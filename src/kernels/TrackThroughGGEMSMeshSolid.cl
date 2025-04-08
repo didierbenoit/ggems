@@ -286,7 +286,8 @@ kernel void track_through_ggems_meshed_solid(
   global GGEMSParticleCrossSections const* particle_cross_sections,
   global GGEMSMaterialTables const* materials,
   global GGEMSMuMuEnData const* attenuations,
-  GGfloat const threshold
+  GGfloat const threshold,
+  GGint const scatter_level
   #ifdef DOSIMETRY
   ,global GGEMSDoseParams* dose_params,
   global GGDosiType* edep_tracking,
@@ -380,6 +381,10 @@ kernel void track_through_ggems_meshed_solid(
       #endif
     }
 
+    #if defined(DOSIMETRY)
+    if (next_discrete_process == COMPTON_SCATTERING || next_discrete_process == RAYLEIGH_SCATTERING) scatter_index++;
+    #endif
+
     #if defined(GGEMS_TRACKING)
     if (global_id == primary_particle->particle_tracking_id) {
       printf("[GGEMS OpenCL kernel track_through_ggems_meshed_solid] ################################################################################\n");
@@ -402,6 +407,7 @@ kernel void track_through_ggems_meshed_solid(
       if (next_discrete_process == TRANSPORTATION) printf("TRANSPORTATION\n");
       printf("[GGEMS OpenCL kernel track_through_ggems_meshed_solid] Next interaction distance: %e mm\n", next_interaction_distance/mm);
       printf("[GGEMS OpenCL kernel track_through_ggems_meshed_solid] Distance to next triangle: %e mm\n", distance_to_next_triangle/mm);
+      printf("[GGEMS OpenCL kernel track_through_ggems_meshed_solid] Scatter level: %d\n", scatter_index);
     }
     #endif
 

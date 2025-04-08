@@ -180,6 +180,20 @@ class GGEMS_EXPORT GGEMSDosimetryCalculator
     void SetTLE(bool const& is_activated);
 
     /*!
+      \fn void SetScatterRegistration(bool const& is_activated)
+      \param is_activated - boolean activating scatter registration
+      \brief activating registration of scatter
+    */
+    void SetScatterRegistration(bool const& is_activated);
+
+    /*!
+      \fn void SetScatterLevelRegistration(GGint const& scatter_level)
+      \param scatter_level - level of scatter
+      \brief level of scatter to register
+    */
+    void SetScatterLevelRegistration(GGint const& scatter_level);
+
+    /*!
       \fn inline cl::Buffer* GetPhotonTrackingBuffer(GGsize const& thread_index) const
       \param thread_index - index of activated device (thread index)
       \return OpenCL buffer for photon tracking in dosimetry mode
@@ -218,6 +232,8 @@ class GGEMS_EXPORT GGEMSDosimetryCalculator
       \brief get the buffer storing dosimetry params
     */
     inline cl::Buffer* GetDoseParams(GGsize const& thread_index) const {return dose_params_[thread_index];}
+
+    inline GGint GetScatterLevel(void) const {return scatter_level_reg_;}
 
     /*!
       \fn void ComputeDose(GGsize const& thread_index)
@@ -296,6 +312,7 @@ class GGEMS_EXPORT GGEMSDosimetryCalculator
     bool is_hit_tracking_; /*!< Boolean for hit tracking */
     bool is_edep_squared_; /*!< Boolean for energy squared deposit */
     bool is_uncertainty_; /*!< Boolean for uncertainty computation */
+    GGint scatter_level_reg_; /*!< Scatter level registration */
     GGfloat scale_factor_; /*!< Scale factor */
     GGchar is_water_reference_; /*!< Water reference for dose computation */
     GGfloat minimum_density_; /*!< Minimum density value for dose computation */
@@ -417,5 +434,13 @@ extern "C" GGEMS_EXPORT void dose_tle_navigator(GGEMSDosimetryCalculator* dose_c
   \brief attach dosimetry module to a navigator
 */
 extern "C" GGEMS_EXPORT void attach_to_navigator_dosimetry_calculator(GGEMSDosimetryCalculator* dose_calculator, char const* navigator);
+
+/*!
+  \fn void dose_scatter_level_to_save_dosimetry_calculator(GGEMSDosimetryCalculator* dose_calculator, GGint const scatter_level)
+  \param dose_calculator - pointer on dose calculator
+  \param scatter_level - index of scatter level
+  \brief storing scatter depending on the level
+*/
+extern "C" GGEMS_EXPORT void dose_scatter_level_to_save_dosimetry_calculator(GGEMSDosimetryCalculator* dose_calculator, GGint const scatter_level);
 
 #endif // End of GUARD_GGEMS_NAVIGATORS_GGEMSDOSIMETRYCALCULATOR_HH

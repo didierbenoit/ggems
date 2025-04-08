@@ -63,6 +63,9 @@ class GGEMSDosimetryCalculator(object):
         ggems_lib.attach_to_navigator_dosimetry_calculator.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
         ggems_lib.attach_to_navigator_dosimetry_calculator.restype = ctypes.c_void_p
 
+        ggems_lib.dose_scatter_level_to_save_dosimetry_calculator.argtypes = [ctypes.c_void_p, ctypes.c_int]
+        ggems_lib.dose_scatter_level_to_save_dosimetry_calculator.restype = ctypes.c_void_p
+
         self.obj = ggems_lib.create_ggems_dosimetry_calculator()
 
     def set_dosel_size(self, dose_x, dose_y, dose_z, unit):
@@ -103,3 +106,6 @@ class GGEMSDosimetryCalculator(object):
 
     def attach_to_navigator(self, name):
         ggems_lib.attach_to_navigator_dosimetry_calculator(self.obj, name.encode('ASCII'))
+
+    def scatter_level_to_save(self, index):
+        ggems_lib.dose_scatter_level_to_save_dosimetry_calculator(self.obj, index)

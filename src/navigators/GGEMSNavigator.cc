@@ -475,6 +475,7 @@ void GGEMSNavigator::TrackThroughSolid(GGsize const& thread_index)
     cl::Buffer* edep_tracking_dosimetry = nullptr;
     cl::Buffer* edep_squared_tracking_dosimetry = nullptr;
     cl::Buffer* dosimetry_params = nullptr;
+    GGint scatter_level = 0;
 
     if (data_reg_type == "HISTOGRAM") {
       histogram = solids_[i]->GetHistogram(thread_index);
@@ -486,6 +487,7 @@ void GGEMSNavigator::TrackThroughSolid(GGsize const& thread_index)
       hit_tracking_dosimetry = dose_calculator_->GetHitTrackingBuffer(thread_index);
       edep_tracking_dosimetry = dose_calculator_->GetEdepBuffer(thread_index);
       edep_squared_tracking_dosimetry = dose_calculator_->GetEdepSquaredBuffer(thread_index);
+      scatter_level = dose_calculator_->GetScatterLevel();
     }
 
     // Getting kernel, and setting parameters
@@ -500,22 +502,23 @@ void GGEMSNavigator::TrackThroughSolid(GGsize const& thread_index)
     kernel->setArg(6, *materials);
     kernel->setArg(7, *attenuations);
     kernel->setArg(8, threshold_);
+    kernel->setArg(9, scatter_level);
     if (data_reg_type == "HISTOGRAM") {
-      kernel->setArg(9, *histogram);
-      if (!scatter_histogram) kernel->setArg(10, sizeof(cl_mem), nullptr);
-      else kernel->setArg(10, *scatter_histogram);
+      kernel->setArg(10, *histogram);
+      if (!scatter_histogram) kernel->setArg(11, sizeof(cl_mem), nullptr);
+      else kernel->setArg(11, *scatter_histogram);
     }
     else if (data_reg_type == "DOSIMETRY") {
-      kernel->setArg(9, *dosimetry_params);
-      kernel->setArg(10, *edep_tracking_dosimetry);
+      kernel->setArg(10, *dosimetry_params);
+      kernel->setArg(11, *edep_tracking_dosimetry);
 
-      if (!edep_squared_tracking_dosimetry) kernel->setArg(11, sizeof(cl_mem), nullptr);
-      else kernel->setArg(11, *edep_squared_tracking_dosimetry);
+      if (!edep_squared_tracking_dosimetry) kernel->setArg(12, sizeof(cl_mem), nullptr);
+      else kernel->setArg(12, *edep_squared_tracking_dosimetry);
 
-      if (!hit_tracking_dosimetry) kernel->setArg(12, sizeof(cl_mem), nullptr);
-      else kernel->setArg(12, *hit_tracking_dosimetry);
-      if (!photon_tracking_dosimetry) kernel->setArg(13, sizeof(cl_mem), nullptr);
-      else kernel->setArg(13, *photon_tracking_dosimetry);
+      if (!hit_tracking_dosimetry) kernel->setArg(13, sizeof(cl_mem), nullptr);
+      else kernel->setArg(13, *hit_tracking_dosimetry);
+      if (!photon_tracking_dosimetry) kernel->setArg(14, sizeof(cl_mem), nullptr);
+      else kernel->setArg(14, *photon_tracking_dosimetry);
     }
 
     // Launching kernel

@@ -45,6 +45,7 @@ GGEMSDosimetryCalculator::GGEMSDosimetryCalculator(void)
   is_hit_tracking_(false),
   is_edep_squared_(false),
   is_uncertainty_(false),
+  scatter_level_reg_(0),
   scale_factor_(1.0f),
   is_water_reference_(FALSE),
   minimum_density_(0.0f),
@@ -280,6 +281,15 @@ void GGEMSDosimetryCalculator::SetWaterReference(bool const& is_activated)
 void GGEMSDosimetryCalculator::SetMinimumDensity(float const& minimum_density, std::string const& unit)
 {
   minimum_density_ = DensityUnit(minimum_density, unit);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+void GGEMSDosimetryCalculator::SetScatterLevelRegistration(GGint const& scatter_level)
+{
+  scatter_level_reg_ = scatter_level;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -906,4 +916,13 @@ void minimum_density_dosimetry_calculator(GGEMSDosimetryCalculator* dose_calcula
 void attach_to_navigator_dosimetry_calculator(GGEMSDosimetryCalculator* dose_calculator, char const* navigator)
 {
   dose_calculator->AttachToNavigator(navigator);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+void dose_scatter_level_to_save_dosimetry_calculator(GGEMSDosimetryCalculator* dose_calculator, GGint const scatter_level)
+{
+  dose_calculator->SetScatterLevelRegistration(scatter_level);
 }

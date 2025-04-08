@@ -64,7 +64,8 @@ kernel void track_through_ggems_voxelized_solid(
   global GGEMSParticleCrossSections const* particle_cross_sections,
   global GGEMSMaterialTables const* materials,
   global GGEMSMuMuEnData const* attenuations,
-  GGfloat const threshold
+  GGfloat const threshold,
+  GGint const scatter_level
   #ifdef DOSIMETRY
   ,global GGEMSDoseParams* dose_params,
   global GGDosiType* edep_tracking,
@@ -128,6 +129,7 @@ kernel void track_through_ggems_voxelized_solid(
 
   GGfloat3 voxel_size = voxelized_solid_data->voxel_sizes_xyz_;
   GGint3 number_of_voxels = voxelized_solid_data->number_of_voxels_xyz_;
+  GGint scatter_index = 0;
 
   // Track particle until out of solid
   do {
@@ -211,6 +213,8 @@ kernel void track_through_ggems_voxelized_solid(
       if (next_discrete_process == RAYLEIGH_SCATTERING) printf("RAYLEIGH_SCATTERING\n");
       if (next_discrete_process == TRANSPORTATION) printf("TRANSPORTATION\n");
       printf("[GGEMS OpenCL kernel track_through_ggems_voxelized_solid] Next interaction distance: %e mm\n", next_interaction_distance/mm);
+      printf("[GGEMS OpenCL kernel track_through_ggems_voxelized_solid] Scatter level: %d\n", scatter_index);
+      printf("Asking scatter level: %d\n", scatter_level);
     }
     #endif
 
@@ -254,8 +258,10 @@ kernel void track_through_ggems_voxelized_solid(
       }
 
       #if defined(DOSIMETRY) && !defined(TLE)
-      GGfloat edep = initial_energy - primary_particle->E_[global_id];
-      dose_record_standard(dose_params, edep_tracking, edep_squared_tracking, hit_tracking, edep, &local_position);
+      if (scatter_index == scatter_level) {
+        GGfloat edep = initial_energy - primary_particle->E_[global_id];
+        dose_record_standard(dose_params, edep_tracking, edep_squared_tracking, hit_tracking, edep, &local_position);
+      }
       #endif
 
       local_direction.x = primary_particle->dx_[global_id];
@@ -303,10 +309,17 @@ kernel void track_through_ggems_voxelized_solid(
     // Apply threshold
     if (primary_particle->E_[global_id] <= materials->photon_energy_cut_[material_id]) {
       #if defined(DOSIMETRY)
-      dose_record_standard(dose_params, edep_tracking, edep_squared_tracking, hit_tracking, primary_particle->E_[global_id], &local_position);
+      if (scatter_index == scatter_level) {
+        dose_record_standard(dose_params, edep_tracking, edep_squared_tracking, hit_tracking, primary_particle->E_[global_id], &local_position);
+      }
       #endif
       primary_particle->status_[global_id] = DEAD;
     }
+
+    #if defined(DOSIMETRY)
+    if (next_discrete_process == COMPTON_SCATTERING || next_discrete_process == RAYLEIGH_SCATTERING) scatter_index++;
+    #endif
+
   } while (primary_particle->status_[global_id] == ALIVE);
 
   // Convert to global position
