@@ -16,6 +16,8 @@
 // *                                                                      *
 // ************************************************************************
 
+#include <pybind11/pybind11.h>
+
 #include "GGEMS/tools/GGEMSPrint.hh"
 
 Pet::Pet(std::string const& name)
@@ -27,6 +29,16 @@ void Pet::SetName(std::string const& name) {
   name_ = name;
 }
 
-std::string const& GetName(void) const {
+std::string const& Pet::GetName(void) const {
   return name_;
 }
+
+namespace py = pybind11;
+
+PYBIND11_MODULE(_tools, m, py::mod_gil_not_used(), py::multiple_interpreters::per_interpreter_gil()) {
+  m.doc() = "Class example for pet animal";
+
+  py::class_<Pet>(m, "Pet")
+    .def(py::init<std::string const&>());
+}
+

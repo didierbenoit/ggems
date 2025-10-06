@@ -1,2 +1,5 @@
 __pycache__
 .ropeproject
+build
+.cache
+compile_commands.json

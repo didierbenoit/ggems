@@ -29,25 +29,33 @@
 #-------------------------------------------------------------------------------
 
 # Checking CMake version
-cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
-project(GGEMS VERSION 2.0 HOMEPAGE_URL ggems.fr LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.15...4.1)
+project(${SKBUILD_PROJECT_NAME} VERSION ${SKBUILD_PROJECT_VERSION} HOMEPAGE_URL ggems.fr LANGUAGES CXX)
 
 # Find pybind11 and Python
+find_package(Python REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11 CONFIG REQUIRED)
 
 # Generate compile commands, useful for some environment editor
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Locate source files for GGEMS
-file(GLOB_RECURSE ggems_src_files CONFIGURE_DEPENDS src/*.cc)
+# Locate source files in each directory
+file(GLOB_RECURSE tools_src_files CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/tools/*.cc")
+file(GLOB_RECURSE sources_src_files CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/sources/*.cc")
 
-# Add a library using FindPython's tooling
-python_add_library(_ggems_lib MODULE src/tools/GGEMSPrint.cc WITH_SOABI)
-target_link_libraries(_ggems_lib PRIVATE pybind11::headers)
+# Tools module
+python_add_library(_tools MODULE ${tools_src_files} WITH_SOABI)
+target_link_libraries(_tools PRIVATE pybind11::headers)
+target_include_directories(_tools PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_definitions(_tools PRIVATE VERSION_INFO=${PROJECT_VERSION})
 
-# This is passing in the version as a define just as an example
-target_compile_definitions(_ggems_lib PRIVATE VERSION_INFO=${PROJECT_VERSION})
+# Sources modules
+python_add_library(_sources MODULE ${sources_src_files} WITH_SOABI)
+target_link_libraries(_sources PRIVATE pybind11::headers)
+target_include_directories(_sources PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_compile_definitions(_sources PRIVATE VERSION_INFO=${PROJECT_VERSION})
 
 # The install directory is the output directory
-install(TARGETS _ggems_lib DESTINATION ggems)
+install(TARGETS _tools DESTINATION ggems)
+install(TARGETS _sources DESTINATION ggems)
 

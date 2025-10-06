@@ -34,4 +34,9 @@ classifiers = [
 
 [tool.scikit-build]
 minimum-version = "build-system.requires"
+ninja.version = ">=1.5"
+cmake.build-type = "Release"
+cmake.args = ["-G Ninja"]
+build-dir = "build/{wheel_tag}"
+build.verbose = true
 
