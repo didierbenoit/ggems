@@ -1,0 +1,37 @@
+[build-system]
+requires = [
+  "scikit-build-core>=0.11",
+  "pybind11>=3.0"
+]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "ggems"
+version = "2.0"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE.md"]
+description="GPU Geant4-based Monte Carlo Simulations"
+readme = "README.md"
+authors = [
+  { name = "Didier BENOIT", email = "didier.benoit@inserm.fr" },
+]
+requires-python = ">=3.8"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: C++",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: MacOS",
+  "Environment :: GPU",
+  "Environment :: GPU :: NVIDIA CUDA",
+  "Environment :: GPU :: OpenCL"
+]
+
+[project.urls]
+"Homepage" = "https://ggems.fr"
+"Source" = "https://github.com/GGEMS/ggems"
+"Documentation" = "https://doc.ggems.fr/v1.3"
+
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+
