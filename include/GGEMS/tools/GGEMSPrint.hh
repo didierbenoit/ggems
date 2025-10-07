@@ -18,15 +18,4 @@
 // *                                                                      *
 // ************************************************************************
 
-#include <string>
-
-class Pet {
-public:
-  explicit Pet(std::string const& name);
-  void SetName(std::string const& name);
-  std::string const& GetName(void) const;
-
-private:
-  std::string name_;
-};
 

@@ -39,9 +39,22 @@ find_package(pybind11 CONFIG REQUIRED)
 # Generate compile commands, useful for some environment editor
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Locate source files in each directory
-file(GLOB_RECURSE tools_src_files CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/tools/*.cc")
-file(GLOB_RECURSE sources_src_files CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/sources/*.cc")
+# Create a python module for each directory
+#set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+#file(GLOB SUBDIRS LIST_DIRECTORIES true "${INCLUDE_DIR}/GGEMS/*")
+#foreach(DIR ${SUBDIRS})
+#  if(IS_DIRECTORY ${DIR})
+#    message(STATUS "Creating module for: ${DIR}")
+#  endif()
+#endforeach()
+
+# Locate source files
+file(
+  GLOB tools_src_files
+  CONFIGURE_DEPENDS
+  "${CMAKE_SOURCE_DIR}/src/tools/*.cc"
+  "${CMAKE_SOURCE_DIR}/python/ggems/tools/GGEMSToolsBindings.cc"
+)
 
 # Tools module
 python_add_library(_tools MODULE ${tools_src_files} WITH_SOABI)
@@ -50,12 +63,12 @@ target_include_directories(_tools PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_compile_definitions(_tools PRIVATE VERSION_INFO=${PROJECT_VERSION})
 
 # Sources modules
-python_add_library(_sources MODULE ${sources_src_files} WITH_SOABI)
-target_link_libraries(_sources PRIVATE pybind11::headers)
-target_include_directories(_sources PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_compile_definitions(_sources PRIVATE VERSION_INFO=${PROJECT_VERSION})
+#python_add_library(_sources MODULE ${sources_src_files} WITH_SOABI)
+#target_link_libraries(_sources PRIVATE pybind11::headers)
+#target_include_directories(_sources PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+#target_compile_definitions(_sources PRIVATE VERSION_INFO=${PROJECT_VERSION})
 
 # The install directory is the output directory
 install(TARGETS _tools DESTINATION ggems)
-install(TARGETS _sources DESTINATION ggems)
+#install(TARGETS _sources DESTINATION ggems)
 

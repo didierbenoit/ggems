@@ -16,4 +16,32 @@
 // *                                                                      *
 // ************************************************************************
 
+/*!
+ * \file GGEMSLogger.cc
+ * \brief ...
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ * \date 2025-10-07
+ * \copyright GNU General Public License v3.0
+ * \version 2.0
+ */
 
+#include "GGEMS/tools/GGEMSLogger.hh"
+
+//GGEMSLogger::GGEMSLogger(void)
+//  : minimum_log_level_(gglog::Level::INFO),
+//  write_lock_() {}
+
+//GGEMSLogger::~GGEMSLogger(void) {}
+
+void GGEMSLogger::SetLevelInfos(gglog::Level const& minimum_log_level) {
+  ;
+}
+
+void GGEMSLogger::LogMessage(gglog::Level const& log_level, std::string const& message, std::chrono::system_clock::time_point const& time) {
+  ;
+}
+
+bool GGEMSLogger::IsValidLogLevel(gglog::Level const& log_level) const {
+  return false;
+}

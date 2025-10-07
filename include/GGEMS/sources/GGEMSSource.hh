@@ -18,7 +18,7 @@
 // *                                                                      *
 // ************************************************************************
 
-#include <pybind11/pybind11.h>
+/*#include <pybind11/pybind11.h>
 
 #include <string>
 
@@ -32,12 +32,12 @@ class PyAnimal : public Animal, public pybind11::trampoline_self_life_support {
 public:
   using Animal::Animal;
   std::string Go(int const& n_times) override {
-    PYBIND11_OVERRIDE_PURE(
-      std::string, /* Return type */
-      Animal,      /* Parent class */
-      Go,          /* Name of function in C++ (must match Python name) */
-      n_times      /* Argument(s) */
-    );
+    PYBIND11_OVERRIDE_PURE(*/
+  //    std::string, /* Return type */
+  //    Animal,      /* Parent class */
+  //    Go,          /* Name of function in C++ (must match Python name) */
+  //    n_times      /* Argument(s) */
+/*    );
   }
 };
 
@@ -45,4 +45,4 @@ class Dog : public Animal {
 public:
   std::string Go(int const& n_times) override;
 };
-
+*/

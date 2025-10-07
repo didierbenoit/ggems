@@ -16,4 +16,31 @@
 // *                                                                      *
 // ************************************************************************
 
+/*!
+ * \file GGEMSToolsBindings.cc
+ * \brief ...
+ * \author
+ * Julien BERT <julien.bert@univ-brest.fr>
+ * Didier BENOIT <didier.benoit@inserm.fr>
+ * \date 2025-10-07
+ * \version 2.0
+*/
 
+/// \cond
+#include <pybind11/pybind11.h>
+/// \endcond
+
+#include "GGEMS/tools/GGEMSLogger.hh"
+
+void CallLog(void) {
+  GGEMSLoggerManager::GetInstance();
+  ; //GGEMSLoggerManager& logger = GGEMSLoggerManager::GetInstance();
+}
+
+namespace py = pybind11;
+
+PYBIND11_MODULE(_tools, m, py::mod_gil_not_used(), py::multiple_interpreters::per_interpreter_gil()) {
+  m.doc() = "Module calling tools ...";
+
+  m.def("CallLog", &CallLog, "A function calling GGEMS Log");
+}

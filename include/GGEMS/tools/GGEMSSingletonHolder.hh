@@ -1,3 +1,5 @@
+#pragma once
+
 // ************************************************************************
 // * This file is part of GGEMS.                                          *
 // *                                                                      *
@@ -16,4 +18,27 @@
 // *                                                                      *
 // ************************************************************************
 
+/*!
+ * \file GGEMSSingletonHolder.hh
+ * \brief ...
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ * \date 2025-10-07
+ * \copyright GNU General Public License v3.0
+ * \version 2.0
+ */
 
+template <class T>
+class GGEMSSingletonHolder
+{
+public:
+   static T& GetInstance(void) noexcept {
+    static T instance;
+    return instance;
+  }
+
+  GGEMSSingletonHolder(GGEMSSingletonHolder const& singleton_holder) = delete;
+  GGEMSSingletonHolder(GGEMSSingletonHolder const&& singleton_holder) = delete;
+  GGEMSSingletonHolder& operator=(GGEMSSingletonHolder const& singleton_holder) = delete;
+  GGEMSSingletonHolder& operator=(GGEMSSingletonHolder const&& singleton_holder) = delete;
+}; // class GGEMSSingletonHolder
