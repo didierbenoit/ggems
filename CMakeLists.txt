@@ -32,6 +32,11 @@
 cmake_minimum_required(VERSION 3.15...4.1)
 project(${SKBUILD_PROJECT_NAME} VERSION ${SKBUILD_PROJECT_VERSION} HOMEPAGE_URL ggems.fr LANGUAGES CXX)
 
+# Get last C++ standard
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 # Find pybind11 and Python
 find_package(Python REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11 REQUIRED)
@@ -45,7 +50,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "" CACHE STRING "Debug flags" FORCE)
 set(CMAKE_CXX_FLAGS_RELEASE "" CACHE STRING "Release flags" FORCE)
 
 # Compiler detection and set flag for each compiler
-if(CMAKE_CXX_COMPILER_ID STREQUAL MSVC)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   add_compile_options(
     "$<$<CONFIG:Debug>:/Od;/Zi;/RTC1;/W4;/Wall;/GS>"
     "$<$<CONFIG:Release>:/Ox;/GL;/fp:fast;/arch:AVX512;/DNDEBUG;/MD>"
@@ -77,6 +82,27 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   add_link_options(
     "$<$<CONFIG:Release>:-flto=auto;-Wl,--gc-sections>"
   )
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+  if(WIN32)
+    add_compile_options(
+      "$<$<CONFIG:Debug>:/Od;/Zi;/RTC1;/MDd;/W4;/Wall>"
+      "$<$<CONFIG:Release>:/O3;/QxHost;/fp:fast;/DNDEBUG;/MD>"
+      /EHsc
+    )
+  else()
+    add_compile_options(
+      "$<$<CONFIG:Debug>:-O0;-g;-fstack-protector-strong>"
+      "$<$<CONFIG:Debug>:-fexceptions;-Wall;-Wextra;-Wpedantic;-Werror>"
+      "$<$<CONFIG:Debug>:-Wshadow;-Wconversion;-Wsign-conversion>"
+      "$<$<CONFIG:Release>:-O3;-DNDEBUG;-fp-model fast=2;-fma>"
+      "$<$<CONFIG:Release>:-fno-omit-frame-pointer>"
+    )
+  endif()
+  add_compile_options(
+    "$<$<CONFIG:Debug>:/Od;/Zi;/RTC1;/MDd;/W4;/Wall>"
+    "$<$<CONFIG:Release>:/O3;/QxHost;/fp:fast;/DNDEBUG;/MD>"
+    /EHsc
+  )
 endif()
 
 # Create a python module for each directory
@@ -96,7 +122,7 @@ file(
   "${CMAKE_SOURCE_DIR}/python/ggems/tools/GGEMSToolsBindings.cc"
 )
 
-# Tools module
+# Module compilation
 python_add_library(_tools MODULE ${tools_src_files} WITH_SOABI)
 target_link_libraries(_tools PRIVATE pybind11::headers)
 target_include_directories(_tools PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
