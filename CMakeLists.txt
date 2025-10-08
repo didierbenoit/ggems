@@ -34,10 +34,50 @@ project(${SKBUILD_PROJECT_NAME} VERSION ${SKBUILD_PROJECT_VERSION} HOMEPAGE_URL 
 
 # Find pybind11 and Python
 find_package(Python REQUIRED COMPONENTS Interpreter Development)
-find_package(pybind11 CONFIG REQUIRED)
+find_package(pybind11 REQUIRED)
 
 # Generate compile commands, useful for some environment editor
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Initialize compiler flags
+set(CMAKE_CXX_FLAGS "" CACHE STRING "CXX flags" FORCE)
+set(CMAKE_CXX_FLAGS_DEBUG "" CACHE STRING "Debug flags" FORCE)
+set(CMAKE_CXX_FLAGS_RELEASE "" CACHE STRING "Release flags" FORCE)
+
+# Compiler detection and set flag for each compiler
+if(CMAKE_CXX_COMPILER_ID STREQUAL MSVC)
+  add_compile_options(
+    "$<$<CONFIG:Debug>:/Od;/Zi;/RTC1;/W4;/Wall;/GS>"
+    "$<$<CONFIG:Release>:/Ox;/GL;/fp:fast;/arch:AVX512;/DNDEBUG;/MD>"
+    /external:anglebrackets
+    /external:W0
+    /EHsc
+  )
+  add_link_options(
+    "$<$<CONFIG:Release>:/LTCG;/OPT:REF;/OPT:ICF>"
+  )
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  add_compile_options(
+    "$<$<CONFIG:Debug>:-O0;-g3;-fno-omit-frame-pointer;-fstack-protector-strong>"
+    "$<$<CONFIG:Debug>:-Wall;-Wextra;-Wpedantic;-Wconversion;-Wshadow>"
+    "$<$<CONFIG:Debug>:-Wnon-virtual-dtor;-fno-common>"
+    "$<$<CONFIG:Release>:-O3;-DNDEBUG;-march=native;-mtune=native;-ffast-math>"
+    "$<$<CONFIG:Release>:-fvectorize;-fslp-vectorize;-funroll-loops;-fstrict-aliasing>"
+    "$<$<CONFIG:Release>:-finline-functions;-flto=full;-fuse-ld=lld;-fdata-sections;-ffunction-sections>"
+  )
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  add_compile_options(
+    "$<$<CONFIG:Debug>:-O0;-g3;-fno-omit-frame-pointer;-fstack-protector-strong>"
+    "$<$<CONFIG:Debug>:-Wall;-Wextra;-Wpedantic;-Wconversion;-Wshadow>"
+    "$<$<CONFIG:Debug>:-Wnon-virtual-dtor;-fno-common>"
+    "$<$<CONFIG:Release>:-O3;-DNDEBUG;-march=native;-mtune=native;-ffast-math>"
+    "$<$<CONFIG:Release>:-funroll-loops;-fstrict-aliasing;-frename-registers>"
+    "$<$<CONFIG:Release>:-finline-functions;-flto=auto;-fdata-sections;-ffunction-sections>"
+  )
+  add_link_options(
+    "$<$<CONFIG:Release>:-flto=auto;-Wl,--gc-sections>"
+  )
+endif()
 
 # Create a python module for each directory
 #set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")

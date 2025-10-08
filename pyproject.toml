@@ -30,7 +30,7 @@ classifiers = [
 [project.urls]
 "Homepage" = "https://ggems.fr"
 "Source" = "https://github.com/GGEMS/ggems"
-"Documentation" = "https://doc.ggems.fr/v1.3"
+"Documentation" = "https://doc.ggems.fr/v2.0"
 
 [tool.scikit-build]
 minimum-version = "build-system.requires"

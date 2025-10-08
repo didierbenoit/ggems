@@ -20,7 +20,7 @@
 
 /*!
  * \file GGEMSLogger.hh
- * \brief ...
+ * \brief Definition of GGEMSLogger class
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  * \date 2025-10-07
@@ -39,16 +39,6 @@
 /*!
  * \namespace gglog
  * \brief Namespace storing the GGEMS standard output replacing the C++ standard 'std::cout'
- * \example
- * \code
- * gglog::info("", "") << "" << gglog::endl;
- * gglog::info2("", "") << "" << gglog::endl;
- * gglog::info3("", "") << "" << gglog::endl;
- * gglog::info4("", "") << "" << gglog::endl;
- * gglog::debug("", "") << "" << gglog::endl;
- * gglog::warn("", "") << "" << gglog::endl;
- * gglog::err("", "") << "" << gglog::endl;
- * \endcode
  */
 namespace gglog {
   /*!
@@ -95,20 +85,22 @@ namespace gglog {
 
 /*!
  * \class GGEMSLogger
- * \brief ...
+ * \brief GGEMSLogger class redefined C++ standard output (on the terminal)
  *
- * @details
- * Cette classe démontre comment :
- * - Documenter les attributs et méthodes
- * - Fournir des descriptions détaillées
- * - Ajouter des notes, avertissements, et exemples d'utilisation
- * 
  * \note
- * This class is thread-safe (since c++11)
+ * This class is used as a singleton defined by:
+ * using GGEMSLoggerManager = GGEMSSingletonHolder<GGEMSLogger>
  *
- * @example
- * @code
- * @endcode
+ * \code
+ * Examples:
+ * gglog::info("CLASS_NAME", "METHOD_NAME") << "" << gglog::endl;
+ * gglog::info2("CLASS_NAME", "METHOD_NAME") << "" << gglog::endl;
+ * gglog::info3("CLASS_NAME", "METHOD_NAME") << "" << gglog::endl;
+ * gglog::info4("CLASS_NAME", "METHOD_NAME") << "" << gglog::endl;
+ * gglog::debug("CLASS_NAME", "METHOD_NAME") << "" << gglog::endl;
+ * gglog::warn("CLASS_NAME", "METHOD_NAME") << "" << gglog::endl;
+ * gglog::err("CLASS_NAME", "METHOD_NAME") << "" << gglog::endl;
+ * \endcode
  */
 class GGEMSLogger final {
 public:
@@ -127,54 +119,55 @@ public:
   ~GGEMSLogger(void) = default;
 
   /*!
-   * \fn GGEMSLogger(GGEMSLogger const& ggems_logger) = delete
-   * \param ggems_logger - reference on the singleton
-   * \brief Avoid copy of the singleton by reference
+   * \fn GGEMSLogger(GGEMSLogger const& logger) = delete
+   * \param logger - Reference on GGEMSLogger
+   * \brief Avoid copy of GGEMSLogger by reference
    */
-  GGEMSLogger(GGEMSLogger const& ggems_logger) = delete;
+  GGEMSLogger(GGEMSLogger const& logger) = delete;
 
   /*!
-   * \fn GGEMSLogger(GGEMSLogger const&& ggems_logger) = delete
-   * \param ggems_logger - rvalue reference on the singleton
-   * \brief Avoid copy of the singleton by rvalue reference
+   * \fn GGEMSLogger(GGEMSLogger const&& logger) = delete
+   * \param logger - RValue reference on GGEMSLogger
+   * \brief Avoid copy of GGEMSLogger by rvalue reference
    */
-  GGEMSLogger(GGEMSLogger const&& ggems_logger) = delete;
+  GGEMSLogger(GGEMSLogger const&& logger) = delete;
 
   /*!
-   * \fn GGEMSLogger& operator=(GGEMSLogger const& ggems_logger) = delete
-   * \param ggems_logger - reference on the singleton
-   * \brief Avoid assignement of the singleton by reference
+   * \fn GGEMSLogger& operator=(GGEMSLogger const& logger) = delete
+   * \param logger - Reference on GGEMSLogger
+   * \brief Avoid assignement of GGEMSLogger by reference
    */
-  GGEMSLogger& operator=(GGEMSLogger const& ggems_logger) = delete;
+  GGEMSLogger& operator=(GGEMSLogger const& logger) = delete;
 
   /*!
-   * \fn GGEMSLogger& operator=(GGEMSLogger const&& ggems_logger) = delete
-   * \param ggems_logger - rvalue reference on the singleton
-   * \brief Avoid copy of the singleton by rvalue reference
+   * \fn GGEMSLogger& operator=(GGEMSLogger const&& logger) = delete
+   * \param logger - RValue reference on GGEMSLogger
+   * \brief Avoid copy of GGEMSLogger by rvalue reference
    */
-  GGEMSLogger& operator=(GGEMSLogger const&& ggems_logger) = delete;
+  GGEMSLogger& operator=(GGEMSLogger const&& logger) = delete;
 
 public:
   /*!
    * \fn void SetLevelInfos(gglog::Level const& minimum_log_level)
-   * \param minimum_log_level - minimum level of infos for output stream
-   * \brief Change the level infos: log::LogLevel::INFO to log::LogLevel::INFO5
+   * \param minimum_log_level - Minimum level of infos for output stream
+   * \brief Change the level infos
    */
   void SetLevelInfos(gglog::Level const& minimum_log_level);
 
   /*!
    * \fn void LogMessage(gglog::Level const& log_level, std::string const& message, std::chrono::system_clock::time_point const& time)
-   * \param log_level - log level of output
-   * \param message - message to print
-   * \param time - time during the print
+   * \param log_level - Log level of output
+   * \param message - Message to print
+   * \param time - Time during the print
    * \brief Print message to terminal
    */
   void LogMessage(gglog::Level const& log_level, std::string const& message, std::chrono::system_clock::time_point const& time);
 
   /*!
    * \fn bool IsValidLogLevel(gglog::Level const& log_level) const
-   * \param log_level - log level of message output
-   * \brief check if the message should be print
+   * \param log_level - Log level of message output
+   * \brief Check if the message should be print
+   * \return True is log level is correct, otherwize false
    */
   bool IsValidLogLevel(gglog::Level const& log_level) const;
 
@@ -183,4 +176,7 @@ private:
   std::mutex   write_lock_; /*!< mutex doing ostream thread safe */
 }; // class GGEMSLogger
 
+/*!
+ * \brief Alias to GGEMSLogger singleton
+ */
 using GGEMSLoggerManager = GGEMSSingletonHolder<GGEMSLogger>;

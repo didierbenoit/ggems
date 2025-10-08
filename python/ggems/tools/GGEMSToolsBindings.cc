@@ -16,25 +16,12 @@
 // *                                                                      *
 // ************************************************************************
 
-/*!
- * \file GGEMSToolsBindings.cc
- * \brief ...
- * \author
- * Julien BERT <julien.bert@univ-brest.fr>
- * Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-10-07
- * \version 2.0
-*/
-
-/// \cond
 #include <pybind11/pybind11.h>
-/// \endcond
 
 #include "GGEMS/tools/GGEMSLogger.hh"
 
 void CallLog(void) {
   GGEMSLoggerManager::GetInstance();
-  ; //GGEMSLoggerManager& logger = GGEMSLoggerManager::GetInstance();
 }
 
 namespace py = pybind11;
