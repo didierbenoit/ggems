@@ -83,12 +83,14 @@ namespace gglog {
   }; // enum Level
 
   /*!
-   * \fn std::ostream& io(Level const& level)
+   * \fn std::ostream& io(Level const& level, std::string const& class_name, std::string const& method_name)
    * \param level - Type of level
+   * \param class_name - Class name
+   * \param method_name - Method name
    * \brief Handling stream with level of log
    * \return Current ostream with message
    */
-  std::ostream& io(Level const& level);
+  std::ostream& io(Level const& level, std::string const& class_name, std::string const& method_name);
 
   /*!
    * \fn std::ostream& endl(std::ostream& stream)
@@ -99,58 +101,87 @@ namespace gglog {
   std::ostream& endl(std::ostream& stream);
 
   /*!
-   * \fn inline std::ostream& info(void)
+   * \fn inline std::ostream& info(std::string const& class_name = "", std::string const& method_name = "")
    * \brief Print data on the terminal with standard info level
+   * \param class_name - Class name
+   * \param method_name - Method name
    * \return Info ostream message
    */
-  inline std::ostream& info(void) {return io(Level::INFO);}
+  inline std::ostream& info(std::string const& class_name = "", std::string const& method_name = "") {
+    return io(Level::INFO, class_name, method_name);
+  }
 
   /*!
-   * \fn inline std::ostream& info2(void)
+   * \fn inline std::ostream& info2(std::string const& class_name = "", std::string const& method_name = "")
    * \brief Print data on the terminal with info level 2
+   * \param class_name - Class name
+   * \param method_name - Method name
    * \return Info level2 ostream message
    */
-  inline std::ostream& info2(void) {return io(Level::INFO2);}
+  inline std::ostream& info2(std::string const& class_name = "", std::string const& method_name = "") {
+    return io(Level::INFO2, class_name, method_name);
+  }
 
   /*!
-   * \fn inline std::ostream& info3(void)
+   * \fn inline std::ostream& info3(std::string const& class_name = "", std::string const& method_name = "")
    * \brief Print data on the terminal with info level 3
+   * \param class_name - Class name
+   * \param method_name - Method name
    * \return Info level3 ostream message
    */
-  inline std::ostream& info3(void) {return io(Level::INFO3);}
+  inline std::ostream& info3(std::string const& class_name = "", std::string const& method_name = "") {
+    return io(Level::INFO3, class_name, method_name);
+  }
 
   /*!
-   * \fn inline std::ostream& info4(void)
+   * \fn inline std::ostream& info4(std::string const& class_name = "", std::string const& method_name = "")
    * \brief Print data on the terminal with info level 4
+   * \param class_name - Class name
+   * \param method_name - Method name
    * \return Info level4 ostream message
    */
-  inline std::ostream& info4(void) {return io(Level::INFO4);}
+  inline std::ostream& info4(std::string const& class_name = "", std::string const& method_name = "") {
+    return io(Level::INFO4, class_name, method_name);
+  }
 
   /*!
-   * \fn inline std::ostream& warn(void)
+   * \fn inline std::ostream& warn(std::string const& class_name = "", std::string const& method_name = "")
    * \brief Print data to terminal with message warning
+   * \param class_name - Class name
+   * \param method_name - Method name
    * \return Warning ostream message
    */
-  inline std::ostream& warn(void) {return io(Level::WARNING);}
+  inline std::ostream& warn(std::string const& class_name = "", std::string const& method_name = "") {
+    return io(Level::WARNING, class_name, method_name);
+  }
 
   /*!
-   * \fn inline std::ostream& debug(void)
+   * \fn inline std::ostream& debug(std::string const& class_name = "", std::string const& method_name = "")
    * \brief Print data to terminal with message debug
+   * \param class_name - Class name
+   * \param method_name - Method name
    * \return Debug ostream message
    */
-  inline std::ostream& debug(void) {return io(Level::DEBUG);}
+  inline std::ostream& debug(std::string const& class_name = "", std::string const& method_name = "") {
+    return io(Level::DEBUG, class_name, method_name);
+  }
 
   /*!
-   * \fn inline std::ostream& err(void)
+   * \fn inline std::ostream& err(std::string const& class_name = "", std::string const& method_name = "")
    * \brief print data to terminal with error level
+   * \param class_name - Class name
+   * \param method_name - Method name
    * \return Error ostream message
    */
-  inline std::ostream& err(void) {return io(Level::ERR);}
+  inline std::ostream& err(std::string const& class_name = "", std::string const& method_name = "") {
+    return io(Level::ERR, class_name, method_name);
+  }
 
   /*!
    * \fn std::string ToString(Level const& level)
    * \param level - Message level
    * \brief Convert the level number to string
+   * \return Level converted to string
    */
   std::string ToString(Level const& level);
 
@@ -158,6 +189,7 @@ namespace gglog {
    * \fn std::string ToString(std::chrono::system_clock::time_point const& time)
    * \param time - Current time
    * \brief Convert the time point to string
+   * \return time chrono converted to string
    */
   std::string ToString(std::chrono::system_clock::time_point const& time);
 } // namespace gglog
@@ -172,6 +204,7 @@ namespace gglog {
  *
  * \code
  * Examples:
+ * gglog::info() << "" << gglog::endl;
  * gglog::info("CLASS_NAME", "METHOD_NAME") << "" << gglog::endl;
  * gglog::info2("CLASS_NAME", "METHOD_NAME") << "" << gglog::endl;
  * gglog::info3("CLASS_NAME", "METHOD_NAME") << "" << gglog::endl;
@@ -234,13 +267,15 @@ public:
   void SetLevelInfos(gglog::Level const& minimum_level);
 
   /*!
-   * \fn void LogMessage(gglog::Level const& log_level, std::string const& message, std::chrono::system_clock::time_point const& time)
+   * \fn void LogMessage(gglog::Level const& log_level, std::string const& message, std::chrono::system_clock::time_point const& time, std::string const& class_name, std::string const& method_name)
    * \param log_level - Log level of output
    * \param message - Message to print
    * \param time - Time during the print
+   * \param class_name - Class name to print
+   * \param method_name - Method name to print
    * \brief Print message to terminal
    */
-  void LogMessage(gglog::Level const& log_level, std::string const& message, std::chrono::system_clock::time_point const& time);
+  void LogMessage(gglog::Level const& log_level, std::string const& message, std::chrono::system_clock::time_point const& time, std::string const& class_name, std::string const& method_name);
 
   /*!
    * \fn bool IsValidLogLevel(gglog::Level const& log_level) const
@@ -260,6 +295,7 @@ private:
  * \param stream - Output stream
  * \param str - String to put in output stream
  * \brief Convenience-wrapper to allow writing std::string into std::ostream
+ * \return C++ ostream storing string 'str'
  */
 std::ostream& operator<<(std::ostream& stream, std::string const& str);
 

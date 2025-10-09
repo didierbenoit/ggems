@@ -47,6 +47,9 @@ void CallLog(void) {
   gglog::debug() << "Test new GGEMS logger" << gglog::endl;
   gglog::warn() << "Test new GGEMS logger" << gglog::endl;
   gglog::err() << "Test new GGEMS logger" << gglog::endl;
+  gglog::info("CLASS", "METHOD") << "Test new GGEMS logger" << gglog::endl;
+  gglog::debug("CLASS", "METHOD") << "Test new GGEMS logger" << gglog::endl;
+  gglog::err("CLASS", "METHOD") << "Test new GGEMS logger" << gglog::endl;
 }
 
 namespace py = pybind11;

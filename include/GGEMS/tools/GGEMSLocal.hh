@@ -80,7 +80,7 @@ struct GGEMSLocal final {
   GGEMSLocal& operator=(GGEMSLocal const&& local) = delete;
 
   /*!
-   * \fn bool IsValidLogLevel(gglog::Level const& Level) const
+   * \fn bool IsValidLogLevel(gglog::Level const& level) const
    * \param level - Level of message output
    * \brief Check if the message should be print
    * \return True if it a valid log
@@ -96,6 +96,8 @@ struct GGEMSLocal final {
   std::ostringstream                    osstream_; /*!< Output string stream storing infos to print on the terminal */
   gglog::Level                          level_; /*!< level of log */
   std::chrono::system_clock::time_point time_; /*!< Time when the stream is written */
+  std::string                           class_name_; /*!< Store the class name */
+  std::string                           method_name_; /*!< Store the method name */
 }; // struct GGEMSLocal
 
 namespace gglog {
