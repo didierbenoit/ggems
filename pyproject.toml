@@ -36,8 +36,6 @@ classifiers = [
 minimum-version = "build-system.requires"
 ninja.version = ">=1.5"
 cmake.build-type = "Debug"
-
 cmake.args = ["-G Ninja"]
 build-dir = "build/{wheel_tag}"
 build.verbose = true
-

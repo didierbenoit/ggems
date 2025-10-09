@@ -16,4 +16,24 @@
 // *                                                                      *
 // ************************************************************************
 
+/*!
+ * \file GGEMSLocal.cc
+ * \brief Definition of GGEMSLocal class
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ * \date 2025-10-09
+ * \copyright GNU General Public License v3.0
+ * \version 2.0
+ */
 
+#include "GGEMS/tools/GGEMSLocal.hh"
+
+thread_local GGEMSLocal gglog::local;
+
+bool GGEMSLocal::IsValidLogLevel(gglog::Level const& Level) const {
+  return GGEMSLoggerManager::GetInstance().IsValidLogLevel(Level);
+}
+
+void GGEMSLocal::WriteMessage(void) const {
+  GGEMSLoggerManager::GetInstance().LogMessage(level_, osstream_.str(), time_);
+}

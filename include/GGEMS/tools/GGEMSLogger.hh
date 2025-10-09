@@ -45,7 +45,7 @@ namespace gglog {
    * \enum Level
    * \brief Represent the different level of stream output
   */
-  enum class Level : char {
+  enum class Level : unsigned char {
     /*!
      * \brief The message corresponds to the first level of info. At this level, the message is always displayed on the terminal.
      */
@@ -79,8 +79,87 @@ namespace gglog {
     /*!
      * \brief The message corresponds to an error text
      */
-    ERROR
+    ERR
   }; // enum Level
+
+  /*!
+   * \fn std::ostream& io(Level const& level)
+   * \param level - Type of level
+   * \brief Handling stream with level of log
+   * \return Current ostream with message
+   */
+  std::ostream& io(Level const& level);
+
+  /*!
+   * \fn std::ostream& endl(std::ostream& stream)
+   * \param stream - Stream for end of line
+   * \brief Handling end of line
+   * \return End of line ostream
+   */
+  std::ostream& endl(std::ostream& stream);
+
+  /*!
+   * \fn inline std::ostream& info(void)
+   * \brief Print data on the terminal with standard info level
+   * \return Info ostream message
+   */
+  inline std::ostream& info(void) {return io(Level::INFO);}
+
+  /*!
+   * \fn inline std::ostream& info2(void)
+   * \brief Print data on the terminal with info level 2
+   * \return Info level2 ostream message
+   */
+  inline std::ostream& info2(void) {return io(Level::INFO2);}
+
+  /*!
+   * \fn inline std::ostream& info3(void)
+   * \brief Print data on the terminal with info level 3
+   * \return Info level3 ostream message
+   */
+  inline std::ostream& info3(void) {return io(Level::INFO3);}
+
+  /*!
+   * \fn inline std::ostream& info4(void)
+   * \brief Print data on the terminal with info level 4
+   * \return Info level4 ostream message
+   */
+  inline std::ostream& info4(void) {return io(Level::INFO4);}
+
+  /*!
+   * \fn inline std::ostream& warn(void)
+   * \brief Print data to terminal with message warning
+   * \return Warning ostream message
+   */
+  inline std::ostream& warn(void) {return io(Level::WARNING);}
+
+  /*!
+   * \fn inline std::ostream& debug(void)
+   * \brief Print data to terminal with message debug
+   * \return Debug ostream message
+   */
+  inline std::ostream& debug(void) {return io(Level::DEBUG);}
+
+  /*!
+   * \fn inline std::ostream& err(void)
+   * \brief print data to terminal with error level
+   * \return Error ostream message
+   */
+  inline std::ostream& err(void) {return io(Level::ERR);}
+
+  /*!
+   * \fn std::string ToString(Level const& level)
+   * \param level - Message level
+   * \brief Convert the level number to string
+   */
+  std::string ToString(Level const& level);
+
+  /*!
+   * \fn std::string ToString(std::chrono::system_clock::time_point const& time)
+   * \param time - Current time
+   * \brief Convert the time point to string
+   */
+  std::string ToString(std::chrono::system_clock::time_point const& time);
 } // namespace gglog
 
 /*!
@@ -109,7 +188,7 @@ public:
    * \fn GGEMSLogger(void)
    */
   GGEMSLogger(void)
-  : minimum_log_level_(gglog::Level::INFO),
+  : minimum_level_(gglog::Level::INFO),
     write_lock_() {}
 
   /*!
@@ -148,11 +227,11 @@ public:
 
 public:
   /*!
-   * \fn void SetLevelInfos(gglog::Level const& minimum_log_level)
-   * \param minimum_log_level - Minimum level of infos for output stream
+   * \fn void SetLevelInfos(gglog::Level const& minimum_level)
+   * \param minimum_level - Minimum level of infos for output stream
    * \brief Change the level infos
    */
-  void SetLevelInfos(gglog::Level const& minimum_log_level);
+  void SetLevelInfos(gglog::Level const& minimum_level);
 
   /*!
    * \fn void LogMessage(gglog::Level const& log_level, std::string const& message, std::chrono::system_clock::time_point const& time)
@@ -172,9 +251,17 @@ public:
   bool IsValidLogLevel(gglog::Level const& log_level) const;
 
 private:
-  gglog::Level minimum_log_level_; /*!< minimum level of log to print on the standard output */
+  gglog::Level minimum_level_; /*!< minimum level of log to print on the standard output */
   std::mutex   write_lock_; /*!< mutex doing ostream thread safe */
 }; // class GGEMSLogger
+
+/*!
+ * \fn std::ostream& operator<<(std::ostream& stream, std::string const& str)
+ * \param stream - Output stream
+ * \param str - String to put in output stream
+ * \brief Convenience-wrapper to allow writing std::string into std::ostream
+ */
+std::ostream& operator<<(std::ostream& stream, std::string const& str);
 
 /*!
  * \brief Alias to GGEMSLogger singleton
