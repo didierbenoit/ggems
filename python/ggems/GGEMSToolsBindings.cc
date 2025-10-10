@@ -54,8 +54,14 @@ void CallLog(void) {
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(_tools, m, py::mod_gil_not_used(), py::multiple_interpreters::per_interpreter_gil()) {
-  m.doc() = "Module calling tools ...";
+PYBIND11_MODULE(ggems_tools, m, py::mod_gil_not_used(), py::multiple_interpreters::per_interpreter_gil()) {
+  m.doc() = R"pbdoc(
+    GGEMS tools
+    ===========
+    Provide methods for:
+      - ....
+      - ....
+  )pbdoc";
 
   m.def("GGEMSVerbosity", &GGEMSVerbosity, "Setting the level of verbosity in GGEMS from 1 to 4");
   m.def("CallLog", &CallLog, "A function calling GGEMS Log");
