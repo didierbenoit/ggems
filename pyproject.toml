@@ -21,7 +21,6 @@ classifiers = [
   "Programming Language :: C++",
   "Operating System :: POSIX :: Linux",
   "Operating System :: Microsoft :: Windows",
-  "Operating System :: MacOS",
   "Environment :: GPU",
   "Environment :: GPU :: NVIDIA CUDA",
   "Environment :: GPU :: OpenCL"
@@ -39,3 +38,6 @@ cmake.build-type = "Debug"
 cmake.args = ["-G Ninja"]
 build-dir = "build/{wheel_tag}"
 build.verbose = true
+
+[tool.scikit-build.cmake.define]
+BUILD_TESTING = "ON"

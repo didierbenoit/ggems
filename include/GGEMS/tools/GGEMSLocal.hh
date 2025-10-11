@@ -94,10 +94,9 @@ struct GGEMSLocal final {
   void WriteMessage(void) const;
 
   std::ostringstream                    osstream_; /*!< Output string stream storing infos to print on the terminal */
-  gglog::Level                          level_; /*!< level of log */
-  std::chrono::system_clock::time_point time_; /*!< Time when the stream is written */
   std::string                           class_name_; /*!< Store the class name */
   std::string                           method_name_; /*!< Store the method name */
+  gglog::Level                          level_; /*!< level of log */
 }; // struct GGEMSLocal
 
 namespace gglog {

@@ -35,8 +35,8 @@
 #include <Windows.h>
 #endif
 
+#include <iterator>
 #include <sstream>
-#include <iomanip>
 #include <iostream>
 #include <algorithm>
 /// \endcond
@@ -48,17 +48,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 std::ostream& gglog::io(gglog::Level const& level, std::string const& class_name, std::string const& method_name) {
-  thread_local GGEMSLocal& local = gglog::local;
-  if (!local.IsValidLogLevel(level)) {
-    local.osstream_.setstate(std::ios::badbit);
+  if (!gglog::local.IsValidLogLevel(level)) {
+    gglog::local.osstream_.setstate(std::ios::badbit);
   }
   else {
-    local.time_ = std::chrono::system_clock::now();
-    local.level_ = level;
-    local.class_name_ = class_name;
-    local.method_name_ = method_name;
+    gglog::local.level_ = level;
+    gglog::local.class_name_ = class_name;
+    gglog::local.method_name_ = method_name;
   }
-  return local.osstream_;
+  return gglog::local.osstream_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,25 +65,24 @@ std::ostream& gglog::io(gglog::Level const& level, std::string const& class_name
 
 std::ostream& gglog::endl(std::ostream& ostream) {
   ostream << std::endl;
-  thread_local GGEMSLocal& local = gglog::local;
-  if(!local.osstream_.bad()) {
-    local.WriteMessage();
+  if(!gglog::local.osstream_.bad()) {
+    gglog::local.WriteMessage();
   }
 
   // reset stream-data (and state)
-  local.osstream_.str(std::string());
-  local.osstream_.clear();
-  local.class_name_.clear();
-  local.method_name_.clear();
+  gglog::local.osstream_.str(std::string());
+  gglog::local.osstream_.clear();
+  gglog::local.class_name_.clear();
+  gglog::local.method_name_.clear();
 
-  return local.osstream_;
+  return gglog::local.osstream_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-void GGEMSLogger::LogMessage(gglog::Level const& level, std::string const& message, std::chrono::system_clock::time_point const& time, std::string const& class_name, std::string const& method_name) {
+void GGEMSLogger::LogMessage(gglog::Level const& level, std::string const& message, std::string const& class_name, std::string const& method_name) {
   if (!IsValidLogLevel(level)) return;
 
   std::lock_guard<std::mutex> guard(write_lock_);
@@ -101,15 +98,14 @@ void GGEMSLogger::LogMessage(gglog::Level const& level, std::string const& messa
   if (level == gglog::Level::ERR) {
     #ifdef _WIN32
     SetConsoleTextAttribute(hConsole, 0x04); // 0x04 means red
-    std::cout << "[GGEMS " << gglog::ToString(level) << " " << gglog::ToString(time) << "] ";
+    std::cout << "[GGEMS " << gglog::ToString(level) << "] ";
     if (!class_name.empty() || !method_name.empty()) {
       std::cout << "(" << class_name << "::" << method_name << ") ";
     }
     SetConsoleTextAttribute(hConsole, info.wAttributes);
     #else
     std::cout << "\033[31m"
-              << "[GGEMS " << gglog::ToString(level)
-              << " " << gglog::ToString(time) << "] ("
+              << "[GGEMS " << gglog::ToString(level) << "] ("
               << class_name << "::" << method_name << ") "
               << "\033[0m";
     #endif
@@ -117,15 +113,14 @@ void GGEMSLogger::LogMessage(gglog::Level const& level, std::string const& messa
   else if (level == gglog::Level::WARNING || level == gglog::Level::DEBUG) {
     #ifdef _WIN32
     SetConsoleTextAttribute(hConsole, 0x06); // 0x06 means yellow
-    std::cout << "[GGEMS " << gglog::ToString(level) << " " << gglog::ToString(time) << "] ";
+    std::cout << "[GGEMS " << gglog::ToString(level) << "] ";
     if (!class_name.empty() || !method_name.empty()) {
       std::cout << "(" << class_name << "::" << method_name << ") ";
     }
     SetConsoleTextAttribute(hConsole, info.wAttributes);
     #else
     std::cout << "\033[33m"
-              << "[GGEMS " << gglog::ToString(level)
-              << " " << gglog::ToString(time) << "] ("
+              << "[GGEMS " << gglog::ToString(level) << "] ("
               << class_name << "::" << method_name << ") "
               << "\033[0m";
     #endif
@@ -133,15 +128,14 @@ void GGEMSLogger::LogMessage(gglog::Level const& level, std::string const& messa
   else {
     #ifdef _WIN32
     SetConsoleTextAttribute(hConsole, 0x02); // 0x02 means green
-    std::cout << "[GGEMS " << gglog::ToString(level) << " " << gglog::ToString(time) << "] ";
+    std::cout << "[GGEMS " << gglog::ToString(level) << "] ";
     if (!class_name.empty() || !method_name.empty()) {
       std::cout << "(" << class_name << "::" << method_name << ") ";
     }
     SetConsoleTextAttribute(hConsole, info.wAttributes);
     #else
     std::cout << "\033[32m"
-              << "[GGEMS " << gglog::ToString(level)
-              << " " << gglog::ToString(time) << "] ("
+              << "[GGEMS " << gglog::ToString(level) << "] ("
               << class_name << "::" << method_name << ") "
               << "\033[0m";
     #endif
@@ -174,26 +168,6 @@ std::string gglog::ToString(gglog::Level const& level) {
     default:
       return "";
   }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-std::string gglog::ToString(std::chrono::system_clock::time_point const& time) {
-  std::time_t tt = std::chrono::system_clock::to_time_t(time);
-
-  struct tm result;
-  #ifdef _WIN32
-  gmtime_s(&result, &tt);
-  #else
-  gmtime_r(&tt, &result);
-  #endif
-
-  std::ostringstream oss;
-  std::string format = "UTC: %Y-%m-%d %H:%M:%S";
-  oss << std::put_time(&result, format.c_str());
-  return oss.str();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

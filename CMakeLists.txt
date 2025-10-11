@@ -41,8 +41,20 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Compiler detection and set flag for each compiler
 include(cmake/CompilerOptions.cmake)
 
-# C++ subdirectories
-add_subdirectory(src/tools)
+# Locate C++ files
+FILE(GLOB GGEMS_SOURCE_FILES CONFIGURE_DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/*.cc
+)
+
+# GGEMS C++ library building
+add_library(ggems STATIC)
+target_sources(ggems PRIVATE ${GGEMS_SOURCE_FILES})
+target_include_directories(ggems PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # C++/Python bindings
-add_subdirectory(python)
+add_subdirectory(python/ggems)
+
+# Google test
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif()

@@ -1,17 +1,11 @@
 add_compile_options(
-  "$<$<CONFIG:Debug>:-O0;-g;-fno-omit-frame-pointer;-fstack-protector-strong>"
-  "$<$<CONFIG:Debug>:-Wall;-Wextra;-Wpedantic;-Wconversion;-Wshadow>"
-  "$<$<CONFIG:Debug>:-Wsign-conversion;-Wnon-virtual-dtor;-fno-common>"
-  "$<$<CONFIG:Debug>:-Wfloat-equal;-Wcast-align;-Wpointer-arith;-Wmissing-include-dirs>"
-  "$<$<CONFIG:Debug>:-Wnon-virtual-dtor;-Wunused;-Wuninitialized;-Wswitch-enum>"
-  "$<$<CONFIG:Debug>:-Wduplicated-cond;-Wduplicated-branches;-Wlogical-op>"
-  "$<$<CONFIG:Debug>:-Wnull-dereference;-Wdouble-promotion>"
+  "$<$<CONFIG:Debug>:-Wall;-Wextra;-Wpedantic;-Wcast-align;-Wcast-qual>"
+  "$<$<CONFIG:Debug>:-Wdisabled-optimization;-Wduplicated-branches>"
+  "$<$<CONFIG:Debug>:-Wduplicated-cond;-Wformat=2;-Wlogical-op>"
+  "$<$<CONFIG:Debug>:-Wmissing-include-dirs;-Wnull-dereference>"
+  "$<$<CONFIG:Debug>:-Woverloaded-virtual;-Wpointer-arith;-Wshadow>"
+  "$<$<CONFIG:Debug>:-Wvla;-Wswitch-enum>"
 
-  "$<$<CONFIG:Release>:-O3;-DNDEBUG;-march=native;-mtune=native;-ffast-math>"
-  "$<$<CONFIG:Release>:-funroll-loops;-fstrict-aliasing;-frename-registers>"
-  "$<$<CONFIG:Release>:-finline-functions;-flto=auto;-fdata-sections;-ffunction-sections>"
-)
-
-add_link_options(
-  "$<$<CONFIG:Release>:-flto=auto;-Wl,--gc-sections>"
+  "$<$<CONFIG:Release>:-O3;-DNDEBUG;-march=native;-mtune=native>"
+  "$<$<CONFIG:Release>:-funroll-loops;-frename-registers>"
 )

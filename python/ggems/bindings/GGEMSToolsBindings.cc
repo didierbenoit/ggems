@@ -17,8 +17,9 @@
 // ************************************************************************
 
 #include <pybind11/pybind11.h>
-
 #include "GGEMS/tools/GGEMSLogger.hh"
+
+namespace py = pybind11;
 
 void GGEMSVerbosity(int level) {
   if (level > 4 || level < 0) level = 4;
@@ -39,30 +40,6 @@ void GGEMSVerbosity(int level) {
   }
 }
 
-void CallLog(void) {
-  gglog::info() << "Test new GGEMS logger" << gglog::endl;
-  gglog::info2() << "Test new GGEMS logger" << gglog::endl;
-  gglog::info3() << "Test new GGEMS logger" << gglog::endl;
-  gglog::info4() << "Test new GGEMS logger" << gglog::endl;
-  gglog::debug() << "Test new GGEMS logger" << gglog::endl;
-  gglog::warn() << "Test new GGEMS logger" << gglog::endl;
-  gglog::err() << "Test new GGEMS logger" << gglog::endl;
-  gglog::info("CLASS", "METHOD") << "Test new GGEMS logger" << gglog::endl;
-  gglog::debug("CLASS", "METHOD") << "Test new GGEMS logger" << gglog::endl;
-  gglog::err("CLASS", "METHOD") << "Test new GGEMS logger" << gglog::endl;
-}
-
-namespace py = pybind11;
-
-PYBIND11_MODULE(ggems_tools, m, py::mod_gil_not_used(), py::multiple_interpreters::per_interpreter_gil()) {
-  m.doc() = R"pbdoc(
-    GGEMS tools
-    ===========
-    Provide methods for:
-      - ....
-      - ....
-  )pbdoc";
-
+void GGEMSInitTools(py::module_& m) {
   m.def("GGEMSVerbosity", &GGEMSVerbosity, "Setting the level of verbosity in GGEMS from 1 to 4");
-  m.def("CallLog", &CallLog, "A function calling GGEMS Log");
 }

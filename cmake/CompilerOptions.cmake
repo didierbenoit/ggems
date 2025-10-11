@@ -11,6 +11,9 @@ set(CMAKE_CXX_FLAGS_RELEASE "" CACHE STRING "Release flags" FORCE)
 
 # Compiler detection and set flag for each compiler
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.20)
+    message(FATAL_ERROR "GGEMS requires MSVC 19.20 (Visual Studio 2019 RTM, version 16.0, toolset v142) or newer")
+  endif()
   include(cmake/MSVCOptions.cmake)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   include(cmake/ClangOptions.cmake)

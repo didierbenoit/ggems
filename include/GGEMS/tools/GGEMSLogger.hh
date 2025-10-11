@@ -31,7 +31,6 @@
 /// \cond
 #include <string>
 #include <mutex>
-#include <chrono>
 /// \endcond
 
 #include "GGEMS/tools/GGEMSSingletonHolder.hh"
@@ -184,14 +183,6 @@ namespace gglog {
    * \return Level converted to string
    */
   std::string ToString(Level const& level);
-
-  /*!
-   * \fn std::string ToString(std::chrono::system_clock::time_point const& time)
-   * \param time - Current time
-   * \brief Convert the time point to string
-   * \return time chrono converted to string
-   */
-  std::string ToString(std::chrono::system_clock::time_point const& time);
 } // namespace gglog
 
 /*!
@@ -267,15 +258,14 @@ public:
   void SetLevelInfos(gglog::Level const& minimum_level);
 
   /*!
-   * \fn void LogMessage(gglog::Level const& log_level, std::string const& message, std::chrono::system_clock::time_point const& time, std::string const& class_name, std::string const& method_name)
+   * \fn void LogMessage(gglog::Level const& log_level, std::string const& message, std::string const& class_name, std::string const& method_name)
    * \param log_level - Log level of output
    * \param message - Message to print
-   * \param time - Time during the print
    * \param class_name - Class name to print
    * \param method_name - Method name to print
    * \brief Print message to terminal
    */
-  void LogMessage(gglog::Level const& log_level, std::string const& message, std::chrono::system_clock::time_point const& time, std::string const& class_name, std::string const& method_name);
+  void LogMessage(gglog::Level const& log_level, std::string const& message, std::string const& class_name, std::string const& method_name);
 
   /*!
    * \fn bool IsValidLogLevel(gglog::Level const& log_level) const

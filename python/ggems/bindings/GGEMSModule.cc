@@ -16,32 +16,23 @@
 // *                                                                      *
 // ************************************************************************
 
-/*!
- * \file GGEMSLocal.cc
- * \brief Definition of GGEMSLocal class
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-10-09
- * \copyright GNU General Public License v3.0
- * \version 2.0
- */
+#include <pybind11/pybind11.h>
 
-#include "GGEMS/tools/GGEMSLocal.hh"
+namespace py = pybind11;
 
-thread_local GGEMSLocal gglog::local;
+void GGEMSInitTools(py::module_&);
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+PYBIND11_MODULE(ggems, m, py::mod_gil_not_used(), py::multiple_interpreters::per_interpreter_gil()) {
+  m.doc() = R"pbdoc(
+    GGEMS unified Python interface
 
-bool GGEMSLocal::IsValidLogLevel(gglog::Level const& Level) const {
-  return GGEMSLoggerManager::GetInstance().IsValidLogLevel(Level);
-}
+    GGEMS tools
+    ===========
+    GGEMS can print lot of infos to the terminal.
+    Provide methods for:
+      - ....
+      - ....
+  )pbdoc";
 
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-void GGEMSLocal::WriteMessage(void) const {
-  GGEMSLoggerManager::GetInstance().LogMessage(level_, osstream_.str(), class_name_, method_name_);
+  GGEMSInitTools(m);
 }

@@ -4,6 +4,6 @@ build
 .cache
 .clangd
 compile_commands.json
-python/ggems/ggems_tools.cp313-win_amd64.ilk
-python/ggems/ggems_tools.cp313-win_amd64.pyd
-python/ggems/ggems_tools.pdb
+python/ggems/ggems.cp313-win_amd64.ilk
+python/ggems/ggems.cp313-win_amd64.pyd
+python/ggems/ggems.pdb
