@@ -21,6 +21,7 @@
 namespace py = pybind11;
 
 void GGEMSInitTools(py::module_&);
+void GGEMSInitFrameworks(py::module_&);
 
 PYBIND11_MODULE(ggems, m, py::mod_gil_not_used(), py::multiple_interpreters::per_interpreter_gil()) {
   m.doc() = R"pbdoc(
@@ -32,7 +33,12 @@ PYBIND11_MODULE(ggems, m, py::mod_gil_not_used(), py::multiple_interpreters::per
     Provide methods for:
       - ....
       - ....
+
+    GGEMS frameworks
+    ================
+    Call OpenCL method ...
   )pbdoc";
 
   GGEMSInitTools(m);
+  GGEMSInitFrameworks(m);
 }

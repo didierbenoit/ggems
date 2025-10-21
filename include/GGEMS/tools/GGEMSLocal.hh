@@ -38,12 +38,12 @@
  * \struct GGEMSLocal
  * \brief Structure storing infos in ostringstream to print on the terminal
  */
-struct GGEMSLocal final {
+struct GGEMSLocal {
   /*!
    * \brief Constructor of GGEMSLocal
    * \fn GGEMSLocal(void)
    */
-  GGEMSLocal(void) : level_(gglog::Level::INFO) {}
+  GGEMSLocal(void) : level_{gglog::Level::INFO} {}
 
   /*!
    * \brief Destructor of GGEMSLocal

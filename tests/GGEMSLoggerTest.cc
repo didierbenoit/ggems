@@ -24,7 +24,7 @@
 class GGEMSLoggerTest : public ::testing::Test {
 protected:
   GGEMSLoggerTest(void) {
-    GGEMSLoggerManager::GetInstance().SetLevelInfos(gglog::Level::INFO4);
+    GGEMSLogger::GetInstance().SetLevelInfos(gglog::Level::INFO4);
   }
 
   ~GGEMSLoggerTest(void) = default;

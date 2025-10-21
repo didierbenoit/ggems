@@ -29,11 +29,10 @@
  */
 
 /// \cond
-#include <string>
+#include <string_view>
 #include <mutex>
+#include <ostream>
 /// \endcond
-
-#include "GGEMS/tools/GGEMSSingletonHolder.hh"
 
 /*!
  * \namespace gglog
@@ -82,14 +81,14 @@ namespace gglog {
   }; // enum Level
 
   /*!
-   * \fn std::ostream& io(Level const& level, std::string const& class_name, std::string const& method_name)
+   * \fn std::ostream& io(Level const& level, std::string_view class_name, std::string_view method_name)
    * \param level - Type of level
    * \param class_name - Class name
    * \param method_name - Method name
    * \brief Handling stream with level of log
    * \return Current ostream with message
    */
-  std::ostream& io(Level const& level, std::string const& class_name, std::string const& method_name);
+  std::ostream& io(Level const& level, std::string_view class_name, std::string_view method_name);
 
   /*!
    * \fn std::ostream& endl(std::ostream& stream)
@@ -100,79 +99,79 @@ namespace gglog {
   std::ostream& endl(std::ostream& stream);
 
   /*!
-   * \fn inline std::ostream& info(std::string const& class_name = "", std::string const& method_name = "")
+   * \fn inline std::ostream& info(std::string_view class_name = "", std::string_view method_name = "")
    * \brief Print data on the terminal with standard info level
    * \param class_name - Class name
    * \param method_name - Method name
    * \return Info ostream message
    */
-  inline std::ostream& info(std::string const& class_name = "", std::string const& method_name = "") {
+  inline std::ostream& info(std::string_view class_name = "", std::string_view method_name = "") {
     return io(Level::INFO, class_name, method_name);
   }
 
   /*!
-   * \fn inline std::ostream& info2(std::string const& class_name = "", std::string const& method_name = "")
+   * \fn inline std::ostream& info2(std::string_view class_name = "", std::string_view method_name = "")
    * \brief Print data on the terminal with info level 2
    * \param class_name - Class name
    * \param method_name - Method name
    * \return Info level2 ostream message
    */
-  inline std::ostream& info2(std::string const& class_name = "", std::string const& method_name = "") {
+  inline std::ostream& info2(std::string_view class_name = "", std::string_view method_name = "") {
     return io(Level::INFO2, class_name, method_name);
   }
 
   /*!
-   * \fn inline std::ostream& info3(std::string const& class_name = "", std::string const& method_name = "")
+   * \fn inline std::ostream& info3(std::string_view class_name = "", std::string_view method_name = "")
    * \brief Print data on the terminal with info level 3
    * \param class_name - Class name
    * \param method_name - Method name
    * \return Info level3 ostream message
    */
-  inline std::ostream& info3(std::string const& class_name = "", std::string const& method_name = "") {
+  inline std::ostream& info3(std::string_view class_name = "", std::string_view method_name = "") {
     return io(Level::INFO3, class_name, method_name);
   }
 
   /*!
-   * \fn inline std::ostream& info4(std::string const& class_name = "", std::string const& method_name = "")
+   * \fn inline std::ostream& info4(std::string_view class_name = "", std::string_view method_name = "")
    * \brief Print data on the terminal with info level 4
    * \param class_name - Class name
    * \param method_name - Method name
    * \return Info level4 ostream message
    */
-  inline std::ostream& info4(std::string const& class_name = "", std::string const& method_name = "") {
+  inline std::ostream& info4(std::string_view class_name = "", std::string_view method_name = "") {
     return io(Level::INFO4, class_name, method_name);
   }
 
   /*!
-   * \fn inline std::ostream& warn(std::string const& class_name = "", std::string const& method_name = "")
+   * \fn inline std::ostream& warn(std::string_view class_name = "", std::string_view method_name = "")
    * \brief Print data to terminal with message warning
    * \param class_name - Class name
    * \param method_name - Method name
    * \return Warning ostream message
    */
-  inline std::ostream& warn(std::string const& class_name = "", std::string const& method_name = "") {
+  inline std::ostream& warn(std::string_view class_name = "", std::string_view method_name = "") {
     return io(Level::WARNING, class_name, method_name);
   }
 
   /*!
-   * \fn inline std::ostream& debug(std::string const& class_name = "", std::string const& method_name = "")
+   * \fn inline std::ostream& debug(std::string_view class_name = "", std::string_view method_name = "")
    * \brief Print data to terminal with message debug
    * \param class_name - Class name
    * \param method_name - Method name
    * \return Debug ostream message
    */
-  inline std::ostream& debug(std::string const& class_name = "", std::string const& method_name = "") {
+  inline std::ostream& debug(std::string_view class_name = "", std::string_view method_name = "") {
     return io(Level::DEBUG, class_name, method_name);
   }
 
   /*!
-   * \fn inline std::ostream& err(std::string const& class_name = "", std::string const& method_name = "")
+   * \fn inline std::ostream& err(std::string_view class_name = "", std::string_view method_name = "")
    * \brief print data to terminal with error level
    * \param class_name - Class name
    * \param method_name - Method name
    * \return Error ostream message
    */
-  inline std::ostream& err(std::string const& class_name = "", std::string const& method_name = "") {
+  inline std::ostream& err(std::string_view class_name = "", std::string_view method_name = "") {
     return io(Level::ERR, class_name, method_name);
   }
 
@@ -187,11 +186,10 @@ namespace gglog {
 
 /*!
  * \class GGEMSLogger
- * \brief GGEMSLogger class redefined C++ standard output (on the terminal)
+ * \brief GGEMSLogger singleton class redefining C++ standard output (on the terminal)
  *
  * \note
- * This class is used as a singleton defined by:
- * using GGEMSLoggerManager = GGEMSSingletonHolder<GGEMSLogger>
+ * This class is a C++ singleton
  *
  * \code
  * Examples:
@@ -205,15 +203,15 @@ namespace gglog {
  * gglog::err("CLASS_NAME", "METHOD_NAME") << "" << gglog::endl;
  * \endcode
  */
-class GGEMSLogger final {
-public:
+class GGEMSLogger {
+private:
   /*!
    * \brief Constructor of GGEMSLogger
    * \fn GGEMSLogger(void)
    */
   GGEMSLogger(void)
-  : minimum_level_(gglog::Level::INFO),
-    write_lock_() {}
+  : minimum_level_{gglog::Level::INFO},
+    write_lock_{} {}
 
   /*!
    * \brief Destructor of GGEMSLogger
@@ -251,6 +249,16 @@ public:
 
 public:
   /*!
+   * \fn static GGEMSLogger& GetInstance(void)
+   * \brief Create a GGEMSLogger C++ static object
+   * \return Reference to static GGEMSLogger
+   */
+  static GGEMSLogger& GetInstance(void) {
+    static GGEMSLogger instance;
+    return instance;
+  }
+
+  /*!
    * \fn void SetLevelInfos(gglog::Level const& minimum_level)
    * \param minimum_level - Minimum level of infos for output stream
    * \brief Change the level infos
@@ -258,14 +266,14 @@ public:
   void SetLevelInfos(gglog::Level const& minimum_level);
 
   /*!
-   * \fn void LogMessage(gglog::Level const& log_level, std::string const& message, std::string const& class_name, std::string const& method_name)
+   * \fn void LogMessage(gglog::Level const& log_level, std::string_view message, std::string_view class_name, std::string const& method_name)
    * \param log_level - Log level of output
    * \param message - Message to print
    * \param class_name - Class name to print
    * \param method_name - Method name to print
    * \brief Print message to terminal
    */
-  void LogMessage(gglog::Level const& log_level, std::string const& message, std::string const& class_name, std::string const& method_name);
+  void LogMessage(gglog::Level const& log_level, std::string_view message, std::string_view class_name, std::string_view method_name);
 
   /*!
    * \fn bool IsValidLogLevel(gglog::Level const& log_level) const
@@ -281,15 +289,10 @@ private:
 }; // class GGEMSLogger
 
 /*!
- * \fn std::ostream& operator<<(std::ostream& stream, std::string const& str)
+ * \fn std::ostream& operator<<(std::ostream& stream, std::string_view str)
  * \param stream - Output stream
  * \param str - String to put in output stream
  * \brief Convenience-wrapper to allow writing std::string into std::ostream
  * \return C++ ostream storing string 'str'
  */
-std::ostream& operator<<(std::ostream& stream, std::string const& str);
-
-/*!
- * \brief Alias to GGEMSLogger singleton
- */
-using GGEMSLoggerManager = GGEMSSingletonHolder<GGEMSLogger>;
+std::ostream& operator<<(std::ostream& stream, std::string_view str);

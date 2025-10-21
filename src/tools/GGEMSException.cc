@@ -17,31 +17,40 @@
 // ************************************************************************
 
 /*!
- * \file GGEMSLocal.cc
- * \brief Definition of GGEMSLocal class
+ * \file GGEMSException.cc
+ * \brief Definition of GGEMSException class
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-10-09
+ * \date 2025-10-12
  * \copyright GNU General Public License v3.0
  * \version 2.0
  */
 
-#include "GGEMS/tools/GGEMSLocal.hh"
+/// \cond
+#include <sstream>
+/// \endcond
 
-thread_local GGEMSLocal gglog::local;
+#include "GGEMS/tools/GGEMSException.hh"
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-bool GGEMSLocal::IsValidLogLevel(gglog::Level const& Level) const {
-  return GGEMSLogger::GetInstance().IsValidLogLevel(Level);
+GGEMSException::GGEMSException(std::string_view filename, std::string_view function_name, int const& line, std::string_view error_name) {
+  BuildErrorMessage(filename, function_name, line, error_name);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-void GGEMSLocal::WriteMessage(void) const {
-  GGEMSLogger::GetInstance().LogMessage(level_, osstream_.str(), class_name_, method_name_);
+void GGEMSException::BuildErrorMessage(std::string_view filename, std::string_view function_name, int const& line, std::string_view error_name) {
+  std::ostringstream oss(std::ostringstream::out);
+  oss << "\n";
+  oss << "*********************************\n";
+  oss << "GGEMS exception:\n";
+  oss << "Failure in [" << function_name << "] (" << filename << ":" << line << ")\n";
+  oss << "Error description:";
+  oss << error_name;
+  error_message_ = oss.str();
 }

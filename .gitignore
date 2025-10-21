@@ -3,6 +3,7 @@ __pycache__
 build
 .cache
 .clangd
+.pytest_cache
 compile_commands.json
 python/ggems/ggems.cp313-win_amd64.ilk
 python/ggems/ggems.cp313-win_amd64.pyd

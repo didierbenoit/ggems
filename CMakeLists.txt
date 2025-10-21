@@ -41,14 +41,28 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Compiler detection and set flag for each compiler
 include(cmake/CompilerOptions.cmake)
 
+#-------------------------------------------------------------------------------
+# Find the OpenCL v3.0
+find_package(CUDAToolkit 12.0 REQUIRED)
+message(STATUS "CUDA Toolkit: ${CUDAToolkit_FOUND}")
+message(STATUS "CUDA Toolkit VERSION: ${CUDAToolkit_VERSION}")
+message(STATUS "CUDA Toolkit INCLUDE DIRS: ${CUDAToolkit_INCLUDE_DIRS}")
+message(STATUS "CUDA Toolkit LIBRARY DIR: ${CUDAToolkit_LIBRARY_DIR}")
+add_definitions(
+  "-DCL_HPP_TARGET_OPENCL_VERSION=300"
+  "-DCL_TARGET_OPENCL_VERSION=300"
+)
+
 # Locate C++ files
 FILE(GLOB GGEMS_SOURCE_FILES CONFIGURE_DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/*.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/frameworks/*.cc
 )
 
 # GGEMS C++ library building
 add_library(ggems STATIC)
 target_sources(ggems PRIVATE ${GGEMS_SOURCE_FILES})
+target_link_libraries(ggems PRIVATE CUDA::OpenCL)
 target_include_directories(ggems PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # C++/Python bindings

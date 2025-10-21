@@ -17,29 +17,13 @@
 // ************************************************************************
 
 #include <pybind11/pybind11.h>
-#include "GGEMS/tools/GGEMSLogger.hh"
+#include "GGEMS/frameworks/GGEMSOpenCL.hh"
 
 namespace py = pybind11;
 
-void GGEMSVerbosity(int level) {
-  if (level > 4 || level < 0) level = 4;
-
-  switch (level) {
-    case 0:
-    case 1:
-      GGEMSLogger::GetInstance().SetLevelInfos(gglog::Level::INFO);
-      break;
-    case 2:
-      GGEMSLogger::GetInstance().SetLevelInfos(gglog::Level::INFO2);
-      break;
-    case 3:
-      GGEMSLogger::GetInstance().SetLevelInfos(gglog::Level::INFO3);
-      break;
-    default:
-      GGEMSLogger::GetInstance().SetLevelInfos(gglog::Level::INFO4);
-  }
-}
-
-void GGEMSInitTools(py::module_& m) {
-  m.def("ggems_verbosity", &GGEMSVerbosity, "Setting the level of verbosity in GGEMS from 1 to 4");
+void GGEMSInitFrameworks(py::module_& m) {
+  py::class_<GGEMSOpenCL>(m, "GGEMSOpenCL")
+    .def_static("get_instance", &GGEMSOpenCL::GetInstance, py::return_value_policy::reference,
+      "Return GGEMSOpenCL singleton instance")
+    .def("clean", &GGEMSOpenCL::Clean, "Release the internal compilers of the platform");
 }

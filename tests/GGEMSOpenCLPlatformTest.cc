@@ -16,30 +16,51 @@
 // *                                                                      *
 // ************************************************************************
 
-#include <pybind11/pybind11.h>
-#include "GGEMS/tools/GGEMSLogger.hh"
+#include <gtest/gtest.h>
+#include <memory>
 
-namespace py = pybind11;
+#include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
 
-void GGEMSVerbosity(int level) {
-  if (level > 4 || level < 0) level = 4;
+using GGEMSOpenCLPlaftormPtr = std::unique_ptr<GGEMSOpenCLPlatform>;
 
-  switch (level) {
-    case 0:
-    case 1:
-      GGEMSLogger::GetInstance().SetLevelInfos(gglog::Level::INFO);
-      break;
-    case 2:
-      GGEMSLogger::GetInstance().SetLevelInfos(gglog::Level::INFO2);
-      break;
-    case 3:
-      GGEMSLogger::GetInstance().SetLevelInfos(gglog::Level::INFO3);
-      break;
-    default:
-      GGEMSLogger::GetInstance().SetLevelInfos(gglog::Level::INFO4);
+class GGEMSOpenCLPlatformTest : public ::testing::Test {
+protected:
+  GGEMSOpenCLPlatformTest(void) {
+    std::vector<cl::Platform> platforms;
+    cl::Platform::get(&platforms);
+
+    // Testing first platform only
+    platform_ = std::make_unique<GGEMSOpenCLPlatform>(platforms.front());
   }
+
+  ~GGEMSOpenCLPlatformTest(void) {
+    platform_->Clean();
+  }
+
+  void SetUp(void) override {}
+
+  void TearDown(void) override {}
+
+protected:
+  GGEMSOpenCLPlaftormPtr platform_;
+};
+
+TEST_F(GGEMSOpenCLPlatformTest, AtLeastOnePlatformAvailable) {
+  ASSERT_TRUE(platform_);
 }
 
-void GGEMSInitTools(py::module_& m) {
-  m.def("ggems_verbosity", &GGEMSVerbosity, "Setting the level of verbosity in GGEMS from 1 to 4");
+TEST_F(GGEMSOpenCLPlatformTest, GetPlatformName) {
+  EXPECT_FALSE(platform_->GetName().empty());
+}
+
+TEST_F(GGEMSOpenCLPlatformTest, GetVersion) {
+  EXPECT_FALSE(platform_->GetVersion().empty());
+}
+
+TEST_F(GGEMSOpenCLPlatformTest, CheckAvailableExtension) {
+  EXPECT_TRUE(platform_->CheckExtension("cl_khr_global_int32_base_atomics"));
+}
+
+TEST_F(GGEMSOpenCLPlatformTest, GetVendorName) {
+  EXPECT_FALSE(platform_->GetVendor().empty());
 }

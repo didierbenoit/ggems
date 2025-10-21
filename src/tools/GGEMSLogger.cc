@@ -47,7 +47,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-std::ostream& gglog::io(gglog::Level const& level, std::string const& class_name, std::string const& method_name) {
+std::ostream& gglog::io(gglog::Level const& level, std::string_view class_name, std::string_view method_name) {
   if (!gglog::local.IsValidLogLevel(level)) {
     gglog::local.osstream_.setstate(std::ios::badbit);
   }
@@ -82,7 +82,7 @@ std::ostream& gglog::endl(std::ostream& ostream) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-void GGEMSLogger::LogMessage(gglog::Level const& level, std::string const& message, std::string const& class_name, std::string const& method_name) {
+void GGEMSLogger::LogMessage(gglog::Level const& level, std::string_view message, std::string_view class_name, std::string_view method_name) {
   if (!IsValidLogLevel(level)) return;
 
   std::lock_guard<std::mutex> guard(write_lock_);
@@ -193,7 +193,7 @@ bool GGEMSLogger::IsValidLogLevel(gglog::Level const& level) const {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-std::ostream& operator<<(std::ostream& stream, std::string const& str)
+std::ostream& operator<<(std::ostream& stream, std::string_view str)
 {
   std::copy(str.begin(), str.end(), std::ostream_iterator<char>(stream));
   return stream;

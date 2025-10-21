@@ -16,7 +16,7 @@ enable_testing()
 file(GLOB TEST_SOURCE_FILES *.cc)
 
 add_executable(tests ${TEST_SOURCE_FILES})
-target_link_libraries(tests PRIVATE ggems GTest::gtest_main)
+target_link_libraries(tests PRIVATE ggems CUDA::OpenCL GTest::gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests(tests)
