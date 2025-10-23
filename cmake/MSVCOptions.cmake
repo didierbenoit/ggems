@@ -4,6 +4,7 @@ add_compile_options(
   "$<$<CONFIG:Release>:/DNDEBUG;/MD>"
   /external:anglebrackets
   /external:W0
+  /MT
   /EHsc
 )
 

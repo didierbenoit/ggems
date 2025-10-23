@@ -9,6 +9,14 @@ set(CMAKE_CXX_FLAGS "" CACHE STRING "CXX flags" FORCE)
 set(CMAKE_CXX_FLAGS_DEBUG "" CACHE STRING "Debug flags" FORCE)
 set(CMAKE_CXX_FLAGS_RELEASE "" CACHE STRING "Release flags" FORCE)
 
+# Compiler check on Windows
+if (WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  message(FATAL_ERROR
+    "GNU Compiler Collectiong detected on Windows. "
+    "Please use MSVC, Intel icx or clang++ instead."
+  )
+endif()
+
 # Compiler detection and set flag for each compiler
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.20)

@@ -3,6 +3,7 @@ if(WIN32)
     "$<$<CONFIG:Debug>:/Od;/Zi;/GS;/W4;/Wall;/fp:precise>"
     "$<$<CONFIG:Release>:/Ox;/QxHost;/fp:fast;/DNDEBUG;/MD>"
     /EHsc
+    /MT
     /external:W0
   )
 else()

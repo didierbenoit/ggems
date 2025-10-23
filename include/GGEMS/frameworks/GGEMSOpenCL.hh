@@ -96,6 +96,12 @@ public:
    */
   void Clean(void);
 
+  /*!
+   * \fn void PrintPlatforms(void) const
+   * \brief Print infos about all found OpenCL platforms
+   */
+  void PrintPlatforms(void) const;
+
 private:
   /*!
    * \fn void InitPlatforms(void)

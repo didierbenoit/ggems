@@ -25,5 +25,6 @@ void GGEMSInitFrameworks(py::module_& m) {
   py::class_<GGEMSOpenCL>(m, "GGEMSOpenCL")
     .def_static("get_instance", &GGEMSOpenCL::GetInstance, py::return_value_policy::reference,
       "Return GGEMSOpenCL singleton instance")
+    .def("print_platforms", &GGEMSOpenCL::PrintPlatforms, "Print infos about all found OpenCL platforms")
     .def("clean", &GGEMSOpenCL::Clean, "Release the internal compilers of the platform");
 }
