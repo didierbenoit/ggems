@@ -45,16 +45,16 @@ public:
   : platform_(platform) {}
 
   /*!
-   * \fn GGEMSOpenCLPlatform(void)
+   * \fn GGEMSOpenCLPlatform()
    * \brief Default constructor of GGEMSOpenCLPlatform deleted
    */
-  GGEMSOpenCLPlatform(void) = delete;
+  GGEMSOpenCLPlatform() = delete;
 
   /*!
-   * \fn ~GGEMSOpenCLPlatform(void)
+   * \fn ~GGEMSOpenCLPlatform()
    * \brief Default constructor of GGEMSOpenCLPlatform deleted
    */
-  ~GGEMSOpenCLPlatform(void) = default;
+  ~GGEMSOpenCLPlatform() = default;
 
 public:
   /*!
@@ -66,67 +66,67 @@ public:
   bool CheckExtension(std::string_view extension_name) const;
 
   /*!
-   * \fn std::string GetName(void) const
+   * \fn std::string GetName() const
    * \brief Return the OpenCL platform name
    * \return Get the OpenCL platform name
    */
-  std::string GetName(void) const;
+  std::string GetName() const;
 
   /*!
-   * \fn std::string GetProfile(void) const
+   * \fn std::string GetProfile() const
    * \brief OpenCL profile string
    * \return Returns the profile name supported by the implementation
    */
-  std::string GetProfile(void) const;
+  std::string GetProfile() const;
 
   /*!
-   * \fn std::string GetVersion(void) const
+   * \fn std::string GetVersion() const
    * \brief OpenCL version string
    * \return Returns the OpenCL version supported by the implementation
    */
-  std::string GetVersion(void) const;
+  std::string GetVersion() const;
 
   /*!
-   * \fn std::string GetVendor(void) const
+   * \fn std::string GetVendor() const
    * \brief OpenCL vendor string
    * \return Platform vendor string.
    */
-  std::string GetVendor(void) const;
+  std::string GetVendor() const;
 
   /*!
-   * \fn std::string GetExtensions(void) const
+   * \fn std::string GetExtensions() const
    * \brief OpenCL extensions string
    * \return Returns a space separated list of extension names supported by the platform
    */
-  std::string GetExtensions(void) const;
+  std::string GetExtensions() const;
 
   /*!
-   * \fn cl_version GetNumericVersion(void) const
+   * \fn cl_version GetNumericVersion() const
    * \brief OpenCL numeric version
    * \return Returns the detailed (major, minor, patch) version supported by the platform
    */
-  cl_version GetNumericVersion(void) const;
+  cl_version GetNumericVersion() const;
 
   /*!
-   * \fn cl_ulong GetHostTimerResolution(void) const
+   * \fn cl_ulong GetHostTimerResolution() const
    * \brief OpenCL host timer resolution
    * \return Returns the resolution of the host timer in nanoseconds
    */
-  cl_ulong GetHostTimerResolution(void) const;
+  cl_ulong GetHostTimerResolution() const;
 
   /*!
-   * \fn std::vector<cl_name_version> GetExtensionsWithVersion(void) const
+   * \fn std::vector<cl_name_version> GetExtensionsWithVersion() const
    * \brief OpenCL extensions with version
    * \return Returns an array of description (name and version) structures that lists all the extensions supported by the platform
    */
-  std::vector<cl_name_version> GetExtensionsWithVersion(void) const;
+  std::vector<cl_name_version> GetExtensionsWithVersion() const;
 
   /*!
-   * \fn std::string GetIcdSuffixKhr(void) const
+   * \fn std::string GetIcdSuffixKhr() const
    * \brief The function name suffix used to identify extension functions to be directed to this platform by the ICD Loader
    * \return Returns the function name suffix
    */
-  std::string GetIcdSuffixKhr(void) const;
+  std::string GetIcdSuffixKhr() const;
 
   /*!
    * \fn template <typename T> std::vector<T> GetPlatformInfoArray(cl_platform_info const& param) const
@@ -145,16 +145,16 @@ public:
   }
 
   /*!
-   * \fn void Print(void) const
+   * \fn void Print() const
    * \brief Print all infos about OpenCL platform to the screen
    */
-  void Print(void) const;
+  void Print() const;
 
   /*!
-   * \fn void Clean(void)
+   * \fn void Clean()
    * \brief Explicitly releases the internal compilers of the platform
    */
-  void Clean(void);
+  void Clean();
 
 private:
   cl::Platform platform_; /*!< OpenCL platform */

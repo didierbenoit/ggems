@@ -29,6 +29,7 @@
  */
 
 #include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
+#include "GGEMS/tools/GGEMSLogger.hh"
 
 /*!
  * \class GGEMSOpenCL
@@ -41,9 +42,9 @@ class GGEMSOpenCL {
 private:
   /*!
    * \brief Constructor of GGEMSOpenCL
-   * \fn GGEMSOpenCL(void)
+   * \fn GGEMSOpenCL()
    */
-  GGEMSOpenCL(void);
+  GGEMSOpenCL();
 
   /*!
    * \fn GGEMSOpenCL(GGEMSOpenCL const& openCL) = delete
@@ -75,39 +76,42 @@ private:
 
 public:
    /*!
-   * \fn static GGEMSOpenCL& GetInstance(void)
+   * \fn static GGEMSOpenCL& GetInstance()
    * \brief Create a GGEMSOpenCL C++ static object, OpenCL platforms, devices and context are created
    * \return Reference to static GGEMSOpenCL
    */
-  static GGEMSOpenCL& GetInstance(void) {
-    static GGEMSOpenCL instance;
-    return instance;
+  static GGEMSOpenCL& GetInstance() {
+    static GGEMSOpenCL* instance = []() {
+      gglog::info4("GGEMSOpenCL", "GetInstance") << "First instance of GGEMSOpenCL singleton..." << gglog::endl;
+      return new GGEMSOpenCL(); // intentionally leaked
+    }();
+    return *instance;
   }
 
   /*!
    * \brief Destructor of GGEMSOpenCL
-   * \fn ~GGEMSOpenCL(void)
+   * \fn ~GGEMSOpenCL()
    */
-  ~GGEMSOpenCL(void);
+  ~GGEMSOpenCL();
 
   /*!
-   * \fn void Clean(void)
+   * \fn void Clean()
    * \brief Explicitly releases the internal compilers of the platforms
    */
-  void Clean(void);
+  void Clean();
 
   /*!
-   * \fn void PrintPlatforms(void) const
+   * \fn void PrintPlatforms() const
    * \brief Print infos about all found OpenCL platforms
    */
-  void PrintPlatforms(void) const;
+  void PrintPlatforms() const;
 
 private:
   /*!
-   * \fn void InitPlatforms(void)
+   * \fn void InitPlatforms()
    * \brief Initialize OpenCL plaftorm
    */
-  void InitPlatforms(void);
+  void InitPlatforms();
 
 private:
   std::vector<GGEMSOpenCLPlatform> platforms_; /*!< stored OpenCL platforms */

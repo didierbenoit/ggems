@@ -27,16 +27,8 @@ PYBIND11_MODULE(ggems, m, py::mod_gil_not_used(), py::multiple_interpreters::per
   m.doc() = R"pbdoc(
     GGEMS unified Python interface
 
-    GGEMS tools
-    ===========
-    GGEMS can print lot of infos to the terminal.
-    Provide methods for:
-      - ....
-      - ....
-
-    GGEMS frameworks
-    ================
-    Call OpenCL method ...
+    - Tools
+    - Frameworks (OpenCL)
   )pbdoc";
 
   GGEMSInitTools(m);

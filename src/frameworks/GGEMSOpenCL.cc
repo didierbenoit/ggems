@@ -27,39 +27,44 @@
  */
 
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
-#include "GGEMS/tools/GGEMSLogger.hh"
 #include "GGEMS/tools/GGEMSException.hh"
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-GGEMSOpenCL::GGEMSOpenCL(void) {
-  gglog::info4("GGEMSOpenCL", "GGEMSOpenCL") << "Creating GGEMSOpenCL..." << gglog::endl;
+GGEMSOpenCL::GGEMSOpenCL() {
+  gglog::info4("GGEMSOpenCL", "GGEMSOpenCL") << "Allocating GGEMSOpenCL..." << gglog::endl;
 
   try {
     InitPlatforms();
+    gglog::info4("GGEMSOpenCL", "GGEMSOpenCL") << "GGEMSOpenCL allocated!!!" << gglog::endl;
   } catch(GGEMSException& e) {
-    gglog::err("GGEMSOpenCL", "GGEMSOpenCL") << e.what() << gglog::endl;
+    gglog::err("GGEMSOpenCL", "GGEMSOpenCL") << "Critical initialization error: " << e.what() << gglog::endl;
+    std::terminate();
+  } catch(std::exception const& e) {
+    gglog::err("GGEMSOpenCL", "GGEMSOpenCL") << "Unexpected exception: " << e.what() << gglog::endl;
+    std::terminate();
+  } catch(...) {
+    gglog::err("GGEMSOpenCL", "GGEMSOpenCL") << "Unknown critical error during initialization" << gglog::endl;
+    std::terminate();
   }
-
-  gglog::info4("GGEMSOpenCL", "GGEMSOpenCL") << "GGEMSOpenCL created!!!" << gglog::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-GGEMSOpenCL::~GGEMSOpenCL(void) {
-  gglog::info4("GGEMSOpenCL", "~GGEMSOpenCL") << "Deleting GGEMSOpenCL..." << gglog::endl;
-  gglog::info4("GGEMSOpenCL", "~GGEMSOpenCL") << "GGEMSOpenCL deleted!!!" << gglog::endl;
+GGEMSOpenCL::~GGEMSOpenCL() {
+  gglog::info4("GGEMSOpenCL", "~GGEMSOpenCL") << "Deleting GGEMSOpenCL singleton..." << gglog::endl;
+  gglog::info4("GGEMSOpenCL", "~GGEMSOpenCL") << "GGEMSOpenCL singleton deleted!!!" << gglog::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-void GGEMSOpenCL::InitPlatforms(void) {
+void GGEMSOpenCL::InitPlatforms() {
   gglog::info4("GGEMSOpenCL", "InitPlatforms") << "Initializing OpenCL platforms..." << gglog::endl;
 
   std::vector<cl::Platform> platforms;
@@ -77,7 +82,7 @@ void GGEMSOpenCL::InitPlatforms(void) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-void GGEMSOpenCL::PrintPlatforms(void) const {
+void GGEMSOpenCL::PrintPlatforms() const {
   for (auto const& p : platforms_) {
     p.Print();
   }
@@ -86,7 +91,7 @@ void GGEMSOpenCL::PrintPlatforms(void) const {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-void GGEMSOpenCL::Clean(void) {
+void GGEMSOpenCL::Clean() {
   gglog::info4("GGEMSOpenCL", "Clean") << "Cleaning all platform ressources..." << gglog::endl;
 
   for (auto& p : platforms_) {

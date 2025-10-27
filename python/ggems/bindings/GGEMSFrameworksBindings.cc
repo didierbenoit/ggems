@@ -22,9 +22,9 @@
 namespace py = pybind11;
 
 void GGEMSInitFrameworks(py::module_& m) {
-  py::class_<GGEMSOpenCL>(m, "GGEMSOpenCL")
-    .def_static("get_instance", &GGEMSOpenCL::GetInstance, py::return_value_policy::reference,
-      "Return GGEMSOpenCL singleton instance")
+  py::class_<GGEMSOpenCL>(m, "GGEMSOpenCL", "GGEMSOpenCL singleton class managing OpenCL ressources", py::module_local())
+    .def(py::init([]() -> GGEMSOpenCL* {return &GGEMSOpenCL::GetInstance();}), py::return_value_policy::reference, "Return GGEMSOpenCL singleton instance")
+    .def("__del__", [](GGEMSOpenCL&) {}, "Do nothing on deletion (C++ singleton)")
     .def("print_platforms", &GGEMSOpenCL::PrintPlatforms, "Print infos about all found OpenCL platforms")
     .def("clean", &GGEMSOpenCL::Clean, "Release the internal compilers of the platform");
 }
