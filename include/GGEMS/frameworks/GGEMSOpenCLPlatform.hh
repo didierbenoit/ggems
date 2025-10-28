@@ -37,12 +37,12 @@
 class GGEMSOpenCLPlatform {
 public:
   /*!
-   * \fn GGEMSOpenCLPlatform(cl::Platform const& platform)
+   * \fn GGEMSOpenCLPlatform(cl::Platform const& platform, std::size_t platform_index)
    * \param platform - OpenCL plaform
+   * \param platform_index - Index of the platform
    * \brief Constructor of GGEMSOpenCLPlatform
    */
-  explicit GGEMSOpenCLPlatform(cl::Platform const& platform)
-  : platform_(platform) {}
+  GGEMSOpenCLPlatform(cl::Platform const& platform, std::size_t platform_index);
 
   /*!
    * \fn GGEMSOpenCLPlatform()
@@ -54,7 +54,7 @@ public:
    * \fn ~GGEMSOpenCLPlatform()
    * \brief Default constructor of GGEMSOpenCLPlatform deleted
    */
-  ~GGEMSOpenCLPlatform() = default;
+  ~GGEMSOpenCLPlatform();
 
 public:
   /*!
@@ -158,4 +158,5 @@ public:
 
 private:
   cl::Platform platform_; /*!< OpenCL platform */
+  std::size_t platform_index_; /*!< Index of the platform */
 };

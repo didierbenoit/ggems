@@ -37,7 +37,7 @@ GGEMSOpenCL::GGEMSOpenCL() {
   gglog::info4("GGEMSOpenCL", "GGEMSOpenCL") << "Allocating GGEMSOpenCL..." << gglog::endl;
 
   try {
-    InitPlatforms();
+    InitPlatformsAndDevices();
     gglog::info4("GGEMSOpenCL", "GGEMSOpenCL") << "GGEMSOpenCL allocated!!!" << gglog::endl;
   } catch(GGEMSException& e) {
     gglog::err("GGEMSOpenCL", "GGEMSOpenCL") << "Critical initialization error: " << e.what() << gglog::endl;
@@ -64,15 +64,15 @@ GGEMSOpenCL::~GGEMSOpenCL() {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-void GGEMSOpenCL::InitPlatforms() {
+void GGEMSOpenCL::InitPlatformsAndDevices() {
   gglog::info4("GGEMSOpenCL", "InitPlatforms") << "Initializing OpenCL platforms..." << gglog::endl;
 
   std::vector<cl::Platform> platforms;
   GGOCL_ERROR(cl::Platform::get(&platforms));
 
   platforms_.reserve(platforms.size());
-  for (auto& p : platforms) {
-    platforms_.emplace_back(p);
+  for(std::size_t i = 0; i < platforms.size(); ++i) {
+    platforms_.emplace_back(platforms[i], i);
   }
 
   gglog::info4("GGEMSOpenCL", "InitPlatforms") << "OpenCL platforms initialized!!!" << gglog::endl;

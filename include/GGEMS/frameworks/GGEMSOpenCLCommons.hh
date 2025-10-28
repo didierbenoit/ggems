@@ -63,22 +63,22 @@
  */
 namespace ggocl {
   /*!
-   * \fn std::string const GetErrorString(cl_int const& error_code)
+   * \fn std::string const GetErrorString(cl_int error_code)
    * \param error_code - Error code for OpenCL
    * \brief Return the error name
    * \return Error message in string format
    */
-  std::string const GetErrorString(cl_int const& error_code);
+  std::string const GetErrorString(cl_int error_code);
 
   /*!
-   * \fn void Failure(std::string_view filename, std::string_view function_name, int const& line, cl_int const& error_code)
+   * \fn void Failure(std::string_view filename, std::string_view function_name, int line, cl_int error_code)
     \param filename - Filename where the exception is thrown
     \param function_name - Function name where the exception is thrown
     \param line - Fine in the function where the exception is thrown
     \param error_code - OpenCL error code
     \brief throw an GGEMS exception
   */
-  void Failure(std::string_view filename, std::string_view function_name, int const& line, cl_int const& error_code);
+  void Failure(std::string_view filename, std::string_view function_name, int line, cl_int error_code);
 
   /*!
    * \def GGOCL_ERROR(error)

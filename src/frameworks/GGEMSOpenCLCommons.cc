@@ -37,7 +37,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-void ggocl::Failure(std::string_view filename, std::string_view function_name, int const& line, cl_int const& error_code) {
+void ggocl::Failure(std::string_view filename, std::string_view function_name, int line, cl_int error_code) {
   if (error_code != CL_SUCCESS) {
     std::string error_name = ggocl::GetErrorString(error_code);
     throw GGEMSException(filename, function_name, line, error_name);
@@ -48,7 +48,7 @@ void ggocl::Failure(std::string_view filename, std::string_view function_name, i
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-std::string const ggocl::GetErrorString(cl_int const& error) {
+std::string const ggocl::GetErrorString(cl_int error) {
   std::ostringstream oss(std::ostringstream::out);
   oss << std::endl;
 

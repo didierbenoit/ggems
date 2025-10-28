@@ -111,7 +111,7 @@ private:
    * \fn void InitPlatforms()
    * \brief Initialize OpenCL plaftorm
    */
-  void InitPlatforms();
+  void InitPlatformsAndDevices();
 
 private:
   std::vector<GGEMSOpenCLPlatform> platforms_; /*!< stored OpenCL platforms */

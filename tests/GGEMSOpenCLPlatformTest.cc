@@ -30,7 +30,7 @@ protected:
     cl::Platform::get(&platforms);
 
     // Testing first platform only
-    platform_ = std::make_unique<GGEMSOpenCLPlatform>(platforms.front());
+    platform_ = std::make_unique<GGEMSOpenCLPlatform>(platforms.front(), 0);
   }
 
   ~GGEMSOpenCLPlatformTest(void) {
