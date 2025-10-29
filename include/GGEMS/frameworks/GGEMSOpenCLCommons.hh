@@ -20,7 +20,12 @@
 
 /*!
  * \file GGEMSOpenCLCommons.hh
- * \brief Definition of GGEMSOpenCLCommons useful methods
+ * \brief Common utility functions and macros for GGEMS OpenCL handling
+ *
+ * This header provides utility functions and macros for OpenCL error handling,
+ * including translation of error codes into human-readable strings and a
+ * standardised failure reporting mechanism.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  * \date 2025-10-12
@@ -43,13 +48,13 @@
 
 /*!
  * \def __FILENAME__
- * \brief Returns the current source file name without its full path.
+ * \brief Retrieves the current source file name without the full path
  *
- * This macro derives the file name from the standard `__FILE__` macro.
+ * This macro extracts the base file name from the standard `__FILE__` macro.
  * - On Windows systems, it searches for the last occurrence of the backslash (`\\`).
- * - On UNIX-like systems, it searches for the last forward slash (`/`).
+ * - On UNIX-like systems, it searches for the last occurrence of the forward slash (`/`).
  *
- * The result is a pointer to the base file name, suitable for logging or diagnostic output.
+ * The resulting pointer is suitable for logging or diagnostic output.
  */
 #ifdef _WIN32
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
@@ -59,41 +64,51 @@
 
 /*!
  * \namespace ggocl
- * \brief Namespace storing GGEMS OpenCL useful methods
+ * \brief Namespace containing utility functions for OpenCL in GGEMS
+ *
+ * Provides common functions for error handling, logging, and reporting
+ * OpenCL failures in a standardised format.
  */
 namespace ggocl {
   /*!
-   * \fn std::string const GetErrorString(cl_int error_code)
-   * \param error_code - Error code for OpenCL
-   * \brief Return the error name
-   * \return Error message in string format
+   * \brief Translate an OpenCL error code into a human-readable string
+   * \param error_code - The OpenCL error code to translate
+   * \return A string describing the error code
+   *
+   * This function can be used to log or report OpenCL errors in a
+   * more understandable manner than numeric codes.
    */
   std::string const GetErrorString(cl_int error_code);
 
   /*!
-   * \fn void Failure(std::string_view filename, std::string_view function_name, int line, cl_int error_code)
-    \param filename - Filename where the exception is thrown
-    \param function_name - Function name where the exception is thrown
-    \param line - Fine in the function where the exception is thrown
-    \param error_code - OpenCL error code
-    \brief throw an GGEMS exception
-  */
+   * \brief Report an OpenCL failure and throw an exception
+   * \param filename - The source file where the failure occurred
+   * \param function_name - The function where the failure occurred
+   * \param line - The line number where the failure occurred
+   * \param error_code - The OpenCL error code
+   *
+   * This function formats a detailed diagnostic message and throws
+   * a GGEMS-specific exception to signal OpenCL failures.
+   */
   void Failure(std::string_view filename, std::string_view function_name, int line, cl_int error_code);
 
   /*!
    * \def GGOCL_ERROR(error)
-   * \brief Constructs an OpenCL failure object with diagnostic information.
+   * \brief Macro for concise OpenCL error reporting
    *
-   * It is intended for concise reporting of OpenCL errors in a standardised format.
+   * This macro invokes `ggocl::Failure` with standard diagnostic information:
+   * the current file, function, line, and the OpenCL error code.
    *
    * Example usage:
    * \code
-   * cl_int err = OpenCLAPIFunction(...);
+   * cl_int err = clSomeOpenCLFunction(...);
    * if (err != CL_SUCCESS) {
    *     GGOCL_ERROR(err);
    * }
-   * GGOCL_ERROR(OpenCLAPIFunction(...))
+   *
+   * // Or inline:
+   * GGOCL_ERROR(clSomeOpenCLFunction(...));
    * \endcode
    */
   #define GGOCL_ERROR(error) (ggocl::Failure(__FILENAME__, __PRETTY_FUNCTION__, __LINE__, error));
-} // ggocl namespace
+}

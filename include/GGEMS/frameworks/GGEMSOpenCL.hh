@@ -20,7 +20,12 @@
 
 /*!
  * \file GGEMSOpenCL.hh
- * \brief Definition of GGEMSOpenCL class
+ * \brief Declaration of the GGEMSOpenCL singleton class for OpenCL management
+ *
+ * This file contains the GGEMSOpenCL singleton class which manages
+ * the initialization and lifecycle of OpenCL platforms, devices, and contexts.
+ * It provides utility functions to inspect available OpenCL platforms.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  * \date 2025-10-12
@@ -33,52 +38,66 @@
 
 /*!
  * \class GGEMSOpenCL
- * \brief GGEMSOpenCL singleton class handling OpenCL library
+ * \brief Singleton class handling OpenCL initialization and management
+ *
+ * GGEMSOpenCL is designed as a C++ singleton to ensure that OpenCL platforms,
+ * devices, and contexts are initialized only once during the program's lifetime.
  *
  * \note
- * This class is used as a C++ singleton
+ * Memory allocated for the singleton instance is intentionally leaked to ensure
+ * that OpenCL resources remain available until program termination. The destructor
+ * is primarily provided to allow explicit cleanup if needed.
  */
 class GGEMSOpenCL {
 private:
   /*!
-   * \brief Constructor of GGEMSOpenCL
-   * \fn GGEMSOpenCL()
+   * \brief Default constructor
+   *
+   * Initializes OpenCL platforms and devices internally by calling
+   * InitPlatformsAndDevices().
    */
   GGEMSOpenCL();
 
   /*!
-   * \fn GGEMSOpenCL(GGEMSOpenCL const& openCL) = delete
-   * \param openCL - Reference on GGEMSOpenCL
-   * \brief Avoid copy of GGEMSOpenCL by reference
+   * \brief Copy constructor (deleted)
+   * \param openCL Reference to another GGEMSOpenCL object
+   *
+   * Copying is disabled for the singleton.
    */
   GGEMSOpenCL(GGEMSOpenCL const& openCL) = delete;
 
   /*!
-   * \fn GGEMSOpenCL(GGEMSOpenCL const&& openCL) = delete
-   * \param openCL - RValue reference on GGEMSOpenCL
-   * \brief Avoid copy of GGEMSOpenCL by rvalue reference
+   * \brief Move constructor (deleted)
+   * \param openCL RValue reference to another GGEMSOpenCL object
+   *
+   * Moving is disabled for the singleton.
    */
   GGEMSOpenCL(GGEMSOpenCL const&& openCL) = delete;
 
   /*!
-   * \fn GGEMSOpenCL& operator=(GGEMSOpenCL const& openCL) = delete
-   * \param openCL - Reference on GGEMSOpenCL
-   * \brief Avoid assignement of GGEMSOpenCL by reference
+   * \brief Copy assignment operator (deleted)
+   * \param openCL Reference to another GGEMSOpenCL object
+   *
+   * Assignment is disabled for the singleton.
    */
   GGEMSOpenCL& operator=(GGEMSOpenCL const& openCL) = delete;
 
   /*!
-   * \fn GGEMSOpenCL& operator=(GGEMSOpenCL const&& openCL) = delete
-   * \param openCL - RValue reference on GGEMSOpenCL
-   * \brief Avoid copy of GGEMSOpenCL by rvalue reference
+   * \brief Move assignment operator (deleted)
+   * \param openCL RValue reference to another GGEMSOpenCL object
+   *
+   * Move assignment is disabled for the singleton.
    */
   GGEMSOpenCL& operator=(GGEMSOpenCL const&& openCL) = delete;
 
 public:
-   /*!
-   * \fn static GGEMSOpenCL& GetInstance()
-   * \brief Create a GGEMSOpenCL C++ static object, OpenCL platforms, devices and context are created
-   * \return Reference to static GGEMSOpenCL
+  /*!
+   * \brief Access the GGEMSOpenCL singleton instance
+   *
+   * If the instance does not yet exist, it is created, OpenCL platforms
+   * and devices are initialized, and a log message is emitted.
+   *
+   * \return Reference to the singleton GGEMSOpenCL object
    */
   static GGEMSOpenCL& GetInstance() {
     static GGEMSOpenCL* instance = []() {
@@ -89,30 +108,36 @@ public:
   }
 
   /*!
-   * \brief Destructor of GGEMSOpenCL
-   * \fn ~GGEMSOpenCL()
+   * \brief Destructor
+   *
+   * Releases internal OpenCL resources if needed. Actual memory for the singleton
+   * is intentionally not freed until program exit.
    */
   ~GGEMSOpenCL();
 
   /*!
-   * \fn void Clean()
-   * \brief Explicitly releases the internal compilers of the platforms
+   * \brief Explicitly releases internal OpenCL compilers and contexts
+   *
+   * Can be called manually to free resources before program termination.
    */
   void Clean();
 
   /*!
-   * \fn void PrintPlatforms() const
-   * \brief Print infos about all found OpenCL platforms
+   * \brief Print detailed information about all available OpenCL platforms
+   *
+   * This includes vendor name, platform name, available devices, and their properties.
    */
   void PrintPlatforms() const;
 
 private:
   /*!
-   * \fn void InitPlatforms()
-   * \brief Initialize OpenCL plaftorm
+   * \brief Internal function to initialize platforms and devices
+   *
+   * Called by the constructor to enumerate all OpenCL platforms and devices,
+   * and store them in the internal platforms_ vector.
    */
   void InitPlatformsAndDevices();
 
 private:
-  std::vector<GGEMSOpenCLPlatform> platforms_; /*!< stored OpenCL platforms */
-}; // class GGEMSOpenCL
+  std::vector<GGEMSOpenCLPlatform> platforms_; /*!< Vector storing all detected OpenCL platforms */
+};

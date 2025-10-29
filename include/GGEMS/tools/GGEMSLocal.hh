@@ -20,7 +20,13 @@
 
 /*!
  * \file GGEMSLocal.hh
- * \brief Definition of GGEMSLocal class
+ * \brief Definition of GGEMSLocal structure for thread-local logging
+ *
+ * GGEMSLocal provides a thread-local storage container to accumulate
+ * log messages using an `ostringstream` and dispatch them to the
+ * GGEMS logging system. It also tracks the class, method, and log level
+ * for structured log output.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  * \date 2025-10-09
@@ -34,71 +40,67 @@
 
 #include "GGEMS/tools/GGEMSLogger.hh"
 
+
 /*!
  * \struct GGEMSLocal
- * \brief Structure storing infos in ostringstream to print on the terminal
+ * \brief Thread-local structure storing log information
+ *
+ * GGEMSLocal is designed to be used as `thread_local`, allowing
+ * each thread to have its own logging buffer. It collects
+ * class/method context, log level, and formatted message content.
  */
 struct GGEMSLocal {
   /*!
-   * \brief Constructor of GGEMSLocal
-   * \fn GGEMSLocal(void)
+   * \brief Default constructor
+   *
+   * Initializes the log level to `gglog::Level::INFO` and prepares
+   * the `ostringstream` buffer.
    */
   GGEMSLocal(void) : level_{gglog::Level::INFO} {}
 
   /*!
-   * \brief Destructor of GGEMSLocal
-   * \fn ~GGEMSLocal(void)
+   * \brief Destructor
+   *
+   * Defaulted; no special cleanup is required.
    */
    ~GGEMSLocal(void) = default;
 
-  /*!
-   * \fn GGEMSLocal(GGEMSLocal const& local) = delete
-   * \param local - Reference on GGEMSLocal
-   * \brief Avoid copy of GGEMSLocal by reference
-   */
+  // Delete copy and move operations to enforce unique thread-local instance
   GGEMSLocal(GGEMSLocal const& local) = delete;
-
-  /*!
-   * \fn GGEMSLocal(GGEMSLocal const&& local) = delete
-   * \param local - RValue reference on GGEMSLocal
-   * \brief Avoid copy of GGEMSLocal by rvalue reference
-   */
   GGEMSLocal(GGEMSLocal const&& local) = delete;
-
-  /*!
-   * \fn GGEMSLocal& operator=(GGEMSLocal const& local) = delete
-   * \param local - Reference on GGEMSLocal
-   * \brief Avoid assignement of GGEMSLocal by reference
-   */
   GGEMSLocal& operator=(GGEMSLocal const& local) = delete;
-
-  /*!
-   * \fn GGEMSLocal& operator=(GGEMSLocal const&& local) = delete
-   * \param local - RValue reference on GGEMSLocal
-   * \brief Avoid copy of GGEMSLocal by rvalue reference
-   */
   GGEMSLocal& operator=(GGEMSLocal const&& local) = delete;
 
   /*!
-   * \fn bool IsValidLogLevel(gglog::Level const& level) const
-   * \param level - Level of message output
-   * \brief Check if the message should be print
-   * \return True if it a valid log
+   * \brief Check if the current log level is active
+   * \param level - Log level to test
+   * \return True if the log message should be emitted, false otherwise
+   *
+   * This allows selective filtering of log messages based on
+   * runtime or compile-time log level configuration.
    */
   bool IsValidLogLevel(gglog::Level const& level) const;
 
   /*!
-   * \fn void WriteMessage(void) const
-   * \brief Give message to the logger manager
+   * \brief Dispatch accumulated message to the logger manager
+   *
+   * Sends the content of `osstream_` along with class/method
+   * information and log level to the GGEMS logging system.
    */
   void WriteMessage(void) const;
 
-  std::ostringstream                    osstream_; /*!< Output string stream storing infos to print on the terminal */
-  std::string                           class_name_; /*!< Store the class name */
-  std::string                           method_name_; /*!< Store the method name */
-  gglog::Level                          level_; /*!< level of log */
-}; // struct GGEMSLocal
+  std::ostringstream osstream_; /*!< Buffer storing formatted log message content */
+  std::string        class_name_; /*!< Name of the class emitting the log */
+  std::string        method_name_; /*!< Name of the method emitting the log */
+  gglog::Level       level_; /*!< Severity level of the log message */
+};
 
 namespace gglog {
-  extern thread_local GGEMSLocal local; /*!< Seemingly global or static storage duration but one copy per thread */
-} // namespace gglog
+  /*!
+   * \brief Thread-local GGEMSLocal instance
+   *
+   * Each thread maintains its own `GGEMSLocal` to avoid
+   * race conditions when logging concurrently.
+   */
+  extern thread_local GGEMSLocal local;
+}

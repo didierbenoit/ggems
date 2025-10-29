@@ -20,7 +20,12 @@
 
 /*!
  * \file GGEMSException.hh
- * \brief Definition of GGEMSException class
+ * \brief Definition of GGEMSException for handling GGEMS-specific errors
+ *
+ * This file defines the GGEMSException class, a final class derived
+ * from `std::exception` that provides detailed error reporting including
+ * source filename, function name, and line number.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  * \date 2025-10-12
@@ -36,17 +41,23 @@
 
 /*!
  * \class GGEMSException
- * \brief GGEMSException class handling exception from GGEMS library
+ * \brief Exception class for GGEMS library errors
+ *
+ * GGEMSException provides detailed diagnostic information for exceptions
+ * raised within the GGEMS framework. The error message includes:
+ * - Source file name
+ * - Function name
+ * - Line number
+ * - Custom error description
  *
  * \note
- * This class is used as a singleton defined by:
- * using GGEMSLoggerManager = GGEMSSingletonHolder<GGEMSLogger>
+ * This class is final and cannot be inherited.
  *
  * \code
- * Examples:
+ * // Example usage:
  * try {
- *   ...
- * }
+ *   // Some GGEMS operation
+ * } 
  * catch (GGEMSException const& e) {
  *   gglog::err() << e.what() << gglog::endl;
  * }
@@ -55,26 +66,31 @@
 class GGEMSException final : public std::exception {
 public:
   /*!
-   * \fn GGEMSException(std::string_view filename, std::string_view function_name, int const& line, std::string_view error_name)
-   * \brief GGEMSException constructor by default deleted
-   * \param filename - Name of file
-   * \param function_name - Name of the function
-   * \param line - Line error
-   * \param error_name - Error description
+   * \brief Construct a GGEMSException with full diagnostic information
+   * \param filename - Name of the source file where the exception occurred
+   * \param function_name - Name of the function throwing the exception
+   * \param line - Line number where the exception was raised
+   * \param error_name - Description of the error
+   *
+   * The constructor internally builds a formatted error message that
+   * can be retrieved using `what()`.
    */
   GGEMSException(std::string_view filename, std::string_view function_name, int const& line, std::string_view error_name);
 
   /*!
-   * \brief GGEMSException destructor
-   * \fn ~GGEMSException(void) noexcept
+   * \brief Destructor
+   *
+   * Defaulted, noexcept destructor. The exception object cleans up
+   * automatically when it goes out of scope.
    */
   virtual ~GGEMSException(void) noexcept = default;
 
 public:
   /*!
-   * \fn char const* what(void) const noexcept override
-   * \brief Print error message to the terminal
-   * \return The error message
+   * \brief Retrieve the error message
+   * \return Pointer to a null-terminated string containing the formatted error message
+   *
+   * The message includes filename, function name, line number, and error description.
    */
   char const* what(void) const noexcept override {
     return error_message_.c_str();
@@ -82,15 +98,17 @@ public:
 
 private:
   /*!
-   * \fn void BuildErrorMessage(std::string_view filename, std::string_view function_name, int const& line, std::string_view error_name)
-   * \brief Build the error message before calling 'what'
-   * \param filename - Name of file
-   * \param function_name - Name of the function
-   * \param line - Line error
-   * \param error_name - Error description
-  */
+   * \brief Construct the detailed error message
+   * \param filename - Source file name
+   * \param function_name - Function name
+   * \param line - Line number
+   * \param error_name - Description of the error
+   *
+   * This function is called by the constructor to populate the `error_message_`
+   * string with a fully formatted diagnostic message.
+   */
   void BuildErrorMessage(std::string_view filename, std::string_view function_name, int const& line, std::string_view error_name);
 
 private:
-  std::string error_message_; /*!< The final error message to print to the terminal */
-}; // class GGEMSException
+  std::string error_message_; /*!< Formatted error message to be returned by `what()` */
+};

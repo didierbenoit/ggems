@@ -20,120 +20,129 @@
 
 /*!
  * \file GGEMSOpenCLPlatform.hh
- * \brief Definition of GGEMSOpenCL class
+ * \brief Declaration of the GGEMSOpenCLPlatform class for OpenCL platform abstraction.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  * \date 2025-10-14
  * \copyright GNU General Public License v3.0
  * \version 2.0
+ *
+ * This header defines the GGEMSOpenCLPlatform class which provides a
+ * comprehensive abstraction of an OpenCL platform, allowing querying
+ * of platform information, extensions, versions, and host timer resolution.
  */
 
 #include "GGEMS/frameworks/GGEMSOpenCLCommons.hh"
 
 /*!
  * \class GGEMSOpenCLPlatform
- * \brief GGEMSOpenCLPlaform class storing an OpenCL platform
+ * \brief Encapsulates a single OpenCL platform and its properties.
+ *
+ * This class represents a native OpenCL platform and provides
+ * convenient methods to query platform-specific information, including:
+ * - Name, vendor, version and profile
+ * - Supported extensions (with optional version information)
+ * - Host timer resolution
+ * - ICD loader function suffix
+ * 
+ * It serves as a container for platform-level OpenCL operations and
+ * acts as a factory for devices belonging to the platform.
  */
 class GGEMSOpenCLPlatform {
 public:
   /*!
-   * \fn GGEMSOpenCLPlatform(cl::Platform const& platform, std::size_t platform_index)
-   * \param platform - OpenCL plaform
-   * \param platform_index - Index of the platform
-   * \brief Constructor of GGEMSOpenCLPlatform
+   * \brief Constructs a GGEMSOpenCLPlatform from a native OpenCL platform.
+   * \param platform The native OpenCL platform object (cl::Platform).
+   * \param platform_index Unique index identifying the platform within the system.
+   *
+   * Initializes internal structures to manage platform queries and devices.
    */
   GGEMSOpenCLPlatform(cl::Platform const& platform, std::size_t platform_index);
 
   /*!
-   * \fn GGEMSOpenCLPlatform()
-   * \brief Default constructor of GGEMSOpenCLPlatform deleted
+   * \brief Default constructor deleted.
+   * 
+   * Ensures that a platform object cannot be default-constructed without
+   * providing a valid native cl::Platform reference and index.
    */
   GGEMSOpenCLPlatform() = delete;
 
   /*!
-   * \fn ~GGEMSOpenCLPlatform()
-   * \brief Default constructor of GGEMSOpenCLPlatform deleted
+   * \brief Destructor for GGEMSOpenCLPlatform.
+   * 
+   * Releases any internal resources associated with the platform if necessary.
    */
   ~GGEMSOpenCLPlatform();
 
 public:
   /*!
-   * \fn bool CheckExtension(std::string_view extension_name) const
-   * \param extension_name - Name of the extension
-   * \brief Check if extension_name exists in list of extension
-   * \return Return true if the extension exists
+   * \brief Checks whether a specific OpenCL extension is supported by the platform.
+   * \param extension_name Name of the extension to query.
+   * \return True if the extension is supported, false otherwise.
    */
   bool CheckExtension(std::string_view extension_name) const;
 
   /*!
-   * \fn std::string GetName() const
-   * \brief Return the OpenCL platform name
-   * \return Get the OpenCL platform name
+   * \brief Retrieves the platform's human-readable name.
+   * \return Name of the OpenCL platform.
    */
   std::string GetName() const;
 
   /*!
-   * \fn std::string GetProfile() const
-   * \brief OpenCL profile string
-   * \return Returns the profile name supported by the implementation
+   * \brief Retrieves the platform's supported profile.
+   * \return Profile string, typically "FULL_PROFILE" or "EMBEDDED_PROFILE".
    */
   std::string GetProfile() const;
 
   /*!
-   * \fn std::string GetVersion() const
-   * \brief OpenCL version string
-   * \return Returns the OpenCL version supported by the implementation
+   * \brief Retrieves the OpenCL version supported by the platform.
+   * \return Version string in the format "OpenCL <major>.<minor> <vendor-specific info>".
    */
   std::string GetVersion() const;
 
   /*!
-   * \fn std::string GetVendor() const
-   * \brief OpenCL vendor string
-   * \return Platform vendor string.
+   * \brief Retrieves the platform vendor name.
+   * \return Vendor string identifying the platform provider.
    */
   std::string GetVendor() const;
 
   /*!
-   * \fn std::string GetExtensions() const
-   * \brief OpenCL extensions string
-   * \return Returns a space separated list of extension names supported by the platform
+   * \brief Retrieves the list of supported platform extensions as a space-separated string.
+   * \return Space-separated string of all extensions supported by the platform.
    */
   std::string GetExtensions() const;
 
   /*!
-   * \fn cl_version GetNumericVersion() const
-   * \brief OpenCL numeric version
-   * \return Returns the detailed (major, minor, patch) version supported by the platform
+   * \brief Retrieves the platform's numeric version.
+   * \return A cl_version structure detailing major, minor, and patch levels.
    */
   cl_version GetNumericVersion() const;
 
   /*!
-   * \fn cl_ulong GetHostTimerResolution() const
-   * \brief OpenCL host timer resolution
-   * \return Returns the resolution of the host timer in nanoseconds
+   * \brief Retrieves the host timer resolution.
+   * \return Resolution of the host timer in nanoseconds.
    */
   cl_ulong GetHostTimerResolution() const;
 
   /*!
-   * \fn std::vector<cl_name_version> GetExtensionsWithVersion() const
-   * \brief OpenCL extensions with version
-   * \return Returns an array of description (name and version) structures that lists all the extensions supported by the platform
+   * \brief Retrieves all platform extensions along with their version numbers.
+   * \return Vector of cl_name_version structures describing supported extensions.
    */
   std::vector<cl_name_version> GetExtensionsWithVersion() const;
 
   /*!
-   * \fn std::string GetIcdSuffixKhr() const
-   * \brief The function name suffix used to identify extension functions to be directed to this platform by the ICD Loader
-   * \return Returns the function name suffix
+   * \brief Retrieves the function name suffix used by the ICD loader for this platform.
+   * \return ICD suffix string.
    */
   std::string GetIcdSuffixKhr() const;
 
   /*!
-   * \fn template <typename T> std::vector<T> GetPlatformInfoArray(cl_platform_info const& param) const
-   * \tparam T - Type of array
-   * \param param - Type of platform parameter
-   * \brief Get the platform params in a vector
-   * \return Return a vector with a list of params
+   * \brief Template function to retrieve arbitrary platform info arrays.
+   * \tparam T Data type of the array elements.
+   * \param param Platform information parameter to query (cl_platform_info).
+   * \return Vector of type T containing the requested information.
+   *
+   * This method automatically resizes the result vector to hold all returned data.
    */
   template <typename T>
   std::vector<T> GetPlatformInfoArray(cl_platform_info const& param) const {
@@ -145,18 +154,21 @@ public:
   }
 
   /*!
-   * \fn void Print() const
-   * \brief Print all infos about OpenCL platform to the screen
+   * \brief Prints all platform information to the standard output.
+   *
+   * This includes name, vendor, version, profile, supported extensions,
+   * and other platform-level details.
    */
   void Print() const;
 
   /*!
-   * \fn void Clean()
-   * \brief Explicitly releases the internal compilers of the platform
+   * \brief Explicitly releases any internal OpenCL compilers or resources.
+   *
+   * Useful for cleaning up platform-level objects before application shutdown.
    */
   void Clean();
 
 private:
-  cl::Platform platform_; /*!< OpenCL platform */
-  std::size_t platform_index_; /*!< Index of the platform */
+  cl::Platform platform_; /*!< Native OpenCL platform object */
+  std::size_t platform_index_; /*!< Index of this platform within the system */
 };
