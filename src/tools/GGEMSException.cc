@@ -36,7 +36,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-GGEMSException::GGEMSException(std::string_view filename, std::string_view function_name, int const& line, std::string_view error_name) {
+GGEMSException::GGEMSException(std::string_view filename, std::string_view function_name, int line, std::string_view error_name) {
   BuildErrorMessage(filename, function_name, line, error_name);
 }
 
@@ -44,13 +44,12 @@ GGEMSException::GGEMSException(std::string_view filename, std::string_view funct
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-void GGEMSException::BuildErrorMessage(std::string_view filename, std::string_view function_name, int const& line, std::string_view error_name) {
+void GGEMSException::BuildErrorMessage(std::string_view filename, std::string_view function_name, int line, std::string_view error_name) {
   std::ostringstream oss(std::ostringstream::out);
-  oss << "\n";
-  oss << "*********************************\n";
-  oss << "GGEMS exception:\n";
-  oss << "Failure in [" << function_name << "] (" << filename << ":" << line << ")\n";
-  oss << "Error description:";
-  oss << error_name;
+  oss << "[GGEMSException]\n"
+      << "File     : " << filename << '\n'
+      << "Function : " << function_name << '\n'
+      << "Line     : " << line << '\n'
+      << "Error    : " << error_name;
   error_message_ = oss.str();
 }

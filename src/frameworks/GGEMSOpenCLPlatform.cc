@@ -39,17 +39,16 @@
 
 GGEMSOpenCLPlatform::GGEMSOpenCLPlatform(cl::Platform const& platform, std::size_t platform_index)
 : platform_{platform}, platform_index_{platform_index} {
-  gglog::info4("GGEMSOpenCLPlatform", "GGEMSOpenCLPlatform") << "Allocating GGEMSOpenCLPlatform..." << gglog::endl;
-  gglog::info4("GGEMSOpenCLPlatform", "GGEMSOpenCLPlatform") << "GGEMSOpenCLPlatform allocated!!!" << gglog::endl;
+  GGEMSScopedLog trace("GGEMSOpenCLPlatform", "GGEMSOpenCLPlatform");
+  DiscoverDevices();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-GGEMSOpenCLPlatform::~GGEMSOpenCLPlatform() {
-  gglog::info4("GGEMSOpenCLPlatform", "~GGEMSOpenCLPlatform") << "Deleting GGEMSOpenCLPlatform..." << gglog::endl;
-  gglog::info4("GGEMSOpenCLPlatform", "~GGEMSOpenCLPlatform") << "GGEMSOpenCLPlatform deleted!!!" << gglog::endl;
+void GGEMSOpenCLPlatform::DiscoverDevices() {
+  GGEMSScopedLog trace("GGEMSOpenCLPlatform", "DiscoverDevices");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +66,7 @@ bool GGEMSOpenCLPlatform::CheckExtension(std::string_view extension_name) const 
 std::string GGEMSOpenCLPlatform::GetName() const {
   cl_int err = 0;
   std::string str = platform_.getInfo<CL_PLATFORM_NAME>(&err);
-  GGOCL_ERROR(err);
+  GGOCL_CHECK(err);
   return str;
 }
 
@@ -78,7 +77,7 @@ std::string GGEMSOpenCLPlatform::GetName() const {
 std::string GGEMSOpenCLPlatform::GetProfile() const {
   cl_int err = 0;
   std::string str = platform_.getInfo<CL_PLATFORM_PROFILE>(&err);
-  GGOCL_ERROR(err);
+  GGOCL_CHECK(err);
   return str;
 }
 
@@ -89,7 +88,7 @@ std::string GGEMSOpenCLPlatform::GetProfile() const {
 std::string GGEMSOpenCLPlatform::GetVersion() const {
   cl_int err = 0;
   std::string str = platform_.getInfo<CL_PLATFORM_VERSION>(&err);
-  GGOCL_ERROR(err);
+  GGOCL_CHECK(err);
   return str;
 }
 
@@ -100,7 +99,7 @@ std::string GGEMSOpenCLPlatform::GetVersion() const {
 std::string GGEMSOpenCLPlatform::GetVendor() const {
   cl_int err = 0;
   std::string str = platform_.getInfo<CL_PLATFORM_VENDOR>(&err);
-  GGOCL_ERROR(err);
+  GGOCL_CHECK(err);
   return str;
 }
 
@@ -111,7 +110,7 @@ std::string GGEMSOpenCLPlatform::GetVendor() const {
 std::string GGEMSOpenCLPlatform::GetExtensions() const {
   cl_int err = 0;
   std::string str = platform_.getInfo<CL_PLATFORM_EXTENSIONS>(&err);
-  GGOCL_ERROR(err);
+  GGOCL_CHECK(err);
   return str;
 }
 
@@ -122,7 +121,7 @@ std::string GGEMSOpenCLPlatform::GetExtensions() const {
 cl_version GGEMSOpenCLPlatform::GetNumericVersion() const {
   cl_int err = 0;
   cl_version version = platform_.getInfo<CL_PLATFORM_NUMERIC_VERSION>(&err);
-  GGOCL_ERROR(err);
+  GGOCL_CHECK(err);
   return version;
 }
 
@@ -133,7 +132,7 @@ cl_version GGEMSOpenCLPlatform::GetNumericVersion() const {
 cl_ulong GGEMSOpenCLPlatform::GetHostTimerResolution() const {
   cl_int err = 0;
   cl_ulong timer = platform_.getInfo<CL_PLATFORM_HOST_TIMER_RESOLUTION>(&err);
-  GGOCL_ERROR(err);
+  GGOCL_CHECK(err);
   return timer;
 }
 
@@ -144,7 +143,7 @@ cl_ulong GGEMSOpenCLPlatform::GetHostTimerResolution() const {
 std::vector<cl_name_version> GGEMSOpenCLPlatform::GetExtensionsWithVersion() const {
   cl_int err = 0;
   std::vector<cl_name_version> extensions = platform_.getInfo<CL_PLATFORM_EXTENSIONS_WITH_VERSION>(&err);
-  GGOCL_ERROR(err);
+  GGOCL_CHECK(err);
   return extensions;
 }
 
@@ -155,7 +154,7 @@ std::vector<cl_name_version> GGEMSOpenCLPlatform::GetExtensionsWithVersion() con
 std::string GGEMSOpenCLPlatform::GetIcdSuffixKhr() const {
   cl_int err = 0;
   std::string str = platform_.getInfo<CL_PLATFORM_ICD_SUFFIX_KHR>(&err);
-  GGOCL_ERROR(err);
+  GGOCL_CHECK(err);
   return str;
 }
 
@@ -229,9 +228,6 @@ void GGEMSOpenCLPlatform::Print() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 void GGEMSOpenCLPlatform::Clean() {
-  gglog::info4("GGEMSOpenCLPlatform", "Clean") << "Cleaning Platform " << GetName() << " ressources..." << gglog::endl;
-
+  GGEMSScopedLog trace("GGEMSOpenCLPlatform", "Clean");
   platform_.unloadCompiler();
-
-  gglog::info4("GGEMSOpenCLPlatform", "Clean") << "Platform ressources cleaned!!!" << gglog::endl;
 }

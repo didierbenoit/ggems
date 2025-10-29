@@ -34,19 +34,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 GGEMSOpenCL::GGEMSOpenCL() {
-  gglog::info4("GGEMSOpenCL", "GGEMSOpenCL") << "Allocating GGEMSOpenCL..." << gglog::endl;
+  GGEMSScopedLog trace("GGEMSOpenCL", "GGEMSOpenCL");
+  std::set_terminate(ggocl::TerminateHandler);
 
   try {
     InitPlatformsAndDevices();
-    gglog::info4("GGEMSOpenCL", "GGEMSOpenCL") << "GGEMSOpenCL allocated!!!" << gglog::endl;
   } catch(GGEMSException& e) {
-    gglog::err("GGEMSOpenCL", "GGEMSOpenCL") << "Critical initialization error: " << e.what() << gglog::endl;
     std::terminate();
   } catch(std::exception const& e) {
-    gglog::err("GGEMSOpenCL", "GGEMSOpenCL") << "Unexpected exception: " << e.what() << gglog::endl;
     std::terminate();
   } catch(...) {
-    gglog::err("GGEMSOpenCL", "GGEMSOpenCL") << "Unknown critical error during initialization" << gglog::endl;
     std::terminate();
   }
 }
@@ -56,8 +53,7 @@ GGEMSOpenCL::GGEMSOpenCL() {
 ////////////////////////////////////////////////////////////////////////////////
 
 GGEMSOpenCL::~GGEMSOpenCL() {
-  gglog::info4("GGEMSOpenCL", "~GGEMSOpenCL") << "Deleting GGEMSOpenCL singleton..." << gglog::endl;
-  gglog::info4("GGEMSOpenCL", "~GGEMSOpenCL") << "GGEMSOpenCL singleton deleted!!!" << gglog::endl;
+  GGEMSScopedLog("GGEMSOpenCL", "~GGEMSOpenCL");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -65,17 +61,22 @@ GGEMSOpenCL::~GGEMSOpenCL() {
 ////////////////////////////////////////////////////////////////////////////////
 
 void GGEMSOpenCL::InitPlatformsAndDevices() {
-  gglog::info4("GGEMSOpenCL", "InitPlatforms") << "Initializing OpenCL platforms..." << gglog::endl;
+  GGEMSScopedLog trace("GGEMSOpenCL", "InitPlatformsAndDevices");
+  std::set_terminate(ggocl::TerminateHandler);
 
   std::vector<cl::Platform> platforms;
-  GGOCL_ERROR(cl::Platform::get(&platforms));
+  GGOCL_CHECK(cl::Platform::get(&platforms));
 
+  if (platforms.empty()) {
+    throw GGEMSException(__FILENAME__, __PRETTY_FUNCTION__, __LINE__,
+      "No OpenCL platforms detected on this system.");
+  }
+
+  platforms_.clear();
   platforms_.reserve(platforms.size());
   for(std::size_t i = 0; i < platforms.size(); ++i) {
     platforms_.emplace_back(platforms[i], i);
   }
-
-  gglog::info4("GGEMSOpenCL", "InitPlatforms") << "OpenCL platforms initialized!!!" << gglog::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -83,6 +84,7 @@ void GGEMSOpenCL::InitPlatformsAndDevices() {
 ////////////////////////////////////////////////////////////////////////////////
 
 void GGEMSOpenCL::PrintPlatforms() const {
+  gglog::info("GGEMSOpenCL", "PrintPlatforms") << "Listing available OpenCL platforms..." << gglog::endl;
   for (auto const& p : platforms_) {
     p.Print();
   }
@@ -92,11 +94,8 @@ void GGEMSOpenCL::PrintPlatforms() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 void GGEMSOpenCL::Clean() {
-  gglog::info4("GGEMSOpenCL", "Clean") << "Cleaning all platform ressources..." << gglog::endl;
-
+  GGEMSScopedLog trace("GGEMSOpenCL", "Clean");
   for (auto& p : platforms_) {
     p.Clean();
   }
-
-  gglog::info4("GGEMSOpenCL", "Clean") << "All platform ressources cleaned!!!" << gglog::endl;
 }

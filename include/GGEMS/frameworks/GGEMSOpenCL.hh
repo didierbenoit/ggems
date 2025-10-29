@@ -38,103 +38,84 @@
 
 /*!
  * \class GGEMSOpenCL
- * \brief Singleton class handling OpenCL initialization and management
+ * \brief Singleton managing OpenCL platforms and devices for GGEMS.
  *
- * GGEMSOpenCL is designed as a C++ singleton to ensure that OpenCL platforms,
- * devices, and contexts are initialized only once during the program's lifetime.
+ * GGEMSOpenCL ensures a unique and persistent OpenCL runtime context
+ * for the entire GGEMS framework. It handles discovery of platforms,
+ * devices, and manages global OpenCL resources.
  *
  * \note
- * Memory allocated for the singleton instance is intentionally leaked to ensure
- * that OpenCL resources remain available until program termination. The destructor
- * is primarily provided to allow explicit cleanup if needed.
+ * The instance is **intentionally heap-allocated** (via `new`)
+ * and never freed. This design ensures compatibility with Pybind11
+ * and multiple interpreter environments (`per_interpreter_gil`),
+ * avoiding premature destruction of OpenCL resources.
  */
-class GGEMSOpenCL {
+class GGEMSOpenCL final {
 private:
   /*!
-   * \brief Default constructor
+   * \brief Default constructor (private).
    *
-   * Initializes OpenCL platforms and devices internally by calling
-   * InitPlatformsAndDevices().
+   * Discovers all OpenCL platforms and their associated devices.
+   * Throws GGEMSException on failure.
    */
   GGEMSOpenCL();
 
-  /*!
-   * \brief Copy constructor (deleted)
-   * \param openCL Reference to another GGEMSOpenCL object
-   *
-   * Copying is disabled for the singleton.
-   */
   GGEMSOpenCL(GGEMSOpenCL const& openCL) = delete;
-
-  /*!
-   * \brief Move constructor (deleted)
-   * \param openCL RValue reference to another GGEMSOpenCL object
-   *
-   * Moving is disabled for the singleton.
-   */
   GGEMSOpenCL(GGEMSOpenCL const&& openCL) = delete;
-
-  /*!
-   * \brief Copy assignment operator (deleted)
-   * \param openCL Reference to another GGEMSOpenCL object
-   *
-   * Assignment is disabled for the singleton.
-   */
   GGEMSOpenCL& operator=(GGEMSOpenCL const& openCL) = delete;
-
-  /*!
-   * \brief Move assignment operator (deleted)
-   * \param openCL RValue reference to another GGEMSOpenCL object
-   *
-   * Move assignment is disabled for the singleton.
-   */
   GGEMSOpenCL& operator=(GGEMSOpenCL const&& openCL) = delete;
 
 public:
   /*!
-   * \brief Access the GGEMSOpenCL singleton instance
+   * \brief Access the GGEMSOpenCL singleton instance.
    *
-   * If the instance does not yet exist, it is created, OpenCL platforms
-   * and devices are initialized, and a log message is emitted.
+   * The instance is lazily created upon the first call.
+   * Memory is intentionally leaked to guarantee persistent lifetime
+   * when used within Python bindings or multi-interpreter environments.
    *
-   * \return Reference to the singleton GGEMSOpenCL object
+   * \return Reference to the singleton GGEMSOpenCL instance.
    */
-  static GGEMSOpenCL& GetInstance() {
+  [[nodiscard]] static GGEMSOpenCL& GetInstance() {
     static GGEMSOpenCL* instance = []() {
-      gglog::info4("GGEMSOpenCL", "GetInstance") << "First instance of GGEMSOpenCL singleton..." << gglog::endl;
+      GGEMSScopedLog trace("GGEMSOpenCL", "GetInstance");
       return new GGEMSOpenCL(); // intentionally leaked
     }();
     return *instance;
   }
 
   /*!
-   * \brief Destructor
+   * \brief Destructor.
    *
-   * Releases internal OpenCL resources if needed. Actual memory for the singleton
-   * is intentionally not freed until program exit.
+   * Performs a graceful shutdown of internal OpenCL resources.
+   * The singleton memory itself is not freed by design.
    */
   ~GGEMSOpenCL();
 
   /*!
-   * \brief Explicitly releases internal OpenCL compilers and contexts
+   * \brief Explicitly releases OpenCL compilers and related platform resources.
    *
-   * Can be called manually to free resources before program termination.
+   * This can be safely called before program termination or module unloading.
    */
   void Clean();
 
   /*!
-   * \brief Print detailed information about all available OpenCL platforms
+   * \brief Prints detailed information about all discovered OpenCL platforms.
    *
-   * This includes vendor name, platform name, available devices, and their properties.
+   * Each platform print includes vendor, version, profile, and supported extensions.
    */
   void PrintPlatforms() const;
 
+  /*!
+   * \brief Provides read-only access to the discovered OpenCL platforms.
+   * \return Constant reference to the list of available platforms.
+   */
+  [[nodiscard]] std::vector<GGEMSOpenCLPlatform> const& GetPlatforms() const noexcept { return platforms_; }
+
 private:
   /*!
-   * \brief Internal function to initialize platforms and devices
+   * \brief Enumerates OpenCL platforms and creates GGEMSOpenCLPlatform instances.
    *
-   * Called by the constructor to enumerate all OpenCL platforms and devices,
-   * and store them in the internal platforms_ vector.
+   * Called internally during construction.
    */
   void InitPlatformsAndDevices();
 

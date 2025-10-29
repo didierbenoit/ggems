@@ -43,72 +43,66 @@
  * \class GGEMSException
  * \brief Exception class for GGEMS library errors
  *
- * GGEMSException provides detailed diagnostic information for exceptions
- * raised within the GGEMS framework. The error message includes:
- * - Source file name
- * - Function name
- * - Line number
- * - Custom error description
+ * This class extends std::exception to deliver rich diagnostic information
+ * in case of runtime or system-level errors. It captures the filename,
+ * function name, line number, and a human-readable description of the
+ * problem that caused the exception.
  *
- * \note
- * This class is final and cannot be inherited.
- *
- * \code
- * // Example usage:
- * try {
- *   // Some GGEMS operation
- * } 
- * catch (GGEMSException const& e) {
- *   gglog::err() << e.what() << gglog::endl;
- * }
- * \endcode
+ * The formatted message can be retrieved through the `what()` interface,
+ * and is structured to be informative for both developers and automated
+ * logging systems.*
  */
 class GGEMSException final : public std::exception {
 public:
   /*!
-   * \brief Construct a GGEMSException with full diagnostic information
-   * \param filename - Name of the source file where the exception occurred
-   * \param function_name - Name of the function throwing the exception
-   * \param line - Line number where the exception was raised
-   * \param error_name - Description of the error
-   *
-   * The constructor internally builds a formatted error message that
-   * can be retrieved using `what()`.
+   * \brief Constructs a GGEMSException with full diagnostic information.
+   * 
+   * \param filename      Name of the source file where the exception occurred.
+   * \param function_name Name of the function throwing the exception.
+   * \param line          Line number where the exception was raised.
+   * \param error_name    Human-readable description of the error.
+   * 
+   * The constructor automatically builds a formatted message containing all
+   * contextual details. The resulting message is accessible via `what()`.
    */
-  GGEMSException(std::string_view filename, std::string_view function_name, int const& line, std::string_view error_name);
+  GGEMSException(std::string_view filename, std::string_view function_name, int line, std::string_view error_name);
 
   /*!
    * \brief Destructor
    *
-   * Defaulted, noexcept destructor. The exception object cleans up
-   * automatically when it goes out of scope.
+   * Defaulted, noexcept destructor. Cleans up resources automatically.
    */
-  virtual ~GGEMSException(void) noexcept = default;
+  ~GGEMSException() noexcept = default;
 
 public:
   /*!
-   * \brief Retrieve the error message
-   * \return Pointer to a null-terminated string containing the formatted error message
-   *
-   * The message includes filename, function name, line number, and error description.
+   * \brief Retrieves the formatted error message.
+   * 
+   * \return Pointer to a null-terminated string containing the diagnostic message.
+   * 
+   * The message includes the file name, function name, line number,
+   * and a textual description of the error. The string remains valid
+   * throughout the lifetime of the exception object.
    */
-  char const* what(void) const noexcept override {
+  [[nodiscard]] char const* what(void) const noexcept override {
     return error_message_.c_str();
   }
 
 private:
   /*!
-   * \brief Construct the detailed error message
-   * \param filename - Source file name
-   * \param function_name - Function name
-   * \param line - Line number
-   * \param error_name - Description of the error
-   *
-   * This function is called by the constructor to populate the `error_message_`
-   * string with a fully formatted diagnostic message.
+   * \brief Builds the detailed diagnostic error message.
+   * 
+   * \param filename      Name of the source file.
+   * \param function_name Name of the function where the exception was thrown.
+   * \param line          Line number associated with the error.
+   * \param error_name    Human-readable description of the error.
+   * 
+   * This function concatenates all diagnostic fields into a single
+   * formatted message stored in `error_message_`. The format is consistent
+   * across all GGEMS components to facilitate structured logging.
    */
-  void BuildErrorMessage(std::string_view filename, std::string_view function_name, int const& line, std::string_view error_name);
+  void BuildErrorMessage(std::string_view filename, std::string_view function_name, int line, std::string_view error_name);
 
 private:
-  std::string error_message_; /*!< Formatted error message to be returned by `what()` */
+  std::string error_message_; /*!< Fully formatted error message. */
 };

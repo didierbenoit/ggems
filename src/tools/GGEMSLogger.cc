@@ -53,8 +53,8 @@ std::ostream& gglog::io(gglog::Level const& level, std::string_view class_name, 
   }
   else {
     gglog::local.level_ = level;
-    gglog::local.class_name_ = class_name;
-    gglog::local.method_name_ = method_name;
+    gglog::local.class_name_ = std::string(class_name);
+    gglog::local.method_name_ = std::string(method_name);
   }
   return gglog::local.osstream_;
 }
@@ -64,7 +64,7 @@ std::ostream& gglog::io(gglog::Level const& level, std::string_view class_name, 
 ////////////////////////////////////////////////////////////////////////////////
 
 std::ostream& gglog::endl(std::ostream& ostream) {
-  ostream << std::endl;
+  ostream << '\n';
   if(!gglog::local.osstream_.bad()) {
     gglog::local.WriteMessage();
   }
@@ -92,82 +92,39 @@ void GGEMSLogger::LogMessage(gglog::Level const& level, std::string_view message
   CONSOLE_SCREEN_BUFFER_INFO info;
   GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
   HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-  FlushConsoleInputBuffer(hConsole);
   #endif
 
+  // Severity banner with colouring
+  #ifdef _WIN32
   if (level == gglog::Level::ERR) {
-    #ifdef _WIN32
-    SetConsoleTextAttribute(hConsole, 0x04); // 0x04 means red
-    std::cout << "[GGEMS " << gglog::ToString(level) << "] ";
-    if (!class_name.empty() || !method_name.empty()) {
-      std::cout << "(" << class_name << "::" << method_name << ") ";
-    }
-    SetConsoleTextAttribute(hConsole, info.wAttributes);
-    #else
-    std::cout << "\033[31m"
-              << "[GGEMS " << gglog::ToString(level) << "] ("
-              << class_name << "::" << method_name << ") "
-              << "\033[0m";
-    #endif
+    SetConsoleTextAttribute(hConsole, 0x04); // red
+  } else if (level == gglog::Level::WARNING || level == gglog::Level::DEBUG) {
+    SetConsoleTextAttribute(hConsole, 0x06); // yellow
+  } else {
+    SetConsoleTextAttribute(hConsole, 0x02); // green
   }
-  else if (level == gglog::Level::WARNING || level == gglog::Level::DEBUG) {
-    #ifdef _WIN32
-    SetConsoleTextAttribute(hConsole, 0x06); // 0x06 means yellow
-    std::cout << "[GGEMS " << gglog::ToString(level) << "] ";
-    if (!class_name.empty() || !method_name.empty()) {
-      std::cout << "(" << class_name << "::" << method_name << ") ";
-    }
-    SetConsoleTextAttribute(hConsole, info.wAttributes);
-    #else
-    std::cout << "\033[33m"
-              << "[GGEMS " << gglog::ToString(level) << "] ("
-              << class_name << "::" << method_name << ") "
-              << "\033[0m";
-    #endif
+  std::cout << "[GGEMS " << gglog::ToString(level) << "] ";
+  if (!class_name.empty() || !method_name.empty()) {
+    std::cout << "(" << class_name << "::" << method_name << ") ";
   }
-  else {
-    #ifdef _WIN32
-    SetConsoleTextAttribute(hConsole, 0x02); // 0x02 means green
-    std::cout << "[GGEMS " << gglog::ToString(level) << "] ";
-    if (!class_name.empty() || !method_name.empty()) {
-      std::cout << "(" << class_name << "::" << method_name << ") ";
-    }
-    SetConsoleTextAttribute(hConsole, info.wAttributes);
-    #else
-    std::cout << "\033[32m"
-              << "[GGEMS " << gglog::ToString(level) << "] ("
-              << class_name << "::" << method_name << ") "
-              << "\033[0m";
-    #endif
+  SetConsoleTextAttribute(hConsole, info.wAttributes);
+  #else
+  if (level == gglog::Level::ERR) {
+    std::cout << "\033[31m";
+  } else if (level == gglog::Level::WARNING || level == gglog::Level::DEBUG) {
+    std::cout << "\033[33m";
+  } else {
+    std::cout << "\033[32m";
   }
+  std::cout << "[GGEMS " << gglog::ToString(level) << "] ";
+  if (!class_name.empty() || !method_name.empty()) {
+    std::cout << "(" << class_name << "::" << method_name << ") ";
+  }
+  std::cout << "\033[0m";
+  #endif
 
   std::cout << message;
   std::cout.flush();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-std::string gglog::ToString(gglog::Level const& level) {
-  switch(level) {
-    case gglog::Level::INFO:
-      return "INFO";
-    case gglog::Level::INFO2:
-      return "INFO2";
-    case gglog::Level::INFO3:
-      return "INFO3";
-    case gglog::Level::INFO4:
-      return "INFO4";
-    case gglog::Level::DEBUG:
-      return "DEBUG";
-    case gglog::Level::WARNING:
-      return "WARNING";
-    case gglog::Level::ERR:
-      return "ERROR";
-    default:
-      return "";
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -184,17 +141,16 @@ void GGEMSLogger::SetLevelInfos(gglog::Level const& minimum_level) {
 
 bool GGEMSLogger::IsValidLogLevel(gglog::Level const& level) const {
   return (level <= minimum_level_
-    || level == gglog::Level::ERR
-    || level == gglog::Level::WARNING
-    || level == gglog::Level::DEBUG) ? true : false;
+        || level == gglog::Level::ERR
+        || level == gglog::Level::WARNING
+        || level == gglog::Level::DEBUG) ? true : false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-std::ostream& operator<<(std::ostream& stream, std::string_view str)
-{
+std::ostream& operator<<(std::ostream& stream, std::string_view str) {
   std::copy(str.begin(), str.end(), std::ostream_iterator<char>(stream));
   return stream;
 }

@@ -20,11 +20,15 @@
 
 /*!
  * \file GGEMSLogger.hh
- * \brief Definition of GGEMSLogger singleton and gglog namespace for structured terminal output
+ * \brief Declaration of the GGEMSLogger singleton and the gglog namespace API.
  *
- * This file provides:
- * - The `gglog` namespace, containing logging levels, helper stream functions, and level-based output methods.
- * - The `GGEMSLogger` singleton class, handling thread-safe, level-filtered output to the terminal.
+ * This header defines:
+ * - The `gglog` namespace: logging levels, stream helpers (`io`, `endl`), and
+ *   convenience functions for levelled output (`info`, `warn`, `debug`, `err`).
+ * - The `GGEMSLogger` singleton: thread-safe, level-filtered terminal output with
+ *   optional coloured severity banners. The implementation preserves Windows and
+ *   POSIX colouring behaviour and serialises output atomically per message.
+ * - The RAII helper `GGEMSScopedLog` for automatic enter/exit tracing at `INFO4`.
  *
  * \author  Julien BERT <julien.bert@univ-brest.fr>
  * \author  Didier BENOIT <didier.benoit@inserm.fr>
@@ -42,26 +46,20 @@
 
 /*!
  * \namespace gglog
- * \brief Provides structured logging functionality for GGEMS
+ * \brief Structured logging API for GGEMS.
  *
- * This namespace defines logging levels, inline helper functions for streaming messages,
- * and conversion utilities. Logging messages can include optional class and method context.
- *
- * Usage example:
+ * The namespace exposes a stream-based logging interface:
  * \code
- * gglog::info("MyClass", "MyMethod") << "Hello world" << gglog::endl;
- * gglog::warn() << "This is a warning" << gglog::endl;
- * gglog::debug("MyClass") << "Debugging data: " << some_value << gglog::endl;
- * gglog::err() << "Error occurred!" << gglog::endl;
+ * gglog::info("MyClass", "MyMethod") << "Hello" << gglog::endl;
+ * gglog::warn() << "Caution" << gglog::endl;
+ * gglog::err("Core") << "Failure" << gglog::endl;
  * \endcode
  */
 namespace gglog {
 
   /*!
    * \enum Level
-   * \brief Severity levels for logging
-   *
-   * Levels are used to filter and categorise messages in the terminal.
+   * \brief Severity levels for logging, ordered informationally.
    */
   enum class Level : unsigned char {
     INFO   = 0,  /*!< General informational messages, always displayed */
@@ -74,152 +72,166 @@ namespace gglog {
   };
 
   /*!
-   * \brief Retrieve an ostream for structured logging
-   * \param level - Severity level
-   * \param class_name - Class emitting the log
-   * \param method_name - Method emitting the log
-   * \return Reference to an ostream for inserting log content
+   * \brief Acquire a stream for structured logging at a given level.
+   * \param level Severity level.
+   * \param class_name Optional class context.
+   * \param method_name Optional method context.
+   * \return Reference to an `std::ostream` that accumulates the message.
    *
-   * Example usage:
-   * \code
-   * gglog::io(Level::INFO, "MyClass", "MyMethod") << "Message content" << gglog::endl;
-   * \endcode
+   * \details The message is buffered per-thread (thread-local) and is emitted
+   *          atomically upon `gglog::endl`.
    */
   std::ostream& io(Level const& level, std::string_view class_name, std::string_view method_name);
 
   /*!
-   * \brief Flush the log message and insert a newline
-   * \param stream - Output stream
-   * \return Reference to the stream
+   * \brief Flush the buffered log line, emit a newline, and reset the buffer.
+   * \param stream The stream returned by `gglog::io`.
+   * \return The same stream (reset and ready for subsequent messages).
+   *
+   * \details This function triggers the actual message dispatch to the logger.
    */
   std::ostream& endl(std::ostream& stream);
 
   /*!
-   * \brief Stream output for standard informational messages (INFO)
-   * \param class_name Optional class name emitting the log
-   * \param method_name Optional method name emitting the log
-   * \return Reference to ostream for streaming message
-   */
-  inline std::ostream& info(std::string_view class_name = "", std::string_view method_name = "") {
-    return io(Level::INFO, class_name, method_name);
-  }
-
-  /*!
-   * \brief Stream output for INFO2 messages (detailed informational messages)
-   * \param class_name Optional class name emitting the log
-   * \param method_name Optional method name emitting the log
-   * \return Reference to ostream for streaming the INFO2 message
+   * \brief Stream output for standard informational messages (`INFO` level)
+   * \param cls Optional class name emitting the log
+   * \param fn  Optional method name emitting the log
+   * \return Reference to a thread-local `std::ostream` used to compose the message
    *
+   * This is the most general informational level. It is always printed and
+   * intended for user-facing messages describing program progress or state.
+   * Example:
+   * \code
+   * gglog::info("GGEMSOpenCL", "Init") << "Initialising OpenCL" << gglog::endl;
+   * \endcode
    */
-  inline std::ostream& info2(std::string_view class_name = "", std::string_view method_name = "") {
-    return io(Level::INFO2, class_name, method_name);
+  inline std::ostream& info(std::string_view cls = "", std::string_view fn = "") {
+    return io(Level::INFO, cls, fn);
   }
 
   /*!
-   * \brief Stream output for INFO3 messages (very detailed informational messages)
-   * \param class_name Optional class name emitting the log
-   * \param method_name Optional method name emitting the log
-   * \return Reference to ostream for streaming the INFO3 message
+   * \brief Stream output for detailed informational messages (`INFO2` level)
+   * \param cls Optional class name emitting the log
+   * \param fn  Optional method name emitting the log
+   * \return Reference to a thread-local `std::ostream` used to compose the message
+   *
+   * The `INFO2` level provides additional contextual information useful for
+   * diagnostic output during simulation or setup, without overwhelming verbosity.
    */
-  inline std::ostream& info3(std::string_view class_name = "", std::string_view method_name = "") {
-    return io(Level::INFO3, class_name, method_name);
+  inline std::ostream& info2(std::string_view cls = "", std::string_view fn = "") {
+    return io(Level::INFO2, cls, fn);
   }
 
   /*!
-   * \brief Stream output for INFO4 messages (function/method enter-exit tracing)
-   * \param class_name Optional class name emitting the log
-   * \param method_name Optional method name emitting the log
-   * \return Reference to ostream for streaming the INFO4 message
+   * \brief Stream output for highly detailed messages (`INFO3` level)
+   * \param cls Optional class name emitting the log
+   * \param fn  Optional method name emitting the log
+   * \return Reference to a thread-local `std::ostream` used to compose the message
+   *
+   * This level is typically used to log intermediate computational data,
+   * parameters, or configuration states during internal debugging.
    */
-  inline std::ostream& info4(std::string_view class_name = "", std::string_view method_name = "") {
-    return io(Level::INFO4, class_name, method_name);
+  inline std::ostream& info3(std::string_view cls = "", std::string_view fn = "") {
+    return io(Level::INFO3, cls, fn);
   }
 
   /*!
-   * \brief Stream output for WARNING messages
-   * \param class_name Optional class name emitting the log
-   * \param method_name Optional method name emitting the log
-   * \return Reference to ostream for streaming the WARNING message
+   * \brief Stream output for enter/exit tracing messages (`INFO4` level)
+   * \param cls Optional class name emitting the log
+   * \param fn  Optional method name emitting the log
+   * \return Reference to a thread-local `std::ostream` used to compose the message
+   *
+   * The `INFO4` level is designed to trace function and method calls,
+   * typically used in conjunction with `GGEMSScopedLog` for automatic
+   * entry/exit diagnostics in complex execution flows.
    */
-  inline std::ostream& warn(std::string_view class_name = "", std::string_view method_name = "") {
-    return io(Level::WARNING, class_name, method_name);
+  inline std::ostream& info4(std::string_view cls = "", std::string_view fn = "") {
+    return io(Level::INFO4, cls, fn);
   }
 
   /*!
-   * \brief Stream output for debugging messages
-   * \param class_name Optional class name emitting the log
-   * \param method_name Optional method name emitting the log
-   * \return Reference to ostream for streaming the debug message
+   * \brief Stream output for warning messages (`WARNING` level)
+   * \param cls Optional class name emitting the log
+   * \param fn  Optional method name emitting the log
+   * \return Reference to a thread-local `std::ostream` used to compose the message
+   *
+   * This level indicates potentially abnormal or risky behaviour that does not
+   * interrupt the simulation but may require user attention or parameter review.
    */
-  inline std::ostream& debug(std::string_view class_name = "", std::string_view method_name = "") {
-    return io(Level::DEBUG, class_name, method_name);
+  inline std::ostream& warn(std::string_view cls = "", std::string_view fn = "") {
+    return io(Level::WARNING, cls, fn);
   }
 
   /*!
-   * \brief Stream output for error messages
-   * \param class_name Optional class name emitting the log
-   * \param method_name Optional method name emitting the log
-   * \return Reference to ostream for streaming the error message
+   * \brief Stream output for debug messages (`DEBUG` level)
+   * \param cls Optional class name emitting the log
+   * \param fn  Optional method name emitting the log
+   * \return Reference to a thread-local `std::ostream` used to compose the message
+   *
+   * Debug messages are intended for developers. They provide detailed internal
+   * state inspection and are typically filtered out in release builds.
    */
-  inline std::ostream& err(std::string_view class_name = "", std::string_view method_name = "") {
-    return io(Level::ERR, class_name, method_name);
+  inline std::ostream& debug(std::string_view cls = "", std::string_view fn = "") {
+    return io(Level::DEBUG, cls, fn);
   }
 
   /*!
-   * \brief Convert a logging level to a human-readable string
-   * \param level - Log level
-   * \return String representation of the level (e.g., "INFO", "DEBUG", "ERR")
+   * \brief Stream output for error messages (`ERR` level)
+   * \param cls Optional class name emitting the log
+   * \param fn  Optional method name emitting the log
+   * \return Reference to a thread-local `std::ostream` used to compose the message
+   *
+   * The `ERR` level denotes a recoverable or fatal failure during execution.
+   * Messages are always printed and formatted in red for emphasis in terminal mode.
    */
-  std::string ToString(Level const& level);
+  inline std::ostream& err(std::string_view cls = "", std::string_view fn = "") {
+    return io(Level::ERR, cls, fn);
+  }
 
-} // namespace gglog
+  /*!
+   * \brief Compile-time conversion of a logging level to its textual form.
+   * \param level Logging severity.
+   * \return A constant string view (e.g., "INFO", "DEBUG", "ERROR").
+   */
+  [[nodiscard]] constexpr std::string_view ToString(Level level) {
+    using enum Level;
+    switch(level) {
+      case INFO:    return "INFO";
+      case INFO2:   return "INFO2";
+      case INFO3:   return "INFO3";
+      case INFO4:   return "INFO4";
+      case DEBUG:   return "DEBUG";
+      case WARNING: return "WARNING";
+      case ERR:     return "ERROR";
+      default:      return "UNKNOWN";
+    }
+  }
+}
 
 /*!
  * \class GGEMSLogger
- * \brief Singleton class for thread-safe logging with level filtering
+ * \brief Thread-safe singleton for terminal logging with level filtering and colouring.
  *
- * GGEMSLogger centralises terminal output for GGEMS, ensuring:
- * - Thread safety via internal mutex
- * - Filtering messages below the configured minimum level
- * - Structured output including class and method context
+ * The logger serialises terminal writes per message using a mutex to prevent
+ * interleaving of coloured severity banners on Windows and POSIX terminals.
+ * Messages are composed in thread-local buffers and flushed atomically.
  *
- * \note Singleton pattern is used: access via `GetInstance()`.
- *
- * \code
- * // Example usage
- * gglog::info("MyClass", "MyMethod") << "Hello world" << gglog::endl;
- * GGEMSLogger::GetInstance().SetLevelInfos(gglog::Level::DEBUG);
- * \endcode
+ * \note Access via `GGEMSLogger::GetInstance()`.
  */
-class GGEMSLogger {
+class GGEMSLogger final {
 private:
- /*!
-  * \brief Constructor of GGEMSLogger
-  *
-  * Initializes the GGEMSLogger singleton instance with default settings:
-  * - Sets the minimum log level to `gglog::Level::INFO`.
-  * - Initializes the internal mutex for thread-safe logging.
-  *
-  * \note
-  * This constructor is private to enforce the singleton pattern.
-  * Access to the logger must be done through `GGEMSLogger::GetInstance()`.
-  */
-  GGEMSLogger(void)
-    : minimum_level_{gglog::Level::INFO}, write_lock_{} {}
+  /*!
+   * \brief Constructs the logger with default settings.
+   *
+   * - Minimum level set to `gglog::Level::INFO`.
+   */
+  GGEMSLogger(void) noexcept : minimum_level_{gglog::Level::INFO} {}
 
   /*!
-   * \brief Destructor of GGEMSLogger
-   *
-   * Cleans up the GGEMSLogger instance.
-   * As the singleton is static, the destructor is called automatically
-   * at program termination and no explicit deletion is needed.
-   *
-   * \note
-   * The destructor is defaulted since there are no dynamically allocated resources.
+   * \brief Defaulted destructor, no dynamic resources.
    */
   ~GGEMSLogger(void) = default;
 
-  // Deleted copy/move operations
   GGEMSLogger(GGEMSLogger const&) = delete;
   GGEMSLogger(GGEMSLogger&&) = delete;
   GGEMSLogger& operator=(GGEMSLogger const&) = delete;
@@ -227,8 +239,8 @@ private:
 
 public:
   /*!
-   * \brief Access the singleton instance
-   * \return Reference to the GGEMSLogger singleton
+   * \brief Returns the singleton instance.
+   * \return Reference to the global logger.
    */
   static GGEMSLogger& GetInstance(void) {
     static GGEMSLogger instance;
@@ -236,38 +248,78 @@ public:
   }
 
   /*!
-   * \brief Set the minimum severity level for logging output
-   * \param minimum_level - Messages below this level will be ignored
+   * \brief Configures the minimum informational level.
+   * \param minimum_level Messages below this informational level are ignored,
+   * except \c DEBUG, \c WARNING and \c ERR which are always emitted.
    */
   void SetLevelInfos(gglog::Level const& minimum_level);
 
   /*!
-   * \brief Log a message to the terminal
-   * \param log_level - Severity level
-   * \param message - Text message
-   * \param class_name - Class context
-   * \param method_name - Method context
+   * \brief Emits a fully formatted message to the terminal.
+   * \param log_level Severity level.
+   * \param message   Content to print (single line, newline already handled).
+   * \param class_name Optional class context.
+   * \param method_name Optional method context.
+   *
+   * \details This method is thread-safe and serialises Windows/POSIX colour
+   *          changes to avoid interleaving. The textual payload is written
+   *          atomically per call.
    */
   void LogMessage(gglog::Level const& log_level, std::string_view message,
                   std::string_view class_name, std::string_view method_name);
 
   /*!
-   * \brief Determine whether a message at the given level should be printed
-   * \param log_level - Message severity
-   * \return True if message passes filtering, false otherwise
+   * \brief Queries whether a message should be emitted according to the filter.
+   * \param log_level Severity of the message.
+   * \return True if the message passes filtering, false otherwise.
    */
-  bool IsValidLogLevel(gglog::Level const& log_level) const;
+  [[nodiscard]] bool IsValidLogLevel(gglog::Level const& log_level) const;
 
 private:
-  gglog::Level minimum_level_; /*!< Minimum log level for output */
-  std::mutex   write_lock_;    /*!< Mutex protecting terminal output for thread safety */
+  gglog::Level minimum_level_; /*!< Informational threshold */
+  std::mutex   write_lock_;    /*!< Serialises coloured output */
 };
 
 /*!
- * \brief Convenience operator to allow writing std::string_view to ostream
- * \param stream - Output stream
- * \param str - String to insert
- * \return Reference to the output stream
+ * \brief Allows streaming `std::string_view` into an `std::ostream`.
+ * \param stream Target stream.
+ * \param str    View to write.
+ * \return The target stream.
  */
 std::ostream& operator<<(std::ostream& stream, std::string_view str);
 
+/*!
+ * \struct GGEMSScopedLog
+ * \brief RAII utility for `INFO4` enter/exit tracing.
+ *
+ * Construct an instance at the beginning of a scope to emit an `INFO4` "Enter"
+ * message; upon destruction, an "Exit" message is emitted. This is useful for
+ * deterministic tracing of function lifetimes during performance investigations.
+ *
+ * \code
+ * void f() {
+ *   GGEMSScopedLog trace("MyClass", "f");
+ *   // work...
+ * }
+ * \endcode
+ */
+struct GGEMSScopedLog final {
+  /*!
+   * \brief Constructs the scope tracer and emits an "Enter" message.
+   * \param cls Class context.
+   * \param fn  Function/method context.
+   */
+  GGEMSScopedLog(std::string_view cls, std::string_view fn)
+    : cls_{cls}, fn_{fn} {
+    gglog::info4(cls_, fn_) << "Enter" << gglog::endl;
+  }
+
+  /*!
+   * \brief Destructs the scope tracer and emits an "Exit" message.
+   */
+  ~GGEMSScopedLog() { gglog::info4(cls_, fn_) << "Exit" << gglog::endl; }
+
+private:
+  std::string cls_; /*!< Class context */
+  std::string fn_; /*!< Function/method context */
+};

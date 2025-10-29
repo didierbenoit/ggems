@@ -20,12 +20,11 @@
 
 /*!
  * \file GGEMSLocal.hh
- * \brief Definition of GGEMSLocal structure for thread-local logging
+ * \brief Thread-local accumulator for GGEMS logging.
  *
- * GGEMSLocal provides a thread-local storage container to accumulate
- * log messages using an `ostringstream` and dispatch them to the
- * GGEMS logging system. It also tracks the class, method, and log level
- * for structured log output.
+ * GGEMSLocal buffers a single log line per thread (via `std::ostringstream`),
+ * storing severity and optional class/method context, which is finally flushed
+ * atomically by the global logger when `gglog::endl` is invoked.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -40,67 +39,53 @@
 
 #include "GGEMS/tools/GGEMSLogger.hh"
 
-
 /*!
  * \struct GGEMSLocal
- * \brief Thread-local structure storing log information
+ * \brief Per-thread logging buffer and context.
  *
- * GGEMSLocal is designed to be used as `thread_local`, allowing
- * each thread to have its own logging buffer. It collects
- * class/method context, log level, and formatted message content.
+ * Each thread owns one GGEMSLocal instance, avoiding contention during message
+ * composition. The global logger only serialises the final emission step.
  */
-struct GGEMSLocal {
+struct GGEMSLocal final {
   /*!
-   * \brief Default constructor
-   *
-   * Initializes the log level to `gglog::Level::INFO` and prepares
-   * the `ostringstream` buffer.
+   * \brief Constructs a local buffer with default informational level.
    */
-  GGEMSLocal(void) : level_{gglog::Level::INFO} {}
+  GGEMSLocal() : level_{gglog::Level::INFO} {}
 
   /*!
-   * \brief Destructor
-   *
-   * Defaulted; no special cleanup is required.
+   * \brief Default destructor, no dynamic resources.
    */
-   ~GGEMSLocal(void) = default;
+   ~GGEMSLocal() = default;
 
-  // Delete copy and move operations to enforce unique thread-local instance
   GGEMSLocal(GGEMSLocal const& local) = delete;
   GGEMSLocal(GGEMSLocal const&& local) = delete;
   GGEMSLocal& operator=(GGEMSLocal const& local) = delete;
   GGEMSLocal& operator=(GGEMSLocal const&& local) = delete;
 
   /*!
-   * \brief Check if the current log level is active
-   * \param level - Log level to test
-   * \return True if the log message should be emitted, false otherwise
-   *
-   * This allows selective filtering of log messages based on
-   * runtime or compile-time log level configuration.
+   * \brief Tests whether a level passes the global filter.
+   * \param level Candidate severity.
+   * \return True if the message should be printed, false otherwise.
    */
-  bool IsValidLogLevel(gglog::Level const& level) const;
+  [[nodiscard]] bool IsValidLogLevel(gglog::Level const& level) const;
 
   /*!
-   * \brief Dispatch accumulated message to the logger manager
+   * \brief Flushes the buffered message to the global logger.
    *
-   * Sends the content of `osstream_` along with class/method
-   * information and log level to the GGEMS logging system.
+   * \details Emits the line atomically; afterwards the buffer is meant to be
+   *          cleared by `gglog::endl`.
    */
-  void WriteMessage(void) const;
+  void WriteMessage() const noexcept;
 
-  std::ostringstream osstream_; /*!< Buffer storing formatted log message content */
-  std::string        class_name_; /*!< Name of the class emitting the log */
-  std::string        method_name_; /*!< Name of the method emitting the log */
-  gglog::Level       level_; /*!< Severity level of the log message */
+  std::ostringstream osstream_; /*!< Per-thread line buffer */
+  std::string        class_name_; /*!< Optional class context */
+  std::string        method_name_; /*!< Optional method context */
+  gglog::Level       level_; /*!< Severity associated with the message */
 };
 
 namespace gglog {
   /*!
-   * \brief Thread-local GGEMSLocal instance
-   *
-   * Each thread maintains its own `GGEMSLocal` to avoid
-   * race conditions when logging concurrently.
+   * \brief Thread-local instance used by `gglog::io`/`gglog::endl`
    */
   extern thread_local GGEMSLocal local;
 }
