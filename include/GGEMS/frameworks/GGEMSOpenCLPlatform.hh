@@ -73,13 +73,21 @@ public:
    * \brief Destructor.
    * \note Automatically cleans platform internals; no explicit action required.
    */
-  ~GGEMSOpenCLPlatform() = default;
+  ~GGEMSOpenCLPlatform();
 
-  // Non-copyable, non-movable (unique ownership semantics)
-  //GGEMSOpenCLPlatform(GGEMSOpenCLPlatform const&) = delete;
-  //GGEMSOpenCLPlatform(GGEMSOpenCLPlatform&&) = delete;
-  //GGEMSOpenCLPlatform& operator=(GGEMSOpenCLPlatform const&) = delete;
-  //GGEMSOpenCLPlatform& operator=(GGEMSOpenCLPlatform&&) = delete;
+  GGEMSOpenCLPlatform(GGEMSOpenCLPlatform const&) = delete;
+  GGEMSOpenCLPlatform& operator=(GGEMSOpenCLPlatform const&) = delete;
+
+  /*!
+   * \brief Move constructor (no-throw).
+   */
+  GGEMSOpenCLPlatform(GGEMSOpenCLPlatform&&) noexcept = default;
+
+  /*!
+   * \brief Move assignment (no-throw).
+   * \return Reference to GGEMSOpenCLPlatform
+   */
+  GGEMSOpenCLPlatform& operator=(GGEMSOpenCLPlatform&&) noexcept = default;
 
 public:
   /*!
@@ -159,6 +167,36 @@ public:
   }
 
   /*!
+   * \brief Get a constant view of all devices discovered on this platform.
+   * \return A vector of raw pointers to `GGEMSOpenCLDevice` objects (non-owning).
+   *
+   * The returned pointers are valid as long as the `GGEMSOpenCLPlatform`
+   * instance remains alive. They must not be deleted or modified.
+   */
+  [[nodiscard]] std::vector<GGEMSOpenCLDevice const*> GetDevices() const;
+
+  /*!
+   * \brief Retrieve the index of this OpenCL platform within the system.
+   * \return The unique index assigned during platform enumeration.
+   *
+   * This index corresponds to the order of discovery in the system’s
+   * OpenCL platform list. It is primarily used for debugging or mapping
+   * user selections to specific platforms.
+   */
+  [[nodiscard]] constexpr std::size_t GetPlatformIndex() const noexcept { return platform_index_; }
+
+  /*!
+   * \brief Retrieve the underlying native OpenCL platform object.
+   * \return Constant reference to the native \c cl::Platform object.
+   *
+   * This method allows interoperability with raw OpenCL APIs or
+   * external libraries that require access to the native handle.
+   * It should be used with care, as modifying the returned object
+   * directly can lead to inconsistent internal state.
+   */
+  [[nodiscard]] cl::Platform const& GetNative() const noexcept { return platform_; }
+
+  /*!
    * \brief Prints a summary of platform properties to the terminal.
    *
    * Information includes name, vendor, version, extensions, and numeric version.
@@ -179,5 +217,5 @@ private:
 private:
   cl::Platform                                    platform_; /*!< Native OpenCL platform object */
   std::size_t                                     platform_index_; /*!< Index of this platform in the system */
-//  std::vector<std::unique_ptr<GGEMSOpenCLDevice>> devices_; /*!< Devices belonging to this platform */
+  std::vector<std::unique_ptr<GGEMSOpenCLDevice>> devices_; /*!< Devices belonging to this platform */
 };

@@ -18,7 +18,7 @@
 
 /*!
  * \file GGEMSLocal.cc
- * \brief Definition of GGEMSLocal class
+ * \brief Thread-local accumulator for GGEMS logging
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  * \date 2025-10-09

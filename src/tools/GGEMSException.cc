@@ -18,7 +18,7 @@
 
 /*!
  * \file GGEMSException.cc
- * \brief Definition of GGEMSException class
+ * \brief Definition of GGEMSException for handling GGEMS-specific error
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  * \date 2025-10-12

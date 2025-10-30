@@ -26,5 +26,6 @@ void GGEMSInitFrameworks(py::module_& m) {
     .def(py::init([]() -> GGEMSOpenCL* {return &GGEMSOpenCL::GetInstance();}), py::return_value_policy::reference, "Return GGEMSOpenCL singleton instance")
     .def("__del__", [](GGEMSOpenCL&) {}, "Do nothing on deletion (C++ singleton)")
     .def("print_platforms", &GGEMSOpenCL::PrintPlatforms, "Print infos about all found OpenCL platforms")
+    .def("print_devices", &GGEMSOpenCL::PrintDevices, "Print infos about all found OpenCL devices")
     .def("clean", &GGEMSOpenCL::Clean, "Release the internal compilers of the platform");
 }

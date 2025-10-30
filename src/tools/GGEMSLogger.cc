@@ -18,7 +18,7 @@
 
 /*!
  * \file GGEMSLogger.cc
- * \brief GGEMSLogger class redefined C++ standard output (on the terminal)
+ * \brief Declaration of the GGEMSLogger singleton and the gglog namespace API.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  * \date 2025-10-07

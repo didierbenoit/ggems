@@ -18,7 +18,7 @@
 
 /*!
  * \file GGEMSOpenCLPlatform.cc
- * \brief Definition of GGEMSOpenCL class
+ * \brief Declaration of the GGEMSOpenCLPlatform class for OpenCL platform abstraction.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  * \date 2025-10-14
@@ -32,6 +32,7 @@
 
 #include "GGEMS/tools/GGEMSLogger.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -39,8 +40,22 @@
 
 GGEMSOpenCLPlatform::GGEMSOpenCLPlatform(cl::Platform const& platform, std::size_t platform_index)
 : platform_{platform}, platform_index_{platform_index} {
-  GGEMSScopedLog trace("GGEMSOpenCLPlatform", "GGEMSOpenCLPlatform");
+  gglog::info2("GGEMSOpenCLPlatform", "GGEMSOpenCLPlatform") << "Allocating GGEMSOpenCLPlatform ["
+    << platform_index_ << "] ..." << gglog::endl;
+
   DiscoverDevices();
+
+  gglog::info2("GGEMSOpenCLPlatform", "GGEMSOpenCLPlatform") << "GGEMSOpenCLPlatform allocated with "
+    << devices_.size() << " device(s)" << gglog::endl;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+GGEMSOpenCLPlatform::~GGEMSOpenCLPlatform() {
+  gglog::info3("GGEMSOpenCLPlatform","~GGEMSOpenCLPlatform") << "Deleting GGEMSOpenCLPlatform ["
+    << platform_index_ << "] ..." << gglog::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -48,7 +63,24 @@ GGEMSOpenCLPlatform::GGEMSOpenCLPlatform(cl::Platform const& platform, std::size
 ////////////////////////////////////////////////////////////////////////////////
 
 void GGEMSOpenCLPlatform::DiscoverDevices() {
-  GGEMSScopedLog trace("GGEMSOpenCLPlatform", "DiscoverDevices");
+  gglog::info2("GGEMSOpenCLPlatform", "DiscoverDevices") << "Discovering OpenCL device(s) for GGEMSOpenCLPlatform ["
+    << platform_index_ << "] ..." << gglog::endl;
+
+ // Only CPU and GPU
+  constexpr cl_device_type mask = CL_DEVICE_TYPE_CPU | CL_DEVICE_TYPE_GPU;
+
+  std::vector<cl::Device> devices;
+  GGOCL_CHECK(platform_.getDevices(mask, &devices));
+
+  devices_.clear();
+  devices_.reserve(devices.size());
+  std::size_t dev_index{0};
+  for (auto const& d : devices) {
+    devices_.emplace_back(std::make_unique<GGEMSOpenCLDevice>(d, platform_index_, dev_index++));
+  }
+
+  gglog::info2("GGEMSOpenCLPlatform", "DiscoverDevices") << "GGEMSOpenCLPlatform [" << platform_index_ << "] found "
+    << devices.size() << " device(s)" << gglog::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -56,7 +88,7 @@ void GGEMSOpenCLPlatform::DiscoverDevices() {
 ////////////////////////////////////////////////////////////////////////////////
 
 bool GGEMSOpenCLPlatform::CheckExtension(std::string_view extension_name) const {
-  return ((GetExtensions().find(extension_name) != std::string::npos) ? true : false);
+  return (GetExtensions().find(extension_name) != std::string::npos);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -169,57 +201,62 @@ void GGEMSOpenCLPlatform::Print() const {
   gglog::info("GGEMSOpenCLPlatform", "Print") << "-> Profile: " << GetProfile() << gglog::endl;
   gglog::info("GGEMSOpenCLPlatform", "Print") << "-> Version: " << GetVersion() << gglog::endl;
 
+  // Decode numeric version: major(10 bits), minor(10 bits), patch(12 bits).
   cl_version numeric_version = GetNumericVersion();
-  cl_uint major = (numeric_version >> 22) & 0x3FF;
-  cl_uint minor = (numeric_version >> 12) & 0x3FF;
-  cl_uint patch = numeric_version & 0x3FF;
-  gglog::info("GGEMSOpenCLPlatform", "Print") << "-> Numeric Version: " << std::hex << "0x"
-    << numeric_version << std::dec << " (" << major << "." << minor << "." << patch
-    << ")" << gglog::endl;
+  cl_uint major = (numeric_version >> 22) & 0x3FFu;
+  cl_uint minor = (numeric_version >> 12) & 0x3FFu;
+  cl_uint patch = (numeric_version >>  0) & 0xFFFu;
+
+  {
+    std::ostringstream oss;
+    oss << "-> Numeric Version: 0x" << std::hex << std::uppercase << numeric_version
+      << std::dec << " (" << major << "." << minor << "." << patch << ")";
+    gglog::info("GGEMSOpenCLPlatform", "Print") << oss.str() << gglog::endl;
+  }
 
   gglog::info("GGEMSOpenCLPlatform", "Print") << "-> Host Timer Resolution: " << GetHostTimerResolution()
     << " ns" << gglog::endl;
 
-  gglog::info("GGEMSOpenCLPlatform", "Print") << "-> Extensions with version: " << gglog::endl;
-  std::ostringstream oss(std::ostringstream::out);
-  std::vector<cl_name_version> extensions = GetExtensionsWithVersion();
-  for (auto const& extension : extensions) {
-    major = (extension.version >> 22) & 0x3FF;
-    minor = (extension.version >> 12) & 0x3FF;
-    patch = extension.version & 0xFFF;
-    oss << extension.name << " (v" << major << "." << minor << "." << patch << ") ";
-   }
-  gglog::info("GGEMSOpenCLPlatform", "Print") << oss.str() << gglog::endl;
-  oss.str("");
-  oss.clear();
+  {
+    std::ostringstream oss;
+    oss << "-> Extensions with version: ";
+    std::vector<cl_name_version> extensions = GetExtensionsWithVersion();
+    for (auto const& extension : extensions) {
+      cl_uint eMajor = (extension.version >> 22) & 0x3FFu;
+      cl_uint eMinor = (extension.version >> 12) & 0x3FFu;
+      cl_uint ePatch = (extension.version >>  0) & 0xFFFu;
+      oss << extension.name << " (v" << eMajor << "." << eMinor << "." << ePatch << ") ";
+    }
+    gglog::info("GGEMSOpenCLPlatform", "Print") << oss.str() << gglog::endl;
+  }
 
   gglog::info("GGEMSOpenCLPlatform", "Print") << "-> ICD Suffix: " << GetIcdSuffixKhr() << gglog::endl;
 
+  // External memory import handle types (if extension present)
   if (CheckExtension("cl_khr_external_memory")) {
-    std::string str("");
-    gglog::info("GGEMSOpenCLPlatform", "Print") << "-> External memory import handle types: ";
-    for (auto const& ext_memory :
-      GetPlatformInfoArray<cl_external_memory_handle_type_khr>(CL_PLATFORM_EXTERNAL_MEMORY_IMPORT_HANDLE_TYPES_KHR)) {
-      str += ((ext_memory ^ CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR) == 0) ?
-        "CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR " : "";
-      str += ((ext_memory ^ CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KHR) == 0) ?
-        "CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KHR " : "";
-      str += ((ext_memory ^ CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KMT_KHR) == 0) ?
-        "CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KMT_KHR " : "";
-      str += ((ext_memory ^ CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KHR) == 0) ?
-        "CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KHR " : "";
-      str += ((ext_memory ^ CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KMT_KHR) == 0) ?
-        "CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KMT_KHR " : "";
-      str += ((ext_memory ^ CL_EXTERNAL_MEMORY_HANDLE_D3D12_HEAP_KHR) == 0) ?
-        "CL_EXTERNAL_MEMORY_HANDLE_D3D12_HEAP_KHR " : "";
-      str += ((ext_memory ^ CL_EXTERNAL_MEMORY_HANDLE_D3D12_RESOURCE_KHR) == 0) ?
-        "CL_EXTERNAL_MEMORY_HANDLE_D3D12_RESOURCE_KHR " : "";
-      str += ((ext_memory ^ CL_EXTERNAL_MEMORY_HANDLE_DMA_BUF_KHR) == 0) ?
-        "CL_EXTERNAL_MEMORY_HANDLE_DMA_BUF_KHR " : "";
-      str += ((ext_memory ^ CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_NAME_KHR) == 0) ?
-        "CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_NAME_KHR " : "";
+    auto const handles = GetPlatformInfoArray<cl_external_memory_handle_type_khr>(CL_PLATFORM_EXTERNAL_MEMORY_IMPORT_HANDLE_TYPES_KHR);
+
+    auto to_string = [](cl_external_memory_handle_type_khr h) -> std::string_view {
+      switch (h) {
+        case CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR:         return "CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR";
+        case CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KHR:      return "CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KHR";
+        case CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KMT_KHR:  return "CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KMT_KHR";
+        case CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KHR:     return "CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KHR";
+        case CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KMT_KHR: return "CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KMT_KHR";
+        case CL_EXTERNAL_MEMORY_HANDLE_D3D12_HEAP_KHR:        return "CL_EXTERNAL_MEMORY_HANDLE_D3D12_HEAP_KHR";
+        case CL_EXTERNAL_MEMORY_HANDLE_D3D12_RESOURCE_KHR:    return "CL_EXTERNAL_MEMORY_HANDLE_D3D12_RESOURCE_KHR";
+        case CL_EXTERNAL_MEMORY_HANDLE_DMA_BUF_KHR:           return "CL_EXTERNAL_MEMORY_HANDLE_DMA_BUF_KHR";
+        case CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_NAME_KHR: return "CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_NAME_KHR";
+        default:                                              return "UNKNOWN_EXTERNAL_MEMORY_HANDLE";
+      }
+    };
+
+    std::ostringstream oss;
+    oss << "-> External memory import handle types: ";
+    for (auto const& h : handles) {
+      oss << to_string(h) << ' ';
     }
-    gglog::info("GGEMSOpenCLPlatform", "Print") << str << gglog::endl;
+    gglog::info("GGEMSOpenCLPlatform", "Print") << oss.str() << gglog::endl;
   }
 }
 
@@ -227,7 +264,26 @@ void GGEMSOpenCLPlatform::Print() const {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+std::vector<GGEMSOpenCLDevice const*> GGEMSOpenCLPlatform::GetDevices() const {
+  std::vector<GGEMSOpenCLDevice const*> result;
+  result.reserve(devices_.size());
+  for (auto const& d : devices_) {
+    result.push_back(d.get());
+  }
+  return result;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 void GGEMSOpenCLPlatform::Clean() {
-  GGEMSScopedLog trace("GGEMSOpenCLPlatform", "Clean");
+  gglog::info2("GGEMSOpenCLPlatform", "Clean") << "Cleaning Platform "
+    << GetName() << " resources..." << gglog::endl;
+
   platform_.unloadCompiler();
+  devices_.clear();
+
+  gglog::info2("GGEMSOpenCLPlatform", "Clean")
+    << "Platform resources cleaned." << gglog::endl;
 }

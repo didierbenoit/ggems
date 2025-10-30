@@ -33,8 +33,13 @@
  * \version 2.0
  */
 
-#include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
 #include "GGEMS/tools/GGEMSLogger.hh"
+
+/// \cond
+#include <vector>
+/// \endcond
+
+class GGEMSOpenCLPlatform;
 
 /*!
  * \class GGEMSOpenCL
@@ -77,7 +82,7 @@ public:
    */
   [[nodiscard]] static GGEMSOpenCL& GetInstance() {
     static GGEMSOpenCL* instance = []() {
-      GGEMSScopedLog trace("GGEMSOpenCL", "GetInstance");
+      gglog::info2("GGEMSOpenCL", "GetInstance") << "First instance of GGEMSOpenCL singleton..." << gglog::endl;
       return new GGEMSOpenCL(); // intentionally leaked
     }();
     return *instance;
@@ -96,7 +101,7 @@ public:
    *
    * This can be safely called before program termination or module unloading.
    */
-  void Clean();
+  void Clean() noexcept;
 
   /*!
    * \brief Prints detailed information about all discovered OpenCL platforms.
@@ -104,6 +109,11 @@ public:
    * Each platform print includes vendor, version, profile, and supported extensions.
    */
   void PrintPlatforms() const;
+
+  /*!
+   * \brief Print all devices across all platforms (aggregated list).
+   */
+  void PrintDevices() const;
 
   /*!
    * \brief Provides read-only access to the discovered OpenCL platforms.
@@ -118,6 +128,21 @@ private:
    * Called internally during construction.
    */
   void InitPlatformsAndDevices();
+
+  /*!
+   * \brief Disable GPU driver kernel caching (development convenience).
+   *
+   * On NVIDIA platforms, OpenCL kernels compiled via the CUDA driver
+   * may be cached on disk (typically under `~/.nv/ComputeCache`).
+   * This function disables that cache by setting the environment variable
+   * `CUDA_CACHE_DISABLE=1`. It is primarily useful during debugging or
+   * dynamic recompilation of OpenCL kernels.
+   *
+   * \note
+   * On Windows, `_putenv_s()` is used.
+   * On POSIX systems, `setenv()` is called safely.
+   */
+  void DisableKernelCache() const;
 
 private:
   std::vector<GGEMSOpenCLPlatform> platforms_; /*!< Vector storing all detected OpenCL platforms */

@@ -18,7 +18,7 @@
 
 /*!
  * \file GGEMSOpenCLCommons.cc
- * \brief Definition of GGEMSOpenCLCommons useful methods
+ * \brief Common utility functions and macros for GGEMS OpenCL error handling
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  * \date 2025-10-12
@@ -50,8 +50,7 @@ void ggocl::Failure(std::string_view filename, std::string_view function_name, i
 ////////////////////////////////////////////////////////////////////////////////
 
 void ggocl::TerminateHandler() noexcept {
-  gglog::err("GGEMS", "TerminateHandler") << "A fatal unrecoverable error occurred. Forcing immediate shutdown."
-    << gglog::endl;
+  gglog::err("", "TerminateHandler") << "A fatal unrecoverable error occurred. Forcing immediate shutdown." << gglog::endl;
   std::abort();  // immediate termination, bypassing atexit handlers
 }
 

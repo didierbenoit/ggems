@@ -84,7 +84,7 @@ public:
    * and a textual description of the error. The string remains valid
    * throughout the lifetime of the exception object.
    */
-  [[nodiscard]] char const* what(void) const noexcept override {
+  [[nodiscard]] char const* what() const noexcept override {
     return error_message_.c_str();
   }
 
