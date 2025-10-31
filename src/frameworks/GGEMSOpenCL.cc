@@ -36,7 +36,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 GGEMSOpenCL::GGEMSOpenCL() {
-  gglog::info2("GGEMSOpenCL", "GGEMSOpenCL") << "Constructing GGEMSOpenCL singleton..." << gglog::endl;
+  gglog::info3("GGEMSOpenCL", "GGEMSOpenCL") << "Constructing GGEMSOpenCL singleton..." << gglog::endl;
   std::set_terminate(ggocl::TerminateHandler);
 
   DisableKernelCache();

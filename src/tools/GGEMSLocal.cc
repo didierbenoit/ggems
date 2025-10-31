@@ -18,12 +18,7 @@
 
 /*!
  * \file GGEMSLocal.cc
- * \brief Thread-local accumulator for GGEMS logging
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-10-09
- * \copyright GNU General Public License v3.0
- * \version 2.0
+ * \brief Implementation of per-thread staging buffer for logging.
  */
 
 #include "GGEMS/tools/GGEMSLocal.hh"
@@ -34,14 +29,14 @@ thread_local GGEMSLocal gglog::local;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-bool GGEMSLocal::IsValidLogLevel(gglog::Level const& level) const {
-  return GGEMSLogger::GetInstance().IsValidLogLevel(level);
+bool GGEMSLocal::IsVisible(gglog::Level level) const noexcept {
+  return GGEMSLogger::GetInstance().IsVisible(level);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-void GGEMSLocal::WriteMessage(void) const noexcept {
+void GGEMSLocal::WriteMessage() const noexcept {
   GGEMSLogger::GetInstance().LogMessage(level_, osstream_.str(), class_name_, method_name_);
 }

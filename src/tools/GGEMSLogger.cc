@@ -18,21 +18,15 @@
 
 /*!
  * \file GGEMSLogger.cc
- * \brief Declaration of the GGEMSLogger singleton and the gglog namespace API.
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-10-07
- * \copyright GNU General Public License v3.0
- * \version 2.0
+ * \brief Implementation of GGEMSLogger and gglog front-end.
  */
 
 /// \cond
 #ifdef _WIN32
-
-#ifdef _MSC_VER
-#define NOMINMAX
-#endif
-#include <Windows.h>
+  #ifdef _MSC_VER
+    #define NOMINMAX
+  #endif
+  #include <Windows.h>
 #endif
 
 #include <iterator>
@@ -47,14 +41,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-std::ostream& gglog::io(gglog::Level const& level, std::string_view class_name, std::string_view method_name) {
-  if (!gglog::local.IsValidLogLevel(level)) {
+std::ostream& gglog::io(gglog::Level level, std::string_view class_name, std::string_view method_name) {
+  if (!GGEMSLogger::GetInstance().IsVisible(level)) {
     gglog::local.osstream_.setstate(std::ios::badbit);
-  }
-  else {
-    gglog::local.level_ = level;
-    gglog::local.class_name_ = std::string(class_name);
-    gglog::local.method_name_ = std::string(method_name);
+  } else {
+    gglog::local.level_       = level;
+    gglog::local.class_name_  = class_name;
+    gglog::local.method_name_ = method_name;
   }
   return gglog::local.osstream_;
 }
@@ -65,11 +58,11 @@ std::ostream& gglog::io(gglog::Level const& level, std::string_view class_name, 
 
 std::ostream& gglog::endl(std::ostream& ostream) {
   ostream << '\n';
-  if(!gglog::local.osstream_.bad()) {
+  if (!gglog::local.osstream_.bad()) {
     gglog::local.WriteMessage();
   }
 
-  // reset stream-data (and state)
+  // Reset per-thread staging stream and context.
   gglog::local.osstream_.str(std::string());
   gglog::local.osstream_.clear();
   gglog::local.class_name_.clear();
@@ -82,45 +75,54 @@ std::ostream& gglog::endl(std::ostream& ostream) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-void GGEMSLogger::LogMessage(gglog::Level const& level, std::string_view message, std::string_view class_name, std::string_view method_name) {
-  if (!IsValidLogLevel(level)) return;
+void GGEMSLogger::LogMessage(gglog::Level level, std::string_view message,
+  std::string_view class_name, std::string_view method_name) {
+  if (!IsVisible(level)) return;
 
   std::lock_guard<std::mutex> guard(write_lock_);
 
   #ifdef _WIN32
-  // Get current color of terminal
-  CONSOLE_SCREEN_BUFFER_INFO info;
-  GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
-  HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-  #endif
+  CONSOLE_SCREEN_BUFFER_INFO info{};
+  const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+  GetConsoleScreenBufferInfo(hConsole, &info);
 
-  // Severity banner with colouring
-  #ifdef _WIN32
+  auto set_colour = [&](WORD attr) {
+    FlushConsoleInputBuffer(hConsole);
+    SetConsoleTextAttribute(hConsole, attr);
+  };
+
+  auto restore_colour = [&]() {
+    SetConsoleTextAttribute(hConsole, info.wAttributes);
+  };
+
+  auto emit_header = [&](WORD colour) {
+    set_colour(colour);
+    std::cout << "[GGEMS " << gglog::ToString(level) << "] ";
+    if (!class_name.empty() || !method_name.empty()) {
+      std::cout << "(" << class_name << "::" << method_name << ") ";
+    }
+    restore_colour();
+  };
+
   if (level == gglog::Level::ERR) {
-    SetConsoleTextAttribute(hConsole, 0x04); // red
+    emit_header(0x04);
   } else if (level == gglog::Level::WARNING || level == gglog::Level::DEBUG) {
-    SetConsoleTextAttribute(hConsole, 0x06); // yellow
+    emit_header(0x06);
   } else {
-    SetConsoleTextAttribute(hConsole, 0x02); // green
+    emit_header(0x02);
   }
-  std::cout << "[GGEMS " << gglog::ToString(level) << "] ";
-  if (!class_name.empty() || !method_name.empty()) {
-    std::cout << "(" << class_name << "::" << method_name << ") ";
-  }
-  SetConsoleTextAttribute(hConsole, info.wAttributes);
   #else
+  auto emit_header = [&](std::string_view code) {
+    std::cout << code << "[GGEMS " << gglog::ToString(level) << "] ("
+      << class_name << "::" << method_name << ") " << "\033[0m";
+  };
   if (level == gglog::Level::ERR) {
-    std::cout << "\033[31m";
+    emit_header("\033[31m");
   } else if (level == gglog::Level::WARNING || level == gglog::Level::DEBUG) {
-    std::cout << "\033[33m";
+    emit_header("\033[33m");
   } else {
-    std::cout << "\033[32m";
+    emit_header("\033[32m");
   }
-  std::cout << "[GGEMS " << gglog::ToString(level) << "] ";
-  if (!class_name.empty() || !method_name.empty()) {
-    std::cout << "(" << class_name << "::" << method_name << ") ";
-  }
-  std::cout << "\033[0m";
   #endif
 
   std::cout << message;
@@ -131,7 +133,7 @@ void GGEMSLogger::LogMessage(gglog::Level const& level, std::string_view message
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-void GGEMSLogger::SetLevelInfos(gglog::Level const& minimum_level) {
+void GGEMSLogger::SetLevelInfos(gglog::Level minimum_level) noexcept {
   minimum_level_ = minimum_level;
 }
 
@@ -139,11 +141,13 @@ void GGEMSLogger::SetLevelInfos(gglog::Level const& minimum_level) {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-bool GGEMSLogger::IsValidLogLevel(gglog::Level const& level) const {
-  return (level <= minimum_level_
-        || level == gglog::Level::ERR
-        || level == gglog::Level::WARNING
-        || level == gglog::Level::DEBUG) ? true : false;
+bool GGEMSLogger::IsVisible(gglog::Level level) const noexcept {
+  // Preserve previous semantics: the threshold controls INFO tiers,
+  // while WARNING/DEBUG/ERR remain visible independent of the threshold.
+  return (level <= minimum_level_)
+      || level == gglog::Level::ERR
+      || level == gglog::Level::WARNING
+      || level == gglog::Level::DEBUG;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -33,12 +33,14 @@ using ggocl::utils::Get;
 using ggocl::utils::GetArray;
 using ggocl::utils::ExtractExtensions;
 using ggocl::utils::HasExtension;
+using ggocl::utils::ClVersionToString;
+using ggocl::utils::ClNameVersionToString;
 
 GGEMSOpenCLPlatform::GGEMSOpenCLPlatform(cl::Platform const& platform, std::size_t platform_index)
   : platform_{platform}
   , platform_index_{platform_index}
 {
-  gglog::info2("GGEMSOpenCLPlatform", "GGEMSOpenCLPlatform")
+  gglog::info3("GGEMSOpenCLPlatform", "GGEMSOpenCLPlatform")
     << "Allocating GGEMSOpenCLPlatform [" << platform_index_ << "] ..." << gglog::endl;
 
   // Cache legacy extension list (space-separated) for quick membership tests.
@@ -114,34 +116,14 @@ void GGEMSOpenCLPlatform::Print() const {
   gglog::info("GGEMSOpenCLPlatform", "Print")
     << "-> Version: " << GetVersion() << gglog::endl;
 
-  const cl_version v = GetNumericVersion();
-  const cl_uint major = (v >> 22) & 0x3FFu;
-  const cl_uint minor = (v >> 12) & 0x3FFu;
-  const cl_uint patch = (v >>  0) & 0x0FFFu;
-
-  {
-    std::ostringstream oss;
-    oss << "-> Numeric Version: " << major << "." << minor << "." << patch
-        << " (0x" << std::hex << std::uppercase << v << std::dec << ")";
-    gglog::info("GGEMSOpenCLPlatform", "Print") << oss.str() << gglog::endl;
-  }
+  gglog::info("GGEMSOpenCLPlatform", "Print") << "-> Numeric Version: "
+    << ClVersionToString(GetNumericVersion()) << gglog::endl;
 
   gglog::info("GGEMSOpenCLPlatform", "Print")
     << "-> Host Timer Resolution: " << GetHostTimerResolution() << " ns" << gglog::endl;
 
-  {
-    // Extensions with version triplets (OpenCL 3.0 core)
-    std::ostringstream oss;
-    oss << "-> Extensions with version: ";
-    const auto exts = GetExtensionsWithVersion();
-    for (auto const& e : exts) {
-      const cl_uint eMajor = (e.version >> 22) & 0x3FFu;
-      const cl_uint eMinor = (e.version >> 12) & 0x3FFu;
-      const cl_uint ePatch = (e.version >>  0) & 0x0FFFu;
-      oss << e.name << " (v" << eMajor << "." << eMinor << "." << ePatch << ") ";
-    }
-    gglog::info("GGEMSOpenCLPlatform", "Print") << oss.str() << gglog::endl;
-  }
+  gglog::info("GGEMSOpenCLPlatform", "Print")
+    << "-> Extensions with version: " << ClNameVersionToString(GetExtensionsWithVersion()) << " ns" << gglog::endl;
 
   gglog::info("GGEMSOpenCLPlatform", "Print")
     << "-> ICD Suffix: " << GetIcdSuffixKhr() << gglog::endl;
@@ -164,21 +146,21 @@ std::vector<GGEMSOpenCLDevice const*> GGEMSOpenCLPlatform::GetDevices() const {
 }
 
 void GGEMSOpenCLPlatform::Clean() {
-  gglog::info2("GGEMSOpenCLPlatform", "Clean")
+  gglog::info3("GGEMSOpenCLPlatform", "Clean")
     << "Cleaning Platform " << GetName() << " resources..." << gglog::endl;
 
   platform_.unloadCompiler();
   devices_.clear();
   extensions_.clear();
 
-  gglog::info2("GGEMSOpenCLPlatform", "Clean")
+  gglog::info3("GGEMSOpenCLPlatform", "Clean")
     << "Platform resources cleaned." << gglog::endl;
 }
 
 // -------------------- Internal discovery --------------------
 
 void GGEMSOpenCLPlatform::DiscoverDevices() {
-  gglog::info2("GGEMSOpenCLPlatform", "DiscoverDevices")
+  gglog::info3("GGEMSOpenCLPlatform", "DiscoverDevices")
     << "Discovering OpenCL devices for platform [" << platform_index_ << "] ..."
     << gglog::endl;
 

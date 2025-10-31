@@ -33,6 +33,11 @@
 #include "GGEMS/tools/GGEMSLogger.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 
+using ggocl::utils::Get;
+using ggocl::utils::GetArray;
+using ggocl::utils::ExtractExtensions;
+using ggocl::utils::HasExtension;
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,10 +51,7 @@ GGEMSOpenCLDevice::GGEMSOpenCLDevice(cl::Device const& device, std::size_t platf
 ////////////////////////////////////////////////////////////////////////////////
 
 std::string GGEMSOpenCLDevice::GetName() const {
-  cl_int err = 0;
-  std::string str = device_.getInfo<CL_DEVICE_NAME>(&err);
-  GGOCL_CHECK(err);
-  return str;
+  return Get<std::string>(device_, CL_DEVICE_NAME);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -57,10 +59,7 @@ std::string GGEMSOpenCLDevice::GetName() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 std::string GGEMSOpenCLDevice::GetVendor() const {
-  cl_int err = 0;
-  std::string str = device_.getInfo<CL_DEVICE_VENDOR>(&err);
-  GGOCL_CHECK(err);
-  return str;
+  return Get<std::string>(device_, CL_DEVICE_VENDOR);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -68,10 +67,7 @@ std::string GGEMSOpenCLDevice::GetVendor() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 std::string GGEMSOpenCLDevice::GetVersion() const {
-  cl_int err = 0;
-  std::string str = device_.getInfo<CL_DEVICE_VERSION>(&err);
-  GGOCL_CHECK(err);
-  return str;
+  return Get<std::string>(device_, CL_DEVICE_VERSION);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -79,10 +75,7 @@ std::string GGEMSOpenCLDevice::GetVersion() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 cl_uint GGEMSOpenCLDevice::GetVendorId() const {
-  cl_int err = 0;
-  cl_uint v = device_.getInfo<CL_DEVICE_VENDOR_ID>(&err);
-  GGOCL_CHECK(err);
-  return v;
+  return Get<cl_uint>(device_, CL_DEVICE_VENDOR_ID);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -90,16 +83,14 @@ cl_uint GGEMSOpenCLDevice::GetVendorId() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 cl_device_type GGEMSOpenCLDevice::GetType() const {
-  cl_int err = 0;
-  cl_device_type v = device_.getInfo<CL_DEVICE_TYPE>(&err);
-  GGOCL_CHECK(err);
-  return v;
+  return Get<cl_device_type>(device_, CL_DEVICE_TYPE);
 }
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-constexpr std::string GGEMSOpenCLDevice::DeviceTypeToString(cl_device_type deviceType) const {
+std::string GGEMSOpenCLDevice::DeviceTypeToString(cl_device_type deviceType) const {
   std::ostringstream oss;
   bool first = true;
 

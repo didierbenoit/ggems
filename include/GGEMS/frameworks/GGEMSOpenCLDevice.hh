@@ -134,27 +134,27 @@ public: // ----- Images -----
   /*!
    * \brief Max 2D image width (pixels).
    */
-  [[nodiscard]] std::size_t GetImage2DMaxWidth() const;
+//  [[nodiscard]] std::size_t GetImage2DMaxWidth() const;
 
   /*!
    * \brief Max 2D image height (pixels).
    */
-  [[nodiscard]] std::size_t GetImage2DMaxHeight() const;
+//  [[nodiscard]] std::size_t GetImage2DMaxHeight() const;
 
   /*!
    * \brief Max 3D image width (voxels).
    */
-  [[nodiscard]] std::size_t GetImage3DMaxWidth() const;
+//  [[nodiscard]] std::size_t GetImage3DMaxWidth() const;
 
   /*!
    * \brief Max 3D image height (voxels).
    */
-  [[nodiscard]] std::size_t GetImage3DMaxHeight() const;
+//  [[nodiscard]] std::size_t GetImage3DMaxHeight() const;
 
   /*!
    * \brief Max 3D image depth (voxels).
    */
-  [[nodiscard]] std::size_t GetImage3DMaxDepth() const;
+//  [[nodiscard]] std::size_t GetImage3DMaxDepth() const;
 
 public:
   /*!
@@ -174,7 +174,7 @@ public:
    * readable string for logging or debugging purposes. The function supports
    * combined bitfield flags and returns concatenated names (e.g. "GPU | CPU").
    */
-  [[nodiscard]] constexpr std::string DeviceTypeToString(cl_device_type deviceType) const;
+  [[nodiscard]] std::string DeviceTypeToString(cl_device_type deviceType) const;
 
 private:
   cl::Device  device_; /*!< Native OpenCL device handle */

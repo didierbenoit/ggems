@@ -20,60 +20,53 @@
 
 /*!
  * \file GGEMSLocal.hh
- * \brief Thread-local accumulator for GGEMS logging.
- *
- * GGEMSLocal buffers a single log line per thread (via `std::ostringstream`),
- * storing severity and optional class/method context, which is finally flushed
- * atomically by the global logger when `gglog::endl` is invoked.
- *
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-10-09
- * \copyright GNU General Public License v3.0
- * \version 2.0
+ * \brief Definition of \c GGEMSLocal, the per-thread staging buffer for logging.
  */
 
 /// \cond
 #include <sstream>
+#include <string>
 /// \endcond
 
 #include "GGEMS/tools/GGEMSLogger.hh"
 
 /*!
  * \struct GGEMSLocal
- * \brief Per-thread logging buffer and context.
+ * \brief Per-thread staging of log lines and their context.
  *
- * Each thread owns one GGEMSLocal instance, avoiding contention during message
- * composition. The global logger only serialises the final emission step.
+ * Each thread owns its instance (declared thread-local in \ref gglog::local),
+ * which accumulates a single line into \c osstream_. The line is emitted by
+ * the back-end when \ref gglog::endl is inserted.
  */
-struct GGEMSLocal final {
+struct GGEMSLocal {
   /*!
-   * \brief Constructs a local buffer with default informational level.
+   * \brief Construct with default severity \c gglog::Level::INFO.
    */
-  GGEMSLocal() : level_{gglog::Level::INFO} {}
+  GGEMSLocal() noexcept : level_{gglog::Level::INFO} {}
 
   /*!
-   * \brief Default destructor, no dynamic resources.
+   * \brief Destructor (no-op).
    */
-   ~GGEMSLocal() = default;
+  ~GGEMSLocal() = default;
 
-  GGEMSLocal(GGEMSLocal const& local) = delete;
-  GGEMSLocal(GGEMSLocal const&& local) = delete;
-  GGEMSLocal& operator=(GGEMSLocal const& local) = delete;
-  GGEMSLocal& operator=(GGEMSLocal const&& local) = delete;
+  GGEMSLocal(GGEMSLocal const&)            = delete;
+  GGEMSLocal(GGEMSLocal&&)                 = delete;
+  GGEMSLocal& operator=(GGEMSLocal const&) = delete;
+  GGEMSLocal& operator=(GGEMSLocal&&)      = delete;
 
   /*!
-   * \brief Tests whether a level passes the global filter.
+   * \brief Query global visibility policy for \p level.
    * \param level Candidate severity.
-   * \return True if the message should be printed, false otherwise.
+   * \return \c true if visible given the current logger policy.
    */
-  [[nodiscard]] bool IsValidLogLevel(gglog::Level const& level) const;
+  [[nodiscard]] bool IsVisible(gglog::Level level) const noexcept;
 
   /*!
-   * \brief Flushes the buffered message to the global logger.
+   * \brief Dispatch the staged message to the \ref GGEMSLogger sink.
    *
-   * \details Emits the line atomically; afterwards the buffer is meant to be
-   *          cleared by `gglog::endl`.
+   * The function gathers \c level_, \c class_name_, \c method_name_ and the
+   * accumulated payload, then calls \ref GGEMSLogger::LogMessage.
+   * The per-thread buffer itself is reset by \ref gglog::endl after this call.
    */
   void WriteMessage() const noexcept;
 
@@ -85,7 +78,9 @@ struct GGEMSLocal final {
 
 namespace gglog {
   /*!
-   * \brief Thread-local instance used by `gglog::io`/`gglog::endl`
+   * \brief Thread-local staging area used by the front-end.
+   *
+   * This instance is written by \ref gglog::io and consumed by \ref gglog::endl.
    */
   extern thread_local GGEMSLocal local;
 }
