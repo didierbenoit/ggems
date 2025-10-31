@@ -20,202 +20,211 @@
 
 /*!
  * \file GGEMSOpenCLPlatform.hh
- * \brief Declaration of the GGEMSOpenCLPlatform class for OpenCL platform abstraction.
+ * \brief Declaration of the GGEMSOpenCLPlatform class for OpenCL 3.0 platform abstraction.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  * \date 2025-10-14
  * \copyright GNU General Public License v3.0
- * \version 2.0
+ * \version 3.0
  *
- * This header defines the GGEMSOpenCLPlatform class which provides a
- * high-level abstraction of an OpenCL platform, allowing comprehensive
- * querying of platform properties, extensions, versions, and attached devices.
+ * This header defines the \c GGEMSOpenCLPlatform class, an OpenCL 3.0 platform
+ * façade that:
+ * - stores the native \c cl::Platform and its stable index,
+ * - discovers and owns all CPU/GPU devices on the platform,
+ * - exposes strongly-typed getters for platform information,
+ * - formats a comprehensive textual report via the GGEMS logger.
+ *
+ * The design is RAII-driven and thread-safe at the logging boundary. Device
+ * ownership is unique and non-transferable (vector of \c std::unique_ptr).
+ * The API emphasises const-correctness and minimal exposure of internals.
  */
+
+/// \cond
+#include <vector>
+#include <string>
+#include <unordered_set>
+/// \endcond
 
 #include "GGEMS/frameworks/GGEMSOpenCLCommons.hh"
 
+// Forward declaration to decouple headers (the destructor is out-of-line).
 class GGEMSOpenCLDevice;
 
 /*!
  * \class GGEMSOpenCLPlatform
- * \brief Encapsulates a single OpenCL platform and its properties.
+ * \brief Encapsulates a single OpenCL 3.0 platform and its CPU/GPU devices.
  *
- * This class represents a native OpenCL platform and provides
- * convenient methods to query platform-specific information, including:
- * - Name, vendor, version, and profile
- * - Supported extensions (with or without version information)
- * - Host timer resolution
- * - ICD loader suffix
- *
- * Each platform instance is responsible for enumerating and holding
- * its associated OpenCL devices (CPU and GPU) through
- * \ref DiscoverDevices.
+ * \note Only CPU and GPU device types are discovered by default. This matches
+ * GGEMS multi-architecture philosophy while avoiding exotic device kinds unless
+ * explicitly needed later.
  */
 class GGEMSOpenCLPlatform final {
 public:
   /*!
-   * \brief Constructs a GGEMSOpenCLPlatform from a native OpenCL platform.
-   * \param platform The native OpenCL platform object (cl::Platform).
-   * \param platform_index Unique index identifying the platform within the system.
+   * \brief Construct a platform façade with a native platform and its stable index.
+   * \param platform        Native OpenCL platform (cl::Platform) to wrap.
+   * \param platform_index  Stable index of this platform in the system enumeration.
    *
-   * The constructor stores the underlying OpenCL handle and prepares
-   * the object for further device discovery and information retrieval.
+   * The constructor extracts the platform extensions list and immediately discovers
+   * CPU/GPU devices. No contexts are created here; that is deferred to higher-level
+   * orchestration (e.g. GGEMSOpenCL / GGEMSManager).
    */
   explicit GGEMSOpenCLPlatform(cl::Platform const& platform, std::size_t platform_index);
 
   /*!
-   * \brief Default constructor deleted.
-   * \note Platforms must be constructed explicitly with a valid OpenCL handle.
+   * \brief Deleted default constructor — a platform façade must wrap a valid platform.
    */
   GGEMSOpenCLPlatform() = delete;
 
   /*!
-   * \brief Destructor.
-   * \note Automatically cleans platform internals; no explicit action required.
+   * \brief Destructor — logs lifecycle and releases owned devices.
+   *
+   * Device objects are destroyed in reverse order of insertion. The native
+   * platform object has no active lifetime management beyond its wrapper.
    */
   ~GGEMSOpenCLPlatform();
 
-  GGEMSOpenCLPlatform(GGEMSOpenCLPlatform const&) = delete;
+  // Non-copyable, non-movable — preserves ownership and index stability.
+  GGEMSOpenCLPlatform(GGEMSOpenCLPlatform const&)            = delete;
   GGEMSOpenCLPlatform& operator=(GGEMSOpenCLPlatform const&) = delete;
 
   /*!
-   * \brief Move constructor (no-throw).
+   * \brief Move constructor (noexcept).
+   *
+   * Enables storage within STL containers such as \c std::vector.
+   * Ownership of devices and extension caches is transferred.
    */
   GGEMSOpenCLPlatform(GGEMSOpenCLPlatform&&) noexcept = default;
 
   /*!
-   * \brief Move assignment (no-throw).
-   * \return Reference to GGEMSOpenCLPlatform
+   * \brief Move assignment operator (noexcept).
+   *
+   * Transfers ownership of all internal data to the destination object.
    */
   GGEMSOpenCLPlatform& operator=(GGEMSOpenCLPlatform&&) noexcept = default;
 
 public:
+  // -------------------- High-level inspection API --------------------
+
   /*!
-   * \brief Checks whether a specific OpenCL extension is supported.
-   * \param extension_name Name of the extension to test.
-   * \return True if the extension is supported, false otherwise.
+   * \brief Check whether a platform-level extension is advertised.
+   * \param extension_name Name of the extension (e.g. "cl_khr_icd").
+   * \return True if present in the platform's extension set, false otherwise.
    */
   [[nodiscard]] bool CheckExtension(std::string_view extension_name) const;
 
   /*!
-   * \brief Retrieves the platform’s human-readable name.
-   * \return Name of the OpenCL platform.
+   * \brief Retrieve the platform's human-readable name.
+   * \return Platform name (e.g. "NVIDIA CUDA", "Intel(R) OpenCL", ...).
    */
   [[nodiscard]] std::string GetName() const;
 
   /*!
-   * \brief Retrieves the supported OpenCL profile string.
-   * \return Typically "FULL_PROFILE" or "EMBEDDED_PROFILE".
+   * \brief Retrieve the supported OpenCL profile string.
+   * \return Typically "FULL_PROFILE" for general-purpose platforms.
    */
   [[nodiscard]] std::string GetProfile() const;
 
   /*!
-   * \brief Retrieves the OpenCL version string.
-   * \return Version string formatted as "OpenCL <major>.<minor> <vendor info>".
+   * \brief Retrieve the platform version string.
+   * \return String formatted as "OpenCL <major>.<minor> <vendor-info>".
    */
   [[nodiscard]] std::string GetVersion() const;
 
   /*!
-   * \brief Retrieves the platform vendor string.
-   * \return Vendor name.
+   * \brief Retrieve the platform vendor string.
+   * \return Vendor name (e.g. "NVIDIA Corporation", "Advanced Micro Devices, Inc.").
    */
   [[nodiscard]] std::string GetVendor() const;
 
   /*!
-   * \brief Retrieves a space-separated list of platform extensions.
-   * \return Space-separated string of extension names.
+   * \brief Retrieve the space-separated list of platform extensions (legacy format).
+   * \return Space-separated extension list (OpenCL core requirement).
    */
   [[nodiscard]] std::string GetExtensions() const;
 
   /*!
-   * \brief Retrieves the platform’s numeric version.
-   * \return The cl_version structure describing (major, minor, patch).
+   * \brief Retrieve the numeric OpenCL version (major/minor/patch packed).
+   * \return \c cl_version with packed fields per OpenCL 3.0 specification.
    */
   [[nodiscard]] cl_version GetNumericVersion() const;
 
   /*!
-   * \brief Retrieves the host timer resolution.
-   * \return Timer resolution in nanoseconds.
+   * \brief Retrieve the host timer resolution in nanoseconds.
+   * \return Timer resolution (\c cl_ulong).
    */
   [[nodiscard]] cl_ulong GetHostTimerResolution() const;
 
   /*!
-   * \brief Retrieves platform extensions along with their version numbers.
-   * \return A vector of cl_name_version elements.
+   * \brief Retrieve the extensions with versions (OpenCL 3.0).
+   * \return Vector of \c cl_name_version for all advertised extensions.
    */
   [[nodiscard]] std::vector<cl_name_version> GetExtensionsWithVersion() const;
 
   /*!
-   * \brief Retrieves the ICD loader suffix for this platform.
-   * \return ICD suffix string (usually vendor-specific).
+   * \brief Retrieve the ICD loader suffix (OpenCL 3.0).
+   * \return ICD suffix string (may be empty if unspecified).
    */
   [[nodiscard]] std::string GetIcdSuffixKhr() const;
 
   /*!
-   * \brief Template method for querying raw platform information arrays.
-   * \tparam T Data type of returned elements.
-   * \param param The OpenCL platform info parameter to query.
-   * \return A vector of type T containing the requested data.
-   */
-  template <typename T>
-  [[nodiscard]] std::vector<T> GetPlatformInfoArray(cl_platform_info const& param) const {
-    std::size_t size = 0;
-    GGOCL_CHECK(::clGetPlatformInfo(platform_(), param, 0, nullptr, &size))
-    std::vector<T> result(size / sizeof(T));
-    GGOCL_CHECK(::clGetPlatformInfo(platform_(), param, size, result.data(), nullptr));
-    return result;
-  }
-
-  /*!
-   * \brief Get a constant view of all devices discovered on this platform.
-   * \return A vector of raw pointers to `GGEMSOpenCLDevice` objects (non-owning).
+   * \brief Print a comprehensive platform report to the terminal using GGEMS logger.
    *
-   * The returned pointers are valid as long as the `GGEMSOpenCLPlatform`
-   * instance remains alive. They must not be deleted or modified.
-   */
-  [[nodiscard]] std::vector<GGEMSOpenCLDevice const*> GetDevices() const;
-
-  /*!
-   * \brief Retrieve the index of this OpenCL platform within the system.
-   * \return The unique index assigned during platform enumeration.
-   *
-   * This index corresponds to the order of discovery in the system’s
-   * OpenCL platform list. It is primarily used for debugging or mapping
-   * user selections to specific platforms.
-   */
-  [[nodiscard]] constexpr std::size_t GetPlatformIndex() const noexcept { return platform_index_; }
-
-  /*!
-   * \brief Retrieve the underlying native OpenCL platform object.
-   * \return Constant reference to the native \c cl::Platform object.
-   *
-   * This method allows interoperability with raw OpenCL APIs or
-   * external libraries that require access to the native handle.
-   * It should be used with care, as modifying the returned object
-   * directly can lead to inconsistent internal state.
-   */
-  [[nodiscard]] cl::Platform const& GetNative() const noexcept { return platform_; }
-
-  /*!
-   * \brief Prints a summary of platform properties to the terminal.
-   *
-   * Information includes name, vendor, version, extensions, and numeric version.
+   * The report includes:
+   * - Basic identity (name, vendor, profile, version),
+   * - Numeric version (decoded as major.minor.patch),
+   * - Host timer resolution,
+   * - Extensions with their version triplets,
+   * - ICD suffix,
+   * - A summary of discovered devices (count only; device details are handled by the device layer).
    */
   void Print() const;
 
   /*!
-   * \brief Releases any internal OpenCL compiler or cached resource.
+   * \brief Explicitly release platform-level resources and owned devices.
+   *
+   * Unloads the platform compiler (if any), clears the device list and cached
+   * extension set. Safe to call multiple times; typically invoked during shutdown.
    */
   void Clean();
 
-private:
+  // -------------------- Accessors for orchestration layers --------------------
+
   /*!
-   * \brief Enumerates all OpenCL devices (CPU and GPU) for this platform.
+   * \brief Get the stable index of this platform in the system enumeration.
+   * \return Zero-based platform index.
+   */
+  [[nodiscard]] std::size_t GetPlatformIndex() const noexcept { return platform_index_; }
+
+  /*!
+   * \brief Access the native \c cl::Platform wrapper (const).
+   * \return Const reference to the wrapped native platform object.
+   */
+  [[nodiscard]] cl::Platform const& GetNative() const noexcept { return platform_; }
+
+  /*!
+   * \brief Non-owning, read-only view of discovered devices.
+   * \return A vector of raw pointers to const \c GGEMSOpenCLDevice instances.
+   *
+   * The platform retains ownership. Returned pointers remain valid until either
+   * \c Clean() is called or the platform object is destroyed.
+   */
+  [[nodiscard]] std::vector<GGEMSOpenCLDevice const*> GetDevices() const;
+
+private:
+  // -------------------- Internal discovery --------------------
+
+  /*!
+   * \brief Discover CPU and GPU devices on this platform and instantiate wrappers.
+   *
+   * Only devices of type \c CL_DEVICE_TYPE_CPU and \c CL_DEVICE_TYPE_GPU are enumerated.
+   * Each native device is wrapped in a \c GGEMSOpenCLDevice and owned by this platform.
    */
   void DiscoverDevices();
 
 private:
-  cl::Platform                                    platform_; /*!< Native OpenCL platform object */
-  std::size_t                                     platform_index_; /*!< Index of this platform in the system */
-  std::vector<std::unique_ptr<GGEMSOpenCLDevice>> devices_; /*!< Devices belonging to this platform */
+  cl::Platform                                    platform_;       /*!< Native OpenCL platform wrapper */
+  std::size_t                                     platform_index_; /*!< Stable platform index */
+  std::unordered_set<std::string>                 extensions_;     /*!< Cached platform extension names */
+  std::vector<std::unique_ptr<GGEMSOpenCLDevice>> devices_;  /*!< Owned CPU/GPU device wrappers */
 };

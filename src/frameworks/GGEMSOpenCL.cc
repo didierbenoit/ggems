@@ -87,8 +87,6 @@ void GGEMSOpenCL::DisableKernelCache() const {
 void GGEMSOpenCL::InitPlatformsAndDevices() {
   gglog::info2("GGEMSOpenCL", "InitPlatformsAndDevices") << "Enumerating OpenCL platforms..." << gglog::endl;
 
-  std::set_terminate(ggocl::TerminateHandler);
-
   std::vector<cl::Platform> platforms;
   GGOCL_CHECK(cl::Platform::get(&platforms));
 

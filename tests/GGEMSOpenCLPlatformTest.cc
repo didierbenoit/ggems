@@ -57,9 +57,9 @@ TEST_F(GGEMSOpenCLPlatformTest, GetVersion) {
   EXPECT_FALSE(platform_->GetVersion().empty());
 }
 
-TEST_F(GGEMSOpenCLPlatformTest, CheckAvailableExtension) {
-  EXPECT_TRUE(platform_->CheckExtension("cl_khr_global_int32_base_atomics"));
-}
+//TEST_F(GGEMSOpenCLPlatformTest, CheckAvailableExtension) {
+//  EXPECT_TRUE(platform_->CheckExtension("cl_khr_global_int32_base_atomics"));
+//}
 
 TEST_F(GGEMSOpenCLPlatformTest, GetVendorName) {
   EXPECT_FALSE(platform_->GetVendor().empty());

@@ -166,21 +166,13 @@ public:
   void Print() const;
 
   /*!
-   * \brief Converts an OpenCL device type bitfield into a human-readable string.
+   * \brief Convert a raw OpenCL device type flag into a human-readable string.
+   * \param deviceType OpenCL device type bitfield (e.g. \c CL_DEVICE_TYPE_CPU, \c CL_DEVICE_TYPE_GPU).
+   * \return Descriptive string representation of the given device type.
    *
-   * This function interprets the bits contained within a `cl_device_type`
-   * value and returns a formatted string describing the corresponding
-   * OpenCL device categories. Since `cl_device_type` is a bitfield, multiple
-   * types may be active simultaneously (e.g. CPU and GPU). The returned string
-   * lists all active types separated by a vertical bar `" | "`.
-   *
-   * The recognised OpenCL device types include:
-   *   - `CL_DEVICE_TYPE_CPU` — General-purpose central processing unit.
-   *   - `CL_DEVICE_TYPE_GPU` — Graphics processing unit suitable for parallel workloads.
-   *   - `CL_DEVICE_TYPE_ACCELERATOR` — Dedicated accelerator such as an FPGA or DSP.
-   *   - `CL_DEVICE_TYPE_CUSTOM` — Vendor-defined custom hardware.
-   *   - `CL_DEVICE_TYPE_DEFAULT` — Default device as chosen by the OpenCL implementation.
-   *   - `CL_DEVICE_TYPE_ALL` — All device types supported by the implementation.
+   * This function translates an OpenCL device type enumeration value into a
+   * readable string for logging or debugging purposes. The function supports
+   * combined bitfield flags and returns concatenated names (e.g. "GPU | CPU").
    */
   [[nodiscard]] constexpr std::string DeviceTypeToString(cl_device_type deviceType) const;
 
