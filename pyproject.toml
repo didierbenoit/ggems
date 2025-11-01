@@ -7,7 +7,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "ggems"
-version = "2.0"
+version = "2.0.0"
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE.md"]
 description="GPU Geant4-based Monte Carlo Simulations"
@@ -15,7 +15,7 @@ readme = "README.md"
 authors = [
   { name = "Didier BENOIT", email = "didier.benoit@inserm.fr" },
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: C++",
@@ -33,11 +33,7 @@ classifiers = [
 
 [tool.scikit-build]
 minimum-version = "build-system.requires"
-ninja.version = ">=1.5"
-cmake.build-type = "Debug"
+ninja.version = ">=1.10"
 cmake.args = ["-G Ninja"]
 build-dir = "build/{wheel_tag}"
 build.verbose = true
-
-[tool.scikit-build.cmake.define]
-BUILD_TESTING = "ON"

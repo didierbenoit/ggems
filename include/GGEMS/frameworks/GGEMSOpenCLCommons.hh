@@ -266,8 +266,8 @@ namespace ggocl {
      * \return \c std::vector<T> containing the result (may be empty).
      *
      * \details Two-step query:
-     *  1) ask for the required byte size (via \ref ggocl::utils::InfoInvoker::Size),
-     *  2) allocate and fetch the payload (via \ref ggocl::utils::InfoInvoker::Data).
+     *  1) query the required byte size using InfoInvoker<T>::Size()
+     *  2) allocate and fetch the payload using InfoInvoker<T>::Data().
      */
     template <typename T, typename ObjType>
     [[nodiscard]] inline std::vector<T> GetArray(ObjType const& obj, cl_uint param) {

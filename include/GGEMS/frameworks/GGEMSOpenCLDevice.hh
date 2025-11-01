@@ -103,58 +103,84 @@ public: // ----- Identity & indices -----
    */
   [[nodiscard]] cl::Device const& GetNative() const noexcept { return device_; }
 
-public: // ----- String properties -----
-  /*!
-   * \brief Device human-readable name.
-   */
+public: // ----- Identity properties -----
   [[nodiscard]] std::string GetName() const;
 
-  /*!
-   * \brief Device vendor string.
-   */
   [[nodiscard]] std::string GetVendor() const;
 
-  /*!
-   * \brief OpenCL device version string.
-   */
   [[nodiscard]] std::string GetVersion() const;
 
+  [[nodiscard]] std::string GetDriverVersion() const;
+
+  [[nodiscard]] std::string GetProfile() const;
+
+  [[nodiscard]] std::string GetOpenCLCVersion() const;
+
+  [[nodiscard]] cl_version GetNumericVersion() const;
+
 public: // ----- Numeric identifiers & types -----
-  /*!
-   * \brief Vendor numeric identifier (implementation-defined).
-   */
   [[nodiscard]] cl_uint GetVendorId() const;
 
-  /*!
-   * \brief Device type bitfield (e.g., \c CL_DEVICE_TYPE_GPU).
-   */
   [[nodiscard]] cl_device_type GetType() const;
 
+public: // ----- Compute properties -----
+  [[nodiscard]] cl_uint GetMaxComputeUnits() const;
+
+  [[nodiscard]] cl_uint GetMaxClockFrequency() const;
+
+  [[nodiscard]] std::size_t GetMaxWorkGroupSize() const;
+
+  [[nodiscard]] cl_uint GetMaxWorkItemDimensions() const;
+
+  [[nodiscard]] std::vector<std::size_t> GetMaxWorkItemSizes() const;
+
+  [[nodiscard]] std::size_t GetPreferredWorkGroupSizeMultiple() const;
+
+public: // ----- Vectorisation properties -----
+  [[nodiscard]] cl_uint GetPreferredVectorWidthChar() const;
+
+  [[nodiscard]] cl_uint GetPreferredVectorWidthShort() const;
+
+  [[nodiscard]] cl_uint GetPreferredVectorWidthInt() const;
+
+  [[nodiscard]] cl_uint GetPreferredVectorWidthLong() const;
+
+  [[nodiscard]] cl_uint GetPreferredVectorWidthFloat() const;
+
+  [[nodiscard]] cl_uint GetPreferredVectorWidthDouble() const;
+
+  [[nodiscard]] cl_uint GetPreferredVectorWidthHalf() const;
+
+  [[nodiscard]] cl_uint GetNativeVectorWidthChar() const;
+
+  [[nodiscard]] cl_uint GetNativeVectorWidthShort() const;
+
+  [[nodiscard]] cl_uint GetNativeVectorWidthInt() const;
+
+  [[nodiscard]] cl_uint GetNativeVectorWidthLong() const;
+
+  [[nodiscard]] cl_uint GetNativeVectorWidthFloat() const;
+
+  [[nodiscard]] cl_uint GetNativeVectorWidthDouble() const;
+
+  [[nodiscard]] cl_uint GetNativeVectorWidthHalf() const;
+
 public: // ----- Images -----
-  /*!
-   * \brief Max 2D image width (pixels).
-   */
-//  [[nodiscard]] std::size_t GetImage2DMaxWidth() const;
+  [[nodiscard]] cl_bool GetImageSupport() const;
 
-  /*!
-   * \brief Max 2D image height (pixels).
-   */
-//  [[nodiscard]] std::size_t GetImage2DMaxHeight() const;
+  [[nodiscard]] std::size_t GetImage2DMaxWidth() const;
+  
+  [[nodiscard]] std::size_t GetImage2DMaxHeight() const;
 
-  /*!
-   * \brief Max 3D image width (voxels).
-   */
-//  [[nodiscard]] std::size_t GetImage3DMaxWidth() const;
+  [[nodiscard]] std::size_t GetImage3DMaxWidth() const;
 
-  /*!
-   * \brief Max 3D image height (voxels).
-   */
-//  [[nodiscard]] std::size_t GetImage3DMaxHeight() const;
+  [[nodiscard]] std::size_t GetImage3DMaxHeight() const;
 
-  /*!
-   * \brief Max 3D image depth (voxels).
-   */
-//  [[nodiscard]] std::size_t GetImage3DMaxDepth() const;
+  [[nodiscard]] std::size_t GetImage3DMaxDepth() const;
+
+  [[nodiscard]] std::size_t GetImageMaxBufferSize() const;
+
+  [[nodiscard]] std::size_t GetImageMaxArraySize() const;
 
 public:
   /*!
@@ -175,6 +201,17 @@ public:
    * combined bitfield flags and returns concatenated names (e.g. "GPU | CPU").
    */
   [[nodiscard]] std::string DeviceTypeToString(cl_device_type deviceType) const;
+
+  [[nodiscard]] std::string VendorIdToString(cl_uint vendor_id) const;
+
+  [[nodiscard]] std::string ClBoolToString(cl_bool flag) const;
+
+private:
+  void PrintIdentity() const;
+  void PrintTypeID() const;
+  void PrintCompute() const;
+  void PrintVectorisation() const;
+  void PrintImages() const;
 
 private:
   cl::Device  device_; /*!< Native OpenCL device handle */

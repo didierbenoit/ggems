@@ -1,0 +1,41 @@
+#projectlogo img {
+  width: 128px;   /* ajuste la largeur */
+  height: auto;   /* conserve les proportions */
+}
+
+#projectlogo {
+  float: left;
+  margin-right: 24px; /* espace avec le titre */
+}
+
+#projectname {
+  font-size: 42px;   /* augmente la valeur à ton goût */
+  font-weight: bold; /* gras pour renforcer */
+  margin-bottom: 16px;
+}
+
+#projectbrief {
+  font-size: 24px;   /* choisis la taille */
+  font-style: italic; /* optionnel : style italique */
+  margin-top: 0;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap');
+
+/* Blocs de code et inline code */
+div.line {
+  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace; /* police moderne monospace */
+  font-size: 16px;      /* taille lisible */
+  line-height: 1.5;
+}
+
+
+/* Survol d'une ligne */
+div.line:hover {
+  background-color: #d2e7d6;
+}
+
+div.line a:hover {
+  text-decoration: underline; /* souligne au survol */
+  cursor: pointer;             /* change le curseur en main */
+}
