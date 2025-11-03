@@ -39,6 +39,7 @@ using ggocl::utils::GetArray;
 //using ggocl::utils::ExtractExtensions;
 //using ggocl::utils::HasExtension;
 using ggocl::utils::ClVersionToString;
+using ggocl::utils::ClNameVersionToString;
 
 GGEMSOpenCLDevice::GGEMSOpenCLDevice(cl::Device const& device, std::size_t platform_index, std::size_t device_index)
 : device_{device}, platform_index_{platform_index}, device_index_{device_index} {
@@ -220,6 +221,145 @@ cl_uint GGEMSOpenCLDevice::GetMaxSamplers() const {
   return Get<cl_uint>(device_, CL_DEVICE_MAX_SAMPLERS);
 }
 
+cl_ulong GGEMSOpenCLDevice::GetGlobalMemSize() const {
+  return Get<cl_ulong>(device_, CL_DEVICE_GLOBAL_MEM_SIZE);
+}
+
+cl_device_mem_cache_type GGEMSOpenCLDevice::GetGlobalMemCacheType() const {
+  return Get<cl_device_mem_cache_type>(device_, CL_DEVICE_GLOBAL_MEM_CACHE_TYPE);
+}
+
+cl_uint GGEMSOpenCLDevice::GetGlobalMemCacheLineSize() const {
+  return Get<cl_uint>(device_, CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE);
+}
+
+cl_ulong GGEMSOpenCLDevice::GetGlobalMemCacheSize() const {
+  return Get<cl_ulong>(device_, CL_DEVICE_GLOBAL_MEM_CACHE_SIZE);
+}
+
+cl_ulong GGEMSOpenCLDevice::GetLocalMemSize() const {
+  return Get<cl_ulong>(device_, CL_DEVICE_LOCAL_MEM_SIZE);
+}
+
+cl_device_local_mem_type GGEMSOpenCLDevice::GetLocalMemType() const {
+  return Get<cl_device_local_mem_type>(device_, CL_DEVICE_LOCAL_MEM_TYPE);
+}
+
+cl_ulong GGEMSOpenCLDevice::GetMaxMemAllocSize() const {
+  return Get<cl_ulong>(device_, CL_DEVICE_MAX_MEM_ALLOC_SIZE);
+}
+
+cl_ulong GGEMSOpenCLDevice::GetMaxConstantBufferSize() const {
+  return Get<cl_ulong>(device_, CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE);
+}
+
+cl_uint GGEMSOpenCLDevice::GetMaxConstantArgs() const {
+  return Get<cl_uint>(device_, CL_DEVICE_MAX_CONSTANT_ARGS);
+}
+
+cl_uint GGEMSOpenCLDevice::GetMemBaseAddrAlign() const {
+  return Get<cl_uint>(device_, CL_DEVICE_MEM_BASE_ADDR_ALIGN);
+}
+
+cl_uint GGEMSOpenCLDevice::GetMinDataTypeAlignSize() const {
+  return Get<cl_uint>(device_, CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE);
+}
+
+cl_bool GGEMSOpenCLDevice::GetHostUnifiedMemory() const {
+  return Get<cl_bool>(device_, CL_DEVICE_HOST_UNIFIED_MEMORY);
+}
+
+std::string GGEMSOpenCLDevice::GetILVersion() const {
+  return Get<std::string>(device_, CL_DEVICE_IL_VERSION);
+}
+
+std::vector<cl_name_version> GGEMSOpenCLDevice::GetILSWithVersion() const {
+  return GetArray<cl_name_version>(device_, CL_DEVICE_ILS_WITH_VERSION);
+}
+
+std::string GGEMSOpenCLDevice::GetSpirVersions() const {
+  if (!GetILVersion().empty()) {
+    return Get<std::string>(device_, CL_DEVICE_SPIR_VERSIONS);
+  } else {
+    return "";
+  }
+}
+
+cl_command_queue_properties GGEMSOpenCLDevice::GetQueueProperties() const {
+  return Get<cl_command_queue_properties>(device_, CL_DEVICE_QUEUE_PROPERTIES);
+}
+
+cl_command_queue_properties GGEMSOpenCLDevice::GetQueueOnHostProperties() const {
+  return Get<cl_command_queue_properties>(device_, CL_DEVICE_QUEUE_ON_HOST_PROPERTIES);
+}
+
+cl_command_queue_properties GGEMSOpenCLDevice::GetQueueOnDeviceProperties() const {
+  return Get<cl_command_queue_properties>(device_, CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES);
+}
+
+cl_uint GGEMSOpenCLDevice::GetQueueOnDevicePreferredSize() const {
+  return Get<cl_uint>(device_, CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE);
+}
+
+cl_uint GGEMSOpenCLDevice::GetMaxOnDeviceQueues() const {
+  return Get<cl_uint>(device_, CL_DEVICE_MAX_ON_DEVICE_QUEUES);
+}
+
+cl_uint GGEMSOpenCLDevice::GetMaxOnDeviceEvents() const {
+  return Get<cl_uint>(device_, CL_DEVICE_MAX_ON_DEVICE_EVENTS);
+}
+
+cl_device_svm_capabilities GGEMSOpenCLDevice::GetSVMCapabilities() const {
+  return Get<cl_device_svm_capabilities>(device_, CL_DEVICE_SVM_CAPABILITIES);
+}
+
+cl_device_atomic_capabilities GGEMSOpenCLDevice::GetAtomicMemoryCapabilities() const {
+  return Get<cl_device_atomic_capabilities>(device_, CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES);
+}
+
+cl_device_atomic_capabilities GGEMSOpenCLDevice::GetAtomicFenceCapabilities() const {
+  return Get<cl_device_atomic_capabilities>(device_, CL_DEVICE_ATOMIC_FENCE_CAPABILITIES);
+}
+
+cl_uint GGEMSOpenCLDevice::GetMaxNumSubGroups() const {
+  return Get<cl_uint>(device_, CL_DEVICE_MAX_NUM_SUB_GROUPS);
+}
+
+cl_bool GGEMSOpenCLDevice::GetSubGroupIndependentForwardProgress() const {
+  return Get<cl_bool>(device_, CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS);
+}
+
+cl_bool GGEMSOpenCLDevice::GetNonUniformWorkGroupSupport() const {
+  return Get<cl_bool>(device_, CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT);
+}
+
+cl_bool GGEMSOpenCLDevice::GetWorkGroupCollectiveFunctionsSupport() const {
+  return Get<cl_bool>(device_, CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT);
+}
+cl_bool GGEMSOpenCLDevice::GetGenericAddressSpaceSupport() const {
+  return Get<cl_bool>(device_, CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT);
+}
+
+cl_device_device_enqueue_capabilities GGEMSOpenCLDevice::GetDeviceEnqueueCapabilities() const {
+  return Get<cl_device_device_enqueue_capabilities>(device_, CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES);
+}
+
+cl_uint GGEMSOpenCLDevice::GetPartitionMaxSubDevices() const {
+  return Get<cl_uint>(device_, CL_DEVICE_PARTITION_MAX_SUB_DEVICES);
+}
+
+std::vector<cl_device_partition_property> GGEMSOpenCLDevice::GetPartitionProperties() const {
+  return GetArray<cl_device_partition_property>(device_, CL_DEVICE_PARTITION_PROPERTIES);
+}
+
+cl_device_affinity_domain GGEMSOpenCLDevice::GetPartitionAffinityDomain() const {
+  return Get<cl_device_affinity_domain>(device_, CL_DEVICE_PARTITION_AFFINITY_DOMAIN);
+}
+
+std::vector<cl_device_partition_property> GGEMSOpenCLDevice::GetPartitionType() const {
+  return GetArray<cl_device_partition_property>(device_, CL_DEVICE_PARTITION_TYPE);
+}
+
 std::string GGEMSOpenCLDevice::DeviceTypeToString(cl_device_type deviceType) const {
   std::ostringstream oss;
   bool first = true;
@@ -261,8 +401,190 @@ std::string GGEMSOpenCLDevice::VendorIdToString(cl_uint vendor_id) const {
   }
 }
 
+std::string GGEMSOpenCLDevice::CacheTypeToString(cl_device_mem_cache_type type) const {
+  switch (type) {
+    case CL_NONE: return "None";
+    case CL_READ_ONLY_CACHE: return "Read-only cache";
+    case CL_READ_WRITE_CACHE: return "Read/Write cache";
+    default: {
+      std::ostringstream oss;
+      oss << "Unknown (0x" << std::hex << type << std::dec << ")";
+      return oss.str();
+    }
+  }
+}
+
 std::string GGEMSOpenCLDevice::ClBoolToString(cl_bool flag) const {
   return (flag == CL_TRUE) ? "CL_TRUE" : "CL_FALSE";
+}
+
+std::string GGEMSOpenCLDevice::LocalMemTypeToString(cl_device_local_mem_type type) const {
+  switch (type) {
+    case CL_NONE: return "None";
+    case CL_LOCAL: return "Local memory (on-chip)";
+    case CL_GLOBAL: return "Global memory (emulated local)";
+    default: {
+      std::ostringstream oss;
+      oss << "Unknown (0x" << std::hex << type << std::dec << ")";
+      return oss.str();
+    }
+  }
+}
+
+std::string GGEMSOpenCLDevice::QueuePropertiesToString(cl_command_queue_properties props) const {
+  std::ostringstream oss;
+  if (props & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    oss << "Out-of-order execution, ";
+  if (props & CL_QUEUE_PROFILING_ENABLE)
+    oss << "Profiling enabled, ";
+  #ifdef CL_QUEUE_ON_DEVICE
+  if (props & CL_QUEUE_ON_DEVICE)
+    oss << "On-device queue, ";
+  #endif
+  #ifdef CL_QUEUE_ON_DEVICE_DEFAULT
+  if (props & CL_QUEUE_ON_DEVICE_DEFAULT)
+    oss << "Default on-device queue, ";
+  #endif
+
+  std::string result = oss.str();
+  if (!result.empty())
+    result.erase(result.size() - 2);
+  else
+    result = "None";
+
+  return result;
+}
+
+std::string GGEMSOpenCLDevice::SVMCapabilitiesToString(cl_device_svm_capabilities caps) const {
+  std::ostringstream oss;
+  if (caps & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER)
+    oss << "Coarse-grain buffer, ";
+  if (caps & CL_DEVICE_SVM_FINE_GRAIN_BUFFER)
+    oss << "Fine-grain buffer, ";
+  if (caps & CL_DEVICE_SVM_FINE_GRAIN_SYSTEM)
+    oss << "Fine-grain system, ";
+  if (caps & CL_DEVICE_SVM_ATOMICS)
+    oss << "Atomics, ";
+
+  std::string out = oss.str();
+  if (!out.empty())
+    out.erase(out.size() - 2);
+  else
+    out = "None";
+  return out;
+}
+
+std::string GGEMSOpenCLDevice::AtomicCapabilitiesToString(cl_device_atomic_capabilities caps) const {
+  std::ostringstream oss;
+  #ifdef CL_DEVICE_ATOMIC_ORDER_RELAXED
+  if (caps & CL_DEVICE_ATOMIC_ORDER_RELAXED) oss << "Relaxed order, ";
+  #endif
+  #ifdef CL_DEVICE_ATOMIC_ORDER_ACQ_REL
+  if (caps & CL_DEVICE_ATOMIC_ORDER_ACQ_REL) oss << "Acquire/Release, ";
+  #endif
+  #ifdef CL_DEVICE_ATOMIC_ORDER_SEQ_CST
+  if (caps & CL_DEVICE_ATOMIC_ORDER_SEQ_CST) oss << "Sequentially consistent, ";
+  #endif
+  #ifdef CL_DEVICE_ATOMIC_SCOPE_WORK_ITEM
+  if (caps & CL_DEVICE_ATOMIC_SCOPE_WORK_ITEM) oss << "Scope: Work-item, ";
+  #endif
+  #ifdef CL_DEVICE_ATOMIC_SCOPE_WORK_GROUP
+  if (caps & CL_DEVICE_ATOMIC_SCOPE_WORK_GROUP) oss << "Scope: Work-group, ";
+  #endif
+  #ifdef CL_DEVICE_ATOMIC_SCOPE_DEVICE
+  if (caps & CL_DEVICE_ATOMIC_SCOPE_DEVICE) oss << "Scope: Device, ";
+  #endif
+  #ifdef CL_DEVICE_ATOMIC_SCOPE_ALL_DEVICES
+  if (caps & CL_DEVICE_ATOMIC_SCOPE_ALL_DEVICES) oss << "Scope: All devices, ";
+  #endif
+
+  std::string s = oss.str();
+  if (!s.empty()) s.erase(s.size() - 2);
+  else s = "None";
+  return s;
+}
+
+std::string GGEMSOpenCLDevice::DeviceEnqueueCapabilitiesToString(cl_device_device_enqueue_capabilities caps) const {
+  std::ostringstream oss;
+  #ifdef CL_DEVICE_QUEUE_SUPPORTED
+  if (caps & CL_DEVICE_QUEUE_SUPPORTED) oss << "Device queues supported, ";
+  #endif
+  #ifdef CL_DEVICE_QUEUE_REPLACEABLE_DEFAULT
+  if (caps & CL_DEVICE_QUEUE_REPLACEABLE_DEFAULT) oss << "Default queue replaceable, ";
+  #endif
+  #ifdef CL_DEVICE_QUEUE_CROSS_DEVICE
+  if (caps & CL_DEVICE_QUEUE_CROSS_DEVICE) oss << "Cross-device enqueue, ";
+  #endif
+  #ifdef CL_DEVICE_QUEUE_CROSS_CONTEXT
+  if (caps & CL_DEVICE_QUEUE_CROSS_CONTEXT) oss << "Cross-context enqueue, ";
+  #endif
+
+  std::string s = oss.str();
+  if (!s.empty())
+    s.erase(s.size() - 2);
+  else
+    s = "None";
+  return s;
+}
+
+std::string GGEMSOpenCLDevice::PartitionPropertiesToString(std::vector<cl_device_partition_property> const& props) const {
+  if (props.empty()) return "None";
+
+  std::ostringstream oss;
+  for (auto p : props) {
+    switch (p) {
+      case CL_DEVICE_PARTITION_EQUALLY:
+       oss << "Equally, ";
+        break;
+      case CL_DEVICE_PARTITION_BY_COUNTS:
+        oss << "By counts, ";
+        break;
+      case CL_DEVICE_PARTITION_BY_AFFINITY_DOMAIN:
+        oss << "By affinity domain, ";
+        break;
+      default:
+        break;
+    }
+  }
+
+  std::string s = oss.str();
+  if (!s.empty())
+    s.erase(s.size() - 2);
+  else s = "None";
+    return s;
+}
+
+std::string GGEMSOpenCLDevice::AffinityDomainToString(cl_device_affinity_domain domain) const {
+  std::ostringstream oss;
+
+  #ifdef CL_DEVICE_AFFINITY_DOMAIN_NUMA
+  if (domain & CL_DEVICE_AFFINITY_DOMAIN_NUMA) oss << "NUMA, ";
+  #endif
+  #ifdef CL_DEVICE_AFFINITY_DOMAIN_L4_CACHE
+  if (domain & CL_DEVICE_AFFINITY_DOMAIN_L4_CACHE) oss << "L4 cache, ";
+  #endif
+  #ifdef CL_DEVICE_AFFINITY_DOMAIN_L3_CACHE
+  if (domain & CL_DEVICE_AFFINITY_DOMAIN_L3_CACHE) oss << "L3 cache, ";
+  #endif
+  #ifdef CL_DEVICE_AFFINITY_DOMAIN_L2_CACHE
+  if (domain & CL_DEVICE_AFFINITY_DOMAIN_L2_CACHE)
+    oss << "L2 cache, ";
+  #endif
+  #ifdef CL_DEVICE_AFFINITY_DOMAIN_L1_CACHE
+  if (domain & CL_DEVICE_AFFINITY_DOMAIN_L1_CACHE)
+    oss << "L1 cache, ";
+  #endif
+  #ifdef CL_DEVICE_AFFINITY_DOMAIN_NEXT_PARTITIONABLE
+  if (domain & CL_DEVICE_AFFINITY_DOMAIN_NEXT_PARTITIONABLE)
+    oss << "Next partitionable, ";
+  #endif
+
+  std::string s = oss.str();
+  if (!s.empty())
+    s.erase(s.size() - 2);
+  else
+    s = "None";
+  return s;
 }
 
 void GGEMSOpenCLDevice::PrintIdentity() const {
@@ -362,6 +684,44 @@ void GGEMSOpenCLDevice::PrintVectorisation() const {
     << GetNativeVectorWidthHalf() << gglog::endl;
 }
 
+void GGEMSOpenCLDevice::PrintMemory() const {
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Global Mem Size: "
+    << GetGlobalMemSize() << " bytes" << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Global Mem Cache Type: "
+    << CacheTypeToString(GetGlobalMemCacheType()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Global Mem Cache Line Size: "
+    << GetGlobalMemCacheLineSize() << " bytes" << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Global Mem Cache Size: "
+    << GetGlobalMemCacheSize() << " bytes" << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Local Mem Size: "
+    << GetLocalMemSize() << " bytes" << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Local Mem Size: "
+    << LocalMemTypeToString(GetLocalMemType()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Max Mem Alloc Size: "
+    << GetMaxMemAllocSize() << " bytes" << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Max Constant Buffer Size: "
+    << GetMaxConstantBufferSize() << " bytes" << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Max Constant Args: "
+    << GetMaxConstantArgs() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Mem Base Addr Align: "
+    << GetMemBaseAddrAlign() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Min Data Type Align Size: "
+    << GetMinDataTypeAlignSize() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Host Unified Memory: "
+    << ClBoolToString(GetHostUnifiedMemory()) << gglog::endl;
+}
+
 void GGEMSOpenCLDevice::PrintImages() const {
    gglog::info("GGEMSOpenCLDevice", "PrintImages") << "-> Image Support: "
     << ClBoolToString(GetImageSupport()) << gglog::endl;
@@ -406,6 +766,75 @@ void GGEMSOpenCLDevice::PrintImages() const {
     << GetMaxSamplers() << gglog::endl;
 }
 
+void GGEMSOpenCLDevice::PrintILSpirV() const {
+  gglog::info("GGEMSOpenCLDevice", "PrintILSpirV") << "-> IL Version: "
+    << ClNameVersionToString(GetILSWithVersion()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintILSpirV") << "-> Spir-V Versions: "
+    << GetSpirVersions() << gglog::endl;
+}
+
+void GGEMSOpenCLDevice::PrintQueueDeviceSide() const {
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Queue Properties: "
+    << QueuePropertiesToString(GetQueueProperties()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Queue On Host Properties: "
+    << QueuePropertiesToString(GetQueueOnHostProperties()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Queue On Device Properties: "
+    << QueuePropertiesToString(GetQueueOnDeviceProperties()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Queue On Device Preferred Size: "
+    << GetQueueOnDevicePreferredSize() << " bytes" << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Max On Device Queues: "
+    << GetMaxOnDeviceQueues() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Max On Device Events: "
+    << GetMaxOnDeviceEvents() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> SVM Capabilities: "
+    << SVMCapabilitiesToString(GetSVMCapabilities()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Atomic Memory Capabilities: "
+    << AtomicCapabilitiesToString(GetAtomicMemoryCapabilities()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Atomic Fence Capabilities: "
+    << AtomicCapabilitiesToString(GetAtomicFenceCapabilities()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Max Num Sub Groups: "
+    << GetMaxNumSubGroups() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Sub Group Independent Forward Progress: "
+    << ClBoolToString(GetSubGroupIndependentForwardProgress()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Non Uniform Workgroup Support: "
+    << ClBoolToString(GetNonUniformWorkGroupSupport()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Workgroup Collective Functions Support: "
+    << ClBoolToString(GetWorkGroupCollectiveFunctionsSupport()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Generic Address Space Support: "
+    << ClBoolToString(GetGenericAddressSpaceSupport()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Device Enqueue Capabilities: "
+    << DeviceEnqueueCapabilitiesToString(GetDeviceEnqueueCapabilities()) << gglog::endl;
+}
+
+void GGEMSOpenCLDevice::PrintPartition() const {
+  gglog::info("GGEMSOpenCLDevice", "PrintPartition") << "-> Partition Max Sub Devices: "
+    << GetPartitionMaxSubDevices() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintPartition") << "-> Partition Properties: "
+    << PartitionPropertiesToString(GetPartitionProperties()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintPartition") << "-> Partition Affinity Domain: "
+    << AffinityDomainToString(GetPartitionAffinityDomain()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintPartition") << "-> Partition Type: "
+    << PartitionPropertiesToString(GetPartitionType()) << gglog::endl;
+}
+
 void GGEMSOpenCLDevice::Print() const {
   gglog::info("GGEMSOpenCLDevice", "Print") << "----- Device [" 
     << platform_index_ << ":" << device_index_ << "] -----" << gglog::endl;
@@ -414,5 +843,9 @@ void GGEMSOpenCLDevice::Print() const {
   PrintTypeID();
   PrintCompute();
   PrintVectorisation();
+  PrintMemory();
   PrintImages();
+  PrintILSpirV();
+  PrintQueueDeviceSide();
+  PrintPartition();
 }

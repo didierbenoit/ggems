@@ -44,6 +44,7 @@
 #include <unordered_set>
 /// \endcond
 
+#define CL_ENABLE_SPIRV_EXTENSIONS
 #ifdef __APPLE__
   #include <OpenCL/opencl.hpp>
 #else
@@ -355,6 +356,5 @@ namespace ggocl {
       }
       return oss.str();
     }
-
   } // namespace utils
 } // namespace ggocl

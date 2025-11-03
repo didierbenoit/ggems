@@ -196,9 +196,77 @@ public: // ----- Images -----
 
   [[nodiscard]] cl_uint GetMaxSamplers() const;
 
-  [[nodiscard]] std::size_t GetGlobalMemSize() const;
+public: // ----- Memory -----
+  [[nodiscard]] cl_ulong GetGlobalMemSize() const;
 
-  CL_DEVICE_GLOBAL_MEM_SIZE, CL_DEVICE_GLOBAL _MEM_CACHE_TYPE/LINE_SIZE/SIZE, CL_DEVICE_LOCAL_MEM_SIZE, CL_DEVICE_MAX_MEM_ALLOC_SIZE, CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE, CL_DEVICE_MAX_CONSTANT_ARGS, CL_DEVICE_MEM_BASE_ADDR_ALIGN, CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE
+  [[nodiscard]] cl_device_mem_cache_type GetGlobalMemCacheType() const;
+
+  [[nodiscard]] cl_uint GetGlobalMemCacheLineSize() const;
+
+  [[nodiscard]] cl_ulong GetGlobalMemCacheSize() const;
+
+  [[nodiscard]] cl_ulong GetLocalMemSize() const;
+
+  [[nodiscard]] cl_device_local_mem_type GetLocalMemType() const;
+
+  [[nodiscard]] cl_ulong GetMaxMemAllocSize() const;
+
+  [[nodiscard]] cl_ulong GetMaxConstantBufferSize() const;
+
+  [[nodiscard]] cl_uint GetMaxConstantArgs() const;
+
+  [[nodiscard]] cl_uint GetMemBaseAddrAlign() const;
+
+  [[nodiscard]] cl_uint GetMinDataTypeAlignSize() const;
+
+  [[nodiscard]] cl_bool GetHostUnifiedMemory() const;
+
+public: // ----- IL/SpirV -----
+  [[nodiscard]] std::string GetILVersion() const;
+
+  [[nodiscard]] std::vector<cl_name_version> GetILSWithVersion() const;
+
+  [[nodiscard]] std::string GetSpirVersions() const;
+
+public: // ----- Queue/Device-side -----
+  [[nodiscard]] cl_command_queue_properties GetQueueProperties() const;
+
+  [[nodiscard]] cl_command_queue_properties GetQueueOnHostProperties() const;
+
+  [[nodiscard]] cl_command_queue_properties GetQueueOnDeviceProperties() const;
+
+  [[nodiscard]] cl_uint GetQueueOnDevicePreferredSize() const;
+
+  [[nodiscard]] cl_uint GetMaxOnDeviceQueues() const;
+
+  [[nodiscard]] cl_uint GetMaxOnDeviceEvents() const;
+
+  [[nodiscard]] cl_device_svm_capabilities GetSVMCapabilities() const;
+
+  [[nodiscard]] cl_device_atomic_capabilities GetAtomicMemoryCapabilities() const;
+
+  [[nodiscard]] cl_device_atomic_capabilities GetAtomicFenceCapabilities() const;
+
+  [[nodiscard]] cl_uint GetMaxNumSubGroups() const;
+
+  [[nodiscard]] cl_bool GetSubGroupIndependentForwardProgress() const;
+
+  [[nodiscard]] cl_bool GetNonUniformWorkGroupSupport() const;
+
+  [[nodiscard]] cl_bool GetWorkGroupCollectiveFunctionsSupport() const;
+
+  [[nodiscard]] cl_bool GetGenericAddressSpaceSupport() const;
+
+  [[nodiscard]] cl_device_device_enqueue_capabilities GetDeviceEnqueueCapabilities() const;
+
+public: // ----- Partition -----
+  [[nodiscard]] cl_uint GetPartitionMaxSubDevices() const;
+
+  [[nodiscard]] std::vector<cl_device_partition_property> GetPartitionProperties() const;
+
+  [[nodiscard]] cl_device_affinity_domain GetPartitionAffinityDomain() const;
+
+  [[nodiscard]] std::vector<cl_device_partition_property> GetPartitionType() const;
 
 public:
   /*!
@@ -224,12 +292,32 @@ public:
 
   [[nodiscard]] std::string ClBoolToString(cl_bool flag) const;
 
+  [[nodiscard]] std::string CacheTypeToString(cl_device_mem_cache_type type) const;
+
+  [[nodiscard]] std::string LocalMemTypeToString(cl_device_local_mem_type type) const;
+
+  [[nodiscard]] std::string QueuePropertiesToString(cl_command_queue_properties props) const;
+
+  [[nodiscard]] std::string SVMCapabilitiesToString(cl_device_svm_capabilities caps) const;
+
+  [[nodiscard]] std::string AtomicCapabilitiesToString(cl_device_atomic_capabilities caps) const;
+
+  [[nodiscard]] std::string DeviceEnqueueCapabilitiesToString(cl_device_device_enqueue_capabilities caps) const;
+
+  [[nodiscard]] std::string PartitionPropertiesToString(std::vector<cl_device_partition_property> const& props) const;
+
+  [[nodiscard]] std::string AffinityDomainToString(cl_device_affinity_domain domain) const;
+
 private:
   void PrintIdentity() const;
   void PrintTypeID() const;
   void PrintCompute() const;
   void PrintVectorisation() const;
+  void PrintMemory() const;
   void PrintImages() const;
+  void PrintILSpirV() const;
+  void PrintQueueDeviceSide() const;
+  void PrintPartition() const;
 
 private:
   cl::Device  device_; /*!< Native OpenCL device handle */
