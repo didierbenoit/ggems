@@ -192,6 +192,34 @@ cl_bool GGEMSOpenCLDevice::GetImageSupport() const {
   return Get<cl_bool>(device_, CL_DEVICE_IMAGE_SUPPORT);
 }
 
+cl_uint GGEMSOpenCLDevice::GetMaxReadImageArgs() const {
+  return Get<cl_uint>(device_, CL_DEVICE_MAX_READ_IMAGE_ARGS);
+}
+
+cl_uint GGEMSOpenCLDevice::GetMaxWriteImageArgs() const {
+  return Get<cl_uint>(device_, CL_DEVICE_MAX_WRITE_IMAGE_ARGS);
+}
+
+cl_uint GGEMSOpenCLDevice::GetMaxReadWriteImageArgs() const {
+  return Get<cl_uint>(device_, CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS);
+}
+
+cl_uint GGEMSOpenCLDevice::GetImagePitchAlignment() const {
+  return Get<cl_uint>(device_, CL_DEVICE_IMAGE_PITCH_ALIGNMENT);
+}
+
+cl_uint GGEMSOpenCLDevice::GetImageBaseAddressAlignment() const {
+  return Get<cl_uint>(device_, CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT);
+}
+
+std::size_t GGEMSOpenCLDevice::GetMaxBufferSize() const {
+  return Get<std::size_t>(device_, CL_DEVICE_IMAGE_MAX_BUFFER_SIZE);
+}
+
+cl_uint GGEMSOpenCLDevice::GetMaxSamplers() const {
+  return Get<cl_uint>(device_, CL_DEVICE_MAX_SAMPLERS);
+}
+
 std::string GGEMSOpenCLDevice::DeviceTypeToString(cl_device_type deviceType) const {
   std::ostringstream oss;
   bool first = true;
@@ -353,11 +381,29 @@ void GGEMSOpenCLDevice::PrintImages() const {
   gglog::info("GGEMSOpenCLDevice", "PrintImages") << "-> Image3D Max Depth: "
     << GetImage3DMaxDepth() << gglog::endl;
 
+  gglog::info("GGEMSOpenCLDevice", "PrintImages") << "-> Max Read Image Args: "
+    << GetMaxReadImageArgs() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintImages") << "-> Max Write Image Args: "
+    << GetMaxWriteImageArgs() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintImages") << "-> Max Read Write Image Args: "
+    << GetMaxReadWriteImageArgs() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintImages") << "-> Image Pitch Alignment: "
+    << GetImagePitchAlignment() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintImages") << "-> Image Base Address Alignment: "
+    << GetImageBaseAddressAlignment() << gglog::endl;
+
   gglog::info("GGEMSOpenCLDevice", "PrintImages") << "-> Image Max Buffer Size: "
     << GetImageMaxBufferSize() << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintImages") << "-> Image Max Array Size: "
     << GetImageMaxArraySize() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintImages") << "-> Max Samplers: "
+    << GetMaxSamplers() << gglog::endl;
 }
 
 void GGEMSOpenCLDevice::Print() const {

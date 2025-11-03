@@ -182,6 +182,24 @@ public: // ----- Images -----
 
   [[nodiscard]] std::size_t GetImageMaxArraySize() const;
 
+  [[nodiscard]] cl_uint GetMaxReadImageArgs() const;
+
+  [[nodiscard]] cl_uint GetMaxWriteImageArgs() const;
+
+  [[nodiscard]] cl_uint GetMaxReadWriteImageArgs() const;
+
+  [[nodiscard]] cl_uint GetImagePitchAlignment() const;
+
+  [[nodiscard]] cl_uint GetImageBaseAddressAlignment() const;
+
+  [[nodiscard]] std::size_t GetMaxBufferSize() const;
+
+  [[nodiscard]] cl_uint GetMaxSamplers() const;
+
+  [[nodiscard]] std::size_t GetGlobalMemSize() const;
+
+  CL_DEVICE_GLOBAL_MEM_SIZE, CL_DEVICE_GLOBAL _MEM_CACHE_TYPE/LINE_SIZE/SIZE, CL_DEVICE_LOCAL_MEM_SIZE, CL_DEVICE_MAX_MEM_ALLOC_SIZE, CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE, CL_DEVICE_MAX_CONSTANT_ARGS, CL_DEVICE_MEM_BASE_ADDR_ALIGN, CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE
+
 public:
   /*!
    * \brief Print a comprehensive, human-readable report for this device.
