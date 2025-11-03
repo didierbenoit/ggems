@@ -360,6 +360,70 @@ std::vector<cl_device_partition_property> GGEMSOpenCLDevice::GetPartitionType() 
   return GetArray<cl_device_partition_property>(device_, CL_DEVICE_PARTITION_TYPE);
 }
 
+std::string GGEMSOpenCLDevice::GetExtensions() const {
+  return Get<std::string>(device_, CL_DEVICE_EXTENSIONS);
+}
+
+std::vector<cl_name_version> GGEMSOpenCLDevice::GetExtensionsWithVersion() const {
+  return GetArray<cl_name_version>(device_, CL_DEVICE_EXTENSIONS_WITH_VERSION);
+}
+
+std::string GGEMSOpenCLDevice::GetBuiltInKernels() const {
+  return Get<std::string>(device_, CL_DEVICE_BUILT_IN_KERNELS);
+}
+
+std::vector<cl_name_version> GGEMSOpenCLDevice::GetBuiltInKernelsWithVersion() const {
+  return GetArray<cl_name_version>(device_, CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION);
+}
+
+cl_uint GGEMSOpenCLDevice::GetAddressBits() const {
+  return Get<cl_uint>(device_, CL_DEVICE_ADDRESS_BITS);
+}
+
+std::size_t GGEMSOpenCLDevice::GetProfilingTimerResolution() const {
+  return Get<std::size_t>(device_, CL_DEVICE_PROFILING_TIMER_RESOLUTION);
+}
+
+cl_bool GGEMSOpenCLDevice::GetCompilerAvailable() const {
+  return Get<cl_bool>(device_, CL_DEVICE_COMPILER_AVAILABLE);
+}
+
+cl_bool GGEMSOpenCLDevice::GetLinkerAvailable() const {
+  return Get<cl_bool>(device_, CL_DEVICE_LINKER_AVAILABLE);
+}
+
+cl_bool GGEMSOpenCLDevice::GetAvailable() const {
+  return Get<cl_bool>(device_, CL_DEVICE_AVAILABLE);
+}
+
+cl_bool GGEMSOpenCLDevice::GetEndianLittle() const {
+  return Get<cl_bool>(device_, CL_DEVICE_ENDIAN_LITTLE);
+}
+
+cl_bool GGEMSOpenCLDevice::GetErrorCorrectionSupport() const {
+  return Get<cl_bool>(device_, CL_DEVICE_ERROR_CORRECTION_SUPPORT);
+}
+
+std::size_t GGEMSOpenCLDevice::GetPrintfBufferSize() const {
+  return Get<std::size_t>(device_, CL_DEVICE_PRINTF_BUFFER_SIZE);
+}
+
+cl_uint GGEMSOpenCLDevice::GetMaxPipeArgs() const {
+  return Get<cl_uint>(device_, CL_DEVICE_MAX_PIPE_ARGS);
+}
+
+cl_uint GGEMSOpenCLDevice::GetPipeMaxActiveReservations() const {
+  return Get<cl_uint>(device_, CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS);
+}
+
+cl_uint GGEMSOpenCLDevice::GetPipeMaxPacketSize() const {
+  return Get<cl_uint>(device_, CL_DEVICE_PIPE_MAX_PACKET_SIZE);
+}
+
+cl_bool GGEMSOpenCLDevice::GetPipeSupport() const {
+  return Get<cl_bool>(device_, CL_DEVICE_PIPE_SUPPORT);
+}
+
 std::string GGEMSOpenCLDevice::DeviceTypeToString(cl_device_type deviceType) const {
   std::ostringstream oss;
   bool first = true;
@@ -835,6 +899,52 @@ void GGEMSOpenCLDevice::PrintPartition() const {
     << PartitionPropertiesToString(GetPartitionType()) << gglog::endl;
 }
 
+void GGEMSOpenCLDevice::PrintPipes() const {
+  gglog::info("GGEMSOpenCLDevice", "PrintPipes") << "-> Max Pipe Args: "
+    << GetMaxPipeArgs() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintPipes") << "-> Pipe Max Active Reservations: "
+    << GetPipeMaxActiveReservations() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintPipes") << "-> Pipe Max Packet Size: "
+    << GetPipeMaxPacketSize() << " bytes" << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintPipes") << "-> Pipe Support: "
+    << GetPipeSupport() << " bytes" << gglog::endl;
+}
+
+void GGEMSOpenCLDevice::PrintExtensionsAndMisc() const {
+  gglog::info("GGEMSOpenCLDevice", "PrintExtensionsAndMisc") << "-> Extensions With Version: "
+    << ClNameVersionToString(GetExtensionsWithVersion()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintExtensionsAndMisc") << "-> Built In Kernels With Version: "
+    << ClNameVersionToString(GetBuiltInKernelsWithVersion()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintExtensionsAndMisc") << "-> Address Bits: "
+    << GetAddressBits() << " bytes" << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintExtensionsAndMisc") << "-> Profiling Timer Resolution: "
+    << GetProfilingTimerResolution() << " ns" << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintExtensionsAndMisc") << "-> Compiler Available: "
+    << ClBoolToString(GetCompilerAvailable()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintExtensionsAndMisc") << "-> Linker Available: "
+    << ClBoolToString(GetLinkerAvailable()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintExtensionsAndMisc") << "-> Available: "
+    << ClBoolToString(GetAvailable()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintExtensionsAndMisc") << "-> Endian Little: "
+    << ClBoolToString(GetEndianLittle()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintExtensionsAndMisc") << "-> Error Correction Support: "
+    << ClBoolToString(GetErrorCorrectionSupport()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintExtensionsAndMisc") << "-> Printf Buffer Size: "
+    << GetPrintfBufferSize() << " bytes" << gglog::endl;
+}
+
 void GGEMSOpenCLDevice::Print() const {
   gglog::info("GGEMSOpenCLDevice", "Print") << "----- Device [" 
     << platform_index_ << ":" << device_index_ << "] -----" << gglog::endl;
@@ -847,5 +957,7 @@ void GGEMSOpenCLDevice::Print() const {
   PrintImages();
   PrintILSpirV();
   PrintQueueDeviceSide();
+  PrintPipes();
   PrintPartition();
+  PrintExtensionsAndMisc();
 }

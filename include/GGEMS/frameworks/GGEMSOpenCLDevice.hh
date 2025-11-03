@@ -268,6 +268,40 @@ public: // ----- Partition -----
 
   [[nodiscard]] std::vector<cl_device_partition_property> GetPartitionType() const;
 
+public: // ----- Extensions & Misc
+  [[nodiscard]] std::string GetExtensions() const;
+
+  [[nodiscard]] std::vector<cl_name_version> GetExtensionsWithVersion() const;
+
+  [[nodiscard]] std::string GetBuiltInKernels() const;
+
+  [[nodiscard]] std::vector<cl_name_version> GetBuiltInKernelsWithVersion() const;
+
+  [[nodiscard]] cl_uint GetAddressBits() const;
+
+  [[nodiscard]] std::size_t GetProfilingTimerResolution() const;
+
+  [[nodiscard]] cl_bool GetCompilerAvailable() const;
+
+  [[nodiscard]] cl_bool GetLinkerAvailable() const;
+
+  [[nodiscard]] cl_bool GetAvailable() const;
+
+  [[nodiscard]] cl_bool GetEndianLittle() const;
+
+  [[nodiscard]] cl_bool GetErrorCorrectionSupport() const;
+
+  [[nodiscard]] std::size_t GetPrintfBufferSize() const;
+
+public: // ----- Pipes -----
+  [[nodiscard]] cl_uint GetMaxPipeArgs() const;
+
+  [[nodiscard]] cl_uint GetPipeMaxActiveReservations() const;
+
+  [[nodiscard]] cl_uint GetPipeMaxPacketSize() const;
+
+  [[nodiscard]] cl_bool GetPipeSupport() const;
+
 public:
   /*!
    * \brief Print a comprehensive, human-readable report for this device.
@@ -318,6 +352,8 @@ private:
   void PrintILSpirV() const;
   void PrintQueueDeviceSide() const;
   void PrintPartition() const;
+  void PrintPipes() const;
+  void PrintExtensionsAndMisc() const;
 
 private:
   cl::Device  device_; /*!< Native OpenCL device handle */
