@@ -27,8 +27,8 @@
  */
 
 /// \cond
-#include <CL/cl.h>
 #include <sstream>
+#include <iomanip>
 /// \endcond
 
 #include "GGEMS/tools/GGEMSLogger.hh"
@@ -36,13 +36,18 @@
 
 using ggocl::utils::Get;
 using ggocl::utils::GetArray;
-//using ggocl::utils::ExtractExtensions;
-//using ggocl::utils::HasExtension;
+using ggocl::utils::ExtractExtensions;
+using ggocl::utils::HasExtension;
 using ggocl::utils::ClVersionToString;
 using ggocl::utils::ClNameVersionToString;
 
 GGEMSOpenCLDevice::GGEMSOpenCLDevice(cl::Device const& device, std::size_t platform_index, std::size_t device_index)
 : device_{device}, platform_index_{platform_index}, device_index_{device_index} {
+  extensions_ = ExtractExtensions(device_, CL_DEVICE_EXTENSIONS);
+}
+
+bool GGEMSOpenCLDevice::CheckExtension(std::string_view name) const {
+  return HasExtension(extensions_, name);
 }
 
 std::string GGEMSOpenCLDevice::GetName() const {
@@ -424,6 +429,49 @@ cl_bool GGEMSOpenCLDevice::GetPipeSupport() const {
   return Get<cl_bool>(device_, CL_DEVICE_PIPE_SUPPORT);
 }
 
+std::size_t GGEMSOpenCLDevice::GetMaxGlobalVariableSize() const {
+  return Get<std::size_t>(device_, CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE);
+}
+
+std::size_t GGEMSOpenCLDevice::GetGlobalVariablePreferredTotalSize() const {
+  return Get<std::size_t>(device_, CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE);
+}
+
+std::string GGEMSOpenCLDevice::GetUUIDKhr() const {
+  auto uuid = GetArray<cl_uchar>(device_, CL_DEVICE_UUID_KHR);
+  return UUIDToString(uuid.data());
+}
+
+std::string GGEMSOpenCLDevice::GetDriverUUIDKhr() const {
+  auto uuid = GetArray<cl_uchar>(device_, CL_DRIVER_UUID_KHR);
+  return UUIDToString(uuid.data());
+}
+
+cl_bool GGEMSOpenCLDevice::GetLUIDValidKhr() const {
+  return Get<cl_bool>(device_, CL_DEVICE_LUID_VALID_KHR);
+}
+
+std::string GGEMSOpenCLDevice::GetLUIDKhr() const {
+  if (GetLUIDValidKhr()) {
+    auto luid = GetArray<cl_uchar>(device_, CL_DEVICE_LUID_KHR);
+    return LUIDToString(luid.data());
+  }
+  else
+    return "Not available";
+}
+
+cl_device_fp_config GGEMSOpenCLDevice::GetHalfFpConfig() const {
+  return Get<cl_device_fp_config>(device_, CL_DEVICE_HALF_FP_CONFIG);
+}
+
+cl_device_fp_config GGEMSOpenCLDevice::GetSingleFpConfig() const {
+  return Get<cl_device_fp_config>(device_, CL_DEVICE_SINGLE_FP_CONFIG);
+}
+ 
+cl_device_fp_config GGEMSOpenCLDevice::GetDoubleFpConfig() const {
+  return Get<cl_device_fp_config>(device_, CL_DEVICE_DOUBLE_FP_CONFIG);
+}
+
 std::string GGEMSOpenCLDevice::DeviceTypeToString(cl_device_type deviceType) const {
   std::ostringstream oss;
   bool first = true;
@@ -651,6 +699,46 @@ std::string GGEMSOpenCLDevice::AffinityDomainToString(cl_device_affinity_domain 
   return s;
 }
 
+std::string GGEMSOpenCLDevice::UUIDToString(cl_uchar const* uuid) const {
+  std::ostringstream oss;
+  oss << std::hex << std::setfill('0');
+  for (int i = 0; i < CL_UUID_SIZE_KHR; ++i) {
+    oss << std::setw(2) << static_cast<int>(uuid[i]);
+    if (i == 3 || i == 5 || i == 7 || i == 9)
+      oss << '-';
+  }
+  return oss.str();
+}
+
+std::string GGEMSOpenCLDevice::LUIDToString(cl_uchar const* luid) const {
+  uint64_t value{0};
+  for (int i = 0; i < CL_LUID_SIZE_KHR; ++i) {
+    value |= static_cast<int>(luid[i]) << (8 * i);
+  }
+
+  std::ostringstream oss;
+  oss << std::hex << std::setfill('0') << std::setw(2) << value;
+  return oss.str();
+}
+
+std::string GGEMSOpenCLDevice::FPConfigToString(cl_device_fp_config cfg) const {
+  std::ostringstream oss;
+  if (cfg & CL_FP_DENORM) oss << "Denormals, ";
+  if (cfg & CL_FP_INF_NAN) oss << "Inf/NaN, ";
+  if (cfg & CL_FP_ROUND_TO_NEAREST) oss << "RoundToNearest, ";
+  if (cfg & CL_FP_ROUND_TO_ZERO) oss << "RoundToZero, ";
+  if (cfg & CL_FP_ROUND_TO_INF) oss << "RoundToInf, ";
+  if (cfg & CL_FP_FMA) oss << "FMA, ";
+  if (cfg & CL_FP_SOFT_FLOAT) oss << "SoftFloat, ";
+  if (cfg & CL_FP_CORRECTLY_ROUNDED_DIVIDE_SQRT) oss << "CorrectDivideSqrt, ";
+
+  auto s = oss.str();
+  if (!s.empty())
+    s.pop_back(), s.pop_back();
+
+  return s.empty() ? "None" : s;
+}
+
 void GGEMSOpenCLDevice::PrintIdentity() const {
   gglog::info("GGEMSOpenCLDevice", "PrintIdentity") << "-> Name: "
     << GetName() << gglog::endl;
@@ -680,6 +768,15 @@ void GGEMSOpenCLDevice::PrintTypeID() const {
 
   gglog::info("GGEMSOpenCLDevice", "PrintTypeID") << "-> Vendor ID: "
     << VendorIdToString(GetVendorId()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintTypeID") << "-> UUID: "
+    << GetUUIDKhr() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintTypeID") << "-> Driver UUID: "
+    << GetDriverUUIDKhr() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintTypeID") << "-> LUID: "
+    << GetLUIDKhr() << gglog::endl;
 }
 
 void GGEMSOpenCLDevice::PrintCompute() const {
@@ -748,7 +845,28 @@ void GGEMSOpenCLDevice::PrintVectorisation() const {
     << GetNativeVectorWidthHalf() << gglog::endl;
 }
 
+void GGEMSOpenCLDevice::PrintFloatingPoint() const {
+  if (CheckExtension("cl_khr_fp16")) {
+    gglog::info("GGEMSOpenCLDevice", "PrintFloatingPoint") << "-> Half FP Config: "
+      << FPConfigToString(GetHalfFpConfig()) << gglog::endl;
+  }
+
+  gglog::info("GGEMSOpenCLDevice", "PrintFloatingPoint") << "-> Single FP Config: "
+    << FPConfigToString(GetSingleFpConfig()) << gglog::endl;
+
+  if (CheckExtension("cl_khr_fp64")) {
+    gglog::info("GGEMSOpenCLDevice", "PrintFloatingPoint") << "-> Double FP Config: "
+      << FPConfigToString(GetDoubleFpConfig()) << gglog::endl;
+  }
+}
+
 void GGEMSOpenCLDevice::PrintMemory() const {
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Max Global Variable Size: "
+    << GetMaxGlobalVariableSize() << " bytes" << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Global Variable Preferred Total Size: "
+    << GetGlobalVariablePreferredTotalSize() << " bytes" << gglog::endl;
+
   gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Global Mem Size: "
     << GetGlobalMemSize() << " bytes" << gglog::endl;
 
@@ -899,17 +1017,17 @@ void GGEMSOpenCLDevice::PrintPartition() const {
     << PartitionPropertiesToString(GetPartitionType()) << gglog::endl;
 }
 
-void GGEMSOpenCLDevice::PrintPipes() const {
-  gglog::info("GGEMSOpenCLDevice", "PrintPipes") << "-> Max Pipe Args: "
+void GGEMSOpenCLDevice::PrintPipe() const {
+  gglog::info("GGEMSOpenCLDevice", "PrintPipe") << "-> Max Pipe Args: "
     << GetMaxPipeArgs() << gglog::endl;
 
-  gglog::info("GGEMSOpenCLDevice", "PrintPipes") << "-> Pipe Max Active Reservations: "
+  gglog::info("GGEMSOpenCLDevice", "PrintPipe") << "-> Pipe Max Active Reservations: "
     << GetPipeMaxActiveReservations() << gglog::endl;
 
-  gglog::info("GGEMSOpenCLDevice", "PrintPipes") << "-> Pipe Max Packet Size: "
+  gglog::info("GGEMSOpenCLDevice", "PrintPipe") << "-> Pipe Max Packet Size: "
     << GetPipeMaxPacketSize() << " bytes" << gglog::endl;
 
-  gglog::info("GGEMSOpenCLDevice", "PrintPipes") << "-> Pipe Support: "
+  gglog::info("GGEMSOpenCLDevice", "PrintPipe") << "-> Pipe Support: "
     << GetPipeSupport() << " bytes" << gglog::endl;
 }
 
@@ -953,11 +1071,12 @@ void GGEMSOpenCLDevice::Print() const {
   PrintTypeID();
   PrintCompute();
   PrintVectorisation();
+  PrintFloatingPoint();
   PrintMemory();
   PrintImages();
   PrintILSpirV();
   PrintQueueDeviceSide();
-  PrintPipes();
+  PrintPipe();
   PrintPartition();
   PrintExtensionsAndMisc();
 }

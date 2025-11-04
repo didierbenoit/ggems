@@ -34,6 +34,10 @@
  * \version 2.0
  */
 
+/// \cond
+#include <unordered_map>
+/// \endcond
+
 #include "GGEMS/frameworks/GGEMSOpenCLCommons.hh"
 
 /*!
@@ -87,6 +91,13 @@ public:
    */
   GGEMSOpenCLDevice& operator=(GGEMSOpenCLDevice&&) noexcept = default;
 
+  /*!
+   * \brief Check whether a device-level extension is advertised.
+   * \param extension_name Name of the extension (e.g. "cl_khr_icd").
+   * \return True if present in the device's extension set, false otherwise.
+   */
+  [[nodiscard]] bool CheckExtension(std::string_view extension_name) const;
+
 public: // ----- Identity & indices -----
   /*!
    * \brief Get the parent platform index.
@@ -117,6 +128,14 @@ public: // ----- Identity properties -----
   [[nodiscard]] std::string GetOpenCLCVersion() const;
 
   [[nodiscard]] cl_version GetNumericVersion() const;
+
+  [[nodiscard]] std::string GetUUIDKhr() const;
+
+  [[nodiscard]] std::string GetDriverUUIDKhr() const;
+
+  [[nodiscard]] cl_bool GetLUIDValidKhr() const;
+
+  [[nodiscard]] std::string GetLUIDKhr() const;
 
 public: // ----- Numeric identifiers & types -----
   [[nodiscard]] cl_uint GetVendorId() const;
@@ -164,6 +183,12 @@ public: // ----- Vectorisation properties -----
   [[nodiscard]] cl_uint GetNativeVectorWidthDouble() const;
 
   [[nodiscard]] cl_uint GetNativeVectorWidthHalf() const;
+
+  [[nodiscard]] cl_device_fp_config GetHalfFpConfig() const;
+
+  [[nodiscard]] cl_device_fp_config GetSingleFpConfig() const;
+  
+  [[nodiscard]] cl_device_fp_config GetDoubleFpConfig() const;
 
 public: // ----- Images -----
   [[nodiscard]] cl_bool GetImageSupport() const;
@@ -220,6 +245,10 @@ public: // ----- Memory -----
   [[nodiscard]] cl_uint GetMinDataTypeAlignSize() const;
 
   [[nodiscard]] cl_bool GetHostUnifiedMemory() const;
+
+  [[nodiscard]] std::size_t GetMaxGlobalVariableSize() const;
+
+  [[nodiscard]] std::size_t GetGlobalVariablePreferredTotalSize() const;
 
 public: // ----- IL/SpirV -----
   [[nodiscard]] std::string GetILVersion() const;
@@ -342,21 +371,29 @@ public:
 
   [[nodiscard]] std::string AffinityDomainToString(cl_device_affinity_domain domain) const;
 
+  [[nodiscard]] inline std::string UUIDToString(cl_uchar const* uuid) const;
+
+  [[nodiscard]] inline std::string LUIDToString(cl_uchar const* luid) const;
+
+  [[nodiscard]] std::string FPConfigToString(cl_device_fp_config cfg) const;
+
 private:
   void PrintIdentity() const;
   void PrintTypeID() const;
   void PrintCompute() const;
   void PrintVectorisation() const;
+  void PrintFloatingPoint() const;
   void PrintMemory() const;
   void PrintImages() const;
   void PrintILSpirV() const;
   void PrintQueueDeviceSide() const;
   void PrintPartition() const;
-  void PrintPipes() const;
+  void PrintPipe() const;
   void PrintExtensionsAndMisc() const;
 
 private:
   cl::Device  device_; /*!< Native OpenCL device handle */
   std::size_t platform_index_; /*!< Parent platform index */
   std::size_t device_index_; /*!< Device index within parent platform */
+  std::unordered_set<std::string>  extensions_; /*!< Cached device extension names */
 };

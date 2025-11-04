@@ -167,6 +167,14 @@ public:
    */
   [[nodiscard]] std::string GetIcdSuffixKhr() const;
 
+  [[nodiscard]] std::vector<cl_external_memory_handle_type_khr> GetExternalMemoryImportHandleTypesKhr() const;
+
+//  [[nodiscard]] std::vector<cl_semaphore_type_khr> GetSemaphoreTypesKhr() const;
+
+//  [[nodiscard]] std::vector<cl_external_semaphore_handle_type_khr> GetSemaphoreImportHandleTypesKhr() const;
+
+//  [[nodiscard]] std::vector<cl_external_semaphore_handle_type_khr> GetSemaphoreExportHandleTypesKhr() const;
+
   /*!
    * \brief Print a comprehensive platform report to the terminal using GGEMS logger.
    *
@@ -210,6 +218,10 @@ public:
    * \c Clean() is called or the platform object is destroyed.
    */
   [[nodiscard]] std::vector<GGEMSOpenCLDevice const*> GetDevices() const;
+
+private:
+  void PrintIdentity() const;
+  void PrintExtension() const;
 
 private:
   // -------------------- Internal discovery --------------------

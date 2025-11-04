@@ -35,6 +35,7 @@ using ggocl::utils::ExtractExtensions;
 using ggocl::utils::HasExtension;
 using ggocl::utils::ClVersionToString;
 using ggocl::utils::ClNameVersionToString;
+using ggocl::utils::ExternalMemoryHandleTypesToString;
 
 GGEMSOpenCLPlatform::GGEMSOpenCLPlatform(cl::Platform const& platform, std::size_t platform_index)
   : platform_{platform}
@@ -43,7 +44,6 @@ GGEMSOpenCLPlatform::GGEMSOpenCLPlatform(cl::Platform const& platform, std::size
   gglog::info3("GGEMSOpenCLPlatform", "GGEMSOpenCLPlatform")
     << "Allocating GGEMSOpenCLPlatform [" << platform_index_ << "] ..." << gglog::endl;
 
-  // Cache legacy extension list (space-separated) for quick membership tests.
   extensions_ = ExtractExtensions(platform_, CL_PLATFORM_EXTENSIONS);
 
   // Discover CPU/GPU devices now; contexts/queues are created later on demand.
@@ -100,7 +100,54 @@ std::string GGEMSOpenCLPlatform::GetIcdSuffixKhr() const {
   return Get<std::string>(platform_, CL_PLATFORM_ICD_SUFFIX_KHR);
 }
 
+std::vector<cl_external_memory_handle_type_khr> GGEMSOpenCLPlatform::GetExternalMemoryImportHandleTypesKhr() const {
+  return GetArray<cl_external_memory_handle_type_khr>(platform_, CL_PLATFORM_EXTERNAL_MEMORY_IMPORT_HANDLE_TYPES_KHR);
+}
+
+/*std::vector<cl_semaphore_type_khr> GGEMSOpenCLPlatform::GetSemaphoreTypesKhr() const {
+  return GetArray<cl_semaphore_type_khr>(platform_, CL_PLATFORM_SEMAPHORE_TYPES_KHR);
+}
+
+std::vector<cl_external_semaphore_handle_type_khr> GGEMSOpenCLPlatform::GetSemaphoreImportHandleTypesKhr() const {
+  return GetArray<cl_external_semaphore_handle_type_khr>(platform_, CL_PLATFORM_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR);
+}
+
+std::vector<cl_external_semaphore_handle_type_khr> GGEMSOpenCLPlatform::GetSemaphoreExportHandleTypesKhr() const {
+  return GetArray<cl_external_semaphore_handle_type_khr>(platform_, CL_PLATFORM_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR);
+}*/
+
 // -------------------- Reporting --------------------
+void GGEMSOpenCLPlatform::PrintIdentity() const {
+   gglog::info("GGEMSOpenCLPlatform", "PrintIdentity")
+    << "-> Profile: " << GetProfile() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLPlatform", "PrintIdentity")
+    << "-> Version: " << GetVersion() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLPlatform", "PrintIdentity") << "-> Numeric Version: "
+    << ClVersionToString(GetNumericVersion()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLPlatform", "PrintIdentity")
+    << "-> ICD Suffix: " << GetIcdSuffixKhr() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLPlatform", "PrintIdentity")
+    << "-> Discovered devices: " << devices_.size() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLPlatform", "PrintIdentity")
+    << "-> Host Timer Resolution: " << GetHostTimerResolution() << " ns" << gglog::endl;
+}
+
+void GGEMSOpenCLPlatform::PrintExtension() const {
+  gglog::info("GGEMSOpenCLPlatform", "PrintExtensions")
+    << "-> Extensions with version: " << ClNameVersionToString(GetExtensionsWithVersion()) << gglog::endl;
+
+  if (CheckExtension("cl_khr_external_memory")) {
+    gglog::info("GGEMSOpenCLPlatform", "PrintExtensions")
+      << "-> External Memory Import Handle Types KHR: "
+      << ExternalMemoryHandleTypesToString(GetExternalMemoryImportHandleTypesKhr())
+      << gglog::endl;
+  };
+}
 
 void GGEMSOpenCLPlatform::Print() const {
   gglog::info("GGEMSOpenCLPlatform", "Print")
@@ -110,26 +157,8 @@ void GGEMSOpenCLPlatform::Print() const {
     << "Platform [" << platform_index_ << "]: " << GetName()
     << " (" << GetVendor() << ")" << gglog::endl;
 
-  gglog::info("GGEMSOpenCLPlatform", "Print")
-    << "-> Profile: " << GetProfile() << gglog::endl;
-
-  gglog::info("GGEMSOpenCLPlatform", "Print")
-    << "-> Version: " << GetVersion() << gglog::endl;
-
-  gglog::info("GGEMSOpenCLPlatform", "Print") << "-> Numeric Version: "
-    << ClVersionToString(GetNumericVersion()) << gglog::endl;
-
-  gglog::info("GGEMSOpenCLPlatform", "Print")
-    << "-> Host Timer Resolution: " << GetHostTimerResolution() << " ns" << gglog::endl;
-
-  gglog::info("GGEMSOpenCLPlatform", "Print")
-    << "-> Extensions with version: " << ClNameVersionToString(GetExtensionsWithVersion()) << " ns" << gglog::endl;
-
-  gglog::info("GGEMSOpenCLPlatform", "Print")
-    << "-> ICD Suffix: " << GetIcdSuffixKhr() << gglog::endl;
-
-  gglog::info("GGEMSOpenCLPlatform", "Print")
-    << "-> Discovered devices: " << devices_.size() << gglog::endl;
+  PrintIdentity();
+  PrintExtension();
 
   gglog::info("GGEMSOpenCLPlatform", "Print")
     << "+++++++++++++++++++++++++++++++++++++" << gglog::endl;
