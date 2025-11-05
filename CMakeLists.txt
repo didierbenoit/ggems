@@ -53,7 +53,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/CompilerOptions.cmake)
 # Optional build features
 # ----------------------------------------------------------------------------
 option(GGEMS_BUILD_TESTS        "Build GoogleTest unit tests" OFF)
-option(GGEMS_BUILD_DOCS         "Build documentation with Doxygen" OFF)
+option(GGEMS_BUILD_DOCS         "Build documentation with Doxygen and Sphinx" OFF)
 option(GGEMS_WITH_IMGUI         "Enable ImGui / Vulkan interface" OFF)
 option(GGEMS_LOG_RING_BUFFER    "Enable in-memory circular log buffer" ON)
 option(GGEMS_ENABLE_SPIRV_CACHE "Enable SPIR-V caching for OpenCL kernels" ON)
@@ -105,7 +105,6 @@ endif()
 # Documentation
 # ----------------------------------------------------------------------------
 if (GGEMS_BUILD_DOCS)
-  find_package(Doxygen REQUIRED)
   add_subdirectory(docs)
 endif()
 
