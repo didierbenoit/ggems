@@ -44,13 +44,23 @@
 #include <unordered_set>
 /// \endcond
 
-
+#define CL_HPP_TARGET_OPENCL_VERSION 300
+#define CL_TARGET_OPENCL_VERSION 300
 #define CL_ENABLE_SPIRV_EXTENSIONS
-#ifdef __APPLE__
-  #include <OpenCL/opencl.hpp>
-#else
-  #include <CL/opencl.h>
-  #include <CL/cl.hpp>
+
+// ---------------------------------------------------------------------------
+// Temporarily disable external-header warnings (Clang / MSVC portable block)
+// ---------------------------------------------------------------------------
+#if defined(__clang__)
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wsign-conversion"
+  #pragma clang diagnostic ignored "-Wunused-parameter"
+#endif
+
+#include <CL/opencl.hpp>
+
+#if defined(__clang__)
+  #pragma clang diagnostic pop
 #endif
 
 #ifdef _MSC_VER
@@ -356,72 +366,6 @@ namespace ggocl {
       for (auto const& nv : name_versions) {
         oss << nv.name << ' ' << ClVersionToString(nv.version) << ' ';
       }
-      return oss.str();
-    }
-
-    [[nodiscard]] inline std::string ExternalMemoryHandleTypesToString(std::vector<cl_external_memory_handle_type_khr> const& types) noexcept {
-      if (types.empty()) return "None";
-
-      std::ostringstream oss;
-      bool firstType = true;
-
-      auto bitmaskToString = [](cl_external_memory_handle_type_khr flags) {
-        std::ostringstream out;
-        bool first = true;
-        auto append = [&](std::string_view s) {
-            if (!first) out << " | ";
-            out << s;
-            first = false;
-        };
-
-        if (flags & CL_EXTERNAL_MEMORY_HANDLE_DMA_BUF_KHR)
-            append("DMA-BUF (Linux)");
-        if (flags & CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR)
-            append("Opaque FD (POSIX)");
-        if (flags & CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KHR)
-            append("Opaque Win32");
-        if (flags & CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KMT_KHR)
-            append("Opaque Win32 KMT");
-        if (flags & CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KHR)
-            append("D3D11 Texture");
-        if (flags & CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KMT_KHR)
-            append("D3D11 Texture KMT");
-        if (flags & CL_EXTERNAL_MEMORY_HANDLE_D3D12_HEAP_KHR)
-            append("D3D12 Heap");
-        if (flags & CL_EXTERNAL_MEMORY_HANDLE_D3D12_RESOURCE_KHR)
-            append("D3D12 Resource");
-
-        return first ? std::string("Unknown") : out.str();
-      };
-
-      for (auto flags : types)
-      {
-        if (!firstType) oss << ", ";
-        oss << bitmaskToString(flags);
-        firstType = false;
-      }
-
-      return oss.str();
-    }
-
-    [[nodiscard]] inline std::string SemaphoreTypesToString(std::vector<cl_semaphore_type_khr> const& types) {
-      if (types.empty()) return "None";
-
-      std::ostringstream oss;
-      bool first = true;
-
-      for (auto t : types) {
-        if (!first) oss << ", ";
-        switch (t) {
-        case CL_SEMAPHORE_TYPE_BINARY_KHR:
-          oss << "Binary";
-        default:
-          oss << "Unknown(" << t << ")";
-          break;
-        }
-        first = false;
-      }
-
       return oss.str();
     }
   } // namespace utils

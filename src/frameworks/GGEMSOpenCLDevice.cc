@@ -31,7 +31,7 @@
 #include <iomanip>
 /// \endcond
 
-#include "GGEMS/tools/GGEMSLogger.hh"
+#include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 
 using ggocl::utils::Get;
@@ -72,6 +72,22 @@ std::string GGEMSOpenCLDevice::GetProfile() const {
 
 std::string GGEMSOpenCLDevice::GetOpenCLCVersion() const {
   return Get<std::string>(device_, CL_DEVICE_OPENCL_C_VERSION);
+}
+
+std::vector<cl_name_version> GGEMSOpenCLDevice::GetOpenCLCAllVersions() const {
+  return GetArray<cl_name_version>(device_, CL_DEVICE_OPENCL_C_ALL_VERSIONS);
+}
+
+cl_version_khr GGEMSOpenCLDevice::GetOpenCLCNumericVersionKhr() const {
+  return Get<cl_version_khr>(device_, CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR);
+}
+
+std::vector<cl_name_version> GGEMSOpenCLDevice::GetOpenCLCFeatures() const {
+  return GetArray<cl_name_version>(device_, CL_DEVICE_OPENCL_C_FEATURES);
+}
+
+cl_version GGEMSOpenCLDevice::GetCxxForOpenCLNumericVersionExt() const {
+  return Get<cl_version>(device_, CL_DEVICE_CXX_FOR_OPENCL_NUMERIC_VERSION_EXT);
 }
 
 cl_version GGEMSOpenCLDevice::GetNumericVersion() const {
@@ -334,6 +350,10 @@ cl_bool GGEMSOpenCLDevice::GetSubGroupIndependentForwardProgress() const {
   return Get<cl_bool>(device_, CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS);
 }
 
+cl_device_exec_capabilities GGEMSOpenCLDevice::GetExecutionCapabilities() const {
+  return Get<cl_device_exec_capabilities>(device_, CL_DEVICE_EXECUTION_CAPABILITIES);
+}
+
 cl_bool GGEMSOpenCLDevice::GetNonUniformWorkGroupSupport() const {
   return Get<cl_bool>(device_, CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT);
 }
@@ -369,8 +389,16 @@ std::string GGEMSOpenCLDevice::GetExtensions() const {
   return Get<std::string>(device_, CL_DEVICE_EXTENSIONS);
 }
 
+std::size_t GGEMSOpenCLDevice::GetMaxParameterSize() const {
+  return Get<std::size_t>(device_, CL_DEVICE_MAX_PARAMETER_SIZE);
+}
+
 std::vector<cl_name_version> GGEMSOpenCLDevice::GetExtensionsWithVersion() const {
   return GetArray<cl_name_version>(device_, CL_DEVICE_EXTENSIONS_WITH_VERSION);
+}
+
+std::string GGEMSOpenCLDevice::GetLastestConformanceVersionPassed() const {
+  return Get<std::string>(device_, CL_DEVICE_LATEST_CONFORMANCE_VERSION_PASSED);
 }
 
 std::string GGEMSOpenCLDevice::GetBuiltInKernels() const {
@@ -379,6 +407,18 @@ std::string GGEMSOpenCLDevice::GetBuiltInKernels() const {
 
 std::vector<cl_name_version> GGEMSOpenCLDevice::GetBuiltInKernelsWithVersion() const {
   return GetArray<cl_name_version>(device_, CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION);
+}
+
+cl_uint GGEMSOpenCLDevice::GetPreferredPlatformAtomicAlignment() const {
+  return Get<cl_uint>(device_, CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT);
+}
+
+cl_uint GGEMSOpenCLDevice::GetPreferredGlobalAtomicAlignment() const {
+  return Get<cl_uint>(device_, CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT);
+}
+
+cl_uint GGEMSOpenCLDevice::GetPreferredLocalAtomicAlignment() const {
+  return Get<cl_uint>(device_, CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT);
 }
 
 cl_uint GGEMSOpenCLDevice::GetAddressBits() const {
@@ -470,6 +510,10 @@ cl_device_fp_config GGEMSOpenCLDevice::GetSingleFpConfig() const {
  
 cl_device_fp_config GGEMSOpenCLDevice::GetDoubleFpConfig() const {
   return Get<cl_device_fp_config>(device_, CL_DEVICE_DOUBLE_FP_CONFIG);
+}
+
+cl_uint GGEMSOpenCLDevice::GetReferenceCount() const {
+  return Get<cl_uint>(device_, CL_DEVICE_REFERENCE_COUNT);
 }
 
 std::string GGEMSOpenCLDevice::DeviceTypeToString(cl_device_type deviceType) const {
@@ -712,8 +756,8 @@ std::string GGEMSOpenCLDevice::UUIDToString(cl_uchar const* uuid) const {
 
 std::string GGEMSOpenCLDevice::LUIDToString(cl_uchar const* luid) const {
   uint64_t value{0};
-  for (int i = 0; i < CL_LUID_SIZE_KHR; ++i) {
-    value |= static_cast<int>(luid[i]) << (8 * i);
+  for (std::size_t i = 0; i < CL_LUID_SIZE_KHR; ++i) {
+    value |= static_cast<uint64_t>(luid[i]) << (8ULL * i);
   }
 
   std::ostringstream oss;
@@ -739,6 +783,26 @@ std::string GGEMSOpenCLDevice::FPConfigToString(cl_device_fp_config cfg) const {
   return s.empty() ? "None" : s;
 }
 
+std::string GGEMSOpenCLDevice::ExecCapabilitiesToString(cl_device_exec_capabilities caps) const {
+  if (caps == 0) return "None";
+
+  std::ostringstream oss;
+  bool first = true;
+
+  auto add = [&](std::string_view name) {
+    if (!first) oss << ", ";
+    oss << name;
+    first = false;
+  };
+
+  if (caps & CL_EXEC_KERNEL)
+    add("Kernel execution");
+  if (caps & CL_EXEC_NATIVE_KERNEL)
+    add("Native kernel execution");
+
+  return oss.str();
+}
+
 void GGEMSOpenCLDevice::PrintIdentity() const {
   gglog::info("GGEMSOpenCLDevice", "PrintIdentity") << "-> Name: "
     << GetName() << gglog::endl;
@@ -757,6 +821,17 @@ void GGEMSOpenCLDevice::PrintIdentity() const {
 
   gglog::info("GGEMSOpenCLDevice", "PrintIdentity") << "-> OpenCL C Version: "
     << GetOpenCLCVersion() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintIdentity") << "-> OpenCL C All Versions: "
+    << ClNameVersionToString(GetOpenCLCAllVersions()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintIdentity") << "-> OpenCL C Features: "
+    << ClNameVersionToString(GetOpenCLCFeatures()) << gglog::endl;
+
+  if (CheckExtension("cl_ext_cxx_for_opencl")) {
+    gglog::info("GGEMSOpenCLDevice", "PrintIdentity") << "-> CXX For OpenCL Numeric Version Ext: "
+      << ClVersionToString(GetCxxForOpenCLNumericVersionExt()) << gglog::endl;
+  }
 
   gglog::info("GGEMSOpenCLDevice", "PrintIdentity") << "-> Numeric Version: "
     << ClVersionToString(GetNumericVersion()) << gglog::endl;
@@ -902,6 +977,18 @@ void GGEMSOpenCLDevice::PrintMemory() const {
 
   gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Host Unified Memory: "
     << ClBoolToString(GetHostUnifiedMemory()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Max Parameter Size: "
+    << GetMaxParameterSize() << " bytes" << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Preferred Platform Atomic Alignement: "
+    << GetPreferredPlatformAtomicAlignment() << " bytes" << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Preferred Global Atomic Alignement: "
+    << GetPreferredGlobalAtomicAlignment() << " bytes" << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Preferred Local Atomic Alignment: "
+    << GetPreferredLocalAtomicAlignment() << " bytes" << gglog::endl;
 }
 
 void GGEMSOpenCLDevice::PrintImages() const {
@@ -1001,6 +1088,15 @@ void GGEMSOpenCLDevice::PrintQueueDeviceSide() const {
 
   gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Device Enqueue Capabilities: "
     << DeviceEnqueueCapabilitiesToString(GetDeviceEnqueueCapabilities()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Execution Capabilities: "
+    << ExecCapabilitiesToString(GetExecutionCapabilities()) << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Reference Count: "
+    << GetReferenceCount() << gglog::endl;
+
+  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Lastest Conformance Version Passed: "
+    << GetLastestConformanceVersionPassed() << gglog::endl;
 }
 
 void GGEMSOpenCLDevice::PrintPartition() const {

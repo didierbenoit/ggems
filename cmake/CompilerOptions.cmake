@@ -1,32 +1,30 @@
-# Get last C++ standard
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+# ============================================================================
+#  @file      CompilerOptions.cmake
+#  @brief     Dispatches compiler-specific configurations for GGEMS.
+#  @details   Detects the active C++ compiler and includes the corresponding
+#             configuration file (Clang or MSVC). Provides a single entry
+#             point for all compiler-related options.
+#  @author    Didier Benoit
+#  @date      2025-11-05
+# ============================================================================
 
-# Initialize compiler flags
-set(CMAKE_CXX_FLAGS "" CACHE STRING "CXX flags" FORCE)
-set(CMAKE_CXX_FLAGS_DEBUG "" CACHE STRING "Debug flags" FORCE)
-set(CMAKE_CXX_FLAGS_RELEASE "" CACHE STRING "Release flags" FORCE)
+include_guard(GLOBAL)
 
-# Compiler check on Windows
-if (WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  message(FATAL_ERROR
-    "GNU Compiler Collectiong detected on Windows. "
-    "Please use MSVC, Intel icx or clang++ instead."
-  )
-endif()
+# ----------------------------------------------------------------------------
+# Detect and include compiler-specific configuration
+# ----------------------------------------------------------------------------
+message(STATUS "Detected compiler: ${CMAKE_CXX_COMPILER_ID}")
 
-# Compiler detection and set flag for each compiler
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.20)
-    message(FATAL_ERROR "GGEMS requires MSVC 19.20 (Visual Studio 2019 RTM, version 16.0, toolset v142) or newer")
-  endif()
-  include(cmake/MSVCOptions.cmake)
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  include(cmake/ClangOptions.cmake)
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  include(cmake/GNUOptions.cmake)
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
-  include(cmake/IntelOptions.cmake)
+# --- Clang or clang-cl -------------------------------------------------------
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    include(${CMAKE_SOURCE_DIR}/cmake/ClangOptions.cmake)
+
+# --- Microsoft Visual C++ ----------------------------------------------------
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    include(${CMAKE_SOURCE_DIR}/cmake/MSVCOptions.cmake)
+
+# --- Fallback ----------------------------------------------------------------
+else()
+    message(WARNING "Unsupported compiler detected: ${CMAKE_CXX_COMPILER_ID}")
+    message(WARNING "Default options will be used; please provide a specific configuration file.")
 endif()

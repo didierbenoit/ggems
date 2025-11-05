@@ -33,7 +33,7 @@
  * \version 2.0
  */
 
-#include "GGEMS/tools/GGEMSLogger.hh"
+#include "GGEMS/core/GGEMSLogger.hh"
 
 /// \cond
 #include <vector>

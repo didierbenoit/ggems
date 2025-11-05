@@ -1,74 +1,134 @@
-# ************************************************************************
-# * This file is part of GGEMS.                                          *
-# *                                                                      *
-# * GGEMS is free software: you can redistribute it and/or modify        *
-# * it under the terms of the GNU General Public License as published by *
-# * the Free Software Foundation, either version 3 of the License, or    *
-# * (at your option) any later version.                                  *
-# *                                                                      *
-# * GGEMS is distributed in the hope that it will be useful,             *
-# * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
-# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
-# * GNU General Public License for more details.                         *
-# *                                                                      *
-# * You should have received a copy of the GNU General Public License    *
-# * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
-# *                                                                      *
-# ************************************************************************
-
-#-------------------------------------------------------------------------------
-# CMakeLists.txt
+# ============================================================================
+#  @file      CMakeLists.txt
+#  @brief     Main build configuration for the GGEMS project.
+#  @details   GGEMS (GPU Geant4-based Monte Carlo Simulations) is a scientific
+#             simulation framework implemented in C++23, leveraging OpenCL 3.0
+#             for heterogeneous computing and pybind11 for Python integration.
+#             This configuration defines compiler dispatch, build-type
+#             management, and optional subsystems such as documentation,
+#             unit testing, and GUI integration (ImGui/Vulkan).
 #
-# CMakeLists.txt - Compile and build the GGEMS library
+#             Requirements:
+#               - CMake ≥ 3.27  (scikit-build-core and pybind11 CONFIG mode)
+#               - OpenCL 3.0 SDK
+#               - pybind11 ≥ 3.0
+#               - Ninja (recommended for single-config builds)
 #
-# Authors :
-#   - Julien Bert <julien.bert@univ-brest.fr>
-#   - Didier Benoit <didier.benoit@inserm.fr>
-#
-# Generated on : 06/10/2025
-#-------------------------------------------------------------------------------
+#             Author:   Didier Benoit
+#             Created:  2025-11-05
+#             License:  GNU GPL v3.0 or later
+# ============================================================================
 
-# Check CMake version
-cmake_minimum_required(VERSION 3.15...4.1)
-project(${SKBUILD_PROJECT_NAME} VERSION ${SKBUILD_PROJECT_VERSION} HOMEPAGE_URL ggems.fr LANGUAGES CXX)
+# ----------------------------------------------------------------------------
+# Minimum required CMake version
+# ----------------------------------------------------------------------------
+cmake_minimum_required(VERSION 3.27 FATAL_ERROR)
 
-# Find Packages
-find_package(pybind11 REQUIRED)
-
-# Generate compile commands, useful for some environment editor
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# Compiler detection and set flag for each compiler
-include(cmake/CompilerOptions.cmake)
-
-#-------------------------------------------------------------------------------
-# Find the OpenCL v3.0
-find_package(CUDAToolkit 12.0 REQUIRED)
-message(STATUS "CUDA Toolkit: ${CUDAToolkit_FOUND}")
-message(STATUS "CUDA Toolkit VERSION: ${CUDAToolkit_VERSION}")
-message(STATUS "CUDA Toolkit INCLUDE DIRS: ${CUDAToolkit_INCLUDE_DIRS}")
-message(STATUS "CUDA Toolkit LIBRARY DIR: ${CUDAToolkit_LIBRARY_DIR}")
-add_definitions(
-  "-DCL_HPP_TARGET_OPENCL_VERSION=300"
-  "-DCL_TARGET_OPENCL_VERSION=300"
+# ----------------------------------------------------------------------------
+# Project declaration
+# ----------------------------------------------------------------------------
+project(GGEMS
+  VERSION 2.0.0
+  LANGUAGES C CXX
+  DESCRIPTION "OpenCL-based simulation engine with Python bindings"
 )
 
-# Locate C++ files
-FILE(GLOB GGEMS_SOURCE_FILES CONFIGURE_DEPENDS
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/*.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/frameworks/*.cc
+# ----------------------------------------------------------------------------
+# Display build context
+# ----------------------------------------------------------------------------
+message(STATUS "CMake version in use: ${CMAKE_VERSION}")
+message(STATUS "Configuring project ${PROJECT_NAME} version ${PROJECT_VERSION}")
+
+# ----------------------------------------------------------------------------
+# Ensure position-independent code for shared libraries and Python modules
+# ----------------------------------------------------------------------------
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# ----------------------------------------------------------------------------
+# Compiler configuration dispatch (Clang / MSVC)
+# ----------------------------------------------------------------------------
+include(${CMAKE_SOURCE_DIR}/cmake/CompilerOptions.cmake)
+
+# ----------------------------------------------------------------------------
+# Optional build features
+# ----------------------------------------------------------------------------
+option(GGEMS_BUILD_TESTS        "Build GoogleTest unit tests" OFF)
+option(GGEMS_BUILD_DOCS         "Build documentation with Doxygen" OFF)
+option(GGEMS_WITH_IMGUI         "Enable ImGui / Vulkan interface" OFF)
+option(GGEMS_LOG_RING_BUFFER    "Enable in-memory circular log buffer" ON)
+option(GGEMS_ENABLE_SPIRV_CACHE "Enable SPIR-V caching for OpenCL kernels" ON)
+
+# ----------------------------------------------------------------------------
+# Dependencies
+# ----------------------------------------------------------------------------
+find_package(OpenCL REQUIRED)
+message(STATUS "OpenCL library located at: ${OpenCL_LIBRARY}")
+message(STATUS "OpenCL include path: ${OpenCL_INCLUDE_DIRS}")
+
+find_package(pybind11 REQUIRED CONFIG)
+
+# ----------------------------------------------------------------------------
+# Include directories
+# ----------------------------------------------------------------------------
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
+# ----------------------------------------------------------------------------
+# Core library
+# ----------------------------------------------------------------------------
+file(GLOB_RECURSE GGEMS_CORE_SOURCES
+  ${PROJECT_SOURCE_DIR}/src/core/*.cc
+  ${PROJECT_SOURCE_DIR}/src/frameworks/*.cc
+  ${PROJECT_SOURCE_DIR}/src/runtime/*.cc
 )
 
-# GGEMS C++ library building
-add_library(ggems STATIC)
-target_sources(ggems PRIVATE ${GGEMS_SOURCE_FILES})
-target_link_libraries(ggems PRIVATE CUDA::OpenCL)
-target_include_directories(ggems PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+add_library(ggems_core STATIC ${GGEMS_CORE_SOURCES})
+target_include_directories(ggems_core PUBLIC
+  ${PROJECT_SOURCE_DIR}/include
+  ${OpenCL_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}/external/OpenCL-CLHPP/include)
+target_link_libraries(ggems_core PUBLIC OpenCL::OpenCL)
 
-# C++/Python bindings
-add_subdirectory(python/ggems)
+# ----------------------------------------------------------------------------
+# Python module (pybind11)
+# ----------------------------------------------------------------------------
+add_subdirectory(python)
 
-# Google test
-if(BUILD_TESTING)
+# ----------------------------------------------------------------------------
+# Unit testing
+# ----------------------------------------------------------------------------
+if (GGEMS_BUILD_TESTS)
+  enable_testing()
   add_subdirectory(tests)
 endif()
+
+# ----------------------------------------------------------------------------
+# Documentation
+# ----------------------------------------------------------------------------
+if (GGEMS_BUILD_DOCS)
+  find_package(Doxygen REQUIRED)
+  add_subdirectory(docs)
+endif()
+
+# ----------------------------------------------------------------------------
+# Optional ImGui / Vulkan interface
+# ----------------------------------------------------------------------------
+if (GGEMS_WITH_IMGUI)
+  message(STATUS "ImGui UI layer enabled.")
+  add_subdirectory(src/ui)
+endif()
+
+# ----------------------------------------------------------------------------
+# Build summary
+# ----------------------------------------------------------------------------
+message(STATUS "")
+message(STATUS "================= GGEMS Build Summary =================")
+message(STATUS "Compiler ID            : ${CMAKE_CXX_COMPILER_ID}")
+message(STATUS "Compiler path          : ${CMAKE_CXX_COMPILER}")
+message(STATUS "C++ standard           : ${CMAKE_CXX_STANDARD}")
+message(STATUS "Build tests            : ${GGEMS_BUILD_TESTS}")
+message(STATUS "Build documentation    : ${GGEMS_BUILD_DOCS}")
+message(STATUS "ImGui UI enabled       : ${GGEMS_WITH_IMGUI}")
+message(STATUS "Logger ring buffer     : ${GGEMS_LOG_RING_BUFFER}")
+message(STATUS "SPIR-V cache enabled   : ${GGEMS_ENABLE_SPIRV_CACHE}")
+message(STATUS "========================================================")
+message(STATUS "")

@@ -27,7 +27,7 @@
  */
 
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
-#include "GGEMS/tools/GGEMSException.hh"
+#include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
 

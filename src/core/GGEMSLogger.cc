@@ -35,7 +35,7 @@
 #include <algorithm>
 /// \endcond
 
-#include "GGEMS/tools/GGEMSLocal.hh"
+#include "GGEMS/core/GGEMSLocal.hh"
 
 std::ostream& gglog::io(gglog::Level level, std::string_view class_name, std::string_view method_name) {
   if (!GGEMSLogger::GetInstance().IsVisible(level)) {

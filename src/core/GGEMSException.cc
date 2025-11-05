@@ -17,18 +17,31 @@
 // ************************************************************************
 
 /*!
- * \file GGEMSLocal.cc
- * \brief Implementation of per-thread staging buffer for logging.
+ * \file GGEMSException.cc
+ * \brief Definition of GGEMSException for handling GGEMS-specific error
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ * \date 2025-10-12
+ * \copyright GNU General Public License v3.0
+ * \version 2.0
  */
 
-#include "GGEMS/tools/GGEMSLocal.hh"
+/// \cond
+#include <sstream>
+/// \endcond
 
-thread_local GGEMSLocal gglog::local;
+#include "GGEMS/core/GGEMSException.hh"
 
-bool GGEMSLocal::IsVisible(gglog::Level level) const noexcept {
-  return GGEMSLogger::GetInstance().IsVisible(level);
+GGEMSException::GGEMSException(std::string_view filename, std::string_view function_name, int line, std::string_view error_name) {
+  BuildErrorMessage(filename, function_name, line, error_name);
 }
 
-void GGEMSLocal::WriteMessage() const noexcept {
-  GGEMSLogger::GetInstance().LogMessage(level_, osstream_.str(), class_name_, method_name_);
+void GGEMSException::BuildErrorMessage(std::string_view filename, std::string_view function_name, int line, std::string_view error_name) {
+  std::ostringstream oss(std::ostringstream::out);
+  oss << "[GGEMSException]\n"
+      << "File     : " << filename << '\n'
+      << "Function : " << function_name << '\n'
+      << "Line     : " << line << '\n'
+      << "Error    : " << error_name;
+  error_message_ = oss.str();
 }

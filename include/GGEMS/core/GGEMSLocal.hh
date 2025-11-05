@@ -28,7 +28,7 @@
 #include <string>
 /// \endcond
 
-#include "GGEMS/tools/GGEMSLogger.hh"
+#include "GGEMS/core/GGEMSLogger.hh"
 
 /*!
  * \struct GGEMSLocal

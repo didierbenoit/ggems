@@ -8,32 +8,26 @@ build-backend = "scikit_build_core.build"
 [project]
 name = "ggems"
 version = "2.0.0"
-license = "GPL-3.0-or-later"
-license-files = ["LICENSE.md"]
-description="GPU Geant4-based Monte Carlo Simulations"
 readme = "README.md"
+license = "GPL-3.0-or-later"
+description="GPU Geant4-based Monte Carlo Simulations"
 authors = [
   { name = "Didier BENOIT", email = "didier.benoit@inserm.fr" },
-]
-requires-python = ">=3.10"
-classifiers = [
-  "Programming Language :: Python :: 3",
-  "Programming Language :: C++",
-  "Operating System :: POSIX :: Linux",
-  "Operating System :: Microsoft :: Windows",
-  "Environment :: GPU",
-  "Environment :: GPU :: NVIDIA CUDA",
-  "Environment :: GPU :: OpenCL"
+  { name = "Julien BERT",   email = "julien.bert@univ-brest.fr"}
 ]
 
 [project.urls]
-"Homepage" = "https://ggems.fr"
-"Source" = "https://github.com/GGEMS/ggems"
-"Documentation" = "https://doc.ggems.fr/v2.0"
+homepage = "https://ggems.fr"
+repository = "https://github.com/GGEMS/ggems"
+documentation = "https://doc.ggems.fr/v2.0"
 
 [tool.scikit-build]
-minimum-version = "build-system.requires"
-ninja.version = ">=1.10"
-cmake.args = ["-G Ninja"]
 build-dir = "build/{wheel_tag}"
+wheel.expand-macos-universal-tags = true
 build.verbose = true
+
+[tool.scikit-build.cmake.define]
+GGEMS_WITH_IMGUI = "OFF"
+GGEMS_LOG_RING_BUFFER = "ON"
+GGEMS_LOG_RING_BUFFER_SIZE = "4096"
+GGEMS_ENABLE_SPIRV_CACHE = "ON"

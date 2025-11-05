@@ -28,8 +28,8 @@
 /// \endcond
 
 #include "GGEMS/frameworks/GGEMSOpenCLCommons.hh"
-#include "GGEMS/tools/GGEMSException.hh"
-#include "GGEMS/tools/GGEMSLogger.hh"
+#include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/GGEMSLogger.hh"
 
 void ggocl::Failure(std::string_view filename, std::string_view function_name, int line, cl_int error_code) {
   if (error_code == CL_SUCCESS) return;

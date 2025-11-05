@@ -127,6 +127,14 @@ public: // ----- Identity properties -----
 
   [[nodiscard]] std::string GetOpenCLCVersion() const;
 
+  [[nodiscard]] std::vector<cl_name_version> GetOpenCLCAllVersions() const;
+
+  [[nodiscard]] cl_version_khr GetOpenCLCNumericVersionKhr() const;
+
+  [[nodiscard]] std::vector<cl_name_version> GetOpenCLCFeatures() const;
+
+  [[nodiscard]] cl_version GetCxxForOpenCLNumericVersionExt() const;
+
   [[nodiscard]] cl_version GetNumericVersion() const;
 
   [[nodiscard]] std::string GetUUIDKhr() const;
@@ -250,6 +258,14 @@ public: // ----- Memory -----
 
   [[nodiscard]] std::size_t GetGlobalVariablePreferredTotalSize() const;
 
+  [[nodiscard]] std::size_t GetMaxParameterSize() const;
+
+  [[nodiscard]] cl_uint GetPreferredPlatformAtomicAlignment() const;
+
+  [[nodiscard]] cl_uint GetPreferredGlobalAtomicAlignment() const;
+
+  [[nodiscard]] cl_uint GetPreferredLocalAtomicAlignment() const;
+
 public: // ----- IL/SpirV -----
   [[nodiscard]] std::string GetILVersion() const;
 
@@ -287,6 +303,12 @@ public: // ----- Queue/Device-side -----
   [[nodiscard]] cl_bool GetGenericAddressSpaceSupport() const;
 
   [[nodiscard]] cl_device_device_enqueue_capabilities GetDeviceEnqueueCapabilities() const;
+
+  [[nodiscard]] cl_device_exec_capabilities GetExecutionCapabilities() const;
+
+  [[nodiscard]] cl_uint GetReferenceCount() const;
+
+  [[nodiscard]] std::string GetLastestConformanceVersionPassed() const;
 
 public: // ----- Partition -----
   [[nodiscard]] cl_uint GetPartitionMaxSubDevices() const;
@@ -376,6 +398,8 @@ public:
   [[nodiscard]] inline std::string LUIDToString(cl_uchar const* luid) const;
 
   [[nodiscard]] std::string FPConfigToString(cl_device_fp_config cfg) const;
+
+  [[nodiscard]] std::string ExecCapabilitiesToString(cl_device_exec_capabilities caps) const;
 
 private:
   void PrintIdentity() const;

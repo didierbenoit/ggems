@@ -16,16 +16,19 @@
 // *                                                                      *
 // ************************************************************************
 
-#include <pybind11/pybind11.h>
-#include "GGEMS/frameworks/GGEMSOpenCL.hh"
+/*!
+ * \file GGEMSLocal.cc
+ * \brief Implementation of per-thread staging buffer for logging.
+ */
 
-namespace py = pybind11;
+#include "GGEMS/core/GGEMSLocal.hh"
 
-void GGEMSInitFrameworks(py::module_& m) {
-  py::class_<GGEMSOpenCL>(m, "GGEMSOpenCL", "GGEMSOpenCL singleton class managing OpenCL ressources", py::module_local())
-    .def(py::init([]() -> GGEMSOpenCL* {return &GGEMSOpenCL::GetInstance();}), py::return_value_policy::reference, "Return GGEMSOpenCL singleton instance")
-    .def("__del__", [](GGEMSOpenCL&) {}, "Do nothing on deletion (C++ singleton)")
-    .def("print_platforms", &GGEMSOpenCL::PrintPlatforms, "Print infos about all found OpenCL platforms")
-    .def("print_devices", &GGEMSOpenCL::PrintDevices, "Print infos about all found OpenCL devices")
-    .def("clean", &GGEMSOpenCL::Clean, "Release the internal compilers of the platform");
+thread_local GGEMSLocal gglog::local;
+
+bool GGEMSLocal::IsVisible(gglog::Level level) const noexcept {
+  return GGEMSLogger::GetInstance().IsVisible(level);
+}
+
+void GGEMSLocal::WriteMessage() const noexcept {
+  GGEMSLogger::GetInstance().LogMessage(level_, osstream_.str(), class_name_, method_name_);
 }

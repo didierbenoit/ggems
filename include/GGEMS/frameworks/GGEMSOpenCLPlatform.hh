@@ -162,20 +162,6 @@ public:
   [[nodiscard]] std::vector<cl_name_version> GetExtensionsWithVersion() const;
 
   /*!
-   * \brief Retrieve the ICD loader suffix (OpenCL 3.0).
-   * \return ICD suffix string (may be empty if unspecified).
-   */
-  [[nodiscard]] std::string GetIcdSuffixKhr() const;
-
-  [[nodiscard]] std::vector<cl_external_memory_handle_type_khr> GetExternalMemoryImportHandleTypesKhr() const;
-
-//  [[nodiscard]] std::vector<cl_semaphore_type_khr> GetSemaphoreTypesKhr() const;
-
-//  [[nodiscard]] std::vector<cl_external_semaphore_handle_type_khr> GetSemaphoreImportHandleTypesKhr() const;
-
-//  [[nodiscard]] std::vector<cl_external_semaphore_handle_type_khr> GetSemaphoreExportHandleTypesKhr() const;
-
-  /*!
    * \brief Print a comprehensive platform report to the terminal using GGEMS logger.
    *
    * The report includes:
