@@ -40,21 +40,21 @@ GGEMSOpenCLPlatform::GGEMSOpenCLPlatform(cl::Platform const& platform, std::size
   : platform_{platform}
   , platform_index_{platform_index}
 {
-  gglog::info3("GGEMSOpenCLPlatform", "GGEMSOpenCLPlatform")
-    << "Allocating GGEMSOpenCLPlatform [" << platform_index_ << "] ..." << gglog::endl;
+//  gglog::info3("GGEMSOpenCLPlatform", "GGEMSOpenCLPlatform")
+  //  << "Allocating GGEMSOpenCLPlatform [" << platform_index_ << "] ..." << gglog::endl;
 
   extensions_ = ExtractExtensions(platform_, CL_PLATFORM_EXTENSIONS);
 
   // Discover CPU/GPU devices now; contexts/queues are created later on demand.
   DiscoverDevices();
 
-  gglog::info2("GGEMSOpenCLPlatform", "GGEMSOpenCLPlatform")
-    << "GGEMSOpenCLPlatform allocated with " << devices_.size() << " device(s)" << gglog::endl;
+ // gglog::info2("GGEMSOpenCLPlatform", "GGEMSOpenCLPlatform")
+ //   << "GGEMSOpenCLPlatform allocated with " << devices_.size() << " device(s)" << gglog::endl;
 }
 
 GGEMSOpenCLPlatform::~GGEMSOpenCLPlatform() {
-  gglog::info3("GGEMSOpenCLPlatform","~GGEMSOpenCLPlatform")
-    << "Releasing GGEMSOpenCLPlatform [" << platform_index_ << "]" << gglog::endl;
+//  gglog::info3("GGEMSOpenCLPlatform","~GGEMSOpenCLPlatform")
+//    << "Releasing GGEMSOpenCLPlatform [" << platform_index_ << "]" << gglog::endl;
 }
 
 // -------------------- Queries --------------------
@@ -97,7 +97,7 @@ std::vector<cl_name_version> GGEMSOpenCLPlatform::GetExtensionsWithVersion() con
 
 // -------------------- Reporting --------------------
 void GGEMSOpenCLPlatform::PrintIdentity() const {
-   gglog::info("GGEMSOpenCLPlatform", "PrintIdentity")
+/*   gglog::info("GGEMSOpenCLPlatform", "PrintIdentity")
     << "-> Profile: " << GetProfile() << gglog::endl;
 
   gglog::info("GGEMSOpenCLPlatform", "PrintIdentity")
@@ -110,16 +110,16 @@ void GGEMSOpenCLPlatform::PrintIdentity() const {
     << "-> Discovered devices: " << devices_.size() << gglog::endl;
 
   gglog::info("GGEMSOpenCLPlatform", "PrintIdentity")
-    << "-> Host Timer Resolution: " << GetHostTimerResolution() << " ns" << gglog::endl;
+    << "-> Host Timer Resolution: " << GetHostTimerResolution() << " ns" << gglog::endl;*/
 }
 
 void GGEMSOpenCLPlatform::PrintExtension() const {
-  gglog::info("GGEMSOpenCLPlatform", "PrintExtensions")
-    << "-> Extensions with version: " << ClNameVersionToString(GetExtensionsWithVersion()) << gglog::endl;
+//  gglog::info("GGEMSOpenCLPlatform", "PrintExtensions")
+//    << "-> Extensions with version: " << ClNameVersionToString(GetExtensionsWithVersion()) << gglog::endl;
 }
 
 void GGEMSOpenCLPlatform::Print() const {
-  gglog::info("GGEMSOpenCLPlatform", "Print")
+/*  gglog::info("GGEMSOpenCLPlatform", "Print")
     << "+++++++++++++++++++++++++++++++++++++" << gglog::endl;
 
   gglog::info("GGEMSOpenCLPlatform", "Print")
@@ -130,7 +130,7 @@ void GGEMSOpenCLPlatform::Print() const {
   PrintExtension();
 
   gglog::info("GGEMSOpenCLPlatform", "Print")
-    << "+++++++++++++++++++++++++++++++++++++" << gglog::endl;
+    << "+++++++++++++++++++++++++++++++++++++" << gglog::endl;*/
 }
 
 // -------------------- Devices & cleanup --------------------
@@ -144,23 +144,23 @@ std::vector<GGEMSOpenCLDevice const*> GGEMSOpenCLPlatform::GetDevices() const {
 }
 
 void GGEMSOpenCLPlatform::Clean() {
-  gglog::info3("GGEMSOpenCLPlatform", "Clean")
-    << "Cleaning Platform " << GetName() << " resources..." << gglog::endl;
+/*  gglog::info3("GGEMSOpenCLPlatform", "Clean")
+    << "Cleaning Platform " << GetName() << " resources..." << gglog::endl;*/
 
   platform_.unloadCompiler();
   devices_.clear();
   extensions_.clear();
 
-  gglog::info3("GGEMSOpenCLPlatform", "Clean")
-    << "Platform resources cleaned." << gglog::endl;
+/*  gglog::info3("GGEMSOpenCLPlatform", "Clean")
+    << "Platform resources cleaned." << gglog::endl;*/
 }
 
 // -------------------- Internal discovery --------------------
 
 void GGEMSOpenCLPlatform::DiscoverDevices() {
-  gglog::info3("GGEMSOpenCLPlatform", "DiscoverDevices")
+/*  gglog::info3("GGEMSOpenCLPlatform", "DiscoverDevices")
     << "Discovering OpenCL devices for platform [" << platform_index_ << "] ..."
-    << gglog::endl;
+    << gglog::endl;*/
 
   constexpr cl_device_type mask = CL_DEVICE_TYPE_CPU | CL_DEVICE_TYPE_GPU;
 
@@ -174,7 +174,7 @@ void GGEMSOpenCLPlatform::DiscoverDevices() {
     devices_.emplace_back(std::make_unique<GGEMSOpenCLDevice>(natives[i], platform_index_, i));
   }
 
-  gglog::info2("GGEMSOpenCLPlatform", "DiscoverDevices")
+/*  gglog::info2("GGEMSOpenCLPlatform", "DiscoverDevices")
     << "Found " << natives.size() << " device(s) on platform [" << platform_index_ << "]"
-    << gglog::endl;
+    << gglog::endl;*/
 }

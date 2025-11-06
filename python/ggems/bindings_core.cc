@@ -7,7 +7,7 @@ namespace py = pybind11;
 void GGEMSVerbosity(int level) {
   if (level > 4 || level < 0) level = 4;
 
-  switch (level) {
+/*  switch (level) {
     case 0:
     case 1:
       GGEMSLogger::GetInstance().SetLevelInfos(gglog::Level::INFO);
@@ -20,7 +20,7 @@ void GGEMSVerbosity(int level) {
       break;
     default:
       GGEMSLogger::GetInstance().SetLevelInfos(gglog::Level::INFO4);
-  }
+  }*/
 }
 
 void GGEMSInitCore(py::module_ &m) {

@@ -39,7 +39,7 @@ void ggocl::Failure(std::string_view filename, std::string_view function_name, i
 
 [[noreturn]] void ggocl::TerminateHandler() noexcept {
   try {
-    gglog::err() << "[GGEMS] Uncaught exception — terminating now." << gglog::endl;
+//    gglog::err() << "[GGEMS] Uncaught exception — terminating now." << gglog::endl;
   } catch (...) {
     // Swallow all
   }

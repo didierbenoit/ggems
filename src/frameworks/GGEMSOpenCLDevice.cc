@@ -804,7 +804,7 @@ std::string GGEMSOpenCLDevice::ExecCapabilitiesToString(cl_device_exec_capabilit
 }
 
 void GGEMSOpenCLDevice::PrintIdentity() const {
-  gglog::info("GGEMSOpenCLDevice", "PrintIdentity") << "-> Name: "
+/*  gglog::info("GGEMSOpenCLDevice", "PrintIdentity") << "-> Name: "
     << GetName() << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintIdentity") << "-> Vendor: "
@@ -834,11 +834,11 @@ void GGEMSOpenCLDevice::PrintIdentity() const {
   }
 
   gglog::info("GGEMSOpenCLDevice", "PrintIdentity") << "-> Numeric Version: "
-    << ClVersionToString(GetNumericVersion()) << gglog::endl;
+    << ClVersionToString(GetNumericVersion()) << gglog::endl;*/
 }
 
 void GGEMSOpenCLDevice::PrintTypeID() const {
-  gglog::info("GGEMSOpenCLDevice", "PrintTypeID") << "-> Type: "
+ /* gglog::info("GGEMSOpenCLDevice", "PrintTypeID") << "-> Type: "
     << DeviceTypeToString(GetType()) << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintTypeID") << "-> Vendor ID: "
@@ -851,11 +851,11 @@ void GGEMSOpenCLDevice::PrintTypeID() const {
     << GetDriverUUIDKhr() << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintTypeID") << "-> LUID: "
-    << GetLUIDKhr() << gglog::endl;
+    << GetLUIDKhr() << gglog::endl;*/
 }
 
 void GGEMSOpenCLDevice::PrintCompute() const {
-   gglog::info("GGEMSOpenCLDevice", "PrintCompute") << "-> Max Compute Units: "
+/*   gglog::info("GGEMSOpenCLDevice", "PrintCompute") << "-> Max Compute Units: "
     << GetMaxComputeUnits() << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintCompute") << "-> Max Clock Frequency: "
@@ -873,11 +873,11 @@ void GGEMSOpenCLDevice::PrintCompute() const {
     << "," << GetMaxWorkItemSizes()[2] << "]" << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintCompute") << "-> Preferred Workgroup Size Multiple: "
-    << GetPreferredWorkGroupSizeMultiple() << gglog::endl;
+    << GetPreferredWorkGroupSizeMultiple() << gglog::endl;*/
 }
 
 void GGEMSOpenCLDevice::PrintVectorisation() const {
-  gglog::info("GGEMSOpenCLDevice", "PrintVectorisation") << "-> Preferred Vector Width Char: "
+/*  gglog::info("GGEMSOpenCLDevice", "PrintVectorisation") << "-> Preferred Vector Width Char: "
     << GetPreferredVectorWidthChar() << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintVectorisation") << "-> Preferred Vector Width Short: "
@@ -917,11 +917,11 @@ void GGEMSOpenCLDevice::PrintVectorisation() const {
     << GetNativeVectorWidthDouble() << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintVectorisation") << "-> Native Vector Width Half: "
-    << GetNativeVectorWidthHalf() << gglog::endl;
+    << GetNativeVectorWidthHalf() << gglog::endl;*/
 }
 
 void GGEMSOpenCLDevice::PrintFloatingPoint() const {
-  if (CheckExtension("cl_khr_fp16")) {
+/*  if (CheckExtension("cl_khr_fp16")) {
     gglog::info("GGEMSOpenCLDevice", "PrintFloatingPoint") << "-> Half FP Config: "
       << FPConfigToString(GetHalfFpConfig()) << gglog::endl;
   }
@@ -932,11 +932,11 @@ void GGEMSOpenCLDevice::PrintFloatingPoint() const {
   if (CheckExtension("cl_khr_fp64")) {
     gglog::info("GGEMSOpenCLDevice", "PrintFloatingPoint") << "-> Double FP Config: "
       << FPConfigToString(GetDoubleFpConfig()) << gglog::endl;
-  }
+  }*/
 }
 
 void GGEMSOpenCLDevice::PrintMemory() const {
-  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Max Global Variable Size: "
+/*  gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Max Global Variable Size: "
     << GetMaxGlobalVariableSize() << " bytes" << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Global Variable Preferred Total Size: "
@@ -988,11 +988,11 @@ void GGEMSOpenCLDevice::PrintMemory() const {
     << GetPreferredGlobalAtomicAlignment() << " bytes" << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintMemory") << "-> Preferred Local Atomic Alignment: "
-    << GetPreferredLocalAtomicAlignment() << " bytes" << gglog::endl;
+    << GetPreferredLocalAtomicAlignment() << " bytes" << gglog::endl;*/
 }
 
 void GGEMSOpenCLDevice::PrintImages() const {
-   gglog::info("GGEMSOpenCLDevice", "PrintImages") << "-> Image Support: "
+/*   gglog::info("GGEMSOpenCLDevice", "PrintImages") << "-> Image Support: "
     << ClBoolToString(GetImageSupport()) << gglog::endl;
 
    gglog::info("GGEMSOpenCLDevice", "PrintImages") << "-> Image2D Max Width: "
@@ -1032,19 +1032,19 @@ void GGEMSOpenCLDevice::PrintImages() const {
     << GetImageMaxArraySize() << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintImages") << "-> Max Samplers: "
-    << GetMaxSamplers() << gglog::endl;
+    << GetMaxSamplers() << gglog::endl;*/
 }
 
 void GGEMSOpenCLDevice::PrintILSpirV() const {
-  gglog::info("GGEMSOpenCLDevice", "PrintILSpirV") << "-> IL Version: "
+/*  gglog::info("GGEMSOpenCLDevice", "PrintILSpirV") << "-> IL Version: "
     << ClNameVersionToString(GetILSWithVersion()) << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintILSpirV") << "-> Spir-V Versions: "
-    << GetSpirVersions() << gglog::endl;
+    << GetSpirVersions() << gglog::endl;*/
 }
 
 void GGEMSOpenCLDevice::PrintQueueDeviceSide() const {
-  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Queue Properties: "
+/*  gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Queue Properties: "
     << QueuePropertiesToString(GetQueueProperties()) << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Queue On Host Properties: "
@@ -1096,11 +1096,11 @@ void GGEMSOpenCLDevice::PrintQueueDeviceSide() const {
     << GetReferenceCount() << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintQueueDeviceSide") << "-> Lastest Conformance Version Passed: "
-    << GetLastestConformanceVersionPassed() << gglog::endl;
+    << GetLastestConformanceVersionPassed() << gglog::endl;*/
 }
 
 void GGEMSOpenCLDevice::PrintPartition() const {
-  gglog::info("GGEMSOpenCLDevice", "PrintPartition") << "-> Partition Max Sub Devices: "
+/*  gglog::info("GGEMSOpenCLDevice", "PrintPartition") << "-> Partition Max Sub Devices: "
     << GetPartitionMaxSubDevices() << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintPartition") << "-> Partition Properties: "
@@ -1110,11 +1110,11 @@ void GGEMSOpenCLDevice::PrintPartition() const {
     << AffinityDomainToString(GetPartitionAffinityDomain()) << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintPartition") << "-> Partition Type: "
-    << PartitionPropertiesToString(GetPartitionType()) << gglog::endl;
+    << PartitionPropertiesToString(GetPartitionType()) << gglog::endl;*/
 }
 
 void GGEMSOpenCLDevice::PrintPipe() const {
-  gglog::info("GGEMSOpenCLDevice", "PrintPipe") << "-> Max Pipe Args: "
+/*  gglog::info("GGEMSOpenCLDevice", "PrintPipe") << "-> Max Pipe Args: "
     << GetMaxPipeArgs() << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintPipe") << "-> Pipe Max Active Reservations: "
@@ -1124,11 +1124,11 @@ void GGEMSOpenCLDevice::PrintPipe() const {
     << GetPipeMaxPacketSize() << " bytes" << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintPipe") << "-> Pipe Support: "
-    << GetPipeSupport() << " bytes" << gglog::endl;
+    << GetPipeSupport() << " bytes" << gglog::endl;*/
 }
 
 void GGEMSOpenCLDevice::PrintExtensionsAndMisc() const {
-  gglog::info("GGEMSOpenCLDevice", "PrintExtensionsAndMisc") << "-> Extensions With Version: "
+/*  gglog::info("GGEMSOpenCLDevice", "PrintExtensionsAndMisc") << "-> Extensions With Version: "
     << ClNameVersionToString(GetExtensionsWithVersion()) << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintExtensionsAndMisc") << "-> Built In Kernels With Version: "
@@ -1156,12 +1156,12 @@ void GGEMSOpenCLDevice::PrintExtensionsAndMisc() const {
     << ClBoolToString(GetErrorCorrectionSupport()) << gglog::endl;
 
   gglog::info("GGEMSOpenCLDevice", "PrintExtensionsAndMisc") << "-> Printf Buffer Size: "
-    << GetPrintfBufferSize() << " bytes" << gglog::endl;
+    << GetPrintfBufferSize() << " bytes" << gglog::endl;*/
 }
 
 void GGEMSOpenCLDevice::Print() const {
-  gglog::info("GGEMSOpenCLDevice", "Print") << "----- Device [" 
-    << platform_index_ << ":" << device_index_ << "] -----" << gglog::endl;
+//  gglog::info("GGEMSOpenCLDevice", "Print") << "----- Device [" 
+//    << platform_index_ << ":" << device_index_ << "] -----" << gglog::endl;
 
   PrintIdentity();
   PrintTypeID();

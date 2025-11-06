@@ -82,7 +82,7 @@ public:
    */
   [[nodiscard]] static GGEMSOpenCL& GetInstance() {
     static GGEMSOpenCL* instance = []() {
-      gglog::info3("GGEMSOpenCL", "GetInstance") << "First instance of GGEMSOpenCL singleton..." << gglog::endl;
+//      gglog::info3("GGEMSOpenCL", "GetInstance") << "First instance of GGEMSOpenCL singleton..." << gglog::endl;
       return new GGEMSOpenCL(); // intentionally leaked
     }();
     return *instance;

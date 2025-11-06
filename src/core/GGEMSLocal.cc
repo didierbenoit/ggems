@@ -16,19 +16,30 @@
 // *                                                                      *
 // ************************************************************************
 
-/*!
- * \file GGEMSLocal.cc
- * \brief Implementation of per-thread staging buffer for logging.
- */
-
+/// \cond
+#include <thread>
+#include <utility>
+/// \endcond
 #include "GGEMS/core/GGEMSLocal.hh"
 
-thread_local GGEMSLocal gglog::local;
+namespace ggems::core {
+  static thread_local LocalState g_local_state{};
+  LocalState& local() { return g_local_state; }
 
-bool GGEMSLocal::IsVisible(gglog::Level level) const noexcept {
-  return GGEMSLogger::GetInstance().IsVisible(level);
-}
+  ScopedModule::ScopedModule(std::string module)
+  : prev_(g_local_state.module_) {
+    g_local_state.module_ = std::move(module);
+  }
 
-void GGEMSLocal::WriteMessage() const noexcept {
-  GGEMSLogger::GetInstance().LogMessage(level_, osstream_.str(), class_name_, method_name_);
-}
+  ScopedModule::~ScopedModule() {
+    g_local_state.module_ = std::move(prev_);
+  }
+
+  ScopedIndent::ScopedIndent() {
+    ++g_local_state.indent_;
+  }
+
+  ScopedIndent::~ScopedIndent() {
+    --g_local_state.indent_;
+  }
+} //namespace ggems::core
