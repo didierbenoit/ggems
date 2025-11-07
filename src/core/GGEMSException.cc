@@ -27,21 +27,30 @@
  */
 
 /// \cond
-#include <sstream>
+#include <format>
+#include <string_view>
+#include <utility>
 /// \endcond
 
 #include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/GGEMSLogger.hh"
 
-GGEMSException::GGEMSException(std::string_view filename, std::string_view function_name, int line, std::string_view error_name) {
-  BuildErrorMessage(filename, function_name, line, error_name);
-}
+namespace ggems::core
+{
+  GGEMSExceptionBase::GGEMSExceptionBase(
+    std::string          message,
+    std::string_view     category,
+    std::source_location loc
+  ) noexcept
+  : payload_(std::move(message))
+  , file_(loc.file_name() ? loc.file_name() : "")
+  , function_(loc.function_name() ? loc.function_name() : "")
+  , line_(static_cast<int>(loc.line()))
+  , category_(category)
+  {
+    full_ = std::vformat("[{}] {}:{} ({}) : {}",
+                         std::make_format_args(category_, file_, line_, function_, payload_));
 
-void GGEMSException::BuildErrorMessage(std::string_view filename, std::string_view function_name, int line, std::string_view error_name) {
-  std::ostringstream oss(std::ostringstream::out);
-  oss << "[GGEMSException]\n"
-      << "File     : " << filename << '\n'
-      << "Function : " << function_name << '\n'
-      << "Line     : " << line << '\n'
-      << "Error    : " << error_name;
-  error_message_ = oss.str();
-}
+    GGEMSLogger::GetInstance().Error("Exception", full_);
+  }
+} // namespace ggems::core

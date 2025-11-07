@@ -24,65 +24,75 @@
 #include <exception>
 #include <string>
 #include <string_view>
+#include <source_location>
+#include <type_traits>
 /// \endcond
 
-/*!
- * \class GGEMSException
- * \brief Exception class for structured GGEMS error diagnostics.
- *
- * The class constructs a detailed diagnostic message at runtime including:
- * - file of origin,
- * - function name,
- * - line number,
- * - and an error description.
- *
- * This facilitates consistent logging across OpenCL, Vulkan, and other
- * GGEMS subsystems while maintaining minimal runtime overhead.
- */
-class GGEMSException final : public std::exception {
-public:
-  /*!
-   * \brief Constructs a GGEMSException with full diagnostic information.
-   * \param filename      Name of the source file where the error occurred.
-   * \param function_name Name of the function where the exception was raised.
-   * \param line          Line number where the exception originated.
-   * \param error_name    Human-readable description of the error.
-   *
-   * Automatically builds a fully formatted diagnostic string suitable
-   * for output through `gglog::err()` or `std::cerr`.
-   */
-  [[nodiscard]]
-  GGEMSException(std::string_view filename, std::string_view function_name, int line, std::string_view error_name);
+namespace ggems::core {
+  class GGEMSExceptionBase : public std::exception {
+  public:
+    explicit GGEMSExceptionBase(
+      std::string          message,
+      std::string_view     category,
+      std::source_location loc = std::source_location::current()
+    ) noexcept;
 
-  /*!
-   * \brief Destructor (noexcept, defaulted).
-   */
-  ~GGEMSException() noexcept override = default;
+    ~GGEMSExceptionBase() override = default;
 
-public:
-  /*!
-   * \brief Retrieve the full error message as a C-string.
-   * \return Null-terminated pointer to the formatted message.
-   */
-  [[nodiscard]] char const* what() const noexcept override {
-    return error_message_.c_str();
+    [[nodiscard]] const char* what() const noexcept override { return full_.c_str(); }
+
+    [[nodiscard]] std::string_view Category() const noexcept { return category_; }
+    [[nodiscard]] std::string_view File()     const noexcept { return file_; }
+    [[nodiscard]] std::string_view Function() const noexcept { return function_; }
+    [[nodiscard]] int              Line()     const noexcept { return line_; }
+    [[nodiscard]] std::string_view Payload()  const noexcept { return payload_; }
+
+  private:
+    std::string payload_;   //!< Unformatted message payload
+    std::string full_;      //!< Fully formatted message returned by what()
+    std::string file_;      //!< Source file
+    std::string function_;  //!< Source function
+    int         line_{0};   //!< Source line
+    std::string category_;  //!< Exception category label
+  };
+
+  class GGEMSRecoverable final : public GGEMSExceptionBase
+  {
+  public:
+    explicit GGEMSRecoverable(
+      std::string          message,
+      std::source_location loc = std::source_location::current()
+    ) noexcept
+    : GGEMSExceptionBase(std::move(message), "Recoverable", loc) {}
+  };
+
+  class GGEMSFatal final : public GGEMSExceptionBase
+  {
+  public:
+    explicit GGEMSFatal(
+      std::string          message,
+      std::source_location loc = std::source_location::current()
+    ) noexcept
+    : GGEMSExceptionBase(std::move(message), "Fatal", loc) {}
+  };
+
+  class GGEMSInternal final : public GGEMSExceptionBase
+  {
+  public:
+    explicit GGEMSInternal(
+      std::string          message,
+      std::source_location loc = std::source_location::current()
+    ) noexcept
+    : GGEMSExceptionBase(std::move(message), "Internal", loc) {}
+  };
+
+  template <typename T>
+  concept GGEMSExceptionType = std::derived_from<T, GGEMSExceptionBase>;
+
+  template <GGEMSExceptionType E>
+  [[noreturn]] inline void Throw(
+      std::string_view     message,
+      std::source_location loc = std::source_location::current()) {
+    throw E(std::string(message), loc);
   }
-
-private:
-  /*!
-   * \brief Construct the detailed error message string.
-   * \param filename      Name of the source file where the error occurred.
-   * \param function_name Name of the function where the exception was raised.
-   * \param line          Line number in the source file where the exception occurred.
-   * \param error_name    Human-readable description of the error or failure cause.
-   *
-   * This function is called internally by the constructor to assemble a fully
-   * formatted diagnostic message combining file, function, line, and error details.
-   * The message is stored in the private member \c error_message_ and later returned
-   * by the \c what() accessor.
-   */
-  void BuildErrorMessage(std::string_view filename, std::string_view function_name, int line, std::string_view error_name);
-
-private:
-  std::string error_message_; /*!< Fully formatted diagnostic message. */
-};
+} // namespace ggems::core

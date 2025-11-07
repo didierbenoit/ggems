@@ -62,8 +62,9 @@ option(GGEMS_ENABLE_SPIRV_CACHE "Enable SPIR-V caching for OpenCL kernels" ON)
 # Dependencies
 # ----------------------------------------------------------------------------
 find_package(OpenCL REQUIRED)
+set(OPENCL_HPP_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/external/opencl-clhpp/include")
 message(STATUS "OpenCL library located at: ${OpenCL_LIBRARY}")
-message(STATUS "OpenCL include path: ${OpenCL_INCLUDE_DIRS}")
+message(STATUS "OpenCL include path: ${OPENCL_HPP_INCLUDE_DIR}")
 
 find_package(pybind11 REQUIRED CONFIG)
 
@@ -84,8 +85,7 @@ file(GLOB_RECURSE GGEMS_CORE_SOURCES
 add_library(ggems_core STATIC ${GGEMS_CORE_SOURCES})
 target_include_directories(ggems_core PUBLIC
   ${PROJECT_SOURCE_DIR}/include
-  ${OpenCL_INCLUDE_DIRS}
-  ${PROJECT_SOURCE_DIR}/external/OpenCL-CLHPP/include)
+  ${OPENCL_HPP_INCLUDE_DIR})
 target_link_libraries(ggems_core PUBLIC OpenCL::OpenCL)
 
 # ----------------------------------------------------------------------------

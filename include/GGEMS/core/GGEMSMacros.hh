@@ -1,3 +1,5 @@
+#pragma once
+
 // ************************************************************************
 // * This file is part of GGEMS.                                          *
 // *                                                                      *
@@ -16,30 +18,35 @@
 // *                                                                      *
 // ************************************************************************
 
-/// \cond
-#include <thread>
-#include <utility>
-/// \endcond
-#include "GGEMS/core/GGEMSLocal.hh"
+#define GGEMS_DEBUG(MODULE, FMT, ...) \
+  ggems::core::GGEMSLogger::GetInstance().Debug((MODULE), (FMT) __VA_OPT__(,) __VA_ARGS__)
 
-namespace ggems::core {
-  static thread_local LocalState g_local_state{};
-  LocalState& local() { return g_local_state; }
+#define GGEMS_INFO(MODULE, FMT, ...) \
+  ggems::core::GGEMSLogger::GetInstance().Info((MODULE), (FMT) __VA_OPT__(,) __VA_ARGS__)
 
-  ScopedModule::ScopedModule(std::string module)
-  : prev_(g_local_state.module_) {
-    g_local_state.module_ = std::move(module);
-  }
+#define GGEMS_WARN(MODULE, FMT, ...) \
+  ggems::core::GGEMSLogger::GetInstance().Warn((MODULE), (FMT) __VA_OPT__(,) __VA_ARGS__)
 
-  ScopedModule::~ScopedModule() {
-    g_local_state.module_ = std::move(prev_);
-  }
+#define GGEMS_ERROR(MODULE, FMT, ...) \
+  ggems::core::GGEMSLogger::GetInstance().Error((MODULE), (FMT) __VA_OPT__(,) __VA_ARGS__)
 
-  ScopedIndent::ScopedIndent() {
-    ++g_local_state.indent_;
-  }
+#define GGEMS_INFOEX(MODULE, DEPTH, FMT, ...) \
+  ggems::core::GGEMSLogger::GetInstance().InfoEx((DEPTH), (MODULE), (FMT) __VA_OPT__(,) __VA_ARGS__)
 
-  ScopedIndent::~ScopedIndent() {
-    --g_local_state.indent_;
-  }
-} //namespace ggems::core
+
+#define GGEMS_CHECK(COND, FMT, ...) \
+  do { \
+    if (!(COND)) { \
+      throw ::ggems::core::GGEMSInternal(std::format((FMT) __VA_OPT__(,) __VA_ARGS__)); \
+    } \
+  } while (false)
+
+#define GGOCL_CHECK(ERRCODE, FMT, ...) \
+  do { \
+    if ((ERRCODE) != CL_SUCCESS) { \
+      throw ::ggems::core::GGEMSRecoverable( \
+        std::format("{} (OpenCL error code: {})", std::format((FMT) __VA_OPT__(,) __VA_ARGS__), (ERRCODE)) \
+      ); \
+    } \
+  } while (false)
+

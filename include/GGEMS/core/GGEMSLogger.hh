@@ -30,6 +30,11 @@
 /// \endcond
 
 namespace ggems::core {
+  template <typename... Args>
+  [[nodiscard]] inline std::string FormatRuntime(std::string_view fmt, Args&&... args) {
+    return std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
+  }
+
   enum class LogLevel : std::uint8_t {
     Debug = 0,
     Info,
@@ -38,23 +43,22 @@ namespace ggems::core {
   };
 
   struct LogColorTheme {
-    std::string debug{"\033[36m"};
-    std::string info{"\033[32m"};
-    std::string warn{"\033[33m"};
-    std::string error{"\033[31m"};
-    std::string reset{"\033[0m"};
+    std::string debug_{"\033[36m"};
+    std::string info_{"\033[32m"};
+    std::string warn_{"\033[33m"};
+    std::string error_{"\033[31m"};
+    std::string reset_{"\033[0m"};
   };
 
   struct LogRecord {
     std::chrono::system_clock::time_point timestamp_{};
-    LogLevel level_{LogLevel::Info};
+    LogLevel        level_{LogLevel::Info};
     std::thread::id thread_id_{};
-    std::string module_{};
-    std::string message_{};
-    std::string function_{};
-    std::string file_{};
-    int line_{0};
-    int indent_{0};
+    std::string     module_{};
+    std::string     message_{};
+    std::string     function_{};
+    std::string     file_{};
+    int             line_{0};
   };
 
   class LogSink {
@@ -70,7 +74,8 @@ namespace ggems::core {
 
   class FileSink final : public LogSink {
   public:
-    explicit FileSink(std::string path);
+    explicit FileSink(std::string path) : path_(std::move(path)) {}
+
     void Write(LogRecord const& rec, std::string const& formatted) override;
   private:
     std::string path_{};
@@ -78,7 +83,7 @@ namespace ggems::core {
 
   class LogFormatter {
   public:
-    std::string format_(LogRecord const& rec, LogColorTheme const& theme, bool use_color) const;
+    std::string Format(LogRecord const& rec, LogColorTheme const& theme, bool use_color) const;
   };
 
   class GGEMSLogger {
@@ -90,10 +95,8 @@ namespace ggems::core {
 
   public:
     void AttachSink(std::unique_ptr<LogSink> sink);
-    void SetLevel(LogLevel lvl) noexcept;
-    void SetTheme(LogColorTheme theme);
     void SetForceColor(std::optional<bool> force);
-    void SetDetailLevel(int d) noexcept;
+    void SetDetailLevel(int d) noexcept { std::lock_guard<std::mutex> lock(mtx_); detail_level_ = d; }
 
     template <typename... Args>
     void Log(LogLevel lvl, std::string_view module, std::format_string<Args...> fmt,
@@ -108,40 +111,48 @@ namespace ggems::core {
       rec.function_ = loc.function_name();
       rec.file_ = loc.file_name();
       rec.line_ = static_cast<int>(loc.line());
-      rec.indent_ = 0;
       Dispatch(rec);
     }
 
     template <typename... Args>
     void Debug(std::string_view module, std::format_string<Args...> fmt,
+               std::source_location const& loc = std::source_location::current(), Args&&... args) {
+      Log(LogLevel::Debug, module, fmt, loc, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void Info(std::string_view module, std::format_string<Args...> fmt, Args&&... args) {
+      auto loc = std::source_location::current();
+      Log(LogLevel::Info, module, fmt, loc, std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    void Warn(std::string_view module, std::format_string<Args...> fmt,
               std::source_location const& loc = std::source_location::current(), Args&&... args) {
-      log(LogLevel::Debug, module, fmt, loc, std::forward<Args>(args)...);
+      Log(LogLevel::Warn, module, fmt, loc, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    void Info(std::string_view module, std::format_string<Args...> fmt,
-              std::source_location const& loc = std::source_location::current(), Args&&... args) {
-      log(LogLevel::Info, module, fmt, loc, std::forward<Args>(args)...);
+    void Error(
+        std::string_view module,
+        std::format_string<Args...> fmt,
+        std::source_location const& loc = std::source_location::current(), Args&&... args) {
+      Log(LogLevel::Error, module, fmt, loc, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    void warn(std::string_view module, std::format_string<Args...> fmt,
-              const std::source_location& loc = std::source_location::current(), Args&&... args) {
-      log(LogLevel::Warn, module, fmt, loc, std::forward<Args>(args)...);
-    }
-
-    template <typename... Args>
-    void error(std::string_view module, std::format_string<Args...> fmt,
-               const std::source_location& loc = std::source_location::current(), Args&&... args) {
-      log(LogLevel::Error, module, fmt, loc, std::forward<Args>(args)...);
-    }
-
-    template <typename... Args>
-    void infoEx(int depth, std::string_view module, std::format_string<Args...> fmt,
-                const std::source_location& loc = std::source_location::current(), Args&&... args) {
+    void InfoEx(
+        int depth,
+        std::string_view module,
+        std::format_string<Args...> fmt,
+        std::source_location const& loc = std::source_location::current(), Args&&... args) {
       if (depth > detail_level_) return;
-      log(LogLevel::Info, module, fmt, loc, std::forward<Args>(args)...);
+      Log(LogLevel::Info, module, fmt, loc, std::forward<Args>(args)...);
     }
+
+    void Error( std::string_view module, std::string_view msg,
+      std::source_location const& loc = std::source_location::current()
+    ) noexcept;
 
   private:
     GGEMSLogger();
@@ -150,18 +161,11 @@ namespace ggems::core {
     bool UseColour() const noexcept;
 
   private:
-    int detail_level_{1};
-    mutable std::mutex mtx_;
+    int                                   detail_level_{1};
+    mutable std::mutex                    mtx_;
     std::vector<std::unique_ptr<LogSink>> sinks_;
-    LogFormatter formatter_{};
-    LogColorTheme theme_{};
-    LogLevel level_{LogLevel::Info};
-    std::optional<bool> force_colour_{};
+    LogFormatter                          formatter_{};
+    LogColorTheme                         theme_{};
+    std::optional<bool>                   force_colour_{};
   };
-
-
-  #define GGEMS_DEBUG(MODULE, FMT, ...) ::ggems::core::GGEMSLogger::instance().debug((MODULE), FMT __VA_OPT__(,) __VA_ARGS__)
-  #define GGEMS_INFO(MODULE, FMT, ...)  ::ggems::core::GGEMSLogger::instance().info((MODULE), FMT __VA_OPT__(,) __VA_ARGS__)
-  #define GGEMS_WARN(MODULE, FMT, ...)  ::ggems::core::GGEMSLogger::instance().warn((MODULE), FMT __VA_OPT__(,) __VA_ARGS__)
-  #define GGEMS_ERROR(MODULE, FMT, ...) ::ggems::core::GGEMSLogger::instance().error((MODULE), FMT __VA_OPT__(,) __VA_ARGS__)
-} // namespace ggems::core
+} //namespace ggems::core

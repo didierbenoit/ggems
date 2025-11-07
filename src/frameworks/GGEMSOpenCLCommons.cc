@@ -1,4 +1,3 @@
-
 // ************************************************************************
 // * This file is part of GGEMS.                                          *
 // *                                                                      *
@@ -34,7 +33,7 @@
 void ggocl::Failure(std::string_view filename, std::string_view function_name, int line, cl_int error_code) {
   if (error_code == CL_SUCCESS) return;
   const std::string err = GetErrorString(error_code);
-  throw GGEMSException(filename, function_name, line, err);
+//  throw GGEMSException(filename, function_name, line, err);
 }
 
 [[noreturn]] void ggocl::TerminateHandler() noexcept {
@@ -53,13 +52,13 @@ std::string ggocl::GetErrorString(cl_int error) {
   // -30..-70  : Compile-time & API misuse
   // -1000..   : Extensions / vendor
   switch (error) {
-    case CL_DEVICE_NOT_FOUND:                        oss << "CL_DEVICE_NOT_FOUND: No matching devices for the requested type."; break;
-    case CL_DEVICE_NOT_AVAILABLE:                    oss << "CL_DEVICE_NOT_AVAILABLE: Device found but currently unavailable."; break;
-    case CL_COMPILER_NOT_AVAILABLE:                  oss << "CL_COMPILER_NOT_AVAILABLE: Program built from source but no compiler available."; break;
-    case CL_MEM_OBJECT_ALLOCATION_FAILURE:           oss << "CL_MEM_OBJECT_ALLOCATION_FAILURE: Failed to allocate memory for an OpenCL object."; break;
-    case CL_OUT_OF_RESOURCES:                        oss << "CL_OUT_OF_RESOURCES: Device-side resource allocation failure."; break;
-    case CL_OUT_OF_HOST_MEMORY:                      oss << "CL_OUT_OF_HOST_MEMORY: Host-side resource allocation failure."; break;
-    case CL_PROFILING_INFO_NOT_AVAILABLE:            oss << "CL_PROFILING_INFO_NOT_AVAILABLE: Queue lacks CL_QUEUE_PROFILING_ENABLE or event not complete."; break;
+    case CL_DEVICE_NOT_FOUND: oss << "CL_DEVICE_NOT_FOUND: No matching devices for the requested type."; break;
+    case CL_DEVICE_NOT_AVAILABLE: oss << "CL_DEVICE_NOT_AVAILABLE: Device found but currently unavailable."; break;
+    case CL_COMPILER_NOT_AVAILABLE: oss << "CL_COMPILER_NOT_AVAILABLE: Program built from source but no compiler available."; break;
+    case CL_MEM_OBJECT_ALLOCATION_FAILURE: oss << "CL_MEM_OBJECT_ALLOCATION_FAILURE: Failed to allocate memory for an OpenCL object."; break;
+    case CL_OUT_OF_RESOURCES: oss << "CL_OUT_OF_RESOURCES: Device-side resource allocation failure."; break;
+    case CL_OUT_OF_HOST_MEMORY: oss << "CL_OUT_OF_HOST_MEMORY: Host-side resource allocation failure."; break;
+    case CL_PROFILING_INFO_NOT_AVAILABLE: oss << "CL_PROFILING_INFO_NOT_AVAILABLE: Queue lacks CL_QUEUE_PROFILING_ENABLE or event not complete."; break;
     case CL_MEM_COPY_OVERLAP:                        oss << "CL_MEM_COPY_OVERLAP: Source and destination buffer regions overlap."; break;
     case CL_IMAGE_FORMAT_MISMATCH:                   oss << "CL_IMAGE_FORMAT_MISMATCH: Incompatible image formats."; break;
     case CL_IMAGE_FORMAT_NOT_SUPPORTED:              oss << "CL_IMAGE_FORMAT_NOT_SUPPORTED: Unsupported image format."; break;

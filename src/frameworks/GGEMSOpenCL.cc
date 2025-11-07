@@ -28,6 +28,7 @@
 
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
 
@@ -36,24 +37,27 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 GGEMSOpenCL::GGEMSOpenCL() {
+  GGEMS_INFOEX("OpenCL", 3, "Constructing GGEMSOpenCL singleton...");
+  double energy = 3.4;
+  GGEMS_INFO("Physics", "Energy deposited = {} keV", energy);
 //  gglog::info3("GGEMSOpenCL", "GGEMSOpenCL") << "Constructing GGEMSOpenCL singleton..." << gglog::endl;
   std::set_terminate(ggocl::TerminateHandler);
 
   DisableKernelCache();
 
-  try {
+ // try {
     InitPlatformsAndDevices();
 //    gglog::info2("GGEMSOpenCL", "GGEMSOpenCL") << "GGEMSOpenCL successfully constructed!" << gglog::endl;
-  } catch(GGEMSException& e) {
+//  } catch(GGEMSException& e) {
 //    gglog::err("GGEMSOpenCL", "GGEMSOpenCL") << "Critical initialization error: " << e.what() << gglog::endl;
-    std::terminate();
-  } catch(std::exception const& e) {
+  //  std::terminate();
+  //} catch(std::exception const& e) {
 //    gglog::err("GGEMSOpenCL", "GGEMSOpenCL") << "Unexpected std::exception: " << e.what() << gglog::endl;
-    std::terminate();
-  } catch(...) {
+  //  std::terminate();
+ // } catch(...) {
 //    gglog::err("GGEMSOpenCL", "GGEMSOpenCL") << "Unknown fatal error during OpenCL initialization." << gglog::endl;
-    std::terminate();
-  }
+   // std::terminate();
+ // }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -90,10 +94,10 @@ void GGEMSOpenCL::InitPlatformsAndDevices() {
   std::vector<cl::Platform> platforms;
 //  GGOCL_CHECK(cl::Platform::get(&platforms));
 
-  if (platforms.empty()) {
-    throw GGEMSException(__FILENAME__, __PRETTY_FUNCTION__, __LINE__,
-      "No OpenCL platforms detected on this system.");
-  }
+ // if (platforms.empty()) {
+ //   throw GGEMSException(__FILENAME__, __PRETTY_FUNCTION__, __LINE__,
+  //    "No OpenCL platforms detected on this system.");
+  //}
 
   platforms_.clear();
   platforms_.reserve(platforms.size());

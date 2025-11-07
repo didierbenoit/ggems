@@ -17,14 +17,18 @@ message(STATUS "Detected compiler: ${CMAKE_CXX_COMPILER_ID}")
 
 # --- Clang or clang-cl -------------------------------------------------------
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    include(${CMAKE_SOURCE_DIR}/cmake/ClangOptions.cmake)
+  include(${CMAKE_SOURCE_DIR}/cmake/ClangOptions.cmake)
 
 # --- Microsoft Visual C++ ----------------------------------------------------
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    include(${CMAKE_SOURCE_DIR}/cmake/MSVCOptions.cmake)
+  include(${CMAKE_SOURCE_DIR}/cmake/MSVCOptions.cmake)
 
 # --- Fallback ----------------------------------------------------------------
 else()
-    message(WARNING "Unsupported compiler detected: ${CMAKE_CXX_COMPILER_ID}")
-    message(WARNING "Default options will be used; please provide a specific configuration file.")
+  message(WARNING "Unsupported compiler detected: ${CMAKE_CXX_COMPILER_ID}")
+  message(WARNING "Default options will be used; please provide a specific configuration file.")
+endif()
+
+if (MSVC OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
