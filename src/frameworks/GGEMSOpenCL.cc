@@ -32,28 +32,28 @@
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
 
+using ggems::core::GGEMSExceptionBase;
+using ggems::core::GGEMSLogger;
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
 GGEMSOpenCL::GGEMSOpenCL() {
-  GGEMS_INFOEX("OpenCL", 3, "Constructing GGEMSOpenCL singleton...");
-  std::set_terminate(ggocl::TerminateHandler);
+  GGEMS_INFOEX("OpenCL", 2, "Constructing GGEMSOpenCL singleton...");
+  std::set_terminate(ggems::core::TerminateHandler);
   DisableKernelCache();
 
- // try {
+  try {
     InitPlatformsAndDevices();
-    GGEMS_INFOEX("OpenCL", 2, "GGEMSOpenCL successfully constructed!");
-//  } catch(GGEMSException& e) {
-//    gglog::err("GGEMSOpenCL", "GGEMSOpenCL") << "Critical initialization error: " << e.what() << gglog::endl;
-  //  std::terminate();
-  //} catch(std::exception const& e) {
-//    gglog::err("GGEMSOpenCL", "GGEMSOpenCL") << "Unexpected std::exception: " << e.what() << gglog::endl;
-  //  std::terminate();
- // } catch(...) {
-//    gglog::err("GGEMSOpenCL", "GGEMSOpenCL") << "Unknown fatal error during OpenCL initialization." << gglog::endl;
-   // std::terminate();
- // }
+    GGEMS_INFOEX("OpenCL", 1, "GGEMSOpenCL successfully constructed!");
+  } catch(GGEMSExceptionBase& e) {
+    std::terminate();
+  } catch(std::exception const& e) {
+    std::terminate();
+  } catch(...) {
+    std::terminate();
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -61,8 +61,8 @@ GGEMSOpenCL::GGEMSOpenCL() {
 ////////////////////////////////////////////////////////////////////////////////
 
 GGEMSOpenCL::~GGEMSOpenCL() {
-  GGEMS_INFOEX("OpenCL", 3, "Releasing GGEMSOpenCL resources...");
-  GGEMS_INFOEX("OpenCL", 3, "GGEMSOpenCL singleton destroyed (memory intentionally retained).");
+  GGEMS_INFOEX("OpenCL", 2, "Releasing GGEMSOpenCL resources...");
+  GGEMS_INFOEX("OpenCL", 2, "GGEMSOpenCL singleton destroyed (memory intentionally retained).");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -77,7 +77,7 @@ void GGEMSOpenCL::DisableKernelCache() const {
   setenv("CUDA_CACHE_DISABLE", "1", 1);
   #endif
 
-  GGEMS_INFOEX("OpenCL", 3, "CUDA kernel cache disabled.");
+  GGEMS_INFOEX("OpenCL", 2, "CUDA kernel cache disabled.");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -85,16 +85,14 @@ void GGEMSOpenCL::DisableKernelCache() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 void GGEMSOpenCL::InitPlatformsAndDevices() {
-  GGEMS_INFOEX("OpenCL", 2, "Enumerating OpenCL platforms...");
+  GGEMS_INFOEX("OpenCL", 1, "Enumerating OpenCL platforms...");
 
   std::vector<cl::Platform> platforms;
-//  GGOCL_CHECK(cl::Platform::get(&platforms));
- // GGOCL_CHECK(cl::Platform::get(&platforms));
+  GGEMS_OCL_CHECK(cl::Platform::get(&platforms),
+                  "No OpenCL platforms detected on this system.");
 
- // if (platforms.empty()) {
- //   throw GGEMSException(__FILENAME__, __PRETTY_FUNCTION__, __LINE__,
-  //    "No OpenCL platforms detected on this system.");
-  //}
+  int a = 0;
+  GGEMS_CHECK(a > 0, "Probleme");
 
   platforms_.clear();
   platforms_.reserve(platforms.size());
@@ -103,7 +101,7 @@ void GGEMSOpenCL::InitPlatformsAndDevices() {
     platforms_.emplace_back(p, plat_index++);
   }
 
-  GGEMS_INFOEX("OpenCL", 2, "{} OpenCL platform(s) initialized.", platforms_.size());
+  GGEMS_INFOEX("OpenCL", 1, "{} OpenCL platform(s) initialized.", platforms_.size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -137,11 +135,11 @@ void GGEMSOpenCL::PrintDevices() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 void GGEMSOpenCL::Clean() noexcept {
-  GGEMS_INFOEX("OpenCL", 2, "Cleaning all OpenCL platform resources...");
+  GGEMS_INFOEX("OpenCL", 1, "Cleaning all OpenCL platform resources...");
 
   for (auto& p : platforms_) {
     p.Clean();
   }
 
-  GGEMS_INFOEX("OpenCL", 2, "All OpenCL platforms cleaned successfully.");
+  GGEMS_INFOEX("OpenCL", 1, "All OpenCL platforms cleaned successfully.");
 }

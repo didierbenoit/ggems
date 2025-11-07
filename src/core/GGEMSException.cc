@@ -18,36 +18,32 @@
 
 /*!
  * \file GGEMSException.cc
- * \brief Definition of GGEMSException for handling GGEMS-specific error
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-10-12
- * \copyright GNU General Public License v3.0
- * \version 2.0
  */
 
-/// \cond
-#include <format>
-#include <string_view>
-#include <utility>
-/// \endcond
-
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSLogger.hh"
 
-namespace ggems::core
-{
-  GGEMSExceptionBase::GGEMSExceptionBase(std::string message, std::string_view category, std::source_location loc) noexcept
-  : payload_(std::move(message))
-  , file_(loc.file_name() ? loc.file_name() : "")
-  , function_(loc.function_name() ? loc.function_name() : "")
-  , line_(static_cast<int>(loc.line()))
-  , category_(category)
-  {
-    full_ = std::vformat("[{}] {}:{} ({}) : {}",
-                         std::make_format_args(category_, file_, line_, function_, payload_));
-    GGEMSLogger::GetInstance().Error("Exception", "[{}] {}:{} ({}) : {}",
-                                     std::source_location::current(),
-                                     category_, file_, line_, function_, payload_);
+namespace ggems::core {
+  void TerminateHandler() noexcept {
+    try {
+      if (auto ex = std::current_exception()) {
+        try {
+          std::rethrow_exception(ex);
+        } catch (GGEMSExceptionBase const& e) {
+          if (!e.Logged()) {
+            GGEMSLogger::GetInstance().Error("Fatal", e.what());
+          }
+        } catch (std::exception const& e) {
+          GGEMSLogger::GetInstance().Error("Fatal", e.what());
+        } catch (...) {
+          GGEMSLogger::GetInstance().Error("Fatal", "Unknown non-standard exception");
+        }
+      } else {
+        GGEMSLogger::GetInstance().Error("Fatal", "Terminate called with no active exception");
+      }
+    } catch (...) {
+      std::fputs("GGEMS Fatal Error: logger failed inside TerminateHandler\n", stderr);
+    }
+
+    std::abort();
   }
-} // namespace ggems::core
+} // ggems::core

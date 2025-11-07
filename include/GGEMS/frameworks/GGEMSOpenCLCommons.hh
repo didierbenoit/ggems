@@ -42,6 +42,7 @@
 #include <sstream>
 #include <vector>
 #include <unordered_set>
+#include <format>
 /// \endcond
 
 #define CL_HPP_TARGET_OPENCL_VERSION 300
@@ -58,123 +59,61 @@
 #endif
 
 #include <CL/opencl.hpp>
+#include "GGEMS/core/GGEMSException.hh"
 
 #if defined(__clang__)
   #pragma clang diagnostic pop
 #endif
 
-#ifdef _MSC_VER
-  #define __PRETTY_FUNCTION__ __FUNCSIG__
-#endif
+namespace ggems::ocl {
+  [[nodiscard]] inline std::string_view GetErrorCodeName(cl_int err) noexcept {
+    switch (err) {
+      case CL_SUCCESS: return "CL_SUCCESS";
+      case CL_DEVICE_NOT_FOUND: return "CL_DEVICE_NOT_FOUND";
+      case CL_DEVICE_NOT_AVAILABLE: return "CL_DEVICE_NOT_AVAILABLE";
+      case CL_COMPILER_NOT_AVAILABLE: return "CL_COMPILER_NOT_AVAILABLE";
+      case CL_MEM_OBJECT_ALLOCATION_FAILURE: return "CL_MEM_OBJECT_ALLOCATION_FAILURE";
+      case CL_OUT_OF_RESOURCES: return "CL_OUT_OF_RESOURCES";
+      case CL_OUT_OF_HOST_MEMORY: return "CL_OUT_OF_HOST_MEMORY";
+      case CL_PROFILING_INFO_NOT_AVAILABLE: return "CL_PROFILING_INFO_NOT_AVAILABLE";
+      case CL_MEM_COPY_OVERLAP: return "CL_MEM_COPY_OVERLAP";
+      case CL_IMAGE_FORMAT_MISMATCH: return "CL_IMAGE_FORMAT_MISMATCH";
+      case CL_IMAGE_FORMAT_NOT_SUPPORTED: return "CL_IMAGE_FORMAT_NOT_SUPPORTED";
+      case CL_BUILD_PROGRAM_FAILURE: return "CL_BUILD_PROGRAM_FAILURE";
+      case CL_MAP_FAILURE: return "CL_MAP_FAILURE";
+      case CL_MISALIGNED_SUB_BUFFER_OFFSET: return "CL_MISALIGNED_SUB_BUFFER_OFFSET";
+      case CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST: return "CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST";
+      case CL_COMPILE_PROGRAM_FAILURE: return "CL_COMPILE_PROGRAM_FAILURE";
+      case CL_LINKER_NOT_AVAILABLE: return "CL_LINKER_NOT_AVAILABLE";
+      case CL_LINK_PROGRAM_FAILURE: return "CL_LINK_PROGRAM_FAILURE";
+      case CL_DEVICE_PARTITION_FAILED: return "CL_DEVICE_PARTITION_FAILED";
+      case CL_KERNEL_ARG_INFO_NOT_AVAILABLE: return "CL_KERNEL_ARG_INFO_NOT_AVAILABLE";
+      default: return "CL_UNKNOWN_ERROR";
+    }
+  }
 
-/*!
- * \def __FILENAME__
- * \brief Basename-only view of \c __FILE__ for concise diagnostics.
- */
-#ifdef _WIN32
-  #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
-#else
-  #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
-#endif
+  [[nodiscard]] inline std::string_view GetErrorDescription(cl_int err) noexcept {
+    switch (err) {
+      case CL_SUCCESS: return "Operation completed successfully.";
+      case CL_DEVICE_NOT_FOUND: return "No matching devices for the requested type.";
+      case CL_DEVICE_NOT_AVAILABLE: return "Device found but currently unavailable.";
+      case CL_COMPILER_NOT_AVAILABLE: return "Program built from source but no compiler available.";
+      case CL_MEM_OBJECT_ALLOCATION_FAILURE: return "Failed to allocate memory for an OpenCL object.";
+      default: return "Unknown OpenCL error.";
+    }
+  }
 
-/*!
- * \def GGOCL_CHECK
- * \brief Check an OpenCL call result and throw \c GGEMSException on failure.
- *
- * Casts to \c cl_int explicitly for portability across vendors and toolchains.
- * The macro calls \ref ggocl::Failure which throws on any code different from \c CL_SUCCESS.
- *
- * Usage (any cl.hpp call returning a \c cl_int):
- * \code
- * cl_int err = obj.getInfo(CL_DEVICE_NAME, &value);
- * GGOCL_CHECK(err);
- * \endcode
- */
-//#define GGOCL_CHECK(error) \
-//  (ggocl::Failure(__FILENAME__, __PRETTY_FUNCTION__, __LINE__, static_cast<cl_int>(error)))
+  [[nodiscard]] inline std::string GetErrorString(cl_int err) noexcept {
+    return std::format("{} - {}", GetErrorCodeName(err), GetErrorDescription(err));
+  }
 
-/*!
- * \namespace ggocl
- * \brief OpenCL utilities and error-management for GGEMS.
- */
-namespace ggocl {
-
-  /*!
-   * \brief Translate an OpenCL error code into a human-readable string.
-   * \param error_code OpenCL error code.
-   * \return Human-readable description of \p error_code.
-   *
-   * Covers core and common vendor/extension ranges. Always returns a valid string.
-   */
-  [[nodiscard]] std::string GetErrorString(cl_int error_code);
-
-  /*!
-   * \brief Failure reporter: throws a \c GGEMSException if \p error_code != \c CL_SUCCESS.
-   * \param filename      Basename of the source file where the failure occurred.
-   * \param function_name Callable/function where the failure occurred.
-   * \param line          Source line of the failure.
-   * \param error_code    OpenCL error code.
-   *
-   * The thrown exception embeds a structured, multi-line diagnostic message including
-   * file, function, line and a description of the OpenCL error.
-   */
-  void Failure(std::string_view filename, std::string_view function_name, int line, cl_int error_code);
-
-  /*!
-   * \brief A terminate handler suitable for HPC contexts and pybind11 integration.
-   *
-   * Logs a short message to \c std::cerr and aborts the process immediately.
-   * Intended to be installed via \c std::set_terminate in the framework initialisation.
-   * This function never returns.
-   */
-  [[noreturn]] void TerminateHandler() noexcept;
-
-  // ---------------------------------------------------------------------------
-  // Strongly-typed info accessors (C++98 cl.hpp wrapper, OpenCL 3.0)
-  // ---------------------------------------------------------------------------
-
-  /*!
-   * \namespace ggocl::utils
-   * \brief Header-only utilities to extract platform/device/context/queue/kernel/program info.
-   *
-   * The \c cl.hpp (C++98) wrapper provides an overload:
-   * \code
-   * obj.getInfo(param, &value)
-   * \endcode
-   * that we leverage for **scalars** and \c std::string (see \ref ggocl::utils::Get).
-   *
-   * For variable-sized arrays we switch to the C API (\c clGet*Info) through a tiny
-   * indirection layer (see \ref ggocl::utils::InfoInvoker) and the public helper
-   * \ref ggocl::utils::GetArray.
-   *
-   * Extra helpers:
-   * - \ref ggocl::utils::ExtractExtensions : splits a space-separated list into a set.
-   * - \ref ggocl::utils::HasExtension     : O(1) membership check on the set.
-   * - \ref ggocl::utils::ClVersionToString : converts \c cl_version to \c std::string.
-   * - \ref ggocl::utils::ClNameVersionToString : converts a \c std::vector<cl_name_version> to \c std::string.
-   */
-  namespace utils {
+  inline void CheckCLError(cl_int err, std::string_view context,
+                           std::source_location loc = std::source_location::current()) {
+    if (err != CL_SUCCESS)
+      ggems::core::ThrowCL(err, GetErrorString, context, loc);
+  }
 
     // ----------------- Indirection to the right clGet*Info function -----------------
-
-    /*!
-     * \brief Low-level indirection that binds an OpenCL C info query function to an object type.
-     *
-     * Primary template is intentionally undefined. Specialisations provide two static functions:
-     * - \c Size(Obj const&, cl_uint, std::size_t*)          — to query the required byte size,
-     * - \c Data(Obj const&, cl_uint, std::size_t, void*)    — to fetch the payload.
-     *
-     * Provided specialisations:
-     * - \c cl::Platform  -> \c clGetPlatformInfo
-     * - \c cl::Device    -> \c clGetDeviceInfo
-     * - \c cl::Context   -> \c clGetContextInfo
-     * - \c cl::CommandQueue -> \c clGetCommandQueueInfo
-     * - \c cl::Kernel    -> \c clGetKernelInfo
-     * - \c cl::Program   -> \c clGetProgramInfo
-     * - \c cl::Event     -> \c clGetEventInfo
-     *
-     * \tparam Obj OpenCL C++ wrapper type for which an information query indirection is provided.
-     */
     template <typename Obj> struct InfoInvoker;
 
     /// \cond INTERNAL
@@ -265,7 +204,7 @@ namespace ggocl {
     template <typename T, typename ObjType>
     [[nodiscard]] inline T Get(ObjType const& obj, cl_uint param) {
       T value{};
-      GGOCL_CHECK(obj.getInfo(param, &value));
+      //GGOCL_CHECK(obj.getInfo(param, &value));
       return value;
     }
 
@@ -287,7 +226,7 @@ namespace ggocl {
       static_assert(!std::is_pointer_v<T>, "T must not be a pointer type");
 
       std::size_t bytes = 0;
-      GGOCL_CHECK(InfoInvoker<ObjType>::Size(obj, param, &bytes));
+      //GGOCL_CHECK(InfoInvoker<ObjType>::Size(obj, param, &bytes));
       if (bytes == 0) return {};
 
       // Usual case: sizeof(T) > 0. For byte blobs this would be specialised elsewhere.
@@ -295,7 +234,7 @@ namespace ggocl {
       std::vector<T> out;
       if constexpr (sizeof(T) != 0) out.resize(count);
 
-      GGOCL_CHECK(InfoInvoker<ObjType>::Data(obj, param, bytes, out.data()));
+      //GGOCL_CHECK(InfoInvoker<ObjType>::Data(obj, param, bytes, out.data()));
       return out;
     }
 
@@ -310,7 +249,7 @@ namespace ggocl {
     [[nodiscard]] inline std::unordered_set<std::string>
     ExtractExtensions(ObjType const& obj, cl_uint param) {
       std::string ext_str;
-      GGOCL_CHECK(obj.getInfo(param, &ext_str));
+      //GGOCL_CHECK(obj.getInfo(param, &ext_str));
 
       std::unordered_set<std::string> result;
       std::istringstream iss(ext_str);
@@ -368,5 +307,4 @@ namespace ggocl {
       }
       return oss.str();
     }
-  } // namespace utils
-} // namespace ggocl
+} // namespace ggems::core

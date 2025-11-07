@@ -30,12 +30,12 @@
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 
-using ggocl::utils::Get;
-using ggocl::utils::GetArray;
-using ggocl::utils::ExtractExtensions;
-using ggocl::utils::HasExtension;
-using ggocl::utils::ClVersionToString;
-using ggocl::utils::ClNameVersionToString;
+using ggems::ocl::Get;
+using ggems::ocl::GetArray;
+using ggems::ocl::ExtractExtensions;
+using ggems::ocl::HasExtension;
+using ggems::ocl::ClVersionToString;
+using ggems::ocl::ClNameVersionToString;
 
 GGEMSOpenCLPlatform::GGEMSOpenCLPlatform(cl::Platform const& platform, std::size_t platform_index)
   : platform_{platform}

@@ -33,20 +33,15 @@
 #define GGEMS_INFOEX(MODULE, DEPTH, FMT, ...) \
   ggems::core::GGEMSLogger::GetInstance().InfoEx((DEPTH), (MODULE), (FMT), std::source_location::current(), __VA_ARGS__)
 
+#define GGEMS_CHECK(COND, MSG)                             \
+  do {                                                     \
+    if (!(COND))                                           \
+      ggems::core::Throw<ggems::core::GGEMSInternal>(MSG); \
+  } while(0)
 
-#define GGEMS_CHECK(COND, FMT, ...) \
-  do { \
-    if (!(COND)) { \
-      throw ::ggems::core::GGEMSInternal(std::format((FMT) __VA_OPT__(,) __VA_ARGS__)); \
-    } \
-  } while (false)
-
-#define GGOCL_CHECK(ERRCODE, FMT, ...) \
-  do { \
-    if ((ERRCODE) != CL_SUCCESS) { \
-      throw ::ggems::core::GGEMSRecoverable( \
-        std::format("{} (OpenCL error code: {})", std::format((FMT) __VA_OPT__(,) __VA_ARGS__), (ERRCODE)) \
-      ); \
-    } \
-  } while (false)
-
+#define GGEMS_OCL_CHECK(EXPR, CONTEXT)                          \
+  do {                                                          \
+    const cl_int error_code = (EXPR);                           \
+    ggems::ocl::CheckCLError(error_code, (CONTEXT),             \
+                              std::source_location::current()); \
+  } while (0)

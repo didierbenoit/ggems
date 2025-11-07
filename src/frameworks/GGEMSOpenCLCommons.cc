@@ -21,31 +21,7 @@
  * \brief Definitions for error translation, failure reporting and termination.
  */
 
-/// \cond
-#include <iostream>
-#include <sstream>
-/// \endcond
-
-#include "GGEMS/frameworks/GGEMSOpenCLCommons.hh"
-#include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSLogger.hh"
-
-void ggocl::Failure(std::string_view filename, std::string_view function_name, int line, cl_int error_code) {
-  if (error_code == CL_SUCCESS) return;
-  const std::string err = GetErrorString(error_code);
-//  throw GGEMSException(filename, function_name, line, err);
-}
-
-[[noreturn]] void ggocl::TerminateHandler() noexcept {
-  try {
-//    gglog::err() << "[GGEMS] Uncaught exception — terminating now." << gglog::endl;
-  } catch (...) {
-    // Swallow all
-  }
-  std::abort();
-}
-
-std::string ggocl::GetErrorString(cl_int error) {
+/*std::string ggocl::GetErrorString(cl_int error) {
   std::ostringstream oss;
   // Group common ranges for clarity:
   //  -1..-19  : Run-time & JIT
@@ -118,4 +94,4 @@ std::string ggocl::GetErrorString(cl_int error) {
   }
 
   return oss.str();
-}
+}*/

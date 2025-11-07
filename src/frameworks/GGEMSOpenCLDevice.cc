@@ -34,12 +34,12 @@
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 
-using ggocl::utils::Get;
-using ggocl::utils::GetArray;
-using ggocl::utils::ExtractExtensions;
-using ggocl::utils::HasExtension;
-using ggocl::utils::ClVersionToString;
-using ggocl::utils::ClNameVersionToString;
+using ggems::ocl::Get;
+using ggems::ocl::GetArray;
+using ggems::ocl::ExtractExtensions;
+using ggems::ocl::HasExtension;
+using ggems::ocl::ClVersionToString;
+using ggems::ocl::ClNameVersionToString;
 
 GGEMSOpenCLDevice::GGEMSOpenCLDevice(cl::Device const& device, std::size_t platform_index, std::size_t device_index)
 : device_{device}, platform_index_{platform_index}, device_index_{device_index} {
