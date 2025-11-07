@@ -37,11 +37,7 @@
 
 namespace ggems::core
 {
-  GGEMSExceptionBase::GGEMSExceptionBase(
-    std::string          message,
-    std::string_view     category,
-    std::source_location loc
-  ) noexcept
+  GGEMSExceptionBase::GGEMSExceptionBase(std::string message, std::string_view category, std::source_location loc) noexcept
   : payload_(std::move(message))
   , file_(loc.file_name() ? loc.file_name() : "")
   , function_(loc.function_name() ? loc.function_name() : "")
@@ -50,7 +46,8 @@ namespace ggems::core
   {
     full_ = std::vformat("[{}] {}:{} ({}) : {}",
                          std::make_format_args(category_, file_, line_, function_, payload_));
-
-    GGEMSLogger::GetInstance().Error("Exception", full_);
+    GGEMSLogger::GetInstance().Error("Exception", "[{}] {}:{} ({}) : {}",
+                                     std::source_location::current(),
+                                     category_, file_, line_, function_, payload_);
   }
 } // namespace ggems::core

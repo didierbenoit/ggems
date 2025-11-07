@@ -90,8 +90,8 @@
  * GGOCL_CHECK(err);
  * \endcode
  */
-#define GGOCL_CHECK(error) \
-  (ggocl::Failure(__FILENAME__, __PRETTY_FUNCTION__, __LINE__, static_cast<cl_int>(error)))
+//#define GGOCL_CHECK(error) \
+//  (ggocl::Failure(__FILENAME__, __PRETTY_FUNCTION__, __LINE__, static_cast<cl_int>(error)))
 
 /*!
  * \namespace ggocl

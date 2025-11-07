@@ -38,16 +38,12 @@
 
 GGEMSOpenCL::GGEMSOpenCL() {
   GGEMS_INFOEX("OpenCL", 3, "Constructing GGEMSOpenCL singleton...");
-  double energy = 3.4;
-  GGEMS_INFO("Physics", "Energy deposited = {} keV", energy);
-//  gglog::info3("GGEMSOpenCL", "GGEMSOpenCL") << "Constructing GGEMSOpenCL singleton..." << gglog::endl;
   std::set_terminate(ggocl::TerminateHandler);
-
   DisableKernelCache();
 
  // try {
     InitPlatformsAndDevices();
-//    gglog::info2("GGEMSOpenCL", "GGEMSOpenCL") << "GGEMSOpenCL successfully constructed!" << gglog::endl;
+    GGEMS_INFOEX("OpenCL", 2, "GGEMSOpenCL successfully constructed!");
 //  } catch(GGEMSException& e) {
 //    gglog::err("GGEMSOpenCL", "GGEMSOpenCL") << "Critical initialization error: " << e.what() << gglog::endl;
   //  std::terminate();
@@ -65,8 +61,8 @@ GGEMSOpenCL::GGEMSOpenCL() {
 ////////////////////////////////////////////////////////////////////////////////
 
 GGEMSOpenCL::~GGEMSOpenCL() {
-//  gglog::info3("GGEMSOpenCL", "~GGEMSOpenCL") << "Releasing GGEMSOpenCL resources..." << gglog::endl;
-//  gglog::info3("GGEMSOpenCL", "~GGEMSOpenCL") << "GGEMSOpenCL singleton destroyed (memory intentionally retained)." << gglog::endl;
+  GGEMS_INFOEX("OpenCL", 3, "Releasing GGEMSOpenCL resources...");
+  GGEMS_INFOEX("OpenCL", 3, "GGEMSOpenCL singleton destroyed (memory intentionally retained).");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -81,7 +77,7 @@ void GGEMSOpenCL::DisableKernelCache() const {
   setenv("CUDA_CACHE_DISABLE", "1", 1);
   #endif
 
-//  gglog::info3("GGEMSOpenCL", "~DisableKernelCache") << "CUDA kernel cache disabled" << gglog::endl;
+  GGEMS_INFOEX("OpenCL", 3, "CUDA kernel cache disabled.");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -89,10 +85,11 @@ void GGEMSOpenCL::DisableKernelCache() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 void GGEMSOpenCL::InitPlatformsAndDevices() {
-//  gglog::info2("GGEMSOpenCL", "InitPlatformsAndDevices") << "Enumerating OpenCL platforms..." << gglog::endl;
+  GGEMS_INFOEX("OpenCL", 2, "Enumerating OpenCL platforms...");
 
   std::vector<cl::Platform> platforms;
 //  GGOCL_CHECK(cl::Platform::get(&platforms));
+ // GGOCL_CHECK(cl::Platform::get(&platforms));
 
  // if (platforms.empty()) {
  //   throw GGEMSException(__FILENAME__, __PRETTY_FUNCTION__, __LINE__,
@@ -106,7 +103,7 @@ void GGEMSOpenCL::InitPlatformsAndDevices() {
     platforms_.emplace_back(p, plat_index++);
   }
 
-//  gglog::info2("GGEMSOpenCL", "InitPlatformsAndDevices") << platforms_.size() << " OpenCL platform(s) initialized." << gglog::endl;
+  GGEMS_INFOEX("OpenCL", 2, "{} OpenCL platform(s) initialized.", platforms_.size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -114,7 +111,7 @@ void GGEMSOpenCL::InitPlatformsAndDevices() {
 ////////////////////////////////////////////////////////////////////////////////
 
 void GGEMSOpenCL::PrintPlatforms() const {
-//  gglog::info("GGEMSOpenCL", "PrintPlatforms") << "Listing available OpenCL platforms..." << gglog::endl;
+  GGEMS_INFO("OpenCL", "Listing available OpenCL platforms...");
 
   for (auto const& p : platforms_) {
     p.Print();
@@ -126,7 +123,7 @@ void GGEMSOpenCL::PrintPlatforms() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 void GGEMSOpenCL::PrintDevices() const {
-//  gglog::info("GGEMSOpenCL", "PrintDevices") << "Listing available OpenCL devices..." << gglog::endl;
+  GGEMS_INFO("OpenCL", "Listing available OpenCL devices...");
 
   for (auto const& p : platforms_) {
     auto const& devices = p.GetDevices();
@@ -140,11 +137,11 @@ void GGEMSOpenCL::PrintDevices() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 void GGEMSOpenCL::Clean() noexcept {
-//  gglog::info2("GGEMSOpenCL", "Clean") << "Cleaning all OpenCL platform resources..." << gglog::endl;
+  GGEMS_INFOEX("OpenCL", 2, "Cleaning all OpenCL platform resources...");
 
   for (auto& p : platforms_) {
     p.Clean();
   }
 
-//  gglog::info2("GGEMSOpenCL", "Clean") << "All OpenCL platforms cleaned successfully." << gglog::endl;
+  GGEMS_INFOEX("OpenCL", 2, "All OpenCL platforms cleaned successfully.");
 }

@@ -56,7 +56,7 @@ namespace ggems::core {
     std::fflush(stream);
   }
 
-  void FileSink::Write(LogRecord const&, const std::string& formatted) {
+  void FileSink::Write(LogRecord const&, std::string const& formatted) {
     std::ofstream out(path_, std::ios::app);
     out << formatted << '\n';
   }
@@ -110,20 +110,6 @@ namespace ggems::core {
     }
     #endif
     sinks_.emplace_back(std::make_unique<ConsoleSink>());
-  }
-
-  void GGEMSLogger::Error(std::string_view module,
-                          std::string_view msg,
-                          std::source_location const& loc) noexcept {
-    LogRecord rec;
-    rec.level_    = LogLevel::Error;
-    rec.module_   = std::string(module);
-    rec.message_  = std::string(msg);
-    rec.function_ = loc.function_name();
-    rec.file_     = loc.file_name();
-    rec.line_     = static_cast<int>(loc.line());
-
-    Dispatch(rec); // ou ta méthode interne de log
   }
 
   void GGEMSLogger::AttachSink(std::unique_ptr<LogSink> sink) {

@@ -30,11 +30,6 @@
 /// \endcond
 
 namespace ggems::core {
-  template <typename... Args>
-  [[nodiscard]] inline std::string FormatRuntime(std::string_view fmt, Args&&... args) {
-    return std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
-  }
-
   enum class LogLevel : std::uint8_t {
     Debug = 0,
     Info,
@@ -99,15 +94,15 @@ namespace ggems::core {
     void SetDetailLevel(int d) noexcept { std::lock_guard<std::mutex> lock(mtx_); detail_level_ = d; }
 
     template <typename... Args>
-    void Log(LogLevel lvl, std::string_view module, std::format_string<Args...> fmt,
-             std::source_location const& loc = std::source_location::current(),
-             Args&&... args) {
+    void Log(LogLevel lvl, std::string_view module,
+                 std::source_location const& loc = std::source_location::current(),
+                 std::string_view msg = "") {
       LogRecord rec;
       rec.timestamp_ = std::chrono::system_clock::now();
       rec.level_ = lvl;
       rec.thread_id_ = std::this_thread::get_id();
       rec.module_ = std::string(module);
-      rec.message_ = std::vformat(fmt.get(), std::make_format_args(std::forward<Args>(args)...));
+      rec.message_ = msg;
       rec.function_ = loc.function_name();
       rec.file_ = loc.file_name();
       rec.line_ = static_cast<int>(loc.line());
@@ -115,44 +110,45 @@ namespace ggems::core {
     }
 
     template <typename... Args>
-    void Debug(std::string_view module, std::format_string<Args...> fmt,
-               std::source_location const& loc = std::source_location::current(), Args&&... args) {
-      Log(LogLevel::Debug, module, fmt, loc, std::forward<Args>(args)...);
+    void Debug(std::string_view module, std::string_view fmt_runtime,
+               std::source_location loc = std::source_location::current(),
+               Args&&... args) {
+      auto s = std::vformat(fmt_runtime, std::make_format_args(args...));
+      Log(LogLevel::Debug, module, loc, s);
     }
 
     template <typename... Args>
-    void Info(std::string_view module, std::format_string<Args...> fmt, Args&&... args) {
-      auto loc = std::source_location::current();
-      Log(LogLevel::Info, module, fmt, loc, std::forward<Args>(args)...);
+    void Info(std::string_view module, std::string_view fmt_runtime,
+              std::source_location loc = std::source_location::current(),
+              Args&&... args) {
+      auto s = std::vformat(fmt_runtime, std::make_format_args(args...));
+      Log(LogLevel::Info, module, loc, s);
     }
 
     template <typename... Args>
-    void Warn(std::string_view module, std::format_string<Args...> fmt,
-              std::source_location const& loc = std::source_location::current(), Args&&... args) {
-      Log(LogLevel::Warn, module, fmt, loc, std::forward<Args>(args)...);
-    }
-
-    template <typename... Args>
-    void Error(
-        std::string_view module,
-        std::format_string<Args...> fmt,
-        std::source_location const& loc = std::source_location::current(), Args&&... args) {
-      Log(LogLevel::Error, module, fmt, loc, std::forward<Args>(args)...);
-    }
-
-    template <typename... Args>
-    void InfoEx(
-        int depth,
-        std::string_view module,
-        std::format_string<Args...> fmt,
-        std::source_location const& loc = std::source_location::current(), Args&&... args) {
+    void InfoEx(int depth, std::string_view module, std::string_view fmt_runtime,
+                std::source_location loc = std::source_location::current(),
+                Args&&... args) {
       if (depth > detail_level_) return;
-      Log(LogLevel::Info, module, fmt, loc, std::forward<Args>(args)...);
+      auto s = std::vformat(fmt_runtime, std::make_format_args(args...));
+      Log(LogLevel::Info, module, loc, s);
     }
 
-    void Error( std::string_view module, std::string_view msg,
-      std::source_location const& loc = std::source_location::current()
-    ) noexcept;
+    template <typename... Args>
+    void Warn(std::string_view module, std::string_view fmt_runtime,
+              std::source_location loc = std::source_location::current(),
+              Args&&... args) {
+      auto s = std::vformat(fmt_runtime, std::make_format_args(args...));
+      Log(LogLevel::Warn, module, loc, s);
+    }
+
+    template <typename... Args>
+    void Error(std::string_view module, std::string_view fmt_runtime,
+               std::source_location loc = std::source_location::current(),
+               Args&&... args) {
+      auto s = std::vformat(fmt_runtime, std::make_format_args(args...));
+      Log(LogLevel::Error, module, loc, s);
+    }
 
   private:
     GGEMSLogger();

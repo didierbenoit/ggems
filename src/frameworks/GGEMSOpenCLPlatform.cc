@@ -28,6 +28,7 @@
 #include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/core/GGEMSLogger.hh"
+#include "GGEMS/core/GGEMSMacros.hh"
 
 using ggocl::utils::Get;
 using ggocl::utils::GetArray;
@@ -40,6 +41,7 @@ GGEMSOpenCLPlatform::GGEMSOpenCLPlatform(cl::Platform const& platform, std::size
   : platform_{platform}
   , platform_index_{platform_index}
 {
+  //GGEMS_INFOEX("OpenCL", 3, )
 //  gglog::info3("GGEMSOpenCLPlatform", "GGEMSOpenCLPlatform")
   //  << "Allocating GGEMSOpenCLPlatform [" << platform_index_ << "] ..." << gglog::endl;
 
@@ -165,7 +167,7 @@ void GGEMSOpenCLPlatform::DiscoverDevices() {
   constexpr cl_device_type mask = CL_DEVICE_TYPE_CPU | CL_DEVICE_TYPE_GPU;
 
   std::vector<cl::Device> natives;
-  GGOCL_CHECK(platform_.getDevices(mask, &natives));
+ // GGOCL_CHECK(platform_.getDevices(mask, &natives));
 
   devices_.clear();
   devices_.reserve(natives.size());

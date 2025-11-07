@@ -19,19 +19,19 @@
 // ************************************************************************
 
 #define GGEMS_DEBUG(MODULE, FMT, ...) \
-  ggems::core::GGEMSLogger::GetInstance().Debug((MODULE), (FMT) __VA_OPT__(,) __VA_ARGS__)
+  ggems::core::GGEMSLogger::GetInstance().Debug((MODULE), (FMT), std::source_location::current(), __VA_ARGS__)
 
 #define GGEMS_INFO(MODULE, FMT, ...) \
-  ggems::core::GGEMSLogger::GetInstance().Info((MODULE), (FMT) __VA_OPT__(,) __VA_ARGS__)
+  ggems::core::GGEMSLogger::GetInstance().Info((MODULE), (FMT), std::source_location::current(), __VA_ARGS__)
 
 #define GGEMS_WARN(MODULE, FMT, ...) \
-  ggems::core::GGEMSLogger::GetInstance().Warn((MODULE), (FMT) __VA_OPT__(,) __VA_ARGS__)
+  ggems::core::GGEMSLogger::GetInstance().Warn((MODULE), (FMT), std::source_location::current(), __VA_ARGS__)
 
 #define GGEMS_ERROR(MODULE, FMT, ...) \
-  ggems::core::GGEMSLogger::GetInstance().Error((MODULE), (FMT) __VA_OPT__(,) __VA_ARGS__)
+  ggems::core::GGEMSLogger::GetInstance().Error((MODULE), (FMT), std::source_location::current(), __VA_ARGS__)
 
 #define GGEMS_INFOEX(MODULE, DEPTH, FMT, ...) \
-  ggems::core::GGEMSLogger::GetInstance().InfoEx((DEPTH), (MODULE), (FMT) __VA_OPT__(,) __VA_ARGS__)
+  ggems::core::GGEMSLogger::GetInstance().InfoEx((DEPTH), (MODULE), (FMT), std::source_location::current(), __VA_ARGS__)
 
 
 #define GGEMS_CHECK(COND, FMT, ...) \

@@ -25,17 +25,13 @@
 #include <string>
 #include <string_view>
 #include <source_location>
-#include <type_traits>
 /// \endcond
 
 namespace ggems::core {
   class GGEMSExceptionBase : public std::exception {
   public:
-    explicit GGEMSExceptionBase(
-      std::string          message,
-      std::string_view     category,
-      std::source_location loc = std::source_location::current()
-    ) noexcept;
+    explicit GGEMSExceptionBase(std::string message, std::string_view category,
+      std::source_location loc = std::source_location::current()) noexcept;
 
     ~GGEMSExceptionBase() override = default;
 
@@ -59,30 +55,16 @@ namespace ggems::core {
   class GGEMSRecoverable final : public GGEMSExceptionBase
   {
   public:
-    explicit GGEMSRecoverable(
-      std::string          message,
-      std::source_location loc = std::source_location::current()
-    ) noexcept
+    explicit GGEMSRecoverable(std::string message,
+      std::source_location loc = std::source_location::current()) noexcept
     : GGEMSExceptionBase(std::move(message), "Recoverable", loc) {}
-  };
-
-  class GGEMSFatal final : public GGEMSExceptionBase
-  {
-  public:
-    explicit GGEMSFatal(
-      std::string          message,
-      std::source_location loc = std::source_location::current()
-    ) noexcept
-    : GGEMSExceptionBase(std::move(message), "Fatal", loc) {}
   };
 
   class GGEMSInternal final : public GGEMSExceptionBase
   {
   public:
-    explicit GGEMSInternal(
-      std::string          message,
-      std::source_location loc = std::source_location::current()
-    ) noexcept
+    explicit GGEMSInternal(std::string message,
+      std::source_location loc = std::source_location::current()) noexcept
     : GGEMSExceptionBase(std::move(message), "Internal", loc) {}
   };
 
@@ -90,8 +72,7 @@ namespace ggems::core {
   concept GGEMSExceptionType = std::derived_from<T, GGEMSExceptionBase>;
 
   template <GGEMSExceptionType E>
-  [[noreturn]] inline void Throw(
-      std::string_view     message,
+  [[noreturn]] inline void Throw(std::string_view message,
       std::source_location loc = std::source_location::current()) {
     throw E(std::string(message), loc);
   }
