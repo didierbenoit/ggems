@@ -23,14 +23,13 @@ namespace py = pybind11;
 // ---------------------------------------------------------------------------
 void GGEMSInitCore(py::module_ &m);
 void GGEMSInitOpenCL(py::module_ &m);
-//void GGEMSInitRuntime(py::module_ &m);
-//void GGEMSInitUI(py::module_ &m);
+// void GGEMSInitRuntime(py::module_ &m);
+// void GGEMSInitUI(py::module_ &m);
 
 // ---------------------------------------------------------------------------
 // GGEMS Python module definition
 // ---------------------------------------------------------------------------
-PYBIND11_MODULE(ggems, m)
-{
+PYBIND11_MODULE(ggems, m) {
   m.doc() = R"pbdoc(
     GGEMS — GPU Geant4-based Monte Carlo Simulations
     =================================================
@@ -39,25 +38,26 @@ PYBIND11_MODULE(ggems, m)
   )pbdoc";
 
   // --- Submodules ---------------------------------------------------------
-  auto core = m.def_submodule("core", "GGEMS core utilities and system helpers");
-  auto opencl = m.def_submodule("opencl", "OpenCL platform and device management");
+  auto core =
+      m.def_submodule("core", "GGEMS core utilities and system helpers");
+  auto opencl =
+      m.def_submodule("opencl", "OpenCL platform and device management");
 
   // --- Initialise C++ bindings for each submodule -------------------------
   GGEMSInitCore(core);
   GGEMSInitOpenCL(opencl);
 
-  m.attr("GGEMSLogger")      = core.attr("GGEMSLogger");
+  m.attr("GGEMSLogger") = core.attr("GGEMSLogger");
   m.attr("set_detail_level") = core.attr("set_detail_level");
-  m.attr("force_color")      = core.attr("force_color");
+  m.attr("force_color") = core.attr("force_color");
 
-  m.attr("GGEMSOpenCL")     = opencl.attr("GGEMSOpenCL");
+  m.attr("GGEMSOpenCL") = opencl.attr("GGEMSOpenCL");
   m.attr("print_platforms") = opencl.attr("print_platforms");
-  m.attr("print_devices")   = opencl.attr("print_devices");
-  m.attr("clean")           = opencl.attr("clean");
+  m.attr("print_devices") = opencl.attr("print_devices");
+  m.attr("clean") = opencl.attr("clean");
 
-    // --- Optional version info (for Python side introspection) --------------
+  // --- Optional version info (for Python side introspection) --------------
   m.attr("__version__") = "2.0.0";
-  m.attr("__author__")  = "Didier Benoit";
+  m.attr("__author__") = "Didier Benoit";
   m.attr("__license__") = "GPLv3";
 }
-

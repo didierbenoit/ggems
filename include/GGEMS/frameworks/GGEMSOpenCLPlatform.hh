@@ -20,7 +20,8 @@
 
 /*!
  * \file GGEMSOpenCLPlatform.hh
- * \brief Declaration of the GGEMSOpenCLPlatform class for OpenCL 3.0 platform abstraction.
+ * \brief Declaration of the GGEMSOpenCLPlatform class for OpenCL 3.0 platform
+ * abstraction.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  * \date 2025-10-14
@@ -40,12 +41,12 @@
  */
 
 /// \cond
-#include <vector>
 #include <string>
 #include <unordered_set>
+#include <vector>
 /// \endcond
 
-#include "GGEMS/frameworks/GGEMSOpenCLCommons.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
 // Forward declaration to decouple headers (the destructor is out-of-line).
 class GGEMSOpenCLDevice;
@@ -61,18 +62,22 @@ class GGEMSOpenCLDevice;
 class GGEMSOpenCLPlatform final {
 public:
   /*!
-   * \brief Construct a platform façade with a native platform and its stable index.
+   * \brief Construct a platform façade with a native platform and its stable
+   * index.
    * \param platform        Native OpenCL platform (cl::Platform) to wrap.
-   * \param platform_index  Stable index of this platform in the system enumeration.
+   * \param platform_index  Stable index of this platform in the system
+   * enumeration.
    *
-   * The constructor extracts the platform extensions list and immediately discovers
-   * CPU/GPU devices. No contexts are created here; that is deferred to higher-level
-   * orchestration (e.g. GGEMSOpenCL / GGEMSManager).
+   * The constructor extracts the platform extensions list and immediately
+   * discovers CPU/GPU devices. No contexts are created here; that is deferred
+   * to higher-level orchestration (e.g. GGEMSOpenCL / GGEMSManager).
    */
-  explicit GGEMSOpenCLPlatform(cl::Platform const& platform, std::size_t platform_index);
+  explicit GGEMSOpenCLPlatform(cl::Platform const &platform,
+                               std::size_t platform_index);
 
   /*!
-   * \brief Deleted default constructor — a platform façade must wrap a valid platform.
+   * \brief Deleted default constructor — a platform façade must wrap a valid
+   * platform.
    */
   GGEMSOpenCLPlatform() = delete;
 
@@ -85,8 +90,8 @@ public:
   ~GGEMSOpenCLPlatform();
 
   // Non-copyable, non-movable — preserves ownership and index stability.
-  GGEMSOpenCLPlatform(GGEMSOpenCLPlatform const&)            = delete;
-  GGEMSOpenCLPlatform& operator=(GGEMSOpenCLPlatform const&) = delete;
+  GGEMSOpenCLPlatform(GGEMSOpenCLPlatform const &) = delete;
+  GGEMSOpenCLPlatform &operator=(GGEMSOpenCLPlatform const &) = delete;
 
   /*!
    * \brief Move constructor (noexcept).
@@ -94,14 +99,14 @@ public:
    * Enables storage within STL containers such as \c std::vector.
    * Ownership of devices and extension caches is transferred.
    */
-  GGEMSOpenCLPlatform(GGEMSOpenCLPlatform&&) noexcept = default;
+  GGEMSOpenCLPlatform(GGEMSOpenCLPlatform &&) noexcept = default;
 
   /*!
    * \brief Move assignment operator (noexcept).
    * \return A reference to GGEMSOpenCLPlatform
    * Transfers ownership of all internal data to the destination object.
    */
-  GGEMSOpenCLPlatform& operator=(GGEMSOpenCLPlatform&&) noexcept = default;
+  GGEMSOpenCLPlatform &operator=(GGEMSOpenCLPlatform &&) noexcept = default;
 
 public:
   // -------------------- High-level inspection API --------------------
@@ -133,12 +138,14 @@ public:
 
   /*!
    * \brief Retrieve the platform vendor string.
-   * \return Vendor name (e.g. "NVIDIA Corporation", "Advanced Micro Devices, Inc.").
+   * \return Vendor name (e.g. "NVIDIA Corporation", "Advanced Micro Devices,
+   * Inc.").
    */
   [[nodiscard]] std::string GetVendor() const;
 
   /*!
-   * \brief Retrieve the space-separated list of platform extensions (legacy format).
+   * \brief Retrieve the space-separated list of platform extensions (legacy
+   * format).
    * \return Space-separated extension list (OpenCL core requirement).
    */
   [[nodiscard]] std::string GetExtensions() const;
@@ -162,7 +169,8 @@ public:
   [[nodiscard]] std::vector<cl_name_version> GetExtensionsWithVersion() const;
 
   /*!
-   * \brief Print a comprehensive platform report to the terminal using GGEMS logger.
+   * \brief Print a comprehensive platform report to the terminal using GGEMS
+   * logger.
    *
    * The report includes:
    * - Basic identity (name, vendor, profile, version),
@@ -170,7 +178,8 @@ public:
    * - Host timer resolution,
    * - Extensions with their version triplets,
    * - ICD suffix,
-   * - A summary of discovered devices (count only; device details are handled by the device layer).
+   * - A summary of discovered devices (count only; device details are handled
+   * by the device layer).
    */
   void Print() const;
 
@@ -178,23 +187,29 @@ public:
    * \brief Explicitly release platform-level resources and owned devices.
    *
    * Unloads the platform compiler (if any), clears the device list and cached
-   * extension set. Safe to call multiple times; typically invoked during shutdown.
+   * extension set. Safe to call multiple times; typically invoked during
+   * shutdown.
    */
   void Clean();
 
-  // -------------------- Accessors for orchestration layers --------------------
+  // -------------------- Accessors for orchestration layers
+  // --------------------
 
   /*!
    * \brief Get the stable index of this platform in the system enumeration.
    * \return Zero-based platform index.
    */
-  [[nodiscard]] std::size_t GetPlatformIndex() const noexcept { return platform_index_; }
+  [[nodiscard]] std::size_t GetPlatformIndex() const noexcept {
+    return platform_index_;
+  }
 
   /*!
    * \brief Access the native \c cl::Platform wrapper (const).
    * \return Const reference to the wrapped native platform object.
    */
-  [[nodiscard]] cl::Platform const& GetNative() const noexcept { return platform_; }
+  [[nodiscard]] cl::Platform const &GetNative() const noexcept {
+    return platform_;
+  }
 
   /*!
    * \brief Non-owning, read-only view of discovered devices.
@@ -203,7 +218,7 @@ public:
    * The platform retains ownership. Returned pointers remain valid until either
    * \c Clean() is called or the platform object is destroyed.
    */
-  [[nodiscard]] std::vector<GGEMSOpenCLDevice const*> GetDevices() const;
+  [[nodiscard]] std::vector<GGEMSOpenCLDevice const *> GetDevices() const;
 
 private:
   void PrintIdentity() const;
@@ -213,16 +228,20 @@ private:
   // -------------------- Internal discovery --------------------
 
   /*!
-   * \brief Discover CPU and GPU devices on this platform and instantiate wrappers.
+   * \brief Discover CPU and GPU devices on this platform and instantiate
+   * wrappers.
    *
-   * Only devices of type \c CL_DEVICE_TYPE_CPU and \c CL_DEVICE_TYPE_GPU are enumerated.
-   * Each native device is wrapped in a \c GGEMSOpenCLDevice and owned by this platform.
+   * Only devices of type \c CL_DEVICE_TYPE_CPU and \c CL_DEVICE_TYPE_GPU are
+   * enumerated. Each native device is wrapped in a \c GGEMSOpenCLDevice and
+   * owned by this platform.
    */
   void DiscoverDevices();
 
 private:
-  cl::Platform                                    platform_;       /*!< Native OpenCL platform wrapper */
-  std::size_t                                     platform_index_; /*!< Stable platform index */
-  std::unordered_set<std::string>                 extensions_;     /*!< Cached platform extension names */
-  std::vector<std::unique_ptr<GGEMSOpenCLDevice>> devices_;  /*!< Owned CPU/GPU device wrappers */
+  cl::Platform platform_;      /*!< Native OpenCL platform wrapper */
+  std::size_t platform_index_; /*!< Stable platform index */
+  std::unordered_set<std::string>
+      extensions_; /*!< Cached platform extension names */
+  std::vector<std::unique_ptr<GGEMSOpenCLDevice>>
+      devices_; /*!< Owned CPU/GPU device wrappers */
 };

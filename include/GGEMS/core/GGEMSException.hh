@@ -21,103 +21,82 @@
  */
 
 /// \cond
+#include <format>
+#include <source_location>
 #include <stdexcept>
 #include <string>
-#include <format>
 #include <string_view>
-#include <source_location>
 /// \endcond
 
 #include "GGEMS/core/GGEMSLogger.hh"
 
 namespace ggems::core {
-  class GGEMSExceptionBase : public std::runtime_error {
-  public:
-    explicit GGEMSExceptionBase(std::string const& msg,
-                                std::string const& cat,
-                                std::source_location loc = std::source_location::current(),
-                                bool do_log = true)
-      : std::runtime_error(msg),
-        file_(loc.file_name()),
-        function_(loc.function_name()),
-        category_(cat),
+class GGEMSExceptionBase : public std::runtime_error {
+public:
+  explicit GGEMSExceptionBase(
+      std::string const &msg, std::string const &cat,
+      std::source_location loc = std::source_location::current(),
+      bool do_log = true)
+      : std::runtime_error(msg), file_(loc.file_name()),
+        function_(loc.function_name()), category_(cat),
         line_(static_cast<int>(loc.line())) {
-    full_ = std::vformat("[{}] {}:{} ({}): {}", 
-                         std::make_format_args(category_, file_, line_, function_, msg));
+    full_ = std::vformat(
+        "[{}] {}:{} ({}): {}",
+        std::make_format_args(category_, file_, line_, function_, msg));
     if (do_log) {
       GGEMSLogger::GetInstance().Error("Exception", full_);
       logged_ = true;
     }
   }
 
-    bool Logged() const noexcept { return logged_; }
-    [[nodiscard]] std::string const& FullMessage() const noexcept { return full_; }
+  bool Logged() const noexcept { return logged_; }
 
-  protected:
-    std::string full_;
-    std::string file_;
-    std::string function_;
-    std::string category_;
-    int         line_;
-    bool        logged_{false};
-  };
+protected:
+  std::string full_;
+  std::string file_;
+  std::string function_;
+  std::string category_;
+  int line_;
+  bool logged_{false};
+};
 
-  class GGEMSRecoverable final : public GGEMSExceptionBase
-  {
-  public:
-    explicit GGEMSRecoverable(std::string const& msg,
-                              std::source_location loc = std::source_location::current(),
-                              bool do_log = true)
-    : GGEMSExceptionBase(std::move(msg), "Recoverable", loc, do_log) {}
-  };
+class GGEMSRecoverable final : public GGEMSExceptionBase {
+public:
+  explicit GGEMSRecoverable(
+      std::string const &msg,
+      std::source_location loc = std::source_location::current(),
+      bool do_log = true)
+      : GGEMSExceptionBase(std::move(msg), "Recoverable", loc, do_log) {}
+};
 
-  class GGEMSInternal final : public GGEMSExceptionBase
-  {
-  public:
-    explicit GGEMSInternal(std::string const& msg,
-                           std::source_location loc = std::source_location::current(),
-                           bool do_log = true)
-    : GGEMSExceptionBase(std::move(msg), "Internal", loc, do_log) {}
-  };
+class GGEMSInternal final : public GGEMSExceptionBase {
+public:
+  explicit GGEMSInternal(
+      std::string const &msg,
+      std::source_location loc = std::source_location::current(),
+      bool do_log = true)
+      : GGEMSExceptionBase(std::move(msg), "Internal", loc, do_log) {}
+};
 
-  class GGEMSFatal final : public GGEMSExceptionBase
-  {
-  public:
-    explicit GGEMSFatal(std::string const& msg,
-                        std::source_location loc = std::source_location::current(),
-                        bool do_log = true)
-    : GGEMSExceptionBase(std::move(msg), "Fatal", loc, do_log) {}
-  };
+class GGEMSFatal final : public GGEMSExceptionBase {
+public:
+  explicit GGEMSFatal(
+      std::string const &msg,
+      std::source_location loc = std::source_location::current(),
+      bool do_log = true)
+      : GGEMSExceptionBase(std::move(msg), "Fatal", loc, do_log) {}
+};
 
-  template <typename T>
-  concept GGEMSExceptionType = std::derived_from<T, GGEMSExceptionBase>;
+template <typename T>
+concept GGEMSExceptionType = std::derived_from<T, GGEMSExceptionBase>;
 
-  template <GGEMSExceptionType E>
-  [[noreturn]] inline void Throw(std::string_view msg,
-                                 std::source_location loc = std::source_location::current(),
-                                 bool do_log = true) {
-    throw E(std::string(msg), loc, do_log);
-  }
+template <GGEMSExceptionType E>
+[[noreturn]] inline void
+Throw(std::string_view msg,
+      std::source_location loc = std::source_location::current(),
+      bool do_log = true) {
+  throw E(std::string(msg), loc, do_log);
+}
 
-  template <typename Enum, typename ToStringFunc>
-  [[noreturn]] inline void ThrowCL(Enum code,
-                                   ToStringFunc to_string,
-                                   std::string_view context,
-                                   std::source_location loc = std::source_location::current()) {
-    std::string msg = std::format("{} (code {}): {}", context, static_cast<int>(code),
-                                  to_string(static_cast<int>(code)));
-    Throw<GGEMSRecoverable>(msg, loc, true);
-  }
-
-  template <typename Enum, typename ToStringFunc>
-  [[noreturn]] inline void ThrowFatalCL(Enum code,
-                                        ToStringFunc toString,
-                                        std::string_view context,
-                                        std::source_location loc = std::source_location::current()) {
-    std::string msg = std::format("{} (code {}): {}", context, static_cast<int>(code),
-                                  toString(static_cast<int>(code)));
-    Throw<GGEMSFatal>(msg, loc, true);
-  }
-
-  [[noreturn]] void TerminateHandler() noexcept;
+[[noreturn]] void TerminateHandler() noexcept;
 } // namespace ggems::core

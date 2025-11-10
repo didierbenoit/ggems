@@ -23,27 +23,30 @@
 #include "GGEMS/core/GGEMSException.hh"
 
 namespace ggems::core {
-  void TerminateHandler() noexcept {
-    try {
-      if (auto ex = std::current_exception()) {
-        try {
-          std::rethrow_exception(ex);
-        } catch (GGEMSExceptionBase const& e) {
-          if (!e.Logged()) {
-            GGEMSLogger::GetInstance().Error("Fatal", e.what());
-          }
-        } catch (std::exception const& e) {
+void TerminateHandler() noexcept {
+  try {
+    if (auto ex = std::current_exception()) {
+      try {
+        std::rethrow_exception(ex);
+      } catch (GGEMSExceptionBase const &e) {
+        if (!e.Logged()) {
           GGEMSLogger::GetInstance().Error("Fatal", e.what());
-        } catch (...) {
-          GGEMSLogger::GetInstance().Error("Fatal", "Unknown non-standard exception");
         }
-      } else {
-        GGEMSLogger::GetInstance().Error("Fatal", "Terminate called with no active exception");
+      } catch (std::exception const &e) {
+        GGEMSLogger::GetInstance().Error("Fatal", e.what());
+      } catch (...) {
+        GGEMSLogger::GetInstance().Error("Fatal",
+                                         "Unknown non-standard exception");
       }
-    } catch (...) {
-      std::fputs("GGEMS Fatal Error: logger failed inside TerminateHandler\n", stderr);
+    } else {
+      GGEMSLogger::GetInstance().Error(
+          "Fatal", "Terminate called with no active exception");
     }
-
-    std::abort();
+  } catch (...) {
+    std::fputs("GGEMS Fatal Error: logger failed inside TerminateHandler\n",
+               stderr);
   }
-} // ggems::core
+
+  std::abort();
+}
+} // namespace ggems::core

@@ -33,7 +33,6 @@
 #include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
 
 using ggems::core::GGEMSExceptionBase;
-using ggems::core::GGEMSLogger;
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -47,11 +46,11 @@ GGEMSOpenCL::GGEMSOpenCL() {
   try {
     InitPlatformsAndDevices();
     GGEMS_INFOEX("OpenCL", 1, "GGEMSOpenCL successfully constructed!");
-  } catch(GGEMSExceptionBase& e) {
+  } catch (GGEMSExceptionBase &e) {
     std::terminate();
-  } catch(std::exception const& e) {
+  } catch (std::exception const &e) {
     std::terminate();
-  } catch(...) {
+  } catch (...) {
     std::terminate();
   }
 }
@@ -62,7 +61,9 @@ GGEMSOpenCL::GGEMSOpenCL() {
 
 GGEMSOpenCL::~GGEMSOpenCL() {
   GGEMS_INFOEX("OpenCL", 2, "Releasing GGEMSOpenCL resources...");
-  GGEMS_INFOEX("OpenCL", 2, "GGEMSOpenCL singleton destroyed (memory intentionally retained).");
+  GGEMS_INFOEX(
+      "OpenCL", 2,
+      "GGEMSOpenCL singleton destroyed (memory intentionally retained).");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -70,12 +71,12 @@ GGEMSOpenCL::~GGEMSOpenCL() {
 ////////////////////////////////////////////////////////////////////////////////
 
 void GGEMSOpenCL::DisableKernelCache() const {
-  #ifdef _MSC_VER
+#ifdef _MSC_VER
   static char env_var[] = "CUDA_CACHE_DISABLE=1";
   _putenv(env_var);
-  #else
+#else
   setenv("CUDA_CACHE_DISABLE", "1", 1);
-  #endif
+#endif
 
   GGEMS_INFOEX("OpenCL", 2, "CUDA kernel cache disabled.");
 }
@@ -91,17 +92,15 @@ void GGEMSOpenCL::InitPlatformsAndDevices() {
   GGEMS_OCL_CHECK(cl::Platform::get(&platforms),
                   "No OpenCL platforms detected on this system.");
 
-  int a = 0;
-  GGEMS_CHECK(a > 0, "Probleme");
-
   platforms_.clear();
   platforms_.reserve(platforms.size());
   std::size_t plat_index{0};
-  for (auto const& p : platforms) {
+  for (auto const &p : platforms) {
     platforms_.emplace_back(p, plat_index++);
   }
 
-  GGEMS_INFOEX("OpenCL", 1, "{} OpenCL platform(s) initialized.", platforms_.size());
+  GGEMS_INFOEX("OpenCL", 1, "{} OpenCL platform(s) initialized.",
+               platforms_.size());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -111,7 +110,7 @@ void GGEMSOpenCL::InitPlatformsAndDevices() {
 void GGEMSOpenCL::PrintPlatforms() const {
   GGEMS_INFO("OpenCL", "Listing available OpenCL platforms...");
 
-  for (auto const& p : platforms_) {
+  for (auto const &p : platforms_) {
     p.Print();
   }
 }
@@ -123,9 +122,9 @@ void GGEMSOpenCL::PrintPlatforms() const {
 void GGEMSOpenCL::PrintDevices() const {
   GGEMS_INFO("OpenCL", "Listing available OpenCL devices...");
 
-  for (auto const& p : platforms_) {
-    auto const& devices = p.GetDevices();
-    for (auto const& d : devices)
+  for (auto const &p : platforms_) {
+    auto const &devices = p.GetDevices();
+    for (auto const &d : devices)
       d->Print();
   }
 }
@@ -137,7 +136,7 @@ void GGEMSOpenCL::PrintDevices() const {
 void GGEMSOpenCL::Clean() noexcept {
   GGEMS_INFOEX("OpenCL", 1, "Cleaning all OpenCL platform resources...");
 
-  for (auto& p : platforms_) {
+  for (auto &p : platforms_) {
     p.Clean();
   }
 

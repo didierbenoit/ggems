@@ -21,162 +21,134 @@
  * \brief Definition of GGEMSOpenCLPlatform methods (OpenCL 3.0 clean variant).
  */
 
-/// \cond
-#include <sstream>
-/// \endcond
-
 #include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
-#include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
-using ggems::ocl::Get;
-using ggems::ocl::GetArray;
 using ggems::ocl::ExtractExtensions;
-using ggems::ocl::HasExtension;
-using ggems::ocl::ClVersionToString;
-using ggems::ocl::ClNameVersionToString;
+using ggems::ocl::GetInfo;
+using ggems::ocl::PrintInfo;
 
-GGEMSOpenCLPlatform::GGEMSOpenCLPlatform(cl::Platform const& platform, std::size_t platform_index)
-  : platform_{platform}
-  , platform_index_{platform_index}
-{
-  //GGEMS_INFOEX("OpenCL", 3, )
-//  gglog::info3("GGEMSOpenCLPlatform", "GGEMSOpenCLPlatform")
-  //  << "Allocating GGEMSOpenCLPlatform [" << platform_index_ << "] ..." << gglog::endl;
+GGEMSOpenCLPlatform::GGEMSOpenCLPlatform(cl::Platform const &platform,
+                                         std::size_t platform_index)
+    : platform_{platform}, platform_index_{platform_index} {
+  GGEMS_INFOEX("OpenCL", 2, "Allocating GGEMSOpenCLPlatform [{}]...",
+               platform_index_);
 
-  extensions_ = ExtractExtensions(platform_, CL_PLATFORM_EXTENSIONS);
+  extensions_ = ExtractExtensions<CL_PLATFORM_EXTENSIONS>(platform_);
 
   // Discover CPU/GPU devices now; contexts/queues are created later on demand.
   DiscoverDevices();
 
- // gglog::info2("GGEMSOpenCLPlatform", "GGEMSOpenCLPlatform")
- //   << "GGEMSOpenCLPlatform allocated with " << devices_.size() << " device(s)" << gglog::endl;
+  GGEMS_INFOEX("OpenCL", 2, "GGEMSOpenCLPlatform allocated with {} device(s)",
+               devices_.size());
 }
 
 GGEMSOpenCLPlatform::~GGEMSOpenCLPlatform() {
-//  gglog::info3("GGEMSOpenCLPlatform","~GGEMSOpenCLPlatform")
-//    << "Releasing GGEMSOpenCLPlatform [" << platform_index_ << "]" << gglog::endl;
+  GGEMS_INFOEX("OpenCL", 2, "Releasing GGEMSOpenCLPlatform [{}]",
+               platform_index_);
 }
 
 // -------------------- Queries --------------------
-
-bool GGEMSOpenCLPlatform::CheckExtension(std::string_view name) const {
-  return HasExtension(extensions_, name);
-}
-
 std::string GGEMSOpenCLPlatform::GetName() const {
-  return Get<std::string>(platform_, CL_PLATFORM_NAME);
+  return GetInfo<CL_PLATFORM_NAME>(platform_);
 }
 
 std::string GGEMSOpenCLPlatform::GetProfile() const {
-  return Get<std::string>(platform_, CL_PLATFORM_PROFILE);
+  return GetInfo<CL_PLATFORM_PROFILE>(platform_);
 }
 
 std::string GGEMSOpenCLPlatform::GetVersion() const {
-  return Get<std::string>(platform_, CL_PLATFORM_VERSION);
+  return GetInfo<CL_PLATFORM_VERSION>(platform_);
 }
 
 std::string GGEMSOpenCLPlatform::GetVendor() const {
-  return Get<std::string>(platform_, CL_PLATFORM_VENDOR);
+  return GetInfo<CL_PLATFORM_VENDOR>(platform_);
 }
 
 std::string GGEMSOpenCLPlatform::GetExtensions() const {
-  return Get<std::string>(platform_, CL_PLATFORM_EXTENSIONS);
+  return GetInfo<CL_PLATFORM_EXTENSIONS>(platform_);
 }
 
 cl_version GGEMSOpenCLPlatform::GetNumericVersion() const {
-  return Get<cl_version>(platform_, CL_PLATFORM_NUMERIC_VERSION);
+  return GetInfo<CL_PLATFORM_NUMERIC_VERSION>(platform_);
 }
 
 cl_ulong GGEMSOpenCLPlatform::GetHostTimerResolution() const {
-  return Get<cl_ulong>(platform_, CL_PLATFORM_HOST_TIMER_RESOLUTION);
+  return GetInfo<CL_PLATFORM_HOST_TIMER_RESOLUTION>(platform_);
 }
 
-std::vector<cl_name_version> GGEMSOpenCLPlatform::GetExtensionsWithVersion() const {
-  return GetArray<cl_name_version>(platform_, CL_PLATFORM_EXTENSIONS_WITH_VERSION);
+std::vector<cl_name_version>
+GGEMSOpenCLPlatform::GetExtensionsWithVersion() const {
+  return GetInfo<CL_PLATFORM_EXTENSIONS_WITH_VERSION>(platform_);
 }
 
 // -------------------- Reporting --------------------
 void GGEMSOpenCLPlatform::PrintIdentity() const {
-/*   gglog::info("GGEMSOpenCLPlatform", "PrintIdentity")
-    << "-> Profile: " << GetProfile() << gglog::endl;
-
-  gglog::info("GGEMSOpenCLPlatform", "PrintIdentity")
-    << "-> Version: " << GetVersion() << gglog::endl;
-
-  gglog::info("GGEMSOpenCLPlatform", "PrintIdentity") << "-> Numeric Version: "
-    << ClVersionToString(GetNumericVersion()) << gglog::endl;
-
-  gglog::info("GGEMSOpenCLPlatform", "PrintIdentity")
-    << "-> Discovered devices: " << devices_.size() << gglog::endl;
-
-  gglog::info("GGEMSOpenCLPlatform", "PrintIdentity")
-    << "-> Host Timer Resolution: " << GetHostTimerResolution() << " ns" << gglog::endl;*/
+  PrintInfo<CL_PLATFORM_PROFILE>(platform_);
+  PrintInfo<CL_PLATFORM_VERSION>(platform_);
+  PrintInfo<CL_PLATFORM_NUMERIC_VERSION>(platform_);
+  PrintInfo<CL_PLATFORM_HOST_TIMER_RESOLUTION>(platform_);
 }
 
 void GGEMSOpenCLPlatform::PrintExtension() const {
-//  gglog::info("GGEMSOpenCLPlatform", "PrintExtensions")
-//    << "-> Extensions with version: " << ClNameVersionToString(GetExtensionsWithVersion()) << gglog::endl;
+  PrintInfo<CL_PLATFORM_EXTENSIONS_WITH_VERSION>(platform_);
 }
 
 void GGEMSOpenCLPlatform::Print() const {
-/*  gglog::info("GGEMSOpenCLPlatform", "Print")
-    << "+++++++++++++++++++++++++++++++++++++" << gglog::endl;
+  GGEMS_INFO("OpenCL", "+++++++++++++++++++++++++++++++++++++");
 
-  gglog::info("GGEMSOpenCLPlatform", "Print")
-    << "Platform [" << platform_index_ << "]: " << GetName()
-    << " (" << GetVendor() << ")" << gglog::endl;
+  GGEMS_INFO("OpenCL", "Platform [{}]: {} ({})", platform_index_, GetName(),
+             GetVendor());
+  GGEMS_INFO("OpenCL", "Discovered devices: {}", devices_.size());
 
   PrintIdentity();
   PrintExtension();
 
-  gglog::info("GGEMSOpenCLPlatform", "Print")
-    << "+++++++++++++++++++++++++++++++++++++" << gglog::endl;*/
+  GGEMS_INFO("OpenCL", "+++++++++++++++++++++++++++++++++++++");
 }
 
 // -------------------- Devices & cleanup --------------------
 
-std::vector<GGEMSOpenCLDevice const*> GGEMSOpenCLPlatform::GetDevices() const {
-  std::vector<GGEMSOpenCLDevice const*> out;
+std::vector<GGEMSOpenCLDevice const *> GGEMSOpenCLPlatform::GetDevices() const {
+  std::vector<GGEMSOpenCLDevice const *> out;
   out.reserve(devices_.size());
-  for (auto const& d : devices_)
+  for (auto const &d : devices_)
     out.push_back(d.get());
   return out;
 }
 
 void GGEMSOpenCLPlatform::Clean() {
-/*  gglog::info3("GGEMSOpenCLPlatform", "Clean")
-    << "Cleaning Platform " << GetName() << " resources..." << gglog::endl;*/
+  GGEMS_INFOEX("OpenCL", 2, "Cleaning Platform {} resources...", GetName());
 
   platform_.unloadCompiler();
   devices_.clear();
   extensions_.clear();
 
-/*  gglog::info3("GGEMSOpenCLPlatform", "Clean")
-    << "Platform resources cleaned." << gglog::endl;*/
+  GGEMS_INFOEX("OpenCL", 2, "Platform resources cleaned.");
 }
 
 // -------------------- Internal discovery --------------------
 
 void GGEMSOpenCLPlatform::DiscoverDevices() {
-/*  gglog::info3("GGEMSOpenCLPlatform", "DiscoverDevices")
-    << "Discovering OpenCL devices for platform [" << platform_index_ << "] ..."
-    << gglog::endl;*/
+  GGEMS_INFOEX("OpenCL", 2, "Discovering OpenCL devices for platform [{}]...",
+               platform_index_);
 
   constexpr cl_device_type mask = CL_DEVICE_TYPE_CPU | CL_DEVICE_TYPE_GPU;
 
   std::vector<cl::Device> natives;
- // GGOCL_CHECK(platform_.getDevices(mask, &natives));
+  GGEMS_OCL_CHECK(platform_.getDevices(mask, &natives),
+                  "No OpenCL devices detected on this platform.");
 
   devices_.clear();
   devices_.reserve(natives.size());
 
   for (std::size_t i = 0; i < natives.size(); ++i) {
-    devices_.emplace_back(std::make_unique<GGEMSOpenCLDevice>(natives[i], platform_index_, i));
+    devices_.emplace_back(
+        std::make_unique<GGEMSOpenCLDevice>(natives[i], platform_index_, i));
   }
 
-/*  gglog::info2("GGEMSOpenCLPlatform", "DiscoverDevices")
-    << "Found " << natives.size() << " device(s) on platform [" << platform_index_ << "]"
-    << gglog::endl;*/
+  GGEMS_INFOEX("OpenCL", 2, "Found {} device(s) on platform [{}]",
+               natives.size(), platform_index_);
 }

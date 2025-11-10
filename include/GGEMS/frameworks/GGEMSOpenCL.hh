@@ -34,6 +34,7 @@
  */
 
 #include "GGEMS/core/GGEMSLogger.hh"
+#include "GGEMS/core/GGEMSMacros.hh"
 
 /// \cond
 #include <vector>
@@ -65,10 +66,10 @@ private:
    */
   GGEMSOpenCL();
 
-  GGEMSOpenCL(GGEMSOpenCL const& openCL) = delete;
-  GGEMSOpenCL(GGEMSOpenCL const&& openCL) = delete;
-  GGEMSOpenCL& operator=(GGEMSOpenCL const& openCL) = delete;
-  GGEMSOpenCL& operator=(GGEMSOpenCL const&& openCL) = delete;
+  GGEMSOpenCL(GGEMSOpenCL const &openCL) = delete;
+  GGEMSOpenCL(GGEMSOpenCL const &&openCL) = delete;
+  GGEMSOpenCL &operator=(GGEMSOpenCL const &openCL) = delete;
+  GGEMSOpenCL &operator=(GGEMSOpenCL const &&openCL) = delete;
 
 public:
   /*!
@@ -80,9 +81,9 @@ public:
    *
    * \return Reference to the singleton GGEMSOpenCL instance.
    */
-  [[nodiscard]] static GGEMSOpenCL& GetInstance() {
-    static GGEMSOpenCL* instance = []() {
-//      gglog::info3("GGEMSOpenCL", "GetInstance") << "First instance of GGEMSOpenCL singleton..." << gglog::endl;
+  [[nodiscard]] static GGEMSOpenCL &GetInstance() {
+    static GGEMSOpenCL *instance = []() {
+      GGEMS_INFOEX("OpenCL", 2, "First Instance of GGEMSOpenCL singleton...");
       return new GGEMSOpenCL(); // intentionally leaked
     }();
     return *instance;
@@ -106,7 +107,8 @@ public:
   /*!
    * \brief Prints detailed information about all discovered OpenCL platforms.
    *
-   * Each platform print includes vendor, version, profile, and supported extensions.
+   * Each platform print includes vendor, version, profile, and supported
+   * extensions.
    */
   void PrintPlatforms() const;
 
@@ -119,11 +121,15 @@ public:
    * \brief Provides read-only access to the discovered OpenCL platforms.
    * \return Constant reference to the list of available platforms.
    */
-  [[nodiscard]] std::vector<GGEMSOpenCLPlatform> const& GetPlatforms() const noexcept { return platforms_; }
+  [[nodiscard]] std::vector<GGEMSOpenCLPlatform> const &
+  GetPlatforms() const noexcept {
+    return platforms_;
+  }
 
 private:
   /*!
-   * \brief Enumerates OpenCL platforms and creates GGEMSOpenCLPlatform instances.
+   * \brief Enumerates OpenCL platforms and creates GGEMSOpenCLPlatform
+   * instances.
    *
    * Called internally during construction.
    */
@@ -145,5 +151,6 @@ private:
   void DisableKernelCache() const;
 
 private:
-  std::vector<GGEMSOpenCLPlatform> platforms_; /*!< Vector storing all detected OpenCL platforms */
+  std::vector<GGEMSOpenCLPlatform>
+      platforms_; /*!< Vector storing all detected OpenCL platforms */
 };

@@ -20,12 +20,14 @@
 
 /*!
  * \file GGEMSOpenCLDevice.hh
- * \brief Declaration of GGEMSOpenCLDevice class encapsulating a single OpenCL device.
+ * \brief Declaration of GGEMSOpenCLDevice class encapsulating a single OpenCL
+ * device.
  *
  * This header defines a C++23, move-only wrapper around a native `cl::Device`.
- * The class exposes a comprehensive set of query accessors for device capabilities,
- * memory limits, compute characteristics, and extension support. It is designed
- * to be owned by \c GGEMSOpenCLPlatform (one device per instance)
+ * The class exposes a comprehensive set of query accessors for device
+ * capabilities, memory limits, compute characteristics, and extension support.
+ * It is designed to be owned by \c GGEMSOpenCLPlatform (one device per
+ * instance)
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -38,7 +40,7 @@
 #include <unordered_map>
 /// \endcond
 
-#include "GGEMS/frameworks/GGEMSOpenCLCommons.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
 /*!
  * \class GGEMSOpenCLDevice
@@ -69,11 +71,13 @@ public:
    * the underlying OpenCL runtime on demand. Fatal errors are reported via
    * \c GGOCL_CHECK which throws GGEMSException.
    */
-  explicit GGEMSOpenCLDevice(cl::Device const& device, std::size_t platform_index, std::size_t device_index);
+  explicit GGEMSOpenCLDevice(cl::Device const &device,
+                             std::size_t platform_index,
+                             std::size_t device_index);
 
   GGEMSOpenCLDevice() = delete;
-  GGEMSOpenCLDevice(GGEMSOpenCLDevice const&) = delete;
-  GGEMSOpenCLDevice& operator=(GGEMSOpenCLDevice const&) = delete;
+  GGEMSOpenCLDevice(GGEMSOpenCLDevice const &) = delete;
+  GGEMSOpenCLDevice &operator=(GGEMSOpenCLDevice const &) = delete;
 
   /*!
    * \brief Destructor (defaulted).
@@ -83,36 +87,33 @@ public:
   /*!
    * \brief Move constructor (no-throw).
    */
-  GGEMSOpenCLDevice(GGEMSOpenCLDevice&&) noexcept = default;
+  GGEMSOpenCLDevice(GGEMSOpenCLDevice &&) noexcept = default;
 
   /*!
    * \brief Move assignment (no-throw).
    * \return reference to GGEMSOpenCLDevice
    */
-  GGEMSOpenCLDevice& operator=(GGEMSOpenCLDevice&&) noexcept = default;
-
-  /*!
-   * \brief Check whether a device-level extension is advertised.
-   * \param extension_name Name of the extension (e.g. "cl_khr_icd").
-   * \return True if present in the device's extension set, false otherwise.
-   */
-  [[nodiscard]] bool CheckExtension(std::string_view extension_name) const;
+  GGEMSOpenCLDevice &operator=(GGEMSOpenCLDevice &&) noexcept = default;
 
 public: // ----- Identity & indices -----
   /*!
    * \brief Get the parent platform index.
    */
-  [[nodiscard]] std::size_t GetPlatformIndex() const noexcept { return platform_index_; }
+  [[nodiscard]] std::size_t GetPlatformIndex() const noexcept {
+    return platform_index_;
+  }
 
   /*!
    * \brief Get the device index within its platform.
    */
-  [[nodiscard]] std::size_t GetDeviceIndex() const noexcept {return device_index_; }
+  [[nodiscard]] std::size_t GetDeviceIndex() const noexcept {
+    return device_index_;
+  }
 
   /*!
    * \brief Get the native OpenCL device handle.
    */
-  [[nodiscard]] cl::Device const& GetNative() const noexcept { return device_; }
+  [[nodiscard]] cl::Device const &GetNative() const noexcept { return device_; }
 
 public: // ----- Identity properties -----
   [[nodiscard]] std::string GetName() const;
@@ -195,14 +196,14 @@ public: // ----- Vectorisation properties -----
   [[nodiscard]] cl_device_fp_config GetHalfFpConfig() const;
 
   [[nodiscard]] cl_device_fp_config GetSingleFpConfig() const;
-  
+
   [[nodiscard]] cl_device_fp_config GetDoubleFpConfig() const;
 
 public: // ----- Images -----
   [[nodiscard]] cl_bool GetImageSupport() const;
 
   [[nodiscard]] std::size_t GetImage2DMaxWidth() const;
-  
+
   [[nodiscard]] std::size_t GetImage2DMaxHeight() const;
 
   [[nodiscard]] std::size_t GetImage3DMaxWidth() const;
@@ -224,8 +225,6 @@ public: // ----- Images -----
   [[nodiscard]] cl_uint GetImagePitchAlignment() const;
 
   [[nodiscard]] cl_uint GetImageBaseAddressAlignment() const;
-
-  [[nodiscard]] std::size_t GetMaxBufferSize() const;
 
   [[nodiscard]] cl_uint GetMaxSamplers() const;
 
@@ -274,8 +273,6 @@ public: // ----- IL/SpirV -----
   [[nodiscard]] std::string GetSpirVersions() const;
 
 public: // ----- Queue/Device-side -----
-  [[nodiscard]] cl_command_queue_properties GetQueueProperties() const;
-
   [[nodiscard]] cl_command_queue_properties GetQueueOnHostProperties() const;
 
   [[nodiscard]] cl_command_queue_properties GetQueueOnDeviceProperties() const;
@@ -288,9 +285,11 @@ public: // ----- Queue/Device-side -----
 
   [[nodiscard]] cl_device_svm_capabilities GetSVMCapabilities() const;
 
-  [[nodiscard]] cl_device_atomic_capabilities GetAtomicMemoryCapabilities() const;
+  [[nodiscard]] cl_device_atomic_capabilities
+  GetAtomicMemoryCapabilities() const;
 
-  [[nodiscard]] cl_device_atomic_capabilities GetAtomicFenceCapabilities() const;
+  [[nodiscard]] cl_device_atomic_capabilities
+  GetAtomicFenceCapabilities() const;
 
   [[nodiscard]] cl_uint GetMaxNumSubGroups() const;
 
@@ -302,7 +301,8 @@ public: // ----- Queue/Device-side -----
 
   [[nodiscard]] cl_bool GetGenericAddressSpaceSupport() const;
 
-  [[nodiscard]] cl_device_device_enqueue_capabilities GetDeviceEnqueueCapabilities() const;
+  [[nodiscard]] cl_device_device_enqueue_capabilities
+  GetDeviceEnqueueCapabilities() const;
 
   [[nodiscard]] cl_device_exec_capabilities GetExecutionCapabilities() const;
 
@@ -313,11 +313,13 @@ public: // ----- Queue/Device-side -----
 public: // ----- Partition -----
   [[nodiscard]] cl_uint GetPartitionMaxSubDevices() const;
 
-  [[nodiscard]] std::vector<cl_device_partition_property> GetPartitionProperties() const;
+  [[nodiscard]] std::vector<cl_device_partition_property>
+  GetPartitionProperties() const;
 
   [[nodiscard]] cl_device_affinity_domain GetPartitionAffinityDomain() const;
 
-  [[nodiscard]] std::vector<cl_device_partition_property> GetPartitionType() const;
+  [[nodiscard]] std::vector<cl_device_partition_property>
+  GetPartitionType() const;
 
 public: // ----- Extensions & Misc
   [[nodiscard]] std::string GetExtensions() const;
@@ -326,7 +328,8 @@ public: // ----- Extensions & Misc
 
   [[nodiscard]] std::string GetBuiltInKernels() const;
 
-  [[nodiscard]] std::vector<cl_name_version> GetBuiltInKernelsWithVersion() const;
+  [[nodiscard]] std::vector<cl_name_version>
+  GetBuiltInKernelsWithVersion() const;
 
   [[nodiscard]] cl_uint GetAddressBits() const;
 
@@ -362,45 +365,6 @@ public:
    */
   void Print() const;
 
-  /*!
-   * \brief Convert a raw OpenCL device type flag into a human-readable string.
-   * \param deviceType OpenCL device type bitfield (e.g. \c CL_DEVICE_TYPE_CPU, \c CL_DEVICE_TYPE_GPU).
-   * \return Descriptive string representation of the given device type.
-   *
-   * This function translates an OpenCL device type enumeration value into a
-   * readable string for logging or debugging purposes. The function supports
-   * combined bitfield flags and returns concatenated names (e.g. "GPU | CPU").
-   */
-  [[nodiscard]] std::string DeviceTypeToString(cl_device_type deviceType) const;
-
-  [[nodiscard]] std::string VendorIdToString(cl_uint vendor_id) const;
-
-  [[nodiscard]] std::string ClBoolToString(cl_bool flag) const;
-
-  [[nodiscard]] std::string CacheTypeToString(cl_device_mem_cache_type type) const;
-
-  [[nodiscard]] std::string LocalMemTypeToString(cl_device_local_mem_type type) const;
-
-  [[nodiscard]] std::string QueuePropertiesToString(cl_command_queue_properties props) const;
-
-  [[nodiscard]] std::string SVMCapabilitiesToString(cl_device_svm_capabilities caps) const;
-
-  [[nodiscard]] std::string AtomicCapabilitiesToString(cl_device_atomic_capabilities caps) const;
-
-  [[nodiscard]] std::string DeviceEnqueueCapabilitiesToString(cl_device_device_enqueue_capabilities caps) const;
-
-  [[nodiscard]] std::string PartitionPropertiesToString(std::vector<cl_device_partition_property> const& props) const;
-
-  [[nodiscard]] std::string AffinityDomainToString(cl_device_affinity_domain domain) const;
-
-  [[nodiscard]] inline std::string UUIDToString(cl_uchar const* uuid) const;
-
-  [[nodiscard]] inline std::string LUIDToString(cl_uchar const* luid) const;
-
-  [[nodiscard]] std::string FPConfigToString(cl_device_fp_config cfg) const;
-
-  [[nodiscard]] std::string ExecCapabilitiesToString(cl_device_exec_capabilities caps) const;
-
 private:
   void PrintIdentity() const;
   void PrintTypeID() const;
@@ -416,8 +380,9 @@ private:
   void PrintExtensionsAndMisc() const;
 
 private:
-  cl::Device  device_; /*!< Native OpenCL device handle */
+  cl::Device device_;          /*!< Native OpenCL device handle */
   std::size_t platform_index_; /*!< Parent platform index */
-  std::size_t device_index_; /*!< Device index within parent platform */
-  std::unordered_set<std::string>  extensions_; /*!< Cached device extension names */
+  std::size_t device_index_;   /*!< Device index within parent platform */
+  std::unordered_set<std::string>
+      extensions_; /*!< Cached device extension names */
 };
