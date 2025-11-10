@@ -50,6 +50,7 @@ PYBIND11_MODULE(ggems, m) {
   m.attr("GGEMSLogger") = core.attr("GGEMSLogger");
   m.attr("set_detail_level") = core.attr("set_detail_level");
   m.attr("force_color") = core.attr("force_color");
+  m.attr("attach_sink") = core.attr("attach_sink");
 
   m.attr("GGEMSOpenCL") = opencl.attr("GGEMSOpenCL");
   m.attr("print_platforms") = opencl.attr("print_platforms");

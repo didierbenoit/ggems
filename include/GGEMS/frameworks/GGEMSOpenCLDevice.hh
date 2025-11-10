@@ -347,6 +347,8 @@ public: // ----- Extensions & Misc
 
   [[nodiscard]] std::size_t GetPrintfBufferSize() const;
 
+  [[nodiscard]] cl_bool GetPreferredInteropUserSync() const;
+
 public: // ----- Pipes -----
   [[nodiscard]] cl_uint GetMaxPipeArgs() const;
 

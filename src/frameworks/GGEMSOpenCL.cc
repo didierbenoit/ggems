@@ -46,9 +46,9 @@ GGEMSOpenCL::GGEMSOpenCL() {
   try {
     InitPlatformsAndDevices();
     GGEMS_INFOEX("OpenCL", 1, "GGEMSOpenCL successfully constructed!");
-  } catch (GGEMSExceptionBase &e) {
+  } catch (GGEMSExceptionBase &) {
     std::terminate();
-  } catch (std::exception const &e) {
+  } catch (std::exception const &) {
     std::terminate();
   } catch (...) {
     std::terminate();

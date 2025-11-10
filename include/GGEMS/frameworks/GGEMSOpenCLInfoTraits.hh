@@ -30,9 +30,6 @@
  */
 
 /// \cond
-#include <CL/cl.h>
-#include <CL/cl_ext.h>
-#include <CL/cl_platform.h>
 #include <CL/opencl.hpp>
 #include <string>
 /// \endcond
@@ -938,5 +935,13 @@ template <> struct InfoTraits<CL_DEVICE_REFERENCE_COUNT> {
   static constexpr std::string_view name = "CL_DEVICE_REFERENCE_COUNT";
   static constexpr std::string_view unit = "";
   static std::string ToString(type v) { return std::to_string(v); }
+};
+
+template <> struct InfoTraits<CL_DEVICE_PREFERRED_INTEROP_USER_SYNC> {
+  using type = cl_bool;
+  static constexpr std::string_view name =
+      "CL_DEVICE_PREFERRED_INTEROP_USER_SYNC";
+  static constexpr std::string_view unit = "";
+  static std::string ToString(type v) { return ClBoolToString(v); }
 };
 } // namespace ggems::ocl

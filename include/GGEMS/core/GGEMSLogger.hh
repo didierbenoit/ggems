@@ -26,7 +26,6 @@
 #include <source_location>
 #include <string>
 #include <string_view>
-#include <thread>
 /// \endcond
 
 #include "GGEMS/core/GGEMSCoreUtils.hh"

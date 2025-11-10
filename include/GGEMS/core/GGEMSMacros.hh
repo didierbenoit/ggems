@@ -26,10 +26,6 @@
   ggems::core::GGEMSLogger::GetInstance().Info(                                \
       (MODULE), (FMT), std::source_location::current(), __VA_ARGS__)
 
-#define GGEMS_WARN(MODULE, FMT, ...)                                           \
-  ggems::core::GGEMSLogger::GetInstance().Warn(                                \
-      (MODULE), (FMT), std::source_location::current(), __VA_ARGS__)
-
 #define GGEMS_ERROR(MODULE, FMT, ...)                                          \
   ggems::core::GGEMSLogger::GetInstance().Error(                               \
       (MODULE), (FMT), std::source_location::current(), __VA_ARGS__)

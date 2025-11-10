@@ -513,6 +513,10 @@ cl_uint GGEMSOpenCLDevice::GetReferenceCount() const {
   return GetInfo<CL_DEVICE_REFERENCE_COUNT>(device_);
 }
 
+cl_bool GGEMSOpenCLDevice::GetPreferredInteropUserSync() const {
+  return GetInfo<CL_DEVICE_PREFERRED_INTEROP_USER_SYNC>(device_);
+}
+
 void GGEMSOpenCLDevice::PrintIdentity() const {
   PrintInfo<CL_DEVICE_NAME>(device_);
   PrintInfo<CL_DEVICE_VENDOR>(device_);
@@ -668,6 +672,7 @@ void GGEMSOpenCLDevice::PrintExtensionsAndMisc() const {
   PrintInfo<CL_DEVICE_ENDIAN_LITTLE>(device_);
   PrintInfo<CL_DEVICE_ERROR_CORRECTION_SUPPORT>(device_);
   PrintInfo<CL_DEVICE_PRINTF_BUFFER_SIZE>(device_);
+  PrintInfo<CL_DEVICE_PREFERRED_INTEROP_USER_SYNC>(device_);
 }
 
 void GGEMSOpenCLDevice::Print() const {

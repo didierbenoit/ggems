@@ -50,7 +50,12 @@ inline std::string_view SimplifyFunctionName(std::string_view full) noexcept {
     full = full.substr(0, pos);
   }
 
-  // Step 2: Remove calling convention (e.g. "__cdecl ")
+  // Step 2: Remove "<...>"
+  if (auto pos = full.find('<'); pos != std::string_view::npos) {
+    full = full.substr(0, pos);
+  }
+
+  // Step 3: Remove calling convention (e.g. "__cdecl ")
   if (auto pos = full.rfind(' '); pos != std::string_view::npos) {
     full = full.substr(pos + 1);
   }
