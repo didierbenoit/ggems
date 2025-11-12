@@ -29,6 +29,7 @@
 /// \endcond
 
 #include "GGEMS/core/GGEMSLogger.hh"
+#include "GGEMS/core/GGEMSMacros.hh"
 
 namespace ggems::core {
 class GGEMSExceptionBase : public std::runtime_error {
@@ -40,12 +41,20 @@ public:
       : std::runtime_error(msg), file_(loc.file_name()),
         function_(loc.function_name()), category_(cat),
         line_(static_cast<int>(loc.line())) {
-    full_ = std::vformat(
-        "[{}] {}:{} ({}): {}",
-        std::make_format_args(category_, file_, line_, function_, msg));
+    full_ = std::format("\n[GGEMS Exception]\n"
+                        "  Type     : {}\n"
+                        "  File     : {}\n"
+                        "  Line     : {}\n"
+                        "  Function : {}\n"
+                        "  Message  : {}\n",
+                        category_, file_, line_, function_, msg);
     if (do_log) {
-      GGEMSLogger::GetInstance().Error("Exception", full_);
-      logged_ = true;
+      try {
+        GGEMS_ERROR("Exception", full_);
+        logged_ = true;
+      } catch (...) {
+        std::fputs("GGEMS: logging failed in GGEMSExceptionBase\n", stderr);
+      }
     }
   }
 
@@ -63,7 +72,7 @@ protected:
 class GGEMSRecoverable final : public GGEMSExceptionBase {
 public:
   explicit GGEMSRecoverable(
-      std::string const &msg,
+      std::string const msg,
       std::source_location loc = std::source_location::current(),
       bool do_log = true)
       : GGEMSExceptionBase(std::move(msg), "Recoverable", loc, do_log) {}
@@ -72,7 +81,7 @@ public:
 class GGEMSInternal final : public GGEMSExceptionBase {
 public:
   explicit GGEMSInternal(
-      std::string const &msg,
+      std::string const msg,
       std::source_location loc = std::source_location::current(),
       bool do_log = true)
       : GGEMSExceptionBase(std::move(msg), "Internal", loc, do_log) {}
@@ -81,7 +90,7 @@ public:
 class GGEMSFatal final : public GGEMSExceptionBase {
 public:
   explicit GGEMSFatal(
-      std::string const &msg,
+      std::string const msg,
       std::source_location loc = std::source_location::current(),
       bool do_log = true)
       : GGEMSExceptionBase(std::move(msg), "Fatal", loc, do_log) {}

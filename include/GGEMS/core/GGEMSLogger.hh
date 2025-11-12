@@ -44,7 +44,7 @@ struct LogColorTheme {
 struct LogRecord {
   std::chrono::system_clock::time_point timestamp_{};
   LogLevel level_{LogLevel::Info};
-  std::size_t thread_id_{};
+  std::string thread_id_{};
   std::string module_{};
   std::string message_{};
   std::string function_{};
@@ -101,7 +101,7 @@ public:
     LogRecord rec;
     rec.timestamp_ = std::chrono::system_clock::now();
     rec.level_ = lvl;
-    rec.thread_id_ = GetThreadIndex();
+    rec.thread_id_ = ThreadTag();
     rec.module_ = std::string(module);
     rec.message_ = msg;
     rec.function_ = SimplifyFunctionName(loc.function_name());
@@ -110,20 +110,17 @@ public:
     Dispatch(rec);
   }
 
-  template <typename... Args>
-  void Debug(std::string_view module, std::string_view fmt_runtime,
-             std::source_location loc = std::source_location::current(),
-             Args &&...args) {
-    auto s = std::vformat(fmt_runtime, std::make_format_args(args...));
-    Log(LogLevel::Debug, module, loc, s);
-  }
-
-  template <typename... Args>
-  void Info(std::string_view module, std::string_view fmt_runtime,
-            std::source_location loc = std::source_location::current(),
-            Args &&...args) {
-    auto s = std::vformat(fmt_runtime, std::make_format_args(args...));
-    Log(LogLevel::Info, module, loc, s);
+  template <LogLevel Level, typename... Args>
+  void LogFmt(std::string_view module, std::string_view fmt_runtime,
+              std::source_location loc = std::source_location::current(),
+              Args &&...args) {
+    std::string s;
+    if constexpr (sizeof...(Args) == 0) {
+      s = std::string(fmt_runtime);
+    } else {
+      s = std::vformat(fmt_runtime, std::make_format_args(args...));
+    }
+    Log(Level, module, loc, s);
   }
 
   template <typename... Args>
@@ -132,24 +129,13 @@ public:
               Args &&...args) {
     if (depth > detail_level_)
       return;
-    auto s = std::vformat(fmt_runtime, std::make_format_args(args...));
+    std::string s;
+    if constexpr (sizeof...(Args) == 0) {
+      s = std::string(fmt_runtime);
+    } else {
+      s = std::vformat(fmt_runtime, std::make_format_args(args...));
+    }
     Log(LogLevel::Info, module, loc, s);
-  }
-
-  template <typename... Args>
-  void Warn(std::string_view module, std::string_view fmt_runtime,
-            std::source_location loc = std::source_location::current(),
-            Args &&...args) {
-    auto s = std::vformat(fmt_runtime, std::make_format_args(args...));
-    Log(LogLevel::Warn, module, loc, s);
-  }
-
-  template <typename... Args>
-  void Error(std::string_view module, std::string_view fmt_runtime,
-             std::source_location loc = std::source_location::current(),
-             Args &&...args) {
-    auto s = std::vformat(fmt_runtime, std::make_format_args(args...));
-    Log(LogLevel::Error, module, loc, s);
   }
 
 private:

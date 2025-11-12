@@ -30,17 +30,15 @@ void TerminateHandler() noexcept {
         std::rethrow_exception(ex);
       } catch (GGEMSExceptionBase const &e) {
         if (!e.Logged()) {
-          GGEMSLogger::GetInstance().Error("Fatal", e.what());
+          GGEMS_ERROR("Fatal", e.what());
         }
       } catch (std::exception const &e) {
-        GGEMSLogger::GetInstance().Error("Fatal", e.what());
+        GGEMS_ERROR("Fatal", e.what());
       } catch (...) {
-        GGEMSLogger::GetInstance().Error("Fatal",
-                                         "Unknown non-standard exception");
+        GGEMS_ERROR("Fatal", "Unknown non-standard exception");
       }
     } else {
-      GGEMSLogger::GetInstance().Error(
-          "Fatal", "Terminate called with no active exception");
+      GGEMS_ERROR("Fatal", "Terminate called with no active exception");
     }
   } catch (...) {
     std::fputs("GGEMS Fatal Error: logger failed inside TerminateHandler\n",

@@ -23,7 +23,7 @@ namespace py = pybind11;
 // ---------------------------------------------------------------------------
 void GGEMSInitCore(py::module_ &m);
 void GGEMSInitOpenCL(py::module_ &m);
-// void GGEMSInitRuntime(py::module_ &m);
+void GGEMSInitRun(py::module_ &m);
 // void GGEMSInitUI(py::module_ &m);
 
 // ---------------------------------------------------------------------------
@@ -42,10 +42,12 @@ PYBIND11_MODULE(ggems, m) {
       m.def_submodule("core", "GGEMS core utilities and system helpers");
   auto opencl =
       m.def_submodule("opencl", "OpenCL platform and device management");
+  auto run = m.def_submodule("run", "GGEMS executor");
 
   // --- Initialise C++ bindings for each submodule -------------------------
   GGEMSInitCore(core);
   GGEMSInitOpenCL(opencl);
+  GGEMSInitRun(run);
 
   m.attr("GGEMSLogger") = core.attr("GGEMSLogger");
   m.attr("set_detail_level") = core.attr("set_detail_level");
@@ -56,6 +58,8 @@ PYBIND11_MODULE(ggems, m) {
   m.attr("print_platforms") = opencl.attr("print_platforms");
   m.attr("print_devices") = opencl.attr("print_devices");
   m.attr("clean") = opencl.attr("clean");
+
+  m.attr("GGEMSExecutor") = run.attr("GGEMSExecutor");
 
   // --- Optional version info (for Python side introspection) --------------
   m.attr("__version__") = "2.0.0";

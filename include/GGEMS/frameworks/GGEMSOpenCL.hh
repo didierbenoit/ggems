@@ -40,6 +40,7 @@
 #include <vector>
 /// \endcond
 
+namespace ggems::ocl {
 class GGEMSOpenCLPlatform;
 
 /*!
@@ -154,3 +155,4 @@ private:
   std::vector<GGEMSOpenCLPlatform>
       platforms_; /*!< Vector storing all detected OpenCL platforms */
 };
+} // namespace ggems::ocl

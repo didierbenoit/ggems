@@ -59,6 +59,7 @@
  * Thread-safety:
  * - Queries are read-only and thread-safe as per OpenCL C++ bindings contract.
  */
+namespace ggems::ocl {
 class GGEMSOpenCLDevice final {
 public:
   /*!
@@ -388,3 +389,4 @@ private:
   std::unordered_set<std::string>
       extensions_; /*!< Cached device extension names */
 };
+} // namespace ggems::ocl

@@ -5,6 +5,8 @@
 namespace py = pybind11;
 
 void GGEMSInitOpenCL(py::module_ &m) {
+  using ggems::ocl::GGEMSOpenCL;
+
   py::class_<GGEMSOpenCL, std::unique_ptr<GGEMSOpenCL, py::nodelete>>(
       m, "GGEMSOpenCL")
       .def(py::init(

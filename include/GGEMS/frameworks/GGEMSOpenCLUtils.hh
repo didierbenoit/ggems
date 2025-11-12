@@ -361,105 +361,84 @@ namespace ggems::ocl {
 }
 
 // === Handles OpenCL errors
-template <typename Enum, typename ToStringFunc>
+template <typename E, typename Enum, typename ToStringFunc>
 [[noreturn]] inline void
-ThrowCL(Enum code, ToStringFunc to_string, std::string_view context,
+ThrowCL(Enum code, ToStringFunc toString, std::string_view context,
         std::source_location loc = std::source_location::current()) {
   std::string msg =
       std::format("{} (code {}): {}", context, static_cast<int>(code),
-                  to_string(static_cast<int>(code)));
-  ggems::core::Throw<ggems::core::GGEMSRecoverable>(msg, loc, true);
-}
-
-template <typename Enum, typename ToStringFunc>
-[[noreturn]] inline void
-ThrowFatalCL(Enum code, ToStringFunc toString, std::string_view context,
-             std::source_location loc = std::source_location::current()) {
-  std::string msg =
-      std::format("{} (code {}): {}", context, static_cast<int>(code),
                   toString(static_cast<int>(code)));
-  ggems::core::Throw<ggems::core::GGEMSFatal>(msg, loc, true);
+  ggems::core::Throw<E>(msg, loc, true);
 }
 
+template <typename E = ggems::core::GGEMSFatal>
 inline void
 CheckCLError(cl_int err, std::string_view context,
              std::source_location loc = std::source_location::current()) {
   if (err != CL_SUCCESS)
-    ThrowFatalCL(err, GetLongErrorString, context, loc);
+    ThrowCL<E>(err, GetLongErrorString, context, loc);
 }
 
 // === Info getters
 namespace detail {
 template <typename T> struct CLInfoReader {
-  static T Read(auto obj, cl_uint param, std::size_t size, auto Getter,
+  static T Read(auto obj, cl_uint param, std::size_t size, auto getter,
                 cl_int &err) {
     (void)size;
     T value{};
-    err = Getter(obj(), param, sizeof(T), &value, nullptr);
+    err = getter(obj(), param, sizeof(T), &value, nullptr);
     return value;
   }
 };
 
 template <> struct CLInfoReader<std::string> {
-  static std::string Read(auto obj, cl_uint param, size_t size, auto Getter,
+  static std::string Read(auto obj, cl_uint param, size_t size, auto getter,
                           cl_int &err) {
     std::string value(size, '\0');
-    err = Getter(obj(), param, size, value.data(), nullptr);
+    err = getter(obj(), param, size, value.data(), nullptr);
     return value;
   }
 };
 
 template <typename T, std::size_t N> struct CLInfoReader<std::array<T, N>> {
   static std::array<T, N> Read(auto obj, cl_uint param, size_t size,
-                               auto Getter, cl_int &err) {
+                               auto getter, cl_int &err) {
     std::array<T, N> v{};
     size_t take = std::min<size_t>(size, N * sizeof(T));
-    err = Getter(obj(), param, take, v.data(), nullptr);
+    err = getter(obj(), param, take, v.data(), nullptr);
     return v;
   }
 };
 
 template <typename T> struct CLInfoReader<std::vector<T>> {
-  static std::vector<T> Read(auto obj, cl_uint param, size_t size, auto Getter,
+  static std::vector<T> Read(auto obj, cl_uint param, size_t size, auto getter,
                              cl_int &err) {
     std::vector<T> v(size / sizeof(T));
-    err = Getter(obj(), param, size, v.data(), nullptr);
+    err = getter(obj(), param, size, v.data(), nullptr);
     return v;
   }
 };
 
-template <typename Object> struct InfoFunction;
+template <class Obj> struct CLGetter;
 
-template <> struct InfoFunction<cl::Device> {
-  static constexpr auto value = &::clGetDeviceInfo;
+template <> struct CLGetter<cl::Device> {
+  static constexpr auto fn = &clGetDeviceInfo;
 };
 
-template <> struct InfoFunction<cl::Platform> {
-  static constexpr auto value = &::clGetPlatformInfo;
+template <> struct CLGetter<cl::Context> {
+  static constexpr auto fn = &clGetContextInfo;
 };
 
-template <> struct InfoFunction<cl::Context> {
-  static constexpr auto value = &::clGetContextInfo;
+template <> struct CLGetter<cl::Platform> {
+  static constexpr auto fn = &clGetPlatformInfo;
 };
 
-template <> struct InfoFunction<cl::CommandQueue> {
-  static constexpr auto value = &::clGetCommandQueueInfo;
+template <> struct CLGetter<cl::Program> {
+  static constexpr auto fn = &clGetProgramInfo;
 };
 
-template <> struct InfoFunction<cl::Program> {
-  static constexpr auto value = &::clGetProgramInfo;
-};
-
-template <> struct InfoFunction<cl::Kernel> {
-  static constexpr auto value = &::clGetKernelInfo;
-};
-
-template <> struct InfoFunction<cl::Memory> {
-  static constexpr auto value = &::clGetMemObjectInfo;
-};
-
-template <> struct InfoFunction<cl::Event> {
-  static constexpr auto value = &::clGetEventInfo;
+template <> struct CLGetter<cl::Kernel> {
+  static constexpr auto fn = &clGetKernelInfo;
 };
 } // namespace detail
 
@@ -474,16 +453,14 @@ template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
     CheckCLError(err, "GetInfo failed");
     return value;
   } else {
-    using InfoFn =
-        cl_int (*)(typename Object::cl_type, cl_uint, size_t, void *, size_t *);
-    InfoFn Getter = detail::InfoFunction<Object>::value;
+    auto getter = detail::CLGetter<Object>::fn;
 
     std::size_t size = 0;
-    err = Getter(obj(), Info, 0, nullptr, &size);
+    err = getter(obj(), Info, 0, nullptr, &size);
     CheckCLError(err, std::string(Traits::name) + " (query size)");
 
     auto value =
-        detail::CLInfoReader<ReturnType>::Read(obj, Info, size, Getter, err);
+        detail::CLInfoReader<ReturnType>::Read(obj, Info, size, getter, err);
     CheckCLError(err, std::string(Traits::name) + " (read)");
     return value;
   }
@@ -492,8 +469,7 @@ template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
 template <cl_uint Info, typename Object> void PrintInfo(Object const &obj) {
   using Traits = InfoTraits<Info>;
   auto value = GetInfo<Info>(obj);
-  GGEMS_INFO("OpenCL", "{}: {} {}", Traits::name, Traits::ToString(value),
-             Traits::unit);
+  GGEMS_INFO("OpenCL", "{}: {}", Traits::name, Traits::ToString(value));
 }
 
 // === Checking extensions

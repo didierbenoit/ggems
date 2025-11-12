@@ -2,11 +2,13 @@
 #include <pybind11/stl.h>
 
 #include "GGEMS/core/GGEMSLogger.hh"
-using namespace ggems::core;
 
 namespace py = pybind11;
 
 void GGEMSInitCore(py::module_ &m) {
+  using ggems::core::FileSink;
+  using ggems::core::GGEMSLogger;
+
   py::class_<GGEMSLogger, std::unique_ptr<GGEMSLogger, py::nodelete>>(
       m, "GGEMSLogger")
       // --- Constructor: returns always the singleton instance ---

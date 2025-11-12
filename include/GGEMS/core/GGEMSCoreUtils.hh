@@ -32,15 +32,37 @@
 
 /// \cond
 #include <atomic>
+#include <format>
+#include <mutex>
+#include <optional>
+#include <string>
 #include <string_view>
+#include <unordered_map>
+
+#if defined(_WIN32)
+#include <intrin.h>
+#include <windows.h>
+#elif defined(__linux__)
+#include <fstream>
+#elif defined(__APPLE__)
+#include <sys/sysctl.h>
+#endif
 /// \endcond
 
 namespace ggems::core {
 [[nodiscard]]
-inline std::size_t GetThreadIndex() noexcept {
-  static std::atomic_size_t counter{0};
-  static thread_local std::size_t id = counter++;
-  return id;
+inline std::string ThreadTag() {
+  static std::atomic<unsigned> next{0};
+  static std::mutex m;
+  static std::unordered_map<std::thread::id, unsigned> map;
+
+  thread_local unsigned idx = [&] {
+    std::scoped_lock lock(m);
+    auto [it, inserted] = map.emplace(std::this_thread::get_id(), next++);
+    return it->second;
+  }();
+
+  return std::format("T{}", idx);
 }
 
 [[nodiscard]]
@@ -83,5 +105,56 @@ inline std::string_view SimplifyFunctionName(std::string_view full) noexcept {
     return full;
 
   return full.substr(prev + 2);
+}
+
+[[nodiscard]] inline std::optional<std::uint32_t>
+GetCPUFrequencyMHz() noexcept {
+#if defined(_WIN32)
+  // --- Windows ---
+  HKEY key;
+  DWORD mhz = 0;
+  DWORD size = sizeof(mhz);
+  if (RegOpenKeyExA(HKEY_LOCAL_MACHINE,
+                    "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", 0,
+                    KEY_READ, &key) == ERROR_SUCCESS) {
+    if (RegQueryValueExA(key, "~MHz", nullptr, nullptr,
+                         reinterpret_cast<LPBYTE>(&mhz),
+                         &size) == ERROR_SUCCESS) {
+      RegCloseKey(key);
+      return mhz;
+    }
+    RegCloseKey(key);
+  }
+  return std::nullopt;
+
+#elif defined(__linux__)
+  // --- Linux ---
+  std::ifstream cpuinfo("/proc/cpuinfo");
+  std::string line;
+  while (std::getline(cpuinfo, line)) {
+    if (line.starts_with("cpu MHz")) {
+      auto pos = line.find(':');
+      if (pos != std::string::npos) {
+        try {
+          double freq = std::stod(line.substr(pos + 1));
+          return static_cast<std::uint32_t>(freq);
+        } catch (...) {
+          return std::nullopt;
+        }
+      }
+    }
+  }
+  return std::nullopt;
+
+#elif defined(__APPLE__)
+  // --- macOS ---
+  std::uint64_t hz = 0;
+  std::size_t size = sizeof(hz);
+  if (sysctlbyname("hw.cpufrequency", &hz, &size, nullptr, 0) == 0)
+    return static_cast<std::uint32_t>(hz / 1'000'000);
+  return std::nullopt;
+#else
+  return std::nullopt;
+#endif
 }
 } // namespace ggems::core

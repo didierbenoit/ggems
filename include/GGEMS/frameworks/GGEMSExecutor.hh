@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ggems {
+namespace ggems::run {
 class GGEMSExecutor {
 public:
   GGEMSExecutor();
@@ -16,4 +16,4 @@ private:
 
 private:
 };
-} // namespace ggems
+} // namespace ggems::run

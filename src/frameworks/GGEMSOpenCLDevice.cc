@@ -27,18 +27,14 @@
  */
 
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
+#include "GGEMS/core/GGEMSCoreUtils.hh"
+#include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 #include <CL/cl.h>
 #include <CL/cl_ext.h>
 
-using ggems::ocl::ExtractExtensions;
-using ggems::ocl::GetInfo;
-using ggems::ocl::HasExtension;
-using ggems::ocl::LUIDToString;
-using ggems::ocl::PrintInfo;
-using ggems::ocl::UUIDToString;
-
+namespace ggems::ocl {
 GGEMSOpenCLDevice::GGEMSOpenCLDevice(cl::Device const &device,
                                      std::size_t platform_index,
                                      std::size_t device_index)
@@ -106,7 +102,21 @@ cl_uint GGEMSOpenCLDevice::GetMaxComputeUnits() const {
 }
 
 cl_uint GGEMSOpenCLDevice::GetMaxClockFrequency() const {
-  return GetInfo<CL_DEVICE_MAX_CLOCK_FREQUENCY>(device_);
+  cl_uint freq{0};
+  freq = device_.getInfo<CL_DEVICE_MAX_CLOCK_FREQUENCY>();
+
+  // Si le driver ne retourne rien ou 0
+  if (freq == 0) {
+    auto type = device_.getInfo<CL_DEVICE_TYPE>();
+
+    // Fallback CPU uniquement
+    if (type & CL_DEVICE_TYPE_CPU) {
+      if (auto cpu_freq = ggems::core::GetCPUFrequencyMHz()) {
+        return static_cast<cl_uint>(*cpu_freq);
+      }
+    }
+  }
+  return freq;
 }
 
 std::size_t GGEMSOpenCLDevice::GetMaxWorkGroupSize() const {
@@ -676,8 +686,9 @@ void GGEMSOpenCLDevice::PrintExtensionsAndMisc() const {
 }
 
 void GGEMSOpenCLDevice::Print() const {
-  GGEMS_INFO("OpenCL", "----- Device [{}:{}]", platform_index_, device_index_);
-
+  GGEMS_INFO("OpenCL", "==========================");
+  GGEMS_INFO("OpenCL", "Device [{}:{}]", platform_index_, device_index_);
+  GGEMS_INFO("OpenCL", "==========================");
   PrintIdentity();
   PrintTypeID();
   PrintCompute();
@@ -691,3 +702,4 @@ void GGEMSOpenCLDevice::Print() const {
   PrintPartition();
   PrintExtensionsAndMisc();
 }
+} // namespace ggems::ocl

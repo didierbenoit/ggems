@@ -2,8 +2,7 @@
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 
-using namespace ggems;
-
+namespace ggems::run {
 GGEMSExecutor::GGEMSExecutor() {
   GGEMS_INFOEX("GGEMS", 3, "GGEMSExecutor created.");
 }
@@ -11,3 +10,11 @@ GGEMSExecutor::GGEMSExecutor() {
 GGEMSExecutor::~GGEMSExecutor() {
   GGEMS_INFOEX("GGEMS", 3, "GGEMSExecutor destroyed.");
 }
+
+void GGEMSExecutor::Initialize() { ; }
+
+void GGEMSExecutor::Run() { ; }
+
+void GGEMSExecutor::SelectDevices() { ; }
+
+} // namespace ggems::run

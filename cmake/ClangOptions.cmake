@@ -37,6 +37,7 @@ add_compile_options(
   -fvisibility=hidden
   -fvisibility-inlines-hidden
 )
+add_compile_definitions(NOMINMAX)
 
 # ----------------------------------------------------------------------------
 # Debug configuration

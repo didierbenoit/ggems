@@ -26,10 +26,7 @@
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
-using ggems::ocl::ExtractExtensions;
-using ggems::ocl::GetInfo;
-using ggems::ocl::PrintInfo;
-
+namespace ggems::ocl {
 GGEMSOpenCLPlatform::GGEMSOpenCLPlatform(cl::Platform const &platform,
                                          std::size_t platform_index)
     : platform_{platform}, platform_index_{platform_index} {
@@ -97,16 +94,15 @@ void GGEMSOpenCLPlatform::PrintExtension() const {
 }
 
 void GGEMSOpenCLPlatform::Print() const {
-  GGEMS_INFO("OpenCL", "+++++++++++++++++++++++++++++++++++++");
+  GGEMS_INFO("OpenCL", "++++++++++++++++++++++++++");
 
   GGEMS_INFO("OpenCL", "Platform [{}]: {} ({})", platform_index_, GetName(),
              GetVendor());
   GGEMS_INFO("OpenCL", "Discovered devices: {}", devices_.size());
+  GGEMS_INFO("OpenCL", "++++++++++++++++++++++++++");
 
   PrintIdentity();
   PrintExtension();
-
-  GGEMS_INFO("OpenCL", "+++++++++++++++++++++++++++++++++++++");
 }
 
 // -------------------- Devices & cleanup --------------------
@@ -152,3 +148,4 @@ void GGEMSOpenCLPlatform::DiscoverDevices() {
   GGEMS_INFOEX("OpenCL", 2, "Found {} device(s) on platform [{}]",
                natives.size(), platform_index_);
 }
+} // namespace ggems::ocl

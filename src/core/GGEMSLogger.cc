@@ -50,6 +50,24 @@ FormatTimestamp(std::chrono::system_clock::time_point const &tp) {
   return std::string(buf);
 }
 
+[[nodiscard]] inline std::optional<std::string>
+GetEnvVar(const char *name) noexcept {
+#if defined(_WIN32)
+  char *buffer = nullptr;
+  std::size_t len = 0;
+  if (_dupenv_s(&buffer, &len, name) == 0 && buffer) {
+    std::string value(buffer);
+    std::free(buffer);
+    return value;
+  }
+  return std::nullopt;
+#else
+  if (const char *value = std::getenv(name))
+    return std::string(value);
+  return std::nullopt;
+#endif
+}
+
 void ConsoleSink::Write(LogRecord const &rec, std::string const &formatted) {
   FILE *stream = (rec.level_ == LogLevel::Error) ? stderr : stdout;
   std::fwrite(formatted.data(), 1, formatted.size(), stream);
@@ -96,10 +114,9 @@ std::string LogFormatter::Format(LogRecord const &rec,
   auto const ts = FormatTimestamp(rec.timestamp_);
   std::string module_part = rec.module_.empty() ? "" : " [" + rec.module_ + "]";
 
-  return std::vformat("{}{} [{}] {{T{}}}{}{} ({}): {}",
-                      std::make_format_args(col, ts, level_str, rec.thread_id_,
-                                            reset, module_part, rec.function_,
-                                            rec.message_));
+  return std::format("{}{} [{}] {{{}}}{}{} ({}): {}", col, ts, level_str,
+                     rec.thread_id_, reset, module_part, rec.function_,
+                     rec.message_);
 }
 
 GGEMSLogger &GGEMSLogger::GetInstance() {
@@ -134,9 +151,11 @@ void GGEMSLogger::SetForceColor(std::optional<bool> force) {
 bool GGEMSLogger::UseColour() const noexcept {
   if (force_colour_.has_value())
     return *force_colour_;
-  char const *no_color = std::getenv("NO_COLOR");
-  if (no_color && *no_color)
+
+  auto no_color = GetEnvVar("NO_COLOR");
+  if (no_color && !no_color->empty())
     return false;
+
   return isatty(fileno(stdout)) != 0;
 }
 

@@ -30,21 +30,61 @@
 
 /// \cond
 #include <CL/opencl.hpp>
+#include <concepts>
+#include <format>
 #include <span>
 #include <sstream>
 /// \endcond
 
 namespace ggems::ocl {
+template <typename T>
+concept IntegralOrFloatingPoint = std::integral<T> || std::floating_point<T>;
+
+template <IntegralOrFloatingPoint T, std::size_t N>
+[[nodiscard]] inline std::string
+ReadableUnits(T value, const std::array<const char *, N> &units,
+              double base = 1024.0) noexcept {
+  double v = static_cast<double>(value);
+  std::size_t i = 0;
+
+  while (v >= base && i + 1 < N) {
+    v /= base;
+    ++i;
+  }
+
+  return std::format("{:.3g} {}", v, units[i]);
+}
+
+template <IntegralOrFloatingPoint T>
+[[nodiscard]] inline std::string ReadableByteUnits(T bytes) noexcept {
+  static constexpr std::array units{"B", "KB", "MB", "GB", "TB", "PB"};
+  return ReadableUnits(bytes, units, 1024.0);
+}
+
+template <IntegralOrFloatingPoint T>
+[[nodiscard]] inline std::string ReadableTimeUnits(T ns) noexcept {
+  static constexpr std::array units{"ns", "us", "ms", "s"};
+  return ReadableUnits(ns, units, 1000.0);
+}
+
+template <IntegralOrFloatingPoint T>
+[[nodiscard]] inline std::string ReadableFrequencyUnits(T Hz) noexcept {
+  static constexpr std::array units{"Hz", "kHz", "MHz", "GHz"};
+  return ReadableUnits(Hz, units, 1000.0);
+}
+
+template <IntegralOrFloatingPoint T>
+[[nodiscard]] inline std::string ReadableBitUnits(T bits) noexcept {
+  static constexpr std::array units{"b", "Kb", "Mb", "Gb", "Tb", "Pb"};
+  return ReadableUnits(bits, units, 1000.0);
+}
+
 [[nodiscard]] inline std::string
 ClVersionToString(cl_version version) noexcept {
   cl_uint major = (version >> 22) & 0x3FFu;
   cl_uint minor = (version >> 12) & 0x3FFu;
   cl_uint patch = (version >> 0) & 0xFFFu;
-
-  std::ostringstream oss;
-  oss << major << '.' << minor << '.' << patch << " (0x" << std::uppercase
-      << std::hex << version << std::dec << ')';
-  return oss.str();
+  return std::format("{}.{}.{}", major, minor, patch);
 }
 
 [[nodiscard]] inline std::string ClNameVersionToString(
@@ -139,7 +179,7 @@ CacheTypeToString(cl_device_mem_cache_type type) noexcept {
 }
 
 [[nodiscard]] inline std::string ClBoolToString(cl_bool flag) noexcept {
-  return (flag == CL_TRUE) ? "CL_TRUE" : "CL_FALSE";
+  return (flag == CL_TRUE) ? "Yes" : "No";
 }
 
 [[nodiscard]] inline std::string
@@ -339,7 +379,9 @@ AffinityDomainToString(cl_device_affinity_domain domain) noexcept {
   return s;
 }
 
-inline std::string UUIDToString(std::span<const cl_uchar, CL_UUID_SIZE_KHR> s) {
+[[nodiscard]]
+inline std::string
+UUIDToString(std::span<const cl_uchar, CL_UUID_SIZE_KHR> s) noexcept {
   // format 8-4-4-4-12
   char buf[36 + 1]{};
 
@@ -364,9 +406,9 @@ inline std::string UUIDToString(std::span<const cl_uchar, CL_UUID_SIZE_KHR> s) {
   return std::string(buf);
 }
 
-// surcharges pratiques
+[[nodiscard]]
 inline std::string
-UUIDToString(std::array<cl_uchar, CL_UUID_SIZE_KHR> const &a) {
+UUIDToString(std::array<cl_uchar, CL_UUID_SIZE_KHR> const &a) noexcept {
   return UUIDToString(
       std::span<const cl_uchar, CL_UUID_SIZE_KHR>(a.data(), a.size()));
 }
@@ -382,8 +424,9 @@ inline std::string LUIDToString(std::span<const cl_uchar, CL_LUID_SIZE_KHR> s) {
   return out;
 }
 
+[[nodiscard]]
 inline std::string
-LUIDToString(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &a) {
+LUIDToString(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &a) noexcept {
   return LUIDToString(
       std::span<const cl_uchar, CL_LUID_SIZE_KHR>(a.data(), a.size()));
 }
@@ -413,6 +456,12 @@ FPConfigToString(cl_device_fp_config cfg) noexcept {
     s.pop_back(), s.pop_back();
 
   return s.empty() ? "None" : s;
+}
+
+[[nodiscard]] inline std::string UIntToString(cl_uint value) noexcept {
+  if (value == std::numeric_limits<cl_uint>::max())
+    return "N/A";
+  return std::to_string(value);
 }
 
 [[nodiscard]] inline std::string

@@ -48,6 +48,7 @@
 
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
+namespace ggems::ocl {
 // Forward declaration to decouple headers (the destructor is out-of-line).
 class GGEMSOpenCLDevice;
 
@@ -245,3 +246,4 @@ private:
   std::vector<std::unique_ptr<GGEMSOpenCLDevice>>
       devices_; /*!< Owned CPU/GPU device wrappers */
 };
+} // namespace ggems::ocl
