@@ -33,15 +33,18 @@
  * \version 2.0
  */
 
-#include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 
 /// \cond
 #include <vector>
 /// \endcond
 
 namespace ggems::ocl {
+
 class GGEMSOpenCLPlatform;
+class GGEMSOpenCLContext;
+class GGEMSOpenCLDevice;
 
 /*!
  * \class GGEMSOpenCL
@@ -57,7 +60,7 @@ class GGEMSOpenCLPlatform;
  * and multiple interpreter environments (`per_interpreter_gil`),
  * avoiding premature destruction of OpenCL resources.
  */
-class GGEMSOpenCL final {
+class GGEMSOpenCL {
 private:
   /*!
    * \brief Default constructor (private).
@@ -127,6 +130,9 @@ public:
     return platforms_;
   }
 
+  void SelectDevices(std::vector<std::string> const &filters);
+  void Initialise();
+
 private:
   /*!
    * \brief Enumerates OpenCL platforms and creates GGEMSOpenCLPlatform
@@ -136,6 +142,11 @@ private:
    */
   void InitPlatformsAndDevices();
 
+  [[nodiscard]]
+  std::vector<ocl::GGEMSOpenCLDevice>
+  ParseDeviceFilters(std::vector<std::string> const &filters);
+
+  void CreateContexts();
   /*!
    * \brief Disable GPU driver kernel caching (development convenience).
    *
@@ -154,5 +165,6 @@ private:
 private:
   std::vector<GGEMSOpenCLPlatform>
       platforms_; /*!< Vector storing all detected OpenCL platforms */
+  std::vector<ggems::ocl::GGEMSOpenCLContext> contexts_;
 };
 } // namespace ggems::ocl

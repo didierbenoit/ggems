@@ -60,7 +60,7 @@ class GGEMSOpenCLDevice;
  * GGEMS multi-architecture philosophy while avoiding exotic device kinds unless
  * explicitly needed later.
  */
-class GGEMSOpenCLPlatform final {
+class GGEMSOpenCLPlatform {
 public:
   /*!
    * \brief Construct a platform façade with a native platform and its stable
@@ -219,7 +219,10 @@ public:
    * The platform retains ownership. Returned pointers remain valid until either
    * \c Clean() is called or the platform object is destroyed.
    */
-  [[nodiscard]] std::vector<GGEMSOpenCLDevice const *> GetDevices() const;
+  [[nodiscard]] std::vector<GGEMSOpenCLDevice> const &
+  GetDevices() const noexcept {
+    return devices_;
+  }
 
 private:
   void PrintIdentity() const;
@@ -243,7 +246,6 @@ private:
   std::size_t platform_index_; /*!< Stable platform index */
   std::unordered_set<std::string>
       extensions_; /*!< Cached platform extension names */
-  std::vector<std::unique_ptr<GGEMSOpenCLDevice>>
-      devices_; /*!< Owned CPU/GPU device wrappers */
+  std::vector<GGEMSOpenCLDevice> devices_; /*!< Owned CPU/GPU device wrappers */
 };
 } // namespace ggems::ocl

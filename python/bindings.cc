@@ -24,7 +24,6 @@ namespace py = pybind11;
 void GGEMSInitCore(py::module_ &m);
 void GGEMSInitOpenCL(py::module_ &m);
 void GGEMSInitRun(py::module_ &m);
-// void GGEMSInitUI(py::module_ &m);
 
 // ---------------------------------------------------------------------------
 // GGEMS Python module definition
@@ -58,8 +57,10 @@ PYBIND11_MODULE(ggems, m) {
   m.attr("print_platforms") = opencl.attr("print_platforms");
   m.attr("print_devices") = opencl.attr("print_devices");
   m.attr("clean") = opencl.attr("clean");
+  m.attr("initialise") = opencl.attr("initialise");
+  m.attr("select_devices") = opencl.attr("select_devices");
 
-  m.attr("GGEMSExecutor") = run.attr("GGEMSExecutor");
+  m.attr("GGEMSRun") = run.attr("GGEMSRun");
 
   // --- Optional version info (for Python side introspection) --------------
   m.attr("__version__") = "2.0.0";

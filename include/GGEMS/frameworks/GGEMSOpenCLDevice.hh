@@ -36,10 +36,6 @@
  * \version 2.0
  */
 
-/// \cond
-#include <unordered_map>
-/// \endcond
-
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
 /*!

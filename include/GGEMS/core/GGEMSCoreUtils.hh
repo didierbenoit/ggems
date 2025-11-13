@@ -50,6 +50,21 @@
 /// \endcond
 
 namespace ggems::core {
+
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
+
+[[nodiscard]] inline std::string lower(std::string s) {
+  for (char &c : s)
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  return s;
+}
+
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
+
 [[nodiscard]]
 inline std::string ThreadTag() {
   static std::atomic<unsigned> next{0};
@@ -64,6 +79,10 @@ inline std::string ThreadTag() {
 
   return std::format("T{}", idx);
 }
+
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
 
 [[nodiscard]]
 inline std::string_view SimplifyFunctionName(std::string_view full) noexcept {
@@ -106,6 +125,10 @@ inline std::string_view SimplifyFunctionName(std::string_view full) noexcept {
 
   return full.substr(prev + 2);
 }
+
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
 
 [[nodiscard]] inline std::optional<std::uint32_t>
 GetCPUFrequencyMHz() noexcept {

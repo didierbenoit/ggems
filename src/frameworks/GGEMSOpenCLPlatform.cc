@@ -27,6 +27,11 @@
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
 namespace ggems::ocl {
+
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
+
 GGEMSOpenCLPlatform::GGEMSOpenCLPlatform(cl::Platform const &platform,
                                          std::size_t platform_index)
     : platform_{platform}, platform_index_{platform_index} {
@@ -42,46 +47,84 @@ GGEMSOpenCLPlatform::GGEMSOpenCLPlatform(cl::Platform const &platform,
                devices_.size());
 }
 
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
+
 GGEMSOpenCLPlatform::~GGEMSOpenCLPlatform() {
   GGEMS_INFOEX("OpenCL", 2, "Releasing GGEMSOpenCLPlatform [{}]",
                platform_index_);
 }
 
-// -------------------- Queries --------------------
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
+
 std::string GGEMSOpenCLPlatform::GetName() const {
   return GetInfo<CL_PLATFORM_NAME>(platform_);
 }
+
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
 
 std::string GGEMSOpenCLPlatform::GetProfile() const {
   return GetInfo<CL_PLATFORM_PROFILE>(platform_);
 }
 
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
+
 std::string GGEMSOpenCLPlatform::GetVersion() const {
   return GetInfo<CL_PLATFORM_VERSION>(platform_);
 }
+
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
 
 std::string GGEMSOpenCLPlatform::GetVendor() const {
   return GetInfo<CL_PLATFORM_VENDOR>(platform_);
 }
 
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
+
 std::string GGEMSOpenCLPlatform::GetExtensions() const {
   return GetInfo<CL_PLATFORM_EXTENSIONS>(platform_);
 }
+
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
 
 cl_version GGEMSOpenCLPlatform::GetNumericVersion() const {
   return GetInfo<CL_PLATFORM_NUMERIC_VERSION>(platform_);
 }
 
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
+
 cl_ulong GGEMSOpenCLPlatform::GetHostTimerResolution() const {
   return GetInfo<CL_PLATFORM_HOST_TIMER_RESOLUTION>(platform_);
 }
+
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
 
 std::vector<cl_name_version>
 GGEMSOpenCLPlatform::GetExtensionsWithVersion() const {
   return GetInfo<CL_PLATFORM_EXTENSIONS_WITH_VERSION>(platform_);
 }
 
-// -------------------- Reporting --------------------
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
+
 void GGEMSOpenCLPlatform::PrintIdentity() const {
   PrintInfo<CL_PLATFORM_PROFILE>(platform_);
   PrintInfo<CL_PLATFORM_VERSION>(platform_);
@@ -89,9 +132,17 @@ void GGEMSOpenCLPlatform::PrintIdentity() const {
   PrintInfo<CL_PLATFORM_HOST_TIMER_RESOLUTION>(platform_);
 }
 
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
+
 void GGEMSOpenCLPlatform::PrintExtension() const {
   PrintInfo<CL_PLATFORM_EXTENSIONS_WITH_VERSION>(platform_);
 }
+
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
 
 void GGEMSOpenCLPlatform::Print() const {
   GGEMS_INFO("OpenCL", "++++++++++++++++++++++++++");
@@ -105,15 +156,9 @@ void GGEMSOpenCLPlatform::Print() const {
   PrintExtension();
 }
 
-// -------------------- Devices & cleanup --------------------
-
-std::vector<GGEMSOpenCLDevice const *> GGEMSOpenCLPlatform::GetDevices() const {
-  std::vector<GGEMSOpenCLDevice const *> out;
-  out.reserve(devices_.size());
-  for (auto const &d : devices_)
-    out.push_back(d.get());
-  return out;
-}
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
 
 void GGEMSOpenCLPlatform::Clean() {
   GGEMS_INFOEX("OpenCL", 2, "Cleaning Platform {} resources...", GetName());
@@ -125,7 +170,9 @@ void GGEMSOpenCLPlatform::Clean() {
   GGEMS_INFOEX("OpenCL", 2, "Platform resources cleaned.");
 }
 
-// -------------------- Internal discovery --------------------
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
 
 void GGEMSOpenCLPlatform::DiscoverDevices() {
   GGEMS_INFOEX("OpenCL", 2, "Discovering OpenCL devices for platform [{}]...",
@@ -141,8 +188,7 @@ void GGEMSOpenCLPlatform::DiscoverDevices() {
   devices_.reserve(natives.size());
 
   for (std::size_t i = 0; i < natives.size(); ++i) {
-    devices_.emplace_back(
-        std::make_unique<GGEMSOpenCLDevice>(natives[i], platform_index_, i));
+    devices_.emplace_back(natives[i], platform_index_, i);
   }
 
   GGEMS_INFOEX("OpenCL", 2, "Found {} device(s) on platform [{}]",

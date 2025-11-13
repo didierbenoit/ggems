@@ -1,15 +1,14 @@
-#include "GGEMS/frameworks/GGEMSExecutor.hh"
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+
+#include "GGEMS/core/GGEMSRun.hh"
 
 namespace py = pybind11;
 
 void GGEMSInitRun(py::module_ &m) {
-  using ggems::run::GGEMSExecutor;
+  using ggems::core::GGEMSRun;
 
-  py::class_<GGEMSExecutor>(m, "GGEMSExecutor")
+  py::class_<GGEMSRun>(m, "GGEMSRun")
       .def(py::init<>())
-      .def("select_devices", &GGEMSExecutor::SelectDevices)
-      .def("run", &GGEMSExecutor::Run)
-      .def("initialize", &GGEMSExecutor::Initialize);
+      .def("run", &GGEMSRun::Run)
+      .def("initialise", &GGEMSRun::Initialise);
 }
