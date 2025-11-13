@@ -1,5 +1,13 @@
 #pragma once
 
+/// \cond
+#include <string>
+#include <vector>
+/// \endcond
+
+#include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
+
 namespace ggems::run {
 class GGEMSExecutor {
 public:
@@ -8,12 +16,15 @@ public:
 
   void Initialize();
   void Run();
-  void SelectDevices();
+  void SelectDevices(std::vector<std::string> const &filters);
 
 private:
   void RunMT();
   void Banner() const;
+  void CreateContexts();
 
 private:
+  std::vector<ggems::ocl::GGEMSOpenCLDevice> devices_;
+  std::vector<ggems::ocl::GGEMSOpenCLContext> contexts_;
 };
 } // namespace ggems::run

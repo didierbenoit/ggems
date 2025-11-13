@@ -135,12 +135,12 @@ void GGEMSOpenCL::PrintDevices() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 void GGEMSOpenCL::Clean() noexcept {
-  GGEMS_INFOEX("OpenCL", 1, "Cleaning all OpenCL platform resources...");
+  GGEMS_INFOEX("OpenCL", 2, "Cleaning all OpenCL platform resources...");
 
   for (auto &p : platforms_) {
     p.Clean();
   }
 
-  GGEMS_INFOEX("OpenCL", 1, "All OpenCL platforms cleaned successfully.");
+  GGEMS_INFOEX("OpenCL", 2, "All OpenCL platforms cleaned successfully.");
 }
 } // namespace ggems::ocl

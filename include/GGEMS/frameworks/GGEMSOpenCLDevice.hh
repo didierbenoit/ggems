@@ -60,7 +60,7 @@
  * - Queries are read-only and thread-safe as per OpenCL C++ bindings contract.
  */
 namespace ggems::ocl {
-class GGEMSOpenCLDevice final {
+class GGEMSOpenCLDevice {
 public:
   /*!
    * \brief Construct a GGEMSOpenCLDevice from a native device handle.
@@ -77,8 +77,8 @@ public:
                              std::size_t device_index);
 
   GGEMSOpenCLDevice() = delete;
-  GGEMSOpenCLDevice(GGEMSOpenCLDevice const &) = delete;
-  GGEMSOpenCLDevice &operator=(GGEMSOpenCLDevice const &) = delete;
+  GGEMSOpenCLDevice(GGEMSOpenCLDevice const &) = default;
+  GGEMSOpenCLDevice &operator=(GGEMSOpenCLDevice const &) = default;
 
   /*!
    * \brief Destructor (defaulted).
@@ -115,6 +115,8 @@ public: // ----- Identity & indices -----
    * \brief Get the native OpenCL device handle.
    */
   [[nodiscard]] cl::Device const &GetNative() const noexcept { return device_; }
+
+  [[nodiscard]] cl_platform_id GetPlatformID() const;
 
 public: // ----- Identity properties -----
   [[nodiscard]] std::string GetName() const;

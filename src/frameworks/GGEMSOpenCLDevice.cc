@@ -28,11 +28,8 @@
 
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/core/GGEMSCoreUtils.hh"
-#include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
-#include <CL/cl.h>
-#include <CL/cl_ext.h>
 
 namespace ggems::ocl {
 GGEMSOpenCLDevice::GGEMSOpenCLDevice(cl::Device const &device,
@@ -40,7 +37,7 @@ GGEMSOpenCLDevice::GGEMSOpenCLDevice(cl::Device const &device,
                                      std::size_t device_index)
     : device_{device}, platform_index_{platform_index},
       device_index_{device_index} {
-  GGEMS_INFOEX("OpenCL", 2, "Allocating GGEMSOpenCLDevice [{}:{}]...",
+  GGEMS_INFOEX("OpenCL", 1, "Allocating GGEMSOpenCLDevice [{}:{}]...",
                platform_index_, device_index_);
   extensions_ = ExtractExtensions<CL_DEVICE_EXTENSIONS>(device_);
 }
@@ -59,6 +56,12 @@ std::string GGEMSOpenCLDevice::GetVersion() const {
 
 std::string GGEMSOpenCLDevice::GetDriverVersion() const {
   return GetInfo<CL_DRIVER_VERSION>(device_);
+}
+
+cl_platform_id GGEMSOpenCLDevice::GetPlatformID() const {
+  cl_platform_id pid{};
+  device_.getInfo(CL_DEVICE_PLATFORM, &pid);
+  return pid;
 }
 
 std::string GGEMSOpenCLDevice::GetProfile() const {

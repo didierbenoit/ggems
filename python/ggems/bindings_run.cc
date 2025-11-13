@@ -1,7 +1,6 @@
+#include "GGEMS/frameworks/GGEMSExecutor.hh"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-#include "GGEMS/frameworks/GGEMSExecutor.hh"
 
 namespace py = pybind11;
 
@@ -10,7 +9,7 @@ void GGEMSInitRun(py::module_ &m) {
 
   py::class_<GGEMSExecutor>(m, "GGEMSExecutor")
       .def(py::init<>())
-      .def("selectDevices", &GGEMSExecutor::SelectDevices)
+      .def("select_devices", &GGEMSExecutor::SelectDevices)
       .def("run", &GGEMSExecutor::Run)
       .def("initialize", &GGEMSExecutor::Initialize);
 }
