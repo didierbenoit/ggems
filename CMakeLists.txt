@@ -62,7 +62,7 @@ option(GGEMS_ENABLE_SPIRV_CACHE "Enable SPIR-V caching for OpenCL kernels" ON)
 # Dependencies
 # ----------------------------------------------------------------------------
 find_package(OpenCL REQUIRED)
-set(OPENCL_HPP_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/external/opencl-clhpp/include")
+set(OPENCL_HPP_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/external/OpenCL-SDK/include")
 message(STATUS "OpenCL library located at: ${OpenCL_LIBRARY}")
 message(STATUS "OpenCL include path: ${OPENCL_HPP_INCLUDE_DIR}")
 
