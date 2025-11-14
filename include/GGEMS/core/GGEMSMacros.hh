@@ -43,7 +43,7 @@
 #define GGEMS_CHECK(COND, MSG)                                                 \
   do {                                                                         \
     if (!(COND))                                                               \
-      ggems::core::Throw<ggems::core::GGEMSInternal>(MSG);                     \
+      ggems::core::Throw<ggems::core::GGEMSFatal>(MSG);                        \
   } while (0)
 
 #define GGEMS_OCL_CHECK(EXPR, CONTEXT)                                         \

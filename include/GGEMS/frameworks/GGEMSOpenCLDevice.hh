@@ -73,8 +73,8 @@ public:
                              std::size_t device_index);
 
   GGEMSOpenCLDevice() = delete;
-  GGEMSOpenCLDevice(GGEMSOpenCLDevice const &) = default;
-  GGEMSOpenCLDevice &operator=(GGEMSOpenCLDevice const &) = default;
+  GGEMSOpenCLDevice(GGEMSOpenCLDevice const &) = delete;
+  GGEMSOpenCLDevice &operator=(GGEMSOpenCLDevice const &) = delete;
 
   /*!
    * \brief Destructor (defaulted).
@@ -90,7 +90,7 @@ public:
    * \brief Move assignment (no-throw).
    * \return reference to GGEMSOpenCLDevice
    */
-  GGEMSOpenCLDevice &operator=(GGEMSOpenCLDevice &&) noexcept = default;
+  GGEMSOpenCLDevice &operator=(GGEMSOpenCLDevice &&) noexcept = delete;
 
 public: // ----- Identity & indices -----
   /*!

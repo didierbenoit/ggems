@@ -30,6 +30,7 @@
  */
 
 /// \cond
+#include <CL/cl.h>
 #include <CL/opencl.hpp>
 #include <string>
 /// \endcond
@@ -1027,6 +1028,89 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_INTEROP_USER_SYNC> {
       "CL_DEVICE_PREFERRED_INTEROP_USER_SYNC";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     return ClBoolToString(v);
+  }
+};
+
+// === Context ===
+template <> struct InfoTraits<CL_CONTEXT_REFERENCE_COUNT> {
+  using type = cl_uint;
+  static constexpr std::string_view name = "CL_CONTEXT_REFERENCE_COUNT";
+  [[nodiscard]] static std::string ToString(type v) noexcept {
+    return UIntToString(v);
+  }
+};
+
+template <> struct InfoTraits<CL_CONTEXT_NUM_DEVICES> {
+  using type = cl_uint;
+  static constexpr std::string_view name = "CL_CONTEXT_NUM_DEVICES";
+  [[nodiscard]] static std::string ToString(type v) noexcept {
+    return UIntToString(v);
+  }
+};
+
+template <> struct InfoTraits<CL_CONTEXT_DEVICES> {
+  using type = std::vector<cl::Device>;
+  static constexpr std::string_view name = "CL_CONTEXT_DEVICES";
+  [[nodiscard]] static std::string ToString(type v) noexcept {
+    return DevicesToString(v);
+  }
+};
+
+template <> struct InfoTraits<CL_CONTEXT_PROPERTIES> {
+  using type = std::vector<cl_context_properties>;
+  static constexpr std::string_view name = "CL_CONTEXT_PROPERTIES";
+  [[nodiscard]] static std::string ToString(type v) noexcept {
+    return ContextPropertiesToString(v);
+  }
+};
+
+// === Command Queue ===
+template <> struct InfoTraits<CL_QUEUE_CONTEXT> {
+  using type = cl::Context;
+  static constexpr std::string_view name = "CL_QUEUE_CONTEXT";
+  [[nodiscard]] static std::string ToString(type v) noexcept {
+    (void)v;
+    return "";
+  }
+};
+
+template <> struct InfoTraits<CL_QUEUE_DEVICE> {
+  using type = cl::Device;
+  static constexpr std::string_view name = "CL_QUEUE_DEVICE";
+  [[nodiscard]] static std::string ToString(type v) noexcept {
+    return DeviceToString(v);
+  }
+};
+
+template <> struct InfoTraits<CL_QUEUE_REFERENCE_COUNT> {
+  using type = cl_uint;
+  static constexpr std::string_view name = "CL_QUEUE_REFERENCE_COUNT";
+  [[nodiscard]] static std::string ToString(type v) noexcept {
+    return UIntToString(v);
+  }
+};
+
+template <> struct InfoTraits<CL_QUEUE_SIZE> {
+  using type = cl_uint;
+  static constexpr std::string_view name = "CL_QUEUE_SIZE";
+  [[nodiscard]] static std::string ToString(type v) noexcept {
+    return UIntToString(v);
+  }
+};
+
+template <> struct InfoTraits<CL_QUEUE_PROPERTIES> {
+  using type = cl_command_queue_properties;
+  static constexpr std::string_view name = "CL_QUEUE_PROPERTIES";
+  [[nodiscard]] static std::string ToString(type v) noexcept {
+    return QueuePropertiesToString(v);
+  }
+};
+
+template <> struct InfoTraits<CL_QUEUE_PROPERTIES_ARRAY> {
+  using type = std::vector<cl_queue_properties>;
+  static constexpr std::string_view name = "CL_QUEUE_PROPERTIES_ARRAY";
+  [[nodiscard]] static std::string ToString(type v) noexcept {
+    return QueuePropertiesArrayToString(v);
   }
 };
 } // namespace ggems::ocl

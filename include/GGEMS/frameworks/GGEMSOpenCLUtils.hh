@@ -437,6 +437,10 @@ template <> struct CLGetter<cl::Program> {
   static constexpr auto fn = &clGetProgramInfo;
 };
 
+template <> struct CLGetter<cl::CommandQueue> {
+  static constexpr auto fn = &clGetCommandQueueInfo;
+};
+
 template <> struct CLGetter<cl::Kernel> {
   static constexpr auto fn = &clGetKernelInfo;
 };

@@ -29,6 +29,7 @@
  */
 
 /// \cond
+#include <CL/cl.h>
 #include <CL/opencl.hpp>
 #include <concepts>
 #include <format>
@@ -200,7 +201,7 @@ LocalMemTypeToString(cl_device_local_mem_type type) noexcept {
 }
 
 [[nodiscard]] inline std::string
-QueuePropertiesToString(cl_command_queue_properties props) noexcept {
+QueuePropertiesToString(cl_command_queue_properties &props) noexcept {
   std::ostringstream oss;
   if (props & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE)
     oss << "Out-of-order execution, ";
@@ -465,6 +466,19 @@ FPConfigToString(cl_device_fp_config cfg) noexcept {
 }
 
 [[nodiscard]] inline std::string
+DevicesToString(std::vector<cl::Device> &devices) noexcept {
+  std::string out;
+  for (auto const &d : devices) {
+    out += std::format("{} ", d.getInfo<CL_DEVICE_NAME>());
+  }
+  return out;
+}
+
+[[nodiscard]] inline std::string DeviceToString(cl::Device &device) noexcept {
+  return device.getInfo<CL_DEVICE_NAME>();
+}
+
+[[nodiscard]] inline std::string
 ExecCapabilitiesToString(cl_device_exec_capabilities caps) noexcept {
   if (caps == 0)
     return "None";
@@ -485,5 +499,68 @@ ExecCapabilitiesToString(cl_device_exec_capabilities caps) noexcept {
     add("Native kernel execution");
 
   return oss.str();
+}
+
+[[nodiscard]] inline std::string QueuePropertiesArrayToString(
+    std::vector<cl_queue_properties> const &qp) noexcept {
+  std::string out;
+
+  for (std::size_t i = 0; i < qp.size(); i += 2) {
+    auto key = qp[i];
+    if (key == 0)
+      break;
+
+    auto val = qp[i + 1];
+
+    switch (key) {
+    case CL_QUEUE_PROPERTIES:
+      out += std::format("CL_QUEUE_PROPERTIES = {} ",
+                         QueuePropertiesToString(val));
+      break;
+
+      //   case CL_QUEUE_SIZE:
+      //   out += std::format("CL_QUEUE_SIZE = {} ", val);
+      //   break;
+
+    default:
+      out += std::format("UNKNOWN_PROPERTY({}) = {}", key, val);
+      break;
+    }
+  }
+
+  return out;
+}
+
+[[nodiscard]] inline std::string ContextPropertiesToString(
+    std::vector<cl_context_properties> const &cp) noexcept {
+  std::string out;
+
+  for (std::size_t i = 0; i < cp.size(); i += 2) {
+    auto key = cp[i];
+    if (key == 0)
+      break;
+
+    auto val = cp[i + 1];
+    void *ptr = reinterpret_cast<void *>(val);
+
+    switch (key) {
+    case CL_CONTEXT_PLATFORM:
+      out += std::format("CL_CONTEXT_PLATFORM = 0x{:016x} ",
+                         reinterpret_cast<std::uintptr_t>(ptr));
+      break;
+
+    case CL_GL_CONTEXT_KHR:
+      out += std::format("CL_GL_CONTEXT_KHR = 0x{:016x} ",
+                         reinterpret_cast<std::uintptr_t>(ptr));
+      break;
+
+    default:
+      out += std::format("UNKNOWN_PROPERTY({}) = 0x{:016x}", key,
+                         reinterpret_cast<std::uintptr_t>(ptr));
+      break;
+    }
+  }
+
+  return out;
 }
 } // namespace ggems::ocl

@@ -26,9 +26,17 @@
  * \version 2.0
  */
 
-#include "GGEMS/frameworks/GGEMSOpenCL.hh"
+/// \cond
+#include <algorithm>
+#include <functional>
+#include <iterator>
+#include <ranges>
+#include <set>
+/// \endcond
+
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
@@ -124,50 +132,45 @@ void GGEMSOpenCL::InitPlatformsAndDevices() {
 void GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters) {
   GGEMS_INFO("OpenCL", "Selecting OpenCL devices...");
 
-  // auto &opencl = GGEMSOpenCL::GetInstance();
-  //  qauto const &platforms = opencl.GetPlatforms();
-
-  // Retrive devices
-  // auto all_devices = platforms_.
-  /*
-    // --- Collect all devices from all platforms ----------------------------
-    for (auto const &platform : platforms) {
-      for (auto const &dev : platform.GetDevices()) {
-        all_devices.push_back(*dev);
-      }
+  // --- Collect all devices from all platforms ----------------------------
+  std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> all_devices;
+  for (auto const &platform : platforms_) {
+    for (auto const &dev : platform.GetDevices()) {
+      all_devices.push_back(dev);
     }
+  }
 
-    if (all_devices.empty())
-      Throw<GGEMSFatal>("No OpenCL devices found.");
+  if (all_devices.empty())
+    Throw<GGEMSFatal>("No OpenCL devices found.");
 
-    // --- Default behaviour --------------------------------------------------
-    if (filters.empty()) {
-      auto it_gpu =
-          std::find_if(all_devices.begin(), all_devices.end(), [](auto const &d)
-    { return (d.GetType() & CL_DEVICE_TYPE_GPU) != 0;
-          });
-      if (it_gpu != all_devices.end()) {
-        devices_.push_back(*it_gpu);
-        GGEMS_INFO("Run", "No filter specified — using first GPU device: {}",
-                   it_gpu->GetName());
-      } else {
-        devices_.push_back(all_devices.front());
-        GGEMS_INFO("Run", "No GPU found — using first available device: {}",
-                   all_devices.front().GetName());
-      }
-      return;
+  // --- Default behaviour --------------------------------------------------
+  if (filters.empty()) {
+    auto it_gpu =
+        std::find_if(all_devices.begin(), all_devices.end(), [](auto const &d) {
+          return (d.get().GetType() & CL_DEVICE_TYPE_GPU) != 0;
+        });
+    if (it_gpu != all_devices.end()) {
+      selected_devices_.push_back(*it_gpu);
+      GGEMS_INFO("Run", "No filter specified — using first GPU device: {}",
+                 it_gpu->get().GetName());
+    } else {
+      selected_devices_.push_back(all_devices.front());
+      GGEMS_INFO("Run", "No GPU found — using first available device: {}",
+                 all_devices.front().get().GetName());
     }
-    devices_ = ParseDeviceFilters(filters, all_devices);
+    return;
+  }
+  selected_devices_ = ParseDeviceFilters(filters, all_devices);
 
-    if (devices_.empty())
-      Throw<GGEMSFatal>("No matching devices for given filters.");
+  if (selected_devices_.empty())
+    Throw<GGEMSFatal>("No matching devices for given filters.");
 
-    GGEMS_INFO("Run", "Total devices selected: {}", devices_.size());
-    for (std::size_t i = 0; i < devices_.size(); ++i) {
-      auto const &d = devices_[i];
-      GGEMS_INFO("Run", "[{}] {}  ({} / {})", i, d.GetName(), d.GetVendor(),
-                 ocl::DeviceTypeToString(d.GetType()));
-    }*/
+  GGEMS_INFO("Run", "Total devices selected: {}", selected_devices_.size());
+  for (std::size_t i = 0; i < selected_devices_.size(); ++i) {
+    auto const &d = selected_devices_[i];
+    GGEMS_INFO("Run", "[{}] {}  ({} / {})", i, d.get().GetName(),
+               d.get().GetVendor(), ocl::DeviceTypeToString(d.get().GetType()));
+  }
 }
 
 /* --------------------------------*/
@@ -192,97 +195,99 @@ void GGEMSOpenCL::Initialise() {
 /* --------------------------------*/
 
 void GGEMSOpenCL::CreateContexts() {
-  /*  contexts_.clear();
-    contexts_.reserve(devices_.size());
+  contexts_.clear();
+  contexts_.reserve(selected_devices_.size());
 
-    for (auto const &dev : devices_)
-      contexts_.emplace_back(dev);
+  for (auto const &dev : selected_devices_)
+    contexts_.emplace_back(dev);
 
-    GGEMS_INFO("Run", "Created {} OpenCL contexts.", contexts_.size())*/
-  ;
+  GGEMS_INFO("Run", "Created {} OpenCL contexts.", contexts_.size());
 }
 
 /* --------------------------------*/
 /* --------------------------------*/
 /* --------------------------------*/
 
-std::vector<GGEMSOpenCLDevice>
-GGEMSOpenCL::ParseDeviceFilters(std::vector<std::string> const &filters) {
-  std::vector<GGEMSOpenCLDevice> selected;
-  /*
-     // filtre to lower case
-     std::vector<std::string> lower_filters;
-     lower_filters.reserve(filters.size());
-     for (auto const &f : filters) {
-       std::string lf = lower(f);
-       lower_filters.push_back(lf);
-     }
+std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>
+GGEMSOpenCL::ParseDeviceFilters(
+    std::vector<std::string> const &filters,
+    std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> all_devices) {
+  std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> selected;
 
-     // Filtre expansion: "1,3-5" → {1,3,4,5}
-     std::set<std::size_t> numeric_indices;
-     for (auto const &f : lower_filters) {
-       bool numeric = std::ranges::all_of(f, [](unsigned char c) {
-         return std::isdigit(c) || c == ',' || c == '-';
-       });
+  // filtre to lower case
+  std::vector<std::string> lower_filters;
+  lower_filters.reserve(filters.size());
+  for (auto const &f : filters) {
+    std::string lf = core::Lower(f);
+    lower_filters.push_back(lf);
+  }
 
-       if (!numeric)
-         continue;
+  // Filtre expansion: "1,3-5" → {1,3,4,5}
+  std::set<std::size_t> numeric_indices;
+  for (auto const &f : lower_filters) {
+    bool numeric = std::ranges::all_of(f, [](unsigned char c) {
+      return std::isdigit(c) || c == ',' || c == '-';
+    });
 
-       std::stringstream ss(f);
-       std::string token;
-       while (std::getline(ss, token, ',')) {
-         auto dash = token.find('-');
-         if (dash != std::string::npos) {
-           std::size_t start = std::stoul(token.substr(0, dash));
-           std::size_t end = std::stoul(token.substr(dash + 1));
-           for (std::size_t i = start; i <= end; ++i)
-             numeric_indices.insert(i);
-         } else if (!token.empty()) {
-           numeric_indices.insert(std::stoul(token));
-         }
-       }
-     }
+    if (!numeric)
+      continue;
 
-     std::vector<std::function<bool(GGEMSOpenCLDevice const &)>> predicates;
-     for (auto const &f : lower_filters) {
-       if (f == "gpu") {
-         predicates.push_back([](auto const &d) {
-           return lower(ocl::DeviceTypeToString(d.GetType())).find("gpu") !=
-                  std::string::npos;
-         });
-       } else if (f == "cpu") {
-         predicates.push_back([](auto const &d) {
-           return lower(ocl::DeviceTypeToString(d.GetType())).find("cpu") !=
-                  std::string::npos;
-         });
-       } else if (vendor_aliases.contains(f)) {
-         std::string vendor_name = vendor_aliases.find(f)->second;
-         predicates.push_back([vendor_name](auto const &d) {
-           return lower(d.GetVendor()).find(vendor_name) != std::string::npos;
-         });
-       }
-     }
+    std::stringstream ss(f);
+    std::string token;
+    while (std::getline(ss, token, ',')) {
+      auto dash = token.find('-');
+      if (dash != std::string::npos) {
+        std::size_t start = std::stoul(token.substr(0, dash));
+        std::size_t end = std::stoul(token.substr(dash + 1));
+        for (std::size_t i = start; i <= end; ++i)
+          numeric_indices.insert(i);
+      } else if (!token.empty()) {
+        numeric_indices.insert(std::stoul(token));
+      }
+    }
+  }
 
-     // Filtres
-     for (std::size_t idx = 0; idx < all_devices.size(); ++idx) {
-       auto const &dev = all_devices[idx];
+  std::vector<std::function<bool(GGEMSOpenCLDevice const &)>> predicates;
+  for (auto const &f : lower_filters) {
+    if (f == "gpu") {
+      predicates.push_back([](auto const &d) {
+        return core::Lower(ocl::DeviceTypeToString(d.GetType())).find("gpu") !=
+               std::string::npos;
+      });
+    } else if (f == "cpu") {
+      predicates.push_back([](auto const &d) {
+        return core::Lower(ocl::DeviceTypeToString(d.GetType())).find("cpu") !=
+               std::string::npos;
+      });
+    } else if (vendor_aliases.contains(f)) {
+      std::string vendor_name = vendor_aliases.find(f)->second;
+      predicates.push_back([vendor_name](auto const &d) {
+        return core::Lower(d.GetVendor()).find(vendor_name) !=
+               std::string::npos;
+      });
+    }
+  }
 
-       bool match = true;
+  // Filtres
+  for (std::size_t idx = 0; idx < all_devices.size(); ++idx) {
+    auto const &dev = all_devices[idx];
 
-       for (auto const &pred : predicates) {
-         if (!pred(dev)) {
-           match = false;
-           break;
-         }
-       }
+    bool match = true;
 
-       if (numeric_indices.contains(idx))
-         match = true;
+    for (auto const &pred : predicates) {
+      if (!pred(dev)) {
+        match = false;
+        break;
+      }
+    }
 
-       if (match)
-         selected.push_back(dev);
-     }
-  */
+    if (numeric_indices.contains(idx))
+      match = true;
+
+    if (match)
+      selected.push_back(dev);
+  }
+
   return selected;
 }
 
@@ -309,6 +314,19 @@ void GGEMSOpenCL::PrintDevices() const {
     auto const &devices = p.GetDevices();
     for (auto const &d : devices)
       d.Print();
+  }
+}
+
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
+
+void GGEMSOpenCL::PrintContexts() const {
+  GGEMS_INFO("OpenCL", "Listing available OpenCL contexts...");
+
+  for (auto const &c : contexts_) {
+    c.PrintContext();
+    c.PrintCommandQueue();
   }
 }
 

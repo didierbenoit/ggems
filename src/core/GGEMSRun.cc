@@ -2,6 +2,7 @@
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 
 namespace ggems::core {
 
@@ -58,6 +59,15 @@ void GGEMSRun::Initialise() {
 /* --------------------------------*/
 /* --------------------------------*/
 
-void GGEMSRun::Run() { ; }
+void GGEMSRun::Run() {
+  auto &opencl = ocl::GGEMSOpenCL::GetInstance();
+
+  auto const &contexts = opencl.GetContext();
+
+  auto context = contexts.front();
+
+  auto svmA = context.CreateSVMBuffer(sizeof(float) * 1024);
+  float *A = (float *)svmA.Data();
+}
 
 } // namespace ggems::core

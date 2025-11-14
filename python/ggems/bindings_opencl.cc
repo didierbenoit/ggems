@@ -15,6 +15,7 @@ void GGEMSInitOpenCL(py::module_ &m) {
            py::return_value_policy::reference)
       .def("print_platforms", &GGEMSOpenCL::PrintPlatforms)
       .def("print_devices", &GGEMSOpenCL::PrintDevices)
+      .def("print_contexts", &GGEMSOpenCL::PrintContexts)
       .def("initialise", &GGEMSOpenCL::Initialise)
       .def("select_devices", &GGEMSOpenCL::SelectDevices, py::arg("devices"))
       .def("clean", &GGEMSOpenCL::Clean)
@@ -29,6 +30,10 @@ void GGEMSInitOpenCL(py::module_ &m) {
   m.def(
       "print_devices", []() { GGEMSOpenCL::GetInstance().PrintDevices(); },
       "Print infos about all found OpenCL devices");
+
+  m.def(
+      "print_contexts", []() { GGEMSOpenCL::GetInstance().PrintContexts(); },
+      "Print infos about all created OpenCL contexts");
 
   m.def(
       "clean", []() { GGEMSOpenCL::GetInstance().Clean(); },

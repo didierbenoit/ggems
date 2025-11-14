@@ -37,6 +37,7 @@
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 
 /// \cond
+#include <functional>
 #include <vector>
 /// \endcond
 
@@ -121,6 +122,8 @@ public:
    */
   void PrintDevices() const;
 
+  void PrintContexts() const;
+
   /*!
    * \brief Provides read-only access to the discovered OpenCL platforms.
    * \return Constant reference to the list of available platforms.
@@ -133,6 +136,11 @@ public:
   void SelectDevices(std::vector<std::string> const &filters);
   void Initialise();
 
+  [[nodiscard]]
+  std::vector<GGEMSOpenCLContext> const &GetContext() noexcept {
+    return contexts_;
+  }
+
 private:
   /*!
    * \brief Enumerates OpenCL platforms and creates GGEMSOpenCLPlatform
@@ -143,8 +151,10 @@ private:
   void InitPlatformsAndDevices();
 
   [[nodiscard]]
-  std::vector<ocl::GGEMSOpenCLDevice>
-  ParseDeviceFilters(std::vector<std::string> const &filters);
+  std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>
+  ParseDeviceFilters(
+      std::vector<std::string> const &filters,
+      std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> all_devices);
 
   void CreateContexts();
   /*!
@@ -165,6 +175,8 @@ private:
 private:
   std::vector<GGEMSOpenCLPlatform>
       platforms_; /*!< Vector storing all detected OpenCL platforms */
-  std::vector<ggems::ocl::GGEMSOpenCLContext> contexts_;
+  std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>
+      selected_devices_;
+  std::vector<GGEMSOpenCLContext> contexts_;
 };
 } // namespace ggems::ocl

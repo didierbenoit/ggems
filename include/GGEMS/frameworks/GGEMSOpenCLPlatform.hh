@@ -107,7 +107,7 @@ public:
    * \return A reference to GGEMSOpenCLPlatform
    * Transfers ownership of all internal data to the destination object.
    */
-  GGEMSOpenCLPlatform &operator=(GGEMSOpenCLPlatform &&) noexcept = default;
+  GGEMSOpenCLPlatform &operator=(GGEMSOpenCLPlatform &&) noexcept = delete;
 
 public:
   // -------------------- High-level inspection API --------------------
