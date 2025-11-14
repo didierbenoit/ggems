@@ -71,6 +71,13 @@ GGEMSOpenCLSVMBuffer::~GGEMSOpenCLSVMBuffer() { Release(); }
 
 void GGEMSOpenCLSVMBuffer::Map(GGEMSOpenCLContext const &ctx,
                                cl_map_flags flags) {
+  auto const &svm = ctx.GetSVMSupport();
+
+  if (svm.fine_grain_system_) {
+    return;
+  }
+
+  // Pour coarse-grain ou fine-grain buffer :
   ctx.EnqueueSVMMap(ptr_, size_in_bytes_, flags);
 }
 
@@ -79,7 +86,23 @@ void GGEMSOpenCLSVMBuffer::Map(GGEMSOpenCLContext const &ctx,
 /* --------------------------------*/
 
 void GGEMSOpenCLSVMBuffer::Unmap(GGEMSOpenCLContext const &ctx) {
+  auto const &svm = ctx.GetSVMSupport();
+
+  if (svm.fine_grain_system_) {
+    return;
+  }
+
   ctx.EnqueueSVMUnmap(ptr_);
+}
+
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
+
+bool GGEMSOpenCLSVMBuffer::NeedsMap(
+    GGEMSOpenCLContext const &ctx) const noexcept {
+  auto const &svm = ctx.GetSVMSupport();
+  return !svm.fine_grain_system_;
 }
 
 /* --------------------------------*/

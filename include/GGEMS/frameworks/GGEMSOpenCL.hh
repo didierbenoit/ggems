@@ -137,7 +137,7 @@ public:
   void Initialise();
 
   [[nodiscard]]
-  std::vector<GGEMSOpenCLContext> const &GetContext() noexcept {
+  std::vector<GGEMSOpenCLContext> &GetContext() noexcept {
     return contexts_;
   }
 

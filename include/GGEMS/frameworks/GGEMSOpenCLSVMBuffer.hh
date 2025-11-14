@@ -41,6 +41,9 @@ public:
 
   void Unmap(GGEMSOpenCLContext const &ctx);
 
+  [[nodiscard]]
+  bool NeedsMap(GGEMSOpenCLContext const &ctx) const noexcept;
+
 private:
   void Release() noexcept;
 

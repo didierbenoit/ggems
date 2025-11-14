@@ -14,11 +14,10 @@
 #include <CL/opencl.hpp>
 /// \endcond
 
+#include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
 
 namespace ggems::ocl {
-class GGEMSOpenCLDevice;
-
 enum class SVMMemoryKind {
   None,
   Auto,
@@ -67,12 +66,25 @@ public:
 public:
   [[nodiscard]] cl_context GetRawContext() const noexcept { return context_(); }
 
+  [[nodiscard]] cl::Context const &GetNative() const noexcept {
+    return context_;
+  }
+  [[nodiscard]] GGEMSOpenCLDevice const &GetDevice() noexcept {
+    return device_;
+  }
+
+  [[nodiscard]] cl::CommandQueue const &GetCommandQueueNative() noexcept {
+    return command_queue_;
+  }
+
   // ----- SVM buffers
   [[nodiscard]] SVMSupport const &GetSVMSupport() const noexcept {
     return svm_support_;
   }
 
   void InitSVMSupport();
+
+  bool SupportILProgram() const noexcept { return supports_il_program_; }
 
   [[nodiscard]] GGEMSOpenCLSVMBuffer
   CreateSVMBuffer(std::size_t size_in_bytes,
@@ -89,7 +101,7 @@ public:
   // ----- Context -----------------------------------
   [[nodiscard]] cl_uint GetReferenceCount() const;
   [[nodiscard]] cl_uint GetNumDevices() const;
-  [[nodiscard]] std::vector<cl::Device> GetDevices() const;
+  [[nodiscard]] std::vector<cl::Device> GetNativeDevices() const;
   [[nodiscard]] std::vector<cl_context_properties> GetProperties() const;
   void PrintContext() const;
   void PrintCommandQueue() const;
@@ -113,5 +125,6 @@ private:
   cl::Context context_;
   cl::CommandQueue command_queue_;
   SVMSupport svm_support_{};
+  bool supports_il_program_{false};
 };
 } // namespace ggems::ocl

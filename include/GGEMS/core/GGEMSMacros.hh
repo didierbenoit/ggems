@@ -18,6 +18,8 @@
 // *                                                                      *
 // ************************************************************************
 
+#include "GGEMS/core/GGEMSLogger.hh"
+
 #define GGEMS_DEBUG(MODULE, FMT, ...)                                          \
   ggems::core::GGEMSLogger::GetInstance()                                      \
       .LogFmt<ggems::core::LogLevel::Debug>(                                   \

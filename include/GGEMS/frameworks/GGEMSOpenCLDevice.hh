@@ -37,6 +37,7 @@
  */
 
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
+#include <unordered_map>
 
 /*!
  * \class GGEMSOpenCLDevice
@@ -105,6 +106,11 @@ public: // ----- Identity & indices -----
    */
   [[nodiscard]] std::size_t GetDeviceIndex() const noexcept {
     return device_index_;
+  }
+
+  [[nodiscard]] std::unordered_set<std::string> const &
+  GetDeviceExtensions() const {
+    return extensions_;
   }
 
   /*!

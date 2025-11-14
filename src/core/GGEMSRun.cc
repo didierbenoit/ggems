@@ -3,6 +3,9 @@
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLProgram.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
 
 namespace ggems::core {
 
@@ -60,14 +63,74 @@ void GGEMSRun::Initialise() {
 /* --------------------------------*/
 
 void GGEMSRun::Run() {
+  using ocl::GGEMSOpenCLKernel;
+  using ocl::GGEMSOpenCLProgram;
+  using ocl::GGEMSOpenCLSVMBuffer;
+
   auto &opencl = ocl::GGEMSOpenCL::GetInstance();
+  auto &contexts = opencl.GetContext();
+  auto &context = contexts.front();
 
-  auto const &contexts = opencl.GetContext();
+  GGEMS_INFO("Core", "Starting SVM vec_add_svm test on...");
 
-  auto context = contexts.front();
+  std::size_t const n = 1024;
+  std::size_t const bytes = n * sizeof(float);
 
-  auto svmA = context.CreateSVMBuffer(sizeof(float) * 1024);
-  float *A = (float *)svmA.Data();
+  auto svmA = context.CreateSVMBuffer(bytes, ocl::SVMMemoryKind::Auto, 0);
+  auto svmB = context.CreateSVMBuffer(bytes, ocl::SVMMemoryKind::Auto, 0);
+  auto svmC = context.CreateSVMBuffer(bytes, ocl::SVMMemoryKind::Auto, 0);
+
+  auto *A = static_cast<float *>(svmA.Data());
+  auto *B = static_cast<float *>(svmB.Data());
+  auto *C = static_cast<float *>(svmC.Data());
+
+  svmA.Map(context);
+  svmB.Map(context);
+  svmC.Map(context);
+
+  for (std::size_t i = 0; i < n; ++i) {
+    A[i] = static_cast<float>(i);
+    B[i] = static_cast<float>(2 * i);
+    C[i] = 0.0f;
+  }
+
+  svmA.Unmap(context);
+  svmB.Unmap(context);
+  svmC.Unmap(context);
+
+  GGEMSOpenCLProgram prog{context, "ggems/kernels", "vec_add_svm"};
+  cl::Kernel raw_kernel = prog.CreateKernel("vec_add_svm");
+  GGEMSOpenCLKernel kernel{context, std::move(raw_kernel), "vec_add_svm"};
+
+  kernel.SetArgSVMPointer(0, A, &svmA);
+  kernel.SetArgSVMPointer(1, B, &svmB);
+  kernel.SetArgSVMPointer(2, C, &svmC);
+
+  kernel.SetArg(3, static_cast<unsigned int>(n));
+
+  std::array<std::size_t, 1> global{n};
+  std::array<std::size_t, 1> local{256};
+
+  kernel.Run(global, local);
+
+  svmC.Map(context);
+  bool ok = true;
+  for (std::size_t i = 0; i < n; ++i) {
+    float expected = 3.0f * static_cast<float>(i);
+    if (std::fabs(C[i] - expected) > 1e-5f) {
+      GGEMS_ERROR("Run", "Mismatch at i = {}: got {}, expected {}", i, C[i],
+                  expected);
+      ok = false;
+      break;
+    }
+  }
+  svmC.Unmap(context);
+
+  if (ok) {
+    GGEMS_INFO("Run", "(TestSVMSimpleVecAdd) Result is correct.");
+  } else {
+    GGEMS_ERROR("Run", "(TestSVMSimpleVecAdd) Result is WRONG.");
+  }
 }
 
 } // namespace ggems::core

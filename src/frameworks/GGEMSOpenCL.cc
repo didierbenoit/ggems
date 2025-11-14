@@ -247,6 +247,13 @@ GGEMSOpenCL::ParseDeviceFilters(
     }
   }
 
+  if (!numeric_indices.empty()) {
+    for (auto const &i : numeric_indices) {
+      selected.push_back(all_devices[i]);
+    }
+    return selected;
+  }
+
   std::vector<std::function<bool(GGEMSOpenCLDevice const &)>> predicates;
   for (auto const &f : lower_filters) {
     if (f == "gpu") {
@@ -280,9 +287,6 @@ GGEMSOpenCL::ParseDeviceFilters(
         break;
       }
     }
-
-    if (numeric_indices.contains(idx))
-      match = true;
 
     if (match)
       selected.push_back(dev);

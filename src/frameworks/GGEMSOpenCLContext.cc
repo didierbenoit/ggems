@@ -2,6 +2,7 @@
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
 namespace ggems::ocl {
 using core::GGEMSFatal;
@@ -19,6 +20,9 @@ GGEMSOpenCLContext::GGEMSOpenCLContext(GGEMSOpenCLDevice const &device)
   CreateContext();
   CreateCommandQueue();
   InitSVMSupport();
+
+  auto const &exts = device_.GetDeviceExtensions();
+  supports_il_program_ = HasExtension(exts, "cl_khr_il_program");
 
   GGEMS_INFOEX("OpenCL", 2, "GGEMSOpenCLContext allocated.");
 }
@@ -131,8 +135,9 @@ GGEMSOpenCLContext::CreateSVMBuffer(std::size_t size_in_bytes,
     Throw<GGEMSFatal>("Unsupported SVMMemoryKind in CreateSVMBuffer.");
   }
 
-  if (svm.atomics_)
+  if (selected == SVMMemoryKind::FineGrainBuffer && svm.atomics_) {
     flags |= CL_MEM_SVM_ATOMICS;
+  }
 
   cl_uint real_alignment = alignment ? alignment : sizeof(void *);
 
@@ -197,7 +202,8 @@ void GGEMSOpenCLContext::SetSVMPointer(cl::Kernel &kernel, cl_uint index,
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
 
-[[nodiscard]] std::vector<cl::Device> GGEMSOpenCLContext::GetDevices() const {
+[[nodiscard]] std::vector<cl::Device>
+GGEMSOpenCLContext::GetNativeDevices() const {
   return GetInfo<CL_CONTEXT_DEVICES>(context_);
 }
 
