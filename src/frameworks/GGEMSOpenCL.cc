@@ -92,6 +92,33 @@ GGEMSOpenCL::~GGEMSOpenCL() {
 /* --------------------------------*/
 /* --------------------------------*/
 
+GGEMSOpenCLProgram &GGEMSOpenCL::GetOrCreateProgram(
+    GGEMSOpenCLContext &ctx, std::filesystem::path const &kernel_root,
+    std::string const &kernel_name, std::string const &build_options) {
+  for (auto &p : program_cache_) {
+    if (p->GetKernelName() == kernel_name &&
+        p->GetSourcePath() == (kernel_root / (kernel_name + ".cl")).string() &&
+        p->GetBuildLog() == build_options) {
+      GGEMS_INFO("OpenCL", "Reusing cached program '{}'.", kernel_name);
+      return *p;
+    }
+  }
+
+  GGEMS_INFO("OpenCL", "Creating program '{}'...", kernel_name);
+
+  auto prog = std::make_unique<GGEMSOpenCLProgram>(ctx, kernel_root,
+                                                   kernel_name, build_options);
+
+  GGEMSOpenCLProgram &ref = *prog;
+  program_cache_.push_back(std::move(prog));
+
+  return ref;
+}
+
+/* --------------------------------*/
+/* --------------------------------*/
+/* --------------------------------*/
+
 void GGEMSOpenCL::DisableKernelCache() const {
 #ifdef _MSC_VER
   static char env_var[] = "CUDA_CACHE_DISABLE=1";

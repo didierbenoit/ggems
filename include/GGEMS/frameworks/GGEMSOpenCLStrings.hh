@@ -38,48 +38,6 @@
 /// \endcond
 
 namespace ggems::ocl {
-template <typename T>
-concept IntegralOrFloatingPoint = std::integral<T> || std::floating_point<T>;
-
-template <IntegralOrFloatingPoint T, std::size_t N>
-[[nodiscard]] inline std::string
-ReadableUnits(T value, const std::array<const char *, N> &units,
-              double base = 1024.0) noexcept {
-  double v = static_cast<double>(value);
-  std::size_t i = 0;
-
-  while (v >= base && i + 1 < N) {
-    v /= base;
-    ++i;
-  }
-
-  return std::format("{:.3g} {}", v, units[i]);
-}
-
-template <IntegralOrFloatingPoint T>
-[[nodiscard]] inline std::string ReadableByteUnits(T bytes) noexcept {
-  static constexpr std::array units{"B", "KB", "MB", "GB", "TB", "PB"};
-  return ReadableUnits(bytes, units, 1024.0);
-}
-
-template <IntegralOrFloatingPoint T>
-[[nodiscard]] inline std::string ReadableTimeUnits(T ns) noexcept {
-  static constexpr std::array units{"ns", "us", "ms", "s"};
-  return ReadableUnits(ns, units, 1000.0);
-}
-
-template <IntegralOrFloatingPoint T>
-[[nodiscard]] inline std::string ReadableFrequencyUnits(T Hz) noexcept {
-  static constexpr std::array units{"Hz", "kHz", "MHz", "GHz"};
-  return ReadableUnits(Hz, units, 1000.0);
-}
-
-template <IntegralOrFloatingPoint T>
-[[nodiscard]] inline std::string ReadableBitUnits(T bits) noexcept {
-  static constexpr std::array units{"b", "Kb", "Mb", "Gb", "Tb", "Pb"};
-  return ReadableUnits(bits, units, 1000.0);
-}
-
 [[nodiscard]] inline std::string
 ClVersionToString(cl_version version) noexcept {
   cl_uint major = (version >> 22) & 0x3FFu;
@@ -88,23 +46,30 @@ ClVersionToString(cl_version version) noexcept {
   return std::format("{}.{}.{}", major, minor, patch);
 }
 
+/* -------------------------------------------------------*/
+
 [[nodiscard]] inline std::string ClNameVersionToString(
     std::vector<cl_name_version> const &name_versions) noexcept {
   std::ostringstream oss;
+  std::string out{""};
   for (auto const &nv : name_versions) {
-    oss << nv.name << ' ' << ClVersionToString(nv.version) << ' ';
+    out += std::format("{} {} ", nv.name, ClVersionToString(nv.version));
   }
-  return oss.str();
+  return out;
 }
+
+/* -------------------------------------------------------*/
 
 [[nodiscard]] inline std::string
 SizeToString(std::vector<size_t> const &sizes) noexcept {
-  std::ostringstream oss;
+  std::string out{""};
   for (auto const &s : sizes) {
-    oss << s << ' ';
+    out += std::format("{} ", s);
   }
-  return oss.str();
+  return out;
 }
+
+/* -------------------------------------------------------*/
 
 [[nodiscard]] inline std::string
 DeviceTypeToString(cl_device_type deviceType) noexcept {
@@ -242,6 +207,21 @@ SVMCapabilitiesToString(cl_device_svm_capabilities caps) noexcept {
     out.erase(out.size() - 2);
   else
     out = "None";
+  return out;
+}
+
+[[nodiscard]]
+inline std::string VectorToString(std::vector<size_t> const &v) noexcept {
+  if (v.empty())
+    return "[]";
+
+  std::string out = "[";
+  for (size_t i = 0; i < v.size(); ++i) {
+    out.append(std::to_string(v[i]));
+    if (i + 1 < v.size())
+      out.append(", ");
+  }
+  out.append("]");
   return out;
 }
 

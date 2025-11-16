@@ -126,9 +126,22 @@ inline std::string_view SimplifyFunctionName(std::string_view full) noexcept {
   return full.substr(prev + 2);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+/* -------------------------------------------------------------------------- */
+
+[[nodiscard]] inline std::uint64_t HashFNV1a(std::string_view s) noexcept {
+  static constexpr std::uint64_t offset = 1469598103934665603ull;
+  static constexpr std::uint64_t prime = 1099511628211ull;
+
+  std::uint64_t h = offset;
+  for (char ch : s) {
+    unsigned char c = static_cast<unsigned char>(ch);
+    h ^= c;
+    h *= prime;
+  }
+  return h;
+}
+
+/* -------------------------------------------------------------------------- */
 
 [[nodiscard]] inline std::optional<std::uint32_t>
 GetCPUFrequencyMHz() noexcept {

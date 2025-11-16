@@ -56,7 +56,6 @@ option(GGEMS_BUILD_TESTS        "Build GoogleTest unit tests" OFF)
 option(GGEMS_BUILD_DOCS         "Build documentation with Doxygen and Sphinx" OFF)
 option(GGEMS_WITH_IMGUI         "Enable ImGui / Vulkan interface" OFF)
 option(GGEMS_LOG_RING_BUFFER    "Enable in-memory circular log buffer" ON)
-option(GGEMS_ENABLE_SPIRV_CACHE "Enable SPIR-V caching for OpenCL kernels" ON)
 
 # ----------------------------------------------------------------------------
 # Dependencies
@@ -128,6 +127,5 @@ message(STATUS "Build tests            : ${GGEMS_BUILD_TESTS}")
 message(STATUS "Build documentation    : ${GGEMS_BUILD_DOCS}")
 message(STATUS "ImGui UI enabled       : ${GGEMS_WITH_IMGUI}")
 message(STATUS "Logger ring buffer     : ${GGEMS_LOG_RING_BUFFER}")
-message(STATUS "SPIR-V cache enabled   : ${GGEMS_ENABLE_SPIRV_CACHE}")
 message(STATUS "========================================================")
 message(STATUS "")

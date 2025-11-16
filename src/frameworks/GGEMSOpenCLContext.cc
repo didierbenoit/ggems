@@ -1,8 +1,11 @@
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/core/units/GGEMSBytesUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
+
+using namespace ggems::units;
 
 namespace ggems::ocl {
 using core::GGEMSFatal;
@@ -20,9 +23,6 @@ GGEMSOpenCLContext::GGEMSOpenCLContext(GGEMSOpenCLDevice const &device)
   CreateContext();
   CreateCommandQueue();
   InitSVMSupport();
-
-  auto const &exts = device_.GetDeviceExtensions();
-  supports_il_program_ = HasExtension(exts, "cl_khr_il_program");
 
   GGEMS_INFOEX("OpenCL", 2, "GGEMSOpenCLContext allocated.");
 }
@@ -51,10 +51,10 @@ void GGEMSOpenCLContext::CreateContext() {
       CL_CONTEXT_PLATFORM,
       reinterpret_cast<cl_context_properties>(device_.GetPlatformID()), 0};
 
-  context_ = cl::Context({device_.GetNative()}, // devices
-                         props,                 // context properties
-                         nullptr,               // notification callback
-                         nullptr,               // user data
+  context_ = cl::Context({device_.GetDeviceNative()}, // devices
+                         props,                       // context properties
+                         nullptr,                     // notification callback
+                         nullptr,                     // user data
                          &err);
 
   CheckCLError(err, "Failed to create OpenCL context");
@@ -74,7 +74,8 @@ void GGEMSOpenCLContext::CreateCommandQueue() {
   cl_command_queue_properties props = 0;
   props |= CL_QUEUE_PROFILING_ENABLE; // needed for profiling
 
-  command_queue_ = cl::CommandQueue(context_, device_.GetNative(), props, &err);
+  command_queue_ =
+      cl::CommandQueue(context_, device_.GetDeviceNative(), props, &err);
 
   CheckCLError(err, "Failed to create command queue.");
 
@@ -102,9 +103,9 @@ void GGEMSOpenCLContext::InitSVMSupport() {
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
 
-GGEMSOpenCLSVMBuffer
-GGEMSOpenCLContext::CreateSVMBuffer(std::size_t size_in_bytes,
-                                    SVMMemoryKind kind, cl_uint alignment) {
+GGEMSOpenCLSVMBuffer GGEMSOpenCLContext::CreateSVMBuffer(Bytes size,
+                                                         SVMMemoryKind kind,
+                                                         cl_uint alignment) {
   auto const &svm = svm_support_;
 
   GGEMS_CHECK(svm.HasAny(), "This context/device does not support SVM.");
@@ -141,18 +142,18 @@ GGEMSOpenCLContext::CreateSVMBuffer(std::size_t size_in_bytes,
 
   cl_uint real_alignment = alignment ? alignment : sizeof(void *);
 
-  return GGEMSOpenCLSVMBuffer{*this, size_in_bytes, flags, real_alignment};
+  return GGEMSOpenCLSVMBuffer{*this, size, flags, real_alignment};
 }
 
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
 
-void GGEMSOpenCLContext::EnqueueSVMMap(void *ptr, std::size_t size,
+void GGEMSOpenCLContext::EnqueueSVMMap(void *ptr, Bytes size,
                                        cl_map_flags flags) const {
   cl_int err = clEnqueueSVMMap(command_queue_(), // raw command queue
                                CL_TRUE,          // blocking map pour simplifier
-                               flags, ptr, size, 0, nullptr, nullptr);
+                               flags, ptr, ToSizeT(size), 0, nullptr, nullptr);
 
   GGEMS_CHECK(err == CL_SUCCESS,
               std::format("SVMMap failed: {}", GetLongErrorString(err)));

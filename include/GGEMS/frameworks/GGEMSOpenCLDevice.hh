@@ -116,7 +116,9 @@ public: // ----- Identity & indices -----
   /*!
    * \brief Get the native OpenCL device handle.
    */
-  [[nodiscard]] cl::Device const &GetNative() const noexcept { return device_; }
+  [[nodiscard]] cl::Device const &GetDeviceNative() const noexcept {
+    return device_;
+  }
 
   [[nodiscard]] cl_platform_id GetPlatformID() const;
 

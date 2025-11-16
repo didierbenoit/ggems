@@ -1,7 +1,10 @@
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/core/units/GGEMSBytesUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
+
+using namespace ggems::units;
 
 namespace ggems::ocl {
 /* --------------------------------*/
@@ -9,24 +12,22 @@ namespace ggems::ocl {
 /* --------------------------------*/
 
 GGEMSOpenCLSVMBuffer::GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context,
-                                           std::size_t size_in_bytes,
-                                           cl_svm_mem_flags flags,
+                                           Bytes size, cl_svm_mem_flags flags,
                                            cl_uint alignment)
-    : context_(&context), ptr_{nullptr}, size_in_bytes_{size_in_bytes},
-      flags_{flags} {
-  GGEMS_CHECK(size_in_bytes_ > 0, "Cannot allocate zero-sized SVM buffer.");
+    : context_(&context), ptr_{nullptr}, size_{size}, flags_{flags} {
+  GGEMS_CHECK(size_.value > 0, "Cannot allocate zero-sized SVM buffer.");
 
   auto const &svm = context.GetSVMSupport();
   GGEMS_CHECK(svm.HasAny(), "Device does not support any form of SVM.");
 
-  cl_context raw_ctx = context.GetRawContext();
+  auto &ctx = context.GetContextNative();
 
-  void *p = clSVMAlloc(raw_ctx, flags_, size_in_bytes_, alignment);
+  void *p = clSVMAlloc(ctx(), flags_, ToSizeT(size), alignment);
   GGEMS_CHECK(p, "clSVMalloc failed: returned nullptr.");
 
   ptr_ = p;
-  GGEMS_INFOEX("OpenCL", 3, "Allocated SVM Buffer of {} bytes.",
-               size_in_bytes_);
+  GGEMS_INFOEX("OpenCL", 3, "Allocated SVM Buffer of {}.",
+               HumanReadable(size_));
 }
 
 /* --------------------------------*/
@@ -48,12 +49,12 @@ GGEMSOpenCLSVMBuffer::operator=(GGEMSOpenCLSVMBuffer &&other) noexcept {
     Release();
     context_ = other.context_;
     ptr_ = other.ptr_;
-    size_in_bytes_ = other.size_in_bytes_;
+    size_ = other.size_;
     flags_ = other.flags_;
 
     other.context_ = nullptr;
     other.ptr_ = nullptr;
-    other.size_in_bytes_ = 0;
+    other.size_ = 0_B;
     other.flags_ = 0;
   }
   return *this;
@@ -69,40 +70,29 @@ GGEMSOpenCLSVMBuffer::~GGEMSOpenCLSVMBuffer() { Release(); }
 /* --------------------------------*/
 /* --------------------------------*/
 
-void GGEMSOpenCLSVMBuffer::Map(GGEMSOpenCLContext const &ctx,
-                               cl_map_flags flags) {
-  auto const &svm = ctx.GetSVMSupport();
+void GGEMSOpenCLSVMBuffer::Map(cl_map_flags flags) {
+  auto const &svm = context_->GetSVMSupport();
 
   if (svm.fine_grain_system_) {
     return;
   }
 
   // Pour coarse-grain ou fine-grain buffer :
-  ctx.EnqueueSVMMap(ptr_, size_in_bytes_, flags);
+  context_->EnqueueSVMMap(ptr_, size_, flags);
 }
 
 /* --------------------------------*/
 /* --------------------------------*/
 /* --------------------------------*/
 
-void GGEMSOpenCLSVMBuffer::Unmap(GGEMSOpenCLContext const &ctx) {
-  auto const &svm = ctx.GetSVMSupport();
+void GGEMSOpenCLSVMBuffer::Unmap() {
+  auto const &svm = context_->GetSVMSupport();
 
   if (svm.fine_grain_system_) {
     return;
   }
 
-  ctx.EnqueueSVMUnmap(ptr_);
-}
-
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
-
-bool GGEMSOpenCLSVMBuffer::NeedsMap(
-    GGEMSOpenCLContext const &ctx) const noexcept {
-  auto const &svm = ctx.GetSVMSupport();
-  return !svm.fine_grain_system_;
+  context_->EnqueueSVMUnmap(ptr_);
 }
 
 /* --------------------------------*/
@@ -111,14 +101,14 @@ bool GGEMSOpenCLSVMBuffer::NeedsMap(
 
 void GGEMSOpenCLSVMBuffer::Release() noexcept {
   if (context_ && ptr_) {
-    cl_context raw_ctx = context_->GetRawContext();
-    clSVMFree(raw_ctx, ptr_);
-    GGEMS_INFOEX("OpenCL", 3, "Release SVM Buffer of {} bytes.",
-                 size_in_bytes_);
+    auto &ctx = context_->GetContextNative();
+    clSVMFree(ctx(), ptr_);
+    GGEMS_INFOEX("OpenCL", 3, "Release SVM Buffer of {}.",
+                 HumanReadable(size_));
   }
   context_ = nullptr;
   ptr_ = nullptr;
-  size_in_bytes_ = 0;
+  size_ = 0_B;
   flags_ = 0;
 }
 } // namespace ggems::ocl

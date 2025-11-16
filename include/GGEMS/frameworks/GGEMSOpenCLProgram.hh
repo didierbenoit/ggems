@@ -11,7 +11,8 @@ namespace ggems::ocl {
 class GGEMSOpenCLProgram {
 public:
   GGEMSOpenCLProgram(GGEMSOpenCLContext &ctx, std::filesystem::path kernel_root,
-                     std::string kernel_name, std::string build_options = "");
+                     std::string kernel_name, std::string build_options = {});
+
   ~GGEMSOpenCLProgram() noexcept;
 
   GGEMSOpenCLProgram(GGEMSOpenCLProgram const &) = delete;
@@ -28,10 +29,7 @@ public:
     return program_();
   }
 
-  [[nodiscard]]
-  cl::Program const &GetProgram() const noexcept {
-    return program_;
-  }
+  cl::Program const &GetProgram() const noexcept { return program_; }
 
   [[nodiscard]]
   std::string_view GetKernelName() const noexcept {
@@ -44,38 +42,38 @@ public:
   }
 
   [[nodiscard]]
-  std::string_view GetSpirVPath() const noexcept {
-    return spirv_path_;
-  }
-
-  [[nodiscard]]
-  std::string_view GetBuildOptions() const noexcept {
-    return build_options_;
-  }
-
-  [[nodiscard]]
   std::string_view GetBuildLog() const noexcept {
     return build_log_;
   }
 
+  [[nodiscard]] cl_uint GetNumDevices() const;
+  [[nodiscard]] std::vector<std::size_t> GetBinarySizes() const;
+  [[nodiscard]] auto GetBinaries() const;
+
 private:
   [[nodiscard]]
-  std::string LoadTextFile(std::filesystem::path const &path);
-  std::vector<std::uint8_t> LoadBinaryFile(std::filesystem::path const &path);
+  static std::string LoadTextFile(std::filesystem::path const &path);
+
+  void Initialise();
 
   void Build();
-  void BuildFromSPIRV(std::vector<std::uint8_t> const &il);
   void BuildFromSource(std::string const &src);
+  void BuildFromBinary(std::vector<std::uint8_t> const &binary);
+
+  std::filesystem::path ComputeCachePath() const;
+  void SaveBinaryToCache();
+  std::vector<std::uint8_t> LoadBinaryFromCache();
 
 private:
   GGEMSOpenCLContext &context_;
   std::filesystem::path kernel_root_;
   std::string kernel_name_;
   std::string source_path_;
-  std::string spirv_path_;
   std::string build_options_;
   std::string build_log_;
   cl::Program program_;
-  bool can_use_il_{false};
+  bool loaded_from_cache_{false};
+  std::uint64_t source_hash_;
+  std::uint64_t global_hash_;
 };
 } // namespace ggems::ocl

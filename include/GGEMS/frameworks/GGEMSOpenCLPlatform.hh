@@ -208,7 +208,7 @@ public:
    * \brief Access the native \c cl::Platform wrapper (const).
    * \return Const reference to the wrapped native platform object.
    */
-  [[nodiscard]] cl::Platform const &GetNative() const noexcept {
+  [[nodiscard]] cl::Platform const &GetPlatformNative() const noexcept {
     return platform_;
   }
 

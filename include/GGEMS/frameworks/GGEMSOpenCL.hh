@@ -35,8 +35,10 @@
 
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLProgram.hh"
 
 /// \cond
+#include <filesystem>
 #include <functional>
 #include <vector>
 /// \endcond
@@ -93,6 +95,10 @@ public:
     }();
     return *instance;
   }
+
+  GGEMSOpenCLProgram &GetOrCreateProgram(
+      GGEMSOpenCLContext &ctx, std::filesystem::path const &kernel_root,
+      std::string const &kernel_name, std::string const &build_options = "");
 
   /*!
    * \brief Destructor.
@@ -178,5 +184,6 @@ private:
   std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>
       selected_devices_;
   std::vector<GGEMSOpenCLContext> contexts_;
+  std::vector<std::unique_ptr<GGEMSOpenCLProgram>> program_cache_;
 };
 } // namespace ggems::ocl

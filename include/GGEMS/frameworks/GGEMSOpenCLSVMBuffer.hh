@@ -2,7 +2,6 @@
 
 #define CL_HPP_TARGET_OPENCL_VERSION 300
 #define CL_TARGET_OPENCL_VERSION 300
-#define CL_ENABLE_SPIRV_EXTENSIONS
 
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -14,12 +13,18 @@
 #include <CL/opencl.hpp>
 /// \endcond
 
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+
+#include "GGEMS/core/units/GGEMSUnits.hh"
+
 namespace ggems::ocl {
 class GGEMSOpenCLContext;
 
 class GGEMSOpenCLSVMBuffer {
 public:
-  GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context, std::size_t size_in_bytes,
+  GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context, units::Bytes size,
                        cl_svm_mem_flags flags, cl_uint alignment = 0);
 
   GGEMSOpenCLSVMBuffer(GGEMSOpenCLSVMBuffer const &) = delete;
@@ -33,16 +38,12 @@ public:
   [[nodiscard]] void *Data() noexcept { return ptr_; }
   [[nodiscard]] void const *Data() const noexcept { return ptr_; }
 
-  [[nodiscard]] std::size_t Size() const noexcept { return size_in_bytes_; }
+  [[nodiscard]] units::Bytes Size() const noexcept { return size_; }
   [[nodiscard]] cl_svm_mem_flags Flags() const noexcept { return flags_; }
 
-  void Map(GGEMSOpenCLContext const &ctx,
-           cl_map_flags flags = CL_MAP_READ | CL_MAP_WRITE);
+  void Map(cl_map_flags flags = CL_MAP_READ | CL_MAP_WRITE);
 
-  void Unmap(GGEMSOpenCLContext const &ctx);
-
-  [[nodiscard]]
-  bool NeedsMap(GGEMSOpenCLContext const &ctx) const noexcept;
+  void Unmap();
 
 private:
   void Release() noexcept;
@@ -50,7 +51,7 @@ private:
 private:
   GGEMSOpenCLContext *context_{nullptr};
   void *ptr_{nullptr};
-  std::size_t size_in_bytes_{0};
+  units::Bytes size_{0ULL};
   cl_svm_mem_flags flags_{0};
 };
 } // namespace ggems::ocl

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GGEMS/core/units/GGEMSBytesUnits.hh"
 #define CL_HPP_TARGET_OPENCL_VERSION 300
 #define CL_TARGET_OPENCL_VERSION 300
 #define CL_ENABLE_SPIRV_EXTENSIONS
@@ -14,6 +15,7 @@
 #include <CL/opencl.hpp>
 /// \endcond
 
+#include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
 
@@ -64,9 +66,7 @@ public:
   GGEMSOpenCLContext &operator=(GGEMSOpenCLContext &&) noexcept = delete;
 
 public:
-  [[nodiscard]] cl_context GetRawContext() const noexcept { return context_(); }
-
-  [[nodiscard]] cl::Context const &GetNative() const noexcept {
+  [[nodiscard]] cl::Context const &GetContextNative() const noexcept {
     return context_;
   }
   [[nodiscard]] GGEMSOpenCLDevice const &GetDevice() noexcept {
@@ -84,14 +84,11 @@ public:
 
   void InitSVMSupport();
 
-  bool SupportILProgram() const noexcept { return supports_il_program_; }
-
   [[nodiscard]] GGEMSOpenCLSVMBuffer
-  CreateSVMBuffer(std::size_t size_in_bytes,
-                  SVMMemoryKind kind = SVMMemoryKind::Auto,
+  CreateSVMBuffer(units::Bytes size, SVMMemoryKind kind = SVMMemoryKind::Auto,
                   cl_uint alignment = 0);
 
-  void EnqueueSVMMap(void *ptr, std::size_t size,
+  void EnqueueSVMMap(void *ptr, units::Bytes size,
                      cl_map_flags flags = CL_MAP_READ | CL_MAP_WRITE) const;
 
   void EnqueueSVMUnmap(void *ptr) const;
@@ -125,6 +122,5 @@ private:
   cl::Context context_;
   cl::CommandQueue command_queue_;
   SVMSupport svm_support_{};
-  bool supports_il_program_{false};
 };
 } // namespace ggems::ocl

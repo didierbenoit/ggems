@@ -52,7 +52,6 @@
 
 #define CL_HPP_TARGET_OPENCL_VERSION 300
 #define CL_TARGET_OPENCL_VERSION 300
-#define CL_ENABLE_SPIRV_EXTENSIONS
 
 // ---------------------------------------------------------------------------
 // Temporarily disable external-header warnings (Clang / MSVC portable block)
@@ -67,13 +66,13 @@
 #include <CL/opencl.hpp>
 /// \endcond
 
-#include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLInfoTraits.hh"
-
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
+
+#include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLInfoTraits.hh"
 
 namespace ggems::ocl {
 // === Error name analyse ===
