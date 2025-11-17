@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GGEMS/core/units/GGEMSBandwidthUnits.hh"
 #include "GGEMS/core/units/GGEMSBitsUnits.hh"
 #include "GGEMS/core/units/GGEMSBytesUnits.hh"
 #include "GGEMS/core/units/GGEMSFrequencyUnits.hh"

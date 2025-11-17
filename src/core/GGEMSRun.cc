@@ -81,9 +81,9 @@ void GGEMSRun::Run() {
   std::size_t const n = 16'777'216;
   Bytes const bytes = Bytes{static_cast<std::uint64_t>(n) * 4ULL};
 
-  auto svmA = context.CreateSVMBuffer(bytes, ocl::SVMMemoryKind::Auto, 128);
-  auto svmB = context.CreateSVMBuffer(bytes, ocl::SVMMemoryKind::Auto, 128);
-  auto svmC = context.CreateSVMBuffer(bytes, ocl::SVMMemoryKind::Auto, 128);
+  auto svmA = context.CreateSVMBuffer(bytes);
+  auto svmB = context.CreateSVMBuffer(bytes);
+  auto svmC = context.CreateSVMBuffer(bytes);
 
   auto *A = static_cast<float *>(svmA.Data());
   auto *B = static_cast<float *>(svmB.Data());
@@ -110,9 +110,9 @@ void GGEMSRun::Run() {
   cl::Kernel raw_kernel = prog.CreateKernel(kernel_name);
   GGEMSOpenCLKernel kernel{context, std::move(raw_kernel), kernel_name};
 
-  kernel.SetArgSVMPointer(0, A, &svmA);
-  kernel.SetArgSVMPointer(1, B, &svmB);
-  kernel.SetArgSVMPointer(2, C, &svmC);
+  kernel.SetArgSVMPointer(0, A);
+  kernel.SetArgSVMPointer(1, B);
+  kernel.SetArgSVMPointer(2, C);
 
   kernel.SetArg(3, static_cast<unsigned int>(n));
 
@@ -120,17 +120,21 @@ void GGEMSRun::Run() {
   std::array<std::size_t, 1> local{256};
 
   // kernel.Run(global, local);
-  kernel.ProfiledEnqueue(global, local, 3 * bytes);
-  // kernel.ProfileWorkGroups(n, 3 * bytes);
+  // kernel.ProfiledEnqueue(global, local, 3 * bytes);
+  //  kernel.ProfileWorkGroups(n, 3 * bytes);
 
-  /*  GGEMSOpenCLProfiler::Options opts{{256, 512, 1024, 2048, 4096, 8192,
-    16384, 32768, 65536, 131072, 262144, 524288, 1'048'576, 2'097'152,
-    4'194'304, 8'388'608, 16'777'216, 33'554'432, 67'108'864}, 3 * 4_B, true,
-                                      true,
-                                      true};
+  GGEMSOpenCLProfiler::Options opts{{256, 512, 1024, 2048, 4096, 8192, 16384,
+                                     32768, 65536, 131072, 262144, 524288,
+                                     1'048'576, 2'097'152, 4'194'304, 8'388'608,
+                                     16'777'216, 33'554'432, 67'108'864},
+                                    3 * 4_B,
+                                    true,
+                                    true,
+                                    true};
 
-    GGEMSOpenCLProfiler profiler{};
-    profiler.ProfileKernel(kernel, opts);*/
+  GGEMSOpenCLProfiler profiler{};
+  profiler.ProfileKernel(kernel, opts);
+  profiler.PrintStaticInfo();
 
   /*std::vector<std::size_t> elements{
       256,       512,        1024,       2048,      4096,
@@ -177,25 +181,6 @@ void GGEMSRun::Run() {
       GGEMS_DEBUG("OpenCL", "  arg address qualifier {}: {}", a, argtype);
       GGEMS_DEBUG("OpenCL", "  arg address qualifier {}: {}", a, argacc);
     }*/
-
-  /* svmC.Map();
-   bool ok = true;
-   for (std::size_t i = 0; i < n; ++i) {
-     float expected = 3.0f * static_cast<float>(i);
-     if (std::fabs(C[i] - expected) > 1e-5f) {
-       GGEMS_ERROR("Run", "Mismatch at i = {}: got {}, expected {}", i, C[i],
-                   expected);
-       ok = false;
-       break;
-     }
-   }
-   svmC.Unmap();
-
-   if (ok) {
-     GGEMS_INFO("Run", "(TestSVMSimpleVecAdd) Result is correct.");
-   } else {
-     GGEMS_ERROR("Run", "(TestSVMSimpleVecAdd) Result is WRONG.");
-   }*/
 }
 
 } // namespace ggems::core

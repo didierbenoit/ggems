@@ -1,6 +1,5 @@
 #pragma once
 
-#include "GGEMS/core/units/GGEMSBandwidthUnits.hh"
 #include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 
@@ -48,7 +47,7 @@ public:
     kernel_.setArg(index, value);
   }
 
-  void SetArgSVMPointer(cl_uint index, void *ptr, GGEMSOpenCLSVMBuffer *owner);
+  void SetArgSVMPointer(cl_uint index, void *ptr);
 
   /* -------- Running -----------------------------*/
   // Exécution simple (1D pour l’instant)

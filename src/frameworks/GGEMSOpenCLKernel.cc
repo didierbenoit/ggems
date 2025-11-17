@@ -26,8 +26,7 @@ GGEMSOpenCLKernel::~GGEMSOpenCLKernel() noexcept {
 
 /* ------------------------------------------------------------------------ */
 
-void GGEMSOpenCLKernel::SetArgSVMPointer(cl_uint index, void *ptr,
-                                         GGEMSOpenCLSVMBuffer *owner) {
+void GGEMSOpenCLKernel::SetArgSVMPointer(cl_uint index, void *ptr) {
   cl_int err = clSetKernelArgSVMPointer(kernel_(), index, ptr);
   GGEMS_OCL_CHECK(err, std::format("Failed to set SVM arg {}", index));
 }

@@ -63,12 +63,14 @@ public:
     bool enable_driver_overhead{true};
   };
 
-  GGEMSOpenCLProfiler() = default;
+  void ProfileKernel(GGEMSOpenCLKernel &kernel, Options const &opts);
 
-  GGEMSKernelProfileReport ProfileKernel(GGEMSOpenCLKernel &kernel,
-                                         Options const &opts) const;
+  void PrintStaticInfo() const;
+  void PrintDynamicInfo() const;
+  void PrintAllInfo() const;
 
 private:
+  GGEMSKernelProfileReport rep_;
 };
 
 GGEMSKernelStaticInfo ExtractKernelStaticInfo(GGEMSOpenCLKernel const &kernel);

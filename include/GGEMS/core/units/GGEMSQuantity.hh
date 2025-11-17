@@ -1,9 +1,11 @@
 #pragma once
 
+/// \cond
 #include <cstdint>
 #include <format>
 #include <string>
 #include <type_traits>
+/// \endcond
 
 namespace ggems::units {
 // -----------------------------

@@ -594,7 +594,7 @@ ArgTypeQualifierToString(cl_kernel_arg_type_qualifier aq) noexcept {
     out += "CL_KERNEL_ARG_TYPE_NONE ";
 
   if (!out.empty())
-    out.erase(out.size() - 2);
+    out.erase(out.size() - 1);
   else
     out = "None";
   return out;
