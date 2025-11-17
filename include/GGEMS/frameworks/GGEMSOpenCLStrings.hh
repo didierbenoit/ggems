@@ -29,7 +29,6 @@
  */
 
 /// \cond
-#include <CL/cl.h>
 #include <CL/opencl.hpp>
 #include <concepts>
 #include <format>
@@ -541,6 +540,63 @@ ExecCapabilitiesToString(cl_device_exec_capabilities caps) noexcept {
     }
   }
 
+  return out;
+}
+
+/* ----------------------------------------------------- */
+
+[[nodiscard]] inline std::string
+ArgAddressQualifierToString(cl_kernel_arg_address_qualifier aq) noexcept {
+  switch (aq) {
+  case CL_KERNEL_ARG_ADDRESS_GLOBAL:
+    return "CL_KERNEL_ARG_ADDRESS_GLOBAL";
+  case CL_KERNEL_ARG_ADDRESS_LOCAL:
+    return "CL_KERNEL_ARG_ADDRESS_LOCAL";
+  case CL_KERNEL_ARG_ADDRESS_CONSTANT:
+    return "CL_KERNEL_ARG_ADDRESS_CONSTANT";
+  default: {
+    return "CL_KERNEL_ARG_ADDRESS_PRIVATE";
+  }
+  }
+}
+
+/* ----------------------------------------------------- */
+
+[[nodiscard]] inline std::string
+ArgAccessQualifierToString(cl_kernel_arg_address_qualifier aq) noexcept {
+  switch (aq) {
+  case CL_KERNEL_ARG_ACCESS_READ_ONLY:
+    return "CL_KERNEL_ARG_ACCESS_READ_ONLY";
+  case CL_KERNEL_ARG_ACCESS_WRITE_ONLY:
+    return "CL_KERNEL_ARG_ACCESS_WRITE_ONLY";
+  case CL_KERNEL_ARG_ACCESS_READ_WRITE:
+    return "CL_KERNEL_ARG_ACCESS_READ_WRITE";
+  default: {
+    return "CL_KERNEL_ARG_ACCESS_NONE";
+  }
+  }
+}
+
+/* ----------------------------------------------------- */
+
+[[nodiscard]] inline std::string
+ArgTypeQualifierToString(cl_kernel_arg_type_qualifier aq) noexcept {
+  std::string out;
+  if (aq & CL_KERNEL_ARG_TYPE_CONST)
+    out += "CL_KERNEL_ARG_TYPE_CONST ";
+  if (aq & CL_KERNEL_ARG_TYPE_RESTRICT)
+    out += "CL_KERNEL_ARG_TYPE_RESTRICT ";
+  if (aq & CL_KERNEL_ARG_TYPE_VOLATILE)
+    out += "CL_KERNEL_ARG_TYPE_VOLATILE ";
+  if (aq & CL_KERNEL_ARG_TYPE_PIPE)
+    out += "CL_KERNEL_ARG_TYPE_PIPE ";
+  if (aq & CL_KERNEL_ARG_TYPE_NONE)
+    out += "CL_KERNEL_ARG_TYPE_NONE ";
+
+  if (!out.empty())
+    out.erase(out.size() - 2);
+  else
+    out = "None";
   return out;
 }
 } // namespace ggems::ocl

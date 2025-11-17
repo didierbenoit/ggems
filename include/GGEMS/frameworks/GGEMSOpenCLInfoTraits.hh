@@ -30,6 +30,7 @@
  */
 
 /// \cond
+#include <CL/cl.h>
 #include <CL/opencl.hpp>
 #include <string>
 /// \endcond
@@ -1166,6 +1167,53 @@ template <> struct InfoTraits<CL_PROGRAM_BINARIES> {
   static constexpr std::string_view name = "CL_PROGRAM_BINARIES";
   static std::string ToString(type const &) noexcept {
     return "<binary blobs>";
+  }
+};
+
+// === Kernel ===
+template <> struct InfoTraits<CL_KERNEL_FUNCTION_NAME> {
+  using type = std::string;
+  static constexpr std::string_view name = "CL_KERNEL_FUNCTION_NAME";
+  [[nodiscard]] static std::string ToString(type v) noexcept { return v; }
+};
+
+template <> struct InfoTraits<CL_KERNEL_NUM_ARGS> {
+  using type = cl_uint;
+  static constexpr std::string_view name = "CL_KERNEL_NUM_ARGS";
+  [[nodiscard]] static std::string ToString(type v) noexcept {
+    return UIntToString(v);
+  }
+};
+
+template <> struct InfoTraits<CL_KERNEL_REFERENCE_COUNT> {
+  using type = cl_uint;
+  static constexpr std::string_view name = "CL_KERNEL_REFERENCE_COUNT";
+  [[nodiscard]] static std::string ToString(type v) noexcept {
+    return UIntToString(v);
+  }
+};
+
+template <> struct InfoTraits<CL_KERNEL_ATTRIBUTES> {
+  using type = std::string;
+  static constexpr std::string_view name = "CL_KERNEL_ATTRIBUTES";
+  [[nodiscard]] static std::string ToString(type v) noexcept { return v; }
+};
+
+template <> struct InfoTraits<CL_KERNEL_CONTEXT> {
+  using type = cl::Context;
+  static constexpr std::string_view name = "CL_KERNEL_CONTEXT";
+  [[nodiscard]] static std::string ToString(type v) noexcept {
+    (void)v;
+    return "";
+  }
+};
+
+template <> struct InfoTraits<CL_KERNEL_PROGRAM> {
+  using type = cl::Program;
+  static constexpr std::string_view name = "CL_KERNEL_PROGRAM";
+  [[nodiscard]] static std::string ToString(type v) noexcept {
+    (void)v;
+    return "";
   }
 };
 } // namespace ggems::ocl

@@ -445,6 +445,28 @@ template <> struct CLGetter<cl::Kernel> {
 };
 } // namespace detail
 
+/* -------------------------------------------------------------------- */
+
+template <cl_uint Info, typename Kernel>
+auto GetArgInfo(Kernel const &k, cl_uint index) {
+  cl_int err{CL_SUCCESS};
+  auto value = k.template getArgInfo<Info>(index, &err);
+  CheckCLError(err, "Get kernel argument info failed.");
+  return value;
+}
+
+/* -------------------------------------------------------------------- */
+
+template <cl_uint Info, typename Kernel, typename Device>
+auto GetWorkGroupInfo(Kernel const &k, Device const &d) {
+  cl_int err{CL_SUCCESS};
+  auto value = k.template getWorkGroupInfo<Info>(d, &err);
+  CheckCLError(err, "Get kernel work group info failed.");
+  return value;
+}
+
+/* -------------------------------------------------------------------- */
+
 template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
   using Traits = InfoTraits<Info>;
   using ReturnType = typename Traits::type;
@@ -469,11 +491,15 @@ template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
   }
 }
 
+/* -------------------------------------------------------------------- */
+
 template <cl_uint Info, typename Object> void PrintInfo(Object const &obj) {
   using Traits = InfoTraits<Info>;
   auto value = GetInfo<Info>(obj);
   GGEMS_INFO("OpenCL", "{}: {}", Traits::name, Traits::ToString(value));
 }
+
+/* -------------------------------------------------------------------- */
 
 // === Checking extensions
 [[nodiscard]] inline bool

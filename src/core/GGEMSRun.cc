@@ -5,6 +5,7 @@
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLProgram.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
 
@@ -67,6 +68,7 @@ void GGEMSRun::Initialise() {
 
 void GGEMSRun::Run() {
   using ocl::GGEMSOpenCLKernel;
+  using ocl::GGEMSOpenCLProfiler;
   using ocl::GGEMSOpenCLProgram;
   using ocl::GGEMSOpenCLSVMBuffer;
 
@@ -76,12 +78,12 @@ void GGEMSRun::Run() {
 
   GGEMS_INFO("Core", "Starting SVM vec_add_svm test on...");
 
-  std::size_t const n = 67'108'864;
+  std::size_t const n = 16'777'216;
   Bytes const bytes = Bytes{static_cast<std::uint64_t>(n) * 4ULL};
 
-  auto svmA = context.CreateSVMBuffer(bytes, ocl::SVMMemoryKind::Auto, 0);
-  auto svmB = context.CreateSVMBuffer(bytes, ocl::SVMMemoryKind::Auto, 0);
-  auto svmC = context.CreateSVMBuffer(bytes, ocl::SVMMemoryKind::Auto, 0);
+  auto svmA = context.CreateSVMBuffer(bytes, ocl::SVMMemoryKind::Auto, 128);
+  auto svmB = context.CreateSVMBuffer(bytes, ocl::SVMMemoryKind::Auto, 128);
+  auto svmC = context.CreateSVMBuffer(bytes, ocl::SVMMemoryKind::Auto, 128);
 
   auto *A = static_cast<float *>(svmA.Data());
   auto *B = static_cast<float *>(svmB.Data());
@@ -119,25 +121,81 @@ void GGEMSRun::Run() {
 
   // kernel.Run(global, local);
   kernel.ProfiledEnqueue(global, local, 3 * bytes);
+  // kernel.ProfileWorkGroups(n, 3 * bytes);
 
-  svmC.Map();
-  bool ok = true;
-  for (std::size_t i = 0; i < n; ++i) {
-    float expected = 3.0f * static_cast<float>(i);
-    if (std::fabs(C[i] - expected) > 1e-5f) {
-      GGEMS_ERROR("Run", "Mismatch at i = {}: got {}, expected {}", i, C[i],
-                  expected);
-      ok = false;
-      break;
-    }
-  }
-  svmC.Unmap();
+  /*  GGEMSOpenCLProfiler::Options opts{{256, 512, 1024, 2048, 4096, 8192,
+    16384, 32768, 65536, 131072, 262144, 524288, 1'048'576, 2'097'152,
+    4'194'304, 8'388'608, 16'777'216, 33'554'432, 67'108'864}, 3 * 4_B, true,
+                                      true,
+                                      true};
 
-  if (ok) {
-    GGEMS_INFO("Run", "(TestSVMSimpleVecAdd) Result is correct.");
-  } else {
-    GGEMS_ERROR("Run", "(TestSVMSimpleVecAdd) Result is WRONG.");
-  }
+    GGEMSOpenCLProfiler profiler{};
+    profiler.ProfileKernel(kernel, opts);*/
+
+  /*std::vector<std::size_t> elements{
+      256,       512,        1024,       2048,      4096,
+      8192,      16384,      32768,      65536,     131072,
+      262144,    524288,     1'048'576,  2'097'152, 4'194'304,
+      8'388'608, 16'777'216, 33'554'432, 67'108'864};
+  kernel.ProfileBandwidthSweep(elements, 3 * 4_B);*/
+
+  //  Time tover = kernel.ProfileDriverOverhead();
+  //  GGEMS_DEBUG("OpenCL", "Driver overhead {}", HumanReadable(tover);
+
+  /*  std::string fname = kernel.GetFunctionName();
+    cl_uint nargs = kernel.GetNumArgs();
+    cl_uint refcount = kernel.GetReferenceCount();
+    std::string attributes = kernel.GetAttributes();
+
+    GGEMS_DEBUG("OpenCL", "fname: {}", fname);
+    GGEMS_DEBUG("OpenCL", "nargs: {}", nargs);
+    GGEMS_DEBUG("OpenCL", "refcount: {}", refcount);
+    GGEMS_DEBUG("OpenCL", "attributes: {}", attributes);
+
+    std::size_t wg = kernel.GetWorkGroupSize();
+    std::size_t pwg = kernel.GetPreferredWorkGroupSizeMultiple();
+    std::array<std::size_t, 3> cwg = kernel.GetCompileWorkGroupSize();
+    Bytes lmem = kernel.GetLocalMemSize() * 1_B;
+    Bytes pmem = kernel.GetPrivateMemSize() * 1_B;
+
+    GGEMS_DEBUG("OpenCL", "work group size: {}", wg);
+    GGEMS_DEBUG("OpenCL", "Preferred WG size multiple: {}", pwg);
+    GGEMS_DEBUG("OpenCL", "Compile WG size: {}", cwg);
+    GGEMS_DEBUG("OpenCL", "Local mem size: {}", HumanReadable(lmem));
+    GGEMS_DEBUG("OpenCL", "Private mem size: {}", HumanReadable(pmem));
+
+    for (cl_uint a = 0; a < nargs; ++a) {
+      std::string argaddr = kernel.GetArgAddressQualifier(a);
+      std::string argname = kernel.GetArgName(a);
+      std::string argtypename = kernel.GetArgTypeName(a);
+      std::string argacc = kernel.GetArgAccessQualifier(a);
+      std::string argtype = kernel.GetArgTypeQualifier(a);
+      GGEMS_DEBUG("OpenCL", "-------------");
+      GGEMS_DEBUG("OpenCL", "  arg name {}: {}", a, argname);
+      GGEMS_DEBUG("OpenCL", "  arg type name {}: {}", a, argtypename);
+      GGEMS_DEBUG("OpenCL", "  arg address qualifier {}: {}", a, argaddr);
+      GGEMS_DEBUG("OpenCL", "  arg address qualifier {}: {}", a, argtype);
+      GGEMS_DEBUG("OpenCL", "  arg address qualifier {}: {}", a, argacc);
+    }*/
+
+  /* svmC.Map();
+   bool ok = true;
+   for (std::size_t i = 0; i < n; ++i) {
+     float expected = 3.0f * static_cast<float>(i);
+     if (std::fabs(C[i] - expected) > 1e-5f) {
+       GGEMS_ERROR("Run", "Mismatch at i = {}: got {}, expected {}", i, C[i],
+                   expected);
+       ok = false;
+       break;
+     }
+   }
+   svmC.Unmap();
+
+   if (ok) {
+     GGEMS_INFO("Run", "(TestSVMSimpleVecAdd) Result is correct.");
+   } else {
+     GGEMS_ERROR("Run", "(TestSVMSimpleVecAdd) Result is WRONG.");
+   }*/
 }
 
 } // namespace ggems::core

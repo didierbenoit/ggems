@@ -69,7 +69,7 @@ public:
   [[nodiscard]] cl::Context const &GetContextNative() const noexcept {
     return context_;
   }
-  [[nodiscard]] GGEMSOpenCLDevice const &GetDevice() noexcept {
+  [[nodiscard]] GGEMSOpenCLDevice const &GetDevice() const noexcept {
     return device_;
   }
 

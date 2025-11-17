@@ -1,8 +1,6 @@
 #pragma once
 
 #include "GGEMS/core/units/GGEMSBandwidthUnits.hh"
-#include "GGEMS/core/units/GGEMSBytesUnits.hh"
-#include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 
@@ -42,17 +40,22 @@ public:
   GGEMSOpenCLKernel &operator=(GGEMSOpenCLKernel &&) noexcept = delete;
 
 public:
-  // Ajout d'arguments
+  GGEMSOpenCLContext const &GetContext() const { return context_; }
+  std::string_view GetKernelName() const { return kernel_name_; }
+
+  /* --------- Arguments --------------------------------*/
   template <typename T> void SetArg(cl_uint index, T const &value) {
     kernel_.setArg(index, value);
   }
 
   void SetArgSVMPointer(cl_uint index, void *ptr, GGEMSOpenCLSVMBuffer *owner);
 
+  /* -------- Running -----------------------------*/
   // Exécution simple (1D pour l’instant)
   void Run(std::array<size_t, 1> const &global,
            std::array<size_t, 1> const &local);
 
+  /* ------------- Profiling ----------------------*/
   GGEMSKernelExecutionStats ProfiledEnqueue(cl::NDRange global,
                                             cl::NDRange local,
                                             units::Bytes bytes_moved) const;
@@ -65,6 +68,28 @@ public:
                         units::Bytes elements_per_item) const;
 
   Time ProfileDriverOverhead() const;
+
+  /* ------------- Kernel Info ------------------- */
+  [[nodiscard]] std::string GetFunctionName() const;
+  [[nodiscard]] cl_uint GetNumArgs() const;
+  [[nodiscard]] cl_uint GetReferenceCount() const;
+  [[nodiscard]] cl::Context GetContextNative() const;
+  [[nodiscard]] cl::Program GetProgramNative() const;
+  [[nodiscard]] std::string GetAttributes() const;
+
+  /* ------------- Kernel Workgroup Info ------------------- */
+  [[nodiscard]] std::size_t GetWorkGroupSize() const;
+  [[nodiscard]] std::size_t GetPreferredWorkGroupSizeMultiple() const;
+  [[nodiscard]] std::array<std::size_t, 3> GetCompileWorkGroupSize() const;
+  [[nodiscard]] cl_ulong GetLocalMemSize() const;
+  [[nodiscard]] cl_ulong GetPrivateMemSize() const;
+
+  /* ------------- Kernel Workgroup Info ------------------- */
+  [[nodiscard]] std::string GetArgAddressQualifier(cl_uint index) const;
+  [[nodiscard]] std::string GetArgAccessQualifier(cl_uint index) const;
+  [[nodiscard]] std::string GetArgTypeName(cl_uint index) const;
+  [[nodiscard]] std::string GetArgTypeQualifier(cl_uint index) const;
+  [[nodiscard]] std::string GetArgName(cl_uint index) const;
 
 private:
   GGEMSOpenCLContext &context_;
