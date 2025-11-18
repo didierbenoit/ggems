@@ -10,15 +10,15 @@ inline std::string HumanReadable(Bytes const &b) {
   long double const v = static_cast<long double>(b.value);
 
   if (v >= 1.0L * 1024.0L * 1024.0L * 1024.0L)
-    return std::format("{:.3} GB", v / (1024.0L * 1024.0L * 1024.0L));
+    return std::format("{:.3f} GB", v / (1024.0L * 1024.0L * 1024.0L));
 
   if (v >= 1.0L * 1024.0L * 1024.0L)
-    return std::format("{:.3} MB", v / (1024.0L * 1024.0L));
+    return std::format("{:.3f} MB", v / (1024.0L * 1024.0L));
 
   if (v >= 1.0L * 1024.0L)
-    return std::format("{:.3} KB", v / 1024.0L);
+    return std::format("{:.3f} KB", v / 1024.0L);
 
-  return std::format("{:.3} B", v);
+  return std::format("{:.3f} B", v);
 }
 
 // B

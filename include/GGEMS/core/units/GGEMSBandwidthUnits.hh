@@ -5,10 +5,10 @@
 #include "GGEMSTimeUnits.hh"
 
 namespace ggems::units {
-using Bandwidth = Quantity<BandwidthDim, long double>; // bytes/s
+using Bandwidth = Quantity<BandwidthDim, long double>;
 
 inline std::string HumanReadable(Bandwidth const &bw) {
-  long double const v = bw.value * 1.0e12L; // Convert -> s
+  long double const v = bw.value * 1.0e12L; // conv to B/s
 
   if (v >= 1.0e9L)
     return std::format("{:.3} GB/s", v / 1.0e9L);

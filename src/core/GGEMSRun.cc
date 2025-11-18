@@ -1,5 +1,6 @@
 #include "GGEMS/core/GGEMSRun.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/core/units/GGEMSBandwidthUnits.hh"
 #include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
@@ -67,10 +68,9 @@ void GGEMSRun::Run() {
     auto const device_type = dev.GetType();
     auto slot = progress_bar_.RegisterDevice(device_name, "vec_add_svm");
     slot->SetActive(true);
-    slot->SetProgress(0.0F);
-    slot->SetBandwidth(0.0F);
+    slot->SetBandwidthBytesPico({0.0});
     slot->SetDeviceType(device_type);
-    slot->SetParticles(0, 100);
+    slot->SetBatches(0, 100);
     slot->SetParticleType(GGEMSProgressBar::Slot::ParticleType::Gamma);
     progress_slots_.emplace_back(std::move(slot));
   }
@@ -82,14 +82,12 @@ void GGEMSRun::Run() {
     auto &ctx = contexts[i];
     auto slot = progress_slots_[i];
     workers_.emplace_back([&ctx, slot]() {
-      float p = 0.f;
-      std::uint64_t k = 0;
-      while (p < 1.0f) {
-        slot->SetProgress(p);
-        slot->SetParticles(k, 100);
-        slot->SetBandwidth(50.0f * p);
-        p += 0.01f;
-        ++k;
+      int p = 0;
+      while (p < 100) {
+        ++p;
+        slot->SetBatches(p, 100);
+        slot->SetBandwidthBytesPico(
+            units::Bandwidth{100.0 * static_cast<float>(p)});
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
       }
       slot->SetActive(false);
@@ -103,6 +101,7 @@ void GGEMSRun::Run() {
   }
   workers_.clear();
   running_.store(false);
+  progress_bar_.Stop();
   GGEMS_INFO("Core", "GGEMS run completed.");
 
   /*  using ocl::GGEMSOpenCLKernel;

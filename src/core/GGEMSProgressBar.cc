@@ -15,13 +15,10 @@
  * with GGEMS.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/*!
- \file GGEMSProgressBar.cc
- \brief Implementation of terminal pulse-based progress monitor.
-*/
-
 /// \cond
 #include "GGEMS/core/GGEMSCoreUtils.hh"
+#include "GGEMS/core/units/GGEMSBandwidthUnits.hh"
+#include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
@@ -32,7 +29,10 @@
 #endif
 /// \endcond
 
+#include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/GGEMSProgressBar.hh"
+#include "GGEMS/core/units/GGEMSTimeUnits.hh"
+#include "GGEMS/core/units/GGEMSUnits.hh"
 
 namespace ggems::core {
 
@@ -43,9 +43,7 @@ namespace ggems::core {
 GGEMSProgressBar::Slot::Slot(std::string device_name,
                              std::string kernel_name) noexcept
     : device_name_{std::move(device_name)},
-      kernel_name_{std::move(kernel_name)} {
-  // Nothing else to do.
-}
+      kernel_name_{std::move(kernel_name)} {}
 
 /* --------------------------------*/
 
@@ -73,55 +71,35 @@ bool GGEMSProgressBar::Slot::IsActive() const noexcept {
 
 /* --------------------------------*/
 
-void GGEMSProgressBar::Slot::SetProgress(float value) noexcept {
-  if (!std::isfinite(value)) {
-    value = 0.0F;
-  }
+void GGEMSProgressBar::Slot::SetBandwidthBytesPico(
+    units::Bandwidth bw) noexcept {
+  bandwidth_bps_.store(bw.value, std::memory_order_relaxed);
+}
 
-  value = std::clamp(value, 0.0F, 1.0F);
-  progress_.store(value, std::memory_order_relaxed);
+units::Bandwidth
+GGEMSProgressBar::Slot::GetBandwidthBytesPico() const noexcept {
+  long double v = bandwidth_bps_.load(std::memory_order_relaxed);
+  return units::Bandwidth{v};
 }
 
 /* --------------------------------*/
 
-float GGEMSProgressBar::Slot::GetProgress() const noexcept {
-  return progress_.load(std::memory_order_relaxed);
+void GGEMSProgressBar::Slot::SetBatches(int const done,
+                                        int const total) noexcept {
+  batches_done_.store(done, std::memory_order_relaxed);
+  batches_total_.store(total, std::memory_order_relaxed);
 }
 
 /* --------------------------------*/
 
-void GGEMSProgressBar::Slot::SetBandwidth(float value) noexcept {
-  if (!std::isfinite(value) || value < 0.0F) {
-    value = 0.0F;
-  }
-
-  bandwidth_gbs_.store(value, std::memory_order_relaxed);
+int GGEMSProgressBar::Slot::GetBatchesDone() const noexcept {
+  return batches_done_.load(std::memory_order_relaxed);
 }
 
 /* --------------------------------*/
 
-float GGEMSProgressBar::Slot::GetBandwidth() const noexcept {
-  return bandwidth_gbs_.load(std::memory_order_relaxed);
-}
-
-/* --------------------------------*/
-
-void GGEMSProgressBar::Slot::SetParticles(std::uint64_t const done,
-                                          std::uint64_t const total) noexcept {
-  particles_done_.store(done, std::memory_order_relaxed);
-  particles_total_.store(total, std::memory_order_relaxed);
-}
-
-/* --------------------------------*/
-
-std::uint64_t GGEMSProgressBar::Slot::GetParticlesDone() const noexcept {
-  return particles_done_.load(std::memory_order_relaxed);
-}
-
-/* --------------------------------*/
-
-std::uint64_t GGEMSProgressBar::Slot::GetParticlesTotal() const noexcept {
-  return particles_total_.load(std::memory_order_relaxed);
+int GGEMSProgressBar::Slot::GetBatchesTotal() const noexcept {
+  return batches_total_.load(std::memory_order_relaxed);
 }
 
 /* --------------------------------*/
@@ -189,7 +167,6 @@ void GGEMSProgressBar::Start() {
   bool expected = false;
   if (!running_.compare_exchange_strong(expected, true,
                                         std::memory_order_acq_rel)) {
-    // Already running; nothing to do.
     return;
   }
 
@@ -320,19 +297,13 @@ std::string GGEMSProgressBar::MakeClearScreen() {
 /* --------------------------------*/
 
 std::string GGEMSProgressBar::MakeHeader() {
-  constexpr std::size_t width = 80;
-
   std::ostringstream oss;
-
   // Top
   oss << "╭────────────────────────────────────────────────────────────────────"
          "────────────╮\n";
-
   oss << "│                       === GGEMS - Particle Monitor ===             "
          "  "
          "          │\n";
-
-  // Separator
   oss << "├────────────────────────────────────────────────────────────────────"
          "────────────┤\n";
 
@@ -355,8 +326,6 @@ std::string GGEMSProgressBar::FormatSlot(std::size_t const index,
   std::ostringstream oss;
 
   bool const active = slot.IsActive();
-  float const progress = slot.GetProgress();
-  float const bandwidth = slot.GetBandwidth();
 
   cl_device_type type = slot.GetDeviceType();
   bool const is_gpu = (type & CL_DEVICE_TYPE_GPU) != 0;
@@ -382,9 +351,16 @@ std::string GGEMSProgressBar::FormatSlot(std::size_t const index,
   }
   oss << "\n";
 
+  int batches_done = slot.GetBatchesDone();
+  int batches_total = slot.GetBatchesTotal();
+
+  float ratio = (batches_total > 0) ? static_cast<float>(batches_done) /
+                                          static_cast<float>(batches_total)
+                                    : 0.0f;
+
   // Status bar.
-  oss << "Status: " << BuildBar(progress, use_colour, is_gpu) << "  "
-      << std::setw(3) << static_cast<int>(progress * 100.0F) << "%";
+  oss << "Status: " << BuildBar(ratio, use_colour, is_gpu) << "  "
+      << std::setw(3) << ratio * 100.0F << "%";
 
   if (active) {
     oss << "   (pulse ";
@@ -423,9 +399,8 @@ std::string GGEMSProgressBar::FormatSlot(std::size_t const index,
 
   oss << "\n";
 
-  // Bandwidth + kernel.
-  oss << "        ↳ Bandwidth: " << std::fixed << std::setprecision(1)
-      << bandwidth << " GB/s";
+  units::Bandwidth bw = slot.GetBandwidthBytesPico();
+  oss << "        ↳ Bandwidth: " << units::HumanReadable(bw);
 
   std::string const &kernel_name = slot.GetKernelName();
   if (!kernel_name.empty()) {
@@ -433,24 +408,18 @@ std::string GGEMSProgressBar::FormatSlot(std::size_t const index,
   }
   oss << "\n";
 
-  // Optional particle statistics and ETA.
-  std::uint64_t const particles_done = slot.GetParticlesDone();
-  std::uint64_t const particles_total = slot.GetParticlesTotal();
-
-  if (particles_total > 0U) {
-    oss << "        ↳ Particles: " << particles_done << " / "
-        << particles_total;
+  if (batches_total > 0) {
+    oss << "        ↳ Batches: " << batches_done << " / " << batches_total;
 
     double eta_seconds = -1.0;
-    double const p = static_cast<double>(progress);
-    if (p > 1.0e-3 && t_seconds > 1.0e-3) {
+    if (ratio > 1.0e-3 && t_seconds > 1.0e-3) {
       // Simple ETA estimate: t / p - t.
-      eta_seconds = t_seconds * (1.0 / p - 1.0);
+      eta_seconds = t_seconds * (1.0 / ratio - 1.0);
     }
 
+    units::Time eta{static_cast<std::uint64_t>(eta_seconds * 10e12)};
     if (eta_seconds > 0.0) {
-      oss << "  : " << std::fixed << std::setprecision(2) << eta_seconds
-          << " s ETA";
+      oss << "  : " << units::HumanReadable(eta) << " ETA";
     } else {
       oss << "  : ETA --";
     }
@@ -529,42 +498,51 @@ std::string GGEMSProgressBar::BuildBar(float const progress,
   std::size_t const filled =
       static_cast<std::size_t>(std::floor(clamped * static_cast<float>(width)));
 
+  // Discrete colour index (0–9)
+  int const colour_index =
+      static_cast<int>(std::floor(clamped * 10.0F)); // 10 colours
+  int const idx = std::clamp(colour_index, 0, 9);
+
+  // GPU: green gradient
+  static constexpr std::array<const char *, 10> gpu_colours = {
+      "\033[38;2;0;45;0m",  "\033[38;2;0;60;0m",  "\033[38;2;0;75;0m",
+      "\033[38;2;0;90;0m",  "\033[38;2;0;110;0m", "\033[38;2;0;130;0m",
+      "\033[38;2;0;160;0m", "\033[38;2;0;190;0m", "\033[38;2;0;220;0m",
+      "\033[38;2;0;255;0m",
+  };
+
+  // CPU: blue gradient
+  static constexpr std::array<const char *, 10> cpu_colours = {
+      "\033[38;2;0;0;45m",  "\033[38;2;0;0;70m",  "\033[38;2;0;0;90m",
+      "\033[38;2;0;0;115m", "\033[38;2;0;0;140m", "\033[38;2;0;0;165m",
+      "\033[38;2;0;0;190m", "\033[38;2;0;0;210m", "\033[38;2;0;0;230m",
+      "\033[38;2;0;0;255m",
+  };
+
+  char const *active_colour =
+      (is_gpu ? gpu_colours[static_cast<std::size_t>(idx)]
+              : cpu_colours[static_cast<std::size_t>(idx)]);
+
+  constexpr char const *inactive_colour = "\033[38;2;70;70;70m"; // gris
+  constexpr char const *reset_colour = "\033[0m";
+
   std::ostringstream oss;
 
   for (std::size_t i = 0; i < width; ++i) {
-    bool const is_f = (i < filled);
-    float const ratio = static_cast<float>(i) / static_cast<float>(width);
-
+    bool const is_filled = (i < filled);
     if (use_colour) {
-      if (is_f) {
-        if (is_gpu) {
-          if (ratio < 0.33f) {
-            oss << "\033[1;32m";
-          } else if (ratio < 0.66f) {
-            oss << "\033[1;32m";
-          } else {
-            oss << "\033[1;32m";
-          }
-        } else {
-          if (ratio < 0.33f) {
-            oss << "\033[1;34m";
-          } else if (ratio < 0.66f) {
-            oss << "\033[1;34m";
-          } else {
-            oss << "\033[1;34m";
-          }
-        }
-        oss << "█";
+      if (is_filled) {
+        oss << active_colour << "█";
       } else {
-        oss << "\033[90m░";
+        oss << inactive_colour << "░";
       }
     } else {
-      oss << (is_f ? "█" : " ");
+      oss << (is_filled ? "█" : " ");
     }
   }
 
   if (use_colour) {
-    oss << "\033[0m";
+    oss << reset_colour;
   }
 
   return oss.str();
