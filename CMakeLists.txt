@@ -57,6 +57,12 @@ option(GGEMS_BUILD_DOCS         "Build documentation with Doxygen and Sphinx" OF
 option(GGEMS_WITH_IMGUI         "Enable ImGui / Vulkan interface" OFF)
 option(GGEMS_LOG_RING_BUFFER    "Enable in-memory circular log buffer" ON)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  add_compile_definitions(GGEMS_DEBUG_MODE)
+else()
+  add_compile_definitions(GGEMS_RELEASE_MODE)
+endif()
+
 # ----------------------------------------------------------------------------
 # Dependencies
 # ----------------------------------------------------------------------------

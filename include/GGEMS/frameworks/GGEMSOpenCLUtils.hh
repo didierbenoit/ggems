@@ -363,19 +363,20 @@ namespace ggems::ocl {
 template <typename E, typename Enum, typename ToStringFunc>
 [[noreturn]] inline void
 ThrowCL(Enum code, ToStringFunc toString, std::string_view context,
+        bool do_log = true,
         std::source_location loc = std::source_location::current()) {
   std::string msg =
       std::format("{} (code {}): {}", context, static_cast<int>(code),
                   toString(static_cast<int>(code)));
-  ggems::core::Throw<E>(msg, loc, true);
+  core::Throw<E>(msg, loc, do_log);
 }
 
-template <typename E = ggems::core::GGEMSFatal>
+template <typename E = core::GGEMSFatal>
 inline void
-CheckCLError(cl_int err, std::string_view context,
+CheckCLError(cl_int err, std::string_view context, bool do_log = true,
              std::source_location loc = std::source_location::current()) {
   if (err != CL_SUCCESS)
-    ThrowCL<E>(err, GetLongErrorString, context, loc);
+    ThrowCL<E>(err, GetLongErrorString, context, do_log, loc);
 }
 
 // === Info getters
@@ -451,7 +452,7 @@ template <cl_uint Info, typename Kernel>
 auto GetArgInfo(Kernel const &k, cl_uint index) {
   cl_int err{CL_SUCCESS};
   auto value = k.template getArgInfo<Info>(index, &err);
-  CheckCLError(err, "Get kernel argument info failed.");
+  GGEMS_OCL_CHECK_RECOVERABLE(err, "Get kernel argument info failed.");
   return value;
 }
 
@@ -461,7 +462,7 @@ template <cl_uint Info, typename Kernel, typename Device>
 auto GetWorkGroupInfo(Kernel const &k, Device const &d) {
   cl_int err{CL_SUCCESS};
   auto value = k.template getWorkGroupInfo<Info>(d, &err);
-  CheckCLError(err, "Get kernel work group info failed.");
+  GGEMS_OCL_CHECK_RECOVERABLE(err, "Get kernel work group info failed.");
   return value;
 }
 
@@ -475,18 +476,19 @@ template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
 
   if constexpr (requires(Object o) { o.template getInfo<Info>(nullptr); }) {
     auto value = obj.template getInfo<Info>(&err);
-    CheckCLError(err, "GetInfo failed");
+    GGEMS_OCL_CHECK_RECOVERABLE(err, "GetInfo failed");
     return value;
   } else {
     auto getter = detail::CLGetter<Object>::fn;
 
     std::size_t size = 0;
     err = getter(obj(), Info, 0, nullptr, &size);
-    CheckCLError(err, std::string(Traits::name) + " (query size)");
+    GGEMS_OCL_CHECK_RECOVERABLE(err,
+                                std::string(Traits::name) + " (query size)");
 
     auto value =
         detail::CLInfoReader<ReturnType>::Read(obj, Info, size, getter, err);
-    CheckCLError(err, std::string(Traits::name) + " (read)");
+    GGEMS_OCL_CHECK_RECOVERABLE(err, std::string(Traits::name) + " (read)");
     return value;
   }
 }

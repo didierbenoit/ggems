@@ -51,7 +51,7 @@
 #define GGEMS_OCL_CHECK(EXPR, CONTEXT)                                         \
   do {                                                                         \
     const cl_int error_code = (EXPR);                                          \
-    ggems::ocl::CheckCLError(error_code, (CONTEXT),                            \
+    ggems::ocl::CheckCLError(error_code, (CONTEXT), true,                      \
                              std::source_location::current());                 \
   } while (0)
 
@@ -59,12 +59,12 @@
   do {                                                                         \
     const cl_int error_code = (EXPR);                                          \
     ggems::ocl::CheckCLError<ggems::core::GGEMSInternal>(                      \
-        error_code, (CONTEXT), std::source_location::current());               \
+        error_code, (CONTEXT), false, std::source_location::current());        \
   } while (0)
 
 #define GGEMS_OCL_CHECK_RECOVERABLE(EXPR, CONTEXT)                             \
   do {                                                                         \
     const cl_int error_code = (EXPR);                                          \
     ggems::ocl::CheckCLError<ggems::core::GGEMSRecoverable>(                   \
-        error_code, (CONTEXT), std::source_location::current());               \
+        error_code, (CONTEXT), false, std::source_location::current());        \
   } while (0)

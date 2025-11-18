@@ -25,6 +25,11 @@ struct GGEMSKernelExecutionStats {
   units::Bandwidth bandwidth{0U};
 };
 
+/*struct GGEMSBestWorkItemsResult {
+  std::size_t best_global_size{0};
+  units::Bandwidth best_bandwidth{0U};
+};*/
+
 class GGEMSOpenCLKernel {
 public:
   GGEMSOpenCLKernel(GGEMSOpenCLContext &ctx, cl::Kernel kernel,
@@ -61,6 +66,11 @@ public:
 
   std::vector<GGEMSKernelExecutionStats>
   ProfileWorkGroups(std::size_t global_size, units::Bytes bytes_moved) const;
+
+  std::vector<GGEMSKernelExecutionStats>
+  ProfileWorkItems(std::vector<std::size_t> const &sizes,
+                   std::size_t local_size,
+                   units::Bytes elements_per_item) const;
 
   std::vector<GGEMSKernelExecutionStats>
   ProfileBandwidthSweep(std::vector<std::size_t> const &sizes,

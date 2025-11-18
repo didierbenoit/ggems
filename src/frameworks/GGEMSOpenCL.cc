@@ -98,7 +98,7 @@ GGEMSOpenCLProgram &GGEMSOpenCL::GetOrCreateProgram(
   for (auto &p : program_cache_) {
     if (p->GetKernelName() == kernel_name &&
         p->GetSourcePath() == (kernel_root / (kernel_name + ".cl")).string() &&
-        p->GetBuildLog() == build_options) {
+        p->GetBuildOptions() == build_options) {
       GGEMS_INFO("OpenCL", "Reusing cached program '{}'.", kernel_name);
       return *p;
     }

@@ -42,8 +42,8 @@ public:
   }
 
   [[nodiscard]]
-  std::string_view GetBuildLog() const noexcept {
-    return build_log_;
+  std::string_view GetBuildOptions() const noexcept {
+    return build_options_;
   }
 
   [[nodiscard]] cl_uint GetNumDevices() const;
@@ -53,6 +53,10 @@ public:
 private:
   [[nodiscard]]
   static std::string LoadTextFile(std::filesystem::path const &path);
+
+  [[nodiscard]] std::vector<std::string> BuildOptions() const;
+  [[nodiscard]] std::string MergeOptions(std::vector<std::string> const &base,
+                                         std::string const &extra) const;
 
   void Initialise();
 

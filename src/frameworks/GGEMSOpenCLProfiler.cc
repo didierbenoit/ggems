@@ -1,4 +1,6 @@
 #include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
+#include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/units/GGEMSBandwidthUnits.hh"
 
 using namespace ggems::units;
@@ -49,15 +51,40 @@ GGEMSKernelStaticInfo ExtractKernelStaticInfo(GGEMSOpenCLKernel const &kernel) {
     a.index = i;
     bool ok = true;
 
-    a.name = kernel.GetArgName(i);
-    ok = a.name.empty() ? false : true;
+    try {
+      a.name = kernel.GetArgName(i);
+    } catch (core::GGEMSRecoverable &e) {
+      GGEMS_WARN("OpenCL", "{}", e.what());
+      ok = false;
+    }
 
-    a.type_name = kernel.GetArgTypeName(i);
-    ok = a.type_name.empty() ? false : true;
+    try {
+      a.type_name = kernel.GetArgTypeName(i);
+    } catch (core::GGEMSRecoverable &e) {
+      GGEMS_WARN("OpenCL", "{}", e.what());
+      ok = false;
+    }
 
-    a.type_qualifier = kernel.GetArgTypeQualifier(i);
-    a.address_qualifier = kernel.GetArgAddressQualifier(i);
-    a.access_qualifier = kernel.GetArgAccessQualifier(i);
+    try {
+      a.type_qualifier = kernel.GetArgTypeQualifier(i);
+    } catch (core::GGEMSRecoverable &e) {
+      GGEMS_WARN("OpenCL", "{}", e.what());
+      ok = false;
+    }
+
+    try {
+      a.address_qualifier = kernel.GetArgAddressQualifier(i);
+    } catch (core::GGEMSRecoverable &e) {
+      GGEMS_WARN("OpenCL", "{}", e.what());
+      ok = false;
+    }
+
+    try {
+      a.access_qualifier = kernel.GetArgAccessQualifier(i);
+    } catch (core::GGEMSRecoverable &e) {
+      GGEMS_WARN("OpenCL", "{}", e.what());
+      ok = false;
+    }
 
     a.has_full_metadata = ok;
     info.args.push_back(std::move(a));
@@ -95,7 +122,26 @@ void GGEMSOpenCLProfiler::ProfileKernel(GGEMSOpenCLKernel &kernel,
     dyn.best_workgroup_bandwidth = best_bw;
   }
 
-  // 2) Bandwidth sweep
+  // 2) Work item sweep
+  if (opts.enable_workitem_sweep && !opts.sizes.empty()) {
+    dyn.workitem_sweep = kernel.ProfileWorkItems(
+        opts.sizes, dyn.best_workgroup_size, opts.bytes_per_item);
+
+    Bandwidth best_bw{0LL};
+    std::size_t best_wi = 0;
+
+    for (auto const &st : dyn.workitem_sweep) {
+      if (st.bandwidth > best_bw) {
+        best_bw = st.bandwidth;
+        best_wi = st.global_work_items;
+      }
+    }
+
+    dyn.best_workitem_size = best_wi;
+    dyn.best_workitem_bandwidth = best_bw;
+  }
+
+  // 3) Bandwidth sweep
   if (opts.enable_bandwidth_sweep && !opts.sizes.empty()) {
     dyn.bandwidth_sweep =
         kernel.ProfileBandwidthSweep(opts.sizes, opts.bytes_per_item);
@@ -109,22 +155,12 @@ void GGEMSOpenCLProfiler::ProfileKernel(GGEMSOpenCLKernel &kernel,
     dyn.max_bandwidth = max_bw;
   }
 
-  // 3) Driver overhead
+  // 4) Driver overhead
   if (opts.enable_driver_overhead) {
     dyn.driver_overhead = kernel.ProfileDriverOverhead();
   }
 
   rep_.dynamic_stats = std::move(dyn);
-
-  // 4) Log résumé (tu ajusteras INFO/INFOEX)
-  /*  GGEMS_INFO("OpenCL",
-               "Profile kernel '{}' on device '{}': "
-               "WGbest= {} → {}, BWmax= {}, overhead= {}",
-               rep_.static_info.kernel_name, rep_.static_info.device_name,
-               rep_.dynamic_stats.best_workgroup_size,
-               rep_.dynamic_stats.best_workgroup_bandwidth,
-               rep_.dynamic_stats.max_bandwidth,
-               rep_.dynamic_stats.driver_overhead);*/
 }
 
 /* -------------------------------------------------------------- */
@@ -170,7 +206,25 @@ void GGEMSOpenCLProfiler::PrintStaticInfo() const {
 
 /* -------------------------------------------------------------- */
 
-void GGEMSOpenCLProfiler::PrintDynamicInfo() const { ; }
+void GGEMSOpenCLProfiler::PrintDynamicInfo() const {
+  GGEMS_INFO("OpenCL", "Kernel dynamic infos:");
+  GGEMS_INFO("OpenCL", "=====================");
+  GGEMS_INFO("OpenCL", "* Kernel: {}", rep_.static_info.kernel_name);
+  GGEMS_INFO("OpenCL", "* Function: {}", rep_.static_info.function_name);
+  GGEMS_INFO("OpenCL", "* Device: {}", rep_.static_info.device_name);
+  GGEMS_INFO("OpenCL", "* Best workitem size: {}",
+             rep_.dynamic_stats.best_workitem_size);
+  GGEMS_INFO("OpenCL", "* Best workitem bandwidth: {}",
+             HumanReadable(rep_.dynamic_stats.best_workitem_bandwidth));
+  GGEMS_INFO("OpenCL", "* Best workgroup size: {}",
+             rep_.dynamic_stats.best_workgroup_size);
+  GGEMS_INFO("OpenCL", "* Best workgroup bandwidth: {}",
+             HumanReadable(rep_.dynamic_stats.best_workgroup_bandwidth));
+  GGEMS_INFO("OpenCL", "* Max Bandwidth: {}",
+             HumanReadable(rep_.dynamic_stats.max_bandwidth));
+  GGEMS_INFO("OpenCL", "* Driver overhead: {}",
+             HumanReadable(rep_.dynamic_stats.driver_overhead));
+}
 
 /* -------------------------------------------------------------- */
 

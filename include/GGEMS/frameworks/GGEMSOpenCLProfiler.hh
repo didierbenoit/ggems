@@ -39,10 +39,14 @@ struct GGEMSKernelStaticInfo {
 
 struct GGEMSKernelDynamicStats {
   std::vector<GGEMSKernelExecutionStats> workgroup_sweep;
+  std::vector<GGEMSKernelExecutionStats> workitem_sweep;
   std::vector<GGEMSKernelExecutionStats> bandwidth_sweep;
 
   std::size_t best_workgroup_size{0};
   units::Bandwidth best_workgroup_bandwidth{0LL};
+
+  std::size_t best_workitem_size{0};
+  units::Bandwidth best_workitem_bandwidth{0LL};
 
   units::Bandwidth max_bandwidth{0ULL};
   units::Time driver_overhead{0LL};
@@ -59,6 +63,7 @@ public:
     std::vector<std::size_t> sizes;   // N pour le sweep
     units::Bytes bytes_per_item{0LL}; // ex: 3*sizeof(float) pour vec_add
     bool enable_workgroup_sweep{true};
+    bool enable_workitem_sweep{true};
     bool enable_bandwidth_sweep{true};
     bool enable_driver_overhead{true};
   };

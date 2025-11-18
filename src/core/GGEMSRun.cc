@@ -1,20 +1,14 @@
 #include "GGEMS/core/GGEMSRun.hh"
-#include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLProgram.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
 
 using namespace ggems::units;
 
 namespace ggems::core {
 
-/* --------------------------------*/
-/* --------------------------------*/
 /* --------------------------------*/
 
 GGEMSRun::GGEMSRun() {
@@ -23,13 +17,25 @@ GGEMSRun::GGEMSRun() {
 }
 
 /* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
 
-GGEMSRun::~GGEMSRun() { GGEMS_INFOEX("Core", 3, "GGEMSRun destroyed."); }
+GGEMSRun::~GGEMSRun() { Stop(); }
 
 /* --------------------------------*/
-/* --------------------------------*/
+
+void GGEMSRun::Stop() {
+  if (!running_.exchange(false))
+    return;
+
+  GGEMS_INFO("Core", "Stopping GGEMS...");
+
+  for (auto &t : workers_) {
+    t.request_stop();
+  }
+
+  workers_.clear();
+  GGEMS_INFO("Core", "GGEMS stopped.");
+}
+
 /* --------------------------------*/
 
 void GGEMSRun::Banner() const {
@@ -53,8 +59,6 @@ void GGEMSRun::Banner() const {
 }
 
 /* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
 
 void GGEMSRun::Initialise() {
   GGEMS_INFO("Core", "Initialising GGEMSRun...");
@@ -63,17 +67,35 @@ void GGEMSRun::Initialise() {
 }
 
 /* --------------------------------*/
-/* --------------------------------*/
+
+void GGEMSRun::RunMT(std::stop_token st, ocl::GGEMSOpenCLContext &ctx) {
+  GGEMS_INFO("Core", "Device {} starting...", ctx.GetDevice().GetName());
+
+  while (!st.stop_requested()) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+
+  GGEMS_INFO("Core", "Device {} stopping...", ctx.GetDevice().GetName());
+}
+
 /* --------------------------------*/
 
 void GGEMSRun::Run() {
-  using ocl::GGEMSOpenCLKernel;
-  using ocl::GGEMSOpenCLProfiler;
-  using ocl::GGEMSOpenCLProgram;
-  using ocl::GGEMSOpenCLSVMBuffer;
+  GGEMS_INFO("Core", "GGEMS starting...");
+  running_.store(true);
 
   auto &opencl = ocl::GGEMSOpenCL::GetInstance();
   auto &contexts = opencl.GetContext();
+
+  for (auto &ctx : contexts) {
+    workers_.emplace_back([this, &ctx](std::stop_token st) { RunMT(st, ctx); });
+  }
+
+  using ocl::GGEMSOpenCLKernel;
+  // using ocl::GGEMSOpenCLProfiler;
+  using ocl::GGEMSOpenCLProgram;
+  using ocl::GGEMSOpenCLSVMBuffer;
+
   auto &context = contexts.front();
 
   GGEMS_INFO("Core", "Starting SVM vec_add_svm test on...");
@@ -119,22 +141,23 @@ void GGEMSRun::Run() {
   std::array<std::size_t, 1> global{n};
   std::array<std::size_t, 1> local{256};
 
-  // kernel.Run(global, local);
+  kernel.Run(global, local);
   // kernel.ProfiledEnqueue(global, local, 3 * bytes);
   //  kernel.ProfileWorkGroups(n, 3 * bytes);
 
-  GGEMSOpenCLProfiler::Options opts{{256, 512, 1024, 2048, 4096, 8192, 16384,
-                                     32768, 65536, 131072, 262144, 524288,
-                                     1'048'576, 2'097'152, 4'194'304, 8'388'608,
-                                     16'777'216, 33'554'432, 67'108'864},
-                                    3 * 4_B,
-                                    true,
-                                    true,
-                                    true};
+  /*GGEMSOpenCLProfiler::Options opts{
+      {256,       512,        1024,       2048,       4096,
+       8192,      16384,      32768,      65536,      131072,
+       262144,    524288,     1'048'576,  2'097'152,  4'194'304,
+       8'388'608, 16'777'216, 33'554'432, 67'108'864, 134'217'728},
+      3 * 4_B,
+      true,
+      true,
+      true};
 
   GGEMSOpenCLProfiler profiler{};
   profiler.ProfileKernel(kernel, opts);
-  profiler.PrintStaticInfo();
+  profiler.PrintAllInfo();*/
 
   /*std::vector<std::size_t> elements{
       256,       512,        1024,       2048,      4096,

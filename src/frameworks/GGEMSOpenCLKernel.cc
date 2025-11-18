@@ -97,6 +97,29 @@ GGEMSOpenCLKernel::ProfiledEnqueue(cl::NDRange global, cl::NDRange local,
 /* -------------------------------------------------------------------------- */
 
 std::vector<GGEMSKernelExecutionStats>
+GGEMSOpenCLKernel::ProfileWorkItems(std::vector<std::size_t> const &sizes,
+                                    std::size_t local_size,
+                                    units::Bytes bytes_per_item) const {
+  std::vector<GGEMSKernelExecutionStats> results;
+
+  for (auto const &n : sizes) {
+    if (n < local_size)
+      continue;
+
+    Bytes const bytes = n * bytes_per_item;
+
+    GGEMSKernelExecutionStats const stats =
+        ProfiledEnqueue(cl::NDRange(n), cl::NDRange(local_size), bytes);
+
+    results.push_back(stats);
+  }
+
+  return results;
+}
+
+/* -------------------------------------------------------------------------- */
+
+std::vector<GGEMSKernelExecutionStats>
 GGEMSOpenCLKernel::ProfileWorkGroups(std::size_t global_size,
                                      Bytes bytes_moved) const {
   std::vector<GGEMSKernelExecutionStats> results;
@@ -126,7 +149,7 @@ GGEMSOpenCLKernel::ProfileBandwidthSweep(std::vector<std::size_t> const &sizes,
                                          Bytes bytes_per_item) const {
   std::vector<GGEMSKernelExecutionStats> results;
 
-  for (auto n : sizes) {
+  for (auto const &n : sizes) {
     Bytes bytes = n * bytes_per_item;
 
     GGEMSKernelExecutionStats stats =

@@ -19,8 +19,6 @@ using core::Throw;
 namespace {
 
 /* ---------------------------------------------*/
-/* ---------------------------------------------*/
-/* ---------------------------------------------*/
 
 std::string Sanitise(std::string s) {
   for (char &c : s) {
@@ -30,17 +28,6 @@ std::string Sanitise(std::string s) {
   return s;
 }
 
-/* ---------------------------------------------*/
-/* ---------------------------------------------*/
-/* ---------------------------------------------*/
-
-template <typename T> void HashCombine(std::size_t &h, T const &v) {
-  std::hash<T> hv;
-  h ^= hv(v) + 0x9e3779b97f4a7c15ULL + (h << 6) + (h >> 2);
-}
-
-/* ---------------------------------------------*/
-/* ---------------------------------------------*/
 /* ---------------------------------------------*/
 
 std::filesystem::path GetCacheRootDirectory() {
@@ -61,19 +48,20 @@ std::filesystem::path GetCacheRootDirectory() {
 } // namespace
 
 /* ---------------------------------------------*/
-/* ---------------------------------------------*/
-/* ---------------------------------------------*/
 
 GGEMSOpenCLProgram::GGEMSOpenCLProgram(GGEMSOpenCLContext &ctx,
                                        std::filesystem::path kernel_root,
                                        std::string kernel_name,
                                        std::string build_options)
     : context_{ctx}, kernel_root_{std::move(kernel_root)},
-      kernel_name_{std::move(kernel_name)},
-      build_options_{std::move(build_options)}, source_hash_{0LL},
-      global_hash_{0LL} {
+      kernel_name_{std::move(kernel_name)}, build_options_{""},
+      source_hash_{0LL}, global_hash_{0LL} {
   GGEMS_INFO("OpenCL", "Initialising program '{}' (path: '{}')", kernel_name_,
              kernel_root_.string());
+
+  std::string extra_options = build_options;
+  auto default_options = BuildOptions();
+  build_options_ = MergeOptions(default_options, extra_options);
 
   Initialise();
   Build();
@@ -82,30 +70,75 @@ GGEMSOpenCLProgram::GGEMSOpenCLProgram(GGEMSOpenCLContext &ctx,
 }
 
 /* ---------------------------------------------*/
-/* ---------------------------------------------*/
-/* ---------------------------------------------*/
 
 GGEMSOpenCLProgram::~GGEMSOpenCLProgram() noexcept {
   GGEMS_INFOEX("OpenCL", 2, "Destroying program '{}'.", source_path_);
 }
 
 /* ---------------------------------------------*/
+
+std::vector<std::string> GGEMSOpenCLProgram::BuildOptions() const {
+  std::vector<std::string> opts;
+
+  opts.emplace_back("-cl-std=CL3.0");
+
+#ifdef GGEMS_DEBUG_MODE
+  opts.emplace_back("-g");
+  opts.emplace_back("-cl-opt-disable");
+#else
+  opts.emplace_back("-cl-fast-relaxed-math");
+  opts.emplace_back("-cl-mad-enable");
+  opts.emplace_back("-cl-no-signed-zeros");
+#endif
+
+  return opts;
+}
+
 /* ---------------------------------------------*/
+
+std::string
+GGEMSOpenCLProgram::MergeOptions(std::vector<std::string> const &base,
+                                 std::string const &extra) const {
+  std::string merged;
+
+  for (auto const &s : base)
+    merged += s + " ";
+
+  if (!extra.empty())
+    merged += extra;
+
+  return merged;
+}
+
 /* ---------------------------------------------*/
 
 void GGEMSOpenCLProgram::Initialise() {
   auto cl_path = kernel_root_ / (kernel_name_ + ".cl");
   source_path_ = cl_path.string();
 
-  GGEMS_INFO("OpenCL", "Initialising program '{}' (path: '{}', source: '{}'",
+  GGEMS_INFO("OpenCL", "Initialising program '{}' (path: '{}', source: '{}')",
              kernel_name_, kernel_root_.string(), source_path_);
 }
 
 /* ---------------------------------------------*/
-/* ---------------------------------------------*/
-/* ---------------------------------------------*/
 
 void GGEMSOpenCLProgram::Build() {
+  auto src = LoadTextFile(std::filesystem::path{source_path_});
+  source_hash_ = HashFNV1a(source_path_);
+
+  auto &dev = context_.GetDevice();
+  std::string concat;
+  concat.reserve(1024);
+
+  concat += Sanitise(dev.GetVendor());
+  concat += Sanitise(dev.GetName());
+  concat += dev.GetDriverVersion();
+  concat += kernel_name_;
+  concat += src;
+  concat += build_options_;
+
+  global_hash_ = HashFNV1a(concat);
+
   auto binary = LoadBinaryFromCache();
   if (!binary.empty()) {
     try {
@@ -124,22 +157,6 @@ void GGEMSOpenCLProgram::Build() {
   GGEMS_INFO("OpenCL", "Building program '{}' from source '{}'.", kernel_name_,
              source_path_);
 
-  auto src = LoadTextFile(std::filesystem::path{source_path_});
-  source_hash_ = HashFNV1a(source_path_);
-
-  auto &dev = context_.GetDevice();
-  std::string concat;
-  concat.reserve(1024);
-
-  concat += Sanitise(dev.GetVendor());
-  concat += Sanitise(dev.GetName());
-  concat += dev.GetDriverVersion();
-  concat += kernel_name_;
-  concat += src;
-  concat += build_options_;
-
-  global_hash_ = HashFNV1a(concat);
-
   BuildFromSource(src);
   try {
     SaveBinaryToCache();
@@ -148,8 +165,6 @@ void GGEMSOpenCLProgram::Build() {
   }
 }
 
-/* ---------------------------------------------*/
-/* ---------------------------------------------*/
 /* ---------------------------------------------*/
 
 std::string
@@ -164,8 +179,6 @@ GGEMSOpenCLProgram::LoadTextFile(std::filesystem::path const &path) {
   return oss.str();
 }
 
-/* ---------------------------------------------*/
-/* ---------------------------------------------*/
 /* ---------------------------------------------*/
 
 void GGEMSOpenCLProgram::BuildFromSource(std::string const &src) {
@@ -192,12 +205,10 @@ void GGEMSOpenCLProgram::BuildFromSource(std::string const &src) {
     GGEMS_INFO("OpenCL", "Build log for '{}' (file='{}'): {}", kernel_name_,
                source_path_, build_log_);
 
-  GGEMS_INFO("OpenCL", "Program '{}' built from source '{}'.", kernel_name_,
-             source_path_);
+  GGEMS_INFO("OpenCL", "Program '{}' built from source '{}' and options '{}'.",
+             kernel_name_, source_path_, build_options_);
 }
 
-/* ---------------------------------------------*/
-/* ---------------------------------------------*/
 /* ---------------------------------------------*/
 
 void GGEMSOpenCLProgram::BuildFromBinary(
@@ -243,11 +254,11 @@ void GGEMSOpenCLProgram::BuildFromBinary(
                source_path_, build_log_);
   }
 
-  GGEMS_INFO("OpenCL", "Program '{}' built from cached binary.", kernel_name_);
+  GGEMS_INFO("OpenCL",
+             "Program '{}' built from cached binary and options '{}'.",
+             kernel_name_, build_options_);
 }
 
-/* ---------------------------------------------*/
-/* ---------------------------------------------*/
 /* ---------------------------------------------*/
 
 std::filesystem::path GGEMSOpenCLProgram::ComputeCachePath() const {
@@ -319,12 +330,9 @@ void GGEMSOpenCLProgram::SaveBinaryToCache() {
 }
 
 /* ---------------------------------------------*/
-/* ---------------------------------------------*/
-/* ---------------------------------------------*/
 
 std::vector<std::uint8_t> GGEMSOpenCLProgram::LoadBinaryFromCache() {
   auto cache_path = ComputeCachePath();
-
   std::ifstream ifs(cache_path, std::ios::binary);
   if (!ifs.good()) {
     return {};
@@ -350,8 +358,6 @@ std::vector<std::uint8_t> GGEMSOpenCLProgram::LoadBinaryFromCache() {
   return data;
 }
 
-/* ---------------------------------------------*/
-/* ---------------------------------------------*/
 /* ---------------------------------------------*/
 
 cl::Kernel GGEMSOpenCLProgram::CreateKernel(std::string const &kernel_name) {
