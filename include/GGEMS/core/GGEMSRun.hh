@@ -6,6 +6,7 @@
 #include <thread>
 /// \endcond
 
+#include "GGEMS/core/GGEMSProgressBar.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 
 namespace ggems::core {
@@ -16,14 +17,14 @@ public:
 
   void Initialise();
   void Run();
-  void Stop();
 
 private:
-  void RunMT(std::stop_token st, ocl::GGEMSOpenCLContext &ctx);
   void Banner() const;
 
 private:
-  std::vector<std::jthread> workers_;
+  std::vector<std::thread> workers_;
   std::atomic<bool> running_{false};
+  GGEMSProgressBar progress_bar_;
+  std::vector<GGEMSProgressBar::SlotPtr> progress_slots_;
 };
 } // namespace ggems::core

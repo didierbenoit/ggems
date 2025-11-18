@@ -18,23 +18,7 @@ GGEMSRun::GGEMSRun() {
 
 /* --------------------------------*/
 
-GGEMSRun::~GGEMSRun() { Stop(); }
-
-/* --------------------------------*/
-
-void GGEMSRun::Stop() {
-  if (!running_.exchange(false))
-    return;
-
-  GGEMS_INFO("Core", "Stopping GGEMS...");
-
-  for (auto &t : workers_) {
-    t.request_stop();
-  }
-
-  workers_.clear();
-  GGEMS_INFO("Core", "GGEMS stopped.");
-}
+GGEMSRun::~GGEMSRun() { ; }
 
 /* --------------------------------*/
 
@@ -68,80 +52,110 @@ void GGEMSRun::Initialise() {
 
 /* --------------------------------*/
 
-void GGEMSRun::RunMT(std::stop_token st, ocl::GGEMSOpenCLContext &ctx) {
-  GGEMS_INFO("Core", "Device {} starting...", ctx.GetDevice().GetName());
-
-  while (!st.stop_requested()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  }
-
-  GGEMS_INFO("Core", "Device {} stopping...", ctx.GetDevice().GetName());
-}
-
-/* --------------------------------*/
-
 void GGEMSRun::Run() {
   GGEMS_INFO("Core", "GGEMS starting...");
   running_.store(true);
-
   auto &opencl = ocl::GGEMSOpenCL::GetInstance();
   auto &contexts = opencl.GetContext();
 
+  progress_slots_.clear();
+  progress_slots_.reserve(contexts.size());
+
   for (auto &ctx : contexts) {
-    workers_.emplace_back([this, &ctx](std::stop_token st) { RunMT(st, ctx); });
+    auto &dev = ctx.GetDevice();
+    auto const device_name = dev.GetName();
+    auto const device_type = dev.GetType();
+    auto slot = progress_bar_.RegisterDevice(device_name, "vec_add_svm");
+    slot->SetActive(true);
+    slot->SetProgress(0.0F);
+    slot->SetBandwidth(0.0F);
+    slot->SetDeviceType(device_type);
+    slot->SetParticles(0, 100);
+    slot->SetParticleType(GGEMSProgressBar::Slot::ParticleType::Gamma);
+    progress_slots_.emplace_back(std::move(slot));
   }
 
-  using ocl::GGEMSOpenCLKernel;
-  // using ocl::GGEMSOpenCLProfiler;
-  using ocl::GGEMSOpenCLProgram;
-  using ocl::GGEMSOpenCLSVMBuffer;
-
-  auto &context = contexts.front();
-
-  GGEMS_INFO("Core", "Starting SVM vec_add_svm test on...");
-
-  std::size_t const n = 16'777'216;
-  Bytes const bytes = Bytes{static_cast<std::uint64_t>(n) * 4ULL};
-
-  auto svmA = context.CreateSVMBuffer(bytes);
-  auto svmB = context.CreateSVMBuffer(bytes);
-  auto svmC = context.CreateSVMBuffer(bytes);
-
-  auto *A = static_cast<float *>(svmA.Data());
-  auto *B = static_cast<float *>(svmB.Data());
-  auto *C = static_cast<float *>(svmC.Data());
-
-  svmA.Map();
-  svmB.Map();
-  svmC.Map();
-
-  for (std::size_t i = 0; i < n; ++i) {
-    A[i] = static_cast<float>(i);
-    B[i] = static_cast<float>(2 * i);
-    C[i] = 0.0f;
+  workers_.clear();
+  workers_.reserve(contexts.size());
+  progress_bar_.Start();
+  for (std::size_t i = 0; i < contexts.size(); ++i) {
+    auto &ctx = contexts[i];
+    auto slot = progress_slots_[i];
+    workers_.emplace_back([&ctx, slot]() {
+      float p = 0.f;
+      std::uint64_t k = 0;
+      while (p < 1.0f) {
+        slot->SetProgress(p);
+        slot->SetParticles(k, 100);
+        slot->SetBandwidth(50.0f * p);
+        p += 0.01f;
+        ++k;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      }
+      slot->SetActive(false);
+    });
   }
 
-  svmA.Unmap();
-  svmB.Unmap();
-  svmC.Unmap();
+  for (auto &t : workers_) {
+    if (t.joinable()) {
+      t.join();
+    }
+  }
+  workers_.clear();
+  running_.store(false);
+  GGEMS_INFO("Core", "GGEMS run completed.");
 
-  std::filesystem::path kernel_root = "ggems/kernels";
-  std::string kernel_name = "vec_add_svm";
+  /*  using ocl::GGEMSOpenCLKernel;
+    // using ocl::GGEMSOpenCLProfiler;
+    using ocl::GGEMSOpenCLProgram;
+    using ocl::GGEMSOpenCLSVMBuffer;
 
-  auto &prog = opencl.GetOrCreateProgram(context, kernel_root, kernel_name, "");
-  cl::Kernel raw_kernel = prog.CreateKernel(kernel_name);
-  GGEMSOpenCLKernel kernel{context, std::move(raw_kernel), kernel_name};
+    auto &context = contexts.front();
 
-  kernel.SetArgSVMPointer(0, A);
-  kernel.SetArgSVMPointer(1, B);
-  kernel.SetArgSVMPointer(2, C);
+    GGEMS_INFO("Core", "Starting SVM vec_add_svm test on...");
 
-  kernel.SetArg(3, static_cast<unsigned int>(n));
+    std::size_t const n = 16'777'216;
+    Bytes const bytes = Bytes{static_cast<std::uint64_t>(n) * 4ULL};
 
-  std::array<std::size_t, 1> global{n};
-  std::array<std::size_t, 1> local{256};
+    auto svmA = context.CreateSVMBuffer(bytes);
+    auto svmB = context.CreateSVMBuffer(bytes);
+    auto svmC = context.CreateSVMBuffer(bytes);
 
-  kernel.Run(global, local);
+    auto *A = static_cast<float *>(svmA.Data());
+    auto *B = static_cast<float *>(svmB.Data());
+    auto *C = static_cast<float *>(svmC.Data());
+
+    svmA.Map();
+    svmB.Map();
+    svmC.Map();
+
+    for (std::size_t i = 0; i < n; ++i) {
+      A[i] = static_cast<float>(i);
+      B[i] = static_cast<float>(2 * i);
+      C[i] = 0.0f;
+    }
+
+    svmA.Unmap();
+    svmB.Unmap();
+    svmC.Unmap();
+
+    std::filesystem::path kernel_root = "ggems/kernels";
+    std::string kernel_name = "vec_add_svm";
+
+    auto &prog = opencl.GetOrCreateProgram(context, kernel_root, kernel_name,
+    ""); cl::Kernel raw_kernel = prog.CreateKernel(kernel_name);
+    GGEMSOpenCLKernel kernel{context, std::move(raw_kernel), kernel_name};
+
+    kernel.SetArgSVMPointer(0, A);
+    kernel.SetArgSVMPointer(1, B);
+    kernel.SetArgSVMPointer(2, C);
+
+    kernel.SetArg(3, static_cast<unsigned int>(n));
+
+    std::array<std::size_t, 1> global{n};
+    std::array<std::size_t, 1> local{256};
+
+    kernel.Run(global, local);*/
   // kernel.ProfiledEnqueue(global, local, 3 * bytes);
   //  kernel.ProfileWorkGroups(n, 3 * bytes);
 
