@@ -18,47 +18,70 @@
  */
 
 /// \cond
-#include "GGEMS/core/units/GGEMSBandwidthUnits.hh"
-#define CL_HPP_TARGET_OPENCL_VERSION 300
-#define CL_TARGET_OPENCL_VERSION 300
-
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wsign-conversion"
-#pragma clang diagnostic ignored "-Wunused-parameter"
-#endif
-
-#include <CL/opencl.hpp>
-
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
-#include <atomic>
-#include <chrono>
-#include <memory>
-#include <mutex>
+#include <cstdint>
+#include <deque>
 #include <string>
 #include <thread>
-#include <vector>
 /// \endcond
+
+#include "GGEMS/render/GGEMSAsciiFrameBuffer.hh"
 
 namespace ggems::core {
 
 class GGEMSProgressBar {
 public:
-  /*!
-   \class Slot
-   \brief Shared state for a single device progress entry.
-   \details
-   A Slot is designed to be owned via std::shared_ptr and updated by the
-   device worker thread while the GGEMSProgressBar periodically renders
-   a textual representation of its fields.
+  GGEMSProgressBar(std::size_t width_ = 100, std::size_t height = 30);
+  ~GGEMSProgressBar();
 
-   Only the atomic fields shall be modified concurrently with rendering.
-  */
+  GGEMSProgressBar(GGEMSProgressBar const &) = delete;
+  GGEMSProgressBar(GGEMSProgressBar const &&) = delete;
+  GGEMSProgressBar &operator=(GGEMSProgressBar const &) = delete;
+  GGEMSProgressBar &operator=(GGEMSProgressBar const &&) = delete;
+
+public:
+  void Start();
+  void Stop();
+
+  struct Slot {
+    std::string name_;
+    std::atomic<float> progress_{0.0f};
+    std::atomic<uint64_t> batches_done_{0};
+    std::atomic<uint64_t> batches_total_{0};
+    std::atomic<uint64_t> eta_picos_{0};
+    std::atomic<long double> bandwidth_byte_per_ps_{0.0};
+    std::atomic<bool> is_gpu_{false};
+    std::atomic<int> phase_{0};
+  };
+
+  std::size_t AddSlot(std::string_view name, bool is_gpu);
+  Slot &GetSlot(std::size_t index) noexcept;
+  std::size_t GetSlotCount() const noexcept;
+
+private:
+  void RenderLoop(std::stop_token st);
+  void Draw();
+  [[nodiscard]] std::string BuildBar(float progress, bool is_gpu);
+  [[nodiscard]] std::string BuildPulse(int phase);
+  [[nodiscard]] std::string FormatETA(uint64_t ps) const noexcept;
+  [[nodiscard]] std::string
+  FormatBandwidth(long double bytes_per_ps) const noexcept;
+  [[nodiscard]] std::size_t SlotBaseRow(std::size_t slot_index) const noexcept;
+
+private:
+  std::deque<Slot> slots_;
+  std::jthread worker_;
+  std::atomic<bool> running_{false};
+  std::unique_ptr<render::GGEMSAsciiFrameBuffer> framebuffer_;
+  std::size_t width_;
+  std::size_t height_;
+  std::atomic<uint64_t> frame_counter_{0U};
+};
+
+/*public:
   class Slot {
   public:
-    enum class ParticleType { Unknown = 0, Electron, Positron, Gamma, Proton };
+    enum class ParticleType { Unknown = 0, Electron, Positron, Gamma, Proton
+};
 
   public:
     Slot(std::string device_name, std::string kernel_name) noexcept;
@@ -107,7 +130,7 @@ public:
   using SlotPtr = std::shared_ptr<Slot>;
   using Clock = std::chrono::steady_clock;
 
-  GGEMSProgressBar(bool use_colour = true,
+  GGEMSProgressBar(std::size_t width = 100, std::size_t height = 40,
                    std::chrono::milliseconds frame_duration =
                        std::chrono::milliseconds{100});
 
@@ -163,6 +186,7 @@ private:
   std::atomic<bool> enabled_{true};
   std::atomic<bool> running_{false};
   bool use_colour_{true};
-};
+  std::unique_ptr<render::GGEMSAsciiFrameBuffer> framebuffer_;
+};*/
 
 } // namespace ggems::core

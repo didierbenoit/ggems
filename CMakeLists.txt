@@ -84,7 +84,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 file(GLOB_RECURSE GGEMS_CORE_SOURCES
   ${PROJECT_SOURCE_DIR}/src/core/*.cc
   ${PROJECT_SOURCE_DIR}/src/frameworks/*.cc
-  ${PROJECT_SOURCE_DIR}/src/runtime/*.cc
+  ${PROJECT_SOURCE_DIR}/src/render/*.cc
 )
 
 add_library(ggems_core STATIC ${GGEMS_CORE_SOURCES})

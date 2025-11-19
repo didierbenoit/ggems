@@ -55,53 +55,54 @@ void GGEMSRun::Initialise() {
 
 void GGEMSRun::Run() {
   GGEMS_INFO("Core", "GGEMS starting...");
-  running_.store(true);
-  auto &opencl = ocl::GGEMSOpenCL::GetInstance();
-  auto &contexts = opencl.GetContext();
+  /*  running_.store(true);
+    auto &opencl = ocl::GGEMSOpenCL::GetInstance();
+    auto &contexts = opencl.GetContext();
 
-  progress_slots_.clear();
-  progress_slots_.reserve(contexts.size());
+    progress_slots_.clear();
+    progress_slots_.reserve(contexts.size());
 
-  for (auto &ctx : contexts) {
-    auto &dev = ctx.GetDevice();
-    auto const device_name = dev.GetName();
-    auto const device_type = dev.GetType();
-    auto slot = progress_bar_.RegisterDevice(device_name, "vec_add_svm");
-    slot->SetActive(true);
-    slot->SetBandwidthBytesPico({0.0});
-    slot->SetDeviceType(device_type);
-    slot->SetBatches(0, 100);
-    slot->SetParticleType(GGEMSProgressBar::Slot::ParticleType::Gamma);
-    progress_slots_.emplace_back(std::move(slot));
-  }
-
-  workers_.clear();
-  workers_.reserve(contexts.size());
-  progress_bar_.Start();
-  for (std::size_t i = 0; i < contexts.size(); ++i) {
-    auto &ctx = contexts[i];
-    auto slot = progress_slots_[i];
-    workers_.emplace_back([&ctx, slot]() {
-      int p = 0;
-      while (p < 100) {
-        ++p;
-        slot->SetBatches(p, 100);
-        slot->SetBandwidthBytesPico(
-            units::Bandwidth{100.0 * static_cast<float>(p)});
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      }
-      slot->SetActive(false);
-    });
-  }
-
-  for (auto &t : workers_) {
-    if (t.joinable()) {
-      t.join();
+    for (auto &ctx : contexts) {
+      auto &dev = ctx.GetDevice();
+      auto const device_name = dev.GetName();
+      auto const device_type = dev.GetType();
+      auto slot = progress_bar_.RegisterDevice(device_name, "vec_add_svm");
+      slot->SetActive(true);
+      slot->SetBandwidthBytesPico({0.0});
+      slot->SetDeviceType(device_type);
+      slot->SetBatches(0, 100);
+      slot->SetParticleType(GGEMSProgressBar::Slot::ParticleType::Gamma);
+      progress_slots_.emplace_back(std::move(slot));
     }
-  }
-  workers_.clear();
-  running_.store(false);
-  progress_bar_.Stop();
+
+    workers_.clear();
+    workers_.reserve(contexts.size());
+    progress_bar_.Start();
+    for (std::size_t i = 0; i < contexts.size(); ++i) {
+      auto &ctx = contexts[i];
+      auto slot = progress_slots_[i];
+      workers_.emplace_back([&ctx, slot]() {
+        int p = 0;
+        while (p < 100) {
+          ++p;
+          slot->SetBatches(p, 100);
+          slot->SetBandwidthBytesPico(
+              units::Bandwidth{100.0 * static_cast<float>(p)});
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        slot->SetActive(false);
+      });
+    }
+
+    for (auto &t : workers_) {
+      if (t.joinable()) {
+        t.join();
+      }
+    }
+    workers_.clear();
+    running_.store(false);
+    progress_bar_.Stop();*/
+
   GGEMS_INFO("Core", "GGEMS run completed.");
 
   /*  using ocl::GGEMSOpenCLKernel;
