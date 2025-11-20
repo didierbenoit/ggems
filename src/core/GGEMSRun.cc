@@ -1,10 +1,13 @@
 #include "GGEMS/core/GGEMSRun.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/core/GGEMSProgressBar.hh"
 #include "GGEMS/core/units/GGEMSBandwidthUnits.hh"
 #include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
+#include <chrono>
+#include <cstdint>
 
 using namespace ggems::units;
 
@@ -55,53 +58,78 @@ void GGEMSRun::Initialise() {
 
 void GGEMSRun::Run() {
   GGEMS_INFO("Core", "GGEMS starting...");
-  /*  running_.store(true);
-    auto &opencl = ocl::GGEMSOpenCL::GetInstance();
-    auto &contexts = opencl.GetContext();
 
-    progress_slots_.clear();
-    progress_slots_.reserve(contexts.size());
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  auto &opencl = ocl::GGEMSOpenCL::GetInstance();
+  auto &contexts = opencl.GetContext();
 
-    for (auto &ctx : contexts) {
-      auto &dev = ctx.GetDevice();
-      auto const device_name = dev.GetName();
-      auto const device_type = dev.GetType();
-      auto slot = progress_bar_.RegisterDevice(device_name, "vec_add_svm");
-      slot->SetActive(true);
-      slot->SetBandwidthBytesPico({0.0});
-      slot->SetDeviceType(device_type);
-      slot->SetBatches(0, 100);
-      slot->SetParticleType(GGEMSProgressBar::Slot::ParticleType::Gamma);
-      progress_slots_.emplace_back(std::move(slot));
-    }
+  // Filling slots
+  for (auto &ctx : contexts) {
+    auto &dev = ctx.GetDevice();
+    auto const device_name = dev.GetName();
+    auto const device_type = dev.GetType();
+    progress_bar_
+        .AddSlot(device_name,
+                 (device_type == CL_DEVICE_TYPE_GPU) ? true : false)
+        .SetKernelName("vec_add")
+        .SetBatchesDone(0ULL)
+        .SetBatchesTotal(100ULL)
+        .SetStatus("pending")
+        .SetParticleType(GGEMSProgressBar::Slot::ParticleType::Aionino)
+        .SetETA_ps(0ULL)
+        .SetBandwidth_bytes_per_ps(0.0);
+  }
 
-    workers_.clear();
-    workers_.reserve(contexts.size());
-    progress_bar_.Start();
-    for (std::size_t i = 0; i < contexts.size(); ++i) {
-      auto &ctx = contexts[i];
-      auto slot = progress_slots_[i];
-      workers_.emplace_back([&ctx, slot]() {
-        int p = 0;
-        while (p < 100) {
-          ++p;
-          slot->SetBatches(p, 100);
-          slot->SetBandwidthBytesPico(
-              units::Bandwidth{100.0 * static_cast<float>(p)});
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  workers_.clear();
+  workers_.reserve(contexts.size());
+  progress_bar_.Start();
+  for (std::size_t i = 0; i < contexts.size(); ++i) {
+    // auto &ctx = contexts[i];
+    auto &slot = progress_bar_.GetSlot(i);
+    workers_.emplace_back([&slot]() {
+      uint64_t p = 0ULL;
+      auto start = std::chrono::high_resolution_clock::now();
+
+      uint64_t nbatch = 100ULL;
+      while (p < nbatch) {
+        ++p;
+
+        auto now = std::chrono::high_resolution_clock::now();
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        int64_t elapsed_ps =
+            std::chrono::duration_cast<std::chrono::nanoseconds>(now - start)
+                .count() *
+            1000;
+
+        long double ratio =
+            static_cast<long double>(p) / static_cast<long double>(nbatch);
+        if (ratio > 0.0) {
+          long double estimated_total_ps =
+              static_cast<long double>(elapsed_ps) / ratio;
+          long double remaining_ps =
+              estimated_total_ps - static_cast<long double>(elapsed_ps);
+          slot.SetETA_ps((remaining_ps > 0.0)
+                             ? static_cast<uint64_t>(remaining_ps)
+                             : 0ULL);
+        } else {
+          slot.SetETA_ps(0ULL);
         }
-        slot->SetActive(false);
-      });
-    }
 
-    for (auto &t : workers_) {
-      if (t.joinable()) {
-        t.join();
+        slot.SetStatus("running").SetBatchesDone(p).SetBandwidth_bytes_per_ps(
+            100.0 * static_cast<double>(p));
       }
+      slot.SetStatus("finished");
+    });
+  }
+
+  for (auto &t : workers_) {
+    if (t.joinable()) {
+      t.join();
     }
-    workers_.clear();
-    running_.store(false);
-    progress_bar_.Stop();*/
+  }
+  workers_.clear();
+  progress_bar_.Stop();
 
   GGEMS_INFO("Core", "GGEMS run completed.");
 

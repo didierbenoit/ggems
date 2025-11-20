@@ -21,29 +21,36 @@ enum class AsciiColour : std::uint8_t {
   Grey
 };
 
-class GGEMSAsciiFrameBuffer {
-public:
-  GGEMSAsciiFrameBuffer(std::size_t width, std::size_t height);
-  ~GGEMSAsciiFrameBuffer() = default;
+enum class Encoding { ASCII, UTF8 };
 
-  GGEMSAsciiFrameBuffer(GGEMSAsciiFrameBuffer const &) = delete;
-  GGEMSAsciiFrameBuffer(GGEMSAsciiFrameBuffer const &&) = delete;
-  GGEMSAsciiFrameBuffer &operator=(GGEMSAsciiFrameBuffer const &) = delete;
-  GGEMSAsciiFrameBuffer &operator=(GGEMSAsciiFrameBuffer const &&) = delete;
+class GGEMSTerminalFramebuffer {
+public:
+  GGEMSTerminalFramebuffer(std::size_t width, std::size_t height);
+  ~GGEMSTerminalFramebuffer() = default;
+
+  GGEMSTerminalFramebuffer(GGEMSTerminalFramebuffer const &) = delete;
+  GGEMSTerminalFramebuffer(GGEMSTerminalFramebuffer const &&) = delete;
+  GGEMSTerminalFramebuffer &
+  operator=(GGEMSTerminalFramebuffer const &) = delete;
+  GGEMSTerminalFramebuffer &
+  operator=(GGEMSTerminalFramebuffer const &&) = delete;
 
 public:
-  void Clear(char c = ' ', AsciiColour color = AsciiColour::Default) noexcept;
-  void Put(std::size_t x, std::size_t y, char c,
+  void Clear(std::string_view s = " ",
+             AsciiColour color = AsciiColour::Default) noexcept;
+  void Put(std::size_t x, std::size_t y, std::string_view s,
            AsciiColour color = AsciiColour::Default) noexcept;
 
-  void DrawText(std::size_t x, std::size_t y, std::string_view text,
-                AsciiColour color = AsciiColour::Default) noexcept;
-  void DrawHLine(std::size_t x, std::size_t y, std::size_t length, char c,
+  void DrawString(std::size_t x, std::size_t y, std::string_view text,
+                  AsciiColour color = AsciiColour::Default) noexcept;
+  void DrawHLine(std::size_t x, std::size_t y, std::size_t length,
+                 std::string_view s,
                  AsciiColour color = AsciiColour::Default) noexcept;
-  void DrawVLine(std::size_t x, std::size_t y, std::size_t length, char c,
+  void DrawVLine(std::size_t x, std::size_t y, std::size_t length,
+                 std::string_view s,
                  AsciiColour color = AsciiColour::Default) noexcept;
   void DrawRect(std::size_t x, std::size_t y, std::size_t width,
-                std::size_t height, char c,
+                std::size_t height, std::string_view s,
                 AsciiColour color = AsciiColour::Default) noexcept;
 
   [[nodiscard]] std::string Render() const;
@@ -62,7 +69,7 @@ private:
 private:
   std::size_t width_;
   std::size_t height_;
-  std::vector<char> buffer_chars_;
+  std::vector<std::string> buffer_cells_;
   std::vector<AsciiColour> buffer_colours_;
   bool use_colour_{true};
 };

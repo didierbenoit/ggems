@@ -18,13 +18,15 @@
  */
 
 /// \cond
+#include <atomic>
 #include <cstdint>
 #include <deque>
 #include <string>
 #include <thread>
 /// \endcond
 
-#include "GGEMS/render/GGEMSAsciiFrameBuffer.hh"
+#include "GGEMS/core/units/GGEMSUnits.hh"
+#include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
 
 namespace ggems::core {
 
@@ -43,19 +45,87 @@ public:
   void Stop();
 
   struct Slot {
+    enum class ParticleType {
+      Gamma,
+      Proton,
+      Electron,
+      Positron,
+      Neutron,
+      Alpha,
+      Aionino
+    };
+
+    static std::string_view ParticleSymbol(ParticleType p) {
+      switch (p) {
+      case ParticleType::Gamma:
+        return "γ";
+      case ParticleType::Proton:
+        return "p";
+      case ParticleType::Electron:
+        return "e⁻";
+      case ParticleType::Positron:
+        return "e⁺";
+      case ParticleType::Neutron:
+        return "n";
+      case ParticleType::Alpha:
+        return "α";
+      case ParticleType::Aionino:
+        return "λ";
+      }
+    }
+
     std::string name_;
-    std::atomic<float> progress_{0.0f};
+    std::string kernel_name_;
+    std::string status_;
+    ParticleType particle_type_;
     std::atomic<uint64_t> batches_done_{0};
     std::atomic<uint64_t> batches_total_{0};
-    std::atomic<uint64_t> eta_picos_{0};
-    std::atomic<long double> bandwidth_byte_per_ps_{0.0};
+    std::atomic<uint64_t> eta_ps_{0ULL};
+    std::atomic<double> bandwidth_byte_per_ps_{0.0};
     std::atomic<bool> is_gpu_{false};
     std::atomic<int> phase_{0};
+
+    Slot &SetBandwidth_bytes_per_ps(double bytes_per_ps);
+    [[nodiscard]] inline double GetBandwidth_bytes_per_ps() const noexcept {
+      return bandwidth_byte_per_ps_.load(std::memory_order_relaxed);
+    }
+
+    Slot &SetETA_ps(uint64_t eta_ps);
+    [[nodiscard]] inline uint64_t GetETA_ps() const noexcept { return eta_ps_; }
+
+    Slot &SetName(std::string_view name);
+    [[nodiscard]] inline std::string GetName() const noexcept { return name_; }
+
+    Slot &SetIsGPU(bool is_gpu);
+    [[nodiscard]] inline bool IsGPU() const noexcept { return is_gpu_; }
+
+    Slot &SetKernelName(std::string_view kernel);
+    [[nodiscard]] inline std::string GetKernelName() const noexcept {
+      return kernel_name_;
+    }
+
+    Slot &SetParticleType(ParticleType p);
+    [[nodiscard]] inline ParticleType GetParticleType() const noexcept {
+      return particle_type_;
+    };
+
+    Slot &SetBatchesTotal(uint64_t total);
+    [[nodiscard]] inline uint64_t GetBatchesTotal() const noexcept {
+      return batches_total_.load(std::memory_order_relaxed);
+    }
+
+    Slot &SetBatchesDone(uint64_t done);
+    [[nodiscard]] inline uint64_t GetBatchesDone() const noexcept {
+      return batches_done_.load(std::memory_order_relaxed);
+    }
+
+    Slot &SetStatus(std::string_view s);
+    [[nodiscard]] std::string GetStatus() const noexcept { return status_; }
   };
 
-  std::size_t AddSlot(std::string_view name, bool is_gpu);
+  Slot &AddSlot(std::string_view name, bool is_gpu);
   Slot &GetSlot(std::size_t index) noexcept;
-  std::size_t GetSlotCount() const noexcept;
+  inline std::size_t GetSlotCount() const noexcept { return slots_.size(); }
 
 private:
   void RenderLoop(std::stop_token st);
@@ -71,7 +141,7 @@ private:
   std::deque<Slot> slots_;
   std::jthread worker_;
   std::atomic<bool> running_{false};
-  std::unique_ptr<render::GGEMSAsciiFrameBuffer> framebuffer_;
+  std::unique_ptr<render::GGEMSTerminalFramebuffer> framebuffer_;
   std::size_t width_;
   std::size_t height_;
   std::atomic<uint64_t> frame_counter_{0U};

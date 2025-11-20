@@ -1,10 +1,10 @@
-#include "GGEMS/render/GGEMSAsciiFramebuffer.hh"
+#include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
 
 namespace ggems::render {
 
-GGEMSAsciiFrameBuffer::GGEMSAsciiFrameBuffer(std::size_t width,
-                                             std::size_t height)
-    : width_{width}, height_{height}, buffer_chars_(width * height, ' '),
+GGEMSTerminalFramebuffer::GGEMSTerminalFramebuffer(std::size_t width,
+                                                   std::size_t height)
+    : width_{width}, height_{height}, buffer_cells_(width * height, " "),
       buffer_colours_(width * height, AsciiColour::Default), use_colour_{true} {
 }
 
@@ -12,8 +12,9 @@ GGEMSAsciiFrameBuffer::GGEMSAsciiFrameBuffer(std::size_t width,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSAsciiFrameBuffer::Clear(char c, AsciiColour colour) noexcept {
-  std::fill(buffer_chars_.begin(), buffer_chars_.end(), c);
+void GGEMSTerminalFramebuffer::Clear(std::string_view s,
+                                     AsciiColour colour) noexcept {
+  std::fill(buffer_cells_.begin(), buffer_cells_.end(), s);
   std::fill(buffer_colours_.begin(), buffer_colours_.end(), colour);
 }
 
@@ -21,14 +22,15 @@ void GGEMSAsciiFrameBuffer::Clear(char c, AsciiColour colour) noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSAsciiFrameBuffer::Put(std::size_t x, std::size_t y, char c,
-                                AsciiColour colour) noexcept {
+void GGEMSTerminalFramebuffer::Put(std::size_t x, std::size_t y,
+                                   std::string_view s,
+                                   AsciiColour colour) noexcept {
   if (x >= width_ || y >= height_) {
     return;
   }
 
   std::size_t idx = x + y * width_;
-  buffer_chars_[idx] = c;
+  buffer_cells_[idx] = s;
   buffer_colours_[idx] = colour;
 }
 
@@ -36,22 +38,22 @@ void GGEMSAsciiFrameBuffer::Put(std::size_t x, std::size_t y, char c,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSAsciiFrameBuffer::DrawText(std::size_t x, std::size_t y,
-                                     std::string_view text,
-                                     AsciiColour colour) noexcept {
+void GGEMSTerminalFramebuffer::DrawString(std::size_t x, std::size_t y,
+                                          std::string_view text,
+                                          AsciiColour colour) noexcept {
   if (y >= height_) {
     return;
   }
 
   std::size_t row_offset = y * width_;
 
-  for (char c : text) {
+  for (auto s : text) {
     if (x >= width_) {
       break;
     }
 
     std::size_t idx = x + row_offset;
-    buffer_chars_[idx] = c;
+    buffer_cells_[idx] = s;
     buffer_colours_[idx] = colour;
     ++x;
   }
@@ -61,9 +63,9 @@ void GGEMSAsciiFrameBuffer::DrawText(std::size_t x, std::size_t y,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSAsciiFrameBuffer::DrawHLine(std::size_t x, std::size_t y,
-                                      std::size_t length, char c,
-                                      AsciiColour colour) noexcept {
+void GGEMSTerminalFramebuffer::DrawHLine(std::size_t x, std::size_t y,
+                                         std::size_t length, std::string_view s,
+                                         AsciiColour colour) noexcept {
   if (y >= height_) {
     return;
   }
@@ -73,7 +75,7 @@ void GGEMSAsciiFrameBuffer::DrawHLine(std::size_t x, std::size_t y,
 
   for (std::size_t i = 0; i < max_len; ++i) {
     std::size_t idx = row_offset + x + i;
-    buffer_chars_[idx] = c;
+    buffer_cells_[idx] = s;
     buffer_colours_[idx] = colour;
   }
 }
@@ -82,9 +84,9 @@ void GGEMSAsciiFrameBuffer::DrawHLine(std::size_t x, std::size_t y,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSAsciiFrameBuffer::DrawVLine(std::size_t x, std::size_t y,
-                                      std::size_t length, char c,
-                                      AsciiColour colour) noexcept {
+void GGEMSTerminalFramebuffer::DrawVLine(std::size_t x, std::size_t y,
+                                         std::size_t length, std::string_view s,
+                                         AsciiColour colour) noexcept {
   if (x >= width_) {
     return;
   }
@@ -93,7 +95,7 @@ void GGEMSAsciiFrameBuffer::DrawVLine(std::size_t x, std::size_t y,
 
   for (std::size_t i = 0; i < max_len; ++i) {
     std::size_t idx = (y + i) * width_ + x;
-    buffer_chars_[idx] = c;
+    buffer_cells_[idx] = s;
     buffer_colours_[idx] = colour;
   }
 }
@@ -102,22 +104,23 @@ void GGEMSAsciiFrameBuffer::DrawVLine(std::size_t x, std::size_t y,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSAsciiFrameBuffer::DrawRect(std::size_t x, std::size_t y,
-                                     std::size_t width, std::size_t height,
-                                     char c, AsciiColour colour) noexcept {
+void GGEMSTerminalFramebuffer::DrawRect(std::size_t x, std::size_t y,
+                                        std::size_t width, std::size_t height,
+                                        std::string_view s,
+                                        AsciiColour colour) noexcept {
   if (width == 0U || height == 0U) {
     return;
   }
 
-  DrawHLine(x, y, width, c, colour);
+  DrawHLine(x, y, width, s, colour);
   if (height > 1U) {
-    DrawHLine(x, y + height - 1U, width, c, colour);
+    DrawHLine(x, y + height - 1U, width, s, colour);
   }
 
   if (height > 2U) {
-    DrawVLine(x, y + 1U, height - 2U, c, colour);
+    DrawVLine(x, y + 1U, height - 2U, s, colour);
     if (width > 1U) {
-      DrawVLine(x + width - 1U, y + 1U, height - 2U, c, colour);
+      DrawVLine(x + width - 1U, y + 1U, height - 2U, s, colour);
     }
   }
 }
@@ -126,7 +129,7 @@ void GGEMSAsciiFrameBuffer::DrawRect(std::size_t x, std::size_t y,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSAsciiFrameBuffer::SetUseColour(bool const use_colour) noexcept {
+void GGEMSTerminalFramebuffer::SetUseColour(bool const use_colour) noexcept {
   use_colour_ = use_colour;
 }
 
@@ -134,13 +137,15 @@ void GGEMSAsciiFrameBuffer::SetUseColour(bool const use_colour) noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-bool GGEMSAsciiFrameBuffer::UseColour() const noexcept { return use_colour_; }
+bool GGEMSTerminalFramebuffer::UseColour() const noexcept {
+  return use_colour_;
+}
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-std::string GGEMSAsciiFrameBuffer::Render() const {
+std::string GGEMSTerminalFramebuffer::Render() const {
   std::string out;
   out.reserve((width_ + 1U) * height_ + 16U);
 
@@ -165,7 +170,7 @@ std::string GGEMSAsciiFrameBuffer::Render() const {
         }
       }
 
-      out.push_back(buffer_chars_[idx]);
+      out.append(buffer_cells_[idx]);
     }
 
     if (use_colour_) {
@@ -173,7 +178,7 @@ std::string GGEMSAsciiFrameBuffer::Render() const {
       current_colour = AsciiColour::Default;
     }
 
-    out.push_back('\n');
+    out.append("\n");
   }
 
   if (use_colour_) {
@@ -188,7 +193,7 @@ std::string GGEMSAsciiFrameBuffer::Render() const {
 /* --------------------------------------------- */
 
 std::string_view
-GGEMSAsciiFrameBuffer::ColourToAnsi(AsciiColour colour) noexcept {
+GGEMSTerminalFramebuffer::ColourToAnsi(AsciiColour colour) noexcept {
   switch (colour) {
   case AsciiColour::Default:
     return "\033[0m";
@@ -214,5 +219,4 @@ GGEMSAsciiFrameBuffer::ColourToAnsi(AsciiColour colour) noexcept {
     return "\033[0m";
   }
 }
-
 } // namespace ggems::render

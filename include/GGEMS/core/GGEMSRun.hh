@@ -7,7 +7,6 @@
 /// \endcond
 
 #include "GGEMS/core/GGEMSProgressBar.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 
 namespace ggems::core {
 class GGEMSRun {
@@ -25,6 +24,5 @@ private:
   std::vector<std::thread> workers_;
   std::atomic<bool> running_{false};
   GGEMSProgressBar progress_bar_;
-  std::vector<GGEMSProgressBar::SlotPtr> progress_slots_;
 };
 } // namespace ggems::core
