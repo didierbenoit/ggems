@@ -10,16 +10,19 @@ using Bandwidth = Quantity<BandwidthDim, long double>;
 inline std::string HumanReadable(Bandwidth const &bw) {
   long double const v = bw.value * 1.0e12L; // conv to B/s
 
+  if (v >= 1.0e12L)
+    return std::format("{:6.2f} TB/s", v / 1.0e12L);
+
   if (v >= 1.0e9L)
-    return std::format("{:.3} GB/s", v / 1.0e9L);
+    return std::format("{:6.2f} GB/s", v / 1.0e9L);
 
   if (v >= 1.0e6L)
-    return std::format("{:.3} MB/s", v / 1.0e6L);
+    return std::format("{:6.2f} MB/s", v / 1.0e6L);
 
   if (v >= 1.0e3L)
-    return std::format("{:.3} KB/s", v / 1.0e3L);
+    return std::format("{:6.2f} KB/s", v / 1.0e3L);
 
-  return std::format("{:.3} B/s", v);
+  return std::format("{:6.2f} B/s", v);
 }
 
 // Direct literals in B/s

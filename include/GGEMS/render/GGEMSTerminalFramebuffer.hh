@@ -41,6 +41,9 @@ public:
   void Put(std::size_t x, std::size_t y, std::string_view s,
            AsciiColour color = AsciiColour::Default) noexcept;
 
+  void DrawStrings(std::size_t x, std::size_t y,
+                   std::vector<std::string> const &line,
+                   AsciiColour color = AsciiColour::Default) noexcept;
   void DrawString(std::size_t x, std::size_t y, std::string_view text,
                   AsciiColour color = AsciiColour::Default) noexcept;
   void DrawHLine(std::size_t x, std::size_t y, std::size_t length,

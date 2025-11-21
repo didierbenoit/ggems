@@ -21,11 +21,13 @@
 #include <cstdint>
 #include <iostream>
 #include <memory>
+#include <thread>
 /// \endcond
 
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/GGEMSProgressBar.hh"
 #include "GGEMS/core/units/GGEMSUnits.hh"
+#include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
 
 namespace ggems::core {
 using render::AsciiColour;
@@ -121,8 +123,8 @@ GGEMSProgressBar::Slot &GGEMSProgressBar::Slot::SetBandwidth_bytes_per_ps(
   return *this;
 }
 
-GGEMSProgressBar::Slot &GGEMSProgressBar::Slot::SetStatus(std::string_view s) {
-  status_ = s;
+GGEMSProgressBar::Slot &GGEMSProgressBar::Slot::SetStatus(Status status) {
+  status_ = status;
   return *this;
 }
 
@@ -163,10 +165,7 @@ void GGEMSProgressBar::Start() {
   }
 
   worker_ = std::jthread{[this](std::stop_token st) { RenderLoop(st); }};
-  std::cout << "\033[?1049h";
-  std::cout << "\033[2J\033[H";
-  std::cout << "\033[?12l";
-  std::cout << "\033[?25l";
+  DisableTerminal();
 }
 
 /* --------------------------------------------- */
@@ -174,6 +173,8 @@ void GGEMSProgressBar::Start() {
 /* --------------------------------------------- */
 
 void GGEMSProgressBar::Stop() {
+  using namespace std::chrono_literals;
+
   bool was_running = running_.exchange(false, std::memory_order_acq_rel);
   if (!was_running) {
     return;
@@ -185,6 +186,26 @@ void GGEMSProgressBar::Stop() {
   }
 
   Draw();
+  std::this_thread::sleep_for(500ms);
+  EnableTerminal();
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSProgressBar::DisableTerminal() {
+  std::cout << "\033[?1049h";
+  std::cout << "\033[2J\033[H";
+  std::cout << "\033[?12l";
+  std::cout << "\033[?25l";
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSProgressBar::EnableTerminal() {
   std::cout << "\033[?1049l";
   std::cout << "\033[?12h";
   std::cout << "\033[?25h";
@@ -200,7 +221,7 @@ void GGEMSProgressBar::RenderLoop(std::stop_token st) {
   while (!st.stop_requested()) {
     Draw();
     ++frame_counter_;
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(200ms);
   }
 
   Draw();
@@ -246,29 +267,35 @@ void GGEMSProgressBar::Draw() {
     std::uint64_t done = slot.batches_done_.load(std::memory_order_relaxed);
     std::uint64_t total = slot.batches_total_.load(std::memory_order_relaxed);
 
-    float progress{0.0};
-    if (total > 0) {
-      progress = static_cast<float>(done) / static_cast<float>(total);
-    } else {
-      progress = 0.0;
-    }
+    float progress = (total > 0)
+                         ? static_cast<float>(done) / static_cast<float>(total)
+                         : 0.0;
 
-    std::string bar = BuildBar(progress, is_gpu);
+    std::vector<std::string> bar = BuildBar(progress);
 
     std::string perc =
         std::format("{:6.2f}%", std::clamp(progress, 0.0F, 1.0F) * 100.0F);
 
-    int local_phase =
-        static_cast<int>(frame_counter_.load(std::memory_order_relaxed) % 4U);
-    std::string pulse = BuildPulse(local_phase);
+    AsciiColour particle_colour = Slot::ParticleColour(slot.particle_type_);
+    std::string particle_name = Slot::ParticleName(slot.particle_type_);
 
-    fb.DrawString(4U, base_y + 1U, "Status: ", AsciiColour::Default);
-    fb.DrawString(13U, base_y + 1U, bar,
-                  is_gpu ? AsciiColour::Green : AsciiColour::Blue);
-    fb.DrawString(13U + bar.size() + 1U, base_y + 1U, perc,
-                  AsciiColour::Bright);
-    fb.DrawString(width_ > 18U ? width_ - 18U : 0U, base_y + 1U, pulse,
-                  AsciiColour::Yellow);
+    std::string status_name = Slot::StatusName(slot.status_);
+    AsciiColour status_colour = Slot::StatusColour(slot.status_);
+
+    std::vector<std::string> pulse = BuildPulse(slot.particle_type_);
+    std::rotate(pulse.begin(), pulse.end() - (frame_counter_ % 12),
+                pulse.end());
+
+    fb.DrawString(4U, base_y + 1U, "Status:", AsciiColour::Default);
+    fb.DrawStrings(6U, base_y + 1U, bar,
+                   is_gpu ? AsciiColour::Green : AsciiColour::Blue);
+    fb.DrawString(6U + bar.size() + 1U, base_y + 1U, perc, AsciiColour::Bright);
+    fb.DrawStrings(6U + bar.size() + 1U + 3U, base_y + 1U, pulse,
+                   particle_colour);
+    fb.DrawString(6U + bar.size() + 1U + 3U + pulse.size() + 1U, base_y + 1U,
+                  particle_name, particle_colour);
+    fb.DrawString(6U + bar.size() + 1U + 3U + pulse.size() + 5U, base_y + 1U,
+                  status_name, status_colour);
 
     // Bandwidth and kernel info line
     long double bw_ps =
@@ -276,8 +303,10 @@ void GGEMSProgressBar::Draw() {
     std::string bw_text = FormatBandwidth(bw_ps);
 
     // Kernel name could be integrated later; for now we keep only bandwidth.
-    fb.DrawString(8U, base_y + 2U, std::format("↳ Bandwidth: {}", bw_text),
-                  AsciiColour::Cyan);
+    fb.DrawString(
+        8U, base_y + 2U,
+        std::format("↳ Bandwidth: {} | kernel: {}", bw_text, slot.kernel_name_),
+        AsciiColour::Cyan);
 
     uint64_t eta_s = slot.eta_ps_.load(std::memory_order_relaxed);
 
@@ -304,38 +333,67 @@ void GGEMSProgressBar::Draw() {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-std::string GGEMSProgressBar::BuildBar(float progress, bool is_gpu) {
-  constexpr std::size_t width = 50U;
+std::vector<std::string> GGEMSProgressBar::BuildBar(float progress) {
+  constexpr std::size_t width = 40U;
+
+  static const std::string FULL = "█";
+  static const std::string EMPTY = "░";
+
+  std::vector<std::string> cells;
+  cells.reserve(width);
+
   float clamped = std::clamp(progress, 0.0f, 1.0f);
   std::size_t filled =
       static_cast<std::size_t>(std::floor(clamped * static_cast<float>(width)));
 
-  std::string bar;
-  bar.reserve(width);
-
   for (std::size_t i = 0; i < width; ++i) {
-    bool is_filled = (i < filled);
-    bar.append(is_filled ? "#" : "-");
+    cells.emplace_back(i < filled ? FULL : EMPTY);
   }
 
-  return bar;
+  return cells;
 }
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-std::string GGEMSProgressBar::BuildPulse(int phase) {
-  switch (phase & 0x3) {
-  case 0:
-    return "pulse (γ)";
-  case 1:
-    return "pulse (γ)";
-  case 2:
-    return "pulse (γ)";
-  default:
-    return "pulse (γ)";
+std::vector<std::string>
+GGEMSProgressBar::BuildPulse(Slot::ParticleType particle_type) {
+  static const std::string halo_small = "✶";
+  static const std::string halo_large = "✸";
+  static const std::string empty = "•";
+
+  std::string particle = Slot::ParticleSymbol(particle_type);
+
+  std::vector<std::string> particle_block(3, " ");
+
+  if (particle.size() <= 2) {
+    particle_block[1] = particle;
+  } else {
+    particle_block[1] = particle;
   }
+
+  std::vector<std::string> out(13, empty);
+
+  out[0] = empty;
+  out[1] = empty;
+  out[2] = empty;
+  out[3] = halo_small;
+  out[4] = halo_large;
+
+  // bloc particule (5–7)
+  out[5] = particle_block[0];
+  out[6] = particle_block[1];
+  out[7] = particle_block[2];
+
+  out[8] = halo_large;
+  out[9] = halo_small;
+
+  out[10] = empty;
+  out[11] = empty;
+  out[12] = empty;
+
+  return out;
 }
 
 /* --------------------------------------------- */

@@ -2,7 +2,6 @@
 
 /// \cond
 #include <atomic>
-#include <stop_token>
 #include <thread>
 /// \endcond
 
@@ -18,7 +17,8 @@ public:
   void Run();
 
 private:
-  void Banner() const;
+  void Banner() const noexcept;
+  void BannerAscii() const noexcept;
 
 private:
   std::vector<std::thread> workers_;

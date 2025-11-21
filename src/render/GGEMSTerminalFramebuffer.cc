@@ -1,4 +1,5 @@
 #include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
+#include "GGEMS/core/GGEMSMacros.hh"
 
 namespace ggems::render {
 
@@ -38,25 +39,27 @@ void GGEMSTerminalFramebuffer::Put(std::size_t x, std::size_t y,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+void GGEMSTerminalFramebuffer::DrawStrings(std::size_t x, std::size_t y,
+                                           std::vector<std::string> const &line,
+                                           AsciiColour colour) noexcept {
+  for (std::size_t i = 0; i < line.size(); ++i) {
+    DrawString(x + i, y, line[i], colour);
+  }
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 void GGEMSTerminalFramebuffer::DrawString(std::size_t x, std::size_t y,
                                           std::string_view text,
                                           AsciiColour colour) noexcept {
-  if (y >= height_) {
+  if (x >= width_ || y >= height_)
     return;
-  }
 
-  std::size_t row_offset = y * width_;
-
-  for (auto s : text) {
-    if (x >= width_) {
-      break;
-    }
-
-    std::size_t idx = x + row_offset;
-    buffer_cells_[idx] = s;
-    buffer_colours_[idx] = colour;
-    ++x;
-  }
+  std::size_t idx = x + y * width_;
+  buffer_cells_[idx] = text;
+  buffer_colours_[idx] = colour;
 }
 
 /* --------------------------------------------- */

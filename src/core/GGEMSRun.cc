@@ -1,4 +1,5 @@
 #include "GGEMS/core/GGEMSRun.hh"
+#include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/GGEMSProgressBar.hh"
 #include "GGEMS/core/units/GGEMSBandwidthUnits.hh"
@@ -17,7 +18,12 @@ namespace ggems::core {
 
 GGEMSRun::GGEMSRun() {
   GGEMS_INFOEX("Core", 3, "GGEMSRun created.");
-  Banner();
+  Encoding encoding = GGEMSLogger::GetInstance().GetEncoding();
+  if (encoding == Encoding::Utf8) {
+    Banner();
+  } else {
+    BannerAscii();
+  }
 }
 
 /* --------------------------------*/
@@ -26,24 +32,56 @@ GGEMSRun::~GGEMSRun() { ; }
 
 /* --------------------------------*/
 
-void GGEMSRun::Banner() const {
+void GGEMSRun::Banner() const noexcept {
   constexpr std::string_view GGEMS_BANNER = R"(
 
-╭──────────────────────────────────────────────────╮
-|   ██████╗  ██████╗ ███████╗███╗   ███╗███████╗   |
-|  ██╔════╝ ██╔════╝ ██╔════╝████╗ ████║██╔════╝   |
-|  ██║  ███╗██║  ███╗█████╗  ██╔████╔██║███████╗   |
-|  ██║   ██║██║   ██║██╔══╝  ██║╚██╔╝██║╚════██║   |
-|  ╚██████╔╝╚██████╔╝███████╗██║ ╚═╝ ██║███████║   |
-|   ╚═════╝  ╚═════╝ ╚══════╝╚═╝     ╚═╝╚══════╝   |
-|                                                  |
-|    GPU Geant4-based Monte Carlo Simulations      |
-|   Version 2.0 • GGEMS Team • https://ggems.fr    |
-|     Authors: Julien Bert  &  Didier Benoit       |
-|  Copyright © 2025  Licensed under GNU GPL v3.0   |
-╰──────────────────────────────────────────────────╯
+╔══════════════════════════════════════════════════╗
+║                                                  ║
+║   ██████╗  ██████╗ ███████╗███╗   ███╗███████╗   ║
+║  ██╔════╝ ██╔════╝ ██╔════╝████╗ ████║██╔════╝   ║
+║  ██║  ███╗██║  ███╗█████╗  ██╔████╔██║███████╗   ║
+║  ██║   ██║██║   ██║██╔══╝  ██║╚██╔╝██║╚════██║   ║
+║  ╚██████╔╝╚██████╔╝███████╗██║ ╚═╝ ██║███████║   ║
+║   ╚═════╝  ╚═════╝ ╚══════╝╚═╝     ╚═╝╚══════╝   ║
+║                                                  ║
+╟──────────────────────────────────────────────────╢
+║                                                  ║
+║    GPU Geant4-based Monte Carlo Simulations      ║
+║   Version 2.0 • GGEMS Team • https://ggems.fr    ║
+║     Authors: Julien Bert  &  Didier Benoit       ║
+║  Copyright © 2025  Licensed under GNU GPL v3.0   ║
+║                                                  ║
+╚══════════════════════════════════════════════════╝
 )";
+
   GGEMS_INFO("Core", "{}", GGEMS_BANNER);
+}
+
+/* --------------------------------*/
+
+void GGEMSRun::BannerAscii() const noexcept {
+  constexpr std::string_view GGEMS_BANNER_ASCII = R"(
+
++**************************************************+
+*                                                  *
+*   ######\  ######\ #######\###\   ###\#######\   *
+*  ##/----/ ##/----/ ##/----/####\ ####|##/----/   *
+*  ##|  ###\##|  ###\#####\  ##/####/##|#######\   *
+*  ##|   ##|##|   ##|##/--/  ##|\##//##|\----##|   *
+*  \######//\######//#######\##| \-/ ##|#######|   *
+*   \-----/  \-----/ \------/\-/     \-/\------/   *
+*                                                  *
++--------------------------------------------------+
+*                                                  *
+*    GPU Geant4-based Monte Carlo Simulations      *
+*   Version 2.0 • GGEMS Team • https://ggems.fr    *
+*     Authors: Julien Bert  &  Didier Benoit       *
+*  Copyright © 2025  Licensed under GNU GPL v3.0   *
+*                                                  *
++**************************************************+
+)";
+
+  GGEMS_INFO("Core", "{}", GGEMS_BANNER_ASCII);
 }
 
 /* --------------------------------*/
@@ -74,7 +112,7 @@ void GGEMSRun::Run() {
         .SetKernelName("vec_add")
         .SetBatchesDone(0ULL)
         .SetBatchesTotal(100ULL)
-        .SetStatus("pending")
+        .SetStatus(GGEMSProgressBar::Slot::Status::Pending)
         .SetParticleType(GGEMSProgressBar::Slot::ParticleType::Aionino)
         .SetETA_ps(0ULL)
         .SetBandwidth_bytes_per_ps(0.0);
@@ -116,10 +154,11 @@ void GGEMSRun::Run() {
           slot.SetETA_ps(0ULL);
         }
 
-        slot.SetStatus("running").SetBatchesDone(p).SetBandwidth_bytes_per_ps(
-            100.0 * static_cast<double>(p));
+        slot.SetStatus(GGEMSProgressBar::Slot::Status::Running)
+            .SetBatchesDone(p)
+            .SetBandwidth_bytes_per_ps(5.0 * static_cast<double>(p));
       }
-      slot.SetStatus("finished");
+      slot.SetStatus(GGEMSProgressBar::Slot::Status::Finished);
     });
   }
 

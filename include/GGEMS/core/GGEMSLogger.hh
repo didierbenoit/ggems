@@ -32,6 +32,7 @@
 
 namespace ggems::core {
 enum class LogLevel : std::uint8_t { Debug = 0, Info, Warn, Error };
+enum class Encoding { Utf8, Ascii };
 
 struct LogColorTheme {
   std::string debug_{"\033[36m"};
@@ -89,6 +90,7 @@ public:
 public:
   void AttachSink(std::unique_ptr<LogSink> sink);
   void SetForceColor(std::optional<bool> force);
+  inline Encoding GetEncoding() const noexcept { return encoding_; }
   void SetDetailLevel(int d) noexcept {
     std::lock_guard<std::mutex> lock(mtx_);
     detail_level_ = d;
@@ -143,6 +145,11 @@ private:
 
   void Dispatch(LogRecord const &rec);
   bool UseColour() const noexcept;
+#ifdef _WIN32
+  bool EnableUtf8Win32();
+#else
+  bool EnableUtf8Unix();
+#endif
 
 private:
   int detail_level_{1};
@@ -151,5 +158,6 @@ private:
   LogFormatter formatter_{};
   LogColorTheme theme_{};
   std::optional<bool> force_colour_{};
+  Encoding encoding_;
 };
 } // namespace ggems::core

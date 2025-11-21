@@ -126,26 +126,52 @@ GGEMSLogger &GGEMSLogger::GetInstance() {
 
 GGEMSLogger::GGEMSLogger() {
 #ifdef _WIN32
-  SetConsoleOutputCP(CP_UTF8);
-  SetConsoleCP(CP_UTF8);
-
-  HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-  if (hOut != INVALID_HANDLE_VALUE) {
-    DWORD dwMode = 0;
-    if (GetConsoleMode(hOut, &dwMode)) {
-      dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-      SetConsoleMode(hOut, dwMode);
-    }
-  }
+  encoding_ = EnableUtf8Win32() ? Encoding::Utf8 : Encoding::Ascii;
 #else
-  try {
-    std::locale::global(std::locale("en_US.UTF-8"));
-  } catch (...) {
-    // on ignore si la locale n'existe pas
-  }
+  encoding_ = EnableUtf8Unix ? Encoding::Utf8 : Encoding::Ascii;
 #endif
   sinks_.emplace_back(std::make_unique<ConsoleSink>());
 }
+
+#ifdef _WIN32
+bool GGEMSLogger::EnableUtf8Win32() {
+  bool ok = true;
+
+  // 1. Set code pages UTF-8
+  ok &= SetConsoleOutputCP(CP_UTF8);
+  ok &= SetConsoleCP(CP_UTF8);
+
+  // 2. Enable VT100 sequences
+  HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+  if (hOut == INVALID_HANDLE_VALUE)
+    return false;
+
+  DWORD mode = 0;
+  if (!GetConsoleMode(hOut, &mode))
+    return false;
+
+  mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+  ok &= SetConsoleMode(hOut, mode);
+
+  // 3. Re-read the mode to check if VT is REALLY enabled
+  DWORD newMode = 0;
+  if (!GetConsoleMode(hOut, &newMode))
+    return false;
+
+  bool vtEnabled = (newMode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0;
+
+  return ok && vtEnabled;
+}
+#else
+bool GGEMSLogger::EnableUtf8Unix() {
+  try {
+    std::locale::global(std::locale("en_US.UTF-8"));
+    return true;
+  } catch (...) {
+    return false;
+  }
+}
+#endif
 
 void GGEMSLogger::AttachSink(std::unique_ptr<LogSink> sink) {
   std::lock_guard<std::mutex> lock(mtx_);
