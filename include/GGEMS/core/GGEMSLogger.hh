@@ -32,7 +32,7 @@
 
 namespace ggems::core {
 enum class LogLevel : std::uint8_t { Debug = 0, Info, Warn, Error };
-enum class Encoding { Utf8, Ascii };
+enum class Encoding : std::uint8_t { Utf8 = 0, Ascii };
 
 struct LogColorTheme {
   std::string debug_{"\033[36m"};
@@ -95,6 +95,7 @@ public:
     std::lock_guard<std::mutex> lock(mtx_);
     detail_level_ = d;
   }
+  bool UseColour() const noexcept;
 
   template <typename... Args>
   void Log(LogLevel lvl, std::string_view module,
@@ -144,7 +145,6 @@ private:
   GGEMSLogger();
 
   void Dispatch(LogRecord const &rec);
-  bool UseColour() const noexcept;
 #ifdef _WIN32
   bool EnableUtf8Win32();
 #else

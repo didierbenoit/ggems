@@ -18,15 +18,18 @@ inline std::string HumanReadable(Bits const &b) {
   long double const v = static_cast<long double>(b.value);
 
   if (v >= 1.0e9L)
-    return std::format("{} Gb", v / 1.0e9L);
+    return std::format("{:6.1f} Tb", v / 1.0e9L);
+
+  if (v >= 1.0e9L)
+    return std::format("{:6.1f} Gb", v / 1.0e9L);
 
   if (v >= 1.0e6L)
-    return std::format("{} Mb", v / 1.0e6L);
+    return std::format("{:6.1f} Mb", v / 1.0e6L);
 
   if (v >= 1.0e3L)
-    return std::format("{} Kb", v / 1.0e3L);
+    return std::format("{:6.1f} Kb", v / 1.0e3L);
 
-  return std::format("{} b", v);
+  return std::format("{:4.0f} b", v);
 }
 
 //

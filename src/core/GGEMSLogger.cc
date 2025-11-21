@@ -128,7 +128,7 @@ GGEMSLogger::GGEMSLogger() {
 #ifdef _WIN32
   encoding_ = EnableUtf8Win32() ? Encoding::Utf8 : Encoding::Ascii;
 #else
-  encoding_ = EnableUtf8Unix ? Encoding::Utf8 : Encoding::Ascii;
+  encoding_ = EnableUtf8Unix() ? Encoding::Utf8 : Encoding::Ascii;
 #endif
   sinks_.emplace_back(std::make_unique<ConsoleSink>());
 }

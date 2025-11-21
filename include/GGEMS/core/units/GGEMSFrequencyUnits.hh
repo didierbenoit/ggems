@@ -9,16 +9,19 @@ using Frequency = Quantity<FrequencyDim, std::uint64_t>;
 inline std::string HumanReadable(Frequency const &f) {
   long double const v = static_cast<long double>(f.value);
 
+  if (v >= 1.0e12L)
+    return std::format("{:5.1f} THz", v / 1.0e12L);
+
   if (v >= 1.0e9L)
-    return std::format("{} GHz", v / 1.0e9L);
+    return std::format("{:5.1f} GHz", v / 1.0e9L);
 
   if (v >= 1.0e6L)
-    return std::format("{} MHz", v / 1.0e6L);
+    return std::format("{:5.1f} MHz", v / 1.0e6L);
 
   if (v >= 1.0e3L)
-    return std::format("{} kHz", v / 1.0e3L);
+    return std::format("{:5.1f} kHz", v / 1.0e3L);
 
-  return std::format("{} Hz", v);
+  return std::format("{:3.0f} Hz", v);
 }
 
 consteval Frequency operator""_Hz(unsigned long long v) {

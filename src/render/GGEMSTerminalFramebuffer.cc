@@ -1,13 +1,17 @@
 #include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
 
 namespace ggems::render {
 
-GGEMSTerminalFramebuffer::GGEMSTerminalFramebuffer(std::size_t width,
-                                                   std::size_t height)
-    : width_{width}, height_{height}, buffer_cells_(width * height, " "),
-      buffer_colours_(width * height, AsciiColour::Default), use_colour_{true} {
-}
+GGEMSTerminalFramebuffer::GGEMSTerminalFramebuffer(std::int16_t width,
+                                                   std::int16_t height)
+    : width_{width}, height_{height},
+      buffer_cells_(static_cast<std::size_t>(width) *
+                        static_cast<std::size_t>(height),
+                    " "),
+      buffer_colours_(static_cast<std::size_t>(width) *
+                          static_cast<std::size_t>(height),
+                      AsciiColour::Default),
+      use_colour_{true} {}
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
@@ -23,14 +27,16 @@ void GGEMSTerminalFramebuffer::Clear(std::string_view s,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSTerminalFramebuffer::Put(std::size_t x, std::size_t y,
+void GGEMSTerminalFramebuffer::Put(std::int16_t x, std::int16_t y,
                                    std::string_view s,
                                    AsciiColour colour) noexcept {
   if (x >= width_ || y >= height_) {
     return;
   }
 
-  std::size_t idx = x + y * width_;
+  std::size_t idx =
+      static_cast<std::size_t>(x) +
+      static_cast<std::size_t>(y) * static_cast<std::size_t>(width_);
   buffer_cells_[idx] = s;
   buffer_colours_[idx] = colour;
 }
@@ -39,11 +45,11 @@ void GGEMSTerminalFramebuffer::Put(std::size_t x, std::size_t y,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSTerminalFramebuffer::DrawStrings(std::size_t x, std::size_t y,
+void GGEMSTerminalFramebuffer::DrawStrings(std::int16_t x, std::int16_t y,
                                            std::vector<std::string> const &line,
                                            AsciiColour colour) noexcept {
   for (std::size_t i = 0; i < line.size(); ++i) {
-    DrawString(x + i, y, line[i], colour);
+    DrawString(x + static_cast<std::int16_t>(i), y, line[i], colour);
   }
 }
 
@@ -51,13 +57,15 @@ void GGEMSTerminalFramebuffer::DrawStrings(std::size_t x, std::size_t y,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSTerminalFramebuffer::DrawString(std::size_t x, std::size_t y,
+void GGEMSTerminalFramebuffer::DrawString(std::int16_t x, std::int16_t y,
                                           std::string_view text,
                                           AsciiColour colour) noexcept {
   if (x >= width_ || y >= height_)
     return;
 
-  std::size_t idx = x + y * width_;
+  std::size_t idx =
+      static_cast<std::size_t>(x) +
+      static_cast<std::size_t>(y) * static_cast<std::size_t>(width_);
   buffer_cells_[idx] = text;
   buffer_colours_[idx] = colour;
 }
@@ -66,18 +74,23 @@ void GGEMSTerminalFramebuffer::DrawString(std::size_t x, std::size_t y,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSTerminalFramebuffer::DrawHLine(std::size_t x, std::size_t y,
-                                         std::size_t length, std::string_view s,
+void GGEMSTerminalFramebuffer::DrawHLine(std::int16_t x, std::int16_t y,
+                                         std::int16_t length,
+                                         std::string_view s,
                                          AsciiColour colour) noexcept {
   if (y >= height_) {
     return;
   }
 
-  std::size_t max_len = (x < width_) ? std::min(length, width_ - x) : 0U;
-  std::size_t row_offset = y * width_;
+  std::int16_t max_len =
+      (x < width_) ? std::min(length, static_cast<std::int16_t>(width_ - x))
+                   : 0;
+  std::size_t row_offset =
+      static_cast<std::size_t>(y) * static_cast<std::size_t>(width_);
 
-  for (std::size_t i = 0; i < max_len; ++i) {
-    std::size_t idx = row_offset + x + i;
+  for (std::int16_t i = 0; i < max_len; ++i) {
+    std::size_t idx =
+        row_offset + static_cast<std::size_t>(x) + static_cast<std::size_t>(i);
     buffer_cells_[idx] = s;
     buffer_colours_[idx] = colour;
   }
@@ -87,17 +100,23 @@ void GGEMSTerminalFramebuffer::DrawHLine(std::size_t x, std::size_t y,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSTerminalFramebuffer::DrawVLine(std::size_t x, std::size_t y,
-                                         std::size_t length, std::string_view s,
+void GGEMSTerminalFramebuffer::DrawVLine(std::int16_t x, std::int16_t y,
+                                         std::int16_t length,
+                                         std::string_view s,
                                          AsciiColour colour) noexcept {
   if (x >= width_) {
     return;
   }
 
-  std::size_t max_len = (y < height_) ? std::min(length, height_ - y) : 0U;
+  std::int16_t max_len =
+      (y < height_) ? std::min(length, static_cast<std::int16_t>(height_ - y))
+                    : 0;
 
-  for (std::size_t i = 0; i < max_len; ++i) {
-    std::size_t idx = (y + i) * width_ + x;
+  for (std::int16_t i = 0; i < max_len; ++i) {
+    std::size_t idx =
+        static_cast<std::size_t>(y) +
+        static_cast<std::size_t>(i) * static_cast<std::size_t>(width_) +
+        static_cast<std::size_t>(x);
     buffer_cells_[idx] = s;
     buffer_colours_[idx] = colour;
   }
@@ -107,8 +126,8 @@ void GGEMSTerminalFramebuffer::DrawVLine(std::size_t x, std::size_t y,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSTerminalFramebuffer::DrawRect(std::size_t x, std::size_t y,
-                                        std::size_t width, std::size_t height,
+void GGEMSTerminalFramebuffer::DrawRect(std::int16_t x, std::int16_t y,
+                                        std::int16_t width, std::int16_t height,
                                         std::string_view s,
                                         AsciiColour colour) noexcept {
   if (width == 0U || height == 0U) {
@@ -116,14 +135,14 @@ void GGEMSTerminalFramebuffer::DrawRect(std::size_t x, std::size_t y,
   }
 
   DrawHLine(x, y, width, s, colour);
-  if (height > 1U) {
-    DrawHLine(x, y + height - 1U, width, s, colour);
+  if (height > 1) {
+    DrawHLine(x, y + height - 1, width, s, colour);
   }
 
-  if (height > 2U) {
-    DrawVLine(x, y + 1U, height - 2U, s, colour);
-    if (width > 1U) {
-      DrawVLine(x + width - 1U, y + 1U, height - 2U, s, colour);
+  if (height > 2) {
+    DrawVLine(x, y + 1, height - 2, s, colour);
+    if (width > 1) {
+      DrawVLine(x + width - 1, y + 1, height - 2, s, colour);
     }
   }
 }
@@ -150,7 +169,9 @@ bool GGEMSTerminalFramebuffer::UseColour() const noexcept {
 
 std::string GGEMSTerminalFramebuffer::Render() const {
   std::string out;
-  out.reserve((width_ + 1U) * height_ + 16U);
+  out.reserve((static_cast<std::size_t>(width_) + 1) *
+                  static_cast<std::size_t>(height_) +
+              16);
 
   if (use_colour_) {
     out.append("\033[0m");
@@ -158,11 +179,12 @@ std::string GGEMSTerminalFramebuffer::Render() const {
 
   AsciiColour current_colour = AsciiColour::Default;
 
-  for (std::size_t y = 0; y < height_; ++y) {
-    std::size_t row_offset = y * width_;
+  for (std::int16_t y = 0; y < height_; ++y) {
+    std::size_t row_offset =
+        static_cast<std::size_t>(y) * static_cast<std::size_t>(width_);
 
-    for (std::size_t x = 0; x < width_; ++x) {
-      std::size_t idx = row_offset + x;
+    for (std::int16_t x = 0; x < width_; ++x) {
+      std::size_t idx = row_offset + static_cast<std::size_t>(x);
       AsciiColour cell_colour = buffer_colours_[idx];
 
       if (use_colour_ && cell_colour != current_colour) {

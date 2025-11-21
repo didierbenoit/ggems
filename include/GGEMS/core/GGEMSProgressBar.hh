@@ -32,7 +32,7 @@ namespace ggems::core {
 
 class GGEMSProgressBar {
 public:
-  GGEMSProgressBar(std::size_t width_ = 100, std::size_t height = 30);
+  GGEMSProgressBar(std::int16_t width_ = 80, std::int16_t height = 24);
   ~GGEMSProgressBar();
 
   GGEMSProgressBar(GGEMSProgressBar const &) = delete;
@@ -45,7 +45,7 @@ public:
   void Stop();
 
   struct Slot {
-    enum class ParticleType {
+    enum class ParticleType : std::uint8_t {
       Gamma,
       Proton,
       Electron,
@@ -55,7 +55,7 @@ public:
       Aionino
     };
 
-    enum class Status { Pending, Running, Finished };
+    enum class Status : std::uint8_t { Pending, Running, Finished };
 
     static std::string ParticleSymbol(ParticleType p) {
       switch (p) {
@@ -140,20 +140,20 @@ public:
     std::string kernel_name_;
     Status status_;
     ParticleType particle_type_;
-    std::atomic<uint64_t> batches_done_{0};
-    std::atomic<uint64_t> batches_total_{0};
-    std::atomic<uint64_t> eta_ps_{0ULL};
-    std::atomic<double> bandwidth_byte_per_ps_{0.0};
+    std::atomic<std::uint64_t> batches_done_{0};
+    std::atomic<std::uint64_t> batches_total_{0};
+    std::atomic<std::uint64_t> eta_ps_{0ULL};
+    std::atomic<long double> bandwidth_byte_per_ps_{0.0};
     std::atomic<bool> is_gpu_{false};
 
-    Slot &SetBandwidth_bytes_per_ps(double bytes_per_ps);
-    Slot &SetETA_ps(uint64_t eta_ps);
+    Slot &SetBandwidth_bytes_per_ps(long double bytes_per_ps);
+    Slot &SetETA_ps(std::uint64_t eta_ps);
     Slot &SetName(std::string_view name);
     Slot &SetIsGPU(bool is_gpu);
     Slot &SetKernelName(std::string_view kernel);
     Slot &SetParticleType(ParticleType p);
-    Slot &SetBatchesTotal(uint64_t total);
-    Slot &SetBatchesDone(uint64_t done);
+    Slot &SetBatchesTotal(std::uint64_t total);
+    Slot &SetBatchesDone(std::uint64_t done);
     Slot &SetStatus(Status status);
   };
 
@@ -166,21 +166,22 @@ private:
   [[nodiscard]] std::vector<std::string> BuildBar(float progress);
   [[nodiscard]] std::vector<std::string>
   BuildPulse(Slot::ParticleType particle_type);
-  [[nodiscard]] std::string FormatETA(uint64_t ps) const noexcept;
+  [[nodiscard]] std::string FormatETA(std::uint64_t ps) const noexcept;
   [[nodiscard]] std::string
   FormatBandwidth(long double bytes_per_ps) const noexcept;
   [[nodiscard]] std::size_t SlotBaseRow(std::size_t slot_index) const noexcept;
 
   void DisableTerminal();
   void EnableTerminal();
+  void EnsureFramebufferSize();
 
 private:
   std::deque<Slot> slots_;
   std::jthread worker_;
   std::atomic<bool> running_{false};
   std::unique_ptr<render::GGEMSTerminalFramebuffer> framebuffer_;
-  std::size_t width_;
-  std::size_t height_;
-  std::atomic<uint64_t> frame_counter_{0U};
+  std::int16_t width_;
+  std::int16_t height_;
+  std::atomic<std::uint64_t> frame_counter_{0U};
 };
 } // namespace ggems::core

@@ -9,16 +9,20 @@ using Bytes = Quantity<InfoBytesDim, std::uint64_t>;
 inline std::string HumanReadable(Bytes const &b) {
   long double const v = static_cast<long double>(b.value);
 
+  if (v >= 1.0L * 1024.0L * 1024.0L * 1024.0L * 1024.0L)
+    return std::format("{:6.1f} TB",
+                       v / (1024.0L * 1024.0L * 1024.0L * 1024.0L));
+
   if (v >= 1.0L * 1024.0L * 1024.0L * 1024.0L)
-    return std::format("{:.3f} GB", v / (1024.0L * 1024.0L * 1024.0L));
+    return std::format("{:6.1f} GB", v / (1024.0L * 1024.0L * 1024.0L));
 
   if (v >= 1.0L * 1024.0L * 1024.0L)
-    return std::format("{:.3f} MB", v / (1024.0L * 1024.0L));
+    return std::format("{:6.1f} MB", v / (1024.0L * 1024.0L));
 
   if (v >= 1.0L * 1024.0L)
-    return std::format("{:.3f} KB", v / 1024.0L);
+    return std::format("{:6.1f} KB", v / 1024.0L);
 
-  return std::format("{:.3f} B", v);
+  return std::format("{:4.0f} B", v);
 }
 
 // B

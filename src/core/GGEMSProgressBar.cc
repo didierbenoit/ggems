@@ -24,10 +24,40 @@
 #include <thread>
 /// \endcond
 
+#include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/GGEMSProgressBar.hh"
 #include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
+
+namespace {
+
+struct TerminalSize {
+  std::int16_t cols_;
+  std::int16_t rows_;
+};
+
+TerminalSize GetTerminalSize() noexcept {
+#ifdef _WIN32
+  CONSOLE_SCREEN_BUFFER_INFO csbi;
+  if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
+    std::int16_t cols = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+    std::int16_t rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+    return {cols, rows};
+  }
+  return {80, 24};
+#else
+  struct winsize ws{};
+  if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0) {
+    std::int16_t cols = static_cast<std::int16_t>(ws.ws_col);
+    std::int16_t rows = static_cast<std::int16_t>(ws.ws_row);
+    return {cols, rows};
+  }
+  return {80, 24};
+#endif
+}
+
+} // namespace
 
 namespace ggems::core {
 using render::AsciiColour;
@@ -59,7 +89,8 @@ GGEMSProgressBar::Slot &GGEMSProgressBar::Slot::SetName(std::string_view name) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-GGEMSProgressBar::Slot &GGEMSProgressBar::Slot::SetBatchesDone(uint64_t done) {
+GGEMSProgressBar::Slot &
+GGEMSProgressBar::Slot::SetBatchesDone(std::uint64_t done) {
   batches_done_.store(done, std::memory_order_relaxed);
   return *this;
 }
@@ -69,7 +100,7 @@ GGEMSProgressBar::Slot &GGEMSProgressBar::Slot::SetBatchesDone(uint64_t done) {
 /* --------------------------------------------- */
 
 GGEMSProgressBar::Slot &
-GGEMSProgressBar::Slot::SetBatchesTotal(uint64_t total) {
+GGEMSProgressBar::Slot::SetBatchesTotal(std::uint64_t total) {
   batches_total_.store(total, std::memory_order_relaxed);
   return *this;
 }
@@ -107,7 +138,8 @@ GGEMSProgressBar::Slot &GGEMSProgressBar::Slot::SetIsGPU(bool is_gpu) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-GGEMSProgressBar::Slot &GGEMSProgressBar::Slot::SetETA_ps(uint64_t eta_ps) {
+GGEMSProgressBar::Slot &
+GGEMSProgressBar::Slot::SetETA_ps(std::uint64_t eta_ps) {
   eta_ps_.store(eta_ps, std::memory_order_relaxed);
   return *this;
 }
@@ -117,7 +149,7 @@ GGEMSProgressBar::Slot &GGEMSProgressBar::Slot::SetETA_ps(uint64_t eta_ps) {
 /* --------------------------------------------- */
 
 GGEMSProgressBar::Slot &GGEMSProgressBar::Slot::SetBandwidth_bytes_per_ps(
-    double bandwidth_byte_per_ps) {
+    long double bandwidth_byte_per_ps) {
   bandwidth_byte_per_ps_.store(bandwidth_byte_per_ps,
                                std::memory_order_relaxed);
   return *this;
@@ -130,7 +162,7 @@ GGEMSProgressBar::Slot &GGEMSProgressBar::Slot::SetStatus(Status status) {
 
 // ----- Progress Bar ------------------------------
 
-GGEMSProgressBar::GGEMSProgressBar(std::size_t width, std::size_t height)
+GGEMSProgressBar::GGEMSProgressBar(std::int16_t width, std::int16_t height)
     : framebuffer_{std::make_unique<GGEMSTerminalFramebuffer>(width, height)},
       width_{width}, height_{height} {}
 
@@ -231,7 +263,45 @@ void GGEMSProgressBar::RenderLoop(std::stop_token st) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+void GGEMSProgressBar::EnsureFramebufferSize() {
+  ::TerminalSize const ts = GetTerminalSize();
+  std::int16_t term_w = ts.cols_ > 0 ? ts.cols_ : width_;
+  std::int16_t term_h = ts.rows_ > 0 ? ts.rows_ : height_;
+
+  constexpr std::int16_t header_rows = 2;   // Title + horizontal line
+  constexpr std::int16_t rows_per_slot = 5; // Like SlotBaseRow
+  std::int16_t n_slots = static_cast<std::int16_t>(slots_.size());
+
+  std::int16_t needed_height =
+      header_rows + (n_slots > 0 ? n_slots * rows_per_slot : rows_per_slot) + 1;
+
+  if (needed_height > term_h)
+    needed_height = term_h;
+
+  std::int16_t new_width = term_w;
+  std::int16_t new_height = needed_height;
+
+  bool need_recreate = !framebuffer_ || framebuffer_->Width() != new_width ||
+                       framebuffer_->height() != new_height;
+
+  if (need_recreate) {
+    framebuffer_ =
+        std::make_unique<GGEMSTerminalFramebuffer>(new_width, new_height);
+    width_ = new_width;
+    height_ = new_height;
+
+    bool use_color = GGEMSLogger::GetInstance().UseColour();
+    framebuffer_->SetUseColour(use_color);
+  }
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 void GGEMSProgressBar::Draw() {
+  EnsureFramebufferSize();
+
   if (!framebuffer_) {
     return;
   }
@@ -308,7 +378,7 @@ void GGEMSProgressBar::Draw() {
         std::format("↳ Bandwidth: {} | kernel: {}", bw_text, slot.kernel_name_),
         AsciiColour::Cyan);
 
-    uint64_t eta_s = slot.eta_ps_.load(std::memory_order_relaxed);
+    std::uint64_t eta_s = slot.eta_ps_.load(std::memory_order_relaxed);
 
     std::string eta_text = FormatETA(eta_s);
 
@@ -414,7 +484,7 @@ std::string GGEMSProgressBar::FormatETA(uint64_t ps) const noexcept {
 
 std::string
 GGEMSProgressBar::FormatBandwidth(long double bytes_per_ps) const noexcept {
-  if (!(std::isfinite(bytes_per_ps) || bytes_per_ps <= 0)) {
+  if (!std::isfinite(bytes_per_ps) || bytes_per_ps <= 0.0L) {
     return "--";
   }
 

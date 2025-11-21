@@ -8,22 +8,25 @@ using Length = Quantity<LengthDim, std::uint64_t>; // base: picometres
 inline std::string HumanReadable(Length const &L) {
   long double const pm = static_cast<long double>(L.value);
 
+  if (pm >= 1.0e15L) // m
+    return std::format("{:5.1f} km", pm / 1.0e15L);
+
   if (pm >= 1.0e12L) // m
-    return std::format("{} m", pm / 1.0e12L);
+    return std::format("{:5.1f} m", pm / 1.0e12L);
 
   if (pm >= 1.0e10L) // cm
-    return std::format("{} cm", pm / 1.0e10L);
+    return std::format("{:5.1f} cm", pm / 1.0e10L);
 
   if (pm >= 1.0e9L) // mm
-    return std::format("{} mm", pm / 1.0e9L);
+    return std::format("{:5.1f} mm", pm / 1.0e9L);
 
   if (pm >= 1.0e6L) // um
-    return std::format("{} um", pm / 1.0e6L);
+    return std::format("{:5.1f} um", pm / 1.0e6L);
 
   if (pm >= 1.0e3L) // nm
-    return std::format("{} nm", pm / 1.0e3L);
+    return std::format("{:5.1f} nm", pm / 1.0e3L);
 
-  return std::format("{} pm", pm); // base
+  return std::format("{:3.0f} pm", pm); // base
 }
 
 // picometres

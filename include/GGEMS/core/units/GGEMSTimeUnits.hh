@@ -30,16 +30,16 @@ inline std::string HumanReadable(Time const &t) {
   }
 
   if (v >= 1.0e12L) // s
-    return std::format("{:.3} s", v / 1.0e12L);
+    return std::format("{:4.1f} s", v / 1.0e12L);
 
   if (v >= 1.0e9L) // ms
-    return std::format("{:.3} ms", v / 1.0e9L);
+    return std::format("{:5.1f} ms", v / 1.0e9L);
 
   if (v >= 1.0e6L) // us
-    return std::format("{:.3} us", v / 1.0e6L);
+    return std::format("{:5.1f} us", v / 1.0e6L);
 
   if (v >= 1.0e3L) // ns
-    return std::format("{:.3} ns", v / 1.0e3L);
+    return std::format("{:5.1f} ns", v / 1.0e3L);
 
   return std::format("{} ps", v); // base
 }
