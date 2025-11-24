@@ -7,8 +7,6 @@
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
-#include <chrono>
-#include <cstdint>
 
 using namespace ggems::units;
 
@@ -19,7 +17,7 @@ namespace ggems::core {
 GGEMSRun::GGEMSRun() {
   GGEMS_INFOEX("Core", 3, "GGEMSRun created.");
   Encoding encoding = GGEMSLogger::GetInstance().GetEncoding();
-  if (encoding == Encoding::Utf8) {
+  if (encoding == Encoding::Utf32) {
     Banner();
   } else {
     BannerAscii();
@@ -74,9 +72,9 @@ void GGEMSRun::BannerAscii() const noexcept {
 +--------------------------------------------------+
 *                                                  *
 *    GPU Geant4-based Monte Carlo Simulations      *
-*   Version 2.0 • GGEMS Team • https://ggems.fr    *
+*   Version 2.0 . GGEMS Team . https://ggems.fr    *
 *     Authors: Julien Bert  &  Didier Benoit       *
-*  Copyright © 2025  Licensed under GNU GPL v3.0   *
+* Copyright (C) 2025  Licensed under GNU GPL v3.0  *
 *                                                  *
 +**************************************************+
 )";
@@ -114,8 +112,8 @@ void GGEMSRun::Run() {
         .SetBatchesTotal(100ULL)
         .SetStatus(GGEMSProgressBar::Slot::Status::Pending)
         .SetParticleType(GGEMSProgressBar::Slot::ParticleType::Aionino)
-        .SetETA_ps(0ULL)
-        .SetBandwidth_bytes_per_ps(0.0);
+        .SetETAPicoseconds(0ULL)
+        .SetBandwidthBytesPerPicosecond(0.0);
   }
 
   workers_.clear();
@@ -147,16 +145,16 @@ void GGEMSRun::Run() {
               static_cast<long double>(elapsed_ps) / ratio;
           long double remaining_ps =
               estimated_total_ps - static_cast<long double>(elapsed_ps);
-          slot.SetETA_ps((remaining_ps > 0.0)
-                             ? static_cast<uint64_t>(remaining_ps)
-                             : 0ULL);
+          slot.SetETAPicoseconds((remaining_ps > 0.0)
+                                     ? static_cast<uint64_t>(remaining_ps)
+                                     : 0ULL);
         } else {
-          slot.SetETA_ps(0ULL);
+          slot.SetETAPicoseconds(0ULL);
         }
 
         slot.SetStatus(GGEMSProgressBar::Slot::Status::Running)
             .SetBatchesDone(p)
-            .SetBandwidth_bytes_per_ps(5.0 * static_cast<double>(p));
+            .SetBandwidthBytesPerPicosecond(5.0 * static_cast<double>(p));
       }
       slot.SetStatus(GGEMSProgressBar::Slot::Status::Finished);
     });

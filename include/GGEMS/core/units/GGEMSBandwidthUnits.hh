@@ -4,25 +4,50 @@
 #include "GGEMSQuantity.hh"
 #include "GGEMSTimeUnits.hh"
 
+/// \cond
+#include <array>
+/// \endcond
+
 namespace ggems::units {
 using Bandwidth = Quantity<BandwidthDim, long double>;
 
-inline std::string HumanReadable(Bandwidth const &bw) {
+inline std::string HumanReadable(Bandwidth const &bw, std::int8_t precision = 7,
+                                 std::int8_t width = -1) {
   long double const v = bw.value * 1.0e12L; // conv to B/s
 
-  if (v >= 1.0e12L)
-    return std::format("{:5.1f} TB/s", v / 1.0e12L);
+  struct Unit {
+    long double threshold;
+    std::string_view suffix;
+    long double scale;
+  };
 
-  if (v >= 1.0e9L)
-    return std::format("{:5.1f} GB/s", v / 1.0e9L);
+  static constexpr std::array<Unit, 5> units{{{1.0e12L, " TB/s", 1.0e12L},
+                                              {1.0e9L, " GB/s", 1.0e9L},
+                                              {1.0e6L, " MB/s", 1.0e6L},
+                                              {1.0e3L, " KB/s", 1.0e3L},
+                                              {0.0L, " B/s", 1.0L}}};
 
-  if (v >= 1.0e6L)
-    return std::format("{:5.1f} MB/s", v / 1.0e6L);
+  for (auto const &u : units) {
+    if (v >= u.threshold) {
 
-  if (v >= 1.0e3L)
-    return std::format("{:5.1f} KB/s", v / 1.0e3L);
+      long double scaled = v / u.scale;
 
-  return std::format("{:5.1f} B/s", v);
+      // Buffer local pour fabriquer le format dynamiquement
+      std::string fmt;
+
+      if (width < 0) {
+        // {:.7f} + suffix
+        fmt = std::format("{{:.{}f}}{}", precision, u.suffix);
+      } else {
+        // {:10.7f} + suffix
+        fmt = std::format("{{:{}.{}f}}{}", width, precision, u.suffix);
+      }
+
+      return std::vformat(fmt, std::make_format_args(scaled));
+    }
+  }
+
+  return std::format("{:.{}f} B/s", v, precision);
 }
 
 // Direct literals in B/s

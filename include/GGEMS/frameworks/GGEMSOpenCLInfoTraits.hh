@@ -30,14 +30,11 @@
  */
 
 /// \cond
-#include <CL/cl.h>
 #include <CL/opencl.hpp>
 #include <string>
 /// \endcond
 
 #include "GGEMS/core/GGEMSCoreUtils.hh"
-#include "GGEMS/core/units/GGEMSFrequencyUnits.hh"
-#include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLStrings.hh"
 
@@ -90,7 +87,7 @@ template <> struct InfoTraits<CL_PLATFORM_HOST_TIMER_RESOLUTION> {
   static constexpr std::string_view name = "CL_PLATFORM_HOST_TIMER_RESOLUTION";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Time t = Time{static_cast<std::uint64_t>(v) * 1000ull};
-    return HumanReadable(t);
+    return HumanReadable(t, 0, 3);
   }
 };
 
@@ -239,7 +236,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_CLOCK_FREQUENCY> {
   [[nodiscard]] static std::string ToString(type v) noexcept {
     if (v != 0) {
       Frequency f = Frequency{static_cast<uint64_t>(v) * 1'000'000ull};
-      return HumanReadable(f);
+      return HumanReadable(f, 1, 5);
     }
 
     auto const fallback = ggems::core::GetCPUFrequencyMHz();
@@ -247,7 +244,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_CLOCK_FREQUENCY> {
     if (fallback.has_value()) {
       Frequency f = Frequency{static_cast<std::uint64_t>(fallback.value()) *
                               1'000'000ull};
-      return HumanReadable(f);
+      return HumanReadable(f, 1, 5);
     } else {
       return "";
     }
@@ -529,7 +526,7 @@ template <> struct InfoTraits<CL_DEVICE_GLOBAL_MEM_SIZE> {
   static constexpr std::string_view unit = " bytes";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    return HumanReadable(B, 1, 5);
   }
 };
 
@@ -547,7 +544,7 @@ template <> struct InfoTraits<CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE> {
       "CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    return HumanReadable(B, 1, 5);
   }
 };
 
@@ -556,7 +553,7 @@ template <> struct InfoTraits<CL_DEVICE_GLOBAL_MEM_CACHE_SIZE> {
   static constexpr std::string_view name = "CL_DEVICE_GLOBAL_MEM_CACHE_SIZE";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    return HumanReadable(B, 1, 5);
   }
 };
 
@@ -565,7 +562,7 @@ template <> struct InfoTraits<CL_DEVICE_LOCAL_MEM_SIZE> {
   static constexpr std::string_view name = "CL_DEVICE_LOCAL_MEM_SIZE";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    return HumanReadable(B, 1, 5);
   }
 };
 
@@ -583,7 +580,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_MEM_ALLOC_SIZE> {
   static constexpr std::string_view name = "CL_DEVICE_MAX_MEM_ALLOC_SIZE";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    return HumanReadable(B, 1, 5);
   }
 };
 
@@ -592,7 +589,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE> {
   static constexpr std::string_view name = "CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    return HumanReadable(B, 1, 5);
   }
 };
 
@@ -600,8 +597,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_CONSTANT_ARGS> {
   using type = cl_uint;
   static constexpr std::string_view name = "CL_DEVICE_MAX_CONSTANT_ARGS";
   [[nodiscard]] static std::string ToString(type v) noexcept {
-    Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    return UIntToString(v);
   }
 };
 
@@ -610,7 +606,7 @@ template <> struct InfoTraits<CL_DEVICE_MEM_BASE_ADDR_ALIGN> {
   static constexpr std::string_view name = "CL_DEVICE_MEM_BASE_ADDR_ALIGN";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    return HumanReadable(B, 1, 5);
   }
 };
 
@@ -619,7 +615,7 @@ template <> struct InfoTraits<CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE> {
   static constexpr std::string_view name = "CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    return HumanReadable(B, 1, 5);
   }
 };
 
@@ -655,7 +651,7 @@ template <> struct InfoTraits<CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE> {
   static constexpr std::string_view unit = " bytes";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    return HumanReadable(B, 1, 5);
   }
 };
 
@@ -843,7 +839,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT> {
   static constexpr std::string_view unit = " bytes";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    return HumanReadable(B, 1, 5);
   }
 };
 
@@ -853,7 +849,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT> {
       "CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    return HumanReadable(B, 1, 5);
   }
 };
 
@@ -863,7 +859,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT> {
       "CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    return HumanReadable(B, 1, 5);
   }
 };
 
@@ -872,8 +868,8 @@ template <> struct InfoTraits<CL_DEVICE_ADDRESS_BITS> {
   static constexpr std::string_view name = "CL_DEVICE_ADDRESS_BITS";
   static constexpr std::string_view unit = " bits";
   [[nodiscard]] static std::string ToString(type v) noexcept {
-    Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    Bits B = Bits{static_cast<std::uint64_t>(v)};
+    return HumanReadable(B, 0, 3);
   }
 };
 
@@ -883,7 +879,7 @@ template <> struct InfoTraits<CL_DEVICE_PROFILING_TIMER_RESOLUTION> {
       "CL_DEVICE_PROFILING_TIMER_RESOLUTION";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Time t = Time{static_cast<uint64_t>(v) * 1000ull};
-    return HumanReadable(t);
+    return HumanReadable(t, 0, 3);
   }
 };
 
@@ -932,7 +928,7 @@ template <> struct InfoTraits<CL_DEVICE_PRINTF_BUFFER_SIZE> {
   static constexpr std::string_view name = "CL_DEVICE_PRINTF_BUFFER_SIZE";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    return HumanReadable(B, 1, 5);
   }
 };
 
@@ -958,7 +954,7 @@ template <> struct InfoTraits<CL_DEVICE_PIPE_MAX_PACKET_SIZE> {
   static constexpr std::string_view name = "CL_DEVICE_PIPE_MAX_PACKET_SIZE";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    return HumanReadable(B, 1, 5);
   }
 };
 
@@ -975,7 +971,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE> {
   static constexpr std::string_view name = "CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    return HumanReadable(B, 1, 5);
   }
 };
 
@@ -985,7 +981,7 @@ template <> struct InfoTraits<CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE> {
       "CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE";
   [[nodiscard]] static std::string ToString(type v) noexcept {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B);
+    return HumanReadable(B, 1, 5);
   }
 };
 

@@ -1,55 +1,142 @@
 #include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
+#include "GGEMS/render/GGEMSColourNames.hh"
+#include "GGEMS/utf/GGEMSGlyphs.hh"
+#include "GGEMS/utf/GGEMSUTF.hh"
 
 namespace ggems::render {
 
-GGEMSTerminalFramebuffer::GGEMSTerminalFramebuffer(std::int16_t width,
-                                                   std::int16_t height)
-    : width_{width}, height_{height},
-      buffer_cells_(static_cast<std::size_t>(width) *
-                        static_cast<std::size_t>(height),
-                    " "),
-      buffer_colours_(static_cast<std::size_t>(width) *
-                          static_cast<std::size_t>(height),
-                      AsciiColour::Default),
-      use_colour_{true} {}
-
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSTerminalFramebuffer::Clear(std::string_view s,
-                                     AsciiColour colour) noexcept {
-  std::fill(buffer_cells_.begin(), buffer_cells_.end(), s);
-  std::fill(buffer_colours_.begin(), buffer_colours_.end(), colour);
-}
+std::pair<std::int16_t, std::int16_t>
+GGEMSTerminalFramebuffer::DetectTerminalSize() noexcept {
+  std::int16_t width = 120;
+  std::int16_t height = 40;
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+#if defined(_WIN32)
 
-void GGEMSTerminalFramebuffer::Put(std::int16_t x, std::int16_t y,
-                                   std::string_view s,
-                                   AsciiColour colour) noexcept {
-  if (x >= width_ || y >= height_) {
-    return;
+  CONSOLE_SCREEN_BUFFER_INFO csbi;
+  HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+
+  if (hOut != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hOut, &csbi)) {
+
+    width =
+        static_cast<std::int16_t>(csbi.srWindow.Right - csbi.srWindow.Left + 1);
+
+    height =
+        static_cast<std::int16_t>(csbi.srWindow.Bottom - csbi.srWindow.Top + 1);
   }
 
-  std::size_t idx =
-      static_cast<std::size_t>(x) +
-      static_cast<std::size_t>(y) * static_cast<std::size_t>(width_);
-  buffer_cells_[idx] = s;
-  buffer_colours_[idx] = colour;
+#else
+  struct winsize ws{};
+  if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0) {
+    width = static_cast<std::int16_t>(ws.ws_col);
+    height = static_cast<std::int16_t>(ws.ws_row);
+  }
+
+#endif
+
+  // Sécurité
+  if (width < 20)
+    width = 20;
+  if (height < 5)
+    height = 5;
+
+  return {width, height};
 }
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSTerminalFramebuffer::DrawStrings(std::int16_t x, std::int16_t y,
-                                           std::vector<std::string> const &line,
-                                           AsciiColour colour) noexcept {
-  for (std::size_t i = 0; i < line.size(); ++i) {
-    DrawString(x + static_cast<std::int16_t>(i), y, line[i], colour);
+GGEMSTerminalFramebuffer::GGEMSTerminalFramebuffer() {
+  auto [w, h] = DetectTerminalSize();
+  width_ = w;
+  height_ = h;
+
+  Resize(w, h);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSTerminalFramebuffer::SetUseColour(bool use_colour) noexcept {
+  use_colour_ = use_colour;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSTerminalFramebuffer::Resize(std::int16_t width, std::int16_t height) {
+  width_ = width;
+  height_ = height;
+
+  std::size_t count =
+      static_cast<std::size_t>(width_) * static_cast<std::size_t>(height_);
+
+  Cell c{default_char_, default_fg_, default_bg_};
+  buffer_.assign(count, c);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSTerminalFramebuffer::UpdateSizeIfNeeded() noexcept {
+  auto [w, h] = DetectTerminalSize();
+
+  if (w != width_ || h != height_) {
+    width_ = w;
+    height_ = h;
+    Resize(width_, height_);
+  }
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSTerminalFramebuffer::Clear(char32_t ch, ColourKey fg,
+                                     ColourKey bg) noexcept {
+  default_char_ = ch;
+  default_fg_ = fg;
+  default_bg_ = bg;
+
+  Cell cell{ch, fg, bg};
+  std::fill(buffer_.begin(), buffer_.end(), cell);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSTerminalFramebuffer::DrawChar(std::int16_t x, std::int16_t y,
+                                        char32_t ch, ColourKey fg,
+                                        ColourKey bg) noexcept {
+  if (x < 0 || y < 0)
+    return;
+  if (x >= width_ || y >= height_)
+    return;
+
+  std::size_t idx = Index(x, y);
+
+  buffer_[idx] = {ch, fg, bg};
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSTerminalFramebuffer::DrawStringsVertical(
+    std::int16_t x, std::int16_t y, std::vector<std::u32string> const &line,
+    ColourKey fg, ColourKey bg) noexcept {
+  std::int16_t cy = y;
+  for (auto const &l : line) {
+    DrawString(x, cy, l, fg, bg);
+    ++cy;
   }
 }
 
@@ -58,16 +145,13 @@ void GGEMSTerminalFramebuffer::DrawStrings(std::int16_t x, std::int16_t y,
 /* --------------------------------------------- */
 
 void GGEMSTerminalFramebuffer::DrawString(std::int16_t x, std::int16_t y,
-                                          std::string_view text,
-                                          AsciiColour colour) noexcept {
-  if (x >= width_ || y >= height_)
-    return;
-
-  std::size_t idx =
-      static_cast<std::size_t>(x) +
-      static_cast<std::size_t>(y) * static_cast<std::size_t>(width_);
-  buffer_cells_[idx] = text;
-  buffer_colours_[idx] = colour;
+                                          std::u32string_view text,
+                                          ColourKey fg, ColourKey bg) noexcept {
+  std::int16_t cx = x;
+  for (char32_t ch : text) {
+    DrawChar(cx, y, ch, fg, bg);
+    ++cx;
+  }
 }
 
 /* --------------------------------------------- */
@@ -75,24 +159,10 @@ void GGEMSTerminalFramebuffer::DrawString(std::int16_t x, std::int16_t y,
 /* --------------------------------------------- */
 
 void GGEMSTerminalFramebuffer::DrawHLine(std::int16_t x, std::int16_t y,
-                                         std::int16_t length,
-                                         std::string_view s,
-                                         AsciiColour colour) noexcept {
-  if (y >= height_) {
-    return;
-  }
-
-  std::int16_t max_len =
-      (x < width_) ? std::min(length, static_cast<std::int16_t>(width_ - x))
-                   : 0;
-  std::size_t row_offset =
-      static_cast<std::size_t>(y) * static_cast<std::size_t>(width_);
-
-  for (std::int16_t i = 0; i < max_len; ++i) {
-    std::size_t idx =
-        row_offset + static_cast<std::size_t>(x) + static_cast<std::size_t>(i);
-    buffer_cells_[idx] = s;
-    buffer_colours_[idx] = colour;
+                                         std::int16_t length, char32_t ch,
+                                         ColourKey fg, ColourKey bg) noexcept {
+  for (std::int16_t cx = x; cx < (x + length); ++cx) {
+    DrawChar(cx, y, ch, fg, bg);
   }
 }
 
@@ -101,24 +171,10 @@ void GGEMSTerminalFramebuffer::DrawHLine(std::int16_t x, std::int16_t y,
 /* --------------------------------------------- */
 
 void GGEMSTerminalFramebuffer::DrawVLine(std::int16_t x, std::int16_t y,
-                                         std::int16_t length,
-                                         std::string_view s,
-                                         AsciiColour colour) noexcept {
-  if (x >= width_) {
-    return;
-  }
-
-  std::int16_t max_len =
-      (y < height_) ? std::min(length, static_cast<std::int16_t>(height_ - y))
-                    : 0;
-
-  for (std::int16_t i = 0; i < max_len; ++i) {
-    std::size_t idx =
-        static_cast<std::size_t>(y) +
-        static_cast<std::size_t>(i) * static_cast<std::size_t>(width_) +
-        static_cast<std::size_t>(x);
-    buffer_cells_[idx] = s;
-    buffer_colours_[idx] = colour;
+                                         std::int16_t length, char32_t ch,
+                                         ColourKey fg, ColourKey bg) noexcept {
+  for (std::int16_t cy = y; cy < (y + length); ++cy) {
+    DrawChar(x, cy, ch, fg, bg);
   }
 }
 
@@ -126,41 +182,25 @@ void GGEMSTerminalFramebuffer::DrawVLine(std::int16_t x, std::int16_t y,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSTerminalFramebuffer::DrawRect(std::int16_t x, std::int16_t y,
-                                        std::int16_t width, std::int16_t height,
-                                        std::string_view s,
-                                        AsciiColour colour) noexcept {
-  if (width == 0U || height == 0U) {
-    return;
-  }
+void GGEMSTerminalFramebuffer::DrawRectBorder(std::int16_t x, std::int16_t y,
+                                              std::int16_t width,
+                                              std::int16_t height, ColourKey fg,
+                                              ColourKey bg) noexcept {
+  auto const &g = utf::Glyphs();
 
-  DrawHLine(x, y, width, s, colour);
-  if (height > 1) {
-    DrawHLine(x, y + height - 1, width, s, colour);
-  }
+  // Horizontal top/bottom
+  DrawHLine(x + 1, y, width - 2, g.horizontal_line, fg, bg);
+  DrawHLine(x + 1, y + height - 1, width - 2, g.horizontal_line, fg, bg);
 
-  if (height > 2) {
-    DrawVLine(x, y + 1, height - 2, s, colour);
-    if (width > 1) {
-      DrawVLine(x + width - 1, y + 1, height - 2, s, colour);
-    }
-  }
-}
+  // Vertical left/right
+  DrawVLine(x, y + 1, height - 2, g.vertical_line, fg, bg);
+  DrawVLine(x + width - 1, y + 1, height - 2, g.vertical_line, fg, bg);
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-void GGEMSTerminalFramebuffer::SetUseColour(bool const use_colour) noexcept {
-  use_colour_ = use_colour;
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-bool GGEMSTerminalFramebuffer::UseColour() const noexcept {
-  return use_colour_;
+  // Corners
+  DrawChar(x, y, g.border_top_left, fg, bg);
+  DrawChar(x + width - 1, y, g.border_top_right, fg, bg);
+  DrawChar(x, y + height - 1, g.border_bottom_left, fg, bg);
+  DrawChar(x + width - 1, y + height - 1, g.border_bottom_right, fg, bg);
 }
 
 /* --------------------------------------------- */
@@ -169,79 +209,30 @@ bool GGEMSTerminalFramebuffer::UseColour() const noexcept {
 
 std::string GGEMSTerminalFramebuffer::Render() const {
   std::string out;
-  out.reserve((static_cast<std::size_t>(width_) + 1) *
-                  static_cast<std::size_t>(height_) +
-              16);
+  out.reserve(static_cast<std::size_t>(width_) *
+                  static_cast<std::size_t>(height_) * 40U +
+              128U);
 
-  if (use_colour_) {
-    out.append("\033[0m");
-  }
+  for (int16_t y = 0; y < height_; y++) {
+    for (int16_t x = 0; x < width_; x++) {
 
-  AsciiColour current_colour = AsciiColour::Default;
+      auto const &cell = buffer_[Index(x, y)];
 
-  for (std::int16_t y = 0; y < height_; ++y) {
-    std::size_t row_offset =
-        static_cast<std::size_t>(y) * static_cast<std::size_t>(width_);
-
-    for (std::int16_t x = 0; x < width_; ++x) {
-      std::size_t idx = row_offset + static_cast<std::size_t>(x);
-      AsciiColour cell_colour = buffer_colours_[idx];
-
-      if (use_colour_ && cell_colour != current_colour) {
-        current_colour = cell_colour;
-        std::string_view code = ColourToAnsi(current_colour);
-        if (!code.empty()) {
-          out.append(code);
-        }
+      if (use_colour_) {
+        out.append(AnsiColour(cell.bg_));
+        out.append(AnsiColour(cell.fg_));
       }
 
-      out.append(buffer_cells_[idx]);
+      out.append(utf::UTF32ToUTF8(cell.ch_));
     }
 
     if (use_colour_) {
-      out.append("\033[0m");
-      current_colour = AsciiColour::Default;
+      out.append("\033[0m"); // reset seulement fin ligne
     }
 
-    out.append("\n");
-  }
-
-  if (use_colour_) {
-    out.append("\033[0m");
+    out.push_back('\n');
   }
 
   return out;
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-std::string_view
-GGEMSTerminalFramebuffer::ColourToAnsi(AsciiColour colour) noexcept {
-  switch (colour) {
-  case AsciiColour::Default:
-    return "\033[0m";
-  case AsciiColour::Faint:
-    return "\033[2m";
-  case AsciiColour::Bright:
-    return "\033[1m";
-  case AsciiColour::Green:
-    return "\033[1;32m";
-  case AsciiColour::Blue:
-    return "\033[1;34m";
-  case AsciiColour::Cyan:
-    return "\033[1;36m";
-  case AsciiColour::Yellow:
-    return "\033[1;33m";
-  case AsciiColour::Magenta:
-    return "\033[1;35m";
-  case AsciiColour::Red:
-    return "\033[1;31m";
-  case AsciiColour::Grey:
-    return "\033[90m";
-  default:
-    return "\033[0m";
-  }
 }
 } // namespace ggems::render

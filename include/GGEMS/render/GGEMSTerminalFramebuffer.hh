@@ -6,24 +6,21 @@
 #include <vector>
 /// \endcond
 
+#include "GGEMS/render/GGEMSColour.hh"
+#include "GGEMS/render/GGEMSColourNames.hh"
+
 namespace ggems::render {
 
-enum class AsciiColour : std::uint8_t {
-  Default = 0,
-  Faint,
-  Bright,
-  Green,
-  Blue,
-  Cyan,
-  Yellow,
-  Magenta,
-  Red,
-  Grey
-};
-
 class GGEMSTerminalFramebuffer {
+private:
+  struct Cell {
+    char32_t ch_;
+    ColourKey fg_;
+    ColourKey bg_;
+  };
+
 public:
-  GGEMSTerminalFramebuffer(std::int16_t width, std::int16_t height);
+  GGEMSTerminalFramebuffer();
   ~GGEMSTerminalFramebuffer() = default;
 
   GGEMSTerminalFramebuffer(GGEMSTerminalFramebuffer const &) = delete;
@@ -34,46 +31,65 @@ public:
   operator=(GGEMSTerminalFramebuffer const &&) = delete;
 
 public:
-  void Clear(std::string_view s = " ",
-             AsciiColour color = AsciiColour::Default) noexcept;
-  void Put(std::int16_t x, std::int16_t y, std::string_view s,
-           AsciiColour color = AsciiColour::Default) noexcept;
-
-  void DrawStrings(std::int16_t x, std::int16_t y,
-                   std::vector<std::string> const &line,
-                   AsciiColour color = AsciiColour::Default) noexcept;
-  void DrawString(std::int16_t x, std::int16_t y, std::string_view text,
-                  AsciiColour color = AsciiColour::Default) noexcept;
-
-  void DrawHLine(std::int16_t x, std::int16_t y, std::int16_t length,
-                 std::string_view s,
-                 AsciiColour color = AsciiColour::Default) noexcept;
-  void DrawVLine(std::int16_t x, std::int16_t y, std::int16_t length,
-                 std::string_view s,
-                 AsciiColour color = AsciiColour::Default) noexcept;
-
-  void DrawRect(std::int16_t x, std::int16_t y, std::int16_t width,
-                std::int16_t height, std::string_view s,
-                AsciiColour color = AsciiColour::Default) noexcept;
-
-  [[nodiscard]] std::string Render() const;
+  // --- Resize / Access ------------------------------------------------------
+  void Resize(std::int16_t width, std::int16_t height);
   [[nodiscard]] constexpr std::int16_t Width() const noexcept { return width_; }
-  [[nodiscard]] constexpr std::int16_t height() const noexcept {
+  [[nodiscard]] constexpr std::int16_t Height() const noexcept {
     return height_;
   }
+  void UpdateSizeIfNeeded() noexcept;
+
+  // --- Clear --------------------------------------------------------------
+  void Clear(char32_t ch = U' ', ColourKey fg = DEFAULT_FG,
+             ColourKey bg = DEFAULT_BG) noexcept;
+
+  // --- Drawing Primitives --------------------------------------------------
+  void DrawChar(std::int16_t x, std::int16_t y, char32_t ch,
+                ColourKey fg = DEFAULT_FG, ColourKey bg = DEFAULT_BG) noexcept;
+
+  void DrawString(std::int16_t x, std::int16_t y, std::u32string_view text,
+                  ColourKey fg = DEFAULT_FG,
+                  ColourKey bg = DEFAULT_BG) noexcept;
+
+  void DrawStringsVertical(std::int16_t x, std::int16_t y,
+                           std::vector<std::u32string> const &line,
+                           ColourKey fg = DEFAULT_FG,
+                           ColourKey bg = DEFAULT_BG) noexcept;
+
+  void DrawHLine(std::int16_t x, std::int16_t y, std::int16_t length,
+                 char32_t ch, ColourKey fg = DEFAULT_FG,
+                 ColourKey bg = DEFAULT_BG) noexcept;
+
+  void DrawVLine(std::int16_t x, std::int16_t y, std::int16_t length,
+                 char32_t ch, ColourKey fg = DEFAULT_FG,
+                 ColourKey bg = DEFAULT_BG) noexcept;
+
+  void DrawRectBorder(std::int16_t x, std::int16_t y, std::int16_t width,
+                      std::int16_t height, ColourKey fg = DEFAULT_FG,
+                      ColourKey bg = DEFAULT_BG) noexcept;
+
+  // --- Convert to UTF-8 buffer for printing ---------------------------------
+  [[nodiscard]] std::string Render() const;
 
   void SetUseColour(bool use_colour) noexcept;
-  [[nodiscard]] bool UseColour() const noexcept;
 
 private:
-  [[nodiscard]] static std::string_view
-  ColourToAnsi(AsciiColour colour) noexcept;
+  [[nodiscard]] inline std::size_t Index(std::int16_t x,
+                                         std::int16_t y) const noexcept {
+    return static_cast<std::size_t>(y) * static_cast<std::size_t>(width_) +
+           static_cast<std::size_t>(x);
+  }
+
+  [[nodiscard]]
+  static std::pair<std::int16_t, std::int16_t> DetectTerminalSize() noexcept;
 
 private:
   std::int16_t width_;
   std::int16_t height_;
-  std::vector<std::string> buffer_cells_;
-  std::vector<AsciiColour> buffer_colours_;
+  std::vector<Cell> buffer_;
   bool use_colour_{true};
+  char32_t default_char_{U' '};
+  ColourKey default_fg_{DEFAULT_FG};
+  ColourKey default_bg_{DEFAULT_BG};
 };
 } // namespace ggems::render

@@ -85,6 +85,7 @@ file(GLOB_RECURSE GGEMS_CORE_SOURCES
   ${PROJECT_SOURCE_DIR}/src/core/*.cc
   ${PROJECT_SOURCE_DIR}/src/frameworks/*.cc
   ${PROJECT_SOURCE_DIR}/src/render/*.cc
+  ${PROJECT_SOURCE_DIR}/src/utf/*.cc
 )
 
 add_library(ggems_core STATIC ${GGEMS_CORE_SOURCES})

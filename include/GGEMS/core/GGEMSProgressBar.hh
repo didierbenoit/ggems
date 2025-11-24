@@ -26,24 +26,14 @@
 /// \endcond
 
 #include "GGEMS/core/units/GGEMSUnits.hh"
+#include "GGEMS/render/GGEMSColourNames.hh"
 #include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
+#include "GGEMS/utf/GGEMSGlyphs.hh"
 
 namespace ggems::core {
 
 class GGEMSProgressBar {
 public:
-  GGEMSProgressBar(std::int16_t width_ = 80, std::int16_t height = 24);
-  ~GGEMSProgressBar();
-
-  GGEMSProgressBar(GGEMSProgressBar const &) = delete;
-  GGEMSProgressBar(GGEMSProgressBar const &&) = delete;
-  GGEMSProgressBar &operator=(GGEMSProgressBar const &) = delete;
-  GGEMSProgressBar &operator=(GGEMSProgressBar const &&) = delete;
-
-public:
-  void Start();
-  void Stop();
-
   struct Slot {
     enum class ParticleType : std::uint8_t {
       Gamma,
@@ -57,131 +47,172 @@ public:
 
     enum class Status : std::uint8_t { Pending, Running, Finished };
 
-    static std::string ParticleSymbol(ParticleType p) {
+    static char32_t ParticleSymbol(ParticleType p) {
       switch (p) {
       case ParticleType::Gamma:
-        return "γ";
+        return utf::Glyphs().gamma;
       case ParticleType::Proton:
-        return "p";
+        return utf::Glyphs().proton;
       case ParticleType::Electron:
-        return "e⁻";
+        return utf::Glyphs().electron;
       case ParticleType::Positron:
-        return "e⁺";
+        return utf::Glyphs().electron;
       case ParticleType::Neutron:
-        return "n";
+        return utf::Glyphs().neutron;
       case ParticleType::Alpha:
-        return "α";
+        return utf::Glyphs().alpha;
       case ParticleType::Aionino:
-        return "λ";
+        return utf::Glyphs().aionino;
       }
     }
 
-    static render::AsciiColour ParticleColour(ParticleType p) {
+    static render::ColourKey ParticleColour(ParticleType p) {
       switch (p) {
       case ParticleType::Gamma:
-        return render::AsciiColour::Green;
+        return render::YELLOW_Gold_B;
       case ParticleType::Proton:
-        return render::AsciiColour::Red;
+        return render::RED_Crimson_B;
       case ParticleType::Electron:
-        return render::AsciiColour::Blue;
+        return render::BLUE_Dodger_B;
       case ParticleType::Positron:
-        return render::AsciiColour::Magenta;
+        return render::MAGENTA_Fuchsia_B;
       case ParticleType::Neutron:
-        return render::AsciiColour::Grey;
+        return render::CYAN_Frost_B;
       case ParticleType::Alpha:
-        return render::AsciiColour::Cyan;
+        return render::CYAN_Marine_B;
       case ParticleType::Aionino:
-        return render::AsciiColour::Blue;
+        return render::BLUE_Ice_B;
       }
     }
 
-    static std::string ParticleName(ParticleType p) {
+    static constexpr std::u32string ParticleName(ParticleType p) {
       switch (p) {
       case ParticleType::Gamma:
-        return "gamma";
+        return U"gamma";
       case ParticleType::Proton:
-        return "proton";
+        return U"proton";
       case ParticleType::Electron:
-        return "electron";
+        return U"electron";
       case ParticleType::Positron:
-        return "positron";
+        return U"positron";
       case ParticleType::Neutron:
-        return "neutron";
+        return U"neutron";
       case ParticleType::Alpha:
-        return "alpha";
+        return U"alpha";
       case ParticleType::Aionino:
-        return "aionino";
+        return U"aionino";
       }
     }
 
-    static render::AsciiColour StatusColour(Status status) {
+    static render::ColourKey StatusColour(Status status) {
       switch (status) {
       case Status::Pending:
-        return render::AsciiColour::Grey;
+        return render::CYAN_Frost;
       case Status::Running:
-        return render::AsciiColour::Green;
+        return render::GREEN_Emerald;
       case Status::Finished:
-        return render::AsciiColour::Red;
+        return render::BLUE_Azure;
       }
     }
 
-    static std::string StatusName(Status status) {
+    static std::u32string StatusName(Status status) {
       switch (status) {
       case Status::Pending:
-        return "pending";
+        return U"pending";
       case Status::Running:
-        return "running";
+        return U"running";
       case Status::Finished:
-        return "finished";
+        return U"finished";
       }
     }
 
     std::string name_;
     std::string kernel_name_;
     Status status_;
-    ParticleType particle_type_;
+    ParticleType particle_type_{ParticleType::Gamma};
+    bool is_gpu_{false};
+
     std::atomic<std::uint64_t> batches_done_{0};
     std::atomic<std::uint64_t> batches_total_{0};
     std::atomic<std::uint64_t> eta_ps_{0ULL};
     std::atomic<long double> bandwidth_byte_per_ps_{0.0};
-    std::atomic<bool> is_gpu_{false};
+    std::atomic<std::uint8_t> cpu_usage_percent_{0};
+    std::atomic<std::uint8_t> gpu_usage_percent_{0};
 
-    Slot &SetBandwidth_bytes_per_ps(long double bytes_per_ps);
-    Slot &SetETA_ps(std::uint64_t eta_ps);
-    Slot &SetName(std::string_view name);
-    Slot &SetIsGPU(bool is_gpu);
-    Slot &SetKernelName(std::string_view kernel);
-    Slot &SetParticleType(ParticleType p);
-    Slot &SetBatchesTotal(std::uint64_t total);
-    Slot &SetBatchesDone(std::uint64_t done);
-    Slot &SetStatus(Status status);
+    Slot &SetKernelName(std::string_view kernel) noexcept;
+    Slot &SetStatus(Status status) noexcept;
+    Slot &SetParticleType(ParticleType p) noexcept;
+    Slot &SetBatchesDone(std::uint64_t done) noexcept;
+    Slot &SetBatchesTotal(std::uint64_t total) noexcept;
+    Slot &SetBandwidthBytesPerPicosecond(long double value) noexcept;
+    Slot &SetETAPicoseconds(std::uint64_t eta_ps) noexcept;
+    Slot &SetIsGPU(bool is_gpu) noexcept;
+    Slot &SetCPUUsage(std::uint8_t value) noexcept;
+    Slot &SetGPUUsage(std::uint8_t value) noexcept;
   };
 
+public:
+  GGEMSProgressBar() = default;
+  ~GGEMSProgressBar();
+
+  GGEMSProgressBar(GGEMSProgressBar const &) = delete;
+  GGEMSProgressBar(GGEMSProgressBar const &&) = delete;
+  GGEMSProgressBar &operator=(GGEMSProgressBar const &) = delete;
+  GGEMSProgressBar &operator=(GGEMSProgressBar const &&) = delete;
+
+public:
   Slot &AddSlot(std::string_view name, bool is_gpu);
   Slot &GetSlot(std::size_t index) noexcept;
+
+  void Start();
+  void Stop();
+
+  void SetFrameRate(std::chrono::milliseconds min_frame_time,
+                    std::chrono::milliseconds max_frame_time) noexcept;
 
 private:
   void RenderLoop(std::stop_token st);
   void Draw();
-  [[nodiscard]] std::vector<std::string> BuildBar(float progress);
-  [[nodiscard]] std::vector<std::string>
+  void PrepareFrame();
+  void FlushFrame();
+
+  void DrawHeader();
+  void DrawSlots();
+  void DrawSingleSlot(std::size_t index, std::int16_t base_y);
+
+  [[nodiscard]] static std::vector<char32_t> BuildBar(float progress);
+  [[nodiscard]] std::vector<char32_t>
   BuildPulse(Slot::ParticleType particle_type);
-  [[nodiscard]] std::string FormatETA(std::uint64_t ps) const noexcept;
-  [[nodiscard]] std::string
-  FormatBandwidth(long double bytes_per_ps) const noexcept;
-  [[nodiscard]] std::size_t SlotBaseRow(std::size_t slot_index) const noexcept;
+
+  [[nodiscard]] static std::u32string FormatPercentage(float progress);
+  [[nodiscard]] static std::string FormatETA(std::uint64_t ps) noexcept;
+  [[nodiscard]] static std::string
+  FormatBandwidth(long double bytes_per_ps) noexcept;
 
   void DisableTerminal();
   void EnableTerminal();
-  void EnsureFramebufferSize();
 
 private:
-  std::deque<Slot> slots_;
+  // --- Concurrence / thread
   std::jthread worker_;
   std::atomic<bool> running_{false};
-  std::unique_ptr<render::GGEMSTerminalFramebuffer> framebuffer_;
-  std::int16_t width_;
-  std::int16_t height_;
+
+  // --- One slot each OpenCL context
+  std::deque<Slot> slots_;
+
+  // --- Layout
+  std::int16_t content_width_{90};
+  std::int16_t frame_height_{0};
+  std::int16_t rows_per_slot_{5};
+  std::int16_t header_rows_{4};
+  std::int16_t footer_rows_{1};
+  std::int16_t center_x_{0};
+  std::int16_t center_y_{0};
+
+  render::GGEMSTerminalFramebuffer framebuffer_;
   std::atomic<std::uint64_t> frame_counter_{0U};
+
+  std::chrono::milliseconds min_frame_time_{100};
+  std::chrono::milliseconds max_frame_time_{2000};
 };
 } // namespace ggems::core

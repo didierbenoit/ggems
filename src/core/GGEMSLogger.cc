@@ -126,15 +126,15 @@ GGEMSLogger &GGEMSLogger::GetInstance() {
 
 GGEMSLogger::GGEMSLogger() {
 #ifdef _WIN32
-  encoding_ = EnableUtf8Win32() ? Encoding::Utf8 : Encoding::Ascii;
+  encoding_ = EnableUtf32Win32() ? Encoding::Utf32 : Encoding::Ascii;
 #else
-  encoding_ = EnableUtf8Unix() ? Encoding::Utf8 : Encoding::Ascii;
+  encoding_ = EnableUtf32Unix() ? Encoding::Utf32 : Encoding::Ascii;
 #endif
   sinks_.emplace_back(std::make_unique<ConsoleSink>());
 }
 
 #ifdef _WIN32
-bool GGEMSLogger::EnableUtf8Win32() {
+bool GGEMSLogger::EnableUtf32Win32() {
   bool ok = true;
 
   // 1. Set code pages UTF-8
@@ -163,7 +163,7 @@ bool GGEMSLogger::EnableUtf8Win32() {
   return ok && vtEnabled;
 }
 #else
-bool GGEMSLogger::EnableUtf8Unix() {
+bool GGEMSLogger::EnableUtf32Unix() {
   try {
     std::locale::global(std::locale("en_US.UTF-8"));
     return true;

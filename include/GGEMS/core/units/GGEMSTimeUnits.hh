@@ -2,11 +2,16 @@
 
 #include "GGEMSQuantity.hh"
 
+/// \cond
+#include <array>
+/// \endcond
+
 namespace ggems::units {
 using Time = Quantity<TimeDim, uint64_t>; // base: picoseconds
 
 // Human-readable time
-inline std::string HumanReadable(Time const &t) {
+inline std::string HumanReadable(Time const &t, std::int8_t precision = 7,
+                                 std::int8_t width = -1) {
   long double const v = static_cast<long double>(t.value);
 
   // >= 60 s → h / min / s / ms
@@ -29,19 +34,39 @@ inline std::string HumanReadable(Time const &t) {
     return std::format("{} min {} s {} ms", minutes, seconds, ms);
   }
 
-  if (v >= 1.0e12L) // s
-    return std::format("{:4.1f} s", v / 1.0e12L);
+  struct Unit {
+    long double threshold_ps;
+    long double scale;
+    std::string_view suffix;
+  };
 
-  if (v >= 1.0e9L) // ms
-    return std::format("{:5.1f} ms", v / 1.0e9L);
+  static constexpr std::array<Unit, 5> units{{
+      {1.0e12L, 1.0e12L, " s"}, // >= 1s
+      {1.0e9L, 1.0e9L, " ms"},  // >= 1ms
+      {1.0e6L, 1.0e6L, " us"},  // >= 1us
+      {1.0e3L, 1.0e3L, " ns"},  // >= 1ns
+      {0.0L, 1.0L, " ps"}       // < 1ns
+  }};
 
-  if (v >= 1.0e6L) // us
-    return std::format("{:5.1f} us", v / 1.0e6L);
+  for (auto const &u : units) {
+    if (v >= u.threshold_ps) {
 
-  if (v >= 1.0e3L) // ns
-    return std::format("{:5.1f} ns", v / 1.0e3L);
+      long double scaled = v / u.scale;
 
-  return std::format("{} ps", v); // base
+      // Construire format dynamique : libre ou fixe
+      std::string fmt;
+      if (width < 0) {
+        fmt = std::format("{{:.{}f}}{}", precision, u.suffix);
+      } else {
+        fmt = std::format("{{:{}.{}f}}{}", width, precision, u.suffix);
+      }
+
+      return std::vformat(fmt, std::make_format_args(scaled));
+    }
+  }
+
+  // fallback jamais atteint
+  return std::format("{:.{}f} ps", v, precision);
 }
 
 // User-defined literals for time (base = ps)
