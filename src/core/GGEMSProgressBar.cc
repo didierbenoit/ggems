@@ -236,9 +236,9 @@ void GGEMSProgressBar::SetFrameRate(
 /* --------------------------------------------- */
 
 void GGEMSProgressBar::DisableTerminal() {
-  std::cout << "\033[?1049h"; // Alternative screen
-  // std::cout << "\033[2J\033[H"; // Clean screen and cursor to [0;0] position
-  // std::cout << "\033[?12l";     // Deactivate blinking cursor
+  std::cout << "\033[?1049h";   // Alternative screen
+  std::cout << "\033[2J\033[H"; // Clean screen and cursor to [0;0] position
+  std::cout << "\033[?12l";     // Deactivate blinking cursor
   std::cout << "\033[H";
   std::cout << "\033[?25l"; // Deactivate cursor
 }
@@ -249,8 +249,8 @@ void GGEMSProgressBar::DisableTerminal() {
 
 void GGEMSProgressBar::EnableTerminal() {
   std::cout << "\033[?1049l"; // Go back to terminal
-  // std::cout << "\033[?12h";   // Activate blinking cursor
-  std::cout << "\033[?25h"; // Visible cursor
+  std::cout << "\033[?12h";   // Activate blinking cursor
+  std::cout << "\033[?25h";   // Visible cursor
 }
 
 /* --------------------------------------------- */

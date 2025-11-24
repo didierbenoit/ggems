@@ -212,7 +212,7 @@ private:
   render::GGEMSTerminalFramebuffer framebuffer_;
   std::atomic<std::uint64_t> frame_counter_{0U};
 
-  std::chrono::milliseconds min_frame_time_{100};
+  std::chrono::milliseconds min_frame_time_{2000};
   std::chrono::milliseconds max_frame_time_{2000};
 };
 } // namespace ggems::core

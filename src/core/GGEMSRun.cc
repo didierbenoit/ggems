@@ -111,7 +111,7 @@ void GGEMSRun::Run() {
         .SetBatchesDone(0ULL)
         .SetBatchesTotal(100ULL)
         .SetStatus(GGEMSProgressBar::Slot::Status::Pending)
-        .SetParticleType(GGEMSProgressBar::Slot::ParticleType::Aionino)
+        .SetParticleType(GGEMSProgressBar::Slot::ParticleType::Gamma)
         .SetETAPicoseconds(0ULL)
         .SetBandwidthBytesPerPicosecond(0.0);
   }
