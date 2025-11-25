@@ -19,6 +19,7 @@
 
 /// \cond
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <deque>
 #include <string>
@@ -172,22 +173,24 @@ public:
 
 private:
   void RenderLoop(std::stop_token st);
-  void Draw();
   void PrepareFrame();
   void FlushFrame();
 
+  void Draw();
   void DrawHeader();
   void DrawSlots();
   void DrawSingleSlot(std::size_t index, std::int16_t base_y);
 
   [[nodiscard]] static std::vector<char32_t> BuildBar(float progress);
-  [[nodiscard]] std::vector<char32_t>
+  [[nodiscard]] static std::vector<char32_t>
   BuildPulse(Slot::ParticleType particle_type);
 
   [[nodiscard]] static std::u32string FormatPercentage(float progress);
   [[nodiscard]] static std::string FormatETA(std::uint64_t ps) noexcept;
   [[nodiscard]] static std::string
   FormatBandwidth(long double bytes_per_ps) noexcept;
+
+  [[nodiscard]] std::chrono::milliseconds ComputeFrameTime() const noexcept;
 
   void DisableTerminal();
   void EnableTerminal();
@@ -212,7 +215,7 @@ private:
   render::GGEMSTerminalFramebuffer framebuffer_;
   std::atomic<std::uint64_t> frame_counter_{0U};
 
-  std::chrono::milliseconds min_frame_time_{2000};
-  std::chrono::milliseconds max_frame_time_{2000};
+  std::chrono::milliseconds min_frame_time_{1000};
+  std::chrono::milliseconds max_frame_time_{300000};
 };
 } // namespace ggems::core
