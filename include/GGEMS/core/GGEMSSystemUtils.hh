@@ -31,7 +31,7 @@ QueryGPUUsage(std::array<std::uint8_t, 8> &luid_bytes) noexcept;
 [[nodiscard]] std::vector<GPUUsage> QueryMultiGPUUsage(
     std::vector<std::array<std::uint8_t, 8>> const &luids) noexcept;
 
-[[nodiscard]] std::optional<std::uint64_t> GetCPUFrequencyMHz() noexcept;
+[[nodiscard]] std::optional<std::uint32_t> GetCPUFrequencyMHz() noexcept;
 
 [[nodiscard]] constexpr OS DetectOS() noexcept {
 #if defined(_WIN32)

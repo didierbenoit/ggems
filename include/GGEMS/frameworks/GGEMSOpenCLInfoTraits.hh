@@ -34,7 +34,7 @@
 #include <string>
 /// \endcond
 
-#include "GGEMS/core/GGEMSCoreUtils.hh"
+#include "GGEMS/core/GGEMSSystemUtils.hh"
 #include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLStrings.hh"
 

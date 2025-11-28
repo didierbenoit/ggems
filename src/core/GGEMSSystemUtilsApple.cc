@@ -1,33 +1,22 @@
 #include "GGEMS/core/GGEMSSystemUtils.hh"
 
-namespace ggems::core {
+#if defined(__APPLE__)
+
+namespace ggems::core::system {
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-namespace system {
-std::optional<SystemUsage> GetSystemUsage() noexcept;
-GPUUsage QueryGPUUsage(std::array<std::uint8_t, 8> &luid_bytes) noexcept;
-std::vector<GPUUsage> QueryMultiGPUUsage(
-    std::vector<std::array<std::uint8_t, 8>> const &luids) noexcept;
-std::optional<std::uint32_t> GetCPUFrequencyMHz() noexcept;
-} // namespace system
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-std::optional<SystemUsage> GetSystemUsage() noexcept {
-  return system::GetSystemUsage();
-}
+std::optional<uint32_t> GetCPUFrequencyMHz() noexcept { return std::nullopt; }
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
 GPUUsage QueryGPUUsage(std::array<std::uint8_t, 8> &luid_bytes) noexcept {
-  return system::QueryGPUUsage(luid_bytes);
+  (void)luid_bytes;
+  return GPUUsage{};
 }
 
 /* --------------------------------------------- */
@@ -36,15 +25,17 @@ GPUUsage QueryGPUUsage(std::array<std::uint8_t, 8> &luid_bytes) noexcept {
 
 std::vector<GPUUsage> QueryMultiGPUUsage(
     std::vector<std::array<std::uint8_t, 8>> const &luids) noexcept {
-  return system::QueryMultiGPUUsage(luids);
+  (void)luids;
+  std::vector<GPUUsage> out;
+  return out;
 }
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-std::optional<std::uint32_t> GetCPUFrequencyMHz() noexcept {
-  return system::GetCPUFrequencyMHz();
-}
+std::optional<SystemUsage> GetSystemUsage() noexcept { return std::nullopt; }
+return std::nullopt;
+} // namespace ggems::core::system
 
-} // namespace ggems::core
+#endif
