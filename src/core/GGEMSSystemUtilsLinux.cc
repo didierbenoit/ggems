@@ -14,17 +14,8 @@ std::optional<uint32_t> GetCPUFrequencyMHz() noexcept { return std::nullopt; }
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-GPUUsage QueryGPUUsage(std::array<std::uint8_t, 8> &luid_bytes) noexcept {
+GPUUsage QueryGPUUsage(std::array<cl_uchar, CL_LUID_SIZE_KHR> &luid) noexcept {
   return GPUUsage{};
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-std::vector<GPUUsage> QueryMultiGPUUsage(
-    std::vector<std::array<std::uint8_t, 8>> const &luids) noexcept {
-  ;
 }
 
 /* --------------------------------------------- */

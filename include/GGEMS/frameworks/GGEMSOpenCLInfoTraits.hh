@@ -30,7 +30,6 @@
  */
 
 /// \cond
-#include <CL/opencl.hpp>
 #include <string>
 /// \endcond
 
@@ -239,14 +238,13 @@ template <> struct InfoTraits<CL_DEVICE_MAX_CLOCK_FREQUENCY> {
       return HumanReadable(f, 1, 5);
     }
 
-    auto const fallback = ggems::core::GetCPUFrequencyMHz();
-
-    if (fallback.has_value()) {
-      Frequency f = Frequency{static_cast<std::uint64_t>(fallback.value()) *
+    auto freq_mhz = core::SystemUsage().cpu_frequency_;
+    if (freq_mhz.has_value()) {
+      Frequency f = Frequency{static_cast<std::uint64_t>(freq_mhz.value()) *
                               1'000'000ull};
       return HumanReadable(f, 1, 5);
     } else {
-      return "";
+      return "N/A";
     }
   };
 };

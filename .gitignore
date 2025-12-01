@@ -3,11 +3,13 @@ __pycache__
 build
 .cache
 .clangd
+.clang-format
 .pytest_cache
 compile_commands.json
 python/ggems/ggems.cp313-win_amd64.ilk
 python/ggems/ggems.cp313-win_amd64.pyd
 python/ggems/ggems.pdb
+python/ggems/ggems.lib
 tree.txt
 docs/Doxygen/html
 docs/Doxygen/xml

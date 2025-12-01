@@ -4,34 +4,36 @@
 #include <array>
 #include <cstdint>
 #include <optional>
-#include <vector>
 /// \endcond
+
+#include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 
 namespace ggems::core {
 enum class OS : std::uint8_t { Win, Linux, Apple };
 
-struct SystemUsage {
-  std::uint8_t cpu_percent_;
-  std::uint8_t ram_percent_;
-  std::uint64_t ram_total_bytes_;
-  std::uint64_t ram_used_bytes_;
+struct RAMUsage {
+  std::uint64_t total_;     // bytes
+  std::uint64_t available_; // bytes
+  std::uint64_t used_;      // bytes
+  std::uint8_t percent_;    // 0–100
 };
 
-struct GPUUsage {
+struct SystemUsage {
+  std::uint8_t cpu_percent_; // 0-100
+  RAMUsage ram_;
+  std::optional<std::uint32_t> cpu_frequency_; // MHz
+};
+
+struct GPUsage {
   std::optional<std::uint8_t> gpu_percent_;
   std::uint64_t vram_total_bytes_;
   std::uint64_t vram_used_bytes_;
 };
 
-[[nodiscard]] std::optional<SystemUsage> GetSystemUsage() noexcept;
+[[nodiscard]] SystemUsage GetSystemUsage() noexcept;
 
-[[nodiscard]] GPUUsage
-QueryGPUUsage(std::array<std::uint8_t, 8> &luid_bytes) noexcept;
-
-[[nodiscard]] std::vector<GPUUsage> QueryMultiGPUUsage(
-    std::vector<std::array<std::uint8_t, 8>> const &luids) noexcept;
-
-[[nodiscard]] std::optional<std::uint32_t> GetCPUFrequencyMHz() noexcept;
+[[nodiscard]] std::optional<GPUsage>
+GetGPUsage(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid_bytes) noexcept;
 
 [[nodiscard]] constexpr OS DetectOS() noexcept {
 #if defined(_WIN32)

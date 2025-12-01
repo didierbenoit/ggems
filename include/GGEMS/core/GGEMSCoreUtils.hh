@@ -40,8 +40,7 @@
 #include <unordered_map>
 
 #if defined(_WIN32)
-#include <intrin.h>
-#include <windows.h>
+#include "GGEMS/platform/windows/GGEMSWindowsCore.hh"
 #elif defined(__linux__)
 #include <fstream>
 #elif defined(__APPLE__)

@@ -7,44 +7,24 @@ namespace ggems::core {
 /* --------------------------------------------- */
 
 namespace system {
-std::optional<SystemUsage> GetSystemUsage() noexcept;
-GPUUsage QueryGPUUsage(std::array<std::uint8_t, 8> &luid_bytes) noexcept;
-std::vector<GPUUsage> QueryMultiGPUUsage(
-    std::vector<std::array<std::uint8_t, 8>> const &luids) noexcept;
-std::optional<std::uint32_t> GetCPUFrequencyMHz() noexcept;
+SystemUsage GetSystemUsage() noexcept;
+
+std::optional<GPUsage>
+GetGPUsage(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid) noexcept;
 } // namespace system
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-std::optional<SystemUsage> GetSystemUsage() noexcept {
-  return system::GetSystemUsage();
+SystemUsage GetSystemUsage() noexcept { return system::GetSystemUsage(); }
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+std::optional<GPUsage>
+GetGPUsage(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid) noexcept {
+  return system::GetGPUsage(luid);
 }
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-GPUUsage QueryGPUUsage(std::array<std::uint8_t, 8> &luid_bytes) noexcept {
-  return system::QueryGPUUsage(luid_bytes);
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-std::vector<GPUUsage> QueryMultiGPUUsage(
-    std::vector<std::array<std::uint8_t, 8>> const &luids) noexcept {
-  return system::QueryMultiGPUUsage(luids);
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-std::optional<std::uint32_t> GetCPUFrequencyMHz() noexcept {
-  return system::GetCPUFrequencyMHz();
-}
-
 } // namespace ggems::core

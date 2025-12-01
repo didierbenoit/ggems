@@ -1,21 +1,6 @@
 #pragma once
 
-#include "GGEMS/core/units/GGEMSBytesUnits.hh"
-#define CL_HPP_TARGET_OPENCL_VERSION 300
-#define CL_TARGET_OPENCL_VERSION 300
-#define CL_ENABLE_SPIRV_EXTENSIONS
-
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wsign-conversion"
-#pragma clang diagnostic ignored "-Wunused-parameter"
-#endif
-
-/// \cond
-#include <CL/opencl.hpp>
-/// \endcond
-
-#include "GGEMS/core/units/GGEMSUnits.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
 

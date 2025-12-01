@@ -2,7 +2,6 @@
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/GGEMSProgressBar.hh"
-#include "GGEMS/core/units/GGEMSBandwidthUnits.hh"
 #include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
@@ -104,9 +103,11 @@ void GGEMSRun::Run() {
     auto &dev = ctx.GetDevice();
     auto const device_name = dev.GetName();
     auto const device_type = dev.GetType();
+    auto const device_luid = dev.GetLUIDKhr();
     progress_bar_
         .AddSlot(device_name,
-                 (device_type == CL_DEVICE_TYPE_GPU) ? true : false)
+                 (device_type == CL_DEVICE_TYPE_GPU) ? true : false,
+                 device_luid)
         .SetKernelName("vec_add")
         .SetBatchesDone(0ULL)
         .SetBatchesTotal(100ULL)

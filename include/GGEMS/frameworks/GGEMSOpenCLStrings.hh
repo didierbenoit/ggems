@@ -28,9 +28,9 @@
  * \version 2.0
  */
 
+#include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
+
 /// \cond
-#include <CL/opencl.hpp>
-#include <concepts>
 #include <format>
 #include <span>
 #include <sstream>

@@ -29,6 +29,7 @@
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/core/GGEMSCoreUtils.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/core/GGEMSSystemUtils.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
 namespace ggems::ocl {
@@ -183,7 +184,7 @@ cl_uint GGEMSOpenCLDevice::GetMaxClockFrequency() const {
 
     // Fallback CPU uniquement
     if (type & CL_DEVICE_TYPE_CPU) {
-      if (auto cpu_freq = ggems::core::GetCPUFrequencyMHz()) {
+      if (auto cpu_freq = core::SystemUsage().cpu_frequency_) {
         return static_cast<cl_uint>(*cpu_freq);
       }
     }
@@ -715,12 +716,12 @@ cl_bool GGEMSOpenCLDevice::GetLUIDValidKhr() const {
 /* --------------------------------*/
 /* --------------------------------*/
 
-std::string GGEMSOpenCLDevice::GetLUIDKhr() const {
+std::array<cl_uchar, CL_LUID_SIZE_KHR> GGEMSOpenCLDevice::GetLUIDKhr() const {
   if (GetLUIDValidKhr()) {
     auto luid = GetInfo<CL_DEVICE_LUID_KHR>(device_);
-    return LUIDToString(luid);
+    return luid;
   } else
-    return "Not available";
+    return {};
 }
 
 /* --------------------------------*/

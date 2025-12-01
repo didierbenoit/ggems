@@ -20,10 +20,7 @@
 #include <format>
 #include <fstream>
 #ifdef _WIN32
-#include <io.h>
-#include <windows.h>
-#define isatty _isatty
-#define fileno _fileno
+#include "GGEMS/platform/windows/GGEMSWindowsCore.hh"
 #else
 #include <unistd.h>
 #endif

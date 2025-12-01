@@ -27,9 +27,11 @@
 /// \endcond
 
 #include "GGEMS/core/units/GGEMSUnits.hh"
+#include "GGEMS/render/GGEMSColour.hh"
 #include "GGEMS/render/GGEMSColourNames.hh"
 #include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
 #include "GGEMS/utf/GGEMSGlyphs.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 
 namespace ggems::core {
 
@@ -110,7 +112,7 @@ public:
       case Status::Pending:
         return render::CYAN_Frost;
       case Status::Running:
-        return render::GREEN_Emerald;
+        return render::GREEN_Neon;
       case Status::Finished:
         return render::BLUE_Azure;
       }
@@ -132,13 +134,12 @@ public:
     Status status_;
     ParticleType particle_type_{ParticleType::Gamma};
     bool is_gpu_{false};
+    std::array<cl_uchar, CL_LUID_SIZE_KHR> luid_;
 
     std::atomic<std::uint64_t> batches_done_{0};
     std::atomic<std::uint64_t> batches_total_{0};
     std::atomic<std::uint64_t> eta_ps_{0ULL};
     std::atomic<long double> bandwidth_byte_per_ps_{0.0};
-    std::atomic<std::uint8_t> cpu_usage_percent_{0};
-    std::atomic<std::uint8_t> gpu_usage_percent_{0};
 
     Slot &SetKernelName(std::string_view kernel) noexcept;
     Slot &SetStatus(Status status) noexcept;
@@ -148,8 +149,6 @@ public:
     Slot &SetBandwidthBytesPerPicosecond(long double value) noexcept;
     Slot &SetETAPicoseconds(std::uint64_t eta_ps) noexcept;
     Slot &SetIsGPU(bool is_gpu) noexcept;
-    Slot &SetCPUUsage(std::uint8_t value) noexcept;
-    Slot &SetGPUUsage(std::uint8_t value) noexcept;
   };
 
 public:
@@ -162,7 +161,8 @@ public:
   GGEMSProgressBar &operator=(GGEMSProgressBar const &&) = delete;
 
 public:
-  Slot &AddSlot(std::string_view name, bool is_gpu);
+  Slot &AddSlot(std::string_view name, bool is_gpu,
+                std::array<cl_uchar, CL_LUID_SIZE_KHR> luid);
   Slot &GetSlot(std::size_t index) noexcept;
 
   void Start();
@@ -180,15 +180,17 @@ private:
   void DrawHeader();
   void DrawSlots();
   void DrawSingleSlot(std::size_t index, std::int16_t base_y);
+  void DrawSystemStats();
 
   [[nodiscard]] static std::vector<char32_t> BuildBar(float progress);
   [[nodiscard]] static std::vector<char32_t>
   BuildPulse(Slot::ParticleType particle_type);
 
+  [[nodiscard]] static render::ColourKey
+  GetColourStatus(std::uint8_t percent) noexcept;
   [[nodiscard]] static std::u32string FormatPercentage(float progress);
-  [[nodiscard]] static std::string FormatETA(std::uint64_t ps) noexcept;
-  [[nodiscard]] static std::string
-  FormatBandwidth(long double bytes_per_ps) noexcept;
+  [[nodiscard]] static std::string FormatETA(std::uint64_t ps);
+  [[nodiscard]] static std::string FormatBandwidth(long double bytes_per_ps);
 
   [[nodiscard]] std::chrono::milliseconds ComputeFrameTime() const noexcept;
 
@@ -208,7 +210,7 @@ private:
   std::int16_t frame_height_{0};
   std::int16_t rows_per_slot_{5};
   std::int16_t header_rows_{4};
-  std::int16_t footer_rows_{1};
+  std::int16_t footer_rows_{2};
   std::int16_t center_x_{0};
   std::int16_t center_y_{0};
 

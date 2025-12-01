@@ -1,22 +1,6 @@
 #pragma once
 
-#define CL_HPP_TARGET_OPENCL_VERSION 300
-#define CL_TARGET_OPENCL_VERSION 300
-
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wsign-conversion"
-#pragma clang diagnostic ignored "-Wunused-parameter"
-#endif
-
-/// \cond
-#include <CL/opencl.hpp>
-/// \endcond
-
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
-
+#include "GGEMSOpenCLExternal.hh"
 #include "GGEMS/core/units/GGEMSUnits.hh"
 
 namespace ggems::ocl {

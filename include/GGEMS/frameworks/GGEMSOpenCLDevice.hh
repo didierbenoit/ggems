@@ -151,7 +151,7 @@ public: // ----- Identity properties -----
 
   [[nodiscard]] cl_bool GetLUIDValidKhr() const;
 
-  [[nodiscard]] std::string GetLUIDKhr() const;
+  [[nodiscard]] std::array<cl_uchar, CL_LUID_SIZE_KHR> GetLUIDKhr() const;
 
 public: // ----- Numeric identifiers & types -----
   [[nodiscard]] cl_uint GetVendorId() const;
