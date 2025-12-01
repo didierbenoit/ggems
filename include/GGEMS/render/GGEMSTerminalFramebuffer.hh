@@ -1,12 +1,9 @@
 #pragma once
 
 /// \cond
-#include <string>
-#include <string_view>
 #include <vector>
 /// \endcond
 
-#include "GGEMS/render/GGEMSColour.hh"
 #include "GGEMS/render/GGEMSColourNames.hh"
 
 namespace ggems::render {
@@ -16,7 +13,6 @@ private:
   struct Cell {
     char32_t ch_;
     ColourKey fg_;
-    ColourKey bg_;
   };
 
 public:
@@ -37,36 +33,30 @@ public:
   [[nodiscard]] constexpr std::int16_t Height() const noexcept {
     return height_;
   }
-  void UpdateSizeIfNeeded() noexcept;
+  void UpdateSizeIfNeeded();
 
   // --- Clear --------------------------------------------------------------
-  void Clear(char32_t ch = U' ', ColourKey fg = DEFAULT_FG,
-             ColourKey bg = DEFAULT_BG) noexcept;
+  void Clear(char32_t ch = U' ', ColourKey fg = DEFAULT_FG);
 
   // --- Drawing Primitives --------------------------------------------------
   void DrawChar(std::int16_t x, std::int16_t y, char32_t ch,
-                ColourKey fg = DEFAULT_FG, ColourKey bg = DEFAULT_BG) noexcept;
+                ColourKey fg = DEFAULT_FG) noexcept;
 
   void DrawString(std::int16_t x, std::int16_t y, std::u32string_view text,
-                  ColourKey fg = DEFAULT_FG,
-                  ColourKey bg = DEFAULT_BG) noexcept;
+                  ColourKey fg = DEFAULT_FG) noexcept;
 
   void DrawStringsVertical(std::int16_t x, std::int16_t y,
                            std::vector<std::u32string> const &line,
-                           ColourKey fg = DEFAULT_FG,
-                           ColourKey bg = DEFAULT_BG) noexcept;
+                           ColourKey fg = DEFAULT_FG) noexcept;
 
   void DrawHLine(std::int16_t x, std::int16_t y, std::int16_t length,
-                 char32_t ch, ColourKey fg = DEFAULT_FG,
-                 ColourKey bg = DEFAULT_BG) noexcept;
+                 char32_t ch, ColourKey fg = DEFAULT_FG) noexcept;
 
   void DrawVLine(std::int16_t x, std::int16_t y, std::int16_t length,
-                 char32_t ch, ColourKey fg = DEFAULT_FG,
-                 ColourKey bg = DEFAULT_BG) noexcept;
+                 char32_t ch, ColourKey fg = DEFAULT_FG) noexcept;
 
   void DrawRectBorder(std::int16_t x, std::int16_t y, std::int16_t width,
-                      std::int16_t height, ColourKey fg = DEFAULT_FG,
-                      ColourKey bg = DEFAULT_BG) noexcept;
+                      std::int16_t height, ColourKey fg = DEFAULT_FG) noexcept;
 
   // --- Convert to UTF-8 buffer for printing ---------------------------------
   [[nodiscard]] std::string Render() const;
@@ -90,6 +80,5 @@ private:
   bool use_colour_{true};
   char32_t default_char_{U' '};
   ColourKey default_fg_{DEFAULT_FG};
-  ColourKey default_bg_{DEFAULT_BG};
 };
 } // namespace ggems::render

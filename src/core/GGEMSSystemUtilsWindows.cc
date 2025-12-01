@@ -7,11 +7,11 @@ namespace ggems::core::system {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-static FILETIME last_idle = {}, last_kernel = {}, last_user = {};
-static bool first_cpu = true;
-
 static std::uint8_t QueryCPUPercent() noexcept {
-  FILETIME idle, kernel, user;
+  static FILETIME last_idle{}, last_kernel{}, last_user{};
+  static bool first_cpu = true;
+
+  FILETIME idle{}, kernel{}, user{};
   if (!GetSystemTimes(&idle, &kernel, &user))
     return 0;
 
@@ -35,9 +35,9 @@ static std::uint8_t QueryCPUPercent() noexcept {
     return x.QuadPart - y.QuadPart;
   };
 
-  uint64_t idle_d = diff(idle, last_idle);
-  uint64_t kernel_d = diff(kernel, last_kernel);
-  uint64_t user_d = diff(user, last_user);
+  std::uint64_t idle_d = diff(idle, last_idle);
+  std::uint64_t kernel_d = diff(kernel, last_kernel);
+  std::uint64_t user_d = diff(user, last_user);
 
   last_idle = idle;
   last_kernel = kernel;
@@ -50,6 +50,68 @@ static std::uint8_t QueryCPUPercent() noexcept {
 
   uint64_t busy = total - idle_d;
   return static_cast<uint8_t>((100ULL * busy) / total);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+static std::uint8_t QueryProcessCPUPercent() noexcept {
+  static bool first{true};
+  static FILETIME last_kernel{}, last_user{};
+  static auto last_time = std::chrono::steady_clock::now();
+
+  FILETIME creation, exit, kernel, user;
+
+  if (!GetProcessTimes(GetCurrentProcess(), &creation, &exit, &kernel, &user)) {
+    return 0;
+  }
+
+  auto now = std::chrono::steady_clock::now();
+
+  if (first) {
+    first = false;
+    last_kernel = kernel;
+    last_user = user;
+    last_time = now;
+    return 0;
+  }
+
+  double dt = std::chrono::duration<double>(now - last_time).count();
+  if (dt <= 0.0) {
+    return 0;
+  }
+
+  auto diff = [](FILETIME a, FILETIME b) {
+    ULARGE_INTEGER x{};
+    x.LowPart = a.dwLowDateTime;
+    x.HighPart = a.dwHighDateTime;
+
+    ULARGE_INTEGER y{};
+    y.LowPart = b.dwLowDateTime;
+    y.HighPart = b.dwHighDateTime;
+
+    return x.QuadPart - y.QuadPart;
+  };
+
+  std::uint64_t dk = diff(kernel, last_kernel);
+  std::uint64_t du = diff(user, last_user);
+
+  last_kernel = kernel;
+  last_user = user;
+  last_time = now;
+
+  // 100 ns → secondes
+  std::uint64_t total = dk + du;
+  double busy_seconds = static_cast<double>(total) * 1e-7;
+
+  double pct = (busy_seconds / dt) * 100.0;
+  if (pct < 0.0)
+    pct = 0.0;
+  if (pct > 100.0)
+    pct = 100.0;
+
+  return static_cast<std::uint8_t>(pct);
 }
 
 /* --------------------------------------------- */
@@ -69,6 +131,21 @@ static RAMUsage QueryRAMStatus() noexcept {
   std::uint8_t percent = static_cast<std::uint8_t>((100ULL * used) / total);
 
   return RAMUsage{total, available, used, percent};
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+static RAMProcessUsage QueryProcessRAM() noexcept {
+  PROCESS_MEMORY_COUNTERS_EX pmc{};
+  if (GetProcessMemoryInfo(GetCurrentProcess(),
+                           reinterpret_cast<PROCESS_MEMORY_COUNTERS *>(&pmc),
+                           sizeof(pmc))) {
+    return RAMProcessUsage{pmc.WorkingSetSize, pmc.PrivateUsage};
+  } else {
+    return RAMProcessUsage{0ULL, 0LL};
+  }
 }
 
 /* --------------------------------------------- */
@@ -121,8 +198,8 @@ ToWindowsLUID(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid) noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-static std::optional<std::uint8_t>
-QueryGPUPercent_D3DKMT(LUID luid, GPUStateCache &cache) noexcept {
+static std::uint8_t QueryGPUPercent_D3DKMT(LUID luid,
+                                           GPUStateCache &cache) noexcept {
 
   D3DKMT_QUERYSTATISTICS s{};
   s.Type = D3DKMT_QUERYSTATISTICS_NODE;
@@ -131,7 +208,7 @@ QueryGPUPercent_D3DKMT(LUID luid, GPUStateCache &cache) noexcept {
   s.QueryNode.NodeId = 0;
 
   if (D3DKMTQueryStatistics(&s) != 0)
-    return std::nullopt;
+    return 0;
 
   uint64_t now_run = static_cast<uint64_t>(
       s.QueryResult.NodeInformation.GlobalInformation.RunningTime.QuadPart);
@@ -175,7 +252,7 @@ static std::uint64_t QueryVRAMUsed_DXGI(LUID const &luid) noexcept { ; }
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-std::optional<GPUsage>
+GPUsage
 GetGPUsage(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid) noexcept {
   GPUsage out;
 
@@ -191,6 +268,14 @@ GetGPUsage(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid) noexcept {
   out.vram_total_bytes_ = 0LL;
 
   return out;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+ProcessUsage GetProcessUsage() noexcept {
+  return ProcessUsage{QueryProcessCPUPercent(), QueryProcessRAM()};
 }
 
 /* --------------------------------------------- */

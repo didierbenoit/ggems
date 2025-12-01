@@ -18,17 +18,9 @@
  */
 
 /// \cond
-#include <atomic>
-#include <chrono>
-#include <cstdint>
 #include <deque>
-#include <string>
-#include <thread>
 /// \endcond
 
-#include "GGEMS/core/units/GGEMSUnits.hh"
-#include "GGEMS/render/GGEMSColour.hh"
-#include "GGEMS/render/GGEMSColourNames.hh"
 #include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
 #include "GGEMS/utf/GGEMSGlyphs.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
@@ -190,6 +182,7 @@ private:
   GetColourStatus(std::uint8_t percent) noexcept;
   [[nodiscard]] static std::u32string FormatPercentage(float progress);
   [[nodiscard]] static std::string FormatETA(std::uint64_t ps);
+  [[nodiscard]] static std::string FormatMemory(std::uint64_t bytes);
   [[nodiscard]] static std::string FormatBandwidth(long double bytes_per_ps);
 
   [[nodiscard]] std::chrono::milliseconds ComputeFrameTime() const noexcept;
@@ -208,7 +201,7 @@ private:
   // --- Layout
   std::int16_t content_width_{90};
   std::int16_t frame_height_{0};
-  std::int16_t rows_per_slot_{5};
+  std::int16_t rows_per_slot_{6};
   std::int16_t header_rows_{4};
   std::int16_t footer_rows_{2};
   std::int16_t center_x_{0};

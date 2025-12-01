@@ -10,6 +10,7 @@
 #include <io.h>
 #include <windows.h>
 #include <winternl.h>
+#include <Psapi.h>
 /// \endcond
 
 #define isatty _isatty
