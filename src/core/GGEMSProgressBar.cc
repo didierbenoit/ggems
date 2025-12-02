@@ -17,6 +17,7 @@
 
 /// \cond
 #include <algorithm>
+#include <cstdint>
 #include <iostream>
 /// \endcond
 
@@ -362,7 +363,7 @@ void GGEMSProgressBar::DrawSingleSlot(std::size_t index, std::int16_t base_y) {
       ++cx;
     }
 
-    // Pourcentage
+    // Percentage
     std::u32string pct32 = FormatPercentage(progress);
     fb.DrawString(static_cast<std::int16_t>(bar_x + 42) + center_x_,
                   center_y_ + y, pct32);
@@ -390,10 +391,11 @@ void GGEMSProgressBar::DrawSingleSlot(std::size_t index, std::int16_t base_y) {
     std::int16_t y = base_y + 2;
     fb.DrawChar(center_x_ + 2, center_y_ + y, g.sub_arrow);
 
-    long double bw = s.bandwidth_byte_per_ps_.load(std::memory_order_relaxed);
+    // long double bw =
+    // s.bandwidth_byte_per_ps_.load(std::memory_order_relaxed);
 
-    std::string bandwidth_kernel_txt = std::format(
-        "Bandwidth: {} | Kernel: {} ", FormatBandwidth(bw), s.kernel_name_);
+    std::string bandwidth_kernel_txt =
+        std::format("Kernel: {} ", s.kernel_name_);
 
     fb.DrawString(center_x_ + 4, center_y_ + y,
                   utf::UTF8ToUTF32(bandwidth_kernel_txt));
@@ -452,6 +454,19 @@ void GGEMSProgressBar::DrawSingleSlot(std::size_t index, std::int16_t base_y) {
       fb.DrawString(center_x_ + 7, center_y_ + y,
                     utf::UTF8ToUTF32(gpu_proc_percent_text),
                     GetColourStatus(gpu_proc_percent));
+
+      fb.DrawString(center_x_ + 12, center_y_ + y, U"| RAM:");
+      std::uint8_t ram_percent = gpu_usage.ram_.percent_;
+      std::string ram_percent_text = std::format("{:3}%", ram_percent);
+      fb.DrawString(center_x_ + 19, center_y_ + y,
+                    utf::UTF8ToUTF32(ram_percent_text),
+                    GetColourStatus(ram_percent));
+
+      std::uint64_t ram_total = gpu_usage.ram_.total_;
+      std::uint64_t ram_used = gpu_usage.ram_.used_;
+      std::string ram_txt = std::format("({}/{})", FormatMemory(ram_used),
+                                        FormatMemory(ram_total));
+      fb.DrawString(center_x_ + 24, center_y_ + y, utf::UTF8ToUTF32(ram_txt));
     }
   }
 }

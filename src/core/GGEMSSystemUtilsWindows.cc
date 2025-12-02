@@ -301,7 +301,8 @@ static GPURAMProcessUsage QueryVRAMUsed_DXGI(LUID const &luid) noexcept {
   std::uint64_t used = info.CurrentUsage;
   std::uint64_t total =
       static_cast<std::uint64_t>(desc_final.DedicatedVideoMemory);
-  std::uint8_t percent = static_cast<uint8_t>(used / total);
+  std::uint8_t percent = static_cast<std::uint8_t>(
+      static_cast<double>(used) * 100.0 / static_cast<double>(total));
 
   adapter3->Release();
 
