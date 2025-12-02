@@ -93,6 +93,9 @@ target_include_directories(ggems_core PUBLIC
   ${PROJECT_SOURCE_DIR}/include
   ${OPENCL_HPP_INCLUDE_DIR})
 target_link_libraries(ggems_core PUBLIC OpenCL::OpenCL)
+if(WIN32)
+  target_link_libraries(ggems_core PRIVATE dxgi)
+endif()
 
 # ----------------------------------------------------------------------------
 # Python module (pybind11)

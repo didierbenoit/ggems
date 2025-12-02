@@ -1,5 +1,7 @@
 #include "GGEMS/core/GGEMSSystemUtils.hh"
 #include "GGEMS/platform/windows/GGEMSWindowsGPU.hh"
+#include <combaseapi.h>
+#include <dxgi.h>
 
 namespace ggems::core::system {
 
@@ -137,14 +139,14 @@ static RAMUsage QueryRAMStatus() noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-static RAMProcessUsage QueryProcessRAM() noexcept {
+static CPURAMProcessUsage QueryProcessRAM() noexcept {
   PROCESS_MEMORY_COUNTERS_EX pmc{};
   if (GetProcessMemoryInfo(GetCurrentProcess(),
                            reinterpret_cast<PROCESS_MEMORY_COUNTERS *>(&pmc),
                            sizeof(pmc))) {
-    return RAMProcessUsage{pmc.WorkingSetSize, pmc.PrivateUsage};
+    return CPURAMProcessUsage{pmc.WorkingSetSize, pmc.PrivateUsage};
   } else {
-    return RAMProcessUsage{0ULL, 0LL};
+    return CPURAMProcessUsage{0ULL, 0LL};
   }
 }
 
@@ -200,7 +202,6 @@ ToWindowsLUID(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid) noexcept {
 
 static std::uint8_t QueryGPUPercent_D3DKMT(LUID luid,
                                            GPUStateCache &cache) noexcept {
-
   D3DKMT_QUERYSTATISTICS s{};
   s.Type = D3DKMT_QUERYSTATISTICS_NODE;
   s.AdapterLuid = luid;
@@ -246,7 +247,66 @@ static std::uint8_t QueryGPUPercent_D3DKMT(LUID luid,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-static std::uint64_t QueryVRAMUsed_DXGI(LUID const &luid) noexcept { ; }
+static GPURAMProcessUsage QueryVRAMUsed_DXGI(LUID const &luid) noexcept {
+  IDXGIFactory4 *factory = nullptr;
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wlanguage-extension-token"
+  if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&factory))))
+    return GPURAMProcessUsage{0ULL, 0LL, 0};
+#pragma clang diagnostic pop
+
+  IDXGIAdapter3 *adapter3 = nullptr;
+
+  for (UINT i = 0;; ++i) {
+    IDXGIAdapter1 *ad1 = nullptr;
+    if (factory->EnumAdapters1(i, &ad1) == DXGI_ERROR_NOT_FOUND)
+      break;
+
+    DXGI_ADAPTER_DESC1 desc{};
+    ad1->GetDesc1(&desc);
+
+    if (desc.AdapterLuid.LowPart == luid.LowPart &&
+        desc.AdapterLuid.HighPart == luid.HighPart) {
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wlanguage-extension-token"
+      if (SUCCEEDED(ad1->QueryInterface(IID_PPV_ARGS(&adapter3)))) {
+        ad1->Release();
+        break;
+      }
+#pragma clang diagnostic pop
+    }
+    ad1->Release();
+  }
+
+  factory->Release();
+
+  if (!adapter3)
+    return GPURAMProcessUsage{0LL, 0LL, 0};
+
+  DXGI_QUERY_VIDEO_MEMORY_INFO info{};
+  if (FAILED(adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL,
+                                            &info))) {
+    adapter3->Release();
+    return GPURAMProcessUsage{0LL, 0LL, 0};
+  }
+
+  DXGI_ADAPTER_DESC1 desc_final{};
+  if (FAILED(adapter3->GetDesc1(&desc_final))) {
+    adapter3->Release();
+    return GPURAMProcessUsage{0LL, 0LL, 0};
+  }
+
+  std::uint64_t used = info.CurrentUsage;
+  std::uint64_t total =
+      static_cast<std::uint64_t>(desc_final.DedicatedVideoMemory);
+  std::uint8_t percent = static_cast<uint8_t>(used / total);
+
+  adapter3->Release();
+
+  return GPURAMProcessUsage{total, used, percent};
+}
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
@@ -264,8 +324,7 @@ GetGPUsage(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid) noexcept {
   int index = static_cast<int>(mix & 15u);
 
   out.gpu_percent_ = QueryGPUPercent_D3DKMT(luid_win, gpu_cache[index]);
-  out.vram_used_bytes_ = 0; // QueryVRAMUsed_DXGI(luid_win);
-  out.vram_total_bytes_ = 0LL;
+  out.ram_ = QueryVRAMUsed_DXGI(luid_win);
 
   return out;
 }
@@ -274,8 +333,8 @@ GetGPUsage(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid) noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-ProcessUsage GetProcessUsage() noexcept {
-  return ProcessUsage{QueryProcessCPUPercent(), QueryProcessRAM()};
+CPUProcessUsage GetProcessUsage() noexcept {
+  return CPUProcessUsage{QueryProcessCPUPercent(), QueryProcessRAM()};
 }
 
 /* --------------------------------------------- */

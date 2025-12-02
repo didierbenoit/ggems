@@ -423,7 +423,7 @@ void GGEMSProgressBar::DrawSingleSlot(std::size_t index, std::int16_t base_y) {
     std::int16_t y = base_y + 4;
 
     if (!is_gpu) { // For CPU Process
-      ProcessUsage process_usage = GetProcessUsage();
+      CPUProcessUsage process_usage = GetProcessUsage();
 
       // CPU Slot Process
       fb.DrawString(center_x_ + 2, center_y_ + y, U"CPU:");
