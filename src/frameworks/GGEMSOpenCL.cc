@@ -26,19 +26,14 @@
  * \version 2.0
  */
 
-/// \cond
 #include <algorithm>
 #include <functional>
-#include <iterator>
-#include <ranges>
 #include <set>
-/// \endcond
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
 
 namespace ggems::ocl {

@@ -15,16 +15,12 @@
  * with GGEMS.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/// \cond
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
-/// \endcond
 
 #include "GGEMS/core/GGEMSProgressBar.hh"
 #include "GGEMS/core/GGEMSSystemUtils.hh"
-#include "GGEMS/render/GGEMSColourNames.hh"
-#include "GGEMS/utf/GGEMSGlyphs.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
 #include "GGEMS/core/units/GGEMSUnits.hh"
 
@@ -281,7 +277,7 @@ void GGEMSProgressBar::DrawHeader() {
       (content_width_ - static_cast<std::int16_t>(title.size())) / 2);
 
   fb.DrawString(center_x_ + title_x, center_y_ + 1, title);
-  fb.DrawChar(center_x_, center_y_ + 2, g.border_rigth);
+  fb.DrawChar(center_x_, center_y_ + 2, g.border_right);
   fb.DrawChar(center_x_ + content_width_ - 1, center_y_ + 2, g.border_left);
   fb.DrawHLine(center_x_ + 1, center_y_ + 2, content_width_ - 2, g.separator);
 }

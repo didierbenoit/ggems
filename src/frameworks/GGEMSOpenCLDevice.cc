@@ -29,8 +29,6 @@
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/core/GGEMSCoreUtils.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
-#include "GGEMS/core/GGEMSSystemUtils.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
 namespace ggems::ocl {
 

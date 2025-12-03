@@ -1,4 +1,3 @@
-#include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/units/GGEMSBytesUnits.hh"

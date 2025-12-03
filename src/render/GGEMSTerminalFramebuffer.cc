@@ -1,5 +1,4 @@
 #include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
-#include "GGEMS/render/GGEMSColour.hh"
 #include "GGEMS/utf/GGEMSGlyphs.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
 
@@ -15,7 +14,6 @@ GGEMSTerminalFramebuffer::DetectTerminalSize() noexcept {
   std::int16_t height = 40;
 
 #if defined(_WIN32)
-
   CONSOLE_SCREEN_BUFFER_INFO csbi;
   HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 
@@ -27,14 +25,12 @@ GGEMSTerminalFramebuffer::DetectTerminalSize() noexcept {
     height =
         static_cast<std::int16_t>(csbi.srWindow.Bottom - csbi.srWindow.Top + 1);
   }
-
 #else
   struct winsize ws{};
   if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0) {
     width = static_cast<std::int16_t>(ws.ws_col);
     height = static_cast<std::int16_t>(ws.ws_row);
   }
-
 #endif
 
   // Sécurité

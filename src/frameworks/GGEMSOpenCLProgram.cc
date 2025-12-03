@@ -3,13 +3,9 @@
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
-/// \cond
-#include <CL/cl.h>
 #include <fstream>
 #include <utility>
-/// \endcond
 
 namespace ggems::ocl {
 using core::GGEMSFatal;

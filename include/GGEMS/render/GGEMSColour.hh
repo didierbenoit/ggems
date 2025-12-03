@@ -1,65 +1,190 @@
 #pragma once
+// ************************************************************************
+// * This file is part of GGEMS.                                          *
+// *                                                                      *
+// * GGEMS is free software: you can redistribute it and/or modify        *
+// * it under the terms of the GNU General Public License as published by *
+// * the Free Software Foundation, either version 3 of the License, or    *
+// * (at your option) any later version.                                  *
+// *                                                                      *
+// * GGEMS is distributed in the hope that it will be useful,             *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
+// * GNU General Public License for more details.                         *
+// *                                                                      *
+// * You should have received a copy of the GNU General Public License    *
+// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
+// *                                                                      *
+// ************************************************************************
 
-/// \cond
+/*!
+ * \file GGEMSColour.hh
+ * \brief Compile-time colour palette and ANSI helpers for GGEMS.
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ * \date 2025-10-29
+ * \version 2.0
+ * \copyright GNU GPL v3.0
+ *
+ * This header defines a small, deterministic colour system used throughout
+ * GGEMS for terminal output, framebuffer rendering, and GUI front-ends
+ * (for example Vulkan/ImGui). Colours are represented as 24-bit RGB values
+ * grouped into families (green, blue, red, grey, and so on) and indexed
+ * by discrete shades.
+ *
+ * A base palette is defined for the "Normal" variant, with 12 shades per
+ * family. At compile time, additional variants "Bright" and "Faint" are
+ * derived through simple transformations, ensuring consistent relationships
+ * between intensity levels. Colour keys are then mapped to terminal
+ * 24-bit ANSI escape sequences for foreground and background attributes.
+ */
+
 #include <array>
 #include <cstdint>
 #include <format>
 #include <string>
 #include <string_view>
-/// \endcond
 
 namespace ggems::render {
+/*!
+ * \struct RGB
+ * \brief Simple 24-bit RGB colour triplet.
+ *
+ * Each component corresponds to an 8-bit channel in the usual [0,255]
+ * range. This structure acts as a low-level carrier for colour data
+ * and is used internally in palettes and conversions to ANSI escape
+ * sequences or GUI back-ends.
+ */
 struct RGB {
-  std::uint8_t r;
-  std::uint8_t g;
-  std::uint8_t b;
+  std::uint8_t r; /*!< Red channel in [0, 255] */
+  std::uint8_t g; /*!< Green channel in [0, 255] */
+  std::uint8_t b; /*!< Blue channel in [0, 255] */
 };
 
+/*!
+ * \enum ColourFamily
+ * \brief Logical grouping of related shades.
+ *
+ * A colour family corresponds to a perceptual group such as "Red",
+ * "Green", "Cyan", "Grey", and so on. Each family is associated with
+ * 12 discrete shades in the base palette.
+ */
 enum class ColourFamily : std::uint8_t {
-  Grey = 0,
-  Red,
-  Orange,
-  Yellow,
-  Green,
-  Cyan,
-  Blue,
-  Magenta,
-  White,
-  Count
+  Grey = 0, /*!< Grey-scale family */
+  Red,      /*!< Red family */
+  Orange,   /*!< Orange family */
+  Yellow,   /*!< Yellow family */
+  Green,    /*!< Green family */
+  Cyan,     /*!< Cyan/Turquoise family */
+  Blue,     /*!< Blue family */
+  Magenta,  /*!< Magenta/Pink family */
+  White,    /*!< White/near-white family */
+  Count     /*!< Number of families (sentinel) */
 };
 
-enum class ColourVariant : std::uint8_t { Normal = 0, Bright, Faint, Count };
+/*!
+ * \enum ColourVariant
+ * \brief Variant of a base shade for intensity control.
+ *
+ * Variants are derived from the base palette by simple transformations.
+ * - Normal: base shade as defined in the palette.
+ * - Bright: shade lightened towards white.
+ * - Faint: slightly dimmed shade.
+ */
+enum class ColourVariant : std::uint8_t {
+  Normal = 0, /*!< Base shade as-is */
+  Bright,     /*!< Lightened variant */
+  Faint,      /*!< Dimmed variant */
+  Count       /*!< Number of variants (sentinel) */
+};
 
-enum class ColourLayer : std::uint8_t { Foreground = 0, Background };
+/*!
+ * \enum ColourLayer
+ * \brief Target layer for colour application.
+ *
+ * Foreground applies to text or glyphs, while Background applies to
+ * the surrounding cell region in terminal or framebuffer rendering.
+ */
+enum class ColourLayer : std::uint8_t {
+  Foreground = 0, /*!< Text or glyph foreground colour */
+  Background      /*!< Background cell colour */
+};
 
+/*!
+ * \struct ColourKey
+ * \brief Compact descriptor of a colour in GGEMS.
+ *
+ * A colour key identifies a colour by family, shade index, variant and
+ * layer. It acts as a high-level handle used by UI code, which can be
+ * converted into concrete RGB values or ANSI escape sequences.
+ *
+ * The struct is trivially comparable and suitable as a key in ordered
+ * containers or for compile-time usage.
+ */
 struct ColourKey {
-  ColourFamily family_{};
-  std::uint8_t shade_{}; // 0–11
-  ColourVariant variant_{ColourVariant::Normal};
-  ColourLayer layer_{ColourLayer::Foreground};
+  ColourFamily family{};                        /*!< Colour family identifier */
+  std::uint8_t shade{};                         /*!< Shade index in [0, 11] */
+  ColourVariant variant{ColourVariant::Normal}; /*!< Intensity variant */
+  ColourLayer layer{ColourLayer::Foreground};   /*!< Target layer (FG/BG) */
 
+  /*!
+   * \brief Three-way comparison operator.
+   *
+   * Provides lexicographical comparison over \ref family, \ref shade,
+   * \ref variant and \ref layer, enabling usage in ordered containers.
+   * \return Comparison category determining ordering relationship.
+   */
   constexpr auto operator<=>(ColourKey const &) const = default;
 };
 
+/*!
+ * \brief Number of colour families in the palette.
+ */
 inline constexpr std::size_t kColourFamilyCount =
     static_cast<std::size_t>(ColourFamily::Count);
+
+/*!
+ * \brief Number of available variants (Normal, Bright, Faint).
+ */
 inline constexpr std::size_t kColourVariantCount =
     static_cast<std::size_t>(ColourVariant::Count);
+
+/*!
+ * \brief Number of discrete shades per family.
+ *
+ * GGEMS currently defines 12 shades per colour family.
+ */
 inline constexpr std::size_t kColourShadeCount = 12U;
 
+/*!
+ * \brief Palette type grouping shades by family.
+ *
+ * Outer index corresponds to \ref ggems::render::ColourFamily, inner index to
+ * shade within that family.
+ */
 using ColourFamilyPalette =
     std::array<std::array<RGB, kColourShadeCount>, kColourFamilyCount>;
 
-// -----------------------------------------------------------------------------
-// Base palette (Normal variant) : 12 nuances par famille, en RGB
-// On génère uniquement la variante "Normal" ici, et on dérive Bright/Faint
-// par transformation constexpr.
-// -----------------------------------------------------------------------------
-
+/*!
+ * \brief Construct an \ref ggems::render::RGB triplet from channel values.
+ *
+ * \param r Red channel in [0, 255].
+ * \param g Green channel in [0, 255].
+ * \param b Blue channel in [0, 255].
+ * \return RGB structure initialised with the provided channels.
+ */
 constexpr RGB MakeRGB(std::uint8_t r, std::uint8_t g, std::uint8_t b) noexcept {
   return RGB{r, g, b};
 }
 
+/*!
+ * \brief Build the greyscale family palette.
+ *
+ * The palette ranges from dark greys to near-white tones, providing
+ * 12 discrete levels for neutral UI elements or backgrounds.
+ *
+ * \return Array of 12 greyscale RGB shades.
+ */
 constexpr std::array<RGB, kColourShadeCount> MakeGreyScale() noexcept {
   return {
       MakeRGB(16, 16, 16),    MakeRGB(32, 32, 32),    MakeRGB(48, 48, 48),
@@ -68,6 +193,14 @@ constexpr std::array<RGB, kColourShadeCount> MakeGreyScale() noexcept {
       MakeRGB(224, 224, 224), MakeRGB(240, 240, 240), MakeRGB(252, 252, 252)};
 }
 
+/*!
+ * \brief Build the red family palette.
+ *
+ * Shades progress from deep reds to softer, warm tones suitable for
+ * emphasis, warnings, or highlighting.
+ *
+ * \return Array of 12 red-family RGB shades.
+ */
 constexpr std::array<RGB, kColourShadeCount> MakeRedScale() noexcept {
   return {
       MakeRGB(64, 0, 0),     MakeRGB(96, 0, 0),      MakeRGB(128, 0, 0),
@@ -76,6 +209,14 @@ constexpr std::array<RGB, kColourShadeCount> MakeRedScale() noexcept {
       MakeRGB(255, 127, 80), MakeRGB(255, 160, 122), MakeRGB(255, 192, 160)};
 }
 
+/*!
+ * \brief Build the orange family palette.
+ *
+ * Includes dark copper-like tones up to bright amber/orange, used for
+ * intermediate emphasis or category highlighting.
+ *
+ * \return Array of 12 orange-family RGB shades.
+ */
 constexpr std::array<RGB, kColourShadeCount> MakeOrangeScale() noexcept {
   return {MakeRGB(80, 32, 0),    MakeRGB(96, 40, 0),    MakeRGB(128, 64, 0),
           MakeRGB(160, 80, 0),   MakeRGB(192, 96, 0),   MakeRGB(210, 105, 30),
@@ -83,6 +224,14 @@ constexpr std::array<RGB, kColourShadeCount> MakeOrangeScale() noexcept {
           MakeRGB(255, 180, 40), MakeRGB(255, 200, 80), MakeRGB(255, 215, 120)};
 }
 
+/*!
+ * \brief Build the yellow family palette.
+ *
+ * Provides gold-like and bright yellow shades, suitable for warning
+ * indicators, highlights, or energy-like visual cues.
+ *
+ * \return Array of 12 yellow-family RGB shades.
+ */
 constexpr std::array<RGB, kColourShadeCount> MakeYellowScale() noexcept {
   return {
       MakeRGB(96, 96, 0),     MakeRGB(128, 128, 0),   MakeRGB(160, 144, 0),
@@ -91,6 +240,14 @@ constexpr std::array<RGB, kColourShadeCount> MakeYellowScale() noexcept {
       MakeRGB(255, 255, 80),  MakeRGB(255, 255, 160), MakeRGB(255, 255, 220)};
 }
 
+/*!
+ * \brief Build the green family palette.
+ *
+ * Shades range from deep greens to fresh, light tones for health,
+ * activity, or success indicators.
+ *
+ * \return Array of 12 green-family RGB shades.
+ */
 constexpr std::array<RGB, kColourShadeCount> MakeGreenScale() noexcept {
   return {MakeRGB(0, 48, 0),    MakeRGB(0, 80, 0),      MakeRGB(0, 100, 0),
           MakeRGB(0, 128, 0),   MakeRGB(0, 160, 64),    MakeRGB(0, 201, 87),
@@ -98,6 +255,14 @@ constexpr std::array<RGB, kColourShadeCount> MakeGreenScale() noexcept {
           MakeRGB(46, 139, 87), MakeRGB(144, 238, 144), MakeRGB(204, 255, 204)};
 }
 
+/*!
+ * \brief Build the cyan family palette.
+ *
+ * Contains turquoise and light blue-greens, useful for informational
+ * hints or secondary focus elements.
+ *
+ * \return Array of 12 cyan-family RGB shades.
+ */
 constexpr std::array<RGB, kColourShadeCount> MakeCyanScale() noexcept {
   return {
       MakeRGB(0, 48, 48),     MakeRGB(0, 80, 80),     MakeRGB(0, 100, 100),
@@ -106,6 +271,14 @@ constexpr std::array<RGB, kColourShadeCount> MakeCyanScale() noexcept {
       MakeRGB(135, 206, 235), MakeRGB(180, 230, 255), MakeRGB(210, 245, 255)};
 }
 
+/*!
+ * \brief Build the blue family palette.
+ *
+ * Covers dark blues, azure tones, and light sky blues, suitable for
+ * neutral or informational backgrounds and accents.
+ *
+ * \return Array of 12 blue-family RGB shades.
+ */
 constexpr std::array<RGB, kColourShadeCount> MakeBlueScale() noexcept {
   return {
       MakeRGB(0, 0, 64),      MakeRGB(0, 0, 96),     MakeRGB(0, 0, 139),
@@ -114,6 +287,14 @@ constexpr std::array<RGB, kColourShadeCount> MakeBlueScale() noexcept {
       MakeRGB(125, 249, 255), MakeRGB(70, 130, 180), MakeRGB(160, 200, 255)};
 }
 
+/*!
+ * \brief Build the magenta family palette.
+ *
+ * Includes violet, pink, and purple-like shades, often used for
+ * highlighting or categorical separation in the UI.
+ *
+ * \return Array of 12 magenta-family RGB shades.
+ */
 constexpr std::array<RGB, kColourShadeCount> MakeMagentaScale() noexcept {
   return {
       MakeRGB(64, 0, 64),     MakeRGB(96, 0, 96),     MakeRGB(128, 0, 128),
@@ -122,6 +303,14 @@ constexpr std::array<RGB, kColourShadeCount> MakeMagentaScale() noexcept {
       MakeRGB(238, 130, 238), MakeRGB(255, 160, 255), MakeRGB(255, 200, 240)};
 }
 
+/*!
+ * \brief Build the white/near-white family palette.
+ *
+ * Contains subtle variations around white for backgrounds and subtle
+ * contrast, including warm and cold whites.
+ *
+ * \return Array of 12 white-family RGB shades.
+ */
 constexpr std::array<RGB, kColourShadeCount> MakeWhiteScale() noexcept {
   return {
       MakeRGB(255, 255, 255), MakeRGB(250, 250, 250), MakeRGB(245, 245, 245),
@@ -130,6 +319,11 @@ constexpr std::array<RGB, kColourShadeCount> MakeWhiteScale() noexcept {
       MakeRGB(185, 185, 185), MakeRGB(255, 255, 240), MakeRGB(255, 255, 200)};
 }
 
+/*!
+ * \brief Build the base palette for all families in the Normal variant.
+ *
+ * \return Complete \ref ggems::render::ColourFamilyPalette for Normal variant.
+ */
 constexpr ColourFamilyPalette MakeBasePalette() noexcept {
   return ColourFamilyPalette{
       MakeGreyScale(),   MakeRedScale(),     MakeOrangeScale(),
@@ -137,22 +331,46 @@ constexpr ColourFamilyPalette MakeBasePalette() noexcept {
       MakeBlueScale(),   MakeMagentaScale(), MakeWhiteScale()};
 }
 
+/*!
+ * \brief Base "Normal" variant palette for all colour families.
+ */
 inline constexpr ColourFamilyPalette kBasePalette = MakeBasePalette();
 
-// -----------------------------------------------------------------------------
-// Variantes (Normal / Bright / Faint) : transformation constexpr sur la base
-// -----------------------------------------------------------------------------
-
+/*!
+ * \brief Brighten a single colour channel.
+ *
+ * The transformation interpolates towards white as:
+ * \f$ c \gets c + (255 - c) / 3 \f$.
+ *
+ * \param c Input channel value in [0,255].
+ * \return Brightened channel value in [0,255].
+ */
 constexpr std::uint8_t BrightenChannel(std::uint8_t c) noexcept {
-  // Lighter towards white : c + (255 - c)/3
   return static_cast<std::uint8_t>(c + (255U - c) / 3U);
 }
 
+/*!
+ * \brief Dim a single colour channel.
+ *
+ * The transformation scales the channel down to two thirds of its
+ * intensity:
+ * \f$ c \gets \lfloor 2c / 3 \rfloor \f$.
+ *
+ * \param c Input channel value in [0,255].
+ * \return Dimmed channel value in [0,255].
+ */
 constexpr std::uint8_t FaintChannel(std::uint8_t c) noexcept {
-  // Slightly dimmer : 2/3 of intensity
   return static_cast<std::uint8_t>((static_cast<std::uint16_t>(c) * 2U) / 3U);
 }
 
+/*!
+ * \brief Apply a \ref ggems::render::ColourVariant transformation to a base
+ * colour.
+ *
+ * \param base Base RGB colour.
+ * \param v Variant to apply (Normal, Bright, Faint).
+ * \return Transformed colour according to \p v.
+ */
 constexpr RGB ApplyVariant(RGB base, ColourVariant v) noexcept {
   switch (v) {
   case ColourVariant::Normal:
@@ -168,6 +386,15 @@ constexpr RGB ApplyVariant(RGB base, ColourVariant v) noexcept {
   }
 }
 
+/*!
+ * \brief Retrieve an RGB colour from the base palette and variant.
+ *
+ * \param family Colour family index.
+ * \param shade Shade index in [0, 11]. Values above the maximum are
+ *              clamped to the last valid shade.
+ * \param variant Intensity variant (Normal, Bright, Faint).
+ * \return Resulting RGB colour.
+ */
 constexpr RGB GetColourRGB(ColourFamily family, std::uint8_t shade,
                            ColourVariant variant) noexcept {
   const auto family_index = static_cast<std::size_t>(family);
@@ -178,12 +405,26 @@ constexpr RGB GetColourRGB(ColourFamily family, std::uint8_t shade,
   return ApplyVariant(base, variant);
 }
 
-// -----------------------------------------------------------------------------
-// Contrôles ANSI simples (reset, bright, faint) optionnels
-// -----------------------------------------------------------------------------
+/*!
+ * \enum AnsiControl
+ * \brief Basic ANSI control codes for text attributes.
+ *
+ * These values abstract simple SGR control sequences such as resetting
+ * attributes, restoring colours, enabling bold or faint text.
+ */
+enum class AnsiControl : std::uint8_t {
+  ResetAll,    /*!< Reset all attributes and colours */
+  ResetColour, /*!< Restore default foreground/background colours */
+  Bold,        /*!< Enable bold/intense rendering */
+  Faint        /*!< Enable faint/dim rendering */
+};
 
-enum class AnsiControl : std::uint8_t { ResetAll, ResetColour, Bold, Faint };
-
+/*!
+ * \brief Return the raw ANSI escape sequence for a control code.
+ *
+ * \param c Control code.
+ * \return Null-terminated escape sequence as a string view.
+ */
 inline std::string_view AnsiControlCode(AnsiControl c) noexcept {
   switch (c) {
   case AnsiControl::ResetAll:
@@ -199,17 +440,20 @@ inline std::string_view AnsiControlCode(AnsiControl c) noexcept {
   }
 }
 
-// -----------------------------------------------------------------------------
-// Génération des séquences ANSI : on écrit directement dans une std::string
-// via std::format_to, sans allocations intermédiaires.
-//  - Foreground : 38;2;R;G;Bm
-//  - Background : 48;2;R;G;Bm
-// -----------------------------------------------------------------------------
-
+/*!
+ * \brief Append an ANSI 24-bit colour sequence to a string.
+ *
+ * \param out Output string to append to.
+ * \param key Colour key describing family, shade, variant, and layer.
+ *
+ * The function computes the RGB value from the palette and emits an ANSI
+ * true-colour escape sequence for either the foreground or background
+ * depending on \ref ggems::render::ColourLayer.
+ */
 inline void AppendAnsiColour(std::string &out, ColourKey const &key) {
-  const RGB rgb = GetColourRGB(key.family_, key.shade_, key.variant_);
+  const RGB rgb = GetColourRGB(key.family, key.shade, key.variant);
 
-  const int code = (key.layer_ == ColourLayer::Foreground) ? 38 : 48;
+  const int code = (key.layer == ColourLayer::Foreground) ? 38 : 48;
 
   std::format_to(std::back_inserter(out), "\033[{};2;{};{};{}m", code,
                  static_cast<unsigned int>(rgb.r),
@@ -217,10 +461,16 @@ inline void AppendAnsiColour(std::string &out, ColourKey const &key) {
                  static_cast<unsigned int>(rgb.b));
 }
 
+/*!
+ * \brief Build an ANSI 24-bit colour sequence as a standalone string.
+ *
+ * \param key Colour key describing family, shade, variant, and layer.
+ * \return Newly allocated string containing the ANSI escape sequence.
+ */
 inline std::string AnsiColour(ColourKey const &key) {
-  const RGB rgb = GetColourRGB(key.family_, key.shade_, key.variant_);
+  const RGB rgb = GetColourRGB(key.family, key.shade, key.variant);
 
-  const int code = (key.layer_ == ColourLayer::Foreground) ? 38 : 48;
+  const int code = (key.layer == ColourLayer::Foreground) ? 38 : 48;
 
   // Retour direct : une seule allocation très légère
   return std::format("\033[{};2;{};{};{}m", code, static_cast<unsigned>(rgb.r),
@@ -228,10 +478,25 @@ inline std::string AnsiColour(ColourKey const &key) {
                      static_cast<unsigned>(rgb.b));
 }
 
+/*!
+ * \brief Append an ANSI control sequence to a string.
+ *
+ * \param out Output string to append to.
+ * \param c Control code to append.
+ */
 inline void AppendAnsiControl(std::string &out, AnsiControl c) {
   out.append(AnsiControlCode(c));
 }
 
+/*!
+ * \brief Return the ANSI control sequence for a given code.
+ *
+ * This helper simply forwards to \ref ggems::render::AnsiControlCode and is
+ * provided for symmetry with \ref ggems::render::AnsiColour.
+ *
+ * \param c Control code.
+ * \return Null-terminated escape sequence as a string view.
+ */
 inline std::string_view AnsiControl(AnsiControl c) {
   switch (c) {
   case AnsiControl::ResetAll:
@@ -247,10 +512,15 @@ inline std::string_view AnsiControl(AnsiControl c) {
   }
 }
 
-// -----------------------------------------------------------------------------
-// Helpers pratiques pour construire des ColourKey
-// -----------------------------------------------------------------------------
-
+/*!
+ * \brief Construct a \ref ggems::render::ColourKey from its components.
+ *
+ * \param family Colour family.
+ * \param shade Shade index in [0, 11].
+ * \param variant Intensity variant (Normal, Bright, Faint).
+ * \param layer Target layer (Foreground or Background).
+ * \return ColourKey describing the requested colour.
+ */
 constexpr ColourKey
 MakeColour(ColourFamily family, std::uint8_t shade,
            ColourVariant variant = ColourVariant::Normal,

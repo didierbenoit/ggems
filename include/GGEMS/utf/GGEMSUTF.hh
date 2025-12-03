@@ -72,8 +72,8 @@ std::string UTF32ToUTF8(char32_t ch32);
  * \return A UTF-8 encoded \c std::string containing the encoding of
  *         all code points in \p str32, in order.
  *
- * Each code point is converted with \ref UTF32ToUTF8, so invalid values
- * are mapped to "?" in the resulting UTF-8 string.
+ * Each code point is converted with \ref ggems::utf::UTF32ToUTF8, so invalid
+ * values are mapped to "?" in the resulting UTF-8 string.
  */
 std::string UTF32ToUTF8(std::u32string_view str32);
 } // namespace ggems::utf
@@ -86,7 +86,31 @@ std::string UTF32ToUTF8(std::u32string_view str32);
  * to a UTF-8 string via \ref ggems::utf::UTF32ToUTF8.
  */
 template <> struct std::formatter<char32_t, char> {
+  /*!
+   * \brief Parse formatting options.
+   *
+   * GGEMS does not require any additional formatting options for
+   * \c char32_t output. Consequently, this method simply returns
+   * the current iterator position, indicating that no format
+   * specifier is processed.
+   *
+   * \param ctx Formatting parse context provided by format engine.
+   * \return Iterator pointing to the end of the parse sequence.
+   */
   constexpr auto parse(std::format_parse_context &ctx) { return ctx.begin(); }
+
+  /*!
+   * \brief Emit \p cp as UTF-8 into the output context.
+   *
+   * Converts the UTF-32 code point \p cp into a UTF-8 encoded string
+   * using \ref ggems::utf::UTF32ToUTF8 and writes it to the format
+   * output iterator.
+   *
+   * \tparam FormatContext Type of the formatting output context.
+   * \param cp Code point to emit.
+   * \param ctx Format output context.
+   * \return Iterator to the end of the formatted output.
+   */
   template <typename FormatContext>
   auto format(char32_t cp, FormatContext &ctx) const {
     return std::format_to(ctx.out(), "{}", ggems::utf::UTF32ToUTF8(cp));

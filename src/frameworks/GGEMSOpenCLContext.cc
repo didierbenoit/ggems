@@ -1,9 +1,6 @@
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
-#include "GGEMS/core/units/GGEMSBytesUnits.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
 using namespace ggems::units;
 

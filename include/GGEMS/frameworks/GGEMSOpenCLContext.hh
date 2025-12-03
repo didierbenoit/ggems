@@ -1,6 +1,5 @@
 #pragma once
 
-#include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
 
