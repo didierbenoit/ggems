@@ -1,6 +1,5 @@
 #pragma once
 
-#include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 
 namespace ggems::ocl {

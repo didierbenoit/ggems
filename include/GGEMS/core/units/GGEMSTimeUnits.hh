@@ -1,15 +1,73 @@
 #pragma once
+// ************************************************************************
+// * This file is part of GGEMS.                                          *
+// *                                                                      *
+// * GGEMS is free software: you can redistribute it and/or modify        *
+// * it under the terms of the GNU General Public License as published by *
+// * the Free Software Foundation, either version 3 of the License, or    *
+// * (at your option) any later version.                                  *
+// *                                                                      *
+// * GGEMS is distributed in the hope that it will be useful,             *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
+// * GNU General Public License for more details.                         *
+// *                                                                      *
+// * You should have received a copy of the GNU General Public License    *
+// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
+// *                                                                      *
+// ************************************************************************
+
+/*!
+ * \file GGEMSTimeUnits.hh
+ * \brief Time quantity alias and human-readable formatting helpers.
+ *
+ * This header defines the \c Time quantity used by GGEMS to represent
+ * durations in engine base units (picoseconds), together with a
+ * human-readable formatter and a set of user-defined literals for
+ * expressing time constants at compile time.
+ *
+ * The base unit for storage is the picosecond (ps); higher-level
+ * interfaces convert to or from nanoseconds, microseconds, milliseconds,
+ * seconds, minutes and hours as needed.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ * \date 2025-10-12
+ * \version 2.0
+ * \copyright
+ * GNU General Public License v3.0
+ */
+
+#include <array>
 
 #include "GGEMSQuantity.hh"
 
-/// \cond
-#include <array>
-/// \endcond
-
 namespace ggems::units {
-using Time = Quantity<TimeDim, uint64_t>; // base: picoseconds
+/*!
+ * \brief Time quantity expressed in picoseconds.
+ *
+ * This alias binds the \c TimeDim dimension to an unsigned 64-bit
+ * representation. All stored values are expressed in base engine units
+ * (picoseconds), while user-facing APIs may expose higher-level units.
+ */
+using Time = Quantity<TimeDim, uint64_t>;
 
-// Human-readable time
+/*!
+ * \brief Converts a time quantity to a human-readable string.
+ *
+ * For durations shorter than 60 seconds, the function selects the most
+ * suitable unit among ps, ns, us, ms and s depending on the magnitude.
+ * For durations longer than or equal to 60 seconds, it returns a compact
+ * breakdown in hours, minutes, seconds and milliseconds.
+ *
+ * \param t         Time quantity in base units (picoseconds).
+ * \param precision Number of digits after the decimal point for the
+ *                  mantissa in the short-duration case.
+ * \param width     Optional minimum field width; if negative, no width
+ *                  constraint is applied.
+ *
+ * \return UTF-8 encoded string describing the duration with its unit.
+ */
 inline std::string HumanReadable(Time const &t, std::int8_t precision = 7,
                                  std::int8_t width = -1) {
   long double const v = static_cast<long double>(t.value);
@@ -53,7 +111,6 @@ inline std::string HumanReadable(Time const &t, std::int8_t precision = 7,
 
       long double scaled = v / u.scale;
 
-      // Construire format dynamique : libre ou fixe
       std::string fmt;
       if (width < 0) {
         fmt = std::format("{{:.{}f}}{}", precision, u.suffix);
@@ -65,72 +122,147 @@ inline std::string HumanReadable(Time const &t, std::int8_t precision = 7,
     }
   }
 
-  // fallback jamais atteint
   return std::format("{:.{}f} ps", v, precision);
 }
 
-// User-defined literals for time (base = ps)
+/*!
+ * \brief User-defined literal for time in picoseconds (integer).
+ *
+ * \param v Integer literal representing a number of picoseconds.
+ * \return \c Time quantity equal to \c v ps.
+ */
+consteval Time operator""_ps(std::uint64_t v) noexcept { return Time{v}; }
 
-consteval Time operator""_ps(unsigned long long v) {
+/*!
+ * \brief User-defined literal for time in picoseconds (floating-point).
+ *
+ * Fractional parts are truncated when converted to the integer engine
+ * unit representation.
+ *
+ * \param v Floating-point literal representing a number of picoseconds.
+ * \return \c Time quantity approximating \c v ps.
+ */
+consteval Time operator""_ps(long double v) noexcept {
   return Time{static_cast<uint64_t>(v)};
 }
 
-consteval Time operator""_ps(long double v) {
-  return Time{static_cast<uint64_t>(v)};
+/*!
+ * \brief User-defined literal for time in nanoseconds (integer).
+ *
+ * \param v Integer literal representing a number of nanoseconds.
+ * \return \c Time quantity equal to \c v ns expressed in picoseconds.
+ */
+consteval Time operator""_ns(std::uint64_t v) noexcept {
+  return Time{v * 1000ull};
 }
 
-// ns
-consteval Time operator""_ns(unsigned long long v) {
-  return Time{static_cast<uint64_t>(v) * 1000ull};
-}
-
-consteval Time operator""_ns(long double v) {
+/*!
+ * \brief User-defined literal for time in nanoseconds (floating-point).
+ *
+ * \param v Floating-point literal representing a number of nanoseconds.
+ * \return \c Time quantity approximating \c v ns expressed in picoseconds.
+ */
+consteval Time operator""_ns(long double v) noexcept {
   return Time{static_cast<uint64_t>(v * 1.0e3L)};
 }
 
-// us
-consteval Time operator""_us(unsigned long long v) {
-  return Time{static_cast<uint64_t>(v) * 1'000'000ull};
+/*!
+ * \brief User-defined literal for time in microseconds (integer).
+ *
+ * \param v Integer literal representing a number of microseconds.
+ * \return \c Time quantity equal to \c v µs expressed in picoseconds.
+ */
+consteval Time operator""_us(std::uint64_t v) noexcept {
+  return Time{v * 1'000'000ull};
 }
 
-consteval Time operator""_us(long double v) {
+/*!
+ * \brief User-defined literal for time in microseconds (floating-point).
+ *
+ * \param v Floating-point literal representing a number of microseconds.
+ * \return \c Time quantity approximating \c v µs expressed in picoseconds.
+ */
+consteval Time operator""_us(long double v) noexcept {
   return Time{static_cast<uint64_t>(v * 1.0e6L)};
 }
 
-// ms
-consteval Time operator""_ms(unsigned long long v) {
-  return Time{static_cast<uint64_t>(v) * 1'000'000'000ull};
+/*!
+ * \brief User-defined literal for time in milliseconds (integer).
+ *
+ * \param v Integer literal representing a number of milliseconds.
+ * \return \c Time quantity equal to \c v ms expressed in picoseconds.
+ */
+consteval Time operator""_ms(std::uint64_t v) noexcept {
+  return Time{v * 1'000'000'000ull};
 }
 
-consteval Time operator""_ms(long double v) {
+/*!
+ * \brief User-defined literal for time in milliseconds (floating-point).
+ *
+ * \param v Floating-point literal representing a number of milliseconds.
+ * \return \c Time quantity approximating \c v ms expressed in picoseconds.
+ */
+consteval Time operator""_ms(long double v) noexcept {
   return Time{static_cast<uint64_t>(v * 1.0e9L)};
 }
 
-// s
-consteval Time operator""_s(unsigned long long v) {
-  return Time{static_cast<uint64_t>(v) * 1'000'000'000'000ull};
+/*!
+ * \brief User-defined literal for time in seconds (integer).
+ *
+ * \param v Integer literal representing a number of seconds.
+ * \return \c Time quantity equal to \c v s expressed in picoseconds.
+ */
+consteval Time operator""_s(std::uint64_t v) noexcept {
+  return Time{v * 1'000'000'000'000ull};
 }
 
-consteval Time operator""_s(long double v) {
+/*!
+ * \brief User-defined literal for time in seconds (floating-point).
+ *
+ * \param v Floating-point literal representing a number of seconds.
+ * \return \c Time quantity approximating \c v s expressed in picoseconds.
+ */
+consteval Time operator""_s(long double v) noexcept {
   return Time{static_cast<uint64_t>(v * 1.0e12L)};
 }
 
-// minutes
-consteval Time operator""_min(unsigned long long v) {
-  return Time{static_cast<uint64_t>(v) * 60ull * 1'000'000'000'000ull};
+/*!
+ * \brief User-defined literal for time in minutes (integer).
+ *
+ * \param v Integer literal representing a number of minutes.
+ * \return \c Time quantity equal to \c v min expressed in picoseconds.
+ */
+consteval Time operator""_min(std::uint64_t v) noexcept {
+  return Time{v * 60ull * 1'000'000'000'000ull};
 }
 
-consteval Time operator""_min(long double v) {
+/*!
+ * \brief User-defined literal for time in minutes (floating-point).
+ *
+ * \param v Floating-point literal representing a number of minutes.
+ * \return \c Time quantity approximating \c v min expressed in picoseconds.
+ */
+consteval Time operator""_min(long double v) noexcept {
   return Time{static_cast<uint64_t>(v * 60.0L * 1.0e12L)};
 }
 
-// hours
-consteval Time operator""_h(unsigned long long v) {
-  return Time{static_cast<uint64_t>(v) * 3600ull * 1'000'000'000'000ull};
+/*!
+ * \brief User-defined literal for time in hours (integer).
+ *
+ * \param v Integer literal representing a number of hours.
+ * \return \c Time quantity equal to \c v h expressed in picoseconds.
+ */
+consteval Time operator""_h(std::uint64_t v) noexcept {
+  return Time{v * 3600ull * 1'000'000'000'000ull};
 }
 
-consteval Time operator""_h(long double v) {
+/*!
+ * \brief User-defined literal for time in hours (floating-point).
+ *
+ * \param v Floating-point literal representing a number of hours.
+ * \return \c Time quantity approximating \c v h expressed in picoseconds.
+ */
+consteval Time operator""_h(long double v) noexcept {
   return Time{static_cast<uint64_t>(v * 3600.0L * 1.0e12L)};
 }
-
 } // namespace ggems::units

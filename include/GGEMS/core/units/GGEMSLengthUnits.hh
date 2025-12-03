@@ -1,86 +1,210 @@
 #pragma once
+// ************************************************************************
+// * This file is part of GGEMS.                                          *
+// *                                                                      *
+// * GGEMS is free software: you can redistribute it and/or modify        *
+// * it under the terms of the GNU General Public License as published by *
+// * the Free Software Foundation, either version 3 of the License, or    *
+// * (at your option) any later version.                                  *
+// *                                                                      *
+// * GGEMS is distributed in the hope that it will be useful,             *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
+// * GNU General Public License for more details.                         *
+// *                                                                      *
+// * You should have received a copy of the GNU General Public License    *
+// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
+// *                                                                      *
+// ************************************************************************
+
+/*!
+ * \file GGEMSLengthUnits.hh
+ * \brief Length quantity and formatting utilities for GGEMS.
+ *
+ * Defines the \c Length quantity stored in engine base units
+ * (picometres). User-defined literals provide conversions from common
+ * physical scales (nm → km), and a helper function emits readable
+ * textual representations with SI prefixes.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ * \date 2025-10-29
+ * \version 2.0
+ * \copyright
+ * GNU General Public License v3.0
+ */
+
+#include <array>
 
 #include "GGEMSQuantity.hh"
 
 namespace ggems::units {
-using Length = Quantity<LengthDim, std::uint64_t>; // base: picometres
+/*!
+ * \brief Length quantity expressed in picometres (pm).
+ *
+ * This alias binds the \c LengthDim dimension to an unsigned 64-bit
+ * representation. All stored values correspond to engine base units in
+ * picometres. Higher-level user-facing scales (nm → km) are produced
+ * only by \c HumanReadable for display convenience.
+ */
+using Length = Quantity<LengthDim, std::uint64_t>;
 
-inline std::string HumanReadable(Length const &L) {
-  long double const pm = static_cast<long double>(L.value);
+/*!
+ * \brief Converts a length quantity to a human-readable UTF-8 string.
+ *
+ * Internal values are stored as picometres (pm). For readability, the
+ * function selects the most appropriate SI prefix (nm, μm, mm, m, km)
+ * based on magnitude and formats the scaled value using fixed precision
+ * and optional minimum width.
+ *
+ * \param l         Length quantity expressed in picometres.
+ * \param precision Digits after the decimal point.
+ * \param width     Minimum formatted width; if negative, no constraint.
+ *
+ * \return UTF-8 encoded textual representation with an SI suffix.
+ */
+inline std::string HumanReadable(Length const &l, std::int8_t precision = 7,
+                                 std::int8_t width = -1) {
+  long double const v = static_cast<long double>(l.value);
 
-  if (pm >= 1.0e15L) // m
-    return std::format("{:5.1f} km", pm / 1.0e15L);
+  struct Unit {
+    long double threshold;
+    std::string_view suffix;
+    long double scale;
+  };
 
-  if (pm >= 1.0e12L) // m
-    return std::format("{:5.1f} m", pm / 1.0e12L);
+  static constexpr std::array<Unit, 6> units{{{1.0e15L, " km", 1.0e15L},
+                                              {1.0e12L, " m", 1.0e12L},
+                                              {1.0e9L, " mm", 1.0e9L},
+                                              {1.0e6L, " um", 1.0e6L},
+                                              {1.0e3L, " nm", 1.0e3L},
+                                              {0.0L, " pm", 1.0L}}};
 
-  if (pm >= 1.0e10L) // cm
-    return std::format("{:5.1f} cm", pm / 1.0e10L);
+  for (auto const &u : units) {
+    if (v >= u.threshold) {
 
-  if (pm >= 1.0e9L) // mm
-    return std::format("{:5.1f} mm", pm / 1.0e9L);
+      long double scaled = v / u.scale;
 
-  if (pm >= 1.0e6L) // um
-    return std::format("{:5.1f} um", pm / 1.0e6L);
+      std::string fmt;
 
-  if (pm >= 1.0e3L) // nm
-    return std::format("{:5.1f} nm", pm / 1.0e3L);
+      if (width < 0) {
+        fmt = std::format("{{:.{}f}}{}", precision, u.suffix);
+      } else {
+        fmt = std::format("{{:{}.{}f}}{}", width, precision, u.suffix);
+      }
 
-  return std::format("{:3.0f} pm", pm); // base
+      return std::vformat(fmt, std::make_format_args(scaled));
+    }
+  }
+
+  return std::format("{:.{}f} pm", v, precision);
 }
 
-// picometres
-consteval Length operator""_pm(unsigned long long v) {
+/*!
+ * \brief User-defined literal for picometres (pm).
+ * \param v Integer literal in pm.
+ * \return \c Length quantity equal to \c v pm.
+ */
+consteval Length operator""_pm(std::uint64_t v) noexcept { return Length{v}; }
+
+/*!
+ * \brief User-defined literal for picometres (pm) from floating-point.
+ * \param v Floating-point literal in pm.
+ * \return \c Length quantity approximating \c v pm (fraction truncated).
+ */
+consteval Length operator""_pm(long double v) noexcept {
   return Length{static_cast<std::uint64_t>(v)};
 }
 
-consteval Length operator""_pm(long double v) {
-  return Length{static_cast<std::uint64_t>(v)};
+/*!
+ * \brief User-defined literal for nanometres (nm).
+ * \param v Integer literal in nm.
+ * \return \c Length quantity equal to \c v × 10³ pm.
+ */
+consteval Length operator""_nm(std::uint64_t v) noexcept {
+  return Length{v * 1000ull};
 }
 
-// nanometres
-consteval Length operator""_nm(unsigned long long v) {
-  return Length{static_cast<std::uint64_t>(v) * 1000ull};
-}
-
-consteval Length operator""_nm(long double v) {
+/*!
+ * \brief User-defined literal for nanometres (nm) from floating-point.
+ * \param v Floating-point literal in nm.
+ * \return \c Length quantity approximating \c v × 10³ pm.
+ */
+consteval Length operator""_nm(long double v) noexcept {
   return Length{static_cast<std::uint64_t>(v * 1.0e3L)};
 }
 
-// micrometres
-consteval Length operator""_um(unsigned long long v) {
-  return Length{static_cast<std::uint64_t>(v) * 1'000'000ull};
+/*!
+ * \brief User-defined literal for micrometres (μm).
+ * \param v Integer literal in um.
+ * \return \c Length quantity equal to \c v × 10⁶ pm.
+ */
+consteval Length operator""_um(std::uint64_t v) noexcept {
+  return Length{v * 1'000'000ull};
 }
 
-consteval Length operator""_um(long double v) {
+/*!
+ * \brief User-defined literal for micrometres (μm) from floating-point.
+ * \param v Floating-point literal in um.
+ * \return \c Length quantity approximating \c v × 10⁶ pm.
+ */
+consteval Length operator""_um(long double v) noexcept {
   return Length{static_cast<std::uint64_t>(v * 1.0e6L)};
 }
 
-// millimetres
-consteval Length operator""_mm(unsigned long long v) {
-  return Length{static_cast<std::uint64_t>(v) * 1'000'000'000ull};
+/*!
+ * \brief User-defined literal for millimetres (mm).
+ * \param v Integer literal in mm.
+ * \return \c Length quantity equal to \c v × 10⁹ pm.
+ */
+consteval Length operator""_mm(std::uint64_t v) noexcept {
+  return Length{v * 1'000'000'000ull};
 }
 
-consteval Length operator""_mm(long double v) {
+/*!
+ * \brief User-defined literal for millimetres (mm) from floating-point.
+ * \param v Floating-point literal in mm.
+ * \return \c Length quantity approximating \c v × 10⁹ pm.
+ */
+consteval Length operator""_mm(long double v) noexcept {
   return Length{static_cast<std::uint64_t>(v * 1.0e9L)};
 }
 
-// centimetres
-consteval Length operator""_cm(unsigned long long v) {
-  return Length{static_cast<std::uint64_t>(v) * 10'000'000'000ull};
+/*!
+ * \brief User-defined literal for metres (m).
+ * \param v Integer literal in m.
+ * \return \c Length quantity equal to \c v × 10¹² pm.
+ */
+consteval Length operator""_m(std::uint64_t v) noexcept {
+  return Length{v * 1'000'000'000'000ull};
 }
 
-consteval Length operator""_cm(long double v) {
-  return Length{static_cast<std::uint64_t>(v * 1.0e10L)};
-}
-
-// metres
-consteval Length operator""_m(unsigned long long v) {
-  return Length{static_cast<std::uint64_t>(v) * 1'000'000'000'000ull};
-}
-
-consteval Length operator""_m(long double v) {
+/*!
+ * \brief User-defined literal for metres (m) from floating-point.
+ * \param v Floating-point literal in m.
+ * \return \c Length quantity approximating \c v × 10¹² pm.
+ */
+consteval Length operator""_m(long double v) noexcept {
   return Length{static_cast<std::uint64_t>(v * 1.0e12L)};
 }
 
+/*!
+ * \brief User-defined literal for kilometres (km).
+ *
+ * \param v Integer literal in kilometres.
+ * \return \c Length quantity equal to \c v × 10¹⁵ pm.
+ */
+consteval Length operator""_km(std::uint64_t v) noexcept {
+  return Length{v * 1'000'000'000'000'000ull};
+}
+
+/*!
+ * \brief User-defined literal for kilometres (km) from floating-point.
+ *
+ * \param v Floating-point literal in kilometres.
+ * \return \c Length quantity approximating \c v × 10¹⁵ pm.
+ */
+consteval Length operator""_km(long double v) noexcept {
+  return Length{static_cast<std::uint64_t>(v * 1.0e15L)};
+}
 } // namespace ggems::units

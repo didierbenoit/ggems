@@ -1,6 +1,5 @@
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
-#include "GGEMS/core/units/GGEMSBytesUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 
 using namespace ggems::units;
@@ -21,7 +20,8 @@ GGEMSOpenCLSVMBuffer::GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context,
 
   auto &ctx = context.GetContextNative();
 
-  void *p = clSVMAlloc(ctx(), flags_, ToSizeT(size), alignment);
+  void *p = clSVMAlloc(ctx(), flags_, static_cast<std::size_t>(size.value),
+                       alignment);
   GGEMS_CHECK(p, "clSVMalloc failed: returned nullptr.");
 
   ptr_ = p;

@@ -1,20 +1,3 @@
-/*
- * This file is part of GGEMS.
- *
- * GGEMS is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * GGEMS is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along
- * with GGEMS.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
@@ -25,8 +8,6 @@
 #include "GGEMS/core/units/GGEMSUnits.hh"
 
 namespace ggems::core {
-// ----- Slot ----------------------------------------------
-
 GGEMSProgressBar::Slot &
 GGEMSProgressBar::AddSlot(std::string_view name, bool is_gpu,
                           std::array<cl_uchar, CL_LUID_SIZE_KHR> luid) {
@@ -425,7 +406,7 @@ void GGEMSProgressBar::DrawSingleSlot(std::size_t index, std::int16_t base_y) {
 
       // CPU Slot Process
       fb.DrawString(center_x_ + 2, center_y_ + y, U"CPU:");
-      std::uint8_t cpu_proc_percent = process_usage.cpu_percent_;
+      std::uint8_t cpu_proc_percent = process_usage.cpu_percent;
       std::string cpu_proc_percent_text =
           std::format("{:3}%", cpu_proc_percent);
       fb.DrawString(center_x_ + 7, center_y_ + y,
@@ -433,8 +414,8 @@ void GGEMSProgressBar::DrawSingleSlot(std::size_t index, std::int16_t base_y) {
                     GetColourStatus(cpu_proc_percent));
 
       // RAM Process, working set size and private usage
-      std::uint64_t working_set = process_usage.ram_.working_set_size_;
-      std::uint64_t private_usage = process_usage.ram_.private_;
+      std::uint64_t working_set = process_usage.ram.working_set_size;
+      std::uint64_t private_usage = process_usage.ram.private_mem;
       std::string ram_txt =
           std::format("Working set: {}, Private: {}", FormatMemory(working_set),
                       FormatMemory(private_usage));
@@ -444,7 +425,7 @@ void GGEMSProgressBar::DrawSingleSlot(std::size_t index, std::int16_t base_y) {
       GPUsage gpu_usage = GetGPUsage(luid);
 
       fb.DrawString(center_x_ + 2, center_y_ + y, U"GPU:");
-      std::uint8_t gpu_proc_percent = gpu_usage.gpu_percent_;
+      std::uint8_t gpu_proc_percent = gpu_usage.gpu_percent;
       std::string gpu_proc_percent_text =
           std::format("{:3}%", gpu_proc_percent);
       fb.DrawString(center_x_ + 7, center_y_ + y,
@@ -452,14 +433,14 @@ void GGEMSProgressBar::DrawSingleSlot(std::size_t index, std::int16_t base_y) {
                     GetColourStatus(gpu_proc_percent));
 
       fb.DrawString(center_x_ + 12, center_y_ + y, U"| RAM:");
-      std::uint8_t ram_percent = gpu_usage.ram_.percent_;
+      std::uint8_t ram_percent = gpu_usage.ram.percent;
       std::string ram_percent_text = std::format("{:3}%", ram_percent);
       fb.DrawString(center_x_ + 19, center_y_ + y,
                     utf::UTF8ToUTF32(ram_percent_text),
                     GetColourStatus(ram_percent));
 
-      std::uint64_t ram_total = gpu_usage.ram_.total_;
-      std::uint64_t ram_used = gpu_usage.ram_.used_;
+      std::uint64_t ram_total = gpu_usage.ram.total;
+      std::uint64_t ram_used = gpu_usage.ram.used;
       std::string ram_txt = std::format("({}/{})", FormatMemory(ram_used),
                                         FormatMemory(ram_total));
       fb.DrawString(center_x_ + 24, center_y_ + y, utf::UTF8ToUTF32(ram_txt));
@@ -480,7 +461,7 @@ void GGEMSProgressBar::DrawSystemStats() {
 
   // CPU global
   fb.DrawString(center_x_ + 2, base_y + center_y_, U"CPU:");
-  std::uint8_t cpu_percent = system_usage.cpu_percent_;
+  std::uint8_t cpu_percent = system_usage.cpu_percent;
   std::string cpu_percent_text = std::format("{:3}%", cpu_percent);
   fb.DrawString(center_x_ + 7, base_y + center_y_,
                 utf::UTF8ToUTF32(cpu_percent_text),
@@ -488,14 +469,14 @@ void GGEMSProgressBar::DrawSystemStats() {
 
   // RAM global
   fb.DrawString(center_x_ + 12, base_y + center_y_, U"| RAM:");
-  std::uint8_t ram_percent = system_usage.ram_.percent_;
+  std::uint8_t ram_percent = system_usage.ram.percent;
   std::string ram_percent_text = std::format("{:3}%", ram_percent);
   fb.DrawString(center_x_ + 19, base_y + center_y_,
                 utf::UTF8ToUTF32(ram_percent_text),
                 GetColourStatus(ram_percent));
 
-  std::uint64_t ram_total = system_usage.ram_.total_;
-  std::uint64_t ram_used = system_usage.ram_.used_;
+  std::uint64_t ram_total = system_usage.ram.total;
+  std::uint64_t ram_used = system_usage.ram.used;
   std::string ram_txt =
       std::format("({}/{})", FormatMemory(ram_used), FormatMemory(ram_total));
   fb.DrawString(center_x_ + 24, base_y + center_y_, utf::UTF8ToUTF32(ram_txt));

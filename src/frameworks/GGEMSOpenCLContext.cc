@@ -150,7 +150,8 @@ void GGEMSOpenCLContext::EnqueueSVMMap(void *ptr, Bytes size,
                                        cl_map_flags flags) const {
   cl_int err = clEnqueueSVMMap(command_queue_(), // raw command queue
                                CL_TRUE,          // blocking map pour simplifier
-                               flags, ptr, ToSizeT(size), 0, nullptr, nullptr);
+                               flags, ptr, static_cast<std::size_t>(size.value),
+                               0, nullptr, nullptr);
 
   GGEMS_CHECK(err == CL_SUCCESS,
               std::format("SVMMap failed: {}", GetLongErrorString(err)));

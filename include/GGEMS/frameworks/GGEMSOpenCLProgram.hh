@@ -1,9 +1,7 @@
 #pragma once
 
-/// \cond
 #include <cstdint>
 #include <filesystem>
-/// \encond
 
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 

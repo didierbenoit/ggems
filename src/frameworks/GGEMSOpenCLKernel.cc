@@ -1,6 +1,5 @@
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
-#include "GGEMS/core/units/GGEMSTimeUnits.hh"
 
 using namespace ggems::units;
 

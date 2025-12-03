@@ -1,7 +1,44 @@
+// ************************************************************************
+// * This file is part of GGEMS.                                          *
+// *                                                                      *
+// * GGEMS is free software: you can redistribute it and/or modify        *
+// * it under the terms of the GNU General Public License as published by *
+// * the Free Software Foundation, either version 3 of the License, or    *
+// * (at your option) any later version.                                  *
+// *                                                                      *
+// * GGEMS is distributed in the hope that it will be useful,             *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
+// * GNU General Public License for more details.                         *
+// *                                                                      *
+// * You should have received a copy of the GNU General Public License    *
+// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
+// *                                                                      *
+// ************************************************************************
+
+/*!
+ * \file GGEMSSystemUtilsWindows.cc
+ * \brief Windows-specific implementations for system CPU, RAM and GPU metrics.
+ *
+ * This translation unit provides the Win32 and DXGI/D3DKMT backends
+ * used by \ref ggems::core::GetSystemUsage(),
+ * \ref ggems::core::GetProcessUsage() and
+ * \ref ggems::core::GetGPUsage().
+ *
+ * It extracts system-wide and per-process utilisation metrics
+ * using native WinAPI calls and low-level driver interfaces.
+ * No OS abstraction is performed here: all logic is Windows-only.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ * \date 2025-10-12
+ * \version 2.0
+ * \copyright
+ * GNU General Public License v3.0
+ */
+
 #include "GGEMS/core/GGEMSSystemUtils.hh"
 #include "GGEMS/platform/windows/GGEMSWindowsGPU.hh"
-#include <combaseapi.h>
-#include <dxgi.h>
 
 namespace ggems::core::system {
 
@@ -9,6 +46,7 @@ namespace ggems::core::system {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+/// \cond
 static std::uint8_t QueryCPUPercent() noexcept {
   static FILETIME last_idle{}, last_kernel{}, last_user{};
   static bool first_cpu = true;
@@ -53,11 +91,13 @@ static std::uint8_t QueryCPUPercent() noexcept {
   uint64_t busy = total - idle_d;
   return static_cast<uint8_t>((100ULL * busy) / total);
 }
+/// \endcond
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+/// \cond
 static std::uint8_t QueryProcessCPUPercent() noexcept {
   static bool first{true};
   static FILETIME last_kernel{}, last_user{};
@@ -115,11 +155,13 @@ static std::uint8_t QueryProcessCPUPercent() noexcept {
 
   return static_cast<std::uint8_t>(pct);
 }
+/// \endcond
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+/// \cond
 static RAMUsage QueryRAMStatus() noexcept {
   MEMORYSTATUSEX mem{};
   mem.dwLength = sizeof(mem);
@@ -134,11 +176,13 @@ static RAMUsage QueryRAMStatus() noexcept {
 
   return RAMUsage{total, available, used, percent};
 }
+/// \endcond
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+/// \cond
 static CPURAMProcessUsage QueryProcessRAM() noexcept {
   PROCESS_MEMORY_COUNTERS_EX pmc{};
   if (GetProcessMemoryInfo(GetCurrentProcess(),
@@ -149,11 +193,13 @@ static CPURAMProcessUsage QueryProcessRAM() noexcept {
     return CPURAMProcessUsage{0ULL, 0LL};
   }
 }
+/// \endcond
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+/// \cond
 std::optional<uint32_t> GetCPUFrequencyMHz() noexcept {
   HKEY key;
   DWORD mhz = 0, size = sizeof(mhz);
@@ -172,11 +218,13 @@ std::optional<uint32_t> GetCPUFrequencyMHz() noexcept {
 
   return std::nullopt;
 }
+/// \endcond
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+/// \cond
 struct GPUStateCache {
   bool init = false;
   uint64_t last_running = 0;
@@ -184,22 +232,26 @@ struct GPUStateCache {
 };
 
 static GPUStateCache gpu_cache[16];
+/// \endcond
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+/// \cond
 static LUID
 ToWindowsLUID(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid) noexcept {
   LUID id{};
   std::memcpy(&id, luid.data(), sizeof(LUID));
   return id;
 }
+/// \endcond
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+/// \cond
 static std::uint8_t QueryGPUPercent_D3DKMT(LUID luid,
                                            GPUStateCache &cache) noexcept {
   D3DKMT_QUERYSTATISTICS s{};
@@ -242,11 +294,13 @@ static std::uint8_t QueryGPUPercent_D3DKMT(LUID luid,
 
   return static_cast<uint8_t>(pct);
 }
+/// \endcond
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+/// \cond
 static GPURAMProcessUsage QueryVRAMUsed_DXGI(LUID const &luid) noexcept {
   IDXGIFactory4 *factory = nullptr;
 
@@ -308,11 +362,13 @@ static GPURAMProcessUsage QueryVRAMUsed_DXGI(LUID const &luid) noexcept {
 
   return GPURAMProcessUsage{total, used, percent};
 }
+/// \endcond
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+/// \cond
 GPUsage
 GetGPUsage(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid) noexcept {
   GPUsage out;
@@ -324,25 +380,30 @@ GetGPUsage(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid) noexcept {
 
   int index = static_cast<int>(mix & 15u);
 
-  out.gpu_percent_ = QueryGPUPercent_D3DKMT(luid_win, gpu_cache[index]);
-  out.ram_ = QueryVRAMUsed_DXGI(luid_win);
+  out.gpu_percent = QueryGPUPercent_D3DKMT(luid_win, gpu_cache[index]);
+  out.ram = QueryVRAMUsed_DXGI(luid_win);
 
   return out;
 }
+/// \endcond
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+/// \cond
 CPUProcessUsage GetProcessUsage() noexcept {
   return CPUProcessUsage{QueryProcessCPUPercent(), QueryProcessRAM()};
 }
+/// \endcond
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+/// \cond
 SystemUsage GetSystemUsage() noexcept {
   return SystemUsage{QueryCPUPercent(), QueryRAMStatus(), GetCPUFrequencyMHz()};
 }
+/// \endcond
 } // namespace ggems::core::system

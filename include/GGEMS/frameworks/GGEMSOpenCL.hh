@@ -34,7 +34,6 @@
  */
 
 #include "GGEMS/core/GGEMSMacros.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLProgram.hh"
 
 /// \cond

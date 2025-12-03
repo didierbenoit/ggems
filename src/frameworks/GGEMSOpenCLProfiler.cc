@@ -1,7 +1,6 @@
 #include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
-#include "GGEMS/core/units/GGEMSBandwidthUnits.hh"
 
 using namespace ggems::units;
 

@@ -1,9 +1,7 @@
 #include "GGEMS/core/GGEMSRun.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
-#include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
-#include <winsvc.h>
 
 using namespace ggems::units;
 
@@ -91,6 +89,11 @@ void GGEMSRun::Initialise() {
 
 void GGEMSRun::Run() {
   GGEMS_INFO("Core", "GGEMS starting...");
+
+  Speed b{Length{125} / Time{45}};
+  Speed b1 = 152.6_m_s;
+
+  GGEMS_DEBUG("Run", "{} || {} || {}", b, HumanReadable(b, 2, 6), b1);
 
   /*  auto &opencl = ocl::GGEMSOpenCL::GetInstance();
     auto &contexts = opencl.GetContext();

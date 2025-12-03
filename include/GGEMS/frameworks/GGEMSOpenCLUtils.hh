@@ -1,46 +1,5 @@
 #pragma once
 
-// ************************************************************************
-// * This file is part of GGEMS.                                          *
-// *                                                                      *
-// * GGEMS is free software: you can redistribute it and/or modify        *
-// * it under the terms of the GNU General Public License as published by *
-// * the Free Software Foundation, either version 3 of the License, or    *
-// * (at your option) any later version.                                  *
-// *                                                                      *
-// * GGEMS is distributed in the hope that it will be useful,             *
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
-// * GNU General Public License for more details.                         *
-// *                                                                      *
-// * You should have received a copy of the GNU General Public License    *
-// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
-// *                                                                      *
-// ************************************************************************
-
-/*!
- * \file GGEMSOpenCLCommons.hh
- * \brief Common utilities, error handling and strongly-typed info helpers for
- * OpenCL 3.0.
- *
- * This header centralises:
- * - error translation and failure reporting (\ref ggocl::GetErrorString, \ref
- * ggocl::Failure),
- * - a strict macro to check OpenCL return codes (\ref GGOCL_CHECK),
- * - generic, strongly-typed info accessors for the C++98 wrapper \c cl.hpp
- *   (\ref ggocl::utils::Get, \ref ggocl::utils::GetArray),
- * - extension helpers (\ref ggocl::utils::ExtractExtensions, \ref
- * ggocl::utils::HasExtension),
- * - a terminate handler suitable for HPC + pybind11 integration (\ref
- * ggocl::TerminateHandler),
- * - conversion helpers (\ref ggocl::utils::ClVersionToString,
- *   \ref ggocl::utils::ClNameVersionToString).
- *
- * All templates are header-only by design. Non-templates are defined in the \c
- * .cc.
- */
-
-/// \cond
 #include <cstring>
 #include <format>
 #include <sstream>
@@ -48,7 +7,6 @@
 #include <string_view>
 #include <unordered_set>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
