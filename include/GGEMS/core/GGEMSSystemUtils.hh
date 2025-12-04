@@ -39,9 +39,11 @@
  * supported on Windows at this stage.
  */
 
+/// \cond
 #include <array>
 #include <cstdint>
 #include <optional>
+/// \endcond
 
 #include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 

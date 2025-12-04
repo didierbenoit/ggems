@@ -90,8 +90,8 @@ void GGEMSRun::Initialise() {
 void GGEMSRun::Run() {
   GGEMS_INFO("Core", "GGEMS starting...");
 
-  Speed b{Length{125} / Time{45}};
-  Speed b1 = 152.6_m_s;
+  Energy b{23512};
+  Energy b1 = 122.6_keV;
 
   GGEMS_DEBUG("Run", "{} || {} || {}", b, HumanReadable(b, 2, 6), b1);
 

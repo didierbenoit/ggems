@@ -52,10 +52,12 @@
 #define NOMINMAX
 #endif
 
+/// \cond
 #include <io.h>
 #include <windows.h>
 #include <winternl.h>
 #include <Psapi.h>
+/// \endcond
 
 /*!
  * \def isatty

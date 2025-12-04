@@ -39,6 +39,11 @@
  * GNU General Public License v3.0
  */
 
+#include "GGEMS/core/units/GGEMSEnergyUnits.hh"
+#include "GGEMS/core/units/GGEMSDensityUnits.hh"
+#include "GGEMS/core/units/GGEMSAreaUnits.hh"
+#include "GGEMS/core/units/GGEMSVolumeUnits.hh"
+#include "GGEMS/core/units/GGEMSMassUnits.hh"
 #include "GGEMS/core/units/GGEMSBandwidthUnits.hh"
 #include "GGEMS/core/units/GGEMSBitsUnits.hh"
 #include "GGEMS/core/units/GGEMSFrequencyUnits.hh"

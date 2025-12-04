@@ -39,11 +39,13 @@
  * 24-bit ANSI escape sequences for foreground and background attributes.
  */
 
+/// \cond
 #include <array>
 #include <cstdint>
 #include <format>
 #include <string>
 #include <string_view>
+/// \endcond
 
 namespace ggems::render {
 /*!

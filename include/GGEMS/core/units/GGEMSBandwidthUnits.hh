@@ -38,7 +38,9 @@
 #include "GGEMSBytesUnits.hh"
 #include "GGEMSTimeUnits.hh"
 
+/// \cond
 #include <array>
+/// \endcond
 
 namespace ggems::units {
 /*!

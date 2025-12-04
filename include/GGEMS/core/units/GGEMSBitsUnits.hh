@@ -39,7 +39,9 @@
 
 #include "GGEMSQuantity.hh"
 
+/// \cond
 #include <array>
+/// \endcond
 
 namespace ggems::units {
 /*!
@@ -129,7 +131,7 @@ consteval Bits operator""_b(long double v) noexcept {
  * \return Corresponding \c Bits quantity expressed in bits.
  */
 consteval Bits operator""_kb(std::uint64_t v) noexcept {
-  return Bits{v * 1000ull};
+  return Bits{v * 1'000ULL};
 }
 
 /*!
@@ -150,7 +152,7 @@ consteval Bits operator""_kb(long double v) noexcept {
  * \return Corresponding \c Bits quantity expressed in bits.
  */
 consteval Bits operator""_Mb(std::uint64_t v) noexcept {
-  return Bits{v * 1'000'000ull};
+  return Bits{v * 1'000'000ULL};
 }
 
 /*!
@@ -171,7 +173,7 @@ consteval Bits operator""_Mb(long double v) noexcept {
  * \return Corresponding \c Bits quantity expressed in bits.
  */
 consteval Bits operator""_Gb(std::uint64_t v) noexcept {
-  return Bits{v * 1'000'000'000ull};
+  return Bits{v * 1'000'000'000ULL};
 }
 
 /*!
@@ -192,7 +194,7 @@ consteval Bits operator""_Gb(long double v) noexcept {
  * \return Corresponding \c Bits quantity expressed in bits.
  */
 consteval Bits operator""_Tb(std::uint64_t v) noexcept {
-  return Bits{v * 1'000'000'000'000ull};
+  return Bits{v * 1'000'000'000'000ULL};
 }
 
 /*!

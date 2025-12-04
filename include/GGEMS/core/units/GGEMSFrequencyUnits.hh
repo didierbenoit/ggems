@@ -36,7 +36,9 @@
 
 #include "GGEMSQuantity.hh"
 
+/// \cond
 #include <array>
+/// \endcond
 
 namespace ggems::units {
 /*!
@@ -124,7 +126,7 @@ consteval Frequency operator""_Hz(long double v) noexcept {
  * \return \c Frequency value equal to \c v × 10³ Hz.
  */
 consteval Frequency operator""_kHz(std::uint64_t v) noexcept {
-  return Frequency{v * 1000ull};
+  return Frequency{v * 1'000ULL};
 }
 
 /*!
@@ -144,7 +146,7 @@ consteval Frequency operator""_kHz(long double v) noexcept {
  * \return \c Frequency value equal to \c v × 10⁶ Hz.
  */
 consteval Frequency operator""_MHz(std::uint64_t v) noexcept {
-  return Frequency{v * 1'000'000ull};
+  return Frequency{v * 1'000'000ULL};
 }
 
 /*!
@@ -164,7 +166,7 @@ consteval Frequency operator""_MHz(long double v) noexcept {
  * \return \c Frequency value equal to \c v × 10⁹ Hz.
  */
 consteval Frequency operator""_GHz(std::uint64_t v) noexcept {
-  return Frequency{v * 1'000'000'000ull};
+  return Frequency{v * 1'000'000'000ULL};
 }
 
 /*!
@@ -184,7 +186,7 @@ consteval Frequency operator""_GHz(long double v) noexcept {
  * \return \c Frequency value equal to \c v × 10¹² Hz.
  */
 consteval Frequency operator""_THz(std::uint64_t v) noexcept {
-  return Frequency{v * 1'000'000'000'000ull};
+  return Frequency{v * 1'000'000'000'000ULL};
 }
 
 /*!

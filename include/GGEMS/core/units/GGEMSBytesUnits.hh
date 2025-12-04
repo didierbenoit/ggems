@@ -36,7 +36,9 @@
 
 #include "GGEMSQuantity.hh"
 
+/// \cond
 #include <array>
+/// \endcond
 
 namespace ggems::units {
 /*!
@@ -122,7 +124,7 @@ consteval Bytes operator""_B(long double v) noexcept {
  * \return \c Bytes quantity equal to \c v × 1024 B.
  */
 consteval Bytes operator""_kB(std::uint64_t v) noexcept {
-  return Bytes{v * 1024ull};
+  return Bytes{v * 1'024ULL};
 }
 
 /*!
@@ -132,7 +134,7 @@ consteval Bytes operator""_kB(std::uint64_t v) noexcept {
  * \return \c Bytes quantity approximating \c v × 1024 B.
  */
 consteval Bytes operator""_kB(long double v) noexcept {
-  return Bytes{static_cast<std::uint64_t>(v * 1024.0L)};
+  return Bytes{static_cast<std::uint64_t>(v * 1'024.0L)};
 }
 
 /*!
@@ -141,7 +143,7 @@ consteval Bytes operator""_kB(long double v) noexcept {
  * \return \c Bytes quantity equal to \c v × 1024² B.
  */
 consteval Bytes operator""_MB(std::uint64_t v) noexcept {
-  return Bytes{v * 1024ull * 1024ull};
+  return Bytes{v * 1'024ULL * 1'024ULL};
 }
 
 /*!
@@ -151,7 +153,7 @@ consteval Bytes operator""_MB(std::uint64_t v) noexcept {
  * \return \c Bytes quantity approximating \c v × 1024² B.
  */
 consteval Bytes operator""_MB(long double v) noexcept {
-  return Bytes{static_cast<std::uint64_t>(v * 1024.0L * 1024.0L)};
+  return Bytes{static_cast<std::uint64_t>(v * 1'024.0L * 1'024.0L)};
 }
 
 /*!
@@ -160,7 +162,7 @@ consteval Bytes operator""_MB(long double v) noexcept {
  * \return \c Bytes quantity equal to \c v × 1024³ B.
  */
 consteval Bytes operator""_GB(std::uint64_t v) noexcept {
-  return Bytes{v * 1024ull * 1024ull * 1024ull};
+  return Bytes{v * 1'024ULL * 1'024ULL * 1'024ULL};
 }
 
 /*!
@@ -170,7 +172,7 @@ consteval Bytes operator""_GB(std::uint64_t v) noexcept {
  * \return \c Bytes quantity approximating \c v × 1024³ B.
  */
 consteval Bytes operator""_GB(long double v) noexcept {
-  return Bytes{static_cast<std::uint64_t>(v * 1024.0L * 1024.0L * 1024.0L)};
+  return Bytes{static_cast<std::uint64_t>(v * 1'024.0L * 1'024.0L * 1'024.0L)};
 }
 
 /*!
@@ -179,7 +181,7 @@ consteval Bytes operator""_GB(long double v) noexcept {
  * \return \c Bytes quantity equal to \c v × 1024⁴ B.
  */
 consteval Bytes operator""_TB(std::uint64_t v) noexcept {
-  return Bytes{v * 1024ull * 1024ull * 1024ull * 1024ull};
+  return Bytes{v * 1'024ULL * 1'024ULL * 1'024ULL * 1'024ULL};
 }
 
 /*!
@@ -189,7 +191,7 @@ consteval Bytes operator""_TB(std::uint64_t v) noexcept {
  * \return \c Bytes quantity approximating \c v × 1024⁴ B.
  */
 consteval Bytes operator""_TB(long double v) noexcept {
-  return Bytes{
-      static_cast<std::uint64_t>(v * 1024.0L * 1024.0L * 1024.0L * 1024.0L)};
+  return Bytes{static_cast<std::uint64_t>(v * 1'024.0L * 1'024.0L * 1'024.0L *
+                                          1'024.0L)};
 }
 } // namespace ggems::units

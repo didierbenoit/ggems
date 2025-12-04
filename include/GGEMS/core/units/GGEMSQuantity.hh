@@ -53,7 +53,9 @@
  * GNU General Public License v3.0
  */
 
+/// \cond
 #include <format>
+/// \endcond
 
 namespace ggems::units {
 
@@ -61,33 +63,46 @@ namespace ggems::units {
  * \brief Compile-time dimensional type.
  *
  * The \c Dim type encodes physical dimensionality as integer exponents
- * applied to Length (LExp), Time (TExp) and Information (IExp).
+ * applied to Length (LExp), Time (TExp), Mass (MExp) and Information (IExp).
  *
  * Examples:
- *  - \c Dim<1,0,0>  ⇒ length
- *  - \c Dim<0,1,0>  ⇒ time
- *  - \c Dim<1,-1,0> ⇒ speed (length/time)
+ *  - \c Dim<1,0,0,0>  ⇒ length
+ *  - \c Dim<0,1,0,0>  ⇒ time
+ *  - \c Dim<1,-1,0,0> ⇒ speed (length/time)
  *
  * \tparam LExp Exponent for Length.
  * \tparam TExp Exponent for Time.
+ * \tparam MExp Exponent for Mass
  * \tparam IExp Exponent for Information.
  */
-template <int LExp, int TExp, int IExp> struct Dim {};
+template <std::int8_t LExp, std::int8_t TExp, std::int8_t MExp,
+          std::int8_t IExp>
+struct Dim {};
 
 /*! \brief Base dimension for length (L). */
-using LengthDim = Dim<1, 0, 0>;
+using LengthDim = Dim<1, 0, 0, 0>;
+/*! \brief Dimension for area (L²) */
+using AreaDim = Dim<2, 0, 0, 0>;
+/*! \brief Dimension for volume (L³) */
+using VolumeDim = Dim<3, 0, 0, 0>;
 /*! \brief Base dimension for time (T). */
-using TimeDim = Dim<0, 1, 0>;
+using TimeDim = Dim<0, 1, 0, 0>;
+/*! \brief Base dimension for mass (M). */
+using MassDim = Dim<0, 0, 1, 0>;
 /*! \brief Base dimension for information measured in bytes. */
-using InfoBytesDim = Dim<0, 0, 1>;
+using InfoBytesDim = Dim<0, 0, 0, 1>;
 /*! \brief Base dimension for information measured in bits. */
-using InfoBitsDim = Dim<0, 0, 2>;
+using InfoBitsDim = Dim<0, 0, 0, 2>;
 /*! \brief Dimension for frequency (T⁻¹). */
-using FrequencyDim = Dim<0, -1, 0>;
+using FrequencyDim = Dim<0, -1, 0, 0>;
 /*! \brief Dimension for speed (L T⁻¹). */
-using SpeedDim = Dim<1, -1, 0>;
+using SpeedDim = Dim<1, -1, 0, 0>;
 /*! \brief Dimension for bandwidth (information per unit time). */
-using BandwidthDim = Dim<0, -1, 1>;
+using BandwidthDim = Dim<0, -1, 0, 1>;
+/*! \brief Dimension for density (M L⁻³) */
+using DensityDim = Dim<-3, 0, 1, 0>;
+/*! \brief Dimension for energy (L²T⁻²M) */
+using EnergyDim = Dim<2, -2, 1, 0>;
 
 /*!
  * \brief Strongly-typed physical quantity with an associated dimension.
@@ -134,14 +149,18 @@ template <typename D1, typename D2> struct DivDim;
  *
  * \tparam L1 Length exponent of numerator.
  * \tparam T1 Time exponent of numerator.
+ * \tparam M1 Mass exponent of numerator.
  * \tparam I1 Information exponent of numerator.
  * \tparam L2 Length exponent of denominator.
  * \tparam T2 Time exponent of denominator.
+ * \tparam M2 Mass exponent of denominator.
  * \tparam I2 Information exponent of denominator.
  */
-template <int L1, int T1, int I1, int L2, int T2, int I2>
-struct DivDim<Dim<L1, T1, I1>, Dim<L2, T2, I2>> {
-  using type = Dim<L1 - L2, T1 - T2, I1 - I2>; /*!< Resulting dimension. */
+template <std::int8_t L1, std::int8_t T1, std::int8_t M1, std::int8_t I1,
+          std::int8_t L2, std::int8_t T2, std::int8_t M2, std::int8_t I2>
+struct DivDim<Dim<L1, T1, M1, I1>, Dim<L2, T2, M2, I2>> {
+  using type =
+      Dim<L1 - L2, T1 - T2, M1 - M2, I1 - I2>; /*!< Resulting dimension. */
 };
 
 /*!

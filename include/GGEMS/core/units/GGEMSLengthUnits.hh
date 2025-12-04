@@ -34,7 +34,9 @@
  * GNU General Public License v3.0
  */
 
+/// \cond
 #include <array>
+/// \endcond
 
 #include "GGEMSQuantity.hh"
 
@@ -122,7 +124,7 @@ consteval Length operator""_pm(long double v) noexcept {
  * \return \c Length quantity equal to \c v × 10³ pm.
  */
 consteval Length operator""_nm(std::uint64_t v) noexcept {
-  return Length{v * 1000ull};
+  return Length{v * 1000ULL};
 }
 
 /*!
@@ -140,7 +142,7 @@ consteval Length operator""_nm(long double v) noexcept {
  * \return \c Length quantity equal to \c v × 10⁶ pm.
  */
 consteval Length operator""_um(std::uint64_t v) noexcept {
-  return Length{v * 1'000'000ull};
+  return Length{v * 1'000'000ULL};
 }
 
 /*!
@@ -158,7 +160,7 @@ consteval Length operator""_um(long double v) noexcept {
  * \return \c Length quantity equal to \c v × 10⁹ pm.
  */
 consteval Length operator""_mm(std::uint64_t v) noexcept {
-  return Length{v * 1'000'000'000ull};
+  return Length{v * 1'000'000'000ULL};
 }
 
 /*!
@@ -176,7 +178,7 @@ consteval Length operator""_mm(long double v) noexcept {
  * \return \c Length quantity equal to \c v × 10¹² pm.
  */
 consteval Length operator""_m(std::uint64_t v) noexcept {
-  return Length{v * 1'000'000'000'000ull};
+  return Length{v * 1'000'000'000'000ULL};
 }
 
 /*!
@@ -195,7 +197,7 @@ consteval Length operator""_m(long double v) noexcept {
  * \return \c Length quantity equal to \c v × 10¹⁵ pm.
  */
 consteval Length operator""_km(std::uint64_t v) noexcept {
-  return Length{v * 1'000'000'000'000'000ull};
+  return Length{v * 1'000'000'000'000'000ULL};
 }
 
 /*!

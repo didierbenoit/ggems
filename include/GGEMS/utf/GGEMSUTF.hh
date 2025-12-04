@@ -37,9 +37,11 @@
  * ASCII '?' (0x3F).
  */
 
+/// \cond
 #include <format>
 #include <string>
 #include <string_view>
+/// \endcond
 
 namespace ggems::utf {
 /*!

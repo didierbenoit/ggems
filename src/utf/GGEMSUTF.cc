@@ -26,7 +26,10 @@
  * \copyright GNU GPL v3
  */
 
+/// \cond
 #include <cuchar>
+/// \endcond
+
 #include "GGEMS/utf/GGEMSUTF.hh"
 
 namespace ggems::utf {
