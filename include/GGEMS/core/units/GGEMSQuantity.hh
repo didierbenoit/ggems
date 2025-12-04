@@ -103,6 +103,8 @@ using BandwidthDim = Dim<0, -1, 0, 1>;
 using DensityDim = Dim<-3, 0, 1, 0>;
 /*! \brief Dimension for energy (L²T⁻²M) */
 using EnergyDim = Dim<2, -2, 1, 0>;
+/*! \brief Dimension for dose (L²T⁻²) */
+using DoseDim = Dim<2, -2, 0, 0>;
 
 /*!
  * \brief Strongly-typed physical quantity with an associated dimension.

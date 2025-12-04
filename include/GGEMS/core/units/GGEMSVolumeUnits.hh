@@ -40,7 +40,7 @@
 #include <array>
 /// \endcond
 
-#include "GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace ggems::units {
 
@@ -68,7 +68,7 @@ using Volume = Quantity<VolumeDim, long double>;
  */
 inline std::string HumanReadable(Volume const &v, std::int8_t precision = 7,
                                  std::int8_t width = -1) {
-  long double const val = v.value;
+  long double val = v.value;
 
   struct Unit {
     long double threshold;

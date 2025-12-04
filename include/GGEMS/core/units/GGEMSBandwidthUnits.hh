@@ -35,8 +35,9 @@
  * GNU General Public License v3.0
  */
 
-#include "GGEMSBytesUnits.hh"
-#include "GGEMSTimeUnits.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSTimeUnits.hh"
+#include "GGEMS/core/units/GGEMSBytesUnits.hh"
 
 /// \cond
 #include <array>
@@ -72,7 +73,7 @@ using Bandwidth = Quantity<BandwidthDim, long double>;
  */
 inline std::string HumanReadable(Bandwidth const &bw, std::int8_t precision = 7,
                                  std::int8_t width = -1) {
-  long double const v = bw.value * 1.0e12L;
+  long double v = bw.value * 1.0e12L;
 
   struct Unit {
     long double threshold;

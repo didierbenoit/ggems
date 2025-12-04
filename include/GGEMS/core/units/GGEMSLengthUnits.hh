@@ -38,7 +38,7 @@
 #include <array>
 /// \endcond
 
-#include "GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace ggems::units {
 /*!
@@ -67,7 +67,7 @@ using Length = Quantity<LengthDim, std::uint64_t>;
  */
 inline std::string HumanReadable(Length const &l, std::int8_t precision = 7,
                                  std::int8_t width = -1) {
-  long double const v = static_cast<long double>(l.value);
+  long double v = static_cast<long double>(l.value);
 
   struct Unit {
     long double threshold;

@@ -90,11 +90,6 @@ void GGEMSRun::Initialise() {
 void GGEMSRun::Run() {
   GGEMS_INFO("Core", "GGEMS starting...");
 
-  Energy b{23512};
-  Energy b1 = 122.6_keV;
-
-  GGEMS_DEBUG("Run", "{} || {} || {}", b, HumanReadable(b, 2, 6), b1);
-
   /*  auto &opencl = ocl::GGEMSOpenCL::GetInstance();
     auto &contexts = opencl.GetContext();
 

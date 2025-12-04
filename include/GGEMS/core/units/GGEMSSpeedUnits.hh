@@ -41,8 +41,8 @@
  * helper to derive a \c Speed from a \c Length over a \c Time.
  */
 
-#include "GGEMSLengthUnits.hh"
-#include "GGEMSTimeUnits.hh"
+#include "GGEMS/core/units/GGEMSLengthUnits.hh"
+#include "GGEMS/core/units/GGEMSTimeUnits.hh"
 
 namespace ggems::units {
 /*!

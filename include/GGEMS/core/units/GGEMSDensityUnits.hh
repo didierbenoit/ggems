@@ -37,11 +37,7 @@
  * GNU General Public License v3.0
  */
 
-/// \cond
-#include <array>
-/// \endcond
-
-#include "GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace ggems::units {
 /*!

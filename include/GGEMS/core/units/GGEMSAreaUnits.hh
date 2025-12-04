@@ -41,7 +41,7 @@
 #include <array>
 /// \endcond
 
-#include "GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace ggems::units {
 /*!

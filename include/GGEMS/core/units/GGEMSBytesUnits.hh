@@ -34,7 +34,7 @@
  * GNU General Public License v3.0
  */
 
-#include "GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 /// \cond
 #include <array>
@@ -66,7 +66,7 @@ using Bytes = Quantity<InfoBytesDim, std::uint64_t>;
  */
 inline std::string HumanReadable(Bytes const &b, std::int8_t precision = 7,
                                  std::int8_t width = -1) {
-  long double const v = static_cast<long double>(b.value);
+  long double v = static_cast<long double>(b.value);
 
   struct Unit {
     long double threshold;

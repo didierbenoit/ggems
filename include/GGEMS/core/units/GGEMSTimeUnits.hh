@@ -42,7 +42,7 @@
 #include <array>
 /// \endcond
 
-#include "GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace ggems::units {
 /*!
@@ -72,7 +72,7 @@ using Time = Quantity<TimeDim, uint64_t>;
  */
 inline std::string HumanReadable(Time const &t, std::int8_t precision = 7,
                                  std::int8_t width = -1) {
-  long double const v = static_cast<long double>(t.value);
+  long double v = static_cast<long double>(t.value);
 
   // >= 60 s → h / min / s / ms
   if (v >= 60.0L * 1.0e12L) {

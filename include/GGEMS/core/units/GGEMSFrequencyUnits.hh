@@ -34,7 +34,7 @@
  * GNU General Public License v3.0
  */
 
-#include "GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 /// \cond
 #include <array>
@@ -66,7 +66,7 @@ using Frequency = Quantity<FrequencyDim, std::uint64_t>;
  */
 inline std::string HumanReadable(Frequency const &f, std::int8_t precision = 7,
                                  std::int8_t width = -1) {
-  long double const v = static_cast<long double>(f.value);
+  long double v = static_cast<long double>(f.value);
 
   struct Unit {
     long double threshold;

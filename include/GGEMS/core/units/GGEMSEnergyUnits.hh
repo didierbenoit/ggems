@@ -40,7 +40,7 @@
 #include <array>
 /// \endcond
 
-#include "GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace ggems::units {
 /*!
@@ -67,7 +67,7 @@ using Energy = Quantity<EnergyDim, std::uint64_t>;
  */
 inline std::string HumanReadable(Energy const &e, std::int8_t precision = 7,
                                  std::int8_t width = -1) {
-  long double const v = static_cast<long double>(e.value);
+  long double v = static_cast<long double>(e.value);
 
   struct Scale {
     long double threshold;
