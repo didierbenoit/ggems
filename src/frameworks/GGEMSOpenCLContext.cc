@@ -1,5 +1,4 @@
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
-#include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 
 using namespace ggems::units;

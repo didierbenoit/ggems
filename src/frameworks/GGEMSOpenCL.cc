@@ -1,47 +1,12 @@
-// ************************************************************************
-// * This file is part of GGEMS.                                          *
-// *                                                                      *
-// * GGEMS is free software: you can redistribute it and/or modify        *
-// * it under the terms of the GNU General Public License as published by *
-// * the Free Software Foundation, either version 3 of the License, or    *
-// * (at your option) any later version.                                  *
-// *                                                                      *
-// * GGEMS is distributed in the hope that it will be useful,             *
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
-// * GNU General Public License for more details.                         *
-// *                                                                      *
-// * You should have received a copy of the GNU General Public License    *
-// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
-// *                                                                      *
-// ************************************************************************
-
-/*!
- * \file GGEMSOpenCL.cc
- * \brief Declaration of the GGEMSOpenCL singleton class for OpenCL management
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-10-12
- * \copyright GNU General Public License v3.0
- * \version 2.0
- */
-
-#include <algorithm>
-#include <functional>
+/// \cond
 #include <set>
+/// \endcond
 
-#include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
 
 namespace ggems::ocl {
-
-using core::GGEMSExceptionBase;
-using core::GGEMSFatal;
-using core::Throw;
-
-// Alias vendors mapping (to normalise searches)
 static const std::unordered_map<std::string, std::string> vendor_aliases = {
     {"intel", "intel(r) corporation"},
     {"nvidia", "nvidia corporation"},
@@ -62,7 +27,7 @@ GGEMSOpenCL::GGEMSOpenCL() {
   try {
     InitPlatformsAndDevices();
     GGEMS_INFOEX("OpenCL", 1, "GGEMSOpenCL successfully constructed!");
-  } catch (GGEMSExceptionBase &) {
+  } catch (core::GGEMSExceptionBase &) {
     std::terminate();
   } catch (std::exception const &) {
     std::terminate();
@@ -161,8 +126,7 @@ void GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters) {
     }
   }
 
-  if (all_devices.empty())
-    Throw<GGEMSFatal>("No OpenCL devices found.");
+  GGEMS_CHECK(!all_devices.empty(), "No OpenCL devices found.");
 
   // --- Default behaviour --------------------------------------------------
   if (filters.empty()) {
@@ -172,24 +136,24 @@ void GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters) {
         });
     if (it_gpu != all_devices.end()) {
       selected_devices_.push_back(*it_gpu);
-      GGEMS_INFO("Run", "No filter specified — using first GPU device: {}",
+      GGEMS_INFO("OpenCL", "No filter specified — using first GPU device: {}",
                  it_gpu->get().GetName());
     } else {
       selected_devices_.push_back(all_devices.front());
-      GGEMS_INFO("Run", "No GPU found — using first available device: {}",
+      GGEMS_INFO("OpenCL", "No GPU found — using first available device: {}",
                  all_devices.front().get().GetName());
     }
     return;
   }
   selected_devices_ = ParseDeviceFilters(filters, all_devices);
 
-  if (selected_devices_.empty())
-    Throw<GGEMSFatal>("No matching devices for given filters.");
+  GGEMS_CHECK(selected_devices_.empty(),
+              "No matching devices for given filters.");
 
-  GGEMS_INFO("Run", "Total devices selected: {}", selected_devices_.size());
+  GGEMS_INFO("OpenCL", "Total devices selected: {}", selected_devices_.size());
   for (std::size_t i = 0; i < selected_devices_.size(); ++i) {
     auto const &d = selected_devices_[i];
-    GGEMS_INFO("Run", "[{}] {}  ({} / {})", i, d.get().GetName(),
+    GGEMS_INFO("OpenCL", "[{}] {}  ({} / {})", i, d.get().GetName(),
                d.get().GetVendor(), ocl::DeviceTypeToString(d.get().GetType()));
   }
 }
@@ -320,7 +284,7 @@ GGEMSOpenCL::ParseDeviceFilters(
 /* --------------------------------*/
 /* --------------------------------*/
 
-void GGEMSOpenCL::PrintPlatforms() const {
+void GGEMSOpenCL::PrintPlatforms() const noexcept {
   GGEMS_INFO("OpenCL", "Listing available OpenCL platforms...");
 
   for (auto const &p : platforms_) {
@@ -332,7 +296,7 @@ void GGEMSOpenCL::PrintPlatforms() const {
 /* --------------------------------*/
 /* --------------------------------*/
 
-void GGEMSOpenCL::PrintDevices() const {
+void GGEMSOpenCL::PrintDevices() const noexcept {
   GGEMS_INFO("OpenCL", "Listing available OpenCL devices...");
 
   for (auto const &p : platforms_) {
@@ -346,7 +310,7 @@ void GGEMSOpenCL::PrintDevices() const {
 /* --------------------------------*/
 /* --------------------------------*/
 
-void GGEMSOpenCL::PrintContexts() const {
+void GGEMSOpenCL::PrintContexts() const noexcept {
   GGEMS_INFO("OpenCL", "Listing available OpenCL contexts...");
 
   for (auto const &c : contexts_) {

@@ -18,33 +18,57 @@
 
 /*!
  * \file GGEMSException.cc
+ * \brief Base exception class and specialised GGEMS exception categories.
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ * \date 2025-10-29
+ * \version 2.0
+ * \copyright
+ * GNU General Public License v3.0
  */
 
 #include "GGEMS/core/GGEMSException.hh"
 
 namespace ggems::core {
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSExceptionBase::Log(std::string const &msg) noexcept {
+  try {
+    std::fputs(msg.c_str(), stderr);
+    std::fputs("\n", stderr);
+  } catch (...) {
+    std::fputs("[GGEMS Exception]: logging failed\n", stderr);
+  }
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 void TerminateHandler() noexcept {
   try {
-    if (auto ex = std::current_exception()) {
+    auto ex = std::current_exception();
+    if (ex) {
       try {
         std::rethrow_exception(ex);
       } catch (GGEMSExceptionBase const &e) {
-        if (!e.Logged()) {
-          GGEMS_ERROR("Fatal", e.what());
+        if (e.Logged()) {
+          GGEMSExceptionBase::Log(e.what());
         }
       } catch (std::exception const &e) {
-        GGEMS_ERROR("Fatal", e.what());
+        GGEMSExceptionBase::Log(std::string("[std::exception] ") + e.what());
       } catch (...) {
-        GGEMS_ERROR("Fatal", "Unknown non-standard exception");
+        GGEMSExceptionBase::Log("[Unknown exception]");
       }
     } else {
-      GGEMS_ERROR("Fatal", "Terminate called with no active exception");
+      GGEMSExceptionBase::Log(
+          "[GGEMSException] Terminate called with no active exception]");
     }
   } catch (...) {
-    std::fputs("GGEMS Fatal Error: logger failed inside TerminateHandler\n",
-               stderr);
+    std::fputs("[GGEMSException] Exception escaped TerminateHandler\n", stderr);
   }
-
   std::abort();
 }
 } // namespace ggems::core

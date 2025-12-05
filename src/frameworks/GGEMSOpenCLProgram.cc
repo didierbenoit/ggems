@@ -1,6 +1,5 @@
 #include "GGEMS/frameworks/GGEMSOpenCLProgram.hh"
 #include "GGEMS/core/GGEMSCoreUtils.hh"
-#include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 
 #include <fstream>

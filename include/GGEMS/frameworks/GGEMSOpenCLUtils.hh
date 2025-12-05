@@ -1,22 +1,15 @@
 #pragma once
 
-#include <cstring>
-#include <format>
-#include <sstream>
-#include <string>
-#include <string_view>
+/// \cond
 #include <unordered_set>
-#include <vector>
+/// \endcond
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLInfoTraits.hh"
 
 namespace ggems::ocl {
-// === Error name analyse ===
 [[nodiscard]] inline std::string_view GetErrorCodeName(cl_int err) noexcept {
   switch (err) {
-  // === Run-time and JIT Compiler Errors (driver-dependent) ===
   case CL_SUCCESS:
     return "CL_SUCCESS";
   case CL_DEVICE_NOT_FOUND:
@@ -58,7 +51,6 @@ namespace ggems::ocl {
   case CL_KERNEL_ARG_INFO_NOT_AVAILABLE:
     return "CL_KERNEL_ARG_INFO_NOT_AVAILABLE";
 
-  // === Compile-time Errors (driver-independent) ===
   case CL_INVALID_VALUE:
     return "CL_INVALID_VALUE";
   case CL_INVALID_DEVICE_TYPE:
@@ -141,11 +133,8 @@ namespace ggems::ocl {
     return "CL_INVALID_PIPE_SIZE";
   case CL_INVALID_DEVICE_QUEUE:
     return "CL_INVALID_DEVICE_QUEUE";
-
-  // === Errors thrown by extensions ===
   case CL_PLATFORM_NOT_FOUND_KHR:
     return "CL_PLATFORM_NOT_FOUND_KHR";
-
   default:
     return "CL_UNKNOWN_ERROR";
   }
@@ -153,7 +142,6 @@ namespace ggems::ocl {
 
 [[nodiscard]] inline std::string_view GetErrorDescription(cl_int err) noexcept {
   switch (err) {
-  // === Run-time and JIT Compiler Errors (driver-dependent) ===
   case CL_SUCCESS:
     return "Operation completed successfully.";
   case CL_DEVICE_NOT_FOUND:
@@ -195,7 +183,6 @@ namespace ggems::ocl {
   case CL_KERNEL_ARG_INFO_NOT_AVAILABLE:
     return "Argument information is not available for the kernel.";
 
-  // === Compile-time Errors (driver-independent) ===
   case CL_INVALID_VALUE:
     return "One or more arguments have invalid values.";
   case CL_INVALID_DEVICE_TYPE:
@@ -278,11 +265,8 @@ namespace ggems::ocl {
     return "pipe_packet_size is 0 or exceeds CL_DEVICE_PIPE_MAX_PACKET_SIZE";
   case CL_INVALID_DEVICE_QUEUE:
     return "Not a valid device queue object.";
-
-  // === Errors thrown by extensions ===
   case CL_PLATFORM_NOT_FOUND_KHR:
     return "No valid ICDs found.";
-
   default:
     return "Unknown OpenCL error.";
   }
@@ -293,11 +277,6 @@ namespace ggems::ocl {
                      GetErrorDescription(err));
 }
 
-[[nodiscard]] inline std::string GetErrorString(cl_int err) noexcept {
-  return std::format("{}", GetErrorCodeName(err));
-}
-
-// === Handles OpenCL errors
 template <typename E, typename Enum, typename ToStringFunc>
 [[noreturn]] inline void
 ThrowCL(Enum code, ToStringFunc toString, std::string_view context,
@@ -317,7 +296,6 @@ CheckCLError(cl_int err, std::string_view context, bool do_log = true,
     ThrowCL<E>(err, GetLongErrorString, context, do_log, loc);
 }
 
-// === Info getters
 namespace detail {
 template <typename T> struct CLInfoReader {
   static T Read(auto obj, cl_uint param, std::size_t size, auto getter,
@@ -384,8 +362,6 @@ template <> struct CLGetter<cl::Kernel> {
 };
 } // namespace detail
 
-/* -------------------------------------------------------------------- */
-
 template <cl_uint Info, typename Kernel>
 auto GetArgInfo(Kernel const &k, cl_uint index) {
   cl_int err{CL_SUCCESS};
@@ -394,8 +370,6 @@ auto GetArgInfo(Kernel const &k, cl_uint index) {
   return value;
 }
 
-/* -------------------------------------------------------------------- */
-
 template <cl_uint Info, typename Kernel, typename Device>
 auto GetWorkGroupInfo(Kernel const &k, Device const &d) {
   cl_int err{CL_SUCCESS};
@@ -403,8 +377,6 @@ auto GetWorkGroupInfo(Kernel const &k, Device const &d) {
   GGEMS_OCL_CHECK_RECOVERABLE(err, "Get kernel work group info failed.");
   return value;
 }
-
-/* -------------------------------------------------------------------- */
 
 template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
   using Traits = InfoTraits<Info>;
@@ -431,15 +403,11 @@ template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
   }
 }
 
-/* -------------------------------------------------------------------- */
-
 template <cl_uint Info, typename Object> void PrintInfo(Object const &obj) {
   using Traits = InfoTraits<Info>;
   auto value = GetInfo<Info>(obj);
   GGEMS_INFO("OpenCL", "{}: {}", Traits::name, Traits::ToString(value));
 }
-
-/* -------------------------------------------------------------------- */
 
 // === Checking extensions
 [[nodiscard]] inline bool
