@@ -1,12 +1,51 @@
+// ************************************************************************
+// * This file is part of GGEMS.                                          *
+// *                                                                      *
+// * GGEMS is free software: you can redistribute it and/or modify        *
+// * it under the terms of the GNU General Public License as published by *
+// * the Free Software Foundation, either version 3 of the License, or    *
+// * (at your option) any later version.                                  *
+// *                                                                      *
+// * GGEMS is distributed in the hope that it will be useful,             *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
+// * GNU General Public License for more details.                         *
+// *                                                                      *
+// * You should have received a copy of the GNU General Public License    *
+// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
+// *                                                                      *
+// ************************************************************************
+
+/*!
+ * \file GGEMSOpenCL.cc
+ * \brief Implementation of the GGEMSOpenCL runtime manager.
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ * \date 2025-10-29
+ * \version 2.0
+ * \copyright
+ * GNU General Public License v3.0
+ */
+
 /// \cond
 #include <set>
 /// \endcond
 
-#include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
 
 namespace ggems::ocl {
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+/*!
+ * \brief Mapping of vendor aliases to normalised vendor names.
+ *
+ * Used internally when parsing device-selection filters to allow
+ * user-friendly terms such as "nvidia" or "amd".
+ */
 static const std::unordered_map<std::string, std::string> vendor_aliases = {
     {"intel", "intel(r) corporation"},
     {"nvidia", "nvidia corporation"},
@@ -15,9 +54,9 @@ static const std::unordered_map<std::string, std::string> vendor_aliases = {
     {"arm", "arm"},
 };
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 GGEMSOpenCL::GGEMSOpenCL() {
   GGEMS_INFOEX("OpenCL", 2, "Constructing GGEMSOpenCL singleton...");
@@ -36,9 +75,9 @@ GGEMSOpenCL::GGEMSOpenCL() {
   }
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 GGEMSOpenCL::~GGEMSOpenCL() {
   GGEMS_INFOEX("OpenCL", 2, "Releasing GGEMSOpenCL resources...");
@@ -47,9 +86,9 @@ GGEMSOpenCL::~GGEMSOpenCL() {
       "GGEMSOpenCL singleton destroyed (memory intentionally retained).");
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 GGEMSOpenCLProgram &GGEMSOpenCL::GetOrCreateProgram(
     GGEMSOpenCLContext &ctx, std::filesystem::path const &kernel_root,
@@ -74,9 +113,9 @@ GGEMSOpenCLProgram &GGEMSOpenCL::GetOrCreateProgram(
   return ref;
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 void GGEMSOpenCL::DisableKernelCache() const {
 #ifdef _MSC_VER
@@ -89,9 +128,9 @@ void GGEMSOpenCL::DisableKernelCache() const {
   GGEMS_INFOEX("OpenCL", 2, "CUDA kernel cache disabled.");
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 void GGEMSOpenCL::InitPlatformsAndDevices() {
   GGEMS_INFOEX("OpenCL", 1, "Enumerating OpenCL platforms...");
@@ -111,9 +150,9 @@ void GGEMSOpenCL::InitPlatformsAndDevices() {
                platforms_.size());
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 void GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters) {
   GGEMS_INFO("OpenCL", "Selecting OpenCL devices...");
@@ -158,9 +197,9 @@ void GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters) {
   }
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 void GGEMSOpenCL::Initialise() {
   try {
@@ -175,9 +214,9 @@ void GGEMSOpenCL::Initialise() {
   }
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 void GGEMSOpenCL::CreateContexts() {
   contexts_.clear();
@@ -189,9 +228,9 @@ void GGEMSOpenCL::CreateContexts() {
   GGEMS_INFO("Run", "Created {} OpenCL contexts.", contexts_.size());
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>
 GGEMSOpenCL::ParseDeviceFilters(
@@ -280,9 +319,9 @@ GGEMSOpenCL::ParseDeviceFilters(
   return selected;
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 void GGEMSOpenCL::PrintPlatforms() const noexcept {
   GGEMS_INFO("OpenCL", "Listing available OpenCL platforms...");
@@ -292,9 +331,9 @@ void GGEMSOpenCL::PrintPlatforms() const noexcept {
   }
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 void GGEMSOpenCL::PrintDevices() const noexcept {
   GGEMS_INFO("OpenCL", "Listing available OpenCL devices...");
@@ -306,9 +345,9 @@ void GGEMSOpenCL::PrintDevices() const noexcept {
   }
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 void GGEMSOpenCL::PrintContexts() const noexcept {
   GGEMS_INFO("OpenCL", "Listing available OpenCL contexts...");
@@ -319,9 +358,9 @@ void GGEMSOpenCL::PrintContexts() const noexcept {
   }
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 void GGEMSOpenCL::Clean() noexcept {
   GGEMS_INFOEX("OpenCL", 2, "Cleaning all OpenCL platform resources...");

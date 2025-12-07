@@ -1,4 +1,33 @@
 #pragma once
+// ************************************************************************
+// * This file is part of GGEMS.                                          *
+// *                                                                      *
+// * GGEMS is free software: you can redistribute it and/or modify        *
+// * it under the terms of the GNU General Public License as published by *
+// * the Free Software Foundation, either version 3 of the License, or    *
+// * (at your option) any later version.                                  *
+// *                                                                      *
+// * GGEMS is distributed in the hope that it will be useful,             *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
+// * GNU General Public License for more details.                         *
+// *                                                                      *
+// * You should have received a copy of the GNU General Public License    *
+// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
+// *                                                                      *
+// ************************************************************************
+
+/*!
+ * \file GGEMSOpenCLUtils.hh
+ * \brief Utility helpers for OpenCL error handling, information queries and
+ * extension parsing.
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ * \date 2025-10-29
+ * \version 2.0
+ * \copyright
+ * GNU General Public License v3.0
+ */
 
 /// \cond
 #include <unordered_set>
@@ -8,6 +37,14 @@
 #include "GGEMS/frameworks/GGEMSOpenCLInfoTraits.hh"
 
 namespace ggems::ocl {
+/*!
+ * \brief Return the symbolic name of an OpenCL error code.
+ *
+ * Maps a cl_int error value to its corresponding OpenCL string token.
+ *
+ * \param err OpenCL error code.
+ * \return String view containing the error name.
+ */
 [[nodiscard]] inline std::string_view GetErrorCodeName(cl_int err) noexcept {
   switch (err) {
   case CL_SUCCESS:
@@ -140,6 +177,15 @@ namespace ggems::ocl {
   }
 }
 
+/*!
+ * \brief Retrieve a human-readable description for an OpenCL error code.
+ *
+ * Complements GetErrorCodeName() by providing a detailed explanation of the
+ * failure reason.
+ *
+ * \param err OpenCL error code.
+ * \return Human-readable error description.
+ */
 [[nodiscard]] inline std::string_view GetErrorDescription(cl_int err) noexcept {
   switch (err) {
   case CL_SUCCESS:
@@ -272,11 +318,33 @@ namespace ggems::ocl {
   }
 }
 
+/*!
+ * \brief Build a long error string combining the symbolic name and description.
+ *
+ * \param err OpenCL error code.
+ * \return Formatted string "{TOKEN} - {Description}".
+ */
 [[nodiscard]] inline std::string GetLongErrorString(cl_int err) noexcept {
   return std::format("{} - {}", GetErrorCodeName(err),
                      GetErrorDescription(err));
 }
 
+/*!
+ * \brief Throw a GGEMS exception for a given OpenCL error.
+ *
+ * Utility wrapper used throughout GGEMS to convert an OpenCL error code
+ * into a typed exception enriched with context and source location.
+ *
+ * \tparam E Exception type derived from GGEMSExceptionBase.
+ * \tparam Enum Enum class representing the error code type.
+ * \tparam ToStringFunc Functor producing a string from the error code.
+ *
+ * \param code Error code.
+ * \param toString Functor converting the code into a string.
+ * \param context Additional contextual message.
+ * \param do_log Whether the exception should be logged.
+ * \param loc Source location automatically filled by the compiler.
+ */
 template <typename E, typename Enum, typename ToStringFunc>
 [[noreturn]] inline void
 ThrowCL(Enum code, ToStringFunc toString, std::string_view context,
@@ -288,6 +356,15 @@ ThrowCL(Enum code, ToStringFunc toString, std::string_view context,
   core::Throw<E>(msg, loc, do_log);
 }
 
+/*!
+ * \brief Check an OpenCL return code and throw if not CL_SUCCESS.
+ *
+ * \tparam E Exception type to throw (defaults to GGEMSFatal).
+ * \param err Error code returned by an OpenCL call.
+ * \param context User-provided message describing the operation.
+ * \param do_log Whether the error is logged.
+ * \param loc Source location.
+ */
 template <typename E = core::GGEMSFatal>
 inline void
 CheckCLError(cl_int err, std::string_view context, bool do_log = true,
@@ -297,7 +374,26 @@ CheckCLError(cl_int err, std::string_view context, bool do_log = true,
 }
 
 namespace detail {
+/*!
+ * \struct CLInfoReader
+ * \brief Primary template for reading scalar OpenCL info values.
+ *
+ * Generic reader used for fixed-size types requested via clGet*Info functions.
+ *
+ * \tparam T Returned type.
+ */
 template <typename T> struct CLInfoReader {
+  /*!
+   * \brief Read the information value.
+   *
+   * \param obj OpenCL object wrapper.
+   * \param param OpenCL parameter identifier.
+   * \param size Buffer size.
+   * \param getter OpenCL getter function pointer.
+   * \param err Output error code.
+   *
+   * \return Retrieved value of type T.
+   */
   static T Read(auto obj, cl_uint param, std::size_t size, auto getter,
                 cl_int &err) {
     (void)size;
@@ -307,7 +403,21 @@ template <typename T> struct CLInfoReader {
   }
 };
 
+/*!
+ * \brief Specialisation for std::string info.
+ */
 template <> struct CLInfoReader<std::string> {
+  /*!
+   * \brief Read a string value from an OpenCL info query.
+   *
+   * \param obj    OpenCL object wrapper.
+   * \param param  Info parameter identifier.
+   * \param size   Expected size of the returned data.
+   * \param getter Pointer to the OpenCL getter function.
+   * \param err    Output variable receiving the OpenCL error code.
+   *
+   * \return Extracted string.
+   */
   static std::string Read(auto obj, cl_uint param, size_t size, auto getter,
                           cl_int &err) {
     std::string value(size, '\0');
@@ -316,7 +426,21 @@ template <> struct CLInfoReader<std::string> {
   }
 };
 
+/*!
+ * \brief Specialisation for std::array<T,N>.
+ */
 template <typename T, std::size_t N> struct CLInfoReader<std::array<T, N>> {
+  /*!
+   * \brief Read an array value from an OpenCL info query.
+   *
+   * \param obj    OpenCL object wrapper.
+   * \param param  Info parameter identifier.
+   * \param size   Expected size in bytes.
+   * \param getter Pointer to the OpenCL getter function.
+   * \param err    Output error code from the underlying OpenCL call.
+   *
+   * \return Extracted fixed-size array.
+   */
   static std::array<T, N> Read(auto obj, cl_uint param, size_t size,
                                auto getter, cl_int &err) {
     std::array<T, N> v{};
@@ -326,7 +450,21 @@ template <typename T, std::size_t N> struct CLInfoReader<std::array<T, N>> {
   }
 };
 
+/*!
+ * \brief Specialisation for std::vector<T>.
+ */
 template <typename T> struct CLInfoReader<std::vector<T>> {
+  /*!
+   * \brief Read a vector value from an OpenCL info query.
+   *
+   * \param obj    OpenCL object wrapper.
+   * \param param  Info parameter identifier.
+   * \param size   Expected size in bytes.
+   * \param getter Pointer to the OpenCL getter function.
+   * \param err    Output error code from the getter.
+   *
+   * \return Extracted vector of elements.
+   */
   static std::vector<T> Read(auto obj, cl_uint param, size_t size, auto getter,
                              cl_int &err) {
     std::vector<T> v(size / sizeof(T));
@@ -335,33 +473,74 @@ template <typename T> struct CLInfoReader<std::vector<T>> {
   }
 };
 
+/*!
+ * \struct CLGetter
+ * \brief Traits mapping a cl::Object type to the corresponding clGet*Info
+ * function.
+ *
+ * Used internally to drive the info-retrieval mechanism.
+ */
 template <class Obj> struct CLGetter;
 
+/*! \brief Getter for cl::Device → clGetDeviceInfo */
 template <> struct CLGetter<cl::Device> {
+  /*!
+   * \brief Pointer to clGetDeviceInfo used to query device information.
+   */
   static constexpr auto fn = &clGetDeviceInfo;
 };
 
+/*! \brief Getter for cl::Context → clGetContextInfo */
 template <> struct CLGetter<cl::Context> {
+  /*!
+   * \brief Pointer to clGetContextInfo used to query context information.
+   */
   static constexpr auto fn = &clGetContextInfo;
 };
 
+/*! \brief Getter for cl::Platform → clGetPlatformInfo */
 template <> struct CLGetter<cl::Platform> {
+  /*!
+   * \brief Pointer to clGetPlatformInfo used to query platform information.
+   */
   static constexpr auto fn = &clGetPlatformInfo;
 };
 
+/*! \brief Getter for cl::Program → clGetProgramInfo */
 template <> struct CLGetter<cl::Program> {
+  /*!
+   * \brief Pointer to clGetProgramInfo used to query program information.
+   */
   static constexpr auto fn = &clGetProgramInfo;
 };
 
+/*! \brief Getter for cl::CommandQueue → clGetCommandQueueInfo */
 template <> struct CLGetter<cl::CommandQueue> {
+  /*!
+   * \brief Pointer to clGetCommandQueueInfo used to query queue information.
+   */
   static constexpr auto fn = &clGetCommandQueueInfo;
 };
 
+/*! \brief Getter for cl::Kernel → clGetKernelInfo */
 template <> struct CLGetter<cl::Kernel> {
+  /*!
+   * \brief Pointer to clGetKernelInfo used to query kernel information.
+   */
   static constexpr auto fn = &clGetKernelInfo;
 };
 } // namespace detail
 
+/*!
+ * \brief Retrieve information about a kernel argument.
+ *
+ * \tparam Info OpenCL kernel argument info identifier.
+ * \tparam Kernel Kernel object type.
+ *
+ * \param k Kernel object.
+ * \param index Argument index.
+ * \return Retrieved info value.
+ */
 template <cl_uint Info, typename Kernel>
 auto GetArgInfo(Kernel const &k, cl_uint index) {
   cl_int err{CL_SUCCESS};
@@ -370,6 +549,17 @@ auto GetArgInfo(Kernel const &k, cl_uint index) {
   return value;
 }
 
+/*!
+ * \brief Retrieve kernel work-group information.
+ *
+ * \tparam Info Work-group info identifier.
+ * \tparam Kernel Kernel type.
+ * \tparam Device Device type.
+ *
+ * \param k Kernel.
+ * \param d Device.
+ * \return Retrieved info value.
+ */
 template <cl_uint Info, typename Kernel, typename Device>
 auto GetWorkGroupInfo(Kernel const &k, Device const &d) {
   cl_int err{CL_SUCCESS};
@@ -378,6 +568,17 @@ auto GetWorkGroupInfo(Kernel const &k, Device const &d) {
   return value;
 }
 
+/*!
+ * \brief Retrieve general OpenCL information from any supported object.
+ *
+ * Automatically selects the correct getter function based on the object type.
+ *
+ * \tparam Info Parameter identifier.
+ * \tparam Object OpenCL object wrapper type.
+ *
+ * \param obj Object instance.
+ * \return Retrieved OpenCL info value.
+ */
 template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
   using Traits = InfoTraits<Info>;
   using ReturnType = typename Traits::type;
@@ -403,13 +604,27 @@ template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
   }
 }
 
+/*!
+ * \brief Print an OpenCL info value using GGEMS logging.
+ *
+ * \tparam Info Parameter identifier.
+ * \tparam Object Object type.
+ *
+ * \param obj Object instance.
+ */
 template <cl_uint Info, typename Object> void PrintInfo(Object const &obj) {
   using Traits = InfoTraits<Info>;
   auto value = GetInfo<Info>(obj);
   GGEMS_INFO("OpenCL", "{}: {}", Traits::name, Traits::ToString(value));
 }
 
-// === Checking extensions
+/*!
+ * \brief Check whether an extension string set contains a given extension.
+ *
+ * \param extensions Set of extension names.
+ * \param name Name of the extension to test.
+ * \return True if present, false otherwise.
+ */
 [[nodiscard]] inline bool
 HasExtension(std::unordered_set<std::string> const &extensions,
              std::string_view name) {
@@ -419,6 +634,15 @@ HasExtension(std::unordered_set<std::string> const &extensions,
   return it != extensions.end();
 }
 
+/*!
+ * \brief Extract and split an extension string list into a set.
+ *
+ * \tparam Info Parameter identifier corresponding to an extension string.
+ * \tparam Object OpenCL object type.
+ *
+ * \param obj Object from which extensions are extracted.
+ * \return Set of individual extension names.
+ */
 template <cl_uint Info, typename Object>
 [[nodiscard]] inline std::unordered_set<std::string>
 ExtractExtensions(Object const &obj) {

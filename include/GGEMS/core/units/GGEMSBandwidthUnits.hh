@@ -35,7 +35,6 @@
  * GNU General Public License v3.0
  */
 
-#include "GGEMS/core/units/GGEMSQuantity.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/units/GGEMSBytesUnits.hh"
 

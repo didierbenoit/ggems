@@ -21,7 +21,7 @@ set(DOXYGEN_INPUT_DIRS
 )
 string(REPLACE ";" " " DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS}")
 
-set(DOXYGEN_OUTPUT_DIR "${PROJECT_SOURCE_DIR}/docs")
+set(DOXYGEN_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Configure paths to custom templates and styles
 set(DOXYGEN_HTML_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/header.html")

@@ -67,7 +67,7 @@ endif()
 # Dependencies
 # ----------------------------------------------------------------------------
 find_package(OpenCL REQUIRED)
-set(OPENCL_HPP_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/external/OpenCL-SDK/external/OpenCL-CLHPP/include")
+set(OPENCL_HPP_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/external/OpenCL-CLHPP/include")
 message(STATUS "OpenCL library located at: ${OpenCL_LIBRARY}")
 message(STATUS "OpenCL include path: ${OPENCL_HPP_INCLUDE_DIR}")
 
