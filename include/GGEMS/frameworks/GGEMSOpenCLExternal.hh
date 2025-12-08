@@ -60,7 +60,9 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
+/// \cond
 #include <CL/opencl.hpp>
+/// \endcond
 
 #if defined(__clang__)
 #pragma clang diagnostic pop
