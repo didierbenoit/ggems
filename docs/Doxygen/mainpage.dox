@@ -3,18 +3,6 @@
  *
  * \section intro_sec Introduction
  *
- * GGEMS is a modular C++23 simulation framework designed for *high-performance medical imaging
- * and radiative transport*. It aims to combine **scientific rigour**, **computational efficiency**
- * and **elegant software design**.  
- *
- * The framework unifies heterogeneous compute back-ends — CPU, GPU, and multi-device architectures —
- * using a clean C++ interface built upon **OpenCL 3.0**, **Vulkan**, and **modern C++ metaprogramming**.
- * It provides full introspection, explicit control of contexts, devices and kernels, and ensures
- * deterministic behaviour across hardware vendors.
- *
- * GGEMS follows the design principle:
- * > *Understand before acting, model before simulating, and simulate only what you can verify.*
- *
  * ---
  *
  * \section arch_sec Architecture Overview
@@ -22,74 +10,30 @@
  * GGEMS is structured into several cohesive layers:
  *
  * - **Core Tools Layer**  
- *   Provides thread-safe logging (\ref gglog) and structured exception handling
- *   via \ref GGEMSLogger, \ref GGEMSLocal, and \ref GGEMSException.
  *
  * - **Framework Layer**  
- *   Encapsulates hardware discovery and OpenCL device management:
- *   - \ref GGEMSOpenCL : process-wide singleton managing platform and device discovery.
- *   - \ref GGEMSOpenCLPlatform : abstraction of a single OpenCL platform (ICD-loader level).
- *   - \ref GGEMSOpenCLDevice : representation of a specific compute device (CPU or GPU).
- *   - \ref GGEMSOpenCLContext : manages kernel compilation, memory, and command queues.
  *
  * - **Utilities Layer**  
- *   The \ref ggocl::utils namespace provides strongly-typed, C++-friendly wrappers around
- *   the C-API (`clGet*Info`) and adds common helpers for error handling and string conversion.
- *   These ensure correctness and uniformity across devices and vendors.
  *
  * ---
  *
  * \section design_sec Design Philosophy
  *
- * - **Clarity through encapsulation:** each OpenCL object (platform, device, context, program)
- *   is represented by a dedicated C++ class, with full ownership semantics and Doxygen-documented APIs.
+ * - **Clarity through encapsulation:**
  *
- * - **Safety through strong typing:** templates under \ref ggocl::utils eliminate the ambiguity
- *   of raw `clGet*Info` calls and provide compile-time type checking.
+ * - **Safety through strong typing:**
  *
- * - **Transparency through logging:** every subsystem emits structured logs with levels
- *   (\ref gglog::Level) allowing fine-grained tracing during development and debugging.
+ * - **Transparency through logging:**
  *
- * - **Reliability through determinism:** all operations are explicit; no hidden resource lifetime
- *   or implicit synchronisation.
+ * - **Reliability through determinism:**
  *
  * ---
  *
  * \section usage_sec Usage Overview
  *
- * Example Python interface (via pybind11):
- * \code{.py}
- * import ggems
- *
- * ocl = ggems.GGEMSOpenCL()
- * ocl.print_platforms()
- * ocl.activate_device("GPU")
- * ocl.run()
- * \endcode
- *
- * Example C++ usage:
- * \code{.cpp}
- * #include <GGEMS/frameworks/GGEMSOpenCL.hh>
- *
- * int main() {
- *     auto& ocl = GGEMSOpenCL::GetInstance();
- *     ocl.PrintPlatforms();
- *     ocl.Clean();
- * }
- * \endcode
- *
  * ---
  *
  * \section ext_sec Extensibility
- *
- * GGEMS is designed to evolve:
- * - Integration with \b Vulkan and \b GLFW for real-time visualisation.
- * - Device-specific optimisation (e.g. vectorised kernels, local memory tiling).
- * - Pybind11 bindings for high-level scripting and scientific workflow automation.
- *
- * The long-term goal is to provide a unified simulation engine
- * for multimodal imaging (PET, CT, SPECT) and dosimetric computation,
- * fully reproducible across hardware and OS configurations.
  *
  * ---
  *

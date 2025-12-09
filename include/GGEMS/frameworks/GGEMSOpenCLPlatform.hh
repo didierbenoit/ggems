@@ -71,7 +71,7 @@ public:
    *
    * The constructor extracts the platform extensions list and immediately
    * discovers CPU/GPU devices. No contexts are created here; that is deferred
-   * to higher-level orchestration (e.g. GGEMSOpenCL / GGEMSManager).
+   * to higher-level orchestration (e.g. GGEMSOpenCL).
    */
   explicit GGEMSOpenCLPlatform(cl::Platform const &platform,
                                std::size_t platform_index);
@@ -100,14 +100,14 @@ public:
    * Enables storage within STL containers such as \c std::vector.
    * Ownership of devices and extension caches is transferred.
    */
-  GGEMSOpenCLPlatform(GGEMSOpenCLPlatform &&) noexcept = default;
+  GGEMSOpenCLPlatform(GGEMSOpenCLPlatform &&) = default;
 
   /*!
    * \brief Move assignment operator (noexcept).
    * \return A reference to GGEMSOpenCLPlatform
    * Transfers ownership of all internal data to the destination object.
    */
-  GGEMSOpenCLPlatform &operator=(GGEMSOpenCLPlatform &&) noexcept = delete;
+  GGEMSOpenCLPlatform &operator=(GGEMSOpenCLPlatform &&) = delete;
 
 public:
   // -------------------- High-level inspection API --------------------
@@ -225,7 +225,27 @@ public:
   }
 
 private:
+  /*!
+   * \brief Print core platform identity information.
+   *
+   * Emits a compact group of OpenCL platform fields using the GGEMS logger:
+   * - profile (FULL_PROFILE or EMBEDDED_PROFILE),
+   * - version string and numeric version triplet,
+   * - host timer resolution.
+   *
+   * This function is used internally by Print() to structure the platform
+   * report.
+   */
   void PrintIdentity() const;
+
+  /*!
+   * \brief Print the platform's extension list with version information.
+   *
+   * Uses the OpenCL 3.0 \c CL_PLATFORM_EXTENSIONS_WITH_VERSION query to display
+   * each advertised extension alongside its encoded version
+   * (major/minor/patch). This forms the second part of the formatted platform
+   * report emitted by Print().
+   */
   void PrintExtension() const;
 
 private:

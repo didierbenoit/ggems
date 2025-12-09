@@ -104,8 +104,8 @@ GGEMSOpenCLProgram &GGEMSOpenCL::GetOrCreateProgram(
 
   GGEMS_INFO("OpenCL", "Creating program '{}'...", kernel_name);
 
-  auto prog = std::make_unique<GGEMSOpenCLProgram>(ctx, kernel_root,
-                                                   kernel_name, build_options);
+  auto prog = std::unique_ptr<GGEMSOpenCLProgram>(
+      new GGEMSOpenCLProgram(ctx, kernel_root, kernel_name, build_options));
 
   GGEMSOpenCLProgram &ref = *prog;
   program_cache_.push_back(std::move(prog));

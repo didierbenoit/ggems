@@ -1,16 +1,52 @@
-#include "GGEMS/core/GGEMSMacros.hh"
+// ************************************************************************
+// * This file is part of GGEMS.                                          *
+// *                                                                      *
+// * GGEMS is free software: you can redistribute it and/or modify        *
+// * it under the terms of the GNU General Public License as published by *
+// * the Free Software Foundation, either version 3 of the License, or    *
+// * (at your option) any later version.                                  *
+// *                                                                      *
+// * GGEMS is distributed in the hope that it will be useful,             *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
+// * GNU General Public License for more details.                         *
+// *                                                                      *
+// * You should have received a copy of the GNU General Public License    *
+// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
+// *                                                                      *
+// ************************************************************************
+
+/*!
+ * \file GGEMSOpenCLSVMBuffer.cc
+ * \brief Declaration of GGEMSOpenCLSVMBuffer, a RAII wrapper for OpenCL SVM
+ * buffers.
+ *
+ * This class encapsulates creation, mapping, unmapping and destruction of
+ * Shared Virtual Memory (SVM) buffers as defined in OpenCL 2.x. It provides a
+ * high-level, exception-safe abstraction while preserving direct access to
+ * the underlying pointer when required by compute kernels.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ * \date 2025-12-08
+ * \version 2.0
+ * \copyright
+ * GNU General Public License v3.0
+ */
+
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 
 using namespace ggems::units;
 
 namespace ggems::ocl {
+
 /* --------------------------------*/
 /* --------------------------------*/
 /* --------------------------------*/
 
 GGEMSOpenCLSVMBuffer::GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context,
                                            Bytes size, cl_svm_mem_flags flags,
-                                           cl_uint alignment)
+                                           Bytes alignment)
     : context_(&context), ptr_{nullptr}, size_{size}, flags_{flags} {
   GGEMS_CHECK(size_.value > 0, "Cannot allocate zero-sized SVM buffer.");
 
@@ -20,7 +56,7 @@ GGEMSOpenCLSVMBuffer::GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context,
   auto &ctx = context.GetContextNative();
 
   void *p = clSVMAlloc(ctx(), flags_, static_cast<std::size_t>(size.value),
-                       alignment);
+                       static_cast<cl_uint>(alignment.value));
   GGEMS_CHECK(p, "clSVMalloc failed: returned nullptr.");
 
   ptr_ = p;
@@ -71,11 +107,10 @@ GGEMSOpenCLSVMBuffer::~GGEMSOpenCLSVMBuffer() { Release(); }
 void GGEMSOpenCLSVMBuffer::Map(cl_map_flags flags) {
   auto const &svm = context_->GetSVMSupport();
 
-  if (svm.fine_grain_system_) {
+  if (svm.fine_grain_system) {
     return;
   }
 
-  // Pour coarse-grain ou fine-grain buffer :
   context_->EnqueueSVMMap(ptr_, size_, flags);
 }
 
@@ -86,7 +121,7 @@ void GGEMSOpenCLSVMBuffer::Map(cl_map_flags flags) {
 void GGEMSOpenCLSVMBuffer::Unmap() {
   auto const &svm = context_->GetSVMSupport();
 
-  if (svm.fine_grain_system_) {
+  if (svm.fine_grain_system) {
     return;
   }
 

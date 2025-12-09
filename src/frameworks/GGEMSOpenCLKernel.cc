@@ -14,12 +14,6 @@ GGEMSOpenCLKernel::GGEMSOpenCLKernel(GGEMSOpenCLContext &ctx, cl::Kernel kernel,
   GGEMS_INFOEX("OpenCL", 2, "Created kernel '{}'", kernel_name_);
 }
 
-/* -------------------------------------------------------------------------- */
-
-GGEMSOpenCLKernel::~GGEMSOpenCLKernel() noexcept {
-  GGEMS_INFOEX("OpenCL", 2, "Destroying kernel '{}'", kernel_name_);
-}
-
 /* ------------------------------------------------------------------------ */
 
 void GGEMSOpenCLKernel::SetArgSVMPointer(cl_uint index, void *ptr) {

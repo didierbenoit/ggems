@@ -34,11 +34,10 @@ public:
   GGEMSOpenCLKernel(GGEMSOpenCLContext &ctx, cl::Kernel kernel,
                     std::string kernel_name);
 
-  ~GGEMSOpenCLKernel() noexcept;
+  ~GGEMSOpenCLKernel();
 
   GGEMSOpenCLKernel(GGEMSOpenCLKernel const &) = delete;
   GGEMSOpenCLKernel &operator=(GGEMSOpenCLKernel const &) = delete;
-
   GGEMSOpenCLKernel(GGEMSOpenCLKernel &&) noexcept = delete;
   GGEMSOpenCLKernel &operator=(GGEMSOpenCLKernel &&) noexcept = delete;
 

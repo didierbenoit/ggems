@@ -1,19 +1,67 @@
+// ************************************************************************
+// * This file is part of GGEMS.                                          *
+// *                                                                      *
+// * GGEMS is free software: you can redistribute it and/or modify        *
+// * it under the terms of the GNU General Public License as published by *
+// * the Free Software Foundation, either version 3 of the License, or    *
+// * (at your option) any later version.                                  *
+// *                                                                      *
+// * GGEMS is distributed in the hope that it will be useful,             *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
+// * GNU General Public License for more details.                         *
+// *                                                                      *
+// * You should have received a copy of the GNU General Public License    *
+// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
+// *                                                                      *
+// ************************************************************************
+
+/*!
+ * \file GGEMSOpenCLProgram.cc
+ * \brief Declaration of GGEMSOpenCLProgram, wrapping OpenCL program creation,
+ *        binary caching, and rebuild logic.
+ *
+ * This class manages the lifecycle of a compiled OpenCL program:
+ * - loading source code,
+ * - compiling with given build options,
+ * - generating and reading cached binaries,
+ * - producing human-readable build logs,
+ * - exposing the final cl::Program to GGEMS.
+ *
+ * GGEMSOpenCLProgram instances cannot be created directly; only
+ * GGEMSOpenCL::GetOrCreateProgram() is authorised to construct them through
+ * internal caching. This ensures program reuse and prevents uncontrolled
+ * recompilation.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ * \date 2025-12-08
+ * \version 2.0
+ * \copyright
+ * GNU General Public License v3.0
+ */
+
 #include "GGEMS/frameworks/GGEMSOpenCLProgram.hh"
 #include "GGEMS/core/GGEMSCoreUtils.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
 
+/// \cond
 #include <fstream>
-#include <utility>
+/// \endcond
 
 namespace ggems::ocl {
-using core::GGEMSFatal;
-using core::HashFNV1a;
-using core::Throw;
 
 namespace {
-
-/* ---------------------------------------------*/
-
+/*!
+ * \brief Replace unsafe filename characters by underscores.
+ *
+ * Internal helper used to normalise vendor name, device name, and kernel names
+ * prior to constructing cache filenames. Characters such as whitespace,
+ * slashes, Windows separators and delimiters are converted to '\_' to ensure
+ * the generated path is portable and valid across platforms.
+ *
+ * \param s Input string to sanitise.
+ * \return Sanitised string safe to use in filesystem paths.
+ */
 std::string Sanitise(std::string s) {
   for (char &c : s) {
     if (c == ' ' || c == '/' || c == '\\' || c == ':' || c == ';' || c == '\t')
@@ -22,8 +70,19 @@ std::string Sanitise(std::string s) {
   return s;
 }
 
-/* ---------------------------------------------*/
-
+/*!
+ * \brief Determine the root directory used for storing OpenCL binary caches.
+ *
+ * Resolves the platform-specific base directory for caching compiled OpenCL
+ * program binaries:
+ *  - On Windows: uses LOCALAPPDATA or APPDATA.
+ *  - On POSIX: uses the HOME directory (creating ~/.ggems/opencl_cache).
+ *
+ * If no environment variable is available, falls back to a local directory
+ * ("ggems_opencl_cache") relative to the working directory.
+ *
+ * \return Filesystem path to the root cache directory.
+ */
 std::filesystem::path GetCacheRootDirectory() {
 #ifdef _WIN32
   if (char const *local = std::getenv("LOCALAPPDATA")) {
@@ -41,7 +100,9 @@ std::filesystem::path GetCacheRootDirectory() {
 }
 } // namespace
 
-/* ---------------------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 GGEMSOpenCLProgram::GGEMSOpenCLProgram(GGEMSOpenCLContext &ctx,
                                        std::filesystem::path kernel_root,
@@ -63,13 +124,9 @@ GGEMSOpenCLProgram::GGEMSOpenCLProgram(GGEMSOpenCLContext &ctx,
   GGEMS_INFO("OpenCL", "Program '{}' built.", kernel_name_);
 }
 
-/* ---------------------------------------------*/
-
-GGEMSOpenCLProgram::~GGEMSOpenCLProgram() noexcept {
-  GGEMS_INFOEX("OpenCL", 2, "Destroying program '{}'.", source_path_);
-}
-
-/* ---------------------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 std::vector<std::string> GGEMSOpenCLProgram::BuildOptions() const {
   std::vector<std::string> opts;
@@ -88,7 +145,9 @@ std::vector<std::string> GGEMSOpenCLProgram::BuildOptions() const {
   return opts;
 }
 
-/* ---------------------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 std::string
 GGEMSOpenCLProgram::MergeOptions(std::vector<std::string> const &base,
@@ -104,7 +163,9 @@ GGEMSOpenCLProgram::MergeOptions(std::vector<std::string> const &base,
   return merged;
 }
 
-/* ---------------------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 void GGEMSOpenCLProgram::Initialise() {
   auto cl_path = kernel_root_ / (kernel_name_ + ".cl");
@@ -114,11 +175,13 @@ void GGEMSOpenCLProgram::Initialise() {
              kernel_name_, kernel_root_.string(), source_path_);
 }
 
-/* ---------------------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 void GGEMSOpenCLProgram::Build() {
   auto src = LoadTextFile(std::filesystem::path{source_path_});
-  source_hash_ = HashFNV1a(source_path_);
+  source_hash_ = core::HashFNV1a(source_path_);
 
   auto &dev = context_.GetDevice();
   std::string concat;
@@ -131,7 +194,7 @@ void GGEMSOpenCLProgram::Build() {
   concat += src;
   concat += build_options_;
 
-  global_hash_ = HashFNV1a(concat);
+  global_hash_ = core::HashFNV1a(concat);
 
   auto binary = LoadBinaryFromCache();
   if (!binary.empty()) {
@@ -159,7 +222,9 @@ void GGEMSOpenCLProgram::Build() {
   }
 }
 
-/* ---------------------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 std::string
 GGEMSOpenCLProgram::LoadTextFile(std::filesystem::path const &path) {
@@ -173,7 +238,9 @@ GGEMSOpenCLProgram::LoadTextFile(std::filesystem::path const &path) {
   return oss.str();
 }
 
-/* ---------------------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 void GGEMSOpenCLProgram::BuildFromSource(std::string const &src) {
   auto &ctx = context_.GetContextNative();
@@ -203,7 +270,9 @@ void GGEMSOpenCLProgram::BuildFromSource(std::string const &src) {
              kernel_name_, source_path_, build_options_);
 }
 
-/* ---------------------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 void GGEMSOpenCLProgram::BuildFromBinary(
     std::vector<std::uint8_t> const &binary) {
@@ -238,7 +307,7 @@ void GGEMSOpenCLProgram::BuildFromBinary(
     build_log_ = program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
     GGEMS_ERROR("OpenCL", "Build log for '{}' (file='{}'): {}", kernel_name_,
                 source_path_, build_log_);
-    Throw<GGEMSFatal>(std::format(
+    core::Throw<core::GGEMSFatal>(std::format(
         "Failed to build OpenCL program '{}' from binary.", kernel_name_));
   }
 
@@ -253,7 +322,9 @@ void GGEMSOpenCLProgram::BuildFromBinary(
              kernel_name_, build_options_);
 }
 
-/* ---------------------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 std::filesystem::path GGEMSOpenCLProgram::ComputeCachePath() const {
   auto &dev = context_.GetDevice();
@@ -276,26 +347,34 @@ std::filesystem::path GGEMSOpenCLProgram::ComputeCachePath() const {
   return device_dir / fname;
 }
 
-/* ---------------------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 [[nodiscard]] cl_uint GGEMSOpenCLProgram::GetNumDevices() const {
   return GetInfo<CL_PROGRAM_NUM_DEVICES>(program_);
 }
 
-/* ---------------------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 [[nodiscard]] std::vector<std::size_t>
 GGEMSOpenCLProgram::GetBinarySizes() const {
   return GetInfo<CL_PROGRAM_BINARY_SIZES>(program_);
 }
 
-/* ---------------------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 [[nodiscard]] auto GGEMSOpenCLProgram::GetBinaries() const {
   return GetInfo<CL_PROGRAM_BINARIES>(program_);
 }
 
-/* ---------------------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 void GGEMSOpenCLProgram::SaveBinaryToCache() {
   auto num = GetNumDevices();
@@ -323,7 +402,9 @@ void GGEMSOpenCLProgram::SaveBinaryToCache() {
              cache_path.string());
 }
 
-/* ---------------------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 std::vector<std::uint8_t> GGEMSOpenCLProgram::LoadBinaryFromCache() {
   auto cache_path = ComputeCachePath();
@@ -352,7 +433,9 @@ std::vector<std::uint8_t> GGEMSOpenCLProgram::LoadBinaryFromCache() {
   return data;
 }
 
-/* ---------------------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 cl::Kernel GGEMSOpenCLProgram::CreateKernel(std::string const &kernel_name) {
   GGEMS_INFOEX("OpenCL", 2, "Creating kernel '{}'", kernel_name);

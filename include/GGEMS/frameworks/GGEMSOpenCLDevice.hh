@@ -29,10 +29,6 @@
  * GNU General Public License v3.0
  */
 
-/// \cond
-#include <unordered_map>
-/// \endcond
-
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
 namespace ggems::ocl {

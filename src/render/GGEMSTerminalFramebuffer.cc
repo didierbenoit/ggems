@@ -2,6 +2,10 @@
 #include "GGEMS/utf/GGEMSGlyphs.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
 
+#if defined(_WIN32)
+#include "GGEMS/platform/windows/GGEMSWindowsCore.hh"
+#endif
+
 namespace ggems::render {
 
 /* --------------------------------------------- */

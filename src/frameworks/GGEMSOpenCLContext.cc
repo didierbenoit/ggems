@@ -1,11 +1,46 @@
+// ************************************************************************
+// * This file is part of GGEMS.                                          *
+// *                                                                      *
+// * GGEMS is free software: you can redistribute it and/or modify        *
+// * it under the terms of the GNU General Public License as published by *
+// * the Free Software Foundation, either version 3 of the License, or    *
+// * (at your option) any later version.                                  *
+// *                                                                      *
+// * GGEMS is distributed in the hope that it will be useful,             *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
+// * GNU General Public License for more details.                         *
+// *                                                                      *
+// * You should have received a copy of the GNU General Public License    *
+// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
+// *                                                                      *
+// ************************************************************************
+
+/*!
+ * \file GGEMSOpenCLContext.cc
+ * \brief Declaration of GGEMSOpenCLContext providing creation and management
+ *        of OpenCL contexts, command queues, SVM capabilities, and future
+ *        interoperability features (OpenCL ↔ Vulkan).
+ *
+ * This class encapsulates all OpenCL context-level operations used by GGEMS.
+ * It creates and manages the native cl::Context, command queue, and SVM
+ * capability detection. The context serves as the central point of memory
+ * allocation, queue submission, kernel setup, and (in future versions)
+ * interoperability with external APIs such as Vulkan.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ * \date 2025-12-08
+ * \version 2.0
+ * \copyright
+ * GNU General Public License v3.0
+ */
+
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
 
 using namespace ggems::units;
 
 namespace ggems::ocl {
-using core::GGEMSFatal;
-using core::Throw;
 
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
@@ -21,15 +56,6 @@ GGEMSOpenCLContext::GGEMSOpenCLContext(GGEMSOpenCLDevice const &device)
   InitSVMSupport();
 
   GGEMS_INFOEX("OpenCL", 2, "GGEMSOpenCLContext allocated.");
-}
-
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-
-GGEMSOpenCLContext::~GGEMSOpenCLContext() {
-  GGEMS_INFOEX("OpenCL", 2, "Destroying OpenCL context for device: {}",
-               device_.GetName());
 }
 
 /* ------------------------------------------------------------------------- */
@@ -53,7 +79,7 @@ void GGEMSOpenCLContext::CreateContext() {
                          nullptr,                     // user data
                          &err);
 
-  CheckCLError(err, "Failed to create OpenCL context");
+  GGEMS_OCL_CHECK(err, "Failed to create OpenCL context");
 
   GGEMS_INFOEX("OpenCL", 2, "OpenCL context created.");
 }
@@ -73,7 +99,7 @@ void GGEMSOpenCLContext::CreateCommandQueue() {
   command_queue_ =
       cl::CommandQueue(context_, device_.GetDeviceNative(), props, &err);
 
-  CheckCLError(err, "Failed to create command queue.");
+  GGEMS_OCL_CHECK(err, "Failed to create command queue.");
 
   GGEMS_INFOEX("OpenCL", 2, "Command queue created (profiling enabled).");
 }
@@ -86,13 +112,13 @@ void GGEMSOpenCLContext::InitSVMSupport() {
   auto const caps = device_.GetSVMCapabilities();
 
   if (caps & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER)
-    svm_support_.coarse_grain_buffer_ = true;
+    svm_support_.coarse_grain_buffer = true;
   if (caps & CL_DEVICE_SVM_FINE_GRAIN_BUFFER)
-    svm_support_.fine_grain_buffer_ = true;
+    svm_support_.fine_grain_buffer = true;
   if (caps & CL_DEVICE_SVM_FINE_GRAIN_SYSTEM)
-    svm_support_.fine_grain_system_ = true;
+    svm_support_.fine_grain_system = true;
   if (caps & CL_DEVICE_SVM_ATOMICS)
-    svm_support_.atomics_ = true;
+    svm_support_.atomics = true;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -101,7 +127,7 @@ void GGEMSOpenCLContext::InitSVMSupport() {
 
 GGEMSOpenCLSVMBuffer GGEMSOpenCLContext::CreateSVMBuffer(Bytes size,
                                                          SVMMemoryKind kind,
-                                                         cl_uint alignment) {
+                                                         Bytes alignment) {
   auto const &svm = svm_support_;
 
   GGEMS_CHECK(svm.HasAny(), "This context/device does not support SVM.");
@@ -129,16 +155,15 @@ GGEMSOpenCLSVMBuffer GGEMSOpenCLContext::CreateSVMBuffer(Bytes size,
     flags = CL_MEM_READ_WRITE;
     break;
   default:
-    Throw<GGEMSFatal>("Unsupported SVMMemoryKind in CreateSVMBuffer.");
+    core::Throw<core::GGEMSFatal>(
+        "Unsupported SVMMemoryKind in CreateSVMBuffer.");
   }
 
-  if (selected == SVMMemoryKind::FineGrainBuffer && svm.atomics_) {
+  if (selected == SVMMemoryKind::FineGrainBuffer && svm.atomics) {
     flags |= CL_MEM_SVM_ATOMICS;
   }
 
-  cl_uint real_alignment = alignment ? alignment : sizeof(void *);
-
-  return GGEMSOpenCLSVMBuffer{*this, size, flags, real_alignment};
+  return GGEMSOpenCLSVMBuffer{*this, size, flags, alignment};
 }
 
 /* ------------------------------------------------------------------------- */

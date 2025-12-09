@@ -59,6 +59,11 @@ using Area = Quantity<AreaDim, long double>;
  * The alias binds the \c AreaDim dimension (L²) to a \c long double
  * representation. All stored values are expressed in base engine units
  * (pm²), while user-facing APIs may expose higher-level square units.
+ *
+ * \param a         Volume quantity in pm²
+ * \param precision Number of digits after the decimal point.
+ * \param width     Minimum formatted width; if negative, no constraint.
+ * \return Human-readable representation of the stored area.
  */
 inline std::string HumanReadable(Area const &a, std::int8_t precision = 7,
                                  std::int8_t width = -1) {
