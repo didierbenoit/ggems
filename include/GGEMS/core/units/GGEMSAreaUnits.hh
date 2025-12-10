@@ -107,7 +107,7 @@ inline std::string HumanReadable(Area const &a, std::int8_t precision = 7,
  * \param v Integer literal representing a value in pm².
  * \return \c Area quantity equal to \c v pm².
  */
-consteval Area operator""_pm2(std::uint64_t v) noexcept {
+consteval Area operator""_pm2(unsigned long long v) noexcept {
   return Area{static_cast<long double>(v)};
 }
 
@@ -127,7 +127,7 @@ consteval Area operator""_pm2(long double v) noexcept { return Area{v}; }
  * \param v Integer literal in nm².
  * \return \c Area quantity equal to \c v × 10⁶ pm².
  */
-consteval Area operator""_nm2(std::uint64_t v) noexcept {
+consteval Area operator""_nm2(unsigned long long v) noexcept {
   return Area{static_cast<long double>(v) * 1.0e6L};
 }
 
@@ -147,7 +147,7 @@ consteval Area operator""_nm2(long double v) noexcept {
  * \param v Integer literal in μm².
  * \return \c Area quantity equal to \c v × 10¹² pm².
  */
-consteval Area operator""_um2(std::uint64_t v) noexcept {
+consteval Area operator""_um2(unsigned long long v) noexcept {
   return Area{static_cast<long double>(v) * 1.0e12L};
 }
 
@@ -167,7 +167,7 @@ consteval Area operator""_um2(long double v) noexcept {
  * \param v Integer literal in mm².
  * \return \c Area quantity equal to \c v × 10¹⁸ pm².
  */
-consteval Area operator""_mm2(std::uint64_t v) noexcept {
+consteval Area operator""_mm2(unsigned long long v) noexcept {
   return Area{static_cast<long double>(v) * 1.0e18L};
 }
 
@@ -187,7 +187,7 @@ consteval Area operator""_mm2(long double v) noexcept {
  * \param v Integer literal in m².
  * \return \c Area quantity equal to \c v × 10²⁴ pm².
  */
-consteval Area operator""_m2(std::uint64_t v) noexcept {
+consteval Area operator""_m2(unsigned long long v) noexcept {
   return Area{static_cast<long double>(v) * 1.0e24L};
 }
 
@@ -207,7 +207,7 @@ consteval Area operator""_m2(long double v) noexcept {
  * \param v Integer literal in km².
  * \return \c Area quantity equal to \c v × 10³⁰ pm².
  */
-consteval Area operator""_km2(std::uint64_t v) noexcept {
+consteval Area operator""_km2(unsigned long long v) noexcept {
   return Area{static_cast<long double>(v) * 1.0e30L};
 }
 

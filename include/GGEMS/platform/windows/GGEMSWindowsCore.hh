@@ -36,6 +36,7 @@
  * platform logic and simulation logic.
  */
 
+#if defined(_WIN32)
 /*!
  * \def WIN32_LEAN_AND_MEAN
  * \brief Reduces the size of the Windows header footprint by excluding rarely
@@ -72,3 +73,4 @@
  * `_fileno`.
  */
 #define fileno _fileno
+#endif

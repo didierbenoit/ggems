@@ -88,7 +88,7 @@ inline std::string HumanReadable(Speed const &v, std::int8_t precision = 7,
  * \param v Integer literal representing speed in m/s.
  * \return \c Speed quantity equal to \c v pm/ps.
  */
-consteval Speed operator""_m_s(std::uint64_t v) noexcept {
+consteval Speed operator""_m_s(unsigned long long v) noexcept {
   return Speed{static_cast<long double>(v)};
 }
 

@@ -106,7 +106,9 @@ inline std::string HumanReadable(Energy const &e, std::int8_t precision = 7,
  * \param v Integer literal in meV.
  * \return \c Energy quantity equal to \c v meV.
  */
-consteval Energy operator""_meV(std::uint64_t v) noexcept { return Energy{v}; }
+consteval Energy operator""_meV(unsigned long long v) noexcept {
+  return Energy{v};
+}
 
 /*!
  * \brief User-defined literal for energy in meV (floating-point).
@@ -124,8 +126,8 @@ consteval Energy operator""_meV(long double v) noexcept {
  * \param v Integer literal in eV.
  * \return Stored as \c v × 10³ meV.
  */
-consteval Energy operator""_eV(std::uint64_t v) noexcept {
-  return Energy{v * 1000ULL};
+consteval Energy operator""_eV(unsigned long long v) noexcept {
+  return Energy{static_cast<std::uint64_t>(v) * 1000ULL};
 }
 
 /*!
@@ -142,8 +144,8 @@ consteval Energy operator""_eV(long double v) noexcept {
  * \param v Integer literal in keV.
  * \return Stored as \c v × 10⁶ meV.
  */
-consteval Energy operator""_keV(std::uint64_t v) noexcept {
-  return Energy{v * 1'000'000ULL};
+consteval Energy operator""_keV(unsigned long long v) noexcept {
+  return Energy{static_cast<std::uint64_t>(v) * 1'000'000ULL};
 }
 
 /*!
@@ -160,8 +162,8 @@ consteval Energy operator""_keV(long double v) noexcept {
  * \param v Integer literal in MeV.
  * \return Stored as \c v × 10⁹ meV.
  */
-consteval Energy operator""_MeV(std::uint64_t v) noexcept {
-  return Energy{v * 1'000'000'000ULL};
+consteval Energy operator""_MeV(unsigned long long v) noexcept {
+  return Energy{static_cast<std::uint64_t>(v) * 1'000'000'000ULL};
 }
 
 /*!
@@ -178,8 +180,8 @@ consteval Energy operator""_MeV(long double v) noexcept {
  * \param v Integer literal in GeV.
  * \return Stored as \c v × 10¹² meV.
  */
-consteval Energy operator""_GeV(std::uint64_t v) noexcept {
-  return Energy{v * 1'000'000'000'000ULL};
+consteval Energy operator""_GeV(unsigned long long v) noexcept {
+  return Energy{static_cast<std::uint64_t>(v) * 1'000'000'000'000ULL};
 }
 
 /*!
@@ -196,8 +198,8 @@ consteval Energy operator""_GeV(long double v) noexcept {
  * \param v Integer literal in TeV.
  * \return Stored as \c v × 10¹⁵ meV.
  */
-consteval Energy operator""_TeV(std::uint64_t v) noexcept {
-  return Energy{v * 1'000'000'000'000'000ULL};
+consteval Energy operator""_TeV(unsigned long long v) noexcept {
+  return Energy{static_cast<std::uint64_t>(v) * 1'000'000'000'000'000ULL};
 }
 
 /*!

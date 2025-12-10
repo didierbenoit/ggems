@@ -22,25 +22,30 @@
 
 #define GGEMS_DEBUG(MODULE, FMT, ...)                                          \
   ggems::core::GGEMSLogger::GetInstance()                                      \
-      .LogFmt<ggems::core::LogLevel::Debug>(                                   \
-          (MODULE), (FMT), std::source_location::current(), __VA_ARGS__)
+      .LogFmt<ggems::core::LogLevel::Debug>((MODULE), (FMT),                   \
+                                            std::source_location::current()    \
+                                                __VA_OPT__(, __VA_ARGS__))
 
 #define GGEMS_INFO(MODULE, FMT, ...)                                           \
   ggems::core::GGEMSLogger::GetInstance().LogFmt<ggems::core::LogLevel::Info>( \
-      (MODULE), (FMT), std::source_location::current(), __VA_ARGS__)
+      (MODULE), (FMT),                                                         \
+      std::source_location::current() __VA_OPT__(, __VA_ARGS__))
 
 #define GGEMS_WARN(MODULE, FMT, ...)                                           \
   ggems::core::GGEMSLogger::GetInstance().LogFmt<ggems::core::LogLevel::Warn>( \
-      (MODULE), (FMT), std::source_location::current(), __VA_ARGS__)
+      (MODULE), (FMT),                                                         \
+      std::source_location::current() __VA_OPT__(, __VA_ARGS__))
 
 #define GGEMS_ERROR(MODULE, FMT, ...)                                          \
   ggems::core::GGEMSLogger::GetInstance()                                      \
-      .LogFmt<ggems::core::LogLevel::Error>(                                   \
-          (MODULE), (FMT), std::source_location::current(), __VA_ARGS__)
+      .LogFmt<ggems::core::LogLevel::Error>((MODULE), (FMT),                   \
+                                            std::source_location::current()    \
+                                                __VA_OPT__(, __VA_ARGS__))
 
 #define GGEMS_INFOEX(MODULE, DEPTH, FMT, ...)                                  \
   ggems::core::GGEMSLogger::GetInstance().InfoEx(                              \
-      (DEPTH), (MODULE), (FMT), std::source_location::current(), __VA_ARGS__)
+      (DEPTH), (MODULE), (FMT),                                                \
+      std::source_location::current() __VA_OPT__(, __VA_ARGS__))
 
 #define GGEMS_CHECK(COND, MSG)                                                 \
   do {                                                                         \

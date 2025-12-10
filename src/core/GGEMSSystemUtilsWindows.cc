@@ -37,6 +37,7 @@
  * GNU General Public License v3.0
  */
 
+#if defined(_WIN32)
 #include "GGEMS/core/GGEMSSystemUtils.hh"
 #include "GGEMS/platform/windows/GGEMSWindowsGPU.hh"
 
@@ -407,3 +408,5 @@ SystemUsage GetSystemUsage() noexcept {
 }
 /// \endcond
 } // namespace ggems::core::system
+
+#endif

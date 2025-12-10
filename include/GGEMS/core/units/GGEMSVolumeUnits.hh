@@ -107,7 +107,7 @@ inline std::string HumanReadable(Volume const &v, std::int8_t precision = 7,
  * \param v Integer literal in pm³.
  * \return \c Volume quantity equal to \c v pm³.
  */
-consteval Volume operator""_pm3(std::uint64_t v) noexcept {
+consteval Volume operator""_pm3(unsigned long long v) noexcept {
   return Volume{static_cast<long double>(v)};
 }
 
@@ -123,7 +123,7 @@ consteval Volume operator""_pm3(long double v) noexcept { return Volume{v}; }
  * \param v Integer literal in nm³.
  * \return \c Volume quantity equal to \c v × 10⁹ pm³.
  */
-consteval Volume operator""_nm3(std::uint64_t v) noexcept {
+consteval Volume operator""_nm3(unsigned long long v) noexcept {
   return Volume{static_cast<long double>(v) * 1.0e9L};
 }
 
@@ -141,7 +141,7 @@ consteval Volume operator""_nm3(long double v) noexcept {
  * \param v Integer literal in μm³.
  * \return \c Volume quantity equal to \c v × 10¹⁸ pm³.
  */
-consteval Volume operator""_um3(std::uint64_t v) noexcept {
+consteval Volume operator""_um3(unsigned long long v) noexcept {
   return Volume{static_cast<long double>(v) * 1.0e18L};
 }
 
@@ -159,7 +159,7 @@ consteval Volume operator""_um3(long double v) noexcept {
  * \param v Integer literal in mm³.
  * \return \c Volume quantity equal to \c v × 10²⁷ pm³.
  */
-consteval Volume operator""_mm3(std::uint64_t v) noexcept {
+consteval Volume operator""_mm3(unsigned long long v) noexcept {
   return Volume{static_cast<long double>(v) * 1.0e27L};
 }
 
@@ -177,7 +177,7 @@ consteval Volume operator""_mm3(long double v) noexcept {
  * \param v Integer literal in m³.
  * \return \c Volume quantity equal to \c v × 10³⁶ pm³.
  */
-consteval Volume operator""_m3(std::uint64_t v) noexcept {
+consteval Volume operator""_m3(unsigned long long v) noexcept {
   return Volume{static_cast<long double>(v) * 1.0e36L};
 }
 
@@ -195,7 +195,7 @@ consteval Volume operator""_m3(long double v) noexcept {
  * \param v Integer literal in km³.
  * \return \c Volume quantity equal to \c v × 10⁴⁵ pm³.
  */
-consteval Volume operator""_km3(std::uint64_t v) noexcept {
+consteval Volume operator""_km3(unsigned long long v) noexcept {
   return Volume{static_cast<long double>(v) * 1.0e45L};
 }
 

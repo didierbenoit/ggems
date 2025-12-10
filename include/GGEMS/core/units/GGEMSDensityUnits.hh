@@ -107,7 +107,7 @@ consteval Density operator""_g_cm3(long double v) noexcept {
  * \param v Integer literal in g/cm³.
  * \return \c Density quantity expressed in pg/pm³ internally.
  */
-consteval Density operator""_g_cm3(std::uint64_t v) noexcept {
+consteval Density operator""_g_cm3(unsigned long long v) noexcept {
   return Density{static_cast<long double>(v) * 1.0e-18L};
 }
 } // namespace ggems::units

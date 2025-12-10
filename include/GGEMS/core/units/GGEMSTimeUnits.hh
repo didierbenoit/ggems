@@ -133,7 +133,9 @@ inline std::string HumanReadable(Time const &t, std::int8_t precision = 7,
  * \param v Integer literal representing a number of picoseconds.
  * \return \c Time quantity equal to \c v ps.
  */
-consteval Time operator""_ps(std::uint64_t v) noexcept { return Time{v}; }
+consteval Time operator""_ps(unsigned long long v) noexcept {
+  return Time{static_cast<std::uint64_t>(v)};
+}
 
 /*!
  * \brief User-defined literal for time in picoseconds (floating-point).
@@ -154,8 +156,8 @@ consteval Time operator""_ps(long double v) noexcept {
  * \param v Integer literal representing a number of nanoseconds.
  * \return \c Time quantity equal to \c v ns expressed in picoseconds.
  */
-consteval Time operator""_ns(std::uint64_t v) noexcept {
-  return Time{v * 1'000ULL};
+consteval Time operator""_ns(unsigned long long v) noexcept {
+  return Time{static_cast<std::uint64_t>(v) * 1'000ULL};
 }
 
 /*!
@@ -174,8 +176,8 @@ consteval Time operator""_ns(long double v) noexcept {
  * \param v Integer literal representing a number of microseconds.
  * \return \c Time quantity equal to \c v µs expressed in picoseconds.
  */
-consteval Time operator""_us(std::uint64_t v) noexcept {
-  return Time{v * 1'000'000ULL};
+consteval Time operator""_us(unsigned long long v) noexcept {
+  return Time{static_cast<std::uint64_t>(v) * 1'000'000ULL};
 }
 
 /*!
@@ -194,8 +196,8 @@ consteval Time operator""_us(long double v) noexcept {
  * \param v Integer literal representing a number of milliseconds.
  * \return \c Time quantity equal to \c v ms expressed in picoseconds.
  */
-consteval Time operator""_ms(std::uint64_t v) noexcept {
-  return Time{v * 1'000'000'000ULL};
+consteval Time operator""_ms(unsigned long long v) noexcept {
+  return Time{static_cast<std::uint64_t>(v) * 1'000'000'000ULL};
 }
 
 /*!
@@ -214,8 +216,8 @@ consteval Time operator""_ms(long double v) noexcept {
  * \param v Integer literal representing a number of seconds.
  * \return \c Time quantity equal to \c v s expressed in picoseconds.
  */
-consteval Time operator""_s(std::uint64_t v) noexcept {
-  return Time{v * 1'000'000'000'000ULL};
+consteval Time operator""_s(unsigned long long v) noexcept {
+  return Time{static_cast<std::uint64_t>(v) * 1'000'000'000'000ULL};
 }
 
 /*!
@@ -234,8 +236,8 @@ consteval Time operator""_s(long double v) noexcept {
  * \param v Integer literal representing a number of minutes.
  * \return \c Time quantity equal to \c v min expressed in picoseconds.
  */
-consteval Time operator""_min(std::uint64_t v) noexcept {
-  return Time{v * 60ull * 1'000'000'000'000ULL};
+consteval Time operator""_min(unsigned long long v) noexcept {
+  return Time{static_cast<std::uint64_t>(v) * 60ull * 1'000'000'000'000ULL};
 }
 
 /*!
@@ -254,8 +256,8 @@ consteval Time operator""_min(long double v) noexcept {
  * \param v Integer literal representing a number of hours.
  * \return \c Time quantity equal to \c v h expressed in picoseconds.
  */
-consteval Time operator""_h(std::uint64_t v) noexcept {
-  return Time{v * 3600ull * 1'000'000'000'000ULL};
+consteval Time operator""_h(unsigned long long v) noexcept {
+  return Time{static_cast<std::uint64_t>(v) * 3600ull * 1'000'000'000'000ULL};
 }
 
 /*!

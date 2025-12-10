@@ -107,7 +107,9 @@ inline std::string HumanReadable(Length const &l, std::int8_t precision = 7,
  * \param v Integer literal in pm.
  * \return \c Length quantity equal to \c v pm.
  */
-consteval Length operator""_pm(std::uint64_t v) noexcept { return Length{v}; }
+consteval Length operator""_pm(unsigned long long v) noexcept {
+  return Length{static_cast<std::uint64_t>(v)};
+}
 
 /*!
  * \brief User-defined literal for picometres (pm) from floating-point.
@@ -123,8 +125,8 @@ consteval Length operator""_pm(long double v) noexcept {
  * \param v Integer literal in nm.
  * \return \c Length quantity equal to \c v × 10³ pm.
  */
-consteval Length operator""_nm(std::uint64_t v) noexcept {
-  return Length{v * 1000ULL};
+consteval Length operator""_nm(unsigned long long v) noexcept {
+  return Length{static_cast<std::uint64_t>(v) * 1000ULL};
 }
 
 /*!
@@ -141,8 +143,8 @@ consteval Length operator""_nm(long double v) noexcept {
  * \param v Integer literal in um.
  * \return \c Length quantity equal to \c v × 10⁶ pm.
  */
-consteval Length operator""_um(std::uint64_t v) noexcept {
-  return Length{v * 1'000'000ULL};
+consteval Length operator""_um(unsigned long long v) noexcept {
+  return Length{static_cast<std::uint64_t>(v) * 1'000'000ULL};
 }
 
 /*!
@@ -159,8 +161,8 @@ consteval Length operator""_um(long double v) noexcept {
  * \param v Integer literal in mm.
  * \return \c Length quantity equal to \c v × 10⁹ pm.
  */
-consteval Length operator""_mm(std::uint64_t v) noexcept {
-  return Length{v * 1'000'000'000ULL};
+consteval Length operator""_mm(unsigned long long v) noexcept {
+  return Length{static_cast<std::uint64_t>(v) * 1'000'000'000ULL};
 }
 
 /*!
@@ -177,8 +179,8 @@ consteval Length operator""_mm(long double v) noexcept {
  * \param v Integer literal in m.
  * \return \c Length quantity equal to \c v × 10¹² pm.
  */
-consteval Length operator""_m(std::uint64_t v) noexcept {
-  return Length{v * 1'000'000'000'000ULL};
+consteval Length operator""_m(unsigned long long v) noexcept {
+  return Length{static_cast<std::uint64_t>(v) * 1'000'000'000'000ULL};
 }
 
 /*!
@@ -196,8 +198,8 @@ consteval Length operator""_m(long double v) noexcept {
  * \param v Integer literal in kilometres.
  * \return \c Length quantity equal to \c v × 10¹⁵ pm.
  */
-consteval Length operator""_km(std::uint64_t v) noexcept {
-  return Length{v * 1'000'000'000'000'000ULL};
+consteval Length operator""_km(unsigned long long v) noexcept {
+  return Length{static_cast<std::uint64_t>(v) * 1'000'000'000'000'000ULL};
 }
 
 /*!

@@ -45,6 +45,8 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <atomic>
+#include <thread>
 /// \endcond
 
 namespace ggems::core {

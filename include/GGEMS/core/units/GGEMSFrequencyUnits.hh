@@ -105,8 +105,8 @@ inline std::string HumanReadable(Frequency const &f, std::int8_t precision = 7,
  * \param v Integer literal in Hz.
  * \return \c Frequency value equal to \c v Hz.
  */
-consteval Frequency operator""_Hz(std::uint64_t v) noexcept {
-  return Frequency{v};
+consteval Frequency operator""_Hz(unsigned long long v) noexcept {
+  return Frequency{static_cast<std::uint64_t>(v)};
 }
 
 /*!
@@ -125,8 +125,8 @@ consteval Frequency operator""_Hz(long double v) noexcept {
  * \param v Integer literal in kHz.
  * \return \c Frequency value equal to \c v × 10³ Hz.
  */
-consteval Frequency operator""_kHz(std::uint64_t v) noexcept {
-  return Frequency{v * 1'000ULL};
+consteval Frequency operator""_kHz(unsigned long long v) noexcept {
+  return Frequency{static_cast<std::uint64_t>(v) * 1'000ULL};
 }
 
 /*!
@@ -145,8 +145,8 @@ consteval Frequency operator""_kHz(long double v) noexcept {
  * \param v Integer literal in MHz.
  * \return \c Frequency value equal to \c v × 10⁶ Hz.
  */
-consteval Frequency operator""_MHz(std::uint64_t v) noexcept {
-  return Frequency{v * 1'000'000ULL};
+consteval Frequency operator""_MHz(unsigned long long v) noexcept {
+  return Frequency{static_cast<std::uint64_t>(v) * 1'000'000ULL};
 }
 
 /*!
@@ -165,8 +165,8 @@ consteval Frequency operator""_MHz(long double v) noexcept {
  * \param v Integer literal in GHz.
  * \return \c Frequency value equal to \c v × 10⁹ Hz.
  */
-consteval Frequency operator""_GHz(std::uint64_t v) noexcept {
-  return Frequency{v * 1'000'000'000ULL};
+consteval Frequency operator""_GHz(unsigned long long v) noexcept {
+  return Frequency{static_cast<std::uint64_t>(v) * 1'000'000'000ULL};
 }
 
 /*!
@@ -185,8 +185,8 @@ consteval Frequency operator""_GHz(long double v) noexcept {
  * \param v Integer literal in THz.
  * \return \c Frequency value equal to \c v × 10¹² Hz.
  */
-consteval Frequency operator""_THz(std::uint64_t v) noexcept {
-  return Frequency{v * 1'000'000'000'000ULL};
+consteval Frequency operator""_THz(unsigned long long v) noexcept {
+  return Frequency{static_cast<std::uint64_t>(v) * 1'000'000'000'000ULL};
 }
 
 /*!

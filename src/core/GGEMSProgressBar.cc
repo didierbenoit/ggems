@@ -1,6 +1,9 @@
+/// \cond
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
+#include <cmath>
+/// \endcond
 
 #include "GGEMS/core/GGEMSProgressBar.hh"
 #include "GGEMS/core/GGEMSSystemUtils.hh"
@@ -629,7 +632,7 @@ std::u32string GGEMSProgressBar::FormatPercentage(float progress) {
 /* --------------------------------------------- */
 
 std::string GGEMSProgressBar::FormatETA(std::uint64_t ps) {
-  if (!std::isfinite(ps) || ps <= 0) {
+  if (ps == 0) {
     return "--";
   }
 
@@ -641,7 +644,7 @@ std::string GGEMSProgressBar::FormatETA(std::uint64_t ps) {
 /* --------------------------------------------- */
 
 std::string GGEMSProgressBar::FormatMemory(std::uint64_t bytes) {
-  if (!std::isfinite(bytes) || bytes <= 0) {
+  if (bytes == 0) {
     return "--";
   }
 
@@ -653,7 +656,7 @@ std::string GGEMSProgressBar::FormatMemory(std::uint64_t bytes) {
 /* --------------------------------------------- */
 
 std::string GGEMSProgressBar::FormatBandwidth(long double bytes_per_ps) {
-  if (!std::isfinite(bytes_per_ps) || bytes_per_ps <= 0.0L) {
+  if (bytes_per_ps <= 0.0L) {
     return "--";
   }
 

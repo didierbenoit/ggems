@@ -112,7 +112,9 @@ inline std::string HumanReadable(Bits const &b, std::int8_t precision = 7,
  * \param v Integer number of bits.
  * \return Corresponding \c Bits quantity.
  */
-consteval Bits operator""_b(std::uint64_t v) noexcept { return Bits{v}; }
+consteval Bits operator""_b(unsigned long long v) noexcept {
+  return Bits{static_cast<std::uint64_t>(v)};
+}
 
 /*!
  * \brief Constructs a \c Bits quantity from a floating-point literal in bits.
@@ -130,8 +132,8 @@ consteval Bits operator""_b(long double v) noexcept {
  * \param v Integer number of kilobits.
  * \return Corresponding \c Bits quantity expressed in bits.
  */
-consteval Bits operator""_kb(std::uint64_t v) noexcept {
-  return Bits{v * 1'000ULL};
+consteval Bits operator""_kb(unsigned long long v) noexcept {
+  return Bits{static_cast<std::uint64_t>(v) * 1'000ULL};
 }
 
 /*!
@@ -151,8 +153,8 @@ consteval Bits operator""_kb(long double v) noexcept {
  * \param v Integer number of megabits.
  * \return Corresponding \c Bits quantity expressed in bits.
  */
-consteval Bits operator""_Mb(std::uint64_t v) noexcept {
-  return Bits{v * 1'000'000ULL};
+consteval Bits operator""_Mb(unsigned long long v) noexcept {
+  return Bits{static_cast<std::uint64_t>(v) * 1'000'000ULL};
 }
 
 /*!
@@ -172,8 +174,8 @@ consteval Bits operator""_Mb(long double v) noexcept {
  * \param v Integer number of gigabits.
  * \return Corresponding \c Bits quantity expressed in bits.
  */
-consteval Bits operator""_Gb(std::uint64_t v) noexcept {
-  return Bits{v * 1'000'000'000ULL};
+consteval Bits operator""_Gb(unsigned long long v) noexcept {
+  return Bits{static_cast<std::uint64_t>(v) * 1'000'000'000ULL};
 }
 
 /*!
@@ -193,8 +195,8 @@ consteval Bits operator""_Gb(long double v) noexcept {
  * \param v Integer number of terabits.
  * \return Corresponding \c Bits quantity expressed in bits.
  */
-consteval Bits operator""_Tb(std::uint64_t v) noexcept {
-  return Bits{v * 1'000'000'000'000ULL};
+consteval Bits operator""_Tb(unsigned long long v) noexcept {
+  return Bits{static_cast<std::uint64_t>(v) * 1'000'000'000'000ULL};
 }
 
 /*!

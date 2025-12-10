@@ -110,7 +110,9 @@ inline std::string HumanReadable(Mass const &m, std::int8_t precision = 7,
  * \param v Integer literal in picograms.
  * \return \c Mass quantity equal to \c v pg.
  */
-consteval Mass operator""_pg(std::uint64_t v) noexcept { return Mass{v}; }
+consteval Mass operator""_pg(unsigned long long v) noexcept {
+  return Mass{static_cast<std::uint64_t>(v)};
+}
 
 /*!
  * \brief User-defined literal for mass in picograms (floating-point).
@@ -128,8 +130,8 @@ consteval Mass operator""_pg(long double v) noexcept {
  * \param v Integer literal in nanograms.
  * \return \c Mass quantity equal to \c v × 10³ pg.
  */
-consteval Mass operator""_ng(std::uint64_t v) noexcept {
-  return Mass{v * 1'000ULL};
+consteval Mass operator""_ng(unsigned long long v) noexcept {
+  return Mass{static_cast<std::uint64_t>(v) * 1'000ULL};
 }
 
 /*!
@@ -148,8 +150,8 @@ consteval Mass operator""_ng(long double v) noexcept {
  * \param v Integer literal in micrograms.
  * \return \c Mass quantity equal to \c v × 10⁶ pg.
  */
-consteval Mass operator""_ug(std::uint64_t v) noexcept {
-  return Mass{v * 1'000'000ULL};
+consteval Mass operator""_ug(unsigned long long v) noexcept {
+  return Mass{static_cast<std::uint64_t>(v) * 1'000'000ULL};
 }
 
 /*!
@@ -168,8 +170,8 @@ consteval Mass operator""_ug(long double v) noexcept {
  * \param v Integer literal in milligrams.
  * \return \c Mass quantity equal to \c v × 10⁹ pg.
  */
-consteval Mass operator""_mg(std::uint64_t v) noexcept {
-  return Mass{v * 1'000'000'000ULL};
+consteval Mass operator""_mg(unsigned long long v) noexcept {
+  return Mass{static_cast<std::uint64_t>(v) * 1'000'000'000ULL};
 }
 
 /*!
@@ -188,8 +190,8 @@ consteval Mass operator""_mg(long double v) noexcept {
  * \param v Integer literal in grams.
  * \return \c Mass quantity equal to \c v × 10¹² pg.
  */
-consteval Mass operator""_g(std::uint64_t v) noexcept {
-  return Mass{v * 1'000'000'000'000ULL};
+consteval Mass operator""_g(unsigned long long v) noexcept {
+  return Mass{static_cast<std::uint64_t>(v) * 1'000'000'000'000ULL};
 }
 
 /*!
@@ -208,8 +210,8 @@ consteval Mass operator""_g(long double v) noexcept {
  * \param v Integer literal in kilograms.
  * \return \c Mass quantity equal to \c v × 10¹⁵ pg.
  */
-consteval Mass operator""_kg(std::uint64_t v) noexcept {
-  return Mass{v * 1'000'000'000'000'000ULL};
+consteval Mass operator""_kg(unsigned long long v) noexcept {
+  return Mass{static_cast<std::uint64_t>(v) * 1'000'000'000'000'000ULL};
 }
 
 /*!

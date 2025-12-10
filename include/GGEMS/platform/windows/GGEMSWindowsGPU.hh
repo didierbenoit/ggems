@@ -34,6 +34,7 @@
  * identifiers, and keeps the rest of the codebase fully portable across Linux.
  */
 
+#if defined(_WIN32)
 #include "GGEMS/platform/windows/GGEMSWindowsCore.hh"
 
 /// \cond
@@ -41,3 +42,4 @@
 #include <dxgi.h>
 #include <dxgi1_4.h>
 /// \endcond
+#endif

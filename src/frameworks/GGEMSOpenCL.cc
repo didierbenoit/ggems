@@ -29,6 +29,8 @@
 
 /// \cond
 #include <set>
+#include <algorithm>
+#include <ranges>
 /// \endcond
 
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
@@ -186,7 +188,7 @@ void GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters) {
   }
   selected_devices_ = ParseDeviceFilters(filters, all_devices);
 
-  GGEMS_CHECK(selected_devices_.empty(),
+  GGEMS_CHECK(!selected_devices_.empty(),
               "No matching devices for given filters.");
 
   GGEMS_INFO("OpenCL", "Total devices selected: {}", selected_devices_.size());

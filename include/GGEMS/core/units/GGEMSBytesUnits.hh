@@ -107,7 +107,9 @@ inline std::string HumanReadable(Bytes const &b, std::int8_t precision = 7,
  * \param v Integer literal in bytes.
  * \return \c Bytes quantity equal to \c v B.
  */
-consteval Bytes operator""_B(std::uint64_t v) noexcept { return Bytes{v}; }
+consteval Bytes operator""_B(unsigned long long v) noexcept {
+  return Bytes{static_cast<std::uint64_t>(v)};
+}
 
 /*!
  * \brief Constructs a \c Bytes quantity from a floating-point literal in bytes.
@@ -123,8 +125,8 @@ consteval Bytes operator""_B(long double v) noexcept {
  * \param v Integer literal in KiB.
  * \return \c Bytes quantity equal to \c v × 1024 B.
  */
-consteval Bytes operator""_kB(std::uint64_t v) noexcept {
-  return Bytes{v * 1'024ULL};
+consteval Bytes operator""_kB(unsigned long long v) noexcept {
+  return Bytes{static_cast<std::uint64_t>(v) * 1'024ULL};
 }
 
 /*!
@@ -142,8 +144,8 @@ consteval Bytes operator""_kB(long double v) noexcept {
  * \param v Integer literal in MiB.
  * \return \c Bytes quantity equal to \c v × 1024² B.
  */
-consteval Bytes operator""_MB(std::uint64_t v) noexcept {
-  return Bytes{v * 1'024ULL * 1'024ULL};
+consteval Bytes operator""_MB(unsigned long long v) noexcept {
+  return Bytes{static_cast<std::uint64_t>(v) * 1'024ULL * 1'024ULL};
 }
 
 /*!
@@ -161,8 +163,8 @@ consteval Bytes operator""_MB(long double v) noexcept {
  * \param v Integer literal in GiB.
  * \return \c Bytes quantity equal to \c v × 1024³ B.
  */
-consteval Bytes operator""_GB(std::uint64_t v) noexcept {
-  return Bytes{v * 1'024ULL * 1'024ULL * 1'024ULL};
+consteval Bytes operator""_GB(unsigned long long v) noexcept {
+  return Bytes{static_cast<std::uint64_t>(v) * 1'024ULL * 1'024ULL * 1'024ULL};
 }
 
 /*!
@@ -180,8 +182,9 @@ consteval Bytes operator""_GB(long double v) noexcept {
  * \param v Integer literal in TiB.
  * \return \c Bytes quantity equal to \c v × 1024⁴ B.
  */
-consteval Bytes operator""_TB(std::uint64_t v) noexcept {
-  return Bytes{v * 1'024ULL * 1'024ULL * 1'024ULL * 1'024ULL};
+consteval Bytes operator""_TB(unsigned long long v) noexcept {
+  return Bytes{static_cast<std::uint64_t>(v) * 1'024ULL * 1'024ULL * 1'024ULL *
+               1'024ULL};
 }
 
 /*!

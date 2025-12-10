@@ -34,7 +34,7 @@ public:
   GGEMSOpenCLKernel(GGEMSOpenCLContext &ctx, cl::Kernel kernel,
                     std::string kernel_name);
 
-  ~GGEMSOpenCLKernel();
+  ~GGEMSOpenCLKernel() = default;
 
   GGEMSOpenCLKernel(GGEMSOpenCLKernel const &) = delete;
   GGEMSOpenCLKernel &operator=(GGEMSOpenCLKernel const &) = delete;

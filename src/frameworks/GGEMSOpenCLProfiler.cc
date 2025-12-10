@@ -175,8 +175,10 @@ void GGEMSOpenCLProfiler::PrintStaticInfo() const {
     GGEMS_INFO("OpenCL", "    -----------------");
     GGEMS_INFO("OpenCL", "        * Max work group size: {}",
                rep_.static_info.work_group.max_work_group_size);
-    GGEMS_INFO("OpenCL", "        * Compile work group size: {}",
-               rep_.static_info.work_group.compile_work_group_size);
+    GGEMS_INFO("OpenCL", "        * Compile work group size: {} {} {}",
+               rep_.static_info.work_group.compile_work_group_size[0],
+               rep_.static_info.work_group.compile_work_group_size[1],
+               rep_.static_info.work_group.compile_work_group_size[2]);
     GGEMS_INFO("OpenCL", "        * Preferred_work_group_size_multiple: {}",
                rep_.static_info.work_group.preferred_work_group_size_multiple);
     GGEMS_INFO("OpenCL", "        * Local_mem_size: {}",

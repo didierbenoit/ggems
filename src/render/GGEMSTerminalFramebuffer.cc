@@ -6,6 +6,12 @@
 #include "GGEMS/platform/windows/GGEMSWindowsCore.hh"
 #endif
 
+#if defined(__linux__) || defined(__unix__)
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <termios.h>
+#endif
+
 namespace ggems::render {
 
 /* --------------------------------------------- */

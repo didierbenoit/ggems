@@ -112,7 +112,7 @@ inline std::string HumanReadable(Bandwidth const &bw, std::int8_t precision = 7,
  * \param v Integer literal in bytes per second (B/s).
  * \return \c Bandwidth quantity equal to \c v × 10⁻¹² B/ps.
  */
-consteval Bandwidth operator""_B_s(std::uint64_t v) noexcept {
+consteval Bandwidth operator""_B_s(unsigned long long v) noexcept {
   return Bandwidth{static_cast<long double>(v) * 1.0e-12L};
 }
 
@@ -132,7 +132,7 @@ consteval Bandwidth operator""_B_s(long double v) noexcept {
  * \param v Integer literal in kilobytes per second (kB/s).
  * \return \c Bandwidth quantity equal to \c v × 10³ × 10⁻¹² B/ps.
  */
-consteval Bandwidth operator""_kB_s(std::uint64_t v) noexcept {
+consteval Bandwidth operator""_kB_s(unsigned long long v) noexcept {
   return Bandwidth{static_cast<long double>(v) * 1.0e3L * 1.0e-12L};
 }
 
@@ -152,7 +152,7 @@ consteval Bandwidth operator""_kB_s(long double v) noexcept {
  * \param v Integer literal in megabytes per second (MB/s).
  * \return \c Bandwidth quantity equal to \c v × 10⁶ × 10⁻¹² B/ps.
  */
-consteval Bandwidth operator""_MB_s(std::uint64_t v) noexcept {
+consteval Bandwidth operator""_MB_s(unsigned long long v) noexcept {
   return Bandwidth{static_cast<long double>(v) * 1.0e6L * 1.0e-12L};
 }
 
@@ -172,7 +172,7 @@ consteval Bandwidth operator""_MB_s(long double v) noexcept {
  * \param v Integer literal in gigabytes per second (GB/s).
  * \return \c Bandwidth quantity equal to \c v × 10⁹ × 10⁻¹² B/ps.
  */
-consteval Bandwidth operator""_GB_s(std::uint64_t v) noexcept {
+consteval Bandwidth operator""_GB_s(unsigned long long v) noexcept {
   return Bandwidth{static_cast<long double>(v) * 1.0e9L * 1.0e-12L};
 }
 
@@ -192,7 +192,7 @@ consteval Bandwidth operator""_GB_s(long double v) noexcept {
  * \param v Integer literal in terabytes per second (TB/s).
  * \return \c Bandwidth quantity equal to \c v B/ps.
  */
-consteval Bandwidth operator""_TB_s(std::uint64_t v) noexcept {
+consteval Bandwidth operator""_TB_s(unsigned long long v) noexcept {
   return Bandwidth{static_cast<long double>(v) * 1.0e12L * 1.0e-12L};
 }
 
@@ -211,7 +211,7 @@ consteval Bandwidth operator""_TB_s(long double v) noexcept {
  * \param v Integer literal in B/ps.
  * \return \c Bandwidth quantity equal to \c v B/ps.
  */
-consteval Bandwidth operator""_B_ps(std::uint64_t v) noexcept {
+consteval Bandwidth operator""_B_ps(unsigned long long v) noexcept {
   return Bandwidth{static_cast<long double>(v)};
 }
 
@@ -229,7 +229,7 @@ consteval Bandwidth operator""_B_ps(long double v) noexcept {
  * \param v Integer literal in kB/ps.
  * \return \c Bandwidth quantity equal to \c v × 10³ B/ps.
  */
-consteval Bandwidth operator""_kB_ps(std::uint64_t v) noexcept {
+consteval Bandwidth operator""_kB_ps(unsigned long long v) noexcept {
   return Bandwidth{static_cast<long double>(v) * 1.0e3L};
 }
 
@@ -248,7 +248,7 @@ consteval Bandwidth operator""_kB_ps(long double v) noexcept {
  * \param v Integer literal in MB/ps.
  * \return \c Bandwidth quantity equal to \c v × 10⁶ B/ps.
  */
-consteval Bandwidth operator""_MB_ps(std::uint64_t v) noexcept {
+consteval Bandwidth operator""_MB_ps(unsigned long long v) noexcept {
   return Bandwidth{static_cast<long double>(v) * 1.0e6L};
 }
 
@@ -267,7 +267,7 @@ consteval Bandwidth operator""_MB_ps(long double v) noexcept {
  * \param v Integer literal in GB/ps.
  * \return \c Bandwidth quantity equal to \c v × 10⁹ B/ps.
  */
-consteval Bandwidth operator""_GB_ps(std::uint64_t v) noexcept {
+consteval Bandwidth operator""_GB_ps(unsigned long long v) noexcept {
   return Bandwidth{static_cast<long double>(v) * 1.0e9L};
 }
 
@@ -287,7 +287,7 @@ consteval Bandwidth operator""_GB_ps(long double v) noexcept {
  * \param v Integer literal in TB/ps.
  * \return \c Bandwidth quantity stored in B/ps.
  */
-consteval Bandwidth operator""_TB_ps(std::uint64_t v) noexcept {
+consteval Bandwidth operator""_TB_ps(unsigned long long v) noexcept {
   return Bandwidth{static_cast<long double>(v) * 1.0e12L};
 }
 

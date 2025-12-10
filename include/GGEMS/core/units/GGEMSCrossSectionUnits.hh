@@ -111,8 +111,8 @@ inline std::string HumanReadable(CrossSection const &cs,
  * \param v Integer literal in pbarn.
  * \return \c CrossSection quantity equal to \c v pbarn.
  */
-consteval CrossSection operator""_pbarn(std::uint64_t v) noexcept {
-  return CrossSection{v};
+consteval CrossSection operator""_pbarn(unsigned long long v) noexcept {
+  return CrossSection{static_cast<std::uint64_t>(v)};
 }
 
 /*!
@@ -131,8 +131,8 @@ consteval CrossSection operator""_pbarn(long double v) noexcept {
  * \param v Integer literal in nbarn.
  * \return \c CrossSection quantity equal to \c v × 10³ pbarn.
  */
-consteval CrossSection operator""_nbarn(std::uint64_t v) noexcept {
-  return CrossSection{v * 1000ULL};
+consteval CrossSection operator""_nbarn(unsigned long long v) noexcept {
+  return CrossSection{static_cast<std::uint64_t>(v) * 1000ULL};
 }
 
 /*!
@@ -151,8 +151,8 @@ consteval CrossSection operator""_nbarn(long double v) noexcept {
  * \param v Integer literal in ubarn.
  * \return \c CrossSection quantity equal to \c v × 10⁶ pbarn.
  */
-consteval CrossSection operator""_ubarn(std::uint64_t v) noexcept {
-  return CrossSection{v * 1'000'000ULL};
+consteval CrossSection operator""_ubarn(unsigned long long v) noexcept {
+  return CrossSection{static_cast<std::uint64_t>(v) * 1'000'000ULL};
 }
 
 /*!
@@ -171,8 +171,8 @@ consteval CrossSection operator""_ubarn(long double v) noexcept {
  * \param v Integer literal in mbarn.
  * \return \c CrossSection quantity equal to \c v × 10⁹ pbarn.
  */
-consteval CrossSection operator""_mbarn(std::uint64_t v) noexcept {
-  return CrossSection{v * 1'000'000'000ULL};
+consteval CrossSection operator""_mbarn(unsigned long long v) noexcept {
+  return CrossSection{static_cast<std::uint64_t>(v) * 1'000'000'000ULL};
 }
 
 /*!
@@ -191,8 +191,8 @@ consteval CrossSection operator""_mbarn(long double v) noexcept {
  * \param v Integer literal in barn.
  * \return \c CrossSection quantity equal to \c v × 10¹² pbarn.
  */
-consteval CrossSection operator""_barn(std::uint64_t v) noexcept {
-  return CrossSection{v * 1'000'000'000'000ULL};
+consteval CrossSection operator""_barn(unsigned long long v) noexcept {
+  return CrossSection{static_cast<std::uint64_t>(v) * 1'000'000'000'000ULL};
 }
 
 /*!
@@ -211,8 +211,8 @@ consteval CrossSection operator""_barn(long double v) noexcept {
  * \param v Integer literal in kbarn.
  * \return \c CrossSection quantity equal to \c v × 10¹⁵ pbarn.
  */
-consteval CrossSection operator""_kbarn(std::uint64_t v) noexcept {
-  return CrossSection{v * 1'000'000'000'000'000ULL};
+consteval CrossSection operator""_kbarn(unsigned long long v) noexcept {
+  return CrossSection{static_cast<std::uint64_t>(v) * 1'000'000'000'000'000ULL};
 }
 
 /*!
