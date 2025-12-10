@@ -13,23 +13,26 @@ include_guard(GLOBAL)
 
 message(STATUS "Detected compiler: Microsoft Visual C++")
 
-# ----------------------------------------------------------------------------
-# Common compile options
-# ----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# MSVC: global compile options
+# ------------------------------------------------------------------------------
 add_compile_options(
-  /std:c++latest
-  /W4
-  /EHsc
-  /permissive-
-  /nologo
-  /utf-8
+  /std:c++latest    # Use latest C++ standard available
+  /W4               # high warning level
+  /EHsc             # C++ exceptions (synchronous)
+  /permissive-      # Strict standard conformance
+  /nologo           # Silence the MSVC banner
+  /utf-8            # Source files treated as UTF-8
+  /Zc:preprocessor
 )
 
-# Disable security warnings for C runtime functions
+# ------------------------------------------------------------------------------
+# MSVC: global compile definitions
+# ------------------------------------------------------------------------------
 add_compile_definitions(
-  _CRT_SECURE_NO_WARNINGS
-  _SCL_SECURE_NO_WARNINGS
-  NOMINMAX
+  _CRT_SECURE_NO_WARNINGS  # Disable warnings for "unsafe" CRT functions
+  _SCL_SECURE_NO_WARNINGS  # Disable warnings for "unsafe" STL functions
+  NOMINMAX                 # Prevent Windows.h from defining min/max macros
 )
 
 # ----------------------------------------------------------------------------
@@ -54,6 +57,5 @@ endif()
 # ----------------------------------------------------------------------------
 # Diagnostic information
 # ----------------------------------------------------------------------------
-message(STATUS "MSVC runtime library : ${CMAKE_MSVC_RUNTIME_LIBRARY}")
-message(STATUS "Build type           : ${CMAKE_BUILD_TYPE}")
-message(STATUS "C++ standard         : ${CMAKE_CXX_STANDARD}")
+message(STATUS "Build type    : ${CMAKE_BUILD_TYPE}")
+message(STATUS "Compiler path : ${CMAKE_CXX_COMPILER}")

@@ -21,6 +21,7 @@
 #include <deque>
 /// \endcond
 
+#include "GGEMS/render/GGEMSColourNames.hh"
 #include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
 #include "GGEMS/utf/GGEMSGlyphs.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
@@ -59,6 +60,7 @@ public:
       case ParticleType::Aionino:
         return utf::Glyphs().aionino;
       }
+      return U'?';
     }
 
     static render::ColourKey ParticleColour(ParticleType p) {
@@ -78,6 +80,7 @@ public:
       case ParticleType::Aionino:
         return render::BLUE_Ice_B;
       }
+      return render::DEFAULT_FG;
     }
 
     static constexpr std::u32string ParticleName(ParticleType p) {
@@ -97,6 +100,7 @@ public:
       case ParticleType::Aionino:
         return U"aionino";
       }
+      return U"unknown";
     }
 
     static render::ColourKey StatusColour(Status status) {
@@ -108,6 +112,7 @@ public:
       case Status::Finished:
         return render::BLUE_Azure;
       }
+      return render::DEFAULT_FG;
     }
 
     static std::u32string StatusName(Status status) {
@@ -119,6 +124,7 @@ public:
       case Status::Finished:
         return U"finished";
       }
+      return U"undefined";
     }
 
     std::string name_;

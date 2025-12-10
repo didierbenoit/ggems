@@ -305,11 +305,17 @@ static std::uint8_t QueryGPUPercent_D3DKMT(LUID luid,
 static GPURAMProcessUsage QueryVRAMUsed_DXGI(LUID const &luid) noexcept {
   IDXGIFactory4 *factory = nullptr;
 
+#if (__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wlanguage-extension-token"
+#endif
+
   if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&factory))))
     return GPURAMProcessUsage{0ULL, 0LL, 0};
+
+#if defined(__clang__)
 #pragma clang diagnostic pop
+#endif
 
   IDXGIAdapter3 *adapter3 = nullptr;
 
@@ -324,13 +330,19 @@ static GPURAMProcessUsage QueryVRAMUsed_DXGI(LUID const &luid) noexcept {
     if (desc.AdapterLuid.LowPart == luid.LowPart &&
         desc.AdapterLuid.HighPart == luid.HighPart) {
 
+#if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wlanguage-extension-token"
+#endif
+
       if (SUCCEEDED(ad1->QueryInterface(IID_PPV_ARGS(&adapter3)))) {
         ad1->Release();
         break;
       }
+
+#if defined(__clang__)
 #pragma clang diagnostic pop
+#endif
     }
     ad1->Release();
   }

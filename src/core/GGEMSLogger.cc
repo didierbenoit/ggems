@@ -135,8 +135,8 @@ bool GGEMSLogger::EnableUtf32Win32() {
   bool ok = true;
 
   // 1. Set code pages UTF-8
-  ok &= SetConsoleOutputCP(CP_UTF8);
-  ok &= SetConsoleCP(CP_UTF8);
+  ok &= (SetConsoleOutputCP(CP_UTF8) != 0);
+  ok &= (SetConsoleCP(CP_UTF8) != 0);
 
   // 2. Enable VT100 sequences
   HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -148,7 +148,7 @@ bool GGEMSLogger::EnableUtf32Win32() {
     return false;
 
   mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-  ok &= SetConsoleMode(hOut, mode);
+  ok &= (SetConsoleMode(hOut, mode) != 0);
 
   // 3. Re-read the mode to check if VT is REALLY enabled
   DWORD newMode = 0;

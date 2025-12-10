@@ -330,9 +330,9 @@ void GGEMSProgressBar::DrawSingleSlot(std::size_t index, std::int16_t base_y) {
     std::uint64_t done = s.batches_done_.load(std::memory_order_relaxed);
     std::uint64_t total = s.batches_total_.load(std::memory_order_relaxed);
 
-    float progress = (total > 0)
+    float progress = (total > 0ULL)
                          ? static_cast<float>(done) / static_cast<float>(total)
-                         : 0.0;
+                         : 0.0f;
 
     auto bar_cells = BuildBar(progress);
     std::int16_t bar_x = 10;
