@@ -3,7 +3,7 @@
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 
-// #include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
 
 using namespace ggems::units;
 
@@ -209,60 +209,60 @@ void GGEMSRun::Run() {
 
     progress_bar_.Stop();*/
 
-  /*  auto &opencl = ocl::GGEMSOpenCL::GetInstance();
-    auto &contexts = opencl.GetContext();
+  auto &opencl = ocl::GGEMSOpenCL::GetInstance();
+  auto &contexts = opencl.GetContext();
 
-    auto &context = contexts.front();
+  auto &context = contexts.front();
 
-    GGEMS_INFO("Core", "Starting SVM vec_add_svm test on...");
+  GGEMS_INFO("Core", "Starting SVM vec_add_svm test on...");
 
-    std::size_t const n = 16'777'216;
-    Bytes const bytes = Bytes{static_cast<std::uint64_t>(n) * 4ULL};
+  std::size_t const n = 16'777'216;
+  Bytes const bytes = Bytes{static_cast<std::uint64_t>(n) * 4ULL};
 
-    auto svmA = context.CreateSVMBuffer(bytes);
-    auto svmB = context.CreateSVMBuffer(bytes);
-    auto svmC = context.CreateSVMBuffer(bytes);
+  auto svmA = context.CreateSVMBuffer(bytes);
+  auto svmB = context.CreateSVMBuffer(bytes);
+  auto svmC = context.CreateSVMBuffer(bytes);
 
-    auto *A = static_cast<float *>(svmA.GetData());
-    auto *B = static_cast<float *>(svmB.GetData());
-    auto *C = static_cast<float *>(svmC.GetData());
+  auto *A = static_cast<float *>(svmA.GetData());
+  auto *B = static_cast<float *>(svmB.GetData());
+  auto *C = static_cast<float *>(svmC.GetData());
 
-    svmA.Map();
-    svmB.Map();
-    svmC.Map();
+  svmA.Map();
+  svmB.Map();
+  svmC.Map();
 
-    for (std::size_t i = 0; i < n; ++i) {
-      A[i] = static_cast<float>(i);
-      B[i] = static_cast<float>(2 * i);
-      C[i] = 0.0f;
-    }
+  for (std::size_t i = 0; i < n; ++i) {
+    A[i] = static_cast<float>(i);
+    B[i] = static_cast<float>(2 * i);
+    C[i] = 0.0f;
+  }
 
-    svmA.Unmap();
-    svmB.Unmap();
-    svmC.Unmap();
+  svmA.Unmap();
+  svmB.Unmap();
+  svmC.Unmap();
 
-    std::filesystem::path kernel_root = "ggems/kernels";
-    std::string kernel_name = "vec_add_svm";
+  std::filesystem::path kernel_root = "ggems/kernels";
+  std::string kernel_name = "vec_add_svm";
 
-    auto &prog = opencl.GetOrCreateProgram(context, kernel_root, kernel_name,
-    ""); cl::Kernel raw_kernel = prog.CreateKernel(kernel_name);
-    ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel), kernel_name};
+  auto &prog = opencl.GetOrCreateProgram(context, kernel_root, kernel_name, "");
+  cl::Kernel raw_kernel = prog.CreateKernel(kernel_name);
+  ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel), kernel_name};
 
-    kernel.SetArgSVMPointer(0, A);
-    kernel.SetArgSVMPointer(1, B);
-    kernel.SetArgSVMPointer(2, C);
+  kernel.SetArgSVMPointer(0, A);
+  kernel.SetArgSVMPointer(1, B);
+  kernel.SetArgSVMPointer(2, C);
 
-    kernel.SetArg(3, static_cast<unsigned int>(n));
+  kernel.SetArg(3, static_cast<unsigned int>(n));
 
-    std::array<std::size_t, 1> global{n};
-    std::array<std::size_t, 1> local{256};*/
+  std::array<std::size_t, 1> global{n};
+  std::array<std::size_t, 1> local{256};
 
   // kernel.Run(global, local);
 
   // kernel.ProfiledEnqueue(global, local, 3 * bytes);
   // kernel.ProfileWorkGroups(n, 3 * bytes);
 
-  /*ocl::GGEMSOpenCLProfiler::Options opts{
+  ocl::GGEMSOpenCLProfiler::Options opts{
       {256,       512,        1024,       2048,       4096,
        8192,      16384,      32768,      65536,      131072,
        262144,    524288,     1'048'576,  2'097'152,  4'194'304,
@@ -284,7 +284,7 @@ void GGEMSRun::Run() {
   kernel.ProfileBandwidthSweep(elements, 3 * 4_B);
 
   Time tover = kernel.ProfileDriverOverhead();
-  GGEMS_DEBUG("OpenCL", "Driver overhead {}", HumanReadable(tover));*/
+  GGEMS_DEBUG("OpenCL", "Driver overhead {}", HumanReadable(tover));
 
   /*  std::string fname = kernel.GetFunctionName();
     cl_uint nargs = kernel.GetNumArgs();

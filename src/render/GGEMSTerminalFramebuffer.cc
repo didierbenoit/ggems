@@ -192,18 +192,27 @@ void GGEMSTerminalFramebuffer::DrawRectBorder(std::int16_t x, std::int16_t y,
   auto const &g = utf::Glyphs();
 
   // Horizontal top/bottom
-  DrawHLine(x + 1, y, width - 2, g.horizontal_line, fg);
-  DrawHLine(x + 1, y + height - 1, width - 2, g.horizontal_line, fg);
+  DrawHLine(static_cast<std::int16_t>(x + 1), y,
+            static_cast<std::int16_t>(width - 2), g.horizontal_line, fg);
+  DrawHLine(static_cast<std::int16_t>(x + 1),
+            static_cast<std::int16_t>(y + height - 1),
+            static_cast<std::int16_t>(width - 2), g.horizontal_line, fg);
 
   // Vertical left/right
-  DrawVLine(x, y + 1, height - 2, g.vertical_line, fg);
-  DrawVLine(x + width - 1, y + 1, height - 2, g.vertical_line, fg);
+  DrawVLine(x, static_cast<std::int16_t>(y + 1),
+            static_cast<std::int16_t>(height - 2), g.vertical_line, fg);
+  DrawVLine(static_cast<std::int16_t>(x + width - 1),
+            static_cast<std::int16_t>(y + 1),
+            static_cast<std::int16_t>(height - 2), g.vertical_line, fg);
 
   // Corners
   DrawChar(x, y, g.border_top_left, fg);
-  DrawChar(x + width - 1, y, g.border_top_right, fg);
-  DrawChar(x, y + height - 1, g.border_bottom_left, fg);
-  DrawChar(x + width - 1, y + height - 1, g.border_bottom_right, fg);
+  DrawChar(static_cast<std::int16_t>(x + width - 1), y, g.border_top_right, fg);
+  DrawChar(x, static_cast<std::int16_t>(y + height - 1), g.border_bottom_left,
+           fg);
+  DrawChar(static_cast<std::int16_t>(x + width - 1),
+           static_cast<std::int16_t>(y + height - 1), g.border_bottom_right,
+           fg);
 }
 
 /* --------------------------------------------- */

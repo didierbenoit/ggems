@@ -70,7 +70,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   message(STATUS "Configuring Clang Debug build")
 
   add_compile_options(-O0 -g3 -Wfloat-conversion -fno-omit-frame-pointer
-    -fstandalone-debug)
+    -fstandalone-deg)
 
   # Optional: detailed compilation timing
   add_compile_options(-ftime-trace)
@@ -105,7 +105,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
     message(STATUS "Clang IPO/LTO enabled")
   else()
-    message(WARNING "IPO not supported: ${ipo_error}")
+    message(WARNING "Clang IPO/LTO not supported: ${ipo_error}")
   endif()
 endif()
 

@@ -262,7 +262,8 @@ void GGEMSProgressBar::DrawHeader() {
 
   fb.DrawString(center_x_ + title_x, center_y_ + 1, title);
   fb.DrawChar(center_x_, center_y_ + 2, g.border_right);
-  fb.DrawChar(center_x_ + content_width_ - 1, center_y_ + 2, g.border_left);
+  fb.DrawChar(static_cast<std::int16_t>(center_x_ + content_width_ - 1),
+              static_cast<std::int16_t>(center_y_ + 2), g.border_left);
   fb.DrawHLine(center_x_ + 1, center_y_ + 2, content_width_ - 2, g.separator);
 }
 
@@ -276,13 +277,16 @@ void GGEMSProgressBar::PrepareFrame() {
 
   framebuffer_.UpdateSizeIfNeeded();
 
-  frame_height_ = header_rows_ + slot_rows + footer_rows_;
+  frame_height_ =
+      static_cast<std::int16_t>(header_rows_ + slot_rows + footer_rows_);
 
   std::int16_t width = framebuffer_.Width();
   std::int16_t height = framebuffer_.Height();
 
-  center_x_ = std::max<std::int16_t>((width - content_width_) / 2, 0);
-  center_y_ = std::max<std::int16_t>((height - frame_height_) / 2, 0);
+  center_x_ = std::max<std::int16_t>(
+      static_cast<std::int16_t>((width - content_width_) / 2), 0);
+  center_y_ = std::max<std::int16_t>(
+      static_cast<std::int16_t>((height - frame_height_) / 2), 0);
 
   framebuffer_.Resize(width, height);
 }
@@ -345,25 +349,29 @@ void GGEMSProgressBar::DrawSingleSlot(std::size_t index, std::int16_t base_y) {
 
     // Percentage
     std::u32string pct32 = FormatPercentage(progress);
-    fb.DrawString(static_cast<std::int16_t>(bar_x + 42) + center_x_,
+    fb.DrawString(static_cast<std::int16_t>(bar_x + 42 + center_x_),
                   center_y_ + y, pct32);
 
     // Pulse
+    using diff_t = std::vector<char32_t>::difference_type;
+    const diff_t shift = static_cast<diff_t>(frame_counter_ % 12);
+
     std::vector<char32_t> pulse = BuildPulse(s.particle_type_);
-    std::rotate(pulse.begin(), pulse.end() - (frame_counter_ % 12),
-                pulse.end());
+    std::rotate(pulse.begin(), pulse.end() - shift, pulse.end());
     render::ColourKey particle_color = Slot::ParticleColour(s.particle_type_);
 
     for (std::int16_t i = 0; auto const &p : pulse) {
-      fb.DrawChar(center_x_ + bar_x + 51 + i, center_y_ + y, p, particle_color);
+      fb.DrawChar(static_cast<std::int16_t>(center_x_ + bar_x + 51 + i),
+                  center_y_ + y, p, particle_color);
       ++i;
     }
 
     // Particle name
     std::int16_t pulse_size = static_cast<std::int16_t>(pulse.size());
     std::u32string particle_name = Slot::ParticleName(s.particle_type_);
-    fb.DrawString(center_x_ + bar_x + 51 + pulse_size + 1, center_y_ + y,
-                  particle_name, particle_color);
+    fb.DrawString(
+        static_cast<std::int16_t>(center_x_ + bar_x + 51 + pulse_size + 1),
+        center_y_ + y, particle_name, particle_color);
   }
 
   // Line 2
@@ -377,13 +385,14 @@ void GGEMSProgressBar::DrawSingleSlot(std::size_t index, std::int16_t base_y) {
     std::string bandwidth_kernel_txt =
         std::format("Kernel: {} ", s.kernel_name_);
 
-    fb.DrawString(center_x_ + 4, center_y_ + y,
+    fb.DrawString(static_cast<std::int16_t>(center_x_ + 4), center_y_ + y,
                   utf::UTF8ToUTF32(bandwidth_kernel_txt));
 
     std::string status_txt =
         std::format("({})", utf::UTF32ToUTF8(Slot::StatusName(s.status_)));
-    fb.DrawString(center_x_ + 4 +
-                      static_cast<int16_t>(bandwidth_kernel_txt.size()) + 2,
+    fb.DrawString(static_cast<std::int16_t>(
+                      center_x_ + 4 +
+                      static_cast<int16_t>(bandwidth_kernel_txt.size()) + 2),
                   center_y_ + y, utf::UTF8ToUTF32(status_txt),
                   Slot::StatusColour(s.status_));
   }
@@ -457,8 +466,8 @@ void GGEMSProgressBar::DrawSingleSlot(std::size_t index, std::int16_t base_y) {
 
 void GGEMSProgressBar::DrawSystemStats() {
   auto &fb = framebuffer_;
-  std::int16_t base_y =
-      header_rows_ + static_cast<std::int16_t>(slots_.size()) * rows_per_slot_;
+  std::int16_t base_y = static_cast<std::int16_t>(
+      header_rows_ + static_cast<std::int16_t>(slots_.size()) * rows_per_slot_);
 
   SystemUsage system_usage = GetSystemUsage();
 
