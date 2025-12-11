@@ -69,8 +69,7 @@ endif()
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   message(STATUS "Configuring Clang Debug build")
 
-  add_compile_options(-O0 -g3 -Wfloat-conversion -fno-omit-frame-pointer
-    -fstandalone-deg)
+  add_compile_options(-O0 -g3 -Wfloat-conversion -fno-omit-frame-pointer)
 
   # Optional: detailed compilation timing
   add_compile_options(-ftime-trace)
