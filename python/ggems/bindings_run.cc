@@ -4,11 +4,9 @@
 
 namespace py = pybind11;
 
-void GGEMSInitRun(py::module_ &m) {
-  using ggems::core::GGEMSRun;
-
-  py::class_<GGEMSRun>(m, "GGEMSRun")
+void BindRun(py::module_ &m) {
+  py::class_<ggems::core::GGEMSRun>(m, "GGEMSRun")
       .def(py::init<>())
-      .def("run", &GGEMSRun::Run)
-      .def("initialise", &GGEMSRun::Initialise);
+      .def("run", &ggems::core::GGEMSRun::Run)
+      .def("initialise", &ggems::core::GGEMSRun::Initialise);
 }

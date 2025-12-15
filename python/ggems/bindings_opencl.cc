@@ -5,48 +5,26 @@
 
 namespace py = pybind11;
 
-void GGEMSInitOpenCL(py::module_ &m) {
-  using ggems::ocl::GGEMSOpenCL;
+void BindOpenCL(py::module_ &m) {
+  /* --------------------------------------------- */
+  /* --------------------------------------------- */
+  /* --------------------------------------------- */
 
-  py::class_<GGEMSOpenCL, std::unique_ptr<GGEMSOpenCL, py::nodelete>>(
+  py::class_<ggems::ocl::GGEMSOpenCL,
+             std::unique_ptr<ggems::ocl::GGEMSOpenCL, py::nodelete>>(
       m, "GGEMSOpenCL")
-      .def(py::init(
-               []() -> GGEMSOpenCL * { return &GGEMSOpenCL::GetInstance(); }),
+      .def(py::init([]() -> ggems::ocl::GGEMSOpenCL * {
+             return &ggems::ocl::GGEMSOpenCL::GetInstance();
+           }),
            py::return_value_policy::reference)
-      .def("print_platforms", &GGEMSOpenCL::PrintPlatforms)
-      .def("print_devices", &GGEMSOpenCL::PrintDevices)
-      .def("print_contexts", &GGEMSOpenCL::PrintContexts)
-      .def("initialise", &GGEMSOpenCL::Initialise)
-      .def("select_devices", &GGEMSOpenCL::SelectDevices, py::arg("devices"))
-      .def("clean", &GGEMSOpenCL::Clean)
-      .def("__repr__", [](const GGEMSOpenCL &) {
+      .def("print_platforms", &ggems::ocl::GGEMSOpenCL::PrintPlatforms)
+      .def("print_devices", &ggems::ocl::GGEMSOpenCL::PrintDevices)
+      .def("print_contexts", &ggems::ocl::GGEMSOpenCL::PrintContexts)
+      .def("initialise", &ggems::ocl::GGEMSOpenCL::Initialise)
+      .def("select_devices", &ggems::ocl::GGEMSOpenCL::SelectDevices,
+           py::arg("devices"))
+      .def("clean", &ggems::ocl::GGEMSOpenCL::Clean)
+      .def("__repr__", [](ggems::ocl::GGEMSOpenCL const &) {
         return "<GGEMSOpenCL (singleton) — OpenCL 3.0 backend active>";
       });
-
-  m.def(
-      "print_platforms", []() { GGEMSOpenCL::GetInstance().PrintPlatforms(); },
-      "Print infos about all found OpenCL platforms");
-
-  m.def(
-      "print_devices", []() { GGEMSOpenCL::GetInstance().PrintDevices(); },
-      "Print infos about all found OpenCL devices");
-
-  m.def(
-      "print_contexts", []() { GGEMSOpenCL::GetInstance().PrintContexts(); },
-      "Print infos about all created OpenCL contexts");
-
-  m.def(
-      "clean", []() { GGEMSOpenCL::GetInstance().Clean(); },
-      "Release the internal compilers of the platform");
-
-  m.def(
-      "initialise", []() { GGEMSOpenCL::GetInstance().Initialise(); },
-      "OpenCL initialisation, creation of contexts");
-
-  m.def(
-      "select_devices",
-      [](std::vector<std::string> const &devices) {
-        GGEMSOpenCL::GetInstance().SelectDevices(devices);
-      },
-      "Select OpenCL device(s)");
 }

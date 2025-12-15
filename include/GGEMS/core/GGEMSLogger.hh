@@ -1,24 +1,7 @@
 #pragma once
 
-// ************************************************************************
-// * This file is part of GGEMS.                                          *
-// *                                                                      *
-// * GGEMS is free software: you can redistribute it and/or modify        *
-// * it under the terms of the GNU General Public License as published by *
-// * the Free Software Foundation, either version 3 of the License, or    *
-// * (at your option) any later version.                                  *
-// *                                                                      *
-// * GGEMS is distributed in the hope that it will be useful,             *
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
-// * GNU General Public License for more details.                         *
-// *                                                                      *
-// * You should have received a copy of the GNU General Public License    *
-// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
-// *                                                                      *
-// ************************************************************************
-
 /// \cond
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <mutex>
@@ -50,7 +33,7 @@ struct LogRecord {
   std::string message_{};
   std::string function_{};
   std::string file_{};
-  int line_{0};
+  std::int32_t line_{0};
 };
 
 class LogSink {
@@ -85,20 +68,24 @@ public:
   static GGEMSLogger &GetInstance();
 
   GGEMSLogger(GGEMSLogger const &) = delete;
+  GGEMSLogger(GGEMSLogger const &&) = delete;
   GGEMSLogger &operator=(GGEMSLogger const &) = delete;
+  GGEMSLogger &operator=(GGEMSLogger const &&) = delete;
 
 public:
   void AttachSink(std::unique_ptr<LogSink> sink);
-  void SetForceColor(std::optional<bool> force);
-
-  inline Encoding GetEncoding() const noexcept { return encoding_; }
-
-  void SetDetailLevel(int d) noexcept {
+  inline void ClearSinks() {
     std::lock_guard<std::mutex> lock(mtx_);
-    detail_level_ = d;
+    sinks_.clear();
   }
 
+  void SetForceColor(std::optional<bool> force);
+  inline Encoding GetEncoding() const noexcept { return encoding_; }
   bool UseColour() const noexcept;
+
+  void SetDetailLevel(std::int32_t d) noexcept {
+    detail_level_.store(d, std::memory_order_relaxed);
+  }
 
   template <typename... Args>
   void Log(LogLevel lvl, std::string_view module,
@@ -117,9 +104,13 @@ public:
   }
 
   template <LogLevel Level, typename... Args>
-  void LogFmt(std::string_view module, std::string_view fmt_runtime,
+  void LogFmt(std::int32_t depth, std::string_view module,
+              std::string_view fmt_runtime,
               std::source_location loc = std::source_location::current(),
               Args &&...args) {
+    std::int32_t dl = detail_level_.load(std::memory_order_relaxed);
+    if (depth > dl)
+      return;
     std::string s;
     if constexpr (sizeof...(Args) == 0) {
       s = std::string(fmt_runtime);
@@ -129,25 +120,11 @@ public:
     Log(Level, module, loc, s);
   }
 
-  template <typename... Args>
-  void InfoEx(int depth, std::string_view module, std::string_view fmt_runtime,
-              std::source_location loc = std::source_location::current(),
-              Args &&...args) {
-    if (depth > detail_level_)
-      return;
-    std::string s;
-    if constexpr (sizeof...(Args) == 0) {
-      s = std::string(fmt_runtime);
-    } else {
-      s = std::vformat(fmt_runtime, std::make_format_args(args...));
-    }
-    Log(LogLevel::Info, module, loc, s);
-  }
-
 private:
   GGEMSLogger();
 
   void Dispatch(LogRecord const &rec);
+
 #ifdef _WIN32
   bool EnableUtf32Win32();
 #else
@@ -155,7 +132,7 @@ private:
 #endif
 
 private:
-  int detail_level_{1};
+  std::atomic<std::int32_t> detail_level_{1};
   mutable std::mutex mtx_;
   std::vector<std::unique_ptr<LogSink>> sinks_;
   LogFormatter formatter_{};

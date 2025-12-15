@@ -1,21 +1,3 @@
-// ************************************************************************
-// * This file is part of GGEMS.                                          *
-// *                                                                      *
-// * GGEMS is free software: you can redistribute it and/or modify        *
-// * it under the terms of the GNU General Public License as published by *
-// * the Free Software Foundation, either version 3 of the License, or    *
-// * (at your option) any later version.                                  *
-// *                                                                      *
-// * GGEMS is distributed in the hope that it will be useful,             *
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
-// * GNU General Public License for more details.                         *
-// *                                                                      *
-// * You should have received a copy of the GNU General Public License    *
-// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
-// *                                                                      *
-// ************************************************************************
-
 /// \cond
 #include <format>
 #include <fstream>
@@ -127,7 +109,6 @@ GGEMSLogger::GGEMSLogger() {
 #else
   encoding_ = EnableUtf32Unix() ? Encoding::Utf32 : Encoding::Ascii;
 #endif
-  sinks_.emplace_back(std::make_unique<ConsoleSink>());
 }
 
 #ifdef _WIN32
@@ -193,8 +174,18 @@ bool GGEMSLogger::UseColour() const noexcept {
 
 void GGEMSLogger::Dispatch(LogRecord const &rec) {
   std::string line = formatter_.Format(rec, theme_, UseColour());
-  std::lock_guard<std::mutex> lock(mtx_);
-  for (auto &s : sinks_)
+
+  std::vector<LogSink *> local_sinks;
+  {
+    std::lock_guard<std::mutex> lock(mtx_);
+    local_sinks.reserve(sinks_.size());
+    for (auto &s : sinks_) {
+      local_sinks.push_back(s.get());
+    }
+  }
+
+  for (auto *s : local_sinks) {
     s->Write(rec, line);
+  }
 }
 } // namespace ggems::core

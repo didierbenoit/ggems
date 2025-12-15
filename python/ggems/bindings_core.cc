@@ -2,30 +2,59 @@
 #include <pybind11/stl.h>
 
 #include "GGEMS/core/GGEMSLogger.hh"
+#include "GGEMS/core/GGEMSOutputState.hh"
+#include "GGEMS/core/GGEMSOutputStateBootstrap.hh"
 
 namespace py = pybind11;
 
-void GGEMSInitCore(py::module_ &m) {
-  using ggems::core::FileSink;
-  using ggems::core::GGEMSLogger;
+void BindCore(py::module_ &m) {
+  /* --------------------------------------------- */
+  /* --------------------------------------------- */
+  /* --------------------------------------------- */
 
-  py::class_<GGEMSLogger, std::unique_ptr<GGEMSLogger, py::nodelete>>(
+  py::enum_<ggems::core::RunStatus>(m, "RunStatus")
+      .value("Starting", ggems::core::RunStatus::Starting)
+      .value("Configuring", ggems::core::RunStatus::Configuring)
+      .value("Ready", ggems::core::RunStatus::Ready)
+      .value("Running", ggems::core::RunStatus::Running)
+      .value("Finished", ggems::core::RunStatus::Finished)
+      .value("Failed", ggems::core::RunStatus::Failed);
+
+  /* --------------------------------------------- */
+  /* --------------------------------------------- */
+  /* --------------------------------------------- */
+
+  py::class_<ggems::core::GGEMSOutputState>(m, "GGEMSOutputState");
+
+  m.def(
+      "get_output_state",
+      []() -> ggems::core::GGEMSOutputState & {
+        return ggems::core::EnsureOutputState();
+      },
+      py::return_value_policy::reference,
+      "Return the global GGEMS output state (read-only observer).");
+
+  /* --------------------------------------------- */
+  /* --------------------------------------------- */
+  /* --------------------------------------------- */
+
+  py::class_<ggems::core::GGEMSLogger,
+             std::unique_ptr<ggems::core::GGEMSLogger, py::nodelete>>(
       m, "GGEMSLogger")
-      // --- Constructor: returns always the singleton instance ---
-      .def(py::init(
-               []() -> GGEMSLogger * { return &GGEMSLogger::GetInstance(); }),
+      .def(py::init([]() -> ggems::core::GGEMSLogger * {
+             return &ggems::core::GGEMSLogger::GetInstance();
+           }),
            py::return_value_policy::reference)
 
-      // --- Methods available from Python instance ---
       .def(
           "attach_sink",
-          [](GGEMSLogger &self, const std::string &type,
+          [](ggems::core::GGEMSLogger &self, const std::string &type,
              const std::string &path = "") {
             if (type == "file") {
               if (path.empty())
                 throw std::invalid_argument(
                     "FileSink requires a valid file path.");
-              self.AttachSink(std::make_unique<FileSink>(path));
+              self.AttachSink(std::make_unique<ggems::core::FileSink>(path));
             } else {
               throw std::invalid_argument("Unknown sink type: " + type);
             }
@@ -33,40 +62,14 @@ void GGEMSInitCore(py::module_ &m) {
           py::arg("type"), py::arg("path") = "",
           "Attach a new log sink ('file').")
 
-      .def("force_color", &GGEMSLogger::SetForceColor, py::arg("force"),
+      .def("force_color", &ggems::core::GGEMSLogger::SetForceColor,
+           py::arg("force"),
            "Force colour output (True/False/None = auto-detect).")
 
-      .def("set_detail_level", &GGEMSLogger::SetDetailLevel, py::arg("detail"),
-           "Set additional detail depth (indentation or sub-verbosity).")
+      .def("set_detail_level", &ggems::core::GGEMSLogger::SetDetailLevel,
+           py::arg("detail"), "Set depth of verbosity.")
 
-      .def("__repr__", [](const GGEMSLogger &) {
+      .def("__repr__", [](ggems::core::GGEMSLogger const &) {
         return "<GGEMSLogger (singleton) — global logging interface>";
       });
-
-  // --- Module-level aliases for convenience --------------------------------
-  m.def(
-      "attach_sink",
-      [](const std::string &type, const std::string &path = "") {
-        auto &log = GGEMSLogger::GetInstance();
-        if (type == "file") {
-          if (path.empty())
-            throw std::invalid_argument("FileSink requires a valid file path.");
-          log.AttachSink(std::make_unique<FileSink>(path));
-        } else {
-          throw std::invalid_argument("Unknown sink type: " + type);
-        }
-      },
-      py::arg("type"), py::arg("path") = "", "Attach a sink directly (file).");
-
-  m.def(
-      "force_color",
-      [](std::optional<bool> force) {
-        GGEMSLogger::GetInstance().SetForceColor(force);
-      },
-      py::arg("force"), "Force colour display globally (True/False/None).");
-
-  m.def(
-      "set_detail_level",
-      [](int d) { GGEMSLogger::GetInstance().SetDetailLevel(d); },
-      py::arg("detail"), "Set detail level globally.");
 }
