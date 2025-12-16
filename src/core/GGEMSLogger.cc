@@ -161,6 +161,10 @@ void GGEMSLogger::SetForceColor(std::optional<bool> force) {
   force_colour_ = force;
 }
 
+void GGEMSLogger::SetForceEncoding(Encoding encoding) noexcept {
+  encoding_ = encoding;
+}
+
 bool GGEMSLogger::UseColour() const noexcept {
   if (force_colour_.has_value())
     return *force_colour_;

@@ -80,8 +80,9 @@ public:
   }
 
   void SetForceColor(std::optional<bool> force);
-  inline Encoding GetEncoding() const noexcept { return encoding_; }
   bool UseColour() const noexcept;
+  inline Encoding GetEncoding() const noexcept { return encoding_; }
+  void SetForceEncoding(Encoding encoding) noexcept;
 
   void SetDetailLevel(std::int32_t d) noexcept {
     detail_level_.store(d, std::memory_order_relaxed);

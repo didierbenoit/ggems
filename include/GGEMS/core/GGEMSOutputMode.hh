@@ -1,0 +1,27 @@
+#pragma once
+
+/// \cond
+#include <string>
+#include <string_view>
+/// \endcond
+
+namespace ggems::core {
+enum OutputMode : std::uint8_t { Term = 0, Gui, Cluster };
+
+OutputMode GetOutputMode() noexcept;
+
+void SetOutputMode(OutputMode mode);
+void SetOutputMode(std::string_view mode);
+
+[[nodiscard]] inline std::string ToString(OutputMode mode) {
+  switch (mode) {
+  case OutputMode::Term:
+    return "term";
+  case OutputMode::Cluster:
+    return "cluster";
+  case OutputMode::Gui:
+    return "gui";
+  }
+  return "term";
+}
+} // namespace ggems::core
