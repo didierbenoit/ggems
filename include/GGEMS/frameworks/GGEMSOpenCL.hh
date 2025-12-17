@@ -57,9 +57,9 @@ private:
   GGEMSOpenCL();
 
   GGEMSOpenCL(GGEMSOpenCL const &openCL) = delete;
-  GGEMSOpenCL(GGEMSOpenCL const &&openCL) = delete;
+  GGEMSOpenCL(GGEMSOpenCL &&openCL) = delete;
   GGEMSOpenCL &operator=(GGEMSOpenCL const &openCL) = delete;
-  GGEMSOpenCL &operator=(GGEMSOpenCL const &&openCL) = delete;
+  GGEMSOpenCL &operator=(GGEMSOpenCL &&openCL) = delete;
 
 public:
   /*!

@@ -5,6 +5,9 @@
 
 #include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
 
+#include "GGEMS/render/GGEMSTerminalRenderer.hh"
+#include "GGEMS/render/GGEMSBanner.hh"
+
 using namespace ggems::units;
 
 namespace ggems::core {
@@ -13,12 +16,12 @@ namespace ggems::core {
 
 GGEMSRun::GGEMSRun() {
   GGEMS_INFOEX("Core", 3, "GGEMSRun created.");
-  Encoding encoding = GGEMSLogger::GetInstance().GetEncoding();
-  if (encoding == Encoding::Utf32) {
-    Banner();
-  } else {
-    BannerAscii();
-  }
+  /*  Encoding encoding = GGEMSLogger::GetInstance().GetEncoding();
+    if (encoding == Encoding::Utf32) {
+      Banner();
+    } else {
+      BannerAscii();
+    }*/
 }
 
 /* --------------------------------*/
@@ -27,7 +30,7 @@ GGEMSRun::~GGEMSRun() { ; }
 
 /* --------------------------------*/
 
-void GGEMSRun::Banner() const noexcept {
+/*void GGEMSRun::Banner() const noexcept {
   constexpr std::string_view GGEMS_BANNER = R"(
 
 ╔══════════════════════════════════════════════════╗
@@ -50,11 +53,11 @@ void GGEMSRun::Banner() const noexcept {
 )";
 
   GGEMS_INFO("Core", "{}", GGEMS_BANNER);
-}
+}*/
 
 /* --------------------------------*/
 
-void GGEMSRun::BannerAscii() const noexcept {
+/*void GGEMSRun::BannerAscii() const noexcept {
   constexpr std::string_view GGEMS_BANNER_ASCII = R"(
 
 +**************************************************+
@@ -77,7 +80,7 @@ void GGEMSRun::BannerAscii() const noexcept {
 )";
 
   GGEMS_INFO("Core", "{}", GGEMS_BANNER_ASCII);
-}
+}*/
 
 /* --------------------------------*/
 
@@ -91,6 +94,12 @@ void GGEMSRun::Initialise() {
 
 void GGEMSRun::Run() {
   GGEMS_INFO("Core", "GGEMS starting...");
+
+  render::GGEMSBanner banner;
+  render::GGEMSTerminalRenderer renderer(banner);
+  renderer.Start();
+  renderer.RenderOnce();
+  renderer.Stop();
 
   /*  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     auto &opencl = ocl::GGEMSOpenCL::GetInstance();

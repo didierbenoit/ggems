@@ -3,6 +3,7 @@
 /// \cond
 #include <string>
 #include <string_view>
+#include <cstdint>
 /// \endcond
 
 namespace ggems::core {

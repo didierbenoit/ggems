@@ -8,12 +8,12 @@ namespace ggems::render {
 class GGEMSTerminalPresenter {
 public:
   GGEMSTerminalPresenter() = default;
-  ~GGEMSTerminalPresenter();
+  ~GGEMSTerminalPresenter() = default;
 
   GGEMSTerminalPresenter(GGEMSTerminalPresenter const &) = delete;
-  GGEMSTerminalPresenter(GGEMSTerminalPresenter const &&) = delete;
+  GGEMSTerminalPresenter(GGEMSTerminalPresenter &&) = delete;
   GGEMSTerminalPresenter &operator=(GGEMSTerminalPresenter const &) = delete;
-  GGEMSTerminalPresenter &operator=(GGEMSTerminalPresenter const &&) = delete;
+  GGEMSTerminalPresenter &operator=(GGEMSTerminalPresenter &&) = delete;
 
 public:
   void Begin(bool use_alt_buffer = true) noexcept;

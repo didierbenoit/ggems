@@ -43,7 +43,6 @@ GGEMSTerminalFramebuffer::DetectTerminalSize() noexcept {
   }
 #endif
 
-  // Sécurité
   if (width < 20)
     width = 20;
   if (height < 5)

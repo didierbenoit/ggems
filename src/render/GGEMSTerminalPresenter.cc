@@ -17,12 +17,6 @@ static void WriteRaw(std::string_view s) noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-GGEMSTerminalPresenter::~GGEMSTerminalPresenter() { End(); }
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
 void GGEMSTerminalPresenter::Begin(bool use_alt_buffer) noexcept {
   if (started_)
     return;
@@ -44,7 +38,7 @@ void GGEMSTerminalPresenter::Begin(bool use_alt_buffer) noexcept {
 /* --------------------------------------------- */
 
 void GGEMSTerminalPresenter::End() noexcept {
-  if (started_)
+  if (!started_)
     return;
 
   WriteRaw("\033[0m");   // Reset and go back default terminal

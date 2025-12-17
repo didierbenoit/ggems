@@ -30,8 +30,6 @@ OutputMode Parse(std::string_view s) {
 
   Throw<GGEMSFatal>(
       "Unknown output mode. Expected: 'term', 'gui', or 'cluster'.");
-
-  return OutputMode::Term; // unreachable
 }
 
 /* --------------------------------------------- */
