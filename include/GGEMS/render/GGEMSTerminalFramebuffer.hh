@@ -20,11 +20,10 @@ public:
   ~GGEMSTerminalFramebuffer() = default;
 
   GGEMSTerminalFramebuffer(GGEMSTerminalFramebuffer const &) = delete;
-  GGEMSTerminalFramebuffer(GGEMSTerminalFramebuffer const &&) = delete;
+  GGEMSTerminalFramebuffer(GGEMSTerminalFramebuffer &&) = delete;
   GGEMSTerminalFramebuffer &
   operator=(GGEMSTerminalFramebuffer const &) = delete;
-  GGEMSTerminalFramebuffer &
-  operator=(GGEMSTerminalFramebuffer const &&) = delete;
+  GGEMSTerminalFramebuffer &operator=(GGEMSTerminalFramebuffer &&) = delete;
 
 public:
   // --- Resize / Access ------------------------------------------------------

@@ -3,7 +3,6 @@
 #include "GGEMS/core/GGEMSOutputMode.hh"
 #include "GGEMS/core/GGEMSCoreUtils.hh"
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSOutputStateSink.hh"
 
 namespace ggems::core {
 /* --------------------------------------------- */
@@ -11,8 +10,8 @@ namespace ggems::core {
 /* --------------------------------------------- */
 
 namespace {
-OutputMode g_mode = OutputMode::Term;
-
+OutputMode g_mode{OutputMode::Term};
+bool g_configured{false};
 std::unique_ptr<GGEMSOutputState> g_state;
 
 /* --------------------------------------------- */
@@ -30,17 +29,6 @@ OutputMode Parse(std::string_view s) {
 
   Throw<GGEMSFatal>(
       "Unknown output mode. Expected: 'term', 'gui', or 'cluster'.");
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-GGEMSOutputState &EnsureOutputState() {
-  if (!g_state) {
-    g_state = std::make_unique<GGEMSOutputState>();
-  }
-  return *g_state;
 }
 
 /* --------------------------------------------- */
@@ -69,8 +57,21 @@ void ConfigureLoggerForMode(OutputMode mode) {
     break;
   }
   }
+
+  g_configured = true;
 }
 } // namespace
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+GGEMSOutputState &EnsureOutputState() {
+  if (!g_state) {
+    g_state = std::make_unique<GGEMSOutputState>();
+  }
+  return *g_state;
+}
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
@@ -83,7 +84,7 @@ OutputMode GetOutputMode() noexcept { return g_mode; }
 /* --------------------------------------------- */
 
 void SetOutputMode(OutputMode mode) {
-  if (mode == g_mode)
+  if (mode == g_mode && g_configured)
     return;
 
   ConfigureLoggerForMode(mode);

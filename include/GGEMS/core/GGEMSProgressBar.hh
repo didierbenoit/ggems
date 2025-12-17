@@ -154,9 +154,9 @@ public:
   ~GGEMSProgressBar();
 
   GGEMSProgressBar(GGEMSProgressBar const &) = delete;
-  GGEMSProgressBar(GGEMSProgressBar const &&) = delete;
+  GGEMSProgressBar(GGEMSProgressBar &&) = delete;
   GGEMSProgressBar &operator=(GGEMSProgressBar const &) = delete;
-  GGEMSProgressBar &operator=(GGEMSProgressBar const &&) = delete;
+  GGEMSProgressBar &operator=(GGEMSProgressBar &&) = delete;
 
 public:
   Slot &AddSlot(std::string_view name, bool is_gpu,

@@ -4,6 +4,7 @@
 #include <cstdint>
 /// \endcond
 
+#include "GGEMS/core/GGEMSOutputState.hh"
 #include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
 #include "GGEMS/render/GGEMSTerminalPresenter.hh"
 
@@ -20,7 +21,8 @@ public:
   };
 
 public:
-  explicit GGEMSTerminalRenderer(GGEMSBanner &banner) : banner_(banner) {}
+  explicit GGEMSTerminalRenderer(GGEMSBanner &banner,
+                                 core::GGEMSOutputState &state);
 
   GGEMSTerminalRenderer(GGEMSTerminalRenderer const &) = delete;
   GGEMSTerminalRenderer(GGEMSTerminalRenderer &&) = delete;
@@ -36,8 +38,14 @@ public:
   void RenderOnce();
 
 private:
+  void DrawLogs(Rect const &rect);
+
+private:
   GGEMSBanner &banner_;
+  core::GGEMSOutputState &state_;
   GGEMSTerminalFramebuffer framebuffer_{};
   GGEMSTerminalPresenter presenter_;
+
+  bool started_{false};
 };
 } // namespace ggems::render

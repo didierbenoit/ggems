@@ -68,9 +68,9 @@ public:
   static GGEMSLogger &GetInstance();
 
   GGEMSLogger(GGEMSLogger const &) = delete;
-  GGEMSLogger(GGEMSLogger const &&) = delete;
+  GGEMSLogger(GGEMSLogger &&) = delete;
   GGEMSLogger &operator=(GGEMSLogger const &) = delete;
-  GGEMSLogger &operator=(GGEMSLogger const &&) = delete;
+  GGEMSLogger &operator=(GGEMSLogger &&) = delete;
 
 public:
   void AttachSink(std::unique_ptr<LogSink> sink);

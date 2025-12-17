@@ -7,6 +7,7 @@
 
 #include "GGEMS/render/GGEMSTerminalRenderer.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
+#include "GGEMS/core/GGEMSOutputMode.hh"
 
 using namespace ggems::units;
 
@@ -95,10 +96,12 @@ void GGEMSRun::Initialise() {
 void GGEMSRun::Run() {
   GGEMS_INFO("Core", "GGEMS starting...");
 
+  auto &state = core::EnsureOutputState();
   render::GGEMSBanner banner;
-  render::GGEMSTerminalRenderer renderer(banner);
+  render::GGEMSTerminalRenderer renderer(banner, state);
   renderer.Start();
   renderer.RenderOnce();
+  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
   renderer.Stop();
 
   /*  std::this_thread::sleep_for(std::chrono::milliseconds(1000));

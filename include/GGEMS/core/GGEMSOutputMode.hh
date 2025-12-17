@@ -6,10 +6,13 @@
 #include <cstdint>
 /// \endcond
 
+#include "GGEMS/core/GGEMSOutputStateSink.hh"
+
 namespace ggems::core {
 enum OutputMode : std::uint8_t { Term = 0, Gui, Cluster };
 
 OutputMode GetOutputMode() noexcept;
+GGEMSOutputState &EnsureOutputState();
 
 void SetOutputMode(OutputMode mode);
 void SetOutputMode(std::string_view mode);
