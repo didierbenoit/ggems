@@ -94,14 +94,21 @@ void GGEMSTerminalRenderer::DrawLogs(Rect const &rect) {
       break;
 
     // Convert UTF-8 (std::string) -> UTF-32 for framebuffer drawing.
-    std::u32string u32 = utf::UTF8ToUTF32(lines[i]);
+    std::u32string u32_prefix = utf::UTF8ToUTF32(lines[i].prefix);
+    std::u32string u32_msg = utf::UTF8ToUTF32(lines[i].msg);
 
     // Truncate to available width.
-    if (static_cast<std::int16_t>(u32.size()) > max_w) {
-      u32.resize(static_cast<std::size_t>(max_w));
+    if (static_cast<std::int16_t>(u32_prefix.size()) > max_w) {
+      u32_prefix.resize(static_cast<std::size_t>(max_w));
     }
 
-    framebuffer_.DrawString(x0, y, u32);
+    if (static_cast<std::int16_t>(u32_msg.size()) > max_w) {
+      u32_msg.resize(static_cast<std::size_t>(max_w));
+    }
+
+    std::int16_t prefix_size = static_cast<std::int16_t>(u32_prefix.size()) + 1;
+    framebuffer_.DrawString(x0, y, u32_prefix, lines[i].color);
+    framebuffer_.DrawString(x0 + prefix_size, y, u32_msg);
   }
 }
 } // namespace ggems::render

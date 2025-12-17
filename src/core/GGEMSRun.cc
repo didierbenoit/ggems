@@ -92,10 +92,8 @@ void GGEMSRun::Initialise() {
 }
 
 /* --------------------------------*/
-
 void GGEMSRun::Run() {
   GGEMS_INFO("Core", "GGEMS starting...");
-
   auto &state = core::EnsureOutputState();
   render::GGEMSBanner banner;
   render::GGEMSTerminalRenderer renderer(banner, state);

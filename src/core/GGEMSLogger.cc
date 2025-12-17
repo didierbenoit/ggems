@@ -1,6 +1,5 @@
 /// \cond
 #include <format>
-#include <fstream>
 #ifdef _WIN32
 #include "GGEMS/platform/windows/GGEMSWindowsCore.hh"
 #else
@@ -9,8 +8,38 @@
 /// \endcond
 
 #include "GGEMS/core/GGEMSLogger.hh"
+#include "GGEMS/core/GGEMSException.hh"
 
 namespace ggems::core {
+
+static render::ColourKey LogLevelColour(LogLevel l) {
+  switch (l) {
+  case LogLevel::Debug:
+    return render::CYAN_Radiant;
+  case LogLevel::Info:
+    return render::GREEN_Emerald;
+  case LogLevel::Warn:
+    return render::YELLOW_Neon;
+  case LogLevel::Error:
+    return render::RED_Cherry;
+  }
+  return render::DEFAULT_FG;
+}
+
+static std::string LogLevelName(LogLevel l) {
+  switch (l) {
+  case LogLevel::Debug:
+    return "DEBUG";
+  case LogLevel::Info:
+    return "INFO";
+  case LogLevel::Warn:
+    return "WARN";
+  case LogLevel::Error:
+    return "ERROR";
+  }
+  return "unknown";
+}
+
 static std::string
 FormatTimestamp(std::chrono::system_clock::time_point const &tp) {
   using namespace std::chrono;
@@ -47,55 +76,30 @@ GetEnvVar(const char *name) noexcept {
 #endif
 }
 
-void ConsoleSink::Write(LogRecord const &rec, std::string const &formatted) {
-  FILE *stream = (rec.level_ == LogLevel::Error) ? stderr : stdout;
-  std::fwrite(formatted.data(), 1, formatted.size(), stream);
-  std::fputc('\n', stream);
-  std::fflush(stream);
+FileSink::FileSink(std::string path)
+    : path_(path), out_(path_, std::ios::out | std::ios::app) {
+  GGEMS_CHECK(out_, "Cannot open log file: " + path_);
 }
 
-void FileSink::Write(LogRecord const &, std::string const &formatted) {
-  std::ofstream out(path_, std::ios::app);
-  out << formatted << '\n';
+void FileSink::Write(RenderedLogLine &&log_line) {
+  std::scoped_lock lock(mtx_);
+  out_ << log_line.prefix << " " << log_line.msg << '\n';
 }
 
-std::string LogFormatter::Format(LogRecord const &rec,
-                                 LogColorTheme const &theme,
-                                 bool use_colour) const {
-  char const *level_str = "INFO";
-  char const *col = "";
-  char const *reset = "";
+RenderedLogLine LogFormatter::Format(LogRecord const &rec,
+                                     bool use_colour) const {
+  RenderedLogLine log_line;
+  log_line.msg = rec.message;
+  if (use_colour)
+    log_line.color = LogLevelColour(rec.level);
 
-  switch (rec.level_) {
-  case LogLevel::Debug:
-    level_str = "DEBUG";
-    col = theme.debug_.c_str();
-    break;
-  case LogLevel::Info:
-    level_str = "INFO";
-    col = theme.info_.c_str();
-    break;
-  case LogLevel::Warn:
-    level_str = "WARN";
-    col = theme.warn_.c_str();
-    break;
-  case LogLevel::Error:
-    level_str = "ERROR";
-    col = theme.error_.c_str();
-    break;
-  }
+  auto const ts = FormatTimestamp(rec.timestamp);
+  std::string module_part = rec.module.empty() ? "" : " [" + rec.module + "]";
+  std::string level_name = LogLevelName(rec.level);
 
-  if (!use_colour)
-    col = "", reset = "";
-  else
-    reset = theme.reset_.c_str();
-
-  auto const ts = FormatTimestamp(rec.timestamp_);
-  std::string module_part = rec.module_.empty() ? "" : " [" + rec.module_ + "]";
-
-  return std::format("{}{} [{}] {{{}}}{}{} ({}): {}", col, ts, level_str,
-                     rec.thread_id_, reset, module_part, rec.function_,
-                     rec.message_);
+  log_line.prefix = std::format("{} [{}] {{{}}}{} ({}):", ts, level_name,
+                                rec.thread_id, module_part, rec.function);
+  return log_line;
 }
 
 GGEMSLogger &GGEMSLogger::GetInstance() {
@@ -103,61 +107,28 @@ GGEMSLogger &GGEMSLogger::GetInstance() {
   return instance;
 }
 
-GGEMSLogger::GGEMSLogger() {
-#ifdef _WIN32
-  encoding_ = EnableUtf32Win32() ? Encoding::Utf32 : Encoding::Ascii;
-#else
-  encoding_ = EnableUtf32Unix() ? Encoding::Utf32 : Encoding::Ascii;
-#endif
-}
+void GGEMSLogger::SetSink(std::unique_ptr<LogSink> sink) {
+  if (!sink) {
+    Throw<GGEMSFatal>("Log sink in null.");
+  }
 
-#ifdef _WIN32
-bool GGEMSLogger::EnableUtf32Win32() {
-  bool ok = true;
+  bool already_set{false};
 
-  // 1. Set code pages UTF-8
-  ok &= (SetConsoleOutputCP(CP_UTF8) != 0);
-  ok &= (SetConsoleCP(CP_UTF8) != 0);
+  {
+    std::scoped_lock lock(mtx_);
+    already_set = (sink_ != nullptr);
+    if (!already_set) {
+      sink_ = std::move(sink);
+    }
+  }
 
-  // 2. Enable VT100 sequences
-  HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-  if (hOut == INVALID_HANDLE_VALUE)
-    return false;
-
-  DWORD mode = 0;
-  if (!GetConsoleMode(hOut, &mode))
-    return false;
-
-  mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-  ok &= (SetConsoleMode(hOut, mode) != 0);
-
-  // 3. Re-read the mode to check if VT is REALLY enabled
-  DWORD newMode = 0;
-  if (!GetConsoleMode(hOut, &newMode))
-    return false;
-
-  bool vtEnabled = (newMode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0;
-
-  return ok && vtEnabled;
-}
-#else
-bool GGEMSLogger::EnableUtf32Unix() {
-  try {
-    std::locale::global(std::locale("en_US.UTF-8"));
-    return true;
-  } catch (...) {
-    return false;
+  if (already_set) {
+    Throw<GGEMSFatal>("Log Sink already set.");
   }
 }
-#endif
 
-void GGEMSLogger::AttachSink(std::unique_ptr<LogSink> sink) {
-  std::lock_guard<std::mutex> lock(mtx_);
-  sinks_.emplace_back(std::move(sink));
-}
-
-void GGEMSLogger::SetForceColor(std::optional<bool> force) {
-  std::lock_guard<std::mutex> lock(mtx_);
+void GGEMSLogger::SetForceColor(bool force) {
+  std::scoped_lock lock(mtx_);
   force_colour_ = force;
 }
 
@@ -169,27 +140,23 @@ bool GGEMSLogger::UseColour() const noexcept {
   if (force_colour_.has_value())
     return *force_colour_;
 
-  auto no_color = GetEnvVar("NO_COLOR");
-  if (no_color && !no_color->empty())
+  if (auto no_color = GetEnvVar("NO_COLOR"); no_color && !no_color->empty())
     return false;
 
-  return isatty(fileno(stdout)) != 0;
+  return true;
 }
 
 void GGEMSLogger::Dispatch(LogRecord const &rec) {
-  std::string line = formatter_.Format(rec, theme_, UseColour());
+  RenderedLogLine log_line = formatter_.Format(rec, UseColour());
 
-  std::vector<LogSink *> local_sinks;
+  LogSink *local_sink = nullptr;
   {
-    std::lock_guard<std::mutex> lock(mtx_);
-    local_sinks.reserve(sinks_.size());
-    for (auto &s : sinks_) {
-      local_sinks.push_back(s.get());
-    }
+    std::scoped_lock lock(mtx_);
+    local_sink = sink_.get();
   }
 
-  for (auto *s : local_sinks) {
-    s->Write(rec, line);
+  if (local_sink) {
+    local_sink->Write(std::move(log_line));
   }
 }
 } // namespace ggems::core

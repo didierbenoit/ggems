@@ -9,9 +9,8 @@ public:
   explicit GGEMSOutputStateSink(GGEMSOutputState &state) noexcept
       : state_(state) {}
 
-  void Write(LogRecord const &rec, std::string const &formatted) override {
-    (void)rec;
-    state_.PushLogLine(formatted);
+  void Write(RenderedLogLine &&log_line) override {
+    state_.PushLogLine(std::move(log_line));
   }
 
 private:

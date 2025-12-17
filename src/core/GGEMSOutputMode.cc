@@ -1,8 +1,10 @@
+/// \cond
 #include <memory>
+/// \endcond
 
 #include "GGEMS/core/GGEMSOutputMode.hh"
-#include "GGEMS/core/GGEMSCoreUtils.hh"
 #include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/GGEMSOutputStateSink.hh"
 
 namespace ggems::core {
 /* --------------------------------------------- */
@@ -37,21 +39,24 @@ OutputMode Parse(std::string_view s) {
 
 void ConfigureLoggerForMode(OutputMode mode) {
   auto &logger = GGEMSLogger::GetInstance();
-  logger.ClearSinks();
 
   switch (mode) {
   case OutputMode::Term: {
     auto &st = EnsureOutputState();
-    logger.AttachSink(std::make_unique<GGEMSOutputStateSink>(st));
+    logger.SetSink(std::make_unique<GGEMSOutputStateSink>(st));
+    logger.SetForceColor(true);
+    logger.SetForceEncoding(Encoding::Utf32);
     break;
   }
   case OutputMode::Gui: {
     auto &st = EnsureOutputState();
-    logger.AttachSink(std::make_unique<GGEMSOutputStateSink>(st));
+    logger.SetSink(std::make_unique<GGEMSOutputStateSink>(st));
+    logger.SetForceColor(true);
+    logger.SetForceEncoding(Encoding::Utf32);
     break;
   }
   case OutputMode::Cluster: {
-    logger.AttachSink(std::make_unique<FileSink>("ggems.log"));
+    logger.SetSink(std::make_unique<FileSink>("ggems.log"));
     logger.SetForceColor(false);
     logger.SetForceEncoding(Encoding::Ascii);
     break;
@@ -86,6 +91,11 @@ OutputMode GetOutputMode() noexcept { return g_mode; }
 void SetOutputMode(OutputMode mode) {
   if (mode == g_mode && g_configured)
     return;
+
+  if (mode != g_mode && g_configured) {
+    Throw<GGEMSFatal>(
+        "Output mode already configured; must be set before initialisation.");
+  }
 
   ConfigureLoggerForMode(mode);
 

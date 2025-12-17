@@ -5,62 +5,57 @@
 #include <chrono>
 #include <cstdint>
 #include <mutex>
-#include <optional>
-#include <source_location>
 #include <string>
+#include <source_location>
+#include <fstream>
 #include <string_view>
 /// \endcond
 
 #include "GGEMS/core/GGEMSCoreUtils.hh"
+#include "GGEMS/render/GGEMSColourNames.hh"
 
 namespace ggems::core {
 enum class LogLevel : std::uint8_t { Debug = 0, Info, Warn, Error };
 enum class Encoding : std::uint8_t { Utf32 = 0, Ascii };
 
-struct LogColorTheme {
-  std::string debug_{"\033[36m"};
-  std::string info_{"\033[32m"};
-  std::string warn_{"\033[33m"};
-  std::string error_{"\033[31m"};
-  std::string reset_{"\033[0m"};
+struct LogRecord {
+  std::chrono::system_clock::time_point timestamp{};
+  LogLevel level{LogLevel::Info};
+  std::string thread_id{};
+  std::string module{};
+  std::string message{};
+  std::string function{};
+  std::string file{};
+  std::int32_t line{0};
 };
 
-struct LogRecord {
-  std::chrono::system_clock::time_point timestamp_{};
-  LogLevel level_{LogLevel::Info};
-  std::string thread_id_{};
-  std::string module_{};
-  std::string message_{};
-  std::string function_{};
-  std::string file_{};
-  std::int32_t line_{0};
+struct RenderedLogLine {
+  std::string prefix{};
+  std::string msg{};
+  render::ColourKey color{render::DEFAULT_FG};
 };
 
 class LogSink {
 public:
   virtual ~LogSink() = default;
-  virtual void Write(LogRecord const &rec, std::string const &formatted) = 0;
-};
-
-class ConsoleSink final : public LogSink {
-public:
-  void Write(LogRecord const &rec, std::string const &formatted) override;
+  virtual void Write(RenderedLogLine &&log_line) = 0;
 };
 
 class FileSink final : public LogSink {
 public:
-  explicit FileSink(std::string path) : path_(std::move(path)) {}
+  explicit FileSink(std::string path);
 
-  void Write(LogRecord const &rec, std::string const &formatted) override;
+  void Write(RenderedLogLine &&log_line) override;
 
 private:
   std::string path_{};
+  std::ofstream out_;
+  std::mutex mtx_;
 };
 
 class LogFormatter {
 public:
-  std::string Format(LogRecord const &rec, LogColorTheme const &theme,
-                     bool use_color) const;
+  RenderedLogLine Format(LogRecord const &rec, bool use_color) const;
 };
 
 class GGEMSLogger {
@@ -73,13 +68,9 @@ public:
   GGEMSLogger &operator=(GGEMSLogger &&) = delete;
 
 public:
-  void AttachSink(std::unique_ptr<LogSink> sink);
-  inline void ClearSinks() {
-    std::lock_guard<std::mutex> lock(mtx_);
-    sinks_.clear();
-  }
+  void SetSink(std::unique_ptr<LogSink> sink);
 
-  void SetForceColor(std::optional<bool> force);
+  void SetForceColor(bool force);
   bool UseColour() const noexcept;
   inline Encoding GetEncoding() const noexcept { return encoding_; }
   void SetForceEncoding(Encoding encoding) noexcept;
@@ -88,19 +79,18 @@ public:
     detail_level_.store(d, std::memory_order_relaxed);
   }
 
-  template <typename... Args>
   void Log(LogLevel lvl, std::string_view module,
            std::source_location const &loc = std::source_location::current(),
            std::string_view msg = "") {
     LogRecord rec;
-    rec.timestamp_ = std::chrono::system_clock::now();
-    rec.level_ = lvl;
-    rec.thread_id_ = ThreadTag();
-    rec.module_ = std::string(module);
-    rec.message_ = msg;
-    rec.function_ = SimplifyFunctionName(loc.function_name());
-    rec.file_ = loc.file_name();
-    rec.line_ = static_cast<int>(loc.line());
+    rec.timestamp = std::chrono::system_clock::now();
+    rec.level = lvl;
+    rec.thread_id = ThreadTag();
+    rec.module = std::string(module);
+    rec.message = msg;
+    rec.function = SimplifyFunctionName(loc.function_name());
+    rec.file = loc.file_name();
+    rec.line = static_cast<int>(loc.line());
     Dispatch(rec);
   }
 
@@ -122,9 +112,17 @@ public:
   }
 
 private:
-  GGEMSLogger();
+  GGEMSLogger() = default;
 
   void Dispatch(LogRecord const &rec);
+
+  inline void ClearSink() noexcept {
+    std::unique_ptr<LogSink> to_delete;
+    {
+      std::scoped_lock lock(mtx_);
+      to_delete = std::move(sink_);
+    }
+  }
 
 #ifdef _WIN32
   bool EnableUtf32Win32();
@@ -135,10 +133,9 @@ private:
 private:
   std::atomic<std::int32_t> detail_level_{1};
   mutable std::mutex mtx_;
-  std::vector<std::unique_ptr<LogSink>> sinks_;
+  std::unique_ptr<LogSink> sink_;
   LogFormatter formatter_{};
-  LogColorTheme theme_{};
   std::optional<bool> force_colour_{};
-  Encoding encoding_;
+  Encoding encoding_{Encoding::Ascii};
 };
 } // namespace ggems::core

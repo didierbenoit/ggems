@@ -51,7 +51,7 @@ std::size_t GGEMSOutputState::GetLogCapacity() const {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSOutputState::PushLogLine(std::string_view formatted_line) {
+void GGEMSOutputState::PushLogLine(RenderedLogLine rendered_line) {
   std::lock_guard<std::mutex> lock(mtx_);
 
   if (log_ring_.empty()) {
@@ -62,10 +62,10 @@ void GGEMSOutputState::PushLogLine(std::string_view formatted_line) {
 
   if (log_size_ < log_capacity_) {
     std::size_t idx = (log_size_ + log_head_) % log_capacity_;
-    log_ring_[idx].assign(formatted_line.data(), formatted_line.size());
+    log_ring_[idx] = std::move(rendered_line);
     ++log_size_;
   } else {
-    log_ring_[log_head_].assign(formatted_line.data(), formatted_line.size());
+    log_ring_[log_head_] = std::move(rendered_line);
     log_head_ = (log_head_ + 1) % log_capacity_;
   }
 }
@@ -74,7 +74,7 @@ void GGEMSOutputState::PushLogLine(std::string_view formatted_line) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-std::vector<std::string>
+std::vector<RenderedLogLine>
 GGEMSOutputState::GetLastLogLinesSnapshot(std::size_t max_lines) const {
   std::lock_guard<std::mutex> lock(mtx_);
 
@@ -83,7 +83,7 @@ GGEMSOutputState::GetLastLogLinesSnapshot(std::size_t max_lines) const {
   }
 
   std::size_t n = std::min(max_lines, log_size_);
-  std::vector<std::string> out;
+  std::vector<RenderedLogLine> out;
   out.reserve(n);
 
   std::size_t start = (log_head_ + (log_size_ - n)) % log_capacity_;
