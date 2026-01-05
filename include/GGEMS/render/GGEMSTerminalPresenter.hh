@@ -4,6 +4,10 @@
 #include <string_view>
 /// \endcond
 
+#ifdef _WIN32
+#include "GGEMS/platform/windows/GGEMSWindowsCore.hh"
+#endif
+
 namespace ggems::render {
 class GGEMSTerminalPresenter {
 public:
@@ -21,7 +25,18 @@ public:
   void Present(std::string_view frame_utf8) noexcept;
 
 private:
+#ifdef _WIN32
+  bool EnableVTUtf8WinConsole();
+  bool RestoreWinConsole();
+#endif
+
+private:
   bool started_{false};
   bool use_alt_buffer_{false};
+#ifdef _WIN32
+  DWORD original_mode_;
+  UINT original_cp_out_;
+  UINT original_cp_;
+#endif
 };
 } // namespace ggems::render
