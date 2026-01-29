@@ -132,7 +132,7 @@ private:
 
 private:
   std::atomic<std::int32_t> detail_level_{1};
-  mutable std::mutex mtx_;
+  mutable std::mutex mtx_{};
   std::unique_ptr<LogSink> sink_;
   LogFormatter formatter_{};
   std::optional<bool> force_colour_{};

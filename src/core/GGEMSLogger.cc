@@ -43,8 +43,8 @@ static std::string LogLevelName(LogLevel l) {
 static std::string
 FormatTimestamp(std::chrono::system_clock::time_point const &tp) {
   using namespace std::chrono;
-  auto const t = system_clock::to_time_t(tp);
-  auto const ms = duration_cast<milliseconds>(tp.time_since_epoch()) % 1000;
+  auto t = system_clock::to_time_t(tp);
+  auto ms = duration_cast<milliseconds>(tp.time_since_epoch()) % 1000;
   std::tm tm_buf{};
 #ifdef _WIN32
   localtime_s(&tm_buf, &t);
@@ -133,6 +133,7 @@ void GGEMSLogger::SetForceColor(bool force) {
 }
 
 void GGEMSLogger::SetForceEncoding(Encoding encoding) noexcept {
+  std::scoped_lock lock(mtx_);
   encoding_ = encoding;
 }
 

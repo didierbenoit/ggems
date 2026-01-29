@@ -31,11 +31,9 @@ public:
 
 public:
   void SetRunStatus(RunStatus run_status);
-
   [[nodiscard]] RunStatus GetRunStatus() const;
 
   void SetLogCapacity(std::size_t capacity);
-
   [[nodiscard]] std::size_t GetLogCapacity() const;
 
   void PushLogLine(RenderedLogLine rendered_line);
