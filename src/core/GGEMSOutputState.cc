@@ -6,7 +6,7 @@ namespace ggems::core {
 /* --------------------------------------------- */
 
 void GGEMSOutputState::SetRunStatus(RunStatus run_status) {
-  std::lock_guard<std::mutex> lock(mtx_);
+  std::scoped_lock lock(mtx_);
   run_status_ = run_status;
 }
 
@@ -15,7 +15,7 @@ void GGEMSOutputState::SetRunStatus(RunStatus run_status) {
 /* --------------------------------------------- */
 
 RunStatus GGEMSOutputState::GetRunStatus() const {
-  std::lock_guard<std::mutex> lock(mtx_);
+  std::scoped_lock lock(mtx_);
   return run_status_;
 }
 
@@ -24,7 +24,7 @@ RunStatus GGEMSOutputState::GetRunStatus() const {
 /* --------------------------------------------- */
 
 void GGEMSOutputState::SetLogCapacity(std::size_t capacity) {
-  std::lock_guard<std::mutex> lock(mtx_);
+  std::scoped_lock lock(mtx_);
 
   if (capacity == 0)
     capacity = 1;
@@ -43,7 +43,7 @@ void GGEMSOutputState::SetLogCapacity(std::size_t capacity) {
 /* --------------------------------------------- */
 
 std::size_t GGEMSOutputState::GetLogCapacity() const {
-  std::lock_guard<std::mutex> lock(mtx_);
+  std::scoped_lock lock(mtx_);
   return log_capacity_;
 }
 
@@ -52,7 +52,7 @@ std::size_t GGEMSOutputState::GetLogCapacity() const {
 /* --------------------------------------------- */
 
 void GGEMSOutputState::PushLogLine(RenderedLogLine rendered_line) {
-  std::lock_guard<std::mutex> lock(mtx_);
+  std::scoped_lock lock(mtx_);
 
   if (log_ring_.empty()) {
     log_ring_.resize(log_capacity_);
@@ -76,7 +76,7 @@ void GGEMSOutputState::PushLogLine(RenderedLogLine rendered_line) {
 
 std::vector<RenderedLogLine>
 GGEMSOutputState::GetLastLogLinesSnapshot(std::size_t max_lines) const {
-  std::lock_guard<std::mutex> lock(mtx_);
+  std::scoped_lock lock(mtx_);
 
   if (log_size_ == 0 || max_lines == 0) {
     return {};
@@ -100,7 +100,7 @@ GGEMSOutputState::GetLastLogLinesSnapshot(std::size_t max_lines) const {
 /* --------------------------------------------- */
 
 void GGEMSOutputState::ClearLogs() {
-  std::lock_guard<std::mutex> lock(mtx_);
+  std::scoped_lock lock(mtx_);
   log_size_ = 0;
   log_head_ = 0;
 }
@@ -109,7 +109,7 @@ void GGEMSOutputState::ClearLogs() {
 /* --------------------------------------------- */
 
 std::size_t GGEMSOutputState::GetLogCount() const {
-  std::lock_guard<std::mutex> lock(mtx_);
+  std::scoped_lock lock(mtx_);
   return log_size_;
 }
 
