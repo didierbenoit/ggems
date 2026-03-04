@@ -28,8 +28,10 @@ public:
 public:
   // --- Resize / Access ------------------------------------------------------
   void Resize(std::int16_t width, std::int16_t height);
-  [[nodiscard]] constexpr std::int16_t Width() const noexcept { return width_; }
-  [[nodiscard]] constexpr std::int16_t Height() const noexcept {
+  [[nodiscard]] inline constexpr std::int16_t Width() const noexcept {
+    return width_;
+  }
+  [[nodiscard]] inline constexpr std::int16_t Height() const noexcept {
     return height_;
   }
   void UpdateSizeIfNeeded();

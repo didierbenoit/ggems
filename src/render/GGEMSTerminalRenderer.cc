@@ -55,15 +55,15 @@ void GGEMSTerminalRenderer::RenderOnce() {
 
   // Header (banner)
   std::int16_t header_h = std::min<std::int16_t>(h, 8);
-  Rect header{0, 0, w, header_h};
-  banner_.Draw(framebuffer_, header);
+  // Rect header{0, 0, w, header_h};
+  banner_.Draw(framebuffer_);
 
   // Log Area
-  std::int16_t logs_y = header_h;
-  std::int16_t logs_h =
-      std::max<std::int16_t>(0, static_cast<std::int16_t>(h - header_h));
-  Rect logs_rect{0, logs_y, w, logs_h};
-  DrawLogs(logs_rect);
+  //  std::int16_t logs_y = header_h;
+  //  std::int16_t logs_h =
+  //      std::max<std::int16_t>(0, static_cast<std::int16_t>(h - header_h));
+  //  Rect logs_rect{0, logs_y, w, logs_h};
+  //  DrawLogs(logs_rect);
 
   std::string const out = framebuffer_.Render();
   presenter_.Present(out);

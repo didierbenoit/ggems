@@ -16,10 +16,14 @@ public:
   GGEMSBanner &operator=(GGEMSBanner &&) = delete;
 
 public:
-  void Draw(GGEMSTerminalFramebuffer &framebuffer,
-            GGEMSTerminalRenderer::Rect const &rect);
+  void Draw(GGEMSTerminalFramebuffer &framebuffer);
   void EmitToLogger(core::GGEMSLogger &) { ; }
 
+  [[nodiscard]] consteval std::int16_t Width() const noexcept;
+  [[nodiscard]] consteval std::int16_t Height() const noexcept;
+
 private:
+  std::int16_t width_;
+  std::int16_t height_;
 };
 } // namespace ggems::render

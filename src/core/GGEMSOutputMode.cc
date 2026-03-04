@@ -45,7 +45,8 @@ void ConfigureLoggerForMode(OutputMode mode) {
     auto &st = EnsureOutputState();
     logger.SetSink(std::make_unique<GGEMSOutputStateSink>(st));
     logger.SetForceColor(true);
-    logger.SetForceEncoding(Encoding::Utf32);
+    //    logger.SetForceEncoding(Encoding::Utf32);
+    logger.SetForceEncoding(Encoding::Ascii);
     break;
   }
   case OutputMode::Gui: {
