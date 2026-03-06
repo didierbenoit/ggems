@@ -1,6 +1,7 @@
 __pycache__
 .ropeproject
 build
+.venv
 .cache
 .clangd
 .clang-format
