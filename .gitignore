@@ -12,6 +12,7 @@ python/ggems/ggems.cp314-win_amd64.ilk
 python/ggems/ggems.cp314-win_amd64.pyd
 python/ggems/ggems.pdb
 python/ggems/ggems.lib
+python/ggems/ggems.exp
 tree.txt
 docs/Doxygen/html
 docs/Doxygen/xml

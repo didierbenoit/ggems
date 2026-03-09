@@ -7,7 +7,7 @@
 namespace ggems::render {
 class GGEMSBanner {
 public:
-  GGEMSBanner();
+  GGEMSBanner() = default;
   ~GGEMSBanner() = default;
 
   GGEMSBanner(GGEMSBanner const &) = delete;
@@ -19,11 +19,16 @@ public:
   void Draw(GGEMSTerminalFramebuffer &framebuffer);
   void EmitToLogger(core::GGEMSLogger &) { ; }
 
-  [[nodiscard]] consteval std::int16_t Width() const noexcept;
-  [[nodiscard]] consteval std::int16_t Height() const noexcept;
+  [[nodiscard]] constexpr std::int16_t GetWidth() const noexcept {
+    return width_;
+  };
+
+  [[nodiscard]] constexpr std::int16_t GetHeight() const noexcept {
+    return height_;
+  };
 
 private:
-  std::int16_t width_;
-  std::int16_t height_;
+  std::int16_t width_{54};
+  std::int16_t height_{17};
 };
 } // namespace ggems::render

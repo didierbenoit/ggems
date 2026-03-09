@@ -54,16 +54,16 @@ void GGEMSTerminalRenderer::RenderOnce() {
   auto h = framebuffer_.Height();
 
   // Header (banner)
-  std::int16_t header_h = std::min<std::int16_t>(h, 8);
+  // std::int16_t header_h = std::min<std::int16_t>(h, 8);
   // Rect header{0, 0, w, header_h};
   banner_.Draw(framebuffer_);
 
   // Log Area
-  //  std::int16_t logs_y = header_h;
-  //  std::int16_t logs_h =
-  //      std::max<std::int16_t>(0, static_cast<std::int16_t>(h - header_h));
-  //  Rect logs_rect{0, logs_y, w, logs_h};
-  //  DrawLogs(logs_rect);
+  std::int16_t logs_y = static_cast<std::int16_t>(banner_.GetHeight() + 1);
+  std::int16_t logs_h =
+      std::max<std::int16_t>(0, static_cast<std::int16_t>(h - logs_y));
+  Rect logs_rect{1, logs_y, w, logs_h};
+  DrawLogs(logs_rect);
 
   std::string const out = framebuffer_.Render();
   presenter_.Present(out);
@@ -81,7 +81,7 @@ void GGEMSTerminalRenderer::DrawLogs(Rect const &rect) {
   auto lines = state_.GetLastLogLinesSnapshot(max_lines);
 
   // Leave 1 column padding; reserve last column to avoid overflow.
-  std::int16_t x0 = 1;
+  std::int16_t x0 = rect.x;
   std::int16_t max_w =
       std::max<std::int16_t>(0, static_cast<std::int16_t>(rect.w - 2));
 
