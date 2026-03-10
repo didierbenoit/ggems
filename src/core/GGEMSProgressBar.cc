@@ -280,8 +280,8 @@ void GGEMSProgressBar::PrepareFrame() {
   frame_height_ =
       static_cast<std::int16_t>(header_rows_ + slot_rows + footer_rows_);
 
-  std::int16_t width = framebuffer_.Width();
-  std::int16_t height = framebuffer_.Height();
+  std::int16_t width = framebuffer_.GetWidth();
+  std::int16_t height = framebuffer_.GetHeight();
 
   center_x_ = std::max<std::int16_t>(
       static_cast<std::int16_t>((width - content_width_) / 2), 0);

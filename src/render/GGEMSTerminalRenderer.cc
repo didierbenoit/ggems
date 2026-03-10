@@ -1,5 +1,10 @@
+/// \cond
+#include <iostream>
+/// \endcond
+
 #include "GGEMS/render/GGEMSTerminalRenderer.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
+#include "GGEMS/render/GGEMSColourNames.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
 
 namespace ggems::render {
@@ -43,6 +48,30 @@ void GGEMSTerminalRenderer::Stop() noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+void GGEMSTerminalRenderer::Refresh() {
+  std::string out = framebuffer_.Render();
+  presenter_.Present(out);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSTerminalRenderer::RenderFinalMessage(std::u32string_view message) {
+
+  std::int16_t h = framebuffer_.GetHeight();
+  framebuffer_.DrawString(1, h - 1, message, render::YELLOW_Neon);
+
+  Refresh();
+
+  std::string dummy;
+  std::getline(std::cin, dummy);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 void GGEMSTerminalRenderer::RenderOnce() {
   if (!started_)
     Start();
@@ -50,8 +79,8 @@ void GGEMSTerminalRenderer::RenderOnce() {
   framebuffer_.UpdateSizeIfNeeded();
   framebuffer_.Clear(U' ', DEFAULT_FG);
 
-  auto w = framebuffer_.Width();
-  auto h = framebuffer_.Height();
+  std::int16_t w = framebuffer_.GetWidth();
+  std::int16_t h = framebuffer_.GetHeight();
 
   // Header (banner)
   // std::int16_t header_h = std::min<std::int16_t>(h, 8);
@@ -59,14 +88,13 @@ void GGEMSTerminalRenderer::RenderOnce() {
   banner_.Draw(framebuffer_);
 
   // Log Area
-  std::int16_t logs_y = static_cast<std::int16_t>(banner_.GetHeight() + 1);
+  std::int16_t logs_y = static_cast<std::int16_t>(banner_.GetBottom());
   std::int16_t logs_h =
       std::max<std::int16_t>(0, static_cast<std::int16_t>(h - logs_y));
   Rect logs_rect{1, logs_y, w, logs_h};
   DrawLogs(logs_rect);
 
-  std::string const out = framebuffer_.Render();
-  presenter_.Present(out);
+  Refresh();
 }
 
 /* --------------------------------------------- */

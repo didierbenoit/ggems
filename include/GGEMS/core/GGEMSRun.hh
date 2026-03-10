@@ -22,10 +22,6 @@ public:
   void Run();
 
 private:
-  //  void Banner() const noexcept;
-  //  void BannerAscii() const noexcept;
-
-private:
   std::vector<std::thread> workers_;
   std::atomic<bool> running_{false};
   GGEMSProgressBar progress_bar_;

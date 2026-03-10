@@ -12,12 +12,21 @@ namespace ggems::render {
 class GGEMSBanner;
 
 class GGEMSTerminalRenderer {
-public:
+private:
   struct Rect {
     std::int16_t x{};
     std::int16_t y{};
     std::int16_t w{};
     std::int16_t h{};
+  };
+
+  struct VisualSegment {
+    std::u32string text{};
+    render::ColourKey colour{render::DEFAULT_FG};
+  };
+
+  struct WrappedLine {
+    std::vector<VisualSegment> segments{};
   };
 
 public:
@@ -36,9 +45,11 @@ public:
   void Stop() noexcept;
 
   void RenderOnce();
+  void RenderFinalMessage(std::u32string_view message);
 
 private:
   void DrawLogs(Rect const &rect);
+  void Refresh();
 
 private:
   GGEMSBanner &banner_;

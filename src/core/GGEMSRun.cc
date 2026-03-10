@@ -15,73 +15,11 @@ namespace ggems::core {
 
 /* --------------------------------*/
 
-GGEMSRun::GGEMSRun() {
-  GGEMS_INFOEX("Core", 3, "GGEMSRun created.");
-  /*  Encoding encoding = GGEMSLogger::GetInstance().GetEncoding();
-    if (encoding == Encoding::Utf32) {
-      Banner();
-    } else {
-      BannerAscii();
-    }*/
-}
+GGEMSRun::GGEMSRun() { GGEMS_INFOEX("Core", 3, "GGEMSRun created."); }
 
 /* --------------------------------*/
 
 GGEMSRun::~GGEMSRun() { ; }
-
-/* --------------------------------*/
-
-/*void GGEMSRun::Banner() const noexcept {
-  constexpr std::string_view GGEMS_BANNER = R"(
-
-╔══════════════════════════════════════════════════╗
-║                                                  ║
-║   ██████╗  ██████╗ ███████╗███╗   ███╗███████╗   ║
-║  ██╔════╝ ██╔════╝ ██╔════╝████╗ ████║██╔════╝   ║
-║  ██║  ███╗██║  ███╗█████╗  ██╔████╔██║███████╗   ║
-║  ██║   ██║██║   ██║██╔══╝  ██║╚██╔╝██║╚════██║   ║
-║  ╚██████╔╝╚██████╔╝███████╗██║ ╚═╝ ██║███████║   ║
-║   ╚═════╝  ╚═════╝ ╚══════╝╚═╝     ╚═╝╚══════╝   ║
-║                                                  ║
-╟──────────────────────────────────────────────────╢
-║                                                  ║
-║    GPU Geant4-based Monte Carlo Simulations      ║
-║   Version 2.0 • GGEMS Team • https://ggems.fr    ║
-║     Authors: Julien Bert  &  Didier Benoit       ║
-║  Copyright © 2025  Licensed under GNU GPL v3.0   ║
-║                                                  ║
-╚══════════════════════════════════════════════════╝
-)";
-
-  GGEMS_INFO("Core", "{}", GGEMS_BANNER);
-}*/
-
-/* --------------------------------*/
-
-/*void GGEMSRun::BannerAscii() const noexcept {
-  constexpr std::string_view GGEMS_BANNER_ASCII = R"(
-
-+**************************************************+
-*                                                  *
-*   ######\  ######\ #######\###\   ###\#######\   *
-*  ##/----/ ##/----/ ##/----/####\ ####|##/----/   *
-*  ##|  ###\##|  ###\#####\  ##/####/##|#######\   *
-*  ##|   ##|##|   ##|##/--/  ##|\##//##|\----##|   *
-*  \######//\######//#######\##| \-/ ##|#######|   *
-*   \-----/  \-----/ \------/\-/     \-/\------/   *
-*                                                  *
-+--------------------------------------------------+
-*                                                  *
-*    GPU Geant4-based Monte Carlo Simulations      *
-*   Version 2.0 . GGEMS Team . https://ggems.fr    *
-*     Authors: Julien Bert  &  Didier Benoit       *
-* Copyright (C) 2025  Licensed under GNU GPL v3.0  *
-*                                                  *
-+**************************************************+
-)";
-
-  GGEMS_INFO("Core", "{}", GGEMS_BANNER_ASCII);
-}*/
 
 /* --------------------------------*/
 
@@ -99,7 +37,7 @@ void GGEMSRun::Run() {
   render::GGEMSTerminalRenderer renderer(banner, state);
   renderer.Start();
   renderer.RenderOnce();
-  std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+  renderer.RenderFinalMessage(U"Press Enter to exit...");
   renderer.Stop();
 
   /*  std::this_thread::sleep_for(std::chrono::milliseconds(1000));

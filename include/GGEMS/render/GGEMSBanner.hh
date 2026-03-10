@@ -19,16 +19,21 @@ public:
   void Draw(GGEMSTerminalFramebuffer &framebuffer);
   void EmitToLogger(core::GGEMSLogger &) { ; }
 
-  [[nodiscard]] constexpr std::int16_t GetWidth() const noexcept {
+  [[nodiscard]] inline constexpr std::int16_t GetWidth() const noexcept {
     return width_;
   };
 
-  [[nodiscard]] constexpr std::int16_t GetHeight() const noexcept {
+  [[nodiscard]] inline constexpr std::int16_t GetHeight() const noexcept {
     return height_;
   };
+
+  [[nodiscard]] inline constexpr std::int16_t GetBottom() const noexcept {
+    return bottom_;
+  }
 
 private:
   std::int16_t width_{54};
   std::int16_t height_{17};
+  std::int16_t bottom_{18};
 };
 } // namespace ggems::render
