@@ -2,6 +2,7 @@
 
 /// \cond
 #include <cstdint>
+#include <vector>
 /// \endcond
 
 #include "GGEMS/core/GGEMSOutputState.hh"
@@ -50,6 +51,12 @@ public:
 private:
   void DrawLogs(Rect const &rect);
   void Refresh();
+
+  [[nodiscard]] std::vector<WrappedLine>
+  WrapLogLine(core::RenderedLogLine const &line, std::int16_t max_width) const;
+
+  [[nodiscard]] static std::pair<std::u32string, std::u32string>
+  SplitChunk(std::u32string_view text, std::int16_t max_width);
 
 private:
   GGEMSBanner &banner_;

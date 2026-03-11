@@ -3,6 +3,7 @@
 /// \endcond
 
 #include "GGEMS/render/GGEMSTerminalRenderer.hh"
+#include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
 #include "GGEMS/render/GGEMSColourNames.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
@@ -83,8 +84,6 @@ void GGEMSTerminalRenderer::RenderOnce() {
   std::int16_t h = framebuffer_.GetHeight();
 
   // Header (banner)
-  // std::int16_t header_h = std::min<std::int16_t>(h, 8);
-  // Rect header{0, 0, w, header_h};
   banner_.Draw(framebuffer_);
 
   // Log Area
@@ -95,6 +94,49 @@ void GGEMSTerminalRenderer::RenderOnce() {
   DrawLogs(logs_rect);
 
   Refresh();
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+std::pair<std::u32string, std::u32string>
+GGEMSTerminalRenderer::SplitChunk(std::u32string_view text,
+                                  std::int16_t max_width) {
+  ;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+std::vector<GGEMSTerminalRenderer::WrappedLine>
+GGEMSTerminalRenderer::WrapLogLine(core::RenderedLogLine const &line,
+                                   std::int16_t max_width) const {
+  // Convert UTF-8 (std::string) -> UTF-32 and create logic segment
+  std::vector<VisualSegment> segments{
+      {utf::UTF8ToUTF32(line.prefix), line.color},
+      {U" "},
+      {utf::UTF8ToUTF32(line.msg)}};
+
+  std::vector<WrappedLine> wrap_lines{};
+  WrappedLine wrap_line{};
+  std::int16_t remaining_width = max_width;
+  for (std::size_t i = 0; i < segments.size(); ++i) {
+    if (static_cast<std::int16_t>(segments[i].text.size()) <= remaining_width) {
+      wrap_line.segments.push_back(segments[i]);
+      remaining_width -= segments[i].text.size();
+    } else { // New line
+      wrap_lines.push_back(wrap_line);
+      wrap_line.segments.clear();
+      remaining_width =
+          max_width - static_cast<std::int16_t>(segments[i].text.size());
+      wrap_line.segments.push_back(segments[i]);
+    }
+  }
+  wrap_lines.push_back(wrap_line);
+
+  return wrap_lines;
 }
 
 /* --------------------------------------------- */
@@ -113,30 +155,52 @@ void GGEMSTerminalRenderer::DrawLogs(Rect const &rect) {
   std::int16_t max_w =
       std::max<std::int16_t>(0, static_cast<std::int16_t>(rect.w - 2));
 
+  std::int16_t y = static_cast<std::int16_t>(rect.y);
+
   for (std::size_t i = 0; i < lines.size(); ++i) {
-    std::int16_t y =
-        static_cast<std::int16_t>(rect.y + static_cast<std::int16_t>(i));
-    if (y < 0)
-      continue;
-    if (y >= rect.y + rect.h)
-      break;
+    // std::int16_t y =
+    //     static_cast<std::int16_t>(rect.y + static_cast<std::int16_t>(i));
+    // if (y < 0)
+    //   continue;
+    // if (y >= rect.y + rect.h)
+    //   break;
 
-    // Convert UTF-8 (std::string) -> UTF-32 for framebuffer drawing.
-    std::u32string u32_prefix = utf::UTF8ToUTF32(lines[i].prefix);
-    std::u32string u32_msg = utf::UTF8ToUTF32(lines[i].msg);
+    auto wrap_log_lines = WrapLogLine(lines[i], max_w);
 
-    // Truncate to available width.
-    if (static_cast<std::int16_t>(u32_prefix.size()) > max_w) {
-      u32_prefix.resize(static_cast<std::size_t>(max_w));
+    for (std::size_t j = 0; j < wrap_log_lines.size(); ++j, ++y) {
+      std::int16_t written_size = 0;
+      for (std::size_t k = 0; k < wrap_log_lines[j].segments.size(); ++k) {
+        framebuffer_.DrawString(x0 + written_size, y,
+                                wrap_log_lines[j].segments[k].text,
+                                wrap_log_lines[j].segments[k].colour);
+        written_size += wrap_log_lines[j].segments[k].text.size();
+      }
     }
-
-    if (static_cast<std::int16_t>(u32_msg.size()) > max_w) {
-      u32_msg.resize(static_cast<std::size_t>(max_w));
-    }
-
-    std::int16_t prefix_size = static_cast<std::int16_t>(u32_prefix.size()) + 1;
-    framebuffer_.DrawString(x0, y, u32_prefix, lines[i].color);
-    framebuffer_.DrawString(x0 + prefix_size, y, u32_msg);
   }
+  /*  for (std::size_t i = 0; i < lines.size(); ++i) {
+      std::int16_t y =
+          static_cast<std::int16_t>(rect.y + static_cast<std::int16_t>(i));
+      if (y < 0)
+        continue;
+      if (y >= rect.y + rect.h)
+        break;
+
+      // Convert UTF-8 (std::string) -> UTF-32 for framebuffer drawing.
+      std::u32string u32_prefix = utf::UTF8ToUTF32(lines[i].prefix);
+      std::u32string u32_msg = utf::UTF8ToUTF32(lines[i].msg);
+
+      // Truncate to available width.
+      if (static_cast<std::int16_t>(u32_prefix.size()) > max_w) {
+        u32_prefix.resize(static_cast<std::size_t>(max_w));
+      }
+
+      if (static_cast<std::int16_t>(u32_msg.size()) > max_w) {
+        u32_msg.resize(static_cast<std::size_t>(max_w));
+      }
+
+      std::int16_t prefix_size = static_cast<std::int16_t>(u32_prefix.size()) +
+    1; framebuffer_.DrawString(x0, y, u32_prefix, lines[i].color);
+      framebuffer_.DrawString(x0 + prefix_size, y, u32_msg);
+    }*/
 }
 } // namespace ggems::render
