@@ -48,6 +48,10 @@ public:
   void RenderOnce();
   void RenderFinalMessage(std::u32string_view message);
 
+  void ScrollUp(std::int32_t lines = 1) noexcept;
+  void ScrollDown(std::int32_t lines = 1) noexcept;
+  void ResetFollowTail() noexcept;
+
 private:
   void DrawLogs(Rect const &rect);
   void Refresh();
@@ -65,5 +69,7 @@ private:
   GGEMSTerminalPresenter presenter_;
 
   bool started_{false};
+  std::int32_t scroll_offset_{0};
+  bool follow_tail_{true};
 };
 } // namespace ggems::render

@@ -59,6 +59,7 @@ void GGEMSTerminalRenderer::Refresh() {
 /* --------------------------------------------- */
 
 void GGEMSTerminalRenderer::RenderFinalMessage(std::u32string_view message) {
+  framebuffer_.UpdateSizeIfNeeded();
 
   std::int16_t h = framebuffer_.GetHeight();
   framebuffer_.DrawString(1, h - 1, message, render::YELLOW_Neon);
@@ -90,7 +91,7 @@ void GGEMSTerminalRenderer::RenderOnce() {
   std::int16_t logs_y = static_cast<std::int16_t>(banner_.GetBottom());
   std::int16_t logs_h =
       std::max<std::int16_t>(0, static_cast<std::int16_t>(h - logs_y));
-  Rect logs_rect{1, logs_y, w, logs_h};
+  Rect logs_rect{1, logs_y, static_cast<std::int16_t>(w - 2), logs_h};
   DrawLogs(logs_rect);
 
   Refresh();
@@ -100,10 +101,82 @@ void GGEMSTerminalRenderer::RenderOnce() {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+void GGEMSTerminalRenderer::ScrollUp(std::int32_t lines) noexcept {
+  if (lines <= 0) {
+    return;
+  }
+
+  follow_tail_ = false;
+  scroll_offset_ += lines;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSTerminalRenderer::ScrollDown(std::int32_t lines) noexcept {
+  if (lines <= 0) {
+    return;
+  }
+
+  scroll_offset_ -= lines;
+  if (scroll_offset_ <= 0) {
+    scroll_offset_ = 0;
+    follow_tail_ = true;
+  }
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSTerminalRenderer::ResetFollowTail() noexcept {
+  scroll_offset_ = 0;
+  follow_tail_ = true;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 std::pair<std::u32string, std::u32string>
 GGEMSTerminalRenderer::SplitChunk(std::u32string_view text,
                                   std::int16_t max_width) {
-  ;
+  if (max_width <= 0 || text.empty()) {
+    return {std::u32string{}, std::u32string{text}};
+  }
+
+  if (static_cast<std::int16_t>(text.size()) <= max_width) {
+    return {std::u32string{text}, std::u32string{}};
+  }
+
+  std::size_t limit = static_cast<std::size_t>(max_width);
+
+  // Search last space within the visible range
+  std::size_t split_pos = std::u32string_view::npos;
+  for (std::size_t i = 0; i < limit; ++i) {
+    if (text[i] == U' ') {
+      split_pos = i;
+    }
+  }
+
+  if (split_pos != std::u32string_view::npos) {
+    std::u32string head{text.substr(0, split_pos)};
+    std::size_t tail_start = split_pos + 1;
+
+    // Skip additional spaces at the beginning of the tail
+    while (tail_start < text.size() && text[tail_start] == U' ') {
+      ++tail_start;
+    }
+
+    std::u32string tail{text.substr(tail_start)};
+    return {std::move(head), std::move(tail)};
+  }
+
+  // Hard warp
+  std::u32string head{text.substr(0, limit)};
+  std::u32string tail{text.substr(limit)};
+  return {std::move(head), std::move(tail)};
 }
 
 /* --------------------------------------------- */
@@ -113,30 +186,62 @@ GGEMSTerminalRenderer::SplitChunk(std::u32string_view text,
 std::vector<GGEMSTerminalRenderer::WrappedLine>
 GGEMSTerminalRenderer::WrapLogLine(core::RenderedLogLine const &line,
                                    std::int16_t max_width) const {
-  // Convert UTF-8 (std::string) -> UTF-32 and create logic segment
+  std::vector<WrappedLine> wrapped_lines{};
+
+  if (max_width <= 0) {
+    return wrapped_lines;
+  }
+
   std::vector<VisualSegment> segments{
       {utf::UTF8ToUTF32(line.prefix), line.color},
-      {U" "},
-      {utf::UTF8ToUTF32(line.msg)}};
+      {U" ", DEFAULT_FG},
+      {utf::UTF8ToUTF32(line.msg), DEFAULT_FG}};
 
-  std::vector<WrappedLine> wrap_lines{};
-  WrappedLine wrap_line{};
-  std::int16_t remaining_width = max_width;
-  for (std::size_t i = 0; i < segments.size(); ++i) {
-    if (static_cast<std::int16_t>(segments[i].text.size()) <= remaining_width) {
-      wrap_line.segments.push_back(segments[i]);
-      remaining_width -= segments[i].text.size();
-    } else { // New line
-      wrap_lines.push_back(wrap_line);
-      wrap_line.segments.clear();
-      remaining_width =
-          max_width - static_cast<std::int16_t>(segments[i].text.size());
-      wrap_line.segments.push_back(segments[i]);
+  WrappedLine current_line{};
+  std::int16_t current_width = 0;
+
+  auto flush_current_line = [&]() {
+    if (!current_line.segments.empty()) {
+      wrapped_lines.push_back(std::move(current_line));
+      current_line = WrappedLine{};
+      current_width = 0;
+    }
+  };
+
+  for (auto const &segment : segments) {
+    std::u32string remaining = segment.text;
+
+    while (!remaining.empty()) {
+      std::int16_t available =
+          static_cast<std::int16_t>(max_width - current_width);
+
+      if (available <= 0) {
+        flush_current_line();
+        available = max_width;
+      }
+
+      if (static_cast<std::int16_t>(remaining.size()) <= available) {
+        current_line.segments.push_back({std::move(remaining), segment.colour});
+        current_width +=
+            static_cast<std::int16_t>(current_line.segments.back().text.size());
+        break;
+      }
+
+      auto [head, tail] = SplitChunk(remaining, available);
+
+      if (!head.empty()) {
+        current_line.segments.push_back({std::move(head), segment.colour});
+        current_width +=
+            static_cast<std::int16_t>(current_line.segments.back().text.size());
+      }
+
+      flush_current_line();
+      remaining = std::move(tail);
     }
   }
-  wrap_lines.push_back(wrap_line);
 
-  return wrap_lines;
+  flush_current_line();
+  return wrapped_lines;
 }
 
 /* --------------------------------------------- */
@@ -147,60 +252,54 @@ void GGEMSTerminalRenderer::DrawLogs(Rect const &rect) {
   if (rect.h <= 0 || rect.w <= 0)
     return;
 
-  std::size_t max_lines = static_cast<std::size_t>(rect.h);
-  auto lines = state_.GetLastLogLinesSnapshot(max_lines);
+  std::int16_t max_w = std::max<std::int16_t>(0, rect.w);
 
-  // Leave 1 column padding; reserve last column to avoid overflow.
-  std::int16_t x0 = rect.x;
-  std::int16_t max_w =
-      std::max<std::int16_t>(0, static_cast<std::int16_t>(rect.w - 2));
+  if (max_w <= 0) {
+    return;
+  }
 
-  std::int16_t y = static_cast<std::int16_t>(rect.y);
+  auto logical_lines = state_.GetLastLogLinesSnapshot(state_.GetLogCapacity());
 
-  for (std::size_t i = 0; i < lines.size(); ++i) {
-    // std::int16_t y =
-    //     static_cast<std::int16_t>(rect.y + static_cast<std::int16_t>(i));
-    // if (y < 0)
-    //   continue;
-    // if (y >= rect.y + rect.h)
-    //   break;
+  std::vector<WrappedLine> visual_lines{};
+  for (auto const &line : logical_lines) {
+    auto wrapped = WrapLogLine(line, max_w);
+    for (auto &wl : wrapped) {
+      visual_lines.push_back(std::move(wl));
+    }
+  }
 
-    auto wrap_log_lines = WrapLogLine(lines[i], max_w);
+  std::size_t max_visible = static_cast<std::size_t>(rect.h);
 
-    for (std::size_t j = 0; j < wrap_log_lines.size(); ++j, ++y) {
-      std::int16_t written_size = 0;
-      for (std::size_t k = 0; k < wrap_log_lines[j].segments.size(); ++k) {
-        framebuffer_.DrawString(x0 + written_size, y,
-                                wrap_log_lines[j].segments[k].text,
-                                wrap_log_lines[j].segments[k].colour);
-        written_size += wrap_log_lines[j].segments[k].text.size();
+  std::size_t tail_start = (visual_lines.size() > max_visible)
+                               ? (visual_lines.size() - max_visible)
+                               : 0;
+  std::size_t start = tail_start;
+
+  if (!follow_tail_) {
+    std::size_t offset = static_cast<std::size_t>(scroll_offset_);
+    start = (tail_start > offset) ? (tail_start - offset) : 0;
+  }
+
+  std::int32_t max_scroll = static_cast<std::int32_t>(tail_start);
+  if (scroll_offset_ > max_scroll) {
+    scroll_offset_ = max_scroll;
+  }
+
+  std::int16_t y = rect.y;
+
+  for (std::size_t i = start; i < visual_lines.size(); ++i, ++y) {
+    if (y >= rect.y + rect.h) {
+      break;
+    }
+
+    std::int16_t x = rect.x;
+
+    for (auto const &seg : visual_lines[i].segments) {
+      if (!seg.text.empty()) {
+        framebuffer_.DrawString(x, y, seg.text, seg.colour);
+        x += static_cast<std::int16_t>(seg.text.size());
       }
     }
   }
-  /*  for (std::size_t i = 0; i < lines.size(); ++i) {
-      std::int16_t y =
-          static_cast<std::int16_t>(rect.y + static_cast<std::int16_t>(i));
-      if (y < 0)
-        continue;
-      if (y >= rect.y + rect.h)
-        break;
-
-      // Convert UTF-8 (std::string) -> UTF-32 for framebuffer drawing.
-      std::u32string u32_prefix = utf::UTF8ToUTF32(lines[i].prefix);
-      std::u32string u32_msg = utf::UTF8ToUTF32(lines[i].msg);
-
-      // Truncate to available width.
-      if (static_cast<std::int16_t>(u32_prefix.size()) > max_w) {
-        u32_prefix.resize(static_cast<std::size_t>(max_w));
-      }
-
-      if (static_cast<std::int16_t>(u32_msg.size()) > max_w) {
-        u32_msg.resize(static_cast<std::size_t>(max_w));
-      }
-
-      std::int16_t prefix_size = static_cast<std::int16_t>(u32_prefix.size()) +
-    1; framebuffer_.DrawString(x0, y, u32_prefix, lines[i].color);
-      framebuffer_.DrawString(x0 + prefix_size, y, u32_msg);
-    }*/
 }
 } // namespace ggems::render
