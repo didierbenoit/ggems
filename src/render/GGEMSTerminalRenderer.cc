@@ -78,6 +78,8 @@ void GGEMSTerminalRenderer::RenderOnce() {
   if (!started_)
     Start();
 
+  HandleInput();
+
   framebuffer_.UpdateSizeIfNeeded();
   framebuffer_.Clear(U' ', DEFAULT_FG);
 
@@ -303,4 +305,45 @@ void GGEMSTerminalRenderer::DrawScrollableContent(Rect const &rect) {
     }
   }
 }
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSTerminalRenderer::HandleInput() noexcept {
+  auto key = presenter_.PollKey();
+
+  switch (key) {
+  case GGEMSTerminalPresenter::TerminalKey::Up:
+    ScrollUp(1);
+    break;
+
+  case GGEMSTerminalPresenter::TerminalKey::Down:
+    ScrollDown(1);
+    break;
+
+  case GGEMSTerminalPresenter::TerminalKey::PageUp: {
+    std::int16_t h = framebuffer_.GetHeight();
+    std::int32_t page_step = std::max<std::int32_t>(1, h - 3);
+    ScrollUp(page_step);
+    break;
+  }
+
+  case GGEMSTerminalPresenter::TerminalKey::PageDown: {
+    std::int16_t h = framebuffer_.GetHeight();
+    std::int32_t page_step = std::max<std::int32_t>(1, h - 3);
+    ScrollDown(page_step);
+    break;
+  }
+
+  case GGEMSTerminalPresenter::TerminalKey::Space:
+    ResetFollowTail();
+    break;
+
+  case GGEMSTerminalPresenter::TerminalKey::None:
+  default:
+    break;
+  }
+}
+
 } // namespace ggems::render

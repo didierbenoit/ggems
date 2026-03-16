@@ -8,6 +8,8 @@
 #include "GGEMS/render/GGEMSTerminalRenderer.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
 #include "GGEMS/core/GGEMSOutputMode.hh"
+#include <chrono>
+#include <thread>
 
 using namespace ggems::units;
 
@@ -36,7 +38,12 @@ void GGEMSRun::Run() {
   render::GGEMSBanner banner;
   render::GGEMSTerminalRenderer renderer(banner, state);
   renderer.Start();
-  renderer.RenderOnce();
+
+  for (std::int32_t i = 0; i < 500; ++i) {
+    renderer.RenderOnce();
+    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+  }
+
   renderer.RenderFinalMessage(U"Press Enter to exit...");
   renderer.Stop();
 
@@ -232,59 +239,59 @@ void GGEMSRun::Run() {
 
      progress_bar_.Stop();*/
 
-  /*  auto &opencl = ocl::GGEMSOpenCL::GetInstance();
-    auto &contexts = opencl.GetContext();
+  /* auto &opencl = ocl::GGEMSOpenCL::GetInstance();
+   auto &contexts = opencl.GetContext();
 
-    auto &context = contexts.front();
+   auto &context = contexts.front();
 
-    GGEMS_INFO("Core", "Starting SVM vec_add_svm test on...");
+   GGEMS_INFO("Core", "Starting SVM vec_add_svm test on...");
 
-    std::size_t const n = 16'777'216;
-    Bytes const bytes = Bytes{static_cast<std::uint64_t>(n) * 4ULL};
+   std::size_t const n = 16'777'216;
+   Bytes const bytes = Bytes{static_cast<std::uint64_t>(n) * 4ULL};
 
-    auto svmA = context.CreateSVMBuffer(bytes);
-    auto svmB = context.CreateSVMBuffer(bytes);
-    auto svmC = context.CreateSVMBuffer(bytes);
+   auto svmA = context.CreateSVMBuffer(bytes);
+   auto svmB = context.CreateSVMBuffer(bytes);
+   auto svmC = context.CreateSVMBuffer(bytes);
 
-    auto *A = static_cast<float *>(svmA.GetData());
-    auto *B = static_cast<float *>(svmB.GetData());
-    auto *C = static_cast<float *>(svmC.GetData());
+   auto *A = static_cast<float *>(svmA.GetData());
+   auto *B = static_cast<float *>(svmB.GetData());
+   auto *C = static_cast<float *>(svmC.GetData());
 
-    svmA.Map();
-    svmB.Map();
-    svmC.Map();
+   svmA.Map();
+   svmB.Map();
+   svmC.Map();
 
-    for (std::size_t i = 0; i < n; ++i) {
-      A[i] = static_cast<float>(i);
-      B[i] = static_cast<float>(2 * i);
-      C[i] = 0.0f;
-    }
+   for (std::size_t i = 0; i < n; ++i) {
+     A[i] = static_cast<float>(i);
+     B[i] = static_cast<float>(2 * i);
+     C[i] = 0.0f;
+   }
 
-    svmA.Unmap();
-    svmB.Unmap();
-    svmC.Unmap();
+   svmA.Unmap();
+   svmB.Unmap();
+   svmC.Unmap();
 
-    std::filesystem::path kernel_root = "ggems/kernels";
-    std::string kernel_name = "vec_add_svm";
+   std::filesystem::path kernel_root = "ggems/kernels";
+   std::string kernel_name = "vec_add_svm";
 
-    auto &prog = opencl.GetOrCreateProgram(context, kernel_root, kernel_name,
-    ""); cl::Kernel raw_kernel = prog.CreateKernel(kernel_name);
-    ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel), kernel_name};
+   auto &prog = opencl.GetOrCreateProgram(context, kernel_root, kernel_name,
+   ""); cl::Kernel raw_kernel = prog.CreateKernel(kernel_name);
+   ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel), kernel_name};
 
-    kernel.SetArgSVMPointer(0, A);
-    kernel.SetArgSVMPointer(1, B);
-    kernel.SetArgSVMPointer(2, C);
+   kernel.SetArgSVMPointer(0, A);
+   kernel.SetArgSVMPointer(1, B);
+   kernel.SetArgSVMPointer(2, C);
 
-    kernel.SetArg(3, static_cast<unsigned int>(n));
+   kernel.SetArg(3, static_cast<unsigned int>(n));
 
-    std::array<std::size_t, 1> global{n};
-    std::array<std::size_t, 1> local{256};
+   std::array<std::size_t, 1> global{n};
+   std::array<std::size_t, 1> local{256};
 
-    // kernel.Run(global, local);
+   kernel.Run(global, local);
 
-    // kernel.ProfiledEnqueue(global, local, 3 * bytes);
-    // kernel.ProfileWorkGroups(n, 3 * bytes);
-
+   kernel.ProfiledEnqueue(global, local, 3 * bytes);
+   kernel.ProfileWorkGroups(n, 3 * bytes);*/
+  /*
     ocl::GGEMSOpenCLProfiler::Options opts{
         {256,       512,        1024,       2048,       4096,
          8192,      16384,      32768,      65536,      131072,
@@ -308,8 +315,8 @@ void GGEMSRun::Run() {
 
     Time tover = kernel.ProfileDriverOverhead();
     GGEMS_DEBUG("OpenCL", "Driver overhead {}", HumanReadable(tover));
-  */
-  /*  std::string fname = kernel.GetFunctionName();
+
+    std::string fname = kernel.GetFunctionName();
     cl_uint nargs = kernel.GetNumArgs();
     cl_uint refcount = kernel.GetReferenceCount();
     std::string attributes = kernel.GetAttributes();
@@ -345,6 +352,9 @@ void GGEMSRun::Run() {
       GGEMS_DEBUG("OpenCL", "  arg address qualifier {}: {}", a, argacc);
     }*/
 
-  GGEMS_INFO("Core", "GGEMS run completed.");
+  // GGEMS_INFO("Core", "GGEMS run completed.");
+  // renderer.RenderOnce();
+  // renderer.RenderFinalMessage(U"Press Enter to exit...");
+  // renderer.Stop();
 }
 } // namespace ggems::core

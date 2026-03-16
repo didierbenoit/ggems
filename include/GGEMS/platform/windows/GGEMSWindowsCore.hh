@@ -58,6 +58,7 @@
 #include <windows.h>
 #include <winternl.h>
 #include <Psapi.h>
+#include <conio.h>
 /// \endcond
 
 /*!

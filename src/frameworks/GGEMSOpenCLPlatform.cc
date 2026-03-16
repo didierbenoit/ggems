@@ -151,7 +151,7 @@ void GGEMSOpenCLPlatform::PrintIdentity() const {
 /* --------------------------------*/
 
 void GGEMSOpenCLPlatform::PrintExtension() const {
-  PrintInfo<CL_PLATFORM_EXTENSIONS_WITH_VERSION>(platform_);
+  PrintInfo<CL_PLATFORM_EXTENSIONS>(platform_);
 }
 
 /* --------------------------------*/

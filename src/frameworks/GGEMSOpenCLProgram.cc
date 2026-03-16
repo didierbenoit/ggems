@@ -131,8 +131,6 @@ GGEMSOpenCLProgram::GGEMSOpenCLProgram(GGEMSOpenCLContext &ctx,
 std::vector<std::string> GGEMSOpenCLProgram::BuildOptions() const {
   std::vector<std::string> opts;
 
-  opts.emplace_back("-cl-std=CL3.0");
-
 #ifdef GGEMS_DEBUG_MODE
   opts.emplace_back("-g");
   opts.emplace_back("-cl-opt-disable");

@@ -128,4 +128,43 @@ void GGEMSTerminalPresenter::Present(std::string_view frame_utf8) noexcept {
   WriteRaw(frame_utf8);
   std::fflush(stdout);
 }
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+GGEMSTerminalPresenter::TerminalKey GGEMSTerminalPresenter::PollKey() noexcept {
+#ifdef _WIN32
+  if (!_kbhit()) {
+    return TerminalKey::None;
+  }
+
+  int ch = _getch();
+
+  if (ch == ' ') {
+    return TerminalKey::Space;
+  }
+
+  // Arrow / Page keys
+  if (ch == 0 || ch == 224) {
+    int ext = _getch();
+    switch (ext) {
+    case 72:
+      return TerminalKey::Up; // Arrow Up
+    case 80:
+      return TerminalKey::Down; // Arrow Down
+    case 73:
+      return TerminalKey::PageUp; // Page Up
+    case 81:
+      return TerminalKey::PageDown; // Page Down
+    default:
+      return TerminalKey::None;
+    }
+  }
+
+  return TerminalKey::None;
+#else
+  return TerminalKey::None;
+#endif
+}
 } // namespace ggems::render

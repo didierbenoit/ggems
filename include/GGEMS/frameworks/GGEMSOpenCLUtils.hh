@@ -614,8 +614,13 @@ template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
  */
 template <cl_uint Info, typename Object> void PrintInfo(Object const &obj) {
   using Traits = InfoTraits<Info>;
-  auto value = GetInfo<Info>(obj);
-  GGEMS_INFO("OpenCL", "{}: {}", Traits::name, Traits::ToString(value));
+
+  try {
+    auto value = GetInfo<Info>(obj);
+    GGEMS_INFO("OpenCL", "{}: {}", Traits::name, Traits::ToString(value));
+  } catch (...) {
+    GGEMS_INFO("OpenCL", "{}: N/A", Traits::name);
+  }
 }
 
 /*!

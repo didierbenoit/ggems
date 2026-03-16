@@ -55,6 +55,8 @@ public:
   void ScrollDown(std::int32_t lines = 1) noexcept;
   void ResetFollowTail() noexcept;
 
+  void HandleInput() noexcept;
+
 private:
   void DrawScrollableContent(Rect const &rect);
   void Refresh();
