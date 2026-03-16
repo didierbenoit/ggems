@@ -6,10 +6,22 @@
 /// \endcond
 
 #include "GGEMS/core/GGEMSOutputState.hh"
+#include "GGEMS/render/GGEMSColour.hh"
+#include "GGEMS/render/GGEMSColourNames.hh"
 #include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
 #include "GGEMS/render/GGEMSTerminalPresenter.hh"
 
 namespace ggems::render {
+
+struct VisualSegment {
+  std::u32string text{};
+  render::ColourKey colour{render::DEFAULT_FG};
+};
+
+struct WrappedLine {
+  std::vector<VisualSegment> segments{};
+};
+
 class GGEMSBanner;
 
 class GGEMSTerminalRenderer {
@@ -19,15 +31,6 @@ private:
     std::int16_t y{};
     std::int16_t w{};
     std::int16_t h{};
-  };
-
-  struct VisualSegment {
-    std::u32string text{};
-    render::ColourKey colour{render::DEFAULT_FG};
-  };
-
-  struct WrappedLine {
-    std::vector<VisualSegment> segments{};
   };
 
 public:
@@ -53,7 +56,7 @@ public:
   void ResetFollowTail() noexcept;
 
 private:
-  void DrawLogs(Rect const &rect);
+  void DrawScrollableContent(Rect const &rect);
   void Refresh();
 
   [[nodiscard]] std::vector<WrappedLine>

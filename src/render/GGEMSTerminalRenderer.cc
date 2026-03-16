@@ -84,15 +84,9 @@ void GGEMSTerminalRenderer::RenderOnce() {
   std::int16_t w = framebuffer_.GetWidth();
   std::int16_t h = framebuffer_.GetHeight();
 
-  // Header (banner)
-  banner_.Draw(framebuffer_);
-
-  // Log Area
-  std::int16_t logs_y = static_cast<std::int16_t>(banner_.GetBottom());
-  std::int16_t logs_h =
-      std::max<std::int16_t>(0, static_cast<std::int16_t>(h - logs_y));
-  Rect logs_rect{1, logs_y, static_cast<std::int16_t>(w - 2), logs_h};
-  DrawLogs(logs_rect);
+  Rect content_rect{1, 1, static_cast<std::int16_t>(w - 2),
+                    static_cast<std::int16_t>(h - 2)};
+  DrawScrollableContent(content_rect);
 
   Refresh();
 }
@@ -183,7 +177,7 @@ GGEMSTerminalRenderer::SplitChunk(std::u32string_view text,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-std::vector<GGEMSTerminalRenderer::WrappedLine>
+std::vector<WrappedLine>
 GGEMSTerminalRenderer::WrapLogLine(core::RenderedLogLine const &line,
                                    std::int16_t max_width) const {
   std::vector<WrappedLine> wrapped_lines{};
@@ -248,7 +242,7 @@ GGEMSTerminalRenderer::WrapLogLine(core::RenderedLogLine const &line,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSTerminalRenderer::DrawLogs(Rect const &rect) {
+void GGEMSTerminalRenderer::DrawScrollableContent(Rect const &rect) {
   if (rect.h <= 0 || rect.w <= 0)
     return;
 
@@ -258,9 +252,16 @@ void GGEMSTerminalRenderer::DrawLogs(Rect const &rect) {
     return;
   }
 
-  auto logical_lines = state_.GetLastLogLinesSnapshot(state_.GetLogCapacity());
-
   std::vector<WrappedLine> visual_lines{};
+
+  // Banner
+  auto banner_lines = banner_.BuildLines(max_w);
+  for (auto &line : banner_lines) {
+    visual_lines.push_back(std::move(line));
+  }
+
+  // Wrapped log lines
+  auto logical_lines = state_.GetLastLogLinesSnapshot(state_.GetLogCapacity());
   for (auto const &line : logical_lines) {
     auto wrapped = WrapLogLine(line, max_w);
     for (auto &wl : wrapped) {

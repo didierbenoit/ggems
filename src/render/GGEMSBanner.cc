@@ -7,13 +7,26 @@ namespace ggems::render {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSBanner::Draw(GGEMSTerminalFramebuffer &framebuffer) {
+std::vector<WrappedLine> GGEMSBanner::BuildLines(std::int16_t max_width) const {
+  std::vector<WrappedLine> lines{};
+  if (max_width <= 0) {
+    return lines;
+  }
+
   auto const &g = utf::Glyphs();
 
-  framebuffer.DrawRectBorder(1, 1, width_, height_, render::GREEN_Mint);
+  auto clip = [max_width](std::u32string s) {
+    if (static_cast<std::int16_t>(s.size()) > max_width) {
+      s.resize(static_cast<std::size_t>(max_width));
+    }
+    return s;
+  };
 
-  framebuffer.DrawHLine(2, 10, static_cast<std::int16_t>(width_ - 2),
-                        g.separator, render::GREEN_Mint);
+  auto push_line = [&](std::u32string text, render::ColourKey colour) {
+    WrappedLine line{};
+    line.segments.push_back({clip(std::move(text)), colour});
+    lines.push_back(std::move(line));
+  };
 
   // Logo superior part
   std::u32string block = std::u32string(1, g.block_filled);
@@ -23,6 +36,25 @@ void GGEMSBanner::Draw(GGEMSTerminalFramebuffer &framebuffer) {
   std::u32string border_4 = std::u32string(1, g.border_bottom_left);
   std::u32string h_line = std::u32string(1, g.horizontal_line);
   std::u32string v_line = std::u32string(1, g.vertical_line);
+
+  std::u32string hline_border_top =
+      border_3 +
+      std::u32string(static_cast<std::size_t>(width_ - 2), g.horizontal_line) +
+      border_1;
+
+  std::u32string hline_border_bottom =
+      border_4 +
+      std::u32string(static_cast<std::size_t>(width_ - 2), g.horizontal_line) +
+      border_2;
+
+  std::u32string empty_line =
+      v_line + std::u32string(static_cast<std::size_t>(width_ - 2), U' ') +
+      v_line;
+
+  std::u32string separator_line =
+      std::u32string(1, g.border_right) +
+      std::u32string(static_cast<std::size_t>(width_ - 2), g.separator) +
+      std::u32string(1, g.border_left);
 
   std::u32string logo_line1 =
       block + block + block + block + block + block + border_1;
@@ -86,13 +118,6 @@ void GGEMSBanner::Draw(GGEMSTerminalFramebuffer &framebuffer) {
   logo_line6 +=
       border_4 + h_line + h_line + h_line + h_line + h_line + h_line + border_2;
 
-  framebuffer.DrawString(6, 3, logo_line1, render::GREEN_Mint);
-  framebuffer.DrawString(5, 4, logo_line2, render::GREEN_Mint);
-  framebuffer.DrawString(5, 5, logo_line3, render::GREEN_Mint);
-  framebuffer.DrawString(5, 6, logo_line4, render::GREEN_Mint);
-  framebuffer.DrawString(5, 7, logo_line5, render::GREEN_Mint);
-  framebuffer.DrawString(6, 8, logo_line6, render::GREEN_Mint);
-
   // Text inferior part
   std::u32string text_line1 = U"GPU Geant4-based Monte Carlo Simulations";
 
@@ -103,9 +128,37 @@ void GGEMSBanner::Draw(GGEMSTerminalFramebuffer &framebuffer) {
   std::u32string text_line3 = U"Authors: Julien Bert & Didier Benoit";
   std::u32string text_line4 = U"Copyright (C) 2026 Licensed under GNU GPL v3.0";
 
-  framebuffer.DrawString(7, 12, text_line1, render::GREEN_Mint);
-  framebuffer.DrawString(6, 13, text_line2, render::GREEN_Mint);
-  framebuffer.DrawString(8, 14, text_line3, render::GREEN_Mint);
-  framebuffer.DrawString(5, 15, text_line4, render::GREEN_Mint);
+  push_line(hline_border_top, render::GREEN_Mint);
+  push_line(empty_line, render::GREEN_Mint);
+
+  push_line(v_line + U"    " + logo_line1 + U"    " + v_line,
+            render::GREEN_Mint);
+  push_line(v_line + U"   " + logo_line2 + U"    " + v_line,
+            render::GREEN_Mint);
+  push_line(v_line + U"   " + logo_line3 + U"    " + v_line,
+            render::GREEN_Mint);
+  push_line(v_line + U"   " + logo_line4 + U"    " + v_line,
+            render::GREEN_Mint);
+  push_line(v_line + U"   " + logo_line5 + U"    " + v_line,
+            render::GREEN_Mint);
+  push_line(v_line + U"    " + logo_line6 + U"    " + v_line,
+            render::GREEN_Mint);
+
+  push_line(empty_line, render::GREEN_Mint);
+  push_line(separator_line, render::GREEN_Mint);
+  push_line(empty_line, render::GREEN_Mint);
+
+  push_line(v_line + U"      " + text_line1 + U"      " + v_line,
+            render::GREEN_Mint);
+  push_line(v_line + U"    " + text_line2 + U"     " + v_line,
+            render::GREEN_Mint);
+  push_line(v_line + U"       " + text_line3 + U"         " + v_line,
+            render::GREEN_Mint);
+  push_line(v_line + U"   " + text_line4 + U"   " + v_line, render::GREEN_Mint);
+
+  push_line(empty_line, render::GREEN_Mint);
+  push_line(hline_border_bottom, render::GREEN_Mint);
+
+  return lines;
 }
 } // namespace ggems::render

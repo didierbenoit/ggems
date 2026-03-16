@@ -16,8 +16,10 @@ public:
   GGEMSBanner &operator=(GGEMSBanner &&) = delete;
 
 public:
-  void Draw(GGEMSTerminalFramebuffer &framebuffer);
   void EmitToLogger(core::GGEMSLogger &) { ; }
+
+  [[nodiscard]] std::vector<WrappedLine>
+  BuildLines(std::int16_t max_width) const;
 
   [[nodiscard]] inline constexpr std::int16_t GetWidth() const noexcept {
     return width_;
