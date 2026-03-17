@@ -1,24 +1,7 @@
 #pragma once
 
-/*
- * This file is part of GGEMS.
- *
- * GGEMS is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * GGEMS is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along
- * with GGEMS.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 /// \cond
-#include <deque>
+#include <vector>
 /// \endcond
 
 #include "GGEMS/render/GGEMSColourNames.hh"
@@ -26,7 +9,7 @@
 #include "GGEMS/utf/GGEMSGlyphs.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 
-namespace ggems::core {
+namespace ggems::render {
 
 class GGEMSProgressBar {
 public:
@@ -41,7 +24,7 @@ public:
       Aionino
     };
 
-    enum class Status : std::uint8_t { Pending, Running, Finished };
+    enum class Status : std::uint8_t { Pending = 0, Running, Finished, Failed };
 
     static char32_t ParticleSymbol(ParticleType p) {
       switch (p) {
@@ -111,6 +94,8 @@ public:
         return render::GREEN_Neon;
       case Status::Finished:
         return render::BLUE_Azure;
+      case Status::Failed:
+        return render::RED_Cherry;
       }
       return render::DEFAULT_FG;
     }
@@ -123,21 +108,23 @@ public:
         return U"running";
       case Status::Finished:
         return U"finished";
+      case Status::Failed:
+        return U"failed";
       }
       return U"undefined";
     }
 
-    std::string name_;
-    std::string kernel_name_;
-    Status status_;
+    std::string name_{""};
+    std::string kernel_name_{""};
+    Status status_{Status::Pending};
     ParticleType particle_type_{ParticleType::Gamma};
     bool is_gpu_{false};
-    std::array<cl_uchar, CL_LUID_SIZE_KHR> luid_;
+    std::array<cl_uchar, CL_LUID_SIZE_KHR> luid_{};
 
-    std::atomic<std::uint64_t> batches_done_{0};
-    std::atomic<std::uint64_t> batches_total_{0};
-    std::atomic<std::uint64_t> eta_ps_{0ULL};
-    std::atomic<long double> bandwidth_byte_per_ps_{0.0};
+    std::uint64_t batches_done_{0ULL};
+    std::uint64_t batches_total_{0ULL};
+    std::uint64_t eta_ps_{0ULL};
+    long double bandwidth_byte_per_ps_{0.0};
 
     Slot &SetKernelName(std::string_view kernel) noexcept;
     Slot &SetStatus(Status status) noexcept;
@@ -151,7 +138,7 @@ public:
 
 public:
   GGEMSProgressBar() = default;
-  ~GGEMSProgressBar();
+  ~GGEMSProgressBar() = default;
 
   GGEMSProgressBar(GGEMSProgressBar const &) = delete;
   GGEMSProgressBar(GGEMSProgressBar &&) = delete;
@@ -161,62 +148,57 @@ public:
 public:
   Slot &AddSlot(std::string_view name, bool is_gpu,
                 std::array<cl_uchar, CL_LUID_SIZE_KHR> luid);
+
   Slot &GetSlot(std::size_t index) noexcept;
+  Slot const &GetSlot(std::size_t index) const noexcept;
 
-  void Start();
-  void Stop();
+  [[nodiscard]] std::size_t GetSlotCount() const noexcept;
 
-  void SetFrameRate(std::chrono::milliseconds min_frame_time,
-                    std::chrono::milliseconds max_frame_time) noexcept;
+  void Clear() noexcept;
+
+  [[nodiscard]] std::int16_t GetHeight() const noexcept;
+
+  void Draw(GGEMSTerminalFramebuffer &framebuffer, std::int16_t x,
+            std::int16_t y, std::int16_t width) const;
 
 private:
-  void RenderLoop(std::stop_token st);
-  void PrepareFrame();
-  void FlushFrame();
-
-  void Draw();
-  void DrawHeader();
-  void DrawSlots();
-  void DrawSingleSlot(std::size_t index, std::int16_t base_y);
-  void DrawSystemStats();
-
   [[nodiscard]] static std::vector<char32_t> BuildBar(float progress);
+
   [[nodiscard]] static std::vector<char32_t>
   BuildPulse(Slot::ParticleType particle_type);
 
   [[nodiscard]] static render::ColourKey
   GetColourStatus(std::uint8_t percent) noexcept;
+
   [[nodiscard]] static std::u32string FormatPercentage(float progress);
   [[nodiscard]] static std::string FormatETA(std::uint64_t ps);
   [[nodiscard]] static std::string FormatMemory(std::uint64_t bytes);
   [[nodiscard]] static std::string FormatBandwidth(long double bytes_per_ps);
 
-  [[nodiscard]] std::chrono::milliseconds ComputeFrameTime() const noexcept;
+  void DrawSingleSlot(GGEMSTerminalFramebuffer &framebuffer, Slot const &slot,
+                      std::int16_t x, std::int16_t y, std::int16_t width) const;
 
-  void DisableTerminal();
-  void EnableTerminal();
+  void DrawSystemStats(GGEMSTerminalFramebuffer &framebuffer, std::int16_t x,
+                       std::int16_t y, std::int16_t width) const;
 
 private:
-  // --- Concurrence / thread
-  std::jthread worker_;
-  std::atomic<bool> running_{false};
-
-  // --- One slot each OpenCL context
-  std::deque<Slot> slots_;
+  std::vector<Slot> slots_;
 
   // --- Layout
-  std::int16_t content_width_{90};
-  std::int16_t frame_height_{0};
-  std::int16_t rows_per_slot_{6};
-  std::int16_t header_rows_{4};
-  std::int16_t footer_rows_{2};
-  std::int16_t center_x_{0};
-  std::int16_t center_y_{0};
+  // std::int16_t content_width_{90};
+  // std::int16_t frame_height_{0};
+  // std::int16_t rows_per_slot_{6};
+  // std::int16_t header_rows_{4};
+  // std::int16_t footer_rows_{2};
+  std::int16_t footer_rows_{1};
+  std::int16_t slot_rows_{6};
+  // std::int16_t center_x_{0};
+  // std::int16_t center_y_{0};
 
-  render::GGEMSTerminalFramebuffer framebuffer_;
-  std::atomic<std::uint64_t> frame_counter_{0U};
+  // render::GGEMSTerminalFramebuffer framebuffer_;
+  // std::atomic<std::uint64_t> frame_counter_{0U};
 
-  std::chrono::milliseconds min_frame_time_{1000};
-  std::chrono::milliseconds max_frame_time_{300000};
+  // std::chrono::milliseconds min_frame_time_{1000};
+  // std::chrono::milliseconds max_frame_time_{300000};
 };
-} // namespace ggems::core
+} // namespace ggems::render

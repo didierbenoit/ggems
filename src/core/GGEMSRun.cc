@@ -7,6 +7,7 @@
 
 #include "GGEMS/render/GGEMSTerminalRenderer.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
+#include "GGEMS/render/GGEMSProgressBar.hh"
 #include "GGEMS/core/GGEMSOutputMode.hh"
 #include <chrono>
 #include <thread>

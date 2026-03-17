@@ -1,16 +1,15 @@
 /// \cond
 #include <algorithm>
 #include <cstdint>
-#include <iostream>
 #include <cmath>
 /// \endcond
 
-#include "GGEMS/core/GGEMSProgressBar.hh"
+#include "GGEMS/render/GGEMSProgressBar.hh"
 #include "GGEMS/core/GGEMSSystemUtils.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
 #include "GGEMS/core/units/GGEMSUnits.hh"
 
-namespace ggems::core {
+namespace ggems::render {
 GGEMSProgressBar::Slot &
 GGEMSProgressBar::AddSlot(std::string_view name, bool is_gpu,
                           std::array<cl_uchar, CL_LUID_SIZE_KHR> luid) {
@@ -29,7 +28,7 @@ GGEMSProgressBar::AddSlot(std::string_view name, bool is_gpu,
 
 GGEMSProgressBar::Slot &
 GGEMSProgressBar::Slot::SetBatchesDone(std::uint64_t done) noexcept {
-  batches_done_.store(done, std::memory_order_relaxed);
+  batches_done_ = done;
   return *this;
 }
 
@@ -39,7 +38,7 @@ GGEMSProgressBar::Slot::SetBatchesDone(std::uint64_t done) noexcept {
 
 GGEMSProgressBar::Slot &
 GGEMSProgressBar::Slot::SetBatchesTotal(std::uint64_t total) noexcept {
-  batches_total_.store(total, std::memory_order_relaxed);
+  batches_total_ = total;
   return *this;
 }
 
@@ -78,7 +77,7 @@ GGEMSProgressBar::Slot &GGEMSProgressBar::Slot::SetIsGPU(bool is_gpu) noexcept {
 
 GGEMSProgressBar::Slot &
 GGEMSProgressBar::Slot::SetETAPicoseconds(std::uint64_t eta_ps) noexcept {
-  eta_ps_.store(eta_ps, std::memory_order_relaxed);
+  eta_ps_ = eta_ps;
   return *this;
 }
 
@@ -88,8 +87,7 @@ GGEMSProgressBar::Slot::SetETAPicoseconds(std::uint64_t eta_ps) noexcept {
 
 GGEMSProgressBar::Slot &GGEMSProgressBar::Slot::SetBandwidthBytesPerPicosecond(
     long double bandwidth_byte_per_ps) noexcept {
-  bandwidth_byte_per_ps_.store(bandwidth_byte_per_ps,
-                               std::memory_order_relaxed);
+  bandwidth_byte_per_ps_ = bandwidth_byte_per_ps;
   return *this;
 }
 
@@ -109,12 +107,6 @@ GGEMSProgressBar::Slot::SetStatus(Status status) noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-GGEMSProgressBar::~GGEMSProgressBar() { Stop(); }
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
 GGEMSProgressBar::Slot &GGEMSProgressBar::GetSlot(std::size_t index) noexcept {
   return slots_[index];
 }
@@ -123,186 +115,98 @@ GGEMSProgressBar::Slot &GGEMSProgressBar::GetSlot(std::size_t index) noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSProgressBar::Start() {
-  bool expected = false;
-  if (!running_.compare_exchange_strong(expected, true,
-                                        std::memory_order_acq_rel)) {
-    return;
-  }
-
-  if (worker_.joinable()) {
-    worker_.request_stop();
-    worker_.join();
-  }
-
-  worker_ = std::jthread{[this](std::stop_token st) { RenderLoop(st); }};
-  DisableTerminal();
+GGEMSProgressBar::Slot const &
+GGEMSProgressBar::GetSlot(std::size_t index) const noexcept {
+  return slots_[index];
 }
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSProgressBar::Stop() {
-  using namespace std::chrono_literals;
-  bool expected = true;
-  if (!running_.compare_exchange_strong(expected, false,
-                                        std::memory_order_acq_rel)) {
-    return;
-  }
-
-  if (worker_.joinable()) {
-    worker_.request_stop();
-    worker_.join();
-  }
-
-  std::this_thread::sleep_for(1000ms);
-  EnableTerminal();
+std::size_t GGEMSProgressBar::GetSlotCount() const noexcept {
+  return slots_.size();
 }
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSProgressBar::SetFrameRate(
-    std::chrono::milliseconds min_frame_time,
-    std::chrono::milliseconds max_frame_time) noexcept {
-  if (min_frame_time <= std::chrono::milliseconds{0}) {
-    min_frame_time = std::chrono::milliseconds{50};
-  }
-  if (max_frame_time < min_frame_time) {
-    max_frame_time = min_frame_time;
-  }
-
-  min_frame_time_ = min_frame_time;
-  max_frame_time_ = max_frame_time;
-}
+void GGEMSProgressBar::Clear() noexcept { slots_.clear(); }
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSProgressBar::DisableTerminal() {
-  std::cout << "\033[?1049h";   // Alternative screen
-  std::cout << "\033[2J\033[H"; // Clean screen and cursor to [0;0] position
-  std::cout << "\033[?12l";     // Deactivate blinking cursor
-  std::cout << "\033[H";
-  std::cout << "\033[?25l"; // Deactivate cursor
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-void GGEMSProgressBar::EnableTerminal() {
-  std::cout << "\033[?1049l"; // Go back to terminal
-  std::cout << "\033[?12h";   // Activate blinking cursor
-  std::cout << "\033[?25h";   // Visible cursor
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-void GGEMSProgressBar::RenderLoop(std::stop_token st) {
-  using namespace std::chrono_literals;
-
-  bool const &use_color = GGEMSLogger::GetInstance().UseColour();
-  framebuffer_.SetUseColour(use_color);
-
-  std::this_thread::sleep_for(10ms);
-
-  while (!st.stop_requested() && running_.load(std::memory_order_acquire)) {
-    Draw();
-    ++frame_counter_;
-
-    auto dynamic_frame_time = ComputeFrameTime();
-    std::this_thread::sleep_for(dynamic_frame_time);
-  }
-
-  Draw();
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-void GGEMSProgressBar::Draw() {
+std::int16_t GGEMSProgressBar::GetHeight() const noexcept {
   if (slots_.empty()) {
+    return footer_rows_;
+  }
+  return static_cast<std::int16_t>(
+      static_cast<std::int16_t>(slots_.size()) * slot_rows_ + footer_rows_);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSProgressBar::Draw(GGEMSTerminalFramebuffer &framebuffer,
+                            std::int16_t x, std::int16_t y,
+                            std::int16_t width) const {
+  if (width <= 0) {
     return;
   }
 
-  PrepareFrame();
-  framebuffer_.Clear(U' ', render::DEFAULT_FG);
-
-  DrawHeader();
-  DrawSlots();
-  DrawSystemStats();
-
-  FlushFrame();
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-void GGEMSProgressBar::DrawHeader() {
-  auto const &g = utf::Glyphs();
-  auto &fb = framebuffer_;
-
-  // Line 0
-  fb.DrawRectBorder(center_x_, center_y_, content_width_, frame_height_,
-                    render::DEFAULT_FG);
-
-  // Line 1:
-  std::u32string title_bar{g.title_bar};
-  std::u32string title = title_bar + U" GGEMS - Particle Monitor " + title_bar;
-  std::int16_t title_x = static_cast<std::int16_t>(
-      (content_width_ - static_cast<std::int16_t>(title.size())) / 2);
-
-  fb.DrawString(center_x_ + title_x, center_y_ + 1, title);
-  fb.DrawChar(center_x_, center_y_ + 2, g.border_right);
-  fb.DrawChar(static_cast<std::int16_t>(center_x_ + content_width_ - 1),
-              static_cast<std::int16_t>(center_y_ + 2), g.border_left);
-  fb.DrawHLine(center_x_ + 1, center_y_ + 2, content_width_ - 2, g.separator);
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-void GGEMSProgressBar::PrepareFrame() {
-  std::int16_t slot_rows =
-      rows_per_slot_ * static_cast<std::int16_t>(slots_.size());
-
-  framebuffer_.UpdateSizeIfNeeded();
-
-  frame_height_ =
-      static_cast<std::int16_t>(header_rows_ + slot_rows + footer_rows_);
-
-  std::int16_t width = framebuffer_.GetWidth();
-  std::int16_t height = framebuffer_.GetHeight();
-
-  center_x_ = std::max<std::int16_t>(
-      static_cast<std::int16_t>((width - content_width_) / 2), 0);
-  center_y_ = std::max<std::int16_t>(
-      static_cast<std::int16_t>((height - frame_height_) / 2), 0);
-
-  framebuffer_.Resize(width, height);
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-void GGEMSProgressBar::DrawSlots() {
-  std::int16_t base_y = 4;
-
-  for (std::size_t i = 0; i < slots_.size(); ++i) {
-    DrawSingleSlot(i, base_y);
-    base_y = static_cast<std::int16_t>(base_y + rows_per_slot_);
+  std::int16_t row = y;
+  for (auto const &slot : slots_) {
+    DrawSingleSlot(framebuffer, slot, x, row, width);
+    row = static_cast<std::int16_t>(row + slot_rows_);
   }
+
+  DrawSystemStats(framebuffer, x, row, width);
 }
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSProgressBar::DrawSystemStats(GGEMSTerminalFramebuffer &framebuffer,
+                                       std::int16_t x, std::int16_t y,
+                                       std::int16_t width) const {
+  if (width <= 0) {
+    return;
+  }
+
+  core::SystemUsage system_usage = core::GetSystemUsage();
+
+  // CPU global
+  std::uint8_t cpu_percent = system_usage.cpu_percent;
+  std::u32string cpu_percent_text =
+      utf::UTF8ToUTF32(std::format("{:3}%", cpu_percent));
+
+  framebuffer.DrawString(x, y, U"CPU:");
+  framebuffer.DrawString(x + 5, y, cpu_percent_text,
+                         GetColourStatus(cpu_percent));
+
+  // RAM global
+  std::uint8_t ram_percent = system_usage.ram.percent;
+  std::u32string ram_percent_text =
+      utf::UTF8ToUTF32(std::format("{:3}%", ram_percent));
+
+  framebuffer.DrawString(x + 10, y, U"| RAM:");
+  framebuffer.DrawString(x + 17, y, ram_percent_text,
+                         GetColourStatus(ram_percent));
+
+  std::uint64_t ram_total = system_usage.ram.total;
+  std::uint64_t ram_used = system_usage.ram.used;
+  std::u32string ram_text = utf::UTF8ToUTF32(
+      std::format("({}/{})", FormatMemory(ram_used), FormatMemory(ram_total)));
+  framebuffer.DrawString(x + 22, y, ram_text);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 void GGEMSProgressBar::DrawSingleSlot(std::size_t index, std::int16_t base_y) {
   auto const &g = utf::Glyphs();
@@ -464,52 +368,8 @@ void GGEMSProgressBar::DrawSingleSlot(std::size_t index, std::int16_t base_y) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSProgressBar::DrawSystemStats() {
-  auto &fb = framebuffer_;
-  std::int16_t base_y = static_cast<std::int16_t>(
-      header_rows_ + static_cast<std::int16_t>(slots_.size()) * rows_per_slot_);
-
-  SystemUsage system_usage = GetSystemUsage();
-
-  // CPU global
-  fb.DrawString(center_x_ + 2, base_y + center_y_, U"CPU:");
-  std::uint8_t cpu_percent = system_usage.cpu_percent;
-  std::string cpu_percent_text = std::format("{:3}%", cpu_percent);
-  fb.DrawString(center_x_ + 7, base_y + center_y_,
-                utf::UTF8ToUTF32(cpu_percent_text),
-                GetColourStatus(cpu_percent));
-
-  // RAM global
-  fb.DrawString(center_x_ + 12, base_y + center_y_, U"| RAM:");
-  std::uint8_t ram_percent = system_usage.ram.percent;
-  std::string ram_percent_text = std::format("{:3}%", ram_percent);
-  fb.DrawString(center_x_ + 19, base_y + center_y_,
-                utf::UTF8ToUTF32(ram_percent_text),
-                GetColourStatus(ram_percent));
-
-  std::uint64_t ram_total = system_usage.ram.total;
-  std::uint64_t ram_used = system_usage.ram.used;
-  std::string ram_txt =
-      std::format("({}/{})", FormatMemory(ram_used), FormatMemory(ram_total));
-  fb.DrawString(center_x_ + 24, base_y + center_y_, utf::UTF8ToUTF32(ram_txt));
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-void GGEMSProgressBar::FlushFrame() {
-  using namespace std::chrono_literals;
-  std::string out = framebuffer_.Render();
-  std::cout << "\033[H" << out << std::flush;
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-std::chrono::milliseconds GGEMSProgressBar::ComputeFrameTime() const noexcept {
-  using namespace std::chrono_literals;
+/*std::chrono::milliseconds GGEMSProgressBar::ComputeFrameTime() const noexcept
+{ using namespace std::chrono_literals;
 
   if (slots_.empty())
     return min_frame_time_;
@@ -542,7 +402,7 @@ std::chrono::milliseconds GGEMSProgressBar::ComputeFrameTime() const noexcept {
   }
 
   return max_frame_time_;
-}
+}*/
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
@@ -589,9 +449,6 @@ GGEMSProgressBar::BuildPulse(Slot::ParticleType particle_type) {
 
   std::vector<char32_t> out(13, empty);
 
-  out[0] = empty;
-  out[1] = empty;
-  out[2] = empty;
   out[3] = halo_small;
   out[4] = halo_large;
 
@@ -603,10 +460,6 @@ GGEMSProgressBar::BuildPulse(Slot::ParticleType particle_type) {
   out[8] = halo_large;
   out[9] = halo_small;
 
-  out[10] = empty;
-  out[11] = empty;
-  out[12] = empty;
-
   return out;
 }
 
@@ -616,11 +469,11 @@ GGEMSProgressBar::BuildPulse(Slot::ParticleType particle_type) {
 
 render::ColourKey
 GGEMSProgressBar::GetColourStatus(std::uint8_t percent) noexcept {
-  if (percent < 33) {
+  if (percent < 33U) {
     return render::GREEN_Neon;
-  } else if (percent < 64) {
+  } else if (percent < 64U) {
     return render::YELLOW_Neon;
-  } else if (percent < 95) {
+  } else if (percent < 95U) {
     return render::RED_Cherry;
   }
   return render::RED_Dark;
@@ -671,4 +524,4 @@ std::string GGEMSProgressBar::FormatBandwidth(long double bytes_per_ps) {
 
   return HumanReadable(units::Bandwidth{bytes_per_ps}, 1, 5);
 }
-} // namespace ggems::core
+} // namespace ggems::render
