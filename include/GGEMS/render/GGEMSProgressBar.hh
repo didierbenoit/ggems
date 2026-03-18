@@ -26,7 +26,7 @@ public:
 
     enum class Status : std::uint8_t { Pending = 0, Running, Finished, Failed };
 
-    static char32_t ParticleSymbol(ParticleType p) {
+    static constexpr char32_t ParticleSymbol(ParticleType p) {
       switch (p) {
       case ParticleType::Gamma:
         return utf::Glyphs().gamma;
@@ -46,24 +46,24 @@ public:
       return U'?';
     }
 
-    static render::ColourKey ParticleColour(ParticleType p) {
+    static constexpr ColourKey ParticleColour(ParticleType p) {
       switch (p) {
       case ParticleType::Gamma:
-        return render::YELLOW_Gold_B;
+        return YELLOW_Gold_B;
       case ParticleType::Proton:
-        return render::RED_Crimson_B;
+        return RED_Crimson_B;
       case ParticleType::Electron:
-        return render::BLUE_Dodger_B;
+        return BLUE_Dodger_B;
       case ParticleType::Positron:
-        return render::MAGENTA_Fuchsia_B;
+        return MAGENTA_Fuchsia_B;
       case ParticleType::Neutron:
-        return render::CYAN_Frost_B;
+        return CYAN_Frost_B;
       case ParticleType::Alpha:
-        return render::CYAN_Marine_B;
+        return CYAN_Marine_B;
       case ParticleType::Aionino:
-        return render::BLUE_Ice_B;
+        return BLUE_Ice_B;
       }
-      return render::DEFAULT_FG;
+      return DEFAULT_FG;
     }
 
     static constexpr std::u32string ParticleName(ParticleType p) {
@@ -86,21 +86,21 @@ public:
       return U"unknown";
     }
 
-    static render::ColourKey StatusColour(Status status) {
+    static constexpr ColourKey StatusColour(Status status) {
       switch (status) {
       case Status::Pending:
-        return render::CYAN_Frost;
+        return CYAN_Frost;
       case Status::Running:
-        return render::GREEN_Neon;
+        return GREEN_Neon;
       case Status::Finished:
-        return render::BLUE_Azure;
+        return BLUE_Azure;
       case Status::Failed:
-        return render::RED_Cherry;
+        return RED_Cherry;
       }
-      return render::DEFAULT_FG;
+      return DEFAULT_FG;
     }
 
-    static std::u32string StatusName(Status status) {
+    static constexpr std::u32string StatusName(Status status) {
       switch (status) {
       case Status::Pending:
         return U"pending";
@@ -114,26 +114,26 @@ public:
       return U"undefined";
     }
 
-    std::string name_{""};
-    std::string kernel_name_{""};
-    Status status_{Status::Pending};
-    ParticleType particle_type_{ParticleType::Gamma};
-    bool is_gpu_{false};
-    std::array<cl_uchar, CL_LUID_SIZE_KHR> luid_{};
+    std::string name{""};
+    std::string kernel_name{""};
+    Status status{Status::Pending};
+    ParticleType particle_type{ParticleType::Gamma};
+    bool is_gpu{false};
+    std::array<cl_uchar, CL_LUID_SIZE_KHR> luid{};
 
-    std::uint64_t batches_done_{0ULL};
-    std::uint64_t batches_total_{0ULL};
-    std::uint64_t eta_ps_{0ULL};
-    long double bandwidth_byte_per_ps_{0.0};
+    std::uint64_t batches_done{0ULL};
+    std::uint64_t batches_total{0ULL};
+    std::uint64_t eta_ps{0ULL};
+    long double bandwidth_byte_per_ps{0.0};
 
     Slot &SetKernelName(std::string_view kernel) noexcept;
-    Slot &SetStatus(Status status) noexcept;
+    Slot &SetStatus(Status st) noexcept;
     Slot &SetParticleType(ParticleType p) noexcept;
     Slot &SetBatchesDone(std::uint64_t done) noexcept;
     Slot &SetBatchesTotal(std::uint64_t total) noexcept;
-    Slot &SetBandwidthBytesPerPicosecond(long double value) noexcept;
-    Slot &SetETAPicoseconds(std::uint64_t eta_ps) noexcept;
-    Slot &SetIsGPU(bool is_gpu) noexcept;
+    Slot &SetBandwidthBytesPerPicosecond(long double bandwidth) noexcept;
+    Slot &SetETAPicoseconds(std::uint64_t eta) noexcept;
+    Slot &SetIsGPU(bool gpu) noexcept;
   };
 
 public:
@@ -163,9 +163,6 @@ public:
 
 private:
   [[nodiscard]] static std::vector<char32_t> BuildBar(float progress);
-
-  [[nodiscard]] static std::vector<char32_t>
-  BuildPulse(Slot::ParticleType particle_type);
 
   [[nodiscard]] static render::ColourKey
   GetColourStatus(std::uint8_t percent) noexcept;

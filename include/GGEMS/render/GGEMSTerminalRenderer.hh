@@ -10,6 +10,7 @@
 #include "GGEMS/render/GGEMSColourNames.hh"
 #include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
 #include "GGEMS/render/GGEMSTerminalPresenter.hh"
+#include "GGEMS/render/GGEMSProgressBar.hh"
 
 namespace ggems::render {
 
@@ -35,6 +36,7 @@ private:
 
 public:
   explicit GGEMSTerminalRenderer(GGEMSBanner &banner,
+                                 GGEMSProgressBar &progress_bar,
                                  core::GGEMSOutputState &state);
 
   GGEMSTerminalRenderer(GGEMSTerminalRenderer const &) = delete;
@@ -69,6 +71,7 @@ private:
 
 private:
   GGEMSBanner &banner_;
+  GGEMSProgressBar &progress_bar_;
   core::GGEMSOutputState &state_;
   GGEMSTerminalFramebuffer framebuffer_{};
   GGEMSTerminalPresenter presenter_;

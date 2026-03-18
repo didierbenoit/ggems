@@ -14,8 +14,9 @@ namespace ggems::render {
 /* --------------------------------------------- */
 
 GGEMSTerminalRenderer::GGEMSTerminalRenderer(GGEMSBanner &banner,
+                                             GGEMSProgressBar &progress_bar,
                                              core::GGEMSOutputState &state)
-    : banner_(banner), state_(state) {}
+    : banner_(banner), progress_bar_(progress_bar), state_(state) {}
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
@@ -62,7 +63,7 @@ void GGEMSTerminalRenderer::RenderFinalMessage(std::u32string_view message) {
   framebuffer_.UpdateSizeIfNeeded();
 
   std::int16_t h = framebuffer_.GetHeight();
-  framebuffer_.DrawString(1, h - 1, message, render::YELLOW_Neon);
+  framebuffer_.DrawString(1, h - 1, message, YELLOW_Neon);
 
   Refresh();
 
@@ -86,9 +87,23 @@ void GGEMSTerminalRenderer::RenderOnce() {
   std::int16_t w = framebuffer_.GetWidth();
   std::int16_t h = framebuffer_.GetHeight();
 
-  Rect content_rect{1, 1, static_cast<std::int16_t>(w - 2),
-                    static_cast<std::int16_t>(h - 2)};
+  std::int16_t final_message_rows = 1;
+  std::int16_t progress_rows = progress_bar_.GetHeight();
+
+  std::int16_t content_x = 1;
+  std::int16_t content_y = 1;
+  std::int16_t content_w = static_cast<std::int16_t>(w - 2);
+  std::int16_t content_h =
+      static_cast<std::int16_t>(h - 1 - progress_rows - final_message_rows - 1);
+
+  Rect content_rect{content_x, content_y, content_w, content_h};
   DrawScrollableContent(content_rect);
+
+  std::int16_t progress_y =
+      static_cast<std::int16_t>(h - final_message_rows - progress_rows);
+  if (progress_y >= 0) {
+    progress_bar_.Draw(framebuffer_, 1, progress_y, w - 2);
+  }
 
   Refresh();
 }

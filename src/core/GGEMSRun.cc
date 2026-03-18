@@ -4,13 +4,10 @@
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 
 #include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
-
 #include "GGEMS/render/GGEMSTerminalRenderer.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
 #include "GGEMS/render/GGEMSProgressBar.hh"
 #include "GGEMS/core/GGEMSOutputMode.hh"
-#include <chrono>
-#include <thread>
 
 using namespace ggems::units;
 
@@ -37,92 +34,97 @@ void GGEMSRun::Run() {
   GGEMS_INFO("Core", "GGEMS starting...");
   auto &state = core::EnsureOutputState();
   render::GGEMSBanner banner;
-  render::GGEMSTerminalRenderer renderer(banner, state);
+  render::GGEMSProgressBar progress_bar;
+  render::GGEMSTerminalRenderer renderer(banner, progress_bar, state);
   renderer.Start();
 
-  for (std::int32_t i = 0; i < 500; ++i) {
+  // for (std::int32_t i = 0; i < 250; ++i) {
+  //   renderer.RenderOnce();
+  //   std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  // }
+
+  auto &opencl = ocl::GGEMSOpenCL::GetInstance();
+  auto &contexts = opencl.GetContext();
+
+  // Filling slots
+  for (auto &ctx : contexts) {
+    auto &dev = ctx.GetDevice();
+    auto const device_name = dev.GetName();
+    auto const device_type = dev.GetType();
+    auto const device_luid = dev.GetLUIDKhr();
+    progress_bar
+        .AddSlot(device_name,
+                 (device_type == CL_DEVICE_TYPE_GPU) ? true : false,
+                 device_luid)
+        .SetKernelName("vec_add")
+        .SetBatchesDone(0ULL)
+        .SetBatchesTotal(100ULL)
+        .SetStatus(render::GGEMSProgressBar::Slot::Status::Pending)
+        .SetParticleType(render::GGEMSProgressBar::Slot::ParticleType::Gamma)
+        .SetETAPicoseconds(0ULL)
+        .SetBandwidthBytesPerPicosecond(0.0);
+
     renderer.RenderOnce();
-    std::this_thread::sleep_for(std::chrono::milliseconds(30));
   }
 
+  workers_.clear();
+  workers_.reserve(contexts.size());
+
+  for (std::size_t i = 0; i < contexts.size(); ++i) {
+    // auto &ctx = contexts[i];
+    auto &slot = progress_bar.GetSlot(i);
+    workers_.emplace_back([&slot, &renderer]() {
+      uint64_t p = 0ULL;
+      auto start = std::chrono::high_resolution_clock::now();
+
+      uint64_t nbatch = 100ULL;
+      while (p < nbatch) {
+        ++p;
+
+        auto now = std::chrono::high_resolution_clock::now();
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        int64_t elapsed_ps =
+            std::chrono::duration_cast<std::chrono::nanoseconds>(now - start)
+                .count() *
+            1000;
+
+        long double ratio =
+            static_cast<long double>(p) / static_cast<long double>(nbatch);
+        if (ratio > 0.0) {
+          long double estimated_total_ps =
+              static_cast<long double>(elapsed_ps) / ratio;
+          long double remaining_ps =
+              estimated_total_ps - static_cast<long double>(elapsed_ps);
+          slot.SetETAPicoseconds((remaining_ps > 0.0)
+                                     ? static_cast<uint64_t>(remaining_ps)
+                                     : 0ULL);
+        } else {
+          slot.SetETAPicoseconds(0ULL);
+        }
+
+        slot.SetStatus(render::GGEMSProgressBar::Slot::Status::Running)
+            .SetBatchesDone(p)
+            .SetBandwidthBytesPerPicosecond(5.0 * static_cast<double>(p));
+        renderer.RenderOnce();
+      }
+      slot.SetStatus(render::GGEMSProgressBar::Slot::Status::Finished);
+      renderer.RenderOnce();
+    });
+  }
+
+  for (auto &t : workers_) {
+    if (t.joinable()) {
+      t.join();
+    }
+  }
+  workers_.clear();
+
+  GGEMS_INFO("Core", "GGEMS run completed.");
+  renderer.RenderOnce();
   renderer.RenderFinalMessage(U"Press Enter to exit...");
   renderer.Stop();
 
-  /*  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    auto &opencl = ocl::GGEMSOpenCL::GetInstance();
-    auto &contexts = opencl.GetContext();
-
-    // Filling slots
-    for (auto &ctx : contexts) {
-      auto &dev = ctx.GetDevice();
-      auto const device_name = dev.GetName();
-      auto const device_type = dev.GetType();
-      auto const device_luid = dev.GetLUIDKhr();
-      progress_bar_
-          .AddSlot(device_name,
-                   (device_type == CL_DEVICE_TYPE_GPU) ? true : false,
-                   device_luid)
-          .SetKernelName("vec_add")
-          .SetBatchesDone(0ULL)
-          .SetBatchesTotal(100ULL)
-          .SetStatus(GGEMSProgressBar::Slot::Status::Pending)
-          .SetParticleType(GGEMSProgressBar::Slot::ParticleType::Gamma)
-          .SetETAPicoseconds(0ULL)
-          .SetBandwidthBytesPerPicosecond(0.0);
-    }
-
-    workers_.clear();
-    workers_.reserve(contexts.size());
-    progress_bar_.Start();
-    for (std::size_t i = 0; i < contexts.size(); ++i) {
-      // auto &ctx = contexts[i];
-      auto &slot = progress_bar_.GetSlot(i);
-      workers_.emplace_back([&slot]() {
-        uint64_t p = 0ULL;
-        auto start = std::chrono::high_resolution_clock::now();
-
-        uint64_t nbatch = 100ULL;
-        while (p < nbatch) {
-          ++p;
-
-          auto now = std::chrono::high_resolution_clock::now();
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-          int64_t elapsed_ps =
-              std::chrono::duration_cast<std::chrono::nanoseconds>(now - start)
-                  .count() *
-              1000;
-
-          long double ratio =
-              static_cast<long double>(p) / static_cast<long double>(nbatch);
-          if (ratio > 0.0) {
-            long double estimated_total_ps =
-                static_cast<long double>(elapsed_ps) / ratio;
-            long double remaining_ps =
-                estimated_total_ps - static_cast<long double>(elapsed_ps);
-            slot.SetETAPicoseconds((remaining_ps > 0.0)
-                                       ? static_cast<uint64_t>(remaining_ps)
-                                       : 0ULL);
-          } else {
-            slot.SetETAPicoseconds(0ULL);
-          }
-
-          slot.SetStatus(GGEMSProgressBar::Slot::Status::Running)
-              .SetBatchesDone(p)
-              .SetBandwidthBytesPerPicosecond(5.0 * static_cast<double>(p));
-        }
-        slot.SetStatus(GGEMSProgressBar::Slot::Status::Finished);
-      });
-    }
-
-    for (auto &t : workers_) {
-      if (t.joinable()) {
-        t.join();
-      }
-    }
-    workers_.clear();
-    progress_bar_.Stop();
-  */
   /*   auto &opencl = ocl::GGEMSOpenCL::GetInstance();
      auto &contexts = opencl.GetContext();
 
@@ -352,10 +354,5 @@ void GGEMSRun::Run() {
       GGEMS_DEBUG("OpenCL", "  arg address qualifier {}: {}", a, argtype);
       GGEMS_DEBUG("OpenCL", "  arg address qualifier {}: {}", a, argacc);
     }*/
-
-  // GGEMS_INFO("Core", "GGEMS run completed.");
-  // renderer.RenderOnce();
-  // renderer.RenderFinalMessage(U"Press Enter to exit...");
-  // renderer.Stop();
 }
 } // namespace ggems::core
