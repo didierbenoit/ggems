@@ -67,6 +67,10 @@ void GGEMSTerminalRenderer::RenderFinalMessage(std::u32string_view message) {
 
   Refresh();
 
+#ifndef _WIN32
+  presenter_.EnablePosixCanonicalInput();
+#endif
+
   std::string dummy;
   std::getline(std::cin, dummy);
 }

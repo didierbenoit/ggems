@@ -2,14 +2,10 @@
 #include "GGEMS/utf/GGEMSGlyphs.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
 
-#if defined(_WIN32)
+#ifdef _WIN32
 #include "GGEMS/platform/windows/GGEMSWindowsCore.hh"
-#endif
-
-#if defined(__linux__) || defined(__unix__)
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <termios.h>
+#else
+#include "GGEMS/platform/posix/GGEMSPosixCore.hh"
 #endif
 
 namespace ggems::render {

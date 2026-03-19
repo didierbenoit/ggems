@@ -15,11 +15,11 @@ static void WriteRaw(std::string_view s) noexcept {
   std::fwrite(s.data(), 1, s.size(), stdout);
 }
 
+#ifdef _WIN32
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-#ifdef _WIN32
 bool GGEMSTerminalPresenter::EnableVTUtf8WinConsole() {
   bool ok{true};
 
@@ -65,6 +65,94 @@ bool GGEMSTerminalPresenter::RestoreWinConsole() {
   ok &= (SetConsoleCP(original_cp_) != 0);
   return ok;
 }
+#else
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+bool GGEMSTerminalPresenter::EnablePosixTerminal() {
+  if (posix_terminal_enabled_) {
+    return true;
+  }
+
+  if (::isatty(STDIN_FILENO) == 0) {
+    return false;
+  }
+
+  if (::tcgetattr(STDIN_FILENO, &original_termios_) != 0) {
+    return false;
+  }
+
+  if (!EnablePosixRawInput()) {
+    return false;
+  }
+
+  posix_terminal_enabled_ = true;
+  return true;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+bool GGEMSTerminalPresenter::EnablePosixRawInput() {
+  if (::isatty(STDIN_FILENO) == 0) {
+    return false;
+  }
+
+  termios raw = original_termios_;
+
+  raw.c_lflag &= static_cast<tcflag_t>(~(ICANON | ECHO));
+  raw.c_iflag &= static_cast<tcflag_t>(~(IXON | ICRNL));
+  raw.c_cc[VMIN] = 0;
+  raw.c_cc[VTIME] = 0;
+
+  if (::tcsetattr(STDIN_FILENO, TCSANOW, &raw) != 0) {
+    return false;
+  }
+
+  ::tcflush(STDIN_FILENO, TCIFLUSH);
+  return true;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+bool GGEMSTerminalPresenter::EnablePosixCanonicalInput() {
+  if (::isatty(STDIN_FILENO) == 0) {
+    return false;
+  }
+
+  termios cooked = original_termios_;
+
+  cooked.c_lflag |= static_cast<tcflag_t>(ICANON | ECHO);
+  cooked.c_iflag |= static_cast<tcflag_t>(ICRNL);
+  cooked.c_cc[VMIN] = 1;
+  cooked.c_cc[VTIME] = 0;
+
+  if (::tcsetattr(STDIN_FILENO, TCSANOW, &cooked) != 0) {
+    return false;
+  }
+
+  ::tcflush(STDIN_FILENO, TCIFLUSH);
+  return true;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+bool GGEMSTerminalPresenter::RestorePosixTerminal() {
+  if (!posix_terminal_enabled_) {
+    return true;
+  }
+
+  bool ok = (::tcsetattr(STDIN_FILENO, TCSANOW, &original_termios_) == 0);
+
+  posix_terminal_enabled_ = false;
+  return ok;
+}
 #endif
 
 /* --------------------------------------------- */
@@ -81,6 +169,9 @@ void GGEMSTerminalPresenter::Begin(bool use_alt_buffer) noexcept {
   GGEMS_CHECK(EnableVTUtf8WinConsole(),
               "Impossible to activate Virtual Terminal and UTF-8 Windows "
               "console mode.");
+#else
+  GGEMS_CHECK(EnablePosixTerminal(),
+              "Impossible to activate POSIX terminal raw mode.");
 #endif
 
   if (use_alt_buffer_) {
@@ -111,6 +202,9 @@ void GGEMSTerminalPresenter::End() noexcept {
 #ifdef _WIN32
   GGEMS_CHECK(RestoreWinConsole(),
               "Impossible to restore Windows console mode.");
+#else
+  GGEMS_CHECK(RestorePosixTerminal(),
+              "Impossible to restore POSIX terminal mode.");
 #endif
 
   started_ = false;
@@ -164,6 +258,39 @@ GGEMSTerminalPresenter::TerminalKey GGEMSTerminalPresenter::PollKey() noexcept {
 
   return TerminalKey::None;
 #else
+  unsigned char seq[4] = {};
+  ssize_t count = ::read(STDIN_FILENO, seq, sizeof(seq));
+
+  if (count <= 0) {
+    return TerminalKey::None;
+  }
+
+  if (count == 1) {
+    if (seq[0] == ' ') {
+      return TerminalKey::Space;
+    }
+    return TerminalKey::None;
+  }
+
+  if (seq[0] == 0x1B && seq[1] == '[') {
+    switch (seq[2]) {
+    case 'A':
+      return TerminalKey::Up;
+    case 'B':
+      return TerminalKey::Down;
+    case '5':
+      if (count >= 4 && seq[3] == '~') {
+        return TerminalKey::PageUp;
+      }
+    case '6':
+      if (count >= 4 && seq[3] == '~') {
+        return TerminalKey::PageDown;
+      }
+    default:
+      break;
+    }
+  }
+
   return TerminalKey::None;
 #endif
 }

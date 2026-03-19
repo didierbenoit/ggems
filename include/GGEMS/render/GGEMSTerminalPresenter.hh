@@ -2,10 +2,13 @@
 
 /// \cond
 #include <string_view>
+#include <cstdint>
 /// \endcond
 
 #ifdef _WIN32
 #include "GGEMS/platform/windows/GGEMSWindowsCore.hh"
+#else
+#include "GGEMS/platform/posix/GGEMSPosixCore.hh"
 #endif
 
 namespace ggems::render {
@@ -35,10 +38,18 @@ public:
   void Present(std::string_view frame_utf8) noexcept;
   [[nodiscard]] TerminalKey PollKey() noexcept;
 
+#ifndef _WIN32
+  bool EnablePosixRawInput();
+  bool EnablePosixCanonicalInput();
+#endif
+
 private:
 #ifdef _WIN32
   bool EnableVTUtf8WinConsole();
   bool RestoreWinConsole();
+#else
+  bool EnablePosixTerminal();
+  bool RestorePosixTerminal();
 #endif
 
 private:
@@ -48,6 +59,10 @@ private:
   DWORD original_mode_;
   UINT original_cp_out_;
   UINT original_cp_;
+#else
+  termios original_termios_{};
+  std::int32_t original_stdin_flags_{0};
+  bool posix_terminal_enabled_{false};
 #endif
 };
 } // namespace ggems::render
