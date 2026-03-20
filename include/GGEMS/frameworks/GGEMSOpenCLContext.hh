@@ -96,13 +96,31 @@ struct SVMSupport {
   }
 };
 
+/*!
+ * \struct VRAMUsage
+ * \brief Tracks per-context OpenCL SVM memory usage monitored by GGEMS.
+ *
+ * This structure stores the total device memory reported by OpenCL together
+ * with the amount currently allocated through GGEMS SVM buffers, the
+ * remaining available memory, the historical allocation peak, and the number
+ * of active SVM allocations associated with the context.
+ */
 struct VRAMUsage {
-  units::Bytes total{0_B};
-  units::Bytes allocated{0_B};
-  units::Bytes available{0_B};
-  units::Bytes peak{0_B};
-  std::size_t allocation_count{0};
+  units::Bytes total{
+      0_B}; /*!< Total OpenCL global memory reported for the device. */
+  units::Bytes allocated{
+      0_B}; /*!< Current amount of SVM memory allocated by GGEMS. */
+  units::Bytes available{
+      0_B}; /*!< Remaining OpenCL memory available to GGEMS. */
+  units::Bytes peak{
+      0_B}; /*!< Highest SVM allocation watermark reached so far. */
+  std::size_t allocation_count{
+      0}; /*!< Number of currently active SVM allocations. */
 
+  /*!
+   * \brief Returns the percentage of OpenCL memory currently allocated.
+   * \return Allocation ratio expressed as an integer percentage in [0, 100].
+   */
   [[nodiscard]] std::uint8_t GetPercent() const noexcept {
     if (total.value == 0LL) {
       return 0U;
@@ -198,27 +216,80 @@ public:
     return svm_support_;
   }
 
+  /*!
+   * \brief Registers a new SVM allocation performed through this context.
+   *
+   * The current allocation amount, remaining available memory, historical
+   * peak, and active allocation counter are updated accordingly.
+   *
+   * \param size Size of the newly allocated SVM buffer.
+   */
   void RegisterSVMAllocation(units::Bytes size) noexcept;
+
+  /*!
+   * \brief Registers the release of an SVM allocation owned by this context.
+   *
+   * The current allocation amount, remaining available memory, and active
+   * allocation counter are updated accordingly.
+   *
+   * \param size Size of the SVM buffer being released.
+   */
   void RegisterSVMRelease(units::Bytes size) noexcept;
 
+  /*!
+   * \brief Returns aggregated VRAM/SVM usage statistics for this context.
+   * \return Constant reference to the current VRAM usage structure.
+   */
   [[nodiscard]] VRAMUsage const &GetVRAMUsage() const noexcept {
     return vram_usage_;
   }
 
+  /*!
+   * \brief Returns the total OpenCL global memory visible to this context.
+   * \return Total device memory expressed in bytes.
+   */
   [[nodiscard]] units::Bytes GetTotalVRAM() const noexcept {
     return vram_usage_.total;
   }
 
+  /*!
+   * \brief Returns the amount of SVM memory currently allocated by GGEMS.
+   * \return Current allocated SVM memory in bytes.
+   */
   [[nodiscard]] units::Bytes GetAllocatedVRAM() const noexcept {
     return vram_usage_.allocated;
   }
 
+  /*!
+   * \brief Returns the remaining OpenCL memory currently available to GGEMS.
+   * \return Remaining available memory in bytes.
+   */
   [[nodiscard]] units::Bytes GetAvailableVRAM() const noexcept {
     return vram_usage_.available;
   }
 
-  [[nodiscard]] std::size_t GetPeakVRAM() const noexcept {
+  /*!
+   * \brief Returns the highest SVM allocation watermark reached so far.
+   * \return Peak allocated SVM memory in bytes.
+   */
+  [[nodiscard]] units::Bytes GetPeakVRAM() const noexcept {
+    return vram_usage_.peak;
+  }
+
+  /*!
+   * \brief Returns the number of currently active SVM allocations.
+   * \return Active SVM allocation count.
+   */
+  [[nodiscard]] std::size_t GetAllocationCountVRAM() const noexcept {
     return vram_usage_.allocation_count;
+  }
+
+  /*!
+   * \brief Returns the current SVM allocation ratio for the context.
+   * \return Allocation percentage in the range [0, 100].
+   */
+  [[nodiscard]] std::uint8_t GetPercentVRAM() const noexcept {
+    return vram_usage_.GetPercent();
   }
 
   /*!
@@ -362,7 +433,20 @@ private:
    */
   void InitSVMSupport();
 
+  /*!
+   * \brief Initialises VRAM accounting from the OpenCL device memory limits.
+   *
+   * The total device memory is queried once from the OpenCL device and the
+   * derived usage fields are initialised accordingly.
+   */
   void InitVRAMUsage();
+
+  /*!
+   * \brief Recomputes derived VRAM accounting values.
+   *
+   * This updates the remaining available memory and the historical peak after
+   * allocation or release events.
+   */
   void UpdateVRAMUsage() noexcept;
 
 private:
@@ -370,6 +454,6 @@ private:
   cl::Context context_;             /*!< Native OpenCL context. */
   cl::CommandQueue command_queue_;  /*!< Primary command queue. */
   SVMSupport svm_support_{};        /*!< SVM capability description. */
-  VRAMUsage vram_usage_{};
+  VRAMUsage vram_usage_{};          /*!< Per-context GGEMS SVM VRAM usage. */
 };
 } // namespace ggems::ocl

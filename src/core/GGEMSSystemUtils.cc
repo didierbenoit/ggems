@@ -53,33 +53,6 @@ namespace system {
  * CPU/RAM state. Values are always provided.
  */
 SystemUsage GetSystemUsage() noexcept;
-
-/*!
- * \brief Returns CPU and RAM usage of the current process.
- *
- * Metrics represent CPU activity and resident memory space belonging to
- * the process hosting GGEMS. All values are instantaneous.
- *
- * \return A \ref ggems::core::CPUProcessUsage structure describing per-process
- * CPU and RAM usage.
- */
-CPUProcessUsage GetProcessUsage() noexcept;
-
-/*!
- * \brief Returns GPU utilisation and VRAM occupancy of the current process.
- *
- * Values represent GPU workload attributed to the process executed by
- * GGEMS. VRAM metrics quantify memory space reserved by the same process.
- *
- * \param luid_bytes Logical Unique Identifier used to identify the GPU device.
- *                   This LUID is typically retrieved via OpenCL.
- *
- * \return A \ref ggems::core::GPUsage structure with GPU load and process VRAM
- * metrics. No field is optional: if not supported by the platform, zeroed
- *         fields are returned.
- */
-GPUsage
-GetGPUsage(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid_bytes) noexcept;
 } // namespace system
 
 /* --------------------------------------------- */
@@ -87,19 +60,4 @@ GetGPUsage(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid_bytes) noexcept;
 /* --------------------------------------------- */
 
 SystemUsage GetSystemUsage() noexcept { return system::GetSystemUsage(); }
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-CPUProcessUsage GetProcessUsage() noexcept { return system::GetProcessUsage(); }
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-GPUsage
-GetGPUsage(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid) noexcept {
-  return system::GetGPUsage(luid);
-}
 } // namespace ggems::core

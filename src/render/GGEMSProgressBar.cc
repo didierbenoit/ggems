@@ -85,9 +85,39 @@ GGEMSProgressBar::Slot::SetETAPicoseconds(std::uint64_t eta) noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-GGEMSProgressBar::Slot &GGEMSProgressBar::Slot::SetBandwidthBytesPerPicosecond(
-    long double bandwidth) noexcept {
-  bandwidth_byte_per_ps = bandwidth;
+GGEMSProgressBar::Slot &
+GGEMSProgressBar::Slot::SetPercentVRAM(std::uint8_t percent) noexcept {
+  vram_percent = percent;
+  return *this;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+GGEMSProgressBar::Slot &
+GGEMSProgressBar::Slot::SetTotalVRAM(std::uint64_t total) noexcept {
+  vram_total = total;
+  return *this;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+GGEMSProgressBar::Slot &
+GGEMSProgressBar::Slot::SetAllocatedVRAM(std::uint64_t allocated) noexcept {
+  vram_allocated = allocated;
+  return *this;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+GGEMSProgressBar::Slot &GGEMSProgressBar::Slot::SetAllocationCountVRAM(
+    std::size_t allocation_count) noexcept {
+  vram_allocation_count = allocation_count;
   return *this;
 }
 
@@ -192,15 +222,15 @@ void GGEMSProgressBar::DrawSystemStats(GGEMSTerminalFramebuffer &framebuffer,
   std::u32string ram_percent_text =
       utf::UTF8ToUTF32(std::format("{:3}%", ram_percent));
 
-  framebuffer.DrawString(x + 10, y, U"| RAM:");
-  framebuffer.DrawString(x + 17, y, ram_percent_text,
+  framebuffer.DrawString(x + 10, y, U"| VRAM:");
+  framebuffer.DrawString(x + 18, y, ram_percent_text,
                          GetColourStatus(ram_percent));
 
   std::uint64_t ram_total = system_usage.ram.total;
   std::uint64_t ram_used = system_usage.ram.used;
   std::u32string ram_text = utf::UTF8ToUTF32(
       std::format("({}/{})", FormatMemory(ram_used), FormatMemory(ram_total)));
-  framebuffer.DrawString(x + 22, y, ram_text);
+  framebuffer.DrawString(x + 23, y, ram_text);
 }
 
 /* --------------------------------------------- */
@@ -310,66 +340,25 @@ void GGEMSProgressBar::DrawSingleSlot(GGEMSTerminalFramebuffer &framebuffer,
 
   // Line 4 Process stats
   {
-    if (!is_gpu) { // For CPU Process
-      core::CPUProcessUsage process_usage = core::GetProcessUsage();
+    framebuffer.DrawString(x, static_cast<std::int16_t>(y + 4), U"VRAM:");
 
-      // CPU Slot Process
-      framebuffer.DrawString(x, static_cast<std::int16_t>(y + 4), U"CPU:");
+    std::u32string vram_percent_text =
+        utf::UTF8ToUTF32(std::format("{:3}%", slot.vram_percent));
 
-      std::uint8_t cpu_proc_percent = process_usage.cpu_percent;
-      std::u32string cpu_proc_percent_text =
-          utf::UTF8ToUTF32(std::format("{:3}%", cpu_proc_percent));
+    framebuffer.DrawString(static_cast<std::int16_t>(x + 5),
+                           static_cast<std::int16_t>(y + 4), vram_percent_text,
+                           GetColourStatus(slot.vram_percent));
 
-      framebuffer.DrawString(
-          static_cast<std::int16_t>(x + 7), static_cast<std::int16_t>(y + 4),
-          cpu_proc_percent_text, GetColourStatus(cpu_proc_percent));
+    std::uint64_t vram_total = slot.vram_total;
+    std::uint64_t vram_used = slot.vram_allocated;
+    std::size_t vram_allocation_count = slot.vram_allocation_count;
 
-      // RAM Process, working set size and private usage
-      std::uint64_t working_set = process_usage.ram.working_set_size;
-      std::uint64_t private_usage = process_usage.ram.private_mem;
-      std::u32string ram_txt = utf::UTF8ToUTF32(
-          std::format("Working set: {}, Private: {}", FormatMemory(working_set),
-                      FormatMemory(private_usage)));
+    std::u32string vram_stat_text = utf::UTF8ToUTF32(
+        std::format("({}/{}) SVM buffers: {}", FormatMemory(vram_used),
+                    FormatMemory(vram_total), vram_allocation_count));
 
-      framebuffer.DrawString(static_cast<std::int16_t>(x + 14),
-                             static_cast<std::int16_t>(y + 4), ram_txt);
-    } else { // For GPU Process
-      auto const &luid = slot.luid;
-      core::GPUsage gpu_usage = core::GetGPUsage(luid);
-
-      framebuffer.DrawString(x, static_cast<std::int16_t>(y + 4), U"GPU:");
-
-      std::uint8_t gpu_proc_percent = gpu_usage.gpu_percent;
-      std::u32string gpu_proc_percent_text{U"N/A"};
-      if (gpu_proc_percent != 0) {
-        gpu_proc_percent_text =
-            utf::UTF8ToUTF32(std::format("{:3}%", gpu_proc_percent));
-      }
-
-      framebuffer.DrawString(
-          static_cast<std::int16_t>(x + 7), static_cast<std::int16_t>(y + 4),
-          gpu_proc_percent_text, GetColourStatus(gpu_proc_percent));
-      framebuffer.DrawString(static_cast<std::int16_t>(x + 12),
-                             static_cast<std::int16_t>(y + 4), U"| RAM:");
-
-      std::uint8_t ram_percent = gpu_usage.ram.percent;
-      std::u32string ram_percent_text{U"N/A"};
-      if (ram_percent != 0) {
-        ram_percent_text = utf::UTF8ToUTF32(std::format("{:3}%", ram_percent));
-      }
-
-      framebuffer.DrawString(static_cast<std::int16_t>(x + 19),
-                             static_cast<std::int16_t>(y + 4), ram_percent_text,
-                             GetColourStatus(ram_percent));
-
-      std::uint64_t ram_total = gpu_usage.ram.total;
-      std::uint64_t ram_used = gpu_usage.ram.used;
-      std::u32string ram_txt = utf::UTF8ToUTF32(std::format(
-          "({}/{})", FormatMemory(ram_used), FormatMemory(ram_total)));
-
-      framebuffer.DrawString(static_cast<std::int16_t>(x + 24),
-                             static_cast<std::int16_t>(y + 4), ram_txt);
-    }
+    framebuffer.DrawString(static_cast<std::int16_t>(x + 10),
+                           static_cast<std::int16_t>(y + 4), vram_stat_text);
   }
 } // namespace ggems::render
 

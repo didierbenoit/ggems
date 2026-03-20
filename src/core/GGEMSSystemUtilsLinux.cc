@@ -67,49 +67,6 @@ static std::optional<LinuxCPUStat> ReadLinuxCPUStat() noexcept {
 /* --------------------------------------------- */
 
 /// \cond
-static std::optional<LinuxProcessCPUTime> ReadSelfProcessCPUTime() noexcept {
-  std::ifstream file("/proc/self/stat");
-  if (!file.is_open()) {
-    return std::nullopt;
-  }
-
-  std::string line;
-  std::getline(file, line);
-  if (line.empty()) {
-    return std::nullopt;
-  }
-
-  // /proc/[pid]/stat :
-  // pid (comm) state ppid ... utime stime ...
-  std::size_t rparen = line.rfind(')');
-  if (rparen == std::string::npos || rparen + 2 >= line.size()) {
-    return std::nullopt;
-  }
-
-  std::string const tail = line.substr(rparen + 2);
-  std::istringstream iss(tail);
-
-  std::string token;
-  for (std::int32_t i = 0; i < 11; ++i) {
-    if (!(iss >> token)) {
-      return std::nullopt;
-    }
-  }
-
-  LinuxProcessCPUTime result{};
-  if (!(iss >> result.utime_ticks >> result.stime_ticks)) {
-    return std::nullopt;
-  }
-
-  return result;
-}
-/// \endcond
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-/// \cond
 static std::uint64_t TotalCPUTime(LinuxCPUStat const &stat) noexcept {
   return stat.user + stat.nice + stat.system + stat.idle + stat.iowait +
          stat.irq + stat.softirq + stat.steal;
@@ -243,63 +200,6 @@ static std::optional<uint32_t> GetCPUFrequencyMHz() noexcept {
 /* --------------------------------------------- */
 
 /// \cond
-static std::uint8_t QueryProcessCPUPercent() noexcept {
-  static bool first{true};
-  static LinuxProcessCPUTime last_cpu{};
-  static auto last_time = std::chrono::steady_clock::now();
-
-  auto current_opt = ReadSelfProcessCPUTime();
-  if (!current_opt.has_value()) {
-    return 0;
-  }
-
-  auto now = std::chrono::steady_clock::now();
-  LinuxProcessCPUTime current = *current_opt;
-
-  if (first) {
-    first = false;
-    last_cpu = current;
-    last_time = now;
-    return 0;
-  }
-
-  double dt = std::chrono::duration<double>(now - last_time).count();
-  if (dt <= 0.0) {
-    return 0;
-  }
-
-  long ticks_per_second = ::sysconf(_SC_CLK_TCK);
-  if (ticks_per_second <= 0) {
-    return 0;
-  }
-
-  std::uint64_t const du = current.utime_ticks - last_cpu.utime_ticks;
-  std::uint64_t const ds = current.stime_ticks - last_cpu.stime_ticks;
-
-  last_cpu = current;
-  last_time = now;
-
-  std::uint64_t total_ticks = du + ds;
-  double const busy_seconds =
-      static_cast<double>(total_ticks) / static_cast<double>(ticks_per_second);
-
-  double pct = (busy_seconds / dt) * 100.0;
-  if (pct < 0.0) {
-    pct = 0.0;
-  }
-  if (pct > 100.0) {
-    pct = 100.0;
-  }
-
-  return static_cast<std::uint8_t>(pct);
-}
-/// \endcond
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-/// \cond
 static RAMUsage QueryRAMStatus() noexcept {
   std::ifstream file("/proc/meminfo");
   if (!file.is_open()) {
@@ -336,61 +236,6 @@ static RAMUsage QueryRAMStatus() noexcept {
   std::uint8_t percent = static_cast<std::uint8_t>((100ULL * used) / total);
 
   return RAMUsage{total, available, used, percent};
-}
-/// \endcond
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-/// \cond
-static CPURAMProcessUsage QueryProcessRAM() noexcept {
-  std::ifstream file("/proc/self/status");
-  if (!file.is_open()) {
-    return CPURAMProcessUsage{0ULL, 0ULL};
-  }
-
-  std::uint64_t vm_rss_kb{0ULL};
-  std::uint64_t vm_data_kb{0ULL};
-
-  std::string line;
-  while (std::getline(file, line)) {
-    if (line.rfind("VmRSS:", 0) == 0) {
-      std::istringstream iss(line);
-      std::string key;
-      std::string unit;
-      iss >> key >> vm_rss_kb >> unit;
-    } else if (line.rfind("VmData:", 0) == 0) {
-      std::istringstream iss(line);
-      std::string key;
-      std::string unit;
-      iss >> key >> vm_data_kb >> unit;
-    }
-  }
-
-  return CPURAMProcessUsage{vm_rss_kb * 1024ULL, vm_data_kb * 1024ULL};
-}
-/// \endcond
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-/// \cond
-GPUsage
-GetGPUsage(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid) noexcept {
-  (void)luid;
-  return GPUsage{0, GPURAMProcessUsage{0LL, 0LL, 0}};
-}
-/// \endcond
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-/// \cond
-CPUProcessUsage GetProcessUsage() noexcept {
-  return CPUProcessUsage{QueryProcessCPUPercent(), QueryProcessRAM()};
 }
 /// \endcond
 

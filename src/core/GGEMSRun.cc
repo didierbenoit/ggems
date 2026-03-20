@@ -38,20 +38,19 @@ void GGEMSRun::Run() {
   render::GGEMSTerminalRenderer renderer(banner, progress_bar, state);
   renderer.Start();
 
-  // for (std::int32_t i = 0; i < 250; ++i) {
-  //   renderer.RenderOnce();
-  //   std::this_thread::sleep_for(std::chrono::milliseconds(50));
-  // }
-
   auto &opencl = ocl::GGEMSOpenCL::GetInstance();
   auto &contexts = opencl.GetContext();
 
+  std::vector<ocl::GGEMSOpenCLSVMBuffer> buffers;
+
   // Filling slots
   for (auto &ctx : contexts) {
+    buffers.push_back(ctx.CreateSVMBuffer(536870912_B));
+
     auto &dev = ctx.GetDevice();
-    auto const device_name = dev.GetName();
-    auto const device_type = dev.GetType();
-    auto const device_luid = dev.GetLUIDKhr();
+    auto device_name = dev.GetName();
+    auto device_type = dev.GetType();
+    auto device_luid = dev.GetLUIDKhr();
     progress_bar
         .AddSlot(device_name,
                  (device_type == CL_DEVICE_TYPE_GPU) ? true : false,
@@ -62,7 +61,10 @@ void GGEMSRun::Run() {
         .SetStatus(render::GGEMSProgressBar::Slot::Status::Pending)
         .SetParticleType(render::GGEMSProgressBar::Slot::ParticleType::Gamma)
         .SetETAPicoseconds(0ULL)
-        .SetBandwidthBytesPerPicosecond(0.0);
+        .SetPercentVRAM(ctx.GetPercentVRAM())
+        .SetTotalVRAM(ctx.GetTotalVRAM().value)
+        .SetAllocatedVRAM(ctx.GetAllocatedVRAM().value)
+        .SetAllocationCountVRAM(ctx.GetAllocationCountVRAM());
 
     renderer.RenderOnce();
   }
@@ -104,8 +106,7 @@ void GGEMSRun::Run() {
         }
 
         slot.SetStatus(render::GGEMSProgressBar::Slot::Status::Running)
-            .SetBatchesDone(p)
-            .SetBandwidthBytesPerPicosecond(5.0 * static_cast<double>(p));
+            .SetBatchesDone(p);
         renderer.RenderOnce();
       }
       slot.SetStatus(render::GGEMSProgressBar::Slot::Status::Finished);

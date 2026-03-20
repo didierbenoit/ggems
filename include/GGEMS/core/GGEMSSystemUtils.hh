@@ -94,58 +94,6 @@ struct SystemUsage {
 };
 
 /*!
- * \struct CPURAMProcessUsage
- * \brief Per-process physical memory usage for the running application.
- *
- * These fields quantify memory pages attributable to the current process.
- * Both values are expressed in bytes.
- */
-struct CPURAMProcessUsage {
-  std::uint64_t working_set_size; /*!< Resident memory pages actively mapped
-                                     into RAM (bytes) */
-  std::uint64_t private_mem; /*!< Privately allocated RAM not shared with other
-                                processes (bytes) */
-};
-
-/*!
- * \struct CPUProcessUsage
- * \brief CPU utilisation of the current process.
- *
- * CPU usage is expressed as a percentage in [0,100] and corresponds to
- * kernel-level statistics for the executing process.
- */
-struct CPUProcessUsage {
-  std::uint8_t cpu_percent; /*!< CPU load of the running process (0–100) */
-  CPURAMProcessUsage ram;   /*!< RAM footprint of the same process */
-};
-
-/*!
- * \struct GPURAMProcessUsage
- * \brief GPU video memory usage attributable to the current process.
- *
- * All three fields describe memory reported by the graphics driver as
- * belonging to the process hosting GGEMS. Units are bytes, and percentage
- * spans [0,100].
- */
-struct GPURAMProcessUsage {
-  std::uint64_t total;  /*!< Total visible VRAM (bytes) */
-  std::uint64_t used;   /*!< VRAM usage attributable to the process (bytes) */
-  std::uint8_t percent; /*!< VRAM utilisation for the process (0–100) */
-};
-
-/*!
- * \struct GPUsage
- * \brief GPU utilisation metrics for the current process.
- *
- * Includes instantaneous GPU load and VRAM usage. Percentages are always
- * in the interval [0,100].
- */
-struct GPUsage {
-  std::uint8_t gpu_percent; /*!< GPU load attributed to the process (0–100) */
-  GPURAMProcessUsage ram;   /*!< GPU VRAM usage belonging to the process */
-};
-
-/*!
  * \brief Returns global system utilisation metrics.
  *
  * The returned structure describes CPU load, memory occupation, and CPU
@@ -156,33 +104,6 @@ struct GPUsage {
  * CPU/RAM state. Values are always provided.
  */
 [[nodiscard]] SystemUsage GetSystemUsage() noexcept;
-
-/*!
- * \brief Returns CPU and RAM usage of the current process.
- *
- * Metrics represent CPU activity and resident memory space belonging to
- * the process hosting GGEMS. All values are instantaneous.
- *
- * \return A \ref ggems::core::CPUProcessUsage structure describing per-process
- * CPU and RAM usage.
- */
-[[nodiscard]] CPUProcessUsage GetProcessUsage() noexcept;
-
-/*!
- * \brief Returns GPU utilisation and VRAM occupancy of the current process.
- *
- * Values represent GPU workload attributed to the process executed by
- * GGEMS. VRAM metrics quantify memory space reserved by the same process.
- *
- * \param luid_bytes Logical Unique Identifier used to identify the GPU device.
- *                   This LUID is typically retrieved via OpenCL.
- *
- * \return A \ref ggems::core::GPUsage structure with GPU load and process VRAM
- * metrics. No field is optional: if not supported by the platform, zeroed
- *         fields are returned.
- */
-[[nodiscard]] GPUsage
-GetGPUsage(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid_bytes) noexcept;
 
 /*!
  * \brief Detects the operating system at compile-time.

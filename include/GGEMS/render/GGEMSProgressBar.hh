@@ -7,6 +7,7 @@
 #include "GGEMS/render/GGEMSColourNames.hh"
 #include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
 #include "GGEMS/utf/GGEMSGlyphs.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 
 namespace ggems::render {
@@ -124,16 +125,23 @@ public:
     std::uint64_t batches_done{0ULL};
     std::uint64_t batches_total{0ULL};
     std::uint64_t eta_ps{0ULL};
-    long double bandwidth_byte_per_ps{0.0};
+
+    std::uint8_t vram_percent{0};
+    std::uint64_t vram_total{0LL};
+    std::uint64_t vram_allocated{0LL};
+    std::size_t vram_allocation_count{0};
 
     Slot &SetKernelName(std::string_view kernel) noexcept;
     Slot &SetStatus(Status st) noexcept;
     Slot &SetParticleType(ParticleType p) noexcept;
     Slot &SetBatchesDone(std::uint64_t done) noexcept;
     Slot &SetBatchesTotal(std::uint64_t total) noexcept;
-    Slot &SetBandwidthBytesPerPicosecond(long double bandwidth) noexcept;
     Slot &SetETAPicoseconds(std::uint64_t eta) noexcept;
     Slot &SetIsGPU(bool gpu) noexcept;
+    Slot &SetPercentVRAM(std::uint8_t percent) noexcept;
+    Slot &SetTotalVRAM(std::uint64_t total) noexcept;
+    Slot &SetAllocatedVRAM(std::uint64_t allocated) noexcept;
+    Slot &SetAllocationCountVRAM(std::size_t allocation_count) noexcept;
   };
 
 public:
