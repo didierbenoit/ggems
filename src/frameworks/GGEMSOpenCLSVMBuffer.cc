@@ -60,6 +60,8 @@ GGEMSOpenCLSVMBuffer::GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context,
   GGEMS_CHECK(p, "clSVMalloc failed: returned nullptr.");
 
   ptr_ = p;
+  context_->RegisterSVMAllocation(size_);
+
   GGEMS_INFOEX("OpenCL", 3, "Allocated SVM Buffer of {}.",
                HumanReadable(size_));
 }
@@ -134,6 +136,8 @@ void GGEMSOpenCLSVMBuffer::Unmap() {
 
 void GGEMSOpenCLSVMBuffer::Release() noexcept {
   if (context_ && ptr_) {
+    context_->RegisterSVMRelease(size_);
+
     auto &ctx = context_->GetContextNative();
     clSVMFree(ctx(), ptr_);
     GGEMS_INFOEX("OpenCL", 3, "Release SVM Buffer of {}.",

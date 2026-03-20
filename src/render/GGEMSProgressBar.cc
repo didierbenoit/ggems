@@ -340,8 +340,11 @@ void GGEMSProgressBar::DrawSingleSlot(GGEMSTerminalFramebuffer &framebuffer,
       framebuffer.DrawString(x, static_cast<std::int16_t>(y + 4), U"GPU:");
 
       std::uint8_t gpu_proc_percent = gpu_usage.gpu_percent;
-      std::u32string gpu_proc_percent_text =
-          utf::UTF8ToUTF32(std::format("{:3}%", gpu_proc_percent));
+      std::u32string gpu_proc_percent_text{U"N/A"};
+      if (gpu_proc_percent != 0) {
+        gpu_proc_percent_text =
+            utf::UTF8ToUTF32(std::format("{:3}%", gpu_proc_percent));
+      }
 
       framebuffer.DrawString(
           static_cast<std::int16_t>(x + 7), static_cast<std::int16_t>(y + 4),
@@ -350,8 +353,10 @@ void GGEMSProgressBar::DrawSingleSlot(GGEMSTerminalFramebuffer &framebuffer,
                              static_cast<std::int16_t>(y + 4), U"| RAM:");
 
       std::uint8_t ram_percent = gpu_usage.ram.percent;
-      std::u32string ram_percent_text =
-          utf::UTF8ToUTF32(std::format("{:3}%", ram_percent));
+      std::u32string ram_percent_text{U"N/A"};
+      if (ram_percent != 0) {
+        ram_percent_text = utf::UTF8ToUTF32(std::format("{:3}%", ram_percent));
+      }
 
       framebuffer.DrawString(static_cast<std::int16_t>(x + 19),
                              static_cast<std::int16_t>(y + 4), ram_percent_text,

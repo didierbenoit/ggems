@@ -54,6 +54,7 @@ GGEMSOpenCLContext::GGEMSOpenCLContext(GGEMSOpenCLDevice const &device)
   CreateContext();
   CreateCommandQueue();
   InitSVMSupport();
+  InitVRAMUsage();
 
   GGEMS_INFOEX("OpenCL", 2, "GGEMSOpenCLContext allocated.");
 }
@@ -119,6 +120,34 @@ void GGEMSOpenCLContext::InitSVMSupport() {
     svm_support_.fine_grain_system = true;
   if (caps & CL_DEVICE_SVM_ATOMICS)
     svm_support_.atomics = true;
+}
+
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+
+void GGEMSOpenCLContext::InitVRAMUsage() {
+  vram_usage_.total =
+      units::Bytes{static_cast<std::uint64_t>(device_.GetGlobalMemSize())};
+
+  UpdateVRAMUsage();
+}
+
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+
+void GGEMSOpenCLContext::UpdateVRAMUsage() noexcept {
+  if (vram_usage_.allocated.value <= vram_usage_.total.value) {
+    vram_usage_.available =
+        units::Bytes{vram_usage_.total.value - vram_usage_.allocated.value};
+  } else {
+    vram_usage_.available = 0_B;
+  }
+
+  if (vram_usage_.allocated.value > vram_usage_.peak.value) {
+    vram_usage_.peak = vram_usage_.allocated;
+  }
 }
 
 /* ------------------------------------------------------------------------- */
@@ -203,6 +232,35 @@ void GGEMSOpenCLContext::SetSVMPointer(cl::Kernel &kernel, cl_uint index,
   GGEMS_CHECK(err == CL_SUCCESS,
               std::format("SetSVMPointer failed at arg {}: {}", index,
                           GetLongErrorString(err)));
+}
+
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+
+void GGEMSOpenCLContext::RegisterSVMAllocation(units::Bytes size) noexcept {
+  vram_usage_.allocated = vram_usage_.allocated + size;
+  ++vram_usage_.allocation_count;
+
+  UpdateVRAMUsage();
+}
+
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+
+void GGEMSOpenCLContext::RegisterSVMRelease(units::Bytes size) noexcept {
+  if (size.value >= vram_usage_.allocated.value) {
+    vram_usage_.allocated = 0_B;
+  } else {
+    vram_usage_.allocated = vram_usage_.allocated - size;
+  }
+
+  if (vram_usage_.allocation_count > 0) {
+    --vram_usage_.allocation_count;
+  }
+
+  UpdateVRAMUsage();
 }
 
 /* ------------------------------------------------------------------------- */

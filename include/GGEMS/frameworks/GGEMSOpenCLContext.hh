@@ -96,6 +96,22 @@ struct SVMSupport {
   }
 };
 
+struct VRAMUsage {
+  units::Bytes total{0_B};
+  units::Bytes allocated{0_B};
+  units::Bytes available{0_B};
+  units::Bytes peak{0_B};
+  std::size_t allocation_count{0};
+
+  [[nodiscard]] std::uint8_t GetPercent() const noexcept {
+    if (total.value == 0LL) {
+      return 0U;
+    }
+
+    return static_cast<std::uint8_t>((100ULL * allocated.value) / total.value);
+  }
+};
+
 /*!
  * \class GGEMSOpenCLContext
  * \brief High-level wrapper for an OpenCL execution context.
@@ -180,6 +196,29 @@ public:
    */
   [[nodiscard]] SVMSupport const &GetSVMSupport() const noexcept {
     return svm_support_;
+  }
+
+  void RegisterSVMAllocation(units::Bytes size) noexcept;
+  void RegisterSVMRelease(units::Bytes size) noexcept;
+
+  [[nodiscard]] VRAMUsage const &GetVRAMUsage() const noexcept {
+    return vram_usage_;
+  }
+
+  [[nodiscard]] units::Bytes GetTotalVRAM() const noexcept {
+    return vram_usage_.total;
+  }
+
+  [[nodiscard]] units::Bytes GetAllocatedVRAM() const noexcept {
+    return vram_usage_.allocated;
+  }
+
+  [[nodiscard]] units::Bytes GetAvailableVRAM() const noexcept {
+    return vram_usage_.available;
+  }
+
+  [[nodiscard]] std::size_t GetPeakVRAM() const noexcept {
+    return vram_usage_.allocation_count;
   }
 
   /*!
@@ -323,10 +362,14 @@ private:
    */
   void InitSVMSupport();
 
+  void InitVRAMUsage();
+  void UpdateVRAMUsage() noexcept;
+
 private:
   GGEMSOpenCLDevice const &device_; /*!< Owning OpenCL device abstraction. */
   cl::Context context_;             /*!< Native OpenCL context. */
   cl::CommandQueue command_queue_;  /*!< Primary command queue. */
   SVMSupport svm_support_{};        /*!< SVM capability description. */
+  VRAMUsage vram_usage_{};
 };
 } // namespace ggems::ocl
