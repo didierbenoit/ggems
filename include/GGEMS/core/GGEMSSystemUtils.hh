@@ -40,7 +40,6 @@
  */
 
 /// \cond
-#include <array>
 #include <cstdint>
 #include <optional>
 /// \endcond

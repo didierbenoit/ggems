@@ -936,6 +936,10 @@ std::string GGEMSOpenCLDevice::GetDriverUUIDKhr() const {
 /* --------------------------------*/
 
 cl_bool GGEMSOpenCLDevice::GetLUIDValidKhr() const {
+  if (!HasExtension(extensions_, "cl_khr_device_uuid")) {
+    return CL_FALSE;
+  }
+
   return GetInfo<CL_DEVICE_LUID_VALID_KHR>(device_);
 }
 
@@ -947,8 +951,9 @@ std::array<cl_uchar, CL_LUID_SIZE_KHR> GGEMSOpenCLDevice::GetLUIDKhr() const {
   if (GetLUIDValidKhr()) {
     auto luid = GetInfo<CL_DEVICE_LUID_KHR>(device_);
     return luid;
-  } else
+  } else {
     return {};
+  }
 }
 
 /* --------------------------------*/

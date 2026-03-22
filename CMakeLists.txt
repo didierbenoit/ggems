@@ -99,10 +99,6 @@ target_include_directories(ggems_core PUBLIC
   ${OPENCL_HPP_INCLUDE_DIR})
 target_link_libraries(ggems_core PUBLIC OpenCL::OpenCL)
 
-if(WIN32)
-  target_link_libraries(ggems_core PRIVATE dxgi)
-endif()
-
 if(UNIX AND NOT APPLE)
   target_link_libraries(ggems_core PRIVATE atomic)
 endif()
