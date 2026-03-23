@@ -169,7 +169,7 @@ void GGEMSProgressBar::Clear() noexcept { slots_.clear(); }
 
 std::int16_t GGEMSProgressBar::GetHeight() const noexcept {
   if (slots_.empty()) {
-    return footer_rows_;
+    return 0;
   }
   return static_cast<std::int16_t>(
       static_cast<std::int16_t>(slots_.size()) * slot_rows_ + footer_rows_);
@@ -182,7 +182,7 @@ std::int16_t GGEMSProgressBar::GetHeight() const noexcept {
 void GGEMSProgressBar::Draw(GGEMSTerminalFramebuffer &framebuffer,
                             std::int16_t x, std::int16_t y,
                             std::int16_t width) const {
-  if (width <= 0) {
+  if (width <= 0 || slots_.empty()) {
     return;
   }
 

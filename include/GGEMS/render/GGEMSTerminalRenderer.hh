@@ -64,6 +64,9 @@ private:
   void DrawFrame(std::u32string_view final_message = U"");
   void Refresh(bool force = false);
 
+  void CaptureCurrentFrame();
+  [[nodiscard]] std::string BuildDiffPayload() const;
+
   [[nodiscard]] std::vector<WrappedLine>
   WrapLogLine(core::RenderedLogLine const &line, std::int16_t max_width) const;
 
@@ -81,7 +84,10 @@ private:
   std::int32_t scroll_offset_{0};
   bool follow_tail_{true};
 
-  std::string last_frame_{};
+  std::vector<GGEMSTerminalFramebuffer::CellView> last_cells_{};
+  std::int16_t last_present_width_{0};
+  std::int16_t last_present_height_{0};
+
   std::chrono::steady_clock::time_point last_present_time_{};
   std::chrono::milliseconds min_present_interval_{33};
   bool force_next_refresh_{true};

@@ -36,8 +36,10 @@ void GGEMSTerminalRenderer::Start() noexcept {
   started_ = true;
 
   force_next_refresh_ = true;
-  last_frame_.clear();
   last_present_time_ = std::chrono::steady_clock::time_point();
+  last_cells_.clear();
+  last_present_width_ = 0;
+  last_present_height_ = 0;
 
   last_width_ = 0;
   last_height_ = 0;
@@ -59,28 +61,207 @@ void GGEMSTerminalRenderer::Stop() noexcept {
 /* --------------------------------------------- */
 
 void GGEMSTerminalRenderer::Refresh(bool force) {
-  std::string out = framebuffer_.Render();
-
   auto now = std::chrono::steady_clock::now();
 
-  bool frame_changed = (out != last_frame_);
   bool enough_time_elapsed =
       (now - last_present_time_) >= min_present_interval_;
 
-  if (!force && !force_next_refresh_) {
-    if (!frame_changed) {
-      return;
-    }
+  std::int16_t w = framebuffer_.GetWidth();
+  std::int16_t h = framebuffer_.GetHeight();
 
-    if (!enough_time_elapsed) {
-      return;
+  bool size_changed = (w != last_present_width_) || (h != last_present_height_);
+
+  if (!force && !force_next_refresh_ && !enough_time_elapsed) {
+    return;
+  }
+
+  // First frame, resize, or explicit force -> full present.
+  if (force || force_next_refresh_ || size_changed || last_cells_.empty()) {
+    std::string out = framebuffer_.Render();
+    presenter_.Present(out);
+
+    CaptureCurrentFrame();
+    last_present_time_ = now;
+    force_next_refresh_ = false;
+    return;
+  }
+
+  std::string payload = BuildDiffPayload();
+  if (payload.empty()) {
+    return;
+  }
+
+  presenter_.Write(payload);
+
+  CaptureCurrentFrame();
+  last_present_time_ = now;
+  force_next_refresh_ = false;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSTerminalRenderer::CaptureCurrentFrame() {
+  std::int16_t w = framebuffer_.GetWidth();
+  std::int16_t h = framebuffer_.GetHeight();
+
+  last_present_width_ = w;
+  last_present_height_ = h;
+
+  std::size_t count = static_cast<std::size_t>(w) * static_cast<std::size_t>(h);
+
+  last_cells_.resize(count);
+
+  for (std::int16_t y = 0; y < h; ++y) {
+    for (std::int16_t x = 0; x < w; ++x) {
+      std::size_t idx =
+          static_cast<std::size_t>(y) * static_cast<std::size_t>(w) +
+          static_cast<std::size_t>(x);
+      last_cells_[idx] = framebuffer_.GetCell(x, y);
+    }
+  }
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+/*std::string GGEMSTerminalRenderer::BuildDiffPayload() const {
+  std::int16_t w = framebuffer_.GetWidth();
+  std::int16_t h = framebuffer_.GetHeight();
+
+  if (w != last_present_width_ || h != last_present_height_) {
+    return {};
+  }
+
+  std::string payload;
+  payload.reserve(static_cast<std::size_t>(w) * static_cast<std::size_t>(h) *
+                  8U);
+
+  for (std::int16_t y = 0; y < h; ++y) {
+    std::int16_t x = 0;
+
+    while (x < w) {
+      std::size_t idx =
+          static_cast<std::size_t>(y) * static_cast<std::size_t>(w) +
+          static_cast<std::size_t>(x);
+
+      auto const current = framebuffer_.GetCell(x, y);
+      auto const &previous = last_cells_[idx];
+
+      if (current == previous) {
+        ++x;
+        continue;
+      }
+
+      // Start a run of changed cells with same colour.
+      ColourKey run_fg = current.fg;
+      std::u32string run_text;
+      std::int16_t run_x = x;
+
+      while (x < w) {
+        std::size_t run_idx =
+            static_cast<std::size_t>(y) * static_cast<std::size_t>(w) +
+            static_cast<std::size_t>(x);
+
+        auto const c = framebuffer_.GetCell(x, y);
+        auto const &p = last_cells_[run_idx];
+
+        if (c == p || c.fg != run_fg) {
+          break;
+        }
+
+        run_text.push_back(c.ch);
+        ++x;
+      }
+
+      payload.append("\033[");
+      payload.append(std::to_string(static_cast<int>(y + 1)));
+      payload.push_back(';');
+      payload.append(std::to_string(static_cast<int>(run_x + 1)));
+      payload.push_back('H');
+
+      payload.append(AnsiColour(DEFAULT_BG));
+      payload.append(AnsiColour(run_fg));
+      payload.append(utf::UTF32ToUTF8(run_text));
     }
   }
 
-  presenter_.Present(out);
-  last_frame_ = std::move(out);
-  last_present_time_ = now;
-  force_next_refresh_ = false;
+  if (!payload.empty()) {
+    payload.append("\033[0m");
+  }
+
+  return payload;
+}*/
+
+std::string GGEMSTerminalRenderer::BuildDiffPayload() const {
+  std::int16_t w = framebuffer_.GetWidth();
+  std::int16_t h = framebuffer_.GetHeight();
+
+  if (w != last_present_width_ || h != last_present_height_) {
+    return {};
+  }
+
+  std::int16_t usable_w =
+      std::max<std::int16_t>(0, static_cast<std::int16_t>(w - 1));
+
+  std::string payload;
+  payload.reserve(static_cast<std::size_t>(usable_w) *
+                  static_cast<std::size_t>(h) * 8U);
+
+  for (std::int16_t y = 0; y < h; ++y) {
+    bool line_changed = false;
+
+    for (std::int16_t x = 0; x < usable_w; ++x) {
+      std::size_t idx =
+          static_cast<std::size_t>(y) * static_cast<std::size_t>(w) +
+          static_cast<std::size_t>(x);
+
+      auto const current = framebuffer_.GetCell(x, y);
+      auto const &previous = last_cells_[idx];
+
+      if (current != previous) {
+        line_changed = true;
+        break;
+      }
+    }
+
+    if (!line_changed) {
+      continue;
+    }
+
+    payload.append("\033[");
+    payload.append(std::to_string(static_cast<int>(y + 1)));
+    payload.append(";1H");
+
+    payload.append(AnsiColour(DEFAULT_BG));
+
+    std::int16_t x = 0;
+    while (x < usable_w) {
+      auto const first_cell = framebuffer_.GetCell(x, y);
+      ColourKey run_fg = first_cell.fg;
+
+      std::u32string run_text;
+      while (x < usable_w) {
+        auto const cell = framebuffer_.GetCell(x, y);
+        if (cell.fg != run_fg) {
+          break;
+        }
+        run_text.push_back(cell.ch);
+        ++x;
+      }
+
+      payload.append(AnsiColour(run_fg));
+      payload.append(utf::UTF32ToUTF8(run_text));
+    }
+  }
+
+  if (!payload.empty()) {
+    payload.append("\033[0m");
+  }
+
+  return payload;
 }
 
 /* --------------------------------------------- */
@@ -108,7 +289,7 @@ void GGEMSTerminalRenderer::DrawFrame(std::u32string_view final_message) {
   std::int16_t content_y = 1;
   std::int16_t content_w = static_cast<std::int16_t>(w - 2);
   std::int16_t content_h =
-      static_cast<std::int16_t>(h - 1 - progress_rows - final_message_rows - 2);
+      static_cast<std::int16_t>(h - progress_rows - final_message_rows - 2);
 
   if (content_h < 0) {
     content_h = 0;

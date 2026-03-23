@@ -37,6 +37,7 @@ public:
   void Begin(bool use_alt_buffer = true) noexcept;
   void End() noexcept;
   void Present(std::string_view frame_utf8) noexcept;
+  void Write(std::string_view bytes) noexcept;
   [[nodiscard]] TerminalKey PollKey() noexcept;
 
 #ifndef _WIN32

@@ -227,6 +227,19 @@ void GGEMSTerminalPresenter::Present(std::string_view frame_utf8) noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+void GGEMSTerminalPresenter::Write(std::string_view bytes) noexcept {
+  if (!started_) {
+    Begin(use_alt_buffer_);
+  }
+
+  WriteRaw(bytes);
+  std::fflush(stdout);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 GGEMSTerminalPresenter::TerminalKey GGEMSTerminalPresenter::PollKey() noexcept {
 #ifdef _WIN32
   if (!_kbhit()) {

@@ -71,6 +71,21 @@ void GGEMSTerminalFramebuffer::SetUseColour(bool use_colour) noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+GGEMSTerminalFramebuffer::CellView
+GGEMSTerminalFramebuffer::GetCell(std::int16_t x,
+                                  std::int16_t y) const noexcept {
+  if (x < 0 || y < 0 || x >= width_ || y >= height_) {
+    return CellView{default_char_, default_fg_};
+  }
+
+  auto &cell = buffer_[Index(x, y)];
+  return CellView{cell.ch, cell.fg};
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 void GGEMSTerminalFramebuffer::Resize(std::int16_t width, std::int16_t height) {
   width_ = width;
   height_ = height;
@@ -230,10 +245,10 @@ std::string GGEMSTerminalFramebuffer::Render() const {
       auto const &cell = buffer_[Index(x, y)];
 
       if (use_colour_) {
-        out.append(AnsiColour(cell.fg_));
+        out.append(AnsiColour(cell.fg));
       }
 
-      out.append(utf::UTF32ToUTF8(cell.ch_));
+      out.append(utf::UTF32ToUTF8(cell.ch));
     }
 
     out.push_back('\n');

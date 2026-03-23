@@ -11,8 +11,22 @@ namespace ggems::render {
 class GGEMSTerminalFramebuffer {
 private:
   struct Cell {
-    char32_t ch_;
-    ColourKey fg_;
+    char32_t ch;
+    ColourKey fg;
+  };
+
+public:
+  struct CellView {
+    char32_t ch{U' '};
+    ColourKey fg{DEFAULT_FG};
+
+    constexpr bool operator==(CellView const &other) const noexcept {
+      return ch == other.ch && fg == other.fg;
+    }
+
+    constexpr bool operator!=(CellView const &other) const noexcept {
+      return !(*this == other);
+    }
   };
 
 public:
@@ -35,6 +49,8 @@ public:
     return height_;
   }
   void UpdateSizeIfNeeded();
+
+  [[nodiscard]] CellView GetCell(std::int16_t x, std::int16_t y) const noexcept;
 
   // --- Clear --------------------------------------------------------------
   void Clear(char32_t ch = U' ', ColourKey fg = DEFAULT_FG);
