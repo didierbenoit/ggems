@@ -159,12 +159,12 @@ GGEMSOpenCLSVMBuffer GGEMSOpenCLContext::CreateSVMBuffer(Bytes size,
                                                          Bytes alignment) {
   auto const &svm = svm_support_;
 
-  GGEMS_CHECK(svm.HasAny(), "This context/device does not support SVM.");
+  GGEMS_FATAL_CHECK(svm.HasAny(), "This context/device does not support SVM.");
 
   SVMMemoryKind selected = kind;
 
-  GGEMS_CHECK(selected != SVMMemoryKind::None,
-              "Invalid SVMMemoryKind::None for allocation.");
+  GGEMS_FATAL_CHECK(selected != SVMMemoryKind::None,
+                    "Invalid SVMMemoryKind::None for allocation.");
 
   if (selected == SVMMemoryKind::Auto) {
     selected = svm.DefaultKind();
@@ -206,8 +206,8 @@ void GGEMSOpenCLContext::EnqueueSVMMap(void *ptr, Bytes size,
                                flags, ptr, static_cast<std::size_t>(size.value),
                                0, nullptr, nullptr);
 
-  GGEMS_CHECK(err == CL_SUCCESS,
-              std::format("SVMMap failed: {}", GetLongErrorString(err)));
+  GGEMS_FATAL_CHECK(err == CL_SUCCESS,
+                    std::format("SVMMap failed: {}", GetLongErrorString(err)));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -217,8 +217,8 @@ void GGEMSOpenCLContext::EnqueueSVMMap(void *ptr, Bytes size,
 void GGEMSOpenCLContext::EnqueueSVMUnmap(void *ptr) const {
   cl_int err = clEnqueueSVMUnmap(command_queue_(), ptr, 0, nullptr, nullptr);
 
-  GGEMS_CHECK(err == CL_SUCCESS,
-              std::format("SVMUnmap failed: {}", GetLongErrorString(err)));
+  GGEMS_FATAL_CHECK(err == CL_SUCCESS, std::format("SVMUnmap failed: {}",
+                                                   GetLongErrorString(err)));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -229,9 +229,9 @@ void GGEMSOpenCLContext::SetSVMPointer(cl::Kernel &kernel, cl_uint index,
                                        void *ptr) const {
   cl_int err = clSetKernelArgSVMPointer(kernel(), index, ptr);
 
-  GGEMS_CHECK(err == CL_SUCCESS,
-              std::format("SetSVMPointer failed at arg {}: {}", index,
-                          GetLongErrorString(err)));
+  GGEMS_FATAL_CHECK(err == CL_SUCCESS,
+                    std::format("SetSVMPointer failed at arg {}: {}", index,
+                                GetLongErrorString(err)));
 }
 
 /* ------------------------------------------------------------------------- */

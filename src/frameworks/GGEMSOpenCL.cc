@@ -167,7 +167,7 @@ void GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters) {
     }
   }
 
-  GGEMS_CHECK(!all_devices.empty(), "No OpenCL devices found.");
+  GGEMS_FATAL_CHECK(!all_devices.empty(), "No OpenCL devices found.");
 
   // --- Default behaviour --------------------------------------------------
   if (filters.empty()) {
@@ -188,8 +188,8 @@ void GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters) {
   }
   selected_devices_ = ParseDeviceFilters(filters, all_devices);
 
-  GGEMS_CHECK(!selected_devices_.empty(),
-              "No matching devices for given filters.");
+  GGEMS_FATAL_CHECK(!selected_devices_.empty(),
+                    "No matching devices for given filters.");
 
   GGEMS_INFO("OpenCL", "Total devices selected: {}", selected_devices_.size());
   for (std::size_t i = 0; i < selected_devices_.size(); ++i) {

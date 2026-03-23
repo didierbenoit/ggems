@@ -47,10 +47,22 @@
       (DEPTH), (MODULE), (FMT),                                                \
       std::source_location::current() __VA_OPT__(, __VA_ARGS__))
 
-#define GGEMS_CHECK(COND, MSG)                                                 \
+#define GGEMS_FATAL_CHECK(COND, MSG)                                           \
   do {                                                                         \
     if (!(COND))                                                               \
       ggems::core::Throw<ggems::core::GGEMSFatal>(MSG);                        \
+  } while (0)
+
+#define GGEMS_INTERNAL_CHECK(COND, MSG)                                        \
+  do {                                                                         \
+    if (!(COND))                                                               \
+      ggems::core::Throw<ggems::core::GGEMSInternal>(MSG);                     \
+  } while (0)
+
+#define GGEMS_RECOVERABLE_CHECK(COND, MSG)                                     \
+  do {                                                                         \
+    if (!(COND))                                                               \
+      ggems::core::Throw<ggems::core::GGEMSRecoverable>(MSG);                  \
   } while (0)
 
 #define GGEMS_OCL_CHECK(EXPR, CONTEXT)                                         \

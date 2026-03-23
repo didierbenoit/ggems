@@ -166,9 +166,9 @@ void GGEMSTerminalPresenter::Begin(bool use_alt_buffer) noexcept {
   use_alt_buffer_ = use_alt_buffer;
 
 #ifdef _WIN32
-  GGEMS_CHECK(EnableVTUtf8WinConsole(),
-              "Impossible to activate Virtual Terminal and UTF-8 Windows "
-              "console mode.");
+  GGEMS_FATAL_CHECK(EnableVTUtf8WinConsole(),
+                    "Impossible to activate Virtual Terminal and UTF-8 Windows "
+                    "console mode.");
 #else
   GGEMS_CHECK(EnablePosixTerminal(),
               "Impossible to activate POSIX terminal raw mode.");
@@ -200,8 +200,8 @@ void GGEMSTerminalPresenter::End() noexcept {
   std::fflush(stdout);
 
 #ifdef _WIN32
-  GGEMS_CHECK(RestoreWinConsole(),
-              "Impossible to restore Windows console mode.");
+  GGEMS_FATAL_CHECK(RestoreWinConsole(),
+                    "Impossible to restore Windows console mode.");
 #else
   GGEMS_CHECK(RestorePosixTerminal(),
               "Impossible to restore POSIX terminal mode.");

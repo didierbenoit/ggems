@@ -33,7 +33,7 @@ void GGEMSRun::Initialise() {
 void GGEMSRun::Run() {
   GGEMS_INFO("Core", "GGEMS starting...");
 
-  auto &progress_bar = core::EnsureProgressBar();
+  auto &progress_bar = core::GetProgressBar();
 
   auto &opencl = ocl::GGEMSOpenCL::GetInstance();
   auto &contexts = opencl.GetContext();
@@ -65,8 +65,6 @@ void GGEMSRun::Run() {
         .SetAllocatedVRAM(ctx.GetAllocatedVRAM().value)
         .SetAllocationCountVRAM(ctx.GetAllocationCountVRAM());
   }
-
-  core::RefreshOutput();
 
   workers_.clear();
   workers_.reserve(contexts.size());
@@ -117,7 +115,6 @@ void GGEMSRun::Run() {
   }
 
   while (finished_workers.load(std::memory_order_relaxed) < workers_.size()) {
-    core::RefreshOutput();
     std::this_thread::sleep_for(std::chrono::milliseconds(33));
   }
 
@@ -129,10 +126,6 @@ void GGEMSRun::Run() {
   workers_.clear();
 
   GGEMS_INFO("Core", "GGEMS run completed.");
-
-  core::RefreshOutput();
-  core::FinaliseOutput(U"Press Enter to exit...");
-  core::StopOutputRuntime();
 
   /*   auto &opencl = ocl::GGEMSOpenCL::GetInstance();
      auto &contexts = opencl.GetContext();

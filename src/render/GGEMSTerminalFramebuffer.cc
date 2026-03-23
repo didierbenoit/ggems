@@ -251,7 +251,9 @@ std::string GGEMSTerminalFramebuffer::Render() const {
       out.append(utf::UTF32ToUTF8(cell.ch));
     }
 
-    out.push_back('\n');
+    if (y + 1 < height_) {
+      out.push_back('\n');
+    }
   }
 
   if (use_colour_) {

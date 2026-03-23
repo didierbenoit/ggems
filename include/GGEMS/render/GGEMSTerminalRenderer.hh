@@ -89,7 +89,7 @@ private:
   std::int16_t last_present_height_{0};
 
   std::chrono::steady_clock::time_point last_present_time_{};
-  std::chrono::milliseconds min_present_interval_{33};
+  std::chrono::milliseconds min_present_interval_{80};
   bool force_next_refresh_{true};
 
   std::int16_t last_width_{0};

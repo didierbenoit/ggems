@@ -21,6 +21,15 @@ std::unique_ptr<render::GGEMSBanner> g_banner{};
 std::unique_ptr<render::GGEMSProgressBar> g_progress_bar{};
 std::unique_ptr<render::GGEMSTerminalRenderer> g_terminal_renderer{};
 
+std::thread g_output_thread{};
+std::atomic<bool> g_output_running{false};
+std::atomic<bool> g_output_stop_requested{false};
+std::atomic<bool> g_output_final_requested{false};
+
+std::mutex g_output_mtx{};
+std::condition_variable g_output_cv{};
+std::u32string g_final_message{U"Press Enter to exit..."};
+
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
@@ -47,14 +56,14 @@ void ConfigureLoggerForMode(OutputMode mode) {
 
   switch (mode) {
   case OutputMode::Term: {
-    auto &st = EnsureOutputState();
+    auto &st = GetOutputState();
     logger.SetSink(std::make_unique<GGEMSOutputStateSink>(st));
     logger.SetForceColor(true);
     logger.SetForceEncoding(Encoding::Utf32);
     break;
   }
   case OutputMode::Gui: {
-    auto &st = EnsureOutputState();
+    auto &st = GetOutputState();
     logger.SetSink(std::make_unique<GGEMSOutputStateSink>(st));
     logger.SetForceColor(true);
     logger.SetForceEncoding(Encoding::Utf32);
@@ -70,29 +79,61 @@ void ConfigureLoggerForMode(OutputMode mode) {
 
   g_configured = true;
 }
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void EnsureTerminalObjects() {
+  auto &st = GetOutputState();
+
+  if (!g_banner) {
+    g_banner = std::make_unique<render::GGEMSBanner>();
+  }
+
+  auto &progress_bar = GetProgressBar();
+
+  if (!g_terminal_renderer) {
+    g_terminal_renderer = std::make_unique<render::GGEMSTerminalRenderer>(
+        *g_banner, progress_bar, st);
+  }
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void OutputThreadLoop() {
+  while (!g_output_stop_requested.load(std::memory_order_relaxed)) {
+    if (g_mode == OutputMode::Term && g_terminal_renderer) {
+      g_terminal_renderer->RenderOnce();
+    }
+
+    if (g_output_final_requested.load(std::memory_order_relaxed)) {
+      std::u32string message;
+      {
+        std::lock_guard<std::mutex> lock(g_output_mtx);
+        message = g_final_message;
+      }
+
+      if (g_mode == OutputMode::Term && g_terminal_renderer) {
+        g_terminal_renderer->RunFinalScreen(message);
+      }
+
+      g_output_final_requested.store(false, std::memory_order_relaxed);
+      break;
+    }
+
+    std::unique_lock<std::mutex> lock(g_output_mtx);
+    g_output_cv.wait_for(lock, std::chrono::milliseconds(33), [] {
+      return g_output_stop_requested.load(std::memory_order_relaxed) ||
+             g_output_final_requested.load(std::memory_order_relaxed);
+    });
+  }
+
+  g_output_running.store(false, std::memory_order_relaxed);
+}
 } // namespace
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-GGEMSOutputState &EnsureOutputState() {
-  if (!g_state) {
-    g_state = std::make_unique<GGEMSOutputState>();
-  }
-  return *g_state;
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-render::GGEMSProgressBar &EnsureProgressBar() {
-  if (!g_progress_bar) {
-    g_progress_bar = std::make_unique<render::GGEMSProgressBar>();
-  }
-  return *g_progress_bar;
-}
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
@@ -104,22 +145,65 @@ OutputMode GetOutputMode() noexcept { return g_mode; }
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void SetOutputMode(OutputMode mode) {
-  if (mode == g_mode && g_configured)
-    return;
+bool IsOutputConfigured() noexcept { return g_configured; }
 
-  if (mode != g_mode && g_configured) {
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+bool IsOutputRuntimeStarted() noexcept {
+  return g_output_running.load(std::memory_order_relaxed);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+GGEMSOutputState &GetOutputState() {
+  if (!g_state) {
+    g_state = std::make_unique<GGEMSOutputState>();
+  }
+  return *g_state;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+render::GGEMSProgressBar &GetProgressBar() {
+  if (!g_configured) {
     Throw<GGEMSFatal>(
-        "Output mode already configured; must be set before initialisation.");
+        "Output mode must be configured before requesting the progress bar. "
+        "Call ggems.core.set_output_mode('term'|'gui'|'cluster') first.");
+  }
+
+  if (g_mode == OutputMode::Cluster) {
+    Throw<GGEMSFatal>("Progress bar is not available in cluster mode.");
+  }
+
+  if (!g_progress_bar) {
+    g_progress_bar = std::make_unique<render::GGEMSProgressBar>();
+  }
+  return *g_progress_bar;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void SetOutputMode(OutputMode mode) {
+  if (mode == g_mode && g_configured) {
+    return;
+  }
+
+  if (g_configured) {
+    Throw<GGEMSFatal>(
+        "Output mode already configured; it must be set exactly once before "
+        "starting GGEMS output runtime.");
   }
 
   ConfigureLoggerForMode(mode);
   g_mode = mode;
-
-  if (g_mode == OutputMode::Term) {
-    EnsureOutputRuntime();
-    RefreshOutput();
-  }
 }
 
 /* --------------------------------------------- */
@@ -132,51 +216,81 @@ void SetOutputMode(std::string_view mode) { SetOutputMode(Parse(mode)); }
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void EnsureOutputRuntime() {
-  if (g_mode != OutputMode::Term) {
+void StartOutputRuntime() {
+  if (!g_configured) {
+    Throw<GGEMSFatal>(
+        "Output mode is not configured. "
+        "Call ggems.core.set_output_mode('term'|'gui'|'cluster') before "
+        "starting GGEMS output runtime.");
+  }
+
+  if (g_output_running.load(std::memory_order_relaxed)) {
     return;
   }
 
-  auto &st = EnsureOutputState();
+  switch (g_mode) {
+  case OutputMode::Term: {
+    EnsureTerminalObjects();
+    g_terminal_renderer->Start();
 
-  if (!g_banner) {
-    g_banner = std::make_unique<render::GGEMSBanner>();
+    g_output_stop_requested.store(false, std::memory_order_relaxed);
+    g_output_final_requested.store(false, std::memory_order_relaxed);
+    g_output_running.store(true, std::memory_order_relaxed);
+
+    g_output_thread = std::thread(OutputThreadLoop);
+    break;
   }
 
-  auto &progress_bar = EnsureProgressBar();
-
-  if (!g_terminal_renderer) {
-    g_terminal_renderer = std::make_unique<render::GGEMSTerminalRenderer>(
-        *g_banner, progress_bar, st);
+  case OutputMode::Gui: {
+    g_output_running.store(true, std::memory_order_relaxed);
+    break;
   }
 
-  g_terminal_renderer->Start();
+  case OutputMode::Cluster: {
+    g_output_running.store(true, std::memory_order_relaxed);
+    break;
+  }
+  }
 }
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void RefreshOutput() {
-  if (g_mode != OutputMode::Term) {
+void WakeOutputRuntime() noexcept {
+  if (!g_output_running.load(std::memory_order_relaxed)) {
     return;
   }
 
-  EnsureOutputRuntime();
-  g_terminal_renderer->RenderOnce();
+  if (g_mode == OutputMode::Term) {
+    g_output_cv.notify_one();
+  }
 }
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void FinaliseOutput(std::u32string_view message) {
-  if (g_mode != OutputMode::Term) {
+void ShowFinalOutputScreen(std::u32string_view message) {
+  if (!g_output_running.load(std::memory_order_relaxed)) {
     return;
   }
 
-  EnsureOutputRuntime();
-  g_terminal_renderer->RunFinalScreen(message);
+  if (g_mode == OutputMode::Cluster) {
+    return;
+  }
+
+  if (g_mode == OutputMode::Gui) {
+    return;
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(g_output_mtx);
+    g_final_message = std::u32string(message);
+  }
+
+  g_output_final_requested.store(true, std::memory_order_relaxed);
+  g_output_cv.notify_one();
 }
 
 /* --------------------------------------------- */
@@ -184,8 +298,17 @@ void FinaliseOutput(std::u32string_view message) {
 /* --------------------------------------------- */
 
 void StopOutputRuntime() noexcept {
+  g_output_stop_requested.store(true, std::memory_order_relaxed);
+  g_output_cv.notify_one();
+
+  if (g_output_thread.joinable()) {
+    g_output_thread.join();
+  }
+
   if (g_terminal_renderer) {
     g_terminal_renderer->Stop();
   }
+
+  g_output_running.store(false, std::memory_order_relaxed);
 }
 } // namespace ggems::core

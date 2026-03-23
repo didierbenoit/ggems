@@ -76,7 +76,10 @@ void GGEMSTerminalRenderer::Refresh(bool force) {
   }
 
   // First frame, resize, or explicit force -> full present.
-  if (force || force_next_refresh_ || size_changed || last_cells_.empty()) {
+  if (force || force_next_refresh_ || size_changed ||
+      last_cells_.empty()) { // ||
+                             // scroll_offset_ != 0 ||
+                             // progress_bar_.GetSlotCount() > 0) {
     std::string out = framebuffer_.Render();
     presenter_.Present(out);
 
@@ -122,78 +125,6 @@ void GGEMSTerminalRenderer::CaptureCurrentFrame() {
     }
   }
 }
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-/*std::string GGEMSTerminalRenderer::BuildDiffPayload() const {
-  std::int16_t w = framebuffer_.GetWidth();
-  std::int16_t h = framebuffer_.GetHeight();
-
-  if (w != last_present_width_ || h != last_present_height_) {
-    return {};
-  }
-
-  std::string payload;
-  payload.reserve(static_cast<std::size_t>(w) * static_cast<std::size_t>(h) *
-                  8U);
-
-  for (std::int16_t y = 0; y < h; ++y) {
-    std::int16_t x = 0;
-
-    while (x < w) {
-      std::size_t idx =
-          static_cast<std::size_t>(y) * static_cast<std::size_t>(w) +
-          static_cast<std::size_t>(x);
-
-      auto const current = framebuffer_.GetCell(x, y);
-      auto const &previous = last_cells_[idx];
-
-      if (current == previous) {
-        ++x;
-        continue;
-      }
-
-      // Start a run of changed cells with same colour.
-      ColourKey run_fg = current.fg;
-      std::u32string run_text;
-      std::int16_t run_x = x;
-
-      while (x < w) {
-        std::size_t run_idx =
-            static_cast<std::size_t>(y) * static_cast<std::size_t>(w) +
-            static_cast<std::size_t>(x);
-
-        auto const c = framebuffer_.GetCell(x, y);
-        auto const &p = last_cells_[run_idx];
-
-        if (c == p || c.fg != run_fg) {
-          break;
-        }
-
-        run_text.push_back(c.ch);
-        ++x;
-      }
-
-      payload.append("\033[");
-      payload.append(std::to_string(static_cast<int>(y + 1)));
-      payload.push_back(';');
-      payload.append(std::to_string(static_cast<int>(run_x + 1)));
-      payload.push_back('H');
-
-      payload.append(AnsiColour(DEFAULT_BG));
-      payload.append(AnsiColour(run_fg));
-      payload.append(utf::UTF32ToUTF8(run_text));
-    }
-  }
-
-  if (!payload.empty()) {
-    payload.append("\033[0m");
-  }
-
-  return payload;
-}*/
 
 std::string GGEMSTerminalRenderer::BuildDiffPayload() const {
   std::int16_t w = framebuffer_.GetWidth();
@@ -286,10 +217,13 @@ void GGEMSTerminalRenderer::DrawFrame(std::u32string_view final_message) {
   std::int16_t progress_rows = progress_bar_.GetHeight();
 
   std::int16_t content_x = 1;
-  std::int16_t content_y = 1;
+  std::int16_t content_y = 0;
   std::int16_t content_w = static_cast<std::int16_t>(w - 2);
-  std::int16_t content_h =
-      static_cast<std::int16_t>(h - progress_rows - final_message_rows - 2);
+
+  std::int16_t progress_y =
+      static_cast<std::int16_t>(h - final_message_rows - progress_rows);
+
+  std::int16_t content_h = static_cast<std::int16_t>(progress_y - content_y);
 
   if (content_h < 0) {
     content_h = 0;
@@ -298,8 +232,6 @@ void GGEMSTerminalRenderer::DrawFrame(std::u32string_view final_message) {
   Rect content_rect{content_x, content_y, content_w, content_h};
   DrawScrollableContent(content_rect);
 
-  std::int16_t progress_y =
-      static_cast<std::int16_t>(h - final_message_rows - progress_rows);
   if (progress_y >= 0) {
     progress_bar_.Draw(framebuffer_, 1, progress_y,
                        static_cast<std::int16_t>(w - 2));
