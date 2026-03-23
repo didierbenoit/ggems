@@ -5,6 +5,7 @@
 #include "GGEMS/core/GGEMSOutputMode.hh"
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSOutputStateSink.hh"
+#include "GGEMS/render/GGEMSBanner.hh"
 
 namespace ggems::core {
 /* --------------------------------------------- */
@@ -14,7 +15,11 @@ namespace ggems::core {
 namespace {
 OutputMode g_mode{OutputMode::Term};
 bool g_configured{false};
-std::unique_ptr<GGEMSOutputState> g_state;
+
+std::unique_ptr<GGEMSOutputState> g_state{};
+std::unique_ptr<render::GGEMSBanner> g_banner{};
+std::unique_ptr<render::GGEMSProgressBar> g_progress_bar{};
+std::unique_ptr<render::GGEMSTerminalRenderer> g_terminal_renderer{};
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
@@ -82,6 +87,17 @@ GGEMSOutputState &EnsureOutputState() {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+render::GGEMSProgressBar &EnsureProgressBar() {
+  if (!g_progress_bar) {
+    g_progress_bar = std::make_unique<render::GGEMSProgressBar>();
+  }
+  return *g_progress_bar;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 OutputMode GetOutputMode() noexcept { return g_mode; }
 
 /* --------------------------------------------- */
@@ -98,8 +114,12 @@ void SetOutputMode(OutputMode mode) {
   }
 
   ConfigureLoggerForMode(mode);
-
   g_mode = mode;
+
+  if (g_mode == OutputMode::Term) {
+    EnsureOutputRuntime();
+    RefreshOutput();
+  }
 }
 
 /* --------------------------------------------- */
@@ -108,4 +128,64 @@ void SetOutputMode(OutputMode mode) {
 
 void SetOutputMode(std::string_view mode) { SetOutputMode(Parse(mode)); }
 
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void EnsureOutputRuntime() {
+  if (g_mode != OutputMode::Term) {
+    return;
+  }
+
+  auto &st = EnsureOutputState();
+
+  if (!g_banner) {
+    g_banner = std::make_unique<render::GGEMSBanner>();
+  }
+
+  auto &progress_bar = EnsureProgressBar();
+
+  if (!g_terminal_renderer) {
+    g_terminal_renderer = std::make_unique<render::GGEMSTerminalRenderer>(
+        *g_banner, progress_bar, st);
+  }
+
+  g_terminal_renderer->Start();
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void RefreshOutput() {
+  if (g_mode != OutputMode::Term) {
+    return;
+  }
+
+  EnsureOutputRuntime();
+  g_terminal_renderer->RenderOnce();
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void FinaliseOutput(std::u32string_view message) {
+  if (g_mode != OutputMode::Term) {
+    return;
+  }
+
+  EnsureOutputRuntime();
+  g_terminal_renderer->RunFinalScreen(message);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void StopOutputRuntime() noexcept {
+  if (g_terminal_renderer) {
+    g_terminal_renderer->Stop();
+  }
+}
 } // namespace ggems::core

@@ -31,8 +31,16 @@ GGEMSTerminalRenderer::~GGEMSTerminalRenderer() noexcept { Stop(); }
 void GGEMSTerminalRenderer::Start() noexcept {
   if (started_)
     return;
+
   presenter_.Begin();
   started_ = true;
+
+  force_next_refresh_ = true;
+  last_frame_.clear();
+  last_present_time_ = std::chrono::steady_clock::time_point();
+
+  last_width_ = 0;
+  last_height_ = 0;
 }
 
 /* --------------------------------------------- */
@@ -50,29 +58,78 @@ void GGEMSTerminalRenderer::Stop() noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSTerminalRenderer::Refresh() {
+void GGEMSTerminalRenderer::Refresh(bool force) {
   std::string out = framebuffer_.Render();
+
+  auto now = std::chrono::steady_clock::now();
+
+  bool frame_changed = (out != last_frame_);
+  bool enough_time_elapsed =
+      (now - last_present_time_) >= min_present_interval_;
+
+  if (!force && !force_next_refresh_) {
+    if (!frame_changed) {
+      return;
+    }
+
+    if (!enough_time_elapsed) {
+      return;
+    }
+  }
+
   presenter_.Present(out);
+  last_frame_ = std::move(out);
+  last_present_time_ = now;
+  force_next_refresh_ = false;
 }
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSTerminalRenderer::RenderFinalMessage(std::u32string_view message) {
+void GGEMSTerminalRenderer::DrawFrame(std::u32string_view final_message) {
   framebuffer_.UpdateSizeIfNeeded();
 
+  std::int16_t w = framebuffer_.GetWidth();
   std::int16_t h = framebuffer_.GetHeight();
-  framebuffer_.DrawString(1, h - 1, message, YELLOW_Neon);
 
-  Refresh();
+  if (w != last_width_ || h != last_height_) {
+    force_next_refresh_ = true;
+    last_width_ = w;
+    last_height_ = h;
+  }
 
-#ifndef _WIN32
-  presenter_.EnablePosixCanonicalInput();
-#endif
+  framebuffer_.Clear(U' ', DEFAULT_FG);
 
-  std::string dummy;
-  std::getline(std::cin, dummy);
+  std::int16_t final_message_rows = 1;
+  std::int16_t progress_rows = progress_bar_.GetHeight();
+
+  std::int16_t content_x = 1;
+  std::int16_t content_y = 1;
+  std::int16_t content_w = static_cast<std::int16_t>(w - 2);
+  std::int16_t content_h =
+      static_cast<std::int16_t>(h - 1 - progress_rows - final_message_rows - 2);
+
+  if (content_h < 0) {
+    content_h = 0;
+  }
+
+  Rect content_rect{content_x, content_y, content_w, content_h};
+  DrawScrollableContent(content_rect);
+
+  std::int16_t progress_y =
+      static_cast<std::int16_t>(h - final_message_rows - progress_rows);
+  if (progress_y >= 0) {
+    progress_bar_.Draw(framebuffer_, 1, progress_y,
+                       static_cast<std::int16_t>(w - 2));
+  }
+
+  if (!final_message.empty()) {
+    framebuffer_.DrawString(1, static_cast<std::int16_t>(h - 1), final_message,
+                            render::YELLOW_Neon);
+  }
+
+  Refresh(false);
 }
 
 /* --------------------------------------------- */
@@ -83,33 +140,27 @@ void GGEMSTerminalRenderer::RenderOnce() {
   if (!started_)
     Start();
 
-  HandleInput();
+  HandleInput(false);
+  DrawFrame();
+}
 
-  framebuffer_.UpdateSizeIfNeeded();
-  framebuffer_.Clear(U' ', DEFAULT_FG);
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
-  std::int16_t w = framebuffer_.GetWidth();
-  std::int16_t h = framebuffer_.GetHeight();
-
-  std::int16_t final_message_rows = 1;
-  std::int16_t progress_rows = progress_bar_.GetHeight();
-
-  std::int16_t content_x = 1;
-  std::int16_t content_y = 1;
-  std::int16_t content_w = static_cast<std::int16_t>(w - 2);
-  std::int16_t content_h =
-      static_cast<std::int16_t>(h - 1 - progress_rows - final_message_rows - 1);
-
-  Rect content_rect{content_x, content_y, content_w, content_h};
-  DrawScrollableContent(content_rect);
-
-  std::int16_t progress_y =
-      static_cast<std::int16_t>(h - final_message_rows - progress_rows);
-  if (progress_y >= 0) {
-    progress_bar_.Draw(framebuffer_, 1, progress_y, w - 2);
+void GGEMSTerminalRenderer::RunFinalScreen(std::u32string_view message) {
+  if (!started_) {
+    Start();
   }
 
-  Refresh();
+  force_next_refresh_ = true;
+
+  bool done = false;
+  while (!done) {
+    DrawFrame(message);
+    done = HandleInput(true);
+    std::this_thread::sleep_for(std::chrono::milliseconds(16));
+  }
 }
 
 /* --------------------------------------------- */
@@ -123,6 +174,7 @@ void GGEMSTerminalRenderer::ScrollUp(std::int32_t lines) noexcept {
 
   follow_tail_ = false;
   scroll_offset_ += lines;
+  force_next_refresh_ = true;
 }
 
 /* --------------------------------------------- */
@@ -139,6 +191,8 @@ void GGEMSTerminalRenderer::ScrollDown(std::int32_t lines) noexcept {
     scroll_offset_ = 0;
     follow_tail_ = true;
   }
+
+  force_next_refresh_ = true;
 }
 
 /* --------------------------------------------- */
@@ -148,6 +202,7 @@ void GGEMSTerminalRenderer::ScrollDown(std::int32_t lines) noexcept {
 void GGEMSTerminalRenderer::ResetFollowTail() noexcept {
   scroll_offset_ = 0;
   follow_tail_ = true;
+  force_next_refresh_ = true;
 }
 
 /* --------------------------------------------- */
@@ -329,40 +384,42 @@ void GGEMSTerminalRenderer::DrawScrollableContent(Rect const &rect) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSTerminalRenderer::HandleInput() noexcept {
+bool GGEMSTerminalRenderer::HandleInput(bool final_mode) noexcept {
   auto key = presenter_.PollKey();
 
   switch (key) {
   case GGEMSTerminalPresenter::TerminalKey::Up:
     ScrollUp(1);
-    break;
+    return false;
 
   case GGEMSTerminalPresenter::TerminalKey::Down:
     ScrollDown(1);
-    break;
+    return false;
 
   case GGEMSTerminalPresenter::TerminalKey::PageUp: {
     std::int16_t h = framebuffer_.GetHeight();
     std::int32_t page_step = std::max<std::int32_t>(1, h - 3);
     ScrollUp(page_step);
-    break;
+    return false;
   }
 
   case GGEMSTerminalPresenter::TerminalKey::PageDown: {
     std::int16_t h = framebuffer_.GetHeight();
     std::int32_t page_step = std::max<std::int32_t>(1, h - 3);
     ScrollDown(page_step);
-    break;
+    return false;
   }
 
   case GGEMSTerminalPresenter::TerminalKey::Space:
     ResetFollowTail();
-    break;
+    return false;
+
+  case GGEMSTerminalPresenter::TerminalKey::Enter:
+    return final_mode;
 
   case GGEMSTerminalPresenter::TerminalKey::None:
   default:
-    break;
+    return false;
   }
 }
-
 } // namespace ggems::render

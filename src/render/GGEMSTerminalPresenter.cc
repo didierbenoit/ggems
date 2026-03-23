@@ -235,6 +235,10 @@ GGEMSTerminalPresenter::TerminalKey GGEMSTerminalPresenter::PollKey() noexcept {
 
   int ch = _getch();
 
+  if (ch == 13) {
+    return TerminalKey::Enter;
+  }
+
   if (ch == ' ') {
     return TerminalKey::Space;
   }
@@ -268,6 +272,10 @@ GGEMSTerminalPresenter::TerminalKey GGEMSTerminalPresenter::PollKey() noexcept {
   if (count == 1) {
     if (seq[0] == ' ') {
       return TerminalKey::Space;
+    }
+
+    if (seq[0] == '\n' || seq[0] == '\r') {
+      return TerminalKey::Enter;
     }
     return TerminalKey::None;
   }

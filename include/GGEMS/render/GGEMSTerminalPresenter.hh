@@ -20,7 +20,8 @@ public:
     Down,
     PageUp,
     PageDown,
-    Space
+    Space,
+    Enter
   };
 
 public:

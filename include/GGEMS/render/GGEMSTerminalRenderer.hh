@@ -51,17 +51,18 @@ public:
   void Stop() noexcept;
 
   void RenderOnce();
-  void RenderFinalMessage(std::u32string_view message);
+  void RunFinalScreen(std::u32string_view message);
 
   void ScrollUp(std::int32_t lines = 1) noexcept;
   void ScrollDown(std::int32_t lines = 1) noexcept;
   void ResetFollowTail() noexcept;
 
-  void HandleInput() noexcept;
+  bool HandleInput(bool final_mode) noexcept;
 
 private:
   void DrawScrollableContent(Rect const &rect);
-  void Refresh();
+  void DrawFrame(std::u32string_view final_message = U"");
+  void Refresh(bool force = false);
 
   [[nodiscard]] std::vector<WrappedLine>
   WrapLogLine(core::RenderedLogLine const &line, std::int16_t max_width) const;
@@ -79,5 +80,13 @@ private:
   bool started_{false};
   std::int32_t scroll_offset_{0};
   bool follow_tail_{true};
+
+  std::string last_frame_{};
+  std::chrono::steady_clock::time_point last_present_time_{};
+  std::chrono::milliseconds min_present_interval_{33};
+  bool force_next_refresh_{true};
+
+  std::int16_t last_width_{0};
+  std::int16_t last_height_{0};
 };
 } // namespace ggems::render
