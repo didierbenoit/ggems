@@ -227,7 +227,7 @@ void GGEMSOpenCLProgram::Build() {
 std::string
 GGEMSOpenCLProgram::LoadTextFile(std::filesystem::path const &path) {
   std::ifstream ifs(path, std::ios::binary);
-  GGEMS_FATAL_CHECK(
+  GGEMS_CHECK_FATAL(
       ifs.good(),
       std::format("Failed to open program source file '{}'.", path.string()));
 

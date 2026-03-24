@@ -25,6 +25,7 @@ std::thread g_output_thread{};
 std::atomic<bool> g_output_running{false};
 std::atomic<bool> g_output_stop_requested{false};
 std::atomic<bool> g_output_final_requested{false};
+std::atomic<bool> g_output_final_done{false};
 
 std::mutex g_output_mtx{};
 std::condition_variable g_output_cv{};
@@ -43,8 +44,7 @@ OutputMode Parse(std::string_view s) {
   if (v == "cluster")
     return OutputMode::Cluster;
 
-  Throw<GGEMSFatal>(
-      "Unknown output mode. Expected: 'term', 'gui', or 'cluster'.");
+  GGEMS_FATAL("Unknown output mode. Expected: 'term', 'gui', or 'cluster'.");
 }
 
 /* --------------------------------------------- */
@@ -112,7 +112,7 @@ void OutputThreadLoop() {
     if (g_output_final_requested.load(std::memory_order_relaxed)) {
       std::u32string message;
       {
-        std::lock_guard<std::mutex> lock(g_output_mtx);
+        std::scoped_lock lock(g_output_mtx);
         message = g_final_message;
       }
 
@@ -121,11 +121,13 @@ void OutputThreadLoop() {
       }
 
       g_output_final_requested.store(false, std::memory_order_relaxed);
-      break;
+      g_output_final_done.store(true, std::memory_order_relaxed);
+      g_output_cv.notify_one();
+      continue;
     }
 
     std::unique_lock<std::mutex> lock(g_output_mtx);
-    g_output_cv.wait_for(lock, std::chrono::milliseconds(33), [] {
+    g_output_cv.wait_for(lock, std::chrono::milliseconds(50), [] {
       return g_output_stop_requested.load(std::memory_order_relaxed) ||
              g_output_final_requested.load(std::memory_order_relaxed);
     });
@@ -171,15 +173,13 @@ GGEMSOutputState &GetOutputState() {
 /* --------------------------------------------- */
 
 render::GGEMSProgressBar &GetProgressBar() {
-  if (!g_configured) {
-    Throw<GGEMSFatal>(
-        "Output mode must be configured before requesting the progress bar. "
-        "Call ggems.core.set_output_mode('term'|'gui'|'cluster') first.");
-  }
+  GGEMS_CHECK_FATAL(
+      g_configured,
+      "Output mode must be configured before requesting the progress bar. "
+      "Call ggems.core.set_output_mode('term'|'gui'|'cluster') first.");
 
-  if (g_mode == OutputMode::Cluster) {
-    Throw<GGEMSFatal>("Progress bar is not available in cluster mode.");
-  }
+  GGEMS_CHECK_FATAL(g_mode != OutputMode::Cluster,
+                    "Progress bar is not available in cluster mode.");
 
   if (!g_progress_bar) {
     g_progress_bar = std::make_unique<render::GGEMSProgressBar>();
@@ -196,11 +196,10 @@ void SetOutputMode(OutputMode mode) {
     return;
   }
 
-  if (g_configured) {
-    Throw<GGEMSFatal>(
-        "Output mode already configured; it must be set exactly once before "
-        "starting GGEMS output runtime.");
-  }
+  GGEMS_CHECK_FATAL(
+      !g_configured,
+      "Output mode already configured; it must be set exactly once before "
+      "starting GGEMS output runtime.");
 
   ConfigureLoggerForMode(mode);
   g_mode = mode;
@@ -217,12 +216,11 @@ void SetOutputMode(std::string_view mode) { SetOutputMode(Parse(mode)); }
 /* --------------------------------------------- */
 
 void StartOutputRuntime() {
-  if (!g_configured) {
-    Throw<GGEMSFatal>(
-        "Output mode is not configured. "
-        "Call ggems.core.set_output_mode('term'|'gui'|'cluster') before "
-        "starting GGEMS output runtime.");
-  }
+  GGEMS_CHECK_FATAL(
+      g_configured,
+      "Output mode is not configured. "
+      "Call ggems.core.set_output_mode('term'|'gui'|'cluster') before "
+      "starting GGEMS output runtime.");
 
   if (g_output_running.load(std::memory_order_relaxed)) {
     return;
@@ -236,6 +234,7 @@ void StartOutputRuntime() {
     g_output_stop_requested.store(false, std::memory_order_relaxed);
     g_output_final_requested.store(false, std::memory_order_relaxed);
     g_output_running.store(true, std::memory_order_relaxed);
+    g_output_final_done.store(false, std::memory_order_relaxed);
 
     g_output_thread = std::thread(OutputThreadLoop);
     break;
@@ -285,12 +284,17 @@ void ShowFinalOutputScreen(std::u32string_view message) {
   }
 
   {
-    std::lock_guard<std::mutex> lock(g_output_mtx);
+    std::scoped_lock lock(g_output_mtx);
     g_final_message = std::u32string(message);
   }
 
+  g_output_final_done.store(false, std::memory_order_relaxed);
   g_output_final_requested.store(true, std::memory_order_relaxed);
   g_output_cv.notify_one();
+
+  std::unique_lock<std::mutex> lock(g_output_mtx);
+  g_output_cv.wait(
+      lock, [] { return g_output_final_done.load(std::memory_order_relaxed); });
 }
 
 /* --------------------------------------------- */

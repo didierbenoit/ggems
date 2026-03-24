@@ -48,16 +48,16 @@ GGEMSOpenCLSVMBuffer::GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context,
                                            Bytes size, cl_svm_mem_flags flags,
                                            Bytes alignment)
     : context_(&context), ptr_{nullptr}, size_{size}, flags_{flags} {
-  GGEMS_FATAL_CHECK(size_.value > 0, "Cannot allocate zero-sized SVM buffer.");
+  GGEMS_CHECK_FATAL(size_.value > 0, "Cannot allocate zero-sized SVM buffer.");
 
   auto const &svm = context.GetSVMSupport();
-  GGEMS_FATAL_CHECK(svm.HasAny(), "Device does not support any form of SVM.");
+  GGEMS_CHECK_FATAL(svm.HasAny(), "Device does not support any form of SVM.");
 
   auto &ctx = context.GetContextNative();
 
   void *p = clSVMAlloc(ctx(), flags_, static_cast<std::size_t>(size.value),
                        static_cast<cl_uint>(alignment.value));
-  GGEMS_FATAL_CHECK(p, "clSVMalloc failed: returned nullptr.");
+  GGEMS_CHECK_FATAL(p, "clSVMalloc failed: returned nullptr.");
 
   ptr_ = p;
   context_->RegisterSVMAllocation(size_);
