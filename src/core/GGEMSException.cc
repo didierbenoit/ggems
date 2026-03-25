@@ -54,9 +54,7 @@ void TerminateHandler() noexcept {
       try {
         std::rethrow_exception(ex);
       } catch (GGEMSExceptionBase const &e) {
-        if (e.Logged()) {
-          GGEMSExceptionBase::Log(e.what());
-        }
+        GGEMSExceptionBase::Log(e.what());
       } catch (std::exception const &e) {
         GGEMSExceptionBase::Log(std::string("[std::exception] ") + e.what());
       } catch (...) {
@@ -64,7 +62,7 @@ void TerminateHandler() noexcept {
       }
     } else {
       GGEMSExceptionBase::Log(
-          "[GGEMSException] Terminate called with no active exception]");
+          "[GGEMSException] Terminate called with no active exception");
     }
   } catch (...) {
     std::fputs("[GGEMSException] Exception escaped TerminateHandler\n", stderr);

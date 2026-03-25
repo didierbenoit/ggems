@@ -77,7 +77,7 @@ GetEnvVar(const char *name) noexcept {
 }
 
 FileSink::FileSink(std::string path)
-    : path_(path), out_(path_, std::ios::out | std::ios::app) {
+    : path_(path), out_(path_, std::ios::out | std::ios::trunc) {
   GGEMS_CHECK_FATAL(out_, "Cannot open log file: " + path_);
 }
 

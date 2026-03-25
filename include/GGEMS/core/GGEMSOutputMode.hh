@@ -19,9 +19,12 @@ OutputMode GetOutputMode() noexcept;
 
 bool IsOutputConfigured() noexcept;
 bool IsOutputRuntimeStarted() noexcept;
+bool IsProgressBarAvailable() noexcept;
 
 void SetOutputMode(OutputMode mode);
 void SetOutputMode(std::string_view mode);
+
+void SetClusterOutputFile(std::string_view path);
 
 void StartOutputRuntime();
 void WakeOutputRuntime() noexcept;

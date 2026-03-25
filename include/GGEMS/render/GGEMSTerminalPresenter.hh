@@ -21,7 +21,10 @@ public:
     PageUp,
     PageDown,
     Space,
-    Enter
+    Enter,
+    WheelDown,
+    WheelUp,
+    Home
   };
 
 public:
@@ -58,9 +61,10 @@ private:
   bool started_{false};
   bool use_alt_buffer_{false};
 #ifdef _WIN32
-  DWORD original_mode_;
-  UINT original_cp_out_;
-  UINT original_cp_;
+  DWORD original_mode_out_{0};
+  DWORD original_mode_in_{0};
+  UINT original_cp_out_{0};
+  UINT original_cp_{0};
 #else
   termios original_termios_{};
   std::int32_t original_stdin_flags_{0};

@@ -16,6 +16,8 @@ namespace {
 OutputMode g_mode{OutputMode::Term};
 bool g_configured{false};
 
+std::string g_cluster_output_file{"ggems.log"};
+
 std::unique_ptr<GGEMSOutputState> g_state{};
 std::unique_ptr<render::GGEMSBanner> g_banner{};
 std::unique_ptr<render::GGEMSProgressBar> g_progress_bar{};
@@ -70,7 +72,7 @@ void ConfigureLoggerForMode(OutputMode mode) {
     break;
   }
   case OutputMode::Cluster: {
-    logger.SetSink(std::make_unique<FileSink>("ggems.log"));
+    logger.SetSink(std::make_unique<FileSink>(g_cluster_output_file));
     logger.SetForceColor(false);
     logger.SetForceEncoding(Encoding::Ascii);
     break;
@@ -161,6 +163,15 @@ bool IsOutputRuntimeStarted() noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+bool IsProgressBarAvailable() noexcept {
+  return g_configured &&
+         (g_mode == OutputMode::Term || g_mode == OutputMode::Gui);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 GGEMSOutputState &GetOutputState() {
   if (!g_state) {
     g_state = std::make_unique<GGEMSOutputState>();
@@ -210,6 +221,26 @@ void SetOutputMode(OutputMode mode) {
 /* --------------------------------------------- */
 
 void SetOutputMode(std::string_view mode) { SetOutputMode(Parse(mode)); }
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void SetClusterOutputFile(std::string_view path) {
+  GGEMS_CHECK_FATAL(!path.empty(),
+                    "Cluster output file path must not be empty.");
+
+  GGEMS_CHECK_FATAL(
+      !g_output_running.load(std::memory_order_relaxed),
+      "Cluster output file cannot be changed while output runtime is started.");
+
+  GGEMS_CHECK_FATAL(
+      !g_configured || g_mode == OutputMode::Cluster,
+      "Cluster output file can only be configured before output mode is set, "
+      "or when output mode is 'cluster'.");
+
+  g_cluster_output_file = std::string(path);
+}
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */

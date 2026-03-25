@@ -101,14 +101,7 @@ public:
       full_ = "\n[GGEMSException] (formatting failed): " + msg + "\n";
     }
 
-    if (do_log) {
-      try {
-        Log(full_);
-        logged_ = true;
-      } catch (...) {
-        logged_ = false;
-      }
-    }
+    logged_ = do_log;
   }
 
   /*!

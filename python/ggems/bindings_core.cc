@@ -18,6 +18,11 @@ void BindCore(py::module_ &m) {
       py::arg("mode"), "Select output mode: 'term', 'gui', or 'cluster'.");
 
   m.def(
+      "set_cluster_output_file",
+      [](std::string const &path) { ggems::core::SetClusterOutputFile(path); },
+      py::arg("path"), "Set output log file path for cluster mode.");
+
+  m.def(
       "start_output_runtime", []() { ggems::core::StartOutputRuntime(); },
       "Start GGEMS output runtime.");
 

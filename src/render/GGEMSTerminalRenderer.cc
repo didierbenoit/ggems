@@ -322,6 +322,16 @@ void GGEMSTerminalRenderer::ResetFollowTail() noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+void GGEMSTerminalRenderer::ScrollToTop() noexcept {
+  follow_tail_ = false;
+  force_next_refresh_ = true;
+  scroll_offset_ = std::numeric_limits<std::int32_t>::max();
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 std::pair<std::u32string, std::u32string>
 GGEMSTerminalRenderer::SplitChunk(std::u32string_view text,
                                   std::int16_t max_width) {
@@ -507,6 +517,18 @@ bool GGEMSTerminalRenderer::HandleInput(bool final_mode) noexcept {
 
   case GGEMSTerminalPresenter::TerminalKey::Down:
     ScrollDown(1);
+    return false;
+
+  case GGEMSTerminalPresenter::TerminalKey::WheelUp:
+    ScrollUp(3);
+    return false;
+
+  case GGEMSTerminalPresenter::TerminalKey::WheelDown:
+    ScrollDown(3);
+    return false;
+
+  case GGEMSTerminalPresenter::TerminalKey::Home:
+    ScrollToTop();
     return false;
 
   case GGEMSTerminalPresenter::TerminalKey::PageUp: {

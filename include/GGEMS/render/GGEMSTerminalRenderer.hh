@@ -56,6 +56,7 @@ public:
   void ScrollUp(std::int32_t lines = 1) noexcept;
   void ScrollDown(std::int32_t lines = 1) noexcept;
   void ResetFollowTail() noexcept;
+  void ScrollToTop() noexcept;
 
   bool HandleInput(bool final_mode) noexcept;
 

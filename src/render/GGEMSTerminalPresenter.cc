@@ -24,29 +24,44 @@ bool GGEMSTerminalPresenter::EnableVTUtf8WinConsole() {
   bool ok{true};
 
   HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-  if (hOut == INVALID_HANDLE_VALUE)
+  HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+
+  if (hOut == INVALID_HANDLE_VALUE || hIn == INVALID_HANDLE_VALUE)
     return false;
 
   original_cp_ = GetConsoleCP();
   original_cp_out_ = GetConsoleOutputCP();
-  if (!GetConsoleMode(hOut, &original_mode_))
+
+  if (!GetConsoleMode(hOut, &original_mode_out_)) {
     return false;
+  }
+
+  if (!GetConsoleMode(hIn, &original_mode_in_)) {
+    return false;
+  }
 
   ok &= (SetConsoleOutputCP(CP_UTF8) != 0);
   ok &= (SetConsoleCP(CP_UTF8) != 0);
 
-  DWORD mode = original_mode_;
+  DWORD out_mode = original_mode_out_;
+  out_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+  ok &= (SetConsoleMode(hOut, out_mode) != 0);
 
-  mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-  ok &= (SetConsoleMode(hOut, mode) != 0);
+  DWORD in_mode = original_mode_in_;
+  in_mode |= static_cast<DWORD>(ENABLE_WINDOW_INPUT);
+  in_mode |= static_cast<DWORD>(ENABLE_MOUSE_INPUT);
+  in_mode |= static_cast<DWORD>(ENABLE_EXTENDED_FLAGS);
+  in_mode &= ~static_cast<DWORD>(ENABLE_QUICK_EDIT_MODE);
+  ok &= (SetConsoleMode(hIn, in_mode) != 0);
 
-  DWORD newMode = 0;
-  if (!GetConsoleMode(hOut, &newMode))
+  DWORD new_out_mode = 0;
+  if (!GetConsoleMode(hOut, &new_out_mode)) {
     return false;
+  }
 
-  bool vtEnabled = (newMode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0;
+  bool vt_enabled = (new_out_mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0;
 
-  return ok && vtEnabled;
+  return ok && vt_enabled;
 }
 
 /* --------------------------------------------- */
@@ -57,12 +72,17 @@ bool GGEMSTerminalPresenter::RestoreWinConsole() {
   bool ok{true};
 
   HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-  if (hOut == INVALID_HANDLE_VALUE)
-    return false;
+  HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
 
-  ok &= (SetConsoleMode(hOut, original_mode_) != 0);
+  if (hOut == INVALID_HANDLE_VALUE || hIn == INVALID_HANDLE_VALUE) {
+    return false;
+  }
+
+  ok &= (SetConsoleMode(hOut, original_mode_out_) != 0);
+  ok &= (SetConsoleMode(hIn, original_mode_in_) != 0);
   ok &= (SetConsoleOutputCP(original_cp_out_) != 0);
   ok &= (SetConsoleCP(original_cp_) != 0);
+
   return ok;
 }
 #else
@@ -242,35 +262,67 @@ void GGEMSTerminalPresenter::Write(std::string_view bytes) noexcept {
 
 GGEMSTerminalPresenter::TerminalKey GGEMSTerminalPresenter::PollKey() noexcept {
 #ifdef _WIN32
-  if (!_kbhit()) {
+  HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+
+  if (hIn == INVALID_HANDLE_VALUE) {
     return TerminalKey::None;
   }
 
-  int ch = _getch();
-
-  if (ch == 13) {
-    return TerminalKey::Enter;
+  DWORD available = 0;
+  if (!GetNumberOfConsoleInputEvents(hIn, &available) || available == 0) {
+    return TerminalKey::None;
   }
 
-  if (ch == ' ') {
-    return TerminalKey::Space;
-  }
+  INPUT_RECORD record{};
+  DWORD read{0};
 
-  // Arrow / Page keys
-  if (ch == 0 || ch == 224) {
-    int ext = _getch();
-    switch (ext) {
-    case 72:
-      return TerminalKey::Up; // Arrow Up
-    case 80:
-      return TerminalKey::Down; // Arrow Down
-    case 73:
-      return TerminalKey::PageUp; // Page Up
-    case 81:
-      return TerminalKey::PageDown; // Page Down
-    default:
+  while (available > 0) {
+    if (!ReadConsoleInputW(hIn, &record, 1, &read) || read == 0) {
       return TerminalKey::None;
     }
+
+    if (record.EventType == KEY_EVENT) {
+      KEY_EVENT_RECORD &key = record.Event.KeyEvent;
+
+      if (!key.bKeyDown) {
+        --available;
+        continue;
+      }
+
+      switch (key.wVirtualKeyCode) {
+      case VK_RETURN:
+        return TerminalKey::Enter;
+      case VK_SPACE:
+        return TerminalKey::Space;
+      case VK_UP:
+        return TerminalKey::Up;
+      case VK_DOWN:
+        return TerminalKey::Down;
+      case VK_PRIOR:
+        return TerminalKey::PageUp;
+      case VK_NEXT:
+        return TerminalKey::PageDown;
+      case VK_HOME:
+        return TerminalKey::Home;
+      default:
+        break;
+      }
+    } else if (record.EventType == MOUSE_EVENT) {
+      MOUSE_EVENT_RECORD &mouse = record.Event.MouseEvent;
+
+      if (mouse.dwEventFlags == MOUSE_WHEELED) {
+        SHORT delta = static_cast<SHORT>(HIWORD(mouse.dwButtonState));
+        if (delta > 0) {
+          return TerminalKey::WheelUp;
+        }
+
+        if (delta < 0) {
+          return TerminalKey::WheelDown;
+        }
+      }
+    }
+
+    --available;
   }
 
   return TerminalKey::None;
