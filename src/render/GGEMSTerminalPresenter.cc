@@ -190,13 +190,20 @@ void GGEMSTerminalPresenter::Begin(bool use_alt_buffer) noexcept {
                     "Impossible to activate Virtual Terminal and UTF-8 Windows "
                     "console mode.");
 #else
-  GGEMS_CHECK(EnablePosixTerminal(),
-              "Impossible to activate POSIX terminal raw mode.");
+  GGEMS_CHECK_FATAL(EnablePosixTerminal(),
+                    "Impossible to activate POSIX terminal raw mode.");
 #endif
 
   if (use_alt_buffer_) {
     WriteRaw("\033[?1049h"); // Enable alternative screen buffer
   }
+
+#ifndef _WIN32
+  WriteRaw("\033[?1000h"); // Enable mouse click reporting
+  WriteRaw("\033[?1006h"); // Enable SGR extended mouse mode
+  WriteRaw("\033[?1015l"); // Ensure urxvt mode is disabled
+#endif
+
   WriteRaw("\033[?25l");     // Hide the cursor
   WriteRaw("\033[2J\033[H"); // Clear screen, and move cursor top left corner
   std::fflush(stdout);
@@ -214,6 +221,12 @@ void GGEMSTerminalPresenter::End() noexcept {
 
   WriteRaw("\033[0m");   // Reset and go back default terminal
   WriteRaw("\033[?25h"); // Show the cursor
+
+#ifndef _WIN32
+  WriteRaw("\033[?1000l"); // Disable mouse click
+  WriteRaw("\033[?1006l"); // Disable SGR extended mouse mode
+#endif
+
   if (use_alt_buffer_) {
     WriteRaw("\033[?1049l"); // Disable alternative screen buffer
   }
@@ -223,8 +236,8 @@ void GGEMSTerminalPresenter::End() noexcept {
   GGEMS_CHECK_FATAL(RestoreWinConsole(),
                     "Impossible to restore Windows console mode.");
 #else
-  GGEMS_CHECK(RestorePosixTerminal(),
-              "Impossible to restore POSIX terminal mode.");
+  GGEMS_CHECK_FATAL(RestorePosixTerminal(),
+                    "Impossible to restore POSIX terminal mode.");
 #endif
 
   started_ = false;
@@ -327,7 +340,7 @@ GGEMSTerminalPresenter::TerminalKey GGEMSTerminalPresenter::PollKey() noexcept {
 
   return TerminalKey::None;
 #else
-  unsigned char seq[4] = {};
+  unsigned char seq[32] = {};
   ssize_t count = ::read(STDIN_FILENO, seq, sizeof(seq));
 
   if (count <= 0) {
@@ -342,25 +355,67 @@ GGEMSTerminalPresenter::TerminalKey GGEMSTerminalPresenter::PollKey() noexcept {
     if (seq[0] == '\n' || seq[0] == '\r') {
       return TerminalKey::Enter;
     }
+
     return TerminalKey::None;
   }
 
+  // --- CSI sequences
   if (seq[0] == 0x1B && seq[1] == '[') {
-    switch (seq[2]) {
-    case 'A':
-      return TerminalKey::Up;
-    case 'B':
-      return TerminalKey::Down;
-    case '5':
-      if (count >= 4 && seq[3] == '~') {
+    // Arrow keys
+    if (count >= 3) {
+      switch (seq[2]) {
+      case 'A':
+        return TerminalKey::Up;
+      case 'B':
+        return TerminalKey::Down;
+      case 'H':
+        return TerminalKey::Home;
+      default:
+        break;
+      }
+    }
+
+    // Tilde-terminated keys: Home / PageUp / PageDown
+    if (count >= 4) {
+      if (seq[2] == '1' && seq[3] == '~') {
+        return TerminalKey::Home;
+      }
+      if (seq[2] == '5' && seq[3] == '~') {
         return TerminalKey::PageUp;
       }
-    case '6':
-      if (count >= 4 && seq[3] == '~') {
+      if (seq[2] == '6' && seq[3] == '~') {
         return TerminalKey::PageDown;
       }
-    default:
-      break;
+    }
+
+    // SGR mouse mode: ESC [ < button ; x ; y M/m
+    if (count >= 6 && seq[2] == '<') {
+      int button = 0;
+      int x = 0;
+      int y = 0;
+      char suffix = '\0';
+
+      if (std::sscanf(reinterpret_cast<char const *>(seq), "\x1b[<%d;%d;%d%c",
+                      &button, &x, &y, &suffix) == 4) {
+        (void)x;
+        (void)y;
+        (void)suffix;
+
+        // Wheel up/down in SGR mode
+        if (button == 64) {
+          return TerminalKey::WheelUp;
+        }
+        if (button == 65) {
+          return TerminalKey::WheelDown;
+        }
+      }
+    }
+  }
+
+  // --- SS3 sequences used by some terminals for Home
+  if (seq[0] == 0x1B && seq[1] == 'O') {
+    if (count >= 3 && seq[2] == 'H') {
+      return TerminalKey::Home;
     }
   }
 

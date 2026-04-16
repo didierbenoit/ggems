@@ -1,5 +1,6 @@
 /// \cond
 #include <memory>
+#include <condition_variable>
 /// \endcond
 
 #include "GGEMS/core/GGEMSOutputMode.hh"
