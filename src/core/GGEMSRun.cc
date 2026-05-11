@@ -33,6 +33,9 @@ void GGEMSRun::Initialise() {
 void GGEMSRun::Run() {
   GGEMS_INFO("Core", "GGEMS starting...");
 
+  Frequency f = 3874364_Hz;
+  GGEMS_DEBUG("Core", "{}", HumanReadable(f, 1, 5));
+
   render::GGEMSProgressBar *progress_bar =
       core::IsProgressBarAvailable() ? &core::GetProgressBar() : nullptr;
 

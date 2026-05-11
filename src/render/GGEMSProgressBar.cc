@@ -366,46 +366,6 @@ void GGEMSProgressBar::DrawSingleSlot(GGEMSTerminalFramebuffer &framebuffer,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-/*std::chrono::milliseconds GGEMSProgressBar::ComputeFrameTime() const noexcept
-{ using namespace std::chrono_literals;
-
-  if (slots_.empty())
-    return min_frame_time_;
-
-  std::uint64_t max_eta_ps = 0ULL;
-  for (auto const &s : slots_) {
-    std::uint64_t eta = s.eta_ps_.load(std::memory_order_relaxed);
-    if (eta > max_eta_ps)
-      max_eta_ps = eta;
-  }
-
-  // Thresholds (in picoseconds)
-  constexpr uint64_t five_min_ps = 300'000'000'000'000ULL;        //   5 min
-  constexpr uint64_t thirty_min_ps = 1'800'000'000'000'000ULL;    //  30 min
-  constexpr uint64_t two_hours_ps = 7'200'000'000'000'000ULL;     //   2 h
-  constexpr uint64_t twelve_hours_ps = 43'200'000'000'000'000ULL; //  12 h
-
-  // Apply your exact “staircase” rules.
-  if (max_eta_ps < five_min_ps) {
-    return min_frame_time_;
-  }
-  if (max_eta_ps < thirty_min_ps) {
-    return 15s;
-  }
-  if (max_eta_ps < two_hours_ps) {
-    return 80s;
-  }
-  if (max_eta_ps < twelve_hours_ps) {
-    return 150s;
-  }
-
-  return max_frame_time_;
-}*/
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
 std::vector<char32_t> GGEMSProgressBar::BuildBar(float progress) {
   constexpr std::size_t width = 40U;
 

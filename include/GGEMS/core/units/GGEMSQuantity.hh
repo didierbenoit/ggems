@@ -298,4 +298,4 @@ struct formatter<ggems::units::Quantity<DimT, Rep>> : formatter<string> {
   }
 };
 } // namespace std
-/// \endcond
+// \endcond

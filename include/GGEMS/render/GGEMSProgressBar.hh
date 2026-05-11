@@ -190,20 +190,7 @@ private:
   std::vector<Slot> slots_;
 
   // --- Layout
-  // std::int16_t content_width_{90};
-  // std::int16_t frame_height_{0};
-  // std::int16_t rows_per_slot_{6};
-  // std::int16_t header_rows_{4};
-  // std::int16_t footer_rows_{2};
   std::int16_t footer_rows_{1};
   std::int16_t slot_rows_{6};
-  // std::int16_t center_x_{0};
-  // std::int16_t center_y_{0};
-
-  // render::GGEMSTerminalFramebuffer framebuffer_;
-  // std::atomic<std::uint64_t> frame_counter_{0U};
-
-  // std::chrono::milliseconds min_frame_time_{1000};
-  // std::chrono::milliseconds max_frame_time_{300000};
 };
 } // namespace ggems::render
