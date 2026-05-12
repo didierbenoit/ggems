@@ -61,13 +61,13 @@ static const std::unordered_map<std::string, std::string> vendor_aliases = {
 /* --------------------------------------------- */
 
 GGEMSOpenCL::GGEMSOpenCL() {
-  GGEMS_INFOEX("OpenCL", 2, "Constructing GGEMSOpenCL singleton...");
+  GGEMS_INFOEX("OpenCL", 3, "Constructing GGEMSOpenCL singleton.");
   std::set_terminate(ggems::core::TerminateHandler);
-  DisableKernelCache();
+  DisableNvidiaDriverKernelCache();
 
   try {
     InitPlatformsAndDevices();
-    GGEMS_INFOEX("OpenCL", 1, "GGEMSOpenCL successfully constructed!");
+    GGEMS_INFOEX("OpenCL", 2, "OpenCL backend initialized.");
   } catch (core::GGEMSExceptionBase &) {
     std::terminate();
   } catch (std::exception const &) {
@@ -82,10 +82,9 @@ GGEMSOpenCL::GGEMSOpenCL() {
 /* --------------------------------------------- */
 
 GGEMSOpenCL::~GGEMSOpenCL() {
-  GGEMS_INFOEX("OpenCL", 2, "Releasing GGEMSOpenCL resources...");
   GGEMS_INFOEX(
-      "OpenCL", 2,
-      "GGEMSOpenCL singleton destroyed (memory intentionally retained).");
+      "OpenCL", 3,
+      "GGEMSOpenCL singleton destroyed; memory intentionally retained.");
 }
 
 /* --------------------------------------------- */
@@ -99,12 +98,13 @@ GGEMSOpenCLProgram &GGEMSOpenCL::GetOrCreateProgram(
     if (p->GetKernelName() == kernel_name &&
         p->GetSourcePath() == (kernel_root / (kernel_name + ".cl")).string() &&
         p->GetBuildOptions() == build_options) {
-      GGEMS_INFO("OpenCL", "Reusing cached program '{}'.", kernel_name);
+      GGEMS_INFOEX("OpenCL", 3, "Reusing cached OpenCL program '{}'.",
+                   kernel_name);
       return *p;
     }
   }
 
-  GGEMS_INFO("OpenCL", "Creating program '{}'...", kernel_name);
+  GGEMS_INFOEX("OpenCL", 2, "Creating OpenCL program '{}'.", kernel_name);
 
   auto prog = std::unique_ptr<GGEMSOpenCLProgram>(
       new GGEMSOpenCLProgram(ctx, kernel_root, kernel_name, build_options));
@@ -119,7 +119,7 @@ GGEMSOpenCLProgram &GGEMSOpenCL::GetOrCreateProgram(
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSOpenCL::DisableKernelCache() const {
+void GGEMSOpenCL::DisableNvidiaDriverKernelCache() const {
 #ifdef _MSC_VER
   static char env_var[] = "CUDA_CACHE_DISABLE=1";
   _putenv(env_var);
@@ -127,7 +127,7 @@ void GGEMSOpenCL::DisableKernelCache() const {
   setenv("CUDA_CACHE_DISABLE", "1", 1);
 #endif
 
-  GGEMS_INFOEX("OpenCL", 2, "CUDA kernel cache disabled.");
+  GGEMS_INFOEX("OpenCL", 3, "NVIDIA kernel cache disabled.");
 }
 
 /* --------------------------------------------- */
@@ -135,7 +135,7 @@ void GGEMSOpenCL::DisableKernelCache() const {
 /* --------------------------------------------- */
 
 void GGEMSOpenCL::InitPlatformsAndDevices() {
-  GGEMS_INFOEX("OpenCL", 1, "Enumerating OpenCL platforms...");
+  GGEMS_INFOEX("OpenCL", 2, "Enumerating OpenCL platforms.");
 
   std::vector<cl::Platform> platforms;
   GGEMS_OCL_CHECK(cl::Platform::get(&platforms),
@@ -148,7 +148,7 @@ void GGEMSOpenCL::InitPlatformsAndDevices() {
     platforms_.emplace_back(p, plat_index++);
   }
 
-  GGEMS_INFOEX("OpenCL", 1, "{} OpenCL platform(s) initialized.",
+  GGEMS_INFOEX("OpenCL", 1, "{} OpenCL platform(s) detected.",
                platforms_.size());
 }
 
@@ -157,7 +157,9 @@ void GGEMSOpenCL::InitPlatformsAndDevices() {
 /* --------------------------------------------- */
 
 void GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters) {
-  GGEMS_INFO("OpenCL", "Selecting OpenCL devices...");
+  selected_devices_.clear();
+
+  GGEMS_INFOEX("OpenCL", 1, "Selecting OpenCL devices.");
 
   // --- Collect all devices from all platforms ----------------------------
   std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> all_devices;
@@ -177,11 +179,11 @@ void GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters) {
         });
     if (it_gpu != all_devices.end()) {
       selected_devices_.push_back(*it_gpu);
-      GGEMS_INFO("OpenCL", "No filter specified — using first GPU device: {}",
+      GGEMS_INFO("OpenCL", "No filter specified; using first GPU device: {}",
                  it_gpu->get().GetName());
     } else {
       selected_devices_.push_back(all_devices.front());
-      GGEMS_INFO("OpenCL", "No GPU found — using first available device: {}",
+      GGEMS_INFO("OpenCL", "No GPU found; using first available device: {}",
                  all_devices.front().get().GetName());
     }
     return;
@@ -191,7 +193,9 @@ void GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters) {
   GGEMS_CHECK_FATAL(!selected_devices_.empty(),
                     "No matching devices for given filters.");
 
-  GGEMS_INFO("OpenCL", "Total devices selected: {}", selected_devices_.size());
+  GGEMS_INFO("OpenCL", "{} OpenCL device(s) selected.",
+             selected_devices_.size());
+
   for (std::size_t i = 0; i < selected_devices_.size(); ++i) {
     auto const &d = selected_devices_[i];
     GGEMS_INFO("OpenCL", "[{}] {}  ({} / {})", i, d.get().GetName(),
@@ -206,7 +210,7 @@ void GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters) {
 void GGEMSOpenCL::Initialise() {
   try {
     CreateContexts();
-    GGEMS_INFOEX("OpenCL", 2, "Contexts successfully constructed!");
+    GGEMS_INFOEX("OpenCL", 2, "OpenCL backend ready.");
   } catch (ggems::core::GGEMSExceptionBase &) {
     std::terminate();
   } catch (std::exception const &) {
@@ -227,7 +231,7 @@ void GGEMSOpenCL::CreateContexts() {
   for (auto const &dev : selected_devices_)
     contexts_.emplace_back(dev);
 
-  GGEMS_INFO("Run", "Created {} OpenCL contexts.", contexts_.size());
+  GGEMS_INFOEX("OpenCL", 2, "{} OpenCL context(s) created.", contexts_.size());
 }
 
 /* --------------------------------------------- */
@@ -326,7 +330,7 @@ GGEMSOpenCL::ParseDeviceFilters(
 /* --------------------------------------------- */
 
 void GGEMSOpenCL::PrintPlatforms() const noexcept {
-  GGEMS_INFO("OpenCL", "Listing available OpenCL platforms...");
+  GGEMS_INFO("OpenCL", "Available OpenCL platforms:");
 
   for (auto const &p : platforms_) {
     p.Print();
@@ -338,7 +342,7 @@ void GGEMSOpenCL::PrintPlatforms() const noexcept {
 /* --------------------------------------------- */
 
 void GGEMSOpenCL::PrintDevices() const noexcept {
-  GGEMS_INFO("OpenCL", "Listing available OpenCL devices...");
+  GGEMS_INFO("OpenCL", "Available OpenCL devices:");
 
   for (auto const &p : platforms_) {
     auto const &devices = p.GetDevices();
@@ -352,7 +356,7 @@ void GGEMSOpenCL::PrintDevices() const noexcept {
 /* --------------------------------------------- */
 
 void GGEMSOpenCL::PrintContexts() const noexcept {
-  GGEMS_INFO("OpenCL", "Listing available OpenCL contexts...");
+  GGEMS_INFO("OpenCL", "Active OpenCL contexts:");
 
   for (auto const &c : contexts_) {
     c.PrintContext();
@@ -365,12 +369,12 @@ void GGEMSOpenCL::PrintContexts() const noexcept {
 /* --------------------------------------------- */
 
 void GGEMSOpenCL::Clean() noexcept {
-  GGEMS_INFOEX("OpenCL", 2, "Cleaning all OpenCL platform resources...");
+  GGEMS_INFOEX("OpenCL", 3, "Cleaning OpenCL platform resources.");
 
   for (auto &p : platforms_) {
     p.Clean();
   }
 
-  GGEMS_INFOEX("OpenCL", 2, "All OpenCL platforms cleaned successfully.");
+  GGEMS_INFOEX("OpenCL", 3, "OpenCL platform resources cleaned.");
 }
 } // namespace ggems::ocl

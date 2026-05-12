@@ -15,13 +15,13 @@ namespace ggems::core {
 static render::ColourKey LogLevelColour(LogLevel l) {
   switch (l) {
   case LogLevel::Debug:
-    return render::CYAN_Aqua;
+    return render::CYAN_Sky;
   case LogLevel::Info:
     return render::GREEN_Emerald;
   case LogLevel::Warn:
-    return render::YELLOW_Neon;
+    return render::YELLOW_Lemon;
   case LogLevel::Error:
-    return render::RED_Cherry;
+    return render::RED_Tomato;
   }
   return render::DEFAULT_FG;
 }

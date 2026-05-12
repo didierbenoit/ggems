@@ -128,36 +128,37 @@ std::vector<WrappedLine> GGEMSBanner::BuildLines(std::int16_t max_width) const {
   std::u32string text_line3 = U"Authors: Julien Bert & Didier Benoit";
   std::u32string text_line4 = U"Copyright (C) 2026 Licensed under GNU GPL v3.0";
 
-  push_line(hline_border_top, render::GREEN_Mint);
-  push_line(empty_line, render::GREEN_Mint);
+  push_line(hline_border_top, render::GREEN_Matrix);
+  push_line(empty_line, render::GREEN_Matrix);
 
   push_line(v_line + U"    " + logo_line1 + U"    " + v_line,
-            render::GREEN_Mint);
+            render::GREEN_Matrix);
   push_line(v_line + U"   " + logo_line2 + U"    " + v_line,
-            render::GREEN_Mint);
+            render::GREEN_Matrix);
   push_line(v_line + U"   " + logo_line3 + U"    " + v_line,
-            render::GREEN_Mint);
+            render::GREEN_Matrix);
   push_line(v_line + U"   " + logo_line4 + U"    " + v_line,
-            render::GREEN_Mint);
+            render::GREEN_Matrix);
   push_line(v_line + U"   " + logo_line5 + U"    " + v_line,
-            render::GREEN_Mint);
+            render::GREEN_Matrix);
   push_line(v_line + U"    " + logo_line6 + U"    " + v_line,
-            render::GREEN_Mint);
+            render::GREEN_Matrix);
 
-  push_line(empty_line, render::GREEN_Mint);
-  push_line(separator_line, render::GREEN_Mint);
-  push_line(empty_line, render::GREEN_Mint);
+  push_line(empty_line, render::GREEN_Matrix);
+  push_line(separator_line, render::GREEN_Matrix);
+  push_line(empty_line, render::GREEN_Matrix);
 
   push_line(v_line + U"      " + text_line1 + U"      " + v_line,
-            render::GREEN_Mint);
+            render::GREEN_Matrix);
   push_line(v_line + U"    " + text_line2 + U"     " + v_line,
-            render::GREEN_Mint);
+            render::GREEN_Matrix);
   push_line(v_line + U"       " + text_line3 + U"         " + v_line,
-            render::GREEN_Mint);
-  push_line(v_line + U"   " + text_line4 + U"   " + v_line, render::GREEN_Mint);
+            render::GREEN_Matrix);
+  push_line(v_line + U"   " + text_line4 + U"   " + v_line,
+            render::GREEN_Matrix);
 
-  push_line(empty_line, render::GREEN_Mint);
-  push_line(hline_border_bottom, render::GREEN_Mint);
+  push_line(empty_line, render::GREEN_Matrix);
+  push_line(hline_border_bottom, render::GREEN_Matrix);
 
   return lines;
 }

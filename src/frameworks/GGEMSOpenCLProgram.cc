@@ -111,8 +111,9 @@ GGEMSOpenCLProgram::GGEMSOpenCLProgram(GGEMSOpenCLContext &ctx,
     : context_{ctx}, kernel_root_{std::move(kernel_root)},
       kernel_name_{std::move(kernel_name)}, build_options_{""},
       source_hash_{0LL}, global_hash_{0LL} {
-  GGEMS_INFO("OpenCL", "Initialising program '{}' (path: '{}')", kernel_name_,
-             kernel_root_.string());
+  GGEMS_INFOEX("OpenCL", 2, "Initialising OpenCL program '{}'.", kernel_name_);
+  GGEMS_INFOEX("OpenCL", 3, "OpenCL program source root: '{}'.",
+               kernel_root_.string());
 
   std::string extra_options = build_options;
   auto default_options = BuildOptions();
@@ -121,7 +122,7 @@ GGEMSOpenCLProgram::GGEMSOpenCLProgram(GGEMSOpenCLContext &ctx,
   Initialise();
   Build();
 
-  GGEMS_INFO("OpenCL", "Program '{}' built.", kernel_name_);
+  GGEMS_INFOEX("OpenCL", 2, "OpenCL program '{}' built.", kernel_name_);
 }
 
 /* --------------------------------------------- */
@@ -199,20 +200,25 @@ void GGEMSOpenCLProgram::Build() {
     try {
       BuildFromBinary(binary);
       loaded_from_cache_ = true;
-      GGEMS_INFO("OpenCL", "Loaded program '{}' from cache.", kernel_name_);
+      GGEMS_INFOEX("OpenCL", 2, "OpenCL program '{}' from cache.",
+                   kernel_name_);
       return;
     } catch (...) {
-      GGEMS_WARN(
-          "OpenCL",
-          "Failed to use cached binary for '{}', falling back to source.",
+      GGEMS_INFOEX(
+          "OpenCL", 2,
+          "Cached binary for '{}' could not be used; falling back to source.",
           kernel_name_);
     }
   }
 
-  GGEMS_INFO("OpenCL", "Building program '{}' from source '{}'.", kernel_name_,
-             source_path_);
+  GGEMS_INFOEX("OpenCL", 2, "Building OpenCL program '{}' from source.",
+               kernel_name_);
+
+  GGEMS_INFOEX("OpenCL", 3, "OpenCL program '{}' source path: '{}'.",
+               kernel_name_, source_path_);
 
   BuildFromSource(src);
+
   try {
     SaveBinaryToCache();
   } catch (...) {
@@ -260,12 +266,15 @@ void GGEMSOpenCLProgram::BuildFromSource(std::string const &src) {
   }
 
   build_log_ = program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-  if (!build_log_.empty())
-    GGEMS_INFO("OpenCL", "Build log for '{}' (file='{}'): {}", kernel_name_,
-               source_path_, build_log_);
+  if (!build_log_.empty()) {
+    GGEMS_INFOEX("OpenCL", 3, "Build log for '{}' (file='{}'): {}",
+                 kernel_name_, source_path_, build_log_);
+  }
+  GGEMS_INFOEX("OpenCL", 2, "OpenCL program '{}' built from source.",
+               kernel_name_);
 
-  GGEMS_INFO("OpenCL", "Program '{}' built from source '{}' and options '{}'.",
-             kernel_name_, source_path_, build_options_);
+  GGEMS_INFOEX("OpenCL", 3, "OpenCL program '{}' source='{}', options='{}'.",
+               kernel_name_, source_path_, build_options_);
 }
 
 /* --------------------------------------------- */
@@ -303,21 +312,27 @@ void GGEMSOpenCLProgram::BuildFromBinary(
   err = program_.build({device}, build_options_.c_str());
   if (err != CL_SUCCESS) {
     build_log_ = program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-    GGEMS_ERROR("OpenCL", "Build log for '{}' (file='{}'): {}", kernel_name_,
-                source_path_, build_log_);
+
+    if (!build_log_.empty()) {
+      GGEMS_INFOEX("OpenCL", 3,
+                   "Cached binary build log for '{}' (file='{}'): {}",
+                   kernel_name_, source_path_, build_log_);
+    }
+
     core::Throw<core::GGEMSFatal>(std::format(
         "Failed to build OpenCL program '{}' from binary.", kernel_name_));
   }
 
   build_log_ = program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
   if (!build_log_.empty()) {
-    GGEMS_INFO("OpenCL", "Build log for '{}' (file='{}'): {}", kernel_name_,
-               source_path_, build_log_);
+    GGEMS_INFOEX("OpenCL", 3, "Build log for '{}' (file='{}'): {}",
+                 kernel_name_, source_path_, build_log_);
   }
+  GGEMS_INFOEX("OpenCL", 2, "OpenCL program '{}' built from cached binary.",
+               kernel_name_);
 
-  GGEMS_INFO("OpenCL",
-             "Program '{}' built from cached binary and options '{}'.",
-             kernel_name_, build_options_);
+  GGEMS_INFOEX("OpenCL", 3, "OpenCL program '{}' binary options='{}'.",
+               kernel_name_, build_options_);
 }
 
 /* --------------------------------------------- */
@@ -338,8 +353,11 @@ std::filesystem::path GGEMSOpenCLProgram::ComputeCachePath() const {
   std::error_code ec;
   std::filesystem::create_directories(device_dir, ec);
   if (ec) {
-    GGEMS_WARN("OpenCL", "Failed to create cache directory '{}': {}",
-               device_dir.string(), ec.message());
+    GGEMS_INFOEX("OpenCL", 2,
+                 "Could not create OpenCL binary cache directory.");
+
+    GGEMS_INFOEX("OpenCL", 3, "OpenCL binary cache directory: '{}' ({})",
+                 device_dir.string(), ec.message());
   }
 
   return device_dir / fname;
@@ -380,7 +398,9 @@ void GGEMSOpenCLProgram::SaveBinaryToCache() {
   auto bins = GetBinaries();
 
   if (num == 0 || sizes.empty() || bins.empty() || sizes[0] == 0) {
-    GGEMS_WARN("OpenCL", "No binary available for '{}'.", kernel_name_);
+    GGEMS_INFOEX("OpenCL", 3,
+                 "No OpenCL binary available for '{}'; cache not written.",
+                 kernel_name_);
     return;
   }
 
@@ -388,16 +408,23 @@ void GGEMSOpenCLProgram::SaveBinaryToCache() {
   std::ofstream ofs(cache_path, std::ios::binary);
 
   if (!ofs.good()) {
-    GGEMS_WARN("OpenCL", "Failed to open '{}' for writing.",
-               cache_path.string());
+    GGEMS_INFOEX("OpenCL", 2, "Could not write OpenCL binary cache for '{}'.",
+                 kernel_name_);
+
+    GGEMS_INFOEX("OpenCL", 3, "OpenCL binary cache path: '{}'.",
+                 cache_path.string());
+
     return;
   }
 
   ofs.write(reinterpret_cast<char const *>(bins[0].data()),
             static_cast<std::streamsize>(bins[0].size()));
 
-  GGEMS_INFO("OpenCL", "Saved binary cache for '{}' → '{}'", kernel_name_,
-             cache_path.string());
+  GGEMS_INFOEX("OpenCL", 2, "OpenCL binary cache saved for '{}'.",
+               kernel_name_);
+
+  GGEMS_INFOEX("OpenCL", 3, "OpenCL binary cache path: '{}'.",
+               cache_path.string());
 }
 
 /* --------------------------------------------- */
@@ -412,21 +439,32 @@ std::vector<std::uint8_t> GGEMSOpenCLProgram::LoadBinaryFromCache() {
   }
 
   ifs.seekg(0, std::ios::end);
-  auto size = ifs.tellg();
-  if (size <= 0) {
+  auto end_pos = ifs.tellg();
+
+  if (end_pos <= std::streampos{0}) {
     return {};
   }
+
+  auto byte_count = static_cast<std::streamoff>(end_pos);
   ifs.seekg(0, std::ios::beg);
 
-  std::vector<std::uint8_t> data(static_cast<std::size_t>(size));
-  if (!ifs.read(reinterpret_cast<char *>(data.data()), size)) {
-    GGEMS_WARN("OpenCL", "Failed to read cache file '{}'.",
-               cache_path.string());
+  std::vector<std::uint8_t> data(static_cast<std::size_t>(byte_count));
+
+  if (!ifs.read(reinterpret_cast<char *>(data.data()),
+                static_cast<std::streamsize>(byte_count))) {
+    GGEMS_INFOEX("OpenCL", 2, "Could not read OpenCL binary cache for '{}'.",
+                 kernel_name_);
+
+    GGEMS_INFOEX("OpenCL", 3, "OpenCL binary cache path: '{}'.",
+                 cache_path.string());
     return {};
   }
 
-  GGEMS_INFO("OpenCL", "Loaded binary cache for program '{}' from '{}'.",
-             kernel_name_, cache_path.string());
+  GGEMS_INFOEX("OpenCL", 2, "OpenCL binary cache loaded for '{}'.",
+               kernel_name_);
+
+  GGEMS_INFOEX("OpenCL", 3, "OpenCL binary cache path: '{}'.",
+               cache_path.string());
 
   return data;
 }

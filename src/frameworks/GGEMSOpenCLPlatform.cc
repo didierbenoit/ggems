@@ -50,15 +50,14 @@ namespace ggems::ocl {
 GGEMSOpenCLPlatform::GGEMSOpenCLPlatform(cl::Platform const &platform,
                                          std::size_t platform_index)
     : platform_{platform}, platform_index_{platform_index} {
-  GGEMS_INFOEX("OpenCL", 2, "Allocating GGEMSOpenCLPlatform [{}]...",
-               platform_index_);
+  GGEMS_INFOEX("OpenCL", 3, "Creating OpenCL platform [{}].", platform_index_);
 
   extensions_ = ExtractExtensions<CL_PLATFORM_EXTENSIONS>(platform_);
 
   DiscoverDevices();
 
-  GGEMS_INFOEX("OpenCL", 2, "GGEMSOpenCLPlatform allocated with {} device(s)",
-               devices_.size());
+  GGEMS_INFOEX("OpenCL", 2, "OpenCL platform [{}] registered with {} device(s)",
+               platform_index_, devices_.size());
 }
 
 /* --------------------------------*/
@@ -66,7 +65,7 @@ GGEMSOpenCLPlatform::GGEMSOpenCLPlatform(cl::Platform const &platform,
 /* --------------------------------*/
 
 GGEMSOpenCLPlatform::~GGEMSOpenCLPlatform() {
-  GGEMS_INFOEX("OpenCL", 2, "Releasing GGEMSOpenCLPlatform [{}]",
+  GGEMS_INFOEX("OpenCL", 3, "Destroying OpenCL platform [{}].",
                platform_index_);
 }
 
@@ -159,12 +158,9 @@ void GGEMSOpenCLPlatform::PrintExtension() const {
 /* --------------------------------*/
 
 void GGEMSOpenCLPlatform::Print() const {
-  GGEMS_INFO("OpenCL", "++++++++++++++++++++++++++");
-
   GGEMS_INFO("OpenCL", "Platform [{}]: {} ({})", platform_index_, GetName(),
              GetVendor());
   GGEMS_INFO("OpenCL", "Discovered devices: {}", devices_.size());
-  GGEMS_INFO("OpenCL", "++++++++++++++++++++++++++");
 
   PrintIdentity();
   PrintExtension();
@@ -175,13 +171,15 @@ void GGEMSOpenCLPlatform::Print() const {
 /* --------------------------------*/
 
 void GGEMSOpenCLPlatform::Clean() {
-  GGEMS_INFOEX("OpenCL", 2, "Cleaning Platform {} resources...", GetName());
+  GGEMS_INFOEX("OpenCL", 3, "Cleaning OpenCL platform [{}] resources.",
+               GetName());
 
   platform_.unloadCompiler();
   devices_.clear();
   extensions_.clear();
 
-  GGEMS_INFOEX("OpenCL", 2, "Platform resources cleaned.");
+  GGEMS_INFOEX("OpenCL", 3, "OpenCL platform [{}] resources cleaned.",
+               platform_index_);
 }
 
 /* --------------------------------*/
@@ -189,7 +187,7 @@ void GGEMSOpenCLPlatform::Clean() {
 /* --------------------------------*/
 
 void GGEMSOpenCLPlatform::DiscoverDevices() {
-  GGEMS_INFOEX("OpenCL", 2, "Discovering OpenCL devices for platform [{}]...",
+  GGEMS_INFOEX("OpenCL", 2, "Discovering OpenCL devices for platform [{}].",
                platform_index_);
 
   constexpr cl_device_type mask = CL_DEVICE_TYPE_CPU | CL_DEVICE_TYPE_GPU;
@@ -205,7 +203,7 @@ void GGEMSOpenCLPlatform::DiscoverDevices() {
     devices_.emplace_back(natives[i], platform_index_, i);
   }
 
-  GGEMS_INFOEX("OpenCL", 2, "Found {} device(s) on platform [{}]",
+  GGEMS_INFOEX("OpenCL", 2, "{} OpenCL device(s) found on platform [{}].",
                natives.size(), platform_index_);
 }
 } // namespace ggems::ocl

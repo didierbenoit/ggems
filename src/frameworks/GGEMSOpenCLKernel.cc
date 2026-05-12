@@ -11,7 +11,7 @@ GGEMSOpenCLKernel::GGEMSOpenCLKernel(GGEMSOpenCLContext &ctx, cl::Kernel kernel,
                                      std::string kernel_name)
     : context_(ctx), kernel_(std::move(kernel)),
       kernel_name_(std::move(kernel_name)) {
-  GGEMS_INFOEX("OpenCL", 2, "Created kernel '{}'", kernel_name_);
+  GGEMS_INFOEX("OpenCL", 3, "OpenCL kernel '{}' created.", kernel_name_);
 }
 
 /* ------------------------------------------------------------------------ */

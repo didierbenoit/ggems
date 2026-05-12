@@ -71,7 +71,7 @@ public:
    */
   [[nodiscard]] static GGEMSOpenCL &GetInstance() {
     static GGEMSOpenCL *instance = []() {
-      GGEMS_INFOEX("OpenCL", 2, "First Instance of GGEMSOpenCL singleton...");
+      GGEMS_INFOEX("OpenCL", 3, "Creating GGEMSOpenCL singleton instance.");
       return new GGEMSOpenCL();
     }();
     return *instance;
@@ -202,7 +202,7 @@ private:
    *
    * Mostly relevant when CUDA and OpenCL coexist on the same machine.
    */
-  void DisableKernelCache() const;
+  void DisableNvidiaDriverKernelCache() const;
 
 private:
   std::vector<GGEMSOpenCLPlatform>

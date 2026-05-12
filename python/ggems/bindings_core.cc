@@ -56,7 +56,7 @@ void BindCore(py::module_ &m) {
            py::return_value_policy::reference)
 
       .def("set_detail_level", &ggems::core::GGEMSLogger::SetDetailLevel,
-           py::arg("detail"), "Set depth of verbosity.")
+           py::arg("detail") = 1, "Set depth of verbosity.")
 
       .def("__repr__", [](ggems::core::GGEMSLogger const &) {
         return "<GGEMSLogger (singleton) — global logging interface>";

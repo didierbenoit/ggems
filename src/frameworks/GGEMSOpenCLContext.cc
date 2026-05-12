@@ -48,7 +48,7 @@ namespace ggems::ocl {
 
 GGEMSOpenCLContext::GGEMSOpenCLContext(GGEMSOpenCLDevice const &device)
     : device_{device} {
-  GGEMS_INFOEX("OpenCL", 2, "Allocating GGEMSOpenCLContext: {}",
+  GGEMS_INFOEX("OpenCL", 3, "Creating OpenCL context for device '{}'.",
                device.GetName());
 
   CreateContext();
@@ -56,7 +56,8 @@ GGEMSOpenCLContext::GGEMSOpenCLContext(GGEMSOpenCLDevice const &device)
   InitSVMSupport();
   InitVRAMUsage();
 
-  GGEMS_INFOEX("OpenCL", 2, "GGEMSOpenCLContext allocated.");
+  GGEMS_INFOEX("OpenCL", 2, "OpenCL context ready for device '{}'.",
+               device_.GetName());
 }
 
 /* ------------------------------------------------------------------------- */
@@ -64,8 +65,7 @@ GGEMSOpenCLContext::GGEMSOpenCLContext(GGEMSOpenCLDevice const &device)
 /* ------------------------------------------------------------------------- */
 
 void GGEMSOpenCLContext::CreateContext() {
-  GGEMS_INFO("OpenCL", "Creating compute OpenCL context for device: {}",
-             device_.GetName());
+  GGEMS_INFOEX("OpenCL", 3, "Creating compute OpenCL context");
 
   cl_int err{CL_SUCCESS};
 
@@ -82,7 +82,7 @@ void GGEMSOpenCLContext::CreateContext() {
 
   GGEMS_OCL_CHECK(err, "Failed to create OpenCL context");
 
-  GGEMS_INFOEX("OpenCL", 2, "OpenCL context created.");
+  GGEMS_INFOEX("OpenCL", 3, "Compute OpenCL context created.");
 }
 
 /* ------------------------------------------------------------------------- */
@@ -90,7 +90,7 @@ void GGEMSOpenCLContext::CreateContext() {
 /* ------------------------------------------------------------------------- */
 
 void GGEMSOpenCLContext::CreateCommandQueue() {
-  GGEMS_INFO("OpenCL", "Creating command queue...");
+  GGEMS_INFOEX("OpenCL", 3, "Creating OpenCL command queue.");
 
   cl_int err{CL_SUCCESS};
 
@@ -102,7 +102,8 @@ void GGEMSOpenCLContext::CreateCommandQueue() {
 
   GGEMS_OCL_CHECK(err, "Failed to create command queue.");
 
-  GGEMS_INFOEX("OpenCL", 2, "Command queue created (profiling enabled).");
+  GGEMS_INFOEX("OpenCL", 3,
+               "OpenCL command queue created with profiling enabled.");
 }
 
 /* ------------------------------------------------------------------------- */

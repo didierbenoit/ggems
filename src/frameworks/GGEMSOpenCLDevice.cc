@@ -41,8 +41,8 @@ GGEMSOpenCLDevice::GGEMSOpenCLDevice(cl::Device const &device,
                                      std::size_t device_index)
     : device_{device}, platform_index_{platform_index},
       device_index_{device_index} {
-  GGEMS_INFOEX("OpenCL", 1, "Allocating GGEMSOpenCLDevice [{}:{}]...",
-               platform_index_, device_index_);
+  GGEMS_INFOEX("OpenCL", 3, "Creating OpenCL device [{}:{}].", platform_index_,
+               device_index_);
   extensions_ = ExtractExtensions<CL_DEVICE_EXTENSIONS>(device_);
 }
 
@@ -1207,9 +1207,7 @@ void GGEMSOpenCLDevice::PrintExtensionsAndMisc() const {
 /* --------------------------------*/
 
 void GGEMSOpenCLDevice::Print() const {
-  GGEMS_INFO("OpenCL", "==========================");
   GGEMS_INFO("OpenCL", "Device [{}:{}]", platform_index_, device_index_);
-  GGEMS_INFO("OpenCL", "==========================");
   PrintIdentity();
   PrintTypeID();
   PrintCompute();

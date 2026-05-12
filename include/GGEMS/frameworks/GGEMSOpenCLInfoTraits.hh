@@ -188,6 +188,9 @@ template <> struct InfoTraits<CL_PLATFORM_HOST_TIMER_RESOLUTION> {
    * \return Human-readable time.
    */
   [[nodiscard]] static std::string ToString(type v) noexcept {
+    if (v == 0) {
+      return "not supported";
+    }
     Time t{static_cast<std::uint64_t>(v) * 1000ull};
     return HumanReadable(t, 0, 3);
   }

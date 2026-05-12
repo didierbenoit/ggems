@@ -15,7 +15,7 @@ namespace ggems::core {
 
 /* --------------------------------*/
 
-GGEMSRun::GGEMSRun() { GGEMS_INFOEX("Core", 3, "GGEMSRun created."); }
+GGEMSRun::GGEMSRun() { GGEMS_INFOEX("Core", 3, "GGEMSRun instance created."); }
 
 /* --------------------------------*/
 
@@ -23,11 +23,7 @@ GGEMSRun::~GGEMSRun() { ; }
 
 /* --------------------------------*/
 
-void GGEMSRun::Initialise() {
-  GGEMS_INFO("Core", "Initialising GGEMSRun...");
-
-  GGEMS_INFO("Core", "GGEMSRun initialised.");
-}
+void GGEMSRun::Initialise() { GGEMS_INFO("Core", "GGEMSRun initialised."); }
 
 /* --------------------------------*/
 void GGEMSRun::Run() {
@@ -35,116 +31,118 @@ void GGEMSRun::Run() {
 
   Frequency f = 3874364_Hz;
   GGEMS_DEBUG("Core", "{}", HumanReadable(f, 1, 5));
+  GGEMS_WARN("Core", "Test");
+  GGEMS_ERROR("Core", "Test");
+  /*
+      render::GGEMSProgressBar *progress_bar =
+          core::IsProgressBarAvailable() ? &core::GetProgressBar() : nullptr;
 
-  render::GGEMSProgressBar *progress_bar =
-      core::IsProgressBarAvailable() ? &core::GetProgressBar() : nullptr;
+      auto &opencl = ocl::GGEMSOpenCL::GetInstance();
+      auto &contexts = opencl.GetContext();
 
-  auto &opencl = ocl::GGEMSOpenCL::GetInstance();
-  auto &contexts = opencl.GetContext();
+      std::vector<ocl::GGEMSOpenCLSVMBuffer> buffers;
 
-  std::vector<ocl::GGEMSOpenCLSVMBuffer> buffers;
+      if (progress_bar) {
+        progress_bar->Clear();
+      }
 
-  if (progress_bar) {
-    progress_bar->Clear();
-  }
+      // Filling slots
+      for (auto &ctx : contexts) {
+        buffers.push_back(ctx.CreateSVMBuffer(1024_B));
 
-  // Filling slots
-  for (auto &ctx : contexts) {
-    buffers.push_back(ctx.CreateSVMBuffer(1024_B));
-
-    if (progress_bar) {
-      auto &dev = ctx.GetDevice();
-      auto device_name = dev.GetName();
-      auto device_type = dev.GetType();
-      auto device_luid = dev.GetLUIDKhr();
-      progress_bar
-          ->AddSlot(device_name,
-                    (device_type == CL_DEVICE_TYPE_GPU) ? true : false,
-                    device_luid)
-          .SetKernelName("vec_add")
-          .SetBatchesDone(0ULL)
-          .SetBatchesTotal(100ULL)
-          .SetStatus(render::GGEMSProgressBar::Slot::Status::Pending)
-          .SetParticleType(render::GGEMSProgressBar::Slot::ParticleType::Gamma)
-          .SetETAPicoseconds(0ULL)
-          .SetPercentVRAM(ctx.GetPercentVRAM())
-          .SetTotalVRAM(ctx.GetTotalVRAM().value)
-          .SetAllocatedVRAM(ctx.GetAllocatedVRAM().value)
-          .SetAllocationCountVRAM(ctx.GetAllocationCountVRAM());
-    }
-  }
-
-  workers_.clear();
-  workers_.reserve(contexts.size());
-
-  std::atomic<std::size_t> finished_workers{0};
-
-  for (std::size_t i = 0; i < contexts.size(); ++i) {
-    if (progress_bar) {
-      auto &slot = progress_bar->GetSlot(i);
-      workers_.emplace_back([&slot, &finished_workers]() {
-        uint64_t p = 0ULL;
-        auto start = std::chrono::high_resolution_clock::now();
-
-        uint64_t nbatch = 100ULL;
-        while (p < nbatch) {
-          ++p;
-
-          auto now = std::chrono::high_resolution_clock::now();
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-          int64_t elapsed_ps =
-              std::chrono::duration_cast<std::chrono::nanoseconds>(now - start)
-                  .count() *
-              1000;
-
-          long double ratio =
-              static_cast<long double>(p) / static_cast<long double>(nbatch);
-
-          if (ratio > 0.0L) {
-            long double estimated_total_ps =
-                static_cast<long double>(elapsed_ps) / ratio;
-            long double remaining_ps =
-                estimated_total_ps - static_cast<long double>(elapsed_ps);
-
-            slot.SetETAPicoseconds((remaining_ps > 0.0L)
-                                       ? static_cast<uint64_t>(remaining_ps)
-                                       : 0ULL);
-          } else {
-            slot.SetETAPicoseconds(0ULL);
-          }
-
-          slot.SetStatus(render::GGEMSProgressBar::Slot::Status::Running)
-              .SetBatchesDone(p);
+        if (progress_bar) {
+          auto &dev = ctx.GetDevice();
+          auto device_name = dev.GetName();
+          auto device_type = dev.GetType();
+          auto device_luid = dev.GetLUIDKhr();
+          progress_bar
+              ->AddSlot(device_name,
+                        (device_type == CL_DEVICE_TYPE_GPU) ? true : false,
+                        device_luid)
+              .SetKernelName("vec_add")
+              .SetBatchesDone(0ULL)
+              .SetBatchesTotal(100ULL)
+              .SetStatus(render::GGEMSProgressBar::Slot::Status::Pending)
+              .SetParticleType(render::GGEMSProgressBar::Slot::ParticleType::Gamma)
+              .SetETAPicoseconds(0ULL)
+              .SetPercentVRAM(ctx.GetPercentVRAM())
+              .SetTotalVRAM(ctx.GetTotalVRAM().value)
+              .SetAllocatedVRAM(ctx.GetAllocatedVRAM().value)
+              .SetAllocationCountVRAM(ctx.GetAllocationCountVRAM());
         }
-        slot.SetStatus(render::GGEMSProgressBar::Slot::Status::Finished);
-        finished_workers.fetch_add(1, std::memory_order_relaxed);
-      });
-    } else {
-      workers_.emplace_back([&finished_workers]() {
-        std::uint64_t p = 0ULL;
-        std::uint64_t nbatch = 100ULL;
+      }
 
-        while (p < nbatch) {
-          ++p;
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      workers_.clear();
+      workers_.reserve(contexts.size());
+
+      std::atomic<std::size_t> finished_workers{0};
+
+      for (std::size_t i = 0; i < contexts.size(); ++i) {
+        if (progress_bar) {
+          auto &slot = progress_bar->GetSlot(i);
+          workers_.emplace_back([&slot, &finished_workers]() {
+            uint64_t p = 0ULL;
+            auto start = std::chrono::high_resolution_clock::now();
+
+            uint64_t nbatch = 100ULL;
+            while (p < nbatch) {
+              ++p;
+
+              auto now = std::chrono::high_resolution_clock::now();
+              std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+              int64_t elapsed_ps =
+                  std::chrono::duration_cast<std::chrono::nanoseconds>(now -
+      start) .count() * 1000;
+
+              long double ratio =
+                  static_cast<long double>(p) / static_cast<long
+     double>(nbatch);
+
+              if (ratio > 0.0L) {
+                long double estimated_total_ps =
+                    static_cast<long double>(elapsed_ps) / ratio;
+                long double remaining_ps =
+                    estimated_total_ps - static_cast<long double>(elapsed_ps);
+
+                slot.SetETAPicoseconds((remaining_ps > 0.0L)
+                                           ? static_cast<uint64_t>(remaining_ps)
+                                           : 0ULL);
+              } else {
+                slot.SetETAPicoseconds(0ULL);
+              }
+
+              slot.SetStatus(render::GGEMSProgressBar::Slot::Status::Running)
+                  .SetBatchesDone(p);
+            }
+            slot.SetStatus(render::GGEMSProgressBar::Slot::Status::Finished);
+            finished_workers.fetch_add(1, std::memory_order_relaxed);
+          });
+        } else {
+          workers_.emplace_back([&finished_workers]() {
+            std::uint64_t p = 0ULL;
+            std::uint64_t nbatch = 100ULL;
+
+            while (p < nbatch) {
+              ++p;
+              std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+
+            finished_workers.fetch_add(1, std::memory_order_relaxed);
+          });
         }
+      }
 
-        finished_workers.fetch_add(1, std::memory_order_relaxed);
-      });
-    }
-  }
+      while (finished_workers.load(std::memory_order_relaxed) < workers_.size())
+     { std::this_thread::sleep_for(std::chrono::milliseconds(33));
+      }
 
-  while (finished_workers.load(std::memory_order_relaxed) < workers_.size()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(33));
-  }
-
-  for (auto &t : workers_) {
-    if (t.joinable()) {
-      t.join();
-    }
-  }
-  workers_.clear();
+      for (auto &t : workers_) {
+        if (t.joinable()) {
+          t.join();
+        }
+      }
+      workers_.clear();*/
 
   GGEMS_INFO("Core", "GGEMS run completed.");
 

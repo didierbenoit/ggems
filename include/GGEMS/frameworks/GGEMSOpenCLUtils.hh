@@ -633,8 +633,9 @@ template <cl_uint Info, typename Object> void PrintInfo(Object const &obj) {
 [[nodiscard]] inline bool
 HasExtension(std::unordered_set<std::string> const &extensions,
              std::string_view name) {
-  if (name.empty())
+  if (name.empty()) {
     return false;
+  }
   auto it = extensions.find(std::string{name});
   return it != extensions.end();
 }
@@ -655,8 +656,9 @@ ExtractExtensions(Object const &obj) {
   std::unordered_set<std::string> result;
   std::istringstream iss(ext_str);
   std::string token;
-  while (iss >> token)
+  while (iss >> token) {
     result.insert(std::move(token));
+  }
   return result;
 }
 } // namespace ggems::ocl
