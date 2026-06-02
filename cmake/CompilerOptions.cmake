@@ -45,22 +45,22 @@ endif()
 # --- Clang or clang-cl --------------------------------------------------------
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   message(STATUS "Loading Clang Option...")
-  include(${CMAKE_CURRENT_LIST_DIR}/ClangOptions.cmake)
+  include(ClangOptions)
 
 # --- Microsoft Visual C++ -----------------------------------------------------
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   message(STATUS "Loading MSVC options...")
-  include(${CMAKE_CURRENT_LIST_DIR}/MSVCOptions.cmake)
+  include(MSVCOptions)
 
   # --- GNU GCC / g++ ----------------------------------------------------------
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   message(STATUS "Loading GCC options...")
-  include(${CMAKE_CURRENT_LIST_DIR}/GNUOptions.cmake)
+  include(GNUOptions)
 
 # --- Intel oneAPI (icpx / classic icc) ----------------------------------------
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
   message(STATUS "Loading Intel compiler options...")
-  include(${CMAKE_CURRENT_LIST_DIR}/IntelOptions.cmake)
+  include(IntelOptions)
 
 # --- Fallback -----------------------------------------------------------------
 else()

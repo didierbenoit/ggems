@@ -25,6 +25,3 @@ documentation = "https://doc.ggems.fr/v2.0"
 build-dir = "build/{wheel_tag}"
 wheel.expand-macos-universal-tags = true
 build.verbose = true
-
-[tool.scikit-build.cmake.define]
-GGEMS_WITH_IMGUI = "OFF"

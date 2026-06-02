@@ -34,9 +34,17 @@ project(GGEMS
 )
 
 # ----------------------------------------------------------------------------
+# C++ language standard
+# ----------------------------------------------------------------------------
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# ----------------------------------------------------------------------------
 # Launcher configuration
 # ----------------------------------------------------------------------------
-include(${CMAKE_SOURCE_DIR}/cmake/CompilerLauncher.cmake)
+list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(CompilerLauncher)
 
 # ----------------------------------------------------------------------------
 # Display build context
@@ -52,7 +60,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # ----------------------------------------------------------------------------
 # Compiler configuration dispatch (Clang / MSVC)
 # ----------------------------------------------------------------------------
-include(${CMAKE_SOURCE_DIR}/cmake/CompilerOptions.cmake)
+include(CompilerOptions)
 
 # ----------------------------------------------------------------------------
 # Optional build features
@@ -60,7 +68,6 @@ include(${CMAKE_SOURCE_DIR}/cmake/CompilerOptions.cmake)
 option(GGEMS_BUILD_TESTS        "Build GoogleTest unit tests" OFF)
 option(GGEMS_BUILD_DOCS         "Build documentation with Doxygen and Sphinx" OFF)
 option(GGEMS_WITH_IMGUI         "Enable ImGui / Vulkan interface" OFF)
-option(GGEMS_LOG_RING_BUFFER    "Enable in-memory circular log buffer" ON)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_compile_definitions(GGEMS_DEBUG_MODE)
@@ -128,7 +135,7 @@ endif()
 # Optional ImGui / Vulkan interface
 # ----------------------------------------------------------------------------
 if (GGEMS_WITH_IMGUI)
-  message(STATUS "ImGui UI layer enabled.")
+  message(STATUS "GGEMS GuiMode enabled: Vulkan / Dear ImGui layer requested.")
   add_subdirectory(src/ui)
 endif()
 

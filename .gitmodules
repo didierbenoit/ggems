@@ -1,3 +1,7 @@
 [submodule "external/OpenCL-CLHPP"]
 	path = external/OpenCL-CLHPP
 	url = https://github.com/KhronosGroup/OpenCL-CLHPP
+[submodule "external/imgui"]
+	path = external/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking
