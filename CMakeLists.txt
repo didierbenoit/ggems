@@ -110,6 +110,13 @@ if(UNIX AND NOT APPLE)
   target_link_libraries(ggems_core PRIVATE atomic)
 endif()
 
+# ----------------------------------------------------------------------------
+# Optional ImGui / Vulkan interface
+# ----------------------------------------------------------------------------
+if (GGEMS_WITH_IMGUI)
+  message(STATUS "GGEMS GuiMode enabled: Vulkan / Dear ImGui layer requested.")
+  add_subdirectory(src/ui)
+endif()
 
 # ----------------------------------------------------------------------------
 # Python module (pybind11)
@@ -129,14 +136,6 @@ endif()
 # ----------------------------------------------------------------------------
 if (GGEMS_BUILD_DOCS)
   add_subdirectory(docs)
-endif()
-
-# ----------------------------------------------------------------------------
-# Optional ImGui / Vulkan interface
-# ----------------------------------------------------------------------------
-if (GGEMS_WITH_IMGUI)
-  message(STATUS "GGEMS GuiMode enabled: Vulkan / Dear ImGui layer requested.")
-  add_subdirectory(src/ui)
 endif()
 
 # ----------------------------------------------------------------------------

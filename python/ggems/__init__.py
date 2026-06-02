@@ -6,6 +6,10 @@ run = ggems.run
 
 __all__ = ["core", "opencl", "run"]
 
+if hasattr(ggems, "gui"):
+    gui = ggems.gui
+    __all__.append("gui")
+
 # Package metadata
 __version__ = "2.0.0"
 __author__ = (

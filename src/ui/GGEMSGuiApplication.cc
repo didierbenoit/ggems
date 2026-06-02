@@ -1,0 +1,118 @@
+#include <format>
+#include <string>
+#include <string_view>
+#include <utility>
+
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+
+#include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/ui/GGEMSGuiApplication.hh"
+
+namespace {
+[[nodiscard]] std::string GetGLFWErrorMessage(std::string_view context) {
+  char const *description{nullptr};
+  int error_code = glfwGetError(&description);
+
+  return std::format("{} GLFW error {}: {}.", context, error_code,
+                     description != nullptr ? description
+                                            : "No diagnostic available");
+}
+} // namespace
+
+namespace ggems::ui {
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+GGEMSGuiApplication::GGEMSGuiApplication(std::string title, std::int32_t width,
+                                         std::int32_t height)
+    : title_(title), width_(width), height_(height) {}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+GGEMSGuiApplication::~GGEMSGuiApplication() noexcept { Shutdown(); }
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSGuiApplication::Shutdown() noexcept {
+  if (window_ != nullptr) {
+    glfwDestroyWindow(window_);
+    window_ = nullptr;
+  }
+
+  if (glfw_initialised_) {
+    glfwTerminate();
+    glfw_initialised_ = false;
+  }
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+bool GGEMSGuiApplication::IsInitialised() const noexcept {
+  return window_ != nullptr;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSGuiApplication::Initialise() {
+  if (window_ != nullptr) {
+    return;
+  }
+
+  GGEMS_CHECK_RECOVERABLE(
+      width_ > 0 && height_ > 0,
+      "GGEMS GuiMode window dimensions must be strictly positive.");
+
+  if (glfwInit() != GLFW_TRUE) {
+    GGEMS_RECOVERABLE(
+        GetGLFWErrorMessage("Unable to Initialise GGEMS GuiMode."));
+  }
+
+  glfw_initialised_ = true;
+
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+  glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+
+  window_ =
+      glfwCreateWindow(static_cast<int>(width_), static_cast<int>(height_),
+                       title_.c_str(), nullptr, nullptr);
+
+  if (window_ == nullptr) {
+    std::string error =
+        GetGLFWErrorMessage("Unable to create the GGEMS GuiMode window.");
+    Shutdown();
+    GGEMS_RECOVERABLE(error);
+  }
+
+  GGEMS_INFO("Gui", "GGEMS GuiMode window created.");
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSGuiApplication::Run() {
+  GGEMS_CHECK_INTERNAL(
+      window_ != nullptr,
+      "GGEMS GuiMode must be initialised before entering its event loop.");
+
+  GGEMS_INFO("Gui", "GGEMS GuiMode event loop started.");
+
+  while (glfwWindowShouldClose(window_) == GLFW_FALSE) {
+    glfwWaitEvents();
+  }
+
+  GGEMS_INFO("Gui", "GGEMS GuiMode event loop stopped.");
+}
+
+} // namespace ggems::ui

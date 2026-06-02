@@ -25,6 +25,11 @@ set_target_properties(ggems PROPERTIES
 # ----------------------------------------------------------------------------
 target_link_libraries(ggems PRIVATE ggems_core)
 
+if (GGEMS_WITH_IMGUI)
+  target_link_libraries(ggems PRIVATE ggems_gui)
+  target_compile_definitions(ggems PRIVATE GGEMS_WITH_IMGUI)
+endif()
+
 # ----------------------------------------------------------------------------
 # Include GGEMS headers
 # ----------------------------------------------------------------------------

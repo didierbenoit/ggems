@@ -42,3 +42,25 @@ message(STATUS "GLM target               : ${GGEMS_GLM_TARGET}")
 include(AddDearImGui)
 
 add_dear_imgui_target(ggems_imgui)
+
+# ----------------------------------------------------------------------------
+# GGEMS GuiMode library
+# ----------------------------------------------------------------------------
+add_library(ggems_gui STATIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSGuiApplication.cc
+)
+
+add_library(GGEMS::Gui ALIAS ggems_gui)
+
+target_include_directories(ggems_gui
+  PUBLIC
+    ${PROJECT_SOURCE_DIR}/include
+)
+
+target_link_libraries(ggems_gui
+  PRIVATE
+    ggems_core
+    ${GGEMS_GLFW_TARGET}
+)
+
+target_compile_features(ggems_gui PUBLIC cxx_std_23)
