@@ -8,7 +8,7 @@
 # ----------------------------------------------------------------------------
 # GUI dependencies
 # ----------------------------------------------------------------------------
-find_package(Vulkan REQUIRED)
+find_package(Vulkan 1.3 REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
 
@@ -48,6 +48,7 @@ add_dear_imgui_target(ggems_imgui)
 # ----------------------------------------------------------------------------
 add_library(ggems_gui STATIC
   ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSGuiApplication.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSVulkanContext.cc
 )
 
 add_library(GGEMS::Gui ALIAS ggems_gui)
@@ -57,9 +58,16 @@ target_include_directories(ggems_gui
     ${PROJECT_SOURCE_DIR}/include
 )
 
+target_compile_definitions(ggems_gui 
+  PRIVATE
+    VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
+    VULKAN_HPP_NO_STRUCT_CONSTRUCTORS=1
+)
+
 target_link_libraries(ggems_gui
   PRIVATE
     ggems_core
+    Vulkan::Vulkan
     ${GGEMS_GLFW_TARGET}
 )
 

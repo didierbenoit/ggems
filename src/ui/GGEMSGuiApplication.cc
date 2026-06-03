@@ -7,8 +7,8 @@
 #include <GLFW/glfw3.h>
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/ui/GGEMSGuiApplication.hh"
+#include "GGEMSVulkanContext.hh"
 
 namespace {
 [[nodiscard]] std::string GetGLFWErrorMessage(std::string_view context) {
@@ -41,6 +41,8 @@ GGEMSGuiApplication::~GGEMSGuiApplication() noexcept { Shutdown(); }
 /* --------------------------------------------- */
 
 void GGEMSGuiApplication::Shutdown() noexcept {
+  vk_context_.reset();
+
   if (window_ != nullptr) {
     glfwDestroyWindow(window_);
     window_ = nullptr;
@@ -57,7 +59,8 @@ void GGEMSGuiApplication::Shutdown() noexcept {
 /* --------------------------------------------- */
 
 bool GGEMSGuiApplication::IsInitialised() const noexcept {
-  return window_ != nullptr;
+  return window_ != nullptr && vk_context_ != nullptr &&
+         vk_context_->IsInitialised();
 }
 
 /* --------------------------------------------- */
@@ -94,7 +97,15 @@ void GGEMSGuiApplication::Initialise() {
     GGEMS_RECOVERABLE(error);
   }
 
-  GGEMS_INFO("Gui", "GGEMS GuiMode window created.");
+  try {
+    vk_context_ = std::make_unique<GGEMSVulkanContext>();
+    vk_context_->Initialise(window_);
+  } catch (...) {
+    Shutdown();
+    throw;
+  }
+
+  GGEMS_INFO("Gui", "GGEMS GuiMode window and Vulkan bootstrap initialised.");
 }
 
 /* --------------------------------------------- */

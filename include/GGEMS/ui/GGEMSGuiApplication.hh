@@ -1,11 +1,14 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <string>
 
 struct GLFWwindow;
 
 namespace ggems::ui {
+
+class GGEMSVulkanContext;
 
 class GGEMSGuiApplication {
 public:
@@ -33,6 +36,7 @@ private:
   std::int32_t width_{0};
   std::int32_t height_{0};
   GLFWwindow *window_{nullptr};
+  std::unique_ptr<GGEMSVulkanContext> vk_context_{};
   bool glfw_initialised_{false};
 };
 
