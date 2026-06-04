@@ -50,6 +50,7 @@ void GGEMSVulkanContext::Initialise(GLFWwindow *window) {
     SetupDebugMessenger();
     CreateSurface(window);
     SelectPhysicalDevice();
+    CreateLogicalDevice();
   } catch (vk::SystemError const &error) {
     GGEMS_RECOVERABLE(
         std::format("Unable to initialise Vulkan GuiMode: {}.", error.what()));
@@ -422,6 +423,64 @@ void GGEMSVulkanContext::SelectPhysicalDevice() {
   GGEMS_INFO("Vulkan",
              "Selected Vulkan queue families: graphics={}, presentation={}, "
              "separate={}.",
+             queue_family_indices_.graphics.value(),
+             queue_family_indices_.presentation.value(),
+             queue_family_indices_.UsesSeparateFamilies());
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::CreateLogicalDevice() {
+  GGEMS_CHECK_INTERNAL(
+      queue_family_indices_.IsComplete(),
+      "Vulkan queue families must be identified before creating the logical "
+      "device.");
+
+  float queue_priority{1.0f};
+
+  std::vector<vk::DeviceQueueCreateInfo> queue_create_infos{};
+  queue_create_infos.reserve(queue_family_indices_.UsesSeparateFamilies() ? 2U
+                                                                          : 1U);
+  queue_create_infos.push_back(vk::DeviceQueueCreateInfo{
+      .queueFamilyIndex = queue_family_indices_.graphics.value(),
+      .queueCount = 1U,
+      .pQueuePriorities = &queue_priority});
+
+  if (queue_family_indices_.UsesSeparateFamilies()) {
+    queue_create_infos.push_back(vk::DeviceQueueCreateInfo{
+        .queueFamilyIndex = queue_family_indices_.presentation.value(),
+        .queueCount = 1U,
+        .pQueuePriorities = &queue_priority});
+  }
+
+  vk::PhysicalDeviceFeatures device_features{};
+
+  vk::PhysicalDeviceVulkan13Features vulkan_13_features{
+      .synchronization2 = vk::True, .dynamicRendering = vk::True};
+
+  vk::DeviceCreateInfo create_info{
+      .pNext = &vulkan_13_features,
+      .queueCreateInfoCount =
+          static_cast<std::uint32_t>(queue_create_infos.size()),
+      .pQueueCreateInfos = queue_create_infos.data(),
+      .enabledExtensionCount =
+          static_cast<std::uint32_t>(k_required_device_extensions.size()),
+      .ppEnabledExtensionNames = k_required_device_extensions.data(),
+      .pEnabledFeatures = &device_features};
+
+  device_ = vk::raii::Device{physical_device_, create_info};
+
+  graphics_queue_ =
+      vk::raii::Queue{device_, queue_family_indices_.graphics.value(), 0U};
+
+  presentation_queue_ =
+      vk::raii::Queue{device_, queue_family_indices_.presentation.value(), 0U};
+
+  GGEMS_INFO("Vulkan",
+             "Vulkan logical device created: graphics queue family={}, "
+             "presentation queue family={}, separate={}.",
              queue_family_indices_.graphics.value(),
              queue_family_indices_.presentation.value(),
              queue_family_indices_.UsesSeparateFamilies());

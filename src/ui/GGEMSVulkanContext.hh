@@ -70,12 +70,17 @@ private:
   [[nodiscard]] std::uint32_t
   ScorePhysicalDevice(vk::raii::PhysicalDevice const &physical_device) const;
 
+  void CreateLogicalDevice();
+
 private:
   vk::raii::Context context_{};
   vk::raii::Instance instance_{nullptr};
   vk::raii::DebugUtilsMessengerEXT debug_messenger_{nullptr};
   vk::raii::SurfaceKHR surface_{nullptr};
   vk::raii::PhysicalDevice physical_device_{nullptr};
+  vk::raii::Device device_{nullptr};
+  vk::raii::Queue graphics_queue_{nullptr};
+  vk::raii::Queue presentation_queue_{nullptr};
 
   QueueFamilyIndices queue_family_indices_{};
 
