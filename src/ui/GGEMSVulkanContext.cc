@@ -15,6 +15,7 @@
 #include <GLFW/glfw3.h>
 
 #include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/GGEMSMacros.hh"
 
 namespace {
 
@@ -36,6 +37,24 @@ namespace ggems::ui {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+GGEMSVulkanContext::~GGEMSVulkanContext() noexcept {
+  if (device_ == nullptr) {
+    return;
+  }
+
+  try {
+    device_.waitIdle();
+  } catch (...) {
+    std::fputs(
+        "[GGEMS Vulkan] Failed to wait for device idle during shutdown.\n",
+        stderr);
+  }
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 void GGEMSVulkanContext::Initialise(GLFWwindow *window) {
   if (initialised_) {
     return;
@@ -51,6 +70,11 @@ void GGEMSVulkanContext::Initialise(GLFWwindow *window) {
     CreateSurface(window);
     SelectPhysicalDevice();
     CreateLogicalDevice();
+    CreateSwapchain(window);
+    CreateSwapchainImageViews();
+    CreateCommandPool();
+    AllocateCommandBuffers();
+    CreateSyncObjects();
   } catch (vk::SystemError const &error) {
     GGEMS_RECOVERABLE(
         std::format("Unable to initialise Vulkan GuiMode: {}.", error.what()));
@@ -59,7 +83,8 @@ void GGEMSVulkanContext::Initialise(GLFWwindow *window) {
   initialised_ = true;
 
   GGEMS_INFO("Vulkan",
-             "Vulkan instance and GLFW presentation surface initialised.");
+             "Vulkan swapchain command buffers and synchronisation objects "
+             "initialised.");
 }
 
 /* --------------------------------------------- */
@@ -311,13 +336,25 @@ bool GGEMSVulkanContext::SupportsRequiredFeatures(
 
 bool GGEMSVulkanContext::SupportsSwapchain(
     vk::raii::PhysicalDevice const &physical_device) const {
-  std::vector<vk::SurfaceFormatKHR> surface_formats =
-      physical_device.getSurfaceFormatsKHR(*surface_);
+  SwapchainSupportDetails details = QuerySwapchainSupport(physical_device);
 
-  std::vector<vk::PresentModeKHR> present_modes =
-      physical_device.getSurfacePresentModesKHR(*surface_);
+  return !details.surface_formats.empty() && !details.present_modes.empty();
+}
 
-  return !surface_formats.empty() && !present_modes.empty();
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+GGEMSVulkanContext::SwapchainSupportDetails
+GGEMSVulkanContext::QuerySwapchainSupport(
+    vk::raii::PhysicalDevice const &physical_device) const {
+  SwapchainSupportDetails details{};
+
+  details.capabilities = physical_device.getSurfaceCapabilitiesKHR(*surface_);
+  details.surface_formats = physical_device.getSurfaceFormatsKHR(*surface_);
+  details.present_modes = physical_device.getSurfacePresentModesKHR(*surface_);
+
+  return details;
 }
 
 /* --------------------------------------------- */
@@ -485,5 +522,435 @@ void GGEMSVulkanContext::CreateLogicalDevice() {
              queue_family_indices_.presentation.value(),
              queue_family_indices_.UsesSeparateFamilies());
 }
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+vk::SurfaceFormatKHR GGEMSVulkanContext::ChooseSwapchainSurfaceFormat(
+    std::vector<vk::SurfaceFormatKHR> const &surface_formats) const {
+  GGEMS_CHECK_INTERNAL(!surface_formats.empty(),
+                       "No Vulkan surface format is available for GuiMode.");
+
+  for (vk::SurfaceFormatKHR const &surface_format : surface_formats) {
+    if (surface_format.format == vk::Format::eB8G8R8A8Srgb &&
+        surface_format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
+      return surface_format;
+    }
+  }
+
+  return surface_formats.front();
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+vk::PresentModeKHR GGEMSVulkanContext::ChooseSwapchainPresentMode(
+    std::vector<vk::PresentModeKHR> const &present_modes) const {
+  GGEMS_CHECK_INTERNAL(!present_modes.empty(),
+                       "No Vulkan present mode is available for GuiMode.");
+
+  for (vk::PresentModeKHR const &present_mode : present_modes) {
+    if (present_mode == vk::PresentModeKHR::eFifo) {
+      return present_mode;
+    }
+  }
+
+  return present_modes.front();
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+vk::Extent2D GGEMSVulkanContext::ChooseSwapchainExtent(
+    vk::SurfaceCapabilitiesKHR const &capabilities, GLFWwindow *window) const {
+  if (capabilities.currentExtent.width !=
+      std::numeric_limits<std::uint32_t>::max()) {
+    return capabilities.currentExtent;
+  }
+
+  int width{0};
+  int height{0};
+
+  glfwGetFramebufferSize(window, &width, &height);
+
+  while (width == 0 || height == 0) {
+    glfwWaitEvents();
+    glfwGetFramebufferSize(window, &width, &height);
+  }
+
+  vk::Extent2D actual_extent{.width = static_cast<std::uint32_t>(width),
+                             .height = static_cast<std::uint32_t>(height)};
+
+  actual_extent.width =
+      std::clamp(actual_extent.width, capabilities.minImageExtent.width,
+                 capabilities.maxImageExtent.width);
+
+  actual_extent.height =
+      std::clamp(actual_extent.height, capabilities.minImageExtent.height,
+                 capabilities.maxImageExtent.height);
+
+  return actual_extent;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::CreateSwapchain(GLFWwindow *window) {
+  GGEMS_CHECK_INTERNAL(
+      physical_device_ != nullptr && device_ != nullptr,
+      "A Vulkan physical device and logical device are required before"
+      "creating the GuiMode swapchain.");
+
+  SwapchainSupportDetails support_details =
+      QuerySwapchainSupport(physical_device_);
+
+  vk::SurfaceFormatKHR surface_format =
+      ChooseSwapchainSurfaceFormat(support_details.surface_formats);
+
+  vk::PresentModeKHR present_mode =
+      ChooseSwapchainPresentMode(support_details.present_modes);
+
+  vk::Extent2D extent =
+      ChooseSwapchainExtent(support_details.capabilities, window);
+
+  std::uint32_t image_count = support_details.capabilities.minImageCount + 1U;
+
+  if (support_details.capabilities.maxImageCount > 0U &&
+      image_count > support_details.capabilities.maxImageCount) {
+    image_count = support_details.capabilities.maxImageCount;
+  }
+
+  std::array<std::uint32_t, 2> queue_family_indices{
+      queue_family_indices_.graphics.value(),
+      queue_family_indices_.presentation.value()};
+
+  vk::SharingMode image_sharing_mode{vk::SharingMode::eExclusive};
+  std::uint32_t queue_family_index_count{0};
+  std::uint32_t *queue_family_index_data{nullptr};
+
+  if (queue_family_indices_.UsesSeparateFamilies()) {
+    image_sharing_mode = vk::SharingMode::eConcurrent;
+    queue_family_index_count =
+        static_cast<std::uint32_t>(queue_family_indices.size());
+    queue_family_index_data = queue_family_indices.data();
+  }
+
+  vk::SwapchainCreateInfoKHR create_info{
+      .surface = *surface_,
+      .minImageCount = image_count,
+      .imageFormat = surface_format.format,
+      .imageColorSpace = surface_format.colorSpace,
+      .imageExtent = extent,
+      .imageArrayLayers = 1U,
+      .imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
+      .imageSharingMode = image_sharing_mode,
+      .queueFamilyIndexCount = queue_family_index_count,
+      .pQueueFamilyIndices = queue_family_index_data,
+      .preTransform = support_details.capabilities.currentTransform,
+      .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
+      .presentMode = present_mode,
+      .clipped = vk::True};
+
+  swapchain_ = vk::raii::SwapchainKHR{device_, create_info};
+  swapchain_images_ = swapchain_.getImages();
+  swapchain_image_format_ = surface_format.format;
+  swapchain_extent_ = extent;
+
+  GGEMS_INFO("Vulkan",
+             "Vulkan swapchain created: images={}, format={}, extent={}x{}, "
+             "present mode={}.",
+             swapchain_images_.size(), vk::to_string(swapchain_image_format_),
+             swapchain_extent_.width, swapchain_extent_.height,
+             vk::to_string(present_mode));
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::CreateSwapchainImageViews() {
+  GGEMS_CHECK_INTERNAL(
+      swapchain_ != nullptr,
+      "A Vulkan swapchain is required before creating swapchain image views.");
+
+  GGEMS_CHECK_INTERNAL(
+      swapchain_image_format_ != vk::Format::eUndefined,
+      "A valid Vulkan swapchain image format is required before creating "
+      "swapchain image views.");
+
+  swapchain_image_views_.clear();
+  swapchain_image_views_.reserve(swapchain_images_.size());
+
+  for (vk::Image image : swapchain_images_) {
+    vk::ImageViewCreateInfo create_info{
+        .image = image,
+        .viewType = vk::ImageViewType::e2D,
+        .format = swapchain_image_format_,
+        .components =
+            vk::ComponentMapping{.r = vk::ComponentSwizzle::eIdentity,
+                                 .g = vk::ComponentSwizzle::eIdentity,
+                                 .b = vk::ComponentSwizzle::eIdentity,
+                                 .a = vk::ComponentSwizzle::eIdentity},
+        .subresourceRange = vk::ImageSubresourceRange{
+            .aspectMask = vk::ImageAspectFlagBits::eColor,
+            .baseMipLevel = 0U,
+            .levelCount = 1U,
+            .baseArrayLayer = 0U,
+            .layerCount = 1U}};
+
+    swapchain_image_views_.emplace_back(device_, create_info);
+  }
+
+  GGEMS_INFO("Vulkan", "Created {} Vulkan swapchain image views.",
+             swapchain_image_views_.size());
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::CreateCommandPool() {
+  GGEMS_CHECK_INTERNAL(
+      queue_family_indices_.graphics.has_value(),
+      "A Vulkan graphics queue family is required before creating the"
+      "GuiMode command pool.");
+
+  vk::CommandPoolCreateInfo create_info{
+      .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+      .queueFamilyIndex = queue_family_indices_.graphics.value()};
+
+  command_pool_ = vk::raii::CommandPool{device_, create_info};
+
+  GGEMS_INFO("Vulkan", "Vulkan command pool created for graphics family {}.",
+             queue_family_indices_.graphics.value());
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::AllocateCommandBuffers() {
+  GGEMS_CHECK_INTERNAL(
+      command_pool_ != nullptr,
+      "A Vulkan command pool is required before allocating GuiMode command "
+      "buffers.");
+
+  GGEMS_CHECK_INTERNAL(
+      !swapchain_images_.empty(),
+      "Swapchain_images_are_required_before_allocating GuiMode command "
+      "buffers.");
+
+  vk::CommandBufferAllocateInfo allocate_info{
+      .commandPool = *command_pool_,
+      .level = vk::CommandBufferLevel::ePrimary,
+      .commandBufferCount =
+          static_cast<std::uint32_t>(swapchain_images_.size())};
+
+  command_buffers_ = device_.allocateCommandBuffers(allocate_info);
+
+  GGEMS_INFO("Vulkan", "Allocated {} Vulkan command buffers.",
+             command_buffers_.size());
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::CreateSyncObjects() {
+  vk::SemaphoreCreateInfo semaphore_create_info{};
+
+  vk::FenceCreateInfo fence_create_info{.flags =
+                                            vk::FenceCreateFlagBits::eSignaled};
+
+  image_available_semaphores_.clear();
+  render_finished_semaphores_.clear();
+  in_flight_fences_.clear();
+
+  image_available_semaphores_.reserve(k_max_frames_in_flight_);
+  render_finished_semaphores_.reserve(k_max_frames_in_flight_);
+  in_flight_fences_.reserve(k_max_frames_in_flight_);
+
+  for (std::uint32_t i = 0U; i < k_max_frames_in_flight_; ++i) {
+    image_available_semaphores_.emplace_back(device_, semaphore_create_info);
+    render_finished_semaphores_.emplace_back(device_, semaphore_create_info);
+    in_flight_fences_.emplace_back(device_, fence_create_info);
+  }
+
+  GGEMS_INFO("Vulkan",
+             "Create Vulkan synchronisation objects for {} frames in flight.",
+             k_max_frames_in_flight_);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::TransitionSwapchainImageLayout(
+    std::uint32_t image_index, vk::ImageLayout old_layout,
+    vk::ImageLayout new_layout) {
+  vk::PipelineStageFlags2 source_stage{vk::PipelineStageFlagBits2::eNone};
+  vk::AccessFlags2 source_access{vk::AccessFlagBits2::eNone};
+
+  vk::PipelineStageFlags2 destination_stage{
+      vk::PipelineStageFlagBits2::eColorAttachmentOutput};
+  vk::AccessFlags2 destination_access{
+      vk::AccessFlagBits2::eColorAttachmentWrite};
+
+  if (new_layout == vk::ImageLayout::ePresentSrcKHR) {
+    source_stage = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
+    source_access = vk::AccessFlagBits2::eColorAttachmentWrite;
+    destination_stage = vk::PipelineStageFlagBits2::eNone;
+    destination_access = vk::AccessFlagBits2::eNone;
+  }
+
+  vk::ImageMemoryBarrier2 image_barrier{
+      .srcStageMask = source_stage,
+      .srcAccessMask = source_access,
+      .dstStageMask = destination_stage,
+      .dstAccessMask = destination_access,
+      .oldLayout = old_layout,
+      .newLayout = new_layout,
+      .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .image = swapchain_images_[image_index],
+      .subresourceRange = vk::ImageSubresourceRange{
+          .aspectMask = vk::ImageAspectFlagBits::eColor,
+          .baseMipLevel = 0U,
+          .levelCount = 1U,
+          .baseArrayLayer = 0U,
+          .layerCount = 1U}};
+
+  vk::DependencyInfo dependency_info{.imageMemoryBarrierCount = 1U,
+                                     .pImageMemoryBarriers = &image_barrier};
+
+  command_buffers_[image_index].pipelineBarrier2(dependency_info);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::RecordCommandBuffer(std::uint32_t image_index) {
+  vk::raii::CommandBuffer &command_buffer = command_buffers_[image_index];
+
+  command_buffer.reset();
+
+  vk::CommandBufferBeginInfo begin_info{};
+  command_buffer.begin(begin_info);
+
+  TransitionSwapchainImageLayout(image_index, vk::ImageLayout::eUndefined,
+                                 vk::ImageLayout::eColorAttachmentOptimal);
+
+  vk::ClearValue clear_value = vk::ClearColorValue(0.08f, 0.09f, 0.11f, 1.0f);
+
+  vk::RenderingAttachmentInfo colour_attachment{
+      .imageView = *swapchain_image_views_[image_index],
+      .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+      .loadOp = vk::AttachmentLoadOp::eClear,
+      .storeOp = vk::AttachmentStoreOp::eStore,
+      .clearValue = clear_value};
+
+  vk::RenderingInfo rendering_info{
+      .renderArea = vk::Rect2D{.offset = vk::Offset2D{.x = 0, .y = 0},
+                               .extent = swapchain_extent_},
+      .layerCount = 1U,
+      .colorAttachmentCount = 1U,
+      .pColorAttachments = &colour_attachment};
+
+  command_buffer.beginRendering(rendering_info);
+  command_buffer.endRendering();
+
+  TransitionSwapchainImageLayout(image_index,
+                                 vk::ImageLayout::eColorAttachmentOptimal,
+                                 vk::ImageLayout::ePresentSrcKHR);
+
+  command_buffer.end();
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::RenderFrame() {
+  GGEMS_CHECK_INTERNAL(
+      initialised_,
+      "Vulkan GuiMode must be initialised before rendering a frame.");
+
+  vk::Result wait_result =
+      device_.waitForFences(*in_flight_fences_[current_frame_], vk::True,
+                            std::numeric_limits<std::uint64_t>::max());
+
+  GGEMS_CHECK_RECOVERABLE(
+      wait_result == vk::Result::eSuccess,
+      std::format("Unable to wait for the Vulkan in-flight fence: {}.",
+                  vk::to_string(wait_result)));
+
+  auto [result, image_index] = swapchain_.acquireNextImage(
+      std::numeric_limits<std::uint64_t>::max(),
+      *image_available_semaphores_[current_frame_], nullptr);
+
+  GGEMS_CHECK_RECOVERABLE(
+      result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR,
+      std::format("Unable to acquire a Vulkan swapchain image: {}.",
+                  vk::to_string(result)));
+
+  device_.resetFences(*in_flight_fences_[current_frame_]);
+
+  RecordCommandBuffer(image_index);
+
+  vk::Semaphore wait_semaphores[]{*image_available_semaphores_[current_frame_]};
+
+  vk::PipelineStageFlags wait_stages[]{
+      vk::PipelineStageFlagBits::eColorAttachmentOutput};
+
+  vk::CommandBuffer command_buffers[]{*command_buffers_[image_index]};
+
+  vk::Semaphore signal_semaphores[]{
+      *render_finished_semaphores_[current_frame_]};
+
+  vk::SubmitInfo submit_info{.waitSemaphoreCount = 1U,
+                             .pWaitSemaphores = wait_semaphores,
+                             .pWaitDstStageMask = wait_stages,
+                             .commandBufferCount = 1U,
+                             .pCommandBuffers = command_buffers,
+                             .signalSemaphoreCount = 1U,
+                             .pSignalSemaphores = signal_semaphores};
+
+  graphics_queue_.submit(submit_info, *in_flight_fences_[current_frame_]);
+
+  vk::SwapchainKHR swapchains[]{*swapchain_};
+
+  vk::PresentInfoKHR present_info{.waitSemaphoreCount = 1U,
+                                  .pWaitSemaphores = signal_semaphores,
+                                  .swapchainCount = 1U,
+                                  .pSwapchains = swapchains,
+                                  .pImageIndices = &image_index};
+
+  vk::Result present_result = presentation_queue_.presentKHR(present_info);
+
+  GGEMS_CHECK_RECOVERABLE(
+      present_result == vk::Result::eSuccess ||
+          present_result == vk::Result::eSuboptimalKHR,
+      std::format("Unable to present a Vulkan swapchain image: {}.",
+                  vk::to_string(present_result)));
+
+  current_frame_ = (current_frame_ + 1U) % k_max_frames_in_flight_;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 } // namespace ggems::ui

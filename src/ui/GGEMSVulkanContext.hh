@@ -12,7 +12,7 @@ namespace ggems::ui {
 class GGEMSVulkanContext {
 public:
   GGEMSVulkanContext() = default;
-  ~GGEMSVulkanContext() noexcept = default;
+  ~GGEMSVulkanContext() noexcept;
 
   GGEMSVulkanContext(GGEMSVulkanContext const &) = delete;
   GGEMSVulkanContext(GGEMSVulkanContext &&) = delete;
@@ -22,6 +22,8 @@ public:
 public:
   void Initialise(GLFWwindow *window);
   [[nodiscard]] bool IsInitialised() const noexcept;
+
+  void RenderFrame();
 
 private:
   struct QueueFamilyIndices {
@@ -35,6 +37,12 @@ private:
     [[nodiscard]] bool UsesSeparateFamilies() const noexcept {
       return IsComplete() && graphics.value() != presentation.value();
     }
+  };
+
+  struct SwapchainSupportDetails {
+    vk::SurfaceCapabilitiesKHR capabilities{};
+    std::vector<vk::SurfaceFormatKHR> surface_formats{};
+    std::vector<vk::PresentModeKHR> present_modes{};
   };
 
 private:
@@ -72,6 +80,33 @@ private:
 
   void CreateLogicalDevice();
 
+  void CreateSwapchain(GLFWwindow *window);
+  void CreateSwapchainImageViews();
+
+  [[nodiscard]] SwapchainSupportDetails
+  QuerySwapchainSupport(vk::raii::PhysicalDevice const &physical_device) const;
+
+  [[nodiscard]] vk::SurfaceFormatKHR ChooseSwapchainSurfaceFormat(
+      std::vector<vk::SurfaceFormatKHR> const &surface_formats) const;
+
+  [[nodiscard]] vk::PresentModeKHR ChooseSwapchainPresentMode(
+      std::vector<vk::PresentModeKHR> const &present_modes) const;
+
+  [[nodiscard]] vk::Extent2D
+  ChooseSwapchainExtent(vk::SurfaceCapabilitiesKHR const &capabilities,
+                        GLFWwindow *window) const;
+
+  void CreateCommandPool();
+  void AllocateCommandBuffers();
+
+  void CreateSyncObjects();
+
+  void RecordCommandBuffer(std::uint32_t image_index);
+
+  void TransitionSwapchainImageLayout(std::uint32_t image_index,
+                                      vk::ImageLayout old_layout,
+                                      vk::ImageLayout new_layout);
+
 private:
   vk::raii::Context context_{};
   vk::raii::Instance instance_{nullptr};
@@ -81,9 +116,22 @@ private:
   vk::raii::Device device_{nullptr};
   vk::raii::Queue graphics_queue_{nullptr};
   vk::raii::Queue presentation_queue_{nullptr};
+  vk::raii::CommandPool command_pool_{nullptr};
+  vk::raii::SwapchainKHR swapchain_{nullptr};
+  std::vector<vk::Image> swapchain_images_{};
+  std::vector<vk::raii::ImageView> swapchain_image_views_{};
+  std::vector<vk::raii::CommandBuffer> command_buffers_{};
+  std::vector<vk::raii::Semaphore> image_available_semaphores_{};
+  std::vector<vk::raii::Semaphore> render_finished_semaphores_{};
+  std::vector<vk::raii::Fence> in_flight_fences_{};
+  std::uint32_t current_frame_{0U};
+  vk::Format swapchain_image_format_{vk::Format::eUndefined};
+  vk::Extent2D swapchain_extent_{};
 
   QueueFamilyIndices queue_family_indices_{};
 
   bool initialised_{false};
+
+  static constexpr std::uint32_t k_max_frames_in_flight_{2U};
 };
 } // namespace ggems::ui

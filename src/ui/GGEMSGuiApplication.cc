@@ -119,8 +119,13 @@ void GGEMSGuiApplication::Run() {
 
   GGEMS_INFO("Gui", "GGEMS GuiMode event loop started.");
 
+  GGEMS_CHECK_INTERNAL(vk_context_ != nullptr && vk_context_->IsInitialised(),
+                       "GGEMS GuiMode required an initialised Vulkan context "
+                       "before entering the event loop.");
+
   while (glfwWindowShouldClose(window_) == GLFW_FALSE) {
-    glfwWaitEvents();
+    glfwPollEvents();
+    vk_context_->RenderFrame();
   }
 
   GGEMS_INFO("Gui", "GGEMS GuiMode event loop stopped.");
