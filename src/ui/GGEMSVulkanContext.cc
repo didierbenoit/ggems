@@ -14,6 +14,10 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_vulkan.h>
+
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 
@@ -49,6 +53,8 @@ GGEMSVulkanContext::~GGEMSVulkanContext() noexcept {
         "[GGEMS Vulkan] Failed to wait for device idle during shutdown.\n",
         stderr);
   }
+
+  ShutdownImGui();
 }
 
 /* --------------------------------------------- */
@@ -75,6 +81,8 @@ void GGEMSVulkanContext::Initialise(GLFWwindow *window) {
     CreateCommandPool();
     AllocateCommandBuffers();
     CreateSyncObjects();
+    CreateImGuiDescriptorPool();
+    InitialiseImGui(window);
   } catch (vk::SystemError const &error) {
     GGEMS_RECOVERABLE(
         std::format("Unable to initialise Vulkan GuiMode: {}.", error.what()));
@@ -83,8 +91,8 @@ void GGEMSVulkanContext::Initialise(GLFWwindow *window) {
   initialised_ = true;
 
   GGEMS_INFO("Vulkan",
-             "Vulkan swapchain command buffers and synchronisation objects "
-             "initialised.");
+             "Vulkan swapchain command buffers, synchronisation objects and "
+             "Dear ImGui backend initialised.");
 }
 
 /* --------------------------------------------- */
@@ -103,7 +111,7 @@ void GGEMSVulkanContext::CreateInstance() {
       .applicationVersion = VK_MAKE_API_VERSION(0, 2, 0, 0),
       .pEngineName = "GGEMS",
       .engineVersion = VK_MAKE_API_VERSION(0, 2, 0, 0),
-      .apiVersion = vk::ApiVersion13};
+      .apiVersion = k_vulkan_api_version_};
 
   std::vector<char const *> required_layers{};
 
@@ -862,6 +870,10 @@ void GGEMSVulkanContext::RecordCommandBuffer(std::uint32_t image_index) {
       .pColorAttachments = &colour_attachment};
 
   command_buffer.beginRendering(rendering_info);
+
+  ImGui_ImplVulkan_RenderDrawData(
+      ImGui::GetDrawData(), static_cast<VkCommandBuffer>(*command_buffer));
+
   command_buffer.endRendering();
 
   TransitionSwapchainImageLayout(image_index,
@@ -875,75 +887,298 @@ void GGEMSVulkanContext::RecordCommandBuffer(std::uint32_t image_index) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSVulkanContext::RenderFrame() {
+void GGEMSVulkanContext::RenderFrame(GLFWwindow *window,
+                                     bool framebuffer_resized) {
   GGEMS_CHECK_INTERNAL(
       initialised_,
       "Vulkan GuiMode must be initialised before rendering a frame.");
 
-  vk::Result wait_result =
-      device_.waitForFences(*in_flight_fences_[current_frame_], vk::True,
-                            std::numeric_limits<std::uint64_t>::max());
+  GGEMS_CHECK_INTERNAL(
+      window != nullptr,
+      "A valid GLFW window is required before rendering a Vulkan frame.");
 
-  GGEMS_CHECK_RECOVERABLE(
-      wait_result == vk::Result::eSuccess,
-      std::format("Unable to wait for the Vulkan in-flight fence: {}.",
-                  vk::to_string(wait_result)));
+  try {
+    if (framebuffer_resized) {
+      RecreateSwapchain(window);
+    }
 
-  auto [result, image_index] = swapchain_.acquireNextImage(
-      std::numeric_limits<std::uint64_t>::max(),
-      *image_available_semaphores_[current_frame_], nullptr);
+    vk::Result wait_result =
+        device_.waitForFences(*in_flight_fences_[current_frame_], vk::True,
+                              std::numeric_limits<std::uint64_t>::max());
 
-  GGEMS_CHECK_RECOVERABLE(
-      result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR,
-      std::format("Unable to acquire a Vulkan swapchain image: {}.",
-                  vk::to_string(result)));
+    GGEMS_CHECK_RECOVERABLE(
+        wait_result == vk::Result::eSuccess,
+        std::format("Unable to wait for the Vulkan in-flight fence: {}.",
+                    vk::to_string(wait_result)));
 
-  device_.resetFences(*in_flight_fences_[current_frame_]);
+    auto [result, image_index] = swapchain_.acquireNextImage(
+        std::numeric_limits<std::uint64_t>::max(),
+        *image_available_semaphores_[current_frame_], nullptr);
 
-  RecordCommandBuffer(image_index);
+    GGEMS_CHECK_RECOVERABLE(
+        result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR,
+        std::format("Unable to acquire a Vulkan swapchain image: {}.",
+                    vk::to_string(result)));
 
-  vk::Semaphore wait_semaphores[]{*image_available_semaphores_[current_frame_]};
+    BuildImGuiFrame();
 
-  vk::PipelineStageFlags wait_stages[]{
-      vk::PipelineStageFlagBits::eColorAttachmentOutput};
+    RecordCommandBuffer(image_index);
 
-  vk::CommandBuffer command_buffers[]{*command_buffers_[image_index]};
+    device_.resetFences(*in_flight_fences_[current_frame_]);
 
-  vk::Semaphore signal_semaphores[]{
-      *render_finished_semaphores_[current_frame_]};
+    vk::Semaphore wait_semaphores[]{
+        *image_available_semaphores_[current_frame_]};
 
-  vk::SubmitInfo submit_info{.waitSemaphoreCount = 1U,
-                             .pWaitSemaphores = wait_semaphores,
-                             .pWaitDstStageMask = wait_stages,
-                             .commandBufferCount = 1U,
-                             .pCommandBuffers = command_buffers,
-                             .signalSemaphoreCount = 1U,
-                             .pSignalSemaphores = signal_semaphores};
+    vk::PipelineStageFlags wait_stages[]{
+        vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
-  graphics_queue_.submit(submit_info, *in_flight_fences_[current_frame_]);
+    vk::CommandBuffer command_buffers[]{*command_buffers_[image_index]};
 
-  vk::SwapchainKHR swapchains[]{*swapchain_};
+    vk::Semaphore signal_semaphores[]{
+        *render_finished_semaphores_[current_frame_]};
 
-  vk::PresentInfoKHR present_info{.waitSemaphoreCount = 1U,
-                                  .pWaitSemaphores = signal_semaphores,
-                                  .swapchainCount = 1U,
-                                  .pSwapchains = swapchains,
-                                  .pImageIndices = &image_index};
+    vk::SubmitInfo submit_info{.waitSemaphoreCount = 1U,
+                               .pWaitSemaphores = wait_semaphores,
+                               .pWaitDstStageMask = wait_stages,
+                               .commandBufferCount = 1U,
+                               .pCommandBuffers = command_buffers,
+                               .signalSemaphoreCount = 1U,
+                               .pSignalSemaphores = signal_semaphores};
 
-  vk::Result present_result = presentation_queue_.presentKHR(present_info);
+    graphics_queue_.submit(submit_info, *in_flight_fences_[current_frame_]);
 
-  GGEMS_CHECK_RECOVERABLE(
-      present_result == vk::Result::eSuccess ||
-          present_result == vk::Result::eSuboptimalKHR,
-      std::format("Unable to present a Vulkan swapchain image: {}.",
-                  vk::to_string(present_result)));
+    vk::SwapchainKHR swapchains[]{*swapchain_};
 
-  current_frame_ = (current_frame_ + 1U) % k_max_frames_in_flight_;
+    vk::PresentInfoKHR present_info{.waitSemaphoreCount = 1U,
+                                    .pWaitSemaphores = signal_semaphores,
+                                    .swapchainCount = 1U,
+                                    .pSwapchains = swapchains,
+                                    .pImageIndices = &image_index};
+
+    vk::Result present_result = presentation_queue_.presentKHR(present_info);
+
+    if (present_result == vk::Result::eErrorOutOfDateKHR ||
+        present_result == vk::Result::eSuboptimalKHR) {
+      RecreateSwapchain(window);
+    } else {
+      GGEMS_CHECK_RECOVERABLE(
+          present_result == vk::Result::eSuccess,
+          std::format("Unable to present a Vulkan swapchain image: {}.",
+                      vk::to_string(present_result)));
+    }
+
+    current_frame_ = (current_frame_ + 1U) % k_max_frames_in_flight_;
+  } catch (vk::OutOfDateKHRError const &) {
+    RecreateSwapchain(window);
+  } catch (vk::SystemError const &error) {
+    GGEMS_RECOVERABLE(std::format(
+        "Unable to render a Vulkan GuiMode frame: {}.", error.what()));
+  }
 }
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
+
+void GGEMSVulkanContext::CleanupSwapchain() {
+  command_buffers_.clear();
+
+  swapchain_image_views_.clear();
+  swapchain_images_.clear();
+
+  swapchain_ = nullptr;
+  swapchain_image_format_ = vk::Format::eUndefined;
+  swapchain_extent_ = vk::Extent2D{};
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::RecreateSwapchain(GLFWwindow *window) {
+  GGEMS_CHECK_INTERNAL(window != nullptr,
+                       "A valid GLFW window is required before recreating the "
+                       "Vulkan swapchain.");
+
+  int width{0};
+  int height{0};
+
+  glfwGetFramebufferSize(window, &width, &height);
+
+  while (width == 0 || height == 0) {
+    glfwWaitEvents();
+    glfwGetFramebufferSize(window, &width, &height);
+  }
+
+  device_.waitIdle();
+
+  CleanupSwapchain();
+
+  CreateSwapchain(window);
+  CreateSwapchainImageViews();
+  AllocateCommandBuffers();
+
+  if (imgui_initialised_) {
+    ImGui_ImplVulkan_SetMinImageCount(
+        static_cast<std::uint32_t>(swapchain_images_.size()));
+  }
+
+  current_frame_ = 0U;
+
+  GGEMS_INFO("Vulkan", "Vulkan swapchain recreated after framebuffer resize.");
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::CreateImGuiDescriptorPool() {
+  std::array<vk::DescriptorPoolSize, 11> pool_sizes{
+      vk::DescriptorPoolSize{vk::DescriptorType::eSampler, 1000U},
+      vk::DescriptorPoolSize{vk::DescriptorType::eCombinedImageSampler, 1000U},
+      vk::DescriptorPoolSize{vk::DescriptorType::eSampledImage, 1000U},
+      vk::DescriptorPoolSize{vk::DescriptorType::eStorageImage, 1000U},
+      vk::DescriptorPoolSize{vk::DescriptorType::eUniformTexelBuffer, 1000U},
+      vk::DescriptorPoolSize{vk::DescriptorType::eStorageTexelBuffer, 1000U},
+      vk::DescriptorPoolSize{vk::DescriptorType::eUniformBuffer, 1000U},
+      vk::DescriptorPoolSize{vk::DescriptorType::eStorageBuffer, 1000U},
+      vk::DescriptorPoolSize{vk::DescriptorType::eUniformBufferDynamic, 1000U},
+      vk::DescriptorPoolSize{vk::DescriptorType::eStorageBufferDynamic, 1000U},
+      vk::DescriptorPoolSize{vk::DescriptorType::eInputAttachment, 1000U}};
+
+  vk::DescriptorPoolCreateInfo create_info{
+      .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+      .maxSets = 1000U * static_cast<std::uint32_t>(pool_sizes.size()),
+      .poolSizeCount = static_cast<std::uint32_t>(pool_sizes.size()),
+      .pPoolSizes = pool_sizes.data()};
+
+  imgui_descriptor_pool_ = vk::raii::DescriptorPool{device_, create_info};
+
+  GGEMS_INFO("Vulkan", "Dear ImGui Vulkan descriptor pool created.");
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::CheckImGuiVkResult(VkResult result) noexcept {
+  if (result == VK_SUCCESS) {
+    return;
+  }
+
+  try {
+    GGEMS_ERROR("Vulkan", "Dear ImGui Vulkan backend error: {}.",
+                vk::to_string(static_cast<vk::Result>(result)));
+  } catch (...) {
+    std::fputs("[GGEMS Vulkan] Dear ImGui backend reported an error.\n",
+               stderr);
+  }
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::InitialiseImGui(GLFWwindow *window) {
+  GGEMS_CHECK_INTERNAL(
+      window != nullptr,
+      "A valid GLFW window is required before initialising Dear ImGui.");
+
+  GGEMS_CHECK_INTERNAL(
+      imgui_descriptor_pool_ != nullptr,
+      "A Vulkan descriptor pool is required before initialising Dear ImGui.");
+
+  IMGUI_CHECKVERSION();
+
+  ImGui::CreateContext();
+
+  ImGuiIO &io = ImGui::GetIO();
+  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+  ImGui::StyleColorsDark();
+
+  ImGui_ImplGlfw_InitForVulkan(window, true);
+
+  imgui_colour_attachment_format_ =
+      static_cast<VkFormat>(swapchain_image_format_);
+
+  imgui_pipeline_rendering_create_info_ = VkPipelineRenderingCreateInfo{
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+      .pNext = nullptr,
+      .viewMask = 0U,
+      .colorAttachmentCount = 1U,
+      .pColorAttachmentFormats = &imgui_colour_attachment_format_,
+      .depthAttachmentFormat = VK_FORMAT_UNDEFINED,
+      .stencilAttachmentFormat = VK_FORMAT_UNDEFINED};
+
+  ImGui_ImplVulkan_InitInfo init_info{};
+  init_info.ApiVersion = k_vulkan_api_version_;
+  init_info.Instance = static_cast<VkInstance>(*instance_);
+  init_info.PhysicalDevice = static_cast<VkPhysicalDevice>(*physical_device_);
+  init_info.Device = static_cast<VkDevice>(*device_);
+  init_info.QueueFamily = queue_family_indices_.graphics.value();
+  init_info.Queue = static_cast<VkQueue>(*graphics_queue_);
+  init_info.DescriptorPool =
+      static_cast<VkDescriptorPool>(*imgui_descriptor_pool_);
+  init_info.MinImageCount =
+      static_cast<std::uint32_t>(swapchain_images_.size());
+  init_info.ImageCount = static_cast<std::uint32_t>(swapchain_images_.size());
+  init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+  init_info.CheckVkResultFn = &GGEMSVulkanContext::CheckImGuiVkResult;
+  init_info.UseDynamicRendering = true;
+  init_info.PipelineInfoMain.PipelineRenderingCreateInfo =
+      imgui_pipeline_rendering_create_info_;
+
+  ImGui_ImplVulkan_Init(&init_info);
+
+  imgui_initialised_ = true;
+
+  GGEMS_INFO("Gui", "Dear ImGui context and Vulkan backend initialised.");
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::ShutdownImGui() noexcept {
+  if (!imgui_initialised_) {
+    return;
+  }
+
+  ImGui_ImplVulkan_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
+  ImGui::DestroyContext();
+
+  imgui_initialised_ = false;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::BuildImGuiFrame() {
+  GGEMS_CHECK_INTERNAL(imgui_initialised_,
+                       "Dear ImGui must be initialised before building a GUI "
+                       "frame.");
+
+  ImGui_ImplVulkan_NewFrame();
+  ImGui_ImplGlfw_NewFrame();
+  ImGui::NewFrame();
+
+  ImGui::Begin("GGEMS GuiMode");
+
+  ImGui::TextUnformatted("GGEMS GuiMode is alive.");
+  ImGui::Separator();
+  ImGui::TextUnformatted("Vulkan renderer: initialised");
+  ImGui::Text("Swapchain extent: %u x %u", swapchain_extent_.width,
+              swapchain_extent_.height);
+  ImGui::TextUnformatted("Output console: not connected yet");
+
+  ImGui::End();
+
+  ImGui::Render();
+}
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */

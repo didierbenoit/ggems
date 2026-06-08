@@ -23,7 +23,7 @@ public:
   void Initialise(GLFWwindow *window);
   [[nodiscard]] bool IsInitialised() const noexcept;
 
-  void RenderFrame();
+  void RenderFrame(GLFWwindow *window, bool framebuffer_resized);
 
 private:
   struct QueueFamilyIndices {
@@ -107,6 +107,16 @@ private:
                                       vk::ImageLayout old_layout,
                                       vk::ImageLayout new_layout);
 
+  void CleanupSwapchain();
+  void RecreateSwapchain(GLFWwindow *window);
+
+  void CreateImGuiDescriptorPool();
+  void InitialiseImGui(GLFWwindow *window);
+  void ShutdownImGui() noexcept;
+  void BuildImGuiFrame();
+
+  static void CheckImGuiVkResult(VkResult result) noexcept;
+
 private:
   vk::raii::Context context_{};
   vk::raii::Instance instance_{nullptr};
@@ -116,6 +126,7 @@ private:
   vk::raii::Device device_{nullptr};
   vk::raii::Queue graphics_queue_{nullptr};
   vk::raii::Queue presentation_queue_{nullptr};
+  vk::raii::DescriptorPool imgui_descriptor_pool_{nullptr};
   vk::raii::CommandPool command_pool_{nullptr};
   vk::raii::SwapchainKHR swapchain_{nullptr};
   std::vector<vk::Image> swapchain_images_{};
@@ -128,10 +139,16 @@ private:
   vk::Format swapchain_image_format_{vk::Format::eUndefined};
   vk::Extent2D swapchain_extent_{};
 
+  VkFormat imgui_colour_attachment_format_{VK_FORMAT_UNDEFINED};
+  VkPipelineRenderingCreateInfo imgui_pipeline_rendering_create_info_{};
+
+  bool imgui_initialised_{false};
+
   QueueFamilyIndices queue_family_indices_{};
 
   bool initialised_{false};
 
+  static constexpr std::uint32_t k_vulkan_api_version_{vk::ApiVersion13};
   static constexpr std::uint32_t k_max_frames_in_flight_{2U};
 };
 } // namespace ggems::ui

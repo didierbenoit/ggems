@@ -97,6 +97,10 @@ void GGEMSGuiApplication::Initialise() {
     GGEMS_RECOVERABLE(error);
   }
 
+  glfwSetWindowUserPointer(window_, this);
+  glfwSetFramebufferSizeCallback(
+      window_, &GGEMSGuiApplication::FramebufferResizeCallback);
+
   try {
     vk_context_ = std::make_unique<GGEMSVulkanContext>();
     vk_context_->Initialise(window_);
@@ -125,10 +129,28 @@ void GGEMSGuiApplication::Run() {
 
   while (glfwWindowShouldClose(window_) == GLFW_FALSE) {
     glfwPollEvents();
-    vk_context_->RenderFrame();
+
+    bool framebuffer_resized = framebuffer_resized_;
+    framebuffer_resized_ = false;
+
+    vk_context_->RenderFrame(window_, framebuffer_resized);
   }
 
   GGEMS_INFO("Gui", "GGEMS GuiMode event loop stopped.");
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSGuiApplication::FramebufferResizeCallback(GLFWwindow *window, int,
+                                                    int) noexcept {
+  auto *application =
+      static_cast<GGEMSGuiApplication *>(glfwGetWindowUserPointer(window));
+
+  if (application != nullptr) {
+    application->framebuffer_resized_ = true;
+  }
 }
 
 } // namespace ggems::ui

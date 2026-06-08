@@ -31,6 +31,9 @@ public:
 private:
   void Shutdown() noexcept;
 
+  static void FramebufferResizeCallback(GLFWwindow *window, int width,
+                                        int height) noexcept;
+
 private:
   std::string title_;
   std::int32_t width_{0};
@@ -38,6 +41,7 @@ private:
   GLFWwindow *window_{nullptr};
   std::unique_ptr<GGEMSVulkanContext> vk_context_{};
   bool glfw_initialised_{false};
+  bool framebuffer_resized_{false};
 };
 
 } // namespace ggems::ui

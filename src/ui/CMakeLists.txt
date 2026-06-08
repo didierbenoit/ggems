@@ -67,6 +67,7 @@ target_compile_definitions(ggems_gui
 target_link_libraries(ggems_gui
   PRIVATE
     ggems_core
+    ggems_imgui
     Vulkan::Vulkan
     ${GGEMS_GLFW_TARGET}
 )
