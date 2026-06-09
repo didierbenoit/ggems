@@ -49,6 +49,8 @@ add_dear_imgui_target(ggems_imgui)
 add_library(ggems_gui STATIC
   ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSGuiApplication.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSVulkanContext.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSImGuiOutputPanel.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSImGuiLayer.cc
 )
 
 add_library(GGEMS::Gui ALIAS ggems_gui)

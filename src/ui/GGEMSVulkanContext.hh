@@ -6,6 +6,8 @@
 
 #include <vulkan/vulkan_raii.hpp>
 
+#include "GGEMSImGuiLayer.hh"
+
 struct GLFWwindow;
 
 namespace ggems::ui {
@@ -99,7 +101,8 @@ private:
   void CreateCommandPool();
   void AllocateCommandBuffers();
 
-  void CreateSyncObjects();
+  void CreateFrameSyncObjects();
+  void CreateSwapchainSyncObjects();
 
   void RecordCommandBuffer(std::uint32_t image_index);
 
@@ -114,6 +117,9 @@ private:
   void InitialiseImGui(GLFWwindow *window);
   void ShutdownImGui() noexcept;
   void BuildImGuiFrame();
+
+  void LoadImGuiFonts();
+  void ApplyImGuiStyle();
 
   static void CheckImGuiVkResult(VkResult result) noexcept;
 
@@ -132,15 +138,20 @@ private:
   std::vector<vk::Image> swapchain_images_{};
   std::vector<vk::raii::ImageView> swapchain_image_views_{};
   std::vector<vk::raii::CommandBuffer> command_buffers_{};
+
   std::vector<vk::raii::Semaphore> image_available_semaphores_{};
   std::vector<vk::raii::Semaphore> render_finished_semaphores_{};
   std::vector<vk::raii::Fence> in_flight_fences_{};
+  std::vector<vk::Fence> swapchain_image_in_flight_fences_{};
   std::uint32_t current_frame_{0U};
+
   vk::Format swapchain_image_format_{vk::Format::eUndefined};
   vk::Extent2D swapchain_extent_{};
 
   VkFormat imgui_colour_attachment_format_{VK_FORMAT_UNDEFINED};
   VkPipelineRenderingCreateInfo imgui_pipeline_rendering_create_info_{};
+
+  GGEMSImGuiLayer imgui_layer_{};
 
   bool imgui_initialised_{false};
 

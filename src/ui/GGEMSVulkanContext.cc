@@ -10,6 +10,9 @@
 #include <algorithm>
 #include <cstdint>
 #include <limits>
+#include <cstdlib>
+#include <filesystem>
+#include <optional>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -34,6 +37,57 @@ constexpr std::array<char const *, 1> k_validation_layers{
 
 constexpr std::array<char const *, 1> k_required_device_extensions{
     vk::KHRSwapchainExtensionName};
+
+[[nodiscard]] std::optional<std::filesystem::path> FindFirstExistingFont() {
+  std::vector<std::filesystem::path> candidates{};
+
+  if (char const *local_app_data = std::getenv("LOCALAPPDATA");
+      local_app_data != nullptr) {
+    std::filesystem::path const user_fonts =
+        std::filesystem::path{local_app_data} / "Microsoft/Windows/Fonts";
+
+    candidates.emplace_back(user_fonts / "JetBrainsMono-Regular.ttf");
+    candidates.emplace_back(user_fonts / "JetBrainsMonoNerdFont-Regular.ttf");
+    candidates.emplace_back(user_fonts /
+                            "JetBrainsMonoNerdFontMono-Regular.ttf");
+    candidates.emplace_back(user_fonts / "JetBrainsMonoNLNerdFont-Regular.ttf");
+    candidates.emplace_back(user_fonts /
+                            "JetBrainsMonoNLNerdFontMono-Regular.ttf");
+  }
+
+  candidates.emplace_back("C:/Windows/Fonts/JetBrainsMono-Regular.ttf");
+  candidates.emplace_back("C:/Windows/Fonts/JetBrainsMonoNerdFont-Regular.ttf");
+  candidates.emplace_back(
+      "C:/Windows/Fonts/JetBrainsMonoNerdFontMono-Regular.ttf");
+  candidates.emplace_back("C:/Windows/Fonts/CascadiaMono.ttf");
+  candidates.emplace_back("C:/Windows/Fonts/CascadiaCode.ttf");
+  candidates.emplace_back("C:/Windows/Fonts/consola.ttf");
+
+  if (char const *home = std::getenv("HOME"); home != nullptr) {
+    std::filesystem::path const user_fonts =
+        std::filesystem::path{home} / ".local/share/fonts";
+
+    candidates.emplace_back(user_fonts / "JetBrainsMono-Regular.ttf");
+    candidates.emplace_back(user_fonts / "JetBrainsMonoNerdFont-Regular.ttf");
+    candidates.emplace_back(user_fonts /
+                            "JetBrainsMonoNerdFontMono-Regular.ttf");
+    candidates.emplace_back(user_fonts / "DejaVuSansMono.ttf");
+  }
+
+  candidates.emplace_back(
+      "/usr/share/fonts/truetype/jetbrains-mono/JetBrainsMono-Regular.ttf");
+  candidates.emplace_back(
+      "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf");
+  candidates.emplace_back("/usr/local/share/fonts/JetBrainsMono-Regular.ttf");
+
+  for (std::filesystem::path const &candidate : candidates) {
+    if (std::filesystem::exists(candidate)) {
+      return candidate;
+    }
+  }
+
+  return std::nullopt;
+}
 } // namespace
 
 namespace ggems::ui {
@@ -80,7 +134,8 @@ void GGEMSVulkanContext::Initialise(GLFWwindow *window) {
     CreateSwapchainImageViews();
     CreateCommandPool();
     AllocateCommandBuffers();
-    CreateSyncObjects();
+    CreateFrameSyncObjects();
+    CreateSwapchainSyncObjects();
     CreateImGuiDescriptorPool();
     InitialiseImGui(window);
   } catch (vk::SystemError const &error) {
@@ -768,29 +823,55 @@ void GGEMSVulkanContext::AllocateCommandBuffers() {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSVulkanContext::CreateSyncObjects() {
-  vk::SemaphoreCreateInfo semaphore_create_info{};
+void GGEMSVulkanContext::CreateFrameSyncObjects() {
+  vk::SemaphoreCreateInfo const semaphore_create_info{};
 
-  vk::FenceCreateInfo fence_create_info{.flags =
-                                            vk::FenceCreateFlagBits::eSignaled};
+  vk::FenceCreateInfo const fence_create_info{
+      .flags = vk::FenceCreateFlagBits::eSignaled};
 
   image_available_semaphores_.clear();
-  render_finished_semaphores_.clear();
   in_flight_fences_.clear();
 
   image_available_semaphores_.reserve(k_max_frames_in_flight_);
-  render_finished_semaphores_.reserve(k_max_frames_in_flight_);
   in_flight_fences_.reserve(k_max_frames_in_flight_);
 
   for (std::uint32_t i = 0U; i < k_max_frames_in_flight_; ++i) {
     image_available_semaphores_.emplace_back(device_, semaphore_create_info);
-    render_finished_semaphores_.emplace_back(device_, semaphore_create_info);
     in_flight_fences_.emplace_back(device_, fence_create_info);
   }
 
-  GGEMS_INFO("Vulkan",
-             "Create Vulkan synchronisation objects for {} frames in flight.",
-             k_max_frames_in_flight_);
+  GGEMS_INFO(
+      "Vulkan",
+      "Created Vulkan frame synchronisation objects for {} frames in flight.",
+      k_max_frames_in_flight_);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::CreateSwapchainSyncObjects() {
+  GGEMS_CHECK_INTERNAL(
+      !swapchain_images_.empty(),
+      "Swapchain images are required before creating Vulkan swapchain "
+      "synchronisation objects.");
+
+  vk::SemaphoreCreateInfo const semaphore_create_info{};
+
+  render_finished_semaphores_.clear();
+  render_finished_semaphores_.reserve(swapchain_images_.size());
+
+  for (std::size_t i = 0U; i < swapchain_images_.size(); ++i) {
+    render_finished_semaphores_.emplace_back(device_, semaphore_create_info);
+  }
+
+  swapchain_image_in_flight_fences_.assign(swapchain_images_.size(),
+                                           vk::Fence{nullptr});
+
+  GGEMS_INFO(
+      "Vulkan",
+      "Created {} Vulkan render-finished semaphores for swapchain images.",
+      render_finished_semaphores_.size());
 }
 
 /* --------------------------------------------- */
@@ -920,6 +1001,29 @@ void GGEMSVulkanContext::RenderFrame(GLFWwindow *window,
         std::format("Unable to acquire a Vulkan swapchain image: {}.",
                     vk::to_string(result)));
 
+    GGEMS_CHECK_INTERNAL(image_index < swapchain_image_in_flight_fences_.size(),
+                         "The acquired Vulkan swapchain image index exceeds "
+                         "the number of tracked "
+                         "in-flight image fences.");
+
+    vk::Fence const image_in_flight_fence =
+        swapchain_image_in_flight_fences_[image_index];
+
+    if (image_in_flight_fence != vk::Fence{nullptr}) {
+      vk::Result const wait_image_result =
+          device_.waitForFences(image_in_flight_fence, vk::True,
+                                std::numeric_limits<std::uint64_t>::max());
+
+      GGEMS_CHECK_RECOVERABLE(
+          wait_image_result == vk::Result::eSuccess,
+          std::format(
+              "Unable to wait for the Vulkan swapchain image fence: {}.",
+              vk::to_string(wait_image_result)));
+    }
+
+    swapchain_image_in_flight_fences_[image_index] =
+        *in_flight_fences_[current_frame_];
+
     BuildImGuiFrame();
 
     RecordCommandBuffer(image_index);
@@ -935,7 +1039,7 @@ void GGEMSVulkanContext::RenderFrame(GLFWwindow *window,
     vk::CommandBuffer command_buffers[]{*command_buffers_[image_index]};
 
     vk::Semaphore signal_semaphores[]{
-        *render_finished_semaphores_[current_frame_]};
+        *render_finished_semaphores_[image_index]};
 
     vk::SubmitInfo submit_info{.waitSemaphoreCount = 1U,
                                .pWaitSemaphores = wait_semaphores,
@@ -986,6 +1090,9 @@ void GGEMSVulkanContext::CleanupSwapchain() {
   swapchain_image_views_.clear();
   swapchain_images_.clear();
 
+  render_finished_semaphores_.clear();
+  swapchain_image_in_flight_fences_.clear();
+
   swapchain_ = nullptr;
   swapchain_image_format_ = vk::Format::eUndefined;
   swapchain_extent_ = vk::Extent2D{};
@@ -1017,6 +1124,7 @@ void GGEMSVulkanContext::RecreateSwapchain(GLFWwindow *window) {
   CreateSwapchain(window);
   CreateSwapchainImageViews();
   AllocateCommandBuffers();
+  CreateSwapchainSyncObjects();
 
   if (imgui_initialised_) {
     ImGui_ImplVulkan_SetMinImageCount(
@@ -1092,6 +1200,9 @@ void GGEMSVulkanContext::InitialiseImGui(GLFWwindow *window) {
 
   ImGui::CreateContext();
 
+  LoadImGuiFonts();
+  ApplyImGuiStyle();
+
   ImGuiIO &io = ImGui::GetIO();
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -1166,16 +1277,7 @@ void GGEMSVulkanContext::BuildImGuiFrame() {
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
 
-  ImGui::Begin("GGEMS GuiMode");
-
-  ImGui::TextUnformatted("GGEMS GuiMode is alive.");
-  ImGui::Separator();
-  ImGui::TextUnformatted("Vulkan renderer: initialised");
-  ImGui::Text("Swapchain extent: %u x %u", swapchain_extent_.width,
-              swapchain_extent_.height);
-  ImGui::TextUnformatted("Output console: not connected yet");
-
-  ImGui::End();
+  imgui_layer_.BuildFrame(swapchain_extent_);
 
   ImGui::Render();
 }
@@ -1184,8 +1286,105 @@ void GGEMSVulkanContext::BuildImGuiFrame() {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+void GGEMSVulkanContext::LoadImGuiFonts() {
+  ImGuiIO &io = ImGui::GetIO();
+
+  constexpr float font_size{15.0F};
+
+  std::optional<std::filesystem::path> const font_path =
+      FindFirstExistingFont();
+
+  if (font_path.has_value()) {
+    io.Fonts->AddFontFromFileTTF(font_path->string().c_str(), font_size);
+
+    GGEMS_INFO("Gui", "Loaded ImGui font '{}'.", font_path->string());
+    return;
+  }
+
+  io.Fonts->AddFontDefault();
+
+  GGEMS_WARN("Gui",
+             "No preferred monospace ImGui font was found. Falling back to "
+             "Dear ImGui default font.");
+}
+
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
+
+void GGEMSVulkanContext::ApplyImGuiStyle() {
+  ImGuiIO &io = ImGui::GetIO();
+
+  io.FontGlobalScale = 1.10f;
+
+  ImGuiStyle &style = ImGui::GetStyle();
+
+  style.WindowPadding = ImVec2{10.0F, 8.0F};
+  style.FramePadding = ImVec2{8.0F, 4.0F};
+  style.CellPadding = ImVec2{6.0F, 4.0F};
+  style.ItemSpacing = ImVec2{8.0F, 6.0F};
+  style.ItemInnerSpacing = ImVec2{6.0F, 4.0F};
+
+  style.WindowRounding = 4.0F;
+  style.ChildRounding = 3.0F;
+  style.FrameRounding = 3.0F;
+  style.PopupRounding = 3.0F;
+  style.ScrollbarRounding = 4.0F;
+  style.GrabRounding = 3.0F;
+  style.TabRounding = 4.0F;
+
+  style.WindowBorderSize = 1.0F;
+  style.ChildBorderSize = 1.0F;
+  style.PopupBorderSize = 1.0F;
+  style.FrameBorderSize = 0.0F;
+  style.TabBorderSize = 0.0F;
+
+  ImVec4 *colours = style.Colors;
+
+  colours[ImGuiCol_Text] = ImVec4{0.88F, 0.93F, 0.95F, 1.00F};
+  colours[ImGuiCol_TextDisabled] = ImVec4{0.48F, 0.55F, 0.60F, 1.00F};
+
+  colours[ImGuiCol_WindowBg] = ImVec4{0.15F, 0.16F, 0.18F, 0.96F};
+  colours[ImGuiCol_ChildBg] = ImVec4{0.12F, 0.13F, 0.15F, 0.96F};
+  colours[ImGuiCol_PopupBg] = ImVec4{0.12F, 0.13F, 0.15F, 0.98F};
+
+  colours[ImGuiCol_Border] = ImVec4{0.35F, 0.42F, 0.48F, 0.55F};
+  colours[ImGuiCol_BorderShadow] = ImVec4{0.00F, 0.00F, 0.00F, 0.00F};
+
+  colours[ImGuiCol_FrameBg] = ImVec4{0.20F, 0.23F, 0.26F, 1.00F};
+  colours[ImGuiCol_FrameBgHovered] = ImVec4{0.27F, 0.32F, 0.36F, 1.00F};
+  colours[ImGuiCol_FrameBgActive] = ImVec4{0.32F, 0.38F, 0.42F, 1.00F};
+
+  colours[ImGuiCol_TitleBg] = ImVec4{0.18F, 0.22F, 0.26F, 1.00F};
+  colours[ImGuiCol_TitleBgActive] = ImVec4{0.24F, 0.34F, 0.42F, 1.00F};
+  colours[ImGuiCol_TitleBgCollapsed] = ImVec4{0.12F, 0.14F, 0.16F, 0.90F};
+
+  colours[ImGuiCol_MenuBarBg] = ImVec4{0.14F, 0.16F, 0.18F, 1.00F};
+
+  colours[ImGuiCol_Button] = ImVec4{0.24F, 0.34F, 0.42F, 1.00F};
+  colours[ImGuiCol_ButtonHovered] = ImVec4{0.32F, 0.46F, 0.56F, 1.00F};
+  colours[ImGuiCol_ButtonActive] = ImVec4{0.22F, 0.55F, 0.68F, 1.00F};
+
+  colours[ImGuiCol_Header] = ImVec4{0.22F, 0.32F, 0.40F, 0.80F};
+  colours[ImGuiCol_HeaderHovered] = ImVec4{0.30F, 0.44F, 0.54F, 0.90F};
+  colours[ImGuiCol_HeaderActive] = ImVec4{0.26F, 0.52F, 0.66F, 1.00F};
+
+  colours[ImGuiCol_Tab] = ImVec4{0.17F, 0.20F, 0.23F, 1.00F};
+  colours[ImGuiCol_TabHovered] = ImVec4{0.30F, 0.44F, 0.54F, 1.00F};
+  colours[ImGuiCol_TabSelected] = ImVec4{0.23F, 0.34F, 0.42F, 1.00F};
+
+  colours[ImGuiCol_ScrollbarBg] = ImVec4{0.10F, 0.11F, 0.12F, 1.00F};
+  colours[ImGuiCol_ScrollbarGrab] = ImVec4{0.32F, 0.38F, 0.42F, 1.00F};
+  colours[ImGuiCol_ScrollbarGrabHovered] = ImVec4{0.42F, 0.50F, 0.55F, 1.00F};
+  colours[ImGuiCol_ScrollbarGrabActive] = ImVec4{0.50F, 0.60F, 0.66F, 1.00F};
+
+  colours[ImGuiCol_CheckMark] = ImVec4{0.42F, 0.78F, 0.88F, 1.00F};
+  colours[ImGuiCol_SliderGrab] = ImVec4{0.42F, 0.78F, 0.88F, 1.00F};
+  colours[ImGuiCol_SliderGrabActive] = ImVec4{0.58F, 0.88F, 0.96F, 1.00F};
+
+  colours[ImGuiCol_ResizeGrip] = ImVec4{0.42F, 0.78F, 0.88F, 0.25F};
+  colours[ImGuiCol_ResizeGripHovered] = ImVec4{0.42F, 0.78F, 0.88F, 0.55F};
+  colours[ImGuiCol_ResizeGripActive] = ImVec4{0.42F, 0.78F, 0.88F, 0.90F};
+}
 
 } // namespace ggems::ui
