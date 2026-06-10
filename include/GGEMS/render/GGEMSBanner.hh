@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstdint>
+#include <vector>
+
 #include "GGEMS/core/GGEMSLogger.hh"
-#include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
-#include "GGEMS/render/GGEMSTerminalRenderer.hh"
+#include "GGEMS/render/GGEMSVisualLine.hh"
 
 namespace ggems::render {
 class GGEMSBanner {

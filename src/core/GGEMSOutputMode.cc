@@ -7,6 +7,7 @@
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSOutputStateSink.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
+#include "GGEMS/render/GGEMSTerminalRenderer.hh"
 
 namespace ggems::core {
 /* --------------------------------------------- */

@@ -11,17 +11,9 @@
 #include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
 #include "GGEMS/render/GGEMSTerminalPresenter.hh"
 #include "GGEMS/render/GGEMSProgressBar.hh"
+#include "GGEMS/render/GGEMSVisualLine.hh"
 
 namespace ggems::render {
-
-struct VisualSegment {
-  std::u32string text{};
-  render::ColourKey colour{render::DEFAULT_FG};
-};
-
-struct WrappedLine {
-  std::vector<VisualSegment> segments{};
-};
 
 class GGEMSBanner;
 

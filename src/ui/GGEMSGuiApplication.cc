@@ -85,6 +85,7 @@ void GGEMSGuiApplication::Initialise() {
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+  glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
   window_ =
       glfwCreateWindow(static_cast<int>(width_), static_cast<int>(height_),
