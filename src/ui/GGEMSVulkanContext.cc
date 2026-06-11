@@ -512,20 +512,20 @@ void GGEMSVulkanContext::SelectPhysicalDevice() {
   vk::PhysicalDeviceProperties const selected_properties =
       physical_device_.getProperties();
 
-  GGEMS_INFO("Vulkan",
-             "Selected Vulkan display device '{}': type={}, API={}.{}.{}.",
-             selected_properties.deviceName.data(),
-             vk::to_string(selected_properties.deviceType),
-             VK_API_VERSION_MAJOR(selected_properties.apiVersion),
-             VK_API_VERSION_MINOR(selected_properties.apiVersion),
-             VK_API_VERSION_PATCH(selected_properties.apiVersion));
+  GGEMS_INFOEX("Vulkan", 1,
+               "Selected Vulkan display device '{}': type={}, API={}.{}.{}.",
+               selected_properties.deviceName.data(),
+               vk::to_string(selected_properties.deviceType),
+               VK_API_VERSION_MAJOR(selected_properties.apiVersion),
+               VK_API_VERSION_MINOR(selected_properties.apiVersion),
+               VK_API_VERSION_PATCH(selected_properties.apiVersion));
 
-  GGEMS_INFO("Vulkan",
-             "Selected Vulkan queue families: graphics={}, presentation={}, "
-             "separate={}.",
-             queue_family_indices_.graphics.value(),
-             queue_family_indices_.presentation.value(),
-             queue_family_indices_.UsesSeparateFamilies());
+  GGEMS_INFOEX("Vulkan", 2,
+               "Selected Vulkan queue families: graphics={}, presentation={}, "
+               "separate={}.",
+               queue_family_indices_.graphics.value(),
+               queue_family_indices_.presentation.value(),
+               queue_family_indices_.UsesSeparateFamilies());
 }
 
 /* --------------------------------------------- */
@@ -578,12 +578,12 @@ void GGEMSVulkanContext::CreateLogicalDevice() {
   presentation_queue_ =
       vk::raii::Queue{device_, queue_family_indices_.presentation.value(), 0U};
 
-  GGEMS_INFO("Vulkan",
-             "Vulkan logical device created: graphics queue family={}, "
-             "presentation queue family={}, separate={}.",
-             queue_family_indices_.graphics.value(),
-             queue_family_indices_.presentation.value(),
-             queue_family_indices_.UsesSeparateFamilies());
+  GGEMS_INFOEX("Vulkan", 2,
+               "Vulkan logical device created: graphics queue family={}, "
+               "presentation queue family={}, separate={}.",
+               queue_family_indices_.graphics.value(),
+               queue_family_indices_.presentation.value(),
+               queue_family_indices_.UsesSeparateFamilies());
 }
 
 /* --------------------------------------------- */
@@ -723,12 +723,12 @@ void GGEMSVulkanContext::CreateSwapchain(GLFWwindow *window) {
   swapchain_image_format_ = surface_format.format;
   swapchain_extent_ = extent;
 
-  GGEMS_INFO("Vulkan",
-             "Vulkan swapchain created: images={}, format={}, extent={}x{}, "
-             "present mode={}.",
-             swapchain_images_.size(), vk::to_string(swapchain_image_format_),
-             swapchain_extent_.width, swapchain_extent_.height,
-             vk::to_string(present_mode));
+  GGEMS_INFOEX("Vulkan", 1,
+               "Vulkan swapchain created: images={}, format={}, extent={}x{}, "
+               "present mode={}.",
+               swapchain_images_.size(), vk::to_string(swapchain_image_format_),
+               swapchain_extent_.width, swapchain_extent_.height,
+               vk::to_string(present_mode));
 }
 
 /* --------------------------------------------- */
@@ -768,8 +768,8 @@ void GGEMSVulkanContext::CreateSwapchainImageViews() {
     swapchain_image_views_.emplace_back(device_, create_info);
   }
 
-  GGEMS_INFO("Vulkan", "Created {} Vulkan swapchain image views.",
-             swapchain_image_views_.size());
+  GGEMS_INFOEX("Vulkan", 2, "Created {} Vulkan swapchain image views.",
+               swapchain_image_views_.size());
 }
 
 /* --------------------------------------------- */
@@ -788,8 +788,9 @@ void GGEMSVulkanContext::CreateCommandPool() {
 
   command_pool_ = vk::raii::CommandPool{device_, create_info};
 
-  GGEMS_INFO("Vulkan", "Vulkan command pool created for graphics family {}.",
-             queue_family_indices_.graphics.value());
+  GGEMS_INFOEX("Vulkan", 2,
+               "Vulkan command pool created for graphics family {}.",
+               queue_family_indices_.graphics.value());
 }
 
 /* --------------------------------------------- */
@@ -815,8 +816,8 @@ void GGEMSVulkanContext::AllocateCommandBuffers() {
 
   command_buffers_ = device_.allocateCommandBuffers(allocate_info);
 
-  GGEMS_INFO("Vulkan", "Allocated {} Vulkan command buffers.",
-             command_buffers_.size());
+  GGEMS_INFOEX("Vulkan", 2, "Allocated {} Vulkan command buffers.",
+               command_buffers_.size());
 }
 
 /* --------------------------------------------- */
@@ -840,8 +841,8 @@ void GGEMSVulkanContext::CreateFrameSyncObjects() {
     in_flight_fences_.emplace_back(device_, fence_create_info);
   }
 
-  GGEMS_INFO(
-      "Vulkan",
+  GGEMS_INFOEX(
+      "Vulkan", 2,
       "Created Vulkan frame synchronisation objects for {} frames in flight.",
       k_max_frames_in_flight_);
 }
@@ -868,8 +869,8 @@ void GGEMSVulkanContext::CreateSwapchainSyncObjects() {
   swapchain_image_in_flight_fences_.assign(swapchain_images_.size(),
                                            vk::Fence{nullptr});
 
-  GGEMS_INFO(
-      "Vulkan",
+  GGEMS_INFOEX(
+      "Vulkan", 2,
       "Created {} Vulkan render-finished semaphores for swapchain images.",
       render_finished_semaphores_.size());
 }
@@ -1133,7 +1134,8 @@ void GGEMSVulkanContext::RecreateSwapchain(GLFWwindow *window) {
 
   current_frame_ = 0U;
 
-  GGEMS_INFO("Vulkan", "Vulkan swapchain recreated after framebuffer resize.");
+  GGEMS_INFOEX("Vulkan", 1,
+               "Vulkan swapchain recreated after framebuffer resize.");
 }
 
 /* --------------------------------------------- */
@@ -1162,7 +1164,7 @@ void GGEMSVulkanContext::CreateImGuiDescriptorPool() {
 
   imgui_descriptor_pool_ = vk::raii::DescriptorPool{device_, create_info};
 
-  GGEMS_INFO("Vulkan", "Dear ImGui Vulkan descriptor pool created.");
+  GGEMS_INFOEX("Vulkan", 2, "Dear ImGui Vulkan descriptor pool created.");
 }
 
 /* --------------------------------------------- */
@@ -1245,7 +1247,7 @@ void GGEMSVulkanContext::InitialiseImGui(GLFWwindow *window) {
 
   imgui_initialised_ = true;
 
-  GGEMS_INFO("Gui", "Dear ImGui context and Vulkan backend initialised.");
+  GGEMS_INFOEX("Gui", 1, "Dear ImGui context and Vulkan backend initialised.");
 }
 
 /* --------------------------------------------- */
@@ -1297,7 +1299,7 @@ void GGEMSVulkanContext::LoadImGuiFonts() {
   if (font_path.has_value()) {
     io.Fonts->AddFontFromFileTTF(font_path->string().c_str(), font_size);
 
-    GGEMS_INFO("Gui", "Loaded ImGui font '{}'.", font_path->string());
+    GGEMS_INFOEX("Gui", 2, "Loaded ImGui font '{}'.", font_path->string());
     return;
   }
 

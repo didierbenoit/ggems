@@ -26,11 +26,14 @@ static render::ColourKey LogLevelColour(LogLevel l) {
   return render::DEFAULT_FG;
 }
 
-static std::string LogLevelName(LogLevel l) {
-  switch (l) {
+static std::string LogLevelName(LogRecord const &rec) {
+  switch (rec.level) {
   case LogLevel::Debug:
     return "DEBUG";
   case LogLevel::Info:
+    if (rec.depth > 0) {
+      return std::format("INFO{}", rec.depth);
+    }
     return "INFO";
   case LogLevel::Warn:
     return "WARN";
@@ -90,12 +93,17 @@ RenderedLogLine LogFormatter::Format(LogRecord const &rec,
                                      bool use_colour) const {
   RenderedLogLine log_line;
   log_line.msg = rec.message;
-  if (use_colour)
+  log_line.level = rec.level;
+  log_line.depth = rec.depth;
+  log_line.module = rec.module;
+
+  if (use_colour) {
     log_line.color = LogLevelColour(rec.level);
+  }
 
   auto const ts = FormatTimestamp(rec.timestamp);
   std::string module_part = rec.module.empty() ? "" : " [" + rec.module + "]";
-  std::string level_name = LogLevelName(rec.level);
+  std::string level_name = LogLevelName(rec);
 
   log_line.prefix = std::format("{} [{}] {{{}}}{} ({}):", ts, level_name,
                                 rec.thread_id, module_part, rec.function);

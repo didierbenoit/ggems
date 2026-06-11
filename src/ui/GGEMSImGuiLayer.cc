@@ -44,8 +44,10 @@ void GGEMSImGuiLayer::BuildFrame(vk::Extent2D const &swapchain_extent) {
   BuildMainDockspace();
 
   if (show_output_panel_) {
+    render::GGEMSBanner &banner = core::GetOutputBanner();
     core::GGEMSOutputState &output_state = core::GetOutputState();
-    output_panel_.Render(output_state);
+
+    output_panel_.Render(banner, output_state);
   }
 
   if (show_status_panel_) {

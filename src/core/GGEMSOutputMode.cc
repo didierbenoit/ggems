@@ -7,6 +7,7 @@
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSOutputStateSink.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
+#include "GGEMS/render/GGEMSProgressBar.hh"
 #include "GGEMS/render/GGEMSTerminalRenderer.hh"
 
 namespace ggems::core {
@@ -88,18 +89,24 @@ void ConfigureLoggerForMode(OutputMode mode) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+void EnsureInteractiveOutputObjects() {
+  (void)GetOutputState();
+  (void)GetOutputBanner();
+  (void)GetProgressBar();
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 void EnsureTerminalObjects() {
   auto &st = GetOutputState();
-
-  if (!g_banner) {
-    g_banner = std::make_unique<render::GGEMSBanner>();
-  }
-
+  auto &banner = GetOutputBanner();
   auto &progress_bar = GetProgressBar();
 
   if (!g_terminal_renderer) {
     g_terminal_renderer = std::make_unique<render::GGEMSTerminalRenderer>(
-        *g_banner, progress_bar, st);
+        banner, progress_bar, st);
   }
 }
 
@@ -179,6 +186,26 @@ GGEMSOutputState &GetOutputState() {
     g_state = std::make_unique<GGEMSOutputState>();
   }
   return *g_state;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+render::GGEMSBanner &GetOutputBanner() {
+  GGEMS_CHECK_FATAL(
+      g_configured,
+      "Output mode must be configured before requesting the progress bar. "
+      "Call ggems.core.set_output_mode('term'|'gui'|'cluster') first.");
+
+  GGEMS_CHECK_FATAL(g_mode != OutputMode::Cluster,
+                    "Progress bar is not available in cluster mode.");
+
+  if (!g_banner) {
+    g_banner = std::make_unique<render::GGEMSBanner>();
+  }
+
+  return *g_banner;
 }
 
 /* --------------------------------------------- */
@@ -274,7 +301,13 @@ void StartOutputRuntime() {
   }
 
   case OutputMode::Gui: {
+    EnsureInteractiveOutputObjects();
+
+    g_output_stop_requested.store(false, std::memory_order_relaxed);
+    g_output_final_requested.store(false, std::memory_order_relaxed);
     g_output_running.store(true, std::memory_order_relaxed);
+    g_output_final_done.store(false, std::memory_order_relaxed);
+
     break;
   }
 

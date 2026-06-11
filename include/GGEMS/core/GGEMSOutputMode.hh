@@ -9,8 +9,9 @@
 #include "GGEMS/core/GGEMSOutputState.hh"
 
 namespace ggems::render {
+class GGEMSBanner;
 class GGEMSProgressBar;
-}
+} // namespace ggems::render
 
 namespace ggems::core {
 enum class OutputMode : std::uint8_t { Term = 0, Gui, Cluster };
@@ -33,6 +34,8 @@ void ShowFinalOutputScreen(
 void StopOutputRuntime() noexcept;
 
 GGEMSOutputState &GetOutputState();
+
+render::GGEMSBanner &GetOutputBanner();
 render::GGEMSProgressBar &GetProgressBar();
 
 [[nodiscard]] inline std::string ToString(OutputMode mode) {

@@ -21,6 +21,7 @@ enum class Encoding : std::uint8_t { Utf32 = 0, Ascii };
 struct LogRecord {
   std::chrono::system_clock::time_point timestamp{};
   LogLevel level{LogLevel::Info};
+  std::int32_t depth{0};
   std::string thread_id{};
   std::string module{};
   std::string message{};
@@ -33,6 +34,9 @@ struct RenderedLogLine {
   std::string prefix{};
   std::string msg{};
   render::ColourKey color{render::DEFAULT_FG};
+  LogLevel level{LogLevel::Info};
+  std::int32_t depth{0};
+  std::string module{};
 };
 
 class LogSink {
@@ -79,12 +83,13 @@ public:
     detail_level_.store(d, std::memory_order_relaxed);
   }
 
-  void Log(LogLevel lvl, std::string_view module,
+  void Log(LogLevel lvl, std::int32_t depth, std::string_view module,
            std::source_location const &loc = std::source_location::current(),
            std::string_view msg = "") {
     LogRecord rec;
     rec.timestamp = std::chrono::system_clock::now();
     rec.level = lvl;
+    rec.depth = depth;
     rec.thread_id = ThreadTag();
     rec.module = std::string(module);
     rec.message = msg;
@@ -108,7 +113,7 @@ public:
     } else {
       s = std::vformat(fmt_runtime, std::make_format_args(args...));
     }
-    Log(Level, module, loc, s);
+    Log(Level, depth, module, loc, s);
   }
 
 private:

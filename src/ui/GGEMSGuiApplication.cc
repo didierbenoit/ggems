@@ -122,7 +122,7 @@ void GGEMSGuiApplication::Run() {
       window_ != nullptr,
       "GGEMS GuiMode must be initialised before entering its event loop.");
 
-  GGEMS_INFO("Gui", "GGEMS GuiMode event loop started.");
+  GGEMS_INFOEX("Gui", 1, "GGEMS GuiMode event loop started.");
 
   GGEMS_CHECK_INTERNAL(vk_context_ != nullptr && vk_context_->IsInitialised(),
                        "GGEMS GuiMode required an initialised Vulkan context "
@@ -137,7 +137,7 @@ void GGEMSGuiApplication::Run() {
     vk_context_->RenderFrame(window_, framebuffer_resized);
   }
 
-  GGEMS_INFO("Gui", "GGEMS GuiMode event loop stopped.");
+  GGEMS_INFOEX("Gui", 1, "GGEMS GuiMode event loop stopped.");
 }
 
 /* --------------------------------------------- */
