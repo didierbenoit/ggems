@@ -46,8 +46,9 @@ void GGEMSImGuiLayer::BuildFrame(vk::Extent2D const &swapchain_extent) {
   if (show_output_panel_) {
     render::GGEMSBanner &banner = core::GetOutputBanner();
     core::GGEMSOutputState &output_state = core::GetOutputState();
+    render::GGEMSProgressBar &progress_bar = core::GetProgressBar();
 
-    output_panel_.Render(banner, output_state);
+    output_panel_.Render(banner, output_state, progress_bar);
   }
 
   if (show_status_panel_) {

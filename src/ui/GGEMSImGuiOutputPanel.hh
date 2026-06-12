@@ -7,6 +7,7 @@
 
 namespace ggems::render {
 class GGEMSBanner;
+class GGEMSProgressBar;
 struct WrappedLine;
 } // namespace ggems::render
 
@@ -23,7 +24,8 @@ public:
 
 public:
   void Render(render::GGEMSBanner const &banner,
-              core::GGEMSOutputState &output_state);
+              core::GGEMSOutputState &output_state,
+              render::GGEMSProgressBar const &progress_bar);
 
 private:
   void RenderWrappedLine(render::WrappedLine const &line) const;
@@ -34,6 +36,7 @@ private:
   bool auto_scroll_{true};
   bool show_prefix_{true};
   bool show_banner_{true};
+  bool show_progress_{true};
   std::array<bool, 5> show_info_depth_{{true, true, true, true, true}};
   bool show_debug_{true};
   bool show_warn_{true};

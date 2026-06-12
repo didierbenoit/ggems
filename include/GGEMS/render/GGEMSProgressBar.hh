@@ -2,18 +2,24 @@
 
 /// \cond
 #include <vector>
+#include <array>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <string_view>
 /// \endcond
 
 #include "GGEMS/render/GGEMSColourNames.hh"
-#include "GGEMS/render/GGEMSTerminalFramebuffer.hh"
 #include "GGEMS/utf/GGEMSGlyphs.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
+#include "GGEMS/render/GGEMSVisualLine.hh"
 
 namespace ggems::render {
 
 class GGEMSProgressBar {
 public:
+  struct SlotSnapshot;
+
   struct Slot {
     enum class ParticleType : std::uint8_t {
       Gamma,
@@ -115,6 +121,23 @@ public:
       return U"undefined";
     }
 
+    Slot(std::string_view slot_name, bool gpu,
+         std::array<cl_uchar, CL_LUID_SIZE_KHR> slot_luid);
+
+    Slot &SetKernelName(std::string_view kernel) noexcept;
+    Slot &SetStatus(Status st) noexcept;
+    Slot &SetParticleType(ParticleType p) noexcept;
+    Slot &SetBatchesDone(std::uint64_t done) noexcept;
+    Slot &SetBatchesTotal(std::uint64_t total) noexcept;
+    Slot &SetETAPicoseconds(std::uint64_t eta) noexcept;
+    Slot &SetIsGPU(bool gpu) noexcept;
+    Slot &SetPercentVRAM(std::uint8_t percent) noexcept;
+    Slot &SetTotalVRAM(std::uint64_t total) noexcept;
+    Slot &SetAllocatedVRAM(std::uint64_t allocated) noexcept;
+    Slot &SetAllocationCountVRAM(std::size_t allocation_count) noexcept;
+
+    [[nodiscard]] SlotSnapshot GetSnapshot() const;
+
     std::string name{""};
     std::string kernel_name{""};
     Status status{Status::Pending};
@@ -131,17 +154,26 @@ public:
     std::uint64_t vram_allocated{0LL};
     std::size_t vram_allocation_count{0};
 
-    Slot &SetKernelName(std::string_view kernel) noexcept;
-    Slot &SetStatus(Status st) noexcept;
-    Slot &SetParticleType(ParticleType p) noexcept;
-    Slot &SetBatchesDone(std::uint64_t done) noexcept;
-    Slot &SetBatchesTotal(std::uint64_t total) noexcept;
-    Slot &SetETAPicoseconds(std::uint64_t eta) noexcept;
-    Slot &SetIsGPU(bool gpu) noexcept;
-    Slot &SetPercentVRAM(std::uint8_t percent) noexcept;
-    Slot &SetTotalVRAM(std::uint64_t total) noexcept;
-    Slot &SetAllocatedVRAM(std::uint64_t allocated) noexcept;
-    Slot &SetAllocationCountVRAM(std::size_t allocation_count) noexcept;
+  private:
+    mutable std::mutex mutex;
+  };
+
+  struct SlotSnapshot {
+    std::string name{};
+    std::string kernel_name{};
+    Slot::Status status{Slot::Status::Pending};
+    Slot::ParticleType particle_type{Slot::ParticleType::Gamma};
+    bool is_gpu{false};
+    std::array<cl_uchar, CL_LUID_SIZE_KHR> luid{};
+
+    std::uint64_t batches_done{0ULL};
+    std::uint64_t batches_total{0LL};
+    std::uint64_t eta_ps{0ULL};
+
+    std::uint8_t vram_percent{0U};
+    std::uint64_t vram_total{0ULL};
+    std::uint64_t vram_allocated{0ULL};
+    std::size_t vram_allocation_count{0U};
   };
 
 public:
@@ -161,13 +193,13 @@ public:
   Slot const &GetSlot(std::size_t index) const noexcept;
 
   [[nodiscard]] std::size_t GetSlotCount() const noexcept;
+  [[nodiscard]] std::vector<SlotSnapshot> GetSlotSnapshots() const;
 
   void Clear() noexcept;
 
-  [[nodiscard]] std::int16_t GetHeight() const noexcept;
+  //[[nodiscard]] std::int16_t GetHeight() const noexcept;
 
-  void Draw(GGEMSTerminalFramebuffer &framebuffer, std::int16_t x,
-            std::int16_t y, std::int16_t width) const;
+  [[nodiscard]] std::vector<WrappedLine> BuildLines() const;
 
 private:
   [[nodiscard]] static std::vector<char32_t> BuildBar(float progress);
@@ -180,17 +212,8 @@ private:
   [[nodiscard]] static std::string FormatMemory(std::uint64_t bytes);
   [[nodiscard]] static std::string FormatBandwidth(long double bytes_per_ps);
 
-  void DrawSingleSlot(GGEMSTerminalFramebuffer &framebuffer, Slot const &slot,
-                      std::int16_t x, std::int16_t y, std::int16_t width) const;
-
-  void DrawSystemStats(GGEMSTerminalFramebuffer &framebuffer, std::int16_t x,
-                       std::int16_t y, std::int16_t width) const;
-
 private:
-  std::vector<Slot> slots_;
-
-  // --- Layout
-  std::int16_t footer_rows_{1};
-  std::int16_t slot_rows_{6};
+  std::vector<std::unique_ptr<Slot>> slots_;
+  mutable std::mutex slots_mutex_;
 };
 } // namespace ggems::render

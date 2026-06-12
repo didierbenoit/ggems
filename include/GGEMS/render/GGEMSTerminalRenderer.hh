@@ -66,6 +66,9 @@ private:
   [[nodiscard]] static std::pair<std::u32string, std::u32string>
   SplitChunk(std::u32string_view text, std::int16_t max_width);
 
+  void DrawWrappedLines(std::vector<WrappedLine> const &lines, std::int16_t x,
+                        std::int16_t y, std::int16_t max_rows);
+
 private:
   GGEMSBanner &banner_;
   GGEMSProgressBar &progress_bar_;

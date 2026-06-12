@@ -199,6 +199,34 @@ std::string GGEMSTerminalRenderer::BuildDiffPayload() const {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+void GGEMSTerminalRenderer::DrawWrappedLines(
+    std::vector<WrappedLine> const &lines, std::int16_t x, std::int16_t y,
+    std::int16_t max_rows) {
+  std::int16_t row = y;
+
+  for (WrappedLine const &line : lines) {
+    if (row >= static_cast<std::int16_t>(y + max_rows)) {
+      break;
+    }
+
+    std::int16_t col = x;
+
+    for (VisualSegment const &segment : line.segments) {
+      if (!segment.text.empty()) {
+        framebuffer_.DrawString(col, row, segment.text, segment.colour);
+        col = static_cast<std::int16_t>(
+            col + static_cast<std::int16_t>(segment.text.size()));
+      }
+    }
+
+    ++row;
+  }
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 void GGEMSTerminalRenderer::DrawFrame(std::u32string_view final_message) {
   framebuffer_.UpdateSizeIfNeeded();
 
@@ -214,7 +242,9 @@ void GGEMSTerminalRenderer::DrawFrame(std::u32string_view final_message) {
   framebuffer_.Clear(U' ', DEFAULT_FG);
 
   std::int16_t final_message_rows = 1;
-  std::int16_t progress_rows = progress_bar_.GetHeight();
+
+  std::vector<WrappedLine> progress_lines = progress_bar_.BuildLines();
+  std::int16_t progress_rows = static_cast<std::int16_t>(progress_lines.size());
 
   std::int16_t content_x = 1;
   std::int16_t content_y = 0;
@@ -232,9 +262,8 @@ void GGEMSTerminalRenderer::DrawFrame(std::u32string_view final_message) {
   Rect content_rect{content_x, content_y, content_w, content_h};
   DrawScrollableContent(content_rect);
 
-  if (progress_y >= 0) {
-    progress_bar_.Draw(framebuffer_, 1, progress_y,
-                       static_cast<std::int16_t>(w - 2));
+  if (progress_y >= 0 && !progress_lines.empty()) {
+    DrawWrappedLines(progress_lines, 1, progress_y, progress_rows);
   }
 
   if (!final_message.empty()) {

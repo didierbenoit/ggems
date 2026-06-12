@@ -4,6 +4,7 @@
 #include "GGEMS/render/GGEMSColour.hh"
 #include "GGEMS/render/GGEMSVisualLine.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
+#include "GGEMS/render/GGEMSProgressBar.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
 
 namespace {
@@ -85,8 +86,9 @@ bool GGEMSImGuiOutputPanel::ShouldDisplay(
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSImGuiOutputPanel::Render(render::GGEMSBanner const &banner,
-                                   core::GGEMSOutputState &output_state) {
+void GGEMSImGuiOutputPanel::Render(
+    render::GGEMSBanner const &banner, core::GGEMSOutputState &output_state,
+    render::GGEMSProgressBar const &progress_bar) {
   ImGui::Begin("GGEMS Output");
 
   std::size_t log_count = output_state.GetLogCount();
@@ -134,6 +136,9 @@ void GGEMSImGuiOutputPanel::Render(render::GGEMSBanner const &banner,
   ImGui::SameLine();
   ImGui::Checkbox("Banner", &show_banner_);
 
+  ImGui::SameLine();
+  ImGui::Checkbox("Progress", &show_progress_);
+
   ImGui::Separator();
 
   ImGui::PushStyleColor(ImGuiCol_ChildBg,
@@ -173,6 +178,18 @@ void GGEMSImGuiOutputPanel::Render(render::GGEMSBanner const &banner,
                           ToImGuiColour(ggems::render::DEFAULT_FG));
     ImGui::TextUnformatted(line.msg.c_str());
     ImGui::PopStyleColor();
+  }
+
+  if (show_progress_) {
+    std::vector<render::WrappedLine> progress_lines = progress_bar.BuildLines();
+
+    if (!progress_lines.empty()) {
+      ImGui::Separator();
+
+      for (render::WrappedLine const &line : progress_lines) {
+        RenderWrappedLine(line);
+      }
+    }
   }
 
   if (auto_scroll_ && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
