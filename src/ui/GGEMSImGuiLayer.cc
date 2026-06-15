@@ -40,7 +40,9 @@ char const *GGEMSImGuiLayer::GetSceneSelectionName() const noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSImGuiLayer::BuildFrame(vk::Extent2D const &swapchain_extent) {
+void GGEMSImGuiLayer::BuildFrame(vk::Extent2D const &swapchain_extent,
+                                 ImTextureID scene_texture_id,
+                                 vk::Extent2D const &scene_texture_extent) {
   BuildMainDockspace();
 
   if (show_output_panel_) {
@@ -60,12 +62,21 @@ void GGEMSImGuiLayer::BuildFrame(vk::Extent2D const &swapchain_extent) {
   }
 
   if (show_viewport_placeholder_) {
-    BuildViewportPlaceholder();
+    BuildViewportPlaceholder(scene_texture_id, scene_texture_extent);
   }
 
   if (show_inspector_panel_) {
     BuildInspectorPanel();
   }
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+GGEMSImGuiLayer::ViewportState const &
+GGEMSImGuiLayer::GetViewportState() const noexcept {
+  return viewport_state_;
 }
 
 /* --------------------------------------------- */
@@ -185,14 +196,48 @@ void GGEMSImGuiLayer::BuildStatusPanel(vk::Extent2D const &swapchain_extent) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSImGuiLayer::BuildViewportPlaceholder() {
-  ImGui::Begin("GGEMS Viewport", &show_viewport_placeholder_);
+void GGEMSImGuiLayer::BuildViewportPlaceholder(
+    ImTextureID scene_texture_id, vk::Extent2D const &scene_texture_extent) {
+  ImGuiWindowFlags window_flags =
+      ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
-  ImGui::TextUnformatted("Future Vulkan scene viewport");
-  ImGui::Separator();
+  ImGui::Begin("GGEMS Viewport", &show_viewport_placeholder_, window_flags);
+
+  ImVec2 available_size = ImGui::GetContentRegionAvail();
+
+  std::uint32_t width = available_size.x > 1.0f
+                            ? static_cast<std::uint32_t>(available_size.x)
+                            : 1U;
+
+  std::uint32_t height = available_size.y > 1.0f
+                             ? static_cast<std::uint32_t>(available_size.y)
+                             : 1U;
+
+  bool texture_matches_viewport = scene_texture_id != ImTextureID{} &&
+                                  scene_texture_extent.width == width &&
+                                  scene_texture_extent.height == height;
+
+  if (texture_matches_viewport) {
+    ImGui::Image(scene_texture_id,
+                 ImVec2{static_cast<float>(width), static_cast<float>(height)});
+  } else {
+    ImGui::TextDisabled("Vulkan scene renderer: preparing render target...");
+    ImGui::TextDisabled("Viewport extent: %u x %u", width, height);
+  }
+
+  viewport_state_.extent = vk::Extent2D{.width = width, .height = height};
+  viewport_state_.visible = show_viewport_placeholder_;
+  viewport_state_.hovered = ImGui::IsWindowHovered();
+  viewport_state_.focused = ImGui::IsWindowFocused();
+
+  ImGui::BeginChild("GGEMS Vulkan Scene Container", ImVec2{0.0f, 0.0f}, true,
+                    ImGuiWindowFlags_NoScrollbar |
+                        ImGuiWindowFlags_NoScrollWithMouse);
 
   ImGui::TextDisabled("Vulkan scene renderer: not connected yet");
-  ImGui::TextDisabled("This panel will receive a Vulkan-rendered image.");
+  ImGui::TextDisabled("Viewport extent: %u x %u", width, height);
+
+  ImGui::EndChild();
 
   ImGui::End();
 }

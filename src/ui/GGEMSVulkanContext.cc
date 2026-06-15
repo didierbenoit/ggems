@@ -108,6 +108,7 @@ GGEMSVulkanContext::~GGEMSVulkanContext() noexcept {
         stderr);
   }
 
+  ShutdownSceneRenderer();
   ShutdownImGui();
 }
 
@@ -138,6 +139,7 @@ void GGEMSVulkanContext::Initialise(GLFWwindow *window) {
     CreateSwapchainSyncObjects();
     CreateImGuiDescriptorPool();
     InitialiseImGui(window);
+    InitialiseSceneRenderer();
   } catch (vk::SystemError const &error) {
     GGEMS_RECOVERABLE(
         std::format("Unable to initialise Vulkan GuiMode: {}.", error.what()));
@@ -932,6 +934,8 @@ void GGEMSVulkanContext::RecordCommandBuffer(std::uint32_t image_index) {
   vk::CommandBufferBeginInfo begin_info{};
   command_buffer.begin(begin_info);
 
+  scene_renderer_.RecordClearCommands(command_buffers_[image_index]);
+
   TransitionSwapchainImageLayout(image_index, vk::ImageLayout::eUndefined,
                                  vk::ImageLayout::eColorAttachmentOptimal);
 
@@ -1279,7 +1283,16 @@ void GGEMSVulkanContext::BuildImGuiFrame() {
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
 
-  imgui_layer_.BuildFrame(swapchain_extent_);
+  imgui_layer_.BuildFrame(swapchain_extent_, scene_renderer_.GetTextureID(),
+                          scene_renderer_.GetViewportExtent());
+
+  GGEMSImGuiLayer::ViewportState const &viewport_state =
+      imgui_layer_.GetViewportState();
+
+  if (viewport_state.visible) {
+    scene_renderer_.SetViewportExtent(viewport_state.extent);
+    scene_renderer_.RecreateRenderTargetsIfNeeded();
+  }
 
   ImGui::Render();
 }
@@ -1388,5 +1401,26 @@ void GGEMSVulkanContext::ApplyImGuiStyle() {
   colours[ImGuiCol_ResizeGripHovered] = ImVec4{0.42F, 0.78F, 0.88F, 0.55F};
   colours[ImGuiCol_ResizeGripActive] = ImVec4{0.42F, 0.78F, 0.88F, 0.90F};
 }
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::InitialiseSceneRenderer() {
+  scene_renderer_.Initialise(physical_device_, device_,
+                             vk::Format::eR8G8B8A8Unorm);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanContext::ShutdownSceneRenderer() noexcept {
+  scene_renderer_.Shutdown();
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 } // namespace ggems::ui

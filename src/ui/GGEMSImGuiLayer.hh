@@ -8,6 +8,14 @@
 namespace ggems::ui {
 class GGEMSImGuiLayer {
 public:
+  struct ViewportState {
+    vk::Extent2D extent{};
+    bool visible{false};
+    bool hovered{false};
+    bool focused{false};
+  };
+
+public:
   GGEMSImGuiLayer() = default;
   ~GGEMSImGuiLayer() = default;
 
@@ -17,7 +25,11 @@ public:
   GGEMSImGuiLayer &operator=(GGEMSImGuiLayer &&) = delete;
 
 public:
-  void BuildFrame(vk::Extent2D const &swapchain_extent);
+  void BuildFrame(vk::Extent2D const &swapchain_extent,
+                  ImTextureID scene_texture_id,
+                  vk::Extent2D const &scene_texture_extent);
+
+  [[nodiscard]] ViewportState const &GetViewportState() const noexcept;
 
 private:
   enum class SceneSelection {
@@ -37,7 +49,8 @@ private:
   void BuildDefaultDockspaceLayout(ImGuiID dockspace_id,
                                    ImVec2 const &dockspace_size);
   void BuildStatusPanel(vk::Extent2D const &swapchain_extent);
-  void BuildViewportPlaceholder();
+  void BuildViewportPlaceholder(ImTextureID scene_texture_id,
+                                vk::Extent2D const &scene_texture_extent);
   void BuildInspectorPanel();
   void BuildScenePanel();
 
@@ -54,5 +67,6 @@ private:
   bool dockspace_layout_built_{false};
   bool show_scene_panel_{true};
   SceneSelection selected_scene_item_{SceneSelection::World};
+  ViewportState viewport_state_{};
 };
 } // namespace ggems::ui

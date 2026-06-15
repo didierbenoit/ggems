@@ -7,6 +7,7 @@
 #include <vulkan/vulkan_raii.hpp>
 
 #include "GGEMSImGuiLayer.hh"
+#include "GGEMSVulkanSceneRenderer.hh"
 
 struct GLFWwindow;
 
@@ -123,6 +124,9 @@ private:
 
   static void CheckImGuiVkResult(VkResult result) noexcept;
 
+  void InitialiseSceneRenderer();
+  void ShutdownSceneRenderer() noexcept;
+
 private:
   vk::raii::Context context_{};
   vk::raii::Instance instance_{nullptr};
@@ -152,6 +156,7 @@ private:
   VkPipelineRenderingCreateInfo imgui_pipeline_rendering_create_info_{};
 
   GGEMSImGuiLayer imgui_layer_{};
+  GGEMSVulkanSceneRenderer scene_renderer_{};
 
   bool imgui_initialised_{false};
 
