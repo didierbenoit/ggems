@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <array>
+#include <string>
 
 #include "GGEMS/core/GGEMSOutputState.hh"
 

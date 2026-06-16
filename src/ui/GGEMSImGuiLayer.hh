@@ -30,6 +30,7 @@ public:
                   vk::Extent2D const &scene_texture_extent);
 
   [[nodiscard]] ViewportState const &GetViewportState() const noexcept;
+  [[nodiscard]] bool ShouldShowAxes() const noexcept;
 
 private:
   enum class SceneSelection {
@@ -66,6 +67,7 @@ private:
   bool show_inspector_panel_{true};
   bool dockspace_layout_built_{false};
   bool show_scene_panel_{true};
+  bool show_axes_{true};
   SceneSelection selected_scene_item_{SceneSelection::World};
   ViewportState viewport_state_{};
 };

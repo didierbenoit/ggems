@@ -44,6 +44,79 @@ include(AddDearImGui)
 add_dear_imgui_target(ggems_imgui)
 
 # ----------------------------------------------------------------------------
+# GGEMS GuiMode shaders
+# ----------------------------------------------------------------------------
+find_program(GGEMS_SLANGC_EXECUTABLE
+  NAMES slangc slangc.exe
+)
+
+if(NOT GGEMS_SLANGC_EXECUTABLE)
+  message(FATAL_ERROR
+    "The Slang shader compiler 'slangc' was not found. "
+    "It is required to build GGEMS GuiMode shaders."
+  )
+endif()
+
+set(GGEMS_UI_SHADER_SOURCE_DIR
+  "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+)
+
+set(GGEMS_UI_SHADER_OUTPUT_DIR
+  "${CMAKE_CURRENT_BINARY_DIR}/shaders"
+)
+
+file(MAKE_DIRECTORY "${GGEMS_UI_SHADER_OUTPUT_DIR}")
+
+
+set(GGEMS_AXES_SHADER_SOURCE
+  "${GGEMS_UI_SHADER_SOURCE_DIR}/GGEMSAxes.slang"
+)
+
+set(GGEMS_AXES_VERTEX_SPV
+  "${GGEMS_UI_SHADER_OUTPUT_DIR}/GGEMSAxes.vert.spv"
+)
+
+set(GGEMS_AXES_FRAGMENT_SPV
+  "${GGEMS_UI_SHADER_OUTPUT_DIR}/GGEMSAxes.frag.spv"
+)
+
+add_custom_command(
+  OUTPUT "${GGEMS_AXES_VERTEX_SPV}"
+  COMMAND "${GGEMS_SLANGC_EXECUTABLE}"
+          "${GGEMS_AXES_SHADER_SOURCE}"
+          -target spirv
+          -profile spirv_1_4
+          -emit-spirv-directly
+          -fvk-use-entrypoint-name
+          -entry VertexMain
+          -stage vertex
+          -o "${GGEMS_AXES_VERTEX_SPV}"
+  DEPENDS "${GGEMS_AXES_SHADER_SOURCE}"
+  VERBATIM
+)
+
+add_custom_command(
+  OUTPUT "${GGEMS_AXES_FRAGMENT_SPV}"
+  COMMAND "${GGEMS_SLANGC_EXECUTABLE}"
+          "${GGEMS_AXES_SHADER_SOURCE}"
+          -target spirv
+          -profile spirv_1_4
+          -emit-spirv-directly
+          -fvk-use-entrypoint-name
+          -entry FragmentMain
+          -stage fragment
+          -o "${GGEMS_AXES_FRAGMENT_SPV}"
+  DEPENDS "${GGEMS_AXES_SHADER_SOURCE}"
+  VERBATIM
+)
+
+add_custom_target(ggems_gui_shaders
+  DEPENDS
+    "${GGEMS_AXES_VERTEX_SPV}"
+    "${GGEMS_AXES_FRAGMENT_SPV}"
+)
+
+# ----------------------------------------------------------------------------
 # GGEMS GuiMode library
 # ----------------------------------------------------------------------------
 add_library(ggems_gui STATIC
@@ -53,6 +126,8 @@ add_library(ggems_gui STATIC
   ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSImGuiLayer.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSVulkanSceneRenderer.cc
 )
+
+add_dependencies(ggems_gui ggems_gui_shaders)
 
 add_library(GGEMS::Gui ALIAS ggems_gui)
 
@@ -65,6 +140,7 @@ target_compile_definitions(ggems_gui
   PRIVATE
     VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
     VULKAN_HPP_NO_STRUCT_CONSTRUCTORS=1
+    GGEMS_UI_SHADER_DIRECTORY="${GGEMS_UI_SHADER_OUTPUT_DIR}"
 )
 
 target_link_libraries(ggems_gui

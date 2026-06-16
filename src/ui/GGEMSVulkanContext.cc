@@ -386,13 +386,18 @@ bool GGEMSVulkanContext::SupportsRequiredFeatures(
     vk::raii::PhysicalDevice const &physical_device) const {
   auto features =
       physical_device.getFeatures2<vk::PhysicalDeviceFeatures2,
+                                   vk::PhysicalDeviceVulkan11Features,
                                    vk::PhysicalDeviceVulkan13Features>();
+
+  vk::PhysicalDeviceVulkan11Features const &vulkan_11_features =
+      features.get<vk::PhysicalDeviceVulkan11Features>();
 
   vk::PhysicalDeviceVulkan13Features const &vulkan_13_features =
       features.get<vk::PhysicalDeviceVulkan13Features>();
 
   return vulkan_13_features.dynamicRendering == vk::True &&
-         vulkan_13_features.synchronization2 == vk::True;
+         vulkan_13_features.synchronization2 == vk::True &&
+         vulkan_11_features.shaderDrawParameters;
 }
 
 /* --------------------------------------------- */
@@ -562,8 +567,11 @@ void GGEMSVulkanContext::CreateLogicalDevice() {
   vk::PhysicalDeviceVulkan13Features vulkan_13_features{
       .synchronization2 = vk::True, .dynamicRendering = vk::True};
 
+  vk::PhysicalDeviceVulkan11Features vulkan_11_features{
+      .pNext = &vulkan_13_features, .shaderDrawParameters = vk::True};
+
   vk::DeviceCreateInfo create_info{
-      .pNext = &vulkan_13_features,
+      .pNext = &vulkan_11_features,
       .queueCreateInfoCount =
           static_cast<std::uint32_t>(queue_create_infos.size()),
       .pQueueCreateInfos = queue_create_infos.data(),
@@ -934,7 +942,7 @@ void GGEMSVulkanContext::RecordCommandBuffer(std::uint32_t image_index) {
   vk::CommandBufferBeginInfo begin_info{};
   command_buffer.begin(begin_info);
 
-  scene_renderer_.RecordClearCommands(command_buffers_[image_index]);
+  scene_renderer_.RecordSceneCommands(command_buffers_[image_index]);
 
   TransitionSwapchainImageLayout(image_index, vk::ImageLayout::eUndefined,
                                  vk::ImageLayout::eColorAttachmentOptimal);
@@ -1283,16 +1291,18 @@ void GGEMSVulkanContext::BuildImGuiFrame() {
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
 
-  imgui_layer_.BuildFrame(swapchain_extent_, scene_renderer_.GetTextureID(),
-                          scene_renderer_.GetViewportExtent());
-
-  GGEMSImGuiLayer::ViewportState const &viewport_state =
+  GGEMSImGuiLayer::ViewportState viewport_state =
       imgui_layer_.GetViewportState();
 
   if (viewport_state.visible) {
     scene_renderer_.SetViewportExtent(viewport_state.extent);
     scene_renderer_.RecreateRenderTargetsIfNeeded();
   }
+
+  imgui_layer_.BuildFrame(swapchain_extent_, scene_renderer_.GetTextureID(),
+                          scene_renderer_.GetViewportExtent());
+
+  scene_renderer_.SetShowAxes(imgui_layer_.ShouldShowAxes());
 
   ImGui::Render();
 }

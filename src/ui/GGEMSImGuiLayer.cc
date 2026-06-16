@@ -74,6 +74,12 @@ void GGEMSImGuiLayer::BuildFrame(vk::Extent2D const &swapchain_extent,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+bool GGEMSImGuiLayer::ShouldShowAxes() const noexcept { return show_axes_; }
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 GGEMSImGuiLayer::ViewportState const &
 GGEMSImGuiLayer::GetViewportState() const noexcept {
   return viewport_state_;
@@ -145,6 +151,10 @@ void GGEMSImGuiLayer::BuildMainMenuBar() {
     ImGui::MenuItem("Scene", nullptr, &show_scene_panel_);
     ImGui::MenuItem("Viewport", nullptr, &show_viewport_placeholder_);
     ImGui::MenuItem("Inspector", nullptr, &show_inspector_panel_);
+
+    ImGui::Separator();
+    ImGui::MenuItem("Axes", nullptr, &show_axes_);
+
     ImGui::EndMenu();
   }
 
