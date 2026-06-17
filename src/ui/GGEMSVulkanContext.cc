@@ -1302,6 +1302,18 @@ void GGEMSVulkanContext::BuildImGuiFrame() {
   imgui_layer_.BuildFrame(swapchain_extent_, scene_renderer_.GetTextureID(),
                           scene_renderer_.GetViewportExtent());
 
+  GGEMSImGuiLayer::ViewportState updated_viewport_state =
+      imgui_layer_.GetViewportState();
+
+  scene_renderer_.OrbitCamera(updated_viewport_state.orbit_delta_x_pixels,
+                              updated_viewport_state.orbit_delta_y_pixels);
+
+  scene_renderer_.ZoomCamera(updated_viewport_state.zoom_delta);
+
+  if (imgui_layer_.ShouldResetCamera()) {
+    scene_renderer_.ResetCamera();
+  }
+
   scene_renderer_.SetShowAxes(imgui_layer_.ShouldShowAxes());
 
   ImGui::Render();

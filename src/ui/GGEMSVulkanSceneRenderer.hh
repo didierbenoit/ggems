@@ -7,9 +7,14 @@
 #include <imgui.h>
 #include <vulkan/vulkan_raii.hpp>
 
+#include "GGEMSVulkanCamera.hh"
+
 namespace ggems::ui {
 
 class GGEMSVulkanSceneRenderer {
+private:
+  using ScenePushConstants = GGEMSVulkanCamera::Matrix4Rows;
+
 public:
   GGEMSVulkanSceneRenderer() = default;
   ~GGEMSVulkanSceneRenderer() = default;
@@ -42,6 +47,10 @@ public:
   void SetShowAxes(bool show_axes) noexcept;
   [[nodiscard]] bool ShouldShowAxes() const noexcept;
 
+  void OrbitCamera(float delta_x_pixels, float delta_y_pixels) noexcept;
+  void ZoomCamera(float wheel_delta) noexcept;
+  void ResetCamera() noexcept;
+
 private:
   void CreateColourTarget();
   void CleanupRenderTargets() noexcept;
@@ -60,23 +69,33 @@ private:
   void CleanupAxesPipeline() noexcept;
   void RecordAxesCommands(vk::raii::CommandBuffer const &command_buffer);
 
+  void CreateDepthTarget();
+  [[nodiscard]] bool IsDepthFormatSupported(vk::Format format) const;
+
 private:
   vk::raii::PhysicalDevice const *physical_device_{nullptr};
   vk::raii::Device const *device_{nullptr};
 
-  vk::Format colour_format_{vk::Format::eUndefined};
   vk::Extent2D viewport_extent_{};
 
+  vk::raii::Sampler sampler_{nullptr};
+
+  vk::Format colour_format_{vk::Format::eUndefined};
   vk::raii::Image colour_image_{nullptr};
   vk::raii::DeviceMemory colour_memory_{nullptr};
   vk::raii::ImageView colour_image_view_{nullptr};
-  vk::raii::Sampler sampler_{nullptr};
+  vk::ImageLayout colour_image_layout_{vk::ImageLayout::eUndefined};
+
+  vk::Format depth_format_{vk::Format::eD32Sfloat};
+  vk::raii::Image depth_image_{nullptr};
+  vk::raii::DeviceMemory depth_memory_{nullptr};
+  vk::raii::ImageView depth_image_view_{nullptr};
+  vk::ImageLayout depth_image_layout_{vk::ImageLayout::eUndefined};
 
   bool initialised_{false};
   bool requires_resize_{false};
 
   VkDescriptorSet imgui_descriptor_set_{VK_NULL_HANDLE};
-  vk::ImageLayout colour_image_layout_{vk::ImageLayout::eUndefined};
 
   vk::raii::ShaderModule axes_vertex_shader_module_{nullptr};
   vk::raii::ShaderModule axes_fragment_shader_module_{nullptr};
@@ -85,6 +104,7 @@ private:
   vk::raii::Pipeline axes_pipeline_{nullptr};
 
   bool show_axes_{true};
+  GGEMSVulkanCamera camera_{};
 };
 
 } // namespace ggems::ui

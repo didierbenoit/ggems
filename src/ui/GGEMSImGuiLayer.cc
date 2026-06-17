@@ -43,6 +43,8 @@ char const *GGEMSImGuiLayer::GetSceneSelectionName() const noexcept {
 void GGEMSImGuiLayer::BuildFrame(vk::Extent2D const &swapchain_extent,
                                  ImTextureID scene_texture_id,
                                  vk::Extent2D const &scene_texture_extent) {
+  reset_camera_requested_ = false;
+
   BuildMainDockspace();
 
   if (show_output_panel_) {
@@ -75,6 +77,14 @@ void GGEMSImGuiLayer::BuildFrame(vk::Extent2D const &swapchain_extent,
 /* --------------------------------------------- */
 
 bool GGEMSImGuiLayer::ShouldShowAxes() const noexcept { return show_axes_; }
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+bool GGEMSImGuiLayer::ShouldResetCamera() const noexcept {
+  return reset_camera_requested_;
+}
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
@@ -155,6 +165,10 @@ void GGEMSImGuiLayer::BuildMainMenuBar() {
     ImGui::Separator();
     ImGui::MenuItem("Axes", nullptr, &show_axes_);
 
+    if (ImGui::MenuItem("Reset Camera")) {
+      reset_camera_requested_ = true;
+    }
+
     ImGui::EndMenu();
   }
 
@@ -211,6 +225,12 @@ void GGEMSImGuiLayer::BuildViewportPlaceholder(
   ImGuiWindowFlags window_flags =
       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
+  viewport_state_.orbit_delta_x_pixels = 0.0f;
+  viewport_state_.orbit_delta_y_pixels = 0.0f;
+  viewport_state_.zoom_delta = 0.0f;
+  viewport_state_.hovered = false;
+  viewport_state_.focused = false;
+
   ImGui::Begin("GGEMS Viewport", &show_viewport_placeholder_, window_flags);
 
   ImVec2 available_size = ImGui::GetContentRegionAvail();
@@ -227,27 +247,36 @@ void GGEMSImGuiLayer::BuildViewportPlaceholder(
                                   scene_texture_extent.width == width &&
                                   scene_texture_extent.height == height;
 
+  viewport_state_.extent = vk::Extent2D{.width = width, .height = height};
+  viewport_state_.visible = show_viewport_placeholder_;
+  viewport_state_.focused =
+      ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+
   if (texture_matches_viewport) {
     ImGui::Image(scene_texture_id,
                  ImVec2{static_cast<float>(width), static_cast<float>(height)});
+
+    viewport_state_.hovered = ImGui::IsItemHovered();
+
+    if (viewport_state_.hovered) {
+      ImGuiIO &io = ImGui::GetIO();
+
+      if (ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.0f)) {
+        viewport_state_.orbit_delta_x_pixels = io.MouseDelta.x;
+        viewport_state_.orbit_delta_y_pixels = io.MouseDelta.y;
+      }
+
+      if (io.MouseWheel != 0.0f) {
+        viewport_state_.zoom_delta = io.MouseWheel;
+      }
+    }
   } else {
     ImGui::TextDisabled("Vulkan scene renderer: preparing render target...");
     ImGui::TextDisabled("Viewport extent: %u x %u", width, height);
+
+    viewport_state_.hovered =
+        ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
   }
-
-  viewport_state_.extent = vk::Extent2D{.width = width, .height = height};
-  viewport_state_.visible = show_viewport_placeholder_;
-  viewport_state_.hovered = ImGui::IsWindowHovered();
-  viewport_state_.focused = ImGui::IsWindowFocused();
-
-  ImGui::BeginChild("GGEMS Vulkan Scene Container", ImVec2{0.0f, 0.0f}, true,
-                    ImGuiWindowFlags_NoScrollbar |
-                        ImGuiWindowFlags_NoScrollWithMouse);
-
-  ImGui::TextDisabled("Vulkan scene renderer: not connected yet");
-  ImGui::TextDisabled("Viewport extent: %u x %u", width, height);
-
-  ImGui::EndChild();
 
   ImGui::End();
 }

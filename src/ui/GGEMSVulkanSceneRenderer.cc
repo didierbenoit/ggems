@@ -10,6 +10,11 @@
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMSVulkanSceneRenderer.hh"
 
+namespace {
+constexpr std::uint32_t k_axes_vertex_count{18U};
+constexpr float k_orbit_degrees_per_pixel{0.20f};
+} // namespace
+
 namespace ggems::ui {
 
 /* --------------------------------------------- */
@@ -97,6 +102,7 @@ void GGEMSVulkanSceneRenderer::RecreateRenderTargetsIfNeeded() {
   device_->waitIdle();
   CleanupRenderTargets();
   CreateColourTarget();
+  CreateDepthTarget();
 
   requires_resize_ = false;
 }
@@ -148,6 +154,23 @@ vk::ImageView GGEMSVulkanSceneRenderer::GetColourImageView() const noexcept {
 
 vk::Sampler GGEMSVulkanSceneRenderer::GetSampler() const noexcept {
   return *sampler_;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+bool GGEMSVulkanSceneRenderer::IsDepthFormatSupported(vk::Format format) const {
+  GGEMS_CHECK_INTERNAL(physical_device_ != nullptr,
+                       "A Vulkan physical device is required before checking "
+                       "depth format support.");
+
+  vk::FormatProperties properties =
+      physical_device_->getFormatProperties(format);
+
+  return (properties.optimalTilingFeatures &
+          vk::FormatFeatureFlagBits::eDepthStencilAttachment) ==
+         vk::FormatFeatureFlagBits::eDepthStencilAttachment;
 }
 
 /* --------------------------------------------- */
@@ -238,6 +261,70 @@ void GGEMSVulkanSceneRenderer::CreateColourTarget() {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+void GGEMSVulkanSceneRenderer::CreateDepthTarget() {
+  GGEMS_CHECK_INTERNAL(device_ != nullptr,
+                       "A Vulkan device is required before creating a scene "
+                       "depth target.");
+
+  GGEMS_CHECK_INTERNAL(
+      IsDepthFormatSupported(depth_format_),
+      std::format("Vulkan depth format '{}' is not supported as a depth "
+                  "attachment.",
+                  vk::to_string(depth_format_)));
+
+  vk::ImageCreateInfo depth_image_create_info{
+      .imageType = vk::ImageType::e2D,
+      .format = depth_format_,
+      .extent = vk::Extent3D{.width = viewport_extent_.width,
+                             .height = viewport_extent_.height,
+                             .depth = 1U},
+      .mipLevels = 1U,
+      .arrayLayers = 1U,
+      .samples = vk::SampleCountFlagBits::e1,
+      .tiling = vk::ImageTiling::eOptimal,
+      .usage = vk::ImageUsageFlagBits::eDepthStencilAttachment,
+      .sharingMode = vk::SharingMode::eExclusive,
+      .initialLayout = vk::ImageLayout::eUndefined};
+
+  depth_image_ = vk::raii::Image{*device_, depth_image_create_info};
+
+  vk::MemoryRequirements memory_requirements =
+      depth_image_.getMemoryRequirements();
+
+  vk::MemoryAllocateInfo memory_allocate_info{
+      .allocationSize = memory_requirements.size,
+      .memoryTypeIndex =
+          FindMemoryType(memory_requirements.memoryTypeBits,
+                         vk::MemoryPropertyFlagBits::eDeviceLocal)};
+
+  depth_memory_ = vk::raii::DeviceMemory{*device_, memory_allocate_info};
+  depth_image_.bindMemory(*depth_memory_, 0U);
+
+  vk::ImageViewCreateInfo depth_view_create_info{
+      .image = *depth_image_,
+      .viewType = vk::ImageViewType::e2D,
+      .format = depth_format_,
+      .subresourceRange = vk::ImageSubresourceRange{
+          .aspectMask = vk::ImageAspectFlagBits::eDepth,
+          .baseMipLevel = 0U,
+          .levelCount = 1U,
+          .baseArrayLayer = 0U,
+          .layerCount = 1U}};
+
+  depth_image_view_ = vk::raii::ImageView{*device_, depth_view_create_info};
+
+  depth_image_layout_ = vk::ImageLayout::eUndefined;
+
+  GGEMS_INFOEX("Vulkan", 2,
+               "Vulkan scene depth target created: {}x{}, format={}.",
+               viewport_extent_.width, viewport_extent_.height,
+               vk::to_string(depth_format_));
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 void GGEMSVulkanSceneRenderer::CleanupRenderTargets() noexcept {
   if (imgui_descriptor_set_ != VK_NULL_HANDLE) {
     ImGui_ImplVulkan_RemoveTexture(imgui_descriptor_set_);
@@ -249,6 +336,11 @@ void GGEMSVulkanSceneRenderer::CleanupRenderTargets() noexcept {
   colour_memory_ = nullptr;
   colour_image_ = nullptr;
   colour_image_layout_ = vk::ImageLayout::eUndefined;
+
+  depth_image_view_ = nullptr;
+  depth_memory_ = nullptr;
+  depth_image_ = nullptr;
+  depth_image_layout_ = vk::ImageLayout::eUndefined;
 }
 
 /* --------------------------------------------- */
@@ -301,6 +393,7 @@ void GGEMSVulkanSceneRenderer::RecordSceneCommands(
     return;
   }
 
+  // =======================
   vk::ImageSubresourceRange colour_range{.aspectMask =
                                              vk::ImageAspectFlagBits::eColor,
                                          .baseMipLevel = 0U,
@@ -346,12 +439,63 @@ void GGEMSVulkanSceneRenderer::RecordSceneCommands(
       .storeOp = vk::AttachmentStoreOp::eStore,
       .clearValue = clear_value};
 
+  vk::ImageSubresourceRange depth_range{.aspectMask =
+                                            vk::ImageAspectFlagBits::eDepth,
+                                        .baseMipLevel = 0U,
+                                        .levelCount = 1U,
+                                        .baseArrayLayer = 0U,
+                                        .layerCount = 1U};
+
+  vk::PipelineStageFlags2 depth_src_stage =
+      depth_image_layout_ == vk::ImageLayout::eUndefined
+          ? vk::PipelineStageFlagBits2::eNone
+          : vk::PipelineStageFlagBits2::eLateFragmentTests;
+
+  vk::AccessFlags2 depth_src_access =
+      depth_image_layout_ == vk::ImageLayout::eUndefined
+          ? vk::AccessFlagBits2::eNone
+          : vk::AccessFlagBits2::eDepthStencilAttachmentWrite;
+
+  vk::ImageMemoryBarrier2 to_depth_attachment{
+      .srcStageMask = depth_src_stage,
+      .srcAccessMask = depth_src_access,
+      .dstStageMask = vk::PipelineStageFlagBits2::eEarlyFragmentTests |
+                      vk::PipelineStageFlagBits2::eLateFragmentTests,
+      .dstAccessMask = vk::AccessFlagBits2::eDepthStencilAttachmentRead |
+                       vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+      .oldLayout = depth_image_layout_,
+      .newLayout = vk::ImageLayout::eDepthAttachmentOptimal,
+      .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+      .image = *depth_image_,
+      .subresourceRange = depth_range};
+
+  vk::DependencyInfo to_depth_attachment_dependency{
+      .imageMemoryBarrierCount = 1U,
+      .pImageMemoryBarriers = &to_depth_attachment};
+
+  command_buffer.pipelineBarrier2(to_depth_attachment_dependency);
+
+  depth_image_layout_ = vk::ImageLayout::eDepthAttachmentOptimal;
+
+  vk::ClearValue depth_clear_value{};
+  depth_clear_value.depthStencil =
+      vk::ClearDepthStencilValue{.depth = 1.0f, .stencil = 0U};
+
+  vk::RenderingAttachmentInfo depth_attachment{
+      .imageView = *depth_image_view_,
+      .imageLayout = vk::ImageLayout::eDepthAttachmentOptimal,
+      .loadOp = vk::AttachmentLoadOp::eClear,
+      .storeOp = vk::AttachmentStoreOp::eDontCare,
+      .clearValue = depth_clear_value};
+
   vk::RenderingInfo const rendering_info{
       .renderArea = vk::Rect2D{.offset = vk::Offset2D{.x = 0, .y = 0},
                                .extent = viewport_extent_},
       .layerCount = 1U,
       .colorAttachmentCount = 1U,
-      .pColorAttachments = &colour_attachment};
+      .pColorAttachments = &colour_attachment,
+      .pDepthAttachment = &depth_attachment};
 
   command_buffer.beginRendering(rendering_info);
 
@@ -534,13 +678,31 @@ void GGEMSVulkanSceneRenderer::CreateAxesPipeline() {
       .dynamicStateCount = static_cast<std::uint32_t>(dynamic_states.size()),
       .pDynamicStates = dynamic_states.data()};
 
-  vk::PipelineLayoutCreateInfo pipeline_layout_create_info{};
+  vk::PipelineDepthStencilStateCreateInfo depth_stencil_state{
+      .depthTestEnable = vk::True,
+      .depthWriteEnable = vk::True,
+      .depthCompareOp = vk::CompareOp::eLessOrEqual,
+      .depthBoundsTestEnable = vk::False,
+      .stencilTestEnable = vk::False,
+      .minDepthBounds = 0.0f,
+      .maxDepthBounds = 1.0f};
+
+  vk::PushConstantRange axes_push_constant_range{
+      .stageFlags = vk::ShaderStageFlagBits::eVertex,
+      .offset = 0U,
+      .size = sizeof(ScenePushConstants)};
+
+  vk::PipelineLayoutCreateInfo pipeline_layout_create_info{
+      .pushConstantRangeCount = 1U,
+      .pPushConstantRanges = &axes_push_constant_range};
 
   axes_pipeline_layout_ =
       vk::raii::PipelineLayout{*device_, pipeline_layout_create_info};
 
   vk::PipelineRenderingCreateInfo rendering_create_info{
-      .colorAttachmentCount = 1U, .pColorAttachmentFormats = &colour_format_};
+      .colorAttachmentCount = 1U,
+      .pColorAttachmentFormats = &colour_format_,
+      .depthAttachmentFormat = depth_format_};
 
   vk::GraphicsPipelineCreateInfo pipeline_create_info{
       .pNext = &rendering_create_info,
@@ -551,6 +713,7 @@ void GGEMSVulkanSceneRenderer::CreateAxesPipeline() {
       .pViewportState = &viewport_state,
       .pRasterizationState = &rasterization_state,
       .pMultisampleState = &multisample_state,
+      .pDepthStencilState = &depth_stencil_state,
       .pColorBlendState = &colour_blend_state,
       .pDynamicState = &dynamic_state,
       .layout = *axes_pipeline_layout_,
@@ -588,7 +751,15 @@ void GGEMSVulkanSceneRenderer::RecordAxesCommands(
   command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
                               *axes_pipeline_);
 
-  command_buffer.draw(6U, 1U, 0U, 0U);
+  camera_.SetViewportExtent(viewport_extent_);
+
+  ScenePushConstants push_constants = camera_.BuildWorldToClipMatrix();
+
+  command_buffer.pushConstants(*axes_pipeline_layout_,
+                               vk::ShaderStageFlagBits::eVertex, 0U,
+                               sizeof(ScenePushConstants), &push_constants);
+
+  command_buffer.draw(k_axes_vertex_count, 1U, 0U, 0U);
 }
 
 /* --------------------------------------------- */
@@ -624,5 +795,33 @@ void GGEMSVulkanSceneRenderer::SetShowAxes(bool show_axes) noexcept {
 bool GGEMSVulkanSceneRenderer::ShouldShowAxes() const noexcept {
   return show_axes_;
 }
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanSceneRenderer::OrbitCamera(float delta_x_pixels,
+                                           float delta_y_pixels) noexcept {
+  if (delta_x_pixels == 0.0f && delta_y_pixels == 0.0f) {
+    return;
+  }
+
+  camera_.Orbit(delta_x_pixels * k_orbit_degrees_per_pixel,
+                delta_y_pixels * k_orbit_degrees_per_pixel);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanSceneRenderer::ZoomCamera(float wheel_delta) noexcept {
+  camera_.ZoomBy(wheel_delta);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSVulkanSceneRenderer::ResetCamera() noexcept { camera_.Reset(); }
 
 } // namespace ggems::ui

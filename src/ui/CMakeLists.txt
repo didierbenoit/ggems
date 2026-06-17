@@ -124,6 +124,7 @@ add_library(ggems_gui STATIC
   ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSVulkanContext.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSImGuiOutputPanel.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSImGuiLayer.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSVulkanCamera.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSVulkanSceneRenderer.cc
 )
 

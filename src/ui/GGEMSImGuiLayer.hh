@@ -13,6 +13,9 @@ public:
     bool visible{false};
     bool hovered{false};
     bool focused{false};
+    float orbit_delta_x_pixels{0.0f};
+    float orbit_delta_y_pixels{0.0f};
+    float zoom_delta{0.0f};
   };
 
 public:
@@ -31,6 +34,7 @@ public:
 
   [[nodiscard]] ViewportState const &GetViewportState() const noexcept;
   [[nodiscard]] bool ShouldShowAxes() const noexcept;
+  [[nodiscard]] bool ShouldResetCamera() const noexcept;
 
 private:
   enum class SceneSelection {
@@ -70,5 +74,6 @@ private:
   bool show_axes_{true};
   SceneSelection selected_scene_item_{SceneSelection::World};
   ViewportState viewport_state_{};
+  bool reset_camera_requested_{false};
 };
 } // namespace ggems::ui
