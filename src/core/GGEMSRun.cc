@@ -9,6 +9,8 @@
 #include "GGEMS/render/GGEMSProgressBar.hh"
 #include "GGEMS/core/GGEMSOutputMode.hh"
 
+#include "GGEMS/core/units/GGEMSUnits.hh"
+
 using namespace ggems::units;
 
 namespace ggems::core {
@@ -28,6 +30,12 @@ void GGEMSRun::Initialise() { GGEMS_INFO("Core", "GGEMSRun initialised."); }
 /* --------------------------------*/
 void GGEMSRun::Run() {
   GGEMS_INFO("Core", "GGEMS starting...");
+
+  Angle a = 90.0_deg;
+  Angle b = 1.5707963267948966_rad;
+
+  GGEMS_DEBUG("Core", "{}", HumanReadable(a));
+  GGEMS_DEBUG("Core", "{}", HumanReadable(b));
 
   Frequency f = 3874364_Hz;
   GGEMS_DEBUG("Core", "{}", HumanReadable(f, 1, 5));

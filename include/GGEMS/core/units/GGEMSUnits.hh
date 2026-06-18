@@ -39,6 +39,7 @@
  * GNU General Public License v3.0
  */
 
+#include "GGEMS/core/units/GGEMSAngularUnits.hh"
 #include "GGEMS/core/units/GGEMSDoseUnits.hh"
 #include "GGEMS/core/units/GGEMSCrossSectionUnits.hh"
 #include "GGEMS/core/units/GGEMSEnergyUnits.hh"
