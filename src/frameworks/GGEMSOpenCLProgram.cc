@@ -132,6 +132,8 @@ GGEMSOpenCLProgram::GGEMSOpenCLProgram(GGEMSOpenCLContext &ctx,
 std::vector<std::string> GGEMSOpenCLProgram::BuildOptions() const {
   std::vector<std::string> opts;
 
+  opts.emplace_back("-I\"" + kernel_root_.generic_string() + "\"");
+
 #ifdef GGEMS_DEBUG_MODE
   opts.emplace_back("-g");
   opts.emplace_back("-cl-opt-disable");
@@ -261,8 +263,10 @@ void GGEMSOpenCLProgram::BuildFromSource(std::string const &src) {
     GGEMS_ERROR("OpenCL", "Build log for program '{}' (file='{}'): {}",
                 kernel_name_, source_path_, build_log_);
     GGEMS_OCL_CHECK(
-        err, std::format("Failed to build OpenCL program '{}' from source.",
-                         kernel_name_));
+        err,
+        std::format(
+            "Failed to build OpenCL program '{}' from source. Build log : {}",
+            kernel_name_, build_log_));
   }
 
   build_log_ = program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);

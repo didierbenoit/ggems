@@ -1,0 +1,12 @@
+#ifndef GGEMS_CORE_RANDOM_GGEMS_RANDOM_TYPES_CLH
+#define GGEMS_CORE_RANDOM_GGEMS_RANDOM_TYPES_CLH
+
+typedef struct GGEMSJKissState {
+  uint x;
+  uint y;
+  uint z;
+  uint w;
+  uint c;
+} GGEMSJKissState;
+
+#endif

@@ -92,7 +92,7 @@ template <> struct std::formatter<ggems::units::Angle> {
   constexpr auto parse(std::format_parse_context &ctx) {
     auto it = ctx.begin();
 
-    if (it != ctx.end() && *it >= '0' && *it < '9') {
+    if (it != ctx.end() && *it >= '0' && *it <= '9') {
       precision = static_cast<std::int8_t>(*it - '0');
       ++it;
     }

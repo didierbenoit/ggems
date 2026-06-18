@@ -66,15 +66,20 @@ add_executable(ggems_core_tests
   ${GGEMS_CORE_TEST_SOURCES}
 )
 
+target_compile_definitions(ggems_core_tests
+  PRIVATE
+  GGEMS_TEST_KERNEL_ROOT="${PROJECT_SOURCE_DIR}/kernels"
+)
+
 target_link_libraries(ggems_core_tests
   PRIVATE
-    ggems_core
-    ${GGEMS_GTEST_MAIN_TARGET}
+  ggems_core
+  ${GGEMS_GTEST_MAIN_TARGET}
 )
 
 target_include_directories(ggems_core_tests
   PRIVATE
-    ${PROJECT_SOURCE_DIR}/include
+  ${PROJECT_SOURCE_DIR}/include
 )
 
 gtest_discover_tests(ggems_core_tests)

@@ -1,0 +1,33 @@
+#ifndef GGEMS_CORE_RANDOM_GGEMS_JKISS_CLH
+#define GGEMS_CORE_RANDOM_GGEMS_JKISS_CLH
+
+#include "core/random/GGEMSRandomTypes.clh"
+
+static inline uint GGEMS_JKissNextUInt(__global GGEMSJKissState *states,
+                                       uint index) {
+  uint y = states[index].y;
+
+  y ^= y << 5;
+  y ^= y >> 7;
+  y ^= y << 22;
+
+  states[index].y = y;
+
+  uint t = states[index].z + states[index].w + states[index].c;
+
+  states[index].z = states[index].w;
+  states[index].c = t >> 31;
+  states[index].w = t & 2147483647U;
+  states[index].x += 1411392427U;
+
+  return states[index].x + states[index].y + states[index].w;
+}
+
+static inline float GGEMS_JKissUniform(__global GGEMSJKissState *states,
+                                       uint index) {
+  uint value = GGEMS_JKissNextUInt(states, index);
+
+  return ((float)value / 4294967295.0f) * (1.0f - 1.0f / 8388608.0f);
+}
+
+#endif
