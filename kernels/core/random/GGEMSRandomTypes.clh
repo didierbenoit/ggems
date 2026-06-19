@@ -9,4 +9,9 @@ typedef struct GGEMSJKissState {
   uint c;
 } GGEMSJKissState;
 
+typedef struct GGEMSPCG32State {
+  ulong state;
+  ulong increment;
+} GGEMSPCG32State;
+
 #endif

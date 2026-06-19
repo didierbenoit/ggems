@@ -1,0 +1,27 @@
+#ifndef GGEMS_CORE_RANDOM_GGEMS_PCG32_CLH
+#define GGEMS_CORE_RANDOM_GGEMS_PCG32_CLH
+
+#include "core/random/GGEMSRandomTypes.clh"
+
+static inline uint GGEMS_PCG32NextUInt(__global GGEMSPCG32State *states,
+                                       uint index) {
+  ulong old_state = states[index].state;
+
+  states[index].state =
+      old_state * 6364136223846793005UL + states[index].increment;
+
+  uint xorshifted = (uint)(((old_state >> 18U) ^ old_state) >> 27U);
+
+  uint rotation = (uint)(old_state >> 59U);
+
+  return (xorshifted >> rotation) | (xorshifted << ((0U - rotation) & 31U));
+}
+
+static inline float GGEMS_PCG32Uniform(__global GGEMSPCG32State *states,
+                                       uint const index) {
+  uint const value = GGEMS_PCG32NextUInt(states, index);
+
+  return ((float)value / 4294967295.0f) * (1.0f - 1.0f / 8388608.0f);
+}
+
+#endif
