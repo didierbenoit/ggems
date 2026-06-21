@@ -1,6 +1,7 @@
 #ifndef GGEMS_CORE_RANDOM_GGEMS_PCG32_CLH
 #define GGEMS_CORE_RANDOM_GGEMS_PCG32_CLH
 
+#include "core/random/GGEMSRandomCommon.clh"
 #include "core/random/GGEMSRandomTypes.clh"
 
 static inline uint GGEMS_PCG32NextUInt(__global GGEMSPCG32State *states,
@@ -18,10 +19,10 @@ static inline uint GGEMS_PCG32NextUInt(__global GGEMSPCG32State *states,
 }
 
 static inline float GGEMS_PCG32Uniform(__global GGEMSPCG32State *states,
-                                       uint const index) {
-  uint const value = GGEMS_PCG32NextUInt(states, index);
+                                       uint index) {
+  uint value = GGEMS_PCG32NextUInt(states, index);
 
-  return ((float)value / 4294967295.0f) * (1.0f - 1.0f / 8388608.0f);
+  return GGEMS_UIntToUniform01(value);
 }
 
 #endif

@@ -14,4 +14,13 @@ typedef struct GGEMSPCG32State {
   ulong increment;
 } GGEMSPCG32State;
 
+typedef struct GGEMSPhiloxState {
+  uint counter_0;
+  uint counter_1;
+  uint counter_2;
+  uint counter_3;
+  uint key_0;
+  uint key_1;
+} GGEMSPhiloxState;
+
 #endif

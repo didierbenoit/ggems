@@ -26,4 +26,17 @@ static_assert(std::is_standard_layout_v<GGEMSPCG32State>);
 static_assert(std::is_trivially_copyable_v<GGEMSPCG32State>);
 static_assert(sizeof(GGEMSPCG32State) == 2U * sizeof(std::uint64_t));
 
+struct GGEMSPhiloxState {
+  std::uint32_t counter_0{0U};
+  std::uint32_t counter_1{0U};
+  std::uint32_t counter_2{0U};
+  std::uint32_t counter_3{0U};
+  std::uint32_t key_0{0};
+  std::uint32_t key_1{1};
+};
+
+static_assert(std::is_standard_layout_v<GGEMSPhiloxState>);
+static_assert(std::is_trivially_copyable_v<GGEMSPhiloxState>);
+static_assert(sizeof(GGEMSPhiloxState) == 6U * sizeof(std::uint32_t));
+
 } // namespace ggems::core::random

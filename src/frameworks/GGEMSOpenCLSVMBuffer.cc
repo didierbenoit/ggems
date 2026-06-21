@@ -135,12 +135,17 @@ void GGEMSOpenCLSVMBuffer::Unmap() {
 
 void GGEMSOpenCLSVMBuffer::Release() noexcept {
   if (context_ && ptr_) {
+    auto &queue = context_->GetCommandQueueNative();
+    clFinish(queue());
+
     context_->RegisterSVMRelease(size_);
 
     auto &ctx = context_->GetContextNative();
     clSVMFree(ctx(), ptr_);
+
     GGEMS_INFOEX("OpenCL", 3, "Release SVM Buffer: {}.", HumanReadable(size_));
   }
+
   context_ = nullptr;
   ptr_ = nullptr;
   size_ = 0_B;

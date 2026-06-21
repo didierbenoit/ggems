@@ -216,9 +216,18 @@ void GGEMSOpenCLContext::EnqueueSVMMap(void *ptr, Bytes size,
 /* ------------------------------------------------------------------------- */
 
 void GGEMSOpenCLContext::EnqueueSVMUnmap(void *ptr) const {
-  cl_int err = clEnqueueSVMUnmap(command_queue_(), ptr, 0, nullptr, nullptr);
+  cl_event unmap_event{nullptr};
+
+  cl_int err =
+      clEnqueueSVMUnmap(command_queue_(), ptr, 0, nullptr, &unmap_event);
 
   GGEMS_CHECK_FATAL(err == CL_SUCCESS, std::format("SVMUnmap failed: {}",
+                                                   GetLongErrorString(err)));
+
+  err = clWaitForEvents(1, &unmap_event);
+
+  clReleaseEvent(unmap_event);
+  GGEMS_CHECK_FATAL(err == CL_SUCCESS, std::format("SVMUnmap wait failed: {}",
                                                    GetLongErrorString(err)));
 }
 

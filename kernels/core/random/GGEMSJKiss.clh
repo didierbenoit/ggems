@@ -1,6 +1,7 @@
 #ifndef GGEMS_CORE_RANDOM_GGEMS_JKISS_CLH
 #define GGEMS_CORE_RANDOM_GGEMS_JKISS_CLH
 
+#include "core/random/GGEMSRandomCommon.clh"
 #include "core/random/GGEMSRandomTypes.clh"
 
 static inline uint GGEMS_JKissNextUInt(__global GGEMSJKissState *states,
@@ -27,7 +28,7 @@ static inline float GGEMS_JKissUniform(__global GGEMSJKissState *states,
                                        uint index) {
   uint value = GGEMS_JKissNextUInt(states, index);
 
-  return ((float)value / 4294967295.0f) * (1.0f - 1.0f / 8388608.0f);
+  return GGEMS_UIntToUniform01(value);
 }
 
 #endif

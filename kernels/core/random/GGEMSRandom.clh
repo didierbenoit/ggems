@@ -1,0 +1,70 @@
+#ifndef GGEMS_CORE_RANDOM_GGEMS_RANDOM_CLH
+#define GGEMS_CORE_RANDOM_GGEMS_RANDOM_CLH
+
+#define GGEMS_RANDOM_ENGINE_JKISS 1
+#define GGEMS_RANDOM_ENGINE_PCG32 2
+#define GGEMS_RANDOM_ENGINE_PHILOX 3
+
+#ifndef GGEMS_RANDOM_ENGINE
+#error "GGEMS_RANDOM_ENGINE must be defined before including GGEMSRandom.clh."
+#endif
+
+#if GGEMS_RANDOM_ENGINE == GGEMS_RANDOM_ENGINE_JKISS
+
+#include "core/random/GGEMSJKiss.clh"
+
+typedef GGEMSJKissState GGEMSRandomState;
+
+static inline float GGEMS_RndmUniform(__global GGEMSRandomState *states,
+                                      uint index) {
+  return GGEMS_JKissUniform(states, index);
+}
+
+static inline float4 GGEMS_RndmUniform4(__global GGEMSRandomState *states,
+                                        uint const index) {
+  return (float4)(GGEMS_JKissUniform(states, index),
+                  GGEMS_JKissUniform(states, index),
+                  GGEMS_JKissUniform(states, index),
+                  GGEMS_JKissUniform(states, index));
+}
+
+#elif GGEMS_RANDOM_ENGINE == GGEMS_RANDOM_ENGINE_PCG32
+
+#include "core/random/GGEMSPCG32.clh"
+
+typedef GGEMSPCG32State GGEMSRandomState;
+
+static inline float GGEMS_RndmUniform(__global GGEMSRandomState *states,
+                                      uint const index) {
+  return GGEMS_PCG32Uniform(states, index);
+}
+
+static inline float4 GGEMS_RndmUniform4(__global GGEMSRandomState *states,
+                                        uint const index) {
+  return (float4)(GGEMS_PCG32Uniform(states, index),
+                  GGEMS_PCG32Uniform(states, index),
+                  GGEMS_PCG32Uniform(states, index),
+                  GGEMS_PCG32Uniform(states, index));
+}
+
+#elif GGEMS_RANDOM_ENGINE == GGEMS_RANDOM_ENGINE_PHILOX
+
+#include "core/random/GGEMSPhilox.clh"
+
+typedef GGEMSPhiloxState GGEMSRandomState;
+
+static inline float GGEMS_RndmUniform(__global GGEMSRandomState *states,
+                                      uint const index) {
+  return GGEMS_PhiloxUniform(states, index);
+}
+
+static inline float4 GGEMS_RndmUniform4(__global GGEMSRandomState *states,
+                                        uint const index) {
+  return GGEMS_PhiloxUniform4(states, index);
+}
+
+#else
+#error "Unsupported GGEMS_RANDOM_ENGINE value."
+#endif
+
+#endif

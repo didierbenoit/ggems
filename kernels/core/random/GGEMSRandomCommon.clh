@@ -1,0 +1,16 @@
+#ifndef GGEMS_CORE_RANDOM_GGEMS_RANDOM_COMMON_CLH
+#define GGEMS_CORE_RANDOM_GGEMS_RANDOM_COMMON_CLH
+
+#define GGEMS_RANDOM_FLOAT_UNIT 5.9604644775390625e-8f
+
+static inline float GGEMS_UIntToUniform01(uint value) {
+  return (float)(value >> 8U) * GGEMS_RANDOM_FLOAT_UNIT;
+}
+
+static inline float4 GGEMS_UInt4ToUniform01(uint4 values) {
+  return (
+      float4)(GGEMS_UIntToUniform01(values.x), GGEMS_UIntToUniform01(values.y),
+              GGEMS_UIntToUniform01(values.z), GGEMS_UIntToUniform01(values.w));
+}
+
+#endif

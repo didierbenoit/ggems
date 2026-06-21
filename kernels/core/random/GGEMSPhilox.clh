@@ -1,0 +1,79 @@
+#ifndef GGEMS_CORE_RANDOM_GGEMS_PHILOX_CLH
+#define GGEMS_CORE_RANDOM_GGEMS_PHILOX_CLH
+
+#include "core/random/GGEMSRandomCommon.clh"
+#include "core/random/GGEMSRandomTypes.clh"
+
+#define GGEMS_PHILOX_M4X32_0 0xD2511F53U
+#define GGEMS_PHILOX_M4X32_1 0xCD9E8D57U
+#define GGEMS_PHILOX_W32_0 0x9E3779B9U
+#define GGEMS_PHILOX_W32_1 0xBB67AE85U
+
+static inline uint GGEMS_MulHi32(uint lhs, uint rhs) {
+  return (uint)(((ulong)lhs * (ulong)rhs) >> 32U);
+}
+
+static inline uint4 GGEMS_Philox4x32Round(uint4 counter, uint2 key) {
+  uint lo_0 = GGEMS_PHILOX_M4X32_0 * counter.x;
+  uint hi_0 = GGEMS_MulHi32(GGEMS_PHILOX_M4X32_0, counter.x);
+
+  uint lo_1 = GGEMS_PHILOX_M4X32_1 * counter.z;
+  uint hi_1 = GGEMS_MulHi32(GGEMS_PHILOX_M4X32_1, counter.z);
+
+  return (uint4)(hi_1 ^ counter.y ^ key.x, lo_1, hi_0 ^ counter.w ^ key.y,
+                 lo_0);
+}
+
+static inline uint4 GGEMS_Philox4x32(uint4 counter, uint2 key) {
+  for (uint round = 0U; round < 10U; ++round) {
+    counter = GGEMS_Philox4x32Round(counter, key);
+
+    key.x += GGEMS_PHILOX_W32_0;
+    key.y += GGEMS_PHILOX_W32_1;
+  }
+
+  return counter;
+}
+
+static inline void
+GGEMS_PhiloxIncrementCounter(__global GGEMSPhiloxState *states, uint index) {
+  states[index].counter_0 += 1U;
+
+  if (states[index].counter_0 == 0U) {
+    states[index].counter_1 += 1U;
+  }
+}
+
+static inline uint4 GGEMS_PhiloxNextUInt4(__global GGEMSPhiloxState *states,
+                                          uint index) {
+  uint4 counter = (uint4)(states[index].counter_0, states[index].counter_1,
+                          states[index].counter_2, states[index].counter_3);
+
+  uint2 key = (uint2)(states[index].key_0, states[index].key_1);
+
+  uint4 value = GGEMS_Philox4x32(counter, key);
+
+  GGEMS_PhiloxIncrementCounter(states, index);
+  return value;
+}
+
+static inline uint GGEMS_PhiloxNextUInt(__global GGEMSPhiloxState *states,
+                                        uint index) {
+  return GGEMS_PhiloxNextUInt4(states, index).x;
+}
+
+static inline float4 GGEMS_PhiloxUniform4(__global GGEMSPhiloxState *states,
+                                          uint index) {
+  uint4 values = GGEMS_PhiloxNextUInt4(states, index);
+
+  return GGEMS_UInt4ToUniform01(values);
+}
+
+static inline float GGEMS_PhiloxUniform(__global GGEMSPhiloxState *states,
+                                        uint index) {
+  uint value = GGEMS_PhiloxNextUInt(states, index);
+
+  return GGEMS_UIntToUniform01(value);
+}
+
+#endif

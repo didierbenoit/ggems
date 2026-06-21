@@ -11,7 +11,9 @@
 #include "GGEMSVulkanSceneRenderer.hh"
 
 namespace {
-constexpr std::uint32_t k_axes_vertex_count{18U};
+constexpr std::uint32_t k_axis_count{3U};
+constexpr std::uint32_t k_vertices_per_axis{2U};
+constexpr std::uint32_t k_axes_vertex_count{k_axis_count * k_vertices_per_axis};
 constexpr float k_orbit_degrees_per_pixel{0.20f};
 } // namespace
 
