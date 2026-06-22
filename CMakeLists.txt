@@ -50,7 +50,9 @@ include(CompilerLauncher)
 # Display build context
 # ----------------------------------------------------------------------------
 message(STATUS "CMake version in use: ${CMAKE_VERSION}")
-message(STATUS "Configuring project ${PROJECT_NAME} version ${PROJECT_VERSION}")
+message(STATUS
+  "Configuring project ${PROJECT_NAME}
+  version ${PROJECT_VERSION}")
 
 # ----------------------------------------------------------------------------
 # Ensure position-independent code for shared libraries and Python modules
@@ -65,9 +67,10 @@ include(CompilerOptions)
 # ----------------------------------------------------------------------------
 # Optional build features
 # ----------------------------------------------------------------------------
-option(GGEMS_BUILD_TESTS        "Build GoogleTest unit tests" OFF)
-option(GGEMS_BUILD_DOCS         "Build documentation with Doxygen and Sphinx" OFF)
-option(GGEMS_WITH_IMGUI         "Enable ImGui / Vulkan interface" OFF)
+option(GGEMS_BUILD_TESTS "Build GoogleTest unit tests" OFF)
+option(GGEMS_BUILD_DOCS  "Build documentation with Doxygen and Sphinx" OFF)
+option(GGEMS_WITH_IMGUI  "Enable ImGui / Vulkan interface" OFF)
+option(GGEMS_BUILD_VALIDATION "Build GGEMS scientific validation tools" OFF)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_compile_definitions(GGEMS_DEBUG_MODE)
@@ -79,7 +82,8 @@ endif()
 # Dependencies
 # ----------------------------------------------------------------------------
 find_package(OpenCL REQUIRED)
-set(OPENCL_HPP_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/external/OpenCL-CLHPP/include")
+set(OPENCL_HPP_INCLUDE_DIR
+  "${PROJECT_SOURCE_DIR}/external/OpenCL-CLHPP/include")
 message(STATUS "OpenCL library located at: ${OpenCL_LIBRARY}")
 message(STATUS "OpenCL include path: ${OPENCL_HPP_INCLUDE_DIR}")
 
@@ -132,6 +136,13 @@ if (GGEMS_BUILD_TESTS)
 endif()
 
 # ----------------------------------------------------------------------------
+# Scientific validation
+# ----------------------------------------------------------------------------
+if (GGEMS_BUILD_VALIDATION)
+  add_subdirectory(validation)
+endif()
+
+# ----------------------------------------------------------------------------
 # Documentation
 # ----------------------------------------------------------------------------
 if (GGEMS_BUILD_DOCS)
@@ -149,5 +160,6 @@ message(STATUS "C++ standard           : ${CMAKE_CXX_STANDARD}")
 message(STATUS "Build tests            : ${GGEMS_BUILD_TESTS}")
 message(STATUS "Build documentation    : ${GGEMS_BUILD_DOCS}")
 message(STATUS "ImGui UI enabled       : ${GGEMS_WITH_IMGUI}")
+message(STATUS "Build validation       : ${GGEMS_BUILD_VALIDATION}")
 message(STATUS "========================================================")
 message(STATUS "")

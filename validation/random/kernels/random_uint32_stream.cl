@@ -26,8 +26,8 @@ static inline uint4 GGEMSValidation_RndmUInt4(__global GGEMSRandomState *states,
 /* --------------------------------------------- */
 
 __kernel void random_uint32_stream(__global GGEMSRandomState *states,
-                                   __global uint *values, ulong particle_count,
-                                   ulong words_per_particle) {
+                                   __global uint *values, uint particle_count,
+                                   uint words_per_particle) {
   uint particle_index = (ulong)get_global_id(0);
 
   if (particle_index >= particle_count) {
