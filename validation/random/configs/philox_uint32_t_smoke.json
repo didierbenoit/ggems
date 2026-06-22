@@ -1,0 +1,44 @@
+{
+  "scheme_version": 1,
+  "name": "philox_uint32_t_smoke",
+  "description": "Small Philox raw uint32 stream used to validate the GGEMS random validation pipeline.",
+
+  "ggems": {
+    "root": ".",
+    "commit": "auto"
+  },
+
+  "random": {
+    "engine": "philox",
+    "seed": 77777,
+    "stream_type": "raw_uint32",
+    "generation_api": "engine_raw_uint32",
+    "particle_count": 1024,
+    "words_per_particle": 1024,
+    "total_words": 1048576,
+    "layout": "particle_major",
+    "endianness": "little"
+  },
+
+  "opencl": {
+    "device_selector": "gpu",
+    "platform": "auto",
+    "device": "auto",
+    "build_options" : [
+      "-cl-std=CL2.0"
+    ]
+  },
+
+  "output": {
+    "stream_path": "validation/random/streams/philox_uint32_smoke.bin",
+    "manifest_path": "validation/random/results/summary/philox_uint32_smoke_manifest.json",
+    "summary_path": "validation/random/results/summary/philox_uint32_smoke_summary.json"
+  },
+
+  "validation" : {
+    "intended_tools": [
+      "PracRand"
+    ],
+    "purpose": "pipeline_smoke_test"
+  }
+}
