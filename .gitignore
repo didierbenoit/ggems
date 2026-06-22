@@ -17,3 +17,25 @@ python/ggems/*.exp
 tree.txt
 docs/Doxygen/html
 docs/Doxygen/xml
+
+# -----------------------------------
+# GGEMS scientific validation artefacts
+# -----------------------------------
+
+validation/random/streams/*
+!validation/random/streams/.gitkeep
+
+validation/random/results/raw/*
+!validation/random/results/raw/.gitkeep
+
+validation/random/results/**/*.bin
+validation/random/results/**/*.dat
+validation/random/results/**/*.raw
+validation/random/results/**/*.npy
+validation/random/results/**/*.npz
+validation/random/results/**/*.log
+
+!validation/random/results/.gitkeep
+!validation/random/results/summary/
+!validation/random/results/summary/**
+!validation/random/results/**/.gitkeep
