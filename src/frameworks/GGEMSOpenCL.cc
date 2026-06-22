@@ -94,13 +94,12 @@ GGEMSOpenCL::~GGEMSOpenCL() {
 GGEMSOpenCLProgram &GGEMSOpenCL::GetOrCreateProgram(
     GGEMSOpenCLContext &ctx, std::filesystem::path const &kernel_root,
     std::string const &kernel_name, std::string const &build_options) {
-  for (auto &p : program_cache_) {
-    if (p->GetKernelName() == kernel_name &&
-        p->GetSourcePath() == (kernel_root / (kernel_name + ".cl")).string() &&
-        p->GetBuildOptions() == build_options) {
-      GGEMS_INFOEX("OpenCL", 3, "Reusing cached OpenCL program '{}'.",
+  for (auto &program : program_cache_) {
+    if (program->Matches(ctx, kernel_root, kernel_name, build_options)) {
+      GGEMS_INFOEX("OpenCL", 3,
+                   "Reusing OpenCL program '{}' from memory cache.",
                    kernel_name);
-      return *p;
+      return *program;
     }
   }
 

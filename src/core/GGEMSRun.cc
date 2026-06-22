@@ -9,25 +9,57 @@
 #include "GGEMS/render/GGEMSProgressBar.hh"
 #include "GGEMS/core/GGEMSOutputMode.hh"
 
+#include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/units/GGEMSUnits.hh"
 
 using namespace ggems::units;
 
 namespace ggems::core {
 
-/* --------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 GGEMSRun::GGEMSRun() { GGEMS_INFOEX("Core", 3, "GGEMSRun instance created."); }
 
-/* --------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
 GGEMSRun::~GGEMSRun() { ; }
 
-/* --------------------------------*/
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
 
-void GGEMSRun::Initialise() { GGEMS_INFO("Core", "GGEMSRun initialised."); }
+void GGEMSRun::Initialise() {
+  GGEMS_CHECK_RECOVERABLE(
+      random_ != nullptr,
+      "GGEMSRun cannot be Initialised without a GGEMSRandom. "
+      "Create a ggems.rndm.GGEMSRandom object and attach it with "
+      "GGEMSRun::SetRandom before calling Initialise.");
 
-/* --------------------------------*/
+  GGEMS_INFO("Core", "GGEMSRun initialised.");
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSRun::SetRandom(std::shared_ptr<random::GGEMSRandom> random) {
+  GGEMS_CHECK_RECOVERABLE(random != nullptr,
+                          "Cannot attach a null GGEMSRandom to GGEMSRun.");
+
+  random_ = std::move(random);
+
+  GGEMS_INFO("Random", "GGEMSRun random engine set to '{}'.",
+             random_->GetEngineName());
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 void GGEMSRun::Run() {
   GGEMS_INFO("Core", "GGEMS starting...");
 

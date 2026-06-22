@@ -44,6 +44,8 @@
 
 /// \cond
 #include <filesystem>
+#include <vector>
+#include <unordered_set>
 /// \endcond
 
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
@@ -155,6 +157,11 @@ public:
    */
   [[nodiscard]] auto GetBinaries() const;
 
+  [[nodiscard]] bool Matches(GGEMSOpenCLContext const &context,
+                             std::filesystem::path const &kernel_root,
+                             std::string_view kernel_name,
+                             std::string_view user_build_options) const;
+
 private:
   /*!
    * \brief Load a kernel source file into memory.
@@ -233,12 +240,25 @@ private:
    */
   std::vector<std::uint8_t> LoadBinaryFromCache();
 
+  [[nodiscard]] std::vector<std::filesystem::path>
+  BuildIncludeSearchRoots() const;
+
+  [[nodiscard]] std::string
+  BuildSourceFingerprintText(std::filesystem::path const &source_path) const;
+
+  void AppendSourceFingerprintText(
+      std::filesystem::path const &source_path,
+      std::vector<std::filesystem::path> const &include_roots,
+      std::unordered_set<std::string> &visited_sources,
+      std::string &fingerprint_text) const;
+
 private:
   GGEMSOpenCLContext &context_;       /*!< Context used for Build operations. */
   std::filesystem::path kernel_root_; /*!< Directory containing the kernel. */
   std::string kernel_name_;           /*!< Base kernel name. */
   std::string source_path_;           /*!< Source file used for compile. */
-  std::string build_options_;         /*!< User-specified build options. */
+  std::string user_build_options_;
+  std::string build_options_;     /*!< User-specified build options. */
   std::string build_log_;         /*!< Build log text from the OpenCL driver. */
   cl::Program program_;           /*!< Compiled OpenCL program. */
   bool loaded_from_cache_{false}; /*!< True if built from cached binary. */

@@ -1,10 +1,13 @@
 #pragma once
 
-/// \cond
 #include <atomic>
 #include <thread>
 #include <vector>
-/// \endcond
+#include <memory>
+
+namespace ggems::core::random {
+class GGEMSRandom;
+}
 
 namespace ggems::core {
 class GGEMSRun {
@@ -20,8 +23,11 @@ public:
   void Initialise();
   void Run();
 
+  void SetRandom(std::shared_ptr<random::GGEMSRandom> random);
+
 private:
   std::vector<std::thread> workers_;
   std::atomic<bool> running_{false};
+  std::shared_ptr<random::GGEMSRandom> random_{nullptr};
 };
 } // namespace ggems::core
