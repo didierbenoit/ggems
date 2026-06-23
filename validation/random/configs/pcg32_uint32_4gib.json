@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "name": "pcg32_uint32_4gib",
+  "description": "Four GiB PCG32 raw uint32 stream for GGEMS random validation with PractRand.",
+
+  "ggems": {
+    "root": ".",
+    "commit": "auto"
+  },
+
+  "random": {
+    "engine": "pcg32",
+    "seed": 77777,
+    "stream_type": "raw_uint32",
+    "generation_api": "engine_raw_uint32",
+    "particle_count": 1048576,
+    "words_per_particle": 1024,
+    "total_words": 1073741824,
+    "layout": "particle_major",
+    "endianness": "little"
+  },
+
+  "opencl": {
+    "device_selector": "gpu",
+    "platform": "auto",
+    "device": "auto",
+    "local_size": 64,
+    "build_options": [
+      "-cl-std=CL2.0"
+    ]
+  },
+
+  "output": {
+    "stream_path": "validation/random/streams/pcg32_uint32_4gib.bin",
+    "manifest_path": "validation/random/results/summary/pcg32_uint32_4gib_manifest.json",
+    "summary_path": "validation/random/results/summary/pcg32_uint32_4gib_summary.json"
+  },
+
+  "validation": {
+    "intended_tools": [
+      "PractRand"
+    ],
+    "purpose": "four_gib_practrand_validation",
+    "practrand": {
+      "max_size": "4GB",
+      "raw_log_path": "validation/random/results/raw/pcg32_uint32_4gib_practrand.log",
+      "summary_path": "validation/random/results/summary/pcg32_uint32_4gib_practrand_summary.json"
+    }
+  }
+}

@@ -36,6 +36,7 @@
  */
 
 #include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
+#include "GGEMS/frameworks/GGEMSSVMMemoryKind.hh"
 #include "GGEMS/core/units/GGEMSUnits.hh"
 
 namespace ggems::ocl {
@@ -63,11 +64,13 @@ public:
    * \param context   Reference to the OpenCL context managing this allocation.
    * \param size      Size of the buffer in bytes.
    * \param flags     OpenCL SVM memory flags (e.g., CL_MEM_READ_WRITE).
+   * \param kind      Selected SVM memory kind.
    * \param alignment Optional alignment requirement (0 = implementation
    * default).
    */
   GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context, units::Bytes size,
-                       cl_svm_mem_flags flags, units::Bytes alignment = 0_B);
+                       cl_svm_mem_flags flags, SVMMemoryKind kind,
+                       units::Bytes alignment = 0_B);
 
   /*!
    * \brief Destructor.
@@ -126,6 +129,12 @@ public:
   [[nodiscard]] cl_svm_mem_flags GetFlags() const noexcept { return flags_; }
 
   /*!
+   * \brief Returns the SVM memory kind selected for this allocation.
+   * \return Selected SVM memory kind.
+   */
+  [[nodiscard]] SVMMemoryKind GetKind() const noexcept { return kind_; }
+
+  /*!
    * \brief Maps the SVM memory into the host address space.
    *
    * For coarse-grain SVM, this requests the runtime to synchronise and
@@ -159,5 +168,6 @@ private:
   units::Bytes size_{0ULL}; /*!< Size of the allocated SVM buffer. */
   cl_svm_mem_flags flags_{
       0}; /*!< OpenCL SVM memory flags used for allocation. */
+  SVMMemoryKind kind_{SVMMemoryKind::None}; /*!< Selected SVM memory kind. */
 };
 } // namespace ggems::ocl

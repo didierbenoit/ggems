@@ -38,26 +38,11 @@
  */
 
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
+#include "GGEMS/frameworks/GGEMSSVMMemoryKind.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
 
 namespace ggems::ocl {
 using units::operator""_B;
-
-/*!
- * \enum SVMMemoryKind
- * \brief Specifies the type of Shared Virtual Memory (SVM) desired for
- * allocation.
- *
- * The context uses the device's SVM capabilities to determine which allocation
- * is possible or optimal. The \c Auto mode selects the best supported type.
- */
-enum class SVMMemoryKind {
-  None,              /*!< No SVM support available. */
-  Auto,              /*!< Automatically choose best-supported SVM mode. */
-  CoarseGrainBuffer, /*!< Coarse-grain buffer SVM. */
-  FineGrainBuffer,   /*!< Fine-grain buffer SVM. */
-  FineGrainSystem    /*!< Fine-grain system-wide SVM. */
-};
 
 /*!
  * \struct SVMSupport
@@ -78,13 +63,43 @@ struct SVMSupport {
    * \return Preferred SVM memory kind.
    */
   [[nodiscard]] SVMMemoryKind DefaultKind() const noexcept {
-    if (fine_grain_system)
-      return SVMMemoryKind::FineGrainSystem;
-    if (fine_grain_buffer)
-      return SVMMemoryKind::FineGrainBuffer;
-    if (coarse_grain_buffer)
+    if (coarse_grain_buffer) {
       return SVMMemoryKind::CoarseGrainBuffer;
+    }
+
+    if (fine_grain_buffer) {
+      return SVMMemoryKind::FineGrainBuffer;
+    }
+
+    if (fine_grain_system) {
+      return SVMMemoryKind::FineGrainSystem;
+    }
+
     return SVMMemoryKind::None;
+  }
+
+  /*!
+   * \brief Indicates whether a specific SVM memory kind is supported.
+   * \param kind SVM memory kind to test.
+   * \return True when the requested kind can be allocated or used.
+   */
+  [[nodiscard]] bool Supports(SVMMemoryKind kind) const noexcept {
+    switch (kind) {
+    case SVMMemoryKind::None:
+      return false;
+    case SVMMemoryKind::Auto:
+      return HasAny();
+    case SVMMemoryKind::CoarseGrainBuffer:
+      return coarse_grain_buffer;
+    case SVMMemoryKind::FineGrainBuffer:
+      return fine_grain_buffer;
+    case SVMMemoryKind::FineGrainBufferAtomics:
+      return fine_grain_buffer && atomics;
+    case SVMMemoryKind::FineGrainSystem:
+      return fine_grain_system;
+    }
+
+    return false;
   }
 
   /*!

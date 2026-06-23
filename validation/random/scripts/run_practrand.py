@@ -12,6 +12,53 @@ from pathlib import Path
 from typing import Any
 
 ################
+def ParseByteSize(text: str) -> int:
+    value = text.strip().upper()
+
+    units = {
+        "B": 1,
+        "KB": 1024,
+        "KIB": 1024,
+        "MB": 1024**2,
+        "MIB": 1024**2,
+        "GB": 1024**3,
+        "GIB": 1024**3,
+        "TB": 1024**4,
+        "TIB": 1024**4,
+    }
+
+    for suffix, multiplier in sorted(units.items(), key=lambda item: len(item[0]), reverse=True):
+        if value.endswith(suffix):
+            number = value[: -len(suffix)].strip()
+
+            if not number.isdigit():
+                raise ValueError(f"Invalid byte size: {text}")
+
+            return int(number) * multiplier
+
+    if value.isdigit():
+        return int(value)
+
+    raise ValueError(
+        f"Invalid byte size: {text}. "
+        "Expected forms such as 4MB, 1GB, 16GiB, or raw bytes."
+    )
+
+################
+def GetManifestStreamByteCount(manifest: dict[str, Any], stream_path: Path) -> int:
+    output = manifest.get("output", {})
+
+    if "byte_count_actual" in output:
+        return int(output["byte_count_actual"])
+
+    random_section = manifest.get("random", {})
+
+    if "byte_count" in random_section:
+        return int(random_section["byte_count"])
+
+    return stream_path.stat().st_size
+
+################
 def LoadJSON(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as stream:
         return json.load(stream)
@@ -133,6 +180,26 @@ def RunPractRand(
     if not stream_path.exists():
         raise FileNotFoundError(f"Stream file not found: {stream_path}")
 
+    requested_max_bytes = ParseByteSize(max_size)
+    available_stream_bytes = GetManifestStreamByteCount(manifest, stream_path)
+
+    actual_file_size = stream_path.stat().st_size
+
+    if actual_file_size != available_stream_bytes:
+        raise RuntimeError(
+            "Manifest stream byte count does not match actual file size:\n"
+            f"  manifest: {available_stream_bytes}\n"
+            f"  file    : {actual_file_size}"
+        )
+
+    if requested_max_bytes > available_stream_bytes:
+        raise RuntimeError(
+            "Requested PractRand max-size is larger than the available stream:\n"
+            f"  requested: {requested_max_bytes} bytes ({max_size})\n"
+            f"  available: {available_stream_bytes} bytes\n"
+            "Generate a larger stream or reduce --max-size."
+        )
+
     EnsureWritable(raw_log_path, force)
 
     rng_test_path = ResolveExecutable(rng_test)
@@ -174,6 +241,7 @@ def RunPractRand(
             "command": command,
             "return_code": completed.returncode,
             "max_size": max_size,
+            "requested_max_bytes": requested_max_bytes,
         },
         "input": {
             "manifest_path": str(manifest_path),
@@ -183,6 +251,7 @@ def RunPractRand(
             "particle_count": manifest["random"]["particle_count"],
             "words_per_particle": manifest["random"]["words_per_particle"],
             "total_words": manifest["random"]["total_words"],
+            "stream_byte_count": available_stream_bytes,
             "sha256": manifest["integrity"]["value"],
         },
         "output": {

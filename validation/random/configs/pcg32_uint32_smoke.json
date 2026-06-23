@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "name": "pcg32_uint32_smoke",
+  "description": "Small PCG32 raw uint32 stream used to validate the GGEMS random validation pipeline.",
+
+  "ggems": {
+    "root": ".",
+    "commit": "auto"
+  },
+
+  "random": {
+    "engine": "pcg32",
+    "seed": 77777,
+    "stream_type": "raw_uint32",
+    "generation_api": "engine_raw_uint32",
+    "particle_count": 1024,
+    "words_per_particle": 1024,
+    "total_words": 1048576,
+    "layout": "particle_major",
+    "endianness": "little"
+  },
+
+  "opencl": {
+    "device_selector": "gpu",
+    "platform": "auto",
+    "device": "auto",
+    "local_size": 64,
+    "build_options": [
+      "-cl-std=CL2.0"
+    ]
+  },
+
+  "output": {
+    "stream_path": "validation/random/streams/pcg32_uint32_smoke.bin",
+    "manifest_path": "validation/random/results/summary/pcg32_uint32_smoke_manifest.json",
+    "summary_path": "validation/random/results/summary/pcg32_uint32_smoke_summary.json"
+  },
+
+  "validation": {
+    "intended_tools": [
+      "PractRand"
+    ],
+    "purpose": "pipeline_smoke_test",
+    "practrand": {
+      "max_size": "4MB",
+      "raw_log_path": "validation/random/results/raw/pcg32_uint32_smoke_practrand.log",
+      "summary_path": "validation/random/results/summary/pcg32_uint32_smoke_practrand_summary.json"
+    }
+  }
+}

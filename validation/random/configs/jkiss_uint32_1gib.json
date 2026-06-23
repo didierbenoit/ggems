@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "name": "jkiss_uint32_1gib",
+  "description": "One GiB JKISS raw uint32 stream for GGEMS random validation with PractRand.",
+
+  "ggems": {
+    "root": ".",
+    "commit": "auto"
+  },
+
+  "random": {
+    "engine": "jkiss",
+    "seed": 77777,
+    "stream_type": "raw_uint32",
+    "generation_api": "engine_raw_uint32",
+    "particle_count": 1048576,
+    "words_per_particle": 256,
+    "total_words": 268435456,
+    "layout": "particle_major",
+    "endianness": "little"
+  },
+
+  "opencl": {
+    "device_selector": "gpu",
+    "platform": "auto",
+    "device": "auto",
+    "local_size": 64,
+    "build_options": [
+      "-cl-std=CL2.0"
+    ]
+  },
+
+  "output": {
+    "stream_path": "validation/random/streams/jkiss_uint32_1gib.bin",
+    "manifest_path": "validation/random/results/summary/jkiss_uint32_1gib_manifest.json",
+    "summary_path": "validation/random/results/summary/jkiss_uint32_1gib_summary.json"
+  },
+
+  "validation": {
+    "intended_tools": [
+      "PractRand"
+    ],
+    "purpose": "one_gib_practrand_validation",
+    "practrand": {
+      "max_size": "1GB",
+      "raw_log_path": "validation/random/results/raw/jkiss_uint32_1gib_practrand.log",
+      "summary_path": "validation/random/results/summary/jkiss_uint32_1gib_practrand_summary.json"
+    }
+  }
+}

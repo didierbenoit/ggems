@@ -113,14 +113,26 @@ void GGEMSOpenCLContext::CreateCommandQueue() {
 void GGEMSOpenCLContext::InitSVMSupport() {
   auto const caps = device_.GetSVMCapabilities();
 
-  if (caps & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER)
+  if (caps & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER) {
     svm_support_.coarse_grain_buffer = true;
-  if (caps & CL_DEVICE_SVM_FINE_GRAIN_BUFFER)
+  }
+  if (caps & CL_DEVICE_SVM_FINE_GRAIN_BUFFER) {
     svm_support_.fine_grain_buffer = true;
-  if (caps & CL_DEVICE_SVM_FINE_GRAIN_SYSTEM)
+  }
+  if (caps & CL_DEVICE_SVM_FINE_GRAIN_SYSTEM) {
     svm_support_.fine_grain_system = true;
-  if (caps & CL_DEVICE_SVM_ATOMICS)
+  }
+  if (caps & CL_DEVICE_SVM_ATOMICS) {
     svm_support_.atomics = true;
+  }
+
+  GGEMS_INFOEX(
+      "OpenCL", 2,
+      "SVM support for '{}': coarse={}, fine-buffer={}, fine-system={}, "
+      "atomics={}, auto={}",
+      device_.GetName(), svm_support_.coarse_grain_buffer,
+      svm_support_.fine_grain_buffer, svm_support_.fine_grain_system,
+      svm_support_.atomics, ToString(svm_support_.DefaultKind()));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -162,24 +174,33 @@ GGEMSOpenCLSVMBuffer GGEMSOpenCLContext::CreateSVMBuffer(Bytes size,
 
   GGEMS_CHECK_FATAL(svm.HasAny(), "This context/device does not support SVM.");
 
-  SVMMemoryKind selected = kind;
-
-  GGEMS_CHECK_FATAL(selected != SVMMemoryKind::None,
+  GGEMS_CHECK_FATAL(kind != SVMMemoryKind::None,
                     "Invalid SVMMemoryKind::None for allocation.");
 
-  if (selected == SVMMemoryKind::Auto) {
-    selected = svm.DefaultKind();
-  }
+  SVMMemoryKind const selected =
+      kind == SVMMemoryKind::Auto ? svm.DefaultKind() : kind;
+
+  GGEMS_CHECK_FATAL(selected != SVMMemoryKind::None,
+                    "No supported SVM memory kind is available.");
+
+  GGEMS_CHECK_FATAL(
+      svm.Supports(selected),
+      std::format("Requested SVM memory kind '{}' is not supported by "
+                  "device '{}'.",
+                  ToString(selected), device_.GetName()));
 
   cl_svm_mem_flags flags = 0;
 
   switch (selected) {
   case SVMMemoryKind::CoarseGrainBuffer:
-    flags = CL_MEM_READ_WRITE; // + SVM coarse-grain implicite
+    flags = CL_MEM_READ_WRITE;
     break;
   case SVMMemoryKind::FineGrainBuffer:
-    // fine-grain buffer : SVM + fine-grain buffer = implicite via caps
     flags = CL_MEM_READ_WRITE | CL_MEM_SVM_FINE_GRAIN_BUFFER;
+    break;
+  case SVMMemoryKind::FineGrainBufferAtomics:
+    flags =
+        CL_MEM_READ_WRITE | CL_MEM_SVM_FINE_GRAIN_BUFFER | CL_MEM_SVM_ATOMICS;
     break;
   case SVMMemoryKind::FineGrainSystem:
     flags = CL_MEM_READ_WRITE;
@@ -189,11 +210,36 @@ GGEMSOpenCLSVMBuffer GGEMSOpenCLContext::CreateSVMBuffer(Bytes size,
         "Unsupported SVMMemoryKind in CreateSVMBuffer.");
   }
 
-  if (selected == SVMMemoryKind::FineGrainBuffer && svm.atomics) {
-    flags |= CL_MEM_SVM_ATOMICS;
+  GGEMS_INFOEX("OpenCL", 2,
+               "Creating SVM buffer: size={}, requested={}, selected={}, "
+               "flags=0x{:X}, alignment={}",
+               HumanReadable(size), ToString(kind), ToString(selected),
+               static_cast<std::uint64_t>(flags), HumanReadable(alignment));
+
+  constexpr std::uint64_t k_large_svm_warning_threshold{64ULL * 1024ULL *
+                                                        1024ULL};
+
+  if (selected == SVMMemoryKind::FineGrainBuffer &&
+      size.value >= k_large_svm_warning_threshold) {
+    GGEMS_WARN("OpenCL",
+               "Fine-grain SVM buffer selected for a large allocation ({}). "
+               "This may severely reduce GPU throughput on some OpenCL "
+               "drivers. Prefer CoarseGrainBuffer for large performance "
+               "buffers when possible.",
+               HumanReadable(size));
   }
 
-  return GGEMSOpenCLSVMBuffer{*this, size, flags, alignment};
+  if (selected == SVMMemoryKind::FineGrainBufferAtomics &&
+      size.value >= k_large_svm_warning_threshold) {
+    GGEMS_WARN("OpenCL",
+               "Fine-grain atomic SVM buffer selected for a large allocation "
+               "({}). This is a synchronisation-heavy memory mode and should "
+               "not be used for large performance buffers unless atomics are "
+               "strictly required.",
+               HumanReadable(size));
+  }
+
+  return GGEMSOpenCLSVMBuffer{*this, size, flags, selected, alignment};
 }
 
 /* ------------------------------------------------------------------------- */

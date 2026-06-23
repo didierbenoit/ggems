@@ -46,8 +46,9 @@ namespace ggems::ocl {
 
 GGEMSOpenCLSVMBuffer::GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context,
                                            Bytes size, cl_svm_mem_flags flags,
-                                           Bytes alignment)
-    : context_(&context), ptr_{nullptr}, size_{size}, flags_{flags} {
+                                           SVMMemoryKind kind, Bytes alignment)
+    : context_(&context), ptr_{nullptr}, size_{size}, flags_{flags},
+      kind_{kind} {
   GGEMS_CHECK_FATAL(size_.value > 0, "Cannot allocate zero-sized SVM buffer.");
 
   auto const &svm = context.GetSVMSupport();
@@ -62,7 +63,8 @@ GGEMSOpenCLSVMBuffer::GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context,
   ptr_ = p;
   context_->RegisterSVMAllocation(size_);
 
-  GGEMS_INFOEX("OpenCL", 3, "Allocated SVM Buffer: {}.", HumanReadable(size_));
+  GGEMS_INFOEX("OpenCL", 3, "Allocated SVM Buffer: {} ({}).",
+               HumanReadable(size_), ToString(kind_));
 }
 
 /* --------------------------------*/
@@ -86,11 +88,13 @@ GGEMSOpenCLSVMBuffer::operator=(GGEMSOpenCLSVMBuffer &&other) noexcept {
     ptr_ = other.ptr_;
     size_ = other.size_;
     flags_ = other.flags_;
+    kind_ = other.kind_;
 
     other.context_ = nullptr;
     other.ptr_ = nullptr;
     other.size_ = 0_B;
     other.flags_ = 0;
+    other.kind_ = SVMMemoryKind::None;
   }
   return *this;
 }
@@ -106,9 +110,7 @@ GGEMSOpenCLSVMBuffer::~GGEMSOpenCLSVMBuffer() { Release(); }
 /* --------------------------------*/
 
 void GGEMSOpenCLSVMBuffer::Map(cl_map_flags flags) {
-  auto const &svm = context_->GetSVMSupport();
-
-  if (svm.fine_grain_system) {
+  if (!RequiresExplicitMap(kind_)) {
     return;
   }
 
@@ -120,9 +122,7 @@ void GGEMSOpenCLSVMBuffer::Map(cl_map_flags flags) {
 /* --------------------------------*/
 
 void GGEMSOpenCLSVMBuffer::Unmap() {
-  auto const &svm = context_->GetSVMSupport();
-
-  if (svm.fine_grain_system) {
+  if (!RequiresExplicitMap(kind_)) {
     return;
   }
 
@@ -143,12 +143,14 @@ void GGEMSOpenCLSVMBuffer::Release() noexcept {
     auto &ctx = context_->GetContextNative();
     clSVMFree(ctx(), ptr_);
 
-    GGEMS_INFOEX("OpenCL", 3, "Release SVM Buffer: {}.", HumanReadable(size_));
+    GGEMS_INFOEX("OpenCL", 3, "Release SVM Buffer: {} ({}).",
+                 HumanReadable(size_), ToString(kind_));
   }
 
   context_ = nullptr;
   ptr_ = nullptr;
   size_ = 0_B;
   flags_ = 0;
+  kind_ = SVMMemoryKind::None;
 }
 } // namespace ggems::ocl
