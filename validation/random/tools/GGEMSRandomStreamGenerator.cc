@@ -32,10 +32,15 @@ struct Options {
   std::uint32_t words_per_particle{1024U};
   std::size_t local_size{64U};
   std::string device_selector{"cpu"};
+  bool force{false};
 
   std::filesystem::path output_path{
       std::filesystem::path{GGEMS_VALIDATION_RANDOM_STREAM_ROOT} /
       "philox_uint32_smoke.bin"};
+
+  std::filesystem::path manifest_path{
+      std::filesystem::path{GGEMS_VALIDATION_RANDOM_RESULT_ROOT} / "summary" /
+      "random_uint32_stream_manifest.json"};
 };
 
 /* --------------------------------------------- */
@@ -53,6 +58,8 @@ void PrintUsage(char const *executable_name) {
             << "  --local-size <size_t>\n"
             << "  --device <gpu|cpu|all|vendor token>\n"
             << "  --output <path>\n"
+            << "  --manifest <path>\n"
+            << "  --force\n"
             << "  --help\n";
 }
 
@@ -103,6 +110,10 @@ Options ParseArguments(int argc, char **argv) {
       options.device_selector = ReadArgumentValue(i, argc, argv, arg);
     } else if (arg == "--output") {
       options.output_path = ReadArgumentValue(i, argc, argv, arg);
+    } else if (arg == "--manifest") {
+      options.manifest_path = ReadArgumentValue(i, argc, argv, arg);
+    } else if (arg == "--force") {
+      options.force = true;
     } else {
       throw std::runtime_error(std::format("Unknown argument '{}'.", arg));
     }
@@ -232,8 +243,28 @@ void InitialiseRandomStates(void *states_data, GGEMSRandomEngine engine,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+void EnsureOutputCanBeWritten(std::filesystem::path const &path, bool force,
+                              std::string_view label) {
+  if (std::filesystem::exists(path) && !force) {
+    throw std::runtime_error(std::format(
+        "{} file already exists: '{}'. Use --force to overwrite it.", label,
+        path.string()));
+  }
+
+  if (!path.parent_path().empty()) {
+    std::filesystem::create_directories(path.parent_path());
+  }
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 void WriteUInt32Binary(std::filesystem::path const &path,
-                       std::uint32_t const *values, std::size_t value_count) {
+                       std::uint32_t const *values, std::size_t value_count,
+                       bool force) {
+  EnsureOutputCanBeWritten(path, force, "Stream");
+
   if (!path.parent_path().empty()) {
     std::filesystem::create_directories(path.parent_path());
   }
@@ -252,6 +283,100 @@ void WriteUInt32Binary(std::filesystem::path const &path,
   if (!stream) {
     throw std::runtime_error(
         std::format("Failed to write output stream '{}'.", path.string()));
+  }
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+std::string JsonEscape(std::string_view text) {
+  std::string escaped;
+  escaped.reserve(text.size());
+
+  for (char c : text) {
+    switch (c) {
+    case '\\':
+      escaped += "\\\\";
+      break;
+    case '"':
+      escaped += "\\\"";
+      break;
+    case '\n':
+      escaped += "\\n";
+      break;
+    case '\r':
+      escaped += "\\r";
+      break;
+    case '\t':
+      escaped += "\\t";
+      break;
+    default:
+      escaped += c;
+      break;
+    }
+  }
+
+  return escaped;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void WriteMinimalManifest(std::filesystem::path const &path,
+                          Options const &options, GGEMSRandom const &random,
+                          ggems::ocl::GGEMSOpenCLDevice const &device,
+                          std::uint64_t total_words, std::uint64_t value_bytes,
+                          std::string const &sha256) {
+  if (!path.parent_path().empty()) {
+    std::filesystem::create_directories(path.parent_path());
+  }
+
+  std::ofstream stream{path};
+
+  if (!stream) {
+    throw std::runtime_error(
+        std::format("Cannot open manifest file '{}'.", path.string()));
+  }
+
+  stream << "{\n";
+  stream << "  \"schema_version\": 1,\n";
+  stream << "  \"random\": {\n";
+  stream << "    \"engine\": \"" << random.GetEngineName() << "\",\n";
+  stream << "    \"seed\": " << random.GetSeed() << ",\n";
+  stream << "    \"particle_count\": " << options.particle_count << ",\n";
+  stream << "    \"words_per_particle\": " << options.words_per_particle
+         << ",\n";
+  stream << "    \"total_words\": " << total_words << ",\n";
+  stream << "    \"byte_count\": " << value_bytes << "\n";
+  stream << "  },\n";
+  stream << "  \"opencl\": {\n";
+  stream << "    \"device_selector\": \"" << JsonEscape(options.device_selector)
+         << "\",\n";
+  stream << "    \"device_name\": \"" << JsonEscape(device.GetName())
+         << "\",\n";
+  stream << "    \"device_vendor\": \"" << JsonEscape(device.GetVendor())
+         << "\",\n";
+  stream << "    \"device_version\": \"" << JsonEscape(device.GetVersion())
+         << "\",\n";
+  stream << "    \"driver_version\": \""
+         << JsonEscape(device.GetDriverVersion()) << "\",\n";
+  stream << "    \"local_size\": " << options.local_size << "\n";
+  stream << "  },\n";
+  stream << "  \"output\": {\n";
+  stream << "    \"stream_path\": \"" << options.output_path.generic_string()
+         << "\"\n";
+  stream << "  },\n";
+  stream << "  \"integrity\": {\n";
+  stream << "    \"algorithm\": \"SHA-256\",\n";
+  stream << "    \"value\": \"" << sha256 << "\"\n";
+  stream << "  }\n";
+  stream << "}\n";
+
+  if (!stream) {
+    throw std::runtime_error(
+        std::format("Failed to write manifest file '{}'.", path.string()));
   }
 }
 
@@ -297,6 +422,7 @@ void GenerateRandomStream(Options const &options) {
   }
 
   auto &context = opencl.GetContext().front();
+  auto &device = context.GetDevice();
 
   std::filesystem::path kernel_root{GGEMS_KERNEL_ROOT};
   std::filesystem::path validation_kernel_root{
@@ -342,9 +468,16 @@ void GenerateRandomStream(Options const &options) {
   values_buffer.Map(CL_MAP_READ);
   WriteUInt32Binary(options.output_path,
                     static_cast<std::uint32_t const *>(values_buffer.GetData()),
-                    static_cast<std::size_t>(total_words));
+                    static_cast<std::size_t>(total_words), options.force);
   values_buffer.Unmap();
 
+  std::string sha256{"manual"};
+
+  WriteMinimalManifest(options.manifest_path, options, random, device,
+                       total_words, value_bytes, sha256);
+
+  std::cout << "Manifest generated : " << options.manifest_path.string()
+            << '\n';
   std::cout << "Stream generated   : " << options.output_path.string() << '\n';
   std::cout << "Bytes written      : " << value_bytes << '\n';
 
