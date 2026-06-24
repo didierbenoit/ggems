@@ -81,8 +81,10 @@ protected:
   static void SetUpTestSuite() {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-    opencl.SelectDevices({"gpu"});
-    opencl.Initialise();
+    if (opencl.GetContext().empty()) {
+      opencl.SelectDevices({"gpu"});
+      opencl.Initialise();
+    }
 
     ASSERT_FALSE(opencl.GetContext().empty());
   }

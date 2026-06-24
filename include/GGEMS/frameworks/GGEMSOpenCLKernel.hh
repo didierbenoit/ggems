@@ -47,7 +47,11 @@ public:
 
   /* --------- Arguments --------------------------------*/
   template <typename T> void SetArg(cl_uint index, T const &value) {
-    kernel_.setArg(index, value);
+    cl_int err = kernel_.setArg(index, value);
+
+    GGEMS_OCL_CHECK(
+        err, std::format("Failed to set kernel argument {} for kernel '{}'",
+                         index, kernel_name_));
   }
 
   void SetArgSVMPointer(cl_uint index, void *ptr);

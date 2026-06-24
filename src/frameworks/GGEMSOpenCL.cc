@@ -224,6 +224,8 @@ void GGEMSOpenCL::Initialise() {
 /* --------------------------------------------- */
 
 void GGEMSOpenCL::CreateContexts() {
+  program_cache_.clear();
+
   contexts_.clear();
   contexts_.reserve(selected_devices_.size());
 
