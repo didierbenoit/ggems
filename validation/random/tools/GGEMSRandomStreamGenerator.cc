@@ -25,6 +25,78 @@ using ggems::core::random::GGEMSPhiloxState;
 using ggems::core::random::GGEMSRandom;
 using ggems::core::random::GGEMSRandomEngine;
 
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+enum class StreamType { RawUInt32, FloatHigh24Bytes };
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+std::string ToString(StreamType stream_type) {
+  switch (stream_type) {
+  case StreamType::RawUInt32:
+    return "raw_uint32";
+  case StreamType::FloatHigh24Bytes:
+    return "float_high24_bytes";
+  }
+
+  throw std::runtime_error("Unsupported stream type.");
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+std::string ToPractRandInputMode(StreamType stream_type) {
+  switch (stream_type) {
+  case StreamType::RawUInt32:
+    return "stdin32";
+  case StreamType::FloatHigh24Bytes:
+    return "stdin8";
+  }
+
+  throw std::runtime_error("Unsupported stream type.");
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+StreamType ParseStreamType(std::string_view value) {
+  if (value == "raw_uint32") {
+    return StreamType::RawUInt32;
+  }
+
+  if (value == "float_high24_bytes") {
+    return StreamType::FloatHigh24Bytes;
+  }
+
+  throw std::runtime_error(std::format("Unsupported stream type '{}'.", value));
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+std::uint64_t GetOutputByteCount(StreamType stream_type,
+                                 std::uint64_t total_words) {
+  switch (stream_type) {
+  case StreamType::RawUInt32:
+    return total_words * 4ULL;
+  case StreamType::FloatHigh24Bytes:
+    return total_words * 3ULL;
+  }
+
+  throw std::runtime_error("Unsupported stream type.");
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 struct Options {
   std::string engine{"philox"};
   std::uint64_t seed{77777ULL};
@@ -33,6 +105,7 @@ struct Options {
   std::size_t local_size{64U};
   std::string device_selector{"cpu"};
   bool force{false};
+  StreamType stream_type{StreamType::RawUInt32};
 
   std::filesystem::path output_path{
       std::filesystem::path{GGEMS_VALIDATION_RANDOM_STREAM_ROOT} /
@@ -59,6 +132,7 @@ void PrintUsage(char const *executable_name) {
             << "  --device <gpu|cpu|all|vendor token>\n"
             << "  --output <path>\n"
             << "  --manifest <path>\n"
+            << "  --stream-type <raw_uint32|float_high24_bytes>\n"
             << "  --force\n"
             << "  --help\n";
 }
@@ -114,6 +188,9 @@ Options ParseArguments(int argc, char **argv) {
       options.manifest_path = ReadArgumentValue(i, argc, argv, arg);
     } else if (arg == "--force") {
       options.force = true;
+    } else if (arg == "--stream-type") {
+      options.stream_type =
+          ParseStreamType(ReadArgumentValue(i, argc, argv, arg));
     } else {
       throw std::runtime_error(std::format("Unknown argument '{}'.", arg));
     }
@@ -290,6 +367,70 @@ void WriteUInt32Binary(std::filesystem::path const &path,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+void WriteFloatHigh24Bytes(std::filesystem::path const &path,
+                           std::uint32_t const *values, std::size_t value_count,
+                           bool force) {
+  EnsureOutputCanBeWritten(path, force, "Stream");
+
+  std::ofstream stream{path, std::ios::binary};
+
+  if (!stream) {
+    throw std::runtime_error(
+        std::format("Cannot open output stream '{}'.", path.string()));
+  }
+
+  constexpr std::size_t k_chunk_value_count = 1U << 20U;
+
+  std::vector<char> buffer;
+  buffer.resize(k_chunk_value_count * 3U);
+
+  for (std::size_t offset = 0U; offset < value_count;
+       offset += k_chunk_value_count) {
+    std::size_t current_count =
+        std::min(k_chunk_value_count, value_count - offset);
+
+    for (std::size_t i = 0U; i < current_count; ++i) {
+      std::uint32_t useful_bits = values[offset + i] >> 8U;
+
+      buffer[3U * i + 0U] = static_cast<char>(useful_bits & 0xFFU);
+      buffer[3U * i + 1U] = static_cast<char>((useful_bits >> 8U) & 0xFFU);
+      buffer[3U * i + 2U] = static_cast<char>((useful_bits >> 16U) & 0xFFU);
+    }
+
+    stream.write(buffer.data(),
+                 static_cast<std::streamsize>(current_count * 3U));
+
+    if (!stream) {
+      throw std::runtime_error(
+          std::format("Failed to write output stream '{}'.", path.string()));
+    }
+  }
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void WriteRandomStream(std::filesystem::path const &path,
+                       StreamType stream_type, std::uint32_t const *values,
+                       std::size_t value_count, bool force) {
+  switch (stream_type) {
+  case StreamType::RawUInt32:
+    WriteUInt32Binary(path, values, value_count, force);
+    return;
+
+  case StreamType::FloatHigh24Bytes:
+    WriteFloatHigh24Bytes(path, values, value_count, force);
+    return;
+  }
+
+  throw std::runtime_error("Unsupported stream type");
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 std::string JsonEscape(std::string_view text) {
   std::string escaped;
   escaped.reserve(text.size());
@@ -327,7 +468,7 @@ std::string JsonEscape(std::string_view text) {
 void WriteMinimalManifest(std::filesystem::path const &path,
                           Options const &options, GGEMSRandom const &random,
                           ggems::ocl::GGEMSOpenCLDevice const &device,
-                          std::uint64_t total_words, std::uint64_t value_bytes,
+                          std::uint64_t total_words, std::uint64_t output_bytes,
                           std::string const &sha256) {
   if (!path.parent_path().empty()) {
     std::filesystem::create_directories(path.parent_path());
@@ -349,7 +490,11 @@ void WriteMinimalManifest(std::filesystem::path const &path,
   stream << "    \"words_per_particle\": " << options.words_per_particle
          << ",\n";
   stream << "    \"total_words\": " << total_words << ",\n";
-  stream << "    \"byte_count\": " << value_bytes << "\n";
+  stream << "    \"byte_count\": " << output_bytes << ",\n";
+  stream << "    \"stream_type\": \"" << ToString(options.stream_type)
+         << "\",\n";
+  stream << "    \"practrand_input_mode\": \""
+         << ToPractRandInputMode(options.stream_type) << "\"\n";
   stream << "  },\n";
   stream << "  \"opencl\": {\n";
   stream << "    \"device_selector\": \"" << JsonEscape(options.device_selector)
@@ -402,8 +547,11 @@ void GenerateRandomStream(Options const &options) {
       static_cast<std::uint64_t>(options.particle_count) *
       static_cast<std::uint64_t>(random.GetStateSize());
 
-  std::uint64_t value_bytes =
+  std::uint64_t value_buffer_bytes =
       total_words * static_cast<std::uint64_t>(sizeof(std::uint32_t));
+
+  std::uint64_t output_bytes =
+      GetOutputByteCount(options.stream_type, total_words);
 
   std::cout << "GGEMS random stream generator\n";
   std::cout << "Engine             : " << random.GetEngineName() << '\n';
@@ -443,7 +591,7 @@ void GenerateRandomStream(Options const &options) {
   auto states_buffer =
       context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
   auto values_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_buffer_bytes});
 
   states_buffer.Map(CL_MAP_WRITE);
   InitialiseRandomStates(states_buffer.GetData(), random.GetEngine(),
@@ -466,20 +614,22 @@ void GenerateRandomStream(Options const &options) {
   kernel.Run({global_size}, {options.local_size});
 
   values_buffer.Map(CL_MAP_READ);
-  WriteUInt32Binary(options.output_path,
+
+  WriteRandomStream(options.output_path, options.stream_type,
                     static_cast<std::uint32_t const *>(values_buffer.GetData()),
                     static_cast<std::size_t>(total_words), options.force);
+
   values_buffer.Unmap();
 
   std::string sha256{"manual"};
 
   WriteMinimalManifest(options.manifest_path, options, random, device,
-                       total_words, value_bytes, sha256);
+                       total_words, output_bytes, sha256);
 
   std::cout << "Manifest generated : " << options.manifest_path.string()
             << '\n';
   std::cout << "Stream generated   : " << options.output_path.string() << '\n';
-  std::cout << "Bytes written      : " << value_bytes << '\n';
+  std::cout << "Bytes written      : " << output_bytes << '\n';
 
   opencl.Clean();
 }

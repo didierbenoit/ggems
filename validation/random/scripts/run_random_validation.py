@@ -76,6 +76,7 @@ def RunRandomValidation(
     seed = str(random_config["seed"])
     particle_count = str(random_config["particle_count"])
     words_per_particle = str(random_config["words_per_particle"])
+    stream_type = str(random_config["stream_type"])
     local_size = str(GetConfigValue(config, ["opencl", "local_size"], 64))
     device_selector = str(opencl_config["device_selector"])
 
@@ -125,6 +126,8 @@ def RunRandomValidation(
         local_size,
         "--device",
         device_selector,
+        "--stream-type",
+        stream_type,
         "--output",
         stream_path.as_posix(),
         "--manifest",

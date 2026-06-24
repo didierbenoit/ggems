@@ -47,7 +47,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
 
   add_compile_options(
     -O3 -march=native
-    -ffast-math -qopt-zmm-usage=high
+    -qopt-zmm-usage=high
     -finline-functions
     -fstrict-aliasing
   )

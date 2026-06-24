@@ -88,7 +88,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
 
   add_compile_options(
     -O3 -march=native
-    -ffast-math
     -finline-functions
     -fstrict-aliasing
   )

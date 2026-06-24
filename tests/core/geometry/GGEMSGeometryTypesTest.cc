@@ -1,4 +1,5 @@
 #include <optional>
+#include <limits>
 
 #include <gtest/gtest.h>
 
@@ -77,8 +78,10 @@ TEST(GGEMSGeometryTypes, DirectionRejectsZeroVector) {
 /* --------------------------------------------- */
 
 TEST(GGEMSGeometryTypes, DirectionRejectsNonFiniteValues) {
+  float infinity = std::numeric_limits<float>::infinity();
+
   std::optional<ggems::geometry::Direction3> const direction =
-      ggems::geometry::TryMakeDirection3(1.0F, INFINITY, 0.0F);
+      ggems::geometry::TryMakeDirection3(1.0F, infinity, 0.0F);
 
   EXPECT_FALSE(direction.has_value());
 }

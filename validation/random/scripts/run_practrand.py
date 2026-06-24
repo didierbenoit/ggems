@@ -166,6 +166,23 @@ def ParsePractRandLog(output: str) -> dict[str, Any]:
     }
 
 ################
+def GetPractRandInputMode(manifest: dict[str, Any]) -> str:
+    random_section = manifest.get("random", {})
+
+    if "practrand_input_mode" in random_section:
+        return str(random_section["practrand_input_mode"])
+
+    stream_type = str(random_section.get("stream_type", "raw_uint32"))
+
+    if stream_type == "raw_uint32":
+        return "stdin32"
+
+    if stream_type == "float_high24_bytes":
+        return "stdin8"
+
+    raise ValueError(f"Unsupported random stream type: {stream_type}")
+
+################
 def RunPractRand(
     manifest_path: Path,
     rng_test: str,
@@ -204,9 +221,11 @@ def RunPractRand(
 
     rng_test_path = ResolveExecutable(rng_test)
 
+    input_mode = GetPractRandInputMode(manifest)
+
     command = [
-        rng_test_path,
-        "stdin32",
+        str(rng_test_path),
+        input_mode,
         "-tlmax",
         max_size,
     ]
@@ -242,6 +261,7 @@ def RunPractRand(
             "return_code": completed.returncode,
             "max_size": max_size,
             "requested_max_bytes": requested_max_bytes,
+            "input_mode": input_mode,
         },
         "input": {
             "manifest_path": str(manifest_path),
