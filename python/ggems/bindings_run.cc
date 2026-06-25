@@ -14,5 +14,11 @@ void BindRun(py::module_ &m) {
 
       .def("initialise", &ggems::core::GGEMSRun::Initialise)
 
-      .def("set_random", &ggems::core::GGEMSRun::SetRandom, py::arg("random"));
+      .def("set_random", &ggems::core::GGEMSRun::SetRandom, py::arg("random"))
+
+      .def("set_primary_count", &ggems::core::GGEMSRun::SetPrimaryCount,
+           py::arg("primary_count"))
+
+      .def("set_worker_count", &ggems::core::GGEMSRun::SetWorkerCount,
+           py::arg("worker_count"));
 }

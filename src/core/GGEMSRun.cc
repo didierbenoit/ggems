@@ -1,16 +1,8 @@
 #include "GGEMS/core/GGEMSRun.hh"
+
 #include "GGEMS/core/GGEMSMacros.hh"
-#include "GGEMS/frameworks/GGEMSOpenCL.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
-
-#include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
-#include "GGEMS/render/GGEMSTerminalRenderer.hh"
-#include "GGEMS/render/GGEMSBanner.hh"
-#include "GGEMS/render/GGEMSProgressBar.hh"
-#include "GGEMS/core/GGEMSOutputMode.hh"
-
 #include "GGEMS/core/random/GGEMSRandom.hh"
-#include "GGEMS/core/units/GGEMSUnits.hh"
+#include "GGEMS/frameworks/GGEMSOpenCL.hh"
 
 using namespace ggems::units;
 
@@ -26,29 +18,12 @@ GGEMSRun::GGEMSRun() { GGEMS_INFOEX("Core", 3, "GGEMSRun instance created."); }
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-GGEMSRun::~GGEMSRun() { ; }
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-void GGEMSRun::Initialise() {
-  GGEMS_CHECK_RECOVERABLE(
-      random_ != nullptr,
-      "GGEMSRun cannot be Initialised without a GGEMSRandom. "
-      "Create a ggems.rndm.GGEMSRandom object and attach it with "
-      "GGEMSRun::SetRandom before calling Initialise.");
-
-  GGEMS_INFO("Core", "GGEMSRun initialised.");
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
 void GGEMSRun::SetRandom(std::shared_ptr<random::GGEMSRandom> random) {
   GGEMS_CHECK_RECOVERABLE(random != nullptr,
                           "Cannot attach a null GGEMSRandom to GGEMSRun.");
+
+  GGEMS_CHECK_RECOVERABLE(!initialised_,
+                          "Cannot change GGEMSRandom after Initialise.");
 
   random_ = std::move(random);
 
@@ -60,8 +35,93 @@ void GGEMSRun::SetRandom(std::shared_ptr<random::GGEMSRandom> random) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+void GGEMSRun::SetPrimaryCount(std::uint64_t primary_count) {
+  GGEMS_CHECK_RECOVERABLE(!initialised_,
+                          "Cannot change primary count after Initialise.");
+
+  primary_stream_.SetPrimaryCount(primary_count);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSRun::SetWorkerCount(std::uint64_t worker_count) {
+  GGEMS_CHECK_RECOVERABLE(worker_count > 0ULL,
+                          "GGEMSRun worker count must be non-zero.");
+
+  GGEMS_CHECK_RECOVERABLE(!initialised_,
+                          "Cannot change worker count after Initialise.");
+
+  worker_count_ = worker_count;
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+void GGEMSRun::Initialise() {
+  GGEMS_CHECK_RECOVERABLE(
+      random_ != nullptr,
+      "GGEMSRun cannot be initialised without a GGEMSRandom. "
+      "Create a ggems.rndm GGEMSRandom object and attach it with "
+      "GGEMSRun::SetRandom before calling Initialise.");
+
+  auto &opencl = ocl::GGEMSOpenCL::GetInstance();
+
+  GGEMS_CHECK_RECOVERABLE(!opencl.GetContext().empty(),
+                          "GGEMSRun requires initialised OpenCL contexts.");
+
+  GGEMS_INFO("Core", "Initialising GGEMSRun stable state...");
+
+  GGEMS_INFO("Random", "Random engine ready: {} with seed {}.",
+             random_->GetEngineName(), random_->GetSeed());
+
+  primary_stream_.Initialise();
+
+  next_run_id_ = 0ULL;
+  initialised_ = true;
+
+  GGEMS_INFO("Core", "GGEMSRun Initialised.");
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 void GGEMSRun::Run() {
-  GGEMS_INFO("Core", "GGEMS starting...");
+  GGEMS_CHECK_RECOVERABLE(initialised_,
+                          "GGEMSRun::Run called before Initialise.");
+
+  GGEMS_CHECK_RECOVERABLE(!running_.exchange(true),
+                          "GGEMSRun is already running.");
+
+  std::uint64_t run_id = next_run_id_++;
+  auto primary_view = primary_stream_.PrepareRun(run_id);
+
+  GGEMS_INFO("Core", "GGEMSRun projection {} started.", run_id);
+
+  GGEMS_INFOEX("Core", 1,
+               "Projection {} primary stream: {} primaries, global history "
+               "offset {}.",
+               run_id, primary_view.source_primary_count,
+               primary_view.global_history_offset);
+
+  GGEMS_INFOEX("Core", 1, "Projection {} worker count: {}.", run_id,
+               worker_count_);
+
+  // Future step:
+  // - reset transport counters
+  // - reset next_primary_id
+  // - update projection transforms
+  // - launch Aionino stream transport kernel
+  // - collect counters and outputs
+
+  GGEMS_INFO("Core", "GGEMSRun projection {} completed.", run_id);
+
+  running_.store(false);
+
+  /*GGEMS_INFO("Core", "GGEMS starting...");
 
   Angle a = 90.0_deg;
   Angle b = 1.5707963267948966_rad;
@@ -186,7 +246,7 @@ void GGEMSRun::Run() {
   workers_.clear();
 
   GGEMS_INFO("Core", "GGEMS run completed.");
-
+*/
   /*  auto &opencl = ocl::GGEMSOpenCL::GetInstance();
     auto &contexts = opencl.GetContext();
 
