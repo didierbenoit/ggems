@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "GGEMS/core/particles/GGEMSPrimaryStream.hh"
+#include "GGEMS/core/transport/GGEMSDummyTransportWorkload.hh"
 
 namespace ggems::core::random {
 class GGEMSRandom;
@@ -27,8 +28,8 @@ public:
   void Run();
 
   void SetRandom(std::shared_ptr<random::GGEMSRandom> random);
-  void SetPrimaryCount(std::uint64_t primary_count);
-  void SetWorkerCount(std::uint64_t worker_count);
+  void SetPrimaryCount(std::uint32_t primary_count);
+  void SetWorkerCount(std::uint32_t worker_count);
 
 private:
   std::vector<std::thread> workers_;
@@ -40,6 +41,11 @@ private:
 
   bool initialised_{false};
   std::uint64_t next_run_id_{0ULL};
-  std::uint64_t worker_count_{256ULL};
+
+  std::unique_ptr<transport::GGEMSDummyTransportWorkload> dummy_transport_{
+      nullptr};
+
+  std::uint32_t primary_count_{4096U};
+  std::uint32_t worker_count_{256U};
 };
 } // namespace ggems::core

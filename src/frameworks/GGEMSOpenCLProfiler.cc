@@ -1,236 +1,186 @@
-#include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+#include <limits>
 
-using namespace ggems::units;
+#include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
+
+#include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/GGEMSMacros.hh"
 
 namespace ggems::ocl {
 
-GGEMSKernelStaticInfo ExtractKernelStaticInfo(GGEMSOpenCLKernel const &kernel) {
-  GGEMSKernelStaticInfo info;
-  GGEMSOpenCLContext const &context = kernel.GetContext();
-  GGEMSOpenCLDevice const &device = context.GetDevice();
-
-  info.kernel_name = kernel.GetKernelName();
-  info.function_name = kernel.GetFunctionName();
-  info.device_name = device.GetName();
-
-  // --- Work group -----------------------------------------------------
-  GGEMSKernelWorkGroupStaticInfo wg{};
-  bool has_any = false;
-
-  wg.max_work_group_size = kernel.GetWorkGroupSize();
-  has_any = has_any || (wg.max_work_group_size != 0);
-
-  wg.compile_work_group_size = kernel.GetCompileWorkGroupSize();
-  has_any = has_any ||
-            (wg.compile_work_group_size[0] || wg.compile_work_group_size[1] ||
-             wg.compile_work_group_size[2]);
-
-  wg.preferred_work_group_size_multiple =
-      kernel.GetPreferredWorkGroupSizeMultiple();
-  has_any = has_any || (wg.preferred_work_group_size_multiple != 0);
-
-  wg.local_mem_size = kernel.GetLocalMemSize() * 1_B;
-  has_any = has_any || (wg.local_mem_size != 0_B);
-
-  wg.private_mem_size = kernel.GetPrivateMemSize() * 1_B;
-  has_any = has_any || (wg.private_mem_size != 0_B);
-
-  wg.has_any_info = has_any;
-
-  info.work_group = wg;
-
-  // --- Args -------------------------------------------------------
-  cl_uint num_args = kernel.GetNumArgs();
-  info.args.reserve(num_args);
-
-  for (cl_uint i = 0; i < num_args; ++i) {
-    GGEMSKernelArgInfo a;
-    a.index = i;
-    bool ok = true;
-
-    try {
-      a.name = kernel.GetArgName(i);
-    } catch (core::GGEMSRecoverable &e) {
-      GGEMS_WARN("OpenCL", "{}", e.what());
-      ok = false;
-    }
-
-    try {
-      a.type_name = kernel.GetArgTypeName(i);
-    } catch (core::GGEMSRecoverable &e) {
-      GGEMS_WARN("OpenCL", "{}", e.what());
-      ok = false;
-    }
-
-    try {
-      a.type_qualifier = kernel.GetArgTypeQualifier(i);
-    } catch (core::GGEMSRecoverable &e) {
-      GGEMS_WARN("OpenCL", "{}", e.what());
-      ok = false;
-    }
-
-    try {
-      a.address_qualifier = kernel.GetArgAddressQualifier(i);
-    } catch (core::GGEMSRecoverable &e) {
-      GGEMS_WARN("OpenCL", "{}", e.what());
-      ok = false;
-    }
-
-    try {
-      a.access_qualifier = kernel.GetArgAccessQualifier(i);
-    } catch (core::GGEMSRecoverable &e) {
-      GGEMS_WARN("OpenCL", "{}", e.what());
-      ok = false;
-    }
-
-    a.has_full_metadata = ok;
-    info.args.push_back(std::move(a));
+namespace {
+ggems::units::Time MakeTimeFromSeconds(long double seconds) noexcept {
+  if (seconds <= 0.0L) {
+    return ggems::units::Time{0U};
   }
 
-  return info;
+  long double picoseconds = seconds * 1.0e12L;
+
+  if (picoseconds >=
+      static_cast<long double>(std::numeric_limits<std::uint64_t>::max())) {
+    return ggems::units::Time{std::numeric_limits<std::uint64_t>::max()};
+  }
+
+  return ggems::units::Time{static_cast<std::uint64_t>(picoseconds + 0.5L)};
 }
 
-/* -------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 
-void GGEMSOpenCLProfiler::ProfileKernel(GGEMSOpenCLKernel &kernel,
-                                        Options const &opts) {
-  rep_.static_info = ExtractKernelStaticInfo(kernel);
-
-  GGEMSKernelDynamicStats dyn{};
-
-  // 1) Work-group sweep
-  if (opts.enable_workgroup_sweep && !opts.sizes.empty()) {
-    std::size_t const n = opts.sizes.back();
-    Bytes const bytes = n * opts.bytes_per_item;
-
-    dyn.workgroup_sweep = kernel.ProfileWorkGroups(n, bytes);
-
-    Bandwidth best_bw{0LL};
-    std::size_t best_wg = 0;
-
-    for (auto const &st : dyn.workgroup_sweep) {
-      if (st.bandwidth > best_bw) {
-        best_bw = st.bandwidth;
-        best_wg = st.local_work_size;
-      }
-    }
-
-    dyn.best_workgroup_size = best_wg;
-    dyn.best_workgroup_bandwidth = best_bw;
+ggems::units::Time MakeTimeFromNanoseconds(cl_ulong nanoseconds) noexcept {
+  if (nanoseconds >= std::numeric_limits<std::uint64_t>::max() / 1000ULL) {
+    return ggems::units::Time{std::numeric_limits<std::uint64_t>::max()};
   }
 
-  // 2) Work item sweep
-  if (opts.enable_workitem_sweep && !opts.sizes.empty()) {
-    dyn.workitem_sweep = kernel.ProfileWorkItems(
-        opts.sizes, dyn.best_workgroup_size, opts.bytes_per_item);
-
-    Bandwidth best_bw{0LL};
-    std::size_t best_wi = 0;
-
-    for (auto const &st : dyn.workitem_sweep) {
-      if (st.bandwidth > best_bw) {
-        best_bw = st.bandwidth;
-        best_wi = st.global_work_items;
-      }
-    }
-
-    dyn.best_workitem_size = best_wi;
-    dyn.best_workitem_bandwidth = best_bw;
-  }
-
-  // 3) Bandwidth sweep
-  if (opts.enable_bandwidth_sweep && !opts.sizes.empty()) {
-    dyn.bandwidth_sweep =
-        kernel.ProfileBandwidthSweep(opts.sizes, opts.bytes_per_item);
-
-    Bandwidth max_bw{0LL};
-    for (auto const &st : dyn.bandwidth_sweep) {
-      if (st.bandwidth > max_bw) {
-        max_bw = st.bandwidth;
-      }
-    }
-    dyn.max_bandwidth = max_bw;
-  }
-
-  // 4) Driver overhead
-  if (opts.enable_driver_overhead) {
-    dyn.driver_overhead = kernel.ProfileDriverOverhead();
-  }
-
-  rep_.dynamic_stats = std::move(dyn);
+  return ggems::units::Time{static_cast<std::uint64_t>(nanoseconds) * 1000ULL};
 }
 
-/* -------------------------------------------------------------- */
+} // namespace
 
-void GGEMSOpenCLProfiler::PrintStaticInfo() const {
-  GGEMS_INFO("OpenCL", "Kernel static infos:");
-  GGEMS_INFO("OpenCL", "====================");
-  GGEMS_INFO("OpenCL", "* Kernel: {}", rep_.static_info.kernel_name);
-  GGEMS_INFO("OpenCL", "* Function: {}", rep_.static_info.function_name);
-  GGEMS_INFO("OpenCL", "* Device: {}", rep_.static_info.device_name);
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 
-  if (rep_.static_info.work_group.has_any_info) {
-    GGEMS_INFO("OpenCL", "    Work group infos:");
-    GGEMS_INFO("OpenCL", "    -----------------");
-    GGEMS_INFO("OpenCL", "        * Max work group size: {}",
-               rep_.static_info.work_group.max_work_group_size);
-    GGEMS_INFO("OpenCL", "        * Compile work group size: {} {} {}",
-               rep_.static_info.work_group.compile_work_group_size[0],
-               rep_.static_info.work_group.compile_work_group_size[1],
-               rep_.static_info.work_group.compile_work_group_size[2]);
-    GGEMS_INFO("OpenCL", "        * Preferred_work_group_size_multiple: {}",
-               rep_.static_info.work_group.preferred_work_group_size_multiple);
-    GGEMS_INFO("OpenCL", "        * Local_mem_size: {}",
-               HumanReadable(rep_.static_info.work_group.local_mem_size));
-    GGEMS_INFO("OpenCL", "        * Private_mem_size: {}",
-               HumanReadable(rep_.static_info.work_group.private_mem_size));
-  } else {
-    GGEMS_WARN("OpenCL", "Work group infos not available.");
-  }
-
-  GGEMS_INFO("OpenCL", "    Argument infos:");
-  for (auto const &i : rep_.static_info.args) {
-    if (i.has_full_metadata) {
-      GGEMS_INFO("OpenCL", "      +++++++++++");
-      GGEMS_INFO("OpenCL", "        * Name: {}", i.name);
-      GGEMS_INFO("OpenCL", "        * Type: {}", i.type_name);
-      GGEMS_INFO("OpenCL", "        * Type qualifier: {}", i.type_qualifier);
-      GGEMS_INFO("OpenCL", "        * Address qualifier: {}",
-                 i.address_qualifier);
-      GGEMS_INFO("OpenCL", "        * Access qualifier: {}",
-                 i.access_qualifier);
-    }
-  }
+void GGEMSOpenCLProfiler::Reset() noexcept {
+  start_ = Clock::time_point{};
+  stop_ = Clock::time_point{};
+  running_ = false;
+  has_measurement_ = false;
+  kernel_timing_ = GGEMSOpenCLKernelTiming{};
 }
 
-/* -------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 
-void GGEMSOpenCLProfiler::PrintDynamicInfo() const {
-  GGEMS_INFO("OpenCL", "Kernel dynamic infos:");
-  GGEMS_INFO("OpenCL", "=====================");
-  GGEMS_INFO("OpenCL", "* Kernel: {}", rep_.static_info.kernel_name);
-  GGEMS_INFO("OpenCL", "* Function: {}", rep_.static_info.function_name);
-  GGEMS_INFO("OpenCL", "* Device: {}", rep_.static_info.device_name);
-  GGEMS_INFO("OpenCL", "* Best workitem size: {}",
-             rep_.dynamic_stats.best_workitem_size);
-  GGEMS_INFO("OpenCL", "* Best workitem bandwidth: {}",
-             HumanReadable(rep_.dynamic_stats.best_workitem_bandwidth));
-  GGEMS_INFO("OpenCL", "* Best workgroup size: {}",
-             rep_.dynamic_stats.best_workgroup_size);
-  GGEMS_INFO("OpenCL", "* Best workgroup bandwidth: {}",
-             HumanReadable(rep_.dynamic_stats.best_workgroup_bandwidth));
-  GGEMS_INFO("OpenCL", "* Max Bandwidth: {}",
-             HumanReadable(rep_.dynamic_stats.max_bandwidth));
-  GGEMS_INFO("OpenCL", "* Driver overhead: {}",
-             HumanReadable(rep_.dynamic_stats.driver_overhead));
+void GGEMSOpenCLProfiler::Start() noexcept {
+  start_ = Clock::now();
+  stop_ = Clock::time_point{};
+  running_ = true;
+  has_measurement_ = false;
+  kernel_timing_ = GGEMSOpenCLKernelTiming{};
 }
 
-/* -------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 
-void GGEMSOpenCLProfiler::PrintAllInfo() const {
-  PrintStaticInfo();
-  PrintDynamicInfo();
+void GGEMSOpenCLProfiler::Stop() noexcept {
+  stop_ = Clock::now();
+  running_ = false;
+  has_measurement_ = true;
+}
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+void GGEMSOpenCLProfiler::RecordKernelEvent(cl::Event const &event) {
+  cl_ulong queued = event.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>();
+  cl_ulong submit = event.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>();
+  cl_ulong start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+  cl_ulong end = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+
+  GGEMS_CHECK_RECOVERABLE(queued <= submit && submit <= start && start <= end,
+                          "Invalid OpenCL profiling timestamps ordering.");
+
+  kernel_timing_.time_queued = MakeTimeFromNanoseconds(queued);
+  kernel_timing_.time_submit = MakeTimeFromNanoseconds(submit);
+  kernel_timing_.time_start = MakeTimeFromNanoseconds(start);
+  kernel_timing_.time_end = MakeTimeFromNanoseconds(end);
+
+  kernel_timing_.command_time = MakeTimeFromNanoseconds(end - queued);
+  kernel_timing_.kernel_time = MakeTimeFromNanoseconds(end - start);
+
+  kernel_timing_.valid = true;
+}
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+long double GGEMSOpenCLProfiler::GetElapsedSecondsRaw() const noexcept {
+  if (!has_measurement_) {
+    return 0.0L;
+  }
+
+  auto elapsed = std::chrono::duration<long double>(stop_ - start_);
+
+  return elapsed.count();
+}
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+ggems::units::Time GGEMSOpenCLProfiler::GetElapsedTime() const noexcept {
+  return MakeTimeFromSeconds(GetElapsedSecondsRaw());
+}
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+ggems::units::Time GGEMSOpenCLProfiler::GetKernelTime() const noexcept {
+  return kernel_timing_.kernel_time;
+}
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+ggems::units::Time GGEMSOpenCLProfiler::GetCommandTime() const noexcept {
+  return kernel_timing_.command_time;
+}
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+double GGEMSOpenCLProfiler::GetElapsedSeconds() const noexcept {
+  return static_cast<double>(GetElapsedSecondsRaw());
+}
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+double GGEMSOpenCLProfiler::GetKernelSeconds() const noexcept {
+  if (!kernel_timing_.valid) {
+    return 0.0;
+  }
+
+  return static_cast<double>(kernel_timing_.kernel_time.value) * 1.0e-12;
+}
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+double GGEMSOpenCLProfiler::ComputeRatePerSecond(
+    std::uint64_t item_count) const noexcept {
+  double elapsed_seconds = GetElapsedSeconds();
+
+  if (elapsed_seconds <= 0.0) {
+    return 0.0;
+  }
+
+  return static_cast<double>(item_count) / elapsed_seconds;
+}
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+double GGEMSOpenCLProfiler::ComputeKernelRatePerSecond(
+    std::uint64_t item_count) const noexcept {
+  double const kernel_seconds = GetKernelSeconds();
+
+  if (kernel_seconds <= 0.0) {
+    return 0.0;
+  }
+
+  return static_cast<double>(item_count) / kernel_seconds;
 }
 
 } // namespace ggems::ocl

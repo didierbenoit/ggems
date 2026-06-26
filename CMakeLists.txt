@@ -105,10 +105,17 @@ file(GLOB_RECURSE GGEMS_CORE_SOURCES
 )
 
 add_library(ggems_core STATIC ${GGEMS_CORE_SOURCES})
+
 target_include_directories(ggems_core PUBLIC
   ${PROJECT_SOURCE_DIR}/include
   ${OPENCL_HPP_INCLUDE_DIR})
+
 target_link_libraries(ggems_core PUBLIC OpenCL::OpenCL)
+
+target_compile_definitions(ggems_core
+  PRIVATE
+  GGEMS_KERNEL_ROOT="${PROJECT_SOURCE_DIR}/kernels"
+)
 
 if(UNIX AND NOT APPLE)
   target_link_libraries(ggems_core PRIVATE atomic)

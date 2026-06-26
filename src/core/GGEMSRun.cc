@@ -1,5 +1,7 @@
-#include "GGEMS/core/GGEMSRun.hh"
+#include <filesystem>
+#include <memory>
 
+#include "GGEMS/core/GGEMSRun.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
@@ -35,7 +37,7 @@ void GGEMSRun::SetRandom(std::shared_ptr<random::GGEMSRandom> random) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSRun::SetPrimaryCount(std::uint64_t primary_count) {
+void GGEMSRun::SetPrimaryCount(std::uint32_t primary_count) {
   GGEMS_CHECK_RECOVERABLE(!initialised_,
                           "Cannot change primary count after Initialise.");
 
@@ -46,7 +48,7 @@ void GGEMSRun::SetPrimaryCount(std::uint64_t primary_count) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSRun::SetWorkerCount(std::uint64_t worker_count) {
+void GGEMSRun::SetWorkerCount(std::uint32_t worker_count) {
   GGEMS_CHECK_RECOVERABLE(worker_count > 0ULL,
                           "GGEMSRun worker count must be non-zero.");
 
@@ -79,6 +81,10 @@ void GGEMSRun::Initialise() {
 
   primary_stream_.Initialise();
 
+  std::filesystem::path kernel_root{GGEMS_KERNEL_ROOT};
+  dummy_transport_ = std::make_unique<transport::GGEMSDummyTransportWorkload>(
+      opencl.GetContext().front(), kernel_root, *random_, worker_count_);
+
   next_run_id_ = 0ULL;
   initialised_ = true;
 
@@ -110,12 +116,21 @@ void GGEMSRun::Run() {
   GGEMS_INFOEX("Core", 1, "Projection {} worker count: {}.", run_id,
                worker_count_);
 
-  // Future step:
-  // - reset transport counters
-  // - reset next_primary_id
-  // - update projection transforms
-  // - launch Aionino stream transport kernel
-  // - collect counters and outputs
+  transport::GGEMSDummyTransportRunConfig config{};
+  config.total_primary_count = primary_count_;
+
+  dummy_transport_->Run(config);
+
+  auto counters = dummy_transport_->ReadCountersOnHost();
+
+  GGEMS_INFO("Core",
+             "Projection {} transport report: primaries={}, histories={}, "
+             "secondaries={}, terminal_particles={}, fake_steps={}, "
+             "max_stack_depth={}, overflow={}.",
+             run_id, counters.consumed_primary_count,
+             counters.completed_history_count, counters.created_secondary_count,
+             counters.terminal_particle_count, counters.total_fake_step_count,
+             counters.max_stack_depth, counters.overflow_count);
 
   GGEMS_INFO("Core", "GGEMSRun projection {} completed.", run_id);
 

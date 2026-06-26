@@ -1,21 +1,10 @@
 #include "core/particles/GGEMSParticleState.clh"
+#include "core/transport/GGEMSTransportCounters.clh"
 #include "core/random/GGEMSRandom.clh"
 
 #ifndef GGEMS_DUMMY_LOCAL_STACK_CAPACITY
 #define GGEMS_DUMMY_LOCAL_STACK_CAPACITY 16U
 #endif
-
-#define GGEMS_DUMMY_COUNTER_NEXT_PRIMARY 0U
-#define GGEMS_DUMMY_COUNTER_CONSUMED_PRIMARY 1U
-#define GGEMS_DUMMY_COUNTER_COMPLETED_HISTORIES 2U
-#define GGEMS_DUMMY_COUNTER_TERMINAL_PARTICLES 3U
-#define GGEMS_DUMMY_COUNTER_CREATED_SECONDARIES 4U
-#define GGEMS_DUMMY_COUNTER_AIONINO_TO_GAMMA 5U
-#define GGEMS_DUMMY_COUNTER_GAMMA_TO_ELECTRON 6U
-#define GGEMS_DUMMY_COUNTER_ELECTRON_TO_ELECTRON 7U
-#define GGEMS_DUMMY_COUNTER_OVERFLOW 8U
-#define GGEMS_DUMMY_COUNTER_MAX_STACK_DEPTH 9U
-#define GGEMS_DUMMY_COUNTER_TOTAL_FAKE_STEPS 10U
 
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
@@ -120,9 +109,9 @@ static inline void GGEMS_DummyKillIfFinished(__private GGEMSParticleState *p,
 __kernel void particle_dummy_stream_branching_transport(
     __global GGEMSRandomState *random_states,
     __global GGEMSParticleState *worker_final_states,
-    volatile __global uint *counters, uint total_primary_count,
-    ulong initial_energy_milli_eV, ulong min_energy_milli_eV,
-    uint max_generation, uint max_steps_per_track) {
+    volatile __global GGEMSTransportCounters *counters,
+    uint total_primary_count, ulong initial_energy_milli_eV,
+    ulong min_energy_milli_eV, uint max_generation, uint max_steps_per_track) {
   uint worker_id = (uint)(get_global_id(0));
 
   GGEMSParticleState stack[GGEMS_DUMMY_LOCAL_STACK_CAPACITY];
@@ -134,8 +123,7 @@ __kernel void particle_dummy_stream_branching_transport(
   last_state.status = GGEMS_PARTICLE_STATUS_INACTIVE;
 
   while (1) {
-    uint primary_id =
-        atomic_add(&counters[GGEMS_DUMMY_COUNTER_NEXT_PRIMARY], 1U);
+    uint primary_id = atomic_add(&counters->next_primary_id, 1U);
 
     if (primary_id >= total_primary_count) {
       break;
@@ -143,12 +131,12 @@ __kernel void particle_dummy_stream_branching_transport(
 
     processed_any_primary = 1U;
 
-    atomic_inc(&counters[GGEMS_DUMMY_COUNTER_CONSUMED_PRIMARY]);
+    atomic_inc(&counters->consumed_primary_count);
 
     GGEMSParticleState current =
         GGEMS_DummyMakeAionino(primary_id, initial_energy_milli_eV);
     current.particle_type = GGEMS_PARTICLE_TYPE_GAMMA;
-    atomic_inc(&counters[GGEMS_DUMMY_COUNTER_AIONINO_TO_GAMMA]);
+    atomic_inc(&counters->aionino_to_gamma_count);
 
     stack_size = 0U;
     uint local_track_index = 1U;
@@ -157,7 +145,7 @@ __kernel void particle_dummy_stream_branching_transport(
     while (history_done == 0U) {
       if (current.status == GGEMS_PARTICLE_STATUS_ALIVE) {
         GGEMS_DummyMoveParticle(&current);
-        atomic_inc(&counters[GGEMS_DUMMY_COUNTER_TOTAL_FAKE_STEPS]);
+        atomic_inc(&counters->total_fake_step_count);
 
         GGEMS_DummyKillIfFinished(&current, min_energy_milli_eV,
                                   max_steps_per_track);
@@ -185,10 +173,10 @@ __kernel void particle_dummy_stream_branching_transport(
 
               local_track_index += 1U;
 
-              atomic_inc(&counters[GGEMS_DUMMY_COUNTER_CREATED_SECONDARIES]);
-              atomic_inc(&counters[GGEMS_DUMMY_COUNTER_GAMMA_TO_ELECTRON]);
+              atomic_inc(&counters->created_secondary_count);
+              atomic_inc(&counters->gamma_to_electron_count);
             } else {
-              atomic_inc(&counters[GGEMS_DUMMY_COUNTER_OVERFLOW]);
+              atomic_inc(&counters->overflow_count);
             }
           } else if (current.particle_type == GGEMS_PARTICLE_TYPE_ELECTRON &&
                      u > 0.5) {
@@ -209,17 +197,17 @@ __kernel void particle_dummy_stream_branching_transport(
 
               local_track_index += 1U;
 
-              atomic_inc(&counters[GGEMS_DUMMY_COUNTER_CREATED_SECONDARIES]);
-              atomic_inc(&counters[GGEMS_DUMMY_COUNTER_ELECTRON_TO_ELECTRON]);
+              atomic_inc(&counters->created_secondary_count);
+              atomic_inc(&counters->electron_to_electron_count);
             } else {
-              atomic_inc(&counters[GGEMS_DUMMY_COUNTER_OVERFLOW]);
+              atomic_inc(&counters->overflow_count);
             }
           }
         }
       }
 
       if (current.status != GGEMS_PARTICLE_STATUS_ALIVE) {
-        atomic_inc(&counters[GGEMS_DUMMY_COUNTER_TERMINAL_PARTICLES]);
+        atomic_inc(&counters->terminal_particle_count);
         last_state = current;
 
         if (stack_size > 0U) {
@@ -227,7 +215,7 @@ __kernel void particle_dummy_stream_branching_transport(
           current = stack[stack_size];
         } else {
           history_done = 1U;
-          atomic_inc(&counters[GGEMS_DUMMY_COUNTER_COMPLETED_HISTORIES]);
+          atomic_inc(&counters->completed_history_count);
         }
       }
     }
@@ -237,6 +225,5 @@ __kernel void particle_dummy_stream_branching_transport(
     worker_final_states[worker_id] = last_state;
   }
 
-  atomic_max(&counters[GGEMS_DUMMY_COUNTER_MAX_STACK_DEPTH],
-             local_max_stack_depth);
+  atomic_max(&counters->max_stack_depth, local_max_stack_depth);
 }
