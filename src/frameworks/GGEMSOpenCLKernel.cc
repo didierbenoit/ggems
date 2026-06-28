@@ -25,149 +25,27 @@ void GGEMSOpenCLKernel::SetArgSVMPointer(cl_uint index, void *ptr) {
 
 void GGEMSOpenCLKernel::Run(std::array<std::size_t, 1> const &global,
                             std::array<std::size_t, 1> const &local) {
-  cl::Event evt;
+  (void)RunAndGetEvent(global, local);
+}
+
+/* ------------------------------------------------------------------------ */
+
+cl::Event
+GGEMSOpenCLKernel::RunAndGetEvent(std::array<std::size_t, 1> const &global,
+                                  std::array<std::size_t, 1> const &local) {
+  cl::Event event;
 
   auto &queue = context_.GetCommandQueueNative();
 
   cl_int err =
       queue.enqueueNDRangeKernel(kernel_, cl::NullRange, cl::NDRange(global[0]),
-                                 cl::NDRange(local[0]), nullptr, &evt);
+                                 cl::NDRange(local[0]), nullptr, &event);
   GGEMS_OCL_CHECK(err,
                   std::format("Failed to enqueue kernel '{}'", kernel_name_));
 
   queue.finish();
-}
 
-/* ------------------------------------------------------------------------ */
-
-GGEMSKernelExecutionStats
-GGEMSOpenCLKernel::ProfiledEnqueue(cl::NDRange global, cl::NDRange local,
-                                   Bytes bytes_moved) const {
-  cl::Event ev;
-
-  auto &queue = context_.GetCommandQueueNative();
-
-  cl_int err =
-      queue.enqueueNDRangeKernel(kernel_, cl::NullRange, cl::NDRange(global),
-                                 cl::NDRange(local), nullptr, &ev);
-  GGEMS_OCL_CHECK(err, std::format("enqueueNDRangeKernel failed"));
-
-  queue.finish();
-
-  GGEMSKernelExecutionStats stats;
-  stats.kernel_name = kernel_name_;
-  stats.device_name = context_.GetDevice().GetName();
-
-  stats.global_work_items = global[0];
-  stats.local_work_size = (local[0] == 0 ? 1 : local[0]);
-  stats.bytes_moved = bytes_moved;
-
-  // --- timestamps ---------------------------------------------------------
-  stats.time_queued = ev.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>() * 1_ns;
-  stats.time_submit = ev.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>() * 1_ns;
-  stats.time_start = ev.getProfilingInfo<CL_PROFILING_COMMAND_START>() * 1_ns;
-  stats.time_end = ev.getProfilingInfo<CL_PROFILING_COMMAND_END>() * 1_ns;
-
-  stats.kernel_time = stats.time_end - stats.time_start;
-  stats.wall_time = stats.time_end - stats.time_queued;
-
-  if (stats.bytes_moved.value > 0 && stats.kernel_time.value > 0) {
-    stats.bandwidth = stats.bytes_moved / stats.kernel_time;
-  }
-
-  // --- log ---------------------------------------------------------------
-  GGEMS_INFO("OpenCL", "Device {}: {} n(WI)= {} L {} took {} → {}",
-             stats.device_name, stats.kernel_name, stats.global_work_items,
-             stats.local_work_size, HumanReadable(stats.kernel_time),
-             HumanReadable(stats.bandwidth));
-
-  return stats;
-}
-
-/* -------------------------------------------------------------------------- */
-
-std::vector<GGEMSKernelExecutionStats>
-GGEMSOpenCLKernel::ProfileWorkItems(std::vector<std::size_t> const &sizes,
-                                    std::size_t local_size,
-                                    units::Bytes bytes_per_item) const {
-  std::vector<GGEMSKernelExecutionStats> results;
-
-  for (auto const &n : sizes) {
-    if (n < local_size)
-      continue;
-
-    Bytes const bytes = n * bytes_per_item;
-
-    GGEMSKernelExecutionStats const stats =
-        ProfiledEnqueue(cl::NDRange(n), cl::NDRange(local_size), bytes);
-
-    results.push_back(stats);
-  }
-
-  return results;
-}
-
-/* -------------------------------------------------------------------------- */
-
-std::vector<GGEMSKernelExecutionStats>
-GGEMSOpenCLKernel::ProfileWorkGroups(std::size_t global_size,
-                                     Bytes bytes_moved) const {
-  std::vector<GGEMSKernelExecutionStats> results;
-  results.reserve(7);
-
-  // Work-group sizes courants
-  std::array<std::size_t, 7> candidates = {1, 32, 64, 128, 256, 512, 1024};
-  auto const &dev = context_.GetDevice();
-
-  for (auto wg : candidates) {
-    if (wg > dev.GetMaxWorkGroupSize())
-      continue;
-
-    GGEMSKernelExecutionStats stats =
-        ProfiledEnqueue(cl::NDRange(global_size), cl::NDRange(wg), bytes_moved);
-
-    results.push_back(stats);
-  }
-
-  return results;
-}
-
-/* -------------------------------------------------------------------------- */
-
-std::vector<GGEMSKernelExecutionStats>
-GGEMSOpenCLKernel::ProfileBandwidthSweep(std::vector<std::size_t> const &sizes,
-                                         Bytes bytes_per_item) const {
-  std::vector<GGEMSKernelExecutionStats> results;
-
-  for (auto const &n : sizes) {
-    Bytes bytes = n * bytes_per_item;
-
-    GGEMSKernelExecutionStats stats =
-        ProfiledEnqueue(cl::NDRange(n), cl::NDRange(256), bytes);
-
-    results.push_back(stats);
-  }
-
-  return results;
-}
-
-/* -------------------------------------------------------------------------- */
-
-Time GGEMSOpenCLKernel::ProfileDriverOverhead() const {
-  cl::Event ev;
-
-  auto &queue = context_.GetCommandQueueNative();
-
-  cl_int err = queue.enqueueNDRangeKernel(
-      kernel_, cl::NullRange, cl::NDRange(1), cl::NDRange(1), nullptr, &ev);
-  GGEMS_OCL_CHECK(err, std::format("Enqueue empty kernel failed."));
-
-  queue.finish();
-
-  Time queued = ev.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>() * 1_ns;
-  Time start = ev.getProfilingInfo<CL_PROFILING_COMMAND_START>() * 1_ns;
-
-  return (start - queued);
+  return event;
 }
 
 /* ---------------------------------------------------------------------- */

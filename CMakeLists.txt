@@ -25,6 +25,13 @@
 cmake_minimum_required(VERSION 3.27 FATAL_ERROR)
 
 # ----------------------------------------------------------------------------
+# MSVC debug information format
+# ----------------------------------------------------------------------------
+set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT
+  "$<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:Embedded>"
+)
+
+# ----------------------------------------------------------------------------
 # Project declaration
 # ----------------------------------------------------------------------------
 project(GGEMS

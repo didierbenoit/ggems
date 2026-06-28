@@ -29,6 +29,8 @@
  * GNU General Public License v3.0
  */
 
+#include <mutex>
+
 #include "GGEMS/frameworks/GGEMSOpenCLProgram.hh"
 
 namespace ggems::ocl {
@@ -213,5 +215,6 @@ private:
       contexts_; /*!< Constructed contexts derived from selected devices. */
   std::vector<std::unique_ptr<GGEMSOpenCLProgram>>
       program_cache_; /*!< Cache of compiled kernel programs. */
+  std::mutex program_cache_mutex_;
 };
 } // namespace ggems::ocl

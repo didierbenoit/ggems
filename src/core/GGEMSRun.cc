@@ -1,14 +1,42 @@
 #include <filesystem>
+#include <algorithm>
 #include <memory>
+#include <exception>
+#include <thread>
+#include <atomic>
+#include <vector>
+#include <limits>
 
 #include "GGEMS/core/GGEMSRun.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
 
 using namespace ggems::units;
 
 namespace ggems::core {
+
+namespace {
+
+void AccumulateTransportCounters(transport::GGEMSTransportCounters &dst,
+                                 transport::GGEMSTransportCounters const &src) {
+  dst.consumed_primary_count += src.consumed_primary_count;
+  dst.completed_history_count += src.completed_history_count;
+  dst.terminal_particle_count += src.terminal_particle_count;
+  dst.created_secondary_count += src.created_secondary_count;
+
+  dst.aionino_to_gamma_count += src.aionino_to_gamma_count;
+  dst.gamma_to_electron_count += src.gamma_to_electron_count;
+  dst.electron_to_electron_count += src.electron_to_electron_count;
+
+  dst.overflow_count += src.overflow_count;
+  dst.total_fake_step_count += src.total_fake_step_count;
+
+  dst.max_stack_depth = std::max(dst.max_stack_depth, src.max_stack_depth);
+}
+
+} // namespace
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
@@ -82,8 +110,25 @@ void GGEMSRun::Initialise() {
   primary_stream_.Initialise();
 
   std::filesystem::path kernel_root{GGEMS_KERNEL_ROOT};
-  dummy_transport_ = std::make_unique<transport::GGEMSDummyTransportWorkload>(
-      opencl.GetContext().front(), kernel_root, *random_, worker_count_);
+
+  dummy_transports_.clear();
+  dummy_transports_.reserve(opencl.GetContext().size());
+
+  for (std::size_t context_index = 0U;
+       context_index < opencl.GetContext().size(); ++context_index) {
+    std::uint64_t random_stream_offset =
+        static_cast<std::uint64_t>(context_index) *
+        static_cast<std::uint64_t>(worker_count_);
+
+    dummy_transports_.push_back(
+        std::make_unique<transport::GGEMSDummyTransportWorkload>(
+            opencl.GetContext()[context_index], kernel_root, *random_,
+            worker_count_, random_stream_offset,
+            static_cast<std::uint32_t>(context_index)));
+  }
+
+  GGEMS_INFO("Core", "{} dummy transport workload(s) initialised.",
+             dummy_transports_.size());
 
   next_run_id_ = 0ULL;
   initialised_ = true;
@@ -102,8 +147,24 @@ void GGEMSRun::Run() {
   GGEMS_CHECK_RECOVERABLE(!running_.exchange(true),
                           "GGEMSRun is already running.");
 
+  struct RunningGuard {
+    std::atomic<bool> &running;
+    ~RunningGuard() { running.store(false); }
+  };
+
+  RunningGuard running_guard{running_};
+
   std::uint64_t run_id = next_run_id_++;
   auto primary_view = primary_stream_.PrepareRun(run_id);
+
+  GGEMS_CHECK_RECOVERABLE(
+      primary_view.source_primary_count <=
+          static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max()),
+      "Dummy transport currently supports at most uint32_t primaries per "
+      "projection.");
+
+  std::uint32_t source_primary_count =
+      static_cast<std::uint32_t>(primary_view.source_primary_count);
 
   GGEMS_INFO("Core", "GGEMSRun projection {} started.", run_id);
 
@@ -116,383 +177,135 @@ void GGEMSRun::Run() {
   GGEMS_INFOEX("Core", 1, "Projection {} worker count: {}.", run_id,
                worker_count_);
 
-  transport::GGEMSDummyTransportRunConfig config{};
-  config.total_primary_count = primary_count_;
+  GGEMS_CHECK_RECOVERABLE(!dummy_transports_.empty(),
+                          "No dummy transport workload was initialised.");
 
-  dummy_transport_->Run(config);
+  std::uint32_t workload_count =
+      static_cast<std::uint32_t>(dummy_transports_.size());
 
-  auto counters = dummy_transport_->ReadCountersOnHost();
+  std::uint32_t primary_base_count = primary_count_ / workload_count;
+  std::uint32_t primary_remainder = primary_count_ % workload_count;
+
+  std::vector<transport::GGEMSDummyTransportRunConfig> configs{workload_count};
+  std::vector<transport::GGEMSDummyTransportRunReport> reports{workload_count};
+  std::vector<std::exception_ptr> exceptions{workload_count};
+
+  std::uint64_t device_primary_offset{0ULL};
+  std::uint32_t assigned_primary_count{0U};
+
+  for (std::uint32_t workload_index = 0U; workload_index < workload_count;
+       ++workload_index) {
+    std::uint32_t device_primary_count =
+        primary_base_count + (workload_index < primary_remainder ? 1U : 0U);
+
+    configs[workload_index].total_primary_count = device_primary_count;
+    configs[workload_index].projection_history_offset =
+        primary_view.global_history_offset;
+    configs[workload_index].device_primary_offset = device_primary_offset;
+
+    assigned_primary_count += device_primary_count;
+    device_primary_offset += device_primary_count;
+  }
+
+  GGEMS_CHECK_RECOVERABLE(
+      assigned_primary_count == source_primary_count,
+      "Dummy transport assigned primary count does not match requested primary"
+      "count.");
+
+  std::vector<std::thread> transport_threads;
+  transport_threads.reserve(workload_count);
+
+  for (std::uint32_t workload_index = 0U; workload_index < workload_count;
+       ++workload_index) {
+    if (configs[workload_index].total_primary_count == 0U) {
+      continue;
+    }
+
+    transport_threads.emplace_back([&, workload_index]() {
+      try {
+        reports[workload_index] =
+            dummy_transports_[workload_index]->Run(configs[workload_index]);
+      } catch (...) {
+        exceptions[workload_index] = std::current_exception();
+      }
+    });
+  }
+
+  for (std::thread &thread : transport_threads) {
+    if (thread.joinable()) {
+      thread.join();
+    }
+  }
+
+  for (std::exception_ptr const &exception : exceptions) {
+    if (exception != nullptr) {
+      std::rethrow_exception(exception);
+    }
+  }
+
+  transport::GGEMSTransportCounters merged_counters{};
+
+  std::uint64_t accumulated_host_time_ps{0ULL};
+  std::uint64_t accumulated_command_time_ps{0ULL};
+  std::uint64_t accumulated_kernel_time_ps{0ULL};
+
+  for (std::uint32_t workload_index = 0U; workload_index < workload_count;
+       ++workload_index) {
+    if (configs[workload_index].total_primary_count == 0U) {
+      continue;
+    }
+
+    auto const &config = configs[workload_index];
+    auto const &report = reports[workload_index];
+    auto const &counters = report.counters;
+
+    AccumulateTransportCounters(merged_counters, counters);
+
+    accumulated_host_time_ps += report.host_time.value;
+    accumulated_command_time_ps += report.command_time.value;
+    accumulated_kernel_time_ps += report.kernel_time.value;
+
+    GGEMS_INFO(
+        "Core",
+        "Projection {} device workload {} [{}: '{}'] report: "
+        "primary_offset={}, assigned_primaries={}, consumed_primaries={}, "
+        "histories={}, secondaries={}, kernel_time={}, host_time={}, "
+        "kernel_histories/s={}.",
+        run_id, workload_index, report.context_index, report.device_name,
+        config.device_primary_offset, config.total_primary_count,
+        counters.consumed_primary_count, counters.completed_history_count,
+        counters.created_secondary_count, report.kernel_time, report.host_time,
+        report.kernel_histories_per_second);
+  }
+
+  GGEMS_CHECK_RECOVERABLE(
+      merged_counters.completed_history_count == source_primary_count,
+      "Dummy transport completed history count does not match primary count.");
+
+  GGEMS_CHECK_RECOVERABLE(
+      merged_counters.terminal_particle_count ==
+          merged_counters.consumed_primary_count +
+              merged_counters.created_secondary_count,
+      "Dummy transport terminal particle count is inconsistent.");
 
   GGEMS_INFO("Core",
-             "Projection {} transport report: primaries={}, histories={}, "
-             "secondaries={}, terminal_particles={}, fake_steps={}, "
-             "max_stack_depth={}, overflow={}.",
-             run_id, counters.consumed_primary_count,
-             counters.completed_history_count, counters.created_secondary_count,
-             counters.terminal_particle_count, counters.total_fake_step_count,
-             counters.max_stack_depth, counters.overflow_count);
+             "Projection {} merged transport report: primaries={}, "
+             "histories={}, secondaries={}, terminal_particles={}, "
+             "fake_steps={}, max_stack_depth={}, overflow={}.",
+             run_id, merged_counters.consumed_primary_count,
+             merged_counters.completed_history_count,
+             merged_counters.created_secondary_count,
+             merged_counters.terminal_particle_count,
+             merged_counters.total_fake_step_count,
+             merged_counters.max_stack_depth, merged_counters.overflow_count);
+
+  GGEMS_INFO("Core",
+             "Projection {} accumulated timing report: host_time={}, "
+             "command_time={}, kernel_time={}.",
+             run_id, ggems::units::Time{accumulated_host_time_ps},
+             ggems::units::Time{accumulated_command_time_ps},
+             ggems::units::Time{accumulated_kernel_time_ps});
 
   GGEMS_INFO("Core", "GGEMSRun projection {} completed.", run_id);
-
-  running_.store(false);
-
-  /*GGEMS_INFO("Core", "GGEMS starting...");
-
-  Angle a = 90.0_deg;
-  Angle b = 1.5707963267948966_rad;
-
-  GGEMS_DEBUG("Core", "{}", HumanReadable(a));
-  GGEMS_DEBUG("Core", "{}", HumanReadable(b));
-
-  Frequency f = 3874364_Hz;
-  GGEMS_DEBUG("Core", "{}", HumanReadable(f, 1, 5));
-  GGEMS_WARN("Core", "Test");
-  GGEMS_ERROR("Core", "Test");
-
-  render::GGEMSProgressBar *progress_bar =
-      core::IsProgressBarAvailable() ? &core::GetProgressBar() : nullptr;
-
-  auto &opencl = ocl::GGEMSOpenCL::GetInstance();
-  auto &contexts = opencl.GetContext();
-
-  std::vector<ocl::GGEMSOpenCLSVMBuffer> buffers;
-
-  if (progress_bar) {
-    progress_bar->Clear();
-  }
-
-  // Filling slots
-  for (auto &ctx : contexts) {
-    buffers.push_back(ctx.CreateSVMBuffer(1024_B));
-
-    if (progress_bar) {
-      auto &dev = ctx.GetDevice();
-      auto device_name = dev.GetName();
-      auto device_type = dev.GetType();
-      auto device_luid = dev.GetLUIDKhr();
-      progress_bar
-          ->AddSlot(device_name,
-                    (device_type == CL_DEVICE_TYPE_GPU) ? true : false,
-                    device_luid)
-          .SetKernelName("vec_add")
-          .SetBatchesDone(0ULL)
-          .SetBatchesTotal(100ULL)
-          .SetStatus(render::GGEMSProgressBar::Slot::Status::Pending)
-          .SetParticleType(
-              render::GGEMSProgressBar::Slot::ParticleType::Aionino)
-          .SetETAPicoseconds(0ULL)
-          .SetPercentVRAM(ctx.GetPercentVRAM())
-          .SetTotalVRAM(ctx.GetTotalVRAM().value)
-          .SetAllocatedVRAM(ctx.GetAllocatedVRAM().value)
-          .SetAllocationCountVRAM(ctx.GetAllocationCountVRAM());
-    }
-  }
-
-  workers_.clear();
-  workers_.reserve(contexts.size());
-
-  std::atomic<std::size_t> finished_workers{0};
-
-  for (std::size_t i = 0; i < contexts.size(); ++i) {
-    if (progress_bar) {
-      auto &slot = progress_bar->GetSlot(i);
-      workers_.emplace_back([&slot, &finished_workers]() {
-        uint64_t p = 0ULL;
-        auto start = std::chrono::high_resolution_clock::now();
-
-        uint64_t nbatch = 100ULL;
-        while (p < nbatch) {
-          ++p;
-
-          auto now = std::chrono::high_resolution_clock::now();
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-          int64_t elapsed_ps =
-              std::chrono::duration_cast<std::chrono::nanoseconds>(now - start)
-                  .count() *
-              1000;
-
-          long double ratio =
-              static_cast<long double>(p) / static_cast<long double>(nbatch);
-
-          if (ratio > 0.0L) {
-            long double estimated_total_ps =
-                static_cast<long double>(elapsed_ps) / ratio;
-            long double remaining_ps =
-                estimated_total_ps - static_cast<long double>(elapsed_ps);
-
-            slot.SetETAPicoseconds((remaining_ps > 0.0L)
-                                       ? static_cast<uint64_t>(remaining_ps)
-                                       : 0ULL);
-          } else {
-            slot.SetETAPicoseconds(0ULL);
-          }
-
-          slot.SetStatus(render::GGEMSProgressBar::Slot::Status::Running)
-              .SetBatchesDone(p);
-        }
-        slot.SetStatus(render::GGEMSProgressBar::Slot::Status::Finished);
-        finished_workers.fetch_add(1, std::memory_order_relaxed);
-      });
-    } else {
-      workers_.emplace_back([&finished_workers]() {
-        std::uint64_t p = 0ULL;
-        std::uint64_t nbatch = 100ULL;
-
-        while (p < nbatch) {
-          ++p;
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-
-        finished_workers.fetch_add(1, std::memory_order_relaxed);
-      });
-    }
-  }
-
-  while (finished_workers.load(std::memory_order_relaxed) < workers_.size()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(33));
-  }
-
-  for (auto &t : workers_) {
-    if (t.joinable()) {
-      t.join();
-    }
-  }
-  workers_.clear();
-
-  GGEMS_INFO("Core", "GGEMS run completed.");
-*/
-  /*  auto &opencl = ocl::GGEMSOpenCL::GetInstance();
-    auto &contexts = opencl.GetContext();
-
-    render::GGEMSProgressBar *progress_bar =
-        core::IsProgressBarAvailable() ? &core::GetProgressBar() : nullptr;
-
-    std::size_t const n = 33'554'432;
-    Bytes const bytes = Bytes{static_cast<std::uint64_t>(n) * 4ULL};
-    std::uint64_t n_vec_add_repeat = 1000ULL;
-
-    // Filling slots
-    for (auto &ctx : contexts) {
-      auto &dev = ctx.GetDevice();
-      auto const device_name = dev.GetName();
-      auto const device_type = dev.GetType();
-      auto const device_luid = dev.GetLUIDKhr();
-      progress_bar
-          ->AddSlot(device_name,
-                    (device_type == CL_DEVICE_TYPE_GPU) ? true : false,
-                    device_luid)
-          .SetKernelName("vec_add")
-          .SetBatchesDone(0ULL)
-          .SetBatchesTotal(n_vec_add_repeat)
-          .SetStatus(render::GGEMSProgressBar::Slot::Status::Pending)
-          .SetParticleType(render::GGEMSProgressBar::Slot::ParticleType::Gamma)
-          .SetETAPicoseconds(0ULL);
-      //.SetBandwidthBytesPerPicosecond(0.0);
-    }
-
-    workers_.clear();
-    workers_.reserve(contexts.size());
-    // progress_bar->Start();
-
-    for (std::size_t i = 0; i < contexts.size(); ++i) {
-      auto &ctx = contexts[i];
-      auto &slot = progress_bar->GetSlot(i);
-      workers_.emplace_back([&opencl, &ctx, &slot, bytes, n_vec_add_repeat]() {
-        auto svmA = ctx.CreateSVMBuffer(bytes);
-        auto svmB = ctx.CreateSVMBuffer(bytes);
-        auto svmC = ctx.CreateSVMBuffer(bytes);
-
-        auto *A = static_cast<float *>(svmA.GetData());
-        auto *B = static_cast<float *>(svmB.GetData());
-        auto *C = static_cast<float *>(svmC.GetData());
-
-        svmA.Map();
-        svmB.Map();
-        svmC.Map();
-
-        for (std::size_t i = 0; i < n; ++i) {
-          A[i] = static_cast<float>(i);
-          B[i] = static_cast<float>(2 * i);
-          C[i] = 0.0f;
-        }
-
-        svmA.Unmap();
-        svmB.Unmap();
-        svmC.Unmap();
-
-        std::filesystem::path kernel_root = "ggems/kernels";
-        std::string kernel_name = "vec_add_svm";
-
-        auto &prog = opencl.GetOrCreateProgram(ctx, kernel_root, kernel_name,
-    ""); cl::Kernel raw_kernel = prog.CreateKernel(kernel_name);
-        ocl::GGEMSOpenCLKernel kernel{ctx, std::move(raw_kernel), kernel_name};
-
-        kernel.SetArgSVMPointer(0, A);
-        kernel.SetArgSVMPointer(1, B);
-        kernel.SetArgSVMPointer(2, C);
-
-        kernel.SetArg(3, static_cast<unsigned int>(n));
-
-        uint64_t p = 0ULL;
-        auto start = std::chrono::high_resolution_clock::now();
-
-        while (p < n_vec_add_repeat) {
-          ++p;
-
-          auto now = std::chrono::high_resolution_clock::now();
-
-          std::array<std::size_t, 1> global{n};
-          std::array<std::size_t, 1> local{256};
-
-          kernel.Run(global, local);
-
-          int64_t elapsed_ps =
-              std::chrono::duration_cast<std::chrono::nanoseconds>(now - start)
-                  .count() *
-              1000;
-
-          long double ratio = static_cast<long double>(p) /
-                              static_cast<long double>(n_vec_add_repeat);
-          if (ratio > 0.0) {
-            long double estimated_total_ps =
-                static_cast<long double>(elapsed_ps) / ratio;
-            long double remaining_ps =
-              estimated_total_ps - static_cast<long double>(elapsed_ps);
-            slot.SetETAPicoseconds((remaining_ps > 0.0)
-                                       ? static_cast<uint64_t>(remaining_ps)
-                                      : 0ULL);
-          } else {
-            slot.SetETAPicoseconds(0ULL);
-          }
-
-          slot.SetStatus(render::GGEMSProgressBar::Slot::Status::Running)
-              .SetBatchesDone(p);
-        }
-        slot.SetStatus(render::GGEMSProgressBar::Slot::Status::Finished);
-      });
-    }
-
-    for (auto &t : workers_) {
-      if (t.joinable()) {
-        t.join();
-      }
-    }
-    workers_.clear();
-  */
-  // progress_bar_.Stop();
-
-  /*  auto &opencl = ocl::GGEMSOpenCL::GetInstance();
-    auto &contexts = opencl.GetContext();
-
-    auto &context = contexts.front();
-
-    GGEMS_INFO("Core", "Starting SVM vec_add_svm test on...");
-
-    std::size_t const n = 16'777'216;
-    Bytes const bytes = Bytes{static_cast<std::uint64_t>(n) * 4ULL};
-
-    auto svmA = context.CreateSVMBuffer(bytes);
-    auto svmB = context.CreateSVMBuffer(bytes);
-    auto svmC = context.CreateSVMBuffer(bytes);
-
-    auto *A = static_cast<float *>(svmA.GetData());
-    auto *B = static_cast<float *>(svmB.GetData());
-    auto *C = static_cast<float *>(svmC.GetData());
-
-    svmA.Map();
-    svmB.Map();
-    svmC.Map();
-
-    for (std::size_t i = 0; i < n; ++i) {
-      A[i] = static_cast<float>(i);
-      B[i] = static_cast<float>(2 * i);
-      C[i] = 0.0f;
-    }
-
-    svmA.Unmap();
-    svmB.Unmap();
-    svmC.Unmap();
-
-    std::filesystem::path kernel_root = "ggems/kernels";
-    std::string kernel_name = "vec_add_svm";
-
-    auto &prog = opencl.GetOrCreateProgram(context, kernel_root, kernel_name,
-    ""); cl::Kernel raw_kernel = prog.CreateKernel(kernel_name);
-    ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel), kernel_name};
-
-    kernel.SetArgSVMPointer(0, A);
-    kernel.SetArgSVMPointer(1, B);
-    kernel.SetArgSVMPointer(2, C);
-
-    kernel.SetArg(3, static_cast<unsigned int>(n));
-
-    std::array<std::size_t, 1> global{n};
-    std::array<std::size_t, 1> local{256};
-
-    kernel.Run(global, local);
-
-    kernel.ProfiledEnqueue(global, local, 3 * bytes);
-    kernel.ProfileWorkGroups(n, 3 * bytes);*/
-  /*
-    ocl::GGEMSOpenCLProfiler::Options opts{
-        {256,       512,        1024,       2048,       4096,
-         8192,      16384,      32768,      65536,      131072,
-         262144,    524288,     1'048'576,  2'097'152,  4'194'304,
-         8'388'608, 16'777'216, 33'554'432, 67'108'864, 134'217'728},
-        3 * 4_B,
-        true,
-        true,
-        true};
-
-    ocl::GGEMSOpenCLProfiler profiler{};
-    profiler.ProfileKernel(kernel, opts);
-    profiler.PrintAllInfo();
-
-    std::vector<std::size_t> elements{
-        256,       512,        1024,       2048,      4096,
-        8192,      16384,      32768,      65536,     131072,
-        262144,    524288,     1'048'576,  2'097'152, 4'194'304,
-        8'388'608, 16'777'216, 33'554'432, 67'108'864};
-    kernel.ProfileBandwidthSweep(elements, 3 * 4_B);
-
-    Time tover = kernel.ProfileDriverOverhead();
-    GGEMS_DEBUG("OpenCL", "Driver overhead {}", HumanReadable(tover));
-
-    std::string fname = kernel.GetFunctionName();
-    cl_uint nargs = kernel.GetNumArgs();
-    cl_uint refcount = kernel.GetReferenceCount();
-    std::string attributes = kernel.GetAttributes();
-
-    GGEMS_DEBUG("OpenCL", "fname: {}", fname);
-    GGEMS_DEBUG("OpenCL", "nargs: {}", nargs);
-    GGEMS_DEBUG("OpenCL", "refcount: {}", refcount);
-    GGEMS_DEBUG("OpenCL", "attributes: {}", attributes);
-
-    std::size_t wg = kernel.GetWorkGroupSize();
-    std::size_t pwg = kernel.GetPreferredWorkGroupSizeMultiple();
-    std::array<std::size_t, 3> cwg = kernel.GetCompileWorkGroupSize();
-    Bytes lmem = kernel.GetLocalMemSize() * 1_B;
-    Bytes pmem = kernel.GetPrivateMemSize() * 1_B;
-
-    GGEMS_DEBUG("OpenCL", "work group size: {}", wg);
-    GGEMS_DEBUG("OpenCL", "Preferred WG size multiple: {}", pwg);
-    GGEMS_DEBUG("OpenCL", "Compile WG size: {}", cwg);
-    GGEMS_DEBUG("OpenCL", "Local mem size: {}", HumanReadable(lmem));
-    GGEMS_DEBUG("OpenCL", "Private mem size: {}", HumanReadable(pmem));
-
-    for (cl_uint a = 0; a < nargs; ++a) {
-      std::string argaddr = kernel.GetArgAddressQualifier(a);
-      std::string argname = kernel.GetArgName(a);
-      std::string argtypename = kernel.GetArgTypeName(a);
-      std::string argacc = kernel.GetArgAccessQualifier(a);
-      std::string argtype = kernel.GetArgTypeQualifier(a);
-      GGEMS_DEBUG("OpenCL", "-------------");
-      GGEMS_DEBUG("OpenCL", "  arg name {}: {}", a, argname);
-      GGEMS_DEBUG("OpenCL", "  arg type name {}: {}", a, argtypename);
-      GGEMS_DEBUG("OpenCL", "  arg address qualifier {}: {}", a, argaddr);
-      GGEMS_DEBUG("OpenCL", "  arg address qualifier {}: {}", a, argtype);
-      GGEMS_DEBUG("OpenCL", "  arg address qualifier {}: {}", a, argacc);
-    }*/
 }
 } // namespace ggems::core

@@ -42,8 +42,8 @@ private:
   bool initialised_{false};
   std::uint64_t next_run_id_{0ULL};
 
-  std::unique_ptr<transport::GGEMSDummyTransportWorkload> dummy_transport_{
-      nullptr};
+  std::vector<std::unique_ptr<transport::GGEMSDummyTransportWorkload>>
+      dummy_transports_;
 
   std::uint32_t primary_count_{4096U};
   std::uint32_t worker_count_{256U};

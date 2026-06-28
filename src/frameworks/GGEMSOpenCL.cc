@@ -94,6 +94,8 @@ GGEMSOpenCL::~GGEMSOpenCL() {
 GGEMSOpenCLProgram &GGEMSOpenCL::GetOrCreateProgram(
     GGEMSOpenCLContext &ctx, std::filesystem::path const &kernel_root,
     std::string const &kernel_name, std::string const &build_options) {
+  std::scoped_lock lock{program_cache_mutex_};
+
   for (auto &program : program_cache_) {
     if (program->Matches(ctx, kernel_root, kernel_name, build_options)) {
       GGEMS_INFOEX("OpenCL", 3,

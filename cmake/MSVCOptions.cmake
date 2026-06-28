@@ -40,7 +40,7 @@ add_compile_definitions(
 # ----------------------------------------------------------------------------
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Configuring MSVC Debug build")
-    add_compile_options(/Zi /Od)
+    add_compile_options(/Od)
     add_link_options(/DEBUG)
 endif()
 

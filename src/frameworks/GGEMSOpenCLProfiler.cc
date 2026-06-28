@@ -76,6 +76,11 @@ void GGEMSOpenCLProfiler::Stop() noexcept {
 /* -------------------------------------------------------------------------- */
 
 void GGEMSOpenCLProfiler::RecordKernelEvent(cl::Event const &event) {
+  GGEMS_CHECK_RECOVERABLE(
+      !running_,
+      "OpenCL kernel event profiling must be recorded after Stop() when host "
+      "timing is active.");
+
   cl_ulong queued = event.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>();
   cl_ulong submit = event.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>();
   cl_ulong start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();

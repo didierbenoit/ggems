@@ -11,6 +11,7 @@
 #include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
 
 namespace {
 
@@ -91,9 +92,13 @@ namespace ggems::core::transport {
 
 GGEMSDummyTransportWorkload::GGEMSDummyTransportWorkload(
     ggems::ocl::GGEMSOpenCLContext &context, std::filesystem::path kernel_root,
-    random::GGEMSRandom const &random, std::uint32_t const worker_count)
+    random::GGEMSRandom const &random, std::uint32_t worker_count,
+    std::uint64_t random_stream_offset, std::uint32_t context_index)
     : context_{&context}, kernel_root_{std::move(kernel_root)},
       random_{&random}, worker_count_{worker_count},
+      random_stream_offset_{random_stream_offset},
+      context_index_{context_index},
+      device_name_{context.GetDevice().GetName()},
       random_states_buffer_{
           context.CreateSVMBuffer(ComputeRandomStatesSize(worker_count))},
       worker_final_states_buffer_{
@@ -119,7 +124,7 @@ void GGEMSDummyTransportWorkload::InitialiseRandomStatesOnHost() {
   auto *states = static_cast<PhiloxState *>(random_states_buffer_.GetData());
 
   for (std::uint32_t i = 0U; i < worker_count_; ++i) {
-    states[i] = MakePhiloxState(random_->GetSeed(), i);
+    states[i] = MakePhiloxState(random_->GetSeed(), random_stream_offset_ + i);
   }
 
   random_states_buffer_.Unmap();
@@ -175,8 +180,8 @@ GGEMSTransportCounters GGEMSDummyTransportWorkload::ReadCountersOnHost() {
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 
-void GGEMSDummyTransportWorkload::Run(
-    GGEMSDummyTransportRunConfig const &config) {
+GGEMSDummyTransportRunReport
+GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
   GGEMS_CHECK_RECOVERABLE(config.total_primary_count > 0U,
                           "Dummy transport primary count must be non-zero.");
 
@@ -206,21 +211,57 @@ void GGEMSDummyTransportWorkload::Run(
 
   auto *random_states = random_states_buffer_.GetData();
   auto *worker_final_states = worker_final_states_buffer_.GetData();
-  auto *counters = counters_buffer_.GetData();
+  auto *counters_ptr = counters_buffer_.GetData();
 
   kernel.SetArgSVMPointer(0U, random_states);
   kernel.SetArgSVMPointer(1U, worker_final_states);
-  kernel.SetArgSVMPointer(2U, counters);
+  kernel.SetArgSVMPointer(2U, counters_ptr);
   kernel.SetArg(3U, static_cast<cl_uint>(config.total_primary_count));
-  kernel.SetArg(4U, static_cast<cl_ulong>(config.initial_energy_milli_eV));
-  kernel.SetArg(5U, static_cast<cl_ulong>(config.min_energy_milli_eV));
-  kernel.SetArg(6U, static_cast<cl_uint>(config.max_generation));
-  kernel.SetArg(7U, static_cast<cl_uint>(config.max_steps_per_track));
+  kernel.SetArg(4U, static_cast<cl_ulong>(config.projection_history_offset));
+  kernel.SetArg(5U, static_cast<cl_ulong>(config.device_primary_offset));
+  kernel.SetArg(6U, static_cast<cl_ulong>(config.initial_energy_milli_eV));
+  kernel.SetArg(7U, static_cast<cl_ulong>(config.min_energy_milli_eV));
+  kernel.SetArg(8U, static_cast<cl_uint>(config.max_generation));
+  kernel.SetArg(9U, static_cast<cl_uint>(config.max_steps_per_track));
 
   constexpr std::size_t k_local_size{64U};
   std::size_t const global_size = RoundUp(worker_count_, k_local_size);
 
-  kernel.Run({global_size}, {k_local_size});
+  ggems::ocl::GGEMSOpenCLProfiler profiler{};
+
+  profiler.Start();
+
+  cl::Event event = kernel.RunAndGetEvent({global_size}, {k_local_size});
+
+  profiler.Stop();
+  profiler.RecordKernelEvent(event);
+
+  GGEMSTransportCounters transport_counters = ReadCountersOnHost();
+
+  GGEMSDummyTransportRunReport report{};
+  report.context_index = context_index_;
+  report.device_name = device_name_;
+
+  report.counters = transport_counters;
+
+  report.host_time = profiler.GetElapsedTime();
+  report.kernel_time = profiler.GetKernelTime();
+  report.command_time = profiler.GetCommandTime();
+
+  report.host_histories_per_second =
+      profiler.ComputeRatePerSecond(transport_counters.completed_history_count);
+
+  report.kernel_histories_per_second = profiler.ComputeKernelRatePerSecond(
+      transport_counters.completed_history_count);
+
+  report.host_terminal_particles_per_second =
+      profiler.ComputeRatePerSecond(transport_counters.terminal_particle_count);
+
+  report.kernel_terminal_particles_per_second =
+      profiler.ComputeKernelRatePerSecond(
+          transport_counters.terminal_particle_count);
+
+  return report;
 }
 
 } // namespace ggems::core::transport

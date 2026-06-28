@@ -6,17 +6,21 @@
 #define GGEMS_DUMMY_LOCAL_STACK_CAPACITY 16U
 #endif
 
+#ifndef GGEMS_DUMMY_TRACK_BRANCH_BITS
+#define GGEMS_DUMMY_TRACK_BRANCH_BITS 16U
+#endif
+
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 
 static inline GGEMSParticleState
-GGEMS_DummyMakeAionino(uint primary_id, ulong initial_energy_milli_eV) {
+GGEMS_DummyMakeAionino(ulong global_primary_id, ulong initial_energy_milli_eV) {
   GGEMSParticleState particle;
 
-  ulong base_track_id = ((ulong)(primary_id) << 32U);
+  ulong base_track_id = global_primary_id << GGEMS_DUMMY_TRACK_BRANCH_BITS;
 
-  particle.global_particle_id = (ulong)(primary_id);
+  particle.global_particle_id = global_primary_id;
   particle.track_id = base_track_id;
   particle.parent_track_id = GGEMS_INVALID_ID_U64;
   particle.time_ps = 0UL;
@@ -53,10 +57,10 @@ GGEMS_DummyMakeAionino(uint primary_id, ulong initial_energy_milli_eV) {
 static inline GGEMSParticleState
 GGEMS_DummyMakeElectronSecondary(GGEMSParticleState parent,
                                  ulong energy_milli_eV, uint generation,
-                                 uint local_track_index) {
+                                 uint local_track_index, ulong base_track_id) {
   GGEMSParticleState secondary = parent;
 
-  secondary.track_id = parent.track_id + (ulong)(local_track_index);
+  secondary.track_id = base_track_id + (ulong)(local_track_index);
   secondary.parent_track_id = parent.track_id;
   secondary.particle_type = GGEMS_PARTICLE_TYPE_ELECTRON;
   secondary.status = GGEMS_PARTICLE_STATUS_ALIVE;
@@ -110,7 +114,8 @@ __kernel void particle_dummy_stream_branching_transport(
     __global GGEMSRandomState *random_states,
     __global GGEMSParticleState *worker_final_states,
     volatile __global GGEMSTransportCounters *counters,
-    uint total_primary_count, ulong initial_energy_milli_eV,
+    uint total_primary_count, ulong projection_history_offset,
+    ulong device_primary_offset, ulong initial_energy_milli_eV,
     ulong min_energy_milli_eV, uint max_generation, uint max_steps_per_track) {
   uint worker_id = (uint)(get_global_id(0));
 
@@ -123,18 +128,24 @@ __kernel void particle_dummy_stream_branching_transport(
   last_state.status = GGEMS_PARTICLE_STATUS_INACTIVE;
 
   while (1) {
-    uint primary_id = atomic_add(&counters->next_primary_id, 1U);
+    uint local_primary_id = atomic_add(&counters->next_primary_id, 1U);
 
-    if (primary_id >= total_primary_count) {
+    if (local_primary_id >= total_primary_count) {
       break;
     }
+
+    ulong global_primary_id = projection_history_offset +
+                              device_primary_offset + (ulong)(local_primary_id);
 
     processed_any_primary = 1U;
 
     atomic_inc(&counters->consumed_primary_count);
 
     GGEMSParticleState current =
-        GGEMS_DummyMakeAionino(primary_id, initial_energy_milli_eV);
+        GGEMS_DummyMakeAionino(global_primary_id, initial_energy_milli_eV);
+
+    ulong base_track_id = current.track_id;
+
     current.particle_type = GGEMS_PARTICLE_TYPE_GAMMA;
     atomic_inc(&counters->aionino_to_gamma_count);
 
@@ -169,7 +180,7 @@ __kernel void particle_dummy_stream_branching_transport(
 
               current = GGEMS_DummyMakeElectronSecondary(
                   current, secondary_energy, current.generation + 1U,
-                  local_track_index);
+                  local_track_index, base_track_id);
 
               local_track_index += 1U;
 
@@ -193,7 +204,7 @@ __kernel void particle_dummy_stream_branching_transport(
 
               current = GGEMS_DummyMakeElectronSecondary(
                   current, secondary_energy, current.generation + 1U,
-                  local_track_index);
+                  local_track_index, base_track_id);
 
               local_track_index += 1U;
 

@@ -50,10 +50,21 @@ TEST_F(GGEMSDummyTransportWorkloadTest, RunsBranchingAioninoPrototype) {
 
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.total_primary_count = k_total_primary_count;
+  config.projection_history_offset = 10'000'000ULL;
+  config.device_primary_offset = 200'000ULL;
 
-  workload.Run(config);
+  auto report = workload.Run(config);
+  auto const &counters = report.counters;
 
-  auto const counters = workload.ReadCountersOnHost();
+  EXPECT_GT(report.host_time.value, 0U);
+  EXPECT_GT(report.kernel_time.value, 0U);
+  EXPECT_GT(report.command_time.value, 0U);
+
+  EXPECT_GT(report.host_histories_per_second, 0.0);
+  EXPECT_GT(report.kernel_histories_per_second, 0.0);
+
+  EXPECT_GT(report.host_terminal_particles_per_second, 0.0);
+  EXPECT_GT(report.kernel_terminal_particles_per_second, 0.0);
 
   EXPECT_EQ(counters.consumed_primary_count, k_total_primary_count);
   EXPECT_EQ(counters.completed_history_count, k_total_primary_count);

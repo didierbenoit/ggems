@@ -96,6 +96,202 @@ inline std::string ThreadTag() {
   return std::format("T{}", idx);
 }
 
+[[nodiscard]]
+inline bool IsAsciiSpace(char const c) noexcept {
+  return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}
+
+[[nodiscard]]
+inline bool IsAsciiLower(char const c) noexcept {
+  return c >= 'a' && c <= 'z';
+}
+
+[[nodiscard]]
+inline std::string_view TrimRight(std::string_view text) noexcept {
+  while (!text.empty() && IsAsciiSpace(text.back())) {
+    text.remove_suffix(1);
+  }
+
+  return text;
+}
+
+[[nodiscard]]
+inline std::size_t FindLastParameterList(std::string_view text) noexcept {
+  std::size_t angle_depth = 0;
+  std::size_t last = std::string_view::npos;
+
+  for (std::size_t i = 0; i < text.size(); ++i) {
+    char const c = text[i];
+
+    if (c == '<') {
+      ++angle_depth;
+    } else if (c == '>' && angle_depth > 0) {
+      --angle_depth;
+    } else if (c == '(' && angle_depth == 0) {
+      last = i;
+    }
+  }
+
+  return last;
+}
+
+[[nodiscard]]
+inline std::string_view RemoveReturnType(std::string_view text) noexcept {
+  std::size_t angle_depth = 0;
+  std::size_t last_space = std::string_view::npos;
+
+  for (std::size_t i = 0; i < text.size(); ++i) {
+    char const c = text[i];
+
+    if (c == '<') {
+      ++angle_depth;
+    } else if (c == '>' && angle_depth > 0) {
+      --angle_depth;
+    } else if (angle_depth == 0 && IsAsciiSpace(c)) {
+      last_space = i;
+    }
+  }
+
+  if (last_space != std::string_view::npos) {
+    return text.substr(last_space + 1);
+  }
+
+  return text;
+}
+
+[[nodiscard]]
+inline std::string_view
+RemoveTrailingEmptyCall(std::string_view text) noexcept {
+  if (text.ends_with("()")) {
+    text.remove_suffix(2);
+  }
+
+  return text;
+}
+
+[[nodiscard]]
+inline std::string_view StripLambdaSuffix(std::string_view text) noexcept {
+  if (auto const pos = text.find("::<lambda"); pos != std::string_view::npos) {
+    return RemoveTrailingEmptyCall(text.substr(0, pos));
+  }
+
+  if (auto const pos = text.find("::(lambda)"); pos != std::string_view::npos) {
+    return RemoveTrailingEmptyCall(text.substr(0, pos));
+  }
+
+  return text;
+}
+
+[[nodiscard]]
+inline std::size_t
+FindLastTopLevelScope(std::string_view text,
+                      std::size_t limit = std::string_view::npos) noexcept {
+  if (limit == std::string_view::npos || limit > text.size()) {
+    limit = text.size();
+  }
+
+  std::size_t angle_depth = 0;
+  std::size_t last = std::string_view::npos;
+
+  for (std::size_t i = 0; i + 1 < limit; ++i) {
+    char const c = text[i];
+
+    if (c == '<') {
+      ++angle_depth;
+    } else if (c == '>' && angle_depth > 0) {
+      --angle_depth;
+    } else if (angle_depth == 0 && c == ':' && text[i + 1] == ':') {
+      last = i;
+      ++i;
+    }
+  }
+
+  return last;
+}
+
+[[nodiscard]]
+inline std::string_view
+StripFunctionTemplateArguments(std::string_view text) noexcept {
+  auto const last_scope = FindLastTopLevelScope(text);
+  std::size_t const start =
+      last_scope == std::string_view::npos ? 0 : last_scope + 2;
+
+  std::size_t angle_depth = 0;
+
+  for (std::size_t i = start; i < text.size(); ++i) {
+    char const c = text[i];
+
+    if (c == '<') {
+      if (angle_depth == 0) {
+        return text.substr(0, i);
+      }
+
+      ++angle_depth;
+    } else if (c == '>' && angle_depth > 0) {
+      --angle_depth;
+    }
+  }
+
+  return text;
+}
+
+[[nodiscard]]
+inline std::string_view KeepRelevantScopes(std::string_view text) noexcept {
+  auto const last = FindLastTopLevelScope(text);
+  if (last == std::string_view::npos) {
+    return text;
+  }
+
+  auto const prev = FindLastTopLevelScope(text, last);
+
+  if (prev == std::string_view::npos) {
+    // Example: ocl::PrintInfo -> PrintInfo
+    // But keep Class::Method if the first part looks like a class.
+    auto const left = text.substr(0, last);
+    if (!left.empty() && IsAsciiLower(left.front())) {
+      return text.substr(last + 2);
+    }
+
+    return text;
+  }
+
+  return text.substr(prev + 2);
+}
+
+[[nodiscard]]
+inline std::string_view SimplifyFunctionName(std::string_view full) noexcept {
+  // Step 1: remove the final parameter list.
+  // Use the last '(' to survive operator() and clang lambda spellings.
+  if (auto const pos = FindLastParameterList(full);
+      pos != std::string_view::npos) {
+    full = full.substr(0, pos);
+  }
+
+  full = TrimRight(full);
+
+  // Step 2: normalise lambda spellings.
+  full = StripLambdaSuffix(full);
+  full = TrimRight(full);
+
+  // Step 3: prefer the GGEMS root namespace if present.
+  constexpr std::string_view root = "ggems::";
+
+  if (auto const pos = full.rfind(root); pos != std::string_view::npos) {
+    full = full.substr(pos + root.size());
+  } else {
+    full = RemoveReturnType(full);
+  }
+
+  full = TrimRight(full);
+
+  // Step 4: remove template arguments only from the function name.
+  full = StripFunctionTemplateArguments(full);
+  full = TrimRight(full);
+
+  // Step 5: keep Class::Method, or plain free function name.
+  return KeepRelevantScopes(full);
+}
+
 /*!
  * \brief Simplifies function names by removing common qualifiers.
  *
@@ -112,10 +308,11 @@ inline std::string ThreadTag() {
  * \param full Raw function name string.
  * \return Simplified user-facing function name.
  */
-[[nodiscard]]
-inline std::string_view SimplifyFunctionName(std::string_view full) noexcept {
-  // Step 1: Remove parameters "(...)"
-  if (auto pos = full.find('('); pos != std::string_view::npos) {
+//[[nodiscard]]
+// inline std::string_view SimplifyFunctionName(std::string_view full) noexcept
+// { return full;
+// Step 1: Remove parameters "(...)"
+/*  if (auto pos = full.find('('); pos != std::string_view::npos) {
     full = full.substr(0, pos);
   }
 
@@ -151,8 +348,92 @@ inline std::string_view SimplifyFunctionName(std::string_view full) noexcept {
   if (prev == std::string_view::npos)
     return full;
 
-  return full.substr(prev + 2);
+  return full.substr(prev + 2);*/
+//}
+
+/*[[nodiscard]]
+inline bool IsAsciiSpace(char const c) noexcept {
+  return c == ' ' || c == '\t' || c == '\n' || c == '\r';
 }
+
+[[nodiscard]]
+inline std::string_view TrimRight(std::string_view text) noexcept {
+  while (!text.empty() && IsAsciiSpace(text.back())) {
+    text.remove_suffix(1);
+  }
+
+  return text;
+}
+
+[[nodiscard]]
+inline std::string_view RemoveReturnType(std::string_view text) noexcept {
+  std::size_t angle_depth = 0;
+  std::size_t last_space = std::string_view::npos;
+
+  for (std::size_t i = 0; i < text.size(); ++i) {
+    char const c = text[i];
+
+    if (c == '<') {
+      ++angle_depth;
+    } else if (c == '>' && angle_depth > 0) {
+      --angle_depth;
+    } else if (angle_depth == 0 && IsAsciiSpace(c)) {
+      last_space = i;
+    }
+  }
+
+  if (last_space != std::string_view::npos) {
+    return text.substr(last_space + 1);
+  }
+
+  return text;
+}
+
+[[nodiscard]]
+inline std::string_view KeepLastTwoScopes(std::string_view text) noexcept {
+  auto const last = text.rfind("::");
+  if (last == std::string_view::npos) {
+    return text;
+  }
+
+  if (last < 2) {
+    return text;
+  }
+
+  auto const prev = text.rfind("::", last - 2);
+  if (prev == std::string_view::npos) {
+    return text;
+  }
+
+  return text.substr(prev + 2);
+}
+
+[[nodiscard]]
+inline std::string_view SimplifyFunctionName(std::string_view full) noexcept {
+  // Step 1: remove function parameters first.
+  // Important: this must happen before searching "ggems::",
+  // because MSVC parameter types may themselves contain "ggems::".
+  if (auto const pos = full.find('('); pos != std::string_view::npos) {
+    full = full.substr(0, pos);
+  }
+
+  full = TrimRight(full);
+
+  // Step 2: if this is a GGEMS symbol, remove everything before ggems::.
+  constexpr std::string_view root = "ggems::";
+
+  if (auto const pos = full.rfind(root); pos != std::string_view::npos) {
+    full = full.substr(pos + root.size());
+  } else {
+    // Fallback for non-GGEMS symbols: remove return type / calling convention.
+    full = RemoveReturnType(full);
+  }
+
+  full = TrimRight(full);
+
+  // Step 3: keep only Class::Method.
+  return KeepLastTwoScopes(full);
+}*/
 
 /*!
  * \brief Computes a 64-bit FNV-1a hash of the input string.
