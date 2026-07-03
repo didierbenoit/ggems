@@ -1,6 +1,8 @@
 #include "core/particles/GGEMSParticleState.clh"
 #include "core/transport/GGEMSTransportCounters.clh"
 #include "core/random/GGEMSRandom.clh"
+#include "core/sources/GGEMSSource.clh"
+#include "core/observer/GGEMSObserverRecord.clh"
 
 #ifndef GGEMS_DUMMY_LOCAL_STACK_CAPACITY
 #define GGEMS_DUMMY_LOCAL_STACK_CAPACITY 16U
@@ -10,18 +12,15 @@
 #define GGEMS_DUMMY_TRACK_BRANCH_BITS 16U
 #endif
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+#ifndef GGEMS_ENABLE_TRANSPORT_OBSERVER
+#define GGEMS_ENABLE_TRANSPORT_OBSERVER 0
+#endif
 
-static inline GGEMSParticleState
-GGEMS_DummyMakeAionino(ulong global_primary_id, ulong initial_energy_milli_eV) {
+static inline GGEMSParticleState GGEMS_MakeInactiveAionino(void) {
   GGEMSParticleState particle;
 
-  ulong base_track_id = global_primary_id << GGEMS_DUMMY_TRACK_BRANCH_BITS;
-
-  particle.global_particle_id = global_primary_id;
-  particle.track_id = base_track_id;
+  particle.global_particle_id = GGEMS_INVALID_ID_U64;
+  particle.track_id = GGEMS_INVALID_ID_U64;
   particle.parent_track_id = GGEMS_INVALID_ID_U64;
   particle.time_ps = 0UL;
 
@@ -30,7 +29,7 @@ GGEMS_DummyMakeAionino(ulong global_primary_id, ulong initial_energy_milli_eV) {
   particle.position_z_pm = 0L;
 
   particle.particle_type = GGEMS_PARTICLE_TYPE_AIONINO;
-  particle.status = GGEMS_PARTICLE_STATUS_ALIVE;
+  particle.status = GGEMS_PARTICLE_STATUS_INACTIVE;
   particle.generation = 0U;
   particle.flags = 0U;
 
@@ -44,8 +43,8 @@ GGEMS_DummyMakeAionino(ulong global_primary_id, ulong initial_energy_milli_eV) {
   particle.direction_z = 1.0f;
   particle.direction_w = 0.0f;
 
-  particle.energy_milli_eV = initial_energy_milli_eV;
-  particle.weight = 1.0f;
+  particle.energy_milli_eV = 0UL;
+  particle.weight = 0.0f;
 
   return particle;
 }
@@ -114,9 +113,20 @@ __kernel void particle_dummy_stream_branching_transport(
     __global GGEMSRandomState *random_states,
     __global GGEMSParticleState *worker_final_states,
     volatile __global GGEMSTransportCounters *counters,
-    uint total_primary_count, ulong projection_history_offset,
-    ulong device_primary_offset, ulong initial_energy_milli_eV,
-    ulong min_energy_milli_eV, uint max_generation, uint max_steps_per_track) {
+    __global GGEMSSourceRecord const *source, uint total_primary_count,
+    ulong projection_history_offset, ulong device_primary_offset,
+    ulong min_energy_milli_eV, uint max_generation, uint max_steps_per_track,
+    __global GGEMSObserverConfigRecord const *observer_config,
+    volatile __global GGEMSObserverCounters *observer_counters,
+    __global GGEMSObserverRecord *observer_records,
+    uint observer_record_capacity) {
+#if GGEMS_ENABLE_TRANSPORT_OBSERVER == 0
+  (void)(observer_config);
+  (void)(observer_counters);
+  (void)(observer_records);
+  (void)(observer_record_capacity);
+#endif
+
   uint worker_id = (uint)(get_global_id(0));
 
   GGEMSParticleState stack[GGEMS_DUMMY_LOCAL_STACK_CAPACITY];
@@ -124,7 +134,7 @@ __kernel void particle_dummy_stream_branching_transport(
   uint local_max_stack_depth = 0U;
   uint processed_any_primary = 0U;
 
-  GGEMSParticleState last_state = GGEMS_DummyMakeAionino(0U, 0U);
+  GGEMSParticleState last_state = GGEMS_MakeInactiveAionino();
   last_state.status = GGEMS_PARTICLE_STATUS_INACTIVE;
 
   while (1) {
@@ -142,12 +152,13 @@ __kernel void particle_dummy_stream_branching_transport(
     atomic_inc(&counters->consumed_primary_count);
 
     GGEMSParticleState current =
-        GGEMS_DummyMakeAionino(global_primary_id, initial_energy_milli_eV);
+        GGEMS_SourceReadAionino(global_primary_id, source);
 
     ulong base_track_id = current.track_id;
 
-    current.particle_type = GGEMS_PARTICLE_TYPE_GAMMA;
-    atomic_inc(&counters->aionino_to_gamma_count);
+    if (current.particle_type == GGEMS_PARTICLE_TYPE_GAMMA) {
+      atomic_inc(&counters->aionino_to_gamma_count);
+    }
 
     stack_size = 0U;
     uint local_track_index = 1U;
@@ -163,11 +174,11 @@ __kernel void particle_dummy_stream_branching_transport(
 
         if (current.status == GGEMS_PARTICLE_STATUS_ALIVE &&
             current.flags == 1U && current.generation < max_generation &&
-            current.energy_milli_eV > (2UL * min_energy_milli_eV)) {
+            current.energy_milli_eV > (min_energy_milli_eV << 1)) {
           float u = GGEMS_RndmUniform(random_states, worker_id);
 
           if (current.particle_type == GGEMS_PARTICLE_TYPE_GAMMA && u > 0.8f) {
-            ulong secondary_energy = current.energy_milli_eV / 2ULL;
+            ulong secondary_energy = current.energy_milli_eV >> 1;
             current.energy_milli_eV -= secondary_energy;
 
             if (stack_size < GGEMS_DUMMY_LOCAL_STACK_CAPACITY) {
@@ -190,8 +201,8 @@ __kernel void particle_dummy_stream_branching_transport(
               atomic_inc(&counters->overflow_count);
             }
           } else if (current.particle_type == GGEMS_PARTICLE_TYPE_ELECTRON &&
-                     u > 0.5) {
-            ulong secondary_energy = current.energy_milli_eV / 2ULL;
+                     u > 0.5f) {
+            ulong secondary_energy = current.energy_milli_eV >> 1;
             current.energy_milli_eV -= secondary_energy;
 
             if (stack_size < GGEMS_DUMMY_LOCAL_STACK_CAPACITY) {

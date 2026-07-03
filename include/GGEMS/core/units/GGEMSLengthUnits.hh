@@ -36,6 +36,8 @@
 
 /// \cond
 #include <array>
+#include <cstdint>
+#include <string>
 /// \endcond
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
@@ -100,6 +102,18 @@ inline std::string HumanReadable(Length const &l, std::int8_t precision = 7,
   }
 
   return std::format("{:.{}f} pm", v, precision);
+}
+
+[[nodiscard]] inline std::string
+HumanReadableSignedLength(std::int64_t value_pm) {
+  if (value_pm >= 0LL) {
+    return HumanReadable(Length{static_cast<std::uint64_t>(value_pm)});
+  }
+
+  std::uint64_t magnitude_pm =
+      static_cast<std::uint64_t>(-(value_pm + 1LL)) + 1ULL;
+
+  return "-" + HumanReadable(Length{magnitude_pm});
 }
 
 /*!

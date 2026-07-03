@@ -5,6 +5,7 @@ namespace py = pybind11;
 void BindCore(py::module_ &m);
 void BindOpenCL(py::module_ &m);
 void BindRandom(py::module_ &m);
+void BindSource(py::module_ &m);
 void BindRun(py::module_ &m);
 
 #ifdef GGEMS_WITH_IMGUI
@@ -22,6 +23,7 @@ PYBIND11_MODULE(ggems, m) {
   auto core = m.def_submodule("core", "GGEMS core module");
   auto opencl = m.def_submodule("opencl", "GGEMS OpenCL module");
   auto random = m.def_submodule("rndm", "GGEMS random module");
+  auto source = m.def_submodule("source", "GGEMS source module");
   auto run = m.def_submodule("run", "GGEMS run module");
 
 #ifdef GGEMS_WITH_IMGUI
@@ -31,6 +33,7 @@ PYBIND11_MODULE(ggems, m) {
   BindCore(core);
   BindOpenCL(opencl);
   BindRandom(random);
+  BindSource(source);
   BindRun(run);
 
 #ifdef GGEMS_WITH_IMGUI

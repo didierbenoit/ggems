@@ -16,6 +16,8 @@ void BindRun(py::module_ &m) {
 
       .def("set_random", &ggems::core::GGEMSRun::SetRandom, py::arg("random"))
 
+      .def("set_source", &ggems::core::GGEMSRun::SetSource, py::arg("source"))
+
       .def("set_primary_count", &ggems::core::GGEMSRun::SetPrimaryCount,
            py::arg("primary_count"))
 

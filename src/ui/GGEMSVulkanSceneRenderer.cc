@@ -757,9 +757,9 @@ void GGEMSVulkanSceneRenderer::RecordAxesCommands(
 
   ScenePushConstants push_constants = camera_.BuildWorldToClipMatrix();
 
-  command_buffer.pushConstants(*axes_pipeline_layout_,
-                               vk::ShaderStageFlagBits::eVertex, 0U,
-                               sizeof(ScenePushConstants), &push_constants);
+  command_buffer.pushConstants(
+      *axes_pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0U,
+      vk::ArrayProxy<const ScenePushConstants>{1U, &push_constants});
 
   command_buffer.draw(k_axes_vertex_count, 1U, 0U, 0U);
 }

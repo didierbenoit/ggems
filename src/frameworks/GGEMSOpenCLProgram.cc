@@ -50,6 +50,7 @@
 #include <optional>
 #include <unordered_set>
 #include <cctype>
+#include <algorithm>
 /// \endcond
 
 namespace ggems::ocl {

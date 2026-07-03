@@ -1,0 +1,64 @@
+#ifndef GGEMS_CORE_OBSERVER_GGEMS_OBSERVER_RECORD_CLH
+#define GGEMS_CORE_OBSERVER_GGEMS_OBSERVER_RECORD_CLH
+
+#include "core/particles/GGEMSParticleState.clh"
+
+#define GGEMS_OBSERVER_RECORD_KIND_UNKNOWN 0U
+#define GGEMS_OBSERVER_RECORD_KIND_SOURCE 1U
+#define GGEMS_OBSERVER_RECORD_KIND_STEP 2U
+#define GGEMS_OBSERVER_RECORD_KIND_SECONDARY_STEP 3U
+#define GGEMS_OBSERVER_RECORD_KIND_TERMINAL 4U
+#define GGEMS_OBSERVER_RECORD_KIND_ANOMALY 5U
+
+typedef struct GGEMSObserverConfigRecord {
+  uint enabled;
+  uint capture_first_primary_count;
+  uint capture_specific_primary_count;
+  uint reserved_0;
+
+  ulong capture_global_primary_id;
+} GGEMSObserverConfigRecord;
+
+typedef struct GGEMSObserverCounters {
+  uint record_count;
+  uint overflow_count;
+  uint captured_primary_count;
+  uint reserved_0;
+} GGEMSObserverCounters;
+
+typedef struct GGEMSObserverRecord {
+  ulong run_id;
+  ulong global_primary_id;
+
+  ulong global_particle_id;
+  ulong track_id;
+  ulong parent_track_id;
+  ulong time_ps;
+
+  long position_x_pm;
+  long position_y_pm;
+  long position_z_pm;
+
+  uint record_kind;
+  uint particle_type;
+  uint status;
+  uint generation;
+
+  uint flags;
+  uint current_navigator_id;
+  uint current_volume_id;
+  uint material_id;
+  uint region_id;
+
+  float direction_x;
+  float direction_y;
+  float direction_z;
+  float direction_w;
+
+  ulong energy_milli_eV;
+
+  float weight;
+  float reserved_0;
+} GGEMSObserverRecord;
+
+#endif

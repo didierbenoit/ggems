@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 
+#include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/particles/GGEMSPrimaryStream.hh"
 #include "GGEMS/core/transport/GGEMSDummyTransportWorkload.hh"
 
@@ -30,13 +31,14 @@ public:
   void SetRandom(std::shared_ptr<random::GGEMSRandom> random);
   void SetPrimaryCount(std::uint32_t primary_count);
   void SetWorkerCount(std::uint32_t worker_count);
+  void SetSource(std::shared_ptr<sources::GGEMSSource> source);
 
 private:
   std::vector<std::thread> workers_;
   std::atomic<bool> running_{false};
 
   std::shared_ptr<random::GGEMSRandom> random_{nullptr};
-
+  std::shared_ptr<sources::GGEMSSource> source_{nullptr};
   particles::GGEMSPrimaryStream primary_stream_{};
 
   bool initialised_{false};

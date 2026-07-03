@@ -56,9 +56,9 @@ private:
   [[nodiscard]] std::vector<char const *> GetRequiredInstanceExtensions() const;
 
   static VKAPI_ATTR VkBool32 VKAPI_CALL
-  DebugVkCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
-                  vk::DebugUtilsMessageTypeFlagsEXT type,
-                  vk::DebugUtilsMessengerCallbackDataEXT const *callback_data,
+  DebugVkCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+                  VkDebugUtilsMessageTypeFlagsEXT type,
+                  VkDebugUtilsMessengerCallbackDataEXT const *callback_data,
                   void *user_data) noexcept;
 
   void SelectPhysicalDevice();

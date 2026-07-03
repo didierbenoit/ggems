@@ -8,6 +8,8 @@
 #include "GGEMS/core/transport/GGEMSTransportCounters.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
 #include "GGEMS/core/units/GGEMSUnits.hh"
+#include "GGEMS/core/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 
 namespace ggems::ocl {
 class GGEMSOpenCLContext;
@@ -25,8 +27,10 @@ struct GGEMSDummyTransportRunConfig {
   std::uint64_t projection_history_offset{0ULL};
   std::uint64_t device_primary_offset{0ULL};
 
-  std::uint64_t initial_energy_milli_eV{511000000ULL};
-  std::uint64_t min_energy_milli_eV{10000000ULL};
+  sources::GGEMSSourceRecord source_record{};
+  observer::GGEMSObserverConfigRecord observer_config{};
+
+  std::uint64_t min_energy_milli_eV{10'000'000ULL};
 
   std::uint32_t max_generation{6U};
   std::uint32_t max_steps_per_track{12U};
@@ -37,6 +41,7 @@ struct GGEMSDummyTransportRunReport {
   std::string device_name{};
 
   GGEMSTransportCounters counters{};
+  observer::GGEMSObserverCounters observer_counters{};
 
   ggems::units::Time host_time{0U};
   ggems::units::Time kernel_time{0U};
@@ -56,7 +61,8 @@ public:
                               random::GGEMSRandom const &random,
                               std::uint32_t worker_count,
                               std::uint64_t random_stream_offset = 0ULL,
-                              std::uint32_t context_index = 0U);
+                              std::uint32_t context_index = 0U,
+                              std::uint32_t observer_record_capacity = 1U);
 
   ~GGEMSDummyTransportWorkload() = default;
 
@@ -72,6 +78,8 @@ public:
 
   [[nodiscard]] GGEMSTransportCounters ReadCountersOnHost();
 
+  [[nodiscard]] observer::GGEMSObserverCounters ReadObserverCountersOnHost();
+
   [[nodiscard]] std::uint32_t GetWorkerCount() const noexcept {
     return worker_count_;
   }
@@ -80,6 +88,10 @@ private:
   void InitialiseRandomStatesOnHost();
   void ResetCountersOnHost();
   void ClearWorkerFinalStatesOnHost();
+  void WriteSourceRecordOnHost(sources::GGEMSSourceRecord const &source_record);
+  void ResetObserverOnHost();
+  void WriteObserverConfigOnHost(
+      observer::GGEMSObserverConfigRecord const &observer_config);
 
 private:
   ggems::ocl::GGEMSOpenCLContext *context_{nullptr};
@@ -92,9 +104,15 @@ private:
   std::uint32_t context_index_{0U};
   std::string device_name_{};
 
+  std::uint32_t observer_record_capacity_{1U};
+
   ggems::ocl::GGEMSOpenCLSVMBuffer random_states_buffer_;
   ggems::ocl::GGEMSOpenCLSVMBuffer worker_final_states_buffer_;
   ggems::ocl::GGEMSOpenCLSVMBuffer counters_buffer_;
+  ggems::ocl::GGEMSOpenCLSVMBuffer source_record_buffer_;
+  ggems::ocl::GGEMSOpenCLSVMBuffer observer_config_buffer_;
+  ggems::ocl::GGEMSOpenCLSVMBuffer observer_counters_buffer_;
+  ggems::ocl::GGEMSOpenCLSVMBuffer observer_records_buffer_;
 };
 
 } // namespace ggems::core::transport

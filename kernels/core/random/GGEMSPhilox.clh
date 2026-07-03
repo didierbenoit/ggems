@@ -10,7 +10,7 @@
 #define GGEMS_PHILOX_W32_1 0xBB67AE85U
 
 static inline uint GGEMS_MulHi32(uint lhs, uint rhs) {
-  return (uint)(((ulong)lhs * (ulong)rhs) >> 32U);
+  return mul_hi(lhs, rhs);
 }
 
 static inline uint4 GGEMS_Philox4x32Round(uint4 counter, uint2 key) {

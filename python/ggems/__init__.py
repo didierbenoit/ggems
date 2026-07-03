@@ -3,9 +3,10 @@ from . import ggems
 core = ggems.core
 opencl = ggems.opencl
 rndm = ggems.rndm
+source = ggems.source
 run = ggems.run
 
-__all__ = ["core", "opencl", "rndm", "run"]
+__all__ = ["core", "opencl", "rndm", "source", "run"]
 
 if hasattr(ggems, "gui"):
     gui = ggems.gui

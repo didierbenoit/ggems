@@ -7,6 +7,9 @@
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/transport/GGEMSDummyTransportWorkload.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
+#include "GGEMS/core/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/core/sources/GGEMSSourceTypes.hh"
+#include "GGEMS/core/sources/GGEMSSource.hh"
 
 namespace {
 
@@ -44,6 +47,15 @@ TEST_F(GGEMSDummyTransportWorkloadTest, RunsBranchingAioninoPrototype) {
   random->SetEngine("philox");
   random->SetSeed(7777777ULL);
 
+  ggems::core::sources::GGEMSSource source{};
+  source.SetAnalytic()
+      .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
+      .SetEnergyMilliElectronVolt(511'000'000ULL)
+      .SetTimeWindow(0ULL, 1'000'000ULL)
+      .SetPositionPM(0ULL, 0ULL, 0ULL)
+      .SetDirection(0.0f, 0.0f, 1.0f)
+      .SetWeight(1.0f);
+
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
       GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT}, *random,
       k_worker_count};
@@ -52,9 +64,11 @@ TEST_F(GGEMSDummyTransportWorkloadTest, RunsBranchingAioninoPrototype) {
   config.total_primary_count = k_total_primary_count;
   config.projection_history_offset = 10'000'000ULL;
   config.device_primary_offset = 200'000ULL;
+  config.source_record = source.BuildRecord();
 
   auto report = workload.Run(config);
   auto const &counters = report.counters;
+  auto const &observer_counters = report.observer_counters;
 
   EXPECT_GT(report.host_time.value, 0U);
   EXPECT_GT(report.kernel_time.value, 0U);
@@ -87,4 +101,8 @@ TEST_F(GGEMSDummyTransportWorkloadTest, RunsBranchingAioninoPrototype) {
   EXPECT_LE(counters.max_stack_depth, 16U);
 
   EXPECT_GT(counters.total_fake_step_count, k_total_primary_count);
+
+  EXPECT_EQ(observer_counters.record_count, 0U);
+  EXPECT_EQ(observer_counters.overflow_count, 0U);
+  EXPECT_EQ(observer_counters.captured_primary_count, 0U);
 }

@@ -12,6 +12,7 @@
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
+#include "GGEMS/core/transport/GGEMSTransportWorkloadPlan.hh"
 
 using namespace ggems::units;
 
@@ -65,6 +66,22 @@ void GGEMSRun::SetRandom(std::shared_ptr<random::GGEMSRandom> random) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+void GGEMSRun::SetSource(std::shared_ptr<sources::GGEMSSource> source) {
+  GGEMS_CHECK_RECOVERABLE(source != nullptr,
+                          "Cannot attach a null GGEMSSource to GGEMSRun.");
+
+  GGEMS_CHECK_RECOVERABLE(!initialised_,
+                          "Cannot change GGEMSSource after Initialise.");
+
+  source_ = std::move(source);
+
+  GGEMS_INFO("Source", "GGEMSRun source attached.");
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 void GGEMSRun::SetPrimaryCount(std::uint32_t primary_count) {
   GGEMS_CHECK_RECOVERABLE(!initialised_,
                           "Cannot change primary count after Initialise.");
@@ -108,6 +125,15 @@ void GGEMSRun::Initialise() {
              random_->GetEngineName(), random_->GetSeed());
 
   primary_stream_.Initialise();
+
+  if (source_ == nullptr) {
+    source_ = std::make_shared<sources::GGEMSSource>();
+
+    GGEMS_INFO("Source", "No GGEMSSource attached to GGEMSRun. "
+                         "Using default analytic gamma point source.");
+  }
+
+  source_->Verbose();
 
   std::filesystem::path kernel_root{GGEMS_KERNEL_ROOT};
 
@@ -180,53 +206,43 @@ void GGEMSRun::Run() {
   GGEMS_CHECK_RECOVERABLE(!dummy_transports_.empty(),
                           "No dummy transport workload was initialised.");
 
-  std::uint32_t workload_count =
-      static_cast<std::uint32_t>(dummy_transports_.size());
+  sources::GGEMSSourceRecord source_record = source_->BuildRecord();
 
-  std::uint32_t primary_base_count = primary_count_ / workload_count;
-  std::uint32_t primary_remainder = primary_count_ % workload_count;
+  std::uint64_t projection_history_offset = primary_view.global_history_offset;
 
-  std::vector<transport::GGEMSDummyTransportRunConfig> configs{workload_count};
-  std::vector<transport::GGEMSDummyTransportRunReport> reports{workload_count};
-  std::vector<std::exception_ptr> exceptions{workload_count};
+  std::vector<transport::GGEMSTransportWorkloadPlan> workload_plan =
+      transport::BuildEqualTransportWorkloadPlan(
+          projection_history_offset, source_primary_count,
+          static_cast<std::uint32_t>(dummy_transports_.size()), worker_count_);
 
-  std::uint64_t device_primary_offset{0ULL};
-  std::uint32_t assigned_primary_count{0U};
+  std::vector<transport::GGEMSDummyTransportRunReport> reports{
+      workload_plan.size()};
 
-  for (std::uint32_t workload_index = 0U; workload_index < workload_count;
-       ++workload_index) {
-    std::uint32_t device_primary_count =
-        primary_base_count + (workload_index < primary_remainder ? 1U : 0U);
-
-    configs[workload_index].total_primary_count = device_primary_count;
-    configs[workload_index].projection_history_offset =
-        primary_view.global_history_offset;
-    configs[workload_index].device_primary_offset = device_primary_offset;
-
-    assigned_primary_count += device_primary_count;
-    device_primary_offset += device_primary_count;
-  }
-
-  GGEMS_CHECK_RECOVERABLE(
-      assigned_primary_count == source_primary_count,
-      "Dummy transport assigned primary count does not match requested primary"
-      "count.");
+  std::vector<std::exception_ptr> exceptions{workload_plan.size()};
 
   std::vector<std::thread> transport_threads;
-  transport_threads.reserve(workload_count);
+  transport_threads.reserve(workload_plan.size());
 
-  for (std::uint32_t workload_index = 0U; workload_index < workload_count;
-       ++workload_index) {
-    if (configs[workload_index].total_primary_count == 0U) {
+  for (std::size_t plan_index = 0U; plan_index < workload_plan.size();
+       ++plan_index) {
+    transport::GGEMSTransportWorkloadPlan workload = workload_plan[plan_index];
+
+    if (workload.primary_count == 0U) {
       continue;
     }
 
-    transport_threads.emplace_back([&, workload_index]() {
+    transport_threads.emplace_back([&, plan_index, workload, source_record]() {
       try {
-        reports[workload_index] =
-            dummy_transports_[workload_index]->Run(configs[workload_index]);
+        transport::GGEMSDummyTransportRunConfig config{};
+        config.total_primary_count = workload.primary_count;
+        config.projection_history_offset = workload.projection_history_offset;
+        config.device_primary_offset = workload.device_primary_offset;
+        config.source_record = source_record;
+
+        reports[plan_index] =
+            dummy_transports_[workload.context_index]->Run(config);
       } catch (...) {
-        exceptions[workload_index] = std::current_exception();
+        exceptions[plan_index] = std::current_exception();
       }
     });
   }
@@ -249,14 +265,15 @@ void GGEMSRun::Run() {
   std::uint64_t accumulated_command_time_ps{0ULL};
   std::uint64_t accumulated_kernel_time_ps{0ULL};
 
-  for (std::uint32_t workload_index = 0U; workload_index < workload_count;
-       ++workload_index) {
-    if (configs[workload_index].total_primary_count == 0U) {
+  for (std::size_t plan_index = 0U; plan_index < workload_plan.size();
+       ++plan_index) {
+    transport::GGEMSTransportWorkloadPlan &workload = workload_plan[plan_index];
+
+    if (workload.primary_count == 0U) {
       continue;
     }
 
-    auto const &config = configs[workload_index];
-    auto const &report = reports[workload_index];
+    auto const &report = reports[plan_index];
     auto const &counters = report.counters;
 
     AccumulateTransportCounters(merged_counters, counters);
@@ -271,10 +288,11 @@ void GGEMSRun::Run() {
         "primary_offset={}, assigned_primaries={}, consumed_primaries={}, "
         "histories={}, secondaries={}, kernel_time={}, host_time={}, "
         "kernel_histories/s={}.",
-        run_id, workload_index, report.context_index, report.device_name,
-        config.device_primary_offset, config.total_primary_count,
-        counters.consumed_primary_count, counters.completed_history_count,
-        counters.created_secondary_count, report.kernel_time, report.host_time,
+        run_id, workload.workload_index, workload.context_index,
+        report.device_name, workload.device_primary_offset,
+        workload.primary_count, counters.consumed_primary_count,
+        counters.completed_history_count, counters.created_secondary_count,
+        report.kernel_time, report.host_time,
         report.kernel_histories_per_second);
   }
 

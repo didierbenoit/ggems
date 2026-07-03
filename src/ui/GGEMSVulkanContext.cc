@@ -96,7 +96,7 @@ namespace ggems::ui {
 /* --------------------------------------------- */
 
 GGEMSVulkanContext::~GGEMSVulkanContext() noexcept {
-  if (device_ == nullptr) {
+  if (*device_ == nullptr) {
     return;
   }
 
@@ -297,20 +297,22 @@ void GGEMSVulkanContext::CreateSurface(GLFWwindow *window) {
 /* --------------------------------------------- */
 
 VKAPI_ATTR VkBool32 VKAPI_CALL GGEMSVulkanContext::DebugVkCallback(
-    vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
-    vk::DebugUtilsMessageTypeFlagsEXT type,
-    vk::DebugUtilsMessengerCallbackDataEXT const *callback_data,
+    VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+    VkDebugUtilsMessageTypeFlagsEXT type,
+    VkDebugUtilsMessengerCallbackDataEXT const *callback_data,
     void *) noexcept {
   if (callback_data == nullptr || callback_data->pMessage == nullptr) {
-    return vk::False;
+    return VK_FALSE;
   }
 
+  std::uint32_t message_type = static_cast<std::uint32_t>(type);
+
   try {
-    if (severity == vk::DebugUtilsMessageSeverityFlagBitsEXT::eError) {
-      GGEMS_ERROR("Vulkan", "Validation layer [{}]: {}", vk::to_string(type),
+    if (severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+      GGEMS_ERROR("Vulkan", "Validation layer [{}]: {}", message_type,
                   callback_data->pMessage);
-    } else if (severity == vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) {
-      GGEMS_WARN("Vulkan", "Validation layer [{}]: {}", vk::to_string(type),
+    } else if (severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+      GGEMS_WARN("Vulkan", "Validation layer [{}]: {}", message_type,
                  callback_data->pMessage);
     }
   } catch (...) {
@@ -318,7 +320,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GGEMSVulkanContext::DebugVkCallback(
                stderr);
   }
 
-  return vk::False;
+  return VK_FALSE;
 }
 
 /* --------------------------------------------- */
@@ -674,7 +676,7 @@ vk::Extent2D GGEMSVulkanContext::ChooseSwapchainExtent(
 
 void GGEMSVulkanContext::CreateSwapchain(GLFWwindow *window) {
   GGEMS_CHECK_INTERNAL(
-      physical_device_ != nullptr && device_ != nullptr,
+      *physical_device_ != nullptr && *device_ != nullptr,
       "A Vulkan physical device and logical device are required before"
       "creating the GuiMode swapchain.");
 
@@ -747,7 +749,7 @@ void GGEMSVulkanContext::CreateSwapchain(GLFWwindow *window) {
 
 void GGEMSVulkanContext::CreateSwapchainImageViews() {
   GGEMS_CHECK_INTERNAL(
-      swapchain_ != nullptr,
+      *swapchain_ != nullptr,
       "A Vulkan swapchain is required before creating swapchain image views.");
 
   GGEMS_CHECK_INTERNAL(
@@ -809,7 +811,7 @@ void GGEMSVulkanContext::CreateCommandPool() {
 
 void GGEMSVulkanContext::AllocateCommandBuffers() {
   GGEMS_CHECK_INTERNAL(
-      command_pool_ != nullptr,
+      *command_pool_ != nullptr,
       "A Vulkan command pool is required before allocating GuiMode command "
       "buffers.");
 
@@ -1207,7 +1209,7 @@ void GGEMSVulkanContext::InitialiseImGui(GLFWwindow *window) {
       "A valid GLFW window is required before initialising Dear ImGui.");
 
   GGEMS_CHECK_INTERNAL(
-      imgui_descriptor_pool_ != nullptr,
+      *imgui_descriptor_pool_ != nullptr,
       "A Vulkan descriptor pool is required before initialising Dear ImGui.");
 
   IMGUI_CHECKVERSION();

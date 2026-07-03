@@ -1,0 +1,72 @@
+#ifndef GGEMS_CORE_SOURCES_GGEMS_SOURCE_CLH
+#define GGEMS_CORE_SOURCES_GGEMS_SOURCE_CLH
+
+#include "core/particles/GGEMSParticleState.clh"
+#include "core/sources/GGEMSSourceRecord.clh"
+
+#ifndef GGEMS_SOURCE_TRACK_BRANCH_BITS
+#define GGEMS_SOURCE_TRACK_BRANCH_BITS 16U
+#endif
+
+static inline ulong GGEMS_SourceMakeBaseTrackId(ulong global_primary_id) {
+  return global_primary_id << GGEMS_SOURCE_TRACK_BRANCH_BITS;
+}
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+static inline ulong
+GGEMS_SourceSampleTimePs(ulong global_primary_id,
+                         __global GGEMSSourceRecord const *source) {
+  if (source->time_stop_ps <= source->time_start_ps) {
+    return source->time_start_ps;
+  }
+
+  ulong duration_ps = source->time_stop_ps - source->time_start_ps;
+
+  return source->time_start_ps + (global_primary_id % duration_ps);
+}
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+static inline GGEMSParticleState
+GGEMS_SourceReadAionino(ulong global_primary_id,
+                        __global GGEMSSourceRecord const *source) {
+  GGEMSParticleState particle;
+
+  ulong base_track_id = GGEMS_SourceMakeBaseTrackId(global_primary_id);
+
+  particle.global_particle_id = global_primary_id;
+  particle.track_id = base_track_id;
+  particle.parent_track_id = GGEMS_INVALID_ID_U64;
+  particle.time_ps = GGEMS_SourceSampleTimePs(global_primary_id, source);
+
+  particle.position_x_pm = source->position_x_pm;
+  particle.position_y_pm = source->position_y_pm;
+  particle.position_z_pm = source->position_z_pm;
+
+  particle.particle_type = source->emitted_particle_type;
+  particle.status = GGEMS_PARTICLE_STATUS_ALIVE;
+  particle.generation = 0U;
+  particle.flags = 0U;
+
+  particle.current_navigator_id = GGEMS_INVALID_ID_U32;
+  particle.current_volume_id = GGEMS_INVALID_ID_U32;
+  particle.material_id = GGEMS_INVALID_ID_U32;
+  particle.region_id = GGEMS_INVALID_ID_U32;
+
+  particle.direction_x = source->direction_x;
+  particle.direction_y = source->direction_y;
+  particle.direction_z = source->direction_z;
+  particle.direction_w = source->direction_w;
+
+  particle.energy_milli_eV = source->energy_milli_eV;
+  particle.weight = source->weight;
+
+  return particle;
+}
+
+#endif
