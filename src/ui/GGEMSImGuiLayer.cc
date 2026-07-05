@@ -9,9 +9,8 @@
 
 namespace ggems::ui {
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 char const *GGEMSImGuiLayer::GetSceneSelectionName() const noexcept {
   switch (selected_scene_item_) {
@@ -36,9 +35,8 @@ char const *GGEMSImGuiLayer::GetSceneSelectionName() const noexcept {
   return "Unknown";
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 void GGEMSImGuiLayer::BuildFrame(vk::Extent2D const &swapchain_extent,
                                  ImTextureID scene_texture_id,
@@ -50,9 +48,8 @@ void GGEMSImGuiLayer::BuildFrame(vk::Extent2D const &swapchain_extent,
   if (show_output_panel_) {
     render::GGEMSBanner &banner = core::GetOutputBanner();
     core::GGEMSOutputState &output_state = core::GetOutputState();
-    render::GGEMSProgressBar &progress_bar = core::GetProgressBar();
 
-    output_panel_.Render(banner, output_state, progress_bar);
+    output_panel_.Render(banner, output_state);
   }
 
   if (show_status_panel_) {
@@ -72,32 +69,24 @@ void GGEMSImGuiLayer::BuildFrame(vk::Extent2D const &swapchain_extent,
   }
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 bool GGEMSImGuiLayer::ShouldShowAxes() const noexcept { return show_axes_; }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 bool GGEMSImGuiLayer::ShouldResetCamera() const noexcept {
   return reset_camera_requested_;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 GGEMSImGuiLayer::ViewportState const &
 GGEMSImGuiLayer::GetViewportState() const noexcept {
   return viewport_state_;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSImGuiLayer::BuildMainDockspace() {
   ImGuiViewport const *viewport = ImGui::GetMainViewport();
@@ -138,9 +127,7 @@ void GGEMSImGuiLayer::BuildMainDockspace() {
   ImGui::End();
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSImGuiLayer::BuildMainMenuBar() {
   if (!ImGui::BeginMainMenuBar()) {
@@ -193,9 +180,7 @@ void GGEMSImGuiLayer::BuildMainMenuBar() {
   ImGui::EndMainMenuBar();
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSImGuiLayer::BuildStatusPanel(vk::Extent2D const &swapchain_extent) {
   ImGui::Begin("GGEMS Status", &show_status_panel_);
@@ -216,9 +201,7 @@ void GGEMSImGuiLayer::BuildStatusPanel(vk::Extent2D const &swapchain_extent) {
   ImGui::End();
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSImGuiLayer::BuildViewportPlaceholder(
     ImTextureID scene_texture_id, vk::Extent2D const &scene_texture_extent) {
@@ -281,9 +264,7 @@ void GGEMSImGuiLayer::BuildViewportPlaceholder(
   ImGui::End();
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSImGuiLayer::BuildDefaultDockspaceLayout(
     ImGuiID dockspace_id, ImVec2 const &dockspace_size) {
@@ -312,9 +293,7 @@ void GGEMSImGuiLayer::BuildDefaultDockspaceLayout(
   ImGui::DockBuilderFinish(dockspace_id);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSImGuiLayer::BuildInspectorPanel() {
   ImGui::Begin("GGEMS Inspector", &show_inspector_panel_);
@@ -372,9 +351,7 @@ void GGEMSImGuiLayer::BuildInspectorPanel() {
   ImGui::End();
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSImGuiLayer::BuildScenePanel() {
   ImGui::Begin("GGEMS Scene", &show_scene_panel_);
@@ -398,9 +375,7 @@ void GGEMSImGuiLayer::BuildScenePanel() {
   ImGui::End();
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSImGuiLayer::BuildSceneNode(char const *label,
                                      SceneSelection selection,

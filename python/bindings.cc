@@ -7,6 +7,7 @@ void BindOpenCL(py::module_ &m);
 void BindRandom(py::module_ &m);
 void BindSource(py::module_ &m);
 void BindRun(py::module_ &m);
+void BindObserver(py::module_ &m);
 
 #ifdef GGEMS_WITH_IMGUI
 void BindGui(py::module_ &m);
@@ -25,6 +26,7 @@ PYBIND11_MODULE(ggems, m) {
   auto random = m.def_submodule("rndm", "GGEMS random module");
   auto source = m.def_submodule("source", "GGEMS source module");
   auto run = m.def_submodule("run", "GGEMS run module");
+  auto observer = m.def_submodule("observer", "GGEMS observer module");
 
 #ifdef GGEMS_WITH_IMGUI
   auto gui = m.def_submodule("gui", "GGEMS graphical interface module");
@@ -35,6 +37,7 @@ PYBIND11_MODULE(ggems, m) {
   BindRandom(random);
   BindSource(source);
   BindRun(run);
+  BindObserver(observer);
 
 #ifdef GGEMS_WITH_IMGUI
   BindGui(gui);

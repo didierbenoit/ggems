@@ -9,7 +9,7 @@ enum class GGEMSObserverRecordKind : std::uint32_t {
   Unknown = 0U,
   Source = 1U,
   Step = 2U,
-  SecondaryCreated = 3U,
+  SecondaryStep = 3U,
   Terminal = 4U,
   Anomaly = 5U
 };
@@ -27,7 +27,7 @@ FromKernelObserverRecordKind(std::uint32_t record_kind) noexcept {
   case 2U:
     return GGEMSObserverRecordKind::Step;
   case 3U:
-    return GGEMSObserverRecordKind::SecondaryCreated;
+    return GGEMSObserverRecordKind::SecondaryStep;
   case 4U:
     return GGEMSObserverRecordKind::Terminal;
   case 5U:
@@ -46,8 +46,8 @@ ToLongName(GGEMSObserverRecordKind record_kind) noexcept {
     return "Source";
   case GGEMSObserverRecordKind::Step:
     return "Step";
-  case GGEMSObserverRecordKind::SecondaryCreated:
-    return "SecondaryCreated";
+  case GGEMSObserverRecordKind::SecondaryStep:
+    return "SecondaryStep";
   case GGEMSObserverRecordKind::Terminal:
     return "Terminal";
   case GGEMSObserverRecordKind::Anomaly:

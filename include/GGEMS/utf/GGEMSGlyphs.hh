@@ -104,8 +104,8 @@ inline const GlyphSet Ascii{U'g', U'e', U'p', U'l', U'a', U'n', U'-',
  * box-drawing characters, and decorative particles used in GGEMS terminals
  * and framebuffers.
  */
-inline const GlyphSet Utf32{U'γ', U'e', U'p', U'λ', U'α', U'ν', U'⁻',
-                            U'⁺', U'→', U'↳', U'✶', U'•', U'✸', U'─',
+inline const GlyphSet Utf32{U'γ', U'β', U'p', U'λ', U'α', U'ν', U'-',
+                            U'+', U'→', U'↳', U'✶', U'•', U'✸', U'─',
                             U'≡', U'█', U'░', U'╔', U'╗', U'╚', U'╝',
                             U'═', U'║', U'╟', U'╢'};
 

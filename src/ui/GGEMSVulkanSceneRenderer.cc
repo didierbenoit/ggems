@@ -9,12 +9,28 @@
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMSVulkanSceneRenderer.hh"
+#include "GGEMS/render/GGEMSColourNames.hh"
 
 namespace {
 constexpr std::uint32_t k_axis_count{3U};
 constexpr std::uint32_t k_vertices_per_axis{2U};
 constexpr std::uint32_t k_axes_vertex_count{k_axis_count * k_vertices_per_axis};
 constexpr float k_orbit_degrees_per_pixel{0.20f};
+
+// =============================================================================
+// =============================================================================
+
+std::array<float, 4U>
+ToVulkanClearColour(ggems::render::ColourKey const &colour) {
+  ggems::render::RGB const rgb =
+      ggems::render::GetColourRGB(colour.family, colour.shade, colour.variant);
+
+  constexpr float k_inverse_255{1.0F / 255.0F};
+
+  return {static_cast<float>(rgb.r) * k_inverse_255,
+          static_cast<float>(rgb.g) * k_inverse_255,
+          static_cast<float>(rgb.b) * k_inverse_255, 1.0F};
+}
 } // namespace
 
 namespace ggems::ui {
@@ -432,7 +448,7 @@ void GGEMSVulkanSceneRenderer::RecordSceneCommands(
   command_buffer.pipelineBarrier2(to_colour_attachment_dependency);
 
   vk::ClearValue clear_value{
-      std::array<float, 4U>{0.025f, 0.030f, 0.032f, 1.0f}};
+      ToVulkanClearColour(ggems::render::GGEMS_THEME_VULKAN_BACKGROUND)};
 
   vk::RenderingAttachmentInfo colour_attachment{
       .imageView = *colour_image_view_,

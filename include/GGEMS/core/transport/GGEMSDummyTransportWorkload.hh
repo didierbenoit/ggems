@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <vector>
 
 #include "GGEMS/core/particles/GGEMSParticleState.hh"
 #include "GGEMS/core/transport/GGEMSTransportCounters.hh"
@@ -22,6 +23,8 @@ class GGEMSRandom;
 namespace ggems::core::transport {
 
 struct GGEMSDummyTransportRunConfig {
+  std::uint64_t run_id{0ULL};
+
   std::uint32_t total_primary_count{4096U};
 
   std::uint64_t projection_history_offset{0ULL};
@@ -32,8 +35,8 @@ struct GGEMSDummyTransportRunConfig {
 
   std::uint64_t min_energy_milli_eV{10'000'000ULL};
 
-  std::uint32_t max_generation{6U};
-  std::uint32_t max_steps_per_track{12U};
+  std::uint32_t max_generation{8U};
+  std::uint32_t max_steps_per_track{32U};
 };
 
 struct GGEMSDummyTransportRunReport {
@@ -42,6 +45,7 @@ struct GGEMSDummyTransportRunReport {
 
   GGEMSTransportCounters counters{};
   observer::GGEMSObserverCounters observer_counters{};
+  std::vector<observer::GGEMSObserverRecord> observer_records{};
 
   ggems::units::Time host_time{0U};
   ggems::units::Time kernel_time{0U};
@@ -79,6 +83,9 @@ public:
   [[nodiscard]] GGEMSTransportCounters ReadCountersOnHost();
 
   [[nodiscard]] observer::GGEMSObserverCounters ReadObserverCountersOnHost();
+
+  [[nodiscard]] std::vector<observer::GGEMSObserverRecord>
+  ReadObserverRecordsOnHost(std::uint32_t record_count);
 
   [[nodiscard]] std::uint32_t GetWorkerCount() const noexcept {
     return worker_count_;

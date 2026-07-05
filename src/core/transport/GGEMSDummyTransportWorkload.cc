@@ -4,6 +4,7 @@
 #include <format>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
@@ -282,6 +283,35 @@ void GGEMSDummyTransportWorkload::WriteObserverConfigOnHost(
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 
+std::vector<observer::GGEMSObserverRecord>
+GGEMSDummyTransportWorkload::ReadObserverRecordsOnHost(
+    std::uint32_t record_count) {
+  std::uint32_t bounded_record_count =
+      std::min(record_count, observer_record_capacity_);
+
+  std::vector<ObserverRecord> records(bounded_record_count);
+
+  if (bounded_record_count == 0U) {
+    return records;
+  }
+
+  observer_records_buffer_.Map(CL_MAP_READ);
+
+  auto const *device_records =
+      static_cast<ObserverRecord const *>(observer_records_buffer_.GetData());
+
+  std::copy(device_records, device_records + bounded_record_count,
+            records.begin());
+
+  observer_records_buffer_.Unmap();
+
+  return records;
+}
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
 GGEMSDummyTransportRunReport
 GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
   GGEMS_CHECK_RECOVERABLE(config.total_primary_count > 0U,
@@ -342,6 +372,7 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
   kernel.SetArgSVMPointer(11U, observer_counters);
   kernel.SetArgSVMPointer(12U, observer_records);
   kernel.SetArg(13U, static_cast<cl_uint>(observer_record_capacity_));
+  kernel.SetArg(14U, static_cast<cl_ulong>(config.run_id));
 
   constexpr std::size_t k_local_size{64U};
   std::size_t const global_size = RoundUp(worker_count_, k_local_size);
@@ -357,6 +388,8 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
 
   GGEMSTransportCounters transport_counters = ReadCountersOnHost();
   ObserverCounters observer_counters_report = ReadObserverCountersOnHost();
+  std::vector<ObserverRecord> observer_records_report =
+      ReadObserverRecordsOnHost(observer_counters_report.record_count);
 
   GGEMSDummyTransportRunReport report{};
   report.context_index = context_index_;
@@ -364,6 +397,7 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
 
   report.counters = transport_counters;
   report.observer_counters = observer_counters_report;
+  report.observer_records = observer_records_report;
 
   report.host_time = profiler.GetElapsedTime();
   report.kernel_time = profiler.GetKernelTime();

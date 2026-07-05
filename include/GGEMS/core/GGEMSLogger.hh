@@ -9,12 +9,16 @@
 #include <source_location>
 #include <fstream>
 #include <string_view>
+#include <memory>
+#include <optional>
+#include <vector>
 /// \endcond
 
 #include "GGEMS/core/GGEMSCoreUtils.hh"
 #include "GGEMS/render/GGEMSColourNames.hh"
 
 namespace ggems::core {
+
 enum class LogLevel : std::uint8_t { Debug = 0, Info, Warn, Error };
 enum class Encoding : std::uint8_t { Utf32 = 0, Ascii };
 
@@ -57,6 +61,16 @@ private:
   std::mutex mtx_;
 };
 
+class StdoutSink : public LogSink {
+public:
+  StdoutSink() = default;
+
+  void Write(RenderedLogLine &&log_line) override;
+
+private:
+  std::mutex mtx_;
+};
+
 class LogFormatter {
 public:
   RenderedLogLine Format(LogRecord const &rec, bool use_color) const;
@@ -72,6 +86,8 @@ public:
   GGEMSLogger &operator=(GGEMSLogger &&) = delete;
 
 public:
+  void ClearSinks() noexcept;
+  void AddSink(std::unique_ptr<LogSink> sink);
   void SetSink(std::unique_ptr<LogSink> sink);
 
   void SetForceColor(bool force);
@@ -118,16 +134,7 @@ public:
 
 private:
   GGEMSLogger() = default;
-
   void Dispatch(LogRecord const &rec);
-
-  inline void ClearSink() noexcept {
-    std::unique_ptr<LogSink> to_delete;
-    {
-      std::scoped_lock lock(mtx_);
-      to_delete = std::move(sink_);
-    }
-  }
 
 #ifdef _WIN32
   bool EnableUtf32Win32();
@@ -138,7 +145,7 @@ private:
 private:
   std::atomic<std::int32_t> detail_level_{1};
   mutable std::mutex mtx_{};
-  std::unique_ptr<LogSink> sink_;
+  std::vector<std::unique_ptr<LogSink>> sinks_;
   LogFormatter formatter_{};
   std::optional<bool> force_colour_{};
   Encoding encoding_{Encoding::Ascii};

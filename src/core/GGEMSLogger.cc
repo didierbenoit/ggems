@@ -1,4 +1,5 @@
 /// \cond
+#include <iostream>
 #include <format>
 #ifdef _WIN32
 #include "GGEMS/platform/windows/GGEMSWindowsCore.hh"
@@ -9,22 +10,30 @@
 
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/render/GGEMSColour.hh"
 
 namespace ggems::core {
+
+// =============================================================================
+// =============================================================================
 
 static render::ColourKey LogLevelColour(LogLevel l) {
   switch (l) {
   case LogLevel::Debug:
-    return render::CYAN_Sky;
+    return render::GGEMS_THEME_LOG_DEBUG;
   case LogLevel::Info:
-    return render::GREEN_Emerald;
+    return render::GGEMS_THEME_LOG_INFO;
   case LogLevel::Warn:
-    return render::YELLOW_Lemon;
+    return render::GGEMS_THEME_LOG_WARN;
   case LogLevel::Error:
-    return render::RED_Tomato;
+    return render::GGEMS_THEME_LOG_ERROR;
   }
-  return render::DEFAULT_FG;
+  return render::GGEMS_THEME_LOG_INFO;
 }
+
+// =============================================================================
+// =============================================================================
 
 static std::string LogLevelName(LogRecord const &rec) {
   switch (rec.level) {
@@ -42,6 +51,9 @@ static std::string LogLevelName(LogRecord const &rec) {
   }
   return "unknown";
 }
+
+// =============================================================================
+// =============================================================================
 
 static std::string
 FormatTimestamp(std::chrono::system_clock::time_point const &tp) {
@@ -61,6 +73,9 @@ FormatTimestamp(std::chrono::system_clock::time_point const &tp) {
   return std::string(buf);
 }
 
+// =============================================================================
+// =============================================================================
+
 [[nodiscard]] inline std::optional<std::string>
 GetEnvVar(const char *name) noexcept {
 #if defined(_WIN32)
@@ -79,15 +94,49 @@ GetEnvVar(const char *name) noexcept {
 #endif
 }
 
+// =============================================================================
+// =============================================================================
+
+void StdoutSink::Write(RenderedLogLine &&log_line) {
+  std::scoped_lock lock(mtx_);
+
+  bool use_colour = GGEMSLogger::GetInstance().UseColour();
+
+  if (!log_line.prefix.empty()) {
+    if (use_colour) {
+      std::cout << render::AnsiColour(log_line.color) << log_line.prefix
+                << render::AnsiControlCode(render::AnsiControl::ResetColour)
+                << ' ';
+    } else {
+      std::cout << log_line.prefix << ' ';
+    }
+  }
+
+  std::cout << log_line.msg << '\n';
+}
+
+// =============================================================================
+// =============================================================================
+
 FileSink::FileSink(std::string path)
     : path_(path), out_(path_, std::ios::out | std::ios::trunc) {
   GGEMS_CHECK_FATAL(out_, "Cannot open log file: " + path_);
 }
 
+// -----------------------------------------------------------------------------
+
 void FileSink::Write(RenderedLogLine &&log_line) {
   std::scoped_lock lock(mtx_);
-  out_ << log_line.prefix << " " << log_line.msg << '\n';
+
+  if (!log_line.prefix.empty()) {
+    out_ << log_line.prefix << ' ';
+  }
+
+  out_ << log_line.msg << '\n';
 }
+
+// =============================================================================
+// =============================================================================
 
 RenderedLogLine LogFormatter::Format(LogRecord const &rec,
                                      bool use_colour) const {
@@ -110,40 +159,58 @@ RenderedLogLine LogFormatter::Format(LogRecord const &rec,
   return log_line;
 }
 
+// =============================================================================
+// =============================================================================
+
 GGEMSLogger &GGEMSLogger::GetInstance() {
   static GGEMSLogger instance;
   return instance;
 }
 
-void GGEMSLogger::SetSink(std::unique_ptr<LogSink> sink) {
-  if (!sink) {
-    Throw<GGEMSFatal>("Log sink in null.");
-  }
+// -----------------------------------------------------------------------------
 
-  bool already_set{false};
+void GGEMSLogger::ClearSinks() noexcept {
+  std::vector<std::unique_ptr<LogSink>> sinks_to_delete;
 
   {
     std::scoped_lock lock(mtx_);
-    already_set = (sink_ != nullptr);
-    if (!already_set) {
-      sink_ = std::move(sink);
-    }
-  }
-
-  if (already_set) {
-    Throw<GGEMSFatal>("Log Sink already set.");
+    sinks_to_delete = std::move(sinks_);
   }
 }
+
+// -----------------------------------------------------------------------------
+
+void GGEMSLogger::AddSink(std::unique_ptr<LogSink> sink) {
+  if (!sink) {
+    GGEMS_FATAL("Log sink is null.");
+  }
+
+  std::scoped_lock lock(mtx_);
+  sinks_.push_back(std::move(sink));
+}
+
+// -----------------------------------------------------------------------------
+
+void GGEMSLogger::SetSink(std::unique_ptr<LogSink> sink) {
+  ClearSinks();
+  AddSink(std::move(sink));
+}
+
+// -----------------------------------------------------------------------------
 
 void GGEMSLogger::SetForceColor(bool force) {
   std::scoped_lock lock(mtx_);
   force_colour_ = force;
 }
 
+// -----------------------------------------------------------------------------
+
 void GGEMSLogger::SetForceEncoding(Encoding encoding) noexcept {
   std::scoped_lock lock(mtx_);
   encoding_ = encoding;
 }
+
+// -----------------------------------------------------------------------------
 
 bool GGEMSLogger::UseColour() const noexcept {
   if (force_colour_.has_value())
@@ -155,17 +222,15 @@ bool GGEMSLogger::UseColour() const noexcept {
   return true;
 }
 
+// -----------------------------------------------------------------------------
+
 void GGEMSLogger::Dispatch(LogRecord const &rec) {
   RenderedLogLine log_line = formatter_.Format(rec, UseColour());
 
-  LogSink *local_sink = nullptr;
-  {
-    std::scoped_lock lock(mtx_);
-    local_sink = sink_.get();
-  }
+  std::scoped_lock lock(mtx_);
 
-  if (local_sink) {
-    local_sink->Write(std::move(log_line));
+  for (std::unique_ptr<LogSink> const &sink : sinks_) {
+    sink->Write(RenderedLogLine{log_line});
   }
 }
 } // namespace ggems::core

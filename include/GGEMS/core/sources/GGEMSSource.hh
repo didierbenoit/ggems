@@ -26,11 +26,11 @@ public:
 
   GGEMSSource &SetEnergyMilliElectronVolt(std::uint64_t energy_milli_eV);
 
-  GGEMSSource &SetTimeWindow(std::uint64_t time_start_ps,
-                             std::uint64_t time_stop_ps);
+  GGEMSSource &SetTimeWindowPicoSecond(std::uint64_t time_start_ps,
+                                       std::uint64_t time_stop_ps);
 
-  GGEMSSource &SetPositionPM(std::int64_t x_pm, std::int64_t y_pm,
-                             std::int64_t z_pm) noexcept;
+  GGEMSSource &SetPositionPicoMeter(std::int64_t x_pm, std::int64_t y_pm,
+                                    std::int64_t z_pm) noexcept;
 
   GGEMSSource &SetDirection(float x, float y, float z);
 

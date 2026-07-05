@@ -10,22 +10,22 @@
 
 namespace ggems::render {
 class GGEMSBanner;
-class GGEMSProgressBar;
 } // namespace ggems::render
 
 namespace ggems::core {
-enum class OutputMode : std::uint8_t { Term = 0, Gui, Cluster };
+
+enum class OutputMode : std::uint8_t { Term = 0, Gui };
 
 OutputMode GetOutputMode() noexcept;
 
 bool IsOutputConfigured() noexcept;
 bool IsOutputRuntimeStarted() noexcept;
-bool IsProgressBarAvailable() noexcept;
 
 void SetOutputMode(OutputMode mode);
 void SetOutputMode(std::string_view mode);
 
-void SetClusterOutputFile(std::string_view path);
+void SetOutputFile(std::string_view path);
+void ClearOutputFile() noexcept;
 
 void StartOutputRuntime();
 void WakeOutputRuntime() noexcept;
@@ -36,14 +36,11 @@ void StopOutputRuntime() noexcept;
 GGEMSOutputState &GetOutputState();
 
 render::GGEMSBanner &GetOutputBanner();
-render::GGEMSProgressBar &GetProgressBar();
 
 [[nodiscard]] inline std::string ToString(OutputMode mode) {
   switch (mode) {
   case OutputMode::Term:
     return "term";
-  case OutputMode::Cluster:
-    return "cluster";
   case OutputMode::Gui:
     return "gui";
   }

@@ -176,8 +176,9 @@ void BindSource(py::module_ &m) {
           "set_time_window",
           [](GGEMSSource &self, double const time_start, double const time_stop,
              std::string const &unit) -> GGEMSSource & {
-            return self.SetTimeWindow(ConvertTimeToPicosecond(time_start, unit),
-                                      ConvertTimeToPicosecond(time_stop, unit));
+            return self.SetTimeWindowPicoSecond(
+                ConvertTimeToPicosecond(time_start, unit),
+                ConvertTimeToPicosecond(time_stop, unit));
           },
           py::arg("time_start"), py::arg("time_stop"), py::arg("unit") = "s",
           py::return_value_policy::reference_internal)
@@ -186,9 +187,10 @@ void BindSource(py::module_ &m) {
           "set_position",
           [](GGEMSSource &self, double const x, double const y, double const z,
              std::string const &unit) -> GGEMSSource & {
-            return self.SetPositionPM(ConvertDistanceToPicometre(x, unit),
-                                      ConvertDistanceToPicometre(y, unit),
-                                      ConvertDistanceToPicometre(z, unit));
+            return self.SetPositionPicoMeter(
+                ConvertDistanceToPicometre(x, unit),
+                ConvertDistanceToPicometre(y, unit),
+                ConvertDistanceToPicometre(z, unit));
           },
           py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
           py::return_value_policy::reference_internal)

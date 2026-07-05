@@ -64,8 +64,8 @@ TEST(GGEMSSource, CanBuildElectronSourceRecord) {
   source.SetEmittedParticleType(
       ggems::core::particles::GGEMSParticleType::Electron);
   source.SetEnergyMilliElectronVolt(1'000'000ULL);
-  source.SetPositionPM(1LL, 2LL, 3LL);
-  source.SetTimeWindow(10ULL, 20ULL);
+  source.SetPositionPicoMeter(1LL, 2LL, 3LL);
+  source.SetTimeWindowPicoSecond(10ULL, 20ULL);
 
   auto const record = source.BuildRecord();
 

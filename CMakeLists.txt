@@ -111,6 +111,11 @@ file(GLOB_RECURSE GGEMS_CORE_SOURCES
   ${PROJECT_SOURCE_DIR}/src/utf/*.cc
 )
 
+list(FILTER GGEMS_CORE_SOURCES EXCLUDE REGEX ".*/src/render/GGEMSProgressBar\\.cc$")
+list(FILTER GGEMS_CORE_SOURCES EXCLUDE REGEX ".*/src/render/GGEMSTerminalFramebuffer\\.cc$")
+list(FILTER GGEMS_CORE_SOURCES EXCLUDE REGEX ".*/src/render/GGEMSTerminalPresenter\\.cc$")
+list(FILTER GGEMS_CORE_SOURCES EXCLUDE REGEX ".*/src/render/GGEMSTerminalRenderer\\.cc$")
+
 add_library(ggems_core STATIC ${GGEMS_CORE_SOURCES})
 
 target_include_directories(ggems_core PUBLIC

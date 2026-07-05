@@ -23,6 +23,8 @@
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMSImGuiTheme.hh"
+#include "GGEMS/render/GGEMSColourNames.hh"
 
 namespace {
 
@@ -88,6 +90,22 @@ constexpr std::array<char const *, 1> k_required_device_extensions{
 
   return std::nullopt;
 }
+
+// =============================================================================
+// =============================================================================
+
+std::array<float, 4U>
+ToVulkanClearColour(ggems::render::ColourKey const &colour) {
+  ggems::render::RGB const rgb =
+      ggems::render::GetColourRGB(colour.family, colour.shade, colour.variant);
+
+  constexpr float k_inverse_255{1.0F / 255.0F};
+
+  return {static_cast<float>(rgb.r) * k_inverse_255,
+          static_cast<float>(rgb.g) * k_inverse_255,
+          static_cast<float>(rgb.b) * k_inverse_255, 1.0F};
+}
+
 } // namespace
 
 namespace ggems::ui {
@@ -949,7 +967,8 @@ void GGEMSVulkanContext::RecordCommandBuffer(std::uint32_t image_index) {
   TransitionSwapchainImageLayout(image_index, vk::ImageLayout::eUndefined,
                                  vk::ImageLayout::eColorAttachmentOptimal);
 
-  vk::ClearValue clear_value = vk::ClearColorValue(0.08f, 0.09f, 0.11f, 1.0f);
+  vk::ClearValue clear_value = vk::ClearColorValue(
+      ToVulkanClearColour(ggems::render::GGEMS_THEME_VULKAN_BACKGROUND));
 
   vk::RenderingAttachmentInfo colour_attachment{
       .imageView = *swapchain_image_views_[image_index],
@@ -1217,13 +1236,13 @@ void GGEMSVulkanContext::InitialiseImGui(GLFWwindow *window) {
   ImGui::CreateContext();
 
   LoadImGuiFonts();
-  ApplyImGuiStyle();
 
   ImGuiIO &io = ImGui::GetIO();
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
   ImGui::StyleColorsDark();
+  ApplyGGEMSImGuiTheme();
 
   ImGui_ImplGlfw_InitForVulkan(window, true);
 
@@ -1345,85 +1364,6 @@ void GGEMSVulkanContext::LoadImGuiFonts() {
   GGEMS_WARN("Gui",
              "No preferred monospace ImGui font was found. Falling back to "
              "Dear ImGui default font.");
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-void GGEMSVulkanContext::ApplyImGuiStyle() {
-  ImGuiIO &io = ImGui::GetIO();
-
-  io.FontGlobalScale = 1.10f;
-
-  ImGuiStyle &style = ImGui::GetStyle();
-
-  style.WindowPadding = ImVec2{10.0F, 8.0F};
-  style.FramePadding = ImVec2{8.0F, 4.0F};
-  style.CellPadding = ImVec2{6.0F, 4.0F};
-  style.ItemSpacing = ImVec2{8.0F, 6.0F};
-  style.ItemInnerSpacing = ImVec2{6.0F, 4.0F};
-
-  style.WindowRounding = 4.0F;
-  style.ChildRounding = 3.0F;
-  style.FrameRounding = 3.0F;
-  style.PopupRounding = 3.0F;
-  style.ScrollbarRounding = 4.0F;
-  style.GrabRounding = 3.0F;
-  style.TabRounding = 4.0F;
-
-  style.WindowBorderSize = 1.0F;
-  style.ChildBorderSize = 1.0F;
-  style.PopupBorderSize = 1.0F;
-  style.FrameBorderSize = 0.0F;
-  style.TabBorderSize = 0.0F;
-
-  ImVec4 *colours = style.Colors;
-
-  colours[ImGuiCol_Text] = ImVec4{0.88F, 0.93F, 0.95F, 1.00F};
-  colours[ImGuiCol_TextDisabled] = ImVec4{0.48F, 0.55F, 0.60F, 1.00F};
-
-  colours[ImGuiCol_WindowBg] = ImVec4{0.15F, 0.16F, 0.18F, 0.96F};
-  colours[ImGuiCol_ChildBg] = ImVec4{0.12F, 0.13F, 0.15F, 0.96F};
-  colours[ImGuiCol_PopupBg] = ImVec4{0.12F, 0.13F, 0.15F, 0.98F};
-
-  colours[ImGuiCol_Border] = ImVec4{0.35F, 0.42F, 0.48F, 0.55F};
-  colours[ImGuiCol_BorderShadow] = ImVec4{0.00F, 0.00F, 0.00F, 0.00F};
-
-  colours[ImGuiCol_FrameBg] = ImVec4{0.20F, 0.23F, 0.26F, 1.00F};
-  colours[ImGuiCol_FrameBgHovered] = ImVec4{0.27F, 0.32F, 0.36F, 1.00F};
-  colours[ImGuiCol_FrameBgActive] = ImVec4{0.32F, 0.38F, 0.42F, 1.00F};
-
-  colours[ImGuiCol_TitleBg] = ImVec4{0.18F, 0.22F, 0.26F, 1.00F};
-  colours[ImGuiCol_TitleBgActive] = ImVec4{0.24F, 0.34F, 0.42F, 1.00F};
-  colours[ImGuiCol_TitleBgCollapsed] = ImVec4{0.12F, 0.14F, 0.16F, 0.90F};
-
-  colours[ImGuiCol_MenuBarBg] = ImVec4{0.14F, 0.16F, 0.18F, 1.00F};
-
-  colours[ImGuiCol_Button] = ImVec4{0.24F, 0.34F, 0.42F, 1.00F};
-  colours[ImGuiCol_ButtonHovered] = ImVec4{0.32F, 0.46F, 0.56F, 1.00F};
-  colours[ImGuiCol_ButtonActive] = ImVec4{0.22F, 0.55F, 0.68F, 1.00F};
-
-  colours[ImGuiCol_Header] = ImVec4{0.22F, 0.32F, 0.40F, 0.80F};
-  colours[ImGuiCol_HeaderHovered] = ImVec4{0.30F, 0.44F, 0.54F, 0.90F};
-  colours[ImGuiCol_HeaderActive] = ImVec4{0.26F, 0.52F, 0.66F, 1.00F};
-
-  colours[ImGuiCol_Tab] = ImVec4{0.17F, 0.20F, 0.23F, 1.00F};
-  colours[ImGuiCol_TabHovered] = ImVec4{0.30F, 0.44F, 0.54F, 1.00F};
-  colours[ImGuiCol_TabSelected] = ImVec4{0.23F, 0.34F, 0.42F, 1.00F};
-
-  colours[ImGuiCol_ScrollbarBg] = ImVec4{0.10F, 0.11F, 0.12F, 1.00F};
-  colours[ImGuiCol_ScrollbarGrab] = ImVec4{0.32F, 0.38F, 0.42F, 1.00F};
-  colours[ImGuiCol_ScrollbarGrabHovered] = ImVec4{0.42F, 0.50F, 0.55F, 1.00F};
-  colours[ImGuiCol_ScrollbarGrabActive] = ImVec4{0.50F, 0.60F, 0.66F, 1.00F};
-
-  colours[ImGuiCol_CheckMark] = ImVec4{0.42F, 0.78F, 0.88F, 1.00F};
-  colours[ImGuiCol_SliderGrab] = ImVec4{0.42F, 0.78F, 0.88F, 1.00F};
-  colours[ImGuiCol_SliderGrabActive] = ImVec4{0.58F, 0.88F, 0.96F, 1.00F};
-
-  colours[ImGuiCol_ResizeGrip] = ImVec4{0.42F, 0.78F, 0.88F, 0.25F};
-  colours[ImGuiCol_ResizeGripHovered] = ImVec4{0.42F, 0.78F, 0.88F, 0.55F};
-  colours[ImGuiCol_ResizeGripActive] = ImVec4{0.42F, 0.78F, 0.88F, 0.90F};
 }
 
 /* --------------------------------------------- */

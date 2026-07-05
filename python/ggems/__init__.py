@@ -5,8 +5,9 @@ opencl = ggems.opencl
 rndm = ggems.rndm
 source = ggems.source
 run = ggems.run
+observer = ggems.observer
 
-__all__ = ["core", "opencl", "rndm", "source", "run"]
+__all__ = ["core", "opencl", "rndm", "source", "run", "observer"]
 
 if hasattr(ggems, "gui"):
     gui = ggems.gui

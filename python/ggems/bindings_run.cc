@@ -1,5 +1,6 @@
 #include <pybind11/pybind11.h>
 
+#include "GGEMS/core/observer/GGEMSTransportObserver.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/GGEMSRun.hh"
 
@@ -17,6 +18,9 @@ void BindRun(py::module_ &m) {
       .def("set_random", &ggems::core::GGEMSRun::SetRandom, py::arg("random"))
 
       .def("set_source", &ggems::core::GGEMSRun::SetSource, py::arg("source"))
+
+      .def("set_observer", &ggems::core::GGEMSRun::SetObserver,
+           py::arg("observer"))
 
       .def("set_primary_count", &ggems::core::GGEMSRun::SetPrimaryCount,
            py::arg("primary_count"))

@@ -13,6 +13,7 @@
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
 #include "GGEMS/core/transport/GGEMSTransportWorkloadPlan.hh"
+#include "GGEMS/core/observer/GGEMSTransportObserver.hh"
 
 using namespace ggems::units;
 
@@ -82,6 +83,24 @@ void GGEMSRun::SetSource(std::shared_ptr<sources::GGEMSSource> source) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+void GGEMSRun::SetObserver(
+    std::shared_ptr<observer::GGEMSTransportObserver> observer) {
+  GGEMS_CHECK_RECOVERABLE(
+      observer != nullptr,
+      "Cannot attach a null GGEMSTransportObserver to GGEMSRun.");
+
+  GGEMS_CHECK_RECOVERABLE(
+      !initialised_, "Cannot change GGEMSTransportObserver after Initialise.");
+
+  observer_ = std::move(observer);
+
+  GGEMS_INFO("Observer", "GGEMSRun transport observer attached.");
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
 void GGEMSRun::SetPrimaryCount(std::uint32_t primary_count) {
   GGEMS_CHECK_RECOVERABLE(!initialised_,
                           "Cannot change primary count after Initialise.");
@@ -135,6 +154,9 @@ void GGEMSRun::Initialise() {
 
   source_->Verbose();
 
+  std::uint32_t observer_record_capacity =
+      observer_ != nullptr ? observer_->GetRecordCapacity() : 1U;
+
   std::filesystem::path kernel_root{GGEMS_KERNEL_ROOT};
 
   dummy_transports_.clear();
@@ -150,7 +172,8 @@ void GGEMSRun::Initialise() {
         std::make_unique<transport::GGEMSDummyTransportWorkload>(
             opencl.GetContext()[context_index], kernel_root, *random_,
             worker_count_, random_stream_offset,
-            static_cast<std::uint32_t>(context_index)));
+            static_cast<std::uint32_t>(context_index),
+            observer_record_capacity));
   }
 
   GGEMS_INFO("Core", "{} dummy transport workload(s) initialised.",
@@ -208,6 +231,12 @@ void GGEMSRun::Run() {
 
   sources::GGEMSSourceRecord source_record = source_->BuildRecord();
 
+  observer::GGEMSObserverConfigRecord observer_config{};
+
+  if (observer_ != nullptr) {
+    observer_config = observer_->BuildConfigRecord();
+  }
+
   std::uint64_t projection_history_offset = primary_view.global_history_offset;
 
   std::vector<transport::GGEMSTransportWorkloadPlan> workload_plan =
@@ -234,6 +263,8 @@ void GGEMSRun::Run() {
     transport_threads.emplace_back([&, plan_index, workload, source_record]() {
       try {
         transport::GGEMSDummyTransportRunConfig config{};
+        config.run_id = run_id;
+        config.observer_config = observer_config;
         config.total_primary_count = workload.primary_count;
         config.projection_history_offset = workload.projection_history_offset;
         config.device_primary_offset = workload.device_primary_offset;
@@ -275,6 +306,10 @@ void GGEMSRun::Run() {
 
     auto const &report = reports[plan_index];
     auto const &counters = report.counters;
+
+    if (observer_ != nullptr && observer_->IsEnabled()) {
+      observer_->Accumulate(report.observer_records, report.observer_counters);
+    }
 
     AccumulateTransportCounters(merged_counters, counters);
 
@@ -325,5 +360,11 @@ void GGEMSRun::Run() {
              ggems::units::Time{accumulated_kernel_time_ps});
 
   GGEMS_INFO("Core", "GGEMSRun projection {} completed.", run_id);
+
+  GGEMS_INFO("Core", "Test");
+  GGEMS_WARN("Core", "Test");
+  GGEMS_INFOEX("Core", 2, "Test");
+  GGEMS_ERROR("Core", "Test");
+  GGEMS_DEBUG("Core", "Test");
 }
 } // namespace ggems::core

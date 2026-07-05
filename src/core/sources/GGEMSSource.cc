@@ -79,8 +79,8 @@ GGEMSSource::SetEnergyMilliElectronVolt(std::uint64_t energy_milli_eV) {
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 
-GGEMSSource &GGEMSSource::SetTimeWindow(std::uint64_t time_start_ps,
-                                        std::uint64_t time_stop_ps) {
+GGEMSSource &GGEMSSource::SetTimeWindowPicoSecond(std::uint64_t time_start_ps,
+                                                  std::uint64_t time_stop_ps) {
   GGEMS_CHECK_RECOVERABLE(time_stop_ps >= time_start_ps,
                           "Source time stop must be greater than or equal to "
                           "source time start.");
@@ -95,8 +95,9 @@ GGEMSSource &GGEMSSource::SetTimeWindow(std::uint64_t time_start_ps,
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 
-GGEMSSource &GGEMSSource::SetPositionPM(std::int64_t x_pm, std::int64_t y_pm,
-                                        std::int64_t z_pm) noexcept {
+GGEMSSource &GGEMSSource::SetPositionPicoMeter(std::int64_t x_pm,
+                                               std::int64_t y_pm,
+                                               std::int64_t z_pm) noexcept {
   record_.position_x_pm = x_pm;
   record_.position_y_pm = y_pm;
   record_.position_z_pm = z_pm;

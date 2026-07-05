@@ -3,7 +3,6 @@
 
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSOutputMode.hh"
-#include "GGEMS/utf/GGEMSUTF.hh"
 
 namespace py = pybind11;
 
@@ -15,24 +14,20 @@ void BindCore(py::module_ &m) {
   m.def(
       "set_output_mode",
       [](std::string const &mode) { ggems::core::SetOutputMode(mode); },
-      py::arg("mode"), "Select output mode: 'term', 'gui', or 'cluster'.");
+      py::arg("mode"), "Select output mode: 'term', or 'gui'.");
 
   m.def(
-      "set_cluster_output_file",
-      [](std::string const &path) { ggems::core::SetClusterOutputFile(path); },
-      py::arg("path"), "Set output log file path for cluster mode.");
+      "set_output_file",
+      [](std::string const &path) { ggems::core::SetOutputFile(path); },
+      py::arg("path"), "Set optional GGEMS output log file path.");
+
+  m.def(
+      "clear_output_file", []() { ggems::core::ClearOutputFile(); },
+      "Disable optional GGEMS output log file.");
 
   m.def(
       "start_output_runtime", []() { ggems::core::StartOutputRuntime(); },
       "Start GGEMS output runtime.");
-
-  m.def(
-      "show_final_output_screen",
-      [](std::string const &message) {
-        ggems::core::ShowFinalOutputScreen(ggems::utf::UTF8ToUTF32(message));
-      },
-      py::arg("message") = "Press Enter to exit...",
-      "Show final interactive output screen when supported.");
 
   m.def(
       "stop_output_runtime", []() { ggems::core::StopOutputRuntime(); },

@@ -84,9 +84,8 @@ TEST(GGEMSObserverTypes, RecordKindsAreKernelCompatible) {
   EXPECT_EQ(ToKernelObserverRecordKind(GGEMSObserverRecordKind::Unknown), 0U);
   EXPECT_EQ(ToKernelObserverRecordKind(GGEMSObserverRecordKind::Source), 1U);
   EXPECT_EQ(ToKernelObserverRecordKind(GGEMSObserverRecordKind::Step), 2U);
-  EXPECT_EQ(
-      ToKernelObserverRecordKind(GGEMSObserverRecordKind::SecondaryCreated),
-      3U);
+  EXPECT_EQ(ToKernelObserverRecordKind(GGEMSObserverRecordKind::SecondaryStep),
+            3U);
   EXPECT_EQ(ToKernelObserverRecordKind(GGEMSObserverRecordKind::Terminal), 4U);
   EXPECT_EQ(ToKernelObserverRecordKind(GGEMSObserverRecordKind::Anomaly), 5U);
 }

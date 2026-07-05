@@ -119,13 +119,14 @@ add_custom_target(ggems_gui_shaders
 # ----------------------------------------------------------------------------
 # GGEMS GuiMode library
 # ----------------------------------------------------------------------------
+file(GLOB GGEMS_GUI_SOURCES CONFIGURE_DEPENDS
+  "${CMAKE_CURRENT_SOURCE_DIR}/*.cc"
+)
+
+list(SORT GGEMS_GUI_SOURCES)
+
 add_library(ggems_gui STATIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSGuiApplication.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSVulkanContext.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSImGuiOutputPanel.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSImGuiLayer.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSVulkanCamera.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/GGEMSVulkanSceneRenderer.cc
+  ${GGEMS_GUI_SOURCES}
 )
 
 add_dependencies(ggems_gui ggems_gui_shaders)

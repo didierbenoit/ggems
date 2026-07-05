@@ -10,6 +10,10 @@
 #define GGEMS_OBSERVER_RECORD_KIND_TERMINAL 4U
 #define GGEMS_OBSERVER_RECORD_KIND_ANOMALY 5U
 
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
 typedef struct GGEMSObserverConfigRecord {
   uint enabled;
   uint capture_first_primary_count;
@@ -19,12 +23,20 @@ typedef struct GGEMSObserverConfigRecord {
   ulong capture_global_primary_id;
 } GGEMSObserverConfigRecord;
 
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
 typedef struct GGEMSObserverCounters {
   uint record_count;
   uint overflow_count;
   uint captured_primary_count;
   uint reserved_0;
 } GGEMSObserverCounters;
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 
 typedef struct GGEMSObserverRecord {
   ulong run_id;
@@ -44,12 +56,6 @@ typedef struct GGEMSObserverRecord {
   uint status;
   uint generation;
 
-  uint flags;
-  uint current_navigator_id;
-  uint current_volume_id;
-  uint material_id;
-  uint region_id;
-
   float direction_x;
   float direction_y;
   float direction_z;
@@ -60,5 +66,98 @@ typedef struct GGEMSObserverRecord {
   float weight;
   float reserved_0;
 } GGEMSObserverRecord;
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+static inline uint GGEMS_ObserverShouldCapturePrimary(
+    __global GGEMSObserverConfigRecord const *config,
+    ulong projection_primary_id, ulong global_primary_id) {
+  if (config->enabled == 0U) {
+    return 0U;
+  }
+
+  if (projection_primary_id < (ulong)(config->capture_first_primary_count)) {
+    return 1U;
+  }
+
+  if (config->capture_specific_primary_count != 0U &&
+      global_primary_id == config->capture_global_primary_id) {
+    return 1U;
+  }
+
+  return 0U;
+}
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+static inline uint
+GGEMS_ObserverReserveRecord(volatile __global GGEMSObserverCounters *counters,
+                            uint record_capacity) {
+  while (1) {
+    uint record_index = counters->record_count;
+
+    if (record_index >= record_capacity) {
+      atomic_inc(&counters->overflow_count);
+      return GGEMS_INVALID_ID_U32;
+    }
+
+    uint previous = atomic_cmpxchg(&counters->record_count, record_index,
+                                   record_index + 1U);
+
+    if (previous == record_index) {
+      return record_index;
+    }
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+
+static inline void
+GGEMS_ObserverRecordParticle(volatile __global GGEMSObserverCounters *counters,
+                             __global GGEMSObserverRecord *records,
+                             uint record_capacity, uint record_kind,
+                             ulong run_id, ulong global_primary_id,
+                             GGEMSParticleState particle) {
+  uint record_index = GGEMS_ObserverReserveRecord(counters, record_capacity);
+
+  if (record_index == GGEMS_INVALID_ID_U32) {
+    return;
+  }
+
+  __global GGEMSObserverRecord *record = records + record_index;
+
+  record->run_id = run_id;
+  record->global_primary_id = global_primary_id;
+
+  record->global_particle_id = particle.global_particle_id;
+  record->track_id = particle.track_id;
+  record->parent_track_id = particle.parent_track_id;
+  record->time_ps = particle.time_ps;
+
+  record->position_x_pm = particle.position_x_pm;
+  record->position_y_pm = particle.position_y_pm;
+  record->position_z_pm = particle.position_z_pm;
+
+  record->record_kind = record_kind;
+  record->particle_type = particle.particle_type;
+  record->status = particle.status;
+  record->generation = particle.generation;
+
+  record->direction_x = particle.direction_x;
+  record->direction_y = particle.direction_y;
+  record->direction_z = particle.direction_z;
+  record->direction_w = particle.direction_w;
+
+  record->energy_milli_eV = particle.energy_milli_eV;
+
+  record->weight = particle.weight;
+  record->reserved_0 = 0.0f;
+}
 
 #endif

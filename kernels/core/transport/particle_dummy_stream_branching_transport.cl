@@ -60,6 +60,7 @@ GGEMS_DummyMakeElectronSecondary(GGEMSParticleState parent,
   GGEMSParticleState secondary = parent;
 
   secondary.track_id = base_track_id + (ulong)(local_track_index);
+  secondary.global_particle_id = secondary.track_id;
   secondary.parent_track_id = parent.track_id;
   secondary.particle_type = GGEMS_PARTICLE_TYPE_ELECTRON;
   secondary.status = GGEMS_PARTICLE_STATUS_ALIVE;
@@ -82,13 +83,13 @@ GGEMS_DummyMakeElectronSecondary(GGEMSParticleState parent,
 
 static inline void GGEMS_DummyMoveParticle(__private GGEMSParticleState *p) {
   if (p->particle_type == GGEMS_PARTICLE_TYPE_GAMMA) {
-    p->position_z_pm += 1000L;
+    p->position_z_pm += 100000000000L;
   } else if (p->particle_type == GGEMS_PARTICLE_TYPE_ELECTRON) {
-    p->position_x_pm += 500L;
-    p->position_z_pm += 250L;
+    p->position_x_pm += 50000000000L;
+    p->position_z_pm += 25000000000L;
   }
 
-  p->time_ps += 1UL;
+  p->time_ps += 10000UL;
   p->flags += 1U;
 }
 
@@ -119,12 +120,13 @@ __kernel void particle_dummy_stream_branching_transport(
     __global GGEMSObserverConfigRecord const *observer_config,
     volatile __global GGEMSObserverCounters *observer_counters,
     __global GGEMSObserverRecord *observer_records,
-    uint observer_record_capacity) {
+    uint observer_record_capacity, ulong run_id) {
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER == 0
   (void)(observer_config);
   (void)(observer_counters);
   (void)(observer_records);
   (void)(observer_record_capacity);
+  (void)(run_id);
 #endif
 
   uint worker_id = (uint)(get_global_id(0));
@@ -147,12 +149,33 @@ __kernel void particle_dummy_stream_branching_transport(
     ulong global_primary_id = projection_history_offset +
                               device_primary_offset + (ulong)(local_primary_id);
 
+#if GGEMS_ENABLE_TRANSPORT_OBSERVER
+    ulong projection_primary_id =
+        device_primary_offset + (ulong)(local_primary_id);
+
+    uint capture_history = GGEMS_ObserverShouldCapturePrimary(
+        observer_config, projection_primary_id, global_primary_id);
+
+    if (capture_history != 0U) {
+      atomic_inc(&observer_counters->captured_primary_count);
+    }
+#endif
+
     processed_any_primary = 1U;
 
     atomic_inc(&counters->consumed_primary_count);
 
     GGEMSParticleState current =
         GGEMS_SourceReadAionino(global_primary_id, source);
+
+#if GGEMS_ENABLE_TRANSPORT_OBSERVER
+    if (capture_history != 0) {
+      GGEMS_ObserverRecordParticle(observer_counters, observer_records,
+                                   observer_record_capacity,
+                                   GGEMS_OBSERVER_RECORD_KIND_SOURCE, run_id,
+                                   global_primary_id, current);
+    }
+#endif
 
     ulong base_track_id = current.track_id;
 
@@ -168,6 +191,15 @@ __kernel void particle_dummy_stream_branching_transport(
       if (current.status == GGEMS_PARTICLE_STATUS_ALIVE) {
         GGEMS_DummyMoveParticle(&current);
         atomic_inc(&counters->total_fake_step_count);
+
+#if GGEMS_ENABLE_TRANSPORT_OBSERVER
+        if (capture_history != 0U) {
+          GGEMS_ObserverRecordParticle(observer_counters, observer_records,
+                                       observer_record_capacity,
+                                       GGEMS_OBSERVER_RECORD_KIND_STEP, run_id,
+                                       global_primary_id, current);
+        }
+#endif
 
         GGEMS_DummyKillIfFinished(&current, min_energy_milli_eV,
                                   max_steps_per_track);
@@ -195,6 +227,16 @@ __kernel void particle_dummy_stream_branching_transport(
 
               local_track_index += 1U;
 
+#if GGEMS_ENABLE_TRANSPORT_OBSERVER
+              if (capture_history != 0U) {
+                GGEMS_ObserverRecordParticle(
+                    observer_counters, observer_records,
+                    observer_record_capacity,
+                    GGEMS_OBSERVER_RECORD_KIND_SECONDARY_STEP, run_id,
+                    global_primary_id, current);
+              }
+#endif
+
               atomic_inc(&counters->created_secondary_count);
               atomic_inc(&counters->gamma_to_electron_count);
             } else {
@@ -219,6 +261,16 @@ __kernel void particle_dummy_stream_branching_transport(
 
               local_track_index += 1U;
 
+#if GGEMS_ENABLE_TRANSPORT_OBSERVER
+              if (capture_history != 0U) {
+                GGEMS_ObserverRecordParticle(
+                    observer_counters, observer_records,
+                    observer_record_capacity,
+                    GGEMS_OBSERVER_RECORD_KIND_SECONDARY_STEP, run_id,
+                    global_primary_id, current);
+              }
+#endif
+
               atomic_inc(&counters->created_secondary_count);
               atomic_inc(&counters->electron_to_electron_count);
             } else {
@@ -229,6 +281,16 @@ __kernel void particle_dummy_stream_branching_transport(
       }
 
       if (current.status != GGEMS_PARTICLE_STATUS_ALIVE) {
+
+#if GGEMS_ENABLE_TRANSPORT_OBSERVER
+        if (capture_history != 0U) {
+          GGEMS_ObserverRecordParticle(observer_counters, observer_records,
+                                       observer_record_capacity,
+                                       GGEMS_OBSERVER_RECORD_KIND_TERMINAL,
+                                       run_id, global_primary_id, current);
+        }
+#endif
+
         atomic_inc(&counters->terminal_particle_count);
         last_state = current;
 

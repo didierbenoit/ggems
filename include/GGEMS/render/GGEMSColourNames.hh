@@ -53,6 +53,7 @@ namespace ggems::render {
  * shade index in the underlying palette.
  */
 enum class GreenShade : std::uint8_t {
+  Acid = 12,
   Matrix = 8,  /*!< Bright neon-green, high energy */
   Emerald = 5, /*!< Balanced vivid green */
   Jade = 4,    /*!< Deep mineral green */
@@ -72,6 +73,7 @@ enum class GreenShade : std::uint8_t {
  * \brief Named blue shades mapped to palette indices.
  */
 enum class BlueShade : std::uint8_t {
+  WYSteel = 12,
   Azure = 9,  /*!< Bright light blue */
   Dodger = 8, /*!< Strong electric blue */
   Ice = 5,    /*!< Very pale icy blue */
@@ -91,6 +93,7 @@ enum class BlueShade : std::uint8_t {
  * \brief Named red shades mapped to palette indices.
  */
 enum class RedShade : std::uint8_t {
+  XenoBlood = 12,
   Crimson = 9, /*!< Intense deep crimson red */
   Ruby = 8,    /*!< Strong ruby-like red */
   Blood = 11,  /*!< Very dark dramatic red */
@@ -110,6 +113,7 @@ enum class RedShade : std::uint8_t {
  * \brief Named cyan shades mapped to palette indices.
  */
 enum class CyanShade : std::uint8_t {
+  Cryo = 12,
   Aqua = 9,    /*!< Bright aqua cyan */
   Ice = 5,     /*!< Pale icy cyan tone */
   Sky = 8,     /*!< Cyan leaning towards light sky blue */
@@ -129,6 +133,7 @@ enum class CyanShade : std::uint8_t {
  * \brief Named magenta shades mapped to palette indices.
  */
 enum class MagentaShade : std::uint8_t {
+  FleshSignal = 12,
   Pink = 9,     /*!< Light pink-tinted magenta */
   Fuchsia = 10, /*!< Strong saturated fuchsia */
   Deep = 11,    /*!< Very dark intense magenta */
@@ -148,6 +153,7 @@ enum class MagentaShade : std::uint8_t {
  * \brief Named yellow shades mapped to palette indices.
  */
 enum class YellowShade : std::uint8_t {
+  MotherAmber = 12,
   Gold = 9,   /*!< Deep golden yellow */
   Amber = 10, /*!< Warm amber yellow */
   Lemon = 8,  /*!< Vivid lemon yellow */
@@ -167,6 +173,7 @@ enum class YellowShade : std::uint8_t {
  * \brief Named grey shades mapped to palette indices.
  */
 enum class GreyShade : std::uint8_t {
+  XenoBlack = 12,
   Light = 9,    /*!< Very light near-white grey */
   Soft = 8,     /*!< Soft mid-light neutral grey */
   Silver = 7,   /*!< Metallic silver-like grey */
@@ -186,6 +193,7 @@ enum class GreyShade : std::uint8_t {
  * \brief Named white/near-white shades mapped to palette indices.
  */
 enum class WhiteShade : std::uint8_t {
+  Bone = 12,
   Pure = 0,    /*!< Neutral baseline white */
   Snow = 1,    /*!< Cold snow-like white */
   Pearl = 2,   /*!< Slightly warm pearlescent white */
@@ -251,7 +259,7 @@ consteval ColourKey DefineColour(ShadeEnum shade,
 }
 
 /*!
- * \brief Default background colour for GGEMS terminal/UI.
+ * \brief Default GGEMS UI background colour.
  *
  * This is a neutral grey intended to provide comfortable contrast
  * with the default foreground.
@@ -261,7 +269,7 @@ inline constexpr ColourKey DEFAULT_BG =
                ColourVariant::Normal, ColourLayer::Background);
 
 /*!
- * \brief Default foreground colour for GGEMS terminal/UI.
+ * \brief Default GGEMS UI foreground colour.
  *
  * This is a soft off-white selected for readability on \ref
  * ggems::render::DEFAULT_BG.
@@ -318,6 +326,7 @@ GEN_COLOUR_NAME(GREEN, Olive, GreenShade, Olive)
 GEN_COLOUR_NAME(GREEN, Pale, GreenShade, Pale)
 GEN_COLOUR_NAME(GREEN, Dark, GreenShade, Dark)
 GEN_COLOUR_NAME(GREEN, Deep, GreenShade, Deep)
+GEN_COLOUR_NAME(GREEN, Acid, GreenShade, Acid)
 
 // Blue
 GEN_COLOUR_NAME(BLUE, Azure, BlueShade, Azure)
@@ -332,6 +341,7 @@ GEN_COLOUR_NAME(BLUE, Soft, BlueShade, Soft)
 GEN_COLOUR_NAME(BLUE, Dark, BlueShade, Dark)
 GEN_COLOUR_NAME(BLUE, Royal, BlueShade, Royal)
 GEN_COLOUR_NAME(BLUE, Vibrant, BlueShade, Vibrant)
+GEN_COLOUR_NAME(BLUE, WYSteel, BlueShade, WYSteel)
 
 // Red
 GEN_COLOUR_NAME(RED, Crimson, RedShade, Crimson)
@@ -346,6 +356,7 @@ GEN_COLOUR_NAME(RED, Dark, RedShade, Dark)
 GEN_COLOUR_NAME(RED, Deep, RedShade, Deep)
 GEN_COLOUR_NAME(RED, Neon, RedShade, Neon)
 GEN_COLOUR_NAME(RED, Vibrant, RedShade, Vibrant)
+GEN_COLOUR_NAME(RED, XenoBlood, RedShade, XenoBlood)
 
 // Cyan
 GEN_COLOUR_NAME(CYAN, Aqua, CyanShade, Aqua)
@@ -360,6 +371,7 @@ GEN_COLOUR_NAME(CYAN, Dark, CyanShade, Dark)
 GEN_COLOUR_NAME(CYAN, Marine, CyanShade, Marine)
 GEN_COLOUR_NAME(CYAN, Radiant, CyanShade, Radiant)
 GEN_COLOUR_NAME(CYAN, Pure, CyanShade, Pure)
+GEN_COLOUR_NAME(CYAN, Cryo, CyanShade, Cryo)
 
 // Magenta
 GEN_COLOUR_NAME(MAGENTA, Pink, MagentaShade, Pink)
@@ -374,6 +386,7 @@ GEN_COLOUR_NAME(MAGENTA, Electric, MagentaShade, Electric)
 GEN_COLOUR_NAME(MAGENTA, Rose, MagentaShade, Rose)
 GEN_COLOUR_NAME(MAGENTA, Sharp, MagentaShade, Sharp)
 GEN_COLOUR_NAME(MAGENTA, Pure, MagentaShade, Pure)
+GEN_COLOUR_NAME(MAGENTA, FleshSignal, MagentaShade, FleshSignal)
 
 // Yellow
 GEN_COLOUR_NAME(YELLOW, Gold, YellowShade, Gold)
@@ -388,6 +401,7 @@ GEN_COLOUR_NAME(YELLOW, Neon, YellowShade, Neon)
 GEN_COLOUR_NAME(YELLOW, Solar, YellowShade, Solar)
 GEN_COLOUR_NAME(YELLOW, Bright, YellowShade, Bright)
 GEN_COLOUR_NAME(YELLOW, Pure, YellowShade, Pure)
+GEN_COLOUR_NAME(YELLOW, MotherAmber, YellowShade, MotherAmber)
 
 // Grey
 GEN_COLOUR_NAME(GREY, Light, GreyShade, Light)
@@ -402,6 +416,7 @@ GEN_COLOUR_NAME(GREY, Pale, GreyShade, Pale)
 GEN_COLOUR_NAME(GREY, Deep, GreyShade, Deep)
 GEN_COLOUR_NAME(GREY, Fog, GreyShade, Fog)
 GEN_COLOUR_NAME(GREY, Smoke, GreyShade, Smoke)
+GEN_COLOUR_NAME(GREY, XenoBlack, GreyShade, XenoBlack)
 
 // White
 GEN_COLOUR_NAME(WHITE, Pure, WhiteShade, Pure)
@@ -416,7 +431,160 @@ GEN_COLOUR_NAME(WHITE, Pale, WhiteShade, Pale)
 GEN_COLOUR_NAME(WHITE, Cold, WhiteShade, Cold)
 GEN_COLOUR_NAME(WHITE, Bright, WhiteShade, Bright)
 GEN_COLOUR_NAME(WHITE, Glare, WhiteShade, Glare)
+GEN_COLOUR_NAME(WHITE, Bone, WhiteShade, Bone)
 
 #undef GEN_COLOUR_NAME
 
+// -----------------------------------------------------------------------------
+// GGEMS visual theme
+// -----------------------------------------------------------------------------
+
+inline constexpr ColourKey GGEMS_THEME_XENO_EDGE = GREEN_Moss;
+inline constexpr ColourKey GGEMS_THEME_WET_STEEL = GREY_Ash;
+inline constexpr ColourKey GGEMS_THEME_DUCT_STEEL = GREY_Steel;
+inline constexpr ColourKey GGEMS_THEME_DARK_PANEL = GREY_XenoBlack_BG;
+
+inline constexpr ColourKey GGEMS_THEME_NEUTRAL_TEXT = WHITE_Bone;
+inline constexpr ColourKey GGEMS_THEME_MUTED_TEXT = GREY_Silver;
+
+inline constexpr ColourKey GGEMS_THEME_ACID = GREEN_Acid;
+inline constexpr ColourKey GGEMS_THEME_ACID_BRIGHT = GREEN_Acid_B;
+inline constexpr ColourKey GGEMS_THEME_ACID_FAINT = GREEN_Acid_F;
+
+inline constexpr ColourKey GGEMS_THEME_CRYO = CYAN_Cryo;
+inline constexpr ColourKey GGEMS_THEME_CRYO_FAINT = CYAN_Cryo_F;
+
+inline constexpr ColourKey GGEMS_THEME_MOTHER_AMBER = YELLOW_MotherAmber;
+inline constexpr ColourKey GGEMS_THEME_XENO_BLOOD = RED_XenoBlood_B;
+
+// -----------------------------------------------------------------------------
+// Global themed components
+// -----------------------------------------------------------------------------
+
+inline constexpr ColourKey GGEMS_THEME_BANNER = GGEMS_THEME_ACID_BRIGHT;
+
+inline constexpr ColourKey GGEMS_THEME_LOG_DEBUG = GGEMS_THEME_CRYO;
+inline constexpr ColourKey GGEMS_THEME_LOG_INFO = GGEMS_THEME_ACID;
+inline constexpr ColourKey GGEMS_THEME_LOG_WARN = GGEMS_THEME_MOTHER_AMBER;
+inline constexpr ColourKey GGEMS_THEME_LOG_ERROR = GGEMS_THEME_XENO_BLOOD;
+
+// -----------------------------------------------------------------------------
+// GGEMS Output console
+// -----------------------------------------------------------------------------
+
+inline constexpr ColourKey GGEMS_THEME_OUTPUT_BACKGROUND =
+    GGEMS_THEME_DARK_PANEL;
+
+inline constexpr ColourKey GGEMS_THEME_OUTPUT_TEXT = GGEMS_THEME_NEUTRAL_TEXT;
+
+inline constexpr ColourKey GGEMS_THEME_OUTPUT_BORDER = GGEMS_THEME_XENO_EDGE;
+
+// -----------------------------------------------------------------------------
+// ImGui global theme
+// -----------------------------------------------------------------------------
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_TEXT = GGEMS_THEME_NEUTRAL_TEXT;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_TEXT_DISABLED =
+    GGEMS_THEME_MUTED_TEXT;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_WINDOW_BG = GGEMS_THEME_DARK_PANEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_CHILD_BG = GGEMS_THEME_DARK_PANEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_POPUP_BG = GGEMS_THEME_DARK_PANEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_BORDER = GGEMS_THEME_XENO_EDGE;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_SEPARATOR = GGEMS_THEME_XENO_EDGE;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_SEPARATOR_HOVERED =
+    GGEMS_THEME_WET_STEEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_SEPARATOR_ACTIVE =
+    GGEMS_THEME_ACID;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_FRAME_BG = GGEMS_THEME_DARK_PANEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_FRAME_HOVERED =
+    GGEMS_THEME_DUCT_STEEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_FRAME_ACTIVE =
+    GGEMS_THEME_WET_STEEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_TITLE_BG = GGEMS_THEME_DARK_PANEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_TITLE_BG_ACTIVE =
+    GGEMS_THEME_DUCT_STEEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_TITLE_BG_COLLAPSED =
+    GGEMS_THEME_DARK_PANEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_MENU_BAR_BG =
+    GGEMS_THEME_DARK_PANEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_BUTTON = GGEMS_THEME_DUCT_STEEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_BUTTON_HOVERED =
+    GGEMS_THEME_WET_STEEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_BUTTON_ACTIVE = GGEMS_THEME_ACID;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_HEADER = GGEMS_THEME_DUCT_STEEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_HEADER_HOVERED =
+    GGEMS_THEME_WET_STEEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_HEADER_ACTIVE =
+    GGEMS_THEME_WET_STEEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_TAB = GGEMS_THEME_DARK_PANEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_TAB_HOVERED =
+    GGEMS_THEME_DUCT_STEEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_TAB_ACTIVE = GGEMS_THEME_WET_STEEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_TAB_ACTIVE_OVERLINE =
+    GGEMS_THEME_ACID;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_SCROLLBAR_BG =
+    GGEMS_THEME_DARK_PANEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_SCROLLBAR_GRAB =
+    GGEMS_THEME_XENO_EDGE;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_SCROLLBAR_GRAB_HOVERED =
+    GGEMS_THEME_WET_STEEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_SCROLLBAR_GRAB_ACTIVE =
+    GGEMS_THEME_ACID;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_CHECK_MARK = GGEMS_THEME_ACID;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_SLIDER_GRAB = GGEMS_THEME_ACID;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_SLIDER_GRAB_ACTIVE =
+    GGEMS_THEME_ACID_BRIGHT;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_RESIZE_GRIP =
+    GGEMS_THEME_XENO_EDGE;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_RESIZE_GRIP_HOVERED =
+    GGEMS_THEME_WET_STEEL;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_RESIZE_GRIP_ACTIVE =
+    GGEMS_THEME_ACID;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_DOCKING_PREVIEW = GGEMS_THEME_ACID;
+
+inline constexpr ColourKey GGEMS_THEME_IMGUI_DOCKING_EMPTY_BG =
+    GGEMS_THEME_DARK_PANEL;
+
+// -----------------------------------------------------------------------------
+// Vulkan
+// -----------------------------------------------------------------------------
+
+inline constexpr ColourKey GGEMS_THEME_VULKAN_BACKGROUND =
+    GGEMS_THEME_DARK_PANEL;
 } // namespace ggems::render

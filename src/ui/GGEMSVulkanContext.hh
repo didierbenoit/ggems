@@ -120,7 +120,6 @@ private:
   void BuildImGuiFrame();
 
   void LoadImGuiFonts();
-  void ApplyImGuiStyle();
 
   static void CheckImGuiVkResult(VkResult result) noexcept;
 

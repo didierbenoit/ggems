@@ -14,7 +14,12 @@ namespace ggems::core::random {
 class GGEMSRandom;
 }
 
+namespace ggems::core::observer {
+class GGEMSTransportObserver;
+}
+
 namespace ggems::core {
+
 class GGEMSRun {
 public:
   GGEMSRun();
@@ -32,6 +37,7 @@ public:
   void SetPrimaryCount(std::uint32_t primary_count);
   void SetWorkerCount(std::uint32_t worker_count);
   void SetSource(std::shared_ptr<sources::GGEMSSource> source);
+  void SetObserver(std::shared_ptr<observer::GGEMSTransportObserver> observer);
 
 private:
   std::vector<std::thread> workers_;
@@ -39,6 +45,8 @@ private:
 
   std::shared_ptr<random::GGEMSRandom> random_{nullptr};
   std::shared_ptr<sources::GGEMSSource> source_{nullptr};
+  std::shared_ptr<observer::GGEMSTransportObserver> observer_{nullptr};
+
   particles::GGEMSPrimaryStream primary_stream_{};
 
   bool initialised_{false};

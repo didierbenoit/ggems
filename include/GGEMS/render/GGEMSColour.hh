@@ -156,7 +156,7 @@ inline constexpr std::size_t kColourVariantCount =
  *
  * GGEMS currently defines 12 shades per colour family.
  */
-inline constexpr std::size_t kColourShadeCount = 12U;
+inline constexpr std::size_t kColourShadeCount = 13U;
 
 /*!
  * \brief Palette type grouping shades by family.
@@ -192,7 +192,8 @@ constexpr std::array<RGB, kColourShadeCount> MakeGreyScale() noexcept {
       MakeRGB(16, 16, 16),    MakeRGB(32, 32, 32),    MakeRGB(48, 48, 48),
       MakeRGB(64, 64, 64),    MakeRGB(96, 96, 96),    MakeRGB(128, 128, 128),
       MakeRGB(160, 160, 160), MakeRGB(192, 192, 192), MakeRGB(208, 208, 208),
-      MakeRGB(224, 224, 224), MakeRGB(240, 240, 240), MakeRGB(252, 252, 252)};
+      MakeRGB(224, 224, 224), MakeRGB(240, 240, 240), MakeRGB(252, 252, 252),
+      MakeRGB(3, 8, 6)};
 }
 
 /*!
@@ -204,11 +205,11 @@ constexpr std::array<RGB, kColourShadeCount> MakeGreyScale() noexcept {
  * \return Array of 12 red-family RGB shades.
  */
 constexpr std::array<RGB, kColourShadeCount> MakeRedScale() noexcept {
-  return {
-      MakeRGB(64, 0, 0),     MakeRGB(96, 0, 0),      MakeRGB(128, 0, 0),
-      MakeRGB(160, 0, 0),    MakeRGB(192, 16, 16),   MakeRGB(220, 20, 60),
-      MakeRGB(255, 40, 40),  MakeRGB(255, 80, 80),   MakeRGB(255, 99, 71),
-      MakeRGB(255, 127, 80), MakeRGB(255, 160, 122), MakeRGB(255, 192, 160)};
+  return {MakeRGB(64, 0, 0),     MakeRGB(96, 0, 0),      MakeRGB(128, 0, 0),
+          MakeRGB(160, 0, 0),    MakeRGB(192, 16, 16),   MakeRGB(220, 20, 60),
+          MakeRGB(255, 40, 40),  MakeRGB(255, 80, 80),   MakeRGB(255, 99, 71),
+          MakeRGB(255, 127, 80), MakeRGB(255, 160, 122), MakeRGB(255, 192, 160),
+          MakeRGB(170, 45, 40)};
 }
 
 /*!
@@ -223,7 +224,8 @@ constexpr std::array<RGB, kColourShadeCount> MakeOrangeScale() noexcept {
   return {MakeRGB(80, 32, 0),    MakeRGB(96, 40, 0),    MakeRGB(128, 64, 0),
           MakeRGB(160, 80, 0),   MakeRGB(192, 96, 0),   MakeRGB(210, 105, 30),
           MakeRGB(255, 127, 80), MakeRGB(255, 140, 0),  MakeRGB(255, 165, 0),
-          MakeRGB(255, 180, 40), MakeRGB(255, 200, 80), MakeRGB(255, 215, 120)};
+          MakeRGB(255, 180, 40), MakeRGB(255, 200, 80), MakeRGB(255, 215, 120),
+          MakeRGB(180, 88, 38)};
 }
 
 /*!
@@ -239,7 +241,8 @@ constexpr std::array<RGB, kColourShadeCount> MakeYellowScale() noexcept {
       MakeRGB(96, 96, 0),     MakeRGB(128, 128, 0),   MakeRGB(160, 144, 0),
       MakeRGB(192, 160, 0),   MakeRGB(210, 180, 0),   MakeRGB(238, 221, 130),
       MakeRGB(240, 230, 140), MakeRGB(250, 250, 120), MakeRGB(255, 255, 0),
-      MakeRGB(255, 255, 80),  MakeRGB(255, 255, 160), MakeRGB(255, 255, 220)};
+      MakeRGB(255, 255, 80),  MakeRGB(255, 255, 160), MakeRGB(255, 255, 220),
+      MakeRGB(190, 145, 45)};
 }
 
 /*!
@@ -254,7 +257,8 @@ constexpr std::array<RGB, kColourShadeCount> MakeGreenScale() noexcept {
   return {MakeRGB(0, 48, 0),    MakeRGB(0, 80, 0),      MakeRGB(0, 100, 0),
           MakeRGB(0, 128, 0),   MakeRGB(0, 160, 64),    MakeRGB(0, 201, 87),
           MakeRGB(0, 255, 0),   MakeRGB(60, 255, 120),  MakeRGB(0, 255, 170),
-          MakeRGB(46, 139, 87), MakeRGB(144, 238, 144), MakeRGB(204, 255, 204)};
+          MakeRGB(46, 139, 87), MakeRGB(144, 238, 144), MakeRGB(204, 255, 204),
+          MakeRGB(48, 220, 160)};
 }
 
 /*!
@@ -270,7 +274,8 @@ constexpr std::array<RGB, kColourShadeCount> MakeCyanScale() noexcept {
       MakeRGB(0, 48, 48),     MakeRGB(0, 80, 80),     MakeRGB(0, 100, 100),
       MakeRGB(0, 128, 128),   MakeRGB(0, 160, 160),   MakeRGB(0, 183, 235),
       MakeRGB(0, 200, 255),   MakeRGB(0, 255, 255),   MakeRGB(80, 255, 255),
-      MakeRGB(135, 206, 235), MakeRGB(180, 230, 255), MakeRGB(210, 245, 255)};
+      MakeRGB(135, 206, 235), MakeRGB(180, 230, 255), MakeRGB(210, 245, 255),
+      MakeRGB(58, 178, 190)};
 }
 
 /*!
@@ -282,11 +287,11 @@ constexpr std::array<RGB, kColourShadeCount> MakeCyanScale() noexcept {
  * \return Array of 12 blue-family RGB shades.
  */
 constexpr std::array<RGB, kColourShadeCount> MakeBlueScale() noexcept {
-  return {
-      MakeRGB(0, 0, 64),      MakeRGB(0, 0, 96),     MakeRGB(0, 0, 139),
-      MakeRGB(25, 25, 112),   MakeRGB(0, 71, 171),   MakeRGB(30, 144, 255),
-      MakeRGB(0, 127, 255),   MakeRGB(0, 191, 255),  MakeRGB(80, 120, 255),
-      MakeRGB(125, 249, 255), MakeRGB(70, 130, 180), MakeRGB(160, 200, 255)};
+  return {MakeRGB(0, 0, 64),      MakeRGB(0, 0, 96),     MakeRGB(0, 0, 139),
+          MakeRGB(25, 25, 112),   MakeRGB(0, 71, 171),   MakeRGB(30, 144, 255),
+          MakeRGB(0, 127, 255),   MakeRGB(0, 191, 255),  MakeRGB(80, 120, 255),
+          MakeRGB(125, 249, 255), MakeRGB(70, 130, 180), MakeRGB(160, 200, 255),
+          MakeRGB(82, 122, 165)};
 }
 
 /*!
@@ -302,7 +307,8 @@ constexpr std::array<RGB, kColourShadeCount> MakeMagentaScale() noexcept {
       MakeRGB(64, 0, 64),     MakeRGB(96, 0, 96),     MakeRGB(128, 0, 128),
       MakeRGB(139, 0, 139),   MakeRGB(186, 85, 211),  MakeRGB(199, 21, 133),
       MakeRGB(255, 0, 255),   MakeRGB(255, 30, 100),  MakeRGB(255, 105, 180),
-      MakeRGB(238, 130, 238), MakeRGB(255, 160, 255), MakeRGB(255, 200, 240)};
+      MakeRGB(238, 130, 238), MakeRGB(255, 160, 255), MakeRGB(255, 200, 240),
+      MakeRGB(150, 62, 92)};
 }
 
 /*!
@@ -318,7 +324,8 @@ constexpr std::array<RGB, kColourShadeCount> MakeWhiteScale() noexcept {
       MakeRGB(255, 255, 255), MakeRGB(250, 250, 250), MakeRGB(245, 245, 245),
       MakeRGB(240, 240, 235), MakeRGB(235, 232, 220), MakeRGB(230, 230, 230),
       MakeRGB(220, 220, 220), MakeRGB(210, 210, 210), MakeRGB(200, 200, 200),
-      MakeRGB(185, 185, 185), MakeRGB(255, 255, 240), MakeRGB(255, 255, 200)};
+      MakeRGB(185, 185, 185), MakeRGB(255, 255, 240), MakeRGB(255, 255, 200),
+      MakeRGB(218, 214, 196)};
 }
 
 /*!
