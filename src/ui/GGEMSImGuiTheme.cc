@@ -100,6 +100,10 @@ void ApplyGGEMSImGuiTheme() {
   colours[ImGuiCol_TabDimmed] = ToImGuiColour(render::GGEMS_THEME_IMGUI_TAB);
   colours[ImGuiCol_TabDimmedSelected] =
       ToImGuiColour(render::GGEMS_THEME_IMGUI_TAB_ACTIVE);
+  colours[ImGuiCol_TabSelectedOverline] =
+      ToImGuiColour(render::GGEMS_THEME_IMGUI_TAB_ACTIVE_OVERLINE);
+  colours[ImGuiCol_TabDimmedSelectedOverline] =
+      ToImGuiColour(render::GGEMS_THEME_IMGUI_TAB_ACTIVE_OVERLINE);
 
   colours[ImGuiCol_ScrollbarBg] =
       ToImGuiColour(render::GGEMS_THEME_IMGUI_SCROLLBAR_BG);

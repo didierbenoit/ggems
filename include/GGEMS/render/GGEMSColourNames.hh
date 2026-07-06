@@ -439,30 +439,23 @@ GEN_COLOUR_NAME(WHITE, Bone, WhiteShade, Bone)
 // GGEMS visual theme
 // -----------------------------------------------------------------------------
 
+inline constexpr ColourKey GGEMS_THEME_DARK_PANEL = GREY_XenoBlack_BG;
+
 inline constexpr ColourKey GGEMS_THEME_XENO_EDGE = GREEN_Moss;
 inline constexpr ColourKey GGEMS_THEME_WET_STEEL = GREY_Ash;
 inline constexpr ColourKey GGEMS_THEME_DUCT_STEEL = GREY_Steel;
-inline constexpr ColourKey GGEMS_THEME_DARK_PANEL = GREY_XenoBlack_BG;
-
 inline constexpr ColourKey GGEMS_THEME_NEUTRAL_TEXT = WHITE_Bone;
 inline constexpr ColourKey GGEMS_THEME_MUTED_TEXT = GREY_Silver;
-
 inline constexpr ColourKey GGEMS_THEME_ACID = GREEN_Acid;
-inline constexpr ColourKey GGEMS_THEME_ACID_BRIGHT = GREEN_Acid_B;
-inline constexpr ColourKey GGEMS_THEME_ACID_FAINT = GREEN_Acid_F;
-
 inline constexpr ColourKey GGEMS_THEME_CRYO = CYAN_Cryo;
-inline constexpr ColourKey GGEMS_THEME_CRYO_FAINT = CYAN_Cryo_F;
-
 inline constexpr ColourKey GGEMS_THEME_MOTHER_AMBER = YELLOW_MotherAmber;
-inline constexpr ColourKey GGEMS_THEME_XENO_BLOOD = RED_XenoBlood_B;
+inline constexpr ColourKey GGEMS_THEME_XENO_BLOOD = RED_XenoBlood;
 
 // -----------------------------------------------------------------------------
 // Global themed components
 // -----------------------------------------------------------------------------
 
-inline constexpr ColourKey GGEMS_THEME_BANNER = GGEMS_THEME_ACID_BRIGHT;
-
+inline constexpr ColourKey GGEMS_THEME_BANNER = GGEMS_THEME_ACID;
 inline constexpr ColourKey GGEMS_THEME_LOG_DEBUG = GGEMS_THEME_CRYO;
 inline constexpr ColourKey GGEMS_THEME_LOG_INFO = GGEMS_THEME_ACID;
 inline constexpr ColourKey GGEMS_THEME_LOG_WARN = GGEMS_THEME_MOTHER_AMBER;
@@ -474,112 +467,87 @@ inline constexpr ColourKey GGEMS_THEME_LOG_ERROR = GGEMS_THEME_XENO_BLOOD;
 
 inline constexpr ColourKey GGEMS_THEME_OUTPUT_BACKGROUND =
     GGEMS_THEME_DARK_PANEL;
-
 inline constexpr ColourKey GGEMS_THEME_OUTPUT_TEXT = GGEMS_THEME_NEUTRAL_TEXT;
-
-inline constexpr ColourKey GGEMS_THEME_OUTPUT_BORDER = GGEMS_THEME_XENO_EDGE;
 
 // -----------------------------------------------------------------------------
 // ImGui global theme
 // -----------------------------------------------------------------------------
 
 inline constexpr ColourKey GGEMS_THEME_IMGUI_TEXT = GGEMS_THEME_NEUTRAL_TEXT;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_TEXT_DISABLED =
     GGEMS_THEME_MUTED_TEXT;
 
 inline constexpr ColourKey GGEMS_THEME_IMGUI_WINDOW_BG = GGEMS_THEME_DARK_PANEL;
 
 inline constexpr ColourKey GGEMS_THEME_IMGUI_CHILD_BG = GGEMS_THEME_DARK_PANEL;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_POPUP_BG = GGEMS_THEME_DARK_PANEL;
 
 inline constexpr ColourKey GGEMS_THEME_IMGUI_BORDER = GGEMS_THEME_XENO_EDGE;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_SEPARATOR = GGEMS_THEME_XENO_EDGE;
-
-inline constexpr ColourKey GGEMS_THEME_IMGUI_SEPARATOR_HOVERED =
-    GGEMS_THEME_WET_STEEL;
-
-inline constexpr ColourKey GGEMS_THEME_IMGUI_SEPARATOR_ACTIVE =
-    GGEMS_THEME_ACID;
+// inline constexpr ColourKey GGEMS_THEME_IMGUI_SEPARATOR_HOVERED =
+//    GGEMS_THEME_WET_STEEL;
+// inline constexpr ColourKey GGEMS_THEME_IMGUI_SEPARATOR_ACTIVE =
+//   GGEMS_THEME_ACID;
 
 inline constexpr ColourKey GGEMS_THEME_IMGUI_FRAME_BG = GGEMS_THEME_DARK_PANEL;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_FRAME_HOVERED =
     GGEMS_THEME_DUCT_STEEL;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_FRAME_ACTIVE =
     GGEMS_THEME_WET_STEEL;
 
-inline constexpr ColourKey GGEMS_THEME_IMGUI_TITLE_BG = GGEMS_THEME_DARK_PANEL;
-
-inline constexpr ColourKey GGEMS_THEME_IMGUI_TITLE_BG_ACTIVE =
-    GGEMS_THEME_DUCT_STEEL;
-
-inline constexpr ColourKey GGEMS_THEME_IMGUI_TITLE_BG_COLLAPSED =
-    GGEMS_THEME_DARK_PANEL;
-
-inline constexpr ColourKey GGEMS_THEME_IMGUI_MENU_BAR_BG =
-    GGEMS_THEME_DARK_PANEL;
+// inline constexpr ColourKey GGEMS_THEME_IMGUI_TITLE_BG =
+// GGEMS_THEME_DARK_PANEL;
+// inline constexpr ColourKey GGEMS_THEME_IMGUI_TITLE_BG_ACTIVE =
+//     GGEMS_THEME_DUCT_STEEL;
+// inline constexpr ColourKey GGEMS_THEME_IMGUI_TITLE_BG_COLLAPSED =
+//    GGEMS_THEME_DARK_PANEL;
+// inline constexpr ColourKey GGEMS_THEME_IMGUI_MENU_BAR_BG =
+//    GGEMS_THEME_DARK_PANEL;
 
 inline constexpr ColourKey GGEMS_THEME_IMGUI_BUTTON = GGEMS_THEME_DUCT_STEEL;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_BUTTON_HOVERED =
     GGEMS_THEME_WET_STEEL;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_BUTTON_ACTIVE = GGEMS_THEME_ACID;
 
 inline constexpr ColourKey GGEMS_THEME_IMGUI_HEADER = GGEMS_THEME_DUCT_STEEL;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_HEADER_HOVERED =
     GGEMS_THEME_WET_STEEL;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_HEADER_ACTIVE =
     GGEMS_THEME_WET_STEEL;
 
 inline constexpr ColourKey GGEMS_THEME_IMGUI_TAB = GGEMS_THEME_DARK_PANEL;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_TAB_HOVERED =
     GGEMS_THEME_DUCT_STEEL;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_TAB_ACTIVE = GGEMS_THEME_WET_STEEL;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_TAB_ACTIVE_OVERLINE =
     GGEMS_THEME_ACID;
 
 inline constexpr ColourKey GGEMS_THEME_IMGUI_SCROLLBAR_BG =
     GGEMS_THEME_DARK_PANEL;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_SCROLLBAR_GRAB =
     GGEMS_THEME_XENO_EDGE;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_SCROLLBAR_GRAB_HOVERED =
     GGEMS_THEME_WET_STEEL;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_SCROLLBAR_GRAB_ACTIVE =
     GGEMS_THEME_ACID;
 
 inline constexpr ColourKey GGEMS_THEME_IMGUI_CHECK_MARK = GGEMS_THEME_ACID;
 
 inline constexpr ColourKey GGEMS_THEME_IMGUI_SLIDER_GRAB = GGEMS_THEME_ACID;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_SLIDER_GRAB_ACTIVE =
-    GGEMS_THEME_ACID_BRIGHT;
+    GGEMS_THEME_ACID;
 
 inline constexpr ColourKey GGEMS_THEME_IMGUI_RESIZE_GRIP =
     GGEMS_THEME_XENO_EDGE;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_RESIZE_GRIP_HOVERED =
     GGEMS_THEME_WET_STEEL;
-
 inline constexpr ColourKey GGEMS_THEME_IMGUI_RESIZE_GRIP_ACTIVE =
     GGEMS_THEME_ACID;
 
-inline constexpr ColourKey GGEMS_THEME_IMGUI_DOCKING_PREVIEW = GGEMS_THEME_ACID;
-
-inline constexpr ColourKey GGEMS_THEME_IMGUI_DOCKING_EMPTY_BG =
-    GGEMS_THEME_DARK_PANEL;
+// inline constexpr ColourKey GGEMS_THEME_IMGUI_DOCKING_PREVIEW =
+// GGEMS_THEME_ACID;
+// inline constexpr ColourKey GGEMS_THEME_IMGUI_DOCKING_EMPTY_BG =
+//     GGEMS_THEME_DARK_PANEL;
 
 // -----------------------------------------------------------------------------
 // Vulkan

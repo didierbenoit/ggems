@@ -28,9 +28,6 @@ void SetOutputFile(std::string_view path);
 void ClearOutputFile() noexcept;
 
 void StartOutputRuntime();
-void WakeOutputRuntime() noexcept;
-void ShowFinalOutputScreen(
-    std::u32string_view message = U"Press Enter to exit...");
 void StopOutputRuntime() noexcept;
 
 GGEMSOutputState &GetOutputState();

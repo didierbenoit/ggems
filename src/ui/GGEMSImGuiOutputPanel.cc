@@ -177,9 +177,6 @@ void GGEMSImGuiOutputPanel::Render(render::GGEMSBanner const &banner,
   ImGui::PushStyleColor(ImGuiCol_ChildBg,
                         ToImGuiColour(render::GGEMS_THEME_OUTPUT_BACKGROUND));
 
-  ImGui::PushStyleColor(
-      ImGuiCol_Border, ToImGuiColour(ggems::render::GGEMS_THEME_OUTPUT_BORDER));
-
   ImGui::BeginChild("GGEMSOutputLogRegion", ImVec2{0.0f, 0.0f}, true,
                     ImGuiWindowFlags_HorizontalScrollbar);
 
@@ -228,7 +225,7 @@ void GGEMSImGuiOutputPanel::Render(render::GGEMSBanner const &banner,
 
   ImGui::EndChild();
 
-  ImGui::PopStyleColor(2);
+  ImGui::PopStyleColor();
 
   ImGui::End();
 }
