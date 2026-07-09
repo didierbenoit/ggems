@@ -15,6 +15,11 @@ class GGEMSVulkanSceneRenderer {
 private:
   using ScenePushConstants = GGEMSVulkanCamera::Matrix4Rows;
 
+  struct TraceVertex {
+    float position[3]{};
+    float colour[4]{};
+  };
+
 public:
   GGEMSVulkanSceneRenderer() = default;
   ~GGEMSVulkanSceneRenderer() = default;
@@ -47,6 +52,10 @@ public:
   void SetShowAxes(bool show_axes) noexcept;
   [[nodiscard]] bool ShouldShowAxes() const noexcept;
 
+  void SetShowParticleTraces(bool show_particle_traces) noexcept;
+  [[nodiscard]] bool ShouldShowParticleTraces() const noexcept;
+  [[nodiscard]] std::uint32_t GetParticleTraceVertexCount() const noexcept;
+
   void OrbitCamera(float delta_x_pixels, float delta_y_pixels) noexcept;
   void ZoomCamera(float wheel_delta) noexcept;
   void ResetCamera() noexcept;
@@ -68,6 +77,15 @@ private:
   void CreateAxesPipeline();
   void CleanupAxesPipeline() noexcept;
   void RecordAxesCommands(vk::raii::CommandBuffer const &command_buffer);
+
+  void CreateTraceShaderModules();
+  void CreateTracePipeline();
+  void CleanupTracePipeline() noexcept;
+  void CleanupTraceResources() noexcept;
+  void CreateDemoTraceVertices();
+  void CreateTraceVertexBuffer();
+  void CleanuTraceResources() noexcept;
+  void RecordTraceCommands(vk::raii::CommandBuffer const &command_buffer);
 
   void CreateDepthTarget();
   [[nodiscard]] bool IsDepthFormatSupported(vk::Format format) const;
@@ -99,11 +117,20 @@ private:
 
   vk::raii::ShaderModule axes_vertex_shader_module_{nullptr};
   vk::raii::ShaderModule axes_fragment_shader_module_{nullptr};
+  vk::raii::ShaderModule trace_vertex_shader_module_{nullptr};
+  vk::raii::ShaderModule trace_fragment_shader_module_{nullptr};
 
   vk::raii::PipelineLayout axes_pipeline_layout_{nullptr};
   vk::raii::Pipeline axes_pipeline_{nullptr};
 
+  vk::raii::PipelineLayout trace_pipeline_layout_{nullptr};
+  vk::raii::Pipeline trace_pipeline_{nullptr};
+  vk::raii::Buffer trace_vertex_buffer_{nullptr};
+  vk::raii::DeviceMemory trace_vertex_memory_{nullptr};
+  std::vector<TraceVertex> trace_vertices_{};
+
   bool show_axes_{true};
+  bool show_particle_traces_{true};
   GGEMSVulkanCamera camera_{};
 };
 

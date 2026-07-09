@@ -3,6 +3,8 @@
 #include <vector>
 #include <format>
 #include <array>
+#include <cstddef>
+#include <cstring>
 
 #include <backends/imgui_impl_vulkan.h>
 
@@ -10,34 +12,50 @@
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMSVulkanSceneRenderer.hh"
 #include "GGEMS/render/GGEMSColourNames.hh"
+#include "GGEMS/core/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/render/GGEMSParticleColours.hh"
 
 namespace {
 constexpr std::uint32_t k_axis_count{3U};
 constexpr std::uint32_t k_vertices_per_axis{2U};
 constexpr std::uint32_t k_axes_vertex_count{k_axis_count * k_vertices_per_axis};
 constexpr float k_orbit_degrees_per_pixel{0.20f};
+constexpr float k_inverse_255{1.0f / 255.0f};
 
 // =============================================================================
 // =============================================================================
+
+[[nodiscard]] std::array<float, 4U>
+ToVulkanRGBA(ggems::render::RGB const &rgb, float const alpha = 1.0F) noexcept {
+  return {static_cast<float>(rgb.r) * k_inverse_255,
+          static_cast<float>(rgb.g) * k_inverse_255,
+          static_cast<float>(rgb.b) * k_inverse_255, alpha};
+}
+
+// -----------------------------------------------------------------------------
 
 std::array<float, 4U>
 ToVulkanClearColour(ggems::render::ColourKey const &colour) {
   ggems::render::RGB const rgb =
       ggems::render::GetColourRGB(colour.family, colour.shade, colour.variant);
 
-  constexpr float k_inverse_255{1.0F / 255.0F};
+  return ToVulkanRGBA(rgb);
+}
 
-  return {static_cast<float>(rgb.r) * k_inverse_255,
-          static_cast<float>(rgb.g) * k_inverse_255,
-          static_cast<float>(rgb.b) * k_inverse_255, 1.0F};
+// -----------------------------------------------------------------------------
+
+std::array<float, 4U> ToVulkanParticleColour(
+    ggems::core::particles::GGEMSParticleType particle_type) {
+  ggems::render::RGB rgb = ggems::render::GetParticleRGB(particle_type);
+
+  return ToVulkanRGBA(rgb);
 }
 } // namespace
 
 namespace ggems::ui {
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 void GGEMSVulkanSceneRenderer::Initialise(
     vk::raii::PhysicalDevice const &physical_device,
@@ -47,7 +65,11 @@ void GGEMSVulkanSceneRenderer::Initialise(
   colour_format_ = colour_format;
 
   CreateAxesShaderModules();
+  CreateTraceShaderModules();
   CreateAxesPipeline();
+  CreateTracePipeline();
+  CreateDemoTraceVertices();
+  CreateTraceVertexBuffer();
 
   initialised_ = true;
   requires_resize_ = true;
@@ -65,6 +87,7 @@ void GGEMSVulkanSceneRenderer::Shutdown() noexcept {
   }
 
   CleanupRenderTargets();
+  CleanupTraceResources();
   CleanupAxesPipeline();
   CleanupShaderModules();
 
@@ -521,6 +544,10 @@ void GGEMSVulkanSceneRenderer::RecordSceneCommands(
     RecordAxesCommands(command_buffer);
   }
 
+  if (show_particle_traces_) {
+    RecordTraceCommands(command_buffer);
+  }
+
   command_buffer.endRendering();
 
   vk::ImageMemoryBarrier2 to_shader_read{
@@ -743,9 +770,47 @@ void GGEMSVulkanSceneRenderer::CreateAxesPipeline() {
   GGEMS_INFOEX("Vulkan", 2, "Vulkan scene axes pipeline created.");
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
+
+void GGEMSVulkanSceneRenderer::CreateTraceShaderModules() {
+  GGEMS_CHECK_INTERNAL(
+      device_ != nullptr,
+      "A Vulkan device is required before creating trace shader modules.");
+
+#ifndef GGEMS_UI_SHADER_DIRECTORY
+  GGEMS_CHECK_INTERNAL(false, "GGEMS_UI_SHADER_DIRECTORY is not defined.");
+#endif
+
+  std::filesystem::path shader_directory(GGEMS_UI_SHADER_DIRECTORY);
+
+  std::filesystem::path vertex_shader_path =
+      shader_directory / "GGEMSTraces.vert.spv";
+  std::filesystem::path fragment_shader_path =
+      shader_directory / "GGEMSTraces.frag.spv";
+
+  std::vector<std::uint32_t> vertex_code = ReadSPIRVFile(vertex_shader_path);
+  std::vector<std::uint32_t> fragment_code =
+      ReadSPIRVFile(fragment_shader_path);
+
+  vk::ShaderModuleCreateInfo vertex_create_info{
+      .codeSize = vertex_code.size() * sizeof(std::uint32_t),
+      .pCode = vertex_code.data()};
+
+  vk::ShaderModuleCreateInfo fragment_create_info{
+      .codeSize = fragment_code.size() * sizeof(std::uint32_t),
+      .pCode = fragment_code.data()};
+
+  trace_vertex_shader_module_ =
+      vk::raii::ShaderModule{*device_, vertex_create_info};
+  trace_fragment_shader_module_ =
+      vk::raii::ShaderModule{*device_, fragment_create_info};
+
+  GGEMS_INFOEX("Vulkan", 2,
+               "Vulkan scene trace shader modules created from '{}'.",
+               shader_directory.string());
+}
+
+// -----------------------------------------------------------------------------
 
 void GGEMSVulkanSceneRenderer::RecordAxesCommands(
     vk::raii::CommandBuffer const &command_buffer) {
@@ -780,43 +845,346 @@ void GGEMSVulkanSceneRenderer::RecordAxesCommands(
   command_buffer.draw(k_axes_vertex_count, 1U, 0U, 0U);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
+
+void GGEMSVulkanSceneRenderer::CreateTracePipeline() {
+  GGEMS_CHECK_INTERNAL(
+      device_ != nullptr,
+      "A Vulkan device is required before creating the trace pipeline.");
+
+  GGEMS_CHECK_INTERNAL(*trace_vertex_shader_module_ != vk::ShaderModule{},
+                       "A Vulkan vertex shader module is required before "
+                       "creating the trace pipeline.");
+
+  GGEMS_CHECK_INTERNAL(*trace_fragment_shader_module_ != vk::ShaderModule{},
+                       "A Vulkan fragment shader module is required before "
+                       "creating the trace pipeline.");
+
+  vk::PipelineShaderStageCreateInfo vertex_stage{
+      .stage = vk::ShaderStageFlagBits::eVertex,
+      .module = *trace_vertex_shader_module_,
+      .pName = "VertexMain"};
+
+  vk::PipelineShaderStageCreateInfo fragment_stage{
+      .stage = vk::ShaderStageFlagBits::eFragment,
+      .module = *trace_fragment_shader_module_,
+      .pName = "FragmentMain"};
+
+  std::array<vk::PipelineShaderStageCreateInfo, 2U> shader_stages{
+      vertex_stage, fragment_stage};
+
+  vk::VertexInputBindingDescription vertex_binding_description{
+      .binding = 0U,
+      .stride = sizeof(TraceVertex),
+      .inputRate = vk::VertexInputRate::eVertex};
+
+  std::array<vk::VertexInputAttributeDescription, 2U>
+      vertex_attribute_descriptions{
+          {vk::VertexInputAttributeDescription{
+               .location = 0U,
+               .binding = 0U,
+               .format = vk::Format::eR32G32B32Sfloat,
+               .offset = offsetof(TraceVertex, position)},
+           vk::VertexInputAttributeDescription{
+               .location = 1U,
+               .binding = 0U,
+               .format = vk::Format::eR32G32B32A32Sfloat,
+               .offset = offsetof(TraceVertex, colour)}}};
+
+  vk::PipelineVertexInputStateCreateInfo vertex_input_state{
+      .vertexBindingDescriptionCount = 1U,
+      .pVertexBindingDescriptions = &vertex_binding_description,
+      .vertexAttributeDescriptionCount =
+          static_cast<std::uint32_t>(vertex_attribute_descriptions.size()),
+      .pVertexAttributeDescriptions = vertex_attribute_descriptions.data()};
+
+  vk::PipelineInputAssemblyStateCreateInfo input_assembly_state{
+      .topology = vk::PrimitiveTopology::eLineList,
+      .primitiveRestartEnable = vk::False};
+
+  vk::PipelineViewportStateCreateInfo viewport_state{.viewportCount = 1U,
+                                                     .scissorCount = 1U};
+
+  vk::PipelineRasterizationStateCreateInfo rasterization_state{
+      .depthClampEnable = vk::False,
+      .rasterizerDiscardEnable = vk::False,
+      .polygonMode = vk::PolygonMode::eFill,
+      .cullMode = vk::CullModeFlagBits::eNone,
+      .frontFace = vk::FrontFace::eCounterClockwise,
+      .depthBiasEnable = vk::False,
+      .lineWidth = 1.0F};
+
+  vk::PipelineMultisampleStateCreateInfo multisample_state{
+      .rasterizationSamples = vk::SampleCountFlagBits::e1,
+      .sampleShadingEnable = vk::False};
+
+  vk::PipelineColorBlendAttachmentState colour_blend_attachment{
+      .blendEnable = vk::False,
+      .colorWriteMask =
+          vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+          vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA};
+
+  vk::PipelineColorBlendStateCreateInfo colour_blend_state{
+      .logicOpEnable = vk::False,
+      .attachmentCount = 1U,
+      .pAttachments = &colour_blend_attachment};
+
+  std::array<vk::DynamicState, 2U> dynamic_states{vk::DynamicState::eViewport,
+                                                  vk::DynamicState::eScissor};
+
+  vk::PipelineDynamicStateCreateInfo dynamic_state{
+      .dynamicStateCount = static_cast<std::uint32_t>(dynamic_states.size()),
+      .pDynamicStates = dynamic_states.data()};
+
+  vk::PipelineDepthStencilStateCreateInfo depth_stencil_state{
+      .depthTestEnable = vk::True,
+      .depthWriteEnable = vk::True,
+      .depthCompareOp = vk::CompareOp::eLessOrEqual,
+      .depthBoundsTestEnable = vk::False,
+      .stencilTestEnable = vk::False,
+      .minDepthBounds = 0.0f,
+      .maxDepthBounds = 1.0f};
+
+  vk::PushConstantRange trace_push_constant_range{
+      .stageFlags = vk::ShaderStageFlagBits::eVertex,
+      .offset = 0U,
+      .size = sizeof(ScenePushConstants)};
+
+  vk::PipelineLayoutCreateInfo pipeline_layout_create_info{
+      .pushConstantRangeCount = 1U,
+      .pPushConstantRanges = &trace_push_constant_range};
+
+  trace_pipeline_layout_ =
+      vk::raii::PipelineLayout{*device_, pipeline_layout_create_info};
+
+  vk::PipelineRenderingCreateInfo rendering_create_info{
+      .colorAttachmentCount = 1U,
+      .pColorAttachmentFormats = &colour_format_,
+      .depthAttachmentFormat = depth_format_};
+
+  vk::GraphicsPipelineCreateInfo pipeline_create_info{
+      .pNext = &rendering_create_info,
+      .stageCount = static_cast<std::uint32_t>(shader_stages.size()),
+      .pStages = shader_stages.data(),
+      .pVertexInputState = &vertex_input_state,
+      .pInputAssemblyState = &input_assembly_state,
+      .pViewportState = &viewport_state,
+      .pRasterizationState = &rasterization_state,
+      .pMultisampleState = &multisample_state,
+      .pDepthStencilState = &depth_stencil_state,
+      .pColorBlendState = &colour_blend_state,
+      .pDynamicState = &dynamic_state,
+      .layout = *trace_pipeline_layout_,
+      .renderPass = nullptr,
+      .subpass = 0U};
+
+  trace_pipeline_ = vk::raii::Pipeline{*device_, nullptr, pipeline_create_info};
+
+  GGEMS_INFOEX("Vulkan", 2, "Vulkan scene trace pipeline created.");
+}
+
+// -----------------------------------------------------------------------------
+
+void GGEMSVulkanSceneRenderer::CreateDemoTraceVertices() {
+  using core::particles::GGEMSParticleType;
+
+  trace_vertices_.clear();
+  trace_vertices_.reserve(30U);
+
+  auto append_segment = [this](GGEMSParticleType particle_type,
+                               std::array<float, 3U> const &a,
+                               std::array<float, 3U> const &b) {
+    std::array<float, 4U> colour = ToVulkanParticleColour(particle_type);
+
+    trace_vertices_.push_back(TraceVertex{
+        {a[0], a[1], a[2]}, {colour[0], colour[1], colour[2], colour[3]}});
+
+    trace_vertices_.push_back(TraceVertex{
+        {b[0], b[1], b[2]}, {colour[0], colour[1], colour[2], colour[3]}});
+  };
+
+  append_segment(GGEMSParticleType::Aionino, {0.0F, 0.0F, -0.90F},
+                 {0.0F, 0.0F, -0.45F});
+
+  append_segment(GGEMSParticleType::Gamma, {0.0F, 0.0F, -0.45F},
+                 {0.0F, 0.0F, 0.10F});
+  append_segment(GGEMSParticleType::Gamma, {0.0F, 0.0F, 0.10F},
+                 {0.0F, 0.0F, 0.82F});
+
+  append_segment(GGEMSParticleType::Electron, {0.0F, 0.0F, 0.10F},
+                 {0.38F, 0.10F, 0.30F});
+  append_segment(GGEMSParticleType::Electron, {0.38F, 0.10F, 0.30F},
+                 {0.72F, 0.20F, 0.46F});
+
+  append_segment(GGEMSParticleType::Positron, {0.0F, 0.0F, -0.04F},
+                 {-0.32F, 0.18F, 0.18F});
+  append_segment(GGEMSParticleType::Positron, {-0.32F, 0.18F, 0.18F},
+                 {-0.56F, 0.32F, 0.42F});
+
+  append_segment(GGEMSParticleType::Proton, {-0.50F, -0.36F, -0.55F},
+                 {-0.08F, -0.24F, -0.18F});
+  append_segment(GGEMSParticleType::Neutron, {0.42F, -0.36F, -0.55F},
+                 {0.06F, -0.18F, -0.20F});
+  append_segment(GGEMSParticleType::Alpha, {-0.22F, 0.42F, -0.42F},
+                 {0.28F, 0.34F, -0.02F});
+
+  GGEMS_INFOEX("Vulkan", 2, "Created {} demo particle trace vertex/vertices.",
+               trace_vertices_.size());
+}
+
+// -----------------------------------------------------------------------------
+
+void GGEMSVulkanSceneRenderer::CreateTraceVertexBuffer() {
+  GGEMS_CHECK_INTERNAL(device_ != nullptr,
+                       "A Vulkan device is required before creating the trace "
+                       "vertex buffer.");
+
+  if (trace_vertices_.empty()) {
+    return;
+  }
+
+  vk::DeviceSize const buffer_size =
+      static_cast<vk::DeviceSize>(trace_vertices_.size() * sizeof(TraceVertex));
+
+  vk::BufferCreateInfo buffer_create_info{
+      .size = buffer_size,
+      .usage = vk::BufferUsageFlagBits::eVertexBuffer,
+      .sharingMode = vk::SharingMode::eExclusive};
+
+  trace_vertex_buffer_ = vk::raii::Buffer{*device_, buffer_create_info};
+
+  vk::MemoryRequirements memory_requirements =
+      trace_vertex_buffer_.getMemoryRequirements();
+
+  vk::MemoryAllocateInfo memory_allocate_info{
+      .allocationSize = memory_requirements.size,
+      .memoryTypeIndex =
+          FindMemoryType(memory_requirements.memoryTypeBits,
+                         vk::MemoryPropertyFlagBits::eHostVisible |
+                             vk::MemoryPropertyFlagBits::eHostCoherent)};
+
+  trace_vertex_memory_ = vk::raii::DeviceMemory{*device_, memory_allocate_info};
+  trace_vertex_buffer_.bindMemory(*trace_vertex_memory_, 0U);
+
+  void *mapped_memory = trace_vertex_memory_.mapMemory(0, buffer_size);
+
+  std::memcpy(mapped_memory, trace_vertices_.data(),
+              static_cast<std::size_t>(buffer_size));
+
+  trace_vertex_memory_.unmapMemory();
+
+  GGEMS_INFOEX("Vulkan", 2,
+               "Vulkan trace vertex buffer "
+               "uploaded: {} vertex/vertices.",
+               trace_vertices_.size());
+}
+
+// -----------------------------------------------------------------------------
+
+void GGEMSVulkanSceneRenderer::RecordTraceCommands(
+    vk::raii::CommandBuffer const &command_buffer) {
+  if (*trace_pipeline_ == vk::Pipeline{} ||
+      *trace_vertex_buffer_ == vk::Buffer{} || trace_vertices_.empty()) {
+    return;
+  }
+
+  vk::Viewport viewport{.x = 0.0f,
+                        .y = 0.0f,
+                        .width = static_cast<float>(viewport_extent_.width),
+                        .height = static_cast<float>(viewport_extent_.height),
+                        .minDepth = 0.0f,
+                        .maxDepth = 1.0f};
+
+  vk::Rect2D const scissor{.offset = vk::Offset2D{.x = 0, .y = 0},
+                           .extent = viewport_extent_};
+
+  command_buffer.setViewport(0U, viewport);
+  command_buffer.setScissor(0U, scissor);
+
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+                              *trace_pipeline_);
+
+  std::array<vk::Buffer, 1U> vertex_buffers{*trace_vertex_buffer_};
+  std::array<vk::DeviceSize, 1U> vertex_offsets{0U};
+
+  command_buffer.bindVertexBuffers(0U, vertex_buffers, vertex_offsets);
+
+  camera_.SetViewportExtent(viewport_extent_);
+
+  ScenePushConstants push_constants = camera_.BuildWorldToClipMatrix();
+
+  command_buffer.pushConstants(
+      *trace_pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0U,
+      vk::ArrayProxy<const ScenePushConstants>{1U, &push_constants});
+
+  command_buffer.draw(static_cast<std::uint32_t>(trace_vertices_.size()), 1U,
+                      0U, 0U);
+}
+
+// -----------------------------------------------------------------------------
 
 void GGEMSVulkanSceneRenderer::CleanupShaderModules() noexcept {
+  trace_fragment_shader_module_ = nullptr;
+  trace_vertex_shader_module_ = nullptr;
   axes_fragment_shader_module_ = nullptr;
   axes_vertex_shader_module_ = nullptr;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
+
+void GGEMSVulkanSceneRenderer::CleanupTracePipeline() noexcept {
+  trace_pipeline_ = nullptr;
+  trace_pipeline_layout_ = nullptr;
+}
+
+// -----------------------------------------------------------------------------
+
+void GGEMSVulkanSceneRenderer::CleanupTraceResources() noexcept {
+  trace_vertex_buffer_ = nullptr;
+  trace_vertex_memory_ = nullptr;
+  trace_vertices_.clear();
+}
+
+// -----------------------------------------------------------------------------
 
 void GGEMSVulkanSceneRenderer::CleanupAxesPipeline() noexcept {
   axes_pipeline_ = nullptr;
   axes_pipeline_layout_ = nullptr;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSVulkanSceneRenderer::SetShowAxes(bool show_axes) noexcept {
   show_axes_ = show_axes;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
+
+void GGEMSVulkanSceneRenderer::SetShowParticleTraces(
+    bool show_particle_traces) noexcept {
+  show_particle_traces_ = show_particle_traces;
+}
+
+// -----------------------------------------------------------------------------
+
+bool GGEMSVulkanSceneRenderer::ShouldShowParticleTraces() const noexcept {
+  return show_particle_traces_;
+}
+
+// -----------------------------------------------------------------------------
+
+std::uint32_t
+GGEMSVulkanSceneRenderer::GetParticleTraceVertexCount() const noexcept {
+  return static_cast<std::uint32_t>(trace_vertices_.size());
+}
+
+// -----------------------------------------------------------------------------
 
 bool GGEMSVulkanSceneRenderer::ShouldShowAxes() const noexcept {
   return show_axes_;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSVulkanSceneRenderer::OrbitCamera(float delta_x_pixels,
                                            float delta_y_pixels) noexcept {
@@ -828,17 +1196,13 @@ void GGEMSVulkanSceneRenderer::OrbitCamera(float delta_x_pixels,
                 delta_y_pixels * k_orbit_degrees_per_pixel);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSVulkanSceneRenderer::ZoomCamera(float wheel_delta) noexcept {
   camera_.ZoomBy(wheel_delta);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSVulkanSceneRenderer::ResetCamera() noexcept { camera_.Reset(); }
 

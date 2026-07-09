@@ -71,13 +71,21 @@ file(MAKE_DIRECTORY "${GGEMS_UI_SHADER_OUTPUT_DIR}")
 set(GGEMS_AXES_SHADER_SOURCE
   "${GGEMS_UI_SHADER_SOURCE_DIR}/GGEMSAxes.slang"
 )
-
 set(GGEMS_AXES_VERTEX_SPV
   "${GGEMS_UI_SHADER_OUTPUT_DIR}/GGEMSAxes.vert.spv"
 )
-
 set(GGEMS_AXES_FRAGMENT_SPV
   "${GGEMS_UI_SHADER_OUTPUT_DIR}/GGEMSAxes.frag.spv"
+)
+
+set(GGEMS_TRACES_SHADER_SOURCE
+  "${GGEMS_UI_SHADER_SOURCE_DIR}/GGEMSTraces.slang"
+)
+set(GGEMS_TRACES_VERTEX_SPV
+  "${GGEMS_UI_SHADER_OUTPUT_DIR}/GGEMSTraces.vert.spv"
+)
+set(GGEMS_TRACES_FRAGMENT_SPV
+  "${GGEMS_UI_SHADER_OUTPUT_DIR}/GGEMSTraces.frag.spv"
 )
 
 add_custom_command(
@@ -110,10 +118,42 @@ add_custom_command(
   VERBATIM
 )
 
+add_custom_command(
+  OUTPUT "${GGEMS_TRACES_VERTEX_SPV}"
+  COMMAND "${GGEMS_SLANGC_EXECUTABLE}"
+          "${GGEMS_TRACES_SHADER_SOURCE}"
+          -target spirv
+          -profile spirv_1_4
+          -emit-spirv-directly
+          -fvk-use-entrypoint-name
+          -entry VertexMain
+          -stage vertex
+          -o "${GGEMS_TRACES_VERTEX_SPV}"
+  DEPENDS "${GGEMS_TRACES_SHADER_SOURCE}"
+  VERBATIM
+)
+
+add_custom_command(
+  OUTPUT "${GGEMS_TRACES_FRAGMENT_SPV}"
+  COMMAND "${GGEMS_SLANGC_EXECUTABLE}"
+          "${GGEMS_TRACES_SHADER_SOURCE}"
+          -target spirv
+          -profile spirv_1_4
+          -emit-spirv-directly
+          -fvk-use-entrypoint-name
+          -entry FragmentMain
+          -stage fragment
+          -o "${GGEMS_TRACES_FRAGMENT_SPV}"
+  DEPENDS "${GGEMS_TRACES_SHADER_SOURCE}"
+  VERBATIM
+)
+
 add_custom_target(ggems_gui_shaders
   DEPENDS
     "${GGEMS_AXES_VERTEX_SPV}"
     "${GGEMS_AXES_FRAGMENT_SPV}"
+    "${GGEMS_TRACES_VERTEX_SPV}"
+    "${GGEMS_TRACES_FRAGMENT_SPV}"
 )
 
 # ----------------------------------------------------------------------------

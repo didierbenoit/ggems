@@ -28,7 +28,7 @@ void GGEMSVulkanCamera::SetViewportExtent(vk::Extent2D const &extent) noexcept {
 
 void GGEMSVulkanCamera::SetOrbitAngles(float yaw_degrees,
                                        float pitch_degrees) noexcept {
-  yaw_degrees = DegreesToRadians(yaw_degrees);
+  yaw_radians_ = DegreesToRadians(yaw_degrees);
   pitch_radians_ = std::clamp(DegreesToRadians(pitch_degrees),
                               -k_max_pitch_radians, k_max_pitch_radians);
 }

@@ -1336,6 +1336,8 @@ void GGEMSVulkanContext::BuildImGuiFrame() {
   }
 
   scene_renderer_.SetShowAxes(imgui_layer_.ShouldShowAxes());
+  scene_renderer_.SetShowParticleTraces(
+      imgui_layer_.ShouldShowParticleTraces());
 
   ImGui::Render();
 }

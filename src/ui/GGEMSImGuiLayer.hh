@@ -34,6 +34,7 @@ public:
 
   [[nodiscard]] ViewportState const &GetViewportState() const noexcept;
   [[nodiscard]] bool ShouldShowAxes() const noexcept;
+  [[nodiscard]] bool ShouldShowParticleTraces() const noexcept;
   [[nodiscard]] bool ShouldResetCamera() const noexcept;
 
 private:
@@ -72,6 +73,9 @@ private:
   bool dockspace_layout_built_{false};
   bool show_scene_panel_{true};
   bool show_axes_{true};
+  bool show_particle_traces_{true};
+  bool show_step_points_{false};
+  bool show_interaction_points_{false};
   SceneSelection selected_scene_item_{SceneSelection::World};
   ViewportState viewport_state_{};
   bool reset_camera_requested_{false};
