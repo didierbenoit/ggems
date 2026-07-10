@@ -1162,7 +1162,7 @@ void GGEMSVulkanSceneRenderer::PanCamera(float delta_x_pixels,
     return;
   }
 
-  camera_.Pan(delta_y_pixels, delta_y_pixels);
+  camera_.Pan(delta_x_pixels, delta_y_pixels);
 }
 
 // -----------------------------------------------------------------------------
