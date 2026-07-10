@@ -1,22 +1,46 @@
 #ifdef GGEMS_WITH_IMGUI
 
 #include <cstdint>
+#include <memory>
 #include <string>
 
 #include <pybind11/pybind11.h>
 
+#include "GGEMS/core/observer/GGEMSTransportObserver.hh"
 #include "GGEMS/ui/GGEMSGuiApplication.hh"
 
 namespace py = pybind11;
 
 void BindGui(py::module_ &m) {
   py::class_<ggems::ui::GGEMSGuiApplication>(m, "GGEMSGuiApplication")
+
       .def(py::init<std::string, std::int32_t, std::int32_t>(),
            py::arg("title") = "GGEMS GuiMode", py::arg("width") = 1600,
            py::arg("height") = 900)
+
       .def("initialise", &ggems::ui::GGEMSGuiApplication::Initialise)
+
       .def("run", &ggems::ui::GGEMSGuiApplication::Run,
            py::call_guard<py::gil_scoped_release>())
+
+      .def(
+          "submit_particle_traces_from_observer",
+          [](ggems::ui::GGEMSGuiApplication &application,
+             std::shared_ptr<
+                 ggems::core::observer::GGEMSTransportObserver> const
+                 &observer) {
+            if (observer == nullptr) {
+              throw py::value_error(
+                  "submit_particle_traces_from_observer expects a non-null "
+                  "GGEMSTransportObserver.");
+            }
+            application.SubmitParticleTracesFromObserver(*observer);
+          },
+          py::arg("observer"))
+
+      .def("clear_particle_traces",
+           &ggems::ui::GGEMSGuiApplication::ClearParticleTraces)
+
       .def("is_initialised", &ggems::ui::GGEMSGuiApplication::IsInitialised);
 }
 

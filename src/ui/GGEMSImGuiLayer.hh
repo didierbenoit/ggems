@@ -15,6 +15,8 @@ public:
     bool focused{false};
     float orbit_delta_x_pixels{0.0f};
     float orbit_delta_y_pixels{0.0f};
+    float pan_delta_x_pixels{0.0f};
+    float pan_delta_y_pixels{0.0f};
     float zoom_delta{0.0f};
   };
 

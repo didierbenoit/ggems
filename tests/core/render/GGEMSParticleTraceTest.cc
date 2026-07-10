@@ -161,4 +161,36 @@ TEST(GGEMSParticleTrace, ZeroLengthTerminalRecordDoesNotCreateSegment) {
   EXPECT_EQ(segments[0].begin_kind, GGEMSObserverRecordKind::Source);
   EXPECT_EQ(segments[0].end_kind, GGEMSObserverRecordKind::Step);
 }
+
+// =============================================================================
+// =============================================================================
+TEST(GGEMSParticleTrace, SegmentsBuildLineVertices) {
+  ggems::render::GGEMSParticleTraceSegment segment{};
+  segment.particle_type = GGEMSParticleType::Gamma;
+  segment.begin = ggems::render::GGEMSParticleTracePoint{
+      .x_m = 1.0F, .y_m = 2.0F, .z_m = 3.0F};
+  segment.end = ggems::render::GGEMSParticleTracePoint{
+      .x_m = 4.0F, .y_m = 5.0F, .z_m = 6.0F};
+
+  std::vector<ggems::render::GGEMSParticleTraceVertex> const vertices =
+      ggems::render::BuildParticleTraceVertices(
+          std::span<ggems::render::GGEMSParticleTraceSegment const>{&segment,
+                                                                    1U});
+
+  ASSERT_EQ(vertices.size(), 2U);
+
+  EXPECT_FLOAT_EQ(vertices[0].position[0], 1.0F);
+  EXPECT_FLOAT_EQ(vertices[0].position[1], 2.0F);
+  EXPECT_FLOAT_EQ(vertices[0].position[2], 3.0F);
+
+  EXPECT_FLOAT_EQ(vertices[1].position[0], 4.0F);
+  EXPECT_FLOAT_EQ(vertices[1].position[1], 5.0F);
+  EXPECT_FLOAT_EQ(vertices[1].position[2], 6.0F);
+
+  EXPECT_GT(vertices[0].colour[1], vertices[0].colour[0]);
+  EXPECT_FLOAT_EQ(vertices[0].colour[3], 1.0F);
+  EXPECT_FLOAT_EQ(vertices[0].colour[0], vertices[1].colour[0]);
+  EXPECT_FLOAT_EQ(vertices[0].colour[1], vertices[1].colour[1]);
+  EXPECT_FLOAT_EQ(vertices[0].colour[2], vertices[1].colour[2]);
+}
 } // namespace

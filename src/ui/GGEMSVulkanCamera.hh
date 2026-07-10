@@ -28,6 +28,7 @@ public:
   void SetZoom(float zoom) noexcept;
 
   void Orbit(float delta_yaw_degrees, float delta_pitch_degrees) noexcept;
+  void Pan(float delta_x_pixels, float delta_y_pixels) noexcept;
   void ZoomBy(float wheel_delta) noexcept;
   void Reset() noexcept;
 
@@ -46,6 +47,14 @@ private:
   [[nodiscard]] static Vector3 Cross(Vector3 const &a,
                                      Vector3 const &b) noexcept;
   [[nodiscard]] static Vector3 Normalise(Vector3 const &v) noexcept;
+
+  struct CameraBasis {
+    Vector3 right{};
+    Vector3 up{};
+    Vector3 forward{};
+  };
+
+  [[nodiscard]] CameraBasis BuildCameraBasis() const noexcept;
 
 private:
   vk::Extent2D viewport_extent_{1U, 1U};

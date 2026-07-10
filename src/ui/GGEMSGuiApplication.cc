@@ -7,6 +7,8 @@
 #include <GLFW/glfw3.h>
 
 #include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/observer/GGEMSTransportObserver.hh"
+#include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/ui/GGEMSGuiApplication.hh"
 #include "GGEMSVulkanContext.hh"
 
@@ -22,23 +24,19 @@ namespace {
 } // namespace
 
 namespace ggems::ui {
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+
+// =============================================================================
+// =============================================================================
 
 GGEMSGuiApplication::GGEMSGuiApplication(std::string title, std::int32_t width,
                                          std::int32_t height)
     : title_(title), width_(width), height_(height) {}
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 GGEMSGuiApplication::~GGEMSGuiApplication() noexcept { Shutdown(); }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSGuiApplication::Shutdown() noexcept {
   vk_context_.reset();
@@ -54,18 +52,14 @@ void GGEMSGuiApplication::Shutdown() noexcept {
   }
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 bool GGEMSGuiApplication::IsInitialised() const noexcept {
   return window_ != nullptr && vk_context_ != nullptr &&
          vk_context_->IsInitialised();
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSGuiApplication::Initialise() {
   if (window_ != nullptr) {
@@ -113,9 +107,7 @@ void GGEMSGuiApplication::Initialise() {
   GGEMS_INFO("Gui", "GGEMS GuiMode window and Vulkan bootstrap initialised.");
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSGuiApplication::Run() {
   GGEMS_CHECK_INTERNAL(
@@ -140,9 +132,7 @@ void GGEMSGuiApplication::Run() {
   GGEMS_INFOEX("Gui", 1, "GGEMS GuiMode event loop stopped.");
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSGuiApplication::FramebufferResizeCallback(GLFWwindow *window, int,
                                                     int) noexcept {
@@ -154,4 +144,31 @@ void GGEMSGuiApplication::FramebufferResizeCallback(GLFWwindow *window, int,
   }
 }
 
+// -----------------------------------------------------------------------------
+
+void GGEMSGuiApplication::SubmitParticleTraceSegments(
+    std::vector<ggems::render::GGEMSParticleTraceSegment> segments) {
+  GGEMS_CHECK_RECOVERABLE(
+      vk_context_ != nullptr && vk_context_->IsInitialised(),
+      "GGEMS GuiMode must be initialised before submitting particle traces.");
+  vk_context_->SubmitParticleTraceSegments(std::move(segments));
+}
+
+// -----------------------------------------------------------------------------
+
+void GGEMSGuiApplication::SubmitParticleTracesFromObserver(
+    ggems::core::observer::GGEMSTransportObserver const &observer) {
+  SubmitParticleTraceSegments(
+      ggems::render::BuildParticleTraceSegments(observer.GetRecords()));
+}
+
+// -----------------------------------------------------------------------------
+
+void GGEMSGuiApplication::ClearParticleTraces() {
+  GGEMS_CHECK_RECOVERABLE(
+      vk_context_ != nullptr && vk_context_->IsInitialised(),
+      "GGEMS GuiMode must be initialised before clearing particle traces.");
+
+  vk_context_->ClearParticleTraces();
+}
 } // namespace ggems::ui

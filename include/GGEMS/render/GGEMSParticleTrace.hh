@@ -37,10 +37,17 @@ struct GGEMSParticleTraceSegment {
   GGEMSParticleTracePoint end{};
 };
 
+struct GGEMSParticleTraceVertex {
+  float position[3]{};
+  float colour[4]{};
+};
+
 [[nodiscard]] GGEMSParticleTracePoint ToParticleTracePointMetre(
     core::observer::GGEMSObserverRecord const &record) noexcept;
 
 [[nodiscard]] std::vector<GGEMSParticleTraceSegment> BuildParticleTraceSegments(
     std::span<core::observer::GGEMSObserverRecord const> records);
 
+[[nodiscard]] std::vector<GGEMSParticleTraceVertex>
+BuildParticleTraceVertices(std::span<GGEMSParticleTraceSegment const> segments);
 } // namespace ggems::render

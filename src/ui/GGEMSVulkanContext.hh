@@ -2,12 +2,14 @@
 
 #include <vector>
 #include <cstdint>
+#include <mutex>
 #include <optional>
 
 #include <vulkan/vulkan_raii.hpp>
 
 #include "GGEMSImGuiLayer.hh"
 #include "GGEMSVulkanSceneRenderer.hh"
+#include "GGEMS/render/GGEMSParticleTrace.hh"
 
 struct GLFWwindow;
 
@@ -27,6 +29,10 @@ public:
   [[nodiscard]] bool IsInitialised() const noexcept;
 
   void RenderFrame(GLFWwindow *window, bool framebuffer_resized);
+
+  void SubmitParticleTraceSegments(
+      std::vector<ggems::render::GGEMSParticleTraceSegment> segments);
+  void ClearParticleTraces();
 
 private:
   struct QueueFamilyIndices {
@@ -118,6 +124,7 @@ private:
   void InitialiseImGui(GLFWwindow *window);
   void ShutdownImGui() noexcept;
   void BuildImGuiFrame();
+  void ApplyPendingParticleTraceSegments();
 
   void LoadImGuiFonts();
 
@@ -156,6 +163,12 @@ private:
 
   GGEMSImGuiLayer imgui_layer_{};
   GGEMSVulkanSceneRenderer scene_renderer_{};
+
+  std::mutex pending_particle_trace_mutex_{};
+  std::vector<ggems::render::GGEMSParticleTraceSegment>
+      pending_particle_trace_segments_{};
+  bool has_pending_particle_trace_segments_{false};
+  bool pending_particle_trace_clear_{false};
 
   bool imgui_initialised_{false};
 

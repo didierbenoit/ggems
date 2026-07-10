@@ -41,15 +41,6 @@ ToVulkanClearColour(ggems::render::ColourKey const &colour) {
 
   return ToVulkanRGBA(rgb);
 }
-
-// -----------------------------------------------------------------------------
-
-std::array<float, 4U> ToVulkanParticleColour(
-    ggems::core::particles::GGEMSParticleType particle_type) {
-  ggems::render::RGB rgb = ggems::render::GetParticleRGB(particle_type);
-
-  return ToVulkanRGBA(rgb);
-}
 } // namespace
 
 namespace ggems::ui {
@@ -68,8 +59,6 @@ void GGEMSVulkanSceneRenderer::Initialise(
   CreateTraceShaderModules();
   CreateAxesPipeline();
   CreateTracePipeline();
-  CreateDemoTraceVertices();
-  CreateTraceVertexBuffer();
 
   initialised_ = true;
   requires_resize_ = true;
@@ -77,9 +66,7 @@ void GGEMSVulkanSceneRenderer::Initialise(
   GGEMS_INFOEX("Vulkan", 1, "Vulkan scene renderer initialised.");
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSVulkanSceneRenderer::Shutdown() noexcept {
   if (!initialised_) {
@@ -101,9 +88,7 @@ void GGEMSVulkanSceneRenderer::Shutdown() noexcept {
   GGEMS_INFOEX("Vulkan", 2, "Vulkan scene renderer shut down.");
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSVulkanSceneRenderer::SetViewportExtent(vk::Extent2D const &extent) {
   if (extent.width == 0U || extent.height == 0U) {
@@ -122,9 +107,7 @@ void GGEMSVulkanSceneRenderer::SetViewportExtent(vk::Extent2D const &extent) {
                viewport_extent_.width, viewport_extent_.height);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSVulkanSceneRenderer::RecreateRenderTargetsIfNeeded() {
   if (!initialised_ || !requires_resize_) {
@@ -148,58 +131,44 @@ void GGEMSVulkanSceneRenderer::RecreateRenderTargetsIfNeeded() {
   requires_resize_ = false;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 bool GGEMSVulkanSceneRenderer::IsInitialised() const noexcept {
   return initialised_;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 bool GGEMSVulkanSceneRenderer::RequiresResize() const noexcept {
   return requires_resize_;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 vk::Extent2D const &
 GGEMSVulkanSceneRenderer::GetViewportExtent() const noexcept {
   return viewport_extent_;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 vk::Format GGEMSVulkanSceneRenderer::GetColourFormat() const noexcept {
   return colour_format_;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 vk::ImageView GGEMSVulkanSceneRenderer::GetColourImageView() const noexcept {
   return *colour_image_view_;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 vk::Sampler GGEMSVulkanSceneRenderer::GetSampler() const noexcept {
   return *sampler_;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 bool GGEMSVulkanSceneRenderer::IsDepthFormatSupported(vk::Format format) const {
   GGEMS_CHECK_INTERNAL(physical_device_ != nullptr,
@@ -214,9 +183,7 @@ bool GGEMSVulkanSceneRenderer::IsDepthFormatSupported(vk::Format format) const {
          vk::FormatFeatureFlagBits::eDepthStencilAttachment;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSVulkanSceneRenderer::CreateColourTarget() {
   GGEMS_CHECK_INTERNAL(device_ != nullptr,
@@ -298,9 +265,7 @@ void GGEMSVulkanSceneRenderer::CreateColourTarget() {
                vk::to_string(colour_format_));
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSVulkanSceneRenderer::CreateDepthTarget() {
   GGEMS_CHECK_INTERNAL(device_ != nullptr,
@@ -362,9 +327,7 @@ void GGEMSVulkanSceneRenderer::CreateDepthTarget() {
                vk::to_string(depth_format_));
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSVulkanSceneRenderer::CleanupRenderTargets() noexcept {
   if (imgui_descriptor_set_ != VK_NULL_HANDLE) {
@@ -384,9 +347,7 @@ void GGEMSVulkanSceneRenderer::CleanupRenderTargets() noexcept {
   depth_image_layout_ = vk::ImageLayout::eUndefined;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 std::uint32_t GGEMSVulkanSceneRenderer::FindMemoryType(
     std::uint32_t type_filter, vk::MemoryPropertyFlags properties) const {
@@ -415,17 +376,13 @@ std::uint32_t GGEMSVulkanSceneRenderer::FindMemoryType(
   return 0U;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 ImTextureID GGEMSVulkanSceneRenderer::GetTextureID() const noexcept {
   return reinterpret_cast<ImTextureID>(imgui_descriptor_set_);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSVulkanSceneRenderer::RecordSceneCommands(
     vk::raii::CommandBuffer const &command_buffer) {
@@ -434,7 +391,6 @@ void GGEMSVulkanSceneRenderer::RecordSceneCommands(
     return;
   }
 
-  // =======================
   vk::ImageSubresourceRange colour_range{.aspectMask =
                                              vk::ImageAspectFlagBits::eColor,
                                          .baseMipLevel = 0U,
@@ -570,9 +526,7 @@ void GGEMSVulkanSceneRenderer::RecordSceneCommands(
   colour_image_layout_ = vk::ImageLayout::eShaderReadOnlyOptimal;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 std::vector<std::uint32_t>
 GGEMSVulkanSceneRenderer::ReadSPIRVFile(std::filesystem::path const &path) {
@@ -609,9 +563,7 @@ GGEMSVulkanSceneRenderer::ReadSPIRVFile(std::filesystem::path const &path) {
   return code;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSVulkanSceneRenderer::CreateAxesShaderModules() {
   GGEMS_CHECK_INTERNAL(device_ != nullptr,
@@ -651,9 +603,7 @@ void GGEMSVulkanSceneRenderer::CreateAxesShaderModules() {
                shader_directory.string());
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSVulkanSceneRenderer::CreateAxesPipeline() {
   GGEMS_CHECK_INTERNAL(
@@ -988,19 +938,19 @@ void GGEMSVulkanSceneRenderer::CreateTracePipeline() {
 void GGEMSVulkanSceneRenderer::CreateDemoTraceVertices() {
   using core::particles::GGEMSParticleType;
 
-  trace_vertices_.clear();
-  trace_vertices_.reserve(30U);
+  std::vector<ggems::render::GGEMSParticleTraceSegment> demo_segments{};
+  demo_segments.reserve(10);
 
-  auto append_segment = [this](GGEMSParticleType particle_type,
-                               std::array<float, 3U> const &a,
-                               std::array<float, 3U> const &b) {
-    std::array<float, 4U> colour = ToVulkanParticleColour(particle_type);
-
-    trace_vertices_.push_back(TraceVertex{
-        {a[0], a[1], a[2]}, {colour[0], colour[1], colour[2], colour[3]}});
-
-    trace_vertices_.push_back(TraceVertex{
-        {b[0], b[1], b[2]}, {colour[0], colour[1], colour[2], colour[3]}});
+  auto append_segment = [&demo_segments](GGEMSParticleType particle_type,
+                                         std::array<float, 3U> const &a,
+                                         std::array<float, 3U> const &b) {
+    demo_segments.push_back(ggems::render::GGEMSParticleTraceSegment{
+        .particle_type = particle_type,
+        .begin = ggems::render::GGEMSParticleTracePoint{.x_m = a[0],
+                                                        .y_m = a[1],
+                                                        .z_m = a[2]},
+        .end = ggems::render::GGEMSParticleTracePoint{
+            .x_m = b[0], .y_m = b[1], .z_m = b[2]}});
   };
 
   append_segment(GGEMSParticleType::Aionino, {0.0F, 0.0F, -0.90F},
@@ -1028,8 +978,17 @@ void GGEMSVulkanSceneRenderer::CreateDemoTraceVertices() {
   append_segment(GGEMSParticleType::Alpha, {-0.22F, 0.42F, -0.42F},
                  {0.28F, 0.34F, -0.02F});
 
+  trace_vertices_ = ggems::render::BuildParticleTraceVertices(demo_segments);
+
   GGEMS_INFOEX("Vulkan", 2, "Created {} demo particle trace vertex/vertices.",
                trace_vertices_.size());
+}
+
+// -----------------------------------------------------------------------------
+
+void GGEMSVulkanSceneRenderer::DestroyTraceVertexBuffer() noexcept {
+  trace_vertex_buffer_ = nullptr;
+  trace_vertex_memory_ = nullptr;
 }
 
 // -----------------------------------------------------------------------------
@@ -1140,8 +1099,7 @@ void GGEMSVulkanSceneRenderer::CleanupTracePipeline() noexcept {
 // -----------------------------------------------------------------------------
 
 void GGEMSVulkanSceneRenderer::CleanupTraceResources() noexcept {
-  trace_vertex_buffer_ = nullptr;
-  trace_vertex_memory_ = nullptr;
+  DestroyTraceVertexBuffer();
   trace_vertices_.clear();
 }
 
@@ -1198,6 +1156,17 @@ void GGEMSVulkanSceneRenderer::OrbitCamera(float delta_x_pixels,
 
 // -----------------------------------------------------------------------------
 
+void GGEMSVulkanSceneRenderer::PanCamera(float delta_x_pixels,
+                                         float delta_y_pixels) noexcept {
+  if (delta_x_pixels == 0.0f && delta_y_pixels == 0.0f) {
+    return;
+  }
+
+  camera_.Pan(delta_y_pixels, delta_y_pixels);
+}
+
+// -----------------------------------------------------------------------------
+
 void GGEMSVulkanSceneRenderer::ZoomCamera(float wheel_delta) noexcept {
   camera_.ZoomBy(wheel_delta);
 }
@@ -1206,4 +1175,34 @@ void GGEMSVulkanSceneRenderer::ZoomCamera(float wheel_delta) noexcept {
 
 void GGEMSVulkanSceneRenderer::ResetCamera() noexcept { camera_.Reset(); }
 
+// -----------------------------------------------------------------------------
+
+void GGEMSVulkanSceneRenderer::SetParticleTraceSegments(
+    std::span<ggems::render::GGEMSParticleTraceSegment const> segments) {
+  GGEMS_CHECK_INTERNAL(
+      device_ != nullptr,
+      "A Vulkan device is required before setting particle trace segments.");
+
+  trace_vertices_ = ggems::render::BuildParticleTraceVertices(segments);
+
+  DestroyTraceVertexBuffer();
+
+  if (!trace_vertices_.empty()) {
+    CreateTraceVertexBuffer();
+  }
+
+  GGEMS_INFOEX(
+      "Vulkan", 1,
+      "Loaded {} particle trace segment(s) into Vulkan: {} vertex/vertices.",
+      segments.size(), trace_vertices_.size());
+}
+
+// -----------------------------------------------------------------------------
+
+void GGEMSVulkanSceneRenderer::ClearParticleTraces() {
+  trace_vertices_.clear();
+  DestroyTraceVertexBuffer();
+
+  GGEMS_INFOEX("Vulkan", 1, "Cleared Vulkan particle traces.");
+}
 } // namespace ggems::ui

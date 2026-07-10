@@ -2,23 +2,21 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <span>
 #include <vector>
 
 #include <imgui.h>
 #include <vulkan/vulkan_raii.hpp>
 
 #include "GGEMSVulkanCamera.hh"
+#include "GGEMS/render/GGEMSParticleTrace.hh"
 
 namespace ggems::ui {
 
 class GGEMSVulkanSceneRenderer {
 private:
   using ScenePushConstants = GGEMSVulkanCamera::Matrix4Rows;
-
-  struct TraceVertex {
-    float position[3]{};
-    float colour[4]{};
-  };
+  using TraceVertex = ggems::render::GGEMSParticleTraceVertex;
 
 public:
   GGEMSVulkanSceneRenderer() = default;
@@ -54,9 +52,13 @@ public:
 
   void SetShowParticleTraces(bool show_particle_traces) noexcept;
   [[nodiscard]] bool ShouldShowParticleTraces() const noexcept;
+  void SetParticleTraceSegments(
+      std::span<ggems::render::GGEMSParticleTraceSegment const> segments);
+  void ClearParticleTraces();
   [[nodiscard]] std::uint32_t GetParticleTraceVertexCount() const noexcept;
 
   void OrbitCamera(float delta_x_pixels, float delta_y_pixels) noexcept;
+  void PanCamera(float delta_x_pixels, float delta_y_pixels) noexcept;
   void ZoomCamera(float wheel_delta) noexcept;
   void ResetCamera() noexcept;
 
@@ -84,7 +86,7 @@ private:
   void CleanupTraceResources() noexcept;
   void CreateDemoTraceVertices();
   void CreateTraceVertexBuffer();
-  void CleanuTraceResources() noexcept;
+  void DestroyTraceVertexBuffer() noexcept;
   void RecordTraceCommands(vk::raii::CommandBuffer const &command_buffer);
 
   void CreateDepthTarget();

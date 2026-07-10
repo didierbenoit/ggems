@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "GGEMS/render/GGEMSParticleTrace.hh"
+#include "GGEMS/render/GGEMSParticleColours.hh"
 
 namespace ggems::render {
 namespace {
@@ -98,6 +99,23 @@ GetParticleType(core::observer::GGEMSObserverRecord const &record) noexcept {
 [[nodiscard]] core::observer::GGEMSObserverRecordKind
 GetRecordKind(core::observer::GGEMSObserverRecord const &record) noexcept {
   return core::observer::FromKernelObserverRecordKind(record.record_kind);
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] GGEMSParticleTraceVertex
+MakeTraceVertex(GGEMSParticleTracePoint const &point,
+                core::particles::GGEMSParticleType particle_type) noexcept {
+  RGB rgb = GetParticleRGB(particle_type);
+
+  constexpr float inverse_255{1.0f / 255.0f};
+
+  return GGEMSParticleTraceVertex{
+      .position = {point.x_m, point.y_m, point.z_m},
+      .colour = {static_cast<float>(rgb.r) * inverse_255,
+                 static_cast<float>(rgb.g) * inverse_255,
+                 static_cast<float>(rgb.b) * inverse_255, 1.0F}};
 }
 
 // =============================================================================
@@ -206,6 +224,23 @@ std::vector<GGEMSParticleTraceSegment> BuildParticleTraceSegments(
   }
 
   return segments;
+}
+
+// =============================================================================
+// =============================================================================
+
+std::vector<GGEMSParticleTraceVertex> BuildParticleTraceVertices(
+    std::span<GGEMSParticleTraceSegment const> segments) {
+  std::vector<GGEMSParticleTraceVertex> vertices{};
+
+  vertices.reserve(segments.size() * 2U);
+
+  for (GGEMSParticleTraceSegment const &segment : segments) {
+    vertices.push_back(MakeTraceVertex(segment.begin, segment.particle_type));
+    vertices.push_back(MakeTraceVertex(segment.end, segment.particle_type));
+  }
+
+  return vertices;
 }
 
 } // namespace ggems::render

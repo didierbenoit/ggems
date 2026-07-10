@@ -3,8 +3,15 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
+
+#include "GGEMS/render/GGEMSParticleTrace.hh"
 
 struct GLFWwindow;
+
+namespace ggems::core::observer {
+class GGEMSTransportObserver;
+}
 
 namespace ggems::ui {
 
@@ -25,6 +32,12 @@ public:
 public:
   void Initialise();
   void Run();
+
+  void SubmitParticleTraceSegments(
+      std::vector<ggems::render::GGEMSParticleTraceSegment> segments);
+  void SubmitParticleTracesFromObserver(
+      ggems::core::observer::GGEMSTransportObserver const &observer);
+  void ClearParticleTraces();
 
   [[nodiscard]] bool IsInitialised() const noexcept;
 
