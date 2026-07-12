@@ -80,14 +80,4 @@ std::string UTF32ToUTF8(char32_t ch32);
 std::string UTF32ToUTF8(std::u32string_view str32);
 } // namespace ggems::utf
 
-/// \cond
-namespace std {
-template <> struct formatter<char32_t, char> {
-  constexpr auto parse(format_parse_context &ctx) { return ctx.begin(); }
-  template <typename FormatContext>
-  auto format(char32_t cp, FormatContext &ctx) const {
-    return format_to(ctx.out(), "{}", ggems::utf::UTF32ToUTF8(cp));
-  }
-};
-} // namespace std
 /// \endcond

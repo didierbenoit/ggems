@@ -9,6 +9,7 @@
 
 #include "GGEMSImGuiLayer.hh"
 #include "GGEMSVulkanSceneRenderer.hh"
+#include "GGEMSVulkanDeviceSelection.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 
 struct GLFWwindow;
@@ -25,7 +26,8 @@ public:
   GGEMSVulkanContext &operator=(GGEMSVulkanContext &&) = delete;
 
 public:
-  void Initialise(GLFWwindow *window);
+  void Initialise(GLFWwindow *window,
+                  detail::GGEMSVulkanDeviceSelector const &device_selector);
   [[nodiscard]] bool IsInitialised() const noexcept;
 
   void RenderFrame(GLFWwindow *window, bool framebuffer_resized);
@@ -61,16 +63,27 @@ private:
 
   [[nodiscard]] std::vector<char const *> GetRequiredInstanceExtensions() const;
 
+#if VK_HEADER_VERSION >= 304
+  static VKAPI_ATTR VkBool32 VKAPI_CALL
+  DebugVkCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
+                  vk::DebugUtilsMessageTypeFlagsEXT type,
+                  vk::DebugUtilsMessengerCallbackDataEXT const *callback_data,
+                  void *user_data) noexcept;
+#else
   static VKAPI_ATTR VkBool32 VKAPI_CALL
   DebugVkCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
                   VkDebugUtilsMessageTypeFlagsEXT type,
                   VkDebugUtilsMessengerCallbackDataEXT const *callback_data,
                   void *user_data) noexcept;
+#endif
 
-  void SelectPhysicalDevice();
+  void SelectPhysicalDevice(
+      detail::GGEMSVulkanDeviceSelector const &device_selector,
+      std::optional<detail::GGEMSVulkanDisplayAdapter> const &display_adapter);
 
-  [[nodiscard]] bool IsPhysicalDeviceSuitable(
-      vk::raii::PhysicalDevice const &physical_device) const;
+  [[nodiscard]] detail::GGEMSVulkanDeviceCandidate
+  BuildPhysicalDeviceCandidate(vk::raii::PhysicalDevice const &physical_device,
+                               std::uint32_t enumeration_index) const;
 
   [[nodiscard]] QueueFamilyIndices
   FindQueueFamilies(vk::raii::PhysicalDevice const &physical_device) const;
@@ -84,8 +97,10 @@ private:
   [[nodiscard]] bool
   SupportsSwapchain(vk::raii::PhysicalDevice const &physical_device) const;
 
-  [[nodiscard]] std::uint32_t
-  ScorePhysicalDevice(vk::raii::PhysicalDevice const &physical_device) const;
+  void WarnIfCrossAdapterPresentation(
+      GLFWwindow *window,
+      std::optional<detail::GGEMSVulkanDisplayAdapter> const &display_adapter)
+      const;
 
   void CreateLogicalDevice();
 
@@ -173,6 +188,7 @@ private:
   bool imgui_initialised_{false};
 
   QueueFamilyIndices queue_family_indices_{};
+  detail::GGEMSVulkanDeviceCandidate selected_physical_device_candidate_{};
 
   bool initialised_{false};
 

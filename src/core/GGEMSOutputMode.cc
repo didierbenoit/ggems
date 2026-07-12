@@ -10,6 +10,10 @@
 #include "GGEMS/utf/GGEMSUTF.hh"
 #include "GGEMS/render/GGEMSColour.hh"
 
+#if defined(_WIN32)
+#include "GGEMS/platform/windows/GGEMSWindowsCore.hh"
+#endif
+
 namespace ggems::core {
 
 namespace {
@@ -26,6 +30,40 @@ std::unique_ptr<GGEMSOutputState> g_state{};
 std::unique_ptr<render::GGEMSBanner> g_banner{};
 
 std::atomic<bool> g_output_running{false};
+
+// =============================================================================
+// =============================================================================
+
+#if defined(_WIN32)
+void EnableWindowsVirtualTerminal(DWORD standard_handle) noexcept {
+  HANDLE handle = GetStdHandle(standard_handle);
+
+  if (handle == nullptr || handle == INVALID_HANDLE_VALUE) {
+    return;
+  }
+
+  DWORD console_mode{0};
+  if (GetConsoleMode(handle, &console_mode) == FALSE) {
+    return;
+  }
+
+  console_mode |= ENABLE_PROCESSED_OUTPUT;
+  console_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+
+  static_cast<void>(SetConsoleMode(handle, console_mode));
+}
+
+// =============================================================================
+// =============================================================================
+
+void PrepareWindowsTerminal() noexcept {
+  static_cast<void>(SetConsoleCP(CP_UTF8));
+  static_cast<void>(SetConsoleOutputCP(CP_UTF8));
+
+  EnableWindowsVirtualTerminal(STD_OUTPUT_HANDLE);
+  EnableWindowsVirtualTerminal(STD_ERROR_HANDLE);
+}
+#endif
 
 // =============================================================================
 // =============================================================================
@@ -231,6 +269,12 @@ void StartOutputRuntime() {
 
   if (g_output_running.load(std::memory_order_relaxed)) {
     return;
+  }
+
+  if (g_mode == OutputMode::Term) {
+#if defined(_WIN32)
+    PrepareWindowsTerminal();
+#endif
   }
 
   g_output_running.store(true, std::memory_order_relaxed);

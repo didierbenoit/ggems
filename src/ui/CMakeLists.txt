@@ -193,4 +193,13 @@ target_link_libraries(ggems_gui
     ${GGEMS_GLFW_TARGET}
 )
 
+if(WIN32)
+  target_link_libraries(ggems_gui
+    PRIVATE
+      dxgi
+      dxguid
+      user32
+  )
+endif()
+
 target_compile_features(ggems_gui PUBLIC cxx_std_23)

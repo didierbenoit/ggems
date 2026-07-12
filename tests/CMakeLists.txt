@@ -83,3 +83,36 @@ target_include_directories(ggems_core_tests
 )
 
 gtest_discover_tests(ggems_core_tests)
+
+# ----------------------------------------------------------------------------
+# GuiMode unit tests
+# ----------------------------------------------------------------------------
+if(GGEMS_WITH_IMGUI)
+  file(GLOB_RECURSE GGEMS_GUI_TEST_SOURCES
+    CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/ui/*.cc")
+
+  add_executable(ggems_gui_tests
+    ${GGEMS_GUI_TEST_SOURCES}
+  )
+
+  target_compile_definitions(ggems_gui_tests
+    PRIVATE
+      VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
+      VULKAN_HPP_NO_STRUCT_CONSTRUCTORS=1
+  )
+
+  target_link_libraries(ggems_gui_tests
+    PRIVATE
+      ggems_gui
+      ${GGEMS_GTEST_MAIN_TARGET}
+  )
+
+  target_include_directories(ggems_gui_tests
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/include
+      ${PROJECT_SOURCE_DIR}/src/ui
+  )
+
+  gtest_discover_tests(ggems_gui_tests)
+endif()

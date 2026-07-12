@@ -11,6 +11,7 @@
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/ui/GGEMSGuiApplication.hh"
 #include "GGEMSVulkanContext.hh"
+#include "GGEMSVulkanDeviceSelection.hh"
 
 namespace {
 [[nodiscard]] std::string GetGLFWErrorMessage(std::string_view context) {
@@ -61,6 +62,31 @@ bool GGEMSGuiApplication::IsInitialised() const noexcept {
 
 // -----------------------------------------------------------------------------
 
+void GGEMSGuiApplication::SetVulkanDevice(std::string selection) {
+  GGEMS_CHECK_RECOVERABLE(window_ == nullptr,
+                          "Vulkan device selection must be configured before "
+                          "GGEMS GuiMode initialisation.");
+
+  GGEMS_CHECK_RECOVERABLE(
+      !selection.empty(),
+      "Vulkan device selection expects 'auto' or a non-empty device name.");
+
+  vulkan_device_name_selector_ = std::move(selection);
+  vulkan_device_index_selector_.reset();
+}
+
+// -----------------------------------------------------------------------------
+
+void GGEMSGuiApplication::SetVulkanDevice(std::uint32_t enumeration_index) {
+  GGEMS_CHECK_RECOVERABLE(window_ == nullptr,
+                          "Vulkan device selection must be configured before "
+                          "GGEMS GuiMode initialisation.");
+
+  vulkan_device_index_selector_ = enumeration_index;
+}
+
+// -----------------------------------------------------------------------------
+
 void GGEMSGuiApplication::Initialise() {
   if (window_ != nullptr) {
     return;
@@ -97,8 +123,15 @@ void GGEMSGuiApplication::Initialise() {
       window_, &GGEMSGuiApplication::FramebufferResizeCallback);
 
   try {
+    detail::GGEMSVulkanDeviceSelector device_selector =
+        vulkan_device_index_selector_.has_value()
+            ? detail::GGEMSVulkanDeviceSelector::FromIndex(
+                  vulkan_device_index_selector_.value())
+            : detail::GGEMSVulkanDeviceSelector::FromString(
+                  vulkan_device_name_selector_);
+
     vk_context_ = std::make_unique<GGEMSVulkanContext>();
-    vk_context_->Initialise(window_);
+    vk_context_->Initialise(window_, device_selector);
   } catch (...) {
     Shutdown();
     throw;

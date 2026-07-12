@@ -1,6 +1,7 @@
 #ifdef GGEMS_WITH_IMGUI
 
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <string>
 
@@ -17,6 +18,27 @@ void BindGui(py::module_ &m) {
       .def(py::init<std::string, std::int32_t, std::int32_t>(),
            py::arg("title") = "GGEMS GuiMode", py::arg("width") = 1600,
            py::arg("height") = 900)
+
+      .def("set_vulkan_device",
+           py::overload_cast<std::string>(
+               &ggems::ui::GGEMSGuiApplication::SetVulkanDevice),
+           py::arg("selection"))
+
+      .def(
+          "set_vulkan_device",
+          [](ggems::ui::GGEMSGuiApplication &application,
+             std::int64_t enumeration_index) {
+            if (enumeration_index < 0 ||
+                enumeration_index >
+                    static_cast<std::int64_t>(
+                        std::numeric_limits<std::uint32_t>::max())) {
+              throw py::value_error(
+                  "Vulkan device enumeration index is outside uint32 range.");
+            }
+            application.SetVulkanDevice(
+                static_cast<std::uint32_t>(enumeration_index));
+          },
+          py::arg("selection"))
 
       .def("initialise", &ggems::ui::GGEMSGuiApplication::Initialise)
 

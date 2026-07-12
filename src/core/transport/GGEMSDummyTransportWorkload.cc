@@ -373,6 +373,7 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
   kernel.SetArgSVMPointer(12U, observer_records);
   kernel.SetArg(13U, static_cast<cl_uint>(observer_record_capacity_));
   kernel.SetArg(14U, static_cast<cl_ulong>(config.run_id));
+  kernel.SetArg(15U, static_cast<cl_uint>(worker_count_));
 
   constexpr std::size_t k_local_size{64U};
   std::size_t const global_size = RoundUp(worker_count_, k_local_size);

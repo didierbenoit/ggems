@@ -14,6 +14,7 @@
 #include <filesystem>
 #include <optional>
 #include <utility>
+#include <string_view>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -26,6 +27,10 @@
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMSImGuiTheme.hh"
 #include "GGEMS/render/GGEMSColourNames.hh"
+
+#if defined(_WIN32)
+#include "GGEMSVulkanDisplayAdapterWin32.hh"
+#endif
 
 namespace {
 
@@ -43,6 +48,43 @@ constexpr std::array<char const *, 1> k_validation_layers{
 
 constexpr std::array<char const *, 1> k_required_device_extensions{
     vk::KHRSwapchainExtensionName};
+
+// =============================================================================
+// =============================================================================
+
+void AppendRejectionReason(std::string &diagnostic, std::string_view reason) {
+  if (!diagnostic.empty()) {
+    diagnostic += "; ";
+  }
+  diagnostic += reason;
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] std::string_view YesNo(bool value) noexcept {
+  return value ? "yes" : "no";
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] std::string_view DisplayMatchLabel(
+    ggems::ui::detail::GGEMSVulkanDeviceCandidate const &candidate,
+    std::optional<ggems::ui::detail::GGEMSVulkanDisplayAdapter> const
+        &display_adapter) noexcept {
+  if (!display_adapter.has_value()) {
+    return "unavailable";
+  }
+
+  if (!candidate.platform_adapter_id.has_value()) {
+    return "unknown";
+  }
+
+  return candidate.platform_adapter_id.value() == display_adapter->platform_id
+             ? "yes"
+             : "no";
+}
 
 // =============================================================================
 // =============================================================================
@@ -139,7 +181,9 @@ GGEMSVulkanContext::~GGEMSVulkanContext() noexcept {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::Initialise(GLFWwindow *window) {
+void GGEMSVulkanContext::Initialise(
+    GLFWwindow *window,
+    detail::GGEMSVulkanDeviceSelector const &device_selector) {
   if (initialised_) {
     return;
   }
@@ -149,12 +193,40 @@ void GGEMSVulkanContext::Initialise(GLFWwindow *window) {
       "A valid GLFW window is required before initialising Vulkan GuiMode.");
 
   try {
+    std::optional<detail::GGEMSVulkanDisplayAdapter> display_adapter{};
+
     CreateInstance();
     SetupDebugMessenger();
     CreateSurface(window);
-    SelectPhysicalDevice();
+
+#if defined(_WIN32)
+    auto display_resolution = detail::ResolveWin32DisplayAdapter(window);
+
+    if (display_resolution.has_value()) {
+      display_adapter = display_resolution.value();
+
+      GGEMS_INFO("Vulkan",
+                 "Display adapter resolved by Win32 HMONITOR/DXGI LUID: {}.",
+                 display_adapter->name);
+    } else {
+      GGEMS_INFO("Vulkan",
+                 "Display adapter identity is unavailable: {} "
+                 "Automatic selection will use the existing GGEMS fallback. "
+                 "An explicit Vulkan selector remains available.",
+                 display_resolution.error());
+    }
+#else
+    GGEMS_INFO(
+        "Vulkan",
+        "Display adapter identity resolution is unavailable on this platform. "
+        "Automatic selection will use the existing GGEMS fallback. "
+        "An explicit Vulkan selector remains available.");
+#endif
+
+    SelectPhysicalDevice(device_selector, display_adapter);
     CreateLogicalDevice();
     CreateSwapchain(window);
+    WarnIfCrossAdapterPresentation(window, display_adapter);
     CreateSwapchainImageViews();
     CreateCommandPool();
     AllocateCommandBuffers();
@@ -328,22 +400,32 @@ void GGEMSVulkanContext::CreateSurface(GLFWwindow *window) {
 
 // -----------------------------------------------------------------------------
 
+#if VK_HEADER_VERSION >= 304
+VKAPI_ATTR VkBool32 VKAPI_CALL GGEMSVulkanContext::DebugVkCallback(
+    vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
+    vk::DebugUtilsMessageTypeFlagsEXT type,
+    vk::DebugUtilsMessengerCallbackDataEXT const *callback_data,
+    void *) noexcept {
+#else
 VKAPI_ATTR VkBool32 VKAPI_CALL GGEMSVulkanContext::DebugVkCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT severity,
     VkDebugUtilsMessageTypeFlagsEXT type,
     VkDebugUtilsMessengerCallbackDataEXT const *callback_data,
     void *) noexcept {
+#endif
   if (callback_data == nullptr || callback_data->pMessage == nullptr) {
     return VK_FALSE;
   }
 
+  std::uint32_t message_severity = static_cast<std::uint32_t>(severity);
   std::uint32_t message_type = static_cast<std::uint32_t>(type);
 
   try {
-    if (severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+    if (message_severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
       GGEMS_ERROR("Vulkan", "Validation layer [{}]: {}", message_type,
                   callback_data->pMessage);
-    } else if (severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+    } else if (message_severity ==
+               VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
       GGEMS_WARN("Vulkan", "Validation layer [{}]: {}", message_type,
                  callback_data->pMessage);
     }
@@ -453,46 +535,92 @@ GGEMSVulkanContext::QuerySwapchainSupport(
 
 // -----------------------------------------------------------------------------
 
-bool GGEMSVulkanContext::IsPhysicalDeviceSuitable(
-    vk::raii::PhysicalDevice const &physical_device) const {
+detail::GGEMSVulkanDeviceCandidate
+GGEMSVulkanContext::BuildPhysicalDeviceCandidate(
+    vk::raii::PhysicalDevice const &physical_device,
+    std::uint32_t enumeration_index) const {
   vk::PhysicalDeviceProperties properties = physical_device.getProperties();
-
-  bool supports_vulkan_1_3 = properties.apiVersion >= vk::ApiVersion13;
-
   QueueFamilyIndices queue_family_indices = FindQueueFamilies(physical_device);
 
-  return supports_vulkan_1_3 && queue_family_indices.IsComplete() &&
-         SupportsRequiredDeviceExtensions(physical_device) &&
-         SupportsRequiredFeatures(physical_device) &&
-         SupportsSwapchain(physical_device);
-}
+  detail::GGEMSVulkanDeviceCandidate candidate{
+      .enumeration_index = enumeration_index,
+      .physical_device = *physical_device,
+      .name = properties.deviceName.data(),
+      .type = properties.deviceType,
+      .vendor_id = properties.vendorID,
+      .device_id = properties.deviceID,
+      .api_version = properties.apiVersion,
+      .driver_version = properties.driverVersion,
+      .graphics_queue_family = queue_family_indices.graphics,
+      .presentation_queue_family = queue_family_indices.presentation};
 
-// -----------------------------------------------------------------------------
-
-std::uint32_t GGEMSVulkanContext::ScorePhysicalDevice(
-    vk::raii::PhysicalDevice const &physical_device) const {
-  switch (physical_device.getProperties().deviceType) {
-  case vk::PhysicalDeviceType::eIntegratedGpu:
-    return 400;
-
-  case vk::PhysicalDeviceType::eDiscreteGpu:
-    return 300;
-
-  case vk::PhysicalDeviceType::eVirtualGpu:
-    return 200;
-
-  case vk::PhysicalDeviceType::eCpu:
-    return 100;
-
-  case vk::PhysicalDeviceType::eOther:
-  default:
-    return 0;
+#if defined(_WIN32)
+  if (candidate.api_version >= vk::ApiVersion11) {
+    candidate.platform_adapter_id =
+        detail::QueryWin32VulkanAdapterId(physical_device);
   }
+#endif
+
+  bool supports_vulkan_1_3 = candidate.api_version >= vk::ApiVersion13;
+
+  candidate.required_extensions_available =
+      SupportsRequiredDeviceExtensions(physical_device);
+
+  candidate.required_features_available =
+      supports_vulkan_1_3 && SupportsRequiredFeatures(physical_device);
+
+  candidate.swapchain_adequate =
+      candidate.required_extensions_available &&
+      candidate.presentation_queue_family.has_value() &&
+      SupportsSwapchain(physical_device);
+
+  candidate.suitable =
+      supports_vulkan_1_3 && candidate.graphics_queue_family.has_value() &&
+      candidate.presentation_queue_family.has_value() &&
+      candidate.required_extensions_available &&
+      candidate.required_features_available && candidate.swapchain_adequate;
+
+  if (!supports_vulkan_1_3) {
+    AppendRejectionReason(candidate.rejection_reason,
+                          "Vulkan 1.3 is unavailable");
+  }
+
+  if (!candidate.graphics_queue_family.has_value()) {
+    AppendRejectionReason(candidate.rejection_reason,
+                          "no graphics queue family");
+  }
+
+  if (!candidate.presentation_queue_family.has_value()) {
+    AppendRejectionReason(candidate.rejection_reason,
+                          "no queue family supports the GLFW surface");
+  }
+
+  if (!candidate.required_extensions_available) {
+    AppendRejectionReason(candidate.rejection_reason,
+                          "VK_KHR_swapchain is unavailable");
+  }
+
+  if (supports_vulkan_1_3 && !candidate.required_features_available) {
+    AppendRejectionReason(candidate.rejection_reason,
+                          "required Vulkan 1.1/1.3 features are unavailable");
+  }
+
+  if (candidate.required_extensions_available &&
+      candidate.presentation_queue_family.has_value() &&
+      !candidate.swapchain_adequate) {
+    AppendRejectionReason(
+        candidate.rejection_reason,
+        "surface formats or presentation modes are unavailable");
+  }
+
+  return candidate;
 }
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::SelectPhysicalDevice() {
+void GGEMSVulkanContext::SelectPhysicalDevice(
+    detail::GGEMSVulkanDeviceSelector const &device_selector,
+    std::optional<detail::GGEMSVulkanDisplayAdapter> const &display_adapter) {
   std::vector<vk::raii::PhysicalDevice> physical_devices =
       instance_.enumeratePhysicalDevices();
 
@@ -500,50 +628,89 @@ void GGEMSVulkanContext::SelectPhysicalDevice() {
       !physical_devices.empty(),
       "No Vulkan physical device is available for GGEMS GuiMode.");
 
-  std::uint32_t best_score{std::numeric_limits<std::uint32_t>::min()};
-  bool device_selected{false};
+  std::vector<detail::GGEMSVulkanDeviceCandidate> candidates{};
+  candidates.reserve(physical_devices.size());
 
-  for (vk::raii::PhysicalDevice const &physical_device : physical_devices) {
-    vk::PhysicalDeviceProperties const properties =
-        physical_device.getProperties();
+  for (std::uint32_t index = 0U;
+       index < static_cast<std::uint32_t>(physical_devices.size()); ++index) {
+    candidates.push_back(
+        BuildPhysicalDeviceCandidate(physical_devices[index], index));
+  }
 
-    if (!IsPhysicalDeviceSuitable(physical_device)) {
-      GGEMS_DEBUG("Vulkan",
-                  "Rejected Vulkan display device '{}': incompatible with "
-                  "GGEMS GuiMode requirements.",
-                  properties.deviceName.data());
-      continue;
-    }
+  GGEMS_INFO("Vulkan", "Vulkan physical devices:");
 
-    std::uint32_t score = ScorePhysicalDevice(physical_device);
+  for (detail::GGEMSVulkanDeviceCandidate const &candidate : candidates) {
+    GGEMS_INFO("Vulkan", "[{}] {}", candidate.enumeration_index,
+               candidate.name);
+    GGEMS_INFO("Vulkan",
+               "    type={} vendor=0x{:04x} device=0x{:04x} "
+               "API={}.{}.{} driver=0x{:08x}",
+               vk::to_string(candidate.type), candidate.vendor_id,
+               candidate.device_id, VK_API_VERSION_MAJOR(candidate.api_version),
+               VK_API_VERSION_MINOR(candidate.api_version),
+               VK_API_VERSION_PATCH(candidate.api_version),
+               candidate.driver_version);
+    GGEMS_INFO(
+        "Vulkan",
+        "    graphics={} present={} extensions={} features={} swapchain={}",
+        YesNo(candidate.graphics_queue_family.has_value()),
+        YesNo(candidate.presentation_queue_family.has_value()),
+        YesNo(candidate.required_extensions_available),
+        YesNo(candidate.required_features_available),
+        YesNo(candidate.swapchain_adequate));
+    GGEMS_INFO("Vulkan", "    display_match={} suitable={}",
+               DisplayMatchLabel(candidate, display_adapter),
+               YesNo(candidate.suitable));
 
-    GGEMS_DEBUG("Vulkan",
-                "Compatible Vulkan display device '{}': type={}, score={}.",
-                properties.deviceName.data(),
-                vk::to_string(properties.deviceType), score);
-
-    if (!device_selected || score > best_score) {
-      physical_device_ = physical_device;
-      queue_family_indices_ = FindQueueFamilies(physical_device);
-      best_score = score;
-      device_selected = true;
+    if (!candidate.suitable) {
+      GGEMS_INFO("Vulkan", "    rejection={}", candidate.rejection_reason);
     }
   }
 
-  GGEMS_CHECK_RECOVERABLE(
-      device_selected,
-      "No Vulkan physical device satisfies the GGEMS GuiMode requirements.");
+  auto selection =
+      detail::SelectVulkanDevice(device_selector, candidates, display_adapter);
 
-  vk::PhysicalDeviceProperties const selected_properties =
-      physical_device_.getProperties();
+  if (!selection.has_value()) {
+    GGEMS_RECOVERABLE(selection.error());
+  }
 
-  GGEMS_INFOEX("Vulkan", 1,
-               "Selected Vulkan display device '{}': type={}, API={}.{}.{}.",
-               selected_properties.deviceName.data(),
-               vk::to_string(selected_properties.deviceType),
-               VK_API_VERSION_MAJOR(selected_properties.apiVersion),
-               VK_API_VERSION_MINOR(selected_properties.apiVersion),
-               VK_API_VERSION_PATCH(selected_properties.apiVersion));
+  auto selected_candidate = std::ranges::find_if(
+      candidates,
+      [&selection](detail::GGEMSVulkanDeviceCandidate const &candidate) {
+        return candidate.enumeration_index == selection->enumeration_index;
+      });
+
+  GGEMS_CHECK_INTERNAL(
+      selected_candidate != candidates.end(),
+      std::format(
+          "Selected Vulkan enumeration index {} is absent from the collected "
+          "candidate set.",
+          selection->enumeration_index));
+
+  vk::PhysicalDevice selected_handle = selected_candidate->physical_device;
+
+  auto selected_physical_device = std::ranges::find_if(
+      physical_devices,
+      [selected_handle](vk::raii::PhysicalDevice const &physical_device) {
+        return *physical_device == selected_handle;
+      });
+
+  GGEMS_CHECK_INTERNAL(
+      selected_physical_device != physical_devices.end(),
+      std::format("Selected Vulkan candidate [{}] '{}' no longer refers to an "
+                  "enumerated physical device.",
+                  selected_candidate->enumeration_index,
+                  selected_candidate->name));
+
+  physical_device_ = *selected_physical_device;
+  selected_physical_device_candidate_ = *selected_candidate;
+  queue_family_indices_ = QueueFamilyIndices{
+      .graphics = selected_candidate->graphics_queue_family,
+      .presentation = selected_candidate->presentation_queue_family};
+
+  GGEMS_INFO("Vulkan", "Vulkan selected device: [{}] {}",
+             selected_candidate->enumeration_index, selected_candidate->name);
+  GGEMS_INFO("Vulkan", "Selection reason: {}.", selection->reason);
 
   GGEMS_INFOEX("Vulkan", 2,
                "Selected Vulkan queue families: graphics={}, presentation={}, "
@@ -551,6 +718,36 @@ void GGEMSVulkanContext::SelectPhysicalDevice() {
                queue_family_indices_.graphics.value(),
                queue_family_indices_.presentation.value(),
                queue_family_indices_.UsesSeparateFamilies());
+}
+
+// -----------------------------------------------------------------------------
+
+void GGEMSVulkanContext::WarnIfCrossAdapterPresentation(
+    GLFWwindow *window,
+    std::optional<detail::GGEMSVulkanDisplayAdapter> const &display_adapter)
+    const {
+  if (!display_adapter.has_value() ||
+      !detail::IsVulkanDisplayAdapterMismatch(
+          selected_physical_device_candidate_, display_adapter)) {
+    return;
+  }
+
+  int framebuffer_width{0};
+  int framebuffer_height{0};
+  glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
+
+  GGEMS_WARN(
+      "Vulkan",
+      "Vulkan rendering device and display adapter differ.\n"
+      "Cross-adapter presentation may reduce performance or cause "
+      "instability.\n"
+      "Framebuffer: {}x{}.\n"
+      "Selected Vulkan device: {}.\n"
+      "Display adapter: {}.\n"
+      "High framebuffer resolutions can amplify cross-adapter presentation "
+      "costs.",
+      framebuffer_width, framebuffer_height,
+      selected_physical_device_candidate_.name, display_adapter->name);
 }
 
 // -----------------------------------------------------------------------------

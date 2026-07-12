@@ -39,9 +39,8 @@ protected:
 
 } // namespace
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST_F(GGEMSDummyTransportWorkloadTest, RunsBranchingAioninoPrototype) {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
@@ -108,9 +107,42 @@ TEST_F(GGEMSDummyTransportWorkloadTest, RunsBranchingAioninoPrototype) {
   EXPECT_EQ(observer_counters.captured_primary_count, 0U);
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSDummyTransportWorkloadTest,
+       GuardsPaddedWorkItemsForRoundedGlobalSize) {
+  constexpr std::uint32_t k_non_multiple_worker_count{257U};
+  constexpr std::uint32_t k_test_primary_count{320U};
+
+  auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
+  random->SetEngine("philox");
+  random->SetSeed(7777777ULL);
+
+  ggems::core::transport::GGEMSDummyTransportWorkload workload{
+      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT}, *random,
+      k_non_multiple_worker_count};
+
+  ggems::core::transport::GGEMSDummyTransportRunConfig config{};
+  config.total_primary_count = k_test_primary_count;
+  config.max_generation = 0U;
+
+  auto report = workload.Run(config);
+  auto const &counters = report.counters;
+
+  EXPECT_EQ(workload.GetWorkerCount(), k_non_multiple_worker_count);
+  EXPECT_EQ(counters.next_primary_id,
+            k_test_primary_count + k_non_multiple_worker_count);
+  EXPECT_EQ(counters.consumed_primary_count, k_test_primary_count);
+  EXPECT_EQ(counters.completed_history_count, k_test_primary_count);
+  EXPECT_EQ(counters.terminal_particle_count, k_test_primary_count);
+  EXPECT_EQ(counters.created_secondary_count, 0U);
+  EXPECT_EQ(counters.overflow_count, 0U);
+  EXPECT_EQ(report.observer_counters.overflow_count, 0U);
+}
+
+// =============================================================================
+// =============================================================================
 
 TEST_F(GGEMSDummyTransportWorkloadTest, CapturesFirstPrimaryHistories) {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();

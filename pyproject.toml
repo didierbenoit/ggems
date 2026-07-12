@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-  "scikit-build-core>=0.11",
+  "scikit-build-core>=0.12.2",
   "pybind11>=3.0"
 ]
 build-backend = "scikit_build_core.build"
@@ -22,6 +22,7 @@ repository = "https://github.com/GGEMS/ggems"
 documentation = "https://doc.ggems.fr/v2.0"
 
 [tool.scikit-build]
+minimum-version = "build-system.requires"
 build-dir = "build/{wheel_tag}"
 wheel.expand-macos-universal-tags = true
 build.verbose = true

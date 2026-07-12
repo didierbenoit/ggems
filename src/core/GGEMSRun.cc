@@ -127,6 +127,9 @@ void GGEMSRun::SetWorkerCount(std::uint32_t worker_count) {
 /* --------------------------------------------- */
 
 void GGEMSRun::Initialise() {
+  GGEMS_CHECK_RECOVERABLE(!initialised_,
+                          "GGEMSRun::Initialise called more than once.");
+
   GGEMS_CHECK_RECOVERABLE(
       random_ != nullptr,
       "GGEMSRun cannot be initialised without a GGEMSRandom. "

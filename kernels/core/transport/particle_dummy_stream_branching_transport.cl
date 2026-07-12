@@ -120,7 +120,7 @@ __kernel void particle_dummy_stream_branching_transport(
     __global GGEMSObserverConfigRecord const *observer_config,
     volatile __global GGEMSObserverCounters *observer_counters,
     __global GGEMSObserverRecord *observer_records,
-    uint observer_record_capacity, ulong run_id) {
+    uint observer_record_capacity, ulong run_id, uint worker_count) {
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER == 0
   (void)(observer_config);
   (void)(observer_counters);
@@ -130,6 +130,10 @@ __kernel void particle_dummy_stream_branching_transport(
 #endif
 
   uint worker_id = (uint)(get_global_id(0));
+
+  if (worker_id >= worker_count) {
+    return;
+  }
 
   GGEMSParticleState stack[GGEMS_DUMMY_LOCAL_STACK_CAPACITY];
   uint stack_size = 0U;

@@ -213,7 +213,7 @@ constexpr std::array<TableColumn, 13U> k_observer_table_columns{{
     {"Par", 3U, CellAlignment::Right},
     {"G", 1U, CellAlignment::Right},
     {"Kind", 4U, CellAlignment::Left},
-    {"Particle", 8U, CellAlignment::Left},
+    {"Particle", 6U, CellAlignment::Left},
     {"S", 1U, CellAlignment::Left},
     {"E", 10U, CellAlignment::Right},
     {"X", 8U, CellAlignment::Right},
@@ -473,25 +473,27 @@ std::string FormatParticleLabel(particles::GGEMSParticleType particle_type) {
     return "?";
 
   case particles::GGEMSParticleType::Aionino:
-    return std::format("{} Aio", glyphs.aionino);
+    return utf::UTF32ToUTF8(glyphs.aionino) + " aio";
 
   case particles::GGEMSParticleType::Gamma:
-    return std::format("{} Gamma", glyphs.gamma);
+    return utf::UTF32ToUTF8(glyphs.gamma) + " gam";
 
   case particles::GGEMSParticleType::Electron:
-    return std::format("{}{} Elec", glyphs.electron, glyphs.minus);
+    return utf::UTF32ToUTF8(glyphs.electron) + utf::UTF32ToUTF8(glyphs.minus) +
+           " ele";
 
   case particles::GGEMSParticleType::Positron:
-    return std::format("{}{} Pos", glyphs.electron, glyphs.plus);
+    return utf::UTF32ToUTF8(glyphs.electron) + utf::UTF32ToUTF8(glyphs.plus) +
+           " pos";
 
   case particles::GGEMSParticleType::Proton:
-    return std::format("{} Prot", glyphs.proton);
+    return utf::UTF32ToUTF8(glyphs.proton) + " pro";
 
   case particles::GGEMSParticleType::Neutron:
-    return std::format("{} Neut", glyphs.neutron);
+    return utf::UTF32ToUTF8(glyphs.neutron) + " neu";
 
   case particles::GGEMSParticleType::Alpha:
-    return std::format("{} Alpha", glyphs.alpha);
+    return utf::UTF32ToUTF8(glyphs.alpha) + " alp";
   }
 
   return "?";

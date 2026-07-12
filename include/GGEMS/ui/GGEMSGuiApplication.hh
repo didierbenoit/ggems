@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -41,6 +42,9 @@ public:
 
   [[nodiscard]] bool IsInitialised() const noexcept;
 
+  void SetVulkanDevice(std::string selection);
+  void SetVulkanDevice(std::uint32_t enumeration_index);
+
 private:
   void Shutdown() noexcept;
 
@@ -51,6 +55,8 @@ private:
   std::string title_;
   std::int32_t width_{0};
   std::int32_t height_{0};
+  std::string vulkan_device_name_selector_{"auto"};
+  std::optional<std::uint32_t> vulkan_device_index_selector_{};
   GLFWwindow *window_{nullptr};
   std::unique_ptr<GGEMSVulkanContext> vk_context_{};
   bool glfw_initialised_{false};
