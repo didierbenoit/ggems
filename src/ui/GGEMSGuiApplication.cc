@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <format>
+#include <ranges>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -8,12 +10,81 @@
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/observer/GGEMSTransportObserver.hh"
+#include "GGEMS/frameworks/GGEMSOpenCL.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLStrings.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/ui/GGEMSGuiApplication.hh"
+
+#include "GGEMSDeviceStatus.hh"
 #include "GGEMSVulkanContext.hh"
 #include "GGEMSVulkanDeviceSelection.hh"
 
 namespace {
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] ggems::ui::detail::GGEMSComputeStatus
+BuildComputeStatus(ggems::ocl::GGEMSOpenCL &opencl) {
+  auto const &contexts = opencl.GetContext();
+
+  if (contexts.empty()) {
+    return {};
+  }
+
+  auto const &platforms = opencl.GetPlatforms();
+
+  ggems::ui::detail::GGEMSComputeStatus compute_status{.initialised = true};
+
+  compute_status.devices.reserve(contexts.size());
+
+  for (std::size_t context_index = 0U; context_index < contexts.size();
+       ++context_index) {
+    ggems::ocl::GGEMSOpenCLDevice const &device =
+        contexts[context_index].GetDevice();
+
+    std::size_t platform_index = device.GetPlatformIndex();
+
+    auto platform = std::ranges::find_if(
+        platforms,
+        [platform_index](ggems::ocl::GGEMSOpenCLPlatform const &candidate) {
+          return candidate.GetPlatformIndex() == platform_index;
+        });
+
+    GGEMS_CHECK_INTERNAL(
+        platform != platforms.end(),
+        std::format(
+            "Active OpenCL context {} refers to unavailable platform index {}.",
+            context_index, platform_index));
+
+    compute_status.devices.push_back(
+        ggems::ui::detail::GGEMSComputeDeviceStatus{
+            .context_index = context_index,
+            .name = device.GetName(),
+            .type = ggems::ocl::DeviceTypeToString(device.GetType()),
+            .platform = platform->GetName()});
+  }
+
+  for (ggems::ui::detail::GGEMSComputeDeviceStatus &device :
+       compute_status.devices) {
+    auto matching_name_count = std::ranges::count_if(
+        compute_status.devices,
+        [&device](
+            ggems::ui::detail::GGEMSComputeDeviceStatus const &candidate) {
+          return candidate.name == device.name;
+        });
+
+    device.show_platform = matching_name_count > 1;
+  }
+
+  return compute_status;
+}
+
+// =============================================================================
+// =============================================================================
+
 [[nodiscard]] std::string GetGLFWErrorMessage(std::string_view context) {
   char const *description{nullptr};
   int error_code = glfwGetError(&description);
@@ -123,6 +194,9 @@ void GGEMSGuiApplication::Initialise() {
       window_, &GGEMSGuiApplication::FramebufferResizeCallback);
 
   try {
+    auto &opencl = ocl::GGEMSOpenCL::GetInstance();
+    detail::GGEMSComputeStatus compute_status = BuildComputeStatus(opencl);
+
     detail::GGEMSVulkanDeviceSelector device_selector =
         vulkan_device_index_selector_.has_value()
             ? detail::GGEMSVulkanDeviceSelector::FromIndex(
@@ -131,7 +205,8 @@ void GGEMSGuiApplication::Initialise() {
                   vulkan_device_name_selector_);
 
     vk_context_ = std::make_unique<GGEMSVulkanContext>();
-    vk_context_->Initialise(window_, device_selector);
+    vk_context_->Initialise(window_, device_selector,
+                            std::move(compute_status));
   } catch (...) {
     Shutdown();
     throw;

@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdio>
+#include <cmath>
 #include <cstring>
 #include <format>
 #include <ranges>
@@ -48,6 +49,24 @@ constexpr std::array<char const *, 1> k_validation_layers{
 
 constexpr std::array<char const *, 1> k_required_device_extensions{
     vk::KHRSwapchainExtensionName};
+
+constexpr float k_imgui_min_ui_scale{1.0f};
+constexpr float k_imgui_max_ui_scale{2.5f};
+constexpr float k_imgui_base_font_size{15.0f};
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] float NormaliseImGuiUIScale(float content_scale_x,
+                                          float content_scale_y) noexcept {
+  if (!std::isfinite(content_scale_x) || !std::isfinite(content_scale_y) ||
+      content_scale_x <= 0.0f || content_scale_y <= 0.0f) {
+    return k_imgui_min_ui_scale;
+  }
+
+  return std::clamp(std::max(content_scale_x, content_scale_y),
+                    k_imgui_min_ui_scale, k_imgui_max_ui_scale);
+}
 
 // =============================================================================
 // =============================================================================
@@ -183,7 +202,8 @@ GGEMSVulkanContext::~GGEMSVulkanContext() noexcept {
 
 void GGEMSVulkanContext::Initialise(
     GLFWwindow *window,
-    detail::GGEMSVulkanDeviceSelector const &device_selector) {
+    detail::GGEMSVulkanDeviceSelector const &device_selector,
+    detail::GGEMSComputeStatus compute_status) {
   if (initialised_) {
     return;
   }
@@ -191,6 +211,8 @@ void GGEMSVulkanContext::Initialise(
   GGEMS_CHECK_INTERNAL(
       window != nullptr,
       "A valid GLFW window is required before initialising Vulkan GuiMode.");
+
+  device_status_.compute = std::move(compute_status);
 
   try {
     std::optional<detail::GGEMSVulkanDisplayAdapter> display_adapter{};
@@ -241,6 +263,7 @@ void GGEMSVulkanContext::Initialise(
   }
 
   initialised_ = true;
+  device_status_.renderer.initialised = true;
 
   GGEMS_INFO("Vulkan",
              "Vulkan swapchain command buffers, synchronisation objects and "
@@ -704,6 +727,13 @@ void GGEMSVulkanContext::SelectPhysicalDevice(
 
   physical_device_ = *selected_physical_device;
   selected_physical_device_candidate_ = *selected_candidate;
+
+  device_status_.renderer.enumeration_index =
+      selected_candidate->enumeration_index;
+  device_status_.renderer.name = selected_candidate->name;
+  device_status_.renderer.type = vk::to_string(selected_candidate->type);
+  device_status_.renderer.selection_reason = selection->reason;
+
   queue_family_indices_ = QueueFamilyIndices{
       .graphics = selected_candidate->graphics_queue_family,
       .presentation = selected_candidate->presentation_queue_family};
@@ -1390,11 +1420,17 @@ void GGEMSVulkanContext::InitialiseImGui(GLFWwindow *window) {
       *imgui_descriptor_pool_ != nullptr,
       "A Vulkan descriptor pool is required before initialising Dear ImGui.");
 
+  float content_scale_x{1.0f};
+  float content_scale_y{1.0f};
+
+  glfwGetWindowContentScale(window, &content_scale_x, &content_scale_y);
+
+  imgui_ui_scale_ = NormaliseImGuiUIScale(content_scale_x, content_scale_y);
+  imgui_font_size_ = k_imgui_base_font_size * imgui_ui_scale_;
+
   IMGUI_CHECKVERSION();
 
   ImGui::CreateContext();
-
-  LoadImGuiFonts();
 
   ImGuiIO &io = ImGui::GetIO();
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -1402,6 +1438,14 @@ void GGEMSVulkanContext::InitialiseImGui(GLFWwindow *window) {
 
   ImGui::StyleColorsDark();
   ApplyGGEMSImGuiTheme();
+  ImGui::GetStyle().ScaleAllSizes(imgui_ui_scale_);
+
+  LoadImGuiFonts();
+
+  GGEMS_INFO("Gui", "ImGui content scale: x={:.2f}, y={:.2f}.", content_scale_x,
+             content_scale_y);
+  GGEMS_INFO("Gui", "ImGui UI scale: {:.2f}.", imgui_ui_scale_);
+  GGEMS_INFO("Gui", "ImGui font size: {:.2f} px.", imgui_font_size_);
 
   ImGui_ImplGlfw_InitForVulkan(window, true);
 
@@ -1516,7 +1560,7 @@ void GGEMSVulkanContext::BuildImGuiFrame() {
   }
 
   imgui_layer_.BuildFrame(swapchain_extent_, scene_renderer_.GetTextureID(),
-                          scene_renderer_.GetViewportExtent());
+                          scene_renderer_.GetViewportExtent(), device_status_);
 
   GGEMSImGuiLayer::ViewportState updated_viewport_state =
       imgui_layer_.GetViewportState();
@@ -1545,19 +1589,19 @@ void GGEMSVulkanContext::BuildImGuiFrame() {
 void GGEMSVulkanContext::LoadImGuiFonts() {
   ImGuiIO &io = ImGui::GetIO();
 
-  constexpr float font_size{15.0F};
-
   std::optional<std::filesystem::path> const font_path =
       FindFirstExistingFont();
 
   if (font_path.has_value()) {
-    io.Fonts->AddFontFromFileTTF(font_path->string().c_str(), font_size);
+    io.Fonts->AddFontFromFileTTF(font_path->string().c_str(), imgui_font_size_);
 
     GGEMS_INFOEX("Gui", 2, "Loaded ImGui font '{}'.", font_path->string());
     return;
   }
 
-  io.Fonts->AddFontDefault();
+  ImFontConfig font_config{};
+  font_config.SizePixels = imgui_font_size_;
+  io.Fonts->AddFontDefault(&font_config);
 
   GGEMS_WARN("Gui",
              "No preferred monospace ImGui font was found. Falling back to "

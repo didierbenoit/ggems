@@ -4,6 +4,7 @@
 #include <imgui.h>
 
 #include "GGEMSImGuiOutputPanel.hh"
+#include "GGEMSDeviceStatus.hh"
 
 namespace ggems::ui {
 class GGEMSImGuiLayer {
@@ -32,7 +33,8 @@ public:
 public:
   void BuildFrame(vk::Extent2D const &swapchain_extent,
                   ImTextureID scene_texture_id,
-                  vk::Extent2D const &scene_texture_extent);
+                  vk::Extent2D const &scene_texture_extent,
+                  detail::GGEMSDeviceStatusSnapshot const &device_status);
 
   [[nodiscard]] ViewportState const &GetViewportState() const noexcept;
   [[nodiscard]] bool ShouldShowAxes() const noexcept;
@@ -56,7 +58,9 @@ private:
   void BuildMainMenuBar();
   void BuildDefaultDockspaceLayout(ImGuiID dockspace_id,
                                    ImVec2 const &dockspace_size);
-  void BuildStatusPanel(vk::Extent2D const &swapchain_extent);
+  void BuildStatusPanel(vk::Extent2D const &swapchain_extent,
+                        detail::GGEMSDeviceStatusSnapshot const &device_status);
+
   void BuildViewportPlaceholder(ImTextureID scene_texture_id,
                                 vk::Extent2D const &scene_texture_extent);
   void BuildInspectorPanel();

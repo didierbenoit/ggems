@@ -7,9 +7,11 @@
 
 #include <vulkan/vulkan_raii.hpp>
 
+#include "GGEMSDeviceStatus.hh"
 #include "GGEMSImGuiLayer.hh"
 #include "GGEMSVulkanSceneRenderer.hh"
 #include "GGEMSVulkanDeviceSelection.hh"
+
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 
 struct GLFWwindow;
@@ -27,7 +29,9 @@ public:
 
 public:
   void Initialise(GLFWwindow *window,
-                  detail::GGEMSVulkanDeviceSelector const &device_selector);
+                  detail::GGEMSVulkanDeviceSelector const &device_selector,
+                  detail::GGEMSComputeStatus compute_status);
+
   [[nodiscard]] bool IsInitialised() const noexcept;
 
   void RenderFrame(GLFWwindow *window, bool framebuffer_resized);
@@ -178,6 +182,7 @@ private:
 
   GGEMSImGuiLayer imgui_layer_{};
   GGEMSVulkanSceneRenderer scene_renderer_{};
+  detail::GGEMSDeviceStatusSnapshot device_status_{};
 
   std::mutex pending_particle_trace_mutex_{};
   std::vector<ggems::render::GGEMSParticleTraceSegment>
@@ -185,6 +190,8 @@ private:
   bool has_pending_particle_trace_segments_{false};
   bool pending_particle_trace_clear_{false};
 
+  float imgui_ui_scale_{1.0f};
+  float imgui_font_size_{15.0f};
   bool imgui_initialised_{false};
 
   QueueFamilyIndices queue_family_indices_{};

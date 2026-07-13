@@ -38,9 +38,10 @@ char const *GGEMSImGuiLayer::GetSceneSelectionName() const noexcept {
 // =============================================================================
 // =============================================================================
 
-void GGEMSImGuiLayer::BuildFrame(vk::Extent2D const &swapchain_extent,
-                                 ImTextureID scene_texture_id,
-                                 vk::Extent2D const &scene_texture_extent) {
+void GGEMSImGuiLayer::BuildFrame(
+    vk::Extent2D const &swapchain_extent, ImTextureID scene_texture_id,
+    vk::Extent2D const &scene_texture_extent,
+    detail::GGEMSDeviceStatusSnapshot const &device_status) {
   reset_camera_requested_ = false;
 
   BuildMainDockspace();
@@ -53,7 +54,7 @@ void GGEMSImGuiLayer::BuildFrame(vk::Extent2D const &swapchain_extent,
   }
 
   if (show_status_panel_) {
-    BuildStatusPanel(swapchain_extent);
+    BuildStatusPanel(swapchain_extent, device_status);
   }
 
   if (show_scene_panel_) {
@@ -192,17 +193,59 @@ void GGEMSImGuiLayer::BuildMainMenuBar() {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSImGuiLayer::BuildStatusPanel(vk::Extent2D const &swapchain_extent) {
+void GGEMSImGuiLayer::BuildStatusPanel(
+    vk::Extent2D const &swapchain_extent,
+    detail::GGEMSDeviceStatusSnapshot const &device_status) {
   ImGui::Begin("GGEMS Status", &show_status_panel_);
 
   ImGui::TextUnformatted("GuiMode bootstrap");
   ImGui::Separator();
 
-  ImGui::TextUnformatted("Vulkan renderer: initialised");
+  ImGui::TextUnformatted("Renderer");
+  ImGui::Separator();
+  ImGui::Indent();
+
+  if (!device_status.renderer.initialised) {
+    ImGui::TextDisabled("Vulkan renderer: not initialised");
+    ImGui::TextDisabled("Vulkan device: not initialised");
+  } else {
+    ImGui::TextUnformatted("Vulkan renderer: initialised");
+    ImGui::Text(
+        "Vulkan device: [%u] %s",
+        static_cast<unsigned int>(device_status.renderer.enumeration_index),
+        device_status.renderer.name.c_str());
+    ImGui::Text("Device type: %s", device_status.renderer.type.c_str());
+    ImGui::Text("Selection: %s",
+                device_status.renderer.selection_reason.c_str());
+  }
+
   ImGui::Text("Swapchain extent: %u x %u", swapchain_extent.width,
               swapchain_extent.height);
 
+  ImGui::Unindent();
   ImGui::Separator();
+
+  ImGui::TextUnformatted("Compute");
+  ImGui::Separator();
+  ImGui::Indent();
+
+  if (!device_status.compute.initialised) {
+    ImGui::TextDisabled("OpenCL devices: not initialised");
+  } else {
+    ImGui::Text("OpenCL devices: %zu", device_status.compute.devices.size());
+
+    for (detail::GGEMSComputeDeviceStatus const &device :
+         device_status.compute.devices) {
+      ImGui::Text("[%zu] %s - %s", device.context_index, device.name.c_str(),
+                  device.type.c_str());
+
+      if (device.show_platform && !device.platform.empty()) {
+        ImGui::Indent();
+        ImGui::TextDisabled("Platform: %s", device.platform.c_str());
+        ImGui::Unindent();
+      }
+    }
+  }
 
   ImGui::TextUnformatted("Scene renderer: connected");
   ImGui::Text("Axes: %s", show_axes_ ? "visible" : "hidden");
