@@ -30,12 +30,15 @@ public:
     return primary_count_;
   }
 
+  [[nodiscard]] GGEMSPrimaryStreamRunView PrepareRun(std::uint64_t run_id);
   [[nodiscard]] GGEMSPrimaryStreamRunView
-  PrepareRun(std::uint64_t run_id) const;
+  PrepareRun(std::uint64_t run_id, std::uint64_t primary_count);
 
 private:
   std::uint64_t primary_count_{4096ULL};
+  std::uint64_t next_global_primary_id_{0ULL};
   bool initialised_{false};
+  bool exhausted_{false};
 };
 
 } // namespace ggems::core::particles

@@ -186,6 +186,9 @@ target_compile_definitions(ggems_gui
 )
 
 target_link_libraries(ggems_gui
+  PUBLIC
+    Vulkan::Headers
+
   PRIVATE
     ggems_core
     ggems_imgui
