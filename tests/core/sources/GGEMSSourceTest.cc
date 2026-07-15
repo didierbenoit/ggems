@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cstring>
 #include <limits>
 
 #include <gtest/gtest.h>
@@ -37,6 +38,49 @@ TEST(GGEMSSource, DefaultSourceIsAnalyticGammaPointSource) {
   EXPECT_FLOAT_EQ(record.direction_y, 0.0F);
   EXPECT_FLOAT_EQ(record.direction_z, 1.0F);
   EXPECT_FLOAT_EQ(record.weight, 1.0F);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSource, PrimaryCountDefaultTo4096) {
+  ggems::core::sources::GGEMSSource source{};
+
+  EXPECT_EQ(source.GetPrimaryCount(), 4096ULL);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSource, PrimaryCountIsFluentAndAcceptsWholeUint64Range) {
+  ggems::core::sources::GGEMSSource source{};
+
+  EXPECT_EQ(&source.SetPrimaryCount(17ULL), &source);
+  EXPECT_EQ(source.GetPrimaryCount(), 17ULL);
+
+  EXPECT_EQ(&source.SetPrimaryCount(0ULL), &source);
+  EXPECT_EQ(source.GetPrimaryCount(), 0ULL);
+
+  EXPECT_EQ(&source.SetPrimaryCount(std::numeric_limits<std::uint64_t>::max()),
+            &source);
+  EXPECT_EQ(source.GetPrimaryCount(),
+            std::numeric_limits<std::uint64_t>::max());
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSource, PrimaryCountDoesNotAlterSourceRecord) {
+  ggems::core::sources::GGEMSSource source{};
+
+  auto record_before = source.BuildRecord();
+
+  source.SetPrimaryCount(17ULL);
+
+  auto record_after = source.BuildRecord();
+
+  EXPECT_EQ(std::memcmp(&record_before, &record_after, sizeof(record_before)),
+            0);
 }
 
 // =============================================================================

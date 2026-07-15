@@ -13,9 +13,24 @@ namespace py = pybind11;
 
 namespace {
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+std::uint64_t ConvertPrimaryCount(py::handle primary_count) {
+  if (!PyLong_Check(primary_count.ptr())) {
+    throw py::type_error("Source primary count must be a Python integer.");
+  }
+
+  unsigned long long converted = PyLong_AsUnsignedLongLong(primary_count.ptr());
+
+  if (PyErr_Occurred() != nullptr) {
+    PyErr_Clear();
+    throw py::value_error(
+        "Source primary count must be in the range [0, UINT64_MAX].");
+  }
+
+  return static_cast<std::uint64_t>(converted);
+}
+
+// =============================================================================
+// =============================================================================
 
 std::uint64_t ConvertEnergyToMilliElectronVolt(double energy,
                                                std::string const &unit) {
@@ -51,9 +66,8 @@ std::uint64_t ConvertEnergyToMilliElectronVolt(double energy,
   return static_cast<std::uint64_t>(energy_milli_eV + 0.5L);
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 std::uint64_t ConvertTimeToPicosecond(double const time,
                                       std::string const &unit) {
@@ -92,9 +106,8 @@ std::uint64_t ConvertTimeToPicosecond(double const time,
   return static_cast<std::uint64_t>(time_ps + 0.5L);
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 std::int64_t ConvertDistanceToPicometre(double const distance,
                                         std::string const &unit) {
@@ -140,9 +153,8 @@ std::int64_t ConvertDistanceToPicometre(double const distance,
 
 } // namespace
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 void BindSource(py::module_ &m) {
   using ggems::core::sources::GGEMSSource;
@@ -152,6 +164,13 @@ void BindSource(py::module_ &m) {
 
       .def("set_analytic", &GGEMSSource::SetAnalytic,
            py::return_value_policy::reference_internal)
+
+      .def(
+          "set_primary_count",
+          [](GGEMSSource &self, py::handle primary_count) -> GGEMSSource & {
+            return self.SetPrimaryCount(ConvertPrimaryCount(primary_count));
+          },
+          py::arg("primary_count"), py::return_value_policy::reference_internal)
 
       .def(
           "set_particle",

@@ -19,6 +19,12 @@ public:
   GGEMSSource &operator=(GGEMSSource &&) = default;
 
 public:
+  GGEMSSource &SetPrimaryCount(std::uint64_t primary_count) noexcept;
+
+  [[nodiscard]] std::uint64_t GetPrimaryCount() const noexcept {
+    return primary_count_;
+  }
+
   GGEMSSource &SetAnalytic() noexcept;
 
   GGEMSSource &
@@ -47,6 +53,7 @@ public:
   void Verbose() const;
 
 private:
+  std::uint64_t primary_count_{4096ULL};
   GGEMSSourceRecord record_{};
 };
 

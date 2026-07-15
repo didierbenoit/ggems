@@ -55,7 +55,6 @@ private:
   std::vector<std::unique_ptr<transport::GGEMSDummyTransportWorkload>>
       dummy_transports_;
 
-  std::uint32_t primary_count_{4096U};
   std::uint32_t worker_count_{256U};
 };
 } // namespace ggems::core

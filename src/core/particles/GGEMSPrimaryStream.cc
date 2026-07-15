@@ -34,8 +34,7 @@ void GGEMSPrimaryStream::Initialise() {
   exhausted_ = false;
   initialised_ = true;
 
-  GGEMS_INFO("Core", "Primary Aionino stream initialised with {} primaries.",
-             primary_count_);
+  GGEMS_INFO("Core", "Primary Aionino stream initialised");
 }
 
 // -----------------------------------------------------------------------------

@@ -40,15 +40,14 @@ void AccumulateTransportCounters(transport::GGEMSTransportCounters &dst,
 
 } // namespace
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-GGEMSRun::GGEMSRun() { GGEMS_INFOEX("Core", 3, "GGEMSRun instance created."); }
+GGEMSRun::GGEMSRun() : source_{std::make_shared<sources::GGEMSSource>()} {
+  GGEMS_INFOEX("Core", 3, "GGEMSRun instance created.");
+}
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSRun::SetRandom(std::shared_ptr<random::GGEMSRandom> random) {
   GGEMS_CHECK_RECOVERABLE(random != nullptr,
@@ -63,9 +62,7 @@ void GGEMSRun::SetRandom(std::shared_ptr<random::GGEMSRandom> random) {
              random_->GetEngineName());
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSRun::SetSource(std::shared_ptr<sources::GGEMSSource> source) {
   GGEMS_CHECK_RECOVERABLE(source != nullptr,
@@ -79,9 +76,7 @@ void GGEMSRun::SetSource(std::shared_ptr<sources::GGEMSSource> source) {
   GGEMS_INFO("Source", "GGEMSRun source attached.");
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSRun::SetObserver(
     std::shared_ptr<observer::GGEMSTransportObserver> observer) {
@@ -97,20 +92,19 @@ void GGEMSRun::SetObserver(
   GGEMS_INFO("Observer", "GGEMSRun transport observer attached.");
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSRun::SetPrimaryCount(std::uint32_t primary_count) {
   GGEMS_CHECK_RECOVERABLE(!initialised_,
                           "Cannot change primary count after Initialise.");
 
-  primary_stream_.SetPrimaryCount(primary_count);
+  GGEMS_CHECK_RECOVERABLE(primary_count > 0U,
+                          "GGEMSRun primary count must be non-zero.");
+
+  source_->SetPrimaryCount(primary_count);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSRun::SetWorkerCount(std::uint32_t worker_count) {
   GGEMS_CHECK_RECOVERABLE(worker_count > 0ULL,
@@ -122,9 +116,7 @@ void GGEMSRun::SetWorkerCount(std::uint32_t worker_count) {
   worker_count_ = worker_count;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSRun::Initialise() {
   GGEMS_CHECK_RECOVERABLE(!initialised_,
@@ -147,13 +139,6 @@ void GGEMSRun::Initialise() {
              random_->GetEngineName(), random_->GetSeed());
 
   primary_stream_.Initialise();
-
-  if (source_ == nullptr) {
-    source_ = std::make_shared<sources::GGEMSSource>();
-
-    GGEMS_INFO("Source", "No GGEMSSource attached to GGEMSRun. "
-                         "Using default analytic gamma point source.");
-  }
 
   source_->Verbose();
 
@@ -188,9 +173,7 @@ void GGEMSRun::Initialise() {
   GGEMS_INFO("Core", "GGEMSRun Initialised.");
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSRun::Run() {
   GGEMS_CHECK_RECOVERABLE(initialised_,
@@ -207,23 +190,33 @@ void GGEMSRun::Run() {
   RunningGuard running_guard{running_};
 
   std::uint64_t run_id = next_run_id_++;
-  auto primary_view = primary_stream_.PrepareRun(run_id);
+
+  sources::GGEMSSourceRecord source_record = source_->BuildRecord();
+  std::uint64_t requested_primary_count = source_->GetPrimaryCount();
+
+  GGEMS_CHECK_RECOVERABLE(requested_primary_count > 0ULL,
+                          "GGEMSRun source primary count must be non-zero.");
 
   GGEMS_CHECK_RECOVERABLE(
-      primary_view.source_primary_count <=
+      requested_primary_count <=
           static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max()),
       "Dummy transport currently supports at most uint32_t primaries per "
       "projection.");
 
+  auto primary_view =
+      primary_stream_.PrepareRun(run_id, requested_primary_count);
+
+  std::uint64_t reserved_primary_count = primary_view.source_primary_count;
+
   std::uint32_t source_primary_count =
-      static_cast<std::uint32_t>(primary_view.source_primary_count);
+      static_cast<std::uint32_t>(reserved_primary_count);
 
   GGEMS_INFO("Core", "GGEMSRun projection {} started.", run_id);
 
   GGEMS_INFOEX("Core", 1,
                "Projection {} primary stream: {} primaries, global history "
                "offset {}.",
-               run_id, primary_view.source_primary_count,
+               run_id, reserved_primary_count,
                primary_view.global_history_offset);
 
   GGEMS_INFOEX("Core", 1, "Projection {} worker count: {}.", run_id,
@@ -231,8 +224,6 @@ void GGEMSRun::Run() {
 
   GGEMS_CHECK_RECOVERABLE(!dummy_transports_.empty(),
                           "No dummy transport workload was initialised.");
-
-  sources::GGEMSSourceRecord source_record = source_->BuildRecord();
 
   observer::GGEMSObserverConfigRecord observer_config{};
 
