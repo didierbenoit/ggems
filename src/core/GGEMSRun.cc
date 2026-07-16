@@ -10,6 +10,7 @@
 #include "GGEMS/core/GGEMSRun.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
+#include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
 #include "GGEMS/core/transport/GGEMSTransportWorkloadPlan.hh"
@@ -43,7 +44,7 @@ void AccumulateTransportCounters(transport::GGEMSTransportCounters &dst,
 // =============================================================================
 // =============================================================================
 
-GGEMSRun::GGEMSRun() : source_{std::make_shared<sources::GGEMSSource>()} {
+GGEMSRun::GGEMSRun() : sources_{std::make_shared<sources::GGEMSSource>()} {
   GGEMS_INFOEX("Core", 3, "GGEMSRun instance created.");
 }
 
@@ -71,9 +72,31 @@ void GGEMSRun::SetSource(std::shared_ptr<sources::GGEMSSource> source) {
   GGEMS_CHECK_RECOVERABLE(!initialised_,
                           "Cannot change GGEMSSource after Initialise.");
 
-  source_ = std::move(source);
+  sources_.clear();
+  sources_.push_back(std::move(source));
+  uses_implicit_default_source_ = false;
 
   GGEMS_INFO("Source", "GGEMSRun source attached.");
+}
+
+// -----------------------------------------------------------------------------
+
+void GGEMSRun::AddSource(std::shared_ptr<sources::GGEMSSource> source) {
+  GGEMS_CHECK_RECOVERABLE(source != nullptr,
+                          "Cannot attach a null GGEMSSource to GGEMSRun.");
+
+  GGEMS_CHECK_RECOVERABLE(!initialised_,
+                          "Cannot add a GGEMSSource after Initalise.");
+
+  if (uses_implicit_default_source_) {
+    sources_.clear();
+  }
+
+  sources_.push_back(std::move(source));
+  uses_implicit_default_source_ = false;
+
+  GGEMS_INFO("Source", "GGEMSRun source attaches at slot {}.",
+             sources_.size() - 1U);
 }
 
 // -----------------------------------------------------------------------------
@@ -101,7 +124,12 @@ void GGEMSRun::SetPrimaryCount(std::uint32_t primary_count) {
   GGEMS_CHECK_RECOVERABLE(primary_count > 0U,
                           "GGEMSRun primary count must be non-zero.");
 
-  source_->SetPrimaryCount(primary_count);
+  GGEMS_CHECK_RECOVERABLE(
+      sources_.size() == 1U,
+      "GGEMSRun::SetPrimaryCount is ambiguous with multiple sources. "
+      "Configure each GGEMSSource primary count directly.");
+
+  sources_.front()->SetPrimaryCount(primary_count);
 }
 
 // -----------------------------------------------------------------------------
@@ -122,6 +150,14 @@ void GGEMSRun::Initialise() {
   GGEMS_CHECK_RECOVERABLE(!initialised_,
                           "GGEMSRun::Initialise called more than once.");
 
+  GGEMS_CHECK_INTERNAL(!sources_.empty(),
+                       "GGEMSRun source collection must not be empty.");
+
+  for (auto const &source : sources_) {
+    GGEMS_CHECK_INTERNAL(source != nullptr,
+                         "GGEMSRun source collection contains a null entry.");
+  }
+
   GGEMS_CHECK_RECOVERABLE(
       random_ != nullptr,
       "GGEMSRun cannot be initialised without a GGEMSRandom. "
@@ -140,7 +176,11 @@ void GGEMSRun::Initialise() {
 
   primary_stream_.Initialise();
 
-  source_->Verbose();
+  for (std::size_t source_index = 0U; source_index < sources_.size();
+       ++source_index) {
+    GGEMS_INFO("Source", "Source slot {}.", source_index);
+    sources_[source_index]->Verbose();
+  }
 
   std::uint32_t observer_record_capacity =
       observer_ != nullptr ? observer_->GetRecordCapacity() : 1U;
@@ -191,25 +231,65 @@ void GGEMSRun::Run() {
 
   std::uint64_t run_id = next_run_id_++;
 
-  sources::GGEMSSourceRecord source_record = source_->BuildRecord();
-  std::uint64_t requested_primary_count = source_->GetPrimaryCount();
+  auto source_snapshot = sources::BuildSourceRunSnapshot(sources_);
 
-  GGEMS_CHECK_RECOVERABLE(requested_primary_count > 0ULL,
-                          "GGEMSRun source primary count must be non-zero.");
+  auto const &source_records = source_snapshot.GetRecords();
+  auto const &source_ranges = source_snapshot.GetRanges();
+
+  GGEMS_CHECK_INTERNAL(
+      source_records.size() == source_ranges.size(),
+      "GGEMSRun source snapshot record and range counts do not match.");
+
+  GGEMS_CHECK_INTERNAL(!source_records.empty(),
+                       "GGEMSRun source snapshot must not be empty.");
+
+  std::uint64_t total_primary_count = source_snapshot.GetTotalPrimaryCount();
 
   GGEMS_CHECK_RECOVERABLE(
-      requested_primary_count <=
+      total_primary_count > 0ULL,
+      "GGEMSRun requires at least one active source per Run.");
+
+  GGEMS_CHECK_RECOVERABLE(
+      total_primary_count <=
           static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max()),
       "Dummy transport currently supports at most uint32_t primaries per "
       "projection.");
 
-  auto primary_view =
-      primary_stream_.PrepareRun(run_id, requested_primary_count);
+  std::size_t active_source_index{source_ranges.size()};
+  std::size_t active_source_count{0U};
+
+  for (std::size_t source_index = 0U; source_index < source_ranges.size();
+       ++source_index) {
+    if (source_ranges[source_index].primary_count == 0ULL) {
+      continue;
+    }
+
+    active_source_index = source_index;
+    ++active_source_count;
+  }
+
+  GGEMS_CHECK_INTERNAL(
+      active_source_count > 0U,
+      "GGEMSRun source snapshot has a positive total but no active source.");
+
+  GGEMS_CHECK_RECOVERABLE(
+      active_source_count == 1U,
+      "Multiple active sources are configured, but the current dummy "
+      "transport still supports only one active source per Run.");
+
+  GGEMS_CHECK_INTERNAL(
+      source_ranges[active_source_index].primary_count == total_primary_count,
+      "The active source primary count does not match the snapshot total.");
+
+  auto primary_view = primary_stream_.PrepareRun(run_id, total_primary_count);
 
   std::uint64_t reserved_primary_count = primary_view.source_primary_count;
 
   std::uint32_t source_primary_count =
       static_cast<std::uint32_t>(reserved_primary_count);
+
+  sources::GGEMSSourceRecord const &source_record =
+      source_records[active_source_index];
 
   GGEMS_INFO("Core", "GGEMSRun projection {} started.", run_id);
 

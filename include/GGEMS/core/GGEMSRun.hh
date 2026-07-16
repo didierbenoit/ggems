@@ -37,6 +37,7 @@ public:
   void SetPrimaryCount(std::uint32_t primary_count);
   void SetWorkerCount(std::uint32_t worker_count);
   void SetSource(std::shared_ptr<sources::GGEMSSource> source);
+  void AddSource(std::shared_ptr<sources::GGEMSSource> source);
   void SetObserver(std::shared_ptr<observer::GGEMSTransportObserver> observer);
 
 private:
@@ -44,8 +45,9 @@ private:
   std::atomic<bool> running_{false};
 
   std::shared_ptr<random::GGEMSRandom> random_{nullptr};
-  std::shared_ptr<sources::GGEMSSource> source_{nullptr};
   std::shared_ptr<observer::GGEMSTransportObserver> observer_{nullptr};
+  std::vector<std::shared_ptr<sources::GGEMSSource>> sources_;
+  bool uses_implicit_default_source_{true};
 
   particles::GGEMSPrimaryStream primary_stream_{};
 
