@@ -6,16 +6,11 @@
 #include <vector>
 
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 
 namespace ggems::core::sources {
 
 class GGEMSSource;
-
-struct GGEMSSourceRunRange {
-  std::uint64_t projection_primary_begin{0ULL};
-  std::uint64_t primary_count{0ULL};
-};
-
 class GGEMSSourceRunSnapshot;
 
 [[nodiscard]] GGEMSSourceRunSnapshot

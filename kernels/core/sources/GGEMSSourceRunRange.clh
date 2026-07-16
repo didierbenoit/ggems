@@ -1,0 +1,9 @@
+#ifndef GGEMS_CORE_SOURCES_GGEMS_SOURCE_RUN_RANGE_CLH
+#define GGEMS_CORE_SOURCES_GGEMS_SOURCE_RUN_RANGE_CLH
+
+typedef struct GGEMSSourceRunRange {
+  ulong projection_primary_begin;
+  ulong primary_count;
+} GGEMSSourceRunRange;
+
+#endif
