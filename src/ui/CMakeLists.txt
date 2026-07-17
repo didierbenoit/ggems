@@ -11,6 +11,7 @@
 find_package(Vulkan 1.3 REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
+find_package(Python REQUIRED COMPONENTS Interpreter)
 
 if(TARGET glfw)
   set(GGEMS_GLFW_TARGET glfw)
@@ -40,7 +41,6 @@ message(STATUS "GLM target               : ${GGEMS_GLM_TARGET}")
 # Dear ImGui
 # ----------------------------------------------------------------------------
 include(AddDearImGui)
-
 add_dear_imgui_target(ggems_imgui)
 
 # ----------------------------------------------------------------------------

@@ -21,6 +21,7 @@
 #include "GGEMSDeviceStatus.hh"
 #include "GGEMSVulkanContext.hh"
 #include "GGEMSVulkanDeviceSelection.hh"
+#include "GGEMSWindowIconData.hh"
 
 namespace {
 // =============================================================================
@@ -188,6 +189,11 @@ void GGEMSGuiApplication::Initialise() {
     Shutdown();
     GGEMS_RECOVERABLE(error);
   }
+
+  GLFWimage icon{.width = detail::k_ggems_window_icon_width,
+                 .height = detail::k_ggems_window_icon_height,
+                 .pixels = detail::k_ggems_window_icon_pixels.data()};
+  glfwSetWindowIcon(window_, 1, &icon);
 
   glfwSetWindowUserPointer(window_, this);
   glfwSetFramebufferSizeCallback(

@@ -22,10 +22,11 @@ using PhiloxState = ggems::core::random::GGEMSPhiloxState;
 using ObserverConfigRecord = ggems::core::observer::GGEMSObserverConfigRecord;
 using ObserverCounters = ggems::core::observer::GGEMSObserverCounters;
 using ObserverRecord = ggems::core::observer::GGEMSObserverRecord;
+using SourceRecord = ggems::core::sources::GGEMSSourceRecord;
+using SourceRunRange = ggems::core::sources::GGEMSSourceRunRange;
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 std::uint64_t SplitMix64(std::uint64_t value) noexcept {
   value += 0x9E3779B97F4A7C15ULL;
@@ -36,12 +37,10 @@ std::uint64_t SplitMix64(std::uint64_t value) noexcept {
   return value ^ (value >> 31U);
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-PhiloxState MakePhiloxState(std::uint64_t const seed,
-                            std::uint64_t const index) noexcept {
+PhiloxState MakePhiloxState(std::uint64_t seed, std::uint64_t index) noexcept {
   std::uint64_t const key = SplitMix64(seed);
 
   return PhiloxState{.counter_0 = 0U,
@@ -52,11 +51,10 @@ PhiloxState MakePhiloxState(std::uint64_t const seed,
                      .key_1 = static_cast<std::uint32_t>(key >> 32U)};
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-ggems::units::Bytes ComputeRandomStatesSize(std::uint32_t const worker_count) {
+ggems::units::Bytes ComputeRandomStatesSize(std::uint32_t worker_count) {
   GGEMS_CHECK_RECOVERABLE(worker_count > 0U,
                           "Dummy transport worker count must be non-zero.");
 
@@ -64,12 +62,10 @@ ggems::units::Bytes ComputeRandomStatesSize(std::uint32_t const worker_count) {
                              sizeof(PhiloxState)};
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-ggems::units::Bytes
-ComputeWorkerFinalStatesSize(std::uint32_t const worker_count) {
+ggems::units::Bytes ComputeWorkerFinalStatesSize(std::uint32_t worker_count) {
   GGEMS_CHECK_RECOVERABLE(worker_count > 0U,
                           "Dummy transport worker count must be non-zero.");
 
@@ -77,18 +73,15 @@ ComputeWorkerFinalStatesSize(std::uint32_t const worker_count) {
                              sizeof(ParticleState)};
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-std::size_t RoundUp(std::size_t const value,
-                    std::size_t const multiple) noexcept {
+std::size_t RoundUp(std::size_t value, std::size_t multiple) noexcept {
   return ((value + multiple - 1U) / multiple) * multiple;
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 ggems::units::Bytes
 ComputeObserverRecordsSize(std::uint32_t observer_record_capacity) {
@@ -101,22 +94,43 @@ ComputeObserverRecordsSize(std::uint32_t observer_record_capacity) {
       sizeof(ObserverRecord)};
 }
 
+// =============================================================================
+// =============================================================================
+
+std::uint32_t ValidateSourceCount(std::uint32_t source_count) {
+  GGEMS_CHECK_RECOVERABLE(source_count > 0U,
+                          "Dummy transport source count must be non-zero.");
+
+  return source_count;
+}
+
+// =============================================================================
+// =============================================================================
+
+template <typename Value>
+void WriteSVMArrayOnHost(ggems::ocl::GGEMSOpenCLSVMBuffer &buffer,
+                         std::vector<Value> const &values) {
+  buffer.Map(CL_MAP_WRITE);
+  auto *destination = static_cast<Value *>(buffer.GetData());
+  std::copy(values.begin(), values.end(), destination);
+  buffer.Unmap();
+}
+
 } // namespace
 
 namespace ggems::core::transport {
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 GGEMSDummyTransportWorkload::GGEMSDummyTransportWorkload(
     ggems::ocl::GGEMSOpenCLContext &context, std::filesystem::path kernel_root,
     random::GGEMSRandom const &random, std::uint32_t worker_count,
-    std::uint64_t random_stream_offset, std::uint32_t context_index,
-    std::uint32_t observer_record_capacity)
+    std::uint32_t source_count, std::uint64_t random_stream_offset,
+    std::uint32_t context_index, std::uint32_t observer_record_capacity)
     : context_{&context}, kernel_root_{std::move(kernel_root)},
       random_{&random}, worker_count_{worker_count},
-      random_stream_offset_{random_stream_offset},
+      source_count_{source_count}, random_stream_offset_{random_stream_offset},
       context_index_{context_index},
       device_name_{context.GetDevice().GetName()},
       observer_record_capacity_{observer_record_capacity},
@@ -126,8 +140,10 @@ GGEMSDummyTransportWorkload::GGEMSDummyTransportWorkload(
           context.CreateSVMBuffer(ComputeWorkerFinalStatesSize(worker_count))},
       counters_buffer_{context.CreateSVMBuffer(
           ggems::units::Bytes{sizeof(TransportCounters)})},
-      source_record_buffer_{context.CreateSVMBuffer(
-          ggems::units::Bytes{sizeof(sources::GGEMSSourceRecord)})},
+      source_records_buffer_{context.CreateSVMBuffer(ggems::units::Bytes{
+          static_cast<std::uint64_t>(source_count_) * sizeof(SourceRecord)})},
+      source_ranges_buffer_{context.CreateSVMBuffer(ggems::units::Bytes{
+          static_cast<std::uint64_t>(source_count_) * sizeof(SourceRunRange)})},
       observer_config_buffer_{context.CreateSVMBuffer(
           ggems::units::Bytes{sizeof(ObserverConfigRecord)})},
       observer_counters_buffer_{context.CreateSVMBuffer(
@@ -144,9 +160,7 @@ GGEMSDummyTransportWorkload::GGEMSDummyTransportWorkload(
   ResetObserverOnHost();
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSDummyTransportWorkload::InitialiseRandomStatesOnHost() {
   random_states_buffer_.Map(CL_MAP_WRITE);
@@ -160,9 +174,7 @@ void GGEMSDummyTransportWorkload::InitialiseRandomStatesOnHost() {
   random_states_buffer_.Unmap();
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSDummyTransportWorkload::ClearWorkerFinalStatesOnHost() {
   worker_final_states_buffer_.Map(CL_MAP_WRITE);
@@ -175,9 +187,7 @@ void GGEMSDummyTransportWorkload::ClearWorkerFinalStatesOnHost() {
   worker_final_states_buffer_.Unmap();
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSDummyTransportWorkload::ResetCountersOnHost() {
   counters_buffer_.Map(CL_MAP_WRITE);
@@ -189,9 +199,7 @@ void GGEMSDummyTransportWorkload::ResetCountersOnHost() {
   counters_buffer_.Unmap();
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 GGEMSTransportCounters GGEMSDummyTransportWorkload::ReadCountersOnHost() {
   counters_buffer_.Map(CL_MAP_READ);
@@ -206,25 +214,7 @@ GGEMSTransportCounters GGEMSDummyTransportWorkload::ReadCountersOnHost() {
   return copy;
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-
-void GGEMSDummyTransportWorkload::WriteSourceRecordOnHost(
-    sources::GGEMSSourceRecord const &source_record) {
-  source_record_buffer_.Map(CL_MAP_WRITE);
-
-  auto *source = static_cast<sources::GGEMSSourceRecord *>(
-      source_record_buffer_.GetData());
-
-  *source = source_record;
-
-  source_record_buffer_.Unmap();
-}
-
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 observer::GGEMSObserverCounters
 GGEMSDummyTransportWorkload::ReadObserverCountersOnHost() {
@@ -239,9 +229,7 @@ GGEMSDummyTransportWorkload::ReadObserverCountersOnHost() {
   return copy;
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSDummyTransportWorkload::ResetObserverOnHost() {
   observer_counters_buffer_.Map(CL_MAP_WRITE);
@@ -263,9 +251,7 @@ void GGEMSDummyTransportWorkload::ResetObserverOnHost() {
   observer_records_buffer_.Unmap();
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 void GGEMSDummyTransportWorkload::WriteObserverConfigOnHost(
     observer::GGEMSObserverConfigRecord const &observer_config) {
@@ -279,9 +265,7 @@ void GGEMSDummyTransportWorkload::WriteObserverConfigOnHost(
   observer_config_buffer_.Unmap();
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 std::vector<observer::GGEMSObserverRecord>
 GGEMSDummyTransportWorkload::ReadObserverRecordsOnHost(
@@ -308,19 +292,26 @@ GGEMSDummyTransportWorkload::ReadObserverRecordsOnHost(
   return records;
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 GGEMSDummyTransportRunReport
 GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
   GGEMS_CHECK_RECOVERABLE(config.total_primary_count > 0U,
                           "Dummy transport primary count must be non-zero.");
 
+  GGEMS_CHECK_RECOVERABLE(
+      config.source_records.size() == config.source_ranges.size(),
+      "Dummy transport source record and range counts must match.");
+
+  GGEMS_CHECK_RECOVERABLE(
+      config.source_records.size() == static_cast<std::size_t>(source_count_),
+      "Dummy transport source arrays do not match the stable source count.");
+
   ResetCountersOnHost();
   ClearWorkerFinalStatesOnHost();
   ResetObserverOnHost();
-  WriteSourceRecordOnHost(config.source_record);
+  WriteSVMArrayOnHost(source_records_buffer_, config.source_records);
+  WriteSVMArrayOnHost(source_ranges_buffer_, config.source_ranges);
   WriteObserverConfigOnHost(config.observer_config);
 
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
@@ -353,7 +344,8 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
   auto *random_states = random_states_buffer_.GetData();
   auto *worker_final_states = worker_final_states_buffer_.GetData();
   auto *counters_ptr = counters_buffer_.GetData();
-  auto *source_record = source_record_buffer_.GetData();
+  auto *source_records = source_records_buffer_.GetData();
+  auto *source_ranges = source_ranges_buffer_.GetData();
   auto *observer_config = observer_config_buffer_.GetData();
   auto *observer_counters = observer_counters_buffer_.GetData();
   auto *observer_records = observer_records_buffer_.GetData();
@@ -361,22 +353,24 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
   kernel.SetArgSVMPointer(0U, random_states);
   kernel.SetArgSVMPointer(1U, worker_final_states);
   kernel.SetArgSVMPointer(2U, counters_ptr);
-  kernel.SetArgSVMPointer(3U, source_record);
-  kernel.SetArg(4U, static_cast<cl_uint>(config.total_primary_count));
-  kernel.SetArg(5U, static_cast<cl_ulong>(config.projection_history_offset));
-  kernel.SetArg(6U, static_cast<cl_ulong>(config.device_primary_offset));
-  kernel.SetArg(7U, static_cast<cl_ulong>(config.min_energy_milli_eV));
-  kernel.SetArg(8U, static_cast<cl_uint>(config.max_generation));
-  kernel.SetArg(9U, static_cast<cl_uint>(config.max_steps_per_track));
-  kernel.SetArgSVMPointer(10U, observer_config);
-  kernel.SetArgSVMPointer(11U, observer_counters);
-  kernel.SetArgSVMPointer(12U, observer_records);
-  kernel.SetArg(13U, static_cast<cl_uint>(observer_record_capacity_));
-  kernel.SetArg(14U, static_cast<cl_ulong>(config.run_id));
-  kernel.SetArg(15U, static_cast<cl_uint>(worker_count_));
+  kernel.SetArgSVMPointer(3U, source_records);
+  kernel.SetArgSVMPointer(4U, source_ranges);
+  kernel.SetArg(5U, static_cast<cl_uint>(source_count_));
+  kernel.SetArg(6U, static_cast<cl_uint>(config.total_primary_count));
+  kernel.SetArg(7U, static_cast<cl_ulong>(config.projection_history_offset));
+  kernel.SetArg(8U, static_cast<cl_ulong>(config.device_primary_offset));
+  kernel.SetArg(9U, static_cast<cl_ulong>(config.min_energy_milli_eV));
+  kernel.SetArg(10U, static_cast<cl_uint>(config.max_generation));
+  kernel.SetArg(11U, static_cast<cl_uint>(config.max_steps_per_track));
+  kernel.SetArgSVMPointer(12U, observer_config);
+  kernel.SetArgSVMPointer(13U, observer_counters);
+  kernel.SetArgSVMPointer(14U, observer_records);
+  kernel.SetArg(15U, static_cast<cl_uint>(observer_record_capacity_));
+  kernel.SetArg(16U, static_cast<cl_ulong>(config.run_id));
+  kernel.SetArg(17U, static_cast<cl_uint>(worker_count_));
 
   constexpr std::size_t k_local_size{64U};
-  std::size_t const global_size = RoundUp(worker_count_, k_local_size);
+  std::size_t global_size = RoundUp(worker_count_, k_local_size);
 
   ggems::ocl::GGEMSOpenCLProfiler profiler{};
 

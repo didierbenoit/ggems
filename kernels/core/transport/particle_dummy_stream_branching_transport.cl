@@ -2,6 +2,7 @@
 #include "core/transport/GGEMSTransportCounters.clh"
 #include "core/random/GGEMSRandom.clh"
 #include "core/sources/GGEMSSource.clh"
+#include "core/sources/GGEMSSourceRunRange.clh"
 #include "core/observer/GGEMSObserverRecord.clh"
 
 #ifndef GGEMS_DUMMY_LOCAL_STACK_CAPACITY
@@ -15,6 +16,9 @@
 #ifndef GGEMS_ENABLE_TRANSPORT_OBSERVER
 #define GGEMS_ENABLE_TRANSPORT_OBSERVER 0
 #endif
+
+// =============================================================================
+// =============================================================================
 
 static inline GGEMSParticleState GGEMS_MakeInactiveAionino(void) {
   GGEMSParticleState particle;
@@ -49,9 +53,8 @@ static inline GGEMSParticleState GGEMS_MakeInactiveAionino(void) {
   return particle;
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 static inline GGEMSParticleState
 GGEMS_DummyMakeElectronSecondary(GGEMSParticleState parent,
@@ -77,9 +80,8 @@ GGEMS_DummyMakeElectronSecondary(GGEMSParticleState parent,
   return secondary;
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 static inline void GGEMS_DummyMoveParticle(__private GGEMSParticleState *p) {
   if (p->particle_type == GGEMS_PARTICLE_TYPE_GAMMA) {
@@ -93,9 +95,8 @@ static inline void GGEMS_DummyMoveParticle(__private GGEMSParticleState *p) {
   p->flags += 1U;
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 static inline void GGEMS_DummyKillIfFinished(__private GGEMSParticleState *p,
                                              ulong min_energy_milli_eV,
@@ -106,17 +107,18 @@ static inline void GGEMS_DummyKillIfFinished(__private GGEMSParticleState *p,
   }
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 __kernel void particle_dummy_stream_branching_transport(
     __global GGEMSRandomState *random_states,
     __global GGEMSParticleState *worker_final_states,
     volatile __global GGEMSTransportCounters *counters,
-    __global GGEMSSourceRecord const *source, uint total_primary_count,
-    ulong projection_history_offset, ulong device_primary_offset,
-    ulong min_energy_milli_eV, uint max_generation, uint max_steps_per_track,
+    __global GGEMSSourceRecord const *source_records,
+    __global GGEMSSourceRunRange const *source_ranges, uint source_count,
+    uint total_primary_count, ulong projection_history_offset,
+    ulong device_primary_offset, ulong min_energy_milli_eV, uint max_generation,
+    uint max_steps_per_track,
     __global GGEMSObserverConfigRecord const *observer_config,
     volatile __global GGEMSObserverCounters *observer_counters,
     __global GGEMSObserverRecord *observer_records,
@@ -150,13 +152,30 @@ __kernel void particle_dummy_stream_branching_transport(
       break;
     }
 
-    ulong global_primary_id = projection_history_offset +
-                              device_primary_offset + (ulong)(local_primary_id);
-
-#if GGEMS_ENABLE_TRANSPORT_OBSERVER
     ulong projection_primary_id =
         device_primary_offset + (ulong)(local_primary_id);
 
+    ulong global_primary_id = projection_history_offset + projection_primary_id;
+
+    uint selected_source_index = source_count;
+
+    for (uint source_index = 0U; source_index < source_count; ++source_index) {
+      ulong begin = source_ranges[source_index].projection_primary_begin;
+      ulong count = source_ranges[source_index].primary_count;
+
+      if (count != 0UL && projection_primary_id >= begin &&
+          projection_primary_id - begin < count) {
+        selected_source_index = source_index;
+        break;
+      }
+    }
+
+    if (selected_source_index == source_count) {
+      atomic_inc(&counters->overflow_count);
+      continue;
+    }
+
+#if GGEMS_ENABLE_TRANSPORT_OBSERVER
     uint capture_history = GGEMS_ObserverShouldCapturePrimary(
         observer_config, projection_primary_id, global_primary_id);
 
@@ -169,8 +188,11 @@ __kernel void particle_dummy_stream_branching_transport(
 
     atomic_inc(&counters->consumed_primary_count);
 
+    __global GGEMSSourceRecord const *source_record =
+        &source_records[selected_source_index];
+
     GGEMSParticleState current =
-        GGEMS_SourceReadAionino(global_primary_id, source);
+        GGEMS_SourceReadAionino(global_primary_id, source_record);
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER
     if (capture_history != 0) {

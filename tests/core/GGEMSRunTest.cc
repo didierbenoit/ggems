@@ -590,27 +590,30 @@ TEST_F(GGEMSRunTest, RejectsCollectionMutationAfterInitialise) {
 // =============================================================================
 // =============================================================================
 
-TEST_F(GGEMSRunTest, RunsWithOneActiveSourceAmongMultipleSlots) {
+TEST_F(GGEMSRunTest, RunsWithDisabledSlotBetweenActiveSources) {
   auto random = MakePhiloxRandom();
-  auto source_0 = MakeLowEnergySource(0ULL);
-  auto source_1 = MakeLowEnergySource(3ULL);
-  auto source_2 = MakeLowEnergySource(0ULL);
+  auto source_0 = MakeLowEnergySource(2ULL);
+  auto source_1 = MakeLowEnergySource(0ULL);
+  auto source_2 = MakeLowEnergySource(3ULL);
 
-  source_0->SetEnergyMilliElectronVolt(2'000'000ULL)
-      .SetPositionPicoMeter(10LL, 20LL, 30LL);
+  source_0->SetPositionPicoMeter(10LL, 20LL, 30LL)
+      .SetDirection(1.0F, 0.0F, 0.0F)
+      .SetWeight(0.25F);
 
-  source_1
+  source_1->SetEnergyMilliElectronVolt(3'000'000ULL)
+      .SetPositionPicoMeter(40LL, 50LL, 60LL);
+
+  source_2
       ->SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
+      .SetEnergyMilliElectronVolt(2'000'000ULL)
       .SetPositionPicoMeter(-40LL, 50LL, -60LL)
       .SetDirection(0.0F, -1.0F, 0.0F)
       .SetWeight(0.75F);
 
-  source_2->SetEnergyMilliElectronVolt(3'000'000ULL)
-      .SetPositionPicoMeter(70LL, 80LL, 90LL);
-
-  auto expected_source_record = source_1->BuildRecord();
-  auto observer = MakeCapturingObserver(3U);
+  auto expected_0 = source_0->BuildRecord();
+  auto expected_2 = source_2->BuildRecord();
+  auto observer = MakeCapturingObserver(5U);
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(random);
@@ -623,11 +626,11 @@ TEST_F(GGEMSRunTest, RunsWithOneActiveSourceAmongMultipleSlots) {
   ASSERT_NO_THROW(run.Initialise());
   ASSERT_NO_THROW(run.Run());
 
-  EXPECT_EQ(observer->GetCapturedPrimaryCount(), 3U);
+  EXPECT_EQ(observer->GetCapturedPrimaryCount(), 5U);
 
   auto source_records = BuildSortedSourceRecordSnapshot(observer->GetRecords());
 
-  ASSERT_EQ(source_records.size(), 3U);
+  ASSERT_EQ(source_records.size(), 5U);
 
   std::uint64_t run_id = source_records.front().run_id;
 
@@ -635,7 +638,8 @@ TEST_F(GGEMSRunTest, RunsWithOneActiveSourceAmongMultipleSlots) {
     EXPECT_EQ(source_records[index].run_id, run_id);
     EXPECT_EQ(source_records[index].global_primary_id,
               static_cast<std::uint64_t>(index));
-    ExpectObserverSourceMatches(source_records[index], expected_source_record);
+    ExpectObserverSourceMatches(source_records[index],
+                                index < 2U ? expected_0 : expected_2);
   }
 }
 
@@ -722,22 +726,26 @@ TEST_F(GGEMSRunTest, AlternatesActiveSourceAcrossSequentialRuns) {
 // =============================================================================
 // =============================================================================
 
-TEST_F(GGEMSRunTest, RejectsMultipleActiveSourcesBeforeReservation) {
+TEST_F(GGEMSRunTest, RebuildsMultipleActiveSourceRangesAcrossSequentialRuns) {
   auto random = MakePhiloxRandom();
-  auto source_a = MakeLowEnergySource(2ULL);
-  auto source_b = MakeLowEnergySource(3ULL);
+  auto source_a = MakeLowEnergySource(3ULL);
+  auto source_b = MakeLowEnergySource(5ULL);
 
-  source_a->SetPositionPicoMeter(10LL, 20LL, 30LL);
+  source_a->SetPositionPicoMeter(10LL, 20LL, 30LL)
+      .SetDirection(1.0f, 0.0f, 0.0f)
+      .SetWeight(0.25);
 
   source_b
       ->SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMilliElectronVolt(2'000'000ULL)
       .SetPositionPicoMeter(-40LL, 50LL, -60LL)
-      .SetDirection(0.0F, -1.0F, 0.0F);
+      .SetDirection(0.0F, -1.0F, 0.0F)
+      .SetWeight(0.75f);
 
+  auto expected_a = source_a->BuildRecord();
   auto expected_b = source_b->BuildRecord();
-  auto observer = MakeCapturingObserver(3U);
+  auto observer = MakeCapturingObserver(8U);
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(random);
@@ -747,27 +755,54 @@ TEST_F(GGEMSRunTest, RejectsMultipleActiveSourcesBeforeReservation) {
   run.SetWorkerCount(64U);
 
   ASSERT_NO_THROW(run.Initialise());
+  ASSERT_NO_THROW(run.Run());
 
-  ExpectGGEMSExceptionContaining([&run]() { run.Run(); },
-                                 "Multiple active sources are configured");
+  auto first_source_records =
+      BuildSortedSourceRecordSnapshot(observer->GetRecords());
 
-  EXPECT_TRUE(observer->GetRecords().empty());
-  EXPECT_EQ(observer->GetCapturedPrimaryCount(), 0U);
+  ASSERT_EQ(first_source_records.size(), 8U);
+  EXPECT_EQ(observer->GetCapturedPrimaryCount(), 8U);
 
-  source_a->SetPrimaryCount(0ULL);
+  std::uint64_t first_run_id = first_source_records.front().run_id;
+
+  for (std::size_t index = 0U; index < first_source_records.size(); ++index) {
+    EXPECT_EQ(first_source_records[index].run_id, first_run_id);
+    EXPECT_EQ(first_source_records[index].global_primary_id,
+              static_cast<std::uint64_t>(index));
+    ExpectObserverSourceMatches(first_source_records[index],
+                                index < 3U ? expected_a : expected_b);
+  }
+
+  source_a->SetPrimaryCount(2ULL);
+  source_b->SetPrimaryCount(4ULL);
 
   ASSERT_NO_THROW(run.Run());
 
-  EXPECT_EQ(observer->GetCapturedPrimaryCount(), 3U);
+  auto all_source_records =
+      BuildSortedSourceRecordSnapshot(observer->GetRecords());
 
-  auto source_records = BuildSortedSourceRecordSnapshot(observer->GetRecords());
+  ASSERT_EQ(all_source_records.size(), 14U);
+  EXPECT_EQ(observer->GetCapturedPrimaryCount(), 14U);
 
-  ASSERT_EQ(source_records.size(), 3U);
+  for (std::size_t index = 0U; index < first_source_records.size(); ++index) {
+    EXPECT_EQ(all_source_records[index].run_id,
+              first_source_records[index].run_id);
+    EXPECT_EQ(all_source_records[index].global_primary_id,
+              first_source_records[index].global_primary_id);
+    ExpectObserverSourceMatches(all_source_records[index],
+                                index < 3U ? expected_a : expected_b);
+  }
 
-  for (std::size_t index = 0U; index < source_records.size(); ++index) {
-    EXPECT_EQ(source_records[index].global_primary_id,
-              static_cast<std::uint64_t>(index));
-    ExpectObserverSourceMatches(source_records[index], expected_b);
+  std::uint64_t second_run_id = all_source_records[8U].run_id;
+
+  EXPECT_EQ(second_run_id, first_run_id + 1ULL);
+
+  for (std::size_t index = 0U; index < 6U; ++index) {
+    auto const &record = all_source_records[index + 8U];
+
+    EXPECT_EQ(record.run_id, second_run_id);
+    EXPECT_EQ(record.global_primary_id, static_cast<std::uint64_t>(index + 8U));
+    ExpectObserverSourceMatches(record, index < 2U ? expected_a : expected_b);
   }
 }
 
@@ -825,9 +860,14 @@ TEST_F(GGEMSRunTest, RejectsAllDisabledSourcesBeforeReservation) {
 // =============================================================================
 // =============================================================================
 
-TEST_F(GGEMSRunTest, AcceptsDuplicateSourceSlotsAtConfiguration) {
+TEST_F(GGEMSRunTest, RunsDuplicateSourceSlots) {
   auto random = MakePhiloxRandom();
   auto source = MakeLowEnergySource(1ULL);
+
+  source->SetPositionPicoMeter(10LL, 20LL, 30LL);
+
+  auto expected = source->BuildRecord();
+  auto observer = MakeCapturingObserver(2U);
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(random);
@@ -835,10 +875,21 @@ TEST_F(GGEMSRunTest, AcceptsDuplicateSourceSlotsAtConfiguration) {
   EXPECT_NO_THROW(run.AddSource(source));
   EXPECT_NO_THROW(run.AddSource(source));
 
+  run.SetObserver(observer);
   run.SetWorkerCount(64U);
 
   ASSERT_NO_THROW(run.Initialise());
+  ASSERT_NO_THROW(run.Run());
 
-  ExpectGGEMSExceptionContaining([&run]() { run.Run(); },
-                                 "Multiple active sources are configured");
+  EXPECT_EQ(observer->GetCapturedPrimaryCount(), 2U);
+
+  auto source_records = BuildSortedSourceRecordSnapshot(observer->GetRecords());
+
+  ASSERT_EQ(source_records.size(), 2U);
+
+  for (std::size_t index = 0U; index < source_records.size(); ++index) {
+    EXPECT_EQ(source_records[index].global_primary_id,
+              static_cast<std::uint64_t>(index));
+    ExpectObserverSourceMatches(source_records[index], expected);
+  }
 }

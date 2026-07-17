@@ -6,6 +6,7 @@
 #include <atomic>
 #include <vector>
 #include <limits>
+#include <utility>
 
 #include "GGEMS/core/GGEMSRun.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
@@ -159,6 +160,13 @@ void GGEMSRun::Initialise() {
   }
 
   GGEMS_CHECK_RECOVERABLE(
+      sources_.size() <=
+          static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()),
+      "Dummy transport currently supports at most uint32_t source slots.");
+
+  std::uint32_t source_count = static_cast<std::uint32_t>(sources_.size());
+
+  GGEMS_CHECK_RECOVERABLE(
       random_ != nullptr,
       "GGEMSRun cannot be initialised without a GGEMSRandom. "
       "Create a ggems.rndm GGEMSRandom object and attach it with "
@@ -199,7 +207,7 @@ void GGEMSRun::Initialise() {
     dummy_transports_.push_back(
         std::make_unique<transport::GGEMSDummyTransportWorkload>(
             opencl.GetContext()[context_index], kernel_root, *random_,
-            worker_count_, random_stream_offset,
+            worker_count_, source_count, random_stream_offset,
             static_cast<std::uint32_t>(context_index),
             observer_record_capacity));
   }
@@ -255,41 +263,12 @@ void GGEMSRun::Run() {
       "Dummy transport currently supports at most uint32_t primaries per "
       "projection.");
 
-  std::size_t active_source_index{source_ranges.size()};
-  std::size_t active_source_count{0U};
-
-  for (std::size_t source_index = 0U; source_index < source_ranges.size();
-       ++source_index) {
-    if (source_ranges[source_index].primary_count == 0ULL) {
-      continue;
-    }
-
-    active_source_index = source_index;
-    ++active_source_count;
-  }
-
-  GGEMS_CHECK_INTERNAL(
-      active_source_count > 0U,
-      "GGEMSRun source snapshot has a positive total but no active source.");
-
-  GGEMS_CHECK_RECOVERABLE(
-      active_source_count == 1U,
-      "Multiple active sources are configured, but the current dummy "
-      "transport still supports only one active source per Run.");
-
-  GGEMS_CHECK_INTERNAL(
-      source_ranges[active_source_index].primary_count == total_primary_count,
-      "The active source primary count does not match the snapshot total.");
-
   auto primary_view = primary_stream_.PrepareRun(run_id, total_primary_count);
 
   std::uint64_t reserved_primary_count = primary_view.source_primary_count;
 
-  std::uint32_t source_primary_count =
+  std::uint32_t projection_primary_count =
       static_cast<std::uint32_t>(reserved_primary_count);
-
-  sources::GGEMSSourceRecord const &source_record =
-      source_records[active_source_index];
 
   GGEMS_INFO("Core", "GGEMSRun projection {} started.", run_id);
 
@@ -315,7 +294,7 @@ void GGEMSRun::Run() {
 
   std::vector<transport::GGEMSTransportWorkloadPlan> workload_plan =
       transport::BuildEqualTransportWorkloadPlan(
-          projection_history_offset, source_primary_count,
+          projection_history_offset, projection_primary_count,
           static_cast<std::uint32_t>(dummy_transports_.size()), worker_count_);
 
   std::vector<transport::GGEMSDummyTransportRunReport> reports{
@@ -323,38 +302,53 @@ void GGEMSRun::Run() {
 
   std::vector<std::exception_ptr> exceptions{workload_plan.size()};
 
-  std::vector<std::thread> transport_threads;
-  transport_threads.reserve(workload_plan.size());
+  std::vector<transport::GGEMSDummyTransportRunConfig> transport_configs{
+      workload_plan.size()};
 
   for (std::size_t plan_index = 0U; plan_index < workload_plan.size();
        ++plan_index) {
-    transport::GGEMSTransportWorkloadPlan workload = workload_plan[plan_index];
+    transport::GGEMSTransportWorkloadPlan const &workload =
+        workload_plan[plan_index];
 
     if (workload.primary_count == 0U) {
       continue;
     }
 
-    transport_threads.emplace_back([&, plan_index, workload, source_record]() {
-      try {
-        transport::GGEMSDummyTransportRunConfig config{};
-        config.run_id = run_id;
-        config.observer_config = observer_config;
-        config.total_primary_count = workload.primary_count;
-        config.projection_history_offset = workload.projection_history_offset;
-        config.device_primary_offset = workload.device_primary_offset;
-        config.source_record = source_record;
-
-        reports[plan_index] =
-            dummy_transports_[workload.context_index]->Run(config);
-      } catch (...) {
-        exceptions[plan_index] = std::current_exception();
-      }
-    });
+    auto &config = transport_configs[plan_index];
+    config.run_id = run_id;
+    config.observer_config = observer_config;
+    config.total_primary_count = workload.primary_count;
+    config.projection_history_offset = workload.projection_history_offset;
+    config.device_primary_offset = workload.device_primary_offset;
+    config.source_records = source_records;
+    config.source_ranges = source_ranges;
   }
 
-  for (std::thread &thread : transport_threads) {
-    if (thread.joinable()) {
-      thread.join();
+  {
+    std::vector<std::jthread> transport_threads;
+    transport_threads.reserve(workload_plan.size());
+
+    for (std::size_t plan_index = 0U; plan_index < workload_plan.size();
+         ++plan_index) {
+      transport::GGEMSTransportWorkloadPlan const &workload =
+          workload_plan[plan_index];
+
+      if (workload.primary_count == 0U) {
+        continue;
+      }
+
+      std::uint32_t context_index = workload.context_index;
+
+      transport_threads.emplace_back(
+          [&, plan_index, context_index,
+           config = std::move(transport_configs[plan_index])]() {
+            try {
+              reports[plan_index] =
+                  dummy_transports_[context_index]->Run(config);
+            } catch (...) {
+              exceptions[plan_index] = std::current_exception();
+            }
+          });
     }
   }
 
@@ -406,7 +400,7 @@ void GGEMSRun::Run() {
   }
 
   GGEMS_CHECK_RECOVERABLE(
-      merged_counters.completed_history_count == source_primary_count,
+      merged_counters.completed_history_count == projection_primary_count,
       "Dummy transport completed history count does not match primary count.");
 
   GGEMS_CHECK_RECOVERABLE(
