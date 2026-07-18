@@ -1,7 +1,10 @@
 #include "GGEMS/core/transport/GGEMSDummyTransportWorkload.hh"
 
 #include <algorithm>
+#include <cstddef>
 #include <format>
+#include <limits>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -13,6 +16,7 @@
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLSVMHostAccess.hh"
 
 namespace {
 
@@ -28,38 +32,17 @@ using SourceRunRange = ggems::core::sources::GGEMSSourceRunRange;
 // =============================================================================
 // =============================================================================
 
-std::uint64_t SplitMix64(std::uint64_t value) noexcept {
-  value += 0x9E3779B97F4A7C15ULL;
-
-  value = (value ^ (value >> 30U)) * 0xBF58476D1CE4E5B9ULL;
-  value = (value ^ (value >> 27U)) * 0x94D049BB133111EBULL;
-
-  return value ^ (value >> 31U);
-}
-
-// =============================================================================
-// =============================================================================
-
-PhiloxState MakePhiloxState(std::uint64_t seed, std::uint64_t index) noexcept {
-  std::uint64_t const key = SplitMix64(seed);
-
-  return PhiloxState{.counter_0 = 0U,
-                     .counter_1 = 0U,
-                     .counter_2 = static_cast<std::uint32_t>(index),
-                     .counter_3 = static_cast<std::uint32_t>(index >> 32U),
-                     .key_0 = static_cast<std::uint32_t>(key),
-                     .key_1 = static_cast<std::uint32_t>(key >> 32U)};
-}
-
-// =============================================================================
-// =============================================================================
-
-ggems::units::Bytes ComputeRandomStatesSize(std::uint32_t worker_count) {
+ggems::units::Bytes
+ComputeRandomStatesSize(ggems::core::random::GGEMSRandom const &random,
+                        std::uint32_t worker_count,
+                        std::uint64_t first_stream_id) {
   GGEMS_CHECK_RECOVERABLE(worker_count > 0U,
                           "Dummy transport worker count must be non-zero.");
 
+  random.ValidateStateRange(first_stream_id, worker_count);
+
   return ggems::units::Bytes{static_cast<std::uint64_t>(worker_count) *
-                             sizeof(PhiloxState)};
+                             static_cast<std::uint64_t>(random.GetStateSize())};
 }
 
 // =============================================================================
@@ -97,25 +80,12 @@ ComputeObserverRecordsSize(std::uint32_t observer_record_capacity) {
 // =============================================================================
 // =============================================================================
 
-std::uint32_t ValidateSourceCount(std::uint32_t source_count) {
+std::uint32_t CheckedSourceCount(std::uint32_t source_count) {
   GGEMS_CHECK_RECOVERABLE(source_count > 0U,
                           "Dummy transport source count must be non-zero.");
 
   return source_count;
 }
-
-// =============================================================================
-// =============================================================================
-
-template <typename Value>
-void WriteSVMArrayOnHost(ggems::ocl::GGEMSOpenCLSVMBuffer &buffer,
-                         std::vector<Value> const &values) {
-  buffer.Map(CL_MAP_WRITE);
-  auto *destination = static_cast<Value *>(buffer.GetData());
-  std::copy(values.begin(), values.end(), destination);
-  buffer.Unmap();
-}
-
 } // namespace
 
 namespace ggems::core::transport {
@@ -130,12 +100,13 @@ GGEMSDummyTransportWorkload::GGEMSDummyTransportWorkload(
     std::uint32_t context_index, std::uint32_t observer_record_capacity)
     : context_{&context}, kernel_root_{std::move(kernel_root)},
       random_{&random}, worker_count_{worker_count},
-      source_count_{source_count}, random_stream_offset_{random_stream_offset},
+      source_count_{CheckedSourceCount(source_count)},
+      random_stream_offset_{random_stream_offset},
       context_index_{context_index},
       device_name_{context.GetDevice().GetName()},
       observer_record_capacity_{observer_record_capacity},
-      random_states_buffer_{
-          context.CreateSVMBuffer(ComputeRandomStatesSize(worker_count))},
+      random_states_buffer_{context.CreateSVMBuffer(
+          ComputeRandomStatesSize(random, worker_count, random_stream_offset))},
       worker_final_states_buffer_{
           context.CreateSVMBuffer(ComputeWorkerFinalStatesSize(worker_count))},
       counters_buffer_{context.CreateSVMBuffer(
@@ -150,125 +121,80 @@ GGEMSDummyTransportWorkload::GGEMSDummyTransportWorkload(
           ggems::units::Bytes{sizeof(ObserverCounters)})},
       observer_records_buffer_{context.CreateSVMBuffer(
           ComputeObserverRecordsSize(observer_record_capacity))} {
-  GGEMS_CHECK_RECOVERABLE(
-      random_->GetKernelEngineId() == 3U,
-      "Dummy transport prototype currently expects the Philox random engine.");
 
-  InitialiseRandomStatesOnHost();
-  ClearWorkerFinalStatesOnHost();
-  ResetCountersOnHost();
-  ResetObserverOnHost();
+  InitialiseRandomStatesInSVM();
+  ClearWorkerFinalStatesInSVM();
+  ResetCountersInSVM();
+  ResetObserverInSVM();
 }
 
 // -----------------------------------------------------------------------------
 
-void GGEMSDummyTransportWorkload::InitialiseRandomStatesOnHost() {
+void GGEMSDummyTransportWorkload::InitialiseRandomStatesInSVM() {
+  std::uint64_t state_bytes = random_states_buffer_.GetSize().value;
+
+  GGEMS_CHECK_INTERNAL(
+      state_bytes <= std::numeric_limits<std::size_t>::max(),
+      "Random state buffer size exceeds host addressable storage.");
+
+  auto *state_storage =
+      static_cast<std::byte *>(random_states_buffer_.GetData());
+
   random_states_buffer_.Map(CL_MAP_WRITE);
 
-  auto *states = static_cast<PhiloxState *>(random_states_buffer_.GetData());
-
-  for (std::uint32_t i = 0U; i < worker_count_; ++i) {
-    states[i] = MakePhiloxState(random_->GetSeed(), random_stream_offset_ + i);
-  }
+  random_->InitialiseStates(
+      random_stream_offset_,
+      std::span<std::byte>{state_storage,
+                           static_cast<std::size_t>(state_bytes)});
 
   random_states_buffer_.Unmap();
 }
 
 // -----------------------------------------------------------------------------
 
-void GGEMSDummyTransportWorkload::ClearWorkerFinalStatesOnHost() {
-  worker_final_states_buffer_.Map(CL_MAP_WRITE);
-
-  auto *states =
-      static_cast<ParticleState *>(worker_final_states_buffer_.GetData());
-
-  std::fill(states, states + worker_count_, ParticleState{});
-
-  worker_final_states_buffer_.Unmap();
+void GGEMSDummyTransportWorkload::ClearWorkerFinalStatesInSVM() {
+  ggems::ocl::FillSVMFromHost(worker_final_states_buffer_, worker_count_,
+                              ParticleState{});
 }
 
 // -----------------------------------------------------------------------------
 
-void GGEMSDummyTransportWorkload::ResetCountersOnHost() {
-  counters_buffer_.Map(CL_MAP_WRITE);
-
-  auto *counters = static_cast<TransportCounters *>(counters_buffer_.GetData());
-
-  *counters = TransportCounters{};
-
-  counters_buffer_.Unmap();
+void GGEMSDummyTransportWorkload::ResetCountersInSVM() {
+  ggems::ocl::WriteSVMFromHost(counters_buffer_, TransportCounters{});
 }
 
 // -----------------------------------------------------------------------------
 
-GGEMSTransportCounters GGEMSDummyTransportWorkload::ReadCountersOnHost() {
-  counters_buffer_.Map(CL_MAP_READ);
-
-  auto const *counters =
-      static_cast<TransportCounters const *>(counters_buffer_.GetData());
-
-  TransportCounters copy = *counters;
-
-  counters_buffer_.Unmap();
-
-  return copy;
+GGEMSTransportCounters GGEMSDummyTransportWorkload::ReadCountersFromSVM() {
+  return ggems::ocl::ReadSVMToHost<TransportCounters>(counters_buffer_);
 }
 
 // -----------------------------------------------------------------------------
 
 observer::GGEMSObserverCounters
-GGEMSDummyTransportWorkload::ReadObserverCountersOnHost() {
-  observer_counters_buffer_.Map(CL_MAP_READ);
-
-  auto const *counters = static_cast<ObserverCounters const *>(
-      observer_counters_buffer_.GetData());
-
-  ObserverCounters copy = *counters;
-
-  observer_counters_buffer_.Unmap();
-  return copy;
+GGEMSDummyTransportWorkload::ReadObserverCountersFromSVM() {
+  return ggems::ocl::ReadSVMToHost<ObserverCounters>(observer_counters_buffer_);
 }
 
 // -----------------------------------------------------------------------------
 
-void GGEMSDummyTransportWorkload::ResetObserverOnHost() {
-  observer_counters_buffer_.Map(CL_MAP_WRITE);
-
-  auto *counters =
-      static_cast<ObserverCounters *>(observer_counters_buffer_.GetData());
-
-  *counters = ObserverCounters{};
-
-  observer_counters_buffer_.Unmap();
-
-  observer_records_buffer_.Map(CL_MAP_WRITE);
-
-  auto *records =
-      static_cast<ObserverRecord *>(observer_records_buffer_.GetData());
-
-  std::fill(records, records + observer_record_capacity_, ObserverRecord{});
-
-  observer_records_buffer_.Unmap();
+void GGEMSDummyTransportWorkload::ResetObserverInSVM() {
+  ggems::ocl::WriteSVMFromHost(observer_counters_buffer_, ObserverCounters{});
+  ggems::ocl::FillSVMFromHost(observer_records_buffer_,
+                              observer_record_capacity_, ObserverRecord{});
 }
 
 // -----------------------------------------------------------------------------
 
-void GGEMSDummyTransportWorkload::WriteObserverConfigOnHost(
+void GGEMSDummyTransportWorkload::WriteObserverConfigToSVM(
     observer::GGEMSObserverConfigRecord const &observer_config) {
-  observer_config_buffer_.Map(CL_MAP_WRITE);
-
-  auto *config =
-      static_cast<ObserverConfigRecord *>(observer_config_buffer_.GetData());
-
-  *config = observer_config;
-
-  observer_config_buffer_.Unmap();
+  ggems::ocl::WriteSVMFromHost(observer_config_buffer_, observer_config);
 }
 
 // -----------------------------------------------------------------------------
 
 std::vector<observer::GGEMSObserverRecord>
-GGEMSDummyTransportWorkload::ReadObserverRecordsOnHost(
+GGEMSDummyTransportWorkload::ReadObserverRecordsFromSVM(
     std::uint32_t record_count) {
   std::uint32_t bounded_record_count =
       std::min(record_count, observer_record_capacity_);
@@ -307,12 +233,16 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
       config.source_records.size() == static_cast<std::size_t>(source_count_),
       "Dummy transport source arrays do not match the stable source count.");
 
-  ResetCountersOnHost();
-  ClearWorkerFinalStatesOnHost();
-  ResetObserverOnHost();
-  WriteSVMArrayOnHost(source_records_buffer_, config.source_records);
-  WriteSVMArrayOnHost(source_ranges_buffer_, config.source_ranges);
-  WriteObserverConfigOnHost(config.observer_config);
+  ResetCountersInSVM();
+  ClearWorkerFinalStatesInSVM();
+  ResetObserverInSVM();
+  ggems::ocl::WriteSVMFromHost(
+      source_records_buffer_,
+      std::span<SourceRecord const>{config.source_records});
+  ggems::ocl::WriteSVMFromHost(
+      source_ranges_buffer_,
+      std::span<SourceRunRange const>{config.source_ranges});
+  WriteObserverConfigToSVM(config.observer_config);
 
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
@@ -350,24 +280,37 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
   auto *observer_counters = observer_counters_buffer_.GetData();
   auto *observer_records = observer_records_buffer_.GetData();
 
-  kernel.SetArgSVMPointer(0U, random_states);
-  kernel.SetArgSVMPointer(1U, worker_final_states);
-  kernel.SetArgSVMPointer(2U, counters_ptr);
-  kernel.SetArgSVMPointer(3U, source_records);
-  kernel.SetArgSVMPointer(4U, source_ranges);
-  kernel.SetArg(5U, static_cast<cl_uint>(source_count_));
-  kernel.SetArg(6U, static_cast<cl_uint>(config.total_primary_count));
-  kernel.SetArg(7U, static_cast<cl_ulong>(config.projection_history_offset));
-  kernel.SetArg(8U, static_cast<cl_ulong>(config.device_primary_offset));
-  kernel.SetArg(9U, static_cast<cl_ulong>(config.min_energy_milli_eV));
-  kernel.SetArg(10U, static_cast<cl_uint>(config.max_generation));
-  kernel.SetArg(11U, static_cast<cl_uint>(config.max_steps_per_track));
-  kernel.SetArgSVMPointer(12U, observer_config);
-  kernel.SetArgSVMPointer(13U, observer_counters);
-  kernel.SetArgSVMPointer(14U, observer_records);
-  kernel.SetArg(15U, static_cast<cl_uint>(observer_record_capacity_));
-  kernel.SetArg(16U, static_cast<cl_ulong>(config.run_id));
-  kernel.SetArg(17U, static_cast<cl_uint>(worker_count_));
+  constexpr cl_uint k_expected_argument_count{18U};
+  cl_uint argument_index{0U};
+
+  kernel.SetArgSVMPointer(argument_index++, random_states);
+  kernel.SetArgSVMPointer(argument_index++, worker_final_states);
+  kernel.SetArgSVMPointer(argument_index++, counters_ptr);
+  kernel.SetArgSVMPointer(argument_index++, source_records);
+  kernel.SetArgSVMPointer(argument_index++, source_ranges);
+  kernel.SetArg(argument_index++, static_cast<cl_uint>(source_count_));
+  kernel.SetArg(argument_index++,
+                static_cast<cl_uint>(config.total_primary_count));
+  kernel.SetArg(argument_index++,
+                static_cast<cl_ulong>(config.projection_history_offset));
+  kernel.SetArg(argument_index++,
+                static_cast<cl_ulong>(config.device_primary_offset));
+  kernel.SetArg(argument_index++,
+                static_cast<cl_ulong>(config.min_energy_milli_eV));
+  kernel.SetArg(argument_index++, static_cast<cl_uint>(config.max_generation));
+  kernel.SetArg(argument_index++,
+                static_cast<cl_uint>(config.max_steps_per_track));
+  kernel.SetArgSVMPointer(argument_index++, observer_config);
+  kernel.SetArgSVMPointer(argument_index++, observer_counters);
+  kernel.SetArgSVMPointer(argument_index++, observer_records);
+  kernel.SetArg(argument_index++,
+                static_cast<cl_uint>(observer_record_capacity_));
+  kernel.SetArg(argument_index++, static_cast<cl_ulong>(config.run_id));
+  kernel.SetArg(argument_index++, static_cast<cl_uint>(worker_count_));
+
+  GGEMS_CHECK_INTERNAL(
+      argument_index == k_expected_argument_count,
+      "Dummy transport kernel argument count is inconsistent.");
 
   constexpr std::size_t k_local_size{64U};
   std::size_t global_size = RoundUp(worker_count_, k_local_size);
@@ -381,10 +324,10 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
   profiler.Stop();
   profiler.RecordKernelEvent(event);
 
-  GGEMSTransportCounters transport_counters = ReadCountersOnHost();
-  ObserverCounters observer_counters_report = ReadObserverCountersOnHost();
+  GGEMSTransportCounters transport_counters = ReadCountersFromSVM();
+  ObserverCounters observer_counters_report = ReadObserverCountersFromSVM();
   std::vector<ObserverRecord> observer_records_report =
-      ReadObserverRecordsOnHost(observer_counters_report.record_count);
+      ReadObserverRecordsFromSVM(observer_counters_report.record_count);
 
   GGEMSDummyTransportRunReport report{};
   report.context_index = context_index_;

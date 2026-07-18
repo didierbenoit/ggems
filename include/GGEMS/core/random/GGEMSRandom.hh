@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -28,6 +29,12 @@ public:
   std::string GetKernelBuildDefinition() const;
 
   std::size_t GetStateSize() const noexcept;
+
+  void ValidateStateRange(std::uint64_t first_stream_id,
+                          std::size_t state_storage) const;
+
+  void InitialiseStates(std::uint64_t first_stream_id,
+                        std::span<std::byte> state_storage) const;
 
   std::vector<std::string> BuildSummaryLines() const;
   void Verbose() const;

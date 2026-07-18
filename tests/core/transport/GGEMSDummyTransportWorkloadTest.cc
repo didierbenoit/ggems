@@ -2,7 +2,9 @@
 #include <filesystem>
 #include <memory>
 #include <algorithm>
+#include <array>
 #include <cstddef>
+#include <string_view>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -511,4 +513,120 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 
   EXPECT_EQ(context.GetAllocatedVRAM().value, allocated_before);
   EXPECT_EQ(context.GetAllocationCountVRAM(), allocation_count_before);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSDummyTransportWorkloadTest,
+       RunsEveryRandomEngineAcrossSuccessiveCalls) {
+  constexpr std::array<std::string_view, 3U> k_engine_names{"philox", "pcg32",
+                                                            "jkiss"};
+
+  constexpr std::uint32_t k_test_worker_count{64U};
+  constexpr std::uint32_t k_test_primary_count{128U};
+  constexpr std::uint32_t k_captured_primary_count{2U};
+  constexpr std::uint32_t k_observer_record_capacity{512U};
+  constexpr std::uint64_t k_first_run_id{17ULL};
+  constexpr std::uint64_t k_first_history_offset{100'000ULL};
+  constexpr std::uint64_t k_random_stream_offset{1'024ULL};
+
+  ggems::core::sources::GGEMSSource source{};
+  source.SetAnalytic()
+      .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
+      .SetEnergyMilliElectronVolt(511'000'000ULL)
+      .SetTimeWindowPicoSecond(0ULL, 1'000ULL)
+      .SetPositionPicoMeter(0LL, 0LL, 0LL)
+      .SetDirection(0.0f, 0.0f, 1.0f)
+      .SetWeight(1.0f);
+
+  auto source_record = source.BuildRecord();
+
+  auto expect_report =
+      [&](ggems::core::transport::GGEMSDummyTransportRunReport const &report,
+          std::uint64_t expected_run_id,
+          std::uint64_t expected_history_offset) {
+        EXPECT_EQ(report.counters.consumed_primary_count, k_test_primary_count);
+        EXPECT_EQ(report.counters.completed_history_count,
+                  k_test_primary_count);
+        EXPECT_EQ(report.counters.aionino_to_gamma_count, k_test_primary_count);
+
+        EXPECT_EQ(report.counters.terminal_particle_count,
+                  report.counters.consumed_primary_count +
+                      report.counters.created_secondary_count);
+
+        EXPECT_EQ(report.counters.overflow_count, 0U);
+        EXPECT_LE(report.counters.max_stack_depth, 16U);
+
+        EXPECT_EQ(report.observer_counters.captured_primary_count,
+                  k_captured_primary_count);
+        EXPECT_EQ(report.observer_counters.overflow_count, 0U);
+        EXPECT_EQ(
+            report.observer_records.size(),
+            static_cast<std::size_t>(report.observer_counters.record_count));
+
+        for (auto const &record : report.observer_records) {
+          EXPECT_EQ(record.run_id, expected_run_id);
+          EXPECT_GE(record.global_primary_id, expected_history_offset);
+          EXPECT_LT(record.global_primary_id,
+                    expected_history_offset + k_captured_primary_count);
+        }
+
+        auto source_records = BuildSortedSourceRecords(report.observer_records);
+
+        ASSERT_EQ(source_records.size(), k_captured_primary_count);
+        EXPECT_EQ(source_records[0U].global_primary_id,
+                  expected_history_offset);
+        EXPECT_EQ(source_records[1U].global_primary_id,
+                  expected_history_offset + 1ULL);
+      };
+
+  for (std::string_view engine_name : k_engine_names) {
+    SCOPED_TRACE(engine_name);
+
+    ggems::core::random::GGEMSRandom random{};
+    random.SetEngine(engine_name).SetSeed(7'777'777ULL);
+
+    auto &context = GetContext();
+
+    ggems::core::transport::GGEMSDummyTransportWorkload workload{
+        context, std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+        random,  k_test_worker_count,
+        1U,      k_random_stream_offset,
+        0U,      k_observer_record_capacity};
+
+    auto allocated_after_construction = context.GetAllocatedVRAM().value;
+    auto allocation_count_after_construction = context.GetAllocationCountVRAM();
+
+    ggems::core::transport::GGEMSDummyTransportRunConfig config{};
+    config.run_id = k_first_run_id;
+    config.total_primary_count = k_test_primary_count;
+    config.projection_history_offset = k_first_history_offset;
+    config.source_records = {source_record};
+    config.source_ranges = {{.projection_primary_begin = 0ULL,
+                             .primary_count = k_test_primary_count}};
+    config.max_generation = 1U;
+    config.observer_config.enabled = 1U;
+    config.observer_config.capture_first_primary_count =
+        k_captured_primary_count;
+
+    auto first_report = workload.Run(config);
+    expect_report(first_report, config.run_id,
+                  config.projection_history_offset);
+
+    EXPECT_EQ(context.GetAllocatedVRAM().value, allocated_after_construction);
+    EXPECT_EQ(context.GetAllocationCountVRAM(),
+              allocation_count_after_construction);
+
+    ++config.run_id;
+    config.projection_history_offset += k_test_primary_count;
+
+    auto second_report = workload.Run(config);
+    expect_report(second_report, config.run_id,
+                  config.projection_history_offset);
+
+    EXPECT_EQ(context.GetAllocatedVRAM().value, allocated_after_construction);
+    EXPECT_EQ(context.GetAllocationCountVRAM(),
+              allocation_count_after_construction);
+  }
 }

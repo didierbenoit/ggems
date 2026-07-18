@@ -57,7 +57,7 @@ public:
                               std::filesystem::path kernel_root,
                               random::GGEMSRandom const &random,
                               std::uint32_t worker_count,
-                              std::uint32_t source_count = 1U,
+                              std::uint32_t source_count,
                               std::uint64_t random_stream_offset = 0ULL,
                               std::uint32_t context_index = 0U,
                               std::uint32_t observer_record_capacity = 1U);
@@ -74,23 +74,23 @@ public:
 public:
   GGEMSDummyTransportRunReport Run(GGEMSDummyTransportRunConfig const &config);
 
-  [[nodiscard]] GGEMSTransportCounters ReadCountersOnHost();
+  [[nodiscard]] GGEMSTransportCounters ReadCountersFromSVM();
 
-  [[nodiscard]] observer::GGEMSObserverCounters ReadObserverCountersOnHost();
+  [[nodiscard]] observer::GGEMSObserverCounters ReadObserverCountersFromSVM();
 
   [[nodiscard]] std::vector<observer::GGEMSObserverRecord>
-  ReadObserverRecordsOnHost(std::uint32_t record_count);
+  ReadObserverRecordsFromSVM(std::uint32_t record_count);
 
   [[nodiscard]] std::uint32_t GetWorkerCount() const noexcept {
     return worker_count_;
   }
 
 private:
-  void InitialiseRandomStatesOnHost();
-  void ResetCountersOnHost();
-  void ClearWorkerFinalStatesOnHost();
-  void ResetObserverOnHost();
-  void WriteObserverConfigOnHost(
+  void InitialiseRandomStatesInSVM();
+  void ResetCountersInSVM();
+  void ClearWorkerFinalStatesInSVM();
+  void ResetObserverInSVM();
+  void WriteObserverConfigToSVM(
       observer::GGEMSObserverConfigRecord const &observer_config);
 
 private:

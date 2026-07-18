@@ -4,6 +4,9 @@
 #include "core/random/GGEMSRandomCommon.clh"
 #include "core/random/GGEMSRandomTypes.clh"
 
+// =============================================================================
+// =============================================================================
+
 static inline uint GGEMS_JKissNextUInt(__global GGEMSJKissState *states,
                                        uint index) {
   uint y = states[index].y;
@@ -23,6 +26,9 @@ static inline uint GGEMS_JKissNextUInt(__global GGEMSJKissState *states,
 
   return states[index].x + states[index].y + states[index].w;
 }
+
+// =============================================================================
+// =============================================================================
 
 static inline float GGEMS_JKissUniform(__global GGEMSJKissState *states,
                                        uint index) {
