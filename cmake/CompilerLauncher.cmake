@@ -1,81 +1,54 @@
 # ============================================================================
-# @file CompilerLauncher.cmake
-# @brief Configure optional compiler launchers for the GGEMS build.
-# @details
-#   This module configures a compiler launcher for C and C++ compilation.
-#   It supports:
-#     - an explicit user-provided launcher,
-#     - automatic detection of sccache,
-#     - fallback when no launcher is available.
+# @file      CompilerLauncher.cmake
+# @brief     Configure the optional GGEMS compiler cache.
 # ============================================================================
 
-# ----------------------------------------------------------------------------
-# User options
-# ----------------------------------------------------------------------------
+include_guard(GLOBAL)
 
-option(GGEMS_USE_COMPILER_CACHE
-  "Enable compiler cache launcher when available"
+option(
+  GGEMS_USE_COMPILER_CACHE
+  "Use sccache as the compiler launcher"
   OFF
 )
 
-set(GGEMS_COMPILER_LAUNCHER
-  ""
-  CACHE STRING "Explicit compiler launcher executable"
+if(NOT GGEMS_USE_COMPILER_CACHE)
+  message(STATUS "Compiler cache         : disabled")
+  return()
+endif()
+
+find_program(
+  GGEMS_SCCACHE_EXECUTABLE
+  NAMES sccache
 )
 
-# ----------------------------------------------------------------------------
-# Internal helper
-# ----------------------------------------------------------------------------
-
-set(GGEMS_COMPILER_LAUNCHER_PROGRAM "")
-
-# ----------------------------------------------------------------------------
-# Resolve compiler launcher
-# ----------------------------------------------------------------------------
-
-if(GGEMS_COMPILER_LAUNCHER)
-  set(GGEMS_COMPILER_LAUNCHER_PROGRAM "${GGEMS_COMPILER_LAUNCHER}")
-  message(STATUS "Using explicit compiler launcher: ${GGEMS_COMPILER_LAUNCHER_PROGRAM}")
-
-elseif(GGEMS_USE_COMPILER_CACHE)
-  find_program(GGEMS_SCCACHE_PROGRAM sccache)
-
-  if(GGEMS_SCCACHE_PROGRAM)
-    set(GGEMS_COMPILER_LAUNCHER_PROGRAM "${GGEMS_SCCACHE_PROGRAM}")
-    message(STATUS "Using sccache compiler launcher: ${GGEMS_COMPILER_LAUNCHER_PROGRAM}")
-  else()
-    message(STATUS "No compiler cache launcher detected")
-  endif()
-
-else()
-  message(STATUS "Compiler cache launcher disabled by user")
+if(NOT GGEMS_SCCACHE_EXECUTABLE)
+  message(
+    FATAL_ERROR
+    "GGEMS_USE_COMPILER_CACHE is ON, but sccache was not found.\n"
+    "Install sccache or configure with "
+    "-DGGEMS_USE_COMPILER_CACHE=OFF."
+  )
 endif()
 
-# ----------------------------------------------------------------------------
-# Apply compiler launcher
-# ----------------------------------------------------------------------------
+# C++ is GGEMS' main language.
+set(
+  CMAKE_CXX_COMPILER_LAUNCHER
+  "${GGEMS_SCCACHE_EXECUTABLE}"
+  CACHE FILEPATH
+  "C++ compiler launcher"
+  FORCE
+)
 
-if(GGEMS_COMPILER_LAUNCHER_PROGRAM)
-  # Compiler launchers are best supported with Ninja and Makefile generators.
-  if(CMAKE_GENERATOR MATCHES "Ninja|Makefiles")
-    set(CMAKE_C_COMPILER_LAUNCHER
-      "${GGEMS_COMPILER_LAUNCHER_PROGRAM}"
-      CACHE STRING "C compiler launcher"
-      FORCE
-    )
+# Some dependencies, notably GoogleTest, may enable and compile C sources.
+set(
+  CMAKE_C_COMPILER_LAUNCHER
+  "${GGEMS_SCCACHE_EXECUTABLE}"
+  CACHE FILEPATH
+  "C compiler launcher"
+  FORCE
+)
 
-    set(CMAKE_CXX_COMPILER_LAUNCHER
-      "${GGEMS_COMPILER_LAUNCHER_PROGRAM}"
-      CACHE STRING "C++ compiler launcher"
-      FORCE
-    )
-
-    message(STATUS "Compiler launcher enabled for C and C++ compilation")
-  else()
-    message(STATUS
-      "Compiler launcher '${GGEMS_COMPILER_LAUNCHER_PROGRAM}' was found, "
-      "but generator '${CMAKE_GENERATOR}' is not the recommended choice. "
-      "Prefer Ninja or Makefiles for reliable launcher support."
-    )
-  endif()
-endif()
+message(STATUS "Compiler cache         : sccache")
+message(STATUS "sccache executable     : ${GGEMS_SCCACHE_EXECUTABLE}")
+message(STATUS "C++ compiler launcher  : ${CMAKE_CXX_COMPILER_LAUNCHER}")
+message(STATUS "C compiler launcher    : ${CMAKE_C_COMPILER_LAUNCHER}")

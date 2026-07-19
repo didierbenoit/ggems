@@ -1,0 +1,12 @@
+-x
+cl
+-cl-std=CL3.0
+-DGGEMS_RANDOM_ENGINE=GGEMS_RANDOM_ENGINE_JKISS
+-I.
+-Itests
+-Icore
+-Icore/particles
+-Icore/random
+-Icore/transport
+-Icore/observer
+-Icore/sources

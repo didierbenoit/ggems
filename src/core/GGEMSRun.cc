@@ -7,6 +7,7 @@
 #include <vector>
 #include <limits>
 #include <utility>
+#include <cstdint>
 
 #include "GGEMS/core/GGEMSRun.hh"
 #include "GGEMS/core/GGEMSMacros.hh"

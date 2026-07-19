@@ -3,9 +3,6 @@ __pycache__
 build
 .venv
 .cache
-.venv
-.clangd
-.clang-format
 .pytest_cache
 compile_commands.json
 python/ggems/*.ilk

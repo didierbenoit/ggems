@@ -1,73 +1,182 @@
 # ============================================================================
-#  @file      CompilerOptions.cmake
-#  @brief     Dispatches compiler-specific configurations for GGEMS.
-#  @details   Detects the active C++ compiler and includes the corresponding
-#             configuration file (Clang or MSVC). Provides a single entry
-#             point for all compiler-related options.
-#  @author    Didier Benoit
-#  @date      2025-11-05
+# @file      CompilerOptions.cmake
+# @brief     Dispatch GGEMS compiler-specific configuration.
+# @details   Validate the operating system, compiler family, and compiler
+#            frontend before loading the corresponding option module.
 # ============================================================================
 
 include_guard(GLOBAL)
 
-# ------------------------------------------------------------------------------
-# Detect and include compiler-specific configuration
-# ------------------------------------------------------------------------------
-message(STATUS "Detected compiler: ${CMAKE_CXX_COMPILER_ID}")
+# ----------------------------------------------------------------------------
+# Compiler identification
+# ----------------------------------------------------------------------------
 
-# --- Windows Rules ------------------------------------------------------------
-if (WIN32 AND NOT (MSVC OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-  message(FATAL_ERROR
-    "Unsupported compiler on Windows: ${CMAKE_CXX_COMPILER_ID}\n"
-    "Allowed compilers on Windows:\n"
-    "  - MSVC\n"
-    "  - clang-cl (Clang with MSVC frontend)\n"
-    "  - Clang/LLVM (pure clang++)\n"
-    "GNU g++ and Intel icpx are NOT supported on Windows.\n"
-  )
-endif()
+set(GGEMS_COMPILER_NAME "")
+set(GGEMS_COMPILER_OPTIONS_MODULE "")
 
-# --- Linux Rules --------------------------------------------------------------
-if (UNIX AND NOT WIN32)
-  if (NOT (CMAKE_CXX_COMPILER_ID MATCHES "Clang"
-        OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-        OR CMAKE_CXX_COMPILER_ID MATCHES "Intel"))
-    message(FATAL_ERROR
-      "Unsupported compiler on Linux: ${CMAKE_CXX_COMPILER_ID}\n"
-      "Allowed compilers on Linux:\n"
-      " - Clang/LLVM\n"
-      " - GNU g++\n"
-      " - Intel icpx\n"
+# ----------------------------------------------------------------------------
+# Windows
+# ----------------------------------------------------------------------------
+
+if(WIN32)
+
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+
+    set(GGEMS_COMPILER_NAME "Microsoft Visual C++")
+    set(GGEMS_COMPILER_OPTIONS_MODULE "MSVCOptions")
+
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+
+    if(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
+
+      set(
+        GGEMS_COMPILER_NAME
+        "LLVM Clang with GNU-like frontend"
+      )
+
+    elseif(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+
+      set(
+        GGEMS_COMPILER_NAME
+        "LLVM Clang with MSVC-like frontend (clang-cl)"
+      )
+
+    else()
+
+      message(
+        FATAL_ERROR
+        "Unsupported Clang frontend on Windows: "
+        "'${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}'."
+      )
+
+    endif()
+
+    set(GGEMS_COMPILER_OPTIONS_MODULE "ClangOptions")
+
+  else()
+
+    message(
+      FATAL_ERROR
+      "Unsupported compiler on Windows: '${CMAKE_CXX_COMPILER_ID}'.\n"
+      "Supported Windows compilers:\n"
+      "  - LLVM Clang\n"
+      "  - clang-cl\n"
+      "  - Microsoft Visual C++"
     )
+
   endif()
-endif()
 
-# --- Clang or clang-cl --------------------------------------------------------
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  message(STATUS "Loading Clang Option...")
-  include(ClangOptions)
+# ----------------------------------------------------------------------------
+# macOS
+# ----------------------------------------------------------------------------
 
-# --- Microsoft Visual C++ -----------------------------------------------------
-elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-  message(STATUS "Loading MSVC options...")
-  include(MSVCOptions)
+elseif(APPLE)
 
-  # --- GNU GCC / g++ ----------------------------------------------------------
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  message(STATUS "Loading GCC options...")
-  include(GNUOptions)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
 
-# --- Intel oneAPI (icpx / classic icc) ----------------------------------------
-elseif (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-  message(STATUS "Loading Intel compiler options...")
-  include(IntelOptions)
+    set(GGEMS_COMPILER_NAME "Apple Clang")
+    set(GGEMS_COMPILER_OPTIONS_MODULE "ClangOptions")
 
-# --- Fallback -----------------------------------------------------------------
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+
+    set(GGEMS_COMPILER_NAME "LLVM Clang")
+    set(GGEMS_COMPILER_OPTIONS_MODULE "ClangOptions")
+
+  else()
+
+    message(
+      FATAL_ERROR
+      "Unsupported compiler on macOS: '${CMAKE_CXX_COMPILER_ID}'.\n"
+      "Supported macOS compilers:\n"
+      "  - Apple Clang\n"
+      "  - LLVM Clang"
+    )
+
+  endif()
+
+# ----------------------------------------------------------------------------
+# Linux
+# ----------------------------------------------------------------------------
+
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+
+    set(GGEMS_COMPILER_NAME "LLVM Clang")
+    set(GGEMS_COMPILER_OPTIONS_MODULE "ClangOptions")
+
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+
+    set(GGEMS_COMPILER_NAME "GNU C++")
+    set(GGEMS_COMPILER_OPTIONS_MODULE "GNUOptions")
+
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+
+    set(GGEMS_COMPILER_NAME "Intel oneAPI DPC++/C++")
+    set(GGEMS_COMPILER_OPTIONS_MODULE "IntelOptions")
+
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+
+    message(
+      FATAL_ERROR
+      "The Intel classic C++ compiler is not supported.\n"
+      "Use the Intel oneAPI LLVM-based compiler 'icpx' instead."
+    )
+
+  else()
+
+    message(
+      FATAL_ERROR
+      "Unsupported compiler on Linux: '${CMAKE_CXX_COMPILER_ID}'.\n"
+      "Supported Linux compilers:\n"
+      "  - LLVM Clang\n"
+      "  - GNU C++\n"
+      "  - Intel oneAPI icpx"
+    )
+
+  endif()
+
+# ----------------------------------------------------------------------------
+# Unsupported operating systems
+# ----------------------------------------------------------------------------
+
 else()
-  message(WARNING "Unsupported compiler detected: ${CMAKE_CXX_COMPILER_ID}")
-  message(WARNING "Default options will be used; please provide a specific configuration file.")
+
+  message(
+    FATAL_ERROR
+    "Unsupported operating system: '${CMAKE_SYSTEM_NAME}'.\n"
+    "GGEMS currently supports Windows and Linux. "
+    "macOS support is prepared but not yet validated."
+  )
+
 endif()
 
-if (WIN32 AND (MSVC OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-  add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+# ----------------------------------------------------------------------------
+# Diagnostics
+# ----------------------------------------------------------------------------
+
+message(STATUS "Operating system      : ${CMAKE_SYSTEM_NAME}")
+message(STATUS "Compiler              : ${GGEMS_COMPILER_NAME}")
+message(STATUS "Compiler ID           : ${CMAKE_CXX_COMPILER_ID}")
+message(STATUS "Compiler frontend     : ${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}")
+message(STATUS "Compiler options file : ${GGEMS_COMPILER_OPTIONS_MODULE}.cmake")
+
+# ----------------------------------------------------------------------------
+# Load compiler-specific options
+# ----------------------------------------------------------------------------
+
+include("${GGEMS_COMPILER_OPTIONS_MODULE}")
+
+# ----------------------------------------------------------------------------
+# Common Windows definitions
+#
+# These remain global temporarily. They will move into the target-based
+# compiler policy during the next compiler-options cleanup.
+# ----------------------------------------------------------------------------
+
+if(WIN32)
+  add_compile_definitions(
+    _CRT_SECURE_NO_WARNINGS
+    NOMINMAX
+  )
 endif()

@@ -1,0 +1,41 @@
+CompileFlags:
+  CompilationDatabase: build
+
+Index:
+  Background: Build
+  StandardLibrary: true
+
+Diagnostics:
+  UnusedIncludes: Strict
+  MissingIncludes: Strict
+
+  ClangTidy:
+    Add:
+      - bugprone-*
+      - performance-*
+      - portability-*
+      - modernize-*
+      - readability-*
+
+    FastCheckFilter: Strict
+
+---
+If:
+  PathMatch: .*\.(cl|clh)$
+
+CompileFlags:
+  CompilationDatabase: kernels
+  Compiler: clang
+
+  Remove:
+    - -std=*
+    - -stdlib=*
+    - /std:*
+
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None
+
+  ClangTidy:
+    Remove:
+      - "*"

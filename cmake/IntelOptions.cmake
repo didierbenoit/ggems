@@ -1,74 +1,61 @@
 # ============================================================================
-#  @file      IntelOptions.cmake
-#  @brief     Compiler configuration for Intel Compiler.
-#  @details   Defines warnings, optimisation, and build-type specific flags
-#             for Unix
-#             Designed for C++23, pybind11 and OpenCL builds in GGEMS.
-#  @author    Didier Benoit
-#  @date      2025-11-05
+# @file      IntelOptions.cmake
+# @brief     Compiler configuration for Intel oneAPI DPC++/C++.
+# @details   Configure warnings and diagnostics for the LLVM-based icpx
+#            compiler on Linux.
+# @author    Didier Benoit
 # ============================================================================
 
 include_guard(GLOBAL)
 
-message(STATUS "Detected Intel oneAPI compiler (icx/icpx)")
+# ----------------------------------------------------------------------------
+# User options
+# ----------------------------------------------------------------------------
 
-# ----------------------------------------------------------------------------
-# Common compilation options
-# ----------------------------------------------------------------------------
-add_compile_options(
-  -std=c++23 -Wall -Wextra -Wpedantic
-  -Wshadow -Wnon-virtual-dtor -finput-charset=UTF-8 -fexec-charset=UTF-8
-  -Wconversion -Wsign-conversion
+option(
+  GGEMS_WARNINGS_AS_ERRORS
+  "Treat GGEMS compiler warnings as errors"
+  OFF
 )
 
-# Colour diagnostics and visibility control
+# ----------------------------------------------------------------------------
+# IntelLLVM diagnostics
+# ----------------------------------------------------------------------------
+
+message(STATUS "Configuring Intel oneAPI C++ compiler")
+
 add_compile_options(
-  -fdiagnostics-color=always
-  -fcolor-diagnostics
-  -fvisibility=hidden
-  -fvisibility-inlines-hidden
+  "$<$<COMPILE_LANGUAGE:CXX>:-Wall>"
+  "$<$<COMPILE_LANGUAGE:CXX>:-Wextra>"
+  "$<$<COMPILE_LANGUAGE:CXX>:-Wpedantic>"
+  "$<$<COMPILE_LANGUAGE:CXX>:-Wshadow>"
+  "$<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor>"
+  "$<$<COMPILE_LANGUAGE:CXX>:-Wconversion>"
+  "$<$<COMPILE_LANGUAGE:CXX>:-Wsign-conversion>"
+  "$<$<COMPILE_LANGUAGE:CXX>:-Wfloat-conversion>"
+
+  "$<$<COMPILE_LANGUAGE:CXX>:-finput-charset=UTF-8>"
+  "$<$<COMPILE_LANGUAGE:CXX>:-fexec-charset=UTF-8>"
+
+  "$<$<COMPILE_LANGUAGE:CXX>:-fdiagnostics-color=always>"
+
+  "$<$<COMPILE_LANGUAGE:CXX>:-fvisibility=hidden>"
+  "$<$<COMPILE_LANGUAGE:CXX>:-fvisibility-inlines-hidden>"
+
+  "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CONFIG:Debug>>:-fno-omit-frame-pointer>"
 )
-add_compile_definitions(NOMINMAX)
 
-# ----------------------------------------------------------------------------
-# Debug configuration
-# ----------------------------------------------------------------------------
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  message(STATUS "Configuring Clang Debug build")
-
-  add_compile_options(-O0 -g3 -Wfloat-conversion -fno-omit-frame-pointer)
-endif()
-
-# ----------------------------------------------------------------------------
-# Release configuration
-# ----------------------------------------------------------------------------
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
-  message(STATUS "Configuring Clang Release build")
-
+if(GGEMS_WARNINGS_AS_ERRORS)
   add_compile_options(
-    -O3 -march=native
-    -qopt-zmm-usage=high
-    -finline-functions
-    -fstrict-aliasing
+    "$<$<COMPILE_LANGUAGE:CXX>:-Werror>"
   )
-
-  add_compile_definitions(NDEBUG)
-endif()
-
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
-  # Enable LINK-TIME optimisation if supported
-  include(CheckIPOSupported)
-  check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
-  if (ipo_supported)
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
-    message(STATUS "Intel IPO/LTO enabled")
-  else()
-    message(WARNING "Intel IPO/LTO not supported: ${ipo_error}")
-  endif()
 endif()
 
 # ----------------------------------------------------------------------------
 # Diagnostic information
 # ----------------------------------------------------------------------------
-message(STATUS "Intel build type : ${CMAKE_BUILD_TYPE}")
-message(STATUS "Compiler path    : ${CMAKE_CXX_COMPILER}")
+
+message(STATUS "Intel compiler          : ${CMAKE_CXX_COMPILER}")
+message(STATUS "Intel compiler version  : ${CMAKE_CXX_COMPILER_VERSION}")
+message(STATUS "Warnings as errors      : ${GGEMS_WARNINGS_AS_ERRORS}")
+message(STATUS "Optimisation policy     : managed by CMake Debug/Release profiles")

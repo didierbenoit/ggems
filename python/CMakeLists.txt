@@ -34,3 +34,15 @@ endif()
 # Include GGEMS headers
 # ----------------------------------------------------------------------------
 target_include_directories(ggems PRIVATE ${PROJECT_SOURCE_DIR}/include)
+
+# ----------------------------------------------------------------------------
+# Language and Release optimization policy
+# ----------------------------------------------------------------------------
+
+target_compile_features(
+  ggems
+  PRIVATE
+    cxx_std_23
+)
+
+ggems_apply_release_optimizations(ggems)

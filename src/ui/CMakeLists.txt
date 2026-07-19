@@ -170,7 +170,6 @@ add_library(ggems_gui STATIC
 )
 
 add_dependencies(ggems_gui ggems_gui_shaders)
-
 add_library(GGEMS::Gui ALIAS ggems_gui)
 
 target_include_directories(ggems_gui
@@ -206,3 +205,6 @@ if(WIN32)
 endif()
 
 target_compile_features(ggems_gui PUBLIC cxx_std_23)
+
+# Apply optional Release-only LTO and native CPU optimizations.
+ggems_apply_release_optimizations(ggems_gui)
