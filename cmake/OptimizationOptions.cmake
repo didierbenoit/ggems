@@ -24,10 +24,33 @@ option(
 )
 
 # ----------------------------------------------------------------------------
+# Effective optimization policy
+# ----------------------------------------------------------------------------
+
+set(GGEMS_LTO_ENABLED "${GGEMS_ENABLE_LTO}")
+
+if(
+  GGEMS_ENABLE_LTO
+  AND CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM"
+)
+  message(
+    WARNING
+    "GGEMS_ENABLE_LTO was requested with IntelLLVM/icpx, but IntelLLVM "
+    "LTO is not currently supported by the GGEMS build configuration. "
+    "LTO will be disabled. Release and native CPU optimizations remain "
+    "available."
+  )
+
+  set(GGEMS_LTO_ENABLED OFF)
+endif()
+
+# ----------------------------------------------------------------------------
 # Link-time optimization support
 # ----------------------------------------------------------------------------
 
-if(GGEMS_ENABLE_LTO)
+set(GGEMS_LTO_SUPPORTED OFF)
+
+if(GGEMS_LTO_ENABLED)
   include(CheckIPOSupported)
 
   check_ipo_supported(
@@ -39,7 +62,7 @@ if(GGEMS_ENABLE_LTO)
   if(NOT GGEMS_LTO_SUPPORTED)
     message(
       FATAL_ERROR
-      "GGEMS_ENABLE_LTO is ON, but interprocedural optimization "
+      "GGEMS LTO is enabled, but interprocedural optimization "
       "is unavailable for the current toolchain:\n"
       "${GGEMS_LTO_ERROR}"
     )
@@ -115,11 +138,11 @@ function(ggems_apply_release_optimizations target_name)
     FALSE
   )
 
-  # Release uses IPO/LTO only when explicitly requested.
+  # Release uses IPO/LTO only when effectively enabled.
   set_property(
     TARGET "${target_name}"
     PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE
-    "${GGEMS_ENABLE_LTO}"
+    "${GGEMS_LTO_ENABLED}"
   )
 
   # Native CPU optimization is restricted to Release.
@@ -127,7 +150,7 @@ function(ggems_apply_release_optimizations target_name)
     target_compile_options(
       "${target_name}"
       PRIVATE
-      "$<$<CONFIG:Release>:${GGEMS_NATIVE_FLAG}>"
+        "$<$<CONFIG:Release>:${GGEMS_NATIVE_FLAG}>"
     )
   endif()
 
@@ -138,9 +161,10 @@ endfunction()
 # ----------------------------------------------------------------------------
 
 message(STATUS "Release LTO requested   : ${GGEMS_ENABLE_LTO}")
+message(STATUS "Release LTO enabled     : ${GGEMS_LTO_ENABLED}")
 message(STATUS "Native CPU requested    : ${GGEMS_ENABLE_NATIVE}")
 
-if(GGEMS_ENABLE_LTO)
+if(GGEMS_LTO_ENABLED)
   message(STATUS "Release LTO support     : ${GGEMS_LTO_SUPPORTED}")
 endif()
 

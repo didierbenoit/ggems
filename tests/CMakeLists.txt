@@ -82,6 +82,8 @@ target_include_directories(ggems_core_tests
   ${PROJECT_SOURCE_DIR}/include
 )
 
+ggems_apply_release_optimizations(ggems_core_tests)
+
 gtest_discover_tests(ggems_core_tests)
 
 # ----------------------------------------------------------------------------
@@ -113,6 +115,8 @@ if(GGEMS_WITH_IMGUI)
       ${PROJECT_SOURCE_DIR}/include
       ${PROJECT_SOURCE_DIR}/src/ui
   )
+
+  ggems_apply_release_optimizations(ggems_gui_tests)
 
   gtest_discover_tests(ggems_gui_tests)
 endif()
