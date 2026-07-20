@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <type_traits>
+#include <cstddef>
 
 #include "GGEMS/core/observer/GGEMSObserverTypes.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
@@ -34,6 +35,7 @@ static_assert(sizeof(GGEMSObserverCounters) == 16U);
 struct GGEMSObserverRecord {
   std::uint64_t run_id{0ULL};
   std::uint64_t global_primary_id{particles::k_invalid_id_u64};
+  std::uint64_t source_local_primary_id{particles::k_invalid_id_u64};
   std::uint64_t global_particle_id{particles::k_invalid_id_u64};
   std::uint64_t track_id{particles::k_invalid_id_u64};
   std::uint64_t parent_track_id{particles::k_invalid_id_u64};
@@ -54,11 +56,34 @@ struct GGEMSObserverRecord {
   float direction_w{0.0F};
   std::uint64_t energy_milli_eV{0ULL};
   float weight{1.0F};
-  float reserved_0{0.0F};
+  std::uint32_t source_index{particles::k_invalid_id_u32};
 };
 
 static_assert(std::is_standard_layout_v<GGEMSObserverRecord>);
 static_assert(std::is_trivially_copyable_v<GGEMSObserverRecord>);
-static_assert(sizeof(GGEMSObserverRecord) == 120U);
+static_assert(sizeof(GGEMSObserverRecord) == 128U);
+static_assert(alignof(GGEMSObserverRecord) == 8U);
+
+static_assert(offsetof(GGEMSObserverRecord, run_id) == 0U);
+static_assert(offsetof(GGEMSObserverRecord, global_primary_id) == 8U);
+static_assert(offsetof(GGEMSObserverRecord, source_local_primary_id) == 16U);
+static_assert(offsetof(GGEMSObserverRecord, global_particle_id) == 24U);
+static_assert(offsetof(GGEMSObserverRecord, track_id) == 32U);
+static_assert(offsetof(GGEMSObserverRecord, parent_track_id) == 40U);
+static_assert(offsetof(GGEMSObserverRecord, time_ps) == 48U);
+static_assert(offsetof(GGEMSObserverRecord, position_x_pm) == 56U);
+static_assert(offsetof(GGEMSObserverRecord, position_y_pm) == 64U);
+static_assert(offsetof(GGEMSObserverRecord, position_z_pm) == 72U);
+static_assert(offsetof(GGEMSObserverRecord, record_kind) == 80U);
+static_assert(offsetof(GGEMSObserverRecord, particle_type) == 84U);
+static_assert(offsetof(GGEMSObserverRecord, status) == 88U);
+static_assert(offsetof(GGEMSObserverRecord, generation) == 92U);
+static_assert(offsetof(GGEMSObserverRecord, direction_x) == 96U);
+static_assert(offsetof(GGEMSObserverRecord, direction_y) == 100U);
+static_assert(offsetof(GGEMSObserverRecord, direction_z) == 104U);
+static_assert(offsetof(GGEMSObserverRecord, direction_w) == 108U);
+static_assert(offsetof(GGEMSObserverRecord, energy_milli_eV) == 112U);
+static_assert(offsetof(GGEMSObserverRecord, weight) == 120U);
+static_assert(offsetof(GGEMSObserverRecord, source_index) == 124U);
 
 } // namespace ggems::core::observer

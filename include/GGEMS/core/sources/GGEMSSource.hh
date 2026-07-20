@@ -4,7 +4,6 @@
 
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
-#include "GGEMS/core/sources/GGEMSSourceTypes.hh"
 
 namespace ggems::core::sources {
 
@@ -15,42 +14,43 @@ public:
 
   GGEMSSource(GGEMSSource const &) = default;
   GGEMSSource(GGEMSSource &&) = default;
-  GGEMSSource &operator=(GGEMSSource const &) = default;
-  GGEMSSource &operator=(GGEMSSource &&) = default;
+  auto operator=(GGEMSSource const &) -> GGEMSSource & = default;
+  auto operator=(GGEMSSource &&) -> GGEMSSource & = default;
 
-public:
-  GGEMSSource &SetPrimaryCount(std::uint64_t primary_count) noexcept;
+  auto SetPrimaryCount(std::uint64_t primary_count) noexcept -> GGEMSSource &;
 
-  [[nodiscard]] std::uint64_t GetPrimaryCount() const noexcept {
+  [[nodiscard]] auto GetPrimaryCount() const noexcept -> std::uint64_t {
     return primary_count_;
   }
 
-  GGEMSSource &SetAnalytic() noexcept;
+  auto SetAnalytic() noexcept -> GGEMSSource &;
 
-  GGEMSSource &
-  SetEmittedParticleType(particles::GGEMSParticleType particle_type) noexcept;
+  auto
+  SetEmittedParticleType(particles::GGEMSParticleType particle_type) noexcept
+      -> GGEMSSource &;
 
-  GGEMSSource &SetEnergyMilliElectronVolt(std::uint64_t energy_milli_eV);
+  auto SetEnergyMilliElectronVolt(std::uint64_t energy_milli_eV)
+      -> GGEMSSource &;
 
-  GGEMSSource &SetTimeWindowPicoSecond(std::uint64_t time_start_ps,
-                                       std::uint64_t time_stop_ps);
+  auto SetTimeWindowPicoSecond(std::uint64_t time_start_ps,
+                               std::uint64_t time_stop_ps) -> GGEMSSource &;
 
-  GGEMSSource &SetPositionPicoMeter(std::int64_t x_pm, std::int64_t y_pm,
-                                    std::int64_t z_pm) noexcept;
+  auto SetPositionPicoMeter(std::int64_t x_pm, std::int64_t y_pm,
+                            std::int64_t z_pm) noexcept -> GGEMSSource &;
 
-  GGEMSSource &SetDirection(float x, float y, float z);
+  auto SetDirection(float dir_x, float dir_y, float dir_z) -> GGEMSSource &;
 
-  GGEMSSource &SetWeight(float weight);
+  auto SetWeight(float weight) -> GGEMSSource &;
 
-  [[nodiscard]] GGEMSSourceRecord const &GetRecord() const noexcept {
+  [[nodiscard]] auto GetRecord() const noexcept -> GGEMSSourceRecord const & {
     return record_;
   }
 
-  [[nodiscard]] GGEMSSourceRecord BuildRecord() const noexcept {
+  [[nodiscard]] auto BuildRecord() const noexcept -> GGEMSSourceRecord {
     return record_;
   }
 
-  void Verbose() const;
+  auto Verbose() const -> void;
 
 private:
   std::uint64_t primary_count_{4096ULL};

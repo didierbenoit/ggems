@@ -11,6 +11,7 @@
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSRun.hh"
 #include "GGEMS/core/observer/GGEMSTransportObserver.hh"
+#include "GGEMS/core/observer/GGEMSObserverTypes.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
@@ -27,17 +28,17 @@ constexpr std::uint32_t k_source_record_kind =
 // =============================================================================
 // =============================================================================
 
-bool IsSourceRecord(
-    ggems::core::observer::GGEMSObserverRecord const &record) noexcept {
+auto IsSourceRecord(
+    ggems::core::observer::GGEMSObserverRecord const &record) noexcept -> bool {
   return record.record_kind == k_source_record_kind;
 }
 
 // =============================================================================
 // =============================================================================
 
-std::vector<ggems::core::observer::GGEMSObserverRecord>
-BuildSortedSourceRecordSnapshot(
-    std::vector<ggems::core::observer::GGEMSObserverRecord> const &records) {
+auto BuildSortedSourceRecordSnapshot(
+    std::vector<ggems::core::observer::GGEMSObserverRecord> const &records)
+    -> std::vector<ggems::core::observer::GGEMSObserverRecord> {
   std::vector<ggems::core::observer::GGEMSObserverRecord> source_records;
 
   for (auto const &record : records) {
@@ -46,15 +47,16 @@ BuildSortedSourceRecordSnapshot(
     }
   }
 
-  std::sort(source_records.begin(), source_records.end(),
-            [](ggems::core::observer::GGEMSObserverRecord const &lhs,
-               ggems::core::observer::GGEMSObserverRecord const &rhs) {
-              if (lhs.run_id != rhs.run_id) {
-                return lhs.run_id < rhs.run_id;
-              }
+  std::ranges::sort(
+      source_records,
+      [](ggems::core::observer::GGEMSObserverRecord const &lhs,
+         ggems::core::observer::GGEMSObserverRecord const &rhs) -> bool {
+        if (lhs.run_id != rhs.run_id) {
+          return lhs.run_id < rhs.run_id;
+        }
 
-              return lhs.global_primary_id < rhs.global_primary_id;
-            });
+        return lhs.global_primary_id < rhs.global_primary_id;
+      });
 
   return source_records;
 }
@@ -62,7 +64,7 @@ BuildSortedSourceRecordSnapshot(
 // =============================================================================
 // =============================================================================
 
-std::shared_ptr<ggems::core::random::GGEMSRandom> MakePhiloxRandom() {
+auto MakePhiloxRandom() -> std::shared_ptr<ggems::core::random::GGEMSRandom> {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
   random->SetEngine("philox");
   random->SetSeed(9'876'543ULL);
@@ -72,8 +74,8 @@ std::shared_ptr<ggems::core::random::GGEMSRandom> MakePhiloxRandom() {
 // =============================================================================
 // =============================================================================
 
-std::shared_ptr<ggems::core::sources::GGEMSSource>
-MakeLowEnergySource(std::uint64_t primary_count) {
+auto MakeLowEnergySource(std::uint64_t primary_count)
+    -> std::shared_ptr<ggems::core::sources::GGEMSSource> {
   auto source = std::make_shared<ggems::core::sources::GGEMSSource>();
   source->SetPrimaryCount(primary_count)
       .SetEnergyMilliElectronVolt(1'000'000ULL)
@@ -84,8 +86,8 @@ MakeLowEnergySource(std::uint64_t primary_count) {
 // =============================================================================
 // =============================================================================
 
-std::shared_ptr<ggems::core::observer::GGEMSTransportObserver>
-MakeCapturingObserver(std::uint32_t primary_count) {
+auto MakeCapturingObserver(std::uint32_t primary_count)
+    -> std::shared_ptr<ggems::core::observer::GGEMSTransportObserver> {
   auto observer =
       std::make_shared<ggems::core::observer::GGEMSTransportObserver>();
   observer->SetRecordCapacity(64U).CaptureFirstPrimaries(primary_count);
@@ -95,9 +97,9 @@ MakeCapturingObserver(std::uint32_t primary_count) {
 // =============================================================================
 // =============================================================================
 
-void ExpectObserverSourceMatches(
+auto ExpectObserverSourceMatches(
     ggems::core::observer::GGEMSObserverRecord const &observed,
-    ggems::core::sources::GGEMSSourceRecord const &expected) {
+    ggems::core::sources::GGEMSSourceRecord const &expected) -> void {
   EXPECT_EQ(observed.record_kind, k_source_record_kind);
   EXPECT_EQ(observed.particle_type, expected.emitted_particle_type);
   EXPECT_EQ(observed.time_ps, expected.time_start_ps);
@@ -119,8 +121,8 @@ void ExpectObserverSourceMatches(
 // =============================================================================
 
 template <typename Function>
-void ExpectGGEMSExceptionContaining(Function &&function,
-                                    std::string_view expected_message) {
+auto ExpectGGEMSExceptionContaining(Function &&function,
+                                    std::string_view expected_message) -> void {
   bool exception_caught = false;
 
   try {
@@ -140,7 +142,7 @@ void ExpectGGEMSExceptionContaining(Function &&function,
 
 class GGEMSRunTest : public ::testing::Test {
 protected:
-  static void SetUpTestSuite() {
+  static auto SetUpTestSuite() -> void {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
     if (opencl.GetContext().empty()) {
@@ -210,11 +212,10 @@ TEST_F(GGEMSRunTest, UsesIndependentSourceSnapshotsAcrossSequentialRuns) {
   ASSERT_NO_THROW(run.Initialise());
   ASSERT_NO_THROW(run.Run());
 
-  auto &records_after_first_run = observer->GetRecords();
+  auto const &records_after_first_run = observer->GetRecords();
 
   auto first_source =
-      std::find_if(records_after_first_run.begin(),
-                   records_after_first_run.end(), IsSourceRecord);
+      std::ranges::find_if(records_after_first_run, IsSourceRecord);
 
   ASSERT_NE(first_source, records_after_first_run.end());
   ASSERT_EQ(std::count_if(records_after_first_run.begin(),
@@ -239,22 +240,22 @@ TEST_F(GGEMSRunTest, UsesIndependentSourceSnapshotsAcrossSequentialRuns) {
 
   ASSERT_NO_THROW(run.Run());
 
-  auto &all_records = observer->GetRecords();
+  auto const &all_records = observer->GetRecords();
 
   ASSERT_EQ(
       std::count_if(all_records.begin(), all_records.end(), IsSourceRecord), 2);
 
-  auto retained_first_source = std::find_if(
-      all_records.begin(), all_records.end(),
+  auto retained_first_source = std::ranges::find_if(
+      all_records,
       [first_run_id = first_source_record.run_id](
-          ggems::core::observer::GGEMSObserverRecord const &record) {
+          ggems::core::observer::GGEMSObserverRecord const &record) -> bool {
         return IsSourceRecord(record) && record.run_id == first_run_id;
       });
 
-  auto second_source = std::find_if(
-      all_records.begin(), all_records.end(),
+  auto second_source = std::ranges::find_if(
+      all_records,
       [first_run_id = first_source_record.run_id](
-          ggems::core::observer::GGEMSObserverRecord const &record) {
+          ggems::core::observer::GGEMSObserverRecord const &record) -> bool {
         return IsSourceRecord(record) && record.run_id != first_run_id;
       });
 
@@ -535,7 +536,7 @@ TEST_F(GGEMSRunTest, LegacyPrimaryCountSetterRejectsMultipleSources) {
   run.AddSource(source_b);
 
   ExpectGGEMSExceptionContaining(
-      [&run]() { run.SetPrimaryCount(5U); },
+      [&run]() -> void { run.SetPrimaryCount(5U); },
       "GGEMSRun::SetPrimaryCount is ambiguous with multiple sources.");
 
   EXPECT_EQ(source_a->GetPrimaryCount(), 0ULL);
@@ -638,6 +639,10 @@ TEST_F(GGEMSRunTest, RunsWithDisabledSlotBetweenActiveSources) {
     EXPECT_EQ(source_records[index].run_id, run_id);
     EXPECT_EQ(source_records[index].global_primary_id,
               static_cast<std::uint64_t>(index));
+    EXPECT_EQ(source_records[index].source_index, index < 2U ? 0U : 2U);
+    EXPECT_EQ(source_records[index].source_local_primary_id,
+              index < 2U ? static_cast<std::uint64_t>(index)
+                         : static_cast<std::uint64_t>(index - 2U));
     ExpectObserverSourceMatches(source_records[index],
                                 index < 2U ? expected_0 : expected_2);
   }
@@ -689,6 +694,9 @@ TEST_F(GGEMSRunTest, AlternatesActiveSourceAcrossSequentialRuns) {
     EXPECT_EQ(first_source_records[index].run_id, first_run_id);
     EXPECT_EQ(first_source_records[index].global_primary_id,
               static_cast<std::uint64_t>(index));
+    EXPECT_EQ(first_source_records[index].source_index, 0U);
+    EXPECT_EQ(first_source_records[index].source_local_primary_id,
+              static_cast<std::uint64_t>(index));
     ExpectObserverSourceMatches(first_source_records[index], expected_a);
   }
 
@@ -719,6 +727,9 @@ TEST_F(GGEMSRunTest, AlternatesActiveSourceAcrossSequentialRuns) {
 
     EXPECT_EQ(record.run_id, second_run_id);
     EXPECT_EQ(record.global_primary_id, static_cast<std::uint64_t>(index + 2U));
+    EXPECT_EQ(record.source_index, 1U);
+    EXPECT_EQ(record.source_local_primary_id,
+              static_cast<std::uint64_t>(index));
     ExpectObserverSourceMatches(record, expected_b);
   }
 }
@@ -732,8 +743,8 @@ TEST_F(GGEMSRunTest, RebuildsMultipleActiveSourceRangesAcrossSequentialRuns) {
   auto source_b = MakeLowEnergySource(5ULL);
 
   source_a->SetPositionPicoMeter(10LL, 20LL, 30LL)
-      .SetDirection(1.0f, 0.0f, 0.0f)
-      .SetWeight(0.25);
+      .SetDirection(1.0F, 0.0F, 0.0F)
+      .SetWeight(0.25F);
 
   source_b
       ->SetEmittedParticleType(
@@ -741,7 +752,7 @@ TEST_F(GGEMSRunTest, RebuildsMultipleActiveSourceRangesAcrossSequentialRuns) {
       .SetEnergyMilliElectronVolt(2'000'000ULL)
       .SetPositionPicoMeter(-40LL, 50LL, -60LL)
       .SetDirection(0.0F, -1.0F, 0.0F)
-      .SetWeight(0.75f);
+      .SetWeight(0.75F);
 
   auto expected_a = source_a->BuildRecord();
   auto expected_b = source_b->BuildRecord();
@@ -769,6 +780,10 @@ TEST_F(GGEMSRunTest, RebuildsMultipleActiveSourceRangesAcrossSequentialRuns) {
     EXPECT_EQ(first_source_records[index].run_id, first_run_id);
     EXPECT_EQ(first_source_records[index].global_primary_id,
               static_cast<std::uint64_t>(index));
+    EXPECT_EQ(first_source_records[index].source_index, index < 3U ? 0U : 1U);
+    EXPECT_EQ(first_source_records[index].source_local_primary_id,
+              index < 3U ? static_cast<std::uint64_t>(index)
+                         : static_cast<std::uint64_t>(index - 3U));
     ExpectObserverSourceMatches(first_source_records[index],
                                 index < 3U ? expected_a : expected_b);
   }
@@ -802,6 +817,10 @@ TEST_F(GGEMSRunTest, RebuildsMultipleActiveSourceRangesAcrossSequentialRuns) {
 
     EXPECT_EQ(record.run_id, second_run_id);
     EXPECT_EQ(record.global_primary_id, static_cast<std::uint64_t>(index + 8U));
+    EXPECT_EQ(record.source_index, index < 2U ? 0U : 1U);
+    EXPECT_EQ(record.source_local_primary_id,
+              index < 2U ? static_cast<std::uint64_t>(index)
+                         : static_cast<std::uint64_t>(index - 2U));
     ExpectObserverSourceMatches(record, index < 2U ? expected_a : expected_b);
   }
 }
@@ -835,7 +854,7 @@ TEST_F(GGEMSRunTest, RejectsAllDisabledSourcesBeforeReservation) {
 
   ASSERT_NO_THROW(run.Initialise());
 
-  ExpectGGEMSExceptionContaining([&run]() { run.Run(); },
+  ExpectGGEMSExceptionContaining([&run]() -> void { run.Run(); },
                                  "at least one active source");
 
   EXPECT_TRUE(observer->GetRecords().empty());
@@ -852,6 +871,10 @@ TEST_F(GGEMSRunTest, RejectsAllDisabledSourcesBeforeReservation) {
   ASSERT_EQ(source_records.size(), 2U);
   EXPECT_EQ(source_records[0U].global_primary_id, 0ULL);
   EXPECT_EQ(source_records[1U].global_primary_id, 1ULL);
+  EXPECT_EQ(source_records[0U].source_index, 1U);
+  EXPECT_EQ(source_records[1U].source_index, 1U);
+  EXPECT_EQ(source_records[0U].source_local_primary_id, 0ULL);
+  EXPECT_EQ(source_records[1U].source_local_primary_id, 1ULL);
 
   ExpectObserverSourceMatches(source_records[0U], expected_b);
   ExpectObserverSourceMatches(source_records[1U], expected_b);
@@ -890,6 +913,9 @@ TEST_F(GGEMSRunTest, RunsDuplicateSourceSlots) {
   for (std::size_t index = 0U; index < source_records.size(); ++index) {
     EXPECT_EQ(source_records[index].global_primary_id,
               static_cast<std::uint64_t>(index));
+    EXPECT_EQ(source_records[index].source_index,
+              static_cast<std::uint32_t>(index));
+    EXPECT_EQ(source_records[index].source_local_primary_id, 0ULL);
     ExpectObserverSourceMatches(source_records[index], expected);
   }
 }

@@ -8,15 +8,20 @@
 #include <limits>
 #include <utility>
 #include <cstdint>
+#include <cstddef>
 
 #include "GGEMS/core/GGEMSRun.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
+#include "GGEMS/core/sources/GGEMSSourceDescription.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
 #include "GGEMS/core/transport/GGEMSTransportWorkloadPlan.hh"
+#include "GGEMS/core/transport/GGEMSTransportCounters.hh"
+#include "GGEMS/core/transport/GGEMSDummyTransportWorkload.hh"
 #include "GGEMS/core/observer/GGEMSTransportObserver.hh"
+#include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 
 using namespace ggems::units;
 
@@ -24,8 +29,9 @@ namespace ggems::core {
 
 namespace {
 
-void AccumulateTransportCounters(transport::GGEMSTransportCounters &dst,
-                                 transport::GGEMSTransportCounters const &src) {
+auto AccumulateTransportCounters(transport::GGEMSTransportCounters &dst,
+                                 transport::GGEMSTransportCounters const &src)
+    -> void {
   dst.consumed_primary_count += src.consumed_primary_count;
   dst.completed_history_count += src.completed_history_count;
   dst.terminal_particle_count += src.terminal_particle_count;
@@ -52,7 +58,7 @@ GGEMSRun::GGEMSRun() : sources_{std::make_shared<sources::GGEMSSource>()} {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSRun::SetRandom(std::shared_ptr<random::GGEMSRandom> random) {
+auto GGEMSRun::SetRandom(std::shared_ptr<random::GGEMSRandom> random) -> void {
   GGEMS_CHECK_RECOVERABLE(random != nullptr,
                           "Cannot attach a null GGEMSRandom to GGEMSRun.");
 
@@ -67,7 +73,7 @@ void GGEMSRun::SetRandom(std::shared_ptr<random::GGEMSRandom> random) {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSRun::SetSource(std::shared_ptr<sources::GGEMSSource> source) {
+auto GGEMSRun::SetSource(std::shared_ptr<sources::GGEMSSource> source) -> void {
   GGEMS_CHECK_RECOVERABLE(source != nullptr,
                           "Cannot attach a null GGEMSSource to GGEMSRun.");
 
@@ -83,7 +89,7 @@ void GGEMSRun::SetSource(std::shared_ptr<sources::GGEMSSource> source) {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSRun::AddSource(std::shared_ptr<sources::GGEMSSource> source) {
+auto GGEMSRun::AddSource(std::shared_ptr<sources::GGEMSSource> source) -> void {
   GGEMS_CHECK_RECOVERABLE(source != nullptr,
                           "Cannot attach a null GGEMSSource to GGEMSRun.");
 
@@ -103,8 +109,8 @@ void GGEMSRun::AddSource(std::shared_ptr<sources::GGEMSSource> source) {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSRun::SetObserver(
-    std::shared_ptr<observer::GGEMSTransportObserver> observer) {
+auto GGEMSRun::SetObserver(
+    std::shared_ptr<observer::GGEMSTransportObserver> observer) -> void {
   GGEMS_CHECK_RECOVERABLE(
       observer != nullptr,
       "Cannot attach a null GGEMSTransportObserver to GGEMSRun.");
@@ -119,7 +125,7 @@ void GGEMSRun::SetObserver(
 
 // -----------------------------------------------------------------------------
 
-void GGEMSRun::SetPrimaryCount(std::uint32_t primary_count) {
+auto GGEMSRun::SetPrimaryCount(std::uint32_t primary_count) -> void {
   GGEMS_CHECK_RECOVERABLE(!initialised_,
                           "Cannot change primary count after Initialise.");
 
@@ -136,7 +142,7 @@ void GGEMSRun::SetPrimaryCount(std::uint32_t primary_count) {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSRun::SetWorkerCount(std::uint32_t worker_count) {
+auto GGEMSRun::SetWorkerCount(std::uint32_t worker_count) -> void {
   GGEMS_CHECK_RECOVERABLE(worker_count > 0ULL,
                           "GGEMSRun worker count must be non-zero.");
 
@@ -148,7 +154,7 @@ void GGEMSRun::SetWorkerCount(std::uint32_t worker_count) {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSRun::Initialise() {
+auto GGEMSRun::Initialise() -> void {
   GGEMS_CHECK_RECOVERABLE(!initialised_,
                           "GGEMSRun::Initialise called more than once.");
 
@@ -165,7 +171,7 @@ void GGEMSRun::Initialise() {
           static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()),
       "Dummy transport currently supports at most uint32_t source slots.");
 
-  std::uint32_t source_count = static_cast<std::uint32_t>(sources_.size());
+  auto source_count = static_cast<std::uint32_t>(sources_.size());
 
   GGEMS_CHECK_RECOVERABLE(
       random_ != nullptr,
@@ -184,12 +190,6 @@ void GGEMSRun::Initialise() {
              random_->GetEngineName(), random_->GetSeed());
 
   primary_stream_.Initialise();
-
-  for (std::size_t source_index = 0U; source_index < sources_.size();
-       ++source_index) {
-    GGEMS_INFO("Source", "Source slot {}.", source_index);
-    sources_[source_index]->Verbose();
-  }
 
   std::uint32_t observer_record_capacity =
       observer_ != nullptr ? observer_->GetRecordCapacity() : 1U;
@@ -219,12 +219,16 @@ void GGEMSRun::Initialise() {
   next_run_id_ = 0ULL;
   initialised_ = true;
 
+  GGEMS_INFO("Source",
+             "GGEMSRun source collection initialised with {} slot(s).",
+             source_count);
+
   GGEMS_INFO("Core", "GGEMSRun Initialised.");
 }
 
 // -----------------------------------------------------------------------------
 
-void GGEMSRun::Run() {
+auto GGEMSRun::Run() -> void {
   GGEMS_CHECK_RECOVERABLE(initialised_,
                           "GGEMSRun::Run called before Initialise.");
 
@@ -266,9 +270,18 @@ void GGEMSRun::Run() {
 
   auto primary_view = primary_stream_.PrepareRun(run_id, total_primary_count);
 
-  std::uint64_t reserved_primary_count = primary_view.source_primary_count;
+  std::uint64_t const reserved_primary_count =
+      primary_view.source_primary_count;
 
-  std::uint32_t projection_primary_count =
+  for (std::size_t source_index = 0U; source_index < source_records.size();
+       ++source_index) {
+    GGEMS_INFOEX("Source", 1, "Run {} source snapshot: {}", run_id,
+                 sources::DescribeSourceRunSlot(source_index,
+                                                source_records[source_index],
+                                                source_ranges[source_index]));
+  }
+
+  auto projection_primary_count =
       static_cast<std::uint32_t>(reserved_primary_count);
 
   GGEMS_INFO("Core", "GGEMSRun projection {} started.", run_id);
@@ -342,7 +355,7 @@ void GGEMSRun::Run() {
 
       transport_threads.emplace_back(
           [&, plan_index, context_index,
-           config = std::move(transport_configs[plan_index])]() {
+           config = std::move(transport_configs[plan_index])]() -> void {
             try {
               reports[plan_index] =
                   dummy_transports_[context_index]->Run(config);

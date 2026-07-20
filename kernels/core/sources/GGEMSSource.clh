@@ -17,7 +17,7 @@ static inline ulong GGEMS_SourceMakeBaseTrackId(ulong global_primary_id) {
 /* -------------------------------------------------------------------------- */
 
 static inline ulong
-GGEMS_SourceSampleTimePs(ulong global_primary_id,
+GGEMS_SourceSampleTimePs(ulong source_local_primary_id,
                          __global GGEMSSourceRecord const *source) {
   if (source->time_stop_ps <= source->time_start_ps) {
     return source->time_start_ps;
@@ -25,7 +25,7 @@ GGEMS_SourceSampleTimePs(ulong global_primary_id,
 
   ulong duration_ps = source->time_stop_ps - source->time_start_ps;
 
-  return source->time_start_ps + (global_primary_id % duration_ps);
+  return source->time_start_ps + (source_local_primary_id % duration_ps);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -33,7 +33,7 @@ GGEMS_SourceSampleTimePs(ulong global_primary_id,
 /* -------------------------------------------------------------------------- */
 
 static inline GGEMSParticleState
-GGEMS_SourceReadAionino(ulong global_primary_id,
+GGEMS_SourceReadAionino(ulong global_primary_id, ulong source_local_primary_id,
                         __global GGEMSSourceRecord const *source) {
   GGEMSParticleState particle;
 
@@ -42,7 +42,7 @@ GGEMS_SourceReadAionino(ulong global_primary_id,
   particle.global_particle_id = global_primary_id;
   particle.track_id = base_track_id;
   particle.parent_track_id = GGEMS_INVALID_ID_U64;
-  particle.time_ps = GGEMS_SourceSampleTimePs(global_primary_id, source);
+  particle.time_ps = GGEMS_SourceSampleTimePs(source_local_primary_id, source);
 
   particle.position_x_pm = source->position_x_pm;
   particle.position_y_pm = source->position_y_pm;

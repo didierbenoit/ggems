@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <span>
 #include <vector>
+#include <array>
 
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/core/observer/GGEMSObserverTypes.hh"
@@ -11,16 +12,19 @@
 namespace ggems::render {
 
 struct GGEMSParticleTracePoint {
-  float x_m{0.0f};
-  float y_m{0.0f};
-  float z_m{0.0f};
+  float x_m{0.0F};
+  float y_m{0.0F};
+  float z_m{0.0F};
 };
 
 struct GGEMSParticleTraceSegment {
   std::uint64_t run_id{0ULL};
   std::uint64_t global_primary_id{core::particles::k_invalid_id_u64};
+  std::uint64_t source_local_primary_id{core::particles::k_invalid_id_u64};
   std::uint64_t track_id{core::particles::k_invalid_id_u64};
   std::uint64_t parent_track_id{core::particles::k_invalid_id_u64};
+
+  std::uint32_t source_index{core::particles::k_invalid_id_u32};
 
   core::particles::GGEMSParticleType particle_type{
       core::particles::GGEMSParticleType::Unknown};
@@ -38,16 +42,19 @@ struct GGEMSParticleTraceSegment {
 };
 
 struct GGEMSParticleTraceVertex {
-  float position[3]{};
-  float colour[4]{};
+  std::array<float, 3U> position{};
+  std::array<float, 4U> colour{};
 };
 
-[[nodiscard]] GGEMSParticleTracePoint ToParticleTracePointMetre(
-    core::observer::GGEMSObserverRecord const &record) noexcept;
+[[nodiscard]] auto ToParticleTracePointMetre(
+    core::observer::GGEMSObserverRecord const &record) noexcept
+    -> GGEMSParticleTracePoint;
 
-[[nodiscard]] std::vector<GGEMSParticleTraceSegment> BuildParticleTraceSegments(
-    std::span<core::observer::GGEMSObserverRecord const> records);
+[[nodiscard]] auto BuildParticleTraceSegments(
+    std::span<core::observer::GGEMSObserverRecord const> records)
+    -> std::vector<GGEMSParticleTraceSegment>;
 
-[[nodiscard]] std::vector<GGEMSParticleTraceVertex>
-BuildParticleTraceVertices(std::span<GGEMSParticleTraceSegment const> segments);
+[[nodiscard]] auto
+BuildParticleTraceVertices(std::span<GGEMSParticleTraceSegment const> segments)
+    -> std::vector<GGEMSParticleTraceVertex>;
 } // namespace ggems::render

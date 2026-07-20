@@ -27,8 +27,8 @@ public:
 
   GGEMSRun(GGEMSRun const &) = delete;
   GGEMSRun(GGEMSRun &&) = delete;
-  GGEMSRun &operator=(GGEMSRun const &) = delete;
-  GGEMSRun &operator=(GGEMSRun &&) = delete;
+  auto operator=(GGEMSRun const &) -> GGEMSRun & = delete;
+  auto operator=(GGEMSRun &&) -> GGEMSRun & = delete;
 
   void Initialise();
   void Run();

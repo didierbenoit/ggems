@@ -21,14 +21,14 @@ struct GGEMSSourceRecord {
       particles::ToKernelParticleType(particles::GGEMSParticleType::Gamma)};
   std::uint32_t flags{0U};
   std::uint32_t reserved_0{0U};
-  float direction_x{0.0f};
-  float direction_y{0.0f};
-  float direction_z{1.0f};
-  float direction_w{0.0f};
-  float weight{1.0f};
-  float reserved_1{0.0f};
-  float reserved_2{0.0f};
-  float reserved_3{0.0f};
+  float direction_x{0.0F};
+  float direction_y{0.0F};
+  float direction_z{1.0F};
+  float direction_w{0.0F};
+  float weight{1.0F};
+  float reserved_1{0.0F};
+  float reserved_2{0.0F};
+  float reserved_3{0.0F};
 };
 
 static_assert(std::is_standard_layout_v<GGEMSSourceRecord>);

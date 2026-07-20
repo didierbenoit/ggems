@@ -175,6 +175,10 @@ __kernel void particle_dummy_stream_branching_transport(
       continue;
     }
 
+    ulong source_local_primary_id =
+        projection_primary_id -
+        source_ranges[selected_source_index].projection_primary_begin;
+
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER
     uint capture_history = GGEMS_ObserverShouldCapturePrimary(
         observer_config, projection_primary_id, global_primary_id);
@@ -191,15 +195,15 @@ __kernel void particle_dummy_stream_branching_transport(
     __global GGEMSSourceRecord const *source_record =
         &source_records[selected_source_index];
 
-    GGEMSParticleState current =
-        GGEMS_SourceReadAionino(global_primary_id, source_record);
+    GGEMSParticleState current = GGEMS_SourceReadAionino(
+        global_primary_id, source_local_primary_id, source_record);
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER
     if (capture_history != 0) {
-      GGEMS_ObserverRecordParticle(observer_counters, observer_records,
-                                   observer_record_capacity,
-                                   GGEMS_OBSERVER_RECORD_KIND_SOURCE, run_id,
-                                   global_primary_id, current);
+      GGEMS_ObserverRecordParticle(
+          observer_counters, observer_records, observer_record_capacity,
+          GGEMS_OBSERVER_RECORD_KIND_SOURCE, run_id, global_primary_id,
+          source_local_primary_id, selected_source_index, current);
     }
 #endif
 
@@ -220,10 +224,10 @@ __kernel void particle_dummy_stream_branching_transport(
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER
         if (capture_history != 0U) {
-          GGEMS_ObserverRecordParticle(observer_counters, observer_records,
-                                       observer_record_capacity,
-                                       GGEMS_OBSERVER_RECORD_KIND_STEP, run_id,
-                                       global_primary_id, current);
+          GGEMS_ObserverRecordParticle(
+              observer_counters, observer_records, observer_record_capacity,
+              GGEMS_OBSERVER_RECORD_KIND_STEP, run_id, global_primary_id,
+              source_local_primary_id, selected_source_index, current);
         }
 #endif
 
@@ -259,7 +263,8 @@ __kernel void particle_dummy_stream_branching_transport(
                     observer_counters, observer_records,
                     observer_record_capacity,
                     GGEMS_OBSERVER_RECORD_KIND_SECONDARY_STEP, run_id,
-                    global_primary_id, current);
+                    global_primary_id, source_local_primary_id,
+                    selected_source_index, current);
               }
 #endif
 
@@ -293,7 +298,8 @@ __kernel void particle_dummy_stream_branching_transport(
                     observer_counters, observer_records,
                     observer_record_capacity,
                     GGEMS_OBSERVER_RECORD_KIND_SECONDARY_STEP, run_id,
-                    global_primary_id, current);
+                    global_primary_id, source_local_primary_id,
+                    selected_source_index, current);
               }
 #endif
 
@@ -310,10 +316,10 @@ __kernel void particle_dummy_stream_branching_transport(
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER
         if (capture_history != 0U) {
-          GGEMS_ObserverRecordParticle(observer_counters, observer_records,
-                                       observer_record_capacity,
-                                       GGEMS_OBSERVER_RECORD_KIND_TERMINAL,
-                                       run_id, global_primary_id, current);
+          GGEMS_ObserverRecordParticle(
+              observer_counters, observer_records, observer_record_capacity,
+              GGEMS_OBSERVER_RECORD_KIND_TERMINAL, run_id, global_primary_id,
+              source_local_primary_id, selected_source_index, current);
         }
 #endif
 

@@ -42,6 +42,7 @@ typedef struct GGEMSObserverRecord {
   ulong run_id;
   ulong global_primary_id;
 
+  ulong source_local_primary_id;
   ulong global_particle_id;
   ulong track_id;
   ulong parent_track_id;
@@ -64,7 +65,7 @@ typedef struct GGEMSObserverRecord {
   ulong energy_milli_eV;
 
   float weight;
-  float reserved_0;
+  uint source_index;
 } GGEMSObserverRecord;
 
 /* -------------------------------------------------------------------------- */
@@ -123,6 +124,7 @@ GGEMS_ObserverRecordParticle(volatile __global GGEMSObserverCounters *counters,
                              __global GGEMSObserverRecord *records,
                              uint record_capacity, uint record_kind,
                              ulong run_id, ulong global_primary_id,
+                             ulong source_local_primary_id, uint source_index,
                              GGEMSParticleState particle) {
   uint record_index = GGEMS_ObserverReserveRecord(counters, record_capacity);
 
@@ -134,6 +136,7 @@ GGEMS_ObserverRecordParticle(volatile __global GGEMSObserverCounters *counters,
 
   record->run_id = run_id;
   record->global_primary_id = global_primary_id;
+  record->source_local_primary_id = source_local_primary_id;
 
   record->global_particle_id = particle.global_particle_id;
   record->track_id = particle.track_id;
@@ -157,7 +160,7 @@ GGEMS_ObserverRecordParticle(volatile __global GGEMSObserverCounters *counters,
   record->energy_milli_eV = particle.energy_milli_eV;
 
   record->weight = particle.weight;
-  record->reserved_0 = 0.0f;
+  record->source_index = source_index;
 }
 
 #endif

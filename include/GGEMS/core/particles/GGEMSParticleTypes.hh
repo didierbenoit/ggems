@@ -27,13 +27,13 @@ enum class GGEMSParticleStatus : std::uint32_t {
   Absorbed = 4U
 };
 
-constexpr std::uint32_t
-ToKernelParticleType(GGEMSParticleType particle_type) noexcept {
+constexpr auto ToKernelParticleType(GGEMSParticleType particle_type) noexcept
+    -> std::uint32_t {
   return static_cast<std::uint32_t>(particle_type);
 }
 
-constexpr GGEMSParticleType
-FromKernelParticleType(std::uint32_t particle_type) noexcept {
+constexpr auto FromKernelParticleType(std::uint32_t particle_type) noexcept
+    -> GGEMSParticleType {
   switch (particle_type) {
   case 1U:
     return GGEMSParticleType::Aionino;
@@ -54,15 +54,15 @@ FromKernelParticleType(std::uint32_t particle_type) noexcept {
   }
 }
 
-constexpr std::uint32_t
-ToKernelParticleStatus(GGEMSParticleStatus status) noexcept {
+constexpr auto ToKernelParticleStatus(GGEMSParticleStatus status) noexcept
+    -> std::uint32_t {
   return static_cast<std::uint32_t>(status);
 }
 
-std::string ToLongName(GGEMSParticleType particle_type);
+auto ToLongName(GGEMSParticleType particle_type) -> std::string;
 
-std::string ToShortName(GGEMSParticleType particle_type);
+auto ToShortName(GGEMSParticleType particle_type) -> std::string;
 
-GGEMSParticleType ParseParticleType(std::string_view particle_name);
+auto ParseParticleType(std::string_view particle_name) -> GGEMSParticleType;
 
 } // namespace ggems::core::particles

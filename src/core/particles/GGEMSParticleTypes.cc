@@ -1,6 +1,7 @@
 #include <cctype>
 #include <format>
 #include <string>
+#include <string_view>
 
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/GGEMSException.hh"
@@ -9,21 +10,20 @@
 namespace ggems::core::particles {
 namespace {
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-std::string NormaliseParticleName(std::string_view particle_name) {
+auto NormaliseParticleName(std::string_view particle_name) -> std::string {
   std::string normalised;
   normalised.reserve(particle_name.size());
 
-  for (char c : particle_name) {
-    if (c == ' ' || c == '_') {
+  for (char character : particle_name) {
+    if (character == ' ' || character == '_') {
       continue;
     }
 
     normalised.push_back(
-        static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
+        static_cast<char>(std::tolower(static_cast<unsigned char>(character))));
   }
 
   return normalised;
@@ -31,11 +31,10 @@ std::string NormaliseParticleName(std::string_view particle_name) {
 
 } // namespace
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-std::string ToLongName(GGEMSParticleType particle_type) {
+auto ToLongName(GGEMSParticleType particle_type) -> std::string {
   switch (particle_type) {
   case GGEMSParticleType::Unknown:
     return "Unknown";
@@ -59,11 +58,10 @@ std::string ToLongName(GGEMSParticleType particle_type) {
   return "Unknown";
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-std::string ToShortName(GGEMSParticleType particle_type) {
+auto ToShortName(GGEMSParticleType particle_type) -> std::string {
   switch (particle_type) {
   case GGEMSParticleType::Unknown:
     return "?";
@@ -87,11 +85,10 @@ std::string ToShortName(GGEMSParticleType particle_type) {
   return "?";
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-GGEMSParticleType ParseParticleType(std::string_view particle_name) {
+auto ParseParticleType(std::string_view particle_name) -> GGEMSParticleType {
   std::string normalised = NormaliseParticleName(particle_name);
 
   if (normalised == "aionino" || normalised == "l") {
