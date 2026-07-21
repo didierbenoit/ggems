@@ -1,3 +1,5 @@
+#include <array>
+#include <cstddef>
 #include <vector>
 #include <cstdint>
 #include <span>
@@ -8,6 +10,7 @@
 #include "GGEMS/core/observer/GGEMSObserverTypes.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
+#include "GGEMS/render/GGEMSParticleColours.hh"
 
 namespace {
 
@@ -49,6 +52,38 @@ using ggems::core::particles::ToKernelParticleType;
   record.position_z_pm = z_pm;
 
   return record;
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto MakeSegment(std::uint32_t source_index,
+                               GGEMSParticleType particle_type,
+                               float position_x)
+    -> ggems::render::GGEMSParticleTraceSegment {
+  return ggems::render::GGEMSParticleTraceSegment{
+      .source_index = source_index,
+      .particle_type = particle_type,
+      .begin = ggems::render::GGEMSParticleTracePoint{.x_m = position_x,
+                                                      .y_m = 0.0F,
+                                                      .z_m = 0.0F},
+      .end = ggems::render::GGEMSParticleTracePoint{
+          .x_m = position_x + 0.5F, .y_m = 1.0F, .z_m = 0.0F}};
+}
+
+// =============================================================================
+// =============================================================================
+
+auto ExpectParticleColour(ggems::render::GGEMSParticleTraceVertex const &vertex,
+                          GGEMSParticleType particle_type) -> void {
+  ggems::render::RGB const rgb = ggems::render::GetParticleRGB(particle_type);
+
+  constexpr float k_inverse_255{1.0F / 255.0F};
+
+  EXPECT_FLOAT_EQ(vertex.colour[0], static_cast<float>(rgb.r) * k_inverse_255);
+  EXPECT_FLOAT_EQ(vertex.colour[1], static_cast<float>(rgb.g) * k_inverse_255);
+  EXPECT_FLOAT_EQ(vertex.colour[2], static_cast<float>(rgb.b) * k_inverse_255);
+  EXPECT_FLOAT_EQ(vertex.colour[3], 1.0F);
 }
 
 // =============================================================================
@@ -243,4 +278,139 @@ TEST(GGEMSParticleTrace, SegmentsBuildLineVertices) {
   EXPECT_FLOAT_EQ(vertices[0].colour[1], vertices[1].colour[1]);
   EXPECT_FLOAT_EQ(vertices[0].colour[2], vertices[1].colour[2]);
 }
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSParticleTrace, InterleavedSegmentsAreGroupedBySourceIndex) {
+  std::array<ggems::render::GGEMSParticleTraceSegment, 4U> segments{
+      MakeSegment(2U, GGEMSParticleType::Gamma, 20.0F),
+      MakeSegment(0U, GGEMSParticleType::Electron, 0.0F),
+      MakeSegment(2U, GGEMSParticleType::Proton, 21.0F),
+      MakeSegment(1U, GGEMSParticleType::Positron, 10.0F)};
+
+  auto draw_data = ggems::render::BuildParticleTraceDrawData(segments);
+
+  ASSERT_EQ(draw_data.vertices.size(), 8U);
+  ASSERT_EQ(draw_data.draw_ranges.size(), 3U);
+
+  EXPECT_EQ(draw_data.draw_ranges[0U].source_index, 0U);
+  EXPECT_EQ(draw_data.draw_ranges[0U].first_vertex, 0U);
+  EXPECT_EQ(draw_data.draw_ranges[0U].vertex_count, 2U);
+
+  EXPECT_EQ(draw_data.draw_ranges[1U].source_index, 1U);
+  EXPECT_EQ(draw_data.draw_ranges[1U].first_vertex, 2U);
+  EXPECT_EQ(draw_data.draw_ranges[1U].vertex_count, 2U);
+
+  EXPECT_EQ(draw_data.draw_ranges[2U].source_index, 2U);
+  EXPECT_EQ(draw_data.draw_ranges[2U].first_vertex, 4U);
+  EXPECT_EQ(draw_data.draw_ranges[2U].vertex_count, 4U);
+
+  EXPECT_FLOAT_EQ(draw_data.vertices[0U].position[0], 0.0F);
+  EXPECT_FLOAT_EQ(draw_data.vertices[2U].position[0], 10.0F);
+  EXPECT_FLOAT_EQ(draw_data.vertices[4U].position[0], 20.0F);
+  EXPECT_FLOAT_EQ(draw_data.vertices[6U].position[0], 21.0F);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSParticleTrace, DrawRangesAreContiguous) {
+  std::array<ggems::render::GGEMSParticleTraceSegment, 5U> segments{
+      MakeSegment(1U, GGEMSParticleType::Gamma, 1.0F),
+      MakeSegment(0U, GGEMSParticleType::Electron, 2.0F),
+      MakeSegment(2U, GGEMSParticleType::Positron, 3.0F),
+      MakeSegment(1U, GGEMSParticleType::Proton, 4.0F),
+      MakeSegment(0U, GGEMSParticleType::Neutron, 5.0F)};
+
+  auto draw_data = ggems::render::BuildParticleTraceDrawData(segments);
+
+  ASSERT_FALSE(draw_data.draw_ranges.empty());
+
+  std::size_t expected_first_vertex{0U};
+
+  for (auto const &draw_range : draw_data.draw_ranges) {
+    EXPECT_EQ(draw_range.first_vertex, expected_first_vertex);
+    expected_first_vertex += draw_range.vertex_count;
+  }
+
+  EXPECT_EQ(expected_first_vertex, draw_data.vertices.size());
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSParticleTrace, GroupingPreservesParticleColours) {
+  std::array<ggems::render::GGEMSParticleTraceSegment, 3U> segments{
+      MakeSegment(1U, GGEMSParticleType::Gamma, 1.0F),
+      MakeSegment(0U, GGEMSParticleType::Electron, 2.0F),
+      MakeSegment(1U, GGEMSParticleType::Proton, 3.0F)};
+
+  auto draw_data = ggems::render::BuildParticleTraceDrawData(segments);
+
+  ASSERT_EQ(draw_data.vertices.size(), 6U);
+
+  ExpectParticleColour(draw_data.vertices[0U], GGEMSParticleType::Electron);
+  ExpectParticleColour(draw_data.vertices[1U], GGEMSParticleType::Electron);
+  ExpectParticleColour(draw_data.vertices[2U], GGEMSParticleType::Gamma);
+  ExpectParticleColour(draw_data.vertices[3U], GGEMSParticleType::Gamma);
+  ExpectParticleColour(draw_data.vertices[4U], GGEMSParticleType::Proton);
+  ExpectParticleColour(draw_data.vertices[5U], GGEMSParticleType::Proton);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSParticleTraceVisibility,
+     ReconciliationPreservesOnlyRetainedSourcePreferences) {
+  ggems::render::GGEMSParticleTraceVisibility visibility{};
+  visibility.ReconcileSourceCount(3U);
+
+  EXPECT_TRUE(visibility.IsSourceVisible(0U));
+  EXPECT_TRUE(visibility.IsSourceVisible(1U));
+  EXPECT_TRUE(visibility.IsSourceVisible(2U));
+
+  visibility.SetSourceVisible(1U, false);
+  visibility.SetSourceVisible(2U, false);
+  visibility.ReconcileSourceCount(5U);
+
+  EXPECT_TRUE(visibility.IsSourceVisible(0U));
+  EXPECT_FALSE(visibility.IsSourceVisible(1U));
+  EXPECT_FALSE(visibility.IsSourceVisible(2U));
+  EXPECT_TRUE(visibility.IsSourceVisible(3U));
+  EXPECT_TRUE(visibility.IsSourceVisible(4U));
+
+  visibility.ReconcileSourceCount(2U);
+  visibility.ReconcileSourceCount(3U);
+
+  EXPECT_FALSE(visibility.IsSourceVisible(1U));
+  EXPECT_TRUE(visibility.IsSourceVisible(2U));
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSParticleTraceVisibility,
+     GlobalAndIndividualFiltersRemainIndependent) {
+  ggems::render::GGEMSParticleTraceVisibility visibility{};
+  visibility.ReconcileSourceCount(2U);
+  visibility.SetSourceVisible(1U, false);
+
+  EXPECT_TRUE(visibility.ShouldDraw(0U));
+  EXPECT_FALSE(visibility.ShouldDraw(1U));
+
+  visibility.SetGlobalVisible(false);
+
+  EXPECT_FALSE(visibility.ShouldDraw(0U));
+  EXPECT_FALSE(visibility.ShouldDraw(1U));
+  EXPECT_TRUE(visibility.IsSourceVisible(0U));
+  EXPECT_FALSE(visibility.IsSourceVisible(1U));
+
+  visibility.SetGlobalVisible(true);
+
+  EXPECT_TRUE(visibility.ShouldDraw(0U));
+  EXPECT_FALSE(visibility.ShouldDraw(1U));
+  EXPECT_TRUE(visibility.ShouldDraw(99U));
+}
+
 } // namespace

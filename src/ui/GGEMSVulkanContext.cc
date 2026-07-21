@@ -1,11 +1,8 @@
-#include "GGEMSVulkanContext.hh"
-
 #include <array>
 #include <cstdio>
 #include <cmath>
 #include <cstring>
 #include <format>
-#include <ranges>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -16,6 +13,7 @@
 #include <optional>
 #include <utility>
 #include <string_view>
+#include <mutex>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -24,10 +22,17 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 
+#include "GGEMSImGuiTheme.hh"
+#include "GGEMSVulkanContext.hh"
+#include "GGEMSVulkanDeviceSelection.hh"
+#include "GGEMSDeviceStatus.hh"
+
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
-#include "GGEMSImGuiTheme.hh"
 #include "GGEMS/render/GGEMSColourNames.hh"
+#include "GGEMS/render/GGEMSColour.hh"
+#include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
+#include "GGEMS/render/GGEMSParticleTrace.hh"
 
 #if defined(_WIN32)
 #include "GGEMSVulkanDisplayAdapterWin32.hh"
@@ -50,17 +55,18 @@ constexpr std::array<char const *, 1> k_validation_layers{
 constexpr std::array<char const *, 1> k_required_device_extensions{
     vk::KHRSwapchainExtensionName};
 
-constexpr float k_imgui_min_ui_scale{1.0f};
-constexpr float k_imgui_max_ui_scale{2.5f};
-constexpr float k_imgui_base_font_size{15.0f};
+constexpr float k_imgui_min_ui_scale{1.0F};
+constexpr float k_imgui_max_ui_scale{2.5F};
+constexpr float k_imgui_base_font_size{15.0F};
 
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] float NormaliseImGuiUIScale(float content_scale_x,
-                                          float content_scale_y) noexcept {
+[[nodiscard]] auto NormaliseImGuiUIScale(float content_scale_x,
+                                         float content_scale_y) noexcept
+    -> float {
   if (!std::isfinite(content_scale_x) || !std::isfinite(content_scale_y) ||
-      content_scale_x <= 0.0f || content_scale_y <= 0.0f) {
+      content_scale_x <= 0.0F || content_scale_y <= 0.0F) {
     return k_imgui_min_ui_scale;
   }
 
@@ -71,7 +77,8 @@ constexpr float k_imgui_base_font_size{15.0f};
 // =============================================================================
 // =============================================================================
 
-void AppendRejectionReason(std::string &diagnostic, std::string_view reason) {
+auto AppendRejectionReason(std::string &diagnostic, std::string_view reason)
+    -> void {
   if (!diagnostic.empty()) {
     diagnostic += "; ";
   }
@@ -81,17 +88,17 @@ void AppendRejectionReason(std::string &diagnostic, std::string_view reason) {
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] std::string_view YesNo(bool value) noexcept {
+[[nodiscard]] auto YesNo(bool value) noexcept -> std::string_view {
   return value ? "yes" : "no";
 }
 
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] std::string_view DisplayMatchLabel(
+[[nodiscard]] auto DisplayMatchLabel(
     ggems::ui::detail::GGEMSVulkanDeviceCandidate const &candidate,
     std::optional<ggems::ui::detail::GGEMSVulkanDisplayAdapter> const
-        &display_adapter) noexcept {
+        &display_adapter) noexcept -> std::string_view {
   if (!display_adapter.has_value()) {
     return "unavailable";
   }
@@ -108,7 +115,8 @@ void AppendRejectionReason(std::string &diagnostic, std::string_view reason) {
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] std::optional<std::filesystem::path> FindFirstExistingFont() {
+[[nodiscard]] auto FindFirstExistingFont()
+    -> std::optional<std::filesystem::path> {
   std::vector<std::filesystem::path> candidates{};
 
   if (char const *local_app_data = std::getenv("LOCALAPPDATA");
@@ -162,8 +170,8 @@ void AppendRejectionReason(std::string &diagnostic, std::string_view reason) {
 // =============================================================================
 // =============================================================================
 
-std::array<float, 4U>
-ToVulkanClearColour(ggems::render::ColourKey const &colour) {
+auto ToVulkanClearColour(ggems::render::ColourKey const &colour)
+    -> std::array<float, 4U> {
   ggems::render::RGB const rgb =
       ggems::render::GetColourRGB(colour.family, colour.shade, colour.variant);
 
@@ -272,12 +280,22 @@ void GGEMSVulkanContext::Initialise(
 
 // -----------------------------------------------------------------------------
 
-bool GGEMSVulkanContext::IsInitialised() const noexcept { return initialised_; }
+auto GGEMSVulkanContext::IsInitialised() const noexcept -> bool {
+  return initialised_;
+}
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::SubmitParticleTraceSegments(
-    std::vector<ggems::render::GGEMSParticleTraceSegment> segments) {
+auto GGEMSVulkanContext::SubmitSourceRunSnapshot(
+    core::sources::GGEMSSourceRunSnapshot snapshot) -> void {
+  std::scoped_lock lock{pending_source_run_snapshot_mutex_};
+  pending_source_run_snapshot_ = std::move(snapshot);
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSVulkanContext::SubmitParticleTraceSegments(
+    std::vector<ggems::render::GGEMSParticleTraceSegment> segments) -> void {
   std::scoped_lock lock{pending_particle_trace_mutex_};
 
   pending_particle_trace_segments_ = std::move(segments);
@@ -287,7 +305,7 @@ void GGEMSVulkanContext::SubmitParticleTraceSegments(
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::ClearParticleTraces() {
+auto GGEMSVulkanContext::ClearParticleTraces() -> void {
   std::scoped_lock lock{pending_particle_trace_mutex_};
 
   pending_particle_trace_segments_.clear();
@@ -297,7 +315,7 @@ void GGEMSVulkanContext::ClearParticleTraces() {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::CreateInstance() {
+auto GGEMSVulkanContext::CreateInstance() -> void {
   constexpr vk::ApplicationInfo application_info{
       .pApplicationName = "GGEMS GuiMode",
       .applicationVersion = VK_MAKE_API_VERSION(0, 2, 0, 0),
@@ -317,7 +335,8 @@ void GGEMSVulkanContext::CreateInstance() {
 
   for (char const *required_layer : required_layers) {
     bool is_available = std::ranges::any_of(
-        available_layers, [required_layer](vk::LayerProperties const &layer) {
+        available_layers,
+        [required_layer](vk::LayerProperties const &layer) -> bool {
           return std::strcmp(layer.layerName, required_layer) == 0;
         });
 
@@ -336,7 +355,7 @@ void GGEMSVulkanContext::CreateInstance() {
   for (char const *required_extension : required_extensions) {
     bool is_available = std::ranges::any_of(
         available_extensions,
-        [required_extension](vk::ExtensionProperties const &extension) {
+        [required_extension](vk::ExtensionProperties const &extension) -> bool {
           return std::strcmp(extension.extensionName, required_extension) == 0;
         });
 
@@ -359,8 +378,8 @@ void GGEMSVulkanContext::CreateInstance() {
 
 // -----------------------------------------------------------------------------
 
-std::vector<char const *>
-GGEMSVulkanContext::GetRequiredInstanceExtensions() const {
+auto GGEMSVulkanContext::GetRequiredInstanceExtensions()
+    -> std::vector<char const *> {
   std::uint32_t extension_count{0};
 
   char const **glfw_extensions =
@@ -383,7 +402,7 @@ GGEMSVulkanContext::GetRequiredInstanceExtensions() const {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::SetupDebugMessenger() {
+auto GGEMSVulkanContext::SetupDebugMessenger() -> void {
   if (!k_enable_validation_layers) {
     return;
   }
@@ -407,7 +426,7 @@ void GGEMSVulkanContext::SetupDebugMessenger() {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::CreateSurface(GLFWwindow *window) {
+auto GGEMSVulkanContext::CreateSurface(GLFWwindow *window) -> void {
   VkSurfaceKHR raw_surface{VK_NULL_HANDLE};
 
   VkResult result =
@@ -424,24 +443,24 @@ void GGEMSVulkanContext::CreateSurface(GLFWwindow *window) {
 // -----------------------------------------------------------------------------
 
 #if VK_HEADER_VERSION >= 304
-VKAPI_ATTR VkBool32 VKAPI_CALL GGEMSVulkanContext::DebugVkCallback(
+auto GGEMSVulkanContext::DebugVkCallback(
     vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
     vk::DebugUtilsMessageTypeFlagsEXT type,
     vk::DebugUtilsMessengerCallbackDataEXT const *callback_data,
-    void *) noexcept {
+    void *) noexcept -> VKAPI_ATTR VkBool32 VKAPI_CALL {
 #else
-VKAPI_ATTR VkBool32 VKAPI_CALL GGEMSVulkanContext::DebugVkCallback(
+auto GGEMSVulkanContext::DebugVkCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT severity,
     VkDebugUtilsMessageTypeFlagsEXT type,
-    VkDebugUtilsMessengerCallbackDataEXT const *callback_data,
-    void *) noexcept {
+    VkDebugUtilsMessengerCallbackDataEXT const *callback_data, void *) noexcept
+    -> VKAPI_ATTR VkBool32 VKAPI_CALL {
 #endif
   if (callback_data == nullptr || callback_data->pMessage == nullptr) {
     return VK_FALSE;
   }
 
-  std::uint32_t message_severity = static_cast<std::uint32_t>(severity);
-  std::uint32_t message_type = static_cast<std::uint32_t>(type);
+  auto message_severity = static_cast<std::uint32_t>(severity);
+  auto message_type = static_cast<std::uint32_t>(type);
 
   try {
     if (message_severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
@@ -462,8 +481,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GGEMSVulkanContext::DebugVkCallback(
 
 // -----------------------------------------------------------------------------
 
-GGEMSVulkanContext::QueueFamilyIndices GGEMSVulkanContext::FindQueueFamilies(
-    vk::raii::PhysicalDevice const &physical_device) const {
+auto GGEMSVulkanContext::FindQueueFamilies(
+    vk::raii::PhysicalDevice const &physical_device) const
+    -> GGEMSVulkanContext::QueueFamilyIndices {
   QueueFamilyIndices indices{};
 
   std::vector<vk::QueueFamilyProperties> const queue_family_properties =
@@ -496,17 +516,18 @@ GGEMSVulkanContext::QueueFamilyIndices GGEMSVulkanContext::FindQueueFamilies(
 
 // -----------------------------------------------------------------------------
 
-bool GGEMSVulkanContext::SupportsRequiredDeviceExtensions(
-    vk::raii::PhysicalDevice const &physical_device) const {
+auto GGEMSVulkanContext::SupportsRequiredDeviceExtensions(
+    vk::raii::PhysicalDevice const &physical_device) -> bool {
   std::vector<vk::ExtensionProperties> const available_extensions =
       physical_device.enumerateDeviceExtensionProperties();
 
   return std::ranges::all_of(
       k_required_device_extensions,
-      [&available_extensions](char const *required_extension) {
+      [&available_extensions](char const *required_extension) -> bool {
         return std::ranges::any_of(
             available_extensions,
-            [required_extension](vk::ExtensionProperties const &extension) {
+            [required_extension](
+                vk::ExtensionProperties const &extension) -> bool {
               return std::strcmp(extension.extensionName, required_extension) ==
                      0;
             });
@@ -515,8 +536,8 @@ bool GGEMSVulkanContext::SupportsRequiredDeviceExtensions(
 
 // -----------------------------------------------------------------------------
 
-bool GGEMSVulkanContext::SupportsRequiredFeatures(
-    vk::raii::PhysicalDevice const &physical_device) const {
+auto GGEMSVulkanContext::SupportsRequiredFeatures(
+    vk::raii::PhysicalDevice const &physical_device) -> bool {
   auto features =
       physical_device.getFeatures2<vk::PhysicalDeviceFeatures2,
                                    vk::PhysicalDeviceVulkan11Features,
@@ -530,13 +551,13 @@ bool GGEMSVulkanContext::SupportsRequiredFeatures(
 
   return vulkan_13_features.dynamicRendering == vk::True &&
          vulkan_13_features.synchronization2 == vk::True &&
-         vulkan_11_features.shaderDrawParameters;
+         vulkan_11_features.shaderDrawParameters == vk::True;
 }
 
 // -----------------------------------------------------------------------------
 
-bool GGEMSVulkanContext::SupportsSwapchain(
-    vk::raii::PhysicalDevice const &physical_device) const {
+auto GGEMSVulkanContext::SupportsSwapchain(
+    vk::raii::PhysicalDevice const &physical_device) const -> bool {
   SwapchainSupportDetails details = QuerySwapchainSupport(physical_device);
 
   return !details.surface_formats.empty() && !details.present_modes.empty();
@@ -544,9 +565,9 @@ bool GGEMSVulkanContext::SupportsSwapchain(
 
 // -----------------------------------------------------------------------------
 
-GGEMSVulkanContext::SwapchainSupportDetails
-GGEMSVulkanContext::QuerySwapchainSupport(
-    vk::raii::PhysicalDevice const &physical_device) const {
+auto GGEMSVulkanContext::QuerySwapchainSupport(
+    vk::raii::PhysicalDevice const &physical_device) const
+    -> GGEMSVulkanContext::SwapchainSupportDetails {
   SwapchainSupportDetails details{};
 
   details.capabilities = physical_device.getSurfaceCapabilitiesKHR(*surface_);
@@ -558,10 +579,10 @@ GGEMSVulkanContext::QuerySwapchainSupport(
 
 // -----------------------------------------------------------------------------
 
-detail::GGEMSVulkanDeviceCandidate
-GGEMSVulkanContext::BuildPhysicalDeviceCandidate(
+auto GGEMSVulkanContext::BuildPhysicalDeviceCandidate(
     vk::raii::PhysicalDevice const &physical_device,
-    std::uint32_t enumeration_index) const {
+    std::uint32_t enumeration_index) const
+    -> detail::GGEMSVulkanDeviceCandidate {
   vk::PhysicalDeviceProperties properties = physical_device.getProperties();
   QueueFamilyIndices queue_family_indices = FindQueueFamilies(physical_device);
 
@@ -641,9 +662,10 @@ GGEMSVulkanContext::BuildPhysicalDeviceCandidate(
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::SelectPhysicalDevice(
+auto GGEMSVulkanContext::SelectPhysicalDevice(
     detail::GGEMSVulkanDeviceSelector const &device_selector,
-    std::optional<detail::GGEMSVulkanDisplayAdapter> const &display_adapter) {
+    std::optional<detail::GGEMSVulkanDisplayAdapter> const &display_adapter)
+    -> void {
   std::vector<vk::raii::PhysicalDevice> physical_devices =
       instance_.enumeratePhysicalDevices();
 
@@ -699,7 +721,8 @@ void GGEMSVulkanContext::SelectPhysicalDevice(
 
   auto selected_candidate = std::ranges::find_if(
       candidates,
-      [&selection](detail::GGEMSVulkanDeviceCandidate const &candidate) {
+      [&selection](
+          detail::GGEMSVulkanDeviceCandidate const &candidate) -> bool {
         return candidate.enumeration_index == selection->enumeration_index;
       });
 
@@ -714,9 +737,8 @@ void GGEMSVulkanContext::SelectPhysicalDevice(
 
   auto selected_physical_device = std::ranges::find_if(
       physical_devices,
-      [selected_handle](vk::raii::PhysicalDevice const &physical_device) {
-        return *physical_device == selected_handle;
-      });
+      [selected_handle](vk::raii::PhysicalDevice const &physical_device)
+          -> bool { return *physical_device == selected_handle; });
 
   GGEMS_CHECK_INTERNAL(
       selected_physical_device != physical_devices.end(),
@@ -752,10 +774,10 @@ void GGEMSVulkanContext::SelectPhysicalDevice(
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::WarnIfCrossAdapterPresentation(
+auto GGEMSVulkanContext::WarnIfCrossAdapterPresentation(
     GLFWwindow *window,
     std::optional<detail::GGEMSVulkanDisplayAdapter> const &display_adapter)
-    const {
+    const -> void {
   if (!display_adapter.has_value() ||
       !detail::IsVulkanDisplayAdapterMismatch(
           selected_physical_device_candidate_, display_adapter)) {
@@ -782,13 +804,13 @@ void GGEMSVulkanContext::WarnIfCrossAdapterPresentation(
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::CreateLogicalDevice() {
+auto GGEMSVulkanContext::CreateLogicalDevice() -> void {
   GGEMS_CHECK_INTERNAL(
       queue_family_indices_.IsComplete(),
       "Vulkan queue families must be identified before creating the logical "
       "device.");
 
-  float queue_priority{1.0f};
+  float queue_priority{1.0F};
 
   std::vector<vk::DeviceQueueCreateInfo> queue_create_infos{};
   queue_create_infos.reserve(queue_family_indices_.UsesSeparateFamilies() ? 2U
@@ -841,8 +863,9 @@ void GGEMSVulkanContext::CreateLogicalDevice() {
 
 // -----------------------------------------------------------------------------
 
-vk::SurfaceFormatKHR GGEMSVulkanContext::ChooseSwapchainSurfaceFormat(
-    std::vector<vk::SurfaceFormatKHR> const &surface_formats) const {
+auto GGEMSVulkanContext::ChooseSwapchainSurfaceFormat(
+    std::vector<vk::SurfaceFormatKHR> const &surface_formats)
+    -> vk::SurfaceFormatKHR {
   GGEMS_CHECK_INTERNAL(!surface_formats.empty(),
                        "No Vulkan surface format is available for GuiMode.");
 
@@ -858,8 +881,9 @@ vk::SurfaceFormatKHR GGEMSVulkanContext::ChooseSwapchainSurfaceFormat(
 
 // -----------------------------------------------------------------------------
 
-vk::PresentModeKHR GGEMSVulkanContext::ChooseSwapchainPresentMode(
-    std::vector<vk::PresentModeKHR> const &present_modes) const {
+auto GGEMSVulkanContext::ChooseSwapchainPresentMode(
+    std::vector<vk::PresentModeKHR> const &present_modes)
+    -> vk::PresentModeKHR {
   GGEMS_CHECK_INTERNAL(!present_modes.empty(),
                        "No Vulkan present mode is available for GuiMode.");
 
@@ -874,8 +898,9 @@ vk::PresentModeKHR GGEMSVulkanContext::ChooseSwapchainPresentMode(
 
 // -----------------------------------------------------------------------------
 
-vk::Extent2D GGEMSVulkanContext::ChooseSwapchainExtent(
-    vk::SurfaceCapabilitiesKHR const &capabilities, GLFWwindow *window) const {
+auto GGEMSVulkanContext::ChooseSwapchainExtent(
+    vk::SurfaceCapabilitiesKHR const &capabilities, GLFWwindow *window)
+    -> vk::Extent2D {
   if (capabilities.currentExtent.width !=
       std::numeric_limits<std::uint32_t>::max()) {
     return capabilities.currentExtent;
@@ -907,7 +932,7 @@ vk::Extent2D GGEMSVulkanContext::ChooseSwapchainExtent(
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::CreateSwapchain(GLFWwindow *window) {
+auto GGEMSVulkanContext::CreateSwapchain(GLFWwindow *window) -> void {
   GGEMS_CHECK_INTERNAL(
       *physical_device_ != nullptr && *device_ != nullptr,
       "A Vulkan physical device and logical device are required before"
@@ -978,7 +1003,7 @@ void GGEMSVulkanContext::CreateSwapchain(GLFWwindow *window) {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::CreateSwapchainImageViews() {
+auto GGEMSVulkanContext::CreateSwapchainImageViews() -> void {
   GGEMS_CHECK_INTERNAL(
       *swapchain_ != nullptr,
       "A Vulkan swapchain is required before creating swapchain image views.");
@@ -1017,7 +1042,7 @@ void GGEMSVulkanContext::CreateSwapchainImageViews() {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::CreateCommandPool() {
+auto GGEMSVulkanContext::CreateCommandPool() -> void {
   GGEMS_CHECK_INTERNAL(
       queue_family_indices_.graphics.has_value(),
       "A Vulkan graphics queue family is required before creating the"
@@ -1036,7 +1061,7 @@ void GGEMSVulkanContext::CreateCommandPool() {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::AllocateCommandBuffers() {
+auto GGEMSVulkanContext::AllocateCommandBuffers() -> void {
   GGEMS_CHECK_INTERNAL(
       *command_pool_ != nullptr,
       "A Vulkan command pool is required before allocating GuiMode command "
@@ -1061,7 +1086,7 @@ void GGEMSVulkanContext::AllocateCommandBuffers() {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::CreateFrameSyncObjects() {
+auto GGEMSVulkanContext::CreateFrameSyncObjects() -> void {
   vk::SemaphoreCreateInfo const semaphore_create_info{};
 
   vk::FenceCreateInfo const fence_create_info{
@@ -1086,7 +1111,7 @@ void GGEMSVulkanContext::CreateFrameSyncObjects() {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::CreateSwapchainSyncObjects() {
+auto GGEMSVulkanContext::CreateSwapchainSyncObjects() -> void {
   GGEMS_CHECK_INTERNAL(
       !swapchain_images_.empty(),
       "Swapchain images are required before creating Vulkan swapchain "
@@ -1112,9 +1137,9 @@ void GGEMSVulkanContext::CreateSwapchainSyncObjects() {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::TransitionSwapchainImageLayout(
+auto GGEMSVulkanContext::TransitionSwapchainImageLayout(
     std::uint32_t image_index, vk::ImageLayout old_layout,
-    vk::ImageLayout new_layout) {
+    vk::ImageLayout new_layout) -> void {
   vk::PipelineStageFlags2 source_stage{vk::PipelineStageFlagBits2::eNone};
   vk::AccessFlags2 source_access{vk::AccessFlagBits2::eNone};
 
@@ -1155,7 +1180,8 @@ void GGEMSVulkanContext::TransitionSwapchainImageLayout(
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::RecordCommandBuffer(std::uint32_t image_index) {
+auto GGEMSVulkanContext::RecordCommandBuffer(std::uint32_t image_index)
+    -> void {
   vk::raii::CommandBuffer &command_buffer = command_buffers_[image_index];
 
   command_buffer.reset();
@@ -1163,7 +1189,8 @@ void GGEMSVulkanContext::RecordCommandBuffer(std::uint32_t image_index) {
   vk::CommandBufferBeginInfo begin_info{};
   command_buffer.begin(begin_info);
 
-  scene_renderer_.RecordSceneCommands(command_buffers_[image_index]);
+  scene_renderer_.RecordSceneCommands(
+      command_buffers_[image_index], imgui_layer_.GetParticleTraceVisibility());
 
   TransitionSwapchainImageLayout(image_index, vk::ImageLayout::eUndefined,
                                  vk::ImageLayout::eColorAttachmentOptimal);
@@ -1201,8 +1228,8 @@ void GGEMSVulkanContext::RecordCommandBuffer(std::uint32_t image_index) {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::RenderFrame(GLFWwindow *window,
-                                     bool framebuffer_resized) {
+auto GGEMSVulkanContext::RenderFrame(GLFWwindow *window,
+                                     bool framebuffer_resized) -> void {
   GGEMS_CHECK_INTERNAL(
       initialised_,
       "Vulkan GuiMode must be initialised before rendering a frame.");
@@ -1263,33 +1290,34 @@ void GGEMSVulkanContext::RenderFrame(GLFWwindow *window,
 
     device_.resetFences(*in_flight_fences_[current_frame_]);
 
-    vk::Semaphore wait_semaphores[]{
+    std::array<vk::Semaphore, 1U> const wait_semaphores{
         *image_available_semaphores_[current_frame_]};
 
-    vk::PipelineStageFlags wait_stages[]{
+    std::array<vk::PipelineStageFlags, 1U> const wait_stages{
         vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
-    vk::CommandBuffer command_buffers[]{*command_buffers_[image_index]};
+    std::array<vk::CommandBuffer, 1U> const command_buffers{
+        *command_buffers_[image_index]};
 
-    vk::Semaphore signal_semaphores[]{
+    std::array<vk::Semaphore, 1U> signal_semaphores{
         *render_finished_semaphores_[image_index]};
 
     vk::SubmitInfo submit_info{.waitSemaphoreCount = 1U,
-                               .pWaitSemaphores = wait_semaphores,
-                               .pWaitDstStageMask = wait_stages,
+                               .pWaitSemaphores = wait_semaphores.data(),
+                               .pWaitDstStageMask = wait_stages.data(),
                                .commandBufferCount = 1U,
-                               .pCommandBuffers = command_buffers,
+                               .pCommandBuffers = command_buffers.data(),
                                .signalSemaphoreCount = 1U,
-                               .pSignalSemaphores = signal_semaphores};
+                               .pSignalSemaphores = signal_semaphores.data()};
 
     graphics_queue_.submit(submit_info, *in_flight_fences_[current_frame_]);
 
-    vk::SwapchainKHR swapchains[]{*swapchain_};
+    std::array<vk::SwapchainKHR, 1U> swapchains{*swapchain_};
 
     vk::PresentInfoKHR present_info{.waitSemaphoreCount = 1U,
-                                    .pWaitSemaphores = signal_semaphores,
+                                    .pWaitSemaphores = signal_semaphores.data(),
                                     .swapchainCount = 1U,
-                                    .pSwapchains = swapchains,
+                                    .pSwapchains = swapchains.data(),
                                     .pImageIndices = &image_index};
 
     vk::Result present_result = presentation_queue_.presentKHR(present_info);
@@ -1315,7 +1343,7 @@ void GGEMSVulkanContext::RenderFrame(GLFWwindow *window,
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::CleanupSwapchain() {
+auto GGEMSVulkanContext::CleanupSwapchain() -> void {
   command_buffers_.clear();
 
   swapchain_image_views_.clear();
@@ -1331,7 +1359,7 @@ void GGEMSVulkanContext::CleanupSwapchain() {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::RecreateSwapchain(GLFWwindow *window) {
+auto GGEMSVulkanContext::RecreateSwapchain(GLFWwindow *window) -> void {
   GGEMS_CHECK_INTERNAL(window != nullptr,
                        "A valid GLFW window is required before recreating the "
                        "Vulkan swapchain.");
@@ -1368,23 +1396,37 @@ void GGEMSVulkanContext::RecreateSwapchain(GLFWwindow *window) {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::CreateImGuiDescriptorPool() {
+auto GGEMSVulkanContext::CreateImGuiDescriptorPool() -> void {
+  constexpr std::uint32_t k_imgui_descriptor_count{1024U};
+
   std::array<vk::DescriptorPoolSize, 11> pool_sizes{
-      vk::DescriptorPoolSize{vk::DescriptorType::eSampler, 1000U},
-      vk::DescriptorPoolSize{vk::DescriptorType::eCombinedImageSampler, 1000U},
-      vk::DescriptorPoolSize{vk::DescriptorType::eSampledImage, 1000U},
-      vk::DescriptorPoolSize{vk::DescriptorType::eStorageImage, 1000U},
-      vk::DescriptorPoolSize{vk::DescriptorType::eUniformTexelBuffer, 1000U},
-      vk::DescriptorPoolSize{vk::DescriptorType::eStorageTexelBuffer, 1000U},
-      vk::DescriptorPoolSize{vk::DescriptorType::eUniformBuffer, 1000U},
-      vk::DescriptorPoolSize{vk::DescriptorType::eStorageBuffer, 1000U},
-      vk::DescriptorPoolSize{vk::DescriptorType::eUniformBufferDynamic, 1000U},
-      vk::DescriptorPoolSize{vk::DescriptorType::eStorageBufferDynamic, 1000U},
-      vk::DescriptorPoolSize{vk::DescriptorType::eInputAttachment, 1000U}};
+      vk::DescriptorPoolSize{.type = vk::DescriptorType::eSampler,
+                             .descriptorCount = k_imgui_descriptor_count},
+      vk::DescriptorPoolSize{.type = vk::DescriptorType::eCombinedImageSampler,
+                             .descriptorCount = k_imgui_descriptor_count},
+      vk::DescriptorPoolSize{.type = vk::DescriptorType::eSampledImage,
+                             .descriptorCount = k_imgui_descriptor_count},
+      vk::DescriptorPoolSize{.type = vk::DescriptorType::eStorageImage,
+                             .descriptorCount = k_imgui_descriptor_count},
+      vk::DescriptorPoolSize{.type = vk::DescriptorType::eUniformTexelBuffer,
+                             .descriptorCount = k_imgui_descriptor_count},
+      vk::DescriptorPoolSize{.type = vk::DescriptorType::eStorageTexelBuffer,
+                             .descriptorCount = k_imgui_descriptor_count},
+      vk::DescriptorPoolSize{.type = vk::DescriptorType::eUniformBuffer,
+                             .descriptorCount = k_imgui_descriptor_count},
+      vk::DescriptorPoolSize{.type = vk::DescriptorType::eStorageBuffer,
+                             .descriptorCount = k_imgui_descriptor_count},
+      vk::DescriptorPoolSize{.type = vk::DescriptorType::eUniformBufferDynamic,
+                             .descriptorCount = k_imgui_descriptor_count},
+      vk::DescriptorPoolSize{.type = vk::DescriptorType::eStorageBufferDynamic,
+                             .descriptorCount = k_imgui_descriptor_count},
+      vk::DescriptorPoolSize{.type = vk::DescriptorType::eInputAttachment,
+                             .descriptorCount = k_imgui_descriptor_count}};
 
   vk::DescriptorPoolCreateInfo create_info{
       .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-      .maxSets = 1000U * static_cast<std::uint32_t>(pool_sizes.size()),
+      .maxSets = k_imgui_descriptor_count *
+                 static_cast<std::uint32_t>(pool_sizes.size()),
       .poolSizeCount = static_cast<std::uint32_t>(pool_sizes.size()),
       .pPoolSizes = pool_sizes.data()};
 
@@ -1395,7 +1437,7 @@ void GGEMSVulkanContext::CreateImGuiDescriptorPool() {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::CheckImGuiVkResult(VkResult result) noexcept {
+auto GGEMSVulkanContext::CheckImGuiVkResult(VkResult result) noexcept -> void {
   if (result == VK_SUCCESS) {
     return;
   }
@@ -1411,7 +1453,7 @@ void GGEMSVulkanContext::CheckImGuiVkResult(VkResult result) noexcept {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::InitialiseImGui(GLFWwindow *window) {
+auto GGEMSVulkanContext::InitialiseImGui(GLFWwindow *window) -> void {
   GGEMS_CHECK_INTERNAL(
       window != nullptr,
       "A valid GLFW window is required before initialising Dear ImGui.");
@@ -1420,8 +1462,8 @@ void GGEMSVulkanContext::InitialiseImGui(GLFWwindow *window) {
       *imgui_descriptor_pool_ != nullptr,
       "A Vulkan descriptor pool is required before initialising Dear ImGui.");
 
-  float content_scale_x{1.0f};
-  float content_scale_y{1.0f};
+  float content_scale_x{1.0F};
+  float content_scale_y{1.0F};
 
   glfwGetWindowContentScale(window, &content_scale_x, &content_scale_y);
 
@@ -1432,9 +1474,9 @@ void GGEMSVulkanContext::InitialiseImGui(GLFWwindow *window) {
 
   ImGui::CreateContext();
 
-  ImGuiIO &io = ImGui::GetIO();
-  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+  ImGuiIO &imgui_io = ImGui::GetIO();
+  imgui_io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+  imgui_io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
   ImGui::StyleColorsDark();
   ApplyGGEMSImGuiTheme();
@@ -1488,7 +1530,7 @@ void GGEMSVulkanContext::InitialiseImGui(GLFWwindow *window) {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::ShutdownImGui() noexcept {
+auto GGEMSVulkanContext::ShutdownImGui() noexcept -> void {
   if (!imgui_initialised_) {
     return;
   }
@@ -1502,7 +1544,26 @@ void GGEMSVulkanContext::ShutdownImGui() noexcept {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::ApplyPendingParticleTraceSegments() {
+auto GGEMSVulkanContext::ApplyPendingSourceRunSnapshot() -> void {
+  std::optional<core::sources::GGEMSSourceRunSnapshot> snapshot{};
+
+  {
+    std::scoped_lock lock{pending_source_run_snapshot_mutex_};
+
+    if (!pending_source_run_snapshot_.has_value()) {
+      return;
+    }
+
+    snapshot = std::move(pending_source_run_snapshot_);
+    pending_source_run_snapshot_.reset();
+  }
+
+  imgui_layer_.SetSourceRunSnapshot(std::move(*snapshot));
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSVulkanContext::ApplyPendingParticleTraceSegments() -> void {
   std::vector<ggems::render::GGEMSParticleTraceSegment> segments{};
   bool apply_segments{false};
   bool clear_segments{false};
@@ -1540,11 +1601,12 @@ void GGEMSVulkanContext::ApplyPendingParticleTraceSegments() {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::BuildImGuiFrame() {
+auto GGEMSVulkanContext::BuildImGuiFrame() -> void {
   GGEMS_CHECK_INTERNAL(imgui_initialised_,
                        "Dear ImGui must be initialised before building a GUI "
                        "frame.");
 
+  ApplyPendingSourceRunSnapshot();
   ApplyPendingParticleTraceSegments();
 
   ImGui_ImplVulkan_NewFrame();
@@ -1578,22 +1640,21 @@ void GGEMSVulkanContext::BuildImGuiFrame() {
   }
 
   scene_renderer_.SetShowAxes(imgui_layer_.ShouldShowAxes());
-  scene_renderer_.SetShowParticleTraces(
-      imgui_layer_.ShouldShowParticleTraces());
 
   ImGui::Render();
 }
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::LoadImGuiFonts() {
-  ImGuiIO &io = ImGui::GetIO();
+auto GGEMSVulkanContext::LoadImGuiFonts() -> void {
+  ImGuiIO &imgui_io = ImGui::GetIO();
 
   std::optional<std::filesystem::path> const font_path =
       FindFirstExistingFont();
 
   if (font_path.has_value()) {
-    io.Fonts->AddFontFromFileTTF(font_path->string().c_str(), imgui_font_size_);
+    imgui_io.Fonts->AddFontFromFileTTF(font_path->string().c_str(),
+                                       imgui_font_size_);
 
     GGEMS_INFOEX("Gui", 2, "Loaded ImGui font '{}'.", font_path->string());
     return;
@@ -1601,7 +1662,7 @@ void GGEMSVulkanContext::LoadImGuiFonts() {
 
   ImFontConfig font_config{};
   font_config.SizePixels = imgui_font_size_;
-  io.Fonts->AddFontDefault(&font_config);
+  imgui_io.Fonts->AddFontDefault(&font_config);
 
   GGEMS_WARN("Gui",
              "No preferred monospace ImGui font was found. Falling back to "
@@ -1610,14 +1671,14 @@ void GGEMSVulkanContext::LoadImGuiFonts() {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::InitialiseSceneRenderer() {
+auto GGEMSVulkanContext::InitialiseSceneRenderer() -> void {
   scene_renderer_.Initialise(physical_device_, device_,
                              vk::Format::eR8G8B8A8Unorm);
 }
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::ShutdownSceneRenderer() noexcept {
+auto GGEMSVulkanContext::ShutdownSceneRenderer() noexcept -> void {
   scene_renderer_.Shutdown();
 }
 } // namespace ggems::ui

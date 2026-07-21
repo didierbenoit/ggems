@@ -1,6 +1,8 @@
 #include <filesystem>
 #include <algorithm>
 #include <memory>
+#include <mutex>
+#include <optional>
 #include <exception>
 #include <thread>
 #include <atomic>
@@ -54,6 +56,14 @@ auto AccumulateTransportCounters(transport::GGEMSTransportCounters &dst,
 
 GGEMSRun::GGEMSRun() : sources_{std::make_shared<sources::GGEMSSource>()} {
   GGEMS_INFOEX("Core", 3, "GGEMSRun instance created.");
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSRun::GetLastSourceRunSnapshot() const
+    -> std::optional<sources::GGEMSSourceRunSnapshot> {
+  std::scoped_lock lock{source_run_snapshot_mutex_};
+  return last_source_run_snapshot_;
 }
 
 // -----------------------------------------------------------------------------
@@ -256,6 +266,9 @@ auto GGEMSRun::Run() -> void {
   GGEMS_CHECK_INTERNAL(!source_records.empty(),
                        "GGEMSRun source snapshot must not be empty.");
 
+  auto const source_slot_count =
+      static_cast<std::uint32_t>(source_records.size());
+
   std::uint64_t total_primary_count = source_snapshot.GetTotalPrimaryCount();
 
   GGEMS_CHECK_RECOVERABLE(
@@ -441,12 +454,15 @@ auto GGEMSRun::Run() -> void {
              ggems::units::Time{accumulated_command_time_ps},
              ggems::units::Time{accumulated_kernel_time_ps});
 
-  GGEMS_INFO("Core", "GGEMSRun projection {} completed.", run_id);
+  if (observer_ != nullptr) {
+    observer_->SetRunSourceSlotCount(source_slot_count);
+  }
 
-  GGEMS_INFO("Core", "Test");
-  GGEMS_WARN("Core", "Test");
-  GGEMS_INFOEX("Core", 2, "Test");
-  GGEMS_ERROR("Core", "Test");
-  GGEMS_DEBUG("Core", "Test");
+  {
+    std::scoped_lock lock{source_run_snapshot_mutex_};
+    last_source_run_snapshot_ = std::move(source_snapshot);
+  }
+
+  GGEMS_INFO("Core", "GGEMSRun projection {} completed.", run_id);
 }
 } // namespace ggems::core

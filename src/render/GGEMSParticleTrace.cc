@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include <span>
+#include <functional>
 
 #include "GGEMS/render/GGEMSColour.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
@@ -199,6 +200,52 @@ auto ToParticleTracePointMetre(
 // =============================================================================
 // =============================================================================
 
+auto GGEMSParticleTraceVisibility::ReconcileSourceCount(
+    std::size_t source_count) -> void {
+  source_visibility_.resize(source_count, std::uint8_t{1U});
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSParticleTraceVisibility::SetGlobalVisible(bool visible) noexcept
+    -> void {
+  global_visible_ = visible;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSParticleTraceVisibility::IsGlobalVisible() const noexcept -> bool {
+  return global_visible_;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSParticleTraceVisibility::SetSourceVisible(std::size_t source_index,
+                                                    bool visible) -> void {
+  source_visibility_.at(source_index) =
+      visible ? std::uint8_t{1U} : std::uint8_t{0U};
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSParticleTraceVisibility::IsSourceVisible(
+    std::uint32_t source_index) const noexcept -> bool {
+  auto const index = static_cast<std::size_t>(source_index);
+
+  return index >= source_visibility_.size() ||
+         source_visibility_[index] != std::uint8_t{0U};
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSParticleTraceVisibility::ShouldDraw(
+    std::uint32_t source_index) const noexcept -> bool {
+  return global_visible_ && IsSourceVisible(source_index);
+}
+
+// =============================================================================
+// =============================================================================
+
 auto BuildParticleTraceSegments(
     std::span<core::observer::GGEMSObserverRecord const> records)
     -> std::vector<GGEMSParticleTraceSegment> {
@@ -263,4 +310,43 @@ auto BuildParticleTraceVertices(
   return vertices;
 }
 
+// =============================================================================
+// =============================================================================
+
+auto BuildParticleTraceDrawData(
+    std::span<GGEMSParticleTraceSegment const> segments)
+    -> GGEMSParticleTraceDrawData {
+  std::vector<GGEMSParticleTraceSegment const *> grouped_segments{};
+  grouped_segments.reserve(segments.size());
+
+  for (GGEMSParticleTraceSegment const &segment : segments) {
+    grouped_segments.push_back(&segment);
+  }
+
+  std::ranges::stable_sort(grouped_segments, std::ranges::less{},
+                           &GGEMSParticleTraceSegment::source_index);
+
+  GGEMSParticleTraceDrawData draw_data{};
+  draw_data.vertices.reserve(segments.size() * 2U);
+  draw_data.draw_ranges.reserve(segments.size());
+
+  for (GGEMSParticleTraceSegment const *segment : grouped_segments) {
+    if (draw_data.draw_ranges.empty() ||
+        draw_data.draw_ranges.back().source_index != segment->source_index) {
+      draw_data.draw_ranges.push_back(
+          GGEMSParticleTraceDrawRange{.source_index = segment->source_index,
+                                      .first_vertex = draw_data.vertices.size(),
+                                      .vertex_count = 0U});
+    }
+
+    draw_data.vertices.push_back(
+        MakeTraceVertex(segment->begin, segment->particle_type));
+    draw_data.vertices.push_back(
+        MakeTraceVertex(segment->end, segment->particle_type));
+
+    draw_data.draw_ranges.back().vertex_count += 2U;
+  }
+
+  return draw_data;
+}
 } // namespace ggems::render

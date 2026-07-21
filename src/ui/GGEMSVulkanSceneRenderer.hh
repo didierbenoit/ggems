@@ -17,6 +17,7 @@ class GGEMSVulkanSceneRenderer {
 private:
   using ScenePushConstants = GGEMSVulkanCamera::Matrix4Rows;
   using TraceVertex = ggems::render::GGEMSParticleTraceVertex;
+  using TraceDrawRange = ggems::render::GGEMSParticleTraceDrawRange;
 
 public:
   GGEMSVulkanSceneRenderer() = default;
@@ -24,75 +25,80 @@ public:
 
   GGEMSVulkanSceneRenderer(GGEMSVulkanSceneRenderer const &) = delete;
   GGEMSVulkanSceneRenderer(GGEMSVulkanSceneRenderer &&) = delete;
-  GGEMSVulkanSceneRenderer &
-  operator=(GGEMSVulkanSceneRenderer const &) = delete;
-  GGEMSVulkanSceneRenderer &operator=(GGEMSVulkanSceneRenderer &&) = delete;
+  auto operator=(GGEMSVulkanSceneRenderer const &)
+      -> GGEMSVulkanSceneRenderer & = delete;
+  auto operator=(GGEMSVulkanSceneRenderer &&)
+      -> GGEMSVulkanSceneRenderer & = delete;
 
-public:
-  void Initialise(vk::raii::PhysicalDevice const &physical_device,
-                  vk::raii::Device const &device, vk::Format colour_format);
+  auto Initialise(vk::raii::PhysicalDevice const &physical_device,
+                  vk::raii::Device const &device, vk::Format colour_format)
+      -> void;
 
-  void Shutdown() noexcept;
+  auto Shutdown() noexcept -> void;
 
-  void SetViewportExtent(vk::Extent2D const &extent);
-  void RecreateRenderTargetsIfNeeded();
+  auto SetViewportExtent(vk::Extent2D const &extent) -> void;
+  auto RecreateRenderTargetsIfNeeded() -> void;
 
-  [[nodiscard]] bool IsInitialised() const noexcept;
-  [[nodiscard]] bool RequiresResize() const noexcept;
-  [[nodiscard]] vk::Extent2D const &GetViewportExtent() const noexcept;
-  [[nodiscard]] vk::Format GetColourFormat() const noexcept;
-  [[nodiscard]] vk::ImageView GetColourImageView() const noexcept;
-  [[nodiscard]] vk::Sampler GetSampler() const noexcept;
+  [[nodiscard]] auto IsInitialised() const noexcept -> bool;
+  [[nodiscard]] auto RequiresResize() const noexcept -> bool;
+  [[nodiscard]] auto GetViewportExtent() const noexcept -> vk::Extent2D const &;
+  [[nodiscard]] auto GetColourFormat() const noexcept -> vk::Format;
+  [[nodiscard]] auto GetColourImageView() const noexcept -> vk::ImageView;
+  [[nodiscard]] auto GetSampler() const noexcept -> vk::Sampler;
 
-  [[nodiscard]] ImTextureID GetTextureID() const noexcept;
-  void RecordSceneCommands(vk::raii::CommandBuffer const &command_buffer);
+  [[nodiscard]] auto GetTextureID() const noexcept -> ImTextureID;
+  auto RecordSceneCommands(
+      vk::raii::CommandBuffer const &command_buffer,
+      ggems::render::GGEMSParticleTraceVisibility const &visibility) -> void;
 
-  void SetShowAxes(bool show_axes) noexcept;
-  [[nodiscard]] bool ShouldShowAxes() const noexcept;
+  auto SetShowAxes(bool show_axes) noexcept -> void;
+  [[nodiscard]] auto ShouldShowAxes() const noexcept -> bool;
 
-  void SetShowParticleTraces(bool show_particle_traces) noexcept;
-  [[nodiscard]] bool ShouldShowParticleTraces() const noexcept;
-  void SetParticleTraceSegments(
-      std::span<ggems::render::GGEMSParticleTraceSegment const> segments);
-  void ClearParticleTraces();
-  [[nodiscard]] std::uint32_t GetParticleTraceVertexCount() const noexcept;
+  auto SetParticleTraceSegments(
+      std::span<ggems::render::GGEMSParticleTraceSegment const> segments)
+      -> void;
+  auto ClearParticleTraces() -> void;
+  [[nodiscard]] auto GetParticleTraceVertexCount() const noexcept
+      -> std::uint32_t;
 
-  void OrbitCamera(float delta_x_pixels, float delta_y_pixels) noexcept;
-  void PanCamera(float delta_x_pixels, float delta_y_pixels) noexcept;
-  void ZoomCamera(float wheel_delta) noexcept;
-  void ResetCamera() noexcept;
-
-private:
-  void CreateColourTarget();
-  void CleanupRenderTargets() noexcept;
-
-  [[nodiscard]] std::uint32_t
-  FindMemoryType(std::uint32_t type_filter,
-                 vk::MemoryPropertyFlags properties) const;
-
-  void CreateAxesShaderModules();
-  void CleanupShaderModules() noexcept;
-
-  [[nodiscard]] static std::vector<std::uint32_t>
-  ReadSPIRVFile(std::filesystem::path const &path);
-
-  void CreateAxesPipeline();
-  void CleanupAxesPipeline() noexcept;
-  void RecordAxesCommands(vk::raii::CommandBuffer const &command_buffer);
-
-  void CreateTraceShaderModules();
-  void CreateTracePipeline();
-  void CleanupTracePipeline() noexcept;
-  void CleanupTraceResources() noexcept;
-  void CreateDemoTraceVertices();
-  void CreateTraceVertexBuffer();
-  void DestroyTraceVertexBuffer() noexcept;
-  void RecordTraceCommands(vk::raii::CommandBuffer const &command_buffer);
-
-  void CreateDepthTarget();
-  [[nodiscard]] bool IsDepthFormatSupported(vk::Format format) const;
+  auto OrbitCamera(float delta_x_pixels, float delta_y_pixels) noexcept -> void;
+  auto PanCamera(float delta_x_pixels, float delta_y_pixels) noexcept -> void;
+  auto ZoomCamera(float wheel_delta) noexcept -> void;
+  auto ResetCamera() noexcept -> void;
 
 private:
+  auto CreateColourTarget() -> void;
+  auto CleanupRenderTargets() noexcept -> void;
+
+  [[nodiscard]] auto FindMemoryType(std::uint32_t type_filter,
+                                    vk::MemoryPropertyFlags properties) const
+      -> std::uint32_t;
+
+  auto CreateAxesShaderModules() -> void;
+  auto CleanupShaderModules() noexcept -> void;
+
+  [[nodiscard]] static auto ReadSPIRVFile(std::filesystem::path const &path)
+      -> std::vector<std::uint32_t>;
+
+  auto CreateAxesPipeline() -> void;
+  auto CleanupAxesPipeline() noexcept -> void;
+  auto RecordAxesCommands(vk::raii::CommandBuffer const &command_buffer)
+      -> void;
+
+  auto CreateTraceShaderModules() -> void;
+  auto CreateTracePipeline() -> void;
+  auto CleanupTracePipeline() noexcept -> void;
+  auto CleanupTraceResources() noexcept -> void;
+  auto CreateDemoTraceVertices() -> void;
+  auto CreateTraceVertexBuffer() -> void;
+  auto DestroyTraceVertexBuffer() noexcept -> void;
+  auto RecordTraceCommands(
+      vk::raii::CommandBuffer const &command_buffer,
+      ggems::render::GGEMSParticleTraceVisibility const &visibility) -> void;
+
+  auto CreateDepthTarget() -> void;
+  [[nodiscard]] auto IsDepthFormatSupported(vk::Format format) const -> bool;
+
   vk::raii::PhysicalDevice const *physical_device_{nullptr};
   vk::raii::Device const *device_{nullptr};
 
@@ -129,11 +135,11 @@ private:
   vk::raii::Pipeline trace_pipeline_{nullptr};
   vk::raii::Buffer trace_vertex_buffer_{nullptr};
   vk::raii::DeviceMemory trace_vertex_memory_{nullptr};
-  std::vector<TraceVertex> trace_vertices_{};
+  std::vector<TraceVertex> trace_vertices_;
+  std::vector<TraceDrawRange> trace_draw_ranges_;
 
   bool show_axes_{true};
-  bool show_particle_traces_{true};
-  GGEMSVulkanCamera camera_{};
+  GGEMSVulkanCamera camera_;
 };
 
 } // namespace ggems::ui

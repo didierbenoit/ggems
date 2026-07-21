@@ -7,6 +7,7 @@
 
 #include <pybind11/pybind11.h>
 
+#include "GGEMS/core/GGEMSRun.hh"
 #include "GGEMS/core/observer/GGEMSTransportObserver.hh"
 #include "GGEMS/ui/GGEMSGuiApplication.hh"
 
@@ -44,6 +45,10 @@ void BindGui(py::module_ &m) {
 
       .def("run", &ggems::ui::GGEMSGuiApplication::Run,
            py::call_guard<py::gil_scoped_release>())
+
+      .def("submit_last_run_source_snapshot",
+           &ggems::ui::GGEMSGuiApplication::SubmitLastRunSourceSnapshot,
+           py::arg("run"))
 
       .def(
           "submit_particle_traces_from_observer",

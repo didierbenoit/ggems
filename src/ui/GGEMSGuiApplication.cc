@@ -1,14 +1,19 @@
 #include <algorithm>
 #include <format>
-#include <ranges>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <vector>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#include "GGEMS/core/GGEMSRun.hh"
 #include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/observer/GGEMSTransportObserver.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
@@ -27,8 +32,8 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] ggems::ui::detail::GGEMSComputeStatus
-BuildComputeStatus(ggems::ocl::GGEMSOpenCL &opencl) {
+[[nodiscard]] auto BuildComputeStatus(ggems::ocl::GGEMSOpenCL &opencl)
+    -> ggems::ui::detail::GGEMSComputeStatus {
   auto const &contexts = opencl.GetContext();
 
   if (contexts.empty()) {
@@ -50,9 +55,8 @@ BuildComputeStatus(ggems::ocl::GGEMSOpenCL &opencl) {
 
     auto platform = std::ranges::find_if(
         platforms,
-        [platform_index](ggems::ocl::GGEMSOpenCLPlatform const &candidate) {
-          return candidate.GetPlatformIndex() == platform_index;
-        });
+        [platform_index](ggems::ocl::GGEMSOpenCLPlatform const &candidate)
+            -> bool { return candidate.GetPlatformIndex() == platform_index; });
 
     GGEMS_CHECK_INTERNAL(
         platform != platforms.end(),
@@ -72,10 +76,8 @@ BuildComputeStatus(ggems::ocl::GGEMSOpenCL &opencl) {
        compute_status.devices) {
     auto matching_name_count = std::ranges::count_if(
         compute_status.devices,
-        [&device](
-            ggems::ui::detail::GGEMSComputeDeviceStatus const &candidate) {
-          return candidate.name == device.name;
-        });
+        [&device](ggems::ui::detail::GGEMSComputeDeviceStatus const &candidate)
+            -> bool { return candidate.name == device.name; });
 
     device.show_platform = matching_name_count > 1;
   }
@@ -86,7 +88,8 @@ BuildComputeStatus(ggems::ocl::GGEMSOpenCL &opencl) {
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] std::string GetGLFWErrorMessage(std::string_view context) {
+[[nodiscard]] auto GetGLFWErrorMessage(std::string_view context)
+    -> std::string {
   char const *description{nullptr};
   int error_code = glfwGetError(&description);
 
@@ -103,7 +106,7 @@ namespace ggems::ui {
 
 GGEMSGuiApplication::GGEMSGuiApplication(std::string title, std::int32_t width,
                                          std::int32_t height)
-    : title_(title), width_(width), height_(height) {}
+    : title_{std::move(title)}, width_{width}, height_{height} {}
 
 // -----------------------------------------------------------------------------
 
@@ -127,14 +130,14 @@ void GGEMSGuiApplication::Shutdown() noexcept {
 
 // -----------------------------------------------------------------------------
 
-bool GGEMSGuiApplication::IsInitialised() const noexcept {
+auto GGEMSGuiApplication::IsInitialised() const noexcept -> bool {
   return window_ != nullptr && vk_context_ != nullptr &&
          vk_context_->IsInitialised();
 }
 
 // -----------------------------------------------------------------------------
 
-void GGEMSGuiApplication::SetVulkanDevice(std::string selection) {
+auto GGEMSGuiApplication::SetVulkanDevice(std::string selection) -> void {
   GGEMS_CHECK_RECOVERABLE(window_ == nullptr,
                           "Vulkan device selection must be configured before "
                           "GGEMS GuiMode initialisation.");
@@ -149,7 +152,8 @@ void GGEMSGuiApplication::SetVulkanDevice(std::string selection) {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSGuiApplication::SetVulkanDevice(std::uint32_t enumeration_index) {
+auto GGEMSGuiApplication::SetVulkanDevice(std::uint32_t enumeration_index)
+    -> void {
   GGEMS_CHECK_RECOVERABLE(window_ == nullptr,
                           "Vulkan device selection must be configured before "
                           "GGEMS GuiMode initialisation.");
@@ -159,7 +163,7 @@ void GGEMSGuiApplication::SetVulkanDevice(std::uint32_t enumeration_index) {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSGuiApplication::Initialise() {
+auto GGEMSGuiApplication::Initialise() -> void {
   if (window_ != nullptr) {
     return;
   }
@@ -256,6 +260,24 @@ void GGEMSGuiApplication::FramebufferResizeCallback(GLFWwindow *window, int,
   if (application != nullptr) {
     application->framebuffer_resized_ = true;
   }
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSGuiApplication::SubmitLastRunSourceSnapshot(
+    ggems::core::GGEMSRun const &run) -> void {
+  GGEMS_CHECK_RECOVERABLE(
+      vk_context_ != nullptr && vk_context_->IsInitialised(),
+      "GGEMS GuiMode must be initialised before submitting a source "
+      "snapshot.");
+
+  auto snapshot = run.GetLastSourceRunSnapshot();
+
+  GGEMS_CHECK_RECOVERABLE(
+      snapshot.has_value(),
+      "GGEMSRun has no successfully completed source snapshot to submit.");
+
+  vk_context_->SubmitSourceRunSnapshot(std::move(*snapshot));
 }
 
 // -----------------------------------------------------------------------------

@@ -5,8 +5,11 @@
 #include <thread>
 #include <vector>
 #include <memory>
+#include <mutex>
+#include <optional>
 
 #include "GGEMS/core/sources/GGEMSSource.hh"
+#include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/particles/GGEMSPrimaryStream.hh"
 #include "GGEMS/core/transport/GGEMSDummyTransportWorkload.hh"
 
@@ -33,6 +36,9 @@ public:
   void Initialise();
   void Run();
 
+  [[nodiscard]] auto GetLastSourceRunSnapshot() const
+      -> std::optional<sources::GGEMSSourceRunSnapshot>;
+
   void SetRandom(std::shared_ptr<random::GGEMSRandom> random);
   void SetPrimaryCount(std::uint32_t primary_count);
   void SetWorkerCount(std::uint32_t worker_count);
@@ -49,7 +55,10 @@ private:
   std::vector<std::shared_ptr<sources::GGEMSSource>> sources_;
   bool uses_implicit_default_source_{true};
 
-  particles::GGEMSPrimaryStream primary_stream_{};
+  mutable std::mutex source_run_snapshot_mutex_;
+  std::optional<sources::GGEMSSourceRunSnapshot> last_source_run_snapshot_;
+
+  particles::GGEMSPrimaryStream primary_stream_;
 
   bool initialised_{false};
   std::uint64_t next_run_id_{0ULL};

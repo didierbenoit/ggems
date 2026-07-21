@@ -1,18 +1,29 @@
-#include <cmath>
-#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <string>
+#include <utility>
 
 #include <imgui.h>
 #include <imgui_internal.h>
 
 #include "GGEMSImGuiLayer.hh"
+#include "GGEMSDeviceStatus.hh"
+#include "GGEMS/core/GGEMSOutputState.hh"
 #include "GGEMS/core/GGEMSOutputMode.hh"
+#include "GGEMS/core/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/core/sources/GGEMSSourceTypes.hh"
+#include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
+#include "GGEMS/render/GGEMSParticleTrace.hh"
+#include "GGEMS/core/units/GGEMSLengthUnits.hh"
+#include "GGEMS/core/units/GGEMSEnergyUnits.hh"
+#include "GGEMS/core/units/GGEMSTimeUnits.hh"
 
 namespace ggems::ui {
 
 // =============================================================================
 // =============================================================================
 
-char const *GGEMSImGuiLayer::GetSceneSelectionName() const noexcept {
+auto GGEMSImGuiLayer::GetSceneSelectionName() const noexcept -> char const * {
   switch (selected_scene_item_) {
   case SceneSelection::None:
     return "None";
@@ -38,10 +49,10 @@ char const *GGEMSImGuiLayer::GetSceneSelectionName() const noexcept {
 // =============================================================================
 // =============================================================================
 
-void GGEMSImGuiLayer::BuildFrame(
+auto GGEMSImGuiLayer::BuildFrame(
     vk::Extent2D const &swapchain_extent, ImTextureID scene_texture_id,
     vk::Extent2D const &scene_texture_extent,
-    detail::GGEMSDeviceStatusSnapshot const &device_status) {
+    detail::GGEMSDeviceStatusSnapshot const &device_status) -> void {
   reset_camera_requested_ = false;
 
   BuildMainDockspace();
@@ -72,30 +83,40 @@ void GGEMSImGuiLayer::BuildFrame(
 
 // -----------------------------------------------------------------------------
 
-bool GGEMSImGuiLayer::ShouldShowAxes() const noexcept { return show_axes_; }
-
-// -----------------------------------------------------------------------------
-
-bool GGEMSImGuiLayer::ShouldShowParticleTraces() const noexcept {
-  return show_particle_traces_;
+auto GGEMSImGuiLayer::SetSourceRunSnapshot(
+    core::sources::GGEMSSourceRunSnapshot snapshot) -> void {
+  particle_trace_visibility_.ReconcileSourceCount(snapshot.GetRecords().size());
+  source_run_snapshot_ = std::move(snapshot);
 }
 
 // -----------------------------------------------------------------------------
 
-bool GGEMSImGuiLayer::ShouldResetCamera() const noexcept {
+auto GGEMSImGuiLayer::ShouldShowAxes() const noexcept -> bool {
+  return show_axes_;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSImGuiLayer::ShouldShowParticleTraces() const noexcept -> bool {
+  return particle_trace_visibility_.IsGlobalVisible();
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSImGuiLayer::ShouldResetCamera() const noexcept -> bool {
   return reset_camera_requested_;
 }
 
 // -----------------------------------------------------------------------------
 
-GGEMSImGuiLayer::ViewportState const &
-GGEMSImGuiLayer::GetViewportState() const noexcept {
+auto GGEMSImGuiLayer::GetViewportState() const noexcept
+    -> GGEMSImGuiLayer::ViewportState const & {
   return viewport_state_;
 }
 
 // -----------------------------------------------------------------------------
 
-void GGEMSImGuiLayer::BuildMainDockspace() {
+auto GGEMSImGuiLayer::BuildMainDockspace() -> void {
   ImGuiViewport const *viewport = ImGui::GetMainViewport();
 
   ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -136,7 +157,14 @@ void GGEMSImGuiLayer::BuildMainDockspace() {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSImGuiLayer::BuildMainMenuBar() {
+auto GGEMSImGuiLayer::GetParticleTraceVisibility() const noexcept
+    -> render::GGEMSParticleTraceVisibility const & {
+  return particle_trace_visibility_;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSImGuiLayer::BuildMainMenuBar() -> void {
   if (!ImGui::BeginMainMenuBar()) {
     return;
   }
@@ -158,7 +186,12 @@ void GGEMSImGuiLayer::BuildMainMenuBar() {
 
     ImGui::Separator();
     ImGui::MenuItem("Axes", nullptr, &show_axes_);
-    ImGui::MenuItem("Particle traces", nullptr, &show_particle_traces_);
+
+    bool show_particle_traces = particle_trace_visibility_.IsGlobalVisible();
+    if (ImGui::MenuItem("Particle traces", nullptr, &show_particle_traces)) {
+      particle_trace_visibility_.SetGlobalVisible(show_particle_traces);
+    }
+
     ImGui::MenuItem("Step points", nullptr, &show_step_points_, false);
     ImGui::MenuItem("Interaction points", nullptr, &show_interaction_points_,
                     false);
@@ -193,9 +226,9 @@ void GGEMSImGuiLayer::BuildMainMenuBar() {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSImGuiLayer::BuildStatusPanel(
+auto GGEMSImGuiLayer::BuildStatusPanel(
     vk::Extent2D const &swapchain_extent,
-    detail::GGEMSDeviceStatusSnapshot const &device_status) {
+    detail::GGEMSDeviceStatusSnapshot const &device_status) -> void {
   ImGui::Begin("GGEMS Status", &show_status_panel_);
 
   ImGui::TextUnformatted("GuiMode bootstrap");
@@ -250,7 +283,8 @@ void GGEMSImGuiLayer::BuildStatusPanel(
   ImGui::TextUnformatted("Scene renderer: connected");
   ImGui::Text("Axes: %s", show_axes_ ? "visible" : "hidden");
   ImGui::Text("Particle traces: %s",
-              show_particle_traces_ ? "visible" : "hidden");
+              particle_trace_visibility_.IsGlobalVisible() ? "visible"
+                                                           : "hidden");
   ImGui::TextUnformatted("GGEMSWorld: not loaded yet");
   ImGui::TextUnformatted("Output console: connected");
 
@@ -259,16 +293,17 @@ void GGEMSImGuiLayer::BuildStatusPanel(
 
 // -----------------------------------------------------------------------------
 
-void GGEMSImGuiLayer::BuildViewportPlaceholder(
-    ImTextureID scene_texture_id, vk::Extent2D const &scene_texture_extent) {
+auto GGEMSImGuiLayer::BuildViewportPlaceholder(
+    ImTextureID scene_texture_id, vk::Extent2D const &scene_texture_extent)
+    -> void {
   ImGuiWindowFlags window_flags =
       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
-  viewport_state_.orbit_delta_x_pixels = 0.0f;
-  viewport_state_.orbit_delta_y_pixels = 0.0f;
-  viewport_state_.pan_delta_x_pixels = 0.0f;
-  viewport_state_.pan_delta_y_pixels = 0.0f;
-  viewport_state_.zoom_delta = 0.0f;
+  viewport_state_.orbit_delta_x_pixels = 0.0F;
+  viewport_state_.orbit_delta_y_pixels = 0.0F;
+  viewport_state_.pan_delta_x_pixels = 0.0F;
+  viewport_state_.pan_delta_y_pixels = 0.0F;
+  viewport_state_.zoom_delta = 0.0F;
   viewport_state_.hovered = false;
   viewport_state_.focused = false;
 
@@ -276,11 +311,11 @@ void GGEMSImGuiLayer::BuildViewportPlaceholder(
 
   ImVec2 available_size = ImGui::GetContentRegionAvail();
 
-  std::uint32_t width = available_size.x > 1.0f
+  std::uint32_t width = available_size.x > 1.0F
                             ? static_cast<std::uint32_t>(available_size.x)
                             : 1U;
 
-  std::uint32_t height = available_size.y > 1.0f
+  std::uint32_t height = available_size.y > 1.0F
                              ? static_cast<std::uint32_t>(available_size.y)
                              : 1U;
 
@@ -299,41 +334,41 @@ void GGEMSImGuiLayer::BuildViewportPlaceholder(
 
     viewport_state_.hovered = ImGui::IsItemHovered();
 
-    ImGuiIO &io = ImGui::GetIO();
+    ImGuiIO &imgui_io = ImGui::GetIO();
 
     if (viewport_state_.hovered) {
 
-      if (ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.0f)) {
-        viewport_state_.orbit_delta_x_pixels = io.MouseDelta.x;
-        viewport_state_.orbit_delta_y_pixels = io.MouseDelta.y;
+      if (ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.0F)) {
+        viewport_state_.orbit_delta_x_pixels = imgui_io.MouseDelta.x;
+        viewport_state_.orbit_delta_y_pixels = imgui_io.MouseDelta.y;
       }
 
-      if (ImGui::IsMouseDragging(ImGuiMouseButton_Middle, 0.0f)) {
-        viewport_state_.pan_delta_x_pixels = io.MouseDelta.x;
-        viewport_state_.pan_delta_y_pixels = io.MouseDelta.y;
+      if (ImGui::IsMouseDragging(ImGuiMouseButton_Middle, 0.0F)) {
+        viewport_state_.pan_delta_x_pixels = imgui_io.MouseDelta.x;
+        viewport_state_.pan_delta_y_pixels = imgui_io.MouseDelta.y;
       }
 
-      if (io.MouseWheel != 0.0f) {
-        viewport_state_.zoom_delta = io.MouseWheel;
+      if (imgui_io.MouseWheel != 0.0F) {
+        viewport_state_.zoom_delta = imgui_io.MouseWheel;
       }
 
       bool allow_keyboard_pan =
           (viewport_state_.hovered || viewport_state_.focused) &&
-          !io.WantTextInput;
+          !imgui_io.WantTextInput;
 
       if (allow_keyboard_pan) {
         float keyboard_pan_speed_pixels_per_second = 360.0F;
 
-        if (io.KeyShift) {
+        if (imgui_io.KeyShift) {
           keyboard_pan_speed_pixels_per_second *= 3.0F;
         }
 
-        if (io.KeyCtrl) {
+        if (imgui_io.KeyCtrl) {
           keyboard_pan_speed_pixels_per_second *= 0.25F;
         }
 
         float keyboard_pan_delta_pixels =
-            keyboard_pan_speed_pixels_per_second * io.DeltaTime;
+            keyboard_pan_speed_pixels_per_second * imgui_io.DeltaTime;
 
         if (ImGui::IsKeyDown(ImGuiKey_LeftArrow)) {
           viewport_state_.pan_delta_x_pixels -= keyboard_pan_delta_pixels;
@@ -365,8 +400,9 @@ void GGEMSImGuiLayer::BuildViewportPlaceholder(
 
 // -----------------------------------------------------------------------------
 
-void GGEMSImGuiLayer::BuildDefaultDockspaceLayout(
-    ImGuiID dockspace_id, ImVec2 const &dockspace_size) {
+auto GGEMSImGuiLayer::BuildDefaultDockspaceLayout(ImGuiID dockspace_id,
+                                                  ImVec2 const &dockspace_size)
+    -> void {
   ImGui::DockBuilderRemoveNode(dockspace_id);
 
   ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);
@@ -394,7 +430,7 @@ void GGEMSImGuiLayer::BuildDefaultDockspaceLayout(
 
 // -----------------------------------------------------------------------------
 
-void GGEMSImGuiLayer::BuildInspectorPanel() {
+auto GGEMSImGuiLayer::BuildInspectorPanel() -> void {
   ImGui::Begin("GGEMS Inspector", &show_inspector_panel_);
 
   ImGui::TextUnformatted("Selection");
@@ -452,7 +488,7 @@ void GGEMSImGuiLayer::BuildInspectorPanel() {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSImGuiLayer::BuildScenePanel() {
+auto GGEMSImGuiLayer::BuildScenePanel() -> void {
   ImGui::Begin("GGEMS Scene", &show_scene_panel_);
 
   ImGui::TextUnformatted("Scene hierarchy");
@@ -476,9 +512,114 @@ void GGEMSImGuiLayer::BuildScenePanel() {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSImGuiLayer::BuildSceneNode(char const *label,
+auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
+  if (!source_run_snapshot_.has_value()) {
+    ImGui::TextDisabled("No completed GGEMSRun source snapshot submitted yet");
+    return;
+  }
+
+  auto const &records = source_run_snapshot_->GetRecords();
+  auto const &ranges = source_run_snapshot_->GetRanges();
+
+  if (records.size() != ranges.size()) {
+    ImGui::TextDisabled("Invalid source snapshot");
+    return;
+  }
+
+  for (std::size_t source_index = 0U; source_index < records.size();
+       ++source_index) {
+    auto const &record = records[source_index];
+    auto const &range = ranges[source_index];
+
+    std::string const source_type{core::sources::ToLongName(
+        core::sources::FromKernelSourceType(record.source_type))};
+
+    std::string const particle_type = core::particles::ToLongName(
+        core::particles::FromKernelParticleType(record.emitted_particle_type));
+
+    std::uint64_t const projection_primary_end =
+        range.projection_primary_begin + range.primary_count;
+
+    ImGui::PushID(static_cast<void const *>(&record));
+
+    bool source_visible = particle_trace_visibility_.IsSourceVisible(
+        static_cast<std::uint32_t>(source_index));
+
+    if (ImGui::Checkbox("##trajectory_visibility", &source_visible)) {
+      particle_trace_visibility_.SetSourceVisible(source_index, source_visible);
+    }
+
+    if (ImGui::IsItemHovered()) {
+      ImGui::BeginTooltip();
+      ImGui::TextUnformatted(
+          "Controls trajectory visibility only; source state is unchanged.");
+      ImGui::EndTooltip();
+    }
+
+    ImGui::SameLine();
+
+    ImGuiTreeNodeFlags const flags =
+        ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+    bool const opened = ImGui::TreeNodeEx(
+        "##source_details", flags, "Source %zu - %s - %s", source_index,
+        source_type.c_str(), particle_type.c_str());
+
+    if (opened) {
+      ImGui::Text("Source index: %zu", source_index);
+      ImGui::Text("Type: %s", source_type.c_str());
+      ImGui::Text("Particle: %s", particle_type.c_str());
+      ImGui::Text("Primary count: %llu",
+                  static_cast<unsigned long long>(range.primary_count));
+      ImGui::Text(
+          "Range: [%llu, %llu)",
+          static_cast<unsigned long long>(range.projection_primary_begin),
+          static_cast<unsigned long long>(projection_primary_end));
+
+      ImGui::Separator();
+
+      std::string const position_x =
+          units::HumanReadableSignedLength(record.position_x_pm, 3);
+      std::string const position_y =
+          units::HumanReadableSignedLength(record.position_y_pm, 3);
+      std::string const position_z =
+          units::HumanReadableSignedLength(record.position_z_pm, 3);
+
+      std::string const energy =
+          units::HumanReadable(units::Energy{record.energy_milli_eV}, 3);
+      std::string const time_start =
+          units::HumanReadable(units::Time{record.time_start_ps}, 3);
+      std::string const time_stop =
+          units::HumanReadable(units::Time{record.time_stop_ps}, 3);
+
+      ImGui::Text("Position: (%s, %s, %s)", position_x.c_str(),
+                  position_y.c_str(), position_z.c_str());
+      ImGui::Text("Direction: (%.6g, %.6g, %.6g)",
+                  static_cast<double>(record.direction_x),
+                  static_cast<double>(record.direction_y),
+                  static_cast<double>(record.direction_z));
+      ImGui::Text("Energy: %s", energy.c_str());
+
+      if (record.time_stop_ps <= record.time_start_ps) {
+        ImGui::Text("Time: %s (fixed)", time_start.c_str());
+      } else {
+        ImGui::Text("Time window: [%s, %s)", time_start.c_str(),
+                    time_stop.c_str());
+      }
+
+      ImGui::Text("Weight: %.9g", static_cast<double>(record.weight));
+      ImGui::TreePop();
+    }
+
+    ImGui::PopID();
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSImGuiLayer::BuildSceneNode(char const *label,
                                      SceneSelection selection,
-                                     ImGuiTreeNodeFlags extra_flags) {
+                                     ImGuiTreeNodeFlags extra_flags) -> void {
   ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow |
                              ImGuiTreeNodeFlags_SpanAvailWidth | extra_flags;
 
@@ -498,7 +639,7 @@ void GGEMSImGuiLayer::BuildSceneNode(char const *label,
       ImGui::TextDisabled("World volume: not loaded yet");
       break;
     case SceneSelection::Sources:
-      ImGui::TextDisabled("No particle source loaded yet");
+      BuildSourceEntries();
       break;
     case SceneSelection::Volumes:
       ImGui::TextDisabled("No geometry volume loaded yet");
@@ -506,12 +647,15 @@ void GGEMSImGuiLayer::BuildSceneNode(char const *label,
     case SceneSelection::Materials:
       ImGui::TextDisabled("No material table loaded yet");
       break;
-    case SceneSelection::Tracks:
+    case SceneSelection::Tracks: {
       ImGui::TextDisabled(
           "Particle traces can be submitted from observer records.");
       ImGui::TextDisabled("Camera pan: middle mouse or arrow keys.");
       ImGui::TextDisabled("Shift + arrows: faster, Ctrl + arrows: precise.");
-      ImGui::Checkbox("Show trajectories", &show_particle_traces_);
+      bool show_particle_traces = particle_trace_visibility_.IsGlobalVisible();
+      if (ImGui::Checkbox("Show trajectories", &show_particle_traces)) {
+        particle_trace_visibility_.SetGlobalVisible(show_particle_traces);
+      }
       ImGui::Checkbox("Show step points", &show_step_points_);
       ImGui::SameLine();
       ImGui::TextDisabled("soon");
@@ -519,6 +663,7 @@ void GGEMSImGuiLayer::BuildSceneNode(char const *label,
       ImGui::SameLine();
       ImGui::TextDisabled("soon");
       break;
+    }
     case SceneSelection::Particles:
       ImGui::TextDisabled("No particle loaded yet");
       break;

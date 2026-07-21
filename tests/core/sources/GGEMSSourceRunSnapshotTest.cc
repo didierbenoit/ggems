@@ -276,7 +276,7 @@ TEST(GGEMSSourceRunSnapshot, BuildsOrderedMultiSourceSnapshot) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSSourceRunSnapshot, PreservesDisabledSourceSlots) {
+TEST(GGEMSSourceRunSnapshot, PreservesZeroPrimarySourceSlots) {
   std::vector<GGEMSSourcePtr> sources{MakeSource(3ULL), MakeSource(0ULL),
                                       MakeSource(5ULL), MakeSource(0ULL),
                                       MakeSource(2ULL)};
@@ -515,4 +515,40 @@ TEST(GGEMSSourceRunSnapshot, SingleSourceOverloadMatchesCollectionOverload) {
                     mono_snapshot.GetRanges()[0U].primary_count);
   EXPECT_EQ(mono_snapshot.GetTotalPrimaryCount(),
             generic_snapshot.GetTotalPrimaryCount());
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceRunSnapshot, PreservesZeroPrimaryAndDuplicateSlotsTogether) {
+  auto active_source = MakeSource(3ULL);
+  active_source->SetEnergyMilliElectronVolt(123'000'000ULL)
+      .SetPositionPicoMeter(11LL, 22LL, 33LL)
+      .SetDirection(0.0F, 0.0F, 1.0F);
+
+  auto disabled_source = MakeSource(0ULL);
+  disabled_source->SetEnergyMilliElectronVolt(456'000'000ULL)
+      .SetPositionPicoMeter(-11LL, -22LL, -33LL)
+      .SetDirection(0.0F, 1.0F, 0.0F);
+
+  std::vector<GGEMSSourcePtr> sources{active_source, disabled_source,
+                                      active_source};
+
+  auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(sources);
+
+  ASSERT_EQ(snapshot.GetRecords().size(), 3U);
+  ASSERT_EQ(snapshot.GetRanges().size(), 3U);
+
+  ExpectSourceRange(snapshot.GetRanges()[0U], 0ULL, 3ULL);
+  ExpectSourceRange(snapshot.GetRanges()[1U], 3ULL, 0ULL);
+  ExpectSourceRange(snapshot.GetRanges()[2U], 3ULL, 3ULL);
+  EXPECT_EQ(snapshot.GetTotalPrimaryCount(), 6ULL);
+
+  ExpectSourceRecordsEqual(snapshot.GetRecords()[0U],
+                           active_source->BuildRecord());
+  ExpectSourceRecordsEqual(snapshot.GetRecords()[1U],
+                           disabled_source->BuildRecord());
+  ExpectSourceRecordsEqual(snapshot.GetRecords()[2U],
+                           active_source->BuildRecord());
+  EXPECT_NE(&snapshot.GetRecords()[0U], &snapshot.GetRecords()[2U]);
 }

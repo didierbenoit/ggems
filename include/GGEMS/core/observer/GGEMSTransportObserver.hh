@@ -16,42 +16,47 @@ public:
 
   GGEMSTransportObserver(GGEMSTransportObserver const &) = delete;
   GGEMSTransportObserver(GGEMSTransportObserver &&) = delete;
-  GGEMSTransportObserver &operator=(GGEMSTransportObserver const &) = delete;
-  GGEMSTransportObserver &operator=(GGEMSTransportObserver &&) = delete;
+  auto operator=(GGEMSTransportObserver const &)
+      -> GGEMSTransportObserver & = delete;
+  auto operator=(GGEMSTransportObserver &&)
+      -> GGEMSTransportObserver & = delete;
 
-public:
-  GGEMSTransportObserver &Enable(bool enabled = true) noexcept;
-  GGEMSTransportObserver &Disable() noexcept;
+  auto Enable(bool enabled = true) noexcept -> GGEMSTransportObserver &;
+  auto Disable() noexcept -> GGEMSTransportObserver &;
 
-  GGEMSTransportObserver &SetRecordCapacity(std::uint32_t record_capacity);
-  GGEMSTransportObserver &
-  SetMaxStoredRecordCount(std::uint32_t max_stored_record_count);
+  auto SetRecordCapacity(std::uint32_t record_capacity)
+      -> GGEMSTransportObserver &;
+  auto SetMaxStoredRecordCount(std::uint32_t max_stored_record_count)
+      -> GGEMSTransportObserver &;
 
-  GGEMSTransportObserver &
-  CaptureFirstPrimaries(std::uint32_t primary_count) noexcept;
+  auto CaptureFirstPrimaries(std::uint32_t primary_count) noexcept
+      -> GGEMSTransportObserver &;
 
-  GGEMSTransportObserver &
-  CapturePrimary(std::uint64_t global_primary_id) noexcept;
-  GGEMSTransportObserver &ClearCapturedPrimary() noexcept;
+  auto CapturePrimary(std::uint64_t global_primary_id) noexcept
+      -> GGEMSTransportObserver &;
+  auto ClearCapturedPrimary() noexcept -> GGEMSTransportObserver &;
 
   void Clear();
+  auto SetRunSourceSlotCount(std::uint32_t source_slot_count) noexcept -> void;
+
   void Accumulate(std::span<GGEMSObserverRecord const> records,
                   GGEMSObserverCounters const &counters);
 
-  [[nodiscard]] GGEMSObserverConfigRecord BuildConfigRecord() const noexcept;
+  [[nodiscard]] auto BuildConfigRecord() const noexcept
+      -> GGEMSObserverConfigRecord;
 
-  [[nodiscard]] bool IsEnabled() const noexcept;
-  [[nodiscard]] std::uint32_t GetRecordCapacity() const noexcept;
-  [[nodiscard]] std::uint32_t GetRecordCount() const noexcept;
-  [[nodiscard]] std::uint32_t GetOverflowCount() const noexcept;
-  [[nodiscard]] std::uint32_t GetCapturedPrimaryCount() const noexcept;
+  [[nodiscard]] auto IsEnabled() const noexcept -> bool;
+  [[nodiscard]] auto GetRecordCapacity() const noexcept -> std::uint32_t;
+  [[nodiscard]] auto GetRecordCount() const noexcept -> std::uint32_t;
+  [[nodiscard]] auto GetOverflowCount() const noexcept -> std::uint32_t;
+  [[nodiscard]] auto GetCapturedPrimaryCount() const noexcept -> std::uint32_t;
 
-  [[nodiscard]] std::vector<GGEMSObserverRecord> const &
-  GetRecords() const noexcept;
+  [[nodiscard]] auto GetRecords() const noexcept
+      -> std::vector<GGEMSObserverRecord> const &;
 
-  [[nodiscard]] std::string
-  BuildDump(std::uint32_t max_record_count = 128U) const;
-  void Verbose(std::uint32_t max_record_count = 128U) const;
+  [[nodiscard]] auto BuildDump(std::uint32_t max_record_count = 128U) const
+      -> std::string;
+  auto Verbose(std::uint32_t max_record_count = 128U) const -> void;
 
 private:
   bool enabled_{false};
@@ -64,7 +69,8 @@ private:
   std::uint64_t capture_global_primary_id_{0xFFFFFFFFFFFFFFFFULL};
 
   GGEMSObserverCounters counters_{};
-  std::vector<GGEMSObserverRecord> records_{};
+  std::uint32_t last_run_source_slot_count_{1U};
+  std::vector<GGEMSObserverRecord> records_;
 };
 
 } // namespace ggems::core::observer

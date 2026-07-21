@@ -10,6 +10,10 @@
 
 struct GLFWwindow;
 
+namespace ggems::core {
+class GGEMSRun;
+}
+
 namespace ggems::core::observer {
 class GGEMSTransportObserver;
 }
@@ -27,12 +31,13 @@ public:
 
   GGEMSGuiApplication(GGEMSGuiApplication const &) = delete;
   GGEMSGuiApplication(GGEMSGuiApplication &&) = delete;
-  GGEMSGuiApplication &operator=(GGEMSGuiApplication const &) = delete;
-  GGEMSGuiApplication &operator=(GGEMSGuiApplication &&) = delete;
+  auto operator=(GGEMSGuiApplication const &) -> GGEMSGuiApplication & = delete;
+  auto operator=(GGEMSGuiApplication &&) -> GGEMSGuiApplication & = delete;
 
-public:
   void Initialise();
   void Run();
+
+  auto SubmitLastRunSourceSnapshot(ggems::core::GGEMSRun const &run) -> void;
 
   void SubmitParticleTraceSegments(
       std::vector<ggems::render::GGEMSParticleTraceSegment> segments);
@@ -40,7 +45,7 @@ public:
       ggems::core::observer::GGEMSTransportObserver const &observer);
   void ClearParticleTraces();
 
-  [[nodiscard]] bool IsInitialised() const noexcept;
+  [[nodiscard]] auto IsInitialised() const noexcept -> bool;
 
   void SetVulkanDevice(std::string selection);
   void SetVulkanDevice(std::uint32_t enumeration_index);
@@ -51,14 +56,13 @@ private:
   static void FramebufferResizeCallback(GLFWwindow *window, int width,
                                         int height) noexcept;
 
-private:
   std::string title_;
   std::int32_t width_{0};
   std::int32_t height_{0};
   std::string vulkan_device_name_selector_{"auto"};
-  std::optional<std::uint32_t> vulkan_device_index_selector_{};
+  std::optional<std::uint32_t> vulkan_device_index_selector_;
   GLFWwindow *window_{nullptr};
-  std::unique_ptr<GGEMSVulkanContext> vk_context_{};
+  std::unique_ptr<GGEMSVulkanContext> vk_context_;
   bool glfw_initialised_{false};
   bool framebuffer_resized_{false};
 };

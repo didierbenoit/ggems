@@ -1,9 +1,10 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <span>
-#include <vector>
 #include <array>
+#include <vector>
 
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/core/observer/GGEMSObserverTypes.hh"
@@ -46,6 +47,36 @@ struct GGEMSParticleTraceVertex {
   std::array<float, 4U> colour{};
 };
 
+struct GGEMSParticleTraceDrawRange {
+  std::uint32_t source_index{core::particles::k_invalid_id_u32};
+  std::size_t first_vertex{0U};
+  std::size_t vertex_count{0U};
+};
+
+struct GGEMSParticleTraceDrawData {
+  std::vector<GGEMSParticleTraceVertex> vertices;
+  std::vector<GGEMSParticleTraceDrawRange> draw_ranges;
+};
+
+class GGEMSParticleTraceVisibility {
+public:
+  auto ReconcileSourceCount(std::size_t source_count) -> void;
+
+  auto SetGlobalVisible(bool visible) noexcept -> void;
+  [[nodiscard]] auto IsGlobalVisible() const noexcept -> bool;
+
+  auto SetSourceVisible(std::size_t source_index, bool visible) -> void;
+  [[nodiscard]] auto IsSourceVisible(std::uint32_t source_index) const noexcept
+      -> bool;
+
+  [[nodiscard]] auto ShouldDraw(std::uint32_t source_index) const noexcept
+      -> bool;
+
+private:
+  bool global_visible_{true};
+  std::vector<std::uint8_t> source_visibility_;
+};
+
 [[nodiscard]] auto ToParticleTracePointMetre(
     core::observer::GGEMSObserverRecord const &record) noexcept
     -> GGEMSParticleTracePoint;
@@ -57,4 +88,8 @@ struct GGEMSParticleTraceVertex {
 [[nodiscard]] auto
 BuildParticleTraceVertices(std::span<GGEMSParticleTraceSegment const> segments)
     -> std::vector<GGEMSParticleTraceVertex>;
+
+[[nodiscard]] auto
+BuildParticleTraceDrawData(std::span<GGEMSParticleTraceSegment const> segments)
+    -> GGEMSParticleTraceDrawData;
 } // namespace ggems::render

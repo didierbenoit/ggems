@@ -35,9 +35,11 @@
  */
 
 /// \cond
+#include <format>
 #include <array>
 #include <cstdint>
 #include <string>
+#include <string_view>
 /// \endcond
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
@@ -67,9 +69,9 @@ using Length = Quantity<LengthDim, std::uint64_t>;
  *
  * \return UTF-8 encoded textual representation with an SI suffix.
  */
-inline std::string HumanReadable(Length const &l, std::int8_t precision = 7,
-                                 std::int8_t width = -1) {
-  long double v = static_cast<long double>(l.value);
+inline auto HumanReadable(Length const &length, std::int8_t precision = 7,
+                          std::int8_t width = -1) -> std::string {
+  auto value = static_cast<long double>(length.value);
 
   struct Unit {
     long double threshold;
@@ -77,37 +79,41 @@ inline std::string HumanReadable(Length const &l, std::int8_t precision = 7,
     long double scale;
   };
 
-  static constexpr std::array<Unit, 6> units{{{1.0e15L, " km", 1.0e15L},
-                                              {1.0e12L, " m", 1.0e12L},
-                                              {1.0e9L, " mm", 1.0e9L},
-                                              {1.0e6L, " um", 1.0e6L},
-                                              {1.0e3L, " nm", 1.0e3L},
-                                              {0.0L, " pm", 1.0L}}};
+  static constexpr std::array<Unit, 6> units{
+      {{.threshold = 1.0e15L, .suffix = " km", .scale = 1.0e15L},
+       {.threshold = 1.0e12L, .suffix = " m", .scale = 1.0e12L},
+       {.threshold = 1.0e9L, .suffix = " mm", .scale = 1.0e9L},
+       {.threshold = 1.0e6L, .suffix = " um", .scale = 1.0e6L},
+       {.threshold = 1.0e3L, .suffix = " nm", .scale = 1.0e3L},
+       {.threshold = 0.0L, .suffix = " pm", .scale = 1.0L}}};
 
-  for (auto const &u : units) {
-    if (v >= u.threshold) {
+  for (auto const &unit : units) {
+    if (value >= unit.threshold) {
 
-      long double scaled = v / u.scale;
+      long double scaled = value / unit.scale;
 
       std::string fmt;
 
       if (width < 0) {
-        fmt = std::format("{{:.{}f}}{}", precision, u.suffix);
+        fmt = std::format("{{:.{}f}}{}", precision, unit.suffix);
       } else {
-        fmt = std::format("{{:{}.{}f}}{}", width, precision, u.suffix);
+        fmt = std::format("{{:{}.{}f}}{}", width, precision, unit.suffix);
       }
 
       return std::vformat(fmt, std::make_format_args(scaled));
     }
   }
 
-  return std::format("{:.{}f} pm", v, precision);
+  return std::format("{:.{}f} pm", value, precision);
 }
 
-[[nodiscard]] inline std::string
-HumanReadableSignedLength(std::int64_t value_pm) {
+[[nodiscard]] inline auto
+HumanReadableSignedLength(std::int64_t const value_pm,
+                          std::int8_t const precision = 7,
+                          std::int8_t const width = -1) -> std::string {
   if (value_pm >= 0LL) {
-    return HumanReadable(Length{static_cast<std::uint64_t>(value_pm)});
+    return HumanReadable(Length{static_cast<std::uint64_t>(value_pm)},
+                         precision, width);
   }
 
   std::uint64_t magnitude_pm =
@@ -121,8 +127,8 @@ HumanReadableSignedLength(std::int64_t value_pm) {
  * \param v Integer literal in pm.
  * \return \c Length quantity equal to \c v pm.
  */
-consteval Length operator""_pm(unsigned long long v) noexcept {
-  return Length{static_cast<std::uint64_t>(v)};
+consteval auto operator""_pm(unsigned long long value) noexcept -> Length {
+  return Length{static_cast<std::uint64_t>(value)};
 }
 
 /*!
@@ -130,8 +136,8 @@ consteval Length operator""_pm(unsigned long long v) noexcept {
  * \param v Floating-point literal in pm.
  * \return \c Length quantity approximating \c v pm (fraction truncated).
  */
-consteval Length operator""_pm(long double v) noexcept {
-  return Length{static_cast<std::uint64_t>(v)};
+consteval auto operator""_pm(long double value) noexcept -> Length {
+  return Length{static_cast<std::uint64_t>(value)};
 }
 
 /*!
@@ -139,8 +145,8 @@ consteval Length operator""_pm(long double v) noexcept {
  * \param v Integer literal in nm.
  * \return \c Length quantity equal to \c v × 10³ pm.
  */
-consteval Length operator""_nm(unsigned long long v) noexcept {
-  return Length{static_cast<std::uint64_t>(v) * 1000ULL};
+consteval auto operator""_nm(unsigned long long value) noexcept -> Length {
+  return Length{static_cast<std::uint64_t>(value) * 1000ULL};
 }
 
 /*!
@@ -148,8 +154,8 @@ consteval Length operator""_nm(unsigned long long v) noexcept {
  * \param v Floating-point literal in nm.
  * \return \c Length quantity approximating \c v × 10³ pm.
  */
-consteval Length operator""_nm(long double v) noexcept {
-  return Length{static_cast<std::uint64_t>(v * 1.0e3L)};
+consteval auto operator""_nm(long double value) noexcept -> Length {
+  return Length{static_cast<std::uint64_t>(value * 1.0e3L)};
 }
 
 /*!
@@ -157,8 +163,8 @@ consteval Length operator""_nm(long double v) noexcept {
  * \param v Integer literal in um.
  * \return \c Length quantity equal to \c v × 10⁶ pm.
  */
-consteval Length operator""_um(unsigned long long v) noexcept {
-  return Length{static_cast<std::uint64_t>(v) * 1'000'000ULL};
+consteval auto operator""_um(unsigned long long value) noexcept -> Length {
+  return Length{static_cast<std::uint64_t>(value) * 1'000'000ULL};
 }
 
 /*!
@@ -166,8 +172,8 @@ consteval Length operator""_um(unsigned long long v) noexcept {
  * \param v Floating-point literal in um.
  * \return \c Length quantity approximating \c v × 10⁶ pm.
  */
-consteval Length operator""_um(long double v) noexcept {
-  return Length{static_cast<std::uint64_t>(v * 1.0e6L)};
+consteval auto operator""_um(long double value) noexcept -> Length {
+  return Length{static_cast<std::uint64_t>(value * 1.0e6L)};
 }
 
 /*!
@@ -175,8 +181,8 @@ consteval Length operator""_um(long double v) noexcept {
  * \param v Integer literal in mm.
  * \return \c Length quantity equal to \c v × 10⁹ pm.
  */
-consteval Length operator""_mm(unsigned long long v) noexcept {
-  return Length{static_cast<std::uint64_t>(v) * 1'000'000'000ULL};
+consteval auto operator""_mm(unsigned long long value) noexcept -> Length {
+  return Length{static_cast<std::uint64_t>(value) * 1'000'000'000ULL};
 }
 
 /*!
@@ -184,8 +190,8 @@ consteval Length operator""_mm(unsigned long long v) noexcept {
  * \param v Floating-point literal in mm.
  * \return \c Length quantity approximating \c v × 10⁹ pm.
  */
-consteval Length operator""_mm(long double v) noexcept {
-  return Length{static_cast<std::uint64_t>(v * 1.0e9L)};
+consteval auto operator""_mm(long double value) noexcept -> Length {
+  return Length{static_cast<std::uint64_t>(value * 1.0e9L)};
 }
 
 /*!
@@ -193,8 +199,8 @@ consteval Length operator""_mm(long double v) noexcept {
  * \param v Integer literal in m.
  * \return \c Length quantity equal to \c v × 10¹² pm.
  */
-consteval Length operator""_m(unsigned long long v) noexcept {
-  return Length{static_cast<std::uint64_t>(v) * 1'000'000'000'000ULL};
+consteval auto operator""_m(unsigned long long value) noexcept -> Length {
+  return Length{static_cast<std::uint64_t>(value) * 1'000'000'000'000ULL};
 }
 
 /*!
@@ -202,8 +208,8 @@ consteval Length operator""_m(unsigned long long v) noexcept {
  * \param v Floating-point literal in m.
  * \return \c Length quantity approximating \c v × 10¹² pm.
  */
-consteval Length operator""_m(long double v) noexcept {
-  return Length{static_cast<std::uint64_t>(v * 1.0e12L)};
+consteval auto operator""_m(long double value) noexcept -> Length {
+  return Length{static_cast<std::uint64_t>(value * 1.0e12L)};
 }
 
 /*!
@@ -212,8 +218,8 @@ consteval Length operator""_m(long double v) noexcept {
  * \param v Integer literal in kilometres.
  * \return \c Length quantity equal to \c v × 10¹⁵ pm.
  */
-consteval Length operator""_km(unsigned long long v) noexcept {
-  return Length{static_cast<std::uint64_t>(v) * 1'000'000'000'000'000ULL};
+consteval auto operator""_km(unsigned long long value) noexcept -> Length {
+  return Length{static_cast<std::uint64_t>(value) * 1'000'000'000'000'000ULL};
 }
 
 /*!
@@ -222,7 +228,7 @@ consteval Length operator""_km(unsigned long long v) noexcept {
  * \param v Floating-point literal in kilometres.
  * \return \c Length quantity approximating \c v × 10¹⁵ pm.
  */
-consteval Length operator""_km(long double v) noexcept {
-  return Length{static_cast<std::uint64_t>(v * 1.0e15L)};
+consteval auto operator""_km(long double value) noexcept -> Length {
+  return Length{static_cast<std::uint64_t>(value * 1.0e15L)};
 }
 } // namespace ggems::units

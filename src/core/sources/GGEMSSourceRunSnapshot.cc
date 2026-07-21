@@ -2,10 +2,17 @@
 #include <format>
 #include <limits>
 #include <utility>
+#include <vector>
+#include <cstdint>
+#include <span>
+#include <memory>
 
 #include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
+#include "GGEMS/core/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 
 namespace ggems::core::sources {
 
@@ -46,8 +53,9 @@ GGEMSSourceRunSnapshot::GGEMSSourceRunSnapshot(
 
 // -----------------------------------------------------------------------------
 
-GGEMSSourceRunSnapshot
-BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources) {
+auto BuildSourceRunSnapshot(
+    std::span<std::shared_ptr<GGEMSSource> const> sources)
+    -> GGEMSSourceRunSnapshot {
   std::vector<GGEMSSourceRecord> records;
   std::vector<GGEMSSourceRunRange> ranges;
 
@@ -76,7 +84,8 @@ BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources) {
 
 // -----------------------------------------------------------------------------
 
-GGEMSSourceRunSnapshot BuildSourceRunSnapshot(GGEMSSource const &source) {
+auto BuildSourceRunSnapshot(GGEMSSource const &source)
+    -> GGEMSSourceRunSnapshot {
   std::vector<GGEMSSourceRecord> records;
   std::vector<GGEMSSourceRunRange> ranges;
 

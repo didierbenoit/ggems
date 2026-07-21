@@ -13,11 +13,12 @@ namespace ggems::core::sources {
 class GGEMSSource;
 class GGEMSSourceRunSnapshot;
 
-[[nodiscard]] GGEMSSourceRunSnapshot
-BuildSourceRunSnapshot(GGEMSSource const &source);
+[[nodiscard]] auto BuildSourceRunSnapshot(GGEMSSource const &source)
+    -> GGEMSSourceRunSnapshot;
 
-[[nodiscard]] GGEMSSourceRunSnapshot
-BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources);
+[[nodiscard]] auto
+BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources)
+    -> GGEMSSourceRunSnapshot;
 
 class GGEMSSourceRunSnapshot {
 public:
@@ -25,36 +26,37 @@ public:
 
   GGEMSSourceRunSnapshot(GGEMSSourceRunSnapshot const &) = default;
   GGEMSSourceRunSnapshot(GGEMSSourceRunSnapshot &&) = default;
-  GGEMSSourceRunSnapshot &operator=(GGEMSSourceRunSnapshot const &) = default;
-  GGEMSSourceRunSnapshot &operator=(GGEMSSourceRunSnapshot &&) = default;
+  auto operator=(GGEMSSourceRunSnapshot const &)
+      -> GGEMSSourceRunSnapshot & = default;
+  auto operator=(GGEMSSourceRunSnapshot &&)
+      -> GGEMSSourceRunSnapshot & = default;
 
-public:
-  [[nodiscard]] std::vector<GGEMSSourceRecord> const &
-  GetRecords() const noexcept {
+  [[nodiscard]] auto GetRecords() const noexcept
+      -> std::vector<GGEMSSourceRecord> const & {
     return records_;
   }
 
-  [[nodiscard]] std::vector<GGEMSSourceRunRange> const &
-  GetRanges() const noexcept {
+  [[nodiscard]] auto GetRanges() const noexcept
+      -> std::vector<GGEMSSourceRunRange> const & {
     return ranges_;
   }
 
-  [[nodiscard]] std::uint64_t GetTotalPrimaryCount() const noexcept {
+  [[nodiscard]] auto GetTotalPrimaryCount() const noexcept -> std::uint64_t {
     return total_primary_count_;
   }
 
 private:
-  friend GGEMSSourceRunSnapshot
-  BuildSourceRunSnapshot(GGEMSSource const &source);
+  friend auto BuildSourceRunSnapshot(GGEMSSource const &source)
+      -> GGEMSSourceRunSnapshot;
 
-  friend GGEMSSourceRunSnapshot
-  BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources);
+  friend auto
+  BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources)
+      -> GGEMSSourceRunSnapshot;
 
   GGEMSSourceRunSnapshot(std::vector<GGEMSSourceRecord> records,
                          std::vector<GGEMSSourceRunRange> ranges,
                          std::uint64_t total_primary_count);
 
-private:
   std::vector<GGEMSSourceRecord> records_;
   std::vector<GGEMSSourceRunRange> ranges_;
   std::uint64_t total_primary_count_{0ULL};

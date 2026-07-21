@@ -13,6 +13,7 @@
 #include "GGEMSVulkanDeviceSelection.hh"
 
 #include "GGEMS/render/GGEMSParticleTrace.hh"
+#include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 
 struct GLFWwindow;
 
@@ -24,136 +25,146 @@ public:
 
   GGEMSVulkanContext(GGEMSVulkanContext const &) = delete;
   GGEMSVulkanContext(GGEMSVulkanContext &&) = delete;
-  GGEMSVulkanContext &operator=(GGEMSVulkanContext const &) = delete;
-  GGEMSVulkanContext &operator=(GGEMSVulkanContext &&) = delete;
+  auto operator=(GGEMSVulkanContext const &) -> GGEMSVulkanContext & = delete;
+  auto operator=(GGEMSVulkanContext &&) -> GGEMSVulkanContext & = delete;
 
-public:
   void Initialise(GLFWwindow *window,
                   detail::GGEMSVulkanDeviceSelector const &device_selector,
                   detail::GGEMSComputeStatus compute_status);
 
-  [[nodiscard]] bool IsInitialised() const noexcept;
+  [[nodiscard]] auto IsInitialised() const noexcept -> bool;
 
-  void RenderFrame(GLFWwindow *window, bool framebuffer_resized);
+  auto RenderFrame(GLFWwindow *window, bool framebuffer_resized) -> void;
 
-  void SubmitParticleTraceSegments(
-      std::vector<ggems::render::GGEMSParticleTraceSegment> segments);
-  void ClearParticleTraces();
+  auto SubmitSourceRunSnapshot(core::sources::GGEMSSourceRunSnapshot snapshot)
+      -> void;
+
+  auto SubmitParticleTraceSegments(
+      std::vector<ggems::render::GGEMSParticleTraceSegment> segments) -> void;
+  auto ClearParticleTraces() -> void;
 
 private:
   struct QueueFamilyIndices {
-    std::optional<std::uint32_t> graphics{};
-    std::optional<std::uint32_t> presentation{};
+    std::optional<std::uint32_t> graphics;
+    std::optional<std::uint32_t> presentation;
 
-    [[nodiscard]] bool IsComplete() const noexcept {
+    [[nodiscard]] auto IsComplete() const noexcept -> bool {
       return graphics.has_value() && presentation.has_value();
     }
 
-    [[nodiscard]] bool UsesSeparateFamilies() const noexcept {
+    [[nodiscard]] auto UsesSeparateFamilies() const noexcept -> bool {
       return IsComplete() && graphics.value() != presentation.value();
     }
   };
 
   struct SwapchainSupportDetails {
     vk::SurfaceCapabilitiesKHR capabilities{};
-    std::vector<vk::SurfaceFormatKHR> surface_formats{};
-    std::vector<vk::PresentModeKHR> present_modes{};
+    std::vector<vk::SurfaceFormatKHR> surface_formats;
+    std::vector<vk::PresentModeKHR> present_modes;
   };
 
-private:
   void CreateInstance();
   void SetupDebugMessenger();
   void CreateSurface(GLFWwindow *window);
 
-  [[nodiscard]] std::vector<char const *> GetRequiredInstanceExtensions() const;
+  [[nodiscard]] static auto GetRequiredInstanceExtensions()
+      -> std::vector<char const *>;
 
 #if VK_HEADER_VERSION >= 304
-  static VKAPI_ATTR VkBool32 VKAPI_CALL
+  static auto
   DebugVkCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
                   vk::DebugUtilsMessageTypeFlagsEXT type,
                   vk::DebugUtilsMessengerCallbackDataEXT const *callback_data,
-                  void *user_data) noexcept;
+                  void *user_data) noexcept -> VKAPI_ATTR VkBool32 VKAPI_CALL;
 #else
-  static VKAPI_ATTR VkBool32 VKAPI_CALL
+  static auto
   DebugVkCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
                   VkDebugUtilsMessageTypeFlagsEXT type,
                   VkDebugUtilsMessengerCallbackDataEXT const *callback_data,
-                  void *user_data) noexcept;
+                  void *user_data) noexcept -> VKAPI_ATTR VkBool32 VKAPI_CALL;
 #endif
 
-  void SelectPhysicalDevice(
+  auto SelectPhysicalDevice(
       detail::GGEMSVulkanDeviceSelector const &device_selector,
-      std::optional<detail::GGEMSVulkanDisplayAdapter> const &display_adapter);
+      std::optional<detail::GGEMSVulkanDisplayAdapter> const &display_adapter)
+      -> void;
 
-  [[nodiscard]] detail::GGEMSVulkanDeviceCandidate
+  [[nodiscard]] auto
   BuildPhysicalDeviceCandidate(vk::raii::PhysicalDevice const &physical_device,
-                               std::uint32_t enumeration_index) const;
+                               std::uint32_t enumeration_index) const
+      -> detail::GGEMSVulkanDeviceCandidate;
 
-  [[nodiscard]] QueueFamilyIndices
-  FindQueueFamilies(vk::raii::PhysicalDevice const &physical_device) const;
+  [[nodiscard]] auto
+  FindQueueFamilies(vk::raii::PhysicalDevice const &physical_device) const
+      -> QueueFamilyIndices;
 
-  [[nodiscard]] bool SupportsRequiredDeviceExtensions(
-      vk::raii::PhysicalDevice const &physical_device) const;
+  [[nodiscard]] static auto SupportsRequiredDeviceExtensions(
+      vk::raii::PhysicalDevice const &physical_device) -> bool;
 
-  [[nodiscard]] bool SupportsRequiredFeatures(
-      vk::raii::PhysicalDevice const &physical_device) const;
+  [[nodiscard]] static auto
+  SupportsRequiredFeatures(vk::raii::PhysicalDevice const &physical_device)
+      -> bool;
 
-  [[nodiscard]] bool
-  SupportsSwapchain(vk::raii::PhysicalDevice const &physical_device) const;
+  [[nodiscard]] auto
+  SupportsSwapchain(vk::raii::PhysicalDevice const &physical_device) const
+      -> bool;
 
-  void WarnIfCrossAdapterPresentation(
+  auto WarnIfCrossAdapterPresentation(
       GLFWwindow *window,
       std::optional<detail::GGEMSVulkanDisplayAdapter> const &display_adapter)
-      const;
+      const -> void;
 
-  void CreateLogicalDevice();
+  auto CreateLogicalDevice() -> void;
 
-  void CreateSwapchain(GLFWwindow *window);
-  void CreateSwapchainImageViews();
+  auto CreateSwapchain(GLFWwindow *window) -> void;
+  auto CreateSwapchainImageViews() -> void;
 
-  [[nodiscard]] SwapchainSupportDetails
-  QuerySwapchainSupport(vk::raii::PhysicalDevice const &physical_device) const;
+  [[nodiscard]] auto
+  QuerySwapchainSupport(vk::raii::PhysicalDevice const &physical_device) const
+      -> SwapchainSupportDetails;
 
-  [[nodiscard]] vk::SurfaceFormatKHR ChooseSwapchainSurfaceFormat(
-      std::vector<vk::SurfaceFormatKHR> const &surface_formats) const;
+  [[nodiscard]] static auto ChooseSwapchainSurfaceFormat(
+      std::vector<vk::SurfaceFormatKHR> const &surface_formats)
+      -> vk::SurfaceFormatKHR;
 
-  [[nodiscard]] vk::PresentModeKHR ChooseSwapchainPresentMode(
-      std::vector<vk::PresentModeKHR> const &present_modes) const;
+  [[nodiscard]] static auto ChooseSwapchainPresentMode(
+      std::vector<vk::PresentModeKHR> const &present_modes)
+      -> vk::PresentModeKHR;
 
-  [[nodiscard]] vk::Extent2D
+  [[nodiscard]] static auto
   ChooseSwapchainExtent(vk::SurfaceCapabilitiesKHR const &capabilities,
-                        GLFWwindow *window) const;
+                        GLFWwindow *window) -> vk::Extent2D;
 
-  void CreateCommandPool();
-  void AllocateCommandBuffers();
+  auto CreateCommandPool() -> void;
+  auto AllocateCommandBuffers() -> void;
 
-  void CreateFrameSyncObjects();
-  void CreateSwapchainSyncObjects();
+  auto CreateFrameSyncObjects() -> void;
+  auto CreateSwapchainSyncObjects() -> void;
 
-  void RecordCommandBuffer(std::uint32_t image_index);
+  auto RecordCommandBuffer(std::uint32_t image_index) -> void;
 
-  void TransitionSwapchainImageLayout(std::uint32_t image_index,
+  auto TransitionSwapchainImageLayout(std::uint32_t image_index,
                                       vk::ImageLayout old_layout,
-                                      vk::ImageLayout new_layout);
+                                      vk::ImageLayout new_layout) -> void;
 
-  void CleanupSwapchain();
-  void RecreateSwapchain(GLFWwindow *window);
+  auto CleanupSwapchain() -> void;
+  auto RecreateSwapchain(GLFWwindow *window) -> void;
 
-  void CreateImGuiDescriptorPool();
-  void InitialiseImGui(GLFWwindow *window);
-  void ShutdownImGui() noexcept;
-  void BuildImGuiFrame();
-  void ApplyPendingParticleTraceSegments();
+  auto CreateImGuiDescriptorPool() -> void;
+  auto InitialiseImGui(GLFWwindow *window) -> void;
+  auto ShutdownImGui() noexcept -> void;
+  auto BuildImGuiFrame() -> void;
+  auto ApplyPendingSourceRunSnapshot() -> void;
+  auto ApplyPendingParticleTraceSegments() -> void;
 
-  void LoadImGuiFonts();
+  auto LoadImGuiFonts() -> void;
 
-  static void CheckImGuiVkResult(VkResult result) noexcept;
+  static auto CheckImGuiVkResult(VkResult result) noexcept -> void;
 
-  void InitialiseSceneRenderer();
-  void ShutdownSceneRenderer() noexcept;
+  auto InitialiseSceneRenderer() -> void;
+  auto ShutdownSceneRenderer() noexcept -> void;
 
-private:
-  vk::raii::Context context_{};
+  vk::raii::Context context_;
   vk::raii::Instance instance_{nullptr};
   vk::raii::DebugUtilsMessengerEXT debug_messenger_{nullptr};
   vk::raii::SurfaceKHR surface_{nullptr};
@@ -164,14 +175,14 @@ private:
   vk::raii::DescriptorPool imgui_descriptor_pool_{nullptr};
   vk::raii::CommandPool command_pool_{nullptr};
   vk::raii::SwapchainKHR swapchain_{nullptr};
-  std::vector<vk::Image> swapchain_images_{};
-  std::vector<vk::raii::ImageView> swapchain_image_views_{};
-  std::vector<vk::raii::CommandBuffer> command_buffers_{};
+  std::vector<vk::Image> swapchain_images_;
+  std::vector<vk::raii::ImageView> swapchain_image_views_;
+  std::vector<vk::raii::CommandBuffer> command_buffers_;
 
-  std::vector<vk::raii::Semaphore> image_available_semaphores_{};
-  std::vector<vk::raii::Semaphore> render_finished_semaphores_{};
-  std::vector<vk::raii::Fence> in_flight_fences_{};
-  std::vector<vk::Fence> swapchain_image_in_flight_fences_{};
+  std::vector<vk::raii::Semaphore> image_available_semaphores_;
+  std::vector<vk::raii::Semaphore> render_finished_semaphores_;
+  std::vector<vk::raii::Fence> in_flight_fences_;
+  std::vector<vk::Fence> swapchain_image_in_flight_fences_;
   std::uint32_t current_frame_{0U};
 
   vk::Format swapchain_image_format_{vk::Format::eUndefined};
@@ -180,18 +191,22 @@ private:
   VkFormat imgui_colour_attachment_format_{VK_FORMAT_UNDEFINED};
   VkPipelineRenderingCreateInfo imgui_pipeline_rendering_create_info_{};
 
-  GGEMSImGuiLayer imgui_layer_{};
-  GGEMSVulkanSceneRenderer scene_renderer_{};
+  GGEMSImGuiLayer imgui_layer_;
+  GGEMSVulkanSceneRenderer scene_renderer_;
   detail::GGEMSDeviceStatusSnapshot device_status_{};
 
-  std::mutex pending_particle_trace_mutex_{};
+  std::mutex pending_source_run_snapshot_mutex_;
+  std::optional<core::sources::GGEMSSourceRunSnapshot>
+      pending_source_run_snapshot_;
+
+  std::mutex pending_particle_trace_mutex_;
   std::vector<ggems::render::GGEMSParticleTraceSegment>
-      pending_particle_trace_segments_{};
+      pending_particle_trace_segments_;
   bool has_pending_particle_trace_segments_{false};
   bool pending_particle_trace_clear_{false};
 
-  float imgui_ui_scale_{1.0f};
-  float imgui_font_size_{15.0f};
+  float imgui_ui_scale_{1.0F};
+  float imgui_font_size_{15.0F};
   bool imgui_initialised_{false};
 
   QueueFamilyIndices queue_family_indices_{};
