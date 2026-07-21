@@ -1,10 +1,11 @@
 #include "GGEMS/render/GGEMSBanner.hh"
 #include "GGEMS/render/GGEMSColourNames.hh"
 #include "GGEMS/utf/GGEMSGlyphs.hh"
+#include "GGEMS/render/GGEMSColour.hh"
 
 namespace ggems::render {
 
-render::ColourKey constexpr banner_colour = render::GGEMS_THEME_BANNER;
+render::ColourKey constexpr banner_colour = render::GREEN_Acid;
 
 // =============================================================================
 // =============================================================================

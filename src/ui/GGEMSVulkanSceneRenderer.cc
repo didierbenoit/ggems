@@ -5,6 +5,7 @@
 #include <array>
 #include <cstddef>
 #include <cstring>
+#include <cstdint>
 
 #include <backends/imgui_impl_vulkan.h>
 
@@ -13,7 +14,6 @@
 #include "GGEMSVulkanSceneRenderer.hh"
 #include "GGEMS/render/GGEMSColourNames.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
-#include "GGEMS/render/GGEMSParticleColours.hh"
 
 namespace {
 constexpr std::uint32_t k_axis_count{3U};
@@ -426,8 +426,7 @@ void GGEMSVulkanSceneRenderer::RecordSceneCommands(
 
   command_buffer.pipelineBarrier2(to_colour_attachment_dependency);
 
-  vk::ClearValue clear_value{
-      ToVulkanClearColour(ggems::render::GGEMS_THEME_VULKAN_BACKGROUND)};
+  vk::ClearValue clear_value{ToVulkanClearColour(render::BLUE_Abyss)};
 
   vk::RenderingAttachmentInfo colour_attachment{
       .imageView = *colour_image_view_,

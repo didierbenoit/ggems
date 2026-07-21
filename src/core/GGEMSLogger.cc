@@ -12,24 +12,25 @@
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/render/GGEMSColour.hh"
+#include "GGEMS/render/GGEMSColourNames.hh"
 
 namespace ggems::core {
 
 // =============================================================================
 // =============================================================================
 
-static render::ColourKey LogLevelColour(LogLevel l) {
-  switch (l) {
+static auto LogLevelColour(LogLevel lvl) -> render::ColourKey {
+  switch (lvl) {
   case LogLevel::Debug:
-    return render::GGEMS_THEME_LOG_DEBUG;
+    return render::CYAN_Cryo;
   case LogLevel::Info:
-    return render::GGEMS_THEME_LOG_INFO;
+    return render::GREEN_Acid;
   case LogLevel::Warn:
-    return render::GGEMS_THEME_LOG_WARN;
+    return render::YELLOW_MotherAmber;
   case LogLevel::Error:
-    return render::GGEMS_THEME_LOG_ERROR;
+    return render::RED_XenoBlood;
   }
-  return render::GGEMS_THEME_LOG_INFO;
+  return render::GREEN_Acid;
 }
 
 // =============================================================================

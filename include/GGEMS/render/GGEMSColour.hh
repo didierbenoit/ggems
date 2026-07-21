@@ -45,6 +45,7 @@
 #include <format>
 #include <string>
 #include <string_view>
+#include <cstddef>
 /// \endcond
 
 namespace ggems::render {
@@ -193,7 +194,7 @@ constexpr std::array<RGB, kColourShadeCount> MakeGreyScale() noexcept {
       MakeRGB(64, 64, 64),    MakeRGB(96, 96, 96),    MakeRGB(128, 128, 128),
       MakeRGB(160, 160, 160), MakeRGB(192, 192, 192), MakeRGB(208, 208, 208),
       MakeRGB(224, 224, 224), MakeRGB(240, 240, 240), MakeRGB(252, 252, 252),
-      MakeRGB(3, 8, 6)};
+      MakeRGB(3, 3, 3)};
 }
 
 /*!
@@ -289,9 +290,9 @@ constexpr std::array<RGB, kColourShadeCount> MakeCyanScale() noexcept {
 constexpr std::array<RGB, kColourShadeCount> MakeBlueScale() noexcept {
   return {MakeRGB(0, 0, 64),      MakeRGB(0, 0, 96),     MakeRGB(0, 0, 139),
           MakeRGB(25, 25, 112),   MakeRGB(0, 71, 171),   MakeRGB(30, 144, 255),
-          MakeRGB(0, 127, 255),   MakeRGB(0, 191, 255),  MakeRGB(80, 120, 255),
+          MakeRGB(0, 127, 255),   MakeRGB(30, 38, 46),   MakeRGB(80, 120, 255),
           MakeRGB(125, 249, 255), MakeRGB(70, 130, 180), MakeRGB(160, 200, 255),
-          MakeRGB(82, 122, 165)};
+          MakeRGB(3, 5, 7)};
 }
 
 /*!

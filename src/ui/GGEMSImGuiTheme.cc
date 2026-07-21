@@ -1,5 +1,7 @@
-#include "GGEMSImGuiTheme.hh"
+#include <imgui.h>
 
+#include "GGEMSImGuiTheme.hh"
+#include "GGEMS/render/GGEMSColour.hh"
 #include "GGEMS/render/GGEMSColourNames.hh"
 
 namespace ggems::ui {
@@ -7,11 +9,11 @@ namespace ggems::ui {
 // =============================================================================
 // =============================================================================
 
-ImVec4 ToImGuiColour(render::ColourKey const &colour) {
+auto ToImGuiColour(render::ColourKey const &colour) -> ImVec4 {
   render::RGB rgb =
       render::GetColourRGB(colour.family, colour.shade, colour.variant);
 
-  constexpr float k_inverse_255{1.0f / 255.0f};
+  constexpr float k_inverse_255{1.0F / 255.0F};
 
   return ImVec4{static_cast<float>(rgb.r) * k_inverse_255,
                 static_cast<float>(rgb.g) * k_inverse_255,
@@ -22,9 +24,9 @@ ImVec4 ToImGuiColour(render::ColourKey const &colour) {
 // =============================================================================
 
 void ApplyGGEMSImGuiTheme() {
-  ImGuiIO &io = ImGui::GetIO();
+  ImGuiIO &imgui_io = ImGui::GetIO();
 
-  io.FontGlobalScale = 1.10F;
+  imgui_io.FontGlobalScale = 1.10F;
 
   ImGuiStyle &style = ImGui::GetStyle();
 
@@ -50,88 +52,228 @@ void ApplyGGEMSImGuiTheme() {
 
   ImVec4 *colours = style.Colors;
 
-  colours[ImGuiCol_Text] = ToImGuiColour(render::GGEMS_THEME_IMGUI_TEXT);
-  colours[ImGuiCol_TextDisabled] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_TEXT_DISABLED);
+  ImVec4 const transparent{0.0F, 0.0F, 0.0F, 0.0F};
 
-  colours[ImGuiCol_WindowBg] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_WINDOW_BG);
-  colours[ImGuiCol_ChildBg] = ToImGuiColour(render::GGEMS_THEME_IMGUI_CHILD_BG);
-  colours[ImGuiCol_PopupBg] = ToImGuiColour(render::GGEMS_THEME_IMGUI_POPUP_BG);
+  auto const WithAlpha = [](ImVec4 colour, float const alpha) -> ImVec4 {
+    colour.w = alpha;
+    return colour;
+  };
 
-  colours[ImGuiCol_Border] = ToImGuiColour(render::GGEMS_THEME_IMGUI_BORDER);
-  colours[ImGuiCol_BorderShadow] = ImVec4{0.0F, 0.0F, 0.0F, 0.0F};
-  colours[ImGuiCol_Separator] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_SEPARATOR);
+  ImVec4 const gunmetal = ToImGuiColour(render::BLUE_Gunmetal);
+  ImVec4 const gunmetal_soft = WithAlpha(gunmetal, 0.38F);
+  ImVec4 const gunmetal_hovered = WithAlpha(gunmetal, 0.72F);
+  ImVec4 const gunmetal_faint = WithAlpha(gunmetal, 0.20F);
 
-  colours[ImGuiCol_FrameBg] = ToImGuiColour(render::GGEMS_THEME_IMGUI_FRAME_BG);
-  colours[ImGuiCol_FrameBgHovered] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_FRAME_HOVERED);
-  colours[ImGuiCol_FrameBgActive] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_FRAME_ACTIVE);
+  ImVec4 const cryo = ToImGuiColour(render::CYAN_Cryo);
+  ImVec4 const cryo_soft = WithAlpha(cryo, 0.60F);
 
-  colours[ImGuiCol_TitleBg] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_WINDOW_BG);
-  colours[ImGuiCol_TitleBgActive] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_FRAME_BG);
-  colours[ImGuiCol_TitleBgCollapsed] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_WINDOW_BG);
+  ImVec4 const amber = ToImGuiColour(render::YELLOW_MotherAmber);
 
-  colours[ImGuiCol_MenuBarBg] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_FRAME_BG);
+  // -----------------------------------------------------------------------------
+  // Main surfaces
+  // -----------------------------------------------------------------------------
 
-  colours[ImGuiCol_Button] = ToImGuiColour(render::GGEMS_THEME_IMGUI_BUTTON);
-  colours[ImGuiCol_ButtonHovered] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_BUTTON_HOVERED);
-  colours[ImGuiCol_ButtonActive] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_BUTTON_ACTIVE);
+  colours[ImGuiCol_WindowBg] = ToImGuiColour(render::BLUE_Abyss);
 
-  colours[ImGuiCol_Header] = ToImGuiColour(render::GGEMS_THEME_IMGUI_HEADER);
-  colours[ImGuiCol_HeaderHovered] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_HEADER_HOVERED);
-  colours[ImGuiCol_HeaderActive] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_HEADER_ACTIVE);
+  colours[ImGuiCol_ChildBg] = transparent;
 
-  colours[ImGuiCol_Tab] = ToImGuiColour(render::GGEMS_THEME_IMGUI_TAB);
-  colours[ImGuiCol_TabHovered] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_TAB_HOVERED);
-  colours[ImGuiCol_TabSelected] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_TAB_ACTIVE);
-  colours[ImGuiCol_TabDimmed] = ToImGuiColour(render::GGEMS_THEME_IMGUI_TAB);
-  colours[ImGuiCol_TabDimmedSelected] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_TAB_ACTIVE);
-  colours[ImGuiCol_TabSelectedOverline] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_TAB_ACTIVE_OVERLINE);
-  colours[ImGuiCol_TabDimmedSelectedOverline] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_TAB_ACTIVE_OVERLINE);
+  colours[ImGuiCol_PopupBg] = ToImGuiColour(render::BLUE_Abyss);
 
-  colours[ImGuiCol_ScrollbarBg] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_SCROLLBAR_BG);
-  colours[ImGuiCol_ScrollbarGrab] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_SCROLLBAR_GRAB);
-  colours[ImGuiCol_ScrollbarGrabHovered] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_SCROLLBAR_GRAB_HOVERED);
-  colours[ImGuiCol_ScrollbarGrabActive] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_SCROLLBAR_GRAB_ACTIVE);
+  colours[ImGuiCol_Border] = ToImGuiColour(render::BLUE_Gunmetal);
 
-  colours[ImGuiCol_CheckMark] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_CHECK_MARK);
-  colours[ImGuiCol_SliderGrab] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_SLIDER_GRAB);
-  colours[ImGuiCol_SliderGrabActive] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_BUTTON_ACTIVE);
+  colours[ImGuiCol_BorderShadow] = transparent;
 
-  colours[ImGuiCol_ResizeGrip] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_RESIZE_GRIP);
-  colours[ImGuiCol_ResizeGripHovered] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_BUTTON_HOVERED);
-  colours[ImGuiCol_ResizeGripActive] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_BUTTON_ACTIVE);
+  // -----------------------------------------------------------------------------
+  // Title bars
+  // -----------------------------------------------------------------------------
 
-  colours[ImGuiCol_DockingPreview] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_BUTTON_ACTIVE);
-  colours[ImGuiCol_DockingEmptyBg] =
-      ToImGuiColour(render::GGEMS_THEME_IMGUI_WINDOW_BG);
+  colours[ImGuiCol_TitleBg] = ToImGuiColour(render::BLUE_Abyss);
+
+  colours[ImGuiCol_TitleBgActive] = gunmetal;
+
+  colours[ImGuiCol_TitleBgCollapsed] = ToImGuiColour(render::BLUE_Abyss);
+
+  // -----------------------------------------------------------------------------
+  // Text
+  // -----------------------------------------------------------------------------
+
+  colours[ImGuiCol_Text] = ToImGuiColour(render::WHITE_Bone);
+
+  colours[ImGuiCol_TextDisabled] = ToImGuiColour(render::GREY_Concrete);
+
+  colours[ImGuiCol_TextLink] = cryo;
+
+  colours[ImGuiCol_TextSelectedBg] = WithAlpha(gunmetal, 0.65F);
+
+  colours[ImGuiCol_InputTextCursor] = cryo;
+
+  // -----------------------------------------------------------------------------
+  // Menu bar
+  // -----------------------------------------------------------------------------
+
+  colours[ImGuiCol_MenuBarBg] = ToImGuiColour(render::BLUE_Abyss);
+
+  // -----------------------------------------------------------------------------
+  // Tabs
+  // -----------------------------------------------------------------------------
+
+  colours[ImGuiCol_Tab] = ToImGuiColour(render::GREY_Deep);
+
+  colours[ImGuiCol_TabHovered] = gunmetal_hovered;
+
+  colours[ImGuiCol_TabSelected] = gunmetal;
+
+  colours[ImGuiCol_TabSelectedOverline] = cryo_soft;
+
+  colours[ImGuiCol_TabDimmed] = ToImGuiColour(render::GREY_Void);
+
+  colours[ImGuiCol_TabDimmedSelected] = ToImGuiColour(render::BLUE_Abyss);
+
+  colours[ImGuiCol_TabDimmedSelectedOverline] = gunmetal_soft;
+
+  // -----------------------------------------------------------------------------
+  // Scrollbars
+  // -----------------------------------------------------------------------------
+
+  colours[ImGuiCol_ScrollbarBg] = ToImGuiColour(render::GREY_Void);
+
+  colours[ImGuiCol_ScrollbarGrab] = gunmetal_soft;
+
+  colours[ImGuiCol_ScrollbarGrabHovered] = gunmetal_hovered;
+
+  colours[ImGuiCol_ScrollbarGrabActive] = gunmetal;
+
+  // -----------------------------------------------------------------------------
+  // Frames: checkbox, radio button, input, plot backgrounds...
+  // -----------------------------------------------------------------------------
+
+  colours[ImGuiCol_FrameBg] = ToImGuiColour(render::BLUE_Abyss);
+
+  colours[ImGuiCol_FrameBgHovered] = gunmetal_hovered;
+
+  colours[ImGuiCol_FrameBgActive] = gunmetal;
+
+  // -----------------------------------------------------------------------------
+  // Headers: tree nodes, collapsing headers, selectable rows...
+  // -----------------------------------------------------------------------------
+
+  colours[ImGuiCol_Header] = ToImGuiColour(render::BLUE_Abyss);
+
+  colours[ImGuiCol_HeaderHovered] = gunmetal_hovered;
+
+  colours[ImGuiCol_HeaderActive] = gunmetal;
+
+  // -----------------------------------------------------------------------------
+  // Separators
+  // -----------------------------------------------------------------------------
+
+  colours[ImGuiCol_Separator] = ToImGuiColour(render::BLUE_Gunmetal);
+
+  colours[ImGuiCol_SeparatorHovered] = ToImGuiColour(render::CYAN_Cryo);
+
+  colours[ImGuiCol_SeparatorActive] = ToImGuiColour(render::CYAN_Cryo);
+
+  // -----------------------------------------------------------------------------
+  // Checkboxes and sliders
+  // -----------------------------------------------------------------------------
+
+  colours[ImGuiCol_CheckMark] = ToImGuiColour(render::WHITE_Bone);
+
+  colours[ImGuiCol_CheckboxSelectedBg] = gunmetal;
+
+  colours[ImGuiCol_SliderGrab] = WithAlpha(gunmetal, 0.85F);
+
+  colours[ImGuiCol_SliderGrabActive] = WithAlpha(cryo, 0.85F);
+
+  // -----------------------------------------------------------------------------
+  // Buttons
+  // -----------------------------------------------------------------------------
+
+  colours[ImGuiCol_Button] = ToImGuiColour(render::BLUE_Abyss);
+
+  colours[ImGuiCol_ButtonHovered] = gunmetal_hovered;
+
+  colours[ImGuiCol_ButtonActive] = gunmetal;
+
+  // -----------------------------------------------------------------------------
+  // Resize grips
+  // -----------------------------------------------------------------------------
+
+  colours[ImGuiCol_ResizeGrip] = WithAlpha(gunmetal, 0.18F);
+
+  colours[ImGuiCol_ResizeGripHovered] = WithAlpha(gunmetal, 0.55F);
+
+  colours[ImGuiCol_ResizeGripActive] = gunmetal;
+
+  // -----------------------------------------------------------------------------
+  // Docking
+  // -----------------------------------------------------------------------------
+
+  colours[ImGuiCol_DockingPreview] = WithAlpha(gunmetal, 0.45F);
+
+  colours[ImGuiCol_DockingEmptyBg] = ToImGuiColour(render::BLUE_Abyss);
+
+  // -----------------------------------------------------------------------------
+  // Plots
+  // -----------------------------------------------------------------------------
+
+  colours[ImGuiCol_PlotLines] = cryo;
+
+  colours[ImGuiCol_PlotLinesHovered] = ToImGuiColour(render::CYAN_Cryo_B);
+
+  colours[ImGuiCol_PlotHistogram] = amber;
+
+  colours[ImGuiCol_PlotHistogramHovered] =
+      ToImGuiColour(render::YELLOW_MotherAmber_B);
+
+  // -----------------------------------------------------------------------------
+  // Tables
+  // -----------------------------------------------------------------------------
+
+  colours[ImGuiCol_TableHeaderBg] = ToImGuiColour(render::BLUE_Abyss);
+
+  colours[ImGuiCol_TableBorderStrong] = WithAlpha(gunmetal, 0.48F);
+
+  colours[ImGuiCol_TableBorderLight] = gunmetal_faint;
+
+  colours[ImGuiCol_TableRowBg] = transparent;
+
+  colours[ImGuiCol_TableRowBgAlt] =
+      WithAlpha(ToImGuiColour(render::BLUE_Abyss), 0.45F);
+
+  // -----------------------------------------------------------------------------
+  // Trees
+  // -----------------------------------------------------------------------------
+
+  colours[ImGuiCol_TreeLines] = gunmetal_soft;
+
+  // -----------------------------------------------------------------------------
+  // Drag and drop
+  // -----------------------------------------------------------------------------
+
+  colours[ImGuiCol_DragDropTarget] = amber;
+
+  colours[ImGuiCol_DragDropTargetBg] = WithAlpha(amber, 0.16F);
+
+  // -----------------------------------------------------------------------------
+  // Markers
+  // -----------------------------------------------------------------------------
+
+  colours[ImGuiCol_UnsavedMarker] = amber;
+
+  // -----------------------------------------------------------------------------
+  // Navigation
+  // -----------------------------------------------------------------------------
+
+  colours[ImGuiCol_NavCursor] = WithAlpha(cryo, 0.85F);
+
+  colours[ImGuiCol_NavWindowingHighlight] = WithAlpha(cryo, 0.55F);
+
+  colours[ImGuiCol_NavWindowingDimBg] =
+      WithAlpha(ToImGuiColour(render::GREY_Void), 0.65F);
+
+  colours[ImGuiCol_ModalWindowDimBg] =
+      WithAlpha(ToImGuiColour(render::GREY_Void), 0.80F);
 }
 
 } // namespace ggems::ui

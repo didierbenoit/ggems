@@ -174,8 +174,7 @@ void GGEMSImGuiOutputPanel::Render(render::GGEMSBanner const &banner,
 
   ImGui::Separator();
 
-  ImGui::PushStyleColor(ImGuiCol_ChildBg,
-                        ToImGuiColour(render::GGEMS_THEME_OUTPUT_BACKGROUND));
+  ImGui::PushStyleColor(ImGuiCol_ChildBg, ToImGuiColour(render::GREY_Void));
 
   ImGui::BeginChild("GGEMSOutputLogRegion", ImVec2{0.0f, 0.0f}, true,
                     ImGuiWindowFlags_HorizontalScrollbar);
@@ -213,9 +212,9 @@ void GGEMSImGuiOutputPanel::Render(render::GGEMSBanner const &banner,
 
     if (is_multiline) {
       message = RemoveLeadingBlockNewline(message);
-      RenderMultilineText(message, ggems::render::GGEMS_THEME_OUTPUT_TEXT);
+      RenderMultilineText(message, render::WHITE_Bone);
     } else {
-      RenderTextLine(message, ggems::render::GGEMS_THEME_OUTPUT_TEXT);
+      RenderTextLine(message, render::WHITE_Bone);
     }
   }
 

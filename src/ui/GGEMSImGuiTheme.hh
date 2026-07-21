@@ -5,7 +5,7 @@
 #include "GGEMS/render/GGEMSColour.hh"
 
 namespace ggems::ui {
-[[nodiscard]] ImVec4 ToImGuiColour(render::ColourKey const &colour);
+[[nodiscard]] auto ToImGuiColour(render::ColourKey const &colour) -> ImVec4;
 
 void ApplyGGEMSImGuiTheme();
 } // namespace ggems::ui

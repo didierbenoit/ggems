@@ -1168,8 +1168,8 @@ void GGEMSVulkanContext::RecordCommandBuffer(std::uint32_t image_index) {
   TransitionSwapchainImageLayout(image_index, vk::ImageLayout::eUndefined,
                                  vk::ImageLayout::eColorAttachmentOptimal);
 
-  vk::ClearValue clear_value = vk::ClearColorValue(
-      ToVulkanClearColour(ggems::render::GGEMS_THEME_VULKAN_BACKGROUND));
+  vk::ClearValue clear_value =
+      vk::ClearColorValue(ToVulkanClearColour(render::BLUE_Abyss));
 
   vk::RenderingAttachmentInfo colour_attachment{
       .imageView = *swapchain_image_views_[image_index],
