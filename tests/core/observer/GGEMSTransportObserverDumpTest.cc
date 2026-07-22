@@ -1,6 +1,7 @@
 #include <array>
 #include <cstdint>
 #include <span>
+#include <format>
 #include <string>
 #include <string_view>
 #include <cstddef>
@@ -202,12 +203,45 @@ TEST(GGEMSTransportObserverDump, KeepsOriginalRecordIndexAfterDisplaySorting) {
 
   std::string const dump = BuildObserverDump(records);
 
-  std::size_t const original_second_record = dump.find("0001 |");
-  std::size_t const original_first_record = dump.find("0000 |");
+  std::string const original_second_record_cell = std::format("| {:>10} |", 1U);
+  std::string const original_first_record_cell = std::format("| {:>10} |", 0U);
+
+  std::size_t const original_second_record =
+      dump.find(original_second_record_cell);
+  std::size_t const original_first_record =
+      dump.find(original_first_record_cell);
 
   ASSERT_NE(original_second_record, std::string::npos);
   ASSERT_NE(original_first_record, std::string::npos);
   EXPECT_LT(original_second_record, original_first_record);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSTransportObserverDump, DumpsEveryStoredRecordWithoutDisplayLimit) {
+  constexpr std::size_t k_record_count{130U};
+
+  std::vector<GGEMSObserverRecord> records;
+  records.reserve(k_record_count);
+
+  for (std::size_t i = 0U; i < k_record_count; ++i) {
+    records.push_back(MakeRecord(8ULL, static_cast<std::uint64_t>(i)));
+  }
+
+  std::string const dump = BuildObserverDump(records);
+  std::string const header = ExtractTableHeader(dump);
+
+  EXPECT_NE(dump.find("Records: 130 | Captured primaries: 1 | Overflow: 0"),
+            std::string::npos);
+  EXPECT_NE(dump.find("|        129 |"), std::string::npos);
+  EXPECT_EQ(dump.find("0129 |"), std::string::npos);
+
+  EXPECT_EQ(dump.find("Displayed:"), std::string::npos);
+  EXPECT_EQ(dump.find("not displayed"), std::string::npos);
+
+  EXPECT_NE(header.find("Trk"), std::string::npos);
+  EXPECT_NE(header.find("Time [ps]"), std::string::npos);
 }
 
 } // namespace

@@ -65,6 +65,7 @@ private:
   std::unique_ptr<GGEMSVulkanContext> vk_context_;
   bool glfw_initialised_{false};
   bool framebuffer_resized_{false};
+  bool missing_observer_warning_emitted_{false};
 };
 
 } // namespace ggems::ui
