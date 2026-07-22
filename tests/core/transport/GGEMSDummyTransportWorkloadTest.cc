@@ -7,6 +7,7 @@
 #include <string_view>
 #include <vector>
 #include <functional>
+#include <span>
 
 #include <gtest/gtest.h>
 
@@ -84,6 +85,51 @@ auto ExpectSourceMatches(
   EXPECT_EQ(observed.energy_milli_eV, expected.energy_milli_eV);
   EXPECT_EQ(observed.deposited_energy_milli_eV, 0ULL);
   EXPECT_FLOAT_EQ(observed.weight, expected.weight);
+}
+
+// =============================================================================
+// =============================================================================
+
+struct ExpectedCapturedPrimary {
+  std::uint32_t source_index;
+  std::uint64_t source_local_primary_id;
+  std::uint64_t global_primary_id;
+};
+
+// =============================================================================
+// =============================================================================
+
+auto ExpectCapturedHistories(
+    ggems::core::transport::GGEMSDummyTransportRunReport const &report,
+    std::span<ExpectedCapturedPrimary const> expected_histories) -> void {
+  EXPECT_EQ(report.observer_counters.captured_primary_count,
+            static_cast<std::uint32_t>(expected_histories.size()));
+
+  auto const source_records = BuildSortedSourceRecords(report.observer_records);
+
+  ASSERT_EQ(source_records.size(), expected_histories.size());
+
+  for (std::size_t index = 0U; index < expected_histories.size(); ++index) {
+    EXPECT_EQ(source_records[index].source_index,
+              expected_histories[index].source_index);
+    EXPECT_EQ(source_records[index].source_local_primary_id,
+              expected_histories[index].source_local_primary_id);
+    EXPECT_EQ(source_records[index].global_primary_id,
+              expected_histories[index].global_primary_id);
+  }
+
+  for (auto const &record : report.observer_records) {
+    auto const expected_history = std::ranges::find_if(
+        expected_histories,
+        [&record](ExpectedCapturedPrimary const &candidate) -> bool {
+          return candidate.source_index == record.source_index &&
+                 candidate.source_local_primary_id ==
+                     record.source_local_primary_id;
+        });
+
+    ASSERT_NE(expected_history, expected_histories.end());
+    EXPECT_EQ(record.global_primary_id, expected_history->global_primary_id);
+  }
 }
 
 // =============================================================================
@@ -260,7 +306,8 @@ TEST_F(GGEMSDummyTransportWorkloadTest, CapturesFirstPrimaryHistories) {
   config.source_ranges = {{.projection_primary_begin = 0ULL,
                            .primary_count = config.total_primary_count}};
   config.observer_config.enabled = 1U;
-  config.observer_config.capture_first_primary_count = k_observed_primary_count;
+  config.observer_config.capture_first_primary_count_per_source =
+      k_observed_primary_count;
 
   auto report = workload.Run(config);
 
@@ -317,6 +364,269 @@ TEST_F(GGEMSDummyTransportWorkloadTest, CapturesFirstPrimaryHistories) {
 // =============================================================================
 
 TEST_F(GGEMSDummyTransportWorkloadTest,
+       CapsFirstPrimaryCaptureAtEachSourceCount) {
+  auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
+  random->SetEngine("philox");
+  random->SetSeed(7'777'777ULL);
+
+  ggems::core::sources::GGEMSSourceRecord source_record{};
+
+  constexpr std::uint64_t k_global_begin{20'000ULL};
+
+  ggems::core::transport::GGEMSDummyTransportWorkload workload{
+      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+      *random,      4U,
+      2U,           0ULL,
+      0U,           64U};
+
+  ggems::core::transport::GGEMSDummyTransportRunConfig config{};
+  config.total_primary_count = 5U;
+  config.projection_history_offset = k_global_begin;
+  config.source_records = {source_record, source_record};
+  config.source_ranges = {
+      {.projection_primary_begin = 0ULL, .primary_count = 1ULL},
+      {.projection_primary_begin = 1ULL, .primary_count = 4ULL}};
+  config.max_generation = 0U;
+  config.max_steps_per_track = 1U;
+  config.observer_config.enabled = 1U;
+  config.observer_config.capture_first_primary_count_per_source = 2U;
+
+  auto const report = workload.Run(config);
+
+  std::array<ExpectedCapturedPrimary, 3U> const expected{{
+      {.source_index = 0U,
+       .source_local_primary_id = 0ULL,
+       .global_primary_id = k_global_begin},
+      {.source_index = 1U,
+       .source_local_primary_id = 0ULL,
+       .global_primary_id = k_global_begin + 1ULL},
+      {.source_index = 1U,
+       .source_local_primary_id = 1ULL,
+       .global_primary_id = k_global_begin + 2ULL},
+  }};
+
+  EXPECT_EQ(report.observer_counters.overflow_count, 0U);
+  ExpectCapturedHistories(report, expected);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSDummyTransportWorkloadTest, CapturesAcrossZeroPrimarySourceSlots) {
+  auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
+  random->SetEngine("philox");
+  random->SetSeed(7'777'777ULL);
+
+  ggems::core::sources::GGEMSSourceRecord source_record{};
+
+  constexpr std::uint64_t k_global_begin{30'000ULL};
+
+  ggems::core::transport::GGEMSDummyTransportWorkload workload{
+      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+      *random,      4U,
+      3U,           0ULL,
+      0U,           64U};
+
+  ggems::core::transport::GGEMSDummyTransportRunConfig config{};
+  config.total_primary_count = 5U;
+  config.projection_history_offset = k_global_begin;
+  config.source_records = {source_record, source_record, source_record};
+  config.source_ranges = {
+      {.projection_primary_begin = 0ULL, .primary_count = 2ULL},
+      {.projection_primary_begin = 2ULL, .primary_count = 0ULL},
+      {.projection_primary_begin = 2ULL, .primary_count = 3ULL}};
+  config.max_generation = 0U;
+  config.max_steps_per_track = 1U;
+  config.observer_config.enabled = 1U;
+  config.observer_config.capture_first_primary_count_per_source = 1U;
+
+  auto const report = workload.Run(config);
+
+  std::array<ExpectedCapturedPrimary, 2U> const expected{{
+      {.source_index = 0U,
+       .source_local_primary_id = 0ULL,
+       .global_primary_id = k_global_begin},
+      {.source_index = 2U,
+       .source_local_primary_id = 0ULL,
+       .global_primary_id = k_global_begin + 2ULL},
+  }};
+
+  EXPECT_EQ(report.observer_counters.overflow_count, 0U);
+  ExpectCapturedHistories(report, expected);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSDummyTransportWorkloadTest,
+       CapturesSpecificSourceLocalPrimaryHistory) {
+  auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
+  random->SetEngine("philox");
+  random->SetSeed(7'777'777ULL);
+
+  ggems::core::sources::GGEMSSourceRecord source_record{};
+
+  constexpr std::uint64_t k_global_begin{40'000ULL};
+
+  ggems::core::transport::GGEMSDummyTransportWorkload workload{
+      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+      *random,      4U,
+      2U,           0ULL,
+      0U,           64U};
+
+  ggems::core::transport::GGEMSDummyTransportRunConfig config{};
+  config.total_primary_count = 8U;
+  config.projection_history_offset = k_global_begin;
+  config.source_records = {source_record, source_record};
+  config.source_ranges = {
+      {.projection_primary_begin = 0ULL, .primary_count = 4ULL},
+      {.projection_primary_begin = 4ULL, .primary_count = 4ULL}};
+  config.max_generation = 0U;
+  config.max_steps_per_track = 1U;
+  config.observer_config.enabled = 1U;
+  config.observer_config.capture_specific_primary_enabled = 1U;
+  config.observer_config.capture_source_index = 1U;
+  config.observer_config.capture_source_local_primary_id = 2ULL;
+
+  auto const report = workload.Run(config);
+
+  std::array<ExpectedCapturedPrimary, 1U> const expected{{
+      {.source_index = 1U,
+       .source_local_primary_id = 2ULL,
+       .global_primary_id = k_global_begin + 6ULL},
+  }};
+
+  EXPECT_EQ(report.observer_counters.overflow_count, 0U);
+  ExpectCapturedHistories(report, expected);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSDummyTransportWorkloadTest,
+       CombinesFirstAndSpecificCaptureWithoutDuplicateHistory) {
+  auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
+  random->SetEngine("philox");
+  random->SetSeed(7'777'777ULL);
+
+  ggems::core::sources::GGEMSSourceRecord source_record{};
+
+  constexpr std::uint64_t k_global_begin{50'000ULL};
+
+  ggems::core::transport::GGEMSDummyTransportWorkload workload{
+      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+      *random,      4U,
+      2U,           0ULL,
+      0U,           64U};
+
+  ggems::core::transport::GGEMSDummyTransportRunConfig config{};
+  config.total_primary_count = 8U;
+  config.projection_history_offset = k_global_begin;
+  config.source_records = {source_record, source_record};
+  config.source_ranges = {
+      {.projection_primary_begin = 0ULL, .primary_count = 4ULL},
+      {.projection_primary_begin = 4ULL, .primary_count = 4ULL}};
+  config.max_generation = 0U;
+  config.max_steps_per_track = 1U;
+  config.observer_config.enabled = 1U;
+  config.observer_config.capture_first_primary_count_per_source = 2U;
+  config.observer_config.capture_specific_primary_enabled = 1U;
+  config.observer_config.capture_source_index = 0U;
+  config.observer_config.capture_source_local_primary_id = 1ULL;
+
+  auto const report = workload.Run(config);
+
+  std::array<ExpectedCapturedPrimary, 4U> const expected{{
+      {.source_index = 0U,
+       .source_local_primary_id = 0ULL,
+       .global_primary_id = k_global_begin},
+      {.source_index = 0U,
+       .source_local_primary_id = 1ULL,
+       .global_primary_id = k_global_begin + 1ULL},
+      {.source_index = 1U,
+       .source_local_primary_id = 0ULL,
+       .global_primary_id = k_global_begin + 4ULL},
+      {.source_index = 1U,
+       .source_local_primary_id = 1ULL,
+       .global_primary_id = k_global_begin + 5ULL},
+  }};
+
+  EXPECT_EQ(report.observer_counters.overflow_count, 0U);
+  ExpectCapturedHistories(report, expected);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSDummyTransportWorkloadTest,
+       CapturesPerSourceLocalPrimariesAcrossDeviceSlices) {
+  auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
+  random->SetEngine("philox");
+  random->SetSeed(7'777'777ULL);
+
+  ggems::core::sources::GGEMSSourceRecord source_record{};
+
+  constexpr std::uint64_t k_global_begin{60'000ULL};
+
+  ggems::core::transport::GGEMSDummyTransportWorkload workload{
+      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+      *random,      4U,
+      2U,           0ULL,
+      0U,           64U};
+
+  ggems::core::transport::GGEMSDummyTransportRunConfig config{};
+  config.run_id = 1ULL;
+  config.total_primary_count = 3U;
+  config.projection_history_offset = k_global_begin;
+  config.device_primary_offset = 0ULL;
+  config.source_records = {source_record, source_record};
+  config.source_ranges = {
+      {.projection_primary_begin = 0ULL, .primary_count = 4ULL},
+      {.projection_primary_begin = 4ULL, .primary_count = 4ULL}};
+  config.max_generation = 0U;
+  config.max_steps_per_track = 1U;
+  config.observer_config.enabled = 1U;
+  config.observer_config.capture_first_primary_count_per_source = 2U;
+
+  auto const first_report = workload.Run(config);
+
+  std::array<ExpectedCapturedPrimary, 2U> const first_expected{{
+      {.source_index = 0U,
+       .source_local_primary_id = 0ULL,
+       .global_primary_id = k_global_begin},
+      {.source_index = 0U,
+       .source_local_primary_id = 1ULL,
+       .global_primary_id = k_global_begin + 1ULL},
+  }};
+
+  ExpectCapturedHistories(first_report, first_expected);
+
+  config.run_id = 2ULL;
+  config.total_primary_count = 5U;
+  config.device_primary_offset = 3ULL;
+
+  auto const second_report = workload.Run(config);
+
+  std::array<ExpectedCapturedPrimary, 2U> const second_expected{{
+      {.source_index = 1U,
+       .source_local_primary_id = 0ULL,
+       .global_primary_id = k_global_begin + 4ULL},
+      {.source_index = 1U,
+       .source_local_primary_id = 1ULL,
+       .global_primary_id = k_global_begin + 5ULL},
+  }};
+
+  ExpectCapturedHistories(second_report, second_expected);
+
+  EXPECT_EQ(first_report.observer_counters.captured_primary_count +
+                second_report.observer_counters.captured_primary_count,
+            4U);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSDummyTransportWorkloadTest,
        RecordsZeroDepositForLosslessMoveAndArtificialTermination) {
   constexpr std::uint64_t k_source_energy_milli_eV{511'000'001ULL};
 
@@ -343,7 +653,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   config.max_generation = 0U;
   config.max_steps_per_track = 1U;
   config.observer_config.enabled = 1U;
-  config.observer_config.capture_first_primary_count = 1U;
+  config.observer_config.capture_first_primary_count_per_source = 1U;
 
   auto const report = workload.Run(config);
   auto const &records = report.observer_records;
@@ -437,7 +747,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
       {.projection_primary_begin = 3ULL, .primary_count = 5ULL}};
   config.max_generation = 0U;
   config.observer_config.enabled = 1U;
-  config.observer_config.capture_first_primary_count = 8U;
+  config.observer_config.capture_first_primary_count_per_source = 8U;
 
   auto allocated_after_construction = context.GetAllocatedVRAM().value;
   auto allocation_count_after_construction = context.GetAllocationCountVRAM();
@@ -542,7 +852,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
       {.projection_primary_begin = 1ULL, .primary_count = 1ULL}};
   config.max_generation = 0U;
   config.observer_config.enabled = 1U;
-  config.observer_config.capture_first_primary_count = 1U;
+  config.observer_config.capture_first_primary_count_per_source = 1U;
 
   auto allocated_after_construction = context.GetAllocatedVRAM().value;
   auto allocation_count_after_construction = context.GetAllocationCountVRAM();
@@ -725,7 +1035,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
                              .primary_count = k_test_primary_count}};
     config.max_generation = 1U;
     config.observer_config.enabled = 1U;
-    config.observer_config.capture_first_primary_count =
+    config.observer_config.capture_first_primary_count_per_source =
         k_captured_primary_count;
 
     auto first_report = workload.Run(config);
@@ -783,7 +1093,8 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   config.max_generation = 1U;
   config.max_steps_per_track = 2U;
   config.observer_config.enabled = 1U;
-  config.observer_config.capture_first_primary_count = k_primary_count;
+  config.observer_config.capture_first_primary_count_per_source =
+      k_primary_count;
 
   auto report = workload.Run(config);
 
@@ -882,7 +1193,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
       {.projection_primary_begin = 4ULL, .primary_count = 4ULL}};
   config.max_generation = 0U;
   config.observer_config.enabled = 1U;
-  config.observer_config.capture_first_primary_count = 8U;
+  config.observer_config.capture_first_primary_count_per_source = 8U;
 
   auto report = workload.Run(config);
 

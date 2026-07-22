@@ -11,11 +11,28 @@
 // =============================================================================
 
 TEST(GGEMSObserverRecord, ConfigRecordIsKernelFriendly) {
-  EXPECT_TRUE(std::is_standard_layout_v<
-              ggems::core::observer::GGEMSObserverConfigRecord>);
-  EXPECT_TRUE(std::is_trivially_copyable_v<
-              ggems::core::observer::GGEMSObserverConfigRecord>);
-  EXPECT_EQ(sizeof(ggems::core::observer::GGEMSObserverConfigRecord), 24U);
+  using ConfigRecord = ggems::core::observer::GGEMSObserverConfigRecord;
+
+  EXPECT_TRUE(std::is_standard_layout_v<ConfigRecord>);
+  EXPECT_TRUE(std::is_trivially_copyable_v<ConfigRecord>);
+  EXPECT_EQ(sizeof(ConfigRecord), 24U);
+  EXPECT_EQ(alignof(ConfigRecord), 8U);
+
+  EXPECT_EQ(offsetof(ConfigRecord, enabled), 0U);
+  EXPECT_EQ(offsetof(ConfigRecord, capture_first_primary_count_per_source), 4U);
+  EXPECT_EQ(offsetof(ConfigRecord, capture_specific_primary_enabled), 8U);
+  EXPECT_EQ(offsetof(ConfigRecord, capture_source_index), 12U);
+  EXPECT_EQ(offsetof(ConfigRecord, capture_source_local_primary_id), 16U);
+
+  ConfigRecord const config{};
+
+  EXPECT_EQ(config.enabled, 0U);
+  EXPECT_EQ(config.capture_first_primary_count_per_source, 0U);
+  EXPECT_EQ(config.capture_specific_primary_enabled, 0U);
+  EXPECT_EQ(config.capture_source_index,
+            ggems::core::particles::k_invalid_id_u32);
+  EXPECT_EQ(config.capture_source_local_primary_id,
+            ggems::core::particles::k_invalid_id_u64);
 }
 
 // =============================================================================

@@ -10,22 +10,19 @@
 #define GGEMS_OBSERVER_RECORD_KIND_TERMINAL 4U
 #define GGEMS_OBSERVER_RECORD_KIND_ANOMALY 5U
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 typedef struct GGEMSObserverConfigRecord {
   uint enabled;
-  uint capture_first_primary_count;
-  uint capture_specific_primary_count;
-  uint reserved_0;
-
-  ulong capture_global_primary_id;
+  uint capture_first_primary_count_per_source;
+  uint capture_specific_primary_enabled;
+  uint capture_source_index;
+  ulong capture_source_local_primary_id;
 } GGEMSObserverConfigRecord;
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 typedef struct GGEMSObserverCounters {
   uint record_count;
@@ -34,9 +31,8 @@ typedef struct GGEMSObserverCounters {
   uint reserved_0;
 } GGEMSObserverCounters;
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 typedef struct GGEMSObserverRecord {
   ulong run_id;
@@ -69,32 +65,32 @@ typedef struct GGEMSObserverRecord {
   uint source_index;
 } GGEMSObserverRecord;
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 static inline uint GGEMS_ObserverShouldCapturePrimary(
-    __global GGEMSObserverConfigRecord const *config,
-    ulong projection_primary_id, ulong global_primary_id) {
+    __global GGEMSObserverConfigRecord const *config, uint source_index,
+    ulong source_local_primary_id) {
   if (config->enabled == 0U) {
     return 0U;
   }
 
-  if (projection_primary_id < (ulong)(config->capture_first_primary_count)) {
+  if (source_local_primary_id <
+      (ulong)(config->capture_first_primary_count_per_source)) {
     return 1U;
   }
 
-  if (config->capture_specific_primary_count != 0U &&
-      global_primary_id == config->capture_global_primary_id) {
+  if (config->capture_specific_primary_enabled != 0U &&
+      source_index == config->capture_source_index &&
+      source_local_primary_id == config->capture_source_local_primary_id) {
     return 1U;
   }
 
   return 0U;
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 static inline uint
 GGEMS_ObserverReserveRecord(volatile __global GGEMSObserverCounters *counters,
@@ -116,9 +112,8 @@ GGEMS_ObserverReserveRecord(volatile __global GGEMSObserverCounters *counters,
   }
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 static inline void GGEMS_ObserverRecordParticle(
     volatile __global GGEMSObserverCounters *counters,

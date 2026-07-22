@@ -920,3 +920,115 @@ TEST_F(GGEMSRunTest, RunsDuplicateSourceSlots) {
     ExpectObserverSourceMatches(source_records[index], expected);
   }
 }
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSRunTest, CapturesFirstPrimariesFromEverySourceSlot) {
+  auto random = MakePhiloxRandom();
+  auto source_0 = MakeLowEnergySource(4ULL);
+  auto source_1 = MakeLowEnergySource(4ULL);
+  auto observer = MakeCapturingObserver(2U);
+
+  ggems::core::GGEMSRun run{};
+  run.SetRandom(random);
+  run.AddSource(source_0);
+  run.AddSource(source_1);
+  run.SetObserver(observer);
+  run.SetWorkerCount(64U);
+
+  ASSERT_NO_THROW(run.Initialise());
+  ASSERT_NO_THROW(run.Run());
+
+  EXPECT_EQ(observer->GetCapturedPrimaryCount(), 4U);
+
+  auto const source_records =
+      BuildSortedSourceRecordSnapshot(observer->GetRecords());
+
+  ASSERT_EQ(source_records.size(), 4U);
+
+  EXPECT_EQ(source_records[0U].source_index, 0U);
+  EXPECT_EQ(source_records[0U].source_local_primary_id, 0ULL);
+  EXPECT_EQ(source_records[0U].global_primary_id, 0ULL);
+
+  EXPECT_EQ(source_records[1U].source_index, 0U);
+  EXPECT_EQ(source_records[1U].source_local_primary_id, 1ULL);
+  EXPECT_EQ(source_records[1U].global_primary_id, 1ULL);
+
+  EXPECT_EQ(source_records[2U].source_index, 1U);
+  EXPECT_EQ(source_records[2U].source_local_primary_id, 0ULL);
+  EXPECT_EQ(source_records[2U].global_primary_id, 4ULL);
+
+  EXPECT_EQ(source_records[3U].source_index, 1U);
+  EXPECT_EQ(source_records[3U].source_local_primary_id, 1ULL);
+  EXPECT_EQ(source_records[3U].global_primary_id, 5ULL);
+
+  for (auto const &record : observer->GetRecords()) {
+    ASSERT_LT(record.source_index, 2U);
+    EXPECT_LT(record.source_local_primary_id, 2ULL);
+
+    std::uint64_t const expected_global_primary_id =
+        (record.source_index == 0U ? 0ULL : 4ULL) +
+        record.source_local_primary_id;
+
+    EXPECT_EQ(record.global_primary_id, expected_global_primary_id);
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSRunTest,
+       RejectsSpecificCaptureOutsideCurrentSnapshotBeforeReservation) {
+  auto random = MakePhiloxRandom();
+  auto source_0 = MakeLowEnergySource(2ULL);
+  auto source_1 = MakeLowEnergySource(0ULL);
+
+  auto observer =
+      std::make_shared<ggems::core::observer::GGEMSTransportObserver>();
+  observer->SetRecordCapacity(64U).CapturePrimary(2U, 0ULL);
+
+  ggems::core::GGEMSRun run{};
+  run.SetRandom(random);
+  run.AddSource(source_0);
+  run.AddSource(source_1);
+  run.SetObserver(observer);
+  run.SetWorkerCount(64U);
+
+  ASSERT_NO_THROW(run.Initialise());
+
+  ExpectGGEMSExceptionContaining(
+      [&run]() -> void { run.Run(); },
+      "Observer source index 2 is outside the current source snapshot.");
+
+  observer->CapturePrimary(1U, 0ULL);
+
+  ExpectGGEMSExceptionContaining(
+      [&run]() -> void { run.Run(); },
+      "Observer primary index 0 is outside source slot 1, which contains 0 "
+      "primaries.");
+
+  observer->CapturePrimary(0U, 2ULL);
+
+  ExpectGGEMSExceptionContaining(
+      [&run]() -> void { run.Run(); },
+      "Observer primary index 2 is outside source slot 0, which contains 2 "
+      "primaries.");
+
+  EXPECT_TRUE(observer->GetRecords().empty());
+  EXPECT_EQ(observer->GetCapturedPrimaryCount(), 0U);
+
+  observer->CapturePrimary(0U, 1ULL);
+
+  ASSERT_NO_THROW(run.Run());
+
+  EXPECT_EQ(observer->GetCapturedPrimaryCount(), 1U);
+
+  auto const source_records =
+      BuildSortedSourceRecordSnapshot(observer->GetRecords());
+
+  ASSERT_EQ(source_records.size(), 1U);
+  EXPECT_EQ(source_records[0U].source_index, 0U);
+  EXPECT_EQ(source_records[0U].source_local_primary_id, 1ULL);
+  EXPECT_EQ(source_records[0U].global_primary_id, 1ULL);
+}

@@ -181,7 +181,7 @@ __kernel void particle_dummy_stream_branching_transport(
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER
     uint capture_history = GGEMS_ObserverShouldCapturePrimary(
-        observer_config, projection_primary_id, global_primary_id);
+        observer_config, selected_source_index, source_local_primary_id);
 
     if (capture_history != 0U) {
       atomic_inc(&observer_counters->captured_primary_count);

@@ -70,7 +70,7 @@ BuildObserverDump(std::span<GGEMSObserverRecord const> records) -> std::string {
 // =============================================================================
 
 [[nodiscard]] auto ExtractTableHeader(std::string const &dump) -> std::string {
-  std::size_t const header_begin = dump.find("| Tra |");
+  std::size_t const header_begin = dump.find("| Trk |");
 
   if (header_begin == std::string::npos) {
     return {};
@@ -98,7 +98,7 @@ TEST(GGEMSTransportObserverDump, UsesRequestedColumnOrderAndHeaders) {
   ASSERT_FALSE(header.empty());
 
   std::array<std::string_view, 11U> const ordered_tokens{
-      "Tra",      "Par",       "Kind", "|  P |",    "Energy", "Edep",
+      "Trk",      "Par",       "Kind", "|  P |",    "Energy", "Edep",
       "Position", "Direction", "Src",  "Time [ps]", "Record",
   };
 

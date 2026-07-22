@@ -1,7 +1,14 @@
 #include "core/observer/GGEMSObserverRecord.clh"
 
-__kernel void observer_record_abi_probe(__global ulong *layout,
-                                        __global GGEMSObserverRecord *records) {
+typedef struct GGEMSObserverConfigAlignmentProbe {
+  uchar prefix;
+  GGEMSObserverConfigRecord config;
+} GGEMSObserverConfigAlignmentProbe;
+
+__kernel void
+observer_record_abi_probe(__global ulong *layout,
+                          __global GGEMSObserverRecord *records,
+                          __global GGEMSObserverConfigRecord *configs) {
   if (get_global_id(0) != 0U) {
     return;
   }
@@ -51,4 +58,42 @@ __kernel void observer_record_abi_probe(__global ulong *layout,
   records[1].deposited_energy_milli_eV = 404UL;
   records[1].weight = 0.75f;
   records[1].source_index = 5U;
+
+  GGEMSObserverConfigRecord private_config;
+  __private uchar const *config_base = (__private uchar const *)&private_config;
+
+#define GGEMS_WRITE_CONFIG_OFFSET(INDEX, FIELD)                                \
+  layout[INDEX] =                                                              \
+      (ulong)((__private uchar const *)&private_config.FIELD - config_base)
+
+  layout[24] = (ulong)(sizeof(GGEMSObserverConfigRecord));
+  GGEMS_WRITE_CONFIG_OFFSET(25, enabled);
+  GGEMS_WRITE_CONFIG_OFFSET(26, capture_first_primary_count_per_source);
+  GGEMS_WRITE_CONFIG_OFFSET(27, capture_specific_primary_enabled);
+  GGEMS_WRITE_CONFIG_OFFSET(28, capture_source_index);
+  GGEMS_WRITE_CONFIG_OFFSET(29, capture_source_local_primary_id);
+
+#undef GGEMS_WRITE_CONFIG_OFFSET
+
+  layout[30] = (ulong)((__global uchar const *)&configs[1] -
+                       (__global uchar const *)&configs[0]);
+
+  GGEMSObserverConfigAlignmentProbe alignment_probe;
+  __private uchar const *alignment_base =
+      (__private uchar const *)&alignment_probe;
+
+  layout[31] = (ulong)((__private uchar const *)&alignment_probe.config -
+                       alignment_base);
+
+  configs[0].enabled = 1U;
+  configs[0].capture_first_primary_count_per_source = 3U;
+  configs[0].capture_specific_primary_enabled = 1U;
+  configs[0].capture_source_index = 7U;
+  configs[0].capture_source_local_primary_id = 11UL;
+
+  configs[1].enabled = 0U;
+  configs[1].capture_first_primary_count_per_source = 5U;
+  configs[1].capture_specific_primary_enabled = 1U;
+  configs[1].capture_source_index = 9U;
+  configs[1].capture_source_local_primary_id = 13UL;
 }

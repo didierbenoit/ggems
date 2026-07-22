@@ -18,14 +18,11 @@
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/core/units/GGEMSLengthUnits.hh"
-#include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/utf/GGEMSGlyphs.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
 
 namespace ggems::core::observer {
 namespace {
-
-enum class CellAlignment : std::uint8_t { Left, Right };
 
 // =============================================================================
 // =============================================================================
@@ -202,7 +199,7 @@ struct TableColumn {
 // =============================================================================
 
 constexpr std::array<TableColumn, 11U> k_observer_table_columns{
-    {{.title = "Tra", .width = 3U},
+    {{.title = "Trk", .width = 3U},
      {.title = "Par", .width = 3U},
      {.title = "Kind", .width = 4U},
      {.title = "P", .width = 2U},
@@ -641,19 +638,22 @@ auto GGEMSTransportObserver::SetMaxStoredRecordCount(
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::CaptureFirstPrimaries(
-    std::uint32_t primary_count) noexcept -> GGEMSTransportObserver & {
+    std::uint32_t primary_count_per_source) noexcept
+    -> GGEMSTransportObserver & {
   enabled_ = true;
-  capture_first_primary_count_ = primary_count;
+  capture_first_primary_count_per_source_ = primary_count_per_source;
   return *this;
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::CapturePrimary(
-    std::uint64_t global_primary_id) noexcept -> GGEMSTransportObserver & {
+    std::uint32_t source_index, std::uint64_t source_local_primary_id) noexcept
+    -> GGEMSTransportObserver & {
   enabled_ = true;
   capture_specific_primary_enabled_ = true;
-  capture_global_primary_id_ = global_primary_id;
+  capture_source_index_ = source_index;
+  capture_source_local_primary_id_ = source_local_primary_id;
   return *this;
 }
 
@@ -662,7 +662,8 @@ auto GGEMSTransportObserver::CapturePrimary(
 auto GGEMSTransportObserver::ClearCapturedPrimary() noexcept
     -> GGEMSTransportObserver & {
   capture_specific_primary_enabled_ = false;
-  capture_global_primary_id_ = 0xFFFFFFFFFFFFFFFFULL;
+  capture_source_index_ = particles::k_invalid_id_u32;
+  capture_source_local_primary_id_ = particles::k_invalid_id_u64;
   return *this;
 }
 
@@ -717,10 +718,12 @@ auto GGEMSTransportObserver::BuildConfigRecord() const noexcept
   GGEMSObserverConfigRecord config{};
 
   config.enabled = enabled_ ? 1U : 0U;
-  config.capture_first_primary_count = capture_first_primary_count_;
+  config.capture_first_primary_count_per_source =
+      capture_first_primary_count_per_source_;
   config.capture_specific_primary_enabled =
       capture_specific_primary_enabled_ ? 1U : 0U;
-  config.capture_global_primary_id = capture_global_primary_id_;
+  config.capture_source_index = capture_source_index_;
+  config.capture_source_local_primary_id = capture_source_local_primary_id_;
 
   return config;
 }

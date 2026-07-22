@@ -6,11 +6,11 @@
 
 namespace py = pybind11;
 
-void BindObserver(py::module_ &m) {
+void BindObserver(py::module_ &mod) {
   using ggems::core::observer::GGEMSTransportObserver;
 
   py::class_<GGEMSTransportObserver, std::shared_ptr<GGEMSTransportObserver>>(
-      m, "GGEMSTransportObserver")
+      mod, "GGEMSTransportObserver")
       .def(py::init<>())
 
       .def("enable", &GGEMSTransportObserver::Enable, py::arg("enabled") = true,
@@ -34,7 +34,7 @@ void BindObserver(py::module_ &m) {
            py::return_value_policy::reference_internal)
 
       .def("capture_primary", &GGEMSTransportObserver::CapturePrimary,
-           py::arg("global_primary_id"),
+           py::arg("source_index"), py::arg("primary_index"),
            py::return_value_policy::reference_internal)
 
       .def("clear_capture_primary",
@@ -44,7 +44,7 @@ void BindObserver(py::module_ &m) {
       .def("clear", &GGEMSTransportObserver::Clear)
 
       .def("verbose", &GGEMSTransportObserver::Verbose,
-           py::arg("max_record_count") = 128)
+           py::arg("max_record_count") = 1'048'576)
 
       .def_property_readonly("record_count",
                              &GGEMSTransportObserver::GetRecordCount)

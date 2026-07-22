@@ -11,6 +11,8 @@
 #include <utility>
 #include <cstdint>
 #include <cstddef>
+#include <format>
+#include <span>
 
 #include "GGEMS/core/GGEMSRun.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
@@ -18,6 +20,7 @@
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/sources/GGEMSSourceDescription.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
+#include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/core/transport/GGEMSTransportWorkloadPlan.hh"
 #include "GGEMS/core/transport/GGEMSTransportCounters.hh"
@@ -49,6 +52,34 @@ auto AccumulateTransportCounters(transport::GGEMSTransportCounters &dst,
   dst.max_stack_depth = std::max(dst.max_stack_depth, src.max_stack_depth);
 }
 
+// =============================================================================
+// =============================================================================
+
+auto ValidateObserverCapture(
+    observer::GGEMSObserverConfigRecord const &config,
+    std::span<sources::GGEMSSourceRunRange const> source_ranges) -> void {
+  if (config.enabled == 0U || config.capture_specific_primary_enabled == 0U) {
+    return;
+  }
+
+  std::uint32_t const source_index = config.capture_source_index;
+
+  GGEMS_CHECK_RECOVERABLE(
+      static_cast<std::size_t>(source_index) < source_ranges.size(),
+      std::format(
+          "Observer source index {} is outside the current source snapshot.",
+          source_index));
+
+  std::uint64_t const source_primary_count =
+      source_ranges[static_cast<std::size_t>(source_index)].primary_count;
+
+  GGEMS_CHECK_RECOVERABLE(
+      config.capture_source_local_primary_id < source_primary_count,
+      std::format("Observer primary index {} is outside source slot {}, which "
+                  "contains {} primaries.",
+                  config.capture_source_local_primary_id, source_index,
+                  source_primary_count));
+}
 } // namespace
 
 // =============================================================================
@@ -266,6 +297,14 @@ auto GGEMSRun::Run() -> void {
   GGEMS_CHECK_INTERNAL(!source_records.empty(),
                        "GGEMSRun source snapshot must not be empty.");
 
+  observer::GGEMSObserverConfigRecord observer_config{};
+
+  if (observer_ != nullptr) {
+    observer_config = observer_->BuildConfigRecord();
+  }
+
+  ValidateObserverCapture(observer_config, source_ranges);
+
   std::uint64_t total_primary_count = source_snapshot.GetTotalPrimaryCount();
 
   GGEMS_CHECK_RECOVERABLE(
@@ -307,12 +346,6 @@ auto GGEMSRun::Run() -> void {
 
   GGEMS_CHECK_RECOVERABLE(!dummy_transports_.empty(),
                           "No dummy transport workload was initialised.");
-
-  observer::GGEMSObserverConfigRecord observer_config{};
-
-  if (observer_ != nullptr) {
-    observer_config = observer_->BuildConfigRecord();
-  }
 
   std::uint64_t projection_history_offset = primary_view.global_history_offset;
 

@@ -11,15 +11,24 @@ namespace ggems::core::observer {
 
 struct GGEMSObserverConfigRecord {
   std::uint32_t enabled{0U};
-  std::uint32_t capture_first_primary_count{0U};
+  std::uint32_t capture_first_primary_count_per_source{0U};
   std::uint32_t capture_specific_primary_enabled{0U};
-  std::uint32_t reserved_0{0U};
-  std::uint64_t capture_global_primary_id{particles::k_invalid_id_u64};
+  std::uint32_t capture_source_index{particles::k_invalid_id_u32};
+  std::uint64_t capture_source_local_primary_id{particles::k_invalid_id_u64};
 };
 
 static_assert(std::is_standard_layout_v<GGEMSObserverConfigRecord>);
 static_assert(std::is_trivially_copyable_v<GGEMSObserverConfigRecord>);
 static_assert(sizeof(GGEMSObserverConfigRecord) == 24U);
+static_assert(alignof(GGEMSObserverConfigRecord) == 8U);
+static_assert(offsetof(GGEMSObserverConfigRecord, enabled) == 0U);
+static_assert(offsetof(GGEMSObserverConfigRecord,
+                       capture_first_primary_count_per_source) == 4U);
+static_assert(offsetof(GGEMSObserverConfigRecord,
+                       capture_specific_primary_enabled) == 8U);
+static_assert(offsetof(GGEMSObserverConfigRecord, capture_source_index) == 12U);
+static_assert(offsetof(GGEMSObserverConfigRecord,
+                       capture_source_local_primary_id) == 16U);
 
 struct GGEMSObserverCounters {
   std::uint32_t record_count{0U};

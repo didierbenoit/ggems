@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
+#include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 
 namespace ggems::core::observer {
 
@@ -29,10 +30,11 @@ public:
   auto SetMaxStoredRecordCount(std::uint32_t max_stored_record_count)
       -> GGEMSTransportObserver &;
 
-  auto CaptureFirstPrimaries(std::uint32_t primary_count) noexcept
+  auto CaptureFirstPrimaries(std::uint32_t primary_count_per_source) noexcept
       -> GGEMSTransportObserver &;
 
-  auto CapturePrimary(std::uint64_t global_primary_id) noexcept
+  auto CapturePrimary(std::uint32_t source_index,
+                      std::uint64_t source_local_primary_id) noexcept
       -> GGEMSTransportObserver &;
   auto ClearCapturedPrimary() noexcept -> GGEMSTransportObserver &;
 
@@ -60,12 +62,13 @@ public:
 private:
   bool enabled_{false};
 
-  std::uint32_t record_capacity_{4096U};
-  std::uint32_t max_stored_record_count_{65'536U};
+  std::uint32_t record_capacity_{65'536U};
+  std::uint32_t max_stored_record_count_{1'048'576U};
 
-  std::uint32_t capture_first_primary_count_{0U};
+  std::uint32_t capture_first_primary_count_per_source_{0U};
   bool capture_specific_primary_enabled_{false};
-  std::uint64_t capture_global_primary_id_{0xFFFFFFFFFFFFFFFFULL};
+  std::uint32_t capture_source_index_{particles::k_invalid_id_u32};
+  std::uint64_t capture_source_local_primary_id_{particles::k_invalid_id_u64};
 
   GGEMSObserverCounters counters_{};
   std::vector<GGEMSObserverRecord> records_;
