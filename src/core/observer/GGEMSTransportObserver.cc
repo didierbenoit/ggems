@@ -196,39 +196,23 @@ auto BuildSortedRecordView(std::vector<GGEMSObserverRecord> const &records,
 struct TableColumn {
   std::string_view title;
   std::size_t width;
-  CellAlignment alignment;
 };
 
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<TableColumn, 13U> k_observer_table_columns{
-    {{.title = "Rec", .width = 4U, .alignment = CellAlignment::Right},
-     {.title = "T", .width = 7U, .alignment = CellAlignment::Right},
-     {.title = "Trk", .width = 3U, .alignment = CellAlignment::Right},
-     {.title = "Par", .width = 3U, .alignment = CellAlignment::Right},
-     {.title = "G", .width = 1U, .alignment = CellAlignment::Right},
-     {.title = "Kind", .width = 4U, .alignment = CellAlignment::Left},
-     {.title = "Particle", .width = 6U, .alignment = CellAlignment::Left},
-     {.title = "E", .width = 10U, .alignment = CellAlignment::Right},
-     {.title = "X", .width = 8U, .alignment = CellAlignment::Right},
-     {.title = "Y", .width = 8U, .alignment = CellAlignment::Right},
-     {.title = "Z", .width = 8U, .alignment = CellAlignment::Right},
-     {.title = "Dir", .width = 18U, .alignment = CellAlignment::Left},
-     {.title = "Src", .width = 3U, .alignment = CellAlignment::Right}}};
-
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] auto
-GetObserverTableColumns(std::uint32_t source_slot_count) noexcept
-    -> std::span<TableColumn const> {
-  std::size_t const column_count = source_slot_count > 1U
-                                       ? k_observer_table_columns.size()
-                                       : k_observer_table_columns.size() - 1U;
-
-  return {k_observer_table_columns.data(), column_count};
-}
+constexpr std::array<TableColumn, 11U> k_observer_table_columns{
+    {{.title = "Tra", .width = 3U},
+     {.title = "Par", .width = 3U},
+     {.title = "Kind", .width = 4U},
+     {.title = "P", .width = 2U},
+     {.title = "Energy", .width = 10U},
+     {.title = "Edep", .width = 10U},
+     {.title = "Position", .width = 36U},
+     {.title = "Direction", .width = 21U},
+     {.title = "Src", .width = 3U},
+     {.title = "Time [ps]", .width = 16U},
+     {.title = "Record", .width = 10U}}};
 
 // =============================================================================
 // =============================================================================
@@ -278,7 +262,7 @@ auto UTF8CodePointByteCount(unsigned char first_byte) noexcept -> std::size_t {
 // =============================================================================
 
 auto FormatTableTime(std::uint64_t time_ps) -> std::string {
-  return ggems::units::HumanReadable(ggems::units::Time{time_ps}, 2);
+  return std::format("{}", time_ps);
 }
 
 // =============================================================================
@@ -293,6 +277,15 @@ auto FormatTableEnergy(std::uint64_t energy_milli_eV) -> std::string {
 
 auto FormatTableLength(std::int64_t length_pm) -> std::string {
   return ggems::units::HumanReadableSignedLength(length_pm, 2);
+}
+
+// =============================================================================
+// =============================================================================
+
+auto FormatPosition(GGEMSObserverRecord const &record) -> std::string {
+  return std::format("({}, {}, {})", FormatTableLength(record.position_x_pm),
+                     FormatTableLength(record.position_y_pm),
+                     FormatTableLength(record.position_z_pm));
 }
 
 // =============================================================================
@@ -354,8 +347,7 @@ auto TruncateToDisplayWidth(std::string_view text, std::size_t width)
 // =============================================================================
 // =============================================================================
 
-auto FormatCell(std::string_view text, std::size_t width,
-                CellAlignment alignment) -> std::string {
+auto FormatCell(std::string_view text, std::size_t width) -> std::string {
   std::string fitted = TruncateToDisplayWidth(text, width);
 
   std::size_t fitted_width = DisplayWidth(fitted);
@@ -366,11 +358,7 @@ auto FormatCell(std::string_view text, std::size_t width,
 
   std::string padding(width - fitted_width, ' ');
 
-  if (alignment == CellAlignment::Right) {
-    return padding + fitted;
-  }
-
-  return fitted + padding;
+  return padding + fitted;
 }
 
 // =============================================================================
@@ -403,7 +391,7 @@ auto MakeTableRow(std::span<TableColumn const> columns,
     TableColumn const &column = columns[column_index];
 
     row += " ";
-    row += FormatCell(cells[column_index], column.width, column.alignment);
+    row += FormatCell(cells[column_index], column.width);
     row += " |";
   }
 
@@ -416,7 +404,7 @@ auto MakeTableRow(std::span<TableColumn const> columns,
 // =============================================================================
 
 auto MakeTableHeader(std::span<TableColumn const> columns) -> std::string {
-  std::array<std::string, 13U> cells{};
+  std::array<std::string, 11U> cells{};
 
   for (std::size_t column_index = 0U; column_index < columns.size();
        ++column_index) {
@@ -430,7 +418,7 @@ auto MakeTableHeader(std::span<TableColumn const> columns) -> std::string {
 // =============================================================================
 // =============================================================================
 
-auto FormatParticleLabel(particles::GGEMSParticleType particle_type)
+auto FormatParticleLabel(particles::GGEMSParticleType const particle_type)
     -> std::string {
   auto const &glyphs = utf::Glyphs();
 
@@ -439,27 +427,25 @@ auto FormatParticleLabel(particles::GGEMSParticleType particle_type)
     return "?";
 
   case particles::GGEMSParticleType::Aionino:
-    return utf::UTF32ToUTF8(glyphs.aionino) + " aio";
+    return utf::UTF32ToUTF8(glyphs.aionino);
 
   case particles::GGEMSParticleType::Gamma:
-    return utf::UTF32ToUTF8(glyphs.gamma) + " gam";
+    return utf::UTF32ToUTF8(glyphs.gamma);
 
   case particles::GGEMSParticleType::Electron:
-    return utf::UTF32ToUTF8(glyphs.electron) + utf::UTF32ToUTF8(glyphs.minus) +
-           " ele";
+    return utf::UTF32ToUTF8(glyphs.electron) + utf::UTF32ToUTF8(glyphs.minus);
 
   case particles::GGEMSParticleType::Positron:
-    return utf::UTF32ToUTF8(glyphs.electron) + utf::UTF32ToUTF8(glyphs.plus) +
-           " pos";
+    return utf::UTF32ToUTF8(glyphs.electron) + utf::UTF32ToUTF8(glyphs.plus);
 
   case particles::GGEMSParticleType::Proton:
-    return utf::UTF32ToUTF8(glyphs.proton) + " pro";
+    return utf::UTF32ToUTF8(glyphs.proton);
 
   case particles::GGEMSParticleType::Neutron:
-    return utf::UTF32ToUTF8(glyphs.neutron) + " neu";
+    return utf::UTF32ToUTF8(glyphs.neutron);
 
   case particles::GGEMSParticleType::Alpha:
-    return utf::UTF32ToUTF8(glyphs.alpha) + " alp";
+    return utf::UTF32ToUTF8(glyphs.alpha);
   }
 
   return "?";
@@ -494,26 +480,26 @@ auto RecordKindShortName(GGEMSObserverRecordKind const record_kind) noexcept
 auto BuildObserverTableRow(std::uint32_t record_index,
                            GGEMSObserverRecord const &record,
                            TrackDisplayMap const &track_display_map)
-    -> std::array<std::string, 13U> {
+    -> std::array<std::string, 11U> {
   GGEMSObserverRecordKind record_kind =
       FromKernelObserverRecordKind(record.record_kind);
 
   particles::GGEMSParticleType particle_type =
       particles::FromKernelParticleType(record.particle_type);
 
-  return {std::format("{:04}", record_index),
-          FormatTableTime(record.time_ps),
-          FormatTrackDisplayId(track_display_map, record.track_id),
-          FormatParentTrack(track_display_map, record.parent_track_id),
-          std::format("{}", record.generation),
-          std::string{RecordKindShortName(record_kind)},
-          FormatParticleLabel(particle_type),
-          FormatTableEnergy(record.energy_milli_eV),
-          FormatTableLength(record.position_x_pm),
-          FormatTableLength(record.position_y_pm),
-          FormatTableLength(record.position_z_pm),
-          FormatDirection(record),
-          std::format("{}", record.source_index)};
+  return {
+      FormatTrackDisplayId(track_display_map, record.track_id),
+      FormatParentTrack(track_display_map, record.parent_track_id),
+      std::string{RecordKindShortName(record_kind)},
+      FormatParticleLabel(particle_type),
+      FormatTableEnergy(record.energy_milli_eV),
+      FormatTableEnergy(record.deposited_energy_milli_eV),
+      FormatPosition(record),
+      FormatDirection(record),
+      std::format("{}", record.source_index),
+      FormatTableTime(record.time_ps),
+      std::format("{:04}", record_index),
+  };
 }
 
 // =============================================================================
@@ -689,13 +675,6 @@ auto GGEMSTransportObserver::Clear() -> void {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSTransportObserver::SetRunSourceSlotCount(
-    std::uint32_t source_slot_count) noexcept -> void {
-  last_run_source_slot_count_ = source_slot_count;
-}
-
-// -----------------------------------------------------------------------------
-
 auto GGEMSTransportObserver::Accumulate(
     std::span<GGEMSObserverRecord const> records,
     GGEMSObserverCounters const &counters) -> void {
@@ -795,9 +774,6 @@ auto GGEMSTransportObserver::BuildDump(
   std::vector<ObserverRecordView> const views =
       BuildSortedRecordView(records_, max_record_count);
 
-  std::span<TableColumn const> const columns =
-      GetObserverTableColumns(last_run_source_slot_count_);
-
   result += "\n";
   result += "=================================================================="
             "==============\n";
@@ -847,7 +823,7 @@ auto GGEMSTransportObserver::BuildDump(
                           primary_track_count);
     result += "\n";
 
-    result += MakeTableHeader(columns);
+    result += MakeTableHeader(k_observer_table_columns);
 
     std::uint64_t previous_track_id{particles::k_invalid_id_u64};
     bool first_track{true};
@@ -860,19 +836,19 @@ auto GGEMSTransportObserver::BuildDump(
       }
 
       if (!first_track && record.track_id != previous_track_id) {
-        result += MakeTableBorder(columns);
+        result += MakeTableBorder(k_observer_table_columns);
       }
 
       first_track = false;
       previous_track_id = record.track_id;
 
-      std::array<std::string, 13U> const row =
+      std::array<std::string, 11U> const row =
           BuildObserverTableRow(view.record_index, record, track_display_map);
 
-      result += MakeTableRow(columns, row);
+      result += MakeTableRow(k_observer_table_columns, row);
     }
 
-    result += MakeTableBorder(columns);
+    result += MakeTableBorder(k_observer_table_columns);
   }
 
   if (records_.size() > views.size()) {

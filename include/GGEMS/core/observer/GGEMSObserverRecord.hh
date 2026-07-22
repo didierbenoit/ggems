@@ -55,13 +55,14 @@ struct GGEMSObserverRecord {
   float direction_z{1.0F};
   float direction_w{0.0F};
   std::uint64_t energy_milli_eV{0ULL};
+  std::uint64_t deposited_energy_milli_eV{0ULL};
   float weight{1.0F};
   std::uint32_t source_index{particles::k_invalid_id_u32};
 };
 
 static_assert(std::is_standard_layout_v<GGEMSObserverRecord>);
 static_assert(std::is_trivially_copyable_v<GGEMSObserverRecord>);
-static_assert(sizeof(GGEMSObserverRecord) == 128U);
+static_assert(sizeof(GGEMSObserverRecord) == 136U);
 static_assert(alignof(GGEMSObserverRecord) == 8U);
 
 static_assert(offsetof(GGEMSObserverRecord, run_id) == 0U);
@@ -83,7 +84,8 @@ static_assert(offsetof(GGEMSObserverRecord, direction_y) == 100U);
 static_assert(offsetof(GGEMSObserverRecord, direction_z) == 104U);
 static_assert(offsetof(GGEMSObserverRecord, direction_w) == 108U);
 static_assert(offsetof(GGEMSObserverRecord, energy_milli_eV) == 112U);
-static_assert(offsetof(GGEMSObserverRecord, weight) == 120U);
-static_assert(offsetof(GGEMSObserverRecord, source_index) == 124U);
+static_assert(offsetof(GGEMSObserverRecord, deposited_energy_milli_eV) == 120U);
+static_assert(offsetof(GGEMSObserverRecord, weight) == 128U);
+static_assert(offsetof(GGEMSObserverRecord, source_index) == 132U);
 
 } // namespace ggems::core::observer

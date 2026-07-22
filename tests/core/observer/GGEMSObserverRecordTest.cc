@@ -38,7 +38,7 @@ TEST(GGEMSObserverRecord, RecordIsKernelFriendly) {
   EXPECT_TRUE(std::is_standard_layout_v<ObserverRecord>);
   EXPECT_TRUE(std::is_trivially_copyable_v<ObserverRecord>);
 
-  EXPECT_EQ(sizeof(ObserverRecord), 128U);
+  EXPECT_EQ(sizeof(ObserverRecord), 136U);
   EXPECT_EQ(alignof(ObserverRecord), 8U);
 
   EXPECT_EQ(offsetof(ObserverRecord, run_id), 0U);
@@ -64,8 +64,9 @@ TEST(GGEMSObserverRecord, RecordIsKernelFriendly) {
   EXPECT_EQ(offsetof(ObserverRecord, direction_w), 108U);
 
   EXPECT_EQ(offsetof(ObserverRecord, energy_milli_eV), 112U);
-  EXPECT_EQ(offsetof(ObserverRecord, weight), 120U);
-  EXPECT_EQ(offsetof(ObserverRecord, source_index), 124U);
+  EXPECT_EQ(offsetof(ObserverRecord, deposited_energy_milli_eV), 120U);
+  EXPECT_EQ(offsetof(ObserverRecord, weight), 128U);
+  EXPECT_EQ(offsetof(ObserverRecord, source_index), 132U);
 }
 
 // =============================================================================
@@ -99,6 +100,8 @@ TEST(GGEMSObserverRecord, DefaultRecordIsEmptyAndInactive) {
   EXPECT_FLOAT_EQ(record.direction_x, 0.0F);
   EXPECT_FLOAT_EQ(record.direction_y, 0.0F);
   EXPECT_FLOAT_EQ(record.direction_z, 1.0F);
+  EXPECT_EQ(record.energy_milli_eV, 0ULL);
+  EXPECT_EQ(record.deposited_energy_milli_eV, 0ULL);
   EXPECT_FLOAT_EQ(record.weight, 1.0F);
 }
 

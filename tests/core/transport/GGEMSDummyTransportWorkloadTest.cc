@@ -29,6 +29,18 @@ constexpr std::uint32_t k_source_record_kind =
     ggems::core::observer::ToKernelObserverRecordKind(
         ggems::core::observer::GGEMSObserverRecordKind::Source);
 
+constexpr std::uint32_t k_step_record_kind =
+    ggems::core::observer::ToKernelObserverRecordKind(
+        ggems::core::observer::GGEMSObserverRecordKind::Step);
+
+constexpr std::uint32_t k_secondary_step_record_kind =
+    ggems::core::observer::ToKernelObserverRecordKind(
+        ggems::core::observer::GGEMSObserverRecordKind::SecondaryStep);
+
+constexpr std::uint32_t k_terminal_record_kind =
+    ggems::core::observer::ToKernelObserverRecordKind(
+        ggems::core::observer::GGEMSObserverRecordKind::Terminal);
+
 // =============================================================================
 // =============================================================================
 
@@ -70,6 +82,7 @@ auto ExpectSourceMatches(
   EXPECT_FLOAT_EQ(observed.direction_w, expected.direction_w);
 
   EXPECT_EQ(observed.energy_milli_eV, expected.energy_milli_eV);
+  EXPECT_EQ(observed.deposited_energy_milli_eV, 0ULL);
   EXPECT_FLOAT_EQ(observed.weight, expected.weight);
 }
 
@@ -269,6 +282,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest, CapturesFirstPrimaryHistories) {
 
   for (auto const &record : records) {
     EXPECT_EQ(record.run_id, k_run_id);
+    EXPECT_EQ(record.deposited_energy_milli_eV, 0ULL);
 
     EXPECT_TRUE(record.global_primary_id == k_projection_history_offset ||
                 record.global_primary_id == k_projection_history_offset + 1ULL);
@@ -297,6 +311,69 @@ TEST_F(GGEMSDummyTransportWorkloadTest, CapturesFirstPrimaryHistories) {
   EXPECT_TRUE(has_source_record);
   EXPECT_TRUE(has_step_record);
   EXPECT_TRUE(has_terminal_record);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSDummyTransportWorkloadTest,
+       RecordsZeroDepositForLosslessMoveAndArtificialTermination) {
+  constexpr std::uint64_t k_source_energy_milli_eV{511'000'001ULL};
+
+  auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
+  random->SetEngine("philox");
+  random->SetSeed(7'777'777ULL);
+
+  ggems::core::sources::GGEMSSource source{};
+  source.SetAnalytic()
+      .SetEnergyMilliElectronVolt(k_source_energy_milli_eV)
+      .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma);
+
+  ggems::core::transport::GGEMSDummyTransportWorkload workload{
+      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+      *random,      1U,
+      1U,           0ULL,
+      0U,           8U};
+
+  ggems::core::transport::GGEMSDummyTransportRunConfig config{};
+  config.total_primary_count = 1U;
+  config.source_records = {source.BuildRecord()};
+  config.source_ranges = {
+      {.projection_primary_begin = 0ULL, .primary_count = 1ULL}};
+  config.max_generation = 0U;
+  config.max_steps_per_track = 1U;
+  config.observer_config.enabled = 1U;
+  config.observer_config.capture_first_primary_count = 1U;
+
+  auto const report = workload.Run(config);
+  auto const &records = report.observer_records;
+
+  ASSERT_EQ(records.size(), 3U);
+  EXPECT_EQ(report.observer_counters.record_count, 3U);
+  EXPECT_EQ(report.observer_counters.overflow_count, 0U);
+  EXPECT_EQ(report.counters.created_secondary_count, 0U);
+  EXPECT_EQ(report.counters.overflow_count, 0U);
+
+  EXPECT_EQ(records[0U].record_kind, k_source_record_kind);
+  EXPECT_EQ(records[1U].record_kind, k_step_record_kind);
+  EXPECT_EQ(records[2U].record_kind, k_terminal_record_kind);
+
+  for (auto const &record : records) {
+    EXPECT_EQ(record.energy_milli_eV, k_source_energy_milli_eV);
+    EXPECT_EQ(record.deposited_energy_milli_eV, 0ULL);
+  }
+
+  EXPECT_EQ(records[2U].status,
+            ggems::core::particles::ToKernelParticleStatus(
+                ggems::core::particles::GGEMSParticleStatus::Killed));
+
+  EXPECT_EQ(records[0U].energy_milli_eV,
+            records[1U].energy_milli_eV +
+                records[1U].deposited_energy_milli_eV);
+
+  EXPECT_EQ(records[1U].energy_milli_eV,
+            records[2U].energy_milli_eV +
+                records[2U].deposited_energy_milli_eV);
 }
 
 // =============================================================================
@@ -575,7 +652,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   ggems::core::sources::GGEMSSource source{};
   source.SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMilliElectronVolt(511'000'000ULL)
+      .SetEnergyMilliElectronVolt(511'000'001ULL)
       .SetTimeWindowPicoSecond(0ULL, 1'000ULL)
       .SetPositionPicoMeter(0LL, 0LL, 0LL)
       .SetDirection(0.0F, 0.0F, 1.0F)
@@ -713,19 +790,55 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   ASSERT_GT(report.counters.created_secondary_count, 0U);
   ASSERT_EQ(report.observer_counters.overflow_count, 0U);
 
+  auto const &records = report.observer_records;
   bool has_secondary_record{false};
-  for (auto const &record : report.observer_records) {
+
+  for (std::size_t record_index = 0U; record_index < records.size();
+       ++record_index) {
+    auto const &record = records[record_index];
     ASSERT_GE(record.global_primary_id, k_global_begin);
     ASSERT_LT(record.global_primary_id, k_global_begin + k_primary_count);
+    EXPECT_EQ(record.deposited_energy_milli_eV, 0ULL);
     EXPECT_EQ(record.source_index, 0U);
     EXPECT_EQ(record.source_local_primary_id,
               +record.global_primary_id - k_global_begin);
 
-    if (record.record_kind ==
-        ggems::core::observer::ToKernelObserverRecordKind(
-            ggems::core::observer::GGEMSObserverRecordKind::SecondaryStep)) {
-      has_secondary_record = true;
+    if (record.record_kind != k_secondary_step_record_kind) {
+      continue;
     }
+
+    has_secondary_record = true;
+    ASSERT_GT(record_index, 0U);
+
+    auto const &parent_before = records[record_index - 1U];
+
+    ASSERT_EQ(parent_before.record_kind, k_step_record_kind);
+    ASSERT_EQ(parent_before.global_primary_id, record.global_primary_id);
+    ASSERT_EQ(parent_before.track_id, record.parent_track_id);
+
+    ggems::core::observer::GGEMSObserverRecord const *parent_after{nullptr};
+
+    for (std::size_t candidate_index = record_index + 1U;
+         candidate_index < records.size(); ++candidate_index) {
+      auto const &candidate = records[candidate_index];
+
+      if (candidate.global_primary_id == record.global_primary_id &&
+          candidate.track_id == record.parent_track_id &&
+          candidate.record_kind == k_step_record_kind) {
+        parent_after = &candidate;
+        break;
+      }
+    }
+
+    ASSERT_NE(parent_after, nullptr);
+    ASSERT_LE(record.energy_milli_eV, parent_before.energy_milli_eV);
+
+    EXPECT_EQ(parent_before.energy_milli_eV - record.energy_milli_eV,
+              parent_after->energy_milli_eV);
+
+    EXPECT_EQ(parent_before.energy_milli_eV,
+              parent_after->energy_milli_eV + record.energy_milli_eV +
+                  record.deposited_energy_milli_eV);
   }
 
   EXPECT_TRUE(has_secondary_record);

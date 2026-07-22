@@ -119,7 +119,7 @@ HumanReadableSignedLength(std::int64_t const value_pm,
   std::uint64_t magnitude_pm =
       static_cast<std::uint64_t>(-(value_pm + 1LL)) + 1ULL;
 
-  return "-" + HumanReadable(Length{magnitude_pm});
+  return "-" + HumanReadable(Length{magnitude_pm}, precision, width);
 }
 
 /*!

@@ -203,7 +203,7 @@ __kernel void particle_dummy_stream_branching_transport(
       GGEMS_ObserverRecordParticle(
           observer_counters, observer_records, observer_record_capacity,
           GGEMS_OBSERVER_RECORD_KIND_SOURCE, run_id, global_primary_id,
-          source_local_primary_id, selected_source_index, current);
+          source_local_primary_id, selected_source_index, current, 0ULL);
     }
 #endif
 
@@ -227,7 +227,7 @@ __kernel void particle_dummy_stream_branching_transport(
           GGEMS_ObserverRecordParticle(
               observer_counters, observer_records, observer_record_capacity,
               GGEMS_OBSERVER_RECORD_KIND_STEP, run_id, global_primary_id,
-              source_local_primary_id, selected_source_index, current);
+              source_local_primary_id, selected_source_index, current, 0ULL);
         }
 #endif
 
@@ -264,7 +264,7 @@ __kernel void particle_dummy_stream_branching_transport(
                     observer_record_capacity,
                     GGEMS_OBSERVER_RECORD_KIND_SECONDARY_STEP, run_id,
                     global_primary_id, source_local_primary_id,
-                    selected_source_index, current);
+                    selected_source_index, current, 0ULL);
               }
 #endif
 
@@ -299,7 +299,7 @@ __kernel void particle_dummy_stream_branching_transport(
                     observer_record_capacity,
                     GGEMS_OBSERVER_RECORD_KIND_SECONDARY_STEP, run_id,
                     global_primary_id, source_local_primary_id,
-                    selected_source_index, current);
+                    selected_source_index, current, 0ULL);
               }
 #endif
 
@@ -319,7 +319,7 @@ __kernel void particle_dummy_stream_branching_transport(
           GGEMS_ObserverRecordParticle(
               observer_counters, observer_records, observer_record_capacity,
               GGEMS_OBSERVER_RECORD_KIND_TERMINAL, run_id, global_primary_id,
-              source_local_primary_id, selected_source_index, current);
+              source_local_primary_id, selected_source_index, current, 0ULL);
         }
 #endif
 

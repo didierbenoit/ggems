@@ -37,7 +37,6 @@ public:
   auto ClearCapturedPrimary() noexcept -> GGEMSTransportObserver &;
 
   void Clear();
-  auto SetRunSourceSlotCount(std::uint32_t source_slot_count) noexcept -> void;
 
   void Accumulate(std::span<GGEMSObserverRecord const> records,
                   GGEMSObserverCounters const &counters);
@@ -69,7 +68,6 @@ private:
   std::uint64_t capture_global_primary_id_{0xFFFFFFFFFFFFFFFFULL};
 
   GGEMSObserverCounters counters_{};
-  std::uint32_t last_run_source_slot_count_{1U};
   std::vector<GGEMSObserverRecord> records_;
 };
 

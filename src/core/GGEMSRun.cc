@@ -266,9 +266,6 @@ auto GGEMSRun::Run() -> void {
   GGEMS_CHECK_INTERNAL(!source_records.empty(),
                        "GGEMSRun source snapshot must not be empty.");
 
-  auto const source_slot_count =
-      static_cast<std::uint32_t>(source_records.size());
-
   std::uint64_t total_primary_count = source_snapshot.GetTotalPrimaryCount();
 
   GGEMS_CHECK_RECOVERABLE(
@@ -453,10 +450,6 @@ auto GGEMSRun::Run() -> void {
              run_id, ggems::units::Time{accumulated_host_time_ps},
              ggems::units::Time{accumulated_command_time_ps},
              ggems::units::Time{accumulated_kernel_time_ps});
-
-  if (observer_ != nullptr) {
-    observer_->SetRunSourceSlotCount(source_slot_count);
-  }
 
   {
     std::scoped_lock lock{source_run_snapshot_mutex_};

@@ -114,6 +114,7 @@ auto ExpectObserverSourceMatches(
   EXPECT_FLOAT_EQ(observed.direction_w, expected.direction_w);
 
   EXPECT_EQ(observed.energy_milli_eV, expected.energy_milli_eV);
+  EXPECT_EQ(observed.deposited_energy_milli_eV, 0ULL);
   EXPECT_FLOAT_EQ(observed.weight, expected.weight);
 }
 
