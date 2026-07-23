@@ -41,11 +41,6 @@ void BindObserver(py::module_ &mod) {
            &GGEMSTransportObserver::ClearCapturedPrimary,
            py::return_value_policy::reference_internal)
 
-      .def("clear", &GGEMSTransportObserver::Clear)
-
-      .def("verbose", &GGEMSTransportObserver::Verbose,
-           py::arg("max_record_count") = 1'048'576)
-
       .def_property_readonly("record_count",
                              &GGEMSTransportObserver::GetRecordCount)
 

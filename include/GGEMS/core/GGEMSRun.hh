@@ -38,6 +38,7 @@ public:
 
   [[nodiscard]] auto GetLastSourceRunSnapshot() const
       -> std::optional<sources::GGEMSSourceRunSnapshot>;
+  [[nodiscard]] auto HasObserver() const noexcept -> bool;
 
   void SetRandom(std::shared_ptr<random::GGEMSRandom> random);
   void SetPrimaryCount(std::uint32_t primary_count);

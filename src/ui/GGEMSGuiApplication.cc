@@ -277,6 +277,15 @@ auto GGEMSGuiApplication::SubmitLastRunSourceSnapshot(
       snapshot.has_value(),
       "GGEMSRun has no successfully completed source snapshot to submit.");
 
+  if (!run.HasObserver() && !missing_observer_warning_emitted_) {
+    missing_observer_warning_emitted_ = true;
+
+    GGEMS_WARN("Gui",
+               "No GGEMSTransportObserver is attached to this GGEMSRun. "
+               "GuiMode can display the scene, but no particle trajectories "
+               "will be available.");
+  }
+
   vk_context_->SubmitSourceRunSnapshot(std::move(*snapshot));
 }
 

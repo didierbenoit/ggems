@@ -99,6 +99,12 @@ auto GGEMSRun::GetLastSourceRunSnapshot() const
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSRun::HasObserver() const noexcept -> bool {
+  return observer_ != nullptr;
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSRun::SetRandom(std::shared_ptr<random::GGEMSRandom> random) -> void {
   GGEMS_CHECK_RECOVERABLE(random != nullptr,
                           "Cannot attach a null GGEMSRandom to GGEMSRun.");
@@ -432,10 +438,6 @@ auto GGEMSRun::Run() -> void {
     auto const &report = reports[plan_index];
     auto const &counters = report.counters;
 
-    if (observer_ != nullptr && observer_->IsEnabled()) {
-      observer_->Accumulate(report.observer_records, report.observer_counters);
-    }
-
     AccumulateTransportCounters(merged_counters, counters);
 
     accumulated_host_time_ps += report.host_time.value;
@@ -483,6 +485,28 @@ auto GGEMSRun::Run() -> void {
              run_id, ggems::units::Time{accumulated_host_time_ps},
              ggems::units::Time{accumulated_command_time_ps},
              ggems::units::Time{accumulated_kernel_time_ps});
+
+  if (observer_ != nullptr) {
+    observer_->Clear();
+    if (observer_config.enabled != 0U) {
+      for (std::size_t plan_index = 0U; plan_index < workload_plan.size();
+           ++plan_index) {
+        transport::GGEMSTransportWorkloadPlan const &workload =
+            workload_plan[plan_index];
+
+        if (workload.primary_count == 0U) {
+          continue;
+        }
+
+        auto const &report = reports[plan_index];
+
+        observer_->Accumulate(report.observer_records,
+                              report.observer_counters);
+      }
+
+      GGEMS_INFO("Observer", "{}", observer_->BuildDump());
+    }
+  }
 
   {
     std::scoped_lock lock{source_run_snapshot_mutex_};

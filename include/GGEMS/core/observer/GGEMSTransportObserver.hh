@@ -55,15 +55,13 @@ public:
   [[nodiscard]] auto GetRecords() const noexcept
       -> std::vector<GGEMSObserverRecord> const &;
 
-  [[nodiscard]] auto BuildDump(std::uint32_t max_record_count = 128U) const
-      -> std::string;
-  auto Verbose(std::uint32_t max_record_count = 128U) const -> void;
+  [[nodiscard]] auto BuildDump() const -> std::string;
 
 private:
   bool enabled_{false};
 
   std::uint32_t record_capacity_{65'536U};
-  std::uint32_t max_stored_record_count_{1'048'576U};
+  std::uint32_t max_stored_record_count_{262'144U};
 
   std::uint32_t capture_first_primary_count_per_source_{0U};
   bool capture_specific_primary_enabled_{false};
