@@ -3,17 +3,21 @@
 #include <format>
 #include <limits>
 #include <string>
+#include <memory>
+#include <array>
 
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
+#include "GGEMSSourceBindingUtilities.hh"
 
 namespace py = pybind11;
 
 namespace {
 
-std::uint64_t ConvertPrimaryCount(py::handle primary_count) {
+auto ConvertPrimaryCount(py::handle primary_count) -> std::uint64_t {
   if (!PyLong_Check(primary_count.ptr())) {
     throw py::type_error("Source primary count must be a Python integer.");
   }
@@ -32,8 +36,8 @@ std::uint64_t ConvertPrimaryCount(py::handle primary_count) {
 // =============================================================================
 // =============================================================================
 
-std::uint64_t ConvertEnergyToMilliElectronVolt(double energy,
-                                               std::string const &unit) {
+auto ConvertEnergyToMilliElectronVolt(double energy, std::string const &unit)
+    -> std::uint64_t {
   if (!std::isfinite(energy) || energy <= 0.0) {
     throw py::value_error("Source energy must be finite and positive.");
   }
@@ -58,19 +62,21 @@ std::uint64_t ConvertEnergyToMilliElectronVolt(double energy,
   long double energy_milli_eV{static_cast<long double>(energy) *
                               factor_to_milli_eV};
 
-  if (energy_milli_eV >=
+  long double const rounded_energy_milli_eV{std::round(energy_milli_eV)};
+
+  if (rounded_energy_milli_eV >=
       static_cast<long double>(std::numeric_limits<std::uint64_t>::max())) {
     throw py::value_error("Source energy is too large.");
   }
 
-  return static_cast<std::uint64_t>(energy_milli_eV + 0.5L);
+  return static_cast<std::uint64_t>(rounded_energy_milli_eV);
 }
 
 // =============================================================================
 // =============================================================================
 
-std::uint64_t ConvertTimeToPicosecond(double const time,
-                                      std::string const &unit) {
+auto ConvertTimeToPicosecond(double const time, std::string const &unit)
+    -> std::uint64_t {
   if (!std::isfinite(time) || time < 0.0) {
     throw py::value_error("Source time must be finite and positive or zero.");
   }
@@ -98,57 +104,43 @@ std::uint64_t ConvertTimeToPicosecond(double const time,
 
   long double const time_ps = static_cast<long double>(time) * factor_to_ps;
 
-  if (time_ps >=
-      static_cast<long double>(std::numeric_limits<std::uint64_t>::max())) {
+  long double const rounded_time_ps{std::round(time_ps)};
+
+  constexpr int uint64_digits{std::numeric_limits<std::uint64_t>::digits};
+
+  long double const uint64_upper_bound{std::ldexp(1.0L, uint64_digits)};
+
+  if (rounded_time_ps >= uint64_upper_bound) {
     throw py::value_error("Source time is too large.");
   }
 
-  return static_cast<std::uint64_t>(time_ps + 0.5L);
+  return static_cast<std::uint64_t>(rounded_time_ps);
 }
 
 // =============================================================================
 // =============================================================================
 
-std::int64_t ConvertDistanceToPicometre(double const distance,
-                                        std::string const &unit) {
-  if (!std::isfinite(distance)) {
+auto ConvertDistanceToPicometre(double const distance, std::string const &unit)
+    -> std::int64_t {
+  auto const conversion =
+      ggems::python::detail::TryConvertDistanceToPicometre(distance, unit);
+
+  if (conversion.has_value()) {
+    return *conversion;
+  }
+
+  using ggems::python::detail::DistanceToPicometreError;
+
+  if (conversion.error() == DistanceToPicometreError::NonFinite) {
     throw py::value_error("Source position must contain finite values.");
   }
 
-  long double factor_to_pm{0.0L};
-
-  if (unit == "pm") {
-    factor_to_pm = 1.0L;
-  } else if (unit == "nm") {
-    factor_to_pm = 1.0e3L;
-  } else if (unit == "um") {
-    factor_to_pm = 1.0e6L;
-  } else if (unit == "mm") {
-    factor_to_pm = 1.0e9L;
-  } else if (unit == "cm") {
-    factor_to_pm = 1.0e10L;
-  } else if (unit == "m") {
-    factor_to_pm = 1.0e12L;
-  } else {
+  if (conversion.error() == DistanceToPicometreError::UnsupportedUnit) {
     throw py::value_error(
         std::format("Unsupported GGEMS distance unit '{}'.", unit));
   }
 
-  long double const distance_pm =
-      static_cast<long double>(distance) * factor_to_pm;
-
-  if (distance_pm >
-          static_cast<long double>(std::numeric_limits<std::int64_t>::max()) ||
-      distance_pm <
-          static_cast<long double>(std::numeric_limits<std::int64_t>::min())) {
-    throw py::value_error("Source position is too large.");
-  }
-
-  if (distance_pm >= 0.0L) {
-    return static_cast<std::int64_t>(distance_pm + 0.5L);
-  }
-
-  return static_cast<std::int64_t>(distance_pm - 0.5L);
+  throw py::value_error("Source position is too large.");
 }
 
 } // namespace
@@ -156,10 +148,10 @@ std::int64_t ConvertDistanceToPicometre(double const distance,
 // =============================================================================
 // =============================================================================
 
-void BindSource(py::module_ &m) {
+auto BindSource(py::module_ &mod) -> void {
   using ggems::core::sources::GGEMSSource;
 
-  py::class_<GGEMSSource, std::shared_ptr<GGEMSSource>>(m, "GGEMSSource")
+  py::class_<GGEMSSource, std::shared_ptr<GGEMSSource>>(mod, "GGEMSSource")
       .def(py::init<>())
 
       .def("set_analytic", &GGEMSSource::SetAnalytic,
@@ -204,12 +196,12 @@ void BindSource(py::module_ &m) {
 
       .def(
           "set_position",
-          [](GGEMSSource &self, double const x, double const y, double const z,
-             std::string const &unit) -> GGEMSSource & {
+          [](GGEMSSource &self, double const pos_x, double const pos_y,
+             double const pos_z, std::string const &unit) -> GGEMSSource & {
             return self.SetPositionPicoMeter(
-                ConvertDistanceToPicometre(x, unit),
-                ConvertDistanceToPicometre(y, unit),
-                ConvertDistanceToPicometre(z, unit));
+                ConvertDistanceToPicometre(pos_x, unit),
+                ConvertDistanceToPicometre(pos_y, unit),
+                ConvertDistanceToPicometre(pos_z, unit));
           },
           py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
           py::return_value_policy::reference_internal)
@@ -218,12 +210,16 @@ void BindSource(py::module_ &m) {
            py::arg("y"), py::arg("z"),
            py::return_value_policy::reference_internal)
 
+      .def("set_orientation", &GGEMSSource::SetOrientation,
+           py::arg("direction"), py::arg("up"),
+           py::return_value_policy::reference_internal)
+
       .def("set_weight", &GGEMSSource::SetWeight, py::arg("weight"),
            py::return_value_policy::reference_internal)
 
       .def("verbose", &GGEMSSource::Verbose)
 
-      .def("__repr__", [](GGEMSSource const &source) {
+      .def("__repr__", [](GGEMSSource const &source) -> std::string {
         auto const &record = source.GetRecord();
 
         return std::format(

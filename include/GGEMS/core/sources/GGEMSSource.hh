@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
@@ -38,7 +39,11 @@ public:
   auto SetPositionPicoMeter(std::int64_t x_pm, std::int64_t y_pm,
                             std::int64_t z_pm) noexcept -> GGEMSSource &;
 
-  auto SetDirection(float dir_x, float dir_y, float dir_z) -> GGEMSSource &;
+  auto SetDirection(double dir_x, double dir_y, double dir_z) -> GGEMSSource &;
+
+  auto SetOrientation(std::array<double, 3U> const &direction,
+                      std::array<double, 3U> const &up_reference)
+      -> GGEMSSource &;
 
   auto SetWeight(float weight) -> GGEMSSource &;
 

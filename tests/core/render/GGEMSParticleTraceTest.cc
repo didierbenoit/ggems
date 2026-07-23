@@ -193,6 +193,54 @@ TEST(GGEMSParticleTrace, DifferentTrackAreNotConnectedTogether) {
 // =============================================================================
 // =============================================================================
 
+TEST(GGEMSParticleTrace, RepeatedLocalIdentifiersAcrossRunsRemainSeparate) {
+  std::vector<GGEMSObserverRecord> records{
+      MakeRecord(3ULL, 12ULL, 99ULL, 0ULL, GGEMSObserverRecordKind::Source,
+                 GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 2U, 5ULL),
+      MakeRecord(3ULL, 12ULL, 99ULL, 10ULL, GGEMSObserverRecordKind::Step,
+                 GGEMSParticleType::Gamma, 100'000'000'000LL, 0LL, 0LL, 2U,
+                 5ULL),
+      MakeRecord(4ULL, 12ULL, 99ULL, 0ULL, GGEMSObserverRecordKind::Source,
+                 GGEMSParticleType::Gamma, 200'000'000'000LL, 0LL, 0LL, 2U,
+                 5ULL),
+      MakeRecord(4ULL, 12ULL, 99ULL, 10ULL, GGEMSObserverRecordKind::Step,
+                 GGEMSParticleType::Gamma, 300'000'000'000LL, 0LL, 0LL, 2U,
+                 5ULL)};
+
+  std::vector<ggems::render::GGEMSParticleTraceSegment> segments =
+      ggems::render::BuildParticleTraceSegments(records);
+
+  ASSERT_EQ(segments.size(), 2U);
+
+  EXPECT_EQ(segments[0].run_id, 3ULL);
+  EXPECT_EQ(segments[0].global_primary_id, 12ULL);
+  EXPECT_FLOAT_EQ(segments[0].begin.x_m, 0.0F);
+  EXPECT_FLOAT_EQ(segments[0].end.x_m, 0.1F);
+
+  EXPECT_EQ(segments[1].run_id, 4ULL);
+  EXPECT_EQ(segments[1].global_primary_id, 12ULL);
+  EXPECT_FLOAT_EQ(segments[1].begin.x_m, 0.2F);
+  EXPECT_FLOAT_EQ(segments[1].end.x_m, 0.3F);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSParticleTrace,
+     DifferentGlobalPrimaryIdentifiersAreNotConnectedWhenLocalFieldsMatch) {
+  std::vector<GGEMSObserverRecord> records{
+      MakeRecord(3ULL, 12ULL, 99ULL, 0ULL, GGEMSObserverRecordKind::Source,
+                 GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 2U, 5ULL),
+      MakeRecord(3ULL, 13ULL, 99ULL, 10ULL, GGEMSObserverRecordKind::Step,
+                 GGEMSParticleType::Gamma, 100'000'000'000LL, 0LL, 0LL, 2U,
+                 5ULL)};
+
+  EXPECT_TRUE(ggems::render::BuildParticleTraceSegments(records).empty());
+}
+
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSParticleTrace, DifferentSourceProvenanceIsNotConnected) {
   std::vector<GGEMSObserverRecord> different_source_index{
       MakeRecord(0ULL, 7ULL, 42ULL, 0ULL, GGEMSObserverRecordKind::Source,

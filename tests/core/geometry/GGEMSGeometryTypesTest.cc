@@ -5,6 +5,20 @@
 
 #include "GGEMS/core/geometry/GGEMSGeometryTypes.hh"
 
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSGeometryTypes, DefaultDirectionIsPositiveZ) {
+  ggems::geometry::Direction3 const direction{};
+
+  EXPECT_FLOAT_EQ(direction.x, 0.0F);
+  EXPECT_FLOAT_EQ(direction.y, 0.0F);
+  EXPECT_FLOAT_EQ(direction.z, 1.0F);
+}
+
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSGeometryTypes, PositionStoresSignedPicometreCoordinates) {
   ggems::geometry::Position3PM const position =
       ggems::geometry::MakePositionPM(-10, 20, -30);
@@ -14,9 +28,8 @@ TEST(GGEMSGeometryTypes, PositionStoresSignedPicometreCoordinates) {
   EXPECT_EQ(position.z, -30);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSGeometryTypes, DisplacementCanMovePosition) {
   ggems::geometry::Position3PM const position =
@@ -30,9 +43,8 @@ TEST(GGEMSGeometryTypes, DisplacementCanMovePosition) {
   EXPECT_EQ(moved, ggems::geometry::MakePositionPM(90, 220, 270));
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSGeometryTypes, DifferenceBetweenPositionsIsSignedDisplacement) {
   ggems::geometry::Position3PM const lhs =
@@ -46,9 +58,8 @@ TEST(GGEMSGeometryTypes, DifferenceBetweenPositionsIsSignedDisplacement) {
   EXPECT_EQ(displacement, ggems::geometry::MakeDisplacementPM(-50, 50, -50));
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSGeometryTypes, DirectionIsNormalisedWhenCreated) {
   std::optional<ggems::geometry::Direction3> const direction =
@@ -62,9 +73,8 @@ TEST(GGEMSGeometryTypes, DirectionIsNormalisedWhenCreated) {
   EXPECT_FLOAT_EQ(ggems::geometry::Norm(*direction), 1.0F);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSGeometryTypes, DirectionRejectsZeroVector) {
   std::optional<ggems::geometry::Direction3> const direction =
@@ -73,9 +83,8 @@ TEST(GGEMSGeometryTypes, DirectionRejectsZeroVector) {
   EXPECT_FALSE(direction.has_value());
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSGeometryTypes, DirectionRejectsNonFiniteValues) {
   float infinity = std::numeric_limits<float>::infinity();
@@ -86,9 +95,23 @@ TEST(GGEMSGeometryTypes, DirectionRejectsNonFiniteValues) {
   EXPECT_FALSE(direction.has_value());
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSGeometryTypes, DirectionHandlesLargeFiniteComponents) {
+  auto const large = static_cast<double>(std::numeric_limits<float>::max());
+
+  auto const direction = ggems::geometry::TryMakeDirection3(large, large, 0.0);
+
+  ASSERT_TRUE(direction.has_value());
+  EXPECT_NEAR(direction->x, 0.70710678F, 1.0e-6F);
+  EXPECT_NEAR(direction->y, 0.70710678F, 1.0e-6F);
+  EXPECT_FLOAT_EQ(direction->z, 0.0F);
+  EXPECT_NEAR(ggems::geometry::Norm(*direction), 1.0F, 1.0e-6F);
+}
+
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSGeometryTypes, DotProductUsesNormalisedDirections) {
   std::optional<ggems::geometry::Direction3> const x_axis =

@@ -443,17 +443,17 @@ auto GGEMSVulkanContext::CreateSurface(GLFWwindow *window) -> void {
 // -----------------------------------------------------------------------------
 
 #if VK_HEADER_VERSION >= 304
-auto GGEMSVulkanContext::DebugVkCallback(
+VKAPI_ATTR auto VKAPI_CALL GGEMSVulkanContext::DebugVkCallback(
     vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
     vk::DebugUtilsMessageTypeFlagsEXT type,
     vk::DebugUtilsMessengerCallbackDataEXT const *callback_data,
-    void *) noexcept -> VKAPI_ATTR VkBool32 VKAPI_CALL {
+    void *) noexcept -> VkBool32 {
 #else
-auto GGEMSVulkanContext::DebugVkCallback(
+VKAPI_ATTR auto VKAPI_CALL GGEMSVulkanContext::DebugVkCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT severity,
     VkDebugUtilsMessageTypeFlagsEXT type,
     VkDebugUtilsMessengerCallbackDataEXT const *callback_data, void *) noexcept
-    -> VKAPI_ATTR VkBool32 VKAPI_CALL {
+    -> VkBool32 {
 #endif
   if (callback_data == nullptr || callback_data->pMessage == nullptr) {
     return VK_FALSE;

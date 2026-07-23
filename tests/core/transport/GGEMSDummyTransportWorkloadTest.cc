@@ -77,10 +77,10 @@ auto ExpectSourceMatches(
   EXPECT_EQ(observed.position_y_pm, expected.position_y_pm);
   EXPECT_EQ(observed.position_z_pm, expected.position_z_pm);
 
-  EXPECT_FLOAT_EQ(observed.direction_x, expected.direction_x);
-  EXPECT_FLOAT_EQ(observed.direction_y, expected.direction_y);
-  EXPECT_FLOAT_EQ(observed.direction_z, expected.direction_z);
-  EXPECT_FLOAT_EQ(observed.direction_w, expected.direction_w);
+  EXPECT_FLOAT_EQ(observed.direction_x, expected.axis_z_x);
+  EXPECT_FLOAT_EQ(observed.direction_y, expected.axis_z_y);
+  EXPECT_FLOAT_EQ(observed.direction_z, expected.axis_z_z);
+  EXPECT_FLOAT_EQ(observed.direction_w, 0.0F);
 
   EXPECT_EQ(observed.energy_milli_eV, expected.energy_milli_eV);
   EXPECT_EQ(observed.deposited_energy_milli_eV, 0ULL);

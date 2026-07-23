@@ -13,6 +13,8 @@
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
+#include "GGEMS/core/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 
 namespace {
 
@@ -21,7 +23,7 @@ using GGEMSSourcePtr = std::shared_ptr<ggems::core::sources::GGEMSSource>;
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] GGEMSSourcePtr MakeSource(std::uint64_t primary_count) {
+[[nodiscard]] auto MakeSource(std::uint64_t primary_count) -> GGEMSSourcePtr {
   auto source = std::make_shared<ggems::core::sources::GGEMSSource>();
   source->SetPrimaryCount(primary_count);
   return source;
@@ -30,9 +32,9 @@ using GGEMSSourcePtr = std::shared_ptr<ggems::core::sources::GGEMSSource>;
 // =============================================================================
 // =============================================================================
 
-void ExpectSourceRecordsEqual(
+auto ExpectSourceRecordsEqual(
     ggems::core::sources::GGEMSSourceRecord const &actual,
-    ggems::core::sources::GGEMSSourceRecord const &expected) {
+    ggems::core::sources::GGEMSSourceRecord const &expected) -> void {
   EXPECT_EQ(actual.source_id, expected.source_id);
   EXPECT_EQ(actual.time_start_ps, expected.time_start_ps);
   EXPECT_EQ(actual.time_stop_ps, expected.time_stop_ps);
@@ -47,23 +49,25 @@ void ExpectSourceRecordsEqual(
   EXPECT_EQ(actual.flags, expected.flags);
   EXPECT_EQ(actual.reserved_0, expected.reserved_0);
 
-  EXPECT_FLOAT_EQ(actual.direction_x, expected.direction_x);
-  EXPECT_FLOAT_EQ(actual.direction_y, expected.direction_y);
-  EXPECT_FLOAT_EQ(actual.direction_z, expected.direction_z);
-  EXPECT_FLOAT_EQ(actual.direction_w, expected.direction_w);
+  EXPECT_FLOAT_EQ(actual.axis_x_x, expected.axis_x_x);
+  EXPECT_FLOAT_EQ(actual.axis_x_y, expected.axis_x_y);
+  EXPECT_FLOAT_EQ(actual.axis_x_z, expected.axis_x_z);
+  EXPECT_FLOAT_EQ(actual.axis_y_x, expected.axis_y_x);
+  EXPECT_FLOAT_EQ(actual.axis_y_y, expected.axis_y_y);
+  EXPECT_FLOAT_EQ(actual.axis_y_z, expected.axis_y_z);
+  EXPECT_FLOAT_EQ(actual.axis_z_x, expected.axis_z_x);
+  EXPECT_FLOAT_EQ(actual.axis_z_y, expected.axis_z_y);
+  EXPECT_FLOAT_EQ(actual.axis_z_z, expected.axis_z_z);
 
   EXPECT_FLOAT_EQ(actual.weight, expected.weight);
-  EXPECT_FLOAT_EQ(actual.reserved_1, expected.reserved_1);
-  EXPECT_FLOAT_EQ(actual.reserved_2, expected.reserved_2);
-  EXPECT_FLOAT_EQ(actual.reserved_3, expected.reserved_3);
 }
 
 // =============================================================================
 // =============================================================================
 
-void ExpectSourceRange(ggems::core::sources::GGEMSSourceRunRange const &range,
+auto ExpectSourceRange(ggems::core::sources::GGEMSSourceRunRange const &range,
                        std::uint64_t expected_begin,
-                       std::uint64_t expected_count) {
+                       std::uint64_t expected_count) -> void {
   EXPECT_EQ(range.projection_primary_begin, expected_begin);
   EXPECT_EQ(range.primary_count, expected_count);
 }
@@ -120,15 +124,17 @@ TEST(GGEMSSourceRunSnapshot, BuildsExpectedMonoSourceSnapshot) {
   EXPECT_EQ(record.flags, 0U);
   EXPECT_EQ(record.reserved_0, 0U);
 
-  EXPECT_FLOAT_EQ(record.direction_x, 0.0F);
-  EXPECT_FLOAT_EQ(record.direction_y, -1.0F);
-  EXPECT_FLOAT_EQ(record.direction_z, 0.0F);
-  EXPECT_FLOAT_EQ(record.direction_w, 0.0F);
+  EXPECT_FLOAT_EQ(record.axis_x_x, 1.0F);
+  EXPECT_FLOAT_EQ(record.axis_x_y, 0.0F);
+  EXPECT_FLOAT_EQ(record.axis_x_z, 0.0F);
+  EXPECT_FLOAT_EQ(record.axis_y_x, 0.0F);
+  EXPECT_FLOAT_EQ(record.axis_y_y, 0.0F);
+  EXPECT_FLOAT_EQ(record.axis_y_z, 1.0F);
+  EXPECT_FLOAT_EQ(record.axis_z_x, 0.0F);
+  EXPECT_FLOAT_EQ(record.axis_z_y, -1.0F);
+  EXPECT_FLOAT_EQ(record.axis_z_z, 0.0F);
 
   EXPECT_FLOAT_EQ(record.weight, 0.25F);
-  EXPECT_FLOAT_EQ(record.reserved_1, 0.0F);
-  EXPECT_FLOAT_EQ(record.reserved_2, 0.0F);
-  EXPECT_FLOAT_EQ(record.reserved_3, 0.0F);
 }
 
 // =============================================================================
@@ -225,8 +231,8 @@ TEST(GGEMSSourceRunSnapshot, BuildsOrderedMultiSourceSnapshot) {
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMilliElectronVolt(101'000'000ULL)
       .SetPositionPicoMeter(10LL, 20LL, 30LL)
-      .SetDirection(1.0f, 0.0f, 0.0f)
-      .SetWeight(0.25f);
+      .SetDirection(1.0F, 0.0F, 0.0F)
+      .SetWeight(0.25F);
 
   auto source_1 = MakeSource(5ULL);
   source_1->SetAnalytic()
@@ -234,8 +240,8 @@ TEST(GGEMSSourceRunSnapshot, BuildsOrderedMultiSourceSnapshot) {
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMilliElectronVolt(202'000'000ULL)
       .SetPositionPicoMeter(-40LL, 50LL, 60LL)
-      .SetDirection(0.0f, 1.0f, 0.0f)
-      .SetWeight(0.50f);
+      .SetDirection(0.0F, 1.0F, 0.0F)
+      .SetWeight(0.50F);
 
   auto source_2 = MakeSource(2ULL);
   source_2->SetAnalytic()
@@ -243,8 +249,8 @@ TEST(GGEMSSourceRunSnapshot, BuildsOrderedMultiSourceSnapshot) {
           ggems::core::particles::GGEMSParticleType::Positron)
       .SetEnergyMilliElectronVolt(303'000'000ULL)
       .SetPositionPicoMeter(70LL, -80LL, 90LL)
-      .SetDirection(0.0f, 0.0f, -1.0f)
-      .SetWeight(0.75f);
+      .SetDirection(0.0F, 0.0F, -1.0F)
+      .SetWeight(0.75F);
 
   std::vector<GGEMSSourcePtr> sources{source_0, source_1, source_2};
 

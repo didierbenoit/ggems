@@ -8,8 +8,10 @@
 
 typedef struct GGEMSSourceRecord {
   ulong source_id;
+
   ulong time_start_ps;
   ulong time_stop_ps;
+
   ulong energy_milli_eV;
 
   long position_x_pm;
@@ -21,15 +23,19 @@ typedef struct GGEMSSourceRecord {
   uint flags;
   uint reserved_0;
 
-  float direction_x;
-  float direction_y;
-  float direction_z;
-  float direction_w;
+  float axis_x_x;
+  float axis_x_y;
+  float axis_x_z;
+
+  float axis_y_x;
+  float axis_y_y;
+  float axis_y_z;
+
+  float axis_z_x;
+  float axis_z_y;
+  float axis_z_z;
 
   float weight;
-  float reserved_1;
-  float reserved_2;
-  float reserved_3;
 } GGEMSSourceRecord;
 
 #endif

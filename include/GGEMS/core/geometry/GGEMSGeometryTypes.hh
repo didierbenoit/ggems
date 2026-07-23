@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cmath>
-#include <compare>
 #include <cstdint>
 #include <optional>
 
@@ -26,86 +25,130 @@ struct Displacement3PM {
 };
 
 struct Direction3 {
-  float x{1.0f};
-  float y{0.0f};
-  float z{0.0f};
+  float x{0.0F};
+  float y{0.0F};
+  float z{1.0F};
 };
 
-constexpr Position3PM MakePositionPM(CoordinatePM x, CoordinatePM y,
-                                     CoordinatePM z) noexcept {
-  return Position3PM{.x = x, .y = y, .z = z};
+constexpr auto MakePositionPM(CoordinatePM pos_x, CoordinatePM pos_y,
+                              CoordinatePM pos_z) noexcept -> Position3PM {
+  return Position3PM{.x = pos_x, .y = pos_y, .z = pos_z};
 }
 
-constexpr Displacement3PM MakeDisplacementPM(CoordinatePM x, CoordinatePM y,
-                                             CoordinatePM z) noexcept {
-  return Displacement3PM{.x = x, .y = y, .z = z};
+constexpr auto MakeDisplacementPM(CoordinatePM dis_x, CoordinatePM dis_y,
+                                  CoordinatePM dis_z) noexcept
+    -> Displacement3PM {
+  return Displacement3PM{.x = dis_x, .y = dis_y, .z = dis_z};
 }
 
-constexpr Position3PM operator+(Position3PM position,
-                                Displacement3PM displacement) noexcept {
+constexpr auto operator+(Position3PM position,
+                         Displacement3PM displacement) noexcept -> Position3PM {
   return Position3PM{.x = position.x + displacement.x,
                      .y = position.y + displacement.y,
                      .z = position.z + displacement.z};
 }
 
-constexpr Position3PM operator-(Position3PM position,
-                                Displacement3PM displacement) noexcept {
+constexpr auto operator-(Position3PM position,
+                         Displacement3PM displacement) noexcept -> Position3PM {
   return Position3PM{.x = position.x - displacement.x,
                      .y = position.y - displacement.y,
                      .z = position.z - displacement.z};
 }
 
-constexpr Displacement3PM operator-(Position3PM lhs, Position3PM rhs) noexcept {
+constexpr auto operator-(Position3PM lhs, Position3PM rhs) noexcept
+    -> Displacement3PM {
   return Displacement3PM{
       .x = lhs.x - rhs.x, .y = lhs.y - rhs.y, .z = lhs.z - rhs.z};
 }
 
-constexpr Displacement3PM operator+(Displacement3PM lhs,
-                                    Displacement3PM rhs) noexcept {
+constexpr auto operator+(Displacement3PM lhs, Displacement3PM rhs) noexcept
+    -> Displacement3PM {
   return Displacement3PM{
       .x = lhs.x + rhs.x, .y = lhs.y + rhs.y, .z = lhs.z + rhs.z};
 }
 
-constexpr Displacement3PM operator-(Displacement3PM lhs,
-                                    Displacement3PM rhs) noexcept {
+constexpr auto operator-(Displacement3PM lhs, Displacement3PM rhs) noexcept
+    -> Displacement3PM {
   return Displacement3PM{
       .x = lhs.x - rhs.x, .y = lhs.y - rhs.y, .z = lhs.z - rhs.z};
 }
 
-constexpr Displacement3PM operator-(Displacement3PM displacement) noexcept {
+constexpr auto operator-(Displacement3PM displacement) noexcept
+    -> Displacement3PM {
   return Displacement3PM{
       .x = -displacement.x, .y = -displacement.y, .z = -displacement.z};
 }
 
-inline float SquaredNorm(Direction3 direction) noexcept {
-  return direction.x * direction.x + direction.y * direction.y +
-         direction.z * direction.z;
+[[nodiscard]] inline auto SquaredNorm(Direction3 direction) noexcept -> float {
+  auto const dir_x = static_cast<double>(direction.x);
+  auto const dir_y = static_cast<double>(direction.y);
+  auto const dir_z = static_cast<double>(direction.z);
+  return static_cast<float>((dir_x * dir_x) + (dir_y * dir_y) +
+                            (dir_z * dir_z));
 }
 
-inline float Norm(Direction3 direction) noexcept {
-  return std::sqrt(SquaredNorm(direction));
+[[nodiscard]] inline auto Norm(Direction3 direction) noexcept -> float {
+  return static_cast<float>(std::hypot(static_cast<double>(direction.x),
+                                       static_cast<double>(direction.y),
+                                       static_cast<double>(direction.z)));
 }
 
-inline std::optional<Direction3> TryMakeDirection3(float x, float y,
-                                                   float z) noexcept {
-  if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z)) {
+namespace detail {
+struct NormalisedVector3D {
+  double x;
+  double y;
+  double z;
+};
+
+[[nodiscard]] inline auto TryNormaliseVector3D(double x_val, double y_val,
+                                               double z_val) noexcept
+    -> std::optional<NormalisedVector3D> {
+  if (!std::isfinite(x_val) || !std::isfinite(y_val) || !std::isfinite(z_val)) {
     return std::nullopt;
   }
 
-  float const squared_norm = x * x + y * y + z * z;
-
-  if (squared_norm <= 1.0e-20F) {
+  double const norm = std::hypot(x_val, y_val, z_val);
+  if (!std::isfinite(norm) || !(norm > 0.0)) {
     return std::nullopt;
   }
 
-  float const inverse_norm = 1.0F / std::sqrt(squared_norm);
+  NormalisedVector3D const result{
+      .x = x_val / norm, .y = y_val / norm, .z = z_val / norm};
 
-  return Direction3{
-      .x = x * inverse_norm, .y = y * inverse_norm, .z = z * inverse_norm};
+  if (!std::isfinite(result.x) || !std::isfinite(result.y) ||
+      !std::isfinite(result.z)) {
+    return std::nullopt;
+  }
+
+  return result;
+}
+} // namespace detail
+
+[[nodiscard]] inline auto TryMakeDirection3(double dir_x, double dir_y,
+                                            double dir_z) noexcept
+    -> std::optional<Direction3> {
+  auto const precise = detail::TryNormaliseVector3D(dir_x, dir_y, dir_z);
+  if (!precise.has_value()) {
+    return std::nullopt;
+  }
+
+  Direction3 const result{.x = static_cast<float>(precise->x),
+                          .y = static_cast<float>(precise->y),
+                          .z = static_cast<float>(precise->z)};
+
+  if (!std::isfinite(result.x) || !std::isfinite(result.y) ||
+      !std::isfinite(result.z) || !(Norm(result) > 0.0F)) {
+    return std::nullopt;
+  }
+
+  return result;
 }
 
-inline float Dot(Direction3 lhs, Direction3 rhs) noexcept {
-  return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z;
+[[nodiscard]] inline auto Dot(Direction3 lhs, Direction3 rhs) noexcept
+    -> float {
+  return static_cast<float>(
+      (static_cast<double>(lhs.x) * static_cast<double>(rhs.x)) +
+      (static_cast<double>(lhs.y) * static_cast<double>(rhs.y)) +
+      (static_cast<double>(lhs.z) * static_cast<double>(rhs.z)));
 }
-
 } // namespace ggems::geometry

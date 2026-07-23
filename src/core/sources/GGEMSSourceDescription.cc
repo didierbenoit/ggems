@@ -52,8 +52,7 @@ auto DescribeSource(GGEMSSourceRecord const &record,
       ggems::units::HumanReadableSignedLength(record.position_x_pm),
       ggems::units::HumanReadableSignedLength(record.position_y_pm),
       ggems::units::HumanReadableSignedLength(record.position_z_pm),
-      record.direction_x, record.direction_y, record.direction_z,
-      record.weight);
+      record.axis_z_x, record.axis_z_y, record.axis_z_z, record.weight);
 }
 
 // =============================================================================

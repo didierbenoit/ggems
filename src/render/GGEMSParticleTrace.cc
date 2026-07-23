@@ -78,7 +78,9 @@ IsTraceableRecord(core::observer::GGEMSObserverRecord const &record) noexcept
 [[nodiscard]] auto
 SameTrace(core::observer::GGEMSObserverRecord const &first,
           core::observer::GGEMSObserverRecord const &second) noexcept -> bool {
-  return first.track_id == second.track_id &&
+  return first.run_id == second.run_id &&
+         first.global_primary_id == second.global_primary_id &&
+         first.track_id == second.track_id &&
          first.source_index == second.source_index &&
          first.source_local_primary_id == second.source_local_primary_id;
 }

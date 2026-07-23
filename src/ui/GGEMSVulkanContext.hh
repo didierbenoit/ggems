@@ -71,17 +71,17 @@ private:
       -> std::vector<char const *>;
 
 #if VK_HEADER_VERSION >= 304
-  static auto
+  static VKAPI_ATTR auto VKAPI_CALL
   DebugVkCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
                   vk::DebugUtilsMessageTypeFlagsEXT type,
                   vk::DebugUtilsMessengerCallbackDataEXT const *callback_data,
-                  void *user_data) noexcept -> VKAPI_ATTR VkBool32 VKAPI_CALL;
+                  void *user_data) noexcept -> VkBool32;
 #else
-  static auto
+  static VKAPI_ATTR auto VKAPI_CALL
   DebugVkCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
                   VkDebugUtilsMessageTypeFlagsEXT type,
                   VkDebugUtilsMessengerCallbackDataEXT const *callback_data,
-                  void *user_data) noexcept -> VKAPI_ATTR VkBool32 VKAPI_CALL;
+                  void *user_data) noexcept -> VkBool32;
 #endif
 
   auto SelectPhysicalDevice(

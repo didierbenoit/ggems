@@ -12,9 +12,8 @@ static inline ulong GGEMS_SourceMakeBaseTrackId(ulong global_primary_id) {
   return global_primary_id << GGEMS_SOURCE_TRACK_BRANCH_BITS;
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 static inline ulong
 GGEMS_SourceSampleTimePs(ulong source_local_primary_id,
@@ -28,9 +27,8 @@ GGEMS_SourceSampleTimePs(ulong source_local_primary_id,
   return source->time_start_ps + (source_local_primary_id % duration_ps);
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 static inline GGEMSParticleState
 GGEMS_SourceReadAionino(ulong global_primary_id, ulong source_local_primary_id,
@@ -58,10 +56,10 @@ GGEMS_SourceReadAionino(ulong global_primary_id, ulong source_local_primary_id,
   particle.material_id = GGEMS_INVALID_ID_U32;
   particle.region_id = GGEMS_INVALID_ID_U32;
 
-  particle.direction_x = source->direction_x;
-  particle.direction_y = source->direction_y;
-  particle.direction_z = source->direction_z;
-  particle.direction_w = source->direction_w;
+  particle.direction_x = source->axis_z_x;
+  particle.direction_y = source->axis_z_y;
+  particle.direction_z = source->axis_z_z;
+  particle.direction_w = 0.0F;
 
   particle.energy_milli_eV = source->energy_milli_eV;
   particle.weight = source->weight;

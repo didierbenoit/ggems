@@ -595,9 +595,9 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
       ImGui::Text("Position: (%s, %s, %s)", position_x.c_str(),
                   position_y.c_str(), position_z.c_str());
       ImGui::Text("Direction: (%.6g, %.6g, %.6g)",
-                  static_cast<double>(record.direction_x),
-                  static_cast<double>(record.direction_y),
-                  static_cast<double>(record.direction_z));
+                  static_cast<double>(record.axis_z_x),
+                  static_cast<double>(record.axis_z_y),
+                  static_cast<double>(record.axis_z_z));
       ImGui::Text("Energy: %s", energy.c_str());
 
       if (record.time_stop_ps <= record.time_start_ps) {

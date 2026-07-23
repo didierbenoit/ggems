@@ -1,3 +1,4 @@
+#include <array>
 #include <cmath>
 #include <cstdint>
 
@@ -7,8 +8,26 @@
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/sources/GGEMSSourceDescription.hh"
+#include "GGEMS/core/sources/GGEMSSourceFrame.hh"
+#include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 
 namespace ggems::core::sources {
+namespace {
+auto StoreSourceFrame(GGEMSSourceRecord &record,
+                      GGEMSSourceFrame const &frame) noexcept -> void {
+  record.axis_x_x = frame.axis_x.x;
+  record.axis_x_y = frame.axis_x.y;
+  record.axis_x_z = frame.axis_x.z;
+
+  record.axis_y_x = frame.axis_y.x;
+  record.axis_y_y = frame.axis_y.y;
+  record.axis_y_z = frame.axis_y.z;
+
+  record.axis_z_x = frame.axis_z.x;
+  record.axis_z_y = frame.axis_z.y;
+  record.axis_z_z = frame.axis_z.z;
+}
+} // namespace
 
 // =============================================================================
 // =============================================================================
@@ -30,10 +49,7 @@ GGEMSSource::GGEMSSource() {
   record_.position_y_pm = 0LL;
   record_.position_z_pm = 0LL;
 
-  record_.direction_x = 0.0F;
-  record_.direction_y = 0.0F;
-  record_.direction_z = 1.0F;
-  record_.direction_w = 0.0F;
+  StoreSourceFrame(record_, GGEMSSourceFrame{});
 
   record_.weight = 1.0F;
 }
@@ -104,24 +120,22 @@ auto GGEMSSource::SetPositionPicoMeter(std::int64_t x_pm, std::int64_t y_pm,
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSSource::SetDirection(float dir_x, float dir_y, float dir_z)
+auto GGEMSSource::SetDirection(double dir_x, double dir_y, double dir_z)
     -> GGEMSSource & {
-  GGEMS_CHECK_RECOVERABLE(std::isfinite(dir_x) && std::isfinite(dir_y) &&
-                              std::isfinite(dir_z),
-                          "Source direction must contain finite values.");
 
-  float const norm2 = (dir_x * dir_x) + (dir_y * dir_y) + (dir_z * dir_z);
+  GGEMSSourceFrame const frame =
+      BuildSourceFrameWithAutomaticUp({dir_x, dir_y, dir_z});
+  StoreSourceFrame(record_, frame);
+  return *this;
+}
 
-  GGEMS_CHECK_RECOVERABLE(norm2 > 0.0F,
-                          "Source direction cannot be the zero vector.");
+// -----------------------------------------------------------------------------
 
-  float const inv_norm = 1.0F / std::sqrt(norm2);
-
-  record_.direction_x = dir_x * inv_norm;
-  record_.direction_y = dir_y * inv_norm;
-  record_.direction_z = dir_z * inv_norm;
-  record_.direction_w = 0.0F;
-
+auto GGEMSSource::SetOrientation(std::array<double, 3U> const &direction,
+                                 std::array<double, 3U> const &up_reference)
+    -> GGEMSSource & {
+  GGEMSSourceFrame const frame = BuildSourceFrame(direction, up_reference);
+  StoreSourceFrame(record_, frame);
   return *this;
 }
 
