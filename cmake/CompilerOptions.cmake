@@ -1,8 +1,7 @@
 # ============================================================================
-# @file      CompilerOptions.cmake
-# @brief     Dispatch GGEMS compiler-specific configuration.
-# @details   Validate the operating system, compiler family, and compiler
-#            frontend before loading the corresponding option module.
+# @file      CompilerOptions.cmake @brief     Dispatch GGEMS compiler-specific
+# configuration. @details   Validate the operating system, compiler family, and
+# compiler frontend before loading the corresponding option module.
 # ============================================================================
 
 include_guard(GLOBAL)
@@ -29,25 +28,16 @@ if(WIN32)
 
     if(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
 
-      set(
-        GGEMS_COMPILER_NAME
-        "LLVM Clang with GNU-like frontend"
-      )
+      set(GGEMS_COMPILER_NAME "LLVM Clang with GNU-like frontend")
 
     elseif(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
 
-      set(
-        GGEMS_COMPILER_NAME
-        "LLVM Clang with MSVC-like frontend (clang-cl)"
-      )
+      set(GGEMS_COMPILER_NAME "LLVM Clang with MSVC-like frontend (clang-cl)")
 
     else()
 
-      message(
-        FATAL_ERROR
-        "Unsupported Clang frontend on Windows: "
-        "'${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}'."
-      )
+      message(FATAL_ERROR "Unsupported Clang frontend on Windows: "
+                          "'${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}'.")
 
     endif()
 
@@ -57,18 +47,15 @@ if(WIN32)
 
     message(
       FATAL_ERROR
-      "Unsupported compiler on Windows: '${CMAKE_CXX_COMPILER_ID}'.\n"
-      "Supported Windows compilers:\n"
-      "  - LLVM Clang\n"
-      "  - clang-cl\n"
-      "  - Microsoft Visual C++"
-    )
+        "Unsupported compiler on Windows: '${CMAKE_CXX_COMPILER_ID}'.\n"
+        "Supported Windows compilers:\n" "  - LLVM Clang\n" "  - clang-cl\n"
+        "  - Microsoft Visual C++")
 
   endif()
 
-# ----------------------------------------------------------------------------
-# macOS
-# ----------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # macOS
+  # ----------------------------------------------------------------------------
 
 elseif(APPLE)
 
@@ -86,17 +73,14 @@ elseif(APPLE)
 
     message(
       FATAL_ERROR
-      "Unsupported compiler on macOS: '${CMAKE_CXX_COMPILER_ID}'.\n"
-      "Supported macOS compilers:\n"
-      "  - Apple Clang\n"
-      "  - LLVM Clang"
-    )
+        "Unsupported compiler on macOS: '${CMAKE_CXX_COMPILER_ID}'.\n"
+        "Supported macOS compilers:\n" "  - Apple Clang\n" "  - LLVM Clang")
 
   endif()
 
-# ----------------------------------------------------------------------------
-# Linux
-# ----------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # Linux
+  # ----------------------------------------------------------------------------
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
@@ -118,36 +102,30 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 
     message(
-      FATAL_ERROR
-      "The Intel classic C++ compiler is not supported.\n"
-      "Use the Intel oneAPI LLVM-based compiler 'icpx' instead."
-    )
+      FATAL_ERROR "The Intel classic C++ compiler is not supported.\n"
+                  "Use the Intel oneAPI LLVM-based compiler 'icpx' instead.")
 
   else()
 
     message(
       FATAL_ERROR
-      "Unsupported compiler on Linux: '${CMAKE_CXX_COMPILER_ID}'.\n"
-      "Supported Linux compilers:\n"
-      "  - LLVM Clang\n"
-      "  - GNU C++\n"
-      "  - Intel oneAPI icpx"
-    )
+        "Unsupported compiler on Linux: '${CMAKE_CXX_COMPILER_ID}'.\n"
+        "Supported Linux compilers:\n" "  - LLVM Clang\n" "  - GNU C++\n"
+        "  - Intel oneAPI icpx")
 
   endif()
 
-# ----------------------------------------------------------------------------
-# Unsupported operating systems
-# ----------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # Unsupported operating systems
+  # ----------------------------------------------------------------------------
 
 else()
 
   message(
     FATAL_ERROR
-    "Unsupported operating system: '${CMAKE_SYSTEM_NAME}'.\n"
-    "GGEMS currently supports Windows and Linux. "
-    "macOS support is prepared but not yet validated."
-  )
+      "Unsupported operating system: '${CMAKE_SYSTEM_NAME}'.\n"
+      "GGEMS currently supports Windows and Linux. "
+      "macOS support is prepared but not yet validated.")
 
 endif()
 
@@ -170,13 +148,10 @@ include("${GGEMS_COMPILER_OPTIONS_MODULE}")
 # ----------------------------------------------------------------------------
 # Common Windows definitions
 #
-# These remain global temporarily. They will move into the target-based
-# compiler policy during the next compiler-options cleanup.
+# These remain global temporarily. They will move into the target-based compiler
+# policy during the next compiler-options cleanup.
 # ----------------------------------------------------------------------------
 
 if(WIN32)
-  add_compile_definitions(
-    _CRT_SECURE_NO_WARNINGS
-    NOMINMAX
-  )
+  add_compile_definitions(_CRT_SECURE_NO_WARNINGS NOMINMAX)
 endif()

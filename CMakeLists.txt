@@ -6,21 +6,19 @@ cmake_minimum_required(VERSION 3.27 FATAL_ERROR)
 # ----------------------------------------------------------------------------
 # MSVC-compatible debug information
 #
-# /Z7 stores debug information in object files. This works better with
-# compiler caches such as sccache than a shared compiler PDB.
+# /Z7 stores debug information in object files. This works better with compiler
+# caches such as sccache than a shared compiler PDB.
 # ----------------------------------------------------------------------------
-set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT
-  "$<$<CONFIG:Debug>:Embedded>"
-)
+set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug>:Embedded>")
 
 # ----------------------------------------------------------------------------
 # Project declaration
 # ----------------------------------------------------------------------------
-project(GGEMS
+project(
+  GGEMS
   VERSION 2.0.0
   LANGUAGES CXX
-  DESCRIPTION "GPU Geant4-based Monte Carlo Simulations"
-)
+  DESCRIPTION "GPU Geant4-based Monte Carlo Simulations")
 
 # ----------------------------------------------------------------------------
 # General CMake configuration
@@ -38,45 +36,26 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # ----------------------------------------------------------------------------
 # Supported build configurations
 # ----------------------------------------------------------------------------
-set(GGEMS_SUPPORTED_BUILD_TYPES
-  Debug
-  Release
-)
+set(GGEMS_SUPPORTED_BUILD_TYPES Debug Release)
 
 if(CMAKE_CONFIGURATION_TYPES)
   # Multi-configuration generators such as Visual Studio or Ninja Multi-Config
-  set(
-    CMAKE_CONFIGURATION_TYPES
-    "${GGEMS_SUPPORTED_BUILD_TYPES}"
-    CACHE STRING
-    "GGEMS build configurations"
-    FORCE
-  )
+  set(CMAKE_CONFIGURATION_TYPES
+      "${GGEMS_SUPPORTED_BUILD_TYPES}"
+      CACHE STRING "GGEMS build configurations" FORCE)
 else()
   # Single-configuration generators such as Ninja and Unix Makefiles
   if(NOT CMAKE_BUILD_TYPE)
-    set(
-      CMAKE_BUILD_TYPE
-      Debug
-      CACHE STRING
-      "GGEMS build configuration"
-      FORCE
-    )
+    set(CMAKE_BUILD_TYPE
+        Debug
+        CACHE STRING "GGEMS build configuration" FORCE)
   endif()
 
-  set_property(
-    CACHE CMAKE_BUILD_TYPE
-    PROPERTY STRINGS
-      Debug
-      Release
-  )
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release)
 
   if(NOT CMAKE_BUILD_TYPE IN_LIST GGEMS_SUPPORTED_BUILD_TYPES)
-    message(
-      FATAL_ERROR
-      "Unsupported GGEMS build type '${CMAKE_BUILD_TYPE}'."
-      "Expected Debug or Release."
-    )
+    message(FATAL_ERROR "Unsupported GGEMS build type '${CMAKE_BUILD_TYPE}'."
+                        "Expected Debug or Release.")
   endif()
 endif()
 
@@ -90,8 +69,7 @@ include(CompilerLauncher)
 # Display build context
 # ----------------------------------------------------------------------------
 message(STATUS "CMake version in use: ${CMAKE_VERSION}")
-message(STATUS
-  "Configuring project ${PROJECT_NAME} version ${PROJECT_VERSION}")
+message(STATUS "Configuring project ${PROJECT_NAME} version ${PROJECT_VERSION}")
 
 # ----------------------------------------------------------------------------
 # Compiler configuration dispatch (Clang / MSVC)
@@ -103,8 +81,8 @@ include(OptimizationOptions)
 # Optional build features
 # ----------------------------------------------------------------------------
 option(GGEMS_BUILD_TESTS "Build GoogleTest unit tests" OFF)
-option(GGEMS_BUILD_DOCS  "Build documentation with Doxygen and Sphinx" OFF)
-option(GGEMS_WITH_IMGUI  "Enable ImGui / Vulkan interface" OFF)
+option(GGEMS_BUILD_DOCS "Build documentation with Doxygen and Sphinx" OFF)
+option(GGEMS_WITH_IMGUI "Enable ImGui / Vulkan interface" OFF)
 option(GGEMS_BUILD_VALIDATION "Build GGEMS scientific validation tools" OFF)
 
 # ----------------------------------------------------------------------------
@@ -112,7 +90,7 @@ option(GGEMS_BUILD_VALIDATION "Build GGEMS scientific validation tools" OFF)
 # ----------------------------------------------------------------------------
 find_package(OpenCL REQUIRED)
 set(OPENCL_HPP_INCLUDE_DIR
-  "${PROJECT_SOURCE_DIR}/external/OpenCL-CLHPP/include")
+    "${PROJECT_SOURCE_DIR}/external/OpenCL-CLHPP/include")
 message(STATUS "OpenCL library located at: ${OpenCL_LIBRARY}")
 message(STATUS "OpenCL include path: ${OPENCL_HPP_INCLUDE_DIR}")
 
@@ -122,107 +100,71 @@ find_package(pybind11 REQUIRED CONFIG)
 # Core library
 # ----------------------------------------------------------------------------
 file(
-  GLOB_RECURSE GGEMS_CORE_SOURCES
+  GLOB_RECURSE
+  GGEMS_CORE_SOURCES
   CONFIGURE_DEPENDS
-    "${PROJECT_SOURCE_DIR}/src/core/*.cc"
-    "${PROJECT_SOURCE_DIR}/src/frameworks/*.cc"
-    "${PROJECT_SOURCE_DIR}/src/render/*.cc"
-    "${PROJECT_SOURCE_DIR}/src/utf/*.cc"
-)
+  "${PROJECT_SOURCE_DIR}/src/core/*.cc"
+  "${PROJECT_SOURCE_DIR}/src/frameworks/*.cc"
+  "${PROJECT_SOURCE_DIR}/src/render/*.cc"
+  "${PROJECT_SOURCE_DIR}/src/utf/*.cc")
 
 list(SORT GGEMS_CORE_SOURCES)
 
-set(
-  GGEMS_SYSTEM_UTILS_SOURCES
-  "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsWindows.cc"
-  "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsLinux.cc"
-  "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsApple.cc"
-)
+set(GGEMS_SYSTEM_UTILS_SOURCES
+    "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsWindows.cc"
+    "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsLinux.cc"
+    "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsApple.cc")
 
 # Remove all platform backends collected by GLOB_RECURSE.
-list(
-  REMOVE_ITEM
-  GGEMS_CORE_SOURCES
-  ${GGEMS_SYSTEM_UTILS_SOURCES}
-)
+list(REMOVE_ITEM GGEMS_CORE_SOURCES ${GGEMS_SYSTEM_UTILS_SOURCES})
 
 if(WIN32)
-  set(
-    GGEMS_SYSTEM_UTILS_SOURCE
-    "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsWindows.cc"
-  )
+  set(GGEMS_SYSTEM_UTILS_SOURCE
+      "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsWindows.cc")
 
   set(GGEMS_SYSTEM_UTILS_BACKEND "Windows")
 
 elseif(APPLE)
-  set(
-    GGEMS_SYSTEM_UTILS_SOURCE
-    "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsApple.cc"
-  )
+  set(GGEMS_SYSTEM_UTILS_SOURCE
+      "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsApple.cc")
 
   set(GGEMS_SYSTEM_UTILS_BACKEND "Apple")
 
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  set(
-    GGEMS_SYSTEM_UTILS_SOURCE
-    "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsLinux.cc"
-  )
+  set(GGEMS_SYSTEM_UTILS_SOURCE
+      "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsLinux.cc")
 
   set(GGEMS_SYSTEM_UTILS_BACKEND "Linux")
 
 else()
   message(
-    FATAL_ERROR
-    "No GGEMS system utilities backend for '${CMAKE_SYSTEM_NAME}'."
-  )
+    FATAL_ERROR "No GGEMS system utilities backend for '${CMAKE_SYSTEM_NAME}'.")
 endif()
 
-list(
-  APPEND
-  GGEMS_CORE_SOURCES
-  "${GGEMS_SYSTEM_UTILS_SOURCE}"
-)
+list(APPEND GGEMS_CORE_SOURCES "${GGEMS_SYSTEM_UTILS_SOURCE}")
 
 list(SORT GGEMS_CORE_SOURCES)
 
-message(
-  STATUS
-  "System utilities backend: ${GGEMS_SYSTEM_UTILS_BACKEND}"
-)
+message(STATUS "System utilities backend: ${GGEMS_SYSTEM_UTILS_BACKEND}")
 
 add_library(ggems_core STATIC ${GGEMS_CORE_SOURCES})
 add_library(GGEMS::Core ALIAS ggems_core)
 
-target_compile_features(ggems_core
-  PUBLIC
-    cxx_std_23
-)
+target_compile_features(ggems_core PUBLIC cxx_std_23)
 
-target_include_directories(ggems_core
-  PUBLIC
-    ${PROJECT_SOURCE_DIR}/include
-    ${OPENCL_HPP_INCLUDE_DIR}
-)
+target_include_directories(ggems_core PUBLIC ${PROJECT_SOURCE_DIR}/include
+                                             ${OPENCL_HPP_INCLUDE_DIR})
 
-target_compile_definitions(ggems_core
-  PUBLIC
-    "$<$<CONFIG:Debug>:GGEMS_DEBUG_MODE>"
-    "$<$<CONFIG:Release>:GGEMS_RELEASE_MODE>"
+target_compile_definitions(
+  ggems_core
+  PUBLIC "$<$<CONFIG:Debug>:GGEMS_DEBUG_MODE>"
+         "$<$<CONFIG:Release>:GGEMS_RELEASE_MODE>"
+  PRIVATE "GGEMS_KERNEL_ROOT=\"${PROJECT_SOURCE_DIR}/kernels\"")
 
-  PRIVATE
-    "GGEMS_KERNEL_ROOT=\"${PROJECT_SOURCE_DIR}/kernels\""
-)
-
-target_link_libraries(ggems_core
-  PUBLIC
-  OpenCL::OpenCL
-)
+target_link_libraries(ggems_core PUBLIC OpenCL::OpenCL)
 
 if(UNIX AND NOT APPLE)
-  target_link_libraries(ggems_core
-    PRIVATE
-    atomic
-  )
+  target_link_libraries(ggems_core PRIVATE atomic)
 endif()
 
 # ----------------------------------------------------------------------------
@@ -233,7 +175,7 @@ ggems_apply_release_optimizations(ggems_core)
 # ----------------------------------------------------------------------------
 # Optional ImGui / Vulkan interface
 # ----------------------------------------------------------------------------
-if (GGEMS_WITH_IMGUI)
+if(GGEMS_WITH_IMGUI)
   message(STATUS "GGEMS GuiMode enabled: Vulkan / Dear ImGui layer requested.")
   add_subdirectory(src/ui)
 endif()
@@ -246,7 +188,7 @@ add_subdirectory(python)
 # ----------------------------------------------------------------------------
 # Unit testing
 # ----------------------------------------------------------------------------
-if (GGEMS_BUILD_TESTS)
+if(GGEMS_BUILD_TESTS)
   enable_testing()
   add_subdirectory(tests)
 endif()
@@ -254,14 +196,14 @@ endif()
 # ----------------------------------------------------------------------------
 # Scientific validation
 # ----------------------------------------------------------------------------
-if (GGEMS_BUILD_VALIDATION)
+if(GGEMS_BUILD_VALIDATION)
   add_subdirectory(validation)
 endif()
 
 # ----------------------------------------------------------------------------
 # Documentation
 # ----------------------------------------------------------------------------
-if (GGEMS_BUILD_DOCS)
+if(GGEMS_BUILD_DOCS)
   add_subdirectory(docs)
 endif()
 
@@ -275,7 +217,8 @@ message(STATUS "CMake version          : ${CMAKE_VERSION}")
 message(STATUS "Generator              : ${CMAKE_GENERATOR}")
 message(STATUS "Compiler ID            : ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "Compiler version       : ${CMAKE_CXX_COMPILER_VERSION}")
-message(STATUS "Compiler frontend      : ${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}")
+message(
+  STATUS "Compiler frontend      : ${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}")
 message(STATUS "Compiler path          : ${CMAKE_CXX_COMPILER}")
 message(STATUS "C++ standard           : C++${CMAKE_CXX_STANDARD}")
 
