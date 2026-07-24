@@ -31,6 +31,45 @@ GGEMS_SourceSampleTimePs(ulong source_local_primary_id,
 // =============================================================================
 
 static inline GGEMSParticleState
+GGEMS_SourceInitialisePrimary(ulong global_primary_id,
+                              ulong source_local_primary_id,
+                              __global GGEMSSourceRecord const *source) {
+  GGEMSParticleState particle;
+
+  particle.global_particle_id = global_primary_id;
+  particle.track_id = 0UL;
+  particle.parent_track_id = GGEMS_INVALID_ID_U64;
+  particle.time_ps = GGEMS_SourceSampleTimePs(source_local_primary_id, source);
+
+  particle.position_x_pm = source->position_x_pm;
+  particle.position_y_pm = source->position_y_pm;
+  particle.position_z_pm = source->position_z_pm;
+
+  particle.particle_type = source->emitted_particle_type;
+  particle.status = GGEMS_PARTICLE_STATUS_ALIVE;
+  particle.generation = 0U;
+  particle.flags = 0U;
+
+  particle.current_navigator_id = GGEMS_INVALID_ID_U32;
+  particle.current_volume_id = GGEMS_INVALID_ID_U32;
+  particle.material_id = GGEMS_INVALID_ID_U32;
+  particle.region_id = GGEMS_INVALID_ID_U32;
+
+  particle.direction_x = source->axis_z_x;
+  particle.direction_y = source->axis_z_y;
+  particle.direction_z = source->axis_z_z;
+  particle.direction_w = 0.0F;
+
+  particle.energy_milli_eV = source->energy_milli_eV;
+  particle.weight = source->weight;
+
+  return particle;
+}
+
+// =============================================================================
+// =============================================================================
+
+static inline GGEMSParticleState
 GGEMS_SourceReadAionino(ulong global_primary_id, ulong source_local_primary_id,
                         __global GGEMSSourceRecord const *source) {
   GGEMSParticleState particle;

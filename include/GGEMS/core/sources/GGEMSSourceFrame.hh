@@ -14,6 +14,9 @@ struct GGEMSSourceFrame {
   geometry::Direction3 axis_z{.x = 0.0F, .y = 0.0F, .z = 1.0F};
 };
 
+[[nodiscard]] auto IsValidSourceFrame(GGEMSSourceFrame const &frame) noexcept
+    -> bool;
+
 [[nodiscard]] auto BuildSourceFrame(std::array<double, 3U> const &direction,
                                     std::array<double, 3U> const &up_reference)
     -> GGEMSSourceFrame;

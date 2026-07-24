@@ -6,6 +6,8 @@
 #include <utility>
 #include <vector>
 #include <string>
+#include <limits>
+#include <functional>
 
 #include <gtest/gtest.h>
 
@@ -25,6 +27,14 @@ namespace {
 constexpr std::uint32_t k_source_record_kind =
     ggems::core::observer::ToKernelObserverRecordKind(
         ggems::core::observer::GGEMSObserverRecordKind::Source);
+
+constexpr std::uint32_t k_step_record_kind =
+    ggems::core::observer::ToKernelObserverRecordKind(
+        ggems::core::observer::GGEMSObserverRecordKind::Step);
+
+constexpr std::uint32_t k_terminal_record_kind =
+    ggems::core::observer::ToKernelObserverRecordKind(
+        ggems::core::observer::GGEMSObserverRecordKind::Terminal);
 
 // =============================================================================
 // =============================================================================
@@ -1108,5 +1118,120 @@ TEST_F(GGEMSRunTest,
   ASSERT_EQ(source_records.size(), 1U);
   EXPECT_EQ(source_records[0U].source_index, 0U);
   EXPECT_EQ(source_records[0U].source_local_primary_id, 1ULL);
+  EXPECT_EQ(source_records[0U].global_primary_id, 1ULL);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSRunTest, ProducesOnlySourceAndTerminalAlongStoredSourceAxis) {
+  auto random = MakePhiloxRandom();
+  auto source = MakeLowEnergySource(1ULL);
+
+  source
+      ->SetEmittedParticleType(
+          ggems::core::particles::GGEMSParticleType::Aionino)
+      .SetPositionPicoMeter(-1'500'000'000'000LL, 0LL, 0LL)
+      .SetDirection(1.0, 0.0, 0.0);
+
+  auto observer = MakeCapturingObserver(1U);
+
+  ggems::core::GGEMSRun run{};
+  run.SetRandom(random);
+  run.SetSource(source);
+  run.SetObserver(observer);
+  run.SetWorkerCount(65U);
+
+  ASSERT_NO_THROW(run.Initialise());
+  ASSERT_NO_THROW(run.Run());
+
+  ASSERT_EQ(observer->GetCapturedPrimaryCount(), 1U);
+  ASSERT_EQ(observer->GetRecords().size(), 2U);
+
+  auto records = observer->GetRecords();
+  std::ranges::sort(records, std::ranges::less{},
+                    &ggems::core::observer::GGEMSObserverRecord::record_kind);
+
+  ASSERT_EQ(records[0U].record_kind, k_source_record_kind);
+  ASSERT_EQ(records[1U].record_kind, k_terminal_record_kind);
+
+  EXPECT_TRUE(std::ranges::none_of(
+      records,
+      [](ggems::core::observer::GGEMSObserverRecord const &record) -> bool {
+        return record.record_kind == k_step_record_kind;
+      }));
+
+  EXPECT_EQ(records[0U].global_particle_id, 0ULL);
+  EXPECT_EQ(records[1U].global_particle_id, 0ULL);
+  EXPECT_EQ(records[0U].track_id, 0ULL);
+  EXPECT_EQ(records[1U].track_id, 0ULL);
+  EXPECT_EQ(records[0U].parent_track_id,
+            ggems::core::particles::k_invalid_id_u64);
+  EXPECT_EQ(records[1U].parent_track_id,
+            ggems::core::particles::k_invalid_id_u64);
+
+  EXPECT_EQ(records[0U].position_x_pm, -1'500'000'000'000LL);
+  EXPECT_EQ(records[1U].position_x_pm, -500'000'000'000LL);
+  EXPECT_EQ(records[0U].position_y_pm, 0LL);
+  EXPECT_EQ(records[1U].position_y_pm, 0LL);
+  EXPECT_EQ(records[0U].position_z_pm, 0LL);
+  EXPECT_EQ(records[1U].position_z_pm, 0LL);
+
+  EXPECT_FLOAT_EQ(records[0U].direction_x, 1.0F);
+  EXPECT_FLOAT_EQ(records[1U].direction_x, 1.0F);
+  EXPECT_EQ(records[0U].energy_milli_eV, records[1U].energy_milli_eV);
+  EXPECT_EQ(records[0U].time_ps, records[1U].time_ps);
+  EXPECT_FLOAT_EQ(records[0U].weight, records[1U].weight);
+  EXPECT_EQ(records[0U].deposited_energy_milli_eV, 0ULL);
+  EXPECT_EQ(records[1U].deposited_energy_milli_eV, 0ULL);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSRunTest,
+       EndpointOverflowPreservesLastCommitAndDoesNotReservePrimaryId) {
+  auto random = MakePhiloxRandom();
+  auto source = MakeLowEnergySource(1ULL);
+  source->SetPositionPicoMeter(0LL, 0LL, 0LL).SetDirection(1.0, 0.0, 0.0);
+
+  auto observer = MakeCapturingObserver(1U);
+
+  ggems::core::GGEMSRun run{};
+  run.SetRandom(random);
+  run.SetSource(source);
+  run.SetObserver(observer);
+  run.SetWorkerCount(64U);
+
+  ASSERT_NO_THROW(run.Initialise());
+  ASSERT_NO_THROW(run.Run());
+
+  std::string const successful_dump = observer->BuildDump();
+  auto const successful_snapshot = run.GetLastSourceRunSnapshot();
+
+  ASSERT_TRUE(successful_snapshot.has_value());
+  ASSERT_FALSE(observer->GetRecords().empty());
+
+  source->SetPositionPicoMeter(std::numeric_limits<std::int64_t>::max(), 0LL,
+                               0LL);
+
+  EXPECT_THROW(run.Run(), ggems::core::GGEMSExceptionBase);
+
+  EXPECT_EQ(observer->BuildDump(), successful_dump);
+
+  auto const snapshot_after_failure = run.GetLastSourceRunSnapshot();
+  ASSERT_TRUE(snapshot_after_failure.has_value());
+  ASSERT_EQ(snapshot_after_failure->GetRecords().size(), 1U);
+  EXPECT_EQ(snapshot_after_failure->GetRecords()[0U].position_x_pm,
+            successful_snapshot->GetRecords()[0U].position_x_pm);
+
+  source->SetPositionPicoMeter(0LL, 0LL, 0LL);
+
+  ASSERT_NO_THROW(run.Run());
+
+  auto const source_records =
+      BuildSortedSourceRecordSnapshot(observer->GetRecords());
+
+  ASSERT_EQ(source_records.size(), 1U);
   EXPECT_EQ(source_records[0U].global_primary_id, 1ULL);
 }

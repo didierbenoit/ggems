@@ -11,7 +11,7 @@
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/particles/GGEMSPrimaryStream.hh"
-#include "GGEMS/core/transport/GGEMSDummyTransportWorkload.hh"
+#include "GGEMS/core/transport/GGEMSTransportWorkload.hh"
 
 namespace ggems::core::random {
 class GGEMSRandom;
@@ -64,8 +64,8 @@ private:
   bool initialised_{false};
   std::uint64_t next_run_id_{0ULL};
 
-  std::vector<std::unique_ptr<transport::GGEMSDummyTransportWorkload>>
-      dummy_transports_;
+  std::vector<std::unique_ptr<transport::GGEMSTransportWorkload>>
+      transport_workloads_;
 
   std::uint32_t worker_count_{256U};
 };

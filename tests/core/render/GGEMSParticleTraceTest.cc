@@ -85,6 +85,7 @@ auto ExpectParticleColour(ggems::render::GGEMSParticleTraceVertex const &vertex,
   EXPECT_FLOAT_EQ(vertex.colour[2], static_cast<float>(rgb.b) * k_inverse_255);
   EXPECT_FLOAT_EQ(vertex.colour[3], 1.0F);
 }
+} // namespace
 
 // =============================================================================
 // =============================================================================
@@ -461,4 +462,103 @@ TEST(GGEMSParticleTraceVisibility,
   EXPECT_TRUE(visibility.ShouldDraw(99U));
 }
 
-} // namespace
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSParticleTrace,
+     DiagnosticCardinalAndDiagonalHistoriesBuildSevenFilteredRanges) {
+  constexpr std::array<std::array<std::int64_t, 3U>, 7U> k_begin_pm{{
+      {-1'500'000'000'000LL, 0LL, 0LL},
+      {1'500'000'000'000LL, 0LL, 0LL},
+      {0LL, -1'500'000'000'000LL, 0LL},
+      {0LL, 1'500'000'000'000LL, 0LL},
+      {0LL, 0LL, -1'500'000'000'000LL},
+      {0LL, 0LL, 1'500'000'000'000LL},
+      {0LL, 0LL, 0LL},
+  }};
+
+  constexpr std::array<std::array<std::int64_t, 3U>, 7U> k_end_pm{{
+      {-500'000'000'000LL, 0LL, 0LL},
+      {500'000'000'000LL, 0LL, 0LL},
+      {0LL, -500'000'000'000LL, 0LL},
+      {0LL, 500'000'000'000LL, 0LL},
+      {0LL, 0LL, -500'000'000'000LL},
+      {0LL, 0LL, 500'000'000'000LL},
+      {577'350'258'827LL, 577'350'258'827LL, 577'350'258'827LL},
+  }};
+
+  std::vector<GGEMSObserverRecord> records;
+  records.reserve(14U);
+
+  for (std::size_t index = 0U; index < k_begin_pm.size(); ++index) {
+    auto terminal = MakeRecord(3ULL, static_cast<std::uint64_t>(index), 0ULL,
+                               0ULL, GGEMSObserverRecordKind::Terminal,
+                               GGEMSParticleType::Aionino, k_end_pm[index][0U],
+                               k_end_pm[index][1U], k_end_pm[index][2U],
+                               static_cast<std::uint32_t>(index));
+
+    terminal.global_particle_id = static_cast<std::uint64_t>(index);
+
+    auto source =
+        MakeRecord(3ULL, static_cast<std::uint64_t>(index), 0ULL, 0ULL,
+                   GGEMSObserverRecordKind::Source, GGEMSParticleType::Aionino,
+                   k_begin_pm[index][0U], k_begin_pm[index][1U],
+                   k_begin_pm[index][2U], static_cast<std::uint32_t>(index));
+
+    source.global_particle_id = static_cast<std::uint64_t>(index);
+
+    records.push_back(terminal);
+    records.push_back(source);
+  }
+
+  auto const segments = ggems::render::BuildParticleTraceSegments(records);
+
+  ASSERT_EQ(segments.size(), 7U);
+
+  constexpr float k_pm_to_m{1.0e-12F};
+
+  for (std::size_t index = 0U; index < segments.size(); ++index) {
+    auto const &segment = segments[index];
+
+    EXPECT_EQ(segment.source_index, index);
+    EXPECT_EQ(segment.global_primary_id, index);
+    EXPECT_EQ(segment.track_id, 0ULL);
+    EXPECT_EQ(segment.begin_kind, GGEMSObserverRecordKind::Source);
+    EXPECT_EQ(segment.end_kind, GGEMSObserverRecordKind::Terminal);
+    EXPECT_EQ(segment.particle_type, GGEMSParticleType::Aionino);
+
+    EXPECT_FLOAT_EQ(segment.begin.x_m,
+                    static_cast<float>(k_begin_pm[index][0U]) * k_pm_to_m);
+    EXPECT_FLOAT_EQ(segment.begin.y_m,
+                    static_cast<float>(k_begin_pm[index][1U]) * k_pm_to_m);
+    EXPECT_FLOAT_EQ(segment.begin.z_m,
+                    static_cast<float>(k_begin_pm[index][2U]) * k_pm_to_m);
+    EXPECT_FLOAT_EQ(segment.end.x_m,
+                    static_cast<float>(k_end_pm[index][0U]) * k_pm_to_m);
+    EXPECT_FLOAT_EQ(segment.end.y_m,
+                    static_cast<float>(k_end_pm[index][1U]) * k_pm_to_m);
+    EXPECT_FLOAT_EQ(segment.end.z_m,
+                    static_cast<float>(k_end_pm[index][2U]) * k_pm_to_m);
+  }
+
+  auto const draw_data = ggems::render::BuildParticleTraceDrawData(segments);
+
+  ASSERT_EQ(draw_data.vertices.size(), 14U);
+  ASSERT_EQ(draw_data.draw_ranges.size(), 7U);
+
+  ggems::render::GGEMSParticleTraceVisibility visibility{};
+  visibility.ReconcileSourceCount(7U);
+  visibility.SetSourceVisible(3U, false);
+
+  for (std::size_t index = 0U; index < 7U; ++index) {
+    EXPECT_EQ(draw_data.draw_ranges[index].source_index, index);
+    EXPECT_EQ(draw_data.draw_ranges[index].first_vertex, index * 2U);
+    EXPECT_EQ(draw_data.draw_ranges[index].vertex_count, 2U);
+    EXPECT_EQ(visibility.ShouldDraw(static_cast<std::uint32_t>(index)),
+              index != 3U);
+    ExpectParticleColour(draw_data.vertices[index * 2U],
+                         GGEMSParticleType::Aionino);
+    ExpectParticleColour(draw_data.vertices[(index * 2U) + 1U],
+                         GGEMSParticleType::Aionino);
+  }
+}

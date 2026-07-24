@@ -15,6 +15,10 @@ constexpr float k_max_pitch_radians{1.4835298641951802F};
 // =============================================================================
 // =============================================================================
 
+GGEMSVulkanCamera::GGEMSVulkanCamera() { Reset(); }
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSVulkanCamera::SetViewportExtent(vk::Extent2D const &extent) noexcept
     -> void {
   if (extent.width == 0U || extent.height == 0U) {
@@ -93,7 +97,7 @@ auto GGEMSVulkanCamera::ZoomBy(float wheel_delta) noexcept -> void {
 
 auto GGEMSVulkanCamera::Reset() noexcept -> void {
   target_m_ = Vector3{.x = 0.0F, .y = 0.0F, .z = 0.0F};
-  SetOrbitAngles(45.0F, 45.0F);
+  SetOrbitAngles(300.0F, 30.0F);
   SetZoom(0.8F);
 }
 

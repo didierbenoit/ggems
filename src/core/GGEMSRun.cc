@@ -24,9 +24,10 @@
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/core/transport/GGEMSTransportWorkloadPlan.hh"
 #include "GGEMS/core/transport/GGEMSTransportCounters.hh"
-#include "GGEMS/core/transport/GGEMSDummyTransportWorkload.hh"
+#include "GGEMS/core/transport/GGEMSTransportWorkload.hh"
 #include "GGEMS/core/observer/GGEMSTransportObserver.hh"
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
+#include "GGEMS/core/transport/GGEMSDiagnosticProjection.hh"
 
 using namespace ggems::units;
 
@@ -80,6 +81,34 @@ auto ValidateObserverCapture(
                   config.capture_source_local_primary_id, source_index,
                   source_primary_count));
 }
+
+// =============================================================================
+// =============================================================================
+
+auto ValidateTransportWorkloadCapacity(std::uint64_t total_primary_count,
+                                       std::size_t workload_count,
+                                       std::uint32_t worker_count) -> void {
+  GGEMS_CHECK_INTERNAL(workload_count > 0U,
+                       "No transport workload was initialised.");
+
+  auto const workload_count_u64 = static_cast<std::uint64_t>(workload_count);
+
+  auto const largest_workload_primary_count =
+      (total_primary_count / workload_count_u64) +
+      (total_primary_count % workload_count_u64 != 0ULL ? 1ULL : 0ULL);
+
+  auto const safe_atomic_primary_count = static_cast<std::uint64_t>(
+      std::numeric_limits<std::uint32_t>::max() - worker_count);
+
+  GGEMS_CHECK_RECOVERABLE(
+      largest_workload_primary_count <= safe_atomic_primary_count,
+      std::format(
+          "Current transport assigns {} primaries to its largest workload, "
+          "exceeding the safe uint32 atomic stream limit {} for {} workers.",
+          largest_workload_primary_count, safe_atomic_primary_count,
+          worker_count));
+}
+
 } // namespace
 
 // =============================================================================
@@ -213,11 +242,6 @@ auto GGEMSRun::Initialise() -> void {
                          "GGEMSRun source collection contains a null entry.");
   }
 
-  GGEMS_CHECK_RECOVERABLE(
-      sources_.size() <=
-          static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()),
-      "Dummy transport currently supports at most uint32_t source slots.");
-
   auto source_count = static_cast<std::uint32_t>(sources_.size());
 
   GGEMS_CHECK_RECOVERABLE(
@@ -243,8 +267,8 @@ auto GGEMSRun::Initialise() -> void {
 
   std::filesystem::path kernel_root{GGEMS_KERNEL_ROOT};
 
-  dummy_transports_.clear();
-  dummy_transports_.reserve(opencl.GetContext().size());
+  transport_workloads_.clear();
+  transport_workloads_.reserve(opencl.GetContext().size());
 
   for (std::size_t context_index = 0U;
        context_index < opencl.GetContext().size(); ++context_index) {
@@ -252,16 +276,16 @@ auto GGEMSRun::Initialise() -> void {
         static_cast<std::uint64_t>(context_index) *
         static_cast<std::uint64_t>(worker_count_);
 
-    dummy_transports_.push_back(
-        std::make_unique<transport::GGEMSDummyTransportWorkload>(
+    transport_workloads_.push_back(
+        std::make_unique<transport::GGEMSTransportWorkload>(
             opencl.GetContext()[context_index], kernel_root, *random_,
             worker_count_, source_count, random_stream_offset,
             static_cast<std::uint32_t>(context_index),
             observer_record_capacity));
   }
 
-  GGEMS_INFO("Core", "{} dummy transport workload(s) initialised.",
-             dummy_transports_.size());
+  GGEMS_INFO("Core", "{} transport workload(s) initialised.",
+             transport_workloads_.size());
 
   next_run_id_ = 0ULL;
   initialised_ = true;
@@ -311,6 +335,8 @@ auto GGEMSRun::Run() -> void {
 
   ValidateObserverCapture(observer_config, source_ranges);
 
+  transport::ValidateDiagnosticTransportSources(source_records, source_ranges);
+
   std::uint64_t total_primary_count = source_snapshot.GetTotalPrimaryCount();
 
   GGEMS_CHECK_RECOVERABLE(
@@ -320,8 +346,14 @@ auto GGEMSRun::Run() -> void {
   GGEMS_CHECK_RECOVERABLE(
       total_primary_count <=
           static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max()),
-      "Dummy transport currently supports at most uint32_t primaries per "
+      "Current transport supports at most uint32_t primaries per "
       "projection.");
+
+  GGEMS_CHECK_RECOVERABLE(!transport_workloads_.empty(),
+                          "No transport workload was initialised.");
+
+  ValidateTransportWorkloadCapacity(total_primary_count,
+                                    transport_workloads_.size(), worker_count_);
 
   auto primary_view = primary_stream_.PrepareRun(run_id, total_primary_count);
 
@@ -350,22 +382,19 @@ auto GGEMSRun::Run() -> void {
   GGEMS_INFOEX("Core", 1, "Projection {} worker count: {}.", run_id,
                worker_count_);
 
-  GGEMS_CHECK_RECOVERABLE(!dummy_transports_.empty(),
-                          "No dummy transport workload was initialised.");
-
   std::uint64_t projection_history_offset = primary_view.global_history_offset;
 
   std::vector<transport::GGEMSTransportWorkloadPlan> workload_plan =
       transport::BuildEqualTransportWorkloadPlan(
           projection_history_offset, projection_primary_count,
-          static_cast<std::uint32_t>(dummy_transports_.size()), worker_count_);
+          static_cast<std::uint32_t>(transport_workloads_.size()),
+          worker_count_);
 
-  std::vector<transport::GGEMSDummyTransportRunReport> reports{
-      workload_plan.size()};
+  std::vector<transport::GGEMSTransportRunReport> reports{workload_plan.size()};
 
   std::vector<std::exception_ptr> exceptions{workload_plan.size()};
 
-  std::vector<transport::GGEMSDummyTransportRunConfig> transport_configs{
+  std::vector<transport::GGEMSTransportRunConfig> transport_configs{
       workload_plan.size()};
 
   for (std::size_t plan_index = 0U; plan_index < workload_plan.size();
@@ -407,7 +436,7 @@ auto GGEMSRun::Run() -> void {
            config = std::move(transport_configs[plan_index])]() -> void {
             try {
               reports[plan_index] =
-                  dummy_transports_[context_index]->Run(config);
+                  transport_workloads_[context_index]->Run(config);
             } catch (...) {
               exceptions[plan_index] = std::current_exception();
             }
@@ -458,15 +487,36 @@ auto GGEMSRun::Run() -> void {
         report.kernel_histories_per_second);
   }
 
-  GGEMS_CHECK_RECOVERABLE(
-      merged_counters.completed_history_count == projection_primary_count,
-      "Dummy transport completed history count does not match primary count.");
+  GGEMS_CHECK_RECOVERABLE(merged_counters.overflow_count == 0U,
+                          "Transport reported an internal overflow.");
 
   GGEMS_CHECK_RECOVERABLE(
-      merged_counters.terminal_particle_count ==
-          merged_counters.consumed_primary_count +
-              merged_counters.created_secondary_count,
-      "Dummy transport terminal particle count is inconsistent.");
+      merged_counters.consumed_primary_count == projection_primary_count,
+      "Transport consumed primary count does not match projection count.");
+
+  GGEMS_CHECK_RECOVERABLE(
+      merged_counters.completed_history_count == projection_primary_count,
+      "Transport completed history count does not match projection count.");
+
+  GGEMS_CHECK_RECOVERABLE(
+      merged_counters.terminal_particle_count == projection_primary_count,
+      "Transport terminal particle count does not match projection count.");
+
+  GGEMS_CHECK_RECOVERABLE(
+      merged_counters.created_secondary_count == 0U,
+      "Transport unexpectedly created secondary particles.");
+
+  GGEMS_CHECK_RECOVERABLE(
+      merged_counters.aionino_to_gamma_count == 0U &&
+          merged_counters.gamma_to_electron_count == 0U &&
+          merged_counters.electron_to_electron_count == 0U,
+      "Transport unexpectedly reported a dummy process transition.");
+
+  GGEMS_CHECK_RECOVERABLE(merged_counters.max_stack_depth == 0U,
+                          "Transport unexpectedly used a secondary stack.");
+
+  GGEMS_CHECK_RECOVERABLE(merged_counters.total_fake_step_count == 0U,
+                          "Transport unexpectedly reported dummy fake steps.");
 
   GGEMS_INFO("Core",
              "Projection {} merged transport report: primaries={}, "

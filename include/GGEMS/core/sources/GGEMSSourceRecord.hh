@@ -42,11 +42,23 @@ struct GGEMSSourceRecord {
   float axis_z_z{1.0F};
 
   float weight{1.0F};
+
+  std::uint32_t emission_geometry_type{
+      ToKernelEmissionGeometryType(GGEMSEmissionGeometryType::Point)};
+  std::uint32_t angular_distribution_type{
+      ToKernelAngularDistributionType(GGEMSAngularDistributionType::Fixed)};
+
+  std::uint64_t geometry_size_x_pm{0ULL};
+  std::uint64_t geometry_size_y_pm{0ULL};
+
+  std::int64_t focus_position_x_pm{0ULL};
+  std::int64_t focus_position_y_pm{0ULL};
+  std::int64_t focus_position_z_pm{0ULL};
 };
 
 static_assert(std::is_standard_layout_v<GGEMSSourceRecord>);
 static_assert(std::is_trivially_copyable_v<GGEMSSourceRecord>);
-static_assert(sizeof(GGEMSSourceRecord) == 112U);
+static_assert(sizeof(GGEMSSourceRecord) == 160U);
 static_assert(alignof(GGEMSSourceRecord) == 8U);
 static_assert(offsetof(GGEMSSourceRecord, source_id) == 0U);
 static_assert(offsetof(GGEMSSourceRecord, time_start_ps) == 8U);
@@ -69,5 +81,12 @@ static_assert(offsetof(GGEMSSourceRecord, axis_z_x) == 96U);
 static_assert(offsetof(GGEMSSourceRecord, axis_z_y) == 100U);
 static_assert(offsetof(GGEMSSourceRecord, axis_z_z) == 104U);
 static_assert(offsetof(GGEMSSourceRecord, weight) == 108U);
+static_assert(offsetof(GGEMSSourceRecord, emission_geometry_type) == 112U);
+static_assert(offsetof(GGEMSSourceRecord, angular_distribution_type) == 116U);
+static_assert(offsetof(GGEMSSourceRecord, geometry_size_x_pm) == 120U);
+static_assert(offsetof(GGEMSSourceRecord, geometry_size_y_pm) == 128U);
+static_assert(offsetof(GGEMSSourceRecord, focus_position_x_pm) == 136U);
+static_assert(offsetof(GGEMSSourceRecord, focus_position_y_pm) == 144U);
+static_assert(offsetof(GGEMSSourceRecord, focus_position_z_pm) == 152U);
 
 } // namespace ggems::core::sources

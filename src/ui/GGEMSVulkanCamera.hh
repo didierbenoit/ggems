@@ -14,7 +14,7 @@ public:
     std::array<float, 4> row_3{0.0F, 0.0F, 0.0F, 1.0F};
   };
 
-  GGEMSVulkanCamera() = default;
+  GGEMSVulkanCamera();
   ~GGEMSVulkanCamera() = default;
 
   GGEMSVulkanCamera(GGEMSVulkanCamera const &) = delete;
@@ -58,9 +58,9 @@ private:
 
   vk::Extent2D viewport_extent_{.width = 1U, .height = 1U};
   Vector3 target_m_{.x = 0.0F, .y = 0.0F, .z = 0.0F};
-  float yaw_radians_{0.7853981633974483F};
-  float pitch_radians_{0.7853981633974483F};
-  float zoom_{0.8F};
+  float yaw_radians_{};
+  float pitch_radians_{};
+  float zoom_{};
   float depth_scale_{0.05F};
 };
 

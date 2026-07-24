@@ -1,0 +1,110 @@
+#ifndef GGEMS_CORE_TRANSPORT_GGEMS_DIAGNOSTIC_PROJECTION_CLH
+#define GGEMS_CORE_TRANSPORT_GGEMS_DIAGNOSTIC_PROJECTION_CLH
+
+#define GGEMS_DIAGNOSTIC_PROJECTION_DISTANCE_PM 1000000000000UL
+#define GGEMS_DIAGNOSTIC_INT64_MAX 9223372036854775807L
+#define GGEMS_DIAGNOSTIC_INT64_MIN (-9223372036854775807L - 1L)
+#define GGEMS_DIAGNOSTIC_INT64_MIN_MAGNITUDE 0x8000000000000000UL
+#define GGEMS_DIAGNOSTIC_UINT64_MAX 0xffffffffffffffffUL
+
+// =============================================================================
+// =============================================================================
+
+static inline uint
+GGEMS_TryScaleDiagnosticProjectionComponent(float component,
+                                            __private long *displacement_pm) {
+  uint bits = as_uint(component);
+  uint negative = bits >> 31U;
+  uint exponent = (bits >> 23U) & 0xffU;
+  uint fraction = bits & 0x007fffffU;
+
+  if (exponent == 0xffU) {
+    return 0U;
+  }
+
+  if (exponent == 0U && fraction == 0U) {
+    *displacement_pm = 0L;
+    return 1U;
+  }
+
+  ulong significand;
+  int exponent2;
+
+  if (exponent == 0U) {
+    significand = (ulong)(fraction);
+    exponent2 = -149;
+  } else {
+    significand = (ulong)(0x00800000U | fraction);
+    exponent2 = (int)(exponent)-150;
+  }
+
+  ulong product = significand * GGEMS_DIAGNOSTIC_PROJECTION_DISTANCE_PM;
+
+  ulong magnitude_limit = negative != 0U ? GGEMS_DIAGNOSTIC_INT64_MIN_MAGNITUDE
+                                         : (ulong)(GGEMS_DIAGNOSTIC_INT64_MAX);
+
+  ulong magnitude = 0UL;
+
+  if (exponent2 >= 0) {
+    uint left_shift = (uint)(exponent2);
+
+    if (left_shift >= 64U || product > (magnitude_limit >> left_shift)) {
+      return 0U;
+    }
+
+    magnitude = product << left_shift;
+  } else {
+    uint right_shift = (uint)(-exponent2);
+
+    if (right_shift > 64U) {
+      magnitude = 0UL;
+    } else if (right_shift == 64U) {
+      magnitude = product >= GGEMS_DIAGNOSTIC_INT64_MIN_MAGNITUDE ? 1UL : 0UL;
+    } else {
+      ulong quotient = product >> right_shift;
+      ulong remainder_mask = (1UL << right_shift) - 1UL;
+      ulong remainder = product & remainder_mask;
+      ulong rounded_threshold = 1UL << (right_shift - 1U);
+
+      magnitude = quotient + (remainder >= rounded_threshold ? 1UL : 0UL);
+    }
+
+    if (magnitude > magnitude_limit) {
+      return 0U;
+    }
+  }
+
+  long result;
+
+  if (negative == 0U) {
+    result = (long)(magnitude);
+  } else if (magnitude == GGEMS_DIAGNOSTIC_INT64_MIN_MAGNITUDE) {
+    result = GGEMS_DIAGNOSTIC_INT64_MIN;
+  } else {
+    result = -(long)(magnitude);
+  }
+
+  *displacement_pm = result;
+  return 1U;
+}
+
+// =============================================================================
+// =============================================================================
+
+static inline uint GGEMS_TryAddDiagnosticProjectionDisplacement(
+    long position_pm, long displacement_pm, __private long *endpoint_pm) {
+  if (displacement_pm > 0L &&
+      position_pm > GGEMS_DIAGNOSTIC_INT64_MAX - displacement_pm) {
+    return 0U;
+  }
+
+  if (displacement_pm < 0L &&
+      position_pm < GGEMS_DIAGNOSTIC_INT64_MIN - displacement_pm) {
+    return 0U;
+  }
+
+  *endpoint_pm = position_pm + displacement_pm;
+  return 1U;
+}
+
+#endif

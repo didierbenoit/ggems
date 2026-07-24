@@ -169,6 +169,13 @@ auto BuildSourceFrame(std::array<double, 3U> const &direction,
 // =============================================================================
 // =============================================================================
 
+auto IsValidSourceFrame(GGEMSSourceFrame const &frame) noexcept -> bool {
+  return IsValidFloatFrame(frame);
+}
+
+// =============================================================================
+// =============================================================================
+
 auto BuildSourceFrameWithAutomaticUp(std::array<double, 3U> const &direction)
     -> GGEMSSourceFrame {
   PreciseAxis const axis_z = RequireNormalised(direction, "direction");
