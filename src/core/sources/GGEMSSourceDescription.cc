@@ -13,6 +13,10 @@
 #include "GGEMS/core/units/GGEMSLengthUnits.hh"
 
 namespace ggems::core::sources {
+
+// =============================================================================
+// =============================================================================
+
 namespace {
 [[nodiscard]] auto DescribeTime(GGEMSSourceRecord const &record)
     -> std::string {
@@ -28,6 +32,52 @@ namespace {
 
   return std::format("Time window: [{}, {})", time_start, time_stop);
 }
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto DescribeEmission(GGEMSSourceRecord const &record)
+    -> std::string {
+  GGEMSEmissionGeometryType const geometry_type =
+      FromKernelEmissionGeometryType(record.emission_geometry_type);
+
+  if (geometry_type == GGEMSEmissionGeometryType::Rectangle) {
+    return std::format("Emission: Rectangle | Size: {} x {}",
+                       ggems::units::HumanReadable(
+                           ggems::units::Length{record.geometry_size_x_pm}),
+                       ggems::units::HumanReadable(
+                           ggems::units::Length{record.geometry_size_y_pm}));
+  }
+
+  if (geometry_type == GGEMSEmissionGeometryType::Ellipse) {
+    return std::format("Emission: Ellipse | Diameter: {} x {}",
+                       ggems::units::HumanReadable(
+                           ggems::units::Length{record.geometry_size_x_pm}),
+                       ggems::units::HumanReadable(
+                           ggems::units::Length{record.geometry_size_y_pm}));
+  }
+
+  return std::format("Emission: {}", ToLongName(geometry_type));
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto DescribeAngularDistribution(GGEMSSourceRecord const &record)
+    -> std::string {
+  GGEMSAngularDistributionType const distribution_type =
+      FromKernelAngularDistributionType(record.angular_distribution_type);
+
+  if (distribution_type != GGEMSAngularDistributionType::Focused) {
+    return std::format("Angular: {}", ToLongName(distribution_type));
+  }
+
+  return std::format(
+      "Angular: Focused | Focus: ({}, {}, {})",
+      ggems::units::HumanReadableSignedLength(record.focus_position_x_pm),
+      ggems::units::HumanReadableSignedLength(record.focus_position_y_pm),
+      ggems::units::HumanReadableSignedLength(record.focus_position_z_pm));
+}
 } // namespace
 
 // =============================================================================
@@ -41,12 +91,13 @@ auto DescribeSource(GGEMSSourceRecord const &record,
       particles::FromKernelParticleType(record.emitted_particle_type);
 
   return std::format(
-      "Type: {} | State: {} | Primary count: {} | Particle: {} ({}) | "
-      "Energy: {} | {} | Position: ({}, {}, {}) | Direction: ({}, {}, {}) | "
-      "Weight: {}",
-      ToLongName(source_type), primary_count == 0ULL ? "Disabled" : "Active",
-      primary_count, particles::ToLongName(particle_type),
-      particles::ToShortName(particle_type),
+      "Type: {} | Primary count: {} | Particle: {} ({}) | "
+      "{} | {} | Energy: {} | {} | Position: ({}, {}, {}) | "
+      "Axis Z: ({}, {}, {}) | Weight: {}",
+      ToLongName(source_type), primary_count,
+      particles::ToLongName(particle_type),
+      particles::ToShortName(particle_type), DescribeEmission(record),
+      DescribeAngularDistribution(record),
       ggems::units::HumanReadable(ggems::units::Energy{record.energy_milli_eV}),
       DescribeTime(record),
       ggems::units::HumanReadableSignedLength(record.position_x_pm),

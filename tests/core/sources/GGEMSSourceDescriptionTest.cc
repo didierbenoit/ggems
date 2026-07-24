@@ -19,32 +19,35 @@ using GGEMSSourcePtr = std::shared_ptr<GGEMSSource>;
 // =============================================================================
 // =============================================================================
 
-constexpr std::string_view k_active_source_description{
-    "Type: Analytic | State: Active | Primary count: 7 | "
-    "Particle: Electron (b-) | Energy: 2.0000000 MeV | "
+constexpr std::string_view k_source_description{
+    "Type: Analytic | Primary count: 7 | "
+    "Particle: Electron (b-) | Emission: Point | Angular: Fixed | "
+    "Energy: 2.0000000 MeV | "
     "Time window: [1.0000000 ns, 2.0000000 ns) | "
     "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
-    "Direction: (1, 0, 0) | Weight: 0.25"};
+    "Axis Z: (1, 0, 0) | Weight: 0.25"};
 
 // =============================================================================
 // =============================================================================
 
-constexpr std::string_view k_disabled_source_description{
-    "Type: Analytic | State: Disabled | Primary count: 0 | "
-    "Particle: Electron (b-) | Energy: 2.0000000 MeV | "
+constexpr std::string_view k_zero_primary_source_description{
+    "Type: Analytic | Primary count: 0 | "
+    "Particle: Electron (b-) | Emission: Point | Angular: Fixed | "
+    "Energy: 2.0000000 MeV | "
     "Time window: [1.0000000 ns, 2.0000000 ns) | "
     "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
-    "Direction: (1, 0, 0) | Weight: 0.25"};
+    "Axis Z: (1, 0, 0) | Weight: 0.25"};
 
 // =============================================================================
 // =============================================================================
 
 constexpr std::string_view k_reconfigured_source_description{
-    "Type: Analytic | State: Active | Primary count: 11 | "
-    "Particle: Gamma (g) | Energy: 511.0000000 keV | "
+    "Type: Analytic | Primary count: 11 | "
+    "Particle: Gamma (g) | Emission: Point | Angular: Fixed | "
+    "Energy: 511.0000000 keV | "
     "Time window: [3.0000000 ns, 4.0000000 ns) | "
     "Position: (0.0000000 pm, 0.0000000 pm, 1.0000000 um) | "
-    "Direction: (0, 1, 0) | Weight: 0.5"};
+    "Axis Z: (0, 1, 0) | Weight: 0.5"};
 
 // =============================================================================
 // =============================================================================
@@ -97,7 +100,7 @@ TEST(GGEMSSourceDescription, DescribesActiveSource) {
 
   EXPECT_EQ(ggems::core::sources::DescribeSource(source->BuildRecord(),
                                                  source->GetPrimaryCount()),
-            k_active_source_description);
+            k_source_description);
 }
 
 // =============================================================================
@@ -108,7 +111,7 @@ TEST(GGEMSSourceDescription, DescribesDisabledSource) {
 
   EXPECT_EQ(ggems::core::sources::DescribeSource(source->BuildRecord(),
                                                  source->GetPrimaryCount()),
-            k_disabled_source_description);
+            k_zero_primary_source_description);
 }
 
 // =============================================================================
@@ -124,13 +127,13 @@ TEST(GGEMSSourceDescription, DescribesSnapshotSlot) {
   EXPECT_EQ(ggems::core::sources::DescribeSourceRunSlot(
                 2U, snapshot.GetRecords()[2U], snapshot.GetRanges()[2U]),
             std::string{"Source slot: 2 | Projection primary begin: 7 | "} +
-                std::string{k_active_source_description});
+                std::string{k_source_description});
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSSourceDescription, PreservesDisabledSlotWithoutCompaction) {
+TEST(GGEMSSourceDescription, PreservesZeroPrimarySlotWithoutCompaction) {
   std::array<GGEMSSourcePtr, 3U> const sources{MakeConfiguredSource(3ULL),
                                                MakeConfiguredSource(0ULL),
                                                MakeConfiguredSource(5ULL)};
@@ -148,9 +151,9 @@ TEST(GGEMSSourceDescription, PreservesDisabledSlotWithoutCompaction) {
 
   ExpectContains(disabled_slot,
                  "Source slot: 1 | Projection primary begin: 3 | ");
-  ExpectContains(disabled_slot, "State: Disabled | Primary count: 0");
+  ExpectContains(disabled_slot, "Primary count: 0");
   ExpectContains(third_slot, "Source slot: 2 | Projection primary begin: 3 | ");
-  ExpectContains(third_slot, "State: Active | Primary count: 5");
+  ExpectContains(third_slot, "Primary count: 5");
 }
 
 // =============================================================================
@@ -170,11 +173,11 @@ TEST(GGEMSSourceDescription, DistinguishesDuplicateSourceSlots) {
 
   EXPECT_EQ(slot_0,
             std::string{"Source slot: 0 | Projection primary begin: 0 | "} +
-                std::string{k_active_source_description});
+                std::string{k_source_description});
 
   EXPECT_EQ(slot_1,
             std::string{"Source slot: 1 | Projection primary begin: 7 | "} +
-                std::string{k_active_source_description});
+                std::string{k_source_description});
 
   EXPECT_NE(slot_0, slot_1);
 }
@@ -193,7 +196,7 @@ TEST(GGEMSSourceDescription, ReflectsSequentialSourceMutation) {
   std::string const description_after = ggems::core::sources::DescribeSource(
       source->BuildRecord(), source->GetPrimaryCount());
 
-  EXPECT_EQ(description_before, k_active_source_description);
+  EXPECT_EQ(description_before, k_source_description);
   EXPECT_EQ(description_after, k_reconfigured_source_description);
   EXPECT_NE(description_before, description_after);
 }
@@ -212,7 +215,7 @@ TEST(GGEMSSourceDescription, DescribesOwnedSnapshotAfterSourceMutation) {
   EXPECT_EQ(ggems::core::sources::DescribeSourceRunSlot(
                 0U, snapshot.GetRecords()[0U], snapshot.GetRanges()[0U]),
             std::string{"Source slot: 0 | Projection primary begin: 0 | "} +
-                std::string{k_active_source_description});
+                std::string{k_source_description});
 
   EXPECT_EQ(ggems::core::sources::DescribeSource(source->BuildRecord(),
                                                  source->GetPrimaryCount()),
@@ -227,15 +230,34 @@ TEST(GGEMSSourceDescription, DistinguishesFixedTimeFromNonEmptyWindow) {
 
   EXPECT_EQ(ggems::core::sources::DescribeSource(source->BuildRecord(),
                                                  source->GetPrimaryCount()),
-            k_active_source_description);
+            k_source_description);
 
   source->SetTimeWindowPicoSecond(1'000ULL, 1'000ULL);
 
   EXPECT_EQ(ggems::core::sources::DescribeSource(source->BuildRecord(),
                                                  source->GetPrimaryCount()),
-            "Type: Analytic | State: Active | Primary count: 7 | "
-            "Particle: Electron (b-) | Energy: 2.0000000 MeV | "
+            "Type: Analytic | Primary count: 7 | "
+            "Particle: Electron (b-) | Emission: Point | Angular: Fixed | "
+            "Energy: 2.0000000 MeV | "
             "Time: fixed at 1.0000000 ns | "
             "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
-            "Direction: (1, 0, 0) | Weight: 0.25");
+            "Axis Z: (1, 0, 0) | Weight: 0.25");
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceDescription, DescribesGeometryAndFocusedDistribution) {
+  auto source = MakeConfiguredSource(7ULL);
+  source->SetEllipseEmissionPicoMeter(10'000'000'000ULL, 5'000'000'000ULL)
+      .SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 100'000'000'000LL);
+
+  std::string const description = ggems::core::sources::DescribeSource(
+      source->BuildRecord(), source->GetPrimaryCount());
+
+  ExpectContains(description, "Emission: Ellipse | Diameter: 10.0000000 mm x "
+                              "5.0000000 mm");
+  ExpectContains(description, "Angular: Focused");
+  ExpectContains(description,
+                 "Focus: (0.0000000 pm, 0.0000000 pm, 100.0000000 mm)");
 }

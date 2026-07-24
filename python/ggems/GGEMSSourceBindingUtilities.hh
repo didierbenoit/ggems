@@ -7,19 +7,22 @@
 
 namespace ggems::python::detail {
 
+// =============================================================================
+// =============================================================================
+
 enum class DistanceToPicometreError : std::uint8_t {
   NonFinite,
+  NonPositive,
   UnsupportedUnit,
   OutOfRange
 };
 
-[[nodiscard]] inline auto
-TryConvertDistanceToPicometre(double distance, std::string_view unit) noexcept
-    -> std::expected<std::int64_t, DistanceToPicometreError> {
-  if (!std::isfinite(distance)) {
-    return std::unexpected(DistanceToPicometreError::NonFinite);
-  }
+// =============================================================================
+// =============================================================================
 
+[[nodiscard]] inline auto
+TryGetDistanceFactorToPicometre(std::string_view unit) noexcept
+    -> std::expected<long double, DistanceToPicometreError> {
   long double factor_to_pm{0.0L};
 
   if (unit == "pm") {
@@ -38,8 +41,26 @@ TryConvertDistanceToPicometre(double distance, std::string_view unit) noexcept
     return std::unexpected(DistanceToPicometreError::UnsupportedUnit);
   }
 
-  long double const distance_pm =
-      static_cast<long double>(distance) * factor_to_pm;
+  return factor_to_pm;
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] inline auto
+TryConvertDistanceToPicometre(double distance, std::string_view unit) noexcept
+    -> std::expected<std::int64_t, DistanceToPicometreError> {
+  if (!std::isfinite(distance)) {
+    return std::unexpected(DistanceToPicometreError::NonFinite);
+  }
+
+  auto const factor = TryGetDistanceFactorToPicometre(unit);
+
+  if (!factor.has_value()) {
+    return std::unexpected(factor.error());
+  }
+
+  long double const distance_pm = static_cast<long double>(distance) * *factor;
 
   if (!std::isfinite(distance_pm)) {
     return std::unexpected(DistanceToPicometreError::OutOfRange);
@@ -59,4 +80,45 @@ TryConvertDistanceToPicometre(double distance, std::string_view unit) noexcept
   return static_cast<std::int64_t>(rounded_pm);
 }
 
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] inline auto
+TryConvertPositiveDistanceToPicometre(double distance,
+                                      std::string_view unit) noexcept
+    -> std::expected<std::uint64_t, DistanceToPicometreError> {
+  if (!std::isfinite(distance)) {
+    return std::unexpected(DistanceToPicometreError::NonFinite);
+  }
+
+  if (distance <= 0.0) {
+    return std::unexpected(DistanceToPicometreError::NonPositive);
+  }
+
+  auto const factor = TryGetDistanceFactorToPicometre(unit);
+
+  if (!factor.has_value()) {
+    return std::unexpected(factor.error());
+  }
+
+  long double const distance_pm = static_cast<long double>(distance) * *factor;
+
+  if (!std::isfinite(distance_pm)) {
+    return std::unexpected(DistanceToPicometreError::OutOfRange);
+  }
+
+  long double const rounded_pm = std::round(distance_pm);
+
+  if (rounded_pm <= 0.0L) {
+    return std::unexpected(DistanceToPicometreError::NonPositive);
+  }
+
+  long double const uint64_upper_exclusive = std::ldexp(1.0L, 64);
+
+  if (rounded_pm >= uint64_upper_exclusive) {
+    return std::unexpected(DistanceToPicometreError::OutOfRange);
+  }
+
+  return static_cast<std::uint64_t>(rounded_pm);
+}
 } // namespace ggems::python::detail

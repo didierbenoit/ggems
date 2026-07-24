@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <limits>
 #include <string_view>
+#include <utility>
 
 #include <gtest/gtest.h>
 
@@ -15,6 +16,7 @@ namespace {
 
 using ggems::python::detail::DistanceToPicometreError;
 using ggems::python::detail::TryConvertDistanceToPicometre;
+using ggems::python::detail::TryConvertPositiveDistanceToPicometre;
 
 // =============================================================================
 // =============================================================================
@@ -129,4 +131,51 @@ TEST(GGEMSSourceBindingUtilities, RejectsInvalidValuesAndUnits) {
   ExpectConversionError(-std::numeric_limits<double>::infinity(), "pm",
                         DistanceToPicometreError::NonFinite);
   ExpectConversionError(1.0, "km", DistanceToPicometreError::UnsupportedUnit);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceBindingUtilities,
+     ConvertsPositiveDimensionsInEverySupportedUnit) {
+  constexpr std::array cases{
+      std::pair{std::string_view{"pm"}, 2ULL},
+      std::pair{std::string_view{"nm"}, 2'000ULL},
+      std::pair{std::string_view{"um"}, 2'000'000ULL},
+      std::pair{std::string_view{"mm"}, 2'000'000'000ULL},
+      std::pair{std::string_view{"cm"}, 20'000'000'000ULL},
+      std::pair{std::string_view{"m"}, 2'000'000'000'000ULL}};
+
+  for (auto const &[unit, expected] : cases) {
+    auto const result = TryConvertPositiveDistanceToPicometre(2.0, unit);
+    ASSERT_TRUE(result.has_value()) << unit;
+    EXPECT_EQ(*result, expected) << unit;
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceBindingUtilities, RejectsNonPositiveDimensions) {
+  for (double value : {-1.0, 0.0, 0.49}) {
+    auto const result = TryConvertPositiveDistanceToPicometre(value, "pm");
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), DistanceToPicometreError::NonPositive);
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceBindingUtilities, ProtectsUint64DimensionRange) {
+  double const upper_exclusive = std::ldexp(1.0, 64);
+  double const largest_double_below = std::nextafter(upper_exclusive, 0.0);
+
+  auto accepted =
+      TryConvertPositiveDistanceToPicometre(largest_double_below, "pm");
+  ASSERT_TRUE(accepted.has_value());
+
+  auto rejected = TryConvertPositiveDistanceToPicometre(upper_exclusive, "pm");
+  ASSERT_FALSE(rejected.has_value());
+  EXPECT_EQ(rejected.error(), DistanceToPicometreError::OutOfRange);
 }

@@ -62,6 +62,14 @@ auto ExpectSourceRecordsEqual(
   EXPECT_FLOAT_EQ(actual.axis_z_z, expected.axis_z_z);
 
   EXPECT_FLOAT_EQ(actual.weight, expected.weight);
+  EXPECT_EQ(actual.emission_geometry_type, expected.emission_geometry_type);
+  EXPECT_EQ(actual.angular_distribution_type,
+            expected.angular_distribution_type);
+  EXPECT_EQ(actual.geometry_size_x_pm, expected.geometry_size_x_pm);
+  EXPECT_EQ(actual.geometry_size_y_pm, expected.geometry_size_y_pm);
+  EXPECT_EQ(actual.focus_position_x_pm, expected.focus_position_x_pm);
+  EXPECT_EQ(actual.focus_position_y_pm, expected.focus_position_y_pm);
+  EXPECT_EQ(actual.focus_position_z_pm, expected.focus_position_z_pm);
 }
 
 // =============================================================================
@@ -99,6 +107,17 @@ TEST(GGEMSSource, DefaultSourceIsAnalyticGammaPointSource) {
   EXPECT_FLOAT_EQ(record.axis_z_y, 0.0F);
   EXPECT_FLOAT_EQ(record.axis_z_z, 1.0F);
   EXPECT_FLOAT_EQ(record.weight, 1.0F);
+  EXPECT_EQ(record.emission_geometry_type,
+            ggems::core::sources::ToKernelEmissionGeometryType(
+                ggems::core::sources::GGEMSEmissionGeometryType::Point));
+  EXPECT_EQ(record.angular_distribution_type,
+            ggems::core::sources::ToKernelAngularDistributionType(
+                ggems::core::sources::GGEMSAngularDistributionType::Fixed));
+  EXPECT_EQ(record.geometry_size_x_pm, 0ULL);
+  EXPECT_EQ(record.geometry_size_y_pm, 0ULL);
+  EXPECT_EQ(record.focus_position_x_pm, 0LL);
+  EXPECT_EQ(record.focus_position_y_pm, 0LL);
+  EXPECT_EQ(record.focus_position_z_pm, 0LL);
 }
 
 // =============================================================================
@@ -358,4 +377,128 @@ TEST(GGEMSSource, BuildRecordReturnsIndependentOwnedSnapshots) {
   EXPECT_FLOAT_EQ(record_b.axis_z_y, -1.0F);
   EXPECT_FLOAT_EQ(record_b.axis_z_z, 0.0F);
   EXPECT_FLOAT_EQ(record_b.weight, 0.75F);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSource, ConfiguresPointRectangleEllipseAndCircle) {
+  using ggems::core::sources::FromKernelEmissionGeometryType;
+  using ggems::core::sources::GGEMSEmissionGeometryType;
+
+  ggems::core::sources::GGEMSSource source{};
+
+  source.SetRectangleEmissionPicoMeter(40ULL, 20ULL);
+  auto rectangle = source.BuildRecord();
+  EXPECT_EQ(FromKernelEmissionGeometryType(rectangle.emission_geometry_type),
+            GGEMSEmissionGeometryType::Rectangle);
+  EXPECT_EQ(rectangle.geometry_size_x_pm, 40ULL);
+  EXPECT_EQ(rectangle.geometry_size_y_pm, 20ULL);
+
+  source.SetEllipseEmissionPicoMeter(30ULL, 10ULL);
+  auto ellipse = source.BuildRecord();
+  EXPECT_EQ(FromKernelEmissionGeometryType(ellipse.emission_geometry_type),
+            GGEMSEmissionGeometryType::Ellipse);
+  EXPECT_EQ(ellipse.geometry_size_x_pm, 30ULL);
+  EXPECT_EQ(ellipse.geometry_size_y_pm, 10ULL);
+
+  source.SetCircleEmissionPicoMeter(12ULL);
+  auto circle = source.BuildRecord();
+  EXPECT_EQ(FromKernelEmissionGeometryType(circle.emission_geometry_type),
+            GGEMSEmissionGeometryType::Ellipse);
+  EXPECT_EQ(circle.geometry_size_x_pm, 12ULL);
+  EXPECT_EQ(circle.geometry_size_y_pm, 12ULL);
+
+  source.SetPointEmission();
+  auto point = source.BuildRecord();
+  EXPECT_EQ(FromKernelEmissionGeometryType(point.emission_geometry_type),
+            GGEMSEmissionGeometryType::Point);
+  EXPECT_EQ(point.geometry_size_x_pm, 0ULL);
+  EXPECT_EQ(point.geometry_size_y_pm, 0ULL);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSource, RejectsInvalidEmissionDimensionsAtomically) {
+  ggems::core::sources::GGEMSSource source{};
+  source.SetRectangleEmissionPicoMeter(40ULL, 20ULL);
+  auto const before = source.BuildRecord();
+
+  EXPECT_THROW(source.SetRectangleEmissionPicoMeter(0ULL, 20ULL),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(source.SetEllipseEmissionPicoMeter(10ULL, 0ULL),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(source.SetCircleEmissionPicoMeter(0ULL),
+               ggems::core::GGEMSExceptionBase);
+
+  ExpectSourceRecordsEqual(source.BuildRecord(), before);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSource, ConfiguresAngularDistributionsAndCanonicalisesFocus) {
+  using ggems::core::sources::FromKernelAngularDistributionType;
+  using ggems::core::sources::GGEMSAngularDistributionType;
+
+  ggems::core::sources::GGEMSSource source{};
+  source.SetPositionPicoMeter(10LL, 20LL, 30LL)
+      .SetFocusedAngularDistributionPicoMeter(40LL, 50LL, 60LL);
+
+  auto focused = source.BuildRecord();
+  EXPECT_EQ(
+      FromKernelAngularDistributionType(focused.angular_distribution_type),
+      GGEMSAngularDistributionType::Focused);
+  EXPECT_EQ(focused.focus_position_x_pm, 40LL);
+  EXPECT_EQ(focused.focus_position_y_pm, 50LL);
+  EXPECT_EQ(focused.focus_position_z_pm, 60LL);
+
+  source.SetIsotropicAngularDistribution();
+  auto isotropic = source.BuildRecord();
+  EXPECT_EQ(
+      FromKernelAngularDistributionType(isotropic.angular_distribution_type),
+      GGEMSAngularDistributionType::Isotropic);
+  EXPECT_EQ(isotropic.focus_position_x_pm, 0LL);
+  EXPECT_EQ(isotropic.focus_position_y_pm, 0LL);
+  EXPECT_EQ(isotropic.focus_position_z_pm, 0LL);
+
+  source.SetFixedAngularDistribution();
+  auto fixed = source.BuildRecord();
+  EXPECT_EQ(FromKernelAngularDistributionType(fixed.angular_distribution_type),
+            GGEMSAngularDistributionType::Fixed);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSource, RejectsDegenerateFocusedConfigurations) {
+  ggems::core::sources::GGEMSSource point{};
+
+  EXPECT_THROW(point.SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 0LL),
+               ggems::core::GGEMSExceptionBase);
+
+  ggems::core::sources::GGEMSSource rectangle{};
+  rectangle.SetRectangleEmissionPicoMeter(10'000ULL, 20'000ULL);
+
+  EXPECT_THROW(
+      rectangle.SetFocusedAngularDistributionPicoMeter(10LL, 20LL, 0LL),
+      ggems::core::GGEMSExceptionBase);
+
+  EXPECT_NO_THROW(
+      rectangle.SetFocusedAngularDistributionPicoMeter(10LL, 20LL, 1'000LL));
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSource, PoseChangesDoNotSelectAnotherAngularMode) {
+  ggems::core::sources::GGEMSSource source{};
+  source.SetIsotropicAngularDistribution()
+      .SetDirection(1.0, 0.0, 0.0)
+      .SetOrientation({0.0, 1.0, 0.0}, {0.0, 0.0, 1.0});
+
+  EXPECT_EQ(ggems::core::sources::FromKernelAngularDistributionType(
+                source.BuildRecord().angular_distribution_type),
+            ggems::core::sources::GGEMSAngularDistributionType::Isotropic);
 }

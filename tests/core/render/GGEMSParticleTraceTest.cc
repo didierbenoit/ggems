@@ -562,3 +562,41 @@ TEST(GGEMSParticleTrace,
                          GGEMSParticleType::Aionino);
   }
 }
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSParticleTrace,
+     SeparatesInterleavedParticlesWithDifferentGlobalParticleIds) {
+  auto source_a =
+      MakeRecord(5ULL, 7ULL, 0ULL, 0ULL, GGEMSObserverRecordKind::Source,
+                 GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 2U, 3ULL);
+  auto terminal_a =
+      MakeRecord(5ULL, 7ULL, 0ULL, 1ULL, GGEMSObserverRecordKind::Terminal,
+                 GGEMSParticleType::Gamma, 100LL, 0LL, 0LL, 2U, 3ULL);
+  auto source_b =
+      MakeRecord(5ULL, 7ULL, 0ULL, 0ULL, GGEMSObserverRecordKind::Source,
+                 GGEMSParticleType::Gamma, 0LL, 100LL, 0LL, 2U, 3ULL);
+  auto terminal_b =
+      MakeRecord(5ULL, 7ULL, 0ULL, 1ULL, GGEMSObserverRecordKind::Terminal,
+                 GGEMSParticleType::Gamma, 0LL, 200LL, 0LL, 2U, 3ULL);
+
+  source_a.global_particle_id = 100ULL;
+  terminal_a.global_particle_id = 100ULL;
+  source_b.global_particle_id = 101ULL;
+  terminal_b.global_particle_id = 101ULL;
+
+  std::array records{terminal_b, source_a, terminal_a, source_b};
+
+  auto const segments = ggems::render::BuildParticleTraceSegments(records);
+
+  ASSERT_EQ(segments.size(), 2U);
+
+  auto const draw_data = ggems::render::BuildParticleTraceDrawData(segments);
+
+  ASSERT_EQ(draw_data.draw_ranges.size(), 1U);
+  EXPECT_EQ(draw_data.draw_ranges[0U].source_index, 2U);
+  EXPECT_EQ(draw_data.draw_ranges[0U].first_vertex, 0U);
+  EXPECT_EQ(draw_data.draw_ranges[0U].vertex_count, 4U);
+  EXPECT_EQ(draw_data.vertices.size(), 4U);
+}

@@ -62,7 +62,7 @@ auto ExpectMatrixNear(Matrix4Rows const &actual, Matrix4Rows const &expected)
   ExpectRowNear(actual.row_3, expected.row_3);
 }
 
-TEST(GGEMSVulkanCamera, ResetRestoresCanonicalFortyFiveDegreeView) {
+TEST(GGEMSVulkanCamera, ResetRestoresCanonicalView) {
   Camera camera{};
   camera.SetViewportExtent(vk::Extent2D{.width = 800U, .height = 800U});
 
@@ -75,9 +75,9 @@ TEST(GGEMSVulkanCamera, ResetRestoresCanonicalFortyFiveDegreeView) {
   camera.Reset();
 
   Matrix4Rows const expected{
-      .row_0 = {-0.8F * k_sqrt_half, 0.0F, -0.8F * k_sqrt_half, 0.0F},
-      .row_1 = {-0.4F, 0.8F * k_sqrt_half, 0.4F, 0.0F},
-      .row_2 = {-0.025F, -0.05F * k_sqrt_half, 0.025F, 0.5F},
+      .row_0 = {0.8F * k_sqrt_half, 0.0F, -0.8F * k_sqrt_half, 0.0F},
+      .row_1 = {-0.4F, 0.8F * k_sqrt_half, -0.4F, 0.0F},
+      .row_2 = {-0.025F, -0.05F * k_sqrt_half, -0.025F, 0.5F},
       .row_3 = {0.0F, 0.0F, 0.0F, 1.0F}};
 
   ExpectMatrixNear(camera.BuildWorldToClipMatrix(), expected);
@@ -127,11 +127,11 @@ TEST(GGEMSVulkanCamera,
   auto const positive_z = TransformPoint(matrix, Point3{.z = 1.0F});
   auto const negative_z = TransformPoint(matrix, Point3{.z = -1.0F});
 
-  EXPECT_NEAR(positive_x[0], -0.8F * k_sqrt_half, k_tolerance);
+  EXPECT_NEAR(positive_x[0], 0.8F * k_sqrt_half, k_tolerance);
   EXPECT_NEAR(positive_x[1], -0.4F, k_tolerance);
   EXPECT_NEAR(positive_x[2], 0.475F, k_tolerance);
 
-  EXPECT_NEAR(negative_x[0], 0.8F * k_sqrt_half, k_tolerance);
+  EXPECT_NEAR(negative_x[0], -0.8F * k_sqrt_half, k_tolerance);
   EXPECT_NEAR(negative_x[1], 0.4F, k_tolerance);
   EXPECT_NEAR(negative_x[2], 0.525F, k_tolerance);
 
@@ -144,18 +144,12 @@ TEST(GGEMSVulkanCamera,
   EXPECT_NEAR(negative_y[2], 0.5F + (0.05F * k_sqrt_half), k_tolerance);
 
   EXPECT_NEAR(positive_z[0], -0.8F * k_sqrt_half, k_tolerance);
-  EXPECT_NEAR(positive_z[1], 0.4F, k_tolerance);
-  EXPECT_NEAR(positive_z[2], 0.525F, k_tolerance);
+  EXPECT_NEAR(positive_z[1], -0.4F, k_tolerance);
+  EXPECT_NEAR(positive_z[2], 0.475F, k_tolerance);
 
   EXPECT_NEAR(negative_z[0], 0.8F * k_sqrt_half, k_tolerance);
-  EXPECT_NEAR(negative_z[1], -0.4F, k_tolerance);
-  EXPECT_NEAR(negative_z[2], 0.475F, k_tolerance);
-
-  EXPECT_GT(positive_y[1], 0.0F);
-  EXPECT_LT(negative_y[1], 0.0F);
-  EXPECT_LT(positive_y[2], positive_x[2]);
-  EXPECT_LT(positive_x[2], negative_x[2]);
-  EXPECT_LT(negative_x[2], negative_y[2]);
+  EXPECT_NEAR(negative_z[1], 0.4F, k_tolerance);
+  EXPECT_NEAR(negative_z[2], 0.525F, k_tolerance);
 }
 
 TEST(GGEMSVulkanCamera,

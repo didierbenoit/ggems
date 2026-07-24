@@ -60,6 +60,14 @@ auto ExpectSourceRecordsEqual(
   EXPECT_FLOAT_EQ(actual.axis_z_z, expected.axis_z_z);
 
   EXPECT_FLOAT_EQ(actual.weight, expected.weight);
+  EXPECT_EQ(actual.emission_geometry_type, expected.emission_geometry_type);
+  EXPECT_EQ(actual.angular_distribution_type,
+            expected.angular_distribution_type);
+  EXPECT_EQ(actual.geometry_size_x_pm, expected.geometry_size_x_pm);
+  EXPECT_EQ(actual.geometry_size_y_pm, expected.geometry_size_y_pm);
+  EXPECT_EQ(actual.focus_position_x_pm, expected.focus_position_x_pm);
+  EXPECT_EQ(actual.focus_position_y_pm, expected.focus_position_y_pm);
+  EXPECT_EQ(actual.focus_position_z_pm, expected.focus_position_z_pm);
 }
 
 // =============================================================================
@@ -557,4 +565,41 @@ TEST(GGEMSSourceRunSnapshot, PreservesZeroPrimaryAndDuplicateSlotsTogether) {
   ExpectSourceRecordsEqual(snapshot.GetRecords()[2U],
                            active_source->BuildRecord());
   EXPECT_NE(&snapshot.GetRecords()[0U], &snapshot.GetRecords()[2U]);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceRunSnapshot, OwnsIndependentGeometryAndAngularConfiguration) {
+  auto source = MakeSource(3ULL);
+  source->SetRectangleEmissionPicoMeter(40ULL, 20ULL)
+      .SetIsotropicAngularDistribution();
+
+  std::vector<GGEMSSourcePtr> sources{source, source};
+  auto first = ggems::core::sources::BuildSourceRunSnapshot(sources);
+
+  source->SetEllipseEmissionPicoMeter(30ULL, 10ULL)
+      .SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 100LL);
+
+  auto second = ggems::core::sources::BuildSourceRunSnapshot(sources);
+
+  ASSERT_EQ(first.GetRecords().size(), 2U);
+  ASSERT_EQ(second.GetRecords().size(), 2U);
+
+  EXPECT_EQ(ggems::core::sources::FromKernelEmissionGeometryType(
+                first.GetRecords()[0U].emission_geometry_type),
+            ggems::core::sources::GGEMSEmissionGeometryType::Rectangle);
+  EXPECT_EQ(ggems::core::sources::FromKernelAngularDistributionType(
+                first.GetRecords()[0U].angular_distribution_type),
+            ggems::core::sources::GGEMSAngularDistributionType::Isotropic);
+
+  EXPECT_EQ(ggems::core::sources::FromKernelEmissionGeometryType(
+                second.GetRecords()[0U].emission_geometry_type),
+            ggems::core::sources::GGEMSEmissionGeometryType::Ellipse);
+  EXPECT_EQ(ggems::core::sources::FromKernelAngularDistributionType(
+                second.GetRecords()[0U].angular_distribution_type),
+            ggems::core::sources::GGEMSAngularDistributionType::Focused);
+
+  ExpectSourceRecordsEqual(first.GetRecords()[0U], first.GetRecords()[1U]);
+  ExpectSourceRecordsEqual(second.GetRecords()[0U], second.GetRecords()[1U]);
 }

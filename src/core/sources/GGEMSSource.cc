@@ -10,9 +10,14 @@
 #include "GGEMS/core/sources/GGEMSSourceDescription.hh"
 #include "GGEMS/core/sources/GGEMSSourceFrame.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourceValidation.hh"
 
 namespace ggems::core::sources {
 namespace {
+
+// =============================================================================
+// =============================================================================
+
 auto StoreSourceFrame(GGEMSSourceRecord &record,
                       GGEMSSourceFrame const &frame) noexcept -> void {
   record.axis_x_x = frame.axis_x.x;
@@ -27,6 +32,16 @@ auto StoreSourceFrame(GGEMSSourceRecord &record,
   record.axis_z_y = frame.axis_z.y;
   record.axis_z_z = frame.axis_z.z;
 }
+
+// =============================================================================
+// =============================================================================
+
+auto CommitValidatedRecord(GGEMSSourceRecord &record,
+                           GGEMSSourceRecord candidate) -> void {
+  ValidateAnalyticSourceRecord(candidate);
+  record = candidate;
+}
+
 } // namespace
 
 // =============================================================================
@@ -52,6 +67,16 @@ GGEMSSource::GGEMSSource() {
   StoreSourceFrame(record_, GGEMSSourceFrame{});
 
   record_.weight = 1.0F;
+
+  record_.emission_geometry_type =
+      ToKernelEmissionGeometryType(GGEMSEmissionGeometryType::Point);
+  record_.angular_distribution_type =
+      ToKernelAngularDistributionType(GGEMSAngularDistributionType::Fixed);
+  record_.geometry_size_x_pm = 0ULL;
+  record_.geometry_size_y_pm = 0ULL;
+  record_.focus_position_x_pm = 0ULL;
+  record_.focus_position_y_pm = 0ULL;
+  record_.focus_position_z_pm = 0ULL;
 }
 
 // -----------------------------------------------------------------------------
@@ -66,6 +91,100 @@ auto GGEMSSource::SetPrimaryCount(std::uint64_t primary_count) noexcept
 
 auto GGEMSSource::SetAnalytic() noexcept -> GGEMSSource & {
   record_.source_type = ToKernelSourceType(GGEMSSourceType::Analytic);
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::SetPointEmission() -> GGEMSSource & {
+  GGEMSSourceRecord candidate = record_;
+  candidate.emission_geometry_type =
+      ToKernelEmissionGeometryType(GGEMSEmissionGeometryType::Point);
+  candidate.geometry_size_x_pm = 0ULL;
+  candidate.geometry_size_y_pm = 0ULL;
+  CommitValidatedRecord(record_, candidate);
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::SetRectangleEmissionPicoMeter(std::uint64_t width_pm,
+                                                std::uint64_t height_pm)
+    -> GGEMSSource & {
+  GGEMS_CHECK_RECOVERABLE(width_pm > 0ULL && height_pm > 0ULL,
+                          "Rectangle width and height must be non-zero.");
+
+  GGEMSSourceRecord candidate = record_;
+  candidate.emission_geometry_type =
+      ToKernelEmissionGeometryType(GGEMSEmissionGeometryType::Rectangle);
+  candidate.geometry_size_x_pm = width_pm;
+  candidate.geometry_size_y_pm = height_pm;
+  CommitValidatedRecord(record_, candidate);
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::SetEllipseEmissionPicoMeter(std::uint64_t diameter_x_pm,
+                                              std::uint64_t diameter_y_pm)
+    -> GGEMSSource & {
+  GGEMS_CHECK_RECOVERABLE(diameter_x_pm > 0ULL && diameter_y_pm > 0ULL,
+                          "Ellipse diameters must be non-zero");
+
+  GGEMSSourceRecord candidate = record_;
+  candidate.emission_geometry_type =
+      ToKernelEmissionGeometryType(GGEMSEmissionGeometryType::Ellipse);
+  candidate.geometry_size_x_pm = diameter_x_pm;
+  candidate.geometry_size_y_pm = diameter_y_pm;
+  CommitValidatedRecord(record_, candidate);
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::SetCircleEmissionPicoMeter(std::uint64_t diameter_pm)
+    -> GGEMSSource & {
+  return SetEllipseEmissionPicoMeter(diameter_pm, diameter_pm);
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::SetFixedAngularDistribution() -> GGEMSSource & {
+  GGEMSSourceRecord candidate = record_;
+  candidate.angular_distribution_type =
+      ToKernelAngularDistributionType(GGEMSAngularDistributionType::Fixed);
+  candidate.focus_position_x_pm = 0ULL;
+  candidate.focus_position_y_pm = 0ULL;
+  candidate.focus_position_z_pm = 0ULL;
+  CommitValidatedRecord(record_, candidate);
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::SetIsotropicAngularDistribution() -> GGEMSSource & {
+  GGEMSSourceRecord candidate = record_;
+  candidate.angular_distribution_type =
+      ToKernelAngularDistributionType(GGEMSAngularDistributionType::Isotropic);
+  candidate.focus_position_x_pm = 0ULL;
+  candidate.focus_position_y_pm = 0ULL;
+  candidate.focus_position_z_pm = 0ULL;
+  CommitValidatedRecord(record_, candidate);
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::SetFocusedAngularDistributionPicoMeter(
+    std::int64_t focus_x_pm, std::int64_t focus_y_pm, std::int64_t focus_z_pm)
+    -> GGEMSSource & {
+  GGEMSSourceRecord candidate = record_;
+  candidate.angular_distribution_type =
+      ToKernelAngularDistributionType(GGEMSAngularDistributionType::Focused);
+  candidate.focus_position_x_pm = focus_x_pm;
+  candidate.focus_position_y_pm = focus_y_pm;
+  candidate.focus_position_z_pm = focus_z_pm;
+  CommitValidatedRecord(record_, candidate);
   return *this;
 }
 
@@ -109,11 +228,12 @@ auto GGEMSSource::SetTimeWindowPicoSecond(std::uint64_t time_start_ps,
 // -----------------------------------------------------------------------------
 
 auto GGEMSSource::SetPositionPicoMeter(std::int64_t x_pm, std::int64_t y_pm,
-                                       std::int64_t z_pm) noexcept
-    -> GGEMSSource & {
-  record_.position_x_pm = x_pm;
-  record_.position_y_pm = y_pm;
-  record_.position_z_pm = z_pm;
+                                       std::int64_t z_pm) -> GGEMSSource & {
+  GGEMSSourceRecord candidate = record_;
+  candidate.position_x_pm = x_pm;
+  candidate.position_y_pm = y_pm;
+  candidate.position_z_pm = z_pm;
+  CommitValidatedRecord(record_, candidate);
 
   return *this;
 }
@@ -135,7 +255,9 @@ auto GGEMSSource::SetOrientation(std::array<double, 3U> const &direction,
                                  std::array<double, 3U> const &up_reference)
     -> GGEMSSource & {
   GGEMSSourceFrame const frame = BuildSourceFrame(direction, up_reference);
-  StoreSourceFrame(record_, frame);
+  GGEMSSourceRecord candidate = record_;
+  StoreSourceFrame(candidate, frame);
+  CommitValidatedRecord(record_, candidate);
   return *this;
 }
 
@@ -151,6 +273,13 @@ auto GGEMSSource::SetWeight(float weight) -> GGEMSSource & {
   record_.weight = weight;
 
   return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::BuildRecord() const -> GGEMSSourceRecord {
+  ValidateAnalyticSourceRecord(record_);
+  return record_;
 }
 
 // -----------------------------------------------------------------------------

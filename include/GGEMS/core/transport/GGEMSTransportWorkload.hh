@@ -90,6 +90,7 @@ private:
   ggems::ocl::GGEMSOpenCLContext *context_{nullptr};
   std::filesystem::path kernel_root_{};
   random::GGEMSRandom const *random_{nullptr};
+  std::string random_kernel_build_definition_;
 
   std::uint32_t worker_count_{0U};
   std::uint32_t source_count_{0U};

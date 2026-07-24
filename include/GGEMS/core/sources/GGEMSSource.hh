@@ -26,6 +26,25 @@ public:
 
   auto SetAnalytic() noexcept -> GGEMSSource &;
 
+  auto SetPointEmission() -> GGEMSSource &;
+
+  auto SetRectangleEmissionPicoMeter(std::uint64_t width_pm,
+                                     std::uint64_t height_pm) -> GGEMSSource &;
+
+  auto SetEllipseEmissionPicoMeter(std::uint64_t diameter_x_pm,
+                                   std::uint64_t diameter_y_pm)
+      -> GGEMSSource &;
+
+  auto SetCircleEmissionPicoMeter(std::uint64_t diameter_pm) -> GGEMSSource &;
+
+  auto SetFixedAngularDistribution() -> GGEMSSource &;
+  auto SetIsotropicAngularDistribution() -> GGEMSSource &;
+
+  auto SetFocusedAngularDistributionPicoMeter(std::int64_t focus_x_pm,
+                                              std::int64_t focus_y_pm,
+                                              std::int64_t focus_z_pm)
+      -> GGEMSSource &;
+
   auto
   SetEmittedParticleType(particles::GGEMSParticleType particle_type) noexcept
       -> GGEMSSource &;
@@ -37,7 +56,7 @@ public:
                                std::uint64_t time_stop_ps) -> GGEMSSource &;
 
   auto SetPositionPicoMeter(std::int64_t x_pm, std::int64_t y_pm,
-                            std::int64_t z_pm) noexcept -> GGEMSSource &;
+                            std::int64_t z_pm) -> GGEMSSource &;
 
   auto SetDirection(double dir_x, double dir_y, double dir_z) -> GGEMSSource &;
 
@@ -51,9 +70,7 @@ public:
     return record_;
   }
 
-  [[nodiscard]] auto BuildRecord() const noexcept -> GGEMSSourceRecord {
-    return record_;
-  }
+  [[nodiscard]] auto BuildRecord() const -> GGEMSSourceRecord;
 
   auto Verbose() const -> void;
 

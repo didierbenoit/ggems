@@ -26,6 +26,9 @@
 
 namespace {
 
+// =============================================================================
+// =============================================================================
+
 using ObserverConfigRecord = ggems::core::observer::GGEMSObserverConfigRecord;
 using ObserverCounters = ggems::core::observer::GGEMSObserverCounters;
 using ObserverRecord = ggems::core::observer::GGEMSObserverRecord;
@@ -166,7 +169,9 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
     std::uint32_t source_count, std::uint64_t random_stream_offset,
     std::uint32_t context_index, std::uint32_t observer_record_capacity)
     : context_{&context}, kernel_root_{std::move(kernel_root)},
-      random_{&random}, worker_count_{worker_count},
+      random_{&random},
+      random_kernel_build_definition_{random.GetKernelBuildDefinition()},
+      worker_count_{worker_count},
       source_count_{CheckedSourceCount(source_count)},
       random_stream_offset_{random_stream_offset},
       context_index_{context_index},
@@ -295,9 +300,9 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
           ? "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=1"
           : "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=0";
 
-  std::string const build_options = std::format(
-      "-cl-std=CL2.0 -I{} {} {}", kernel_root_.generic_string(),
-      random_->GetKernelBuildDefinition(), observer_build_definition);
+  std::string const build_options =
+      std::format("-cl-std=CL2.0 -I{} {} {}", kernel_root_.generic_string(),
+                  random_kernel_build_definition_, observer_build_definition);
 
   auto &program =
       opencl.GetOrCreateProgram(*context_, kernel_transport_root,

@@ -22,10 +22,11 @@ static inline float GGEMS_RndmUniform(__global GGEMSRandomState *states,
 
 static inline float4 GGEMS_RndmUniform4(__global GGEMSRandomState *states,
                                         uint const index) {
-  return (float4)(GGEMS_JKissUniform(states, index),
-                  GGEMS_JKissUniform(states, index),
-                  GGEMS_JKissUniform(states, index),
-                  GGEMS_JKissUniform(states, index));
+  float const x = GGEMS_JKissUniform(states, index);
+  float const y = GGEMS_JKissUniform(states, index);
+  float const z = GGEMS_JKissUniform(states, index);
+  float const w = GGEMS_JKissUniform(states, index);
+  return (float4)(x, y, z, w);
 }
 
 #elif GGEMS_RANDOM_ENGINE == GGEMS_RANDOM_ENGINE_PCG32
@@ -41,10 +42,11 @@ static inline float GGEMS_RndmUniform(__global GGEMSRandomState *states,
 
 static inline float4 GGEMS_RndmUniform4(__global GGEMSRandomState *states,
                                         uint const index) {
-  return (float4)(GGEMS_PCG32Uniform(states, index),
-                  GGEMS_PCG32Uniform(states, index),
-                  GGEMS_PCG32Uniform(states, index),
-                  GGEMS_PCG32Uniform(states, index));
+  float const x = GGEMS_PCG32Uniform(states, index);
+  float const y = GGEMS_PCG32Uniform(states, index);
+  float const z = GGEMS_PCG32Uniform(states, index);
+  float const w = GGEMS_PCG32Uniform(states, index);
+  return (float4)(x, y, z, w);
 }
 
 #elif GGEMS_RANDOM_ENGINE == GGEMS_RANDOM_ENGINE_PHILOX

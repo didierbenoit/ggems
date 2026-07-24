@@ -8,6 +8,9 @@
 #include <string>
 #include <limits>
 #include <functional>
+#include <array>
+#include <set>
+#include <tuple>
 
 #include <gtest/gtest.h>
 
@@ -1234,4 +1237,68 @@ TEST_F(GGEMSRunTest,
 
   ASSERT_EQ(source_records.size(), 1U);
   EXPECT_EQ(source_records[0U].global_primary_id, 1ULL);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSRunTest,
+       RunsRectangleIsotropicAndFocusedSourcesWithOnlySourceAndTerminal) {
+  auto random = MakePhiloxRandom();
+
+  auto rectangle = MakeLowEnergySource(32ULL);
+  rectangle->SetRectangleEmissionPicoMeter(40'000'000'000ULL,
+                                           20'000'000'000ULL);
+
+  auto isotropic = MakeLowEnergySource(32ULL);
+  isotropic->SetIsotropicAngularDistribution();
+
+  auto focused = MakeLowEnergySource(32ULL);
+  focused->SetEllipseEmissionPicoMeter(30'000'000'000ULL, 10'000'000'000ULL)
+      .SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 1'000'000'000'000LL);
+
+  auto observer = MakeCapturingObserver(32U);
+  observer->SetRecordCapacity(192U);
+
+  ggems::core::GGEMSRun run{};
+  run.SetRandom(random);
+  run.AddSource(rectangle);
+  run.AddSource(isotropic);
+  run.AddSource(focused);
+  run.SetObserver(observer);
+  run.SetWorkerCount(64U);
+
+  ASSERT_NO_THROW(run.Initialise());
+  ASSERT_NO_THROW(run.Run());
+
+  ASSERT_EQ(observer->GetCapturedPrimaryCount(), 96U);
+  ASSERT_EQ(observer->GetRecords().size(), 192U);
+
+  std::array<std::size_t, 3U> source_counts{};
+  std::array<std::set<std::tuple<std::int64_t, std::int64_t, std::int64_t>>, 3U>
+      positions;
+  std::array<std::set<std::tuple<float, float, float>>, 3U> directions;
+
+  for (auto const &record : observer->GetRecords()) {
+    EXPECT_TRUE(record.record_kind == k_source_record_kind ||
+                record.record_kind == k_terminal_record_kind);
+
+    if (!IsSourceRecord(record)) {
+      continue;
+    }
+
+    ASSERT_LT(record.source_index, 3U);
+    ++source_counts[record.source_index];
+    positions[record.source_index].emplace(
+        record.position_x_pm, record.position_y_pm, record.position_z_pm);
+    directions[record.source_index].emplace(
+        record.direction_x, record.direction_y, record.direction_z);
+  }
+
+  EXPECT_EQ(source_counts[0U], 32U);
+  EXPECT_EQ(source_counts[1U], 32U);
+  EXPECT_EQ(source_counts[2U], 32U);
+  EXPECT_GT(positions[0U].size(), 1U);
+  EXPECT_GT(directions[1U].size(), 1U);
+  EXPECT_GT(positions[2U].size(), 1U);
 }

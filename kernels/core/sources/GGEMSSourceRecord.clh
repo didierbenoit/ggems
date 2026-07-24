@@ -6,6 +6,16 @@
 #define GGEMS_SOURCE_TYPE_VOXELIZED 2U
 #define GGEMS_SOURCE_TYPE_PHASE_SPACE 3U
 
+#define GGEMS_EMISSION_GEOMETRY_TYPE_UNKNOWN 0U
+#define GGEMS_EMISSION_GEOMETRY_TYPE_POINT 1U
+#define GGEMS_EMISSION_GEOMETRY_TYPE_RECTANGLE 2U
+#define GGEMS_EMISSION_GEOMETRY_TYPE_ELLIPSE 3U
+
+#define GGEMS_ANGULAR_DISTRIBUTION_TYPE_UNKNOWN 0U
+#define GGEMS_ANGULAR_DISTRIBUTION_TYPE_FIXED 1U
+#define GGEMS_ANGULAR_DISTRIBUTION_TYPE_ISOTROPIC 2U
+#define GGEMS_ANGULAR_DISTRIBUTION_TYPE_FOCUSED 3U
+
 typedef struct GGEMSSourceRecord {
   ulong source_id;
 
@@ -36,6 +46,16 @@ typedef struct GGEMSSourceRecord {
   float axis_z_z;
 
   float weight;
+
+  uint emission_geometry_type;
+  uint angular_distribution_type;
+
+  ulong geometry_size_x_pm;
+  ulong geometry_size_y_pm;
+
+  long focus_position_x_pm;
+  long focus_position_y_pm;
+  long focus_position_z_pm;
 } GGEMSSourceRecord;
 
 #endif

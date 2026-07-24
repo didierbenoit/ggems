@@ -3,6 +3,8 @@
 #include <string>
 #include <utility>
 
+#include <vulkan/vulkan.hpp>
+
 #include <imgui.h>
 #include <imgui_internal.h>
 
@@ -537,6 +539,20 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
     std::string const particle_type = core::particles::ToLongName(
         core::particles::FromKernelParticleType(record.emitted_particle_type));
 
+    auto const emission_geometry_type =
+        core::sources::FromKernelEmissionGeometryType(
+            record.emission_geometry_type);
+
+    auto const angular_distribution_type =
+        core::sources::FromKernelAngularDistributionType(
+            record.angular_distribution_type);
+
+    std::string const emission_geometry{
+        core::sources::ToLongName(emission_geometry_type)};
+
+    std::string const angular_distribution{
+        core::sources::ToLongName(angular_distribution_type)};
+
     std::uint64_t const projection_primary_end =
         range.projection_primary_begin + range.primary_count;
 
@@ -578,6 +594,44 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
 
       ImGui::Separator();
 
+      ImGui::Text("Emission: %s", emission_geometry.c_str());
+
+      if (emission_geometry_type ==
+          core::sources::GGEMSEmissionGeometryType::Rectangle) {
+        std::string const size_x =
+            units::HumanReadable(units::Length{record.geometry_size_x_pm}, 3);
+        std::string const size_y =
+            units::HumanReadable(units::Length{record.geometry_size_y_pm}, 3);
+
+        ImGui::Text("Size: %s x %s", size_x.c_str(), size_y.c_str());
+      } else if (emission_geometry_type ==
+                 core::sources::GGEMSEmissionGeometryType::Ellipse) {
+        std::string const diameter_x =
+            units::HumanReadable(units::Length{record.geometry_size_x_pm}, 3);
+        std::string const diameter_y =
+            units::HumanReadable(units::Length{record.geometry_size_y_pm}, 3);
+
+        ImGui::Text("Diameter: %s x %s", diameter_x.c_str(),
+                    diameter_y.c_str());
+      }
+
+      ImGui::Text("Angular: %s", angular_distribution.c_str());
+
+      if (angular_distribution_type ==
+          core::sources::GGEMSAngularDistributionType::Focused) {
+        std::string const focus_x =
+            units::HumanReadableSignedLength(record.focus_position_x_pm, 3);
+        std::string const focus_y =
+            units::HumanReadableSignedLength(record.focus_position_y_pm, 3);
+        std::string const focus_z =
+            units::HumanReadableSignedLength(record.focus_position_z_pm, 3);
+
+        ImGui::Text("Focus: (%s, %s, %s)", focus_x.c_str(), focus_y.c_str(),
+                    focus_z.c_str());
+      }
+
+      ImGui::Separator();
+
       std::string const position_x =
           units::HumanReadableSignedLength(record.position_x_pm, 3);
       std::string const position_y =
@@ -594,7 +648,7 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
 
       ImGui::Text("Position: (%s, %s, %s)", position_x.c_str(),
                   position_y.c_str(), position_z.c_str());
-      ImGui::Text("Direction: (%.6g, %.6g, %.6g)",
+      ImGui::Text("Axis Z: (%.6g, %.6g, %.6g)",
                   static_cast<double>(record.axis_z_x),
                   static_cast<double>(record.axis_z_y),
                   static_cast<double>(record.axis_z_z));

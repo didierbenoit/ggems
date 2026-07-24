@@ -86,6 +86,15 @@ ggems_apply_release_optimizations(ggems_core_tests)
 
 gtest_discover_tests(ggems_core_tests)
 
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
+add_test(
+  NAME GGEMSSourceBindingsPython
+  COMMAND
+    ${CMAKE_COMMAND} -E env "PYTHONPATH=$<TARGET_FILE_DIR:ggems>"
+    "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/python/GGEMSSourceBindingsTest.py")
+
 # ----------------------------------------------------------------------------
 # GuiMode unit tests
 # ----------------------------------------------------------------------------

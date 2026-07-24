@@ -79,6 +79,7 @@ IsTraceableRecord(core::observer::GGEMSObserverRecord const &record) noexcept
 SameTrace(core::observer::GGEMSObserverRecord const &first,
           core::observer::GGEMSObserverRecord const &second) noexcept -> bool {
   return first.run_id == second.run_id &&
+         first.global_particle_id == second.global_particle_id &&
          first.global_primary_id == second.global_primary_id &&
          first.track_id == second.track_id &&
          first.source_index == second.source_index &&

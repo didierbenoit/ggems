@@ -18,26 +18,42 @@
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMHostAccess.hh"
+#include "GGEMS/core/sources/GGEMSSourceTypes.hh"
 
 namespace {
 
+// =============================================================================
+// =============================================================================
+
 using SourceRecord = ggems::core::sources::GGEMSSourceRecord;
 using SourceRunRange = ggems::core::sources::GGEMSSourceRunRange;
+
+// =============================================================================
+// =============================================================================
 
 struct SourceRecordAlignmentProbe {
   std::uint8_t prefix;
   SourceRecord record;
 };
 
+// =============================================================================
+// =============================================================================
+
 struct SourceRunRangeAlignmentProbe {
   std::uint8_t prefix;
   SourceRunRange range;
 };
 
-constexpr std::size_t k_layout_value_count{29U};
-constexpr std::size_t k_host_value_count{23U};
+// =============================================================================
+// =============================================================================
+
+constexpr std::size_t k_layout_value_count{36U};
+constexpr std::size_t k_host_value_count{30U};
 constexpr std::size_t k_source_record_count{2U};
 constexpr std::size_t k_source_range_count{2U};
+
+// =============================================================================
+// =============================================================================
 
 [[nodiscard]] auto MakeHostSourceRecord() -> SourceRecord {
   return {
@@ -62,8 +78,18 @@ constexpr std::size_t k_source_range_count{2U};
       .axis_z_y = 5.25F,
       .axis_z_z = -6.5F,
       .weight = 0.875F,
+      .emission_geometry_type = 112U,
+      .angular_distribution_type = 113U,
+      .geometry_size_x_pm = 114ULL,
+      .geometry_size_y_pm = 115ULL,
+      .focus_position_x_pm = -116LL,
+      .focus_position_y_pm = 117LL,
+      .focus_position_z_pm = -118LL,
   };
 }
+
+// =============================================================================
+// =============================================================================
 
 [[nodiscard]] auto MakeDeviceSourceRecord() -> SourceRecord {
   return {
@@ -88,11 +114,25 @@ constexpr std::size_t k_source_range_count{2U};
       .axis_z_y = 14.875F,
       .axis_z_z = -15.5F,
       .weight = 0.625F,
+      .emission_geometry_type =
+          ggems::core::sources::ToKernelEmissionGeometryType(
+              ggems::core::sources::GGEMSEmissionGeometryType::Ellipse),
+      .angular_distribution_type =
+          ggems::core::sources::ToKernelAngularDistributionType(
+              ggems::core::sources::GGEMSAngularDistributionType::Focused),
+      .geometry_size_x_pm = 212ULL,
+      .geometry_size_y_pm = 213ULL,
+      .focus_position_x_pm = -214LL,
+      .focus_position_y_pm = 215LL,
+      .focus_position_z_pm = -216LL,
   };
 }
 
+// =============================================================================
+// =============================================================================
+
 [[nodiscard]] auto EncodeSourceRecord(SourceRecord const &record)
-    -> std::array<std::uint64_t, 21U> {
+    -> std::array<std::uint64_t, 28U> {
   return {{
       record.source_id,
       record.time_start_ps,
@@ -115,8 +155,18 @@ constexpr std::size_t k_source_range_count{2U};
       static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_z_y)),
       static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_z_z)),
       static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.weight)),
+      static_cast<std::uint64_t>(record.emission_geometry_type),
+      static_cast<std::uint64_t>(record.angular_distribution_type),
+      record.geometry_size_x_pm,
+      record.geometry_size_y_pm,
+      std::bit_cast<std::uint64_t>(record.focus_position_x_pm),
+      std::bit_cast<std::uint64_t>(record.focus_position_y_pm),
+      std::bit_cast<std::uint64_t>(record.focus_position_z_pm),
   }};
 }
+
+// =============================================================================
+// =============================================================================
 
 auto ExpectSourceRecordsEqual(SourceRecord const &actual,
                               SourceRecord const &expected) -> void {
@@ -141,7 +191,18 @@ auto ExpectSourceRecordsEqual(SourceRecord const &actual,
   EXPECT_FLOAT_EQ(actual.axis_z_y, expected.axis_z_y);
   EXPECT_FLOAT_EQ(actual.axis_z_z, expected.axis_z_z);
   EXPECT_FLOAT_EQ(actual.weight, expected.weight);
+  EXPECT_EQ(actual.emission_geometry_type, expected.emission_geometry_type);
+  EXPECT_EQ(actual.angular_distribution_type,
+            expected.angular_distribution_type);
+  EXPECT_EQ(actual.geometry_size_x_pm, expected.geometry_size_x_pm);
+  EXPECT_EQ(actual.geometry_size_y_pm, expected.geometry_size_y_pm);
+  EXPECT_EQ(actual.focus_position_x_pm, expected.focus_position_x_pm);
+  EXPECT_EQ(actual.focus_position_y_pm, expected.focus_position_y_pm);
+  EXPECT_EQ(actual.focus_position_z_pm, expected.focus_position_z_pm);
 }
+
+// =============================================================================
+// =============================================================================
 
 class GGEMSSourceRecordKernelTest : public ::testing::Test {
 protected:
@@ -162,6 +223,9 @@ protected:
 };
 
 } // namespace
+
+// =============================================================================
+// =============================================================================
 
 TEST_F(GGEMSSourceRecordKernelTest, HostAndKernelLayoutsAndValuesMatch) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
@@ -237,6 +301,15 @@ TEST_F(GGEMSSourceRecordKernelTest, HostAndKernelLayoutsAndValuesMatch) {
       static_cast<std::uint64_t>(offsetof(SourceRecord, axis_z_y)),
       static_cast<std::uint64_t>(offsetof(SourceRecord, axis_z_z)),
       static_cast<std::uint64_t>(offsetof(SourceRecord, weight)),
+      static_cast<std::uint64_t>(
+          offsetof(SourceRecord, emission_geometry_type)),
+      static_cast<std::uint64_t>(
+          offsetof(SourceRecord, angular_distribution_type)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, geometry_size_x_pm)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, geometry_size_y_pm)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, focus_position_x_pm)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, focus_position_y_pm)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, focus_position_z_pm)),
       static_cast<std::uint64_t>(sizeof(SourceRecord)),
       static_cast<std::uint64_t>(offsetof(SourceRecordAlignmentProbe, record)),
       static_cast<std::uint64_t>(sizeof(SourceRunRange)),
@@ -259,8 +332,8 @@ TEST_F(GGEMSSourceRecordKernelTest, HostAndKernelLayoutsAndValuesMatch) {
     EXPECT_EQ(host_values[index], expected_host_record_values[index]) << index;
   }
 
-  EXPECT_EQ(host_values[21U], 301ULL);
-  EXPECT_EQ(host_values[22U], 302ULL);
+  EXPECT_EQ(host_values[28U], 301ULL);
+  EXPECT_EQ(host_values[29U], 302ULL);
 
   ExpectSourceRecordsEqual(source_records[1U], MakeDeviceSourceRecord());
   EXPECT_EQ(source_ranges[1U].projection_primary_begin, 401ULL);

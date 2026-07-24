@@ -30,10 +30,141 @@ GGEMS_SourceSampleTimePs(ulong source_local_primary_id,
 // =============================================================================
 // =============================================================================
 
-static inline GGEMSParticleState
-GGEMS_SourceInitialisePrimary(ulong global_primary_id,
-                              ulong source_local_primary_id,
-                              __global GGEMSSourceRecord const *source) {
+static inline uint
+GGEMS_SourceRequiresRandom(__global GGEMSSourceRecord const *source) {
+  return source->emission_geometry_type != GGEMS_EMISSION_GEOMETRY_TYPE_POINT ||
+         source->angular_distribution_type ==
+             GGEMS_ANGULAR_DISTRIBUTION_TYPE_ISOTROPIC;
+}
+
+// =============================================================================
+// =============================================================================
+
+static inline float2
+GGEMS_SourceSampleLocalPosition(__global GGEMSSourceRecord const *source,
+                                float4 random_values) {
+  if (source->emission_geometry_type ==
+      GGEMS_EMISSION_GEOMETRY_TYPE_RECTANGLE) {
+    return (float2)((random_values.x - 0.5f) *
+                        convert_float(source->geometry_size_x_pm),
+                    (random_values.y - 0.5f) *
+                        convert_float(source->geometry_size_y_pm));
+  }
+
+  if (source->emission_geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_ELLIPSE) {
+    float radius = sqrt(random_values.x);
+    float phi = 6.28318530717958647692f * random_values.y;
+    float cos_phi = 0.0f;
+    float sin_phi = sincos(phi, &cos_phi);
+
+    return (float2)(0.5f * convert_float(source->geometry_size_x_pm) * radius *
+                        cos_phi,
+                    0.5f * convert_float(source->geometry_size_y_pm) * radius *
+                        sin_phi);
+  }
+
+  return (float2)(0.0f, 0.0f);
+}
+
+// =============================================================================
+// =============================================================================
+
+static inline long3
+GGEMS_SourceSamplePosition(__global GGEMSSourceRecord const *source,
+                           float4 random_values) {
+  if (source->emission_geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_POINT) {
+    return (long3)(source->position_x_pm, source->position_y_pm,
+                   source->position_z_pm);
+  }
+
+  float2 local_position =
+      GGEMS_SourceSampleLocalPosition(source, random_values);
+
+  float displacement_x_pm =
+      source->axis_x_x * local_position.x + source->axis_y_x * local_position.y;
+  float displacement_y_pm =
+      source->axis_x_y * local_position.x + source->axis_y_y * local_position.y;
+  float displacement_z_pm =
+      source->axis_x_z * local_position.x + source->axis_y_z * local_position.y;
+
+  long rounded_x_pm = convert_long_rtz(round(displacement_x_pm));
+  long rounded_y_pm = convert_long_rtz(round(displacement_y_pm));
+  long rounded_z_pm = convert_long_rtz(round(displacement_z_pm));
+
+  return (long3)(source->position_x_pm + rounded_x_pm,
+                 source->position_y_pm + rounded_y_pm,
+                 source->position_z_pm + rounded_z_pm);
+}
+
+// =============================================================================
+// =============================================================================
+
+static inline ulong GGEMS_SourceSignedMagnitude(long value) {
+  return value < 0L ? (ulong)(-(value + 1L)) + 1UL : (ulong)(value);
+}
+
+// =============================================================================
+// =============================================================================
+
+static inline float GGEMS_SourceDifferenceToFloat(long lhs, long rhs) {
+  uint different_signs = (lhs < 0L) != (rhs < 0L);
+  ulong magnitude = 0UL;
+
+  if (different_signs != 0U) {
+    magnitude =
+        GGEMS_SourceSignedMagnitude(lhs) + GGEMS_SourceSignedMagnitude(rhs);
+  } else if (lhs >= rhs) {
+    magnitude = (ulong)(lhs - rhs);
+  } else {
+    magnitude = (ulong)(rhs - lhs);
+  }
+
+  float converted = convert_float(magnitude);
+  return lhs >= rhs ? converted : -converted;
+}
+
+// =============================================================================
+// =============================================================================
+
+static inline float3
+GGEMS_SourceSampleDirection(__global GGEMSSourceRecord const *source,
+                            long3 sampled_position, float4 random_values) {
+  if (source->angular_distribution_type ==
+      GGEMS_ANGULAR_DISTRIBUTION_TYPE_FIXED) {
+    return (float3)(source->axis_z_x, source->axis_z_y, source->axis_z_z);
+  }
+
+  if (source->angular_distribution_type ==
+      GGEMS_ANGULAR_DISTRIBUTION_TYPE_ISOTROPIC) {
+    float const cos_theta = 1.0f - 2.0f * random_values.z;
+    float const sin_theta = sqrt(fmax(0.0f, 1.0f - cos_theta * cos_theta));
+
+    float const phi = 6.28318530717958647692f * random_values.w;
+    float cos_phi = 0.0f;
+    float const sin_phi = sincos(phi, &cos_phi);
+
+    return (float3)(sin_theta * cos_phi, sin_theta * sin_phi, cos_theta);
+  }
+
+  float3 delta =
+      (float3)(GGEMS_SourceDifferenceToFloat(source->focus_position_x_pm,
+                                             sampled_position.x),
+               GGEMS_SourceDifferenceToFloat(source->focus_position_y_pm,
+                                             sampled_position.y),
+               GGEMS_SourceDifferenceToFloat(source->focus_position_z_pm,
+                                             sampled_position.z));
+
+  float scale = fmax(fabs(delta.x), fmax(fabs(delta.y), fabs(delta.z)));
+
+  return normalize(delta / scale);
+}
+
+// =============================================================================
+// =============================================================================
+
+static inline GGEMSParticleState GGEMS_SourceInitialisePrimary(
+    ulong global_primary_id, ulong source_local_primary_id,
+    __global GGEMSSourceRecord const *source, float4 random_values) {
   GGEMSParticleState particle;
 
   particle.global_particle_id = global_primary_id;
@@ -41,9 +172,11 @@ GGEMS_SourceInitialisePrimary(ulong global_primary_id,
   particle.parent_track_id = GGEMS_INVALID_ID_U64;
   particle.time_ps = GGEMS_SourceSampleTimePs(source_local_primary_id, source);
 
-  particle.position_x_pm = source->position_x_pm;
-  particle.position_y_pm = source->position_y_pm;
-  particle.position_z_pm = source->position_z_pm;
+  long3 sampled_position = GGEMS_SourceSamplePosition(source, random_values);
+
+  particle.position_x_pm = sampled_position.x;
+  particle.position_y_pm = sampled_position.y;
+  particle.position_z_pm = sampled_position.z;
 
   particle.particle_type = source->emitted_particle_type;
   particle.status = GGEMS_PARTICLE_STATUS_ALIVE;
@@ -55,9 +188,12 @@ GGEMS_SourceInitialisePrimary(ulong global_primary_id,
   particle.material_id = GGEMS_INVALID_ID_U32;
   particle.region_id = GGEMS_INVALID_ID_U32;
 
-  particle.direction_x = source->axis_z_x;
-  particle.direction_y = source->axis_z_y;
-  particle.direction_z = source->axis_z_z;
+  float3 sampled_direction =
+      GGEMS_SourceSampleDirection(source, sampled_position, random_values);
+
+  particle.direction_x = sampled_direction.x;
+  particle.direction_y = sampled_direction.y;
+  particle.direction_z = sampled_direction.z;
   particle.direction_w = 0.0F;
 
   particle.energy_milli_eV = source->energy_milli_eV;

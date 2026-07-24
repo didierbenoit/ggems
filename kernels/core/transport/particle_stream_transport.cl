@@ -10,6 +10,9 @@
 #define GGEMS_ENABLE_TRANSPORT_OBSERVER 0
 #endif
 
+// =============================================================================
+// =============================================================================
+
 __kernel void particle_stream_transport(
     __global GGEMSRandomState *random_states,
     volatile __global GGEMSTransportCounters *counters,
@@ -98,8 +101,14 @@ __kernel void particle_stream_transport(
     __global GGEMSSourceRecord const *source =
         &source_records[selected_source_index];
 
+    float4 random_values = (float4)(0.0);
+
+    if (GGEMS_SourceRequiresRandom(source) != 0U) {
+      random_values = GGEMS_RndmUniform4(random_states, worker_id);
+    }
+
     GGEMSParticleState particle = GGEMS_SourceInitialisePrimary(
-        global_primary_id, source_local_primary_id, source);
+        global_primary_id, source_local_primary_id, source, random_values);
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER
     if (capture_history != 0U) {
