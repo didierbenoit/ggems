@@ -17,6 +17,7 @@
 #include "GGEMSSourceBindingUtilities.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/core/units/GGEMSEnergyUnits.hh"
+#include "GGEMS/core/units/GGEMSAngularUnits.hh"
 
 namespace py = pybind11;
 
@@ -144,6 +145,27 @@ auto ConvertDistanceToPicometre(double distance, std::string const &unit,
 // =============================================================================
 // =============================================================================
 
+auto ConvertAngle(double angle, std::string const &unit)
+    -> ggems::units::Angle {
+  if (!std::isfinite(angle)) {
+    throw py::value_error("Source angle must be finite.");
+  }
+
+  if (unit == "deg") {
+    return ggems::units::MakeDegrees(static_cast<long double>(angle));
+  }
+
+  if (unit == "rad") {
+    return ggems::units::MakeRadians(static_cast<long double>(angle));
+  }
+
+  throw py::value_error(
+      std::format("Unsupported GGEMS angle unit '{}'.", unit));
+}
+
+// =============================================================================
+// =============================================================================
+
 auto ConvertPositiveDistanceToPicometre(double distance,
                                         std::string const &unit,
                                         std::string_view quantity)
@@ -228,12 +250,67 @@ auto BindSource(py::module_ &mod) -> void {
           py::arg("diameter"), py::arg("unit") = "mm",
           py::return_value_policy::reference_internal)
 
+      .def(
+          "set_emission_box",
+          [](GGEMSSource &self, double width, double height, double depth,
+             std::string const &unit) -> GGEMSSource & {
+            return self.SetBoxEmissionPicoMeter(
+                ConvertPositiveDistanceToPicometre(width, unit,
+                                                   "Source box width"),
+                ConvertPositiveDistanceToPicometre(height, unit,
+                                                   "Source box height"),
+                ConvertPositiveDistanceToPicometre(depth, unit,
+                                                   "Source box depth"));
+          },
+          py::arg("width"), py::arg("height"), py::arg("depth"),
+          py::arg("unit") = "mm", py::return_value_policy::reference_internal)
+
+      .def(
+          "set_emission_sphere",
+          [](GGEMSSource &self, double diameter,
+             std::string const &unit) -> GGEMSSource & {
+            return self.SetSphereEmissionPicoMeter(
+                ConvertPositiveDistanceToPicometre(diameter, unit,
+                                                   "Source sphere diameter"));
+          },
+          py::arg("diameter"), py::arg("unit") = "mm",
+          py::return_value_policy::reference_internal)
+
+      .def(
+          "set_emission_cylinder",
+          [](GGEMSSource &self, double diameter, double height,
+             std::string const &unit) -> GGEMSSource & {
+            return self.SetCylinderEmissionPicoMeter(
+                ConvertPositiveDistanceToPicometre(diameter, unit,
+                                                   "Source cylinder diameter"),
+                ConvertPositiveDistanceToPicometre(height, unit,
+                                                   "Source cylinder height"));
+          },
+          py::arg("diameter"), py::arg("height"), py::arg("unit") = "mm",
+          py::return_value_policy::reference_internal)
+
       .def("set_angular_fixed", &GGEMSSource::SetFixedAngularDistribution,
            py::return_value_policy::reference_internal)
 
-      .def("set_angular_isotropic",
-           &GGEMSSource::SetIsotropicAngularDistribution,
-           py::return_value_policy::reference_internal)
+      .def(
+          "set_angular_isotropic",
+          [](GGEMSSource &self) -> GGEMSSource & {
+            return self.SetIsotropicAngularDistribution();
+          },
+          py::return_value_policy::reference_internal)
+
+      .def(
+          "set_angular_isotropic",
+          [](GGEMSSource &self, double theta_min, double theta_max,
+             double phi_min, double phi_max,
+             std::string const &unit) -> GGEMSSource & {
+            return self.SetIsotropicAngularDistribution(
+                ConvertAngle(theta_min, unit), ConvertAngle(theta_max, unit),
+                ConvertAngle(phi_min, unit), ConvertAngle(phi_max, unit));
+          },
+          py::arg("theta_min"), py::arg("theta_max"), py::arg("phi_min"),
+          py::arg("phi_max"), py::arg("unit") = "deg",
+          py::return_value_policy::reference_internal)
 
       .def(
           "set_angular_focused",
@@ -345,9 +422,19 @@ auto BindSource(py::module_ &mod) -> void {
         auto const &record = source.GetRecord();
         auto const distribution_type = source.GetEnergyDistribution().GetType();
 
+        auto const geometry_type =
+            ggems::core::sources::FromKernelEmissionGeometryType(
+                record.emission_geometry_type);
+        auto const angular_type =
+            ggems::core::sources::FromKernelAngularDistributionType(
+                record.angular_distribution_type);
+
         return std::format(
-            "<GGEMSSource type={} particle_type={} energy_distribution={}>",
+            "<GGEMSSource type={} particle_type={} emission_geometry={} "
+            "angular_distribution={} energy_distribution={}>",
             record.source_type, record.emitted_particle_type,
+            ggems::core::sources::ToLongName(geometry_type),
+            ggems::core::sources::ToLongName(angular_type),
             ggems::core::sources::ToLongName(distribution_type));
       });
 }

@@ -9,6 +9,7 @@
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/core/units/GGEMSAngularUnits.hh"
 
 namespace ggems::core {
 class GGEMSRun;
@@ -45,8 +46,21 @@ public:
 
   auto SetCircleEmissionPicoMeter(std::uint64_t diameter_pm) -> GGEMSSource &;
 
+  auto SetBoxEmissionPicoMeter(std::uint64_t width_pm, std::uint64_t height_pm,
+                               std::uint64_t depth_pm) -> GGEMSSource &;
+
+  auto SetSphereEmissionPicoMeter(std::uint64_t diameter_pm) -> GGEMSSource &;
+
+  auto SetCylinderEmissionPicoMeter(std::uint64_t diameter_pm,
+                                    std::uint64_t height_pm) -> GGEMSSource &;
+
   auto SetFixedAngularDistribution() -> GGEMSSource &;
   auto SetIsotropicAngularDistribution() -> GGEMSSource &;
+  auto SetIsotropicAngularDistribution(ggems::units::Angle theta_min,
+                                       ggems::units::Angle theta_max,
+                                       ggems::units::Angle phi_min,
+                                       ggems::units::Angle phi_max)
+      -> GGEMSSource &;
 
   auto SetFocusedAngularDistributionPicoMeter(std::int64_t focus_x_pm,
                                               std::int64_t focus_y_pm,

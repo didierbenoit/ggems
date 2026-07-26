@@ -16,7 +16,7 @@ TEST(GGEMSSourceRecord, IsKernelFriendly) {
   EXPECT_TRUE(std::is_standard_layout_v<SourceRecord>);
   EXPECT_TRUE(std::is_trivially_copyable_v<SourceRecord>);
 
-  EXPECT_EQ(sizeof(SourceRecord), 160U);
+  EXPECT_EQ(sizeof(SourceRecord), 184U);
   EXPECT_EQ(alignof(SourceRecord), 8U);
 
   EXPECT_EQ(offsetof(SourceRecord, source_id), 0U);
@@ -50,6 +50,11 @@ TEST(GGEMSSourceRecord, IsKernelFriendly) {
   EXPECT_EQ(offsetof(SourceRecord, focus_position_x_pm), 136U);
   EXPECT_EQ(offsetof(SourceRecord, focus_position_y_pm), 144U);
   EXPECT_EQ(offsetof(SourceRecord, focus_position_z_pm), 152U);
+  EXPECT_EQ(offsetof(SourceRecord, geometry_size_z_pm), 160U);
+  EXPECT_EQ(offsetof(SourceRecord, isotropic_cos_theta_lower), 168U);
+  EXPECT_EQ(offsetof(SourceRecord, isotropic_cos_theta_upper), 172U);
+  EXPECT_EQ(offsetof(SourceRecord, isotropic_phi_min_rad), 176U);
+  EXPECT_EQ(offsetof(SourceRecord, isotropic_phi_max_rad), 180U);
 }
 
 // =============================================================================
@@ -92,7 +97,18 @@ TEST(GGEMSSourceRecord, DefaultSourceRecordIsAnalyticGammaPointSource) {
                 ggems::core::sources::GGEMSAngularDistributionType::Fixed));
   EXPECT_EQ(source.geometry_size_x_pm, 0ULL);
   EXPECT_EQ(source.geometry_size_y_pm, 0ULL);
+  EXPECT_EQ(source.geometry_size_z_pm, 0ULL);
   EXPECT_EQ(source.focus_position_x_pm, 0LL);
   EXPECT_EQ(source.focus_position_y_pm, 0LL);
   EXPECT_EQ(source.focus_position_z_pm, 0LL);
+  EXPECT_FLOAT_EQ(
+      source.isotropic_cos_theta_lower,
+      ggems::core::sources::k_isotropic_full_sphere_cos_theta_lower);
+  EXPECT_FLOAT_EQ(
+      source.isotropic_cos_theta_upper,
+      ggems::core::sources::k_isotropic_full_sphere_cos_theta_upper);
+  EXPECT_FLOAT_EQ(source.isotropic_phi_min_rad,
+                  ggems::core::sources::k_isotropic_full_sphere_phi_min_rad);
+  EXPECT_FLOAT_EQ(source.isotropic_phi_max_rad,
+                  ggems::core::sources::k_isotropic_full_sphere_phi_max_rad);
 }

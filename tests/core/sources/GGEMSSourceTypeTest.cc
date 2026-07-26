@@ -1,6 +1,4 @@
 #include <array>
-#include <cstdint>
-#include <string_view>
 #include <utility>
 
 #include <gtest/gtest.h>
@@ -15,8 +13,10 @@ TEST(GGEMSSourceTypes, EmissionGeometryKernelIdsAreStable) {
   using ggems::core::sources::FromKernelEmissionGeometryType;
   using ggems::core::sources::ToKernelEmissionGeometryType;
 
-  constexpr std::array cases{std::pair{Unknown, 0U}, std::pair{Point, 1U},
-                             std::pair{Rectangle, 2U}, std::pair{Ellipse, 3U}};
+  constexpr std::array cases{std::pair{Unknown, 0U},   std::pair{Point, 1U},
+                             std::pair{Rectangle, 2U}, std::pair{Ellipse, 3U},
+                             std::pair{Box, 4U},       std::pair{Sphere, 5U},
+                             std::pair{Cylinder, 6U}};
 
   for (auto const &[type, kernel_id] : cases) {
     EXPECT_EQ(ToKernelEmissionGeometryType(type), kernel_id);
@@ -27,6 +27,14 @@ TEST(GGEMSSourceTypes, EmissionGeometryKernelIdsAreStable) {
   EXPECT_EQ(ggems::core::sources::ToLongName(Point), "Point");
   EXPECT_EQ(ggems::core::sources::ToLongName(Rectangle), "Rectangle");
   EXPECT_EQ(ggems::core::sources::ToLongName(Ellipse), "Ellipse");
+  EXPECT_EQ(ggems::core::sources::ToLongName(Box), "Box");
+  EXPECT_EQ(ggems::core::sources::ToLongName(Sphere), "Sphere");
+  EXPECT_EQ(ggems::core::sources::ToLongName(Cylinder), "Cylinder");
+  EXPECT_EQ(ggems::core::sources::ToLongName(Unknown), "Unknown");
+  EXPECT_EQ(
+      ggems::core::sources::ToLongName(
+          static_cast<ggems::core::sources::GGEMSEmissionGeometryType>(99U)),
+      "Unknown");
 }
 
 // =============================================================================

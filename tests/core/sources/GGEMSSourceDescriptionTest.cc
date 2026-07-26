@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <numbers>
 
 #include <gtest/gtest.h>
 
@@ -10,6 +11,7 @@
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceDescription.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
+#include "GGEMS/core/units/GGEMSAngularUnits.hh"
 
 namespace {
 
@@ -260,4 +262,55 @@ TEST(GGEMSSourceDescription, DescribesGeometryAndFocusedDistribution) {
   ExpectContains(description, "Angular: Focused");
   ExpectContains(description,
                  "Focus: (0.0000000 pm, 0.0000000 pm, 100.0000000 mm)");
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceDescription, DescribesVolumeGeometryMetadata) {
+  auto source = MakeConfiguredSource(7ULL);
+
+  source->SetBoxEmissionPicoMeter(10'000'000'000ULL, 5'000'000'000ULL,
+                                  2'000'000'000ULL);
+  std::string box = ggems::core::sources::DescribeSource(
+      source->BuildRecord(), source->GetPrimaryCount());
+  ExpectContains(box, "Emission: Box | Size: 10.0000000 mm x 5.0000000 mm x "
+                      "2.0000000 mm");
+
+  source->SetSphereEmissionPicoMeter(8'000'000'000ULL);
+  std::string sphere = ggems::core::sources::DescribeSource(
+      source->BuildRecord(), source->GetPrimaryCount());
+  ExpectContains(sphere, "Emission: Sphere | Diameter: 8.0000000 mm");
+
+  source->SetCylinderEmissionPicoMeter(6'000'000'000ULL, 12'000'000'000ULL);
+  std::string cylinder = ggems::core::sources::DescribeSource(
+      source->BuildRecord(), source->GetPrimaryCount());
+  ExpectContains(cylinder, "Emission: Cylinder | Diameter: 6.0000000 mm | "
+                           "Height: 12.0000000 mm");
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceDescription, DescribesFullAndBoundedIsotropicDomainsInDegrees) {
+  constexpr long double k_pi{std::numbers::pi_v<long double>};
+  auto source = MakeConfiguredSource(7ULL);
+  source->SetIsotropicAngularDistribution();
+
+  std::string full_sphere = ggems::core::sources::DescribeSource(
+      source->BuildRecord(), source->GetPrimaryCount());
+  ExpectContains(full_sphere, "Angular: Isotropic | Domain: Full sphere");
+
+  source->SetIsotropicAngularDistribution(
+      ggems::units::MakeRadians(0.25L * k_pi),
+      ggems::units::MakeRadians(0.5L * k_pi),
+      ggems::units::MakeRadians(-0.25L * k_pi),
+      ggems::units::MakeRadians(0.25L * k_pi));
+  std::string bounded = ggems::core::sources::DescribeSource(
+      source->BuildRecord(), source->GetPrimaryCount());
+
+  ExpectContains(bounded, "Angular: Isotropic | Theta:");
+  ExpectContains(bounded, "Phi:");
+  ExpectContains(bounded, "deg");
+  EXPECT_EQ(bounded.find("cos"), std::string::npos);
 }

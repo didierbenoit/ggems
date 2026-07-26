@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -16,6 +18,8 @@
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/core/units/GGEMSLengthUnits.hh"
+#include "GGEMS/core/units/GGEMSAngularUnits.hh"
+#include "GGEMS/core/sources/GGEMSSourceValidation.hh"
 
 namespace ggems::core::sources {
 
@@ -62,6 +66,30 @@ namespace {
                            ggems::units::Length{record.geometry_size_y_pm}));
   }
 
+  if (geometry_type == GGEMSEmissionGeometryType::Box) {
+    return std::format("Emission: Box | Size: {} x {} x {}",
+                       ggems::units::HumanReadable(
+                           ggems::units::Length{record.geometry_size_x_pm}),
+                       ggems::units::HumanReadable(
+                           ggems::units::Length{record.geometry_size_y_pm}),
+                       ggems::units::HumanReadable(
+                           ggems::units::Length{record.geometry_size_z_pm}));
+  }
+
+  if (geometry_type == GGEMSEmissionGeometryType::Sphere) {
+    return std::format("Emission: Sphere | Diameter: {}",
+                       ggems::units::HumanReadable(
+                           ggems::units::Length{record.geometry_size_x_pm}));
+  }
+
+  if (geometry_type == GGEMSEmissionGeometryType::Cylinder) {
+    return std::format("Emission: Cylinder | Diameter: {} | Height: {}",
+                       ggems::units::HumanReadable(
+                           ggems::units::Length{record.geometry_size_x_pm}),
+                       ggems::units::HumanReadable(
+                           ggems::units::Length{record.geometry_size_z_pm}));
+  }
+
   return std::format("Emission: {}", ToLongName(geometry_type));
 }
 
@@ -72,6 +100,28 @@ namespace {
     -> std::string {
   GGEMSAngularDistributionType const distribution_type =
       FromKernelAngularDistributionType(record.angular_distribution_type);
+
+  if (distribution_type == GGEMSAngularDistributionType::Isotropic) {
+    if (IsDefaultFullSphereIsotropicDomain(record)) {
+      return "Angular: Isotropic | Domain: Full sphere";
+    }
+
+    long double const theta_min = std::acos(
+        std::clamp(static_cast<long double>(record.isotropic_cos_theta_upper),
+                   -1.0L, 1.0L));
+    long double const theta_max = std::acos(
+        std::clamp(static_cast<long double>(record.isotropic_cos_theta_lower),
+                   -1.0L, 1.0L));
+
+    return std::format(
+        "Angular: Isotropic | Theta: {} to {} | Phi: {} to {}",
+        ggems::units::HumanReadable(ggems::units::MakeRadians(theta_min)),
+        ggems::units::HumanReadable(ggems::units::MakeRadians(theta_max)),
+        ggems::units::HumanReadable(ggems::units::MakeRadians(
+            static_cast<long double>(record.isotropic_phi_min_rad))),
+        ggems::units::HumanReadable(ggems::units::MakeRadians(
+            static_cast<long double>(record.isotropic_phi_max_rad))));
+  }
 
   if (distribution_type != GGEMSAngularDistributionType::Focused) {
     return std::format("Angular: {}", ToLongName(distribution_type));

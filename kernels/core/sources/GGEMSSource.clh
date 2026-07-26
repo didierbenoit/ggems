@@ -8,6 +8,11 @@
 #define GGEMS_SOURCE_TRACK_BRANCH_BITS 16U
 #endif
 
+#define GGEMS_SOURCE_TWO_PI_F 6.28318530717958647692f
+
+// =============================================================================
+// =============================================================================
+
 static inline ulong GGEMS_SourceMakeBaseTrackId(ulong global_primary_id) {
   return global_primary_id << GGEMS_SOURCE_TRACK_BRANCH_BITS;
 }
@@ -30,11 +35,31 @@ GGEMS_SourceSampleTimePs(ulong source_local_primary_id,
 // =============================================================================
 // =============================================================================
 
+static inline uint GGEMS_SourceIsVolumeGeometry(uint geometry_type) {
+  return geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_BOX ||
+         geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_SPHERE ||
+         geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_CYLINDER;
+}
+
+// =============================================================================
+// =============================================================================
+
 static inline uint
-GGEMS_SourceRequiresRandom(__global GGEMSSourceRecord const *source) {
-  return source->emission_geometry_type != GGEMS_EMISSION_GEOMETRY_TYPE_POINT ||
-         source->angular_distribution_type ==
-             GGEMS_ANGULAR_DISTRIBUTION_TYPE_ISOTROPIC;
+GGEMS_SourceRandomVectorDrawCount(__global GGEMSSourceRecord const *source) {
+  uint draw_count =
+      source->emission_geometry_type != GGEMS_EMISSION_GEOMETRY_TYPE_POINT ||
+              source->angular_distribution_type ==
+                  GGEMS_ANGULAR_DISTRIBUTION_TYPE_ISOTROPIC
+          ? 1U
+          : 0U;
+
+  if (GGEMS_SourceIsVolumeGeometry(source->emission_geometry_type) != 0U &&
+      source->angular_distribution_type ==
+          GGEMS_ANGULAR_DISTRIBUTION_TYPE_ISOTROPIC) {
+    ++draw_count;
+  }
+
+  return draw_count;
 }
 
 // =============================================================================
@@ -53,7 +78,7 @@ GGEMS_SourceSampleLocalPosition(__global GGEMSSourceRecord const *source,
 
   if (source->emission_geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_ELLIPSE) {
     float radius = sqrt(random_values.x);
-    float phi = 6.28318530717958647692f * random_values.y;
+    float phi = GGEMS_SOURCE_TWO_PI_F * random_values.y;
     float cos_phi = 0.0f;
     float sin_phi = sincos(phi, &cos_phi);
 
@@ -69,12 +94,78 @@ GGEMS_SourceSampleLocalPosition(__global GGEMSSourceRecord const *source,
 // =============================================================================
 // =============================================================================
 
+static inline float3
+GGEMS_SourceSampleLocalVolumePosition(__global GGEMSSourceRecord const *source,
+                                      float4 random_values) {
+  if (source->emission_geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_BOX) {
+    return (float3)((random_values.x - 0.5f) *
+                        convert_float(source->geometry_size_x_pm),
+                    (random_values.y - 0.5f) *
+                        convert_float(source->geometry_size_y_pm),
+                    (random_values.z - 0.5f) *
+                        convert_float(source->geometry_size_z_pm));
+  }
+
+  if (source->emission_geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_SPHERE) {
+    float const radius = 0.5f * convert_float(source->geometry_size_x_pm) *
+                         cbrt(random_values.x);
+    float const cos_theta = 1.0f - 2.0f * random_values.y;
+    float const sin_theta = sqrt(fmax(0.0f, 1.0f - cos_theta * cos_theta));
+    float const phi = GGEMS_SOURCE_TWO_PI_F * random_values.z;
+    float cos_phi = 0.0f;
+    float const sin_phi = sincos(phi, &cos_phi);
+
+    return (float3)(radius * sin_theta * cos_phi, radius * sin_theta * sin_phi,
+                    radius * cos_theta);
+  }
+
+  if (source->emission_geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_CYLINDER) {
+    float const radius = 0.5f * convert_float(source->geometry_size_x_pm) *
+                         sqrt(random_values.x);
+    float const phi = GGEMS_SOURCE_TWO_PI_F * random_values.y;
+    float cos_phi = 0.0f;
+    float const sin_phi = sincos(phi, &cos_phi);
+
+    return (float3)(radius * cos_phi, radius * sin_phi,
+                    (random_values.z - 0.5f) *
+                        convert_float(source->geometry_size_z_pm));
+  }
+
+  return (float3)(0.0f, 0.0f, 0.0f);
+}
+
+// =============================================================================
+// =============================================================================
+
 static inline long3
 GGEMS_SourceSamplePosition(__global GGEMSSourceRecord const *source,
                            float4 random_values) {
   if (source->emission_geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_POINT) {
     return (long3)(source->position_x_pm, source->position_y_pm,
                    source->position_z_pm);
+  }
+
+  if (GGEMS_SourceIsVolumeGeometry(source->emission_geometry_type) != 0U) {
+    float3 local_position =
+        GGEMS_SourceSampleLocalVolumePosition(source, random_values);
+
+    float displacement_x_pm = source->axis_x_x * local_position.x +
+                              source->axis_y_x * local_position.y +
+                              source->axis_z_x * local_position.z;
+    float displacement_y_pm = source->axis_x_y * local_position.x +
+                              source->axis_y_y * local_position.y +
+                              source->axis_z_y * local_position.z;
+    float displacement_z_pm = source->axis_x_z * local_position.x +
+                              source->axis_y_z * local_position.y +
+                              source->axis_z_z * local_position.z;
+
+    long rounded_x_pm = convert_long_sat_rtz(round(displacement_x_pm));
+    long rounded_y_pm = convert_long_sat_rtz(round(displacement_y_pm));
+    long rounded_z_pm = convert_long_sat_rtz(round(displacement_z_pm));
+
+    return (long3)(add_sat(source->position_x_pm, rounded_x_pm),
+                   add_sat(source->position_y_pm, rounded_y_pm),
+                   add_sat(source->position_z_pm, rounded_z_pm));
   }
 
   float2 local_position =
@@ -87,13 +178,13 @@ GGEMS_SourceSamplePosition(__global GGEMSSourceRecord const *source,
   float displacement_z_pm =
       source->axis_x_z * local_position.x + source->axis_y_z * local_position.y;
 
-  long rounded_x_pm = convert_long_rtz(round(displacement_x_pm));
-  long rounded_y_pm = convert_long_rtz(round(displacement_y_pm));
-  long rounded_z_pm = convert_long_rtz(round(displacement_z_pm));
+  long rounded_x_pm = convert_long_sat_rtz(round(displacement_x_pm));
+  long rounded_y_pm = convert_long_sat_rtz(round(displacement_y_pm));
+  long rounded_z_pm = convert_long_sat_rtz(round(displacement_z_pm));
 
-  return (long3)(source->position_x_pm + rounded_x_pm,
-                 source->position_y_pm + rounded_y_pm,
-                 source->position_z_pm + rounded_z_pm);
+  return (long3)(add_sat(source->position_x_pm, rounded_x_pm),
+                 add_sat(source->position_y_pm, rounded_y_pm),
+                 add_sat(source->position_z_pm, rounded_z_pm));
 }
 
 // =============================================================================
@@ -126,9 +217,20 @@ static inline float GGEMS_SourceDifferenceToFloat(long lhs, long rhs) {
 // =============================================================================
 // =============================================================================
 
-static inline float3
-GGEMS_SourceSampleDirection(__global GGEMSSourceRecord const *source,
-                            long3 sampled_position, float4 random_values) {
+static inline uint
+GGEMS_SourceUsesDefaultFullSphere(__global GGEMSSourceRecord const *source) {
+  return source->isotropic_cos_theta_lower == -1.0f &&
+         source->isotropic_cos_theta_upper == 1.0f &&
+         source->isotropic_phi_min_rad == 0.0f &&
+         source->isotropic_phi_max_rad == GGEMS_SOURCE_TWO_PI_F;
+}
+
+// =============================================================================
+// =============================================================================
+
+static inline float3 GGEMS_SourceSampleDirection(
+    __global GGEMSSourceRecord const *source, long3 sampled_position,
+    float4 primary_random_values, float4 secondary_random_values) {
   if (source->angular_distribution_type ==
       GGEMS_ANGULAR_DISTRIBUTION_TYPE_FIXED) {
     return (float3)(source->axis_z_x, source->axis_z_y, source->axis_z_z);
@@ -136,14 +238,48 @@ GGEMS_SourceSampleDirection(__global GGEMSSourceRecord const *source,
 
   if (source->angular_distribution_type ==
       GGEMS_ANGULAR_DISTRIBUTION_TYPE_ISOTROPIC) {
-    float const cos_theta = 1.0f - 2.0f * random_values.z;
-    float const sin_theta = sqrt(fmax(0.0f, 1.0f - cos_theta * cos_theta));
 
-    float const phi = 6.28318530717958647692f * random_values.w;
+    uint const volume_geometry =
+        GGEMS_SourceIsVolumeGeometry(source->emission_geometry_type);
+    float const u_theta = volume_geometry != 0U ? secondary_random_values.x
+                                                : primary_random_values.z;
+    float const u_phi = volume_geometry != 0U ? secondary_random_values.y
+                                              : primary_random_values.w;
+
+    if (GGEMS_SourceUsesDefaultFullSphere(source) != 0U) {
+      float const cos_theta = 1.0f - 2.0f * u_theta;
+      float const sin_theta = sqrt(fmax(0.0f, 1.0f - cos_theta * cos_theta));
+
+      float const phi = GGEMS_SOURCE_TWO_PI_F * u_phi;
+      float cos_phi = 0.0f;
+      float const sin_phi = sincos(phi, &cos_phi);
+
+      return (float3)(sin_theta * cos_phi, sin_theta * sin_phi, cos_theta);
+    }
+
+    float const cos_theta = source->isotropic_cos_theta_lower +
+                            u_theta * (source->isotropic_cos_theta_upper -
+                                       source->isotropic_cos_theta_lower);
+    float const sin_theta = sqrt(fmax(0.0f, 1.0f - cos_theta * cos_theta));
+    float const phi =
+        source->isotropic_phi_min_rad +
+        u_phi * (source->isotropic_phi_max_rad - source->isotropic_phi_min_rad);
     float cos_phi = 0.0f;
     float const sin_phi = sincos(phi, &cos_phi);
+    float3 const local_direction =
+        (float3)(sin_theta * cos_phi, sin_theta * sin_phi, cos_theta);
+    float3 const global_direction =
+        (float3)(source->axis_x_x * local_direction.x +
+                     source->axis_y_x * local_direction.y +
+                     source->axis_z_x * local_direction.z,
+                 source->axis_x_y * local_direction.x +
+                     source->axis_y_y * local_direction.y +
+                     source->axis_z_y * local_direction.z,
+                 source->axis_x_z * local_direction.x +
+                     source->axis_y_z * local_direction.y +
+                     source->axis_z_z * local_direction.z);
 
-    return (float3)(sin_theta * cos_phi, sin_theta * sin_phi, cos_theta);
+    return normalize(global_direction);
   }
 
   float3 delta =
@@ -164,7 +300,8 @@ GGEMS_SourceSampleDirection(__global GGEMSSourceRecord const *source,
 
 static inline GGEMSParticleState GGEMS_SourceInitialisePrimary(
     ulong global_primary_id, ulong source_local_primary_id,
-    __global GGEMSSourceRecord const *source, float4 random_values) {
+    __global GGEMSSourceRecord const *source, float4 primary_random_values,
+    float4 secondary_random_values) {
   GGEMSParticleState particle;
 
   particle.global_particle_id = global_primary_id;
@@ -172,7 +309,8 @@ static inline GGEMSParticleState GGEMS_SourceInitialisePrimary(
   particle.parent_track_id = GGEMS_INVALID_ID_U64;
   particle.time_ps = GGEMS_SourceSampleTimePs(source_local_primary_id, source);
 
-  long3 sampled_position = GGEMS_SourceSamplePosition(source, random_values);
+  long3 sampled_position =
+      GGEMS_SourceSamplePosition(source, primary_random_values);
 
   particle.position_x_pm = sampled_position.x;
   particle.position_y_pm = sampled_position.y;
@@ -188,8 +326,8 @@ static inline GGEMSParticleState GGEMS_SourceInitialisePrimary(
   particle.material_id = GGEMS_INVALID_ID_U32;
   particle.region_id = GGEMS_INVALID_ID_U32;
 
-  float3 sampled_direction =
-      GGEMS_SourceSampleDirection(source, sampled_position, random_values);
+  float3 sampled_direction = GGEMS_SourceSampleDirection(
+      source, sampled_position, primary_random_values, secondary_random_values);
 
   particle.direction_x = sampled_direction.x;
   particle.direction_y = sampled_direction.y;

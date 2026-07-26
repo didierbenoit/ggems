@@ -1,6 +1,7 @@
-#include <cstring>
+#include <cmath>
 #include <limits>
 #include <cstdint>
+#include <numbers>
 
 #include <gtest/gtest.h>
 
@@ -9,6 +10,7 @@
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/core/units/GGEMSAngularUnits.hh"
 
 // =============================================================================
 // =============================================================================
@@ -67,9 +69,16 @@ auto ExpectSourceRecordsEqual(
             expected.angular_distribution_type);
   EXPECT_EQ(actual.geometry_size_x_pm, expected.geometry_size_x_pm);
   EXPECT_EQ(actual.geometry_size_y_pm, expected.geometry_size_y_pm);
+  EXPECT_EQ(actual.geometry_size_z_pm, expected.geometry_size_z_pm);
   EXPECT_EQ(actual.focus_position_x_pm, expected.focus_position_x_pm);
   EXPECT_EQ(actual.focus_position_y_pm, expected.focus_position_y_pm);
   EXPECT_EQ(actual.focus_position_z_pm, expected.focus_position_z_pm);
+  EXPECT_FLOAT_EQ(actual.isotropic_cos_theta_lower,
+                  expected.isotropic_cos_theta_lower);
+  EXPECT_FLOAT_EQ(actual.isotropic_cos_theta_upper,
+                  expected.isotropic_cos_theta_upper);
+  EXPECT_FLOAT_EQ(actual.isotropic_phi_min_rad, expected.isotropic_phi_min_rad);
+  EXPECT_FLOAT_EQ(actual.isotropic_phi_max_rad, expected.isotropic_phi_max_rad);
 }
 
 // =============================================================================
@@ -115,9 +124,15 @@ TEST(GGEMSSource, DefaultSourceIsAnalyticGammaPointSource) {
                 ggems::core::sources::GGEMSAngularDistributionType::Fixed));
   EXPECT_EQ(record.geometry_size_x_pm, 0ULL);
   EXPECT_EQ(record.geometry_size_y_pm, 0ULL);
+  EXPECT_EQ(record.geometry_size_z_pm, 0ULL);
   EXPECT_EQ(record.focus_position_x_pm, 0LL);
   EXPECT_EQ(record.focus_position_y_pm, 0LL);
   EXPECT_EQ(record.focus_position_z_pm, 0LL);
+  EXPECT_FLOAT_EQ(record.isotropic_cos_theta_lower, -1.0F);
+  EXPECT_FLOAT_EQ(record.isotropic_cos_theta_upper, 1.0F);
+  EXPECT_FLOAT_EQ(record.isotropic_phi_min_rad, 0.0F);
+  EXPECT_FLOAT_EQ(record.isotropic_phi_max_rad,
+                  ggems::core::sources::k_isotropic_full_sphere_phi_max_rad);
 }
 
 // =============================================================================
@@ -394,6 +409,7 @@ TEST(GGEMSSource, ConfiguresPointRectangleEllipseAndCircle) {
             GGEMSEmissionGeometryType::Rectangle);
   EXPECT_EQ(rectangle.geometry_size_x_pm, 40ULL);
   EXPECT_EQ(rectangle.geometry_size_y_pm, 20ULL);
+  EXPECT_EQ(rectangle.geometry_size_z_pm, 0ULL);
 
   source.SetEllipseEmissionPicoMeter(30ULL, 10ULL);
   auto ellipse = source.BuildRecord();
@@ -401,6 +417,7 @@ TEST(GGEMSSource, ConfiguresPointRectangleEllipseAndCircle) {
             GGEMSEmissionGeometryType::Ellipse);
   EXPECT_EQ(ellipse.geometry_size_x_pm, 30ULL);
   EXPECT_EQ(ellipse.geometry_size_y_pm, 10ULL);
+  EXPECT_EQ(ellipse.geometry_size_z_pm, 0ULL);
 
   source.SetCircleEmissionPicoMeter(12ULL);
   auto circle = source.BuildRecord();
@@ -408,6 +425,7 @@ TEST(GGEMSSource, ConfiguresPointRectangleEllipseAndCircle) {
             GGEMSEmissionGeometryType::Ellipse);
   EXPECT_EQ(circle.geometry_size_x_pm, 12ULL);
   EXPECT_EQ(circle.geometry_size_y_pm, 12ULL);
+  EXPECT_EQ(circle.geometry_size_z_pm, 0ULL);
 
   source.SetPointEmission();
   auto point = source.BuildRecord();
@@ -415,6 +433,7 @@ TEST(GGEMSSource, ConfiguresPointRectangleEllipseAndCircle) {
             GGEMSEmissionGeometryType::Point);
   EXPECT_EQ(point.geometry_size_x_pm, 0ULL);
   EXPECT_EQ(point.geometry_size_y_pm, 0ULL);
+  EXPECT_EQ(point.geometry_size_z_pm, 0ULL);
 }
 
 // =============================================================================
@@ -501,4 +520,207 @@ TEST(GGEMSSource, PoseChangesDoNotSelectAnotherAngularMode) {
   EXPECT_EQ(ggems::core::sources::FromKernelAngularDistributionType(
                 source.BuildRecord().angular_distribution_type),
             ggems::core::sources::GGEMSAngularDistributionType::Isotropic);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSource, ConfiguresCanonicalVolumeDimensionsAndSwitching) {
+  using ggems::core::sources::FromKernelEmissionGeometryType;
+  using ggems::core::sources::GGEMSEmissionGeometryType;
+
+  ggems::core::sources::GGEMSSource source{};
+
+  source.SetBoxEmissionPicoMeter(40ULL, 20ULL, 10ULL);
+  auto const box = source.BuildRecord();
+  EXPECT_EQ(FromKernelEmissionGeometryType(box.emission_geometry_type),
+            GGEMSEmissionGeometryType::Box);
+  EXPECT_EQ(box.geometry_size_x_pm, 40ULL);
+  EXPECT_EQ(box.geometry_size_y_pm, 20ULL);
+  EXPECT_EQ(box.geometry_size_z_pm, 10ULL);
+
+  source.SetSphereEmissionPicoMeter(12ULL);
+  auto const sphere = source.BuildRecord();
+  EXPECT_EQ(FromKernelEmissionGeometryType(sphere.emission_geometry_type),
+            GGEMSEmissionGeometryType::Sphere);
+  EXPECT_EQ(sphere.geometry_size_x_pm, 12ULL);
+  EXPECT_EQ(sphere.geometry_size_y_pm, 12ULL);
+  EXPECT_EQ(sphere.geometry_size_z_pm, 12ULL);
+
+  source.SetCylinderEmissionPicoMeter(14ULL, 30ULL);
+  auto const cylinder = source.BuildRecord();
+  EXPECT_EQ(FromKernelEmissionGeometryType(cylinder.emission_geometry_type),
+            GGEMSEmissionGeometryType::Cylinder);
+  EXPECT_EQ(cylinder.geometry_size_x_pm, 14ULL);
+  EXPECT_EQ(cylinder.geometry_size_y_pm, 14ULL);
+  EXPECT_EQ(cylinder.geometry_size_z_pm, 30ULL);
+
+  source.SetCircleEmissionPicoMeter(8ULL);
+  auto const circle = source.BuildRecord();
+  EXPECT_EQ(FromKernelEmissionGeometryType(circle.emission_geometry_type),
+            GGEMSEmissionGeometryType::Ellipse);
+  EXPECT_EQ(circle.geometry_size_x_pm, 8ULL);
+  EXPECT_EQ(circle.geometry_size_y_pm, 8ULL);
+  EXPECT_EQ(circle.geometry_size_z_pm, 0ULL);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSource, RejectsInvalidVolumeDimensionsAtomically) {
+  ggems::core::sources::GGEMSSource source{};
+  source.SetRectangleEmissionPicoMeter(40ULL, 20ULL);
+  auto const before = source.BuildRecord();
+
+  EXPECT_THROW(source.SetBoxEmissionPicoMeter(0ULL, 20ULL, 10ULL),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(source.SetBoxEmissionPicoMeter(40ULL, 0ULL, 10ULL),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(source.SetBoxEmissionPicoMeter(40ULL, 20ULL, 0ULL),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(source.SetSphereEmissionPicoMeter(0ULL),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(source.SetCylinderEmissionPicoMeter(0ULL, 10ULL),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(source.SetCylinderEmissionPicoMeter(10ULL, 0ULL),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(source.SetSphereEmissionPicoMeter(
+                   std::numeric_limits<std::uint64_t>::max()),
+               ggems::core::GGEMSExceptionBase);
+
+  ExpectSourceRecordsEqual(source.BuildRecord(), before);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSource, ConfiguresBoundedAndCanonicalFullSphereIsotropicDomains) {
+  constexpr long double k_pi{std::numbers::pi_v<long double>};
+  using ggems::units::MakeRadians;
+
+  ggems::core::sources::GGEMSSource source{};
+  source.SetIsotropicAngularDistribution(
+      MakeRadians(0.0L), MakeRadians(0.5L * k_pi), MakeRadians(-0.5L * k_pi),
+      MakeRadians(0.5L * k_pi));
+
+  auto const bounded = source.BuildRecord();
+  EXPECT_NEAR(bounded.isotropic_cos_theta_lower, 0.0F,
+              std::numeric_limits<float>::epsilon());
+  EXPECT_FLOAT_EQ(bounded.isotropic_cos_theta_upper, 1.0F);
+  EXPECT_FLOAT_EQ(bounded.isotropic_phi_min_rad,
+                  static_cast<float>(-0.5L * k_pi));
+  EXPECT_FLOAT_EQ(bounded.isotropic_phi_max_rad,
+                  static_cast<float>(0.5L * k_pi));
+  EXPECT_EQ(bounded.focus_position_x_pm, 0LL);
+  EXPECT_EQ(bounded.focus_position_y_pm, 0LL);
+  EXPECT_EQ(bounded.focus_position_z_pm, 0LL);
+
+  source.SetIsotropicAngularDistribution(MakeRadians(0.0L), MakeRadians(k_pi),
+                                         MakeRadians(0.0L),
+                                         MakeRadians(2.0L * k_pi));
+  auto const explicit_full_sphere = source.BuildRecord();
+
+  ggems::core::sources::GGEMSSource no_argument{};
+  no_argument.SetIsotropicAngularDistribution();
+  auto const canonical_full_sphere = no_argument.BuildRecord();
+
+  EXPECT_FLOAT_EQ(explicit_full_sphere.isotropic_cos_theta_lower,
+                  canonical_full_sphere.isotropic_cos_theta_lower);
+  EXPECT_FLOAT_EQ(explicit_full_sphere.isotropic_cos_theta_upper,
+                  canonical_full_sphere.isotropic_cos_theta_upper);
+  EXPECT_FLOAT_EQ(explicit_full_sphere.isotropic_phi_min_rad,
+                  canonical_full_sphere.isotropic_phi_min_rad);
+  EXPECT_FLOAT_EQ(explicit_full_sphere.isotropic_phi_max_rad,
+                  canonical_full_sphere.isotropic_phi_max_rad);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSource, RejectsInvalidOrCollapsedAngularDomainsAtomically) {
+  constexpr long double k_pi{std::numbers::pi_v<long double>};
+  using ggems::units::MakeRadians;
+
+  ggems::core::sources::GGEMSSource source{};
+  source.SetIsotropicAngularDistribution(MakeRadians(0.1L), MakeRadians(1.0L),
+                                         MakeRadians(-1.0L), MakeRadians(1.0L));
+  auto const before = source.BuildRecord();
+  long double const nan = std::numeric_limits<long double>::quiet_NaN();
+  long double const infinity = std::numeric_limits<long double>::infinity();
+
+  EXPECT_THROW(source.SetIsotropicAngularDistribution(
+                   MakeRadians(nan), MakeRadians(1.0L), MakeRadians(0.0L),
+                   MakeRadians(1.0L)),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(source.SetIsotropicAngularDistribution(
+                   MakeRadians(0.0L), MakeRadians(infinity), MakeRadians(0.0L),
+                   MakeRadians(1.0L)),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(source.SetIsotropicAngularDistribution(
+                   MakeRadians(-0.1L), MakeRadians(1.0L), MakeRadians(0.0L),
+                   MakeRadians(1.0L)),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(source.SetIsotropicAngularDistribution(
+                   MakeRadians(1.0L), MakeRadians(1.0L), MakeRadians(0.0L),
+                   MakeRadians(1.0L)),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(source.SetIsotropicAngularDistribution(
+                   MakeRadians(0.0L), MakeRadians(k_pi + 0.1L),
+                   MakeRadians(0.0L), MakeRadians(1.0L)),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(source.SetIsotropicAngularDistribution(
+                   MakeRadians(0.0L), MakeRadians(1.0L), MakeRadians(1.0L),
+                   MakeRadians(1.0L)),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(source.SetIsotropicAngularDistribution(
+                   MakeRadians(0.0L), MakeRadians(1.0L), MakeRadians(0.0L),
+                   MakeRadians(2.0L * k_pi + 0.1L)),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(source.SetIsotropicAngularDistribution(
+                   MakeRadians(0.0L), MakeRadians(1.0L), MakeRadians(1.0L),
+                   MakeRadians(std::nextafter(1.0L, 2.0L))),
+               ggems::core::GGEMSExceptionBase);
+
+  ExpectSourceRecordsEqual(source.BuildRecord(), before);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSource, RejectsFocusedTargetsInsideVolumeSupport) {
+  ggems::core::sources::GGEMSSource box{};
+  box.SetBoxEmissionPicoMeter(100ULL, 80ULL, 60ULL);
+  EXPECT_THROW(box.SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 0LL),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_NO_THROW(
+      box.SetFocusedAngularDistributionPicoMeter(1'000LL, 0LL, 0LL));
+
+  ggems::core::sources::GGEMSSource sphere{};
+  sphere.SetSphereEmissionPicoMeter(100ULL);
+  EXPECT_THROW(sphere.SetFocusedAngularDistributionPicoMeter(50LL, 0LL, 0LL),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_NO_THROW(
+      sphere.SetFocusedAngularDistributionPicoMeter(1'000LL, 0LL, 0LL));
+
+  ggems::core::sources::GGEMSSource cylinder{};
+  cylinder.SetCylinderEmissionPicoMeter(100ULL, 200ULL);
+  EXPECT_THROW(cylinder.SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 100LL),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_NO_THROW(
+      cylinder.SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 1'000LL));
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSource, RejectedDirectionMovingFocusedBoxPreservesRecord) {
+  ggems::core::sources::GGEMSSource source{};
+  source.SetBoxEmissionPicoMeter(100ULL, 2ULL, 2ULL)
+      .SetFocusedAngularDistributionPicoMeter(0LL, 40LL, 0LL);
+  auto const before = source.BuildRecord();
+
+  EXPECT_THROW(source.SetDirection(1.0, 0.0, 0.0),
+               ggems::core::GGEMSExceptionBase);
+
+  ExpectSourceRecordsEqual(source.BuildRecord(), before);
 }

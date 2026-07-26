@@ -14,8 +14,15 @@ class GGEMSSourceBindingsTest(unittest.TestCase):
         self.assertIs(source.set_emission_rectangle(40.0, 20.0, "mm"), source)
         self.assertIs(source.set_emission_ellipse(10.0, 5.0, "mm"), source)
         self.assertIs(source.set_emission_circle(10.0, "mm"), source)
+        self.assertIs(source.set_emission_box(40.0, 20.0, 10.0, "mm"), source)
+        self.assertIs(source.set_emission_sphere(10.0, "mm"), source)
+        self.assertIs(source.set_emission_cylinder(10.0, 20.0, "mm"), source)
         self.assertIs(source.set_angular_fixed(), source)
         self.assertIs(source.set_angular_isotropic(), source)
+        self.assertIs(
+            source.set_angular_isotropic(10.0, 60.0, -45.0, 45.0, "deg"),
+            source,
+        )
         self.assertIs(source.set_angular_focused(0.0, 0.0, 100.0, "mm"), source)
         self.assertIs(source.set_energy(100.0, "keV"), source)
 
@@ -39,6 +46,9 @@ class GGEMSSourceBindingsTest(unittest.TestCase):
                 source.set_emission_rectangle(2.0, 1.0, unit)
                 source.set_emission_ellipse(2.0, 1.0, unit)
                 source.set_emission_circle(1.0, unit)
+                source.set_emission_box(2.0, 1.0, 3.0, unit)
+                source.set_emission_sphere(1.0, unit)
+                source.set_emission_cylinder(1.0, 2.0, unit)
                 source.set_angular_focused(0.0, 0.0, 2.0, unit)
 
     def test_invalid_dimensions_have_distinct_diagnostics(self) -> None:
@@ -58,6 +68,40 @@ class GGEMSSourceBindingsTest(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "too large"):
             source.set_emission_circle(math.ldexp(1.0, 64), "pm")
+
+        with self.assertRaisesRegex(ValueError, "strictly positive"):
+            source.set_emission_box(1.0, 0.0, 1.0, "mm")
+
+        with self.assertRaisesRegex(ValueError, "strictly positive"):
+            source.set_emission_sphere(0.0, "mm")
+
+        with self.assertRaisesRegex(ValueError, "strictly positive"):
+            source.set_emission_cylinder(1.0, -1.0, "mm")
+
+    def test_bounded_isotropic_accepts_degrees_radians_and_negative_phi(self) -> None:
+        source = ggems.source.GGEMSSource()
+
+        self.assertIs(source.set_angular_isotropic(0, 90, -45, 45, "deg"), source)
+        self.assertIs(
+            source.set_angular_isotropic(0.0, math.pi / 2.0, -1.0, 1.0, "rad"),
+            source,
+        )
+        self.assertIn("angular_distribution=Isotropic", repr(source))
+
+        with self.assertRaisesRegex(ValueError, "finite"):
+            source.set_angular_isotropic(0.0, math.nan, 0.0, 1.0, "rad")
+        with self.assertRaisesRegex(ValueError, "Unsupported"):
+            source.set_angular_isotropic(0.0, 90.0, 0.0, 180.0, "grad")
+        with self.assertRaises(RuntimeError):
+            source.set_angular_isotropic(90.0, 90.0, 0.0, 180.0, "deg")
+        with self.assertRaises(RuntimeError):
+            source.set_angular_isotropic(0.0, 90.0, 0.0, 361.0, "deg")
+
+    def test_volume_repr_and_absent_cube_api(self) -> None:
+        source = ggems.source.GGEMSSource().set_emission_box(2, 3, 4, "mm")
+        self.assertIn("emission_geometry=Box", repr(source))
+        self.assertFalse(hasattr(source, "set_emission_cube"))
+        self.assertFalse(hasattr(source, "set_cube_emission"))
 
     def test_invalid_focus_is_reported(self) -> None:
         source = ggems.source.GGEMSSource()

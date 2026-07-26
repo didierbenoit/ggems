@@ -111,8 +111,17 @@ static_assert(!HasPerRunEnergyTables<TransportConfig>);
   } else if (geometry_case == 1U) {
     source->SetEllipseEmissionPicoMeter(4'000'000ULL, 2'000'000ULL)
         .SetIsotropicAngularDistribution();
-  } else {
+  } else if (geometry_case == 2U) {
     source->SetRectangleEmissionPicoMeter(4'000'000ULL, 2'000'000ULL)
+        .SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 1'000'000'000'000LL);
+  } else if (geometry_case == 3U) {
+    source->SetBoxEmissionPicoMeter(4'000'000ULL, 2'000'000ULL, 1'000'000ULL)
+        .SetFixedAngularDistribution();
+  } else if (geometry_case == 4U) {
+    source->SetSphereEmissionPicoMeter(4'000'000ULL)
+        .SetIsotropicAngularDistribution();
+  } else {
+    source->SetCylinderEmissionPicoMeter(4'000'000ULL, 2'000'000ULL)
         .SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 1'000'000'000'000LL);
   }
 
@@ -261,8 +270,9 @@ TEST_F(GGEMSEnergySamplingTransportTest,
        SamplesEnergyAfterGeometryAndDirectionForEveryEngine) {
   constexpr std::array<std::string_view, 3U> k_engines{"jkiss", "pcg32",
                                                        "philox"};
-  constexpr std::array<std::string_view, 3U> k_geometry_cases{
-      "Rectangle + Fixed", "Ellipse + Isotropic", "Rectangle + Focused"};
+  constexpr std::array<std::string_view, 6U> k_geometry_cases{
+      "Rectangle + Fixed", "Ellipse + Isotropic", "Rectangle + Focused",
+      "Box + Fixed",       "Sphere + Isotropic",  "Cylinder + Focused"};
   constexpr std::array<double, 2U> k_line_energies{2.0, 6.0};
   constexpr std::array<double, 2U> k_line_weights{1.0, 1.0};
 

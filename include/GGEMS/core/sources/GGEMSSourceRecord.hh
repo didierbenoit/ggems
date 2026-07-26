@@ -9,6 +9,12 @@
 
 namespace ggems::core::sources {
 
+inline constexpr float k_isotropic_full_sphere_cos_theta_lower{-1.0F};
+inline constexpr float k_isotropic_full_sphere_cos_theta_upper{1.0F};
+inline constexpr float k_isotropic_full_sphere_phi_min_rad{0.0F};
+inline constexpr float k_isotropic_full_sphere_phi_max_rad{
+    6.28318530717958647692F};
+
 struct GGEMSSourceRecord {
   std::uint64_t source_id{0ULL};
 
@@ -55,11 +61,18 @@ struct GGEMSSourceRecord {
   std::int64_t focus_position_x_pm{0ULL};
   std::int64_t focus_position_y_pm{0ULL};
   std::int64_t focus_position_z_pm{0ULL};
+
+  std::uint64_t geometry_size_z_pm{0ULL};
+
+  float isotropic_cos_theta_lower{k_isotropic_full_sphere_cos_theta_lower};
+  float isotropic_cos_theta_upper{k_isotropic_full_sphere_cos_theta_upper};
+  float isotropic_phi_min_rad{k_isotropic_full_sphere_phi_min_rad};
+  float isotropic_phi_max_rad{k_isotropic_full_sphere_phi_max_rad};
 };
 
 static_assert(std::is_standard_layout_v<GGEMSSourceRecord>);
 static_assert(std::is_trivially_copyable_v<GGEMSSourceRecord>);
-static_assert(sizeof(GGEMSSourceRecord) == 160U);
+static_assert(sizeof(GGEMSSourceRecord) == 184U);
 static_assert(alignof(GGEMSSourceRecord) == 8U);
 static_assert(offsetof(GGEMSSourceRecord, source_id) == 0U);
 static_assert(offsetof(GGEMSSourceRecord, time_start_ps) == 8U);
@@ -89,5 +102,9 @@ static_assert(offsetof(GGEMSSourceRecord, geometry_size_y_pm) == 128U);
 static_assert(offsetof(GGEMSSourceRecord, focus_position_x_pm) == 136U);
 static_assert(offsetof(GGEMSSourceRecord, focus_position_y_pm) == 144U);
 static_assert(offsetof(GGEMSSourceRecord, focus_position_z_pm) == 152U);
-
+static_assert(offsetof(GGEMSSourceRecord, geometry_size_z_pm) == 160U);
+static_assert(offsetof(GGEMSSourceRecord, isotropic_cos_theta_lower) == 168U);
+static_assert(offsetof(GGEMSSourceRecord, isotropic_cos_theta_upper) == 172U);
+static_assert(offsetof(GGEMSSourceRecord, isotropic_phi_min_rad) == 176U);
+static_assert(offsetof(GGEMSSourceRecord, isotropic_phi_max_rad) == 180U);
 } // namespace ggems::core::sources

@@ -104,14 +104,22 @@ __kernel void particle_stream_transport(
     __global GGEMSSourceRecord const *source =
         &source_records[selected_source_index];
 
-    float4 random_values = (float4)(0.0);
+    float4 primary_random_values = (float4)(0.0f);
+    float4 secondary_random_values = (float4)(0.0f);
+    uint const random_vector_draw_count =
+        GGEMS_SourceRandomVectorDrawCount(source);
 
-    if (GGEMS_SourceRequiresRandom(source) != 0U) {
-      random_values = GGEMS_RndmUniform4(random_states, worker_id);
+    if (random_vector_draw_count > 0U) {
+      primary_random_values = GGEMS_RndmUniform4(random_states, worker_id);
+    }
+
+    if (random_vector_draw_count > 1U) {
+      secondary_random_values = GGEMS_RndmUniform4(random_states, worker_id);
     }
 
     GGEMSParticleState particle = GGEMS_SourceInitialisePrimary(
-        global_primary_id, source_local_primary_id, source, random_values);
+        global_primary_id, source_local_primary_id, source,
+        primary_random_values, secondary_random_values);
 
     __global GGEMSEnergyDistributionRecord const *energy_distribution =
         &energy_distribution_records[selected_source_index];

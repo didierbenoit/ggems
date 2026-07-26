@@ -10,6 +10,9 @@
 #define GGEMS_EMISSION_GEOMETRY_TYPE_POINT 1U
 #define GGEMS_EMISSION_GEOMETRY_TYPE_RECTANGLE 2U
 #define GGEMS_EMISSION_GEOMETRY_TYPE_ELLIPSE 3U
+#define GGEMS_EMISSION_GEOMETRY_TYPE_BOX 4U
+#define GGEMS_EMISSION_GEOMETRY_TYPE_SPHERE 5U
+#define GGEMS_EMISSION_GEOMETRY_TYPE_CYLINDER 6U
 
 #define GGEMS_ANGULAR_DISTRIBUTION_TYPE_UNKNOWN 0U
 #define GGEMS_ANGULAR_DISTRIBUTION_TYPE_FIXED 1U
@@ -56,6 +59,13 @@ typedef struct GGEMSSourceRecord {
   long focus_position_x_pm;
   long focus_position_y_pm;
   long focus_position_z_pm;
+
+  ulong geometry_size_z_pm;
+
+  float isotropic_cos_theta_lower;
+  float isotropic_cos_theta_upper;
+  float isotropic_phi_min_rad;
+  float isotropic_phi_max_rad;
 } GGEMSSourceRecord;
 
 #endif

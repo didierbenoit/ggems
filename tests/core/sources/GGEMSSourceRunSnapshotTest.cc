@@ -6,6 +6,7 @@
 #include <memory>
 #include <string_view>
 #include <vector>
+#include <numbers>
 
 #include <gtest/gtest.h>
 
@@ -17,6 +18,7 @@
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
+#include "GGEMS/core/units/GGEMSAngularUnits.hh"
 
 namespace {
 
@@ -73,9 +75,16 @@ auto ExpectSourceRecordsEqual(
             expected.angular_distribution_type);
   EXPECT_EQ(actual.geometry_size_x_pm, expected.geometry_size_x_pm);
   EXPECT_EQ(actual.geometry_size_y_pm, expected.geometry_size_y_pm);
+  EXPECT_EQ(actual.geometry_size_z_pm, expected.geometry_size_z_pm);
   EXPECT_EQ(actual.focus_position_x_pm, expected.focus_position_x_pm);
   EXPECT_EQ(actual.focus_position_y_pm, expected.focus_position_y_pm);
   EXPECT_EQ(actual.focus_position_z_pm, expected.focus_position_z_pm);
+  EXPECT_FLOAT_EQ(actual.isotropic_cos_theta_lower,
+                  expected.isotropic_cos_theta_lower);
+  EXPECT_FLOAT_EQ(actual.isotropic_cos_theta_upper,
+                  expected.isotropic_cos_theta_upper);
+  EXPECT_FLOAT_EQ(actual.isotropic_phi_min_rad, expected.isotropic_phi_min_rad);
+  EXPECT_FLOAT_EQ(actual.isotropic_phi_max_rad, expected.isotropic_phi_max_rad);
 }
 
 // =============================================================================
@@ -765,4 +774,30 @@ TEST(GGEMSSourceRunSnapshot,
       weights, [](double weight) -> bool { return weight == 1.0; }));
   EXPECT_TRUE(std::ranges::is_sorted(ticket_bounds));
   EXPECT_EQ(std::ranges::adjacent_find(ticket_bounds), ticket_bounds.end());
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceRunSnapshot, OwnsVolumeAndBoundedAngularRecordFields) {
+  constexpr long double k_pi{std::numbers::pi_v<long double>};
+  ggems::core::sources::GGEMSSource source{};
+  source.SetPrimaryCount(3ULL)
+      .SetBoxEmissionPicoMeter(40ULL, 20ULL, 10ULL)
+      .SetIsotropicAngularDistribution(ggems::units::MakeRadians(0.25L * k_pi),
+                                       ggems::units::MakeRadians(0.5L * k_pi),
+                                       ggems::units::MakeRadians(-0.25L * k_pi),
+                                       ggems::units::MakeRadians(0.25L * k_pi));
+
+  auto const expected = source.BuildRecord();
+  auto const snapshot = ggems::core::sources::BuildSourceRunSnapshot(source);
+
+  source.SetCylinderEmissionPicoMeter(12ULL, 30ULL)
+      .SetFixedAngularDistribution();
+
+  ASSERT_EQ(snapshot.GetRecords().size(), 1U);
+  ExpectSourceRecordsEqual(snapshot.GetRecords().front(), expected);
+  EXPECT_EQ(snapshot.GetRecords().front().geometry_size_z_pm, 10ULL);
+  EXPECT_FLOAT_EQ(snapshot.GetRecords().front().isotropic_phi_min_rad,
+                  static_cast<float>(-0.25L * k_pi));
 }

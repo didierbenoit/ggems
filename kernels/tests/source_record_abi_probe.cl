@@ -1,15 +1,23 @@
 #include "core/sources/GGEMSSourceRecord.clh"
 #include "core/sources/GGEMSSourceRunRange.clh"
 
+// =============================================================================
+// =============================================================================
+
 typedef struct GGEMSSourceRecordAlignmentProbe {
   uchar prefix;
   GGEMSSourceRecord record;
 } GGEMSSourceRecordAlignmentProbe;
 
+// =============================================================================
+// =============================================================================
 typedef struct GGEMSSourceRunRangeAlignmentProbe {
   uchar prefix;
   GGEMSSourceRunRange range;
 } GGEMSSourceRunRangeAlignmentProbe;
+
+// =============================================================================
+// =============================================================================
 
 __kernel void source_record_abi_probe(__global ulong *layout,
                                       __global GGEMSSourceRecord *records,
@@ -55,34 +63,39 @@ __kernel void source_record_abi_probe(__global ulong *layout,
   GGEMS_WRITE_RECORD_OFFSET(26, focus_position_x_pm);
   GGEMS_WRITE_RECORD_OFFSET(27, focus_position_y_pm);
   GGEMS_WRITE_RECORD_OFFSET(28, focus_position_z_pm);
+  GGEMS_WRITE_RECORD_OFFSET(29, geometry_size_z_pm);
+  GGEMS_WRITE_RECORD_OFFSET(30, isotropic_cos_theta_lower);
+  GGEMS_WRITE_RECORD_OFFSET(31, isotropic_cos_theta_upper);
+  GGEMS_WRITE_RECORD_OFFSET(32, isotropic_phi_min_rad);
+  GGEMS_WRITE_RECORD_OFFSET(33, isotropic_phi_max_rad);
 
 #undef GGEMS_WRITE_RECORD_OFFSET
 
-  layout[29] = (ulong)((__global uchar const *)&records[1] -
+  layout[34] = (ulong)((__global uchar const *)&records[1] -
                        (__global uchar const *)&records[0]);
 
   GGEMSSourceRecordAlignmentProbe record_alignment_probe;
   __private uchar const *record_alignment_base =
       (__private uchar const *)&record_alignment_probe;
-  layout[30] = (ulong)((__private uchar const *)&record_alignment_probe.record -
+  layout[35] = (ulong)((__private uchar const *)&record_alignment_probe.record -
                        record_alignment_base);
 
   GGEMSSourceRunRange private_range;
   __private uchar const *range_base = (__private uchar const *)&private_range;
 
-  layout[31] = (ulong)(sizeof(GGEMSSourceRunRange));
-  layout[32] =
+  layout[36] = (ulong)(sizeof(GGEMSSourceRunRange));
+  layout[37] =
       (ulong)((__private uchar const *)&private_range.projection_primary_begin -
               range_base);
-  layout[33] = (ulong)((__private uchar const *)&private_range.primary_count -
+  layout[38] = (ulong)((__private uchar const *)&private_range.primary_count -
                        range_base);
-  layout[34] = (ulong)((__global uchar const *)&ranges[1] -
+  layout[39] = (ulong)((__global uchar const *)&ranges[1] -
                        (__global uchar const *)&ranges[0]);
 
   GGEMSSourceRunRangeAlignmentProbe range_alignment_probe;
   __private uchar const *range_alignment_base =
       (__private uchar const *)&range_alignment_probe;
-  layout[35] = (ulong)((__private uchar const *)&range_alignment_probe.range -
+  layout[40] = (ulong)((__private uchar const *)&range_alignment_probe.range -
                        range_alignment_base);
 
   host_values[0] = records[0].source_id;
@@ -113,8 +126,13 @@ __kernel void source_record_abi_probe(__global ulong *layout,
   host_values[25] = as_ulong(records[0].focus_position_x_pm);
   host_values[26] = as_ulong(records[0].focus_position_y_pm);
   host_values[27] = as_ulong(records[0].focus_position_z_pm);
-  host_values[28] = ranges[0].projection_primary_begin;
-  host_values[29] = ranges[0].primary_count;
+  host_values[28] = records[0].geometry_size_z_pm;
+  host_values[29] = (ulong)(as_uint(records[0].isotropic_cos_theta_lower));
+  host_values[30] = (ulong)(as_uint(records[0].isotropic_cos_theta_upper));
+  host_values[31] = (ulong)(as_uint(records[0].isotropic_phi_min_rad));
+  host_values[32] = (ulong)(as_uint(records[0].isotropic_phi_max_rad));
+  host_values[33] = ranges[0].projection_primary_begin;
+  host_values[34] = ranges[0].primary_count;
 
   records[1].source_id = 201UL;
   records[1].time_start_ps = 202UL;
@@ -145,6 +163,11 @@ __kernel void source_record_abi_probe(__global ulong *layout,
   records[1].focus_position_x_pm = -214L;
   records[1].focus_position_y_pm = 215L;
   records[1].focus_position_z_pm = -216L;
+  records[1].geometry_size_z_pm = 217UL;
+  records[1].isotropic_cos_theta_lower = -0.75f;
+  records[1].isotropic_cos_theta_upper = 0.875f;
+  records[1].isotropic_phi_min_rad = -1.25f;
+  records[1].isotropic_phi_max_rad = 2.5f;
 
   ranges[1].projection_primary_begin = 401UL;
   ranges[1].primary_count = 402UL;

@@ -20,13 +20,14 @@
 #include "GGEMS/core/observer/GGEMSObserverTypes.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
-#include "GGEMS/core/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/core/transport/GGEMSDiagnosticProjection.hh"
 #include "GGEMS/core/transport/GGEMSTransportWorkload.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/core/units/GGEMSAngularUnits.hh"
+
 namespace {
 
 // =============================================================================
@@ -539,5 +540,96 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 
     EXPECT_EQ(Context().GetAllocatedVRAM().value, allocated);
     EXPECT_EQ(Context().GetAllocationCountVRAM(), allocation_count);
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSSourceSamplingTransportTest,
+       MixedLegacyAndVolumeSourcesPreserveObserverAndPaddingContracts) {
+  constexpr std::array<std::string_view, 3U> k_engines{"jkiss", "pcg32",
+                                                       "philox"};
+  constexpr std::array<std::uint64_t, 8U> k_counts{1ULL, 2ULL, 2ULL, 2ULL,
+                                                   2ULL, 2ULL, 0ULL, 2ULL};
+  constexpr std::uint32_t k_total_primary_count{13U};
+
+  ggems::core::sources::GGEMSSource point{};
+  point.SetPointEmission().SetFixedAngularDistribution();
+
+  ggems::core::sources::GGEMSSource rectangle{};
+  rectangle.SetRectangleEmissionPicoMeter(40'000'000ULL, 20'000'000ULL)
+      .SetIsotropicAngularDistribution();
+
+  ggems::core::sources::GGEMSSource ellipse{};
+  ellipse.SetEllipseEmissionPicoMeter(40'000'000ULL, 20'000'000ULL)
+      .SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 1'000'000'000LL);
+
+  ggems::core::sources::GGEMSSource box{};
+  box.SetBoxEmissionPicoMeter(40'000'000ULL, 20'000'000ULL, 10'000'000ULL)
+      .SetFixedAngularDistribution();
+
+  ggems::core::sources::GGEMSSource sphere{};
+  sphere.SetSphereEmissionPicoMeter(30'000'000ULL)
+      .SetIsotropicAngularDistribution(
+          ggems::units::MakeDegrees(10.0L), ggems::units::MakeDegrees(60.0L),
+          ggems::units::MakeDegrees(-45.0L), ggems::units::MakeDegrees(45.0L));
+
+  ggems::core::sources::GGEMSSource cylinder{};
+  cylinder.SetCylinderEmissionPicoMeter(30'000'000ULL, 50'000'000ULL)
+      .SetIsotropicAngularDistribution();
+
+  SourceRecord invalid_zero_slot = point.BuildRecord();
+  invalid_zero_slot.emission_geometry_type = 99U;
+
+  std::vector<SourceRecord> const records{
+      point.BuildRecord(), rectangle.BuildRecord(), ellipse.BuildRecord(),
+      box.BuildRecord(),   sphere.BuildRecord(),    cylinder.BuildRecord(),
+      invalid_zero_slot,   box.BuildRecord()};
+
+  for (std::string_view const engine : k_engines) {
+    SCOPED_TRACE(engine);
+    ggems::core::random::GGEMSRandom random{};
+    random.SetEngine(engine).SetSeed(12'345ULL);
+
+    TransportWorkload workload{Context(),
+                               std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                               random,
+                               65U,
+                               *MakeMonoSourceConfiguration(records.size()),
+                               0ULL,
+                               0U,
+                               2U * k_total_primary_count};
+
+    auto const report = workload.Run(MakeConfig(records, k_counts));
+    EXPECT_EQ(workload.GetWorkerCount(), 65U);
+    EXPECT_EQ(report.counters.consumed_primary_count, k_total_primary_count);
+    EXPECT_EQ(report.counters.completed_history_count, k_total_primary_count);
+    EXPECT_EQ(report.counters.terminal_particle_count, k_total_primary_count);
+    EXPECT_EQ(report.counters.created_secondary_count, 0U);
+    EXPECT_EQ(report.counters.overflow_count, 0U);
+    EXPECT_EQ(report.observer_counters.overflow_count, 0U);
+
+    auto const source_observations =
+        RecordsOfKind(report, ObserverRecordKind::Source);
+    ASSERT_EQ(source_observations.size(), k_total_primary_count);
+
+    for (ObserverRecord const &source_observation : source_observations) {
+      ASSERT_LT(source_observation.source_index, k_counts.size());
+      EXPECT_NE(source_observation.source_index, 6U);
+      EXPECT_LT(source_observation.source_local_primary_id,
+                k_counts[source_observation.source_index]);
+
+      ObserverRecord const *terminal = FindTerminal(report, source_observation);
+      ASSERT_NE(terminal, nullptr);
+      EXPECT_FLOAT_EQ(terminal->direction_x, source_observation.direction_x);
+      EXPECT_FLOAT_EQ(terminal->direction_y, source_observation.direction_y);
+      EXPECT_FLOAT_EQ(terminal->direction_z, source_observation.direction_z);
+      EXPECT_EQ(terminal->energy_milli_eV, source_observation.energy_milli_eV);
+      EXPECT_EQ(terminal->source_index, source_observation.source_index);
+      EXPECT_EQ(terminal->source_local_primary_id,
+                source_observation.source_local_primary_id);
+      ExpectDiagnosticProjection(report, source_observation);
+    }
   }
 }

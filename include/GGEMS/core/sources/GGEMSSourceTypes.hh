@@ -16,7 +16,10 @@ enum class GGEMSEmissionGeometryType : std::uint32_t {
   Unknown = 0U,
   Point = 1U,
   Rectangle = 2U,
-  Ellipse = 3U
+  Ellipse = 3U,
+  Box = 4U,
+  Sphere = 5U,
+  Cylinder = 6U
 };
 
 enum class GGEMSAngularDistributionType : std::uint32_t {
@@ -122,6 +125,12 @@ FromKernelEmissionGeometryType(std::uint32_t geometry_type) noexcept
     return GGEMSEmissionGeometryType::Rectangle;
   case 3U:
     return GGEMSEmissionGeometryType::Ellipse;
+  case 4U:
+    return GGEMSEmissionGeometryType::Box;
+  case 5U:
+    return GGEMSEmissionGeometryType::Sphere;
+  case 6U:
+    return GGEMSEmissionGeometryType::Cylinder;
   default:
     return GGEMSEmissionGeometryType::Unknown;
   }
@@ -137,6 +146,12 @@ ToLongName(GGEMSEmissionGeometryType geometry_type) noexcept
     return "Rectangle";
   case GGEMSEmissionGeometryType::Ellipse:
     return "Ellipse";
+  case GGEMSEmissionGeometryType::Box:
+    return "Box";
+  case GGEMSEmissionGeometryType::Sphere:
+    return "Sphere";
+  case GGEMSEmissionGeometryType::Cylinder:
+    return "Cylinder";
   case GGEMSEmissionGeometryType::Unknown:
     return "Unknown";
   }

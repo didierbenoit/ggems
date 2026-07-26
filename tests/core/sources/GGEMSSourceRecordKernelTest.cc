@@ -47,8 +47,8 @@ struct SourceRunRangeAlignmentProbe {
 // =============================================================================
 // =============================================================================
 
-constexpr std::size_t k_layout_value_count{36U};
-constexpr std::size_t k_host_value_count{30U};
+constexpr std::size_t k_layout_value_count{41U};
+constexpr std::size_t k_host_value_count{35U};
 constexpr std::size_t k_source_record_count{2U};
 constexpr std::size_t k_source_range_count{2U};
 
@@ -56,113 +56,136 @@ constexpr std::size_t k_source_range_count{2U};
 // =============================================================================
 
 [[nodiscard]] auto MakeHostSourceRecord() -> SourceRecord {
-  return {
-      .source_id = 101ULL,
-      .time_start_ps = 102ULL,
-      .time_stop_ps = 103ULL,
-      .energy_milli_eV = 104ULL,
-      .position_x_pm = -105LL,
-      .position_y_pm = 106LL,
-      .position_z_pm = -107LL,
-      .source_type = 108U,
-      .emitted_particle_type = 109U,
-      .flags = 110U,
-      .reserved_0 = 111U,
-      .axis_x_x = -0.125F,
-      .axis_x_y = 0.25F,
-      .axis_x_z = -0.5F,
-      .axis_y_x = 1.25F,
-      .axis_y_y = -2.5F,
-      .axis_y_z = 3.75F,
-      .axis_z_x = -4.125F,
-      .axis_z_y = 5.25F,
-      .axis_z_z = -6.5F,
-      .weight = 0.875F,
-      .emission_geometry_type = 112U,
-      .angular_distribution_type = 113U,
-      .geometry_size_x_pm = 114ULL,
-      .geometry_size_y_pm = 115ULL,
-      .focus_position_x_pm = -116LL,
-      .focus_position_y_pm = 117LL,
-      .focus_position_z_pm = -118LL,
-  };
+  return {.source_id = 101ULL,
+          .time_start_ps = 102ULL,
+          .time_stop_ps = 103ULL,
+          .energy_milli_eV = 104ULL,
+          .position_x_pm = -105LL,
+          .position_y_pm = 106LL,
+          .position_z_pm = -107LL,
+          .source_type = 108U,
+          .emitted_particle_type = 109U,
+          .flags = 110U,
+          .reserved_0 = 111U,
+          .axis_x_x = -0.125F,
+          .axis_x_y = 0.25F,
+          .axis_x_z = -0.5F,
+          .axis_y_x = 1.25F,
+          .axis_y_y = -2.5F,
+          .axis_y_z = 3.75F,
+          .axis_z_x = -4.125F,
+          .axis_z_y = 5.25F,
+          .axis_z_z = -6.5F,
+          .weight = 0.875F,
+          .emission_geometry_type = 112U,
+          .angular_distribution_type = 113U,
+          .geometry_size_x_pm = 114ULL,
+          .geometry_size_y_pm = 115ULL,
+          .focus_position_x_pm = -116LL,
+          .focus_position_y_pm = 117LL,
+          .focus_position_z_pm = -118LL,
+          .geometry_size_z_pm = 119ULL,
+          .isotropic_cos_theta_lower = -0.625F,
+          .isotropic_cos_theta_upper = 0.75F,
+          .isotropic_phi_min_rad = -1.125F,
+          .isotropic_phi_max_rad = 2.25F};
 }
 
 // =============================================================================
 // =============================================================================
 
 [[nodiscard]] auto MakeDeviceSourceRecord() -> SourceRecord {
-  return {
-      .source_id = 201ULL,
-      .time_start_ps = 202ULL,
-      .time_stop_ps = 203ULL,
-      .energy_milli_eV = 204ULL,
-      .position_x_pm = -205LL,
-      .position_y_pm = 206LL,
-      .position_z_pm = -207LL,
-      .source_type = 208U,
-      .emitted_particle_type = 209U,
-      .flags = 210U,
-      .reserved_0 = 211U,
-      .axis_x_x = -7.25F,
-      .axis_x_y = 8.5F,
-      .axis_x_z = -9.75F,
-      .axis_y_x = 10.125F,
-      .axis_y_y = -11.25F,
-      .axis_y_z = 12.5F,
-      .axis_z_x = -13.75F,
-      .axis_z_y = 14.875F,
-      .axis_z_z = -15.5F,
-      .weight = 0.625F,
-      .emission_geometry_type =
-          ggems::core::sources::ToKernelEmissionGeometryType(
-              ggems::core::sources::GGEMSEmissionGeometryType::Ellipse),
-      .angular_distribution_type =
-          ggems::core::sources::ToKernelAngularDistributionType(
-              ggems::core::sources::GGEMSAngularDistributionType::Focused),
-      .geometry_size_x_pm = 212ULL,
-      .geometry_size_y_pm = 213ULL,
-      .focus_position_x_pm = -214LL,
-      .focus_position_y_pm = 215LL,
-      .focus_position_z_pm = -216LL,
-  };
+  return {.source_id = 201ULL,
+          .time_start_ps = 202ULL,
+          .time_stop_ps = 203ULL,
+          .energy_milli_eV = 204ULL,
+          .position_x_pm = -205LL,
+          .position_y_pm = 206LL,
+          .position_z_pm = -207LL,
+          .source_type = 208U,
+          .emitted_particle_type = 209U,
+          .flags = 210U,
+          .reserved_0 = 211U,
+          .axis_x_x = -7.25F,
+          .axis_x_y = 8.5F,
+          .axis_x_z = -9.75F,
+          .axis_y_x = 10.125F,
+          .axis_y_y = -11.25F,
+          .axis_y_z = 12.5F,
+          .axis_z_x = -13.75F,
+          .axis_z_y = 14.875F,
+          .axis_z_z = -15.5F,
+          .weight = 0.625F,
+          .emission_geometry_type =
+              ggems::core::sources::ToKernelEmissionGeometryType(
+                  ggems::core::sources::GGEMSEmissionGeometryType::Ellipse),
+          .angular_distribution_type =
+              ggems::core::sources::ToKernelAngularDistributionType(
+                  ggems::core::sources::GGEMSAngularDistributionType::Focused),
+          .geometry_size_x_pm = 212ULL,
+          .geometry_size_y_pm = 213ULL,
+          .focus_position_x_pm = -214LL,
+          .focus_position_y_pm = 215LL,
+          .focus_position_z_pm = -216LL,
+          .geometry_size_z_pm = 217ULL,
+          .isotropic_cos_theta_lower = -0.75F,
+          .isotropic_cos_theta_upper = 0.875F,
+          .isotropic_phi_min_rad = -1.25F,
+          .isotropic_phi_max_rad = 2.5F};
 }
 
 // =============================================================================
 // =============================================================================
 
 [[nodiscard]] auto EncodeSourceRecord(SourceRecord const &record)
-    -> std::array<std::uint64_t, 28U> {
-  return {{
-      record.source_id,
-      record.time_start_ps,
-      record.time_stop_ps,
-      record.energy_milli_eV,
-      std::bit_cast<std::uint64_t>(record.position_x_pm),
-      std::bit_cast<std::uint64_t>(record.position_y_pm),
-      std::bit_cast<std::uint64_t>(record.position_z_pm),
-      static_cast<std::uint64_t>(record.source_type),
-      static_cast<std::uint64_t>(record.emitted_particle_type),
-      static_cast<std::uint64_t>(record.flags),
-      static_cast<std::uint64_t>(record.reserved_0),
-      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_x_x)),
-      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_x_y)),
-      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_x_z)),
-      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_y_x)),
-      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_y_y)),
-      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_y_z)),
-      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_z_x)),
-      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_z_y)),
-      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_z_z)),
-      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.weight)),
-      static_cast<std::uint64_t>(record.emission_geometry_type),
-      static_cast<std::uint64_t>(record.angular_distribution_type),
-      record.geometry_size_x_pm,
-      record.geometry_size_y_pm,
-      std::bit_cast<std::uint64_t>(record.focus_position_x_pm),
-      std::bit_cast<std::uint64_t>(record.focus_position_y_pm),
-      std::bit_cast<std::uint64_t>(record.focus_position_z_pm),
-  }};
+    -> std::array<std::uint64_t, 33U> {
+  return {
+      {record.source_id,
+       record.time_start_ps,
+       record.time_stop_ps,
+       record.energy_milli_eV,
+       std::bit_cast<std::uint64_t>(record.position_x_pm),
+       std::bit_cast<std::uint64_t>(record.position_y_pm),
+       std::bit_cast<std::uint64_t>(record.position_z_pm),
+       static_cast<std::uint64_t>(record.source_type),
+       static_cast<std::uint64_t>(record.emitted_particle_type),
+       static_cast<std::uint64_t>(record.flags),
+       static_cast<std::uint64_t>(record.reserved_0),
+       static_cast<std::uint64_t>(
+           std::bit_cast<std::uint32_t>(record.axis_x_x)),
+       static_cast<std::uint64_t>(
+           std::bit_cast<std::uint32_t>(record.axis_x_y)),
+       static_cast<std::uint64_t>(
+           std::bit_cast<std::uint32_t>(record.axis_x_z)),
+       static_cast<std::uint64_t>(
+           std::bit_cast<std::uint32_t>(record.axis_y_x)),
+       static_cast<std::uint64_t>(
+           std::bit_cast<std::uint32_t>(record.axis_y_y)),
+       static_cast<std::uint64_t>(
+           std::bit_cast<std::uint32_t>(record.axis_y_z)),
+       static_cast<std::uint64_t>(
+           std::bit_cast<std::uint32_t>(record.axis_z_x)),
+       static_cast<std::uint64_t>(
+           std::bit_cast<std::uint32_t>(record.axis_z_y)),
+       static_cast<std::uint64_t>(
+           std::bit_cast<std::uint32_t>(record.axis_z_z)),
+       static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.weight)),
+       static_cast<std::uint64_t>(record.emission_geometry_type),
+       static_cast<std::uint64_t>(record.angular_distribution_type),
+       record.geometry_size_x_pm,
+       record.geometry_size_y_pm,
+       std::bit_cast<std::uint64_t>(record.focus_position_x_pm),
+       std::bit_cast<std::uint64_t>(record.focus_position_y_pm),
+       std::bit_cast<std::uint64_t>(record.focus_position_z_pm),
+       record.geometry_size_z_pm,
+       static_cast<std::uint64_t>(
+           std::bit_cast<std::uint32_t>(record.isotropic_cos_theta_lower)),
+       static_cast<std::uint64_t>(
+           std::bit_cast<std::uint32_t>(record.isotropic_cos_theta_upper)),
+       static_cast<std::uint64_t>(
+           std::bit_cast<std::uint32_t>(record.isotropic_phi_min_rad)),
+       static_cast<std::uint64_t>(
+           std::bit_cast<std::uint32_t>(record.isotropic_phi_max_rad))}};
 }
 
 // =============================================================================
@@ -199,6 +222,13 @@ auto ExpectSourceRecordsEqual(SourceRecord const &actual,
   EXPECT_EQ(actual.focus_position_x_pm, expected.focus_position_x_pm);
   EXPECT_EQ(actual.focus_position_y_pm, expected.focus_position_y_pm);
   EXPECT_EQ(actual.focus_position_z_pm, expected.focus_position_z_pm);
+  EXPECT_EQ(actual.geometry_size_z_pm, expected.geometry_size_z_pm);
+  EXPECT_FLOAT_EQ(actual.isotropic_cos_theta_lower,
+                  expected.isotropic_cos_theta_lower);
+  EXPECT_FLOAT_EQ(actual.isotropic_cos_theta_upper,
+                  expected.isotropic_cos_theta_upper);
+  EXPECT_FLOAT_EQ(actual.isotropic_phi_min_rad, expected.isotropic_phi_min_rad);
+  EXPECT_FLOAT_EQ(actual.isotropic_phi_max_rad, expected.isotropic_phi_max_rad);
 }
 
 // =============================================================================
@@ -310,6 +340,13 @@ TEST_F(GGEMSSourceRecordKernelTest, HostAndKernelLayoutsAndValuesMatch) {
       static_cast<std::uint64_t>(offsetof(SourceRecord, focus_position_x_pm)),
       static_cast<std::uint64_t>(offsetof(SourceRecord, focus_position_y_pm)),
       static_cast<std::uint64_t>(offsetof(SourceRecord, focus_position_z_pm)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, geometry_size_z_pm)),
+      static_cast<std::uint64_t>(
+          offsetof(SourceRecord, isotropic_cos_theta_lower)),
+      static_cast<std::uint64_t>(
+          offsetof(SourceRecord, isotropic_cos_theta_upper)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, isotropic_phi_min_rad)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, isotropic_phi_max_rad)),
       static_cast<std::uint64_t>(sizeof(SourceRecord)),
       static_cast<std::uint64_t>(offsetof(SourceRecordAlignmentProbe, record)),
       static_cast<std::uint64_t>(sizeof(SourceRunRange)),
@@ -332,8 +369,8 @@ TEST_F(GGEMSSourceRecordKernelTest, HostAndKernelLayoutsAndValuesMatch) {
     EXPECT_EQ(host_values[index], expected_host_record_values[index]) << index;
   }
 
-  EXPECT_EQ(host_values[28U], 301ULL);
-  EXPECT_EQ(host_values[29U], 302ULL);
+  EXPECT_EQ(host_values[33U], 301ULL);
+  EXPECT_EQ(host_values[34U], 302ULL);
 
   ExpectSourceRecordsEqual(source_records[1U], MakeDeviceSourceRecord());
   EXPECT_EQ(source_ranges[1U].projection_primary_begin, 401ULL);

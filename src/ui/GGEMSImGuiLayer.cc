@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <string>
 #include <utility>
+#include <algorithm>
+#include <cmath>
 
 #include <vulkan/vulkan.hpp>
 
@@ -20,6 +22,8 @@
 #include "GGEMS/core/units/GGEMSLengthUnits.hh"
 #include "GGEMS/core/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
+#include "GGEMS/core/sources/GGEMSSourceValidation.hh"
+#include "GGEMS/core/units/GGEMSAngularUnits.hh"
 
 namespace ggems::ui {
 
@@ -626,12 +630,63 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
 
         ImGui::Text("Diameter: %s x %s", diameter_x.c_str(),
                     diameter_y.c_str());
+      } else if (emission_geometry_type ==
+                 core::sources::GGEMSEmissionGeometryType::Box) {
+        std::string const width =
+            units::HumanReadable(units::Length{record.geometry_size_x_pm}, 3);
+        std::string const height =
+            units::HumanReadable(units::Length{record.geometry_size_y_pm}, 3);
+        std::string const depth =
+            units::HumanReadable(units::Length{record.geometry_size_z_pm}, 3);
+
+        ImGui::Text("Size: %s x %s x %s", width.c_str(), height.c_str(),
+                    depth.c_str());
+      } else if (emission_geometry_type ==
+                 core::sources::GGEMSEmissionGeometryType::Sphere) {
+        std::string const diameter =
+            units::HumanReadable(units::Length{record.geometry_size_x_pm}, 3);
+        ImGui::Text("Diameter: %s", diameter.c_str());
+      } else if (emission_geometry_type ==
+                 core::sources::GGEMSEmissionGeometryType::Cylinder) {
+        std::string const diameter =
+            units::HumanReadable(units::Length{record.geometry_size_x_pm}, 3);
+        std::string const height =
+            units::HumanReadable(units::Length{record.geometry_size_z_pm}, 3);
+        ImGui::Text("Diameter: %s", diameter.c_str());
+        ImGui::Text("Height: %s", height.c_str());
       }
 
       ImGui::Text("Angular: %s", angular_distribution.c_str());
 
       if (angular_distribution_type ==
-          core::sources::GGEMSAngularDistributionType::Focused) {
+          core::sources::GGEMSAngularDistributionType::Isotropic) {
+        if (core::sources::IsDefaultFullSphereIsotropicDomain(record)) {
+          ImGui::TextUnformatted("Domain: Full sphere");
+        } else {
+          long double const theta_min_rad = std::acos(std::clamp(
+              static_cast<long double>(record.isotropic_cos_theta_upper), -1.0L,
+              1.0L));
+          long double const theta_max_rad = std::acos(std::clamp(
+              static_cast<long double>(record.isotropic_cos_theta_lower), -1.0L,
+              1.0L));
+          std::string const theta_min =
+              units::HumanReadable(units::MakeRadians(theta_min_rad), 3);
+          std::string const theta_max =
+              units::HumanReadable(units::MakeRadians(theta_max_rad), 3);
+          std::string const phi_min =
+              units::HumanReadable(units::MakeRadians(static_cast<long double>(
+                                       record.isotropic_phi_min_rad)),
+                                   3);
+          std::string const phi_max =
+              units::HumanReadable(units::MakeRadians(static_cast<long double>(
+                                       record.isotropic_phi_max_rad)),
+                                   3);
+
+          ImGui::Text("Theta: %s to %s", theta_min.c_str(), theta_max.c_str());
+          ImGui::Text("Phi: %s to %s", phi_min.c_str(), phi_max.c_str());
+        }
+      } else if (angular_distribution_type ==
+                 core::sources::GGEMSAngularDistributionType::Focused) {
         std::string const focus_x =
             units::HumanReadableSignedLength(record.focus_position_x_pm, 3);
         std::string const focus_y =
