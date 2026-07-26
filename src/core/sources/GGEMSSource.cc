@@ -1,7 +1,12 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
+#include <span>
+#include <string_view>
+#include <utility>
 
+#include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/core/GGEMSException.hh"
@@ -77,6 +82,77 @@ GGEMSSource::GGEMSSource() {
   record_.focus_position_x_pm = 0ULL;
   record_.focus_position_y_pm = 0ULL;
   record_.focus_position_z_pm = 0ULL;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::CheckEnergyConfigurationMutable() const -> void {
+  GGEMS_CHECK_RECOVERABLE(!initialization_finalized_,
+                          "Cannot change GGEMSSource energy after successful "
+                          "GGEMSRun::Initialise.");
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::FinalizeInitialization() noexcept -> void {
+  initialization_finalized_ = true;
+}
+
+// -----------------------------------------------------------------------------
+
+GGEMSSource::GGEMSSource(GGEMSSource &&other) {
+  other.CheckEnergyConfigurationMutable();
+
+  primary_count_ = other.primary_count_;
+  record_ = other.record_;
+  energy_distribution_ = std::move(other.energy_distribution_);
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::operator=(GGEMSSource const &other) -> GGEMSSource & {
+  if (this == &other) {
+    return *this;
+  }
+
+  CheckEnergyConfigurationMutable();
+  GGEMSSource candidate{other};
+
+  primary_count_ = candidate.primary_count_;
+  record_ = candidate.record_;
+  energy_distribution_ = std::move(candidate.energy_distribution_);
+  initialization_finalized_ = candidate.initialization_finalized_;
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::operator=(GGEMSSource &&other) -> GGEMSSource & {
+  if (this == &other) {
+    return *this;
+  }
+
+  CheckEnergyConfigurationMutable();
+  other.CheckEnergyConfigurationMutable();
+
+  primary_count_ = other.primary_count_;
+  record_ = other.record_;
+  energy_distribution_ = std::move(other.energy_distribution_);
+  initialization_finalized_ = false;
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::CommitEnergyDistribution(
+    GGEMSEnergyDistribution distribution) noexcept -> void {
+  std::uint64_t const source_record_energy =
+      distribution.GetType() == GGEMSEnergyDistributionType::Mono
+          ? distribution.GetMonoEnergyMilliElectronVolt()
+          : 0ULL;
+
+  energy_distribution_ = std::move(distribution);
+  record_.energy_milli_eV = source_record_energy;
 }
 
 // -----------------------------------------------------------------------------
@@ -202,11 +278,42 @@ auto GGEMSSource::SetEmittedParticleType(
 
 auto GGEMSSource::SetEnergyMilliElectronVolt(std::uint64_t energy_milli_eV)
     -> GGEMSSource & {
-  GGEMS_CHECK_RECOVERABLE(energy_milli_eV > 0ULL,
-                          "Source energy must be non-zero.");
+  CheckEnergyConfigurationMutable();
+  CommitEnergyDistribution(GGEMSEnergyDistribution::BuildMono(energy_milli_eV));
+  return *this;
+}
 
-  record_.energy_milli_eV = energy_milli_eV;
+// -----------------------------------------------------------------------------
 
+auto GGEMSSource::SetDiscreteEnergyLines(
+    std::span<double const> energies, std::span<double const> relative_weights,
+    std::string_view unit) -> GGEMSSource & {
+  CheckEnergyConfigurationMutable();
+  CommitEnergyDistribution(GGEMSEnergyDistribution::BuildDiscreteLines(
+      energies, relative_weights, unit));
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::SetRegularEnergySpectrum(
+    std::span<double const> bin_centers,
+    std::span<double const> relative_bin_weights, std::string_view unit)
+    -> GGEMSSource & {
+  CheckEnergyConfigurationMutable();
+  CommitEnergyDistribution(GGEMSEnergyDistribution::BuildRegularSpectrum(
+      bin_centers, relative_bin_weights, unit));
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::LoadRegularEnergySpectrum(
+    std::filesystem::path const &filename, std::string_view unit)
+    -> GGEMSSource & {
+  CheckEnergyConfigurationMutable();
+  CommitEnergyDistribution(
+      GGEMSEnergyDistribution::LoadRegularSpectrum(filename, unit));
   return *this;
 }
 
@@ -278,6 +385,15 @@ auto GGEMSSource::SetWeight(float weight) -> GGEMSSource & {
 // -----------------------------------------------------------------------------
 
 auto GGEMSSource::BuildRecord() const -> GGEMSSourceRecord {
+  std::uint64_t const expected_energy =
+      energy_distribution_.GetType() == GGEMSEnergyDistributionType::Mono
+          ? energy_distribution_.GetMonoEnergyMilliElectronVolt()
+          : 0ULL;
+
+  GGEMS_CHECK_INTERNAL(
+      record_.energy_milli_eV == expected_energy,
+      "GGEMSSource record and energy distribution are inconsistent.");
+
   ValidateAnalyticSourceRecord(record_);
   return record_;
 }
@@ -285,6 +401,13 @@ auto GGEMSSource::BuildRecord() const -> GGEMSSourceRecord {
 // -----------------------------------------------------------------------------
 
 auto GGEMSSource::Verbose() const -> void {
-  GGEMS_INFO("Source", "{}", DescribeSource(record_, primary_count_));
+  GGEMSSourceRecord const source_record = BuildRecord();
+  GGEMSEnergyDistributionRecord const energy_record =
+      energy_distribution_.BuildRecord(0ULL);
+
+  GGEMS_INFO(
+      "Source", "{}",
+      DescribeSource(source_record, primary_count_, energy_record,
+                     energy_distribution_.GetEnergyValuesMilliElectronVolt()));
 }
 } // namespace ggems::core::sources

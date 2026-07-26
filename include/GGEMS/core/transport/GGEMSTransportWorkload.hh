@@ -20,6 +20,10 @@ namespace ggems::core::random {
 class GGEMSRandom;
 }
 
+namespace ggems::core::sources {
+class GGEMSSourceConfigurationSnapshot;
+}
+
 namespace ggems::core::transport {
 
 struct GGEMSTransportRunConfig {
@@ -49,13 +53,14 @@ struct GGEMSTransportRunReport {
 
 class GGEMSTransportWorkload {
 public:
-  GGEMSTransportWorkload(ggems::ocl::GGEMSOpenCLContext &context,
-                         std::filesystem::path kernel_root,
-                         random::GGEMSRandom const &random,
-                         std::uint32_t worker_count, std::uint32_t source_count,
-                         std::uint64_t random_stream_offset = 0ULL,
-                         std::uint32_t context_index = 0U,
-                         std::uint32_t observer_record_capacity = 1U);
+  GGEMSTransportWorkload(
+      ggems::ocl::GGEMSOpenCLContext &context,
+      std::filesystem::path kernel_root, random::GGEMSRandom const &random,
+      std::uint32_t worker_count,
+      sources::GGEMSSourceConfigurationSnapshot const &source_configuration,
+      std::uint64_t random_stream_offset = 0ULL,
+      std::uint32_t context_index = 0U,
+      std::uint32_t observer_record_capacity = 1U);
 
   ~GGEMSTransportWorkload() = default;
 
@@ -103,6 +108,9 @@ private:
   ggems::ocl::GGEMSOpenCLSVMBuffer counters_buffer_;
   ggems::ocl::GGEMSOpenCLSVMBuffer source_records_buffer_;
   ggems::ocl::GGEMSOpenCLSVMBuffer source_ranges_buffer_;
+  ggems::ocl::GGEMSOpenCLSVMBuffer energy_distribution_records_buffer_;
+  ggems::ocl::GGEMSOpenCLSVMBuffer energy_values_buffer_;
+  ggems::ocl::GGEMSOpenCLSVMBuffer cumulative_ticket_upper_buffer_;
   ggems::ocl::GGEMSOpenCLSVMBuffer observer_config_buffer_;
   ggems::ocl::GGEMSOpenCLSVMBuffer observer_counters_buffer_;
   ggems::ocl::GGEMSOpenCLSVMBuffer observer_records_buffer_;

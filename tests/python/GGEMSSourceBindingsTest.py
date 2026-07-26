@@ -1,4 +1,6 @@
 import math
+from pathlib import Path
+import tempfile
 import unittest
 
 import ggems
@@ -15,6 +17,20 @@ class GGEMSSourceBindingsTest(unittest.TestCase):
         self.assertIs(source.set_angular_fixed(), source)
         self.assertIs(source.set_angular_isotropic(), source)
         self.assertIs(source.set_angular_focused(0.0, 0.0, 100.0, "mm"), source)
+        self.assertIs(source.set_energy(100.0, "keV"), source)
+
+        self.assertIs(
+            source.set_discrete_energy_lines(
+                [40.0, 80.0, 120.0], (1.0, 2.0, 1.0), "keV"
+            ),
+            source,
+        )
+        self.assertIs(
+            source.set_regular_energy_spectrum(
+                (20.0, 22.0, 24.0), [1.0, 2.0, 1.0], "keV"
+            ),
+            source,
+        )
 
     def test_all_distance_units_are_accepted(self) -> None:
         for unit in ("pm", "nm", "um", "mm", "cm", "m"):
@@ -48,6 +64,138 @@ class GGEMSSourceBindingsTest(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "must not target"):
             source.set_angular_focused(0.0, 0.0, 0.0, "pm")
+
+    def test_energy_sequences_accept_lists_and_tuples(self) -> None:
+        source = ggems.source.GGEMSSource()
+
+        self.assertIs(
+            source.set_discrete_energy_lines(
+                [40.0, 80.0, 120.0], (1.0, 2.0, 1.0), "keV"
+            ),
+            source,
+        )
+        self.assertIn("Discrete lines", repr(source))
+
+        self.assertIs(
+            source.set_regular_energy_spectrum(
+                (20.0, 22.0, 24.0), [1.0, 2.0, 1.0], "keV"
+            ),
+            source,
+        )
+        self.assertIn("Regular spectrum", repr(source))
+
+        self.assertIs(source.set_energy(511.0, "keV"), source)
+        self.assertIn("Mono", repr(source))
+
+    def test_energy_sequence_errors_are_reported(self) -> None:
+        source = ggems.source.GGEMSSource()
+
+        with self.assertRaises(RuntimeError):
+            source.set_discrete_energy_lines([40.0, 80.0], [1.0], "keV")
+
+        with self.assertRaises(RuntimeError):
+            source.set_discrete_energy_lines([80.0, 40.0], [1.0, 1.0], "keV")
+
+        with self.assertRaises(RuntimeError):
+            source.set_regular_energy_spectrum(
+                [20.0, 22.0, 25.0], [1.0, 2.0, 1.0], "keV"
+            )
+
+        with self.assertRaises(TypeError):
+            source.set_discrete_energy_lines([40.0, "not-a-number"], [1.0, 1.0], "keV")
+
+        with self.assertRaises(RuntimeError):
+            source.set_regular_energy_spectrum([20.0, 22.0], [1.0, 1.0], "invalid-unit")
+
+        invalid_operations = (
+            (
+                "empty discrete table",
+                RuntimeError,
+                lambda: source.set_discrete_energy_lines([], [], "keV"),
+            ),
+            (
+                "single discrete line",
+                RuntimeError,
+                lambda: source.set_discrete_energy_lines([40.0], [1.0], "keV"),
+            ),
+            (
+                "zero discrete weight sum",
+                RuntimeError,
+                lambda: source.set_discrete_energy_lines(
+                    [40.0, 80.0], [0.0, 0.0], "keV"
+                ),
+            ),
+            (
+                "regular length mismatch",
+                RuntimeError,
+                lambda: source.set_regular_energy_spectrum([20.0, 22.0], [1.0], "keV"),
+            ),
+            (
+                "non-positive regular center",
+                RuntimeError,
+                lambda: source.set_regular_energy_spectrum(
+                    [0.0, 2.0], [1.0, 1.0], "keV"
+                ),
+            ),
+            (
+                "non-finite regular weight",
+                RuntimeError,
+                lambda: source.set_regular_energy_spectrum(
+                    [20.0, 22.0], [1.0, float("inf")], "keV"
+                ),
+            ),
+            (
+                "negative Mono energy",
+                ValueError,
+                lambda: source.set_energy(-1.0, "keV"),
+            ),
+            (
+                "non-finite Mono energy",
+                ValueError,
+                lambda: source.set_energy(float("nan"), "keV"),
+            ),
+            (
+                "overflowing Mono energy",
+                ValueError,
+                lambda: source.set_energy(float(2**64), "meV"),
+            ),
+        )
+
+        for case, exception_type, operation in invalid_operations:
+            with self.subTest(case=case):
+                with self.assertRaises(exception_type):
+                    operation()
+
+        source.set_discrete_energy_lines([40.0, 80.0, 120.0], [1.0, 2.0, 1.0], "keV")
+        previous_description = repr(source)
+
+        with self.assertRaises(RuntimeError):
+            source.set_discrete_energy_lines(
+                [40.0, 40.0, 120.0], [1.0, 2.0, 1.0], "keV"
+            )
+
+        self.assertEqual(repr(source), previous_description)
+
+    def test_regular_spectrum_loader_uses_pathlike_and_reports_line(self) -> None:
+        source = ggems.source.GGEMSSource()
+
+        with tempfile.TemporaryDirectory() as directory:
+            filename = Path(directory) / "spectrum.dat"
+            filename.write_text(
+                "# center weight\n0.011 1.0\nnot-a-number 2.0\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+
+            with self.assertRaisesRegex(RuntimeError, r"line 3:"):
+                source.load_regular_energy_spectrum(filename, "MeV")
+
+            filename.write_text(
+                "0.011 1.0\n0.012 2.0\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            self.assertIs(source.load_regular_energy_spectrum(filename, "MeV"), source)
 
 
 if __name__ == "__main__":

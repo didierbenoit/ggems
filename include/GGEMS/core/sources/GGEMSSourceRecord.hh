@@ -15,6 +15,7 @@ struct GGEMSSourceRecord {
   std::uint64_t time_start_ps{0ULL};
   std::uint64_t time_stop_ps{0ULL};
 
+  // Exact Mono energy; zero for table-backed energy distributions.
   std::uint64_t energy_milli_eV{511'000'000ULL};
 
   std::int64_t position_x_pm{0ULL};

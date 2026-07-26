@@ -1,17 +1,22 @@
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
 #include <format>
 #include <limits>
-#include <string>
 #include <memory>
 #include <string_view>
+#include <string>
+#include <vector>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/stl/filesystem.h>
 
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMSSourceBindingUtilities.hh"
+#include "GGEMS/core/sources/GGEMSSourceTypes.hh"
+#include "GGEMS/core/units/GGEMSEnergyUnits.hh"
 
 namespace py = pybind11;
 
@@ -41,38 +46,28 @@ auto ConvertPrimaryCount(py::handle primary_count) -> std::uint64_t {
 
 auto ConvertEnergyToMilliElectronVolt(double energy, std::string const &unit)
     -> std::uint64_t {
-  if (!std::isfinite(energy) || energy <= 0.0) {
-    throw py::value_error("Source energy must be finite and positive.");
+  auto const conversion =
+      ggems::units::TryConvertEnergyToMilliElectronVolt(energy, unit);
+
+  if (conversion.has_value()) {
+    return *conversion;
   }
 
-  long double factor_to_milli_eV{0.0L};
+  using ggems::units::EnergyConversionError;
 
-  if (unit == "milli_eV" || unit == "meV") {
-    factor_to_milli_eV = 1.0L;
-  } else if (unit == "eV") {
-    factor_to_milli_eV = 1.0e3L;
-  } else if (unit == "keV") {
-    factor_to_milli_eV = 1.0e6L;
-  } else if (unit == "MeV") {
-    factor_to_milli_eV = 1.0e9L;
-  } else if (unit == "GeV") {
-    factor_to_milli_eV = 1.0e12L;
-  } else {
+  switch (conversion.error()) {
+  case EnergyConversionError::NonFinite:
+    throw py::value_error("Source energy must be finite.");
+  case EnergyConversionError::NonPositive:
+    throw py::value_error("Source energy must be strictly positive.");
+  case EnergyConversionError::UnsupportedUnit:
     throw py::value_error(
         std::format("Unsupported GGEMS energy unit '{}'.", unit));
-  }
-
-  long double energy_milli_eV{static_cast<long double>(energy) *
-                              factor_to_milli_eV};
-
-  long double const rounded_energy_milli_eV{std::round(energy_milli_eV)};
-
-  if (rounded_energy_milli_eV >=
-      static_cast<long double>(std::numeric_limits<std::uint64_t>::max())) {
+  case EnergyConversionError::OutOfRange:
     throw py::value_error("Source energy is too large.");
   }
 
-  return static_cast<std::uint64_t>(rounded_energy_milli_eV);
+  throw py::value_error("Source energy conversion failed.");
 }
 
 // =============================================================================
@@ -282,6 +277,35 @@ auto BindSource(py::module_ &mod) -> void {
           py::return_value_policy::reference_internal)
 
       .def(
+          "set_discrete_energy_lines",
+          [](GGEMSSource &self, std::vector<double> const &energies,
+             std::vector<double> const &weights,
+             std::string const &unit) -> GGEMSSource & {
+            return self.SetDiscreteEnergyLines(energies, weights, unit);
+          },
+          py::arg("energies"), py::arg("weights"), py::arg("unit") = "keV",
+          py::return_value_policy::reference_internal)
+
+      .def(
+          "set_regular_energy_spectrum",
+          [](GGEMSSource &self, std::vector<double> const &bin_centers,
+             std::vector<double> const &weights,
+             std::string const &unit) -> GGEMSSource & {
+            return self.SetRegularEnergySpectrum(bin_centers, weights, unit);
+          },
+          py::arg("bin_centers"), py::arg("weights"), py::arg("unit") = "keV",
+          py::return_value_policy::reference_internal)
+
+      .def(
+          "load_regular_energy_spectrum",
+          [](GGEMSSource &self, std::filesystem::path const &filename,
+             std::string const &unit) -> GGEMSSource & {
+            return self.LoadRegularEnergySpectrum(filename, unit);
+          },
+          py::arg("filename"), py::arg("unit") = "keV",
+          py::return_value_policy::reference_internal)
+
+      .def(
           "set_time_window",
           [](GGEMSSource &self, double const time_start, double const time_stop,
              std::string const &unit) -> GGEMSSource & {
@@ -319,10 +343,11 @@ auto BindSource(py::module_ &mod) -> void {
 
       .def("__repr__", [](GGEMSSource const &source) -> std::string {
         auto const &record = source.GetRecord();
+        auto const distribution_type = source.GetEnergyDistribution().GetType();
 
         return std::format(
-            "<GGEMSSource type={} particle_type={} energy_milli_ev={}>",
+            "<GGEMSSource type={} particle_type={} energy_distribution={}>",
             record.source_type, record.emitted_particle_type,
-            record.energy_milli_eV);
+            ggems::core::sources::ToLongName(distribution_type));
       });
 }

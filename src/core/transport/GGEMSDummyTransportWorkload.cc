@@ -233,6 +233,15 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
       config.source_records.size() == static_cast<std::size_t>(source_count_),
       "Dummy transport source arrays do not match the stable source count.");
 
+  for (std::size_t source_index = 0U;
+       source_index < config.source_records.size(); ++source_index) {
+    GGEMS_CHECK_RECOVERABLE(
+        config.source_records[source_index].energy_milli_eV > 0ULL,
+        std::format("Dummy transport source {} must use an exact positive Mono "
+                    "energy.",
+                    source_index));
+  }
+
   ResetCountersInSVM();
   ClearWorkerFinalStatesInSVM();
   ResetObserverInSVM();

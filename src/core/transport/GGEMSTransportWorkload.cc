@@ -23,6 +23,8 @@
 #include "GGEMS/frameworks/GGEMSOpenCLSVMHostAccess.hh"
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/core/units/GGEMSBytesUnits.hh"
+#include "GGEMS/core/sources/GGEMSEnergyDistributionRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 
 namespace {
 
@@ -36,6 +38,8 @@ using SourceRecord = ggems::core::sources::GGEMSSourceRecord;
 using SourceRunRange = ggems::core::sources::GGEMSSourceRunRange;
 using TransportCounters = ggems::core::transport::GGEMSTransportCounters;
 using TransportRunConfig = ggems::core::transport::GGEMSTransportRunConfig;
+using EnergyDistributionRecord =
+    ggems::core::sources::GGEMSEnergyDistributionRecord;
 
 // =============================================================================
 // =============================================================================
@@ -71,11 +75,55 @@ ComputeObserverRecordsSize(std::uint32_t observer_record_capacity)
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] auto CheckedSourceCount(std::uint32_t source_count)
+[[nodiscard]] auto
+ComputeEnergyTableBufferSize(std::uint64_t logical_entry_count,
+                             std::uint64_t element_size)
+    -> ggems::units::Bytes {
+  std::uint64_t const physical_entry_count =
+      std::max(std::uint64_t{1U}, logical_entry_count);
+
+  GGEMS_CHECK_RECOVERABLE(
+      physical_entry_count <=
+          std::numeric_limits<std::uint64_t>::max() / element_size,
+      "Transport energy table buffer size overflows uint64 storage.");
+
+  return ggems::units::Bytes{physical_entry_count * element_size};
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto CheckedSourceCount(std::size_t source_count)
     -> std::uint32_t {
   GGEMS_CHECK_RECOVERABLE(source_count > 0U,
                           "Transport source count must be non-zero.");
-  return source_count;
+
+  GGEMS_CHECK_RECOVERABLE(std::in_range<std::uint32_t>(source_count),
+                          "Transport source count exceeds uint32 storage.");
+  return static_cast<std::uint32_t>(source_count);
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto CheckedEnergyTableEntryCount(
+    ggems::core::sources::GGEMSSourceConfigurationSnapshot const
+        &source_configuration) -> std::uint64_t {
+  GGEMS_CHECK_INTERNAL(
+      source_configuration.GetEnergyDistributionRecords().size() ==
+          source_configuration.GetSourceCount(),
+      "Transport source configuration record count is inconsistent.");
+  GGEMS_CHECK_INTERNAL(
+      source_configuration.GetEnergyValuesMilliElectronVolt().size() ==
+          source_configuration.GetCumulativeTicketUpperBounds().size(),
+      "Transport source configuration energy and ticket counts do not match.");
+  GGEMS_CHECK_RECOVERABLE(
+      std::in_range<std::uint64_t>(
+          source_configuration.GetEnergyValuesMilliElectronVolt().size()),
+      "Transport energy table entry count exceeds uint64 storage.");
+
+  return static_cast<std::uint64_t>(
+      source_configuration.GetEnergyValuesMilliElectronVolt().size());
 }
 
 // =============================================================================
@@ -166,13 +214,14 @@ namespace ggems::core::transport {
 GGEMSTransportWorkload::GGEMSTransportWorkload(
     ggems::ocl::GGEMSOpenCLContext &context, std::filesystem::path kernel_root,
     random::GGEMSRandom const &random, std::uint32_t worker_count,
-    std::uint32_t source_count, std::uint64_t random_stream_offset,
-    std::uint32_t context_index, std::uint32_t observer_record_capacity)
+    sources::GGEMSSourceConfigurationSnapshot const &source_configuration,
+    std::uint64_t random_stream_offset, std::uint32_t context_index,
+    std::uint32_t observer_record_capacity)
     : context_{&context}, kernel_root_{std::move(kernel_root)},
       random_{&random},
       random_kernel_build_definition_{random.GetKernelBuildDefinition()},
       worker_count_{worker_count},
-      source_count_{CheckedSourceCount(source_count)},
+      source_count_{CheckedSourceCount(source_configuration.GetSourceCount())},
       random_stream_offset_{random_stream_offset},
       context_index_{context_index},
       device_name_{context.GetDevice().GetName()},
@@ -185,12 +234,47 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
           static_cast<std::uint64_t>(source_count_) * sizeof(SourceRecord)})},
       source_ranges_buffer_{context.CreateSVMBuffer(ggems::units::Bytes{
           static_cast<std::uint64_t>(source_count_) * sizeof(SourceRunRange)})},
+      energy_distribution_records_buffer_{context.CreateSVMBuffer(
+          ggems::units::Bytes{static_cast<std::uint64_t>(source_count_) *
+                              sizeof(EnergyDistributionRecord)})},
+      energy_values_buffer_{
+          context.CreateSVMBuffer(ComputeEnergyTableBufferSize(
+              CheckedEnergyTableEntryCount(source_configuration),
+              sizeof(std::uint64_t)))},
+      cumulative_ticket_upper_buffer_{
+          context.CreateSVMBuffer(ComputeEnergyTableBufferSize(
+              CheckedEnergyTableEntryCount(source_configuration),
+              sizeof(std::uint64_t)))},
       observer_config_buffer_{context.CreateSVMBuffer(
           ggems::units::Bytes{sizeof(ObserverConfigRecord)})},
       observer_counters_buffer_{context.CreateSVMBuffer(
           ggems::units::Bytes{sizeof(ObserverCounters)})},
       observer_records_buffer_{context.CreateSVMBuffer(
           ComputeObserverRecordsSize(observer_record_capacity))} {
+  auto const &energy_distribution_records =
+      source_configuration.GetEnergyDistributionRecords();
+  auto const &energy_values_milli_eV =
+      source_configuration.GetEnergyValuesMilliElectronVolt();
+  auto const &cumulative_ticket_upper =
+      source_configuration.GetCumulativeTicketUpperBounds();
+
+  ggems::ocl::WriteSVMFromHost(
+      energy_distribution_records_buffer_,
+      std::span<EnergyDistributionRecord const>{energy_distribution_records});
+
+  if (energy_values_milli_eV.empty()) {
+    ggems::ocl::WriteSVMFromHost(energy_values_buffer_, std::uint64_t{0ULL});
+    ggems::ocl::WriteSVMFromHost(cumulative_ticket_upper_buffer_,
+                                 std::uint64_t{0ULL});
+  } else {
+    ggems::ocl::WriteSVMFromHost(
+        energy_values_buffer_,
+        std::span<std::uint64_t const>{energy_values_milli_eV});
+    ggems::ocl::WriteSVMFromHost(
+        cumulative_ticket_upper_buffer_,
+        std::span<std::uint64_t const>{cumulative_ticket_upper});
+  }
+
   InitialiseRandomStatesInSVM();
   ResetCountersInSVM();
   ResetObserverInSVM();
@@ -313,7 +397,7 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
   ggems::ocl::GGEMSOpenCLKernel kernel{*context_, std::move(raw_kernel),
                                        "particle_stream_transport"};
 
-  constexpr cl_uint k_expected_argument_count{14U};
+  constexpr cl_uint k_expected_argument_count{17U};
   cl_uint argument_index{0U};
 
   kernel.SetArgSVMPointer(argument_index++, random_states_buffer_.GetData());
@@ -335,6 +419,11 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
                 static_cast<cl_uint>(observer_record_capacity_));
   kernel.SetArg(argument_index++, static_cast<cl_ulong>(config.run_id));
   kernel.SetArg(argument_index++, static_cast<cl_uint>(worker_count_));
+  kernel.SetArgSVMPointer(argument_index++,
+                          energy_distribution_records_buffer_.GetData());
+  kernel.SetArgSVMPointer(argument_index++, energy_values_buffer_.GetData());
+  kernel.SetArgSVMPointer(argument_index++,
+                          cumulative_ticket_upper_buffer_.GetData());
 
   GGEMS_CHECK_INTERNAL(argument_index == k_expected_argument_count,
                        "Transport kernel argument count is inconsistent.");

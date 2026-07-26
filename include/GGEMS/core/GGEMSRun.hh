@@ -64,6 +64,8 @@ private:
   bool initialised_{false};
   std::uint64_t next_run_id_{0ULL};
 
+  sources::GGEMSSourceConfigurationSnapshotPtr source_configuration_snapshot_;
+
   std::vector<std::unique_ptr<transport::GGEMSTransportWorkload>>
       transport_workloads_;
 

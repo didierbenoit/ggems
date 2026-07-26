@@ -1,6 +1,7 @@
 #include "GGEMS/core/particles/GGEMSPrimaryStream.hh"
 
 #include <limits>
+#include <cstdint>
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
@@ -10,7 +11,7 @@ namespace ggems::core::particles {
 // =============================================================================
 // =============================================================================
 
-void GGEMSPrimaryStream::SetPrimaryCount(std::uint64_t primary_count) {
+auto GGEMSPrimaryStream::SetPrimaryCount(std::uint64_t primary_count) -> void {
   GGEMS_CHECK_RECOVERABLE(primary_count > 0ULL,
                           "Primary stream particle count must be non-zero.");
 
@@ -23,31 +24,32 @@ void GGEMSPrimaryStream::SetPrimaryCount(std::uint64_t primary_count) {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSPrimaryStream::Initialise() {
+auto GGEMSPrimaryStream::Initialise() -> void {
   GGEMS_CHECK_RECOVERABLE(
       !initialised_, "Primary stream cannot be initialised more than once.");
 
   GGEMS_CHECK_RECOVERABLE(primary_count_ > 0ULL,
                           "Cannot initialise an empty primary stream.");
 
+  GGEMS_INFO("Core", "Primary Aionino stream initialised");
+
   next_global_primary_id_ = 0ULL;
   exhausted_ = false;
   initialised_ = true;
-
-  GGEMS_INFO("Core", "Primary Aionino stream initialised");
 }
 
 // -----------------------------------------------------------------------------
 
-GGEMSPrimaryStreamRunView GGEMSPrimaryStream::PrepareRun(std::uint64_t run_id) {
+auto GGEMSPrimaryStream::PrepareRun(std::uint64_t run_id)
+    -> GGEMSPrimaryStreamRunView {
   return PrepareRun(run_id, primary_count_);
 }
 
 // -----------------------------------------------------------------------------
 
-GGEMSPrimaryStreamRunView
-GGEMSPrimaryStream::PrepareRun(std::uint64_t run_id,
-                               std::uint64_t primary_count) {
+auto GGEMSPrimaryStream::PrepareRun(std::uint64_t run_id,
+                                    std::uint64_t primary_count)
+    -> GGEMSPrimaryStreamRunView {
   GGEMS_CHECK_RECOVERABLE(
       initialised_,
       "Primary stream must be initialised before reserving a range");

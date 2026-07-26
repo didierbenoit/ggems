@@ -242,7 +242,12 @@ auto GGEMSRun::Initialise() -> void {
                          "GGEMSRun source collection contains a null entry.");
   }
 
-  auto source_count = static_cast<std::uint32_t>(sources_.size());
+  GGEMS_CHECK_RECOVERABLE(
+      sources_.size() <=
+          static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()),
+      "GGEMSRun source slot count exceeds uint32 storage.");
+
+  auto const source_count = static_cast<std::uint32_t>(sources_.size());
 
   GGEMS_CHECK_RECOVERABLE(
       random_ != nullptr,
@@ -260,15 +265,17 @@ auto GGEMSRun::Initialise() -> void {
   GGEMS_INFO("Random", "Random engine ready: {} with seed {}.",
              random_->GetEngineName(), random_->GetSeed());
 
-  primary_stream_.Initialise();
-
   std::uint32_t observer_record_capacity =
       observer_ != nullptr ? observer_->GetRecordCapacity() : 1U;
 
+  auto new_source_configuration =
+      sources::BuildSourceConfigurationSnapshot(sources_);
+
   std::filesystem::path kernel_root{GGEMS_KERNEL_ROOT};
 
-  transport_workloads_.clear();
-  transport_workloads_.reserve(opencl.GetContext().size());
+  std::vector<std::unique_ptr<transport::GGEMSTransportWorkload>>
+      new_transport_workloads;
+  new_transport_workloads.reserve(opencl.GetContext().size());
 
   for (std::size_t context_index = 0U;
        context_index < opencl.GetContext().size(); ++context_index) {
@@ -276,25 +283,29 @@ auto GGEMSRun::Initialise() -> void {
         static_cast<std::uint64_t>(context_index) *
         static_cast<std::uint64_t>(worker_count_);
 
-    transport_workloads_.push_back(
+    new_transport_workloads.push_back(
         std::make_unique<transport::GGEMSTransportWorkload>(
             opencl.GetContext()[context_index], kernel_root, *random_,
-            worker_count_, source_count, random_stream_offset,
+            worker_count_, *new_source_configuration, random_stream_offset,
             static_cast<std::uint32_t>(context_index),
             observer_record_capacity));
   }
 
-  GGEMS_INFO("Core", "{} transport workload(s) initialised.",
-             transport_workloads_.size());
+  GGEMS_INFO("Core", "{} transport workload(s) prepared.",
+             new_transport_workloads.size());
+  GGEMS_INFO("Source", "GGEMSRun source collection prepared with {} slot(s).",
+             source_count);
 
+  primary_stream_.Initialise();
+
+  transport_workloads_.swap(new_transport_workloads);
+  source_configuration_snapshot_ = std::move(new_source_configuration);
   next_run_id_ = 0ULL;
   initialised_ = true;
 
-  GGEMS_INFO("Source",
-             "GGEMSRun source collection initialised with {} slot(s).",
-             source_count);
-
-  GGEMS_INFO("Core", "GGEMSRun Initialised.");
+  for (auto const &source : sources_) {
+    source->FinalizeInitialization();
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -315,14 +326,15 @@ auto GGEMSRun::Run() -> void {
 
   std::uint64_t run_id = next_run_id_++;
 
-  auto source_snapshot = sources::BuildSourceRunSnapshot(sources_);
+  auto source_snapshot =
+      sources::BuildSourceRunSnapshot(sources_, source_configuration_snapshot_);
 
   auto const &source_records = source_snapshot.GetRecords();
   auto const &source_ranges = source_snapshot.GetRanges();
 
   GGEMS_CHECK_INTERNAL(
       source_records.size() == source_ranges.size(),
-      "GGEMSRun source snapshot record and range counts do not match.");
+      "GGEMSRun source snapshot component counts do not match.");
 
   GGEMS_CHECK_INTERNAL(!source_records.empty(),
                        "GGEMSRun source snapshot must not be empty.");
@@ -363,9 +375,7 @@ auto GGEMSRun::Run() -> void {
   for (std::size_t source_index = 0U; source_index < source_records.size();
        ++source_index) {
     GGEMS_INFOEX("Source", 1, "Run {} source snapshot: {}", run_id,
-                 sources::DescribeSourceRunSlot(source_index,
-                                                source_records[source_index],
-                                                source_ranges[source_index]));
+                 sources::DescribeSourceRunSlot(source_index, source_snapshot));
   }
 
   auto projection_primary_count =

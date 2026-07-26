@@ -17,22 +17,25 @@ public:
 
   GGEMSPrimaryStream(GGEMSPrimaryStream const &) = delete;
   GGEMSPrimaryStream(GGEMSPrimaryStream &&) = delete;
-  GGEMSPrimaryStream &operator=(GGEMSPrimaryStream const &) = delete;
-  GGEMSPrimaryStream &operator=(GGEMSPrimaryStream &&) = delete;
+  auto operator=(GGEMSPrimaryStream const &) -> GGEMSPrimaryStream & = delete;
+  auto operator=(GGEMSPrimaryStream &&) -> GGEMSPrimaryStream & = delete;
 
-public:
-  void SetPrimaryCount(std::uint64_t primary_count);
-  void Initialise();
+  auto SetPrimaryCount(std::uint64_t primary_count) -> void;
+  auto Initialise() -> void;
 
-  [[nodiscard]] bool IsInitialised() const noexcept { return initialised_; }
+  [[nodiscard]] auto IsInitialised() const noexcept -> bool {
+    return initialised_;
+  }
 
-  [[nodiscard]] std::uint64_t GetPrimaryCount() const noexcept {
+  [[nodiscard]] auto GetPrimaryCount() const noexcept -> std::uint64_t {
     return primary_count_;
   }
 
-  [[nodiscard]] GGEMSPrimaryStreamRunView PrepareRun(std::uint64_t run_id);
-  [[nodiscard]] GGEMSPrimaryStreamRunView
-  PrepareRun(std::uint64_t run_id, std::uint64_t primary_count);
+  [[nodiscard]] auto PrepareRun(std::uint64_t run_id)
+      -> GGEMSPrimaryStreamRunView;
+  [[nodiscard]] auto PrepareRun(std::uint64_t run_id,
+                                std::uint64_t primary_count)
+      -> GGEMSPrimaryStreamRunView;
 
 private:
   std::uint64_t primary_count_{4096ULL};

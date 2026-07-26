@@ -26,12 +26,20 @@ enum class GGEMSAngularDistributionType : std::uint32_t {
   Focused = 3U
 };
 
-constexpr auto ToKernelSourceType(GGEMSSourceType source_type) noexcept
-    -> std::uint32_t {
+enum class GGEMSEnergyDistributionType : std::uint32_t {
+  Unknown = 0U,
+  Mono = 1U,
+  DiscreteLines = 2U,
+  RegularSpectrum = 3U
+};
+
+[[nodiscard]] constexpr auto
+ToKernelSourceType(GGEMSSourceType source_type) noexcept -> std::uint32_t {
   return static_cast<std::uint32_t>(source_type);
 }
 
-constexpr auto FromKernelSourceType(std::uint32_t const source_type) noexcept
+[[nodiscard]] constexpr auto
+FromKernelSourceType(std::uint32_t const source_type) noexcept
     -> GGEMSSourceType {
   switch (source_type) {
   case 1U:
@@ -45,8 +53,8 @@ constexpr auto FromKernelSourceType(std::uint32_t const source_type) noexcept
   }
 }
 
-constexpr auto ToLongName(GGEMSSourceType const source_type) noexcept
-    -> std::string_view {
+[[nodiscard]] constexpr auto
+ToLongName(GGEMSSourceType const source_type) noexcept -> std::string_view {
   switch (source_type) {
   case GGEMSSourceType::Unknown:
     return "Unknown";
@@ -56,6 +64,43 @@ constexpr auto ToLongName(GGEMSSourceType const source_type) noexcept
     return "Voxelized";
   case GGEMSSourceType::PhaseSpace:
     return "PhaseSpace";
+  }
+
+  return "Unknown";
+}
+
+[[nodiscard]] constexpr auto ToKernelEnergyDistributionType(
+    GGEMSEnergyDistributionType distribution_type) noexcept -> std::uint32_t {
+  return static_cast<std::uint32_t>(distribution_type);
+}
+
+[[nodiscard]] constexpr auto
+FromKernelEnergyDistributionType(std::uint32_t const distribution_type) noexcept
+    -> GGEMSEnergyDistributionType {
+  switch (distribution_type) {
+  case 1U:
+    return GGEMSEnergyDistributionType::Mono;
+  case 2U:
+    return GGEMSEnergyDistributionType::DiscreteLines;
+  case 3U:
+    return GGEMSEnergyDistributionType::RegularSpectrum;
+  default:
+    return GGEMSEnergyDistributionType::Unknown;
+  }
+}
+
+[[nodiscard]] constexpr auto
+ToLongName(GGEMSEnergyDistributionType const distribution_type) noexcept
+    -> std::string_view {
+  switch (distribution_type) {
+  case GGEMSEnergyDistributionType::Mono:
+    return "Mono";
+  case GGEMSEnergyDistributionType::DiscreteLines:
+    return "Discrete lines";
+  case GGEMSEnergyDistributionType::RegularSpectrum:
+    return "Regular spectrum";
+  case GGEMSEnergyDistributionType::Unknown:
+    return "Unknown";
   }
 
   return "Unknown";

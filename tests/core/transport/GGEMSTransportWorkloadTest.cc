@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <filesystem>
 #include <limits>
+#include <memory>
+#include <utility>
 #include <span>
 #include <string_view>
 #include <tuple>
@@ -18,12 +20,16 @@
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/core/transport/GGEMSTransportWorkload.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 
 namespace {
+
+// =============================================================================
+// =============================================================================
 
 using ObserverRecord = ggems::core::observer::GGEMSObserverRecord;
 using ObserverRecordKind = ggems::core::observer::GGEMSObserverRecordKind;
@@ -34,8 +40,13 @@ using SourceRunRange = ggems::core::sources::GGEMSSourceRunRange;
 using TransportRunConfig = ggems::core::transport::GGEMSTransportRunConfig;
 using TransportRunReport = ggems::core::transport::GGEMSTransportRunReport;
 using TransportWorkload = ggems::core::transport::GGEMSTransportWorkload;
+using SourceConfigurationSnapshotPtr =
+    ggems::core::sources::GGEMSSourceConfigurationSnapshotPtr;
 
 constexpr std::int64_t k_one_metre_pm{1'000'000'000'000LL};
+
+// =============================================================================
+// =============================================================================
 
 [[nodiscard]] auto
 MakeSourceRecord(std::array<std::int64_t, 3U> const &position,
@@ -55,6 +66,25 @@ MakeSourceRecord(std::array<std::int64_t, 3U> const &position,
   return source.BuildRecord();
 }
 
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto MakeMonoSourceConfiguration(std::size_t source_count)
+    -> SourceConfigurationSnapshotPtr {
+  std::vector<std::shared_ptr<ggems::core::sources::GGEMSSource>> sources;
+  sources.reserve(source_count);
+
+  for (std::size_t source_index = 0U; source_index < source_count;
+       ++source_index) {
+    sources.push_back(std::make_shared<ggems::core::sources::GGEMSSource>());
+  }
+
+  return ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
+}
+
+// =============================================================================
+// =============================================================================
+
 [[nodiscard]] auto BuildRanges(std::span<std::uint64_t const> primary_counts)
     -> std::vector<SourceRunRange> {
   std::vector<SourceRunRange> ranges;
@@ -71,6 +101,9 @@ MakeSourceRecord(std::array<std::int64_t, 3U> const &position,
   return ranges;
 }
 
+// =============================================================================
+// =============================================================================
+
 [[nodiscard]] auto MakeConfig(std::vector<SourceRecord> records,
                               std::span<std::uint64_t const> primary_counts,
                               std::uint32_t workload_primary_count,
@@ -85,6 +118,9 @@ MakeSourceRecord(std::array<std::int64_t, 3U> const &position,
   config.source_ranges = BuildRanges(primary_counts);
   return config;
 }
+
+// =============================================================================
+// =============================================================================
 
 [[nodiscard]] auto FindHistoryRecords(TransportRunReport const &report,
                                       std::uint64_t global_primary_id)
@@ -107,6 +143,9 @@ MakeSourceRecord(std::array<std::int64_t, 3U> const &position,
   return records;
 }
 
+// =============================================================================
+// =============================================================================
+
 auto ExpectMinimalCounters(TransportRunReport const &report,
                            std::uint32_t expected_primary_count) -> void {
   EXPECT_EQ(report.counters.consumed_primary_count, expected_primary_count);
@@ -120,6 +159,9 @@ auto ExpectMinimalCounters(TransportRunReport const &report,
   EXPECT_EQ(report.counters.max_stack_depth, 0U);
   EXPECT_EQ(report.counters.total_fake_step_count, 0U);
 }
+
+// =============================================================================
+// =============================================================================
 
 auto ExpectHistory(TransportRunReport const &report, SourceRecord const &source,
                    std::uint64_t run_id, std::uint64_t global_primary_id,
@@ -177,6 +219,9 @@ auto ExpectHistory(TransportRunReport const &report, SourceRecord const &source,
   EXPECT_EQ(terminal_record.position_z_pm, terminal_position[2U]);
 }
 
+// =============================================================================
+// =============================================================================
+
 class GGEMSTransportWorkloadTest : public ::testing::Test {
 protected:
   static auto SetUpTestSuite() -> void {
@@ -196,6 +241,9 @@ protected:
 };
 
 } // namespace
+
+// =============================================================================
+// =============================================================================
 
 TEST_F(GGEMSTransportWorkloadTest,
        ProjectsSixCardinalSourcesAndPreservesState) {
@@ -239,11 +287,14 @@ TEST_F(GGEMSTransportWorkloadTest,
   ggems::core::random::GGEMSRandom random{};
   random.SetEngine("philox").SetSeed(7'777'777ULL);
 
-  TransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      random,       65U,
-      6U,           0ULL,
-      0U,           12U};
+  TransportWorkload workload{GetContext(),
+                             std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                             random,
+                             65U,
+                             *MakeMonoSourceConfiguration(6U),
+                             0ULL,
+                             0U,
+                             12U};
 
   auto config = MakeConfig(source_records, k_counts, 6U, 100ULL);
   config.run_id = 9ULL;
@@ -263,6 +314,9 @@ TEST_F(GGEMSTransportWorkloadTest,
   }
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST_F(GGEMSTransportWorkloadTest, ProjectsStoredBinary32DiagonalExactly) {
   SourceRecord const source =
       MakeSourceRecord({0LL, 0LL, 0LL}, {1.0, 1.0, 1.0});
@@ -276,11 +330,14 @@ TEST_F(GGEMSTransportWorkloadTest, ProjectsStoredBinary32DiagonalExactly) {
   ggems::core::random::GGEMSRandom random{};
   random.SetEngine("philox").SetSeed(1ULL);
 
-  TransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      random,       64U,
-      1U,           0ULL,
-      0U,           2U};
+  TransportWorkload workload{GetContext(),
+                             std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                             random,
+                             64U,
+                             *MakeMonoSourceConfiguration(1U),
+                             0ULL,
+                             0U,
+                             2U};
 
   auto config = MakeConfig({source}, k_counts, 1U);
   config.observer_config.enabled = 1U;
@@ -292,6 +349,9 @@ TEST_F(GGEMSTransportWorkloadTest, ProjectsStoredBinary32DiagonalExactly) {
                 {577'350'258'827LL, 577'350'258'827LL, 577'350'258'827LL});
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST_F(GGEMSTransportWorkloadTest,
        InitialisesConfiguredParticleTypeGenerically) {
   SourceRecord const source = MakeSourceRecord({0LL, 0LL, 0LL}, {0.0, 0.0, 1.0},
@@ -302,11 +362,14 @@ TEST_F(GGEMSTransportWorkloadTest,
   ggems::core::random::GGEMSRandom random{};
   random.SetEngine("pcg32").SetSeed(2ULL);
 
-  TransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      random,       64U,
-      1U,           0ULL,
-      0U,           2U};
+  TransportWorkload workload{GetContext(),
+                             std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                             random,
+                             64U,
+                             *MakeMonoSourceConfiguration(1U),
+                             0ULL,
+                             0U,
+                             2U};
 
   auto config = MakeConfig({source}, k_counts, 1U);
   config.observer_config.enabled = 1U;
@@ -317,6 +380,9 @@ TEST_F(GGEMSTransportWorkloadTest,
   ExpectHistory(report, source, 0ULL, 0ULL, 0U, 0ULL,
                 {0LL, 0LL, k_one_metre_pm});
 }
+
+// =============================================================================
+// =============================================================================
 
 TEST_F(GGEMSTransportWorkloadTest,
        PreservesZeroPrimaryAndDuplicateSourceSlots) {
@@ -330,11 +396,14 @@ TEST_F(GGEMSTransportWorkloadTest,
   ggems::core::random::GGEMSRandom random{};
   random.SetEngine("philox").SetSeed(3ULL);
 
-  TransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      random,       65U,
-      4U,           0ULL,
-      0U,           10U};
+  TransportWorkload workload{GetContext(),
+                             std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                             random,
+                             65U,
+                             *MakeMonoSourceConfiguration(4U),
+                             0ULL,
+                             0U,
+                             10U};
 
   auto config = MakeConfig({source_a, source_b, source_a, source_b}, k_counts,
                            5U, 1'000ULL);
@@ -358,6 +427,9 @@ TEST_F(GGEMSTransportWorkloadTest,
                 {0LL, -k_one_metre_pm, 0LL});
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST_F(GGEMSTransportWorkloadTest,
        CombinesObserverPoliciesWithoutDuplicateHistories) {
   SourceRecord const source_0 =
@@ -370,11 +442,14 @@ TEST_F(GGEMSTransportWorkloadTest,
   ggems::core::random::GGEMSRandom random{};
   random.SetEngine("philox").SetSeed(4ULL);
 
-  TransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      random,       64U,
-      2U,           0ULL,
-      0U,           8U};
+  TransportWorkload workload{GetContext(),
+                             std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                             random,
+                             64U,
+                             *MakeMonoSourceConfiguration(2U),
+                             0ULL,
+                             0U,
+                             8U};
 
   auto config = MakeConfig({source_0, source_1}, k_counts, 5U);
   config.observer_config.enabled = 1U;
@@ -405,6 +480,9 @@ TEST_F(GGEMSTransportWorkloadTest,
   EXPECT_EQ(FindHistoryRecords(report, 8ULL).size(), 2U);
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST_F(GGEMSTransportWorkloadTest,
        ObserverOverflowIsIndependentFromTransportOverflow) {
   SourceRecord const source =
@@ -414,11 +492,14 @@ TEST_F(GGEMSTransportWorkloadTest,
   ggems::core::random::GGEMSRandom random{};
   random.SetEngine("philox").SetSeed(5ULL);
 
-  TransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      random,       64U,
-      1U,           0ULL,
-      0U,           1U};
+  TransportWorkload workload{GetContext(),
+                             std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                             random,
+                             64U,
+                             *MakeMonoSourceConfiguration(1U),
+                             0ULL,
+                             0U,
+                             1U};
 
   auto config = MakeConfig({source}, k_counts, 1U);
   config.observer_config.enabled = 1U;
@@ -433,6 +514,9 @@ TEST_F(GGEMSTransportWorkloadTest,
   EXPECT_EQ(report.observer_records.size(), 1U);
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST_F(GGEMSTransportWorkloadTest,
        PreservesSourceLocalIdsAcrossADeviceSliceBoundary) {
   SourceRecord const source_0 =
@@ -444,11 +528,14 @@ TEST_F(GGEMSTransportWorkloadTest,
   ggems::core::random::GGEMSRandom random{};
   random.SetEngine("philox").SetSeed(6ULL);
 
-  TransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      random,       65U,
-      2U,           0ULL,
-      0U,           6U};
+  TransportWorkload workload{GetContext(),
+                             std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                             random,
+                             65U,
+                             *MakeMonoSourceConfiguration(2U),
+                             0ULL,
+                             0U,
+                             6U};
 
   auto config = MakeConfig({source_0, source_1}, k_counts, 3U, 100ULL, 1ULL);
   config.observer_config.enabled = 1U;
@@ -463,6 +550,9 @@ TEST_F(GGEMSTransportWorkloadTest,
   ExpectHistory(report, source_1, 0ULL, 103ULL, 1U, 1ULL,
                 {0LL, k_one_metre_pm, 0LL});
 }
+
+// =============================================================================
+// =============================================================================
 
 TEST_F(GGEMSTransportWorkloadTest,
        RunsAllRandomEnginesTwiceWithoutAdditionalSVMAllocation) {
@@ -479,11 +569,14 @@ TEST_F(GGEMSTransportWorkloadTest,
     ggems::core::random::GGEMSRandom random{};
     random.SetEngine(engine).SetSeed(7ULL);
 
-    TransportWorkload workload{
-        GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-        random,       65U,
-        1U,           1'024ULL,
-        0U,           4U};
+    TransportWorkload workload{GetContext(),
+                               std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                               random,
+                               65U,
+                               *MakeMonoSourceConfiguration(1U),
+                               1'024ULL,
+                               0U,
+                               4U};
 
     auto const allocated_after_construction =
         GetContext().GetAllocatedVRAM().value;
@@ -519,6 +612,9 @@ TEST_F(GGEMSTransportWorkloadTest,
   }
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST_F(GGEMSTransportWorkloadTest,
        IgnoresUnsupportedZeroPrimarySlotButRejectsItWhenNonZero) {
   SourceRecord unsupported = MakeSourceRecord(
@@ -532,11 +628,14 @@ TEST_F(GGEMSTransportWorkloadTest,
   ggems::core::random::GGEMSRandom random{};
   random.SetEngine("philox").SetSeed(8ULL);
 
-  TransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      random,       64U,
-      2U,           0ULL,
-      0U,           2U};
+  TransportWorkload workload{GetContext(),
+                             std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                             random,
+                             64U,
+                             *MakeMonoSourceConfiguration(2U),
+                             0ULL,
+                             0U,
+                             2U};
 
   constexpr std::array<std::uint64_t, 2U> k_zero_then_active{0ULL, 1ULL};
 
@@ -554,6 +653,9 @@ TEST_F(GGEMSTransportWorkloadTest,
   EXPECT_THROW(workload.Run(config), ggems::core::GGEMSExceptionBase);
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST_F(GGEMSTransportWorkloadTest,
        RejectsEndpointOverflowAndInvalidSourceRanges) {
   SourceRecord const overflowing = MakeSourceRecord(
@@ -563,11 +665,14 @@ TEST_F(GGEMSTransportWorkloadTest,
   ggems::core::random::GGEMSRandom random{};
   random.SetEngine("philox").SetSeed(9ULL);
 
-  TransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      random,       64U,
-      1U,           0ULL,
-      0U,           2U};
+  TransportWorkload workload{GetContext(),
+                             std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                             random,
+                             64U,
+                             *MakeMonoSourceConfiguration(1U),
+                             0ULL,
+                             0U,
+                             2U};
 
   auto config = MakeConfig({overflowing}, k_counts, 1U);
   EXPECT_THROW(workload.Run(config), ggems::core::GGEMSExceptionBase);
@@ -587,11 +692,14 @@ TEST_F(GGEMSTransportWorkloadTest, RejectsZeroStableSourceCount) {
   random.SetEngine("philox").SetSeed(10ULL);
 
   auto construct = [&]() -> void {
-    TransportWorkload workload{
-        GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-        random,       64U,
-        0U,           0ULL,
-        0U,           2U};
+    TransportWorkload workload{GetContext(),
+                               std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                               random,
+                               64U,
+                               *MakeMonoSourceConfiguration(0U),
+                               0ULL,
+                               0U,
+                               2U};
   };
 
   EXPECT_THROW(construct(), ggems::core::GGEMSExceptionBase);

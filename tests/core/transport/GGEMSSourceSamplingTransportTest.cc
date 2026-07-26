@@ -12,6 +12,7 @@
 #include <utility>
 #include <functional>
 #include <cstddef>
+#include <memory>
 
 #include <gtest/gtest.h>
 
@@ -19,6 +20,8 @@
 #include "GGEMS/core/observer/GGEMSObserverTypes.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
+#include "GGEMS/core/sources/GGEMSSourceTypes.hh"
+#include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/core/transport/GGEMSDiagnosticProjection.hh"
 #include "GGEMS/core/transport/GGEMSTransportWorkload.hh"
@@ -36,6 +39,24 @@ using SourceRunRange = ggems::core::sources::GGEMSSourceRunRange;
 using TransportRunConfig = ggems::core::transport::GGEMSTransportRunConfig;
 using TransportRunReport = ggems::core::transport::GGEMSTransportRunReport;
 using TransportWorkload = ggems::core::transport::GGEMSTransportWorkload;
+using SourceConfigurationSnapshotPtr =
+    ggems::core::sources::GGEMSSourceConfigurationSnapshotPtr;
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto MakeMonoSourceConfiguration(std::size_t source_count)
+    -> SourceConfigurationSnapshotPtr {
+  std::vector<std::shared_ptr<ggems::core::sources::GGEMSSource>> sources;
+  sources.reserve(source_count);
+
+  for (std::size_t source_index = 0U; source_index < source_count;
+       ++source_index) {
+    sources.push_back(std::make_shared<ggems::core::sources::GGEMSSource>());
+  }
+
+  return ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
+}
 
 // =============================================================================
 // =============================================================================
@@ -172,16 +193,22 @@ TEST_F(GGEMSSourceSamplingTransportTest,
     random_a.SetEngine(engine).SetSeed(7'777ULL);
     random_b.SetEngine(engine).SetSeed(7'777ULL);
 
-    TransportWorkload workload_a{
-        Context(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-        random_a,  1U,
-        1U,        0ULL,
-        0U,        16U};
-    TransportWorkload workload_b{
-        Context(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-        random_b,  1U,
-        1U,        0ULL,
-        0U,        2U};
+    TransportWorkload workload_a{Context(),
+                                 std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                                 random_a,
+                                 1U,
+                                 *MakeMonoSourceConfiguration(1U),
+                                 0ULL,
+                                 0U,
+                                 16U};
+    TransportWorkload workload_b{Context(),
+                                 std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                                 random_b,
+                                 1U,
+                                 *MakeMonoSourceConfiguration(1U),
+                                 0ULL,
+                                 0U,
+                                 2U};
 
     ggems::core::sources::GGEMSSource point_fixed{};
     auto fixed_config = MakeConfig({point_fixed.BuildRecord()}, k_eight);
@@ -237,11 +264,14 @@ TEST_F(GGEMSSourceSamplingTransportTest,
   ggems::core::random::GGEMSRandom random{};
   random.SetEngine("philox").SetSeed(8'888ULL);
 
-  TransportWorkload workload{
-      Context(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      random,    64U,
-      3U,        0ULL,
-      0U,        1'536U};
+  TransportWorkload workload{Context(),
+                             std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                             random,
+                             64U,
+                             *MakeMonoSourceConfiguration(3U),
+                             0ULL,
+                             0U,
+                             1'536U};
 
   auto const report = workload.Run(MakeConfig(
       {rectangle.BuildRecord(), ellipse.BuildRecord(), circle.BuildRecord()},
@@ -335,11 +365,14 @@ TEST_F(GGEMSSourceSamplingTransportTest,
     ggems::core::random::GGEMSRandom random{};
     random.SetEngine(engine).SetSeed(9'999ULL);
 
-    TransportWorkload workload{
-        Context(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-        random,    64U,
-        1U,        0ULL,
-        0U,        2U * k_primary_count};
+    TransportWorkload workload{Context(),
+                               std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                               random,
+                               64U,
+                               *MakeMonoSourceConfiguration(1U),
+                               0ULL,
+                               0U,
+                               2U * k_primary_count};
 
     auto const report =
         workload.Run(MakeConfig({source.BuildRecord()}, k_counts));
@@ -412,11 +445,14 @@ TEST_F(GGEMSSourceSamplingTransportTest,
   ggems::core::random::GGEMSRandom random{};
   random.SetEngine("pcg32").SetSeed(10'101ULL);
 
-  TransportWorkload workload{
-      Context(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      random,    64U,
-      5U,        0ULL,
-      0U,        770U};
+  TransportWorkload workload{Context(),
+                             std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                             random,
+                             64U,
+                             *MakeMonoSourceConfiguration(5U),
+                             0ULL,
+                             0U,
+                             770U};
 
   auto const report = workload.Run(MakeConfig(
       {point.BuildRecord(), rectangle.BuildRecord(), ellipse.BuildRecord(),
@@ -469,11 +505,14 @@ TEST_F(GGEMSSourceSamplingTransportTest,
     ggems::core::random::GGEMSRandom random{};
     random.SetEngine(engine).SetSeed(11'111ULL);
 
-    TransportWorkload workload{
-        Context(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-        random,    1U,
-        1U,        0ULL,
-        0U,        16U};
+    TransportWorkload workload{Context(),
+                               std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+                               random,
+                               1U,
+                               *MakeMonoSourceConfiguration(1U),
+                               0ULL,
+                               0U,
+                               16U};
 
     auto const allocated = Context().GetAllocatedVRAM().value;
     auto const allocation_count = Context().GetAllocationCountVRAM();

@@ -15,28 +15,27 @@ class GGEMSRandom {
 public:
   GGEMSRandom();
 
-public:
-  GGEMSRandom &SetEngine(GGEMSRandomEngine engine) noexcept;
-  GGEMSRandom &SetEngine(std::string_view engine_name);
+  auto SetEngine(GGEMSRandomEngine engine) noexcept -> GGEMSRandom &;
+  auto SetEngine(std::string_view engine_name) -> GGEMSRandom &;
 
-  GGEMSRandomEngine GetEngine() const noexcept;
-  std::string GetEngineName() const;
+  [[nodiscard]] auto GetEngine() const noexcept -> GGEMSRandomEngine;
+  [[nodiscard]] auto GetEngineName() const -> std::string;
 
-  GGEMSRandom &SetSeed(std::uint64_t seed) noexcept;
-  std::uint64_t GetSeed() const noexcept;
+  auto SetSeed(std::uint64_t seed) noexcept -> GGEMSRandom &;
+  [[nodiscard]] auto GetSeed() const noexcept -> std::uint64_t;
 
-  std::uint32_t GetKernelEngineId() const noexcept;
-  std::string GetKernelBuildDefinition() const;
+  [[nodiscard]] auto GetKernelEngineId() const noexcept -> std::uint32_t;
+  [[nodiscard]] auto GetKernelBuildDefinition() const -> std::string;
 
-  std::size_t GetStateSize() const noexcept;
+  [[nodiscard]] auto GetStateSize() const noexcept -> std::size_t;
 
-  void ValidateStateRange(std::uint64_t first_stream_id,
-                          std::size_t state_storage) const;
+  auto ValidateStateRange(std::uint64_t first_stream_id,
+                          std::size_t state_count) const -> void;
 
-  void InitialiseStates(std::uint64_t first_stream_id,
-                        std::span<std::byte> state_storage) const;
+  auto InitialiseStates(std::uint64_t first_stream_id,
+                        std::span<std::byte> state_storage) const -> void;
 
-  std::vector<std::string> BuildSummaryLines() const;
+  [[nodiscard]] auto BuildSummaryLines() const -> std::vector<std::string>;
   void Verbose() const;
 
 private:

@@ -14,6 +14,7 @@
 #include "GGEMS/core/GGEMSOutputMode.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
+#include "GGEMS/core/sources/GGEMSEnergyDistributionRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/core/units/GGEMSLengthUnits.hh"
@@ -522,8 +523,13 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
 
   auto const &records = source_run_snapshot_->GetRecords();
   auto const &ranges = source_run_snapshot_->GetRanges();
+  auto const &energy_records =
+      source_run_snapshot_->GetEnergyDistributionRecords();
+  auto const &energy_values =
+      source_run_snapshot_->GetEnergyValuesMilliElectronVolt();
 
-  if (records.size() != ranges.size()) {
+  if (records.size() != ranges.size() ||
+      records.size() != energy_records.size()) {
     ImGui::TextDisabled("Invalid source snapshot");
     return;
   }
@@ -532,6 +538,7 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
        ++source_index) {
     auto const &record = records[source_index];
     auto const &range = ranges[source_index];
+    auto const &energy_record = energy_records[source_index];
 
     std::string const source_type{core::sources::ToLongName(
         core::sources::FromKernelSourceType(record.source_type))};
@@ -546,6 +553,12 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
     auto const angular_distribution_type =
         core::sources::FromKernelAngularDistributionType(
             record.angular_distribution_type);
+
+    auto const energy_distribution_type =
+        core::sources::FromKernelEnergyDistributionType(
+            energy_record.distribution_type);
+    std::string const energy_distribution{
+        core::sources::ToLongName(energy_distribution_type)};
 
     std::string const emission_geometry{
         core::sources::ToLongName(emission_geometry_type)};
@@ -639,8 +652,6 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
       std::string const position_z =
           units::HumanReadableSignedLength(record.position_z_pm, 3);
 
-      std::string const energy =
-          units::HumanReadable(units::Energy{record.energy_milli_eV}, 3);
       std::string const time_start =
           units::HumanReadable(units::Time{record.time_start_ps}, 3);
       std::string const time_stop =
@@ -652,7 +663,54 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
                   static_cast<double>(record.axis_z_x),
                   static_cast<double>(record.axis_z_y),
                   static_cast<double>(record.axis_z_z));
-      ImGui::Text("Energy: %s", energy.c_str());
+
+      ImGui::Text("Energy distribution: %s", energy_distribution.c_str());
+
+      if (energy_distribution_type ==
+          core::sources::GGEMSEnergyDistributionType::Mono) {
+        std::string const energy =
+            units::HumanReadable(units::Energy{record.energy_milli_eV}, 3);
+        ImGui::Text("Energy: %s", energy.c_str());
+      } else {
+        bool const table_offset_fits =
+            energy_record.table_offset <=
+            static_cast<std::uint64_t>(energy_values.size());
+        std::size_t const table_offset =
+            table_offset_fits
+                ? static_cast<std::size_t>(energy_record.table_offset)
+                : 0U;
+        auto const table_count =
+            static_cast<std::size_t>(energy_record.table_count);
+        bool const valid_table =
+            table_offset_fits && table_count >= 2U &&
+            table_count <= energy_values.size() - table_offset;
+
+        if (!valid_table) {
+          ImGui::TextDisabled("Invalid energy table metadata");
+        } else {
+          std::string const first = units::HumanReadable(
+              units::Energy{energy_values[table_offset]}, 3);
+          std::string const last = units::HumanReadable(
+              units::Energy{energy_values[table_offset + table_count - 1U]}, 3);
+
+          if (energy_distribution_type ==
+              core::sources::GGEMSEnergyDistributionType::DiscreteLines) {
+            ImGui::Text("Line count: %zu", table_count);
+            ImGui::Text("Line-energy range: %s - %s", first.c_str(),
+                        last.c_str());
+          } else if (energy_distribution_type ==
+                     core::sources::GGEMSEnergyDistributionType::
+                         RegularSpectrum) {
+            std::string const width = units::HumanReadable(
+                units::Energy{energy_record.regular_bin_width_milli_eV}, 3);
+            ImGui::Text("Bin count: %zu", table_count);
+            ImGui::Text("Center range: %s - %s", first.c_str(), last.c_str());
+            ImGui::Text("Bin width: %s", width.c_str());
+          } else {
+            ImGui::TextDisabled("Unknown energy distribution");
+          }
+        }
+      }
 
       if (record.time_stop_ps <= record.time_start_ps) {
         ImGui::Text("Time: %s (fixed)", time_start.c_str());

@@ -15,8 +15,13 @@
 
 typedef GGEMSJKissState GGEMSRandomState;
 
+static inline uint GGEMS_RndmUInt32(__global GGEMSRandomState *states,
+                                    uint const index) {
+  return GGEMS_JKissNextUInt(states, index);
+}
+
 static inline float GGEMS_RndmUniform(__global GGEMSRandomState *states,
-                                      uint index) {
+                                      uint const index) {
   return GGEMS_JKissUniform(states, index);
 }
 
@@ -34,6 +39,11 @@ static inline float4 GGEMS_RndmUniform4(__global GGEMSRandomState *states,
 #include "core/random/GGEMSPCG32.clh"
 
 typedef GGEMSPCG32State GGEMSRandomState;
+
+static inline uint GGEMS_RndmUInt32(__global GGEMSRandomState *states,
+                                    uint const index) {
+  return GGEMS_PCG32NextUInt(states, index);
+}
 
 static inline float GGEMS_RndmUniform(__global GGEMSRandomState *states,
                                       uint const index) {
@@ -54,6 +64,11 @@ static inline float4 GGEMS_RndmUniform4(__global GGEMSRandomState *states,
 #include "core/random/GGEMSPhilox.clh"
 
 typedef GGEMSPhiloxState GGEMSRandomState;
+
+static inline uint GGEMS_RndmUInt32(__global GGEMSRandomState *states,
+                                    uint const index) {
+  return GGEMS_PhiloxNextUInt(states, index);
+}
 
 static inline float GGEMS_RndmUniform(__global GGEMSRandomState *states,
                                       uint const index) {

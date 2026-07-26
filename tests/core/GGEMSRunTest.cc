@@ -265,7 +265,6 @@ TEST_F(GGEMSRunTest, UsesIndependentSourceSnapshotsAcrossSequentialRuns) {
   source
       ->SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMilliElectronVolt(2'000'000ULL)
       .SetTimeWindowPicoSecond(200ULL, 200ULL)
       .SetPositionPicoMeter(-40LL, 50LL, -60LL)
       .SetDirection(0.0F, -1.0F, 0.0F)

@@ -2,9 +2,17 @@
 
 #include <array>
 #include <cstdint>
+#include <filesystem>
+#include <span>
+#include <string_view>
 
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
+
+namespace ggems::core {
+class GGEMSRun;
+}
 
 namespace ggems::core::sources {
 
@@ -14,9 +22,9 @@ public:
   ~GGEMSSource() = default;
 
   GGEMSSource(GGEMSSource const &) = default;
-  GGEMSSource(GGEMSSource &&) = default;
-  auto operator=(GGEMSSource const &) -> GGEMSSource & = default;
-  auto operator=(GGEMSSource &&) -> GGEMSSource & = default;
+  GGEMSSource(GGEMSSource &&other);
+  auto operator=(GGEMSSource const &other) -> GGEMSSource &;
+  auto operator=(GGEMSSource &&other) -> GGEMSSource &;
 
   auto SetPrimaryCount(std::uint64_t primary_count) noexcept -> GGEMSSource &;
 
@@ -52,6 +60,22 @@ public:
   auto SetEnergyMilliElectronVolt(std::uint64_t energy_milli_eV)
       -> GGEMSSource &;
 
+  auto SetDiscreteEnergyLines(std::span<double const> energies,
+                              std::span<double const> relative_weights,
+                              std::string_view unit) -> GGEMSSource &;
+
+  auto SetRegularEnergySpectrum(std::span<double const> bin_centers,
+                                std::span<double const> relative_bin_weights,
+                                std::string_view unit) -> GGEMSSource &;
+
+  auto LoadRegularEnergySpectrum(std::filesystem::path const &filename,
+                                 std::string_view unit) -> GGEMSSource &;
+
+  [[nodiscard]] auto GetEnergyDistribution() const noexcept
+      -> GGEMSEnergyDistribution const & {
+    return energy_distribution_;
+  }
+
   auto SetTimeWindowPicoSecond(std::uint64_t time_start_ps,
                                std::uint64_t time_stop_ps) -> GGEMSSource &;
 
@@ -75,8 +99,18 @@ public:
   auto Verbose() const -> void;
 
 private:
+  friend class ggems::core::GGEMSRun;
+
+  auto CheckEnergyConfigurationMutable() const -> void;
+  auto FinalizeInitialization() noexcept -> void;
+
+  auto CommitEnergyDistribution(GGEMSEnergyDistribution distribution) noexcept
+      -> void;
+
   std::uint64_t primary_count_{4096ULL};
   GGEMSSourceRecord record_{};
+  GGEMSEnergyDistribution energy_distribution_;
+  bool initialization_finalized_{false};
 };
 
 } // namespace ggems::core::sources

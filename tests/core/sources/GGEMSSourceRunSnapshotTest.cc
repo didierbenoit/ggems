@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -15,10 +16,17 @@
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
+#include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
 
 namespace {
 
 using GGEMSSourcePtr = std::shared_ptr<ggems::core::sources::GGEMSSource>;
+
+template <typename T>
+concept HasEnergyTableReservation =
+    requires(T value) { value.ReserveEnergyTableCapacity(std::size_t{1U}); };
+
+static_assert(!HasEnergyTableReservation<ggems::core::sources::GGEMSSource>);
 
 // =============================================================================
 // =============================================================================
@@ -602,4 +610,159 @@ TEST(GGEMSSourceRunSnapshot, OwnsIndependentGeometryAndAngularConfiguration) {
 
   ExpectSourceRecordsEqual(first.GetRecords()[0U], first.GetRecords()[1U]);
   ExpectSourceRecordsEqual(second.GetRecords()[0U], second.GetRecords()[1U]);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceRunSnapshot,
+     OwnsPackedEnergyTablesWithZeroPrimaryAndDuplicateSlots) {
+  constexpr std::array<double, 3U> k_discrete_energies{1.0, 2.0, 3.0};
+  constexpr std::array<double, 3U> k_discrete_weights{1.0, 0.0, 3.0};
+  constexpr std::array<double, 3U> k_regular_centers{10.0, 12.0, 14.0};
+  constexpr std::array<double, 3U> k_regular_weights{0.0, 1.0, 1.0};
+
+  auto mono = MakeSource(1ULL);
+  mono->SetEnergyMilliElectronVolt(511'000'000ULL);
+
+  auto discrete = MakeSource(0ULL);
+  discrete->SetDiscreteEnergyLines(k_discrete_energies, k_discrete_weights,
+                                   "MeV");
+
+  auto regular = MakeSource(2ULL);
+  regular->SetRegularEnergySpectrum(k_regular_centers, k_regular_weights,
+                                    "MeV");
+
+  std::vector<GGEMSSourcePtr> sources{mono, discrete, regular, discrete};
+  auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(sources);
+
+  auto const &records = snapshot.GetRecords();
+  auto const &ranges = snapshot.GetRanges();
+  auto const &energy_records = snapshot.GetEnergyDistributionRecords();
+  auto const &values = snapshot.GetEnergyValuesMilliElectronVolt();
+  auto const &relative_weights = snapshot.GetRelativeWeights();
+  auto const &ticket_bounds = snapshot.GetCumulativeTicketUpperBounds();
+
+  ASSERT_EQ(records.size(), 4U);
+  ASSERT_EQ(ranges.size(), 4U);
+  ASSERT_EQ(energy_records.size(), 4U);
+
+  ExpectSourceRange(ranges[0U], 0ULL, 1ULL);
+  ExpectSourceRange(ranges[1U], 1ULL, 0ULL);
+  ExpectSourceRange(ranges[2U], 1ULL, 2ULL);
+  ExpectSourceRange(ranges[3U], 3ULL, 0ULL);
+  EXPECT_EQ(snapshot.GetTotalPrimaryCount(), 3ULL);
+
+  EXPECT_EQ(records[0U].energy_milli_eV, 511'000'000ULL);
+  EXPECT_EQ(records[1U].energy_milli_eV, 0ULL);
+  EXPECT_EQ(records[2U].energy_milli_eV, 0ULL);
+  EXPECT_EQ(records[3U].energy_milli_eV, 0ULL);
+
+  EXPECT_EQ(ggems::core::sources::FromKernelEnergyDistributionType(
+                energy_records[0U].distribution_type),
+            ggems::core::sources::GGEMSEnergyDistributionType::Mono);
+  EXPECT_EQ(energy_records[0U].table_offset, 0ULL);
+  EXPECT_EQ(energy_records[0U].table_count, 0U);
+
+  EXPECT_EQ(ggems::core::sources::FromKernelEnergyDistributionType(
+                energy_records[1U].distribution_type),
+            ggems::core::sources::GGEMSEnergyDistributionType::DiscreteLines);
+  EXPECT_EQ(energy_records[1U].table_offset, 0ULL);
+  EXPECT_EQ(energy_records[1U].table_count, 3U);
+
+  EXPECT_EQ(ggems::core::sources::FromKernelEnergyDistributionType(
+                energy_records[2U].distribution_type),
+            ggems::core::sources::GGEMSEnergyDistributionType::RegularSpectrum);
+  EXPECT_EQ(energy_records[2U].table_offset, 3ULL);
+  EXPECT_EQ(energy_records[2U].table_count, 3U);
+  EXPECT_EQ(energy_records[2U].regular_bin_width_milli_eV, 2'000'000'000ULL);
+
+  EXPECT_EQ(energy_records[3U].table_offset, 6ULL);
+  EXPECT_EQ(energy_records[3U].table_count, 3U);
+
+  std::vector<std::uint64_t> const expected_values{
+      1'000'000'000ULL,  2'000'000'000ULL,  3'000'000'000ULL,
+      10'000'000'000ULL, 12'000'000'000ULL, 14'000'000'000ULL,
+      1'000'000'000ULL,  2'000'000'000ULL,  3'000'000'000ULL};
+  std::vector<double> const expected_relative_weights{1.0, 0.0, 3.0, 0.0, 1.0,
+                                                      1.0, 1.0, 0.0, 3.0};
+  std::vector<std::uint64_t> const expected_ticket_bounds{
+      1'073'741'824ULL, 1'073'741'824ULL, 4'294'967'296ULL, 0ULL,
+      2'147'483'648ULL, 4'294'967'296ULL, 1'073'741'824ULL, 1'073'741'824ULL,
+      4'294'967'296ULL};
+
+  EXPECT_EQ(values, expected_values);
+  EXPECT_EQ(relative_weights, expected_relative_weights);
+  EXPECT_EQ(ticket_bounds, expected_ticket_bounds);
+
+  discrete->SetEnergyMilliElectronVolt(99'000'000ULL);
+  regular->SetEnergyMilliElectronVolt(88'000'000ULL);
+
+  EXPECT_EQ(snapshot.GetEnergyValuesMilliElectronVolt(), expected_values);
+  EXPECT_EQ(snapshot.GetRelativeWeights(), expected_relative_weights);
+  EXPECT_EQ(snapshot.GetCumulativeTicketUpperBounds(), expected_ticket_bounds);
+  EXPECT_EQ(snapshot.GetEnergyDistributionRecords()[1U].table_offset, 0ULL);
+  EXPECT_EQ(snapshot.GetEnergyDistributionRecords()[3U].table_offset, 6ULL);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceRunSnapshot, AllMonoSourcesUseEmptyPackedEnergyTables) {
+  auto source_0 = MakeSource(1ULL);
+  auto source_1 = MakeSource(0ULL);
+  auto source_2 = MakeSource(2ULL);
+
+  std::vector<GGEMSSourcePtr> sources{source_0, source_1, source_2};
+  auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(sources);
+
+  ASSERT_EQ(snapshot.GetEnergyDistributionRecords().size(), 3U);
+  EXPECT_TRUE(snapshot.GetEnergyValuesMilliElectronVolt().empty());
+  EXPECT_TRUE(snapshot.GetRelativeWeights().empty());
+  EXPECT_TRUE(snapshot.GetCumulativeTicketUpperBounds().empty());
+
+  for (auto const &record : snapshot.GetEnergyDistributionRecords()) {
+    EXPECT_EQ(ggems::core::sources::FromKernelEnergyDistributionType(
+                  record.distribution_type),
+              ggems::core::sources::GGEMSEnergyDistributionType::Mono);
+    EXPECT_EQ(record.table_offset, 0ULL);
+    EXPECT_EQ(record.table_count, 0U);
+    EXPECT_EQ(record.regular_bin_width_milli_eV, 0ULL);
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceRunSnapshot,
+     PacksOneHundredThousandRegularBinsWithoutReservation) {
+  constexpr std::size_t k_bin_count{100'000U};
+  std::vector<double> bin_centers(k_bin_count);
+  std::vector<double> relative_weights(k_bin_count, 1.0);
+
+  for (std::size_t index = 0U; index < k_bin_count; ++index) {
+    bin_centers[index] = 1'000'000.0 + 2.0 * static_cast<double>(index);
+  }
+
+  ggems::core::sources::GGEMSSource source{};
+  source.SetRegularEnergySpectrum(bin_centers, relative_weights, "meV");
+
+  auto const snapshot = ggems::core::sources::BuildSourceRunSnapshot(source);
+  auto const &energy_records = snapshot.GetEnergyDistributionRecords();
+  auto const &values = snapshot.GetEnergyValuesMilliElectronVolt();
+  auto const &weights = snapshot.GetRelativeWeights();
+  auto const &ticket_bounds = snapshot.GetCumulativeTicketUpperBounds();
+
+  ASSERT_EQ(energy_records.size(), 1U);
+  EXPECT_EQ(energy_records[0U].table_offset, 0ULL);
+  EXPECT_EQ(energy_records[0U].table_count, k_bin_count);
+  EXPECT_EQ(values.size(), k_bin_count);
+  EXPECT_EQ(weights.size(), k_bin_count);
+  ASSERT_EQ(ticket_bounds.size(), k_bin_count);
+  EXPECT_EQ(ticket_bounds.back(),
+            ggems::core::sources::k_energy_ticket_space_size);
+  EXPECT_TRUE(std::ranges::all_of(
+      weights, [](double weight) -> bool { return weight == 1.0; }));
+  EXPECT_TRUE(std::ranges::is_sorted(ticket_bounds));
+  EXPECT_EQ(std::ranges::adjacent_find(ticket_bounds), ticket_bounds.end());
 }

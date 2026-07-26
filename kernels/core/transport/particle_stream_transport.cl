@@ -1,6 +1,7 @@
 #include "core/observer/GGEMSObserverRecord.clh"
 #include "core/particles/GGEMSParticleState.clh"
 #include "core/random/GGEMSRandom.clh"
+#include "core/sources/GGEMSEnergyDistribution.clh"
 #include "core/sources/GGEMSSource.clh"
 #include "core/sources/GGEMSSourceRunRange.clh"
 #include "core/transport/GGEMSDiagnosticProjection.clh"
@@ -23,8 +24,10 @@ __kernel void particle_stream_transport(
     __global GGEMSObserverConfigRecord const *observer_config,
     volatile __global GGEMSObserverCounters *observer_counters,
     __global GGEMSObserverRecord *observer_records,
-    uint observer_record_capacity, ulong run_id, uint worker_count) {
-  (void)(random_states);
+    uint observer_record_capacity, ulong run_id, uint worker_count,
+    __global GGEMSEnergyDistributionRecord const *energy_distribution_records,
+    __global ulong const *energy_values_milli_eV,
+    __global ulong const *cumulative_ticket_upper) {
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER == 0
   (void)(observer_config);
@@ -109,6 +112,13 @@ __kernel void particle_stream_transport(
 
     GGEMSParticleState particle = GGEMS_SourceInitialisePrimary(
         global_primary_id, source_local_primary_id, source, random_values);
+
+    __global GGEMSEnergyDistributionRecord const *energy_distribution =
+        &energy_distribution_records[selected_source_index];
+
+    particle.energy_milli_eV = GGEMS_EnergyDistributionSample(
+        source, energy_distribution, energy_values_milli_eV,
+        cumulative_ticket_upper, random_states, worker_id);
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER
     if (capture_history != 0U) {

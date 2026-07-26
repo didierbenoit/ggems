@@ -22,7 +22,7 @@ using GGEMSSourcePtr = std::shared_ptr<GGEMSSource>;
 constexpr std::string_view k_source_description{
     "Type: Analytic | Primary count: 7 | "
     "Particle: Electron (b-) | Emission: Point | Angular: Fixed | "
-    "Energy: 2.0000000 MeV | "
+    "Energy: Mono (2.0000000 MeV) | "
     "Time window: [1.0000000 ns, 2.0000000 ns) | "
     "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
     "Axis Z: (1, 0, 0) | Weight: 0.25"};
@@ -33,7 +33,7 @@ constexpr std::string_view k_source_description{
 constexpr std::string_view k_zero_primary_source_description{
     "Type: Analytic | Primary count: 0 | "
     "Particle: Electron (b-) | Emission: Point | Angular: Fixed | "
-    "Energy: 2.0000000 MeV | "
+    "Energy: Mono (2.0000000 MeV) | "
     "Time window: [1.0000000 ns, 2.0000000 ns) | "
     "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
     "Axis Z: (1, 0, 0) | Weight: 0.25"};
@@ -44,7 +44,7 @@ constexpr std::string_view k_zero_primary_source_description{
 constexpr std::string_view k_reconfigured_source_description{
     "Type: Analytic | Primary count: 11 | "
     "Particle: Gamma (g) | Emission: Point | Angular: Fixed | "
-    "Energy: 511.0000000 keV | "
+    "Energy: Mono (511.0000000 keV) | "
     "Time window: [3.0000000 ns, 4.0000000 ns) | "
     "Position: (0.0000000 pm, 0.0000000 pm, 1.0000000 um) | "
     "Axis Z: (0, 1, 0) | Weight: 0.5"};
@@ -238,7 +238,7 @@ TEST(GGEMSSourceDescription, DistinguishesFixedTimeFromNonEmptyWindow) {
                                                  source->GetPrimaryCount()),
             "Type: Analytic | Primary count: 7 | "
             "Particle: Electron (b-) | Emission: Point | Angular: Fixed | "
-            "Energy: 2.0000000 MeV | "
+            "Energy: Mono (2.0000000 MeV) | "
             "Time: fixed at 1.0000000 ns | "
             "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
             "Axis Z: (1, 0, 0) | Weight: 0.25");

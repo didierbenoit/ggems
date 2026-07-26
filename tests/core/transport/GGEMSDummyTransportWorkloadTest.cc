@@ -866,6 +866,11 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   EXPECT_EQ(context.GetAllocationCountVRAM(),
             allocation_count_after_construction);
 
+  auto table_backed_config = config;
+  table_backed_config.source_records[0U].energy_milli_eV = 0ULL;
+  EXPECT_THROW(workload.Run(table_backed_config),
+               ggems::core::GGEMSExceptionBase);
+
   auto report = workload.Run(config);
 
   EXPECT_EQ(report.counters.overflow_count, 1U);
