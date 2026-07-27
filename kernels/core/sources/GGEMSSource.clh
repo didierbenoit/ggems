@@ -3,6 +3,8 @@
 
 #include "core/particles/GGEMSParticleState.clh"
 #include "core/sources/GGEMSSourceRecord.clh"
+#include "core/random/GGEMSRandom.clh"
+#include "core/sources/GGEMSEnergyDistribution.clh"
 
 #ifndef GGEMS_SOURCE_TRACK_BRANCH_BITS
 #define GGEMS_SOURCE_TRACK_BRANCH_BITS 16U
@@ -23,13 +25,8 @@ static inline ulong GGEMS_SourceMakeBaseTrackId(ulong global_primary_id) {
 static inline ulong
 GGEMS_SourceSampleTimePs(ulong source_local_primary_id,
                          __global GGEMSSourceRecord const *source) {
-  if (source->time_stop_ps <= source->time_start_ps) {
-    return source->time_start_ps;
-  }
-
-  ulong duration_ps = source->time_stop_ps - source->time_start_ps;
-
-  return source->time_start_ps + (source_local_primary_id % duration_ps);
+  (void)(source_local_primary_id);
+  return source->time_start_ps;
 }
 
 // =============================================================================
@@ -39,27 +36,6 @@ static inline uint GGEMS_SourceIsVolumeGeometry(uint geometry_type) {
   return geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_BOX ||
          geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_SPHERE ||
          geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_CYLINDER;
-}
-
-// =============================================================================
-// =============================================================================
-
-static inline uint
-GGEMS_SourceRandomVectorDrawCount(__global GGEMSSourceRecord const *source) {
-  uint draw_count =
-      source->emission_geometry_type != GGEMS_EMISSION_GEOMETRY_TYPE_POINT ||
-              source->angular_distribution_type ==
-                  GGEMS_ANGULAR_DISTRIBUTION_TYPE_ISOTROPIC
-          ? 1U
-          : 0U;
-
-  if (GGEMS_SourceIsVolumeGeometry(source->emission_geometry_type) != 0U &&
-      source->angular_distribution_type ==
-          GGEMS_ANGULAR_DISTRIBUTION_TYPE_ISOTROPIC) {
-    ++draw_count;
-  }
-
-  return draw_count;
 }
 
 // =============================================================================
@@ -138,8 +114,8 @@ GGEMS_SourceSampleLocalVolumePosition(__global GGEMSSourceRecord const *source,
 // =============================================================================
 
 static inline long3
-GGEMS_SourceSamplePosition(__global GGEMSSourceRecord const *source,
-                           float4 random_values) {
+GGEMS_SourceSamplePositionFromUniforms(__global GGEMSSourceRecord const *source,
+                                       float4 random_values) {
   if (source->emission_geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_POINT) {
     return (long3)(source->position_x_pm, source->position_y_pm,
                    source->position_z_pm);
@@ -190,6 +166,21 @@ GGEMS_SourceSamplePosition(__global GGEMSSourceRecord const *source,
 // =============================================================================
 // =============================================================================
 
+static inline long3
+GGEMS_SourceSamplePosition(__global GGEMSSourceRecord const *source,
+                           __global GGEMSRandomState *random_states,
+                           uint worker_id) {
+  if (source->emission_geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_POINT) {
+    return GGEMS_SourceSamplePositionFromUniforms(source, (float4)(0.0f));
+  }
+
+  float4 const random_values = GGEMS_RndmUniform4(random_states, worker_id);
+  return GGEMS_SourceSamplePositionFromUniforms(source, random_values);
+}
+
+// =============================================================================
+// =============================================================================
+
 static inline ulong GGEMS_SourceSignedMagnitude(long value) {
   return value < 0L ? (ulong)(-(value + 1L)) + 1UL : (ulong)(value);
 }
@@ -228,9 +219,9 @@ GGEMS_SourceUsesDefaultFullSphere(__global GGEMSSourceRecord const *source) {
 // =============================================================================
 // =============================================================================
 
-static inline float3 GGEMS_SourceSampleDirection(
+static inline float3 GGEMS_SourceSampleDirectionFromUniforms(
     __global GGEMSSourceRecord const *source, long3 sampled_position,
-    float4 primary_random_values, float4 secondary_random_values) {
+    float4 random_values) {
   if (source->angular_distribution_type ==
       GGEMS_ANGULAR_DISTRIBUTION_TYPE_FIXED) {
     return (float3)(source->axis_z_x, source->axis_z_y, source->axis_z_z);
@@ -239,12 +230,8 @@ static inline float3 GGEMS_SourceSampleDirection(
   if (source->angular_distribution_type ==
       GGEMS_ANGULAR_DISTRIBUTION_TYPE_ISOTROPIC) {
 
-    uint const volume_geometry =
-        GGEMS_SourceIsVolumeGeometry(source->emission_geometry_type);
-    float const u_theta = volume_geometry != 0U ? secondary_random_values.x
-                                                : primary_random_values.z;
-    float const u_phi = volume_geometry != 0U ? secondary_random_values.y
-                                              : primary_random_values.w;
+    float const u_theta = random_values.x;
+    float const u_phi = random_values.y;
 
     if (GGEMS_SourceUsesDefaultFullSphere(source) != 0U) {
       float const cos_theta = 1.0f - 2.0f * u_theta;
@@ -298,19 +285,64 @@ static inline float3 GGEMS_SourceSampleDirection(
 // =============================================================================
 // =============================================================================
 
+static inline float3 GGEMS_SourceSampleDirection(
+    __global GGEMSSourceRecord const *source, long3 sampled_position,
+    __global GGEMSRandomState *random_states, uint worker_id) {
+  if (source->angular_distribution_type ==
+      GGEMS_ANGULAR_DISTRIBUTION_TYPE_ISOTROPIC) {
+    float4 const random_values = GGEMS_RndmUniform4(random_states, worker_id);
+    return GGEMS_SourceSampleDirectionFromUniforms(source, sampled_position,
+                                                   random_values);
+  }
+
+  return GGEMS_SourceSampleDirectionFromUniforms(source, sampled_position,
+                                                 (float4)(0.0f));
+}
+
+// =============================================================================
+// =============================================================================
+
+static inline ulong GGEMS_SourceSampleEnergy(
+    __global GGEMSSourceRecord const *source,
+    __global GGEMSEnergyDistributionRecord const *distribution,
+    __global ulong const *energy_values_milli_eV,
+    __global ulong const *cumulative_ticket_upper,
+    __global GGEMSRandomState *random_states, uint worker_id) {
+  return GGEMS_EnergyDistributionSample(
+      source, distribution, energy_values_milli_eV, cumulative_ticket_upper,
+      random_states, worker_id);
+}
+
+// =============================================================================
+// =============================================================================
+
 static inline GGEMSParticleState GGEMS_SourceInitialisePrimary(
     ulong global_primary_id, ulong source_local_primary_id,
-    __global GGEMSSourceRecord const *source, float4 primary_random_values,
-    float4 secondary_random_values) {
+    __global GGEMSSourceRecord const *source,
+    __global GGEMSEnergyDistributionRecord const *energy_distribution,
+    __global ulong const *energy_values_milli_eV,
+    __global ulong const *cumulative_ticket_upper,
+    __global GGEMSRandomState *random_states, uint worker_id) {
+  ulong const sampled_time_ps =
+      GGEMS_SourceSampleTimePs(source_local_primary_id, source);
+
+  long3 const sampled_position =
+      GGEMS_SourceSamplePosition(source, random_states, worker_id);
+
+  float3 const sampled_direction = GGEMS_SourceSampleDirection(
+      source, sampled_position, random_states, worker_id);
+
+  ulong const sampled_energy_milli_eV = GGEMS_SourceSampleEnergy(
+      source, energy_distribution, energy_values_milli_eV,
+      cumulative_ticket_upper, random_states, worker_id);
+
   GGEMSParticleState particle;
 
   particle.global_particle_id = global_primary_id;
   particle.track_id = 0UL;
   particle.parent_track_id = GGEMS_INVALID_ID_U64;
-  particle.time_ps = GGEMS_SourceSampleTimePs(source_local_primary_id, source);
 
-  long3 sampled_position =
-      GGEMS_SourceSamplePosition(source, primary_random_values);
+  particle.time_ps = sampled_time_ps;
 
   particle.position_x_pm = sampled_position.x;
   particle.position_y_pm = sampled_position.y;
@@ -326,15 +358,12 @@ static inline GGEMSParticleState GGEMS_SourceInitialisePrimary(
   particle.material_id = GGEMS_INVALID_ID_U32;
   particle.region_id = GGEMS_INVALID_ID_U32;
 
-  float3 sampled_direction = GGEMS_SourceSampleDirection(
-      source, sampled_position, primary_random_values, secondary_random_values);
-
   particle.direction_x = sampled_direction.x;
   particle.direction_y = sampled_direction.y;
   particle.direction_z = sampled_direction.z;
   particle.direction_w = 0.0F;
 
-  particle.energy_milli_eV = source->energy_milli_eV;
+  particle.energy_milli_eV = sampled_energy_milli_eV;
   particle.weight = source->weight;
 
   return particle;

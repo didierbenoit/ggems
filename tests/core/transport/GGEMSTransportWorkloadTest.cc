@@ -58,12 +58,14 @@ MakeSourceRecord(std::array<std::int64_t, 3U> const &position,
   source.SetAnalytic()
       .SetEmittedParticleType(particle_type)
       .SetEnergyMilliElectronVolt(5'000'000'000ULL)
-      .SetTimeWindowPicoSecond(123ULL, 123ULL)
       .SetPositionPicoMeter(position[0U], position[1U], position[2U])
       .SetDirection(direction[0U], direction[1U], direction[2U])
       .SetWeight(0.75F);
 
-  return source.BuildRecord();
+  SourceRecord record = source.BuildRecord();
+  record.time_start_ps = 123ULL;
+  record.time_stop_ps = 123ULL;
+  return record;
 }
 
 // =============================================================================

@@ -8,6 +8,7 @@
 #include <mutex>
 #include <optional>
 
+#include "GGEMS/core/GGEMSTimeWindow.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/particles/GGEMSPrimaryStream.hh"
@@ -36,6 +37,16 @@ public:
   void Initialise();
   void Run();
 
+  auto SetTimePicoSecond(std::uint64_t start_ps, std::uint64_t stop_ps,
+                         std::uint64_t step_ps) -> void;
+  auto ResetTime() -> void;
+
+  [[nodiscard]] auto HasTimeConfiguration() const noexcept -> bool;
+  [[nodiscard]] auto HasNextTimeStep() const noexcept -> bool;
+  [[nodiscard]] auto GetCurrentTimePicoSecond() const noexcept -> std::uint64_t;
+  [[nodiscard]] auto GetCurrentTimeWindowPicoSecond() const noexcept
+      -> GGEMSTimeWindow;
+
   [[nodiscard]] auto GetLastSourceRunSnapshot() const
       -> std::optional<sources::GGEMSSourceRunSnapshot>;
   [[nodiscard]] auto HasObserver() const noexcept -> bool;
@@ -63,6 +74,12 @@ private:
 
   bool initialised_{false};
   std::uint64_t next_run_id_{0ULL};
+
+  bool has_time_configuration_{false};
+  std::uint64_t time_start_ps_{0ULL};
+  std::uint64_t time_stop_ps_{0ULL};
+  std::uint64_t time_step_ps_{0ULL};
+  std::atomic<std::uint64_t> current_time_ps_{0ULL};
 
   sources::GGEMSSourceConfigurationSnapshotPtr source_configuration_snapshot_;
 

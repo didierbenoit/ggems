@@ -11,6 +11,7 @@
 #include <gtest/gtest.h>
 
 #include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/GGEMSTimeWindow.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
@@ -111,7 +112,6 @@ TEST(GGEMSSourceRunSnapshot, BuildsExpectedMonoSourceSnapshot) {
       .SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMilliElectronVolt(222'000'000ULL)
-      .SetTimeWindowPicoSecond(12ULL, 34ULL)
       .SetPositionPicoMeter(-11LL, 22LL, -33LL)
       .SetDirection(0.0F, -4.0F, 0.0F)
       .SetWeight(0.25F);
@@ -132,8 +132,8 @@ TEST(GGEMSSourceRunSnapshot, BuildsExpectedMonoSourceSnapshot) {
   auto const &record = records[0U];
 
   EXPECT_EQ(record.source_id, 0ULL);
-  EXPECT_EQ(record.time_start_ps, 12ULL);
-  EXPECT_EQ(record.time_stop_ps, 34ULL);
+  EXPECT_EQ(record.time_start_ps, 0ULL);
+  EXPECT_EQ(record.time_stop_ps, 0ULL);
   EXPECT_EQ(record.energy_milli_eV, 222'000'000ULL);
 
   EXPECT_EQ(record.position_x_pm, -11LL);
@@ -172,7 +172,6 @@ TEST(GGEMSSourceRunSnapshot, OwnsIndependentSourceState) {
       .SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMilliElectronVolt(111'000'000ULL)
-      .SetTimeWindowPicoSecond(10ULL, 20ULL)
       .SetPositionPicoMeter(11LL, -22LL, 33LL)
       .SetDirection(1.0F, 0.0F, 0.0F)
       .SetWeight(0.125F);
@@ -184,7 +183,6 @@ TEST(GGEMSSourceRunSnapshot, OwnsIndependentSourceState) {
       .SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMilliElectronVolt(222'000'000ULL)
-      .SetTimeWindowPicoSecond(30ULL, 40ULL)
       .SetPositionPicoMeter(-44LL, 55LL, -66LL)
       .SetDirection(0.0F, -1.0F, 0.0F)
       .SetWeight(0.875F);
@@ -332,6 +330,47 @@ TEST(GGEMSSourceRunSnapshot, PreservesZeroPrimarySourceSlots) {
   }
 
   EXPECT_EQ(snapshot.GetTotalPrimaryCount(), 10ULL);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceRunSnapshot,
+     InjectsOneWindowIntoEveryCopiedRecordWithoutMutatingSources) {
+  auto active = MakeSource(3ULL);
+  auto empty = MakeSource(0ULL);
+  active->SetPositionPicoMeter(1LL, 2LL, 3LL);
+  empty->SetPositionPicoMeter(4LL, 5LL, 6LL);
+  std::vector<GGEMSSourcePtr> sources{active, empty, active};
+
+  auto const active_before = active->BuildRecord();
+  auto const empty_before = empty->BuildRecord();
+  constexpr ggems::core::GGEMSTimeWindow k_window{.start_ps = 100ULL,
+                                                  .stop_ps = 125ULL};
+
+  auto const snapshot =
+      ggems::core::sources::BuildSourceRunSnapshot(sources, k_window);
+
+  ASSERT_EQ(snapshot.GetRecords().size(), 3U);
+  ASSERT_EQ(snapshot.GetRanges().size(), 3U);
+  for (auto const &record : snapshot.GetRecords()) {
+    EXPECT_EQ(record.time_start_ps, k_window.start_ps);
+    EXPECT_EQ(record.time_stop_ps, k_window.stop_ps);
+  }
+
+  ExpectSourceRange(snapshot.GetRanges()[0U], 0ULL, 3ULL);
+  ExpectSourceRange(snapshot.GetRanges()[1U], 3ULL, 0ULL);
+  ExpectSourceRange(snapshot.GetRanges()[2U], 3ULL, 3ULL);
+  EXPECT_EQ(snapshot.GetTotalPrimaryCount(), 6ULL);
+
+  ExpectSourceRecordsEqual(active->BuildRecord(), active_before);
+  ExpectSourceRecordsEqual(empty->BuildRecord(), empty_before);
+  EXPECT_EQ(active->BuildRecord().time_start_ps, 0ULL);
+  EXPECT_EQ(active->BuildRecord().time_stop_ps, 0ULL);
+
+  EXPECT_THROW(static_cast<void>(ggems::core::sources::BuildSourceRunSnapshot(
+                   sources, {.start_ps = 2ULL, .stop_ps = 1ULL})),
+               ggems::core::GGEMSExceptionBase);
 }
 
 // =============================================================================
@@ -522,7 +561,6 @@ TEST(GGEMSSourceRunSnapshot, SingleSourceOverloadMatchesCollectionOverload) {
   source->SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Proton)
       .SetEnergyMilliElectronVolt(555'000'000ULL)
-      .SetTimeWindowPicoSecond(50ULL, 75ULL)
       .SetPositionPicoMeter(-10LL, 20LL, -30LL)
       .SetDirection(1.0F, -1.0F, 0.0F)
       .SetWeight(0.625F);

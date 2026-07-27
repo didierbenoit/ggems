@@ -39,6 +39,12 @@ class GGEMSSourceBindingsTest(unittest.TestCase):
             source,
         )
 
+    def test_time_configuration_is_owned_by_run(self) -> None:
+        source = ggems.source.GGEMSSource()
+
+        self.assertFalse(hasattr(source, "set_time_window"))
+        self.assertFalse(hasattr(source, "set_time"))
+
     def test_all_distance_units_are_accepted(self) -> None:
         for unit in ("pm", "nm", "um", "mm", "cm", "m"):
             with self.subTest(unit=unit):

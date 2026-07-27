@@ -28,12 +28,23 @@
 #include "GGEMS/core/observer/GGEMSTransportObserver.hh"
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/core/transport/GGEMSDiagnosticProjection.hh"
+#include "GGEMS/core/GGEMSTimeWindow.hh"
 
 using namespace ggems::units;
 
 namespace ggems::core {
-
 namespace {
+
+// =============================================================================
+// =============================================================================
+
+struct RunningGuard {
+  std::atomic<bool> &running;
+  ~RunningGuard() { running.store(false); }
+};
+
+// =============================================================================
+// =============================================================================
 
 auto AccumulateTransportCounters(transport::GGEMSTransportCounters &dst,
                                  transport::GGEMSTransportCounters const &src)
@@ -130,6 +141,75 @@ auto GGEMSRun::GetLastSourceRunSnapshot() const
 
 auto GGEMSRun::HasObserver() const noexcept -> bool {
   return observer_ != nullptr;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSRun::SetTimePicoSecond(std::uint64_t start_ps, std::uint64_t stop_ps,
+                                 std::uint64_t step_ps) -> void {
+  GGEMS_CHECK_RECOVERABLE(!initialised_,
+                          "Cannot configure GGEMSRun time after Initalise.");
+  GGEMS_CHECK_RECOVERABLE(
+      start_ps < stop_ps,
+      "GGEMSRun time start must be strictly less than time stop.");
+  GGEMS_CHECK_RECOVERABLE(step_ps > 0ULL,
+                          "GGEMSRun time step must be non-zero");
+
+  time_start_ps_ = start_ps;
+  time_stop_ps_ = stop_ps;
+  time_step_ps_ = step_ps;
+  current_time_ps_.store(start_ps);
+  has_time_configuration_ = true;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSRun::ResetTime() -> void {
+  GGEMS_CHECK_RECOVERABLE(!running_.exchange(true),
+                          "Cannot reset GGEMSRun time while Run is executing.");
+
+  RunningGuard running_guard{running_};
+  current_time_ps_.store(has_time_configuration_ ? time_start_ps_ : 0ULL);
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSRun::HasTimeConfiguration() const noexcept -> bool {
+  return has_time_configuration_;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSRun::HasNextTimeStep() const noexcept -> bool {
+  return !has_time_configuration_ || current_time_ps_.load() < time_stop_ps_;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSRun::GetCurrentTimePicoSecond() const noexcept -> std::uint64_t {
+  return current_time_ps_.load();
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSRun::GetCurrentTimeWindowPicoSecond() const noexcept
+    -> GGEMSTimeWindow {
+  if (!has_time_configuration_) {
+    return {};
+  }
+
+  std::uint64_t const current_time_ps = current_time_ps_.load();
+
+  if (current_time_ps >= time_stop_ps_) {
+    return {.start_ps = time_stop_ps_, .stop_ps = time_stop_ps_};
+  }
+
+  std::uint64_t const remaining_time_ps = time_stop_ps_ - current_time_ps;
+  std::uint64_t const window_width_ps =
+      std::min(time_step_ps_, remaining_time_ps);
+
+  return {.start_ps = current_time_ps,
+          .stop_ps = current_time_ps + window_width_ps};
 }
 
 // -----------------------------------------------------------------------------
@@ -301,6 +381,7 @@ auto GGEMSRun::Initialise() -> void {
   transport_workloads_.swap(new_transport_workloads);
   source_configuration_snapshot_ = std::move(new_source_configuration);
   next_run_id_ = 0ULL;
+  current_time_ps_.store(has_time_configuration_ ? time_start_ps_ : 0ULL);
   initialised_ = true;
 
   for (auto const &source : sources_) {
@@ -317,17 +398,16 @@ auto GGEMSRun::Run() -> void {
   GGEMS_CHECK_RECOVERABLE(!running_.exchange(true),
                           "GGEMSRun is already running.");
 
-  struct RunningGuard {
-    std::atomic<bool> &running;
-    ~RunningGuard() { running.store(false); }
-  };
-
   RunningGuard running_guard{running_};
 
-  std::uint64_t run_id = next_run_id_++;
+  GGEMS_CHECK_RECOVERABLE(HasNextTimeStep(),
+                          "GGEMSRun time schedule is exhausted.");
 
-  auto source_snapshot =
-      sources::BuildSourceRunSnapshot(sources_, source_configuration_snapshot_);
+  GGEMSTimeWindow const time_window = GetCurrentTimeWindowPicoSecond();
+  std::uint64_t const run_id = next_run_id_++;
+
+  auto source_snapshot = sources::BuildSourceRunSnapshot(
+      sources_, source_configuration_snapshot_, time_window);
 
   auto const &source_records = source_snapshot.GetRecords();
   auto const &source_ranges = source_snapshot.GetRanges();
@@ -339,6 +419,38 @@ auto GGEMSRun::Run() -> void {
   GGEMS_CHECK_INTERNAL(!source_records.empty(),
                        "GGEMSRun source snapshot must not be empty.");
 
+  std::uint64_t const total_primary_count =
+      source_snapshot.GetTotalPrimaryCount();
+
+  GGEMS_CHECK_RECOVERABLE(
+      total_primary_count > 0ULL || has_time_configuration_,
+      "GGEMSRun requires a non-zero total primary count in static mode.");
+
+  for (std::size_t source_index = 0U; source_index < source_records.size();
+       ++source_index) {
+    GGEMS_INFOEX("Source", 1, "Run {} source snapshot: {}", run_id,
+                 sources::DescribeSourceRunSlot(source_index, source_snapshot));
+  }
+
+  if (total_primary_count == 0ULL) {
+    if (observer_ != nullptr) {
+      observer_->Clear();
+    }
+
+    {
+      std::scoped_lock lock{source_run_snapshot_mutex_};
+      last_source_run_snapshot_ = std::move(source_snapshot);
+    }
+
+    GGEMS_INFO("Core",
+               "GGEMSRun projection {} completed as an empty time window "
+               "[{} ps, {} ps).",
+               run_id, time_window.start_ps, time_window.stop_ps);
+
+    current_time_ps_.store(time_window.stop_ps);
+    return;
+  }
+
   observer::GGEMSObserverConfigRecord observer_config{};
 
   if (observer_ != nullptr) {
@@ -348,12 +460,6 @@ auto GGEMSRun::Run() -> void {
   ValidateObserverCapture(observer_config, source_ranges);
 
   transport::ValidateDiagnosticTransportSources(source_records, source_ranges);
-
-  std::uint64_t total_primary_count = source_snapshot.GetTotalPrimaryCount();
-
-  GGEMS_CHECK_RECOVERABLE(
-      total_primary_count > 0ULL,
-      "GGEMSRun requires at least one active source per Run.");
 
   GGEMS_CHECK_RECOVERABLE(
       total_primary_count <=
@@ -371,12 +477,6 @@ auto GGEMSRun::Run() -> void {
 
   std::uint64_t const reserved_primary_count =
       primary_view.source_primary_count;
-
-  for (std::size_t source_index = 0U; source_index < source_records.size();
-       ++source_index) {
-    GGEMS_INFOEX("Source", 1, "Run {} source snapshot: {}", run_id,
-                 sources::DescribeSourceRunSlot(source_index, source_snapshot));
-  }
 
   auto projection_primary_count =
       static_cast<std::uint32_t>(reserved_primary_count);
@@ -574,5 +674,6 @@ auto GGEMSRun::Run() -> void {
   }
 
   GGEMS_INFO("Core", "GGEMSRun projection {} completed.", run_id);
+  current_time_ps_.store(time_window.stop_ps);
 }
 } // namespace ggems::core

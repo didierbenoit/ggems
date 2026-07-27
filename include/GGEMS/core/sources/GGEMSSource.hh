@@ -90,9 +90,6 @@ public:
     return energy_distribution_;
   }
 
-  auto SetTimeWindowPicoSecond(std::uint64_t time_start_ps,
-                               std::uint64_t time_stop_ps) -> GGEMSSource &;
-
   auto SetPositionPicoMeter(std::int64_t x_pm, std::int64_t y_pm,
                             std::int64_t z_pm) -> GGEMSSource &;
 

@@ -10,6 +10,8 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include <fstream>
+#include <iterator>
 
 #include <gtest/gtest.h>
 
@@ -23,6 +25,7 @@
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMHostAccess.hh"
+#include "GGEMS/core/sources/GGEMSEnergyDistributionRecord.hh"
 
 namespace {
 
@@ -30,21 +33,20 @@ namespace {
 // =============================================================================
 
 using AngularType = ggems::core::sources::GGEMSAngularDistributionType;
+using EnergyDistributionRecord =
+    ggems::core::sources::GGEMSEnergyDistributionRecord;
+using EnergyType = ggems::core::sources::GGEMSEnergyDistributionType;
 using GeometryType = ggems::core::sources::GGEMSEmissionGeometryType;
 using Random = ggems::core::random::GGEMSRandom;
 using Source = ggems::core::sources::GGEMSSource;
 using SourceRecord = ggems::core::sources::GGEMSSourceRecord;
 
+// =============================================================================
+// =============================================================================
+
 struct SamplingResult {
   std::array<std::int64_t, 3U> position{};
   std::array<float, 3U> direction{};
-};
-
-struct DrawCase {
-  GeometryType geometry;
-  AngularType angular;
-  bool bounded;
-  std::uint32_t expected_vector_count;
 };
 
 // =============================================================================
@@ -99,7 +101,10 @@ struct DrawCase {
     break;
   }
 
-  return source.BuildRecord();
+  SourceRecord record = source.BuildRecord();
+  record.time_start_ps = 123ULL;
+  record.time_stop_ps = 456ULL;
+  return record;
 }
 
 // =============================================================================
@@ -178,8 +183,10 @@ protected:
 
   static auto ExpectDrawPlan(SourceRecord const &source,
                              std::string_view engine,
-                             std::uint32_t expected_vector_count,
-                             std::uint32_t energy_raw_count) -> void {
+                             std::uint32_t expected_position_vector_count,
+                             std::uint32_t expected_direction_vector_count,
+                             bool table_energy) -> void {
+
     Random random{};
     random.SetEngine(engine).SetSeed(77'777ULL);
 
@@ -187,7 +194,20 @@ protected:
     random.InitialiseStates(0ULL, std::span<std::byte>{initial_state});
     std::vector<std::byte> sample_state = initial_state;
     std::vector<std::byte> reference_state = initial_state;
-    std::array<std::uint32_t, 3U> observed{};
+
+    EnergyDistributionRecord distribution{
+        .regular_bin_width_milli_eV = 0ULL,
+        .table_offset = 0ULL,
+        .distribution_type =
+            ggems::core::sources::ToKernelEnergyDistributionType(
+                table_energy ? EnergyType::DiscreteLines : EnergyType::Mono),
+        .table_count = table_energy ? 2U : 0U};
+    constexpr std::array<std::uint64_t, 2U> energy_values{40ULL, 80ULL};
+    constexpr std::array<std::uint64_t, 2U> ticket_upper{2'147'483'648ULL,
+                                                         4'294'967'296ULL};
+    std::array<std::int64_t, 6U> sampled_positions{};
+    std::array<float, 6U> sampled_directions{};
+    std::array<std::uint64_t, 4U> sampled_values{};
 
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
     auto &context = Context();
@@ -197,15 +217,31 @@ protected:
         context.CreateSVMBuffer(ggems::units::Bytes{reference_state.size()});
     auto source_buffer =
         context.CreateSVMBuffer(ggems::units::Bytes{sizeof(source)});
-    auto observed_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(observed)});
+    auto distribution_buffer =
+        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(distribution)});
+    auto energy_buffer =
+        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(energy_values)});
+    auto ticket_buffer =
+        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(ticket_upper)});
+    auto position_buffer =
+        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(sampled_positions)});
+    auto direction_buffer = context.CreateSVMBuffer(
+        ggems::units::Bytes{sizeof(sampled_directions)});
+    auto value_buffer =
+        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(sampled_values)});
 
     ggems::ocl::WriteSVMFromHost(sample_buffer,
                                  std::span<std::byte const>{sample_state});
     ggems::ocl::WriteSVMFromHost(reference_buffer,
                                  std::span<std::byte const>{reference_state});
     ggems::ocl::WriteSVMFromHost(source_buffer, source);
-    ggems::ocl::WriteSVMFromHost(observed_buffer, std::span{observed});
+    ggems::ocl::WriteSVMFromHost(distribution_buffer, distribution);
+    ggems::ocl::WriteSVMFromHost(energy_buffer, std::span{energy_values});
+    ggems::ocl::WriteSVMFromHost(ticket_buffer, std::span{ticket_upper});
+    ggems::ocl::WriteSVMFromHost(position_buffer, std::span{sampled_positions});
+    ggems::ocl::WriteSVMFromHost(direction_buffer,
+                                 std::span{sampled_directions});
+    ggems::ocl::WriteSVMFromHost(value_buffer, std::span{sampled_values});
 
     std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path const kernel_test_root = kernel_root / "tests";
@@ -213,31 +249,91 @@ protected:
                                               "source_sampling_probe",
                                               BuildOptions(random));
     cl::Kernel raw_kernel =
-        program.CreateKernel("source_random_draw_plan_probe");
-    ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
-                                         "source_random_draw_plan_probe"};
+        program.CreateKernel("source_initialisation_random_state_probe");
+    ggems::ocl::GGEMSOpenCLKernel kernel{
+        context, std::move(raw_kernel),
+        "source_initialisation_random_state_probe"};
 
     kernel.SetArgSVMPointer(0U, sample_buffer.GetData());
     kernel.SetArgSVMPointer(1U, reference_buffer.GetData());
     kernel.SetArgSVMPointer(2U, source_buffer.GetData());
-    kernel.SetArg(3U, static_cast<cl_uint>(expected_vector_count));
-    kernel.SetArg(4U, static_cast<cl_uint>(energy_raw_count));
-    kernel.SetArgSVMPointer(5U, observed_buffer.GetData());
+    kernel.SetArgSVMPointer(3U, distribution_buffer.GetData());
+    kernel.SetArgSVMPointer(4U, energy_buffer.GetData());
+    kernel.SetArgSVMPointer(5U, ticket_buffer.GetData());
+    kernel.SetArg(6U, static_cast<cl_uint>(expected_position_vector_count));
+    kernel.SetArg(7U, static_cast<cl_uint>(expected_direction_vector_count));
+    kernel.SetArg(8U, static_cast<cl_uint>(table_energy ? 1U : 0U));
+    kernel.SetArg(9U, static_cast<cl_ulong>(97ULL));
+    kernel.SetArgSVMPointer(10U, position_buffer.GetData());
+    kernel.SetArgSVMPointer(11U, direction_buffer.GetData());
+    kernel.SetArgSVMPointer(12U, value_buffer.GetData());
     kernel.Run({1U}, {1U});
 
     ggems::ocl::ReadSVMToHost(sample_buffer,
                               std::span<std::byte>{sample_state});
     ggems::ocl::ReadSVMToHost(reference_buffer,
                               std::span<std::byte>{reference_state});
-    ggems::ocl::ReadSVMToHost(observed_buffer, std::span{observed});
+    ggems::ocl::ReadSVMToHost(position_buffer, std::span{sampled_positions});
+    ggems::ocl::ReadSVMToHost(direction_buffer, std::span{sampled_directions});
+    ggems::ocl::ReadSVMToHost(value_buffer, std::span{sampled_values});
 
-    EXPECT_EQ(observed[0U], expected_vector_count);
-    EXPECT_EQ(observed[1U], observed[2U]);
     EXPECT_EQ(sample_state, reference_state);
+    for (std::size_t axis = 0U; axis < 3U; ++axis) {
+      EXPECT_EQ(sampled_positions[axis], sampled_positions[axis + 3U]);
+      EXPECT_EQ(std::bit_cast<std::uint32_t>(sampled_directions[axis]),
+                std::bit_cast<std::uint32_t>(sampled_directions[axis + 3U]));
+    }
+    EXPECT_EQ(sampled_values[0U], source.time_start_ps);
+    EXPECT_EQ(sampled_values[0U], sampled_values[1U]);
+    EXPECT_EQ(sampled_values[2U], sampled_values[3U]);
   }
 };
 
 } // namespace
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSSourceSamplingKernelTest,
+       SamplesPlanarPositionsFromImposedVectors) {
+  Source rectangle{};
+  rectangle.SetPositionPicoMeter(100LL, 200LL, 300LL)
+      .SetRectangleEmissionPicoMeter(8ULL, 12ULL);
+  SamplingResult const rectangle_result =
+      RunImposedProbe(rectangle.BuildRecord(),
+                      {0.75F, 0.25F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});
+  EXPECT_EQ(rectangle_result.position,
+            (std::array<std::int64_t, 3U>{102LL, 197LL, 300LL}));
+
+  Source ellipse{};
+  ellipse.SetPositionPicoMeter(100LL, 200LL, 300LL)
+      .SetEllipseEmissionPicoMeter(8ULL, 12ULL);
+  SamplingResult const ellipse_result = RunImposedProbe(
+      ellipse.BuildRecord(), {0.25F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});
+  EXPECT_EQ(ellipse_result.position,
+            (std::array<std::int64_t, 3U>{102LL, 200LL, 300LL}));
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSSourceSamplingKernelTest,
+       FocusedDirectionUsesImposedSampledPosition) {
+  Source rectangle{};
+  rectangle.SetPositionPicoMeter(100LL, 200LL, 300LL)
+      .SetRectangleEmissionPicoMeter(8ULL, 12ULL)
+      .SetFocusedAngularDistributionPicoMeter(102LL, 197LL, 1'300LL);
+
+  SamplingResult const result =
+      RunImposedProbe(rectangle.BuildRecord(),
+                      {0.75F, 0.25F, 0.0F, 0.0F, 0.9F, 0.1F, 0.8F, 0.2F});
+
+  EXPECT_EQ(result.position,
+            (std::array<std::int64_t, 3U>{102LL, 197LL, 300LL}));
+  EXPECT_NEAR(result.direction[0U], 0.0F, 1.0e-6F);
+  EXPECT_NEAR(result.direction[1U], 0.0F, 1.0e-6F);
+  EXPECT_NEAR(result.direction[2U], 1.0F, 1.0e-6F);
+}
 
 // =============================================================================
 // =============================================================================
@@ -285,8 +381,8 @@ TEST_F(GGEMSSourceSamplingKernelTest,
       .SetOrientation({1.0, 0.0, 0.0}, {0.0, 0.0, 1.0})
       .SetIsotropicAngularDistribution();
 
-  std::array<float, 8U> const uniforms{0.0F, 0.0F, 0.25F, 0.375F,
-                                       0.9F, 0.1F, 0.7F,  0.2F};
+  std::array<float, 8U> const uniforms{0.0F,  0.0F,   0.0F, 0.0F,
+                                       0.25F, 0.375F, 0.7F, 0.2F};
   auto const result_a = RunImposedProbe(source_a.BuildRecord(), uniforms);
   auto const result_b = RunImposedProbe(source_b.BuildRecord(), uniforms);
 
@@ -309,7 +405,7 @@ TEST_F(GGEMSSourceSamplingKernelTest,
           ggems::units::MakeDegrees(0.0L), ggems::units::MakeDegrees(90.0L));
 
   SamplingResult const result = RunImposedProbe(
-      source.BuildRecord(), {0.0F, 0.0F, 0.5F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});
+      source.BuildRecord(), {0.0F, 0.0F, 0.0F, 0.0F, 0.5F, 0.0F, 0.0F, 0.0F});
 
   EXPECT_NEAR(result.direction[0U], 0.5F, 1.0e-6F);
   EXPECT_NEAR(result.direction[1U], 0.8660254F, 1.0e-6F);
@@ -426,13 +522,13 @@ TEST_F(GGEMSSourceSamplingKernelTest,
   EXPECT_NEAR(plus_x.direction[2U], 0.0F, 1.0e-6F);
 
   auto const plus_y = RunImposedProbe(
-      point.BuildRecord(), {0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F});
+      point.BuildRecord(), {0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F});
   EXPECT_NEAR(plus_y.direction[0U], 0.0F, 1.0e-6F);
   EXPECT_NEAR(plus_y.direction[1U], 1.0F, 1.0e-6F);
   EXPECT_NEAR(plus_y.direction[2U], 0.0F, 1.0e-6F);
 
   auto const plus_z = RunImposedProbe(
-      point.BuildRecord(), {0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F});
+      point.BuildRecord(), {0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F});
   EXPECT_NEAR(plus_z.direction[0U], 0.0F, 1.0e-6F);
   EXPECT_NEAR(plus_z.direction[1U], 0.0F, 1.0e-6F);
   EXPECT_NEAR(plus_z.direction[2U], 1.0F, 1.0e-6F);
@@ -453,118 +549,70 @@ TEST_F(GGEMSSourceSamplingKernelTest,
 // =============================================================================
 
 TEST_F(GGEMSSourceSamplingKernelTest,
-       ExactGeometryAngularVectorPlanForEveryEngine) {
+       ExactSourceInitialisationDrawPlanForEveryEngine) {
   constexpr std::array<std::string_view, 3U> k_engines{"jkiss", "pcg32",
                                                        "philox"};
-  std::vector<DrawCase> const cases{
-      {.geometry = GeometryType::Point,
-       .angular = AngularType::Fixed,
-       .bounded = false,
-       .expected_vector_count = 0U},
-      {.geometry = GeometryType::Point,
-       .angular = AngularType::Focused,
-       .bounded = false,
-       .expected_vector_count = 0U},
-      {.geometry = GeometryType::Point,
-       .angular = AngularType::Isotropic,
-       .bounded = false,
-       .expected_vector_count = 1U},
-      {.geometry = GeometryType::Point,
-       .angular = AngularType::Isotropic,
-       .bounded = true,
-       .expected_vector_count = 1U},
-      {.geometry = GeometryType::Rectangle,
-       .angular = AngularType::Fixed,
-       .bounded = false,
-       .expected_vector_count = 1U},
-      {.geometry = GeometryType::Rectangle,
-       .angular = AngularType::Focused,
-       .bounded = false,
-       .expected_vector_count = 1U},
-      {.geometry = GeometryType::Rectangle,
-       .angular = AngularType::Isotropic,
-       .bounded = false,
-       .expected_vector_count = 1U},
-      {.geometry = GeometryType::Rectangle,
-       .angular = AngularType::Isotropic,
-       .bounded = true,
-       .expected_vector_count = 1U},
-      {.geometry = GeometryType::Ellipse,
-       .angular = AngularType::Fixed,
-       .bounded = false,
-       .expected_vector_count = 1U},
-      {.geometry = GeometryType::Ellipse,
-       .angular = AngularType::Focused,
-       .bounded = false,
-       .expected_vector_count = 1U},
-      {.geometry = GeometryType::Ellipse,
-       .angular = AngularType::Isotropic,
-       .bounded = false,
-       .expected_vector_count = 1U},
-      {.geometry = GeometryType::Ellipse,
-       .angular = AngularType::Isotropic,
-       .bounded = true,
-       .expected_vector_count = 1U},
-      {.geometry = GeometryType::Box,
-       .angular = AngularType::Fixed,
-       .bounded = false,
-       .expected_vector_count = 1U},
-      {.geometry = GeometryType::Box,
-       .angular = AngularType::Focused,
-       .bounded = false,
-       .expected_vector_count = 1U},
-      {.geometry = GeometryType::Box,
-       .angular = AngularType::Isotropic,
-       .bounded = false,
-       .expected_vector_count = 2U},
-      {.geometry = GeometryType::Box,
-       .angular = AngularType::Isotropic,
-       .bounded = true,
-       .expected_vector_count = 2U},
-      {.geometry = GeometryType::Sphere,
-       .angular = AngularType::Fixed,
-       .bounded = false,
-       .expected_vector_count = 1U},
-      {.geometry = GeometryType::Sphere,
-       .angular = AngularType::Focused,
-       .bounded = false,
-       .expected_vector_count = 1U},
-      {.geometry = GeometryType::Sphere,
-       .angular = AngularType::Isotropic,
-       .bounded = false,
-       .expected_vector_count = 2U},
-      {.geometry = GeometryType::Sphere,
-       .angular = AngularType::Isotropic,
-       .bounded = true,
-       .expected_vector_count = 2U},
-      {.geometry = GeometryType::Cylinder,
-       .angular = AngularType::Fixed,
-       .bounded = false,
-       .expected_vector_count = 1U},
-      {.geometry = GeometryType::Cylinder,
-       .angular = AngularType::Focused,
-       .bounded = false,
-       .expected_vector_count = 1U},
-      {.geometry = GeometryType::Cylinder,
-       .angular = AngularType::Isotropic,
-       .bounded = false,
-       .expected_vector_count = 2U},
-      {.geometry = GeometryType::Cylinder,
-       .angular = AngularType::Isotropic,
-       .bounded = true,
-       .expected_vector_count = 2U},
-  };
+  constexpr std::array<GeometryType, 6U> k_geometries{
+      GeometryType::Point, GeometryType::Rectangle, GeometryType::Ellipse,
+      GeometryType::Box,   GeometryType::Sphere,    GeometryType::Cylinder};
+
+  constexpr std::array<AngularType, 3U> k_angular_distributions{
+      AngularType::Fixed, AngularType::Focused, AngularType::Isotropic};
 
   for (std::string_view const engine : k_engines) {
-    for (DrawCase const &draw_case : cases) {
-      SCOPED_TRACE(engine);
-      SCOPED_TRACE(static_cast<std::uint32_t>(draw_case.geometry));
-      SCOPED_TRACE(static_cast<std::uint32_t>(draw_case.angular));
-      SCOPED_TRACE(draw_case.bounded);
-      SourceRecord const record = BuildSourceRecord(
-          draw_case.geometry, draw_case.angular, draw_case.bounded);
-      ExpectDrawPlan(record, engine, draw_case.expected_vector_count, 0U);
-      ExpectDrawPlan(record, engine, draw_case.expected_vector_count, 1U);
+    for (GeometryType const geometry : k_geometries) {
+      for (AngularType const angular : k_angular_distributions) {
+        std::size_t const bounded_case_count =
+            angular == AngularType::Isotropic ? 2U : 1U;
+
+        for (std::size_t bounded_case = 0U; bounded_case < bounded_case_count;
+             ++bounded_case) {
+          bool const bounded = bounded_case != 0U;
+          std::uint32_t const position_draw_count =
+              geometry == GeometryType::Point ? 0U : 1U;
+          std::uint32_t const direction_draw_count =
+              angular == AngularType::Isotropic ? 1U : 0U;
+
+          SCOPED_TRACE(engine);
+          SCOPED_TRACE(static_cast<std::uint32_t>(geometry));
+          SCOPED_TRACE(static_cast<std::uint32_t>(angular));
+          SCOPED_TRACE(bounded);
+
+          SourceRecord const record =
+              BuildSourceRecord(geometry, angular, bounded);
+          ExpectDrawPlan(record, engine, position_draw_count,
+                         direction_draw_count, false);
+          ExpectDrawPlan(record, engine, position_draw_count,
+                         direction_draw_count, true);
+        }
+      }
     }
   }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceSamplingKernelSource,
+     ProductionTransportDelegatesRandomSamplingToSource) {
+  std::filesystem::path const transport_path =
+      std::filesystem::path{GGEMS_TEST_KERNEL_ROOT} / "core" / "transport" /
+      "particle_stream_transport.cl";
+  std::ifstream transport_file{transport_path};
+  ASSERT_TRUE(transport_file.is_open()) << transport_path;
+
+  std::string const transport_source{
+      std::istreambuf_iterator<char>{transport_file},
+      std::istreambuf_iterator<char>{}};
+
+  EXPECT_NE(transport_source.find("GGEMS_SourceInitialisePrimary"),
+            std::string::npos);
+  EXPECT_EQ(transport_source.find("GGEMS_Rndm"), std::string::npos);
+  EXPECT_EQ(transport_source.find("primary_random_values"), std::string::npos);
+  EXPECT_EQ(transport_source.find("secondary_random_values"),
+            std::string::npos);
+  EXPECT_EQ(transport_source.find("GGEMS_SourceRandomVectorDrawCount"),
+            std::string::npos);
+  EXPECT_EQ(transport_source.find("GGEMS_EnergyDistributionSample("),
+            std::string::npos);
 }

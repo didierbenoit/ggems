@@ -16,6 +16,7 @@
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSRun.hh"
+#include "GGEMS/core/GGEMSTimeWindow.hh"
 #include "GGEMS/core/observer/GGEMSTransportObserver.hh"
 #include "GGEMS/core/observer/GGEMSObserverTypes.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
@@ -92,8 +93,7 @@ auto MakeLowEnergySource(std::uint64_t primary_count)
     -> std::shared_ptr<ggems::core::sources::GGEMSSource> {
   auto source = std::make_shared<ggems::core::sources::GGEMSSource>();
   source->SetPrimaryCount(primary_count)
-      .SetEnergyMilliElectronVolt(1'000'000ULL)
-      .SetTimeWindowPicoSecond(100ULL, 100ULL);
+      .SetEnergyMilliElectronVolt(1'000'000ULL);
   return source;
 }
 
@@ -189,6 +189,288 @@ TEST(GGEMSRun, ReportsObserverAttachment) {
 // =============================================================================
 // =============================================================================
 
+TEST(GGEMSRun, ExposesStaticAndConfiguredTimeStateBeforeInitialise) {
+  ggems::core::GGEMSRun run{};
+
+  EXPECT_FALSE(run.HasTimeConfiguration());
+  EXPECT_TRUE(run.HasNextTimeStep());
+  EXPECT_EQ(run.GetCurrentTimePicoSecond(), 0ULL);
+  EXPECT_EQ(run.GetCurrentTimeWindowPicoSecond(),
+            (ggems::core::GGEMSTimeWindow{}));
+  EXPECT_NO_THROW(run.ResetTime());
+
+  EXPECT_THROW(run.SetTimePicoSecond(5ULL, 5ULL, 1ULL),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(run.SetTimePicoSecond(6ULL, 5ULL, 1ULL),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(run.SetTimePicoSecond(5ULL, 6ULL, 0ULL),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_FALSE(run.HasTimeConfiguration());
+
+  EXPECT_NO_THROW(run.SetTimePicoSecond(10ULL, 20ULL, 50ULL));
+  EXPECT_TRUE(run.HasTimeConfiguration());
+  EXPECT_TRUE(run.HasNextTimeStep());
+  EXPECT_EQ(run.GetCurrentTimePicoSecond(), 10ULL);
+  EXPECT_EQ(
+      run.GetCurrentTimeWindowPicoSecond(),
+      (ggems::core::GGEMSTimeWindow{.start_ps = 10ULL, .stop_ps = 20ULL}));
+  EXPECT_NO_THROW(run.ResetTime());
+  EXPECT_EQ(run.GetCurrentTimePicoSecond(), 10ULL);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSRunTest, RepeatedStaticRunsKeepPrimaryBirthTimeAtZero) {
+  auto random = MakePhiloxRandom();
+  auto source = MakeLowEnergySource(1ULL);
+  auto observer = MakeCapturingObserver(1U);
+
+  ggems::core::GGEMSRun run{};
+  run.SetRandom(random);
+  run.SetSource(source);
+  run.SetObserver(observer);
+  run.SetWorkerCount(64U);
+
+  ASSERT_NO_THROW(run.Initialise());
+
+  for (std::uint64_t expected_run_id = 0ULL; expected_run_id < 2ULL;
+       ++expected_run_id) {
+    ASSERT_NO_THROW(run.Run());
+    auto const source_records =
+        BuildSortedSourceRecordSnapshot(observer->GetRecords());
+    ASSERT_EQ(source_records.size(), 1U);
+    EXPECT_EQ(source_records[0U].run_id, expected_run_id);
+    EXPECT_EQ(source_records[0U].time_ps, 0ULL);
+    EXPECT_EQ(run.GetCurrentTimePicoSecond(), 0ULL);
+    EXPECT_TRUE(run.HasNextTimeStep());
+
+    auto const snapshot = run.GetLastSourceRunSnapshot();
+    ASSERT_TRUE(snapshot.has_value());
+    ASSERT_EQ(snapshot->GetRecords().size(), 1U);
+    EXPECT_EQ(snapshot->GetRecords()[0U].time_start_ps, 0ULL);
+    EXPECT_EQ(snapshot->GetRecords()[0U].time_stop_ps, 0ULL);
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSRunTest, AdvancesConfiguredWindowsAndResetOnlyRewindsTime) {
+  auto random = MakePhiloxRandom();
+  auto source = MakeLowEnergySource(1ULL);
+  source->SetRectangleEmissionPicoMeter(20'000ULL, 10'000ULL);
+  auto observer = MakeCapturingObserver(1U);
+
+  ggems::core::GGEMSRun run{};
+  run.SetRandom(random);
+  run.SetSource(source);
+  run.SetObserver(observer);
+  run.SetWorkerCount(1U);
+  run.SetTimePicoSecond(10ULL, 25ULL, 8ULL);
+
+  ASSERT_NO_THROW(run.Initialise());
+  EXPECT_THROW(run.SetTimePicoSecond(0ULL, 1ULL, 1ULL),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_EQ(
+      run.GetCurrentTimeWindowPicoSecond(),
+      (ggems::core::GGEMSTimeWindow{.start_ps = 10ULL, .stop_ps = 18ULL}));
+
+  ASSERT_NO_THROW(run.Run());
+  auto first_records = BuildSortedSourceRecordSnapshot(observer->GetRecords());
+  ASSERT_EQ(first_records.size(), 1U);
+  EXPECT_EQ(first_records[0U].run_id, 0ULL);
+  EXPECT_EQ(first_records[0U].global_primary_id, 0ULL);
+  EXPECT_EQ(first_records[0U].time_ps, 10ULL);
+  EXPECT_EQ(run.GetCurrentTimePicoSecond(), 18ULL);
+
+  ASSERT_NO_THROW(run.Run());
+  auto second_records = BuildSortedSourceRecordSnapshot(observer->GetRecords());
+  ASSERT_EQ(second_records.size(), 1U);
+  EXPECT_EQ(second_records[0U].run_id, 1ULL);
+  EXPECT_EQ(second_records[0U].global_primary_id, 1ULL);
+  EXPECT_EQ(second_records[0U].time_ps, 18ULL);
+  EXPECT_EQ(run.GetCurrentTimePicoSecond(), 25ULL);
+  EXPECT_FALSE(run.HasNextTimeStep());
+  EXPECT_EQ(
+      run.GetCurrentTimeWindowPicoSecond(),
+      (ggems::core::GGEMSTimeWindow{.start_ps = 25ULL, .stop_ps = 25ULL}));
+
+  auto const snapshot_before_exhaustion = run.GetLastSourceRunSnapshot();
+  ASSERT_TRUE(snapshot_before_exhaustion.has_value());
+  ASSERT_EQ(snapshot_before_exhaustion->GetRecords().size(), 1U);
+  EXPECT_EQ(snapshot_before_exhaustion->GetRecords()[0U].time_start_ps, 18ULL);
+  EXPECT_EQ(snapshot_before_exhaustion->GetRecords()[0U].time_stop_ps, 25ULL);
+  std::string const dump_before_exhaustion = observer->BuildDump();
+
+  ExpectGGEMSExceptionContaining([&run]() -> void { run.Run(); },
+                                 "time schedule is exhausted");
+  EXPECT_EQ(run.GetCurrentTimePicoSecond(), 25ULL);
+  EXPECT_EQ(observer->BuildDump(), dump_before_exhaustion);
+
+  ASSERT_NO_THROW(run.ResetTime());
+  EXPECT_EQ(run.GetCurrentTimePicoSecond(), 10ULL);
+  EXPECT_TRUE(run.HasNextTimeStep());
+  EXPECT_EQ(observer->BuildDump(), dump_before_exhaustion);
+  auto const snapshot_after_reset = run.GetLastSourceRunSnapshot();
+  ASSERT_TRUE(snapshot_after_reset.has_value());
+  EXPECT_EQ(snapshot_after_reset->GetRecords()[0U].time_start_ps, 18ULL);
+  EXPECT_EQ(snapshot_after_reset->GetRecords()[0U].time_stop_ps, 25ULL);
+
+  ASSERT_NO_THROW(run.Run());
+  auto reset_records = BuildSortedSourceRecordSnapshot(observer->GetRecords());
+  ASSERT_EQ(reset_records.size(), 1U);
+  EXPECT_EQ(reset_records[0U].run_id, 2ULL);
+  EXPECT_EQ(reset_records[0U].global_primary_id, 2ULL);
+  EXPECT_EQ(reset_records[0U].time_ps, 10ULL);
+
+  auto reference_source = MakeLowEnergySource(1ULL);
+  reference_source->SetRectangleEmissionPicoMeter(20'000ULL, 10'000ULL);
+  auto reference_observer = MakeCapturingObserver(1U);
+
+  ggems::core::GGEMSRun reference_run{};
+  reference_run.SetRandom(MakePhiloxRandom());
+  reference_run.SetSource(reference_source);
+  reference_run.SetObserver(reference_observer);
+  reference_run.SetWorkerCount(1U);
+  ASSERT_NO_THROW(reference_run.Initialise());
+
+  ASSERT_NO_THROW(reference_run.Run());
+  auto reference_first =
+      BuildSortedSourceRecordSnapshot(reference_observer->GetRecords());
+  ASSERT_EQ(reference_first.size(), 1U);
+  ASSERT_NO_THROW(reference_run.Run());
+  ASSERT_NO_THROW(reference_run.Run());
+  auto reference_third =
+      BuildSortedSourceRecordSnapshot(reference_observer->GetRecords());
+  ASSERT_EQ(reference_third.size(), 1U);
+
+  EXPECT_EQ(first_records[0U].position_x_pm, reference_first[0U].position_x_pm);
+  EXPECT_EQ(first_records[0U].position_y_pm, reference_first[0U].position_y_pm);
+  EXPECT_EQ(reset_records[0U].position_x_pm, reference_third[0U].position_x_pm);
+  EXPECT_EQ(reset_records[0U].position_y_pm, reference_third[0U].position_y_pm);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSRunTest, GivesEveryDeviceTheSameEffectiveWindow) {
+  std::size_t const context_count =
+      ggems::ocl::GGEMSOpenCL::GetInstance().GetContext().size();
+  ASSERT_GT(context_count, 0U);
+  ASSERT_LE(context_count, static_cast<std::size_t>(
+                               std::numeric_limits<std::uint32_t>::max()));
+
+  auto source = MakeLowEnergySource(static_cast<std::uint64_t>(context_count));
+  auto observer =
+      MakeCapturingObserver(static_cast<std::uint32_t>(context_count));
+
+  ggems::core::GGEMSRun run{};
+  run.SetRandom(MakePhiloxRandom());
+  run.SetSource(source);
+  run.SetObserver(observer);
+  run.SetWorkerCount(1U);
+  run.SetTimePicoSecond(50ULL, 75ULL, 25ULL);
+
+  ASSERT_NO_THROW(run.Initialise());
+  ASSERT_NO_THROW(run.Run());
+
+  auto const source_records =
+      BuildSortedSourceRecordSnapshot(observer->GetRecords());
+  ASSERT_EQ(source_records.size(), context_count);
+  EXPECT_TRUE(
+      std::ranges::all_of(source_records, [](auto const &record) -> bool {
+        return record.time_ps == 50ULL;
+      }));
+
+  auto const snapshot = run.GetLastSourceRunSnapshot();
+  ASSERT_TRUE(snapshot.has_value());
+  ASSERT_EQ(snapshot->GetRecords().size(), 1U);
+  EXPECT_EQ(snapshot->GetRecords()[0U].time_start_ps, 50ULL);
+  EXPECT_EQ(snapshot->GetRecords()[0U].time_stop_ps, 75ULL);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSRunTest,
+       ConfiguredZeroCountWindowConsumesOnlyRunIdAndAdvancesClock) {
+  auto random = MakePhiloxRandom();
+  auto source = MakeLowEnergySource(1ULL);
+  source->SetRectangleEmissionPicoMeter(20'000ULL, 10'000ULL);
+  auto observer = MakeCapturingObserver(1U);
+
+  ggems::core::GGEMSRun run{};
+  run.SetRandom(random);
+  run.SetSource(source);
+  run.SetObserver(observer);
+  run.SetWorkerCount(1U);
+  run.SetTimePicoSecond(0ULL, 3ULL, 1ULL);
+
+  ASSERT_NO_THROW(run.Initialise());
+  ASSERT_NO_THROW(run.Run());
+  auto first_records = BuildSortedSourceRecordSnapshot(observer->GetRecords());
+  ASSERT_EQ(first_records.size(), 1U);
+  EXPECT_EQ(first_records[0U].run_id, 0ULL);
+  EXPECT_EQ(first_records[0U].global_primary_id, 0ULL);
+  EXPECT_EQ(first_records[0U].time_ps, 0ULL);
+
+  source->SetPrimaryCount(0ULL);
+  ASSERT_NO_THROW(run.Run());
+  EXPECT_EQ(run.GetCurrentTimePicoSecond(), 2ULL);
+  EXPECT_TRUE(observer->GetRecords().empty());
+  EXPECT_EQ(observer->GetRecordCount(), 0U);
+  EXPECT_EQ(observer->GetCapturedPrimaryCount(), 0U);
+
+  auto const empty_snapshot = run.GetLastSourceRunSnapshot();
+  ASSERT_TRUE(empty_snapshot.has_value());
+  ASSERT_EQ(empty_snapshot->GetRecords().size(), 1U);
+  ASSERT_EQ(empty_snapshot->GetRanges().size(), 1U);
+  EXPECT_EQ(empty_snapshot->GetRecords()[0U].time_start_ps, 1ULL);
+  EXPECT_EQ(empty_snapshot->GetRecords()[0U].time_stop_ps, 2ULL);
+  EXPECT_EQ(empty_snapshot->GetRanges()[0U].primary_count, 0ULL);
+  EXPECT_EQ(empty_snapshot->GetTotalPrimaryCount(), 0ULL);
+
+  source->SetPrimaryCount(1ULL);
+  ASSERT_NO_THROW(run.Run());
+  auto third_records = BuildSortedSourceRecordSnapshot(observer->GetRecords());
+  ASSERT_EQ(third_records.size(), 1U);
+  EXPECT_EQ(third_records[0U].run_id, 2ULL);
+  EXPECT_EQ(third_records[0U].global_primary_id, 1ULL);
+  EXPECT_EQ(third_records[0U].time_ps, 2ULL);
+
+  auto reference_random = MakePhiloxRandom();
+  auto reference_source = MakeLowEnergySource(1ULL);
+  reference_source->SetRectangleEmissionPicoMeter(20'000ULL, 10'000ULL);
+  auto reference_observer = MakeCapturingObserver(1U);
+
+  ggems::core::GGEMSRun reference_run{};
+  reference_run.SetRandom(reference_random);
+  reference_run.SetSource(reference_source);
+  reference_run.SetObserver(reference_observer);
+  reference_run.SetWorkerCount(1U);
+  ASSERT_NO_THROW(reference_run.Initialise());
+
+  ASSERT_NO_THROW(reference_run.Run());
+  auto reference_first =
+      BuildSortedSourceRecordSnapshot(reference_observer->GetRecords());
+  ASSERT_EQ(reference_first.size(), 1U);
+  ASSERT_NO_THROW(reference_run.Run());
+  auto reference_second =
+      BuildSortedSourceRecordSnapshot(reference_observer->GetRecords());
+  ASSERT_EQ(reference_second.size(), 1U);
+
+  EXPECT_EQ(first_records[0U].position_x_pm, reference_first[0U].position_x_pm);
+  EXPECT_EQ(first_records[0U].position_y_pm, reference_first[0U].position_y_pm);
+  EXPECT_EQ(third_records[0U].position_x_pm,
+            reference_second[0U].position_x_pm);
+  EXPECT_EQ(third_records[0U].position_y_pm,
+            reference_second[0U].position_y_pm);
+}
+
+// =============================================================================
+// =============================================================================
+
 TEST_F(GGEMSRunTest, RejectsSecondInitialiseAndRemainsUsable) {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
   random->SetEngine("philox");
@@ -220,7 +502,6 @@ TEST_F(GGEMSRunTest, UsesIndependentSourceSnapshotsAcrossSequentialRuns) {
   source->SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMilliElectronVolt(1'000'000ULL)
-      .SetTimeWindowPicoSecond(100ULL, 100ULL)
       .SetPositionPicoMeter(10LL, -20LL, 30LL)
       .SetDirection(1.0F, 0.0F, 0.0F)
       .SetWeight(0.25F);
@@ -265,7 +546,6 @@ TEST_F(GGEMSRunTest, UsesIndependentSourceSnapshotsAcrossSequentialRuns) {
   source
       ->SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
-      .SetTimeWindowPicoSecond(200ULL, 200ULL)
       .SetPositionPicoMeter(-40LL, 50LL, -60LL)
       .SetDirection(0.0F, -1.0F, 0.0F)
       .SetWeight(0.75F);
@@ -946,7 +1226,7 @@ TEST_F(GGEMSRunTest, RejectsAllDisabledSourcesBeforeReservation) {
   ASSERT_NO_THROW(run.Initialise());
 
   ExpectGGEMSExceptionContaining([&run]() -> void { run.Run(); },
-                                 "at least one active source");
+                                 "non-zero total primary count");
 
   EXPECT_TRUE(observer->GetRecords().empty());
   EXPECT_EQ(observer->GetCapturedPrimaryCount(), 0U);
@@ -1204,9 +1484,11 @@ TEST_F(GGEMSRunTest,
   run.SetSource(source);
   run.SetObserver(observer);
   run.SetWorkerCount(64U);
+  run.SetTimePicoSecond(0ULL, 3ULL, 1ULL);
 
   ASSERT_NO_THROW(run.Initialise());
   ASSERT_NO_THROW(run.Run());
+  EXPECT_EQ(run.GetCurrentTimePicoSecond(), 1ULL);
 
   std::string const successful_dump = observer->BuildDump();
   auto const successful_snapshot = run.GetLastSourceRunSnapshot();
@@ -1219,6 +1501,7 @@ TEST_F(GGEMSRunTest,
 
   EXPECT_THROW(run.Run(), ggems::core::GGEMSExceptionBase);
 
+  EXPECT_EQ(run.GetCurrentTimePicoSecond(), 1ULL);
   EXPECT_EQ(observer->BuildDump(), successful_dump);
 
   auto const snapshot_after_failure = run.GetLastSourceRunSnapshot();
@@ -1236,6 +1519,8 @@ TEST_F(GGEMSRunTest,
 
   ASSERT_EQ(source_records.size(), 1U);
   EXPECT_EQ(source_records[0U].global_primary_id, 1ULL);
+  EXPECT_EQ(source_records[0U].time_ps, 1ULL);
+  EXPECT_EQ(run.GetCurrentTimePicoSecond(), 2ULL);
 }
 
 // =============================================================================

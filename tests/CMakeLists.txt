@@ -95,6 +95,13 @@ add_test(
     "${Python3_EXECUTABLE}"
     "${CMAKE_CURRENT_SOURCE_DIR}/python/GGEMSSourceBindingsTest.py")
 
+add_test(
+  NAME GGEMSRunBindingsPython
+  COMMAND
+    ${CMAKE_COMMAND} -E env "PYTHONPATH=$<TARGET_FILE_DIR:ggems>"
+    "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/python/GGEMSRunBindingsTest.py")
+
 # ----------------------------------------------------------------------------
 # GuiMode unit tests
 # ----------------------------------------------------------------------------

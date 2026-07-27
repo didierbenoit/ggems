@@ -66,6 +66,18 @@ auto BuildSortedSourceRecords(
 // =============================================================================
 // =============================================================================
 
+[[nodiscard]] auto
+WithTimeWindow(ggems::core::sources::GGEMSSourceRecord record,
+               std::uint64_t time_start_ps, std::uint64_t time_stop_ps)
+    -> ggems::core::sources::GGEMSSourceRecord {
+  record.time_start_ps = time_start_ps;
+  record.time_stop_ps = time_stop_ps;
+  return record;
+}
+
+// =============================================================================
+// =============================================================================
+
 auto ExpectSourceMatches(
     ggems::core::observer::GGEMSObserverRecord const &observed,
     ggems::core::sources::GGEMSSourceRecord const &expected) -> void {
@@ -169,7 +181,6 @@ TEST_F(GGEMSDummyTransportWorkloadTest, RunsBranchingAioninoPrototype) {
   source.SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMilliElectronVolt(511'000'000ULL)
-      .SetTimeWindowPicoSecond(0ULL, 1'000'000ULL)
       .SetPositionPicoMeter(0ULL, 0ULL, 0ULL)
       .SetDirection(0.0F, 0.0F, 1.0F)
       .SetWeight(1.0F);
@@ -184,7 +195,8 @@ TEST_F(GGEMSDummyTransportWorkloadTest, RunsBranchingAioninoPrototype) {
   config.total_primary_count = k_total_primary_count;
   config.projection_history_offset = 10'000'000ULL;
   config.device_primary_offset = 200'000ULL;
-  config.source_records = {source.BuildRecord()};
+  config.source_records = {
+      WithTimeWindow(source.BuildRecord(), 0ULL, 1'000'000ULL)};
   config.source_ranges = {{.projection_primary_begin = 0ULL,
                            .primary_count = config.device_primary_offset +
                                             config.total_primary_count}};
@@ -281,7 +293,6 @@ TEST_F(GGEMSDummyTransportWorkloadTest, CapturesFirstPrimaryHistories) {
   source.SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMilliElectronVolt(511'000'000ULL)
-      .SetTimeWindowPicoSecond(0ULL, 1'000'000ULL)
       .SetPositionPicoMeter(0ULL, 0ULL, 0ULL)
       .SetDirection(0.0F, 0.0F, 1.0F)
       .SetWeight(1.0F);
@@ -302,7 +313,8 @@ TEST_F(GGEMSDummyTransportWorkloadTest, CapturesFirstPrimaryHistories) {
   config.total_primary_count = 64U;
   config.projection_history_offset = k_projection_history_offset;
   config.device_primary_offset = 0ULL;
-  config.source_records = {source.BuildRecord()};
+  config.source_records = {
+      WithTimeWindow(source.BuildRecord(), 0ULL, 1'000'000ULL)};
   config.source_ranges = {{.projection_primary_begin = 0ULL,
                            .primary_count = config.total_primary_count}};
   config.observer_config.enabled = 1U;
@@ -699,7 +711,6 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   source_a.SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMilliElectronVolt(1'000'000ULL)
-      .SetTimeWindowPicoSecond(100ULL, 100ULL)
       .SetPositionPicoMeter(10LL, 20LL, 30LL)
       .SetDirection(1.0F, 0.0F, 0.0F)
       .SetWeight(0.25F);
@@ -707,7 +718,6 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   ggems::core::sources::GGEMSSource disabled_source{};
   disabled_source.SetAnalytic()
       .SetEnergyMilliElectronVolt(3'000'000ULL)
-      .SetTimeWindowPicoSecond(300ULL, 300ULL)
       .SetPositionPicoMeter(40LL, 50LL, 60LL);
 
   ggems::core::sources::GGEMSSource source_c{};
@@ -715,14 +725,14 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
       .SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMilliElectronVolt(2'000'000ULL)
-      .SetTimeWindowPicoSecond(200ULL, 200ULL)
       .SetPositionPicoMeter(-70LL, 80LL, -90LL)
       .SetDirection(0.0F, -1.0F, 0.0F)
       .SetWeight(0.75F);
 
-  auto expected_a = source_a.BuildRecord();
-  auto disabled_record = disabled_source.BuildRecord();
-  auto expected_c = source_c.BuildRecord();
+  auto expected_a = WithTimeWindow(source_a.BuildRecord(), 100ULL, 100ULL);
+  auto disabled_record =
+      WithTimeWindow(disabled_source.BuildRecord(), 100ULL, 100ULL);
+  auto expected_c = WithTimeWindow(source_c.BuildRecord(), 100ULL, 100ULL);
 
   constexpr std::uint32_t k_observer_capacity{64U};
   constexpr std::uint64_t k_global_begin{10'000'000ULL};
@@ -968,12 +978,11 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   source.SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMilliElectronVolt(511'000'001ULL)
-      .SetTimeWindowPicoSecond(0ULL, 1'000ULL)
       .SetPositionPicoMeter(0LL, 0LL, 0LL)
       .SetDirection(0.0F, 0.0F, 1.0F)
       .SetWeight(1.0F);
 
-  auto source_record = source.BuildRecord();
+  auto source_record = WithTimeWindow(source.BuildRecord(), 0ULL, 1'000ULL);
 
   auto expect_report =
       [&](ggems::core::transport::GGEMSDummyTransportRunReport const &report,
@@ -1080,8 +1089,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   ggems::core::sources::GGEMSSource source{};
   source.SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMilliElectronVolt(511'000'000ULL)
-      .SetTimeWindowPicoSecond(0ULL, 1'000ULL);
+      .SetEnergyMilliElectronVolt(511'000'000ULL);
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
       GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
@@ -1092,7 +1100,8 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.total_primary_count = k_primary_count;
   config.projection_history_offset = k_global_begin;
-  config.source_records = {source.BuildRecord()};
+  config.source_records = {
+      WithTimeWindow(source.BuildRecord(), 0ULL, 1'000ULL)};
   config.source_ranges = {
       {.projection_primary_begin = 0ULL, .primary_count = k_primary_count}};
   config.max_generation = 1U;
@@ -1159,10 +1168,12 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 
   EXPECT_TRUE(has_secondary_record);
 }
+
 // =============================================================================
 // =============================================================================
+
 TEST_F(GGEMSDummyTransportWorkloadTest,
-       SamplesTimeFromEachSourceLocalPrimaryId) {
+       UsesWindowStartForEverySourceLocalPrimaryId) {
   constexpr std::uint64_t k_time_start_ps{100ULL};
   constexpr std::uint64_t k_time_stop_ps{103ULL};
   constexpr std::uint64_t k_global_begin{10'000'000ULL};
@@ -1172,16 +1183,20 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   random->SetSeed(7'777'777ULL);
 
   ggems::core::sources::GGEMSSource source_a{};
-  source_a.SetPrimaryCount(4ULL)
-      .SetEnergyMilliElectronVolt(1'000'000ULL)
-      .SetTimeWindowPicoSecond(k_time_start_ps, k_time_stop_ps);
+  source_a.SetPrimaryCount(4ULL).SetEnergyMilliElectronVolt(1'000'000ULL);
 
   ggems::core::sources::GGEMSSource source_b{};
   source_b.SetPrimaryCount(4ULL)
       .SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMilliElectronVolt(1'000'000ULL)
-      .SetTimeWindowPicoSecond(k_time_start_ps, k_time_stop_ps);
+      .SetEnergyMilliElectronVolt(1'000'000ULL);
+
+  auto source_record_a = source_a.BuildRecord();
+  source_record_a.time_start_ps = k_time_start_ps;
+  source_record_a.time_stop_ps = k_time_stop_ps;
+  auto source_record_b = source_b.BuildRecord();
+  source_record_b.time_start_ps = k_time_start_ps;
+  source_record_b.time_stop_ps = k_time_stop_ps;
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
       GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
@@ -1192,7 +1207,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.total_primary_count = 8U;
   config.projection_history_offset = k_global_begin;
-  config.source_records = {source_a.BuildRecord(), source_b.BuildRecord()};
+  config.source_records = {source_record_a, source_record_b};
   config.source_ranges = {
       {.projection_primary_begin = 0ULL, .primary_count = 4ULL},
       {.projection_primary_begin = 4ULL, .primary_count = 4ULL}};
@@ -1218,14 +1233,10 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
         projection_primary_id < 4ULL ? projection_primary_id
                                      : projection_primary_id - 4ULL;
 
-    std::uint64_t expected_time_ps =
-        k_time_start_ps +
-        (expected_source_local_primary_id % (k_time_stop_ps - k_time_start_ps));
-
     EXPECT_EQ(record.global_primary_id, k_global_begin + projection_primary_id);
     EXPECT_EQ(record.source_index, expected_source_index);
     EXPECT_EQ(record.source_local_primary_id, expected_source_local_primary_id);
-    EXPECT_EQ(record.time_ps, expected_time_ps);
+    EXPECT_EQ(record.time_ps, k_time_start_ps);
     EXPECT_LT(record.time_ps, k_time_stop_ps);
   }
 }

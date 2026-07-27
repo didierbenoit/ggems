@@ -16,9 +16,13 @@
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
+#include "GGEMS/core/GGEMSTimeWindow.hh"
 
 namespace ggems::core::sources {
 namespace {
+
+// =============================================================================
+// =============================================================================
 
 struct PackedSourceConfiguration {
   std::vector<GGEMSEnergyDistributionRecord> energy_distribution_records;
@@ -115,12 +119,24 @@ auto PackSourceConfiguration(std::span<GGEMSSource const *const> sources)
 // =============================================================================
 // =============================================================================
 
+auto ValidateTimeWindow(GGEMSTimeWindow time_window) -> void {
+  GGEMS_CHECK_RECOVERABLE(
+      time_window.start_ps <= time_window.stop_ps,
+      "GGEMSSourceRunSnapshot time window stop precedes its start.");
+}
+
+// =============================================================================
+// =============================================================================
+
 auto AppendSourceRunSnapshotEntry(std::vector<GGEMSSourceRecord> &records,
                                   std::vector<GGEMSSourceRunRange> &ranges,
                                   std::uint64_t &total_primary_count,
                                   GGEMSSource const &source,
-                                  std::size_t source_index) -> void {
+                                  std::size_t source_index,
+                                  GGEMSTimeWindow time_window) -> void {
   GGEMSSourceRecord source_record = source.BuildRecord();
+  source_record.time_start_ps = time_window.start_ps;
+  source_record.time_stop_ps = time_window.stop_ps;
   std::uint64_t const source_primary_count = source.GetPrimaryCount();
 
   GGEMS_CHECK_RECOVERABLE(
@@ -205,8 +221,9 @@ GGEMSSourceRunSnapshot::GGEMSSourceRunSnapshot(
 
 auto BuildSourceRunSnapshot(
     std::span<std::shared_ptr<GGEMSSource> const> sources,
-    GGEMSSourceConfigurationSnapshotPtr source_configuration)
-    -> GGEMSSourceRunSnapshot {
+    GGEMSSourceConfigurationSnapshotPtr source_configuration,
+    GGEMSTimeWindow time_window) -> GGEMSSourceRunSnapshot {
+  ValidateTimeWindow(time_window);
   GGEMS_CHECK_INTERNAL(source_configuration != nullptr,
                        "GGEMSSource configuration snapshot is null.");
   GGEMS_CHECK_INTERNAL(
@@ -231,7 +248,7 @@ auto BuildSourceRunSnapshot(
             source_index));
 
     AppendSourceRunSnapshotEntry(records, ranges, total_primary_count, *source,
-                                 source_index);
+                                 source_index, time_window);
   }
 
   return GGEMSSourceRunSnapshot{std::move(records), std::move(ranges),
@@ -242,28 +259,54 @@ auto BuildSourceRunSnapshot(
 // -----------------------------------------------------------------------------
 
 auto BuildSourceRunSnapshot(
-    std::span<std::shared_ptr<GGEMSSource> const> sources)
+    std::span<std::shared_ptr<GGEMSSource> const> sources,
+    GGEMSSourceConfigurationSnapshotPtr source_configuration)
     -> GGEMSSourceRunSnapshot {
-  auto source_configuration = BuildSourceConfigurationSnapshot(sources);
-  return BuildSourceRunSnapshot(sources, std::move(source_configuration));
+  return BuildSourceRunSnapshot(sources, std::move(source_configuration), {});
 }
 
 // -----------------------------------------------------------------------------
 
-auto BuildSourceRunSnapshot(GGEMSSource const &source)
+auto BuildSourceRunSnapshot(
+    std::span<std::shared_ptr<GGEMSSource> const> sources,
+    GGEMSTimeWindow time_window) -> GGEMSSourceRunSnapshot {
+  auto source_configuration = BuildSourceConfigurationSnapshot(sources);
+  return BuildSourceRunSnapshot(sources, std::move(source_configuration),
+                                time_window);
+}
+
+// -----------------------------------------------------------------------------
+
+auto BuildSourceRunSnapshot(
+    std::span<std::shared_ptr<GGEMSSource> const> sources)
     -> GGEMSSourceRunSnapshot {
+  return BuildSourceRunSnapshot(sources, GGEMSTimeWindow{});
+}
+
+// -----------------------------------------------------------------------------
+
+auto BuildSourceRunSnapshot(GGEMSSource const &source,
+                            GGEMSTimeWindow time_window)
+    -> GGEMSSourceRunSnapshot {
+  ValidateTimeWindow(time_window);
   std::vector<GGEMSSourceRecord> records;
   std::vector<GGEMSSourceRunRange> ranges;
   records.reserve(1U);
   ranges.reserve(1U);
 
   std::uint64_t total_primary_count{0ULL};
-  AppendSourceRunSnapshotEntry(records, ranges, total_primary_count, source,
-                               0U);
+  AppendSourceRunSnapshotEntry(records, ranges, total_primary_count, source, 0U,
+                               time_window);
 
   return GGEMSSourceRunSnapshot{std::move(records), std::move(ranges),
                                 BuildSourceConfigurationSnapshot(source),
                                 total_primary_count};
 }
 
+// -----------------------------------------------------------------------------
+
+auto BuildSourceRunSnapshot(GGEMSSource const &source)
+    -> GGEMSSourceRunSnapshot {
+  return BuildSourceRunSnapshot(source, {});
+}
 } // namespace ggems::core::sources

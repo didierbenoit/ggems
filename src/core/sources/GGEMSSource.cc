@@ -19,6 +19,7 @@
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceValidation.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
+#include "GGEMS/core/sources/GGEMSEnergyDistributionRecord.hh"
 
 namespace ggems::core::sources {
 namespace {
@@ -82,7 +83,7 @@ GGEMSSource::GGEMSSource() {
       particles::ToKernelParticleType(particles::GGEMSParticleType::Gamma);
 
   record_.time_start_ps = 0ULL;
-  record_.time_stop_ps = 1'000'000ULL;
+  record_.time_stop_ps = 0ULL;
 
   record_.energy_milli_eV = 511'000'000ULL;
 
@@ -469,21 +470,6 @@ auto GGEMSSource::LoadRegularEnergySpectrum(
   CheckEnergyConfigurationMutable();
   CommitEnergyDistribution(
       GGEMSEnergyDistribution::LoadRegularSpectrum(filename, unit));
-  return *this;
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSSource::SetTimeWindowPicoSecond(std::uint64_t time_start_ps,
-                                          std::uint64_t time_stop_ps)
-    -> GGEMSSource & {
-  GGEMS_CHECK_RECOVERABLE(time_stop_ps >= time_start_ps,
-                          "Source time stop must be greater than or equal to "
-                          "source time start.");
-
-  record_.time_start_ps = time_start_ps;
-  record_.time_stop_ps = time_stop_ps;
-
   return *this;
 }
 

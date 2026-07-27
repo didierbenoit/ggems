@@ -2,7 +2,6 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
-#include <limits>
 #include <memory>
 #include <string_view>
 #include <string>
@@ -69,51 +68,6 @@ auto ConvertEnergyToMilliElectronVolt(double energy, std::string const &unit)
   }
 
   throw py::value_error("Source energy conversion failed.");
-}
-
-// =============================================================================
-// =============================================================================
-
-auto ConvertTimeToPicosecond(double const time, std::string const &unit)
-    -> std::uint64_t {
-  if (!std::isfinite(time) || time < 0.0) {
-    throw py::value_error("Source time must be finite and positive or zero.");
-  }
-
-  long double factor_to_ps{0.0L};
-
-  if (unit == "ps") {
-    factor_to_ps = 1.0L;
-  } else if (unit == "ns") {
-    factor_to_ps = 1.0e3L;
-  } else if (unit == "us") {
-    factor_to_ps = 1.0e6L;
-  } else if (unit == "ms") {
-    factor_to_ps = 1.0e9L;
-  } else if (unit == "s") {
-    factor_to_ps = 1.0e12L;
-  } else if (unit == "min") {
-    factor_to_ps = 60.0e12L;
-  } else if (unit == "h") {
-    factor_to_ps = 3600.0e12L;
-  } else {
-    throw py::value_error(
-        std::format("Unsupported GGEMS time unit '{}'.", unit));
-  }
-
-  long double const time_ps = static_cast<long double>(time) * factor_to_ps;
-
-  long double const rounded_time_ps{std::round(time_ps)};
-
-  constexpr int uint64_digits{std::numeric_limits<std::uint64_t>::digits};
-
-  long double const uint64_upper_bound{std::ldexp(1.0L, uint64_digits)};
-
-  if (rounded_time_ps >= uint64_upper_bound) {
-    throw py::value_error("Source time is too large.");
-  }
-
-  return static_cast<std::uint64_t>(rounded_time_ps);
 }
 
 // =============================================================================
@@ -380,17 +334,6 @@ auto BindSource(py::module_ &mod) -> void {
             return self.LoadRegularEnergySpectrum(filename, unit);
           },
           py::arg("filename"), py::arg("unit") = "keV",
-          py::return_value_policy::reference_internal)
-
-      .def(
-          "set_time_window",
-          [](GGEMSSource &self, double const time_start, double const time_stop,
-             std::string const &unit) -> GGEMSSource & {
-            return self.SetTimeWindowPicoSecond(
-                ConvertTimeToPicosecond(time_start, unit),
-                ConvertTimeToPicosecond(time_stop, unit));
-          },
-          py::arg("time_start"), py::arg("time_stop"), py::arg("unit") = "s",
           py::return_value_policy::reference_internal)
 
       .def(

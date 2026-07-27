@@ -6,6 +6,7 @@
 #include <span>
 #include <vector>
 
+#include "GGEMS/core/GGEMSTimeWindow.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistributionRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
@@ -29,14 +30,27 @@ using GGEMSSourceConfigurationSnapshotPtr =
 [[nodiscard]] auto BuildSourceRunSnapshot(GGEMSSource const &source)
     -> GGEMSSourceRunSnapshot;
 
+[[nodiscard]] auto BuildSourceRunSnapshot(GGEMSSource const &source,
+                                          GGEMSTimeWindow time_window)
+    -> GGEMSSourceRunSnapshot;
+
 [[nodiscard]] auto
 BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources)
     -> GGEMSSourceRunSnapshot;
 
 [[nodiscard]] auto
 BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources,
+                       GGEMSTimeWindow time_window) -> GGEMSSourceRunSnapshot;
+
+[[nodiscard]] auto
+BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources,
                        GGEMSSourceConfigurationSnapshotPtr source_configuration)
     -> GGEMSSourceRunSnapshot;
+
+[[nodiscard]] auto
+BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources,
+                       GGEMSSourceConfigurationSnapshotPtr source_configuration,
+                       GGEMSTimeWindow time_window) -> GGEMSSourceRunSnapshot;
 
 class GGEMSSourceConfigurationSnapshot {
 public:
@@ -149,14 +163,31 @@ private:
   friend auto BuildSourceRunSnapshot(GGEMSSource const &source)
       -> GGEMSSourceRunSnapshot;
 
+  friend auto BuildSourceRunSnapshot(GGEMSSource const &source,
+                                     GGEMSTimeWindow time_window)
+      -> GGEMSSourceRunSnapshot;
+
   friend auto
   BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources)
       -> GGEMSSourceRunSnapshot;
+
+  friend auto
+  BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources,
+                         GGEMSTimeWindow time_window) -> GGEMSSourceRunSnapshot;
+
+  friend auto
+  BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources,
+                         GGEMSTimeWindow time_window) -> GGEMSSourceRunSnapshot;
 
   friend auto BuildSourceRunSnapshot(
       std::span<std::shared_ptr<GGEMSSource> const> sources,
       GGEMSSourceConfigurationSnapshotPtr source_configuration)
       -> GGEMSSourceRunSnapshot;
+
+  friend auto BuildSourceRunSnapshot(
+      std::span<std::shared_ptr<GGEMSSource> const> sources,
+      GGEMSSourceConfigurationSnapshotPtr source_configuration,
+      GGEMSTimeWindow time_window) -> GGEMSSourceRunSnapshot;
 
   GGEMSSourceRunSnapshot(
       std::vector<GGEMSSourceRecord> records,

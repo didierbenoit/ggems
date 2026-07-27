@@ -25,6 +25,17 @@ constexpr std::string_view k_source_description{
     "Type: Analytic | Primary count: 7 | "
     "Particle: Electron (b-) | Emission: Point | Angular: Fixed | "
     "Energy: Mono (2.0000000 MeV) | "
+    "Time: fixed at 0.0000000 ps | "
+    "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
+    "Axis Z: (1, 0, 0) | Weight: 0.25"};
+
+// =============================================================================
+// =============================================================================
+
+constexpr std::string_view k_window_source_description{
+    "Type: Analytic | Primary count: 7 | "
+    "Particle: Electron (b-) | Emission: Point | Angular: Fixed | "
+    "Energy: Mono (2.0000000 MeV) | "
     "Time window: [1.0000000 ns, 2.0000000 ns) | "
     "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
     "Axis Z: (1, 0, 0) | Weight: 0.25"};
@@ -36,7 +47,7 @@ constexpr std::string_view k_zero_primary_source_description{
     "Type: Analytic | Primary count: 0 | "
     "Particle: Electron (b-) | Emission: Point | Angular: Fixed | "
     "Energy: Mono (2.0000000 MeV) | "
-    "Time window: [1.0000000 ns, 2.0000000 ns) | "
+    "Time: fixed at 0.0000000 ps | "
     "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
     "Axis Z: (1, 0, 0) | Weight: 0.25"};
 
@@ -47,7 +58,7 @@ constexpr std::string_view k_reconfigured_source_description{
     "Type: Analytic | Primary count: 11 | "
     "Particle: Gamma (g) | Emission: Point | Angular: Fixed | "
     "Energy: Mono (511.0000000 keV) | "
-    "Time window: [3.0000000 ns, 4.0000000 ns) | "
+    "Time: fixed at 0.0000000 ps | "
     "Position: (0.0000000 pm, 0.0000000 pm, 1.0000000 um) | "
     "Axis Z: (0, 1, 0) | Weight: 0.5"};
 
@@ -63,7 +74,6 @@ constexpr std::string_view k_reconfigured_source_description{
       .SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMilliElectronVolt(2'000'000'000ULL)
-      .SetTimeWindowPicoSecond(1'000ULL, 2'000ULL)
       .SetPositionPicoMeter(1'000'000'000LL, -2'000'000'000LL, 0LL)
       .SetDirection(2.0F, 0.0F, 0.0F)
       .SetWeight(0.25F);
@@ -78,7 +88,6 @@ auto ReconfigureSource(GGEMSSource &source) -> void {
   source.SetPrimaryCount(11ULL)
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMilliElectronVolt(511'000'000ULL)
-      .SetTimeWindowPicoSecond(3'000ULL, 4'000ULL)
       .SetPositionPicoMeter(0LL, 0LL, 1'000'000LL)
       .SetDirection(0.0F, 2.0F, 0.0F)
       .SetWeight(0.5F);
@@ -124,12 +133,13 @@ TEST(GGEMSSourceDescription, DescribesSnapshotSlot) {
                                                MakeConfiguredSource(4ULL),
                                                MakeConfiguredSource(7ULL)};
 
-  auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(sources);
+  auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(
+      sources, {.start_ps = 1'000ULL, .stop_ps = 2'000ULL});
 
   EXPECT_EQ(ggems::core::sources::DescribeSourceRunSlot(
                 2U, snapshot.GetRecords()[2U], snapshot.GetRanges()[2U]),
             std::string{"Source slot: 2 | Projection primary begin: 7 | "} +
-                std::string{k_source_description});
+                std::string{k_window_source_description});
 }
 
 // =============================================================================
@@ -140,7 +150,8 @@ TEST(GGEMSSourceDescription, PreservesZeroPrimarySlotWithoutCompaction) {
                                                MakeConfiguredSource(0ULL),
                                                MakeConfiguredSource(5ULL)};
 
-  auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(sources);
+  auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(
+      sources, {.start_ps = 1'000ULL, .stop_ps = 2'000ULL});
 
   ASSERT_EQ(snapshot.GetRecords().size(), 3U);
   ASSERT_EQ(snapshot.GetRanges().size(), 3U);
@@ -165,7 +176,8 @@ TEST(GGEMSSourceDescription, DistinguishesDuplicateSourceSlots) {
   auto source = MakeConfiguredSource(7ULL);
   std::array<GGEMSSourcePtr, 2U> const sources{source, source};
 
-  auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(sources);
+  auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(
+      sources, {.start_ps = 1'000ULL, .stop_ps = 2'000ULL});
 
   std::string const slot_0 = ggems::core::sources::DescribeSourceRunSlot(
       0U, snapshot.GetRecords()[0U], snapshot.GetRanges()[0U]);
@@ -175,11 +187,11 @@ TEST(GGEMSSourceDescription, DistinguishesDuplicateSourceSlots) {
 
   EXPECT_EQ(slot_0,
             std::string{"Source slot: 0 | Projection primary begin: 0 | "} +
-                std::string{k_source_description});
+                std::string{k_window_source_description});
 
   EXPECT_EQ(slot_1,
             std::string{"Source slot: 1 | Projection primary begin: 7 | "} +
-                std::string{k_source_description});
+                std::string{k_window_source_description});
 
   EXPECT_NE(slot_0, slot_1);
 }
@@ -210,14 +222,15 @@ TEST(GGEMSSourceDescription, DescribesOwnedSnapshotAfterSourceMutation) {
   auto source = MakeConfiguredSource(7ULL);
   std::array<GGEMSSourcePtr, 1U> const sources{source};
 
-  auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(sources);
+  auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(
+      sources, {.start_ps = 1'000ULL, .stop_ps = 2'000ULL});
 
   ReconfigureSource(*source);
 
   EXPECT_EQ(ggems::core::sources::DescribeSourceRunSlot(
                 0U, snapshot.GetRecords()[0U], snapshot.GetRanges()[0U]),
             std::string{"Source slot: 0 | Projection primary begin: 0 | "} +
-                std::string{k_source_description});
+                std::string{k_window_source_description});
 
   EXPECT_EQ(ggems::core::sources::DescribeSource(source->BuildRecord(),
                                                  source->GetPrimaryCount()),
@@ -227,23 +240,22 @@ TEST(GGEMSSourceDescription, DescribesOwnedSnapshotAfterSourceMutation) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSSourceDescription, DistinguishesFixedTimeFromNonEmptyWindow) {
+TEST(GGEMSSourceDescription, DistinguishesStaticSourceFromRunWindow) {
   auto source = MakeConfiguredSource(7ULL);
 
   EXPECT_EQ(ggems::core::sources::DescribeSource(source->BuildRecord(),
                                                  source->GetPrimaryCount()),
             k_source_description);
 
-  source->SetTimeWindowPicoSecond(1'000ULL, 1'000ULL);
+  auto const snapshot = ggems::core::sources::BuildSourceRunSnapshot(
+      *source, {.start_ps = 1'000ULL, .stop_ps = 2'000ULL});
+  ASSERT_EQ(snapshot.GetRecords().size(), 1U);
 
-  EXPECT_EQ(ggems::core::sources::DescribeSource(source->BuildRecord(),
+  EXPECT_EQ(ggems::core::sources::DescribeSource(snapshot.GetRecords()[0U],
                                                  source->GetPrimaryCount()),
-            "Type: Analytic | Primary count: 7 | "
-            "Particle: Electron (b-) | Emission: Point | Angular: Fixed | "
-            "Energy: Mono (2.0000000 MeV) | "
-            "Time: fixed at 1.0000000 ns | "
-            "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
-            "Axis Z: (1, 0, 0) | Weight: 0.25");
+            k_window_source_description);
+  EXPECT_EQ(source->BuildRecord().time_start_ps, 0ULL);
+  EXPECT_EQ(source->BuildRecord().time_stop_ps, 0ULL);
 }
 
 // =============================================================================

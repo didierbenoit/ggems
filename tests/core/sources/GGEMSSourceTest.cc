@@ -12,6 +12,13 @@
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
 
+template <typename T>
+concept HasMutableTimeWindow = requires(T value) {
+  value.SetTimeWindowPicoSecond(std::uint64_t{0ULL}, std::uint64_t{1ULL});
+};
+
+static_assert(!HasMutableTimeWindow<ggems::core::sources::GGEMSSource>);
+
 // =============================================================================
 // =============================================================================
 
@@ -100,7 +107,7 @@ TEST(GGEMSSource, DefaultSourceIsAnalyticGammaPointSource) {
   EXPECT_EQ(record.energy_milli_eV, 511'000'000ULL);
 
   EXPECT_EQ(record.time_start_ps, 0ULL);
-  EXPECT_EQ(record.time_stop_ps, 1'000'000ULL);
+  EXPECT_EQ(record.time_stop_ps, 0ULL);
 
   EXPECT_EQ(record.position_x_pm, 0LL);
   EXPECT_EQ(record.position_y_pm, 0LL);
@@ -190,11 +197,12 @@ TEST(GGEMSSource, RejectsZeroEnergy) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSSource, RejectsReversedTimeWindow) {
+TEST(GGEMSSource, StandaloneRecordUsesCanonicalStaticTime) {
   ggems::core::sources::GGEMSSource source{};
 
-  EXPECT_THROW(source.SetTimeWindowPicoSecond(20ULL, 10ULL),
-               ggems::core::GGEMSExceptionBase);
+  auto const record = source.BuildRecord();
+  EXPECT_EQ(record.time_start_ps, 0ULL);
+  EXPECT_EQ(record.time_stop_ps, 0ULL);
 }
 
 // =============================================================================
@@ -329,7 +337,6 @@ TEST(GGEMSSource, BuildRecordReturnsIndependentOwnedSnapshots) {
   source.SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMilliElectronVolt(111'000'000ULL)
-      .SetTimeWindowPicoSecond(10ULL, 20ULL)
       .SetPositionPicoMeter(11LL, -22LL, 33LL)
       .SetDirection(1.0F, 0.0F, 0.0F)
       .SetWeight(0.25);
@@ -340,7 +347,6 @@ TEST(GGEMSSource, BuildRecordReturnsIndependentOwnedSnapshots) {
       .SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMilliElectronVolt(222'000'000ULL)
-      .SetTimeWindowPicoSecond(30ULL, 40ULL)
       .SetPositionPicoMeter(-44LL, 55LL, -66LL)
       .SetDirection(0.0F, -1.0F, 0.0F)
       .SetWeight(0.75);
@@ -355,8 +361,8 @@ TEST(GGEMSSource, BuildRecordReturnsIndependentOwnedSnapshots) {
             ggems::core::particles::ToKernelParticleType(
                 ggems::core::particles::GGEMSParticleType::Gamma));
   EXPECT_EQ(record_a.energy_milli_eV, 111'000'000ULL);
-  EXPECT_EQ(record_a.time_start_ps, 10ULL);
-  EXPECT_EQ(record_a.time_stop_ps, 20ULL);
+  EXPECT_EQ(record_a.time_start_ps, 0ULL);
+  EXPECT_EQ(record_a.time_stop_ps, 0ULL);
   EXPECT_EQ(record_a.position_x_pm, 11LL);
   EXPECT_EQ(record_a.position_y_pm, -22LL);
   EXPECT_EQ(record_a.position_z_pm, 33LL);
@@ -377,8 +383,8 @@ TEST(GGEMSSource, BuildRecordReturnsIndependentOwnedSnapshots) {
                 ggems::core::particles::GGEMSParticleType::Electron));
 
   EXPECT_EQ(record_b.energy_milli_eV, 222'000'000ULL);
-  EXPECT_EQ(record_b.time_start_ps, 30ULL);
-  EXPECT_EQ(record_b.time_stop_ps, 40ULL);
+  EXPECT_EQ(record_b.time_start_ps, 0ULL);
+  EXPECT_EQ(record_b.time_stop_ps, 0ULL);
   EXPECT_EQ(record_b.position_x_pm, -44LL);
   EXPECT_EQ(record_b.position_y_pm, 55LL);
   EXPECT_EQ(record_b.position_z_pm, -66LL);
