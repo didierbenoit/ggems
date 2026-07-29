@@ -7,12 +7,14 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <algorithm>
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideEmission.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideProvenance.hh"
+#include "GGEMS/core/radioactivity/GGEMSRadionuclideScientificMetadata.hh"
 
 namespace ggems::core::radioactivity {
 namespace {
@@ -30,13 +32,9 @@ namespace {
 // =============================================================================
 
 [[nodiscard]] auto HasVisibleText(std::string_view text) noexcept -> bool {
-  for (char character : text) {
-    if (!IsAsciiWhitespace(character)) {
-      return true;
-    }
-  }
-
-  return false;
+  return std::ranges::any_of(text, [](char character) noexcept -> bool {
+    return !IsAsciiWhitespace(character);
+  });
 }
 
 // =============================================================================
@@ -178,6 +176,28 @@ GGEMSRadionuclideDefinition::GGEMSRadionuclideDefinition(
     : canonical_name_{std::move(canonical_name)}, aliases_{std::move(aliases)},
       half_life_seconds_{half_life_seconds}, provenance_{std::move(provenance)},
       emissions_{std::move(emissions)} {
+  ValidateAndBuildDerivedState();
+}
+
+// -----------------------------------------------------------------------------
+
+GGEMSRadionuclideDefinition::GGEMSRadionuclideDefinition(
+    std::string canonical_name, std::vector<std::string> aliases,
+    long double half_life_seconds,
+    GGEMSRadionuclideScientificMetadata scientific_metadata,
+    std::vector<GGEMSRadionuclideEmission> emissions)
+    : canonical_name_{std::move(canonical_name)}, aliases_{std::move(aliases)},
+      half_life_seconds_{half_life_seconds},
+      provenance_{scientific_metadata.GetEvaluationSource().GetProvenance()},
+      emissions_{std::move(emissions)},
+      scientific_metadata_{std::move(scientific_metadata)} {
+  scientific_metadata_->ValidateChannelLinks(emissions_.size());
+  ValidateAndBuildDerivedState();
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSRadionuclideDefinition::ValidateAndBuildDerivedState() -> void {
   GGEMS_CHECK_RECOVERABLE(std::isfinite(half_life_seconds_),
                           "Radionuclide half-life must be finite.");
   GGEMS_CHECK_RECOVERABLE(half_life_seconds_ > 0.0L,
