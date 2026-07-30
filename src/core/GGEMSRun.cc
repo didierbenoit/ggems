@@ -19,6 +19,7 @@
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/sources/GGEMSSourceDescription.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
@@ -317,9 +318,18 @@ auto GGEMSRun::Initialise() -> void {
   GGEMS_CHECK_INTERNAL(!sources_.empty(),
                        "GGEMSRun source collection must not be empty.");
 
-  for (auto const &source : sources_) {
+  for (std::size_t source_index = 0U; source_index < sources_.size();
+       ++source_index) {
+    auto const &source = sources_[source_index];
     GGEMS_CHECK_INTERNAL(source != nullptr,
                          "GGEMSRun source collection contains a null entry.");
+
+    GGEMS_CHECK_RECOVERABLE(
+        source->GetPopulationMode() ==
+            sources::GGEMSSourcePopulationMode::CountDriven,
+        std::format("GGEMSRun source slot {} is ActivityDriven; B3.2 device "
+                    "integration is not implemented.",
+                    source_index));
   }
 
   GGEMS_CHECK_RECOVERABLE(

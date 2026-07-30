@@ -7,10 +7,13 @@
 #include <utility>
 #include <numbers>
 #include <limits>
+#include <variant>
+#include <memory>
 
 #include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
@@ -19,6 +22,7 @@
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceValidation.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
+#include "GGEMS/core/units/GGEMSActivityUnits.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistributionRecord.hh"
 
 namespace ggems::core::sources {
@@ -110,10 +114,29 @@ GGEMSSource::GGEMSSource() {
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSSource::CheckCountDrivenConfiguration() const -> void {
+  GGEMS_CHECK_RECOVERABLE(
+      GetPopulationMode() == GGEMSSourcePopulationMode::CountDriven,
+      "Cannot use single-particle configuration on an ActivityDriven "
+      "GGEMSSource.");
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSSource::CheckEnergyConfigurationMutable() const -> void {
+  CheckCountDrivenConfiguration();
   GGEMS_CHECK_RECOVERABLE(!initialization_finalized_,
                           "Cannot change GGEMSSource energy after successful "
                           "GGEMSRun::Initialise.");
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::CheckPopulationConfigurationMutable() const -> void {
+  GGEMS_CHECK_RECOVERABLE(
+      !initialization_finalized_,
+      "Cannot change GGEMSSource population mode after successful "
+      "GGEMSRun::Initialise.");
 }
 
 // -----------------------------------------------------------------------------
@@ -125,9 +148,9 @@ auto GGEMSSource::FinalizeInitialization() noexcept -> void {
 // -----------------------------------------------------------------------------
 
 GGEMSSource::GGEMSSource(GGEMSSource &&other) {
-  other.CheckEnergyConfigurationMutable();
+  other.CheckPopulationConfigurationMutable();
 
-  primary_count_ = other.primary_count_;
+  population_configuration_ = std::move(other.population_configuration_);
   record_ = other.record_;
   energy_distribution_ = std::move(other.energy_distribution_);
 }
@@ -139,10 +162,10 @@ auto GGEMSSource::operator=(GGEMSSource const &other) -> GGEMSSource & {
     return *this;
   }
 
-  CheckEnergyConfigurationMutable();
+  CheckPopulationConfigurationMutable();
   GGEMSSource candidate{other};
 
-  primary_count_ = candidate.primary_count_;
+  population_configuration_ = std::move(candidate.population_configuration_);
   record_ = candidate.record_;
   energy_distribution_ = std::move(candidate.energy_distribution_);
   initialization_finalized_ = candidate.initialization_finalized_;
@@ -156,10 +179,10 @@ auto GGEMSSource::operator=(GGEMSSource &&other) -> GGEMSSource & {
     return *this;
   }
 
-  CheckEnergyConfigurationMutable();
-  other.CheckEnergyConfigurationMutable();
+  CheckPopulationConfigurationMutable();
+  other.CheckPopulationConfigurationMutable();
 
-  primary_count_ = other.primary_count_;
+  population_configuration_ = std::move(other.population_configuration_);
   record_ = other.record_;
   energy_distribution_ = std::move(other.energy_distribution_);
   initialization_finalized_ = false;
@@ -181,10 +204,77 @@ auto GGEMSSource::CommitEnergyDistribution(
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSSource::SetPrimaryCount(std::uint64_t primary_count) noexcept
+auto GGEMSSource::SetPrimaryCount(std::uint64_t primary_count)
     -> GGEMSSource & {
-  primary_count_ = primary_count;
+  CheckCountDrivenConfiguration();
+  std::get<GGEMSCountDrivenSourceConfiguration>(population_configuration_)
+      .primary_count = primary_count;
   return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::GetPrimaryCount() const -> std::uint64_t {
+  CheckCountDrivenConfiguration();
+  return std::get<GGEMSCountDrivenSourceConfiguration>(
+             population_configuration_)
+      .primary_count;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::SetCountDrivenPopulation(std::uint64_t primary_count)
+    -> GGEMSSource & {
+  CheckPopulationConfigurationMutable();
+  population_configuration_ =
+      GGEMSCountDrivenSourceConfiguration{.primary_count = primary_count};
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::SetActivityDrivenRadionuclide(
+    std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>
+        radionuclide,
+    units::Activity activity_at_reference_time, std::uint64_t reference_time_ps)
+    -> GGEMSSource & {
+  CheckPopulationConfigurationMutable();
+  GGEMS_CHECK_RECOVERABLE(
+      radionuclide != nullptr,
+      "ActivityDriven GGEMSSource requires a radionuclide definition.");
+  GGEMS_CHECK_RECOVERABLE(
+      std::isfinite(activity_at_reference_time.value),
+      "ActivityDriven GGEMSSource activity must be finite.");
+  GGEMS_CHECK_RECOVERABLE(
+      activity_at_reference_time.value >= 0.0L,
+      "ActivityDriven GGEMSSource activity must be non-negative.");
+
+  population_configuration_ = GGEMSActivityDrivenSourceConfiguration{
+      .radionuclide = std::move(radionuclide),
+      .activity_at_reference_time = activity_at_reference_time,
+      .reference_time_ps = reference_time_ps};
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::GetPopulationMode() const noexcept
+    -> GGEMSSourcePopulationMode {
+  return std::holds_alternative<GGEMSCountDrivenSourceConfiguration>(
+             population_configuration_)
+             ? GGEMSSourcePopulationMode::CountDriven
+             : GGEMSSourcePopulationMode::ActivityDriven;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::GetActivityDrivenConfiguration() const
+    -> GGEMSActivityDrivenSourceConfiguration const & {
+  GGEMS_CHECK_RECOVERABLE(
+      GetPopulationMode() == GGEMSSourcePopulationMode::ActivityDriven,
+      "GGEMSSource is not configured in ActivityDriven mode.");
+  return std::get<GGEMSActivityDrivenSourceConfiguration>(
+      population_configuration_);
 }
 
 // -----------------------------------------------------------------------------
@@ -423,7 +513,8 @@ auto GGEMSSource::SetFocusedAngularDistributionPicoMeter(
 // -----------------------------------------------------------------------------
 
 auto GGEMSSource::SetEmittedParticleType(
-    particles::GGEMSParticleType particle_type) noexcept -> GGEMSSource & {
+    particles::GGEMSParticleType particle_type) -> GGEMSSource & {
+  CheckCountDrivenConfiguration();
   record_.emitted_particle_type =
       particles::ToKernelParticleType(particle_type);
 
@@ -471,6 +562,14 @@ auto GGEMSSource::LoadRegularEnergySpectrum(
   CommitEnergyDistribution(
       GGEMSEnergyDistribution::LoadRegularSpectrum(filename, unit));
   return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::GetEnergyDistribution() const
+    -> GGEMSEnergyDistribution const & {
+  CheckCountDrivenConfiguration();
+  return energy_distribution_;
 }
 
 // -----------------------------------------------------------------------------
@@ -528,6 +627,7 @@ auto GGEMSSource::SetWeight(float weight) -> GGEMSSource & {
 // -----------------------------------------------------------------------------
 
 auto GGEMSSource::BuildRecord() const -> GGEMSSourceRecord {
+  CheckCountDrivenConfiguration();
   std::uint64_t const expected_energy =
       energy_distribution_.GetType() == GGEMSEnergyDistributionType::Mono
           ? energy_distribution_.GetMonoEnergyMilliElectronVolt()
@@ -543,6 +643,13 @@ auto GGEMSSource::BuildRecord() const -> GGEMSSourceRecord {
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSSource::GetRecord() const -> GGEMSSourceRecord const & {
+  CheckCountDrivenConfiguration();
+  return record_;
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSSource::Verbose() const -> void {
   GGEMSSourceRecord const source_record = BuildRecord();
   GGEMSEnergyDistributionRecord const energy_record =
@@ -550,7 +657,7 @@ auto GGEMSSource::Verbose() const -> void {
 
   GGEMS_INFO(
       "Source", "{}",
-      DescribeSource(source_record, primary_count_, energy_record,
+      DescribeSource(source_record, GetPrimaryCount(), energy_record,
                      energy_distribution_.GetEnergyValuesMilliElectronVolt()));
 }
 } // namespace ggems::core::sources

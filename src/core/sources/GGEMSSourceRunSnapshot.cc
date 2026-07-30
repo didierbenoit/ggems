@@ -14,6 +14,7 @@
 #include "GGEMS/core/sources/GGEMSEnergyDistributionRecord.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/GGEMSTimeWindow.hh"
@@ -54,6 +55,12 @@ auto PackSourceConfiguration(std::span<GGEMSSource const *const> sources)
         source != nullptr,
         std::format("Cannot pack source configuration: source at index {} is "
                     "null.",
+                    source_index));
+
+    GGEMS_CHECK_RECOVERABLE(
+        source->GetPopulationMode() == GGEMSSourcePopulationMode::CountDriven,
+        std::format("Cannot pack source configuration: source at index {} is "
+                    "ActivityDriven and requires B3.2 device integration.",
                     source_index));
 
     GGEMSEnergyDistribution const &distribution =
@@ -134,6 +141,12 @@ auto AppendSourceRunSnapshotEntry(std::vector<GGEMSSourceRecord> &records,
                                   GGEMSSource const &source,
                                   std::size_t source_index,
                                   GGEMSTimeWindow time_window) -> void {
+  GGEMS_CHECK_RECOVERABLE(
+      source.GetPopulationMode() == GGEMSSourcePopulationMode::CountDriven,
+      std::format("Cannot build GGEMSSourceRunSnapshot: source at index {} is "
+                  "ActivityDriven and requires B3.2 device integration.",
+                  source_index));
+
   GGEMSSourceRecord source_record = source.BuildRecord();
   source_record.time_start_ps = time_window.start_ps;
   source_record.time_stop_ps = time_window.stop_ps;

@@ -20,6 +20,9 @@
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
+#include "GGEMS/core/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
+#include "GGEMS/core/units/GGEMSActivityUnits.hh"
 
 namespace {
 
@@ -281,6 +284,36 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
   Source copied{*source};
   ExpectFinalizedRejection(
       [&]() -> void { copied.SetEnergyMilliElectronVolt(90'000'000ULL); });
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSEnergyRunLifecycleTest,
+       SuccessfulInitialiseFreezesPopulationModeButKeepsCountMutable) {
+  auto source = MakeSource();
+
+  ggems::core::GGEMSRun run{};
+  run.SetRandom(MakeRandom());
+  run.SetSource(source);
+  run.SetWorkerCount(64U);
+  ASSERT_NO_THROW(run.Initialise());
+
+  auto radionuclide = std::make_shared<
+      ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
+      ggems::core::radioactivity::builtins::BuildF18Radionuclide());
+
+  ExpectFinalizedRejection([&]() -> void {
+    source->SetActivityDrivenRadionuclide(radionuclide,
+                                          ggems::units::Activity{100.0L}, 0ULL);
+  });
+  ExpectFinalizedRejection(
+      [&]() -> void { source->SetCountDrivenPopulation(7ULL); });
+
+  EXPECT_EQ(source->GetPopulationMode(),
+            ggems::core::sources::GGEMSSourcePopulationMode::CountDriven);
+  EXPECT_NO_THROW(source->SetPrimaryCount(7ULL));
+  EXPECT_EQ(source->GetPrimaryCount(), 7ULL);
 }
 
 // =============================================================================

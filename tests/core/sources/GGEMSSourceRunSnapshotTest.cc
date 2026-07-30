@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <utility>
 #include <memory>
 #include <string_view>
 #include <vector>
@@ -20,6 +21,9 @@
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
+#include "GGEMS/core/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
+#include "GGEMS/core/units/GGEMSActivityUnits.hh"
 
 namespace {
 
@@ -38,6 +42,25 @@ static_assert(!HasEnergyTableReservation<ggems::core::sources::GGEMSSource>);
   auto source = std::make_shared<ggems::core::sources::GGEMSSource>();
   source->SetPrimaryCount(primary_count);
   return source;
+}
+
+// =============================================================================
+// =============================================================================
+
+template <typename Function>
+auto ExpectGGEMSExceptionContaining(Function &&function,
+                                    std::string_view expected) -> void {
+  bool caught = false;
+
+  try {
+    std::forward<Function>(function)();
+  } catch (ggems::core::GGEMSExceptionBase const &exception) {
+    caught = true;
+    EXPECT_NE(std::string_view{exception.what()}.find(expected),
+              std::string_view::npos);
+  }
+
+  EXPECT_TRUE(caught);
 }
 
 // =============================================================================
@@ -838,4 +861,62 @@ TEST(GGEMSSourceRunSnapshot, OwnsVolumeAndBoundedAngularRecordFields) {
   EXPECT_EQ(snapshot.GetRecords().front().geometry_size_z_pm, 10ULL);
   EXPECT_FLOAT_EQ(snapshot.GetRecords().front().isotropic_phi_min_rad,
                   static_cast<float>(-0.25L * k_pi));
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceRunSnapshot, RejectsActivityDrivenSlotsBeforePacking) {
+  auto definition = std::make_shared<
+      ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
+      ggems::core::radioactivity::builtins::BuildF18Radionuclide());
+  auto activity_source = std::make_shared<ggems::core::sources::GGEMSSource>();
+  activity_source->SetActivityDrivenRadionuclide(
+      definition, ggems::units::Activity{1.0L}, 0ULL);
+
+  ExpectGGEMSExceptionContaining(
+      [&activity_source]() -> void {
+        (void)ggems::core::sources::BuildSourceConfigurationSnapshot(
+            *activity_source);
+      },
+      "index 0 is ActivityDriven and requires B3.2 device integration");
+  ExpectGGEMSExceptionContaining(
+      [&activity_source]() -> void {
+        (void)ggems::core::sources::BuildSourceRunSnapshot(
+            *activity_source,
+            ggems::core::GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1ULL});
+      },
+      "index 0 is ActivityDriven and requires B3.2 device integration");
+
+  std::vector<std::shared_ptr<ggems::core::sources::GGEMSSource>> sources{
+      MakeSource(1ULL), activity_source};
+  ExpectGGEMSExceptionContaining(
+      [&sources]() -> void {
+        (void)ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
+      },
+      "index 1 is ActivityDriven and requires B3.2 device integration");
+  ExpectGGEMSExceptionContaining(
+      [&sources]() -> void {
+        (void)ggems::core::sources::BuildSourceRunSnapshot(
+            sources,
+            ggems::core::GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1ULL});
+      },
+      "index 1 is ActivityDriven and requires B3.2 device integration");
+
+  auto count_source = MakeSource(1ULL);
+  std::vector<std::shared_ptr<ggems::core::sources::GGEMSSource>>
+      reconfigured_sources{count_source, MakeSource(2ULL)};
+  auto stable_configuration =
+      ggems::core::sources::BuildSourceConfigurationSnapshot(
+          reconfigured_sources);
+  reconfigured_sources[1U]->SetActivityDrivenRadionuclide(
+      definition, ggems::units::Activity{2.0L}, 0ULL);
+
+  ExpectGGEMSExceptionContaining(
+      [&reconfigured_sources, &stable_configuration]() -> void {
+        (void)ggems::core::sources::BuildSourceRunSnapshot(
+            reconfigured_sources, stable_configuration,
+            ggems::core::GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1ULL});
+      },
+      "index 1 is ActivityDriven and requires B3.2 device integration");
 }

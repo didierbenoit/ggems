@@ -25,6 +25,9 @@
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/core/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
+#include "GGEMS/core/units/GGEMSActivityUnits.hh"
 
 namespace {
 
@@ -216,6 +219,34 @@ TEST(GGEMSRun, ExposesStaticAndConfiguredTimeStateBeforeInitialise) {
       (ggems::core::GGEMSTimeWindow{.start_ps = 10ULL, .stop_ps = 20ULL}));
   EXPECT_NO_THROW(run.ResetTime());
   EXPECT_EQ(run.GetCurrentTimePicoSecond(), 10ULL);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSRun,
+     RejectsActivityDrivenSourceBeforeRuntimeSetupAndLeavesItMutable) {
+  auto radionuclide = std::make_shared<
+      ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
+      ggems::core::radioactivity::builtins::BuildF18Radionuclide());
+  auto source = std::make_shared<ggems::core::sources::GGEMSSource>();
+  source->SetActivityDrivenRadionuclide(radionuclide,
+                                        ggems::units::Activity{100.0L}, 0ULL);
+
+  ggems::core::GGEMSRun run{};
+  run.SetSource(source);
+
+  ExpectGGEMSExceptionContaining(
+      [&run]() -> void { run.Initialise(); },
+      "source slot 0 is ActivityDriven; B3.2 device integration is not "
+      "implemented");
+
+  EXPECT_NO_THROW(source->SetActivityDrivenRadionuclide(
+      radionuclide, ggems::units::Activity{125.0L}, 17ULL));
+  EXPECT_NO_THROW(source->SetCountDrivenPopulation(3ULL));
+  EXPECT_EQ(source->GetPopulationMode(),
+            ggems::core::sources::GGEMSSourcePopulationMode::CountDriven);
+  EXPECT_EQ(source->GetPrimaryCount(), 3ULL);
 }
 
 // =============================================================================
