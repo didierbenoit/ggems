@@ -2,6 +2,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <ios>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
@@ -21,17 +22,27 @@
 #include "GGEMSF18SpectrumCSV.hh"
 
 namespace {
+
+// =============================================================================
+// =============================================================================
+
 using ggems::core::GGEMSExceptionBase;
-using ggems::core::radioactivity::builtins::BuildF18Radionuclide;
+using ggems::core::radioactivity::builtins::BuildF18PositronSpectrum;
 using ggems::core::sources::k_energy_ticket_space_size;
 using ggems::validation::radioactivity::ExportF18SpectrumCSV;
 using ggems::validation::radioactivity::RunF18SpectrumValidationCLI;
 using ggems::validation::radioactivity::WriteF18SpectrumCSV;
 
+// =============================================================================
+// =============================================================================
+
 inline constexpr std::string_view k_expected_header{
     "bin_index,lower_edge_milli_eV,center_milli_eV,upper_edge_milli_eV,"
     "normalized_relative_weight,assigned_ticket_count,"
     "cumulative_ticket_upper_bound"};
+
+// =============================================================================
+// =============================================================================
 
 [[nodiscard]] auto SplitFields(std::string const &line)
     -> std::vector<std::string> {
@@ -46,6 +57,9 @@ inline constexpr std::string_view k_expected_header{
   return fields;
 }
 
+// =============================================================================
+// =============================================================================
+
 [[nodiscard]] auto ReadFile(std::filesystem::path const &path) -> std::string {
   std::ifstream input{path, std::ios::binary};
   return {std::istreambuf_iterator<char>{input},
@@ -53,12 +67,12 @@ inline constexpr std::string_view k_expected_header{
 }
 } // namespace
 
-TEST(GGEMSF18SpectrumCSVTest, WritesExactRowsAndReconstructsTicketBounds) {
-  auto const definition = BuildF18Radionuclide();
-  auto const emissions = definition.GetEmissions();
-  ASSERT_FALSE(emissions.empty());
+// =============================================================================
+// =============================================================================
 
-  auto const &distribution = emissions.front().GetEnergyDistribution();
+TEST(GGEMSF18SpectrumCSVTest, WritesExactRowsAndReconstructsTicketBounds) {
+  auto const beta_result = BuildF18PositronSpectrum();
+  auto const &distribution = beta_result.distribution;
   auto const centers = distribution.GetEnergyValuesMilliElectronVolt();
   auto const weights = distribution.GetRelativeWeights();
   auto const bounds = distribution.GetCumulativeTicketUpperBounds();
@@ -110,10 +124,12 @@ TEST(GGEMSF18SpectrumCSVTest, WritesExactRowsAndReconstructsTicketBounds) {
   EXPECT_FALSE(static_cast<bool>(std::getline(input, line)));
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSF18SpectrumCSVTest, RejectsEmptyAndUnwritableOutputPaths) {
-  auto const definition = BuildF18Radionuclide();
-  auto const &distribution =
-      definition.GetEmissions().front().GetEnergyDistribution();
+  auto const beta_result = BuildF18PositronSpectrum();
+  auto const &distribution = beta_result.distribution;
 
   EXPECT_THROW(
       (void)ExportF18SpectrumCSV(std::filesystem::path{}, distribution),
@@ -130,6 +146,9 @@ TEST(GGEMSF18SpectrumCSVTest, RejectsEmptyAndUnwritableOutputPaths) {
                                           distribution),
                GGEMSExceptionBase);
 }
+
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSF18SpectrumCSVTest, CLIRejectsInvalidArgumentCounts) {
   std::ostringstream standard_output;
@@ -190,12 +209,9 @@ TEST(GGEMSF18SpectrumCSVTest, CLIExportsToTheExplicitTemporaryPath) {
   EXPECT_EQ(csv.back(), '\n');
 
   std::string const summary = standard_output.str();
-  EXPECT_NE(summary.find("Radionuclide: F-18 EvaluatedSubset"),
-            std::string::npos);
-  EXPECT_NE(summary.find("LNHB / KRI"), std::string::npos);
+  EXPECT_NE(summary.find("Radionuclide: F-18"), std::string::npos);
   EXPECT_NE(summary.find("Beta model: AllowedPointCoulomb"), std::string::npos);
-  EXPECT_NE(summary.find("Target maximum bin width [milli-eV]: 500000"),
-            std::string::npos);
+  EXPECT_NE(summary.find("Bin count: 1268"), std::string::npos);
   EXPECT_NE(summary.find("Endpoint [milli-eV]: 633900000"), std::string::npos);
   EXPECT_NE(summary.find(output_path.generic_string()), std::string::npos);
 }

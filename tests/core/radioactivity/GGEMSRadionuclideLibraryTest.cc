@@ -14,7 +14,7 @@
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideEmission.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideLibrary.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideProvenance.hh"
+#include "GGEMS/core/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
 
 namespace {
@@ -26,19 +26,14 @@ using ggems::core::particles::GGEMSParticleType;
 using ggems::core::radioactivity::GGEMSRadionuclideDefinition;
 using ggems::core::radioactivity::GGEMSRadionuclideEmission;
 using ggems::core::radioactivity::GGEMSRadionuclideLibrary;
-using ggems::core::radioactivity::GGEMSRadionuclideProvenance;
+using ggems::core::radioactivity::builtins::BuildC11Radionuclide;
+using ggems::core::radioactivity::builtins::BuildF18Radionuclide;
+using ggems::core::radioactivity::builtins::BuildO15Radionuclide;
 using ggems::core::sources::GGEMSEnergyDistribution;
 
 static_assert(std::is_const_v<std::remove_reference_t<
                   decltype(*std::declval<
                            GGEMSRadionuclideLibrary::DefinitionPointer>())>>);
-
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] auto MakeProvenance() -> GGEMSRadionuclideProvenance {
-  return {"Synthetic authority", "Synthetic citation", "Synthetic version"};
-}
 
 // =============================================================================
 // =============================================================================
@@ -52,7 +47,7 @@ static_assert(std::is_const_v<std::remove_reference_t<
                          GGEMSEnergyDistribution::BuildMono(1ULL));
 
   return {std::move(canonical_name), std::move(aliases), 100.0L,
-          MakeProvenance(), std::move(emissions)};
+          std::move(emissions)};
 }
 
 // =============================================================================
@@ -65,7 +60,7 @@ static_assert(std::is_const_v<std::remove_reference_t<
   centers.reserve(table_count);
 
   for (std::size_t index = 0U; index < table_count; ++index) {
-    centers.push_back(20.0 + static_cast<double>(index) * 2.0);
+    centers.push_back(20.0 + (static_cast<double>(index) * 2.0));
   }
 
   std::vector<GGEMSRadionuclideEmission> emissions;
@@ -73,12 +68,9 @@ static_assert(std::is_const_v<std::remove_reference_t<
       GGEMSParticleType::Electron, 1.0L,
       GGEMSEnergyDistribution::BuildRegularSpectrum(centers, weights, "keV"));
 
-  return {"Synthetic-Large",
-          {"SL"},
-          100.0L,
-          MakeProvenance(),
-          std::move(emissions)};
+  return {"Synthetic-Large", {"SL"}, 100.0L, std::move(emissions)};
 }
+} // namespace
 
 // =============================================================================
 // =============================================================================
@@ -249,4 +241,47 @@ TEST(GGEMSRadionuclideLibraryTest,
       4096U);
 }
 
-} // namespace
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSRadionuclideLibraryTest,
+     RealBuiltInsCoexistInDeterministicStableOrder) {
+  GGEMSRadionuclideLibrary library;
+  auto const f18 = library.Add(BuildF18Radionuclide());
+  auto const c11 = library.Add(BuildC11Radionuclide());
+  auto const o15 = library.Add(BuildO15Radionuclide());
+
+  auto const definitions = library.GetDefinitions();
+  ASSERT_EQ(definitions.size(), 3U);
+  EXPECT_EQ(definitions[0U], f18);
+  EXPECT_EQ(definitions[1U], c11);
+  EXPECT_EQ(definitions[2U], o15);
+
+  EXPECT_EQ(library.Find("18f"), f18);
+  EXPECT_EQ(library.Find("carbon-11"), c11);
+  EXPECT_EQ(library.Find("15o"), o15);
+  EXPECT_EQ(library.Find("F-18").get(), f18.get());
+  EXPECT_EQ(library.Find("C-11").get(), c11.get());
+  EXPECT_EQ(library.Find("O-15").get(), o15.get());
+
+  EXPECT_NE(f18->GetHalfLifeSeconds(), c11->GetHalfLifeSeconds());
+  EXPECT_NE(f18->GetHalfLifeSeconds(), o15->GetHalfLifeSeconds());
+  EXPECT_NE(c11->GetHalfLifeSeconds(), o15->GetHalfLifeSeconds());
+
+  auto const &f18_energy = f18->GetEmissions()[0U].GetEnergyDistribution();
+  auto const &c11_energy = c11->GetEmissions()[0U].GetEnergyDistribution();
+  auto const &o15_energy = o15->GetEmissions()[0U].GetEnergyDistribution();
+  EXPECT_EQ(f18_energy.GetTableCount(), 1'268U);
+  EXPECT_EQ(c11_energy.GetTableCount(), 1'921U);
+  EXPECT_EQ(o15_energy.GetTableCount(), 3'465U);
+
+  auto const endpoint =
+      [](GGEMSEnergyDistribution const &distribution) -> std::uint64_t {
+    auto const centers = distribution.GetEnergyValuesMilliElectronVolt();
+    return centers.back() +
+           (distribution.GetRegularBinWidthMilliElectronVolt() / 2ULL);
+  };
+  EXPECT_EQ(endpoint(f18_energy), 633'900'000ULL);
+  EXPECT_EQ(endpoint(c11_energy), 960'500'000ULL);
+  EXPECT_EQ(endpoint(o15_energy), 1'732'180'000ULL);
+}

@@ -340,6 +340,18 @@ TEST(GGEMSBetaSpectrumBuilderTest,
 // =============================================================================
 // =============================================================================
 
+TEST(GGEMSBetaSpectrumBuilderTest,
+     RejectsLu177FirstForbiddenTransitionWithoutFallback) {
+  GGEMSBetaTransition const transition{
+      GGEMSBetaSign::Minus, 72U, 177U, 496'800'000ULL,
+      GGEMSBetaTransitionClass::FirstForbidden};
+
+  EXPECT_THROW((void)BuildBetaSpectrum(transition), GGEMSExceptionBase);
+}
+
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSBetaSpectrumBuilderTest, LeavesCallerValuesUnchanged) {
   GGEMSBetaTransition const transition = F18Transition();
   GGEMSBetaTransition const transition_copy = transition;

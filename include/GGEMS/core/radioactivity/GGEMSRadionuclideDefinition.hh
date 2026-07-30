@@ -1,14 +1,11 @@
 #pragma once
 
-#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 #include <vector>
 
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideEmission.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideProvenance.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideScientificMetadata.hh"
 
 namespace ggems::core::radioactivity {
 class GGEMSRadionuclideLibrary;
@@ -18,14 +15,7 @@ public:
   GGEMSRadionuclideDefinition(std::string canonical_name,
                               std::vector<std::string> aliases,
                               long double half_life_seconds,
-                              GGEMSRadionuclideProvenance provenance,
                               std::vector<GGEMSRadionuclideEmission> emissions);
-
-  GGEMSRadionuclideDefinition(
-      std::string canonical_name, std::vector<std::string> aliases,
-      long double half_life_seconds,
-      GGEMSRadionuclideScientificMetadata scientific_metadata,
-      std::vector<GGEMSRadionuclideEmission> emissions);
 
   [[nodiscard]] auto GetCanonicalName() const noexcept -> std::string_view {
     return canonical_name_;
@@ -38,16 +28,6 @@ public:
 
   [[nodiscard]] auto GetHalfLifeSeconds() const noexcept -> long double {
     return half_life_seconds_;
-  }
-
-  [[nodiscard]] auto GetProvenance() const noexcept
-      -> GGEMSRadionuclideProvenance const & {
-    return provenance_;
-  }
-
-  [[nodiscard]] auto GetScientificMetadata() const noexcept
-      -> std::optional<GGEMSRadionuclideScientificMetadata> const & {
-    return scientific_metadata_;
   }
 
   [[nodiscard]] auto GetEmissions() const noexcept
@@ -80,15 +60,11 @@ private:
     return lookup_keys_;
   }
 
-  auto ValidateAndBuildDerivedState() -> void;
-
   std::string canonical_name_;
   std::vector<std::string> aliases_;
   std::vector<std::string> lookup_keys_;
   long double half_life_seconds_;
-  GGEMSRadionuclideProvenance provenance_;
   std::vector<GGEMSRadionuclideEmission> emissions_;
-  std::optional<GGEMSRadionuclideScientificMetadata> scientific_metadata_;
   long double total_yield_per_decay_{0.0L};
   std::vector<long double> channel_selection_weights_;
 };

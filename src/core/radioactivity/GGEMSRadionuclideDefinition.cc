@@ -1,6 +1,5 @@
 #include <cmath>
 #include <format>
-#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -13,8 +12,6 @@
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideEmission.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideProvenance.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideScientificMetadata.hh"
 
 namespace ggems::core::radioactivity {
 namespace {
@@ -26,15 +23,6 @@ namespace {
     -> bool {
   return character == ' ' || character == '\t' || character == '\n' ||
          character == '\r' || character == '\f' || character == '\v';
-}
-
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] auto HasVisibleText(std::string_view text) noexcept -> bool {
-  return std::ranges::any_of(text, [](char character) noexcept -> bool {
-    return !IsAsciiWhitespace(character);
-  });
 }
 
 // =============================================================================
@@ -77,35 +65,6 @@ ComputeTotalYieldPerDecay(std::span<GGEMSRadionuclideEmission const> emissions)
 }
 
 } // namespace
-
-// =============================================================================
-// =============================================================================
-
-GGEMSRadionuclideProvenance::GGEMSRadionuclideProvenance(
-    std::string authority, std::string citation,
-    std::string evaluation_date_or_version,
-    std::optional<std::string> reference_identifier)
-    : authority_{std::move(authority)}, citation_{std::move(citation)},
-      evaluation_date_or_version_{std::move(evaluation_date_or_version)},
-      reference_identifier_{std::move(reference_identifier)} {
-  GGEMS_CHECK_RECOVERABLE(
-      HasVisibleText(authority_),
-      "Radionuclide provenance authority must contain non-whitespace text.");
-  GGEMS_CHECK_RECOVERABLE(
-      HasVisibleText(citation_),
-      "Radionuclide provenance citation must contain non-whitespace text.");
-  GGEMS_CHECK_RECOVERABLE(
-      HasVisibleText(evaluation_date_or_version_),
-      "Radionuclide provenance evaluation date or version must contain "
-      "non-whitespace text.");
-
-  if (reference_identifier_.has_value()) {
-    GGEMS_CHECK_RECOVERABLE(
-        HasVisibleText(*reference_identifier_),
-        "Radionuclide provenance reference identifier must contain "
-        "non-whitespace text when present.");
-  }
-}
 
 // =============================================================================
 // =============================================================================
@@ -171,33 +130,10 @@ GGEMSRadionuclideDefinition::NormalizeLookupName(std::string_view name)
 
 GGEMSRadionuclideDefinition::GGEMSRadionuclideDefinition(
     std::string canonical_name, std::vector<std::string> aliases,
-    long double half_life_seconds, GGEMSRadionuclideProvenance provenance,
-    std::vector<GGEMSRadionuclideEmission> emissions)
-    : canonical_name_{std::move(canonical_name)}, aliases_{std::move(aliases)},
-      half_life_seconds_{half_life_seconds}, provenance_{std::move(provenance)},
-      emissions_{std::move(emissions)} {
-  ValidateAndBuildDerivedState();
-}
-
-// -----------------------------------------------------------------------------
-
-GGEMSRadionuclideDefinition::GGEMSRadionuclideDefinition(
-    std::string canonical_name, std::vector<std::string> aliases,
     long double half_life_seconds,
-    GGEMSRadionuclideScientificMetadata scientific_metadata,
     std::vector<GGEMSRadionuclideEmission> emissions)
     : canonical_name_{std::move(canonical_name)}, aliases_{std::move(aliases)},
-      half_life_seconds_{half_life_seconds},
-      provenance_{scientific_metadata.GetEvaluationSource().GetProvenance()},
-      emissions_{std::move(emissions)},
-      scientific_metadata_{std::move(scientific_metadata)} {
-  scientific_metadata_->ValidateChannelLinks(emissions_.size());
-  ValidateAndBuildDerivedState();
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSRadionuclideDefinition::ValidateAndBuildDerivedState() -> void {
+      half_life_seconds_{half_life_seconds}, emissions_{std::move(emissions)} {
   GGEMS_CHECK_RECOVERABLE(std::isfinite(half_life_seconds_),
                           "Radionuclide half-life must be finite.");
   GGEMS_CHECK_RECOVERABLE(half_life_seconds_ > 0.0L,

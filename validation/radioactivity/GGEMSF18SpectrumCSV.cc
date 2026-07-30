@@ -18,10 +18,7 @@
 #include <utility>
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/radioactivity/GGEMSBetaSpectrumBuilder.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideScientificMetadata.hh"
 #include "GGEMS/core/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
@@ -44,36 +41,6 @@ inline constexpr std::string_view k_csv_header{
 [[noreturn]] auto Reject(std::string message) -> void {
   core::Throw<core::GGEMSRecoverable>(std::move(message),
                                       std::source_location::current(), false);
-}
-
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] auto FindF18BetaApproximation(
-    core::radioactivity::GGEMSRadionuclideScientificMetadata const &metadata,
-    std::size_t included_channel_index)
-    -> core::radioactivity::GGEMSBetaApproximationMetadata const & {
-  core::radioactivity::GGEMSBetaApproximationMetadata const *match{nullptr};
-
-  for (auto const &approximation : metadata.GetBetaApproximations()) {
-    if (approximation.GetIncludedChannelIndex() != included_channel_index) {
-      continue;
-    }
-
-    if (match != nullptr) {
-      Reject("F-18 scientific metadata contains duplicate beta "
-             "approximations for the positron channel.");
-    }
-
-    match = &approximation;
-  }
-
-  if (match == nullptr) {
-    Reject("F-18 scientific metadata does not contain the positron beta "
-           "approximation.");
-  }
-
-  return *match;
 }
 
 // =============================================================================
@@ -246,50 +213,17 @@ RunF18SpectrumValidationCLI(std::span<std::string_view const> arguments,
     }
 
     std::filesystem::path const output_path{std::string{arguments.front()}};
-    auto const definition =
-        core::radioactivity::builtins::BuildF18Radionuclide();
+    auto const beta_result =
+        core::radioactivity::builtins::BuildF18PositronSpectrum();
+    auto const &diagnostics = beta_result.diagnostics;
 
-    if (definition.GetCanonicalName() != "F-18") {
-      Reject("The built-in F-18 factory returned an unexpected definition.");
-    }
-
-    auto const &optional_metadata = definition.GetScientificMetadata();
-
-    if (!optional_metadata.has_value()) {
-      Reject("The built-in F-18 definition has no scientific metadata.");
-    }
-
-    auto const &metadata = *optional_metadata;
-
-    if (metadata.GetCompleteness() !=
-        core::radioactivity::GGEMSRadionuclideCompleteness::EvaluatedSubset) {
-      Reject("The built-in F-18 definition is not an EvaluatedSubset.");
-    }
-
-    constexpr std::size_t k_positron_channel_index{0U};
-    auto const emissions = definition.GetEmissions();
-
-    if (emissions.size() <= k_positron_channel_index ||
-        emissions[k_positron_channel_index].GetParticleType() !=
-            core::particles::GGEMSParticleType::Positron) {
-      Reject("The built-in F-18 definition has no positron channel at index "
-             "zero.");
-    }
-
-    auto const &approximation =
-        FindF18BetaApproximation(metadata, k_positron_channel_index);
-
-    if (approximation.GetOptions().model !=
+    if (diagnostics.model !=
         core::radioactivity::GGEMSBetaSpectrumModel::AllowedPointCoulomb) {
-      Reject("The built-in F-18 positron channel does not use "
-             "AllowedPointCoulomb.");
+      Reject("The F-18 positron spectrum does not use AllowedPointCoulomb.");
     }
 
-    auto const &distribution =
-        emissions[k_positron_channel_index].GetEnergyDistribution();
     GGEMSF18SpectrumCSVResult const export_result =
-        ExportF18SpectrumCSV(output_path, distribution);
-    auto const &diagnostics = approximation.GetDiagnostics();
+        ExportF18SpectrumCSV(output_path, beta_result.distribution);
 
     if (export_result.row_count != diagnostics.bin_count ||
         export_result.final_cumulative_ticket_upper_bound !=
@@ -298,20 +232,12 @@ RunF18SpectrumValidationCLI(std::span<std::string_view const> arguments,
              "diagnostics.");
     }
 
-    auto const &evaluation_source = metadata.GetEvaluationSource();
-    auto const &provenance = evaluation_source.GetProvenance();
-
     std::ostringstream summary;
     summary.imbue(std::locale::classic());
     summary << std::setprecision(
         std::numeric_limits<long double>::max_digits10);
-    summary << "Radionuclide: F-18 EvaluatedSubset\n";
-    summary << "Evaluation: " << provenance.GetAuthority() << " / "
-            << evaluation_source.GetSourceSnapshotIdentifier() << '\n';
+    summary << "Radionuclide: F-18\n";
     summary << "Beta model: AllowedPointCoulomb\n";
-    summary << "Target maximum bin width [milli-eV]: "
-            << approximation.GetOptions().grid.target_maximum_bin_width_milli_eV
-            << '\n';
     summary << "Bin count: " << diagnostics.bin_count << '\n';
     summary << "Endpoint [milli-eV]: " << diagnostics.upper_edge_milli_eV
             << '\n';
