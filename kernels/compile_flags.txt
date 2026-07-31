@@ -10,3 +10,4 @@ cl
 -Icore/transport
 -Icore/observer
 -Icore/sources
+-Icore/radioactivity

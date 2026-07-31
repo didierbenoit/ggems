@@ -86,10 +86,11 @@ using SourceConfigurationSnapshotPtr =
   config.total_primary_count = static_cast<std::uint32_t>(
       std::ranges::fold_left(counts, 0ULL, std::plus{}));
   config.source_records = std::move(records);
+  config.source_population_records.resize(config.source_records.size());
   config.source_ranges = BuildRanges(counts);
   config.observer_config.enabled = 1U;
   config.observer_config.capture_first_primary_count_per_source =
-      config.total_primary_count;
+      static_cast<std::uint32_t>(config.total_primary_count);
   return config;
 }
 

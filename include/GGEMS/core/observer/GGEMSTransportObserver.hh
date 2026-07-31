@@ -8,6 +8,10 @@
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 
+namespace ggems::core {
+class GGEMSRun;
+}
+
 namespace ggems::core::observer {
 
 class GGEMSTransportObserver {
@@ -58,6 +62,12 @@ public:
   [[nodiscard]] auto BuildDump() const -> std::string;
 
 private:
+  friend class ggems::core::GGEMSRun;
+
+  explicit GGEMSTransportObserver(bool reserve_record_capacity);
+
+  auto SwapRunResult(GGEMSTransportObserver &other) noexcept -> void;
+
   bool enabled_{false};
 
   std::uint32_t record_capacity_{65'536U};

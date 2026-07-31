@@ -277,6 +277,10 @@ auto GGEMSGuiApplication::SubmitLastRunSourceSnapshot(
       snapshot.has_value(),
       "GGEMSRun has no successfully completed source snapshot to submit.");
 
+  GGEMS_CHECK_RECOVERABLE(
+      !snapshot->HasActivityDrivenSource(),
+      "ActivityDriven GUI presentation is not implemented.");
+
   if (!run.HasObserver() && !missing_observer_warning_emitted_) {
     missing_observer_warning_emitted_ = true;
 

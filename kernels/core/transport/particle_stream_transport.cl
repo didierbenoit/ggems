@@ -6,6 +6,9 @@
 #include "core/sources/GGEMSSourceRunRange.clh"
 #include "core/transport/GGEMSDiagnosticProjection.clh"
 #include "core/transport/GGEMSTransportCounters.clh"
+#include "core/radioactivity/GGEMSRadionuclideEmissionRecord.clh"
+#include "core/radioactivity/GGEMSRadionuclideGroupRange.clh"
+#include "core/sources/GGEMSSourcePopulationRecord.clh"
 
 #ifndef GGEMS_ENABLE_TRANSPORT_OBSERVER
 #define GGEMS_ENABLE_TRANSPORT_OBSERVER 0
@@ -27,7 +30,10 @@ __kernel void particle_stream_transport(
     uint observer_record_capacity, ulong run_id, uint worker_count,
     __global GGEMSEnergyDistributionRecord const *energy_distribution_records,
     __global ulong const *energy_values_milli_eV,
-    __global ulong const *cumulative_ticket_upper) {
+    __global ulong const *cumulative_ticket_upper,
+    __global GGEMSSourcePopulationRecord const *source_population_records,
+    __global GGEMSRadionuclideEmissionRecord const *radionuclide_emissions,
+    __global GGEMSRadionuclideGroupRange const *radionuclide_group_ranges) {
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER == 0
   (void)(observer_config);
@@ -103,14 +109,55 @@ __kernel void particle_stream_transport(
 
     __global GGEMSSourceRecord const *source =
         &source_records[selected_source_index];
+    __global GGEMSSourcePopulationRecord const *population =
+        &source_population_records[selected_source_index];
 
-    __global GGEMSEnergyDistributionRecord const *energy_distribution =
-        &energy_distribution_records[selected_source_index];
+    GGEMSParticleState particle;
 
-    GGEMSParticleState particle = GGEMS_SourceInitialisePrimary(
-        global_primary_id, source_local_primary_id, source, energy_distribution,
-        energy_values_milli_eV, cumulative_ticket_upper, random_states,
-        worker_id);
+    if (population->population_mode ==
+        GGEMS_SOURCE_POPULATION_MODE_COUNT_DRIVEN) {
+      __global GGEMSEnergyDistributionRecord const *energy_distribution =
+          &energy_distribution_records[selected_source_index];
+
+      particle = GGEMS_SourceInitialisePrimary(
+          global_primary_id, source_local_primary_id, source,
+          energy_distribution, energy_values_milli_eV, cumulative_ticket_upper,
+          random_states, worker_id);
+    } else {
+      uint selected_emission_index = 0xFFFFFFFFU;
+
+      for (uint local_emission_index = 0U;
+           local_emission_index < population->emission_count;
+           ++local_emission_index) {
+        uint emission_index =
+            population->first_emission_index + local_emission_index;
+        ulong begin = radionuclide_group_ranges[emission_index]
+                          .source_local_primary_begin;
+        ulong count = radionuclide_group_ranges[emission_index].primary_count;
+
+        if (count != 0UL && source_local_primary_id >= begin &&
+            source_local_primary_id - begin < count) {
+          selected_emission_index = emission_index;
+          break;
+        }
+      }
+
+      if (selected_emission_index == 0xFFFFFFFFU) {
+        atomic_inc(&counters->overflow_count);
+        continue;
+      }
+
+      __global GGEMSRadionuclideEmissionRecord const *emission =
+          &radionuclide_emissions[selected_emission_index];
+      __global GGEMSEnergyDistributionRecord const *energy_distribution =
+          &energy_distribution_records[emission
+                                           ->energy_distribution_record_index];
+
+      particle = GGEMS_SourceInitialiseActivityDrivenPrimary(
+          global_primary_id, source_local_primary_id, source, population,
+          emission, energy_distribution, energy_values_milli_eV,
+          cumulative_ticket_upper, random_states, worker_id);
+    }
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER
     if (capture_history != 0U) {

@@ -147,6 +147,21 @@ auto GGEMSSource::FinalizeInitialization() noexcept -> void {
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSSource::BuildCommonRecord() const -> GGEMSSourceRecord {
+  GGEMSSourceRecord record = record_;
+
+  if (GetPopulationMode() == GGEMSSourcePopulationMode::ActivityDriven) {
+    record.emitted_particle_type =
+        particles::ToKernelParticleType(particles::GGEMSParticleType::Unknown);
+    record.energy_milli_eV = 0ULL;
+  }
+
+  ValidateAnalyticSourceRecord(record);
+  return record;
+}
+
+// -----------------------------------------------------------------------------
+
 GGEMSSource::GGEMSSource(GGEMSSource &&other) {
   other.CheckPopulationConfigurationMutable();
 
@@ -628,17 +643,17 @@ auto GGEMSSource::SetWeight(float weight) -> GGEMSSource & {
 
 auto GGEMSSource::BuildRecord() const -> GGEMSSourceRecord {
   CheckCountDrivenConfiguration();
+  GGEMSSourceRecord const record = BuildCommonRecord();
   std::uint64_t const expected_energy =
       energy_distribution_.GetType() == GGEMSEnergyDistributionType::Mono
           ? energy_distribution_.GetMonoEnergyMilliElectronVolt()
           : 0ULL;
 
   GGEMS_CHECK_INTERNAL(
-      record_.energy_milli_eV == expected_energy,
+      record.energy_milli_eV == expected_energy,
       "GGEMSSource record and energy distribution are inconsistent.");
 
-  ValidateAnalyticSourceRecord(record_);
-  return record_;
+  return record;
 }
 
 // -----------------------------------------------------------------------------

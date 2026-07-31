@@ -189,6 +189,8 @@ add_subdirectory(python)
 # Unit testing
 # ----------------------------------------------------------------------------
 if(GGEMS_BUILD_TESTS)
+  target_compile_definitions(ggems_core
+                             PRIVATE GGEMS_ENABLE_INTERNAL_TEST_HOOKS)
   enable_testing()
   add_subdirectory(tests)
 endif()

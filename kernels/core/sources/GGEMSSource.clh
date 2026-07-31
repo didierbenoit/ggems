@@ -5,6 +5,9 @@
 #include "core/sources/GGEMSSourceRecord.clh"
 #include "core/random/GGEMSRandom.clh"
 #include "core/sources/GGEMSEnergyDistribution.clh"
+#include "core/radioactivity/GGEMSRadioactiveTimeSampling.clh"
+#include "core/radioactivity/GGEMSRadionuclideEmissionRecord.clh"
+#include "core/sources/GGEMSSourcePopulationRecord.clh"
 
 #ifndef GGEMS_SOURCE_TRACK_BRANCH_BITS
 #define GGEMS_SOURCE_TRACK_BRANCH_BITS 16U
@@ -309,8 +312,8 @@ static inline ulong GGEMS_SourceSampleEnergy(
     __global ulong const *cumulative_ticket_upper,
     __global GGEMSRandomState *random_states, uint worker_id) {
   return GGEMS_EnergyDistributionSample(
-      source, distribution, energy_values_milli_eV, cumulative_ticket_upper,
-      random_states, worker_id);
+      source->energy_milli_eV, distribution, energy_values_milli_eV,
+      cumulative_ticket_upper, random_states, worker_id);
 }
 
 // =============================================================================
@@ -349,6 +352,68 @@ static inline GGEMSParticleState GGEMS_SourceInitialisePrimary(
   particle.position_z_pm = sampled_position.z;
 
   particle.particle_type = source->emitted_particle_type;
+  particle.status = GGEMS_PARTICLE_STATUS_ALIVE;
+  particle.generation = 0U;
+  particle.flags = 0U;
+
+  particle.current_navigator_id = GGEMS_INVALID_ID_U32;
+  particle.current_volume_id = GGEMS_INVALID_ID_U32;
+  particle.material_id = GGEMS_INVALID_ID_U32;
+  particle.region_id = GGEMS_INVALID_ID_U32;
+
+  particle.direction_x = sampled_direction.x;
+  particle.direction_y = sampled_direction.y;
+  particle.direction_z = sampled_direction.z;
+  particle.direction_w = 0.0F;
+
+  particle.energy_milli_eV = sampled_energy_milli_eV;
+  particle.weight = source->weight;
+
+  return particle;
+}
+
+// =============================================================================
+// =============================================================================
+
+static inline GGEMSParticleState GGEMS_SourceInitialiseActivityDrivenPrimary(
+    ulong global_primary_id, ulong source_local_primary_id,
+    __global GGEMSSourceRecord const *source,
+    __global GGEMSSourcePopulationRecord const *population,
+    __global GGEMSRadionuclideEmissionRecord const *emission,
+    __global GGEMSEnergyDistributionRecord const *energy_distribution,
+    __global ulong const *energy_values_milli_eV,
+    __global ulong const *cumulative_ticket_upper,
+    __global GGEMSRandomState *random_states, uint worker_id) {
+  (void)(source_local_primary_id);
+
+  uint const time_raw_word = GGEMS_RndmUInt32(random_states, worker_id);
+  ulong const sampled_time_ps = GGEMS_SampleRadioactiveTimeFromRaw(
+      source->time_start_ps, source->time_stop_ps, population->scaled_decay,
+      time_raw_word);
+
+  long3 const sampled_position =
+      GGEMS_SourceSamplePosition(source, random_states, worker_id);
+
+  float3 const sampled_direction = GGEMS_SourceSampleDirection(
+      source, sampled_position, random_states, worker_id);
+
+  ulong const sampled_energy_milli_eV = GGEMS_EnergyDistributionSample(
+      emission->mono_energy_milli_eV, energy_distribution,
+      energy_values_milli_eV, cumulative_ticket_upper, random_states,
+      worker_id);
+
+  GGEMSParticleState particle;
+
+  particle.global_particle_id = global_primary_id;
+  particle.track_id = 0UL;
+  particle.parent_track_id = GGEMS_INVALID_ID_U64;
+  particle.time_ps = sampled_time_ps;
+
+  particle.position_x_pm = sampled_position.x;
+  particle.position_y_pm = sampled_position.y;
+  particle.position_z_pm = sampled_position.z;
+
+  particle.particle_type = emission->particle_type;
   particle.status = GGEMS_PARTICLE_STATUS_ALIVE;
   particle.generation = 0U;
   particle.flags = 0U;

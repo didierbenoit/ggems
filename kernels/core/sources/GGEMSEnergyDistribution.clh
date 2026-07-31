@@ -78,13 +78,13 @@ static inline ulong GGEMS_EnergyDistributionSampleWithTicket(
 // =============================================================================
 
 static inline ulong GGEMS_EnergyDistributionSample(
-    __global GGEMSSourceRecord const *source,
+    ulong mono_energy_milli_eV,
     __global GGEMSEnergyDistributionRecord const *distribution,
     __global ulong const *energy_values_milli_eV,
     __global ulong const *cumulative_ticket_upper,
     __global GGEMSRandomState *random_states, uint worker_id) {
   if (distribution->distribution_type == GGEMS_ENERGY_DISTRIBUTION_TYPE_MONO) {
-    return source->energy_milli_eV;
+    return mono_energy_milli_eV;
   }
 
   uint const raw_ticket = GGEMS_RndmUInt32(random_states, worker_id);

@@ -9,6 +9,7 @@
 #include <span>
 #include <cstdint>
 #include <vector>
+#include <utility>
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
@@ -581,8 +582,15 @@ auto AddSaturated(std::uint32_t &destination, std::uint64_t value) -> void {
 // =============================================================================
 // =============================================================================
 
-GGEMSTransportObserver::GGEMSTransportObserver() {
-  records_.reserve(record_capacity_);
+GGEMSTransportObserver::GGEMSTransportObserver()
+    : GGEMSTransportObserver{true} {}
+
+// -----------------------------------------------------------------------------
+
+GGEMSTransportObserver::GGEMSTransportObserver(bool reserve_record_capacity) {
+  if (reserve_record_capacity) {
+    records_.reserve(record_capacity_);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -671,6 +679,14 @@ auto GGEMSTransportObserver::ClearCapturedPrimary() noexcept
 auto GGEMSTransportObserver::Clear() -> void {
   counters_ = GGEMSObserverCounters{};
   records_.clear();
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSTransportObserver::SwapRunResult(
+    GGEMSTransportObserver &other) noexcept -> void {
+  std::swap(counters_, other.counters_);
+  records_.swap(other.records_);
 }
 
 // -----------------------------------------------------------------------------

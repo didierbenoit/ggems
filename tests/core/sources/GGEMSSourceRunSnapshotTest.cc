@@ -866,7 +866,8 @@ TEST(GGEMSSourceRunSnapshot, OwnsVolumeAndBoundedAngularRecordFields) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSSourceRunSnapshot, RejectsActivityDrivenSlotsBeforePacking) {
+TEST(GGEMSSourceRunSnapshot,
+     PacksActivityConfigurationButRequiresPlannerForRunSnapshot) {
   auto definition = std::make_shared<
       ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
       ggems::core::radioactivity::builtins::BuildF18Radionuclide());
@@ -874,34 +875,39 @@ TEST(GGEMSSourceRunSnapshot, RejectsActivityDrivenSlotsBeforePacking) {
   activity_source->SetActivityDrivenRadionuclide(
       definition, ggems::units::Activity{1.0L}, 0ULL);
 
-  ExpectGGEMSExceptionContaining(
-      [&activity_source]() -> void {
-        (void)ggems::core::sources::BuildSourceConfigurationSnapshot(
-            *activity_source);
-      },
-      "index 0 is ActivityDriven and requires B3.2 device integration");
+  auto const activity_configuration =
+      ggems::core::sources::BuildSourceConfigurationSnapshot(*activity_source);
+  ASSERT_EQ(activity_configuration->GetSourceCount(), 1U);
+  ASSERT_EQ(activity_configuration->GetEmissionCount(), 3U);
+  ASSERT_EQ(activity_configuration->GetRadionuclideDefinitions().size(), 1U);
+  EXPECT_EQ(activity_configuration->GetRadionuclideDefinitions()[0U],
+            definition);
+
   ExpectGGEMSExceptionContaining(
       [&activity_source]() -> void {
         (void)ggems::core::sources::BuildSourceRunSnapshot(
             *activity_source,
             ggems::core::GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1ULL});
       },
-      "index 0 is ActivityDriven and requires B3.2 device integration");
+      "index 0 is ActivityDriven and requires a planner candidate");
 
   std::vector<std::shared_ptr<ggems::core::sources::GGEMSSource>> sources{
       MakeSource(1ULL), activity_source};
-  ExpectGGEMSExceptionContaining(
-      [&sources]() -> void {
-        (void)ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
-      },
-      "index 1 is ActivityDriven and requires B3.2 device integration");
+  auto const mixed_configuration =
+      ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
+  ASSERT_EQ(mixed_configuration->GetSourceCount(), 2U);
+  ASSERT_EQ(mixed_configuration->GetEmissionCount(), 3U);
+  ASSERT_EQ(mixed_configuration->GetRadionuclideDefinitions().size(), 2U);
+  EXPECT_EQ(mixed_configuration->GetRadionuclideDefinitions()[0U], nullptr);
+  EXPECT_EQ(mixed_configuration->GetRadionuclideDefinitions()[1U], definition);
+
   ExpectGGEMSExceptionContaining(
       [&sources]() -> void {
         (void)ggems::core::sources::BuildSourceRunSnapshot(
             sources,
             ggems::core::GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1ULL});
       },
-      "index 1 is ActivityDriven and requires B3.2 device integration");
+      "index 1 is ActivityDriven and requires a planner candidate");
 
   auto count_source = MakeSource(1ULL);
   std::vector<std::shared_ptr<ggems::core::sources::GGEMSSource>>
@@ -918,5 +924,5 @@ TEST(GGEMSSourceRunSnapshot, RejectsActivityDrivenSlotsBeforePacking) {
             reconfigured_sources, stable_configuration,
             ggems::core::GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1ULL});
       },
-      "index 1 is ActivityDriven and requires B3.2 device integration");
+      "index 1 is ActivityDriven and requires a planner candidate");
 }

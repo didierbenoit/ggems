@@ -117,6 +117,7 @@ MakeSourceRecord(std::array<std::int64_t, 3U> const &position,
   config.projection_history_offset = projection_history_offset;
   config.device_primary_offset = device_primary_offset;
   config.source_records = std::move(records);
+  config.source_population_records.resize(config.source_records.size());
   config.source_ranges = BuildRanges(primary_counts);
   return config;
 }

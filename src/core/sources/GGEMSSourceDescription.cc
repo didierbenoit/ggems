@@ -14,12 +14,15 @@
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulationRecord.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/core/units/GGEMSLengthUnits.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
 #include "GGEMS/core/sources/GGEMSSourceValidation.hh"
+#include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 
 namespace ggems::core::sources {
 
@@ -248,12 +251,68 @@ auto DescribeSourceRunSlot(std::size_t source_index,
     -> std::string {
   auto const &records = snapshot.GetRecords();
   auto const &ranges = snapshot.GetRanges();
+  auto const &population_records = snapshot.GetPopulationRecords();
   auto const &energy_records = snapshot.GetEnergyDistributionRecords();
 
   GGEMS_CHECK_INTERNAL(source_index < records.size() &&
                            source_index < ranges.size() &&
+                           source_index < population_records.size() &&
                            source_index < energy_records.size(),
                        "Source description index is outside the run snapshot.");
+
+  auto const &population = population_records[source_index];
+  if (population.population_mode ==
+      ToKernelSourcePopulationMode(GGEMSSourcePopulationMode::ActivityDriven)) {
+    auto const &record = records[source_index];
+    auto const &range = ranges[source_index];
+    auto const &emission_records = snapshot.GetRadionuclideEmissionRecords();
+    auto const &group_ranges = snapshot.GetGroupRanges();
+    auto const &definitions = snapshot.GetRadionuclideDefinitions();
+
+    GGEMS_CHECK_INTERNAL(
+        source_index < definitions.size() &&
+            definitions[source_index] != nullptr &&
+            population.first_emission_index <= emission_records.size() &&
+            population.emission_count <=
+                emission_records.size() - population.first_emission_index &&
+            group_ranges.size() == emission_records.size(),
+        "ActivityDriven source description metadata is inconsistent.");
+
+    std::string groups;
+    for (std::uint32_t offset = 0U; offset < population.emission_count;
+         ++offset) {
+      std::size_t const emission_index =
+          static_cast<std::size_t>(population.first_emission_index) + offset;
+      auto const &emission = emission_records[emission_index];
+      GGEMS_CHECK_INTERNAL(
+          emission.energy_distribution_record_index < energy_records.size(),
+          "ActivityDriven energy record index is outside the snapshot.");
+
+      if (!groups.empty()) {
+        groups += "; ";
+      }
+      groups +=
+          std::format("#{} {} count={}", offset,
+                      particles::ToLongName(particles::FromKernelParticleType(
+                          emission.particle_type)),
+                      group_ranges[emission_index].primary_count);
+    }
+
+    return std::format(
+        "Source slot: {} | Projection primary begin: {} | Type: {} | "
+        "Population: ActivityDriven | Radionuclide: {} | Primary count: {} | "
+        "Emission groups: {} [{}] | {} | {} | {} | Position: ({}, {}, {}) | "
+        "Axis Z: ({}, {}, {}) | Weight: {}",
+        source_index, range.projection_primary_begin,
+        ToLongName(FromKernelSourceType(record.source_type)),
+        definitions[source_index]->GetCanonicalName(), range.primary_count,
+        population.emission_count, groups, DescribeEmission(record),
+        DescribeAngularDistribution(record), DescribeTime(record),
+        ggems::units::HumanReadableSignedLength(record.position_x_pm),
+        ggems::units::HumanReadableSignedLength(record.position_y_pm),
+        ggems::units::HumanReadableSignedLength(record.position_z_pm),
+        record.axis_z_x, record.axis_z_y, record.axis_z_z, record.weight);
+  }
 
   return DescribeSourceRunSlot(source_index, records[source_index],
                                ranges[source_index],

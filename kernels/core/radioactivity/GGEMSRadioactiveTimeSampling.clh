@@ -1,0 +1,67 @@
+#ifndef GGEMS_CORE_RADIOACTIVITY_GGEMS_RADIOACTIVE_TIME_SAMPLING_CLH
+#define GGEMS_CORE_RADIOACTIVITY_GGEMS_RADIOACTIVE_TIME_SAMPLING_CLH
+
+#include "core/random/GGEMSRandomCommon.clh"
+
+// The uniform-limit CDF error is bounded by x / 8 + O(x^2), so 2^-14
+// keeps the leading binary32 error below 1.0e-5.
+#define GGEMS_RADIOACTIVE_TIME_UNIFORM_LIMIT_SCALED_DECAY 0x1.0p-14f
+
+// =============================================================================
+// =============================================================================
+
+static inline float GGEMS_ComputeRadioactiveTimeRelative(float uniform,
+                                                         float scaled_decay) {
+  if (scaled_decay <= GGEMS_RADIOACTIVE_TIME_UNIFORM_LIMIT_SCALED_DECAY) {
+    return uniform;
+  }
+
+  float const decay_mass = -expm1(-scaled_decay);
+  return -log1p(-uniform * decay_mass) / scaled_decay;
+}
+
+// =============================================================================
+// =============================================================================
+
+static inline uint GGEMS_QuantizeRadioactiveTimeRelative(float relative) {
+  return convert_uint_sat_rtz(relative * 4294967296.0f);
+}
+
+// =============================================================================
+// =============================================================================
+
+static inline ulong GGEMS_ScaleRadioactiveTimeTicket(ulong window_width_ps,
+                                                     uint ticket) {
+  ulong const width_upper = window_width_ps >> 32U;
+  ulong const width_lower = window_width_ps & 0xFFFFFFFFUL;
+  ulong const ticket_u64 = (ulong)(ticket);
+
+  return width_upper * ticket_u64 + ((width_lower * ticket_u64) >> 32U);
+}
+
+// =============================================================================
+// =============================================================================
+
+static inline ulong GGEMS_SampleRadioactiveTimeFromRaw(ulong time_start_ps,
+                                                       ulong time_stop_ps,
+                                                       float scaled_decay,
+                                                       uint raw_word) {
+  if (time_stop_ps <= time_start_ps) {
+    return time_start_ps;
+  }
+
+  float const uniform = GGEMS_UIntToUniform01(raw_word);
+  float const relative =
+      GGEMS_ComputeRadioactiveTimeRelative(uniform, scaled_decay);
+  uint const ticket = GGEMS_QuantizeRadioactiveTimeRelative(relative);
+  ulong const window_width_ps = time_stop_ps - time_start_ps;
+  ulong offset_ps = GGEMS_ScaleRadioactiveTimeTicket(window_width_ps, ticket);
+
+  if (offset_ps >= window_width_ps) {
+    offset_ps = window_width_ps - 1UL;
+  }
+
+  return time_start_ps + offset_ps;
+}
+
+#endif

@@ -13,6 +13,8 @@
 #include <cstddef>
 #include <format>
 #include <span>
+#include <string>
+#include <type_traits>
 
 #include "GGEMS/core/GGEMSRun.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
@@ -20,6 +22,7 @@
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/sources/GGEMSSourceDescription.hh"
 #include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
+#include "GGEMS/core/radioactivity/GGEMSRadionuclideEmissionPlan.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
@@ -47,20 +50,57 @@ struct RunningGuard {
 // =============================================================================
 // =============================================================================
 
-auto AccumulateTransportCounters(transport::GGEMSTransportCounters &dst,
-                                 transport::GGEMSTransportCounters const &src)
-    -> void {
-  dst.consumed_primary_count += src.consumed_primary_count;
-  dst.completed_history_count += src.completed_history_count;
-  dst.terminal_particle_count += src.terminal_particle_count;
-  dst.created_secondary_count += src.created_secondary_count;
+static_assert(
+    std::is_nothrow_move_assignable_v<sources::GGEMSSourceRunSnapshot>);
 
-  dst.aionino_to_gamma_count += src.aionino_to_gamma_count;
-  dst.gamma_to_electron_count += src.gamma_to_electron_count;
-  dst.electron_to_electron_count += src.electron_to_electron_count;
+// =============================================================================
+// =============================================================================
 
-  dst.overflow_count += src.overflow_count;
-  dst.total_fake_step_count += src.total_fake_step_count;
+[[nodiscard]] auto SaturateToUint32(std::uint64_t value) noexcept
+    -> std::uint32_t {
+  return static_cast<std::uint32_t>(std::min(
+      value,
+      static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max())));
+}
+
+// =============================================================================
+// =============================================================================
+
+auto CheckedAccumulate(std::uint64_t &destination, std::uint64_t value,
+                       char const *diagnostic) -> void {
+  GGEMS_CHECK_RECOVERABLE(value <= std::numeric_limits<std::uint64_t>::max() -
+                                       destination,
+                          diagnostic);
+  destination += value;
+}
+
+// =============================================================================
+// =============================================================================
+
+auto AccumulateTransportCounters(
+    transport::GGEMSTransportLogicalCounters &dst,
+    transport::GGEMSTransportLogicalCounters const &src) -> void {
+  CheckedAccumulate(dst.next_primary_id, src.next_primary_id,
+                    "Transport primary cursor aggregation overflows uint64.");
+  CheckedAccumulate(dst.consumed_primary_count, src.consumed_primary_count,
+                    "Transport consumed-primary aggregation overflows uint64.");
+  CheckedAccumulate(dst.completed_history_count, src.completed_history_count,
+                    "Transport history aggregation overflows uint64.");
+  CheckedAccumulate(dst.terminal_particle_count, src.terminal_particle_count,
+                    "Transport terminal aggregation overflows uint64.");
+  CheckedAccumulate(dst.created_secondary_count, src.created_secondary_count,
+                    "Transport secondary aggregation overflows uint64.");
+  CheckedAccumulate(dst.aionino_to_gamma_count, src.aionino_to_gamma_count,
+                    "Transport Aionino transition aggregation overflows.");
+  CheckedAccumulate(dst.gamma_to_electron_count, src.gamma_to_electron_count,
+                    "Transport Gamma transition aggregation overflows.");
+  CheckedAccumulate(dst.electron_to_electron_count,
+                    src.electron_to_electron_count,
+                    "Transport Electron transition aggregation overflows.");
+  CheckedAccumulate(dst.overflow_count, src.overflow_count,
+                    "Transport overflow aggregation overflows uint64.");
+  CheckedAccumulate(dst.total_fake_step_count, src.total_fake_step_count,
+                    "Transport fake-step aggregation overflows uint64.");
 
   dst.max_stack_depth = std::max(dst.max_stack_depth, src.max_stack_depth);
 }
@@ -94,33 +134,6 @@ auto ValidateObserverCapture(
                   source_primary_count));
 }
 
-// =============================================================================
-// =============================================================================
-
-auto ValidateTransportWorkloadCapacity(std::uint64_t total_primary_count,
-                                       std::size_t workload_count,
-                                       std::uint32_t worker_count) -> void {
-  GGEMS_CHECK_INTERNAL(workload_count > 0U,
-                       "No transport workload was initialised.");
-
-  auto const workload_count_u64 = static_cast<std::uint64_t>(workload_count);
-
-  auto const largest_workload_primary_count =
-      (total_primary_count / workload_count_u64) +
-      (total_primary_count % workload_count_u64 != 0ULL ? 1ULL : 0ULL);
-
-  auto const safe_atomic_primary_count = static_cast<std::uint64_t>(
-      std::numeric_limits<std::uint32_t>::max() - worker_count);
-
-  GGEMS_CHECK_RECOVERABLE(
-      largest_workload_primary_count <= safe_atomic_primary_count,
-      std::format(
-          "Current transport assigns {} primaries to its largest workload, "
-          "exceeding the safe uint32 atomic stream limit {} for {} workers.",
-          largest_workload_primary_count, safe_atomic_primary_count,
-          worker_count));
-}
-
 } // namespace
 
 // =============================================================================
@@ -129,6 +142,10 @@ auto ValidateTransportWorkloadCapacity(std::uint64_t total_primary_count,
 GGEMSRun::GGEMSRun() : sources_{std::make_shared<sources::GGEMSSource>()} {
   GGEMS_INFOEX("Core", 3, "GGEMSRun instance created.");
 }
+
+// -----------------------------------------------------------------------------
+
+GGEMSRun::~GGEMSRun() = default;
 
 // -----------------------------------------------------------------------------
 
@@ -318,19 +335,37 @@ auto GGEMSRun::Initialise() -> void {
   GGEMS_CHECK_INTERNAL(!sources_.empty(),
                        "GGEMSRun source collection must not be empty.");
 
+  bool has_activity_driven_source{false};
+
   for (std::size_t source_index = 0U; source_index < sources_.size();
        ++source_index) {
     auto const &source = sources_[source_index];
     GGEMS_CHECK_INTERNAL(source != nullptr,
                          "GGEMSRun source collection contains a null entry.");
 
-    GGEMS_CHECK_RECOVERABLE(
-        source->GetPopulationMode() ==
-            sources::GGEMSSourcePopulationMode::CountDriven,
-        std::format("GGEMSRun source slot {} is ActivityDriven; B3.2 device "
-                    "integration is not implemented.",
-                    source_index));
+    if (source->GetPopulationMode() ==
+        sources::GGEMSSourcePopulationMode::ActivityDriven) {
+      has_activity_driven_source = true;
+      GGEMS_CHECK_RECOVERABLE(
+          has_time_configuration_ && time_start_ps_ < time_stop_ps_ &&
+              time_step_ps_ > 0ULL,
+          "ActivityDriven GGEMSRun sources require a configured non-empty "
+          "time schedule.");
+      GGEMS_CHECK_RECOVERABLE(
+          source->GetActivityDrivenConfiguration().reference_time_ps <=
+              time_start_ps_,
+          std::format(
+              "ActivityDriven source slot {} reference time must not follow "
+              "the configured GGEMSRun start time.",
+              source_index));
+    }
   }
+
+  GGEMS_CHECK_INTERNAL(!has_activity_driven_source ||
+                           (has_time_configuration_ &&
+                            time_start_ps_ < time_stop_ps_ &&
+                            time_step_ps_ > 0ULL),
+                       "ActivityDriven chronology validation is inconsistent.");
 
   GGEMS_CHECK_RECOVERABLE(
       sources_.size() <=
@@ -350,6 +385,12 @@ auto GGEMSRun::Initialise() -> void {
   GGEMS_CHECK_RECOVERABLE(!opencl.GetContext().empty(),
                           "GGEMSRun requires initialised OpenCL contexts.");
 
+  GGEMS_CHECK_RECOVERABLE(
+      opencl.GetContext().size() <=
+          static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()),
+      "GGEMSRun OpenCL context count exceeds uint32 storage.");
+  (void)transport::ComputeSafeTransportLaunchPrimaryCount(worker_count_);
+
   GGEMS_INFO("Core", "Initialising GGEMSRun stable state...");
 
   GGEMS_INFO("Random", "Random engine ready: {} with seed {}.",
@@ -358,6 +399,9 @@ auto GGEMSRun::Initialise() -> void {
   std::uint32_t observer_record_capacity =
       observer_ != nullptr ? observer_->GetRecordCapacity() : 1U;
 
+  auto new_radionuclide_emission_planner =
+      std::make_unique<radioactivity::GGEMSRadionuclideEmissionPlanner>(
+          sources_, *random_);
   auto new_source_configuration =
       sources::BuildSourceConfigurationSnapshot(sources_);
 
@@ -369,6 +413,10 @@ auto GGEMSRun::Initialise() -> void {
 
   for (std::size_t context_index = 0U;
        context_index < opencl.GetContext().size(); ++context_index) {
+    GGEMS_CHECK_RECOVERABLE(
+        context_index <= std::numeric_limits<std::uint64_t>::max() /
+                             static_cast<std::uint64_t>(worker_count_),
+        "GGEMSRun random stream offset overflows uint64 storage.");
     std::uint64_t random_stream_offset =
         static_cast<std::uint64_t>(context_index) *
         static_cast<std::uint64_t>(worker_count_);
@@ -390,13 +438,15 @@ auto GGEMSRun::Initialise() -> void {
 
   transport_workloads_.swap(new_transport_workloads);
   source_configuration_snapshot_ = std::move(new_source_configuration);
+  radionuclide_emission_planner_ = std::move(new_radionuclide_emission_planner);
   next_run_id_ = 0ULL;
   current_time_ps_.store(has_time_configuration_ ? time_start_ps_ : 0ULL);
-  initialised_ = true;
 
   for (auto const &source : sources_) {
     source->FinalizeInitialization();
   }
+
+  initialised_ = true;
 }
 
 // -----------------------------------------------------------------------------
@@ -414,16 +464,33 @@ auto GGEMSRun::Run() -> void {
                           "GGEMSRun time schedule is exhausted.");
 
   GGEMSTimeWindow const time_window = GetCurrentTimeWindowPicoSecond();
-  std::uint64_t const run_id = next_run_id_++;
+  GGEMS_CHECK_RECOVERABLE(next_run_id_ <
+                              std::numeric_limits<std::uint64_t>::max(),
+                          "GGEMSRun identifier space is exhausted.");
+  std::uint64_t const run_id = next_run_id_;
+  GGEMS_CHECK_INTERNAL(
+      radionuclide_emission_planner_ != nullptr,
+      "GGEMSRun radionuclide emission planner was not initialised.");
+  GGEMS_CHECK_RECOVERABLE(
+      radionuclide_emission_planner_->GetRevision() <
+          std::numeric_limits<std::uint64_t>::max(),
+      "GGEMSRun radionuclide emission planner revision is exhausted.");
+
+  auto emission_candidate =
+      radionuclide_emission_planner_->BuildCandidate(time_window);
 
   auto source_snapshot = sources::BuildSourceRunSnapshot(
-      sources_, source_configuration_snapshot_, time_window);
+      sources_, source_configuration_snapshot_, emission_candidate.GetPlan());
 
   auto const &source_records = source_snapshot.GetRecords();
   auto const &source_ranges = source_snapshot.GetRanges();
+  auto const &source_population_records =
+      source_snapshot.GetPopulationRecords();
+  auto const &radionuclide_group_ranges = source_snapshot.GetGroupRanges();
 
   GGEMS_CHECK_INTERNAL(
-      source_records.size() == source_ranges.size(),
+      source_records.size() == source_ranges.size() &&
+          source_records.size() == source_population_records.size(),
       "GGEMSRun source snapshot component counts do not match.");
 
   GGEMS_CHECK_INTERNAL(!source_records.empty(),
@@ -442,25 +509,6 @@ auto GGEMSRun::Run() -> void {
                  sources::DescribeSourceRunSlot(source_index, source_snapshot));
   }
 
-  if (total_primary_count == 0ULL) {
-    if (observer_ != nullptr) {
-      observer_->Clear();
-    }
-
-    {
-      std::scoped_lock lock{source_run_snapshot_mutex_};
-      last_source_run_snapshot_ = std::move(source_snapshot);
-    }
-
-    GGEMS_INFO("Core",
-               "GGEMSRun projection {} completed as an empty time window "
-               "[{} ps, {} ps).",
-               run_id, time_window.start_ps, time_window.stop_ps);
-
-    current_time_ps_.store(time_window.stop_ps);
-    return;
-  }
-
   observer::GGEMSObserverConfigRecord observer_config{};
 
   if (observer_ != nullptr) {
@@ -471,42 +519,40 @@ auto GGEMSRun::Run() -> void {
 
   transport::ValidateDiagnosticTransportSources(source_records, source_ranges);
 
-  GGEMS_CHECK_RECOVERABLE(
-      total_primary_count <=
-          static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max()),
-      "Current transport supports at most uint32_t primaries per "
-      "projection.");
-
   GGEMS_CHECK_RECOVERABLE(!transport_workloads_.empty(),
                           "No transport workload was initialised.");
 
-  ValidateTransportWorkloadCapacity(total_primary_count,
-                                    transport_workloads_.size(), worker_count_);
+  if (total_primary_count == 0ULL) {
+    std::unique_ptr<observer::GGEMSTransportObserver> observer_result_candidate;
 
-  auto primary_view = primary_stream_.PrepareRun(run_id, total_primary_count);
+    if (observer_ != nullptr) {
+      observer_result_candidate =
+          std::unique_ptr<observer::GGEMSTransportObserver>{
+              new observer::GGEMSTransportObserver{false}};
+    }
 
-  std::uint64_t const reserved_primary_count =
-      primary_view.source_primary_count;
+    std::unique_lock snapshot_lock{source_run_snapshot_mutex_};
 
-  auto projection_primary_count =
-      static_cast<std::uint32_t>(reserved_primary_count);
+    GGEMS_INFO("Core",
+               "GGEMSRun projection {} completed as an empty time window "
+               "[{} ps, {} ps).",
+               run_id, time_window.start_ps, time_window.stop_ps);
 
-  GGEMS_INFO("Core", "GGEMSRun projection {} started.", run_id);
+    radionuclide_emission_planner_->CommitCandidate(emission_candidate);
+    ++next_run_id_;
 
-  GGEMS_INFOEX("Core", 1,
-               "Projection {} primary stream: {} primaries, global history "
-               "offset {}.",
-               run_id, reserved_primary_count,
-               primary_view.global_history_offset);
+    if (observer_result_candidate != nullptr) {
+      observer_->SwapRunResult(*observer_result_candidate);
+    }
 
-  GGEMS_INFOEX("Core", 1, "Projection {} worker count: {}.", run_id,
-               worker_count_);
-
-  std::uint64_t projection_history_offset = primary_view.global_history_offset;
+    last_source_run_snapshot_ = std::move(source_snapshot);
+    current_time_ps_.store(time_window.stop_ps);
+    return;
+  }
 
   std::vector<transport::GGEMSTransportWorkloadPlan> workload_plan =
       transport::BuildEqualTransportWorkloadPlan(
-          projection_history_offset, projection_primary_count,
+          0ULL, total_primary_count,
           static_cast<std::uint32_t>(transport_workloads_.size()),
           worker_count_);
 
@@ -530,11 +576,36 @@ auto GGEMSRun::Run() -> void {
     config.run_id = run_id;
     config.observer_config = observer_config;
     config.total_primary_count = workload.primary_count;
-    config.projection_history_offset = workload.projection_history_offset;
+    config.projection_history_offset = 0ULL;
     config.device_primary_offset = workload.device_primary_offset;
     config.source_records = source_records;
+    config.source_population_records = source_population_records;
     config.source_ranges = source_ranges;
+    config.radionuclide_group_ranges = radionuclide_group_ranges;
+    transport_workloads_[workload.context_index]->ValidateRunConfig(config);
   }
+
+  auto primary_view = primary_stream_.PrepareRun(run_id, total_primary_count);
+  std::uint64_t const reserved_primary_count =
+      primary_view.source_primary_count;
+  ++next_run_id_;
+
+  for (std::size_t plan_index = 0U; plan_index < workload_plan.size();
+       ++plan_index) {
+    workload_plan[plan_index].projection_history_offset =
+        primary_view.global_history_offset;
+    transport_configs[plan_index].projection_history_offset =
+        primary_view.global_history_offset;
+  }
+
+  GGEMS_INFO("Core", "GGEMSRun projection {} started.", run_id);
+  GGEMS_INFOEX("Core", 1,
+               "Projection {} primary stream: {} primaries, global history "
+               "offset {}.",
+               run_id, reserved_primary_count,
+               primary_view.global_history_offset);
+  GGEMS_INFOEX("Core", 1, "Projection {} worker count: {}.", run_id,
+               worker_count_);
 
   {
     std::vector<std::jthread> transport_threads;
@@ -570,7 +641,7 @@ auto GGEMSRun::Run() -> void {
     }
   }
 
-  transport::GGEMSTransportCounters merged_counters{};
+  transport::GGEMSTransportLogicalCounters merged_counters{};
 
   std::uint64_t accumulated_host_time_ps{0ULL};
   std::uint64_t accumulated_command_time_ps{0ULL};
@@ -589,9 +660,12 @@ auto GGEMSRun::Run() -> void {
 
     AccumulateTransportCounters(merged_counters, counters);
 
-    accumulated_host_time_ps += report.host_time.value;
-    accumulated_command_time_ps += report.command_time.value;
-    accumulated_kernel_time_ps += report.kernel_time.value;
+    CheckedAccumulate(accumulated_host_time_ps, report.host_time.value,
+                      "Transport host-time aggregation overflows uint64.");
+    CheckedAccumulate(accumulated_command_time_ps, report.command_time.value,
+                      "Transport command-time aggregation overflows uint64.");
+    CheckedAccumulate(accumulated_kernel_time_ps, report.kernel_time.value,
+                      "Transport kernel-time aggregation overflows uint64.");
 
     GGEMS_INFO(
         "Core",
@@ -611,15 +685,19 @@ auto GGEMSRun::Run() -> void {
                           "Transport reported an internal overflow.");
 
   GGEMS_CHECK_RECOVERABLE(
-      merged_counters.consumed_primary_count == projection_primary_count,
+      merged_counters.consumed_primary_count == total_primary_count,
       "Transport consumed primary count does not match projection count.");
 
   GGEMS_CHECK_RECOVERABLE(
-      merged_counters.completed_history_count == projection_primary_count,
+      merged_counters.next_primary_id == total_primary_count,
+      "Transport logical primary cursor does not match projection count.");
+
+  GGEMS_CHECK_RECOVERABLE(
+      merged_counters.completed_history_count == total_primary_count,
       "Transport completed history count does not match projection count.");
 
   GGEMS_CHECK_RECOVERABLE(
-      merged_counters.terminal_particle_count == projection_primary_count,
+      merged_counters.terminal_particle_count == total_primary_count,
       "Transport terminal particle count does not match projection count.");
 
   GGEMS_CHECK_RECOVERABLE(
@@ -656,34 +734,101 @@ auto GGEMSRun::Run() -> void {
              ggems::units::Time{accumulated_command_time_ps},
              ggems::units::Time{accumulated_kernel_time_ps});
 
+  std::unique_ptr<observer::GGEMSTransportObserver> observer_result_candidate;
+  std::string observer_dump;
+
   if (observer_ != nullptr) {
-    observer_->Clear();
-    if (observer_config.enabled != 0U) {
-      for (std::size_t plan_index = 0U; plan_index < workload_plan.size();
-           ++plan_index) {
-        transport::GGEMSTransportWorkloadPlan const &workload =
-            workload_plan[plan_index];
+    observer_result_candidate =
+        std::unique_ptr<observer::GGEMSTransportObserver>{
+            new observer::GGEMSTransportObserver{false}};
+    observer_result_candidate->max_stored_record_count_ =
+        observer_->max_stored_record_count_;
 
-        if (workload.primary_count == 0U) {
-          continue;
-        }
+    std::uint64_t logical_record_count{0ULL};
+    std::uint64_t logical_overflow_count{0ULL};
+    std::uint64_t logical_captured_primary_count{0ULL};
 
-        auto const &report = reports[plan_index];
-
-        observer_->Accumulate(report.observer_records,
-                              report.observer_counters);
+    for (std::size_t plan_index = 0U; plan_index < workload_plan.size();
+         ++plan_index) {
+      if (workload_plan[plan_index].primary_count == 0ULL) {
+        continue;
       }
 
-      GGEMS_INFO("Observer", "{}", observer_->BuildDump());
+      auto const &report = reports[plan_index];
+      GGEMS_CHECK_INTERNAL(
+          report.logical_observer_counters.record_count ==
+              report.observer_records.size(),
+          "Transport logical Observer record count does not match its "
+          "candidate records.");
+      CheckedAccumulate(
+          logical_record_count, report.logical_observer_counters.record_count,
+          "Observer logical record aggregation overflows uint64.");
+      CheckedAccumulate(
+          logical_overflow_count,
+          report.logical_observer_counters.overflow_count,
+          "Observer logical overflow aggregation overflows uint64.");
+      CheckedAccumulate(
+          logical_captured_primary_count,
+          report.logical_observer_counters.captured_primary_count,
+          "Observer logical captured-primary aggregation overflows uint64.");
+    }
+
+    std::size_t const stored_record_limit =
+        observer_result_candidate->max_stored_record_count_;
+    auto const reserve_count = static_cast<std::size_t>(
+        std::min<std::uint64_t>(logical_record_count, stored_record_limit));
+    observer_result_candidate->records_.reserve(reserve_count);
+
+    for (std::size_t plan_index = 0U; plan_index < workload_plan.size();
+         ++plan_index) {
+      if (workload_plan[plan_index].primary_count == 0ULL) {
+        continue;
+      }
+
+      auto const &records = reports[plan_index].observer_records;
+      std::size_t const remaining_capacity =
+          observer_result_candidate->records_.size() < stored_record_limit
+              ? stored_record_limit - observer_result_candidate->records_.size()
+              : 0U;
+      std::size_t const copied_record_count =
+          std::min(records.size(), remaining_capacity);
+
+      observer_result_candidate->records_.insert(
+          observer_result_candidate->records_.end(), records.begin(),
+          records.begin() + static_cast<std::ptrdiff_t>(copied_record_count));
+      CheckedAccumulate(logical_overflow_count,
+                        records.size() - copied_record_count,
+                        "Observer host-drop aggregation overflows uint64.");
+    }
+
+    observer_result_candidate->counters_.record_count =
+        static_cast<std::uint32_t>(observer_result_candidate->records_.size());
+    observer_result_candidate->counters_.overflow_count =
+        SaturateToUint32(logical_overflow_count);
+    observer_result_candidate->counters_.captured_primary_count =
+        SaturateToUint32(logical_captured_primary_count);
+
+    if (observer_config.enabled != 0U) {
+      observer_dump = observer_result_candidate->BuildDump();
     }
   }
 
-  {
-    std::scoped_lock lock{source_run_snapshot_mutex_};
-    last_source_run_snapshot_ = std::move(source_snapshot);
+  std::unique_lock snapshot_lock{source_run_snapshot_mutex_};
+
+  if (!observer_dump.empty()) {
+    GGEMS_INFO("Observer", "{}", observer_dump);
   }
 
   GGEMS_INFO("Core", "GGEMSRun projection {} completed.", run_id);
+
+  radionuclide_emission_planner_->CommitCandidate(emission_candidate);
+
+  if (observer_result_candidate != nullptr) {
+    observer_->SwapRunResult(*observer_result_candidate);
+  }
+
+  last_source_run_snapshot_ = std::move(source_snapshot);
+
   current_time_ps_.store(time_window.stop_ps);
 }
 } // namespace ggems::core

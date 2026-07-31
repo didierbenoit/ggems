@@ -9,8 +9,8 @@ __kernel void energy_distribution_sampling_probe(
     __global ulong const *cumulative_ticket_upper, uint expected_draw_count,
     __global ulong *sampled_energy) {
   sampled_energy[0] = GGEMS_EnergyDistributionSample(
-      source, distribution, energy_values_milli_eV, cumulative_ticket_upper,
-      sample_states, 0U);
+      source->energy_milli_eV, distribution, energy_values_milli_eV,
+      cumulative_ticket_upper, sample_states, 0U);
 
   for (uint draw = 0U; draw < expected_draw_count; ++draw) {
     (void)(GGEMS_RndmUInt32(reference_states, 0U));

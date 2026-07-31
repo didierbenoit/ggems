@@ -1,0 +1,14 @@
+#ifndef GGEMS_CORE_SOURCES_GGEMS_SOURCE_POPULATION_RECORD_CLH
+#define GGEMS_CORE_SOURCES_GGEMS_SOURCE_POPULATION_RECORD_CLH
+
+#define GGEMS_SOURCE_POPULATION_MODE_COUNT_DRIVEN 0U
+#define GGEMS_SOURCE_POPULATION_MODE_ACTIVITY_DRIVEN 1U
+
+typedef struct GGEMSSourcePopulationRecord {
+  uint population_mode;
+  uint first_emission_index;
+  uint emission_count;
+  float scaled_decay;
+} GGEMSSourcePopulationRecord;
+
+#endif

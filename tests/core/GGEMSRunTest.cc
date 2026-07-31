@@ -225,7 +225,7 @@ TEST(GGEMSRun, ExposesStaticAndConfiguredTimeStateBeforeInitialise) {
 // =============================================================================
 
 TEST(GGEMSRun,
-     RejectsActivityDrivenSourceBeforeRuntimeSetupAndLeavesItMutable) {
+     RejectsInvalidActivityChronologyBeforeFinalisationAndLeavesItMutable) {
   auto radionuclide = std::make_shared<
       ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
       ggems::core::radioactivity::builtins::BuildF18Radionuclide());
@@ -238,11 +238,20 @@ TEST(GGEMSRun,
 
   ExpectGGEMSExceptionContaining(
       [&run]() -> void { run.Initialise(); },
-      "source slot 0 is ActivityDriven; B3.2 device integration is not "
-      "implemented");
+      "ActivityDriven GGEMSRun sources require a configured non-empty time "
+      "schedule");
 
   EXPECT_NO_THROW(source->SetActivityDrivenRadionuclide(
       radionuclide, ggems::units::Activity{125.0L}, 17ULL));
+  EXPECT_NO_THROW(run.SetTimePicoSecond(10ULL, 20ULL, 10ULL));
+
+  ExpectGGEMSExceptionContaining(
+      [&run]() -> void { run.Initialise(); },
+      "ActivityDriven source slot 0 reference time must not follow the "
+      "configured GGEMSRun start time");
+
+  EXPECT_NO_THROW(source->SetActivityDrivenRadionuclide(
+      radionuclide, ggems::units::Activity{125.0L}, 10ULL));
   EXPECT_NO_THROW(source->SetCountDrivenPopulation(3ULL));
   EXPECT_EQ(source->GetPopulationMode(),
             ggems::core::sources::GGEMSSourcePopulationMode::CountDriven);
