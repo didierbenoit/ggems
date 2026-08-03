@@ -1,81 +1,29 @@
-#include <cstdint>
-#include <format>
 #include <string>
-#include <string_view>
 
 #include <pybind11/pybind11.h>
+
+#include "detail/GGEMSPythonQuantityConversion.hh"
 
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/observer/GGEMSTransportObserver.hh"
 #include "GGEMS/core/GGEMSRun.hh"
-#include "GGEMS/core/units/GGEMSQuantity.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 
 namespace py = pybind11;
 
 namespace {
 
-[[noreturn]] auto
-ThrowRunTimeConversionError(ggems::units::UnitConversionError error,
-                            std::string_view unit) -> void {
-  using ggems::units::UnitConversionError;
-
-  switch (error) {
-  case UnitConversionError::NonFinite:
-    throw py::value_error("Run time must be finite.");
-  case UnitConversionError::NegativeValue:
-    throw py::value_error("Run time must be positive or zero.");
-  case UnitConversionError::UnsupportedUnit:
-    throw py::value_error(std::format("Unsupported Run time unit '{}'.", unit));
-  case UnitConversionError::OutOfRange:
-    throw py::value_error("Run time is too large.");
-  case UnitConversionError::InexactConversion:
-    throw py::value_error(
-        "Run time cannot be represented in GGEMS canonical units.");
-  }
-
-  throw py::value_error("Run time conversion failed.");
-}
-
-// =============================================================================
-// =============================================================================
-
-template <ggems::units::QuantityType TimeQuantity>
-auto ConvertRunTimeToPicoSecond(double time, std::string_view unit)
-    -> std::uint64_t {
-  auto const conversion = ggems::units::TryMakeQuantity<TimeQuantity>(
-      static_cast<long double>(time), unit);
-
-  if (conversion.has_value()) {
-    return conversion->value;
-  }
-
-  ThrowRunTimeConversionError(conversion.error(), unit);
-}
-
-// =============================================================================
-// =============================================================================
-
-auto ConvertRunTimeFromPicoSecond(std::uint64_t time_ps, std::string_view unit)
-    -> double {
-
-  auto const conversion = ggems::units::TryConvertTo(
-      ggems::units::TimePoint{.value = time_ps}, unit);
-
-  if (conversion.has_value()) {
-    return static_cast<double>(*conversion);
-  }
-
-  ThrowRunTimeConversionError(conversion.error(), unit);
-}
+constexpr auto k_run_time_conversion_context =
+    ggems::python::detail::QuantityConversionContext{
+        .quantity_name = "Run time", .unsupported_unit_subject = "Run time"};
 
 } // namespace
 
 // =============================================================================
 // =============================================================================
 
-void BindRun(py::module_ &mod) {
-  py::class_<ggems::core::GGEMSRun>(mod, "GGEMSRun")
+void BindRun(py::module_ &module) {
+  py::class_<ggems::core::GGEMSRun>(module, "GGEMSRun")
       .def(py::init<>())
 
       .def("run", &ggems::core::GGEMSRun::Run,
@@ -103,10 +51,18 @@ void BindRun(py::module_ &mod) {
           [](ggems::core::GGEMSRun &self, double start, double stop,
              double step, std::string const &unit) -> void {
             self.SetTimePicoSecond(
-                ConvertRunTimeToPicoSecond<ggems::units::TimePoint>(start,
-                                                                    unit),
-                ConvertRunTimeToPicoSecond<ggems::units::TimePoint>(stop, unit),
-                ConvertRunTimeToPicoSecond<ggems::units::Duration>(step, unit));
+                ggems::python::detail::MakeQuantityOrThrow<
+                    ggems::units::TimePoint>(start, unit,
+                                             k_run_time_conversion_context)
+                    .value,
+                ggems::python::detail::MakeQuantityOrThrow<
+                    ggems::units::TimePoint>(stop, unit,
+                                             k_run_time_conversion_context)
+                    .value,
+                ggems::python::detail::MakeQuantityOrThrow<
+                    ggems::units::Duration>(step, unit,
+                                            k_run_time_conversion_context)
+                    .value);
           },
           py::arg("start"), py::arg("stop"), py::arg("step"),
           py::arg("unit") = "s")
@@ -122,8 +78,10 @@ void BindRun(py::module_ &mod) {
           "get_current_time",
           [](ggems::core::GGEMSRun const &self,
              std::string const &unit) -> double {
-            return ConvertRunTimeFromPicoSecond(self.GetCurrentTimePicoSecond(),
-                                                unit);
+            return ggems::python::detail::ConvertQuantityToDoubleOrThrow(
+                ggems::units::TimePoint{.value =
+                                            self.GetCurrentTimePicoSecond()},
+                unit, k_run_time_conversion_context);
           },
           py::arg("unit") = "s")
 
@@ -133,8 +91,12 @@ void BindRun(py::module_ &mod) {
              std::string const &unit) -> py::tuple {
             auto const window = self.GetCurrentTimeWindowPicoSecond();
             return py::make_tuple(
-                ConvertRunTimeFromPicoSecond(window.start_ps, unit),
-                ConvertRunTimeFromPicoSecond(window.stop_ps, unit));
+                ggems::python::detail::ConvertQuantityToDoubleOrThrow(
+                    ggems::units::TimePoint{.value = window.start_ps}, unit,
+                    k_run_time_conversion_context),
+                ggems::python::detail::ConvertQuantityToDoubleOrThrow(
+                    ggems::units::TimePoint{.value = window.stop_ps}, unit,
+                    k_run_time_conversion_context));
           },
           py::arg("unit") = "s");
 }

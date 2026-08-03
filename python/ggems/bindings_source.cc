@@ -1,9 +1,7 @@
-#include <cmath>
 #include <cstdint>
 #include <filesystem>
 #include <format>
 #include <memory>
-#include <string_view>
 #include <string>
 #include <vector>
 
@@ -11,13 +9,14 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl/filesystem.h>
 
+#include "detail/GGEMSPythonQuantityConversion.hh"
+
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/core/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
 #include "GGEMS/core/units/GGEMSLengthUnits.hh"
-#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace py = pybind11;
 
@@ -42,50 +41,6 @@ auto ConvertPrimaryCount(py::handle primary_count) -> std::uint64_t {
   return static_cast<std::uint64_t>(converted);
 }
 
-// =============================================================================
-// =============================================================================
-
-[[noreturn]] auto ThrowSourceQuantityConversionError(
-    ggems::units::UnitConversionError error, std::string_view quantity,
-    std::string_view unit_kind, std::string_view unit) -> void {
-  using ggems::units::UnitConversionError;
-
-  switch (error) {
-  case UnitConversionError::UnsupportedUnit:
-    throw py::value_error(
-        std::format("Unsupported GGEMS {} unit '{}'.", unit_kind, unit));
-  case UnitConversionError::NonFinite:
-    throw py::value_error(std::format("{} must be finite.", quantity));
-  case UnitConversionError::NegativeValue:
-    throw py::value_error(
-        std::format("{} must not be positive or zero.", quantity));
-  case UnitConversionError::OutOfRange:
-    throw py::value_error(std::format("{} is too large.", quantity));
-  case UnitConversionError::InexactConversion:
-    throw py::value_error(std::format(
-        "{} cannot be represented in GGEMS canonical units.", quantity));
-  }
-
-  throw py::value_error("Source quantity conversion failed.");
-}
-
-// =============================================================================
-// =============================================================================
-
-template <ggems::units::QuantityType QuantityValue>
-auto ConvertSourceQuantity(double value, std::string_view unit,
-                           std::string_view quantity,
-                           std::string_view unit_kind) -> QuantityValue {
-  auto const conversion = ggems::units::TryMakeQuantity<QuantityValue>(
-      static_cast<long double>(value), unit);
-
-  if (!conversion.has_value()) {
-    ThrowSourceQuantityConversionError(conversion.error(), quantity, unit_kind,
-                                       unit);
-  }
-
-  return *conversion;
-}
 } // namespace
 
 // =============================================================================
@@ -93,6 +48,7 @@ auto ConvertSourceQuantity(double value, std::string_view unit,
 
 auto BindSource(py::module_ &mod) -> void {
   using ggems::core::sources::GGEMSSource;
+  using ggems::python::detail::MakeQuantityOrThrow;
 
   py::class_<GGEMSSource, std::shared_ptr<GGEMSSource>>(mod, "GGEMSSource")
       .def(py::init<>())
@@ -108,11 +64,15 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double width, double height,
              std::string const &unit) -> GGEMSSource & {
             return self.SetRectangleEmissionPicoMeter(
-                ConvertSourceQuantity<ggems::units::Length>(
-                    width, unit, "Source rectangle width", "length")
+                MakeQuantityOrThrow<ggems::units::Length>(
+                    width, unit,
+                    {.quantity_name = "Source rectangle width",
+                     .unsupported_unit_subject = "GGEMS length"})
                     .value,
-                ConvertSourceQuantity<ggems::units::Length>(
-                    height, unit, "Source rectangle height", "length")
+                MakeQuantityOrThrow<ggems::units::Length>(
+                    height, unit,
+                    {.quantity_name = "Source rectangle height",
+                     .unsupported_unit_subject = "GGEMS length"})
                     .value);
           },
           py::arg("width"), py::arg("height"), py::arg("unit") = "mm",
@@ -123,11 +83,15 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double diameter_x, double diameter_y,
              std::string const &unit) -> GGEMSSource & {
             return self.SetEllipseEmissionPicoMeter(
-                ConvertSourceQuantity<ggems::units::Length>(
-                    diameter_x, unit, "Source ellipse X diameter", "length")
+                MakeQuantityOrThrow<ggems::units::Length>(
+                    diameter_x, unit,
+                    {.quantity_name = "Source ellipse X diameter",
+                     .unsupported_unit_subject = "GGEMS length"})
                     .value,
-                ConvertSourceQuantity<ggems::units::Length>(
-                    diameter_y, unit, "Source ellipse Y diameter", "length")
+                MakeQuantityOrThrow<ggems::units::Length>(
+                    diameter_y, unit,
+                    {.quantity_name = "Source ellipse Y diameter",
+                     .unsupported_unit_subject = "GGEMS length"})
                     .value);
           },
           py::arg("diameter_x"), py::arg("diameter_y"), py::arg("unit") = "mm",
@@ -138,8 +102,10 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double diameter,
              std::string const &unit) -> GGEMSSource & {
             return self.SetCircleEmissionPicoMeter(
-                ConvertSourceQuantity<ggems::units::Length>(
-                    diameter, unit, "Source circle diameter", "length")
+                MakeQuantityOrThrow<ggems::units::Length>(
+                    diameter, unit,
+                    {.quantity_name = "Source circle diameter",
+                     .unsupported_unit_subject = "GGEMS length"})
                     .value);
           },
           py::arg("diameter"), py::arg("unit") = "mm",
@@ -150,14 +116,20 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double width, double height, double depth,
              std::string const &unit) -> GGEMSSource & {
             return self.SetBoxEmissionPicoMeter(
-                ConvertSourceQuantity<ggems::units::Length>(
-                    width, unit, "Source box width", "length")
+                MakeQuantityOrThrow<ggems::units::Length>(
+                    width, unit,
+                    {.quantity_name = "Source box width",
+                     .unsupported_unit_subject = "GGEMS length"})
                     .value,
-                ConvertSourceQuantity<ggems::units::Length>(
-                    height, unit, "Source box height", "length")
+                MakeQuantityOrThrow<ggems::units::Length>(
+                    height, unit,
+                    {.quantity_name = "Source box height",
+                     .unsupported_unit_subject = "GGEMS length"})
                     .value,
-                ConvertSourceQuantity<ggems::units::Length>(
-                    depth, unit, "Source box depth", "length")
+                MakeQuantityOrThrow<ggems::units::Length>(
+                    depth, unit,
+                    {.quantity_name = "Source box depth",
+                     .unsupported_unit_subject = "GGEMS length"})
                     .value);
           },
           py::arg("width"), py::arg("height"), py::arg("depth"),
@@ -168,8 +140,10 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double diameter,
              std::string const &unit) -> GGEMSSource & {
             return self.SetSphereEmissionPicoMeter(
-                ConvertSourceQuantity<ggems::units::Length>(
-                    diameter, unit, "Source sphere diameter", "length")
+                MakeQuantityOrThrow<ggems::units::Length>(
+                    diameter, unit,
+                    {.quantity_name = "Source sphere diameter",
+                     .unsupported_unit_subject = "GGEMS length"})
                     .value);
           },
           py::arg("diameter"), py::arg("unit") = "mm",
@@ -180,11 +154,15 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double diameter, double height,
              std::string const &unit) -> GGEMSSource & {
             return self.SetCylinderEmissionPicoMeter(
-                ConvertSourceQuantity<ggems::units::Length>(
-                    diameter, unit, "Source cylinder diameter", "length")
+                MakeQuantityOrThrow<ggems::units::Length>(
+                    diameter, unit,
+                    {.quantity_name = "Source cylinder diameter",
+                     .unsupported_unit_subject = "GGEMS length"})
                     .value,
-                ConvertSourceQuantity<ggems::units::Length>(
-                    height, unit, "Source cylinder height", "length")
+                MakeQuantityOrThrow<ggems::units::Length>(
+                    height, unit,
+                    {.quantity_name = "Source cylinder height",
+                     .unsupported_unit_subject = "GGEMS length"})
                     .value);
           },
           py::arg("diameter"), py::arg("height"), py::arg("unit") = "mm",
@@ -206,14 +184,22 @@ auto BindSource(py::module_ &mod) -> void {
              double phi_min, double phi_max,
              std::string const &unit) -> GGEMSSource & {
             return self.SetIsotropicAngularDistribution(
-                ConvertSourceQuantity<ggems::units::Angle>(
-                    theta_min, unit, "Source angle", "angle"),
-                ConvertSourceQuantity<ggems::units::Angle>(
-                    theta_max, unit, "Source angle", "angle"),
-                ConvertSourceQuantity<ggems::units::Angle>(
-                    phi_min, unit, "Source angle", "angle"),
-                ConvertSourceQuantity<ggems::units::Angle>(
-                    phi_max, unit, "Source angle", "angle"));
+                MakeQuantityOrThrow<ggems::units::Angle>(
+                    theta_min, unit,
+                    {.quantity_name = "Source angle",
+                     .unsupported_unit_subject = "GGEMS angle"}),
+                MakeQuantityOrThrow<ggems::units::Angle>(
+                    theta_max, unit,
+                    {.quantity_name = "Source angle",
+                     .unsupported_unit_subject = "GGEMS angle"}),
+                MakeQuantityOrThrow<ggems::units::Angle>(
+                    phi_min, unit,
+                    {.quantity_name = "Source angle",
+                     .unsupported_unit_subject = "GGEMS angle"}),
+                MakeQuantityOrThrow<ggems::units::Angle>(
+                    phi_max, unit,
+                    {.quantity_name = "Source angle",
+                     .unsupported_unit_subject = "GGEMS angle"}));
           },
           py::arg("theta_min"), py::arg("theta_max"), py::arg("phi_min"),
           py::arg("phi_max"), py::arg("unit") = "deg",
@@ -224,14 +210,20 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double focus_x, double focus_y, double focus_z,
              std::string const &unit) -> GGEMSSource & {
             return self.SetFocusedAngularDistributionPicoMeter(
-                ConvertSourceQuantity<ggems::units::PositionCoordinate>(
-                    focus_x, unit, "Source focus position", "length")
+                MakeQuantityOrThrow<ggems::units::PositionCoordinate>(
+                    focus_x, unit,
+                    {.quantity_name = "Source focus position",
+                     .unsupported_unit_subject = "GGEMS length"})
                     .value,
-                ConvertSourceQuantity<ggems::units::PositionCoordinate>(
-                    focus_y, unit, "Source focus position", "length")
+                MakeQuantityOrThrow<ggems::units::PositionCoordinate>(
+                    focus_y, unit,
+                    {.quantity_name = "Source focus position",
+                     .unsupported_unit_subject = "GGEMS length"})
                     .value,
-                ConvertSourceQuantity<ggems::units::PositionCoordinate>(
-                    focus_z, unit, "Source focus position", "length")
+                MakeQuantityOrThrow<ggems::units::PositionCoordinate>(
+                    focus_z, unit,
+                    {.quantity_name = "Source focus position",
+                     .unsupported_unit_subject = "GGEMS length"})
                     .value);
           },
           py::arg("focus_x"), py::arg("focus_y"), py::arg("focus_z"),
@@ -258,8 +250,10 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double const energy,
              std::string const &unit) -> GGEMSSource & {
             return self.SetEnergyMilliElectronVolt(
-                ConvertSourceQuantity<ggems::units::Energy>(
-                    energy, unit, "Source energy", "energy")
+                MakeQuantityOrThrow<ggems::units::Energy>(
+                    energy, unit,
+                    {.quantity_name = "Source energy",
+                     .unsupported_unit_subject = "GGEMS energy"})
                     .value);
           },
           py::arg("energy"), py::arg("unit") = "keV",
@@ -299,14 +293,20 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double const pos_x, double const pos_y,
              double const pos_z, std::string const &unit) -> GGEMSSource & {
             return self.SetPositionPicoMeter(
-                ConvertSourceQuantity<ggems::units::PositionCoordinate>(
-                    pos_x, unit, "Source position", "length")
+                MakeQuantityOrThrow<ggems::units::PositionCoordinate>(
+                    pos_x, unit,
+                    {.quantity_name = "Source position",
+                     .unsupported_unit_subject = "GGEMS length"})
                     .value,
-                ConvertSourceQuantity<ggems::units::PositionCoordinate>(
-                    pos_y, unit, "Source position", "length")
+                MakeQuantityOrThrow<ggems::units::PositionCoordinate>(
+                    pos_y, unit,
+                    {.quantity_name = "Source position",
+                     .unsupported_unit_subject = "GGEMS length"})
                     .value,
-                ConvertSourceQuantity<ggems::units::PositionCoordinate>(
-                    pos_z, unit, "Source position", "length")
+                MakeQuantityOrThrow<ggems::units::PositionCoordinate>(
+                    pos_z, unit,
+                    {.quantity_name = "Source position",
+                     .unsupported_unit_subject = "GGEMS length"})
                     .value);
           },
           py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",

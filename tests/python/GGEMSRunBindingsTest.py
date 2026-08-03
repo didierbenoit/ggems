@@ -58,19 +58,20 @@ class GGEMSRunBindingsTest(unittest.TestCase):
         for value in (math.nan, math.inf, -math.inf):
             with self.subTest(value=value):
                 simulation = ggems.run.GGEMSRun()
-                with self.assertRaisesRegex(ValueError, "Run time must be finite"):
+                with self.assertRaisesRegex(ValueError, r"^Run time must be finite\.$"):
                     simulation.set_time(value, 2.0, 1.0, "ps")
 
         simulation = ggems.run.GGEMSRun()
         with self.assertRaisesRegex(ValueError, "positive or zero"):
             simulation.set_time(-1.0, 2.0, 1.0, "ps")
-        with self.assertRaisesRegex(ValueError, "too large"):
+        with self.assertRaisesRegex(ValueError, r"^Run time is too large\.$"):
             simulation.set_time(float(2**64), float(2**64), 1.0, "ps")
-        with self.assertRaisesRegex(ValueError, "Unsupported Run time unit"):
+        unsupported_unit_message = r"^Unsupported Run time unit 'fortnight'\.$"
+        with self.assertRaisesRegex(ValueError, unsupported_unit_message):
             simulation.set_time(0.0, 2.0, 1.0, "fortnight")
-        with self.assertRaisesRegex(ValueError, "Unsupported Run time unit"):
+        with self.assertRaisesRegex(ValueError, unsupported_unit_message):
             simulation.get_current_time("fortnight")
-        with self.assertRaisesRegex(ValueError, "Unsupported Run time unit"):
+        with self.assertRaisesRegex(ValueError, unsupported_unit_message):
             simulation.get_current_time_window("fortnight")
 
     def test_invalid_schedule_semantics_are_rejected(self) -> None:

@@ -57,22 +57,36 @@ class GGEMSSourceBindingsTest(unittest.TestCase):
                 source.set_emission_cylinder(1.0, 2.0, unit)
                 source.set_angular_focused(0.0, 0.0, 2.0, unit)
 
+    def test_negative_signed_position_is_accepted(self) -> None:
+        source = ggems.source.GGEMSSource()
+
+        self.assertIs(source.set_position(-1.0, -2.0, -3.0, "mm"), source)
+
     def test_invalid_dimensions_have_distinct_diagnostics(self) -> None:
         source = ggems.source.GGEMSSource()
 
         with self.assertRaisesRegex(RuntimeError, "non-zero"):
             source.set_emission_circle(0.0, "mm")
 
-        with self.assertRaisesRegex(ValueError, "positive or zero"):
+        with self.assertRaisesRegex(
+            ValueError,
+            r"^Source rectangle width must be positive or zero\.$",
+        ):
             source.set_emission_rectangle(-1.0, 2.0, "mm")
 
-        with self.assertRaisesRegex(ValueError, "finite"):
+        with self.assertRaisesRegex(
+            ValueError, r"^Source ellipse X diameter must be finite\.$"
+        ):
             source.set_emission_ellipse(math.nan, 1.0, "mm")
 
-        with self.assertRaisesRegex(ValueError, "Unsupported"):
+        with self.assertRaisesRegex(
+            ValueError, r"^Unsupported GGEMS length unit 'KM'\.$"
+        ):
             source.set_emission_circle(1.0, "KM")
 
-        with self.assertRaisesRegex(ValueError, "too large"):
+        with self.assertRaisesRegex(
+            ValueError, r"^Source circle diameter is too large\.$"
+        ):
             source.set_emission_circle(math.ldexp(1.0, 64), "pm")
 
         with self.assertRaisesRegex(RuntimeError, "strictly positive"):
@@ -81,7 +95,10 @@ class GGEMSSourceBindingsTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "strictly positive"):
             source.set_emission_sphere(0.0, "mm")
 
-        with self.assertRaisesRegex(ValueError, "positive or zero"):
+        with self.assertRaisesRegex(
+            ValueError,
+            r"^Source cylinder height must be positive or zero\.$",
+        ):
             source.set_emission_cylinder(1.0, -1.0, "mm")
 
     def test_bounded_isotropic_accepts_degrees_radians_and_negative_phi(self) -> None:
@@ -94,9 +111,11 @@ class GGEMSSourceBindingsTest(unittest.TestCase):
         )
         self.assertIn("angular_distribution=Isotropic", repr(source))
 
-        with self.assertRaisesRegex(ValueError, "finite"):
+        with self.assertRaisesRegex(ValueError, r"^Source angle must be finite\.$"):
             source.set_angular_isotropic(0.0, math.nan, 0.0, 1.0, "rad")
-        with self.assertRaisesRegex(ValueError, "Unsupported"):
+        with self.assertRaisesRegex(
+            ValueError, r"^Unsupported GGEMS angle unit 'grad'\.$"
+        ):
             source.set_angular_isotropic(0.0, 90.0, 0.0, 180.0, "grad")
         with self.assertRaises(RuntimeError):
             source.set_angular_isotropic(90.0, 90.0, 0.0, 180.0, "deg")
@@ -156,6 +175,11 @@ class GGEMSSourceBindingsTest(unittest.TestCase):
 
         with self.assertRaises(RuntimeError):
             source.set_regular_energy_spectrum([20.0, 22.0], [1.0, 1.0], "invalid-unit")
+
+        with self.assertRaisesRegex(
+            ValueError, r"^Unsupported GGEMS energy unit 'invalid-unit'\.$"
+        ):
+            source.set_energy(1.0, "invalid-unit")
 
         invalid_operations = (
             (
