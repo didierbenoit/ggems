@@ -1,10 +1,8 @@
 #pragma once
 
-/// \cond
 #include <string>
 #include <string_view>
 #include <cstdint>
-/// \endcond
 
 #include "GGEMS/core/GGEMSOutputState.hh"
 
@@ -16,25 +14,25 @@ namespace ggems::core {
 
 enum class OutputMode : std::uint8_t { Term = 0, Gui };
 
-OutputMode GetOutputMode() noexcept;
+auto GetOutputMode() noexcept -> OutputMode;
 
-bool IsOutputConfigured() noexcept;
-bool IsOutputRuntimeStarted() noexcept;
+auto IsOutputConfigured() noexcept -> bool;
+auto IsOutputRuntimeStarted() noexcept -> bool;
 
-void SetOutputMode(OutputMode mode);
-void SetOutputMode(std::string_view mode);
+auto SetOutputMode(OutputMode mode) -> void;
+auto SetOutputMode(std::string_view mode) -> void;
 
-void SetOutputFile(std::string_view path);
-void ClearOutputFile() noexcept;
+auto SetOutputFile(std::string_view path) -> void;
+auto ClearOutputFile() noexcept -> void;
 
-void StartOutputRuntime();
-void StopOutputRuntime() noexcept;
+auto StartOutputRuntime() -> void;
+auto StopOutputRuntime() noexcept -> void;
 
-GGEMSOutputState &GetOutputState();
+auto GetOutputState() -> GGEMSOutputState &;
 
-render::GGEMSBanner &GetOutputBanner();
+auto GetOutputBanner() -> render::GGEMSBanner &;
 
-[[nodiscard]] inline std::string ToString(OutputMode mode) {
+[[nodiscard]] inline auto ToString(OutputMode mode) -> std::string {
   switch (mode) {
   case OutputMode::Term:
     return "term";

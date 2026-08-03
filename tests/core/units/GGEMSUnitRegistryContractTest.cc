@@ -8,6 +8,7 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/units/GGEMSActivityUnits.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
 #include "GGEMS/core/units/GGEMSAreaUnits.hh"
@@ -24,6 +25,7 @@
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/units/GGEMSVolumeUnits.hh"
 #include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "../support/GGEMSScopedLoggerEncoding.hh"
 
 namespace ggems::units {
 
@@ -98,6 +100,10 @@ namespace {
 // =============================================================================
 
 using namespace ggems::units;
+using ggems::test::ScopedLoggerEncoding;
+
+// =============================================================================
+// =============================================================================
 
 template <typename Left, typename Right>
 concept Addable = requires(Left left, Right right) { left + right; };
@@ -128,6 +134,41 @@ struct MissingFixedUnitFamily {
   static constexpr std::string_view fixed_display_unit{"absent"};
   static constexpr std::int8_t default_precision{7};
 };
+
+template <typename UnitSet>
+auto ExpectSelectedSymbols(
+    std::string_view unit_set_name,
+    std::string_view UnitDefinition::*expected_symbol_member) -> void {
+  for (auto const &unit : UnitRegistry<UnitSet>::units) {
+    SCOPED_TRACE(std::string{unit_set_name} + ": " +
+                 std::string{unit.canonical_name});
+    EXPECT_EQ(detail::SelectUnitSymbol(unit),
+              unit.*expected_symbol_member);
+  }
+}
+
+auto ExpectEveryRegisteredSymbol(
+    std::string_view UnitDefinition::*expected_symbol_member) -> void {
+  ExpectSelectedSymbols<ActivityUnitSet>("ActivityUnitSet",
+                                         expected_symbol_member);
+  ExpectSelectedSymbols<AngleUnitSet>("AngleUnitSet", expected_symbol_member);
+  ExpectSelectedSymbols<AreaUnitSet>("AreaUnitSet", expected_symbol_member);
+  ExpectSelectedSymbols<BitsUnitSet>("BitsUnitSet", expected_symbol_member);
+  ExpectSelectedSymbols<BytesUnitSet>("BytesUnitSet", expected_symbol_member);
+  ExpectSelectedSymbols<CrossSectionUnitSet>("CrossSectionUnitSet",
+                                             expected_symbol_member);
+  ExpectSelectedSymbols<DensityUnitSet>("DensityUnitSet",
+                                        expected_symbol_member);
+  ExpectSelectedSymbols<DoseUnitSet>("DoseUnitSet", expected_symbol_member);
+  ExpectSelectedSymbols<EnergyUnitSet>("EnergyUnitSet", expected_symbol_member);
+  ExpectSelectedSymbols<FrequencyUnitSet>("FrequencyUnitSet",
+                                           expected_symbol_member);
+  ExpectSelectedSymbols<LengthUnitSet>("LengthUnitSet", expected_symbol_member);
+  ExpectSelectedSymbols<MassUnitSet>("MassUnitSet", expected_symbol_member);
+  ExpectSelectedSymbols<SpeedUnitSet>("SpeedUnitSet", expected_symbol_member);
+  ExpectSelectedSymbols<TimeUnitSet>("TimeUnitSet", expected_symbol_member);
+  ExpectSelectedSymbols<VolumeUnitSet>("VolumeUnitSet", expected_symbol_member);
+}
 
 // =============================================================================
 // =============================================================================
@@ -439,7 +480,61 @@ TEST(GGEMSUnitRegistryContractTest, BridgesBitsAndBytesExplicitlyAndExactly) {
 // =============================================================================
 // =============================================================================
 
+TEST(GGEMSUnitRegistryContractTest, SelectsEveryAsciiUnitSymbol) {
+  ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
+
+  ExpectEveryRegisteredSymbol(&UnitDefinition::symbol);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSUnitRegistryContractTest, SelectsEveryUnicodeUnitSymbol) {
+  ScopedLoggerEncoding const encoding{ggems::core::Encoding::Unicode};
+
+  ExpectEveryRegisteredSymbol(&UnitDefinition::display_symbol);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSUnitRegistryContractTest, UsesEncodingForHumanReadable) {
+  {
+    ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
+
+    EXPECT_EQ(HumanReadable(1_um), "1.0000000 um");
+    EXPECT_EQ(HumanReadable(1_um2), "1.0000000 um2");
+  }
+
+  {
+    ScopedLoggerEncoding const encoding{ggems::core::Encoding::Unicode};
+
+    EXPECT_EQ(HumanReadable(1_um3), "1.0000000 µm³");
+    EXPECT_EQ(HumanReadable(1_g_cm3), "1.0000000 g/cm³");
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSUnitRegistryContractTest, UsesEncodingForQuantityFormatter) {
+  {
+    ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
+    EXPECT_EQ(std::format("{}", 1_um), "1.0000000 um");
+  }
+
+  {
+    ScopedLoggerEncoding const encoding{ggems::core::Encoding::Unicode};
+    EXPECT_EQ(std::format("{}", 1_um), "1.0000000 µm");
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSUnitRegistryContractTest, AppliesFamilySpecificDisplayPolicies) {
+  ScopedLoggerEncoding const encoding(ggems::core::Encoding::Unicode);
+
   EXPECT_EQ(HumanReadable(Bytes{1'024ULL}), "1.0000000 KiB");
   EXPECT_EQ(HumanReadable(Bits{1'000ULL}), "1.0000000 kbit");
   EXPECT_EQ(HumanReadable(1_cm), "10.0000000 mm");

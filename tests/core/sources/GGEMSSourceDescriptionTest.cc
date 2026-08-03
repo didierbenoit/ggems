@@ -7,16 +7,19 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceDescription.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
+#include "../support/GGEMSScopedLoggerEncoding.hh"
 
 namespace {
 
 using GGEMSSource = ggems::core::sources::GGEMSSource;
 using GGEMSSourcePtr = std::shared_ptr<GGEMSSource>;
+using ggems::test::ScopedLoggerEncoding;
 
 // =============================================================================
 // =============================================================================
@@ -197,9 +200,10 @@ TEST(GGEMSSourceDescription, DistinguishesDuplicateSourceSlots) {
 }
 
 // =============================================================================
-// =============================================================================
+// ============================================================================
 
 TEST(GGEMSSourceDescription, ReflectsSequentialSourceMutation) {
+  ScopedLoggerEncoding const encoding{ggems::core::Encoding::Unicode};
   auto source = MakeConfiguredSource(7ULL);
 
   std::string const description_before = ggems::core::sources::DescribeSource(
@@ -219,6 +223,7 @@ TEST(GGEMSSourceDescription, ReflectsSequentialSourceMutation) {
 // =============================================================================
 
 TEST(GGEMSSourceDescription, DescribesOwnedSnapshotAfterSourceMutation) {
+  ScopedLoggerEncoding const encoding{ggems::core::Encoding::Unicode};
   auto source = MakeConfiguredSource(7ULL);
   std::array<GGEMSSourcePtr, 1U> const sources{source};
 

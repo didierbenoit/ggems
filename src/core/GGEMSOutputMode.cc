@@ -2,11 +2,19 @@
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
 
+#include "GGEMS/core/GGEMSLogger.hh"
+#include "GGEMS/core/GGEMSCoreUtils.hh"
 #include "GGEMS/core/GGEMSOutputMode.hh"
 #include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/GGEMSOutputStateSink.hh"
+#include "GGEMS/core/GGEMSOutputState.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
+#include "GGEMS/render/GGEMSVisualLine.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
 #include "GGEMS/render/GGEMSColour.hh"
 
@@ -68,7 +76,7 @@ void PrepareWindowsTerminal() noexcept {
 // =============================================================================
 // =============================================================================
 
-OutputMode Parse(std::string_view mode) {
+auto Parse(std::string_view mode) -> OutputMode {
   std::string value = Lower(std::string(mode));
 
   if (value == "term" || value == "terminal") {
@@ -85,7 +93,7 @@ OutputMode Parse(std::string_view mode) {
 // =============================================================================
 // =============================================================================
 
-void AddOptionalFileSink(GGEMSLogger &logger) {
+auto AddOptionalFileSink(GGEMSLogger &logger) -> void {
   if (g_output_file_path.has_value()) {
     logger.AddSink(std::make_unique<FileSink>(*g_output_file_path));
   }
@@ -94,7 +102,7 @@ void AddOptionalFileSink(GGEMSLogger &logger) {
 // =============================================================================
 // =============================================================================
 
-void ConfigureLoggerForMode(OutputMode mode) {
+auto ConfigureLoggerForMode(OutputMode mode) -> void {
   GGEMSLogger &logger = GGEMSLogger::GetInstance();
 
   logger.ClearSinks();
@@ -104,14 +112,14 @@ void ConfigureLoggerForMode(OutputMode mode) {
     logger.AddSink(std::make_unique<StdoutSink>());
     AddOptionalFileSink(logger);
     logger.SetForceColor(true);
-    logger.SetForceEncoding(Encoding::Utf32);
+    logger.SetForceEncoding(Encoding::Unicode);
     break;
 
   case OutputMode::Gui:
     logger.AddSink(std::make_unique<GGEMSOutputStateSink>(GetOutputState()));
     AddOptionalFileSink(logger);
     logger.SetForceColor(true);
-    logger.SetForceEncoding(Encoding::Utf32);
+    logger.SetForceEncoding(Encoding::Unicode);
     break;
   }
 
@@ -121,7 +129,7 @@ void ConfigureLoggerForMode(OutputMode mode) {
 // =============================================================================
 // =============================================================================
 
-std::string ToTerminalText(render::WrappedLine const &line) {
+auto ToTerminalText(render::WrappedLine const &line) -> std::string {
   std::string out;
 
   bool const use_colour = GGEMSLogger::GetInstance().UseColour();
@@ -146,7 +154,7 @@ std::string ToTerminalText(render::WrappedLine const &line) {
 // =============================================================================
 // =============================================================================
 
-void EmitTerminalBanner() {
+auto EmitTerminalBanner() -> void {
   render::GGEMSBanner &banner = GetOutputBanner();
 
   std::vector<render::WrappedLine> lines = banner.BuildLines(banner.GetWidth());
@@ -162,24 +170,24 @@ void EmitTerminalBanner() {
 // =============================================================================
 // =============================================================================
 
-OutputMode GetOutputMode() noexcept { return g_mode; }
+auto GetOutputMode() noexcept -> OutputMode { return g_mode; }
 
 // =============================================================================
 // =============================================================================
 
-bool IsOutputConfigured() noexcept { return g_configured; }
+auto IsOutputConfigured() noexcept -> bool { return g_configured; }
 
 // =============================================================================
 // =============================================================================
 
-bool IsOutputRuntimeStarted() noexcept {
+auto IsOutputRuntimeStarted() noexcept -> bool {
   return g_output_running.load(std::memory_order_relaxed);
 }
 
 // =============================================================================
 // =============================================================================
 
-GGEMSOutputState &GetOutputState() {
+auto GetOutputState() -> GGEMSOutputState & {
   if (!g_state) {
     g_state = std::make_unique<GGEMSOutputState>();
   }
@@ -190,7 +198,7 @@ GGEMSOutputState &GetOutputState() {
 // =============================================================================
 // =============================================================================
 
-render::GGEMSBanner &GetOutputBanner() {
+auto GetOutputBanner() -> render::GGEMSBanner & {
   GGEMS_CHECK_FATAL(
       g_configured,
       "Output mode must be configured before requesting the banner. "
@@ -206,7 +214,7 @@ render::GGEMSBanner &GetOutputBanner() {
 // =============================================================================
 // =============================================================================
 
-void SetOutputMode(OutputMode const mode) {
+auto SetOutputMode(OutputMode const mode) -> void {
   if (mode == g_mode && g_configured) {
     return;
   }
@@ -223,12 +231,14 @@ void SetOutputMode(OutputMode const mode) {
 // =============================================================================
 // =============================================================================
 
-void SetOutputMode(std::string_view mode) { SetOutputMode(Parse(mode)); }
+auto SetOutputMode(std::string_view mode) -> void {
+  SetOutputMode(Parse(mode));
+}
 
 // =============================================================================
 // =============================================================================
 
-void SetOutputFile(std::string_view path) {
+auto SetOutputFile(std::string_view path) -> void {
   GGEMS_CHECK_FATAL(!path.empty(), "Output file path must not be empty.");
 
   GGEMS_CHECK_FATAL(
@@ -245,7 +255,7 @@ void SetOutputFile(std::string_view path) {
 // =============================================================================
 // =============================================================================
 
-void ClearOutputFile() noexcept {
+auto ClearOutputFile() noexcept -> void {
   if (g_output_running.load(std::memory_order_relaxed)) {
     return;
   }
@@ -260,7 +270,7 @@ void ClearOutputFile() noexcept {
 // =============================================================================
 // =============================================================================
 
-void StartOutputRuntime() {
+auto StartOutputRuntime() -> void {
   GGEMS_CHECK_FATAL(
       g_configured,
       "Output mode is not configured. "
@@ -287,7 +297,7 @@ void StartOutputRuntime() {
 // =============================================================================
 // =============================================================================
 
-void StopOutputRuntime() noexcept {
+auto StopOutputRuntime() noexcept -> void {
   g_output_running.store(false, std::memory_order_relaxed);
 }
 } // namespace ggems::core

@@ -11,6 +11,9 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <algorithm>
+
+#include "GGEMS/core/GGEMSLogger.hh"
 
 namespace ggems::units {
 
@@ -120,12 +123,11 @@ constexpr auto UnitAcceptsToken(UnitDefinition const &unit,
   if (unit.symbol == token) {
     return true;
   }
-  for (auto const alias : unit.aliases) {
-    if (!alias.empty() && alias == token) {
-      return true;
-    }
-  }
-  return false;
+
+  return std::ranges::any_of(unit.aliases,
+                             [token](std::string_view alias) noexcept -> bool {
+                               return !alias.empty() && alias == token;
+                             });
 }
 
 constexpr auto ParsingTokensCollide(UnitDefinition const &lhs,
@@ -134,12 +136,11 @@ constexpr auto ParsingTokensCollide(UnitDefinition const &lhs,
   if (UnitAcceptsToken(rhs, lhs.symbol)) {
     return true;
   }
-  for (auto const alias : lhs.aliases) {
-    if (!alias.empty() && UnitAcceptsToken(rhs, alias)) {
-      return true;
-    }
-  }
-  return false;
+
+  return std::ranges::any_of(
+      lhs.aliases, [&rhs](std::string_view alias) noexcept -> bool {
+        return !alias.empty() && UnitAcceptsToken(rhs, alias);
+      });
 }
 
 constexpr auto ExactIntegralFactor(UnitScale const &scale,
@@ -257,17 +258,27 @@ constexpr auto ConvertIntegralMagnitude(std::uint64_t magnitude, bool negative)
   return static_cast<Representation>(magnitude);
 }
 
+[[nodiscard]] inline auto SelectUnitSymbol(UnitDefinition const &unit) noexcept
+    -> std::string_view {
+  if (ggems::core::GGEMSLogger::GetInstance().GetEncoding() ==
+      ggems::core::Encoding::Ascii) {
+    return unit.symbol;
+  }
+  return unit.display_symbol;
+}
+
 template <typename QuantityType>
 auto FormatScaled(QuantityType const &quantity, UnitDefinition const &unit,
                   std::int8_t precision, std::int8_t width) -> std::string {
   long double const scaled =
       static_cast<long double>(quantity.value) / ScaleFactor(unit.scale);
+
+  std::string_view const selected_symbol = SelectUnitSymbol(unit);
   std::string format;
   if (width < 0) {
-    format = std::format("{{:.{}f}} {}", precision, unit.display_symbol);
+    format = std::format("{{:.{}f}} {}", precision, selected_symbol);
   } else {
-    format =
-        std::format("{{:{}.{}f}} {}", width, precision, unit.display_symbol);
+    format = std::format("{{:{}.{}f}} {}", width, precision, selected_symbol);
   }
   return std::vformat(format, std::make_format_args(scaled));
 }

@@ -1,12 +1,22 @@
-/// \cond
 #include <iostream>
 #include <format>
+#include <string>
+#include <chrono>
+#include <ctime>
+#include <cstdio>
+#include <array>
+#include <optional>
+#include <cstdlib>
+#include <mutex>
+#include <utility>
+#include <memory>
+#include <vector>
+
 #ifdef _WIN32
 #include "GGEMS/platform/windows/GGEMSWindowsCore.hh"
 #else
 #include <unistd.h>
 #endif
-/// \endcond
 
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSException.hh"
@@ -36,7 +46,7 @@ static auto LogLevelColour(LogLevel lvl) -> render::ColourKey {
 // =============================================================================
 // =============================================================================
 
-static std::string LogLevelName(LogRecord const &rec) {
+static auto LogLevelName(LogRecord const &rec) -> std::string {
   switch (rec.level) {
   case LogLevel::Debug:
     return "DEBUG";
@@ -56,33 +66,37 @@ static std::string LogLevelName(LogRecord const &rec) {
 // =============================================================================
 // =============================================================================
 
-static std::string
-FormatTimestamp(std::chrono::system_clock::time_point const &tp) {
+static auto
+FormatTimestamp(std::chrono::system_clock::time_point const &time_point)
+    -> std::string {
   using namespace std::chrono;
-  auto t = system_clock::to_time_t(tp);
-  auto ms = duration_cast<milliseconds>(tp.time_since_epoch()) % 1000;
+  auto time = system_clock::to_time_t(time_point);
+  auto m_sec =
+      duration_cast<milliseconds>(time_point.time_since_epoch()) % 1000;
   std::tm tm_buf{};
 #ifdef _WIN32
-  localtime_s(&tm_buf, &t);
+  localtime_s(&tm_buf, &time);
 #else
-  localtime_r(&t, &tm_buf);
+  localtime_r(&time, &tm_buf);
 #endif
-  char buf[64];
-  std::snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d.%03d",
+  std::array<char, 64> buf;
+  std::snprintf(buf.data(), buf.size(), "%04d-%02d-%02d %02d:%02d:%02d.%03d",
                 tm_buf.tm_year + 1900, tm_buf.tm_mon + 1, tm_buf.tm_mday,
-                tm_buf.tm_hour, tm_buf.tm_min, tm_buf.tm_sec, (int)ms.count());
-  return std::string(buf);
+                tm_buf.tm_hour, tm_buf.tm_min, tm_buf.tm_sec,
+                (int)m_sec.count());
+
+  return std::string{buf.data()};
 }
 
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] inline std::optional<std::string>
-GetEnvVar(const char *name) noexcept {
+[[nodiscard]] auto GetEnvVar(const char *name) noexcept
+    -> std::optional<std::string> {
 #if defined(_WIN32)
   char *buffer = nullptr;
   std::size_t len = 0;
-  if (_dupenv_s(&buffer, &len, name) == 0 && buffer) {
+  if (_dupenv_s(&buffer, &len, name) == 0 && buffer != nullptr) {
     std::string value(buffer);
     std::free(buffer);
     return value;
@@ -120,13 +134,13 @@ void StdoutSink::Write(RenderedLogLine &&log_line) {
 // =============================================================================
 
 FileSink::FileSink(std::string path)
-    : path_(path), out_(path_, std::ios::out | std::ios::trunc) {
+    : path_(std::move(path)), out_(path_, std::ios::out | std::ios::trunc) {
   GGEMS_CHECK_FATAL(out_, "Cannot open log file: " + path_);
 }
 
 // -----------------------------------------------------------------------------
 
-void FileSink::Write(RenderedLogLine &&log_line) {
+auto FileSink::Write(RenderedLogLine &&log_line) -> void {
   std::scoped_lock lock(mtx_);
 
   if (!log_line.prefix.empty()) {
@@ -139,38 +153,39 @@ void FileSink::Write(RenderedLogLine &&log_line) {
 // =============================================================================
 // =============================================================================
 
-RenderedLogLine LogFormatter::Format(LogRecord const &rec,
-                                     bool use_colour) const {
+auto LogFormatter::Format(LogRecord const &rec, bool use_color)
+    -> RenderedLogLine {
   RenderedLogLine log_line;
   log_line.msg = rec.message;
   log_line.level = rec.level;
   log_line.depth = rec.depth;
   log_line.module = rec.module;
 
-  if (use_colour) {
+  if (use_color) {
     log_line.color = LogLevelColour(rec.level);
   }
 
-  auto const ts = FormatTimestamp(rec.timestamp);
+  auto const time_stamp = FormatTimestamp(rec.timestamp);
   std::string module_part = rec.module.empty() ? "" : " [" + rec.module + "]";
   std::string level_name = LogLevelName(rec);
 
-  log_line.prefix = std::format("{} [{}] {{{}}}{} ({}):", ts, level_name,
-                                rec.thread_id, module_part, rec.function);
+  log_line.prefix =
+      std::format("{} [{}] {{{}}}{} ({}):", time_stamp, level_name,
+                  rec.thread_id, module_part, rec.function);
   return log_line;
 }
 
 // =============================================================================
 // =============================================================================
 
-GGEMSLogger &GGEMSLogger::GetInstance() {
+auto GGEMSLogger::GetInstance() -> GGEMSLogger & {
   static GGEMSLogger instance;
   return instance;
 }
 
 // -----------------------------------------------------------------------------
 
-void GGEMSLogger::ClearSinks() noexcept {
+auto GGEMSLogger::ClearSinks() noexcept -> void {
   std::vector<std::unique_ptr<LogSink>> sinks_to_delete;
 
   {
@@ -181,7 +196,7 @@ void GGEMSLogger::ClearSinks() noexcept {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSLogger::AddSink(std::unique_ptr<LogSink> sink) {
+auto GGEMSLogger::AddSink(std::unique_ptr<LogSink> sink) -> void {
   if (!sink) {
     GGEMS_FATAL("Log sink is null.");
   }
@@ -192,41 +207,43 @@ void GGEMSLogger::AddSink(std::unique_ptr<LogSink> sink) {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSLogger::SetSink(std::unique_ptr<LogSink> sink) {
+auto GGEMSLogger::SetSink(std::unique_ptr<LogSink> sink) -> void {
   ClearSinks();
   AddSink(std::move(sink));
 }
 
 // -----------------------------------------------------------------------------
 
-void GGEMSLogger::SetForceColor(bool force) {
+auto GGEMSLogger::SetForceColor(bool force) -> void {
   std::scoped_lock lock(mtx_);
   force_colour_ = force;
 }
 
 // -----------------------------------------------------------------------------
 
-void GGEMSLogger::SetForceEncoding(Encoding encoding) noexcept {
+auto GGEMSLogger::SetForceEncoding(Encoding encoding) noexcept -> void {
   std::scoped_lock lock(mtx_);
   encoding_ = encoding;
 }
 
 // -----------------------------------------------------------------------------
 
-bool GGEMSLogger::UseColour() const noexcept {
-  if (force_colour_.has_value())
+auto GGEMSLogger::UseColour() const noexcept -> bool {
+  if (force_colour_.has_value()) {
     return *force_colour_;
+  }
 
-  if (auto no_color = GetEnvVar("NO_COLOR"); no_color && !no_color->empty())
+  if (auto no_color = GetEnvVar("NO_COLOR"); no_color && !no_color->empty()) {
     return false;
+  }
 
   return true;
 }
 
 // -----------------------------------------------------------------------------
 
-void GGEMSLogger::Dispatch(LogRecord const &rec) {
-  RenderedLogLine log_line = formatter_.Format(rec, UseColour());
+auto GGEMSLogger::Dispatch(LogRecord const &rec) -> void {
+  RenderedLogLine log_line = LogFormatter::Format(rec, UseColour());
 
   std::scoped_lock lock(mtx_);
 
