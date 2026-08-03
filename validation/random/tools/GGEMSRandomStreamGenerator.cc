@@ -9,32 +9,30 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <cstddef>
+#include <cstdlib>
+#include <exception>
+#include <span>
+#include <utility>
 
 #include "GGEMS/core/random/GGEMSRandom.hh"
-#include "GGEMS/core/random/GGEMSRandomEngine.hh"
-#include "GGEMS/core/random/GGEMSRandomState.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
+#include "GGEMS/core/units/GGEMSBytesUnits.hh"
 
 namespace {
-using ggems::core::random::GGEMSJKissState;
-using ggems::core::random::GGEMSPCG32State;
-using ggems::core::random::GGEMSPhiloxState;
 using ggems::core::random::GGEMSRandom;
-using ggems::core::random::GGEMSRandomEngine;
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-enum class StreamType { RawUInt32, FloatHigh24Bytes };
+enum class StreamType : std::int8_t { RawUInt32, FloatHigh24Bytes };
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-std::string ToString(StreamType stream_type) {
+auto ToString(StreamType stream_type) -> std::string {
   switch (stream_type) {
   case StreamType::RawUInt32:
     return "raw_uint32";
@@ -45,11 +43,10 @@ std::string ToString(StreamType stream_type) {
   throw std::runtime_error("Unsupported stream type.");
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-std::string ToPractRandInputMode(StreamType stream_type) {
+auto ToPractRandInputMode(StreamType stream_type) -> std::string {
   switch (stream_type) {
   case StreamType::RawUInt32:
     return "stdin32";
@@ -60,11 +57,10 @@ std::string ToPractRandInputMode(StreamType stream_type) {
   throw std::runtime_error("Unsupported stream type.");
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-StreamType ParseStreamType(std::string_view value) {
+auto ParseStreamType(std::string_view value) -> StreamType {
   if (value == "raw_uint32") {
     return StreamType::RawUInt32;
   }
@@ -76,12 +72,11 @@ StreamType ParseStreamType(std::string_view value) {
   throw std::runtime_error(std::format("Unsupported stream type '{}'.", value));
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-std::uint64_t GetOutputByteCount(StreamType stream_type,
-                                 std::uint64_t total_words) {
+auto GetOutputByteCount(StreamType stream_type, std::uint64_t total_words)
+    -> std::uint64_t {
   switch (stream_type) {
   case StreamType::RawUInt32:
     return total_words * 4ULL;
@@ -92,9 +87,8 @@ std::uint64_t GetOutputByteCount(StreamType stream_type,
   throw std::runtime_error("Unsupported stream type.");
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 struct Options {
   std::string engine{"philox"};
@@ -115,11 +109,10 @@ struct Options {
       "random_uint32_stream_manifest.json"};
 };
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-void PrintUsage(char const *executable_name) {
+auto PrintUsage(char const *executable_name) -> void {
   std::cout << "Usage:\n"
             << " " << executable_name << " [options]\n\n"
             << "Options:\n"
@@ -136,12 +129,11 @@ void PrintUsage(char const *executable_name) {
             << "  --help\n";
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-std::string ReadArgumentValue(int &index, int argc, char **argv,
-                              std::string_view option_name) {
+auto ReadArgumentValue(int &index, int argc, char **argv,
+                       std::string_view option_name) -> std::string {
   if (index + 1 >= argc) {
     throw std::runtime_error(
         std::format("Missing value after '{}'.", option_name));
@@ -151,11 +143,10 @@ std::string ReadArgumentValue(int &index, int argc, char **argv,
   return std::string{argv[index]};
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-Options ParseArguments(int argc, char **argv) {
+auto ParseArguments(int argc, char **argv) -> Options {
   Options options;
 
   for (int i = 1; i < argc; ++i) {
@@ -210,117 +201,18 @@ Options ParseArguments(int argc, char **argv) {
   return options;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-std::size_t RoundUp(std::size_t value, std::size_t multiple) noexcept {
+auto RoundUp(std::size_t value, std::size_t multiple) noexcept -> std::size_t {
   return ((value + multiple - 1U) / multiple) * multiple;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-std::uint64_t SplitMix64(std::uint64_t value) noexcept {
-  value += 0x9E3779B97F4A7C15ULL;
-
-  value = (value ^ (value >> 30U)) * 0xBF58476D1CE4E5B9ULL;
-  value = (value ^ (value >> 27U)) * 0x94D049BB133111EBULL;
-
-  return value ^ (value >> 31U);
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-GGEMSJKissState MakeJKissState(std::uint32_t seed,
-                               std::uint32_t index) noexcept {
-  return GGEMSJKissState{.x = seed + 123456789U + 1013904223U * index,
-                         .y = seed ^ (362436069U + 1664525U * index),
-                         .z = seed + 521288629U + 69069U * index,
-                         .w = seed ^ (88675123U + 22695477U * index),
-                         .c = index & 1U};
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-GGEMSPCG32State MakePCG32State(std::uint64_t seed,
-                               std::uint64_t index) noexcept {
-  std::uint64_t state =
-      SplitMix64(seed + 0xD1B54A32D192ED03ULL * (index + 1ULL));
-
-  std::uint64_t stream = SplitMix64(seed ^ (0xABC98388FB8FAC03ULL + index));
-
-  return GGEMSPCG32State{.state = state, .increment = stream | 1ULL};
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-GGEMSPhiloxState MakePhiloxState(std::uint64_t seed,
-                                 std::uint64_t index) noexcept {
-  std::uint64_t const key = SplitMix64(seed);
-
-  return GGEMSPhiloxState{.counter_0 = 0U,
-                          .counter_1 = 0U,
-                          .counter_2 = static_cast<std::uint32_t>(index),
-                          .counter_3 = static_cast<std::uint32_t>(index >> 32U),
-                          .key_0 = static_cast<std::uint32_t>(key),
-                          .key_1 = static_cast<std::uint32_t>(key >> 32U)};
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-void InitialiseRandomStates(void *states_data, GGEMSRandomEngine engine,
-                            std::uint64_t seed, std::uint32_t particle_count) {
-  switch (engine) {
-  case GGEMSRandomEngine::JKISS: {
-    auto *states = static_cast<GGEMSJKissState *>(states_data);
-
-    for (std::uint32_t i = 0U; i < particle_count; ++i) {
-      states[i] = MakeJKissState(static_cast<std::uint32_t>(seed), i);
-    }
-
-    return;
-  }
-
-  case GGEMSRandomEngine::PCG32: {
-    auto *states = static_cast<GGEMSPCG32State *>(states_data);
-
-    for (std::uint32_t i = 0U; i < particle_count; ++i) {
-      states[i] = MakePCG32State(seed, i);
-    }
-
-    return;
-  }
-
-  case GGEMSRandomEngine::Philox: {
-    auto *states = static_cast<GGEMSPhiloxState *>(states_data);
-
-    for (std::uint32_t i = 0U; i < particle_count; ++i) {
-      states[i] = MakePhiloxState(seed, i);
-    }
-
-    return;
-  }
-  }
-
-  throw std::runtime_error("Unsupported GGEMS random engine.");
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-void EnsureOutputCanBeWritten(std::filesystem::path const &path, bool force,
-                              std::string_view label) {
+auto EnsureOutputCanBeWritten(std::filesystem::path const &path, bool force,
+                              std::string_view label) -> void {
   if (std::filesystem::exists(path) && !force) {
     throw std::runtime_error(std::format(
         "{} file already exists: '{}'. Use --force to overwrite it.", label,
@@ -332,13 +224,12 @@ void EnsureOutputCanBeWritten(std::filesystem::path const &path, bool force,
   }
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-void WriteUInt32Binary(std::filesystem::path const &path,
+auto WriteUInt32Binary(std::filesystem::path const &path,
                        std::uint32_t const *values, std::size_t value_count,
-                       bool force) {
+                       bool force) -> void {
   EnsureOutputCanBeWritten(path, force, "Stream");
 
   if (!path.parent_path().empty()) {
@@ -362,13 +253,12 @@ void WriteUInt32Binary(std::filesystem::path const &path,
   }
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-void WriteFloatHigh24Bytes(std::filesystem::path const &path,
+auto WriteFloatHigh24Bytes(std::filesystem::path const &path,
                            std::uint32_t const *values, std::size_t value_count,
-                           bool force) {
+                           bool force) -> void {
   EnsureOutputCanBeWritten(path, force, "Stream");
 
   std::ofstream stream{path, std::ios::binary};
@@ -391,9 +281,9 @@ void WriteFloatHigh24Bytes(std::filesystem::path const &path,
     for (std::size_t i = 0U; i < current_count; ++i) {
       std::uint32_t useful_bits = values[offset + i] >> 8U;
 
-      buffer[3U * i + 0U] = static_cast<char>(useful_bits & 0xFFU);
-      buffer[3U * i + 1U] = static_cast<char>((useful_bits >> 8U) & 0xFFU);
-      buffer[3U * i + 2U] = static_cast<char>((useful_bits >> 16U) & 0xFFU);
+      buffer[(3U * i) + 0U] = static_cast<char>(useful_bits & 0xFFU);
+      buffer[(3U * i) + 1U] = static_cast<char>((useful_bits >> 8U) & 0xFFU);
+      buffer[(3U * i) + 2U] = static_cast<char>((useful_bits >> 16U) & 0xFFU);
     }
 
     stream.write(buffer.data(),
@@ -406,9 +296,8 @@ void WriteFloatHigh24Bytes(std::filesystem::path const &path,
   }
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 void WriteRandomStream(std::filesystem::path const &path,
                        StreamType stream_type, std::uint32_t const *values,
@@ -426,16 +315,15 @@ void WriteRandomStream(std::filesystem::path const &path,
   throw std::runtime_error("Unsupported stream type");
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-std::string JsonEscape(std::string_view text) {
+auto JsonEscape(std::string_view text) -> std::string {
   std::string escaped;
   escaped.reserve(text.size());
 
-  for (char c : text) {
-    switch (c) {
+  for (char letter : text) {
+    switch (letter) {
     case '\\':
       escaped += "\\\\";
       break;
@@ -452,7 +340,7 @@ std::string JsonEscape(std::string_view text) {
       escaped += "\\t";
       break;
     default:
-      escaped += c;
+      escaped += letter;
       break;
     }
   }
@@ -460,15 +348,14 @@ std::string JsonEscape(std::string_view text) {
   return escaped;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-void WriteMinimalManifest(std::filesystem::path const &path,
+auto WriteMinimalManifest(std::filesystem::path const &path,
                           Options const &options, GGEMSRandom const &random,
                           ggems::ocl::GGEMSOpenCLDevice const &device,
                           std::uint64_t total_words, std::uint64_t output_bytes,
-                          std::string const &sha256) {
+                          std::string const &sha256) -> void {
   if (!path.parent_path().empty()) {
     std::filesystem::create_directories(path.parent_path());
   }
@@ -483,38 +370,38 @@ void WriteMinimalManifest(std::filesystem::path const &path,
   stream << "{\n";
   stream << "  \"schema_version\": 1,\n";
   stream << "  \"random\": {\n";
-  stream << "    \"engine\": \"" << random.GetEngineName() << "\",\n";
+  stream << R"(    "engine": ")" << random.GetEngineName() << "\",\n";
   stream << "    \"seed\": " << random.GetSeed() << ",\n";
   stream << "    \"particle_count\": " << options.particle_count << ",\n";
   stream << "    \"words_per_particle\": " << options.words_per_particle
          << ",\n";
   stream << "    \"total_words\": " << total_words << ",\n";
   stream << "    \"byte_count\": " << output_bytes << ",\n";
-  stream << "    \"stream_type\": \"" << ToString(options.stream_type)
+  stream << R"(    "stream_type": ")" << ToString(options.stream_type)
          << "\",\n";
-  stream << "    \"practrand_input_mode\": \""
+  stream << R"(    "practrand_input_mode": ")"
          << ToPractRandInputMode(options.stream_type) << "\"\n";
   stream << "  },\n";
   stream << "  \"opencl\": {\n";
-  stream << "    \"device_selector\": \"" << JsonEscape(options.device_selector)
+  stream << R"(    "device_selector": ")" << JsonEscape(options.device_selector)
          << "\",\n";
-  stream << "    \"device_name\": \"" << JsonEscape(device.GetName())
+  stream << R"(    "device_name": ")" << JsonEscape(device.GetName())
          << "\",\n";
-  stream << "    \"device_vendor\": \"" << JsonEscape(device.GetVendor())
+  stream << R"(    "device_vendor": ")" << JsonEscape(device.GetVendor())
          << "\",\n";
-  stream << "    \"device_version\": \"" << JsonEscape(device.GetVersion())
+  stream << R"(    "device_version": ")" << JsonEscape(device.GetVersion())
          << "\",\n";
-  stream << "    \"driver_version\": \""
+  stream << R"(    "driver_version": ")"
          << JsonEscape(device.GetDriverVersion()) << "\",\n";
   stream << "    \"local_size\": " << options.local_size << "\n";
   stream << "  },\n";
   stream << "  \"output\": {\n";
-  stream << "    \"stream_path\": \"" << options.output_path.generic_string()
+  stream << R"(    "stream_path": ")" << options.output_path.generic_string()
          << "\"\n";
   stream << "  },\n";
   stream << "  \"integrity\": {\n";
   stream << "    \"algorithm\": \"SHA-256\",\n";
-  stream << "    \"value\": \"" << sha256 << "\"\n";
+  stream << R"(    "value": ")" << sha256 << "\"\n";
   stream << "  }\n";
   stream << "}\n";
 
@@ -524,11 +411,10 @@ void WriteMinimalManifest(std::filesystem::path const &path,
   }
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-void GenerateRandomStream(Options const &options) {
+auto GenerateRandomStream(Options const &options) -> void {
   GGEMSRandom random;
   random.SetEngine(options.engine);
   random.SetSeed(options.seed);
@@ -569,7 +455,7 @@ void GenerateRandomStream(Options const &options) {
   }
 
   auto &context = opencl.GetContext().front();
-  auto &device = context.GetDevice();
+  auto const &device = context.GetDevice();
 
   std::filesystem::path kernel_root{GGEMS_KERNEL_ROOT};
   std::filesystem::path validation_kernel_root{
@@ -593,8 +479,12 @@ void GenerateRandomStream(Options const &options) {
       context.CreateSVMBuffer(ggems::units::Bytes{value_buffer_bytes});
 
   states_buffer.Map(CL_MAP_WRITE);
-  InitialiseRandomStates(states_buffer.GetData(), random.GetEngine(),
-                         random.GetSeed(), options.particle_count);
+
+  auto state_storage =
+      std::span<std::byte>{static_cast<std::byte *>(states_buffer.GetData()),
+                           static_cast<std::size_t>(state_bytes)};
+  random.InitialiseStates(0ULL, state_storage);
+
   states_buffer.Unmap();
 
   values_buffer.Map(CL_MAP_WRITE);
@@ -635,11 +525,10 @@ void GenerateRandomStream(Options const &options) {
 
 } // namespace
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-int main(int argc, char **argv) {
+auto main(int argc, char **argv) -> int {
   try {
     Options options = ParseArguments(argc, argv);
     GenerateRandomStream(options);
