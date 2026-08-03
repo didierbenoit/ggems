@@ -11,11 +11,11 @@
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/core/observer/GGEMSObserverTypes.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/core/units/GGEMSLengthUnits.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace ggems::render {
 namespace {
-
-constexpr float k_picometre_to_metre{1.0e-12F};
 
 // =============================================================================
 // =============================================================================
@@ -195,9 +195,12 @@ auto ToParticleTracePointMetre(
     core::observer::GGEMSObserverRecord const &record) noexcept
     -> GGEMSParticleTracePoint {
   return GGEMSParticleTracePoint{
-      .x_m = static_cast<float>(record.position_x_pm) * k_picometre_to_metre,
-      .y_m = static_cast<float>(record.position_y_pm) * k_picometre_to_metre,
-      .z_m = static_cast<float>(record.position_z_pm) * k_picometre_to_metre};
+      .x_m = static_cast<float>(*units::TryConvertTo(
+          units::PositionCoordinate{record.position_x_pm}, "m")),
+      .y_m = static_cast<float>(*units::TryConvertTo(
+          units::PositionCoordinate{record.position_y_pm}, "m")),
+      .z_m = static_cast<float>(*units::TryConvertTo(
+          units::PositionCoordinate{record.position_z_pm}, "m"))};
 }
 
 // =============================================================================

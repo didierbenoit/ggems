@@ -37,7 +37,7 @@
 
 #include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 #include "GGEMS/frameworks/GGEMSSVMMemoryKind.hh"
-#include "GGEMS/core/units/GGEMSUnits.hh"
+#include "GGEMS/core/units/GGEMSBytesUnits.hh"
 
 namespace ggems::ocl {
 class GGEMSOpenCLContext;

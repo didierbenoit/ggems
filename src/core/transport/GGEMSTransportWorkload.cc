@@ -1,9 +1,11 @@
 #include "GGEMS/core/transport/GGEMSTransportWorkload.hh"
 
 #include <algorithm>
+
 #if defined(GGEMS_ENABLE_INTERNAL_TEST_HOOKS)
 #include <atomic>
 #endif
+
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -36,6 +38,7 @@
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/core/units/GGEMSBytesUnits.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace {
 
@@ -811,12 +814,15 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
       saturate_u32(report.logical_observer_counters.captured_primary_count);
 
   auto compute_rate = [](std::uint64_t count,
-                         ggems::units::Time time) noexcept -> double {
-    if (time.value == 0ULL) {
+                         ggems::units::Duration duration) noexcept -> double {
+    if (duration.value == 0ULL) {
       return 0.0;
     }
-    return static_cast<double>(count) * 1.0e12 /
-           static_cast<double>(time.value);
+
+    auto const seconds = ggems::units::TryConvertTo(duration, "s");
+    return seconds.has_value() && *seconds > 0.0L
+               ? static_cast<double>(count) / static_cast<double>(*seconds)
+               : 0.0;
   };
 
   report.host_histories_per_second =

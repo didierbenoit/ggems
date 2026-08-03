@@ -41,7 +41,6 @@ private:
     float z{0.0F};
   };
 
-  [[nodiscard]] static auto DegreesToRadians(float degrees) noexcept -> float;
   [[nodiscard]] static auto Dot(Vector3 const &first,
                                 Vector3 const &second) noexcept -> float;
   [[nodiscard]] static auto Cross(Vector3 const &first,

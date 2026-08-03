@@ -9,11 +9,10 @@
 #include "GGEMS/core/random/GGEMSPoissonSampler.hh"
 #include "GGEMS/core/units/GGEMSActivityUnits.hh"
 #include "GGEMS/core/GGEMSTimeWindow.hh"
+#include "GGEMS/core/units/GGEMSTimeUnits.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace ggems::core::radioactivity {
-namespace {
-constexpr long double k_picosecond_to_second{1.0e-12L};
-} // namespace
 
 // =============================================================================
 // =============================================================================
@@ -45,10 +44,10 @@ auto ComputeExpectedDecayEventCount(units::Activity activity_at_reference,
 
   auto const elapsed_start_ps = time_window.start_ps - reference_time_ps;
   auto const duration_ps = time_window.stop_ps - time_window.start_ps;
-  long double const elapsed_start_seconds =
-      static_cast<long double>(elapsed_start_ps) * k_picosecond_to_second;
-  long double const duration_seconds =
-      static_cast<long double>(duration_ps) * k_picosecond_to_second;
+  auto const elapsed_start_seconds =
+      *units::TryConvertTo(units::Duration{elapsed_start_ps}, "s");
+  auto const duration_seconds =
+      *units::TryConvertTo(units::Duration{duration_ps}, "s");
   long double const decay_constant =
       std::numbers::ln2_v<long double> / half_life_seconds;
 

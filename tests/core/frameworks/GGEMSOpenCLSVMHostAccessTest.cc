@@ -8,7 +8,6 @@
 #include <gtest/gtest.h>
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMHostAccess.hh"
 

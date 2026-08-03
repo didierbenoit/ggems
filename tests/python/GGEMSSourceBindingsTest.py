@@ -46,7 +46,7 @@ class GGEMSSourceBindingsTest(unittest.TestCase):
         self.assertFalse(hasattr(source, "set_time"))
 
     def test_all_distance_units_are_accepted(self) -> None:
-        for unit in ("pm", "nm", "um", "mm", "cm", "m"):
+        for unit in ("pm", "nm", "um", "µm", "μm", "mm", "cm", "m", "km"):
             with self.subTest(unit=unit):
                 source = ggems.source.GGEMSSource()
                 source.set_emission_rectangle(2.0, 1.0, unit)
@@ -60,28 +60,28 @@ class GGEMSSourceBindingsTest(unittest.TestCase):
     def test_invalid_dimensions_have_distinct_diagnostics(self) -> None:
         source = ggems.source.GGEMSSource()
 
-        with self.assertRaisesRegex(ValueError, "strictly positive"):
+        with self.assertRaisesRegex(RuntimeError, "non-zero"):
             source.set_emission_circle(0.0, "mm")
 
-        with self.assertRaisesRegex(ValueError, "strictly positive"):
+        with self.assertRaisesRegex(ValueError, "positive or zero"):
             source.set_emission_rectangle(-1.0, 2.0, "mm")
 
         with self.assertRaisesRegex(ValueError, "finite"):
             source.set_emission_ellipse(math.nan, 1.0, "mm")
 
         with self.assertRaisesRegex(ValueError, "Unsupported"):
-            source.set_emission_circle(1.0, "km")
+            source.set_emission_circle(1.0, "KM")
 
         with self.assertRaisesRegex(ValueError, "too large"):
             source.set_emission_circle(math.ldexp(1.0, 64), "pm")
 
-        with self.assertRaisesRegex(ValueError, "strictly positive"):
+        with self.assertRaisesRegex(RuntimeError, "strictly positive"):
             source.set_emission_box(1.0, 0.0, 1.0, "mm")
 
-        with self.assertRaisesRegex(ValueError, "strictly positive"):
+        with self.assertRaisesRegex(RuntimeError, "strictly positive"):
             source.set_emission_sphere(0.0, "mm")
 
-        with self.assertRaisesRegex(ValueError, "strictly positive"):
+        with self.assertRaisesRegex(ValueError, "positive or zero"):
             source.set_emission_cylinder(1.0, -1.0, "mm")
 
     def test_bounded_isotropic_accepts_degrees_radians_and_negative_phi(self) -> None:
@@ -193,6 +193,11 @@ class GGEMSSourceBindingsTest(unittest.TestCase):
                 lambda: source.set_regular_energy_spectrum(
                     [20.0, 22.0], [1.0, float("inf")], "keV"
                 ),
+            ),
+            (
+                "zero Mono energy",
+                RuntimeError,
+                lambda: source.set_energy(0.0, "meV"),
             ),
             (
                 "negative Mono energy",

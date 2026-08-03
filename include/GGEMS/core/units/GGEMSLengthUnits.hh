@@ -1,234 +1,178 @@
 #pragma once
-// ************************************************************************
-// * This file is part of GGEMS.                                          *
-// *                                                                      *
-// * GGEMS is free software: you can redistribute it and/or modify        *
-// * it under the terms of the GNU General Public License as published by *
-// * the Free Software Foundation, either version 3 of the License, or    *
-// * (at your option) any later version.                                  *
-// *                                                                      *
-// * GGEMS is distributed in the hope that it will be useful,             *
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
-// * GNU General Public License for more details.                         *
-// *                                                                      *
-// * You should have received a copy of the GNU General Public License    *
-// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
-// *                                                                      *
-// ************************************************************************
 
-/*!
- * \file GGEMSLengthUnits.hh
- * \brief Length quantity and formatting utilities for GGEMS.
- *
- * Defines the \c Length quantity stored in engine base units
- * (picometres). User-defined literals provide conversions from common
- * physical scales (nm → km), and a helper function emits readable
- * textual representations with SI prefixes.
- *
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-10-29
- * \version 2.0
- * \copyright
- * GNU General Public License v3.0
- */
-
-/// \cond
-#include <format>
 #include <array>
 #include <cstdint>
 #include <string>
 #include <string_view>
-/// \endcond
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace ggems::units {
-/*!
- * \brief Length quantity expressed in picometres (pm).
- *
- * This alias binds the \c LengthDim dimension to an unsigned 64-bit
- * representation. All stored values correspond to engine base units in
- * picometres. Higher-level user-facing scales (nm → km) are produced
- * only by \c HumanReadable for display convenience.
- */
-using Length = Quantity<LengthDim, std::uint64_t>;
 
-/*!
- * \brief Converts a length quantity to a human-readable UTF-8 string.
- *
- * Internal values are stored as picometres (pm). For readability, the
- * function selects the most appropriate SI prefix (nm, μm, mm, m, km)
- * based on magnitude and formats the scaled value using fixed precision
- * and optional minimum width.
- *
- * \param l         Length quantity expressed in picometres.
- * \param precision Digits after the decimal point.
- * \param width     Minimum formatted width; if negative, no constraint.
- *
- * \return UTF-8 encoded textual representation with an SI suffix.
- */
-inline auto HumanReadable(Length const &length, std::int8_t precision = 7,
-                          std::int8_t width = -1) -> std::string {
-  auto value = static_cast<long double>(length.value);
+struct LengthUnitSet {
+  using dimension = LengthDim;
+};
 
-  struct Unit {
-    long double threshold;
-    std::string_view suffix;
-    long double scale;
-  };
+template <> struct UnitRegistry<LengthUnitSet> {
+  static constexpr std::array<UnitDefinition, 7U> units{{
+      {.canonical_name = "Picometer",
+       .symbol = "pm",
+       .display_symbol = "pm",
+       .aliases = {},
+       .literal_suffix = "_pm",
+       .scale = DecimalScale(0),
+       .canonical = true,
+       .automatic_display = true},
+      {.canonical_name = "Nanometer",
+       .symbol = "nm",
+       .display_symbol = "nm",
+       .aliases = {},
+       .literal_suffix = "_nm",
+       .scale = DecimalScale(3),
+       .automatic_display = true},
+      {.canonical_name = "Micrometer",
+       .symbol = "um",
+       .display_symbol = "µm",
+       .aliases = {"µm", "μm"},
+       .literal_suffix = "_um",
+       .scale = DecimalScale(6),
+       .automatic_display = true},
+      {.canonical_name = "Millimeter",
+       .symbol = "mm",
+       .display_symbol = "mm",
+       .aliases = {},
+       .literal_suffix = "_mm",
+       .scale = DecimalScale(9),
+       .automatic_display = true},
+      {.canonical_name = "Centimeter",
+       .symbol = "cm",
+       .display_symbol = "cm",
+       .aliases = {},
+       .literal_suffix = "_cm",
+       .scale = DecimalScale(10),
+       .automatic_display = false},
+      {.canonical_name = "Meter",
+       .symbol = "m",
+       .display_symbol = "m",
+       .aliases = {},
+       .literal_suffix = "_m",
+       .scale = DecimalScale(12),
+       .automatic_display = true},
+      {.canonical_name = "Kilometer",
+       .symbol = "km",
+       .display_symbol = "km",
+       .aliases = {},
+       .literal_suffix = "_km",
+       .scale = DecimalScale(15),
+       .automatic_display = true},
+  }};
+};
 
-  static constexpr std::array<Unit, 6> units{
-      {{.threshold = 1.0e15L, .suffix = " km", .scale = 1.0e15L},
-       {.threshold = 1.0e12L, .suffix = " m", .scale = 1.0e12L},
-       {.threshold = 1.0e9L, .suffix = " mm", .scale = 1.0e9L},
-       {.threshold = 1.0e6L, .suffix = " um", .scale = 1.0e6L},
-       {.threshold = 1.0e3L, .suffix = " nm", .scale = 1.0e3L},
-       {.threshold = 0.0L, .suffix = " pm", .scale = 1.0L}}};
+struct LengthFamily {
+  using dimension = LengthDim;
+  using unit_set = LengthUnitSet;
+  using representation = std::uint64_t;
+  static constexpr std::string_view name{"Length"};
+  static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
+  static constexpr QuantityFormatPolicy format_policy{
+      QuantityFormatPolicy::AutomaticScale};
+  static constexpr std::string_view fixed_display_unit{};
+  static constexpr std::int8_t default_precision{7};
+};
 
-  for (auto const &unit : units) {
-    if (value >= unit.threshold) {
+struct PositionCoordinateFamily {
+  using dimension = LengthDim;
+  using unit_set = LengthUnitSet;
+  using representation = std::int64_t;
+  static constexpr std::string_view name{"PositionCoordinate"};
+  static constexpr QuantityDomain domain{QuantityDomain::Signed};
+  static constexpr QuantityFormatPolicy format_policy{
+      QuantityFormatPolicy::AutomaticScale};
+  static constexpr std::string_view fixed_display_unit{};
+  static constexpr std::int8_t default_precision{7};
+};
 
-      long double scaled = value / unit.scale;
+struct DisplacementFamily {
+  using dimension = LengthDim;
+  using unit_set = LengthUnitSet;
+  using representation = std::int64_t;
+  static constexpr std::string_view name{"Displacement"};
+  static constexpr QuantityDomain domain{QuantityDomain::Signed};
+  static constexpr QuantityFormatPolicy format_policy{
+      QuantityFormatPolicy::AutomaticScale};
+  static constexpr std::string_view fixed_display_unit{};
+  static constexpr std::int8_t default_precision{7};
+};
 
-      std::string fmt;
+using Length = Quantity<LengthFamily>;
+using PositionCoordinate = Quantity<PositionCoordinateFamily>;
+using Displacement = Quantity<DisplacementFamily>;
 
-      if (width < 0) {
-        fmt = std::format("{{:.{}f}}{}", precision, unit.suffix);
-      } else {
-        fmt = std::format("{{:{}.{}f}}{}", width, precision, unit.suffix);
-      }
+static_assert(ValidateUnitSet<LengthUnitSet>());
+static_assert(ValidateFamily<LengthFamily>());
+static_assert(ValidateFamily<PositionCoordinateFamily>());
+static_assert(ValidateFamily<DisplacementFamily>());
 
-      return std::vformat(fmt, std::make_format_args(scaled));
-    }
-  }
-
-  return std::format("{:.{}f} pm", value, precision);
+[[nodiscard]] inline auto HumanReadableSignedLength(std::int64_t value_pm,
+                                                    std::int8_t precision = 7,
+                                                    std::int8_t width = -1)
+    -> std::string {
+  return HumanReadable(PositionCoordinate{value_pm}, precision, width);
 }
 
-[[nodiscard]] inline auto
-HumanReadableSignedLength(std::int64_t const value_pm,
-                          std::int8_t const precision = 7,
-                          std::int8_t const width = -1) -> std::string {
-  if (value_pm >= 0LL) {
-    return HumanReadable(Length{static_cast<std::uint64_t>(value_pm)},
-                         precision, width);
-  }
-
-  std::uint64_t magnitude_pm =
-      static_cast<std::uint64_t>(-(value_pm + 1LL)) + 1ULL;
-
-  return "-" + HumanReadable(Length{magnitude_pm}, precision, width);
+consteval auto operator""_pm(unsigned long long value) -> Length {
+  return MakeQuantity<Length>(value, "pm");
 }
 
-/*!
- * \brief User-defined literal for picometres (pm).
- * \param v Integer literal in pm.
- * \return \c Length quantity equal to \c v pm.
- */
-consteval auto operator""_pm(unsigned long long value) noexcept -> Length {
-  return Length{static_cast<std::uint64_t>(value)};
+consteval auto operator""_pm(long double value) -> Length {
+  return MakeQuantity<Length>(value, "pm");
 }
 
-/*!
- * \brief User-defined literal for picometres (pm) from floating-point.
- * \param v Floating-point literal in pm.
- * \return \c Length quantity approximating \c v pm (fraction truncated).
- */
-consteval auto operator""_pm(long double value) noexcept -> Length {
-  return Length{static_cast<std::uint64_t>(value)};
+consteval auto operator""_nm(unsigned long long value) -> Length {
+  return MakeQuantity<Length>(value, "nm");
 }
 
-/*!
- * \brief User-defined literal for nanometres (nm).
- * \param v Integer literal in nm.
- * \return \c Length quantity equal to \c v × 10³ pm.
- */
-consteval auto operator""_nm(unsigned long long value) noexcept -> Length {
-  return Length{static_cast<std::uint64_t>(value) * 1000ULL};
+consteval auto operator""_nm(long double value) -> Length {
+  return MakeQuantity<Length>(value, "nm");
 }
 
-/*!
- * \brief User-defined literal for nanometres (nm) from floating-point.
- * \param v Floating-point literal in nm.
- * \return \c Length quantity approximating \c v × 10³ pm.
- */
-consteval auto operator""_nm(long double value) noexcept -> Length {
-  return Length{static_cast<std::uint64_t>(value * 1.0e3L)};
+consteval auto operator""_um(unsigned long long value) -> Length {
+  return MakeQuantity<Length>(value, "um");
 }
 
-/*!
- * \brief User-defined literal for micrometres (μm).
- * \param v Integer literal in um.
- * \return \c Length quantity equal to \c v × 10⁶ pm.
- */
-consteval auto operator""_um(unsigned long long value) noexcept -> Length {
-  return Length{static_cast<std::uint64_t>(value) * 1'000'000ULL};
+consteval auto operator""_um(long double value) -> Length {
+  return MakeQuantity<Length>(value, "um");
 }
 
-/*!
- * \brief User-defined literal for micrometres (μm) from floating-point.
- * \param v Floating-point literal in um.
- * \return \c Length quantity approximating \c v × 10⁶ pm.
- */
-consteval auto operator""_um(long double value) noexcept -> Length {
-  return Length{static_cast<std::uint64_t>(value * 1.0e6L)};
+consteval auto operator""_mm(unsigned long long value) -> Length {
+  return MakeQuantity<Length>(value, "mm");
 }
 
-/*!
- * \brief User-defined literal for millimetres (mm).
- * \param v Integer literal in mm.
- * \return \c Length quantity equal to \c v × 10⁹ pm.
- */
-consteval auto operator""_mm(unsigned long long value) noexcept -> Length {
-  return Length{static_cast<std::uint64_t>(value) * 1'000'000'000ULL};
+consteval auto operator""_mm(long double value) -> Length {
+  return MakeQuantity<Length>(value, "mm");
 }
 
-/*!
- * \brief User-defined literal for millimetres (mm) from floating-point.
- * \param v Floating-point literal in mm.
- * \return \c Length quantity approximating \c v × 10⁹ pm.
- */
-consteval auto operator""_mm(long double value) noexcept -> Length {
-  return Length{static_cast<std::uint64_t>(value * 1.0e9L)};
+consteval auto operator""_cm(unsigned long long value) -> Length {
+  return MakeQuantity<Length>(value, "cm");
 }
 
-/*!
- * \brief User-defined literal for metres (m).
- * \param v Integer literal in m.
- * \return \c Length quantity equal to \c v × 10¹² pm.
- */
-consteval auto operator""_m(unsigned long long value) noexcept -> Length {
-  return Length{static_cast<std::uint64_t>(value) * 1'000'000'000'000ULL};
+consteval auto operator""_cm(long double value) -> Length {
+  return MakeQuantity<Length>(value, "cm");
 }
 
-/*!
- * \brief User-defined literal for metres (m) from floating-point.
- * \param v Floating-point literal in m.
- * \return \c Length quantity approximating \c v × 10¹² pm.
- */
-consteval auto operator""_m(long double value) noexcept -> Length {
-  return Length{static_cast<std::uint64_t>(value * 1.0e12L)};
+consteval auto operator""_m(unsigned long long value) -> Length {
+  return MakeQuantity<Length>(value, "m");
 }
 
-/*!
- * \brief User-defined literal for kilometres (km).
- *
- * \param v Integer literal in kilometres.
- * \return \c Length quantity equal to \c v × 10¹⁵ pm.
- */
-consteval auto operator""_km(unsigned long long value) noexcept -> Length {
-  return Length{static_cast<std::uint64_t>(value) * 1'000'000'000'000'000ULL};
+consteval auto operator""_m(long double value) -> Length {
+  return MakeQuantity<Length>(value, "m");
 }
 
-/*!
- * \brief User-defined literal for kilometres (km) from floating-point.
- *
- * \param v Floating-point literal in kilometres.
- * \return \c Length quantity approximating \c v × 10¹⁵ pm.
- */
-consteval auto operator""_km(long double value) noexcept -> Length {
-  return Length{static_cast<std::uint64_t>(value * 1.0e15L)};
+consteval auto operator""_km(unsigned long long value) -> Length {
+  return MakeQuantity<Length>(value, "km");
+}
+
+consteval auto operator""_km(long double value) -> Length {
+  return MakeQuantity<Length>(value, "km");
 }
 } // namespace ggems::units

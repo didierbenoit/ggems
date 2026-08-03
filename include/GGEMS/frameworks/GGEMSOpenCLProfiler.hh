@@ -3,8 +3,8 @@
 #include <chrono>
 #include <cstdint>
 
-#include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
+#include "GGEMS/core/units/GGEMSTimeUnits.hh"
 
 namespace ggems::ocl {
 
@@ -14,8 +14,8 @@ struct GGEMSOpenCLKernelTiming {
   ggems::units::Time time_start{0U};
   ggems::units::Time time_end{0U};
 
-  ggems::units::Time command_time{0U};
-  ggems::units::Time kernel_time{0U};
+  ggems::units::Duration command_time{0U};
+  ggems::units::Duration kernel_time{0U};
 
   bool valid{false};
 };
@@ -47,9 +47,9 @@ public:
     return kernel_timing_.valid;
   }
 
-  [[nodiscard]] ggems::units::Time GetElapsedTime() const noexcept;
-  [[nodiscard]] ggems::units::Time GetKernelTime() const noexcept;
-  [[nodiscard]] ggems::units::Time GetCommandTime() const noexcept;
+  [[nodiscard]] auto GetElapsedTime() const noexcept -> ggems::units::Duration;
+  [[nodiscard]] auto GetKernelTime() const noexcept -> ggems::units::Duration;
+  [[nodiscard]] auto GetCommandTime() const noexcept -> ggems::units::Duration;
 
   [[nodiscard]] double GetElapsedSeconds() const noexcept;
   [[nodiscard]] double GetKernelSeconds() const noexcept;

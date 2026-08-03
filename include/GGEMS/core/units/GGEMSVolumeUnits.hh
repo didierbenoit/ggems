@@ -1,211 +1,142 @@
 #pragma once
-// ************************************************************************
-// * This file is part of GGEMS.                                          *
-// *                                                                      *
-// * GGEMS is free software: you can redistribute it and/or modify        *
-// * it under the terms of the GNU General Public License as published by *
-// * the Free Software Foundation, either version 3 of the License, or    *
-// * (at your option) any later version.                                  *
-// *                                                                      *
-// * GGEMS is distributed in the hope that it will be useful,             *
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
-// * GNU General Public License for more details.                         *
-// *                                                                      *
-// * You should have received a copy of the GNU General Public License    *
-// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
-// ************************************************************************
 
-/*!
- * \file GGEMSVolumeUnits.hh
- * \brief Volume quantity alias and conversion helpers.
- *
- * This header defines the \c Volume quantity used by GGEMS to represent
- * volumetric values in engine base units (cubic picometres), along with
- * a human-readable formatter and a set of compile-time user-defined
- * literals for common volumetric scales.
- *
- * The stored base unit is the cubic picometre (pm³). Higher-level
- * interfaces may convert to nm³, μm³, mm³, m³, or km³ for display.
- *
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-10-12
- * \version 2.0
- * \copyright
- * GNU General Public License v3.0
- */
-
-/// \cond
 #include <array>
-/// \endcond
+#include <cstdint>
+#include <string_view>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace ggems::units {
 
-/*!
- * \brief Volume quantity expressed in cubic picometres.
- *
- * The alias binds the \c VolumeDim dimension (L³) to a \c long double
- * representation. All values are stored in engine base units (pm³),
- * while user-facing formatting may present higher-level scales.
- */
-using Volume = Quantity<VolumeDim, long double>;
+struct VolumeUnitSet {
+  using dimension = VolumeDim;
+};
 
-/*!
- * \brief Converts a volume quantity to a formatted UTF-8 string.
- *
- * Depending on magnitude, the function selects among pm³, nm³, μm³,
- * mm³, m³, or km³. Values are scaled accordingly and a suffix is added.
- *
- * \param v         Volume quantity in pm³.
- * \param precision Number of fractional digits in the formatted output.
- * \param width     Optional minimum field width. If negative, no width
- *                  constraint applies.
- *
- * \return Human-readable representation of the stored volume.
- */
-inline std::string HumanReadable(Volume const &v, std::int8_t precision = 7,
-                                 std::int8_t width = -1) {
-  long double val = v.value;
+template <> struct UnitRegistry<VolumeUnitSet> {
+  static constexpr std::array<UnitDefinition, 7U> units{{
+      {.canonical_name = "CubicPicometer",
+       .symbol = "pm3",
+       .display_symbol = "pm³",
+       .aliases = {"pm³"},
+       .literal_suffix = "_pm3",
+       .scale = DecimalScale(0),
+       .canonical = true,
+       .automatic_display = true},
+      {.canonical_name = "CubicNanometer",
+       .symbol = "nm3",
+       .display_symbol = "nm³",
+       .aliases = {"nm³"},
+       .literal_suffix = "_nm3",
+       .scale = DecimalScale(9),
+       .automatic_display = true},
+      {.canonical_name = "CubicMicrometer",
+       .symbol = "um3",
+       .display_symbol = "µm³",
+       .aliases = {"µm3", "μm3", "um³", "µm³", "μm³"},
+       .literal_suffix = "_um3",
+       .scale = DecimalScale(18),
+       .automatic_display = true},
+      {.canonical_name = "CubicMillimeter",
+       .symbol = "mm3",
+       .display_symbol = "mm³",
+       .aliases = {"mm³"},
+       .literal_suffix = "_mm3",
+       .scale = DecimalScale(27),
+       .automatic_display = true},
+      {.canonical_name = "CubicCentimeter",
+       .symbol = "cm3",
+       .display_symbol = "cm³",
+       .aliases = {"cm³"},
+       .literal_suffix = "_cm3",
+       .scale = DecimalScale(30),
+       .automatic_display = false},
+      {.canonical_name = "CubicMeter",
+       .symbol = "m3",
+       .display_symbol = "m³",
+       .aliases = {"m³"},
+       .literal_suffix = "_m3",
+       .scale = DecimalScale(36),
+       .automatic_display = true},
+      {.canonical_name = "CubicKilometer",
+       .symbol = "km3",
+       .display_symbol = "km³",
+       .aliases = {"km³"},
+       .literal_suffix = "_km3",
+       .scale = DecimalScale(45),
+       .automatic_display = true},
+  }};
+};
 
-  struct Unit {
-    long double threshold;
-    std::string_view suffix;
-    long double scale;
-  };
+struct VolumeFamily {
+  using dimension = VolumeDim;
+  using unit_set = VolumeUnitSet;
+  using representation = long double;
+  static constexpr std::string_view name{"Volume"};
+  static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
+  static constexpr QuantityFormatPolicy format_policy{
+      QuantityFormatPolicy::AutomaticScale};
+  static constexpr std::string_view fixed_display_unit{};
+  static constexpr std::int8_t default_precision{7};
+};
 
-  static constexpr std::array<Unit, 6> units{{{1.0e45L, " km3", 1.0e45L},
-                                              {1.0e36L, " m3", 1.0e36L},
-                                              {1.0e27L, " mm3", 1.0e27L},
-                                              {1.0e18L, " um3", 1.0e18L},
-                                              {1.0e9L, " nm3", 1.0e9L},
-                                              {0.0L, " pm3", 1.0L}}};
+using Volume = Quantity<VolumeFamily>;
 
-  for (auto const &u : units) {
-    if (val >= u.threshold) {
+static_assert(ValidateUnitSet<VolumeUnitSet>());
+static_assert(ValidateFamily<VolumeFamily>());
 
-      long double scaled = val / u.scale;
-
-      std::string fmt;
-      if (width < 0) {
-        fmt = std::format("{{:.{}f}}{}", precision, u.suffix);
-      } else {
-        fmt = std::format("{{:{}.{}f}}{}", width, precision, u.suffix);
-      }
-
-      return std::vformat(fmt, std::make_format_args(scaled));
-    }
-  }
-
-  return std::format("{:.{}f} pm3", val, precision);
+consteval auto operator""_pm3(unsigned long long value) -> Volume {
+  return MakeQuantity<Volume>(value, "pm3");
 }
 
-/*!
- * \brief User-defined literal for integer volume in pm³.
- * \param v Integer literal in pm³.
- * \return \c Volume quantity equal to \c v pm³.
- */
-consteval Volume operator""_pm3(unsigned long long v) noexcept {
-  return Volume{static_cast<long double>(v)};
+consteval auto operator""_pm3(long double value) -> Volume {
+  return MakeQuantity<Volume>(value, "pm3");
 }
 
-/*!
- * \brief User-defined literal for floating-point volume in pm³.
- * \param v Floating-point literal in pm³.
- * \return \c Volume quantity approximating \c v pm³.
- */
-consteval Volume operator""_pm3(long double v) noexcept { return Volume{v}; }
-
-/*!
- * \brief User-defined literal for integer volume in nm³.
- * \param v Integer literal in nm³.
- * \return \c Volume quantity equal to \c v × 10⁹ pm³.
- */
-consteval Volume operator""_nm3(unsigned long long v) noexcept {
-  return Volume{static_cast<long double>(v) * 1.0e9L};
+consteval auto operator""_nm3(unsigned long long value) -> Volume {
+  return MakeQuantity<Volume>(value, "nm3");
 }
 
-/*!
- * \brief User-defined literal for floating-point volume in nm³.
- * \param v Floating-point literal in nm³.
- * \return \c Volume quantity approximating \c v × 10⁹ pm³.
- */
-consteval Volume operator""_nm3(long double v) noexcept {
-  return Volume{v * 1.0e9L};
+consteval auto operator""_nm3(long double value) -> Volume {
+  return MakeQuantity<Volume>(value, "nm3");
 }
 
-/*!
- * \brief User-defined literal for integer volume in μm³.
- * \param v Integer literal in μm³.
- * \return \c Volume quantity equal to \c v × 10¹⁸ pm³.
- */
-consteval Volume operator""_um3(unsigned long long v) noexcept {
-  return Volume{static_cast<long double>(v) * 1.0e18L};
+consteval auto operator""_um3(unsigned long long value) -> Volume {
+  return MakeQuantity<Volume>(value, "um3");
 }
 
-/*!
- * \brief User-defined literal for floating-point volume in μm³.
- * \param v Floating-point literal in μm³.
- * \return \c Volume quantity approximating \c v × 10¹⁸ pm³.
- */
-consteval Volume operator""_um3(long double v) noexcept {
-  return Volume{v * 1.0e18L};
+consteval auto operator""_um3(long double value) -> Volume {
+  return MakeQuantity<Volume>(value, "um3");
 }
 
-/*!
- * \brief User-defined literal for integer volume in mm³.
- * \param v Integer literal in mm³.
- * \return \c Volume quantity equal to \c v × 10²⁷ pm³.
- */
-consteval Volume operator""_mm3(unsigned long long v) noexcept {
-  return Volume{static_cast<long double>(v) * 1.0e27L};
+consteval auto operator""_mm3(unsigned long long value) -> Volume {
+  return MakeQuantity<Volume>(value, "mm3");
 }
 
-/*!
- * \brief User-defined literal for floating-point volume in mm³.
- * \param v Floating-point literal in mm³.
- * \return \c Volume quantity approximating \c v × 10²⁷ pm³.
- */
-consteval Volume operator""_mm3(long double v) noexcept {
-  return Volume{v * 1.0e27L};
+consteval auto operator""_mm3(long double value) -> Volume {
+  return MakeQuantity<Volume>(value, "mm3");
 }
 
-/*!
- * \brief User-defined literal for integer volume in m³.
- * \param v Integer literal in m³.
- * \return \c Volume quantity equal to \c v × 10³⁶ pm³.
- */
-consteval Volume operator""_m3(unsigned long long v) noexcept {
-  return Volume{static_cast<long double>(v) * 1.0e36L};
+consteval auto operator""_cm3(unsigned long long value) -> Volume {
+  return MakeQuantity<Volume>(value, "cm3");
 }
 
-/*!
- * \brief User-defined literal for floating-point volume in m³.
- * \param v Floating-point literal in m³.
- * \return \c Volume quantity approximating \c v × 10³⁶ pm³.
- */
-consteval Volume operator""_m3(long double v) noexcept {
-  return Volume{v * 1.0e36L};
+consteval auto operator""_cm3(long double value) -> Volume {
+  return MakeQuantity<Volume>(value, "cm3");
 }
 
-/*!
- * \brief User-defined literal for integer volume in km³.
- * \param v Integer literal in km³.
- * \return \c Volume quantity equal to \c v × 10⁴⁵ pm³.
- */
-consteval Volume operator""_km3(unsigned long long v) noexcept {
-  return Volume{static_cast<long double>(v) * 1.0e45L};
+consteval auto operator""_m3(unsigned long long value) -> Volume {
+  return MakeQuantity<Volume>(value, "m3");
 }
 
-/*!
- * \brief User-defined literal for floating-point volume in km³.
- * \param v Floating-point literal in km³.
- * \return \c Volume quantity approximating \c v × 10⁴⁵ pm³.
- */
-consteval Volume operator""_km3(long double v) noexcept {
-  return Volume{v * 1.0e45L};
+consteval auto operator""_m3(long double value) -> Volume {
+  return MakeQuantity<Volume>(value, "m3");
 }
 
+consteval auto operator""_km3(unsigned long long value) -> Volume {
+  return MakeQuantity<Volume>(value, "km3");
+}
+
+consteval auto operator""_km3(long double value) -> Volume {
+  return MakeQuantity<Volume>(value, "km3");
+}
 } // namespace ggems::units

@@ -28,6 +28,8 @@
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/core/sources/GGEMSSourcePopulationRecord.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/core/units/GGEMSTimeUnits.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace ggems::core::sources {
 
@@ -283,8 +285,8 @@ auto BuildScaledDecay(
     GGEMSTimeWindow time_window,
     radioactivity::GGEMSRadionuclideDefinition const &definition) -> float {
   std::uint64_t const duration_ps = time_window.stop_ps - time_window.start_ps;
-  long double const duration_seconds =
-      static_cast<long double>(duration_ps) * 1.0e-12L;
+  auto const duration_seconds =
+      *units::TryConvertTo(units::Duration{duration_ps}, "s");
   long double const scaled_decay = std::numbers::ln2_v<long double> *
                                    duration_seconds /
                                    definition.GetHalfLifeSeconds();

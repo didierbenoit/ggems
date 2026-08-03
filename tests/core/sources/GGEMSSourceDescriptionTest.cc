@@ -59,7 +59,7 @@ constexpr std::string_view k_reconfigured_source_description{
     "Particle: Gamma (g) | Emission: Point | Angular: Fixed | "
     "Energy: Mono (511.0000000 keV) | "
     "Time: fixed at 0.0000000 ps | "
-    "Position: (0.0000000 pm, 0.0000000 pm, 1.0000000 um) | "
+    "Position: (0.0000000 pm, 0.0000000 pm, 1.0000000 µm) | "
     "Axis Z: (0, 1, 0) | Weight: 0.5"};
 
 // =============================================================================

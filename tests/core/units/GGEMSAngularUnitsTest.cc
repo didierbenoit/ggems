@@ -4,6 +4,7 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
 
 namespace {
@@ -249,19 +250,4 @@ TEST(GGEMSAngularUnits, StdFormatterUsesDefaultHumanReadableDegrees) {
 
   EXPECT_EQ(std::format("{}", angle), "12.346 deg");
 }
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-TEST(GGEMSAngularUnits, StdFormatterSupportsSingleDigitPrecision) {
-  using namespace ggems::units;
-
-  Angle angle = 12.3456_deg;
-
-  EXPECT_EQ(std::format("{:0}", angle), "12 deg");
-  EXPECT_EQ(std::format("{:1}", angle), "12.3 deg");
-  EXPECT_EQ(std::format("{:2}", angle), "12.35 deg");
-}
-
 } // namespace

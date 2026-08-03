@@ -1,201 +1,111 @@
 #pragma once
-// ************************************************************************
-// * This file is part of GGEMS.                                          *
-// *                                                                      *
-// * GGEMS is free software: you can redistribute it and/or modify        *
-// * it under the terms of the GNU General Public License as published by *
-// * the Free Software Foundation, either version 3 of the License, or    *
-// * (at your option) any later version.                                  *
-// *                                                                      *
-// * GGEMS is distributed in the hope that it will be useful,             *
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
-// * GNU General Public License for more details.                         *
-// *                                                                      *
-// * You should have received a copy of the GNU General Public License    *
-// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
-// *                                                                      *
-// ************************************************************************
 
-/*!
- * \file GGEMSFrequencyUnits.hh
- * \brief Frequency units for GGEMS expressed in base Hertz (Hz).
- *
- * Defines the \c Frequency quantity bound to the frequency dimension,
- * together with user-defined literals for constructing strongly-typed
- * frequency values. A helper function provides human-readable textual
- * representations using SI prefixes (kHz, MHz, GHz, THz).
- *
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-10-29
- * \version 2.0
- * \copyright
- * GNU General Public License v3.0
- */
+#include <array>
+#include <cstdint>
+#include <string_view>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
 
-/// \cond
-#include <array>
-/// \endcond
-
 namespace ggems::units {
-/*!
- * \brief Frequency quantity expressed in Hertz.
- *
- * This alias binds the \c FrequencyDim dimension to an unsigned 64-bit
- * representation. Stored values correspond to base engine units (Hz),
- * while higher-level formatting may expose scaled SI prefixes such as
- * kHz, MHz, GHz, or THz.
- */
-using Frequency = Quantity<FrequencyDim, std::uint64_t>;
 
-/*!
- * \brief Converts a frequency quantity into a human-readable UTF-8 string.
- *
- * The function selects an appropriate SI prefix based on the magnitude
- * (kHz, MHz, GHz, THz). Text output uses fixed precision and optional
- * minimum width, providing clear alignment in logs or UI components.
- *
- * \param f         Frequency quantity expressed in Hertz.
- * \param precision Digits after the decimal point.
- * \param width     Minimum formatted field width; if negative, no constraint.
- *
- * \return UTF-8 text representation of the scaled frequency.
- */
-inline std::string HumanReadable(Frequency const &f, std::int8_t precision = 7,
-                                 std::int8_t width = -1) {
-  long double v = static_cast<long double>(f.value);
+struct FrequencyUnitSet {
+  using dimension = FrequencyDim;
+};
 
-  struct Unit {
-    long double threshold;
-    std::string_view suffix;
-    long double scale;
-  };
+template <> struct UnitRegistry<FrequencyUnitSet> {
+  static constexpr std::array<UnitDefinition, 5U> units{{
+      {.canonical_name = "Hertz",
+       .symbol = "Hz",
+       .display_symbol = "Hz",
+       .aliases = {},
+       .literal_suffix = "_Hz",
+       .scale = DecimalScale(0),
+       .canonical = true,
+       .automatic_display = true},
+      {.canonical_name = "Kilohertz",
+       .symbol = "kHz",
+       .display_symbol = "kHz",
+       .aliases = {},
+       .literal_suffix = "_kHz",
+       .scale = DecimalScale(3),
+       .automatic_display = true},
+      {.canonical_name = "Megahertz",
+       .symbol = "MHz",
+       .display_symbol = "MHz",
+       .aliases = {},
+       .literal_suffix = "_MHz",
+       .scale = DecimalScale(6),
+       .automatic_display = true},
+      {.canonical_name = "Gigahertz",
+       .symbol = "GHz",
+       .display_symbol = "GHz",
+       .aliases = {},
+       .literal_suffix = "_GHz",
+       .scale = DecimalScale(9),
+       .automatic_display = true},
+      {.canonical_name = "Terahertz",
+       .symbol = "THz",
+       .display_symbol = "THz",
+       .aliases = {},
+       .literal_suffix = "_THz",
+       .scale = DecimalScale(12),
+       .automatic_display = true},
+  }};
+};
 
-  static constexpr std::array<Unit, 5> units{{{1.0e12L, " THz", 1.0e12L},
-                                              {1.0e9L, " GHz", 1.0e9L},
-                                              {1.0e6L, " MHz", 1.0e6L},
-                                              {1.0e3L, " kHz", 1.0e3L},
-                                              {0.0L, " Hz", 1.0L}}};
+struct FrequencyFamily {
+  using dimension = FrequencyDim;
+  using unit_set = FrequencyUnitSet;
+  using representation = std::uint64_t;
+  static constexpr std::string_view name{"Frequency"};
+  static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
+  static constexpr QuantityFormatPolicy format_policy{
+      QuantityFormatPolicy::AutomaticScale};
+  static constexpr std::string_view fixed_display_unit{};
+  static constexpr std::int8_t default_precision{7};
+};
 
-  for (auto const &u : units) {
-    if (v >= u.threshold) {
+using Frequency = Quantity<FrequencyFamily>;
 
-      long double scaled = v / u.scale;
+static_assert(ValidateUnitSet<FrequencyUnitSet>());
+static_assert(ValidateFamily<FrequencyFamily>());
 
-      std::string fmt;
-
-      if (width < 0) {
-        fmt = std::format("{{:.{}f}}{}", precision, u.suffix);
-      } else {
-        fmt = std::format("{{:{}.{}f}}{}", width, precision, u.suffix);
-      }
-
-      return std::vformat(fmt, std::make_format_args(scaled));
-    }
-  }
-
-  return std::format("{:.{}f} Hz", v, precision);
+consteval auto operator""_Hz(unsigned long long value) -> Frequency {
+  return MakeQuantity<Frequency>(value, "Hz");
 }
 
-/*!
- * \brief Constructs a \c Frequency quantity from an integer literal in Hertz.
- * \param v Integer literal in Hz.
- * \return \c Frequency value equal to \c v Hz.
- */
-consteval Frequency operator""_Hz(unsigned long long v) noexcept {
-  return Frequency{static_cast<std::uint64_t>(v)};
+consteval auto operator""_Hz(long double value) -> Frequency {
+  return MakeQuantity<Frequency>(value, "Hz");
 }
 
-/*!
- * \brief Constructs a \c Frequency quantity from a floating-point literal in
- * Hertz.
- * \param v Floating-point literal in Hz.
- * \return \c Frequency value approximating \c v Hz (truncated to integer).
- */
-consteval Frequency operator""_Hz(long double v) noexcept {
-  return Frequency{static_cast<std::uint64_t>(v)};
+consteval auto operator""_kHz(unsigned long long value) -> Frequency {
+  return MakeQuantity<Frequency>(value, "kHz");
 }
 
-/*!
- * \brief Constructs a \c Frequency quantity from an integer literal in
- * kilohertz.
- * \param v Integer literal in kHz.
- * \return \c Frequency value equal to \c v × 10³ Hz.
- */
-consteval Frequency operator""_kHz(unsigned long long v) noexcept {
-  return Frequency{static_cast<std::uint64_t>(v) * 1'000ULL};
+consteval auto operator""_kHz(long double value) -> Frequency {
+  return MakeQuantity<Frequency>(value, "kHz");
 }
 
-/*!
- * \brief Constructs a \c Frequency quantity from a floating-point literal in
- * kilohertz.
- * \param v Floating-point literal in kHz.
- * \return \c Frequency value approximating \c v × 10³ Hz.
- */
-consteval Frequency operator""_kHz(long double v) noexcept {
-  return Frequency{static_cast<std::uint64_t>(v * 1.0e3L)};
+consteval auto operator""_MHz(unsigned long long value) -> Frequency {
+  return MakeQuantity<Frequency>(value, "MHz");
 }
 
-/*!
- * \brief Constructs a \c Frequency quantity from an integer literal in
- * megahertz.
- * \param v Integer literal in MHz.
- * \return \c Frequency value equal to \c v × 10⁶ Hz.
- */
-consteval Frequency operator""_MHz(unsigned long long v) noexcept {
-  return Frequency{static_cast<std::uint64_t>(v) * 1'000'000ULL};
+consteval auto operator""_MHz(long double value) -> Frequency {
+  return MakeQuantity<Frequency>(value, "MHz");
+}
+consteval auto operator""_GHz(unsigned long long value) -> Frequency {
+  return MakeQuantity<Frequency>(value, "GHz");
 }
 
-/*!
- * \brief Constructs a \c Frequency quantity from a floating-point literal in
- * megahertz.
- * \param v Floating-point literal in MHz.
- * \return \c Frequency value approximating \c v × 10⁶ Hz.
- */
-consteval Frequency operator""_MHz(long double v) noexcept {
-  return Frequency{static_cast<std::uint64_t>(v * 1.0e6L)};
+consteval auto operator""_GHz(long double value) -> Frequency {
+  return MakeQuantity<Frequency>(value, "GHz");
 }
 
-/*!
- * \brief Constructs a \c Frequency quantity from an integer literal in
- * gigahertz.
- * \param v Integer literal in GHz.
- * \return \c Frequency value equal to \c v × 10⁹ Hz.
- */
-consteval Frequency operator""_GHz(unsigned long long v) noexcept {
-  return Frequency{static_cast<std::uint64_t>(v) * 1'000'000'000ULL};
+consteval auto operator""_THz(unsigned long long value) -> Frequency {
+  return MakeQuantity<Frequency>(value, "THz");
 }
 
-/*!
- * \brief Constructs a \c Frequency quantity from a floating-point literal in
- * gigahertz.
- * \param v Floating-point literal in GHz.
- * \return \c Frequency value approximating \c v × 10⁹ Hz.
- */
-consteval Frequency operator""_GHz(long double v) noexcept {
-  return Frequency{static_cast<std::uint64_t>(v * 1.0e9L)};
-}
-
-/*!
- * \brief Constructs a \c Frequency quantity from an integer literal in
- * terahertz.
- * \param v Integer literal in THz.
- * \return \c Frequency value equal to \c v × 10¹² Hz.
- */
-consteval Frequency operator""_THz(unsigned long long v) noexcept {
-  return Frequency{static_cast<std::uint64_t>(v) * 1'000'000'000'000ULL};
-}
-
-/*!
- * \brief Constructs a \c Frequency quantity from a floating-point literal in
- * terahertz.
- * \param v Floating-point literal in THz.
- * \return \c Frequency value approximating \c v × 10¹² Hz.
- */
-consteval Frequency operator""_THz(long double v) noexcept {
-  return Frequency{static_cast<std::uint64_t>(v * 1.0e12L)};
+consteval auto operator""_THz(long double value) -> Frequency {
+  return MakeQuantity<Frequency>(value, "THz");
 }
 } // namespace ggems::units

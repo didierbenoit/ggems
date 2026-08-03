@@ -78,9 +78,8 @@ target_compile_definitions(
 target_link_libraries(ggems_core_tests PRIVATE ggems_core
                                                ${GGEMS_GTEST_MAIN_TARGET})
 
-target_include_directories(
-  ggems_core_tests PRIVATE ${PROJECT_SOURCE_DIR}/include
-                           ${PROJECT_SOURCE_DIR}/python)
+target_include_directories(ggems_core_tests
+                           PRIVATE ${PROJECT_SOURCE_DIR}/include)
 
 ggems_apply_release_optimizations(ggems_core_tests)
 

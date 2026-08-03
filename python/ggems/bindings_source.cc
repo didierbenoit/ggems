@@ -13,10 +13,11 @@
 
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
-#include "GGEMSSourceBindingUtilities.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/core/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
+#include "GGEMS/core/units/GGEMSLengthUnits.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace py = pybind11;
 
@@ -44,111 +45,46 @@ auto ConvertPrimaryCount(py::handle primary_count) -> std::uint64_t {
 // =============================================================================
 // =============================================================================
 
-auto ConvertEnergyToMilliElectronVolt(double energy, std::string const &unit)
-    -> std::uint64_t {
-  auto const conversion =
-      ggems::units::TryConvertEnergyToMilliElectronVolt(energy, unit);
+[[noreturn]] auto ThrowSourceQuantityConversionError(
+    ggems::units::UnitConversionError error, std::string_view quantity,
+    std::string_view unit_kind, std::string_view unit) -> void {
+  using ggems::units::UnitConversionError;
 
-  if (conversion.has_value()) {
-    return *conversion;
-  }
-
-  using ggems::units::EnergyConversionError;
-
-  switch (conversion.error()) {
-  case EnergyConversionError::NonFinite:
-    throw py::value_error("Source energy must be finite.");
-  case EnergyConversionError::NonPositive:
-    throw py::value_error("Source energy must be strictly positive.");
-  case EnergyConversionError::UnsupportedUnit:
+  switch (error) {
+  case UnitConversionError::UnsupportedUnit:
     throw py::value_error(
-        std::format("Unsupported GGEMS energy unit '{}'.", unit));
-  case EnergyConversionError::OutOfRange:
-    throw py::value_error("Source energy is too large.");
-  }
-
-  throw py::value_error("Source energy conversion failed.");
-}
-
-// =============================================================================
-// =============================================================================
-
-auto ConvertDistanceToPicometre(double distance, std::string const &unit,
-                                std::string_view quantity) -> std::int64_t {
-  auto const conversion =
-      ggems::python::detail::TryConvertDistanceToPicometre(distance, unit);
-
-  if (conversion.has_value()) {
-    return *conversion;
-  }
-
-  using ggems::python::detail::DistanceToPicometreError;
-
-  if (conversion.error() == DistanceToPicometreError::NonFinite) {
+        std::format("Unsupported GGEMS {} unit '{}'.", unit_kind, unit));
+  case UnitConversionError::NonFinite:
     throw py::value_error(std::format("{} must be finite.", quantity));
-  }
-
-  if (conversion.error() == DistanceToPicometreError::UnsupportedUnit) {
+  case UnitConversionError::NegativeValue:
     throw py::value_error(
-        std::format("Unsupported GGEMS distance unit '{}'.", unit));
+        std::format("{} must not be positive or zero.", quantity));
+  case UnitConversionError::OutOfRange:
+    throw py::value_error(std::format("{} is too large.", quantity));
+  case UnitConversionError::InexactConversion:
+    throw py::value_error(std::format(
+        "{} cannot be represented in GGEMS canonical units.", quantity));
   }
 
-  throw py::value_error(std::format("{} is too large.", quantity));
+  throw py::value_error("Source quantity conversion failed.");
 }
 
 // =============================================================================
 // =============================================================================
 
-auto ConvertAngle(double angle, std::string const &unit)
-    -> ggems::units::Angle {
-  if (!std::isfinite(angle)) {
-    throw py::value_error("Source angle must be finite.");
+template <ggems::units::QuantityType QuantityValue>
+auto ConvertSourceQuantity(double value, std::string_view unit,
+                           std::string_view quantity,
+                           std::string_view unit_kind) -> QuantityValue {
+  auto const conversion = ggems::units::TryMakeQuantity<QuantityValue>(
+      static_cast<long double>(value), unit);
+
+  if (!conversion.has_value()) {
+    ThrowSourceQuantityConversionError(conversion.error(), quantity, unit_kind,
+                                       unit);
   }
 
-  if (unit == "deg") {
-    return ggems::units::MakeDegrees(static_cast<long double>(angle));
-  }
-
-  if (unit == "rad") {
-    return ggems::units::MakeRadians(static_cast<long double>(angle));
-  }
-
-  throw py::value_error(
-      std::format("Unsupported GGEMS angle unit '{}'.", unit));
-}
-
-// =============================================================================
-// =============================================================================
-
-auto ConvertPositiveDistanceToPicometre(double distance,
-                                        std::string const &unit,
-                                        std::string_view quantity)
-    -> std::uint64_t {
-  auto const conversion =
-      ggems::python::detail::TryConvertPositiveDistanceToPicometre(distance,
-                                                                   unit);
-
-  if (conversion.has_value()) {
-    return *conversion;
-  }
-
-  using ggems::python::detail::DistanceToPicometreError;
-
-  if (conversion.error() == DistanceToPicometreError::NonFinite) {
-    throw py::value_error(std::format("{} must be finite.", quantity));
-  }
-
-  if (conversion.error() == DistanceToPicometreError::NonPositive) {
-    throw py::value_error(
-        std::format("{} must be strictly positive.", quantity));
-  }
-
-  if (conversion.error() == DistanceToPicometreError::UnsupportedUnit) {
-    throw py::value_error(
-        std::format("Unsupported GGEMS distance unit '{}'.", unit));
-  }
-
-  throw py::value_error(std::format("{} is too large.", quantity));
+  return *conversion;
 }
 } // namespace
 
@@ -172,10 +108,12 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double width, double height,
              std::string const &unit) -> GGEMSSource & {
             return self.SetRectangleEmissionPicoMeter(
-                ConvertPositiveDistanceToPicometre(width, unit,
-                                                   "Source rectangle width"),
-                ConvertPositiveDistanceToPicometre(height, unit,
-                                                   "Source rectangle height"));
+                ConvertSourceQuantity<ggems::units::Length>(
+                    width, unit, "Source rectangle width", "length")
+                    .value,
+                ConvertSourceQuantity<ggems::units::Length>(
+                    height, unit, "Source rectangle height", "length")
+                    .value);
           },
           py::arg("width"), py::arg("height"), py::arg("unit") = "mm",
           py::return_value_policy::reference_internal)
@@ -185,10 +123,12 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double diameter_x, double diameter_y,
              std::string const &unit) -> GGEMSSource & {
             return self.SetEllipseEmissionPicoMeter(
-                ConvertPositiveDistanceToPicometre(diameter_x, unit,
-                                                   "Source ellipse X diameter"),
-                ConvertPositiveDistanceToPicometre(
-                    diameter_y, unit, "Source ellipse Y diameter"));
+                ConvertSourceQuantity<ggems::units::Length>(
+                    diameter_x, unit, "Source ellipse X diameter", "length")
+                    .value,
+                ConvertSourceQuantity<ggems::units::Length>(
+                    diameter_y, unit, "Source ellipse Y diameter", "length")
+                    .value);
           },
           py::arg("diameter_x"), py::arg("diameter_y"), py::arg("unit") = "mm",
           py::return_value_policy::reference_internal)
@@ -198,8 +138,9 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double diameter,
              std::string const &unit) -> GGEMSSource & {
             return self.SetCircleEmissionPicoMeter(
-                ConvertPositiveDistanceToPicometre(diameter, unit,
-                                                   "Source circle diameter"));
+                ConvertSourceQuantity<ggems::units::Length>(
+                    diameter, unit, "Source circle diameter", "length")
+                    .value);
           },
           py::arg("diameter"), py::arg("unit") = "mm",
           py::return_value_policy::reference_internal)
@@ -209,12 +150,15 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double width, double height, double depth,
              std::string const &unit) -> GGEMSSource & {
             return self.SetBoxEmissionPicoMeter(
-                ConvertPositiveDistanceToPicometre(width, unit,
-                                                   "Source box width"),
-                ConvertPositiveDistanceToPicometre(height, unit,
-                                                   "Source box height"),
-                ConvertPositiveDistanceToPicometre(depth, unit,
-                                                   "Source box depth"));
+                ConvertSourceQuantity<ggems::units::Length>(
+                    width, unit, "Source box width", "length")
+                    .value,
+                ConvertSourceQuantity<ggems::units::Length>(
+                    height, unit, "Source box height", "length")
+                    .value,
+                ConvertSourceQuantity<ggems::units::Length>(
+                    depth, unit, "Source box depth", "length")
+                    .value);
           },
           py::arg("width"), py::arg("height"), py::arg("depth"),
           py::arg("unit") = "mm", py::return_value_policy::reference_internal)
@@ -224,8 +168,9 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double diameter,
              std::string const &unit) -> GGEMSSource & {
             return self.SetSphereEmissionPicoMeter(
-                ConvertPositiveDistanceToPicometre(diameter, unit,
-                                                   "Source sphere diameter"));
+                ConvertSourceQuantity<ggems::units::Length>(
+                    diameter, unit, "Source sphere diameter", "length")
+                    .value);
           },
           py::arg("diameter"), py::arg("unit") = "mm",
           py::return_value_policy::reference_internal)
@@ -235,10 +180,12 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double diameter, double height,
              std::string const &unit) -> GGEMSSource & {
             return self.SetCylinderEmissionPicoMeter(
-                ConvertPositiveDistanceToPicometre(diameter, unit,
-                                                   "Source cylinder diameter"),
-                ConvertPositiveDistanceToPicometre(height, unit,
-                                                   "Source cylinder height"));
+                ConvertSourceQuantity<ggems::units::Length>(
+                    diameter, unit, "Source cylinder diameter", "length")
+                    .value,
+                ConvertSourceQuantity<ggems::units::Length>(
+                    height, unit, "Source cylinder height", "length")
+                    .value);
           },
           py::arg("diameter"), py::arg("height"), py::arg("unit") = "mm",
           py::return_value_policy::reference_internal)
@@ -259,8 +206,14 @@ auto BindSource(py::module_ &mod) -> void {
              double phi_min, double phi_max,
              std::string const &unit) -> GGEMSSource & {
             return self.SetIsotropicAngularDistribution(
-                ConvertAngle(theta_min, unit), ConvertAngle(theta_max, unit),
-                ConvertAngle(phi_min, unit), ConvertAngle(phi_max, unit));
+                ConvertSourceQuantity<ggems::units::Angle>(
+                    theta_min, unit, "Source angle", "angle"),
+                ConvertSourceQuantity<ggems::units::Angle>(
+                    theta_max, unit, "Source angle", "angle"),
+                ConvertSourceQuantity<ggems::units::Angle>(
+                    phi_min, unit, "Source angle", "angle"),
+                ConvertSourceQuantity<ggems::units::Angle>(
+                    phi_max, unit, "Source angle", "angle"));
           },
           py::arg("theta_min"), py::arg("theta_max"), py::arg("phi_min"),
           py::arg("phi_max"), py::arg("unit") = "deg",
@@ -271,12 +224,15 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double focus_x, double focus_y, double focus_z,
              std::string const &unit) -> GGEMSSource & {
             return self.SetFocusedAngularDistributionPicoMeter(
-                ConvertDistanceToPicometre(focus_x, unit,
-                                           "Source focus position"),
-                ConvertDistanceToPicometre(focus_y, unit,
-                                           "Source focus position"),
-                ConvertDistanceToPicometre(focus_z, unit,
-                                           "Source focus position"));
+                ConvertSourceQuantity<ggems::units::PositionCoordinate>(
+                    focus_x, unit, "Source focus position", "length")
+                    .value,
+                ConvertSourceQuantity<ggems::units::PositionCoordinate>(
+                    focus_y, unit, "Source focus position", "length")
+                    .value,
+                ConvertSourceQuantity<ggems::units::PositionCoordinate>(
+                    focus_z, unit, "Source focus position", "length")
+                    .value);
           },
           py::arg("focus_x"), py::arg("focus_y"), py::arg("focus_z"),
           py::arg("unit") = "mm", py::return_value_policy::reference_internal)
@@ -302,7 +258,9 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double const energy,
              std::string const &unit) -> GGEMSSource & {
             return self.SetEnergyMilliElectronVolt(
-                ConvertEnergyToMilliElectronVolt(energy, unit));
+                ConvertSourceQuantity<ggems::units::Energy>(
+                    energy, unit, "Source energy", "energy")
+                    .value);
           },
           py::arg("energy"), py::arg("unit") = "keV",
           py::return_value_policy::reference_internal)
@@ -341,9 +299,15 @@ auto BindSource(py::module_ &mod) -> void {
           [](GGEMSSource &self, double const pos_x, double const pos_y,
              double const pos_z, std::string const &unit) -> GGEMSSource & {
             return self.SetPositionPicoMeter(
-                ConvertDistanceToPicometre(pos_x, unit, "Source position"),
-                ConvertDistanceToPicometre(pos_y, unit, "Source position"),
-                ConvertDistanceToPicometre(pos_z, unit, "Source position"));
+                ConvertSourceQuantity<ggems::units::PositionCoordinate>(
+                    pos_x, unit, "Source position", "length")
+                    .value,
+                ConvertSourceQuantity<ggems::units::PositionCoordinate>(
+                    pos_y, unit, "Source position", "length")
+                    .value,
+                ConvertSourceQuantity<ggems::units::PositionCoordinate>(
+                    pos_z, unit, "Source position", "length")
+                    .value);
           },
           py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
           py::return_value_policy::reference_internal)

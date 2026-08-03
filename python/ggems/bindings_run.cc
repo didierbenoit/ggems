@@ -5,29 +5,33 @@
 
 #include <pybind11/pybind11.h>
 
-#include "GGEMS/core/observer/GGEMSTransportObserver.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
+#include "GGEMS/core/observer/GGEMSTransportObserver.hh"
 #include "GGEMS/core/GGEMSRun.hh"
-#include "GGEMSTimeBindingUtilities.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSTimeUnits.hh"
 
 namespace py = pybind11;
 
 namespace {
 
 [[noreturn]] auto
-ThrowRunTimeConversionError(ggems::python::detail::TimeConversionError error,
+ThrowRunTimeConversionError(ggems::units::UnitConversionError error,
                             std::string_view unit) -> void {
-  using ggems::python::detail::TimeConversionError;
+  using ggems::units::UnitConversionError;
 
   switch (error) {
-  case TimeConversionError::NonFinite:
+  case UnitConversionError::NonFinite:
     throw py::value_error("Run time must be finite.");
-  case TimeConversionError::Negative:
+  case UnitConversionError::NegativeValue:
     throw py::value_error("Run time must be positive or zero.");
-  case TimeConversionError::UnsupportedUnit:
+  case UnitConversionError::UnsupportedUnit:
     throw py::value_error(std::format("Unsupported Run time unit '{}'.", unit));
-  case TimeConversionError::OutOfRange:
+  case UnitConversionError::OutOfRange:
     throw py::value_error("Run time is too large.");
+  case UnitConversionError::InexactConversion:
+    throw py::value_error(
+        "Run time cannot be represented in GGEMS canonical units.");
   }
 
   throw py::value_error("Run time conversion failed.");
@@ -36,13 +40,14 @@ ThrowRunTimeConversionError(ggems::python::detail::TimeConversionError error,
 // =============================================================================
 // =============================================================================
 
+template <ggems::units::QuantityType TimeQuantity>
 auto ConvertRunTimeToPicoSecond(double time, std::string_view unit)
     -> std::uint64_t {
-  auto const conversion =
-      ggems::python::detail::TryConvertTimeToPicoSecond(time, unit);
+  auto const conversion = ggems::units::TryMakeQuantity<TimeQuantity>(
+      static_cast<long double>(time), unit);
 
   if (conversion.has_value()) {
-    return *conversion;
+    return conversion->value;
   }
 
   ThrowRunTimeConversionError(conversion.error(), unit);
@@ -53,17 +58,21 @@ auto ConvertRunTimeToPicoSecond(double time, std::string_view unit)
 
 auto ConvertRunTimeFromPicoSecond(std::uint64_t time_ps, std::string_view unit)
     -> double {
-  auto const conversion =
-      ggems::python::detail::TryConvertPicoSecondToTime(time_ps, unit);
+
+  auto const conversion = ggems::units::TryConvertTo(
+      ggems::units::TimePoint{.value = time_ps}, unit);
 
   if (conversion.has_value()) {
-    return *conversion;
+    return static_cast<double>(*conversion);
   }
 
   ThrowRunTimeConversionError(conversion.error(), unit);
 }
 
 } // namespace
+
+// =============================================================================
+// =============================================================================
 
 void BindRun(py::module_ &mod) {
   py::class_<ggems::core::GGEMSRun>(mod, "GGEMSRun")
@@ -93,9 +102,11 @@ void BindRun(py::module_ &mod) {
           "set_time",
           [](ggems::core::GGEMSRun &self, double start, double stop,
              double step, std::string const &unit) -> void {
-            self.SetTimePicoSecond(ConvertRunTimeToPicoSecond(start, unit),
-                                   ConvertRunTimeToPicoSecond(stop, unit),
-                                   ConvertRunTimeToPicoSecond(step, unit));
+            self.SetTimePicoSecond(
+                ConvertRunTimeToPicoSecond<ggems::units::TimePoint>(start,
+                                                                    unit),
+                ConvertRunTimeToPicoSecond<ggems::units::TimePoint>(stop, unit),
+                ConvertRunTimeToPicoSecond<ggems::units::Duration>(step, unit));
           },
           py::arg("start"), py::arg("stop"), py::arg("step"),
           py::arg("unit") = "s")

@@ -18,8 +18,9 @@
 #include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
-#include "GGEMS/core/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/core/units/GGEMSEnergyUnits.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace {
 
@@ -136,31 +137,40 @@ TEST(GGEMSEnergyDistributionTypes, StableIdentifiersAndNames) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSEnergyUnits, RuntimeConversionUsesExactMilliElectronVolts) {
+TEST(GGEMSEnergyUnits, GenericConversionUsesExactMilliElectronVolts) {
   auto const mev =
-      ggems::units::TryConvertEnergyToMilliElectronVolt(0.120, "MeV");
+      ggems::units::TryMakeQuantity<ggems::units::Energy>(0.120L, "MeV");
   ASSERT_TRUE(mev.has_value());
-  EXPECT_EQ(*mev, 120'000'000ULL);
+
+  EXPECT_EQ(mev->value, 120'000'000ULL);
+
+  auto const zero =
+      ggems::units::TryMakeQuantity<ggems::units::Energy>(0.0L, "keV");
+  ASSERT_TRUE(zero.has_value());
+  EXPECT_EQ(zero->value, 0ULL);
 
   auto const unsupported =
-      ggems::units::TryConvertEnergyToMilliElectronVolt(1.0, "joule");
-  ASSERT_FALSE(unsupported.has_value());
-  EXPECT_EQ(unsupported.error(),
-            ggems::units::EnergyConversionError::UnsupportedUnit);
+      ggems::units::TryMakeQuantity<ggems::units::Energy>(1.0L, "joule");
+  auto const negative =
+      ggems::units::TryMakeQuantity<ggems::units::Energy>(-1.0L, "keV");
+  auto const nan = ggems::units::TryMakeQuantity<ggems::units::Energy>(
+      std::numeric_limits<long double>::quiet_NaN(), "keV");
+  auto const infinity = ggems::units::TryMakeQuantity<ggems::units::Energy>(
+      std::numeric_limits<long double>::infinity(), "keV");
+  auto const overflow = ggems::units::TryMakeQuantity<ggems::units::Energy>(
+      std::ldexp(1.0L, 64), "meV");
 
-  EXPECT_FALSE(ggems::units::TryConvertEnergyToMilliElectronVolt(0.0, "keV")
-                   .has_value());
-  EXPECT_FALSE(ggems::units::TryConvertEnergyToMilliElectronVolt(-1.0, "keV")
-                   .has_value());
-  EXPECT_FALSE(ggems::units::TryConvertEnergyToMilliElectronVolt(
-                   std::numeric_limits<double>::quiet_NaN(), "keV")
-                   .has_value());
-  EXPECT_FALSE(ggems::units::TryConvertEnergyToMilliElectronVolt(
-                   std::numeric_limits<double>::infinity(), "keV")
-                   .has_value());
-  EXPECT_FALSE(ggems::units::TryConvertEnergyToMilliElectronVolt(
-                   std::ldexp(1.0, 64), "meV")
-                   .has_value());
+  ASSERT_FALSE(negative.has_value());
+  ASSERT_FALSE(nan.has_value());
+  ASSERT_FALSE(infinity.has_value());
+  ASSERT_FALSE(overflow.has_value());
+
+  EXPECT_EQ(unsupported.error(),
+            ggems::units::UnitConversionError::UnsupportedUnit);
+  EXPECT_EQ(negative.error(), ggems::units::UnitConversionError::NegativeValue);
+  EXPECT_EQ(nan.error(), ggems::units::UnitConversionError::NonFinite);
+  EXPECT_EQ(infinity.error(), ggems::units::UnitConversionError::NonFinite);
+  EXPECT_EQ(overflow.error(), ggems::units::UnitConversionError::OutOfRange);
 }
 
 // =============================================================================

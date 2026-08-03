@@ -8,7 +8,6 @@
 
 #include "GGEMS/core/particles/GGEMSParticleState.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
-#include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"

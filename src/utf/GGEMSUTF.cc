@@ -1,44 +1,15 @@
-// ************************************************************************
-// * This file is part of GGEMS.                                          *
-// *                                                                      *
-// * GGEMS is free software: you can redistribute it and/or modify        *
-// * it under the terms of the GNU General Public License as published by *
-// * the Free Software Foundation, either version 3 of the License, or    *
-// * (at your option) any later version.                                  *
-// *                                                                      *
-// * GGEMS is distributed in the hope that it will be useful,             *
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
-// * GNU General Public License for more details.                         *
-// *                                                                      *
-// * You should have received a copy of the GNU General Public License    *
-// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
-// *                                                                      *
-// ************************************************************************
-
-/*!
- * \file GGEMSUTF.cc
- * \brief UTF-8 and UTF-32 conversion utilities for GGEMS.
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-10-12
- * \version 2.0
- * \copyright GNU GPL v3
- */
-
-/// \cond
 #include <cuchar>
-/// \endcond
+#include <string>
+#include <string_view>
 
 #include "GGEMS/utf/GGEMSUTF.hh"
 
 namespace ggems::utf {
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-std::u32string UTF8ToUTF32(std::string_view str8) {
+auto UTF8ToUTF32(std::string_view str8) -> std::u32string {
   std::u32string out;
   std::mbstate_t st{};
   char const *src = str8.data();
@@ -62,11 +33,10 @@ std::u32string UTF8ToUTF32(std::string_view str8) {
   return out;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-std::string UTF32ToUTF8(char32_t ch32) {
+auto UTF32ToUTF8(char32_t ch32) -> std::string {
   std::string out;
   if (ch32 <= 0x7F) {
     out.push_back(static_cast<char>(ch32));
@@ -88,11 +58,10 @@ std::string UTF32ToUTF8(char32_t ch32) {
   return out;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-std::string UTF32ToUTF8(std::u32string_view str32) {
+auto UTF32ToUTF8(std::u32string_view str32) -> std::string {
   std::string out;
   out.reserve(str32.size() * 4);
   for (char32_t cp : str32) {

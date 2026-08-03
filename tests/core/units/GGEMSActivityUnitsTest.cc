@@ -5,6 +5,7 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 #include "GGEMS/core/units/GGEMSActivityUnits.hh"
 #include "GGEMS/core/units/GGEMSFrequencyUnits.hh"
 
@@ -14,9 +15,9 @@ namespace {
 // =============================================================================
 
 using ggems::units::Activity;
-using ggems::units::ActivityConversionError;
 using ggems::units::Frequency;
-using ggems::units::TryConvertActivityToBecquerel;
+using ggems::units::TryMakeQuantity;
+using ggems::units::UnitConversionError;
 
 // =============================================================================
 // =============================================================================
@@ -41,7 +42,7 @@ TEST(GGEMSActivityUnitsTest, ConvertsBecquerelSIPrefixesExactly) {
 
   for (Case const &test_case : cases) {
     SCOPED_TRACE(test_case.unit);
-    auto const converted = TryConvertActivityToBecquerel(1.25L, test_case.unit);
+    auto const converted = TryMakeQuantity<Activity>(1.25L, test_case.unit);
     ASSERT_TRUE(converted.has_value());
     EXPECT_EQ(converted->value, test_case.expected_becquerel);
   }
@@ -51,11 +52,11 @@ TEST(GGEMSActivityUnitsTest, ConvertsBecquerelSIPrefixesExactly) {
 // =============================================================================
 
 TEST(GGEMSActivityUnitsTest, ConvertsCurieFamilyExactly) {
-  auto const curie = TryConvertActivityToBecquerel(1.0L, "Ci");
-  auto const millicurie = TryConvertActivityToBecquerel(1.0L, "mCi");
-  auto const microcurie_ascii = TryConvertActivityToBecquerel(1.0L, "uCi");
-  auto const microcurie_utf8 = TryConvertActivityToBecquerel(1.0L, "\xC2\xB5"
-                                                                   "Ci");
+  auto const curie = TryMakeQuantity<Activity>(1.0L, "Ci");
+  auto const millicurie = TryMakeQuantity<Activity>(1.0L, "mCi");
+  auto const microcurie_ascii = TryMakeQuantity<Activity>(1.0L, "uCi");
+  auto const microcurie_utf8 = TryMakeQuantity<Activity>(1.0L, "\xC2\xB5"
+                                                               "Ci");
 
   ASSERT_TRUE(curie.has_value());
   ASSERT_TRUE(millicurie.has_value());
@@ -71,7 +72,7 @@ TEST(GGEMSActivityUnitsTest, ConvertsCurieFamilyExactly) {
 // =============================================================================
 
 TEST(GGEMSActivityUnitsTest, AcceptsZeroActivity) {
-  auto const converted = TryConvertActivityToBecquerel(0.0L, "TBq");
+  auto const converted = TryMakeQuantity<Activity>(0.0L, "TBq");
 
   ASSERT_TRUE(converted.has_value());
   EXPECT_EQ(converted->value, 0.0L);
@@ -81,10 +82,10 @@ TEST(GGEMSActivityUnitsTest, AcceptsZeroActivity) {
 // =============================================================================
 
 TEST(GGEMSActivityUnitsTest, RejectsNegativeActivity) {
-  auto const converted = TryConvertActivityToBecquerel(-1.0L, "Bq");
+  auto const converted = TryMakeQuantity<Activity>(-1.0L, "Bq");
 
   ASSERT_FALSE(converted.has_value());
-  EXPECT_EQ(converted.error(), ActivityConversionError::Negative);
+  EXPECT_EQ(converted.error(), UnitConversionError::NegativeValue);
 }
 
 // =============================================================================
@@ -94,10 +95,10 @@ TEST(GGEMSActivityUnitsTest, RejectsNonFiniteActivity) {
   for (long double value : {std::numeric_limits<long double>::quiet_NaN(),
                             std::numeric_limits<long double>::infinity(),
                             -std::numeric_limits<long double>::infinity()}) {
-    auto const converted = TryConvertActivityToBecquerel(value, "Bq");
+    auto const converted = TryMakeQuantity<Activity>(value, "Bq");
 
     ASSERT_FALSE(converted.has_value());
-    EXPECT_EQ(converted.error(), ActivityConversionError::NonFinite);
+    EXPECT_EQ(converted.error(), UnitConversionError::NonFinite);
   }
 }
 
@@ -105,21 +106,21 @@ TEST(GGEMSActivityUnitsTest, RejectsNonFiniteActivity) {
 // =============================================================================
 
 TEST(GGEMSActivityUnitsTest, RejectsUnsupportedUnit) {
-  auto const converted = TryConvertActivityToBecquerel(1.0L, "dpm");
+  auto const converted = TryMakeQuantity<Activity>(1.0L, "dpm");
 
   ASSERT_FALSE(converted.has_value());
-  EXPECT_EQ(converted.error(), ActivityConversionError::UnsupportedUnit);
+  EXPECT_EQ(converted.error(), UnitConversionError::UnsupportedUnit);
 }
 
 // =============================================================================
 // =============================================================================
 
 TEST(GGEMSActivityUnitsTest, RejectsConversionOverflow) {
-  auto const converted = TryConvertActivityToBecquerel(
-      std::numeric_limits<long double>::max(), "TBq");
+  auto const converted =
+      TryMakeQuantity<Activity>(std::numeric_limits<long double>::max(), "TBq");
 
   ASSERT_FALSE(converted.has_value());
-  EXPECT_EQ(converted.error(), ActivityConversionError::OutOfRange);
+  EXPECT_EQ(converted.error(), UnitConversionError::OutOfRange);
 }
 
 // =============================================================================

@@ -4,23 +4,23 @@
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSTimeUnits.hh"
 
 namespace ggems::ocl {
 
 namespace {
-ggems::units::Time MakeTimeFromSeconds(long double seconds) noexcept {
+auto MakeDurationFromSeconds(long double seconds) noexcept
+    -> ggems::units::Duration {
   if (seconds <= 0.0L) {
-    return ggems::units::Time{0U};
+    return ggems::units::Duration{0U};
   }
 
-  long double picoseconds = seconds * 1.0e12L;
+  auto const duration =
+      ggems::units::TryMakeQuantity<ggems::units::Duration>(seconds, "s");
 
-  if (picoseconds >=
-      static_cast<long double>(std::numeric_limits<std::uint64_t>::max())) {
-    return ggems::units::Time{std::numeric_limits<std::uint64_t>::max()};
-  }
-
-  return ggems::units::Time{static_cast<std::uint64_t>(picoseconds + 0.5L)};
+  return duration.value_or(
+      ggems::units::Duration{std::numeric_limits<std::uint64_t>::max()});
 }
 
 /* -------------------------------------------------------------------------- */
@@ -32,7 +32,10 @@ ggems::units::Time MakeTimeFromNanoseconds(cl_ulong nanoseconds) noexcept {
     return ggems::units::Time{std::numeric_limits<std::uint64_t>::max()};
   }
 
-  return ggems::units::Time{static_cast<std::uint64_t>(nanoseconds) * 1000ULL};
+  auto const time =
+      ggems::units::TryMakeQuantity<ggems::units::Time>(nanoseconds, "ns");
+  return time.value_or(
+      ggems::units::Time{std::numeric_limits<std::uint64_t>::max()});
 }
 
 } // namespace
@@ -118,15 +121,17 @@ long double GGEMSOpenCLProfiler::GetElapsedSecondsRaw() const noexcept {
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 
-ggems::units::Time GGEMSOpenCLProfiler::GetElapsedTime() const noexcept {
-  return MakeTimeFromSeconds(GetElapsedSecondsRaw());
+auto GGEMSOpenCLProfiler::GetElapsedTime() const noexcept
+    -> ggems::units::Duration {
+  return MakeDurationFromSeconds(GetElapsedSecondsRaw());
 }
 
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 
-ggems::units::Time GGEMSOpenCLProfiler::GetKernelTime() const noexcept {
+auto GGEMSOpenCLProfiler::GetKernelTime() const noexcept
+    -> ggems::units::Duration {
   return kernel_timing_.kernel_time;
 }
 
@@ -155,7 +160,9 @@ double GGEMSOpenCLProfiler::GetKernelSeconds() const noexcept {
     return 0.0;
   }
 
-  return static_cast<double>(kernel_timing_.kernel_time.value) * 1.0e-12;
+  auto const seconds =
+      ggems::units::TryConvertTo(kernel_timing_.kernel_time, "s");
+  return seconds.has_value() ? static_cast<double>(*seconds) : 0.0;
 }
 
 /* -------------------------------------------------------------------------- */

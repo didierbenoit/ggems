@@ -1,15 +1,16 @@
 #include <algorithm>
 #include <cmath>
-#include <numbers>
 
 #include <vulkan/vulkan.hpp>
 
 #include "GGEMSVulkanCamera.hh"
+#include "GGEMS/core/units/GGEMSAngularUnits.hh"
 
 namespace ggems::ui {
 
 namespace {
-constexpr float k_max_pitch_radians{1.4835298641951802F};
+constexpr float k_max_pitch_radians =
+    static_cast<float>(units::ToRadians(units::MakeDegrees(85.0L)));
 } // namespace
 
 // =============================================================================
@@ -32,9 +33,13 @@ auto GGEMSVulkanCamera::SetViewportExtent(vk::Extent2D const &extent) noexcept
 
 auto GGEMSVulkanCamera::SetOrbitAngles(float yaw_degrees,
                                        float pitch_degrees) noexcept -> void {
-  yaw_radians_ = DegreesToRadians(yaw_degrees);
-  pitch_radians_ = std::clamp(DegreesToRadians(pitch_degrees),
-                              -k_max_pitch_radians, k_max_pitch_radians);
+  yaw_radians_ = static_cast<float>(units::ToRadians(
+      units::MakeDegrees(static_cast<long double>(yaw_degrees))));
+
+  pitch_radians_ =
+      std::clamp(static_cast<float>(units::ToRadians(units::MakeDegrees(
+                     static_cast<long double>(pitch_degrees)))),
+                 -k_max_pitch_radians, k_max_pitch_radians);
 }
 
 // -----------------------------------------------------------------------------
@@ -47,11 +52,13 @@ auto GGEMSVulkanCamera::SetZoom(float zoom) noexcept -> void {
 
 auto GGEMSVulkanCamera::Orbit(float delta_yaw_degrees,
                               float delta_pitch_degrees) noexcept -> void {
-  yaw_radians_ += DegreesToRadians(delta_yaw_degrees);
+  yaw_radians_ += static_cast<float>(units::ToRadians(
+      units::MakeDegrees(static_cast<long double>(delta_yaw_degrees))));
 
-  pitch_radians_ =
-      std::clamp(pitch_radians_ + DegreesToRadians(delta_pitch_degrees),
-                 -k_max_pitch_radians, k_max_pitch_radians);
+  pitch_radians_ = std::clamp(
+      pitch_radians_ + static_cast<float>(units::ToRadians(units::MakeDegrees(
+                           static_cast<long double>(delta_pitch_degrees)))),
+      -k_max_pitch_radians, k_max_pitch_radians);
 }
 
 // -----------------------------------------------------------------------------
@@ -167,12 +174,6 @@ auto GGEMSVulkanCamera::BuildCameraBasis() const noexcept
   Vector3 up_reference = Cross(right, forward);
 
   return CameraBasis{.right = right, .up = up_reference, .forward = forward};
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanCamera::DegreesToRadians(float degrees) noexcept -> float {
-  return degrees * std::numbers::pi_v<float> / 180.0F;
 }
 
 // -----------------------------------------------------------------------------

@@ -20,6 +20,7 @@
 #include "GGEMS/core/sources/GGEMSEnergyDistributionRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/core/units/GGEMSEnergyUnits.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace ggems::core::sources {
 namespace {
@@ -69,26 +70,31 @@ struct ValidationContext {
                                  std::string_view distribution_name,
                                  std::size_t index, ValidationContext context)
     -> std::uint64_t {
-  auto const conversion =
-      ggems::units::TryConvertEnergyToMilliElectronVolt(energy, unit);
+  auto const conversion = ggems::units::TryMakeQuantity<ggems::units::Energy>(
+      static_cast<long double>(energy), unit);
 
   if (conversion.has_value()) {
-    return *conversion;
+    if (conversion->value == 0ULL) {
+      RejectEntry(distribution_name, index, context,
+                  "energy must remain strictly positive after conversion to "
+                  "milli-electronvolts.");
+    }
+    return conversion->value;
   }
 
-  using ggems::units::EnergyConversionError;
+  using ggems::units::UnitConversionError;
 
-  if (conversion.error() == EnergyConversionError::NonFinite) {
+  if (conversion.error() == UnitConversionError::NonFinite) {
     RejectEntry(distribution_name, index, context, "energy must be finite.");
   }
 
-  if (conversion.error() == EnergyConversionError::NonPositive) {
+  if (conversion.error() == UnitConversionError::NegativeValue) {
     RejectEntry(distribution_name, index, context,
                 "energy must remain strictly positive after conversion to "
                 "milli-electronvolts.");
   }
 
-  if (conversion.error() == EnergyConversionError::UnsupportedUnit) {
+  if (conversion.error() == UnitConversionError::UnsupportedUnit) {
     RejectEntry(distribution_name, index, context,
                 std::format("unsupported GGEMS energy unit '{}'.", unit));
   }

@@ -8,7 +8,6 @@
 #include "GGEMS/core/particles/GGEMSParticleState.hh"
 #include "GGEMS/core/transport/GGEMSTransportCounters.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
-#include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"

@@ -1,301 +1,732 @@
 #pragma once
-// ************************************************************************
-// * This file is part of GGEMS.                                          *
-// *                                                                      *
-// * GGEMS is free software: you can redistribute it and/or modify        *
-// * it under the terms of the GNU General Public License as published by *
-// * the Free Software Foundation, either version 3 of the License, or    *
-// * (at your option) any later version.                                  *
-// *                                                                      *
-// * GGEMS is distributed in the hope that it will be useful,             *
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
-// * GNU General Public License for more details.                         *
-// *                                                                      *
-// * You should have received a copy of the GNU General Public License    *
-// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
-// *                                                                      *
-// ************************************************************************
 
-/*!
- * \file GGEMSQuantity.hh
- * \brief Dimensional quantity system and physical unit base types.
- *
- * This header defines GGEMS core system for representing physical
- * quantities with explicit dimensional exponents. A quantity is modelled
- * as a compile-time dimension type \c Dim with exponents applied to the
- * base dimensions of Length (L), Time (T) and Information (I), together
- * with a numeric representation holding the scaled integer value.
- *
- * \par Purpose
- * The mechanism enforces dimensional consistency in expressions, prevents
- * invalid mixes of unrelated units at compile time, and enables exact
- * integer-based storage for GGEMS' internal physical unit system.
- *
- * \par Design principles
- *  - Dimensions are specified as integer exponents on base primitives:
- *    \c Length, \c Time and \c Information.
- *  - Quantities are strongly typed via \c Quantity<Dim,R> where \c Dim
- *    encodes the dimension and \c R holds the numeric representation.
- *  - Arithmetic rules preserve dimensional correctness: addition and
- *    subtraction require matching dimensions, while division of
- *    quantities derives a new dimension according to exponent algebra.
- *
- * Human-readable representations are produced via \c HumanReadable, and
- * formatting is integrated into \c std::format by a formatter
- * specialisation.
- *
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-10-12
- * \version 2.0
- * \copyright
- * GNU General Public License v3.0
- */
-
-/// \cond
+#include <array>
 #include <format>
-/// \endcond
+#include <cmath>
+#include <concepts>
+#include <cstddef>
+#include <cstdint>
+#include <expected>
+#include <limits>
+#include <string>
+#include <string_view>
+#include <type_traits>
 
 namespace ggems::units {
 
-/*!
- * \brief Compile-time dimensional type.
- *
- * The \c Dim type encodes physical dimensionality as integer exponents
- * applied to Length (LExp), Time (TExp), Mass (MExp) and Information (IExp).
- *
- * Examples:
- *  - \c Dim<1,0,0,0>  ⇒ length
- *  - \c Dim<0,1,0,0>  ⇒ time
- *  - \c Dim<1,-1,0,0> ⇒ speed (length/time)
- *
- * \tparam LExp Exponent for Length.
- * \tparam TExp Exponent for Time.
- * \tparam MExp Exponent for Mass
- * \tparam IExp Exponent for Information.
- */
-template <std::int8_t LExp, std::int8_t TExp, std::int8_t MExp,
-          std::int8_t IExp>
+template <std::int8_t LengthExponent, std::int8_t TimeExponent,
+          std::int8_t MassExponent, std::int8_t InformationExponent>
 struct Dim {};
 
-/*! \brief Base dimension for length (L). */
+using DimensionlessDim = Dim<0, 0, 0, 0>;
 using LengthDim = Dim<1, 0, 0, 0>;
-/*! \brief Dimension for area (L²) */
 using AreaDim = Dim<2, 0, 0, 0>;
-/*! \brief Dimension for volume (L³) */
 using VolumeDim = Dim<3, 0, 0, 0>;
-/*! \brief Base dimension for time (T). */
 using TimeDim = Dim<0, 1, 0, 0>;
-/*! \brief Base dimension for mass (M). */
 using MassDim = Dim<0, 0, 1, 0>;
-/*! \brief Base dimension for information measured in bytes. */
-using InfoBytesDim = Dim<0, 0, 0, 1>;
-/*! \brief Base dimension for information measured in bits. */
-using InfoBitsDim = Dim<0, 0, 0, 2>;
-/*! \brief Dimension for frequency (T⁻¹). */
+using InformationDim = Dim<0, 0, 0, 1>;
 using FrequencyDim = Dim<0, -1, 0, 0>;
-/*! \brief Dimension for speed (L T⁻¹). */
 using SpeedDim = Dim<1, -1, 0, 0>;
-/*! \brief Dimension for bandwidth (information per unit time). */
-using BandwidthDim = Dim<0, -1, 0, 1>;
-/*! \brief Dimension for density (M L⁻³) */
 using DensityDim = Dim<-3, 0, 1, 0>;
-/*! \brief Dimension for energy (L²T⁻²M) */
 using EnergyDim = Dim<2, -2, 1, 0>;
-/*! \brief Dimension for dose (L²T⁻²) */
 using DoseDim = Dim<2, -2, 0, 0>;
 
-/*!
- * \brief Strongly-typed physical quantity with an associated dimension.
- *
- * \tparam DimT Compile-time dimension type (e.g. \c LengthDim, \c TimeDim).
- * \tparam Rep  Underlying representation type used to store the value.
- *
- * The stored \c value is expressed in GGEMS base engine units for the
- * corresponding quantity family (e.g. picoseconds for time, picometres
- * for length). Higher-level unit headers define aliases such as
- * \c Time or \c Length bound to concrete representations.
- */
-template <typename DimT, typename Rep = std::uint64_t> struct Quantity {
-  Rep value{}; /*!< Stored scalar value in base engine units. */
+enum class QuantityDomain : std::uint8_t { NonNegative, Signed };
 
-  /*!
-   * \brief Default three-way comparison between quantities.
-   *
-   * Quantities of the same dimension are ordered according to their
-   * stored scalar \c value. Mixed-dimension comparisons are ill-formed
-   * at compile time.
-   * \return Strong ordering result that reflects the relative ordering
-   *         of the underlying raw values.
-   */
+enum class QuantityFormatPolicy : std::uint8_t {
+  AutomaticScale,
+  FixedUnit,
+  DurationBreakdown
+};
+
+enum class UnitConversionError : std::uint8_t {
+  UnsupportedUnit,
+  NonFinite,
+  NegativeValue,
+  OutOfRange,
+  InexactConversion
+};
+
+struct UnitScale {
+  std::uint64_t numerator{1ULL};
+  std::uint64_t denominator{1ULL};
+  std::int16_t decimal_exponent{0};
+  long double special_factor{0.0L};
+};
+
+consteval auto DecimalScale(std::int16_t exponent,
+                            std::uint64_t numerator = 1ULL,
+                            std::uint64_t denominator = 1ULL) -> UnitScale {
+  return {.numerator = numerator,
+          .denominator = denominator,
+          .decimal_exponent = exponent,
+          .special_factor = 0.0L};
+};
+
+consteval auto SpecialScale(long double factor) -> UnitScale {
+  return {.numerator = 1ULL,
+          .denominator = 1ULL,
+          .decimal_exponent = 0,
+          .special_factor = factor};
+}
+
+inline constexpr std::size_t k_max_unit_alias_count{5U};
+
+struct UnitDefinition {
+  std::string_view canonical_name;
+  std::string_view symbol;
+  std::string_view display_symbol;
+  std::array<std::string_view, k_max_unit_alias_count> aliases{};
+  std::string_view literal_suffix;
+  UnitScale scale;
+  bool canonical{false};
+  bool automatic_display{false};
+};
+
+template <typename UniSet> struct UnitRegistry;
+
+namespace detail {
+
+constexpr auto Pow10(std::int16_t exponent) noexcept -> long double {
+  long double result{1.0L};
+  if (exponent >= 0) {
+    for (std::int16_t index = 0; index < exponent; ++index) {
+      result *= 10.0L;
+    }
+  } else {
+    for (std::int16_t index = 0; index > exponent; --index) {
+      result /= 10.0L;
+    }
+  }
+  return result;
+}
+
+constexpr auto ScaleFactor(UnitScale const &scale) noexcept -> long double {
+  if (scale.special_factor != 0.0L) {
+    return scale.special_factor;
+  }
+  return static_cast<long double>(scale.numerator) /
+         static_cast<long double>(scale.denominator) *
+         Pow10(scale.decimal_exponent);
+}
+
+constexpr auto IsFinite(long double value) noexcept -> bool {
+  return value == value && value <= std::numeric_limits<long double>::max() &&
+         value >= -std::numeric_limits<long double>::max();
+}
+
+constexpr auto UnitAcceptsToken(UnitDefinition const &unit,
+                                std::string_view token) noexcept -> bool {
+  if (unit.symbol == token) {
+    return true;
+  }
+  for (auto const alias : unit.aliases) {
+    if (!alias.empty() && alias == token) {
+      return true;
+    }
+  }
+  return false;
+}
+
+constexpr auto ParsingTokensCollide(UnitDefinition const &lhs,
+                                    UnitDefinition const &rhs) noexcept
+    -> bool {
+  if (UnitAcceptsToken(rhs, lhs.symbol)) {
+    return true;
+  }
+  for (auto const alias : lhs.aliases) {
+    if (!alias.empty() && UnitAcceptsToken(rhs, alias)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+constexpr auto ExactIntegralFactor(UnitScale const &scale,
+                                   std::uint64_t &factor) noexcept -> bool {
+  if (scale.special_factor != 0.0L || scale.denominator != 1ULL ||
+      scale.decimal_exponent < 0) {
+    return false;
+  }
+  factor = scale.numerator;
+  for (std::int16_t index = 0; index < scale.decimal_exponent; ++index) {
+    if (factor > std::numeric_limits<std::uint64_t>::max() / 10ULL) {
+      return false;
+    }
+    factor *= 10ULL;
+  }
+  return true;
+}
+
+template <typename Representation>
+constexpr auto ConvertCanonical(long double value)
+    -> std::expected<Representation, UnitConversionError> {
+  if (!IsFinite(value)) {
+    return std::unexpected(UnitConversionError::OutOfRange);
+  }
+
+  if constexpr (std::floating_point<Representation>) {
+    auto const converted = static_cast<Representation>(value);
+    if (!IsFinite(static_cast<long double>(converted))) {
+      return std::unexpected(UnitConversionError::OutOfRange);
+    }
+    return converted;
+  } else {
+    long double upper{1.0L};
+    for (int digit = 0; digit < std::numeric_limits<Representation>::digits;
+         ++digit) {
+      upper *= 2.0L;
+    }
+    if constexpr (std::unsigned_integral<Representation>) {
+      if (value < 0.0L) {
+        return std::unexpected(UnitConversionError::NegativeValue);
+      }
+      if (value >= upper) {
+        return std::unexpected(UnitConversionError::OutOfRange);
+      }
+    } else if (value < -upper || value >= upper) {
+      return std::unexpected(UnitConversionError::OutOfRange);
+    }
+    auto converted = static_cast<Representation>(value);
+    long double const remainder = value - static_cast<long double>(converted);
+    if (remainder >= 0.5L) {
+      if (converted == std::numeric_limits<Representation>::max()) {
+        return std::unexpected(UnitConversionError::OutOfRange);
+      }
+      ++converted;
+    } else if (remainder <= -0.5L) {
+      if (converted == std::numeric_limits<Representation>::min()) {
+        return std::unexpected(UnitConversionError::OutOfRange);
+      }
+      --converted;
+    }
+    return converted;
+  }
+}
+
+template <typename Type>
+concept ExactIntegral =
+    std::integral<Type> && !std::same_as<std::remove_cv_t<Type>, bool> &&
+    sizeof(Type) <= sizeof(std::uint64_t);
+
+template <ExactIntegral Integer>
+constexpr auto IntegralIsNegative(Integer value) noexcept -> bool {
+  if constexpr (std::signed_integral<Integer>) {
+    return value < 0;
+  }
+  return false;
+}
+
+template <ExactIntegral Integer>
+constexpr auto IntegralMagnitude(Integer value) noexcept -> std::uint64_t {
+  using UnsignedInteger = std::make_unsigned_t<Integer>;
+  auto magnitude = static_cast<UnsignedInteger>(value);
+  if constexpr (std::signed_integral<Integer>) {
+    if (value < 0) {
+      magnitude = static_cast<UnsignedInteger>(UnsignedInteger{0} - magnitude);
+    }
+  }
+  return static_cast<std::uint64_t>(magnitude);
+}
+
+template <ExactIntegral Representation>
+constexpr auto ConvertIntegralMagnitude(std::uint64_t magnitude, bool negative)
+    -> std::expected<Representation, UnitConversionError> {
+  if (negative) {
+    if constexpr (std::unsigned_integral<Representation>) {
+      return std::unexpected(UnitConversionError::NegativeValue);
+    } else {
+      auto const negative_limit =
+          static_cast<std::uint64_t>(
+              std::numeric_limits<Representation>::max()) +
+          1ULL;
+      if (magnitude > negative_limit) {
+        return std::unexpected(UnitConversionError::OutOfRange);
+      }
+      if (magnitude == negative_limit) {
+        return std::numeric_limits<Representation>::min();
+      }
+      return static_cast<Representation>(
+          -static_cast<Representation>(magnitude));
+    }
+  }
+  if (magnitude >
+      static_cast<std::uint64_t>(std::numeric_limits<Representation>::max())) {
+    return std::unexpected(UnitConversionError::OutOfRange);
+  }
+  return static_cast<Representation>(magnitude);
+}
+
+template <typename QuantityType>
+auto FormatScaled(QuantityType const &quantity, UnitDefinition const &unit,
+                  std::int8_t precision, std::int8_t width) -> std::string {
+  long double const scaled =
+      static_cast<long double>(quantity.value) / ScaleFactor(unit.scale);
+  std::string format;
+  if (width < 0) {
+    format = std::format("{{:.{}f}} {}", precision, unit.display_symbol);
+  } else {
+    format =
+        std::format("{{:{}.{}f}} {}", width, precision, unit.display_symbol);
+  }
+  return std::vformat(format, std::make_format_args(scaled));
+}
+
+} // namespace detail
+
+template <typename UnitSet>
+concept HasUnitRegistry = requires {
+  typename UnitSet::dimension;
+  UnitRegistry<UnitSet>::units;
+};
+
+template <typename UnitSet> consteval auto ValidateUnitSet() -> bool {
+  if constexpr (!HasUnitRegistry<UnitSet>) {
+    return false;
+  } else {
+    auto const &units = UnitRegistry<UnitSet>::units;
+    if (units.empty()) {
+      return false;
+    }
+    std::size_t canonical_count{0U};
+    for (std::size_t lhs_index = 0U; lhs_index < units.size(); ++lhs_index) {
+      auto const &lhs = units[lhs_index];
+      long double const factor = detail::ScaleFactor(lhs.scale);
+      if (lhs.canonical_name.empty() || lhs.symbol.empty() ||
+          lhs.display_symbol.empty() || lhs.literal_suffix.empty() ||
+          lhs.scale.numerator == 0ULL || lhs.scale.denominator == 0ULL ||
+          !detail::IsFinite(factor) || factor <= 0.0L) {
+        return false;
+      }
+      if (lhs.canonical) {
+        ++canonical_count;
+        if (factor != 1.0L) {
+          return false;
+        }
+      }
+      for (std::size_t alias_index = 0U; alias_index < lhs.aliases.size();
+           ++alias_index) {
+        auto const alias = lhs.aliases[alias_index];
+        if (alias.empty()) {
+          continue;
+        }
+        if (alias == lhs.symbol) {
+          return false;
+        }
+        for (std::size_t other = alias_index + 1U; other < lhs.aliases.size();
+             ++other) {
+          if (alias == lhs.aliases[other]) {
+            return false;
+          }
+        }
+      }
+      for (std::size_t rhs_index = lhs_index + 1U; rhs_index < units.size();
+           ++rhs_index) {
+        auto const &rhs = units[rhs_index];
+        if (lhs.canonical_name == rhs.canonical_name ||
+            lhs.literal_suffix == rhs.literal_suffix ||
+            detail::ParsingTokensCollide(lhs, rhs) ||
+            detail::ParsingTokensCollide(rhs, lhs)) {
+          return false;
+        }
+      }
+    }
+    return canonical_count == 1U;
+  }
+}
+
+template <typename UnitSet>
+constexpr auto FindUnit(std::string_view symbol) noexcept
+    -> UnitDefinition const * {
+  static_assert(ValidateUnitSet<UnitSet>());
+  for (auto const &unit : UnitRegistry<UnitSet>::units) {
+    if (detail::UnitAcceptsToken(unit, symbol)) {
+      return &unit;
+    }
+  }
+  return nullptr;
+}
+
+template <typename Family>
+concept QuantityFamily = requires {
+  typename Family::dimension;
+  typename Family::unit_set;
+  typename Family::representation;
+  { Family::name } -> std::convertible_to<std::string_view>;
+  { Family::domain } -> std::same_as<QuantityDomain const &>;
+  { Family::format_policy } -> std::same_as<QuantityFormatPolicy const &>;
+  { Family::fixed_display_unit } -> std::convertible_to<std::string_view>;
+  { Family::default_precision } -> std::convertible_to<std::int8_t>;
+} && std::is_arithmetic_v<typename Family::representation>;
+
+template <typename Family> consteval auto ValidateFamily() -> bool {
+  if constexpr (!QuantityFamily<Family> ||
+                !ValidateUnitSet<typename Family::unit_set>() ||
+                !std::is_same_v<typename Family::dimension,
+                                typename Family::unit_set::dimension>) {
+    return false;
+  } else {
+    using Representation = typename Family::representation;
+    if (std::string_view{Family::name}.empty() ||
+        Family::default_precision < 0 ||
+        (Family::domain == QuantityDomain::Signed &&
+         std::unsigned_integral<Representation>)) {
+      return false;
+    }
+
+    if (Family::format_policy == QuantityFormatPolicy::FixedUnit) {
+      return FindUnit<typename Family::unit_set>(Family::fixed_display_unit) !=
+             nullptr;
+    }
+
+    bool has_automatic_unit{false};
+    for (auto const &unit : UnitRegistry<typename Family::unit_set>::units) {
+      has_automatic_unit = has_automatic_unit || unit.automatic_display;
+    }
+
+    if (!has_automatic_unit) {
+      return false;
+    }
+
+    if (Family::format_policy == QuantityFormatPolicy::DurationBreakdown) {
+      if constexpr (!std::is_same_v<typename Family::dimension, TimeDim> ||
+                    !std::unsigned_integral<Representation>) {
+        return false;
+      } else {
+        auto const *second = FindUnit<typename Family::unit_set>("s");
+        auto const *millisecond = FindUnit<typename Family::unit_set>("ms");
+
+        if (second == nullptr || millisecond == nullptr) {
+          return false;
+        }
+
+        std::uint64_t second_factor{0ULL};
+        std::uint64_t millisecond_factor{0ULL};
+        return detail::ExactIntegralFactor(second->scale, second_factor) &&
+               detail::ExactIntegralFactor(millisecond->scale,
+                                           millisecond_factor) &&
+               millisecond_factor <=
+                   std::numeric_limits<std::uint64_t>::max() / 1'000ULL &&
+               second_factor == millisecond_factor * 1'000ULL;
+      }
+    }
+    return true;
+  }
+}
+
+template <typename Family> struct Quantity {
+  static_assert(ValidateFamily<Family>(),
+                "GGEMS quantity family or unit registry is incomplete.");
+  using family = Family;
+  using dimension = typename Family::dimension;
+  using representation = typename Family::representation;
+  representation value{};
   constexpr auto operator<=>(Quantity const &) const = default;
 };
 
-/*!
- * \brief Metafunction computing the dimension of a quotient of quantities.
- *
- * Given two dimension types \c D1 and \c D2, the nested \c type alias
- * of \c DivDim<D1,D2> represents the dimension of the quotient
- * \f$ D_1 / D_2 \f$ obtained by subtracting each exponent component-wise.
- *
- * Specialisations are provided for \c Dim.
- *
- * \tparam D1 Numerator dimension type.
- * \tparam D2 Denominator dimension type.
- */
-template <typename D1, typename D2> struct DivDim;
+template <typename Type> struct IsQuantity : std::false_type {};
 
-/*!
- * \brief Specialisation of DivDim for \c Dim exponents.
- *
- * \tparam L1 Length exponent of numerator.
- * \tparam T1 Time exponent of numerator.
- * \tparam M1 Mass exponent of numerator.
- * \tparam I1 Information exponent of numerator.
- * \tparam L2 Length exponent of denominator.
- * \tparam T2 Time exponent of denominator.
- * \tparam M2 Mass exponent of denominator.
- * \tparam I2 Information exponent of denominator.
- */
-template <std::int8_t L1, std::int8_t T1, std::int8_t M1, std::int8_t I1,
-          std::int8_t L2, std::int8_t T2, std::int8_t M2, std::int8_t I2>
-struct DivDim<Dim<L1, T1, M1, I1>, Dim<L2, T2, M2, I2>> {
-  using type =
-      Dim<L1 - L2, T1 - T2, M1 - M2, I1 - I2>; /*!< Resulting dimension. */
-};
+template <typename Family>
+struct IsQuantity<Quantity<Family>> : std::true_type {};
 
-/*!
- * \brief Adds two quantities with identical dimensions.
- *
- * The result uses the common type of the two representations. The
- * operation is only defined when the dimensions match, enforcing
- * dimensional correctness at compile time.
- *
- * \tparam D  Dimension type (same for both operands).
- * \tparam R1 Representation type of the left-hand side.
- * \tparam R2 Representation type of the right-hand side.
- * \param lhs Left-hand side quantity.
- * \param rhs Right-hand side quantity.
- * \return Quantity with dimension \c D and common representation type.
- */
-template <typename D, typename R1, typename R2>
-constexpr auto operator+(Quantity<D, R1> lhs, Quantity<D, R2> rhs) noexcept {
-  using OutRep = std::common_type_t<R1, R2>;
-  return Quantity<D, OutRep>{static_cast<OutRep>(lhs.value) +
-                             static_cast<OutRep>(rhs.value)};
+template <typename Type>
+concept QuantityType = IsQuantity<std::remove_cvref_t<Type>>::value;
+
+template <typename Type>
+concept Arithmetic = std::integral<Type> || std::floating_point<Type>;
+
+template <QuantityFamily Family>
+constexpr auto operator+(Quantity<Family> lhs, Quantity<Family> rhs) noexcept
+    -> Quantity<Family> {
+  return {lhs.value + rhs.value};
 }
 
-/*!
- * \brief Subtracts two quantities with identical dimensions.
- *
- * The result uses the common type of the two representations. As for
- * addition, dimensions must match to keep the operation well-formed.
- *
- * \tparam D  Dimension type (same for both operands).
- * \tparam R1 Representation type of the left-hand side.
- * \tparam R2 Representation type of the right-hand side.
- * \param lhs Left-hand side quantity.
- * \param rhs Right-hand side quantity.
- * \return Quantity with dimension \c D and common representation type.
- */
-template <typename D, typename R1, typename R2>
-constexpr auto operator-(Quantity<D, R1> lhs, Quantity<D, R2> rhs) noexcept {
-  using OutRep = std::common_type_t<R1, R2>;
-  return Quantity<D, OutRep>{static_cast<OutRep>(lhs.value) -
-                             static_cast<OutRep>(rhs.value)};
+template <QuantityFamily Family>
+constexpr auto operator-(Quantity<Family> lhs, Quantity<Family> rhs) noexcept
+    -> Quantity<Family> {
+  return {lhs.value - rhs.value};
 }
 
-/*!
- * \brief Divides two quantities and produces a quantity of derived dimension.
- *
- * The resulting dimension is obtained via \c DivDim<D1,D2>::type and the
- * representation type is the common type of both operands extended with
- * \c long double to keep precision for non-integer ratios.
- *
- * \tparam D1 Dimension of the numerator.
- * \tparam R1 Representation of the numerator.
- * \tparam D2 Dimension of the denominator.
- * \tparam R2 Representation of the denominator.
- * \param lhs Numerator quantity.
- * \param rhs Denominator quantity.
- * \return Quantity with derived dimension and floating-point representation.
- */
-template <typename D1, typename R1, typename D2, typename R2>
-constexpr auto operator/(Quantity<D1, R1> lhs, Quantity<D2, R2> rhs) noexcept {
-  using OutDim = typename DivDim<D1, D2>::type;
-  using OutRep = std::common_type_t<R1, R2, long double>;
-  return Quantity<OutDim, OutRep>{static_cast<OutRep>(lhs.value) /
-                                  static_cast<OutRep>(rhs.value)};
+template <QuantityFamily Family>
+  requires std::signed_integral<typename Family::representation> ||
+           std::floating_point<typename Family::representation>
+constexpr auto operator-(Quantity<Family> quantity) noexcept
+    -> Quantity<Family> {
+  return {-quantity.value};
 }
 
-/*!
- * \brief Multiplies a quantity by a scalar factor (quantity * scalar).
- *
- * \tparam DimT  Dimension type of the quantity.
- * \tparam Rep   Representation type of the quantity.
- * \tparam Scalar Arithmetic scalar type.
- * \param q Quantity to scale.
- * \param s Scalar factor.
- * \return Quantity with unchanged dimension and common representation type.
- */
-template <typename DimT, typename Rep, typename Scalar,
-          std::enable_if_t<std::is_arithmetic_v<Scalar>, int> = 0>
-constexpr auto operator*(Quantity<DimT, Rep> q, Scalar s) noexcept {
-  using OutRep = std::common_type_t<Rep, Scalar>;
-  return Quantity<DimT, OutRep>{static_cast<OutRep>(q.value) *
-                                static_cast<OutRep>(s)};
+template <QuantityFamily Family, Arithmetic Scalar>
+  requires std::floating_point<typename Family::representation>
+constexpr auto operator*(Quantity<Family> quantity, Scalar scale) noexcept
+    -> Quantity<Family> {
+  return {quantity.value * static_cast<long double>(scale)};
 }
 
-/*!
- * \brief Multiplies a quantity by a scalar factor (scalar * quantity).
- *
- * This overload is symmetric to the quantity–scalar version and enables
- * natural expression ordering.
- *
- * \tparam DimT  Dimension type of the quantity.
- * \tparam Rep   Representation type of the quantity.
- * \tparam Scalar Arithmetic scalar type.
- * \param s Scalar factor.
- * \param q Quantity to scale.
- * \return Quantity with unchanged dimension and common representation type.
- */
-template <typename DimT, typename Rep, typename Scalar,
-          std::enable_if_t<std::is_arithmetic_v<Scalar>, int> = 0>
-constexpr auto operator*(Scalar s, Quantity<DimT, Rep> q) noexcept {
-  using OutRep = std::common_type_t<Rep, Scalar>;
-  return Quantity<DimT, OutRep>{static_cast<OutRep>(q.value) *
-                                static_cast<OutRep>(s)};
+template <QuantityFamily Family, Arithmetic Scalar>
+  requires std::floating_point<typename Family::representation>
+constexpr auto operator*(Scalar scale, Quantity<Family> quantity) noexcept
+    -> Quantity<Family> {
+  return quantity * scale;
 }
 
-/*!
- * \brief Generic fallback for human-readable quantity formatting.
- *
- * This overload simply returns the stored \c value as a decimal string.
- * Unit-specific headers such as \c GGEMSTimeUnits.hh can provide more
- * specialised overloads that select appropriate display units and
- * suffixes while keeping this generic version as a safe default.
- *
- * \tparam D Dimension type of the quantity.
- * \tparam R Representation type of the quantity.
- * \param q Quantity to format.
- * \return UTF-8 encoded decimal representation of \c q.value.
- */
-template <typename D, typename R>
-inline std::string HumanReadable(Quantity<D, R> const &q) {
-  return std::format("{}", q.value);
+template <QuantityFamily Family, Arithmetic Scalar>
+  requires std::floating_point<typename Family::representation>
+constexpr auto operator/(Quantity<Family> quantity, Scalar scale) noexcept
+    -> Quantity<Family> {
+  return {quantity.value / static_cast<long double>(scale)};
+}
+
+template <QuantityType TargetQuantity>
+[[nodiscard]] constexpr auto TryMakeQuantity(long double value,
+                                             std::string_view unit_symbol)
+    -> std::expected<TargetQuantity, UnitConversionError> {
+  using Family = typename TargetQuantity::family;
+  auto const *unit = FindUnit<typename Family::unit_set>(unit_symbol);
+
+  if (unit == nullptr) {
+    return std::unexpected(UnitConversionError::UnsupportedUnit);
+  }
+
+  if (!detail::IsFinite(value)) {
+    return std::unexpected(UnitConversionError::NonFinite);
+  }
+
+  if (Family::domain == QuantityDomain::NonNegative && value < 0.0L) {
+    return std::unexpected(UnitConversionError::NegativeValue);
+  }
+
+  auto converted =
+      detail::ConvertCanonical<typename TargetQuantity::representation>(
+          value * detail::ScaleFactor(unit->scale));
+
+  if (!converted.has_value()) {
+    return std::unexpected(converted.error());
+  }
+
+  return TargetQuantity{*converted};
+}
+
+template <QuantityType TargetQuantity, detail::ExactIntegral SourceInteger>
+  requires detail::ExactIntegral<typename TargetQuantity::representation>
+[[nodiscard]] constexpr auto TryMakeQuantity(SourceInteger value,
+                                             std::string_view unit_symbol)
+    -> std::expected<TargetQuantity, UnitConversionError> {
+  using Family = typename TargetQuantity::family;
+  using Representation = typename TargetQuantity::representation;
+
+  auto const *unit = FindUnit<typename Family::unit_set>(unit_symbol);
+  if (unit == nullptr) {
+    return std::unexpected(UnitConversionError::UnsupportedUnit);
+  }
+
+  bool const negative = detail::IntegralIsNegative(value);
+  if (Family::domain == QuantityDomain::NonNegative && negative) {
+    return std::unexpected(UnitConversionError::NegativeValue);
+  }
+
+  std::uint64_t factor{0ULL};
+  if (!detail::ExactIntegralFactor(unit->scale, factor)) {
+    return TryMakeQuantity<TargetQuantity>(static_cast<long double>(value),
+                                           unit_symbol);
+  }
+
+  std::uint64_t const magnitude = detail::IntegralMagnitude(value);
+  if (magnitude > std::numeric_limits<std::uint64_t>::max() / factor) {
+    return std::unexpected(UnitConversionError::OutOfRange);
+  }
+
+  auto const converted = detail::ConvertIntegralMagnitude<Representation>(
+      magnitude * factor, negative);
+  if (!converted.has_value()) {
+    return std::unexpected(converted.error());
+  }
+
+  return TargetQuantity{*converted};
+}
+
+template <QuantityType SourceQuantity>
+[[nodiscard]] constexpr auto TryConvertTo(SourceQuantity quantity,
+                                          std::string_view unit_symbol)
+    -> std::expected<long double, UnitConversionError> {
+  using Family = typename SourceQuantity::family;
+
+  auto const *unit = FindUnit<typename Family::unit_set>(unit_symbol);
+  if (unit == nullptr) {
+    return std::unexpected(UnitConversionError::UnsupportedUnit);
+  }
+
+  auto const canonical = static_cast<long double>(quantity.value);
+  if (!detail::IsFinite(canonical)) {
+    return std::unexpected(UnitConversionError::NonFinite);
+  }
+
+  long double const converted = canonical / detail::ScaleFactor(unit->scale);
+  if (!detail::IsFinite(converted)) {
+    return std::unexpected(UnitConversionError::OutOfRange);
+  }
+
+  return converted;
+}
+
+template <detail::ExactIntegral TargetRepresentation,
+          QuantityType SourceQuantity>
+  requires detail::ExactIntegral<typename SourceQuantity::representation>
+[[nodiscard]] constexpr auto TryConvertTo(SourceQuantity quantity,
+                                          std::string_view unit_symbol)
+    -> std::expected<TargetRepresentation, UnitConversionError> {
+  using Family = typename SourceQuantity::family;
+
+  auto const *unit = FindUnit<typename Family::unit_set>(unit_symbol);
+  if (unit == nullptr) {
+    return std::unexpected(UnitConversionError::UnsupportedUnit);
+  }
+
+  if (quantity.value == 0) {
+    return TargetRepresentation{0};
+  }
+
+  std::uint64_t factor{0ULL};
+  if (!detail::ExactIntegralFactor(unit->scale, factor)) {
+    return std::unexpected(UnitConversionError::InexactConversion);
+  }
+
+  bool const negative = detail::IntegralIsNegative(quantity.value);
+  std::uint64_t const magnitude = detail::IntegralMagnitude(quantity.value);
+  if (magnitude % factor != 0ULL) {
+    return std::unexpected(UnitConversionError::InexactConversion);
+  }
+
+  return detail::ConvertIntegralMagnitude<TargetRepresentation>(
+      magnitude / factor, negative);
+}
+
+template <QuantityType QuantityValue>
+[[nodiscard]] constexpr auto TryConvert(long double value,
+                                        std::string_view source_unit,
+                                        std::string_view target_unit)
+    -> std::expected<long double, UnitConversionError> {
+  auto const canonical = TryMakeQuantity<QuantityValue>(value, source_unit);
+
+  if (!canonical.has_value()) {
+    return std::unexpected(canonical.error());
+  }
+
+  return TryConvertTo(*canonical, target_unit);
+}
+
+template <QuantityType QuantityValue>
+consteval auto MakeQuantity(unsigned long long value,
+                            std::string_view unit_symbol) -> QuantityValue {
+  using Representation = typename QuantityValue::representation;
+
+  auto const *unit =
+      FindUnit<typename QuantityValue::family::unit_set>(unit_symbol);
+  if (unit == nullptr) {
+    throw "Unsupported GGEMS quantity literal unit.";
+  }
+
+  if constexpr (std::integral<Representation>) {
+    std::uint64_t factor{0ULL};
+    if (detail::ExactIntegralFactor(unit->scale, factor)) {
+      auto const maximum = static_cast<std::uint64_t>(
+          std::numeric_limits<Representation>::max());
+      if (factor == 0ULL || value > maximum / factor) {
+        throw "GGEMS quantity literal is out of range.";
+      }
+      return QuantityValue{static_cast<Representation>(value * factor)};
+    }
+  }
+
+  auto const result = TryMakeQuantity<QuantityValue>(
+      static_cast<long double>(value), unit_symbol);
+  if (!result.has_value()) {
+    throw "Invalid GGEMS quantity literal.";
+  }
+
+  return *result;
+}
+
+template <QuantityType QuantityValue>
+consteval auto MakeQuantity(long double value, std::string_view unit_symbol)
+    -> QuantityValue {
+  auto const result = TryMakeQuantity<QuantityValue>(value, unit_symbol);
+  if (!result.has_value()) {
+    throw "Invalid GGEMS quantity literal.";
+  }
+  return *result;
+}
+
+template <QuantityType QuantityValue>
+auto HumanReadable(
+    QuantityValue const &quantity,
+    std::int8_t precision = QuantityValue::family::default_precision,
+    std::int8_t width = -1) -> std::string {
+  using Family = typename QuantityValue::family;
+  using UnitSet = typename Family::unit_set;
+  if constexpr (Family::format_policy == QuantityFormatPolicy::FixedUnit) {
+    return detail::FormatScaled(quantity,
+                                *FindUnit<UnitSet>(Family::fixed_display_unit),
+                                precision, width);
+  }
+  if constexpr (Family::format_policy ==
+                QuantityFormatPolicy::DurationBreakdown) {
+    auto const second_factor = static_cast<std::uint64_t>(
+        detail::ScaleFactor(FindUnit<UnitSet>("s")->scale));
+    if (quantity.value >= 60ULL * second_factor) {
+      auto const millisecond_factor = static_cast<std::uint64_t>(
+          detail::ScaleFactor(FindUnit<UnitSet>("ms")->scale));
+      auto const total_seconds = quantity.value / second_factor;
+      auto const remainder = quantity.value % second_factor;
+      auto const hours = total_seconds / 3'600ULL;
+      auto const minutes = total_seconds % 3'600ULL / 60ULL;
+      auto const seconds = total_seconds % 60ULL;
+      auto const milliseconds = remainder / millisecond_factor;
+      if (hours > 0ULL) {
+        return std::format("{} h {} min {} s {} ms", hours, minutes, seconds,
+                           milliseconds);
+      }
+      return std::format("{} min {} s {} ms", minutes, seconds, milliseconds);
+    }
+  }
+
+  long double const magnitude =
+      std::abs(static_cast<long double>(quantity.value));
+
+  UnitDefinition const *selected{nullptr};
+  long double selected_factor{-1.0L};
+  for (auto const &unit : UnitRegistry<UnitSet>::units) {
+    long double const factor = detail::ScaleFactor(unit.scale);
+    if (unit.automatic_display && magnitude >= factor &&
+        factor > selected_factor) {
+      selected = &unit;
+      selected_factor = factor;
+    }
+  }
+
+  if (selected == nullptr) {
+    long double smallest_factor = std::numeric_limits<long double>::max();
+    for (auto const &unit : UnitRegistry<UnitSet>::units) {
+      long double const factor = detail::ScaleFactor(unit.scale);
+      if (unit.automatic_display && factor < smallest_factor) {
+        selected = &unit;
+        smallest_factor = factor;
+      }
+    }
+  }
+  return detail::FormatScaled(quantity, *selected, precision, width);
 }
 
 } // namespace ggems::units
 
-/// \cond
 namespace std {
-template <typename DimT, typename Rep>
-struct formatter<ggems::units::Quantity<DimT, Rep>> : formatter<string> {
-  auto format(ggems::units::Quantity<DimT, Rep> const &q, auto &ctx) const {
-    using ggems::units::HumanReadable;
-    return formatter<string>::format(HumanReadable(q), ctx);
+template <ggems::units::QuantityFamily Family>
+struct formatter<ggems::units::Quantity<Family>> : formatter<string> {
+  template <typename FormatContext>
+  auto format(ggems::units::Quantity<Family> const &quantity,
+              FormatContext &context) const ->
+      typename FormatContext::iterator {
+    return formatter<string>::format(ggems::units::HumanReadable(quantity),
+                                     context);
   }
 };
 } // namespace std
-// \endcond

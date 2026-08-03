@@ -37,6 +37,7 @@
  */
 
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
+#include "GGEMS/core/units/GGEMSBytesUnits.hh"
 
 using namespace ggems::units;
 
@@ -216,11 +217,10 @@ GGEMSOpenCLSVMBuffer GGEMSOpenCLContext::CreateSVMBuffer(Bytes size,
                HumanReadable(size), ToString(kind), ToString(selected),
                static_cast<std::uint64_t>(flags), HumanReadable(alignment));
 
-  constexpr std::uint64_t k_large_svm_warning_threshold{64ULL * 1024ULL *
-                                                        1024ULL};
+  constexpr auto k_large_svm_warning_threshold{64_MiB};
 
   if (selected == SVMMemoryKind::FineGrainBuffer &&
-      size.value >= k_large_svm_warning_threshold) {
+      size >= k_large_svm_warning_threshold) {
     GGEMS_WARN("OpenCL",
                "Fine-grain SVM buffer selected for a large allocation ({}). "
                "This may severely reduce GPU throughput on some OpenCL "
@@ -230,7 +230,7 @@ GGEMSOpenCLSVMBuffer GGEMSOpenCLContext::CreateSVMBuffer(Bytes size,
   }
 
   if (selected == SVMMemoryKind::FineGrainBufferAtomics &&
-      size.value >= k_large_svm_warning_threshold) {
+      size >= k_large_svm_warning_threshold) {
     GGEMS_WARN("OpenCL",
                "Fine-grain atomic SVM buffer selected for a large allocation "
                "({}). This is a synchronisation-heavy memory mode and should "

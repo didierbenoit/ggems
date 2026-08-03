@@ -1,46 +1,17 @@
 #pragma once
-// ************************************************************************
-// * This file is part of GGEMS.                                          *
-// *                                                                      *
-// * GGEMS is free software: you can redistribute it and/or modify        *
-// * it under the terms of the GNU General Public License as published by *
-// * the Free Software Foundation, either version 3 of the License, or    *
-// * (at your option) any later version.                                  *
-// *                                                                      *
-// * GGEMS is distributed in the hope that it will be useful,             *
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
-// * GNU General Public License for more details.                         *
-// *                                                                      *
-// * You should have received a copy of the GNU General Public License    *
-// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
-// *                                                                      *
-// ************************************************************************
 
-/*!
- * \file GGEMSOpenCLInfoTraits.hh
- * \brief Traits describing OpenCL information parameters.
- *
- * Each specialisation provides:
- * - the C++ type associated with the info query
- * - a symbolic name for logging
- * - a human-readable formatter
- *
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-12-08
- * \version 2.0
- * \copyright
- * GNU General Public License v3.0
- */
-
-/// \cond
+#include <cstdint>
 #include <string>
-/// \endcond
+#include <string_view>
+#include <vector>
 
 #include "GGEMS/core/GGEMSSystemUtils.hh"
-#include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLStrings.hh"
+#include "GGEMS/core/units/GGEMSTimeUnits.hh"
+#include "GGEMS/core/units/GGEMSFrequencyUnits.hh"
+#include "GGEMS/core/units/GGEMSBytesUnits.hh"
+#include "GGEMS/core/units/GGEMSBitsUnits.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace ggems::ocl {
 using namespace ggems::units;
@@ -191,8 +162,11 @@ template <> struct InfoTraits<CL_PLATFORM_HOST_TIMER_RESOLUTION> {
     if (v == 0) {
       return "not supported";
     }
-    Time t{static_cast<std::uint64_t>(v) * 1000ull};
-    return HumanReadable(t, 0, 3);
+    auto const duration = TryMakeQuantity<Duration>(v, "ns");
+    if (!duration.has_value()) {
+      return "out of range";
+    }
+    return HumanReadable(*duration, 0, 3);
   }
 };
 
@@ -589,15 +563,21 @@ template <> struct InfoTraits<CL_DEVICE_MAX_CLOCK_FREQUENCY> {
    */
   [[nodiscard]] static std::string ToString(type v) noexcept {
     if (v != 0) {
-      Frequency f = Frequency{static_cast<std::uint64_t>(v) * 1'000'000ull};
-      return HumanReadable(f, 1, 5);
+      auto const frequency = TryMakeQuantity<Frequency>(v, "MHz");
+      if (!frequency.has_value()) {
+        return "N/A";
+      }
+      return HumanReadable(*frequency, 1, 5);
     }
 
     auto freq_mhz = core::SystemUsage().cpu_frequency;
     if (freq_mhz.has_value()) {
-      Frequency f = Frequency{static_cast<std::uint64_t>(freq_mhz.value()) *
-                              1'000'000ull};
-      return HumanReadable(f, 1, 5);
+      auto const frequency =
+          TryMakeQuantity<Frequency>(freq_mhz.value(), "MHz");
+      if (!frequency.has_value()) {
+        return "N/A";
+      }
+      return HumanReadable(*frequency, 1, 5);
     } else {
       return "N/A";
     }
@@ -1456,8 +1436,8 @@ template <> struct InfoTraits<CL_DEVICE_MEM_BASE_ADDR_ALIGN> {
    * \return Human-readable alignment.
    */
   [[nodiscard]] static std::string ToString(type v) noexcept {
-    Bytes B = Bytes{static_cast<std::uint64_t>(v)};
-    return HumanReadable(B, 1, 5);
+    Bits bits{static_cast<std::uint64_t>(v)};
+    return HumanReadable(bits, 1, 5);
   }
 };
 
@@ -2102,8 +2082,11 @@ template <> struct InfoTraits<CL_DEVICE_PROFILING_TIMER_RESOLUTION> {
    * \return Human-readable time representation.
    */
   [[nodiscard]] static std::string ToString(type v) noexcept {
-    Time t = Time{static_cast<uint64_t>(v) * 1000ull};
-    return HumanReadable(t, 0, 3);
+    auto const duration = TryMakeQuantity<Duration>(v, "ns");
+    if (!duration.has_value()) {
+      return "out of range";
+    }
+    return HumanReadable(*duration, 0, 3);
   }
 };
 

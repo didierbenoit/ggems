@@ -13,7 +13,6 @@
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/random/GGEMSRandomEngine.hh"
 #include "GGEMS/core/random/GGEMSRandomState.hh"
-#include "GGEMS/core/units/GGEMSUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
