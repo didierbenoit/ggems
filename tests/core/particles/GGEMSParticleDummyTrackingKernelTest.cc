@@ -6,6 +6,7 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/core/particles/GGEMSParticleState.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
@@ -21,10 +22,6 @@ constexpr std::size_t k_local_size{64U};
 
 constexpr std::uint64_t k_global_particle_offset{987654ULL};
 constexpr std::uint64_t k_energy_milli_eV{511000000ULL};
-
-std::size_t RoundUp(std::size_t value, std::size_t multiple) noexcept {
-  return ((value + multiple - 1U) / multiple) * multiple;
-}
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
@@ -86,7 +83,11 @@ TEST_F(GGEMSParticleDummyTrackingKernelTest, KillsAlivePrimaryParticles) {
   active_count[0] = 999U;
   active_count_buffer.Unmap();
 
-  std::size_t global_size = RoundUp(k_particle_count, k_local_size);
+  auto const padded_global_work_size =
+      ggems::ocl::detail::TryComputePaddedGlobalWorkSize(k_particle_count,
+                                                         k_local_size);
+  ASSERT_TRUE(padded_global_work_size.has_value());
+  std::size_t const global_size = *padded_global_work_size;
 
   std::uint32_t particle_type = ggems::core::particles::ToKernelParticleType(
       ggems::core::particles::GGEMSParticleType::Aionino);

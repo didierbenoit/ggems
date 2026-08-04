@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/random/GGEMSRandomState.hh"
@@ -53,13 +54,6 @@ ggems::units::Bytes ComputeWorkerFinalStatesSize(std::uint32_t worker_count) {
 
   return ggems::units::Bytes{static_cast<std::uint64_t>(worker_count) *
                              sizeof(ParticleState)};
-}
-
-// =============================================================================
-// =============================================================================
-
-std::size_t RoundUp(std::size_t value, std::size_t multiple) noexcept {
-  return ((value + multiple - 1U) / multiple) * multiple;
 }
 
 // =============================================================================
@@ -321,7 +315,12 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
       "Dummy transport kernel argument count is inconsistent.");
 
   constexpr std::size_t k_local_size{64U};
-  std::size_t global_size = RoundUp(worker_count_, k_local_size);
+  auto const padded_global_work_size =
+      ggems::ocl::detail::TryComputePaddedGlobalWorkSize(worker_count_,
+                                                         k_local_size);
+  GGEMS_CHECK_INTERNAL(padded_global_work_size.has_value(),
+                       "Unable to compute the padded OpenCL global work size.");
+  std::size_t const global_size = *padded_global_work_size;
 
   ggems::ocl::GGEMSOpenCLProfiler profiler{};
 

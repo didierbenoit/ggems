@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "GGEMS/core/GGEMSLogger.hh"
+// #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/render/GGEMSVisualLine.hh"
 
 namespace ggems::render {
@@ -14,24 +14,23 @@ public:
 
   GGEMSBanner(GGEMSBanner const &) = delete;
   GGEMSBanner(GGEMSBanner &&) = delete;
-  GGEMSBanner &operator=(GGEMSBanner const &) = delete;
-  GGEMSBanner &operator=(GGEMSBanner &&) = delete;
+  auto operator=(GGEMSBanner const &) -> GGEMSBanner & = delete;
+  auto operator=(GGEMSBanner &&) -> GGEMSBanner & = delete;
 
-public:
-  void EmitToLogger(core::GGEMSLogger &) { ; }
+  // auto EmitToLogger(core::GGEMSLogger &) -> void { ; }
 
-  [[nodiscard]] std::vector<WrappedLine>
-  BuildLines(std::int16_t max_width) const;
+  [[nodiscard]] auto BuildLines(std::int16_t max_width) const
+      -> std::vector<WrappedLine>;
 
-  [[nodiscard]] inline constexpr std::int16_t GetWidth() const noexcept {
+  [[nodiscard]] constexpr auto GetWidth() const noexcept -> std::int16_t {
     return width_;
   };
 
-  [[nodiscard]] inline constexpr std::int16_t GetHeight() const noexcept {
+  [[nodiscard]] constexpr auto GetHeight() const noexcept -> std::int16_t {
     return height_;
   };
 
-  [[nodiscard]] inline constexpr std::int16_t GetBottom() const noexcept {
+  [[nodiscard]] constexpr auto GetBottom() const noexcept -> std::int16_t {
     return bottom_;
   }
 

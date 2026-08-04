@@ -18,6 +18,7 @@
 #include <vector>
 #include <memory>
 
+#include "GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
@@ -168,14 +169,6 @@ ComputeObserverRecordsSize(std::uint32_t observer_record_capacity)
 
   return static_cast<std::uint64_t>(
       source_configuration.GetEnergyValuesMilliElectronVolt().size());
-}
-
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] auto RoundUp(std::size_t value, std::size_t multiple) noexcept
-    -> std::size_t {
-  return ((value + multiple - 1U) / multiple) * multiple;
 }
 
 // =============================================================================
@@ -680,7 +673,12 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
   kernel_->SetArg(12U, static_cast<cl_ulong>(config.run_id));
 
   constexpr std::size_t k_local_size{64U};
-  std::size_t const global_size = RoundUp(worker_count_, k_local_size);
+  auto const padded_global_work_size =
+      ggems::ocl::detail::TryComputePaddedGlobalWorkSize(worker_count_,
+                                                         k_local_size);
+  GGEMS_CHECK_INTERNAL(padded_global_work_size.has_value(),
+                       "Unable to compute the padded OpenCL global work size.");
+  std::size_t const global_size = *padded_global_work_size;
 
   GGEMSTransportRunReport report{};
   report.context_index = context_index_;

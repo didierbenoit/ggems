@@ -15,6 +15,7 @@
 #include <span>
 #include <utility>
 
+#include "GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
@@ -199,13 +200,6 @@ auto ParseArguments(int argc, char **argv) -> Options {
   }
 
   return options;
-}
-
-// =============================================================================
-// =============================================================================
-
-auto RoundUp(std::size_t value, std::size_t multiple) noexcept -> std::size_t {
-  return ((value + multiple - 1U) / multiple) * multiple;
 }
 
 // =============================================================================
@@ -497,8 +491,14 @@ auto GenerateRandomStream(Options const &options) -> void {
   kernel.SetArg(2U, static_cast<cl_uint>(options.particle_count));
   kernel.SetArg(3U, static_cast<cl_uint>(options.words_per_particle));
 
-  std::size_t const global_size = RoundUp(
-      static_cast<std::size_t>(options.particle_count), options.local_size);
+  auto const padded_global_work_size =
+      ggems::ocl::detail::TryComputePaddedGlobalWorkSize(
+          static_cast<std::size_t>(options.particle_count), options.local_size);
+  if (!padded_global_work_size.has_value()) {
+    throw std::runtime_error(
+        "Unable to compute the padded OpenCL global work size.");
+  }
+  std::size_t const global_size = *padded_global_work_size;
 
   kernel.Run({global_size}, {options.local_size});
 

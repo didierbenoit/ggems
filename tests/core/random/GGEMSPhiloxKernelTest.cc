@@ -5,17 +5,23 @@
 #include <format>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include <gtest/gtest.h>
 
+#include "GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/core/random/GGEMSRandomState.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
+#include "GGEMS/core/units/GGEMSBytesUnits.hh"
 
 namespace {
 
 using PhiloxState = ggems::core::random::GGEMSPhiloxState;
+
+// =============================================================================
+// =============================================================================
 
 constexpr std::uint64_t k_seed{77777ULL};
 constexpr std::uint64_t k_alternative_seed{77778ULL};
@@ -29,19 +35,18 @@ constexpr std::size_t k_uniform4_blocks_per_particle{2U};
 constexpr std::size_t k_uniform4_value_count{
     k_particle_count * k_uniform4_blocks_per_particle * 4U};
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+constexpr auto k_padded_global_work_size =
+    ggems::ocl::detail::TryComputePaddedGlobalWorkSize(k_particle_count,
+                                                       k_local_size);
 
-std::size_t RoundUp(std::size_t value, std::size_t multiple) noexcept {
-  return ((value + multiple - 1U) / multiple) * multiple;
-}
+static_assert(k_padded_global_work_size.has_value());
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+constexpr std::size_t k_global_work_size = *k_padded_global_work_size;
 
-std::uint64_t SplitMix64(std::uint64_t value) noexcept {
+// =============================================================================
+// =============================================================================
+
+auto SplitMix64(std::uint64_t value) noexcept -> std::uint64_t {
   value += 0x9E3779B97F4A7C15ULL;
 
   value = (value ^ (value >> 30U)) * 0xBF58476D1CE4E5B9ULL;
@@ -50,11 +55,11 @@ std::uint64_t SplitMix64(std::uint64_t value) noexcept {
   return value ^ (value >> 31U);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-PhiloxState MakePhiloxState(std::uint64_t seed, std::uint64_t index) noexcept {
+auto MakePhiloxState(std::uint64_t seed, std::uint64_t index) noexcept
+    -> PhiloxState {
   std::uint64_t key = SplitMix64(seed);
 
   return PhiloxState{.counter_0 = 0U,
@@ -65,23 +70,21 @@ PhiloxState MakePhiloxState(std::uint64_t seed, std::uint64_t index) noexcept {
                      .key_1 = static_cast<std::uint32_t>(key >> 32U)};
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
-bool AreStatesEqual(PhiloxState &lhs, PhiloxState &rhs) noexcept {
+auto AreStatesEqual(PhiloxState &lhs, PhiloxState &rhs) noexcept -> bool {
   return lhs.counter_0 == rhs.counter_0 && lhs.counter_1 == rhs.counter_1 &&
          lhs.counter_2 == rhs.counter_2 && lhs.counter_3 == rhs.counter_3 &&
          lhs.key_0 == rhs.key_0 && lhs.key_1 == rhs.key_1;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 class GGEMSPhiloxKernelTest : public ::testing::Test {
 protected:
-  static void SetUpTestSuite() {
+  static auto SetUpTestSuite() -> void {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
     if (opencl.GetContext().empty()) {
@@ -92,7 +95,7 @@ protected:
     ASSERT_FALSE(opencl.GetContext().empty());
   }
 
-  static ggems::ocl::GGEMSOpenCLContext &GetContext() {
+  static auto GetContext() -> ggems::ocl::GGEMSOpenCLContext & {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
     return opencl.GetContext().front();
@@ -101,9 +104,8 @@ protected:
 
 } // namespace
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST_F(GGEMSPhiloxKernelTest, UniformValuesAreInsideUnitInterval) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
@@ -141,7 +143,7 @@ TEST_F(GGEMSPhiloxKernelTest, UniformValuesAreInsideUnitInterval) {
     states[i] = MakePhiloxState(k_seed, static_cast<std::uint64_t>(i));
   }
 
-  std::fill(values, values + k_value_count, -1.0f);
+  std::fill(values, values + k_value_count, -1.0F);
 
   values_buffer.Unmap();
   states_buffer.Unmap();
@@ -151,23 +153,20 @@ TEST_F(GGEMSPhiloxKernelTest, UniformValuesAreInsideUnitInterval) {
   kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
   kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
 
-  std::size_t global_size = RoundUp(k_particle_count, k_local_size);
-
-  kernel.Run({global_size}, {k_local_size});
+  kernel.Run({k_global_work_size}, {k_local_size});
 
   values_buffer.Map(CL_MAP_READ);
 
   for (std::size_t i = 0U; i < k_value_count; ++i) {
-    EXPECT_GE(values[i], 0.0f);
-    EXPECT_LT(values[i], 1.0f);
+    EXPECT_GE(values[i], 0.0F);
+    EXPECT_LT(values[i], 1.0F);
   }
 
   values_buffer.Unmap();
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST_F(GGEMSPhiloxKernelTest, SequenceContinuesBetweenKernelCalls) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
@@ -215,9 +214,7 @@ TEST_F(GGEMSPhiloxKernelTest, SequenceContinuesBetweenKernelCalls) {
   kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
   kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
 
-  std::size_t global_size = RoundUp(k_particle_count, k_local_size);
-
-  kernel.Run({global_size}, {k_local_size});
+  kernel.Run({k_global_work_size}, {k_local_size});
 
   std::vector<float> first_values(k_value_count);
 
@@ -225,7 +222,7 @@ TEST_F(GGEMSPhiloxKernelTest, SequenceContinuesBetweenKernelCalls) {
   std::copy(values, values + k_value_count, first_values.begin());
   values_buffer.Unmap();
 
-  kernel.Run({global_size}, {k_local_size});
+  kernel.Run({k_global_work_size}, {k_local_size});
 
   values_buffer.Map(CL_MAP_READ);
 
@@ -245,9 +242,8 @@ TEST_F(GGEMSPhiloxKernelTest, SequenceContinuesBetweenKernelCalls) {
   EXPECT_TRUE(sequence_has_advanced);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST_F(GGEMSPhiloxKernelTest, SameSeedProducesSameFirstSequence) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
@@ -278,7 +274,7 @@ TEST_F(GGEMSPhiloxKernelTest, SameSeedProducesSameFirstSequence) {
   auto *states = static_cast<PhiloxState *>(states_buffer.GetData());
   auto *values = static_cast<float *>(values_buffer.GetData());
 
-  auto initialise_states = [&]() {
+  auto initialise_states = [&]() -> void {
     states_buffer.Map(CL_MAP_WRITE);
     values_buffer.Map(CL_MAP_WRITE);
 
@@ -297,11 +293,9 @@ TEST_F(GGEMSPhiloxKernelTest, SameSeedProducesSameFirstSequence) {
   kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
   kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
 
-  std::size_t global_size = RoundUp(k_particle_count, k_local_size);
-
   initialise_states();
 
-  kernel.Run({global_size}, {k_local_size});
+  kernel.Run({k_global_work_size}, {k_local_size});
 
   std::vector<float> first_values(k_value_count);
 
@@ -311,7 +305,7 @@ TEST_F(GGEMSPhiloxKernelTest, SameSeedProducesSameFirstSequence) {
 
   initialise_states();
 
-  kernel.Run({global_size}, {k_local_size});
+  kernel.Run({k_global_work_size}, {k_local_size});
 
   values_buffer.Map(CL_MAP_READ);
 
@@ -322,9 +316,8 @@ TEST_F(GGEMSPhiloxKernelTest, SameSeedProducesSameFirstSequence) {
   values_buffer.Unmap();
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST_F(GGEMSPhiloxKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
@@ -355,7 +348,7 @@ TEST_F(GGEMSPhiloxKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
   auto *states = static_cast<PhiloxState *>(states_buffer.GetData());
   auto *values = static_cast<float *>(values_buffer.GetData());
 
-  auto initialise_states = [&](std::uint64_t seed) {
+  auto initialise_states = [&](std::uint64_t seed) -> void {
     states_buffer.Map(CL_MAP_WRITE);
     values_buffer.Map(CL_MAP_WRITE);
 
@@ -374,11 +367,9 @@ TEST_F(GGEMSPhiloxKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
   kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
   kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
 
-  std::size_t global_size = RoundUp(k_particle_count, k_local_size);
-
   initialise_states(k_seed);
 
-  kernel.Run({global_size}, {k_local_size});
+  kernel.Run({k_global_work_size}, {k_local_size});
 
   std::vector<float> first_seed_values(k_value_count);
 
@@ -388,7 +379,7 @@ TEST_F(GGEMSPhiloxKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
 
   initialise_states(k_alternative_seed);
 
-  kernel.Run({global_size}, {k_local_size});
+  kernel.Run({k_global_work_size}, {k_local_size});
 
   values_buffer.Map(CL_MAP_READ);
 
@@ -408,9 +399,8 @@ TEST_F(GGEMSPhiloxKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
   EXPECT_GT(different_value_count, k_value_count / 2U);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST_F(GGEMSPhiloxKernelTest, RandomStatesAreAdvancedByKernelExecution) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
@@ -463,9 +453,7 @@ TEST_F(GGEMSPhiloxKernelTest, RandomStatesAreAdvancedByKernelExecution) {
   kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
   kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
 
-  std::size_t global_size = RoundUp(k_particle_count, k_local_size);
-
-  kernel.Run({global_size}, {k_local_size});
+  kernel.Run({k_global_work_size}, {k_local_size});
 
   states_buffer.Map(CL_MAP_READ);
   values_buffer.Map(CL_MAP_READ);
@@ -499,9 +487,8 @@ TEST_F(GGEMSPhiloxKernelTest, RandomStatesAreAdvancedByKernelExecution) {
   EXPECT_EQ(changed_state_count, k_particle_count);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST_F(GGEMSPhiloxKernelTest,
        Uniform4ValuesAreInsideUnitIntervalAndAdvanceByBlock) {
@@ -555,9 +542,7 @@ TEST_F(GGEMSPhiloxKernelTest,
   kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
   kernel.SetArg(3U, static_cast<cl_uint>(k_uniform4_blocks_per_particle));
 
-  std::size_t global_size = RoundUp(k_particle_count, k_local_size);
-
-  kernel.Run({global_size}, {k_local_size});
+  kernel.Run({k_global_work_size}, {k_local_size});
 
   states_buffer.Map(CL_MAP_READ);
   values_buffer.Map(CL_MAP_READ);
@@ -582,10 +567,6 @@ TEST_F(GGEMSPhiloxKernelTest,
   values_buffer.Unmap();
   states_buffer.Unmap();
 }
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
 
 TEST_F(GGEMSPhiloxKernelTest, GenericRandomUniformUsesSelectedPhiloxEngine) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
@@ -634,9 +615,7 @@ TEST_F(GGEMSPhiloxKernelTest, GenericRandomUniformUsesSelectedPhiloxEngine) {
   kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
   kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
 
-  std::size_t global_size = RoundUp(k_particle_count, k_local_size);
-
-  kernel.Run({global_size}, {k_local_size});
+  kernel.Run({k_global_work_size}, {k_local_size});
 
   states_buffer.Map(CL_MAP_READ);
   values_buffer.Map(CL_MAP_READ);
@@ -655,9 +634,8 @@ TEST_F(GGEMSPhiloxKernelTest, GenericRandomUniformUsesSelectedPhiloxEngine) {
   states_buffer.Unmap();
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST_F(GGEMSPhiloxKernelTest, GenericRandomUniform4UsesSelectedPhiloxEngine) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
@@ -712,9 +690,7 @@ TEST_F(GGEMSPhiloxKernelTest, GenericRandomUniform4UsesSelectedPhiloxEngine) {
   kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
   kernel.SetArg(3U, static_cast<cl_uint>(k_uniform4_blocks_per_particle));
 
-  std::size_t global_size = RoundUp(k_particle_count, k_local_size);
-
-  kernel.Run({global_size}, {k_local_size});
+  kernel.Run({k_global_work_size}, {k_local_size});
 
   states_buffer.Map(CL_MAP_READ);
   values_buffer.Map(CL_MAP_READ);
