@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <format>
-#include <limits>
 #include <string>
 #include <string_view>
 #include <array>
@@ -11,6 +10,7 @@
 #include <vector>
 #include <utility>
 
+#include "GGEMSObserverCounterArithmetic.hh"
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/observer/GGEMSObserverTypes.hh"
@@ -567,16 +567,6 @@ auto BuildPrimaryIds(std::vector<ObserverRecordView> const &views)
   return primary_ids;
 }
 
-// =============================================================================
-// =============================================================================
-
-auto AddSaturated(std::uint32_t &destination, std::uint64_t value) -> void {
-  std::uint64_t sum = static_cast<std::uint64_t>(destination) + value;
-
-  destination = static_cast<std::uint32_t>(std::min<std::uint64_t>(
-      sum,
-      static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max())));
-}
 } // namespace
 
 // =============================================================================
@@ -694,9 +684,10 @@ auto GGEMSTransportObserver::SwapRunResult(
 auto GGEMSTransportObserver::Accumulate(
     std::span<GGEMSObserverRecord const> records,
     GGEMSObserverCounters const &counters) -> void {
-  AddSaturated(counters_.captured_primary_count,
-               counters.captured_primary_count);
-  AddSaturated(counters_.overflow_count, counters.overflow_count);
+  detail::AddSaturatedObserverCounter(counters_.captured_primary_count,
+                                      counters.captured_primary_count);
+  detail::AddSaturatedObserverCounter(counters_.overflow_count,
+                                      counters.overflow_count);
 
   std::size_t available_record_count =
       std::min<std::size_t>(records.size(), counters.record_count);
@@ -715,8 +706,8 @@ auto GGEMSTransportObserver::Accumulate(
                   records_to_copy.end());
 
   if (copied_record_count < available_record_count) {
-    AddSaturated(counters_.overflow_count,
-                 available_record_count - copied_record_count);
+    detail::AddSaturatedObserverCounter(
+        counters_.overflow_count, available_record_count - copied_record_count);
   }
 
   counters_.record_count = static_cast<std::uint32_t>(records_.size());

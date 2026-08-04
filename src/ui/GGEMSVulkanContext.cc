@@ -26,11 +26,11 @@
 #include "GGEMSVulkanContext.hh"
 #include "GGEMSVulkanDeviceSelection.hh"
 #include "GGEMSDeviceStatus.hh"
+#include "GGEMSVulkanColorConversion.hh"
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/render/GGEMSColourNames.hh"
-#include "GGEMS/render/GGEMSColour.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 
@@ -165,21 +165,6 @@ auto AppendRejectionReason(std::string &diagnostic, std::string_view reason)
   }
 
   return std::nullopt;
-}
-
-// =============================================================================
-// =============================================================================
-
-auto ToVulkanClearColour(ggems::render::ColourKey const &colour)
-    -> std::array<float, 4U> {
-  ggems::render::RGB const rgb =
-      ggems::render::GetColourRGB(colour.family, colour.shade, colour.variant);
-
-  constexpr float k_inverse_255{1.0F / 255.0F};
-
-  return {static_cast<float>(rgb.r) * k_inverse_255,
-          static_cast<float>(rgb.g) * k_inverse_255,
-          static_cast<float>(rgb.b) * k_inverse_255, 1.0F};
 }
 
 } // namespace
@@ -1196,7 +1181,7 @@ auto GGEMSVulkanContext::RecordCommandBuffer(std::uint32_t image_index)
                                  vk::ImageLayout::eColorAttachmentOptimal);
 
   vk::ClearValue clear_value =
-      vk::ClearColorValue(ToVulkanClearColour(render::BLUE_Abyss));
+      vk::ClearColorValue(detail::ToVulkanClearColor(render::BLUE_Abyss));
 
   vk::RenderingAttachmentInfo colour_attachment{
       .imageView = *swapchain_image_views_[image_index],

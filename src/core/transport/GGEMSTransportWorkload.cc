@@ -18,6 +18,7 @@
 #include <vector>
 #include <memory>
 
+#include "GGEMSObserverCounterArithmetic.hh"
 #include "GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
@@ -799,17 +800,14 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
   report.logical_observer_counters.record_count =
       report.observer_records.size();
 
-  auto saturate_u32 = [](std::uint64_t value) noexcept -> std::uint32_t {
-    return static_cast<std::uint32_t>(std::min(
-        value,
-        static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max())));
-  };
   report.observer_counters.record_count =
       static_cast<std::uint32_t>(report.observer_records.size());
   report.observer_counters.overflow_count =
-      saturate_u32(report.logical_observer_counters.overflow_count);
+      observer::detail::SaturateObserverCounter(
+          report.logical_observer_counters.overflow_count);
   report.observer_counters.captured_primary_count =
-      saturate_u32(report.logical_observer_counters.captured_primary_count);
+      observer::detail::SaturateObserverCounter(
+          report.logical_observer_counters.captured_primary_count);
 
   auto compute_rate = [](std::uint64_t count,
                          ggems::units::Duration duration) noexcept -> double {

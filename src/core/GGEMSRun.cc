@@ -16,6 +16,7 @@
 #include <string>
 #include <type_traits>
 
+#include "GGEMSObserverCounterArithmetic.hh"
 #include "GGEMS/core/GGEMSRun.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
@@ -27,7 +28,6 @@
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/core/transport/GGEMSTransportWorkloadPlan.hh"
-#include "GGEMS/core/transport/GGEMSTransportCounters.hh"
 #include "GGEMS/core/transport/GGEMSTransportWorkload.hh"
 #include "GGEMS/core/observer/GGEMSTransportObserver.hh"
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
@@ -52,16 +52,6 @@ struct RunningGuard {
 
 static_assert(
     std::is_nothrow_move_assignable_v<sources::GGEMSSourceRunSnapshot>);
-
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] auto SaturateToUint32(std::uint64_t value) noexcept
-    -> std::uint32_t {
-  return static_cast<std::uint32_t>(std::min(
-      value,
-      static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max())));
-}
 
 // =============================================================================
 // =============================================================================
@@ -804,9 +794,10 @@ auto GGEMSRun::Run() -> void {
     observer_result_candidate->counters_.record_count =
         static_cast<std::uint32_t>(observer_result_candidate->records_.size());
     observer_result_candidate->counters_.overflow_count =
-        SaturateToUint32(logical_overflow_count);
+        observer::detail::SaturateObserverCounter(logical_overflow_count);
     observer_result_candidate->counters_.captured_primary_count =
-        SaturateToUint32(logical_captured_primary_count);
+        observer::detail::SaturateObserverCounter(
+            logical_captured_primary_count);
 
     if (observer_config.enabled != 0U) {
       observer_dump = observer_result_candidate->BuildDump();

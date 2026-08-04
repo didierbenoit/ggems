@@ -155,8 +155,9 @@ target_compile_features(ggems_core PUBLIC cxx_std_23)
 target_include_directories(ggems_core PUBLIC ${PROJECT_SOURCE_DIR}/include
                                              ${OPENCL_HPP_INCLUDE_DIR})
 
-target_include_directories(ggems_core
-                           PRIVATE ${PROJECT_SOURCE_DIR}/src/frameworks)
+target_include_directories(
+  ggems_core PRIVATE ${PROJECT_SOURCE_DIR}/src/frameworks
+                     ${PROJECT_SOURCE_DIR}/src/core/observer)
 
 target_compile_definitions(
   ggems_core

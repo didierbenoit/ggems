@@ -13,42 +13,22 @@
 
 #include <backends/imgui_impl_vulkan.h>
 
+#include "GGEMSVulkanSceneRenderer.hh"
+#include "GGEMSVulkanColorConversion.hh"
+
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
-#include "GGEMSVulkanSceneRenderer.hh"
 #include "GGEMS/render/GGEMSColourNames.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
-#include "GGEMS/render/GGEMSColour.hh"
 
 namespace {
+
 constexpr std::uint32_t k_axis_count{3U};
 constexpr std::uint32_t k_vertices_per_axis{2U};
 constexpr std::uint32_t k_axes_vertex_count{k_axis_count * k_vertices_per_axis};
 constexpr float k_orbit_degrees_per_pixel{0.20F};
-constexpr float k_inverse_255{1.0F / 255.0F};
 
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] auto ToVulkanRGBA(ggems::render::RGB const &rgb,
-                                float const alpha = 1.0F) noexcept
-    -> std::array<float, 4U> {
-  return {static_cast<float>(rgb.r) * k_inverse_255,
-          static_cast<float>(rgb.g) * k_inverse_255,
-          static_cast<float>(rgb.b) * k_inverse_255, alpha};
-}
-
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] auto ToVulkanClearColour(ggems::render::ColourKey const &colour)
-    -> std::array<float, 4U> {
-  ggems::render::RGB const rgb =
-      ggems::render::GetColourRGB(colour.family, colour.shade, colour.variant);
-
-  return ToVulkanRGBA(rgb);
-}
 } // namespace
 
 namespace ggems::ui {
@@ -439,7 +419,7 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
 
   command_buffer.pipelineBarrier2(to_colour_attachment_dependency);
 
-  vk::ClearValue clear_value{ToVulkanClearColour(render::BLUE_Abyss)};
+  vk::ClearValue clear_value{detail::ToVulkanClearColor(render::BLUE_Abyss)};
 
   vk::RenderingAttachmentInfo colour_attachment{
       .imageView = *colour_image_view_,
