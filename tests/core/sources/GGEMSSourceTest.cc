@@ -624,6 +624,38 @@ TEST(GGEMSSource, BuildRecordReturnsIndependentOwnedSnapshots) {
 // =============================================================================
 // =============================================================================
 
+TEST(GGEMSSource, ExecutionRecordPreservesSourceStateAcrossPopulationModes) {
+  using ggems::core::particles::GGEMSParticleType;
+
+  ggems::core::sources::GGEMSSource source{};
+  source.SetEmittedParticleType(GGEMSParticleType::Electron)
+      .SetEnergyMilliElectronVolt(123'456ULL)
+      .SetBoxEmissionPicoMeter(11ULL, 13ULL, 17ULL)
+      .SetPositionPicoMeter(101LL, -202LL, 303LL)
+      .SetOrientation({1.0, 0.0, 0.0}, {0.0, 0.0, 1.0})
+      .SetFocusedAngularDistributionPicoMeter(10'000LL, 20'000LL, -30'000LL)
+      .SetWeight(0.375F);
+
+  auto const count_driven_record = source.BuildRecord();
+  ExpectSourceRecordsEqual(source.BuildExecutionRecord(), count_driven_record);
+
+  auto expected_activity_record = count_driven_record;
+  expected_activity_record.emitted_particle_type =
+      ggems::core::particles::ToKernelParticleType(GGEMSParticleType::Unknown);
+  expected_activity_record.energy_milli_eV = 0ULL;
+
+  source.SetActivityDrivenRadionuclide(MakeTestRadionuclide(),
+                                       ggems::units::Activity{7.5L}, 42ULL);
+  auto const activity_driven_record = source.BuildExecutionRecord();
+
+  ExpectSourceRecordsEqual(activity_driven_record, expected_activity_record);
+  EXPECT_EQ(activity_driven_record.time_start_ps, 0ULL);
+  EXPECT_EQ(activity_driven_record.time_stop_ps, 0ULL);
+}
+
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSSource, ConfiguresPointRectangleEllipseAndCircle) {
   using ggems::core::sources::FromKernelEmissionGeometryType;
   using ggems::core::sources::GGEMSEmissionGeometryType;

@@ -33,14 +33,6 @@
 
 namespace ggems::core::sources {
 
-class GGEMSSourceRunSnapshotAccess {
-public:
-  [[nodiscard]] static auto BuildCommonRecord(GGEMSSource const &source)
-      -> GGEMSSourceRecord {
-    return source.BuildCommonRecord();
-  }
-};
-
 namespace {
 
 // =============================================================================
@@ -482,7 +474,7 @@ auto BuildSourceRunSnapshot(
     GGEMSSourceRecord source_record =
         population_mode == GGEMSSourcePopulationMode::CountDriven
             ? source->BuildRecord()
-            : GGEMSSourceRunSnapshotAccess::BuildCommonRecord(*source);
+            : source->BuildExecutionRecord();
     source_record.time_start_ps = time_window.start_ps;
     source_record.time_stop_ps = time_window.stop_ps;
 

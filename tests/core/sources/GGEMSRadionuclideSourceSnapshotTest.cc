@@ -269,6 +269,10 @@ TEST(GGEMSRadionuclideSourceSnapshot,
                   plan_sources[index].run_primary_begin);
     EXPECT_EQ(records[index].time_start_ps, k_window.start_ps);
     EXPECT_EQ(records[index].time_stop_ps, k_window.stop_ps);
+
+    auto const source_record = sources[index]->BuildExecutionRecord();
+    EXPECT_EQ(source_record.time_start_ps, 0ULL);
+    EXPECT_EQ(source_record.time_stop_ps, 0ULL);
     EXPECT_EQ(populations[index].population_mode,
               ggems::core::sources::ToKernelSourcePopulationMode(
                   plan_sources[index].population_mode));
@@ -296,9 +300,9 @@ TEST(GGEMSRadionuclideSourceSnapshot,
   EXPECT_EQ(populations[1U].emission_count, 1U);
   EXPECT_EQ(populations[3U].first_emission_index, 1U);
   EXPECT_EQ(populations[3U].emission_count, 3U);
-  float const expected_discrete_scaled_decay = static_cast<float>(
+  auto const expected_discrete_scaled_decay = static_cast<float>(
       std::numbers::ln2_v<long double> / discrete->GetHalfLifeSeconds());
-  float const expected_f18_scaled_decay = static_cast<float>(
+  auto const expected_f18_scaled_decay = static_cast<float>(
       std::numbers::ln2_v<long double> / f18->GetHalfLifeSeconds());
   EXPECT_FLOAT_EQ(populations[1U].scaled_decay, expected_discrete_scaled_decay);
   EXPECT_FLOAT_EQ(populations[3U].scaled_decay, expected_f18_scaled_decay);
@@ -331,7 +335,11 @@ TEST(GGEMSRadionuclideSourceSnapshot,
   {
     auto definition = MakeDiscreteDefinition();
     weak_definition = definition;
-    std::vector<SourcePtr> sources{MakeActivitySource(definition, 0.0L)};
+    auto source = MakeActivitySource(definition, 0.0L);
+    source->SetBoxEmissionPicoMeter(101ULL, 103ULL, 107ULL)
+        .SetPositionPicoMeter(11LL, -22LL, 33LL)
+        .SetWeight(0.625F);
+    std::vector<SourcePtr> sources{source};
     configuration =
         ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
     Planner planner{sources, MakeRandom()};
@@ -344,6 +352,25 @@ TEST(GGEMSRadionuclideSourceSnapshot,
     definition.reset();
     sources.clear();
   }
+
+  ASSERT_EQ(snapshot->GetRecords().size(), 1U);
+  auto const &record = snapshot->GetRecords().front();
+  EXPECT_EQ(record.time_start_ps, 10ULL);
+  EXPECT_EQ(record.time_stop_ps, 1'000'000'000'010ULL);
+  EXPECT_EQ(record.emitted_particle_type,
+            ggems::core::particles::ToKernelParticleType(
+                ggems::core::particles::GGEMSParticleType::Unknown));
+  EXPECT_EQ(record.energy_milli_eV, 0ULL);
+  EXPECT_EQ(record.position_x_pm, 11LL);
+  EXPECT_EQ(record.position_y_pm, -22LL);
+  EXPECT_EQ(record.position_z_pm, 33LL);
+  EXPECT_EQ(record.emission_geometry_type,
+            ggems::core::sources::ToKernelEmissionGeometryType(
+                ggems::core::sources::GGEMSEmissionGeometryType::Box));
+  EXPECT_EQ(record.geometry_size_x_pm, 101ULL);
+  EXPECT_EQ(record.geometry_size_y_pm, 103ULL);
+  EXPECT_EQ(record.geometry_size_z_pm, 107ULL);
+  EXPECT_FLOAT_EQ(record.weight, 0.625F);
 
   ASSERT_FALSE(weak_definition.expired());
   ASSERT_EQ(configuration->GetRadionuclideDefinitions().size(), 1U);

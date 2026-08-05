@@ -147,7 +147,7 @@ auto GGEMSSource::FinalizeInitialization() noexcept -> void {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSSource::BuildCommonRecord() const -> GGEMSSourceRecord {
+auto GGEMSSource::BuildExecutionRecord() const -> GGEMSSourceRecord {
   GGEMSSourceRecord record = record_;
 
   if (GetPopulationMode() == GGEMSSourcePopulationMode::ActivityDriven) {
@@ -643,7 +643,7 @@ auto GGEMSSource::SetWeight(float weight) -> GGEMSSource & {
 
 auto GGEMSSource::BuildRecord() const -> GGEMSSourceRecord {
   CheckCountDrivenConfiguration();
-  GGEMSSourceRecord const record = BuildCommonRecord();
+  GGEMSSourceRecord const record = BuildExecutionRecord();
   std::uint64_t const expected_energy =
       energy_distribution_.GetType() == GGEMSEnergyDistributionType::Mono
           ? energy_distribution_.GetMonoEnergyMilliElectronVolt()

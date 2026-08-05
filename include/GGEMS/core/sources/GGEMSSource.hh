@@ -20,8 +20,6 @@ class GGEMSRun;
 
 namespace ggems::core::sources {
 
-class GGEMSSourceRunSnapshotAccess;
-
 class GGEMSSource {
 public:
   GGEMSSource();
@@ -122,18 +120,18 @@ public:
 
   [[nodiscard]] auto GetRecord() const -> GGEMSSourceRecord const &;
 
+  [[nodiscard]] auto BuildExecutionRecord() const -> GGEMSSourceRecord;
+
   [[nodiscard]] auto BuildRecord() const -> GGEMSSourceRecord;
 
   auto Verbose() const -> void;
 
 private:
   friend class ggems::core::GGEMSRun;
-  friend class GGEMSSourceRunSnapshotAccess;
 
   auto CheckCountDrivenConfiguration() const -> void;
   auto CheckEnergyConfigurationMutable() const -> void;
   auto CheckPopulationConfigurationMutable() const -> void;
-  [[nodiscard]] auto BuildCommonRecord() const -> GGEMSSourceRecord;
   auto FinalizeInitialization() noexcept -> void;
 
   auto CommitEnergyDistribution(GGEMSEnergyDistribution distribution) noexcept
