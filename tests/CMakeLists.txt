@@ -79,10 +79,8 @@ target_link_libraries(ggems_core_tests PRIVATE ggems_core
                                                ${GGEMS_GTEST_MAIN_TARGET})
 
 target_include_directories(
-  ggems_core_tests
-  PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/src/core/observer
-          ${PROJECT_SOURCE_DIR}/src/frameworks
-          ${PROJECT_SOURCE_DIR}/tests/include)
+  ggems_core_tests PRIVATE ${PROJECT_SOURCE_DIR}/include
+                           ${PROJECT_SOURCE_DIR}/tests/include)
 
 ggems_apply_release_optimizations(ggems_core_tests)
 
@@ -120,9 +118,8 @@ if(GGEMS_WITH_IMGUI)
   target_link_libraries(ggems_gui_tests PRIVATE ggems_gui
                                                 ${GGEMS_GTEST_MAIN_TARGET})
 
-  target_include_directories(
-    ggems_gui_tests PRIVATE ${PROJECT_SOURCE_DIR}/include
-                            ${PROJECT_SOURCE_DIR}/src/ui)
+  target_include_directories(ggems_gui_tests
+                             PRIVATE ${PROJECT_SOURCE_DIR}/include)
 
   ggems_apply_release_optimizations(ggems_gui_tests)
 

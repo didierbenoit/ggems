@@ -27,17 +27,28 @@
  * GNU General Public License v3.0
  */
 
-/// \cond
 #include <set>
 #include <algorithm>
-#include <ranges>
-/// \endcond
+#include <cctype>
+#include <string>
 
-#include "GGEMS/core/GGEMSCoreUtils.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
 
 namespace ggems::ocl {
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto NormalizeDeviceSelectionText(std::string text)
+    -> std::string {
+  for (char &character : text) {
+    character =
+        static_cast<char>(std::tolower(static_cast<unsigned char>(character)));
+  }
+
+  return text;
+}
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
@@ -252,7 +263,7 @@ GGEMSOpenCL::ParseDeviceFilters(
   std::vector<std::string> lower_filters;
   lower_filters.reserve(filters.size());
   for (auto const &f : filters) {
-    std::string lf = core::Lower(f);
+    std::string lf = NormalizeDeviceSelectionText(f);
     lower_filters.push_back(lf);
   }
 
@@ -292,18 +303,20 @@ GGEMSOpenCL::ParseDeviceFilters(
   for (auto const &f : lower_filters) {
     if (f == "gpu") {
       predicates.push_back([](auto const &d) {
-        return core::Lower(ocl::DeviceTypeToString(d.GetType())).find("gpu") !=
-               std::string::npos;
+        return NormalizeDeviceSelectionText(
+                   ocl::DeviceTypeToString(d.GetType()))
+                   .find("gpu") != std::string::npos;
       });
     } else if (f == "cpu") {
       predicates.push_back([](auto const &d) {
-        return core::Lower(ocl::DeviceTypeToString(d.GetType())).find("cpu") !=
-               std::string::npos;
+        return NormalizeDeviceSelectionText(
+                   ocl::DeviceTypeToString(d.GetType()))
+                   .find("cpu") != std::string::npos;
       });
     } else if (vendor_aliases.contains(f)) {
       std::string vendor_name = vendor_aliases.find(f)->second;
       predicates.push_back([vendor_name](auto const &d) {
-        return core::Lower(d.GetVendor()).find(vendor_name) !=
+        return NormalizeDeviceSelectionText(d.GetVendor()).find(vendor_name) !=
                std::string::npos;
       });
     }

@@ -5,9 +5,9 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <cctype>
 
 #include "GGEMS/core/GGEMSLogger.hh"
-#include "GGEMS/core/GGEMSCoreUtils.hh"
 #include "GGEMS/core/GGEMSOutputMode.hh"
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
@@ -38,6 +38,20 @@ std::unique_ptr<GGEMSOutputState> g_state{};
 std::unique_ptr<render::GGEMSBanner> g_banner{};
 
 std::atomic<bool> g_output_running{false};
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto NormalizeOutputMode(std::string_view mode) -> std::string {
+  std::string normalized{mode};
+
+  for (char &character : normalized) {
+    character =
+        static_cast<char>(std::tolower(static_cast<unsigned char>(character)));
+  }
+
+  return normalized;
+}
 
 // =============================================================================
 // =============================================================================
@@ -77,7 +91,7 @@ void PrepareWindowsTerminal() noexcept {
 // =============================================================================
 
 auto Parse(std::string_view mode) -> OutputMode {
-  std::string value = Lower(std::string(mode));
+  std::string const value = NormalizeOutputMode(mode);
 
   if (value == "term" || value == "terminal") {
     return OutputMode::Term;
