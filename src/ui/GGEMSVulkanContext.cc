@@ -22,11 +22,11 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 
-#include "GGEMSImGuiTheme.hh"
-#include "GGEMSVulkanContext.hh"
-#include "GGEMSVulkanDeviceSelection.hh"
-#include "GGEMSDeviceStatus.hh"
-#include "GGEMSVulkanColorConversion.hh"
+#include "GGEMS/ui/GGEMSImGuiTheme.hh"
+#include "GGEMS/ui/GGEMSVulkanContext.hh"
+#include "GGEMS/ui/GGEMSVulkanDeviceSelection.hh"
+#include "GGEMS/ui/GGEMSDeviceStatus.hh"
+#include "GGEMS/ui/GGEMSVulkanColorConversion.hh"
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
@@ -35,7 +35,7 @@
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 
 #if defined(_WIN32)
-#include "GGEMSVulkanDisplayAdapterWin32.hh"
+#include "GGEMS/ui/GGEMSVulkanDisplayAdapterWin32.hh"
 #endif
 
 namespace {

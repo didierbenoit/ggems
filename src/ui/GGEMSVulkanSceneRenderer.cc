@@ -13,8 +13,8 @@
 
 #include <backends/imgui_impl_vulkan.h>
 
-#include "GGEMSVulkanSceneRenderer.hh"
-#include "GGEMSVulkanColorConversion.hh"
+#include "GGEMS/ui/GGEMSVulkanSceneRenderer.hh"
+#include "GGEMS/ui/GGEMSVulkanColorConversion.hh"
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"

@@ -22,11 +22,10 @@
 #include "GGEMS/frameworks/GGEMSOpenCLStrings.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/ui/GGEMSGuiApplication.hh"
-
-#include "GGEMSDeviceStatus.hh"
-#include "GGEMSVulkanContext.hh"
-#include "GGEMSVulkanDeviceSelection.hh"
-#include "GGEMSWindowIconData.hh"
+#include "GGEMS/ui/GGEMSDeviceStatus.hh"
+#include "GGEMS/ui/GGEMSVulkanContext.hh"
+#include "GGEMS/ui/GGEMSVulkanDeviceSelection.hh"
+#include "GGEMS/ui/GGEMSWindowIconData.hh"
 
 namespace {
 // =============================================================================

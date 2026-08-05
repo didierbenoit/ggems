@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMSOpenCLLaunchGeometry.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLLaunchGeometry.hh"
 
 namespace {
 

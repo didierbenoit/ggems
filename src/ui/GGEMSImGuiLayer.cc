@@ -10,8 +10,8 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
-#include "GGEMSImGuiLayer.hh"
-#include "GGEMSDeviceStatus.hh"
+#include "GGEMS/ui/GGEMSImGuiLayer.hh"
+#include "GGEMS/ui/GGEMSDeviceStatus.hh"
 #include "GGEMS/core/GGEMSOutputState.hh"
 #include "GGEMS/core/GGEMSOutputMode.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"

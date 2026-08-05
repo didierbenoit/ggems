@@ -11,8 +11,8 @@
 #include <memory>
 #include <optional>
 #include <vector>
+#include <format>
 
-#include "GGEMS/core/GGEMSCoreUtils.hh"
 #include "GGEMS/render/GGEMSColourNames.hh"
 #include "GGEMS/render/GGEMSColour.hh"
 
@@ -99,19 +99,7 @@ public:
 
   auto Log(LogLevel lvl, std::int32_t depth, std::string_view module,
            std::source_location const &loc = std::source_location::current(),
-           std::string_view msg = "") -> void {
-    LogRecord rec;
-    rec.timestamp = std::chrono::system_clock::now();
-    rec.level = lvl;
-    rec.depth = depth;
-    rec.thread_id = ThreadTag();
-    rec.module = std::string(module);
-    rec.message = msg;
-    rec.function = SimplifyFunctionName(loc.function_name());
-    rec.file = loc.file_name();
-    rec.line = static_cast<int>(loc.line());
-    Dispatch(rec);
-  }
+           std::string_view msg = "") -> void;
 
   template <LogLevel Level, typename... Args>
   auto LogFmt(std::int32_t depth, std::string_view module,

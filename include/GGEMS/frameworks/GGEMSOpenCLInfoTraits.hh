@@ -2,10 +2,11 @@
 
 #include <cstdint>
 #include <string>
+#include <cstddef>
 #include <string_view>
 #include <vector>
 
-#include "GGEMS/core/GGEMSSystemUtils.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLStrings.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/units/GGEMSFrequencyUnits.hh"
@@ -16,37 +17,14 @@
 namespace ggems::ocl {
 using namespace ggems::units;
 
-/*!
- * \brief Primary traits template for OpenCL info parameters.
- *
- * Specialisations of this template map a cl_* info identifier to:
- * - a \c type alias giving the corresponding C++ type;
- * - a \c name string_view describing the parameter;
- * - a \c ToString() function producing a human-readable representation.
- *
- * \tparam Info OpenCL info identifier (e.g. CL_DEVICE_NAME).
- */
 template <cl_uint Info> struct InfoTraits;
 
-// ============================================================================
-// Platform
-// ============================================================================
-
-/*!
- * \struct InfoTraits<CL_PLATFORM_VENDOR>
- * \brief Traits for \c CL_PLATFORM_VENDOR.
- */
 template <> struct InfoTraits<CL_PLATFORM_VENDOR> {
   using type = std::string; /*!< C++ type returned by this info query. */
 
   static constexpr std::string_view name =
       "CL_PLATFORM_VENDOR"; /*!< Symbolic name of this info token. */
 
-  /*!
-   * \brief Convert vendor string to readable format.
-   * \param v Value returned by \c clGetPlatformInfo.
-   * \return Vendor name.
-   */
   [[nodiscard]] static std::string ToString(type v) noexcept { return v; }
 };
 
@@ -570,35 +548,15 @@ template <> struct InfoTraits<CL_DEVICE_MAX_CLOCK_FREQUENCY> {
       return HumanReadable(*frequency, 1, 5);
     }
 
-    auto freq_mhz = core::SystemUsage().cpu_frequency;
-    if (freq_mhz.has_value()) {
-      auto const frequency =
-          TryMakeQuantity<Frequency>(freq_mhz.value(), "MHz");
-      if (!frequency.has_value()) {
-        return "N/A";
-      }
-      return HumanReadable(*frequency, 1, 5);
-    } else {
-      return "N/A";
-    }
+    return "N/A";
   }
 };
 
-/*!
- * \struct InfoTraits<CL_DEVICE_MAX_WORK_GROUP_SIZE>
- * \brief Traits for \c CL_DEVICE_MAX_WORK_GROUP_SIZE.
- */
 template <> struct InfoTraits<CL_DEVICE_MAX_WORK_GROUP_SIZE> {
-  using type = std::size_t; /*!< Maximum work-group size supported. */
+  using type = std::size_t;
 
-  static constexpr std::string_view name =
-      "CL_DEVICE_MAX_WORK_GROUP_SIZE"; /*!< Symbolic OpenCL token name. */
+  static constexpr std::string_view name = "CL_DEVICE_MAX_WORK_GROUP_SIZE";
 
-  /*!
-   * \brief Convert work-group size to string.
-   * \param v Maximum work-group size.
-   * \return Decimal string.
-   */
   [[nodiscard]] static std::string ToString(type v) noexcept {
     return std::to_string(v);
   }

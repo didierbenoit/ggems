@@ -3,7 +3,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include "GGEMSVulkanCamera.hh"
+#include "GGEMS/ui/GGEMSVulkanCamera.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
 
 namespace ggems::ui {

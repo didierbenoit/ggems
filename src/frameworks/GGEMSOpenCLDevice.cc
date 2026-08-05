@@ -172,22 +172,8 @@ cl_uint GGEMSOpenCLDevice::GetMaxComputeUnits() const {
 /* --------------------------------*/
 /* --------------------------------*/
 
-cl_uint GGEMSOpenCLDevice::GetMaxClockFrequency() const {
-  cl_uint freq{0};
-  freq = device_.getInfo<CL_DEVICE_MAX_CLOCK_FREQUENCY>();
-
-  // Si le driver ne retourne rien ou 0
-  if (freq == 0) {
-    auto type = device_.getInfo<CL_DEVICE_TYPE>();
-
-    // Fallback CPU uniquement
-    if (type & CL_DEVICE_TYPE_CPU) {
-      if (auto cpu_freq = core::SystemUsage().cpu_frequency) {
-        return static_cast<cl_uint>(*cpu_freq);
-      }
-    }
-  }
-  return freq;
+auto GGEMSOpenCLDevice::GetMaxClockFrequency() const -> cl_uint {
+  return GetInfo<CL_DEVICE_MAX_CLOCK_FREQUENCY>(device_);
 }
 
 /* --------------------------------*/

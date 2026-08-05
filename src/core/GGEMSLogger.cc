@@ -11,6 +11,9 @@
 #include <utility>
 #include <memory>
 #include <vector>
+#include <string_view>
+#include <cstdint>
+#include <source_location>
 
 #ifdef _WIN32
 #include "GGEMS/platform/windows/GGEMSWindowsCore.hh"
@@ -23,6 +26,7 @@
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/render/GGEMSColour.hh"
 #include "GGEMS/render/GGEMSColourNames.hh"
+#include "GGEMS/core/detail/GGEMSLoggerMetadata.hh"
 
 namespace ggems::core {
 
@@ -181,6 +185,24 @@ auto LogFormatter::Format(LogRecord const &rec, bool use_color)
 auto GGEMSLogger::GetInstance() -> GGEMSLogger & {
   static GGEMSLogger instance;
   return instance;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSLogger::Log(LogLevel lvl, std::int32_t depth, std::string_view module,
+                      std::source_location const &loc, std::string_view msg)
+    -> void {
+  LogRecord rec;
+  rec.timestamp = std::chrono::system_clock::now();
+  rec.level = lvl;
+  rec.depth = depth;
+  rec.thread_id = logging::detail::ThreadTag();
+  rec.module = std::string(module);
+  rec.message = msg;
+  rec.function = logging::detail::SimplifyFunctionName(loc.function_name());
+  rec.file = loc.file_name();
+  rec.line = static_cast<int>(loc.line());
+  Dispatch(rec);
 }
 
 // -----------------------------------------------------------------------------

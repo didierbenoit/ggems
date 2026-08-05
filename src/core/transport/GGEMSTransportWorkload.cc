@@ -1,5 +1,3 @@
-#include "GGEMS/core/transport/GGEMSTransportWorkload.hh"
-
 #include <algorithm>
 
 #if defined(GGEMS_ENABLE_INTERNAL_TEST_HOOKS)
@@ -18,8 +16,8 @@
 #include <vector>
 #include <memory>
 
-#include "GGEMSObserverCounterArithmetic.hh"
-#include "GGEMSOpenCLLaunchGeometry.hh"
+#include "GGEMS/core/observer/GGEMSObserverCounterArithmetic.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
@@ -30,6 +28,7 @@
 #include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
 #include "GGEMS/core/transport/GGEMSDiagnosticProjection.hh"
 #include "GGEMS/core/transport/GGEMSTransportCounters.hh"
+#include "GGEMS/core/transport/GGEMSTransportWorkload.hh"
 #include "GGEMS/core/transport/GGEMSTransportWorkloadPlan.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"

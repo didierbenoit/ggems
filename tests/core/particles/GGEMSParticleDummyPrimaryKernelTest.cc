@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMSOpenCLLaunchGeometry.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/core/particles/GGEMSParticleState.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"

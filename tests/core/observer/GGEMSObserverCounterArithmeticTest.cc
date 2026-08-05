@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMSObserverCounterArithmetic.hh"
+#include "GGEMS/core/observer/GGEMSObserverCounterArithmetic.hh"
 
 namespace {
 

@@ -7,7 +7,7 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMSVulkanDeviceSelection.hh"
+#include "GGEMS/ui/GGEMSVulkanDeviceSelection.hh"
 
 namespace {
 

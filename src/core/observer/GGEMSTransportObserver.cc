@@ -10,7 +10,7 @@
 #include <vector>
 #include <utility>
 
-#include "GGEMSObserverCounterArithmetic.hh"
+#include "GGEMS/core/observer/GGEMSObserverCounterArithmetic.hh"
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/observer/GGEMSObserverTypes.hh"

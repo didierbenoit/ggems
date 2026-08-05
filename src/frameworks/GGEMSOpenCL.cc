@@ -33,6 +33,7 @@
 #include <ranges>
 /// \endcond
 
+#include "GGEMS/core/GGEMSCoreUtils.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
 

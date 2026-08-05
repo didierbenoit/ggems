@@ -13,7 +13,7 @@
 #include "GGEMS/core/sources/GGEMSSourceDescription.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
-#include "../support/GGEMSScopedLoggerEncoding.hh"
+#include "support/GGEMSScopedLoggerEncoding.hh"
 
 namespace {
 

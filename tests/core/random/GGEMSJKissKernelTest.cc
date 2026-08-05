@@ -9,7 +9,7 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMSOpenCLLaunchGeometry.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/core/random/GGEMSRandomState.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"

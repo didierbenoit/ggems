@@ -16,7 +16,7 @@
 #include <string>
 #include <type_traits>
 
-#include "GGEMSObserverCounterArithmetic.hh"
+#include "GGEMS/core/observer/GGEMSObserverCounterArithmetic.hh"
 #include "GGEMS/core/GGEMSRun.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"

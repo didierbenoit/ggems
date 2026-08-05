@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 #include <vulkan/vulkan.hpp>
 
-#include "GGEMSVulkanCamera.hh"
+#include "GGEMS/ui/GGEMSVulkanCamera.hh"
 
 namespace {
 

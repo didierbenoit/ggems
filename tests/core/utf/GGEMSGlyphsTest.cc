@@ -7,7 +7,7 @@
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/utf/GGEMSGlyphs.hh"
 
-#include "../support/GGEMSScopedLoggerEncoding.hh"
+#include "support/GGEMSScopedLoggerEncoding.hh"
 
 namespace {
 
@@ -22,24 +22,39 @@ struct GlyphCase {
 };
 
 constexpr std::array<GlyphCase, 19U> k_glyph_cases{{
-    {.name = "gamma", .member = &GlyphSet::gamma, .ascii = U'g', .unicode = U'γ'},
+    {.name = "gamma",
+     .member = &GlyphSet::gamma,
+     .ascii = U'g',
+     .unicode = U'γ'},
     {.name = "electron",
      .member = &GlyphSet::electron,
      .ascii = U'e',
      .unicode = U'β'},
-    {.name = "proton", .member = &GlyphSet::proton, .ascii = U'p', .unicode = U'p'},
+    {.name = "proton",
+     .member = &GlyphSet::proton,
+     .ascii = U'p',
+     .unicode = U'p'},
     {.name = "aionino",
      .member = &GlyphSet::aionino,
      .ascii = U'l',
      .unicode = U'λ'},
-    {.name = "alpha", .member = &GlyphSet::alpha, .ascii = U'a', .unicode = U'α'},
+    {.name = "alpha",
+     .member = &GlyphSet::alpha,
+     .ascii = U'a',
+     .unicode = U'α'},
     {.name = "neutron",
      .member = &GlyphSet::neutron,
      .ascii = U'n',
      .unicode = U'ν'},
-    {.name = "minus", .member = &GlyphSet::minus, .ascii = U'-', .unicode = U'-'},
+    {.name = "minus",
+     .member = &GlyphSet::minus,
+     .ascii = U'-',
+     .unicode = U'-'},
     {.name = "plus", .member = &GlyphSet::plus, .ascii = U'+', .unicode = U'+'},
-    {.name = "pulse2", .member = &GlyphSet::pulse2, .ascii = U'.', .unicode = U'•'},
+    {.name = "pulse2",
+     .member = &GlyphSet::pulse2,
+     .ascii = U'.',
+     .unicode = U'•'},
     {.name = "separator",
      .member = &GlyphSet::separator,
      .ascii = U'-',

@@ -15,7 +15,7 @@
 #include <span>
 #include <utility>
 
-#include "GGEMSOpenCLLaunchGeometry.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"

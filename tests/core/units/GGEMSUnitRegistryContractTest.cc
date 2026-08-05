@@ -25,7 +25,7 @@
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/units/GGEMSVolumeUnits.hh"
 #include "GGEMS/core/units/GGEMSQuantity.hh"
-#include "../support/GGEMSScopedLoggerEncoding.hh"
+#include "support/GGEMSScopedLoggerEncoding.hh"
 
 namespace ggems::units {
 
@@ -142,8 +142,7 @@ auto ExpectSelectedSymbols(
   for (auto const &unit : UnitRegistry<UnitSet>::units) {
     SCOPED_TRACE(std::string{unit_set_name} + ": " +
                  std::string{unit.canonical_name});
-    EXPECT_EQ(detail::SelectUnitSymbol(unit),
-              unit.*expected_symbol_member);
+    EXPECT_EQ(detail::SelectUnitSymbol(unit), unit.*expected_symbol_member);
   }
 }
 
@@ -162,7 +161,7 @@ auto ExpectEveryRegisteredSymbol(
   ExpectSelectedSymbols<DoseUnitSet>("DoseUnitSet", expected_symbol_member);
   ExpectSelectedSymbols<EnergyUnitSet>("EnergyUnitSet", expected_symbol_member);
   ExpectSelectedSymbols<FrequencyUnitSet>("FrequencyUnitSet",
-                                           expected_symbol_member);
+                                          expected_symbol_member);
   ExpectSelectedSymbols<LengthUnitSet>("LengthUnitSet", expected_symbol_member);
   ExpectSelectedSymbols<MassUnitSet>("MassUnitSet", expected_symbol_member);
   ExpectSelectedSymbols<SpeedUnitSet>("SpeedUnitSet", expected_symbol_member);

@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include "GGEMSOpenCLLaunchGeometry.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/random/GGEMSRandomState.hh"

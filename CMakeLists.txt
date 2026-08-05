@@ -110,43 +110,6 @@ file(
 
 list(SORT GGEMS_CORE_SOURCES)
 
-set(GGEMS_SYSTEM_UTILS_SOURCES
-    "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsWindows.cc"
-    "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsLinux.cc"
-    "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsApple.cc")
-
-# Remove all platform backends collected by GLOB_RECURSE.
-list(REMOVE_ITEM GGEMS_CORE_SOURCES ${GGEMS_SYSTEM_UTILS_SOURCES})
-
-if(WIN32)
-  set(GGEMS_SYSTEM_UTILS_SOURCE
-      "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsWindows.cc")
-
-  set(GGEMS_SYSTEM_UTILS_BACKEND "Windows")
-
-elseif(APPLE)
-  set(GGEMS_SYSTEM_UTILS_SOURCE
-      "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsApple.cc")
-
-  set(GGEMS_SYSTEM_UTILS_BACKEND "Apple")
-
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  set(GGEMS_SYSTEM_UTILS_SOURCE
-      "${PROJECT_SOURCE_DIR}/src/core/GGEMSSystemUtilsLinux.cc")
-
-  set(GGEMS_SYSTEM_UTILS_BACKEND "Linux")
-
-else()
-  message(
-    FATAL_ERROR "No GGEMS system utilities backend for '${CMAKE_SYSTEM_NAME}'.")
-endif()
-
-list(APPEND GGEMS_CORE_SOURCES "${GGEMS_SYSTEM_UTILS_SOURCE}")
-
-list(SORT GGEMS_CORE_SOURCES)
-
-message(STATUS "System utilities backend: ${GGEMS_SYSTEM_UTILS_BACKEND}")
-
 add_library(ggems_core STATIC ${GGEMS_CORE_SOURCES})
 add_library(GGEMS::Core ALIAS ggems_core)
 
@@ -154,10 +117,6 @@ target_compile_features(ggems_core PUBLIC cxx_std_23)
 
 target_include_directories(ggems_core PUBLIC ${PROJECT_SOURCE_DIR}/include
                                              ${OPENCL_HPP_INCLUDE_DIR})
-
-target_include_directories(
-  ggems_core PRIVATE ${PROJECT_SOURCE_DIR}/src/frameworks
-                     ${PROJECT_SOURCE_DIR}/src/core/observer)
 
 target_compile_definitions(
   ggems_core

@@ -1,13 +1,13 @@
 #include <imgui.h>
 #include <string_view>
 
-#include "GGEMSImGuiOutputPanel.hh"
+#include "GGEMS/ui/GGEMSImGuiOutputPanel.hh"
 #include "GGEMS/render/GGEMSColour.hh"
 #include "GGEMS/render/GGEMSVisualLine.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
 #include "GGEMS/render/GGEMSColourNames.hh"
-#include "GGEMSImGuiTheme.hh"
+#include "GGEMS/ui/GGEMSImGuiTheme.hh"
 
 namespace {
 

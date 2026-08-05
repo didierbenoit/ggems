@@ -4,7 +4,7 @@
 #include <utility>
 #include <vector>
 
-#include "GGEMSVulkanDeviceSelection.hh"
+#include "GGEMS/ui/GGEMSVulkanDeviceSelection.hh"
 
 namespace {
 

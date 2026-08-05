@@ -6,7 +6,7 @@
 
 #include "GGEMS/render/GGEMSColour.hh"
 #include "GGEMS/render/GGEMSColourNames.hh"
-#include "GGEMSVulkanColorConversion.hh"
+#include "GGEMS/ui/GGEMSVulkanColorConversion.hh"
 
 namespace {
 

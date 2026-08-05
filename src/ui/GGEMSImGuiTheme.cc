@@ -1,6 +1,6 @@
 #include <imgui.h>
 
-#include "GGEMSImGuiTheme.hh"
+#include "GGEMS/ui/GGEMSImGuiTheme.hh"
 #include "GGEMS/render/GGEMSColour.hh"
 #include "GGEMS/render/GGEMSColourNames.hh"
 

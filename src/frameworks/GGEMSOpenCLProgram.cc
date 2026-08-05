@@ -41,22 +41,21 @@
  * GNU General Public License v3.0
  */
 
-#include "GGEMS/frameworks/GGEMSOpenCLProgram.hh"
-#include "GGEMS/core/GGEMSCoreUtils.hh"
-
-/// \cond
 #include <fstream>
 #include <sstream>
 #include <optional>
 #include <unordered_set>
 #include <cctype>
 #include <algorithm>
-/// \endcond
+#include <string_view>
+
+#include "GGEMS/frameworks/GGEMSOpenCLProgram.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLCacheFingerprint.hh"
 
 namespace ggems::ocl {
 
 namespace {
-constexpr std::string_view k_opencl_cache_schema{"GGEMS_OPENCL_CACHE_V2"};
+constexpr std::string_view k_opencl_cache_schema{"GGEMS_OPENCL_CACHE"};
 
 /*!
  * \brief Replace unsafe filename characters by underscores.
@@ -440,7 +439,7 @@ void GGEMSOpenCLProgram::Build() {
 
   std::string source_fingerprint_text = BuildSourceFingerprintText(source_path);
 
-  source_hash_ = core::HashFNV1a(source_fingerprint_text);
+  source_hash_ = detail::HashFNV1a64(source_fingerprint_text);
 
   auto &dev = context_.GetDevice();
 
@@ -457,7 +456,7 @@ void GGEMSOpenCLProgram::Build() {
   concat += "\nBuildOptions=" + build_options_;
   concat += "\nSourceHash=" + std::format("{:016x}", source_hash_);
 
-  global_hash_ = core::HashFNV1a(concat);
+  global_hash_ = detail::HashFNV1a64(concat);
 
   auto binary = LoadBinaryFromCache();
   if (!binary.empty()) {
