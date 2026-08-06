@@ -192,7 +192,8 @@ TEST_F(GGEMSActivityDrivenRunTest,
 
   ASSERT_NO_THROW(run.Initialise());
 
-  auto const &configuration = source->GetActivityDrivenConfiguration();
+  auto const &configuration =
+      source->BuildActivityDrivenPopulationConfiguration();
   EXPECT_EQ(configuration.radionuclide, radionuclide);
   EXPECT_EQ(configuration.activity_at_reference_time.value, k_activity_bq);
   EXPECT_EQ(configuration.reference_time_ps, k_second_ps);

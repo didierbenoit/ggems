@@ -46,9 +46,6 @@ public:
   [[nodiscard]] auto BuildActivityDrivenPopulationConfiguration() const
       -> GGEMSActivityDrivenSourceConfiguration;
 
-  [[nodiscard]] auto GetActivityDrivenConfiguration() const
-      -> GGEMSActivityDrivenSourceConfiguration const &;
-
   auto ValidatePopulationForRunInitialization(
       std::optional<GGEMSTimeWindow> const &initial_time_window) const -> void;
 

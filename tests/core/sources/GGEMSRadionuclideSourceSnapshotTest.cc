@@ -10,6 +10,7 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSTimeWindow.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
@@ -334,6 +335,72 @@ TEST(GGEMSRadionuclideSourceSnapshot,
 // =============================================================================
 
 TEST(GGEMSRadionuclideSourceSnapshot,
+     RejectsLiveAndPackedDefinitionMismatchesWithoutConsumingCandidate) {
+  auto planned_definition = std::make_shared<Definition const>(
+      ggems::core::radioactivity::builtins::BuildF18Radionuclide());
+  auto replacement_definition = MakeDiscreteDefinition();
+  auto source = MakeActivitySource(planned_definition, 0.0L);
+  std::vector<SourcePtr> sources{source};
+  constexpr ggems::core::GGEMSTimeWindow k_window{
+      .start_ps = 0ULL,
+      .stop_ps = 1'000'000'000'000ULL,
+  };
+
+  auto const configuration =
+      ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
+  Planner planner{sources, MakeRandom()};
+  auto candidate = planner.BuildCandidate(k_window);
+  auto const successful_snapshot = ggems::core::sources::BuildSourceRunSnapshot(
+      sources, configuration, candidate.GetPlan());
+
+  ASSERT_EQ(successful_snapshot.GetRadionuclideDefinitions().size(), 1U);
+  EXPECT_EQ(successful_snapshot.GetRadionuclideDefinitions()[0U],
+            planned_definition);
+  ASSERT_EQ(successful_snapshot.GetPopulationRecords().size(), 1U);
+  EXPECT_EQ(successful_snapshot.GetPopulationRecords()[0U].emission_count, 3U);
+
+  source->SetActivityDrivenRadionuclide(replacement_definition,
+                                        ggems::units::Activity{0.0L}, 0ULL);
+  EXPECT_THROW((void)ggems::core::sources::BuildSourceRunSnapshot(
+                   sources, configuration, candidate.GetPlan()),
+               ggems::core::GGEMSExceptionBase);
+
+  auto live_configuration =
+      source->BuildActivityDrivenPopulationConfiguration();
+  EXPECT_EQ(live_configuration.radionuclide, replacement_definition);
+  EXPECT_FALSE(candidate.IsCommitted());
+  EXPECT_EQ(planner.GetRevision(), 0ULL);
+  EXPECT_EQ(successful_snapshot.GetRadionuclideDefinitions()[0U],
+            planned_definition);
+
+  source->SetActivityDrivenRadionuclide(planned_definition,
+                                        ggems::units::Activity{0.0L}, 0ULL);
+  std::vector<SourcePtr> mismatched_sources{
+      MakeActivitySource(replacement_definition, 0.0L)};
+  auto const mismatched_configuration =
+      ggems::core::sources::BuildSourceConfigurationSnapshot(
+          mismatched_sources);
+
+  EXPECT_THROW((void)ggems::core::sources::BuildSourceRunSnapshot(
+                   sources, mismatched_configuration, candidate.GetPlan()),
+               ggems::core::GGEMSExceptionBase);
+
+  live_configuration = source->BuildActivityDrivenPopulationConfiguration();
+  EXPECT_EQ(live_configuration.radionuclide, planned_definition);
+  EXPECT_FALSE(candidate.IsCommitted());
+  EXPECT_EQ(planner.GetRevision(), 0ULL);
+  EXPECT_EQ(successful_snapshot.GetRadionuclideDefinitions()[0U],
+            planned_definition);
+
+  EXPECT_NO_THROW(planner.CommitCandidate(candidate));
+  EXPECT_TRUE(candidate.IsCommitted());
+  EXPECT_EQ(planner.GetRevision(), 1ULL);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSRadionuclideSourceSnapshot,
      ConfigurationAndRunSnapshotOwnRadionuclideDefinitions) {
   std::weak_ptr<Definition const> weak_definition;
   ggems::core::sources::GGEMSSourceConfigurationSnapshotPtr configuration;
@@ -397,6 +464,27 @@ TEST(GGEMSRadionuclideSourceSnapshot,
   EXPECT_EQ(snapshot->GetRadionuclideDefinitions()[0U],
             configuration->GetRadionuclideDefinitions()[0U]);
 
+  ASSERT_EQ(snapshot->GetPopulationRecords().size(), 1U);
+  auto const &population = snapshot->GetPopulationRecords()[0U];
+  EXPECT_EQ(
+      population.population_mode,
+      ggems::core::sources::ToKernelSourcePopulationMode(
+          ggems::core::sources::GGEMSSourcePopulationMode::ActivityDriven));
+  EXPECT_EQ(population.first_emission_index, 0U);
+  EXPECT_EQ(population.emission_count, 1U);
+  auto const expected_scaled_decay =
+      static_cast<float>(std::numbers::ln2_v<long double> / 60.0L);
+  EXPECT_FLOAT_EQ(population.scaled_decay, expected_scaled_decay);
+
+  ASSERT_EQ(snapshot->GetRanges().size(), 1U);
+  EXPECT_EQ(snapshot->GetRanges()[0U].projection_primary_begin, 0ULL);
+  EXPECT_EQ(snapshot->GetRanges()[0U].primary_count, 0ULL);
+  EXPECT_EQ(snapshot->GetTotalPrimaryCount(), 0ULL);
+
+  ASSERT_EQ(snapshot->GetGroupRanges().size(), 1U);
+  EXPECT_EQ(snapshot->GetGroupRanges()[0U].source_local_primary_begin, 0ULL);
+  EXPECT_EQ(snapshot->GetGroupRanges()[0U].primary_count, 0ULL);
+
   configuration.reset();
   ASSERT_FALSE(weak_definition.expired());
   snapshot.reset();
@@ -428,6 +516,16 @@ TEST(GGEMSRadionuclideSourceSnapshot,
       sources, configuration, candidate.GetPlan());
 
   ASSERT_EQ(snapshot.GetPopulationRecords().size(), 2U);
+  ASSERT_EQ(snapshot.GetRadionuclideDefinitions().size(), 2U);
+  EXPECT_EQ(snapshot.GetRadionuclideDefinitions()[0U], definition);
+  EXPECT_EQ(snapshot.GetRadionuclideDefinitions()[1U], definition);
+  ASSERT_EQ(snapshot.GetGroupRanges().size(), 6U);
+  for (auto const &group_range : snapshot.GetGroupRanges()) {
+    EXPECT_EQ(group_range.source_local_primary_begin, 0ULL);
+    EXPECT_EQ(group_range.primary_count, 0ULL);
+  }
+  EXPECT_EQ(snapshot.GetTotalPrimaryCount(), 0ULL);
+
   ASSERT_EQ(snapshot.GetRanges().size(), 2U);
   EXPECT_EQ(snapshot.GetPopulationRecords()[0U].first_emission_index, 0U);
   EXPECT_EQ(snapshot.GetPopulationRecords()[1U].first_emission_index, 3U);

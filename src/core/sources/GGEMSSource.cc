@@ -295,17 +295,6 @@ auto GGEMSSource::BuildActivityDrivenPopulationConfiguration() const
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSSource::GetActivityDrivenConfiguration() const
-    -> GGEMSActivityDrivenSourceConfiguration const & {
-  GGEMS_CHECK_RECOVERABLE(
-      GetPopulationMode() == GGEMSSourcePopulationMode::ActivityDriven,
-      "GGEMSSource is not configured in ActivityDriven mode.");
-  return std::get<GGEMSActivityDrivenSourceConfiguration>(
-      population_configuration_);
-}
-
-// -----------------------------------------------------------------------------
-
 auto GGEMSSource::ValidatePopulationForRunInitialization(
     std::optional<GGEMSTimeWindow> const &initial_time_window) const -> void {
   if (GetPopulationMode() == GGEMSSourcePopulationMode::CountDriven) {

@@ -262,8 +262,6 @@ TEST(GGEMSSource, DefaultPopulationIsCountDriven) {
 
   EXPECT_EQ(source.GetPopulationMode(), GGEMSSourcePopulationMode::CountDriven);
   EXPECT_EQ(source.GetPrimaryCount(), 4096ULL);
-  EXPECT_THROW((void)source.GetActivityDrivenConfiguration(),
-               ggems::core::GGEMSExceptionBase);
 }
 
 // =============================================================================
@@ -395,7 +393,8 @@ TEST(GGEMSSource,
       [&](std::uint64_t expected_reference_time_ps) -> void {
     EXPECT_EQ(source.GetPopulationMode(),
               GGEMSSourcePopulationMode::ActivityDriven);
-    auto const &configuration = source.GetActivityDrivenConfiguration();
+    auto const &configuration =
+        source.BuildActivityDrivenPopulationConfiguration();
     EXPECT_EQ(configuration.radionuclide, radionuclide);
     EXPECT_EQ(configuration.activity_at_reference_time.value, k_activity_bq);
     EXPECT_EQ(configuration.reference_time_ps, expected_reference_time_ps);
@@ -459,7 +458,8 @@ TEST(GGEMSSource, OwnsAtomicImmutableRadionuclideConfiguration) {
   EXPECT_FALSE(retained.expired());
   EXPECT_EQ(source.GetPopulationMode(),
             GGEMSSourcePopulationMode::ActivityDriven);
-  auto const &configuration = source.GetActivityDrivenConfiguration();
+  auto const &configuration =
+      source.BuildActivityDrivenPopulationConfiguration();
   EXPECT_EQ(configuration.radionuclide.get(), definition_address);
   EXPECT_EQ(configuration.activity_at_reference_time.value, 12.5L);
   EXPECT_EQ(configuration.reference_time_ps, 37ULL);
@@ -480,10 +480,7 @@ TEST(GGEMSSource, RejectsInvalidActivityConfigurationAtomically) {
 
   source.SetActivityDrivenRadionuclide(radionuclide,
                                        ggems::units::Activity{3.0L}, 5ULL);
-  auto const &before = source.GetActivityDrivenConfiguration();
-  auto const *before_definition = before.radionuclide.get();
-  long double const before_activity = before.activity_at_reference_time.value;
-  std::uint64_t const before_reference_time = before.reference_time_ps;
+  auto const before = source.BuildActivityDrivenPopulationConfiguration();
 
   EXPECT_THROW(source.SetActivityDrivenRadionuclide(
                    replacement, ggems::units::Activity{-1.0L}, 8ULL),
@@ -501,10 +498,11 @@ TEST(GGEMSSource, RejectsInvalidActivityConfigurationAtomically) {
           8ULL),
       ggems::core::GGEMSExceptionBase);
 
-  auto const &after = source.GetActivityDrivenConfiguration();
-  EXPECT_EQ(after.radionuclide.get(), before_definition);
-  EXPECT_EQ(after.activity_at_reference_time.value, before_activity);
-  EXPECT_EQ(after.reference_time_ps, before_reference_time);
+  auto const after = source.BuildActivityDrivenPopulationConfiguration();
+  EXPECT_EQ(after.radionuclide, before.radionuclide);
+  EXPECT_EQ(after.activity_at_reference_time.value,
+            before.activity_at_reference_time.value);
+  EXPECT_EQ(after.reference_time_ps, before.reference_time_ps);
 }
 
 // =============================================================================
@@ -648,7 +646,8 @@ TEST(GGEMSSource,
 
   EXPECT_EQ(source.GetPopulationMode(),
             ggems::core::sources::GGEMSSourcePopulationMode::ActivityDriven);
-  auto const &configuration = source.GetActivityDrivenConfiguration();
+  auto const &configuration =
+      source.BuildActivityDrivenPopulationConfiguration();
   EXPECT_EQ(configuration.radionuclide, radionuclide);
   EXPECT_EQ(configuration.activity_at_reference_time.value, 12.5L);
   EXPECT_EQ(configuration.reference_time_ps, 37ULL);
@@ -664,14 +663,16 @@ TEST(GGEMSSource, CopiesAndMovesActivityConfigurationByManagedOwnership) {
                                        ggems::units::Activity{8.0L}, 9ULL);
 
   ggems::core::sources::GGEMSSource copied{source};
-  EXPECT_EQ(copied.GetActivityDrivenConfiguration().radionuclide, radionuclide);
-  EXPECT_EQ(
-      copied.GetActivityDrivenConfiguration().activity_at_reference_time.value,
-      8.0L);
+  auto const copied_configuration =
+      copied.BuildActivityDrivenPopulationConfiguration();
+  EXPECT_EQ(copied_configuration.radionuclide, radionuclide);
+  EXPECT_EQ(copied_configuration.activity_at_reference_time.value, 8.0L);
 
   ggems::core::sources::GGEMSSource moved{std::move(copied)};
-  EXPECT_EQ(moved.GetActivityDrivenConfiguration().radionuclide, radionuclide);
-  EXPECT_EQ(moved.GetActivityDrivenConfiguration().reference_time_ps, 9ULL);
+  auto const moved_configuration =
+      moved.BuildActivityDrivenPopulationConfiguration();
+  EXPECT_EQ(moved_configuration.radionuclide, radionuclide);
+  EXPECT_EQ(moved_configuration.reference_time_ps, 9ULL);
 }
 
 // =============================================================================

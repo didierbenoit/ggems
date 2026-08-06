@@ -492,7 +492,8 @@ auto BuildSourceRunSnapshot(
               stable_definitions[source_index] == nullptr,
           "CountDriven emission plan contains radionuclide configuration.");
     } else {
-      auto const &activity = source->GetActivityDrivenConfiguration();
+      auto const activity =
+          source->BuildActivityDrivenPopulationConfiguration();
       GGEMS_CHECK_INTERNAL(
           activity.radionuclide != nullptr &&
               activity.radionuclide == plan_definitions[source_index] &&
