@@ -172,6 +172,36 @@ protected:
 // =============================================================================
 
 TEST_F(GGEMSActivityDrivenRunTest,
+       RetriesDuplicateActivitySourceSlotsAfterInvalidReferenceTime) {
+  auto radionuclide = MakeMonoRadionuclide();
+  auto source = MakeActivitySource(radionuclide);
+  source->SetActivityDrivenRadionuclide(
+      radionuclide, ggems::units::Activity{k_activity_bq}, 3ULL * k_second_ps);
+
+  ggems::core::GGEMSRun run{};
+  run.SetRandom(MakeRandom());
+  run.SetSource(source);
+  run.AddSource(source);
+  run.SetWorkerCount(64U);
+  run.SetTimePicoSecond(2ULL * k_second_ps, 3ULL * k_second_ps, k_second_ps);
+
+  EXPECT_THROW(run.Initialise(), ggems::core::GGEMSExceptionBase);
+
+  EXPECT_NO_THROW(source->SetActivityDrivenRadionuclide(
+      radionuclide, ggems::units::Activity{k_activity_bq}, k_second_ps));
+
+  ASSERT_NO_THROW(run.Initialise());
+
+  auto const &configuration = source->GetActivityDrivenConfiguration();
+  EXPECT_EQ(configuration.radionuclide, radionuclide);
+  EXPECT_EQ(configuration.activity_at_reference_time.value, k_activity_bq);
+  EXPECT_EQ(configuration.reference_time_ps, k_second_ps);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSActivityDrivenRunTest,
        InitialisesFinalisesAndKeepsIdsMonotoneAcrossResetTime) {
   auto radionuclide = MakeMonoRadionuclide();
   auto source = MakeActivitySource(radionuclide);

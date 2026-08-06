@@ -81,7 +81,7 @@ struct EnergyState {
 
   return {
       .type = distribution.GetType(),
-      .source_record_energy_milli_eV = source.GetRecord().energy_milli_eV,
+      .source_record_energy_milli_eV = source.BuildRecord().energy_milli_eV,
       .mono_energy_milli_eV = distribution.GetMonoEnergyMilliElectronVolt(),
       .regular_bin_width_milli_eV =
           distribution.GetRegularBinWidthMilliElectronVolt(),
@@ -98,7 +98,7 @@ auto ExpectEnergyState(Source const &source, EnergyState const &expected)
     -> void {
   auto const &distribution = source.GetEnergyDistribution();
   EXPECT_EQ(distribution.GetType(), expected.type);
-  EXPECT_EQ(source.GetRecord().energy_milli_eV,
+  EXPECT_EQ(source.BuildRecord().energy_milli_eV,
             expected.source_record_energy_milli_eV);
   EXPECT_EQ(distribution.GetMonoEnergyMilliElectronVolt(),
             expected.mono_energy_milli_eV);
@@ -172,7 +172,7 @@ auto ExpectFinalizedRejection(Function &&function) -> void {
     FAIL() << "Expected finalized source energy rejection.";
   } catch (ggems::core::GGEMSExceptionBase const &exception) {
     EXPECT_NE(std::string_view{exception.what()}.find(
-                  "after successful GGEMSRun::Initialise"),
+                  "after source initialization has been finalized."),
               std::string_view::npos);
   }
 }
@@ -214,6 +214,10 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
   run.SetWorkerCount(64U);
 
   EXPECT_THROW(run.Initialise(), ggems::core::GGEMSExceptionBase);
+  EXPECT_NO_THROW(source->SetCountDrivenPopulation(2ULL));
+  EXPECT_EQ(source->GetPopulationMode(),
+            ggems::core::sources::GGEMSSourcePopulationMode::CountDriven);
+  EXPECT_EQ(source->GetPrimaryCount(), 2ULL);
   EXPECT_NO_THROW(
       source->SetRegularEnergySpectrum(k_centers, k_bin_weights, "MeV"));
 

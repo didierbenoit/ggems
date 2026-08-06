@@ -6,17 +6,15 @@
 #include <span>
 #include <memory>
 #include <string_view>
+#include <optional>
 
+#include "GGEMS/core/GGEMSTimeWindow.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/core/units/GGEMSActivityUnits.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
-
-namespace ggems::core {
-class GGEMSRun;
-}
 
 namespace ggems::core::sources {
 
@@ -45,13 +43,14 @@ public:
   [[nodiscard]] auto GetPopulationMode() const noexcept
       -> GGEMSSourcePopulationMode;
 
-  [[nodiscard]] auto GetPopulationConfiguration() const noexcept
-      -> GGEMSSourcePopulationConfiguration const & {
-    return population_configuration_;
-  }
+  [[nodiscard]] auto BuildActivityDrivenPopulationConfiguration() const
+      -> GGEMSActivityDrivenSourceConfiguration;
 
   [[nodiscard]] auto GetActivityDrivenConfiguration() const
       -> GGEMSActivityDrivenSourceConfiguration const &;
+
+  auto ValidatePopulationForRunInitialization(
+      std::optional<GGEMSTimeWindow> const &initial_time_window) const -> void;
 
   auto SetAnalytic() noexcept -> GGEMSSource &;
 
@@ -118,21 +117,18 @@ public:
 
   auto SetWeight(float weight) -> GGEMSSource &;
 
-  [[nodiscard]] auto GetRecord() const -> GGEMSSourceRecord const &;
-
   [[nodiscard]] auto BuildExecutionRecord() const -> GGEMSSourceRecord;
 
   [[nodiscard]] auto BuildRecord() const -> GGEMSSourceRecord;
 
+  auto FinalizeInitialization() noexcept -> void;
+
   auto Verbose() const -> void;
 
 private:
-  friend class ggems::core::GGEMSRun;
-
   auto CheckCountDrivenConfiguration() const -> void;
   auto CheckEnergyConfigurationMutable() const -> void;
   auto CheckPopulationConfigurationMutable() const -> void;
-  auto FinalizeInitialization() noexcept -> void;
 
   auto CommitEnergyDistribution(GGEMSEnergyDistribution distribution) noexcept
       -> void;

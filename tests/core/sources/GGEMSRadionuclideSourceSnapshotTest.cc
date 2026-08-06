@@ -178,8 +178,10 @@ TEST(GGEMSRadionuclideSourceSnapshot,
   EXPECT_EQ(energy_records[14U].table_count, 0U);
 
   auto const &values = configuration->GetEnergyValuesMilliElectronVolt();
+  auto const &relative_weights = configuration->GetRelativeWeights();
   auto const &tickets = configuration->GetCumulativeTicketUpperBounds();
   ASSERT_EQ(values.size(), 7'925U);
+  ASSERT_EQ(relative_weights.size(), values.size());
   ASSERT_EQ(tickets.size(), values.size());
 
   constexpr std::array<std::uint64_t, 9U> k_expected_table_offsets{
@@ -200,12 +202,17 @@ TEST(GGEMSRadionuclideSourceSnapshot,
 
   auto const &discrete_record = energy_records[11U];
   ASSERT_EQ(discrete_record.table_count, 3U);
-  std::size_t const discrete_offset =
+  auto const discrete_offset =
       static_cast<std::size_t>(discrete_record.table_offset);
   ASSERT_LE(discrete_offset + discrete_record.table_count, values.size());
   EXPECT_EQ(values[discrete_offset + 0U], 10'000'000ULL);
   EXPECT_EQ(values[discrete_offset + 1U], 20'000'000ULL);
   EXPECT_EQ(values[discrete_offset + 2U], 30'000'000ULL);
+  EXPECT_DOUBLE_EQ(relative_weights[discrete_offset + 0U], 1.0);
+  EXPECT_DOUBLE_EQ(relative_weights[discrete_offset + 1U], 2.0);
+  EXPECT_DOUBLE_EQ(relative_weights[discrete_offset + 2U], 1.0);
+  EXPECT_EQ(tickets[discrete_offset + 0U], 1'073'741'824ULL);
+  EXPECT_EQ(tickets[discrete_offset + 1U], 3'221'225'472ULL);
   EXPECT_EQ(tickets[discrete_offset + 2U],
             ggems::core::sources::k_energy_ticket_space_size);
 }
@@ -352,6 +359,15 @@ TEST(GGEMSRadionuclideSourceSnapshot,
     definition.reset();
     sources.clear();
   }
+
+  EXPECT_EQ(configuration->GetEnergyValuesMilliElectronVolt(),
+            (std::vector<std::uint64_t>{10'000'000ULL, 20'000'000ULL,
+                                        30'000'000ULL}));
+  EXPECT_EQ(configuration->GetRelativeWeights(),
+            (std::vector<double>{1.0, 2.0, 1.0}));
+  EXPECT_EQ(configuration->GetCumulativeTicketUpperBounds(),
+            (std::vector<std::uint64_t>{1'073'741'824ULL, 3'221'225'472ULL,
+                                        4'294'967'296ULL}));
 
   ASSERT_EQ(snapshot->GetRecords().size(), 1U);
   auto const &record = snapshot->GetRecords().front();

@@ -130,7 +130,8 @@ GGEMSRadionuclideEmissionPlanner::GGEMSRadionuclideEmissionPlanner(
 
     if (slot.population_mode ==
         sources::GGEMSSourcePopulationMode::ActivityDriven) {
-      auto const &configuration = source->GetActivityDrivenConfiguration();
+      auto const configuration =
+          source->BuildActivityDrivenPopulationConfiguration();
       GGEMS_CHECK_INTERNAL(
           configuration.radionuclide != nullptr,
           "ActivityDriven source has a null radionuclide definition.");
@@ -225,7 +226,8 @@ auto GGEMSRadionuclideEmissionPlanner::BuildCandidate(
                      "Emission-plan total primary count overflows uint64.");
       radionuclide_definitions.push_back(nullptr);
     } else {
-      auto const &configuration = slot.source->GetActivityDrivenConfiguration();
+      auto const configuration =
+          slot.source->BuildActivityDrivenPopulationConfiguration();
       GGEMS_CHECK_RECOVERABLE(
           configuration.radionuclide == slot.radionuclide,
           std::format("Emission-plan source slot {} changed radionuclide "

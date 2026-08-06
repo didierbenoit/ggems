@@ -225,7 +225,7 @@ TEST(GGEMSRun, ExposesStaticAndConfiguredTimeStateBeforeInitialise) {
 // =============================================================================
 
 TEST(GGEMSRun,
-     RejectsInvalidActivityChronologyBeforeFinalisationAndLeavesItMutable) {
+     RejectsInvalidActivityChronologyBeforeFinalizationAndLeavesItMutable) {
   auto radionuclide = std::make_shared<
       ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
       ggems::core::radioactivity::builtins::BuildF18Radionuclide());
@@ -247,11 +247,21 @@ TEST(GGEMSRun,
 
   ExpectGGEMSExceptionContaining(
       [&run]() -> void { run.Initialise(); },
-      "ActivityDriven source slot 0 reference time must not follow the "
+      "ActivityDriven source reference time must not follow the "
       "configured GGEMSRun start time");
 
   EXPECT_NO_THROW(source->SetActivityDrivenRadionuclide(
+      radionuclide, ggems::units::Activity{125.0L}, 9ULL));
+  ExpectGGEMSExceptionContaining(
+      [&run]() -> void { run.Initialise(); },
+      "GGEMSRun cannot be initialised without a GGEMSRandom");
+
+  EXPECT_NO_THROW(source->SetActivityDrivenRadionuclide(
       radionuclide, ggems::units::Activity{125.0L}, 10ULL));
+  ExpectGGEMSExceptionContaining(
+      [&run]() -> void { run.Initialise(); },
+      "GGEMSRun cannot be initialised without a GGEMSRandom");
+
   EXPECT_NO_THROW(source->SetCountDrivenPopulation(3ULL));
   EXPECT_EQ(source->GetPopulationMode(),
             ggems::core::sources::GGEMSSourcePopulationMode::CountDriven);

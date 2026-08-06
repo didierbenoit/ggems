@@ -285,15 +285,15 @@ TEST_F(GGEMSSourceSamplingTransportTest,
   std::array<std::set<std::tuple<std::int64_t, std::int64_t, std::int64_t>>, 3U>
       distinct_positions;
 
-  std::array<SourceRecord const *, 3U> const configured_sources{
-      &rectangle.GetRecord(), &ellipse.GetRecord(), &circle.GetRecord()};
+  std::array<SourceRecord, 3U> const configured_sources{
+      rectangle.BuildRecord(), ellipse.BuildRecord(), circle.BuildRecord()};
 
   for (ObserverRecord const &record : source_records) {
     auto const source_index = static_cast<std::size_t>(record.source_index);
 
     ASSERT_LT(source_index, configured_sources.size());
 
-    SourceRecord const &source = *configured_sources[source_index];
+    SourceRecord const &source = configured_sources[source_index];
 
     long double const delta_x_pm =
         static_cast<long double>(record.position_x_pm) -

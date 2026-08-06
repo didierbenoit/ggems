@@ -94,7 +94,7 @@ auto ExpectDistributionUnchanged(
     std::vector<double> const &relative_weights,
     std::vector<std::uint64_t> const &ticket_bounds) -> void {
   Distribution const &distribution = source.GetEnergyDistribution();
-  EXPECT_EQ(source.GetRecord().energy_milli_eV, record.energy_milli_eV);
+  EXPECT_EQ(source.BuildRecord().energy_milli_eV, record.energy_milli_eV);
   EXPECT_EQ(distribution.GetType(), type);
   EXPECT_EQ(distribution.GetMonoEnergyMilliElectronVolt(),
             mono_energy_milli_eV);
@@ -343,7 +343,7 @@ TEST(GGEMSEnergyDistribution,
   ggems::core::sources::GGEMSSource source{};
   source.SetDiscreteEnergyLines(valid_energies, valid_weights, "keV");
 
-  auto const record = source.GetRecord();
+  auto const record = source.BuildRecord();
   Distribution const &distribution = source.GetEnergyDistribution();
   auto const type = distribution.GetType();
   auto const mono_energy = distribution.GetMonoEnergyMilliElectronVolt();
@@ -469,7 +469,7 @@ TEST(GGEMSEnergyDistribution, InvalidSetterPreservesPreviousState) {
   ggems::core::sources::GGEMSSource source{};
   source.SetDiscreteEnergyLines(energies, weights, "keV");
 
-  auto const record = source.GetRecord();
+  auto const record = source.BuildRecord();
   Distribution const &distribution = source.GetEnergyDistribution();
   auto const type = distribution.GetType();
   auto const mono_energy = distribution.GetMonoEnergyMilliElectronVolt();
@@ -507,7 +507,7 @@ TEST(GGEMSEnergyDistribution, InvalidSetterPreservesPreviousState) {
                   .GetEnergyValuesMilliElectronVolt()
                   .empty());
   EXPECT_TRUE(source.GetEnergyDistribution().GetRelativeWeights().empty());
-  EXPECT_EQ(source.GetRecord().energy_milli_eV, 90'000'000ULL);
+  EXPECT_EQ(source.BuildRecord().energy_milli_eV, 90'000'000ULL);
 }
 
 // =============================================================================

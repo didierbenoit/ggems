@@ -326,7 +326,7 @@ auto BindSource(py::module_ &mod) -> void {
       .def("verbose", &GGEMSSource::Verbose)
 
       .def("__repr__", [](GGEMSSource const &source) -> std::string {
-        auto const &record = source.GetRecord();
+        auto const record = source.BuildRecord();
         auto const distribution_type = source.GetEnergyDistribution().GetType();
 
         auto const geometry_type =

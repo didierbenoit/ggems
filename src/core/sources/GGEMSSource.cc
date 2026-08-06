@@ -9,7 +9,9 @@
 #include <limits>
 #include <variant>
 #include <memory>
+#include <optional>
 
+#include "GGEMS/core/GGEMSTimeWindow.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
@@ -126,17 +128,16 @@ auto GGEMSSource::CheckCountDrivenConfiguration() const -> void {
 auto GGEMSSource::CheckEnergyConfigurationMutable() const -> void {
   CheckCountDrivenConfiguration();
   GGEMS_CHECK_RECOVERABLE(!initialization_finalized_,
-                          "Cannot change GGEMSSource energy after successful "
-                          "GGEMSRun::Initialise.");
+                          "Cannot change GGEMSSource energy after source "
+                          "initialization has been finalized.");
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSSource::CheckPopulationConfigurationMutable() const -> void {
-  GGEMS_CHECK_RECOVERABLE(
-      !initialization_finalized_,
-      "Cannot change GGEMSSource population mode after successful "
-      "GGEMSRun::Initialise.");
+  GGEMS_CHECK_RECOVERABLE(!initialization_finalized_,
+                          "Cannot change GGEMSSource population mode after "
+                          "source initialization has been finalized.");
 }
 
 // -----------------------------------------------------------------------------
@@ -283,6 +284,17 @@ auto GGEMSSource::GetPopulationMode() const noexcept
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSSource::BuildActivityDrivenPopulationConfiguration() const
+    -> GGEMSActivityDrivenSourceConfiguration {
+  GGEMS_CHECK_RECOVERABLE(
+      GetPopulationMode() == GGEMSSourcePopulationMode::ActivityDriven,
+      "GGEMSSource is not configured in ActivityDriven mode.");
+  return std::get<GGEMSActivityDrivenSourceConfiguration>(
+      population_configuration_);
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSSource::GetActivityDrivenConfiguration() const
     -> GGEMSActivityDrivenSourceConfiguration const & {
   GGEMS_CHECK_RECOVERABLE(
@@ -290,6 +302,28 @@ auto GGEMSSource::GetActivityDrivenConfiguration() const
       "GGEMSSource is not configured in ActivityDriven mode.");
   return std::get<GGEMSActivityDrivenSourceConfiguration>(
       population_configuration_);
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSource::ValidatePopulationForRunInitialization(
+    std::optional<GGEMSTimeWindow> const &initial_time_window) const -> void {
+  if (GetPopulationMode() == GGEMSSourcePopulationMode::CountDriven) {
+    return;
+  }
+
+  GGEMS_CHECK_RECOVERABLE(
+      initial_time_window.has_value() &&
+          initial_time_window->start_ps < initial_time_window->stop_ps,
+      "ActivityDriven GGEMSRun sources require a configured non-empty "
+      "time schedule.");
+
+  auto const &configuration = std::get<GGEMSActivityDrivenSourceConfiguration>(
+      population_configuration_);
+  GGEMS_CHECK_RECOVERABLE(
+      configuration.reference_time_ps <= initial_time_window->start_ps,
+      "ActivityDriven source reference time must not follow the configured "
+      "GGEMSRun start time.");
 }
 
 // -----------------------------------------------------------------------------
@@ -654,13 +688,6 @@ auto GGEMSSource::BuildRecord() const -> GGEMSSourceRecord {
       "GGEMSSource record and energy distribution are inconsistent.");
 
   return record;
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSSource::GetRecord() const -> GGEMSSourceRecord const & {
-  CheckCountDrivenConfiguration();
-  return record_;
 }
 
 // -----------------------------------------------------------------------------

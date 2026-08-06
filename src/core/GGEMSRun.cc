@@ -22,7 +22,6 @@
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/sources/GGEMSSourceDescription.hh"
-#include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideEmissionPlan.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
@@ -325,37 +324,19 @@ auto GGEMSRun::Initialise() -> void {
   GGEMS_CHECK_INTERNAL(!sources_.empty(),
                        "GGEMSRun source collection must not be empty.");
 
-  bool has_activity_driven_source{false};
-
-  for (std::size_t source_index = 0U; source_index < sources_.size();
-       ++source_index) {
-    auto const &source = sources_[source_index];
+  for (auto const &source : sources_) {
     GGEMS_CHECK_INTERNAL(source != nullptr,
                          "GGEMSRun source collection contains a null entry.");
-
-    if (source->GetPopulationMode() ==
-        sources::GGEMSSourcePopulationMode::ActivityDriven) {
-      has_activity_driven_source = true;
-      GGEMS_CHECK_RECOVERABLE(
-          has_time_configuration_ && time_start_ps_ < time_stop_ps_ &&
-              time_step_ps_ > 0ULL,
-          "ActivityDriven GGEMSRun sources require a configured non-empty "
-          "time schedule.");
-      GGEMS_CHECK_RECOVERABLE(
-          source->GetActivityDrivenConfiguration().reference_time_ps <=
-              time_start_ps_,
-          std::format(
-              "ActivityDriven source slot {} reference time must not follow "
-              "the configured GGEMSRun start time.",
-              source_index));
-    }
   }
 
-  GGEMS_CHECK_INTERNAL(!has_activity_driven_source ||
-                           (has_time_configuration_ &&
-                            time_start_ps_ < time_stop_ps_ &&
-                            time_step_ps_ > 0ULL),
-                       "ActivityDriven chronology validation is inconsistent.");
+  auto const initial_time_window =
+      has_time_configuration_
+          ? std::make_optional(GetCurrentTimeWindowPicoSecond())
+          : std::optional<GGEMSTimeWindow>{};
+
+  for (auto const &source : sources_) {
+    source->ValidatePopulationForRunInitialization(initial_time_window);
+  }
 
   GGEMS_CHECK_RECOVERABLE(
       sources_.size() <=

@@ -131,7 +131,8 @@ auto PackSourceConfiguration(std::span<GGEMSSource const *const> sources)
       continue;
     }
 
-    auto const &configuration = source->GetActivityDrivenConfiguration();
+    auto const configuration =
+        source->BuildActivityDrivenPopulationConfiguration();
 
     GGEMS_CHECK_INTERNAL(
         configuration.radionuclide != nullptr,
@@ -182,8 +183,9 @@ auto PackSourceConfiguration(std::span<GGEMSSource const *const> sources)
       packed.radionuclide_definitions.push_back(nullptr);
     } else {
       packed.energy_distribution_records.emplace_back();
-      packed.radionuclide_definitions.push_back(
-          source->GetActivityDrivenConfiguration().radionuclide);
+      auto const configuration =
+          source->BuildActivityDrivenPopulationConfiguration();
+      packed.radionuclide_definitions.push_back(configuration.radionuclide);
     }
   }
 
@@ -193,8 +195,9 @@ auto PackSourceConfiguration(std::span<GGEMSSource const *const> sources)
       continue;
     }
 
-    auto const &definition =
-        *source->GetActivityDrivenConfiguration().radionuclide;
+    auto const configuration =
+        source->BuildActivityDrivenPopulationConfiguration();
+    auto const &definition = *configuration.radionuclide;
     for (auto const &emission : definition.GetEmissions()) {
       GGEMS_CHECK_INTERNAL(
           std::in_range<std::uint32_t>(

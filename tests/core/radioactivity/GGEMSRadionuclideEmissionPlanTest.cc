@@ -374,6 +374,10 @@ TEST(GGEMSRadionuclideEmissionPlanTest,
 TEST(GGEMSRadionuclideEmissionPlanTest,
      ZeroActivityPreservesEmptyGroupsAndConsumesNoHostState) {
   constexpr std::array<long double, 2U> k_yields{1.0L, 2.0L};
+  constexpr long double k_live_activity_bq{25.0L};
+  constexpr std::uint64_t k_reference_time_ps{500'000'000'000ULL};
+  constexpr ggems::core::GGEMSTimeWindow k_later_window{
+      .start_ps = 1'000'000'000'000ULL, .stop_ps = 2'000'000'000'000ULL};
 
   for (RandomEngine engine : k_engines) {
     SCOPED_TRACE(static_cast<std::uint32_t>(engine));
@@ -400,14 +404,32 @@ TEST(GGEMSRadionuclideEmissionPlanTest,
               source_entries[0U].run_primary_end);
     planner.CommitCandidate(zero_candidate);
 
-    source->SetActivityDrivenRadionuclide(definition,
-                                          ggems::units::Activity{25.0L}, 0ULL);
-    auto continued = planner.BuildCandidate(k_one_second_window);
+    auto replacement_definition =
+        MakeSyntheticDefinition(k_yields, 10.0L, "Replacement");
+    source->SetActivityDrivenRadionuclide(
+        replacement_definition, ggems::units::Activity{k_live_activity_bq},
+        k_reference_time_ps);
+    EXPECT_THROW((void)planner.BuildCandidate(k_later_window),
+                 ggems::core::GGEMSExceptionBase);
+    EXPECT_EQ(planner.GetRevision(), 1ULL);
 
-    auto reference_source = MakeActivitySource(definition, 25.0L);
+    source->SetActivityDrivenRadionuclide(
+        definition, ggems::units::Activity{k_live_activity_bq},
+        k_reference_time_ps);
+    auto continued = planner.BuildCandidate(k_later_window);
+    auto const continued_sources = continued.GetPlan().GetSources();
+    ASSERT_EQ(continued_sources.size(), 1U);
+    EXPECT_EQ(continued_sources[0U].expected_parent_decay_count,
+              ggems::core::radioactivity::ComputeExpectedDecayEventCount(
+                  ggems::units::Activity{k_live_activity_bq},
+                  definition->GetHalfLifeSeconds(), k_reference_time_ps,
+                  k_later_window));
+
+    auto reference_source =
+        MakeActivitySource(definition, k_live_activity_bq, k_reference_time_ps);
     std::vector<SourcePtr> reference_sources{reference_source};
     Planner reference{reference_sources, random};
-    auto expected = reference.BuildCandidate(k_one_second_window);
+    auto expected = reference.BuildCandidate(k_later_window);
     ExpectPlansEqual(continued.GetPlan(), expected.GetPlan());
   }
 }
