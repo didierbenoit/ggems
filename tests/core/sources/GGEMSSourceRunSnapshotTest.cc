@@ -8,6 +8,7 @@
 #include <string_view>
 #include <vector>
 #include <numbers>
+#include <span>
 
 #include <gtest/gtest.h>
 
@@ -20,10 +21,14 @@
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulationRecord.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
 #include "GGEMS/core/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
-#include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
+#include "GGEMS/core/radioactivity/GGEMSRadionuclideEmissionPlan.hh"
 #include "GGEMS/core/units/GGEMSActivityUnits.hh"
+#include "GGEMS/core/random/GGEMSRandom.hh"
+#include "GGEMS/core/random/GGEMSRandomEngine.hh"
 
 namespace {
 
@@ -119,6 +124,178 @@ auto ExpectSourceRange(ggems::core::sources::GGEMSSourceRunRange const &range,
                        std::uint64_t expected_count) -> void {
   EXPECT_EQ(range.projection_primary_begin, expected_begin);
   EXPECT_EQ(range.primary_count, expected_count);
+}
+
+// =============================================================================
+// =============================================================================
+
+using Planner = ggems::core::radioactivity::GGEMSRadionuclideEmissionPlanner;
+using Random = ggems::core::random::GGEMSRandom;
+using SourceConfiguration =
+    ggems::core::sources::GGEMSSourceConfigurationSnapshot;
+using SourceConfigurationPtr =
+    ggems::core::sources::GGEMSSourceConfigurationSnapshotPtr;
+using SourceRunSnapshot = ggems::core::sources::GGEMSSourceRunSnapshot;
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto MakePlannerRandom() -> Random {
+  Random random{};
+  random.SetEngine(ggems::core::random::GGEMSRandomEngine::PCG32)
+      .SetSeed(77'777ULL);
+  return random;
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto BuildPlanBasedCountSnapshot(
+    std::span<GGEMSSourcePtr const> sources,
+    SourceConfigurationPtr source_configuration, Planner const &planner,
+    ggems::core::GGEMSTimeWindow time_window) -> SourceRunSnapshot {
+  auto const revision = planner.GetRevision();
+  auto candidate = planner.BuildCandidate(time_window);
+  auto const &plan = candidate.GetPlan();
+
+  EXPECT_EQ(candidate.GetBaseRevision(), revision);
+  EXPECT_FALSE(candidate.IsCommitted());
+  EXPECT_EQ(planner.GetRevision(), revision);
+  EXPECT_EQ(plan.GetTimeWindow(), time_window);
+  EXPECT_EQ(plan.GetSources().size(), sources.size());
+  EXPECT_TRUE(plan.GetGroups().empty());
+  EXPECT_EQ(plan.GetRadionuclideDefinitions().size(), sources.size());
+  for (auto const &definition : plan.GetRadionuclideDefinitions()) {
+    EXPECT_EQ(definition, nullptr);
+  }
+
+  return ggems::core::sources::BuildSourceRunSnapshot(
+      sources, std::move(source_configuration), plan);
+}
+
+// =============================================================================
+// =============================================================================
+
+auto ExpectSourceConfigurationsEqual(SourceConfiguration const &standalone,
+                                     SourceConfiguration const &planned)
+    -> void {
+  EXPECT_EQ(standalone.GetSourceCount(), planned.GetSourceCount());
+  EXPECT_EQ(standalone.GetEmissionCount(), planned.GetEmissionCount());
+
+  auto const &standalone_energy_records =
+      standalone.GetEnergyDistributionRecords();
+  auto const &planned_energy_records = planned.GetEnergyDistributionRecords();
+  ASSERT_EQ(standalone_energy_records.size(), planned_energy_records.size());
+  for (std::size_t index = 0U; index < standalone_energy_records.size();
+       ++index) {
+    SCOPED_TRACE(index);
+    auto const &standalone_record = standalone_energy_records[index];
+    auto const &planned_record = planned_energy_records[index];
+    EXPECT_EQ(standalone_record.regular_bin_width_milli_eV,
+              planned_record.regular_bin_width_milli_eV);
+    EXPECT_EQ(standalone_record.table_offset, planned_record.table_offset);
+    EXPECT_EQ(standalone_record.distribution_type,
+              planned_record.distribution_type);
+    EXPECT_EQ(standalone_record.table_count, planned_record.table_count);
+  }
+
+  EXPECT_EQ(standalone.GetEnergyValuesMilliElectronVolt(),
+            planned.GetEnergyValuesMilliElectronVolt());
+  EXPECT_EQ(standalone.GetRelativeWeights(), planned.GetRelativeWeights());
+  EXPECT_EQ(standalone.GetCumulativeTicketUpperBounds(),
+            planned.GetCumulativeTicketUpperBounds());
+
+  auto const &standalone_emission_records =
+      standalone.GetRadionuclideEmissionRecords();
+  auto const &planned_emission_records =
+      planned.GetRadionuclideEmissionRecords();
+  ASSERT_EQ(standalone_emission_records.size(),
+            planned_emission_records.size());
+  for (std::size_t index = 0U; index < standalone_emission_records.size();
+       ++index) {
+    SCOPED_TRACE(index);
+    auto const &standalone_record = standalone_emission_records[index];
+    auto const &planned_record = planned_emission_records[index];
+    EXPECT_EQ(standalone_record.particle_type, planned_record.particle_type);
+    EXPECT_EQ(standalone_record.energy_distribution_record_index,
+              planned_record.energy_distribution_record_index);
+    EXPECT_EQ(standalone_record.mono_energy_milli_eV,
+              planned_record.mono_energy_milli_eV);
+  }
+
+  auto const &standalone_definitions = standalone.GetRadionuclideDefinitions();
+  auto const &planned_definitions = planned.GetRadionuclideDefinitions();
+  ASSERT_EQ(standalone_definitions.size(), planned_definitions.size());
+  for (std::size_t index = 0U; index < standalone_definitions.size(); ++index) {
+    SCOPED_TRACE(index);
+    EXPECT_EQ(standalone_definitions[index], planned_definitions[index]);
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+auto ExpectCountDrivenSnapshotsEqual(
+    SourceRunSnapshot const &standalone, SourceRunSnapshot const &planned,
+    ggems::core::GGEMSTimeWindow expected_window) -> void {
+  EXPECT_EQ(standalone.GetTotalPrimaryCount(), planned.GetTotalPrimaryCount());
+  EXPECT_FALSE(standalone.HasActivityDrivenSource());
+  EXPECT_FALSE(planned.HasActivityDrivenSource());
+
+  auto const &standalone_records = standalone.GetRecords();
+  auto const &planned_records = planned.GetRecords();
+  auto const &standalone_ranges = standalone.GetRanges();
+  auto const &planned_ranges = planned.GetRanges();
+  auto const &standalone_population_records = standalone.GetPopulationRecords();
+  auto const &planned_population_records = planned.GetPopulationRecords();
+
+  ASSERT_EQ(standalone_records.size(), planned_records.size());
+  ASSERT_EQ(standalone_ranges.size(), planned_ranges.size());
+  ASSERT_EQ(standalone_population_records.size(),
+            planned_population_records.size());
+  ASSERT_EQ(standalone_records.size(), standalone_ranges.size());
+  ASSERT_EQ(standalone_records.size(), standalone_population_records.size());
+  EXPECT_EQ(standalone_records.size(),
+            standalone.GetSourceConfiguration().GetSourceCount());
+  EXPECT_EQ(planned_records.size(),
+            planned.GetSourceConfiguration().GetSourceCount());
+
+  for (std::size_t index = 0U; index < standalone_records.size(); ++index) {
+    SCOPED_TRACE(index);
+    ExpectSourceRecordsEqual(standalone_records[index], planned_records[index]);
+    EXPECT_EQ(standalone_records[index].time_start_ps,
+              expected_window.start_ps);
+    EXPECT_EQ(standalone_records[index].time_stop_ps, expected_window.stop_ps);
+    EXPECT_EQ(planned_records[index].time_start_ps, expected_window.start_ps);
+    EXPECT_EQ(planned_records[index].time_stop_ps, expected_window.stop_ps);
+
+    ExpectSourceRange(standalone_ranges[index],
+                      planned_ranges[index].projection_primary_begin,
+                      planned_ranges[index].primary_count);
+
+    auto const &standalone_population = standalone_population_records[index];
+    auto const &planned_population = planned_population_records[index];
+    EXPECT_EQ(standalone_population.population_mode,
+              planned_population.population_mode);
+    EXPECT_EQ(standalone_population.first_emission_index,
+              planned_population.first_emission_index);
+    EXPECT_EQ(standalone_population.emission_count,
+              planned_population.emission_count);
+    EXPECT_FLOAT_EQ(standalone_population.scaled_decay,
+                    planned_population.scaled_decay);
+    EXPECT_EQ(
+        standalone_population.population_mode,
+        ggems::core::sources::ToKernelSourcePopulationMode(
+            ggems::core::sources::GGEMSSourcePopulationMode::CountDriven));
+    EXPECT_EQ(standalone_population.first_emission_index, 0U);
+    EXPECT_EQ(standalone_population.emission_count, 0U);
+    EXPECT_FLOAT_EQ(standalone_population.scaled_decay, 0.0F);
+  }
+
+  EXPECT_TRUE(standalone.GetGroupRanges().empty());
+  EXPECT_TRUE(planned.GetGroupRanges().empty());
+  ExpectSourceConfigurationsEqual(standalone.GetSourceConfiguration(),
+                                  planned.GetSourceConfiguration());
 }
 
 } // namespace
@@ -556,12 +733,14 @@ TEST(GGEMSSourceRunSnapshot, RejectsOverflowingTotal) {
   auto expected_0 = source_0->BuildRecord();
   auto expected_1 = source_1->BuildRecord();
   std::vector<GGEMSSourcePtr> sources{source_0, source_1};
+  Random const random = MakePlannerRandom();
+  Planner planner{sources, random};
 
   bool exception_caught = false;
 
   try {
     static_cast<void>(ggems::core::sources::BuildSourceRunSnapshot(sources));
-  } catch (ggems::core::GGEMSExceptionBase const &exception) {
+  } catch (ggems::core::GGEMSRecoverable const &exception) {
     exception_caught = true;
 
     std::string_view diagnostic{exception.what()};
@@ -570,6 +749,9 @@ TEST(GGEMSSourceRunSnapshot, RejectsOverflowingTotal) {
   }
 
   EXPECT_TRUE(exception_caught);
+  EXPECT_THROW(static_cast<void>(planner.BuildCandidate({})),
+               ggems::core::GGEMSRecoverable);
+  EXPECT_EQ(planner.GetRevision(), 0ULL);
   EXPECT_EQ(source_0->GetPrimaryCount(), k_maximum);
   EXPECT_EQ(source_1->GetPrimaryCount(), 1ULL);
   ExpectSourceRecordsEqual(source_0->BuildRecord(), expected_0);
@@ -607,6 +789,197 @@ TEST(GGEMSSourceRunSnapshot, SingleSourceOverloadMatchesCollectionOverload) {
                     mono_snapshot.GetRanges()[0U].primary_count);
   EXPECT_EQ(mono_snapshot.GetTotalPrimaryCount(),
             generic_snapshot.GetTotalPrimaryCount());
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceRunSnapshot,
+     StandaloneSingleSourceOverloadsMatchPopulationPlan) {
+  constexpr std::uint64_t k_primary_count{7ULL};
+  constexpr ggems::core::GGEMSTimeWindow k_time_window{.start_ps = 123ULL,
+                                                       .stop_ps = 987ULL};
+
+  auto source = MakeSource(k_primary_count);
+  source
+      ->SetEmittedParticleType(
+          ggems::core::particles::GGEMSParticleType::Electron)
+      .SetEnergyMilliElectronVolt(222'000'000ULL)
+      .SetPositionPicoMeter(-11LL, 22LL, -33LL)
+      .SetWeight(0.25F);
+  std::vector<GGEMSSourcePtr> sources{source};
+  auto configuration =
+      ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
+  Random const random = MakePlannerRandom();
+  Planner planner{sources, random};
+
+  auto standalone_static =
+      ggems::core::sources::BuildSourceRunSnapshot(*source);
+  auto planned_static = BuildPlanBasedCountSnapshot(
+      sources, configuration, planner, ggems::core::GGEMSTimeWindow{});
+  ExpectCountDrivenSnapshotsEqual(standalone_static, planned_static, {});
+  ASSERT_EQ(standalone_static.GetRanges().size(), 1U);
+  ExpectSourceRange(standalone_static.GetRanges()[0U], 0ULL, k_primary_count);
+  EXPECT_EQ(standalone_static.GetTotalPrimaryCount(), k_primary_count);
+
+  auto standalone_timed =
+      ggems::core::sources::BuildSourceRunSnapshot(*source, k_time_window);
+  auto planned_timed = BuildPlanBasedCountSnapshot(sources, configuration,
+                                                   planner, k_time_window);
+  ExpectCountDrivenSnapshotsEqual(standalone_timed, planned_timed,
+                                  k_time_window);
+  ASSERT_EQ(standalone_timed.GetRanges().size(), 1U);
+  ExpectSourceRange(standalone_timed.GetRanges()[0U], 0ULL, k_primary_count);
+  EXPECT_EQ(standalone_timed.GetTotalPrimaryCount(), k_primary_count);
+  EXPECT_EQ(planner.GetRevision(), 0ULL);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceRunSnapshot,
+     StandaloneCollectionOverloadsMatchPopulationPlanWithZeroSlot) {
+  constexpr ggems::core::GGEMSTimeWindow k_time_window{.start_ps = 1'234ULL,
+                                                       .stop_ps = 5'678ULL};
+
+  auto source_0 = MakeSource(3ULL);
+  source_0->SetEnergyMilliElectronVolt(111'000'000ULL)
+      .SetPositionPicoMeter(1LL, 2LL, 3LL);
+  auto source_1 = MakeSource(0ULL);
+  source_1->SetEnergyMilliElectronVolt(222'000'000ULL)
+      .SetPositionPicoMeter(4LL, 5LL, 6LL);
+  auto source_2 = MakeSource(5ULL);
+  source_2->SetEnergyMilliElectronVolt(333'000'000ULL)
+      .SetPositionPicoMeter(7LL, 8LL, 9LL);
+
+  std::vector<GGEMSSourcePtr> sources{source_0, source_1, source_2};
+  auto configuration =
+      ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
+  Random const random = MakePlannerRandom();
+  Planner planner{sources, random};
+
+  auto standalone_static =
+      ggems::core::sources::BuildSourceRunSnapshot(sources);
+  auto planned_static = BuildPlanBasedCountSnapshot(
+      sources, configuration, planner, ggems::core::GGEMSTimeWindow{});
+  ExpectCountDrivenSnapshotsEqual(standalone_static, planned_static, {});
+  ASSERT_EQ(standalone_static.GetRanges().size(), 3U);
+  ExpectSourceRange(standalone_static.GetRanges()[0U], 0ULL, 3ULL);
+  ExpectSourceRange(standalone_static.GetRanges()[1U], 3ULL, 0ULL);
+  ExpectSourceRange(standalone_static.GetRanges()[2U], 3ULL, 5ULL);
+  EXPECT_EQ(standalone_static.GetTotalPrimaryCount(), 8ULL);
+
+  auto standalone_timed =
+      ggems::core::sources::BuildSourceRunSnapshot(sources, k_time_window);
+  auto planned_timed = BuildPlanBasedCountSnapshot(sources, configuration,
+                                                   planner, k_time_window);
+  ExpectCountDrivenSnapshotsEqual(standalone_timed, planned_timed,
+                                  k_time_window);
+  ASSERT_EQ(standalone_timed.GetRanges().size(), 3U);
+  ExpectSourceRange(standalone_timed.GetRanges()[0U], 0ULL, 3ULL);
+  ExpectSourceRange(standalone_timed.GetRanges()[1U], 3ULL, 0ULL);
+  ExpectSourceRange(standalone_timed.GetRanges()[2U], 3ULL, 5ULL);
+  EXPECT_EQ(standalone_timed.GetTotalPrimaryCount(), 8ULL);
+  EXPECT_EQ(planner.GetRevision(), 0ULL);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceRunSnapshot,
+     ExistingConfigurationOverloadsPreserveIdentityForDuplicateSlots) {
+  constexpr std::uint64_t k_primary_count{4ULL};
+  constexpr ggems::core::GGEMSTimeWindow k_time_window{.start_ps = 99ULL,
+                                                       .stop_ps = 199ULL};
+
+  auto source = MakeSource(k_primary_count);
+  source->SetEnergyMilliElectronVolt(444'000'000ULL)
+      .SetPositionPicoMeter(-4LL, 5LL, -6LL);
+  std::vector<GGEMSSourcePtr> sources{source, source};
+  auto configuration =
+      ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
+  Random const random = MakePlannerRandom();
+  Planner planner{sources, random};
+
+  auto standalone_static =
+      ggems::core::sources::BuildSourceRunSnapshot(sources, configuration);
+  auto planned_static = BuildPlanBasedCountSnapshot(
+      sources, configuration, planner, ggems::core::GGEMSTimeWindow{});
+  ExpectCountDrivenSnapshotsEqual(standalone_static, planned_static, {});
+  EXPECT_EQ(&standalone_static.GetSourceConfiguration(), configuration.get());
+  EXPECT_EQ(&planned_static.GetSourceConfiguration(), configuration.get());
+  ASSERT_EQ(standalone_static.GetRanges().size(), 2U);
+  ExpectSourceRange(standalone_static.GetRanges()[0U], 0ULL, k_primary_count);
+  ExpectSourceRange(standalone_static.GetRanges()[1U], k_primary_count,
+                    k_primary_count);
+  EXPECT_EQ(standalone_static.GetTotalPrimaryCount(), 2ULL * k_primary_count);
+  ASSERT_EQ(standalone_static.GetRecords().size(), 2U);
+  EXPECT_NE(&standalone_static.GetRecords()[0U],
+            &standalone_static.GetRecords()[1U]);
+
+  auto standalone_timed = ggems::core::sources::BuildSourceRunSnapshot(
+      sources, configuration, k_time_window);
+  auto planned_timed = BuildPlanBasedCountSnapshot(sources, configuration,
+                                                   planner, k_time_window);
+  ExpectCountDrivenSnapshotsEqual(standalone_timed, planned_timed,
+                                  k_time_window);
+  EXPECT_EQ(&standalone_timed.GetSourceConfiguration(), configuration.get());
+  EXPECT_EQ(&planned_timed.GetSourceConfiguration(), configuration.get());
+  ASSERT_EQ(standalone_timed.GetRanges().size(), 2U);
+  ExpectSourceRange(standalone_timed.GetRanges()[0U], 0ULL, k_primary_count);
+  ExpectSourceRange(standalone_timed.GetRanges()[1U], k_primary_count,
+                    k_primary_count);
+  EXPECT_EQ(standalone_timed.GetTotalPrimaryCount(), 2ULL * k_primary_count);
+  EXPECT_EQ(planner.GetRevision(), 0ULL);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceRunSnapshot,
+     StandaloneAndPopulationPlanObserveCountMutationBetweenAttempts) {
+  constexpr ggems::core::GGEMSTimeWindow k_time_window{.start_ps = 300ULL,
+                                                       .stop_ps = 700ULL};
+
+  auto source_0 = MakeSource(2ULL);
+  auto source_1 = MakeSource(4ULL);
+  std::vector<GGEMSSourcePtr> sources{source_0, source_1};
+  auto configuration =
+      ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
+  Random const random = MakePlannerRandom();
+  Planner planner{sources, random};
+
+  auto standalone_first = ggems::core::sources::BuildSourceRunSnapshot(
+      sources, configuration, k_time_window);
+  auto planned_first = BuildPlanBasedCountSnapshot(sources, configuration,
+                                                   planner, k_time_window);
+  ExpectCountDrivenSnapshotsEqual(standalone_first, planned_first,
+                                  k_time_window);
+  ASSERT_EQ(standalone_first.GetRanges().size(), 2U);
+  ExpectSourceRange(standalone_first.GetRanges()[0U], 0ULL, 2ULL);
+  ExpectSourceRange(standalone_first.GetRanges()[1U], 2ULL, 4ULL);
+  EXPECT_EQ(standalone_first.GetTotalPrimaryCount(), 6ULL);
+
+  source_0->SetPrimaryCount(5ULL);
+  source_1->SetPrimaryCount(0ULL);
+
+  auto standalone_second = ggems::core::sources::BuildSourceRunSnapshot(
+      sources, configuration, k_time_window);
+  auto planned_second = BuildPlanBasedCountSnapshot(sources, configuration,
+                                                    planner, k_time_window);
+  ExpectCountDrivenSnapshotsEqual(standalone_second, planned_second,
+                                  k_time_window);
+  ASSERT_EQ(standalone_second.GetRanges().size(), 2U);
+  ExpectSourceRange(standalone_second.GetRanges()[0U], 0ULL, 5ULL);
+  ExpectSourceRange(standalone_second.GetRanges()[1U], 5ULL, 0ULL);
+  EXPECT_EQ(standalone_second.GetTotalPrimaryCount(), 5ULL);
+  EXPECT_EQ(&standalone_first.GetSourceConfiguration(), configuration.get());
+  EXPECT_EQ(&planned_first.GetSourceConfiguration(), configuration.get());
+  EXPECT_EQ(&standalone_second.GetSourceConfiguration(), configuration.get());
+  EXPECT_EQ(&planned_second.GetSourceConfiguration(), configuration.get());
+  EXPECT_EQ(source_0->GetPrimaryCount(), 5ULL);
+  EXPECT_EQ(source_1->GetPrimaryCount(), 0ULL);
+  EXPECT_EQ(planner.GetRevision(), 0ULL);
 }
 
 // =============================================================================
