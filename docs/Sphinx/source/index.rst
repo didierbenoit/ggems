@@ -5,7 +5,7 @@
 
 Welcome to the GGEMS Documentation
 ==================================
-GGEMS (GPU Geant4-based Monte Carlo Simulations) is a Monte Carlo numerical simulation platform dedicated to medical applications such as CT/CBCT imaging and hadron therapy. The physical models from the `Geant4`_ platform, which is a toolkit for simulating the interaction of particles through matter, are implemented in GGEMS using the `OpenCL`_ library. This approach enables parallel computing on heterogeneous architectures such as CPUs and GPUs. The core of the GGEMS library is fully written in C++, including the components that integrate OpenCL and OpenGL (for visualisation). However, the library can only be used through commands written in Python.
+GGEMS (GPU Geant4-based Monte Carlo Simulations) is a Monte Carlo numerical simulation platform dedicated to medical applications such as CT/CBCT imaging and hadron therapy. The physical models from the `Geant4`_ platform, which is a toolkit for simulating the interaction of particles through matter, are implemented in GGEMS using the `OpenCL`_ library. This approach enables parallel computing on heterogeneous architectures such as CPUs and GPUs. The core of the GGEMS library is fully written in C++, including the components that integrate OpenCL and OpenGL (for visualization). However, the library can only be used through commands written in Python.
 
 .. _Geant4: https://geant4.web.cern.ch
 .. _OpenCL: https://www.khronos.org/opencl

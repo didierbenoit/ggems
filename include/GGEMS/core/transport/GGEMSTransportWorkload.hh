@@ -124,7 +124,7 @@ public:
   }
 
 private:
-  auto InitialiseRandomStatesInSVM() -> void;
+  auto InitializeRandomStatesInSVM() -> void;
   auto ResetCountersInSVM() -> void;
   auto ResetObserverCountersInSVM() -> void;
   auto WriteObserverConfigToSVM(

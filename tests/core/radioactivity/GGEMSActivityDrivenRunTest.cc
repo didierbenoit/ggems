@@ -159,7 +159,7 @@ protected:
 
     if (opencl.GetContext().empty()) {
       opencl.SelectDevices({"gpu"});
-      opencl.Initialise();
+      opencl.Initialize();
     }
 
     ASSERT_FALSE(opencl.GetContext().empty());
@@ -185,12 +185,12 @@ TEST_F(GGEMSActivityDrivenRunTest,
   run.SetWorkerCount(64U);
   run.SetTimePicoSecond(2ULL * k_second_ps, 3ULL * k_second_ps, k_second_ps);
 
-  EXPECT_THROW(run.Initialise(), ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(run.Initialize(), ggems::core::GGEMSExceptionBase);
 
   EXPECT_NO_THROW(source->SetActivityDrivenRadionuclide(
       radionuclide, ggems::units::Activity{k_activity_bq}, k_second_ps));
 
-  ASSERT_NO_THROW(run.Initialise());
+  ASSERT_NO_THROW(run.Initialize());
 
   auto const &configuration =
       source->BuildActivityDrivenPopulationConfiguration();
@@ -203,7 +203,7 @@ TEST_F(GGEMSActivityDrivenRunTest,
 // =============================================================================
 
 TEST_F(GGEMSActivityDrivenRunTest,
-       InitialisesFinalisesAndKeepsIdsMonotoneAcrossResetTime) {
+       InitializesFinalizesAndKeepsIdsMonotoneAcrossResetTime) {
   auto radionuclide = MakeMonoRadionuclide();
   auto source = MakeActivitySource(radionuclide);
   auto observer = MakeObserver();
@@ -236,7 +236,7 @@ TEST_F(GGEMSActivityDrivenRunTest,
   run.SetWorkerCount(64U);
   run.SetTimePicoSecond(0ULL, 3ULL * k_second_ps, k_second_ps);
 
-  ASSERT_NO_THROW(run.Initialise());
+  ASSERT_NO_THROW(run.Initialize());
 
   EXPECT_THROW(source->SetActivityDrivenRadionuclide(
                    radionuclide, ggems::units::Activity{k_activity_bq}, 0ULL),
@@ -355,7 +355,7 @@ TEST_F(GGEMSActivityDrivenRunTest,
   run.SetWorkerCount(64U);
   run.SetTimePicoSecond(0ULL, 2ULL * k_second_ps, k_second_ps);
 
-  ASSERT_NO_THROW(run.Initialise());
+  ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
 
   EXPECT_EQ(run.GetCurrentTimePicoSecond(), k_second_ps);
@@ -413,7 +413,7 @@ TEST_F(GGEMSActivityDrivenRunTest,
   run.SetWorkerCount(64U);
   run.SetTimePicoSecond(0ULL, 3ULL * k_second_ps, k_second_ps);
 
-  ASSERT_NO_THROW(run.Initialise());
+  ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
 
   auto const first_snapshot = run.GetLastSourceRunSnapshot();
@@ -460,7 +460,7 @@ TEST_F(GGEMSActivityDrivenRunTest,
   reference_run.SetWorkerCount(64U);
   reference_run.SetTimePicoSecond(0ULL, 3ULL * k_second_ps, k_second_ps);
 
-  ASSERT_NO_THROW(reference_run.Initialise());
+  ASSERT_NO_THROW(reference_run.Initialize());
   ASSERT_NO_THROW(reference_run.Run());
   ASSERT_NO_THROW(reference_run.Run());
 
@@ -517,7 +517,7 @@ TEST_F(GGEMSActivityDrivenRunTest,
   run.SetWorkerCount(64U);
   run.SetTimePicoSecond(0ULL, 3ULL * k_second_ps, k_second_ps);
 
-  ASSERT_NO_THROW(run.Initialise());
+  ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
 
   auto const first_snapshot = run.GetLastSourceRunSnapshot();

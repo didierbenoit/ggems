@@ -5,9 +5,9 @@
 #include <span>
 #include <functional>
 
-#include "GGEMS/render/GGEMSColour.hh"
+#include "GGEMS/render/GGEMSColor.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
-#include "GGEMS/render/GGEMSParticleColours.hh"
+#include "GGEMS/render/GGEMSParticleColors.hh"
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/core/observer/GGEMSObserverTypes.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
@@ -129,7 +129,7 @@ MakeTraceVertex(GGEMSParticleTracePoint const &point,
 
   return GGEMSParticleTraceVertex{
       .position = {point.x_m, point.y_m, point.z_m},
-      .colour = {static_cast<float>(rgb.r) * inverse_255,
+      .color = {static_cast<float>(rgb.r) * inverse_255,
                  static_cast<float>(rgb.g) * inverse_255,
                  static_cast<float>(rgb.b) * inverse_255, 1.0F}};
 }
@@ -191,7 +191,7 @@ MakeTraceVertex(GGEMSParticleTracePoint const &point,
 // =============================================================================
 // =============================================================================
 
-auto ToParticleTracePointMetre(
+auto ToParticleTracePointMeter(
     core::observer::GGEMSObserverRecord const &record) noexcept
     -> GGEMSParticleTracePoint {
   return GGEMSParticleTracePoint{
@@ -288,8 +288,8 @@ auto BuildParticleTraceSegments(
           .end_kind = GetRecordKind(current),
           .begin_time_ps = previous->time_ps,
           .end_time_ps = current.time_ps,
-          .begin = ToParticleTracePointMetre(*previous),
-          .end = ToParticleTracePointMetre(current)});
+          .begin = ToParticleTracePointMeter(*previous),
+          .end = ToParticleTracePointMeter(current)});
     }
 
     previous = &current;

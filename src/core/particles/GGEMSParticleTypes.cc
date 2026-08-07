@@ -13,20 +13,20 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-auto NormaliseParticleName(std::string_view particle_name) -> std::string {
-  std::string normalised;
-  normalised.reserve(particle_name.size());
+auto NormalizeParticleName(std::string_view particle_name) -> std::string {
+  std::string normalized;
+  normalized.reserve(particle_name.size());
 
   for (char character : particle_name) {
     if (character == ' ' || character == '_') {
       continue;
     }
 
-    normalised.push_back(
+    normalized.push_back(
         static_cast<char>(std::tolower(static_cast<unsigned char>(character))));
   }
 
-  return normalised;
+  return normalized;
 }
 
 } // namespace
@@ -89,33 +89,33 @@ auto ToShortName(GGEMSParticleType particle_type) -> std::string {
 // =============================================================================
 
 auto ParseParticleType(std::string_view particle_name) -> GGEMSParticleType {
-  std::string normalised = NormaliseParticleName(particle_name);
+  std::string normalized = NormalizeParticleName(particle_name);
 
-  if (normalised == "aionino" || normalised == "l") {
+  if (normalized == "aionino" || normalized == "l") {
     return GGEMSParticleType::Aionino;
   }
 
-  if (normalised == "gamma" || normalised == "photon" || normalised == "g") {
+  if (normalized == "gamma" || normalized == "photon" || normalized == "g") {
     return GGEMSParticleType::Gamma;
   }
 
-  if (normalised == "electron" || normalised == "e-" || normalised == "b-") {
+  if (normalized == "electron" || normalized == "e-" || normalized == "b-") {
     return GGEMSParticleType::Electron;
   }
 
-  if (normalised == "positron" || normalised == "e+" || normalised == "b+") {
+  if (normalized == "positron" || normalized == "e+" || normalized == "b+") {
     return GGEMSParticleType::Positron;
   }
 
-  if (normalised == "proton" || normalised == "p") {
+  if (normalized == "proton" || normalized == "p") {
     return GGEMSParticleType::Proton;
   }
 
-  if (normalised == "neutron" || normalised == "n") {
+  if (normalized == "neutron" || normalized == "n") {
     return GGEMSParticleType::Neutron;
   }
 
-  if (normalised == "alpha" || normalised == "a") {
+  if (normalized == "alpha" || normalized == "a") {
     return GGEMSParticleType::Alpha;
   }
 

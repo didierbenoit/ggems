@@ -32,7 +32,7 @@ public:
   auto ValidateStateRange(std::uint64_t first_stream_id,
                           std::size_t state_count) const -> void;
 
-  auto InitialiseStates(std::uint64_t first_stream_id,
+  auto InitializeStates(std::uint64_t first_stream_id,
                         std::span<std::byte> state_storage) const -> void;
 
   [[nodiscard]] auto BuildSummaryLines() const -> std::vector<std::string>;

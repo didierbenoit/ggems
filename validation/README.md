@@ -10,4 +10,4 @@ It is intentionally separated from:
 
 The `validation/` directory is dedicated to reproducible scientific validation workflows used for documentation, publications, and comparison with reference tools such as Geant4.
 
-Large generated artefacts are not tracked by Git. Configuration files, scripts, small summaries, and documentation are tracked so that validation datasets can be regenerated from recorded metadata.
+Large generated artifacts are not tracked by Git. Configuration files, scripts, small summaries, and documentation are tracked so that validation datasets can be regenerated from recorded metadata.

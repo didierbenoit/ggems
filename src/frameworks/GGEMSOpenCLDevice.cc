@@ -1035,7 +1035,7 @@ void GGEMSOpenCLDevice::PrintCompute() const {
 /* --------------------------------*/
 /* --------------------------------*/
 
-void GGEMSOpenCLDevice::PrintVectorisation() const {
+void GGEMSOpenCLDevice::PrintVectorization() const {
   PrintInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR>(device_);
   PrintInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT>(device_);
   PrintInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT>(device_);
@@ -1197,7 +1197,7 @@ void GGEMSOpenCLDevice::Print() const {
   PrintIdentity();
   PrintTypeID();
   PrintCompute();
-  PrintVectorisation();
+  PrintVectorization();
   PrintFloatingPoint();
   PrintMemory();
   PrintImages();

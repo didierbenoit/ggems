@@ -27,7 +27,7 @@ constexpr std::uint32_t k_implicit_significand_bit{0x0080'0000U};
 constexpr std::uint32_t k_non_finite_exponent{0xFFU};
 constexpr std::uint64_t k_int64_min_magnitude{0x8000'0000'0000'0000ULL};
 constexpr std::uint64_t k_max_binary32_significand{0x00FF'FFFFULL};
-constexpr float k_normalised_direction_component_bound{
+constexpr float k_normalized_direction_component_bound{
     std::bit_cast<float>(0x3F80'0001U)};
 
 static_assert(k_max_binary32_significand <=
@@ -204,22 +204,22 @@ auto ValidateDiagnosticTransportSources(
             TryScaleDiagnosticProjectionComponent(direction[axis],
                                                   displacement_pm),
             std::format("Diagnostic projection cannot scale source slot {} "
-                        "axis_z.{} into int64 picometres.",
+                        "axis_z.{} into int64 picometers.",
                         source_index, k_axis_names[axis]));
 
-        std::int64_t endpoint_centre_pm{0ULL};
+        std::int64_t endpoint_center_pm{0ULL};
 
         GGEMS_CHECK_RECOVERABLE(
             TryAddDiagnosticProjectionDisplacement(
-                position[axis], displacement_pm, endpoint_centre_pm),
+                position[axis], displacement_pm, endpoint_center_pm),
             std::format(
                 "Diagnostic projection endpoint overflows int64 at source "
                 "slot {} axis {}.",
                 source_index, k_axis_names[axis]));
 
         GGEMS_CHECK_RECOVERABLE(
-            sources::HasSignedPicoMetreEnvelope(
-                endpoint_centre_pm, emission_bounds.component_radius_pm),
+            sources::HasSignedPicoMeterEnvelope(
+                endpoint_center_pm, emission_bounds.component_radius_pm),
             std::format(
                 "Diagnostic projection envelope overflows int64 at source "
                 "slot {} axis {}.",
@@ -233,9 +233,9 @@ auto ValidateDiagnosticTransportSources(
 
     GGEMS_CHECK_INTERNAL(
         TryScaleDiagnosticProjectionComponent(
-            k_normalised_direction_component_bound,
+            k_normalized_direction_component_bound,
             direction_displacement_bound_pm),
-        "Cannot construct diagnostic normalised-direction bound.");
+        "Cannot construct diagnostic normalized-direction bound.");
 
     auto const displacement_bound_pm =
         static_cast<std::uint64_t>(direction_displacement_bound_pm);
@@ -250,7 +250,7 @@ auto ValidateDiagnosticTransportSources(
 
     for (std::size_t axis = 0U; axis < position.size(); ++axis) {
       GGEMS_CHECK_RECOVERABLE(
-          sources::HasSignedPicoMetreEnvelope(position[axis], total_radius_pm),
+          sources::HasSignedPicoMeterEnvelope(position[axis], total_radius_pm),
           std::format(
               "Diagnostic projection envelope overflows int64 at source "
               "slot {} axis {}.",

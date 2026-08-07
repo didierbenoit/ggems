@@ -30,7 +30,7 @@
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
-#include "GGEMS/render/GGEMSColourNames.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 
@@ -62,7 +62,7 @@ constexpr float k_imgui_base_font_size{15.0F};
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] auto NormaliseImGuiUIScale(float content_scale_x,
+[[nodiscard]] auto NormalizeImGuiUIScale(float content_scale_x,
                                          float content_scale_y) noexcept
     -> float {
   if (!std::isfinite(content_scale_x) || !std::isfinite(content_scale_y) ||
@@ -193,17 +193,17 @@ GGEMSVulkanContext::~GGEMSVulkanContext() noexcept {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSVulkanContext::Initialise(
+void GGEMSVulkanContext::Initialize(
     GLFWwindow *window,
     detail::GGEMSVulkanDeviceSelector const &device_selector,
     detail::GGEMSComputeStatus compute_status) {
-  if (initialised_) {
+  if (initialized_) {
     return;
   }
 
   GGEMS_CHECK_INTERNAL(
       window != nullptr,
-      "A valid GLFW window is required before initialising Vulkan GuiMode.");
+      "A valid GLFW window is required before initializing Vulkan GuiMode.");
 
   device_status_.compute = std::move(compute_status);
 
@@ -248,25 +248,25 @@ void GGEMSVulkanContext::Initialise(
     CreateFrameSyncObjects();
     CreateSwapchainSyncObjects();
     CreateImGuiDescriptorPool();
-    InitialiseImGui(window);
-    InitialiseSceneRenderer();
+    InitializeImGui(window);
+    InitializeSceneRenderer();
   } catch (vk::SystemError const &error) {
     GGEMS_RECOVERABLE(
-        std::format("Unable to initialise Vulkan GuiMode: {}.", error.what()));
+        std::format("Unable to initialize Vulkan GuiMode: {}.", error.what()));
   }
 
-  initialised_ = true;
-  device_status_.renderer.initialised = true;
+  initialized_ = true;
+  device_status_.renderer.initialized = true;
 
   GGEMS_INFO("Vulkan",
-             "Vulkan swapchain command buffers, synchronisation objects and "
-             "Dear ImGui backend initialised.");
+             "Vulkan swapchain command buffers, synchronization objects and "
+             "Dear ImGui backend initialized.");
 }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanContext::IsInitialised() const noexcept -> bool {
-  return initialised_;
+auto GGEMSVulkanContext::IsInitialized() const noexcept -> bool {
+  return initialized_;
 }
 
 // -----------------------------------------------------------------------------
@@ -1090,7 +1090,7 @@ auto GGEMSVulkanContext::CreateFrameSyncObjects() -> void {
 
   GGEMS_INFOEX(
       "Vulkan", 2,
-      "Created Vulkan frame synchronisation objects for {} frames in flight.",
+      "Created Vulkan frame synchronization objects for {} frames in flight.",
       k_max_frames_in_flight_);
 }
 
@@ -1100,7 +1100,7 @@ auto GGEMSVulkanContext::CreateSwapchainSyncObjects() -> void {
   GGEMS_CHECK_INTERNAL(
       !swapchain_images_.empty(),
       "Swapchain images are required before creating Vulkan swapchain "
-      "synchronisation objects.");
+      "synchronization objects.");
 
   vk::SemaphoreCreateInfo const semaphore_create_info{};
 
@@ -1183,7 +1183,7 @@ auto GGEMSVulkanContext::RecordCommandBuffer(std::uint32_t image_index)
   vk::ClearValue clear_value =
       vk::ClearColorValue(detail::ToVulkanClearColor(render::BLUE_Abyss));
 
-  vk::RenderingAttachmentInfo colour_attachment{
+  vk::RenderingAttachmentInfo color_attachment{
       .imageView = *swapchain_image_views_[image_index],
       .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
       .loadOp = vk::AttachmentLoadOp::eClear,
@@ -1195,7 +1195,7 @@ auto GGEMSVulkanContext::RecordCommandBuffer(std::uint32_t image_index)
                                .extent = swapchain_extent_},
       .layerCount = 1U,
       .colorAttachmentCount = 1U,
-      .pColorAttachments = &colour_attachment};
+      .pColorAttachments = &color_attachment};
 
   command_buffer.beginRendering(rendering_info);
 
@@ -1216,8 +1216,8 @@ auto GGEMSVulkanContext::RecordCommandBuffer(std::uint32_t image_index)
 auto GGEMSVulkanContext::RenderFrame(GLFWwindow *window,
                                      bool framebuffer_resized) -> void {
   GGEMS_CHECK_INTERNAL(
-      initialised_,
-      "Vulkan GuiMode must be initialised before rendering a frame.");
+      initialized_,
+      "Vulkan GuiMode must be initialized before rendering a frame.");
 
   GGEMS_CHECK_INTERNAL(
       window != nullptr,
@@ -1368,7 +1368,7 @@ auto GGEMSVulkanContext::RecreateSwapchain(GLFWwindow *window) -> void {
   AllocateCommandBuffers();
   CreateSwapchainSyncObjects();
 
-  if (imgui_initialised_) {
+  if (imgui_initialized_) {
     ImGui_ImplVulkan_SetMinImageCount(
         static_cast<std::uint32_t>(swapchain_images_.size()));
   }
@@ -1438,21 +1438,21 @@ auto GGEMSVulkanContext::CheckImGuiVkResult(VkResult result) noexcept -> void {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanContext::InitialiseImGui(GLFWwindow *window) -> void {
+auto GGEMSVulkanContext::InitializeImGui(GLFWwindow *window) -> void {
   GGEMS_CHECK_INTERNAL(
       window != nullptr,
-      "A valid GLFW window is required before initialising Dear ImGui.");
+      "A valid GLFW window is required before initializing Dear ImGui.");
 
   GGEMS_CHECK_INTERNAL(
       *imgui_descriptor_pool_ != nullptr,
-      "A Vulkan descriptor pool is required before initialising Dear ImGui.");
+      "A Vulkan descriptor pool is required before initializing Dear ImGui.");
 
   float content_scale_x{1.0F};
   float content_scale_y{1.0F};
 
   glfwGetWindowContentScale(window, &content_scale_x, &content_scale_y);
 
-  imgui_ui_scale_ = NormaliseImGuiUIScale(content_scale_x, content_scale_y);
+  imgui_ui_scale_ = NormalizeImGuiUIScale(content_scale_x, content_scale_y);
   imgui_font_size_ = k_imgui_base_font_size * imgui_ui_scale_;
 
   IMGUI_CHECKVERSION();
@@ -1476,7 +1476,7 @@ auto GGEMSVulkanContext::InitialiseImGui(GLFWwindow *window) -> void {
 
   ImGui_ImplGlfw_InitForVulkan(window, true);
 
-  imgui_colour_attachment_format_ =
+  imgui_color_attachment_format_ =
       static_cast<VkFormat>(swapchain_image_format_);
 
   imgui_pipeline_rendering_create_info_ = VkPipelineRenderingCreateInfo{
@@ -1484,7 +1484,7 @@ auto GGEMSVulkanContext::InitialiseImGui(GLFWwindow *window) -> void {
       .pNext = nullptr,
       .viewMask = 0U,
       .colorAttachmentCount = 1U,
-      .pColorAttachmentFormats = &imgui_colour_attachment_format_,
+      .pColorAttachmentFormats = &imgui_color_attachment_format_,
       .depthAttachmentFormat = VK_FORMAT_UNDEFINED,
       .stencilAttachmentFormat = VK_FORMAT_UNDEFINED};
 
@@ -1508,15 +1508,15 @@ auto GGEMSVulkanContext::InitialiseImGui(GLFWwindow *window) -> void {
 
   ImGui_ImplVulkan_Init(&init_info);
 
-  imgui_initialised_ = true;
+  imgui_initialized_ = true;
 
-  GGEMS_INFOEX("Gui", 1, "Dear ImGui context and Vulkan backend initialised.");
+  GGEMS_INFOEX("Gui", 1, "Dear ImGui context and Vulkan backend initialized.");
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSVulkanContext::ShutdownImGui() noexcept -> void {
-  if (!imgui_initialised_) {
+  if (!imgui_initialized_) {
     return;
   }
 
@@ -1524,7 +1524,7 @@ auto GGEMSVulkanContext::ShutdownImGui() noexcept -> void {
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();
 
-  imgui_initialised_ = false;
+  imgui_initialized_ = false;
 }
 
 // -----------------------------------------------------------------------------
@@ -1587,8 +1587,8 @@ auto GGEMSVulkanContext::ApplyPendingParticleTraceSegments() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSVulkanContext::BuildImGuiFrame() -> void {
-  GGEMS_CHECK_INTERNAL(imgui_initialised_,
-                       "Dear ImGui must be initialised before building a GUI "
+  GGEMS_CHECK_INTERNAL(imgui_initialized_,
+                       "Dear ImGui must be initialized before building a GUI "
                        "frame.");
 
   ApplyPendingSourceRunSnapshot();
@@ -1656,8 +1656,8 @@ auto GGEMSVulkanContext::LoadImGuiFonts() -> void {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanContext::InitialiseSceneRenderer() -> void {
-  scene_renderer_.Initialise(physical_device_, device_,
+auto GGEMSVulkanContext::InitializeSceneRenderer() -> void {
+  scene_renderer_.Initialize(physical_device_, device_,
                              vk::Format::eR8G8B8A8Unorm);
 }
 

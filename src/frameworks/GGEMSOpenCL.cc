@@ -55,7 +55,7 @@ namespace ggems::ocl {
 /* --------------------------------------------- */
 
 /*!
- * \brief Mapping of vendor aliases to normalised vendor names.
+ * \brief Mapping of vendor aliases to normalized vendor names.
  *
  * Used internally when parsing device-selection filters to allow
  * user-friendly terms such as "nvidia" or "amd".
@@ -184,7 +184,7 @@ void GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters) {
 
   GGEMS_CHECK_FATAL(!all_devices.empty(), "No OpenCL devices found.");
 
-  // --- Default behaviour --------------------------------------------------
+  // --- Default behavior --------------------------------------------------
   if (filters.empty()) {
     auto it_gpu =
         std::find_if(all_devices.begin(), all_devices.end(), [](auto const &d) {
@@ -220,7 +220,7 @@ void GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSOpenCL::Initialise() {
+void GGEMSOpenCL::Initialize() {
   try {
     CreateContexts();
     GGEMS_INFOEX("OpenCL", 2, "OpenCL backend ready.");

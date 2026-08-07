@@ -8,7 +8,6 @@
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
-#include "GGEMS/core/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/core/sources/GGEMSSourceFrame.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
@@ -243,10 +242,10 @@ auto ValidateFocusedDistribution(GGEMSSourceRecord const &record,
 // =============================================================================
 // =============================================================================
 
-auto HasSignedPicoMetreEnvelope(std::int64_t centre_pm,
+auto HasSignedPicoMeterEnvelope(std::int64_t center_pm,
                                 std::uint64_t radius_pm) noexcept -> bool {
   std::uint64_t const ordinal =
-      static_cast<std::uint64_t>(centre_pm) ^ k_signed_ordinal_bias;
+      static_cast<std::uint64_t>(center_pm) ^ k_signed_ordinal_bias;
 
   return radius_pm <= ordinal &&
          radius_pm <= std::numeric_limits<std::uint64_t>::max() - ordinal;
@@ -343,7 +342,7 @@ auto BuildEmissionBounds(GGEMSSourceRecord const &record)
   GGEMS_CHECK_RECOVERABLE(
       std::isfinite(rounded_radius_pm) && rounded_radius_pm >= 0.0L &&
           rounded_radius_pm < uint64_upper_exclusive,
-      "Emission geometry radius exceeds uint64 picometre storage.");
+      "Emission geometry radius exceeds uint64 picometer storage.");
 
   return {.component_radius_pm = static_cast<std::uint64_t>(rounded_radius_pm),
           .half_extent_x_pm = half_x_pm,
@@ -385,8 +384,8 @@ auto ValidateAnalyticSourceRecord(GGEMSSourceRecord const &record) -> void {
 
   for (std::size_t axis = 0U; axis < positions.size(); ++axis) {
     GGEMS_CHECK_RECOVERABLE(
-        HasSignedPicoMetreEnvelope(positions[axis], bounds.component_radius_pm),
-        std::format("Emission geometry exceeds int64 picometre storage "
+        HasSignedPicoMeterEnvelope(positions[axis], bounds.component_radius_pm),
+        std::format("Emission geometry exceeds int64 picometer storage "
                     "around source axis {}.",
                     k_axis_names[axis]));
   }

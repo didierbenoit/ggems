@@ -62,7 +62,7 @@ protected:
 
     if (opencl.GetContext().empty()) {
       opencl.SelectDevices({"gpu"});
-      opencl.Initialise();
+      opencl.Initialize();
     }
 
     ASSERT_FALSE(opencl.GetContext().empty());
@@ -307,11 +307,11 @@ TEST_F(GGEMSHostRandomStreamKernelTest,
 
         raw_state_buffer.Map(CL_MAP_WRITE);
         uniform_state_buffer.Map(CL_MAP_WRITE);
-        random.InitialiseStates(
+        random.InitializeStates(
             stream_id, std::span<std::byte>{
                            static_cast<std::byte *>(raw_state_buffer.GetData()),
                            random.GetStateSize()});
-        random.InitialiseStates(
+        random.InitializeStates(
             stream_id, std::span<std::byte>{static_cast<std::byte *>(
                                                 uniform_state_buffer.GetData()),
                                             random.GetStateSize()});

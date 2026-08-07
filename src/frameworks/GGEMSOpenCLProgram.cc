@@ -29,7 +29,7 @@
  * - exposing the final cl::Program to GGEMS.
  *
  * GGEMSOpenCLProgram instances cannot be created directly; only
- * GGEMSOpenCL::GetOrCreateProgram() is authorised to construct them through
+ * GGEMSOpenCL::GetOrCreateProgram() is authorized to construct them through
  * internal caching. This ensures program reuse and prevents uncontrolled
  * recompilation.
  *
@@ -60,15 +60,15 @@ constexpr std::string_view k_opencl_cache_schema{"GGEMS_OPENCL_CACHE"};
 /*!
  * \brief Replace unsafe filename characters by underscores.
  *
- * Internal helper used to normalise vendor name, device name, and kernel names
+ * Internal helper used to normalize vendor name, device name, and kernel names
  * prior to constructing cache filenames. Characters such as whitespace,
  * slashes, Windows separators and delimiters are converted to '\_' to ensure
  * the generated path is portable and valid across platforms.
  *
- * \param s Input string to sanitise.
- * \return Sanitised string safe to use in filesystem paths.
+ * \param s Input string to sanitize.
+ * \return Sanitized string safe to use in filesystem paths.
  */
-std::string Sanitise(std::string s) {
+std::string Sanitize(std::string s) {
   for (char &c : s) {
     if (c == ' ' || c == '/' || c == '\\' || c == ':' || c == ';' || c == '\t')
       c = '_';
@@ -178,7 +178,7 @@ ExtractIncludeRoots(std::string_view build_options) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-std::filesystem::path NormalisePath(std::filesystem::path const &path) {
+std::filesystem::path NormalizePath(std::filesystem::path const &path) {
   std::error_code ec;
   std::filesystem::path const canonical =
       std::filesystem::weakly_canonical(path, ec);
@@ -211,7 +211,7 @@ ResolveLocalInclude(std::string const &include_name,
     std::error_code ec;
 
     if (std::filesystem::exists(candidate, ec) && !ec) {
-      return NormalisePath(candidate);
+      return NormalizePath(candidate);
     }
   }
 
@@ -232,14 +232,14 @@ GGEMSOpenCLProgram::GGEMSOpenCLProgram(GGEMSOpenCLContext &ctx,
       kernel_name_{std::move(kernel_name)},
       user_build_options_{std::move(build_options)}, build_options_{""},
       source_hash_{0LL}, global_hash_{0LL} {
-  GGEMS_INFOEX("OpenCL", 2, "Initialising OpenCL program '{}'.", kernel_name_);
+  GGEMS_INFOEX("OpenCL", 2, "Initializing OpenCL program '{}'.", kernel_name_);
   GGEMS_INFOEX("OpenCL", 3, "OpenCL program source root: '{}'.",
                kernel_root_.string());
 
   auto default_options = BuildOptions();
   build_options_ = MergeOptions(default_options, user_build_options_);
 
-  Initialise();
+  Initialize();
   Build();
 
   GGEMS_INFOEX("OpenCL", 2, "OpenCL program '{}' built.", kernel_name_);
@@ -288,11 +288,11 @@ GGEMSOpenCLProgram::MergeOptions(std::vector<std::string> const &base,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSOpenCLProgram::Initialise() {
+void GGEMSOpenCLProgram::Initialize() {
   auto cl_path = kernel_root_ / (kernel_name_ + ".cl");
   source_path_ = cl_path.string();
 
-  GGEMS_INFO("OpenCL", "Initialising program '{}' (path: '{}', source: '{}')",
+  GGEMS_INFO("OpenCL", "Initializing program '{}' (path: '{}', source: '{}')",
              kernel_name_, kernel_root_.string(), source_path_);
 }
 
@@ -320,7 +320,7 @@ GGEMSOpenCLProgram::BuildIncludeSearchRoots() const {
   roots.insert(roots.end(), option_roots.begin(), option_roots.end());
 
   for (std::filesystem::path &root : roots) {
-    root = NormalisePath(root);
+    root = NormalizePath(root);
   }
 
   std::ranges::sort(roots);
@@ -340,7 +340,7 @@ std::string GGEMSOpenCLProgram::BuildSourceFingerprintText(
   std::unordered_set<std::string> visited_sources;
   std::string fingerprint_text;
 
-  AppendSourceFingerprintText(NormalisePath(source_path), include_roots,
+  AppendSourceFingerprintText(NormalizePath(source_path), include_roots,
                               visited_sources, fingerprint_text);
 
   return fingerprint_text;
@@ -355,8 +355,8 @@ void GGEMSOpenCLProgram::AppendSourceFingerprintText(
     std::vector<std::filesystem::path> const &include_roots,
     std::unordered_set<std::string> &visited_sources,
     std::string &fingerprint_text) const {
-  std::filesystem::path normalised_source = NormalisePath(source_path);
-  std::string source_key = normalised_source.generic_string();
+  std::filesystem::path normalized_source = NormalizePath(source_path);
+  std::string source_key = normalized_source.generic_string();
 
   if (visited_sources.contains(source_key)) {
     return;
@@ -364,7 +364,7 @@ void GGEMSOpenCLProgram::AppendSourceFingerprintText(
 
   visited_sources.insert(source_key);
 
-  std::string source = LoadTextFile(normalised_source);
+  std::string source = LoadTextFile(normalized_source);
 
   fingerprint_text += "\n/* BEGIN GGEMS SOURCE: ";
   fingerprint_text += source_key;
@@ -385,7 +385,7 @@ void GGEMSOpenCLProgram::AppendSourceFingerprintText(
     }
 
     std::optional<std::filesystem::path> include_path = ResolveLocalInclude(
-        *include_name, normalised_source.parent_path(), include_roots);
+        *include_name, normalized_source.parent_path(), include_roots);
 
     if (!include_path.has_value()) {
       fingerprint_text += "\n/* UNRESOLVED GGEMS INCLUDE: ";
@@ -420,10 +420,10 @@ bool GGEMSOpenCLProgram::Matches(
   }
 
   std::filesystem::path expected_source_path =
-      NormalisePath(kernel_root / (std::string{kernel_name} + ".cl"));
+      NormalizePath(kernel_root / (std::string{kernel_name} + ".cl"));
 
   std::filesystem::path current_source_path =
-      NormalisePath(std::filesystem::path{source_path_});
+      NormalizePath(std::filesystem::path{source_path_});
 
   return current_source_path == expected_source_path;
 }
@@ -447,8 +447,8 @@ void GGEMSOpenCLProgram::Build() {
   concat.reserve(1024);
 
   concat += k_opencl_cache_schema;
-  concat += "\nVendor=" + Sanitise(dev.GetVendor());
-  concat += "\nDevice=" + Sanitise(dev.GetName());
+  concat += "\nVendor=" + Sanitize(dev.GetVendor());
+  concat += "\nDevice=" + Sanitize(dev.GetName());
   concat += "\nDeviceVersion=" + dev.GetVersion();
   concat += "\nOpenCLCVersion=" + dev.GetOpenCLCVersion();
   concat += "\nDriverVersion=" + dev.GetDriverVersion();
@@ -610,8 +610,8 @@ void GGEMSOpenCLProgram::BuildFromBinary(
 
 std::filesystem::path GGEMSOpenCLProgram::ComputeCachePath() const {
   auto &dev = context_.GetDevice();
-  std::string vendor = Sanitise(dev.GetVendor());
-  std::string name = Sanitise(dev.GetName());
+  std::string vendor = Sanitize(dev.GetVendor());
+  std::string name = Sanitize(dev.GetName());
 
   std::string fname = std::format("{}__{}__{}__{:016x}.bin", vendor, name,
                                   kernel_name_, global_hash_);

@@ -319,7 +319,7 @@ static inline ulong GGEMS_SourceSampleEnergy(
 // =============================================================================
 // =============================================================================
 
-static inline GGEMSParticleState GGEMS_SourceInitialisePrimary(
+static inline GGEMSParticleState GGEMS_SourceInitializePrimary(
     ulong global_primary_id, ulong source_local_primary_id,
     __global GGEMSSourceRecord const *source,
     __global GGEMSEnergyDistributionRecord const *energy_distribution,
@@ -375,7 +375,7 @@ static inline GGEMSParticleState GGEMS_SourceInitialisePrimary(
 // =============================================================================
 // =============================================================================
 
-static inline GGEMSParticleState GGEMS_SourceInitialiseActivityDrivenPrimary(
+static inline GGEMSParticleState GGEMS_SourceInitializeActivityDrivenPrimary(
     ulong global_primary_id, ulong source_local_primary_id,
     __global GGEMSSourceRecord const *source,
     __global GGEMSSourcePopulationRecord const *population,

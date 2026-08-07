@@ -39,7 +39,7 @@ The following commands define a basic X-ray source.
 Voxelized Source
 ================
 
-Since GGEMS v1.3, it is possible to use a voxelised source. This will be useful when PET and SPECT imaging systems become available in GGEMS. The use of a voxelised source is very similar to that of a voxelised phantom. The user must provide a voxelised volume in MHD format, where an activity value (used as a weight) is assigned to each voxel. The source position can be defined by the user in the global coordinate system.
+Since GGEMS v1.3, it is possible to use a voxelized source. This will be useful when PET and SPECT imaging systems become available in GGEMS. The use of a voxelized source is very similar to that of a voxelized phantom. The user must provide a voxelized volume in MHD format, where an activity value (used as a weight) is assigned to each voxel. The source position can be defined by the user in the global coordinate system.
 
 .. code-block:: python
 

@@ -13,7 +13,7 @@ struct GGEMSEmissionBounds {
   long double half_extent_z_pm{0.0L};
 };
 
-[[nodiscard]] auto HasSignedPicoMetreEnvelope(std::int64_t centre_pm,
+[[nodiscard]] auto HasSignedPicoMeterEnvelope(std::int64_t center_pm,
                                               std::uint64_t radius_pm) noexcept
     -> bool;
 

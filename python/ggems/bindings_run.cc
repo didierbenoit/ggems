@@ -29,7 +29,7 @@ void BindRun(py::module_ &module) {
       .def("run", &ggems::core::GGEMSRun::Run,
            py::call_guard<py::gil_scoped_release>())
 
-      .def("initialise", &ggems::core::GGEMSRun::Initialise)
+      .def("initialize", &ggems::core::GGEMSRun::Initialize)
 
       .def("set_random", &ggems::core::GGEMSRun::SetRandom, py::arg("random"))
 

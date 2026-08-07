@@ -28,11 +28,11 @@ public:
   auto operator=(GGEMSVulkanContext const &) -> GGEMSVulkanContext & = delete;
   auto operator=(GGEMSVulkanContext &&) -> GGEMSVulkanContext & = delete;
 
-  void Initialise(GLFWwindow *window,
+  void Initialize(GLFWwindow *window,
                   detail::GGEMSVulkanDeviceSelector const &device_selector,
                   detail::GGEMSComputeStatus compute_status);
 
-  [[nodiscard]] auto IsInitialised() const noexcept -> bool;
+  [[nodiscard]] auto IsInitialized() const noexcept -> bool;
 
   auto RenderFrame(GLFWwindow *window, bool framebuffer_resized) -> void;
 
@@ -151,7 +151,7 @@ private:
   auto RecreateSwapchain(GLFWwindow *window) -> void;
 
   auto CreateImGuiDescriptorPool() -> void;
-  auto InitialiseImGui(GLFWwindow *window) -> void;
+  auto InitializeImGui(GLFWwindow *window) -> void;
   auto ShutdownImGui() noexcept -> void;
   auto BuildImGuiFrame() -> void;
   auto ApplyPendingSourceRunSnapshot() -> void;
@@ -161,7 +161,7 @@ private:
 
   static auto CheckImGuiVkResult(VkResult result) noexcept -> void;
 
-  auto InitialiseSceneRenderer() -> void;
+  auto InitializeSceneRenderer() -> void;
   auto ShutdownSceneRenderer() noexcept -> void;
 
   vk::raii::Context context_;
@@ -188,7 +188,7 @@ private:
   vk::Format swapchain_image_format_{vk::Format::eUndefined};
   vk::Extent2D swapchain_extent_{};
 
-  VkFormat imgui_colour_attachment_format_{VK_FORMAT_UNDEFINED};
+  VkFormat imgui_color_attachment_format_{VK_FORMAT_UNDEFINED};
   VkPipelineRenderingCreateInfo imgui_pipeline_rendering_create_info_{};
 
   GGEMSImGuiLayer imgui_layer_;
@@ -207,12 +207,12 @@ private:
 
   float imgui_ui_scale_{1.0F};
   float imgui_font_size_{15.0F};
-  bool imgui_initialised_{false};
+  bool imgui_initialized_{false};
 
   QueueFamilyIndices queue_family_indices_{};
   detail::GGEMSVulkanDeviceCandidate selected_physical_device_candidate_{};
 
-  bool initialised_{false};
+  bool initialized_{false};
 
   static constexpr std::uint32_t k_vulkan_api_version_{vk::ApiVersion13};
   static constexpr std::uint32_t k_max_frames_in_flight_{2U};

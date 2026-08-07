@@ -187,7 +187,7 @@ protected:
 
     if (opencl.GetContext().empty()) {
       opencl.SelectDevices({"gpu"});
-      opencl.Initialise();
+      opencl.Initialize();
     }
 
     ASSERT_FALSE(opencl.GetContext().empty());
@@ -200,7 +200,7 @@ protected:
 // =============================================================================
 
 TEST_F(GGEMSEnergyRunLifecycleTest,
-       FailedInitialiseLeavesEnergyMutableAndRetryable) {
+       FailedInitializeLeavesEnergyMutableAndRetryable) {
   constexpr std::array<double, 2U> k_lines{1.0, 3.0};
   constexpr std::array<double, 2U> k_weights{1.0, 1.0};
   constexpr std::array<double, 3U> k_centers{10.0, 12.0, 14.0};
@@ -213,7 +213,7 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
   run.SetSource(source);
   run.SetWorkerCount(64U);
 
-  EXPECT_THROW(run.Initialise(), ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(run.Initialize(), ggems::core::GGEMSExceptionBase);
   EXPECT_NO_THROW(source->SetCountDrivenPopulation(2ULL));
   EXPECT_EQ(source->GetPopulationMode(),
             ggems::core::sources::GGEMSSourcePopulationMode::CountDriven);
@@ -222,7 +222,7 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
       source->SetRegularEnergySpectrum(k_centers, k_bin_weights, "MeV"));
 
   run.SetRandom(MakeRandom());
-  ASSERT_NO_THROW(run.Initialise());
+  ASSERT_NO_THROW(run.Initialize());
 
   EnergyState const finalized = CaptureEnergyState(*source);
   ExpectFinalizedRejection(
@@ -234,7 +234,7 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
 // =============================================================================
 
 TEST_F(GGEMSEnergyRunLifecycleTest,
-       SuccessfulInitialiseRejectsEveryEnergySetterWithoutMutation) {
+       SuccessfulInitializeRejectsEveryEnergySetterWithoutMutation) {
   constexpr std::array<double, 2U> k_initial_centers{10.0, 12.0};
   constexpr std::array<double, 2U> k_initial_weights{1.0, 3.0};
   constexpr std::array<double, 2U> k_lines{2.0, 6.0};
@@ -251,7 +251,7 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
   run.SetRandom(MakeRandom());
   run.SetSource(source);
   run.SetWorkerCount(64U);
-  ASSERT_NO_THROW(run.Initialise());
+  ASSERT_NO_THROW(run.Initialize());
 
   EnergyState const finalized = CaptureEnergyState(*source);
   auto const expect_unchanged = [&]() -> void {
@@ -294,14 +294,14 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
 // =============================================================================
 
 TEST_F(GGEMSEnergyRunLifecycleTest,
-       SuccessfulInitialiseFreezesPopulationModeButKeepsCountMutable) {
+       SuccessfulInitializeFreezesPopulationModeButKeepsCountMutable) {
   auto source = MakeSource();
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(MakeRandom());
   run.SetSource(source);
   run.SetWorkerCount(64U);
-  ASSERT_NO_THROW(run.Initialise());
+  ASSERT_NO_THROW(run.Initialize());
 
   auto radionuclide = std::make_shared<
       ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
@@ -336,13 +336,13 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
   first_run.AddSource(source);
   first_run.AddSource(source);
   first_run.SetWorkerCount(64U);
-  ASSERT_NO_THROW(first_run.Initialise());
+  ASSERT_NO_THROW(first_run.Initialize());
 
   ggems::core::GGEMSRun second_run{};
   second_run.SetRandom(MakeRandom());
   second_run.SetSource(source);
   second_run.SetWorkerCount(64U);
-  ASSERT_NO_THROW(second_run.Initialise());
+  ASSERT_NO_THROW(second_run.Initialize());
 
   EnergyState const finalized = CaptureEnergyState(*source);
   ExpectFinalizedRejection(
@@ -368,7 +368,7 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
   run.SetRandom(MakeRandom());
   run.SetSource(source);
   run.SetWorkerCount(64U);
-  ASSERT_NO_THROW(run.Initialise());
+  ASSERT_NO_THROW(run.Initialize());
 
   std::size_t const allocation_count = GetTotalOpenCLAllocationCount();
   std::uint64_t const allocated_bytes = GetTotalOpenCLAllocatedBytes();

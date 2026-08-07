@@ -159,12 +159,12 @@ auto GGEMSVulkanCamera::BuildCameraBasis() const noexcept
                         .y = std::sin(pitch_radians_),
                         .z = std::sin(-yaw_radians_) * cos_pitch};
 
-  Vector3 forward = Normalise(Vector3{
+  Vector3 forward = Normalize(Vector3{
       .x = -camera_offset.x, .y = -camera_offset.y, .z = -camera_offset.z});
 
   Vector3 world_up{.x = 0.0F, .y = 1.0F, .z = 0.0F};
 
-  Vector3 right = Normalise(Cross(forward, world_up));
+  Vector3 right = Normalize(Cross(forward, world_up));
 
   if (std::abs(right.x) < 1.0e-6F && std::abs(right.y) < 1.0e-6F &&
       std::abs(right.z) < 1.0e-6F) {
@@ -195,7 +195,7 @@ auto GGEMSVulkanCamera::Cross(Vector3 const &first,
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanCamera::Normalise(Vector3 const &vec) noexcept
+auto GGEMSVulkanCamera::Normalize(Vector3 const &vec) noexcept
     -> GGEMSVulkanCamera::Vector3 {
   float length = std::sqrt(Dot(vec, vec));
 

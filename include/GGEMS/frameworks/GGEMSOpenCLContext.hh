@@ -166,7 +166,7 @@ public:
    * SVM capabilities of the target device. All memory operations and command
    * dispatch occur through this context instance.
    *
-   * \param device The device used to initialise the context.
+   * \param device The device used to initialize the context.
    */
   explicit GGEMSOpenCLContext(GGEMSOpenCLDevice const &device);
 
@@ -449,10 +449,10 @@ private:
   void InitSVMSupport();
 
   /*!
-   * \brief Initialises VRAM accounting from the OpenCL device memory limits.
+   * \brief Initializes VRAM accounting from the OpenCL device memory limits.
    *
    * The total device memory is queried once from the OpenCL device and the
-   * derived usage fields are initialised accordingly.
+   * derived usage fields are initialized accordingly.
    */
   void InitVRAMUsage();
 

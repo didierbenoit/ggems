@@ -21,7 +21,7 @@ class GGEMSBetaTransition {
 public:
   GGEMSBetaTransition(GGEMSBetaSign sign, std::uint32_t daughter_atomic_number,
                       std::uint32_t daughter_mass_number,
-                      std::uint64_t endpoint_kinetic_energy_milli_ev,
+                      std::uint64_t endpoint_kinetic_energy_milli_eV,
                       GGEMSBetaTransitionClass transition_class);
 
   ~GGEMSBetaTransition() = default;

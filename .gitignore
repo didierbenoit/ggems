@@ -16,7 +16,7 @@ docs/Doxygen/html
 docs/Doxygen/xml
 
 # -----------------------------------
-# GGEMS scientific validation artefacts
+# GGEMS scientific validation artifacts
 # -----------------------------------
 
 validation/random/streams/

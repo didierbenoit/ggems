@@ -28,16 +28,6 @@
 // =============================================================================
 // =============================================================================
 
-template <typename T>
-concept HasMutableTimeWindow = requires(T value) {
-  value.SetTimeWindowPicoSecond(std::uint64_t{0ULL}, std::uint64_t{1ULL});
-};
-
-static_assert(!HasMutableTimeWindow<ggems::core::sources::GGEMSSource>);
-
-// =============================================================================
-// =============================================================================
-
 [[nodiscard]] auto MakeTestRadionuclide(std::string canonical_name = "Test")
     -> std::shared_ptr<
         ggems::core::radioactivity::GGEMSRadionuclideDefinition const> {
@@ -759,7 +749,7 @@ TEST(GGEMSSource, AcceptsZeroWeight) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSSource, NormalisesDirection) {
+TEST(GGEMSSource, NormalizesDirection) {
   ggems::core::sources::GGEMSSource source{};
 
   source.SetDirection(0.0, 0.0, 2.0);
@@ -986,7 +976,7 @@ TEST(GGEMSSource, RejectsInvalidEmissionDimensionsAtomically) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSSource, ConfiguresAngularDistributionsAndCanonicalisesFocus) {
+TEST(GGEMSSource, ConfiguresAngularDistributionsAndCanonicalizesFocus) {
   using ggems::core::sources::FromKernelAngularDistributionType;
   using ggems::core::sources::GGEMSAngularDistributionType;
 

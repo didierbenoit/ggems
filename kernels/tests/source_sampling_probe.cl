@@ -37,7 +37,7 @@ source_sampling_imposed_probe(__global GGEMSSourceRecord const *source,
 // =============================================================================
 // =============================================================================
 
-__kernel void source_initialisation_random_state_probe(
+__kernel void source_initialization_random_state_probe(
     __global GGEMSRandomState *sample_states,
     __global GGEMSRandomState *reference_states,
     __global GGEMSSourceRecord const *source,
@@ -53,7 +53,7 @@ __kernel void source_initialisation_random_state_probe(
     return;
   }
 
-  GGEMSParticleState const particle = GGEMS_SourceInitialisePrimary(
+  GGEMSParticleState const particle = GGEMS_SourceInitializePrimary(
       19UL, source_local_primary_id, source, energy_distribution,
       energy_values_milli_eV, cumulative_ticket_upper, sample_states, 0U);
 

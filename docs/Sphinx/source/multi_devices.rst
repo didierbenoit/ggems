@@ -2,7 +2,7 @@
 Multi-Devices
 *************
 
-GGEMS can be used on any platform compatible with OpenCL 3.0. Each GPU or CPU is recognised as a device. There are different ways to activate a device.
+GGEMS can be used on any platform compatible with OpenCL 3.0. Each GPU or CPU is recognized as a device. There are different ways to activate a device.
 
 * Using the device index (assumed to be known by the user):
 

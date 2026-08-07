@@ -442,7 +442,7 @@ auto GenerateRandomStream(Options const &options) -> void {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
   opencl.SelectDevices({options.device_selector});
-  opencl.Initialise();
+  opencl.Initialize();
 
   if (opencl.GetContext().empty()) {
     throw std::runtime_error("No GGEMS OpenCL context available.");
@@ -477,7 +477,7 @@ auto GenerateRandomStream(Options const &options) -> void {
   auto state_storage =
       std::span<std::byte>{static_cast<std::byte *>(states_buffer.GetData()),
                            static_cast<std::size_t>(state_bytes)};
-  random.InitialiseStates(0ULL, state_storage);
+  random.InitializeStates(0ULL, state_storage);
 
   states_buffer.Unmap();
 

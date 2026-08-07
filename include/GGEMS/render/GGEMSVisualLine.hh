@@ -3,13 +3,13 @@
 #include <string>
 #include <vector>
 
-#include "GGEMS/render/GGEMSColour.hh"
-#include "GGEMS/render/GGEMSColourNames.hh"
+#include "GGEMS/render/GGEMSColor.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
 
 namespace ggems::render {
 struct VisualSegment {
   std::u32string text;
-  ColourKey colour{DEFAULT_FG};
+  ColorKey color{DEFAULT_FG};
 };
 
 struct WrappedLine {

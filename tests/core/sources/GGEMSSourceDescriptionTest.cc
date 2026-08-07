@@ -109,7 +109,7 @@ auto ExpectContains(std::string const &description, std::string_view expected)
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSSourceDescription, DescribesActiveSource) {
+TEST(GGEMSSourceDescription, DescribesPositivePrimaryCountSource) {
   auto source = MakeConfiguredSource(7ULL);
 
   EXPECT_EQ(ggems::core::sources::DescribeSource(source->BuildRecord(),
@@ -120,7 +120,7 @@ TEST(GGEMSSourceDescription, DescribesActiveSource) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSSourceDescription, DescribesDisabledSource) {
+TEST(GGEMSSourceDescription, DescribesZeroPrimarySource) {
   auto source = MakeConfiguredSource(0ULL);
 
   EXPECT_EQ(ggems::core::sources::DescribeSource(source->BuildRecord(),
@@ -159,15 +159,16 @@ TEST(GGEMSSourceDescription, PreservesZeroPrimarySlotWithoutCompaction) {
   ASSERT_EQ(snapshot.GetRecords().size(), 3U);
   ASSERT_EQ(snapshot.GetRanges().size(), 3U);
 
-  std::string const disabled_slot = ggems::core::sources::DescribeSourceRunSlot(
-      1U, snapshot.GetRecords()[1U], snapshot.GetRanges()[1U]);
+  std::string const zero_primary_slot =
+      ggems::core::sources::DescribeSourceRunSlot(1U, snapshot.GetRecords()[1U],
+                                                  snapshot.GetRanges()[1U]);
 
   std::string const third_slot = ggems::core::sources::DescribeSourceRunSlot(
       2U, snapshot.GetRecords()[2U], snapshot.GetRanges()[2U]);
 
-  ExpectContains(disabled_slot,
+  ExpectContains(zero_primary_slot,
                  "Source slot: 1 | Projection primary begin: 3 | ");
-  ExpectContains(disabled_slot, "Primary count: 0");
+  ExpectContains(zero_primary_slot, "Primary count: 0");
   ExpectContains(third_slot, "Source slot: 2 | Projection primary begin: 3 | ");
   ExpectContains(third_slot, "Primary count: 5");
 }

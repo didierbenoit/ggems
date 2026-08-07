@@ -19,7 +19,7 @@ __kernel void activity_source_random_order_probe(
   }
 
   GGEMSParticleState const particle =
-      GGEMS_SourceInitialiseActivityDrivenPrimary(
+      GGEMS_SourceInitializeActivityDrivenPrimary(
           19UL, 23UL, source, population, emission, energy_distribution,
           energy_values_milli_eV, cumulative_ticket_upper, sample_states, 0U);
 

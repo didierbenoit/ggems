@@ -2,18 +2,18 @@
 #include <string_view>
 
 #include "GGEMS/ui/GGEMSImGuiOutputPanel.hh"
-#include "GGEMS/render/GGEMSColour.hh"
+#include "GGEMS/render/GGEMSColor.hh"
 #include "GGEMS/render/GGEMSVisualLine.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
-#include "GGEMS/render/GGEMSColourNames.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/ui/GGEMSImGuiTheme.hh"
 
 namespace {
 
 void RenderTextLine(std::string_view text,
-                    ggems::render::ColourKey const &color) {
-  ImGui::PushStyleColor(ImGuiCol_Text, ggems::ui::ToImGuiColour(color));
+                    ggems::render::ColorKey const &color) {
+  ImGui::PushStyleColor(ImGuiCol_Text, ggems::ui::ToImGuiColor(color));
 
   if (text.empty()) {
     ImGui::Dummy(ImVec2{0.0F, ImGui::GetTextLineHeight()});
@@ -28,9 +28,9 @@ void RenderTextLine(std::string_view text,
 // =============================================================================
 
 void RenderMultilineText(std::string_view text,
-                         ggems::render::ColourKey const &colour) {
+                         ggems::render::ColorKey const &color) {
   if (text.empty()) {
-    RenderTextLine(text, colour);
+    RenderTextLine(text, color);
     return;
   }
 
@@ -40,11 +40,11 @@ void RenderMultilineText(std::string_view text,
     std::size_t const end = text.find('\n', start);
 
     if (end == std::string_view::npos) {
-      RenderTextLine(text.substr(start), colour);
+      RenderTextLine(text.substr(start), color);
       break;
     }
 
-    RenderTextLine(text.substr(start, end - start), colour);
+    RenderTextLine(text.substr(start, end - start), color);
     start = end + 1U;
   }
 }
@@ -83,7 +83,7 @@ void GGEMSImGuiOutputPanel::RenderWrappedLine(
 
     std::string text = utf::UTF32ToUTF8(segment.text);
 
-    ImGui::PushStyleColor(ImGuiCol_Text, ToImGuiColour(segment.colour));
+    ImGui::PushStyleColor(ImGuiCol_Text, ToImGuiColor(segment.color));
     ImGui::TextUnformatted(text.c_str());
     ImGui::PopStyleColor();
 
@@ -174,7 +174,7 @@ void GGEMSImGuiOutputPanel::Render(render::GGEMSBanner const &banner,
 
   ImGui::Separator();
 
-  ImGui::PushStyleColor(ImGuiCol_ChildBg, ToImGuiColour(render::GREY_Void));
+  ImGui::PushStyleColor(ImGuiCol_ChildBg, ToImGuiColor(render::GRAY_Void));
 
   ImGui::BeginChild("GGEMSOutputLogRegion", ImVec2{0.0f, 0.0f}, true,
                     ImGuiWindowFlags_HorizontalScrollbar);

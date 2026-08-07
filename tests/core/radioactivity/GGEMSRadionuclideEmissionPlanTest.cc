@@ -50,20 +50,6 @@ constexpr std::array<RandomEngine, 3U> k_engines{
 constexpr ggems::core::GGEMSTimeWindow k_one_second_window{
     .start_ps = 0ULL, .stop_ps = 1'000'000'000'000ULL};
 
-template <typename T>
-concept HasEmissionTimesPicoSecond =
-    requires(T const &value) { value.GetEmissionTimesPicoSecond(); };
-
-template <typename T>
-concept HasTimeOffsets = requires(T const &value) {
-  value.time_begin;
-  value.time_end;
-};
-
-static_assert(!HasEmissionTimesPicoSecond<Plan>);
-static_assert(!HasTimeOffsets<PlanSource>);
-static_assert(!HasTimeOffsets<PlanGroup>);
-
 // =============================================================================
 // =============================================================================
 

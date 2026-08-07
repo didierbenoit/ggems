@@ -37,7 +37,7 @@
  *
  * The design is RAII-driven and thread-safe at the logging boundary. Device
  * ownership is unique and non-transferable (vector of \c std::unique_ptr).
- * The API emphasises const-correctness and minimal exposure of internals.
+ * The API emphasizes const-correctness and minimal exposure of internals.
  */
 
 /// \cond

@@ -21,10 +21,10 @@ public:
   auto operator=(GGEMSPrimaryStream &&) -> GGEMSPrimaryStream & = delete;
 
   auto SetPrimaryCount(std::uint64_t primary_count) -> void;
-  auto Initialise() -> void;
+  auto Initialize() -> void;
 
-  [[nodiscard]] auto IsInitialised() const noexcept -> bool {
-    return initialised_;
+  [[nodiscard]] auto IsInitialized() const noexcept -> bool {
+    return initialized_;
   }
 
   [[nodiscard]] auto GetPrimaryCount() const noexcept -> std::uint64_t {
@@ -40,7 +40,7 @@ public:
 private:
   std::uint64_t primary_count_{4096ULL};
   std::uint64_t next_global_primary_id_{0ULL};
-  bool initialised_{false};
+  bool initialized_{false};
   bool exhausted_{false};
 };
 

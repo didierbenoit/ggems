@@ -41,10 +41,16 @@ struct GGEMSRadionuclideEmissionPlanGroup {
   std::uint64_t run_primary_end{0ULL};
 };
 
-class GGEMSRadionuclideEmissionPlanner;
-
 class GGEMSRadionuclideEmissionPlan {
 public:
+  [[nodiscard]] static auto
+  Create(GGEMSTimeWindow time_window,
+         std::vector<GGEMSRadionuclideEmissionPlanSource> sources,
+         std::vector<GGEMSRadionuclideEmissionPlanGroup> groups,
+         std::vector<std::shared_ptr<GGEMSRadionuclideDefinition const>>
+             radionuclide_definitions,
+         std::uint64_t total_primary_count) -> GGEMSRadionuclideEmissionPlan;
+
   ~GGEMSRadionuclideEmissionPlan() = default;
 
   GGEMSRadionuclideEmissionPlan(GGEMSRadionuclideEmissionPlan const &) =
@@ -79,8 +85,6 @@ public:
   }
 
 private:
-  friend class GGEMSRadionuclideEmissionPlanner;
-
   GGEMSRadionuclideEmissionPlan(
       GGEMSTimeWindow time_window,
       std::vector<GGEMSRadionuclideEmissionPlanSource> sources,
@@ -99,6 +103,12 @@ private:
 
 class GGEMSRadionuclideEmissionPlanCandidate {
 public:
+  [[nodiscard]] static auto
+  Create(std::shared_ptr<void const> owner_identity,
+         std::uint64_t base_revision, GGEMSRadionuclideEmissionPlan plan,
+         std::vector<random::GGEMSHostRandomStream> candidate_streams)
+      -> GGEMSRadionuclideEmissionPlanCandidate;
+
   ~GGEMSRadionuclideEmissionPlanCandidate() = default;
 
   GGEMSRadionuclideEmissionPlanCandidate(
@@ -121,9 +131,12 @@ public:
 
   [[nodiscard]] auto IsCommitted() const noexcept -> bool { return committed_; }
 
-private:
-  friend class GGEMSRadionuclideEmissionPlanner;
+  auto CommitTo(std::shared_ptr<void const> const &owner_identity,
+                std::uint64_t &current_revision,
+                std::vector<random::GGEMSHostRandomStream> &persistent_streams)
+      -> void;
 
+private:
   GGEMSRadionuclideEmissionPlanCandidate(
       std::shared_ptr<void const> owner_identity, std::uint64_t base_revision,
       GGEMSRadionuclideEmissionPlan plan,

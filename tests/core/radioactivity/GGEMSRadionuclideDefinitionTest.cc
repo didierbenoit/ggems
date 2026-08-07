@@ -68,7 +68,7 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 
 TEST(GGEMSRadionuclideDefinitionTest,
-     OwnsChannelsAndNormalizedSelectionWeights) {
+     OwnsEmissionsSelectionWeightsAndLookupKeys) {
   std::string canonical_name{"Synthetic-Mixed"};
   std::vector<std::string> aliases{"SM", "Synthetic mixed display alias"};
   std::vector<GGEMSRadionuclideEmission> emissions;
@@ -115,6 +115,13 @@ TEST(GGEMSRadionuclideDefinitionTest,
                                  definition.GetTotalYieldPerDecay();
     EXPECT_EQ(selection_weights[index], expected);
   }
+
+  auto lookup_keys = definition.BuildLookupKeys();
+  EXPECT_EQ(lookup_keys,
+            (std::vector<std::string>{"synthetic-mixed", "sm",
+                                      "synthetic mixed display alias"}));
+  lookup_keys.clear();
+  EXPECT_EQ(definition.BuildLookupKeys().size(), 3U);
 }
 
 // =============================================================================

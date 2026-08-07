@@ -22,7 +22,7 @@ def main() -> None:
     try:
         opencl = ggems.opencl.GGEMSOpenCL()
         opencl.select_devices(["1"])
-        opencl.initialise()
+        opencl.initialize()
 
         random = ggems.rndm.GGEMSRandom().set_engine("philox").set_seed(120_015)
 
@@ -41,7 +41,7 @@ def main() -> None:
             .set_particle("gamma")
             # Source placed 100 cm before the origin on global -Z.
             .set_position(0.0, 0.0, -SOURCE_DISTANCE_CM, "cm")
-            # The cone central axis points towards the origin along global +Z.
+            # The cone central axis points toward the origin along global +Z.
             .set_direction(0.0, 0.0, 1.0)
             .set_emission_point()
             # Circular cone: theta in [0, 15 deg], complete azimuth.
@@ -60,7 +60,7 @@ def main() -> None:
         simulation.add_source(source)
         #        simulation.set_observer(observer)
         simulation.set_worker_count(WORKER_COUNT)
-        simulation.initialise()
+        simulation.initialize()
         simulation.run()
     finally:
         ggems.core.stop_output_runtime()

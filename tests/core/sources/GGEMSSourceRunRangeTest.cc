@@ -26,7 +26,7 @@ TEST(GGEMSSourceRunRange, IsKernelFriendly) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSSourceRunRange, SupportsDisabledSourceRange) {
+TEST(GGEMSSourceRunRange, SupportsZeroPrimarySourceRange) {
   ggems::core::sources::GGEMSSourceRunRange range{
       .projection_primary_begin = 3ULL, .primary_count = 0ULL};
 

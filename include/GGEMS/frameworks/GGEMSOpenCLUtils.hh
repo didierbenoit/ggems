@@ -404,7 +404,7 @@ template <typename T> struct CLInfoReader {
 };
 
 /*!
- * \brief Specialisation for std::string info.
+ * \brief Specialization for std::string info.
  */
 template <> struct CLInfoReader<std::string> {
   /*!
@@ -427,7 +427,7 @@ template <> struct CLInfoReader<std::string> {
 };
 
 /*!
- * \brief Specialisation for std::array<T,N>.
+ * \brief Specialization for std::array<T,N>.
  */
 template <typename T, std::size_t N> struct CLInfoReader<std::array<T, N>> {
   /*!
@@ -451,7 +451,7 @@ template <typename T, std::size_t N> struct CLInfoReader<std::array<T, N>> {
 };
 
 /*!
- * \brief Specialisation for std::vector<T>.
+ * \brief Specialization for std::vector<T>.
  */
 template <typename T> struct CLInfoReader<std::vector<T>> {
   /*!

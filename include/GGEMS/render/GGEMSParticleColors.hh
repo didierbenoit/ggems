@@ -1,11 +1,11 @@
 #pragma once
 
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
-#include "GGEMS/render/GGEMSColourNames.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
 
 namespace ggems::render {
 
-constexpr ColourKey GetParticleColourKey(
+constexpr ColorKey GetParticleColorKey(
     core::particles::GGEMSParticleType particle_type) noexcept {
   using core::particles::GGEMSParticleType;
 
@@ -21,7 +21,7 @@ constexpr ColourKey GetParticleColourKey(
   case GGEMSParticleType::Proton:
     return RED_Tomato;
   case GGEMSParticleType::Neutron:
-    return GREY_Silver;
+    return GRAY_Silver;
   case GGEMSParticleType::Alpha:
     return YELLOW_Gold;
   case GGEMSParticleType::Unknown:
@@ -32,8 +32,8 @@ constexpr ColourKey GetParticleColourKey(
 
 constexpr RGB
 GetParticleRGB(core::particles::GGEMSParticleType particle_type) noexcept {
-  ColourKey colour = GetParticleColourKey(particle_type);
-  return GetColourRGB(colour.family, colour.shade, colour.variant);
+  ColorKey color = GetParticleColorKey(particle_type);
+  return GetColorRGB(color.family, color.shade, color.variant);
 }
 
 } // namespace ggems::render

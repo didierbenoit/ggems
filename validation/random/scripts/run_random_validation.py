@@ -108,7 +108,7 @@ def RunRandomValidation(
     generator_path = ResolvePath(generator_path, Path.cwd()).resolve()
     rng_test_path = ResolvePath(rng_test_path, Path.cwd()).resolve()
 
-    finalise_script = ggems_root / "validation/random/scripts/finalise_random_manifest.py"
+    finalize_script = ggems_root / "validation/random/scripts/finalize_random_manifest.py"
     check_script = ggems_root / "validation/random/scripts/check_random_manifest.py"
     practrand_script = ggems_root / "validation/random/scripts/run_practrand.py"
 
@@ -137,9 +137,9 @@ def RunRandomValidation(
     if force:
         generator_command.append("--force")
 
-    finalise_command = [
+    finalize_command = [
         sys.executable,
-        str(finalise_script),
+        str(finalize_script),
         "--manifest",
         manifest_path.as_posix(),
     ]
@@ -180,7 +180,7 @@ def RunRandomValidation(
     print(f"PractRand : {practrand_max_size}")
 
     RunCommand(generator_command, ggems_root)
-    RunCommand(finalise_command, ggems_root)
+    RunCommand(finalize_command, ggems_root)
     RunCommand(check_command, ggems_root)
     RunCommand(practrand_command, ggems_root)
 

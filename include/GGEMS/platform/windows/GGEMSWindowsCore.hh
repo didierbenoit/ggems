@@ -27,7 +27,7 @@
  * \version 2.0
  * \copyright GNU GPL v3
  *
- * This header centralises very light-weight Windows-specific system includes
+ * This header centralizes very light-weight Windows-specific system includes
  * employed by GGEMS to query OS state, access process information, and interact
  * with device and memory subsystems under Microsoft Windows.
  *

@@ -24,8 +24,8 @@
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
-#include "GGEMS/render/GGEMSColour.hh"
-#include "GGEMS/render/GGEMSColourNames.hh"
+#include "GGEMS/render/GGEMSColor.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/core/detail/GGEMSLoggerMetadata.hh"
 
 namespace ggems::core {
@@ -33,7 +33,7 @@ namespace ggems::core {
 // =============================================================================
 // =============================================================================
 
-static auto LogLevelColour(LogLevel lvl) -> render::ColourKey {
+static auto LogLevelColor(LogLevel lvl) -> render::ColorKey {
   switch (lvl) {
   case LogLevel::Debug:
     return render::CYAN_Cryo;
@@ -119,12 +119,12 @@ FormatTimestamp(std::chrono::system_clock::time_point const &time_point)
 void StdoutSink::Write(RenderedLogLine &&log_line) {
   std::scoped_lock lock(mtx_);
 
-  bool use_colour = GGEMSLogger::GetInstance().UseColour();
+  bool use_color = GGEMSLogger::GetInstance().UseColor();
 
   if (!log_line.prefix.empty()) {
-    if (use_colour) {
-      std::cout << render::AnsiColour(log_line.color) << log_line.prefix
-                << render::AnsiControlCode(render::AnsiControl::ResetColour)
+    if (use_color) {
+      std::cout << render::AnsiColor(log_line.color) << log_line.prefix
+                << render::AnsiControlCode(render::AnsiControl::ResetColor)
                 << ' ';
     } else {
       std::cout << log_line.prefix << ' ';
@@ -166,7 +166,7 @@ auto LogFormatter::Format(LogRecord const &rec, bool use_color)
   log_line.module = rec.module;
 
   if (use_color) {
-    log_line.color = LogLevelColour(rec.level);
+    log_line.color = LogLevelColor(rec.level);
   }
 
   auto const time_stamp = FormatTimestamp(rec.timestamp);
@@ -238,7 +238,7 @@ auto GGEMSLogger::SetSink(std::unique_ptr<LogSink> sink) -> void {
 
 auto GGEMSLogger::SetForceColor(bool force) -> void {
   std::scoped_lock lock(mtx_);
-  force_colour_ = force;
+  force_color_ = force;
 }
 
 // -----------------------------------------------------------------------------
@@ -250,9 +250,9 @@ auto GGEMSLogger::SetForceEncoding(Encoding encoding) noexcept -> void {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSLogger::UseColour() const noexcept -> bool {
-  if (force_colour_.has_value()) {
-    return *force_colour_;
+auto GGEMSLogger::UseColor() const noexcept -> bool {
+  if (force_color_.has_value()) {
+    return *force_color_;
   }
 
   if (auto no_color = GetEnvVar("NO_COLOR"); no_color && !no_color->empty()) {
@@ -265,7 +265,7 @@ auto GGEMSLogger::UseColour() const noexcept -> bool {
 // -----------------------------------------------------------------------------
 
 auto GGEMSLogger::Dispatch(LogRecord const &rec) -> void {
-  RenderedLogLine log_line = LogFormatter::Format(rec, UseColour());
+  RenderedLogLine log_line = LogFormatter::Format(rec, UseColor());
 
   std::scoped_lock lock(mtx_);
 

@@ -119,7 +119,7 @@ __kernel void particle_stream_transport(
       __global GGEMSEnergyDistributionRecord const *energy_distribution =
           &energy_distribution_records[selected_source_index];
 
-      particle = GGEMS_SourceInitialisePrimary(
+      particle = GGEMS_SourceInitializePrimary(
           global_primary_id, source_local_primary_id, source,
           energy_distribution, energy_values_milli_eV, cumulative_ticket_upper,
           random_states, worker_id);
@@ -153,7 +153,7 @@ __kernel void particle_stream_transport(
           &energy_distribution_records[emission
                                            ->energy_distribution_record_index];
 
-      particle = GGEMS_SourceInitialiseActivityDrivenPrimary(
+      particle = GGEMS_SourceInitializeActivityDrivenPrimary(
           global_primary_id, source_local_primary_id, source, population,
           emission, energy_distribution, energy_values_milli_eV,
           cumulative_ticket_upper, random_states, worker_id);

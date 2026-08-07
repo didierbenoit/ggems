@@ -25,12 +25,12 @@ using ggems::core::random::GGEMSRandomEngine;
 // =============================================================================
 // =============================================================================
 
-std::vector<std::byte> InitialiseStateBytes(GGEMSRandom const &random,
+std::vector<std::byte> InitializeStateBytes(GGEMSRandom const &random,
                                             std::uint64_t first_stream_id,
                                             std::size_t state_count) {
   std::vector<std::byte> storage(state_count * random.GetStateSize());
 
-  random.InitialiseStates(first_stream_id,
+  random.InitializeStates(first_stream_id,
                           std::span<std::byte>{storage.data(), storage.size()});
 
   return storage;
@@ -53,7 +53,7 @@ State ReadState(std::vector<std::byte> const &storage,
 // =============================================================================
 // =============================================================================
 
-class GGEMSRandomStateInitialisationTest
+class GGEMSRandomStateInitializationTest
     : public ::testing::TestWithParam<GGEMSRandomEngine> {};
 
 } // namespace
@@ -61,7 +61,7 @@ class GGEMSRandomStateInitialisationTest
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSRandomStateInitialisationContractTest,
+TEST(GGEMSRandomStateInitializationContractTest,
      EngineIdsAndStateSizesMatchKernelContracts) {
   GGEMSRandom random{};
 
@@ -81,14 +81,14 @@ TEST(GGEMSRandomStateInitialisationContractTest,
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSRandomStateInitialisationContractTest,
+TEST(GGEMSRandomStateInitializationContractTest,
      ExistingInitialStateContractsArePreserved) {
   GGEMSRandom random{};
   random.SetSeed(77'777ULL);
 
   random.SetEngine(GGEMSRandomEngine::JKISS);
   auto jkiss =
-      ReadState<GGEMSJKissState>(InitialiseStateBytes(random, 42ULL, 1U));
+      ReadState<GGEMSJKissState>(InitializeStateBytes(random, 42ULL, 1U));
 
   EXPECT_EQ(jkiss.x, 4'052'806'268U);
   EXPECT_EQ(jkiss.y, 432'290'774U);
@@ -98,14 +98,14 @@ TEST(GGEMSRandomStateInitialisationContractTest,
 
   random.SetEngine(GGEMSRandomEngine::PCG32);
   auto const pcg32 =
-      ReadState<GGEMSPCG32State>(InitialiseStateBytes(random, 42ULL, 1U));
+      ReadState<GGEMSPCG32State>(InitializeStateBytes(random, 42ULL, 1U));
 
   EXPECT_EQ(pcg32.state, 0x2AFC81E9C4CF0395ULL);
   EXPECT_EQ(pcg32.increment, 0xE5E985F73D706249ULL);
 
   random.SetEngine(GGEMSRandomEngine::Philox);
   auto const philox =
-      ReadState<GGEMSPhiloxState>(InitialiseStateBytes(random, 42ULL, 1U));
+      ReadState<GGEMSPhiloxState>(InitializeStateBytes(random, 42ULL, 1U));
 
   EXPECT_EQ(philox.counter_0, 0U);
   EXPECT_EQ(philox.counter_1, 0U);
@@ -118,13 +118,13 @@ TEST(GGEMSRandomStateInitialisationContractTest,
 // =============================================================================
 // =============================================================================
 
-TEST_P(GGEMSRandomStateInitialisationTest,
+TEST_P(GGEMSRandomStateInitializationTest,
        SameSeedAndStreamProduceIdenticalStateBytes) {
   GGEMSRandom random{};
   random.SetEngine(GetParam()).SetSeed(77'777ULL);
 
-  auto first = InitialiseStateBytes(random, 42ULL, 1U);
-  auto second = InitialiseStateBytes(random, 42ULL, 1U);
+  auto first = InitializeStateBytes(random, 42ULL, 1U);
+  auto second = InitializeStateBytes(random, 42ULL, 1U);
 
   EXPECT_EQ(first, second);
 }
@@ -132,13 +132,13 @@ TEST_P(GGEMSRandomStateInitialisationTest,
 // =============================================================================
 // =============================================================================
 
-TEST_P(GGEMSRandomStateInitialisationTest,
+TEST_P(GGEMSRandomStateInitializationTest,
        DifferentStreamsProduceDifferentStateBytes) {
   GGEMSRandom random{};
   random.SetEngine(GetParam()).SetSeed(77'777ULL);
 
-  auto first = InitialiseStateBytes(random, 42ULL, 1U);
-  auto second = InitialiseStateBytes(random, 43ULL, 1U);
+  auto first = InitializeStateBytes(random, 42ULL, 1U);
+  auto second = InitializeStateBytes(random, 43ULL, 1U);
 
   EXPECT_NE(first, second);
 }
@@ -146,14 +146,14 @@ TEST_P(GGEMSRandomStateInitialisationTest,
 // =============================================================================
 // =============================================================================
 
-TEST_P(GGEMSRandomStateInitialisationTest,
+TEST_P(GGEMSRandomStateInitializationTest,
        DifferentSeedsProduceDifferentStateBytes) {
   GGEMSRandom random{};
   random.SetEngine(GetParam()).SetSeed(77'777ULL);
-  auto first = InitialiseStateBytes(random, 42ULL, 1U);
+  auto first = InitializeStateBytes(random, 42ULL, 1U);
 
   random.SetSeed(77'778ULL);
-  auto second = InitialiseStateBytes(random, 42ULL, 1U);
+  auto second = InitializeStateBytes(random, 42ULL, 1U);
 
   EXPECT_NE(first, second);
 }
@@ -161,20 +161,20 @@ TEST_P(GGEMSRandomStateInitialisationTest,
 // =============================================================================
 // =============================================================================
 
-TEST_P(GGEMSRandomStateInitialisationTest,
-       BatchInitialisationMatchesIndividualStates) {
+TEST_P(GGEMSRandomStateInitializationTest,
+       BatchInitializationMatchesIndividualStates) {
   constexpr std::uint64_t k_first_stream_id{123ULL};
   constexpr std::size_t k_state_count{4U};
 
   GGEMSRandom random{};
   random.SetEngine(GetParam()).SetSeed(77'777ULL);
 
-  auto batch = InitialiseStateBytes(random, k_first_stream_id, k_state_count);
+  auto batch = InitializeStateBytes(random, k_first_stream_id, k_state_count);
 
   std::size_t state_size = random.GetStateSize();
 
   for (std::size_t index = 0U; index < k_state_count; ++index) {
-    auto individual = InitialiseStateBytes(
+    auto individual = InitializeStateBytes(
         random, k_first_stream_id + static_cast<std::uint64_t>(index), 1U);
 
     auto batch_begin =
@@ -187,12 +187,12 @@ TEST_P(GGEMSRandomStateInitialisationTest,
 // =============================================================================
 // =============================================================================
 
-TEST_P(GGEMSRandomStateInitialisationTest,
+TEST_P(GGEMSRandomStateInitializationTest,
        AcceptsBoundaryStreamRangeWithoutOverflow) {
   GGEMSRandom random{};
   random.SetEngine(GetParam()).SetSeed(77'777ULL);
 
-  EXPECT_NO_THROW((void)InitialiseStateBytes(random, 0ULL, 1U));
+  EXPECT_NO_THROW((void)InitializeStateBytes(random, 0ULL, 1U));
 
   std::uint64_t first_stream_id =
       GetParam() == GGEMSRandomEngine::JKISS
@@ -201,13 +201,13 @@ TEST_P(GGEMSRandomStateInitialisationTest,
                 3ULL
           : std::numeric_limits<std::uint64_t>::max() - 3ULL;
 
-  EXPECT_NO_THROW((void)InitialiseStateBytes(random, first_stream_id, 4U));
+  EXPECT_NO_THROW((void)InitializeStateBytes(random, first_stream_id, 4U));
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST_P(GGEMSRandomStateInitialisationTest,
+TEST_P(GGEMSRandomStateInitializationTest,
        RejectsOverflowingStreamRangeBeforeWriting) {
   GGEMSRandom random{};
   random.SetEngine(GetParam()).SetSeed(77'777ULL);
@@ -219,7 +219,7 @@ TEST_P(GGEMSRandomStateInitialisationTest,
   std::span<std::byte> selected_storage{storage.data(),
                                         2U * random.GetStateSize()};
 
-  EXPECT_THROW(random.InitialiseStates(
+  EXPECT_THROW(random.InitializeStates(
                    std::numeric_limits<std::uint64_t>::max(), selected_storage),
                ggems::core::GGEMSExceptionBase);
 
@@ -229,7 +229,7 @@ TEST_P(GGEMSRandomStateInitialisationTest,
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSRandomStateInitialisationContractTest,
+TEST(GGEMSRandomStateInitializationContractTest,
      JKISSRejectsStreamIdentifiersOutsideUInt32) {
   GGEMSRandom random{};
   random.SetEngine(GGEMSRandomEngine::JKISS).SetSeed(77'777ULL);
@@ -237,7 +237,7 @@ TEST(GGEMSRandomStateInitialisationContractTest,
   auto storage = std::vector<std::byte>(random.GetStateSize(), std::byte{0x5A});
   auto before = storage;
 
-  EXPECT_THROW(random.InitialiseStates(
+  EXPECT_THROW(random.InitializeStates(
                    static_cast<std::uint64_t>(
                        std::numeric_limits<std::uint32_t>::max()) +
                        1ULL,
@@ -250,14 +250,14 @@ TEST(GGEMSRandomStateInitialisationContractTest,
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSRandomStateInitialisationContractTest,
+TEST(GGEMSRandomStateInitializationContractTest,
      JKISSUsesTheLow32BitsOfTheSeed) {
   GGEMSRandom random{};
   random.SetEngine(GGEMSRandomEngine::JKISS).SetSeed(23ULL);
-  auto low_seed = InitialiseStateBytes(random, 42ULL, 1U);
+  auto low_seed = InitializeStateBytes(random, 42ULL, 1U);
 
   random.SetSeed((1ULL << 32U) + 23ULL);
-  auto high_seed = InitialiseStateBytes(random, 42ULL, 1U);
+  auto high_seed = InitializeStateBytes(random, 42ULL, 1U);
 
   EXPECT_EQ(low_seed, high_seed);
 }
@@ -265,7 +265,7 @@ TEST(GGEMSRandomStateInitialisationContractTest,
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSRandomStateInitialisationContractTest,
+TEST(GGEMSRandomStateInitializationContractTest,
      RejectsStorageWithPartialStateBeforeWriting) {
   GGEMSRandom random{};
   random.SetEngine(GGEMSRandomEngine::PCG32).SetSeed(77'777ULL);
@@ -274,7 +274,7 @@ TEST(GGEMSRandomStateInitialisationContractTest,
   std::fill(storage.begin(), storage.end(), std::byte{0x5A});
   auto before = storage;
 
-  EXPECT_THROW(random.InitialiseStates(
+  EXPECT_THROW(random.InitializeStates(
                    0ULL, std::span<std::byte>{storage.data(), storage.size()}),
                ggems::core::GGEMSExceptionBase);
 
@@ -284,7 +284,7 @@ TEST(GGEMSRandomStateInitialisationContractTest,
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSRandomStateInitialisationContractTest,
+TEST(GGEMSRandomStateInitializationContractTest,
      RejectsInvalidEngineBeforeWriting) {
   GGEMSRandom random{};
   random.SetEngine(static_cast<GGEMSRandomEngine>(0U));
@@ -293,7 +293,7 @@ TEST(GGEMSRandomStateInitialisationContractTest,
   std::fill(storage.begin(), storage.end(), std::byte{0x5A});
   auto before = storage;
 
-  EXPECT_THROW(random.InitialiseStates(
+  EXPECT_THROW(random.InitializeStates(
                    0ULL, std::span<std::byte>{storage.data(), storage.size()}),
                ggems::core::GGEMSExceptionBase);
 
@@ -303,7 +303,7 @@ TEST(GGEMSRandomStateInitialisationContractTest,
 // =============================================================================
 // =============================================================================
 
-INSTANTIATE_TEST_SUITE_P(AllEngines, GGEMSRandomStateInitialisationTest,
+INSTANTIATE_TEST_SUITE_P(AllEngines, GGEMSRandomStateInitializationTest,
                          ::testing::Values(GGEMSRandomEngine::JKISS,
                                            GGEMSRandomEngine::PCG32,
                                            GGEMSRandomEngine::Philox));

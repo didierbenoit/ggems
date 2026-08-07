@@ -49,6 +49,19 @@ auto CheckedVectorOffset(std::size_t offset, std::string const &diagnostic)
 // =============================================================================
 // =============================================================================
 
+auto GGEMSRadionuclideEmissionPlan::Create(
+    GGEMSTimeWindow time_window,
+    std::vector<GGEMSRadionuclideEmissionPlanSource> sources,
+    std::vector<GGEMSRadionuclideEmissionPlanGroup> groups,
+    std::vector<std::shared_ptr<GGEMSRadionuclideDefinition const>>
+        radionuclide_definitions,
+    std::uint64_t total_primary_count) -> GGEMSRadionuclideEmissionPlan {
+  return {time_window, std::move(sources), std::move(groups),
+          std::move(radionuclide_definitions), total_primary_count};
+}
+
+// -----------------------------------------------------------------------------
+
 GGEMSRadionuclideEmissionPlan::GGEMSRadionuclideEmissionPlan(
     GGEMSTimeWindow time_window,
     std::vector<GGEMSRadionuclideEmissionPlanSource> sources,
@@ -60,6 +73,17 @@ GGEMSRadionuclideEmissionPlan::GGEMSRadionuclideEmissionPlan(
       groups_{std::move(groups)},
       radionuclide_definitions_{std::move(radionuclide_definitions)},
       total_primary_count_{total_primary_count} {}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSRadionuclideEmissionPlanCandidate::Create(
+    std::shared_ptr<void const> owner_identity, std::uint64_t base_revision,
+    GGEMSRadionuclideEmissionPlan plan,
+    std::vector<random::GGEMSHostRandomStream> candidate_streams)
+    -> GGEMSRadionuclideEmissionPlanCandidate {
+  return {std::move(owner_identity), base_revision, std::move(plan),
+          std::move(candidate_streams)};
+}
 
 // -----------------------------------------------------------------------------
 
@@ -95,6 +119,32 @@ auto GGEMSRadionuclideEmissionPlanCandidate::operator=(
   plan_ = std::move(other.plan_);
   candidate_streams_ = std::move(other.candidate_streams_);
   return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSRadionuclideEmissionPlanCandidate::CommitTo(
+    std::shared_ptr<void const> const &owner_identity,
+    std::uint64_t &current_revision,
+    std::vector<random::GGEMSHostRandomStream> &persistent_streams) -> void {
+  GGEMS_CHECK_RECOVERABLE(
+      owner_identity_ == owner_identity,
+      "Cannot commit an emission-plan candidate from another planner.");
+  GGEMS_CHECK_RECOVERABLE(!committed_,
+                          "Emission-plan candidate was already committed.");
+  GGEMS_CHECK_RECOVERABLE(
+      base_revision_ == current_revision,
+      "Emission-plan candidate is stale for the current planner revision.");
+  GGEMS_CHECK_RECOVERABLE(
+      current_revision < std::numeric_limits<std::uint64_t>::max(),
+      "Emission-plan planner revision overflows uint64 storage.");
+  GGEMS_CHECK_INTERNAL(
+      candidate_streams_.size() == persistent_streams.size(),
+      "Emission-plan candidate stream count does not match its planner.");
+
+  persistent_streams.swap(candidate_streams_);
+  ++current_revision;
+  committed_ = true;
 }
 
 // =============================================================================
@@ -310,37 +360,20 @@ auto GGEMSRadionuclideEmissionPlanner::BuildCandidate(
          .run_primary_end = total_primary_count});
   }
 
-  GGEMSRadionuclideEmissionPlan plan{
+  GGEMSRadionuclideEmissionPlan plan = GGEMSRadionuclideEmissionPlan::Create(
       time_window, std::move(plan_sources), std::move(plan_groups),
-      std::move(radionuclide_definitions), total_primary_count};
+      std::move(radionuclide_definitions), total_primary_count);
 
-  return GGEMSRadionuclideEmissionPlanCandidate{owner_identity_, revision_,
-                                                std::move(plan),
-                                                std::move(candidate_streams)};
+  return GGEMSRadionuclideEmissionPlanCandidate::Create(
+      owner_identity_, revision_, std::move(plan),
+      std::move(candidate_streams));
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSRadionuclideEmissionPlanner::CommitCandidate(
     GGEMSRadionuclideEmissionPlanCandidate &candidate) -> void {
-  GGEMS_CHECK_RECOVERABLE(
-      candidate.owner_identity_ == owner_identity_,
-      "Cannot commit an emission-plan candidate from another planner.");
-  GGEMS_CHECK_RECOVERABLE(!candidate.committed_,
-                          "Emission-plan candidate was already committed.");
-  GGEMS_CHECK_RECOVERABLE(
-      candidate.base_revision_ == revision_,
-      "Emission-plan candidate is stale for the current planner revision.");
-  GGEMS_CHECK_RECOVERABLE(
-      revision_ < std::numeric_limits<std::uint64_t>::max(),
-      "Emission-plan planner revision overflows uint64 storage.");
-  GGEMS_CHECK_INTERNAL(
-      candidate.candidate_streams_.size() == persistent_streams_.size(),
-      "Emission-plan candidate stream count does not match its planner.");
-
-  persistent_streams_.swap(candidate.candidate_streams_);
-  ++revision_;
-  candidate.committed_ = true;
+  candidate.CommitTo(owner_identity_, revision_, persistent_streams_);
 }
 
 } // namespace ggems::core::radioactivity

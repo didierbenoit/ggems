@@ -154,8 +154,8 @@ auto GGEMSRun::HasObserver() const noexcept -> bool {
 
 auto GGEMSRun::SetTimePicoSecond(std::uint64_t start_ps, std::uint64_t stop_ps,
                                  std::uint64_t step_ps) -> void {
-  GGEMS_CHECK_RECOVERABLE(!initialised_,
-                          "Cannot configure GGEMSRun time after Initalise.");
+  GGEMS_CHECK_RECOVERABLE(!initialized_,
+                          "Cannot configure GGEMSRun time after Initialize.");
   GGEMS_CHECK_RECOVERABLE(
       start_ps < stop_ps,
       "GGEMSRun time start must be strictly less than time stop.");
@@ -225,8 +225,8 @@ auto GGEMSRun::SetRandom(std::shared_ptr<random::GGEMSRandom> random) -> void {
   GGEMS_CHECK_RECOVERABLE(random != nullptr,
                           "Cannot attach a null GGEMSRandom to GGEMSRun.");
 
-  GGEMS_CHECK_RECOVERABLE(!initialised_,
-                          "Cannot change GGEMSRandom after Initialise.");
+  GGEMS_CHECK_RECOVERABLE(!initialized_,
+                          "Cannot change GGEMSRandom after Initialize.");
 
   random_ = std::move(random);
 
@@ -240,8 +240,8 @@ auto GGEMSRun::SetSource(std::shared_ptr<sources::GGEMSSource> source) -> void {
   GGEMS_CHECK_RECOVERABLE(source != nullptr,
                           "Cannot attach a null GGEMSSource to GGEMSRun.");
 
-  GGEMS_CHECK_RECOVERABLE(!initialised_,
-                          "Cannot change GGEMSSource after Initialise.");
+  GGEMS_CHECK_RECOVERABLE(!initialized_,
+                          "Cannot change GGEMSSource after Initialize.");
 
   sources_.clear();
   sources_.push_back(std::move(source));
@@ -256,8 +256,8 @@ auto GGEMSRun::AddSource(std::shared_ptr<sources::GGEMSSource> source) -> void {
   GGEMS_CHECK_RECOVERABLE(source != nullptr,
                           "Cannot attach a null GGEMSSource to GGEMSRun.");
 
-  GGEMS_CHECK_RECOVERABLE(!initialised_,
-                          "Cannot add a GGEMSSource after Initalise.");
+  GGEMS_CHECK_RECOVERABLE(!initialized_,
+                          "Cannot add a GGEMSSource after Initialize.");
 
   if (uses_implicit_default_source_) {
     sources_.clear();
@@ -279,7 +279,7 @@ auto GGEMSRun::SetObserver(
       "Cannot attach a null GGEMSTransportObserver to GGEMSRun.");
 
   GGEMS_CHECK_RECOVERABLE(
-      !initialised_, "Cannot change GGEMSTransportObserver after Initialise.");
+      !initialized_, "Cannot change GGEMSTransportObserver after Initialize.");
 
   observer_ = std::move(observer);
 
@@ -289,8 +289,8 @@ auto GGEMSRun::SetObserver(
 // -----------------------------------------------------------------------------
 
 auto GGEMSRun::SetPrimaryCount(std::uint32_t primary_count) -> void {
-  GGEMS_CHECK_RECOVERABLE(!initialised_,
-                          "Cannot change primary count after Initialise.");
+  GGEMS_CHECK_RECOVERABLE(!initialized_,
+                          "Cannot change primary count after Initialize.");
 
   GGEMS_CHECK_RECOVERABLE(primary_count > 0U,
                           "GGEMSRun primary count must be non-zero.");
@@ -309,17 +309,17 @@ auto GGEMSRun::SetWorkerCount(std::uint32_t worker_count) -> void {
   GGEMS_CHECK_RECOVERABLE(worker_count > 0ULL,
                           "GGEMSRun worker count must be non-zero.");
 
-  GGEMS_CHECK_RECOVERABLE(!initialised_,
-                          "Cannot change worker count after Initialise.");
+  GGEMS_CHECK_RECOVERABLE(!initialized_,
+                          "Cannot change worker count after Initialize.");
 
   worker_count_ = worker_count;
 }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSRun::Initialise() -> void {
-  GGEMS_CHECK_RECOVERABLE(!initialised_,
-                          "GGEMSRun::Initialise called more than once.");
+auto GGEMSRun::Initialize() -> void {
+  GGEMS_CHECK_RECOVERABLE(!initialized_,
+                          "GGEMSRun::Initialize called more than once.");
 
   GGEMS_CHECK_INTERNAL(!sources_.empty(),
                        "GGEMSRun source collection must not be empty.");
@@ -347,14 +347,14 @@ auto GGEMSRun::Initialise() -> void {
 
   GGEMS_CHECK_RECOVERABLE(
       random_ != nullptr,
-      "GGEMSRun cannot be initialised without a GGEMSRandom. "
+      "GGEMSRun cannot be initialized without a GGEMSRandom. "
       "Create a ggems.rndm GGEMSRandom object and attach it with "
-      "GGEMSRun::SetRandom before calling Initialise.");
+      "GGEMSRun::SetRandom before calling Initialize.");
 
   auto &opencl = ocl::GGEMSOpenCL::GetInstance();
 
   GGEMS_CHECK_RECOVERABLE(!opencl.GetContext().empty(),
-                          "GGEMSRun requires initialised OpenCL contexts.");
+                          "GGEMSRun requires initialized OpenCL contexts.");
 
   GGEMS_CHECK_RECOVERABLE(
       opencl.GetContext().size() <=
@@ -362,7 +362,7 @@ auto GGEMSRun::Initialise() -> void {
       "GGEMSRun OpenCL context count exceeds uint32 storage.");
   (void)transport::ComputeSafeTransportLaunchPrimaryCount(worker_count_);
 
-  GGEMS_INFO("Core", "Initialising GGEMSRun stable state...");
+  GGEMS_INFO("Core", "Initializing GGEMSRun stable state...");
 
   GGEMS_INFO("Random", "Random engine ready: {} with seed {}.",
              random_->GetEngineName(), random_->GetSeed());
@@ -405,7 +405,7 @@ auto GGEMSRun::Initialise() -> void {
   GGEMS_INFO("Source", "GGEMSRun source collection prepared with {} slot(s).",
              source_count);
 
-  primary_stream_.Initialise();
+  primary_stream_.Initialize();
 
   transport_workloads_.swap(new_transport_workloads);
   source_configuration_snapshot_ = std::move(new_source_configuration);
@@ -417,14 +417,14 @@ auto GGEMSRun::Initialise() -> void {
     source->FinalizeInitialization();
   }
 
-  initialised_ = true;
+  initialized_ = true;
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSRun::Run() -> void {
-  GGEMS_CHECK_RECOVERABLE(initialised_,
-                          "GGEMSRun::Run called before Initialise.");
+  GGEMS_CHECK_RECOVERABLE(initialized_,
+                          "GGEMSRun::Run called before Initialize.");
 
   GGEMS_CHECK_RECOVERABLE(!running_.exchange(true),
                           "GGEMSRun is already running.");
@@ -441,7 +441,7 @@ auto GGEMSRun::Run() -> void {
   std::uint64_t const run_id = next_run_id_;
   GGEMS_CHECK_INTERNAL(
       radionuclide_emission_planner_ != nullptr,
-      "GGEMSRun radionuclide emission planner was not initialised.");
+      "GGEMSRun radionuclide emission planner was not initialized.");
   GGEMS_CHECK_RECOVERABLE(
       radionuclide_emission_planner_->GetRevision() <
           std::numeric_limits<std::uint64_t>::max(),
@@ -491,7 +491,7 @@ auto GGEMSRun::Run() -> void {
   transport::ValidateDiagnosticTransportSources(source_records, source_ranges);
 
   GGEMS_CHECK_RECOVERABLE(!transport_workloads_.empty(),
-                          "No transport workload was initialised.");
+                          "No transport workload was initialized.");
 
   if (total_primary_count == 0ULL) {
     std::unique_ptr<observer::GGEMSTransportObserver> observer_result_candidate;

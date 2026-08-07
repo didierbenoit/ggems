@@ -2468,7 +2468,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_INTEROP_USER_SYNC> {
       "CL_DEVICE_PREFERRED_INTEROP_USER_SYNC"; /*!< Symbolic token. */
 
   /*!
-   * \brief Convert boolean synchronisation preference to string.
+   * \brief Convert boolean synchronization preference to string.
    * \param v Boolean value.
    * \return "YES" or "NO".
    */

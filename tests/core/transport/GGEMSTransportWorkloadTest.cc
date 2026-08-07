@@ -43,7 +43,7 @@ using TransportWorkload = ggems::core::transport::GGEMSTransportWorkload;
 using SourceConfigurationSnapshotPtr =
     ggems::core::sources::GGEMSSourceConfigurationSnapshotPtr;
 
-constexpr std::int64_t k_one_metre_pm{1'000'000'000'000LL};
+constexpr std::int64_t k_one_meter_pm{1'000'000'000'000LL};
 
 // =============================================================================
 // =============================================================================
@@ -232,7 +232,7 @@ protected:
 
     if (opencl.GetContext().empty()) {
       opencl.SelectDevices({"gpu"});
-      opencl.Initialise();
+      opencl.Initialize();
     }
 
     ASSERT_FALSE(opencl.GetContext().empty());
@@ -356,7 +356,7 @@ TEST_F(GGEMSTransportWorkloadTest, ProjectsStoredBinary32DiagonalExactly) {
 // =============================================================================
 
 TEST_F(GGEMSTransportWorkloadTest,
-       InitialisesConfiguredParticleTypeGenerically) {
+       InitializesConfiguredParticleTypeGenerically) {
   SourceRecord const source = MakeSourceRecord({0LL, 0LL, 0LL}, {0.0, 0.0, 1.0},
                                                ParticleType::Electron);
 
@@ -381,7 +381,7 @@ TEST_F(GGEMSTransportWorkloadTest,
   auto const report = workload.Run(config);
 
   ExpectHistory(report, source, 0ULL, 0ULL, 0U, 0ULL,
-                {0LL, 0LL, k_one_metre_pm});
+                {0LL, 0LL, k_one_meter_pm});
 }
 
 // =============================================================================
@@ -419,15 +419,15 @@ TEST_F(GGEMSTransportWorkloadTest,
   EXPECT_EQ(report.observer_counters.captured_primary_count, 5U);
 
   ExpectHistory(report, source_a, 0ULL, 1'000ULL, 0U, 0ULL,
-                {k_one_metre_pm, 0LL, 0LL});
+                {k_one_meter_pm, 0LL, 0LL});
   ExpectHistory(report, source_a, 0ULL, 1'001ULL, 0U, 1ULL,
-                {k_one_metre_pm, 0LL, 0LL});
+                {k_one_meter_pm, 0LL, 0LL});
   ExpectHistory(report, source_a, 0ULL, 1'002ULL, 2U, 0ULL,
-                {k_one_metre_pm, 0LL, 0LL});
+                {k_one_meter_pm, 0LL, 0LL});
   ExpectHistory(report, source_a, 0ULL, 1'003ULL, 2U, 1ULL,
-                {k_one_metre_pm, 0LL, 0LL});
+                {k_one_meter_pm, 0LL, 0LL});
   ExpectHistory(report, source_b, 0ULL, 1'004ULL, 3U, 0ULL,
-                {0LL, -k_one_metre_pm, 0LL});
+                {0LL, -k_one_meter_pm, 0LL});
 }
 
 // =============================================================================
@@ -547,11 +547,11 @@ TEST_F(GGEMSTransportWorkloadTest,
   auto const report = workload.Run(config);
 
   ExpectHistory(report, source_0, 0ULL, 101ULL, 0U, 1ULL,
-                {k_one_metre_pm, 0LL, 0LL});
+                {k_one_meter_pm, 0LL, 0LL});
   ExpectHistory(report, source_1, 0ULL, 102ULL, 1U, 0ULL,
-                {0LL, k_one_metre_pm, 0LL});
+                {0LL, k_one_meter_pm, 0LL});
   ExpectHistory(report, source_1, 0ULL, 103ULL, 1U, 1ULL,
-                {0LL, k_one_metre_pm, 0LL});
+                {0LL, k_one_meter_pm, 0LL});
 }
 
 // =============================================================================
@@ -648,7 +648,7 @@ TEST_F(GGEMSTransportWorkloadTest,
 
   auto const report = workload.Run(config);
   ExpectHistory(report, analytic, 0ULL, 0ULL, 1U, 0ULL,
-                {0LL, 0LL, k_one_metre_pm});
+                {0LL, 0LL, k_one_meter_pm});
 
   constexpr std::array<std::uint64_t, 2U> k_unsupported_active{1ULL, 0ULL};
   config.source_ranges = BuildRanges(k_unsupported_active);

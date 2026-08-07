@@ -8,7 +8,6 @@
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideEmission.hh"
 
 namespace ggems::core::radioactivity {
-class GGEMSRadionuclideLibrary;
 
 class GGEMSRadionuclideDefinition {
 public:
@@ -44,21 +43,15 @@ public:
     return channel_selection_weights_;
   }
 
+  [[nodiscard]] auto BuildLookupKeys() const -> std::vector<std::string> {
+    return lookup_keys_;
+  }
+
 private:
-  friend class GGEMSRadionuclideLibrary;
-
-  [[nodiscard]] static auto NormalizeLookupName(std::string_view name)
-      -> std::string;
-
   [[nodiscard]] static auto
   BuildLookupKeys(std::string_view canonical_name,
                   std::span<std::string const> aliases)
       -> std::vector<std::string>;
-
-  [[nodiscard]] auto GetLookupKeys() const noexcept
-      -> std::span<std::string const> {
-    return lookup_keys_;
-  }
 
   std::string canonical_name_;
   std::vector<std::string> aliases_;

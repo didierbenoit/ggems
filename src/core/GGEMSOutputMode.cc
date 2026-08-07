@@ -16,7 +16,7 @@
 #include "GGEMS/render/GGEMSBanner.hh"
 #include "GGEMS/render/GGEMSVisualLine.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
-#include "GGEMS/render/GGEMSColour.hh"
+#include "GGEMS/render/GGEMSColor.hh"
 
 #if defined(_WIN32)
 #include "GGEMS/platform/windows/GGEMSWindowsCore.hh"
@@ -146,20 +146,20 @@ auto ConfigureLoggerForMode(OutputMode mode) -> void {
 auto ToTerminalText(render::WrappedLine const &line) -> std::string {
   std::string out;
 
-  bool const use_colour = GGEMSLogger::GetInstance().UseColour();
-  bool wrote_colour{false};
+  bool const use_color = GGEMSLogger::GetInstance().UseColor();
+  bool wrote_color{false};
 
   for (render::VisualSegment const &segment : line.segments) {
-    if (use_colour) {
-      render::AppendAnsiColour(out, segment.colour);
-      wrote_colour = true;
+    if (use_color) {
+      render::AppendAnsiColor(out, segment.color);
+      wrote_color = true;
     }
 
     out += utf::UTF32ToUTF8(segment.text);
   }
 
-  if (wrote_colour) {
-    render::AppendAnsiControl(out, render::AnsiControl::ResetColour);
+  if (wrote_color) {
+    render::AppendAnsiControl(out, render::AnsiControl::ResetColor);
   }
 
   return out;

@@ -126,7 +126,7 @@ SizeToString(std::vector<size_t> const &sizes) {
  * \param device_type Bitfield composed of \c CL_DEVICE_TYPE_* values.
  *
  * \return A string describing the device type, or "Unknown" if no
- *         recognised flag is set.
+ *         recognized flag is set.
  */
 [[nodiscard]] inline std::string
 DeviceTypeToString(cl_device_type device_type) {
@@ -167,13 +167,13 @@ DeviceTypeToString(cl_device_type device_type) {
 /*!
  * \brief Convert an OpenCL vendor ID to a readable string.
  *
- * The mapping performed by this function is not standardised by OpenCL.
+ * The mapping performed by this function is not standardized by OpenCL.
  * It uses a GGEMS-specific association to translate known vendor numeric
  * identifiers into their common textual names.
  *
  * \param vendor_id Numeric vendor identifier returned by OpenCL.
  *
- * \return A descriptive vendor name if recognised, otherwise the decimal
+ * \return A descriptive vendor name if recognized, otherwise the decimal
  *         string representation of \p id.
  */
 [[nodiscard]] inline std::string VendorIdToString(cl_uint vendor_id) {
@@ -215,7 +215,7 @@ DeviceTypeToString(cl_device_type device_type) {
  *
  * \return A descriptive string such as "None", "Read-Only Cache",
  *         or "Read/Write Cache". Returns "Unknown" if the value is not part
- *         of the recognised enumeration set.
+ *         of the recognized enumeration set.
  */
 [[nodiscard]] inline std::string
 CacheTypeToString(cl_device_mem_cache_type type) {
@@ -302,7 +302,7 @@ LocalMemTypeToString(cl_device_local_mem_type type) {
  * \param props Bitfield composed of \c CL_QUEUE_* flag values.
  *
  * \return A string listing all active properties, or "None" if the bitfield
- *         contains no recognised flags.
+ *         contains no recognized flags.
  */
 [[nodiscard]] inline std::string
 QueuePropertiesToString(cl_command_queue_properties &props) {
@@ -344,7 +344,7 @@ QueuePropertiesToString(cl_command_queue_properties &props) {
  * \param caps Bitfield composed of \c CL_DEVICE_SVM_* capability flags.
  *
  * \return A string listing all supported SVM capabilities, or "None" if the
- *         device reports no recognised feature.
+ *         device reports no recognized feature.
  */
 [[nodiscard]] inline std::string
 SVMCapabilitiesToString(cl_device_svm_capabilities caps) {
@@ -471,7 +471,7 @@ AtomicCapabilitiesToString(cl_device_atomic_capabilities caps) {
  * flags.
  *
  * \return A human-readable list of supported device enqueue capabilities,
- *         or "None" if no recognised flag is present.
+ *         or "None" if no recognized flag is present.
  */
 [[nodiscard]] inline std::string
 DeviceEnqueueCapabilitiesToString(cl_device_device_enqueue_capabilities caps) {
@@ -562,7 +562,7 @@ DeviceEnqueueCapabilitiesToString(cl_device_device_enqueue_capabilities caps) {
  * \param domain Bitfield composed of \c CL_DEVICE_AFFINITY_DOMAIN_* flags.
  *
  * \return A string listing all active affinity domains, or "None" if no
- *         recognised domain flag is set.
+ *         recognized domain flag is set.
  */
 [[nodiscard]] inline std::string
 AffinityDomainToString(cl_device_affinity_domain domain) {
@@ -744,7 +744,7 @@ LUIDToString(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &a) {
  * \param cfg Bitfield composed of \c CL_FP_* flags.
  *
  * \return A human-readable list of FP configuration flags, or "None" if no
- *         recognised capability is present.
+ *         recognized capability is present.
  */
 [[nodiscard]] inline std::string FPConfigToString(cl_device_fp_config cfg) {
   std::ostringstream oss;
@@ -855,7 +855,7 @@ DevicesToString(std::vector<cl::Device> &devices) {
  * \param caps Bitfield composed of \c CL_EXEC_* flags.
  *
  * \return A comma-separated list of execution capabilities, or "None" if
- *         no recognised capability flag is set.
+ *         no recognized capability flag is set.
  */
 [[nodiscard]] inline std::string
 ExecCapabilitiesToString(cl_device_exec_capabilities caps) {
@@ -990,7 +990,7 @@ ContextPropertiesToString(std::vector<cl_context_properties> const &cp) {
  * \param aq The address qualifier value.
  *
  * \return A string such as "Global", "Local", "Constant" or "Private".
- *         Returns "Unknown" if the value is not part of the recognised set.
+ *         Returns "Unknown" if the value is not part of the recognized set.
  */
 [[nodiscard]] inline std::string
 ArgAddressQualifierToString(cl_kernel_arg_address_qualifier aq) noexcept {
@@ -1021,7 +1021,7 @@ ArgAddressQualifierToString(cl_kernel_arg_address_qualifier aq) noexcept {
  * \param aq The access qualifier associated with a kernel argument.
  *
  * \return A human-readable string such as "ReadOnly", "WriteOnly",
- *         "ReadWrite" or "None". Returns "Unknown" if not recognised.
+ *         "ReadWrite" or "None". Returns "Unknown" if not recognized.
  */
 [[nodiscard]] inline std::string
 ArgAccessQualifierToString(cl_kernel_arg_address_qualifier aq) noexcept {

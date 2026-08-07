@@ -68,6 +68,13 @@ BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources,
 
 class GGEMSSourceConfigurationSnapshot {
 public:
+  [[nodiscard]] static auto Create(GGEMSSource const &source)
+      -> GGEMSSourceConfigurationSnapshotPtr;
+
+  [[nodiscard]] static auto
+  Create(std::span<std::shared_ptr<GGEMSSource> const> sources)
+      -> GGEMSSourceConfigurationSnapshotPtr;
+
   ~GGEMSSourceConfigurationSnapshot() = default;
 
   GGEMSSourceConfigurationSnapshot(GGEMSSourceConfigurationSnapshot const &) =
@@ -119,13 +126,6 @@ public:
   }
 
 private:
-  friend auto BuildSourceConfigurationSnapshot(GGEMSSource const &source)
-      -> GGEMSSourceConfigurationSnapshotPtr;
-
-  friend auto BuildSourceConfigurationSnapshot(
-      std::span<std::shared_ptr<GGEMSSource> const> sources)
-      -> GGEMSSourceConfigurationSnapshotPtr;
-
   GGEMSSourceConfigurationSnapshot(
       std::size_t source_count,
       std::vector<GGEMSEnergyDistributionRecord> energy_distribution_records,
@@ -151,6 +151,21 @@ private:
 
 class GGEMSSourceRunSnapshot {
 public:
+  [[nodiscard]] static auto Create(GGEMSSource const &source,
+                                   GGEMSTimeWindow time_window)
+      -> GGEMSSourceRunSnapshot;
+
+  [[nodiscard]] static auto
+  Create(std::span<std::shared_ptr<GGEMSSource> const> sources,
+         GGEMSSourceConfigurationSnapshotPtr source_configuration,
+         GGEMSTimeWindow time_window) -> GGEMSSourceRunSnapshot;
+
+  [[nodiscard]] static auto
+  Create(std::span<std::shared_ptr<GGEMSSource> const> sources,
+         GGEMSSourceConfigurationSnapshotPtr source_configuration,
+         radioactivity::GGEMSRadionuclideEmissionPlan const &emission_plan)
+      -> GGEMSSourceRunSnapshot;
+
   ~GGEMSSourceRunSnapshot() = default;
 
   GGEMSSourceRunSnapshot(GGEMSSourceRunSnapshot const &) = default;
@@ -223,37 +238,6 @@ public:
   [[nodiscard]] auto HasActivityDrivenSource() const noexcept -> bool;
 
 private:
-  friend auto BuildSourceRunSnapshot(GGEMSSource const &source)
-      -> GGEMSSourceRunSnapshot;
-
-  friend auto BuildSourceRunSnapshot(GGEMSSource const &source,
-                                     GGEMSTimeWindow time_window)
-      -> GGEMSSourceRunSnapshot;
-
-  friend auto
-  BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources)
-      -> GGEMSSourceRunSnapshot;
-
-  friend auto
-  BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources,
-                         GGEMSTimeWindow time_window) -> GGEMSSourceRunSnapshot;
-
-  friend auto BuildSourceRunSnapshot(
-      std::span<std::shared_ptr<GGEMSSource> const> sources,
-      GGEMSSourceConfigurationSnapshotPtr source_configuration)
-      -> GGEMSSourceRunSnapshot;
-
-  friend auto BuildSourceRunSnapshot(
-      std::span<std::shared_ptr<GGEMSSource> const> sources,
-      GGEMSSourceConfigurationSnapshotPtr source_configuration,
-      GGEMSTimeWindow time_window) -> GGEMSSourceRunSnapshot;
-
-  friend auto BuildSourceRunSnapshot(
-      std::span<std::shared_ptr<GGEMSSource> const> sources,
-      GGEMSSourceConfigurationSnapshotPtr source_configuration,
-      radioactivity::GGEMSRadionuclideEmissionPlan const &emission_plan)
-      -> GGEMSSourceRunSnapshot;
-
   GGEMSSourceRunSnapshot(
       std::vector<GGEMSSourceRecord> records,
       std::vector<GGEMSSourceRunRange> ranges,

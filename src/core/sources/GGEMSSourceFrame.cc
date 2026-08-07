@@ -11,28 +11,28 @@
 namespace ggems::core::sources {
 namespace {
 
-using PreciseAxis = geometry::detail::NormalisedVector3D;
+using PreciseAxis = geometry::detail::NormalizedVector3D;
 using Vector3D = std::array<double, 3U>;
 
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] auto RequireNormalised(Vector3D const &vector,
+[[nodiscard]] auto RequireNormalized(Vector3D const &vector,
                                      std::string_view name) -> PreciseAxis {
   GGEMS_CHECK_RECOVERABLE(
       std::isfinite(vector[0U]) && std::isfinite(vector[1U]) &&
           std::isfinite(vector[2U]),
-      std::format("Source  {} must contain finite values.", name));
+      std::format("Source {} must contain finite values.", name));
 
-  auto const normalised =
-      geometry::detail::TryNormaliseVector3D(vector[0], vector[1], vector[2]);
+  auto const normalized =
+      geometry::detail::TryNormalizeVector3D(vector[0], vector[1], vector[2]);
 
   GGEMS_CHECK_RECOVERABLE(
-      normalised.has_value(),
+      normalized.has_value(),
       std::format("Source {} must have a finite, strictly positive norm.",
                   name));
 
-  return *normalised;
+  return *normalized;
 }
 
 // =============================================================================
@@ -129,7 +129,7 @@ using Vector3D = std::array<double, 3U>;
 // =============================================================================
 // =============================================================================
 
-auto BuildSourceFrameFromNormalised(PreciseAxis direction,
+auto BuildSourceFrameFromNormalized(PreciseAxis direction,
                                     PreciseAxis up_reference)
     -> GGEMSSourceFrame {
   GGEMS_CHECK_RECOVERABLE(!IsTooParallel(direction, up_reference),
@@ -137,10 +137,10 @@ auto BuildSourceFrameFromNormalised(PreciseAxis direction,
                                       "to parallel (1 - abs(dot) <= {}).",
                                       k_source_frame_parallel_tolerance));
 
-  PreciseAxis const axis_x = RequireNormalised(Cross(up_reference, direction),
+  PreciseAxis const axis_x = RequireNormalized(Cross(up_reference, direction),
                                                "frame horizontal axis");
   PreciseAxis const axis_y =
-      RequireNormalised(Cross(direction, axis_x), "frame vertical axis");
+      RequireNormalized(Cross(direction, axis_x), "frame vertical axis");
 
   GGEMSSourceFrame const frame = {.axis_x = ToFloatDirection(axis_x),
                                   .axis_y = ToFloatDirection(axis_y),
@@ -161,9 +161,9 @@ auto BuildSourceFrameFromNormalised(PreciseAxis direction,
 auto BuildSourceFrame(std::array<double, 3U> const &direction,
                       std::array<double, 3U> const &up_reference)
     -> GGEMSSourceFrame {
-  return BuildSourceFrameFromNormalised(
-      RequireNormalised(direction, "direction"),
-      RequireNormalised(up_reference, "up vector"));
+  return BuildSourceFrameFromNormalized(
+      RequireNormalized(direction, "direction"),
+      RequireNormalized(up_reference, "up vector"));
 }
 
 // =============================================================================
@@ -178,14 +178,14 @@ auto IsValidSourceFrame(GGEMSSourceFrame const &frame) noexcept -> bool {
 
 auto BuildSourceFrameWithAutomaticUp(std::array<double, 3U> const &direction)
     -> GGEMSSourceFrame {
-  PreciseAxis const axis_z = RequireNormalised(direction, "direction");
+  PreciseAxis const axis_z = RequireNormalized(direction, "direction");
   PreciseAxis constexpr preferred_up{.x = 0.0, .y = 0.0, .z = 1.0};
   PreciseAxis constexpr fallback_up{.x = 0.0, .y = 1.0, .z = 0.0};
 
   PreciseAxis const selected_up =
       IsTooParallel(axis_z, preferred_up) ? fallback_up : preferred_up;
 
-  return BuildSourceFrameFromNormalised(axis_z, selected_up);
+  return BuildSourceFrameFromNormalized(axis_z, selected_up);
 }
 
 } // namespace ggems::core::sources

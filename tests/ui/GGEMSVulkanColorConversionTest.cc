@@ -4,8 +4,8 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMS/render/GGEMSColour.hh"
-#include "GGEMS/render/GGEMSColourNames.hh"
+#include "GGEMS/render/GGEMSColor.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/ui/GGEMSVulkanColorConversion.hh"
 
 namespace {
@@ -95,11 +95,11 @@ TEST(GGEMSVulkanColorConversion, IgnoresForegroundAndBackgroundLayer) {
 // =============================================================================
 
 TEST(GGEMSVulkanColorConversion, ClampsShadeAbovePaletteRange) {
-  constexpr render::ColourKey out_of_range_color{
-      .family = render::ColourFamily::Blue,
+  constexpr render::ColorKey out_of_range_color{
+      .family = render::ColorFamily::Blue,
       .shade = std::numeric_limits<std::uint8_t>::max(),
-      .variant = render::ColourVariant::Normal,
-      .layer = render::ColourLayer::Foreground};
+      .variant = render::ColorVariant::Normal,
+      .layer = render::ColorLayer::Foreground};
 
   ExpectVulkanColor(ToVulkanClearColor(out_of_range_color),
                     k_expected_blue_abyss);

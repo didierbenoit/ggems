@@ -7,7 +7,7 @@ struct ScenePushConstants {
 
 struct VertexOutput {
   float4 position : SV_Position;
-  float3 colour : COLOR0;
+  float3 color : COLOR0;
 };
 
 [[vk::push_constant]]
@@ -38,7 +38,7 @@ VertexOutput VertexMain(uint vertex_id : SV_VertexID) {
       float3(0.0, 0.0,  1.0)
   };
 
-  float3 colours[6] = {
+  float3 colors[6] = {
       // X axis
       float3(0.95, 0.20, 0.16),
       float3(0.95, 0.20, 0.16),
@@ -54,12 +54,12 @@ VertexOutput VertexMain(uint vertex_id : SV_VertexID) {
 
   VertexOutput output;
   output.position = TransformWorldPosition(positions[vertex_id]);
-  output.colour = colours[vertex_id];
+  output.color = colors[vertex_id];
 
   return output;
 }
 
 [shader("fragment")]
 float4 FragmentMain(VertexOutput input) : SV_Target {
-  return float4(input.colour, 1.0);
+  return float4(input.color, 1.0);
 }

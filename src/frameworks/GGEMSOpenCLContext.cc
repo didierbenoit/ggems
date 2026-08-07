@@ -233,7 +233,7 @@ GGEMSOpenCLSVMBuffer GGEMSOpenCLContext::CreateSVMBuffer(Bytes size,
       size >= k_large_svm_warning_threshold) {
     GGEMS_WARN("OpenCL",
                "Fine-grain atomic SVM buffer selected for a large allocation "
-               "({}). This is a synchronisation-heavy memory mode and should "
+               "({}). This is a synchronization-heavy memory mode and should "
                "not be used for large performance buffers unless atomics are "
                "strictly required.",
                HumanReadable(size));

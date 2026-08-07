@@ -30,7 +30,7 @@
  * - exposing the final cl::Program to GGEMS.
  *
  * GGEMSOpenCLProgram instances cannot be created directly; only
- * GGEMSOpenCL::GetOrCreateProgram() is authorised to construct them through
+ * GGEMSOpenCL::GetOrCreateProgram() is authorized to construct them through
  * internal caching. This ensures program reuse and prevents uncontrolled
  * recompilation.
  *
@@ -183,7 +183,7 @@ private:
   /*!
    * \brief Merge base compiler options with an additional option string.
    *
-   * \param base  Pre-tokenised option list.
+   * \param base  Pre-tokenized option list.
    * \param extra Extra string passed by the user.
    * \return Merged option string.
    */
@@ -191,11 +191,11 @@ private:
                                          std::string const &extra) const;
 
   /*!
-   * \brief Initialise the program: load source, detect cache, build.
+   * \brief Initialize the program: load source, detect cache, build.
    *
    * This is executed once by the constructor wrapper in GGEMSOpenCL.
    */
-  void Initialise();
+  void Initialize();
 
   /*!
    * \brief Build either from cached binary or from source.

@@ -45,7 +45,7 @@ private:
                                 Vector3 const &second) noexcept -> float;
   [[nodiscard]] static auto Cross(Vector3 const &first,
                                   Vector3 const &second) noexcept -> Vector3;
-  [[nodiscard]] static auto Normalise(Vector3 const &vec) noexcept -> Vector3;
+  [[nodiscard]] static auto Normalize(Vector3 const &vec) noexcept -> Vector3;
 
   struct CameraBasis {
     Vector3 right{};

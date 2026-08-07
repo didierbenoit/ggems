@@ -34,7 +34,7 @@ public:
   auto operator=(GGEMSGuiApplication const &) -> GGEMSGuiApplication & = delete;
   auto operator=(GGEMSGuiApplication &&) -> GGEMSGuiApplication & = delete;
 
-  void Initialise();
+  void Initialize();
   void Run();
 
   auto SubmitLastRunSourceSnapshot(ggems::core::GGEMSRun const &run) -> void;
@@ -45,7 +45,7 @@ public:
       ggems::core::observer::GGEMSTransportObserver const &observer);
   void ClearParticleTraces();
 
-  [[nodiscard]] auto IsInitialised() const noexcept -> bool;
+  [[nodiscard]] auto IsInitialized() const noexcept -> bool;
 
   void SetVulkanDevice(std::string selection);
   void SetVulkanDevice(std::uint32_t enumeration_index);
@@ -63,7 +63,7 @@ private:
   std::optional<std::uint32_t> vulkan_device_index_selector_;
   GLFWwindow *window_{nullptr};
   std::unique_ptr<GGEMSVulkanContext> vk_context_;
-  bool glfw_initialised_{false};
+  bool glfw_initialized_{false};
   bool framebuffer_resized_{false};
   bool missing_observer_warning_emitted_{false};
 };

@@ -108,7 +108,7 @@ protected:
 
     if (opencl.GetContext().empty()) {
       opencl.SelectDevices({"gpu"});
-      opencl.Initialise();
+      opencl.Initialize();
     }
 
     ASSERT_FALSE(opencl.GetContext().empty());
@@ -137,7 +137,7 @@ protected:
     auto &context = Context();
 
     std::vector<std::byte> initial_state(random.GetStateSize());
-    random.InitialiseStates(0ULL, std::span<std::byte>{initial_state});
+    random.InitializeStates(0ULL, std::span<std::byte>{initial_state});
     std::vector<std::byte> sample_state = initial_state;
     std::vector<std::byte> reference_state = initial_state;
     std::uint64_t sampled_energy{0ULL};
@@ -320,7 +320,7 @@ protected:
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
     auto &context = Context();
     std::vector<std::byte> initial_state(random.GetStateSize());
-    random.InitialiseStates(0ULL, std::span<std::byte>{initial_state});
+    random.InitializeStates(0ULL, std::span<std::byte>{initial_state});
     std::vector<std::byte> raw_state = initial_state;
     std::vector<std::byte> uniform_state = initial_state;
     RawProbeResult result{};

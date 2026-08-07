@@ -326,7 +326,7 @@ GGEMSSourceConfigurationSnapshot::GGEMSSourceConfigurationSnapshot(
 // =============================================================================
 // =============================================================================
 
-auto BuildSourceConfigurationSnapshot(GGEMSSource const &source)
+auto GGEMSSourceConfigurationSnapshot::Create(GGEMSSource const &source)
     -> GGEMSSourceConfigurationSnapshotPtr {
   std::array<GGEMSSource const *, 1U> sources{&source};
   PackedSourceConfiguration packed = PackSourceConfiguration(sources);
@@ -344,7 +344,15 @@ auto BuildSourceConfigurationSnapshot(GGEMSSource const &source)
 // =============================================================================
 // =============================================================================
 
-auto BuildSourceConfigurationSnapshot(
+auto BuildSourceConfigurationSnapshot(GGEMSSource const &source)
+    -> GGEMSSourceConfigurationSnapshotPtr {
+  return GGEMSSourceConfigurationSnapshot::Create(source);
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSourceConfigurationSnapshot::Create(
+
     std::span<std::shared_ptr<GGEMSSource> const> sources)
     -> GGEMSSourceConfigurationSnapshotPtr {
   std::vector<GGEMSSource const *> source_pointers;
@@ -364,6 +372,15 @@ auto BuildSourceConfigurationSnapshot(
           std::move(packed.cumulative_ticket_upper),
           std::move(packed.radionuclide_emission_records),
           std::move(packed.radionuclide_definitions)}};
+}
+
+// =============================================================================
+// =============================================================================
+
+auto BuildSourceConfigurationSnapshot(
+    std::span<std::shared_ptr<GGEMSSource> const> sources)
+    -> GGEMSSourceConfigurationSnapshotPtr {
+  return GGEMSSourceConfigurationSnapshot::Create(sources);
 }
 
 // =============================================================================
@@ -401,7 +418,7 @@ auto GGEMSSourceRunSnapshot::HasActivityDrivenSource() const noexcept -> bool {
 // =============================================================================
 // =============================================================================
 
-auto BuildSourceRunSnapshot(
+auto GGEMSSourceRunSnapshot::Create(
     std::span<std::shared_ptr<GGEMSSource> const> sources,
     GGEMSSourceConfigurationSnapshotPtr source_configuration,
     radioactivity::GGEMSRadionuclideEmissionPlan const &emission_plan)
@@ -588,6 +605,18 @@ auto BuildSourceRunSnapshot(
 auto BuildSourceRunSnapshot(
     std::span<std::shared_ptr<GGEMSSource> const> sources,
     GGEMSSourceConfigurationSnapshotPtr source_configuration,
+    radioactivity::GGEMSRadionuclideEmissionPlan const &emission_plan)
+    -> GGEMSSourceRunSnapshot {
+  return GGEMSSourceRunSnapshot::Create(
+      sources, std::move(source_configuration), emission_plan);
+}
+
+// =============================================================================
+// =============================================================================
+
+auto GGEMSSourceRunSnapshot::Create(
+    std::span<std::shared_ptr<GGEMSSource> const> sources,
+    GGEMSSourceConfigurationSnapshotPtr source_configuration,
     GGEMSTimeWindow time_window) -> GGEMSSourceRunSnapshot {
   ValidateTimeWindow(time_window);
   GGEMS_CHECK_INTERNAL(source_configuration != nullptr,
@@ -633,6 +662,17 @@ auto BuildSourceRunSnapshot(
 
 auto BuildSourceRunSnapshot(
     std::span<std::shared_ptr<GGEMSSource> const> sources,
+    GGEMSSourceConfigurationSnapshotPtr source_configuration,
+    GGEMSTimeWindow time_window) -> GGEMSSourceRunSnapshot {
+  return GGEMSSourceRunSnapshot::Create(
+      sources, std::move(source_configuration), time_window);
+}
+
+// =============================================================================
+// =============================================================================
+
+auto BuildSourceRunSnapshot(
+    std::span<std::shared_ptr<GGEMSSource> const> sources,
     GGEMSSourceConfigurationSnapshotPtr source_configuration)
     -> GGEMSSourceRunSnapshot {
   return BuildSourceRunSnapshot(sources, std::move(source_configuration), {});
@@ -661,8 +701,8 @@ auto BuildSourceRunSnapshot(
 // =============================================================================
 // =============================================================================
 
-auto BuildSourceRunSnapshot(GGEMSSource const &source,
-                            GGEMSTimeWindow time_window)
+auto GGEMSSourceRunSnapshot::Create(GGEMSSource const &source,
+                                    GGEMSTimeWindow time_window)
     -> GGEMSSourceRunSnapshot {
   ValidateTimeWindow(time_window);
   std::vector<GGEMSSourceRecord> records;
@@ -683,6 +723,15 @@ auto BuildSourceRunSnapshot(GGEMSSource const &source,
                                 {},
                                 BuildSourceConfigurationSnapshot(source),
                                 total_primary_count};
+}
+
+// =============================================================================
+// =============================================================================
+
+auto BuildSourceRunSnapshot(GGEMSSource const &source,
+                            GGEMSTimeWindow time_window)
+    -> GGEMSSourceRunSnapshot {
+  return GGEMSSourceRunSnapshot::Create(source, time_window);
 }
 
 // =============================================================================

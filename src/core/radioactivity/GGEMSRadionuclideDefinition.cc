@@ -6,24 +6,15 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <algorithm>
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideEmission.hh"
+#include "GGEMS/core/radioactivity/detail/GGEMSRadionuclideLookupPolicy.hh"
 
 namespace ggems::core::radioactivity {
 namespace {
-
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] constexpr auto IsAsciiWhitespace(char character) noexcept
-    -> bool {
-  return character == ' ' || character == '\t' || character == '\n' ||
-         character == '\r' || character == '\f' || character == '\v';
-}
 
 // =============================================================================
 // =============================================================================
@@ -48,7 +39,7 @@ ComputeTotalYieldPerDecay(std::span<GGEMSRadionuclideEmission const> emissions)
     }
 
     GGEMS_CHECK_RECOVERABLE(std::isfinite(compensation),
-                            "Radionuclide total emission yield in not finite.");
+                            "Radionuclide total emission yield is not finite.");
 
     sum = next;
   }
@@ -69,33 +60,6 @@ ComputeTotalYieldPerDecay(std::span<GGEMSRadionuclideEmission const> emissions)
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] auto
-GGEMSRadionuclideDefinition::NormalizeLookupName(std::string_view name)
-    -> std::string {
-  while (!name.empty() && IsAsciiWhitespace(name.front())) {
-    name.remove_prefix(1U);
-  }
-
-  while (!name.empty() && IsAsciiWhitespace(name.back())) {
-    name.remove_suffix(1U);
-  }
-
-  std::string normalized;
-  normalized.reserve(name.size());
-
-  for (char character : name) {
-    if (character >= 'A' && character <= 'Z') {
-      normalized.push_back(static_cast<char>(character - 'A' + 'a'));
-    } else {
-      normalized.push_back(character);
-    }
-  }
-
-  return normalized;
-}
-
-// -----------------------------------------------------------------------------
-
 [[nodiscard]] auto GGEMSRadionuclideDefinition::BuildLookupKeys(
     std::string_view canonical_name, std::span<std::string const> aliases)
     -> std::vector<std::string> {
@@ -103,7 +67,7 @@ GGEMSRadionuclideDefinition::NormalizeLookupName(std::string_view name)
   std::unordered_set<std::string> unique_keys;
 
   auto add_key = [&](std::string_view name, std::string_view kind) -> void {
-    std::string normalized = NormalizeLookupName(name);
+    std::string normalized = detail::NormalizeRadionuclideLookupName(name);
 
     GGEMS_CHECK_RECOVERABLE(
         !normalized.empty(),

@@ -38,7 +38,7 @@ public:
   auto operator=(GGEMSRun const &) -> GGEMSRun & = delete;
   auto operator=(GGEMSRun &&) -> GGEMSRun & = delete;
 
-  void Initialise();
+  void Initialize();
   void Run();
 
   auto SetTimePicoSecond(std::uint64_t start_ps, std::uint64_t stop_ps,
@@ -76,7 +76,7 @@ private:
 
   particles::GGEMSPrimaryStream primary_stream_;
 
-  bool initialised_{false};
+  bool initialized_{false};
   std::uint64_t next_run_id_{0ULL};
 
   bool has_time_configuration_{false};

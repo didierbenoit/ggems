@@ -16,26 +16,26 @@ auto GGEMSPrimaryStream::SetPrimaryCount(std::uint64_t primary_count) -> void {
                           "Primary stream particle count must be non-zero.");
 
   GGEMS_CHECK_RECOVERABLE(
-      !initialised_,
-      "Primary stream particle count cannot be changed after initialise.");
+      !initialized_,
+      "Primary stream particle count cannot be changed after initialize.");
 
   primary_count_ = primary_count;
 }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSPrimaryStream::Initialise() -> void {
+auto GGEMSPrimaryStream::Initialize() -> void {
   GGEMS_CHECK_RECOVERABLE(
-      !initialised_, "Primary stream cannot be initialised more than once.");
+      !initialized_, "Primary stream cannot be initialized more than once.");
 
   GGEMS_CHECK_RECOVERABLE(primary_count_ > 0ULL,
-                          "Cannot initialise an empty primary stream.");
+                          "Cannot initialize an empty primary stream.");
 
-  GGEMS_INFO("Core", "Primary Aionino stream initialised");
+  GGEMS_INFO("Core", "Primary Aionino stream initialized");
 
   next_global_primary_id_ = 0ULL;
   exhausted_ = false;
-  initialised_ = true;
+  initialized_ = true;
 }
 
 // -----------------------------------------------------------------------------
@@ -51,8 +51,8 @@ auto GGEMSPrimaryStream::PrepareRun(std::uint64_t run_id,
                                     std::uint64_t primary_count)
     -> GGEMSPrimaryStreamRunView {
   GGEMS_CHECK_RECOVERABLE(
-      initialised_,
-      "Primary stream must be initialised before reserving a range");
+      initialized_,
+      "Primary stream must be initialized before reserving a range");
 
   GGEMS_CHECK_RECOVERABLE(primary_count > 0ULL,
                           "Primary stream reservation count must be non-zero");

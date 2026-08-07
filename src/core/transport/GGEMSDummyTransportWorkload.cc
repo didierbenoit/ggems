@@ -115,7 +115,7 @@ GGEMSDummyTransportWorkload::GGEMSDummyTransportWorkload(
       observer_records_buffer_{context.CreateSVMBuffer(
           ComputeObserverRecordsSize(observer_record_capacity))} {
 
-  InitialiseRandomStatesInSVM();
+  InitializeRandomStatesInSVM();
   ClearWorkerFinalStatesInSVM();
   ResetCountersInSVM();
   ResetObserverInSVM();
@@ -123,7 +123,7 @@ GGEMSDummyTransportWorkload::GGEMSDummyTransportWorkload(
 
 // -----------------------------------------------------------------------------
 
-void GGEMSDummyTransportWorkload::InitialiseRandomStatesInSVM() {
+void GGEMSDummyTransportWorkload::InitializeRandomStatesInSVM() {
   std::uint64_t state_bytes = random_states_buffer_.GetSize().value;
 
   GGEMS_CHECK_INTERNAL(
@@ -135,7 +135,7 @@ void GGEMSDummyTransportWorkload::InitialiseRandomStatesInSVM() {
 
   random_states_buffer_.Map(CL_MAP_WRITE);
 
-  random_->InitialiseStates(
+  random_->InitializeStates(
       random_stream_offset_,
       std::span<std::byte>{state_storage,
                            static_cast<std::size_t>(state_bytes)});

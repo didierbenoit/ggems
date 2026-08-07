@@ -46,4 +46,4 @@ message(STATUS "Intel compiler          : ${CMAKE_CXX_COMPILER}")
 message(STATUS "Intel compiler version  : ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "Warnings as errors      : ${GGEMS_WARNINGS_AS_ERRORS}")
 message(
-  STATUS "Optimisation policy     : managed by CMake Debug/Release profiles")
+  STATUS "Optimization policy     : managed by CMake Debug/Release profiles")

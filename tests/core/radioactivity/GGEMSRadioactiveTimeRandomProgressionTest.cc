@@ -32,7 +32,7 @@ protected:
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
     if (opencl.GetContext().empty()) {
       opencl.SelectDevices({"gpu"});
-      opencl.Initialise();
+      opencl.Initialize();
     }
     ASSERT_FALSE(opencl.GetContext().empty());
   }
@@ -66,7 +66,7 @@ TEST_F(GGEMSRadioactiveTimeRandomProgressionTest,
         context.CreateSVMBuffer(ggems::units::Bytes{sizeof(std::uint64_t)});
 
     state_buffer.Map(CL_MAP_WRITE);
-    random.InitialiseStates(
+    random.InitializeStates(
         0ULL,
         std::span<std::byte>{static_cast<std::byte *>(state_buffer.GetData()),
                              random.GetStateSize()});

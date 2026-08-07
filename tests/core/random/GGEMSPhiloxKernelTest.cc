@@ -89,7 +89,7 @@ protected:
 
     if (opencl.GetContext().empty()) {
       opencl.SelectDevices({"gpu"});
-      opencl.Initialise();
+      opencl.Initialize();
     }
 
     ASSERT_FALSE(opencl.GetContext().empty());
@@ -274,7 +274,7 @@ TEST_F(GGEMSPhiloxKernelTest, SameSeedProducesSameFirstSequence) {
   auto *states = static_cast<PhiloxState *>(states_buffer.GetData());
   auto *values = static_cast<float *>(values_buffer.GetData());
 
-  auto initialise_states = [&]() -> void {
+  auto initialize_states = [&]() -> void {
     states_buffer.Map(CL_MAP_WRITE);
     values_buffer.Map(CL_MAP_WRITE);
 
@@ -293,7 +293,7 @@ TEST_F(GGEMSPhiloxKernelTest, SameSeedProducesSameFirstSequence) {
   kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
   kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
 
-  initialise_states();
+  initialize_states();
 
   kernel.Run({k_global_work_size}, {k_local_size});
 
@@ -303,7 +303,7 @@ TEST_F(GGEMSPhiloxKernelTest, SameSeedProducesSameFirstSequence) {
   std::copy(values, values + k_value_count, first_values.begin());
   values_buffer.Unmap();
 
-  initialise_states();
+  initialize_states();
 
   kernel.Run({k_global_work_size}, {k_local_size});
 
@@ -348,7 +348,7 @@ TEST_F(GGEMSPhiloxKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
   auto *states = static_cast<PhiloxState *>(states_buffer.GetData());
   auto *values = static_cast<float *>(values_buffer.GetData());
 
-  auto initialise_states = [&](std::uint64_t seed) -> void {
+  auto initialize_states = [&](std::uint64_t seed) -> void {
     states_buffer.Map(CL_MAP_WRITE);
     values_buffer.Map(CL_MAP_WRITE);
 
@@ -367,7 +367,7 @@ TEST_F(GGEMSPhiloxKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
   kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
   kernel.SetArg(3U, static_cast<cl_uint>(k_samples_per_particle));
 
-  initialise_states(k_seed);
+  initialize_states(k_seed);
 
   kernel.Run({k_global_work_size}, {k_local_size});
 
@@ -377,7 +377,7 @@ TEST_F(GGEMSPhiloxKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
   std::copy(values, values + k_value_count, first_seed_values.begin());
   values_buffer.Unmap();
 
-  initialise_states(k_alternative_seed);
+  initialize_states(k_alternative_seed);
 
   kernel.Run({k_global_work_size}, {k_local_size});
 

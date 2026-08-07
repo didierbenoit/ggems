@@ -5,14 +5,14 @@
 #include <cstddef>
 
 #include "GGEMS/render/GGEMSBanner.hh"
-#include "GGEMS/render/GGEMSColourNames.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/utf/GGEMSGlyphs.hh"
-#include "GGEMS/render/GGEMSColour.hh"
+#include "GGEMS/render/GGEMSColor.hh"
 #include "GGEMS/render/GGEMSVisualLine.hh"
 
 namespace ggems::render {
 
-render::ColourKey constexpr banner_colour = render::GREEN_Acid;
+render::ColorKey constexpr banner_color = render::GREEN_Acid;
 
 // =============================================================================
 // =============================================================================
@@ -33,9 +33,9 @@ auto GGEMSBanner::BuildLines(std::int16_t max_width) const
     return text;
   };
 
-  auto push_line = [&](std::u32string text, render::ColourKey colour) -> void {
+  auto push_line = [&](std::u32string text, render::ColorKey color) -> void {
     WrappedLine line{};
-    line.segments.push_back({.text = clip(std::move(text)), .colour = colour});
+    line.segments.push_back({.text = clip(std::move(text)), .color = color});
     lines.push_back(std::move(line));
   };
 
@@ -141,29 +141,29 @@ auto GGEMSBanner::BuildLines(std::int16_t max_width) const
   std::u32string text_line3 = U"Authors: Julien Bert & Didier Benoit";
   std::u32string text_line4 = U"Copyright (C) 2026 Licensed under GNU GPL v3.0";
 
-  push_line(hline_border_top, banner_colour);
-  push_line(empty_line, banner_colour);
+  push_line(hline_border_top, banner_color);
+  push_line(empty_line, banner_color);
 
-  push_line(v_line + U"    " + logo_line1 + U"    " + v_line, banner_colour);
-  push_line(v_line + U"   " + logo_line2 + U"    " + v_line, banner_colour);
-  push_line(v_line + U"   " + logo_line3 + U"    " + v_line, banner_colour);
-  push_line(v_line + U"   " + logo_line4 + U"    " + v_line, banner_colour);
-  push_line(v_line + U"   " + logo_line5 + U"    " + v_line, banner_colour);
-  push_line(v_line + U"    " + logo_line6 + U"    " + v_line, banner_colour);
+  push_line(v_line + U"    " + logo_line1 + U"    " + v_line, banner_color);
+  push_line(v_line + U"   " + logo_line2 + U"    " + v_line, banner_color);
+  push_line(v_line + U"   " + logo_line3 + U"    " + v_line, banner_color);
+  push_line(v_line + U"   " + logo_line4 + U"    " + v_line, banner_color);
+  push_line(v_line + U"   " + logo_line5 + U"    " + v_line, banner_color);
+  push_line(v_line + U"    " + logo_line6 + U"    " + v_line, banner_color);
 
-  push_line(empty_line, banner_colour);
-  push_line(separator_line, banner_colour);
-  push_line(empty_line, banner_colour);
+  push_line(empty_line, banner_color);
+  push_line(separator_line, banner_color);
+  push_line(empty_line, banner_color);
 
   push_line(v_line + U"      " + text_line1 + U"      " + v_line,
-            banner_colour);
-  push_line(v_line + U"    " + text_line2 + U"     " + v_line, banner_colour);
+            banner_color);
+  push_line(v_line + U"    " + text_line2 + U"     " + v_line, banner_color);
   push_line(v_line + U"       " + text_line3 + U"         " + v_line,
-            banner_colour);
-  push_line(v_line + U"   " + text_line4 + U"   " + v_line, banner_colour);
+            banner_color);
+  push_line(v_line + U"   " + text_line4 + U"   " + v_line, banner_color);
 
-  push_line(empty_line, banner_colour);
-  push_line(hline_border_bottom, banner_colour);
+  push_line(empty_line, banner_color);
+  push_line(hline_border_bottom, banner_color);
 
   return lines;
 }

@@ -19,7 +19,7 @@
 
 /*!
  * \file GGEMSException.hh
- * \brief Base exception class and specialised GGEMS exception categories.
+ * \brief Base exception class and specialized GGEMS exception categories.
  *
  * This header provides the exception hierarchy used throughout GGEMS.
  * All exceptions ultimately derive from \c GGEMSExceptionBase, which
@@ -35,7 +35,7 @@
  *
  * The formatting uses \c std::format to build a multi-line summary,
  * suitable for both console display and logs. Derived exceptions simply
- * specialise their category (e.g. "Recoverable", "Internal", "Fatal").
+ * specialize their category (e.g. "Recoverable", "Internal", "Fatal").
  *
  * A generic helper \c Throw<E>() is also provided to throw any GGEMS
  * exception type with an optional source location. By default, the

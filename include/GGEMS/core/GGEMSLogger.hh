@@ -13,8 +13,8 @@
 #include <vector>
 #include <format>
 
-#include "GGEMS/render/GGEMSColourNames.hh"
-#include "GGEMS/render/GGEMSColour.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
+#include "GGEMS/render/GGEMSColor.hh"
 
 namespace ggems::core {
 
@@ -36,7 +36,7 @@ struct LogRecord {
 struct RenderedLogLine {
   std::string prefix;
   std::string msg;
-  render::ColourKey color{render::DEFAULT_FG};
+  render::ColorKey color{render::DEFAULT_FG};
   LogLevel level{LogLevel::Info};
   std::int32_t depth{0};
   std::string module;
@@ -89,7 +89,7 @@ public:
   auto SetSink(std::unique_ptr<LogSink> sink) -> void;
 
   auto SetForceColor(bool force) -> void;
-  auto UseColour() const noexcept -> bool;
+  auto UseColor() const noexcept -> bool;
   auto GetEncoding() const noexcept -> Encoding { return encoding_; }
   auto SetForceEncoding(Encoding encoding) noexcept -> void;
 
@@ -133,7 +133,7 @@ private:
   std::atomic<std::int32_t> detail_level_{1};
   mutable std::mutex mtx_;
   std::vector<std::unique_ptr<LogSink>> sinks_;
-  std::optional<bool> force_colour_;
+  std::optional<bool> force_color_;
   Encoding encoding_{Encoding::Ascii};
 };
 } // namespace ggems::core

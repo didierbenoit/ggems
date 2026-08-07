@@ -23,7 +23,7 @@ def main() -> None:
     try:
         opencl = ggems.opencl.GGEMSOpenCL()
         opencl.select_devices(["amd"])
-        opencl.initialise()
+        opencl.initialize()
 
         random = ggems.rndm.GGEMSRandom().set_engine("philox").set_seed(120_015)
 
@@ -42,7 +42,7 @@ def main() -> None:
             .set_particle("gamma")
             # Source placed 100 cm before the origin on global -Z.
             .set_position(0.0, 0.0, -SOURCE_DISTANCE_CM, "cm")
-            # The cone central axis points towards the origin along global +Z.
+            # The cone central axis points toward the origin along global +Z.
             .set_direction(0.0, 0.0, 1.0)
             .set_emission_point()
             # Circular cone: theta in [0, 15 deg], complete azimuth.
@@ -65,13 +65,13 @@ def main() -> None:
         application = ggems.gui.GGEMSGuiApplication(
             "120 kVp polyenergetic cone-beam", 1600, 900
         )
-        application.initialise()
+        application.initialize()
 
         failures: list[BaseException] = []
 
         def simulate() -> None:
             try:
-                simulation.initialise()
+                simulation.initialize()
                 simulation.run()
                 application.submit_last_run_source_snapshot(simulation)
                 application.submit_particle_traces_from_observer(observer)

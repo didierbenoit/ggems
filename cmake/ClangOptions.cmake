@@ -97,4 +97,4 @@ message(
   STATUS "Clang frontend          : ${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}")
 message(STATUS "Warnings as errors      : ${GGEMS_WARNINGS_AS_ERRORS}")
 message(
-  STATUS "Optimisation policy     : managed by CMake Debug/Release profiles")
+  STATUS "Optimization policy     : managed by CMake Debug/Release profiles")

@@ -30,8 +30,8 @@ public:
   auto operator=(GGEMSVulkanSceneRenderer &&)
       -> GGEMSVulkanSceneRenderer & = delete;
 
-  auto Initialise(vk::raii::PhysicalDevice const &physical_device,
-                  vk::raii::Device const &device, vk::Format colour_format)
+  auto Initialize(vk::raii::PhysicalDevice const &physical_device,
+                  vk::raii::Device const &device, vk::Format color_format)
       -> void;
 
   auto Shutdown() noexcept -> void;
@@ -39,11 +39,11 @@ public:
   auto SetViewportExtent(vk::Extent2D const &extent) -> void;
   auto RecreateRenderTargetsIfNeeded() -> void;
 
-  [[nodiscard]] auto IsInitialised() const noexcept -> bool;
+  [[nodiscard]] auto IsInitialized() const noexcept -> bool;
   [[nodiscard]] auto RequiresResize() const noexcept -> bool;
   [[nodiscard]] auto GetViewportExtent() const noexcept -> vk::Extent2D const &;
-  [[nodiscard]] auto GetColourFormat() const noexcept -> vk::Format;
-  [[nodiscard]] auto GetColourImageView() const noexcept -> vk::ImageView;
+  [[nodiscard]] auto GetColorFormat() const noexcept -> vk::Format;
+  [[nodiscard]] auto GetColorImageView() const noexcept -> vk::ImageView;
   [[nodiscard]] auto GetSampler() const noexcept -> vk::Sampler;
 
   [[nodiscard]] auto GetTextureID() const noexcept -> ImTextureID;
@@ -67,7 +67,7 @@ public:
   auto ResetCamera() noexcept -> void;
 
 private:
-  auto CreateColourTarget() -> void;
+  auto CreateColorTarget() -> void;
   auto CleanupRenderTargets() noexcept -> void;
 
   [[nodiscard]] auto FindMemoryType(std::uint32_t type_filter,
@@ -106,11 +106,11 @@ private:
 
   vk::raii::Sampler sampler_{nullptr};
 
-  vk::Format colour_format_{vk::Format::eUndefined};
-  vk::raii::Image colour_image_{nullptr};
-  vk::raii::DeviceMemory colour_memory_{nullptr};
-  vk::raii::ImageView colour_image_view_{nullptr};
-  vk::ImageLayout colour_image_layout_{vk::ImageLayout::eUndefined};
+  vk::Format color_format_{vk::Format::eUndefined};
+  vk::raii::Image color_image_{nullptr};
+  vk::raii::DeviceMemory color_memory_{nullptr};
+  vk::raii::ImageView color_image_view_{nullptr};
+  vk::ImageLayout color_image_layout_{vk::ImageLayout::eUndefined};
 
   vk::Format depth_format_{vk::Format::eD32Sfloat};
   vk::raii::Image depth_image_{nullptr};
@@ -118,7 +118,7 @@ private:
   vk::raii::ImageView depth_image_view_{nullptr};
   vk::ImageLayout depth_image_layout_{vk::ImageLayout::eUndefined};
 
-  bool initialised_{false};
+  bool initialized_{false};
   bool requires_resize_{false};
 
   VkDescriptorSet imgui_descriptor_set_{VK_NULL_HANDLE};

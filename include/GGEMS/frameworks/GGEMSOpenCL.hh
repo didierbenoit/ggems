@@ -43,16 +43,16 @@ class GGEMSOpenCLDevice;
  * \class GGEMSOpenCL
  * \brief Singleton managing the OpenCL runtime used by GGEMS.
  *
- * This class initialises OpenCL platforms and devices, creates contexts,
+ * This class initializes OpenCL platforms and devices, creates contexts,
  * manages kernel programs, and exposes runtime inspection utilities.
- * It centralises all low-level OpenCL interactions required throughout GGEMS.
+ * It centralizes all low-level OpenCL interactions required throughout GGEMS.
  */
 class GGEMSOpenCL {
 private:
   /*!
    * \brief Construct the singleton instance.
    *
-   * The constructor initialises OpenCL platforms/devices and configures
+   * The constructor initializes OpenCL platforms/devices and configures
    * the runtime environment. It should never be invoked directly and is
    * only used internally by the GetInstance() method.
    */
@@ -101,7 +101,7 @@ public:
    * \brief Destroy the OpenCL runtime.
    *
    * Releases internal resources but intentionally preserves allocated
-   * memory to ensure stable shutdown behaviour.
+   * memory to ensure stable shutdown behavior.
    */
   ~GGEMSOpenCL();
 
@@ -158,7 +158,7 @@ public:
    *
    * Errors are fatal and terminate the program.
    */
-  void Initialise();
+  void Initialize();
 
   /*!
    * \brief Access the list of OpenCL contexts.

@@ -49,7 +49,7 @@ protected:
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
     if (opencl.GetContext().empty()) {
       opencl.SelectDevices({"gpu"});
-      opencl.Initialise();
+      opencl.Initialize();
     }
     ASSERT_FALSE(opencl.GetContext().empty());
   }
@@ -102,7 +102,7 @@ TEST_F(GGEMSActivitySourceRandomOrderTest,
     Random random{};
     random.SetEngine(engine).SetSeed(77'777ULL);
     std::vector<std::byte> initial_state(random.GetStateSize());
-    random.InitialiseStates(0ULL, std::span<std::byte>{initial_state});
+    random.InitializeStates(0ULL, std::span<std::byte>{initial_state});
     std::vector<std::byte> sample_state = initial_state;
     std::vector<std::byte> reference_state = initial_state;
 

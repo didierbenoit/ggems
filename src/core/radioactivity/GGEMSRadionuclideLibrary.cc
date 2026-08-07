@@ -10,6 +10,7 @@
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideLibrary.hh"
+#include "GGEMS/core/radioactivity/detail/GGEMSRadionuclideLookupPolicy.hh"
 
 namespace ggems::core::radioactivity {
 
@@ -19,8 +20,7 @@ namespace ggems::core::radioactivity {
 [[nodiscard]] auto
 GGEMSRadionuclideLibrary::Add(GGEMSRadionuclideDefinition definition)
     -> DefinitionPointer {
-  auto const definition_keys = definition.GetLookupKeys();
-  std::vector<std::string> keys{definition_keys.begin(), definition_keys.end()};
+  std::vector<std::string> keys = definition.BuildLookupKeys();
 
   for (std::string const &key : keys) {
     GGEMS_CHECK_RECOVERABLE(
@@ -60,7 +60,7 @@ GGEMSRadionuclideLibrary::Add(GGEMSRadionuclideDefinition definition)
 [[nodiscard]] auto GGEMSRadionuclideLibrary::Find(std::string_view name) const
     -> DefinitionPointer {
   auto const iterator =
-      lookup_.find(GGEMSRadionuclideDefinition::NormalizeLookupName(name));
+      lookup_.find(detail::NormalizeRadionuclideLookupName(name));
 
   if (iterator == lookup_.end()) {
     return {};

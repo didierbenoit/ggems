@@ -7,7 +7,7 @@
 
 namespace ggems::ui::detail {
 struct GGEMSVulkanDeviceStatus {
-  bool initialised{false};
+  bool initialized{false};
   std::uint32_t enumeration_index{0U};
   std::string name{};
   std::string type{};
@@ -23,7 +23,7 @@ struct GGEMSComputeDeviceStatus {
 };
 
 struct GGEMSComputeStatus {
-  bool initialised{false};
+  bool initialized{false};
   std::vector<GGEMSComputeDeviceStatus> devices{};
 };
 

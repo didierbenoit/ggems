@@ -18,7 +18,7 @@
 
 /*!
  * \file XXXX
- * \brief Base exception class and specialised GGEMS exception categories.
+ * \brief Base exception class and specialized GGEMS exception categories.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  * \version 2.0

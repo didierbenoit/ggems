@@ -34,15 +34,6 @@ namespace {
 
 using GGEMSSourcePtr = std::shared_ptr<ggems::core::sources::GGEMSSource>;
 
-template <typename T>
-concept HasEnergyTableReservation =
-    requires(T value) { value.ReserveEnergyTableCapacity(std::size_t{1U}); };
-
-static_assert(!HasEnergyTableReservation<ggems::core::sources::GGEMSSource>);
-
-// =============================================================================
-// =============================================================================
-
 [[nodiscard]] auto MakeSource(std::uint64_t primary_count) -> GGEMSSourcePtr {
   auto source = std::make_shared<ggems::core::sources::GGEMSSource>();
   source->SetPrimaryCount(primary_count);
@@ -409,7 +400,7 @@ TEST(GGEMSSourceRunSnapshot, OwnsIndependentSourceState) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSSourceRunSnapshot, RepresentsDisabledMonoSource) {
+TEST(GGEMSSourceRunSnapshot, RepresentsZeroPrimaryMonoSource) {
   ggems::core::sources::GGEMSSource source{};
   source.SetPrimaryCount(0ULL);
 
@@ -537,14 +528,15 @@ TEST(GGEMSSourceRunSnapshot, PreservesZeroPrimarySourceSlots) {
 
 TEST(GGEMSSourceRunSnapshot,
      InjectsOneWindowIntoEveryCopiedRecordWithoutMutatingSources) {
-  auto active = MakeSource(3ULL);
-  auto empty = MakeSource(0ULL);
-  active->SetPositionPicoMeter(1LL, 2LL, 3LL);
-  empty->SetPositionPicoMeter(4LL, 5LL, 6LL);
-  std::vector<GGEMSSourcePtr> sources{active, empty, active};
+  auto positive_count_source = MakeSource(3ULL);
+  auto zero_primary_source = MakeSource(0ULL);
+  positive_count_source->SetPositionPicoMeter(1LL, 2LL, 3LL);
+  zero_primary_source->SetPositionPicoMeter(4LL, 5LL, 6LL);
+  std::vector<GGEMSSourcePtr> sources{
+      positive_count_source, zero_primary_source, positive_count_source};
 
-  auto const active_before = active->BuildRecord();
-  auto const empty_before = empty->BuildRecord();
+  auto const positive_count_before = positive_count_source->BuildRecord();
+  auto const zero_primary_before = zero_primary_source->BuildRecord();
   constexpr ggems::core::GGEMSTimeWindow k_window{.start_ps = 100ULL,
                                                   .stop_ps = 125ULL};
 
@@ -563,10 +555,12 @@ TEST(GGEMSSourceRunSnapshot,
   ExpectSourceRange(snapshot.GetRanges()[2U], 3ULL, 3ULL);
   EXPECT_EQ(snapshot.GetTotalPrimaryCount(), 6ULL);
 
-  ExpectSourceRecordsEqual(active->BuildRecord(), active_before);
-  ExpectSourceRecordsEqual(empty->BuildRecord(), empty_before);
-  EXPECT_EQ(active->BuildRecord().time_start_ps, 0ULL);
-  EXPECT_EQ(active->BuildRecord().time_stop_ps, 0ULL);
+  ExpectSourceRecordsEqual(positive_count_source->BuildRecord(),
+                           positive_count_before);
+  ExpectSourceRecordsEqual(zero_primary_source->BuildRecord(),
+                           zero_primary_before);
+  EXPECT_EQ(positive_count_source->BuildRecord().time_start_ps, 0ULL);
+  EXPECT_EQ(positive_count_source->BuildRecord().time_stop_ps, 0ULL);
 
   EXPECT_THROW(static_cast<void>(ggems::core::sources::BuildSourceRunSnapshot(
                    sources, {.start_ps = 2ULL, .stop_ps = 1ULL})),
@@ -986,18 +980,18 @@ TEST(GGEMSSourceRunSnapshot,
 // =============================================================================
 
 TEST(GGEMSSourceRunSnapshot, PreservesZeroPrimaryAndDuplicateSlotsTogether) {
-  auto active_source = MakeSource(3ULL);
-  active_source->SetEnergyMilliElectronVolt(123'000'000ULL)
+  auto positive_count_source = MakeSource(3ULL);
+  positive_count_source->SetEnergyMilliElectronVolt(123'000'000ULL)
       .SetPositionPicoMeter(11LL, 22LL, 33LL)
       .SetDirection(0.0F, 0.0F, 1.0F);
 
-  auto disabled_source = MakeSource(0ULL);
-  disabled_source->SetEnergyMilliElectronVolt(456'000'000ULL)
+  auto zero_primary_source = MakeSource(0ULL);
+  zero_primary_source->SetEnergyMilliElectronVolt(456'000'000ULL)
       .SetPositionPicoMeter(-11LL, -22LL, -33LL)
       .SetDirection(0.0F, 1.0F, 0.0F);
 
-  std::vector<GGEMSSourcePtr> sources{active_source, disabled_source,
-                                      active_source};
+  std::vector<GGEMSSourcePtr> sources{
+      positive_count_source, zero_primary_source, positive_count_source};
 
   auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(sources);
 
@@ -1010,11 +1004,11 @@ TEST(GGEMSSourceRunSnapshot, PreservesZeroPrimaryAndDuplicateSlotsTogether) {
   EXPECT_EQ(snapshot.GetTotalPrimaryCount(), 6ULL);
 
   ExpectSourceRecordsEqual(snapshot.GetRecords()[0U],
-                           active_source->BuildRecord());
+                           positive_count_source->BuildRecord());
   ExpectSourceRecordsEqual(snapshot.GetRecords()[1U],
-                           disabled_source->BuildRecord());
+                           zero_primary_source->BuildRecord());
   ExpectSourceRecordsEqual(snapshot.GetRecords()[2U],
-                           active_source->BuildRecord());
+                           positive_count_source->BuildRecord());
   EXPECT_NE(&snapshot.GetRecords()[0U], &snapshot.GetRecords()[2U]);
 }
 

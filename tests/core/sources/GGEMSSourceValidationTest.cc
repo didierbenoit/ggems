@@ -46,16 +46,16 @@ TEST(GGEMSSourceValidation, RejectsUnknownEnumsAndInvalidFrame) {
 // =============================================================================
 
 TEST(GGEMSSourceValidation, ChecksExactSignedEnvelopeDistances) {
-  using ggems::core::sources::HasSignedPicoMetreEnvelope;
+  using ggems::core::sources::HasSignedPicoMeterEnvelope;
 
-  EXPECT_TRUE(HasSignedPicoMetreEnvelope(0LL, 0ULL));
-  EXPECT_TRUE(HasSignedPicoMetreEnvelope(
+  EXPECT_TRUE(HasSignedPicoMeterEnvelope(0LL, 0ULL));
+  EXPECT_TRUE(HasSignedPicoMeterEnvelope(
       std::numeric_limits<std::int64_t>::max(), 0ULL));
-  EXPECT_TRUE(HasSignedPicoMetreEnvelope(
+  EXPECT_TRUE(HasSignedPicoMeterEnvelope(
       std::numeric_limits<std::int64_t>::min(), 0ULL));
-  EXPECT_FALSE(HasSignedPicoMetreEnvelope(
+  EXPECT_FALSE(HasSignedPicoMeterEnvelope(
       std::numeric_limits<std::int64_t>::max(), 1ULL));
-  EXPECT_FALSE(HasSignedPicoMetreEnvelope(
+  EXPECT_FALSE(HasSignedPicoMeterEnvelope(
       std::numeric_limits<std::int64_t>::min(), 1ULL));
 }
 

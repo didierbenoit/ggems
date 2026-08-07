@@ -165,7 +165,7 @@ protected:
 
     if (opencl.GetContext().empty()) {
       opencl.SelectDevices({"gpu"});
-      opencl.Initialise();
+      opencl.Initialize();
     }
 
     ASSERT_FALSE(opencl.GetContext().empty());
@@ -326,10 +326,10 @@ TEST_F(GGEMSSourceSamplingTransportTest,
       EXPECT_LE(std::abs(local_x), (0.5L * geometry_size_x_pm) + 2.0L);
       EXPECT_LE(std::abs(local_y), (0.5L * geometry_size_y_pm) + 2.0L);
     } else {
-      long double const normalised_x = 2.0L * local_x / geometry_size_x_pm;
-      long double const normalised_y = 2.0L * local_y / geometry_size_y_pm;
+      long double const normalized_x = 2.0L * local_x / geometry_size_x_pm;
+      long double const normalized_y = 2.0L * local_y / geometry_size_y_pm;
 
-      EXPECT_LE((normalised_x * normalised_x) + (normalised_y * normalised_y),
+      EXPECT_LE((normalized_x * normalized_x) + (normalized_y * normalized_y),
                 1.00001L);
     }
 

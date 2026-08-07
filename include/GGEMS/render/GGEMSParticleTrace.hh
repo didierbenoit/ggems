@@ -44,7 +44,7 @@ struct GGEMSParticleTraceSegment {
 
 struct GGEMSParticleTraceVertex {
   std::array<float, 3U> position{};
-  std::array<float, 4U> colour{};
+  std::array<float, 4U> color{};
 };
 
 struct GGEMSParticleTraceDrawRange {
@@ -77,7 +77,7 @@ private:
   std::vector<std::uint8_t> source_visibility_;
 };
 
-[[nodiscard]] auto ToParticleTracePointMetre(
+[[nodiscard]] auto ToParticleTracePointMeter(
     core::observer::GGEMSObserverRecord const &record) noexcept
     -> GGEMSParticleTracePoint;
 

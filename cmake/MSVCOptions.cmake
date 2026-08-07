@@ -50,4 +50,4 @@ message(STATUS "MSVC compiler version   : ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "MSVC runtime            : dynamic (/MDd Debug, /MD Release)")
 message(STATUS "Warnings as errors      : ${GGEMS_WARNINGS_AS_ERRORS}")
 message(
-  STATUS "Optimisation policy     : managed by CMake Debug/Release profiles")
+  STATUS "Optimization policy     : managed by CMake Debug/Release profiles")

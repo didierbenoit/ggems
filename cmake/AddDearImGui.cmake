@@ -14,7 +14,7 @@ function(add_dear_imgui_target target_name)
     message(
       FATAL_ERROR
         "Dear ImGui was not found in '${GGEMS_IMGUI_SOURCE_DIR}'.\n"
-        "Initialise the external dependency with:\n"
+        "Initialize the external dependency with:\n"
         "  git submodule update --init --recursive")
   endif()
 

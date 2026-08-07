@@ -86,7 +86,7 @@ public:
   }
 
 private:
-  void InitialiseRandomStatesInSVM();
+  void InitializeRandomStatesInSVM();
   void ResetCountersInSVM();
   void ClearWorkerFinalStatesInSVM();
   void ResetObserverInSVM();

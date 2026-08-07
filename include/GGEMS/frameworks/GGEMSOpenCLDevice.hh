@@ -801,7 +801,7 @@ public:
   [[nodiscard]] std::size_t GetPrintfBufferSize() const;
 
   /*!
-   * \brief Indicates whether interop synchronisation with the host is
+   * \brief Indicates whether interop synchronization with the host is
    * preferred.
    * \return CL_TRUE if preferred.
    */
@@ -885,7 +885,7 @@ private:
   /*!
    * \brief Prints preferred and native vector widths for all scalar types.
    */
-  void PrintVectorisation() const;
+  void PrintVectorization() const;
 
   /*!
    * \brief Prints floating-point capability information (FP16, FP32, FP64).

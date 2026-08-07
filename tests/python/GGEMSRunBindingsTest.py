@@ -88,7 +88,7 @@ class GGEMSRunBindingsTest(unittest.TestCase):
                 with self.assertRaises(RuntimeError):
                     simulation.set_time(start, stop, step, "ps")
 
-    def test_configured_schedule_iterates_and_resets_after_initialise(self) -> None:
+    def test_configured_schedule_iterates_and_resets_after_initialize(self) -> None:
         opencl = ggems.opencl.GGEMSOpenCL()
         simulation = None
         random = None
@@ -96,7 +96,7 @@ class GGEMSRunBindingsTest(unittest.TestCase):
 
         try:
             opencl.select_devices(["gpu"])
-            opencl.initialise()
+            opencl.initialize()
 
             random = ggems.rndm.GGEMSRandom()
             random.set_engine("philox")
@@ -112,7 +112,7 @@ class GGEMSRunBindingsTest(unittest.TestCase):
             simulation.set_source(source)
             simulation.set_worker_count(64)
             simulation.set_time(0.0, 3.0, 2.0, "ps")
-            simulation.initialise()
+            simulation.initialize()
 
             with self.assertRaises(RuntimeError):
                 simulation.set_time(0.0, 4.0, 1.0, "ps")

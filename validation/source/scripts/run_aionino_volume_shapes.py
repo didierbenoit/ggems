@@ -21,7 +21,7 @@ def main() -> None:
     try:
         opencl = ggems.opencl.GGEMSOpenCL()
         opencl.select_devices(["gpu"])
-        opencl.initialise()
+        opencl.initialize()
 
         random = ggems.rndm.GGEMSRandom().set_engine("philox").set_seed(56_789)
         observer = (
@@ -45,13 +45,13 @@ def main() -> None:
         application = ggems.gui.GGEMSGuiApplication(
             "Aionino volume emission shapes", 1600, 900
         )
-        application.initialise()
+        application.initialize()
 
         failures: list[BaseException] = []
 
         def simulate() -> None:
             try:
-                simulation.initialise()
+                simulation.initialize()
                 simulation.run()
                 application.submit_last_run_source_snapshot(simulation)
                 application.submit_particle_traces_from_observer(observer)

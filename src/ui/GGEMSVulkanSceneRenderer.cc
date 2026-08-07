@@ -18,7 +18,7 @@
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
-#include "GGEMS/render/GGEMSColourNames.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 
@@ -36,28 +36,28 @@ namespace ggems::ui {
 // =============================================================================
 // =============================================================================
 
-auto GGEMSVulkanSceneRenderer::Initialise(
+auto GGEMSVulkanSceneRenderer::Initialize(
     vk::raii::PhysicalDevice const &physical_device,
-    vk::raii::Device const &device, vk::Format colour_format) -> void {
+    vk::raii::Device const &device, vk::Format color_format) -> void {
   physical_device_ = &physical_device;
   device_ = &device;
-  colour_format_ = colour_format;
+  color_format_ = color_format;
 
   CreateAxesShaderModules();
   CreateTraceShaderModules();
   CreateAxesPipeline();
   CreateTracePipeline();
 
-  initialised_ = true;
+  initialized_ = true;
   requires_resize_ = true;
 
-  GGEMS_INFOEX("Vulkan", 1, "Vulkan scene renderer initialised.");
+  GGEMS_INFOEX("Vulkan", 1, "Vulkan scene renderer initialized.");
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSVulkanSceneRenderer::Shutdown() noexcept -> void {
-  if (!initialised_) {
+  if (!initialized_) {
     return;
   }
 
@@ -68,8 +68,8 @@ auto GGEMSVulkanSceneRenderer::Shutdown() noexcept -> void {
 
   physical_device_ = nullptr;
   device_ = nullptr;
-  colour_format_ = vk::Format::eUndefined;
-  initialised_ = false;
+  color_format_ = vk::Format::eUndefined;
+  initialized_ = false;
   requires_resize_ = false;
   viewport_extent_ = vk::Extent2D{};
 
@@ -99,7 +99,7 @@ auto GGEMSVulkanSceneRenderer::SetViewportExtent(vk::Extent2D const &extent)
 // -----------------------------------------------------------------------------
 
 auto GGEMSVulkanSceneRenderer::RecreateRenderTargetsIfNeeded() -> void {
-  if (!initialised_ || !requires_resize_) {
+  if (!initialized_ || !requires_resize_) {
     return;
   }
 
@@ -114,7 +114,7 @@ auto GGEMSVulkanSceneRenderer::RecreateRenderTargetsIfNeeded() -> void {
 
   device_->waitIdle();
   CleanupRenderTargets();
-  CreateColourTarget();
+  CreateColorTarget();
   CreateDepthTarget();
 
   requires_resize_ = false;
@@ -122,8 +122,8 @@ auto GGEMSVulkanSceneRenderer::RecreateRenderTargetsIfNeeded() -> void {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanSceneRenderer::IsInitialised() const noexcept -> bool {
-  return initialised_;
+auto GGEMSVulkanSceneRenderer::IsInitialized() const noexcept -> bool {
+  return initialized_;
 }
 
 // -----------------------------------------------------------------------------
@@ -141,15 +141,15 @@ auto GGEMSVulkanSceneRenderer::GetViewportExtent() const noexcept
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanSceneRenderer::GetColourFormat() const noexcept -> vk::Format {
-  return colour_format_;
+auto GGEMSVulkanSceneRenderer::GetColorFormat() const noexcept -> vk::Format {
+  return color_format_;
 }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanSceneRenderer::GetColourImageView() const noexcept
+auto GGEMSVulkanSceneRenderer::GetColorImageView() const noexcept
     -> vk::ImageView {
-  return *colour_image_view_;
+  return *color_image_view_;
 }
 
 // -----------------------------------------------------------------------------
@@ -176,14 +176,14 @@ auto GGEMSVulkanSceneRenderer::IsDepthFormatSupported(vk::Format format) const
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanSceneRenderer::CreateColourTarget() -> void {
+auto GGEMSVulkanSceneRenderer::CreateColorTarget() -> void {
   GGEMS_CHECK_INTERNAL(device_ != nullptr,
                        "A Vulkan device is required before creating a scene "
-                       "colour target.");
+                       "color target.");
 
   vk::ImageCreateInfo image_create_info{
       .imageType = vk::ImageType::e2D,
-      .format = colour_format_,
+      .format = color_format_,
       .extent = vk::Extent3D{.width = viewport_extent_.width,
                              .height = viewport_extent_.height,
                              .depth = 1U},
@@ -197,10 +197,10 @@ auto GGEMSVulkanSceneRenderer::CreateColourTarget() -> void {
       .sharingMode = vk::SharingMode::eExclusive,
       .initialLayout = vk::ImageLayout::eUndefined};
 
-  colour_image_ = vk::raii::Image{*device_, image_create_info};
+  color_image_ = vk::raii::Image{*device_, image_create_info};
 
   vk::MemoryRequirements memory_requirements =
-      colour_image_.getMemoryRequirements();
+      color_image_.getMemoryRequirements();
 
   vk::MemoryAllocateInfo memory_allocate_info{
       .allocationSize = memory_requirements.size,
@@ -208,13 +208,13 @@ auto GGEMSVulkanSceneRenderer::CreateColourTarget() -> void {
           FindMemoryType(memory_requirements.memoryTypeBits,
                          vk::MemoryPropertyFlagBits::eDeviceLocal)};
 
-  colour_memory_ = vk::raii::DeviceMemory{*device_, memory_allocate_info};
-  colour_image_.bindMemory(*colour_memory_, 0U);
+  color_memory_ = vk::raii::DeviceMemory{*device_, memory_allocate_info};
+  color_image_.bindMemory(*color_memory_, 0U);
 
   vk::ImageViewCreateInfo image_view_create_info{
-      .image = *colour_image_,
+      .image = *color_image_,
       .viewType = vk::ImageViewType::e2D,
-      .format = colour_format_,
+      .format = color_format_,
       .subresourceRange = vk::ImageSubresourceRange{
           .aspectMask = vk::ImageAspectFlagBits::eColor,
           .baseMipLevel = 0U,
@@ -222,7 +222,7 @@ auto GGEMSVulkanSceneRenderer::CreateColourTarget() -> void {
           .baseArrayLayer = 0U,
           .layerCount = 1U}};
 
-  colour_image_view_ = vk::raii::ImageView{*device_, image_view_create_info};
+  color_image_view_ = vk::raii::ImageView{*device_, image_view_create_info};
 
   vk::SamplerCreateInfo sampler_create_info{
       .magFilter = vk::Filter::eLinear,
@@ -245,15 +245,15 @@ auto GGEMSVulkanSceneRenderer::CreateColourTarget() -> void {
 
   imgui_descriptor_set_ =
       ImGui_ImplVulkan_AddTexture(static_cast<VkSampler>(*sampler_),
-                                  static_cast<VkImageView>(*colour_image_view_),
+                                  static_cast<VkImageView>(*color_image_view_),
                                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-  colour_image_layout_ = vk::ImageLayout::eUndefined;
+  color_image_layout_ = vk::ImageLayout::eUndefined;
 
   GGEMS_INFOEX("Vulkan", 2,
-               "Vulkan scene colour target created: {}x{}, format={}.",
+               "Vulkan scene color target created: {}x{}, format={}.",
                viewport_extent_.width, viewport_extent_.height,
-               vk::to_string(colour_format_));
+               vk::to_string(color_format_));
 }
 
 // -----------------------------------------------------------------------------
@@ -327,10 +327,10 @@ auto GGEMSVulkanSceneRenderer::CleanupRenderTargets() noexcept -> void {
   }
 
   sampler_ = nullptr;
-  colour_image_view_ = nullptr;
-  colour_memory_ = nullptr;
-  colour_image_ = nullptr;
-  colour_image_layout_ = vk::ImageLayout::eUndefined;
+  color_image_view_ = nullptr;
+  color_memory_ = nullptr;
+  color_image_ = nullptr;
+  color_image_layout_ = vk::ImageLayout::eUndefined;
 
   depth_image_view_ = nullptr;
   depth_memory_ = nullptr;
@@ -363,7 +363,7 @@ auto GGEMSVulkanSceneRenderer::FindMemoryType(
 
   GGEMS_CHECK_INTERNAL(false,
                        "No suitable Vulkan memory type was found for the scene "
-                       "renderer colour target.");
+                       "renderer color target.");
 
   return 0U;
 }
@@ -380,11 +380,11 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
     vk::raii::CommandBuffer const &command_buffer,
     ggems::render::GGEMSParticleTraceVisibility const &visibility) -> void {
   if (imgui_descriptor_set_ == VK_NULL_HANDLE ||
-      *colour_image_ == vk::Image{} || *colour_image_view_ == vk::ImageView{}) {
+      *color_image_ == vk::Image{} || *color_image_view_ == vk::ImageView{}) {
     return;
   }
 
-  vk::ImageSubresourceRange colour_range{.aspectMask =
+  vk::ImageSubresourceRange color_range{.aspectMask =
                                              vk::ImageAspectFlagBits::eColor,
                                          .baseMipLevel = 0U,
                                          .levelCount = 1U,
@@ -392,37 +392,37 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
                                          .layerCount = 1U};
 
   vk::PipelineStageFlags2 src_stage =
-      colour_image_layout_ == vk::ImageLayout::eUndefined
+      color_image_layout_ == vk::ImageLayout::eUndefined
           ? vk::PipelineStageFlagBits2::eNone
           : vk::PipelineStageFlagBits2::eFragmentShader;
 
   vk::AccessFlags2 src_access =
-      colour_image_layout_ == vk::ImageLayout::eUndefined
+      color_image_layout_ == vk::ImageLayout::eUndefined
           ? vk::AccessFlagBits2::eNone
           : vk::AccessFlagBits2::eShaderSampledRead;
 
-  vk::ImageMemoryBarrier2 to_colour_attachment{
+  vk::ImageMemoryBarrier2 to_color_attachment{
       .srcStageMask = src_stage,
       .srcAccessMask = src_access,
       .dstStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
       .dstAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite,
-      .oldLayout = colour_image_layout_,
+      .oldLayout = color_image_layout_,
       .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
       .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
       .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-      .image = *colour_image_,
-      .subresourceRange = colour_range};
+      .image = *color_image_,
+      .subresourceRange = color_range};
 
-  vk::DependencyInfo to_colour_attachment_dependency{
+  vk::DependencyInfo to_color_attachment_dependency{
       .imageMemoryBarrierCount = 1U,
-      .pImageMemoryBarriers = &to_colour_attachment};
+      .pImageMemoryBarriers = &to_color_attachment};
 
-  command_buffer.pipelineBarrier2(to_colour_attachment_dependency);
+  command_buffer.pipelineBarrier2(to_color_attachment_dependency);
 
   vk::ClearValue clear_value{detail::ToVulkanClearColor(render::BLUE_Abyss)};
 
-  vk::RenderingAttachmentInfo colour_attachment{
-      .imageView = *colour_image_view_,
+  vk::RenderingAttachmentInfo color_attachment{
+      .imageView = *color_image_view_,
       .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
       .loadOp = vk::AttachmentLoadOp::eClear,
       .storeOp = vk::AttachmentStoreOp::eStore,
@@ -483,7 +483,7 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
                                .extent = viewport_extent_},
       .layerCount = 1U,
       .colorAttachmentCount = 1U,
-      .pColorAttachments = &colour_attachment,
+      .pColorAttachments = &color_attachment,
       .pDepthAttachment = &depth_attachment};
 
   command_buffer.beginRendering(rendering_info);
@@ -505,15 +505,15 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
       .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
       .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
       .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-      .image = *colour_image_,
-      .subresourceRange = colour_range};
+      .image = *color_image_,
+      .subresourceRange = color_range};
 
   vk::DependencyInfo const to_shader_read_dependency{
       .imageMemoryBarrierCount = 1U, .pImageMemoryBarriers = &to_shader_read};
 
   command_buffer.pipelineBarrier2(to_shader_read_dependency);
 
-  colour_image_layout_ = vk::ImageLayout::eShaderReadOnlyOptimal;
+  color_image_layout_ = vk::ImageLayout::eShaderReadOnlyOptimal;
 }
 
 // -----------------------------------------------------------------------------
@@ -645,16 +645,16 @@ auto GGEMSVulkanSceneRenderer::CreateAxesPipeline() -> void {
       .rasterizationSamples = vk::SampleCountFlagBits::e1,
       .sampleShadingEnable = vk::False};
 
-  vk::PipelineColorBlendAttachmentState colour_blend_attachment{
+  vk::PipelineColorBlendAttachmentState color_blend_attachment{
       .blendEnable = vk::False,
       .colorWriteMask =
           vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
           vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA};
 
-  vk::PipelineColorBlendStateCreateInfo colour_blend_state{
+  vk::PipelineColorBlendStateCreateInfo color_blend_state{
       .logicOpEnable = vk::False,
       .attachmentCount = 1U,
-      .pAttachments = &colour_blend_attachment};
+      .pAttachments = &color_blend_attachment};
 
   std::array<vk::DynamicState, 2U> dynamic_states{vk::DynamicState::eViewport,
                                                   vk::DynamicState::eScissor};
@@ -686,7 +686,7 @@ auto GGEMSVulkanSceneRenderer::CreateAxesPipeline() -> void {
 
   vk::PipelineRenderingCreateInfo rendering_create_info{
       .colorAttachmentCount = 1U,
-      .pColorAttachmentFormats = &colour_format_,
+      .pColorAttachmentFormats = &color_format_,
       .depthAttachmentFormat = depth_format_};
 
   vk::GraphicsPipelineCreateInfo pipeline_create_info{
@@ -699,7 +699,7 @@ auto GGEMSVulkanSceneRenderer::CreateAxesPipeline() -> void {
       .pRasterizationState = &rasterization_state,
       .pMultisampleState = &multisample_state,
       .pDepthStencilState = &depth_stencil_state,
-      .pColorBlendState = &colour_blend_state,
+      .pColorBlendState = &color_blend_state,
       .pDynamicState = &dynamic_state,
       .layout = *axes_pipeline_layout_,
       .renderPass = nullptr,
@@ -829,7 +829,7 @@ auto GGEMSVulkanSceneRenderer::CreateTracePipeline() -> void {
                .location = 1U,
                .binding = 0U,
                .format = vk::Format::eR32G32B32A32Sfloat,
-               .offset = offsetof(TraceVertex, colour)}}};
+               .offset = offsetof(TraceVertex, color)}}};
 
   vk::PipelineVertexInputStateCreateInfo vertex_input_state{
       .vertexBindingDescriptionCount = 1U,
@@ -858,16 +858,16 @@ auto GGEMSVulkanSceneRenderer::CreateTracePipeline() -> void {
       .rasterizationSamples = vk::SampleCountFlagBits::e1,
       .sampleShadingEnable = vk::False};
 
-  vk::PipelineColorBlendAttachmentState colour_blend_attachment{
+  vk::PipelineColorBlendAttachmentState color_blend_attachment{
       .blendEnable = vk::False,
       .colorWriteMask =
           vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
           vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA};
 
-  vk::PipelineColorBlendStateCreateInfo colour_blend_state{
+  vk::PipelineColorBlendStateCreateInfo color_blend_state{
       .logicOpEnable = vk::False,
       .attachmentCount = 1U,
-      .pAttachments = &colour_blend_attachment};
+      .pAttachments = &color_blend_attachment};
 
   std::array<vk::DynamicState, 2U> dynamic_states{vk::DynamicState::eViewport,
                                                   vk::DynamicState::eScissor};
@@ -899,7 +899,7 @@ auto GGEMSVulkanSceneRenderer::CreateTracePipeline() -> void {
 
   vk::PipelineRenderingCreateInfo rendering_create_info{
       .colorAttachmentCount = 1U,
-      .pColorAttachmentFormats = &colour_format_,
+      .pColorAttachmentFormats = &color_format_,
       .depthAttachmentFormat = depth_format_};
 
   vk::GraphicsPipelineCreateInfo pipeline_create_info{
@@ -912,7 +912,7 @@ auto GGEMSVulkanSceneRenderer::CreateTracePipeline() -> void {
       .pRasterizationState = &rasterization_state,
       .pMultisampleState = &multisample_state,
       .pDepthStencilState = &depth_stencil_state,
-      .pColorBlendState = &colour_blend_state,
+      .pColorBlendState = &color_blend_state,
       .pDynamicState = &dynamic_state,
       .layout = *trace_pipeline_layout_,
       .renderPass = nullptr,

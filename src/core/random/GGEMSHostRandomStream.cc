@@ -27,7 +27,7 @@ template <typename State>
 auto InitializeState(GGEMSRandom const &random, std::uint64_t stream_id)
     -> State {
   State state{};
-  random.InitialiseStates(stream_id,
+  random.InitializeStates(stream_id,
                           std::as_writable_bytes(std::span<State>{&state, 1U}));
   return state;
 }

@@ -18,7 +18,7 @@ GGEMS features:
 * Voxelized source
 * Navigation in simple box volume, voxelized volume or meshed volume
 * Flat or curved detector for CBCT/CT application
-* Visualisation using OpenGL
+* Visualization using OpenGL
 
 ## Requirements
 

@@ -8,7 +8,7 @@
 
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
-#include "GGEMS/render/GGEMSColourNames.hh"
+#include "GGEMS/render/GGEMSColorNames.hh"
 
 #include "support/GGEMSScopedLoggerEncoding.hh"
 
@@ -76,7 +76,7 @@ auto ExpectNominalBanner(ggems::core::Encoding encoding,
 
     auto const &segment = lines[line_index].segments.front();
     ASSERT_EQ(untruncated_lines[line_index].segments.size(), 1U);
-    EXPECT_EQ(segment.colour, ggems::render::GREEN_Acid);
+    EXPECT_EQ(segment.color, ggems::render::GREEN_Acid);
     EXPECT_EQ(segment.text, expected_lines[line_index]);
     EXPECT_EQ(segment.text,
               untruncated_lines[line_index].segments.front().text);
@@ -108,7 +108,7 @@ TEST(GGEMSBannerTest, HandlesEmptyAndReducedWidths) {
     ASSERT_EQ(lines[line_index].segments.size(), 1U);
 
     auto const &segment = lines[line_index].segments.front();
-    EXPECT_EQ(segment.colour, ggems::render::GREEN_Acid);
+    EXPECT_EQ(segment.color, ggems::render::GREEN_Acid);
     EXPECT_LE(segment.text.size(), static_cast<std::size_t>(k_reduced_width));
     EXPECT_EQ(segment.text, k_ascii_banner[line_index].substr(
                                 0U, static_cast<std::size_t>(k_reduced_width)));

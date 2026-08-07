@@ -10,7 +10,7 @@
 #include "GGEMS/core/observer/GGEMSObserverTypes.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
-#include "GGEMS/render/GGEMSParticleColours.hh"
+#include "GGEMS/render/GGEMSParticleColors.hh"
 
 namespace {
 
@@ -74,16 +74,16 @@ using ggems::core::particles::ToKernelParticleType;
 // =============================================================================
 // =============================================================================
 
-auto ExpectParticleColour(ggems::render::GGEMSParticleTraceVertex const &vertex,
+auto ExpectParticleColor(ggems::render::GGEMSParticleTraceVertex const &vertex,
                           GGEMSParticleType particle_type) -> void {
   ggems::render::RGB const rgb = ggems::render::GetParticleRGB(particle_type);
 
   constexpr float k_inverse_255{1.0F / 255.0F};
 
-  EXPECT_FLOAT_EQ(vertex.colour[0], static_cast<float>(rgb.r) * k_inverse_255);
-  EXPECT_FLOAT_EQ(vertex.colour[1], static_cast<float>(rgb.g) * k_inverse_255);
-  EXPECT_FLOAT_EQ(vertex.colour[2], static_cast<float>(rgb.b) * k_inverse_255);
-  EXPECT_FLOAT_EQ(vertex.colour[3], 1.0F);
+  EXPECT_FLOAT_EQ(vertex.color[0], static_cast<float>(rgb.r) * k_inverse_255);
+  EXPECT_FLOAT_EQ(vertex.color[1], static_cast<float>(rgb.g) * k_inverse_255);
+  EXPECT_FLOAT_EQ(vertex.color[2], static_cast<float>(rgb.b) * k_inverse_255);
+  EXPECT_FLOAT_EQ(vertex.color[3], 1.0F);
 }
 } // namespace
 
@@ -321,11 +321,11 @@ TEST(GGEMSParticleTrace, SegmentsBuildLineVertices) {
   EXPECT_FLOAT_EQ(vertices[1].position[1], 5.0F);
   EXPECT_FLOAT_EQ(vertices[1].position[2], 6.0F);
 
-  EXPECT_GT(vertices[0].colour[1], vertices[0].colour[0]);
-  EXPECT_FLOAT_EQ(vertices[0].colour[3], 1.0F);
-  EXPECT_FLOAT_EQ(vertices[0].colour[0], vertices[1].colour[0]);
-  EXPECT_FLOAT_EQ(vertices[0].colour[1], vertices[1].colour[1]);
-  EXPECT_FLOAT_EQ(vertices[0].colour[2], vertices[1].colour[2]);
+  EXPECT_GT(vertices[0].color[1], vertices[0].color[0]);
+  EXPECT_FLOAT_EQ(vertices[0].color[3], 1.0F);
+  EXPECT_FLOAT_EQ(vertices[0].color[0], vertices[1].color[0]);
+  EXPECT_FLOAT_EQ(vertices[0].color[1], vertices[1].color[1]);
+  EXPECT_FLOAT_EQ(vertices[0].color[2], vertices[1].color[2]);
 }
 
 // =============================================================================
@@ -389,7 +389,7 @@ TEST(GGEMSParticleTrace, DrawRangesAreContiguous) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSParticleTrace, GroupingPreservesParticleColours) {
+TEST(GGEMSParticleTrace, GroupingPreservesParticleColors) {
   std::array<ggems::render::GGEMSParticleTraceSegment, 3U> segments{
       MakeSegment(1U, GGEMSParticleType::Gamma, 1.0F),
       MakeSegment(0U, GGEMSParticleType::Electron, 2.0F),
@@ -399,12 +399,12 @@ TEST(GGEMSParticleTrace, GroupingPreservesParticleColours) {
 
   ASSERT_EQ(draw_data.vertices.size(), 6U);
 
-  ExpectParticleColour(draw_data.vertices[0U], GGEMSParticleType::Electron);
-  ExpectParticleColour(draw_data.vertices[1U], GGEMSParticleType::Electron);
-  ExpectParticleColour(draw_data.vertices[2U], GGEMSParticleType::Gamma);
-  ExpectParticleColour(draw_data.vertices[3U], GGEMSParticleType::Gamma);
-  ExpectParticleColour(draw_data.vertices[4U], GGEMSParticleType::Proton);
-  ExpectParticleColour(draw_data.vertices[5U], GGEMSParticleType::Proton);
+  ExpectParticleColor(draw_data.vertices[0U], GGEMSParticleType::Electron);
+  ExpectParticleColor(draw_data.vertices[1U], GGEMSParticleType::Electron);
+  ExpectParticleColor(draw_data.vertices[2U], GGEMSParticleType::Gamma);
+  ExpectParticleColor(draw_data.vertices[3U], GGEMSParticleType::Gamma);
+  ExpectParticleColor(draw_data.vertices[4U], GGEMSParticleType::Proton);
+  ExpectParticleColor(draw_data.vertices[5U], GGEMSParticleType::Proton);
 }
 
 // =============================================================================
@@ -556,9 +556,9 @@ TEST(GGEMSParticleTrace,
     EXPECT_EQ(draw_data.draw_ranges[index].vertex_count, 2U);
     EXPECT_EQ(visibility.ShouldDraw(static_cast<std::uint32_t>(index)),
               index != 3U);
-    ExpectParticleColour(draw_data.vertices[index * 2U],
+    ExpectParticleColor(draw_data.vertices[index * 2U],
                          GGEMSParticleType::Aionino);
-    ExpectParticleColour(draw_data.vertices[(index * 2U) + 1U],
+    ExpectParticleColor(draw_data.vertices[(index * 2U) + 1U],
                          GGEMSParticleType::Aionino);
   }
 }

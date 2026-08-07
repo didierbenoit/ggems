@@ -14,7 +14,7 @@ TEST(GGEMSPrimaryStream, ProducesContiguousDisjointFixedCountRanges) {
 
   ggems::core::particles::GGEMSPrimaryStream stream{};
   stream.SetPrimaryCount(k_primary_count);
-  stream.Initialise();
+  stream.Initialize();
 
   auto first = stream.PrepareRun(0ULL);
   auto second = stream.PrepareRun(1ULL);
@@ -47,7 +47,7 @@ TEST(GGEMSPrimaryStream, ProducesContiguousDisjointFixedCountRanges) {
 
 TEST(GGEMSPrimaryStream, ReservesContiguousDisjointVariableCountRanges) {
   ggems::core::particles::GGEMSPrimaryStream stream{};
-  stream.Initialise();
+  stream.Initialize();
 
   auto first = stream.PrepareRun(0ULL, 3ULL);
   auto second = stream.PrepareRun(1ULL, 7ULL);
@@ -82,7 +82,7 @@ TEST(GGEMSPrimaryStream, ReservesContiguousDisjointVariableCountRanges) {
 
 TEST(GGEMSPrimaryStream, KeepsRunLabelsIndependentFromReservedRanges) {
   ggems::core::particles::GGEMSPrimaryStream stream{};
-  stream.Initialise();
+  stream.Initialize();
 
   auto first = stream.PrepareRun(42ULL, 3ULL);
   auto second = stream.PrepareRun(42ULL, 5ULL);
@@ -115,7 +115,7 @@ TEST(GGEMSPrimaryStream, UsesConfiguredPrimaryCountInRunMetadata) {
 
   ggems::core::particles::GGEMSPrimaryStream stream{};
   stream.SetPrimaryCount(k_primary_count);
-  stream.Initialise();
+  stream.Initialize();
 
   auto run_view = stream.PrepareRun(0ULL);
 
@@ -126,12 +126,12 @@ TEST(GGEMSPrimaryStream, UsesConfiguredPrimaryCountInRunMetadata) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSPrimaryStream, RejectsPrimaryCountMutationAfterInitialise) {
+TEST(GGEMSPrimaryStream, RejectsPrimaryCountMutationAfterInitialize) {
   constexpr std::uint64_t k_initial_primary_count{13ULL};
 
   ggems::core::particles::GGEMSPrimaryStream stream{};
   stream.SetPrimaryCount(k_initial_primary_count);
-  stream.Initialise();
+  stream.Initialize();
 
   EXPECT_THROW(stream.SetPrimaryCount(19ULL), ggems::core::GGEMSExceptionBase);
 
@@ -143,7 +143,7 @@ TEST(GGEMSPrimaryStream, RejectsPrimaryCountMutationAfterInitialise) {
 
 TEST(GGEMSPrimaryStream, RejectsZeroReservationWithoutConsumingIndentifiers) {
   ggems::core::particles::GGEMSPrimaryStream stream{};
-  stream.Initialise();
+  stream.Initialize();
 
   EXPECT_THROW(static_cast<void>(stream.PrepareRun(41ULL, 0ULL)),
                ggems::core::GGEMSExceptionBase);
@@ -164,7 +164,7 @@ TEST(GGEMSPrimaryStream,
       std::numeric_limits<std::uint64_t>::max()};
 
   ggems::core::particles::GGEMSPrimaryStream stream{};
-  stream.Initialise();
+  stream.Initialize();
 
   auto first = stream.PrepareRun(0ULL, k_maximum_id);
 
@@ -189,13 +189,13 @@ TEST(GGEMSPrimaryStream,
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSPrimaryStream, RejectsSecondInitialiseWithoutResettingReservations) {
+TEST(GGEMSPrimaryStream, RejectsSecondInitializeWithoutResettingReservations) {
   ggems::core::particles::GGEMSPrimaryStream stream{};
-  stream.Initialise();
+  stream.Initialize();
 
   auto first = stream.PrepareRun(11ULL, 3ULL);
 
-  EXPECT_THROW(stream.Initialise(), ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(stream.Initialize(), ggems::core::GGEMSExceptionBase);
 
   auto second = stream.PrepareRun(12ULL, 2ULL);
 

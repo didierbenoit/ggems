@@ -2,7 +2,7 @@
 OpenGL Visualization
 ********************
 
-In GGEMS, user-defined volumes and sources can be visualised. OpenGL can be enabled through the GGEMS macro. Several colours are already predefined, such as:
+In GGEMS, user-defined volumes and sources can be visualized. OpenGL can be enabled through the GGEMS macro. Several colors are already predefined, such as:
 
   * black
   * blue

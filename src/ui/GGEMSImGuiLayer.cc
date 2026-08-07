@@ -245,11 +245,11 @@ auto GGEMSImGuiLayer::BuildStatusPanel(
   ImGui::Separator();
   ImGui::Indent();
 
-  if (!device_status.renderer.initialised) {
-    ImGui::TextDisabled("Vulkan renderer: not initialised");
-    ImGui::TextDisabled("Vulkan device: not initialised");
+  if (!device_status.renderer.initialized) {
+    ImGui::TextDisabled("Vulkan renderer: not initialized");
+    ImGui::TextDisabled("Vulkan device: not initialized");
   } else {
-    ImGui::TextUnformatted("Vulkan renderer: initialised");
+    ImGui::TextUnformatted("Vulkan renderer: initialized");
     ImGui::Text(
         "Vulkan device: [%u] %s",
         static_cast<unsigned int>(device_status.renderer.enumeration_index),
@@ -269,8 +269,8 @@ auto GGEMSImGuiLayer::BuildStatusPanel(
   ImGui::Separator();
   ImGui::Indent();
 
-  if (!device_status.compute.initialised) {
-    ImGui::TextDisabled("OpenCL devices: not initialised");
+  if (!device_status.compute.initialized) {
+    ImGui::TextDisabled("OpenCL devices: not initialized");
   } else {
     ImGui::Text("OpenCL devices: %zu", device_status.compute.devices.size());
 

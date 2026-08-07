@@ -553,7 +553,7 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
         std::span<std::uint64_t const>{cumulative_ticket_upper});
   }
 
-  InitialiseRandomStatesInSVM();
+  InitializeRandomStatesInSVM();
   ResetCountersInSVM();
   ResetObserverCountersInSVM();
   ggems::ocl::FillSVMFromHost(observer_records_buffer_,
@@ -570,7 +570,7 @@ auto GGEMSTransportWorkload::ValidateRunConfig(
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSTransportWorkload::InitialiseRandomStatesInSVM() -> void {
+auto GGEMSTransportWorkload::InitializeRandomStatesInSVM() -> void {
   std::uint64_t const state_bytes = random_states_buffer_.GetSize().value;
 
   GGEMS_CHECK_INTERNAL(
@@ -582,7 +582,7 @@ auto GGEMSTransportWorkload::InitialiseRandomStatesInSVM() -> void {
 
   random_states_buffer_.Map(CL_MAP_WRITE);
 
-  random_->InitialiseStates(
+  random_->InitializeStates(
       random_stream_offset_,
       std::span<std::byte>{state_storage,
                            static_cast<std::size_t>(state_bytes)});
@@ -668,7 +668,7 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
   WriteObserverConfigToSVM(config.observer_config);
 
   GGEMS_CHECK_INTERNAL(kernel_ != nullptr,
-                       "Transport kernel is not initialised.");
+                       "Transport kernel is not initialized.");
   kernel_->SetArg(6U, static_cast<cl_ulong>(config.projection_history_offset));
   kernel_->SetArg(12U, static_cast<cl_ulong>(config.run_id));
 

@@ -19,7 +19,7 @@ TEST(GGEMSGeometryTypes, DefaultDirectionIsPositiveZ) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSGeometryTypes, PositionStoresSignedPicometreCoordinates) {
+TEST(GGEMSGeometryTypes, PositionStoresSignedPicometerCoordinates) {
   ggems::geometry::Position3PM const position =
       ggems::geometry::MakePositionPM(-10, 20, -30);
 
@@ -61,7 +61,7 @@ TEST(GGEMSGeometryTypes, DifferenceBetweenPositionsIsSignedDisplacement) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSGeometryTypes, DirectionIsNormalisedWhenCreated) {
+TEST(GGEMSGeometryTypes, DirectionIsNormalizedWhenCreated) {
   std::optional<ggems::geometry::Direction3> const direction =
       ggems::geometry::TryMakeDirection3(3.0F, 4.0F, 0.0F);
 
@@ -113,7 +113,7 @@ TEST(GGEMSGeometryTypes, DirectionHandlesLargeFiniteComponents) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSGeometryTypes, DotProductUsesNormalisedDirections) {
+TEST(GGEMSGeometryTypes, DotProductUsesNormalizedDirections) {
   std::optional<ggems::geometry::Direction3> const x_axis =
       ggems::geometry::TryMakeDirection3(1.0F, 0.0F, 0.0F);
 

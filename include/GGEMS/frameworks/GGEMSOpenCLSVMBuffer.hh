@@ -137,7 +137,7 @@ public:
   /*!
    * \brief Maps the SVM memory into the host address space.
    *
-   * For coarse-grain SVM, this requests the runtime to synchronise and
+   * For coarse-grain SVM, this requests the runtime to synchronize and
    * prepare the buffer for host access. Fine-grain system SVM does not
    * require explicit mapping.
    *
@@ -148,7 +148,7 @@ public:
   /*!
    * \brief Unmaps a previously mapped SVM buffer.
    *
-   * On coarse-grain SVM devices, synchronisation back to the device is
+   * On coarse-grain SVM devices, synchronization back to the device is
    * performed. Fine-grain systems ignore this call.
    */
   void Unmap();

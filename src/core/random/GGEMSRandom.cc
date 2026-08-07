@@ -19,20 +19,20 @@
 namespace ggems::core::random {
 namespace {
 
-auto NormaliseEngineName(std::string_view engine_name) -> std::string {
-  std::string normalised;
-  normalised.reserve(engine_name.size());
+auto NormalizeEngineName(std::string_view engine_name) -> std::string {
+  std::string normalized;
+  normalized.reserve(engine_name.size());
 
   for (char character : engine_name) {
     if (character == '_' || character == '-' || character == ' ') {
       continue;
     }
 
-    normalised.push_back(
+    normalized.push_back(
         static_cast<char>(std::tolower(static_cast<unsigned char>(character))));
   }
 
-  return normalised;
+  return normalized;
 }
 
 // =============================================================================
@@ -125,7 +125,7 @@ auto CheckLastStreamId(std::uint64_t first_stream_id, std::size_t state_count)
 // =============================================================================
 
 template <typename State, typename Factory>
-auto InitialiseStateStorage(std::uint64_t first_stream_id,
+auto InitializeStateStorage(std::uint64_t first_stream_id,
                             std::size_t state_count,
                             std::span<std::byte> state_storage,
                             Factory make_state) noexcept -> void {
@@ -161,17 +161,17 @@ auto ToString(GGEMSRandomEngine engine) -> std::string {
 // =============================================================================
 
 auto ParseRandomEngine(std::string_view engine_name) -> GGEMSRandomEngine {
-  std::string normalised = NormaliseEngineName(engine_name);
+  std::string normalized = NormalizeEngineName(engine_name);
 
-  if (normalised == "jkiss" || normalised == "kiss") {
+  if (normalized == "jkiss" || normalized == "kiss") {
     return GGEMSRandomEngine::JKISS;
   }
 
-  if (normalised == "pcg32" || normalised == "pcg") {
+  if (normalized == "pcg32" || normalized == "pcg") {
     return GGEMSRandomEngine::PCG32;
   }
 
-  if (normalised == "philox") {
+  if (normalized == "philox") {
     return GGEMSRandomEngine::Philox;
   }
 
@@ -280,7 +280,7 @@ auto GGEMSRandom::ValidateStateRange(std::uint64_t first_stream_id,
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSRandom::InitialiseStates(std::uint64_t first_stream_id,
+auto GGEMSRandom::InitializeStates(std::uint64_t first_stream_id,
                                    std::span<std::byte> state_storage) const
     -> void {
   std::size_t state_count = CheckedStateCount(GetStateSize(), state_storage);
@@ -291,7 +291,7 @@ auto GGEMSRandom::InitialiseStates(std::uint64_t first_stream_id,
   case GGEMSRandomEngine::JKISS: {
     auto seed = static_cast<std::uint32_t>(seed_);
 
-    InitialiseStateStorage<GGEMSJKissState>(
+    InitializeStateStorage<GGEMSJKissState>(
         first_stream_id, state_count, state_storage,
         [seed](std::uint64_t stream_id) noexcept -> GGEMSJKissState {
           return MakeJKissState(seed, static_cast<std::uint32_t>(stream_id));
@@ -300,7 +300,7 @@ auto GGEMSRandom::InitialiseStates(std::uint64_t first_stream_id,
   }
 
   case GGEMSRandomEngine::PCG32:
-    InitialiseStateStorage<GGEMSPCG32State>(
+    InitializeStateStorage<GGEMSPCG32State>(
         first_stream_id, state_count, state_storage,
         [seed = seed_](std::uint64_t stream_id) noexcept -> GGEMSPCG32State {
           return MakePCG32State(seed, stream_id);
@@ -308,7 +308,7 @@ auto GGEMSRandom::InitialiseStates(std::uint64_t first_stream_id,
     return;
 
   case GGEMSRandomEngine::Philox:
-    InitialiseStateStorage<GGEMSPhiloxState>(
+    InitializeStateStorage<GGEMSPhiloxState>(
         first_stream_id, state_count, state_storage,
         [seed = seed_](std::uint64_t stream_id) noexcept -> GGEMSPhiloxState {
           return MakePhiloxState(seed, stream_id);
@@ -316,7 +316,7 @@ auto GGEMSRandom::InitialiseStates(std::uint64_t first_stream_id,
     return;
   }
 
-  GGEMS_INTERNAL("Unsupported GGEMS random engine state initialisation.");
+  GGEMS_INTERNAL("Unsupported GGEMS random engine state initialization.");
 }
 
 // -----------------------------------------------------------------------------

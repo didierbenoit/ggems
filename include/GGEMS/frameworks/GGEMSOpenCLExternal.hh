@@ -27,7 +27,7 @@
  * \version 2.0
  * \copyright GNU GPL v3
  *
- * This header centralises the inclusion of the Khronos OpenCL 3.0 C++
+ * This header centralizes the inclusion of the Khronos OpenCL 3.0 C++
  * bindings while locally suppressing compiler warnings emitted from within
  * the external header.
  *

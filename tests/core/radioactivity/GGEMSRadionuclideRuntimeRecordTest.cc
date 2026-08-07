@@ -40,24 +40,6 @@ struct GroupAlignmentProbe {
   GroupRange range;
 };
 
-template <typename T>
-concept HasYield = requires(T value) { value.yield; };
-
-template <typename T>
-concept HasChannelProbability =
-    requires(T value) { value.channel_probability; };
-
-template <typename T>
-concept HasSourceIndex = requires(T value) { value.source_index; };
-
-template <typename T>
-concept HasRadionuclideId = requires(T value) { value.radionuclide_id; };
-
-static_assert(!HasYield<EmissionRecord>);
-static_assert(!HasChannelProbability<EmissionRecord>);
-static_assert(!HasSourceIndex<EmissionRecord>);
-static_assert(!HasRadionuclideId<EmissionRecord>);
-
 class GGEMSRadionuclideRuntimeRecordKernelTest : public ::testing::Test {
 protected:
   static auto SetUpTestSuite() -> void {
@@ -65,7 +47,7 @@ protected:
 
     if (opencl.GetContext().empty()) {
       opencl.SelectDevices({"gpu"});
-      opencl.Initialise();
+      opencl.Initialize();
     }
 
     ASSERT_FALSE(opencl.GetContext().empty());

@@ -117,7 +117,7 @@ protected:
 
     if (opencl.GetContext().empty()) {
       opencl.SelectDevices({"gpu"});
-      opencl.Initialise();
+      opencl.Initialize();
     }
 
     ASSERT_FALSE(opencl.GetContext().empty());
@@ -191,7 +191,7 @@ protected:
     random.SetEngine(engine).SetSeed(77'777ULL);
 
     std::vector<std::byte> initial_state(random.GetStateSize());
-    random.InitialiseStates(0ULL, std::span<std::byte>{initial_state});
+    random.InitializeStates(0ULL, std::span<std::byte>{initial_state});
     std::vector<std::byte> sample_state = initial_state;
     std::vector<std::byte> reference_state = initial_state;
 
@@ -249,10 +249,10 @@ protected:
                                               "source_sampling_probe",
                                               BuildOptions(random));
     cl::Kernel raw_kernel =
-        program.CreateKernel("source_initialisation_random_state_probe");
+        program.CreateKernel("source_initialization_random_state_probe");
     ggems::ocl::GGEMSOpenCLKernel kernel{
         context, std::move(raw_kernel),
-        "source_initialisation_random_state_probe"};
+        "source_initialization_random_state_probe"};
 
     kernel.SetArgSVMPointer(0U, sample_buffer.GetData());
     kernel.SetArgSVMPointer(1U, reference_buffer.GetData());
@@ -549,7 +549,7 @@ TEST_F(GGEMSSourceSamplingKernelTest,
 // =============================================================================
 
 TEST_F(GGEMSSourceSamplingKernelTest,
-       ExactSourceInitialisationDrawPlanForEveryEngine) {
+       ExactSourceInitializationDrawPlanForEveryEngine) {
   constexpr std::array<std::string_view, 3U> k_engines{"jkiss", "pcg32",
                                                        "philox"};
   constexpr std::array<GeometryType, 6U> k_geometries{
@@ -605,7 +605,7 @@ TEST(GGEMSSourceSamplingKernelSource,
       std::istreambuf_iterator<char>{transport_file},
       std::istreambuf_iterator<char>{}};
 
-  EXPECT_NE(transport_source.find("GGEMS_SourceInitialisePrimary"),
+  EXPECT_NE(transport_source.find("GGEMS_SourceInitializePrimary"),
             std::string::npos);
   EXPECT_EQ(transport_source.find("GGEMS_Rndm"), std::string::npos);
   EXPECT_EQ(transport_source.find("primary_random_values"), std::string::npos);

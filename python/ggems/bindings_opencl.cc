@@ -20,7 +20,7 @@ void BindOpenCL(py::module_ &m) {
       .def("print_platforms", &ggems::ocl::GGEMSOpenCL::PrintPlatforms)
       .def("print_devices", &ggems::ocl::GGEMSOpenCL::PrintDevices)
       .def("print_contexts", &ggems::ocl::GGEMSOpenCL::PrintContexts)
-      .def("initialise", &ggems::ocl::GGEMSOpenCL::Initialise)
+      .def("initialize", &ggems::ocl::GGEMSOpenCL::Initialize)
       .def("select_devices", &ggems::ocl::GGEMSOpenCL::SelectDevices,
            py::arg("devices"))
       .def("clean", &ggems::ocl::GGEMSOpenCL::Clean)

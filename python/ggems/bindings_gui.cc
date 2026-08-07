@@ -41,7 +41,7 @@ void BindGui(py::module_ &m) {
           },
           py::arg("selection"))
 
-      .def("initialise", &ggems::ui::GGEMSGuiApplication::Initialise)
+      .def("initialize", &ggems::ui::GGEMSGuiApplication::Initialize)
 
       .def("run", &ggems::ui::GGEMSGuiApplication::Run,
            py::call_guard<py::gil_scoped_release>())
@@ -68,7 +68,7 @@ void BindGui(py::module_ &m) {
       .def("clear_particle_traces",
            &ggems::ui::GGEMSGuiApplication::ClearParticleTraces)
 
-      .def("is_initialised", &ggems::ui::GGEMSGuiApplication::IsInitialised);
+      .def("is_initialized", &ggems::ui::GGEMSGuiApplication::IsInitialized);
 }
 
 #endif

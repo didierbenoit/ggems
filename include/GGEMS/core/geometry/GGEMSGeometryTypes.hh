@@ -94,15 +94,15 @@ constexpr auto operator-(Displacement3PM displacement) noexcept
 }
 
 namespace detail {
-struct NormalisedVector3D {
+struct NormalizedVector3D {
   double x;
   double y;
   double z;
 };
 
-[[nodiscard]] inline auto TryNormaliseVector3D(double x_val, double y_val,
+[[nodiscard]] inline auto TryNormalizeVector3D(double x_val, double y_val,
                                                double z_val) noexcept
-    -> std::optional<NormalisedVector3D> {
+    -> std::optional<NormalizedVector3D> {
   if (!std::isfinite(x_val) || !std::isfinite(y_val) || !std::isfinite(z_val)) {
     return std::nullopt;
   }
@@ -112,7 +112,7 @@ struct NormalisedVector3D {
     return std::nullopt;
   }
 
-  NormalisedVector3D const result{
+  NormalizedVector3D const result{
       .x = x_val / norm, .y = y_val / norm, .z = z_val / norm};
 
   if (!std::isfinite(result.x) || !std::isfinite(result.y) ||
@@ -127,7 +127,7 @@ struct NormalisedVector3D {
 [[nodiscard]] inline auto TryMakeDirection3(double dir_x, double dir_y,
                                             double dir_z) noexcept
     -> std::optional<Direction3> {
-  auto const precise = detail::TryNormaliseVector3D(dir_x, dir_y, dir_z);
+  auto const precise = detail::TryNormalizeVector3D(dir_x, dir_y, dir_z);
   if (!precise.has_value()) {
     return std::nullopt;
   }
