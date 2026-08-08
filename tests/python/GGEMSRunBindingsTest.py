@@ -1,3 +1,4 @@
+import gc
 import math
 import unittest
 
@@ -134,6 +135,38 @@ class GGEMSRunBindingsTest(unittest.TestCase):
             self.assertTrue(simulation.has_next_time_step())
             simulation.run()
             self.assertEqual(simulation.get_current_time("ps"), 2.0)
+
+            random = ggems.rndm.GGEMSRandom()
+            random.set_engine("philox")
+            random.set_seed(24_680)
+
+            definition = ggems.radionuclide("F-18")
+            source = ggems.Source()
+            source.set_radionuclide(
+                definition,
+                activity=100.0,
+                activity_unit="MBq",
+                reference_time=0.0,
+                time_unit="s",
+            )
+            definition = None
+            gc.collect()
+
+            simulation = ggems.run.GGEMSRun()
+            simulation.set_random(random)
+            simulation.set_source(source)
+            simulation.set_worker_count(64)
+            simulation.set_time(0.0, 1.0, 1.0, "us")
+            simulation.initialize()
+
+            with self.assertRaises(RuntimeError):
+                source.set_radionuclide(
+                    ggems.radionuclide("C-11"),
+                    activity=1.0,
+                    activity_unit="Bq",
+                )
+
+            simulation.run()
         finally:
             simulation = None
             source = None

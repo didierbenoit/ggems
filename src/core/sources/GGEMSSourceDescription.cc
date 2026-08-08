@@ -8,6 +8,7 @@
 
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistributionRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceDescription.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
@@ -16,12 +17,14 @@
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
 #include "GGEMS/core/sources/GGEMSSourcePopulationRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourceValidation.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSActivityUnits.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/core/units/GGEMSLengthUnits.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
-#include "GGEMS/core/sources/GGEMSSourceValidation.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 
 namespace ggems::core::sources {
@@ -199,6 +202,45 @@ DescribeEnergy(GGEMSSourceRecord const &source_record,
 // =============================================================================
 // =============================================================================
 
+auto DescribeSource(GGEMSSource const &source) -> std::string {
+  if (source.GetPopulationMode() == GGEMSSourcePopulationMode::CountDriven) {
+    GGEMSSourceRecord const source_record = source.BuildRecord();
+    auto const &energy_distribution = source.GetEnergyDistribution();
+    GGEMSEnergyDistributionRecord const energy_record =
+        energy_distribution.BuildRecord(0ULL);
+
+    return DescribeSource(
+        source_record, source.GetPrimaryCount(), energy_record,
+        energy_distribution.GetEnergyValuesMilliElectronVolt());
+  }
+
+  GGEMSSourceRecord const source_record = source.BuildExecutionRecord();
+  auto const configuration =
+      source.BuildActivityDrivenPopulationConfiguration();
+  auto const &radionuclide = *configuration.radionuclide;
+
+  return std::format(
+      "Type: {} | Population: ActivityDriven | Radionuclide: {} | "
+      "Activity at reference time: {} | Reference time: {} | "
+      "Emission count: {} | {} | {} | Position: ({}, {}, {}) | "
+      "Axis Z: ({}, {}, {}) | Weight: {}",
+      ToLongName(FromKernelSourceType(source_record.source_type)),
+      radionuclide.GetCanonicalName(),
+      ggems::units::HumanReadable(configuration.activity_at_reference_time),
+      ggems::units::HumanReadable(
+          ggems::units::TimePoint{.value = configuration.reference_time_ps}),
+      radionuclide.GetEmissions().size(), DescribeEmission(source_record),
+      DescribeAngularDistribution(source_record),
+      ggems::units::HumanReadableSignedLength(source_record.position_x_pm),
+      ggems::units::HumanReadableSignedLength(source_record.position_y_pm),
+      ggems::units::HumanReadableSignedLength(source_record.position_z_pm),
+      source_record.axis_z_x, source_record.axis_z_y, source_record.axis_z_z,
+      source_record.weight);
+}
+
+// =============================================================================
+// =============================================================================
+
 auto DescribeSource(GGEMSSourceRecord const &record,
                     std::uint64_t primary_count) -> std::string {
   GGEMS_CHECK_INTERNAL(
@@ -265,7 +307,7 @@ auto DescribeSourceRunSlot(std::size_t source_index,
       ToKernelSourcePopulationMode(GGEMSSourcePopulationMode::ActivityDriven)) {
     auto const &record = records[source_index];
     auto const &range = ranges[source_index];
-    auto const &emission_records = snapshot.GetRadionuclideEmissionRecords();
+    auto const &emission_records = snapshot.GetEmissionRecords();
     auto const &group_ranges = snapshot.GetGroupRanges();
     auto const &definitions = snapshot.GetRadionuclideDefinitions();
 

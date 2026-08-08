@@ -2,12 +2,13 @@
 #define GGEMS_CORE_SOURCES_GGEMS_SOURCE_CLH
 
 #include "core/particles/GGEMSParticleState.clh"
-#include "core/sources/GGEMSSourceRecord.clh"
 #include "core/random/GGEMSRandom.clh"
-#include "core/sources/GGEMSEnergyDistribution.clh"
 #include "core/radioactivity/GGEMSRadioactiveTimeSampling.clh"
-#include "core/radioactivity/GGEMSRadionuclideEmissionRecord.clh"
 #include "core/sources/GGEMSSourcePopulationRecord.clh"
+#include "core/sources/GGEMSEnergyDistribution.clh"
+#include "core/sources/GGEMSSourceRecord.clh"
+#include "core/sources/GGEMSSourceEmissionRange.clh"
+#include "core/sources/GGEMSSourceEmissionRecord.clh"
 
 #ifndef GGEMS_SOURCE_TRACK_BRANCH_BITS
 #define GGEMS_SOURCE_TRACK_BRANCH_BITS 16U
@@ -379,7 +380,7 @@ static inline GGEMSParticleState GGEMS_SourceInitializeActivityDrivenPrimary(
     ulong global_primary_id, ulong source_local_primary_id,
     __global GGEMSSourceRecord const *source,
     __global GGEMSSourcePopulationRecord const *population,
-    __global GGEMSRadionuclideEmissionRecord const *emission,
+    __global GGEMSSourceEmissionRecord const *emission,
     __global GGEMSEnergyDistributionRecord const *energy_distribution,
     __global ulong const *energy_values_milli_eV,
     __global ulong const *cumulative_ticket_upper,
@@ -432,6 +433,66 @@ static inline GGEMSParticleState GGEMS_SourceInitializeActivityDrivenPrimary(
   particle.weight = source->weight;
 
   return particle;
+}
+
+// =============================================================================
+// =============================================================================
+
+static inline uint GGEMS_SourceTryInitializePrimary(
+    ulong global_primary_id, ulong source_local_primary_id, uint source_index,
+    __global GGEMSSourceRecord const *source,
+    __global GGEMSSourcePopulationRecord const *population,
+    __global GGEMSSourceEmissionRecord const *source_emissions,
+    __global GGEMSSourceEmissionRange const *source_emission_ranges,
+    __global GGEMSEnergyDistributionRecord const *energy_distribution_records,
+    __global ulong const *energy_values_milli_eV,
+    __global ulong const *cumulative_ticket_upper,
+    __global GGEMSRandomState *random_states, uint worker_id,
+    GGEMSParticleState *particle) {
+  if (population->population_mode ==
+      GGEMS_SOURCE_POPULATION_MODE_COUNT_DRIVEN) {
+    __global GGEMSEnergyDistributionRecord const *energy_distribution =
+        &energy_distribution_records[source_index];
+
+    *particle = GGEMS_SourceInitializePrimary(
+        global_primary_id, source_local_primary_id, source, energy_distribution,
+        energy_values_milli_eV, cumulative_ticket_upper, random_states,
+        worker_id);
+    return 1U;
+  }
+
+  uint selected_emission_index = 0xFFFFFFFFU;
+
+  for (uint local_emission_index = 0U;
+       local_emission_index < population->emission_count;
+       ++local_emission_index) {
+    uint emission_index =
+        population->first_emission_index + local_emission_index;
+    ulong begin =
+        source_emission_ranges[emission_index].source_local_primary_begin;
+    ulong count = source_emission_ranges[emission_index].primary_count;
+
+    if (count != 0UL && source_local_primary_id >= begin &&
+        source_local_primary_id - begin < count) {
+      selected_emission_index = emission_index;
+      break;
+    }
+  }
+
+  if (selected_emission_index == 0xFFFFFFFFU) {
+    return 0U;
+  }
+
+  __global GGEMSSourceEmissionRecord const *emission =
+      &source_emissions[selected_emission_index];
+  __global GGEMSEnergyDistributionRecord const *energy_distribution =
+      &energy_distribution_records[emission->energy_distribution_record_index];
+
+  *particle = GGEMS_SourceInitializeActivityDrivenPrimary(
+      global_primary_id, source_local_primary_id, source, population, emission,
+      energy_distribution, energy_values_milli_eV, cumulative_ticket_upper,
+      random_states, worker_id);
+  return 1U;
 }
 
 // =============================================================================

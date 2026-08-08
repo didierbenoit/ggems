@@ -22,7 +22,7 @@
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/sources/GGEMSSourceDescription.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideEmissionPlan.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulationPlan.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
@@ -370,9 +370,9 @@ auto GGEMSRun::Initialize() -> void {
   std::uint32_t observer_record_capacity =
       observer_ != nullptr ? observer_->GetRecordCapacity() : 1U;
 
-  auto new_radionuclide_emission_planner =
-      std::make_unique<radioactivity::GGEMSRadionuclideEmissionPlanner>(
-          sources_, *random_);
+  auto new_source_population_planner =
+      std::make_unique<sources::GGEMSSourcePopulationPlanner>(sources_,
+                                                              *random_);
   auto new_source_configuration =
       sources::BuildSourceConfigurationSnapshot(sources_);
 
@@ -409,7 +409,7 @@ auto GGEMSRun::Initialize() -> void {
 
   transport_workloads_.swap(new_transport_workloads);
   source_configuration_snapshot_ = std::move(new_source_configuration);
-  radionuclide_emission_planner_ = std::move(new_radionuclide_emission_planner);
+  source_population_planner_ = std::move(new_source_population_planner);
   next_run_id_ = 0ULL;
   current_time_ps_.store(has_time_configuration_ ? time_start_ps_ : 0ULL);
 
@@ -440,24 +440,24 @@ auto GGEMSRun::Run() -> void {
                           "GGEMSRun identifier space is exhausted.");
   std::uint64_t const run_id = next_run_id_;
   GGEMS_CHECK_INTERNAL(
-      radionuclide_emission_planner_ != nullptr,
-      "GGEMSRun radionuclide emission planner was not initialized.");
+      source_population_planner_ != nullptr,
+      "GGEMSRun source population planner was not initialized.");
   GGEMS_CHECK_RECOVERABLE(
-      radionuclide_emission_planner_->GetRevision() <
+      source_population_planner_->GetRevision() <
           std::numeric_limits<std::uint64_t>::max(),
-      "GGEMSRun radionuclide emission planner revision is exhausted.");
+      "GGEMSRun source population planner revision is exhausted.");
 
-  auto emission_candidate =
-      radionuclide_emission_planner_->BuildCandidate(time_window);
+  auto population_candidate =
+      source_population_planner_->BuildCandidate(time_window);
 
   auto source_snapshot = sources::BuildSourceRunSnapshot(
-      sources_, source_configuration_snapshot_, emission_candidate.GetPlan());
+      sources_, source_configuration_snapshot_, population_candidate.GetPlan());
 
   auto const &source_records = source_snapshot.GetRecords();
   auto const &source_ranges = source_snapshot.GetRanges();
   auto const &source_population_records =
       source_snapshot.GetPopulationRecords();
-  auto const &radionuclide_group_ranges = source_snapshot.GetGroupRanges();
+  auto const &source_emission_ranges = source_snapshot.GetGroupRanges();
 
   GGEMS_CHECK_INTERNAL(
       source_records.size() == source_ranges.size() &&
@@ -509,7 +509,7 @@ auto GGEMSRun::Run() -> void {
                "[{} ps, {} ps).",
                run_id, time_window.start_ps, time_window.stop_ps);
 
-    radionuclide_emission_planner_->CommitCandidate(emission_candidate);
+    source_population_planner_->CommitCandidate(population_candidate);
     ++next_run_id_;
 
     if (observer_result_candidate != nullptr) {
@@ -552,7 +552,7 @@ auto GGEMSRun::Run() -> void {
     config.source_records = source_records;
     config.source_population_records = source_population_records;
     config.source_ranges = source_ranges;
-    config.radionuclide_group_ranges = radionuclide_group_ranges;
+    config.source_emission_ranges = source_emission_ranges;
     transport_workloads_[workload.context_index]->ValidateRunConfig(config);
   }
 
@@ -793,7 +793,7 @@ auto GGEMSRun::Run() -> void {
 
   GGEMS_INFO("Core", "GGEMSRun projection {} completed.", run_id);
 
-  radionuclide_emission_planner_->CommitCandidate(emission_candidate);
+  source_population_planner_->CommitCandidate(population_candidate);
 
   if (observer_result_candidate != nullptr) {
     observer_->SwapRunResult(*observer_result_candidate);

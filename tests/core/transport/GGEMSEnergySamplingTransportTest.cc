@@ -58,7 +58,7 @@ static_assert(!HasPerRunEnergyTables<TransportConfig>);
   config.source_records = snapshot.GetRecords();
   config.source_population_records = snapshot.GetPopulationRecords();
   config.source_ranges = snapshot.GetRanges();
-  config.radionuclide_group_ranges = snapshot.GetGroupRanges();
+  config.source_emission_ranges = snapshot.GetGroupRanges();
   config.observer_config.enabled = 1U;
   config.observer_config.capture_first_primary_count_per_source = 3U;
   return config;

@@ -9,8 +9,8 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideEmissionRecord.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideGroupRange.hh"
+#include "GGEMS/core/sources/GGEMSSourceEmissionRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourceEmissionRange.hh"
 #include "GGEMS/core/sources/GGEMSSourcePopulationRecord.hh"
 #include "GGEMS/core/units/GGEMSBytesUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
@@ -20,9 +20,8 @@
 
 namespace {
 
-using EmissionRecord =
-    ggems::core::radioactivity::GGEMSRadionuclideEmissionRecord;
-using GroupRange = ggems::core::radioactivity::GGEMSRadionuclideGroupRange;
+using EmissionRecord = ggems::core::sources::GGEMSSourceEmissionRecord;
+using GroupRange = ggems::core::sources::GGEMSSourceEmissionRange;
 using PopulationRecord = ggems::core::sources::GGEMSSourcePopulationRecord;
 
 struct PopulationAlignmentProbe {
@@ -40,7 +39,7 @@ struct GroupAlignmentProbe {
   GroupRange range;
 };
 
-class GGEMSRadionuclideRuntimeRecordKernelTest : public ::testing::Test {
+class GGEMSSourceEmissionRecordKernelTest : public ::testing::Test {
 protected:
   static auto SetUpTestSuite() -> void {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
@@ -59,7 +58,7 @@ protected:
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSRadionuclideRuntimeRecord, HostLayoutsAndSentinelsAreExact) {
+TEST(GGEMSSourceEmissionRecord, HostLayoutsAndSentinelsAreExact) {
   EXPECT_TRUE(std::is_standard_layout_v<PopulationRecord>);
   EXPECT_TRUE(std::is_trivially_copyable_v<PopulationRecord>);
   EXPECT_EQ(sizeof(PopulationRecord), 16U);
@@ -106,7 +105,7 @@ TEST(GGEMSRadionuclideRuntimeRecord, HostLayoutsAndSentinelsAreExact) {
 // =============================================================================
 // =============================================================================
 
-TEST_F(GGEMSRadionuclideRuntimeRecordKernelTest,
+TEST_F(GGEMSSourceEmissionRecordKernelTest,
        HostAndOpenCLLayoutsStridesAndValuesMatch) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
   auto &context = opencl.GetContext().front();
@@ -149,13 +148,13 @@ TEST_F(GGEMSRadionuclideRuntimeRecordKernelTest,
   std::string const build_options =
       std::format("-cl-std=CL2.0 -I{}", kernel_root.generic_string());
 
-  auto &program = opencl.GetOrCreateProgram(
-      context, kernel_test_root, "radionuclide_runtime_record_abi_probe",
-      build_options);
+  auto &program = opencl.GetOrCreateProgram(context, kernel_test_root,
+                                            "source_emission_record_abi_probe",
+                                            build_options);
   cl::Kernel raw_kernel =
-      program.CreateKernel("radionuclide_runtime_record_abi_probe");
+      program.CreateKernel("source_emission_record_abi_probe");
   ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
-                                       "radionuclide_runtime_record_abi_probe"};
+                                       "source_emission_record_abi_probe"};
 
   kernel.SetArgSVMPointer(0U, layout_buffer.GetData());
   kernel.SetArgSVMPointer(1U, population_buffer.GetData());

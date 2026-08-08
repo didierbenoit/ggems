@@ -15,9 +15,6 @@
 #include "GGEMS/core/GGEMSMacros.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideEmission.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideEmissionPlan.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideEmissionRecord.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideGroupRange.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistributionRecord.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
@@ -27,6 +24,9 @@
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/core/sources/GGEMSSourcePopulationRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulationPlan.hh"
+#include "GGEMS/core/sources/GGEMSSourceEmissionRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourceEmissionRange.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/units/GGEMSQuantity.hh"
@@ -44,8 +44,7 @@ struct PackedSourceConfiguration {
   std::vector<std::uint64_t> energy_values_milli_eV;
   std::vector<double> relative_weights;
   std::vector<std::uint64_t> cumulative_ticket_upper;
-  std::vector<radioactivity::GGEMSRadionuclideEmissionRecord>
-      radionuclide_emission_records;
+  std::vector<GGEMSSourceEmissionRecord> source_emission_records;
   std::vector<std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>>
       radionuclide_definitions;
 };
@@ -156,13 +155,16 @@ auto PackSourceConfiguration(std::span<GGEMSSource const *const> sources)
       total_emission_count <=
           static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()),
       "Flattened radionuclide emission count exceeds uint32 storage.");
+
   std::size_t const total_energy_record_count = CheckedAddSize(
       sources.size(), total_emission_count,
       "Packed energy distribution record count exceeds host storage.");
+
   GGEMS_CHECK_RECOVERABLE(
       total_energy_record_count <=
           static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()),
       "Packed energy distribution record count exceeds uint32 storage.");
+
   GGEMS_CHECK_RECOVERABLE(
       total_table_count <= packed.energy_values_milli_eV.max_size() &&
           total_table_count <= packed.relative_weights.max_size() &&
@@ -173,7 +175,7 @@ auto PackSourceConfiguration(std::span<GGEMSSource const *const> sources)
   packed.energy_values_milli_eV.reserve(total_table_count);
   packed.relative_weights.reserve(total_table_count);
   packed.cumulative_ticket_upper.reserve(total_table_count);
-  packed.radionuclide_emission_records.reserve(total_emission_count);
+  packed.source_emission_records.reserve(total_emission_count);
   packed.radionuclide_definitions.reserve(sources.size());
 
   // Keep the first N energy records source-indexed for CountDriven lookup.
@@ -211,7 +213,7 @@ auto PackSourceConfiguration(std::span<GGEMSSource const *const> sources)
               ? distribution.GetMonoEnergyMilliElectronVolt()
               : 0ULL;
 
-      packed.radionuclide_emission_records.push_back(
+      packed.source_emission_records.push_back(
           {.particle_type =
                particles::ToKernelParticleType(emission.GetParticleType()),
            .energy_distribution_record_index = energy_record_index,
@@ -222,7 +224,7 @@ auto PackSourceConfiguration(std::span<GGEMSSource const *const> sources)
 
   GGEMS_CHECK_INTERNAL(
       packed.energy_distribution_records.size() == total_energy_record_count &&
-          packed.radionuclide_emission_records.size() == total_emission_count &&
+          packed.source_emission_records.size() == total_emission_count &&
           packed.radionuclide_definitions.size() == sources.size(),
       "Packed source configuration component counts do not match.");
   return packed;
@@ -310,8 +312,7 @@ GGEMSSourceConfigurationSnapshot::GGEMSSourceConfigurationSnapshot(
     std::vector<std::uint64_t> energy_values_milli_eV,
     std::vector<double> relative_weights,
     std::vector<std::uint64_t> cumulative_ticket_upper,
-    std::vector<radioactivity::GGEMSRadionuclideEmissionRecord>
-        radionuclide_emission_records,
+    std::vector<GGEMSSourceEmissionRecord> source_emission_records,
     std::vector<
         std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>>
         radionuclide_definitions)
@@ -320,7 +321,7 @@ GGEMSSourceConfigurationSnapshot::GGEMSSourceConfigurationSnapshot(
       energy_values_milli_eV_{std::move(energy_values_milli_eV)},
       relative_weights_{std::move(relative_weights)},
       cumulative_ticket_upper_{std::move(cumulative_ticket_upper)},
-      radionuclide_emission_records_{std::move(radionuclide_emission_records)},
+      source_emission_records_{std::move(source_emission_records)},
       radionuclide_definitions_{std::move(radionuclide_definitions)} {}
 
 // =============================================================================
@@ -337,7 +338,7 @@ auto GGEMSSourceConfigurationSnapshot::Create(GGEMSSource const &source)
           std::move(packed.energy_values_milli_eV),
           std::move(packed.relative_weights),
           std::move(packed.cumulative_ticket_upper),
-          std::move(packed.radionuclide_emission_records),
+          std::move(packed.source_emission_records),
           std::move(packed.radionuclide_definitions)}};
 }
 
@@ -370,7 +371,7 @@ auto GGEMSSourceConfigurationSnapshot::Create(
           std::move(packed.energy_values_milli_eV),
           std::move(packed.relative_weights),
           std::move(packed.cumulative_ticket_upper),
-          std::move(packed.radionuclide_emission_records),
+          std::move(packed.source_emission_records),
           std::move(packed.radionuclide_definitions)}};
 }
 
@@ -390,12 +391,13 @@ GGEMSSourceRunSnapshot::GGEMSSourceRunSnapshot(
     std::vector<GGEMSSourceRecord> records,
     std::vector<GGEMSSourceRunRange> ranges,
     std::vector<GGEMSSourcePopulationRecord> population_records,
-    std::vector<radioactivity::GGEMSRadionuclideGroupRange> group_ranges,
+    std::vector<GGEMSSourceEmissionRange> emission_ranges,
+    GGEMSTimeWindow time_window,
     GGEMSSourceConfigurationSnapshotPtr source_configuration,
     std::uint64_t total_primary_count)
     : records_{std::move(records)}, ranges_{std::move(ranges)},
       population_records_{std::move(population_records)},
-      group_ranges_{std::move(group_ranges)},
+      emission_ranges_{std::move(emission_ranges)}, time_window_{time_window},
       source_configuration_{std::move(source_configuration)},
       total_primary_count_{total_primary_count} {}
 
@@ -421,9 +423,9 @@ auto GGEMSSourceRunSnapshot::HasActivityDrivenSource() const noexcept -> bool {
 auto GGEMSSourceRunSnapshot::Create(
     std::span<std::shared_ptr<GGEMSSource> const> sources,
     GGEMSSourceConfigurationSnapshotPtr source_configuration,
-    radioactivity::GGEMSRadionuclideEmissionPlan const &emission_plan)
+    GGEMSSourcePopulationPlan const &population_plan)
     -> GGEMSSourceRunSnapshot {
-  GGEMSTimeWindow const time_window = emission_plan.GetTimeWindow();
+  GGEMSTimeWindow const time_window = population_plan.GetTimeWindow();
   ValidateTimeWindow(time_window);
   GGEMS_CHECK_INTERNAL(source_configuration != nullptr,
                        "GGEMSSource configuration snapshot is null.");
@@ -431,9 +433,9 @@ auto GGEMSSourceRunSnapshot::Create(
       source_configuration->GetSourceCount() == sources.size(),
       "GGEMSSource configuration and run snapshot slot counts do not match.");
 
-  auto const plan_sources = emission_plan.GetSources();
-  auto const plan_groups = emission_plan.GetGroups();
-  auto const plan_definitions = emission_plan.GetRadionuclideDefinitions();
+  auto const plan_sources = population_plan.GetSources();
+  auto const plan_emissions = population_plan.GetGroups();
+  auto const plan_definitions = population_plan.GetRadionuclideDefinitions();
   auto const &stable_definitions =
       source_configuration->GetRadionuclideDefinitions();
 
@@ -443,17 +445,17 @@ auto GGEMSSourceRunSnapshot::Create(
           stable_definitions.size() == sources.size(),
       "Emission plan and source configuration slot counts do not match.");
   GGEMS_CHECK_INTERNAL(
-      plan_groups.size() == source_configuration->GetEmissionCount(),
+      plan_emissions.size() == source_configuration->GetEmissionCount(),
       "Emission plan and immutable emission counts do not match.");
 
   std::vector<GGEMSSourceRecord> records;
   std::vector<GGEMSSourceRunRange> ranges;
   std::vector<GGEMSSourcePopulationRecord> population_records;
-  std::vector<radioactivity::GGEMSRadionuclideGroupRange> group_ranges;
+  std::vector<GGEMSSourceEmissionRange> emission_ranges;
   records.reserve(sources.size());
   ranges.reserve(sources.size());
   population_records.reserve(sources.size());
-  group_ranges.reserve(plan_groups.size());
+  emission_ranges.reserve(plan_emissions.size());
 
   std::uint64_t expected_run_primary_begin{0ULL};
   std::uint64_t expected_emission_begin{0ULL};
@@ -480,9 +482,9 @@ auto GGEMSSourceRunSnapshot::Create(
     GGEMS_CHECK_INTERNAL(
         plan_source.emission_begin == expected_emission_begin &&
             plan_source.emission_begin <=
-                static_cast<std::uint64_t>(plan_groups.size()) &&
+                static_cast<std::uint64_t>(plan_emissions.size()) &&
             plan_source.emission_count <=
-                static_cast<std::uint64_t>(plan_groups.size()) -
+                static_cast<std::uint64_t>(plan_emissions.size()) -
                     plan_source.emission_begin,
         "Emission plan source emission range is invalid.");
 
@@ -534,41 +536,43 @@ auto GGEMSSourceRunSnapshot::Create(
       std::uint64_t expected_source_local_begin{0ULL};
       for (std::uint64_t emission_offset = 0ULL;
            emission_offset < plan_source.emission_count; ++emission_offset) {
-        auto const group_index = static_cast<std::size_t>(
+        auto const emission_index = static_cast<std::size_t>(
             plan_source.emission_begin + emission_offset);
-        auto const &group = plan_groups[group_index];
+        auto const &emission = plan_emissions[emission_index];
 
         GGEMS_CHECK_INTERNAL(
-            group.source_index == static_cast<std::uint32_t>(source_index) &&
-                group.emission_index ==
+            emission.source_index == static_cast<std::uint32_t>(source_index) &&
+                emission.emission_index ==
                     static_cast<std::uint32_t>(emission_offset) &&
-                group.source_local_primary_begin ==
+                emission.source_local_primary_begin ==
                     expected_source_local_begin &&
-                group.source_local_primary_end >=
-                    group.source_local_primary_begin &&
-                group.sampled_primary_count ==
-                    group.source_local_primary_end -
-                        group.source_local_primary_begin,
+                emission.source_local_primary_end >=
+                    emission.source_local_primary_begin &&
+                emission.sampled_primary_count ==
+                    emission.source_local_primary_end -
+                        emission.source_local_primary_begin,
             "Emission plan group order or source-local range is invalid.");
+
         GGEMS_CHECK_INTERNAL(
-            group.source_local_primary_end <= source_primary_count &&
-                group.source_local_primary_begin <=
+            emission.source_local_primary_end <= source_primary_count &&
+                emission.source_local_primary_begin <=
                     std::numeric_limits<std::uint64_t>::max() -
                         plan_source.run_primary_begin &&
-                group.source_local_primary_end <=
+                emission.source_local_primary_end <=
                     std::numeric_limits<std::uint64_t>::max() -
                         plan_source.run_primary_begin &&
-                group.run_primary_begin ==
+                emission.run_primary_begin ==
                     plan_source.run_primary_begin +
-                        group.source_local_primary_begin &&
-                group.run_primary_end == plan_source.run_primary_begin +
-                                             group.source_local_primary_end,
+                        emission.source_local_primary_begin &&
+                emission.run_primary_end ==
+                    plan_source.run_primary_begin +
+                        emission.source_local_primary_end,
             "Emission plan group global range is inconsistent.");
 
-        group_ranges.push_back(
-            {.source_local_primary_begin = group.source_local_primary_begin,
-             .primary_count = group.sampled_primary_count});
-        expected_source_local_begin = group.source_local_primary_end;
+        emission_ranges.push_back(
+            {.source_local_primary_begin = emission.source_local_primary_begin,
+             .primary_count = emission.sampled_primary_count});
+        expected_source_local_begin = emission.source_local_primary_end;
       }
 
       GGEMS_CHECK_INTERNAL(
@@ -585,18 +589,19 @@ auto GGEMSSourceRunSnapshot::Create(
   }
 
   GGEMS_CHECK_INTERNAL(
-      expected_run_primary_begin == emission_plan.GetTotalPrimaryCount() &&
+      expected_run_primary_begin == population_plan.GetTotalPrimaryCount() &&
           expected_emission_begin ==
-              static_cast<std::uint64_t>(plan_groups.size()) &&
-          group_ranges.size() == plan_groups.size(),
+              static_cast<std::uint64_t>(plan_emissions.size()) &&
+          emission_ranges.size() == plan_emissions.size(),
       "Emission plan ranges do not match their declared totals.");
 
   return GGEMSSourceRunSnapshot{std::move(records),
                                 std::move(ranges),
                                 std::move(population_records),
-                                std::move(group_ranges),
+                                std::move(emission_ranges),
+                                time_window,
                                 std::move(source_configuration),
-                                emission_plan.GetTotalPrimaryCount()};
+                                population_plan.GetTotalPrimaryCount()};
 }
 
 // =============================================================================
@@ -605,10 +610,10 @@ auto GGEMSSourceRunSnapshot::Create(
 auto BuildSourceRunSnapshot(
     std::span<std::shared_ptr<GGEMSSource> const> sources,
     GGEMSSourceConfigurationSnapshotPtr source_configuration,
-    radioactivity::GGEMSRadionuclideEmissionPlan const &emission_plan)
+    GGEMSSourcePopulationPlan const &population_plan)
     -> GGEMSSourceRunSnapshot {
   return GGEMSSourceRunSnapshot::Create(
-      sources, std::move(source_configuration), emission_plan);
+      sources, std::move(source_configuration), population_plan);
 }
 
 // =============================================================================
@@ -653,6 +658,7 @@ auto GGEMSSourceRunSnapshot::Create(
                                 std::move(ranges),
                                 std::move(population_records),
                                 {},
+                                time_window,
                                 std::move(source_configuration),
                                 total_primary_count};
 }
@@ -721,6 +727,7 @@ auto GGEMSSourceRunSnapshot::Create(GGEMSSource const &source,
                                 std::move(ranges),
                                 std::move(population_records),
                                 {},
+                                time_window,
                                 BuildSourceConfigurationSnapshot(source),
                                 total_primary_count};
 }

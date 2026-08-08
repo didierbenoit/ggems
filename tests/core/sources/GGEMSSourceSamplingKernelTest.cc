@@ -605,7 +605,7 @@ TEST(GGEMSSourceSamplingKernelSource,
       std::istreambuf_iterator<char>{transport_file},
       std::istreambuf_iterator<char>{}};
 
-  EXPECT_NE(transport_source.find("GGEMS_SourceInitializePrimary"),
+  EXPECT_NE(transport_source.find("GGEMS_SourceTryInitializePrimary"),
             std::string::npos);
   EXPECT_EQ(transport_source.find("GGEMS_Rndm"), std::string::npos);
   EXPECT_EQ(transport_source.find("primary_random_values"), std::string::npos);

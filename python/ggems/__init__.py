@@ -6,8 +6,21 @@ rndm = ggems.rndm
 source = ggems.source
 run = ggems.run
 observer = ggems.observer
+RadionuclideDefinition = ggems.RadionuclideDefinition
+Source = ggems.Source
+radionuclide = ggems.radionuclide
 
-__all__ = ["core", "opencl", "rndm", "source", "run", "observer"]
+__all__ = [
+    "core",
+    "opencl",
+    "rndm",
+    "source",
+    "run",
+    "observer",
+    "RadionuclideDefinition",
+    "Source",
+    "radionuclide",
+]
 
 if hasattr(ggems, "gui"):
     gui = ggems.gui
@@ -21,4 +34,3 @@ __author__ = (
 )
 __license__ = "GPLv3"
 __description__ = "GPU Geant4-based Monte Carlo Simulations (GGEMS)"
-

@@ -230,8 +230,7 @@ TEST(GGEMSRun,
       ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
       ggems::core::radioactivity::builtins::BuildF18Radionuclide());
   auto source = std::make_shared<ggems::core::sources::GGEMSSource>();
-  source->SetActivityDrivenRadionuclide(radionuclide,
-                                        ggems::units::Activity{100.0L}, 0ULL);
+  source->SetRadionuclide(radionuclide, ggems::units::Activity{100.0L}, 0ULL);
 
   ggems::core::GGEMSRun run{};
   run.SetSource(source);
@@ -241,7 +240,7 @@ TEST(GGEMSRun,
       "ActivityDriven GGEMSRun sources require a configured non-empty time "
       "schedule");
 
-  EXPECT_NO_THROW(source->SetActivityDrivenRadionuclide(
+  EXPECT_NO_THROW(source->SetRadionuclide(
       radionuclide, ggems::units::Activity{125.0L}, 17ULL));
   EXPECT_NO_THROW(run.SetTimePicoSecond(10ULL, 20ULL, 10ULL));
 
@@ -250,13 +249,13 @@ TEST(GGEMSRun,
       "ActivityDriven source reference time must not follow the "
       "configured GGEMSRun start time");
 
-  EXPECT_NO_THROW(source->SetActivityDrivenRadionuclide(
+  EXPECT_NO_THROW(source->SetRadionuclide(
       radionuclide, ggems::units::Activity{125.0L}, 9ULL));
   ExpectGGEMSExceptionContaining(
       [&run]() -> void { run.Initialize(); },
       "GGEMSRun cannot be initialized without a GGEMSRandom");
 
-  EXPECT_NO_THROW(source->SetActivityDrivenRadionuclide(
+  EXPECT_NO_THROW(source->SetRadionuclide(
       radionuclide, ggems::units::Activity{125.0L}, 10ULL));
   ExpectGGEMSExceptionContaining(
       [&run]() -> void { run.Initialize(); },

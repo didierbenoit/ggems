@@ -16,6 +16,7 @@
 #include <vector>
 #include <memory>
 
+#include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/core/observer/GGEMSObserverCounterArithmetic.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/core/GGEMSMacros.hh"
@@ -26,6 +27,8 @@
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/core/sources/GGEMSSourcePopulationRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
+#include "GGEMS/core/sources/GGEMSSourceEmissionRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourceEmissionRange.hh"
 #include "GGEMS/core/transport/GGEMSDiagnosticProjection.hh"
 #include "GGEMS/core/transport/GGEMSTransportCounters.hh"
 #include "GGEMS/core/transport/GGEMSTransportWorkload.hh"
@@ -34,9 +37,6 @@
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMHostAccess.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideEmissionRecord.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideGroupRange.hh"
-#include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/core/units/GGEMSBytesUnits.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/units/GGEMSQuantity.hh"
@@ -49,10 +49,8 @@ namespace {
 using ObserverConfigRecord = ggems::core::observer::GGEMSObserverConfigRecord;
 using ObserverCounters = ggems::core::observer::GGEMSObserverCounters;
 using ObserverRecord = ggems::core::observer::GGEMSObserverRecord;
-using RadionuclideEmissionRecord =
-    ggems::core::radioactivity::GGEMSRadionuclideEmissionRecord;
-using RadionuclideGroupRange =
-    ggems::core::radioactivity::GGEMSRadionuclideGroupRange;
+using SourceEmissionRecord = ggems::core::sources::GGEMSSourceEmissionRecord;
+using SourceEmissionRange = ggems::core::sources::GGEMSSourceEmissionRange;
 using SourcePopulationRecord =
     ggems::core::sources::GGEMSSourcePopulationRecord;
 using SourceRecord = ggems::core::sources::GGEMSSourceRecord;
@@ -248,11 +246,11 @@ auto ValidateRunConfigImpl(TransportRunConfig const &config,
           launch_primary_count_limit <= safe_atomic_primary_count,
       "Transport launch-primary limit exceeds the safe uint32 atomic stream "
       "capacity.");
-  GGEMS_CHECK_RECOVERABLE(
-      config.radionuclide_group_ranges.size() ==
-          static_cast<std::size_t>(stable_emission_count),
-      "Transport radionuclide group ranges do not match the stable emission "
-      "count.");
+
+  GGEMS_CHECK_RECOVERABLE(config.source_emission_ranges.size() ==
+                              static_cast<std::size_t>(stable_emission_count),
+                          "Transport source emission ranges do not match the "
+                          "stable emission count.");
 
   ggems::core::transport::ValidateDiagnosticTransportSources(
       config.source_records, config.source_ranges);
@@ -303,12 +301,14 @@ auto ValidateRunConfigImpl(TransportRunConfig const &config,
         population.population_mode == activity_driven_mode,
         std::format("Source population record {} has an unknown mode.",
                     source_index));
+
     GGEMS_CHECK_RECOVERABLE(
         std::isfinite(population.scaled_decay) &&
             population.scaled_decay >= 0.0F,
         std::format("ActivityDriven source population record {} has invalid "
                     "scaled decay.",
                     source_index));
+
     GGEMS_CHECK_RECOVERABLE(
         population.first_emission_index == next_emission_index,
         std::format("ActivityDriven source population record {} begins at "
@@ -318,6 +318,7 @@ auto ValidateRunConfigImpl(TransportRunConfig const &config,
 
     std::uint64_t const emission_end =
         next_emission_index + population.emission_count;
+
     GGEMS_CHECK_RECOVERABLE(
         emission_end <= stable_emission_count,
         std::format("ActivityDriven source population record {} exceeds the "
@@ -327,24 +328,29 @@ auto ValidateRunConfigImpl(TransportRunConfig const &config,
     std::uint64_t source_local_primary_count{0ULL};
     for (std::uint64_t emission_index = next_emission_index;
          emission_index < emission_end; ++emission_index) {
-      RadionuclideGroupRange const &group =
-          config.radionuclide_group_ranges[static_cast<std::size_t>(
-              emission_index)];
+      SourceEmissionRange const &emission_range =
+          config
+              .source_emission_ranges[static_cast<std::size_t>(emission_index)];
+
       GGEMS_CHECK_RECOVERABLE(
-          group.source_local_primary_begin == source_local_primary_count,
-          std::format("Radionuclide group range {} begins at {}, expected {}.",
-                      emission_index, group.source_local_primary_begin,
+          emission_range.source_local_primary_begin ==
+              source_local_primary_count,
+          std::format("Source emission range {} begins at {}, expected {}.",
+                      emission_index, emission_range.source_local_primary_begin,
                       source_local_primary_count));
+
       GGEMS_CHECK_RECOVERABLE(
-          group.primary_count <= std::numeric_limits<std::uint64_t>::max() -
-                                     source_local_primary_count,
-          std::format("Radionuclide group range {} overflows uint64.",
+          emission_range.primary_count <=
+              std::numeric_limits<std::uint64_t>::max() -
+                  source_local_primary_count,
+          std::format("Source emission range {} overflows uint64.",
                       emission_index));
-      source_local_primary_count += group.primary_count;
+      source_local_primary_count += emission_range.primary_count;
     }
+
     GGEMS_CHECK_RECOVERABLE(
         source_local_primary_count == range.primary_count,
-        std::format("ActivityDriven source population record {} group total "
+        std::format("ActivityDriven source population record {} emission total "
                     "does not match its source range.",
                     source_index));
     next_emission_index = emission_end;
@@ -438,12 +444,12 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
                               sizeof(SourcePopulationRecord)})},
       source_ranges_buffer_{context.CreateSVMBuffer(ggems::units::Bytes{
           static_cast<std::uint64_t>(source_count_) * sizeof(SourceRunRange)})},
-      radionuclide_emission_records_buffer_{
+      source_emission_records_buffer_{
           context.CreateSVMBuffer(ComputeArrayBufferSize(
-              emission_count_, sizeof(RadionuclideEmissionRecord)))},
-      radionuclide_group_ranges_buffer_{
+              emission_count_, sizeof(SourceEmissionRecord)))},
+      source_emission_ranges_buffer_{
           context.CreateSVMBuffer(ComputeArrayBufferSize(
-              emission_count_, sizeof(RadionuclideGroupRange)))},
+              emission_count_, sizeof(SourceEmissionRange)))},
       energy_distribution_records_buffer_{
           context.CreateSVMBuffer(ComputeArrayBufferSize(
               CheckedEnergyDistributionRecordCount(source_configuration),
@@ -502,14 +508,14 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   kernel_->SetArgSVMPointer(argument_index++,
                             source_population_records_buffer_.GetData());
   kernel_->SetArgSVMPointer(argument_index++,
-                            radionuclide_emission_records_buffer_.GetData());
+                            source_emission_records_buffer_.GetData());
   kernel_->SetArgSVMPointer(argument_index++,
-                            radionuclide_group_ranges_buffer_.GetData());
+                            source_emission_ranges_buffer_.GetData());
   GGEMS_CHECK_INTERNAL(argument_index == k_expected_argument_count,
                        "Transport kernel argument count is inconsistent.");
 
-  auto const &radionuclide_emission_records =
-      source_configuration.GetRadionuclideEmissionRecords();
+  auto const &source_emission_records =
+      source_configuration.GetEmissionRecords();
   auto const &energy_distribution_records =
       source_configuration.GetEnergyDistributionRecords();
   auto const &energy_values_milli_eV =
@@ -518,22 +524,23 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
       source_configuration.GetCumulativeTicketUpperBounds();
 
   GGEMS_CHECK_INTERNAL(
-      radionuclide_emission_records.size() == emission_count_,
-      "Transport immutable radionuclide emission count is inconsistent.");
+      source_emission_records.size() == emission_count_,
+      "Transport immutable source emission count is inconsistent.");
+
   GGEMS_CHECK_INTERNAL(
       energy_distribution_records.size() >= source_count_,
       "Transport immutable energy configuration lacks source-indexed "
       "records.");
 
-  if (radionuclide_emission_records.empty()) {
-    ggems::ocl::WriteSVMFromHost(radionuclide_emission_records_buffer_,
-                                 RadionuclideEmissionRecord{});
-    ggems::ocl::WriteSVMFromHost(radionuclide_group_ranges_buffer_,
-                                 RadionuclideGroupRange{});
+  if (source_emission_records.empty()) {
+    ggems::ocl::WriteSVMFromHost(source_emission_records_buffer_,
+                                 SourceEmissionRecord{});
+    ggems::ocl::WriteSVMFromHost(source_emission_ranges_buffer_,
+                                 SourceEmissionRange{});
   } else {
-    ggems::ocl::WriteSVMFromHost(radionuclide_emission_records_buffer_,
-                                 std::span<RadionuclideEmissionRecord const>{
-                                     radionuclide_emission_records});
+    ggems::ocl::WriteSVMFromHost(
+        source_emission_records_buffer_,
+        std::span<SourceEmissionRecord const>{source_emission_records});
   }
 
   ggems::ocl::WriteSVMFromHost(
@@ -659,10 +666,10 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
       source_ranges_buffer_,
       std::span<SourceRunRange const>{config.source_ranges});
 
-  if (!config.radionuclide_group_ranges.empty()) {
-    ggems::ocl::WriteSVMFromHost(radionuclide_group_ranges_buffer_,
-                                 std::span<RadionuclideGroupRange const>{
-                                     config.radionuclide_group_ranges});
+  if (!config.source_emission_ranges.empty()) {
+    ggems::ocl::WriteSVMFromHost(
+        source_emission_ranges_buffer_,
+        std::span<SourceEmissionRange const>{config.source_emission_ranges});
   }
 
   WriteObserverConfigToSVM(config.observer_config);

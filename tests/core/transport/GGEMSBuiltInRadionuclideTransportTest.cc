@@ -16,7 +16,7 @@
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideEmission.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideEmissionPlan.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulationPlan.hh"
 #include "GGEMS/core/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
@@ -43,8 +43,8 @@ using EnergyDistributionType =
 using ObserverRecord = ggems::core::observer::GGEMSObserverRecord;
 using ObserverRecordKind = ggems::core::observer::GGEMSObserverRecordKind;
 using ParticleType = ggems::core::particles::GGEMSParticleType;
-using Plan = ggems::core::radioactivity::GGEMSRadionuclideEmissionPlan;
-using Planner = ggems::core::radioactivity::GGEMSRadionuclideEmissionPlanner;
+using Plan = ggems::core::sources::GGEMSSourcePopulationPlan;
+using Planner = ggems::core::sources::GGEMSSourcePopulationPlanner;
 using Random = ggems::core::random::GGEMSRandom;
 using Source = ggems::core::sources::GGEMSSource;
 using SourceConfigurationSnapshotPtr =
@@ -93,7 +93,7 @@ struct ActivityScenario {
       .SetFixedAngularDistribution()
       .SetPositionPicoMeter(0LL, 0LL, 0LL)
       .SetDirection(0.0, 0.0, 1.0)
-      .SetActivityDrivenRadionuclide(
+      .SetRadionuclide(
           std::make_shared<Definition const>(std::move(definition)), activity,
           k_time_window.start_ps);
 
@@ -125,7 +125,7 @@ struct ActivityScenario {
   config.source_population_records =
       scenario.source_snapshot.GetPopulationRecords();
   config.source_ranges = scenario.source_snapshot.GetRanges();
-  config.radionuclide_group_ranges = scenario.source_snapshot.GetGroupRanges();
+  config.source_emission_ranges = scenario.source_snapshot.GetGroupRanges();
   config.observer_config.enabled = 1U;
   return config;
 }
@@ -212,7 +212,7 @@ auto ExpectNoUnsupportedF18Records(TransportRunReport const &report) -> void {
                                            std::size_t emission_index)
     -> EnergyDistributionRecord const & {
   auto const &emission_records =
-      scenario.source_configuration->GetRadionuclideEmissionRecords();
+      scenario.source_configuration->GetEmissionRecords();
   auto const &energy_records =
       scenario.source_configuration->GetEnergyDistributionRecords();
 
@@ -312,7 +312,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
       ggems::units::Activity{100'000'000.0L}, random);
 
   auto const &emission_records =
-      scenario.source_configuration->GetRadionuclideEmissionRecords();
+      scenario.source_configuration->GetEmissionRecords();
   auto const plan_groups = scenario.emission_plan.GetGroups();
   auto const &group_ranges = scenario.source_snapshot.GetGroupRanges();
   ASSERT_EQ(emission_records.size(), 3U);
@@ -463,7 +463,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
       std::move(definition), ggems::units::Activity{1'024'000.0L}, random);
 
   ASSERT_EQ(
-      scenario.source_configuration->GetRadionuclideEmissionRecords().size(),
+      scenario.source_configuration->GetEmissionRecords().size(),
       1U);
   ASSERT_EQ(scenario.source_snapshot.GetGroupRanges().size(), 1U);
   ASSERT_EQ(scenario.emission_plan.GetGroups().size(), 1U);
@@ -512,7 +512,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
       std::move(definition), ggems::units::Activity{1'024'000.0L}, random);
 
   ASSERT_EQ(
-      scenario.source_configuration->GetRadionuclideEmissionRecords().size(),
+      scenario.source_configuration->GetEmissionRecords().size(),
       1U);
   ASSERT_EQ(scenario.source_snapshot.GetGroupRanges().size(), 1U);
   ASSERT_EQ(scenario.emission_plan.GetGroups().size(), 1U);
@@ -567,7 +567,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
       std::move(definition), ggems::units::Activity{1'024'000.0L}, random);
 
   ASSERT_EQ(
-      scenario.source_configuration->GetRadionuclideEmissionRecords().size(),
+      scenario.source_configuration->GetEmissionRecords().size(),
       1U);
   ASSERT_EQ(scenario.source_snapshot.GetGroupRanges().size(), 1U);
   ASSERT_GT(scenario.source_snapshot.GetGroupRanges()[0U].primary_count,

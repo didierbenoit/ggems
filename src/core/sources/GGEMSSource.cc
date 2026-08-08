@@ -249,7 +249,7 @@ auto GGEMSSource::SetCountDrivenPopulation(std::uint64_t primary_count)
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSSource::SetActivityDrivenRadionuclide(
+auto GGEMSSource::SetRadionuclide(
     std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>
         radionuclide,
     units::Activity activity_at_reference_time, std::uint64_t reference_time_ps)
@@ -682,13 +682,6 @@ auto GGEMSSource::BuildRecord() const -> GGEMSSourceRecord {
 // -----------------------------------------------------------------------------
 
 auto GGEMSSource::Verbose() const -> void {
-  GGEMSSourceRecord const source_record = BuildRecord();
-  GGEMSEnergyDistributionRecord const energy_record =
-      energy_distribution_.BuildRecord(0ULL);
-
-  GGEMS_INFO(
-      "Source", "{}",
-      DescribeSource(source_record, GetPrimaryCount(), energy_record,
-                     energy_distribution_.GetEnergyValuesMilliElectronVolt()));
+  GGEMS_INFO("Source", "{}", DescribeSource(*this));
 }
 } // namespace ggems::core::sources

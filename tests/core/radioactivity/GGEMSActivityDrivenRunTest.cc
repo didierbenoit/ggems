@@ -17,9 +17,9 @@
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideEmission.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideEmissionPlan.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulationPlan.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/units/GGEMSActivityUnits.hh"
@@ -112,8 +112,8 @@ private:
     long double activity_bq = k_activity_bq)
     -> std::shared_ptr<ggems::core::sources::GGEMSSource> {
   auto source = std::make_shared<ggems::core::sources::GGEMSSource>();
-  source->SetActivityDrivenRadionuclide(
-      std::move(radionuclide), ggems::units::Activity{activity_bq}, 0ULL);
+  source->SetRadionuclide(std::move(radionuclide),
+                          ggems::units::Activity{activity_bq}, 0ULL);
   return source;
 }
 
@@ -175,8 +175,8 @@ TEST_F(GGEMSActivityDrivenRunTest,
        RetriesDuplicateActivitySourceSlotsAfterInvalidReferenceTime) {
   auto radionuclide = MakeMonoRadionuclide();
   auto source = MakeActivitySource(radionuclide);
-  source->SetActivityDrivenRadionuclide(
-      radionuclide, ggems::units::Activity{k_activity_bq}, 3ULL * k_second_ps);
+  source->SetRadionuclide(radionuclide, ggems::units::Activity{k_activity_bq},
+                          3ULL * k_second_ps);
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(MakeRandom());
@@ -187,7 +187,7 @@ TEST_F(GGEMSActivityDrivenRunTest,
 
   EXPECT_THROW(run.Initialize(), ggems::core::GGEMSExceptionBase);
 
-  EXPECT_NO_THROW(source->SetActivityDrivenRadionuclide(
+  EXPECT_NO_THROW(source->SetRadionuclide(
       radionuclide, ggems::units::Activity{k_activity_bq}, k_second_ps));
 
   ASSERT_NO_THROW(run.Initialize());
@@ -212,8 +212,8 @@ TEST_F(GGEMSActivityDrivenRunTest,
   std::vector<std::shared_ptr<ggems::core::sources::GGEMSSource>>
       reference_sources{MakeActivitySource(radionuclide)};
   auto reference_random = MakeRandom();
-  ggems::core::radioactivity::GGEMSRadionuclideEmissionPlanner
-      reference_planner{reference_sources, *reference_random};
+  ggems::core::sources::GGEMSSourcePopulationPlanner reference_planner{
+      reference_sources, *reference_random};
   auto reference_first = reference_planner.BuildCandidate(
       {.start_ps = 0ULL, .stop_ps = k_second_ps});
   std::uint64_t const expected_first_count =
@@ -238,7 +238,7 @@ TEST_F(GGEMSActivityDrivenRunTest,
 
   ASSERT_NO_THROW(run.Initialize());
 
-  EXPECT_THROW(source->SetActivityDrivenRadionuclide(
+  EXPECT_THROW(source->SetRadionuclide(
                    radionuclide, ggems::units::Activity{k_activity_bq}, 0ULL),
                ggems::core::GGEMSExceptionBase);
   EXPECT_THROW(source->SetCountDrivenPopulation(1ULL),
@@ -329,8 +329,8 @@ TEST_F(GGEMSActivityDrivenRunTest,
           MakeActivitySource(radionuclide, k_empty_then_non_empty_activity_bq)};
   auto reference_random = MakeRandom();
   reference_random->SetSeed(k_empty_then_non_empty_seed);
-  ggems::core::radioactivity::GGEMSRadionuclideEmissionPlanner
-      reference_planner{reference_sources, *reference_random};
+  ggems::core::sources::GGEMSSourcePopulationPlanner reference_planner{
+      reference_sources, *reference_random};
 
   auto reference_first = reference_planner.BuildCandidate(
       {.start_ps = 0ULL, .stop_ps = k_second_ps});
@@ -494,8 +494,8 @@ TEST_F(GGEMSActivityDrivenRunTest,
   auto reference_random = MakeRandom();
   auto reference_configuration =
       ggems::core::sources::BuildSourceConfigurationSnapshot(reference_sources);
-  ggems::core::radioactivity::GGEMSRadionuclideEmissionPlanner
-      reference_planner{reference_sources, *reference_random};
+  ggems::core::sources::GGEMSSourcePopulationPlanner reference_planner{
+      reference_sources, *reference_random};
 
   auto reference_first = reference_planner.BuildCandidate(
       {.start_ps = 0ULL, .stop_ps = k_second_ps});

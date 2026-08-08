@@ -34,7 +34,7 @@ public:
 
   auto SetCountDrivenPopulation(std::uint64_t primary_count) -> GGEMSSource &;
 
-  auto SetActivityDrivenRadionuclide(
+  auto SetRadionuclide(
       std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>
           radionuclide,
       units::Activity activity_at_reference_time,

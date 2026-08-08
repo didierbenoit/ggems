@@ -15,7 +15,7 @@
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideEmission.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideEmissionPlan.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulationPlan.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadioactiveTimeSampling.hh"
 #include "GGEMS/core/random/GGEMSHostRandomStream.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
@@ -37,7 +37,7 @@ using HostRandomStream = ggems::core::random::GGEMSHostRandomStream;
 using ObserverRecord = ggems::core::observer::GGEMSObserverRecord;
 using ObserverRecordKind = ggems::core::observer::GGEMSObserverRecordKind;
 using ParticleType = ggems::core::particles::GGEMSParticleType;
-using Planner = ggems::core::radioactivity::GGEMSRadionuclideEmissionPlanner;
+using Planner = ggems::core::sources::GGEMSSourcePopulationPlanner;
 using Random = ggems::core::random::GGEMSRandom;
 using Source = ggems::core::sources::GGEMSSource;
 using SourceConfigurationSnapshotPtr =
@@ -95,7 +95,7 @@ struct ActivityScenario {
       .SetPositionPicoMeter(11LL, 22LL, 33LL)
       .SetDirection(0.0, 0.0, 1.0)
       .SetWeight(0.5F)
-      .SetActivityDrivenRadionuclide(std::move(definition),
+      .SetRadionuclide(std::move(definition),
                                      ggems::units::Activity{64.0L},
                                      k_time_window.start_ps);
 
@@ -128,7 +128,7 @@ struct ActivityScenario {
   config.source_population_records =
       scenario.source_snapshot.GetPopulationRecords();
   config.source_ranges = scenario.source_snapshot.GetRanges();
-  config.radionuclide_group_ranges = scenario.source_snapshot.GetGroupRanges();
+  config.source_emission_ranges = scenario.source_snapshot.GetGroupRanges();
   config.observer_config.enabled = 1U;
   config.observer_config.capture_first_primary_count_per_source =
       std::numeric_limits<std::uint32_t>::max();
@@ -386,7 +386,7 @@ TEST_F(GGEMSRadionuclideTransportTest,
   config.source_records = grown_snapshot.GetRecords();
   config.source_population_records = grown_snapshot.GetPopulationRecords();
   config.source_ranges = grown_snapshot.GetRanges();
-  config.radionuclide_group_ranges = grown_snapshot.GetGroupRanges();
+  config.source_emission_ranges = grown_snapshot.GetGroupRanges();
   auto const grown_report = workload.Run(config);
 
   ExpectLogicalTransportCounters(grown_report, grown_primary_count);

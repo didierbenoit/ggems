@@ -7,14 +7,14 @@
 #include <memory>
 
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
-#include "GGEMS/core/sources/GGEMSSourceRecord.hh"
-#include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/core/transport/GGEMSTransportCounters.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideGroupRange.hh"
-#include "GGEMS/core/sources/GGEMSSourcePopulationRecord.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulationRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
+#include "GGEMS/core/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourceEmissionRange.hh"
 
 namespace ggems::ocl {
 class GGEMSOpenCLContext;
@@ -38,8 +38,7 @@ struct GGEMSTransportRunConfig {
   std::vector<sources::GGEMSSourceRecord> source_records;
   std::vector<sources::GGEMSSourcePopulationRecord> source_population_records;
   std::vector<sources::GGEMSSourceRunRange> source_ranges;
-  std::vector<radioactivity::GGEMSRadionuclideGroupRange>
-      radionuclide_group_ranges;
+  std::vector<sources::GGEMSSourceEmissionRange> source_emission_ranges;
   observer::GGEMSObserverConfigRecord observer_config{};
 };
 
@@ -149,8 +148,8 @@ private:
   ggems::ocl::GGEMSOpenCLSVMBuffer source_records_buffer_;
   ggems::ocl::GGEMSOpenCLSVMBuffer source_population_records_buffer_;
   ggems::ocl::GGEMSOpenCLSVMBuffer source_ranges_buffer_;
-  ggems::ocl::GGEMSOpenCLSVMBuffer radionuclide_emission_records_buffer_;
-  ggems::ocl::GGEMSOpenCLSVMBuffer radionuclide_group_ranges_buffer_;
+  ggems::ocl::GGEMSOpenCLSVMBuffer source_emission_records_buffer_;
+  ggems::ocl::GGEMSOpenCLSVMBuffer source_emission_ranges_buffer_;
   ggems::ocl::GGEMSOpenCLSVMBuffer energy_distribution_records_buffer_;
   ggems::ocl::GGEMSOpenCLSVMBuffer energy_values_buffer_;
   ggems::ocl::GGEMSOpenCLSVMBuffer cumulative_ticket_upper_buffer_;

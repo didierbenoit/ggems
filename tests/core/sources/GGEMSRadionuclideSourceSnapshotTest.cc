@@ -14,7 +14,7 @@
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideEmission.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideEmissionPlan.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulationPlan.hh"
 #include "GGEMS/core/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/random/GGEMSRandomEngine.hh"
@@ -30,7 +30,7 @@ namespace {
 
 using Definition = ggems::core::radioactivity::GGEMSRadionuclideDefinition;
 using Emission = ggems::core::radioactivity::GGEMSRadionuclideEmission;
-using Planner = ggems::core::radioactivity::GGEMSRadionuclideEmissionPlanner;
+using Planner = ggems::core::sources::GGEMSSourcePopulationPlanner;
 using Random = ggems::core::random::GGEMSRandom;
 using Source = ggems::core::sources::GGEMSSource;
 using SourcePtr = std::shared_ptr<Source>;
@@ -61,8 +61,8 @@ using SourcePtr = std::shared_ptr<Source>;
 MakeActivitySource(std::shared_ptr<Definition const> radionuclide,
                    long double activity_bq) -> SourcePtr {
   auto source = std::make_shared<Source>();
-  source->SetActivityDrivenRadionuclide(
-      std::move(radionuclide), ggems::units::Activity{activity_bq}, 0ULL);
+  source->SetRadionuclide(std::move(radionuclide),
+                          ggems::units::Activity{activity_bq}, 0ULL);
   return source;
 }
 
@@ -110,8 +110,7 @@ TEST(GGEMSRadionuclideSourceSnapshot,
   auto const configuration =
       ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
   auto const &energy_records = configuration->GetEnergyDistributionRecords();
-  auto const &emission_records =
-      configuration->GetRadionuclideEmissionRecords();
+  auto const &emission_records = configuration->GetEmissionRecords();
   auto const &definitions = configuration->GetRadionuclideDefinitions();
 
   constexpr std::size_t k_source_count{6U};
@@ -358,8 +357,8 @@ TEST(GGEMSRadionuclideSourceSnapshot,
   ASSERT_EQ(successful_snapshot.GetPopulationRecords().size(), 1U);
   EXPECT_EQ(successful_snapshot.GetPopulationRecords()[0U].emission_count, 3U);
 
-  source->SetActivityDrivenRadionuclide(replacement_definition,
-                                        ggems::units::Activity{0.0L}, 0ULL);
+  source->SetRadionuclide(replacement_definition, ggems::units::Activity{0.0L},
+                          0ULL);
   EXPECT_THROW((void)ggems::core::sources::BuildSourceRunSnapshot(
                    sources, configuration, candidate.GetPlan()),
                ggems::core::GGEMSExceptionBase);
@@ -372,8 +371,8 @@ TEST(GGEMSRadionuclideSourceSnapshot,
   EXPECT_EQ(successful_snapshot.GetRadionuclideDefinitions()[0U],
             planned_definition);
 
-  source->SetActivityDrivenRadionuclide(planned_definition,
-                                        ggems::units::Activity{0.0L}, 0ULL);
+  source->SetRadionuclide(planned_definition, ggems::units::Activity{0.0L},
+                          0ULL);
   std::vector<SourcePtr> mismatched_sources{
       MakeActivitySource(replacement_definition, 0.0L)};
   auto const mismatched_configuration =

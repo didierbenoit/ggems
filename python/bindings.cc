@@ -2,40 +2,43 @@
 
 namespace py = pybind11;
 
-void BindCore(py::module_ &m);
-void BindOpenCL(py::module_ &m);
-void BindRandom(py::module_ &m);
-void BindSource(py::module_ &m);
-void BindRun(py::module_ &m);
-void BindObserver(py::module_ &m);
+void BindCore(py::module_ &module);
+void BindOpenCL(py::module_ &module);
+void BindRandom(py::module_ &module);
+void BindRadionuclide(py::module_ &module);
+void BindSource(py::module_ &module);
+void BindRun(py::module_ &module);
+void BindObserver(py::module_ &module);
 
 #ifdef GGEMS_WITH_IMGUI
-void BindGui(py::module_ &m);
+void BindGui(py::module_ &module);
 #endif
 
-PYBIND11_MODULE(ggems, m) {
-  m.doc() = R"pbdoc(
+PYBIND11_MODULE(ggems, module) {
+  module.doc() = R"pbdoc(
     GGEMS — GPU Geant4-based Monte Carlo Simulations
     =================================================
     Modular C++ engine accelerated with OpenCL and
     exposed to Python via Pybind11.
   )pbdoc";
 
-  auto core = m.def_submodule("core", "GGEMS core module");
-  auto opencl = m.def_submodule("opencl", "GGEMS OpenCL module");
-  auto random = m.def_submodule("rndm", "GGEMS random module");
-  auto source = m.def_submodule("source", "GGEMS source module");
-  auto run = m.def_submodule("run", "GGEMS run module");
-  auto observer = m.def_submodule("observer", "GGEMS observer module");
+  auto core = module.def_submodule("core", "GGEMS core module");
+  auto opencl = module.def_submodule("opencl", "GGEMS OpenCL module");
+  auto random = module.def_submodule("rndm", "GGEMS random module");
+  auto source = module.def_submodule("source", "GGEMS source module");
+  auto run = module.def_submodule("run", "GGEMS run module");
+  auto observer = module.def_submodule("observer", "GGEMS observer module");
 
 #ifdef GGEMS_WITH_IMGUI
-  auto gui = m.def_submodule("gui", "GGEMS graphical interface module");
+  auto gui = module.def_submodule("gui", "GGEMS graphical interface module");
 #endif
 
   BindCore(core);
   BindOpenCL(opencl);
+  BindRadionuclide(module);
   BindRandom(random);
   BindSource(source);
+  module.attr("Source") = source.attr("GGEMSSource");
   BindRun(run);
   BindObserver(observer);
 
@@ -43,9 +46,9 @@ PYBIND11_MODULE(ggems, m) {
   BindGui(gui);
 #endif
 
-  m.attr("__version__") = "2.0.0";
-  m.attr("__author__") =
+  module.attr("__version__") = "2.0.0";
+  module.attr("__author__") =
       py::make_tuple("Didier Benoit <didier.benoit@inserm.fr>",
                      "Julien Bert <julien.bert@univ-brest.fr>");
-  m.attr("__license__") = "GPLv3";
+  module.attr("__license__") = "GPLv3";
 }

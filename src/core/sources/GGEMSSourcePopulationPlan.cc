@@ -15,14 +15,14 @@
 #include "GGEMS/core/radioactivity/GGEMSDecayStatistics.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideEmission.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideEmissionPlan.hh"
 #include "GGEMS/core/random/GGEMSHostRandomStream.hh"
 #include "GGEMS/core/random/GGEMSPoissonSampler.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulationPlan.hh"
 
-namespace ggems::core::radioactivity {
+namespace ggems::core::sources {
 namespace {
 
 // =============================================================================
@@ -49,47 +49,49 @@ auto CheckedVectorOffset(std::size_t offset, std::string const &diagnostic)
 // =============================================================================
 // =============================================================================
 
-auto GGEMSRadionuclideEmissionPlan::Create(
+auto GGEMSSourcePopulationPlan::Create(
     GGEMSTimeWindow time_window,
-    std::vector<GGEMSRadionuclideEmissionPlanSource> sources,
-    std::vector<GGEMSRadionuclideEmissionPlanGroup> groups,
-    std::vector<std::shared_ptr<GGEMSRadionuclideDefinition const>>
+    std::vector<GGEMSSourcePopulationPlanSource> sources,
+    std::vector<GGEMSSourcePopulationPlanEmission> emissions,
+    std::vector<
+        std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>>
         radionuclide_definitions,
-    std::uint64_t total_primary_count) -> GGEMSRadionuclideEmissionPlan {
-  return {time_window, std::move(sources), std::move(groups),
+    std::uint64_t total_primary_count) -> GGEMSSourcePopulationPlan {
+  return {time_window, std::move(sources), std::move(emissions),
           std::move(radionuclide_definitions), total_primary_count};
 }
 
 // -----------------------------------------------------------------------------
 
-GGEMSRadionuclideEmissionPlan::GGEMSRadionuclideEmissionPlan(
+GGEMSSourcePopulationPlan::GGEMSSourcePopulationPlan(
     GGEMSTimeWindow time_window,
-    std::vector<GGEMSRadionuclideEmissionPlanSource> sources,
-    std::vector<GGEMSRadionuclideEmissionPlanGroup> groups,
-    std::vector<std::shared_ptr<GGEMSRadionuclideDefinition const>>
+    std::vector<GGEMSSourcePopulationPlanSource> sources,
+    std::vector<GGEMSSourcePopulationPlanEmission> emissions,
+    std::vector<
+        std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>>
         radionuclide_definitions,
     std::uint64_t total_primary_count)
     : time_window_{time_window}, sources_{std::move(sources)},
-      groups_{std::move(groups)},
+      emissions_{std::move(emissions)},
       radionuclide_definitions_{std::move(radionuclide_definitions)},
       total_primary_count_{total_primary_count} {}
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSRadionuclideEmissionPlanCandidate::Create(
+auto GGEMSSourcePopulationCandidate::Create(
     std::shared_ptr<void const> owner_identity, std::uint64_t base_revision,
-    GGEMSRadionuclideEmissionPlan plan,
+    GGEMSSourcePopulationPlan plan,
     std::vector<random::GGEMSHostRandomStream> candidate_streams)
-    -> GGEMSRadionuclideEmissionPlanCandidate {
+    -> GGEMSSourcePopulationCandidate {
   return {std::move(owner_identity), base_revision, std::move(plan),
           std::move(candidate_streams)};
 }
 
 // -----------------------------------------------------------------------------
 
-GGEMSRadionuclideEmissionPlanCandidate::GGEMSRadionuclideEmissionPlanCandidate(
+GGEMSSourcePopulationCandidate::GGEMSSourcePopulationCandidate(
     std::shared_ptr<void const> owner_identity, std::uint64_t base_revision,
-    GGEMSRadionuclideEmissionPlan plan,
+    GGEMSSourcePopulationPlan plan,
     std::vector<random::GGEMSHostRandomStream> candidate_streams)
     : owner_identity_{std::move(owner_identity)}, base_revision_{base_revision},
       plan_{std::move(plan)}, candidate_streams_{std::move(candidate_streams)} {
@@ -97,8 +99,8 @@ GGEMSRadionuclideEmissionPlanCandidate::GGEMSRadionuclideEmissionPlanCandidate(
 
 // -----------------------------------------------------------------------------
 
-GGEMSRadionuclideEmissionPlanCandidate::GGEMSRadionuclideEmissionPlanCandidate(
-    GGEMSRadionuclideEmissionPlanCandidate &&other) noexcept
+GGEMSSourcePopulationCandidate::GGEMSSourcePopulationCandidate(
+    GGEMSSourcePopulationCandidate &&other) noexcept
     : owner_identity_{std::move(other.owner_identity_)},
       base_revision_{other.base_revision_}, committed_{other.committed_},
       plan_{std::move(other.plan_)},
@@ -106,9 +108,9 @@ GGEMSRadionuclideEmissionPlanCandidate::GGEMSRadionuclideEmissionPlanCandidate(
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSRadionuclideEmissionPlanCandidate::operator=(
-    GGEMSRadionuclideEmissionPlanCandidate &&other) noexcept
-    -> GGEMSRadionuclideEmissionPlanCandidate & {
+auto GGEMSSourcePopulationCandidate::operator=(
+    GGEMSSourcePopulationCandidate &&other) noexcept
+    -> GGEMSSourcePopulationCandidate & {
   if (this == &other) {
     return *this;
   }
@@ -123,7 +125,7 @@ auto GGEMSRadionuclideEmissionPlanCandidate::operator=(
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSRadionuclideEmissionPlanCandidate::CommitTo(
+auto GGEMSSourcePopulationCandidate::CommitTo(
     std::shared_ptr<void const> const &owner_identity,
     std::uint64_t &current_revision,
     std::vector<random::GGEMSHostRandomStream> &persistent_streams) -> void {
@@ -150,13 +152,13 @@ auto GGEMSRadionuclideEmissionPlanCandidate::CommitTo(
 // =============================================================================
 // =============================================================================
 
-GGEMSRadionuclideEmissionPlanner::GGEMSRadionuclideEmissionPlanner(
-    std::span<std::shared_ptr<sources::GGEMSSource> const> sources,
+GGEMSSourcePopulationPlanner::GGEMSSourcePopulationPlanner(
+    std::span<std::shared_ptr<GGEMSSource> const> sources,
     random::GGEMSRandom const &random)
     : owner_identity_{std::make_shared<std::uint8_t const>(0U)} {
   GGEMS_CHECK_RECOVERABLE(
       !sources.empty(),
-      "GGEMSRadionuclideEmissionPlanner requires at least one source slot.");
+      "GGEMSSourcePopulationPlanner requires at least one source slot.");
   GGEMS_CHECK_RECOVERABLE(
       sources.size() <=
           static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()),
@@ -178,8 +180,7 @@ GGEMSRadionuclideEmissionPlanner::GGEMSRadionuclideEmissionPlanner(
                           .first_stream_id = total_stream_count,
                           .emission_count = 0ULL};
 
-    if (slot.population_mode ==
-        sources::GGEMSSourcePopulationMode::ActivityDriven) {
+    if (slot.population_mode == GGEMSSourcePopulationMode::ActivityDriven) {
       auto const configuration =
           source->BuildActivityDrivenPopulationConfiguration();
       GGEMS_CHECK_INTERNAL(
@@ -227,9 +228,8 @@ GGEMSRadionuclideEmissionPlanner::GGEMSRadionuclideEmissionPlanner(
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSRadionuclideEmissionPlanner::BuildCandidate(
-    GGEMSTimeWindow time_window) const
-    -> GGEMSRadionuclideEmissionPlanCandidate {
+auto GGEMSSourcePopulationPlanner::BuildCandidate(
+    GGEMSTimeWindow time_window) const -> GGEMSSourcePopulationCandidate {
   GGEMS_CHECK_RECOVERABLE(time_window.start_ps <= time_window.stop_ps,
                           "Emission-plan time window stop precedes its start.");
 
@@ -240,13 +240,13 @@ auto GGEMSRadionuclideEmissionPlanner::BuildCandidate(
 
   std::vector<random::GGEMSHostRandomStream> candidate_streams =
       persistent_streams_;
-  std::vector<GGEMSRadionuclideEmissionPlanSource> plan_sources;
-  std::vector<GGEMSRadionuclideEmissionPlanGroup> plan_groups;
-  std::vector<std::shared_ptr<GGEMSRadionuclideDefinition const>>
+  std::vector<GGEMSSourcePopulationPlanSource> plan_sources;
+  std::vector<GGEMSSourcePopulationPlanEmission> plan_emissions;
+  std::vector<std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>>
       radionuclide_definitions;
 
   plan_sources.reserve(source_slots_.size());
-  plan_groups.reserve(candidate_streams.size());
+  plan_emissions.reserve(candidate_streams.size());
   radionuclide_definitions.reserve(source_slots_.size());
 
   std::uint64_t total_primary_count{0ULL};
@@ -263,13 +263,13 @@ auto GGEMSRadionuclideEmissionPlanner::BuildCandidate(
                     source_index));
 
     auto const source_index_u32 = static_cast<std::uint32_t>(source_index);
-    std::uint64_t const group_begin = CheckedVectorOffset(
-        plan_groups.size(), "Emission-plan group offset exceeds uint64.");
+    std::uint64_t const emission_begin =
+        CheckedVectorOffset(plan_emissions.size(),
+                            "Population-plan emission offset exceeds uint64.");
     std::uint64_t const source_primary_begin = total_primary_count;
     long double expected_parent_decay_count{0.0L};
 
-    if (slot.population_mode ==
-        sources::GGEMSSourcePopulationMode::CountDriven) {
+    if (slot.population_mode == GGEMSSourcePopulationMode::CountDriven) {
       std::uint64_t const primary_count = slot.source->GetPrimaryCount();
       total_primary_count =
           CheckedAdd(total_primary_count, primary_count,
@@ -285,10 +285,11 @@ auto GGEMSRadionuclideEmissionPlanner::BuildCandidate(
                       source_index));
 
       radionuclide_definitions.push_back(slot.radionuclide);
-      expected_parent_decay_count = ComputeExpectedDecayEventCount(
-          configuration.activity_at_reference_time,
-          slot.radionuclide->GetHalfLifeSeconds(),
-          configuration.reference_time_ps, time_window);
+      expected_parent_decay_count =
+          radioactivity::ComputeExpectedDecayEventCount(
+              configuration.activity_at_reference_time,
+              slot.radionuclide->GetHalfLifeSeconds(),
+              configuration.reference_time_ps, time_window);
 
       auto const emissions = slot.radionuclide->GetEmissions();
       GGEMS_CHECK_INTERNAL(emissions.size() ==
@@ -299,7 +300,8 @@ auto GGEMSRadionuclideEmissionPlanner::BuildCandidate(
 
       for (std::size_t emission_index = 0U; emission_index < emissions.size();
            ++emission_index) {
-        GGEMSRadionuclideEmission const &emission = emissions[emission_index];
+        radioactivity::GGEMSRadionuclideEmission const &emission =
+            emissions[emission_index];
         long double const yield_per_decay = emission.GetYieldPerDecay();
         long double const expected_emission_count =
             expected_parent_decay_count * yield_per_decay;
@@ -330,7 +332,7 @@ auto GGEMSRadionuclideEmissionPlanner::BuildCandidate(
             CheckedAdd(run_primary_begin, sampled_primary_count,
                        "Emission-plan total primary count overflows uint64.");
 
-        plan_groups.push_back(
+        plan_emissions.push_back(
             {.source_index = source_index_u32,
              .emission_index = static_cast<std::uint32_t>(emission_index),
              .host_stream_id = stream_id,
@@ -347,33 +349,34 @@ auto GGEMSRadionuclideEmissionPlanner::BuildCandidate(
       }
     }
 
-    std::uint64_t const group_end = CheckedVectorOffset(
-        plan_groups.size(), "Emission-plan group offset exceeds uint64.");
+    std::uint64_t const emission_end =
+        CheckedVectorOffset(plan_emissions.size(),
+                            "Population-plan emission offset exceeds uint64.");
 
     plan_sources.push_back(
         {.source_index = source_index_u32,
          .population_mode = slot.population_mode,
          .expected_parent_decay_count = expected_parent_decay_count,
-         .emission_begin = group_begin,
-         .emission_count = group_end - group_begin,
+         .emission_begin = emission_begin,
+         .emission_count = emission_end - emission_begin,
          .run_primary_begin = source_primary_begin,
          .run_primary_end = total_primary_count});
   }
 
-  GGEMSRadionuclideEmissionPlan plan = GGEMSRadionuclideEmissionPlan::Create(
-      time_window, std::move(plan_sources), std::move(plan_groups),
+  GGEMSSourcePopulationPlan plan = GGEMSSourcePopulationPlan::Create(
+      time_window, std::move(plan_sources), std::move(plan_emissions),
       std::move(radionuclide_definitions), total_primary_count);
 
-  return GGEMSRadionuclideEmissionPlanCandidate::Create(
-      owner_identity_, revision_, std::move(plan),
-      std::move(candidate_streams));
+  return GGEMSSourcePopulationCandidate::Create(owner_identity_, revision_,
+                                                std::move(plan),
+                                                std::move(candidate_streams));
 }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSRadionuclideEmissionPlanner::CommitCandidate(
-    GGEMSRadionuclideEmissionPlanCandidate &candidate) -> void {
+auto GGEMSSourcePopulationPlanner::CommitCandidate(
+    GGEMSSourcePopulationCandidate &candidate) -> void {
   candidate.CommitTo(owner_identity_, revision_, persistent_streams_);
 }
 
-} // namespace ggems::core::radioactivity
+} // namespace ggems::core::sources

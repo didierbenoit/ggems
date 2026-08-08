@@ -1,5 +1,5 @@
-#include "core/radioactivity/GGEMSRadionuclideEmissionRecord.clh"
-#include "core/radioactivity/GGEMSRadionuclideGroupRange.clh"
+#include "core/sources/GGEMSSourceEmissionRecord.clh"
+#include "core/sources/GGEMSSourceEmissionRange.clh"
 #include "core/sources/GGEMSSourcePopulationRecord.clh"
 
 typedef struct GGEMSSourcePopulationAlignmentProbe {
@@ -7,20 +7,20 @@ typedef struct GGEMSSourcePopulationAlignmentProbe {
   GGEMSSourcePopulationRecord record;
 } GGEMSSourcePopulationAlignmentProbe;
 
-typedef struct GGEMSRadionuclideEmissionAlignmentProbe {
+typedef struct GGEMSSourceEmissionAlignmentProbe {
   uchar prefix;
-  GGEMSRadionuclideEmissionRecord record;
-} GGEMSRadionuclideEmissionAlignmentProbe;
+  GGEMSSourceEmissionRecord record;
+} GGEMSSourceEmissionAlignmentProbe;
 
-typedef struct GGEMSRadionuclideGroupAlignmentProbe {
+typedef struct GGEMSSourceEmissionRangeAlignmentProbe {
   uchar prefix;
-  GGEMSRadionuclideGroupRange range;
-} GGEMSRadionuclideGroupAlignmentProbe;
+  GGEMSSourceEmissionRange range;
+} GGEMSSourceEmissionRangeAlignmentProbe;
 
-__kernel void radionuclide_runtime_record_abi_probe(
+__kernel void source_emission_record_abi_probe(
     __global ulong *layout, __global GGEMSSourcePopulationRecord *populations,
-    __global GGEMSRadionuclideEmissionRecord *emissions,
-    __global GGEMSRadionuclideGroupRange *groups) {
+    __global GGEMSSourceEmissionRecord *emissions,
+    __global GGEMSSourceEmissionRange *groups) {
   if (get_global_id(0) != 0U) {
     return;
   }
@@ -47,10 +47,10 @@ __kernel void radionuclide_runtime_record_abi_probe(
   layout[6] = (ulong)((__private uchar const *)&population_alignment.record -
                       (__private uchar const *)&population_alignment);
 
-  GGEMSRadionuclideEmissionRecord private_emission;
+  GGEMSSourceEmissionRecord private_emission;
   __private uchar const *emission_base =
       (__private uchar const *)&private_emission;
-  layout[7] = (ulong)(sizeof(GGEMSRadionuclideEmissionRecord));
+  layout[7] = (ulong)(sizeof(GGEMSSourceEmissionRecord));
   layout[8] = (ulong)((__private uchar const *)&private_emission.particle_type -
                       emission_base);
   layout[9] = (ulong)((__private uchar const *)&private_emission
@@ -61,13 +61,13 @@ __kernel void radionuclide_runtime_record_abi_probe(
               emission_base);
   layout[11] = (ulong)((__global uchar const *)&emissions[1] -
                        (__global uchar const *)&emissions[0]);
-  GGEMSRadionuclideEmissionAlignmentProbe emission_alignment;
+  GGEMSSourceEmissionAlignmentProbe emission_alignment;
   layout[12] = (ulong)((__private uchar const *)&emission_alignment.record -
                        (__private uchar const *)&emission_alignment);
 
-  GGEMSRadionuclideGroupRange private_group;
+  GGEMSSourceEmissionRange private_group;
   __private uchar const *group_base = (__private uchar const *)&private_group;
-  layout[13] = (ulong)(sizeof(GGEMSRadionuclideGroupRange));
+  layout[13] = (ulong)(sizeof(GGEMSSourceEmissionRange));
   layout[14] = (ulong)((__private uchar const *)&private_group
                            .source_local_primary_begin -
                        group_base);
@@ -75,7 +75,7 @@ __kernel void radionuclide_runtime_record_abi_probe(
                        group_base);
   layout[16] = (ulong)((__global uchar const *)&groups[1] -
                        (__global uchar const *)&groups[0]);
-  GGEMSRadionuclideGroupAlignmentProbe group_alignment;
+  GGEMSSourceEmissionRangeAlignmentProbe group_alignment;
   layout[17] = (ulong)((__private uchar const *)&group_alignment.range -
                        (__private uchar const *)&group_alignment);
 

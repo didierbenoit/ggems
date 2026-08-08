@@ -11,9 +11,9 @@
 #include <gtest/gtest.h>
 
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideEmissionRecord.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/random/GGEMSRandomEngine.hh"
+#include "GGEMS/core/sources/GGEMSSourceEmissionRecord.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistributionRecord.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourcePopulationRecord.hh"
@@ -31,8 +31,7 @@ namespace {
 using EnergyDistributionRecord =
     ggems::core::sources::GGEMSEnergyDistributionRecord;
 using EnergyType = ggems::core::sources::GGEMSEnergyDistributionType;
-using EmissionRecord =
-    ggems::core::radioactivity::GGEMSRadionuclideEmissionRecord;
+using EmissionRecord = ggems::core::sources::GGEMSSourceEmissionRecord;
 using ParticleType = ggems::core::particles::GGEMSParticleType;
 using PopulationRecord = ggems::core::sources::GGEMSSourcePopulationRecord;
 using Random = ggems::core::random::GGEMSRandom;
@@ -40,8 +39,14 @@ using RandomEngine = ggems::core::random::GGEMSRandomEngine;
 using Source = ggems::core::sources::GGEMSSource;
 using SourceRecord = ggems::core::sources::GGEMSSourceRecord;
 
+// =============================================================================
+// =============================================================================
+
 constexpr std::array<RandomEngine, 3U> k_engines{
     RandomEngine::JKISS, RandomEngine::PCG32, RandomEngine::Philox};
+
+// =============================================================================
+// =============================================================================
 
 class GGEMSActivitySourceRandomOrderTest : public ::testing::Test {
 protected:

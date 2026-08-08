@@ -10,7 +10,10 @@
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 
 namespace ggems::core::sources {
+class GGEMSSource;
 class GGEMSSourceRunSnapshot;
+
+[[nodiscard]] auto DescribeSource(GGEMSSource const &source) -> std::string;
 
 [[nodiscard]] auto DescribeSource(GGEMSSourceRecord const &record,
                                   std::uint64_t primary_count) -> std::string;

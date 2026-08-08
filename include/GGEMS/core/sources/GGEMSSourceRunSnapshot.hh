@@ -10,19 +10,19 @@
 #include "GGEMS/core/sources/GGEMSEnergyDistributionRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideEmissionRecord.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideGroupRange.hh"
 #include "GGEMS/core/sources/GGEMSSourcePopulationRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourceEmissionRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourceEmissionRange.hh"
 
 namespace ggems::core::radioactivity {
 class GGEMSRadionuclideDefinition;
-class GGEMSRadionuclideEmissionPlan;
 } // namespace ggems::core::radioactivity
 
 namespace ggems::core::sources {
 
 class GGEMSSource;
 class GGEMSSourceConfigurationSnapshot;
+class GGEMSSourcePopulationPlan;
 class GGEMSSourceRunSnapshot;
 
 using GGEMSSourceConfigurationSnapshotPtr =
@@ -60,10 +60,10 @@ BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources,
                        GGEMSSourceConfigurationSnapshotPtr source_configuration,
                        GGEMSTimeWindow time_window) -> GGEMSSourceRunSnapshot;
 
-[[nodiscard]] auto BuildSourceRunSnapshot(
-    std::span<std::shared_ptr<GGEMSSource> const> sources,
-    GGEMSSourceConfigurationSnapshotPtr source_configuration,
-    radioactivity::GGEMSRadionuclideEmissionPlan const &emission_plan)
+[[nodiscard]] auto
+BuildSourceRunSnapshot(std::span<std::shared_ptr<GGEMSSource> const> sources,
+                       GGEMSSourceConfigurationSnapshotPtr source_configuration,
+                       GGEMSSourcePopulationPlan const &population_plan)
     -> GGEMSSourceRunSnapshot;
 
 class GGEMSSourceConfigurationSnapshot {
@@ -106,9 +106,9 @@ public:
     return cumulative_ticket_upper_;
   }
 
-  [[nodiscard]] auto GetRadionuclideEmissionRecords() const noexcept
-      -> std::vector<radioactivity::GGEMSRadionuclideEmissionRecord> const & {
-    return radionuclide_emission_records_;
+  [[nodiscard]] auto GetEmissionRecords() const noexcept
+      -> std::vector<GGEMSSourceEmissionRecord> const & {
+    return source_emission_records_;
   }
 
   [[nodiscard]] auto GetRadionuclideDefinitions() const noexcept -> std::vector<
@@ -122,7 +122,7 @@ public:
   }
 
   [[nodiscard]] auto GetEmissionCount() const noexcept -> std::size_t {
-    return radionuclide_emission_records_.size();
+    return source_emission_records_.size();
   }
 
 private:
@@ -132,8 +132,7 @@ private:
       std::vector<std::uint64_t> energy_values_milli_eV,
       std::vector<double> relative_weights,
       std::vector<std::uint64_t> cumulative_ticket_upper,
-      std::vector<radioactivity::GGEMSRadionuclideEmissionRecord>
-          radionuclide_emission_records,
+      std::vector<GGEMSSourceEmissionRecord> source_emission_records,
       std::vector<
           std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>>
           radionuclide_definitions);
@@ -143,8 +142,7 @@ private:
   std::vector<std::uint64_t> energy_values_milli_eV_;
   std::vector<double> relative_weights_;
   std::vector<std::uint64_t> cumulative_ticket_upper_;
-  std::vector<radioactivity::GGEMSRadionuclideEmissionRecord>
-      radionuclide_emission_records_;
+  std::vector<GGEMSSourceEmissionRecord> source_emission_records_;
   std::vector<std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>>
       radionuclide_definitions_;
 };
@@ -163,7 +161,7 @@ public:
   [[nodiscard]] static auto
   Create(std::span<std::shared_ptr<GGEMSSource> const> sources,
          GGEMSSourceConfigurationSnapshotPtr source_configuration,
-         radioactivity::GGEMSRadionuclideEmissionPlan const &emission_plan)
+         GGEMSSourcePopulationPlan const &population_plan)
       -> GGEMSSourceRunSnapshot;
 
   ~GGEMSSourceRunSnapshot() = default;
@@ -191,8 +189,12 @@ public:
   }
 
   [[nodiscard]] auto GetGroupRanges() const noexcept
-      -> std::vector<radioactivity::GGEMSRadionuclideGroupRange> const & {
-    return group_ranges_;
+      -> std::vector<GGEMSSourceEmissionRange> const & {
+    return emission_ranges_;
+  }
+
+  [[nodiscard]] auto GetTimeWindow() const noexcept -> GGEMSTimeWindow {
+    return time_window_;
   }
 
   [[nodiscard]] auto GetSourceConfiguration() const noexcept
@@ -220,9 +222,9 @@ public:
     return source_configuration_->GetCumulativeTicketUpperBounds();
   }
 
-  [[nodiscard]] auto GetRadionuclideEmissionRecords() const noexcept
-      -> std::vector<radioactivity::GGEMSRadionuclideEmissionRecord> const & {
-    return source_configuration_->GetRadionuclideEmissionRecords();
+  [[nodiscard]] auto GetEmissionRecords() const noexcept
+      -> std::vector<GGEMSSourceEmissionRecord> const & {
+    return source_configuration_->GetEmissionRecords();
   }
 
   [[nodiscard]] auto GetRadionuclideDefinitions() const noexcept -> std::vector<
@@ -242,14 +244,16 @@ private:
       std::vector<GGEMSSourceRecord> records,
       std::vector<GGEMSSourceRunRange> ranges,
       std::vector<GGEMSSourcePopulationRecord> population_records,
-      std::vector<radioactivity::GGEMSRadionuclideGroupRange> group_ranges,
+      std::vector<GGEMSSourceEmissionRange> emission_ranges,
+      GGEMSTimeWindow time_window,
       GGEMSSourceConfigurationSnapshotPtr source_configuration,
       std::uint64_t total_primary_count);
 
   std::vector<GGEMSSourceRecord> records_;
   std::vector<GGEMSSourceRunRange> ranges_;
   std::vector<GGEMSSourcePopulationRecord> population_records_;
-  std::vector<radioactivity::GGEMSRadionuclideGroupRange> group_ranges_;
+  std::vector<GGEMSSourceEmissionRange> emission_ranges_;
+  GGEMSTimeWindow time_window_;
   GGEMSSourceConfigurationSnapshotPtr source_configuration_;
   std::uint64_t total_primary_count_{0ULL};
 };

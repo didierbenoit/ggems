@@ -25,7 +25,7 @@
 #include "GGEMS/core/sources/GGEMSSourcePopulationRecord.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
 #include "GGEMS/core/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideEmissionPlan.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulationPlan.hh"
 #include "GGEMS/core/units/GGEMSActivityUnits.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/random/GGEMSRandomEngine.hh"
@@ -120,7 +120,7 @@ auto ExpectSourceRange(ggems::core::sources::GGEMSSourceRunRange const &range,
 // =============================================================================
 // =============================================================================
 
-using Planner = ggems::core::radioactivity::GGEMSRadionuclideEmissionPlanner;
+using Planner = ggems::core::sources::GGEMSSourcePopulationPlanner;
 using Random = ggems::core::random::GGEMSRandom;
 using SourceConfiguration =
     ggems::core::sources::GGEMSSourceConfigurationSnapshot;
@@ -196,10 +196,8 @@ auto ExpectSourceConfigurationsEqual(SourceConfiguration const &standalone,
   EXPECT_EQ(standalone.GetCumulativeTicketUpperBounds(),
             planned.GetCumulativeTicketUpperBounds());
 
-  auto const &standalone_emission_records =
-      standalone.GetRadionuclideEmissionRecords();
-  auto const &planned_emission_records =
-      planned.GetRadionuclideEmissionRecords();
+  auto const &standalone_emission_records = standalone.GetEmissionRecords();
+  auto const &planned_emission_records = planned.GetEmissionRecords();
   ASSERT_EQ(standalone_emission_records.size(),
             planned_emission_records.size());
   for (std::size_t index = 0U; index < standalone_emission_records.size();
@@ -543,6 +541,7 @@ TEST(GGEMSSourceRunSnapshot,
   auto const snapshot =
       ggems::core::sources::BuildSourceRunSnapshot(sources, k_window);
 
+  EXPECT_EQ(snapshot.GetTimeWindow(), k_window);
   ASSERT_EQ(snapshot.GetRecords().size(), 3U);
   ASSERT_EQ(snapshot.GetRanges().size(), 3U);
   for (auto const &record : snapshot.GetRecords()) {
@@ -572,8 +571,13 @@ TEST(GGEMSSourceRunSnapshot,
 
 TEST(GGEMSSourceRunSnapshot, BuildsEmptySnapshot) {
   std::vector<GGEMSSourcePtr> const sources{};
+  constexpr ggems::core::GGEMSTimeWindow k_window{.start_ps = 7ULL,
+                                                  .stop_ps = 9ULL};
 
-  auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(sources);
+  auto snapshot =
+      ggems::core::sources::BuildSourceRunSnapshot(sources, k_window);
+
+  EXPECT_EQ(snapshot.GetTimeWindow(), k_window);
 
   EXPECT_TRUE(snapshot.GetRecords().empty());
   EXPECT_TRUE(snapshot.GetRanges().empty());
@@ -1239,8 +1243,8 @@ TEST(GGEMSSourceRunSnapshot,
       ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
       ggems::core::radioactivity::builtins::BuildF18Radionuclide());
   auto activity_source = std::make_shared<ggems::core::sources::GGEMSSource>();
-  activity_source->SetActivityDrivenRadionuclide(
-      definition, ggems::units::Activity{1.0L}, 0ULL);
+  activity_source->SetRadionuclide(definition, ggems::units::Activity{1.0L},
+                                   0ULL);
 
   auto const activity_configuration =
       ggems::core::sources::BuildSourceConfigurationSnapshot(*activity_source);
@@ -1282,8 +1286,8 @@ TEST(GGEMSSourceRunSnapshot,
   auto stable_configuration =
       ggems::core::sources::BuildSourceConfigurationSnapshot(
           reconfigured_sources);
-  reconfigured_sources[1U]->SetActivityDrivenRadionuclide(
-      definition, ggems::units::Activity{2.0L}, 0ULL);
+  reconfigured_sources[1U]->SetRadionuclide(definition,
+                                            ggems::units::Activity{2.0L}, 0ULL);
 
   ExpectGGEMSExceptionContaining(
       [&reconfigured_sources, &stable_configuration]() -> void {

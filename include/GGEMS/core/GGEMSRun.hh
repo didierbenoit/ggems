@@ -18,8 +18,8 @@ namespace ggems::core::random {
 class GGEMSRandom;
 }
 
-namespace ggems::core::radioactivity {
-class GGEMSRadionuclideEmissionPlanner;
+namespace ggems::core::sources {
+class GGEMSSourcePopulationPlanner;
 }
 
 namespace ggems::core::observer {
@@ -86,8 +86,8 @@ private:
   std::atomic<std::uint64_t> current_time_ps_{0ULL};
 
   sources::GGEMSSourceConfigurationSnapshotPtr source_configuration_snapshot_;
-  std::unique_ptr<radioactivity::GGEMSRadionuclideEmissionPlanner>
-      radionuclide_emission_planner_;
+  std::unique_ptr<sources::GGEMSSourcePopulationPlanner>
+      source_population_planner_;
 
   std::vector<std::unique_ptr<transport::GGEMSTransportWorkload>>
       transport_workloads_;

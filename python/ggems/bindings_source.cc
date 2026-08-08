@@ -10,13 +10,18 @@
 #include <pybind11/stl/filesystem.h>
 
 #include "detail/GGEMSPythonQuantityConversion.hh"
+#include "detail/GGEMSPythonRadionuclideDefinition.hh"
 
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
 #include "GGEMS/core/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
 #include "GGEMS/core/units/GGEMSLengthUnits.hh"
+#include "GGEMS/core/units/GGEMSActivityUnits.hh"
+#include "GGEMS/core/units/GGEMSTimeUnits.hh"
+#include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 
 namespace py = pybind11;
 
@@ -46,11 +51,12 @@ auto ConvertPrimaryCount(py::handle primary_count) -> std::uint64_t {
 // =============================================================================
 // =============================================================================
 
-auto BindSource(py::module_ &mod) -> void {
+auto BindSource(py::module_ &module) -> void {
   using ggems::core::sources::GGEMSSource;
   using ggems::python::detail::MakeQuantityOrThrow;
+  using ggems::python::detail::RadionuclideDefinitionHandle;
 
-  py::class_<GGEMSSource, std::shared_ptr<GGEMSSource>>(mod, "GGEMSSource")
+  py::class_<GGEMSSource, std::shared_ptr<GGEMSSource>>(module, "GGEMSSource")
       .def(py::init<>())
 
       .def("set_analytic", &GGEMSSource::SetAnalytic,
@@ -237,6 +243,32 @@ auto BindSource(py::module_ &mod) -> void {
           py::arg("primary_count"), py::return_value_policy::reference_internal)
 
       .def(
+          "set_radionuclide",
+          [](GGEMSSource &self,
+             RadionuclideDefinitionHandle const &radionuclide, double activity,
+             std::string const &activity_unit, double reference_time,
+             std::string const &time_unit) -> GGEMSSource & {
+            auto const converted_activity =
+                MakeQuantityOrThrow<ggems::units::Activity>(
+                    activity, activity_unit,
+                    {.quantity_name = "Source activity",
+                     .unsupported_unit_subject = "GGEMS activity"});
+            auto const converted_reference_time =
+                MakeQuantityOrThrow<ggems::units::TimePoint>(
+                    reference_time, time_unit,
+                    {.quantity_name = "Source reference time",
+                     .unsupported_unit_subject = "GGEMS time"});
+
+            return self.SetRadionuclide(radionuclide.GetDefinition(),
+                                        converted_activity,
+                                        converted_reference_time.value);
+          },
+          py::arg("radionuclide"), py::arg("activity"),
+          py::arg("activity_unit") = "Bq", py::arg("reference_time") = 0.0,
+          py::arg("time_unit") = "s",
+          py::return_value_policy::reference_internal)
+
+      .def(
           "set_particle",
           [](GGEMSSource &self,
              std::string const &particle_name) -> GGEMSSource & {
@@ -326,6 +358,32 @@ auto BindSource(py::module_ &mod) -> void {
       .def("verbose", &GGEMSSource::Verbose)
 
       .def("__repr__", [](GGEMSSource const &source) -> std::string {
+        if (source.GetPopulationMode() ==
+            ggems::core::sources::GGEMSSourcePopulationMode::ActivityDriven) {
+          auto const record = source.BuildExecutionRecord();
+          auto const configuration =
+              source.BuildActivityDrivenPopulationConfiguration();
+          auto const &radionuclide = *configuration.radionuclide;
+          auto const geometry_type =
+              ggems::core::sources::FromKernelEmissionGeometryType(
+                  record.emission_geometry_type);
+          auto const angular_type =
+              ggems::core::sources::FromKernelAngularDistributionType(
+                  record.angular_distribution_type);
+
+          return std::format(
+              "<GGEMSSource type={} population=ActivityDriven "
+              "radionuclide={} activity_Bq={} reference_time_ps={} "
+              "emission_count={} emission_geometry={} "
+              "angular_distribution={}>",
+              record.source_type, radionuclide.GetCanonicalName(),
+              configuration.activity_at_reference_time.value,
+              configuration.reference_time_ps,
+              radionuclide.GetEmissions().size(),
+              ggems::core::sources::ToLongName(geometry_type),
+              ggems::core::sources::ToLongName(angular_type));
+        }
+
         auto const record = source.BuildRecord();
         auto const distribution_type = source.GetEnergyDistribution().GetType();
 

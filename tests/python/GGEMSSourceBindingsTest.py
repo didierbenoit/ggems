@@ -1,3 +1,4 @@
+import gc
 import math
 from pathlib import Path
 import tempfile
@@ -10,6 +11,7 @@ class GGEMSSourceBindingsTest(unittest.TestCase):
     def test_configuration_methods_are_fluent(self) -> None:
         source = ggems.source.GGEMSSource()
 
+        self.assertIs(source.set_primary_count(17), source)
         self.assertIs(source.set_emission_point(), source)
         self.assertIs(source.set_emission_rectangle(40.0, 20.0, "mm"), source)
         self.assertIs(source.set_emission_ellipse(10.0, 5.0, "mm"), source)
@@ -38,6 +40,120 @@ class GGEMSSourceBindingsTest(unittest.TestCase):
             ),
             source,
         )
+
+    def test_builtin_radionuclide_metadata_is_exact(self) -> None:
+        expected = {
+            "F-18": (6584.04, 3),
+            "C-11": (1221.66, 1),
+            "O-15": (122.266, 1),
+        }
+
+        for name, (half_life_seconds, emission_count) in expected.items():
+            with self.subTest(name=name):
+                definition = ggems.radionuclide(name)
+                self.assertIsInstance(definition, ggems.RadionuclideDefinition)
+                self.assertEqual(definition.name, name)
+                self.assertEqual(definition.half_life_seconds, half_life_seconds)
+                self.assertEqual(definition.emission_count, emission_count)
+
+    def test_radionuclide_factory_requires_exact_canonical_names(self) -> None:
+        for name in ("F18", "f-18", " F-18 ", "unknown"):
+            with self.subTest(name=name):
+                with self.assertRaisesRegex(ValueError, "Unknown built-in"):
+                    ggems.radionuclide(name)
+
+    def test_radionuclide_definition_surface_is_immutable(self) -> None:
+        with self.assertRaises(TypeError):
+            ggems.RadionuclideDefinition()
+
+        definition = ggems.radionuclide("F-18")
+        for attribute, value in (
+            ("name", "C-11"),
+            ("half_life_seconds", 1.0),
+            ("emission_count", 0),
+            ("custom", "value"),
+        ):
+            with self.subTest(attribute=attribute):
+                with self.assertRaises(AttributeError):
+                    setattr(definition, attribute, value)
+
+    def test_source_accepts_radionuclide_with_quantity_units(self) -> None:
+        source = ggems.Source()
+        definition = ggems.radionuclide("F-18")
+
+        self.assertIs(
+            source.set_radionuclide(
+                definition,
+                activity=2.5,
+                activity_unit="mCi",
+                reference_time=3.0,
+                time_unit="ms",
+            ),
+            source,
+        )
+
+    def test_activity_driven_repr_owns_definition_and_reports_configuration(self) -> None:
+        definition = ggems.radionuclide("F-18")
+        source = ggems.Source()
+        source.set_emission_box(2.0, 3.0, 4.0, "mm")
+        source.set_angular_isotropic()
+        source.set_radionuclide(
+            definition,
+            activity=2.5,
+            activity_unit="kBq",
+            reference_time=3.0,
+            time_unit="ns",
+        )
+
+        del definition
+        gc.collect()
+
+        text = repr(source)
+        self.assertIn("population=ActivityDriven", text)
+        self.assertIn("radionuclide=F-18", text)
+        self.assertIn("activity_Bq=2500", text)
+        self.assertIn("reference_time_ps=3000", text)
+        self.assertIn("emission_count=3", text)
+        self.assertIn("emission_geometry=Box", text)
+        self.assertIn("angular_distribution=Isotropic", text)
+        self.assertNotIn("particle_type=", text)
+        self.assertNotIn("energy_distribution=", text)
+
+    def test_radionuclide_conversion_failure_is_atomic(self) -> None:
+        source = ggems.Source()
+        definition = ggems.radionuclide("F-18")
+
+        with self.assertRaisesRegex(
+            ValueError, r"^Unsupported GGEMS time unit 'fortnight'\.$"
+        ):
+            source.set_radionuclide(
+                definition,
+                activity=1.0,
+                activity_unit="Bq",
+                reference_time=1.0,
+                time_unit="fortnight",
+            )
+
+        self.assertIs(source.set_primary_count(1), source)
+
+        invalid_cases = (
+            (math.nan, "Bq", 0.0, "s", "Source activity must be finite"),
+            (-1.0, "Bq", 0.0, "s", "Source activity must be positive"),
+            (1.0, "invalid", 0.0, "s", "Unsupported GGEMS activity"),
+            (1.0, "Bq", math.inf, "s", "Source reference time must be finite"),
+        )
+        for activity, activity_unit, reference_time, time_unit, message in invalid_cases:
+            with self.subTest(message=message):
+                candidate = ggems.Source()
+                with self.assertRaisesRegex(ValueError, message):
+                    candidate.set_radionuclide(
+                        definition,
+                        activity=activity,
+                        activity_unit=activity_unit,
+                        reference_time=reference_time,
+                        time_unit=time_unit,
+                    )
+                self.assertIs(candidate.set_primary_count(1), candidate)
 
     def test_time_configuration_is_owned_by_run(self) -> None:
         source = ggems.source.GGEMSSource()

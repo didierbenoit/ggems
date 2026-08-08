@@ -9,10 +9,12 @@
 
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/core/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSSourceDescription.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
+#include "GGEMS/core/units/GGEMSActivityUnits.hh"
 #include "support/GGEMSScopedLoggerEncoding.hh"
 
 namespace {
@@ -112,9 +114,56 @@ auto ExpectContains(std::string const &description, std::string_view expected)
 TEST(GGEMSSourceDescription, DescribesPositivePrimaryCountSource) {
   auto source = MakeConfiguredSource(7ULL);
 
+  EXPECT_EQ(ggems::core::sources::DescribeSource(*source),
+            k_source_description);
   EXPECT_EQ(ggems::core::sources::DescribeSource(source->BuildRecord(),
                                                  source->GetPrimaryCount()),
             k_source_description);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSourceDescription,
+     DescribesStandaloneActivityDrivenConfigurationWithoutRunFacts) {
+  ScopedLoggerEncoding const encoding{ggems::core::Encoding::Unicode};
+  auto radionuclide = std::make_shared<
+      ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
+      ggems::core::radioactivity::builtins::BuildF18Radionuclide());
+  GGEMSSource source{};
+  source
+      .SetRadionuclide(radionuclide, ggems::units::Activity{100'000'000.0L},
+                       2'000'000'000ULL)
+      .SetBoxEmissionPicoMeter(2'000'000'000ULL, 3'000'000'000ULL,
+                               4'000'000'000ULL)
+      .SetIsotropicAngularDistribution()
+      .SetPositionPicoMeter(1'000'000'000LL, -2'000'000'000LL, 0LL)
+      .SetDirection(1.0, 0.0, 0.0)
+      .SetWeight(0.25F);
+
+  std::string const description = ggems::core::sources::DescribeSource(source);
+
+  ExpectContains(description, "Type: Analytic");
+  ExpectContains(description, "Population: ActivityDriven");
+  ExpectContains(description, "Radionuclide: F-18");
+  ExpectContains(description, "Activity at reference time: 100.0000000 MBq");
+  ExpectContains(description, "Reference time: 2.0000000 ms");
+  ExpectContains(description, "Emission count: 3");
+  ExpectContains(description, "Emission: Box");
+  ExpectContains(description, "Angular: Isotropic | Domain: Full sphere");
+  ExpectContains(description,
+                 "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm)");
+  ExpectContains(description, "Axis Z: (1, 0, 0)");
+  ExpectContains(description, "Weight: 0.25");
+  EXPECT_EQ(description.find("Primary count:"), std::string::npos);
+  EXPECT_EQ(description.find("Projection primary begin:"), std::string::npos);
+  EXPECT_EQ(description.find("Emission groups:"), std::string::npos);
+  EXPECT_EQ(description.find("count="), std::string::npos);
+  EXPECT_EQ(description.find("Time window:"), std::string::npos);
+  EXPECT_EQ(description.find("Time: fixed at"), std::string::npos);
+  EXPECT_EQ(description.find("Particle:"), std::string::npos);
+  EXPECT_EQ(description.find("Energy:"), std::string::npos);
+  EXPECT_EQ(description.find("Energy distribution:"), std::string::npos);
 }
 
 // =============================================================================

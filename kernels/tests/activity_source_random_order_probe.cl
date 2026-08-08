@@ -8,7 +8,7 @@ __kernel void activity_source_random_order_probe(
     __global GGEMSRandomState *reference_states,
     __global GGEMSSourceRecord const *source,
     __global GGEMSSourcePopulationRecord const *population,
-    __global GGEMSRadionuclideEmissionRecord const *emission,
+    __global GGEMSSourceEmissionRecord const *emission,
     __global GGEMSEnergyDistributionRecord const *energy_distribution,
     __global ulong const *energy_values_milli_eV,
     __global ulong const *cumulative_ticket_upper,

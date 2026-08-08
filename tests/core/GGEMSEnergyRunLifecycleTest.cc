@@ -308,8 +308,7 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
       ggems::core::radioactivity::builtins::BuildF18Radionuclide());
 
   ExpectFinalizedRejection([&]() -> void {
-    source->SetActivityDrivenRadionuclide(radionuclide,
-                                          ggems::units::Activity{100.0L}, 0ULL);
+    source->SetRadionuclide(radionuclide, ggems::units::Activity{100.0L}, 0ULL);
   });
   ExpectFinalizedRejection(
       [&]() -> void { source->SetCountDrivenPopulation(7ULL); });

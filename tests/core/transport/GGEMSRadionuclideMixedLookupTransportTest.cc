@@ -18,7 +18,7 @@
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideEmission.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideEmissionPlan.hh"
+#include "GGEMS/core/sources/GGEMSSourcePopulationPlan.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadioactiveTimeSampling.hh"
 #include "GGEMS/core/random/GGEMSHostRandomStream.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
@@ -41,7 +41,7 @@ using HostRandomStream = ggems::core::random::GGEMSHostRandomStream;
 using ObserverRecord = ggems::core::observer::GGEMSObserverRecord;
 using ObserverRecordKind = ggems::core::observer::GGEMSObserverRecordKind;
 using ParticleType = ggems::core::particles::GGEMSParticleType;
-using Planner = ggems::core::radioactivity::GGEMSRadionuclideEmissionPlanner;
+using Planner = ggems::core::sources::GGEMSSourcePopulationPlanner;
 using Random = ggems::core::random::GGEMSRandom;
 using Source = ggems::core::sources::GGEMSSource;
 using SourcePtr = std::shared_ptr<Source>;
@@ -97,7 +97,7 @@ constexpr std::array<std::uint64_t, 3U> k_activity_energies{111ULL, 222ULL,
 
   auto activity = std::make_shared<Source>();
   activity
-      ->SetActivityDrivenRadionuclide(MakeDefinition(),
+      ->SetRadionuclide(MakeDefinition(),
                                       ggems::units::Activity{100.0L}, 0ULL)
       .SetPositionPicoMeter(0LL, 2'000LL, 0LL);
 
@@ -134,7 +134,7 @@ constexpr std::array<std::uint64_t, 3U> k_activity_energies{111ULL, 222ULL,
   config.source_records = snapshot.GetRecords();
   config.source_population_records = snapshot.GetPopulationRecords();
   config.source_ranges = snapshot.GetRanges();
-  config.radionuclide_group_ranges = snapshot.GetGroupRanges();
+  config.source_emission_ranges = snapshot.GetGroupRanges();
   config.observer_config.enabled = 1U;
   config.observer_config.capture_first_primary_count_per_source =
       std::numeric_limits<std::uint32_t>::max();
@@ -257,7 +257,7 @@ auto ExpectSourceAndGroupLookup(SourceRunSnapshot const &snapshot,
   auto const &ranges = snapshot.GetRanges();
   auto const &population_records = snapshot.GetPopulationRecords();
   auto const &group_ranges = snapshot.GetGroupRanges();
-  auto const &emission_records = snapshot.GetRadionuclideEmissionRecords();
+  auto const &emission_records = snapshot.GetEmissionRecords();
   auto const &source_host_records = snapshot.GetRecords();
 
   ASSERT_EQ(ranges.size(), 3U);

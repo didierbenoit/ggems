@@ -1,9 +1,0 @@
-#ifndef GGEMS_CORE_RADIOACTIVITY_GGEMS_RADIONUCLIDE_GROUP_RANGE_CLH
-#define GGEMS_CORE_RADIOACTIVITY_GGEMS_RADIONUCLIDE_GROUP_RANGE_CLH
-
-typedef struct GGEMSRadionuclideGroupRange {
-  ulong source_local_primary_begin;
-  ulong primary_count;
-} GGEMSRadionuclideGroupRange;
-
-#endif
