@@ -1,7 +1,4 @@
 # ============================================================================
-# @file      ClangOptions.cmake @brief     Compiler configuration for LLVM Clang
-# and Apple Clang. @details   Configure warnings and diagnostics for GNU-like
-# Clang and MSVC-like clang-cl frontends.
 # ============================================================================
 
 include_guard(GLOBAL)

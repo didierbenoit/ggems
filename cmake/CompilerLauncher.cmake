@@ -1,6 +1,4 @@
 # ============================================================================
-# @file      CompilerLauncher.cmake @brief     Configure the optional GGEMS
-# compiler cache.
 # ============================================================================
 
 include_guard(GLOBAL)

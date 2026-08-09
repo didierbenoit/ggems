@@ -1,43 +1,13 @@
 // ************************************************************************
-// * This file is part of GGEMS.                                          *
-// *                                                                      *
-// * GGEMS is free software: you can redistribute it and/or modify        *
-// * it under the terms of the GNU General Public License as published by *
-// * the Free Software Foundation, either version 3 of the License, or    *
-// * (at your option) any later version.                                  *
-// *                                                                      *
-// * GGEMS is distributed in the hope that it will be useful,             *
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
-// * GNU General Public License for more details.                         *
-// *                                                                      *
-// * You should have received a copy of the GNU General Public License    *
-// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
-// *                                                                      *
 // ************************************************************************
 
-/*!
- * \file GGEMSOpenCLContext.cc
- * \brief Declaration of GGEMSOpenCLContext providing creation and management
- *        of OpenCL contexts, command queues, SVM capabilities, and future
- *        interoperability features (OpenCL ↔ Vulkan).
- *
- * This class encapsulates all OpenCL context-level operations used by GGEMS.
- * It creates and manages the native cl::Context, command queue, and SVM
- * capability detection. The context serves as the central point of memory
- * allocation, queue submission, kernel setup, and (in future versions)
- * interoperability with external APIs such as Vulkan.
- *
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-12-08
- * \version 2.0
- * \copyright
- * GNU General Public License v3.0
- */
 
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
+
+#include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/GGEMSLogMacros.hh"
 #include "GGEMS/core/units/GGEMSBytesUnits.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
 using namespace ggems::units;
 
@@ -81,7 +51,7 @@ void GGEMSOpenCLContext::CreateContext() {
                          nullptr,                     // user data
                          &err);
 
-  GGEMS_OCL_CHECK(err, "Failed to create OpenCL context");
+  CheckCLError(err, "Failed to create OpenCL context");
 
   GGEMS_INFOEX("OpenCL", 3, "Compute OpenCL context created.");
 }
@@ -101,7 +71,7 @@ void GGEMSOpenCLContext::CreateCommandQueue() {
   command_queue_ =
       cl::CommandQueue(context_, device_.GetDeviceNative(), props, &err);
 
-  GGEMS_OCL_CHECK(err, "Failed to create command queue.");
+  CheckCLError(err, "Failed to create command queue.");
 
   GGEMS_INFOEX("OpenCL", 3,
                "OpenCL command queue created with profiling enabled.");
@@ -173,22 +143,26 @@ GGEMSOpenCLSVMBuffer GGEMSOpenCLContext::CreateSVMBuffer(Bytes size,
                                                          Bytes alignment) {
   auto const &svm = svm_support_;
 
-  GGEMS_CHECK_FATAL(svm.HasAny(), "This context/device does not support SVM.");
+  if (!(svm.HasAny())) {
+    throw ggems::core::GGEMSFatal("This context/device does not support SVM.");
+  }
 
-  GGEMS_CHECK_FATAL(kind != SVMMemoryKind::None,
-                    "Invalid SVMMemoryKind::None for allocation.");
+  if (!(kind != SVMMemoryKind::None)) {
+    throw ggems::core::GGEMSFatal("Invalid SVMMemoryKind::None for allocation.");
+  }
 
   SVMMemoryKind const selected =
       kind == SVMMemoryKind::Auto ? svm.DefaultKind() : kind;
 
-  GGEMS_CHECK_FATAL(selected != SVMMemoryKind::None,
-                    "No supported SVM memory kind is available.");
+  if (!(selected != SVMMemoryKind::None)) {
+    throw ggems::core::GGEMSFatal("No supported SVM memory kind is available.");
+  }
 
-  GGEMS_CHECK_FATAL(
-      svm.Supports(selected),
-      std::format("Requested SVM memory kind '{}' is not supported by "
+  if (!(svm.Supports(selected))) {
+    throw ggems::core::GGEMSFatal(std::format("Requested SVM memory kind '{}' is not supported by "
                   "device '{}'.",
                   ToString(selected), device_.GetName()));
+  }
 
   cl_svm_mem_flags flags = 0;
 
@@ -207,8 +181,7 @@ GGEMSOpenCLSVMBuffer GGEMSOpenCLContext::CreateSVMBuffer(Bytes size,
     flags = CL_MEM_READ_WRITE;
     break;
   default:
-    core::Throw<core::GGEMSFatal>(
-        "Unsupported SVMMemoryKind in CreateSVMBuffer.");
+    throw core::GGEMSFatal("Unsupported SVMMemoryKind in CreateSVMBuffer.");
   }
 
   GGEMS_INFOEX("OpenCL", 2,
@@ -253,8 +226,9 @@ void GGEMSOpenCLContext::EnqueueSVMMap(void *ptr, Bytes size,
                                flags, ptr, static_cast<std::size_t>(size.value),
                                0, nullptr, nullptr);
 
-  GGEMS_CHECK_FATAL(err == CL_SUCCESS,
-                    std::format("SVMMap failed: {}", GetLongErrorString(err)));
+  if (!(err == CL_SUCCESS)) {
+    throw ggems::core::GGEMSFatal(std::format("SVMMap failed: {}", GetLongErrorString(err)));
+  }
 }
 
 /* ------------------------------------------------------------------------- */
@@ -267,14 +241,18 @@ void GGEMSOpenCLContext::EnqueueSVMUnmap(void *ptr) const {
   cl_int err =
       clEnqueueSVMUnmap(command_queue_(), ptr, 0, nullptr, &unmap_event);
 
-  GGEMS_CHECK_FATAL(err == CL_SUCCESS, std::format("SVMUnmap failed: {}",
+  if (!(err == CL_SUCCESS)) {
+    throw ggems::core::GGEMSFatal(std::format("SVMUnmap failed: {}",
                                                    GetLongErrorString(err)));
+  }
 
   err = clWaitForEvents(1, &unmap_event);
 
   clReleaseEvent(unmap_event);
-  GGEMS_CHECK_FATAL(err == CL_SUCCESS, std::format("SVMUnmap wait failed: {}",
+  if (!(err == CL_SUCCESS)) {
+    throw ggems::core::GGEMSFatal(std::format("SVMUnmap wait failed: {}",
                                                    GetLongErrorString(err)));
+  }
 }
 
 /* ------------------------------------------------------------------------- */
@@ -285,9 +263,10 @@ void GGEMSOpenCLContext::SetSVMPointer(cl::Kernel &kernel, cl_uint index,
                                        void *ptr) const {
   cl_int err = clSetKernelArgSVMPointer(kernel(), index, ptr);
 
-  GGEMS_CHECK_FATAL(err == CL_SUCCESS,
-                    std::format("SetSVMPointer failed at arg {}: {}", index,
+  if (!(err == CL_SUCCESS)) {
+    throw ggems::core::GGEMSFatal(std::format("SetSVMPointer failed at arg {}: {}", index,
                                 GetLongErrorString(err)));
+  }
 }
 
 /* ------------------------------------------------------------------------- */

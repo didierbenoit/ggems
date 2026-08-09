@@ -5,7 +5,7 @@
 
 #include "GGEMS/core/transport/GGEMSTransportWorkloadPlan.hh"
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+
 
 namespace ggems::core::transport {
 
@@ -18,20 +18,23 @@ GGEMSTransportChunkIterator::GGEMSTransportChunkIterator(
     : next_device_primary_offset_{device_primary_offset},
       remaining_primary_count_{primary_count},
       launch_primary_count_limit_{launch_primary_count_limit} {
-  GGEMS_CHECK_RECOVERABLE(
-      launch_primary_count_limit_ > 0U,
-      "Transport chunk launch-primary limit must be non-zero.");
-  GGEMS_CHECK_RECOVERABLE(remaining_primary_count_ == 0ULL ||
+  if (!(launch_primary_count_limit_ > 0U)) {
+    throw ggems::core::GGEMSRecoverable("Transport chunk launch-primary limit must be non-zero.");
+  }
+  if (!(remaining_primary_count_ == 0ULL ||
                               remaining_primary_count_ - 1ULL <=
                                   std::numeric_limits<std::uint64_t>::max() -
-                                      next_device_primary_offset_,
-                          "Transport chunk interval overflows uint64 storage.");
+                                      next_device_primary_offset_)) {
+    throw ggems::core::GGEMSRecoverable("Transport chunk interval overflows uint64 storage.");
+  }
 }
 
 // ----------------------------------------------------------------------------
 
 auto GGEMSTransportChunkIterator::Next() -> GGEMSTransportChunk {
-  GGEMS_CHECK_RECOVERABLE(HasNext(), "Transport chunk iterator is exhausted.");
+  if (!(HasNext())) {
+    throw ggems::core::GGEMSRecoverable("Transport chunk iterator is exhausted.");
+  }
 
   std::uint64_t const chunk_count_u64 =
       std::min(remaining_primary_count_,
@@ -53,11 +56,13 @@ auto GGEMSTransportChunkIterator::Next() -> GGEMSTransportChunk {
 
 auto ComputeSafeTransportLaunchPrimaryCount(std::uint32_t worker_count)
     -> std::uint32_t {
-  GGEMS_CHECK_RECOVERABLE(worker_count > 0U,
-                          "Transport worker count must be non-zero.");
-  GGEMS_CHECK_RECOVERABLE(
-      worker_count < std::numeric_limits<std::uint32_t>::max(),
-      "Transport worker count leaves no positive uint32 launch capacity.");
+  if (!(worker_count > 0U)) {
+    throw ggems::core::GGEMSRecoverable("Transport worker count must be non-zero.");
+  }
+  if (!(worker_count < std::numeric_limits<std::uint32_t>::max())) {
+    throw ggems::core::GGEMSRecoverable(
+        "Transport worker count leaves no positive uint32 launch capacity.");
+  }
   return std::numeric_limits<std::uint32_t>::max() - worker_count;
 }
 
@@ -69,17 +74,20 @@ auto BuildEqualTransportWorkloadPlan(std::uint64_t projection_history_offset,
                                      std::uint32_t workload_count,
                                      std::uint32_t worker_count_per_workload)
     -> std::vector<GGEMSTransportWorkloadPlan> {
-  GGEMS_CHECK_RECOVERABLE(total_primary_count > 0U,
-                          "Cannot build a transport workload plan with zero"
+  if (!(total_primary_count > 0U)) {
+    throw ggems::core::GGEMSRecoverable("Cannot build a transport workload plan with zero"
                           "primary particles.");
+  }
 
-  GGEMS_CHECK_RECOVERABLE(workload_count > 0U,
-                          "Cannot build a transport workload plan with zero "
+  if (!(workload_count > 0U)) {
+    throw ggems::core::GGEMSRecoverable("Cannot build a transport workload plan with zero "
                           "workloads.");
+  }
 
-  GGEMS_CHECK_RECOVERABLE(worker_count_per_workload > 0U,
-                          "Cannot build a transport workload plan with zero "
+  if (!(worker_count_per_workload > 0U)) {
+    throw ggems::core::GGEMSRecoverable("Cannot build a transport workload plan with zero "
                           "workers per workload.");
+  }
 
   std::vector<GGEMSTransportWorkloadPlan> workload_plan;
   workload_plan.reserve(workload_count);
@@ -105,17 +113,18 @@ auto BuildEqualTransportWorkloadPlan(std::uint64_t projection_history_offset,
         .projection_history_offset = projection_history_offset,
         .device_primary_offset = device_primary_offset});
 
-    GGEMS_CHECK_INTERNAL(
-        workload_primary_count <=
-            std::numeric_limits<std::uint64_t>::max() - device_primary_offset,
-        "Transport workload plan offset overflows uint64 storage.");
+    if (!(workload_primary_count <=
+            std::numeric_limits<std::uint64_t>::max() - device_primary_offset)) {
+      throw ggems::core::GGEMSInternal("Transport workload plan offset overflows uint64 storage.");
+    }
     device_primary_offset += workload_primary_count;
   }
 
-  GGEMS_CHECK_RECOVERABLE(CountAssignedPrimaries(workload_plan) ==
-                              total_primary_count,
-                          "Transport workload plan assigned primary count does "
+  if (!(CountAssignedPrimaries(workload_plan) ==
+                              total_primary_count)) {
+    throw ggems::core::GGEMSRecoverable("Transport workload plan assigned primary count does "
                           "not match requested primary count.");
+  }
 
   return workload_plan;
 }
@@ -129,10 +138,11 @@ auto CountAssignedPrimaries(
   std::uint64_t assigned_primary_count{0ULL};
 
   for (GGEMSTransportWorkloadPlan const &workload : workload_plan) {
-    GGEMS_CHECK_INTERNAL(
-        workload.primary_count <=
-            std::numeric_limits<std::uint64_t>::max() - assigned_primary_count,
-        "Transport assigned-primary total overflows uint64 storage.");
+    if (!(workload.primary_count <=
+            std::numeric_limits<std::uint64_t>::max() - assigned_primary_count)) {
+      throw ggems::core::GGEMSInternal(
+          "Transport assigned-primary total overflows uint64 storage.");
+    }
     assigned_primary_count += workload.primary_count;
   }
 

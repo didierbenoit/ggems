@@ -1,11 +1,9 @@
 #pragma once
 
-/// \cond
 #include <cstdint>
 #include <mutex>
 #include <vector>
 #include <string>
-/// \endcond
 
 #include "GGEMS/core/GGEMSLogger.hh"
 

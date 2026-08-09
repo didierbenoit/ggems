@@ -1,45 +1,11 @@
 // ************************************************************************
-// * This file is part of GGEMS.                                          *
-// *                                                                      *
-// * GGEMS is free software: you can redistribute it and/or modify        *
-// * it under the terms of the GNU General Public License as published by *
-// * the Free Software Foundation, either version 3 of the License, or    *
-// * (at your option) any later version.                                  *
-// *                                                                      *
-// * GGEMS is distributed in the hope that it will be useful,             *
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
-// * GNU General Public License for more details.                         *
-// *                                                                      *
-// * You should have received a copy of the GNU General Public License    *
-// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
-// *                                                                      *
 // ************************************************************************
 
-/*!
- * \file GGEMSOpenCLPlatform.cc
- * \brief Declaration of the GGEMSOpenCLPlatform class for OpenCL 3.0 platform
- * abstraction.
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-10-14
- * \copyright GNU General Public License v3.0
- * \version 3.0
- *
- * This header defines the \c GGEMSOpenCLPlatform class, an OpenCL 3.0 platform
- * façade that:
- * - stores the native \c cl::Platform and its stable index,
- * - discovers and owns all CPU/GPU devices on the platform,
- * - exposes strongly-typed getters for platform information,
- * - formats a comprehensive textual report via the GGEMS logger.
- *
- * The design is RAII-driven and thread-safe at the logging boundary. Device
- * ownership is unique and non-transferable (vector of \c std::unique_ptr).
- * The API emphasizes const-correctness and minimal exposure of internals.
- */
 
+#include "GGEMS/core/GGEMSLogMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
 namespace ggems::ocl {
 
@@ -193,8 +159,10 @@ void GGEMSOpenCLPlatform::DiscoverDevices() {
   constexpr cl_device_type mask = CL_DEVICE_TYPE_CPU | CL_DEVICE_TYPE_GPU;
 
   std::vector<cl::Device> natives;
-  GGEMS_OCL_CHECK(platform_.getDevices(mask, &natives),
-                  "No OpenCL devices detected on this platform.");
+  {
+    auto const opencl_error_code = (platform_.getDevices(mask, &natives));
+    ggems::ocl::CheckCLError(opencl_error_code, "No OpenCL devices detected on this platform.");
+  }
 
   devices_.clear();
   devices_.reserve(natives.size());

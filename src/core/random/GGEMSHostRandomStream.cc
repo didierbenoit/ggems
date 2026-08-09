@@ -3,7 +3,7 @@
 #include <span>
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+
 #include "GGEMS/core/random/GGEMSHostRandomStream.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/random/GGEMSRandomState.hh"
@@ -138,7 +138,7 @@ GGEMSHostRandomStream::GGEMSHostRandomStream(GGEMSRandom const &random,
     return;
   }
 
-  GGEMS_INTERNAL("Unsupported GGEMS random engine for host stream.");
+  throw ggems::core::GGEMSInternal("Unsupported GGEMS random engine for host stream.");
 }
 
 // -----------------------------------------------------------------------------

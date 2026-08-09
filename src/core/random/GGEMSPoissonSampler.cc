@@ -3,7 +3,7 @@
 #include <limits>
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+
 #include "GGEMS/core/random/GGEMSHostRandomStream.hh"
 #include "GGEMS/core/random/GGEMSPoissonSampler.hh"
 
@@ -102,16 +102,16 @@ auto SampleByTransformedRejection(long double mean,
         ((((2.0L * a) / us) + b) * u) + mean + k_ptrs_candidate_offset);
 
     if (!std::isfinite(candidate_value)) {
-      GGEMS_RECOVERABLE("Sampled Poisson candidate is not finite.");
+      throw ggems::core::GGEMSRecoverable("Sampled Poisson candidate is not finite.");
     }
 
     if (candidate_value < 0.0L) {
       continue;
     }
 
-    GGEMS_CHECK_RECOVERABLE(
-        candidate_value < k_uint64_upper_exclusive,
-        "Sampled Poisson candidate exceeds uint64_t range.");
+    if (!(candidate_value < k_uint64_upper_exclusive)) {
+      throw ggems::core::GGEMSRecoverable("Sampled Poisson candidate exceeds uint64_t range.");
+    }
 
     auto const candidate = static_cast<std::uint64_t>(candidate_value);
 
@@ -141,10 +141,15 @@ auto SampleByTransformedRejection(long double mean,
 
 auto SamplePoisson(long double mean, GGEMSHostRandomStream &random)
     -> std::uint64_t {
-  GGEMS_CHECK_RECOVERABLE(std::isfinite(mean), "Poisson mean must be finite.");
-  GGEMS_CHECK_RECOVERABLE(mean >= 0.0L, "Poisson mean must be non-negative.");
-  GGEMS_CHECK_RECOVERABLE(IsRepresentableMean(mean),
-                          "Poisson mean exceeds uint64_t range.");
+  if (!(std::isfinite(mean))) {
+    throw ggems::core::GGEMSRecoverable("Poisson mean must be finite.");
+  }
+  if (!(mean >= 0.0L)) {
+    throw ggems::core::GGEMSRecoverable("Poisson mean must be non-negative.");
+  }
+  if (!(IsRepresentableMean(mean))) {
+    throw ggems::core::GGEMSRecoverable("Poisson mean exceeds uint64_t range.");
+  }
 
   if (mean == 0.0L) {
     return 0ULL;

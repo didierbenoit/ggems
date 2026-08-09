@@ -10,7 +10,7 @@
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSOutputMode.hh"
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+
 #include "GGEMS/core/GGEMSOutputStateSink.hh"
 #include "GGEMS/core/GGEMSOutputState.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
@@ -101,7 +101,7 @@ auto Parse(std::string_view mode) -> OutputMode {
     return OutputMode::Gui;
   }
 
-  GGEMS_FATAL("Unknown output mode. Expected: 'term' or 'gui'.");
+  throw ggems::core::GGEMSFatal("Unknown output mode. Expected: 'term' or 'gui'.");
 }
 
 // =============================================================================
@@ -213,10 +213,10 @@ auto GetOutputState() -> GGEMSOutputState & {
 // =============================================================================
 
 auto GetOutputBanner() -> render::GGEMSBanner & {
-  GGEMS_CHECK_FATAL(
-      g_configured,
-      "Output mode must be configured before requesting the banner. "
+  if (!(g_configured)) {
+    throw ggems::core::GGEMSFatal("Output mode must be configured before requesting the banner. "
       "Call ggems.core.set_output_mode('term'|'gui') first.");
+  }
 
   if (!g_banner) {
     g_banner = std::make_unique<render::GGEMSBanner>();
@@ -233,10 +233,11 @@ auto SetOutputMode(OutputMode const mode) -> void {
     return;
   }
 
-  GGEMS_CHECK_FATAL(
-      !g_configured,
-      "Output mode already configured; it must be set exactly once before "
+  if (g_configured) {
+    throw ggems::core::GGEMSFatal(
+        "Output mode already configured; it must be set exactly once before "
       "starting GGEMS output runtime.");
+  }
 
   g_mode = mode;
   ConfigureLoggerForMode(g_mode);
@@ -253,11 +254,13 @@ auto SetOutputMode(std::string_view mode) -> void {
 // =============================================================================
 
 auto SetOutputFile(std::string_view path) -> void {
-  GGEMS_CHECK_FATAL(!path.empty(), "Output file path must not be empty.");
+  if (path.empty()) {
+    throw ggems::core::GGEMSFatal("Output file path must not be empty.");
+  }
 
-  GGEMS_CHECK_FATAL(
-      !g_output_running.load(std::memory_order_relaxed),
-      "Output file cannot be changed while output runtime is started.");
+  if (g_output_running.load(std::memory_order_relaxed)) {
+    throw ggems::core::GGEMSFatal("Output file cannot be changed while output runtime is started.");
+  }
 
   g_output_file_path = std::string(path);
 
@@ -285,11 +288,11 @@ auto ClearOutputFile() noexcept -> void {
 // =============================================================================
 
 auto StartOutputRuntime() -> void {
-  GGEMS_CHECK_FATAL(
-      g_configured,
-      "Output mode is not configured. "
+  if (!(g_configured)) {
+    throw ggems::core::GGEMSFatal("Output mode is not configured. "
       "Call ggems.core.set_output_mode('term'|'gui') before starting GGEMS "
       "output runtime.");
+  }
 
   if (g_output_running.load(std::memory_order_relaxed)) {
     return;

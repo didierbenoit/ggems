@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
 namespace ggems::ocl {
 
@@ -24,9 +25,9 @@ public:
   template <typename T> void SetArg(cl_uint index, T const &value) {
     cl_int err = kernel_.setArg(index, value);
 
-    GGEMS_OCL_CHECK(
-        err, std::format("Failed to set kernel argument {} for kernel '{}'",
-                         index, kernel_name_));
+    CheckCLError(err, std::format(
+                          "Failed to set kernel argument {} for kernel '{}'",
+                          index, kernel_name_));
   }
 
   void SetArgSVMPointer(cl_uint index, void *ptr);

@@ -1,5 +1,6 @@
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/core/GGEMSLogMacros.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
 using namespace ggems::units;
 
@@ -18,7 +19,7 @@ GGEMSOpenCLKernel::GGEMSOpenCLKernel(GGEMSOpenCLContext &ctx, cl::Kernel kernel,
 
 void GGEMSOpenCLKernel::SetArgSVMPointer(cl_uint index, void *ptr) {
   cl_int err = clSetKernelArgSVMPointer(kernel_(), index, ptr);
-  GGEMS_OCL_CHECK(err, std::format("Failed to set SVM arg {}", index));
+  CheckCLError(err, std::format("Failed to set SVM arg {}", index));
 }
 
 /* ------------------------------------------------------------------------ */
@@ -40,8 +41,8 @@ GGEMSOpenCLKernel::RunAndGetEvent(std::array<std::size_t, 1> const &global,
   cl_int err =
       queue.enqueueNDRangeKernel(kernel_, cl::NullRange, cl::NDRange(global[0]),
                                  cl::NDRange(local[0]), nullptr, &event);
-  GGEMS_OCL_CHECK(err,
-                  std::format("Failed to enqueue kernel '{}'", kernel_name_));
+  CheckCLError(err,
+               std::format("Failed to enqueue kernel '{}'", kernel_name_));
 
   queue.finish();
 

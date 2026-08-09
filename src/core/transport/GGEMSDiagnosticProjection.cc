@@ -8,7 +8,7 @@
 #include <string_view>
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
@@ -167,9 +167,10 @@ auto TryAddDiagnosticProjectionDisplacement(std::int64_t position_pm,
 auto ValidateDiagnosticTransportSources(
     std::span<sources::GGEMSSourceRecord const> source_records,
     std::span<sources::GGEMSSourceRunRange const> source_ranges) -> void {
-  GGEMS_CHECK_RECOVERABLE(
-      source_records.size() == source_ranges.size(),
-      "Diagnostic transport source record and range counts must match.");
+  if (!(source_records.size() == source_ranges.size())) {
+    throw ggems::core::GGEMSRecoverable(
+        "Diagnostic transport source record and range counts must match.");
+  }
 
   constexpr std::array<std::string_view, 3U> k_axis_names{"X", "Y", "Z"};
 
@@ -200,30 +201,31 @@ auto ValidateDiagnosticTransportSources(
       for (std::size_t axis = 0U; axis < direction.size(); ++axis) {
         std::int64_t displacement_pm{0LL};
 
-        GGEMS_CHECK_RECOVERABLE(
-            TryScaleDiagnosticProjectionComponent(direction[axis],
-                                                  displacement_pm),
-            std::format("Diagnostic projection cannot scale source slot {} "
+        if (!(TryScaleDiagnosticProjectionComponent(direction[axis],
+                                                  displacement_pm))) {
+          throw ggems::core::GGEMSRecoverable(
+              std::format("Diagnostic projection cannot scale source slot {} "
                         "axis_z.{} into int64 picometers.",
                         source_index, k_axis_names[axis]));
+        }
 
         std::int64_t endpoint_center_pm{0ULL};
 
-        GGEMS_CHECK_RECOVERABLE(
-            TryAddDiagnosticProjectionDisplacement(
-                position[axis], displacement_pm, endpoint_center_pm),
-            std::format(
+        if (!(TryAddDiagnosticProjectionDisplacement(
+                position[axis], displacement_pm, endpoint_center_pm))) {
+          throw ggems::core::GGEMSRecoverable(std::format(
                 "Diagnostic projection endpoint overflows int64 at source "
                 "slot {} axis {}.",
                 source_index, k_axis_names[axis]));
+        }
 
-        GGEMS_CHECK_RECOVERABLE(
-            sources::HasSignedPicoMeterEnvelope(
-                endpoint_center_pm, emission_bounds.component_radius_pm),
-            std::format(
+        if (!(sources::HasSignedPicoMeterEnvelope(
+                endpoint_center_pm, emission_bounds.component_radius_pm))) {
+          throw ggems::core::GGEMSRecoverable(std::format(
                 "Diagnostic projection envelope overflows int64 at source "
                 "slot {} axis {}.",
                 source_index, k_axis_names[axis]));
+        }
       }
 
       continue;
@@ -231,30 +233,31 @@ auto ValidateDiagnosticTransportSources(
 
     std::int64_t direction_displacement_bound_pm{0LL};
 
-    GGEMS_CHECK_INTERNAL(
-        TryScaleDiagnosticProjectionComponent(
+    if (!(TryScaleDiagnosticProjectionComponent(
             k_normalized_direction_component_bound,
-            direction_displacement_bound_pm),
-        "Cannot construct diagnostic normalized-direction bound.");
+            direction_displacement_bound_pm))) {
+      throw ggems::core::GGEMSInternal("Cannot construct diagnostic normalized-direction bound.");
+    }
 
     auto const displacement_bound_pm =
         static_cast<std::uint64_t>(direction_displacement_bound_pm);
 
-    GGEMS_CHECK_RECOVERABLE(
-        emission_bounds.component_radius_pm <=
-            std::numeric_limits<std::uint64_t>::max() - displacement_bound_pm,
-        "Diagnostic source and direction envelopes overflow uint64.");
+    if (!(emission_bounds.component_radius_pm <=
+            std::numeric_limits<std::uint64_t>::max() - displacement_bound_pm)) {
+      throw ggems::core::GGEMSRecoverable(
+          "Diagnostic source and direction envelopes overflow uint64.");
+    }
 
     std::uint64_t const total_radius_pm =
         emission_bounds.component_radius_pm + displacement_bound_pm;
 
     for (std::size_t axis = 0U; axis < position.size(); ++axis) {
-      GGEMS_CHECK_RECOVERABLE(
-          sources::HasSignedPicoMeterEnvelope(position[axis], total_radius_pm),
-          std::format(
+      if (!(sources::HasSignedPicoMeterEnvelope(position[axis], total_radius_pm))) {
+        throw ggems::core::GGEMSRecoverable(std::format(
               "Diagnostic projection envelope overflows int64 at source "
               "slot {} axis {}.",
               source_index, k_axis_names[axis]));
+      }
     }
   }
 }

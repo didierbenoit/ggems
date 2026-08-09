@@ -1,235 +1,144 @@
 #pragma once
 // ************************************************************************
-// * This file is part of GGEMS.                                          *
-// *                                                                      *
-// * GGEMS is free software: you can redistribute it and/or modify        *
-// * it under the terms of the GNU General Public License as published by *
-// * the Free Software Foundation, either version 3 of the License, or    *
-// * (at your option) any later version.                                  *
-// *                                                                      *
-// * GGEMS is distributed in the hope that it will be useful,             *
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
-// * GNU General Public License for more details.                         *
-// *                                                                      *
-// * You should have received a copy of the GNU General Public License    *
-// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
-// *                                                                      *
 // ************************************************************************
 
-/*!
- * \file GGEMSColorNames.hh
- * \brief Human-friendly color aliases built on GGEMSColor palette.
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-10-29
- * \version 2.0
- * \copyright GNU GPL v3.0
- *
- * This header builds named color aliases on top of the generic color
- * system defined in \ref GGEMSColor.hh. For each color family, an
- * enumeration of semantic shade names is provided (for example Matrix,
- * Emerald, Jade for green), corresponding to specific shade indices.
- *
- * A constexpr metafunction maps shade enums to their color families, and
- * a helper generates \ref ggems::render::ColorKey values at compile time. A
- * macro creates a dense set of aliases for each name, covering both foreground
- * and background, and all variants Normal, Bright, and Faint.
- *
- * These facilities are intended to provide:
- *  - readability in UI and logging code,
- *  - a stable color vocabulary across terminal and GUI back-ends.
- */
 
 #include <cstdint>
 
 #include "GGEMS/render/GGEMSColor.hh"
 
 namespace ggems::render {
-/*!
- * \enum GreenShade
- * \brief Named green shades mapped to palette indices.
- *
- * Each enumerator corresponds to a shade index in the green family
- * defined in \ref ggems::render::MakeGreenScale. The numeric values match the
- * shade index in the underlying palette.
- */
 enum class GreenShade : std::uint8_t {
   Acid = 12,
-  Matrix = 8,  /*!< Bright neon-green, high energy */
-  Emerald = 5, /*!< Balanced vivid green */
-  Jade = 4,    /*!< Deep mineral green */
-  Lime = 10,   /*!< Fresh light green with yellow tint */
-  Moss = 2,    /*!< Muted earthy green */
-  Mint = 7,    /*!< Pale cold green */
-  Forest = 11, /*!< Dark evergreen tone */
-  Neon = 9,    /*!< High-intensity green highlight */
-  Olive = 3,   /*!< Warm yellow-green */
-  Pale = 1,    /*!< Soft desaturated green */
-  Dark = 6,    /*!< Deep low-value green */
-  Deep = 0     /*!< Maximum depth baseline green */
+  Matrix = 8,
+  Emerald = 5,
+  Jade = 4,
+  Lime = 10,
+  Moss = 2,
+  Mint = 7,
+  Forest = 11,
+  Neon = 9,
+  Olive = 3,
+  Pale = 1,
+  Dark = 6,
+  Deep = 0
 };
 
-/*!
- * \enum BlueShade
- * \brief Named blue shades mapped to palette indices.
- */
 enum class BlueShade : std::uint8_t {
   Abyss = 12,
-  Azure = 9,  /*!< Bright light blue */
-  Dodger = 8, /*!< Strong electric blue */
-  Ice = 5,    /*!< Very pale icy blue */
-  Deep = 11,  /*!< Highly saturated deep blue */
+  Azure = 9,
+  Dodger = 8,
+  Ice = 5,
+  Deep = 11,
   Gunmetal = 7,
-  Navy = 10,  /*!< Dark navy blue */
-  Pale = 3,   /*!< Soft low-saturation blue */
-  Steel = 4,  /*!< Slightly grayish steel blue */
-  Soft = 2,   /*!< Gentle, unobtrusive blue */
-  Dark = 6,   /*!< Deepened blue for shadows or edges */
-  Royal = 1,  /*!< Balanced royal blue */
-  Vibrant = 0 /*!< Energetic, vivid blue baseline */
+  Navy = 10,
+  Pale = 3,
+  Steel = 4,
+  Soft = 2,
+  Dark = 6,
+  Royal = 1,
+  Vibrant = 0
 };
 
-/*!
- * \enum RedShade
- * \brief Named red shades mapped to palette indices.
- */
 enum class RedShade : std::uint8_t {
   XenoBlood = 12,
-  Crimson = 9, /*!< Intense deep crimson red */
-  Ruby = 8,    /*!< Strong ruby-like red */
-  Blood = 11,  /*!< Very dark dramatic red */
-  Tomato = 5,  /*!< Warm tomato-like red with an orange note */
-  Coral = 4,   /*!< Softer coral red */
-  Cherry = 10, /*!< Bright cherry red */
-  Pale = 3,    /*!< Soft low-saturation red */
-  Soft = 2,    /*!< Gentle pastel red */
-  Dark = 6,    /*!< Deep red for contrast or structural elements */
-  Deep = 7,    /*!< Mineral-like deep red */
-  Neon = 1,    /*!< High-brightness neon red */
-  Vibrant = 0  /*!< Vivid energetic baseline red */
+  Crimson = 9,
+  Ruby = 8,
+  Blood = 11,
+  Tomato = 5,
+  Coral = 4,
+  Cherry = 10,
+  Pale = 3,
+  Soft = 2,
+  Dark = 6,
+  Deep = 7,
+  Neon = 1,
+  Vibrant = 0
 };
 
-/*!
- * \enum CyanShade
- * \brief Named cyan shades mapped to palette indices.
- */
 enum class CyanShade : std::uint8_t {
   Cryo = 12,
-  Aqua = 9,    /*!< Bright aqua cyan */
-  Ice = 5,     /*!< Pale icy cyan tone */
-  Sky = 8,     /*!< Cyan leaning toward light sky blue */
-  Neon = 10,   /*!< Very intense neon cyan */
-  Deep = 11,   /*!< Saturated deep cyan */
-  Soft = 2,    /*!< Gentle low-intensity cyan */
-  Pale = 3,    /*!< Soft desaturated cyan */
-  Frost = 4,   /*!< Cool frosted cyan */
-  Dark = 6,    /*!< Dark cyan for contrast */
-  Marine = 7,  /*!< Marine-leaning cyan tone */
-  Radiant = 1, /*!< Bright high-contrast cyan */
-  Pure = 0     /*!< Neutral baseline cyan */
+  Aqua = 9,
+  Ice = 5,
+  Sky = 8,
+  Neon = 10,
+  Deep = 11,
+  Soft = 2,
+  Pale = 3,
+  Frost = 4,
+  Dark = 6,
+  Marine = 7,
+  Radiant = 1,
+  Pure = 0
 };
 
-/*!
- * \enum MagentaShade
- * \brief Named magenta shades mapped to palette indices.
- */
 enum class MagentaShade : std::uint8_t {
   FleshSignal = 12,
-  Pink = 9,     /*!< Light pink-tinted magenta */
-  Fuchsia = 10, /*!< Strong saturated fuchsia */
-  Deep = 11,    /*!< Very dark intense magenta */
-  Soft = 5,     /*!< Soft pastel magenta */
-  Orchid = 4,   /*!< Orchid-like purple-magenta */
-  Pale = 3,     /*!< Pale low-saturation magenta */
-  Dark = 6,     /*!< Dark magenta for deep accents */
-  Neon = 8,     /*!< Bright neon magenta */
-  Electric = 7, /*!< Highly energetic electric magenta */
-  Rose = 2,     /*!< Rose-leaning magenta */
-  Sharp = 1,    /*!< Sharp, high-contrast magenta */
-  Pure = 0      /*!< Neutral baseline magenta */
+  Pink = 9,
+  Fuchsia = 10,
+  Deep = 11,
+  Soft = 5,
+  Orchid = 4,
+  Pale = 3,
+  Dark = 6,
+  Neon = 8,
+  Electric = 7,
+  Rose = 2,
+  Sharp = 1,
+  Pure = 0
 };
 
-/*!
- * \enum YellowShade
- * \brief Named yellow shades mapped to palette indices.
- */
 enum class YellowShade : std::uint8_t {
   MotherAmber = 12,
-  Gold = 9,   /*!< Deep golden yellow */
-  Amber = 10, /*!< Warm amber yellow */
-  Lemon = 8,  /*!< Vivid lemon yellow */
-  Pale = 5,   /*!< Pale desaturated yellow */
-  Soft = 4,   /*!< Soft gentle yellow */
-  Sand = 2,   /*!< Sandy muted yellow */
-  Dark = 6,   /*!< Dark yellow for strong contrast */
-  Deep = 11,  /*!< Deep saturated yellow */
-  Neon = 7,   /*!< High-intensity neon yellow */
-  Solar = 3,  /*!< Radiant sun-like yellow */
-  Bright = 1, /*!< Very bright yellow */
-  Pure = 0    /*!< Neutral baseline yellow */
+  Gold = 9,
+  Amber = 10,
+  Lemon = 8,
+  Pale = 5,
+  Soft = 4,
+  Sand = 2,
+  Dark = 6,
+  Deep = 11,
+  Neon = 7,
+  Solar = 3,
+  Bright = 1,
+  Pure = 0
 };
 
-/*!
- * \enum GrayShade
- * \brief Named gray shades mapped to palette indices.
- */
 enum class GrayShade : std::uint8_t {
   Void = 12,
-  Light = 9,    /*!< Very light near-white gray */
-  Soft = 8,     /*!< Soft mid-light neutral gray */
-  Silver = 7,   /*!< Metallic silver-like gray */
-  Concrete = 6, /*!< Concrete-like mid-dark gray */
-  Dark = 5,     /*!< Dark neutral gray */
-  Charcoal = 4, /*!< Charcoal deep gray */
-  Ash = 3,      /*!< Ash-like gray with low saturation */
-  Steel = 2,    /*!< Industrial steel gray */
-  Pale = 1,     /*!< Pale low-intensity gray */
-  Deep = 0,     /*!< Deepest gray of the family */
-  Fog = 10,     /*!< Fog-like soft gray with slight cool tone */
-  Smoke = 11    /*!< Smoke-deepened dark gray */
+  Light = 9,
+  Soft = 8,
+  Silver = 7,
+  Concrete = 6,
+  Dark = 5,
+  Charcoal = 4,
+  Ash = 3,
+  Steel = 2,
+  Pale = 1,
+  Deep = 0,
+  Fog = 10,
+  Smoke = 11
 };
 
-/*!
- * \enum WhiteShade
- * \brief Named white/near-white shades mapped to palette indices.
- */
 enum class WhiteShade : std::uint8_t {
   Bone = 12,
-  Pure = 0,    /*!< Neutral baseline white */
-  Snow = 1,    /*!< Cold snow-like white */
-  Pearl = 2,   /*!< Slightly warm pearlescent white */
-  Ivory = 3,   /*!< Natural ivory-toned white */
-  Cream = 4,   /*!< Soft creamy off-white */
-  Frost = 5,   /*!< Frosted cool white */
-  Ice = 6,     /*!< Icy white with a subtle bluish hint */
-  Soft = 7,    /*!< Softened white with reduced contrast */
-  Pale = 8,    /*!< Very pale off-white */
-  Cold = 9,    /*!< Cool white leaning toward gray */
-  Bright = 10, /*!< High-luminance bright white */
-  Glare = 11   /*!< Extremely intense white with strong glare */
+  Pure = 0,
+  Snow = 1,
+  Pearl = 2,
+  Ivory = 3,
+  Cream = 4,
+  Frost = 5,
+  Ice = 6,
+  Soft = 7,
+  Pale = 8,
+  Cold = 9,
+  Bright = 10,
+  Glare = 11
 };
 
-/*!
- * \brief Compile-time mapping from shade enum to color family.
- *
- * The primary template is left undefined and is specialized for each
- * shade enumeration. Attempting to use it with an unsupported shade
- * type will result in a compile-time error.
- *
- * \tparam ShadeEnum Shade enumeration type.
- * \return Color family corresponding to the shade enumeration.
- */
 template <typename ShadeEnum>
 consteval auto FamilyOf(ShadeEnum) -> ColorFamily;
 
-/*!
- * \def DEF_FAMILY
- * \brief Helper macro to specialize FamilyOf for a shade enumeration.
- *
- * \param ShadeEnum Shade enumeration type (for example GreenShade).
- * \param FamilyName Corresponding \ref ggems::render::ColorFamily value.
- */
 #define DEF_FAMILY(ShadeEnum, FamilyName)                                      \
   template <> consteval auto FamilyOf(ShadeEnum) -> ColorFamily {             \
     return FamilyName;                                                         \
@@ -246,15 +155,6 @@ DEF_FAMILY(WhiteShade, ColorFamily::White)
 
 #undef DEF_FAMILY
 
-/*!
- * \brief Define a \ref ggems::render::ColorKey from a named shade enumeration.
- *
- * \tparam ShadeEnum Shade enumeration type (for example GreenShade).
- * \param shade Shade enumerator selecting the palette index.
- * \param variant Intensity variant (Normal, Bright, Faint).
- * \param layer Target layer (Foreground or Background).
- * \return Color key combining the family, shade index, variant and layer.
- */
 template <typename ShadeEnum>
 consteval auto DefineColor(ShadeEnum shade,
                             ColorVariant variant = ColorVariant::Normal,
@@ -264,47 +164,14 @@ consteval auto DefineColor(ShadeEnum shade,
                     layer);
 }
 
-/*!
- * \brief Default GGEMS UI background color.
- *
- * This is a neutral gray intended to provide comfortable contrast
- * with the default foreground.
- */
 inline constexpr ColorKey DEFAULT_BG =
     MakeColor(ColorFamily::Gray, static_cast<std::uint8_t>(GrayShade::Steel),
                ColorVariant::Normal, ColorLayer::Background);
 
-/*!
- * \brief Default GGEMS UI foreground color.
- *
- * This is a soft off-white selected for readability on \ref
- * ggems::render::DEFAULT_BG.
- */
 inline constexpr ColorKey DEFAULT_FG = MakeColor(
     ColorFamily::White, static_cast<std::uint8_t>(WhiteShade::Ivory),
     ColorVariant::Normal, ColorLayer::Foreground);
 
-/*!
- * \def GEN_COLOR_NAME
- * \brief Generate a full set of color aliases for a named shade.
- *
- * For a given family label, shade name, enumeration type and enumerator
- * value, this macro declares six \ref ggems::render::ColorKey constants:
- *
- *  - FAMILYNAME_SHADENAME: normal variant, foreground layer
- *  - FAMILYNAME_SHADENAME_B: bright variant, foreground layer
- *  - FAMILYNAME_SHADENAME_F: faint variant, foreground layer
- *  - FAMILYNAME_SHADENAME_BG: normal variant, background layer
- *  - FAMILYNAME_SHADENAME_B_BG: bright variant, background layer
- *  - FAMILYNAME_SHADENAME_F_BG: faint variant, background layer
- *
- * These aliases are intended for direct use in UI and logging code.
- *
- * \param FAMILYNAME Uppercase family label (for example GREEN).
- * \param SHADENAME Shade label (for example Matrix).
- * \param ENUMTYPE Shade enumeration type (for example GreenShade).
- * \param VALUE Enumerated shade value (for example Matrix).
- */
 #define GEN_COLOR_NAME(FAMILYNAME, SHADENAME, ENUMTYPE, VALUE)                \
   inline constexpr ColorKey FAMILYNAME##_##SHADENAME =                        \
       DefineColor(ENUMTYPE::VALUE);                                           \

@@ -1,45 +1,6 @@
 // ************************************************************************
-// * This file is part of GGEMS.                                          *
-// *                                                                      *
-// * GGEMS is free software: you can redistribute it and/or modify        *
-// * it under the terms of the GNU General Public License as published by *
-// * the Free Software Foundation, either version 3 of the License, or    *
-// * (at your option) any later version.                                  *
-// *                                                                      *
-// * GGEMS is distributed in the hope that it will be useful,             *
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
-// * GNU General Public License for more details.                         *
-// *                                                                      *
-// * You should have received a copy of the GNU General Public License    *
-// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
-// *                                                                      *
 // ************************************************************************
 
-/*!
- * \file GGEMSOpenCLProgram.cc
- * \brief Declaration of GGEMSOpenCLProgram, wrapping OpenCL program creation,
- *        binary caching, and rebuild logic.
- *
- * This class manages the lifecycle of a compiled OpenCL program:
- * - loading source code,
- * - compiling with given build options,
- * - generating and reading cached binaries,
- * - producing human-readable build logs,
- * - exposing the final cl::Program to GGEMS.
- *
- * GGEMSOpenCLProgram instances cannot be created directly; only
- * GGEMSOpenCL::GetOrCreateProgram() is authorized to construct them through
- * internal caching. This ensures program reuse and prevents uncontrolled
- * recompilation.
- *
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-12-08
- * \version 2.0
- * \copyright
- * GNU General Public License v3.0
- */
 
 #include <fstream>
 #include <sstream>
@@ -49,25 +10,17 @@
 #include <algorithm>
 #include <string_view>
 
+#include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/GGEMSLogMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLProgram.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLCacheFingerprint.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
 namespace ggems::ocl {
 
 namespace {
 constexpr std::string_view k_opencl_cache_schema{"GGEMS_OPENCL_CACHE"};
 
-/*!
- * \brief Replace unsafe filename characters by underscores.
- *
- * Internal helper used to normalize vendor name, device name, and kernel names
- * prior to constructing cache filenames. Characters such as whitespace,
- * slashes, Windows separators and delimiters are converted to '\_' to ensure
- * the generated path is portable and valid across platforms.
- *
- * \param s Input string to sanitize.
- * \return Sanitized string safe to use in filesystem paths.
- */
 std::string Sanitize(std::string s) {
   for (char &c : s) {
     if (c == ' ' || c == '/' || c == '\\' || c == ':' || c == ';' || c == '\t')
@@ -76,19 +29,6 @@ std::string Sanitize(std::string s) {
   return s;
 }
 
-/*!
- * \brief Determine the root directory used for storing OpenCL binary caches.
- *
- * Resolves the platform-specific base directory for caching compiled OpenCL
- * program binaries:
- *  - On Windows: uses LOCALAPPDATA or APPDATA.
- *  - On POSIX: uses the HOME directory (creating ~/.ggems/opencl_cache).
- *
- * If no environment variable is available, falls back to a local directory
- * ("ggems_opencl_cache") relative to the working directory.
- *
- * \return Filesystem path to the root cache directory.
- */
 std::filesystem::path GetCacheRootDirectory() {
 #ifdef _WIN32
   if (char const *local = std::getenv("LOCALAPPDATA")) {
@@ -500,9 +440,10 @@ void GGEMSOpenCLProgram::Build() {
 std::string
 GGEMSOpenCLProgram::LoadTextFile(std::filesystem::path const &path) {
   std::ifstream ifs(path, std::ios::binary);
-  GGEMS_CHECK_FATAL(
-      ifs.good(),
-      std::format("Failed to open program source file '{}'.", path.string()));
+  if (!(ifs.good())) {
+    throw ggems::core::GGEMSFatal(
+        std::format("Failed to open program source file '{}'.", path.string()));
+  }
 
   std::ostringstream oss;
   oss << ifs.rdbuf();
@@ -527,7 +468,7 @@ void GGEMSOpenCLProgram::BuildFromSource(std::string const &src) {
     build_log_ = program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
     GGEMS_ERROR("OpenCL", "Build log for program '{}' (file='{}'): {}",
                 kernel_name_, source_path_, build_log_);
-    GGEMS_OCL_CHECK(
+    CheckCLError(
         err,
         std::format(
             "Failed to build OpenCL program '{}' from source. Build log : {}",
@@ -566,15 +507,15 @@ void GGEMSOpenCLProgram::BuildFromBinary(
   cl_program prog = clCreateProgramWithBinary(ctx(), 1, &dev_id, &length, &ptr,
                                               &binary_status, &err);
 
-  GGEMS_OCL_CHECK(
+  CheckCLError(
       err, std::format(
                "Failed to create program with binary for '{}' (source='{}').",
                kernel_name_, source_path_));
 
-  GGEMS_OCL_CHECK(
-      binary_status,
-      std::format("Binary status error for program '{}' (source='{}').",
-                  kernel_name_, source_path_));
+  CheckCLError(binary_status,
+               std::format(
+                   "Binary status error for program '{}' (source='{}').",
+                   kernel_name_, source_path_));
 
   program_ = cl::Program(prog, false);
 
@@ -588,7 +529,7 @@ void GGEMSOpenCLProgram::BuildFromBinary(
                    kernel_name_, source_path_, build_log_);
     }
 
-    core::Throw<core::GGEMSFatal>(std::format(
+    throw core::GGEMSFatal(std::format(
         "Failed to build OpenCL program '{}' from binary.", kernel_name_));
   }
 
@@ -747,8 +688,8 @@ cl::Kernel GGEMSOpenCLProgram::CreateKernel(std::string const &kernel_name) {
 
   cl_int err{CL_SUCCESS};
   cl::Kernel kernel(program_, kernel_name.c_str(), &err);
-  GGEMS_OCL_CHECK(err,
-                  std::format("Failed to create kernel '{}'", kernel_name));
+  CheckCLError(err,
+               std::format("Failed to create kernel '{}'", kernel_name));
 
   return kernel;
 }

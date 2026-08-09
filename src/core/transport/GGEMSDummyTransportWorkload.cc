@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "GGEMS/frameworks/GGEMSOpenCLLaunchGeometry.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/random/GGEMSRandomState.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
@@ -36,8 +36,9 @@ ggems::units::Bytes
 ComputeRandomStatesSize(ggems::core::random::GGEMSRandom const &random,
                         std::uint32_t worker_count,
                         std::uint64_t first_stream_id) {
-  GGEMS_CHECK_RECOVERABLE(worker_count > 0U,
-                          "Dummy transport worker count must be non-zero.");
+  if (!(worker_count > 0U)) {
+    throw ggems::core::GGEMSRecoverable("Dummy transport worker count must be non-zero.");
+  }
 
   random.ValidateStateRange(first_stream_id, worker_count);
 
@@ -49,8 +50,9 @@ ComputeRandomStatesSize(ggems::core::random::GGEMSRandom const &random,
 // =============================================================================
 
 ggems::units::Bytes ComputeWorkerFinalStatesSize(std::uint32_t worker_count) {
-  GGEMS_CHECK_RECOVERABLE(worker_count > 0U,
-                          "Dummy transport worker count must be non-zero.");
+  if (!(worker_count > 0U)) {
+    throw ggems::core::GGEMSRecoverable("Dummy transport worker count must be non-zero.");
+  }
 
   return ggems::units::Bytes{static_cast<std::uint64_t>(worker_count) *
                              sizeof(ParticleState)};
@@ -61,9 +63,10 @@ ggems::units::Bytes ComputeWorkerFinalStatesSize(std::uint32_t worker_count) {
 
 ggems::units::Bytes
 ComputeObserverRecordsSize(std::uint32_t observer_record_capacity) {
-  GGEMS_CHECK_RECOVERABLE(
-      observer_record_capacity > 0U,
-      "Dummy transport observer record capacity must be non-zero.");
+  if (!(observer_record_capacity > 0U)) {
+    throw ggems::core::GGEMSRecoverable(
+        "Dummy transport observer record capacity must be non-zero.");
+  }
 
   return ggems::units::Bytes{
       static_cast<std::uint64_t>(observer_record_capacity) *
@@ -74,8 +77,9 @@ ComputeObserverRecordsSize(std::uint32_t observer_record_capacity) {
 // =============================================================================
 
 std::uint32_t CheckedSourceCount(std::uint32_t source_count) {
-  GGEMS_CHECK_RECOVERABLE(source_count > 0U,
-                          "Dummy transport source count must be non-zero.");
+  if (!(source_count > 0U)) {
+    throw ggems::core::GGEMSRecoverable("Dummy transport source count must be non-zero.");
+  }
 
   return source_count;
 }
@@ -126,9 +130,9 @@ GGEMSDummyTransportWorkload::GGEMSDummyTransportWorkload(
 void GGEMSDummyTransportWorkload::InitializeRandomStatesInSVM() {
   std::uint64_t state_bytes = random_states_buffer_.GetSize().value;
 
-  GGEMS_CHECK_INTERNAL(
-      state_bytes <= std::numeric_limits<std::size_t>::max(),
-      "Random state buffer size exceeds host addressable storage.");
+  if (!(state_bytes <= std::numeric_limits<std::size_t>::max())) {
+    throw ggems::core::GGEMSInternal("Random state buffer size exceeds host addressable storage.");
+  }
 
   auto *state_storage =
       static_cast<std::byte *>(random_states_buffer_.GetData());
@@ -215,24 +219,28 @@ GGEMSDummyTransportWorkload::ReadObserverRecordsFromSVM(
 
 GGEMSDummyTransportRunReport
 GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
-  GGEMS_CHECK_RECOVERABLE(config.total_primary_count > 0U,
-                          "Dummy transport primary count must be non-zero.");
+  if (!(config.total_primary_count > 0U)) {
+    throw ggems::core::GGEMSRecoverable("Dummy transport primary count must be non-zero.");
+  }
 
-  GGEMS_CHECK_RECOVERABLE(
-      config.source_records.size() == config.source_ranges.size(),
-      "Dummy transport source record and range counts must match.");
+  if (!(config.source_records.size() == config.source_ranges.size())) {
+    throw ggems::core::GGEMSRecoverable(
+        "Dummy transport source record and range counts must match.");
+  }
 
-  GGEMS_CHECK_RECOVERABLE(
-      config.source_records.size() == static_cast<std::size_t>(source_count_),
-      "Dummy transport source arrays do not match the stable source count.");
+  if (!(config.source_records.size() == static_cast<std::size_t>(source_count_))) {
+    throw ggems::core::GGEMSRecoverable(
+        "Dummy transport source arrays do not match the stable source count.");
+  }
 
   for (std::size_t source_index = 0U;
        source_index < config.source_records.size(); ++source_index) {
-    GGEMS_CHECK_RECOVERABLE(
-        config.source_records[source_index].energy_milli_eV > 0ULL,
-        std::format("Dummy transport source {} must use an exact positive Mono "
+    if (!(config.source_records[source_index].energy_milli_eV > 0ULL)) {
+      throw ggems::core::GGEMSRecoverable(
+          std::format("Dummy transport source {} must use an exact positive Mono "
                     "energy.",
                     source_index));
+    }
   }
 
   ResetCountersInSVM();
@@ -310,16 +318,17 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
   kernel.SetArg(argument_index++, static_cast<cl_ulong>(config.run_id));
   kernel.SetArg(argument_index++, static_cast<cl_uint>(worker_count_));
 
-  GGEMS_CHECK_INTERNAL(
-      argument_index == k_expected_argument_count,
-      "Dummy transport kernel argument count is inconsistent.");
+  if (!(argument_index == k_expected_argument_count)) {
+    throw ggems::core::GGEMSInternal("Dummy transport kernel argument count is inconsistent.");
+  }
 
   constexpr std::size_t k_local_size{64U};
   auto const padded_global_work_size =
       ggems::ocl::detail::TryComputePaddedGlobalWorkSize(worker_count_,
                                                          k_local_size);
-  GGEMS_CHECK_INTERNAL(padded_global_work_size.has_value(),
-                       "Unable to compute the padded OpenCL global work size.");
+  if (!(padded_global_work_size.has_value())) {
+    throw ggems::core::GGEMSInternal("Unable to compute the padded OpenCL global work size.");
+  }
   std::size_t const global_size = *padded_global_work_size;
 
   ggems::ocl::GGEMSOpenCLProfiler profiler{};

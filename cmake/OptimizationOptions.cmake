@@ -1,7 +1,4 @@
 # ============================================================================
-# @file      OptimizationOptions.cmake @brief     Configure optional GGEMS
-# Release optimizations. @details   Provide target-based support for link-time
-# optimization and native CPU code generation.
 # ============================================================================
 
 include_guard(GLOBAL)

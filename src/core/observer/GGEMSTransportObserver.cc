@@ -9,10 +9,12 @@
 #include <cstdint>
 #include <vector>
 #include <utility>
+#include <limits>
+#include <memory>
 
 #include "GGEMS/core/observer/GGEMSObserverCounterArithmetic.hh"
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+
 #include "GGEMS/core/observer/GGEMSObserverTypes.hh"
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/core/observer/GGEMSTransportObserver.hh"
@@ -24,6 +26,19 @@
 
 namespace ggems::core::observer {
 namespace {
+
+// =============================================================================
+// =============================================================================
+
+auto CheckedAccumulateRunResultCounter(std::uint64_t &destination,
+                                       std::uint64_t value,
+                                       char const *diagnostic) -> void {
+  if (!(value <= std::numeric_limits<std::uint64_t>::max() -
+                                       destination)) {
+    throw ggems::core::GGEMSRecoverable(diagnostic);
+  }
+  destination += value;
+}
 
 // =============================================================================
 // =============================================================================
@@ -585,6 +600,16 @@ GGEMSTransportObserver::GGEMSTransportObserver(bool reserve_record_capacity) {
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSTransportObserver::CreateRunResultCandidate() const
+    -> std::unique_ptr<GGEMSTransportObserver> {
+  auto candidate = std::unique_ptr<GGEMSTransportObserver>{
+      new GGEMSTransportObserver{false}};
+  candidate->max_stored_record_count_ = max_stored_record_count_;
+  return candidate;
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSTransportObserver::Enable(bool const enabled) noexcept
     -> GGEMSTransportObserver & {
   enabled_ = enabled;
@@ -602,9 +627,9 @@ auto GGEMSTransportObserver::Disable() noexcept -> GGEMSTransportObserver & {
 
 auto GGEMSTransportObserver::SetRecordCapacity(
     std::uint32_t const record_capacity) -> GGEMSTransportObserver & {
-  GGEMS_CHECK_RECOVERABLE(
-      record_capacity > 0U,
-      "Transport observer record capacity must be non-zero.");
+  if (!(record_capacity > 0U)) {
+    throw ggems::core::GGEMSRecoverable("Transport observer record capacity must be non-zero.");
+  }
 
   if (record_capacity > records_.capacity()) {
     records_.reserve(record_capacity);
@@ -618,9 +643,10 @@ auto GGEMSTransportObserver::SetRecordCapacity(
 
 auto GGEMSTransportObserver::SetMaxStoredRecordCount(
     std::uint32_t const max_stored_record_count) -> GGEMSTransportObserver & {
-  GGEMS_CHECK_RECOVERABLE(
-      max_stored_record_count > 0U,
-      "Transport observer maximum stored record count must be non-zero.");
+  if (!(max_stored_record_count > 0U)) {
+    throw ggems::core::GGEMSRecoverable(
+        "Transport observer maximum stored record count must be non-zero.");
+  }
 
   max_stored_record_count_ = max_stored_record_count;
 
@@ -667,16 +693,19 @@ auto GGEMSTransportObserver::ClearCapturedPrimary() noexcept
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::Clear() -> void {
+  run_result_logical_counters_ = GGEMSObserverRunResultCounters{};
   counters_ = GGEMSObserverCounters{};
   records_.clear();
 }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSTransportObserver::SwapRunResult(
-    GGEMSTransportObserver &other) noexcept -> void {
-  std::swap(counters_, other.counters_);
-  records_.swap(other.records_);
+auto GGEMSTransportObserver::CommitRunResult(
+    GGEMSTransportObserver &candidate) noexcept -> void {
+  std::swap(run_result_logical_counters_,
+            candidate.run_result_logical_counters_);
+  std::swap(counters_, candidate.counters_);
+  records_.swap(candidate.records_);
 }
 
 // -----------------------------------------------------------------------------
@@ -684,13 +713,46 @@ auto GGEMSTransportObserver::SwapRunResult(
 auto GGEMSTransportObserver::Accumulate(
     std::span<GGEMSObserverRecord const> records,
     GGEMSObserverCounters const &counters) -> void {
-  detail::AddSaturatedObserverCounter(counters_.captured_primary_count,
-                                      counters.captured_primary_count);
-  detail::AddSaturatedObserverCounter(counters_.overflow_count,
-                                      counters.overflow_count);
-
   std::size_t available_record_count =
       std::min<std::size_t>(records.size(), counters.record_count);
+
+  AccumulateRunResult(
+      records.first(available_record_count),
+      GGEMSObserverRunResultCounters{
+          .record_count = available_record_count,
+          .overflow_count = counters.overflow_count,
+          .captured_primary_count = counters.captured_primary_count,
+      });
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSTransportObserver::AccumulateRunResult(
+    std::span<GGEMSObserverRecord const> records,
+    GGEMSObserverRunResultCounters const &logical_counters) -> void {
+  if (!(logical_counters.record_count == records.size())) {
+    throw ggems::core::GGEMSInternal(
+        "Transport logical Observer record count does not match its candidate "
+      "records.");
+  }
+
+  CheckedAccumulateRunResultCounter(
+      run_result_logical_counters_.record_count, logical_counters.record_count,
+      "Observer logical record aggregation overflows uint64.");
+  CheckedAccumulateRunResultCounter(
+      run_result_logical_counters_.overflow_count,
+      logical_counters.overflow_count,
+      "Observer logical overflow aggregation overflows uint64.");
+  CheckedAccumulateRunResultCounter(
+      run_result_logical_counters_.captured_primary_count,
+      logical_counters.captured_primary_count,
+      "Observer logical captured-primary aggregation overflows uint64.");
+
+  auto const reserve_count = static_cast<std::size_t>(std::min<std::uint64_t>(
+      run_result_logical_counters_.record_count, max_stored_record_count_));
+  if (reserve_count > records_.capacity()) {
+    records_.reserve(reserve_count);
+  }
 
   std::size_t remaining_capacity =
       records_.size() < max_stored_record_count_
@@ -698,19 +760,25 @@ auto GGEMSTransportObserver::Accumulate(
           : 0U;
 
   std::size_t copied_record_count =
-      std::min<std::size_t>(available_record_count, remaining_capacity);
+      std::min<std::size_t>(records.size(), remaining_capacity);
 
   auto records_to_copy = records.first(copied_record_count);
 
   records_.insert(records_.end(), records_to_copy.begin(),
                   records_to_copy.end());
 
-  if (copied_record_count < available_record_count) {
-    detail::AddSaturatedObserverCounter(
-        counters_.overflow_count, available_record_count - copied_record_count);
+  if (copied_record_count < records.size()) {
+    CheckedAccumulateRunResultCounter(
+        run_result_logical_counters_.overflow_count,
+        records.size() - copied_record_count,
+        "Observer host-drop aggregation overflows uint64.");
   }
 
   counters_.record_count = static_cast<std::uint32_t>(records_.size());
+  counters_.overflow_count = detail::SaturateObserverCounter(
+      run_result_logical_counters_.overflow_count);
+  counters_.captured_primary_count = detail::SaturateObserverCounter(
+      run_result_logical_counters_.captured_primary_count);
 }
 
 // -----------------------------------------------------------------------------

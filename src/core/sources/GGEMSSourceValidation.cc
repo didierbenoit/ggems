@@ -7,7 +7,7 @@
 #include <algorithm>
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+
 #include "GGEMS/core/sources/GGEMSSourceFrame.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
@@ -143,9 +143,10 @@ auto ValidateFocusedDistribution(GGEMSSourceRecord const &record,
       record.focus_position_z_pm == record.position_z_pm;
 
   if (geometry_type == GGEMSEmissionGeometryType::Point) {
-    GGEMS_CHECK_RECOVERABLE(
-        !focus_equals_origin,
-        "A Focused Point source must not target its emission position.");
+    if (focus_equals_origin) {
+      throw ggems::core::GGEMSRecoverable(
+          "A Focused Point source must not target its emission position.");
+    }
     return;
   }
 
@@ -199,10 +200,11 @@ auto ValidateFocusedDistribution(GGEMSSourceRecord const &record,
           std::abs(local_z) <= bounds.half_extent_z_pm + band_z;
     }
 
-    GGEMS_CHECK_RECOVERABLE(
-        !focus_in_reachable_support,
-        "A Focused volume source must target a point outside its reachable "
+    if (focus_in_reachable_support) {
+      throw ggems::core::GGEMSRecoverable(
+          "A Focused volume source must target a point outside its reachable "
         "emission support.");
+    }
     return;
   }
 
@@ -232,10 +234,11 @@ auto ValidateFocusedDistribution(GGEMSSourceRecord const &record,
        k_binary32_sampling_margin) +
       integer_rounding_band;
 
-  GGEMS_CHECK_RECOVERABLE(
-      std::abs(normal_distance) > plane_band,
-      "A Focused Rectangle or Ellipse source must target a point outside "
+  if (!(std::abs(normal_distance) > plane_band)) {
+    throw ggems::core::GGEMSRecoverable(
+        "A Focused Rectangle or Ellipse source must target a point outside "
       "its emission plane.");
+  }
 }
 } // namespace
 
@@ -260,19 +263,20 @@ auto BuildEmissionBounds(GGEMSSourceRecord const &record)
       FromKernelEmissionGeometryType(record.emission_geometry_type);
 
   if (geometry_type == GGEMSEmissionGeometryType::Point) {
-    GGEMS_CHECK_RECOVERABLE(
-        record.geometry_size_x_pm == 0ULL &&
+    if (!(record.geometry_size_x_pm == 0ULL &&
             record.geometry_size_y_pm == 0ULL &&
-            record.geometry_size_z_pm == 0ULL,
-        "Point emission geometry must have zero dimensions.");
+            record.geometry_size_z_pm == 0ULL)) {
+      throw ggems::core::GGEMSRecoverable("Point emission geometry must have zero dimensions.");
+    }
     return {};
   }
 
   bool const planar = geometry_type == GGEMSEmissionGeometryType::Rectangle ||
                       geometry_type == GGEMSEmissionGeometryType::Ellipse;
   bool const volume = IsVolumeGeometry(geometry_type);
-  GGEMS_CHECK_RECOVERABLE(planar || volume,
-                          "Unsupported analytic emission geometry type.");
+  if (!(planar || volume)) {
+    throw ggems::core::GGEMSRecoverable("Unsupported analytic emission geometry type.");
+  }
 
   auto const size_x_pm = static_cast<long double>(record.geometry_size_x_pm);
   auto const size_y_pm = static_cast<long double>(record.geometry_size_y_pm);
@@ -285,44 +289,48 @@ auto BuildEmissionBounds(GGEMSSourceRecord const &record)
   long double basis_scale{1.0L};
 
   if (planar) {
-    GGEMS_CHECK_RECOVERABLE(
-        record.geometry_size_x_pm > 0ULL && record.geometry_size_y_pm > 0ULL &&
-            record.geometry_size_z_pm == 0ULL,
-        "Rectangle and Ellipse dimensions must be strictly positive in X/Y "
+    if (!(record.geometry_size_x_pm > 0ULL && record.geometry_size_y_pm > 0ULL &&
+            record.geometry_size_z_pm == 0ULL)) {
+      throw ggems::core::GGEMSRecoverable(
+          "Rectangle and Ellipse dimensions must be strictly positive in X/Y "
         "and zero in Z.");
+    }
     half_x_pm = 0.5L * size_x_pm;
     half_y_pm = 0.5L * size_y_pm;
     mathematical_radius_pm = 0.5L * std::hypot(size_x_pm, size_y_pm);
     basis_scale = ComputePlanarBasisScale(record);
   } else if (geometry_type == GGEMSEmissionGeometryType::Box) {
-    GGEMS_CHECK_RECOVERABLE(record.geometry_size_x_pm > 0ULL &&
+    if (!(record.geometry_size_x_pm > 0ULL &&
                                 record.geometry_size_y_pm > 0ULL &&
-                                record.geometry_size_z_pm > 0ULL,
-                            "Box dimensions must be strictly positive.");
+                                record.geometry_size_z_pm > 0ULL)) {
+      throw ggems::core::GGEMSRecoverable("Box dimensions must be strictly positive.");
+    }
     half_x_pm = 0.5L * size_x_pm;
     half_y_pm = 0.5L * size_y_pm;
     half_z_pm = 0.5L * size_z_pm;
     mathematical_radius_pm = 0.5L * std::hypot(size_x_pm, size_y_pm, size_z_pm);
     basis_scale = ComputeSpatialComponentScale(record);
   } else if (geometry_type == GGEMSEmissionGeometryType::Sphere) {
-    GGEMS_CHECK_RECOVERABLE(
-        record.geometry_size_x_pm > 0ULL &&
+    if (!(record.geometry_size_x_pm > 0ULL &&
             record.geometry_size_y_pm == record.geometry_size_x_pm &&
-            record.geometry_size_z_pm == record.geometry_size_x_pm,
-        "Sphere dimensions must contain one repeated strictly positive "
+            record.geometry_size_z_pm == record.geometry_size_x_pm)) {
+      throw ggems::core::GGEMSRecoverable(
+          "Sphere dimensions must contain one repeated strictly positive "
         "diameter.");
+    }
     half_x_pm = 0.5L * size_x_pm;
     half_y_pm = half_x_pm;
     half_z_pm = half_x_pm;
     mathematical_radius_pm = half_x_pm;
     basis_scale = ComputeSpatialComponentScale(record);
   } else {
-    GGEMS_CHECK_RECOVERABLE(
-        record.geometry_size_x_pm > 0ULL &&
+    if (!(record.geometry_size_x_pm > 0ULL &&
             record.geometry_size_y_pm == record.geometry_size_x_pm &&
-            record.geometry_size_z_pm > 0ULL,
-        "Cylinder dimensions must contain a repeated positive diameter and "
+            record.geometry_size_z_pm > 0ULL)) {
+      throw ggems::core::GGEMSRecoverable(
+          "Cylinder dimensions must contain a repeated positive diameter and "
         "a positive height.");
+    }
     half_x_pm = 0.5L * size_x_pm;
     half_y_pm = half_x_pm;
     half_z_pm = 0.5L * size_z_pm;
@@ -339,10 +347,11 @@ auto BuildEmissionBounds(GGEMSSourceRecord const &record)
 
   long double const uint64_upper_exclusive = std::ldexp(1.0L, 64);
 
-  GGEMS_CHECK_RECOVERABLE(
-      std::isfinite(rounded_radius_pm) && rounded_radius_pm >= 0.0L &&
-          rounded_radius_pm < uint64_upper_exclusive,
-      "Emission geometry radius exceeds uint64 picometer storage.");
+  if (!(std::isfinite(rounded_radius_pm) && rounded_radius_pm >= 0.0L &&
+          rounded_radius_pm < uint64_upper_exclusive)) {
+    throw ggems::core::GGEMSRecoverable(
+        "Emission geometry radius exceeds uint64 picometer storage.");
+  }
 
   return {.component_radius_pm = static_cast<std::uint64_t>(rounded_radius_pm),
           .half_extent_x_pm = half_x_pm,
@@ -367,14 +376,15 @@ auto IsDefaultFullSphereIsotropicDomain(
 // =============================================================================
 
 auto ValidateAnalyticSourceRecord(GGEMSSourceRecord const &record) -> void {
-  GGEMS_CHECK_RECOVERABLE(
-      FromKernelSourceType(record.source_type) == GGEMSSourceType::Analytic,
-      "Current source sampling supports only Analytic sources.");
+  if (!(FromKernelSourceType(record.source_type) == GGEMSSourceType::Analytic)) {
+    throw ggems::core::GGEMSRecoverable("Current source sampling supports only Analytic sources.");
+  }
 
-  GGEMS_CHECK_RECOVERABLE(
-      IsValidSourceFrame(BuildRecordFrame(record)),
-      "Source record must contain a finite, orthonormal, right-handed "
+  if (!(IsValidSourceFrame(BuildRecordFrame(record)))) {
+    throw ggems::core::GGEMSRecoverable(
+        "Source record must contain a finite, orthonormal, right-handed "
       "binary32 frame.");
+  }
 
   GGEMSEmissionBounds const bounds = BuildEmissionBounds(record);
 
@@ -383,19 +393,21 @@ auto ValidateAnalyticSourceRecord(GGEMSSourceRecord const &record) -> void {
       record.position_x_pm, record.position_y_pm, record.position_z_pm};
 
   for (std::size_t axis = 0U; axis < positions.size(); ++axis) {
-    GGEMS_CHECK_RECOVERABLE(
-        HasSignedPicoMeterEnvelope(positions[axis], bounds.component_radius_pm),
-        std::format("Emission geometry exceeds int64 picometer storage "
+    if (!(HasSignedPicoMeterEnvelope(positions[axis], bounds.component_radius_pm))) {
+      throw ggems::core::GGEMSRecoverable(
+          std::format("Emission geometry exceeds int64 picometer storage "
                     "around source axis {}.",
                     k_axis_names[axis]));
+    }
   }
 
   GGEMSAngularDistributionType const distribution_type =
       FromKernelAngularDistributionType(record.angular_distribution_type);
 
-  GGEMS_CHECK_RECOVERABLE(distribution_type !=
-                              GGEMSAngularDistributionType::Unknown,
-                          "Unsupported analytic angular distribution type.");
+  if (!(distribution_type !=
+                              GGEMSAngularDistributionType::Unknown)) {
+    throw ggems::core::GGEMSRecoverable("Unsupported analytic angular distribution type.");
+  }
 
   bool const finite_domain = std::isfinite(record.isotropic_cos_theta_lower) &&
                              std::isfinite(record.isotropic_cos_theta_upper) &&
@@ -405,21 +417,22 @@ auto ValidateAnalyticSourceRecord(GGEMSSourceRecord const &record) -> void {
       static_cast<long double>(record.isotropic_phi_max_rad) -
       static_cast<long double>(record.isotropic_phi_min_rad);
 
-  GGEMS_CHECK_RECOVERABLE(
-      finite_domain && record.isotropic_cos_theta_lower >= -1.0F &&
+  if (!(finite_domain && record.isotropic_cos_theta_lower >= -1.0F &&
           record.isotropic_cos_theta_lower < record.isotropic_cos_theta_upper &&
           record.isotropic_cos_theta_upper <= 1.0F &&
           record.isotropic_phi_min_rad < record.isotropic_phi_max_rad &&
           std::isfinite(phi_width) &&
           phi_width <=
-              static_cast<long double>(k_isotropic_full_sphere_phi_max_rad),
-      "Invalid binary32 Isotropic angular domain.");
+              static_cast<long double>(k_isotropic_full_sphere_phi_max_rad))) {
+    throw ggems::core::GGEMSRecoverable("Invalid binary32 Isotropic angular domain.");
+  }
 
   if (distribution_type != GGEMSAngularDistributionType::Isotropic) {
-    GGEMS_CHECK_RECOVERABLE(
-        IsDefaultFullSphereIsotropicDomain(record),
-        "Fixed and Focused source records must store the canonical unused "
+    if (!(IsDefaultFullSphereIsotropicDomain(record))) {
+      throw ggems::core::GGEMSRecoverable(
+          "Fixed and Focused source records must store the canonical unused "
         "Isotropic domain.");
+    }
   }
 
   if (distribution_type == GGEMSAngularDistributionType::Focused) {
@@ -429,8 +442,9 @@ auto ValidateAnalyticSourceRecord(GGEMSSourceRecord const &record) -> void {
     return;
   }
 
-  GGEMS_CHECK_RECOVERABLE(
-      IsZeroFocus(record),
-      "Fixed and Isotropic source records must store a zero focus.");
+  if (!(IsZeroFocus(record))) {
+    throw ggems::core::GGEMSRecoverable(
+        "Fixed and Isotropic source records must store a zero focus.");
+  }
 }
 } // namespace ggems::core::sources

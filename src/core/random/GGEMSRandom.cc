@@ -11,7 +11,7 @@
 #include <string_view>
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/core/GGEMSLogMacros.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/random/GGEMSRandomState.hh"
 #include "GGEMS/core/random/GGEMSRandomEngine.hh"
@@ -93,12 +93,14 @@ auto MakePhiloxState(std::uint64_t seed, std::uint64_t stream_id) noexcept
 
 auto CheckedStateCount(std::size_t state_size,
                        std::span<std::byte> state_storage) -> std::size_t {
-  GGEMS_CHECK_INTERNAL(state_size > 0U,
-                       "Unsupported GGEMS Random engine state size.");
+  if (!(state_size > 0U)) {
+    throw ggems::core::GGEMSInternal("Unsupported GGEMS Random engine state size.");
+  }
 
-  GGEMS_CHECK_RECOVERABLE(state_storage.size() % state_size == 0U,
-                          "Random state storage size must be a multiple of the "
+  if (!(state_storage.size() % state_size == 0U)) {
+    throw ggems::core::GGEMSRecoverable("Random state storage size must be a multiple of the "
                           "selected engine state size.");
+  }
 
   return state_storage.size() / state_size;
 }
@@ -112,11 +114,11 @@ auto CheckLastStreamId(std::uint64_t first_stream_id, std::size_t state_count)
     return first_stream_id;
   }
 
-  GGEMS_CHECK_RECOVERABLE(
-      std::cmp_less_equal(state_count - 1U,
+  if (!(std::cmp_less_equal(state_count - 1U,
                           std::numeric_limits<std::uint64_t>::max() -
-                              first_stream_id),
-      "Random stream identifier range overflow uint64_t.");
+                              first_stream_id))) {
+    throw ggems::core::GGEMSRecoverable("Random stream identifier range overflow uint64_t.");
+  }
 
   return first_stream_id + static_cast<std::uint64_t>(state_count - 1U);
 }
@@ -153,7 +155,7 @@ auto ToString(GGEMSRandomEngine engine) -> std::string {
     return "Philox";
   }
 
-  GGEMS_INTERNAL("Unsupported GGEMS random engine.");
+  throw ggems::core::GGEMSInternal("Unsupported GGEMS random engine.");
   return "Unknown";
 }
 
@@ -175,7 +177,7 @@ auto ParseRandomEngine(std::string_view engine_name) -> GGEMSRandomEngine {
     return GGEMSRandomEngine::Philox;
   }
 
-  GGEMS_RECOVERABLE(
+  throw ggems::core::GGEMSRecoverable(
       std::format("Unsupported GGEMS random engine '{}'.", engine_name));
 
   return GGEMSRandomEngine::JKISS;
@@ -264,17 +266,19 @@ auto GGEMSRandom::GetStateSize() const noexcept -> std::size_t {
 
 auto GGEMSRandom::ValidateStateRange(std::uint64_t first_stream_id,
                                      std::size_t state_count) const -> void {
-  GGEMS_CHECK_INTERNAL(GetStateSize() > 0U,
-                       "Unsupported GGEMS random engine state size.");
+  if (!(GetStateSize() > 0U)) {
+    throw ggems::core::GGEMSInternal("Unsupported GGEMS random engine state size.");
+  }
 
   std::uint64_t last_stream_id =
       CheckLastStreamId(first_stream_id, state_count);
 
   if (engine_ == GGEMSRandomEngine::JKISS) {
-    GGEMS_CHECK_RECOVERABLE(state_count == 0U ||
+    if (!(state_count == 0U ||
                                 last_stream_id <=
-                                    std::numeric_limits<std::uint32_t>::max(),
-                            "JKISS stream identifier must fit uint32_t.");
+                                    std::numeric_limits<std::uint32_t>::max())) {
+      throw ggems::core::GGEMSRecoverable("JKISS stream identifier must fit uint32_t.");
+    }
   }
 }
 
@@ -316,7 +320,7 @@ auto GGEMSRandom::InitializeStates(std::uint64_t first_stream_id,
     return;
   }
 
-  GGEMS_INTERNAL("Unsupported GGEMS random engine state initialization.");
+  throw ggems::core::GGEMSInternal("Unsupported GGEMS random engine state initialization.");
 }
 
 // -----------------------------------------------------------------------------

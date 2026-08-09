@@ -4,7 +4,7 @@
 #include <string_view>
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+
 #include "GGEMS/core/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/core/sources/GGEMSSourceFrame.hh"
 
@@ -19,18 +19,19 @@ using Vector3D = std::array<double, 3U>;
 
 [[nodiscard]] auto RequireNormalized(Vector3D const &vector,
                                      std::string_view name) -> PreciseAxis {
-  GGEMS_CHECK_RECOVERABLE(
-      std::isfinite(vector[0U]) && std::isfinite(vector[1U]) &&
-          std::isfinite(vector[2U]),
-      std::format("Source {} must contain finite values.", name));
+  if (!(std::isfinite(vector[0U]) && std::isfinite(vector[1U]) &&
+          std::isfinite(vector[2U]))) {
+    throw ggems::core::GGEMSRecoverable(std::format("Source {} must contain finite values.", name));
+  }
 
   auto const normalized =
       geometry::detail::TryNormalizeVector3D(vector[0], vector[1], vector[2]);
 
-  GGEMS_CHECK_RECOVERABLE(
-      normalized.has_value(),
-      std::format("Source {} must have a finite, strictly positive norm.",
+  if (!(normalized.has_value())) {
+    throw ggems::core::GGEMSRecoverable(
+        std::format("Source {} must have a finite, strictly positive norm.",
                   name));
+  }
 
   return *normalized;
 }
@@ -69,9 +70,10 @@ using Vector3D = std::array<double, 3U>;
   auto const converted =
       geometry::TryMakeDirection3(direction.x, direction.y, direction.z);
 
-  GGEMS_CHECK_INTERNAL(converted.has_value(),
-                       "Source orientation cannot be represented by a finite, "
+  if (!(converted.has_value())) {
+    throw ggems::core::GGEMSInternal("Source orientation cannot be represented by a finite, "
                        "non-zero float direction.");
+  }
 
   return *converted;
 }
@@ -132,10 +134,11 @@ using Vector3D = std::array<double, 3U>;
 auto BuildSourceFrameFromNormalized(PreciseAxis direction,
                                     PreciseAxis up_reference)
     -> GGEMSSourceFrame {
-  GGEMS_CHECK_RECOVERABLE(!IsTooParallel(direction, up_reference),
-                          std::format("Source direction and up are too close "
+  if (IsTooParallel(direction, up_reference)) {
+    throw ggems::core::GGEMSRecoverable(std::format("Source direction and up are too close "
                                       "to parallel (1 - abs(dot) <= {}).",
                                       k_source_frame_parallel_tolerance));
+  }
 
   PreciseAxis const axis_x = RequireNormalized(Cross(up_reference, direction),
                                                "frame horizontal axis");
@@ -146,9 +149,10 @@ auto BuildSourceFrameFromNormalized(PreciseAxis direction,
                                   .axis_y = ToFloatDirection(axis_y),
                                   .axis_z = ToFloatDirection(direction)};
 
-  GGEMS_CHECK_INTERNAL(IsValidFloatFrame(frame),
-                       "Source orientation cannot be represented by a "
+  if (!(IsValidFloatFrame(frame))) {
+    throw ggems::core::GGEMSInternal("Source orientation cannot be represented by a "
                        "sufficiently orthonormal right-handed float frame.");
+  }
 
   return frame;
 }

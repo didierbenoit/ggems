@@ -23,7 +23,7 @@
 
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+
 #include "GGEMS/render/GGEMSColor.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/core/detail/GGEMSLoggerMetadata.hh"
@@ -139,7 +139,9 @@ void StdoutSink::Write(RenderedLogLine &&log_line) {
 
 FileSink::FileSink(std::string path)
     : path_(std::move(path)), out_(path_, std::ios::out | std::ios::trunc) {
-  GGEMS_CHECK_FATAL(out_, "Cannot open log file: " + path_);
+  if (!(out_)) {
+    throw ggems::core::GGEMSFatal("Cannot open log file: " + path_);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -220,7 +222,7 @@ auto GGEMSLogger::ClearSinks() noexcept -> void {
 
 auto GGEMSLogger::AddSink(std::unique_ptr<LogSink> sink) -> void {
   if (!sink) {
-    GGEMS_FATAL("Log sink is null.");
+    throw ggems::core::GGEMSFatal("Log sink is null.");
   }
 
   std::scoped_lock lock(mtx_);

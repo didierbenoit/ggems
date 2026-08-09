@@ -17,7 +17,7 @@
 #include "GGEMS/ui/GGEMSVulkanColorConversion.hh"
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/core/GGEMSLogMacros.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
@@ -103,14 +103,16 @@ auto GGEMSVulkanSceneRenderer::RecreateRenderTargetsIfNeeded() -> void {
     return;
   }
 
-  GGEMS_CHECK_INTERNAL(
-      device_ != nullptr,
-      "A Vulkan device is required before recreating scene render targets.");
+  if (!(device_ != nullptr)) {
+    throw ggems::core::GGEMSInternal(
+        "A Vulkan device is required before recreating scene render targets.");
+  }
 
-  GGEMS_CHECK_INTERNAL(viewport_extent_.width > 0U &&
-                           viewport_extent_.height > 0U,
-                       "A valid scene viewport extent is required before "
+  if (!(viewport_extent_.width > 0U &&
+                           viewport_extent_.height > 0U)) {
+    throw ggems::core::GGEMSInternal("A valid scene viewport extent is required before "
                        "recreating scene render targets.");
+  }
 
   device_->waitIdle();
   CleanupRenderTargets();
@@ -162,9 +164,10 @@ auto GGEMSVulkanSceneRenderer::GetSampler() const noexcept -> vk::Sampler {
 
 auto GGEMSVulkanSceneRenderer::IsDepthFormatSupported(vk::Format format) const
     -> bool {
-  GGEMS_CHECK_INTERNAL(physical_device_ != nullptr,
-                       "A Vulkan physical device is required before checking "
+  if (!(physical_device_ != nullptr)) {
+    throw ggems::core::GGEMSInternal("A Vulkan physical device is required before checking "
                        "depth format support.");
+  }
 
   vk::FormatProperties properties =
       physical_device_->getFormatProperties(format);
@@ -177,9 +180,10 @@ auto GGEMSVulkanSceneRenderer::IsDepthFormatSupported(vk::Format format) const
 // -----------------------------------------------------------------------------
 
 auto GGEMSVulkanSceneRenderer::CreateColorTarget() -> void {
-  GGEMS_CHECK_INTERNAL(device_ != nullptr,
-                       "A Vulkan device is required before creating a scene "
+  if (!(device_ != nullptr)) {
+    throw ggems::core::GGEMSInternal("A Vulkan device is required before creating a scene "
                        "color target.");
+  }
 
   vk::ImageCreateInfo image_create_info{
       .imageType = vk::ImageType::e2D,
@@ -259,15 +263,17 @@ auto GGEMSVulkanSceneRenderer::CreateColorTarget() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSVulkanSceneRenderer::CreateDepthTarget() -> void {
-  GGEMS_CHECK_INTERNAL(device_ != nullptr,
-                       "A Vulkan device is required before creating a scene "
+  if (!(device_ != nullptr)) {
+    throw ggems::core::GGEMSInternal("A Vulkan device is required before creating a scene "
                        "depth target.");
+  }
 
-  GGEMS_CHECK_INTERNAL(
-      IsDepthFormatSupported(depth_format_),
-      std::format("Vulkan depth format '{}' is not supported as a depth "
+  if (!(IsDepthFormatSupported(depth_format_))) {
+    throw ggems::core::GGEMSInternal(
+        std::format("Vulkan depth format '{}' is not supported as a depth "
                   "attachment.",
                   vk::to_string(depth_format_)));
+  }
 
   vk::ImageCreateInfo depth_image_create_info{
       .imageType = vk::ImageType::e2D,
@@ -343,9 +349,10 @@ auto GGEMSVulkanSceneRenderer::CleanupRenderTargets() noexcept -> void {
 auto GGEMSVulkanSceneRenderer::FindMemoryType(
     std::uint32_t type_filter, vk::MemoryPropertyFlags properties) const
     -> std::uint32_t {
-  GGEMS_CHECK_INTERNAL(physical_device_ != nullptr,
-                       "A Vulkan physical device is required before selecting "
+  if (!(physical_device_ != nullptr)) {
+    throw ggems::core::GGEMSInternal("A Vulkan physical device is required before selecting "
                        "a memory type.");
+  }
 
   vk::PhysicalDeviceMemoryProperties memory_properties =
       physical_device_->getMemoryProperties();
@@ -361,9 +368,10 @@ auto GGEMSVulkanSceneRenderer::FindMemoryType(
     }
   }
 
-  GGEMS_CHECK_INTERNAL(false,
-                       "No suitable Vulkan memory type was found for the scene "
+  if (!(false)) {
+    throw ggems::core::GGEMSInternal("No suitable Vulkan memory type was found for the scene "
                        "renderer color target.");
+  }
 
   return 0U;
 }
@@ -522,20 +530,23 @@ auto GGEMSVulkanSceneRenderer::ReadSPIRVFile(std::filesystem::path const &path)
     -> std::vector<std::uint32_t> {
   std::ifstream file{path, std::ios::binary | std::ios::ate};
 
-  GGEMS_CHECK_INTERNAL(
-      file.is_open(),
-      std::format("Unable to open SPIR-V shader file '{}'.", path.string()));
+  if (!(file.is_open())) {
+    throw ggems::core::GGEMSInternal(
+        std::format("Unable to open SPIR-V shader file '{}'.", path.string()));
+  }
 
   std::streamsize file_size = file.tellg();
 
-  GGEMS_CHECK_INTERNAL(
-      file_size > 0,
-      std::format("SPIR-V shader file '{}' is empty.", path.string()));
+  if (!(file_size > 0)) {
+    throw ggems::core::GGEMSInternal(
+        std::format("SPIR-V shader file '{}' is empty.", path.string()));
+  }
 
-  GGEMS_CHECK_INTERNAL(
-      file_size % static_cast<std::streamsize>(sizeof(std::uint32_t)) == 0,
-      std::format("SPIR-V shader file '{}' has an invalid byte size.",
+  if (!(file_size % static_cast<std::streamsize>(sizeof(std::uint32_t)) == 0)) {
+    throw ggems::core::GGEMSInternal(
+        std::format("SPIR-V shader file '{}' has an invalid byte size.",
                   path.string()));
+  }
 
   file.seekg(0, std::ios::beg);
 
@@ -546,9 +557,10 @@ auto GGEMSVulkanSceneRenderer::ReadSPIRVFile(std::filesystem::path const &path)
 
   file.read(reinterpret_cast<char *>(code.data()), file_size);
 
-  GGEMS_CHECK_INTERNAL(
-      file.good(),
-      std::format("Unable to read SPIR-V shader file '{}'.", path.string()));
+  if (!(file.good())) {
+    throw ggems::core::GGEMSInternal(
+        std::format("Unable to read SPIR-V shader file '{}'.", path.string()));
+  }
 
   return code;
 }
@@ -556,12 +568,15 @@ auto GGEMSVulkanSceneRenderer::ReadSPIRVFile(std::filesystem::path const &path)
 // -----------------------------------------------------------------------------
 
 auto GGEMSVulkanSceneRenderer::CreateAxesShaderModules() -> void {
-  GGEMS_CHECK_INTERNAL(device_ != nullptr,
-                       "A Vulkan device is required before creating scene "
+  if (!(device_ != nullptr)) {
+    throw ggems::core::GGEMSInternal("A Vulkan device is required before creating scene "
                        "shader modules.");
+  }
 
 #ifndef GGEMS_UI_SHADER_DIRECTORY
-  GGEMS_CHECK_INTERNAL(false, "GGEMS_UI_SHADER_DIRECTORY is not defined.");
+  if (!(false)) {
+    throw ggems::core::GGEMSInternal("GGEMS_UI_SHADER_DIRECTORY is not defined.");
+  }
 #endif
 
   std::filesystem::path shader_directory{GGEMS_UI_SHADER_DIRECTORY};
@@ -596,19 +611,22 @@ auto GGEMSVulkanSceneRenderer::CreateAxesShaderModules() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSVulkanSceneRenderer::CreateAxesPipeline() -> void {
-  GGEMS_CHECK_INTERNAL(
-      device_ != nullptr,
-      "A Vulkan device is required before creating the axes pipeline.");
+  if (!(device_ != nullptr)) {
+    throw ggems::core::GGEMSInternal(
+        "A Vulkan device is required before creating the axes pipeline.");
+  }
 
-  GGEMS_CHECK_INTERNAL(
-      *axes_vertex_shader_module_ != vk::ShaderModule{},
-      "A Vulkan vertex shader module is required before creating the axes "
+  if (!(*axes_vertex_shader_module_ != vk::ShaderModule{})) {
+    throw ggems::core::GGEMSInternal(
+        "A Vulkan vertex shader module is required before creating the axes "
       "pipeline.");
+  }
 
-  GGEMS_CHECK_INTERNAL(
-      *axes_fragment_shader_module_ != vk::ShaderModule{},
-      "A Vulkan fragment shader module is required before creating the axes "
+  if (!(*axes_fragment_shader_module_ != vk::ShaderModule{})) {
+    throw ggems::core::GGEMSInternal(
+        "A Vulkan fragment shader module is required before creating the axes "
       "pipeline.");
+  }
 
   vk::PipelineShaderStageCreateInfo vertex_stage{
       .stage = vk::ShaderStageFlagBits::eVertex,
@@ -713,12 +731,15 @@ auto GGEMSVulkanSceneRenderer::CreateAxesPipeline() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSVulkanSceneRenderer::CreateTraceShaderModules() -> void {
-  GGEMS_CHECK_INTERNAL(
-      device_ != nullptr,
-      "A Vulkan device is required before creating trace shader modules.");
+  if (!(device_ != nullptr)) {
+    throw ggems::core::GGEMSInternal(
+        "A Vulkan device is required before creating trace shader modules.");
+  }
 
 #ifndef GGEMS_UI_SHADER_DIRECTORY
-  GGEMS_CHECK_INTERNAL(false, "GGEMS_UI_SHADER_DIRECTORY is not defined.");
+  if (!(false)) {
+    throw ggems::core::GGEMSInternal("GGEMS_UI_SHADER_DIRECTORY is not defined.");
+  }
 #endif
 
   std::filesystem::path shader_directory(GGEMS_UI_SHADER_DIRECTORY);
@@ -788,17 +809,20 @@ auto GGEMSVulkanSceneRenderer::RecordAxesCommands(
 // -----------------------------------------------------------------------------
 
 auto GGEMSVulkanSceneRenderer::CreateTracePipeline() -> void {
-  GGEMS_CHECK_INTERNAL(
-      device_ != nullptr,
-      "A Vulkan device is required before creating the trace pipeline.");
+  if (!(device_ != nullptr)) {
+    throw ggems::core::GGEMSInternal(
+        "A Vulkan device is required before creating the trace pipeline.");
+  }
 
-  GGEMS_CHECK_INTERNAL(*trace_vertex_shader_module_ != vk::ShaderModule{},
-                       "A Vulkan vertex shader module is required before "
+  if (!(*trace_vertex_shader_module_ != vk::ShaderModule{})) {
+    throw ggems::core::GGEMSInternal("A Vulkan vertex shader module is required before "
                        "creating the trace pipeline.");
+  }
 
-  GGEMS_CHECK_INTERNAL(*trace_fragment_shader_module_ != vk::ShaderModule{},
-                       "A Vulkan fragment shader module is required before "
+  if (!(*trace_fragment_shader_module_ != vk::ShaderModule{})) {
+    throw ggems::core::GGEMSInternal("A Vulkan fragment shader module is required before "
                        "creating the trace pipeline.");
+  }
 
   vk::PipelineShaderStageCreateInfo vertex_stage{
       .stage = vk::ShaderStageFlagBits::eVertex,
@@ -987,9 +1011,10 @@ auto GGEMSVulkanSceneRenderer::DestroyTraceVertexBuffer() noexcept -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSVulkanSceneRenderer::CreateTraceVertexBuffer() -> void {
-  GGEMS_CHECK_INTERNAL(device_ != nullptr,
-                       "A Vulkan device is required before creating the trace "
+  if (!(device_ != nullptr)) {
+    throw ggems::core::GGEMSInternal("A Vulkan device is required before creating the trace "
                        "vertex buffer.");
+  }
 
   if (trace_vertices_.empty()) {
     return;
@@ -1178,17 +1203,19 @@ auto GGEMSVulkanSceneRenderer::ResetCamera() noexcept -> void {
 auto GGEMSVulkanSceneRenderer::SetParticleTraceSegments(
     std::span<ggems::render::GGEMSParticleTraceSegment const> segments)
     -> void {
-  GGEMS_CHECK_INTERNAL(
-      device_ != nullptr,
-      "A Vulkan device is required before setting particle trace segments.");
+  if (!(device_ != nullptr)) {
+    throw ggems::core::GGEMSInternal(
+        "A Vulkan device is required before setting particle trace segments.");
+  }
 
   auto draw_data = ggems::render::BuildParticleTraceDrawData(segments);
 
-  GGEMS_CHECK_INTERNAL(
-      draw_data.vertices.size() <=
-          static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()),
-      "The particle trace vertex count exceeds the Vulkan uint32_t draw "
+  if (!(draw_data.vertices.size() <=
+          static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()))) {
+    throw ggems::core::GGEMSInternal(
+        "The particle trace vertex count exceeds the Vulkan uint32_t draw "
       "range.");
+  }
 
   DestroyTraceVertexBuffer();
 

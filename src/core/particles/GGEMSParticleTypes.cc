@@ -5,7 +5,7 @@
 
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+
 
 namespace ggems::core::particles {
 namespace {
@@ -54,7 +54,7 @@ auto ToLongName(GGEMSParticleType particle_type) -> std::string {
     return "Alpha";
   }
 
-  GGEMS_INTERNAL("Unsupported GGEMS particle type.");
+  throw ggems::core::GGEMSInternal("Unsupported GGEMS particle type.");
   return "Unknown";
 }
 
@@ -81,7 +81,7 @@ auto ToShortName(GGEMSParticleType particle_type) -> std::string {
     return "a";
   }
 
-  GGEMS_INTERNAL("Unsupported GGEMS particle type.");
+  throw ggems::core::GGEMSInternal("Unsupported GGEMS particle type.");
   return "?";
 }
 
@@ -119,7 +119,7 @@ auto ParseParticleType(std::string_view particle_name) -> GGEMSParticleType {
     return GGEMSParticleType::Alpha;
   }
 
-  GGEMS_RECOVERABLE(
+  throw ggems::core::GGEMSRecoverable(
       std::format("Unsupported GGEMS particle type '{}'.", particle_name));
 
   return GGEMSParticleType::Unknown;

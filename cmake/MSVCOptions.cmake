@@ -1,7 +1,4 @@
 # ============================================================================
-# @file      MSVCOptions.cmake @brief     Compiler configuration for Microsoft
-# Visual C++. @details   Configure warnings, language conformance, UTF-8
-# support, and the dynamic MSVC runtime required by Python extension modules.
 # ============================================================================
 
 include_guard(GLOBAL)

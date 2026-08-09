@@ -11,7 +11,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "GGEMS/core/GGEMSMacros.hh"
+
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
 
@@ -30,16 +30,18 @@ struct IsSpan<std::span<T, Extent>> : std::true_type {};
 
 template <SVMHostTransferValue T>
 void CheckSVMHostAccessElementCount(std::size_t count) {
-  GGEMS_CHECK_INTERNAL(count <=
-                           std::numeric_limits<std::size_t>::max() / sizeof(T),
-                       "SVM host access byte count exceeds std::size_t.");
+  if (!(count <=
+                           std::numeric_limits<std::size_t>::max() / sizeof(T))) {
+    throw ggems::core::GGEMSInternal("SVM host access byte count exceeds std::size_t.");
+  }
 }
 
 inline void CheckSVMHostAccessByteCapacity(GGEMSOpenCLSVMBuffer const &buffer,
                                            std::size_t byte_count) {
-  GGEMS_CHECK_INTERNAL(
-      std::cmp_less_equal(byte_count, buffer.GetSize().value),
-      "SVM buffer capacity is insufficient for the requested host access.");
+  if (!(std::cmp_less_equal(byte_count, buffer.GetSize().value))) {
+    throw ggems::core::GGEMSInternal(
+        "SVM buffer capacity is insufficient for the requested host access.");
+  }
 }
 
 template <typename Operation>

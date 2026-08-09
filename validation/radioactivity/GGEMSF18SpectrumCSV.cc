@@ -10,7 +10,6 @@
 #include <limits>
 #include <locale>
 #include <ostream>
-#include <source_location>
 #include <span>
 #include <sstream>
 #include <string>
@@ -39,8 +38,7 @@ inline constexpr std::string_view k_csv_header{
 // =============================================================================
 
 [[noreturn]] auto Reject(std::string message) -> void {
-  core::Throw<core::GGEMSRecoverable>(std::move(message),
-                                      std::source_location::current(), false);
+  throw core::GGEMSRecoverable(std::move(message));
 }
 
 // =============================================================================

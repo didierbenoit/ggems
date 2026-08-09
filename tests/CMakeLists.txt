@@ -1,7 +1,4 @@
 # ============================================================================
-# @file      CMakeLists.txt @brief     Unit test build configuration for GGEMS.
-# @details   This file declares the GoogleTest-based test executables used to
-# validate deterministic core components of GGEMS.
 # ============================================================================
 
 # ----------------------------------------------------------------------------

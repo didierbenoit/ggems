@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <span>
 #include <string>
 #include <vector>
@@ -8,11 +9,13 @@
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 
-namespace ggems::core {
-class GGEMSRun;
-}
-
 namespace ggems::core::observer {
+
+struct GGEMSObserverRunResultCounters {
+  std::uint64_t record_count{0ULL};
+  std::uint64_t overflow_count{0ULL};
+  std::uint64_t captured_primary_count{0ULL};
+};
 
 class GGEMSTransportObserver {
 public:
@@ -47,6 +50,16 @@ public:
   void Accumulate(std::span<GGEMSObserverRecord const> records,
                   GGEMSObserverCounters const &counters);
 
+  [[nodiscard]] auto CreateRunResultCandidate() const
+      -> std::unique_ptr<GGEMSTransportObserver>;
+
+  auto
+  AccumulateRunResult(std::span<GGEMSObserverRecord const> records,
+                      GGEMSObserverRunResultCounters const &logical_counters)
+      -> void;
+
+  auto CommitRunResult(GGEMSTransportObserver &candidate) noexcept -> void;
+
   [[nodiscard]] auto BuildConfigRecord() const noexcept
       -> GGEMSObserverConfigRecord;
 
@@ -62,11 +75,7 @@ public:
   [[nodiscard]] auto BuildDump() const -> std::string;
 
 private:
-  friend class ggems::core::GGEMSRun;
-
   explicit GGEMSTransportObserver(bool reserve_record_capacity);
-
-  auto SwapRunResult(GGEMSTransportObserver &other) noexcept -> void;
 
   bool enabled_{false};
 
@@ -78,6 +87,7 @@ private:
   std::uint32_t capture_source_index_{particles::k_invalid_id_u32};
   std::uint64_t capture_source_local_primary_id_{particles::k_invalid_id_u64};
 
+  GGEMSObserverRunResultCounters run_result_logical_counters_{};
   GGEMSObserverCounters counters_{};
   std::vector<GGEMSObserverRecord> records_;
 };

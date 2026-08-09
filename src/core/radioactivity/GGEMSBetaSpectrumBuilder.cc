@@ -72,7 +72,7 @@ struct RegularGrid {
 // =============================================================================
 
 [[noreturn]] auto Reject(std::string message) -> void {
-  ggems::core::Throw<ggems::core::GGEMSRecoverable>(std::move(message));
+  throw GGEMSRecoverable(std::move(message));
 }
 
 // =============================================================================

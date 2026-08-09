@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideLibrary.hh"
 #include "GGEMS/core/radioactivity/detail/GGEMSRadionuclideLookupPolicy.hh"
@@ -23,10 +23,11 @@ GGEMSRadionuclideLibrary::Add(GGEMSRadionuclideDefinition definition)
   std::vector<std::string> keys = definition.BuildLookupKeys();
 
   for (std::string const &key : keys) {
-    GGEMS_CHECK_RECOVERABLE(
-        !lookup_.contains(key),
-        std::format("Radionuclide lookup name '{}' is already registered.",
+    if (lookup_.contains(key)) {
+      throw ggems::core::GGEMSRecoverable(
+          std::format("Radionuclide lookup name '{}' is already registered.",
                     key));
+    }
   }
 
   DefinitionPointer definition_pointer =
@@ -42,8 +43,9 @@ GGEMSRadionuclideLibrary::Add(GGEMSRadionuclideDefinition definition)
     auto const [iterator, inserted] =
         updated_lookup.emplace(std::move(key), definition_pointer);
     static_cast<void>(iterator);
-    GGEMS_CHECK_INTERNAL(inserted,
-                         "Validated radionuclide lookup insertion failed.");
+    if (!(inserted)) {
+      throw ggems::core::GGEMSInternal("Validated radionuclide lookup insertion failed.");
+    }
   }
 
   static_assert(noexcept(definitions_.swap(updated_definitions)));

@@ -1,8 +1,4 @@
 # ============================================================================
-# @file      docs/CMakeLists.txt @brief     Documentation build configuration
-# for GGEMS. @details   Configures and generates the Doxygen-based C++
-# documentation, with optional integration into Sphinx (for Python narrative
-# docs). This script is invoked only if the option BUILD_DOCS is enabled.
 # ============================================================================
 
 # --- Section: Options and dependencies --------------------------------------
@@ -52,5 +48,5 @@ add_custom_target(
 # GGEMS" ) add_dependencies(sphinx_docs docs) endif()
 
 # --- Section: Final messages ------------------------------------------------
-message(STATUS "Doxygen input directory : ${DOXYGEN_INPUT_DIR}")
+message(STATUS "Doxygen input directory : ${DOXYGEN_INPUT_DIRS}")
 message(STATUS "Doxygen output directory: ${DOXYGEN_OUTPUT_DIR}")

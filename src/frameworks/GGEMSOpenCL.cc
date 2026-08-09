@@ -1,39 +1,18 @@
 // ************************************************************************
-// * This file is part of GGEMS.                                          *
-// *                                                                      *
-// * GGEMS is free software: you can redistribute it and/or modify        *
-// * it under the terms of the GNU General Public License as published by *
-// * the Free Software Foundation, either version 3 of the License, or    *
-// * (at your option) any later version.                                  *
-// *                                                                      *
-// * GGEMS is distributed in the hope that it will be useful,             *
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
-// * GNU General Public License for more details.                         *
-// *                                                                      *
-// * You should have received a copy of the GNU General Public License    *
-// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
-// *                                                                      *
 // ************************************************************************
 
-/*!
- * \file GGEMSOpenCL.cc
- * \brief Implementation of the GGEMSOpenCL runtime manager.
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-10-29
- * \version 2.0
- * \copyright
- * GNU General Public License v3.0
- */
 
 #include <set>
 #include <algorithm>
 #include <cctype>
+#include <exception>
 #include <string>
 
+#include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/GGEMSLogMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
 namespace ggems::ocl {
 
@@ -54,12 +33,6 @@ namespace ggems::ocl {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-/*!
- * \brief Mapping of vendor aliases to normalized vendor names.
- *
- * Used internally when parsing device-selection filters to allow
- * user-friendly terms such as "nvidia" or "amd".
- */
 static const std::unordered_map<std::string, std::string> vendor_aliases = {
     {"intel", "intel(r) corporation"},
     {"nvidia", "nvidia corporation"},
@@ -151,8 +124,10 @@ void GGEMSOpenCL::InitPlatformsAndDevices() {
   GGEMS_INFOEX("OpenCL", 2, "Enumerating OpenCL platforms.");
 
   std::vector<cl::Platform> platforms;
-  GGEMS_OCL_CHECK(cl::Platform::get(&platforms),
-                  "No OpenCL platforms detected on this system.");
+  {
+    auto const opencl_error_code = (cl::Platform::get(&platforms));
+    ggems::ocl::CheckCLError(opencl_error_code, "No OpenCL platforms detected on this system.");
+  }
 
   platforms_.clear();
   platforms_.reserve(platforms.size());
@@ -182,7 +157,9 @@ void GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters) {
     }
   }
 
-  GGEMS_CHECK_FATAL(!all_devices.empty(), "No OpenCL devices found.");
+  if (all_devices.empty()) {
+    throw ggems::core::GGEMSFatal("No OpenCL devices found.");
+  }
 
   // --- Default behavior --------------------------------------------------
   if (filters.empty()) {
@@ -203,8 +180,9 @@ void GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters) {
   }
   selected_devices_ = ParseDeviceFilters(filters, all_devices);
 
-  GGEMS_CHECK_FATAL(!selected_devices_.empty(),
-                    "No matching devices for given filters.");
+  if (selected_devices_.empty()) {
+    throw ggems::core::GGEMSFatal("No matching devices for given filters.");
+  }
 
   GGEMS_INFO("OpenCL", "{} OpenCL device(s) selected.",
              selected_devices_.size());

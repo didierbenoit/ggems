@@ -1,67 +1,51 @@
 // ************************************************************************
-// * This file is part of GGEMS.                                          *
-// *                                                                      *
-// * GGEMS is free software: you can redistribute it and/or modify        *
-// * it under the terms of the GNU General Public License as published by *
-// * the Free Software Foundation, either version 3 of the License, or    *
-// * (at your option) any later version.                                  *
-// *                                                                      *
-// * GGEMS is distributed in the hope that it will be useful,             *
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of       *
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        *
-// * GNU General Public License for more details.                         *
-// *                                                                      *
-// * You should have received a copy of the GNU General Public License    *
-// * along with GGEMS.  If not, see <https://www.gnu.org/licenses/>.      *
-// *                                                                      *
 // ************************************************************************
 
-/*!
- * \file GGEMSException.cc
- * \brief Base exception class and specialized GGEMS exception categories.
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- * \date 2025-10-29
- * \version 2.0
- * \copyright
- * GNU General Public License v3.0
- */
+
+#include <cstdio>
+#include <cstdlib>
+#include <exception>
+#include <string_view>
 
 #include "GGEMS/core/GGEMSException.hh"
 
-namespace ggems::core {
+namespace {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSExceptionBase::Log(std::string const &msg) noexcept {
-  try {
-    std::fputs(msg.c_str(), stderr);
-    std::fputs("\n", stderr);
-  } catch (...) {
-    std::fputs("[GGEMS Exception]: logging failed\n", stderr);
+auto WriteEmergencyDiagnostic(std::string_view prefix,
+                              std::string_view message = {}) noexcept -> void {
+  if (!prefix.empty()) {
+    std::fwrite(prefix.data(), sizeof(char), prefix.size(), stderr);
   }
+  if (!message.empty()) {
+    std::fwrite(message.data(), sizeof(char), message.size(), stderr);
+  }
+  std::fputc('\n', stderr);
 }
+} // namespace
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
+namespace ggems::core {
 void TerminateHandler() noexcept {
   try {
-    auto ex = std::current_exception();
-    if (ex) {
+    auto exception = std::current_exception();
+    if (exception) {
       try {
-        std::rethrow_exception(ex);
-      } catch (GGEMSExceptionBase const &e) {
-        GGEMSExceptionBase::Log(e.what());
-      } catch (std::exception const &e) {
-        GGEMSExceptionBase::Log(std::string("[std::exception] ") + e.what());
+        std::rethrow_exception(exception);
+      } catch (GGEMSExceptionBase const &caught_exception) {
+        WriteEmergencyDiagnostic({}, caught_exception.what());
+      } catch (std::exception const &caught_exception) {
+        WriteEmergencyDiagnostic("[std::exception] ", caught_exception.what());
       } catch (...) {
-        GGEMSExceptionBase::Log("[Unknown exception]");
+        WriteEmergencyDiagnostic("[Unknown exception]");
       }
     } else {
-      GGEMSExceptionBase::Log(
+      WriteEmergencyDiagnostic(
           "[GGEMSException] Terminate called with no active exception");
     }
   } catch (...) {

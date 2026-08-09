@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/core/GGEMSLogMacros.hh"
 
 namespace ggems::core::particles {
 
@@ -12,12 +12,14 @@ namespace ggems::core::particles {
 // =============================================================================
 
 auto GGEMSPrimaryStream::SetPrimaryCount(std::uint64_t primary_count) -> void {
-  GGEMS_CHECK_RECOVERABLE(primary_count > 0ULL,
-                          "Primary stream particle count must be non-zero.");
+  if (!(primary_count > 0ULL)) {
+    throw ggems::core::GGEMSRecoverable("Primary stream particle count must be non-zero.");
+  }
 
-  GGEMS_CHECK_RECOVERABLE(
-      !initialized_,
-      "Primary stream particle count cannot be changed after initialize.");
+  if (initialized_) {
+    throw ggems::core::GGEMSRecoverable(
+        "Primary stream particle count cannot be changed after initialize.");
+  }
 
   primary_count_ = primary_count;
 }
@@ -25,11 +27,13 @@ auto GGEMSPrimaryStream::SetPrimaryCount(std::uint64_t primary_count) -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSPrimaryStream::Initialize() -> void {
-  GGEMS_CHECK_RECOVERABLE(
-      !initialized_, "Primary stream cannot be initialized more than once.");
+  if (initialized_) {
+    throw ggems::core::GGEMSRecoverable("Primary stream cannot be initialized more than once.");
+  }
 
-  GGEMS_CHECK_RECOVERABLE(primary_count_ > 0ULL,
-                          "Cannot initialize an empty primary stream.");
+  if (!(primary_count_ > 0ULL)) {
+    throw ggems::core::GGEMSRecoverable("Cannot initialize an empty primary stream.");
+  }
 
   GGEMS_INFO("Core", "Primary Aionino stream initialized");
 
@@ -50,16 +54,19 @@ auto GGEMSPrimaryStream::PrepareRun(std::uint64_t run_id)
 auto GGEMSPrimaryStream::PrepareRun(std::uint64_t run_id,
                                     std::uint64_t primary_count)
     -> GGEMSPrimaryStreamRunView {
-  GGEMS_CHECK_RECOVERABLE(
-      initialized_,
-      "Primary stream must be initialized before reserving a range");
+  if (!(initialized_)) {
+    throw ggems::core::GGEMSRecoverable(
+        "Primary stream must be initialized before reserving a range");
+  }
 
-  GGEMS_CHECK_RECOVERABLE(primary_count > 0ULL,
-                          "Primary stream reservation count must be non-zero");
+  if (!(primary_count > 0ULL)) {
+    throw ggems::core::GGEMSRecoverable("Primary stream reservation count must be non-zero");
+  }
 
-  GGEMS_CHECK_RECOVERABLE(
-      !exhausted_,
-      "Primary stream is exhausted; no global primary identifiers remain.");
+  if (exhausted_) {
+    throw ggems::core::GGEMSRecoverable(
+        "Primary stream is exhausted; no global primary identifiers remain.");
+  }
 
   constexpr std::uint64_t k_maximum_primary_id{
       std::numeric_limits<std::uint64_t>::max()};
@@ -67,9 +74,10 @@ auto GGEMSPrimaryStream::PrepareRun(std::uint64_t run_id,
   std::uint64_t begin = next_global_primary_id_;
   std::uint64_t count_minus_one = primary_count - 1ULL;
 
-  GGEMS_CHECK_RECOVERABLE(count_minus_one <= k_maximum_primary_id - begin,
-                          "Primary stream requested range is not representable "
+  if (!(count_minus_one <= k_maximum_primary_id - begin)) {
+    throw ggems::core::GGEMSRecoverable("Primary stream requested range is not representable "
                           "with uint64_t global primary identifiers.");
+  }
 
   std::uint64_t last_id = begin + count_minus_one;
 

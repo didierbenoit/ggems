@@ -17,7 +17,7 @@
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/core/GGEMSLogMacros.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/sources/GGEMSSourceDescription.hh"
 #include "GGEMS/core/sources/GGEMSSourceFrame.hh"
@@ -117,27 +117,30 @@ GGEMSSource::GGEMSSource() {
 // -----------------------------------------------------------------------------
 
 auto GGEMSSource::CheckCountDrivenConfiguration() const -> void {
-  GGEMS_CHECK_RECOVERABLE(
-      GetPopulationMode() == GGEMSSourcePopulationMode::CountDriven,
-      "Cannot use single-particle configuration on an ActivityDriven "
+  if (!(GetPopulationMode() == GGEMSSourcePopulationMode::CountDriven)) {
+    throw ggems::core::GGEMSRecoverable(
+        "Cannot use single-particle configuration on an ActivityDriven "
       "GGEMSSource.");
+  }
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSSource::CheckEnergyConfigurationMutable() const -> void {
   CheckCountDrivenConfiguration();
-  GGEMS_CHECK_RECOVERABLE(!initialization_finalized_,
-                          "Cannot change GGEMSSource energy after source "
+  if (initialization_finalized_) {
+    throw ggems::core::GGEMSRecoverable("Cannot change GGEMSSource energy after source "
                           "initialization has been finalized.");
+  }
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSSource::CheckPopulationConfigurationMutable() const -> void {
-  GGEMS_CHECK_RECOVERABLE(!initialization_finalized_,
-                          "Cannot change GGEMSSource population mode after "
+  if (initialization_finalized_) {
+    throw ggems::core::GGEMSRecoverable("Cannot change GGEMSSource population mode after "
                           "source initialization has been finalized.");
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -255,15 +258,17 @@ auto GGEMSSource::SetRadionuclide(
     units::Activity activity_at_reference_time, std::uint64_t reference_time_ps)
     -> GGEMSSource & {
   CheckPopulationConfigurationMutable();
-  GGEMS_CHECK_RECOVERABLE(
-      radionuclide != nullptr,
-      "ActivityDriven GGEMSSource requires a radionuclide definition.");
-  GGEMS_CHECK_RECOVERABLE(
-      std::isfinite(activity_at_reference_time.value),
-      "ActivityDriven GGEMSSource activity must be finite.");
-  GGEMS_CHECK_RECOVERABLE(
-      activity_at_reference_time.value >= 0.0L,
-      "ActivityDriven GGEMSSource activity must be non-negative.");
+  if (!(radionuclide != nullptr)) {
+    throw ggems::core::GGEMSRecoverable(
+        "ActivityDriven GGEMSSource requires a radionuclide definition.");
+  }
+  if (!(std::isfinite(activity_at_reference_time.value))) {
+    throw ggems::core::GGEMSRecoverable("ActivityDriven GGEMSSource activity must be finite.");
+  }
+  if (!(activity_at_reference_time.value >= 0.0L)) {
+    throw ggems::core::GGEMSRecoverable(
+        "ActivityDriven GGEMSSource activity must be non-negative.");
+  }
 
   population_configuration_ = GGEMSActivityDrivenSourceConfiguration{
       .radionuclide = std::move(radionuclide),
@@ -286,9 +291,9 @@ auto GGEMSSource::GetPopulationMode() const noexcept
 
 auto GGEMSSource::BuildActivityDrivenPopulationConfiguration() const
     -> GGEMSActivityDrivenSourceConfiguration {
-  GGEMS_CHECK_RECOVERABLE(
-      GetPopulationMode() == GGEMSSourcePopulationMode::ActivityDriven,
-      "GGEMSSource is not configured in ActivityDriven mode.");
+  if (!(GetPopulationMode() == GGEMSSourcePopulationMode::ActivityDriven)) {
+    throw ggems::core::GGEMSRecoverable("GGEMSSource is not configured in ActivityDriven mode.");
+  }
   return std::get<GGEMSActivityDrivenSourceConfiguration>(
       population_configuration_);
 }
@@ -301,18 +306,20 @@ auto GGEMSSource::ValidatePopulationForRunInitialization(
     return;
   }
 
-  GGEMS_CHECK_RECOVERABLE(
-      initial_time_window.has_value() &&
-          initial_time_window->start_ps < initial_time_window->stop_ps,
-      "ActivityDriven GGEMSRun sources require a configured non-empty "
+  if (!(initial_time_window.has_value() &&
+          initial_time_window->start_ps < initial_time_window->stop_ps)) {
+    throw ggems::core::GGEMSRecoverable(
+        "ActivityDriven GGEMSRun sources require a configured non-empty "
       "time schedule.");
+  }
 
   auto const &configuration = std::get<GGEMSActivityDrivenSourceConfiguration>(
       population_configuration_);
-  GGEMS_CHECK_RECOVERABLE(
-      configuration.reference_time_ps <= initial_time_window->start_ps,
-      "ActivityDriven source reference time must not follow the configured "
+  if (!(configuration.reference_time_ps <= initial_time_window->start_ps)) {
+    throw ggems::core::GGEMSRecoverable(
+        "ActivityDriven source reference time must not follow the configured "
       "GGEMSRun start time.");
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -340,8 +347,9 @@ auto GGEMSSource::SetPointEmission() -> GGEMSSource & {
 auto GGEMSSource::SetRectangleEmissionPicoMeter(std::uint64_t width_pm,
                                                 std::uint64_t height_pm)
     -> GGEMSSource & {
-  GGEMS_CHECK_RECOVERABLE(width_pm > 0ULL && height_pm > 0ULL,
-                          "Rectangle width and height must be non-zero.");
+  if (!(width_pm > 0ULL && height_pm > 0ULL)) {
+    throw ggems::core::GGEMSRecoverable("Rectangle width and height must be non-zero.");
+  }
 
   GGEMSSourceRecord candidate = record_;
   candidate.emission_geometry_type =
@@ -358,8 +366,9 @@ auto GGEMSSource::SetRectangleEmissionPicoMeter(std::uint64_t width_pm,
 auto GGEMSSource::SetEllipseEmissionPicoMeter(std::uint64_t diameter_x_pm,
                                               std::uint64_t diameter_y_pm)
     -> GGEMSSource & {
-  GGEMS_CHECK_RECOVERABLE(diameter_x_pm > 0ULL && diameter_y_pm > 0ULL,
-                          "Ellipse diameters must be non-zero");
+  if (!(diameter_x_pm > 0ULL && diameter_y_pm > 0ULL)) {
+    throw ggems::core::GGEMSRecoverable("Ellipse diameters must be non-zero");
+  }
 
   GGEMSSourceRecord candidate = record_;
   candidate.emission_geometry_type =
@@ -384,9 +393,10 @@ auto GGEMSSource::SetBoxEmissionPicoMeter(std::uint64_t width_pm,
                                           std::uint64_t height_pm,
                                           std::uint64_t depth_pm)
     -> GGEMSSource & {
-  GGEMS_CHECK_RECOVERABLE(width_pm > 0ULL && height_pm > 0ULL &&
-                              depth_pm > 0ULL,
-                          "Box dimensions must be strictly positive.");
+  if (!(width_pm > 0ULL && height_pm > 0ULL &&
+                              depth_pm > 0ULL)) {
+    throw ggems::core::GGEMSRecoverable("Box dimensions must be strictly positive.");
+  }
 
   GGEMSSourceRecord candidate = record_;
   candidate.emission_geometry_type =
@@ -402,8 +412,9 @@ auto GGEMSSource::SetBoxEmissionPicoMeter(std::uint64_t width_pm,
 
 auto GGEMSSource::SetSphereEmissionPicoMeter(std::uint64_t diameter_pm)
     -> GGEMSSource & {
-  GGEMS_CHECK_RECOVERABLE(diameter_pm > 0ULL,
-                          "Sphere diameter must be strictly positive.");
+  if (!(diameter_pm > 0ULL)) {
+    throw ggems::core::GGEMSRecoverable("Sphere diameter must be strictly positive.");
+  }
 
   GGEMSSourceRecord candidate = record_;
   candidate.emission_geometry_type =
@@ -420,9 +431,9 @@ auto GGEMSSource::SetSphereEmissionPicoMeter(std::uint64_t diameter_pm)
 auto GGEMSSource::SetCylinderEmissionPicoMeter(std::uint64_t diameter_pm,
                                                std::uint64_t height_pm)
     -> GGEMSSource & {
-  GGEMS_CHECK_RECOVERABLE(
-      diameter_pm > 0ULL && height_pm > 0ULL,
-      "Cylinder diameter and height must be strictly positive.");
+  if (!(diameter_pm > 0ULL && height_pm > 0ULL)) {
+    throw ggems::core::GGEMSRecoverable("Cylinder diameter and height must be strictly positive.");
+  }
 
   GGEMSSourceRecord candidate = record_;
   candidate.emission_geometry_type =
@@ -477,21 +488,23 @@ auto GGEMSSource::SetIsotropicAngularDistribution(ggems::units::Angle theta_min,
   long double const phi_min_rad = ggems::units::ToRadians(phi_min);
   long double const phi_max_rad = ggems::units::ToRadians(phi_max);
 
-  GGEMS_CHECK_RECOVERABLE(
-      std::isfinite(theta_min_rad) && std::isfinite(theta_max_rad) &&
-          std::isfinite(phi_min_rad) && std::isfinite(phi_max_rad),
-      "Isotropic angular bounds must be finite.");
+  if (!(std::isfinite(theta_min_rad) && std::isfinite(theta_max_rad) &&
+          std::isfinite(phi_min_rad) && std::isfinite(phi_max_rad))) {
+    throw ggems::core::GGEMSRecoverable("Isotropic angular bounds must be finite.");
+  }
 
-  GGEMS_CHECK_RECOVERABLE(
-      theta_min_rad >= 0.0L && theta_min_rad < theta_max_rad &&
-          theta_max_rad <= k_pi,
-      "Isotropic theta bounds must satisfy 0 <= min < max <= pi.");
+  if (!(theta_min_rad >= 0.0L && theta_min_rad < theta_max_rad &&
+          theta_max_rad <= k_pi)) {
+    throw ggems::core::GGEMSRecoverable(
+        "Isotropic theta bounds must satisfy 0 <= min < max <= pi.");
+  }
 
   long double const phi_width_rad = phi_max_rad - phi_min_rad;
-  GGEMS_CHECK_RECOVERABLE(phi_max_rad > phi_min_rad &&
+  if (!(phi_max_rad > phi_min_rad &&
                               std::isfinite(phi_width_rad) &&
-                              phi_width_rad <= k_two_pi,
-                          "Isotropic phi bounds must have width in (0, 2*pi].");
+                              phi_width_rad <= k_two_pi)) {
+    throw ggems::core::GGEMSRecoverable("Isotropic phi bounds must have width in (0, 2*pi].");
+  }
 
   GGEMSSourceRecord candidate = record_;
   candidate.angular_distribution_type =
@@ -503,10 +516,11 @@ auto GGEMSSource::SetIsotropicAngularDistribution(ggems::units::Angle theta_min,
   long double const cos_theta_lower = std::cos(theta_max_rad);
   long double const cos_theta_upper = std::cos(theta_min_rad);
 
-  GGEMS_CHECK_RECOVERABLE(
-      IsFiniteBinary32(cos_theta_lower) && IsFiniteBinary32(cos_theta_upper) &&
-          IsFiniteBinary32(phi_min_rad) && IsFiniteBinary32(phi_max_rad),
-      "Isotropic angular bounds cannot be represented in binary32.");
+  if (!(IsFiniteBinary32(cos_theta_lower) && IsFiniteBinary32(cos_theta_upper) &&
+          IsFiniteBinary32(phi_min_rad) && IsFiniteBinary32(phi_max_rad))) {
+    throw ggems::core::GGEMSRecoverable(
+        "Isotropic angular bounds cannot be represented in binary32.");
+  }
 
   auto const stored_cos_lower = static_cast<float>(cos_theta_lower);
   auto const stored_cos_upper = static_cast<float>(cos_theta_upper);
@@ -516,12 +530,13 @@ auto GGEMSSource::SetIsotropicAngularDistribution(ggems::units::Angle theta_min,
       static_cast<long double>(stored_phi_max) -
       static_cast<long double>(stored_phi_min);
 
-  GGEMS_CHECK_RECOVERABLE(
-      stored_cos_lower < stored_cos_upper && stored_phi_min < stored_phi_max &&
+  if (!(stored_cos_lower < stored_cos_upper && stored_phi_min < stored_phi_max &&
           std::isfinite(stored_phi_width) &&
           stored_phi_width <=
-              static_cast<long double>(k_isotropic_full_sphere_phi_max_rad),
-      "Isotropic angular domain collapses or exceeds its binary32 contract.");
+              static_cast<long double>(k_isotropic_full_sphere_phi_max_rad))) {
+    throw ggems::core::GGEMSRecoverable(
+        "Isotropic angular domain collapses or exceeds its binary32 contract.");
+  }
 
   candidate.isotropic_cos_theta_lower = stored_cos_lower;
   candidate.isotropic_cos_theta_upper = stored_cos_upper;
@@ -651,11 +666,13 @@ auto GGEMSSource::SetOrientation(std::array<double, 3U> const &direction,
 // -----------------------------------------------------------------------------
 
 auto GGEMSSource::SetWeight(float weight) -> GGEMSSource & {
-  GGEMS_CHECK_RECOVERABLE(std::isfinite(weight),
-                          "Source weight must be finite.");
+  if (!(std::isfinite(weight))) {
+    throw ggems::core::GGEMSRecoverable("Source weight must be finite.");
+  }
 
-  GGEMS_CHECK_RECOVERABLE(weight >= 0.0F,
-                          "Source weight must be positive or zero.");
+  if (!(weight >= 0.0F)) {
+    throw ggems::core::GGEMSRecoverable("Source weight must be positive or zero.");
+  }
 
   record_.weight = weight;
 
@@ -672,9 +689,10 @@ auto GGEMSSource::BuildRecord() const -> GGEMSSourceRecord {
           ? energy_distribution_.GetMonoEnergyMilliElectronVolt()
           : 0ULL;
 
-  GGEMS_CHECK_INTERNAL(
-      record.energy_milli_eV == expected_energy,
-      "GGEMSSource record and energy distribution are inconsistent.");
+  if (!(record.energy_milli_eV == expected_energy)) {
+    throw ggems::core::GGEMSInternal(
+        "GGEMSSource record and energy distribution are inconsistent.");
+  }
 
   return record;
 }

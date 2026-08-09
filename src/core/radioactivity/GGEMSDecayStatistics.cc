@@ -3,7 +3,7 @@
 #include <numbers>
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+
 #include "GGEMS/core/radioactivity/GGEMSDecayStatistics.hh"
 #include "GGEMS/core/random/GGEMSHostRandomStream.hh"
 #include "GGEMS/core/random/GGEMSPoissonSampler.hh"
@@ -22,20 +22,24 @@ auto ComputeExpectedDecayEventCount(units::Activity activity_at_reference,
                                     std::uint64_t reference_time_ps,
                                     GGEMSTimeWindow time_window)
     -> long double {
-  GGEMS_CHECK_RECOVERABLE(std::isfinite(activity_at_reference.value),
-                          "Activity at the reference time must be finite.");
-  GGEMS_CHECK_RECOVERABLE(
-      activity_at_reference.value >= 0.0L,
-      "Activity at the reference time must be non-negative.");
-  GGEMS_CHECK_RECOVERABLE(std::isfinite(half_life_seconds),
-                          "Half-life must be finite.");
-  GGEMS_CHECK_RECOVERABLE(half_life_seconds > 0.0L,
-                          "Half-life must be strictly positive.");
-  GGEMS_CHECK_RECOVERABLE(time_window.start_ps <= time_window.stop_ps,
-                          "Decay time window start must not exceed its stop.");
-  GGEMS_CHECK_RECOVERABLE(
-      reference_time_ps <= time_window.start_ps,
-      "Decay reference time must not exceed the window start.");
+  if (!(std::isfinite(activity_at_reference.value))) {
+    throw ggems::core::GGEMSRecoverable("Activity at the reference time must be finite.");
+  }
+  if (!(activity_at_reference.value >= 0.0L)) {
+    throw ggems::core::GGEMSRecoverable("Activity at the reference time must be non-negative.");
+  }
+  if (!(std::isfinite(half_life_seconds))) {
+    throw ggems::core::GGEMSRecoverable("Half-life must be finite.");
+  }
+  if (!(half_life_seconds > 0.0L)) {
+    throw ggems::core::GGEMSRecoverable("Half-life must be strictly positive.");
+  }
+  if (!(time_window.start_ps <= time_window.stop_ps)) {
+    throw ggems::core::GGEMSRecoverable("Decay time window start must not exceed its stop.");
+  }
+  if (!(reference_time_ps <= time_window.start_ps)) {
+    throw ggems::core::GGEMSRecoverable("Decay reference time must not exceed the window start.");
+  }
 
   if (activity_at_reference.value == 0.0L ||
       time_window.start_ps == time_window.stop_ps) {
@@ -70,10 +74,12 @@ auto ComputeExpectedDecayEventCount(units::Activity activity_at_reference,
     mean = activity_at_start * decayed_fraction / decay_constant;
   }
 
-  GGEMS_CHECK_RECOVERABLE(std::isfinite(mean),
-                          "Expected decay event count is not finite.");
-  GGEMS_CHECK_RECOVERABLE(mean >= 0.0L,
-                          "Expected decay event count is negative.");
+  if (!(std::isfinite(mean))) {
+    throw ggems::core::GGEMSRecoverable("Expected decay event count is not finite.");
+  }
+  if (!(mean >= 0.0L)) {
+    throw ggems::core::GGEMSRecoverable("Expected decay event count is negative.");
+  }
 
   return mean;
 }

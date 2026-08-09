@@ -1,8 +1,4 @@
 # ============================================================================
-# @file      CMakeLists.txt
-# @brief     Build configuration for the optional GGEMS graphical mode.
-# @details   Resolves Vulkan, GLFW and GLM only when GGEMS_WITH_IMGUI is 
-#            enabled, preserving headless builds.
 # ============================================================================
 
 # ----------------------------------------------------------------------------

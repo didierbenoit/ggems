@@ -6,7 +6,7 @@
 #include <string>
 #include <span>
 
-#include "GGEMS/core/GGEMSMacros.hh"
+
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/sources/GGEMSSource.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistributionRecord.hh"
@@ -151,33 +151,36 @@ DescribeEnergy(GGEMSSourceRecord const &source_record,
       FromKernelEnergyDistributionType(energy_record.distribution_type);
 
   if (distribution_type == GGEMSEnergyDistributionType::Mono) {
-    GGEMS_CHECK_INTERNAL(source_record.energy_milli_eV > 0ULL &&
+    if (!(source_record.energy_milli_eV > 0ULL &&
                              energy_record.table_offset == 0ULL &&
                              energy_record.table_count == 0U &&
-                             energy_record.regular_bin_width_milli_eV == 0ULL,
-                         "Invalid Mono energy description record.");
+                             energy_record.regular_bin_width_milli_eV == 0ULL)) {
+      throw ggems::core::GGEMSInternal("Invalid Mono energy description record.");
+    }
 
     return std::format("Energy: Mono ({})",
                        ggems::units::HumanReadable(ggems::units::Energy{
                            source_record.energy_milli_eV}));
   }
 
-  GGEMS_CHECK_INTERNAL(
-      distribution_type == GGEMSEnergyDistributionType::DiscreteLines ||
-          distribution_type == GGEMSEnergyDistributionType::RegularSpectrum,
-      "Unsupported source energy distribution in description.");
+  if (!(distribution_type == GGEMSEnergyDistributionType::DiscreteLines ||
+          distribution_type == GGEMSEnergyDistributionType::RegularSpectrum)) {
+    throw ggems::core::GGEMSInternal("Unsupported source energy distribution in description.");
+  }
 
-  GGEMS_CHECK_INTERNAL(energy_record.table_offset <=
-                           static_cast<std::uint64_t>(energy_values.size()),
-                       "Source energy description table offset is invalid.");
+  if (!(energy_record.table_offset <=
+                           static_cast<std::uint64_t>(energy_values.size()))) {
+    throw ggems::core::GGEMSInternal("Source energy description table offset is invalid.");
+  }
 
   auto const table_offset =
       static_cast<std::size_t>(energy_record.table_offset);
   auto const table_count = static_cast<std::size_t>(energy_record.table_count);
 
-  GGEMS_CHECK_INTERNAL(table_count >= 2U &&
-                           table_count <= energy_values.size() - table_offset,
-                       "Source energy description table range is invalid.");
+  if (!(table_count >= 2U &&
+                           table_count <= energy_values.size() - table_offset)) {
+    throw ggems::core::GGEMSInternal("Source energy description table range is invalid.");
+  }
 
   std::string const first = ggems::units::HumanReadable(
       ggems::units::Energy{energy_values[table_offset]});
@@ -243,10 +246,10 @@ auto DescribeSource(GGEMSSource const &source) -> std::string {
 
 auto DescribeSource(GGEMSSourceRecord const &record,
                     std::uint64_t primary_count) -> std::string {
-  GGEMS_CHECK_INTERNAL(
-      record.energy_milli_eV > 0ULL,
-      "The energy-aware DescribeSource overload is required for a "
+  if (!(record.energy_milli_eV > 0ULL)) {
+    throw ggems::core::GGEMSInternal("The energy-aware DescribeSource overload is required for a "
       "table-backed source.");
+  }
 
   GGEMSEnergyDistributionRecord const energy_record{
       .distribution_type =
@@ -296,11 +299,12 @@ auto DescribeSourceRunSlot(std::size_t source_index,
   auto const &population_records = snapshot.GetPopulationRecords();
   auto const &energy_records = snapshot.GetEnergyDistributionRecords();
 
-  GGEMS_CHECK_INTERNAL(source_index < records.size() &&
+  if (!(source_index < records.size() &&
                            source_index < ranges.size() &&
                            source_index < population_records.size() &&
-                           source_index < energy_records.size(),
-                       "Source description index is outside the run snapshot.");
+                           source_index < energy_records.size())) {
+    throw ggems::core::GGEMSInternal("Source description index is outside the run snapshot.");
+  }
 
   auto const &population = population_records[source_index];
   if (population.population_mode ==
@@ -311,14 +315,15 @@ auto DescribeSourceRunSlot(std::size_t source_index,
     auto const &group_ranges = snapshot.GetGroupRanges();
     auto const &definitions = snapshot.GetRadionuclideDefinitions();
 
-    GGEMS_CHECK_INTERNAL(
-        source_index < definitions.size() &&
+    if (!(source_index < definitions.size() &&
             definitions[source_index] != nullptr &&
             population.first_emission_index <= emission_records.size() &&
             population.emission_count <=
                 emission_records.size() - population.first_emission_index &&
-            group_ranges.size() == emission_records.size(),
-        "ActivityDriven source description metadata is inconsistent.");
+            group_ranges.size() == emission_records.size())) {
+      throw ggems::core::GGEMSInternal(
+          "ActivityDriven source description metadata is inconsistent.");
+    }
 
     std::string groups;
     for (std::uint32_t offset = 0U; offset < population.emission_count;
@@ -326,9 +331,10 @@ auto DescribeSourceRunSlot(std::size_t source_index,
       std::size_t const emission_index =
           static_cast<std::size_t>(population.first_emission_index) + offset;
       auto const &emission = emission_records[emission_index];
-      GGEMS_CHECK_INTERNAL(
-          emission.energy_distribution_record_index < energy_records.size(),
-          "ActivityDriven energy record index is outside the snapshot.");
+      if (!(emission.energy_distribution_record_index < energy_records.size())) {
+        throw ggems::core::GGEMSInternal(
+            "ActivityDriven energy record index is outside the snapshot.");
+      }
 
       if (!groups.empty()) {
         groups += "; ";
@@ -368,10 +374,11 @@ auto DescribeSourceRunSlot(std::size_t source_index,
 auto DescribeSourceRunSlot(std::size_t source_index,
                            GGEMSSourceRecord const &record,
                            GGEMSSourceRunRange const &range) -> std::string {
-  GGEMS_CHECK_INTERNAL(
-      record.energy_milli_eV > 0ULL,
-      "The energy-aware DescribeSourceRunSlot overload is required for a "
+  if (!(record.energy_milli_eV > 0ULL)) {
+    throw ggems::core::GGEMSInternal(
+        "The energy-aware DescribeSourceRunSlot overload is required for a "
       "table-backed source.");
+  }
 
   GGEMSEnergyDistributionRecord const energy_record{
       .distribution_type =

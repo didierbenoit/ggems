@@ -1,7 +1,4 @@
 # ============================================================================
-# @file      IntelOptions.cmake @brief     Compiler configuration for Intel
-# oneAPI DPC++/C++. @details   Configure warnings and diagnostics for the
-# LLVM-based icpx compiler on Linux. @author    Didier Benoit
 # ============================================================================
 
 include_guard(GLOBAL)

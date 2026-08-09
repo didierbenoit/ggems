@@ -1,8 +1,4 @@
 # ============================================================================
-# @file      AddDearImGui.cmake @brief     Define the Dear ImGui target used by
-# the GGEMS graphical mode. @details   Dear ImGui is embedded as a source
-# dependency and compiled with its GLFW and Vulkan backends. This module is
-# loaded only when GGEMS_WITH_IMGUI is enabled.
 # ============================================================================
 
 include_guard(GLOBAL)

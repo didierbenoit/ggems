@@ -1,7 +1,4 @@
 # ============================================================================
-# @file      CMakeLists.txt @brief     Random number validation tools for GGEMS.
-# @details   This file declares optional executables used to generate
-# reproducible random streams for scientific validation.
 # ============================================================================
 
 # ----------------------------------------------------------------------------

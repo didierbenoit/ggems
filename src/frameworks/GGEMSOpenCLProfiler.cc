@@ -3,7 +3,7 @@
 #include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+
 #include "GGEMS/core/units/GGEMSQuantity.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 
@@ -79,18 +79,20 @@ void GGEMSOpenCLProfiler::Stop() noexcept {
 /* -------------------------------------------------------------------------- */
 
 void GGEMSOpenCLProfiler::RecordKernelEvent(cl::Event const &event) {
-  GGEMS_CHECK_RECOVERABLE(
-      !running_,
-      "OpenCL kernel event profiling must be recorded after Stop() when host "
+  if (running_) {
+    throw ggems::core::GGEMSRecoverable(
+        "OpenCL kernel event profiling must be recorded after Stop() when host "
       "timing is active.");
+  }
 
   cl_ulong queued = event.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>();
   cl_ulong submit = event.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>();
   cl_ulong start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
   cl_ulong end = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
 
-  GGEMS_CHECK_RECOVERABLE(queued <= submit && submit <= start && start <= end,
-                          "Invalid OpenCL profiling timestamps ordering.");
+  if (!(queued <= submit && submit <= start && start <= end)) {
+    throw ggems::core::GGEMSRecoverable("Invalid OpenCL profiling timestamps ordering.");
+  }
 
   kernel_timing_.time_queued = MakeTimeFromNanoseconds(queued);
   kernel_timing_.time_submit = MakeTimeFromNanoseconds(submit);

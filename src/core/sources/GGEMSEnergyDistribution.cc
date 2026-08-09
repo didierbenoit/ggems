@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+
 #include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistributionRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
@@ -37,7 +37,7 @@ struct ValidationContext {
 // =============================================================================
 
 [[noreturn]] auto Reject(std::string message) -> void {
-  ggems::core::Throw<ggems::core::GGEMSRecoverable>(std::move(message));
+  throw GGEMSRecoverable(std::move(message));
 }
 
 // =============================================================================
@@ -373,8 +373,9 @@ GGEMSEnergyDistribution::GGEMSEnergyDistribution(
 
 auto GGEMSEnergyDistribution::BuildMono(std::uint64_t energy_milli_eV)
     -> GGEMSEnergyDistribution {
-  GGEMS_CHECK_RECOVERABLE(energy_milli_eV > 0ULL,
-                          "Source energy must be non-zero.");
+  if (!(energy_milli_eV > 0ULL)) {
+    throw ggems::core::GGEMSRecoverable("Source energy must be non-zero.");
+  }
 
   return GGEMSEnergyDistribution{
       GGEMSEnergyDistributionType::Mono, energy_milli_eV, 0ULL, {}, {}, {}};
@@ -385,16 +386,18 @@ auto GGEMSEnergyDistribution::BuildMono(std::uint64_t energy_milli_eV)
 auto GGEMSEnergyDistribution::BuildDiscreteLines(
     std::span<double const> energies, std::span<double const> relative_weights,
     std::string_view unit) -> GGEMSEnergyDistribution {
-  GGEMS_CHECK_RECOVERABLE(
-      energies.size() == relative_weights.size(),
-      "Discrete energy line and relative-weight counts must match.");
-  GGEMS_CHECK_RECOVERABLE(
-      energies.size() >= 2U,
-      "Discrete energy distributions require at least two lines.");
-  GGEMS_CHECK_RECOVERABLE(
-      energies.size() <=
-          static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()),
-      "Discrete energy line count exceeds uint32 storage.");
+  if (!(energies.size() == relative_weights.size())) {
+    throw ggems::core::GGEMSRecoverable(
+        "Discrete energy line and relative-weight counts must match.");
+  }
+  if (!(energies.size() >= 2U)) {
+    throw ggems::core::GGEMSRecoverable(
+        "Discrete energy distributions require at least two lines.");
+  }
+  if (!(energies.size() <=
+          static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()))) {
+    throw ggems::core::GGEMSRecoverable("Discrete energy line count exceeds uint32 storage.");
+  }
 
   ValidationContext const context{};
 
@@ -436,17 +439,18 @@ auto GGEMSEnergyDistribution::BuildRegularSpectrumWithContext(
   ValidationContext const context{.filename = filename,
                                   .line_numbers = line_numbers};
 
-  GGEMS_CHECK_RECOVERABLE(
-      bin_centers.size() == relative_bin_weights.size(),
-      "Regular spectrum center and relative-weight counts must match.");
+  if (!(bin_centers.size() == relative_bin_weights.size())) {
+    throw ggems::core::GGEMSRecoverable(
+        "Regular spectrum center and relative-weight counts must match.");
+  }
   if (bin_centers.size() < 2U) {
     RejectEntry("Regular energy spectrum", 0U, context,
                 "requires at least two bins.");
   }
-  GGEMS_CHECK_RECOVERABLE(
-      bin_centers.size() <=
-          static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()),
-      "Regular spectrum bin count exceeds uint32 storage.");
+  if (!(bin_centers.size() <=
+          static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()))) {
+    throw ggems::core::GGEMSRecoverable("Regular spectrum bin count exceeds uint32 storage.");
+  }
 
   auto energy_values = ConvertEnergyValues(bin_centers, unit,
                                            "Regular energy spectrum", context);

@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+
 #include "GGEMS/core/GGEMSTimeWindow.hh"
 #include "GGEMS/core/radioactivity/GGEMSDecayStatistics.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
@@ -30,8 +30,9 @@ namespace {
 
 auto CheckedAdd(std::uint64_t lhs, std::uint64_t rhs,
                 std::string const &diagnostic) -> std::uint64_t {
-  GGEMS_CHECK_RECOVERABLE(
-      rhs <= std::numeric_limits<std::uint64_t>::max() - lhs, diagnostic);
+  if (!(rhs <= std::numeric_limits<std::uint64_t>::max() - lhs)) {
+    throw ggems::core::GGEMSRecoverable(diagnostic);
+  }
   return lhs + rhs;
 }
 
@@ -40,7 +41,9 @@ auto CheckedAdd(std::uint64_t lhs, std::uint64_t rhs,
 
 auto CheckedVectorOffset(std::size_t offset, std::string const &diagnostic)
     -> std::uint64_t {
-  GGEMS_CHECK_RECOVERABLE(std::in_range<std::uint64_t>(offset), diagnostic);
+  if (!(std::in_range<std::uint64_t>(offset))) {
+    throw ggems::core::GGEMSRecoverable(diagnostic);
+  }
   return static_cast<std::uint64_t>(offset);
 }
 
@@ -129,20 +132,24 @@ auto GGEMSSourcePopulationCandidate::CommitTo(
     std::shared_ptr<void const> const &owner_identity,
     std::uint64_t &current_revision,
     std::vector<random::GGEMSHostRandomStream> &persistent_streams) -> void {
-  GGEMS_CHECK_RECOVERABLE(
-      owner_identity_ == owner_identity,
-      "Cannot commit an emission-plan candidate from another planner.");
-  GGEMS_CHECK_RECOVERABLE(!committed_,
-                          "Emission-plan candidate was already committed.");
-  GGEMS_CHECK_RECOVERABLE(
-      base_revision_ == current_revision,
-      "Emission-plan candidate is stale for the current planner revision.");
-  GGEMS_CHECK_RECOVERABLE(
-      current_revision < std::numeric_limits<std::uint64_t>::max(),
-      "Emission-plan planner revision overflows uint64 storage.");
-  GGEMS_CHECK_INTERNAL(
-      candidate_streams_.size() == persistent_streams.size(),
-      "Emission-plan candidate stream count does not match its planner.");
+  if (!(owner_identity_ == owner_identity)) {
+    throw ggems::core::GGEMSRecoverable(
+        "Cannot commit an emission-plan candidate from another planner.");
+  }
+  if (committed_) {
+    throw ggems::core::GGEMSRecoverable("Emission-plan candidate was already committed.");
+  }
+  if (!(base_revision_ == current_revision)) {
+    throw ggems::core::GGEMSRecoverable(
+        "Emission-plan candidate is stale for the current planner revision.");
+  }
+  if (!(current_revision < std::numeric_limits<std::uint64_t>::max())) {
+    throw ggems::core::GGEMSRecoverable("Emission-plan planner revision overflows uint64 storage.");
+  }
+  if (!(candidate_streams_.size() == persistent_streams.size())) {
+    throw ggems::core::GGEMSInternal(
+        "Emission-plan candidate stream count does not match its planner.");
+  }
 
   persistent_streams.swap(candidate_streams_);
   ++current_revision;
@@ -156,13 +163,14 @@ GGEMSSourcePopulationPlanner::GGEMSSourcePopulationPlanner(
     std::span<std::shared_ptr<GGEMSSource> const> sources,
     random::GGEMSRandom const &random)
     : owner_identity_{std::make_shared<std::uint8_t const>(0U)} {
-  GGEMS_CHECK_RECOVERABLE(
-      !sources.empty(),
-      "GGEMSSourcePopulationPlanner requires at least one source slot.");
-  GGEMS_CHECK_RECOVERABLE(
-      sources.size() <=
-          static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()),
-      "Emission-plan source slot count exceeds uint32 storage.");
+  if (sources.empty()) {
+    throw ggems::core::GGEMSRecoverable(
+        "GGEMSSourcePopulationPlanner requires at least one source slot.");
+  }
+  if (!(sources.size() <=
+          static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()))) {
+    throw ggems::core::GGEMSRecoverable("Emission-plan source slot count exceeds uint32 storage.");
+  }
 
   source_slots_.reserve(sources.size());
   std::uint64_t total_stream_count{0ULL};
@@ -170,9 +178,10 @@ GGEMSSourcePopulationPlanner::GGEMSSourcePopulationPlanner(
   for (std::size_t source_index = 0U; source_index < sources.size();
        ++source_index) {
     auto const &source = sources[source_index];
-    GGEMS_CHECK_RECOVERABLE(
-        source != nullptr,
-        std::format("Emission-plan source slot {} is null.", source_index));
+    if (!(source != nullptr)) {
+      throw ggems::core::GGEMSRecoverable(
+          std::format("Emission-plan source slot {} is null.", source_index));
+    }
 
     StableSourceSlot slot{.source = source,
                           .population_mode = source->GetPopulationMode(),
@@ -183,18 +192,19 @@ GGEMSSourcePopulationPlanner::GGEMSSourcePopulationPlanner(
     if (slot.population_mode == GGEMSSourcePopulationMode::ActivityDriven) {
       auto const configuration =
           source->BuildActivityDrivenPopulationConfiguration();
-      GGEMS_CHECK_INTERNAL(
-          configuration.radionuclide != nullptr,
-          "ActivityDriven source has a null radionuclide definition.");
+      if (!(configuration.radionuclide != nullptr)) {
+        throw ggems::core::GGEMSInternal(
+            "ActivityDriven source has a null radionuclide definition.");
+      }
 
       auto const emissions = configuration.radionuclide->GetEmissions();
-      GGEMS_CHECK_RECOVERABLE(
-          emissions.size() <= static_cast<std::size_t>(
-                                  std::numeric_limits<std::uint32_t>::max()),
-          "Radionuclide emission count exceeds uint32 storage.");
-      GGEMS_CHECK_RECOVERABLE(
-          std::in_range<std::uint64_t>(emissions.size()),
-          "Radionuclide emission count exceeds uint64 storage.");
+      if (!(emissions.size() <= static_cast<std::size_t>(
+                                  std::numeric_limits<std::uint32_t>::max()))) {
+        throw ggems::core::GGEMSRecoverable("Radionuclide emission count exceeds uint32 storage.");
+      }
+      if (!(std::in_range<std::uint64_t>(emissions.size()))) {
+        throw ggems::core::GGEMSRecoverable("Radionuclide emission count exceeds uint64 storage.");
+      }
 
       slot.radionuclide = configuration.radionuclide;
       slot.emission_count = static_cast<std::uint64_t>(emissions.size());
@@ -206,13 +216,15 @@ GGEMSSourcePopulationPlanner::GGEMSSourcePopulationPlanner(
     source_slots_.push_back(std::move(slot));
   }
 
-  GGEMS_CHECK_RECOVERABLE(
-      std::in_range<std::size_t>(total_stream_count),
-      "Host radionuclide stream count exceeds host vector storage.");
+  if (!(std::in_range<std::size_t>(total_stream_count))) {
+    throw ggems::core::GGEMSRecoverable(
+        "Host radionuclide stream count exceeds host vector storage.");
+  }
   auto const stream_count = static_cast<std::size_t>(total_stream_count);
-  GGEMS_CHECK_RECOVERABLE(stream_count <= persistent_streams_.max_size(),
-                          "Host radionuclide stream count exceeds host vector "
+  if (!(stream_count <= persistent_streams_.max_size())) {
+    throw ggems::core::GGEMSRecoverable("Host radionuclide stream count exceeds host vector "
                           "storage.");
+  }
 
   random::GGEMSRandom host_random = random;
   host_random.SetSeed(random.GetSeed() ^
@@ -230,13 +242,15 @@ GGEMSSourcePopulationPlanner::GGEMSSourcePopulationPlanner(
 
 auto GGEMSSourcePopulationPlanner::BuildCandidate(
     GGEMSTimeWindow time_window) const -> GGEMSSourcePopulationCandidate {
-  GGEMS_CHECK_RECOVERABLE(time_window.start_ps <= time_window.stop_ps,
-                          "Emission-plan time window stop precedes its start.");
+  if (!(time_window.start_ps <= time_window.stop_ps)) {
+    throw ggems::core::GGEMSRecoverable("Emission-plan time window stop precedes its start.");
+  }
 
   bool const has_activity_source = !persistent_streams_.empty();
-  GGEMS_CHECK_RECOVERABLE(
-      !has_activity_source || time_window.start_ps < time_window.stop_ps,
-      "ActivityDriven sources require a non-empty GGEMSRun time window.");
+  if (!(!has_activity_source || time_window.start_ps < time_window.stop_ps)) {
+    throw ggems::core::GGEMSRecoverable(
+        "ActivityDriven sources require a non-empty GGEMSRun time window.");
+  }
 
   std::vector<random::GGEMSHostRandomStream> candidate_streams =
       persistent_streams_;
@@ -254,13 +268,15 @@ auto GGEMSSourcePopulationPlanner::BuildCandidate(
   for (std::size_t source_index = 0U; source_index < source_slots_.size();
        ++source_index) {
     StableSourceSlot const &slot = source_slots_[source_index];
-    GGEMS_CHECK_INTERNAL(slot.source != nullptr,
-                         "Stable emission-plan source slot is null.");
-    GGEMS_CHECK_RECOVERABLE(
-        slot.source->GetPopulationMode() == slot.population_mode,
-        std::format("Emission-plan source slot {} changed population mode "
+    if (!(slot.source != nullptr)) {
+      throw ggems::core::GGEMSInternal("Stable emission-plan source slot is null.");
+    }
+    if (!(slot.source->GetPopulationMode() == slot.population_mode)) {
+      throw ggems::core::GGEMSRecoverable(
+          std::format("Emission-plan source slot {} changed population mode "
                     "after planner construction.",
                     source_index));
+    }
 
     auto const source_index_u32 = static_cast<std::uint32_t>(source_index);
     std::uint64_t const emission_begin =
@@ -278,11 +294,12 @@ auto GGEMSSourcePopulationPlanner::BuildCandidate(
     } else {
       auto const configuration =
           slot.source->BuildActivityDrivenPopulationConfiguration();
-      GGEMS_CHECK_RECOVERABLE(
-          configuration.radionuclide == slot.radionuclide,
-          std::format("Emission-plan source slot {} changed radionuclide "
+      if (!(configuration.radionuclide == slot.radionuclide)) {
+        throw ggems::core::GGEMSRecoverable(
+            std::format("Emission-plan source slot {} changed radionuclide "
                       "definition after planner construction.",
                       source_index));
+      }
 
       radionuclide_definitions.push_back(slot.radionuclide);
       expected_parent_decay_count =
@@ -292,9 +309,10 @@ auto GGEMSSourcePopulationPlanner::BuildCandidate(
               configuration.reference_time_ps, time_window);
 
       auto const emissions = slot.radionuclide->GetEmissions();
-      GGEMS_CHECK_INTERNAL(emissions.size() ==
-                               static_cast<std::size_t>(slot.emission_count),
-                           "Stable radionuclide emission count changed.");
+      if (!(emissions.size() ==
+                               static_cast<std::size_t>(slot.emission_count))) {
+        throw ggems::core::GGEMSInternal("Stable radionuclide emission count changed.");
+      }
 
       std::uint64_t source_local_primary_begin{0ULL};
 
@@ -306,20 +324,22 @@ auto GGEMSSourcePopulationPlanner::BuildCandidate(
         long double const expected_emission_count =
             expected_parent_decay_count * yield_per_decay;
 
-        GGEMS_CHECK_RECOVERABLE(
-            std::isfinite(expected_emission_count) &&
-                expected_emission_count >= 0.0L,
-            std::format("Expected emission count is invalid for source slot "
+        if (!(std::isfinite(expected_emission_count) &&
+                expected_emission_count >= 0.0L)) {
+          throw ggems::core::GGEMSRecoverable(
+              std::format("Expected emission count is invalid for source slot "
                         "{}, emission {}.",
                         source_index, emission_index));
+        }
 
         std::uint64_t const stream_id = CheckedAdd(
             slot.first_stream_id, static_cast<std::uint64_t>(emission_index),
             "Host radionuclide stream identifier overflows.");
-        GGEMS_CHECK_INTERNAL(
-            std::in_range<std::size_t>(stream_id) &&
-                static_cast<std::size_t>(stream_id) < candidate_streams.size(),
-            "Host radionuclide stream identifier is outside candidate state.");
+        if (!(std::in_range<std::size_t>(stream_id) &&
+                static_cast<std::size_t>(stream_id) < candidate_streams.size())) {
+          throw ggems::core::GGEMSInternal(
+              "Host radionuclide stream identifier is outside candidate state.");
+        }
         auto &stream = candidate_streams[static_cast<std::size_t>(stream_id)];
 
         std::uint64_t const sampled_primary_count =

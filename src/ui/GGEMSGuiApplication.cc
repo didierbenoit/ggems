@@ -13,7 +13,7 @@
 
 #include "GGEMS/core/GGEMSRun.hh"
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+#include "GGEMS/core/GGEMSLogMacros.hh"
 #include "GGEMS/core/observer/GGEMSTransportObserver.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
@@ -57,11 +57,11 @@ namespace {
         [platform_index](ggems::ocl::GGEMSOpenCLPlatform const &candidate)
             -> bool { return candidate.GetPlatformIndex() == platform_index; });
 
-    GGEMS_CHECK_INTERNAL(
-        platform != platforms.end(),
-        std::format(
+    if (!(platform != platforms.end())) {
+      throw ggems::core::GGEMSInternal(std::format(
             "Active OpenCL context {} refers to unavailable platform index {}.",
             context_index, platform_index));
+    }
 
     compute_status.devices.push_back(
         ggems::ui::detail::GGEMSComputeDeviceStatus{
@@ -137,13 +137,15 @@ auto GGEMSGuiApplication::IsInitialized() const noexcept -> bool {
 // -----------------------------------------------------------------------------
 
 auto GGEMSGuiApplication::SetVulkanDevice(std::string selection) -> void {
-  GGEMS_CHECK_RECOVERABLE(window_ == nullptr,
-                          "Vulkan device selection must be configured before "
+  if (!(window_ == nullptr)) {
+    throw ggems::core::GGEMSRecoverable("Vulkan device selection must be configured before "
                           "GGEMS GuiMode initialization.");
+  }
 
-  GGEMS_CHECK_RECOVERABLE(
-      !selection.empty(),
-      "Vulkan device selection expects 'auto' or a non-empty device name.");
+  if (selection.empty()) {
+    throw ggems::core::GGEMSRecoverable(
+        "Vulkan device selection expects 'auto' or a non-empty device name.");
+  }
 
   vulkan_device_name_selector_ = std::move(selection);
   vulkan_device_index_selector_.reset();
@@ -153,9 +155,10 @@ auto GGEMSGuiApplication::SetVulkanDevice(std::string selection) -> void {
 
 auto GGEMSGuiApplication::SetVulkanDevice(std::uint32_t enumeration_index)
     -> void {
-  GGEMS_CHECK_RECOVERABLE(window_ == nullptr,
-                          "Vulkan device selection must be configured before "
+  if (!(window_ == nullptr)) {
+    throw ggems::core::GGEMSRecoverable("Vulkan device selection must be configured before "
                           "GGEMS GuiMode initialization.");
+  }
 
   vulkan_device_index_selector_ = enumeration_index;
 }
@@ -167,13 +170,13 @@ auto GGEMSGuiApplication::Initialize() -> void {
     return;
   }
 
-  GGEMS_CHECK_RECOVERABLE(
-      width_ > 0 && height_ > 0,
-      "GGEMS GuiMode window dimensions must be strictly positive.");
+  if (!(width_ > 0 && height_ > 0)) {
+    throw ggems::core::GGEMSRecoverable(
+        "GGEMS GuiMode window dimensions must be strictly positive.");
+  }
 
   if (glfwInit() != GLFW_TRUE) {
-    GGEMS_RECOVERABLE(
-        GetGLFWErrorMessage("Unable to Initialize GGEMS GuiMode."));
+    throw ggems::core::GGEMSRecoverable(GetGLFWErrorMessage("Unable to Initialize GGEMS GuiMode."));
   }
 
   glfw_initialized_ = true;
@@ -190,7 +193,7 @@ auto GGEMSGuiApplication::Initialize() -> void {
     std::string error =
         GetGLFWErrorMessage("Unable to create the GGEMS GuiMode window.");
     Shutdown();
-    GGEMS_RECOVERABLE(error);
+    throw ggems::core::GGEMSRecoverable(error);
   }
 
   GLFWimage icon{.width = detail::k_ggems_window_icon_width,
@@ -227,15 +230,17 @@ auto GGEMSGuiApplication::Initialize() -> void {
 // -----------------------------------------------------------------------------
 
 void GGEMSGuiApplication::Run() {
-  GGEMS_CHECK_INTERNAL(
-      window_ != nullptr,
-      "GGEMS GuiMode must be initialized before entering its event loop.");
+  if (!(window_ != nullptr)) {
+    throw ggems::core::GGEMSInternal(
+        "GGEMS GuiMode must be initialized before entering its event loop.");
+  }
 
   GGEMS_INFOEX("Gui", 1, "GGEMS GuiMode event loop started.");
 
-  GGEMS_CHECK_INTERNAL(vk_context_ != nullptr && vk_context_->IsInitialized(),
-                       "GGEMS GuiMode required an initialized Vulkan context "
+  if (!(vk_context_ != nullptr && vk_context_->IsInitialized())) {
+    throw ggems::core::GGEMSInternal("GGEMS GuiMode required an initialized Vulkan context "
                        "before entering the event loop.");
+  }
 
   while (glfwWindowShouldClose(window_) == GLFW_FALSE) {
     glfwPollEvents();
@@ -265,20 +270,22 @@ void GGEMSGuiApplication::FramebufferResizeCallback(GLFWwindow *window, int,
 
 auto GGEMSGuiApplication::SubmitLastRunSourceSnapshot(
     ggems::core::GGEMSRun const &run) -> void {
-  GGEMS_CHECK_RECOVERABLE(
-      vk_context_ != nullptr && vk_context_->IsInitialized(),
-      "GGEMS GuiMode must be initialized before submitting a source "
+  if (!(vk_context_ != nullptr && vk_context_->IsInitialized())) {
+    throw ggems::core::GGEMSRecoverable(
+        "GGEMS GuiMode must be initialized before submitting a source "
       "snapshot.");
+  }
 
   auto snapshot = run.GetLastSourceRunSnapshot();
 
-  GGEMS_CHECK_RECOVERABLE(
-      snapshot.has_value(),
-      "GGEMSRun has no successfully completed source snapshot to submit.");
+  if (!(snapshot.has_value())) {
+    throw ggems::core::GGEMSRecoverable(
+        "GGEMSRun has no successfully completed source snapshot to submit.");
+  }
 
-  GGEMS_CHECK_RECOVERABLE(
-      !snapshot->HasActivityDrivenSource(),
-      "ActivityDriven GUI presentation is not implemented.");
+  if (snapshot->HasActivityDrivenSource()) {
+    throw ggems::core::GGEMSRecoverable("ActivityDriven GUI presentation is not implemented.");
+  }
 
   if (!run.HasObserver() && !missing_observer_warning_emitted_) {
     missing_observer_warning_emitted_ = true;
@@ -296,9 +303,10 @@ auto GGEMSGuiApplication::SubmitLastRunSourceSnapshot(
 
 void GGEMSGuiApplication::SubmitParticleTraceSegments(
     std::vector<ggems::render::GGEMSParticleTraceSegment> segments) {
-  GGEMS_CHECK_RECOVERABLE(
-      vk_context_ != nullptr && vk_context_->IsInitialized(),
-      "GGEMS GuiMode must be initialized before submitting particle traces.");
+  if (!(vk_context_ != nullptr && vk_context_->IsInitialized())) {
+    throw ggems::core::GGEMSRecoverable(
+        "GGEMS GuiMode must be initialized before submitting particle traces.");
+  }
   vk_context_->SubmitParticleTraceSegments(std::move(segments));
 }
 
@@ -313,9 +321,10 @@ void GGEMSGuiApplication::SubmitParticleTracesFromObserver(
 // -----------------------------------------------------------------------------
 
 void GGEMSGuiApplication::ClearParticleTraces() {
-  GGEMS_CHECK_RECOVERABLE(
-      vk_context_ != nullptr && vk_context_->IsInitialized(),
-      "GGEMS GuiMode must be initialized before clearing particle traces.");
+  if (!(vk_context_ != nullptr && vk_context_->IsInitialized())) {
+    throw ggems::core::GGEMSRecoverable(
+        "GGEMS GuiMode must be initialized before clearing particle traces.");
+  }
 
   vk_context_->ClearParticleTraces();
 }

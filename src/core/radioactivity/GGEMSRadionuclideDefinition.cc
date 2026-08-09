@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSMacros.hh"
+
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideEmission.hh"
 #include "GGEMS/core/radioactivity/detail/GGEMSRadionuclideLookupPolicy.hh"
@@ -29,8 +29,9 @@ ComputeTotalYieldPerDecay(std::span<GGEMSRadionuclideEmission const> emissions)
     long double const value = emission.GetYieldPerDecay();
     long double const next = sum + value;
 
-    GGEMS_CHECK_RECOVERABLE(std::isfinite(next),
-                            "Radionuclide total emission yield is not finite.");
+    if (!(std::isfinite(next))) {
+      throw ggems::core::GGEMSRecoverable("Radionuclide total emission yield is not finite.");
+    }
 
     if (std::abs(sum) >= std::abs(value)) {
       compensation += (sum - next) + value;
@@ -38,19 +39,22 @@ ComputeTotalYieldPerDecay(std::span<GGEMSRadionuclideEmission const> emissions)
       compensation += (value - next) + sum;
     }
 
-    GGEMS_CHECK_RECOVERABLE(std::isfinite(compensation),
-                            "Radionuclide total emission yield is not finite.");
+    if (!(std::isfinite(compensation))) {
+      throw ggems::core::GGEMSRecoverable("Radionuclide total emission yield is not finite.");
+    }
 
     sum = next;
   }
 
   long double const total = sum + compensation;
 
-  GGEMS_CHECK_RECOVERABLE(std::isfinite(total),
-                          "Radionuclide total emission yield is not finite.");
-  GGEMS_CHECK_RECOVERABLE(
-      total > 0.0L,
-      "Radionuclide total emission yield must be strictly positive.");
+  if (!(std::isfinite(total))) {
+    throw ggems::core::GGEMSRecoverable("Radionuclide total emission yield is not finite.");
+  }
+  if (!(total > 0.0L)) {
+    throw ggems::core::GGEMSRecoverable(
+        "Radionuclide total emission yield must be strictly positive.");
+  }
 
   return total;
 }
@@ -69,14 +73,16 @@ ComputeTotalYieldPerDecay(std::span<GGEMSRadionuclideEmission const> emissions)
   auto add_key = [&](std::string_view name, std::string_view kind) -> void {
     std::string normalized = detail::NormalizeRadionuclideLookupName(name);
 
-    GGEMS_CHECK_RECOVERABLE(
-        !normalized.empty(),
-        std::format("Radionuclide {} must contain non-whitespace text.", kind));
-    GGEMS_CHECK_RECOVERABLE(
-        unique_keys.insert(normalized).second,
-        std::format("Duplicate radionuclide {} '{}' after ASCII lookup "
+    if (normalized.empty()) {
+      throw ggems::core::GGEMSRecoverable(
+          std::format("Radionuclide {} must contain non-whitespace text.", kind));
+    }
+    if (!(unique_keys.insert(normalized).second)) {
+      throw ggems::core::GGEMSRecoverable(
+          std::format("Duplicate radionuclide {} '{}' after ASCII lookup "
                     "normalization.",
                     kind, name));
+    }
 
     keys.push_back(std::move(normalized));
   };
@@ -98,13 +104,16 @@ GGEMSRadionuclideDefinition::GGEMSRadionuclideDefinition(
     std::vector<GGEMSRadionuclideEmission> emissions)
     : canonical_name_{std::move(canonical_name)}, aliases_{std::move(aliases)},
       half_life_seconds_{half_life_seconds}, emissions_{std::move(emissions)} {
-  GGEMS_CHECK_RECOVERABLE(std::isfinite(half_life_seconds_),
-                          "Radionuclide half-life must be finite.");
-  GGEMS_CHECK_RECOVERABLE(half_life_seconds_ > 0.0L,
-                          "Radionuclide half-life must be strictly positive.");
-  GGEMS_CHECK_RECOVERABLE(
-      !emissions_.empty(),
-      "Radionuclide definition requires at least one emission channel.");
+  if (!(std::isfinite(half_life_seconds_))) {
+    throw ggems::core::GGEMSRecoverable("Radionuclide half-life must be finite.");
+  }
+  if (!(half_life_seconds_ > 0.0L)) {
+    throw ggems::core::GGEMSRecoverable("Radionuclide half-life must be strictly positive.");
+  }
+  if (emissions_.empty()) {
+    throw ggems::core::GGEMSRecoverable(
+        "Radionuclide definition requires at least one emission channel.");
+  }
 
   lookup_keys_ = BuildLookupKeys(canonical_name_, aliases_);
   total_yield_per_decay_ = ComputeTotalYieldPerDecay(emissions_);
@@ -113,9 +122,9 @@ GGEMSRadionuclideDefinition::GGEMSRadionuclideDefinition(
   for (GGEMSRadionuclideEmission const &emission : emissions_) {
     long double const selection_weight =
         emission.GetYieldPerDecay() / total_yield_per_decay_;
-    GGEMS_CHECK_INTERNAL(
-        std::isfinite(selection_weight),
-        "Radionuclide channel selection weight is not finite.");
+    if (!(std::isfinite(selection_weight))) {
+      throw ggems::core::GGEMSInternal("Radionuclide channel selection weight is not finite.");
+    }
     channel_selection_weights_.push_back(selection_weight);
   }
 }

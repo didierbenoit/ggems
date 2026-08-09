@@ -1,7 +1,4 @@
 # ============================================================================
-# @file      CompilerOptions.cmake @brief     Dispatch GGEMS compiler-specific
-# configuration. @details   Validate the operating system, compiler family, and
-# compiler frontend before loading the corresponding option module.
 # ============================================================================
 
 include_guard(GLOBAL)
