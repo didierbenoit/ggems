@@ -12,11 +12,11 @@
 namespace ggems::core::logging::detail {
 namespace {
 
-[[nodiscard]] auto IsAsciiSpace(char const c) noexcept -> bool {
+[[nodiscard]] auto IsAsciiSpace(char c) noexcept -> bool {
   return c == ' ' || c == '\t' || c == '\n' || c == '\r';
 }
 
-[[nodiscard]] auto IsAsciiLower(char const c) noexcept -> bool {
+[[nodiscard]] auto IsAsciiLower(char c) noexcept -> bool {
   return c >= 'a' && c <= 'z';
 }
 

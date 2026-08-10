@@ -23,14 +23,14 @@ auto SetOutputMode(OutputMode mode) -> void;
 auto SetOutputMode(std::string_view mode) -> void;
 
 auto SetOutputFile(std::string_view path) -> void;
-auto ClearOutputFile() noexcept -> void;
+auto ClearOutputFile() -> void;
 
 auto StartOutputRuntime() -> void;
 auto StopOutputRuntime() noexcept -> void;
 
 auto GetOutputState() -> GGEMSOutputState &;
 
-auto GetOutputBanner() -> render::GGEMSBanner &;
+auto GetOutputBanner() -> render::GGEMSBanner const &;
 
 [[nodiscard]] inline auto ToString(OutputMode mode) -> std::string {
   switch (mode) {

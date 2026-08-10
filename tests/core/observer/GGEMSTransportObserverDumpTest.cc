@@ -28,8 +28,8 @@ using ggems::core::particles::GGEMSParticleType;
 // =============================================================================
 
 [[nodiscard]] auto
-MakeRecord(std::uint64_t const track_id, std::uint64_t const time_ps,
-           GGEMSParticleType const particle_type = GGEMSParticleType::Gamma)
+MakeRecord(std::uint64_t track_id, std::uint64_t time_ps,
+           GGEMSParticleType particle_type = GGEMSParticleType::Gamma)
     -> GGEMSObserverRecord {
   GGEMSObserverRecord record{};
 

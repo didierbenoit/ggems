@@ -73,7 +73,8 @@ auto MakePhiloxState(std::uint64_t seed, std::uint64_t index) noexcept
 // =============================================================================
 // =============================================================================
 
-auto AreStatesEqual(PhiloxState &lhs, PhiloxState &rhs) noexcept -> bool {
+auto AreStatesEqual(PhiloxState const &lhs, PhiloxState const &rhs) noexcept
+    -> bool {
   return lhs.counter_0 == rhs.counter_0 && lhs.counter_1 == rhs.counter_1 &&
          lhs.counter_2 == rhs.counter_2 && lhs.counter_3 == rhs.counter_3 &&
          lhs.key_0 == rhs.key_0 && lhs.key_1 == rhs.key_1;

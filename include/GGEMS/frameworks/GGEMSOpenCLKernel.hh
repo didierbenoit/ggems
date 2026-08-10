@@ -7,7 +7,7 @@ namespace ggems::ocl {
 
 class GGEMSOpenCLKernel {
 public:
-  GGEMSOpenCLKernel(GGEMSOpenCLContext &ctx, cl::Kernel kernel,
+  GGEMSOpenCLKernel(GGEMSOpenCLContext const &ctx, cl::Kernel kernel,
                     std::string kernel_name);
 
   ~GGEMSOpenCLKernel() = default;
@@ -18,8 +18,8 @@ public:
   GGEMSOpenCLKernel &operator=(GGEMSOpenCLKernel &&) noexcept = delete;
 
 public:
-  GGEMSOpenCLContext const &GetContext() const { return context_; }
-  std::string_view GetKernelName() const { return kernel_name_; }
+  GGEMSOpenCLContext const &GetContext() const noexcept { return context_; }
+  std::string_view GetKernelName() const noexcept { return kernel_name_; }
 
   /* --------- Arguments --------------------------------*/
   template <typename T> void SetArg(cl_uint index, T const &value) {
@@ -30,7 +30,7 @@ public:
                           index, kernel_name_));
   }
 
-  void SetArgSVMPointer(cl_uint index, void *ptr);
+  auto SetArgSVMPointer(cl_uint index, void const *ptr) -> void;
 
   /* -------- Running -----------------------------*/
   // Exécution simple (1D pour l’instant)
@@ -64,7 +64,7 @@ public:
   [[nodiscard]] std::string GetArgName(cl_uint index) const;
 
 private:
-  GGEMSOpenCLContext &context_;
+  GGEMSOpenCLContext const &context_;
   cl::Kernel kernel_;
   std::string kernel_name_;
 };

@@ -95,7 +95,7 @@ FormatTimestamp(std::chrono::system_clock::time_point const &time_point)
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] auto GetEnvVar(const char *name) noexcept
+[[nodiscard]] auto GetEnvVar(const char *name)
     -> std::optional<std::string> {
 #if defined(_WIN32)
   char *buffer = nullptr;
@@ -184,7 +184,7 @@ auto LogFormatter::Format(LogRecord const &rec, bool use_color)
 // =============================================================================
 // =============================================================================
 
-auto GGEMSLogger::GetInstance() -> GGEMSLogger & {
+auto GGEMSLogger::GetInstance() noexcept -> GGEMSLogger & {
   static GGEMSLogger instance;
   return instance;
 }
@@ -209,7 +209,7 @@ auto GGEMSLogger::Log(LogLevel lvl, std::int32_t depth, std::string_view module,
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSLogger::ClearSinks() noexcept -> void {
+auto GGEMSLogger::ClearSinks() -> void {
   std::vector<std::unique_ptr<LogSink>> sinks_to_delete;
 
   {
@@ -245,14 +245,14 @@ auto GGEMSLogger::SetForceColor(bool force) -> void {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSLogger::SetForceEncoding(Encoding encoding) noexcept -> void {
+auto GGEMSLogger::SetForceEncoding(Encoding encoding) -> void {
   std::scoped_lock lock(mtx_);
   encoding_ = encoding;
 }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSLogger::UseColor() const noexcept -> bool {
+auto GGEMSLogger::UseColor() const -> bool {
   if (force_color_.has_value()) {
     return *force_color_;
   }

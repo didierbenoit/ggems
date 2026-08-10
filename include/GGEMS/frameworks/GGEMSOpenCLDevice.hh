@@ -32,7 +32,7 @@ public:
   }
 
   [[nodiscard]] std::unordered_set<std::string> const &
-  GetDeviceExtensions() const {
+  GetDeviceExtensions() const noexcept {
     return extensions_;
   }
 

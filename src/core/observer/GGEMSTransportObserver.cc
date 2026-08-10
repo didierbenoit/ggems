@@ -225,7 +225,7 @@ constexpr std::array<TableColumn, 11U> k_observer_table_columns{
 // =============================================================================
 // =============================================================================
 
-auto CleanDirectionValue(float const value) noexcept -> float {
+auto CleanDirectionValue(float value) noexcept -> float {
   if (std::fabs(value) < 0.005F) {
     return 0.0F;
   }
@@ -426,7 +426,7 @@ auto MakeTableHeader(std::span<TableColumn const> columns) -> std::string {
 // =============================================================================
 // =============================================================================
 
-auto FormatParticleLabel(particles::GGEMSParticleType const particle_type)
+auto FormatParticleLabel(particles::GGEMSParticleType particle_type)
     -> std::string {
   auto const &glyphs = utf::Glyphs();
 
@@ -462,7 +462,7 @@ auto FormatParticleLabel(particles::GGEMSParticleType const particle_type)
 // =============================================================================
 // =============================================================================
 
-auto RecordKindShortName(GGEMSObserverRecordKind const record_kind) noexcept
+auto RecordKindShortName(GGEMSObserverRecordKind record_kind) noexcept
     -> std::string_view {
   switch (record_kind) {
   case GGEMSObserverRecordKind::Unknown:
@@ -610,7 +610,7 @@ auto GGEMSTransportObserver::CreateRunResultCandidate() const
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSTransportObserver::Enable(bool const enabled) noexcept
+auto GGEMSTransportObserver::Enable(bool enabled) noexcept
     -> GGEMSTransportObserver & {
   enabled_ = enabled;
   return *this;
@@ -626,7 +626,7 @@ auto GGEMSTransportObserver::Disable() noexcept -> GGEMSTransportObserver & {
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::SetRecordCapacity(
-    std::uint32_t const record_capacity) -> GGEMSTransportObserver & {
+    std::uint32_t record_capacity) -> GGEMSTransportObserver & {
   if (!(record_capacity > 0U)) {
     throw ggems::core::GGEMSRecoverable("Transport observer record capacity must be non-zero.");
   }
@@ -642,7 +642,7 @@ auto GGEMSTransportObserver::SetRecordCapacity(
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::SetMaxStoredRecordCount(
-    std::uint32_t const max_stored_record_count) -> GGEMSTransportObserver & {
+    std::uint32_t max_stored_record_count) -> GGEMSTransportObserver & {
   if (!(max_stored_record_count > 0U)) {
     throw ggems::core::GGEMSRecoverable(
         "Transport observer maximum stored record count must be non-zero.");
@@ -692,7 +692,7 @@ auto GGEMSTransportObserver::ClearCapturedPrimary() noexcept
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSTransportObserver::Clear() -> void {
+auto GGEMSTransportObserver::Clear() noexcept -> void {
   run_result_logical_counters_ = GGEMSObserverRunResultCounters{};
   counters_ = GGEMSObserverCounters{};
   records_.clear();

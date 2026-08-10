@@ -138,7 +138,7 @@ CacheTypeToString(cl_device_mem_cache_type type) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-[[nodiscard]] inline std::string ClBoolToString(cl_bool flag) noexcept {
+[[nodiscard]] inline std::string ClBoolToString(cl_bool flag) {
   return (flag == CL_TRUE) ? "Yes" : "No";
 }
 
@@ -167,8 +167,9 @@ LocalMemTypeToString(cl_device_local_mem_type type) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-[[nodiscard]] inline std::string
-QueuePropertiesToString(cl_command_queue_properties &props) {
+[[nodiscard]] inline auto
+QueuePropertiesToString(cl_command_queue_properties const &props)
+    -> std::string {
   std::ostringstream oss;
   if (props & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE)
     oss << "Out-of-order execution, ";
@@ -392,7 +393,7 @@ AffinityDomainToString(cl_device_affinity_domain domain) {
 
 [[nodiscard]]
 inline std::string
-UUIDToString(std::span<const cl_uchar, CL_UUID_SIZE_KHR> s) noexcept {
+UUIDToString(std::span<const cl_uchar, CL_UUID_SIZE_KHR> s) {
   // format 8-4-4-4-12
   char buf[36 + 1]{};
 
@@ -423,7 +424,7 @@ UUIDToString(std::span<const cl_uchar, CL_UUID_SIZE_KHR> s) noexcept {
 
 [[nodiscard]]
 inline std::string
-UUIDToString(std::array<cl_uchar, CL_UUID_SIZE_KHR> const &a) noexcept {
+UUIDToString(std::array<cl_uchar, CL_UUID_SIZE_KHR> const &a) {
   return UUIDToString(
       std::span<const cl_uchar, CL_UUID_SIZE_KHR>(a.data(), a.size()));
 }
@@ -499,8 +500,8 @@ LUIDToString(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &a) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-[[nodiscard]] inline std::string
-DevicesToString(std::vector<cl::Device> &devices) {
+[[nodiscard]] inline auto
+DevicesToString(std::vector<cl::Device> const &devices) -> std::string {
   std::string out;
   for (auto const &d : devices) {
     out += std::format("{} ", d.getInfo<CL_DEVICE_NAME>());
@@ -512,7 +513,8 @@ DevicesToString(std::vector<cl::Device> &devices) {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-[[nodiscard]] inline std::string DeviceToString(cl::Device &device) {
+[[nodiscard]] inline auto DeviceToString(cl::Device const &device)
+    -> std::string {
   return device.getInfo<CL_DEVICE_NAME>();
 }
 
@@ -614,7 +616,7 @@ ContextPropertiesToString(std::vector<cl_context_properties> const &cp) {
 /* --------------------------------------------- */
 
 [[nodiscard]] inline std::string
-ArgAddressQualifierToString(cl_kernel_arg_address_qualifier aq) noexcept {
+ArgAddressQualifierToString(cl_kernel_arg_address_qualifier aq) {
   switch (aq) {
   case CL_KERNEL_ARG_ADDRESS_GLOBAL:
     return "CL_KERNEL_ARG_ADDRESS_GLOBAL";
@@ -633,7 +635,7 @@ ArgAddressQualifierToString(cl_kernel_arg_address_qualifier aq) noexcept {
 /* --------------------------------------------- */
 
 [[nodiscard]] inline std::string
-ArgAccessQualifierToString(cl_kernel_arg_address_qualifier aq) noexcept {
+ArgAccessQualifierToString(cl_kernel_arg_address_qualifier aq) {
   switch (aq) {
   case CL_KERNEL_ARG_ACCESS_READ_ONLY:
     return "CL_KERNEL_ARG_ACCESS_READ_ONLY";

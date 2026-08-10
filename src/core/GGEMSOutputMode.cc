@@ -169,7 +169,7 @@ auto ToTerminalText(render::WrappedLine const &line) -> std::string {
 // =============================================================================
 
 auto EmitTerminalBanner() -> void {
-  render::GGEMSBanner &banner = GetOutputBanner();
+  render::GGEMSBanner const &banner = GetOutputBanner();
 
   std::vector<render::WrappedLine> lines = banner.BuildLines(banner.GetWidth());
 
@@ -212,7 +212,7 @@ auto GetOutputState() -> GGEMSOutputState & {
 // =============================================================================
 // =============================================================================
 
-auto GetOutputBanner() -> render::GGEMSBanner & {
+auto GetOutputBanner() -> render::GGEMSBanner const & {
   if (!(g_configured)) {
     throw ggems::core::GGEMSFatal("Output mode must be configured before requesting the banner. "
       "Call ggems.core.set_output_mode('term'|'gui') first.");
@@ -228,7 +228,7 @@ auto GetOutputBanner() -> render::GGEMSBanner & {
 // =============================================================================
 // =============================================================================
 
-auto SetOutputMode(OutputMode const mode) -> void {
+auto SetOutputMode(OutputMode mode) -> void {
   if (mode == g_mode && g_configured) {
     return;
   }
@@ -272,7 +272,7 @@ auto SetOutputFile(std::string_view path) -> void {
 // =============================================================================
 // =============================================================================
 
-auto ClearOutputFile() noexcept -> void {
+auto ClearOutputFile() -> void {
   if (g_output_running.load(std::memory_order_relaxed)) {
     return;
   }

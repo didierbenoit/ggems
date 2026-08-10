@@ -162,7 +162,7 @@ private:
   static auto CheckImGuiVkResult(VkResult result) noexcept -> void;
 
   auto InitializeSceneRenderer() -> void;
-  auto ShutdownSceneRenderer() noexcept -> void;
+  auto ShutdownSceneRenderer() -> void;
 
   vk::raii::Context context_;
   vk::raii::Instance instance_{nullptr};

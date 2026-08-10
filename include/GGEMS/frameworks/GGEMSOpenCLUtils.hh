@@ -284,7 +284,7 @@ namespace ggems::ocl {
   }
 }
 
-[[nodiscard]] inline std::string GetLongErrorString(cl_int err) noexcept {
+[[nodiscard]] inline std::string GetLongErrorString(cl_int err) {
   return std::format("{} - {}", GetErrorCodeName(err),
                      GetErrorDescription(err));
 }
@@ -304,8 +304,8 @@ CheckCLError(cl_int err, std::string_view context,
 
 namespace detail {
 template <typename T> struct CLInfoReader {
-  static T Read(auto obj, cl_uint param, std::size_t size, auto getter,
-                cl_int &err) {
+  static auto Read(auto const &obj, cl_uint param, std::size_t size,
+                   auto getter, cl_int &err) -> T {
     (void)size;
     T value{};
     err = getter(obj(), param, sizeof(T), &value, nullptr);
@@ -314,8 +314,8 @@ template <typename T> struct CLInfoReader {
 };
 
 template <> struct CLInfoReader<std::string> {
-  static std::string Read(auto obj, cl_uint param, size_t size, auto getter,
-                          cl_int &err) {
+  static auto Read(auto const &obj, cl_uint param, size_t size, auto getter,
+                   cl_int &err) -> std::string {
     std::string value(size, '\0');
     err = getter(obj(), param, size, value.data(), nullptr);
     return value;
@@ -323,8 +323,8 @@ template <> struct CLInfoReader<std::string> {
 };
 
 template <typename T, std::size_t N> struct CLInfoReader<std::array<T, N>> {
-  static std::array<T, N> Read(auto obj, cl_uint param, size_t size,
-                               auto getter, cl_int &err) {
+  static auto Read(auto const &obj, cl_uint param, size_t size, auto getter,
+                   cl_int &err) -> std::array<T, N> {
     std::array<T, N> v{};
     size_t take = std::min<size_t>(size, N * sizeof(T));
     err = getter(obj(), param, take, v.data(), nullptr);
@@ -333,8 +333,8 @@ template <typename T, std::size_t N> struct CLInfoReader<std::array<T, N>> {
 };
 
 template <typename T> struct CLInfoReader<std::vector<T>> {
-  static std::vector<T> Read(auto obj, cl_uint param, size_t size, auto getter,
-                             cl_int &err) {
+  static auto Read(auto const &obj, cl_uint param, size_t size, auto getter,
+                   cl_int &err) -> std::vector<T> {
     std::vector<T> v(size / sizeof(T));
     err = getter(obj(), param, size, v.data(), nullptr);
     return v;
@@ -392,7 +392,9 @@ template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
 
   cl_int err{CL_SUCCESS};
 
-  if constexpr (requires(Object o) { o.template getInfo<Info>(nullptr); }) {
+  if constexpr (requires(Object const &object) {
+                  object.template getInfo<Info>(nullptr);
+                }) {
     auto value = obj.template getInfo<Info>(&err);
     CheckCLError<core::GGEMSRecoverable>(err, "GetInfo failed");
     return value;

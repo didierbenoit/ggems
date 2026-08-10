@@ -70,7 +70,7 @@ template <> struct InfoTraits<CL_PLATFORM_NUMERIC_VERSION> {
   static constexpr std::string_view name =
       "CL_PLATFORM_NUMERIC_VERSION";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClVersionToString(v);
   }
 };
@@ -81,7 +81,7 @@ template <> struct InfoTraits<CL_PLATFORM_HOST_TIMER_RESOLUTION> {
   static constexpr std::string_view name =
       "CL_PLATFORM_HOST_TIMER_RESOLUTION";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     if (v == 0) {
       return "not supported";
     }
@@ -99,7 +99,7 @@ template <> struct InfoTraits<CL_PLATFORM_EXTENSIONS_WITH_VERSION> {
   static constexpr std::string_view name =
       "CL_PLATFORM_EXTENSIONS_WITH_VERSION";
 
-  [[nodiscard]] static std::string ToString(type const &v) noexcept {
+  [[nodiscard]] static std::string ToString(type const &v) {
     return ClNameVersionToString(v);
   }
 };
@@ -196,7 +196,7 @@ template <> struct InfoTraits<CL_DEVICE_ILS_WITH_VERSION> {
   static constexpr std::string_view name =
       "CL_DEVICE_ILS_WITH_VERSION";
 
-  [[nodiscard]] static std::string ToString(type const &v) noexcept {
+  [[nodiscard]] static std::string ToString(type const &v) {
     return ClNameVersionToString(v);
   }
 };
@@ -208,7 +208,7 @@ template <> struct InfoTraits<CL_DEVICE_OPENCL_C_ALL_VERSIONS> {
   static constexpr std::string_view name =
       "CL_DEVICE_OPENCL_C_ALL_VERSIONS";
 
-  [[nodiscard]] static std::string ToString(type const &v) noexcept {
+  [[nodiscard]] static std::string ToString(type const &v) {
     return ClNameVersionToString(v);
   }
 };
@@ -219,7 +219,7 @@ template <> struct InfoTraits<CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR> {
   static constexpr std::string_view name =
       "CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClVersionToString(v);
   }
 };
@@ -230,7 +230,7 @@ template <> struct InfoTraits<CL_DEVICE_OPENCL_C_FEATURES> {
   static constexpr std::string_view name =
       "CL_DEVICE_OPENCL_C_FEATURES";
 
-  [[nodiscard]] static std::string ToString(type const &v) noexcept {
+  [[nodiscard]] static std::string ToString(type const &v) {
     return ClNameVersionToString(v);
   }
 };
@@ -241,7 +241,7 @@ template <> struct InfoTraits<CL_DEVICE_CXX_FOR_OPENCL_NUMERIC_VERSION_EXT> {
   static constexpr std::string_view name =
       "CL_DEVICE_CXX_FOR_OPENCL_NUMERIC_VERSION_EXT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClVersionToString(v);
   }
 };
@@ -252,7 +252,7 @@ template <> struct InfoTraits<CL_DEVICE_NUMERIC_VERSION> {
   static constexpr std::string_view name =
       "CL_DEVICE_NUMERIC_VERSION";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClVersionToString(v);
   }
 };
@@ -263,7 +263,7 @@ template <> struct InfoTraits<CL_DEVICE_VENDOR_ID> {
   static constexpr std::string_view name =
       "CL_DEVICE_VENDOR_ID";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return VendorIdToString(v);
   }
 };
@@ -274,7 +274,7 @@ template <> struct InfoTraits<CL_DEVICE_TYPE> {
   static constexpr std::string_view name =
       "CL_DEVICE_TYPE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return DeviceTypeToString(v);
   }
 };
@@ -285,7 +285,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_COMPUTE_UNITS> {
   static constexpr std::string_view name =
       "CL_DEVICE_MAX_COMPUTE_UNITS";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -296,7 +296,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_CLOCK_FREQUENCY> {
   static constexpr std::string_view name =
       "CL_DEVICE_MAX_CLOCK_FREQUENCY";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     if (v != 0) {
       auto const frequency = TryMakeQuantity<Frequency>(v, "MHz");
       if (!frequency.has_value()) {
@@ -314,7 +314,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_WORK_GROUP_SIZE> {
 
   static constexpr std::string_view name = "CL_DEVICE_MAX_WORK_GROUP_SIZE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return std::to_string(v);
   }
 };
@@ -325,7 +325,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS> {
   static constexpr std::string_view name =
       "CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -336,7 +336,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_WORK_ITEM_SIZES> {
   static constexpr std::string_view name =
       "CL_DEVICE_MAX_WORK_ITEM_SIZES";
 
-  [[nodiscard]] static std::string ToString(type const &v) noexcept {
+  [[nodiscard]] static std::string ToString(type const &v) {
     return SizeToString(v);
   }
 };
@@ -347,7 +347,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_MULTIPLE> {
   static constexpr std::string_view name =
       "CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_MULTIPLE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return std::to_string(v);
   }
 };
@@ -358,7 +358,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR> {
   static constexpr std::string_view name =
       "CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -369,7 +369,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT> {
   static constexpr std::string_view name =
       "CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -380,7 +380,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT> {
   static constexpr std::string_view name =
       "CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -391,7 +391,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG> {
   static constexpr std::string_view name =
       "CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -402,7 +402,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT> {
   static constexpr std::string_view name =
       "CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -413,7 +413,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE> {
   static constexpr std::string_view name =
       "CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -424,7 +424,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF> {
   static constexpr std::string_view name =
       "CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -435,7 +435,7 @@ template <> struct InfoTraits<CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR> {
   static constexpr std::string_view name =
       "CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -446,7 +446,7 @@ template <> struct InfoTraits<CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT> {
   static constexpr std::string_view name =
       "CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -457,7 +457,7 @@ template <> struct InfoTraits<CL_DEVICE_NATIVE_VECTOR_WIDTH_INT> {
   static constexpr std::string_view name =
       "CL_DEVICE_NATIVE_VECTOR_WIDTH_INT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -468,7 +468,7 @@ template <> struct InfoTraits<CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG> {
   static constexpr std::string_view name =
       "CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -479,7 +479,7 @@ template <> struct InfoTraits<CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT> {
   static constexpr std::string_view name =
       "CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -490,7 +490,7 @@ template <> struct InfoTraits<CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE> {
   static constexpr std::string_view name =
       "CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -501,7 +501,7 @@ template <> struct InfoTraits<CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF> {
   static constexpr std::string_view name =
       "CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -512,7 +512,7 @@ template <> struct InfoTraits<CL_DEVICE_IMAGE2D_MAX_WIDTH> {
   static constexpr std::string_view name =
       "CL_DEVICE_IMAGE2D_MAX_WIDTH";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return std::to_string(v);
   }
 };
@@ -523,7 +523,7 @@ template <> struct InfoTraits<CL_DEVICE_IMAGE2D_MAX_HEIGHT> {
   static constexpr std::string_view name =
       "CL_DEVICE_IMAGE2D_MAX_HEIGHT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return std::to_string(v);
   }
 };
@@ -534,7 +534,7 @@ template <> struct InfoTraits<CL_DEVICE_IMAGE3D_MAX_WIDTH> {
   static constexpr std::string_view name =
       "CL_DEVICE_IMAGE3D_MAX_WIDTH";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return std::to_string(v);
   }
 };
@@ -545,7 +545,7 @@ template <> struct InfoTraits<CL_DEVICE_IMAGE3D_MAX_HEIGHT> {
   static constexpr std::string_view name =
       "CL_DEVICE_IMAGE3D_MAX_HEIGHT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return std::to_string(v);
   }
 };
@@ -556,7 +556,7 @@ template <> struct InfoTraits<CL_DEVICE_IMAGE3D_MAX_DEPTH> {
   static constexpr std::string_view name =
       "CL_DEVICE_IMAGE3D_MAX_DEPTH";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return std::to_string(v);
   }
 };
@@ -567,7 +567,7 @@ template <> struct InfoTraits<CL_DEVICE_IMAGE_MAX_BUFFER_SIZE> {
   static constexpr std::string_view name =
       "CL_DEVICE_IMAGE_MAX_BUFFER_SIZE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return std::to_string(v);
   }
 };
@@ -578,7 +578,7 @@ template <> struct InfoTraits<CL_DEVICE_IMAGE_MAX_ARRAY_SIZE> {
   static constexpr std::string_view name =
       "CL_DEVICE_IMAGE_MAX_ARRAY_SIZE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return std::to_string(v);
   }
 };
@@ -589,7 +589,7 @@ template <> struct InfoTraits<CL_DEVICE_IMAGE_SUPPORT> {
   static constexpr std::string_view name =
       "CL_DEVICE_IMAGE_SUPPORT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClBoolToString(v);
   }
 };
@@ -600,7 +600,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_READ_IMAGE_ARGS> {
   static constexpr std::string_view name =
       "CL_DEVICE_MAX_READ_IMAGE_ARGS";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -611,7 +611,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_WRITE_IMAGE_ARGS> {
   static constexpr std::string_view name =
       "CL_DEVICE_MAX_WRITE_IMAGE_ARGS";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -622,7 +622,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS> {
   static constexpr std::string_view name =
       "CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -633,7 +633,7 @@ template <> struct InfoTraits<CL_DEVICE_IMAGE_PITCH_ALIGNMENT> {
   static constexpr std::string_view name =
       "CL_DEVICE_IMAGE_PITCH_ALIGNMENT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -644,7 +644,7 @@ template <> struct InfoTraits<CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT> {
   static constexpr std::string_view name =
       "CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -655,7 +655,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_SAMPLERS> {
   static constexpr std::string_view name =
       "CL_DEVICE_MAX_SAMPLERS";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -669,7 +669,7 @@ template <> struct InfoTraits<CL_DEVICE_GLOBAL_MEM_SIZE> {
   static constexpr std::string_view unit =
       " bytes";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
     return HumanReadable(B, 1, 5);
   }
@@ -681,7 +681,7 @@ template <> struct InfoTraits<CL_DEVICE_GLOBAL_MEM_CACHE_TYPE> {
   static constexpr std::string_view name =
       "CL_DEVICE_GLOBAL_MEM_CACHE_TYPE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return CacheTypeToString(v);
   }
 };
@@ -692,7 +692,7 @@ template <> struct InfoTraits<CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE> {
   static constexpr std::string_view name =
       "CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
     return HumanReadable(B, 1, 5);
   }
@@ -704,7 +704,7 @@ template <> struct InfoTraits<CL_DEVICE_GLOBAL_MEM_CACHE_SIZE> {
   static constexpr std::string_view name =
       "CL_DEVICE_GLOBAL_MEM_CACHE_SIZE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
     return HumanReadable(B, 1, 5);
   }
@@ -716,7 +716,7 @@ template <> struct InfoTraits<CL_DEVICE_LOCAL_MEM_SIZE> {
   static constexpr std::string_view name =
       "CL_DEVICE_LOCAL_MEM_SIZE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
     return HumanReadable(B, 1, 5);
   }
@@ -731,7 +731,7 @@ template <> struct InfoTraits<CL_DEVICE_LOCAL_MEM_TYPE> {
   static constexpr std::string_view unit =
       "";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return LocalMemTypeToString(v);
   }
 };
@@ -742,7 +742,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_MEM_ALLOC_SIZE> {
   static constexpr std::string_view name =
       "CL_DEVICE_MAX_MEM_ALLOC_SIZE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
     return HumanReadable(B, 1, 5);
   }
@@ -754,7 +754,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE> {
   static constexpr std::string_view name =
       "CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
     return HumanReadable(B, 1, 5);
   }
@@ -766,7 +766,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_CONSTANT_ARGS> {
   static constexpr std::string_view name =
       "CL_DEVICE_MAX_CONSTANT_ARGS";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -777,7 +777,7 @@ template <> struct InfoTraits<CL_DEVICE_MEM_BASE_ADDR_ALIGN> {
   static constexpr std::string_view name =
       "CL_DEVICE_MEM_BASE_ADDR_ALIGN";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     Bits bits{static_cast<std::uint64_t>(v)};
     return HumanReadable(bits, 1, 5);
   }
@@ -789,7 +789,7 @@ template <> struct InfoTraits<CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE> {
   static constexpr std::string_view name =
       "CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
     return HumanReadable(B, 1, 5);
   }
@@ -802,7 +802,7 @@ template <> struct InfoTraits<CL_DEVICE_HOST_UNIFIED_MEMORY> {
   static constexpr std::string_view name =
       "CL_DEVICE_HOST_UNIFIED_MEMORY";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClBoolToString(v);
   }
 };
@@ -814,7 +814,7 @@ template <> struct InfoTraits<CL_DEVICE_QUEUE_ON_HOST_PROPERTIES> {
   static constexpr std::string_view name =
       "CL_DEVICE_QUEUE_ON_HOST_PROPERTIES";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return QueuePropertiesToString(v);
   }
 };
@@ -826,7 +826,7 @@ template <> struct InfoTraits<CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES> {
   static constexpr std::string_view name =
       "CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return QueuePropertiesToString(v);
   }
 };
@@ -840,7 +840,7 @@ template <> struct InfoTraits<CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE> {
   static constexpr std::string_view unit =
       " bytes";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
     return HumanReadable(B, 1, 5);
   }
@@ -852,7 +852,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_ON_DEVICE_QUEUES> {
   static constexpr std::string_view name =
       "CL_DEVICE_MAX_ON_DEVICE_QUEUES";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -863,7 +863,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_ON_DEVICE_EVENTS> {
   static constexpr std::string_view name =
       "CL_DEVICE_MAX_ON_DEVICE_EVENTS";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -874,7 +874,7 @@ template <> struct InfoTraits<CL_DEVICE_SVM_CAPABILITIES> {
   static constexpr std::string_view name =
       "CL_DEVICE_SVM_CAPABILITIES";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return SVMCapabilitiesToString(v);
   }
 };
@@ -886,7 +886,7 @@ template <> struct InfoTraits<CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES> {
   static constexpr std::string_view name =
       "CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return AtomicCapabilitiesToString(v);
   }
 };
@@ -898,7 +898,7 @@ template <> struct InfoTraits<CL_DEVICE_ATOMIC_FENCE_CAPABILITIES> {
   static constexpr std::string_view name =
       "CL_DEVICE_ATOMIC_FENCE_CAPABILITIES";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return AtomicCapabilitiesToString(v);
   }
 };
@@ -909,7 +909,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_NUM_SUB_GROUPS> {
   static constexpr std::string_view name =
       "CL_DEVICE_MAX_NUM_SUB_GROUPS";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -921,7 +921,7 @@ struct InfoTraits<CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS> {
   static constexpr std::string_view name =
       "CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClBoolToString(v);
   }
 };
@@ -932,7 +932,7 @@ template <> struct InfoTraits<CL_DEVICE_EXECUTION_CAPABILITIES> {
   static constexpr std::string_view name =
       "CL_DEVICE_EXECUTION_CAPABILITIES";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ExecCapabilitiesToString(v);
   }
 };
@@ -943,7 +943,7 @@ template <> struct InfoTraits<CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT> {
   static constexpr std::string_view name =
       "CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClBoolToString(v);
   }
 };
@@ -955,7 +955,7 @@ struct InfoTraits<CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT> {
   static constexpr std::string_view name =
       "CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClBoolToString(v);
   }
 };
@@ -966,7 +966,7 @@ template <> struct InfoTraits<CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT> {
   static constexpr std::string_view name =
       "CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClBoolToString(v);
   }
 };
@@ -977,7 +977,7 @@ template <> struct InfoTraits<CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES> {
   static constexpr std::string_view name =
       "CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return DeviceEnqueueCapabilitiesToString(v);
   }
 };
@@ -988,7 +988,7 @@ template <> struct InfoTraits<CL_DEVICE_PARTITION_MAX_SUB_DEVICES> {
   static constexpr std::string_view name =
       "CL_DEVICE_PARTITION_MAX_SUB_DEVICES";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -1000,7 +1000,7 @@ template <> struct InfoTraits<CL_DEVICE_PARTITION_PROPERTIES> {
   static constexpr std::string_view name =
       "CL_DEVICE_PARTITION_PROPERTIES";
 
-  [[nodiscard]] static std::string ToString(type const &v) noexcept {
+  [[nodiscard]] static std::string ToString(type const &v) {
     return PartitionPropertiesToString(v);
   }
 };
@@ -1011,7 +1011,7 @@ template <> struct InfoTraits<CL_DEVICE_PARTITION_AFFINITY_DOMAIN> {
   static constexpr std::string_view name =
       "CL_DEVICE_PARTITION_AFFINITY_DOMAIN";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return AffinityDomainToString(v);
   }
 };
@@ -1023,7 +1023,7 @@ template <> struct InfoTraits<CL_DEVICE_PARTITION_TYPE> {
   static constexpr std::string_view name =
       "CL_DEVICE_PARTITION_TYPE";
 
-  [[nodiscard]] static std::string ToString(type const &v) noexcept {
+  [[nodiscard]] static std::string ToString(type const &v) {
     return PartitionPropertiesToString(v);
   }
 };
@@ -1034,7 +1034,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_PARAMETER_SIZE> {
   static constexpr std::string_view name =
       "CL_DEVICE_IMAGE_MAX_PARAMETER_SIZE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return std::to_string(v);
   }
 };
@@ -1045,7 +1045,7 @@ template <> struct InfoTraits<CL_DEVICE_EXTENSIONS_WITH_VERSION> {
   static constexpr std::string_view name =
       "CL_DEVICE_EXTENSIONS_WITH_VERSION";
 
-  [[nodiscard]] static std::string ToString(type const &v) noexcept {
+  [[nodiscard]] static std::string ToString(type const &v) {
     return ClNameVersionToString(v);
   }
 };
@@ -1074,7 +1074,7 @@ template <> struct InfoTraits<CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION> {
   static constexpr std::string_view name =
       "CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION";
 
-  [[nodiscard]] static std::string ToString(type const &v) noexcept {
+  [[nodiscard]] static std::string ToString(type const &v) {
     return ClNameVersionToString(v);
   }
 };
@@ -1088,7 +1088,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT> {
   static constexpr std::string_view unit =
       " bytes";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
     return HumanReadable(B, 1, 5);
   }
@@ -1100,7 +1100,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT> {
   static constexpr std::string_view name =
       "CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
     return HumanReadable(B, 1, 5);
   }
@@ -1112,7 +1112,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT> {
   static constexpr std::string_view name =
       "CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
     return HumanReadable(B, 1, 5);
   }
@@ -1127,7 +1127,7 @@ template <> struct InfoTraits<CL_DEVICE_ADDRESS_BITS> {
   static constexpr std::string_view unit =
       " bits";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     Bits B = Bits{static_cast<std::uint64_t>(v)};
     return HumanReadable(B, 0, 3);
   }
@@ -1139,7 +1139,7 @@ template <> struct InfoTraits<CL_DEVICE_PROFILING_TIMER_RESOLUTION> {
   static constexpr std::string_view name =
       "CL_DEVICE_PROFILING_TIMER_RESOLUTION";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     auto const duration = TryMakeQuantity<Duration>(v, "ns");
     if (!duration.has_value()) {
       return "out of range";
@@ -1154,7 +1154,7 @@ template <> struct InfoTraits<CL_DEVICE_COMPILER_AVAILABLE> {
   static constexpr std::string_view name =
       "CL_DEVICE_COMPILER_AVAILABLE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClBoolToString(v);
   }
 };
@@ -1165,7 +1165,7 @@ template <> struct InfoTraits<CL_DEVICE_LINKER_AVAILABLE> {
   static constexpr std::string_view name =
       "CL_DEVICE_LINKER_AVAILABLE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClBoolToString(v);
   }
 };
@@ -1176,7 +1176,7 @@ template <> struct InfoTraits<CL_DEVICE_AVAILABLE> {
   static constexpr std::string_view name =
       "CL_DEVICE_AVAILABLE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClBoolToString(v);
   }
 };
@@ -1187,7 +1187,7 @@ template <> struct InfoTraits<CL_DEVICE_ENDIAN_LITTLE> {
   static constexpr std::string_view name =
       "CL_DEVICE_ENDIAN_LITTLE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClBoolToString(v);
   }
 };
@@ -1198,7 +1198,7 @@ template <> struct InfoTraits<CL_DEVICE_ERROR_CORRECTION_SUPPORT> {
   static constexpr std::string_view name =
       "CL_DEVICE_ERROR_CORRECTION_SUPPORT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClBoolToString(v);
   }
 };
@@ -1209,7 +1209,7 @@ template <> struct InfoTraits<CL_DEVICE_PRINTF_BUFFER_SIZE> {
   static constexpr std::string_view name =
       "CL_DEVICE_PRINTF_BUFFER_SIZE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
     return HumanReadable(B, 1, 5);
   }
@@ -1221,7 +1221,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_PIPE_ARGS> {
   static constexpr std::string_view name =
       "CL_DEVICE_MAX_PIPE_ARGS";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -1232,7 +1232,7 @@ template <> struct InfoTraits<CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS> {
   static constexpr std::string_view name =
       "CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -1243,7 +1243,7 @@ template <> struct InfoTraits<CL_DEVICE_PIPE_MAX_PACKET_SIZE> {
   static constexpr std::string_view name =
       "CL_DEVICE_PIPE_MAX_PACKET_SIZE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
     return HumanReadable(B, 1, 5);
   }
@@ -1255,7 +1255,7 @@ template <> struct InfoTraits<CL_DEVICE_PIPE_SUPPORT> {
   static constexpr std::string_view name =
       "CL_DEVICE_PIPE_SUPPORT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClBoolToString(v);
   }
 };
@@ -1266,7 +1266,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE> {
   static constexpr std::string_view name =
       "CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
     return HumanReadable(B, 1, 5);
   }
@@ -1278,7 +1278,7 @@ template <> struct InfoTraits<CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE> {
   static constexpr std::string_view name =
       "CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     Bytes B = Bytes{static_cast<std::uint64_t>(v)};
     return HumanReadable(B, 1, 5);
   }
@@ -1291,7 +1291,7 @@ template <> struct InfoTraits<CL_DEVICE_UUID_KHR> {
   static constexpr std::string_view name =
       "CL_DEVICE_UUID_KHR";
 
-  [[nodiscard]] static std::string ToString(type const &v) noexcept {
+  [[nodiscard]] static std::string ToString(type const &v) {
     return UUIDToString(v);
   }
 };
@@ -1303,7 +1303,7 @@ template <> struct InfoTraits<CL_DRIVER_UUID_KHR> {
   static constexpr std::string_view name =
       "CL_DRIVER_UUID_KHR";
 
-  [[nodiscard]] static std::string ToString(type const &v) noexcept {
+  [[nodiscard]] static std::string ToString(type const &v) {
     return UUIDToString(v);
   }
 };
@@ -1314,7 +1314,7 @@ template <> struct InfoTraits<CL_DEVICE_LUID_VALID_KHR> {
   static constexpr std::string_view name =
       "CL_DEVICE_LUID_VALID_KHR";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClBoolToString(v);
   }
 };
@@ -1325,7 +1325,7 @@ template <> struct InfoTraits<CL_DEVICE_LUID_KHR> {
   static constexpr std::string_view name =
       "CL_DEVICE_LUID_KHR";
 
-  [[nodiscard]] static std::string ToString(type const &v) noexcept {
+  [[nodiscard]] static std::string ToString(type const &v) {
     return LUIDToString(v);
   }
 };
@@ -1337,7 +1337,7 @@ template <> struct InfoTraits<CL_DEVICE_HALF_FP_CONFIG> {
   static constexpr std::string_view name =
       "CL_DEVICE_HALF_FP_CONFIG";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return FPConfigToString(v);
   }
 };
@@ -1349,7 +1349,7 @@ template <> struct InfoTraits<CL_DEVICE_SINGLE_FP_CONFIG> {
   static constexpr std::string_view name =
       "CL_DEVICE_SINGLE_FP_CONFIG";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return FPConfigToString(v);
   }
 };
@@ -1361,7 +1361,7 @@ template <> struct InfoTraits<CL_DEVICE_DOUBLE_FP_CONFIG> {
   static constexpr std::string_view name =
       "CL_DEVICE_DOUBLE_FP_CONFIG";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return FPConfigToString(v);
   }
 };
@@ -1372,7 +1372,7 @@ template <> struct InfoTraits<CL_DEVICE_REFERENCE_COUNT> {
   static constexpr std::string_view name =
       "CL_DEVICE_REFERENCE_COUNT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -1383,7 +1383,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_INTEROP_USER_SYNC> {
   static constexpr std::string_view name =
       "CL_DEVICE_PREFERRED_INTEROP_USER_SYNC";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ClBoolToString(v);
   }
 };
@@ -1398,7 +1398,7 @@ template <> struct InfoTraits<CL_CONTEXT_REFERENCE_COUNT> {
   static constexpr std::string_view name =
       "CL_CONTEXT_REFERENCE_COUNT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -1409,7 +1409,7 @@ template <> struct InfoTraits<CL_CONTEXT_NUM_DEVICES> {
   static constexpr std::string_view name =
       "CL_CONTEXT_NUM_DEVICES";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -1420,7 +1420,7 @@ template <> struct InfoTraits<CL_CONTEXT_DEVICES> {
   static constexpr std::string_view name =
       "CL_CONTEXT_DEVICES";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return DevicesToString(v);
   }
 };
@@ -1432,7 +1432,7 @@ template <> struct InfoTraits<CL_CONTEXT_PROPERTIES> {
   static constexpr std::string_view name =
       "CL_CONTEXT_PROPERTIES";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return ContextPropertiesToString(v);
   }
 };
@@ -1443,7 +1443,7 @@ template <> struct InfoTraits<CL_QUEUE_CONTEXT> {
   static constexpr std::string_view name =
       "CL_QUEUE_CONTEXT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     (void)v;
     return "";
   }
@@ -1455,7 +1455,7 @@ template <> struct InfoTraits<CL_QUEUE_DEVICE> {
   static constexpr std::string_view name =
       "CL_QUEUE_DEVICE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return DeviceToString(v);
   }
 };
@@ -1466,7 +1466,7 @@ template <> struct InfoTraits<CL_QUEUE_REFERENCE_COUNT> {
   static constexpr std::string_view name =
       "CL_QUEUE_REFERENCE_COUNT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -1477,7 +1477,7 @@ template <> struct InfoTraits<CL_QUEUE_SIZE> {
   static constexpr std::string_view name =
       "CL_QUEUE_SIZE";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -1488,7 +1488,7 @@ template <> struct InfoTraits<CL_QUEUE_PROPERTIES> {
   static constexpr std::string_view name =
       "CL_QUEUE_PROPERTIES";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return QueuePropertiesToString(v);
   }
 };
@@ -1500,7 +1500,7 @@ template <> struct InfoTraits<CL_QUEUE_PROPERTIES_ARRAY> {
   static constexpr std::string_view name =
       "CL_QUEUE_PROPERTIES_ARRAY";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return QueuePropertiesArrayToString(v);
   }
 };
@@ -1515,7 +1515,7 @@ template <> struct InfoTraits<CL_PROGRAM_NUM_DEVICES> {
   static constexpr std::string_view name =
       "CL_PROGRAM_NUM_DEVICES";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -1526,7 +1526,7 @@ template <> struct InfoTraits<CL_PROGRAM_BINARY_SIZES> {
   static constexpr std::string_view name =
       "CL_PROGRAM_BINARY_SIZES";
 
-  static std::string ToString(type const &v) noexcept {
+  static std::string ToString(type const &v) {
     return VectorToString(v);
   }
 };
@@ -1538,7 +1538,7 @@ template <> struct InfoTraits<CL_PROGRAM_BINARIES> {
   static constexpr std::string_view name =
       "CL_PROGRAM_BINARIES";
 
-  static std::string ToString(type const &) noexcept {
+  static std::string ToString(type const &) {
     return "<binary blobs>";
   }
 };
@@ -1562,7 +1562,7 @@ template <> struct InfoTraits<CL_KERNEL_NUM_ARGS> {
   static constexpr std::string_view name =
       "CL_KERNEL_NUM_ARGS";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -1573,7 +1573,7 @@ template <> struct InfoTraits<CL_KERNEL_REFERENCE_COUNT> {
   static constexpr std::string_view name =
       "CL_KERNEL_REFERENCE_COUNT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     return UIntToString(v);
   }
 };
@@ -1593,7 +1593,7 @@ template <> struct InfoTraits<CL_KERNEL_CONTEXT> {
   static constexpr std::string_view name =
       "CL_KERNEL_CONTEXT";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     (void)v;
     return "";
   }
@@ -1605,7 +1605,7 @@ template <> struct InfoTraits<CL_KERNEL_PROGRAM> {
   static constexpr std::string_view name =
       "CL_KERNEL_PROGRAM";
 
-  [[nodiscard]] static std::string ToString(type v) noexcept {
+  [[nodiscard]] static std::string ToString(type v) {
     (void)v;
     return "";
   }

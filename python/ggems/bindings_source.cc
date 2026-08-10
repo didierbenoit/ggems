@@ -279,7 +279,7 @@ auto BindSource(py::module_ &module) -> void {
 
       .def(
           "set_energy",
-          [](GGEMSSource &self, double const energy,
+          [](GGEMSSource &self, double energy,
              std::string const &unit) -> GGEMSSource & {
             return self.SetEnergyMilliElectronVolt(
                 MakeQuantityOrThrow<ggems::units::Energy>(
@@ -322,8 +322,8 @@ auto BindSource(py::module_ &module) -> void {
 
       .def(
           "set_position",
-          [](GGEMSSource &self, double const pos_x, double const pos_y,
-             double const pos_z, std::string const &unit) -> GGEMSSource & {
+          [](GGEMSSource &self, double pos_x, double pos_y, double pos_z,
+             std::string const &unit) -> GGEMSSource & {
             return self.SetPositionPicoMeter(
                 MakeQuantityOrThrow<ggems::units::PositionCoordinate>(
                     pos_x, unit,

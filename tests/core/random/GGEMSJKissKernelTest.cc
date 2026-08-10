@@ -58,7 +58,8 @@ auto MakeJKissState(std::uint32_t seed, std::uint32_t index) noexcept
 // =============================================================================
 // =============================================================================
 
-auto AreStatesEqual(JKissState &lhs, JKissState &rhs) noexcept -> bool {
+auto AreStatesEqual(JKissState const &lhs, JKissState const &rhs) noexcept
+    -> bool {
   return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w == rhs.w &&
          lhs.c == rhs.c;
 }

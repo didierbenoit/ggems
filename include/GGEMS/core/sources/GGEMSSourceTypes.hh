@@ -42,7 +42,7 @@ ToKernelSourceType(GGEMSSourceType source_type) noexcept -> std::uint32_t {
 }
 
 [[nodiscard]] constexpr auto
-FromKernelSourceType(std::uint32_t const source_type) noexcept
+FromKernelSourceType(std::uint32_t source_type) noexcept
     -> GGEMSSourceType {
   switch (source_type) {
   case 1U:
@@ -57,7 +57,7 @@ FromKernelSourceType(std::uint32_t const source_type) noexcept
 }
 
 [[nodiscard]] constexpr auto
-ToLongName(GGEMSSourceType const source_type) noexcept -> std::string_view {
+ToLongName(GGEMSSourceType source_type) noexcept -> std::string_view {
   switch (source_type) {
   case GGEMSSourceType::Unknown:
     return "Unknown";
@@ -78,7 +78,7 @@ ToLongName(GGEMSSourceType const source_type) noexcept -> std::string_view {
 }
 
 [[nodiscard]] constexpr auto
-FromKernelEnergyDistributionType(std::uint32_t const distribution_type) noexcept
+FromKernelEnergyDistributionType(std::uint32_t distribution_type) noexcept
     -> GGEMSEnergyDistributionType {
   switch (distribution_type) {
   case 1U:
@@ -93,7 +93,7 @@ FromKernelEnergyDistributionType(std::uint32_t const distribution_type) noexcept
 }
 
 [[nodiscard]] constexpr auto
-ToLongName(GGEMSEnergyDistributionType const distribution_type) noexcept
+ToLongName(GGEMSEnergyDistributionType distribution_type) noexcept
     -> std::string_view {
   switch (distribution_type) {
   case GGEMSEnergyDistributionType::Mono:

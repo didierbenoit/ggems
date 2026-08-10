@@ -28,7 +28,8 @@ public:
 
 private:
   void RenderWrappedLine(render::WrappedLine const &line) const;
-  [[nodiscard]] bool ShouldDisplay(core::RenderedLogLine const &line) const;
+  [[nodiscard]] bool
+  ShouldDisplay(core::RenderedLogLine const &line) const noexcept;
 
 private:
   std::size_t max_visible_lines_{2000U};

@@ -14,7 +14,7 @@ public:
     std::array<float, 4> row_3{0.0F, 0.0F, 0.0F, 1.0F};
   };
 
-  GGEMSVulkanCamera();
+  GGEMSVulkanCamera() noexcept;
   ~GGEMSVulkanCamera() = default;
 
   GGEMSVulkanCamera(GGEMSVulkanCamera const &) = delete;

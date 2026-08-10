@@ -24,11 +24,12 @@ public:
   GGEMSOpenCLProgram &operator=(GGEMSOpenCLProgram &&) noexcept = delete;
 
 private:
-  GGEMSOpenCLProgram(GGEMSOpenCLContext &ctx, std::filesystem::path kernel_root,
+  GGEMSOpenCLProgram(GGEMSOpenCLContext const &ctx,
+                     std::filesystem::path kernel_root,
                      std::string kernel_name, std::string build_options = {});
 
 public:
-  cl::Kernel CreateKernel(std::string const &kernel_name);
+  auto CreateKernel(std::string const &kernel_name) const -> cl::Kernel;
 
   cl::Program const &GetProgramNative() const noexcept { return program_; }
 
@@ -50,10 +51,10 @@ public:
 
   [[nodiscard]] auto GetBinaries() const;
 
-  [[nodiscard]] bool Matches(GGEMSOpenCLContext const &context,
+  [[nodiscard]] auto Matches(GGEMSOpenCLContext const &context,
                              std::filesystem::path const &kernel_root,
                              std::string_view kernel_name,
-                             std::string_view user_build_options) const;
+                             std::string_view user_build_options) const -> bool;
 
 private:
   [[nodiscard]]
@@ -91,7 +92,7 @@ private:
       std::string &fingerprint_text) const;
 
 private:
-  GGEMSOpenCLContext &context_;
+  GGEMSOpenCLContext const &context_;
   std::filesystem::path kernel_root_;
   std::string kernel_name_;
   std::string source_path_;

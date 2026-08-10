@@ -77,21 +77,21 @@ public:
 
 class GGEMSLogger {
 public:
-  static auto GetInstance() -> GGEMSLogger &;
+  static auto GetInstance() noexcept -> GGEMSLogger &;
 
   GGEMSLogger(GGEMSLogger const &) = delete;
   GGEMSLogger(GGEMSLogger &&) = delete;
   auto operator=(GGEMSLogger const &) -> GGEMSLogger & = delete;
   auto operator=(GGEMSLogger &&) -> GGEMSLogger & = delete;
 
-  auto ClearSinks() noexcept -> void;
+  auto ClearSinks() -> void;
   auto AddSink(std::unique_ptr<LogSink> sink) -> void;
   auto SetSink(std::unique_ptr<LogSink> sink) -> void;
 
   auto SetForceColor(bool force) -> void;
-  auto UseColor() const noexcept -> bool;
+  auto UseColor() const -> bool;
   auto GetEncoding() const noexcept -> Encoding { return encoding_; }
-  auto SetForceEncoding(Encoding encoding) noexcept -> void;
+  auto SetForceEncoding(Encoding encoding) -> void;
 
   auto SetDetailLevel(std::int32_t detail_level) noexcept -> void {
     detail_level_.store(detail_level, std::memory_order_relaxed);

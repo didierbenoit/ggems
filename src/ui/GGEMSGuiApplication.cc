@@ -31,15 +31,13 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] auto BuildComputeStatus(ggems::ocl::GGEMSOpenCL &opencl)
+[[nodiscard]] auto BuildComputeStatus(
+    std::vector<ggems::ocl::GGEMSOpenCLContext> const &contexts,
+    std::vector<ggems::ocl::GGEMSOpenCLPlatform> const &platforms)
     -> ggems::ui::detail::GGEMSComputeStatus {
-  auto const &contexts = opencl.GetContext();
-
   if (contexts.empty()) {
     return {};
   }
-
-  auto const &platforms = opencl.GetPlatforms();
 
   ggems::ui::detail::GGEMSComputeStatus compute_status{.initialized = true};
 
@@ -207,7 +205,8 @@ auto GGEMSGuiApplication::Initialize() -> void {
 
   try {
     auto &opencl = ocl::GGEMSOpenCL::GetInstance();
-    detail::GGEMSComputeStatus compute_status = BuildComputeStatus(opencl);
+    detail::GGEMSComputeStatus compute_status =
+        BuildComputeStatus(opencl.GetContext(), opencl.GetPlatforms());
 
     detail::GGEMSVulkanDeviceSelector device_selector =
         vulkan_device_index_selector_.has_value()

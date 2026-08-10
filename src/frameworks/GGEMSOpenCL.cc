@@ -76,12 +76,14 @@ GGEMSOpenCL::~GGEMSOpenCL() {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-GGEMSOpenCLProgram &GGEMSOpenCL::GetOrCreateProgram(
-    GGEMSOpenCLContext &ctx, std::filesystem::path const &kernel_root,
-    std::string const &kernel_name, std::string const &build_options) {
+auto GGEMSOpenCL::GetOrCreateProgram(
+    GGEMSOpenCLContext const &ctx,
+    std::filesystem::path const &kernel_root,
+    std::string const &kernel_name, std::string const &build_options)
+    -> GGEMSOpenCLProgram const & {
   std::scoped_lock lock{program_cache_mutex_};
 
-  for (auto &program : program_cache_) {
+  for (auto const &program : program_cache_) {
     if (program->Matches(ctx, kernel_root, kernel_name, build_options)) {
       GGEMS_INFOEX("OpenCL", 3,
                    "Reusing OpenCL program '{}' from memory cache.",
@@ -95,7 +97,7 @@ GGEMSOpenCLProgram &GGEMSOpenCL::GetOrCreateProgram(
   auto prog = std::unique_ptr<GGEMSOpenCLProgram>(
       new GGEMSOpenCLProgram(ctx, kernel_root, kernel_name, build_options));
 
-  GGEMSOpenCLProgram &ref = *prog;
+  GGEMSOpenCLProgram const &ref = *prog;
   program_cache_.push_back(std::move(prog));
 
   return ref;
@@ -324,7 +326,7 @@ GGEMSOpenCL::ParseDeviceFilters(
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSOpenCL::PrintPlatforms() const noexcept {
+void GGEMSOpenCL::PrintPlatforms() const {
   GGEMS_INFO("OpenCL", "Available OpenCL platforms:");
 
   for (auto const &p : platforms_) {
@@ -336,7 +338,7 @@ void GGEMSOpenCL::PrintPlatforms() const noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSOpenCL::PrintDevices() const noexcept {
+void GGEMSOpenCL::PrintDevices() const {
   GGEMS_INFO("OpenCL", "Available OpenCL devices:");
 
   for (auto const &p : platforms_) {
@@ -350,7 +352,7 @@ void GGEMSOpenCL::PrintDevices() const noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSOpenCL::PrintContexts() const noexcept {
+void GGEMSOpenCL::PrintContexts() const {
   GGEMS_INFO("OpenCL", "Active OpenCL contexts:");
 
   for (auto const &c : contexts_) {
@@ -363,7 +365,7 @@ void GGEMSOpenCL::PrintContexts() const noexcept {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-void GGEMSOpenCL::Clean() noexcept {
+void GGEMSOpenCL::Clean() {
   GGEMS_INFOEX("OpenCL", 3, "Cleaning OpenCL platform resources.");
 
   for (auto &p : platforms_) {

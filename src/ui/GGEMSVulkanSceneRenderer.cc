@@ -56,7 +56,7 @@ auto GGEMSVulkanSceneRenderer::Initialize(
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanSceneRenderer::Shutdown() noexcept -> void {
+auto GGEMSVulkanSceneRenderer::Shutdown() -> void {
   if (!initialized_) {
     return;
   }

@@ -11,6 +11,8 @@ using ClockFrequencyTraits =
     ggems::ocl::InfoTraits<CL_DEVICE_MAX_CLOCK_FREQUENCY>;
 using ggems::test::ScopedLoggerEncoding;
 
+static_assert(!noexcept(ClockFrequencyTraits::ToString(0U)));
+
 } // namespace
 
 // =============================================================================

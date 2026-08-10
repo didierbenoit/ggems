@@ -148,7 +148,8 @@ public:
 
   void EnqueueSVMUnmap(void *ptr) const;
 
-  void SetSVMPointer(cl::Kernel &kernel, cl_uint index, void *ptr) const;
+  auto SetSVMPointer(cl::Kernel &kernel, cl_uint index, void const *ptr) const
+      -> void;
 
   // ----- Context -----------------------------------
 

@@ -1,41 +1,285 @@
+/* ========================================================================== 
+ * GGEMS Doxygen custom stylesheet
+ * ========================================================================== */
+
+
+/* --------------------------------------------------------------------------
+ * GGEMS color palette
+ * -------------------------------------------------------------------------- */
+
+html {
+  /* GGEMS Light */
+  --ggems-primary: #213126;
+  --ggems-background: #ffffff;
+  --ggems-accent: #319b54;
+  --ggems-accent-secondary: #8a2be2;
+  --ggems-header-background: #f7fbf7;
+  --ggems-header-primary: #319b54;
+  --ggems-selected: #e4f4e8;
+  --ggems-hover: #f1f8f3;
+  --ggems-highlight: #fff9b8;
+  --ggems-danger: #c84c4c;
+  --ggems-success: #319b54;
+
+  /* Page */
+  --page-background-color: var(--ggems-background);
+  --page-foreground-color: var(--ggems-primary);
+  --page-link-color: var(--ggems-accent);
+  --page-visited-link-color: var(--ggems-accent-secondary);
+  --page-external-link-color: var(--ggems-accent);
+
+  /* Index */
+  --index-odd-item-bg-color: var(--ggems-hover);
+  --index-even-item-bg-color: var(--ggems-background);
+  --index-header-color: var(--ggems-primary);
+  --index-separator-color: var(--ggems-selected);
+
+  /* Header */
+  --header-background-color: var(--ggems-header-background);
+  --header-separator-color: var(--ggems-selected);
+  --group-header-separator-color: var(--ggems-selected);
+  --group-header-color: var(--ggems-header-primary);
+
+  /* Footer and titles */
+  --footer-foreground-color: var(--ggems-accent);
+  --citation-label-color: var(--ggems-accent-secondary);
+  --title-background-color: var(--ggems-background);
+  --title-separator-color: var(--ggems-selected);
+
+  /* Blockquotes */
+  --blockquote-background-color: var(--ggems-hover);
+  --blockquote-border-color: var(--ggems-accent);
+
+  /* Scrollbars */
+  --scrollbar-thumb-color: var(--ggems-accent);
+  --scrollbar-background-color: var(--ggems-header-background);
+
+  /* Icons */
+  --icon-background-color: var(--ggems-accent);
+  --icon-foreground-color: #ffffff;
+  --icon-folder-open-fill-color: var(--ggems-selected);
+  --icon-folder-fill-color: var(--ggems-hover);
+  --icon-folder-border-color: var(--ggems-accent);
+  --icon-doc-fill-color: var(--ggems-selected);
+  --icon-doc-border-color: var(--ggems-accent);
+
+  /* Brief member declarations */
+  --memdecl-background-color: var(--ggems-hover);
+  --memdecl-foreground-color: var(--ggems-primary);
+  --memdecl-template-color: var(--ggems-accent-secondary);
+  --memdecl-border-color: var(--ggems-selected);
+
+  /* Detailed member documentation */
+  --memdef-border-color: var(--ggems-selected);
+  --memdef-title-background-color: var(--ggems-selected);
+  --memdef-proto-background-color: var(--ggems-hover);
+  --memdef-proto-text-color: var(--ggems-primary);
+  --memdef-param-name-color: var(--ggems-accent-secondary);
+  --memdef-template-color: var(--ggems-accent-secondary);
+
+  /* Tables */
+  --table-cell-border-color: var(--ggems-selected);
+  --table-header-background-color: var(--ggems-accent);
+  --table-header-foreground-color: #ffffff;
+
+  /* Labels */
+  --label-background-color: var(--ggems-accent);
+  --label-left-top-border-color: var(--ggems-accent);
+  --label-right-bottom-border-color: var(--ggems-selected);
+  --label-foreground-color: #ffffff;
+
+  /* Navigation */
+  --nav-background-color: var(--ggems-header-background);
+  --nav-foreground-color: var(--ggems-header-primary);
+  --nav-border-color: var(--ggems-selected);
+  --nav-breadcrumb-separator-color: var(--ggems-selected);
+  --nav-breadcrumb-active-bg: var(--ggems-selected);
+  --nav-breadcrumb-color: var(--ggems-accent);
+  --nav-splitbar-bg-color: var(--ggems-selected);
+  --nav-splitbar-handle-color: var(--ggems-accent);
+  --nav-text-normal-color: var(--ggems-primary);
+  --nav-menu-button-color: var(--ggems-accent);
+  --nav-menu-background-color: var(--ggems-background);
+  --nav-menu-foreground-color: var(--ggems-primary);
+  --nav-menu-active-bg: var(--ggems-selected);
+  --nav-menu-active-color: var(--ggems-accent);
+  --nav-arrow-color: var(--ggems-accent);
+  --nav-arrow-selected-color: var(--ggems-accent-secondary);
+
+  /* Sync icon */
+  --sync-icon-border-color: var(--ggems-selected);
+  --sync-icon-background-color: var(--ggems-header-background);
+  --sync-icon-selected-background-color: var(--ggems-selected);
+  --sync-icon-color: var(--ggems-accent);
+  --sync-icon-selected-color: var(--ggems-accent-secondary);
+
+  /* Table of contents */
+  --toc-background-color: var(--ggems-hover);
+  --toc-border-color: var(--ggems-selected);
+  --toc-header-color: var(--ggems-accent);
+
+  /* Search */
+  --search-background-color: var(--ggems-background);
+  --search-foreground-color: var(--ggems-primary);
+  --search-active-color: var(--ggems-primary);
+  --search-filter-background-color: var(--ggems-header-background);
+  --search-filter-foreground-color: var(--ggems-primary);
+  --search-filter-border-color: var(--ggems-selected);
+  --search-filter-highlight-text-color: #ffffff;
+  --search-filter-highlight-bg-color: var(--ggems-accent);
+  --search-results-foreground-color: var(--ggems-accent);
+  --search-results-background-color: var(--ggems-background);
+  --search-results-border-color: var(--ggems-selected);
+  --search-box-border-color: var(--ggems-selected);
+  --search-close-icon-bg-color: var(--ggems-accent);
+  --search-close-icon-fg-color: #ffffff;
+
+  /* Source code containers.
+   * Syntax colors themselves intentionally remain Doxygen defaults. */
+  --fragment-foreground-color: var(--ggems-primary);
+  --fragment-background-color: var(--ggems-hover);
+  --fragment-border-color: var(--ggems-selected);
+  --fragment-lineno-border-color: var(--ggems-accent);
+  --fragment-lineno-background-color: var(--ggems-selected);
+  --fragment-lineno-foreground-color: var(--ggems-primary);
+  --fragment-lineno-link-fg-color: var(--ggems-accent);
+  --fragment-lineno-link-bg-color: var(--ggems-selected);
+  --fragment-lineno-link-hover-fg-color: var(--ggems-accent-secondary);
+  --fragment-lineno-link-hover-bg-color: var(--ggems-hover);
+  --fragment-copy-ok-color: var(--ggems-success);
+  --fragment-highlight-filter: -3;
+
+  /* Tooltips */
+  --tooltip-foreground-color: var(--ggems-primary);
+  --tooltip-background-color: var(--ggems-background);
+  --tooltip-arrow-background-color: var(--ggems-background);
+  --tooltip-border-color: var(--ggems-selected);
+  --tooltip-doc-color: var(--ggems-primary);
+  --tooltip-declaration-color: var(--ggems-accent);
+  --tooltip-link-color: var(--ggems-accent-secondary);
+
+  /* Doxygen special sections */
+  --warning-color-bg: var(--ggems-highlight);
+  --warning-color-hl: var(--ggems-danger);
+  --warning-color-text: var(--ggems-primary);
+
+  --note-color-bg: var(--ggems-highlight);
+  --note-color-hl: var(--ggems-accent);
+  --note-color-text: var(--ggems-primary);
+
+  --todo-color-bg: var(--ggems-selected);
+  --todo-color-hl: var(--ggems-accent-secondary);
+  --todo-color-text: var(--ggems-primary);
+
+  --bug-color-bg: var(--ggems-selected);
+  --bug-color-hl: var(--ggems-danger);
+  --bug-color-text: var(--ggems-primary);
+
+  --invariant-color-bg: var(--ggems-selected);
+  --invariant-color-hl: var(--ggems-success);
+  --invariant-color-text: var(--ggems-primary);
+}
+
+
+/* --------------------------------------------------------------------------
+ * GGEMS Dark
+ * -------------------------------------------------------------------------- */
+
+html.dark-mode {
+  --ggems-primary: #e7f3ea;
+  --ggems-background: #101612;
+  --ggems-accent: #50c878;
+  --ggems-accent-secondary: #b388ff;
+  --ggems-header-background: #131c16;
+  --ggems-header-primary: #8adaa5;
+  --ggems-selected: #1d2a22;
+  --ggems-hover: #18231c;
+  --ggems-highlight: #403c12;
+  --ggems-danger: #e06a6a;
+  --ggems-success: #50c878;
+
+  --icon-foreground-color: #101612;
+  --table-header-foreground-color: #101612;
+  --label-foreground-color: #101612;
+  --search-filter-highlight-text-color: #101612;
+  --search-close-icon-fg-color: #101612;
+
+  --fragment-highlight-filter: 5;
+}
+
+
+/* --------------------------------------------------------------------------
+ * Project header
+ * -------------------------------------------------------------------------- */
+
 #projectlogo img {
-  width: 128px;   /* ajuste la largeur */
-  height: auto;   /* conserve les proportions */
+  width: 128px;
+  height: auto;
 }
 
 #projectlogo {
   float: left;
-  margin-right: 24px; /* espace avec le titre */
+  margin-right: 24px;
 }
 
 #projectname {
-  font-size: 42px;   /* augmente la valeur à ton goût */
-  font-weight: bold; /* gras pour renforcer */
+  font-size: 42px;
+  font-weight: bold;
   margin-bottom: 16px;
 }
 
 #projectbrief {
-  font-size: 24px;   /* choisis la taille */
-  font-style: italic; /* optionnel : style italique */
+  font-size: 24px;
+  font-style: italic;
   margin-top: 0;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap');
 
-/* Blocs de code et inline code */
+/* --------------------------------------------------------------------------
+ * Source code
+ * -------------------------------------------------------------------------- */
+
 div.line {
-  font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace; /* police moderne monospace */
-  font-size: 16px;      /* taille lisible */
+  font-family: var(--font-family-monospace);
+  font-size: 16px;
   line-height: 1.5;
 }
 
-
-/* Survol d'une ligne */
 div.line:hover {
-  background-color: #d2e7d6;
+  background-color: var(--ggems-selected);
 }
 
 div.line a:hover {
-  text-decoration: underline; /* souligne au survol */
-  cursor: pointer;             /* change le curseur en main */
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+
+/* --------------------------------------------------------------------------
+ * Scrollbars
+ *
+ * Doxygen omits its own WebKit scrollbar styling when an extra stylesheet is
+ * supplied, so GGEMS defines it here.
+ * -------------------------------------------------------------------------- */
+
+:root {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb-color)
+                   var(--scrollbar-background-color);
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+  background-color: var(--scrollbar-background-color);
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 6px;
+  box-shadow: inset 0 0 12px 12px var(--scrollbar-thumb-color);
+}
+
+::-webkit-scrollbar-corner {
+  background-color: var(--scrollbar-background-color);
 }

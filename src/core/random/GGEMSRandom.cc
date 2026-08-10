@@ -130,7 +130,8 @@ template <typename State, typename Factory>
 auto InitializeStateStorage(std::uint64_t first_stream_id,
                             std::size_t state_count,
                             std::span<std::byte> state_storage,
-                            Factory make_state) noexcept -> void {
+                            Factory make_state)
+    noexcept(noexcept(make_state(first_stream_id))) -> void {
   for (std::size_t state_index = 0U; state_index < state_count; ++state_index) {
     auto state =
         make_state(first_stream_id + static_cast<std::uint64_t>(state_index));
@@ -340,7 +341,7 @@ auto GGEMSRandom::BuildSummaryLines() const -> std::vector<std::string> {
 // -----------------------------------------------------------------------------
 
 auto GGEMSRandom::Verbose() const -> void {
-  for (std::string &line : BuildSummaryLines()) {
+  for (std::string const &line : BuildSummaryLines()) {
     GGEMS_INFO("Random", "{}", line);
   }
 }

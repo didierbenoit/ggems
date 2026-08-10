@@ -45,7 +45,7 @@ public:
       -> GGEMSTransportObserver &;
   auto ClearCapturedPrimary() noexcept -> GGEMSTransportObserver &;
 
-  void Clear();
+  void Clear() noexcept;
 
   void Accumulate(std::span<GGEMSObserverRecord const> records,
                   GGEMSObserverCounters const &counters);

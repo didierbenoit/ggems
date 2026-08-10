@@ -9,7 +9,7 @@ namespace ggems::ui {
 // =============================================================================
 // =============================================================================
 
-auto ToImGuiColor(render::ColorKey const &color) -> ImVec4 {
+auto ToImGuiColor(render::ColorKey const &color) noexcept -> ImVec4 {
   render::RGB rgb =
       render::GetColorRGB(color.family, color.shade, color.variant);
 
@@ -54,7 +54,7 @@ void ApplyGGEMSImGuiTheme() {
 
   ImVec4 const transparent{0.0F, 0.0F, 0.0F, 0.0F};
 
-  auto const WithAlpha = [](ImVec4 color, float const alpha) -> ImVec4 {
+  auto const WithAlpha = [](ImVec4 color, float alpha) -> ImVec4 {
     color.w = alpha;
     return color;
   };

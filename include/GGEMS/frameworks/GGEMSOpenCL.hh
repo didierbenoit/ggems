@@ -29,19 +29,21 @@ public:
     return *instance;
   }
 
-  GGEMSOpenCLProgram &GetOrCreateProgram(
-      GGEMSOpenCLContext &ctx, std::filesystem::path const &kernel_root,
-      std::string const &kernel_name, std::string const &build_options = "");
+  auto GetOrCreateProgram(
+      GGEMSOpenCLContext const &ctx,
+      std::filesystem::path const &kernel_root,
+      std::string const &kernel_name, std::string const &build_options = "")
+      -> GGEMSOpenCLProgram const &;
 
   ~GGEMSOpenCL();
 
-  void Clean() noexcept;
+  void Clean();
 
-  void PrintPlatforms() const noexcept;
+  void PrintPlatforms() const;
 
-  void PrintDevices() const noexcept;
+  void PrintDevices() const;
 
-  void PrintContexts() const noexcept;
+  void PrintContexts() const;
 
   [[nodiscard]] std::vector<GGEMSOpenCLPlatform> const &
   GetPlatforms() const noexcept {

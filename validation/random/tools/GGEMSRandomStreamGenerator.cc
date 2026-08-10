@@ -133,7 +133,7 @@ auto PrintUsage(char const *executable_name) -> void {
 // =============================================================================
 // =============================================================================
 
-auto ReadArgumentValue(int &index, int argc, char **argv,
+auto ReadArgumentValue(int &index, int argc, char const *const *argv,
                        std::string_view option_name) -> std::string {
   if (index + 1 >= argc) {
     throw std::runtime_error(
@@ -147,7 +147,7 @@ auto ReadArgumentValue(int &index, int argc, char **argv,
 // =============================================================================
 // =============================================================================
 
-auto ParseArguments(int argc, char **argv) -> Options {
+auto ParseArguments(int argc, char const *const *argv) -> Options {
   Options options;
 
   for (int i = 1; i < argc; ++i) {

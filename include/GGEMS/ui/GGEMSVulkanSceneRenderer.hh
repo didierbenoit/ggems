@@ -34,7 +34,7 @@ public:
                   vk::raii::Device const &device, vk::Format color_format)
       -> void;
 
-  auto Shutdown() noexcept -> void;
+  auto Shutdown() -> void;
 
   auto SetViewportExtent(vk::Extent2D const &extent) -> void;
   auto RecreateRenderTargetsIfNeeded() -> void;

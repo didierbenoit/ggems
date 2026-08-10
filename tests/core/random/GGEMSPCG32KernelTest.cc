@@ -71,7 +71,8 @@ auto MakePCG32State(std::uint64_t seed, std::uint64_t index) noexcept
 // =============================================================================
 // =============================================================================
 
-auto AreStatesEqual(PCG32State &lhs, PCG32State &rhs) noexcept -> bool {
+auto AreStatesEqual(PCG32State const &lhs, PCG32State const &rhs) noexcept
+    -> bool {
   return lhs.state == rhs.state && lhs.increment == rhs.increment;
 }
 

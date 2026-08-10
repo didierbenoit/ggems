@@ -9,6 +9,7 @@
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMHostAccess.hh"
 
 namespace {
@@ -25,6 +26,8 @@ struct HostAccessRecord {
 };
 
 static_assert(std::is_trivially_copyable_v<HostAccessRecord>);
+static_assert(std::is_nothrow_move_constructible_v<
+              ggems::ocl::GGEMSOpenCLSVMBuffer>);
 
 // =============================================================================
 // =============================================================================

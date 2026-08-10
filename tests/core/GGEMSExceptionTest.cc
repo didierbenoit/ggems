@@ -11,6 +11,10 @@
 
 namespace {
 
+static_assert(noexcept(ggems::ocl::GetErrorCodeName(CL_SUCCESS)));
+static_assert(noexcept(ggems::ocl::GetErrorDescription(CL_SUCCESS)));
+static_assert(!noexcept(ggems::ocl::GetLongErrorString(CL_SUCCESS)));
+
 [[noreturn]] auto
 ThrowRecoverableFromKnownLine(std::int32_t &expected_line) -> void {
   expected_line = static_cast<std::int32_t>(__LINE__ + 1);

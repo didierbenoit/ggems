@@ -164,7 +164,7 @@ ResolveLocalInclude(std::string const &include_name,
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-GGEMSOpenCLProgram::GGEMSOpenCLProgram(GGEMSOpenCLContext &ctx,
+GGEMSOpenCLProgram::GGEMSOpenCLProgram(GGEMSOpenCLContext const &ctx,
                                        std::filesystem::path kernel_root,
                                        std::string kernel_name,
                                        std::string build_options)
@@ -343,10 +343,10 @@ void GGEMSOpenCLProgram::AppendSourceFingerprintText(
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-bool GGEMSOpenCLProgram::Matches(
+auto GGEMSOpenCLProgram::Matches(
     GGEMSOpenCLContext const &context, std::filesystem::path const &kernel_root,
-    std::string_view const kernel_name,
-    std::string_view const user_build_options) const {
+    std::string_view kernel_name, std::string_view user_build_options) const
+    -> bool {
   if (&context_ != &context) {
     return false;
   }
@@ -683,7 +683,8 @@ std::vector<std::uint8_t> GGEMSOpenCLProgram::LoadBinaryFromCache() {
 /* --------------------------------------------- */
 /* --------------------------------------------- */
 
-cl::Kernel GGEMSOpenCLProgram::CreateKernel(std::string const &kernel_name) {
+auto GGEMSOpenCLProgram::CreateKernel(std::string const &kernel_name) const
+    -> cl::Kernel {
   GGEMS_INFOEX("OpenCL", 2, "Creating kernel '{}'", kernel_name);
 
   cl_int err{CL_SUCCESS};

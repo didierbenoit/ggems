@@ -259,8 +259,8 @@ void GGEMSOpenCLContext::EnqueueSVMUnmap(void *ptr) const {
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
 
-void GGEMSOpenCLContext::SetSVMPointer(cl::Kernel &kernel, cl_uint index,
-                                       void *ptr) const {
+auto GGEMSOpenCLContext::SetSVMPointer(cl::Kernel &kernel, cl_uint index,
+                                       void const *ptr) const -> void {
   cl_int err = clSetKernelArgSVMPointer(kernel(), index, ptr);
 
   if (!(err == CL_SUCCESS)) {

@@ -1689,7 +1689,7 @@ auto GGEMSVulkanContext::InitializeSceneRenderer() -> void {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanContext::ShutdownSceneRenderer() noexcept -> void {
+auto GGEMSVulkanContext::ShutdownSceneRenderer() -> void {
   scene_renderer_.Shutdown();
 }
 } // namespace ggems::ui

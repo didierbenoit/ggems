@@ -37,7 +37,7 @@ struct ThreadTagPair {
 
 [[nodiscard]] auto IsDecimalThreadTag(std::string_view tag) noexcept -> bool {
   return tag.size() >= 2U && tag.front() == 'T' &&
-         std::ranges::all_of(tag.substr(1U), [](char const character) -> bool {
+         std::ranges::all_of(tag.substr(1U), [](char character) -> bool {
            return character >= '0' && character <= '9';
          });
 }

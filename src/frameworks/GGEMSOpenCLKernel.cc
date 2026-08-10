@@ -8,7 +8,8 @@ namespace ggems::ocl {
 
 /* ---------------------------------------------------------------------------*/
 
-GGEMSOpenCLKernel::GGEMSOpenCLKernel(GGEMSOpenCLContext &ctx, cl::Kernel kernel,
+GGEMSOpenCLKernel::GGEMSOpenCLKernel(GGEMSOpenCLContext const &ctx,
+                                     cl::Kernel kernel,
                                      std::string kernel_name)
     : context_(ctx), kernel_(std::move(kernel)),
       kernel_name_(std::move(kernel_name)) {
@@ -17,7 +18,8 @@ GGEMSOpenCLKernel::GGEMSOpenCLKernel(GGEMSOpenCLContext &ctx, cl::Kernel kernel,
 
 /* ------------------------------------------------------------------------ */
 
-void GGEMSOpenCLKernel::SetArgSVMPointer(cl_uint index, void *ptr) {
+auto GGEMSOpenCLKernel::SetArgSVMPointer(cl_uint index, void const *ptr)
+    -> void {
   cl_int err = clSetKernelArgSVMPointer(kernel_(), index, ptr);
   CheckCLError(err, std::format("Failed to set SVM arg {}", index));
 }

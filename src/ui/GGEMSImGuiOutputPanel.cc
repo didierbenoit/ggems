@@ -94,7 +94,7 @@ void GGEMSImGuiOutputPanel::RenderWrappedLine(
 // -----------------------------------------------------------------------------
 
 bool GGEMSImGuiOutputPanel::ShouldDisplay(
-    core::RenderedLogLine const &line) const {
+    core::RenderedLogLine const &line) const noexcept {
   switch (line.level) {
   case core::LogLevel::Debug:
     return show_debug_;

@@ -175,7 +175,7 @@ public:
 
 private:
   struct StableSourceSlot {
-    std::shared_ptr<GGEMSSource> source;
+    std::shared_ptr<GGEMSSource const> source;
     GGEMSSourcePopulationMode population_mode{
         GGEMSSourcePopulationMode::CountDriven};
     std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>

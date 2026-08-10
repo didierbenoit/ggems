@@ -65,7 +65,7 @@ auto GGEMSImGuiLayer::BuildFrame(
   BuildMainDockspace();
 
   if (show_output_panel_) {
-    render::GGEMSBanner &banner = core::GetOutputBanner();
+    render::GGEMSBanner const &banner = core::GetOutputBanner();
     core::GGEMSOutputState &output_state = core::GetOutputState();
 
     output_panel_.Render(banner, output_state);
@@ -341,7 +341,7 @@ auto GGEMSImGuiLayer::BuildViewportPlaceholder(
 
     viewport_state_.hovered = ImGui::IsItemHovered();
 
-    ImGuiIO &imgui_io = ImGui::GetIO();
+    ImGuiIO const &imgui_io = ImGui::GetIO();
 
     if (viewport_state_.hovered) {
 

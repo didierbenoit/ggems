@@ -11,10 +11,10 @@ class RadionuclideDefinitionHandle {
 public:
   explicit RadionuclideDefinitionHandle(
       std::shared_ptr<core::radioactivity::GGEMSRadionuclideDefinition const>
-          definition)
+          definition) noexcept
       : definition_{std::move(definition)} {}
 
-  [[nodiscard]] auto GetDefinition() const -> std::shared_ptr<
+  [[nodiscard]] auto GetDefinition() const noexcept -> std::shared_ptr<
       core::radioactivity::GGEMSRadionuclideDefinition const> {
     return definition_;
   }

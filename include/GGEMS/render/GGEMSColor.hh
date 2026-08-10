@@ -233,7 +233,7 @@ inline void AppendAnsiControl(std::string &out, AnsiControl c) {
   out.append(AnsiControlCode(c));
 }
 
-inline std::string_view AnsiControl(AnsiControl c) {
+inline std::string_view AnsiControl(AnsiControl c) noexcept {
   switch (c) {
   case AnsiControl::ResetAll:
     return "\033[0m";
