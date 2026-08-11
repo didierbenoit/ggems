@@ -30,12 +30,13 @@
 /// \cond
 #include <utility>
 #include <exception>
+#include <cstddef>
 /// \endcond
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
-#include "GGEMS/frameworks/GGEMSSVMMemoryKind.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLSVMMemoryKind.hh"
 #include "GGEMS/core/units/GGEMSBytesUnits.hh"
 
 namespace ggems::ocl {

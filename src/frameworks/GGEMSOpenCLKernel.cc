@@ -1,49 +1,55 @@
-#include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
+#include <utility>
+#include <cstddef>
+#include <array>
+#include <format>
+#include <string>
+
 #include "GGEMS/core/GGEMSLogMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLStrings.hh"
 
 using namespace ggems::units;
 
 namespace ggems::ocl {
 
-/* ---------------------------------------------------------------------------*/
+// -----------------------------------------------------------------------------
 
-GGEMSOpenCLKernel::GGEMSOpenCLKernel(GGEMSOpenCLContext const &ctx,
-                                     cl::Kernel kernel,
-                                     std::string kernel_name)
-    : context_(ctx), kernel_(std::move(kernel)),
-      kernel_name_(std::move(kernel_name)) {
+GGEMSOpenCLKernel::GGEMSOpenCLKernel(GGEMSOpenCLContext const &context,
+                                     cl::Kernel kernel, std::string kernel_name)
+    : context_{context}, kernel_{std::move(kernel)},
+      kernel_name_{std::move(kernel_name)} {
   GGEMS_INFOEX("OpenCL", 3, "OpenCL kernel '{}' created.", kernel_name_);
 }
 
-/* ------------------------------------------------------------------------ */
+// -----------------------------------------------------------------------------
 
-auto GGEMSOpenCLKernel::SetArgSVMPointer(cl_uint index, void const *ptr)
+auto GGEMSOpenCLKernel::SetArgSVMPointer(cl_uint index, void const *pointer)
     -> void {
-  cl_int err = clSetKernelArgSVMPointer(kernel_(), index, ptr);
-  CheckCLError(err, std::format("Failed to set SVM arg {}", index));
+  cl_int error = clSetKernelArgSVMPointer(kernel_(), index, pointer);
+  CheckCLError(error, std::format("Failed to set SVM arg {}", index));
 }
 
-/* ------------------------------------------------------------------------ */
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLKernel::Run(std::array<std::size_t, 1> const &global,
-                            std::array<std::size_t, 1> const &local) {
+auto GGEMSOpenCLKernel::Run(std::array<std::size_t, 1> const &global,
+                            std::array<std::size_t, 1> const &local) -> void {
   (void)RunAndGetEvent(global, local);
 }
 
-/* ------------------------------------------------------------------------ */
+// -----------------------------------------------------------------------------
 
-cl::Event
-GGEMSOpenCLKernel::RunAndGetEvent(std::array<std::size_t, 1> const &global,
-                                  std::array<std::size_t, 1> const &local) {
+auto GGEMSOpenCLKernel::RunAndGetEvent(std::array<std::size_t, 1> const &global,
+                                       std::array<std::size_t, 1> const &local)
+    -> cl::Event {
   cl::Event event;
 
-  auto &queue = context_.GetCommandQueueNative();
+  auto const &queue = context_.GetCommandQueueNative();
 
-  cl_int err =
+  cl_int error =
       queue.enqueueNDRangeKernel(kernel_, cl::NullRange, cl::NDRange(global[0]),
                                  cl::NDRange(local[0]), nullptr, &event);
-  CheckCLError(err,
+  CheckCLError(error,
                std::format("Failed to enqueue kernel '{}'", kernel_name_));
 
   queue.finish();
@@ -51,111 +57,112 @@ GGEMSOpenCLKernel::RunAndGetEvent(std::array<std::size_t, 1> const &global,
   return event;
 }
 
-/* ---------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-std::string GGEMSOpenCLKernel::GetFunctionName() const {
+auto GGEMSOpenCLKernel::GetFunctionName() const -> std::string {
   return GetInfo<CL_KERNEL_FUNCTION_NAME>(kernel_);
 }
 
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLKernel::GetNumArgs() const {
+auto GGEMSOpenCLKernel::GetNumArgs() const -> cl_uint {
   return GetInfo<CL_KERNEL_NUM_ARGS>(kernel_);
 }
 
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLKernel::GetReferenceCount() const {
+auto GGEMSOpenCLKernel::GetReferenceCount() const -> cl_uint {
   return GetInfo<CL_KERNEL_REFERENCE_COUNT>(kernel_);
 }
 
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-cl::Context GGEMSOpenCLKernel::GetContextNative() const {
+auto GGEMSOpenCLKernel::GetContextNative() const -> cl::Context {
   return GetInfo<CL_KERNEL_CONTEXT>(kernel_);
 }
 
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-cl::Program GGEMSOpenCLKernel::GetProgramNative() const {
+auto GGEMSOpenCLKernel::GetProgramNative() const -> cl::Program {
   return GetInfo<CL_KERNEL_PROGRAM>(kernel_);
 }
 
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-std::string GGEMSOpenCLKernel::GetAttributes() const {
+auto GGEMSOpenCLKernel::GetAttributes() const -> std::string {
   return GetInfo<CL_KERNEL_ATTRIBUTES>(kernel_);
 }
 
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-[[nodiscard]] std::size_t GGEMSOpenCLKernel::GetWorkGroupSize() const {
-  auto const &devs = context_.GetNativeDevices();
-  return GetWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>(kernel_, devs.front());
+[[nodiscard]] auto GGEMSOpenCLKernel::GetWorkGroupSize() const -> std::size_t {
+  auto const devices = context_.GetNativeDevices();
+  return GetWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>(kernel_, devices.front());
 }
 
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-[[nodiscard]] std::size_t
-GGEMSOpenCLKernel::GetPreferredWorkGroupSizeMultiple() const {
-  auto devs = context_.GetNativeDevices();
+[[nodiscard]] auto GGEMSOpenCLKernel::GetPreferredWorkGroupSizeMultiple() const
+    -> std::size_t {
+  auto const devices = context_.GetNativeDevices();
   return GetWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
-      kernel_, devs.front());
+      kernel_, devices.front());
 }
 
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-[[nodiscard]] std::array<std::size_t, 3>
-GGEMSOpenCLKernel::GetCompileWorkGroupSize() const {
-  auto devs = context_.GetNativeDevices();
+[[nodiscard]] auto GGEMSOpenCLKernel::GetCompileWorkGroupSize() const
+    -> std::array<std::size_t, 3> {
+  auto const devices = context_.GetNativeDevices();
   return GetWorkGroupInfo<CL_KERNEL_COMPILE_WORK_GROUP_SIZE>(kernel_,
-                                                             devs.front());
+                                                             devices.front());
 }
 
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-[[nodiscard]] cl_ulong GGEMSOpenCLKernel::GetLocalMemSize() const {
-  auto devs = context_.GetNativeDevices();
-  return GetWorkGroupInfo<CL_KERNEL_LOCAL_MEM_SIZE>(kernel_, devs.front());
+[[nodiscard]] auto GGEMSOpenCLKernel::GetLocalMemSize() const -> cl_ulong {
+  auto const devices = context_.GetNativeDevices();
+  return GetWorkGroupInfo<CL_KERNEL_LOCAL_MEM_SIZE>(kernel_, devices.front());
 }
 
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-[[nodiscard]] cl_ulong GGEMSOpenCLKernel::GetPrivateMemSize() const {
-  auto devs = context_.GetNativeDevices();
-  return GetWorkGroupInfo<CL_KERNEL_PRIVATE_MEM_SIZE>(kernel_, devs.front());
+[[nodiscard]] auto GGEMSOpenCLKernel::GetPrivateMemSize() const -> cl_ulong {
+  auto const devices = context_.GetNativeDevices();
+  return GetWorkGroupInfo<CL_KERNEL_PRIVATE_MEM_SIZE>(kernel_, devices.front());
 }
 
-/* -------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-[[nodiscard]] std::string
-GGEMSOpenCLKernel::GetArgAddressQualifier(cl_uint index) const {
+[[nodiscard]] auto
+GGEMSOpenCLKernel::GetArgAddressQualifier(cl_uint index) const -> std::string {
   return ArgAddressQualifierToString(
       GetArgInfo<CL_KERNEL_ARG_ADDRESS_QUALIFIER>(kernel_, index));
 }
 
-/* -------------------------------------------------------------------------- */
-[[nodiscard]] std::string
-GGEMSOpenCLKernel::GetArgAccessQualifier(cl_uint index) const {
+// -----------------------------------------------------------------------------
+[[nodiscard]] auto GGEMSOpenCLKernel::GetArgAccessQualifier(cl_uint index) const
+    -> std::string {
   return ArgAccessQualifierToString(
       GetArgInfo<CL_KERNEL_ARG_ACCESS_QUALIFIER>(kernel_, index));
 }
 
-/* -------------------------------------------------------------------------- */
-[[nodiscard]] std::string
-GGEMSOpenCLKernel::GetArgTypeName(cl_uint index) const {
+// -----------------------------------------------------------------------------
+[[nodiscard]] auto GGEMSOpenCLKernel::GetArgTypeName(cl_uint index) const
+    -> std::string {
   return GetArgInfo<CL_KERNEL_ARG_TYPE_NAME>(kernel_, index);
 }
 
-/* -------------------------------------------------------------------------- */
-[[nodiscard]] std::string
-GGEMSOpenCLKernel::GetArgTypeQualifier(cl_uint index) const {
+// -----------------------------------------------------------------------------
+[[nodiscard]] auto GGEMSOpenCLKernel::GetArgTypeQualifier(cl_uint index) const
+    -> std::string {
   return ArgTypeQualifierToString(
       GetArgInfo<CL_KERNEL_ARG_TYPE_QUALIFIER>(kernel_, index));
 }
 
-/* -------------------------------------------------------------------------- */
-[[nodiscard]] std::string GGEMSOpenCLKernel::GetArgName(cl_uint index) const {
+// -----------------------------------------------------------------------------
+[[nodiscard]] auto GGEMSOpenCLKernel::GetArgName(cl_uint index) const
+    -> std::string {
   return GetArgInfo<CL_KERNEL_ARG_NAME>(kernel_, index);
 }
 

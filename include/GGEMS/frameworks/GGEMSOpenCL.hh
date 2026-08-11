@@ -39,13 +39,13 @@ public:
                           std::string const &build_options = "")
       -> GGEMSOpenCLProgram const &;
 
-  void Clean();
+  auto Clean() -> void;
 
-  void PrintPlatforms() const;
+  auto PrintPlatforms() const -> void;
 
-  void PrintDevices() const;
+  auto PrintDevices() const -> void;
 
-  void PrintContexts() const;
+  auto PrintContexts() const -> void;
 
   [[nodiscard]] auto GetPlatforms() const noexcept
       -> std::vector<GGEMSOpenCLPlatform> const & {
@@ -68,7 +68,8 @@ private:
   [[nodiscard]]
   static auto ParseDeviceFilters(
       std::vector<std::string> const &filters,
-      std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> all_devices)
+      std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const
+          &all_devices)
       -> std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>;
 
   auto CreateContexts() -> void;

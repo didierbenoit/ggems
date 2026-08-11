@@ -1,5 +1,11 @@
 #pragma once
 
+#include <array>
+#include <cstddef>
+#include <format>
+#include <string>
+#include <string_view>
+
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
@@ -7,61 +13,60 @@ namespace ggems::ocl {
 
 class GGEMSOpenCLKernel {
 public:
-  GGEMSOpenCLKernel(GGEMSOpenCLContext const &ctx, cl::Kernel kernel,
+  GGEMSOpenCLKernel(GGEMSOpenCLContext const &context, cl::Kernel kernel,
                     std::string kernel_name);
 
   ~GGEMSOpenCLKernel() = default;
 
   GGEMSOpenCLKernel(GGEMSOpenCLKernel const &) = delete;
-  GGEMSOpenCLKernel &operator=(GGEMSOpenCLKernel const &) = delete;
+  auto operator=(GGEMSOpenCLKernel const &) -> GGEMSOpenCLKernel & = delete;
   GGEMSOpenCLKernel(GGEMSOpenCLKernel &&) noexcept = delete;
-  GGEMSOpenCLKernel &operator=(GGEMSOpenCLKernel &&) noexcept = delete;
+  auto operator=(GGEMSOpenCLKernel &&) noexcept -> GGEMSOpenCLKernel & = delete;
 
-public:
-  GGEMSOpenCLContext const &GetContext() const noexcept { return context_; }
-  std::string_view GetKernelName() const noexcept { return kernel_name_; }
-
-  /* --------- Arguments --------------------------------*/
-  template <typename T> void SetArg(cl_uint index, T const &value) {
-    cl_int err = kernel_.setArg(index, value);
-
-    CheckCLError(err, std::format(
-                          "Failed to set kernel argument {} for kernel '{}'",
-                          index, kernel_name_));
+  [[nodiscard]] auto GetContext() const noexcept -> GGEMSOpenCLContext const & {
+    return context_;
   }
 
-  auto SetArgSVMPointer(cl_uint index, void const *ptr) -> void;
+  [[nodiscard]] auto GetKernelName() const noexcept -> std::string_view {
+    return kernel_name_;
+  }
 
-  /* -------- Running -----------------------------*/
-  // Exécution simple (1D pour l’instant)
-  void Run(std::array<size_t, 1> const &global,
-           std::array<size_t, 1> const &local);
+  template <typename T> auto SetArg(cl_uint index, T const &value) -> void {
+    cl_int error = kernel_.setArg(index, value);
 
-  [[nodiscard]] cl::Event
-  RunAndGetEvent(std::array<std::size_t, 1> const &global,
-                 std::array<std::size_t, 1> const &local);
+    CheckCLError(error,
+                 std::format("Failed to set kernel argument {} for kernel '{}'",
+                             index, kernel_name_));
+  }
 
-  /* ------------- Kernel Info ------------------- */
-  [[nodiscard]] std::string GetFunctionName() const;
-  [[nodiscard]] cl_uint GetNumArgs() const;
-  [[nodiscard]] cl_uint GetReferenceCount() const;
-  [[nodiscard]] cl::Context GetContextNative() const;
-  [[nodiscard]] cl::Program GetProgramNative() const;
-  [[nodiscard]] std::string GetAttributes() const;
+  auto SetArgSVMPointer(cl_uint index, void const *pointer) -> void;
 
-  /* ------------- Kernel Workgroup Info ------------------- */
-  [[nodiscard]] std::size_t GetWorkGroupSize() const;
-  [[nodiscard]] std::size_t GetPreferredWorkGroupSizeMultiple() const;
-  [[nodiscard]] std::array<std::size_t, 3> GetCompileWorkGroupSize() const;
-  [[nodiscard]] cl_ulong GetLocalMemSize() const;
-  [[nodiscard]] cl_ulong GetPrivateMemSize() const;
+  auto Run(std::array<std::size_t, 1> const &global,
+           std::array<std::size_t, 1> const &local) -> void;
 
-  /* ------------- Kernel Workgroup Info ------------------- */
-  [[nodiscard]] std::string GetArgAddressQualifier(cl_uint index) const;
-  [[nodiscard]] std::string GetArgAccessQualifier(cl_uint index) const;
-  [[nodiscard]] std::string GetArgTypeName(cl_uint index) const;
-  [[nodiscard]] std::string GetArgTypeQualifier(cl_uint index) const;
-  [[nodiscard]] std::string GetArgName(cl_uint index) const;
+  [[nodiscard]] auto RunAndGetEvent(std::array<std::size_t, 1> const &global,
+                                    std::array<std::size_t, 1> const &local)
+      -> cl::Event;
+
+  [[nodiscard]] auto GetFunctionName() const -> std::string;
+  [[nodiscard]] auto GetNumArgs() const -> cl_uint;
+  [[nodiscard]] auto GetReferenceCount() const -> cl_uint;
+  [[nodiscard]] auto GetContextNative() const -> cl::Context;
+  [[nodiscard]] auto GetProgramNative() const -> cl::Program;
+  [[nodiscard]] auto GetAttributes() const -> std::string;
+
+  [[nodiscard]] auto GetWorkGroupSize() const -> std::size_t;
+  [[nodiscard]] auto GetPreferredWorkGroupSizeMultiple() const -> std::size_t;
+  [[nodiscard]] auto GetCompileWorkGroupSize() const
+      -> std::array<std::size_t, 3>;
+  [[nodiscard]] auto GetLocalMemSize() const -> cl_ulong;
+  [[nodiscard]] auto GetPrivateMemSize() const -> cl_ulong;
+
+  [[nodiscard]] auto GetArgAddressQualifier(cl_uint index) const -> std::string;
+  [[nodiscard]] auto GetArgAccessQualifier(cl_uint index) const -> std::string;
+  [[nodiscard]] auto GetArgTypeName(cl_uint index) const -> std::string;
+  [[nodiscard]] auto GetArgTypeQualifier(cl_uint index) const -> std::string;
+  [[nodiscard]] auto GetArgName(cl_uint index) const -> std::string;
 
 private:
   GGEMSOpenCLContext const &context_;

@@ -232,7 +232,8 @@ auto GGEMSOpenCL::CreateContexts() -> void {
 
 auto GGEMSOpenCL::ParseDeviceFilters(
     std::vector<std::string> const &filters,
-    std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> all_devices)
+    std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const
+        &all_devices)
     -> std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> {
   std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> selected;
 
@@ -327,7 +328,7 @@ auto GGEMSOpenCL::ParseDeviceFilters(
 
 // -----------------------------------------------------------------------------
 
-void GGEMSOpenCL::PrintPlatforms() const {
+auto GGEMSOpenCL::PrintPlatforms() const -> void {
   GGEMS_INFO("OpenCL", "Available OpenCL platforms:");
 
   for (auto const &platform : platforms_) {
@@ -337,7 +338,7 @@ void GGEMSOpenCL::PrintPlatforms() const {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSOpenCL::PrintDevices() const {
+auto GGEMSOpenCL::PrintDevices() const -> void {
   GGEMS_INFO("OpenCL", "Available OpenCL devices:");
 
   for (auto const &platform : platforms_) {
@@ -350,7 +351,7 @@ void GGEMSOpenCL::PrintDevices() const {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSOpenCL::PrintContexts() const {
+auto GGEMSOpenCL::PrintContexts() const -> void {
   GGEMS_INFO("OpenCL", "Active OpenCL contexts:");
 
   for (auto const &context : contexts_) {
@@ -361,7 +362,7 @@ void GGEMSOpenCL::PrintContexts() const {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSOpenCL::Clean() {
+auto GGEMSOpenCL::Clean() -> void {
   GGEMS_INFOEX("OpenCL", 3, "Cleaning OpenCL platform resources.");
 
   for (auto &platform : platforms_) {

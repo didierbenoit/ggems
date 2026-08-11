@@ -1,11 +1,13 @@
 #pragma once
-// ************************************************************************
-// ************************************************************************
 
+#include <cstddef>
+#include <cstdint>
+#include <vector>
 
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
-#include "GGEMS/frameworks/GGEMSSVMMemoryKind.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLSVMMemoryKind.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
+#include "GGEMS/core/units/GGEMSBytesUnits.hh"
 
 namespace ggems::ocl {
 using units::operator""_B;
@@ -16,7 +18,7 @@ struct SVMSupport {
   bool fine_grain_system{false};
   bool atomics{false};
 
-  [[nodiscard]] SVMMemoryKind DefaultKind() const noexcept {
+  [[nodiscard]] auto DefaultKind() const noexcept -> SVMMemoryKind {
     if (coarse_grain_buffer) {
       return SVMMemoryKind::CoarseGrainBuffer;
     }
@@ -32,7 +34,7 @@ struct SVMSupport {
     return SVMMemoryKind::None;
   }
 
-  [[nodiscard]] bool Supports(SVMMemoryKind kind) const noexcept {
+  [[nodiscard]] auto Supports(SVMMemoryKind kind) const noexcept -> bool {
     switch (kind) {
     case SVMMemoryKind::None:
       return false;
@@ -51,24 +53,19 @@ struct SVMSupport {
     return false;
   }
 
-  [[nodiscard]] bool HasAny() const noexcept {
+  [[nodiscard]] auto HasAny() const noexcept -> bool {
     return coarse_grain_buffer || fine_grain_buffer || fine_grain_system;
   }
 };
 
 struct VRAMUsage {
-  units::Bytes total{
-      0_B};
-  units::Bytes allocated{
-      0_B};
-  units::Bytes available{
-      0_B};
-  units::Bytes peak{
-      0_B};
-  std::size_t allocation_count{
-      0};
+  units::Bytes total{0_B};
+  units::Bytes allocated{0_B};
+  units::Bytes available{0_B};
+  units::Bytes peak{0_B};
+  std::size_t allocation_count{0};
 
-  [[nodiscard]] std::uint8_t GetPercent() const noexcept {
+  [[nodiscard]] auto GetPercent() const noexcept -> std::uint8_t {
     if (total.value == 0LL) {
       return 0U;
     }
@@ -84,116 +81,112 @@ public:
   ~GGEMSOpenCLContext() = default;
 
   GGEMSOpenCLContext(GGEMSOpenCLContext const &) = default;
+  GGEMSOpenCLContext(GGEMSOpenCLContext &&) noexcept = default;
+  auto operator=(GGEMSOpenCLContext const &) -> GGEMSOpenCLContext & = delete;
+  auto operator=(GGEMSOpenCLContext &&) -> GGEMSOpenCLContext & = delete;
 
-  GGEMSOpenCLContext(GGEMSOpenCLContext &&) = default;
-
-  GGEMSOpenCLContext &operator=(GGEMSOpenCLContext const &) = delete;
-  GGEMSOpenCLContext &operator=(GGEMSOpenCLContext &&) = delete;
-
-public:
-  [[nodiscard]] cl::Context const &GetContextNative() const noexcept {
+  [[nodiscard]] auto GetContextNative() const noexcept -> cl::Context const & {
     return context_;
   }
 
-  [[nodiscard]] GGEMSOpenCLDevice const &GetDevice() const noexcept {
+  [[nodiscard]] auto GetDevice() const noexcept -> GGEMSOpenCLDevice const & {
     return device_;
   }
 
-  [[nodiscard]] cl::CommandQueue const &GetCommandQueueNative() const noexcept {
+  [[nodiscard]] auto GetCommandQueueNative() const noexcept
+      -> cl::CommandQueue const & {
     return command_queue_;
   }
 
-  [[nodiscard]] SVMSupport const &GetSVMSupport() const noexcept {
+  [[nodiscard]] auto GetSVMSupport() const noexcept -> SVMSupport const & {
     return svm_support_;
   }
 
-  void RegisterSVMAllocation(units::Bytes size) noexcept;
+  auto RegisterSVMAllocation(units::Bytes size) noexcept -> void;
 
-  void RegisterSVMRelease(units::Bytes size) noexcept;
+  auto RegisterSVMRelease(units::Bytes size) noexcept -> void;
 
-  [[nodiscard]] VRAMUsage const &GetVRAMUsage() const noexcept {
+  [[nodiscard]] auto GetVRAMUsage() const noexcept -> VRAMUsage const & {
     return vram_usage_;
   }
 
-  [[nodiscard]] units::Bytes GetTotalVRAM() const noexcept {
+  [[nodiscard]] auto GetTotalVRAM() const noexcept -> units::Bytes {
     return vram_usage_.total;
   }
 
-  [[nodiscard]] units::Bytes GetAllocatedVRAM() const noexcept {
+  [[nodiscard]] auto GetAllocatedVRAM() const noexcept -> units::Bytes {
     return vram_usage_.allocated;
   }
 
-  [[nodiscard]] units::Bytes GetAvailableVRAM() const noexcept {
+  [[nodiscard]] auto GetAvailableVRAM() const noexcept -> units::Bytes {
     return vram_usage_.available;
   }
 
-  [[nodiscard]] units::Bytes GetPeakVRAM() const noexcept {
+  [[nodiscard]] auto GetPeakVRAM() const noexcept -> units::Bytes {
     return vram_usage_.peak;
   }
 
-  [[nodiscard]] std::size_t GetAllocationCountVRAM() const noexcept {
+  [[nodiscard]] auto GetAllocationCountVRAM() const noexcept -> std::size_t {
     return vram_usage_.allocation_count;
   }
 
-  [[nodiscard]] std::uint8_t GetPercentVRAM() const noexcept {
+  [[nodiscard]] auto GetPercentVRAM() const noexcept -> std::uint8_t {
     return vram_usage_.GetPercent();
   }
 
-  [[nodiscard]] GGEMSOpenCLSVMBuffer
-  CreateSVMBuffer(units::Bytes size, SVMMemoryKind kind = SVMMemoryKind::Auto,
-                  units::Bytes alignment = 0_B);
+  [[nodiscard]] auto CreateSVMBuffer(units::Bytes size,
+                                     SVMMemoryKind kind = SVMMemoryKind::Auto,
+                                     units::Bytes alignment = 0_B)
+      -> GGEMSOpenCLSVMBuffer;
 
-  void EnqueueSVMMap(void *ptr, units::Bytes size,
-                     cl_map_flags flags = CL_MAP_READ | CL_MAP_WRITE) const;
-
-  void EnqueueSVMUnmap(void *ptr) const;
-
-  auto SetSVMPointer(cl::Kernel &kernel, cl_uint index, void const *ptr) const
+  auto EnqueueSVMMap(void *pointer, units::Bytes size,
+                     cl_map_flags flags = CL_MAP_READ | CL_MAP_WRITE) const
       -> void;
 
-  // ----- Context -----------------------------------
+  auto EnqueueSVMUnmap(void *pointer) const -> void;
 
-  [[nodiscard]] cl_uint GetReferenceCount() const;
+  auto SetSVMPointer(cl::Kernel &kernel, cl_uint index,
+                     void const *pointer) const -> void;
 
-  [[nodiscard]] cl_uint GetNumDevices() const;
+  [[nodiscard]] auto GetReferenceCount() const -> cl_uint;
 
-  [[nodiscard]] std::vector<cl::Device> GetNativeDevices() const;
+  [[nodiscard]] auto GetNumDevices() const -> cl_uint;
 
-  [[nodiscard]] std::vector<cl_context_properties> GetProperties() const;
+  [[nodiscard]] auto GetNativeDevices() const -> std::vector<cl::Device>;
 
-  void PrintContext() const;
+  [[nodiscard]] auto GetProperties() const
+      -> std::vector<cl_context_properties>;
 
-  void PrintCommandQueue() const;
+  auto PrintContext() const -> void;
 
-  // ----- Command Queue -----------------------------
+  auto PrintCommandQueue() const -> void;
 
-  [[nodiscard]] cl::Context GetQueueContext() const;
+  [[nodiscard]] auto GetQueueContext() const -> cl::Context;
 
-  [[nodiscard]] cl::Device GetQueueDevice() const;
+  [[nodiscard]] auto GetQueueDevice() const -> cl::Device;
 
-  [[nodiscard]] cl_uint GetQueueReferenceCount() const;
+  [[nodiscard]] auto GetQueueReferenceCount() const -> cl_uint;
 
-  [[nodiscard]] cl_command_queue_properties GetQueueProperties() const;
+  [[nodiscard]] auto GetQueueProperties() const -> cl_command_queue_properties;
 
-  [[nodiscard]] std::vector<cl_queue_properties>
-  GetQueuePropertiesArray() const;
+  [[nodiscard]] auto GetQueuePropertiesArray() const
+      -> std::vector<cl_queue_properties>;
 
-  [[nodiscard]] cl_uint GetQueueSize() const;
-
-private:
-  void CreateContext();
-
-  void CreateGLSharedContext();
-
-  void CreateCommandQueue();
-
-  void InitSVMSupport();
-
-  void InitVRAMUsage();
-
-  void UpdateVRAMUsage() noexcept;
+  [[nodiscard]] auto GetQueueSize() const -> cl_uint;
 
 private:
+  auto CreateContext() -> void;
+
+  auto CreateGLSharedContext() -> void;
+
+  auto CreateCommandQueue() -> void;
+
+  auto InitSVMSupport() -> void;
+
+  auto InitVRAMUsage() -> void;
+
+  auto UpdateVRAMUsage() noexcept -> void;
+
   GGEMSOpenCLDevice const &device_;
   cl::Context context_;
   cl::CommandQueue command_queue_;

@@ -1,11 +1,12 @@
 #pragma once
-// ************************************************************************
-// ************************************************************************
 
-
+#include <cstddef>
+#include <cstdint>
 #include <filesystem>
-#include <vector>
+#include <string>
+#include <string_view>
 #include <unordered_set>
+#include <vector>
 
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 
@@ -19,37 +20,36 @@ public:
   ~GGEMSOpenCLProgram() = default;
 
   GGEMSOpenCLProgram(GGEMSOpenCLProgram const &) = delete;
-  GGEMSOpenCLProgram &operator=(GGEMSOpenCLProgram const &) = delete;
+  auto operator=(GGEMSOpenCLProgram const &) -> GGEMSOpenCLProgram & = delete;
   GGEMSOpenCLProgram(GGEMSOpenCLProgram &&) noexcept = delete;
-  GGEMSOpenCLProgram &operator=(GGEMSOpenCLProgram &&) noexcept = delete;
+  auto operator=(GGEMSOpenCLProgram &&) noexcept
+      -> GGEMSOpenCLProgram & = delete;
 
-private:
-  GGEMSOpenCLProgram(GGEMSOpenCLContext const &ctx,
-                     std::filesystem::path kernel_root,
-                     std::string kernel_name, std::string build_options = {});
+  [[nodiscard]] auto CreateKernel(std::string const &kernel_name) const
+      -> cl::Kernel;
 
-public:
-  auto CreateKernel(std::string const &kernel_name) const -> cl::Kernel;
+  [[nodiscard]] auto GetProgramNative() const noexcept -> cl::Program const & {
+    return program_;
+  }
 
-  cl::Program const &GetProgramNative() const noexcept { return program_; }
-
-  [[nodiscard]] std::string_view GetKernelName() const noexcept {
+  [[nodiscard]] auto GetKernelName() const noexcept -> std::string_view {
     return kernel_name_;
   }
 
-  [[nodiscard]] std::string_view GetSourcePath() const noexcept {
+  [[nodiscard]] auto GetSourcePath() const noexcept -> std::string_view {
     return source_path_;
   }
 
-  [[nodiscard]] std::string_view GetBuildOptions() const noexcept {
+  [[nodiscard]] auto GetBuildOptions() const noexcept -> std::string_view {
     return build_options_;
   }
 
-  [[nodiscard]] cl_uint GetNumDevices() const;
+  [[nodiscard]] auto GetNumDevices() const -> cl_uint;
 
-  [[nodiscard]] std::vector<std::size_t> GetBinarySizes() const;
+  [[nodiscard]] auto GetBinarySizes() const -> std::vector<std::size_t>;
 
-  [[nodiscard]] auto GetBinaries() const;
+  [[nodiscard]] auto GetBinaries() const
+      -> std::vector<std::vector<unsigned char>>;
 
   [[nodiscard]] auto Matches(GGEMSOpenCLContext const &context,
                              std::filesystem::path const &kernel_root,
@@ -57,41 +57,46 @@ public:
                              std::string_view user_build_options) const -> bool;
 
 private:
+  GGEMSOpenCLProgram(GGEMSOpenCLContext const &context,
+                     std::filesystem::path kernel_root, std::string kernel_name,
+                     std::string build_options = {});
+
   [[nodiscard]]
-  static std::string LoadTextFile(std::filesystem::path const &path);
+  static auto LoadTextFile(std::filesystem::path const &path) -> std::string;
 
-  [[nodiscard]] std::vector<std::string> BuildOptions() const;
+  [[nodiscard]] auto BuildOptions() const -> std::vector<std::string>;
 
-  [[nodiscard]] std::string MergeOptions(std::vector<std::string> const &base,
-                                         std::string const &extra) const;
+  [[nodiscard]] static auto MergeOptions(std::vector<std::string> const &base,
+                                         std::string const &extra)
+      -> std::string;
 
-  void Initialize();
+  auto Initialize() -> void;
 
-  void Build();
+  auto Build() -> void;
 
-  void BuildFromSource(std::string const &src);
+  auto BuildFromSource(std::string const &source) -> void;
 
-  void BuildFromBinary(std::vector<std::uint8_t> const &binary);
+  auto BuildFromBinary(std::vector<std::uint8_t> const &binary) -> void;
 
-  std::filesystem::path ComputeCachePath() const;
+  [[nodiscard]] auto ComputeCachePath() const -> std::filesystem::path;
 
-  void SaveBinaryToCache();
+  auto SaveBinaryToCache() -> void;
 
-  std::vector<std::uint8_t> LoadBinaryFromCache();
+  auto LoadBinaryFromCache() -> std::vector<std::uint8_t>;
 
-  [[nodiscard]] std::vector<std::filesystem::path>
-  BuildIncludeSearchRoots() const;
+  [[nodiscard]] auto BuildIncludeSearchRoots() const
+      -> std::vector<std::filesystem::path>;
 
-  [[nodiscard]] std::string
-  BuildSourceFingerprintText(std::filesystem::path const &source_path) const;
+  [[nodiscard]] auto
+  BuildSourceFingerprintText(std::filesystem::path const &source_path) const
+      -> std::string;
 
-  void AppendSourceFingerprintText(
+  auto AppendSourceFingerprintText(
       std::filesystem::path const &source_path,
       std::vector<std::filesystem::path> const &include_roots,
       std::unordered_set<std::string> &visited_sources,
-      std::string &fingerprint_text) const;
+      std::string &fingerprint_text) const -> void;
 
-private:
   GGEMSOpenCLContext const &context_;
   std::filesystem::path kernel_root_;
   std::string kernel_name_;

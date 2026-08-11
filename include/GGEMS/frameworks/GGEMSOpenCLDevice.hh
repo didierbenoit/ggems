@@ -1,15 +1,17 @@
 #pragma once
-// ************************************************************************
-// ************************************************************************
 
+#include <array>
+#include <cstddef>
+#include <string>
+#include <unordered_set>
+#include <vector>
 
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
 namespace ggems::ocl {
 class GGEMSOpenCLDevice {
 public:
-  explicit GGEMSOpenCLDevice(cl::Device const &device,
-                             std::size_t platform_index,
+  explicit GGEMSOpenCLDevice(cl::Device device, std::size_t platform_index,
                              std::size_t device_index);
 
   GGEMSOpenCLDevice() = delete;
@@ -17,297 +19,299 @@ public:
   ~GGEMSOpenCLDevice() = default;
 
   GGEMSOpenCLDevice(GGEMSOpenCLDevice const &) = delete;
-  GGEMSOpenCLDevice &operator=(GGEMSOpenCLDevice const &) = delete;
-  GGEMSOpenCLDevice &operator=(GGEMSOpenCLDevice &&) noexcept = delete;
+  auto operator=(GGEMSOpenCLDevice const &) -> GGEMSOpenCLDevice & = delete;
+  auto operator=(GGEMSOpenCLDevice &&) noexcept -> GGEMSOpenCLDevice & = delete;
 
   GGEMSOpenCLDevice(GGEMSOpenCLDevice &&) noexcept = default;
 
-public:
-  [[nodiscard]] std::size_t GetPlatformIndex() const noexcept {
+  [[nodiscard]] auto GetPlatformIndex() const noexcept -> std::size_t {
     return platform_index_;
   }
 
-  [[nodiscard]] std::size_t GetDeviceIndex() const noexcept {
+  [[nodiscard]] auto GetDeviceIndex() const noexcept -> std::size_t {
     return device_index_;
   }
 
-  [[nodiscard]] std::unordered_set<std::string> const &
-  GetDeviceExtensions() const noexcept {
+  [[nodiscard]] auto GetDeviceExtensions() const noexcept
+      -> std::unordered_set<std::string> const & {
     return extensions_;
   }
 
-  [[nodiscard]] cl::Device const &GetDeviceNative() const noexcept {
+  [[nodiscard]] auto GetDeviceNative() const noexcept -> cl::Device const & {
     return device_;
   }
 
-  [[nodiscard]] cl_platform_id GetPlatformID() const;
+  [[nodiscard]] auto GetPlatformID() const -> cl_platform_id;
 
-public:
-  [[nodiscard]] std::string GetName() const;
+  [[nodiscard]] auto GetName() const -> std::string;
 
-  [[nodiscard]] std::string GetVendor() const;
+  [[nodiscard]] auto GetVendor() const -> std::string;
 
-  [[nodiscard]] std::string GetVersion() const;
+  [[nodiscard]] auto GetVersion() const -> std::string;
 
-  [[nodiscard]] std::string GetDriverVersion() const;
+  [[nodiscard]] auto GetDriverVersion() const -> std::string;
 
-  [[nodiscard]] std::string GetProfile() const;
+  [[nodiscard]] auto GetProfile() const -> std::string;
 
-  [[nodiscard]] std::string GetOpenCLCVersion() const;
+  [[nodiscard]] auto GetOpenCLCVersion() const -> std::string;
 
-  [[nodiscard]] std::vector<cl_name_version> GetOpenCLCAllVersions() const;
+  [[nodiscard]] auto GetOpenCLCAllVersions() const
+      -> std::vector<cl_name_version>;
 
-  [[nodiscard]] cl_version_khr GetOpenCLCNumericVersionKhr() const;
+  [[nodiscard]] auto GetOpenCLCNumericVersionKhr() const -> cl_version_khr;
 
-  [[nodiscard]] std::vector<cl_name_version> GetOpenCLCFeatures() const;
+  [[nodiscard]] auto GetOpenCLCFeatures() const -> std::vector<cl_name_version>;
 
-  [[nodiscard]] cl_version GetCxxForOpenCLNumericVersionExt() const;
+  [[nodiscard]] auto GetCxxForOpenCLNumericVersionExt() const -> cl_version;
 
-  [[nodiscard]] cl_version GetNumericVersion() const;
+  [[nodiscard]] auto GetNumericVersion() const -> cl_version;
 
-  [[nodiscard]] std::string GetUUIDKhr() const;
+  [[nodiscard]] auto GetUUIDKhr() const -> std::string;
 
-  [[nodiscard]] std::string GetDriverUUIDKhr() const;
+  [[nodiscard]] auto GetDriverUUIDKhr() const -> std::string;
 
-  [[nodiscard]] cl_bool GetLUIDValidKhr() const;
+  [[nodiscard]] auto GetLUIDValidKhr() const -> cl_bool;
 
-  [[nodiscard]] std::array<cl_uchar, CL_LUID_SIZE_KHR> GetLUIDKhr() const;
+  [[nodiscard]] auto GetLUIDKhr() const
+      -> std::array<cl_uchar, CL_LUID_SIZE_KHR>;
 
-  [[nodiscard]] cl_uint GetVendorId() const;
+  [[nodiscard]] auto GetVendorId() const -> cl_uint;
 
-  [[nodiscard]] cl_device_type GetType() const;
+  [[nodiscard]] auto GetType() const -> cl_device_type;
 
-  [[nodiscard]] cl_uint GetMaxComputeUnits() const;
+  [[nodiscard]] auto GetMaxComputeUnits() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetMaxClockFrequency() const;
+  [[nodiscard]] auto GetMaxClockFrequency() const -> cl_uint;
 
-  [[nodiscard]] std::size_t GetMaxWorkGroupSize() const;
+  [[nodiscard]] auto GetMaxWorkGroupSize() const -> std::size_t;
 
-  [[nodiscard]] cl_uint GetMaxWorkItemDimensions() const;
+  [[nodiscard]] auto GetMaxWorkItemDimensions() const -> cl_uint;
 
-  [[nodiscard]] std::vector<std::size_t> GetMaxWorkItemSizes() const;
+  [[nodiscard]] auto GetMaxWorkItemSizes() const -> std::vector<std::size_t>;
 
-  [[nodiscard]] std::size_t GetPreferredWorkGroupSizeMultiple() const;
+  [[nodiscard]] auto GetPreferredWorkGroupSizeMultiple() const -> std::size_t;
 
-  [[nodiscard]] cl_uint GetPreferredVectorWidthChar() const;
+  [[nodiscard]] auto GetPreferredVectorWidthChar() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetPreferredVectorWidthShort() const;
+  [[nodiscard]] auto GetPreferredVectorWidthShort() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetPreferredVectorWidthInt() const;
+  [[nodiscard]] auto GetPreferredVectorWidthInt() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetPreferredVectorWidthLong() const;
+  [[nodiscard]] auto GetPreferredVectorWidthLong() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetPreferredVectorWidthFloat() const;
+  [[nodiscard]] auto GetPreferredVectorWidthFloat() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetPreferredVectorWidthDouble() const;
+  [[nodiscard]] auto GetPreferredVectorWidthDouble() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetPreferredVectorWidthHalf() const;
+  [[nodiscard]] auto GetPreferredVectorWidthHalf() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetNativeVectorWidthChar() const;
+  [[nodiscard]] auto GetNativeVectorWidthChar() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetNativeVectorWidthShort() const;
+  [[nodiscard]] auto GetNativeVectorWidthShort() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetNativeVectorWidthInt() const;
+  [[nodiscard]] auto GetNativeVectorWidthInt() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetNativeVectorWidthLong() const;
+  [[nodiscard]] auto GetNativeVectorWidthLong() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetNativeVectorWidthFloat() const;
+  [[nodiscard]] auto GetNativeVectorWidthFloat() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetNativeVectorWidthDouble() const;
+  [[nodiscard]] auto GetNativeVectorWidthDouble() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetNativeVectorWidthHalf() const;
+  [[nodiscard]] auto GetNativeVectorWidthHalf() const -> cl_uint;
 
-  [[nodiscard]] cl_device_fp_config GetHalfFpConfig() const;
+  [[nodiscard]] auto GetHalfFpConfig() const -> cl_device_fp_config;
 
-  [[nodiscard]] cl_device_fp_config GetSingleFpConfig() const;
+  [[nodiscard]] auto GetSingleFpConfig() const -> cl_device_fp_config;
 
-  [[nodiscard]] cl_device_fp_config GetDoubleFpConfig() const;
+  [[nodiscard]] auto GetDoubleFpConfig() const -> cl_device_fp_config;
 
-  [[nodiscard]] cl_bool GetImageSupport() const;
+  [[nodiscard]] auto GetImageSupport() const -> cl_bool;
 
-  [[nodiscard]] std::size_t GetImage2DMaxWidth() const;
+  [[nodiscard]] auto GetImage2DMaxWidth() const -> std::size_t;
 
-  [[nodiscard]] std::size_t GetImage2DMaxHeight() const;
+  [[nodiscard]] auto GetImage2DMaxHeight() const -> std::size_t;
 
-  [[nodiscard]] std::size_t GetImage3DMaxWidth() const;
+  [[nodiscard]] auto GetImage3DMaxWidth() const -> std::size_t;
 
-  [[nodiscard]] std::size_t GetImage3DMaxHeight() const;
+  [[nodiscard]] auto GetImage3DMaxHeight() const -> std::size_t;
 
-  [[nodiscard]] std::size_t GetImage3DMaxDepth() const;
+  [[nodiscard]] auto GetImage3DMaxDepth() const -> std::size_t;
 
-  [[nodiscard]] std::size_t GetImageMaxBufferSize() const;
+  [[nodiscard]] auto GetImageMaxBufferSize() const -> std::size_t;
 
-  [[nodiscard]] std::size_t GetImageMaxArraySize() const;
+  [[nodiscard]] auto GetImageMaxArraySize() const -> std::size_t;
 
-  [[nodiscard]] cl_uint GetMaxReadImageArgs() const;
+  [[nodiscard]] auto GetMaxReadImageArgs() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetMaxWriteImageArgs() const;
+  [[nodiscard]] auto GetMaxWriteImageArgs() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetMaxReadWriteImageArgs() const;
+  [[nodiscard]] auto GetMaxReadWriteImageArgs() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetImagePitchAlignment() const;
+  [[nodiscard]] auto GetImagePitchAlignment() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetImageBaseAddressAlignment() const;
+  [[nodiscard]] auto GetImageBaseAddressAlignment() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetMaxSamplers() const;
+  [[nodiscard]] auto GetMaxSamplers() const -> cl_uint;
 
-  [[nodiscard]] cl_ulong GetGlobalMemSize() const;
+  [[nodiscard]] auto GetGlobalMemSize() const -> cl_ulong;
 
-  [[nodiscard]] cl_device_mem_cache_type GetGlobalMemCacheType() const;
+  [[nodiscard]] auto GetGlobalMemCacheType() const -> cl_device_mem_cache_type;
 
-  [[nodiscard]] cl_uint GetGlobalMemCacheLineSize() const;
+  [[nodiscard]] auto GetGlobalMemCacheLineSize() const -> cl_uint;
 
-  [[nodiscard]] cl_ulong GetGlobalMemCacheSize() const;
+  [[nodiscard]] auto GetGlobalMemCacheSize() const -> cl_ulong;
 
-  [[nodiscard]] cl_ulong GetLocalMemSize() const;
+  [[nodiscard]] auto GetLocalMemSize() const -> cl_ulong;
 
-  [[nodiscard]] cl_device_local_mem_type GetLocalMemType() const;
+  [[nodiscard]] auto GetLocalMemType() const -> cl_device_local_mem_type;
 
-  [[nodiscard]] cl_ulong GetMaxMemAllocSize() const;
+  [[nodiscard]] auto GetMaxMemAllocSize() const -> cl_ulong;
 
-  [[nodiscard]] cl_ulong GetMaxConstantBufferSize() const;
+  [[nodiscard]] auto GetMaxConstantBufferSize() const -> cl_ulong;
 
-  [[nodiscard]] cl_uint GetMaxConstantArgs() const;
+  [[nodiscard]] auto GetMaxConstantArgs() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetMemBaseAddrAlign() const;
+  [[nodiscard]] auto GetMemBaseAddrAlign() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetMinDataTypeAlignSize() const;
+  [[nodiscard]] auto GetMinDataTypeAlignSize() const -> cl_uint;
 
-  [[nodiscard]] cl_bool GetHostUnifiedMemory() const;
+  [[nodiscard]] auto GetHostUnifiedMemory() const -> cl_bool;
 
-  [[nodiscard]] std::string GetILVersion() const;
+  [[nodiscard]] auto GetILVersion() const -> std::string;
 
-  [[nodiscard]] std::vector<cl_name_version> GetILSWithVersion() const;
+  [[nodiscard]] auto GetILSWithVersion() const -> std::vector<cl_name_version>;
 
-  [[nodiscard]] std::string GetSpirVersions() const;
+  [[nodiscard]] auto GetSpirVersions() const -> std::string;
 
-  [[nodiscard]] cl_command_queue_properties GetQueueOnHostProperties() const;
+  [[nodiscard]] auto GetQueueOnHostProperties() const
+      -> cl_command_queue_properties;
 
-  [[nodiscard]] cl_command_queue_properties GetQueueOnDeviceProperties() const;
+  [[nodiscard]] auto GetQueueOnDeviceProperties() const
+      -> cl_command_queue_properties;
 
-  [[nodiscard]] cl_uint GetQueueOnDevicePreferredSize() const;
+  [[nodiscard]] auto GetQueueOnDevicePreferredSize() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetMaxOnDeviceQueues() const;
+  [[nodiscard]] auto GetMaxOnDeviceQueues() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetMaxOnDeviceEvents() const;
+  [[nodiscard]] auto GetMaxOnDeviceEvents() const -> cl_uint;
 
-  [[nodiscard]] cl_device_svm_capabilities GetSVMCapabilities() const;
+  [[nodiscard]] auto GetSVMCapabilities() const -> cl_device_svm_capabilities;
 
-  [[nodiscard]] cl_device_atomic_capabilities
-  GetAtomicMemoryCapabilities() const;
+  [[nodiscard]] auto GetAtomicMemoryCapabilities() const
+      -> cl_device_atomic_capabilities;
 
-  [[nodiscard]] cl_device_atomic_capabilities
-  GetAtomicFenceCapabilities() const;
+  [[nodiscard]] auto GetAtomicFenceCapabilities() const
+      -> cl_device_atomic_capabilities;
 
-  [[nodiscard]] cl_uint GetMaxNumSubGroups() const;
+  [[nodiscard]] auto GetMaxNumSubGroups() const -> cl_uint;
 
-  [[nodiscard]] cl_bool GetSubGroupIndependentForwardProgress() const;
+  [[nodiscard]] auto GetSubGroupIndependentForwardProgress() const -> cl_bool;
 
-  [[nodiscard]] cl_bool GetNonUniformWorkGroupSupport() const;
+  [[nodiscard]] auto GetNonUniformWorkGroupSupport() const -> cl_bool;
 
-  [[nodiscard]] cl_bool GetWorkGroupCollectiveFunctionsSupport() const;
+  [[nodiscard]] auto GetWorkGroupCollectiveFunctionsSupport() const -> cl_bool;
 
-  [[nodiscard]] cl_bool GetGenericAddressSpaceSupport() const;
+  [[nodiscard]] auto GetGenericAddressSpaceSupport() const -> cl_bool;
 
-  [[nodiscard]] cl_device_device_enqueue_capabilities
-  GetDeviceEnqueueCapabilities() const;
+  [[nodiscard]] auto GetDeviceEnqueueCapabilities() const
+      -> cl_device_device_enqueue_capabilities;
 
-  [[nodiscard]] cl_device_exec_capabilities GetExecutionCapabilities() const;
+  [[nodiscard]] auto GetExecutionCapabilities() const
+      -> cl_device_exec_capabilities;
 
-  [[nodiscard]] cl_uint GetReferenceCount() const;
+  [[nodiscard]] auto GetReferenceCount() const -> cl_uint;
 
-  [[nodiscard]] std::string GetLastestConformanceVersionPassed() const;
+  [[nodiscard]] auto GetLastestConformanceVersionPassed() const -> std::string;
 
-  [[nodiscard]] cl_uint GetPartitionMaxSubDevices() const;
+  [[nodiscard]] auto GetPartitionMaxSubDevices() const -> cl_uint;
 
-  [[nodiscard]] std::vector<cl_device_partition_property>
-  GetPartitionProperties() const;
+  [[nodiscard]] auto GetPartitionProperties() const
+      -> std::vector<cl_device_partition_property>;
 
-  [[nodiscard]] cl_device_affinity_domain GetPartitionAffinityDomain() const;
+  [[nodiscard]] auto GetPartitionAffinityDomain() const
+      -> cl_device_affinity_domain;
 
-  [[nodiscard]] std::vector<cl_device_partition_property>
-  GetPartitionType() const;
+  [[nodiscard]] auto GetPartitionType() const
+      -> std::vector<cl_device_partition_property>;
 
-  [[nodiscard]] std::string GetExtensions() const;
+  [[nodiscard]] auto GetExtensions() const -> std::string;
 
-  [[nodiscard]] std::vector<cl_name_version> GetExtensionsWithVersion() const;
+  [[nodiscard]] auto GetExtensionsWithVersion() const
+      -> std::vector<cl_name_version>;
 
-  [[nodiscard]] std::string GetBuiltInKernels() const;
+  [[nodiscard]] auto GetBuiltInKernels() const -> std::string;
 
-  [[nodiscard]] std::vector<cl_name_version>
-  GetBuiltInKernelsWithVersion() const;
+  [[nodiscard]] auto GetBuiltInKernelsWithVersion() const
+      -> std::vector<cl_name_version>;
 
-  [[nodiscard]] cl_uint GetPreferredPlatformAtomicAlignment() const;
+  [[nodiscard]] auto GetPreferredPlatformAtomicAlignment() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetPreferredGlobalAtomicAlignment() const;
+  [[nodiscard]] auto GetPreferredGlobalAtomicAlignment() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetPreferredLocalAtomicAlignment() const;
+  [[nodiscard]] auto GetPreferredLocalAtomicAlignment() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetAddressBits() const;
+  [[nodiscard]] auto GetAddressBits() const -> cl_uint;
 
-  [[nodiscard]] std::size_t GetProfilingTimerResolution() const;
+  [[nodiscard]] auto GetProfilingTimerResolution() const -> std::size_t;
 
-  [[nodiscard]] cl_bool GetCompilerAvailable() const;
+  [[nodiscard]] auto GetCompilerAvailable() const -> cl_bool;
 
-  [[nodiscard]] cl_bool GetLinkerAvailable() const;
+  [[nodiscard]] auto GetLinkerAvailable() const -> cl_bool;
 
-  [[nodiscard]] cl_bool GetAvailable() const;
+  [[nodiscard]] auto GetAvailable() const -> cl_bool;
 
-  [[nodiscard]] cl_bool GetEndianLittle() const;
+  [[nodiscard]] auto GetEndianLittle() const -> cl_bool;
 
-  [[nodiscard]] cl_bool GetErrorCorrectionSupport() const;
+  [[nodiscard]] auto GetErrorCorrectionSupport() const -> cl_bool;
 
-  [[nodiscard]] std::size_t GetPrintfBufferSize() const;
+  [[nodiscard]] auto GetPrintfBufferSize() const -> std::size_t;
 
-  [[nodiscard]] cl_bool GetPreferredInteropUserSync() const;
+  [[nodiscard]] auto GetPreferredInteropUserSync() const -> cl_bool;
 
-  [[nodiscard]] cl_uint GetMaxPipeArgs() const;
+  [[nodiscard]] auto GetMaxPipeArgs() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetPipeMaxActiveReservations() const;
+  [[nodiscard]] auto GetPipeMaxActiveReservations() const -> cl_uint;
 
-  [[nodiscard]] cl_uint GetPipeMaxPacketSize() const;
+  [[nodiscard]] auto GetPipeMaxPacketSize() const -> cl_uint;
 
-  [[nodiscard]] cl_bool GetPipeSupport() const;
+  [[nodiscard]] auto GetPipeSupport() const -> cl_bool;
 
-  [[nodiscard]] std::size_t GetMaxGlobalVariableSize() const;
+  [[nodiscard]] auto GetMaxGlobalVariableSize() const -> std::size_t;
 
-  [[nodiscard]] std::size_t GetGlobalVariablePreferredTotalSize() const;
+  [[nodiscard]] auto GetGlobalVariablePreferredTotalSize() const -> std::size_t;
 
-  [[nodiscard]] std::size_t GetMaxParameterSize() const;
+  [[nodiscard]] auto GetMaxParameterSize() const -> std::size_t;
 
-public:
-  void Print() const;
+  auto Print() const -> void;
 
 private:
-  void PrintIdentity() const;
+  auto PrintIdentity() const -> void;
 
-  void PrintTypeID() const;
+  auto PrintTypeID() const -> void;
 
-  void PrintCompute() const;
+  auto PrintCompute() const -> void;
 
-  void PrintVectorization() const;
+  auto PrintVectorization() const -> void;
 
-  void PrintFloatingPoint() const;
+  auto PrintFloatingPoint() const -> void;
 
-  void PrintMemory() const;
+  auto PrintMemory() const -> void;
 
-  void PrintImages() const;
+  auto PrintImages() const -> void;
 
-  void PrintILSpirV() const;
+  auto PrintILSpirV() const -> void;
 
-  void PrintQueueDeviceSide() const;
+  auto PrintQueueDeviceSide() const -> void;
 
-  void PrintPipe() const;
+  auto PrintPipe() const -> void;
 
-  void PrintPartition() const;
+  auto PrintPartition() const -> void;
 
-  void PrintExtensionsAndMisc() const;
+  auto PrintExtensionsAndMisc() const -> void;
 
-private:
   cl::Device device_;
   std::size_t platform_index_;
   std::size_t device_index_;
-  std::unordered_set<std::string>
-      extensions_;
+  std::unordered_set<std::string> extensions_;
 };
 } // namespace ggems::ocl

@@ -85,7 +85,7 @@ enum class SVMMemoryKind : std::uint8_t {
  * \return True if explicit mapping is required, false otherwise.
  */
 [[nodiscard]] constexpr auto RequiresExplicitMap(SVMMemoryKind kind) noexcept
-    -> auto {
+    -> bool {
   return kind == SVMMemoryKind::CoarseGrainBuffer;
 }
 

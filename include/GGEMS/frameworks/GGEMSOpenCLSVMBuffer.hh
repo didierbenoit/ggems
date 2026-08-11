@@ -30,7 +30,7 @@
 #pragma once
 
 #include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
-#include "GGEMS/frameworks/GGEMSSVMMemoryKind.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLSVMMemoryKind.hh"
 #include "GGEMS/core/units/GGEMSBytesUnits.hh"
 
 namespace ggems::ocl {
@@ -160,10 +160,11 @@ private:
    */
   auto Release() noexcept -> void;
 
-  GGEMSOpenCLContext *context_{nullptr};       /*!< OpenCL context owning the allocation. */
-  void *ptr_{nullptr};                         /*!< Pointer to the SVM allocation. */
-  units::Bytes size_{0ULL};                    /*!< SVM allocation size. */
-  cl_svm_mem_flags flags_{0};                  /*!< OpenCL SVM allocation flags. */
-  SVMMemoryKind kind_{SVMMemoryKind::None};    /*!< SVM memory kind. */
+  GGEMSOpenCLContext *context_{
+      nullptr};               /*!< OpenCL context owning the allocation. */
+  void *ptr_{nullptr};        /*!< Pointer to the SVM allocation. */
+  units::Bytes size_{0ULL};   /*!< SVM allocation size. */
+  cl_svm_mem_flags flags_{0}; /*!< OpenCL SVM allocation flags. */
+  SVMMemoryKind kind_{SVMMemoryKind::None}; /*!< SVM memory kind. */
 };
 } // namespace ggems::ocl

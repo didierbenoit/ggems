@@ -413,7 +413,8 @@ template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
   }
 }
 
-template <cl_uint Info, typename Object> void PrintInfo(Object const &obj) {
+template <cl_uint Info, typename Object>
+auto PrintInfo(Object const &obj) -> void {
   using Traits = InfoTraits<Info>;
 
   try {

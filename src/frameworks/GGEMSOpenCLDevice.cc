@@ -1,902 +1,700 @@
-// ************************************************************************
-// ************************************************************************
-
+#include <utility>
+#include <cstddef>
+#include <string>
+#include <vector>
+#include <array>
 
 #include "GGEMS/core/GGEMSLogMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLStrings.hh"
 
 namespace ggems::ocl {
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// =============================================================================
+// =============================================================================
 
-GGEMSOpenCLDevice::GGEMSOpenCLDevice(cl::Device const &device,
+GGEMSOpenCLDevice::GGEMSOpenCLDevice(cl::Device device,
                                      std::size_t platform_index,
                                      std::size_t device_index)
-    : device_{device}, platform_index_{platform_index},
+    : device_{std::move(device)}, platform_index_{platform_index},
       device_index_{device_index} {
   GGEMS_INFOEX("OpenCL", 3, "Creating OpenCL device [{}:{}].", platform_index_,
                device_index_);
   extensions_ = ExtractExtensions<CL_DEVICE_EXTENSIONS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::string GGEMSOpenCLDevice::GetName() const {
+auto GGEMSOpenCLDevice::GetName() const -> std::string {
   return GetInfo<CL_DEVICE_NAME>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::string GGEMSOpenCLDevice::GetVendor() const {
+auto GGEMSOpenCLDevice::GetVendor() const -> std::string {
   return GetInfo<CL_DEVICE_VENDOR>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::string GGEMSOpenCLDevice::GetVersion() const {
+auto GGEMSOpenCLDevice::GetVersion() const -> std::string {
   return GetInfo<CL_DEVICE_VERSION>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::string GGEMSOpenCLDevice::GetDriverVersion() const {
+auto GGEMSOpenCLDevice::GetDriverVersion() const -> std::string {
   return GetInfo<CL_DRIVER_VERSION>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_platform_id GGEMSOpenCLDevice::GetPlatformID() const {
-  cl_platform_id pid{};
-  device_.getInfo(CL_DEVICE_PLATFORM, &pid);
-  return pid;
+auto GGEMSOpenCLDevice::GetPlatformID() const -> cl_platform_id {
+  cl_platform_id platform_id{};
+  device_.getInfo(CL_DEVICE_PLATFORM, &platform_id);
+  return platform_id;
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::string GGEMSOpenCLDevice::GetProfile() const {
+auto GGEMSOpenCLDevice::GetProfile() const -> std::string {
   return GetInfo<CL_DEVICE_PROFILE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::string GGEMSOpenCLDevice::GetOpenCLCVersion() const {
+auto GGEMSOpenCLDevice::GetOpenCLCVersion() const -> std::string {
   return GetInfo<CL_DEVICE_OPENCL_C_VERSION>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::vector<cl_name_version> GGEMSOpenCLDevice::GetOpenCLCAllVersions() const {
+auto GGEMSOpenCLDevice::GetOpenCLCAllVersions() const
+    -> std::vector<cl_name_version> {
   return GetInfo<CL_DEVICE_OPENCL_C_ALL_VERSIONS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_version_khr GGEMSOpenCLDevice::GetOpenCLCNumericVersionKhr() const {
+auto GGEMSOpenCLDevice::GetOpenCLCNumericVersionKhr() const -> cl_version_khr {
   return GetInfo<CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::vector<cl_name_version> GGEMSOpenCLDevice::GetOpenCLCFeatures() const {
+auto GGEMSOpenCLDevice::GetOpenCLCFeatures() const
+    -> std::vector<cl_name_version> {
   return GetInfo<CL_DEVICE_OPENCL_C_FEATURES>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_version GGEMSOpenCLDevice::GetCxxForOpenCLNumericVersionExt() const {
+auto GGEMSOpenCLDevice::GetCxxForOpenCLNumericVersionExt() const -> cl_version {
   return GetInfo<CL_DEVICE_CXX_FOR_OPENCL_NUMERIC_VERSION_EXT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_version GGEMSOpenCLDevice::GetNumericVersion() const {
+auto GGEMSOpenCLDevice::GetNumericVersion() const -> cl_version {
   return GetInfo<CL_DEVICE_NUMERIC_VERSION>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetVendorId() const {
+auto GGEMSOpenCLDevice::GetVendorId() const -> cl_uint {
   return GetInfo<CL_DEVICE_VENDOR_ID>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_device_type GGEMSOpenCLDevice::GetType() const {
+auto GGEMSOpenCLDevice::GetType() const -> cl_device_type {
   return GetInfo<CL_DEVICE_TYPE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetMaxComputeUnits() const {
+auto GGEMSOpenCLDevice::GetMaxComputeUnits() const -> cl_uint {
   return GetInfo<CL_DEVICE_MAX_COMPUTE_UNITS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLDevice::GetMaxClockFrequency() const -> cl_uint {
   return GetInfo<CL_DEVICE_MAX_CLOCK_FREQUENCY>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::size_t GGEMSOpenCLDevice::GetMaxWorkGroupSize() const {
+auto GGEMSOpenCLDevice::GetMaxWorkGroupSize() const -> std::size_t {
   return GetInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetMaxWorkItemDimensions() const {
+auto GGEMSOpenCLDevice::GetMaxWorkItemDimensions() const -> cl_uint {
   return GetInfo<CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::vector<std::size_t> GGEMSOpenCLDevice::GetMaxWorkItemSizes() const {
+auto GGEMSOpenCLDevice::GetMaxWorkItemSizes() const
+    -> std::vector<std::size_t> {
   return GetInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::size_t GGEMSOpenCLDevice::GetPreferredWorkGroupSizeMultiple() const {
+auto GGEMSOpenCLDevice::GetPreferredWorkGroupSizeMultiple() const
+    -> std::size_t {
   return GetInfo<CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetPreferredVectorWidthChar() const {
+auto GGEMSOpenCLDevice::GetPreferredVectorWidthChar() const -> cl_uint {
   return GetInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetPreferredVectorWidthShort() const {
+auto GGEMSOpenCLDevice::GetPreferredVectorWidthShort() const -> cl_uint {
   return GetInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetPreferredVectorWidthInt() const {
+auto GGEMSOpenCLDevice::GetPreferredVectorWidthInt() const -> cl_uint {
   return GetInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetPreferredVectorWidthLong() const {
+auto GGEMSOpenCLDevice::GetPreferredVectorWidthLong() const -> cl_uint {
   return GetInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetPreferredVectorWidthFloat() const {
+auto GGEMSOpenCLDevice::GetPreferredVectorWidthFloat() const -> cl_uint {
   return GetInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetPreferredVectorWidthDouble() const {
+auto GGEMSOpenCLDevice::GetPreferredVectorWidthDouble() const -> cl_uint {
   return GetInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetPreferredVectorWidthHalf() const {
+auto GGEMSOpenCLDevice::GetPreferredVectorWidthHalf() const -> cl_uint {
   return GetInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetNativeVectorWidthChar() const {
+auto GGEMSOpenCLDevice::GetNativeVectorWidthChar() const -> cl_uint {
   return GetInfo<CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetNativeVectorWidthShort() const {
+auto GGEMSOpenCLDevice::GetNativeVectorWidthShort() const -> cl_uint {
   return GetInfo<CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetNativeVectorWidthInt() const {
+auto GGEMSOpenCLDevice::GetNativeVectorWidthInt() const -> cl_uint {
   return GetInfo<CL_DEVICE_NATIVE_VECTOR_WIDTH_INT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetNativeVectorWidthLong() const {
+auto GGEMSOpenCLDevice::GetNativeVectorWidthLong() const -> cl_uint {
   return GetInfo<CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetNativeVectorWidthFloat() const {
+auto GGEMSOpenCLDevice::GetNativeVectorWidthFloat() const -> cl_uint {
   return GetInfo<CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetNativeVectorWidthDouble() const {
+auto GGEMSOpenCLDevice::GetNativeVectorWidthDouble() const -> cl_uint {
   return GetInfo<CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetNativeVectorWidthHalf() const {
+auto GGEMSOpenCLDevice::GetNativeVectorWidthHalf() const -> cl_uint {
   return GetInfo<CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::size_t GGEMSOpenCLDevice::GetImage2DMaxWidth() const {
+auto GGEMSOpenCLDevice::GetImage2DMaxWidth() const -> std::size_t {
   return GetInfo<CL_DEVICE_IMAGE2D_MAX_WIDTH>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::size_t GGEMSOpenCLDevice::GetImage2DMaxHeight() const {
+auto GGEMSOpenCLDevice::GetImage2DMaxHeight() const -> std::size_t {
   return GetInfo<CL_DEVICE_IMAGE2D_MAX_HEIGHT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::size_t GGEMSOpenCLDevice::GetImage3DMaxWidth() const {
+auto GGEMSOpenCLDevice::GetImage3DMaxWidth() const -> std::size_t {
   return GetInfo<CL_DEVICE_IMAGE3D_MAX_WIDTH>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::size_t GGEMSOpenCLDevice::GetImage3DMaxHeight() const {
+auto GGEMSOpenCLDevice::GetImage3DMaxHeight() const -> std::size_t {
   return GetInfo<CL_DEVICE_IMAGE3D_MAX_HEIGHT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::size_t GGEMSOpenCLDevice::GetImage3DMaxDepth() const {
+auto GGEMSOpenCLDevice::GetImage3DMaxDepth() const -> std::size_t {
   return GetInfo<CL_DEVICE_IMAGE3D_MAX_DEPTH>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::size_t GGEMSOpenCLDevice::GetImageMaxBufferSize() const {
+auto GGEMSOpenCLDevice::GetImageMaxBufferSize() const -> std::size_t {
   return GetInfo<CL_DEVICE_IMAGE_MAX_BUFFER_SIZE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::size_t GGEMSOpenCLDevice::GetImageMaxArraySize() const {
+auto GGEMSOpenCLDevice::GetImageMaxArraySize() const -> std::size_t {
   return GetInfo<CL_DEVICE_IMAGE_MAX_ARRAY_SIZE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_bool GGEMSOpenCLDevice::GetImageSupport() const {
+auto GGEMSOpenCLDevice::GetImageSupport() const -> cl_bool {
   return GetInfo<CL_DEVICE_IMAGE_SUPPORT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetMaxReadImageArgs() const {
+auto GGEMSOpenCLDevice::GetMaxReadImageArgs() const -> cl_uint {
   return GetInfo<CL_DEVICE_MAX_READ_IMAGE_ARGS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetMaxWriteImageArgs() const {
+auto GGEMSOpenCLDevice::GetMaxWriteImageArgs() const -> cl_uint {
   return GetInfo<CL_DEVICE_MAX_WRITE_IMAGE_ARGS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetMaxReadWriteImageArgs() const {
+auto GGEMSOpenCLDevice::GetMaxReadWriteImageArgs() const -> cl_uint {
   return GetInfo<CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetImagePitchAlignment() const {
+auto GGEMSOpenCLDevice::GetImagePitchAlignment() const -> cl_uint {
   return GetInfo<CL_DEVICE_IMAGE_PITCH_ALIGNMENT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetImageBaseAddressAlignment() const {
+auto GGEMSOpenCLDevice::GetImageBaseAddressAlignment() const -> cl_uint {
   return GetInfo<CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetMaxSamplers() const {
+auto GGEMSOpenCLDevice::GetMaxSamplers() const -> cl_uint {
   return GetInfo<CL_DEVICE_MAX_SAMPLERS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_ulong GGEMSOpenCLDevice::GetGlobalMemSize() const {
+auto GGEMSOpenCLDevice::GetGlobalMemSize() const -> cl_ulong {
   return GetInfo<CL_DEVICE_GLOBAL_MEM_SIZE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_device_mem_cache_type GGEMSOpenCLDevice::GetGlobalMemCacheType() const {
+auto GGEMSOpenCLDevice::GetGlobalMemCacheType() const
+    -> cl_device_mem_cache_type {
   return GetInfo<CL_DEVICE_GLOBAL_MEM_CACHE_TYPE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetGlobalMemCacheLineSize() const {
+auto GGEMSOpenCLDevice::GetGlobalMemCacheLineSize() const -> cl_uint {
   return GetInfo<CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_ulong GGEMSOpenCLDevice::GetGlobalMemCacheSize() const {
+auto GGEMSOpenCLDevice::GetGlobalMemCacheSize() const -> cl_ulong {
   return GetInfo<CL_DEVICE_GLOBAL_MEM_CACHE_SIZE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_ulong GGEMSOpenCLDevice::GetLocalMemSize() const {
+auto GGEMSOpenCLDevice::GetLocalMemSize() const -> cl_ulong {
   return GetInfo<CL_DEVICE_LOCAL_MEM_SIZE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_device_local_mem_type GGEMSOpenCLDevice::GetLocalMemType() const {
+auto GGEMSOpenCLDevice::GetLocalMemType() const -> cl_device_local_mem_type {
   return GetInfo<CL_DEVICE_LOCAL_MEM_TYPE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_ulong GGEMSOpenCLDevice::GetMaxMemAllocSize() const {
+auto GGEMSOpenCLDevice::GetMaxMemAllocSize() const -> cl_ulong {
   return GetInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_ulong GGEMSOpenCLDevice::GetMaxConstantBufferSize() const {
+auto GGEMSOpenCLDevice::GetMaxConstantBufferSize() const -> cl_ulong {
   return GetInfo<CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetMaxConstantArgs() const {
+auto GGEMSOpenCLDevice::GetMaxConstantArgs() const -> cl_uint {
   return GetInfo<CL_DEVICE_MAX_CONSTANT_ARGS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetMemBaseAddrAlign() const {
+auto GGEMSOpenCLDevice::GetMemBaseAddrAlign() const -> cl_uint {
   return GetInfo<CL_DEVICE_MEM_BASE_ADDR_ALIGN>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetMinDataTypeAlignSize() const {
+auto GGEMSOpenCLDevice::GetMinDataTypeAlignSize() const -> cl_uint {
   return GetInfo<CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_bool GGEMSOpenCLDevice::GetHostUnifiedMemory() const {
+auto GGEMSOpenCLDevice::GetHostUnifiedMemory() const -> cl_bool {
   return GetInfo<CL_DEVICE_HOST_UNIFIED_MEMORY>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::string GGEMSOpenCLDevice::GetILVersion() const {
+auto GGEMSOpenCLDevice::GetILVersion() const -> std::string {
   return GetInfo<CL_DEVICE_IL_VERSION>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::vector<cl_name_version> GGEMSOpenCLDevice::GetILSWithVersion() const {
+auto GGEMSOpenCLDevice::GetILSWithVersion() const
+    -> std::vector<cl_name_version> {
   return GetInfo<CL_DEVICE_ILS_WITH_VERSION>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::string GGEMSOpenCLDevice::GetSpirVersions() const {
+auto GGEMSOpenCLDevice::GetSpirVersions() const -> std::string {
   return GetInfo<CL_DEVICE_SPIR_VERSIONS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_command_queue_properties
-GGEMSOpenCLDevice::GetQueueOnHostProperties() const {
+auto GGEMSOpenCLDevice::GetQueueOnHostProperties() const
+    -> cl_command_queue_properties {
   return GetInfo<CL_DEVICE_QUEUE_ON_HOST_PROPERTIES>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_command_queue_properties
-GGEMSOpenCLDevice::GetQueueOnDeviceProperties() const {
+auto GGEMSOpenCLDevice::GetQueueOnDeviceProperties() const
+    -> cl_command_queue_properties {
   return GetInfo<CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetQueueOnDevicePreferredSize() const {
+auto GGEMSOpenCLDevice::GetQueueOnDevicePreferredSize() const -> cl_uint {
   return GetInfo<CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetMaxOnDeviceQueues() const {
+auto GGEMSOpenCLDevice::GetMaxOnDeviceQueues() const -> cl_uint {
   return GetInfo<CL_DEVICE_MAX_ON_DEVICE_QUEUES>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetMaxOnDeviceEvents() const {
+auto GGEMSOpenCLDevice::GetMaxOnDeviceEvents() const -> cl_uint {
   return GetInfo<CL_DEVICE_MAX_ON_DEVICE_EVENTS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_device_svm_capabilities GGEMSOpenCLDevice::GetSVMCapabilities() const {
+auto GGEMSOpenCLDevice::GetSVMCapabilities() const
+    -> cl_device_svm_capabilities {
   return GetInfo<CL_DEVICE_SVM_CAPABILITIES>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_device_atomic_capabilities
-GGEMSOpenCLDevice::GetAtomicMemoryCapabilities() const {
+auto GGEMSOpenCLDevice::GetAtomicMemoryCapabilities() const
+    -> cl_device_atomic_capabilities {
   return GetInfo<CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_device_atomic_capabilities
-GGEMSOpenCLDevice::GetAtomicFenceCapabilities() const {
+auto GGEMSOpenCLDevice::GetAtomicFenceCapabilities() const
+    -> cl_device_atomic_capabilities {
   return GetInfo<CL_DEVICE_ATOMIC_FENCE_CAPABILITIES>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetMaxNumSubGroups() const {
+auto GGEMSOpenCLDevice::GetMaxNumSubGroups() const -> cl_uint {
   return GetInfo<CL_DEVICE_MAX_NUM_SUB_GROUPS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_bool GGEMSOpenCLDevice::GetSubGroupIndependentForwardProgress() const {
+auto GGEMSOpenCLDevice::GetSubGroupIndependentForwardProgress() const
+    -> cl_bool {
   return GetInfo<CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_device_exec_capabilities
-GGEMSOpenCLDevice::GetExecutionCapabilities() const {
+auto GGEMSOpenCLDevice::GetExecutionCapabilities() const
+    -> cl_device_exec_capabilities {
   return GetInfo<CL_DEVICE_EXECUTION_CAPABILITIES>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_bool GGEMSOpenCLDevice::GetNonUniformWorkGroupSupport() const {
+auto GGEMSOpenCLDevice::GetNonUniformWorkGroupSupport() const -> cl_bool {
   return GetInfo<CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_bool GGEMSOpenCLDevice::GetWorkGroupCollectiveFunctionsSupport() const {
+auto GGEMSOpenCLDevice::GetWorkGroupCollectiveFunctionsSupport() const
+    -> cl_bool {
   return GetInfo<CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_bool GGEMSOpenCLDevice::GetGenericAddressSpaceSupport() const {
+auto GGEMSOpenCLDevice::GetGenericAddressSpaceSupport() const -> cl_bool {
   return GetInfo<CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_device_device_enqueue_capabilities
-GGEMSOpenCLDevice::GetDeviceEnqueueCapabilities() const {
+auto GGEMSOpenCLDevice::GetDeviceEnqueueCapabilities() const
+    -> cl_device_device_enqueue_capabilities {
   return GetInfo<CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetPartitionMaxSubDevices() const {
+auto GGEMSOpenCLDevice::GetPartitionMaxSubDevices() const -> cl_uint {
   return GetInfo<CL_DEVICE_PARTITION_MAX_SUB_DEVICES>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::vector<cl_device_partition_property>
-GGEMSOpenCLDevice::GetPartitionProperties() const {
+auto GGEMSOpenCLDevice::GetPartitionProperties() const
+    -> std::vector<cl_device_partition_property> {
   return GetInfo<CL_DEVICE_PARTITION_PROPERTIES>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_device_affinity_domain
-GGEMSOpenCLDevice::GetPartitionAffinityDomain() const {
+auto GGEMSOpenCLDevice::GetPartitionAffinityDomain() const
+    -> cl_device_affinity_domain {
   return GetInfo<CL_DEVICE_PARTITION_AFFINITY_DOMAIN>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::vector<cl_device_partition_property>
-GGEMSOpenCLDevice::GetPartitionType() const {
+auto GGEMSOpenCLDevice::GetPartitionType() const
+    -> std::vector<cl_device_partition_property> {
   return GetInfo<CL_DEVICE_PARTITION_TYPE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::string GGEMSOpenCLDevice::GetExtensions() const {
+auto GGEMSOpenCLDevice::GetExtensions() const -> std::string {
   return GetInfo<CL_DEVICE_EXTENSIONS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::size_t GGEMSOpenCLDevice::GetMaxParameterSize() const {
+auto GGEMSOpenCLDevice::GetMaxParameterSize() const -> std::size_t {
   return GetInfo<CL_DEVICE_MAX_PARAMETER_SIZE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::vector<cl_name_version>
-GGEMSOpenCLDevice::GetExtensionsWithVersion() const {
+auto GGEMSOpenCLDevice::GetExtensionsWithVersion() const
+    -> std::vector<cl_name_version> {
   return GetInfo<CL_DEVICE_EXTENSIONS_WITH_VERSION>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::string GGEMSOpenCLDevice::GetLastestConformanceVersionPassed() const {
+auto GGEMSOpenCLDevice::GetLastestConformanceVersionPassed() const
+    -> std::string {
   return GetInfo<CL_DEVICE_LATEST_CONFORMANCE_VERSION_PASSED>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::string GGEMSOpenCLDevice::GetBuiltInKernels() const {
+auto GGEMSOpenCLDevice::GetBuiltInKernels() const -> std::string {
   return GetInfo<CL_DEVICE_BUILT_IN_KERNELS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::vector<cl_name_version>
-GGEMSOpenCLDevice::GetBuiltInKernelsWithVersion() const {
+auto GGEMSOpenCLDevice::GetBuiltInKernelsWithVersion() const
+    -> std::vector<cl_name_version> {
   return GetInfo<CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetPreferredPlatformAtomicAlignment() const {
+auto GGEMSOpenCLDevice::GetPreferredPlatformAtomicAlignment() const -> cl_uint {
   return GetInfo<CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetPreferredGlobalAtomicAlignment() const {
+auto GGEMSOpenCLDevice::GetPreferredGlobalAtomicAlignment() const -> cl_uint {
   return GetInfo<CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetPreferredLocalAtomicAlignment() const {
+auto GGEMSOpenCLDevice::GetPreferredLocalAtomicAlignment() const -> cl_uint {
   return GetInfo<CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetAddressBits() const {
+auto GGEMSOpenCLDevice::GetAddressBits() const -> cl_uint {
   return GetInfo<CL_DEVICE_ADDRESS_BITS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::size_t GGEMSOpenCLDevice::GetProfilingTimerResolution() const {
+auto GGEMSOpenCLDevice::GetProfilingTimerResolution() const -> std::size_t {
   return GetInfo<CL_DEVICE_PROFILING_TIMER_RESOLUTION>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_bool GGEMSOpenCLDevice::GetCompilerAvailable() const {
+auto GGEMSOpenCLDevice::GetCompilerAvailable() const -> cl_bool {
   return GetInfo<CL_DEVICE_COMPILER_AVAILABLE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_bool GGEMSOpenCLDevice::GetLinkerAvailable() const {
+auto GGEMSOpenCLDevice::GetLinkerAvailable() const -> cl_bool {
   return GetInfo<CL_DEVICE_LINKER_AVAILABLE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_bool GGEMSOpenCLDevice::GetAvailable() const {
+auto GGEMSOpenCLDevice::GetAvailable() const -> cl_bool {
   return GetInfo<CL_DEVICE_AVAILABLE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_bool GGEMSOpenCLDevice::GetEndianLittle() const {
+auto GGEMSOpenCLDevice::GetEndianLittle() const -> cl_bool {
   return GetInfo<CL_DEVICE_ENDIAN_LITTLE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_bool GGEMSOpenCLDevice::GetErrorCorrectionSupport() const {
+auto GGEMSOpenCLDevice::GetErrorCorrectionSupport() const -> cl_bool {
   return GetInfo<CL_DEVICE_ERROR_CORRECTION_SUPPORT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::size_t GGEMSOpenCLDevice::GetPrintfBufferSize() const {
+auto GGEMSOpenCLDevice::GetPrintfBufferSize() const -> std::size_t {
   return GetInfo<CL_DEVICE_PRINTF_BUFFER_SIZE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetMaxPipeArgs() const {
+auto GGEMSOpenCLDevice::GetMaxPipeArgs() const -> cl_uint {
   return GetInfo<CL_DEVICE_MAX_PIPE_ARGS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetPipeMaxActiveReservations() const {
+auto GGEMSOpenCLDevice::GetPipeMaxActiveReservations() const -> cl_uint {
   return GetInfo<CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetPipeMaxPacketSize() const {
+auto GGEMSOpenCLDevice::GetPipeMaxPacketSize() const -> cl_uint {
   return GetInfo<CL_DEVICE_PIPE_MAX_PACKET_SIZE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_bool GGEMSOpenCLDevice::GetPipeSupport() const {
+auto GGEMSOpenCLDevice::GetPipeSupport() const -> cl_bool {
   return GetInfo<CL_DEVICE_PIPE_SUPPORT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::size_t GGEMSOpenCLDevice::GetMaxGlobalVariableSize() const {
+auto GGEMSOpenCLDevice::GetMaxGlobalVariableSize() const -> std::size_t {
   return GetInfo<CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::size_t GGEMSOpenCLDevice::GetGlobalVariablePreferredTotalSize() const {
+auto GGEMSOpenCLDevice::GetGlobalVariablePreferredTotalSize() const
+    -> std::size_t {
   return GetInfo<CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::string GGEMSOpenCLDevice::GetUUIDKhr() const {
+auto GGEMSOpenCLDevice::GetUUIDKhr() const -> std::string {
   auto uuid = GetInfo<CL_DEVICE_UUID_KHR>(device_);
   return UUIDToString(uuid);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::string GGEMSOpenCLDevice::GetDriverUUIDKhr() const {
+auto GGEMSOpenCLDevice::GetDriverUUIDKhr() const -> std::string {
   auto uuid = GetInfo<CL_DRIVER_UUID_KHR>(device_);
   return UUIDToString(uuid);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_bool GGEMSOpenCLDevice::GetLUIDValidKhr() const {
+auto GGEMSOpenCLDevice::GetLUIDValidKhr() const -> cl_bool {
   if (!HasExtension(extensions_, "cl_khr_device_uuid")) {
     return CL_FALSE;
   }
@@ -904,64 +702,50 @@ cl_bool GGEMSOpenCLDevice::GetLUIDValidKhr() const {
   return GetInfo<CL_DEVICE_LUID_VALID_KHR>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-std::array<cl_uchar, CL_LUID_SIZE_KHR> GGEMSOpenCLDevice::GetLUIDKhr() const {
-  if (GetLUIDValidKhr()) {
-    auto luid = GetInfo<CL_DEVICE_LUID_KHR>(device_);
-    return luid;
-  } else {
-    return {};
+auto GGEMSOpenCLDevice::GetLUIDKhr() const
+    -> std::array<cl_uchar, CL_LUID_SIZE_KHR> {
+  if (GetLUIDValidKhr() != CL_FALSE) {
+    return GetInfo<CL_DEVICE_LUID_KHR>(device_);
   }
+
+  return {};
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_device_fp_config GGEMSOpenCLDevice::GetHalfFpConfig() const {
+auto GGEMSOpenCLDevice::GetHalfFpConfig() const -> cl_device_fp_config {
   return GetInfo<CL_DEVICE_HALF_FP_CONFIG>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_device_fp_config GGEMSOpenCLDevice::GetSingleFpConfig() const {
+auto GGEMSOpenCLDevice::GetSingleFpConfig() const -> cl_device_fp_config {
   return GetInfo<CL_DEVICE_SINGLE_FP_CONFIG>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_device_fp_config GGEMSOpenCLDevice::GetDoubleFpConfig() const {
+auto GGEMSOpenCLDevice::GetDoubleFpConfig() const -> cl_device_fp_config {
   return GetInfo<CL_DEVICE_DOUBLE_FP_CONFIG>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_uint GGEMSOpenCLDevice::GetReferenceCount() const {
+auto GGEMSOpenCLDevice::GetReferenceCount() const -> cl_uint {
   return GetInfo<CL_DEVICE_REFERENCE_COUNT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-cl_bool GGEMSOpenCLDevice::GetPreferredInteropUserSync() const {
+auto GGEMSOpenCLDevice::GetPreferredInteropUserSync() const -> cl_bool {
   return GetInfo<CL_DEVICE_PREFERRED_INTEROP_USER_SYNC>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLDevice::PrintIdentity() const {
+auto GGEMSOpenCLDevice::PrintIdentity() const -> void {
   PrintInfo<CL_DEVICE_NAME>(device_);
   PrintInfo<CL_DEVICE_VENDOR>(device_);
   PrintInfo<CL_DEVICE_VERSION>(device_);
@@ -978,11 +762,9 @@ void GGEMSOpenCLDevice::PrintIdentity() const {
   PrintInfo<CL_DEVICE_NUMERIC_VERSION>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLDevice::PrintTypeID() const {
+auto GGEMSOpenCLDevice::PrintTypeID() const -> void {
   PrintInfo<CL_DEVICE_TYPE>(device_);
   PrintInfo<CL_DEVICE_VENDOR_ID>(device_);
 
@@ -993,11 +775,9 @@ void GGEMSOpenCLDevice::PrintTypeID() const {
   }
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLDevice::PrintCompute() const {
+auto GGEMSOpenCLDevice::PrintCompute() const -> void {
   PrintInfo<CL_DEVICE_MAX_COMPUTE_UNITS>(device_);
   PrintInfo<CL_DEVICE_MAX_CLOCK_FREQUENCY>(device_);
   PrintInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>(device_);
@@ -1006,11 +786,9 @@ void GGEMSOpenCLDevice::PrintCompute() const {
   PrintInfo<CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLDevice::PrintVectorization() const {
+auto GGEMSOpenCLDevice::PrintVectorization() const -> void {
   PrintInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR>(device_);
   PrintInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT>(device_);
   PrintInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT>(device_);
@@ -1027,11 +805,9 @@ void GGEMSOpenCLDevice::PrintVectorization() const {
   PrintInfo<CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLDevice::PrintFloatingPoint() const {
+auto GGEMSOpenCLDevice::PrintFloatingPoint() const -> void {
   if (HasExtension(extensions_, "cl_khr_fp16")) {
     PrintInfo<CL_DEVICE_HALF_FP_CONFIG>(device_);
   }
@@ -1043,11 +819,9 @@ void GGEMSOpenCLDevice::PrintFloatingPoint() const {
   }
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLDevice::PrintMemory() const {
+auto GGEMSOpenCLDevice::PrintMemory() const -> void {
   PrintInfo<CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE>(device_);
   PrintInfo<CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE>(device_);
   PrintInfo<CL_DEVICE_GLOBAL_MEM_SIZE>(device_);
@@ -1067,11 +841,9 @@ void GGEMSOpenCLDevice::PrintMemory() const {
   PrintInfo<CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLDevice::PrintImages() const {
+auto GGEMSOpenCLDevice::PrintImages() const -> void {
   PrintInfo<CL_DEVICE_IMAGE_SUPPORT>(device_);
   PrintInfo<CL_DEVICE_IMAGE2D_MAX_WIDTH>(device_);
   PrintInfo<CL_DEVICE_IMAGE2D_MAX_HEIGHT>(device_);
@@ -1088,22 +860,18 @@ void GGEMSOpenCLDevice::PrintImages() const {
   PrintInfo<CL_DEVICE_MAX_SAMPLERS>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLDevice::PrintILSpirV() const {
+auto GGEMSOpenCLDevice::PrintILSpirV() const -> void {
   if (HasExtension(extensions_, "cl_khr_spir")) {
     PrintInfo<CL_DEVICE_ILS_WITH_VERSION>(device_);
     PrintInfo<CL_DEVICE_SPIR_VERSIONS>(device_);
   }
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLDevice::PrintQueueDeviceSide() const {
+auto GGEMSOpenCLDevice::PrintQueueDeviceSide() const -> void {
   PrintInfo<CL_DEVICE_QUEUE_ON_HOST_PROPERTIES>(device_);
   PrintInfo<CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES>(device_);
   PrintInfo<CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE>(device_);
@@ -1123,33 +891,27 @@ void GGEMSOpenCLDevice::PrintQueueDeviceSide() const {
   PrintInfo<CL_DEVICE_LATEST_CONFORMANCE_VERSION_PASSED>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLDevice::PrintPartition() const {
+auto GGEMSOpenCLDevice::PrintPartition() const -> void {
   PrintInfo<CL_DEVICE_PARTITION_MAX_SUB_DEVICES>(device_);
   PrintInfo<CL_DEVICE_PARTITION_PROPERTIES>(device_);
   PrintInfo<CL_DEVICE_PARTITION_AFFINITY_DOMAIN>(device_);
   PrintInfo<CL_DEVICE_PARTITION_TYPE>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLDevice::PrintPipe() const {
+auto GGEMSOpenCLDevice::PrintPipe() const -> void {
   PrintInfo<CL_DEVICE_MAX_PIPE_ARGS>(device_);
   PrintInfo<CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS>(device_);
   PrintInfo<CL_DEVICE_PIPE_MAX_PACKET_SIZE>(device_);
   PrintInfo<CL_DEVICE_PIPE_SUPPORT>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLDevice::PrintExtensionsAndMisc() const {
+auto GGEMSOpenCLDevice::PrintExtensionsAndMisc() const -> void {
   PrintInfo<CL_DEVICE_EXTENSIONS_WITH_VERSION>(device_);
   PrintInfo<CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION>(device_);
   PrintInfo<CL_DEVICE_ADDRESS_BITS>(device_);
@@ -1163,11 +925,9 @@ void GGEMSOpenCLDevice::PrintExtensionsAndMisc() const {
   PrintInfo<CL_DEVICE_PREFERRED_INTEROP_USER_SYNC>(device_);
 }
 
-/* --------------------------------*/
-/* --------------------------------*/
-/* --------------------------------*/
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLDevice::Print() const {
+auto GGEMSOpenCLDevice::Print() const -> void {
   GGEMS_INFO("OpenCL", "Device [{}:{}]", platform_index_, device_index_);
   PrintIdentity();
   PrintTypeID();

@@ -1,21 +1,25 @@
-// ************************************************************************
-// ************************************************************************
-
-
-#include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
+#include <format>
+#include <array>
+#include <vector>
+#include <cstdint>
+#include <cstddef>
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSLogMacros.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 #include "GGEMS/core/units/GGEMSBytesUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLSVMMemoryKind.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
 
 using namespace ggems::units;
 
 namespace ggems::ocl {
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 GGEMSOpenCLContext::GGEMSOpenCLContext(GGEMSOpenCLDevice const &device)
     : device_{device} {
@@ -31,69 +35,59 @@ GGEMSOpenCLContext::GGEMSOpenCLContext(GGEMSOpenCLDevice const &device)
                device_.GetName());
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLContext::CreateContext() {
+auto GGEMSOpenCLContext::CreateContext() -> void {
   GGEMS_INFOEX("OpenCL", 3, "Creating compute OpenCL context");
 
-  cl_int err{CL_SUCCESS};
+  cl_int error{CL_SUCCESS};
 
-  // --- Standard compute-only context (no OpenGL interop) --------------------
-  cl_context_properties props[] = {
+  std::array<cl_context_properties, 3> props{
       CL_CONTEXT_PLATFORM,
       reinterpret_cast<cl_context_properties>(device_.GetPlatformID()), 0};
 
-  context_ = cl::Context({device_.GetDeviceNative()}, // devices
-                         props,                       // context properties
-                         nullptr,                     // notification callback
-                         nullptr,                     // user data
-                         &err);
+  context_ = cl::Context({device_.GetDeviceNative()}, props.data(), nullptr,
+                         nullptr, &error);
 
-  CheckCLError(err, "Failed to create OpenCL context");
+  CheckCLError(error, "Failed to create OpenCL context");
 
   GGEMS_INFOEX("OpenCL", 3, "Compute OpenCL context created.");
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLContext::CreateCommandQueue() {
+auto GGEMSOpenCLContext::CreateCommandQueue() -> void {
   GGEMS_INFOEX("OpenCL", 3, "Creating OpenCL command queue.");
 
-  cl_int err{CL_SUCCESS};
+  cl_int error{CL_SUCCESS};
 
   cl_command_queue_properties props = 0;
   props |= CL_QUEUE_PROFILING_ENABLE; // needed for profiling
 
   command_queue_ =
-      cl::CommandQueue(context_, device_.GetDeviceNative(), props, &err);
+      cl::CommandQueue(context_, device_.GetDeviceNative(), props, &error);
 
-  CheckCLError(err, "Failed to create command queue.");
+  CheckCLError(error, "Failed to create command queue.");
 
   GGEMS_INFOEX("OpenCL", 3,
                "OpenCL command queue created with profiling enabled.");
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLContext::InitSVMSupport() {
-  auto const caps = device_.GetSVMCapabilities();
+auto GGEMSOpenCLContext::InitSVMSupport() -> void {
+  auto const capabilities = device_.GetSVMCapabilities();
 
-  if (caps & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER) {
+  if ((capabilities & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER) != 0) {
     svm_support_.coarse_grain_buffer = true;
   }
-  if (caps & CL_DEVICE_SVM_FINE_GRAIN_BUFFER) {
+  if ((capabilities & CL_DEVICE_SVM_FINE_GRAIN_BUFFER) != 0) {
     svm_support_.fine_grain_buffer = true;
   }
-  if (caps & CL_DEVICE_SVM_FINE_GRAIN_SYSTEM) {
+  if ((capabilities & CL_DEVICE_SVM_FINE_GRAIN_SYSTEM) != 0) {
     svm_support_.fine_grain_system = true;
   }
-  if (caps & CL_DEVICE_SVM_ATOMICS) {
+  if ((capabilities & CL_DEVICE_SVM_ATOMICS) != 0) {
     svm_support_.atomics = true;
   }
 
@@ -106,22 +100,18 @@ void GGEMSOpenCLContext::InitSVMSupport() {
       svm_support_.atomics, ToString(svm_support_.DefaultKind()));
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLContext::InitVRAMUsage() {
+auto GGEMSOpenCLContext::InitVRAMUsage() -> void {
   vram_usage_.total =
       units::Bytes{static_cast<std::uint64_t>(device_.GetGlobalMemSize())};
 
   UpdateVRAMUsage();
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLContext::UpdateVRAMUsage() noexcept {
+auto GGEMSOpenCLContext::UpdateVRAMUsage() noexcept -> void {
   if (vram_usage_.allocated.value <= vram_usage_.total.value) {
     vram_usage_.available =
         units::Bytes{vram_usage_.total.value - vram_usage_.allocated.value};
@@ -134,34 +124,33 @@ void GGEMSOpenCLContext::UpdateVRAMUsage() noexcept {
   }
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-GGEMSOpenCLSVMBuffer GGEMSOpenCLContext::CreateSVMBuffer(Bytes size,
-                                                         SVMMemoryKind kind,
-                                                         Bytes alignment) {
-  auto const &svm = svm_support_;
+auto GGEMSOpenCLContext::CreateSVMBuffer(Bytes size, SVMMemoryKind kind,
+                                         Bytes alignment)
+    -> GGEMSOpenCLSVMBuffer {
+  auto const &svm_support = svm_support_;
 
-  if (!(svm.HasAny())) {
+  if (!svm_support.HasAny()) {
     throw ggems::core::GGEMSFatal("This context/device does not support SVM.");
   }
 
-  if (!(kind != SVMMemoryKind::None)) {
-    throw ggems::core::GGEMSFatal("Invalid SVMMemoryKind::None for allocation.");
+  if (kind == SVMMemoryKind::None) {
+    throw ggems::core::GGEMSFatal(
+        "Invalid SVMMemoryKind::None for allocation.");
   }
 
   SVMMemoryKind const selected =
-      kind == SVMMemoryKind::Auto ? svm.DefaultKind() : kind;
+      kind == SVMMemoryKind::Auto ? svm_support.DefaultKind() : kind;
 
-  if (!(selected != SVMMemoryKind::None)) {
+  if (selected == SVMMemoryKind::None) {
     throw ggems::core::GGEMSFatal("No supported SVM memory kind is available.");
   }
 
-  if (!(svm.Supports(selected))) {
-    throw ggems::core::GGEMSFatal(std::format("Requested SVM memory kind '{}' is not supported by "
-                  "device '{}'.",
-                  ToString(selected), device_.GetName()));
+  if (!svm_support.Supports(selected)) {
+    throw ggems::core::GGEMSFatal(std::format(
+        "Requested SVM memory kind '{}' is not supported by device '{}'.",
+        ToString(selected), device_.GetName()));
   }
 
   cl_svm_mem_flags flags = 0;
@@ -215,76 +204,71 @@ GGEMSOpenCLSVMBuffer GGEMSOpenCLContext::CreateSVMBuffer(Bytes size,
   return GGEMSOpenCLSVMBuffer{*this, size, flags, selected, alignment};
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLContext::EnqueueSVMMap(void *ptr, Bytes size,
-                                       cl_map_flags flags) const {
-  cl_int err = clEnqueueSVMMap(command_queue_(), // raw command queue
-                               CL_TRUE,          // blocking map pour simplifier
-                               flags, ptr, static_cast<std::size_t>(size.value),
-                               0, nullptr, nullptr);
+auto GGEMSOpenCLContext::EnqueueSVMMap(void *pointer, Bytes size,
+                                       cl_map_flags flags) const -> void {
+  cl_int error =
+      clEnqueueSVMMap(command_queue_(), // raw command queue
+                      CL_TRUE,          // blocking map for simplicity
+                      flags, pointer, static_cast<std::size_t>(size.value), 0,
+                      nullptr, nullptr);
 
-  if (!(err == CL_SUCCESS)) {
-    throw ggems::core::GGEMSFatal(std::format("SVMMap failed: {}", GetLongErrorString(err)));
+  if (error != CL_SUCCESS) {
+    throw ggems::core::GGEMSFatal(
+        std::format("SVMMap failed: {}", GetLongErrorString(error)));
   }
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLContext::EnqueueSVMUnmap(void *ptr) const {
+auto GGEMSOpenCLContext::EnqueueSVMUnmap(void *pointer) const -> void {
   cl_event unmap_event{nullptr};
 
-  cl_int err =
-      clEnqueueSVMUnmap(command_queue_(), ptr, 0, nullptr, &unmap_event);
+  cl_int error =
+      clEnqueueSVMUnmap(command_queue_(), pointer, 0, nullptr, &unmap_event);
 
-  if (!(err == CL_SUCCESS)) {
-    throw ggems::core::GGEMSFatal(std::format("SVMUnmap failed: {}",
-                                                   GetLongErrorString(err)));
+  if (error != CL_SUCCESS) {
+    throw ggems::core::GGEMSFatal(
+        std::format("SVMUnmap failed: {}", GetLongErrorString(error)));
   }
 
-  err = clWaitForEvents(1, &unmap_event);
+  error = clWaitForEvents(1, &unmap_event);
 
   clReleaseEvent(unmap_event);
-  if (!(err == CL_SUCCESS)) {
-    throw ggems::core::GGEMSFatal(std::format("SVMUnmap wait failed: {}",
-                                                   GetLongErrorString(err)));
+  if (error != CL_SUCCESS) {
+    throw ggems::core::GGEMSFatal(
+        std::format("SVMUnmap wait failed: {}", GetLongErrorString(error)));
   }
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLContext::SetSVMPointer(cl::Kernel &kernel, cl_uint index,
-                                       void const *ptr) const -> void {
-  cl_int err = clSetKernelArgSVMPointer(kernel(), index, ptr);
+                                       void const *pointer) const -> void {
+  cl_int error = clSetKernelArgSVMPointer(kernel(), index, pointer);
 
-  if (!(err == CL_SUCCESS)) {
-    throw ggems::core::GGEMSFatal(std::format("SetSVMPointer failed at arg {}: {}", index,
-                                GetLongErrorString(err)));
+  if (error != CL_SUCCESS) {
+    throw ggems::core::GGEMSFatal(
+        std::format("SetSVMPointer failed at arg {}: {}", index,
+                    GetLongErrorString(error)));
   }
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLContext::RegisterSVMAllocation(units::Bytes size) noexcept {
+auto GGEMSOpenCLContext::RegisterSVMAllocation(units::Bytes size) noexcept
+    -> void {
   vram_usage_.allocated = vram_usage_.allocated + size;
   ++vram_usage_.allocation_count;
 
   UpdateVRAMUsage();
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLContext::RegisterSVMRelease(units::Bytes size) noexcept {
+auto GGEMSOpenCLContext::RegisterSVMRelease(units::Bytes size) noexcept
+    -> void {
   if (size.value >= vram_usage_.allocated.value) {
     vram_usage_.allocated = 0_B;
   } else {
@@ -298,110 +282,87 @@ void GGEMSOpenCLContext::RegisterSVMRelease(units::Bytes size) noexcept {
   UpdateVRAMUsage();
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-[[nodiscard]] cl_uint GGEMSOpenCLContext::GetReferenceCount() const {
+[[nodiscard]] auto GGEMSOpenCLContext::GetReferenceCount() const -> cl_uint {
   return GetInfo<CL_CONTEXT_REFERENCE_COUNT>(context_);
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-[[nodiscard]] cl_uint GGEMSOpenCLContext::GetNumDevices() const {
+[[nodiscard]] auto GGEMSOpenCLContext::GetNumDevices() const -> cl_uint {
   return GetInfo<CL_CONTEXT_NUM_DEVICES>(context_);
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-[[nodiscard]] std::vector<cl::Device>
-GGEMSOpenCLContext::GetNativeDevices() const {
+[[nodiscard]] auto GGEMSOpenCLContext::GetNativeDevices() const
+    -> std::vector<cl::Device> {
   return GetInfo<CL_CONTEXT_DEVICES>(context_);
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-[[nodiscard]] std::vector<cl_context_properties>
-GGEMSOpenCLContext::GetProperties() const {
+[[nodiscard]] auto GGEMSOpenCLContext::GetProperties() const
+    -> std::vector<cl_context_properties> {
   return GetInfo<CL_CONTEXT_PROPERTIES>(context_);
 }
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-[[nodiscard]] cl::Context GGEMSOpenCLContext::GetQueueContext() const {
+[[nodiscard]] auto GGEMSOpenCLContext::GetQueueContext() const -> cl::Context {
   return GetInfo<CL_QUEUE_CONTEXT>(command_queue_);
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-[[nodiscard]] cl::Device GGEMSOpenCLContext::GetQueueDevice() const {
+[[nodiscard]] auto GGEMSOpenCLContext::GetQueueDevice() const -> cl::Device {
   return GetInfo<CL_QUEUE_DEVICE>(command_queue_);
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-[[nodiscard]] cl_uint GGEMSOpenCLContext::GetQueueReferenceCount() const {
+[[nodiscard]] auto GGEMSOpenCLContext::GetQueueReferenceCount() const
+    -> cl_uint {
   return GetInfo<CL_QUEUE_REFERENCE_COUNT>(command_queue_);
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-[[nodiscard]] cl_command_queue_properties
-GGEMSOpenCLContext::GetQueueProperties() const {
+[[nodiscard]] auto GGEMSOpenCLContext::GetQueueProperties() const
+    -> cl_command_queue_properties {
   return GetInfo<CL_QUEUE_PROPERTIES>(command_queue_);
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-[[nodiscard]] std::vector<cl_queue_properties>
-GGEMSOpenCLContext::GetQueuePropertiesArray() const {
+[[nodiscard]] auto GGEMSOpenCLContext::GetQueuePropertiesArray() const
+    -> std::vector<cl_queue_properties> {
   return GetInfo<CL_QUEUE_PROPERTIES_ARRAY>(command_queue_);
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-[[nodiscard]] cl_uint GGEMSOpenCLContext::GetQueueSize() const {
-  auto props = GetInfo<CL_QUEUE_PROPERTIES>(command_queue_);
-  if (props & CL_QUEUE_ON_DEVICE) {
+[[nodiscard]] auto GGEMSOpenCLContext::GetQueueSize() const -> cl_uint {
+  auto const properties = GetInfo<CL_QUEUE_PROPERTIES>(command_queue_);
+  if ((properties & CL_QUEUE_ON_DEVICE) != 0) {
     return GetInfo<CL_QUEUE_SIZE>(command_queue_);
-  } else {
-    return 0;
   }
+
+  return 0U;
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLContext::PrintContext() const {
+auto GGEMSOpenCLContext::PrintContext() const -> void {
   PrintInfo<CL_CONTEXT_NUM_DEVICES>(context_);
   PrintInfo<CL_CONTEXT_DEVICES>(context_);
   PrintInfo<CL_CONTEXT_PROPERTIES>(context_);
   PrintInfo<CL_CONTEXT_REFERENCE_COUNT>(context_);
 }
 
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
+// -----------------------------------------------------------------------------
 
-void GGEMSOpenCLContext::PrintCommandQueue() const {
+auto GGEMSOpenCLContext::PrintCommandQueue() const -> void {
   PrintInfo<CL_QUEUE_DEVICE>(command_queue_);
   PrintInfo<CL_QUEUE_REFERENCE_COUNT>(command_queue_);
   PrintInfo<CL_QUEUE_PROPERTIES>(command_queue_);

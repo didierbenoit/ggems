@@ -1,92 +1,75 @@
 #pragma once
 
-// ************************************************************************
-// ************************************************************************
-
-
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include <cstddef>
+#include <string_view>
 
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 
 namespace ggems::ocl {
-// Forward declaration to decouple headers (the destructor is out-of-line).
+
 class GGEMSOpenCLDevice;
 
 class GGEMSOpenCLPlatform {
 public:
-  explicit GGEMSOpenCLPlatform(cl::Platform const &platform,
+  explicit GGEMSOpenCLPlatform(cl::Platform platform,
                                std::size_t platform_index);
 
   GGEMSOpenCLPlatform() = delete;
 
   ~GGEMSOpenCLPlatform();
 
-  // Non-copyable, non-movable — preserves ownership and index stability.
   GGEMSOpenCLPlatform(GGEMSOpenCLPlatform const &) = delete;
-  GGEMSOpenCLPlatform &operator=(GGEMSOpenCLPlatform const &) = delete;
+  auto operator=(GGEMSOpenCLPlatform const &) -> GGEMSOpenCLPlatform & = delete;
+  GGEMSOpenCLPlatform(GGEMSOpenCLPlatform &&) noexcept = default;
+  auto operator=(GGEMSOpenCLPlatform &&) -> GGEMSOpenCLPlatform & = delete;
 
-  GGEMSOpenCLPlatform(GGEMSOpenCLPlatform &&) = default;
+  [[nodiscard]] auto CheckExtension(std::string_view extension_name) const
+      -> bool;
+  [[nodiscard]] auto GetName() const -> std::string;
 
-  GGEMSOpenCLPlatform &operator=(GGEMSOpenCLPlatform &&) = delete;
+  [[nodiscard]] auto GetProfile() const -> std::string;
 
-public:
-  // -------------------- High-level inspection API --------------------
+  [[nodiscard]] auto GetVersion() const -> std::string;
 
-  [[nodiscard]] bool CheckExtension(std::string_view extension_name) const;
+  [[nodiscard]] auto GetVendor() const -> std::string;
 
-  [[nodiscard]] std::string GetName() const;
+  [[nodiscard]] auto GetExtensions() const -> std::string;
 
-  [[nodiscard]] std::string GetProfile() const;
+  [[nodiscard]] auto GetNumericVersion() const -> cl_version;
 
-  [[nodiscard]] std::string GetVersion() const;
+  [[nodiscard]] auto GetHostTimerResolution() const -> cl_ulong;
 
-  [[nodiscard]] std::string GetVendor() const;
+  [[nodiscard]] auto GetExtensionsWithVersion() const
+      -> std::vector<cl_name_version>;
 
-  [[nodiscard]] std::string GetExtensions() const;
+  auto Print() const -> void;
+  auto Clean() -> void;
 
-  [[nodiscard]] cl_version GetNumericVersion() const;
-
-  [[nodiscard]] cl_ulong GetHostTimerResolution() const;
-
-  [[nodiscard]] std::vector<cl_name_version> GetExtensionsWithVersion() const;
-
-  void Print() const;
-
-  void Clean();
-
-  // -------------------- Accessors for orchestration layers
-  // --------------------
-
-  [[nodiscard]] std::size_t GetPlatformIndex() const noexcept {
+  [[nodiscard]] auto GetPlatformIndex() const noexcept -> std::size_t {
     return platform_index_;
   }
 
-  [[nodiscard]] cl::Platform const &GetPlatformNative() const noexcept {
+  [[nodiscard]] auto GetPlatformNative() const noexcept
+      -> cl::Platform const & {
     return platform_;
   }
 
-  [[nodiscard]] std::vector<GGEMSOpenCLDevice> const &
-  GetDevices() const noexcept {
+  [[nodiscard]] auto GetDevices() const noexcept
+      -> std::vector<GGEMSOpenCLDevice> const & {
     return devices_;
   }
 
 private:
-  void PrintIdentity() const;
+  auto PrintIdentity() const -> void;
+  auto PrintExtension() const -> void;
+  auto DiscoverDevices() -> void;
 
-  void PrintExtension() const;
-
-private:
-  // -------------------- Internal discovery --------------------
-
-  void DiscoverDevices();
-
-private:
   cl::Platform platform_;
   std::size_t platform_index_;
-  std::unordered_set<std::string>
-      extensions_;
+  std::unordered_set<std::string> extensions_;
   std::vector<GGEMSOpenCLDevice> devices_;
 };
 } // namespace ggems::ocl
