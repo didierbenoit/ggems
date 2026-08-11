@@ -21,72 +21,61 @@
 
 /*!
  * \file
- * \brief Defines OpenCL shared virtual memory kinds and related utilities.
+ * \brief XXX.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-#pragma once
+#include "GGEMS/.../XXX.hh"
 
 /// \cond
-#include <string_view>
 #include <cstdint>
+#include <string>
 /// \endcond
 
-/*!
- * \namespace ggems::ocl
- * \brief Provides the OpenCL backend components of GGEMS.
- */
-namespace ggems::ocl {
+#include "GGEMS/..."
+
+namespace {
 
 /*!
- * \brief Specifies the shared virtual memory mode used by an OpenCL buffer.
- */
-enum class SVMMemoryKind : std::uint8_t {
-  None,                   /*!< No SVM memory mode is selected. */
-  Auto,                   /*!< Selects the SVM memory mode automatically. */
-  CoarseGrainBuffer,      /*!< Uses coarse-grain buffer SVM. */
-  FineGrainBuffer,        /*!< Uses fine-grain buffer SVM. */
-  FineGrainBufferAtomics, /*!< Uses fine-grain buffer SVM with atomic access. */
-  FineGrainSystem         /*!< Uses fine-grain system SVM. */
-};
-
-/*!
- * \brief Returns the name of an SVM memory kind.
+ * \brief XXX.
  *
- * \param[in] kind SVM memory kind to convert.
- * \return Name of the SVM memory kind.
+ * XXX.
+ *
+ * \param[in] value XXX.
+ * \return XXX.
  */
-[[nodiscard]] constexpr auto ToString(SVMMemoryKind kind) noexcept
-    -> std::string_view {
-  switch (kind) {
-  case SVMMemoryKind::None:
-    return "None";
-  case SVMMemoryKind::Auto:
-    return "Auto";
-  case SVMMemoryKind::CoarseGrainBuffer:
-    return "CoarseGrainBuffer";
-  case SVMMemoryKind::FineGrainBuffer:
-    return "FineGrainBuffer";
-  case SVMMemoryKind::FineGrainBufferAtomics:
-    return "FineGrainBufferAtomics";
-  case SVMMemoryKind::FineGrainSystem:
-    return "FineGrainSystem";
-  }
+[[nodiscard]] std::uint64_t XXX(std::uint64_t value) noexcept { return value; }
 
-  return "Unknown";
-}
+// =============================================================================
+// =============================================================================
 
 /*!
- * \brief Checks whether an SVM memory kind requires explicit host mapping.
+ * \brief XXX.
  *
- * \param[in] kind SVM memory kind to check.
- * \return True if explicit mapping is required, false otherwise.
+ * XXX.
+ *
+ * \param[in] value XXX.
+ * \return XXX.
  */
-[[nodiscard]] constexpr auto RequiresExplicitMap(SVMMemoryKind kind) noexcept
-    -> auto {
-  return kind == SVMMemoryKind::CoarseGrainBuffer;
-}
+[[nodiscard]] std::uint64_t YYY(std::uint64_t value) noexcept { return value; }
 
-} // namespace ggems::ocl
+} // namespace
+
+// ============================================================================
+// ============================================================================
+
+namespace ggems::xxx {
+
+XXXClass::XXXClass(std::string value) : value_(std::move(value)) {}
+
+// ----------------------------------------------------------------------------
+
+std::string const &XXXClass::GetXXX() const noexcept { return value_; }
+
+// ----------------------------------------------------------------------------
+
+void XXXClass::DoXXX() {}
+
+} // namespace ggems::xxx

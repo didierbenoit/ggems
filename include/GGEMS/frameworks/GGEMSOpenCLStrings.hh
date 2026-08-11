@@ -1,95 +1,88 @@
 #pragma once
-// ************************************************************************
-// ************************************************************************
 
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <format>
+#include <limits>
+#include <span>
+#include <sstream>
+#include <string>
+#include <string_view>
+#include <vector>
+#include <ios>
 
 #include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 
-#include <format>
-#include <span>
-#include <sstream>
-
 namespace ggems::ocl {
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]] inline std::string ClVersionToString(cl_version version) {
+[[nodiscard]] inline auto ClVersionToString(cl_version version) -> std::string {
   cl_uint major = (version >> 22) & 0x3FFu;
   cl_uint minor = (version >> 12) & 0x3FFu;
   cl_uint patch = (version >> 0) & 0xFFFu;
   return std::format("{}.{}.{}", major, minor, patch);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]] inline std::string
-ClNameVersionToString(std::vector<cl_name_version> const &name_versions) {
-  std::ostringstream oss;
-  std::string out{""};
-  for (auto const &nv : name_versions) {
-    out += std::format("{} {} ", nv.name, ClVersionToString(nv.version));
+[[nodiscard]] inline auto
+ClNameVersionToString(std::vector<cl_name_version> const &name_versions)
+    -> std::string {
+  std::string output{};
+  for (auto const &name_version : name_versions) {
+    output += std::format("{} {} ", name_version.name,
+                          ClVersionToString(name_version.version));
   }
-  return out;
+  return output;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]] inline std::string
-SizeToString(std::vector<size_t> const &sizes) {
-  std::string out{""};
-  for (auto const &s : sizes) {
-    out += std::format("{} ", s);
+[[nodiscard]] inline auto SizeToString(std::vector<std::size_t> const &sizes)
+    -> std::string {
+  std::string output{};
+  for (auto const size : sizes) {
+    output += std::format("{} ", size);
   }
-  return out;
+  return output;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]] inline std::string
-DeviceTypeToString(cl_device_type device_type) {
-  std::ostringstream oss;
+[[nodiscard]] inline auto DeviceTypeToString(cl_device_type device_type)
+    -> std::string {
+  std::ostringstream stream;
   bool first = true;
 
-  auto const append = [&](std::string const &name) {
+  auto const append = [&](std::string const &name) -> void {
     if (!first) {
-      oss << " | ";
+      stream << " | ";
     }
-    oss << name;
+    stream << name;
     first = false;
   };
 
-  if (device_type & CL_DEVICE_TYPE_CPU)
+  if ((device_type & CL_DEVICE_TYPE_CPU) != 0) {
     append("CPU");
-  if (device_type & CL_DEVICE_TYPE_GPU)
+  }
+  if ((device_type & CL_DEVICE_TYPE_GPU) != 0) {
     append("GPU");
-  if (device_type & CL_DEVICE_TYPE_ACCELERATOR)
+  }
+  if ((device_type & CL_DEVICE_TYPE_ACCELERATOR) != 0) {
     append("Accelerator");
-  if (device_type & CL_DEVICE_TYPE_CUSTOM)
+  }
+  if ((device_type & CL_DEVICE_TYPE_CUSTOM) != 0) {
     append("Custom");
-  if (device_type == CL_DEVICE_TYPE_DEFAULT)
+  }
+  if (device_type == CL_DEVICE_TYPE_DEFAULT) {
     append("Default");
-  if (device_type == CL_DEVICE_TYPE_ALL)
+  }
+  if (device_type == CL_DEVICE_TYPE_ALL) {
     append("All");
+  }
 
-  if (first)
-    oss << "Unknown(" << device_type << ')';
+  if (first) {
+    stream << "Unknown(" << device_type << ')';
+  }
 
-  return oss.str();
+  return stream.str();
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]] inline std::string VendorIdToString(cl_uint vendor_id) {
+[[nodiscard]] inline auto VendorIdToString(cl_uint vendor_id) -> std::string {
   switch (vendor_id) {
   case 0x8086:
     return "Intel Corporation";
@@ -106,19 +99,15 @@ DeviceTypeToString(cl_device_type device_type) {
   case 0x1010:
     return "Imagination Technologies";
   default: {
-    std::ostringstream oss;
-    oss << "Unknown (0x" << std::hex << vendor_id << ")" << std::dec;
-    return oss.str();
+    std::ostringstream stream;
+    stream << "Unknown (0x" << std::hex << vendor_id << ")" << std::dec;
+    return stream.str();
   }
   }
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]] inline std::string
-CacheTypeToString(cl_device_mem_cache_type type) {
+[[nodiscard]] inline auto CacheTypeToString(cl_device_mem_cache_type type)
+    -> std::string {
   switch (type) {
   case CL_NONE:
     return "None";
@@ -127,27 +116,19 @@ CacheTypeToString(cl_device_mem_cache_type type) {
   case CL_READ_WRITE_CACHE:
     return "Read/Write cache";
   default: {
-    std::ostringstream oss;
-    oss << "Unknown (0x" << std::hex << type << std::dec << ")";
-    return oss.str();
+    std::ostringstream stream;
+    stream << "Unknown (0x" << std::hex << type << std::dec << ")";
+    return stream.str();
   }
   }
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]] inline std::string ClBoolToString(cl_bool flag) {
+[[nodiscard]] inline auto ClBoolToString(cl_bool flag) -> std::string {
   return (flag == CL_TRUE) ? "Yes" : "No";
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]] inline std::string
-LocalMemTypeToString(cl_device_local_mem_type type) {
+[[nodiscard]] inline auto LocalMemTypeToString(cl_device_local_mem_type type)
+    -> std::string {
   switch (type) {
   case CL_NONE:
     return "None";
@@ -156,468 +137,448 @@ LocalMemTypeToString(cl_device_local_mem_type type) {
   case CL_GLOBAL:
     return "Global memory (emulated local)";
   default: {
-    std::ostringstream oss;
-    oss << "Unknown (0x" << std::hex << type << std::dec << ")";
-    return oss.str();
+    std::ostringstream stream;
+    stream << "Unknown (0x" << std::hex << type << std::dec << ")";
+    return stream.str();
   }
   }
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
 [[nodiscard]] inline auto
-QueuePropertiesToString(cl_command_queue_properties const &props)
+QueuePropertiesToString(cl_command_queue_properties const &properties)
     -> std::string {
-  std::ostringstream oss;
-  if (props & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE)
-    oss << "Out-of-order execution, ";
-  if (props & CL_QUEUE_PROFILING_ENABLE)
-    oss << "Profiling enabled, ";
+  std::ostringstream stream;
+  if ((properties & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) != 0) {
+    stream << "Out-of-order execution, ";
+  }
+  if ((properties & CL_QUEUE_PROFILING_ENABLE) != 0) {
+    stream << "Profiling enabled, ";
+  }
 #ifdef CL_QUEUE_ON_DEVICE
-  if (props & CL_QUEUE_ON_DEVICE)
-    oss << "On-device queue, ";
+  if ((properties & CL_QUEUE_ON_DEVICE) != 0) {
+    stream << "On-device queue, ";
+  }
 #endif
 #ifdef CL_QUEUE_ON_DEVICE_DEFAULT
-  if (props & CL_QUEUE_ON_DEVICE_DEFAULT)
-    oss << "Default on-device queue, ";
+  if ((properties & CL_QUEUE_ON_DEVICE_DEFAULT) != 0) {
+    stream << "Default on-device queue, ";
+  }
 #endif
 
-  std::string result = oss.str();
-  if (!result.empty())
+  std::string result = stream.str();
+  if (!result.empty()) {
     result.erase(result.size() - 2);
-  else
+  } else {
     result = "None";
+  }
 
   return result;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]] inline std::string
-SVMCapabilitiesToString(cl_device_svm_capabilities caps) {
-  std::ostringstream oss;
-  if (caps & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER)
-    oss << "Coarse-grain buffer, ";
-  if (caps & CL_DEVICE_SVM_FINE_GRAIN_BUFFER)
-    oss << "Fine-grain buffer, ";
-  if (caps & CL_DEVICE_SVM_FINE_GRAIN_SYSTEM)
-    oss << "Fine-grain system, ";
-  if (caps & CL_DEVICE_SVM_ATOMICS)
-    oss << "Atomics, ";
-
-  std::string out = oss.str();
-  if (!out.empty())
-    out.erase(out.size() - 2);
-  else
-    out = "None";
-  return out;
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]]
-inline std::string VectorToString(std::vector<size_t> const &v) {
-  if (v.empty())
-    return "[]";
-
-  std::string out = "[";
-  for (size_t i = 0; i < v.size(); ++i) {
-    out.append(std::to_string(v[i]));
-    if (i + 1 < v.size())
-      out.append(", ");
+[[nodiscard]] inline auto
+SVMCapabilitiesToString(cl_device_svm_capabilities capabilities)
+    -> std::string {
+  std::ostringstream stream;
+  if ((capabilities & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER) != 0) {
+    stream << "Coarse-grain buffer, ";
   }
-  out.append("]");
-  return out;
+  if ((capabilities & CL_DEVICE_SVM_FINE_GRAIN_BUFFER) != 0) {
+    stream << "Fine-grain buffer, ";
+  }
+  if ((capabilities & CL_DEVICE_SVM_FINE_GRAIN_SYSTEM) != 0) {
+    stream << "Fine-grain system, ";
+  }
+  if ((capabilities & CL_DEVICE_SVM_ATOMICS) != 0) {
+    stream << "Atomics, ";
+  }
+
+  std::string output = stream.str();
+  if (!output.empty()) {
+    output.erase(output.size() - 2);
+  } else {
+    output = "None";
+  }
+  return output;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+[[nodiscard]] inline auto VectorToString(std::vector<std::size_t> const &values)
+    -> std::string {
+  if (values.empty()) {
+    return "[]";
+  }
 
-[[nodiscard]] inline std::string
-AtomicCapabilitiesToString(cl_device_atomic_capabilities caps) {
-  std::ostringstream oss;
+  std::string output = "[";
+  for (std::size_t index = 0; index < values.size(); ++index) {
+    output.append(std::to_string(values[index]));
+    if (index + 1 < values.size()) {
+      output.append(", ");
+    }
+  }
+  output.append("]");
+  return output;
+}
+
+[[nodiscard]] inline auto
+AtomicCapabilitiesToString(cl_device_atomic_capabilities capabilities)
+    -> std::string {
+  std::ostringstream stream;
 #ifdef CL_DEVICE_ATOMIC_ORDER_RELAXED
-  if (caps & CL_DEVICE_ATOMIC_ORDER_RELAXED)
-    oss << "Relaxed order, ";
+  if ((capabilities & CL_DEVICE_ATOMIC_ORDER_RELAXED) != 0) {
+    stream << "Relaxed order, ";
+  }
 #endif
 #ifdef CL_DEVICE_ATOMIC_ORDER_ACQ_REL
-  if (caps & CL_DEVICE_ATOMIC_ORDER_ACQ_REL)
-    oss << "Acquire/Release, ";
+  if ((capabilities & CL_DEVICE_ATOMIC_ORDER_ACQ_REL) != 0) {
+    stream << "Acquire/Release, ";
+  }
 #endif
 #ifdef CL_DEVICE_ATOMIC_ORDER_SEQ_CST
-  if (caps & CL_DEVICE_ATOMIC_ORDER_SEQ_CST)
-    oss << "Sequentially consistent, ";
+  if ((capabilities & CL_DEVICE_ATOMIC_ORDER_SEQ_CST) != 0) {
+    stream << "Sequentially consistent, ";
+  }
 #endif
 #ifdef CL_DEVICE_ATOMIC_SCOPE_WORK_ITEM
-  if (caps & CL_DEVICE_ATOMIC_SCOPE_WORK_ITEM)
-    oss << "Scope: Work-item, ";
+  if ((capabilities & CL_DEVICE_ATOMIC_SCOPE_WORK_ITEM) != 0) {
+    stream << "Scope: Work-item, ";
+  }
 #endif
 #ifdef CL_DEVICE_ATOMIC_SCOPE_WORK_GROUP
-  if (caps & CL_DEVICE_ATOMIC_SCOPE_WORK_GROUP)
-    oss << "Scope: Work-group, ";
+  if ((capabilities & CL_DEVICE_ATOMIC_SCOPE_WORK_GROUP) != 0) {
+    stream << "Scope: Work-group, ";
+  }
 #endif
 #ifdef CL_DEVICE_ATOMIC_SCOPE_DEVICE
-  if (caps & CL_DEVICE_ATOMIC_SCOPE_DEVICE)
-    oss << "Scope: Device, ";
+  if ((capabilities & CL_DEVICE_ATOMIC_SCOPE_DEVICE) != 0) {
+    stream << "Scope: Device, ";
+  }
 #endif
 #ifdef CL_DEVICE_ATOMIC_SCOPE_ALL_DEVICES
-  if (caps & CL_DEVICE_ATOMIC_SCOPE_ALL_DEVICES)
-    oss << "Scope: All devices, ";
+  if ((capabilities & CL_DEVICE_ATOMIC_SCOPE_ALL_DEVICES) != 0) {
+    stream << "Scope: All devices, ";
+  }
 #endif
 
-  std::string s = oss.str();
-  if (!s.empty())
-    s.erase(s.size() - 2);
-  else
-    s = "None";
-  return s;
+  std::string result = stream.str();
+  if (!result.empty()) {
+    result.erase(result.size() - 2);
+  } else {
+    result = "None";
+  }
+  return result;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]] inline std::string
-DeviceEnqueueCapabilitiesToString(cl_device_device_enqueue_capabilities caps) {
-  std::ostringstream oss;
+[[nodiscard]] inline auto DeviceEnqueueCapabilitiesToString(
+    cl_device_device_enqueue_capabilities capabilities) -> std::string {
+  std::ostringstream stream;
 #ifdef CL_DEVICE_QUEUE_SUPPORTED
-  if (caps & CL_DEVICE_QUEUE_SUPPORTED)
-    oss << "Device queues supported, ";
+  if ((capabilities & CL_DEVICE_QUEUE_SUPPORTED) != 0) {
+    stream << "Device queues supported, ";
+  }
 #endif
 #ifdef CL_DEVICE_QUEUE_REPLACEABLE_DEFAULT
-  if (caps & CL_DEVICE_QUEUE_REPLACEABLE_DEFAULT)
-    oss << "Default queue replaceable, ";
+  if ((capabilities & CL_DEVICE_QUEUE_REPLACEABLE_DEFAULT) != 0) {
+    stream << "Default queue replaceable, ";
+  }
 #endif
 #ifdef CL_DEVICE_QUEUE_CROSS_DEVICE
-  if (caps & CL_DEVICE_QUEUE_CROSS_DEVICE)
-    oss << "Cross-device enqueue, ";
+  if ((capabilities & CL_DEVICE_QUEUE_CROSS_DEVICE) != 0) {
+    stream << "Cross-device enqueue, ";
+  }
 #endif
 #ifdef CL_DEVICE_QUEUE_CROSS_CONTEXT
-  if (caps & CL_DEVICE_QUEUE_CROSS_CONTEXT)
-    oss << "Cross-context enqueue, ";
+  if ((capabilities & CL_DEVICE_QUEUE_CROSS_CONTEXT) != 0) {
+    stream << "Cross-context enqueue, ";
+  }
 #endif
 
-  std::string s = oss.str();
-  if (!s.empty())
-    s.erase(s.size() - 2);
-  else
-    s = "None";
-  return s;
+  std::string result = stream.str();
+  if (!result.empty()) {
+    result.erase(result.size() - 2);
+  } else {
+    result = "None";
+  }
+  return result;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]] inline std::string PartitionPropertiesToString(
-    std::vector<cl_device_partition_property> const &props) {
-  if (props.empty())
+[[nodiscard]] inline auto PartitionPropertiesToString(
+    std::vector<cl_device_partition_property> const &properties)
+    -> std::string {
+  if (properties.empty()) {
     return "None";
+  }
 
-  std::ostringstream oss;
-  for (auto p : props) {
-    switch (p) {
+  std::ostringstream stream;
+  for (auto const property : properties) {
+    switch (property) {
     case CL_DEVICE_PARTITION_EQUALLY:
-      oss << "Equally, ";
+      stream << "Equally, ";
       break;
     case CL_DEVICE_PARTITION_BY_COUNTS:
-      oss << "By counts, ";
+      stream << "By counts, ";
       break;
     case CL_DEVICE_PARTITION_BY_AFFINITY_DOMAIN:
-      oss << "By affinity domain, ";
+      stream << "By affinity domain, ";
       break;
     default:
       break;
     }
   }
 
-  std::string s = oss.str();
-  if (!s.empty())
-    s.erase(s.size() - 2);
-  else
-    s = "None";
-  return s;
+  std::string result = stream.str();
+  if (!result.empty()) {
+    result.erase(result.size() - 2);
+  } else {
+    result = "None";
+  }
+  return result;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]] inline std::string
-AffinityDomainToString(cl_device_affinity_domain domain) {
-  std::ostringstream oss;
+[[nodiscard]] inline auto
+AffinityDomainToString(cl_device_affinity_domain domain) -> std::string {
+  std::ostringstream stream;
 
 #ifdef CL_DEVICE_AFFINITY_DOMAIN_NUMA
-  if (domain & CL_DEVICE_AFFINITY_DOMAIN_NUMA)
-    oss << "NUMA, ";
+  if ((domain & CL_DEVICE_AFFINITY_DOMAIN_NUMA) != 0) {
+    stream << "NUMA, ";
+  }
 #endif
 #ifdef CL_DEVICE_AFFINITY_DOMAIN_L4_CACHE
-  if (domain & CL_DEVICE_AFFINITY_DOMAIN_L4_CACHE)
-    oss << "L4 cache, ";
+  if ((domain & CL_DEVICE_AFFINITY_DOMAIN_L4_CACHE) != 0) {
+    stream << "L4 cache, ";
+  }
 #endif
 #ifdef CL_DEVICE_AFFINITY_DOMAIN_L3_CACHE
-  if (domain & CL_DEVICE_AFFINITY_DOMAIN_L3_CACHE)
-    oss << "L3 cache, ";
+  if ((domain & CL_DEVICE_AFFINITY_DOMAIN_L3_CACHE) != 0) {
+    stream << "L3 cache, ";
+  }
 #endif
 #ifdef CL_DEVICE_AFFINITY_DOMAIN_L2_CACHE
-  if (domain & CL_DEVICE_AFFINITY_DOMAIN_L2_CACHE)
-    oss << "L2 cache, ";
+  if ((domain & CL_DEVICE_AFFINITY_DOMAIN_L2_CACHE) != 0) {
+    stream << "L2 cache, ";
+  }
 #endif
 #ifdef CL_DEVICE_AFFINITY_DOMAIN_L1_CACHE
-  if (domain & CL_DEVICE_AFFINITY_DOMAIN_L1_CACHE)
-    oss << "L1 cache, ";
+  if ((domain & CL_DEVICE_AFFINITY_DOMAIN_L1_CACHE) != 0) {
+    stream << "L1 cache, ";
+  }
 #endif
 #ifdef CL_DEVICE_AFFINITY_DOMAIN_NEXT_PARTITIONABLE
-  if (domain & CL_DEVICE_AFFINITY_DOMAIN_NEXT_PARTITIONABLE)
-    oss << "Next partitionable, ";
+  if ((domain & CL_DEVICE_AFFINITY_DOMAIN_NEXT_PARTITIONABLE) != 0) {
+    stream << "Next partitionable, ";
+  }
 #endif
 
-  std::string s = oss.str();
-  if (!s.empty())
-    s.erase(s.size() - 2);
-  else
-    s = "None";
-  return s;
-}
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]]
-inline std::string
-UUIDToString(std::span<const cl_uchar, CL_UUID_SIZE_KHR> s) {
-  // format 8-4-4-4-12
-  char buf[36 + 1]{};
-
-  auto hex = [](cl_uchar b) -> std::array<char, 2> {
-    constexpr char k[] = "0123456789abcdef";
-    return {k[(b >> 4) & 0xF], k[b & 0xF]};
-  };
-
-  int p = 0;
-  auto put = [&](cl_uchar b) {
-    auto h = hex(b);
-    buf[p++] = h[0];
-    buf[p++] = h[1];
-  };
-
-  for (std::size_t i = 0; i < 16; ++i) {
-    put(s[i]);
-    if (i == 3 || i == 5 || i == 7 || i == 9)
-      buf[p++] = '-';
+  std::string result = stream.str();
+  if (!result.empty()) {
+    result.erase(result.size() - 2);
+  } else {
+    result = "None";
   }
-  buf[p] = 0;
-  return std::string(buf);
+  return result;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+[[nodiscard]] inline auto
+UUIDToString(std::span<cl_uchar const, CL_UUID_SIZE_KHR> uuid) -> std::string {
+  std::array<char, 37> buffer{};
 
-[[nodiscard]]
-inline std::string
-UUIDToString(std::array<cl_uchar, CL_UUID_SIZE_KHR> const &a) {
+  auto const to_hex_pair = [](cl_uchar byte) -> std::array<char, 2> {
+    constexpr std::string_view hex_digits{"0123456789abcdef"};
+    return {hex_digits[(byte >> 4) & 0xF], hex_digits[byte & 0xF]};
+  };
+
+  std::size_t position = 0;
+  auto const append_byte = [&](cl_uchar byte) -> void {
+    auto const hex_pair = to_hex_pair(byte);
+    buffer[position++] = hex_pair[0];
+    buffer[position++] = hex_pair[1];
+  };
+
+  for (std::size_t index = 0; index < uuid.size(); ++index) {
+    append_byte(uuid[index]);
+    if (index == 3 || index == 5 || index == 7 || index == 9) {
+      buffer[position++] = '-';
+    }
+  }
+  buffer[position] = '\0';
+  return {buffer.data()};
+}
+
+[[nodiscard]] inline auto
+UUIDToString(std::array<cl_uchar, CL_UUID_SIZE_KHR> const &uuid)
+    -> std::string {
   return UUIDToString(
-      std::span<const cl_uchar, CL_UUID_SIZE_KHR>(a.data(), a.size()));
+      std::span<cl_uchar const, CL_UUID_SIZE_KHR>(uuid.data(), uuid.size()));
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+[[nodiscard]] inline auto
+LUIDToString(std::span<cl_uchar const, CL_LUID_SIZE_KHR> luid) -> std::string {
+  std::string output;
+  output.reserve(CL_LUID_SIZE_KHR * 2);
+  constexpr std::string_view hex_digits{"0123456789abcdef"};
 
-[[nodiscard]]
-inline std::string LUIDToString(std::span<const cl_uchar, CL_LUID_SIZE_KHR> s) {
-  std::string out;
-  out.reserve(CL_LUID_SIZE_KHR * 2);
-  constexpr char k[] = "0123456789abcdef";
-  for (auto b : s) {
-    out.push_back(k[(b >> 4) & 0xF]);
-    out.push_back(k[b & 0xF]);
+  for (auto byte : luid) {
+    output.push_back(hex_digits[(byte >> 4) & 0xF]);
+    output.push_back(hex_digits[byte & 0xF]);
   }
-  return out;
+  return output;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]]
-inline std::string
-LUIDToString(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &a) {
+[[nodiscard]] inline auto
+LUIDToString(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid)
+    -> std::string {
   return LUIDToString(
-      std::span<const cl_uchar, CL_LUID_SIZE_KHR>(a.data(), a.size()));
+      std::span<cl_uchar const, CL_LUID_SIZE_KHR>(luid.data(), luid.size()));
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+[[nodiscard]] inline auto FPConfigToString(cl_device_fp_config config)
+    -> std::string {
+  std::ostringstream stream;
+  if ((config & CL_FP_DENORM) != 0) {
+    stream << "Denormals, ";
+  }
+  if ((config & CL_FP_INF_NAN) != 0) {
+    stream << "Inf/NaN, ";
+  }
+  if ((config & CL_FP_ROUND_TO_NEAREST) != 0) {
+    stream << "RoundToNearest, ";
+  }
+  if ((config & CL_FP_ROUND_TO_ZERO) != 0) {
+    stream << "RoundToZero, ";
+  }
+  if ((config & CL_FP_ROUND_TO_INF) != 0) {
+    stream << "RoundToInf, ";
+  }
+  if ((config & CL_FP_FMA) != 0) {
+    stream << "FMA, ";
+  }
+  if ((config & CL_FP_SOFT_FLOAT) != 0) {
+    stream << "SoftFloat, ";
+  }
+  if ((config & CL_FP_CORRECTLY_ROUNDED_DIVIDE_SQRT) != 0) {
+    stream << "CorrectDivideSqrt, ";
+  }
 
-[[nodiscard]] inline std::string FPConfigToString(cl_device_fp_config cfg) {
-  std::ostringstream oss;
-  if (cfg & CL_FP_DENORM)
-    oss << "Denormals, ";
-  if (cfg & CL_FP_INF_NAN)
-    oss << "Inf/NaN, ";
-  if (cfg & CL_FP_ROUND_TO_NEAREST)
-    oss << "RoundToNearest, ";
-  if (cfg & CL_FP_ROUND_TO_ZERO)
-    oss << "RoundToZero, ";
-  if (cfg & CL_FP_ROUND_TO_INF)
-    oss << "RoundToInf, ";
-  if (cfg & CL_FP_FMA)
-    oss << "FMA, ";
-  if (cfg & CL_FP_SOFT_FLOAT)
-    oss << "SoftFloat, ";
-  if (cfg & CL_FP_CORRECTLY_ROUNDED_DIVIDE_SQRT)
-    oss << "CorrectDivideSqrt, ";
+  auto result = stream.str();
+  if (!result.empty()) {
+    result.pop_back();
+    result.pop_back();
+  }
 
-  auto s = oss.str();
-  if (!s.empty())
-    s.pop_back(), s.pop_back();
-
-  return s.empty() ? "None" : s;
+  return result.empty() ? "None" : result;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]] inline std::string UIntToString(cl_uint value) {
-  if (value == std::numeric_limits<cl_uint>::max())
+[[nodiscard]] inline auto UIntToString(cl_uint value) -> std::string {
+  if (value == std::numeric_limits<cl_uint>::max()) {
     return "N/A";
+  }
   return std::to_string(value);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
 [[nodiscard]] inline auto
 DevicesToString(std::vector<cl::Device> const &devices) -> std::string {
-  std::string out;
-  for (auto const &d : devices) {
-    out += std::format("{} ", d.getInfo<CL_DEVICE_NAME>());
+  std::string output;
+  for (auto const &device : devices) {
+    output += std::format("{} ", device.getInfo<CL_DEVICE_NAME>());
   }
-  return out;
+  return output;
 }
-
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
 
 [[nodiscard]] inline auto DeviceToString(cl::Device const &device)
     -> std::string {
   return device.getInfo<CL_DEVICE_NAME>();
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]] inline std::string
-ExecCapabilitiesToString(cl_device_exec_capabilities caps) {
-  if (caps == 0)
+[[nodiscard]] inline auto
+ExecCapabilitiesToString(cl_device_exec_capabilities capabilities)
+    -> std::string {
+  if (capabilities == 0) {
     return "None";
+  }
 
-  std::ostringstream oss;
+  std::ostringstream stream;
   bool first = true;
 
-  auto add = [&](std::string_view name) {
-    if (!first)
-      oss << ", ";
-    oss << name;
+  auto const append_capability = [&](std::string_view name) -> void {
+    if (!first) {
+      stream << ", ";
+    }
+    stream << name;
     first = false;
   };
 
-  if (caps & CL_EXEC_KERNEL)
-    add("Kernel execution");
-  if (caps & CL_EXEC_NATIVE_KERNEL)
-    add("Native kernel execution");
+  if ((capabilities & CL_EXEC_KERNEL) != 0) {
+    append_capability("Kernel execution");
+  }
+  if ((capabilities & CL_EXEC_NATIVE_KERNEL) != 0) {
+    append_capability("Native kernel execution");
+  }
 
-  return oss.str();
+  return stream.str();
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+[[nodiscard]] inline auto QueuePropertiesArrayToString(
+    std::vector<cl_queue_properties> const &queue_properties) -> std::string {
+  std::string output;
 
-[[nodiscard]] inline std::string
-QueuePropertiesArrayToString(std::vector<cl_queue_properties> const &qp) {
-  std::string out;
-
-  for (std::size_t i = 0; i < qp.size(); i += 2) {
-    auto key = qp[i];
-    if (key == 0)
+  for (std::size_t index = 0; index < queue_properties.size(); index += 2) {
+    auto property = queue_properties[index];
+    if (property == 0) {
       break;
+    }
 
-    auto val = qp[i + 1];
+    auto value = queue_properties[index + 1];
 
-    switch (key) {
+    switch (property) {
     case CL_QUEUE_PROPERTIES:
-      out += std::format("CL_QUEUE_PROPERTIES = {} ",
-                         QueuePropertiesToString(val));
+      output += std::format("CL_QUEUE_PROPERTIES = {} ",
+                            QueuePropertiesToString(value));
       break;
     default:
-      out += std::format("UNKNOWN_PROPERTY({}) = {}", key, val);
+      output += std::format("UNKNOWN_PROPERTY({}) = {}", property, value);
       break;
     }
   }
 
-  return out;
+  return output;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+[[nodiscard]] inline auto ContextPropertiesToString(
+    std::vector<cl_context_properties> const &context_properties)
+    -> std::string {
+  std::string output;
 
-[[nodiscard]] inline std::string
-ContextPropertiesToString(std::vector<cl_context_properties> const &cp) {
-  std::string out;
-
-  for (std::size_t i = 0; i < cp.size(); i += 2) {
-    auto key = cp[i];
-    if (key == 0)
+  for (std::size_t index = 0; index < context_properties.size(); index += 2) {
+    auto property = context_properties[index];
+    if (property == 0) {
       break;
+    }
 
-    auto val = cp[i + 1];
-    void *ptr = reinterpret_cast<void *>(val);
+    auto value = context_properties[index + 1];
+    auto const raw_value = static_cast<std::uintptr_t>(value);
 
-    switch (key) {
+    switch (property) {
     case CL_CONTEXT_PLATFORM:
-      out += std::format("CL_CONTEXT_PLATFORM = 0x{:016x} ",
-                         reinterpret_cast<std::uintptr_t>(ptr));
+      output += std::format("CL_CONTEXT_PLATFORM = 0x{:016x} ", raw_value);
       break;
 
     case CL_GL_CONTEXT_KHR:
-      out += std::format("CL_GL_CONTEXT_KHR = 0x{:016x} ",
-                         reinterpret_cast<std::uintptr_t>(ptr));
+      output += std::format("CL_GL_CONTEXT_KHR = 0x{:016x} ", raw_value);
       break;
 
     default:
-      out += std::format("UNKNOWN_PROPERTY({}) = 0x{:016x}", key,
-                         reinterpret_cast<std::uintptr_t>(ptr));
+      output +=
+          std::format("UNKNOWN_PROPERTY({}) = 0x{:016x}", property, raw_value);
       break;
     }
   }
 
-  return out;
+  return output;
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]] inline std::string
-ArgAddressQualifierToString(cl_kernel_arg_address_qualifier aq) {
-  switch (aq) {
+[[nodiscard]] inline auto
+ArgAddressQualifierToString(cl_kernel_arg_address_qualifier qualifier)
+    -> std::string {
+  switch (qualifier) {
   case CL_KERNEL_ARG_ADDRESS_GLOBAL:
     return "CL_KERNEL_ARG_ADDRESS_GLOBAL";
   case CL_KERNEL_ARG_ADDRESS_LOCAL:
@@ -630,13 +591,10 @@ ArgAddressQualifierToString(cl_kernel_arg_address_qualifier aq) {
   }
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-
-[[nodiscard]] inline std::string
-ArgAccessQualifierToString(cl_kernel_arg_address_qualifier aq) {
-  switch (aq) {
+[[nodiscard]] inline auto
+ArgAccessQualifierToString(cl_kernel_arg_address_qualifier qualifier)
+    -> std::string {
+  switch (qualifier) {
   case CL_KERNEL_ARG_ACCESS_READ_ONLY:
     return "CL_KERNEL_ARG_ACCESS_READ_ONLY";
   case CL_KERNEL_ARG_ACCESS_WRITE_ONLY:
@@ -649,28 +607,31 @@ ArgAccessQualifierToString(cl_kernel_arg_address_qualifier aq) {
   }
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+[[nodiscard]] inline auto
+ArgTypeQualifierToString(cl_kernel_arg_type_qualifier qualifier)
+    -> std::string {
+  std::string output;
+  if ((qualifier & CL_KERNEL_ARG_TYPE_CONST) != 0) {
+    output += "CL_KERNEL_ARG_TYPE_CONST ";
+  }
+  if ((qualifier & CL_KERNEL_ARG_TYPE_RESTRICT) != 0) {
+    output += "CL_KERNEL_ARG_TYPE_RESTRICT ";
+  }
+  if ((qualifier & CL_KERNEL_ARG_TYPE_VOLATILE) != 0) {
+    output += "CL_KERNEL_ARG_TYPE_VOLATILE ";
+  }
+  if ((qualifier & CL_KERNEL_ARG_TYPE_PIPE) != 0) {
+    output += "CL_KERNEL_ARG_TYPE_PIPE ";
+  }
+  if ((qualifier & CL_KERNEL_ARG_TYPE_NONE) != 0) {
+    output += "CL_KERNEL_ARG_TYPE_NONE ";
+  }
 
-[[nodiscard]] inline std::string
-ArgTypeQualifierToString(cl_kernel_arg_type_qualifier aq) {
-  std::string out;
-  if (aq & CL_KERNEL_ARG_TYPE_CONST)
-    out += "CL_KERNEL_ARG_TYPE_CONST ";
-  if (aq & CL_KERNEL_ARG_TYPE_RESTRICT)
-    out += "CL_KERNEL_ARG_TYPE_RESTRICT ";
-  if (aq & CL_KERNEL_ARG_TYPE_VOLATILE)
-    out += "CL_KERNEL_ARG_TYPE_VOLATILE ";
-  if (aq & CL_KERNEL_ARG_TYPE_PIPE)
-    out += "CL_KERNEL_ARG_TYPE_PIPE ";
-  if (aq & CL_KERNEL_ARG_TYPE_NONE)
-    out += "CL_KERNEL_ARG_TYPE_NONE ";
-
-  if (!out.empty())
-    out.erase(out.size() - 1);
-  else
-    out = "None";
-  return out;
+  if (!output.empty()) {
+    output.erase(output.size() - 1);
+  } else {
+    output = "None";
+  }
+  return output;
 }
 } // namespace ggems::ocl

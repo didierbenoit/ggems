@@ -1,6 +1,4 @@
 #pragma once
-// ************************************************************************
-// ************************************************************************
 
 #include <algorithm>
 #include <array>
@@ -20,7 +18,8 @@
 #include "GGEMS/frameworks/GGEMSOpenCLInfoTraits.hh"
 
 namespace ggems::ocl {
-[[nodiscard]] inline std::string_view GetErrorCodeName(cl_int err) noexcept {
+[[nodiscard]] inline auto GetErrorCodeName(cl_int err) noexcept
+    -> std::string_view {
   switch (err) {
   case CL_SUCCESS:
     return "CL_SUCCESS";
@@ -152,7 +151,8 @@ namespace ggems::ocl {
   }
 }
 
-[[nodiscard]] inline std::string_view GetErrorDescription(cl_int err) noexcept {
+[[nodiscard]] inline auto GetErrorDescription(cl_int err) noexcept
+    -> std::string_view {
   switch (err) {
   case CL_SUCCESS:
     return "Operation completed successfully.";
@@ -284,7 +284,7 @@ namespace ggems::ocl {
   }
 }
 
-[[nodiscard]] inline std::string GetLongErrorString(cl_int err) {
+[[nodiscard]] inline auto GetLongErrorString(cl_int err) -> std::string {
   return std::format("{} - {}", GetErrorCodeName(err),
                      GetErrorDescription(err));
 }
@@ -295,10 +295,10 @@ CheckCLError(cl_int err, std::string_view context,
              std::source_location loc = std::source_location::current())
     -> void {
   if (err != CL_SUCCESS) {
-    throw ExceptionType(
-        std::format("{} (code {}): {}", context, static_cast<int>(err),
-                    GetLongErrorString(err)),
-        loc);
+    throw ExceptionType(std::format("{} (code {}): {}", context,
+                                    static_cast<int>(err),
+                                    GetLongErrorString(err)),
+                        loc);
   }
 }
 
@@ -325,64 +325,63 @@ template <> struct CLInfoReader<std::string> {
 template <typename T, std::size_t N> struct CLInfoReader<std::array<T, N>> {
   static auto Read(auto const &obj, cl_uint param, size_t size, auto getter,
                    cl_int &err) -> std::array<T, N> {
-    std::array<T, N> v{};
+    std::array<T, N> values{};
     size_t take = std::min<size_t>(size, N * sizeof(T));
-    err = getter(obj(), param, take, v.data(), nullptr);
-    return v;
+    err = getter(obj(), param, take, values.data(), nullptr);
+    return values;
   }
 };
 
 template <typename T> struct CLInfoReader<std::vector<T>> {
   static auto Read(auto const &obj, cl_uint param, size_t size, auto getter,
                    cl_int &err) -> std::vector<T> {
-    std::vector<T> v(size / sizeof(T));
-    err = getter(obj(), param, size, v.data(), nullptr);
-    return v;
+    std::vector<T> values(size / sizeof(T));
+    err = getter(obj(), param, size, values.data(), nullptr);
+    return values;
   }
 };
 
 template <class Obj> struct CLGetter;
 
 template <> struct CLGetter<cl::Device> {
-  static constexpr auto fn = &clGetDeviceInfo;
+  static constexpr auto function = &clGetDeviceInfo;
 };
 
 template <> struct CLGetter<cl::Context> {
-  static constexpr auto fn = &clGetContextInfo;
+  static constexpr auto function = &clGetContextInfo;
 };
 
 template <> struct CLGetter<cl::Platform> {
-  static constexpr auto fn = &clGetPlatformInfo;
+  static constexpr auto function = &clGetPlatformInfo;
 };
 
 template <> struct CLGetter<cl::Program> {
-  static constexpr auto fn = &clGetProgramInfo;
+  static constexpr auto function = &clGetProgramInfo;
 };
 
 template <> struct CLGetter<cl::CommandQueue> {
-  static constexpr auto fn = &clGetCommandQueueInfo;
+  static constexpr auto function = &clGetCommandQueueInfo;
 };
 
 template <> struct CLGetter<cl::Kernel> {
-  static constexpr auto fn = &clGetKernelInfo;
+  static constexpr auto function = &clGetKernelInfo;
 };
 } // namespace detail
 
 template <cl_uint Info, typename Kernel>
-auto GetArgInfo(Kernel const &k, cl_uint index) {
+auto GetArgInfo(Kernel const &kernel, cl_uint index) {
   cl_int err{CL_SUCCESS};
-  auto value = k.template getArgInfo<Info>(index, &err);
-  CheckCLError<core::GGEMSRecoverable>(err,
-                                       "Get kernel argument info failed.");
+  auto value = kernel.template getArgInfo<Info>(index, &err);
+  CheckCLError<core::GGEMSRecoverable>(err, "Get kernel argument info failed.");
   return value;
 }
 
 template <cl_uint Info, typename Kernel, typename Device>
-auto GetWorkGroupInfo(Kernel const &k, Device const &d) {
+auto GetWorkGroupInfo(Kernel const &kernel, Device const &device) {
   cl_int err{CL_SUCCESS};
-  auto value = k.template getWorkGroupInfo<Info>(d, &err);
-  CheckCLError<core::GGEMSRecoverable>(
-      err, "Get kernel work group info failed.");
+  auto value = kernel.template getWorkGroupInfo<Info>(device, &err);
+  CheckCLError<core::GGEMSRecoverable>(err,
+                                       "Get kernel work group info failed.");
   return value;
 }
 
@@ -399,17 +398,17 @@ template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
     CheckCLError<core::GGEMSRecoverable>(err, "GetInfo failed");
     return value;
   } else {
-    auto getter = detail::CLGetter<Object>::fn;
+    auto getter = detail::CLGetter<Object>::function;
 
     std::size_t size = 0;
     err = getter(obj(), Info, 0, nullptr, &size);
-    CheckCLError<core::GGEMSRecoverable>(
-        err, std::string(Traits::name) + " (query size)");
+    CheckCLError<core::GGEMSRecoverable>(err, std::string(Traits::name) +
+                                                  " (query size)");
 
     auto value =
         detail::CLInfoReader<ReturnType>::Read(obj, Info, size, getter, err);
-    CheckCLError<core::GGEMSRecoverable>(
-        err, std::string(Traits::name) + " (read)");
+    CheckCLError<core::GGEMSRecoverable>(err,
+                                         std::string(Traits::name) + " (read)");
     return value;
   }
 }
@@ -425,19 +424,19 @@ template <cl_uint Info, typename Object> void PrintInfo(Object const &obj) {
   }
 }
 
-[[nodiscard]] inline bool
+[[nodiscard]] inline auto
 HasExtension(std::unordered_set<std::string> const &extensions,
-             std::string_view name) {
+             std::string_view name) -> bool {
   if (name.empty()) {
     return false;
   }
-  auto it = extensions.find(std::string{name});
-  return it != extensions.end();
+  auto it_extension = extensions.find(std::string{name});
+  return it_extension != extensions.end();
 }
 
 template <cl_uint Info, typename Object>
-[[nodiscard]] inline std::unordered_set<std::string>
-ExtractExtensions(Object const &obj) {
+[[nodiscard]] auto ExtractExtensions(Object const &obj)
+    -> std::unordered_set<std::string> {
   std::string ext_str = GetInfo<Info>(obj);
   std::unordered_set<std::string> result;
   std::istringstream iss(ext_str);

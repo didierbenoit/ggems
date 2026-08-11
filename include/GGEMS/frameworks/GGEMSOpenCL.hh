@@ -1,6 +1,11 @@
 #pragma once
 
 #include <mutex>
+#include <string>
+#include <vector>
+#include <filesystem>
+#include <functional>
+#include <memory>
 
 #include "GGEMS/core/GGEMSLogMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLProgram.hh"
@@ -12,30 +17,27 @@ class GGEMSOpenCLContext;
 class GGEMSOpenCLDevice;
 
 class GGEMSOpenCL {
-private:
-  GGEMSOpenCL();
+public:
+  ~GGEMSOpenCL();
 
   GGEMSOpenCL(GGEMSOpenCL const &openCL) = delete;
   GGEMSOpenCL(GGEMSOpenCL &&openCL) = delete;
-  GGEMSOpenCL &operator=(GGEMSOpenCL const &openCL) = delete;
-  GGEMSOpenCL &operator=(GGEMSOpenCL &&openCL) = delete;
+  auto operator=(GGEMSOpenCL const &openCL) -> GGEMSOpenCL & = delete;
+  auto operator=(GGEMSOpenCL &&openCL) -> GGEMSOpenCL & = delete;
 
-public:
-  [[nodiscard]] static GGEMSOpenCL &GetInstance() {
-    static GGEMSOpenCL *instance = []() {
+  [[nodiscard]] static auto GetInstance() -> GGEMSOpenCL & {
+    static GGEMSOpenCL *instance = []() -> GGEMSOpenCL * {
       GGEMS_INFOEX("OpenCL", 3, "Creating GGEMSOpenCL singleton instance.");
       return new GGEMSOpenCL();
     }();
     return *instance;
   }
 
-  auto GetOrCreateProgram(
-      GGEMSOpenCLContext const &ctx,
-      std::filesystem::path const &kernel_root,
-      std::string const &kernel_name, std::string const &build_options = "")
+  auto GetOrCreateProgram(GGEMSOpenCLContext const &ctx,
+                          std::filesystem::path const &kernel_root,
+                          std::string const &kernel_name,
+                          std::string const &build_options = "")
       -> GGEMSOpenCLProgram const &;
-
-  ~GGEMSOpenCL();
 
   void Clean();
 
@@ -45,34 +47,34 @@ public:
 
   void PrintContexts() const;
 
-  [[nodiscard]] std::vector<GGEMSOpenCLPlatform> const &
-  GetPlatforms() const noexcept {
+  [[nodiscard]] auto GetPlatforms() const noexcept
+      -> std::vector<GGEMSOpenCLPlatform> const & {
     return platforms_;
   }
 
-  void SelectDevices(std::vector<std::string> const &filters);
+  auto SelectDevices(std::vector<std::string> const &filters) -> void;
 
-  void Initialize();
+  auto Initialize() -> void;
 
   [[nodiscard]]
-  std::vector<GGEMSOpenCLContext> &GetContext() noexcept {
+  auto GetContext() noexcept -> std::vector<GGEMSOpenCLContext> & {
     return contexts_;
   }
 
 private:
+  GGEMSOpenCL();
   void InitPlatformsAndDevices();
 
   [[nodiscard]]
-  std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>
-  ParseDeviceFilters(
+  static auto ParseDeviceFilters(
       std::vector<std::string> const &filters,
-      std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> all_devices);
+      std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> all_devices)
+      -> std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>;
 
-  void CreateContexts();
+  auto CreateContexts() -> void;
 
-  void DisableNvidiaDriverKernelCache() const;
+  static auto DisableNvidiaDriverKernelCache() -> void;
 
-private:
   std::vector<GGEMSOpenCLPlatform> platforms_;
   std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>
       selected_devices_;
