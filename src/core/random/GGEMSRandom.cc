@@ -94,12 +94,14 @@ auto MakePhiloxState(std::uint64_t seed, std::uint64_t stream_id) noexcept
 auto CheckedStateCount(std::size_t state_size,
                        std::span<std::byte> state_storage) -> std::size_t {
   if (!(state_size > 0U)) {
-    throw ggems::core::GGEMSInternal("Unsupported GGEMS Random engine state size.");
+    throw ggems::core::GGEMSInternal(
+        "Unsupported GGEMS Random engine state size.");
   }
 
   if (!(state_storage.size() % state_size == 0U)) {
-    throw ggems::core::GGEMSRecoverable("Random state storage size must be a multiple of the "
-                          "selected engine state size.");
+    throw ggems::core::GGEMSRecoverable(
+        "Random state storage size must be a multiple of the "
+        "selected engine state size.");
   }
 
   return state_storage.size() / state_size;
@@ -115,9 +117,10 @@ auto CheckLastStreamId(std::uint64_t first_stream_id, std::size_t state_count)
   }
 
   if (!(std::cmp_less_equal(state_count - 1U,
-                          std::numeric_limits<std::uint64_t>::max() -
-                              first_stream_id))) {
-    throw ggems::core::GGEMSRecoverable("Random stream identifier range overflow uint64_t.");
+                            std::numeric_limits<std::uint64_t>::max() -
+                                first_stream_id))) {
+    throw ggems::core::GGEMSRecoverable(
+        "Random stream identifier range overflow uint64_t.");
   }
 
   return first_stream_id + static_cast<std::uint64_t>(state_count - 1U);
@@ -127,11 +130,11 @@ auto CheckLastStreamId(std::uint64_t first_stream_id, std::size_t state_count)
 // =============================================================================
 
 template <typename State, typename Factory>
-auto InitializeStateStorage(std::uint64_t first_stream_id,
-                            std::size_t state_count,
-                            std::span<std::byte> state_storage,
-                            Factory make_state)
-    noexcept(noexcept(make_state(first_stream_id))) -> void {
+auto InitializeStateStorage(
+    std::uint64_t first_stream_id, std::size_t state_count,
+    std::span<std::byte> state_storage,
+    Factory make_state) noexcept(noexcept(make_state(first_stream_id)))
+    -> void {
   for (std::size_t state_index = 0U; state_index < state_count; ++state_index) {
     auto state =
         make_state(first_stream_id + static_cast<std::uint64_t>(state_index));
@@ -157,7 +160,6 @@ auto ToString(GGEMSRandomEngine engine) -> std::string {
   }
 
   throw ggems::core::GGEMSInternal("Unsupported GGEMS random engine.");
-  return "Unknown";
 }
 
 // =============================================================================
@@ -268,7 +270,8 @@ auto GGEMSRandom::GetStateSize() const noexcept -> std::size_t {
 auto GGEMSRandom::ValidateStateRange(std::uint64_t first_stream_id,
                                      std::size_t state_count) const -> void {
   if (!(GetStateSize() > 0U)) {
-    throw ggems::core::GGEMSInternal("Unsupported GGEMS random engine state size.");
+    throw ggems::core::GGEMSInternal(
+        "Unsupported GGEMS random engine state size.");
   }
 
   std::uint64_t last_stream_id =
@@ -276,9 +279,9 @@ auto GGEMSRandom::ValidateStateRange(std::uint64_t first_stream_id,
 
   if (engine_ == GGEMSRandomEngine::JKISS) {
     if (!(state_count == 0U ||
-                                last_stream_id <=
-                                    std::numeric_limits<std::uint32_t>::max())) {
-      throw ggems::core::GGEMSRecoverable("JKISS stream identifier must fit uint32_t.");
+          last_stream_id <= std::numeric_limits<std::uint32_t>::max())) {
+      throw ggems::core::GGEMSRecoverable(
+          "JKISS stream identifier must fit uint32_t.");
     }
   }
 }
@@ -321,7 +324,8 @@ auto GGEMSRandom::InitializeStates(std::uint64_t first_stream_id,
     return;
   }
 
-  throw ggems::core::GGEMSInternal("Unsupported GGEMS random engine state initialization.");
+  throw ggems::core::GGEMSInternal(
+      "Unsupported GGEMS random engine state initialization.");
 }
 
 // -----------------------------------------------------------------------------

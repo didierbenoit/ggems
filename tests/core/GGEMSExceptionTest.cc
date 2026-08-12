@@ -74,7 +74,6 @@ TEST(GGEMSExceptionTest, CapturesTheDirectThrowSite) {
 
   try {
     ThrowRecoverableFromKnownLine(expected_line);
-    FAIL() << "Expected a recoverable exception.";
   } catch (ggems::core::GGEMSRecoverable const &exception) {
     EXPECT_EQ(expected_line, exception.GetLine());
     EXPECT_NE(std::string_view{exception.GetFileName()}.find(

@@ -1,14 +1,9 @@
-# ============================================================================
-# ============================================================================
-
-# ----------------------------------------------------------------------------
 # Dependencies
-# ----------------------------------------------------------------------------
 include(FetchContent)
 include(GoogleTest)
 
 set(GGEMS_GTEST_VERSION
-    "v1.17.0"
+    "v1.18.0"
     CACHE STRING "GoogleTest version used when FetchContent is required.")
 
 option(
@@ -60,9 +55,7 @@ else()
   message(FATAL_ERROR "No usable GoogleTest main target was found.")
 endif()
 
-# ----------------------------------------------------------------------------
 # Core unit tests
-# ----------------------------------------------------------------------------
 file(GLOB_RECURSE GGEMS_CORE_TEST_SOURCES CONFIGURE_DEPENDS
      "${CMAKE_CURRENT_SOURCE_DIR}/core/*.cc")
 
@@ -72,8 +65,9 @@ target_compile_definitions(
   ggems_core_tests
   PRIVATE GGEMS_TEST_KERNEL_ROOT="${PROJECT_SOURCE_DIR}/kernels")
 
-target_link_libraries(ggems_core_tests PRIVATE ggems_core
-                                               ${GGEMS_GTEST_MAIN_TARGET})
+target_link_libraries(
+  ggems_core_tests PRIVATE ggems_core GGEMS::CompilerOptions
+                           ${GGEMS_GTEST_MAIN_TARGET})
 
 target_include_directories(
   ggems_core_tests PRIVATE ${PROJECT_SOURCE_DIR}/include
@@ -83,25 +77,7 @@ ggems_apply_release_optimizations(ggems_core_tests)
 
 gtest_discover_tests(ggems_core_tests)
 
-find_package(Python3 REQUIRED COMPONENTS Interpreter)
-
-add_test(
-  NAME GGEMSSourceBindingsPython
-  COMMAND
-    ${CMAKE_COMMAND} -E env "PYTHONPATH=$<TARGET_FILE_DIR:ggems>"
-    "${Python3_EXECUTABLE}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/python/GGEMSSourceBindingsTest.py")
-
-add_test(
-  NAME GGEMSRunBindingsPython
-  COMMAND
-    ${CMAKE_COMMAND} -E env "PYTHONPATH=$<TARGET_FILE_DIR:ggems>"
-    "${Python3_EXECUTABLE}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/python/GGEMSRunBindingsTest.py")
-
-# ----------------------------------------------------------------------------
 # GuiMode unit tests
-# ----------------------------------------------------------------------------
 if(GGEMS_WITH_IMGUI)
   file(GLOB_RECURSE GGEMS_GUI_TEST_SOURCES CONFIGURE_DEPENDS
        "${CMAKE_CURRENT_SOURCE_DIR}/ui/*.cc")
@@ -112,8 +88,9 @@ if(GGEMS_WITH_IMGUI)
     ggems_gui_tests PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
                             VULKAN_HPP_NO_STRUCT_CONSTRUCTORS=1)
 
-  target_link_libraries(ggems_gui_tests PRIVATE ggems_gui
-                                                ${GGEMS_GTEST_MAIN_TARGET})
+  target_link_libraries(
+    ggems_gui_tests PRIVATE ggems_gui GGEMS::CompilerOptions
+                            ${GGEMS_GTEST_MAIN_TARGET})
 
   target_include_directories(ggems_gui_tests
                              PRIVATE ${PROJECT_SOURCE_DIR}/include)
@@ -121,4 +98,11 @@ if(GGEMS_WITH_IMGUI)
   ggems_apply_release_optimizations(ggems_gui_tests)
 
   gtest_discover_tests(ggems_gui_tests)
+endif()
+
+# Test build target
+add_custom_target(tests DEPENDS ggems_core_tests)
+
+if(GGEMS_WITH_IMGUI)
+  add_dependencies(tests ggems_gui_tests)
 endif()

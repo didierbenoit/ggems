@@ -1,6 +1,3 @@
-# ============================================================================
-# ============================================================================
-
 include_guard(GLOBAL)
 
 option(GGEMS_USE_COMPILER_CACHE "Use sccache as the compiler launcher" OFF)

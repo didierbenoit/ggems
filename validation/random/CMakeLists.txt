@@ -1,13 +1,9 @@
-# ============================================================================
-# ============================================================================
-
-# ----------------------------------------------------------------------------
 # Random stream generator
-# ----------------------------------------------------------------------------
 add_executable(ggems_random_stream_generator
                tools/GGEMSRandomStreamGenerator.cc)
 
-target_link_libraries(ggems_random_stream_generator PRIVATE ggems_core)
+target_link_libraries(ggems_random_stream_generator
+                      PRIVATE ggems_core GGEMS::CompilerOptions)
 
 target_include_directories(
   ggems_random_stream_generator PRIVATE ${PROJECT_SOURCE_DIR}/include

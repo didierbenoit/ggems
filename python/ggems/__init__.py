@@ -1,4 +1,46 @@
-from . import ggems
+import os as _os
+from pathlib import Path as _Path
+
+_dll_directory_handles = []
+
+try:
+    from . import ggems
+except ImportError:
+    if _os.name != "nt":
+        raise
+
+    _runtime_dirs = []
+
+    _oneapi_root = _os.environ.get("ONEAPI_ROOT")
+    if _oneapi_root:
+        _runtime_dirs.extend(
+            [
+                _Path(_oneapi_root) / "compiler" / "latest" / "bin",
+                _Path(_oneapi_root) / "bin",
+            ]
+        )
+
+    _program_files_x86 = _os.environ.get("ProgramFiles(x86)")
+    if _program_files_x86:
+        _runtime_dirs.append(
+            _Path(_program_files_x86)
+            / "Intel"
+            / "oneAPI"
+            / "compiler"
+            / "latest"
+            / "bin"
+        )
+
+    for _runtime_dir in dict.fromkeys(_runtime_dirs):
+        if any(
+            (_runtime_dir / _dll).is_file() for _dll in ("libmmd.dll", "libmmdd.dll")
+        ):
+            _dll_directory_handles.append(_os.add_dll_directory(str(_runtime_dir)))
+
+    if not _dll_directory_handles:
+        raise
+
+    from . import ggems
 
 core = ggems.core
 opencl = ggems.opencl

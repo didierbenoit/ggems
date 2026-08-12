@@ -214,8 +214,9 @@ template <ExactIntegral Integer>
 constexpr auto IntegralIsNegative(Integer value) noexcept -> bool {
   if constexpr (std::signed_integral<Integer>) {
     return value < 0;
+  } else {
+    return false;
   }
-  return false;
 }
 
 template <ExactIntegral Integer>
@@ -678,53 +679,54 @@ auto HumanReadable(
     return detail::FormatScaled(quantity,
                                 *FindUnit<UnitSet>(Family::fixed_display_unit),
                                 precision, width);
-  }
-  if constexpr (Family::format_policy ==
-                QuantityFormatPolicy::DurationBreakdown) {
-    auto const second_factor = static_cast<std::uint64_t>(
-        detail::ScaleFactor(FindUnit<UnitSet>("s")->scale));
-    if (quantity.value >= 60ULL * second_factor) {
-      auto const millisecond_factor = static_cast<std::uint64_t>(
-          detail::ScaleFactor(FindUnit<UnitSet>("ms")->scale));
-      auto const total_seconds = quantity.value / second_factor;
-      auto const remainder = quantity.value % second_factor;
-      auto const hours = total_seconds / 3'600ULL;
-      auto const minutes = total_seconds % 3'600ULL / 60ULL;
-      auto const seconds = total_seconds % 60ULL;
-      auto const milliseconds = remainder / millisecond_factor;
-      if (hours > 0ULL) {
-        return std::format("{} h {} min {} s {} ms", hours, minutes, seconds,
-                           milliseconds);
+  } else {
+    if constexpr (Family::format_policy ==
+                  QuantityFormatPolicy::DurationBreakdown) {
+      auto const second_factor = static_cast<std::uint64_t>(
+          detail::ScaleFactor(FindUnit<UnitSet>("s")->scale));
+      if (quantity.value >= 60ULL * second_factor) {
+        auto const millisecond_factor = static_cast<std::uint64_t>(
+            detail::ScaleFactor(FindUnit<UnitSet>("ms")->scale));
+        auto const total_seconds = quantity.value / second_factor;
+        auto const remainder = quantity.value % second_factor;
+        auto const hours = total_seconds / 3'600ULL;
+        auto const minutes = total_seconds % 3'600ULL / 60ULL;
+        auto const seconds = total_seconds % 60ULL;
+        auto const milliseconds = remainder / millisecond_factor;
+        if (hours > 0ULL) {
+          return std::format("{} h {} min {} s {} ms", hours, minutes, seconds,
+                             milliseconds);
+        }
+        return std::format("{} min {} s {} ms", minutes, seconds, milliseconds);
       }
-      return std::format("{} min {} s {} ms", minutes, seconds, milliseconds);
     }
-  }
 
-  long double const magnitude =
-      std::abs(static_cast<long double>(quantity.value));
+    long double const magnitude =
+        std::abs(static_cast<long double>(quantity.value));
 
-  UnitDefinition const *selected{nullptr};
-  long double selected_factor{-1.0L};
-  for (auto const &unit : UnitRegistry<UnitSet>::units) {
-    long double const factor = detail::ScaleFactor(unit.scale);
-    if (unit.automatic_display && magnitude >= factor &&
-        factor > selected_factor) {
-      selected = &unit;
-      selected_factor = factor;
-    }
-  }
-
-  if (selected == nullptr) {
-    long double smallest_factor = std::numeric_limits<long double>::max();
+    UnitDefinition const *selected{nullptr};
+    long double selected_factor{-1.0L};
     for (auto const &unit : UnitRegistry<UnitSet>::units) {
       long double const factor = detail::ScaleFactor(unit.scale);
-      if (unit.automatic_display && factor < smallest_factor) {
+      if (unit.automatic_display && magnitude >= factor &&
+          factor > selected_factor) {
         selected = &unit;
-        smallest_factor = factor;
+        selected_factor = factor;
       }
     }
+
+    if (selected == nullptr) {
+      long double smallest_factor = std::numeric_limits<long double>::max();
+      for (auto const &unit : UnitRegistry<UnitSet>::units) {
+        long double const factor = detail::ScaleFactor(unit.scale);
+        if (unit.automatic_display && factor < smallest_factor) {
+          selected = &unit;
+          smallest_factor = factor;
+        }
+      }
+    }
+    return detail::FormatScaled(quantity, *selected, precision, width);
   }
-  return detail::FormatScaled(quantity, *selected, precision, width);
 }
 
 } // namespace ggems::units

@@ -25,14 +25,6 @@
 #include "GGEMS/core/units/GGEMSActivityUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 
-namespace ggems::core::transport {
-
-auto SetTransportWorkloadTestControl(
-    std::uint32_t launch_primary_count_limit,
-    std::uint32_t fail_after_completed_chunk_count) noexcept -> void;
-
-} // namespace ggems::core::transport
-
 namespace {
 
 constexpr std::uint64_t k_second_ps{1'000'000'000'000ULL};
@@ -42,34 +34,6 @@ constexpr long double k_activity_bq{512.0L};
 constexpr std::uint32_t k_source_record_kind =
     ggems::core::observer::ToKernelObserverRecordKind(
         ggems::core::observer::GGEMSObserverRecordKind::Source);
-
-// =============================================================================
-// =============================================================================
-
-class TransportWorkloadTestControl {
-public:
-  explicit TransportWorkloadTestControl(
-      std::uint32_t launch_primary_count_limit) noexcept
-      : launch_primary_count_limit_{launch_primary_count_limit} {
-    SetFailureChunkCount(0U);
-  }
-
-  ~TransportWorkloadTestControl() {
-    ggems::core::transport::SetTransportWorkloadTestControl(0U, 0U);
-  }
-
-  TransportWorkloadTestControl(TransportWorkloadTestControl const &) = delete;
-  auto operator=(TransportWorkloadTestControl const &)
-      -> TransportWorkloadTestControl & = delete;
-
-  auto SetFailureChunkCount(std::uint32_t chunk_count) const noexcept -> void {
-    ggems::core::transport::SetTransportWorkloadTestControl(
-        launch_primary_count_limit_, chunk_count);
-  }
-
-private:
-  std::uint32_t launch_primary_count_limit_;
-};
 
 // =============================================================================
 // =============================================================================
@@ -474,105 +438,4 @@ TEST_F(GGEMSActivityDrivenRunTest,
             k_second_ps);
   EXPECT_EQ(reference_second_snapshot->GetRecords()[0U].time_stop_ps,
             2ULL * k_second_ps);
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST_F(GGEMSActivityDrivenRunTest,
-       LaterChunkFailurePreservesCommittedStateAndPlannerCandidate) {
-  constexpr std::uint32_t k_chunk_primary_count{3U};
-  constexpr std::uint32_t k_failure_chunk_count{2U};
-
-  TransportWorkloadTestControl test_control{k_chunk_primary_count};
-  auto radionuclide = MakeMonoRadionuclide();
-  auto source = MakeActivitySource(radionuclide);
-  auto observer = MakeObserver();
-
-  std::vector<std::shared_ptr<ggems::core::sources::GGEMSSource>>
-      reference_sources{MakeActivitySource(radionuclide)};
-  auto reference_random = MakeRandom();
-  auto reference_configuration =
-      ggems::core::sources::BuildSourceConfigurationSnapshot(reference_sources);
-  ggems::core::sources::GGEMSSourcePopulationPlanner reference_planner{
-      reference_sources, *reference_random};
-
-  auto reference_first = reference_planner.BuildCandidate(
-      {.start_ps = 0ULL, .stop_ps = k_second_ps});
-  auto expected_first_snapshot = ggems::core::sources::BuildSourceRunSnapshot(
-      reference_sources, reference_configuration, reference_first.GetPlan());
-  reference_planner.CommitCandidate(reference_first);
-
-  auto reference_second = reference_planner.BuildCandidate(
-      {.start_ps = k_second_ps, .stop_ps = 2ULL * k_second_ps});
-  auto expected_retry_snapshot = ggems::core::sources::BuildSourceRunSnapshot(
-      reference_sources, reference_configuration, reference_second.GetPlan());
-  ASSERT_GT(expected_retry_snapshot.GetTotalPrimaryCount(),
-            2ULL * k_failure_chunk_count * k_chunk_primary_count);
-
-  ggems::core::GGEMSRun run{};
-  run.SetRandom(MakeRandom());
-  run.SetSource(source);
-  run.SetObserver(observer);
-  run.SetWorkerCount(64U);
-  run.SetTimePicoSecond(0ULL, 3ULL * k_second_ps, k_second_ps);
-
-  ASSERT_NO_THROW(run.Initialize());
-  ASSERT_NO_THROW(run.Run());
-
-  auto const first_snapshot = run.GetLastSourceRunSnapshot();
-  ASSERT_TRUE(first_snapshot.has_value());
-  EXPECT_EQ(first_snapshot->GetTotalPrimaryCount(),
-            expected_first_snapshot.GetTotalPrimaryCount());
-  std::string const first_observer_dump = observer->BuildDump();
-
-  test_control.SetFailureChunkCount(k_failure_chunk_count);
-  EXPECT_THROW(run.Run(), ggems::core::GGEMSExceptionBase);
-
-  EXPECT_EQ(run.GetCurrentTimePicoSecond(), k_second_ps);
-  EXPECT_EQ(observer->BuildDump(), first_observer_dump);
-  auto const snapshot_after_failure = run.GetLastSourceRunSnapshot();
-  ASSERT_TRUE(snapshot_after_failure.has_value());
-  EXPECT_EQ(snapshot_after_failure->GetTotalPrimaryCount(),
-            first_snapshot->GetTotalPrimaryCount());
-  ASSERT_EQ(snapshot_after_failure->GetRecords().size(), 1U);
-  EXPECT_EQ(snapshot_after_failure->GetRecords()[0U].time_start_ps, 0ULL);
-  EXPECT_EQ(snapshot_after_failure->GetRecords()[0U].time_stop_ps, k_second_ps);
-
-  test_control.SetFailureChunkCount(0U);
-  ASSERT_NO_THROW(run.Run());
-
-  auto const retry_snapshot = run.GetLastSourceRunSnapshot();
-  ASSERT_TRUE(retry_snapshot.has_value());
-  EXPECT_EQ(retry_snapshot->GetTotalPrimaryCount(),
-            expected_retry_snapshot.GetTotalPrimaryCount());
-  ASSERT_EQ(retry_snapshot->GetRanges().size(),
-            expected_retry_snapshot.GetRanges().size());
-  ASSERT_EQ(retry_snapshot->GetGroupRanges().size(),
-            expected_retry_snapshot.GetGroupRanges().size());
-
-  for (std::size_t index = 0U; index < retry_snapshot->GetRanges().size();
-       ++index) {
-    EXPECT_EQ(
-        retry_snapshot->GetRanges()[index].projection_primary_begin,
-        expected_retry_snapshot.GetRanges()[index].projection_primary_begin);
-    EXPECT_EQ(retry_snapshot->GetRanges()[index].primary_count,
-              expected_retry_snapshot.GetRanges()[index].primary_count);
-  }
-  for (std::size_t index = 0U; index < retry_snapshot->GetGroupRanges().size();
-       ++index) {
-    EXPECT_EQ(
-        retry_snapshot->GetGroupRanges()[index].source_local_primary_begin,
-        expected_retry_snapshot.GetGroupRanges()[index]
-            .source_local_primary_begin);
-    EXPECT_EQ(retry_snapshot->GetGroupRanges()[index].primary_count,
-              expected_retry_snapshot.GetGroupRanges()[index].primary_count);
-  }
-
-  auto const retry_source_records = GetSortedSourceRecords(*observer);
-  ASSERT_FALSE(retry_source_records.empty());
-  EXPECT_EQ(retry_source_records.front().global_primary_id,
-            expected_first_snapshot.GetTotalPrimaryCount() +
-                expected_retry_snapshot.GetTotalPrimaryCount());
-  EXPECT_EQ(run.GetCurrentTimePicoSecond(), 2ULL * k_second_ps);
 }

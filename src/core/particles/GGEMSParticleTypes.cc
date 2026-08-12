@@ -6,7 +6,6 @@
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/GGEMSException.hh"
 
-
 namespace ggems::core::particles {
 namespace {
 
@@ -55,7 +54,6 @@ auto ToLongName(GGEMSParticleType particle_type) -> std::string {
   }
 
   throw ggems::core::GGEMSInternal("Unsupported GGEMS particle type.");
-  return "Unknown";
 }
 
 // =============================================================================
@@ -82,7 +80,6 @@ auto ToShortName(GGEMSParticleType particle_type) -> std::string {
   }
 
   throw ggems::core::GGEMSInternal("Unsupported GGEMS particle type.");
-  return "?";
 }
 
 // =============================================================================

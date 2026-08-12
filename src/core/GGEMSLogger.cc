@@ -15,12 +15,6 @@
 #include <cstdint>
 #include <source_location>
 
-#ifdef _WIN32
-#include "GGEMS/platform/windows/GGEMSWindowsCore.hh"
-#else
-#include <unistd.h>
-#endif
-
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSException.hh"
 
@@ -95,8 +89,7 @@ FormatTimestamp(std::chrono::system_clock::time_point const &time_point)
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] auto GetEnvVar(const char *name)
-    -> std::optional<std::string> {
+[[nodiscard]] auto GetEnvVar(const char *name) -> std::optional<std::string> {
 #if defined(_WIN32)
   char *buffer = nullptr;
   std::size_t len = 0;

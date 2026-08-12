@@ -19,7 +19,7 @@
 #include "GGEMS/render/GGEMSColor.hh"
 
 #if defined(_WIN32)
-#include "GGEMS/platform/windows/GGEMSWindowsCore.hh"
+#include <windows.h>
 #endif
 
 namespace ggems::core {
@@ -101,7 +101,8 @@ auto Parse(std::string_view mode) -> OutputMode {
     return OutputMode::Gui;
   }
 
-  throw ggems::core::GGEMSFatal("Unknown output mode. Expected: 'term' or 'gui'.");
+  throw ggems::core::GGEMSFatal(
+      "Unknown output mode. Expected: 'term' or 'gui'.");
 }
 
 // =============================================================================
@@ -214,8 +215,9 @@ auto GetOutputState() -> GGEMSOutputState & {
 
 auto GetOutputBanner() -> render::GGEMSBanner const & {
   if (!(g_configured)) {
-    throw ggems::core::GGEMSFatal("Output mode must be configured before requesting the banner. "
-      "Call ggems.core.set_output_mode('term'|'gui') first.");
+    throw ggems::core::GGEMSFatal(
+        "Output mode must be configured before requesting the banner. "
+        "Call ggems.core.set_output_mode('term'|'gui') first.");
   }
 
   if (!g_banner) {
@@ -236,7 +238,7 @@ auto SetOutputMode(OutputMode mode) -> void {
   if (g_configured) {
     throw ggems::core::GGEMSFatal(
         "Output mode already configured; it must be set exactly once before "
-      "starting GGEMS output runtime.");
+        "starting GGEMS output runtime.");
   }
 
   g_mode = mode;
@@ -259,7 +261,8 @@ auto SetOutputFile(std::string_view path) -> void {
   }
 
   if (g_output_running.load(std::memory_order_relaxed)) {
-    throw ggems::core::GGEMSFatal("Output file cannot be changed while output runtime is started.");
+    throw ggems::core::GGEMSFatal(
+        "Output file cannot be changed while output runtime is started.");
   }
 
   g_output_file_path = std::string(path);
@@ -289,9 +292,10 @@ auto ClearOutputFile() -> void {
 
 auto StartOutputRuntime() -> void {
   if (!(g_configured)) {
-    throw ggems::core::GGEMSFatal("Output mode is not configured. "
-      "Call ggems.core.set_output_mode('term'|'gui') before starting GGEMS "
-      "output runtime.");
+    throw ggems::core::GGEMSFatal(
+        "Output mode is not configured. "
+        "Call ggems.core.set_output_mode('term'|'gui') before starting GGEMS "
+        "output runtime.");
   }
 
   if (g_output_running.load(std::memory_order_relaxed)) {
