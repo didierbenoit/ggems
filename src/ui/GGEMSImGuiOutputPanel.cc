@@ -1,18 +1,25 @@
-#include <imgui.h>
 #include <string_view>
+#include <cstddef>
+#include <string>
+#include <cstdint>
+#include <vector>
 
+#include <imgui.h>
+
+#include "GGEMS/core/GGEMSOutputState.hh"
+#include "GGEMS/core/GGEMSLogger.hh"
+#include "GGEMS/ui/GGEMSImGuiTheme.hh"
 #include "GGEMS/ui/GGEMSImGuiOutputPanel.hh"
 #include "GGEMS/render/GGEMSColor.hh"
 #include "GGEMS/render/GGEMSVisualLine.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
-#include "GGEMS/utf/GGEMSUTF.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
-#include "GGEMS/ui/GGEMSImGuiTheme.hh"
+#include "GGEMS/utf/GGEMSUTF.hh"
 
 namespace {
 
-void RenderTextLine(std::string_view text,
-                    ggems::render::ColorKey const &color) {
+auto RenderTextLine(std::string_view text, ggems::render::ColorKey const &color)
+    -> void {
   ImGui::PushStyleColor(ImGuiCol_Text, ggems::ui::ToImGuiColor(color));
 
   if (text.empty()) {
@@ -27,8 +34,8 @@ void RenderTextLine(std::string_view text,
 // =============================================================================
 // =============================================================================
 
-void RenderMultilineText(std::string_view text,
-                         ggems::render::ColorKey const &color) {
+auto RenderMultilineText(std::string_view text,
+                         ggems::render::ColorKey const &color) -> void {
   if (text.empty()) {
     RenderTextLine(text, color);
     return;
@@ -52,7 +59,8 @@ void RenderMultilineText(std::string_view text,
 // =============================================================================
 // =============================================================================
 
-std::string_view RemoveLeadingBlockNewline(std::string_view text) noexcept {
+auto RemoveLeadingBlockNewline(std::string_view text) noexcept
+    -> std::string_view {
   if (!text.empty() && text.front() == '\n') {
     text.remove_prefix(1U);
   }
@@ -67,8 +75,8 @@ namespace ggems::ui {
 // =============================================================================
 // =============================================================================
 
-void GGEMSImGuiOutputPanel::RenderWrappedLine(
-    render::WrappedLine const &line) const {
+auto GGEMSImGuiOutputPanel::RenderWrappedLine(render::WrappedLine const &line)
+    -> void {
   if (line.segments.empty()) {
     ImGui::Spacing();
     return;
@@ -78,7 +86,7 @@ void GGEMSImGuiOutputPanel::RenderWrappedLine(
 
   for (render::VisualSegment const &segment : line.segments) {
     if (!first_segment) {
-      ImGui::SameLine(0.0f, 0.0f);
+      ImGui::SameLine(0.0F, 0.0F);
     }
 
     std::string text = utf::UTF32ToUTF8(segment.text);
@@ -93,8 +101,8 @@ void GGEMSImGuiOutputPanel::RenderWrappedLine(
 
 // -----------------------------------------------------------------------------
 
-bool GGEMSImGuiOutputPanel::ShouldDisplay(
-    core::RenderedLogLine const &line) const noexcept {
+auto GGEMSImGuiOutputPanel::ShouldDisplay(
+    core::RenderedLogLine const &line) const noexcept -> bool {
   switch (line.level) {
   case core::LogLevel::Debug:
     return show_debug_;
@@ -123,8 +131,8 @@ bool GGEMSImGuiOutputPanel::ShouldDisplay(
 
 // -----------------------------------------------------------------------------
 
-void GGEMSImGuiOutputPanel::Render(render::GGEMSBanner const &banner,
-                                   core::GGEMSOutputState &output_state) {
+auto GGEMSImGuiOutputPanel::Render(core::GGEMSOutputState &output_state)
+    -> void {
   ImGui::Begin("GGEMS Output");
 
   std::size_t log_count = output_state.GetLogCount();
@@ -154,7 +162,7 @@ void GGEMSImGuiOutputPanel::Render(render::GGEMSBanner const &banner,
     ImGui::TextUnformatted("Info depth");
     ImGui::Separator();
 
-    ImGui::Checkbox("INFO", &show_info_depth_[0]);
+    ImGui::Checkbox("INFO", show_info_depth_.data());
     ImGui::Checkbox("INFOEX 1", &show_info_depth_[1]);
     ImGui::Checkbox("INFOEX 2", &show_info_depth_[2]);
     ImGui::Checkbox("INFOEX 3", &show_info_depth_[3]);
@@ -176,12 +184,12 @@ void GGEMSImGuiOutputPanel::Render(render::GGEMSBanner const &banner,
 
   ImGui::PushStyleColor(ImGuiCol_ChildBg, ToImGuiColor(render::GRAY_Void));
 
-  ImGui::BeginChild("GGEMSOutputLogRegion", ImVec2{0.0f, 0.0f}, true,
+  ImGui::BeginChild("GGEMSOutputLogRegion", ImVec2{0.0F, 0.0F},
+                    ImGuiChildFlags_Borders,
                     ImGuiWindowFlags_HorizontalScrollbar);
 
   if (show_banner_) {
-    std::vector<render::WrappedLine> banner_lines =
-        banner.BuildLines(banner.GetWidth());
+    auto const banner_lines = render::BuildBannerLines();
 
     for (render::WrappedLine const &line : banner_lines) {
       RenderWrappedLine(line);
@@ -198,7 +206,7 @@ void GGEMSImGuiOutputPanel::Render(render::GGEMSBanner const &banner,
       continue;
     }
 
-    bool const is_multiline = line.msg.find('\n') != std::string::npos;
+    bool const is_multiline = line.msg.contains('\n');
 
     if (show_prefix_ && !line.prefix.empty()) {
       RenderTextLine(line.prefix, line.color);
@@ -219,7 +227,7 @@ void GGEMSImGuiOutputPanel::Render(render::GGEMSBanner const &banner,
   }
 
   if (auto_scroll_ && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
-    ImGui::SetScrollHereY(1.0f);
+    ImGui::SetScrollHereY(1.0F);
   }
 
   ImGui::EndChild();

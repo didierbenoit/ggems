@@ -14,18 +14,29 @@
 
 namespace {
 
-using BannerSnapshot = std::array<std::u32string_view, 17U>;
+// =============================================================================
+// =============================================================================
+
+constexpr std::size_t number_lines = 17U;
+
+// =============================================================================
+// =============================================================================
+
+using BannerSnapshot = std::array<std::u32string_view, number_lines>;
 using ggems::test::ScopedLoggerEncoding;
 
-constexpr BannerSnapshot k_ascii_banner{{
+// =============================================================================
+// =============================================================================
+
+constexpr BannerSnapshot ascii_banner{{
     U"+****************************************************+",
     U"*                                                    *",
-    U"*    ######+  ######+ #######+###+   ###+#######+    *",
-    U"*   ##+****+ ##+****+ ##+****+####+ ####*##+****+    *",
-    U"*   ##*  ###+##*  ###+#####+  ##+####+##*#######+    *",
-    U"*   ##*   ##*##*   ##*##+**+  ##*+##++##*+****##*    *",
-    U"*   +######+++######++#######+##* +*+ ##*#######*    *",
-    U"*    +*****+  +*****+ +******++*+     +*++******+    *",
+    U"*    ######   ######  ####### ###    ### #######     *",
+    U"*   ##       ##       ##      ####  #### ##          *",
+    U"*   ##   ### ##   ### #####   ## #### ## #######     *",
+    U"*   ##    ## ##    ## ##      ##  ##  ##      ##     *",
+    U"*    ######   ######  ####### ##      ## #######     *",
+    U"*   ******** ******** ******* ********** *******     *",
     U"*                                                    *",
     U"+----------------------------------------------------+",
     U"*                                                    *",
@@ -37,7 +48,10 @@ constexpr BannerSnapshot k_ascii_banner{{
     U"+****************************************************+",
 }};
 
-constexpr BannerSnapshot k_unicode_banner{{
+// =============================================================================
+// =============================================================================
+
+constexpr BannerSnapshot unicode_banner{{
     U"╔════════════════════════════════════════════════════╗",
     U"║                                                    ║",
     U"║    ██████╗  ██████╗ ███████╗███╗   ███╗███████╗    ║",
@@ -57,62 +71,38 @@ constexpr BannerSnapshot k_unicode_banner{{
     U"╚════════════════════════════════════════════════════╝",
 }};
 
-auto ExpectNominalBanner(ggems::core::Encoding encoding,
-                         BannerSnapshot const &expected_lines) -> void {
-  ScopedLoggerEncoding const scoped_encoding{encoding};
-  ggems::render::GGEMSBanner banner;
+// =============================================================================
+// =============================================================================
 
-  auto const lines = banner.BuildLines(banner.GetWidth());
-  auto const untruncated_lines =
-      banner.BuildLines(std::numeric_limits<std::int16_t>::max());
+auto ExpectBanner(ggems::core::Encoding encoding,
+                  BannerSnapshot const &expected_lines) -> void {
+  ScopedLoggerEncoding const scoped_encoding{encoding};
+  auto const lines = ggems::render::BuildBannerLines();
 
   ASSERT_EQ(lines.size(), expected_lines.size());
-  ASSERT_EQ(untruncated_lines.size(), lines.size());
-  EXPECT_EQ(lines.size(), static_cast<std::size_t>(banner.GetHeight()));
 
-  for (std::size_t line_index = 0U; line_index < lines.size(); ++line_index) {
-    SCOPED_TRACE(line_index);
-    ASSERT_EQ(lines[line_index].segments.size(), 1U);
-
-    auto const &segment = lines[line_index].segments.front();
-    ASSERT_EQ(untruncated_lines[line_index].segments.size(), 1U);
-    EXPECT_EQ(segment.color, ggems::render::GREEN_Acid);
-    EXPECT_EQ(segment.text, expected_lines[line_index]);
-    EXPECT_EQ(segment.text,
-              untruncated_lines[line_index].segments.front().text);
-    EXPECT_EQ(segment.text.size(), static_cast<std::size_t>(banner.GetWidth()));
-  }
-}
-
-TEST(GGEMSBannerTest, BuildsCompleteAsciiBanner) {
-  ExpectNominalBanner(ggems::core::Encoding::Ascii, k_ascii_banner);
-}
-
-TEST(GGEMSBannerTest, BuildsCompleteUnicodeBanner) {
-  ExpectNominalBanner(ggems::core::Encoding::Unicode, k_unicode_banner);
-}
-
-TEST(GGEMSBannerTest, HandlesEmptyAndReducedWidths) {
-  ggems::render::GGEMSBanner banner;
-
-  EXPECT_TRUE(banner.BuildLines(0).empty());
-  EXPECT_TRUE(banner.BuildLines(-1).empty());
-
-  ScopedLoggerEncoding const scoped_encoding{ggems::core::Encoding::Ascii};
-  constexpr std::int16_t k_reduced_width{10};
-  auto const lines = banner.BuildLines(k_reduced_width);
-
-  ASSERT_EQ(lines.size(), k_ascii_banner.size());
   for (std::size_t line_index = 0U; line_index < lines.size(); ++line_index) {
     SCOPED_TRACE(line_index);
     ASSERT_EQ(lines[line_index].segments.size(), 1U);
 
     auto const &segment = lines[line_index].segments.front();
     EXPECT_EQ(segment.color, ggems::render::GREEN_Acid);
-    EXPECT_LE(segment.text.size(), static_cast<std::size_t>(k_reduced_width));
-    EXPECT_EQ(segment.text, k_ascii_banner[line_index].substr(
-                                0U, static_cast<std::size_t>(k_reduced_width)));
+    EXPECT_EQ(segment.text, expected_lines[line_index]);
   }
 }
 
 } // namespace
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSBannerTest, BuildsCompleteAsciiBanner) {
+  ExpectBanner(ggems::core::Encoding::Ascii, ascii_banner);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSBannerTest, BuildsCompleteUnicodeBanner) {
+  ExpectBanner(ggems::core::Encoding::Unicode, unicode_banner);
+}

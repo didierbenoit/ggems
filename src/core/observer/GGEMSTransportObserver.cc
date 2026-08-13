@@ -12,16 +12,15 @@
 #include <limits>
 #include <memory>
 
-#include "GGEMS/core/observer/GGEMSObserverCounterArithmetic.hh"
 #include "GGEMS/core/GGEMSException.hh"
-
+#include "GGEMS/core/GGEMSLogger.hh"
+#include "GGEMS/core/observer/GGEMSObserverCounterArithmetic.hh"
 #include "GGEMS/core/observer/GGEMSObserverTypes.hh"
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/core/observer/GGEMSTransportObserver.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/core/units/GGEMSLengthUnits.hh"
-#include "GGEMS/utf/GGEMSGlyphs.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
 
 namespace ggems::core::observer {
@@ -33,8 +32,7 @@ namespace {
 auto CheckedAccumulateRunResultCounter(std::uint64_t &destination,
                                        std::uint64_t value,
                                        char const *diagnostic) -> void {
-  if (!(value <= std::numeric_limits<std::uint64_t>::max() -
-                                       destination)) {
+  if (!(value <= std::numeric_limits<std::uint64_t>::max() - destination)) {
     throw ggems::core::GGEMSRecoverable(diagnostic);
   }
   destination += value;
@@ -428,35 +426,12 @@ auto MakeTableHeader(std::span<TableColumn const> columns) -> std::string {
 
 auto FormatParticleLabel(particles::GGEMSParticleType particle_type)
     -> std::string {
-  auto const &glyphs = utf::Glyphs();
+  auto const encoding = GGEMSLogger::GetInstance().GetEncoding();
+  auto const symbol = encoding == Encoding::Ascii
+                          ? particles::ToAsciiSymbol(particle_type)
+                          : particles::ToUnicodeSymbol(particle_type);
 
-  switch (particle_type) {
-  case particles::GGEMSParticleType::Unknown:
-    return "?";
-
-  case particles::GGEMSParticleType::Aionino:
-    return utf::UTF32ToUTF8(glyphs.aionino);
-
-  case particles::GGEMSParticleType::Gamma:
-    return utf::UTF32ToUTF8(glyphs.gamma);
-
-  case particles::GGEMSParticleType::Electron:
-    return utf::UTF32ToUTF8(glyphs.electron) + utf::UTF32ToUTF8(glyphs.minus);
-
-  case particles::GGEMSParticleType::Positron:
-    return utf::UTF32ToUTF8(glyphs.electron) + utf::UTF32ToUTF8(glyphs.plus);
-
-  case particles::GGEMSParticleType::Proton:
-    return utf::UTF32ToUTF8(glyphs.proton);
-
-  case particles::GGEMSParticleType::Neutron:
-    return utf::UTF32ToUTF8(glyphs.neutron);
-
-  case particles::GGEMSParticleType::Alpha:
-    return utf::UTF32ToUTF8(glyphs.alpha);
-  }
-
-  return "?";
+  return utf::UTF32ToUTF8(symbol);
 }
 
 // =============================================================================
@@ -625,10 +600,11 @@ auto GGEMSTransportObserver::Disable() noexcept -> GGEMSTransportObserver & {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSTransportObserver::SetRecordCapacity(
-    std::uint32_t record_capacity) -> GGEMSTransportObserver & {
+auto GGEMSTransportObserver::SetRecordCapacity(std::uint32_t record_capacity)
+    -> GGEMSTransportObserver & {
   if (!(record_capacity > 0U)) {
-    throw ggems::core::GGEMSRecoverable("Transport observer record capacity must be non-zero.");
+    throw ggems::core::GGEMSRecoverable(
+        "Transport observer record capacity must be non-zero.");
   }
 
   if (record_capacity > records_.capacity()) {
@@ -733,7 +709,7 @@ auto GGEMSTransportObserver::AccumulateRunResult(
   if (!(logical_counters.record_count == records.size())) {
     throw ggems::core::GGEMSInternal(
         "Transport logical Observer record count does not match its candidate "
-      "records.");
+        "records.");
   }
 
   CheckedAccumulateRunResultCounter(

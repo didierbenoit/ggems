@@ -17,13 +17,14 @@
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistributionRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourceValidation.hh"
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/core/units/GGEMSLengthUnits.hh"
 #include "GGEMS/core/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
-#include "GGEMS/core/sources/GGEMSSourceValidation.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace ggems::ui {
 
@@ -65,10 +66,8 @@ auto GGEMSImGuiLayer::BuildFrame(
   BuildMainDockspace();
 
   if (show_output_panel_) {
-    render::GGEMSBanner const &banner = core::GetOutputBanner();
     core::GGEMSOutputState &output_state = core::GetOutputState();
-
-    output_panel_.Render(banner, output_state);
+    output_panel_.Render(output_state);
   }
 
   if (show_status_panel_) {

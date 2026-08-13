@@ -85,6 +85,58 @@ auto ToShortName(GGEMSParticleType particle_type) -> std::string {
 // =============================================================================
 // =============================================================================
 
+auto ToAsciiSymbol(GGEMSParticleType particle_type) -> std::u32string_view {
+  switch (particle_type) {
+  case GGEMSParticleType::Unknown:
+    return U"?";
+  case GGEMSParticleType::Aionino:
+    return U"l";
+  case GGEMSParticleType::Gamma:
+    return U"g";
+  case GGEMSParticleType::Electron:
+    return U"e-";
+  case GGEMSParticleType::Positron:
+    return U"e+";
+  case GGEMSParticleType::Proton:
+    return U"p";
+  case GGEMSParticleType::Neutron:
+    return U"n";
+  case GGEMSParticleType::Alpha:
+    return U"a";
+  }
+
+  throw ggems::core::GGEMSInternal("Unsupported GGEMS particle type.");
+}
+
+// =============================================================================
+// =============================================================================
+
+auto ToUnicodeSymbol(GGEMSParticleType particle_type) -> std::u32string_view {
+  switch (particle_type) {
+  case GGEMSParticleType::Unknown:
+    return U"?";
+  case GGEMSParticleType::Aionino:
+    return U"λ";
+  case GGEMSParticleType::Gamma:
+    return U"γ";
+  case GGEMSParticleType::Electron:
+    return U"β-";
+  case GGEMSParticleType::Positron:
+    return U"β+";
+  case GGEMSParticleType::Proton:
+    return U"p";
+  case GGEMSParticleType::Neutron:
+    return U"ν";
+  case GGEMSParticleType::Alpha:
+    return U"α";
+  }
+
+  throw ggems::core::GGEMSInternal("Unsupported GGEMS particle type.");
+}
+
+// =============================================================================
+// =============================================================================
+
 auto ParseParticleType(std::string_view particle_name) -> GGEMSParticleType {
   std::string normalized = NormalizeParticleName(particle_name);
 

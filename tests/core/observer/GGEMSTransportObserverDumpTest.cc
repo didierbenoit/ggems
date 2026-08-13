@@ -5,15 +5,17 @@
 #include <string>
 #include <string_view>
 #include <cstddef>
+#include <vector>
 
 #include <gtest/gtest.h>
 
+#include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/core/observer/GGEMSObserverTypes.hh"
 #include "GGEMS/core/observer/GGEMSTransportObserver.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
-#include "GGEMS/utf/GGEMSGlyphs.hh"
+#include "GGEMSScopedLoggerEncoding.hh"
 
 namespace {
 
@@ -23,6 +25,7 @@ using ggems::core::observer::GGEMSObserverRecordKind;
 using ggems::core::observer::GGEMSTransportObserver;
 using ggems::core::particles::GGEMSParticleStatus;
 using ggems::core::particles::GGEMSParticleType;
+using ggems::test::ScopedLoggerEncoding;
 
 // =============================================================================
 // =============================================================================
@@ -118,7 +121,9 @@ TEST(GGEMSTransportObserverDump, UsesRequestedColumnOrderAndHeaders) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSTransportObserverDump, DisplaysOnlyUtf8ParticleSymbols) {
+TEST(GGEMSTransportObserverDump, DisplaysAsciiParticleSymbols) {
+  ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
+
   std::array<GGEMSObserverRecord, 3U> const records{{
       MakeRecord(1ULL, 0ULL, GGEMSParticleType::Gamma),
       MakeRecord(2ULL, 0ULL, GGEMSParticleType::Electron),
@@ -127,15 +132,31 @@ TEST(GGEMSTransportObserverDump, DisplaysOnlyUtf8ParticleSymbols) {
 
   std::string const dump = BuildObserverDump(records);
 
-  auto const &glyphs = ggems::utf::Glyphs();
+  EXPECT_NE(dump.find("|  g |"), std::string::npos);
+  EXPECT_NE(dump.find("| e- |"), std::string::npos);
+  EXPECT_NE(dump.find("| e+ |"), std::string::npos);
+}
 
-  std::string const gamma = ggems::utf::UTF32ToUTF8(glyphs.gamma);
+// =============================================================================
+// =============================================================================
 
-  std::string const electron = ggems::utf::UTF32ToUTF8(glyphs.electron) +
-                               ggems::utf::UTF32ToUTF8(glyphs.minus);
+TEST(GGEMSTransportObserverDump, DisplaysUnicodeParticleSymbols) {
+  ScopedLoggerEncoding const encoding{ggems::core::Encoding::Unicode};
 
-  std::string const positron = ggems::utf::UTF32ToUTF8(glyphs.electron) +
-                               ggems::utf::UTF32ToUTF8(glyphs.plus);
+  std::array<GGEMSObserverRecord, 3U> const records{{
+      MakeRecord(1ULL, 0ULL, GGEMSParticleType::Gamma),
+      MakeRecord(2ULL, 0ULL, GGEMSParticleType::Electron),
+      MakeRecord(3ULL, 0ULL, GGEMSParticleType::Positron),
+  }};
+
+  std::string const dump = BuildObserverDump(records);
+
+  std::string const gamma = ggems::utf::UTF32ToUTF8(
+      ggems::core::particles::ToUnicodeSymbol(GGEMSParticleType::Gamma));
+  std::string const electron = ggems::utf::UTF32ToUTF8(
+      ggems::core::particles::ToUnicodeSymbol(GGEMSParticleType::Electron));
+  std::string const positron = ggems::utf::UTF32ToUTF8(
+      ggems::core::particles::ToUnicodeSymbol(GGEMSParticleType::Positron));
 
   EXPECT_NE(dump.find("|  " + gamma + " |"), std::string::npos);
   EXPECT_NE(dump.find("| " + electron + " |"), std::string::npos);

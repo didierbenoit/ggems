@@ -2,12 +2,11 @@
 
 #include <cstddef>
 #include <array>
-#include <string>
 
+#include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSOutputState.hh"
 
 namespace ggems::render {
-class GGEMSBanner;
 struct WrappedLine;
 } // namespace ggems::render
 
@@ -19,19 +18,18 @@ public:
 
   GGEMSImGuiOutputPanel(GGEMSImGuiOutputPanel const &) = delete;
   GGEMSImGuiOutputPanel(GGEMSImGuiOutputPanel &&) = delete;
-  GGEMSImGuiOutputPanel &operator=(GGEMSImGuiOutputPanel const &) = delete;
-  GGEMSImGuiOutputPanel &operator=(GGEMSImGuiOutputPanel &&) = delete;
+  auto operator=(GGEMSImGuiOutputPanel const &)
+      -> GGEMSImGuiOutputPanel & = delete;
+  auto operator=(GGEMSImGuiOutputPanel &&) -> GGEMSImGuiOutputPanel & = delete;
 
-public:
-  void Render(render::GGEMSBanner const &banner,
-              core::GGEMSOutputState &output_state);
-
-private:
-  void RenderWrappedLine(render::WrappedLine const &line) const;
-  [[nodiscard]] bool
-  ShouldDisplay(core::RenderedLogLine const &line) const noexcept;
+  auto Render(core::GGEMSOutputState &output_state) -> void;
 
 private:
+  static auto RenderWrappedLine(render::WrappedLine const &line) -> void;
+
+  [[nodiscard]] auto
+  ShouldDisplay(core::RenderedLogLine const &line) const noexcept -> bool;
+
   std::size_t max_visible_lines_{2000U};
   bool auto_scroll_{true};
   bool show_prefix_{true};

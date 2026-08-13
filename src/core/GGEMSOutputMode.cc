@@ -35,8 +35,6 @@ bool g_configured{false};
 std::optional<std::string> g_output_file_path{};
 
 std::unique_ptr<GGEMSOutputState> g_state{};
-std::unique_ptr<render::GGEMSBanner> g_banner{};
-
 std::atomic<bool> g_output_running{false};
 
 // =============================================================================
@@ -170,9 +168,7 @@ auto ToTerminalText(render::WrappedLine const &line) -> std::string {
 // =============================================================================
 
 auto EmitTerminalBanner() -> void {
-  render::GGEMSBanner const &banner = GetOutputBanner();
-
-  std::vector<render::WrappedLine> lines = banner.BuildLines(banner.GetWidth());
+  auto const lines = render::BuildBannerLines();
 
   for (render::WrappedLine const &line : lines) {
     std::cout << ToTerminalText(line) << '\n';
@@ -208,23 +204,6 @@ auto GetOutputState() -> GGEMSOutputState & {
   }
 
   return *g_state;
-}
-
-// =============================================================================
-// =============================================================================
-
-auto GetOutputBanner() -> render::GGEMSBanner const & {
-  if (!(g_configured)) {
-    throw ggems::core::GGEMSFatal(
-        "Output mode must be configured before requesting the banner. "
-        "Call ggems.core.set_output_mode('term'|'gui') first.");
-  }
-
-  if (!g_banner) {
-    g_banner = std::make_unique<render::GGEMSBanner>();
-  }
-
-  return *g_banner;
 }
 
 // =============================================================================

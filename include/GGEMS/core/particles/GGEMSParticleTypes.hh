@@ -63,6 +63,12 @@ auto ToLongName(GGEMSParticleType particle_type) -> std::string;
 
 auto ToShortName(GGEMSParticleType particle_type) -> std::string;
 
+[[nodiscard]] auto ToAsciiSymbol(GGEMSParticleType particle_type)
+    -> std::u32string_view;
+
+[[nodiscard]] auto ToUnicodeSymbol(GGEMSParticleType particle_type)
+    -> std::u32string_view;
+
 auto ParseParticleType(std::string_view particle_name) -> GGEMSParticleType;
 
 } // namespace ggems::core::particles

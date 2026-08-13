@@ -2,9 +2,8 @@
 
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSParticleTypes, ParsesLongShortAndSymbolicNames) {
   using ggems::core::particles::GGEMSParticleType;
@@ -35,9 +34,8 @@ TEST(GGEMSParticleTypes, ParsesLongShortAndSymbolicNames) {
   EXPECT_EQ(ParseParticleType("a"), GGEMSParticleType::Alpha);
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSParticleTypes, HasStableLongNames) {
   using ggems::core::particles::GGEMSParticleType;
@@ -53,9 +51,8 @@ TEST(GGEMSParticleTypes, HasStableLongNames) {
   EXPECT_EQ(ToLongName(GGEMSParticleType::Alpha), "Alpha");
 }
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSParticleTypes, HasStableShortNames) {
   using ggems::core::particles::GGEMSParticleType;
@@ -69,4 +66,37 @@ TEST(GGEMSParticleTypes, HasStableShortNames) {
   EXPECT_EQ(ToShortName(GGEMSParticleType::Proton), "p");
   EXPECT_EQ(ToShortName(GGEMSParticleType::Neutron), "n");
   EXPECT_EQ(ToShortName(GGEMSParticleType::Alpha), "a");
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSParticleTypes, HasStableAsciiAndUnicodeSymbols) {
+  using ggems::core::particles::GGEMSParticleType;
+  using ggems::core::particles::ToAsciiSymbol;
+  using ggems::core::particles::ToUnicodeSymbol;
+
+  EXPECT_EQ(ToAsciiSymbol(GGEMSParticleType::Unknown), U"?");
+  EXPECT_EQ(ToUnicodeSymbol(GGEMSParticleType::Unknown), U"?");
+
+  EXPECT_EQ(ToAsciiSymbol(GGEMSParticleType::Aionino), U"l");
+  EXPECT_EQ(ToUnicodeSymbol(GGEMSParticleType::Aionino), U"λ");
+
+  EXPECT_EQ(ToAsciiSymbol(GGEMSParticleType::Gamma), U"g");
+  EXPECT_EQ(ToUnicodeSymbol(GGEMSParticleType::Gamma), U"γ");
+
+  EXPECT_EQ(ToAsciiSymbol(GGEMSParticleType::Electron), U"e-");
+  EXPECT_EQ(ToUnicodeSymbol(GGEMSParticleType::Electron), U"β-");
+
+  EXPECT_EQ(ToAsciiSymbol(GGEMSParticleType::Positron), U"e+");
+  EXPECT_EQ(ToUnicodeSymbol(GGEMSParticleType::Positron), U"β+");
+
+  EXPECT_EQ(ToAsciiSymbol(GGEMSParticleType::Proton), U"p");
+  EXPECT_EQ(ToUnicodeSymbol(GGEMSParticleType::Proton), U"p");
+
+  EXPECT_EQ(ToAsciiSymbol(GGEMSParticleType::Neutron), U"n");
+  EXPECT_EQ(ToUnicodeSymbol(GGEMSParticleType::Neutron), U"ν");
+
+  EXPECT_EQ(ToAsciiSymbol(GGEMSParticleType::Alpha), U"a");
+  EXPECT_EQ(ToUnicodeSymbol(GGEMSParticleType::Alpha), U"α");
 }

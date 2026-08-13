@@ -6,10 +6,6 @@
 
 #include "GGEMS/core/GGEMSOutputState.hh"
 
-namespace ggems::render {
-class GGEMSBanner;
-} // namespace ggems::render
-
 namespace ggems::core {
 
 enum class OutputMode : std::uint8_t { Term = 0, Gui };
@@ -29,8 +25,6 @@ auto StartOutputRuntime() -> void;
 auto StopOutputRuntime() noexcept -> void;
 
 auto GetOutputState() -> GGEMSOutputState &;
-
-auto GetOutputBanner() -> render::GGEMSBanner const &;
 
 [[nodiscard]] inline auto ToString(OutputMode mode) -> std::string {
   switch (mode) {
