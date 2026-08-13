@@ -1,3 +1,4 @@
+# ==============================================================================
 # Dependencies
 include(FetchContent)
 include(GoogleTest)
@@ -55,54 +56,81 @@ else()
   message(FATAL_ERROR "No usable GoogleTest main target was found.")
 endif()
 
-# Core unit tests
-file(GLOB_RECURSE GGEMS_CORE_TEST_SOURCES CONFIGURE_DEPENDS
-     "${CMAKE_CURRENT_SOURCE_DIR}/core/*.cc")
+# ==============================================================================
+# generic function adding test
+function(ggems_add_test_suite target_name)
+  set(one_value_args SOURCE_DIR)
+  set(multi_value_args LINK_LIBRARIES COMPILE_DEFINITIONS INCLUDE_DIRECTORIES)
 
-add_executable(ggems_core_tests ${GGEMS_CORE_TEST_SOURCES})
+  cmake_parse_arguments(TEST "" "${one_value_args}" "${multi_value_args}"
+                        ${ARGN})
 
-target_compile_definitions(
-  ggems_core_tests
-  PRIVATE GGEMS_TEST_KERNEL_ROOT="${PROJECT_SOURCE_DIR}/kernels")
+  file(GLOB_RECURSE test_sources CONFIGURE_DEPENDS
+       "${CMAKE_CURRENT_SOURCE_DIR}/${TEST_SOURCE_DIR}/*.cc")
 
-target_link_libraries(
-  ggems_core_tests PRIVATE ggems_core GGEMS::CompilerOptions
-                           ${GGEMS_GTEST_MAIN_TARGET})
-
-target_include_directories(
-  ggems_core_tests PRIVATE ${PROJECT_SOURCE_DIR}/include
-                           ${PROJECT_SOURCE_DIR}/tests/include)
-
-ggems_apply_release_optimizations(ggems_core_tests)
-
-gtest_discover_tests(ggems_core_tests)
-
-# GuiMode unit tests
-if(GGEMS_WITH_IMGUI)
-  file(GLOB_RECURSE GGEMS_GUI_TEST_SOURCES CONFIGURE_DEPENDS
-       "${CMAKE_CURRENT_SOURCE_DIR}/ui/*.cc")
-
-  add_executable(ggems_gui_tests ${GGEMS_GUI_TEST_SOURCES})
-
-  target_compile_definitions(
-    ggems_gui_tests PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
-                            VULKAN_HPP_NO_STRUCT_CONSTRUCTORS=1)
+  add_executable(${target_name} ${test_sources})
 
   target_link_libraries(
-    ggems_gui_tests PRIVATE ggems_gui GGEMS::CompilerOptions
-                            ${GGEMS_GTEST_MAIN_TARGET})
+    ${target_name} PRIVATE ${TEST_LINK_LIBRARIES} GGEMS::CompilerOptions
+                           ${GGEMS_GTEST_MAIN_TARGET})
 
-  target_include_directories(ggems_gui_tests
-                             PRIVATE ${PROJECT_SOURCE_DIR}/include)
+  target_include_directories(
+    ${target_name}
+    PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/tests/include
+            ${TEST_INCLUDE_DIRECTORIES})
 
-  ggems_apply_release_optimizations(ggems_gui_tests)
+  if(TEST_COMPILE_DEFINITIONS)
+    target_compile_definitions(${target_name}
+                               PRIVATE ${TEST_COMPILE_DEFINITIONS})
+  endif()
 
-  gtest_discover_tests(ggems_gui_tests)
+  ggems_apply_release_optimizations(${target_name})
+
+  gtest_discover_tests(${target_name})
+endfunction()
+
+# ==============================================================================
+# Core unit tests
+ggems_add_test_suite(
+  ggems_core_tests
+  SOURCE_DIR
+  core
+  LINK_LIBRARIES
+  ggems_core
+  COMPILE_DEFINITIONS
+  GGEMS_TEST_KERNEL_ROOT="${PROJECT_SOURCE_DIR}/kernels")
+
+# ==============================================================================
+# Framework unit tests
+ggems_add_test_suite(
+  ggems_framework_tests
+  SOURCE_DIR
+  frameworks
+  LINK_LIBRARIES
+  ggems_core
+  COMPILE_DEFINITIONS
+  GGEMS_TEST_KERNEL_ROOT="${PROJECT_SOURCE_DIR}/kernels")
+
+# ==============================================================================
+# GuiMode unit tests
+if(GGEMS_WITH_IMGUI)
+  ggems_add_test_suite(
+    ggems_gui_tests
+    SOURCE_DIR
+    ui
+    LINK_LIBRARIES
+    ggems_gui
+    COMPILE_DEFINITIONS
+    VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
+    VULKAN_HPP_NO_STRUCT_CONSTRUCTORS=1)
 endif()
 
+# ==============================================================================
 # Test build target
-add_custom_target(tests DEPENDS ggems_core_tests)
+set(GGEMS_TEST_TARGETS ggems_core_tests ggems_framework_tests)
 
 if(GGEMS_WITH_IMGUI)
-  add_dependencies(tests ggems_gui_tests)
+  list(APPEND GGEMS_TEST_TARGETS ggems_gui_tests)
 endif()
+
+add_custom_target(tests DEPENDS ${GGEMS_TEST_TARGETS})

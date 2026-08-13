@@ -5,10 +5,8 @@
 
 namespace ggems::ocl::detail {
 namespace {
-
 constexpr std::uint64_t k_fnv1a64_offset_basis{14695981039346656037ULL};
 constexpr std::uint64_t k_fnv1a64_prime{1099511628211ULL};
-
 } // namespace
 
 [[nodiscard]] auto HashFNV1a64(std::string_view bytes) noexcept

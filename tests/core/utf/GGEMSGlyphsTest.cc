@@ -7,7 +7,7 @@
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/utf/GGEMSGlyphs.hh"
 
-#include "support/GGEMSScopedLoggerEncoding.hh"
+#include "GGEMSScopedLoggerEncoding.hh"
 
 namespace {
 

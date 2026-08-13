@@ -15,7 +15,7 @@
 #include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
 #include "GGEMS/core/units/GGEMSActivityUnits.hh"
-#include "support/GGEMSScopedLoggerEncoding.hh"
+#include "GGEMSScopedLoggerEncoding.hh"
 
 namespace {
 

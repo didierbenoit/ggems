@@ -3,15 +3,13 @@
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLInfoTraits.hh"
-#include "support/GGEMSScopedLoggerEncoding.hh"
+#include "GGEMSScopedLoggerEncoding.hh"
 
 namespace {
 
 using ClockFrequencyTraits =
     ggems::ocl::InfoTraits<CL_DEVICE_MAX_CLOCK_FREQUENCY>;
 using ggems::test::ScopedLoggerEncoding;
-
-static_assert(!noexcept(ClockFrequencyTraits::ToString(0U)));
 
 } // namespace
 

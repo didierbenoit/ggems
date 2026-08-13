@@ -25,7 +25,7 @@
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/units/GGEMSVolumeUnits.hh"
 #include "GGEMS/core/units/GGEMSQuantity.hh"
-#include "support/GGEMSScopedLoggerEncoding.hh"
+#include "GGEMSScopedLoggerEncoding.hh"
 
 namespace ggems::units {
 

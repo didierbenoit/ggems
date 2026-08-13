@@ -10,7 +10,7 @@
 #include "GGEMS/render/GGEMSBanner.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
 
-#include "support/GGEMSScopedLoggerEncoding.hh"
+#include "GGEMSScopedLoggerEncoding.hh"
 
 namespace {
 

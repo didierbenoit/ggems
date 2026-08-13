@@ -7,14 +7,12 @@
 #include "GGEMS/frameworks/GGEMSOpenCLLaunchGeometry.hh"
 
 namespace {
-
 struct PaddedGlobalWorkSizeCase {
   char const *label;
   std::size_t logical_work_size;
   std::size_t local_work_size;
   std::size_t expected_global_work_size;
 };
-
 } // namespace
 
 // =============================================================================

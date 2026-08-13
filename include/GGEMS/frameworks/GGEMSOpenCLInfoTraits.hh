@@ -703,7 +703,7 @@ template <> struct InfoTraits<CL_DEVICE_LOCAL_MEM_TYPE> {
 
   static constexpr std::string_view name = "CL_DEVICE_LOCAL_MEM_TYPE";
 
-  static constexpr std::string_view unit;
+  static constexpr std::string_view unit{};
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return LocalMemTypeToString(value);

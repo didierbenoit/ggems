@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <vector>
 
-// #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/render/GGEMSVisualLine.hh"
 
 namespace ggems::render {
@@ -16,8 +15,6 @@ public:
   GGEMSBanner(GGEMSBanner &&) = delete;
   auto operator=(GGEMSBanner const &) -> GGEMSBanner & = delete;
   auto operator=(GGEMSBanner &&) -> GGEMSBanner & = delete;
-
-  // auto EmitToLogger(core::GGEMSLogger &) -> void { ; }
 
   [[nodiscard]] auto BuildLines(std::int16_t max_width) const
       -> std::vector<WrappedLine>;
