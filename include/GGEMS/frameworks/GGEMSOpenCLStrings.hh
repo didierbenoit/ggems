@@ -1,5 +1,35 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Provides human-readable conversions for OpenCL information values.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #pragma once
 
+/// \cond
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -11,18 +41,29 @@
 #include <string_view>
 #include <vector>
 #include <ios>
+/// \endcond
 
 #include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 
 namespace ggems::ocl {
 
+/*!
+ * \brief Converts a packed OpenCL version to text.
+ *
+ * \param[in] version Packed OpenCL version value.
+ * \return Dotted major.minor.patch version string.
+ */
 [[nodiscard]] inline auto ClVersionToString(cl_version version) -> std::string {
-  cl_uint major = (version >> 22) & 0x3FFu;
-  cl_uint minor = (version >> 12) & 0x3FFu;
-  cl_uint patch = (version >> 0) & 0xFFFu;
-  return std::format("{}.{}.{}", major, minor, patch);
+  return std::format("{}.{}.{}", CL_VERSION_MAJOR(version),
+                     CL_VERSION_MINOR(version), CL_VERSION_PATCH(version));
 }
 
+/*!
+ * \brief Formats OpenCL name/version entries.
+ *
+ * \param[in] name_versions OpenCL name/version entries.
+ * \return Readable name/version list.
+ */
 [[nodiscard]] inline auto
 ClNameVersionToString(std::vector<cl_name_version> const &name_versions)
     -> std::string {
@@ -34,6 +75,12 @@ ClNameVersionToString(std::vector<cl_name_version> const &name_versions)
   return output;
 }
 
+/*!
+ * \brief Formats a sequence of size values.
+ *
+ * \param[in] sizes Size values to format.
+ * \return Space-separated size values.
+ */
 [[nodiscard]] inline auto SizeToString(std::vector<std::size_t> const &sizes)
     -> std::string {
   std::string output{};
@@ -43,6 +90,12 @@ ClNameVersionToString(std::vector<cl_name_version> const &name_versions)
   return output;
 }
 
+/*!
+ * \brief Converts an OpenCL device-type bitfield to text.
+ *
+ * \param[in] device_type OpenCL device-type bitfield.
+ * \return Readable device-type description.
+ */
 [[nodiscard]] inline auto DeviceTypeToString(cl_device_type device_type)
     -> std::string {
   std::ostringstream stream;
@@ -82,6 +135,12 @@ ClNameVersionToString(std::vector<cl_name_version> const &name_versions)
   return stream.str();
 }
 
+/*!
+ * \brief Converts a known OpenCL vendor identifier to text.
+ *
+ * \param[in] vendor_id OpenCL vendor identifier.
+ * \return Known vendor name or a hexadecimal identifier.
+ */
 [[nodiscard]] inline auto VendorIdToString(cl_uint vendor_id) -> std::string {
   switch (vendor_id) {
   case 0x8086:
@@ -106,6 +165,12 @@ ClNameVersionToString(std::vector<cl_name_version> const &name_versions)
   }
 }
 
+/*!
+ * \brief Converts an OpenCL memory-cache type to text.
+ *
+ * \param[in] type OpenCL memory-cache type.
+ * \return Readable cache-type name.
+ */
 [[nodiscard]] inline auto CacheTypeToString(cl_device_mem_cache_type type)
     -> std::string {
   switch (type) {
@@ -123,10 +188,22 @@ ClNameVersionToString(std::vector<cl_name_version> const &name_versions)
   }
 }
 
+/*!
+ * \brief Converts an OpenCL Boolean value to text.
+ *
+ * \param[in] flag OpenCL Boolean value.
+ * \return "Yes" for CL_TRUE, otherwise "No".
+ */
 [[nodiscard]] inline auto ClBoolToString(cl_bool flag) -> std::string {
   return (flag == CL_TRUE) ? "Yes" : "No";
 }
 
+/*!
+ * \brief Converts an OpenCL local-memory type to text.
+ *
+ * \param[in] type OpenCL local-memory type.
+ * \return Readable local-memory type.
+ */
 [[nodiscard]] inline auto LocalMemTypeToString(cl_device_local_mem_type type)
     -> std::string {
   switch (type) {
@@ -144,6 +221,12 @@ ClNameVersionToString(std::vector<cl_name_version> const &name_versions)
   }
 }
 
+/*!
+ * \brief Formats an OpenCL command-queue property bitfield.
+ *
+ * \param[in] properties Command-queue property bitfield.
+ * \return Readable command-queue properties.
+ */
 [[nodiscard]] inline auto
 QueuePropertiesToString(cl_command_queue_properties const &properties)
     -> std::string {
@@ -175,6 +258,12 @@ QueuePropertiesToString(cl_command_queue_properties const &properties)
   return result;
 }
 
+/*!
+ * \brief Formats OpenCL SVM capability flags.
+ *
+ * \param[in] capabilities SVM capability bitfield.
+ * \return Readable SVM capabilities.
+ */
 [[nodiscard]] inline auto
 SVMCapabilitiesToString(cl_device_svm_capabilities capabilities)
     -> std::string {
@@ -201,6 +290,12 @@ SVMCapabilitiesToString(cl_device_svm_capabilities capabilities)
   return output;
 }
 
+/*!
+ * \brief Formats a vector of size values.
+ *
+ * \param[in] values Values to format.
+ * \return Bracketed comma-separated values.
+ */
 [[nodiscard]] inline auto VectorToString(std::vector<std::size_t> const &values)
     -> std::string {
   if (values.empty()) {
@@ -218,6 +313,12 @@ SVMCapabilitiesToString(cl_device_svm_capabilities capabilities)
   return output;
 }
 
+/*!
+ * \brief Formats OpenCL atomic capability flags.
+ *
+ * \param[in] capabilities Atomic capability bitfield.
+ * \return Readable atomic capabilities.
+ */
 [[nodiscard]] inline auto
 AtomicCapabilitiesToString(cl_device_atomic_capabilities capabilities)
     -> std::string {
@@ -267,6 +368,12 @@ AtomicCapabilitiesToString(cl_device_atomic_capabilities capabilities)
   return result;
 }
 
+/*!
+ * \brief Formats OpenCL device-enqueue capability flags.
+ *
+ * \param[in] capabilities Device-enqueue capability bitfield.
+ * \return Readable device-enqueue capabilities.
+ */
 [[nodiscard]] inline auto DeviceEnqueueCapabilitiesToString(
     cl_device_device_enqueue_capabilities capabilities) -> std::string {
   std::ostringstream stream;
@@ -300,6 +407,12 @@ AtomicCapabilitiesToString(cl_device_atomic_capabilities capabilities)
   return result;
 }
 
+/*!
+ * \brief Formats OpenCL device-partition properties.
+ *
+ * \param[in] properties Partition property values.
+ * \return Readable partition properties.
+ */
 [[nodiscard]] inline auto PartitionPropertiesToString(
     std::vector<cl_device_partition_property> const &properties)
     -> std::string {
@@ -333,6 +446,12 @@ AtomicCapabilitiesToString(cl_device_atomic_capabilities capabilities)
   return result;
 }
 
+/*!
+ * \brief Formats OpenCL device-affinity domain flags.
+ *
+ * \param[in] domain Affinity-domain bitfield.
+ * \return Readable affinity domains.
+ */
 [[nodiscard]] inline auto
 AffinityDomainToString(cl_device_affinity_domain domain) -> std::string {
   std::ostringstream stream;
@@ -377,6 +496,12 @@ AffinityDomainToString(cl_device_affinity_domain domain) -> std::string {
   return result;
 }
 
+/*!
+ * \brief Formats an OpenCL UUID as canonical hexadecimal text.
+ *
+ * \param[in] uuid OpenCL UUID bytes.
+ * \return Canonical UUID string.
+ */
 [[nodiscard]] inline auto
 UUIDToString(std::span<cl_uchar const, CL_UUID_SIZE_KHR> uuid) -> std::string {
   std::array<char, 37> buffer{};
@@ -403,6 +528,12 @@ UUIDToString(std::span<cl_uchar const, CL_UUID_SIZE_KHR> uuid) -> std::string {
   return {buffer.data()};
 }
 
+/*!
+ * \brief Formats an OpenCL UUID as canonical hexadecimal text.
+ *
+ * \param[in] uuid OpenCL UUID bytes.
+ * \return Canonical UUID string.
+ */
 [[nodiscard]] inline auto
 UUIDToString(std::array<cl_uchar, CL_UUID_SIZE_KHR> const &uuid)
     -> std::string {
@@ -410,6 +541,12 @@ UUIDToString(std::array<cl_uchar, CL_UUID_SIZE_KHR> const &uuid)
       std::span<cl_uchar const, CL_UUID_SIZE_KHR>(uuid.data(), uuid.size()));
 }
 
+/*!
+ * \brief Formats an OpenCL LUID as hexadecimal text.
+ *
+ * \param[in] luid OpenCL LUID bytes.
+ * \return Hexadecimal LUID string.
+ */
 [[nodiscard]] inline auto
 LUIDToString(std::span<cl_uchar const, CL_LUID_SIZE_KHR> luid) -> std::string {
   std::string output;
@@ -423,6 +560,12 @@ LUIDToString(std::span<cl_uchar const, CL_LUID_SIZE_KHR> luid) -> std::string {
   return output;
 }
 
+/*!
+ * \brief Formats an OpenCL LUID as hexadecimal text.
+ *
+ * \param[in] luid OpenCL LUID bytes.
+ * \return Hexadecimal LUID string.
+ */
 [[nodiscard]] inline auto
 LUIDToString(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid)
     -> std::string {
@@ -430,6 +573,12 @@ LUIDToString(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid)
       std::span<cl_uchar const, CL_LUID_SIZE_KHR>(luid.data(), luid.size()));
 }
 
+/*!
+ * \brief Formats OpenCL floating-point capability flags.
+ *
+ * \param[in] config Floating-point capability bitfield.
+ * \return Readable floating-point capabilities.
+ */
 [[nodiscard]] inline auto FPConfigToString(cl_device_fp_config config)
     -> std::string {
   std::ostringstream stream;
@@ -467,6 +616,12 @@ LUIDToString(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid)
   return result.empty() ? "None" : result;
 }
 
+/*!
+ * \brief Formats an OpenCL unsigned integer value.
+ *
+ * \param[in] value OpenCL unsigned integer value.
+ * \return Decimal value, or "N/A" for the maximum cl_uint sentinel.
+ */
 [[nodiscard]] inline auto UIntToString(cl_uint value) -> std::string {
   if (value == std::numeric_limits<cl_uint>::max()) {
     return "N/A";
@@ -474,6 +629,12 @@ LUIDToString(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid)
   return std::to_string(value);
 }
 
+/*!
+ * \brief Formats a list of OpenCL devices.
+ *
+ * \param[in] devices Native OpenCL devices.
+ * \return Readable device-name list.
+ */
 [[nodiscard]] inline auto
 DevicesToString(std::vector<cl::Device> const &devices) -> std::string {
   std::string output;
@@ -483,11 +644,23 @@ DevicesToString(std::vector<cl::Device> const &devices) -> std::string {
   return output;
 }
 
+/*!
+ * \brief Returns the name of an OpenCL device.
+ *
+ * \param[in] device Native OpenCL device.
+ * \return OpenCL device name.
+ */
 [[nodiscard]] inline auto DeviceToString(cl::Device const &device)
     -> std::string {
   return device.getInfo<CL_DEVICE_NAME>();
 }
 
+/*!
+ * \brief Formats OpenCL execution capability flags.
+ *
+ * \param[in] capabilities Execution capability bitfield.
+ * \return Readable execution capabilities.
+ */
 [[nodiscard]] inline auto
 ExecCapabilitiesToString(cl_device_exec_capabilities capabilities)
     -> std::string {
@@ -516,6 +689,12 @@ ExecCapabilitiesToString(cl_device_exec_capabilities capabilities)
   return stream.str();
 }
 
+/*!
+ * \brief Formats an OpenCL command-queue property array.
+ *
+ * \param[in] queue_properties OpenCL queue property array.
+ * \return Readable queue property list.
+ */
 [[nodiscard]] inline auto QueuePropertiesArrayToString(
     std::vector<cl_queue_properties> const &queue_properties) -> std::string {
   std::string output;
@@ -542,6 +721,12 @@ ExecCapabilitiesToString(cl_device_exec_capabilities capabilities)
   return output;
 }
 
+/*!
+ * \brief Formats an OpenCL context property array.
+ *
+ * \param[in] context_properties OpenCL context property array.
+ * \return Readable context property list.
+ */
 [[nodiscard]] inline auto ContextPropertiesToString(
     std::vector<cl_context_properties> const &context_properties)
     -> std::string {
@@ -575,6 +760,12 @@ ExecCapabilitiesToString(cl_device_exec_capabilities capabilities)
   return output;
 }
 
+/*!
+ * \brief Converts a kernel-argument address qualifier to text.
+ *
+ * \param[in] qualifier Kernel-argument address qualifier.
+ * \return Readable address qualifier.
+ */
 [[nodiscard]] inline auto
 ArgAddressQualifierToString(cl_kernel_arg_address_qualifier qualifier)
     -> std::string {
@@ -591,6 +782,12 @@ ArgAddressQualifierToString(cl_kernel_arg_address_qualifier qualifier)
   }
 }
 
+/*!
+ * \brief Converts a kernel-argument access qualifier to text.
+ *
+ * \param[in] qualifier Kernel-argument access qualifier.
+ * \return Readable access qualifier.
+ */
 [[nodiscard]] inline auto
 ArgAccessQualifierToString(cl_kernel_arg_access_qualifier qualifier)
     -> std::string {
@@ -607,6 +804,12 @@ ArgAccessQualifierToString(cl_kernel_arg_access_qualifier qualifier)
   }
 }
 
+/*!
+ * \brief Formats kernel-argument type qualifier flags.
+ *
+ * \param[in] qualifier Kernel-argument type qualifier bitfield.
+ * \return Readable type qualifiers.
+ */
 [[nodiscard]] inline auto
 ArgTypeQualifierToString(cl_kernel_arg_type_qualifier qualifier)
     -> std::string {

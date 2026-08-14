@@ -88,3 +88,40 @@ TEST(GGEMSOpenCLProgramTest, ReusesEquivalentProgramFromMemoryCache) {
 
   EXPECT_EQ(&first, &second);
 }
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSOpenCLProgramTest, CachedProgramOutlivesContextWrapper) {
+  auto const &compiler_devices =
+      ggems::test::GetOpenCLCompilerDeviceInventory();
+
+  if (compiler_devices.empty()) {
+    GTEST_SKIP() << "No available GGEMS-discovered device has a compiler.";
+  }
+
+  auto const &device = compiler_devices.front().inventory.device.get();
+  auto const probe_root = GetOpenCLFrameworkProbeRoot();
+  auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
+
+  ggems::ocl::GGEMSOpenCLProgram const *cached_program{nullptr};
+
+  {
+    ggems::ocl::GGEMSOpenCLContext context{device};
+
+    cached_program = &opencl.GetOrCreateProgram(context, probe_root,
+                                                k_opencl_framework_probe_name);
+
+    EXPECT_TRUE(cached_program->Matches(context, probe_root,
+                                        k_opencl_framework_probe_name, ""));
+  }
+
+  ASSERT_NE(cached_program, nullptr);
+  EXPECT_NE(cached_program->GetProgramNative()(), nullptr);
+  EXPECT_EQ(cached_program->GetNumDevices(), 1U);
+
+  auto const kernel =
+      cached_program->CreateKernel(k_opencl_framework_probe_name);
+
+  EXPECT_NE(kernel(), nullptr);
+}

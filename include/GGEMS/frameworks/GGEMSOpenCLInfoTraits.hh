@@ -1,11 +1,42 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines internal OpenCL information traits used by generic query helpers.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #pragma once
 
+/// \cond
 #include <cstdint>
 #include <string>
 #include <cstddef>
 #include <string_view>
 #include <vector>
 #include <array>
+/// \endcond
 
 #include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLStrings.hh"
@@ -16,6 +47,7 @@
 #include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace ggems::ocl {
+/// \cond
 using namespace ggems::units;
 
 template <cl_uint Info> struct InfoTraits;
@@ -1511,4 +1543,5 @@ template <> struct InfoTraits<CL_KERNEL_PROGRAM> {
     return "";
   }
 };
+/// \endcond
 } // namespace ggems::ocl

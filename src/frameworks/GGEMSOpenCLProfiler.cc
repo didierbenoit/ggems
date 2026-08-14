@@ -1,6 +1,37 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Implements host and OpenCL kernel profiling utilities.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
 #include <limits>
 #include <cstdint>
 #include <chrono>
+/// \endcond
 
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
@@ -12,9 +43,20 @@ namespace ggems::ocl {
 
 namespace {
 
+/*!
+ * \brief Number of picoseconds in one nanosecond.
+ */
+constexpr std::uint64_t k_picoseconds_per_nanosecond{1000ULL};
+
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Converts a nonnegative duration in seconds to GGEMS picoseconds.
+ *
+ * \param[in] seconds Duration in seconds.
+ * \return GGEMS duration rounded to picoseconds and saturated to its storage range.
+ */
 auto MakeDurationFromSeconds(long double seconds) noexcept
     -> ggems::units::Duration {
   if (seconds < 0.0L) {
@@ -31,9 +73,16 @@ auto MakeDurationFromSeconds(long double seconds) noexcept
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Converts an OpenCL nanosecond timestamp to a GGEMS picosecond time point.
+ *
+ * \param[in] nanoseconds OpenCL profiling timestamp in nanoseconds.
+ * \return GGEMS time point in picoseconds, saturated to its storage range.
+ */
 auto MakeTimeFromNanoseconds(cl_ulong nanoseconds) noexcept
     -> ggems::units::Time {
-  if (nanoseconds > std::numeric_limits<std::uint64_t>::max() / 1000ULL) {
+  if (nanoseconds > std::numeric_limits<std::uint64_t>::max() /
+                        k_picoseconds_per_nanosecond) {
     return ggems::units::Time{std::numeric_limits<std::uint64_t>::max()};
   }
 
@@ -102,7 +151,7 @@ auto GGEMSOpenCLProfiler::RecordKernelEvent(cl::Event const &event) -> void {
   cl_ulong end = event.getProfilingInfo<CL_PROFILING_COMMAND_END>(&error);
   CheckCLError(error, "Failed to get OpenCL command end timestamp.");
 
-  if (!(queued <= submit && submit <= start && start <= end)) {
+  if (queued > submit || submit > start || start > end) {
     throw ggems::core::GGEMSRecoverable(
         "Invalid OpenCL profiling timestamps ordering.");
   }

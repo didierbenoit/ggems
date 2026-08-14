@@ -35,8 +35,6 @@ void BindOpenCL(py::module_ &module) {
       .def("select_devices", &ggems::ocl::GGEMSOpenCL::SelectDevices,
            py::arg("devices"))
 
-      .def("clean", &ggems::ocl::GGEMSOpenCL::Clean)
-
       .def("__repr__", [](ggems::ocl::GGEMSOpenCL const &) -> std::string {
         return "<GGEMSOpenCL (singleton) — OpenCL 3.0 backend active>";
       });

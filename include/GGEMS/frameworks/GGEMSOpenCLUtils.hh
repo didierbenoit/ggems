@@ -1,5 +1,35 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Provides OpenCL error handling and generic information-query helpers.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #pragma once
 
+/// \cond
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -11,6 +41,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+/// \endcond
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSLogMacros.hh"
@@ -18,6 +49,12 @@
 #include "GGEMS/frameworks/GGEMSOpenCLInfoTraits.hh"
 
 namespace ggems::ocl {
+/*!
+ * \brief Returns the symbolic name of an OpenCL error code.
+ *
+ * \param[in] err OpenCL status or error code.
+ * \return Symbolic OpenCL error name, or CL_UNKNOWN_ERROR.
+ */
 [[nodiscard]] inline auto GetErrorCodeName(cl_int err) noexcept
     -> std::string_view {
   switch (err) {
@@ -151,6 +188,12 @@ namespace ggems::ocl {
   }
 }
 
+/*!
+ * \brief Returns a human-readable description of an OpenCL error code.
+ *
+ * \param[in] err OpenCL status or error code.
+ * \return Human-readable OpenCL error description.
+ */
 [[nodiscard]] inline auto GetErrorDescription(cl_int err) noexcept
     -> std::string_view {
   switch (err) {
@@ -284,11 +327,25 @@ namespace ggems::ocl {
   }
 }
 
+/*!
+ * \brief Builds a combined OpenCL error name and description.
+ *
+ * \param[in] err OpenCL status or error code.
+ * \return Combined symbolic name and description.
+ */
 [[nodiscard]] inline auto GetLongErrorString(cl_int err) -> std::string {
   return std::format("{} - {}", GetErrorCodeName(err),
                      GetErrorDescription(err));
 }
 
+/*!
+ * \brief Throws a GGEMS exception when an OpenCL call fails.
+ *
+ * \tparam ExceptionType GGEMS exception type raised on failure.
+ * \param[in] err OpenCL status code to check.
+ * \param[in] context Diagnostic context prepended to the error message.
+ * \param[in] loc Source location associated with the failure.
+ */
 template <core::GGEMSExceptionType ExceptionType = core::GGEMSFatal>
 inline auto
 CheckCLError(cl_int err, std::string_view context,
@@ -302,6 +359,7 @@ CheckCLError(cl_int err, std::string_view context,
   }
 }
 
+/// \cond
 namespace detail {
 template <typename T> struct CLInfoReader {
   static auto Read(auto const &obj, cl_uint param, std::size_t size,
@@ -370,7 +428,17 @@ template <> struct CLGetter<cl::Kernel> {
   static constexpr auto function = &clGetKernelInfo;
 };
 } // namespace detail
+/// \endcond
 
+/*!
+ * \brief Returns typed OpenCL kernel-argument information.
+ *
+ * \tparam Info OpenCL kernel-argument information selector.
+ * \tparam Kernel Kernel wrapper type.
+ * \param[in] kernel Kernel queried for argument information.
+ * \param[in] index Kernel argument index.
+ * \return Requested kernel-argument information value.
+ */
 template <cl_uint Info, typename Kernel>
 auto GetArgInfo(Kernel const &kernel, cl_uint index) {
   cl_int err{CL_SUCCESS};
@@ -379,6 +447,16 @@ auto GetArgInfo(Kernel const &kernel, cl_uint index) {
   return value;
 }
 
+/*!
+ * \brief Returns typed OpenCL kernel work-group information.
+ *
+ * \tparam Info OpenCL work-group information selector.
+ * \tparam Kernel Kernel wrapper type.
+ * \tparam Device Device wrapper type.
+ * \param[in] kernel Kernel queried for work-group information.
+ * \param[in] device Device associated with the work-group query.
+ * \return Requested work-group information value.
+ */
 template <cl_uint Info, typename Kernel, typename Device>
 auto GetWorkGroupInfo(Kernel const &kernel, Device const &device) {
   cl_int err{CL_SUCCESS};
@@ -388,6 +466,14 @@ auto GetWorkGroupInfo(Kernel const &kernel, Device const &device) {
   return value;
 }
 
+/*!
+ * \brief Returns typed OpenCL information for a supported object.
+ *
+ * \tparam Info OpenCL information selector.
+ * \tparam Object OpenCL C++ wrapper type.
+ * \param[in] obj OpenCL object to query.
+ * \return Requested information value.
+ */
 template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
   using Traits = InfoTraits<Info>;
   using ReturnType = typename Traits::type;
@@ -416,6 +502,13 @@ template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
   }
 }
 
+/*!
+ * \brief Queries and logs an OpenCL information value.
+ *
+ * \tparam Info OpenCL information selector.
+ * \tparam Object OpenCL C++ wrapper type.
+ * \param[in] obj OpenCL object to query.
+ */
 template <cl_uint Info, typename Object>
 auto PrintInfo(Object const &obj) -> void {
   using Traits = InfoTraits<Info>;
@@ -428,6 +521,13 @@ auto PrintInfo(Object const &obj) -> void {
   }
 }
 
+/*!
+ * \brief Checks whether an extension name is present in a parsed extension set.
+ *
+ * \param[in] extensions Parsed OpenCL extension names.
+ * \param[in] name Extension name to search for.
+ * \return True if the extension is present, false otherwise.
+ */
 [[nodiscard]] inline auto
 HasExtension(std::unordered_set<std::string> const &extensions,
              std::string_view name) -> bool {
@@ -438,6 +538,14 @@ HasExtension(std::unordered_set<std::string> const &extensions,
   return it_extension != extensions.end();
 }
 
+/*!
+ * \brief Parses a space-separated OpenCL extension string into a set.
+ *
+ * \tparam Info OpenCL information selector that returns the extension string.
+ * \tparam Object OpenCL object type.
+ * \param[in] obj OpenCL object to query.
+ * \return Set of parsed extension names.
+ */
 template <cl_uint Info, typename Object>
 [[nodiscard]] auto ExtractExtensions(Object const &obj)
     -> std::unordered_set<std::string> {

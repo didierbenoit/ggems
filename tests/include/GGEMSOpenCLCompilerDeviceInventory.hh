@@ -20,7 +20,6 @@ struct OpenCLCompilerDeviceInventoryEntry {
 
 [[nodiscard]] inline auto GetOpenCLCompilerDeviceInventory()
     -> std::vector<OpenCLCompilerDeviceInventoryEntry> const & {
-  // Cached GGEMSOpenCLProgram objects retain these contexts by reference.
   static auto const inventory =
       [] -> std::vector<OpenCLCompilerDeviceInventoryEntry> {
     std::vector<OpenCLCompilerDeviceInventoryEntry> result;

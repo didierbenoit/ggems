@@ -1,3 +1,33 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Implements OpenCL program building, fingerprinting, and caching.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
@@ -16,6 +46,7 @@
 #include <cstdint>
 #include <iosfwd>
 #include <cstddef>
+/// \endcond
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSLogMacros.hh"
@@ -31,11 +62,20 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Schema identifier stored in GGEMS OpenCL cache entries.
+ */
 constexpr std::string_view k_opencl_cache_schema{"GGEMS_OPENCL_CACHE"};
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Replaces path-unsafe separator characters in a cache-name component.
+ *
+ * \param[in] value Text to sanitize.
+ * \return Sanitized cache-name component.
+ */
 auto Sanitize(std::string value) -> std::string {
   for (char &character : value) {
     if (character == ' ' || character == '/' || character == '\\' ||
@@ -49,6 +89,11 @@ auto Sanitize(std::string value) -> std::string {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Returns the platform-appropriate GGEMS OpenCL cache directory.
+ *
+ * \return OpenCL cache root directory.
+ */
 auto GetCacheRootDirectory() -> std::filesystem::path {
 #ifdef _WIN32
   if (char const *local = std::getenv("LOCALAPPDATA")) {
@@ -68,6 +113,12 @@ auto GetCacheRootDirectory() -> std::filesystem::path {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Extracts a quoted local include from one source line.
+ *
+ * \param[in] line Source line to inspect.
+ * \return Included relative path when a quoted include is found, otherwise an empty optional.
+ */
 auto ExtractQuotedInclude(std::string_view line) -> std::optional<std::string> {
   auto include_pos = line.find("#include");
 
@@ -94,6 +145,12 @@ auto ExtractQuotedInclude(std::string_view line) -> std::optional<std::string> {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Extracts -I include roots from an OpenCL build-option string.
+ *
+ * \param[in] build_options OpenCL build options.
+ * \return Include-root paths in option order.
+ */
 auto ExtractIncludeRoots(std::string_view build_options)
     -> std::vector<std::filesystem::path> {
   std::vector<std::filesystem::path> roots;
@@ -141,10 +198,15 @@ auto ExtractIncludeRoots(std::string_view build_options)
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Normalizes a filesystem path, preferring weak canonicalization when available.
+ *
+ * \param[in] path Path to normalize.
+ * \return Normalized filesystem path.
+ */
 auto NormalizePath(std::filesystem::path const &path) -> std::filesystem::path {
   std::error_code error_code;
-  std::filesystem::path const canonical =
-      std::filesystem::weakly_canonical(path, error_code);
+  auto canonical = std::filesystem::weakly_canonical(path, error_code);
 
   if (!error_code) {
     return canonical;
@@ -156,6 +218,14 @@ auto NormalizePath(std::filesystem::path const &path) -> std::filesystem::path {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Resolves a quoted include against the including directory and configured roots.
+ *
+ * \param[in] include_name Quoted include path.
+ * \param[in] including_dir Directory of the including source file.
+ * \param[in] include_roots Configured include-search roots.
+ * \return Resolved normalized source path, or an empty optional if no candidate exists.
+ */
 auto ResolveLocalInclude(
     std::string const &include_name, std::filesystem::path const &including_dir,
     std::vector<std::filesystem::path> const &include_roots)
@@ -189,7 +259,9 @@ GGEMSOpenCLProgram::GGEMSOpenCLProgram(GGEMSOpenCLContext const &context,
                                        std::filesystem::path kernel_root,
                                        std::string kernel_name,
                                        std::string build_options)
-    : context_{context}, kernel_root_{std::move(kernel_root)},
+    : context_{context.GetContextNative()},
+      device_{context.GetDevice().GetDeviceNative()},
+      kernel_root_{std::move(kernel_root)},
       kernel_name_{std::move(kernel_name)},
       user_build_options_{std::move(build_options)}, source_hash_{0LL},
       global_hash_{0LL} {
@@ -356,7 +428,11 @@ auto GGEMSOpenCLProgram::Matches(GGEMSOpenCLContext const &context,
                                  std::string_view kernel_name,
                                  std::string_view user_build_options) const
     -> bool {
-  if (&context_ != &context) {
+  if (context_() != context.GetContextNative()()) {
+    return false;
+  }
+
+  if (device_() != context.GetDevice().GetDeviceNative()()) {
     return false;
   }
 
@@ -388,17 +464,15 @@ auto GGEMSOpenCLProgram::Build() -> void {
 
   source_hash_ = detail::HashFNV1a64(source_fingerprint_text);
 
-  auto const &device = context_.GetDevice();
-
   std::string concat;
   concat.reserve(1024);
 
   concat += k_opencl_cache_schema;
-  concat += "\nVendor=" + Sanitize(device.GetVendor());
-  concat += "\nDevice=" + Sanitize(device.GetName());
-  concat += "\nDeviceVersion=" + device.GetVersion();
-  concat += "\nOpenCLCVersion=" + device.GetOpenCLCVersion();
-  concat += "\nDriverVersion=" + device.GetDriverVersion();
+  concat += "\nVendor=" + Sanitize(GetInfo<CL_DEVICE_VENDOR>(device_));
+  concat += "\nDevice=" + Sanitize(GetInfo<CL_DEVICE_NAME>(device_));
+  concat += "\nDeviceVersion=" + GetInfo<CL_DEVICE_VERSION>(device_);
+  concat += "\nOpenCLCVersion=" + GetInfo<CL_DEVICE_OPENCL_C_VERSION>(device_);
+  concat += "\nDriverVersion=" + GetInfo<CL_DRIVER_VERSION>(device_);
   concat += "\nKernelName=" + kernel_name_;
   concat += "\nBuildOptions=" + build_options_;
   concat += "\nSourceHash=" + std::format("{:016x}", source_hash_);
@@ -457,8 +531,8 @@ auto GGEMSOpenCLProgram::LoadTextFile(std::filesystem::path const &path)
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProgram::BuildFromSource(std::string const &source) -> void {
-  auto const &context = context_.GetContextNative();
-  auto const &device = context_.GetDevice().GetDeviceNative();
+  auto const &context = context_;
+  auto const &device = device_;
 
   cl::Program::Sources sources;
   sources.emplace_back(source.c_str(), source.size());
@@ -493,8 +567,8 @@ auto GGEMSOpenCLProgram::BuildFromSource(std::string const &source) -> void {
 
 auto GGEMSOpenCLProgram::BuildFromBinary(
     std::vector<std::uint8_t> const &binary) -> void {
-  auto const &context = context_.GetContextNative();
-  auto const &device = context_.GetDevice().GetDeviceNative();
+  auto const &context = context_;
+  auto const &device = device_;
   cl_device_id device_id = device();
 
   cl_int binary_status{CL_SUCCESS};
@@ -549,9 +623,8 @@ auto GGEMSOpenCLProgram::BuildFromBinary(
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProgram::ComputeCachePath() const -> std::filesystem::path {
-  auto const &device = context_.GetDevice();
-  std::string vendor = Sanitize(device.GetVendor());
-  std::string name = Sanitize(device.GetName());
+  std::string vendor = Sanitize(GetInfo<CL_DEVICE_VENDOR>(device_));
+  std::string name = Sanitize(GetInfo<CL_DEVICE_NAME>(device_));
 
   std::string filename = std::format("{}__{}__{}__{:016x}.bin", vendor, name,
                                      kernel_name_, global_hash_);

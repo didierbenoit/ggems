@@ -1,8 +1,13 @@
+#include <type_traits>
+
 #include <gtest/gtest.h>
 
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
+
+static_assert(!std::is_copy_constructible_v<ggems::ocl::GGEMSOpenCLContext>);
+static_assert(!std::is_copy_assignable_v<ggems::ocl::GGEMSOpenCLContext>);
 
 // =============================================================================
 // =============================================================================

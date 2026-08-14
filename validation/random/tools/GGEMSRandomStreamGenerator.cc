@@ -519,8 +519,6 @@ auto GenerateRandomStream(Options const &options) -> void {
             << '\n';
   std::cout << "Stream generated   : " << options.output_path.string() << '\n';
   std::cout << "Bytes written      : " << output_bytes << '\n';
-
-  opencl.Clean();
 }
 
 } // namespace
