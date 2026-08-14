@@ -1,6 +1,8 @@
 #include <array>
 #include <cstddef>
 #include <utility>
+#include <limits>
+#include <cstdint>
 
 #include <gtest/gtest.h>
 
@@ -220,6 +222,16 @@ TEST(GGEMSOpenCLSVMBufferTest,
     EXPECT_THROW(
         (void)context.CreateSVMBuffer(64_B, ggems::ocl::SVMMemoryKind::None),
         ggems::core::GGEMSFatal);
+    EXPECT_EQ(context.GetAllocatedVRAM(), allocated_before);
+    EXPECT_EQ(context.GetAllocationCountVRAM(), allocation_count_before);
+
+    constexpr auto k_oversized_alignment = ggems::units::Bytes{
+        static_cast<std::uint64_t>(std::numeric_limits<cl_uint>::max()) + 1ULL};
+
+    EXPECT_THROW((void)context.CreateSVMBuffer(64_B,
+                                               ggems::ocl::SVMMemoryKind::Auto,
+                                               k_oversized_alignment),
+                 ggems::core::GGEMSFatal);
     EXPECT_EQ(context.GetAllocatedVRAM(), allocated_before);
     EXPECT_EQ(context.GetAllocationCountVRAM(), allocation_count_before);
 

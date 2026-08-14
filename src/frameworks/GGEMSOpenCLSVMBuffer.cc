@@ -59,11 +59,18 @@ GGEMSOpenCLSVMBuffer::GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context,
     throw ggems::core::GGEMSFatal("Device does not support any form of SVM.");
   }
 
+  if (!(std::in_range<cl_uint>(alignment.value))) {
+    throw core::GGEMSFatal(
+        "SVM allocation alignment exceeds OpenCL cl_uint range.");
+  }
+
   auto const &ctx = context.GetContextNative();
 
-  void *svm_ptr =
-      clSVMAlloc(ctx(), flags_, static_cast<std::size_t>(size.value),
-                 static_cast<cl_uint>(alignment.value));
+  auto const opencl_alignment = static_cast<cl_uint>(alignment.value);
+
+  void *svm_ptr = clSVMAlloc(
+      ctx(), flags_, static_cast<std::size_t>(size.value), opencl_alignment);
+
   if (svm_ptr == nullptr) {
     throw ggems::core::GGEMSFatal("clSVMAlloc failed: returned nullptr.");
   }

@@ -1,8 +1,12 @@
 #include <algorithm>
 #include <cstddef>
+#include <array>
+#include <string>
+#include <string_view>
 
 #include <gtest/gtest.h>
 
+#include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
@@ -59,4 +63,39 @@ TEST(GGEMSOpenCLTest, DiscoveryHierarchyIsCoherent) {
     EXPECT_NE(device.GetDeviceNative()(), nullptr);
     EXPECT_EQ(device.GetPlatformID(), platform.GetPlatformNative()());
   }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSOpenCLTest, RejectsInvalidDeviceSelectors) {
+  auto const inventory = ggems::test::GetOpenCLDeviceInventory();
+  ASSERT_FALSE(inventory.empty());
+
+  constexpr std::array<std::string_view, 7> invalid_selectors{
+      "toot", "all;gpu", "0;gpu", "1-0", "cpu;gpu", "intel;nvidia", "0;;1",
+  };
+
+  auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
+
+  for (auto const selector : invalid_selectors) {
+    SCOPED_TRACE(selector);
+
+    EXPECT_THROW(opencl.SelectDevices({std::string{selector}}),
+                 ggems::core::GGEMSFatal);
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSOpenCLTest, RejectsOutOfRangeDeviceIndex) {
+  auto const inventory = ggems::test::GetOpenCLDeviceInventory();
+  ASSERT_FALSE(inventory.empty());
+
+  auto const out_of_range_index = std::to_string(inventory.size());
+
+  EXPECT_THROW(ggems::ocl::GGEMSOpenCL::GetInstance().SelectDevices(
+                   {out_of_range_index}),
+               ggems::core::GGEMSFatal);
 }
