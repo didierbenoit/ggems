@@ -1,9 +1,40 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Implements construction of the ASCII and Unicode GGEMS banner.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
 #include <array>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 #include <cstddef>
+/// \endcond
 
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
@@ -16,12 +47,21 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Number of text rows in each banner snapshot.
+ */
 constexpr std::size_t number_lines = 17U;
+/*!
+ * \brief Fixed-size view of all text rows forming one banner variant.
+ */
 using BannerSnapshot = std::array<std::u32string_view, number_lines>;
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief ASCII-only GGEMS banner used when ASCII output is selected.
+ */
 constexpr BannerSnapshot ascii_banner{{
     U"+****************************************************+",
     U"*                                                    *",
@@ -45,6 +85,9 @@ constexpr BannerSnapshot ascii_banner{{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Unicode GGEMS banner used when Unicode output is selected.
+ */
 constexpr BannerSnapshot unicode_banner{{
     U"╔════════════════════════════════════════════════════╗",
     U"║                                                    ║",
@@ -68,11 +111,19 @@ constexpr BannerSnapshot unicode_banner{{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Color applied to every segment of the GGEMS banner.
+ */
 constexpr ggems::render::ColorKey banner_color = ggems::render::GREEN_Acid;
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Selects the banner snapshot for the active logger encoding.
+ *
+ * \return Reference to the ASCII or Unicode banner snapshot.
+ */
 [[nodiscard]] auto GetBannerSnapshot() noexcept -> BannerSnapshot const & {
   if (ggems::core::GGEMSLogger::GetInstance().GetEncoding() ==
       ggems::core::Encoding::Ascii) {

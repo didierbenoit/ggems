@@ -983,7 +983,7 @@ template <> struct InfoTraits<CL_DEVICE_PARTITION_TYPE> {
 template <> struct InfoTraits<CL_DEVICE_MAX_PARAMETER_SIZE> {
   using type = std::size_t;
 
-  static constexpr std::string_view name = "CL_DEVICE_IMAGE_MAX_PARAMETER_SIZE";
+  static constexpr std::string_view name = "CL_DEVICE_MAX_PARAMETER_SIZE";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return std::to_string(value);

@@ -61,8 +61,8 @@ auto GGEMSOpenCLContext::CreateCommandQueue() -> void {
 
   cl_int error{CL_SUCCESS};
 
-  cl_command_queue_properties props = 0;
-  props |= CL_QUEUE_PROFILING_ENABLE; // needed for profiling
+  cl_command_queue_properties props{0};
+  props |= CL_QUEUE_PROFILING_ENABLE;
 
   command_queue_ =
       cl::CommandQueue(context_, device_.GetDeviceNative(), props, &error);

@@ -14,9 +14,9 @@ ToVulkanClearColor(render::ColorKey const &color) noexcept
   render::RGB const rgb =
       render::GetColorRGB(color.family, color.shade, color.variant);
 
-  return {static_cast<float>(rgb.r) * k_inverse_color_channel_maximum,
-          static_cast<float>(rgb.g) * k_inverse_color_channel_maximum,
-          static_cast<float>(rgb.b) * k_inverse_color_channel_maximum, 1.0F};
+  return {static_cast<float>(rgb.red) * k_inverse_color_channel_maximum,
+          static_cast<float>(rgb.green) * k_inverse_color_channel_maximum,
+          static_cast<float>(rgb.blue) * k_inverse_color_channel_maximum, 1.0F};
 }
 
 } // namespace ggems::ui::detail

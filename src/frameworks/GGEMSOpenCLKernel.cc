@@ -9,8 +9,6 @@
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLStrings.hh"
 
-using namespace ggems::units;
-
 namespace ggems::ocl {
 
 // -----------------------------------------------------------------------------
@@ -52,7 +50,8 @@ auto GGEMSOpenCLKernel::RunAndGetEvent(std::array<std::size_t, 1> const &global,
   CheckCLError(error,
                std::format("Failed to enqueue kernel '{}'", kernel_name_));
 
-  queue.finish();
+  CheckCLError(queue.finish(),
+               std::format("Failed to finish kernel '{}'", kernel_name_));
 
   return event;
 }

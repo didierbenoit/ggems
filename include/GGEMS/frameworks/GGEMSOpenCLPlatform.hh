@@ -1,12 +1,10 @@
 #pragma once
 
 #include <string>
-#include <unordered_set>
 #include <vector>
 #include <cstddef>
-#include <string_view>
 
-#include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 
 namespace ggems::ocl {
 
@@ -26,8 +24,6 @@ public:
   GGEMSOpenCLPlatform(GGEMSOpenCLPlatform &&) noexcept = default;
   auto operator=(GGEMSOpenCLPlatform &&) -> GGEMSOpenCLPlatform & = delete;
 
-  [[nodiscard]] auto CheckExtension(std::string_view extension_name) const
-      -> bool;
   [[nodiscard]] auto GetName() const -> std::string;
 
   [[nodiscard]] auto GetProfile() const -> std::string;
@@ -69,7 +65,6 @@ private:
 
   cl::Platform platform_;
   std::size_t platform_index_;
-  std::unordered_set<std::string> extensions_;
   std::vector<GGEMSOpenCLDevice> devices_;
 };
 } // namespace ggems::ocl

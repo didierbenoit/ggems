@@ -11,6 +11,7 @@
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/render/GGEMSParticleColors.hh"
+#include "GGEMS/render/GGEMSColor.hh"
 
 namespace {
 
@@ -75,14 +76,16 @@ using ggems::core::particles::ToKernelParticleType;
 // =============================================================================
 
 auto ExpectParticleColor(ggems::render::GGEMSParticleTraceVertex const &vertex,
-                          GGEMSParticleType particle_type) -> void {
+                         GGEMSParticleType particle_type) -> void {
   ggems::render::RGB const rgb = ggems::render::GetParticleRGB(particle_type);
 
   constexpr float k_inverse_255{1.0F / 255.0F};
 
-  EXPECT_FLOAT_EQ(vertex.color[0], static_cast<float>(rgb.r) * k_inverse_255);
-  EXPECT_FLOAT_EQ(vertex.color[1], static_cast<float>(rgb.g) * k_inverse_255);
-  EXPECT_FLOAT_EQ(vertex.color[2], static_cast<float>(rgb.b) * k_inverse_255);
+  EXPECT_FLOAT_EQ(vertex.color[0], static_cast<float>(rgb.red) * k_inverse_255);
+  EXPECT_FLOAT_EQ(vertex.color[1],
+                  static_cast<float>(rgb.green) * k_inverse_255);
+  EXPECT_FLOAT_EQ(vertex.color[2],
+                  static_cast<float>(rgb.blue) * k_inverse_255);
   EXPECT_FLOAT_EQ(vertex.color[3], 1.0F);
 }
 } // namespace
@@ -557,9 +560,9 @@ TEST(GGEMSParticleTrace,
     EXPECT_EQ(visibility.ShouldDraw(static_cast<std::uint32_t>(index)),
               index != 3U);
     ExpectParticleColor(draw_data.vertices[index * 2U],
-                         GGEMSParticleType::Aionino);
+                        GGEMSParticleType::Aionino);
     ExpectParticleColor(draw_data.vertices[(index * 2U) + 1U],
-                         GGEMSParticleType::Aionino);
+                        GGEMSParticleType::Aionino);
   }
 }
 

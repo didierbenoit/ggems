@@ -4,6 +4,7 @@
 #include <vector>
 #include <array>
 
+#include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSLogMacros.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
@@ -52,7 +53,9 @@ auto GGEMSOpenCLDevice::GetDriverVersion() const -> std::string {
 
 auto GGEMSOpenCLDevice::GetPlatformID() const -> cl_platform_id {
   cl_platform_id platform_id{};
-  device_.getInfo(CL_DEVICE_PLATFORM, &platform_id);
+  cl_int error = device_.getInfo(CL_DEVICE_PLATFORM, &platform_id);
+  CheckCLError<core::GGEMSRecoverable>(error,
+                                       "Failed to get OpenCL device platform.");
   return platform_id;
 }
 
@@ -557,7 +560,7 @@ auto GGEMSOpenCLDevice::GetExtensionsWithVersion() const
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSOpenCLDevice::GetLastestConformanceVersionPassed() const
+auto GGEMSOpenCLDevice::GetLatestConformanceVersionPassed() const
     -> std::string {
   return GetInfo<CL_DEVICE_LATEST_CONFORMANCE_VERSION_PASSED>(device_);
 }

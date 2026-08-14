@@ -15,9 +15,9 @@ auto ToImGuiColor(render::ColorKey const &color) noexcept -> ImVec4 {
 
   constexpr float k_inverse_255{1.0F / 255.0F};
 
-  return ImVec4{static_cast<float>(rgb.r) * k_inverse_255,
-                static_cast<float>(rgb.g) * k_inverse_255,
-                static_cast<float>(rgb.b) * k_inverse_255, 1.0F};
+  return ImVec4{static_cast<float>(rgb.red) * k_inverse_255,
+                static_cast<float>(rgb.green) * k_inverse_255,
+                static_cast<float>(rgb.blue) * k_inverse_255, 1.0F};
 }
 
 // =============================================================================

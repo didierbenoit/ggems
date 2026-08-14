@@ -18,8 +18,6 @@ GGEMSOpenCLPlatform::GGEMSOpenCLPlatform(cl::Platform platform,
     : platform_{std::move(platform)}, platform_index_{platform_index} {
   GGEMS_INFOEX("OpenCL", 3, "Creating OpenCL platform [{}].", platform_index_);
 
-  extensions_ = ExtractExtensions<CL_PLATFORM_EXTENSIONS>(platform_);
-
   DiscoverDevices();
 
   GGEMS_INFOEX("OpenCL", 2, "OpenCL platform [{}] registered with {} device(s)",
@@ -116,7 +114,6 @@ auto GGEMSOpenCLPlatform::Clean() -> void {
 
   platform_.unloadCompiler();
   devices_.clear();
-  extensions_.clear();
 
   GGEMS_INFOEX("OpenCL", 3, "OpenCL platform [{}] resources cleaned.",
                platform_index_);

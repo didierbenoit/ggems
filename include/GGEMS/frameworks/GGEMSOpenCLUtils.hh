@@ -119,7 +119,7 @@ namespace ggems::ocl {
   case CL_INVALID_EVENT_WAIT_LIST:
     return "CL_INVALID_EVENT_WAIT_LIST";
   case CL_INVALID_EVENT:
-    return "CL_INVALID_EVENT:";
+    return "CL_INVALID_EVENT";
   case CL_INVALID_OPERATION:
     return "CL_INVALID_OPERATION";
   case CL_INVALID_GL_OBJECT:
@@ -318,6 +318,9 @@ template <> struct CLInfoReader<std::string> {
                    cl_int &err) -> std::string {
     std::string value(size, '\0');
     err = getter(obj(), param, size, value.data(), nullptr);
+    if (err == CL_SUCCESS && !value.empty() && value.back() == '\0') {
+      value.pop_back();
+    }
     return value;
   }
 };

@@ -177,8 +177,6 @@ public:
 private:
   auto CreateContext() -> void;
 
-  auto CreateGLSharedContext() -> void;
-
   auto CreateCommandQueue() -> void;
 
   auto InitSVMSupport() -> void;

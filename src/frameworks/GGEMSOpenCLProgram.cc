@@ -191,8 +191,8 @@ GGEMSOpenCLProgram::GGEMSOpenCLProgram(GGEMSOpenCLContext const &context,
                                        std::string build_options)
     : context_{context}, kernel_root_{std::move(kernel_root)},
       kernel_name_{std::move(kernel_name)},
-      user_build_options_{std::move(build_options)}, build_options_{},
-      source_hash_{0LL}, global_hash_{0LL} {
+      user_build_options_{std::move(build_options)}, source_hash_{0LL},
+      global_hash_{0LL} {
   GGEMS_INFOEX("OpenCL", 2, "Initializing OpenCL program '{}'.", kernel_name_);
   GGEMS_INFOEX("OpenCL", 3, "OpenCL program source root: '{}'.",
                kernel_root_.string());
@@ -409,7 +409,6 @@ auto GGEMSOpenCLProgram::Build() -> void {
   if (!binary.empty()) {
     try {
       BuildFromBinary(binary);
-      loaded_from_cache_ = true;
       GGEMS_INFOEX("OpenCL", 2, "OpenCL program '{}' from cache.",
                    kernel_name_);
       return;

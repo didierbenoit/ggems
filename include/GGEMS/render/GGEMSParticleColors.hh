@@ -2,11 +2,13 @@
 
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
+#include "GGEMS/render/GGEMSColor.hh"
 
 namespace ggems::render {
 
-constexpr ColorKey GetParticleColorKey(
-    core::particles::GGEMSParticleType particle_type) noexcept {
+constexpr auto
+GetParticleColorKey(core::particles::GGEMSParticleType particle_type) noexcept
+    -> ColorKey {
   using core::particles::GGEMSParticleType;
 
   switch (particle_type) {
@@ -30,8 +32,9 @@ constexpr ColorKey GetParticleColorKey(
   }
 }
 
-constexpr RGB
-GetParticleRGB(core::particles::GGEMSParticleType particle_type) noexcept {
+constexpr auto
+GetParticleRGB(core::particles::GGEMSParticleType particle_type) noexcept
+    -> RGB {
   ColorKey color = GetParticleColorKey(particle_type);
   return GetColorRGB(color.family, color.shade, color.variant);
 }

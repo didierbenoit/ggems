@@ -105,7 +105,6 @@ private:
   std::string build_options_;
   std::string build_log_;
   cl::Program program_;
-  bool loaded_from_cache_{false};
   std::uint64_t source_hash_;
   std::uint64_t global_hash_;
 };

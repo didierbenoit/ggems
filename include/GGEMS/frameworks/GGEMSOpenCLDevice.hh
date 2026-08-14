@@ -221,7 +221,7 @@ public:
 
   [[nodiscard]] auto GetReferenceCount() const -> cl_uint;
 
-  [[nodiscard]] auto GetLastestConformanceVersionPassed() const -> std::string;
+  [[nodiscard]] auto GetLatestConformanceVersionPassed() const -> std::string;
 
   [[nodiscard]] auto GetPartitionMaxSubDevices() const -> cl_uint;
 

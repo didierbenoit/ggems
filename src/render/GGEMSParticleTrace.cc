@@ -129,9 +129,9 @@ MakeTraceVertex(GGEMSParticleTracePoint const &point,
 
   return GGEMSParticleTraceVertex{
       .position = {point.x_m, point.y_m, point.z_m},
-      .color = {static_cast<float>(rgb.r) * inverse_255,
-                 static_cast<float>(rgb.g) * inverse_255,
-                 static_cast<float>(rgb.b) * inverse_255, 1.0F}};
+      .color = {static_cast<float>(rgb.red) * inverse_255,
+                static_cast<float>(rgb.green) * inverse_255,
+                static_cast<float>(rgb.blue) * inverse_255, 1.0F}};
 }
 
 // =============================================================================

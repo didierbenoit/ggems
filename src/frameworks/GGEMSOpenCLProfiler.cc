@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <chrono>
 
+#include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/units/GGEMSQuantity.hh"
@@ -69,6 +70,10 @@ auto GGEMSOpenCLProfiler::Start() noexcept -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProfiler::Stop() noexcept -> void {
+  if (!running_) {
+    return;
+  }
+
   stop_ = Clock::now();
   running_ = false;
   has_measurement_ = true;
@@ -83,10 +88,19 @@ auto GGEMSOpenCLProfiler::RecordKernelEvent(cl::Event const &event) -> void {
         "timing is active.");
   }
 
-  cl_ulong queued = event.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>();
-  cl_ulong submit = event.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>();
-  cl_ulong start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
-  cl_ulong end = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+  cl_int error{0};
+
+  cl_ulong queued = event.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>(&error);
+  CheckCLError(error, "Failed to get OpenCL command queue timestamp.");
+
+  cl_ulong submit = event.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>(&error);
+  CheckCLError(error, "Failed to get OpenCL command submit timestamp.");
+
+  cl_ulong start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>(&error);
+  CheckCLError(error, "Failed to get OpenCL command start timestamp.");
+
+  cl_ulong end = event.getProfilingInfo<CL_PROFILING_COMMAND_END>(&error);
+  CheckCLError(error, "Failed to get OpenCL command end timestamp.");
 
   if (!(queued <= submit && submit <= start && start <= end)) {
     throw ggems::core::GGEMSRecoverable(

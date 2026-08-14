@@ -592,7 +592,7 @@ ArgAddressQualifierToString(cl_kernel_arg_address_qualifier qualifier)
 }
 
 [[nodiscard]] inline auto
-ArgAccessQualifierToString(cl_kernel_arg_address_qualifier qualifier)
+ArgAccessQualifierToString(cl_kernel_arg_access_qualifier qualifier)
     -> std::string {
   switch (qualifier) {
   case CL_KERNEL_ARG_ACCESS_READ_ONLY:
