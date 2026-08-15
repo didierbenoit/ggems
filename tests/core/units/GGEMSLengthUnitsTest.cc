@@ -48,12 +48,10 @@ static_assert(!std::convertible_to<PositionCoordinate, Length>);
 // =============================================================================
 
 TEST(GGEMSLengthUnits, ConvertsEveryRegisteredLengthToken) {
-  constexpr std::array<LengthConversionCase, 10U> cases{{
+  constexpr std::array<LengthConversionCase, 8U> cases{{
       {.value = 2.0L, .unit = "pm", .expected = 2ULL},
       {.value = 2.0L, .unit = "nm", .expected = 2'000ULL},
       {.value = 2.0L, .unit = "um", .expected = 2'000'000ULL},
-      {.value = 2.0L, .unit = "µm", .expected = 2'000'000ULL},
-      {.value = 2.0L, .unit = "μm", .expected = 2'000'000ULL},
       {.value = 2.0L, .unit = "mm", .expected = 2'000'000'000ULL},
       {.value = 2.0L, .unit = "cm", .expected = 20'000'000'000ULL},
       {.value = 2.0L, .unit = "m", .expected = 2'000'000'000'000ULL},

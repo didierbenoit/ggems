@@ -32,63 +32,42 @@ namespace ggems::units {
 // =============================================================================
 // =============================================================================
 
-struct MissingCanonicalUnitSet {
+struct EmptyUnitSet {
   using dimension = LengthDim;
 };
 
-template <> struct UnitRegistry<MissingCanonicalUnitSet> {
-  static constexpr std::array<UnitDefinition, 1> units{{
-      {.canonical_name = "test",
-       .symbol = "test",
-       .display_symbol = "test",
-       .literal_suffix = "test",
-       .scale = DecimalScale(0)},
+template <> struct UnitRegistry<EmptyUnitSet> {
+  static constexpr std::array<UnitDefinition, 0U> units{};
+};
+
+struct EmptySymbolUnitSet {
+  using dimension = LengthDim;
+};
+
+template <> struct UnitRegistry<EmptySymbolUnitSet> {
+  static constexpr std::array<UnitDefinition, 1U> units{{
+      {.symbol = "", .scale = DecimalScale(0)},
   }};
 };
 
-struct DuplicateTokenUnitSet {
+struct DuplicateSymbolUnitSet {
   using dimension = LengthDim;
 };
 
-template <> struct UnitRegistry<DuplicateTokenUnitSet> {
-  static constexpr std::array<UnitDefinition, 2> units{{
-      {.canonical_name = "first",
-       .symbol = "first",
-       .display_symbol = "first",
-       .aliases = {"shared"},
-       .literal_suffix = "first",
-       .scale = DecimalScale(0),
-       .canonical = true,
-       .automatic_display = true},
-      {.canonical_name = "second",
-       .symbol = "second",
-       .display_symbol = "second",
-       .aliases = {"shared"},
-       .literal_suffix = "second",
-       .scale = DecimalScale(1),
-       .automatic_display = true},
+template <> struct UnitRegistry<DuplicateSymbolUnitSet> {
+  static constexpr std::array<UnitDefinition, 2U> units{{
+      {.symbol = "shared", .scale = DecimalScale(0)},
+      {.symbol = "shared", .scale = DecimalScale(1)},
   }};
 };
 
-struct DuplicateLiteralSuffixUnitSet {
+struct InvalidScaleUnitSet {
   using dimension = LengthDim;
 };
 
-template <> struct UnitRegistry<DuplicateLiteralSuffixUnitSet> {
-  static constexpr std::array<UnitDefinition, 2> units{{
-      {.canonical_name = "first",
-       .symbol = "first",
-       .display_symbol = "first",
-       .literal_suffix = "duplicate",
-       .scale = DecimalScale(0),
-       .canonical = true,
-       .automatic_display = true},
-      {.canonical_name = "second",
-       .symbol = "second",
-       .display_symbol = "second",
-       .literal_suffix = "duplicate",
-       .scale = DecimalScale(1),
-       .automatic_display = true},
+template <> struct UnitRegistry<InvalidScaleUnitSet> {
+  static constexpr std::array<UnitDefinition, 1U> units{{
+      {.symbol = "invalid", .scale = SpecialScale(-1.0L)},
   }};
 };
 
@@ -136,37 +115,46 @@ struct MissingFixedUnitFamily {
 };
 
 template <typename UnitSet>
-auto ExpectSelectedSymbols(
-    std::string_view unit_set_name,
-    std::string_view UnitDefinition::*expected_symbol_member) -> void {
+auto ExpectSelectedSymbols(std::string_view unit_set_name,
+                           ggems::core::Encoding encoding) -> void {
   for (auto const &unit : UnitRegistry<UnitSet>::units) {
-    SCOPED_TRACE(std::string{unit_set_name} + ": " +
-                 std::string{unit.canonical_name});
-    EXPECT_EQ(detail::SelectUnitSymbol(unit), unit.*expected_symbol_member);
+    SCOPED_TRACE(std::string{unit_set_name} + ": " + std::string{unit.symbol});
+    std::string_view expected_symbol = unit.symbol;
+    if (encoding == ggems::core::Encoding::Unicode &&
+        !unit.unicode_symbol.empty()) {
+      expected_symbol = unit.unicode_symbol;
+    }
+    EXPECT_EQ(detail::SelectUnitSymbol(unit), expected_symbol);
   }
 }
 
-auto ExpectEveryRegisteredSymbol(
-    std::string_view UnitDefinition::*expected_symbol_member) -> void {
-  ExpectSelectedSymbols<ActivityUnitSet>("ActivityUnitSet",
-                                         expected_symbol_member);
-  ExpectSelectedSymbols<AngleUnitSet>("AngleUnitSet", expected_symbol_member);
-  ExpectSelectedSymbols<AreaUnitSet>("AreaUnitSet", expected_symbol_member);
-  ExpectSelectedSymbols<BitsUnitSet>("BitsUnitSet", expected_symbol_member);
-  ExpectSelectedSymbols<BytesUnitSet>("BytesUnitSet", expected_symbol_member);
-  ExpectSelectedSymbols<CrossSectionUnitSet>("CrossSectionUnitSet",
-                                             expected_symbol_member);
-  ExpectSelectedSymbols<DensityUnitSet>("DensityUnitSet",
-                                        expected_symbol_member);
-  ExpectSelectedSymbols<DoseUnitSet>("DoseUnitSet", expected_symbol_member);
-  ExpectSelectedSymbols<EnergyUnitSet>("EnergyUnitSet", expected_symbol_member);
-  ExpectSelectedSymbols<FrequencyUnitSet>("FrequencyUnitSet",
-                                          expected_symbol_member);
-  ExpectSelectedSymbols<LengthUnitSet>("LengthUnitSet", expected_symbol_member);
-  ExpectSelectedSymbols<MassUnitSet>("MassUnitSet", expected_symbol_member);
-  ExpectSelectedSymbols<SpeedUnitSet>("SpeedUnitSet", expected_symbol_member);
-  ExpectSelectedSymbols<TimeUnitSet>("TimeUnitSet", expected_symbol_member);
-  ExpectSelectedSymbols<VolumeUnitSet>("VolumeUnitSet", expected_symbol_member);
+auto ExpectEveryRegisteredSymbol(ggems::core::Encoding encoding) -> void {
+  ExpectSelectedSymbols<ActivityUnitSet>("ActivityUnitSet", encoding);
+  ExpectSelectedSymbols<AngleUnitSet>("AngleUnitSet", encoding);
+  ExpectSelectedSymbols<AreaUnitSet>("AreaUnitSet", encoding);
+  ExpectSelectedSymbols<BitsUnitSet>("BitsUnitSet", encoding);
+  ExpectSelectedSymbols<BytesUnitSet>("BytesUnitSet", encoding);
+  ExpectSelectedSymbols<CrossSectionUnitSet>("CrossSectionUnitSet", encoding);
+  ExpectSelectedSymbols<DensityUnitSet>("DensityUnitSet", encoding);
+  ExpectSelectedSymbols<DoseUnitSet>("DoseUnitSet", encoding);
+  ExpectSelectedSymbols<EnergyUnitSet>("EnergyUnitSet", encoding);
+  ExpectSelectedSymbols<FrequencyUnitSet>("FrequencyUnitSet", encoding);
+  ExpectSelectedSymbols<LengthUnitSet>("LengthUnitSet", encoding);
+  ExpectSelectedSymbols<MassUnitSet>("MassUnitSet", encoding);
+  ExpectSelectedSymbols<SpeedUnitSet>("SpeedUnitSet", encoding);
+  ExpectSelectedSymbols<TimeUnitSet>("TimeUnitSet", encoding);
+  ExpectSelectedSymbols<VolumeUnitSet>("VolumeUnitSet", encoding);
+}
+
+template <QuantityType QuantityValue>
+auto ExpectUnsupportedUnit(std::string_view unit_symbol) -> void {
+  SCOPED_TRACE(std::string{unit_symbol});
+  auto const converted = TryMakeQuantity<QuantityValue>(1.0L, unit_symbol);
+
+  EXPECT_FALSE(converted.has_value());
+  if (!converted.has_value()) {
+    EXPECT_EQ(converted.error(), UnitConversionError::UnsupportedUnit);
+  }
 }
 
 // =============================================================================
@@ -208,9 +196,10 @@ static_assert(ValidateFamily<DurationFamily>());
 static_assert(ValidateFamily<TimePointFamily>());
 static_assert(ValidateFamily<VolumeFamily>());
 
-static_assert(!ValidateUnitSet<MissingCanonicalUnitSet>());
-static_assert(!ValidateUnitSet<DuplicateTokenUnitSet>());
-static_assert(!ValidateUnitSet<DuplicateLiteralSuffixUnitSet>());
+static_assert(!ValidateUnitSet<EmptyUnitSet>());
+static_assert(!ValidateUnitSet<EmptySymbolUnitSet>());
+static_assert(!ValidateUnitSet<DuplicateSymbolUnitSet>());
+static_assert(!ValidateUnitSet<InvalidScaleUnitSet>());
 static_assert(!ValidateFamily<SignedUnsignedFamily>());
 static_assert(!ValidateFamily<MissingFixedUnitFamily>());
 
@@ -244,7 +233,7 @@ static_assert(!std::is_convertible_v<Bits, Bytes>);
 // =============================================================================
 // =============================================================================
 
-consteval auto EveryRegisteredLiteralCompiles() -> bool {
+consteval auto EveryPublicLiteralCompiles() -> bool {
   auto const activity = std::array{
       1_Bq,   1_kBq,   1_MBq,   1_GBq,   1_TBq,   1_Ci,   1_mCi,   1_uCi,
       1.0_Bq, 1.0_kBq, 1.0_MBq, 1.0_GBq, 1.0_TBq, 1.0_Ci, 1.0_mCi, 1.0_uCi};
@@ -253,16 +242,18 @@ consteval auto EveryRegisteredLiteralCompiles() -> bool {
       std::array{1_pm2,   1_nm2,   1_um2,   1_mm2,   1_cm2,   1_m2,   1_km2,
                  1.0_pm2, 1.0_nm2, 1.0_um2, 1.0_mm2, 1.0_cm2, 1.0_m2, 1.0_km2};
   auto const bits = std::array{
-      1_bit,    1_kbit,   1_Mbit,    1_Gbit,    1_Tbit,    1_Kibit,
-      1_Mibit,  1_Gibit,  1_Tibit,   1.0_bit,   1.0_kbit,  1.0_Mbit,
-      1.0_Gbit, 1.0_Tbit, 1.0_Kibit, 1.0_Mibit, 1.0_Gibit, 1.0_Tibit};
+      1_bit,     1_kbit,    1_Mbit,   1_Gbit,   1_Tbit,   1_Kibit,   1_Mibit,
+      1_Gibit,   1_Tibit,   1_b,      1_kb,     1_Mb,     1_Gb,      1_Tb,
+      1.0_bit,   1.0_kbit,  1.0_Mbit, 1.0_Gbit, 1.0_Tbit, 1.0_Kibit, 1.0_Mibit,
+      1.0_Gibit, 1.0_Tibit, 1.0_b,    1.0_kb,   1.0_Mb,   1.0_Gb,    1.0_Tb};
   auto const bytes =
       std::array{1_B,    1_kB,   1_MB,    1_GB,    1_TB,    1_KiB,
                  1_MiB,  1_GiB,  1_TiB,   1.0_B,   1.0_kB,  1.0_MB,
                  1.0_GB, 1.0_TB, 1.0_KiB, 1.0_MiB, 1.0_GiB, 1.0_TiB};
-  auto const cross_section =
-      std::array{1_pb,   1_nb,   1_ub,   1_mb,   1_barn,   1_kbarn,
-                 1.0_pb, 1.0_nb, 1.0_ub, 1.0_mb, 1.0_barn, 1.0_kbarn};
+  auto const cross_section = std::array{
+      1_pb,     1_nb,      1_ub,      1_mb,      1_barn,    1_kbarn,  1_pbarn,
+      1_nbarn,  1_ubarn,   1_mbarn,   1.0_pb,    1.0_nb,    1.0_ub,   1.0_mb,
+      1.0_barn, 1.0_kbarn, 1.0_pbarn, 1.0_nbarn, 1.0_ubarn, 1.0_mbarn};
   auto const density = std::array{1_pg_pm3, 1_g_cm3, 1.0_pg_pm3, 1.0_g_cm3};
   auto const dose = std::array{1_meV_pg,   1_Gy,   1_mGy,   1_uGy,
                                1.0_meV_pg, 1.0_Gy, 1.0_mGy, 1.0_uGy};
@@ -301,7 +292,7 @@ consteval auto EveryRegisteredLiteralCompiles() -> bool {
   return true;
 }
 
-static_assert(EveryRegisteredLiteralCompiles());
+static_assert(EveryPublicLiteralCompiles());
 static_assert((1_cm).value == 10'000'000'000ULL);
 static_assert((1_cm2).value == 100'000'000'000'000'000'000.0L);
 static_assert((1_km).value == 1'000'000'000'000'000ULL);
@@ -316,42 +307,52 @@ static_assert((1_Gy).value == 6'241'509ULL);
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSUnitRegistryContractTest, ParsesOnlyExplicitCaseSensitiveTokens) {
-  auto const micrometer_ascii = TryMakeQuantity<Length>(1.0L, "um");
-  auto const micrometer_micro_sign = TryMakeQuantity<Length>(1.0L, "µm");
-  auto const micrometer_greek_mu = TryMakeQuantity<Length>(1.0L, "μm");
-  ASSERT_TRUE(micrometer_ascii.has_value());
-  ASSERT_TRUE(micrometer_micro_sign.has_value());
-  ASSERT_TRUE(micrometer_greek_mu.has_value());
-  EXPECT_EQ(micrometer_ascii->value, 1'000'000ULL);
-  EXPECT_EQ(*micrometer_micro_sign, *micrometer_ascii);
-  EXPECT_EQ(*micrometer_greek_mu, *micrometer_ascii);
+TEST(GGEMSUnitRegistryContractTest, ParsesOnlyOfficialAsciiSymbols) {
+  EXPECT_TRUE(TryMakeQuantity<Length>(1.0L, "pm").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Length>(1.0L, "nm").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Length>(1.0L, "um").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Length>(1.0L, "mm").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Length>(1.0L, "cm").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Length>(1.0L, "m").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Length>(1.0L, "km").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Area>(1.0L, "pm2").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Area>(1.0L, "um2").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Area>(1.0L, "cm2").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Volume>(1.0L, "pm3").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Volume>(1.0L, "um3").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Volume>(1.0L, "cm3").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Duration>(1.0L, "us").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Duration>(1.0L, "ms").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Duration>(1.0L, "s").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Dose>(1.0L, "uGy").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Activity>(1.0L, "uCi").has_value());
+  EXPECT_TRUE(TryMakeQuantity<CrossSection>(1.0L, "ub").has_value());
+  EXPECT_TRUE(TryMakeQuantity<CrossSection>(1.0L, "pb").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Energy>(1.0L, "meV").has_value());
+  EXPECT_TRUE(TryMakeQuantity<Bits>(1.0L, "bit").has_value());
 
-  auto const square_micrometer_ascii = TryMakeQuantity<Area>(1.0L, "um2");
-  auto const square_micrometer_micro = TryMakeQuantity<Area>(1.0L, "µm2");
-  auto const square_micrometer_greek = TryMakeQuantity<Area>(1.0L, "μm²");
-  ASSERT_TRUE(square_micrometer_ascii.has_value());
-  ASSERT_TRUE(square_micrometer_micro.has_value());
-  ASSERT_TRUE(square_micrometer_greek.has_value());
-  EXPECT_EQ(*square_micrometer_micro, *square_micrometer_ascii);
-  EXPECT_EQ(*square_micrometer_greek, *square_micrometer_ascii);
-
-  auto const microcurie_ascii = TryMakeQuantity<Activity>(1.0L, "uCi");
-  auto const microcurie_micro_sign = TryMakeQuantity<Activity>(1.0L, "µCi");
-  auto const microcurie_greek_mu = TryMakeQuantity<Activity>(1.0L, "μCi");
-  ASSERT_TRUE(microcurie_ascii.has_value());
-  ASSERT_TRUE(microcurie_micro_sign.has_value());
-  ASSERT_TRUE(microcurie_greek_mu.has_value());
-  EXPECT_EQ(microcurie_ascii->value, 37'000.0L);
-  EXPECT_EQ(*microcurie_micro_sign, *microcurie_ascii);
-  EXPECT_EQ(*microcurie_greek_mu, *microcurie_ascii);
-
-  auto const upper_case = TryMakeQuantity<Length>(1.0L, "UM");
-  auto const leading_space = TryMakeQuantity<Length>(1.0L, " um");
-  ASSERT_FALSE(upper_case.has_value());
-  ASSERT_FALSE(leading_space.has_value());
-  EXPECT_EQ(upper_case.error(), UnitConversionError::UnsupportedUnit);
-  EXPECT_EQ(leading_space.error(), UnitConversionError::UnsupportedUnit);
+  ExpectUnsupportedUnit<Length>("µm");
+  ExpectUnsupportedUnit<Length>("\xCE\xBC"
+                                "m");
+  ExpectUnsupportedUnit<Area>("µm²");
+  ExpectUnsupportedUnit<Area>("\xCE\xBC"
+                              "m²");
+  ExpectUnsupportedUnit<Activity>("µCi");
+  ExpectUnsupportedUnit<Activity>("\xCE\xBC"
+                                  "Ci");
+  ExpectUnsupportedUnit<CrossSection>("µb");
+  ExpectUnsupportedUnit<CrossSection>("\xCE\xBC"
+                                      "b");
+  ExpectUnsupportedUnit<CrossSection>("pbarn");
+  ExpectUnsupportedUnit<CrossSection>("nbarn");
+  ExpectUnsupportedUnit<CrossSection>("ubarn");
+  ExpectUnsupportedUnit<CrossSection>("mbarn");
+  ExpectUnsupportedUnit<Energy>("milli_eV");
+  ExpectUnsupportedUnit<Bits>("b");
+  ExpectUnsupportedUnit<Length>("UM");
+  ExpectUnsupportedUnit<Length>(" um");
+  ExpectUnsupportedUnit<Length>("um ");
+  ExpectUnsupportedUnit<Length>("parsec");
 }
 
 // =============================================================================
@@ -362,21 +363,21 @@ TEST(GGEMSUnitRegistryContractTest, ConvertsThroughCanonicalRepresentations) {
   auto const square_centimeter = TryMakeQuantity<Area>(1.0L, "cm2");
   auto const cubic_centimeter = TryMakeQuantity<Volume>(1.0L, "cm3");
   auto const barn = TryMakeQuantity<CrossSection>(1, "barn");
-  auto const picobarn_alias = TryMakeQuantity<CrossSection>(1, "pbarn");
-  auto const energy_alias = TryMakeQuantity<Energy>(1, "milli_eV");
+  auto const picobarn = TryMakeQuantity<CrossSection>(1, "pb");
+  auto const energy = TryMakeQuantity<Energy>(1, "meV");
 
   ASSERT_TRUE(centimeter.has_value());
   ASSERT_TRUE(square_centimeter.has_value());
   ASSERT_TRUE(cubic_centimeter.has_value());
   ASSERT_TRUE(barn.has_value());
-  ASSERT_TRUE(picobarn_alias.has_value());
-  ASSERT_TRUE(energy_alias.has_value());
+  ASSERT_TRUE(picobarn.has_value());
+  ASSERT_TRUE(energy.has_value());
   EXPECT_EQ(centimeter->value, 10'000'000'000ULL);
   EXPECT_EQ(square_centimeter->value, 1.0e20L);
   EXPECT_NEAR(static_cast<double>(cubic_centimeter->value), 1.0e30, 1.0e15);
   EXPECT_EQ(barn->value, 1'000'000'000'000ULL);
-  EXPECT_EQ(picobarn_alias->value, 1ULL);
-  EXPECT_EQ(energy_alias->value, 1ULL);
+  EXPECT_EQ(picobarn->value, 1ULL);
+  EXPECT_EQ(energy->value, 1ULL);
 
   auto const centimeter_round_trip = TryConvertTo(*centimeter, "cm");
   auto const barn_in_picobarns = TryConvertTo<std::uint64_t>(*barn, "pb");
@@ -482,7 +483,7 @@ TEST(GGEMSUnitRegistryContractTest, BridgesBitsAndBytesExplicitlyAndExactly) {
 TEST(GGEMSUnitRegistryContractTest, SelectsEveryAsciiUnitSymbol) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
 
-  ExpectEveryRegisteredSymbol(&UnitDefinition::symbol);
+  ExpectEveryRegisteredSymbol(ggems::core::Encoding::Ascii);
 }
 
 // =============================================================================
@@ -491,7 +492,7 @@ TEST(GGEMSUnitRegistryContractTest, SelectsEveryAsciiUnitSymbol) {
 TEST(GGEMSUnitRegistryContractTest, SelectsEveryUnicodeUnitSymbol) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Unicode};
 
-  ExpectEveryRegisteredSymbol(&UnitDefinition::display_symbol);
+  ExpectEveryRegisteredSymbol(ggems::core::Encoding::Unicode);
 }
 
 // =============================================================================

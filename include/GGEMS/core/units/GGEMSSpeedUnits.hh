@@ -16,21 +16,11 @@ struct SpeedUnitSet {
 
 template <> struct UnitRegistry<SpeedUnitSet> {
   static constexpr std::array<UnitDefinition, 2U> units{{
-      {.canonical_name = "PicometerPerPicosecond",
-       .symbol = "pm/ps",
-       .display_symbol = "pm/ps",
-       .aliases = {},
-       .literal_suffix = "_pm_ps",
+      {.symbol = "pm/ps",
        .scale = DecimalScale(0),
-       .canonical = true,
        .automatic_display = false},
-      {.canonical_name = "MeterPerSecond",
-       .symbol = "m/s",
-       .display_symbol = "m/s",
-       .aliases = {},
-       .literal_suffix = "_m_s",
-       .scale = DecimalScale(0),
-       .automatic_display = true},
+      {.symbol = "m/s",
+       .scale = DecimalScale(0)},
   }};
 };
 

@@ -55,17 +55,13 @@ TEST(GGEMSActivityUnitsTest, ConvertsCurieFamilyExactly) {
   auto const curie = TryMakeQuantity<Activity>(1.0L, "Ci");
   auto const millicurie = TryMakeQuantity<Activity>(1.0L, "mCi");
   auto const microcurie_ascii = TryMakeQuantity<Activity>(1.0L, "uCi");
-  auto const microcurie_utf8 = TryMakeQuantity<Activity>(1.0L, "\xC2\xB5"
-                                                               "Ci");
 
   ASSERT_TRUE(curie.has_value());
   ASSERT_TRUE(millicurie.has_value());
   ASSERT_TRUE(microcurie_ascii.has_value());
-  ASSERT_TRUE(microcurie_utf8.has_value());
   EXPECT_EQ(curie->value, 37'000'000'000.0L);
   EXPECT_EQ(millicurie->value, 37'000'000.0L);
   EXPECT_EQ(microcurie_ascii->value, 37'000.0L);
-  EXPECT_EQ(microcurie_utf8->value, 37'000.0L);
 }
 
 // =============================================================================

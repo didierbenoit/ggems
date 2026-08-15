@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <format>
 #include <cmath>
 #include <concepts>
@@ -11,7 +10,6 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
-#include <algorithm>
 
 #include "GGEMS/core/GGEMSLogger.hh"
 
@@ -73,17 +71,11 @@ consteval auto SpecialScale(long double factor) -> UnitScale {
           .special_factor = factor};
 }
 
-inline constexpr std::size_t k_max_unit_alias_count{5U};
-
 struct UnitDefinition {
-  std::string_view canonical_name;
   std::string_view symbol;
-  std::string_view display_symbol;
-  std::array<std::string_view, k_max_unit_alias_count> aliases{};
-  std::string_view literal_suffix;
   UnitScale scale;
-  bool canonical{false};
-  bool automatic_display{false};
+  std::string_view unicode_symbol{};
+  bool automatic_display{true};
 };
 
 template <typename UniSet> struct UnitRegistry;
@@ -116,31 +108,6 @@ constexpr auto ScaleFactor(UnitScale const &scale) noexcept -> long double {
 constexpr auto IsFinite(long double value) noexcept -> bool {
   return value == value && value <= std::numeric_limits<long double>::max() &&
          value >= -std::numeric_limits<long double>::max();
-}
-
-constexpr auto UnitAcceptsToken(UnitDefinition const &unit,
-                                std::string_view token) noexcept -> bool {
-  if (unit.symbol == token) {
-    return true;
-  }
-
-  return std::ranges::any_of(unit.aliases,
-                             [token](std::string_view alias) noexcept -> bool {
-                               return !alias.empty() && alias == token;
-                             });
-}
-
-constexpr auto ParsingTokensCollide(UnitDefinition const &lhs,
-                                    UnitDefinition const &rhs) noexcept
-    -> bool {
-  if (UnitAcceptsToken(rhs, lhs.symbol)) {
-    return true;
-  }
-
-  return std::ranges::any_of(
-      lhs.aliases, [&rhs](std::string_view alias) noexcept -> bool {
-        return !alias.empty() && UnitAcceptsToken(rhs, alias);
-      });
 }
 
 constexpr auto ExactIntegralFactor(UnitScale const &scale,
@@ -265,7 +232,7 @@ constexpr auto ConvertIntegralMagnitude(std::uint64_t magnitude, bool negative)
       ggems::core::Encoding::Ascii) {
     return unit.symbol;
   }
-  return unit.display_symbol;
+  return unit.unicode_symbol.empty() ? unit.symbol : unit.unicode_symbol;
 }
 
 template <typename QuantityType>
@@ -300,50 +267,24 @@ template <typename UnitSet> consteval auto ValidateUnitSet() -> bool {
     if (units.empty()) {
       return false;
     }
-    std::size_t canonical_count{0U};
     for (std::size_t lhs_index = 0U; lhs_index < units.size(); ++lhs_index) {
       auto const &lhs = units[lhs_index];
-      long double const factor = detail::ScaleFactor(lhs.scale);
-      if (lhs.canonical_name.empty() || lhs.symbol.empty() ||
-          lhs.display_symbol.empty() || lhs.literal_suffix.empty() ||
-          lhs.scale.numerator == 0ULL || lhs.scale.denominator == 0ULL ||
-          !detail::IsFinite(factor) || factor <= 0.0L) {
+      if (lhs.symbol.empty() || lhs.scale.numerator == 0ULL ||
+          lhs.scale.denominator == 0ULL) {
         return false;
       }
-      if (lhs.canonical) {
-        ++canonical_count;
-        if (factor != 1.0L) {
-          return false;
-        }
-      }
-      for (std::size_t alias_index = 0U; alias_index < lhs.aliases.size();
-           ++alias_index) {
-        auto const alias = lhs.aliases[alias_index];
-        if (alias.empty()) {
-          continue;
-        }
-        if (alias == lhs.symbol) {
-          return false;
-        }
-        for (std::size_t other = alias_index + 1U; other < lhs.aliases.size();
-             ++other) {
-          if (alias == lhs.aliases[other]) {
-            return false;
-          }
-        }
+      long double const factor = detail::ScaleFactor(lhs.scale);
+      if (!detail::IsFinite(factor) || factor <= 0.0L) {
+        return false;
       }
       for (std::size_t rhs_index = lhs_index + 1U; rhs_index < units.size();
            ++rhs_index) {
-        auto const &rhs = units[rhs_index];
-        if (lhs.canonical_name == rhs.canonical_name ||
-            lhs.literal_suffix == rhs.literal_suffix ||
-            detail::ParsingTokensCollide(lhs, rhs) ||
-            detail::ParsingTokensCollide(rhs, lhs)) {
+        if (lhs.symbol == units[rhs_index].symbol) {
           return false;
         }
       }
     }
-    return canonical_count == 1U;
+    return true;
   }
 }
 
@@ -352,7 +293,7 @@ constexpr auto FindUnit(std::string_view symbol) noexcept
     -> UnitDefinition const * {
   static_assert(ValidateUnitSet<UnitSet>());
   for (auto const &unit : UnitRegistry<UnitSet>::units) {
-    if (detail::UnitAcceptsToken(unit, symbol)) {
+    if (unit.symbol == symbol) {
       return &unit;
     }
   }

@@ -15,22 +15,11 @@ struct AngleUnitSet {
 
 template <> struct UnitRegistry<AngleUnitSet> {
   static constexpr std::array<UnitDefinition, 2U> units{{
-      {.canonical_name = "Radian",
-       .symbol = "rad",
-       .display_symbol = "rad",
-       .aliases = {},
-       .literal_suffix = "_rad",
+      {.symbol = "rad",
        .scale = DecimalScale(0),
-       .canonical = true,
        .automatic_display = false},
-      {.canonical_name = "Degree",
-       .symbol = "deg",
-       .display_symbol = "deg",
-       .aliases = {},
-       .literal_suffix = "_deg",
-       .scale = SpecialScale(std::numbers::pi_v<long double> / 180.0L),
-       .canonical = false,
-       .automatic_display = true},
+      {.symbol = "deg",
+       .scale = SpecialScale(std::numbers::pi_v<long double> / 180.0L)},
   }};
 };
 

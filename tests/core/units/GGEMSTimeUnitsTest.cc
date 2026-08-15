@@ -48,12 +48,10 @@ static_assert(!std::convertible_to<TimePoint, Duration>);
 // =============================================================================
 
 TEST(GGEMSTimeUnits, ConvertsEveryRegisteredTimeTokenToPicoseconds) {
-  constexpr std::array<ToPicosecondCase, 9U> cases{{
+  constexpr std::array<ToPicosecondCase, 7U> cases{{
       {.value = 2.0L, .unit = "ps", .expected = 2ULL},
       {.value = 2.0L, .unit = "ns", .expected = 2'000ULL},
       {.value = 2.0L, .unit = "us", .expected = 2'000'000ULL},
-      {.value = 2.0L, .unit = "µs", .expected = 2'000'000ULL},
-      {.value = 2.0L, .unit = "μs", .expected = 2'000'000ULL},
       {.value = 2.0L, .unit = "ms", .expected = 2'000'000'000ULL},
       {.value = 2.0L, .unit = "s", .expected = 2'000'000'000'000ULL},
       {.value = 2.0L, .unit = "min", .expected = 120'000'000'000'000ULL},
@@ -139,12 +137,10 @@ TEST(GGEMSTimeUnits, ProtectsTheUint64PicosecondRange) {
 
 TEST(GGEMSTimeUnits, ConvertsPicosecondsToEveryRegisteredTimeToken) {
   constexpr std::uint64_t k_one_hour_ps{3'600'000'000'000'000ULL};
-  constexpr std::array<FromPicosecondCase, 9U> cases{{
+  constexpr std::array<FromPicosecondCase, 7U> cases{{
       {.unit = "ps", .expected = 3'600'000'000'000'000.0L},
       {.unit = "ns", .expected = 3'600'000'000'000.0L},
       {.unit = "us", .expected = 3'600'000'000.0L},
-      {.unit = "µs", .expected = 3'600'000'000.0L},
-      {.unit = "μs", .expected = 3'600'000'000.0L},
       {.unit = "ms", .expected = 3'600'000.0L},
       {.unit = "s", .expected = 3'600.0L},
       {.unit = "min", .expected = 60.0L},

@@ -14,21 +14,13 @@ struct DensityUnitSet {
 
 template <> struct UnitRegistry<DensityUnitSet> {
   static constexpr std::array<UnitDefinition, 2U> units{{
-      {.canonical_name = "PicogramPerCubicPicometer",
-       .symbol = "pg/pm3",
-       .display_symbol = "pg/pm³",
-       .aliases = {"pg/pm³"},
-       .literal_suffix = "_pg_pm3",
+      {.symbol = "pg/pm3",
        .scale = DecimalScale(0),
-       .canonical = true,
+       .unicode_symbol = "pg/pm³",
        .automatic_display = false},
-      {.canonical_name = "GramPerCubicCentimeter",
-       .symbol = "g/cm3",
-       .display_symbol = "g/cm³",
-       .aliases = {"g/cm³"},
-       .literal_suffix = "_g_cm3",
+      {.symbol = "g/cm3",
        .scale = DecimalScale(-18),
-       .automatic_display = true},
+       .unicode_symbol = "g/cm³"},
   }};
 };
 
