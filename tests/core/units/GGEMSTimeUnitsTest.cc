@@ -12,10 +12,10 @@
 
 namespace {
 
+using ggems::units::ConvertTo;
 using ggems::units::Duration;
+using ggems::units::MakeQuantity;
 using ggems::units::TimePoint;
-using ggems::units::TryConvertTo;
-using ggems::units::TryMakeQuantity;
 using ggems::units::UnitConversionError;
 
 struct ToPicosecondCase {
@@ -32,7 +32,7 @@ struct FromPicosecondCase {
 template <typename QuantityValue>
 auto ExpectConversionError(long double value, std::string_view unit,
                            UnitConversionError expected_error) -> void {
-  auto const conversion = TryMakeQuantity<QuantityValue>(value, unit);
+  auto const conversion = MakeQuantity<QuantityValue>(value, unit);
 
   ASSERT_FALSE(conversion.has_value());
   EXPECT_EQ(conversion.error(), expected_error);
@@ -60,9 +60,9 @@ TEST(GGEMSTimeUnits, ConvertsEveryRegisteredTimeTokenToPicoseconds) {
 
   for (auto const &test_case : cases) {
     auto const duration =
-        TryMakeQuantity<Duration>(test_case.value, test_case.unit);
+        MakeQuantity<Duration>(test_case.value, test_case.unit);
     auto const time_point =
-        TryMakeQuantity<TimePoint>(test_case.value, test_case.unit);
+        MakeQuantity<TimePoint>(test_case.value, test_case.unit);
 
     ASSERT_TRUE(duration.has_value()) << test_case.unit;
     EXPECT_EQ(duration->value, test_case.expected) << test_case.unit;
@@ -85,13 +85,13 @@ TEST(GGEMSTimeUnits, RoundsToTheNearestPicosecond) {
 
   for (auto const &test_case : cases) {
     auto const conversion =
-        TryMakeQuantity<Duration>(test_case.value, test_case.unit);
+        MakeQuantity<Duration>(test_case.value, test_case.unit);
 
     ASSERT_TRUE(conversion.has_value());
     EXPECT_EQ(conversion->value, test_case.expected);
   }
 
-  auto const negative_zero = TryMakeQuantity<Duration>(-0.0L, "ps");
+  auto const negative_zero = MakeQuantity<Duration>(-0.0L, "ps");
   ASSERT_TRUE(negative_zero.has_value());
   EXPECT_EQ(negative_zero->value, 0ULL);
 }
@@ -121,8 +121,8 @@ TEST(GGEMSTimeUnits, RejectsInvalidInputAndUnsupportedUnits) {
 TEST(GGEMSTimeUnits, ProtectsTheUint64PicosecondRange) {
   long double const upper_exclusive = std::ldexp(1.0L, 64);
 
-  auto const accepted = TryMakeQuantity<Duration>(
-      std::numeric_limits<std::uint64_t>::max(), "ps");
+  auto const accepted =
+      MakeQuantity<Duration>(std::numeric_limits<std::uint64_t>::max(), "ps");
   ASSERT_TRUE(accepted.has_value());
   EXPECT_EQ(accepted->value, std::numeric_limits<std::uint64_t>::max());
 
@@ -149,7 +149,7 @@ TEST(GGEMSTimeUnits, ConvertsPicosecondsToEveryRegisteredTimeToken) {
 
   for (auto const &test_case : cases) {
     auto const conversion =
-        TryConvertTo(TimePoint{.value = k_one_hour_ps}, test_case.unit);
+        ConvertTo(TimePoint{.value = k_one_hour_ps}, test_case.unit);
 
     ASSERT_TRUE(conversion.has_value()) << test_case.unit;
     EXPECT_EQ(*conversion, test_case.expected) << test_case.unit;
@@ -160,7 +160,7 @@ TEST(GGEMSTimeUnits, ConvertsPicosecondsToEveryRegisteredTimeToken) {
 // =============================================================================
 
 TEST(GGEMSTimeUnits, RejectsUnsupportedOutputUnit) {
-  auto const conversion = TryConvertTo(TimePoint{.value = 1ULL}, "fortnight");
+  auto const conversion = ConvertTo(TimePoint{.value = 1ULL}, "fortnight");
 
   ASSERT_FALSE(conversion.has_value());
   EXPECT_EQ(conversion.error(), UnitConversionError::UnsupportedUnit);

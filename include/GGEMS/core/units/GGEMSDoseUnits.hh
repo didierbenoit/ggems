@@ -45,34 +45,34 @@ static_assert(ValidateUnitSet<DoseUnitSet>());
 static_assert(ValidateFamily<DoseFamily>());
 
 consteval auto operator""_meV_pg(unsigned long long value) -> Dose {
-  return MakeQuantity<Dose>(value, "meV/pg");
+  return detail::MakeLiteralQuantity<Dose>(value, "meV/pg");
 }
 
 consteval auto operator""_meV_pg(long double value) -> Dose {
-  return MakeQuantity<Dose>(value, "meV/pg");
+  return detail::MakeLiteralQuantity<Dose>(value, "meV/pg");
 }
 
 consteval auto operator""_Gy(unsigned long long value) -> Dose {
-  return MakeQuantity<Dose>(value, "Gy");
+  return detail::MakeLiteralQuantity<Dose>(value, "Gy");
 }
 
 consteval auto operator""_Gy(long double value) -> Dose {
-  return MakeQuantity<Dose>(value, "Gy");
+  return detail::MakeLiteralQuantity<Dose>(value, "Gy");
 }
 
 consteval auto operator""_mGy(unsigned long long value) -> Dose {
-  return MakeQuantity<Dose>(value, "mGy");
+  return detail::MakeLiteralQuantity<Dose>(value, "mGy");
 }
 
 consteval auto operator""_mGy(long double value) -> Dose {
-  return MakeQuantity<Dose>(value, "mGy");
+  return detail::MakeLiteralQuantity<Dose>(value, "mGy");
 }
 
 consteval auto operator""_uGy(unsigned long long value) -> Dose {
-  return MakeQuantity<Dose>(value, "uGy");
+  return detail::MakeLiteralQuantity<Dose>(value, "uGy");
 }
 
 consteval auto operator""_uGy(long double value) -> Dose {
-  return MakeQuantity<Dose>(value, "uGy");
+  return detail::MakeLiteralQuantity<Dose>(value, "uGy");
 }
 } // namespace ggems::units

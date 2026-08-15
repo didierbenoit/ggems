@@ -61,50 +61,50 @@ static_assert(ValidateFamily<EnergyFamily>());
 static_assert(ValidateFamily<EnergyChangeFamily>());
 
 consteval auto operator""_meV(unsigned long long value) -> Energy {
-  return MakeQuantity<Energy>(value, "meV");
+  return detail::MakeLiteralQuantity<Energy>(value, "meV");
 }
 
 consteval auto operator""_meV(long double value) -> Energy {
-  return MakeQuantity<Energy>(value, "meV");
+  return detail::MakeLiteralQuantity<Energy>(value, "meV");
 }
 
 consteval auto operator""_eV(unsigned long long value) -> Energy {
-  return MakeQuantity<Energy>(value, "eV");
+  return detail::MakeLiteralQuantity<Energy>(value, "eV");
 }
 
 consteval auto operator""_eV(long double value) -> Energy {
-  return MakeQuantity<Energy>(value, "eV");
+  return detail::MakeLiteralQuantity<Energy>(value, "eV");
 }
 
 consteval auto operator""_keV(unsigned long long value) -> Energy {
-  return MakeQuantity<Energy>(value, "keV");
+  return detail::MakeLiteralQuantity<Energy>(value, "keV");
 }
 
 consteval auto operator""_keV(long double value) -> Energy {
-  return MakeQuantity<Energy>(value, "keV");
+  return detail::MakeLiteralQuantity<Energy>(value, "keV");
 }
 
 consteval auto operator""_MeV(unsigned long long value) -> Energy {
-  return MakeQuantity<Energy>(value, "MeV");
+  return detail::MakeLiteralQuantity<Energy>(value, "MeV");
 }
 
 consteval auto operator""_MeV(long double value) -> Energy {
-  return MakeQuantity<Energy>(value, "MeV");
+  return detail::MakeLiteralQuantity<Energy>(value, "MeV");
 }
 
 consteval auto operator""_GeV(unsigned long long value) -> Energy {
-  return MakeQuantity<Energy>(value, "GeV");
+  return detail::MakeLiteralQuantity<Energy>(value, "GeV");
 }
 
 consteval auto operator""_GeV(long double value) -> Energy {
-  return MakeQuantity<Energy>(value, "GeV");
+  return detail::MakeLiteralQuantity<Energy>(value, "GeV");
 }
 
 consteval auto operator""_TeV(unsigned long long value) -> Energy {
-  return MakeQuantity<Energy>(value, "TeV");
+  return detail::MakeLiteralQuantity<Energy>(value, "TeV");
 }
 
 consteval auto operator""_TeV(long double value) -> Energy {
-  return MakeQuantity<Energy>(value, "TeV");
+  return detail::MakeLiteralQuantity<Energy>(value, "TeV");
 }
 } // namespace ggems::units

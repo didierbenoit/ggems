@@ -55,66 +55,66 @@ static_assert(ValidateUnitSet<ActivityUnitSet>());
 static_assert(ValidateFamily<ActivityFamily>());
 
 consteval auto operator""_Bq(unsigned long long value) -> Activity {
-  return MakeQuantity<Activity>(value, "Bq");
+  return detail::MakeLiteralQuantity<Activity>(value, "Bq");
 }
 
 consteval auto operator""_Bq(long double value) -> Activity {
-  return MakeQuantity<Activity>(value, "Bq");
+  return detail::MakeLiteralQuantity<Activity>(value, "Bq");
 }
 
 consteval auto operator""_kBq(unsigned long long value) -> Activity {
-  return MakeQuantity<Activity>(value, "kBq");
+  return detail::MakeLiteralQuantity<Activity>(value, "kBq");
 }
 
 consteval auto operator""_kBq(long double value) -> Activity {
-  return MakeQuantity<Activity>(value, "kBq");
+  return detail::MakeLiteralQuantity<Activity>(value, "kBq");
 }
 
 consteval auto operator""_MBq(unsigned long long value) -> Activity {
-  return MakeQuantity<Activity>(value, "MBq");
+  return detail::MakeLiteralQuantity<Activity>(value, "MBq");
 }
 
 consteval auto operator""_MBq(long double value) -> Activity {
-  return MakeQuantity<Activity>(value, "MBq");
+  return detail::MakeLiteralQuantity<Activity>(value, "MBq");
 }
 
 consteval auto operator""_GBq(unsigned long long value) -> Activity {
-  return MakeQuantity<Activity>(value, "GBq");
+  return detail::MakeLiteralQuantity<Activity>(value, "GBq");
 }
 
 consteval auto operator""_GBq(long double value) -> Activity {
-  return MakeQuantity<Activity>(value, "GBq");
+  return detail::MakeLiteralQuantity<Activity>(value, "GBq");
 }
 
 consteval auto operator""_TBq(unsigned long long value) -> Activity {
-  return MakeQuantity<Activity>(value, "TBq");
+  return detail::MakeLiteralQuantity<Activity>(value, "TBq");
 }
 
 consteval auto operator""_TBq(long double value) -> Activity {
-  return MakeQuantity<Activity>(value, "TBq");
+  return detail::MakeLiteralQuantity<Activity>(value, "TBq");
 }
 
 consteval auto operator""_Ci(unsigned long long value) -> Activity {
-  return MakeQuantity<Activity>(value, "Ci");
+  return detail::MakeLiteralQuantity<Activity>(value, "Ci");
 }
 
 consteval auto operator""_Ci(long double value) -> Activity {
-  return MakeQuantity<Activity>(value, "Ci");
+  return detail::MakeLiteralQuantity<Activity>(value, "Ci");
 }
 
 consteval auto operator""_mCi(unsigned long long value) -> Activity {
-  return MakeQuantity<Activity>(value, "mCi");
+  return detail::MakeLiteralQuantity<Activity>(value, "mCi");
 }
 
 consteval auto operator""_mCi(long double value) -> Activity {
-  return MakeQuantity<Activity>(value, "mCi");
+  return detail::MakeLiteralQuantity<Activity>(value, "mCi");
 }
 
 consteval auto operator""_uCi(unsigned long long value) -> Activity {
-  return MakeQuantity<Activity>(value, "uCi");
+  return detail::MakeLiteralQuantity<Activity>(value, "uCi");
 }
 
 consteval auto operator""_uCi(long double value) -> Activity {
-  return MakeQuantity<Activity>(value, "uCi");
+  return detail::MakeLiteralQuantity<Activity>(value, "uCi");
 }
 } // namespace ggems::units

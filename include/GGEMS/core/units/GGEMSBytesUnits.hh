@@ -57,74 +57,74 @@ static_assert(ValidateUnitSet<BytesUnitSet>());
 static_assert(ValidateFamily<BytesFamily>());
 
 consteval auto operator""_B(unsigned long long value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "B");
+  return detail::MakeLiteralQuantity<Bytes>(value, "B");
 }
 
 consteval auto operator""_B(long double value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "B");
+  return detail::MakeLiteralQuantity<Bytes>(value, "B");
 }
 
 consteval auto operator""_kB(unsigned long long value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "kB");
+  return detail::MakeLiteralQuantity<Bytes>(value, "kB");
 }
 
 consteval auto operator""_kB(long double value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "kB");
+  return detail::MakeLiteralQuantity<Bytes>(value, "kB");
 }
 
 consteval auto operator""_MB(unsigned long long value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "MB");
+  return detail::MakeLiteralQuantity<Bytes>(value, "MB");
 }
 
 consteval auto operator""_MB(long double value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "MB");
+  return detail::MakeLiteralQuantity<Bytes>(value, "MB");
 }
 
 consteval auto operator""_GB(unsigned long long value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "GB");
+  return detail::MakeLiteralQuantity<Bytes>(value, "GB");
 }
 
 consteval auto operator""_GB(long double value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "GB");
+  return detail::MakeLiteralQuantity<Bytes>(value, "GB");
 }
 
 consteval auto operator""_TB(unsigned long long value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "TB");
+  return detail::MakeLiteralQuantity<Bytes>(value, "TB");
 }
 
 consteval auto operator""_TB(long double value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "TB");
+  return detail::MakeLiteralQuantity<Bytes>(value, "TB");
 }
 
 consteval auto operator""_KiB(unsigned long long value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "KiB");
+  return detail::MakeLiteralQuantity<Bytes>(value, "KiB");
 }
 
 consteval auto operator""_KiB(long double value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "KiB");
+  return detail::MakeLiteralQuantity<Bytes>(value, "KiB");
 }
 
 consteval auto operator""_MiB(unsigned long long value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "MiB");
+  return detail::MakeLiteralQuantity<Bytes>(value, "MiB");
 }
 
 consteval auto operator""_MiB(long double value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "MiB");
+  return detail::MakeLiteralQuantity<Bytes>(value, "MiB");
 }
 
 consteval auto operator""_GiB(unsigned long long value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "GiB");
+  return detail::MakeLiteralQuantity<Bytes>(value, "GiB");
 }
 
 consteval auto operator""_GiB(long double value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "GiB");
+  return detail::MakeLiteralQuantity<Bytes>(value, "GiB");
 }
 
 consteval auto operator""_TiB(unsigned long long value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "TiB");
+  return detail::MakeLiteralQuantity<Bytes>(value, "TiB");
 }
 
 consteval auto operator""_TiB(long double value) -> Bytes {
-  return MakeQuantity<Bytes>(value, "TiB");
+  return detail::MakeLiteralQuantity<Bytes>(value, "TiB");
 }
 } // namespace ggems::units

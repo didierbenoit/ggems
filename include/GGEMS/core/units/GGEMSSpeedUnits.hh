@@ -42,19 +42,19 @@ static_assert(ValidateUnitSet<SpeedUnitSet>());
 static_assert(ValidateFamily<SpeedFamily>());
 
 consteval auto operator""_pm_ps(unsigned long long value) -> Speed {
-  return MakeQuantity<Speed>(value, "pm/ps");
+  return detail::MakeLiteralQuantity<Speed>(value, "pm/ps");
 }
 
 consteval auto operator""_pm_ps(long double value) -> Speed {
-  return MakeQuantity<Speed>(value, "pm/ps");
+  return detail::MakeLiteralQuantity<Speed>(value, "pm/ps");
 }
 
 consteval auto operator""_m_s(unsigned long long value) -> Speed {
-  return MakeQuantity<Speed>(value, "m/s");
+  return detail::MakeLiteralQuantity<Speed>(value, "m/s");
 }
 
 consteval auto operator""_m_s(long double value) -> Speed {
-  return MakeQuantity<Speed>(value, "m/s");
+  return detail::MakeLiteralQuantity<Speed>(value, "m/s");
 }
 
 inline auto MakeSpeed(Length length, Time duration) noexcept -> Speed {

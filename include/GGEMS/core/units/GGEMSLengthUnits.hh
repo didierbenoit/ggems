@@ -87,58 +87,58 @@ static_assert(ValidateFamily<DisplacementFamily>());
 }
 
 consteval auto operator""_pm(unsigned long long value) -> Length {
-  return MakeQuantity<Length>(value, "pm");
+  return detail::MakeLiteralQuantity<Length>(value, "pm");
 }
 
 consteval auto operator""_pm(long double value) -> Length {
-  return MakeQuantity<Length>(value, "pm");
+  return detail::MakeLiteralQuantity<Length>(value, "pm");
 }
 
 consteval auto operator""_nm(unsigned long long value) -> Length {
-  return MakeQuantity<Length>(value, "nm");
+  return detail::MakeLiteralQuantity<Length>(value, "nm");
 }
 
 consteval auto operator""_nm(long double value) -> Length {
-  return MakeQuantity<Length>(value, "nm");
+  return detail::MakeLiteralQuantity<Length>(value, "nm");
 }
 
 consteval auto operator""_um(unsigned long long value) -> Length {
-  return MakeQuantity<Length>(value, "um");
+  return detail::MakeLiteralQuantity<Length>(value, "um");
 }
 
 consteval auto operator""_um(long double value) -> Length {
-  return MakeQuantity<Length>(value, "um");
+  return detail::MakeLiteralQuantity<Length>(value, "um");
 }
 
 consteval auto operator""_mm(unsigned long long value) -> Length {
-  return MakeQuantity<Length>(value, "mm");
+  return detail::MakeLiteralQuantity<Length>(value, "mm");
 }
 
 consteval auto operator""_mm(long double value) -> Length {
-  return MakeQuantity<Length>(value, "mm");
+  return detail::MakeLiteralQuantity<Length>(value, "mm");
 }
 
 consteval auto operator""_cm(unsigned long long value) -> Length {
-  return MakeQuantity<Length>(value, "cm");
+  return detail::MakeLiteralQuantity<Length>(value, "cm");
 }
 
 consteval auto operator""_cm(long double value) -> Length {
-  return MakeQuantity<Length>(value, "cm");
+  return detail::MakeLiteralQuantity<Length>(value, "cm");
 }
 
 consteval auto operator""_m(unsigned long long value) -> Length {
-  return MakeQuantity<Length>(value, "m");
+  return detail::MakeLiteralQuantity<Length>(value, "m");
 }
 
 consteval auto operator""_m(long double value) -> Length {
-  return MakeQuantity<Length>(value, "m");
+  return detail::MakeLiteralQuantity<Length>(value, "m");
 }
 
 consteval auto operator""_km(unsigned long long value) -> Length {
-  return MakeQuantity<Length>(value, "km");
+  return detail::MakeLiteralQuantity<Length>(value, "km");
 }
 
 consteval auto operator""_km(long double value) -> Length {
-  return MakeQuantity<Length>(value, "km");
+  return detail::MakeLiteralQuantity<Length>(value, "km");
 }
 } // namespace ggems::units

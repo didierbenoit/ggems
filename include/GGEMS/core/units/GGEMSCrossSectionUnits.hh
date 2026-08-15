@@ -48,82 +48,82 @@ static_assert(ValidateUnitSet<CrossSectionUnitSet>());
 static_assert(ValidateFamily<CrossSectionFamily>());
 
 consteval auto operator""_pb(unsigned long long value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "pb");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "pb");
 }
 
 consteval auto operator""_pb(long double value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "pb");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "pb");
 }
 
 consteval auto operator""_nb(unsigned long long value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "nb");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "nb");
 }
 
 consteval auto operator""_nb(long double value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "nb");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "nb");
 }
 
 consteval auto operator""_ub(unsigned long long value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "ub");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "ub");
 }
 
 consteval auto operator""_ub(long double value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "ub");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "ub");
 }
 
 consteval auto operator""_mb(unsigned long long value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "mb");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "mb");
 }
 
 consteval auto operator""_mb(long double value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "mb");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "mb");
 }
 
 consteval auto operator""_barn(unsigned long long value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "barn");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "barn");
 }
 
 consteval auto operator""_barn(long double value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "barn");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "barn");
 }
 
 consteval auto operator""_kbarn(unsigned long long value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "kbarn");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "kbarn");
 }
 
 consteval auto operator""_kbarn(long double value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "kbarn");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "kbarn");
 }
 
 consteval auto operator""_pbarn(unsigned long long value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "pb");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "pb");
 }
 
 consteval auto operator""_pbarn(long double value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "pb");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "pb");
 }
 
 consteval auto operator""_nbarn(unsigned long long value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "nb");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "nb");
 }
 
 consteval auto operator""_nbarn(long double value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "nb");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "nb");
 }
 
 consteval auto operator""_ubarn(unsigned long long value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "ub");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "ub");
 }
 
 consteval auto operator""_ubarn(long double value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "ub");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "ub");
 }
 
 consteval auto operator""_mbarn(unsigned long long value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "mb");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "mb");
 }
 
 consteval auto operator""_mbarn(long double value) -> CrossSection {
-  return MakeQuantity<CrossSection>(value, "mb");
+  return detail::MakeLiteralQuantity<CrossSection>(value, "mb");
 }
 } // namespace ggems::units

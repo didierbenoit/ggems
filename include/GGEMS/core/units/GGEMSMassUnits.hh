@@ -48,50 +48,50 @@ static_assert(ValidateUnitSet<MassUnitSet>());
 static_assert(ValidateFamily<MassFamily>());
 
 consteval auto operator""_pg(unsigned long long value) -> Mass {
-  return MakeQuantity<Mass>(value, "pg");
+  return detail::MakeLiteralQuantity<Mass>(value, "pg");
 }
 
 consteval auto operator""_pg(long double value) -> Mass {
-  return MakeQuantity<Mass>(value, "pg");
+  return detail::MakeLiteralQuantity<Mass>(value, "pg");
 }
 
 consteval auto operator""_ng(unsigned long long value) -> Mass {
-  return MakeQuantity<Mass>(value, "ng");
+  return detail::MakeLiteralQuantity<Mass>(value, "ng");
 }
 
 consteval auto operator""_ng(long double value) -> Mass {
-  return MakeQuantity<Mass>(value, "ng");
+  return detail::MakeLiteralQuantity<Mass>(value, "ng");
 }
 
 consteval auto operator""_ug(unsigned long long value) -> Mass {
-  return MakeQuantity<Mass>(value, "ug");
+  return detail::MakeLiteralQuantity<Mass>(value, "ug");
 }
 
 consteval auto operator""_ug(long double value) -> Mass {
-  return MakeQuantity<Mass>(value, "ug");
+  return detail::MakeLiteralQuantity<Mass>(value, "ug");
 }
 
 consteval auto operator""_mg(unsigned long long value) -> Mass {
-  return MakeQuantity<Mass>(value, "mg");
+  return detail::MakeLiteralQuantity<Mass>(value, "mg");
 }
 
 consteval auto operator""_mg(long double value) -> Mass {
-  return MakeQuantity<Mass>(value, "mg");
+  return detail::MakeLiteralQuantity<Mass>(value, "mg");
 }
 
 consteval auto operator""_g(unsigned long long value) -> Mass {
-  return MakeQuantity<Mass>(value, "g");
+  return detail::MakeLiteralQuantity<Mass>(value, "g");
 }
 
 consteval auto operator""_g(long double value) -> Mass {
-  return MakeQuantity<Mass>(value, "g");
+  return detail::MakeLiteralQuantity<Mass>(value, "g");
 }
 
 consteval auto operator""_kg(unsigned long long value) -> Mass {
-  return MakeQuantity<Mass>(value, "kg");
+  return detail::MakeLiteralQuantity<Mass>(value, "kg");
 }
 
 consteval auto operator""_kg(long double value) -> Mass {
-  return MakeQuantity<Mass>(value, "kg");
+  return detail::MakeLiteralQuantity<Mass>(value, "kg");
 }
 } // namespace ggems::units

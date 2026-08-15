@@ -13,8 +13,8 @@
 namespace {
 
 using ggems::units::Length;
+using ggems::units::MakeQuantity;
 using ggems::units::PositionCoordinate;
-using ggems::units::TryMakeQuantity;
 using ggems::units::UnitConversionError;
 
 struct SignedConversionCase {
@@ -32,7 +32,7 @@ struct LengthConversionCase {
 template <typename QuantityValue>
 auto ExpectConversionError(long double value, std::string_view unit,
                            UnitConversionError expected_error) -> void {
-  auto const conversion = TryMakeQuantity<QuantityValue>(value, unit);
+  auto const conversion = MakeQuantity<QuantityValue>(value, unit);
 
   ASSERT_FALSE(conversion.has_value());
   EXPECT_EQ(conversion.error(), expected_error);
@@ -61,7 +61,7 @@ TEST(GGEMSLengthUnits, ConvertsEveryRegisteredLengthToken) {
 
   for (auto const &test_case : cases) {
     auto const conversion =
-        TryMakeQuantity<Length>(test_case.value, test_case.unit);
+        MakeQuantity<Length>(test_case.value, test_case.unit);
 
     ASSERT_TRUE(conversion.has_value()) << test_case.unit;
     EXPECT_EQ(conversion->value, test_case.expected) << test_case.unit;
@@ -81,7 +81,7 @@ TEST(GGEMSLengthUnits, ConvertsSignedPositionCoordinates) {
 
   for (auto const &test_case : cases) {
     auto const conversion =
-        TryMakeQuantity<PositionCoordinate>(test_case.value, test_case.unit);
+        MakeQuantity<PositionCoordinate>(test_case.value, test_case.unit);
 
     ASSERT_TRUE(conversion.has_value()) << test_case.unit;
     EXPECT_EQ(conversion->value, test_case.expected) << test_case.unit;
@@ -105,7 +105,7 @@ TEST(GGEMSLengthUnits, RoundsHalfPicometersAwayFromZero) {
 
   for (auto const &test_case : cases) {
     auto const conversion =
-        TryMakeQuantity<PositionCoordinate>(test_case.value, test_case.unit);
+        MakeQuantity<PositionCoordinate>(test_case.value, test_case.unit);
 
     ASSERT_TRUE(conversion.has_value());
     EXPECT_EQ(conversion->value, test_case.expected);
@@ -121,9 +121,9 @@ TEST(GGEMSLengthUnits, EnforcesSignedCanonicalRange) {
   long double const below_lower = std::nextafter(
       lower_inclusive, -std::numeric_limits<long double>::infinity());
 
-  auto const upper_accepted = TryMakeQuantity<PositionCoordinate>(
+  auto const upper_accepted = MakeQuantity<PositionCoordinate>(
       std::numeric_limits<std::int64_t>::max(), "pm");
-  auto const lower_accepted = TryMakeQuantity<PositionCoordinate>(
+  auto const lower_accepted = MakeQuantity<PositionCoordinate>(
       std::numeric_limits<std::int64_t>::min(), "pm");
 
   ASSERT_TRUE(upper_accepted.has_value());
@@ -147,15 +147,15 @@ TEST(GGEMSLengthUnits, EnforcesNonNegativeCanonicalRange) {
   long double const upper_exclusive = std::ldexp(1.0L, 64);
 
   auto const accepted =
-      TryMakeQuantity<Length>(std::numeric_limits<std::uint64_t>::max(), "pm");
+      MakeQuantity<Length>(std::numeric_limits<std::uint64_t>::max(), "pm");
   ASSERT_TRUE(accepted.has_value());
   EXPECT_EQ(accepted->value, std::numeric_limits<std::uint64_t>::max());
 
-  auto const rounded_zero = TryMakeQuantity<Length>(0.49L, "pm");
+  auto const rounded_zero = MakeQuantity<Length>(0.49L, "pm");
   ASSERT_TRUE(rounded_zero.has_value());
   EXPECT_EQ(rounded_zero->value, 0ULL);
 
-  auto const negative_zero = TryMakeQuantity<Length>(-0.0L, "pm");
+  auto const negative_zero = MakeQuantity<Length>(-0.0L, "pm");
   ASSERT_TRUE(negative_zero.has_value());
   EXPECT_EQ(negative_zero->value, 0ULL);
 

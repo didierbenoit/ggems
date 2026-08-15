@@ -42,18 +42,18 @@ static_assert(ValidateUnitSet<DensityUnitSet>());
 static_assert(ValidateFamily<DensityFamily>());
 
 consteval auto operator""_pg_pm3(unsigned long long value) -> Density {
-  return MakeQuantity<Density>(value, "pg/pm3");
+  return detail::MakeLiteralQuantity<Density>(value, "pg/pm3");
 }
 
 consteval auto operator""_pg_pm3(long double value) -> Density {
-  return MakeQuantity<Density>(value, "pg/pm3");
+  return detail::MakeLiteralQuantity<Density>(value, "pg/pm3");
 }
 
 consteval auto operator""_g_cm3(unsigned long long value) -> Density {
-  return MakeQuantity<Density>(value, "g/cm3");
+  return detail::MakeLiteralQuantity<Density>(value, "g/cm3");
 }
 
 consteval auto operator""_g_cm3(long double value) -> Density {
-  return MakeQuantity<Density>(value, "g/cm3");
+  return detail::MakeLiteralQuantity<Density>(value, "g/cm3");
 }
 } // namespace ggems::units

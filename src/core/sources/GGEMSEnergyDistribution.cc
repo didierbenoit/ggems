@@ -70,7 +70,7 @@ struct ValidationContext {
                                  std::string_view distribution_name,
                                  std::size_t index, ValidationContext context)
     -> std::uint64_t {
-  auto const conversion = ggems::units::TryMakeQuantity<ggems::units::Energy>(
+  auto const conversion = ggems::units::MakeQuantity<ggems::units::Energy>(
       static_cast<long double>(energy), unit);
 
   if (conversion.has_value()) {

@@ -80,115 +80,115 @@ static_assert(!std::is_same_v<Bits, Bytes>);
 }
 
 consteval auto operator""_bit(unsigned long long value) -> Bits {
-  return MakeQuantity<Bits>(value, "bit");
+  return detail::MakeLiteralQuantity<Bits>(value, "bit");
 }
 
 consteval auto operator""_bit(long double value) -> Bits {
-  return MakeQuantity<Bits>(value, "bit");
+  return detail::MakeLiteralQuantity<Bits>(value, "bit");
 }
 
 consteval auto operator""_b(unsigned long long value) -> Bits {
-  return MakeQuantity<Bits>(value, "bit");
+  return detail::MakeLiteralQuantity<Bits>(value, "bit");
 }
 
 consteval auto operator""_b(long double value) -> Bits {
-  return MakeQuantity<Bits>(value, "bit");
+  return detail::MakeLiteralQuantity<Bits>(value, "bit");
 }
 
 consteval auto operator""_kbit(unsigned long long value) -> Bits {
-  return MakeQuantity<Bits>(value, "kbit");
+  return detail::MakeLiteralQuantity<Bits>(value, "kbit");
 }
 
 consteval auto operator""_kbit(long double value) -> Bits {
-  return MakeQuantity<Bits>(value, "kbit");
+  return detail::MakeLiteralQuantity<Bits>(value, "kbit");
 }
 
 consteval auto operator""_Mbit(unsigned long long value) -> Bits {
-  return MakeQuantity<Bits>(value, "Mbit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Mbit");
 }
 
 consteval auto operator""_Mbit(long double value) -> Bits {
-  return MakeQuantity<Bits>(value, "Mbit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Mbit");
 }
 
 consteval auto operator""_Gbit(unsigned long long value) -> Bits {
-  return MakeQuantity<Bits>(value, "Gbit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Gbit");
 }
 
 consteval auto operator""_Gbit(long double value) -> Bits {
-  return MakeQuantity<Bits>(value, "Gbit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Gbit");
 }
 
 consteval auto operator""_Tbit(unsigned long long value) -> Bits {
-  return MakeQuantity<Bits>(value, "Tbit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Tbit");
 }
 
 consteval auto operator""_Tbit(long double value) -> Bits {
-  return MakeQuantity<Bits>(value, "Tbit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Tbit");
 }
 
 consteval auto operator""_Kibit(unsigned long long value) -> Bits {
-  return MakeQuantity<Bits>(value, "Kibit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Kibit");
 }
 
 consteval auto operator""_Kibit(long double value) -> Bits {
-  return MakeQuantity<Bits>(value, "Kibit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Kibit");
 }
 
 consteval auto operator""_Mibit(unsigned long long value) -> Bits {
-  return MakeQuantity<Bits>(value, "Mibit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Mibit");
 }
 
 consteval auto operator""_Mibit(long double value) -> Bits {
-  return MakeQuantity<Bits>(value, "Mibit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Mibit");
 }
 
 consteval auto operator""_Gibit(unsigned long long value) -> Bits {
-  return MakeQuantity<Bits>(value, "Gibit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Gibit");
 }
 
 consteval auto operator""_Gibit(long double value) -> Bits {
-  return MakeQuantity<Bits>(value, "Gibit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Gibit");
 }
 
 consteval auto operator""_Tibit(unsigned long long value) -> Bits {
-  return MakeQuantity<Bits>(value, "Tibit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Tibit");
 }
 
 consteval auto operator""_Tibit(long double value) -> Bits {
-  return MakeQuantity<Bits>(value, "Tibit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Tibit");
 }
 
 consteval auto operator""_kb(unsigned long long value) -> Bits {
-  return MakeQuantity<Bits>(value, "kbit");
+  return detail::MakeLiteralQuantity<Bits>(value, "kbit");
 }
 
 consteval auto operator""_kb(long double value) -> Bits {
-  return MakeQuantity<Bits>(value, "kbit");
+  return detail::MakeLiteralQuantity<Bits>(value, "kbit");
 }
 
 consteval auto operator""_Mb(unsigned long long value) -> Bits {
-  return MakeQuantity<Bits>(value, "Mbit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Mbit");
 }
 
 consteval auto operator""_Mb(long double value) -> Bits {
-  return MakeQuantity<Bits>(value, "Mbit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Mbit");
 }
 
 consteval auto operator""_Gb(unsigned long long value) -> Bits {
-  return MakeQuantity<Bits>(value, "Gbit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Gbit");
 }
 
 consteval auto operator""_Gb(long double value) -> Bits {
-  return MakeQuantity<Bits>(value, "Gbit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Gbit");
 }
 
 consteval auto operator""_Tb(unsigned long long value) -> Bits {
-  return MakeQuantity<Bits>(value, "Tbit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Tbit");
 }
 
 consteval auto operator""_Tb(long double value) -> Bits {
-  return MakeQuantity<Bits>(value, "Tbit");
+  return detail::MakeLiteralQuantity<Bits>(value, "Tbit");
 }
 
 } // namespace ggems::units

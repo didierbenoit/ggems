@@ -820,7 +820,7 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
       return 0.0;
     }
 
-    auto const seconds = ggems::units::TryConvertTo(duration, "s");
+    auto const seconds = ggems::units::ConvertTo(duration, "s");
     return seconds.has_value() && *seconds > 0.0L
                ? static_cast<double>(count) / static_cast<double>(*seconds)
                : 0.0;

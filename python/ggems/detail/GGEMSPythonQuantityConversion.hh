@@ -46,7 +46,7 @@ ThrowQuantityConversionError(ggems::units::UnitConversionError error,
 template <ggems::units::QuantityType TargetQuantity>
 auto MakeQuantityOrThrow(double value, std::string_view unit,
                          QuantityConversionContext context) -> TargetQuantity {
-  auto const conversion = ggems::units::TryMakeQuantity<TargetQuantity>(
+  auto const conversion = ggems::units::MakeQuantity<TargetQuantity>(
       static_cast<long double>(value), unit);
 
   if (conversion.has_value()) {
@@ -61,7 +61,7 @@ auto ConvertQuantityToDoubleOrThrow(SourceQuantity quantity,
                                     std::string_view unit,
                                     QuantityConversionContext context)
     -> double {
-  auto const conversion = ggems::units::TryConvertTo(quantity, unit);
+  auto const conversion = ggems::units::ConvertTo(quantity, unit);
 
   if (conversion.has_value()) {
     return static_cast<double>(*conversion);

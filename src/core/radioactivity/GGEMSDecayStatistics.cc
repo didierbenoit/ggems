@@ -49,9 +49,9 @@ auto ComputeExpectedDecayEventCount(units::Activity activity_at_reference,
   auto const elapsed_start_ps = time_window.start_ps - reference_time_ps;
   auto const duration_ps = time_window.stop_ps - time_window.start_ps;
   auto const elapsed_start_seconds =
-      *units::TryConvertTo(units::Duration{elapsed_start_ps}, "s");
+      *units::ConvertTo(units::Duration{elapsed_start_ps}, "s");
   auto const duration_seconds =
-      *units::TryConvertTo(units::Duration{duration_ps}, "s");
+      *units::ConvertTo(units::Duration{duration_ps}, "s");
   long double const decay_constant =
       std::numbers::ln2_v<long double> / half_life_seconds;
 

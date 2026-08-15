@@ -67,58 +67,58 @@ static_assert(ValidateFamily<DurationFamily>());
 static_assert(ValidateFamily<TimePointFamily>());
 
 consteval auto operator""_ps(unsigned long long value) -> Time {
-  return MakeQuantity<Time>(value, "ps");
+  return detail::MakeLiteralQuantity<Time>(value, "ps");
 }
 
 consteval auto operator""_ps(long double value) -> Time {
-  return MakeQuantity<Time>(value, "ps");
+  return detail::MakeLiteralQuantity<Time>(value, "ps");
 }
 
 consteval auto operator""_ns(unsigned long long value) -> Time {
-  return MakeQuantity<Time>(value, "ns");
+  return detail::MakeLiteralQuantity<Time>(value, "ns");
 }
 
 consteval auto operator""_ns(long double value) -> Time {
-  return MakeQuantity<Time>(value, "ns");
+  return detail::MakeLiteralQuantity<Time>(value, "ns");
 }
 
 consteval auto operator""_us(unsigned long long value) -> Time {
-  return MakeQuantity<Time>(value, "us");
+  return detail::MakeLiteralQuantity<Time>(value, "us");
 }
 
 consteval auto operator""_us(long double value) -> Time {
-  return MakeQuantity<Time>(value, "us");
+  return detail::MakeLiteralQuantity<Time>(value, "us");
 }
 
 consteval auto operator""_ms(unsigned long long value) -> Time {
-  return MakeQuantity<Time>(value, "ms");
+  return detail::MakeLiteralQuantity<Time>(value, "ms");
 }
 
 consteval auto operator""_ms(long double value) -> Time {
-  return MakeQuantity<Time>(value, "ms");
+  return detail::MakeLiteralQuantity<Time>(value, "ms");
 }
 
 consteval auto operator""_s(unsigned long long value) -> Time {
-  return MakeQuantity<Time>(value, "s");
+  return detail::MakeLiteralQuantity<Time>(value, "s");
 }
 
 consteval auto operator""_s(long double value) -> Time {
-  return MakeQuantity<Time>(value, "s");
+  return detail::MakeLiteralQuantity<Time>(value, "s");
 }
 
 consteval auto operator""_min(unsigned long long value) -> Time {
-  return MakeQuantity<Time>(value, "min");
+  return detail::MakeLiteralQuantity<Time>(value, "min");
 }
 
 consteval auto operator""_min(long double value) -> Time {
-  return MakeQuantity<Time>(value, "min");
+  return detail::MakeLiteralQuantity<Time>(value, "min");
 }
 
 consteval auto operator""_h(unsigned long long value) -> Time {
-  return MakeQuantity<Time>(value, "h");
+  return detail::MakeLiteralQuantity<Time>(value, "h");
 }
 
 consteval auto operator""_h(long double value) -> Time {
-  return MakeQuantity<Time>(value, "h");
+  return detail::MakeLiteralQuantity<Time>(value, "h");
 }
 } // namespace ggems::units

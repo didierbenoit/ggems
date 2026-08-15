@@ -45,41 +45,41 @@ static_assert(ValidateUnitSet<FrequencyUnitSet>());
 static_assert(ValidateFamily<FrequencyFamily>());
 
 consteval auto operator""_Hz(unsigned long long value) -> Frequency {
-  return MakeQuantity<Frequency>(value, "Hz");
+  return detail::MakeLiteralQuantity<Frequency>(value, "Hz");
 }
 
 consteval auto operator""_Hz(long double value) -> Frequency {
-  return MakeQuantity<Frequency>(value, "Hz");
+  return detail::MakeLiteralQuantity<Frequency>(value, "Hz");
 }
 
 consteval auto operator""_kHz(unsigned long long value) -> Frequency {
-  return MakeQuantity<Frequency>(value, "kHz");
+  return detail::MakeLiteralQuantity<Frequency>(value, "kHz");
 }
 
 consteval auto operator""_kHz(long double value) -> Frequency {
-  return MakeQuantity<Frequency>(value, "kHz");
+  return detail::MakeLiteralQuantity<Frequency>(value, "kHz");
 }
 
 consteval auto operator""_MHz(unsigned long long value) -> Frequency {
-  return MakeQuantity<Frequency>(value, "MHz");
+  return detail::MakeLiteralQuantity<Frequency>(value, "MHz");
 }
 
 consteval auto operator""_MHz(long double value) -> Frequency {
-  return MakeQuantity<Frequency>(value, "MHz");
+  return detail::MakeLiteralQuantity<Frequency>(value, "MHz");
 }
 consteval auto operator""_GHz(unsigned long long value) -> Frequency {
-  return MakeQuantity<Frequency>(value, "GHz");
+  return detail::MakeLiteralQuantity<Frequency>(value, "GHz");
 }
 
 consteval auto operator""_GHz(long double value) -> Frequency {
-  return MakeQuantity<Frequency>(value, "GHz");
+  return detail::MakeLiteralQuantity<Frequency>(value, "GHz");
 }
 
 consteval auto operator""_THz(unsigned long long value) -> Frequency {
-  return MakeQuantity<Frequency>(value, "THz");
+  return detail::MakeLiteralQuantity<Frequency>(value, "THz");
 }
 
 consteval auto operator""_THz(long double value) -> Frequency {
-  return MakeQuantity<Frequency>(value, "THz");
+  return detail::MakeLiteralQuantity<Frequency>(value, "THz");
 }
 } // namespace ggems::units

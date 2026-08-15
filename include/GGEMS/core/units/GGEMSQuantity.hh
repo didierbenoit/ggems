@@ -430,8 +430,8 @@ constexpr auto operator/(Quantity<Family> quantity, Scalar scale) noexcept
 }
 
 template <QuantityType TargetQuantity>
-[[nodiscard]] constexpr auto TryMakeQuantity(long double value,
-                                             std::string_view unit_symbol)
+[[nodiscard]] constexpr auto MakeQuantity(long double value,
+                                          std::string_view unit_symbol)
     -> std::expected<TargetQuantity, UnitConversionError> {
   using Family = typename TargetQuantity::family;
   auto const *unit = FindUnit<typename Family::unit_set>(unit_symbol);
@@ -461,8 +461,8 @@ template <QuantityType TargetQuantity>
 
 template <QuantityType TargetQuantity, detail::ExactIntegral SourceInteger>
   requires detail::ExactIntegral<typename TargetQuantity::representation>
-[[nodiscard]] constexpr auto TryMakeQuantity(SourceInteger value,
-                                             std::string_view unit_symbol)
+[[nodiscard]] constexpr auto MakeQuantity(SourceInteger value,
+                                          std::string_view unit_symbol)
     -> std::expected<TargetQuantity, UnitConversionError> {
   using Family = typename TargetQuantity::family;
   using Representation = typename TargetQuantity::representation;
@@ -479,8 +479,8 @@ template <QuantityType TargetQuantity, detail::ExactIntegral SourceInteger>
 
   std::uint64_t factor{0ULL};
   if (!detail::ExactIntegralFactor(unit->scale, factor)) {
-    return TryMakeQuantity<TargetQuantity>(static_cast<long double>(value),
-                                           unit_symbol);
+    return MakeQuantity<TargetQuantity>(static_cast<long double>(value),
+                                        unit_symbol);
   }
 
   std::uint64_t const magnitude = detail::IntegralMagnitude(value);
@@ -498,8 +498,8 @@ template <QuantityType TargetQuantity, detail::ExactIntegral SourceInteger>
 }
 
 template <QuantityType SourceQuantity>
-[[nodiscard]] constexpr auto TryConvertTo(SourceQuantity quantity,
-                                          std::string_view unit_symbol)
+[[nodiscard]] constexpr auto ConvertTo(SourceQuantity quantity,
+                                       std::string_view unit_symbol)
     -> std::expected<long double, UnitConversionError> {
   using Family = typename SourceQuantity::family;
 
@@ -524,8 +524,8 @@ template <QuantityType SourceQuantity>
 template <detail::ExactIntegral TargetRepresentation,
           QuantityType SourceQuantity>
   requires detail::ExactIntegral<typename SourceQuantity::representation>
-[[nodiscard]] constexpr auto TryConvertTo(SourceQuantity quantity,
-                                          std::string_view unit_symbol)
+[[nodiscard]] constexpr auto ConvertTo(SourceQuantity quantity,
+                                       std::string_view unit_symbol)
     -> std::expected<TargetRepresentation, UnitConversionError> {
   using Family = typename SourceQuantity::family;
 
@@ -553,23 +553,12 @@ template <detail::ExactIntegral TargetRepresentation,
       magnitude / factor, negative);
 }
 
-template <QuantityType QuantityValue>
-[[nodiscard]] constexpr auto TryConvert(long double value,
-                                        std::string_view source_unit,
-                                        std::string_view target_unit)
-    -> std::expected<long double, UnitConversionError> {
-  auto const canonical = TryMakeQuantity<QuantityValue>(value, source_unit);
-
-  if (!canonical.has_value()) {
-    return std::unexpected(canonical.error());
-  }
-
-  return TryConvertTo(*canonical, target_unit);
-}
+namespace detail {
 
 template <QuantityType QuantityValue>
-consteval auto MakeQuantity(unsigned long long value,
-                            std::string_view unit_symbol) -> QuantityValue {
+consteval auto MakeLiteralQuantity(unsigned long long value,
+                                   std::string_view unit_symbol)
+    -> QuantityValue {
   using Representation = typename QuantityValue::representation;
 
   auto const *unit =
@@ -590,8 +579,8 @@ consteval auto MakeQuantity(unsigned long long value,
     }
   }
 
-  auto const result = TryMakeQuantity<QuantityValue>(
-      static_cast<long double>(value), unit_symbol);
+  auto const result =
+      MakeQuantity<QuantityValue>(static_cast<long double>(value), unit_symbol);
   if (!result.has_value()) {
     throw "Invalid GGEMS quantity literal.";
   }
@@ -600,14 +589,17 @@ consteval auto MakeQuantity(unsigned long long value,
 }
 
 template <QuantityType QuantityValue>
-consteval auto MakeQuantity(long double value, std::string_view unit_symbol)
+consteval auto MakeLiteralQuantity(long double value,
+                                   std::string_view unit_symbol)
     -> QuantityValue {
-  auto const result = TryMakeQuantity<QuantityValue>(value, unit_symbol);
+  auto const result = MakeQuantity<QuantityValue>(value, unit_symbol);
   if (!result.has_value()) {
     throw "Invalid GGEMS quantity literal.";
   }
   return *result;
 }
+
+} // namespace detail
 
 template <QuantityType QuantityValue>
 auto HumanReadable(

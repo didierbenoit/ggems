@@ -64,7 +64,7 @@ auto MakeDurationFromSeconds(long double seconds) noexcept
   }
 
   auto const duration =
-      ggems::units::TryMakeQuantity<ggems::units::Duration>(seconds, "s");
+      ggems::units::MakeQuantity<ggems::units::Duration>(seconds, "s");
 
   return duration.value_or(
       ggems::units::Duration{std::numeric_limits<std::uint64_t>::max()});
@@ -87,7 +87,7 @@ auto MakeTimeFromNanoseconds(cl_ulong nanoseconds) noexcept
   }
 
   auto const time =
-      ggems::units::TryMakeQuantity<ggems::units::Time>(nanoseconds, "ns");
+      ggems::units::MakeQuantity<ggems::units::Time>(nanoseconds, "ns");
 
   return time.value_or(
       ggems::units::Time{std::numeric_limits<std::uint64_t>::max()});
@@ -213,8 +213,7 @@ auto GGEMSOpenCLProfiler::GetKernelSeconds() const noexcept -> double {
     return 0.0;
   }
 
-  auto const seconds =
-      ggems::units::TryConvertTo(kernel_timing_.kernel_time, "s");
+  auto const seconds = ggems::units::ConvertTo(kernel_timing_.kernel_time, "s");
 
   return seconds.has_value() ? static_cast<double>(*seconds) : 0.0;
 }

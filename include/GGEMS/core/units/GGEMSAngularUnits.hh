@@ -63,19 +63,19 @@ constexpr auto ToDegrees(Angle angle) noexcept -> long double {
 }
 
 consteval auto operator""_rad(long double value) -> Angle {
-  return MakeQuantity<Angle>(value, "rad");
+  return detail::MakeLiteralQuantity<Angle>(value, "rad");
 }
 
 consteval auto operator""_rad(unsigned long long value) -> Angle {
-  return MakeQuantity<Angle>(value, "rad");
+  return detail::MakeLiteralQuantity<Angle>(value, "rad");
 }
 
 consteval auto operator""_deg(long double value) -> Angle {
-  return MakeQuantity<Angle>(value, "deg");
+  return detail::MakeLiteralQuantity<Angle>(value, "deg");
 }
 
 consteval auto operator""_deg(unsigned long long value) -> Angle {
-  return MakeQuantity<Angle>(value, "deg");
+  return detail::MakeLiteralQuantity<Angle>(value, "deg");
 }
 
 } // namespace ggems::units

@@ -149,7 +149,7 @@ auto ExpectEveryRegisteredSymbol(ggems::core::Encoding encoding) -> void {
 template <QuantityType QuantityValue>
 auto ExpectUnsupportedUnit(std::string_view unit_symbol) -> void {
   SCOPED_TRACE(std::string{unit_symbol});
-  auto const converted = TryMakeQuantity<QuantityValue>(1.0L, unit_symbol);
+  auto const converted = MakeQuantity<QuantityValue>(1.0L, unit_symbol);
 
   EXPECT_FALSE(converted.has_value());
   if (!converted.has_value()) {
@@ -308,28 +308,28 @@ static_assert((1_Gy).value == 6'241'509ULL);
 // =============================================================================
 
 TEST(GGEMSUnitRegistryContractTest, ParsesOnlyOfficialAsciiSymbols) {
-  EXPECT_TRUE(TryMakeQuantity<Length>(1.0L, "pm").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Length>(1.0L, "nm").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Length>(1.0L, "um").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Length>(1.0L, "mm").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Length>(1.0L, "cm").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Length>(1.0L, "m").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Length>(1.0L, "km").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Area>(1.0L, "pm2").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Area>(1.0L, "um2").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Area>(1.0L, "cm2").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Volume>(1.0L, "pm3").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Volume>(1.0L, "um3").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Volume>(1.0L, "cm3").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Duration>(1.0L, "us").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Duration>(1.0L, "ms").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Duration>(1.0L, "s").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Dose>(1.0L, "uGy").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Activity>(1.0L, "uCi").has_value());
-  EXPECT_TRUE(TryMakeQuantity<CrossSection>(1.0L, "ub").has_value());
-  EXPECT_TRUE(TryMakeQuantity<CrossSection>(1.0L, "pb").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Energy>(1.0L, "meV").has_value());
-  EXPECT_TRUE(TryMakeQuantity<Bits>(1.0L, "bit").has_value());
+  EXPECT_TRUE(MakeQuantity<Length>(1.0L, "pm").has_value());
+  EXPECT_TRUE(MakeQuantity<Length>(1.0L, "nm").has_value());
+  EXPECT_TRUE(MakeQuantity<Length>(1.0L, "um").has_value());
+  EXPECT_TRUE(MakeQuantity<Length>(1.0L, "mm").has_value());
+  EXPECT_TRUE(MakeQuantity<Length>(1.0L, "cm").has_value());
+  EXPECT_TRUE(MakeQuantity<Length>(1.0L, "m").has_value());
+  EXPECT_TRUE(MakeQuantity<Length>(1.0L, "km").has_value());
+  EXPECT_TRUE(MakeQuantity<Area>(1.0L, "pm2").has_value());
+  EXPECT_TRUE(MakeQuantity<Area>(1.0L, "um2").has_value());
+  EXPECT_TRUE(MakeQuantity<Area>(1.0L, "cm2").has_value());
+  EXPECT_TRUE(MakeQuantity<Volume>(1.0L, "pm3").has_value());
+  EXPECT_TRUE(MakeQuantity<Volume>(1.0L, "um3").has_value());
+  EXPECT_TRUE(MakeQuantity<Volume>(1.0L, "cm3").has_value());
+  EXPECT_TRUE(MakeQuantity<Duration>(1.0L, "us").has_value());
+  EXPECT_TRUE(MakeQuantity<Duration>(1.0L, "ms").has_value());
+  EXPECT_TRUE(MakeQuantity<Duration>(1.0L, "s").has_value());
+  EXPECT_TRUE(MakeQuantity<Dose>(1.0L, "uGy").has_value());
+  EXPECT_TRUE(MakeQuantity<Activity>(1.0L, "uCi").has_value());
+  EXPECT_TRUE(MakeQuantity<CrossSection>(1.0L, "ub").has_value());
+  EXPECT_TRUE(MakeQuantity<CrossSection>(1.0L, "pb").has_value());
+  EXPECT_TRUE(MakeQuantity<Energy>(1.0L, "meV").has_value());
+  EXPECT_TRUE(MakeQuantity<Bits>(1.0L, "bit").has_value());
 
   ExpectUnsupportedUnit<Length>("µm");
   ExpectUnsupportedUnit<Length>("\xCE\xBC"
@@ -359,12 +359,12 @@ TEST(GGEMSUnitRegistryContractTest, ParsesOnlyOfficialAsciiSymbols) {
 // =============================================================================
 
 TEST(GGEMSUnitRegistryContractTest, ConvertsThroughCanonicalRepresentations) {
-  auto const centimeter = TryMakeQuantity<Length>(1, "cm");
-  auto const square_centimeter = TryMakeQuantity<Area>(1.0L, "cm2");
-  auto const cubic_centimeter = TryMakeQuantity<Volume>(1.0L, "cm3");
-  auto const barn = TryMakeQuantity<CrossSection>(1, "barn");
-  auto const picobarn = TryMakeQuantity<CrossSection>(1, "pb");
-  auto const energy = TryMakeQuantity<Energy>(1, "meV");
+  auto const centimeter = MakeQuantity<Length>(1, "cm");
+  auto const square_centimeter = MakeQuantity<Area>(1.0L, "cm2");
+  auto const cubic_centimeter = MakeQuantity<Volume>(1.0L, "cm3");
+  auto const barn = MakeQuantity<CrossSection>(1, "barn");
+  auto const picobarn = MakeQuantity<CrossSection>(1, "pb");
+  auto const energy = MakeQuantity<Energy>(1, "meV");
 
   ASSERT_TRUE(centimeter.has_value());
   ASSERT_TRUE(square_centimeter.has_value());
@@ -379,8 +379,8 @@ TEST(GGEMSUnitRegistryContractTest, ConvertsThroughCanonicalRepresentations) {
   EXPECT_EQ(picobarn->value, 1ULL);
   EXPECT_EQ(energy->value, 1ULL);
 
-  auto const centimeter_round_trip = TryConvertTo(*centimeter, "cm");
-  auto const barn_in_picobarns = TryConvertTo<std::uint64_t>(*barn, "pb");
+  auto const centimeter_round_trip = ConvertTo(*centimeter, "cm");
+  auto const barn_in_picobarns = ConvertTo<std::uint64_t>(*barn, "pb");
   ASSERT_TRUE(centimeter_round_trip.has_value());
   ASSERT_TRUE(barn_in_picobarns.has_value());
   EXPECT_EQ(*centimeter_round_trip, 1.0L);
@@ -391,12 +391,12 @@ TEST(GGEMSUnitRegistryContractTest, ConvertsThroughCanonicalRepresentations) {
 // =============================================================================
 
 TEST(GGEMSUnitRegistryContractTest, AppliesTheNumericBoundaryContract) {
-  auto const positive_below_half = TryMakeQuantity<Length>(0.49L, "pm");
-  auto const positive_half = TryMakeQuantity<Length>(0.5L, "pm");
-  auto const positive_above_half = TryMakeQuantity<Length>(1.5L, "pm");
-  auto const negative_half = TryMakeQuantity<PositionCoordinate>(-0.5L, "pm");
+  auto const positive_below_half = MakeQuantity<Length>(0.49L, "pm");
+  auto const positive_half = MakeQuantity<Length>(0.5L, "pm");
+  auto const positive_above_half = MakeQuantity<Length>(1.5L, "pm");
+  auto const negative_half = MakeQuantity<PositionCoordinate>(-0.5L, "pm");
   auto const negative_above_half =
-      TryMakeQuantity<PositionCoordinate>(-1.5L, "pm");
+      MakeQuantity<PositionCoordinate>(-1.5L, "pm");
   ASSERT_TRUE(positive_below_half.has_value());
   ASSERT_TRUE(positive_half.has_value());
   ASSERT_TRUE(positive_above_half.has_value());
@@ -409,24 +409,23 @@ TEST(GGEMSUnitRegistryContractTest, AppliesTheNumericBoundaryContract) {
   EXPECT_EQ(negative_above_half->value, -2LL);
 
   auto const maximum_length =
-      TryMakeQuantity<Length>(std::numeric_limits<std::uint64_t>::max(), "pm");
-  auto const minimum_position = TryMakeQuantity<PositionCoordinate>(
+      MakeQuantity<Length>(std::numeric_limits<std::uint64_t>::max(), "pm");
+  auto const minimum_position = MakeQuantity<PositionCoordinate>(
       std::numeric_limits<std::int64_t>::min(), "pm");
   ASSERT_TRUE(maximum_length.has_value());
   ASSERT_TRUE(minimum_position.has_value());
   EXPECT_EQ(maximum_length->value, std::numeric_limits<std::uint64_t>::max());
   EXPECT_EQ(minimum_position->value, std::numeric_limits<std::int64_t>::min());
 
-  auto const exact_maximum = TryConvertTo<std::uint64_t>(*maximum_length, "pm");
-  auto const exact_minimum =
-      TryConvertTo<std::int64_t>(*minimum_position, "pm");
+  auto const exact_maximum = ConvertTo<std::uint64_t>(*maximum_length, "pm");
+  auto const exact_minimum = ConvertTo<std::int64_t>(*minimum_position, "pm");
   ASSERT_TRUE(exact_maximum.has_value());
   ASSERT_TRUE(exact_minimum.has_value());
   EXPECT_EQ(*exact_maximum, std::numeric_limits<std::uint64_t>::max());
   EXPECT_EQ(*exact_minimum, std::numeric_limits<std::int64_t>::min());
 
-  auto const zero_dose_in_gray = TryConvertTo<std::uint64_t>(Dose{0ULL}, "Gy");
-  auto const zero_energy = TryMakeQuantity<Energy>(0.0L, "keV");
+  auto const zero_dose_in_gray = ConvertTo<std::uint64_t>(Dose{0ULL}, "Gy");
+  auto const zero_energy = MakeQuantity<Energy>(0.0L, "keV");
   ASSERT_TRUE(zero_dose_in_gray.has_value());
   ASSERT_TRUE(zero_energy.has_value());
   EXPECT_EQ(*zero_dose_in_gray, 0ULL);
@@ -437,13 +436,13 @@ TEST(GGEMSUnitRegistryContractTest, AppliesTheNumericBoundaryContract) {
 // =============================================================================
 
 TEST(GGEMSUnitRegistryContractTest, ReportsEveryConversionErrorCategory) {
-  auto const unsupported = TryMakeQuantity<Length>(1.0L, "parsec");
-  auto const non_finite = TryMakeQuantity<Length>(
-      std::numeric_limits<long double>::infinity(), "pm");
-  auto const negative = TryMakeQuantity<Length>(-1, "pm");
+  auto const unsupported = MakeQuantity<Length>(1.0L, "parsec");
+  auto const non_finite =
+      MakeQuantity<Length>(std::numeric_limits<long double>::infinity(), "pm");
+  auto const negative = MakeQuantity<Length>(-1, "pm");
   auto const overflow =
-      TryMakeQuantity<Length>(std::numeric_limits<std::uint64_t>::max(), "nm");
-  auto const inexact = TryConvertTo<std::uint64_t>(Length{1ULL}, "nm");
+      MakeQuantity<Length>(std::numeric_limits<std::uint64_t>::max(), "nm");
+  auto const inexact = ConvertTo<std::uint64_t>(Length{1ULL}, "nm");
 
   ASSERT_FALSE(unsupported.has_value());
   ASSERT_FALSE(non_finite.has_value());

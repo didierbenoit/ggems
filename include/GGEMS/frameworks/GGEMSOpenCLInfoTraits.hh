@@ -121,7 +121,7 @@ template <> struct InfoTraits<CL_PLATFORM_HOST_TIMER_RESOLUTION> {
     if (value == 0) {
       return "not supported";
     }
-    auto const duration = TryMakeQuantity<Duration>(value, "ns");
+    auto const duration = MakeQuantity<Duration>(value, "ns");
     if (!duration.has_value()) {
       return "out of range";
     }
@@ -329,7 +329,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_CLOCK_FREQUENCY> {
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     if (value != 0) {
-      auto const frequency = TryMakeQuantity<Frequency>(value, "MHz");
+      auto const frequency = MakeQuantity<Frequency>(value, "MHz");
       if (!frequency.has_value()) {
         return "N/A";
       }
@@ -1122,7 +1122,7 @@ template <> struct InfoTraits<CL_DEVICE_PROFILING_TIMER_RESOLUTION> {
       "CL_DEVICE_PROFILING_TIMER_RESOLUTION";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
-    auto const duration = TryMakeQuantity<Duration>(value, "ns");
+    auto const duration = MakeQuantity<Duration>(value, "ns");
     if (!duration.has_value()) {
       return "out of range";
     }

@@ -16,7 +16,7 @@ namespace {
 
 using ggems::units::Activity;
 using ggems::units::Frequency;
-using ggems::units::TryMakeQuantity;
+using ggems::units::MakeQuantity;
 using ggems::units::UnitConversionError;
 
 // =============================================================================
@@ -42,7 +42,7 @@ TEST(GGEMSActivityUnitsTest, ConvertsBecquerelSIPrefixesExactly) {
 
   for (Case const &test_case : cases) {
     SCOPED_TRACE(test_case.unit);
-    auto const converted = TryMakeQuantity<Activity>(1.25L, test_case.unit);
+    auto const converted = MakeQuantity<Activity>(1.25L, test_case.unit);
     ASSERT_TRUE(converted.has_value());
     EXPECT_EQ(converted->value, test_case.expected_becquerel);
   }
@@ -52,9 +52,9 @@ TEST(GGEMSActivityUnitsTest, ConvertsBecquerelSIPrefixesExactly) {
 // =============================================================================
 
 TEST(GGEMSActivityUnitsTest, ConvertsCurieFamilyExactly) {
-  auto const curie = TryMakeQuantity<Activity>(1.0L, "Ci");
-  auto const millicurie = TryMakeQuantity<Activity>(1.0L, "mCi");
-  auto const microcurie_ascii = TryMakeQuantity<Activity>(1.0L, "uCi");
+  auto const curie = MakeQuantity<Activity>(1.0L, "Ci");
+  auto const millicurie = MakeQuantity<Activity>(1.0L, "mCi");
+  auto const microcurie_ascii = MakeQuantity<Activity>(1.0L, "uCi");
 
   ASSERT_TRUE(curie.has_value());
   ASSERT_TRUE(millicurie.has_value());
@@ -68,7 +68,7 @@ TEST(GGEMSActivityUnitsTest, ConvertsCurieFamilyExactly) {
 // =============================================================================
 
 TEST(GGEMSActivityUnitsTest, AcceptsZeroActivity) {
-  auto const converted = TryMakeQuantity<Activity>(0.0L, "TBq");
+  auto const converted = MakeQuantity<Activity>(0.0L, "TBq");
 
   ASSERT_TRUE(converted.has_value());
   EXPECT_EQ(converted->value, 0.0L);
@@ -78,7 +78,7 @@ TEST(GGEMSActivityUnitsTest, AcceptsZeroActivity) {
 // =============================================================================
 
 TEST(GGEMSActivityUnitsTest, RejectsNegativeActivity) {
-  auto const converted = TryMakeQuantity<Activity>(-1.0L, "Bq");
+  auto const converted = MakeQuantity<Activity>(-1.0L, "Bq");
 
   ASSERT_FALSE(converted.has_value());
   EXPECT_EQ(converted.error(), UnitConversionError::NegativeValue);
@@ -91,7 +91,7 @@ TEST(GGEMSActivityUnitsTest, RejectsNonFiniteActivity) {
   for (long double value : {std::numeric_limits<long double>::quiet_NaN(),
                             std::numeric_limits<long double>::infinity(),
                             -std::numeric_limits<long double>::infinity()}) {
-    auto const converted = TryMakeQuantity<Activity>(value, "Bq");
+    auto const converted = MakeQuantity<Activity>(value, "Bq");
 
     ASSERT_FALSE(converted.has_value());
     EXPECT_EQ(converted.error(), UnitConversionError::NonFinite);
@@ -102,7 +102,7 @@ TEST(GGEMSActivityUnitsTest, RejectsNonFiniteActivity) {
 // =============================================================================
 
 TEST(GGEMSActivityUnitsTest, RejectsUnsupportedUnit) {
-  auto const converted = TryMakeQuantity<Activity>(1.0L, "dpm");
+  auto const converted = MakeQuantity<Activity>(1.0L, "dpm");
 
   ASSERT_FALSE(converted.has_value());
   EXPECT_EQ(converted.error(), UnitConversionError::UnsupportedUnit);
@@ -113,7 +113,7 @@ TEST(GGEMSActivityUnitsTest, RejectsUnsupportedUnit) {
 
 TEST(GGEMSActivityUnitsTest, RejectsConversionOverflow) {
   auto const converted =
-      TryMakeQuantity<Activity>(std::numeric_limits<long double>::max(), "TBq");
+      MakeQuantity<Activity>(std::numeric_limits<long double>::max(), "TBq");
 
   ASSERT_FALSE(converted.has_value());
   EXPECT_EQ(converted.error(), UnitConversionError::OutOfRange);

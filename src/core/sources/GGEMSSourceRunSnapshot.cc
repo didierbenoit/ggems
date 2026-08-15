@@ -295,7 +295,7 @@ auto BuildScaledDecay(
     radioactivity::GGEMSRadionuclideDefinition const &definition) -> float {
   std::uint64_t const duration_ps = time_window.stop_ps - time_window.start_ps;
   auto const duration_seconds =
-      *units::TryConvertTo(units::Duration{duration_ps}, "s");
+      *units::ConvertTo(units::Duration{duration_ps}, "s");
   long double const scaled_decay = std::numbers::ln2_v<long double> *
                                    duration_seconds /
                                    definition.GetHalfLifeSeconds();

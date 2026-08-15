@@ -57,58 +57,58 @@ static_assert(ValidateUnitSet<VolumeUnitSet>());
 static_assert(ValidateFamily<VolumeFamily>());
 
 consteval auto operator""_pm3(unsigned long long value) -> Volume {
-  return MakeQuantity<Volume>(value, "pm3");
+  return detail::MakeLiteralQuantity<Volume>(value, "pm3");
 }
 
 consteval auto operator""_pm3(long double value) -> Volume {
-  return MakeQuantity<Volume>(value, "pm3");
+  return detail::MakeLiteralQuantity<Volume>(value, "pm3");
 }
 
 consteval auto operator""_nm3(unsigned long long value) -> Volume {
-  return MakeQuantity<Volume>(value, "nm3");
+  return detail::MakeLiteralQuantity<Volume>(value, "nm3");
 }
 
 consteval auto operator""_nm3(long double value) -> Volume {
-  return MakeQuantity<Volume>(value, "nm3");
+  return detail::MakeLiteralQuantity<Volume>(value, "nm3");
 }
 
 consteval auto operator""_um3(unsigned long long value) -> Volume {
-  return MakeQuantity<Volume>(value, "um3");
+  return detail::MakeLiteralQuantity<Volume>(value, "um3");
 }
 
 consteval auto operator""_um3(long double value) -> Volume {
-  return MakeQuantity<Volume>(value, "um3");
+  return detail::MakeLiteralQuantity<Volume>(value, "um3");
 }
 
 consteval auto operator""_mm3(unsigned long long value) -> Volume {
-  return MakeQuantity<Volume>(value, "mm3");
+  return detail::MakeLiteralQuantity<Volume>(value, "mm3");
 }
 
 consteval auto operator""_mm3(long double value) -> Volume {
-  return MakeQuantity<Volume>(value, "mm3");
+  return detail::MakeLiteralQuantity<Volume>(value, "mm3");
 }
 
 consteval auto operator""_cm3(unsigned long long value) -> Volume {
-  return MakeQuantity<Volume>(value, "cm3");
+  return detail::MakeLiteralQuantity<Volume>(value, "cm3");
 }
 
 consteval auto operator""_cm3(long double value) -> Volume {
-  return MakeQuantity<Volume>(value, "cm3");
+  return detail::MakeLiteralQuantity<Volume>(value, "cm3");
 }
 
 consteval auto operator""_m3(unsigned long long value) -> Volume {
-  return MakeQuantity<Volume>(value, "m3");
+  return detail::MakeLiteralQuantity<Volume>(value, "m3");
 }
 
 consteval auto operator""_m3(long double value) -> Volume {
-  return MakeQuantity<Volume>(value, "m3");
+  return detail::MakeLiteralQuantity<Volume>(value, "m3");
 }
 
 consteval auto operator""_km3(unsigned long long value) -> Volume {
-  return MakeQuantity<Volume>(value, "km3");
+  return detail::MakeLiteralQuantity<Volume>(value, "km3");
 }
 
 consteval auto operator""_km3(long double value) -> Volume {
-  return MakeQuantity<Volume>(value, "km3");
+  return detail::MakeLiteralQuantity<Volume>(value, "km3");
 }
 } // namespace ggems::units

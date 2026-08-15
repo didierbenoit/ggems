@@ -195,11 +195,11 @@ auto ToParticleTracePointMeter(
     core::observer::GGEMSObserverRecord const &record) noexcept
     -> GGEMSParticleTracePoint {
   return GGEMSParticleTracePoint{
-      .x_m = static_cast<float>(*units::TryConvertTo(
+      .x_m = static_cast<float>(*units::ConvertTo(
           units::PositionCoordinate{record.position_x_pm}, "m")),
-      .y_m = static_cast<float>(*units::TryConvertTo(
+      .y_m = static_cast<float>(*units::ConvertTo(
           units::PositionCoordinate{record.position_y_pm}, "m")),
-      .z_m = static_cast<float>(*units::TryConvertTo(
+      .z_m = static_cast<float>(*units::ConvertTo(
           units::PositionCoordinate{record.position_z_pm}, "m"))};
 }
 

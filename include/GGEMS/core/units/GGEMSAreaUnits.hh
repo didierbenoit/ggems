@@ -57,58 +57,58 @@ static_assert(ValidateUnitSet<AreaUnitSet>());
 static_assert(ValidateFamily<AreaFamily>());
 
 consteval auto operator""_pm2(unsigned long long value) -> Area {
-  return MakeQuantity<Area>(value, "pm2");
+  return detail::MakeLiteralQuantity<Area>(value, "pm2");
 }
 
 consteval auto operator""_pm2(long double value) -> Area {
-  return MakeQuantity<Area>(value, "pm2");
+  return detail::MakeLiteralQuantity<Area>(value, "pm2");
 }
 
 consteval auto operator""_nm2(unsigned long long value) -> Area {
-  return MakeQuantity<Area>(value, "nm2");
+  return detail::MakeLiteralQuantity<Area>(value, "nm2");
 }
 
 consteval auto operator""_nm2(long double value) -> Area {
-  return MakeQuantity<Area>(value, "nm2");
+  return detail::MakeLiteralQuantity<Area>(value, "nm2");
 }
 
 consteval auto operator""_um2(unsigned long long value) -> Area {
-  return MakeQuantity<Area>(value, "um2");
+  return detail::MakeLiteralQuantity<Area>(value, "um2");
 }
 
 consteval auto operator""_um2(long double value) -> Area {
-  return MakeQuantity<Area>(value, "um2");
+  return detail::MakeLiteralQuantity<Area>(value, "um2");
 }
 
 consteval auto operator""_mm2(unsigned long long value) -> Area {
-  return MakeQuantity<Area>(value, "mm2");
+  return detail::MakeLiteralQuantity<Area>(value, "mm2");
 }
 
 consteval auto operator""_mm2(long double value) -> Area {
-  return MakeQuantity<Area>(value, "mm2");
+  return detail::MakeLiteralQuantity<Area>(value, "mm2");
 }
 
 consteval auto operator""_cm2(unsigned long long value) -> Area {
-  return MakeQuantity<Area>(value, "cm2");
+  return detail::MakeLiteralQuantity<Area>(value, "cm2");
 }
 
 consteval auto operator""_cm2(long double value) -> Area {
-  return MakeQuantity<Area>(value, "cm2");
+  return detail::MakeLiteralQuantity<Area>(value, "cm2");
 }
 
 consteval auto operator""_m2(unsigned long long value) -> Area {
-  return MakeQuantity<Area>(value, "m2");
+  return detail::MakeLiteralQuantity<Area>(value, "m2");
 }
 
 consteval auto operator""_m2(long double value) -> Area {
-  return MakeQuantity<Area>(value, "m2");
+  return detail::MakeLiteralQuantity<Area>(value, "m2");
 }
 
 consteval auto operator""_km2(unsigned long long value) -> Area {
-  return MakeQuantity<Area>(value, "km2");
+  return detail::MakeLiteralQuantity<Area>(value, "km2");
 }
 
 consteval auto operator""_km2(long double value) -> Area {
-  return MakeQuantity<Area>(value, "km2");
+  return detail::MakeLiteralQuantity<Area>(value, "km2");
 }
 } // namespace ggems::units

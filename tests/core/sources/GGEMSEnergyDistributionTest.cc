@@ -139,25 +139,25 @@ TEST(GGEMSEnergyDistributionTypes, StableIdentifiersAndNames) {
 
 TEST(GGEMSEnergyUnits, GenericConversionUsesExactMilliElectronVolts) {
   auto const mev =
-      ggems::units::TryMakeQuantity<ggems::units::Energy>(0.120L, "MeV");
+      ggems::units::MakeQuantity<ggems::units::Energy>(0.120L, "MeV");
   ASSERT_TRUE(mev.has_value());
 
   EXPECT_EQ(mev->value, 120'000'000ULL);
 
   auto const zero =
-      ggems::units::TryMakeQuantity<ggems::units::Energy>(0.0L, "keV");
+      ggems::units::MakeQuantity<ggems::units::Energy>(0.0L, "keV");
   ASSERT_TRUE(zero.has_value());
   EXPECT_EQ(zero->value, 0ULL);
 
   auto const unsupported =
-      ggems::units::TryMakeQuantity<ggems::units::Energy>(1.0L, "joule");
+      ggems::units::MakeQuantity<ggems::units::Energy>(1.0L, "joule");
   auto const negative =
-      ggems::units::TryMakeQuantity<ggems::units::Energy>(-1.0L, "keV");
-  auto const nan = ggems::units::TryMakeQuantity<ggems::units::Energy>(
+      ggems::units::MakeQuantity<ggems::units::Energy>(-1.0L, "keV");
+  auto const nan = ggems::units::MakeQuantity<ggems::units::Energy>(
       std::numeric_limits<long double>::quiet_NaN(), "keV");
-  auto const infinity = ggems::units::TryMakeQuantity<ggems::units::Energy>(
+  auto const infinity = ggems::units::MakeQuantity<ggems::units::Energy>(
       std::numeric_limits<long double>::infinity(), "keV");
-  auto const overflow = ggems::units::TryMakeQuantity<ggems::units::Energy>(
+  auto const overflow = ggems::units::MakeQuantity<ggems::units::Energy>(
       std::ldexp(1.0L, 64), "meV");
 
   ASSERT_FALSE(negative.has_value());
