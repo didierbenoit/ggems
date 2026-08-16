@@ -1,3 +1,33 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Implements internal GGEMS logger metadata normalization.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
 #include <atomic>
 #include <cstddef>
 #include <format>
@@ -7,19 +37,48 @@
 #include <thread>
 #include <unordered_map>
 
+/// \endcond
 #include "GGEMS/core/detail/GGEMSLoggerMetadata.hh"
 
 namespace ggems::core::logging::detail {
 namespace {
 
-[[nodiscard]] auto IsAsciiSpace(char c) noexcept -> bool {
-  return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+// =============================================================================
+// =============================================================================
+
+/*!
+ * \brief Tests whether a character is one of the ASCII whitespace characters used by the simplifier.
+ *
+ * \param[in] character Character to test.
+ * \return True for space, tab, line feed, or carriage return.
+ */
+[[nodiscard]] auto IsAsciiSpace(char character) noexcept -> bool {
+  return character == ' ' || character == '\t' || character == '\n' ||
+         character == '\r';
 }
 
-[[nodiscard]] auto IsAsciiLower(char c) noexcept -> bool {
-  return c >= 'a' && c <= 'z';
+// =============================================================================
+// =============================================================================
+
+/*!
+ * \brief Tests whether a character is an ASCII lowercase letter.
+ *
+ * \param[in] character Character to test.
+ * \return True for ``a`` through ``z``.
+ */
+[[nodiscard]] auto IsAsciiLower(char character) noexcept -> bool {
+  return character >= 'a' && character <= 'z';
 }
 
+// =============================================================================
+// =============================================================================
+
+/*!
+ * \brief Removes trailing ASCII whitespace from a string view.
+ *
+ * \param[in] text View to trim.
+ * \return Trimmed subview of \p text.
+ */
 [[nodiscard]] auto TrimRight(std::string_view text) noexcept
     -> std::string_view {
   while (!text.empty() && IsAsciiSpace(text.back())) {
@@ -29,19 +88,28 @@ namespace {
   return text;
 }
 
+// =============================================================================
+// =============================================================================
+
+/*!
+ * \brief Finds the last top-level opening parenthesis outside template arguments.
+ *
+ * \param[in] text Function spelling to scan.
+ * \return Position of the last candidate parameter list, or ``npos``.
+ */
 [[nodiscard]] auto FindLastParameterList(std::string_view text) noexcept
     -> std::size_t {
   std::size_t angle_depth = 0;
   std::size_t last = std::string_view::npos;
 
   for (std::size_t i = 0; i < text.size(); ++i) {
-    char const c = text[i];
+    char const character = text[i];
 
-    if (c == '<') {
+    if (character == '<') {
       ++angle_depth;
-    } else if (c == '>' && angle_depth > 0) {
+    } else if (character == '>' && angle_depth > 0) {
       --angle_depth;
-    } else if (c == '(' && angle_depth == 0) {
+    } else if (character == '(' && angle_depth == 0) {
       last = i;
     }
   }
@@ -49,19 +117,28 @@ namespace {
   return last;
 }
 
+// =============================================================================
+// =============================================================================
+
+/*!
+ * \brief Removes a compiler-provided return-type prefix from a function spelling.
+ *
+ * \param[in] text Function spelling to simplify.
+ * \return Subview beginning after the last top-level ASCII space when present.
+ */
 [[nodiscard]] auto RemoveReturnType(std::string_view text) noexcept
     -> std::string_view {
   std::size_t angle_depth = 0;
   std::size_t last_space = std::string_view::npos;
 
   for (std::size_t i = 0; i < text.size(); ++i) {
-    char const c = text[i];
+    char const character = text[i];
 
-    if (c == '<') {
+    if (character == '<') {
       ++angle_depth;
-    } else if (c == '>' && angle_depth > 0) {
+    } else if (character == '>' && angle_depth > 0) {
       --angle_depth;
-    } else if (angle_depth == 0 && IsAsciiSpace(c)) {
+    } else if (angle_depth == 0 && IsAsciiSpace(character)) {
       last_space = i;
     }
   }
@@ -73,6 +150,15 @@ namespace {
   return text;
 }
 
+// =============================================================================
+// =============================================================================
+
+/*!
+ * \brief Removes a trailing empty-call suffix from a function spelling.
+ *
+ * \param[in] text Function spelling to simplify.
+ * \return Simplified subview.
+ */
 [[nodiscard]] auto RemoveTrailingEmptyCall(std::string_view text) noexcept
     -> std::string_view {
   if (text.ends_with("()")) {
@@ -82,6 +168,15 @@ namespace {
   return text;
 }
 
+// =============================================================================
+// =============================================================================
+
+/*!
+ * \brief Removes supported compiler lambda suffix spellings.
+ *
+ * \param[in] text Function spelling to simplify.
+ * \return Simplified subview.
+ */
 [[nodiscard]] auto StripLambdaSuffix(std::string_view text) noexcept
     -> std::string_view {
   if (auto const pos = text.find("::<lambda"); pos != std::string_view::npos) {
@@ -95,6 +190,16 @@ namespace {
   return text;
 }
 
+// =============================================================================
+// =============================================================================
+
+/*!
+ * \brief Finds the last top-level C++ scope separator before a limit.
+ *
+ * \param[in] text Function spelling to scan.
+ * \param[in] limit Exclusive scan limit, or ``npos`` for the full view.
+ * \return Position of the last top-level ``::`` separator, or ``npos``.
+ */
 [[nodiscard]] auto
 FindLastTopLevelScope(std::string_view text,
                       std::size_t limit = std::string_view::npos) noexcept
@@ -107,13 +212,13 @@ FindLastTopLevelScope(std::string_view text,
   std::size_t last = std::string_view::npos;
 
   for (std::size_t i = 0; i + 1 < limit; ++i) {
-    char const c = text[i];
+    char const character = text[i];
 
-    if (c == '<') {
+    if (character == '<') {
       ++angle_depth;
-    } else if (c == '>' && angle_depth > 0) {
+    } else if (character == '>' && angle_depth > 0) {
       --angle_depth;
-    } else if (angle_depth == 0 && c == ':' && text[i + 1] == ':') {
+    } else if (angle_depth == 0 && character == ':' && text[i + 1] == ':') {
       last = i;
       ++i;
     }
@@ -122,6 +227,15 @@ FindLastTopLevelScope(std::string_view text,
   return last;
 }
 
+// =============================================================================
+// =============================================================================
+
+/*!
+ * \brief Removes template arguments attached to the final function name.
+ *
+ * \param[in] text Function spelling to simplify.
+ * \return Simplified subview.
+ */
 [[nodiscard]] auto
 StripFunctionTemplateArguments(std::string_view text) noexcept
     -> std::string_view {
@@ -132,15 +246,15 @@ StripFunctionTemplateArguments(std::string_view text) noexcept
   std::size_t angle_depth = 0;
 
   for (std::size_t i = start; i < text.size(); ++i) {
-    char const c = text[i];
+    char const character = text[i];
 
-    if (c == '<') {
+    if (character == '<') {
       if (angle_depth == 0) {
         return text.substr(0, i);
       }
 
       ++angle_depth;
-    } else if (c == '>' && angle_depth > 0) {
+    } else if (character == '>' && angle_depth > 0) {
       --angle_depth;
     }
   }
@@ -148,6 +262,15 @@ StripFunctionTemplateArguments(std::string_view text) noexcept
   return text;
 }
 
+// =============================================================================
+// =============================================================================
+
+/*!
+ * \brief Keeps the concise class/function scope used in log prefixes.
+ *
+ * \param[in] text Function spelling to simplify.
+ * \return View containing the retained final scopes.
+ */
 [[nodiscard]] auto KeepRelevantScopes(std::string_view text) noexcept
     -> std::string_view {
   auto const last = FindLastTopLevelScope(text);
@@ -178,13 +301,14 @@ StripFunctionTemplateArguments(std::string_view text) noexcept
 
 [[nodiscard]] auto ThreadTag() -> std::string {
   static std::atomic<unsigned> next{0};
-  static std::mutex m;
-  static std::unordered_map<std::thread::id, unsigned> map;
+  static std::mutex mutex;
+  static std::unordered_map<std::thread::id, unsigned> thread_tags;
 
-  thread_local unsigned idx = [&] {
-    std::scoped_lock lock(m);
-    auto [it, inserted] = map.emplace(std::this_thread::get_id(), next++);
-    return it->second;
+  thread_local unsigned idx = [&]() -> unsigned {
+    std::scoped_lock lock(mutex);
+    auto const iterator =
+        thread_tags.emplace(std::this_thread::get_id(), next++).first;
+    return iterator->second;
   }();
 
   return std::format("T{}", idx);

@@ -1,3 +1,33 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Implements GGEMS log formatting, sinks, and singleton dispatch.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
 #include <iostream>
 #include <format>
 #include <string>
@@ -15,6 +45,7 @@
 #include <cstdint>
 #include <source_location>
 
+/// \endcond
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/GGEMSException.hh"
 
@@ -27,6 +58,12 @@ namespace ggems::core {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Maps a log severity to its GGEMS display color.
+ *
+ * \param[in] lvl Log severity.
+ * \return Color used for the rendered log prefix.
+ */
 static auto LogLevelColor(LogLevel lvl) -> render::ColorKey {
   switch (lvl) {
   case LogLevel::Debug:
@@ -44,6 +81,14 @@ static auto LogLevelColor(LogLevel lvl) -> render::ColorKey {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Builds the textual severity label shown in a log prefix.
+ *
+ * Informational records with positive depth use labels such as ``INFO2``.
+ *
+ * \param[in] rec Record whose severity and depth are formatted.
+ * \return Textual severity label.
+ */
 static auto LogLevelName(LogRecord const &rec) -> std::string {
   switch (rec.level) {
   case LogLevel::Debug:
@@ -64,6 +109,12 @@ static auto LogLevelName(LogRecord const &rec) -> std::string {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Formats a system-clock timestamp in local time with millisecond precision.
+ *
+ * \param[in] time_point Timestamp to format.
+ * \return Timestamp formatted as ``YYYY-MM-DD HH:MM:SS.mmm``.
+ */
 static auto
 FormatTimestamp(std::chrono::system_clock::time_point const &time_point)
     -> std::string {
@@ -89,6 +140,12 @@ FormatTimestamp(std::chrono::system_clock::time_point const &time_point)
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Reads an environment variable without transferring platform-owned storage.
+ *
+ * \param[in] name Environment-variable name.
+ * \return Variable value when present, otherwise an empty optional.
+ */
 [[nodiscard]] auto GetEnvVar(const char *name) -> std::optional<std::string> {
 #if defined(_WIN32)
   char *buffer = nullptr;
