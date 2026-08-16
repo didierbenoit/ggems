@@ -37,11 +37,12 @@
 
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/GGEMSLogMacros.hh"
-#include "GGEMS/core/units/GGEMSQuantity.hh"
 #include "GGEMS/core/units/GGEMSBytesUnits.hh"
+#include "GGEMS/core/units/GGEMSUnitFormatting.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMMemoryKind.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
 

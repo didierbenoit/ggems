@@ -5,12 +5,11 @@
 #include <string_view>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace ggems::units {
 
-struct VolumeUnitSet {
-  using dimension = VolumeDim;
-};
+struct VolumeUnitSet {};
 
 template <> struct UnitRegistry<VolumeUnitSet> {
   static constexpr std::array<UnitDefinition, 7U> units{{
@@ -39,11 +38,10 @@ template <> struct UnitRegistry<VolumeUnitSet> {
   }};
 };
 
-struct VolumeFamily {
-  using dimension = VolumeDim;
+struct VolumeTag {};
+
+template <> struct QuantityTraits<VolumeTag> {
   using unit_set = VolumeUnitSet;
-  using representation = long double;
-  static constexpr std::string_view name{"Volume"};
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::AutomaticScale};
@@ -51,10 +49,10 @@ struct VolumeFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-using Volume = Quantity<VolumeFamily>;
+using Volume = Quantity<VolumeTag, long double>;
 
 static_assert(ValidateUnitSet<VolumeUnitSet>());
-static_assert(ValidateFamily<VolumeFamily>());
+static_assert(ValidateQuantityTraits<VolumeTag, long double>());
 
 consteval auto operator""_pm3(unsigned long long value) -> Volume {
   return detail::MakeLiteralQuantity<Volume>(value, "pm3");

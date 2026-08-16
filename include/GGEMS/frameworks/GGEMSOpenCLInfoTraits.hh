@@ -44,7 +44,8 @@
 #include "GGEMS/core/units/GGEMSFrequencyUnits.hh"
 #include "GGEMS/core/units/GGEMSBytesUnits.hh"
 #include "GGEMS/core/units/GGEMSBitsUnits.hh"
-#include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
+#include "GGEMS/core/units/GGEMSUnitFormatting.hh"
 
 namespace ggems::ocl {
 /// \cond

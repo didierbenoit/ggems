@@ -21,6 +21,7 @@
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/core/units/GGEMSLengthUnits.hh"
+#include "GGEMS/core/units/GGEMSUnitFormatting.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
 
 namespace ggems::core::observer {

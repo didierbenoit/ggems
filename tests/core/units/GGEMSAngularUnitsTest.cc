@@ -1,11 +1,10 @@
 #include <cmath>
 #include <format>
-#include <string>
 
 #include <gtest/gtest.h>
 
-#include "GGEMS/core/units/GGEMSQuantity.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
+#include "GGEMS/core/units/GGEMSUnitFormatting.hh"
 
 namespace {
 

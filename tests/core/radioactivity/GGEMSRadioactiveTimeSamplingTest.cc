@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
+#include <string>
 #include <limits>
 #include <numbers>
 #include <span>
@@ -14,6 +15,7 @@
 #include "GGEMS/core/radioactivity/GGEMSRadioactiveTimeSampling.hh"
 #include "GGEMS/core/units/GGEMSBytesUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMHostAccess.hh"

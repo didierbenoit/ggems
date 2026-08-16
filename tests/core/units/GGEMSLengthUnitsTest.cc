@@ -7,8 +7,8 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMS/core/units/GGEMSQuantity.hh"
 #include "GGEMS/core/units/GGEMSLengthUnits.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace {
 

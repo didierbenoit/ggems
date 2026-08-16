@@ -30,12 +30,13 @@
 #include "GGEMS/core/transport/GGEMSTransportWorkload.hh"
 #include "GGEMS/core/transport/GGEMSTransportWorkloadPlan.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMHostAccess.hh"
 #include "GGEMS/core/units/GGEMSBytesUnits.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
-#include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace {
 

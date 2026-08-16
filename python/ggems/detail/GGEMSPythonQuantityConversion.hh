@@ -6,6 +6,7 @@
 #include <pybind11/pybind11.h>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace ggems::python::detail {
 

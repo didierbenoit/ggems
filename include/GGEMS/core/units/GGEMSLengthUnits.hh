@@ -6,12 +6,12 @@
 #include <string_view>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
+#include "GGEMS/core/units/GGEMSUnitFormatting.hh"
 
 namespace ggems::units {
 
-struct LengthUnitSet {
-  using dimension = LengthDim;
-};
+struct LengthUnitSet {};
 
 template <> struct UnitRegistry<LengthUnitSet> {
   static constexpr std::array<UnitDefinition, 7U> units{{
@@ -34,11 +34,10 @@ template <> struct UnitRegistry<LengthUnitSet> {
   }};
 };
 
-struct LengthFamily {
-  using dimension = LengthDim;
+struct LengthTag {};
+
+template <> struct QuantityTraits<LengthTag> {
   using unit_set = LengthUnitSet;
-  using representation = std::uint64_t;
-  static constexpr std::string_view name{"Length"};
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::AutomaticScale};
@@ -46,11 +45,10 @@ struct LengthFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-struct PositionCoordinateFamily {
-  using dimension = LengthDim;
+struct PositionCoordinateTag {};
+
+template <> struct QuantityTraits<PositionCoordinateTag> {
   using unit_set = LengthUnitSet;
-  using representation = std::int64_t;
-  static constexpr std::string_view name{"PositionCoordinate"};
   static constexpr QuantityDomain domain{QuantityDomain::Signed};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::AutomaticScale};
@@ -58,11 +56,10 @@ struct PositionCoordinateFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-struct DisplacementFamily {
-  using dimension = LengthDim;
+struct DisplacementTag {};
+
+template <> struct QuantityTraits<DisplacementTag> {
   using unit_set = LengthUnitSet;
-  using representation = std::int64_t;
-  static constexpr std::string_view name{"Displacement"};
   static constexpr QuantityDomain domain{QuantityDomain::Signed};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::AutomaticScale};
@@ -70,14 +67,14 @@ struct DisplacementFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-using Length = Quantity<LengthFamily>;
-using PositionCoordinate = Quantity<PositionCoordinateFamily>;
-using Displacement = Quantity<DisplacementFamily>;
+using Length = Quantity<LengthTag, std::uint64_t>;
+using PositionCoordinate = Quantity<PositionCoordinateTag, std::int64_t>;
+using Displacement = Quantity<DisplacementTag, std::int64_t>;
 
 static_assert(ValidateUnitSet<LengthUnitSet>());
-static_assert(ValidateFamily<LengthFamily>());
-static_assert(ValidateFamily<PositionCoordinateFamily>());
-static_assert(ValidateFamily<DisplacementFamily>());
+static_assert(ValidateQuantityTraits<LengthTag, std::uint64_t>());
+static_assert(ValidateQuantityTraits<PositionCoordinateTag, std::int64_t>());
+static_assert(ValidateQuantityTraits<DisplacementTag, std::int64_t>());
 
 [[nodiscard]] inline auto HumanReadableSignedLength(std::int64_t value_pm,
                                                     std::int8_t precision = 7,

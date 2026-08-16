@@ -3,13 +3,17 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
+#include <string>
+#include <utility>
 
 #include <gtest/gtest.h>
 
 #include "GGEMS/frameworks/GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/core/particles/GGEMSParticleState.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/core/units/GGEMSBytesUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
 

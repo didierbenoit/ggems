@@ -5,12 +5,11 @@
 #include <string_view>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace ggems::units {
 
-struct DensityUnitSet {
-  using dimension = DensityDim;
-};
+struct DensityUnitSet {};
 
 template <> struct UnitRegistry<DensityUnitSet> {
   static constexpr std::array<UnitDefinition, 2U> units{{
@@ -24,11 +23,10 @@ template <> struct UnitRegistry<DensityUnitSet> {
   }};
 };
 
-struct DensityFamily {
-  using dimension = DensityDim;
+struct DensityTag {};
+
+template <> struct QuantityTraits<DensityTag> {
   using unit_set = DensityUnitSet;
-  using representation = long double;
-  static constexpr std::string_view name{"Density"};
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::FixedUnit};
@@ -36,10 +34,10 @@ struct DensityFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-using Density = Quantity<DensityFamily>;
+using Density = Quantity<DensityTag, long double>;
 
 static_assert(ValidateUnitSet<DensityUnitSet>());
-static_assert(ValidateFamily<DensityFamily>());
+static_assert(ValidateQuantityTraits<DensityTag, long double>());
 
 consteval auto operator""_pg_pm3(unsigned long long value) -> Density {
   return detail::MakeLiteralQuantity<Density>(value, "pg/pm3");

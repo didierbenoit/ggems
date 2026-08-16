@@ -5,12 +5,11 @@
 #include <string_view>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace ggems::units {
 
-struct DoseUnitSet {
-  using dimension = DoseDim;
-};
+struct DoseUnitSet {};
 
 template <> struct UnitRegistry<DoseUnitSet> {
   static constexpr std::array<UnitDefinition, 4U> units{{
@@ -27,11 +26,10 @@ template <> struct UnitRegistry<DoseUnitSet> {
   }};
 };
 
-struct DoseFamily {
-  using dimension = DoseDim;
+struct DoseTag {};
+
+template <> struct QuantityTraits<DoseTag> {
   using unit_set = DoseUnitSet;
-  using representation = std::uint64_t;
-  static constexpr std::string_view name{"Dose"};
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::AutomaticScale};
@@ -39,10 +37,10 @@ struct DoseFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-using Dose = Quantity<DoseFamily>;
+using Dose = Quantity<DoseTag, std::uint64_t>;
 
 static_assert(ValidateUnitSet<DoseUnitSet>());
-static_assert(ValidateFamily<DoseFamily>());
+static_assert(ValidateQuantityTraits<DoseTag, std::uint64_t>());
 
 consteval auto operator""_meV_pg(unsigned long long value) -> Dose {
   return detail::MakeLiteralQuantity<Dose>(value, "meV/pg");

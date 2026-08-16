@@ -5,14 +5,13 @@
 #include <string_view>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 #include "GGEMS/core/units/GGEMSLengthUnits.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 
 namespace ggems::units {
 
-struct SpeedUnitSet {
-  using dimension = SpeedDim;
-};
+struct SpeedUnitSet {};
 
 template <> struct UnitRegistry<SpeedUnitSet> {
   static constexpr std::array<UnitDefinition, 2U> units{{
@@ -24,11 +23,10 @@ template <> struct UnitRegistry<SpeedUnitSet> {
   }};
 };
 
-struct SpeedFamily {
-  using dimension = SpeedDim;
+struct SpeedTag {};
+
+template <> struct QuantityTraits<SpeedTag> {
   using unit_set = SpeedUnitSet;
-  using representation = long double;
-  static constexpr std::string_view name{"Speed"};
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::FixedUnit};
@@ -36,10 +34,10 @@ struct SpeedFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-using Speed = Quantity<SpeedFamily>;
+using Speed = Quantity<SpeedTag, long double>;
 
 static_assert(ValidateUnitSet<SpeedUnitSet>());
-static_assert(ValidateFamily<SpeedFamily>());
+static_assert(ValidateQuantityTraits<SpeedTag, long double>());
 
 consteval auto operator""_pm_ps(unsigned long long value) -> Speed {
   return detail::MakeLiteralQuantity<Speed>(value, "pm/ps");

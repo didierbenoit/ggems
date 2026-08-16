@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <filesystem>
 #include <format>
 #include <limits>
 #include <span>
@@ -11,9 +13,16 @@
 
 #include "GGEMS/frameworks/GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/core/GGEMSException.hh"
+#include "GGEMS/core/observer/GGEMSObserverRecord.hh"
+#include "GGEMS/core/particles/GGEMSParticleState.hh"
+#include "GGEMS/core/sources/GGEMSSourceRecord.hh"
+#include "GGEMS/core/sources/GGEMSSourceRunRange.hh"
+#include "GGEMS/core/transport/GGEMSTransportCounters.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/random/GGEMSRandomState.hh"
+#include "GGEMS/core/units/GGEMSBytesUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLProfiler.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMHostAccess.hh"

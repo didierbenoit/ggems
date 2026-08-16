@@ -5,12 +5,11 @@
 #include <string_view>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace ggems::units {
 
-struct FrequencyUnitSet {
-  using dimension = FrequencyDim;
-};
+struct FrequencyUnitSet {};
 
 template <> struct UnitRegistry<FrequencyUnitSet> {
   static constexpr std::array<UnitDefinition, 5U> units{{
@@ -27,11 +26,10 @@ template <> struct UnitRegistry<FrequencyUnitSet> {
   }};
 };
 
-struct FrequencyFamily {
-  using dimension = FrequencyDim;
+struct FrequencyTag {};
+
+template <> struct QuantityTraits<FrequencyTag> {
   using unit_set = FrequencyUnitSet;
-  using representation = std::uint64_t;
-  static constexpr std::string_view name{"Frequency"};
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::AutomaticScale};
@@ -39,10 +37,10 @@ struct FrequencyFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-using Frequency = Quantity<FrequencyFamily>;
+using Frequency = Quantity<FrequencyTag, std::uint64_t>;
 
 static_assert(ValidateUnitSet<FrequencyUnitSet>());
-static_assert(ValidateFamily<FrequencyFamily>());
+static_assert(ValidateQuantityTraits<FrequencyTag, std::uint64_t>());
 
 consteval auto operator""_Hz(unsigned long long value) -> Frequency {
   return detail::MakeLiteralQuantity<Frequency>(value, "Hz");

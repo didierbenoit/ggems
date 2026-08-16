@@ -5,12 +5,11 @@
 #include <string_view>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace ggems::units {
 
-struct MassUnitSet {
-  using dimension = MassDim;
-};
+struct MassUnitSet {};
 
 template <> struct UnitRegistry<MassUnitSet> {
   static constexpr std::array<UnitDefinition, 6U> units{{
@@ -30,11 +29,10 @@ template <> struct UnitRegistry<MassUnitSet> {
   }};
 };
 
-struct MassFamily {
-  using dimension = MassDim;
+struct MassTag {};
+
+template <> struct QuantityTraits<MassTag> {
   using unit_set = MassUnitSet;
-  using representation = std::uint64_t;
-  static constexpr std::string_view name{"Mass"};
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::AutomaticScale};
@@ -42,10 +40,10 @@ struct MassFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-using Mass = Quantity<MassFamily>;
+using Mass = Quantity<MassTag, std::uint64_t>;
 
 static_assert(ValidateUnitSet<MassUnitSet>());
-static_assert(ValidateFamily<MassFamily>());
+static_assert(ValidateQuantityTraits<MassTag, std::uint64_t>());
 
 consteval auto operator""_pg(unsigned long long value) -> Mass {
   return detail::MakeLiteralQuantity<Mass>(value, "pg");

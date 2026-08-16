@@ -5,12 +5,11 @@
 #include <string_view>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace ggems::units {
 
-struct BytesUnitSet {
-  using dimension = InformationDim;
-};
+struct BytesUnitSet {};
 
 template <> struct UnitRegistry<BytesUnitSet> {
   static constexpr std::array<UnitDefinition, 9U> units{{
@@ -39,11 +38,10 @@ template <> struct UnitRegistry<BytesUnitSet> {
   }};
 };
 
-struct BytesFamily {
-  using dimension = InformationDim;
+struct BytesTag {};
+
+template <> struct QuantityTraits<BytesTag> {
   using unit_set = BytesUnitSet;
-  using representation = std::uint64_t;
-  static constexpr std::string_view name{"Bytes"};
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::AutomaticScale};
@@ -51,10 +49,10 @@ struct BytesFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-using Bytes = Quantity<BytesFamily>;
+using Bytes = Quantity<BytesTag, std::uint64_t>;
 
 static_assert(ValidateUnitSet<BytesUnitSet>());
-static_assert(ValidateFamily<BytesFamily>());
+static_assert(ValidateQuantityTraits<BytesTag, std::uint64_t>());
 
 consteval auto operator""_B(unsigned long long value) -> Bytes {
   return detail::MakeLiteralQuantity<Bytes>(value, "B");

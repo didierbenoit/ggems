@@ -5,12 +5,11 @@
 #include <array>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace ggems::units {
 
-struct CrossSectionUnitSet {
-  using dimension = AreaDim;
-};
+struct CrossSectionUnitSet {};
 
 template <> struct UnitRegistry<CrossSectionUnitSet> {
   static constexpr std::array<UnitDefinition, 6U> units{{
@@ -30,11 +29,10 @@ template <> struct UnitRegistry<CrossSectionUnitSet> {
   }};
 };
 
-struct CrossSectionFamily {
-  using dimension = AreaDim;
+struct CrossSectionTag {};
+
+template <> struct QuantityTraits<CrossSectionTag> {
   using unit_set = CrossSectionUnitSet;
-  using representation = std::uint64_t;
-  static constexpr std::string_view name{"CrossSection"};
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::AutomaticScale};
@@ -42,10 +40,10 @@ struct CrossSectionFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-using CrossSection = Quantity<CrossSectionFamily>;
+using CrossSection = Quantity<CrossSectionTag, std::uint64_t>;
 
 static_assert(ValidateUnitSet<CrossSectionUnitSet>());
-static_assert(ValidateFamily<CrossSectionFamily>());
+static_assert(ValidateQuantityTraits<CrossSectionTag, std::uint64_t>());
 
 consteval auto operator""_pb(unsigned long long value) -> CrossSection {
   return detail::MakeLiteralQuantity<CrossSection>(value, "pb");

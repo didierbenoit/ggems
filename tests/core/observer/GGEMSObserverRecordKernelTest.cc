@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
+#include <string>
 #include <utility>
 
 #include <gtest/gtest.h>
@@ -11,6 +12,7 @@
 #include "GGEMS/core/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/core/units/GGEMSBytesUnits.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"

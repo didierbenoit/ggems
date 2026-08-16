@@ -6,12 +6,11 @@
 #include <string_view>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace ggems::units {
 
-struct AngleUnitSet {
-  using dimension = DimensionlessDim;
-};
+struct AngleUnitSet {};
 
 template <> struct UnitRegistry<AngleUnitSet> {
   static constexpr std::array<UnitDefinition, 2U> units{{
@@ -23,11 +22,10 @@ template <> struct UnitRegistry<AngleUnitSet> {
   }};
 };
 
-struct AngleFamily {
-  using dimension = DimensionlessDim;
+struct AngleTag {};
+
+template <> struct QuantityTraits<AngleTag> {
   using unit_set = AngleUnitSet;
-  using representation = long double;
-  static constexpr std::string_view name{"Angle"};
   static constexpr QuantityDomain domain{QuantityDomain::Signed};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::FixedUnit};
@@ -35,10 +33,10 @@ struct AngleFamily {
   static constexpr std::int8_t default_precision{3};
 };
 
-using Angle = Quantity<AngleFamily>;
+using Angle = Quantity<AngleTag, long double>;
 
 static_assert(ValidateUnitSet<AngleUnitSet>());
-static_assert(ValidateFamily<AngleFamily>());
+static_assert(ValidateQuantityTraits<AngleTag, long double>());
 
 namespace detail {
 inline constexpr long double k_pi{std::numbers::pi_v<long double>};

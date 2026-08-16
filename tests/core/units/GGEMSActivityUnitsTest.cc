@@ -5,9 +5,10 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMS/core/units/GGEMSQuantity.hh"
 #include "GGEMS/core/units/GGEMSActivityUnits.hh"
 #include "GGEMS/core/units/GGEMSFrequencyUnits.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
+#include "GGEMS/core/units/GGEMSUnitFormatting.hh"
 
 namespace {
 

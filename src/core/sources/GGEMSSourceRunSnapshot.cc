@@ -29,7 +29,7 @@
 #include "GGEMS/core/sources/GGEMSSourceEmissionRange.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
-#include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace ggems::core::sources {
 

@@ -5,12 +5,11 @@
 #include <string_view>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace ggems::units {
 
-struct EnergyUnitSet {
-  using dimension = EnergyDim;
-};
+struct EnergyUnitSet {};
 
 template <> struct UnitRegistry<EnergyUnitSet> {
   static constexpr std::array<UnitDefinition, 6U> units{{
@@ -29,11 +28,10 @@ template <> struct UnitRegistry<EnergyUnitSet> {
   }};
 };
 
-struct EnergyFamily {
-  using dimension = EnergyDim;
+struct EnergyTag {};
+
+template <> struct QuantityTraits<EnergyTag> {
   using unit_set = EnergyUnitSet;
-  using representation = std::uint64_t;
-  static constexpr std::string_view name{"Energy"};
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::AutomaticScale};
@@ -41,11 +39,10 @@ struct EnergyFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-struct EnergyChangeFamily {
-  using dimension = EnergyDim;
+struct EnergyChangeTag {};
+
+template <> struct QuantityTraits<EnergyChangeTag> {
   using unit_set = EnergyUnitSet;
-  using representation = std::int64_t;
-  static constexpr std::string_view name{"EnergyChange"};
   static constexpr QuantityDomain domain{QuantityDomain::Signed};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::AutomaticScale};
@@ -53,12 +50,12 @@ struct EnergyChangeFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-using Energy = Quantity<EnergyFamily>;
-using EnergyChange = Quantity<EnergyChangeFamily>;
+using Energy = Quantity<EnergyTag, std::uint64_t>;
+using EnergyChange = Quantity<EnergyChangeTag, std::int64_t>;
 
 static_assert(ValidateUnitSet<EnergyUnitSet>());
-static_assert(ValidateFamily<EnergyFamily>());
-static_assert(ValidateFamily<EnergyChangeFamily>());
+static_assert(ValidateQuantityTraits<EnergyTag, std::uint64_t>());
+static_assert(ValidateQuantityTraits<EnergyChangeTag, std::int64_t>());
 
 consteval auto operator""_meV(unsigned long long value) -> Energy {
   return detail::MakeLiteralQuantity<Energy>(value, "meV");

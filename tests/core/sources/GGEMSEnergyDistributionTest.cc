@@ -20,7 +20,7 @@
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/core/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/core/units/GGEMSEnergyUnits.hh"
-#include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace {
 

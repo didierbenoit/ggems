@@ -5,25 +5,19 @@
 #include <string_view>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace ggems::units {
 
-struct ActivityUnitSet {
-  using dimension = FrequencyDim;
-};
+struct ActivityUnitSet {};
 
 template <> struct UnitRegistry<ActivityUnitSet> {
   static constexpr std::array<UnitDefinition, 8U> units{{
-      {.symbol = "Bq",
-       .scale = DecimalScale(0)},
-      {.symbol = "kBq",
-       .scale = DecimalScale(3)},
-      {.symbol = "MBq",
-       .scale = DecimalScale(6)},
-      {.symbol = "GBq",
-       .scale = DecimalScale(9)},
-      {.symbol = "TBq",
-       .scale = DecimalScale(12)},
+      {.symbol = "Bq", .scale = DecimalScale(0)},
+      {.symbol = "kBq", .scale = DecimalScale(3)},
+      {.symbol = "MBq", .scale = DecimalScale(6)},
+      {.symbol = "GBq", .scale = DecimalScale(9)},
+      {.symbol = "TBq", .scale = DecimalScale(12)},
       {.symbol = "Ci",
        .scale = DecimalScale(0, 37'000'000'000ULL),
        .automatic_display = false},
@@ -37,11 +31,10 @@ template <> struct UnitRegistry<ActivityUnitSet> {
   }};
 };
 
-struct ActivityFamily {
-  using dimension = FrequencyDim;
+struct ActivityTag {};
+
+template <> struct QuantityTraits<ActivityTag> {
   using unit_set = ActivityUnitSet;
-  using representation = long double;
-  static constexpr std::string_view name{"Activity"};
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::AutomaticScale};
@@ -49,10 +42,10 @@ struct ActivityFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-using Activity = Quantity<ActivityFamily>;
+using Activity = Quantity<ActivityTag, long double>;
 
 static_assert(ValidateUnitSet<ActivityUnitSet>());
-static_assert(ValidateFamily<ActivityFamily>());
+static_assert(ValidateQuantityTraits<ActivityTag, long double>());
 
 consteval auto operator""_Bq(unsigned long long value) -> Activity {
   return detail::MakeLiteralQuantity<Activity>(value, "Bq");

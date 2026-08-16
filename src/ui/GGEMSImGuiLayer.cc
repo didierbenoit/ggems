@@ -24,7 +24,7 @@
 #include "GGEMS/core/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
-#include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitFormatting.hh"
 
 namespace ggems::ui {
 

@@ -19,12 +19,11 @@
 #include "GGEMS/core/sources/GGEMSSourcePopulationRecord.hh"
 #include "GGEMS/core/sources/GGEMSSourceValidation.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
-#include "GGEMS/core/units/GGEMSQuantity.hh"
-#include "GGEMS/core/units/GGEMSActivityUnits.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/core/units/GGEMSLengthUnits.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
+#include "GGEMS/core/units/GGEMSUnitFormatting.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 
 namespace ggems::core::sources {

@@ -12,7 +12,7 @@
 #include "GGEMS/core/observer/GGEMSObserverTypes.hh"
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/units/GGEMSLengthUnits.hh"
-#include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace ggems::render {
 namespace {

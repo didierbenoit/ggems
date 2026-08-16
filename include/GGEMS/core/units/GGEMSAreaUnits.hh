@@ -5,12 +5,11 @@
 #include <string_view>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace ggems::units {
 
-struct AreaUnitSet {
-  using dimension = AreaDim;
-};
+struct AreaUnitSet {};
 
 template <> struct UnitRegistry<AreaUnitSet> {
   static constexpr std::array<UnitDefinition, 7U> units{{
@@ -39,11 +38,10 @@ template <> struct UnitRegistry<AreaUnitSet> {
   }};
 };
 
-struct AreaFamily {
-  using dimension = AreaDim;
+struct AreaTag {};
+
+template <> struct QuantityTraits<AreaTag> {
   using unit_set = AreaUnitSet;
-  using representation = long double;
-  static constexpr std::string_view name{"Area"};
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::AutomaticScale};
@@ -51,10 +49,10 @@ struct AreaFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-using Area = Quantity<AreaFamily>;
+using Area = Quantity<AreaTag, long double>;
 
 static_assert(ValidateUnitSet<AreaUnitSet>());
-static_assert(ValidateFamily<AreaFamily>());
+static_assert(ValidateQuantityTraits<AreaTag, long double>());
 
 consteval auto operator""_pm2(unsigned long long value) -> Area {
   return detail::MakeLiteralQuantity<Area>(value, "pm2");

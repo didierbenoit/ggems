@@ -5,12 +5,11 @@
 #include <string_view>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 
 namespace ggems::units {
 
-struct TimeUnitSet {
-  using dimension = TimeDim;
-};
+struct TimeUnitSet {};
 
 template <> struct UnitRegistry<TimeUnitSet> {
   static constexpr std::array<UnitDefinition, 7U> units{{
@@ -34,11 +33,10 @@ template <> struct UnitRegistry<TimeUnitSet> {
   }};
 };
 
-struct DurationFamily {
-  using dimension = TimeDim;
+struct DurationTag {};
+
+template <> struct QuantityTraits<DurationTag> {
   using unit_set = TimeUnitSet;
-  using representation = std::uint64_t;
-  static constexpr std::string_view name{"Duration"};
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::DurationBreakdown};
@@ -46,11 +44,10 @@ struct DurationFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-struct TimePointFamily {
-  using dimension = TimeDim;
+struct TimePointTag {};
+
+template <> struct QuantityTraits<TimePointTag> {
   using unit_set = TimeUnitSet;
-  using representation = std::uint64_t;
-  static constexpr std::string_view name{"TimePoint"};
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::AutomaticScale};
@@ -58,13 +55,13 @@ struct TimePointFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-using Duration = Quantity<DurationFamily>;
-using TimePoint = Quantity<TimePointFamily>;
+using Duration = Quantity<DurationTag, std::uint64_t>;
+using TimePoint = Quantity<TimePointTag, std::uint64_t>;
 using Time = Duration;
 
 static_assert(ValidateUnitSet<TimeUnitSet>());
-static_assert(ValidateFamily<DurationFamily>());
-static_assert(ValidateFamily<TimePointFamily>());
+static_assert(ValidateQuantityTraits<DurationTag, std::uint64_t>());
+static_assert(ValidateQuantityTraits<TimePointTag, std::uint64_t>());
 
 consteval auto operator""_ps(unsigned long long value) -> Time {
   return detail::MakeLiteralQuantity<Time>(value, "ps");

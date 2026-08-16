@@ -8,13 +8,12 @@
 #include <type_traits>
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 #include "GGEMS/core/units/GGEMSBytesUnits.hh"
 
 namespace ggems::units {
 
-struct BitsUnitSet {
-  using dimension = InformationDim;
-};
+struct BitsUnitSet {};
 
 template <> struct UnitRegistry<BitsUnitSet> {
   static constexpr std::array<UnitDefinition, 9U> units{{
@@ -43,11 +42,10 @@ template <> struct UnitRegistry<BitsUnitSet> {
   }};
 };
 
-struct BitsFamily {
-  using dimension = InformationDim;
+struct BitsTag {};
+
+template <> struct QuantityTraits<BitsTag> {
   using unit_set = BitsUnitSet;
-  using representation = std::uint64_t;
-  static constexpr std::string_view name{"Bits"};
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
   static constexpr QuantityFormatPolicy format_policy{
       QuantityFormatPolicy::AutomaticScale};
@@ -55,11 +53,10 @@ struct BitsFamily {
   static constexpr std::int8_t default_precision{7};
 };
 
-using Bits = Quantity<BitsFamily>;
+using Bits = Quantity<BitsTag, std::uint64_t>;
 
 static_assert(ValidateUnitSet<BitsUnitSet>());
-static_assert(ValidateFamily<BitsFamily>());
-static_assert(std::is_same_v<Bits::dimension, Bytes::dimension>);
+static_assert(ValidateQuantityTraits<BitsTag, std::uint64_t>());
 static_assert(!std::is_same_v<Bits, Bytes>);
 
 [[nodiscard]] constexpr auto TryConvertBytesToBits(Bytes bytes) noexcept

@@ -9,6 +9,9 @@
 #include <gtest/gtest.h>
 
 #include "GGEMS/core/GGEMSLogger.hh"
+#include "GGEMS/core/units/GGEMSQuantity.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
+#include "GGEMS/core/units/GGEMSUnitFormatting.hh"
 #include "GGEMS/core/units/GGEMSActivityUnits.hh"
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
 #include "GGEMS/core/units/GGEMSAreaUnits.hh"
@@ -24,7 +27,6 @@
 #include "GGEMS/core/units/GGEMSSpeedUnits.hh"
 #include "GGEMS/core/units/GGEMSTimeUnits.hh"
 #include "GGEMS/core/units/GGEMSVolumeUnits.hh"
-#include "GGEMS/core/units/GGEMSQuantity.hh"
 #include "GGEMSScopedLoggerEncoding.hh"
 
 namespace ggems::units {
@@ -32,17 +34,13 @@ namespace ggems::units {
 // =============================================================================
 // =============================================================================
 
-struct EmptyUnitSet {
-  using dimension = LengthDim;
-};
+struct EmptyUnitSet {};
 
 template <> struct UnitRegistry<EmptyUnitSet> {
   static constexpr std::array<UnitDefinition, 0U> units{};
 };
 
-struct EmptySymbolUnitSet {
-  using dimension = LengthDim;
-};
+struct EmptySymbolUnitSet {};
 
 template <> struct UnitRegistry<EmptySymbolUnitSet> {
   static constexpr std::array<UnitDefinition, 1U> units{{
@@ -50,9 +48,7 @@ template <> struct UnitRegistry<EmptySymbolUnitSet> {
   }};
 };
 
-struct DuplicateSymbolUnitSet {
-  using dimension = LengthDim;
-};
+struct DuplicateSymbolUnitSet {};
 
 template <> struct UnitRegistry<DuplicateSymbolUnitSet> {
   static constexpr std::array<UnitDefinition, 2U> units{{
@@ -61,14 +57,34 @@ template <> struct UnitRegistry<DuplicateSymbolUnitSet> {
   }};
 };
 
-struct InvalidScaleUnitSet {
-  using dimension = LengthDim;
-};
+struct InvalidScaleUnitSet {};
 
 template <> struct UnitRegistry<InvalidScaleUnitSet> {
   static constexpr std::array<UnitDefinition, 1U> units{{
       {.symbol = "invalid", .scale = SpecialScale(-1.0L)},
   }};
+};
+
+struct SignedUnsignedTag {};
+
+template <> struct QuantityTraits<SignedUnsignedTag> {
+  using unit_set = LengthUnitSet;
+  static constexpr QuantityDomain domain{QuantityDomain::Signed};
+  static constexpr QuantityFormatPolicy format_policy{
+      QuantityFormatPolicy::AutomaticScale};
+  static constexpr std::string_view fixed_display_unit{};
+  static constexpr std::int8_t default_precision{7};
+};
+
+struct MissingFixedUnitTag {};
+
+template <> struct QuantityTraits<MissingFixedUnitTag> {
+  using unit_set = LengthUnitSet;
+  static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
+  static constexpr QuantityFormatPolicy format_policy{
+      QuantityFormatPolicy::FixedUnit};
+  static constexpr std::string_view fixed_display_unit{"absent"};
+  static constexpr std::int8_t default_precision{7};
 };
 
 } // namespace ggems::units
@@ -89,30 +105,6 @@ concept Addable = requires(Left left, Right right) { left + right; };
 
 template <typename Left, typename Right>
 concept Comparable = requires(Left left, Right right) { left <=> right; };
-
-struct SignedUnsignedFamily {
-  using dimension = LengthDim;
-  using unit_set = LengthUnitSet;
-  using representation = std::uint64_t;
-  static constexpr std::string_view name{"SignedUnsigned"};
-  static constexpr QuantityDomain domain{QuantityDomain::Signed};
-  static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::AutomaticScale};
-  static constexpr std::string_view fixed_display_unit{};
-  static constexpr std::int8_t default_precision{7};
-};
-
-struct MissingFixedUnitFamily {
-  using dimension = LengthDim;
-  using unit_set = LengthUnitSet;
-  using representation = std::uint64_t;
-  static constexpr std::string_view name{"MissingFixedUnit"};
-  static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
-  static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::FixedUnit};
-  static constexpr std::string_view fixed_display_unit{"absent"};
-  static constexpr std::int8_t default_precision{7};
-};
 
 template <typename UnitSet>
 auto ExpectSelectedSymbols(std::string_view unit_set_name,
@@ -176,48 +168,42 @@ static_assert(ValidateUnitSet<SpeedUnitSet>());
 static_assert(ValidateUnitSet<TimeUnitSet>());
 static_assert(ValidateUnitSet<VolumeUnitSet>());
 
-static_assert(ValidateFamily<ActivityFamily>());
-static_assert(ValidateFamily<AngleFamily>());
-static_assert(ValidateFamily<AreaFamily>());
-static_assert(ValidateFamily<BitsFamily>());
-static_assert(ValidateFamily<BytesFamily>());
-static_assert(ValidateFamily<CrossSectionFamily>());
-static_assert(ValidateFamily<DensityFamily>());
-static_assert(ValidateFamily<DoseFamily>());
-static_assert(ValidateFamily<EnergyFamily>());
-static_assert(ValidateFamily<EnergyChangeFamily>());
-static_assert(ValidateFamily<FrequencyFamily>());
-static_assert(ValidateFamily<LengthFamily>());
-static_assert(ValidateFamily<PositionCoordinateFamily>());
-static_assert(ValidateFamily<DisplacementFamily>());
-static_assert(ValidateFamily<MassFamily>());
-static_assert(ValidateFamily<SpeedFamily>());
-static_assert(ValidateFamily<DurationFamily>());
-static_assert(ValidateFamily<TimePointFamily>());
-static_assert(ValidateFamily<VolumeFamily>());
+static_assert(ValidateQuantityTraits<ActivityTag, long double>());
+static_assert(ValidateQuantityTraits<AngleTag, long double>());
+static_assert(ValidateQuantityTraits<AreaTag, long double>());
+static_assert(ValidateQuantityTraits<BitsTag, std::uint64_t>());
+static_assert(ValidateQuantityTraits<BytesTag, std::uint64_t>());
+static_assert(ValidateQuantityTraits<CrossSectionTag, std::uint64_t>());
+static_assert(ValidateQuantityTraits<DensityTag, long double>());
+static_assert(ValidateQuantityTraits<DoseTag, std::uint64_t>());
+static_assert(ValidateQuantityTraits<EnergyTag, std::uint64_t>());
+static_assert(ValidateQuantityTraits<EnergyChangeTag, std::int64_t>());
+static_assert(ValidateQuantityTraits<FrequencyTag, std::uint64_t>());
+static_assert(ValidateQuantityTraits<LengthTag, std::uint64_t>());
+static_assert(ValidateQuantityTraits<PositionCoordinateTag, std::int64_t>());
+static_assert(ValidateQuantityTraits<DisplacementTag, std::int64_t>());
+static_assert(ValidateQuantityTraits<MassTag, std::uint64_t>());
+static_assert(ValidateQuantityTraits<SpeedTag, long double>());
+static_assert(ValidateQuantityTraits<DurationTag, std::uint64_t>());
+static_assert(ValidateQuantityTraits<TimePointTag, std::uint64_t>());
+static_assert(ValidateQuantityTraits<VolumeTag, long double>());
 
 static_assert(!ValidateUnitSet<EmptyUnitSet>());
 static_assert(!ValidateUnitSet<EmptySymbolUnitSet>());
 static_assert(!ValidateUnitSet<DuplicateSymbolUnitSet>());
 static_assert(!ValidateUnitSet<InvalidScaleUnitSet>());
-static_assert(!ValidateFamily<SignedUnsignedFamily>());
-static_assert(!ValidateFamily<MissingFixedUnitFamily>());
+static_assert(!ValidateQuantityTraits<SignedUnsignedTag, std::uint64_t>());
+static_assert(!ValidateQuantityTraits<MissingFixedUnitTag, std::uint64_t>());
 
 // =============================================================================
 // =============================================================================
 
-static_assert(std::is_same_v<Activity::dimension, Frequency::dimension>);
 static_assert(!std::is_same_v<Activity, Frequency>);
-static_assert(std::is_same_v<Area::dimension, CrossSection::dimension>);
 static_assert(!std::is_same_v<Area, CrossSection>);
-static_assert(std::is_same_v<Bits::dimension, Bytes::dimension>);
 static_assert(!std::is_same_v<Bits, Bytes>);
-static_assert(std::is_same_v<Length::dimension, PositionCoordinate::dimension>);
 static_assert(!std::is_same_v<Length, PositionCoordinate>);
 static_assert(!std::is_same_v<PositionCoordinate, Displacement>);
-static_assert(std::is_same_v<Energy::dimension, EnergyChange::dimension>);
 static_assert(!std::is_same_v<Energy, EnergyChange>);
-static_assert(std::is_same_v<Duration::dimension, TimePoint::dimension>);
 static_assert(!std::is_same_v<Duration, TimePoint>);
 static_assert(std::is_same_v<Time, Duration>);
 
@@ -531,7 +517,7 @@ TEST(GGEMSUnitRegistryContractTest, UsesEncodingForQuantityFormatter) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSUnitRegistryContractTest, AppliesFamilySpecificDisplayPolicies) {
+TEST(GGEMSUnitRegistryContractTest, AppliesQuantitySpecificDisplayPolicies) {
   ScopedLoggerEncoding const encoding(ggems::core::Encoding::Unicode);
 
   EXPECT_EQ(HumanReadable(Bytes{1'024ULL}), "1.0000000 KiB");
