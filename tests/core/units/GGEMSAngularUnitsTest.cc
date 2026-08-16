@@ -1,14 +1,21 @@
 #include <cmath>
 #include <format>
+#include <limits>
 
 #include <gtest/gtest.h>
 
 #include "GGEMS/core/units/GGEMSAngularUnits.hh"
+#include "GGEMS/core/units/GGEMSUnitConversion.hh"
 #include "GGEMS/core/units/GGEMSUnitFormatting.hh"
 
 namespace {
 
 constexpr long double k_tolerance{1.0e-12L};
+constexpr long double k_pi_reference{3.141592653589793238462643383279502884L};
+constexpr long double k_rounding_error_bound{8.0L};
+constexpr long double k_registered_token_tolerance{
+    k_rounding_error_bound * k_pi_reference *
+    std::numeric_limits<long double>::epsilon()};
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
@@ -27,6 +34,19 @@ TEST(GGEMSAngularUnits, DefaultAngleIsZeroRadians) {
   ggems::units::Angle angle{};
   ExpectNearLongDouble(ggems::units::ToRadians(angle), 0.0L);
   ExpectNearLongDouble(ggems::units::ToDegrees(angle), 0.0L);
+}
+
+TEST(GGEMSAngularUnits, ConvertsEveryRegisteredAngleToken) {
+  using namespace ggems::units;
+
+  auto const radians = MakeQuantity<Angle>(2.5L, "rad");
+  auto const degrees = MakeQuantity<Angle>(180.0L, "deg");
+
+  ASSERT_TRUE(radians.has_value());
+  ASSERT_TRUE(degrees.has_value());
+  EXPECT_EQ(radians->value, 2.5L);
+  ExpectNearLongDouble(degrees->value, k_pi_reference,
+                       k_registered_token_tolerance);
 }
 
 /* --------------------------------------------- */

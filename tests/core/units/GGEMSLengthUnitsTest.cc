@@ -7,11 +7,16 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/units/GGEMSLengthUnits.hh"
 #include "GGEMS/core/units/GGEMSUnitConversion.hh"
+#include "GGEMSScopedLoggerEncoding.hh"
 
 namespace {
 
+using ggems::test::ScopedLoggerEncoding;
+using ggems::units::Displacement;
+using ggems::units::HumanReadableSignedLength;
 using ggems::units::Length;
 using ggems::units::MakeQuantity;
 using ggems::units::PositionCoordinate;
@@ -82,6 +87,21 @@ TEST(GGEMSLengthUnits, ConvertsSignedPositionCoordinates) {
   for (auto const &test_case : cases) {
     auto const conversion =
         MakeQuantity<PositionCoordinate>(test_case.value, test_case.unit);
+
+    ASSERT_TRUE(conversion.has_value()) << test_case.unit;
+    EXPECT_EQ(conversion->value, test_case.expected) << test_case.unit;
+  }
+}
+
+TEST(GGEMSLengthUnits, ConvertsSignedDisplacements) {
+  constexpr std::array<SignedConversionCase, 2U> cases{{
+      {.value = 2.0L, .unit = "nm", .expected = 2'000LL},
+      {.value = -2.0L, .unit = "cm", .expected = -20'000'000'000LL},
+  }};
+
+  for (auto const &test_case : cases) {
+    auto const conversion =
+        MakeQuantity<Displacement>(test_case.value, test_case.unit);
 
     ASSERT_TRUE(conversion.has_value()) << test_case.unit;
     EXPECT_EQ(conversion->value, test_case.expected) << test_case.unit;
@@ -182,4 +202,10 @@ TEST(GGEMSLengthUnits, RejectsNonFiniteValuesAndUnknownTokens) {
                                 UnitConversionError::UnsupportedUnit);
   ExpectConversionError<Length>(1.0L, "inch",
                                 UnitConversionError::UnsupportedUnit);
+}
+
+TEST(GGEMSLengthUnits, FormatsSignedLengthThroughPublicHelper) {
+  ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
+
+  EXPECT_EQ(HumanReadableSignedLength(-1'000'000LL, 2), "-1.00 um");
 }
