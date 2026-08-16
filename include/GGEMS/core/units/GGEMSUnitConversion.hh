@@ -1,5 +1,35 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Declares GGEMS unit registries, quantity traits, and checked unit conversion helpers.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #pragma once
 
+/// \cond
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -7,19 +37,49 @@
 #include <limits>
 #include <string_view>
 #include <type_traits>
+/// \endcond
 
 #include "GGEMS/core/units/GGEMSQuantity.hh"
 
 namespace ggems::units {
 
+/*!
+ * \brief Specifies whether a quantity may represent negative values.
+ */
 enum class QuantityDomain : std::uint8_t { NonNegative, Signed };
+/*!
+ * \var QuantityDomain QuantityDomain::NonNegative
+ * \brief Quantity values must be nonnegative.
+ */
+/*!
+ * \var QuantityDomain QuantityDomain::Signed
+ * \brief Quantity values may be negative or positive.
+ */
 
+/*!
+ * \brief Selects the human-readable formatting strategy for a quantity family.
+ */
 enum class QuantityFormatPolicy : std::uint8_t {
   AutomaticScale,
   FixedUnit,
   DurationBreakdown
 };
+/*!
+ * \var QuantityFormatPolicy QuantityFormatPolicy::AutomaticScale
+ * \brief Selects a display unit automatically from the registered unit scales.
+ */
+/*!
+ * \var QuantityFormatPolicy QuantityFormatPolicy::FixedUnit
+ * \brief Always formats using the configured fixed display unit.
+ */
+/*!
+ * \var QuantityFormatPolicy QuantityFormatPolicy::DurationBreakdown
+ * \brief Formats long durations as hours, minutes, seconds, and milliseconds when appropriate.
+ */
 
+/*!
+ * \brief Reports failures produced by checked GGEMS unit conversions.
+ */
 enum class UnitConversionError : std::uint8_t {
   UnsupportedUnit,
   NonFinite,
@@ -27,14 +87,57 @@ enum class UnitConversionError : std::uint8_t {
   OutOfRange,
   InexactConversion
 };
+/*!
+ * \var UnitConversionError UnitConversionError::UnsupportedUnit
+ * \brief The requested unit symbol is not registered.
+ */
+/*!
+ * \var UnitConversionError UnitConversionError::NonFinite
+ * \brief The supplied floating-point value is not finite.
+ */
+/*!
+ * \var UnitConversionError UnitConversionError::NegativeValue
+ * \brief A negative value was supplied for a nonnegative quantity.
+ */
+/*!
+ * \var UnitConversionError UnitConversionError::OutOfRange
+ * \brief The converted value cannot be represented by the destination type.
+ */
+/*!
+ * \var UnitConversionError UnitConversionError::InexactConversion
+ * \brief An exact integral conversion was requested but the value is not exactly representable.
+ */
 
+/*!
+ * \brief Describes a unit scale relative to the canonical unit of its quantity family.
+ */
 struct UnitScale {
+  /*!
+   * \brief Rational scale numerator.
+   */
   std::uint64_t numerator{1ULL};
+  /*!
+   * \brief Rational scale denominator.
+   */
   std::uint64_t denominator{1ULL};
+  /*!
+   * \brief Base-10 exponent applied to the rational scale.
+   */
   std::int16_t decimal_exponent{0};
+  /*!
+   * \brief Explicit scale factor used when a rational decimal scale is unsuitable; zero selects the rational representation.
+   */
   long double special_factor{0.0L};
 };
 
+/*!
+ * \brief Creates an exact rational decimal unit scale.
+ *
+ * \param[in] exponent Base-10 exponent.
+ * \param[in] numerator Rational scale numerator.
+ * \param[in] denominator Rational scale denominator.
+ * \return UnitScale describing the requested exact scale.
+ */
 consteval auto DecimalScale(std::int16_t exponent,
                             std::uint64_t numerator = 1ULL,
                             std::uint64_t denominator = 1ULL) -> UnitScale {
@@ -44,6 +147,12 @@ consteval auto DecimalScale(std::int16_t exponent,
           .special_factor = 0.0L};
 };
 
+/*!
+ * \brief Creates a unit scale represented by an explicit floating-point factor.
+ *
+ * \param[in] factor Scale factor relative to the canonical unit.
+ * \return UnitScale using the supplied special factor.
+ */
 consteval auto SpecialScale(long double factor) -> UnitScale {
   return {.numerator = 1ULL,
           .denominator = 1ULL,
@@ -51,17 +160,43 @@ consteval auto SpecialScale(long double factor) -> UnitScale {
           .special_factor = factor};
 }
 
+/*!
+ * \brief Describes one accepted unit symbol and its conversion metadata.
+ */
 struct UnitDefinition {
+  /*!
+   * \brief ASCII unit symbol accepted by conversion functions.
+   */
   std::string_view symbol;
+  /*!
+   * \brief Scale relative to the canonical quantity representation.
+   */
   UnitScale scale;
+  /*!
+   * \brief Optional Unicode symbol used for formatted output.
+   */
   std::string_view unicode_symbol{};
+  /*!
+   * \brief Whether automatic formatting may select this unit.
+   */
   bool automatic_display{true};
 };
 
+/*!
+ * \brief Primary template for quantity-family unit registries.
+ *
+ * \tparam UniSet Unit-set marker type.
+ */
 template <typename UniSet> struct UnitRegistry;
 
+/*!
+ * \brief Primary template for quantity-family conversion and formatting traits.
+ *
+ * \tparam Tag Quantity-family tag type.
+ */
 template <typename Tag> struct QuantityTraits;
 
+/// \cond
 namespace detail {
 
 constexpr auto Pow10(std::int16_t exponent) noexcept -> long double {
@@ -209,10 +344,22 @@ constexpr auto ConvertIntegralMagnitude(std::uint64_t magnitude, bool negative)
 }
 
 } // namespace detail
+/// \endcond
 
 template <typename UnitSet>
+/*!
+ * \brief Checks whether a unit-set type has a UnitRegistry specialization.
+ *
+ * \tparam UnitSet Unit-set marker type.
+ */
 concept HasUnitRegistry = requires { UnitRegistry<UnitSet>::units; };
 
+/*!
+ * \brief Validates a unit registry at compile time.
+ *
+ * \tparam UnitSet Unit-set marker type.
+ * \return true when the registry is nonempty, finite, positive, and free of duplicate ASCII symbols; otherwise false.
+ */
 template <typename UnitSet> consteval auto ValidateUnitSet() -> bool {
   if constexpr (!HasUnitRegistry<UnitSet>) {
     return false;
@@ -243,6 +390,13 @@ template <typename UnitSet> consteval auto ValidateUnitSet() -> bool {
 }
 
 template <typename UnitSet>
+/*!
+ * \brief Finds a unit definition by its ASCII symbol.
+ *
+ * \tparam UnitSet Unit-set marker type.
+ * \param[in] symbol ASCII unit symbol to locate.
+ * \return Pointer to the matching unit definition, or nullptr when the symbol is unsupported.
+ */
 constexpr auto FindUnit(std::string_view symbol) noexcept
     -> UnitDefinition const * {
   static_assert(ValidateUnitSet<UnitSet>());
@@ -255,6 +409,13 @@ constexpr auto FindUnit(std::string_view symbol) noexcept
 }
 
 template <typename Tag, typename Representation>
+/*!
+ * \brief Validates quantity traits and representation compatibility at compile time.
+ *
+ * \tparam Tag Quantity-family tag type.
+ * \tparam Representation Underlying arithmetic representation type.
+ * \return true when the traits and representation satisfy the GGEMS unit-system requirements; otherwise false.
+ */
 consteval auto ValidateQuantityTraits() -> bool {
   if constexpr (!requires {
                   typename QuantityTraits<Tag>::unit_set;
@@ -324,6 +485,14 @@ consteval auto ValidateQuantityTraits() -> bool {
 }
 
 template <QuantityType TargetQuantity>
+/*!
+ * \brief Constructs a quantity from a floating-point value and unit symbol with checked conversion.
+ *
+ * \tparam TargetQuantity GGEMS quantity type to construct.
+ * \param[in] value Input value expressed in the supplied unit.
+ * \param[in] unit_symbol ASCII symbol of the input unit.
+ * \return Constructed quantity, or a UnitConversionError describing the failed conversion.
+ */
 [[nodiscard]] constexpr auto MakeQuantity(long double value,
                                           std::string_view unit_symbol)
     -> std::expected<TargetQuantity, UnitConversionError> {
@@ -353,6 +522,15 @@ template <QuantityType TargetQuantity>
   return TargetQuantity{*converted};
 }
 
+/*!
+ * \brief Constructs an integral-representation quantity from an integral value and unit symbol while preserving exact conversions when possible.
+ *
+ * \tparam TargetQuantity GGEMS quantity type to construct.
+ * \tparam SourceInteger Integral source type.
+ * \param[in] value Input integer expressed in the supplied unit.
+ * \param[in] unit_symbol ASCII symbol of the input unit.
+ * \return Constructed quantity, or a UnitConversionError describing the failed conversion.
+ */
 template <QuantityType TargetQuantity, detail::ExactIntegral SourceInteger>
   requires detail::ExactIntegral<typename TargetQuantity::representation>
 [[nodiscard]] constexpr auto MakeQuantity(SourceInteger value,
@@ -392,6 +570,14 @@ template <QuantityType TargetQuantity, detail::ExactIntegral SourceInteger>
 }
 
 template <QuantityType SourceQuantity>
+/*!
+ * \brief Converts a quantity to a floating-point value in another unit.
+ *
+ * \tparam SourceQuantity GGEMS quantity type to convert.
+ * \param[in] quantity Quantity to convert.
+ * \param[in] unit_symbol ASCII symbol of the destination unit.
+ * \return Converted value, or a UnitConversionError when the unit is unsupported or the result is not finite.
+ */
 [[nodiscard]] constexpr auto ConvertTo(SourceQuantity quantity,
                                        std::string_view unit_symbol)
     -> std::expected<long double, UnitConversionError> {
@@ -415,6 +601,15 @@ template <QuantityType SourceQuantity>
   return converted;
 }
 
+/*!
+ * \brief Converts an integral quantity to an integral value in another unit when the result is exact.
+ *
+ * \tparam TargetRepresentation Integral destination representation.
+ * \tparam SourceQuantity GGEMS quantity type to convert.
+ * \param[in] quantity Quantity to convert.
+ * \param[in] unit_symbol ASCII symbol of the destination unit.
+ * \return Exact converted value, or a UnitConversionError when the unit is unsupported, the conversion is inexact, or the value is out of range.
+ */
 template <detail::ExactIntegral TargetRepresentation,
           QuantityType SourceQuantity>
   requires detail::ExactIntegral<typename SourceQuantity::representation>
@@ -447,6 +642,7 @@ template <detail::ExactIntegral TargetRepresentation,
       magnitude / factor, negative);
 }
 
+/// \cond
 namespace detail {
 
 template <QuantityType QuantityValue>
@@ -494,4 +690,5 @@ consteval auto MakeLiteralQuantity(long double value,
 }
 
 } // namespace detail
+/// \endcond
 } // namespace ggems::units

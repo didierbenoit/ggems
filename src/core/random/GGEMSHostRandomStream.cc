@@ -1,7 +1,40 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Implements the host-side GGEMS random stream.
+ *
+ * Implements JKISS, PCG32, and Philox state progression and scalar uniform sampling on the host.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
 #include <array>
 #include <cstdint>
 #include <span>
 
+/// \endcond
 #include "GGEMS/core/GGEMSException.hh"
 
 #include "GGEMS/core/random/GGEMSHostRandomStream.hh"
@@ -15,14 +48,25 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*! \brief First Philox 4x32 multiplication constant. */
 constexpr std::uint32_t k_philox_m4x32_0{0xD2511F53U};
+/*! \brief Second Philox 4x32 multiplication constant. */
 constexpr std::uint32_t k_philox_m4x32_1{0xCD9E8D57U};
+/*! \brief First Philox key-bump constant. */
 constexpr std::uint32_t k_philox_w32_0{0x9E3779B9U};
+/*! \brief Second Philox key-bump constant. */
 constexpr std::uint32_t k_philox_w32_1{0xBB67AE85U};
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Initializes one concrete host stream state through GGEMSRandom.
+ * \tparam State Random-engine state type.
+ * \param[in] random Random configuration.
+ * \param[in] stream_id Logical stream identifier.
+ * \return Initialized state.
+ */
 template <typename State>
 auto InitializeState(GGEMSRandom const &random, std::uint64_t stream_id)
     -> State {
@@ -35,6 +79,11 @@ auto InitializeState(GGEMSRandom const &random, std::uint64_t stream_id)
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Advances one JKISS state and returns the next raw word.
+ * \param[in,out] state JKISS stream state.
+ * \return Next 32-bit JKISS output.
+ */
 auto NextJKiss(GGEMSJKissState &state) noexcept -> std::uint32_t {
   std::uint32_t y = state.y;
 
@@ -57,10 +106,15 @@ auto NextJKiss(GGEMSJKissState &state) noexcept -> std::uint32_t {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Advances one PCG32 state and returns the next raw word.
+ * \param[in,out] state PCG32 stream state.
+ * \return Next 32-bit PCG32 output.
+ */
 auto NextPCG32(GGEMSPCG32State &state) noexcept -> std::uint32_t {
   std::uint64_t const old_state = state.state;
 
-  state.state = old_state * 6'364'136'223'846'793'005ULL + state.increment;
+  state.state = (old_state * 6'364'136'223'846'793'005ULL) + state.increment;
 
   auto const xorshifted =
       static_cast<std::uint32_t>(((old_state >> 18U) ^ old_state) >> 27U);
@@ -72,6 +126,12 @@ auto NextPCG32(GGEMSPCG32State &state) noexcept -> std::uint32_t {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Returns the high 32 bits of a 32-by-32-bit unsigned product.
+ * \param[in] lhs Left factor.
+ * \param[in] rhs Right factor.
+ * \return High 32 bits of the 64-bit product.
+ */
 auto MultiplyHigh32(std::uint32_t lhs, std::uint32_t rhs) noexcept
     -> std::uint32_t {
   return static_cast<std::uint32_t>(
@@ -82,6 +142,12 @@ auto MultiplyHigh32(std::uint32_t lhs, std::uint32_t rhs) noexcept
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Applies one Philox 4x32 round to a counter and key.
+ * \param[in] counter Four-word Philox counter.
+ * \param[in] key Two-word Philox key.
+ * \return Counter transformed by one Philox round.
+ */
 auto PhiloxRound(std::array<std::uint32_t, 4> const &counter,
                  std::array<std::uint32_t, 2> const &key) noexcept
     -> std::array<std::uint32_t, 4> {
@@ -96,6 +162,11 @@ auto PhiloxRound(std::array<std::uint32_t, 4> const &counter,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Generates the next scalar Philox output and advances the host counter.
+ * \param[in,out] state Philox stream state.
+ * \return First 32-bit word of the generated Philox block.
+ */
 auto NextPhilox(GGEMSPhiloxState &state) noexcept -> std::uint32_t {
   std::array<std::uint32_t, 4> counter{state.counter_0, state.counter_1,
                                        state.counter_2, state.counter_3};
@@ -138,7 +209,8 @@ GGEMSHostRandomStream::GGEMSHostRandomStream(GGEMSRandom const &random,
     return;
   }
 
-  throw ggems::core::GGEMSInternal("Unsupported GGEMS random engine for host stream.");
+  throw ggems::core::GGEMSInternal(
+      "Unsupported GGEMS random engine for host stream.");
 }
 
 // -----------------------------------------------------------------------------
@@ -178,9 +250,9 @@ auto GGEMSHostRandomStream::UniformFloat01() noexcept -> float {
 // -----------------------------------------------------------------------------
 
 auto GGEMSHostRandomStream::UniformDoubleOpen01() noexcept -> double {
-  auto const a = static_cast<std::uint64_t>(NextUInt32() >> 5U);
-  auto const b = static_cast<std::uint64_t>(NextUInt32() >> 6U);
-  std::uint64_t const bits = (a << 26U) + b;
+  auto const high_bits = static_cast<std::uint64_t>(NextUInt32() >> 5U);
+  auto const low_bits = static_cast<std::uint64_t>(NextUInt32() >> 6U);
+  std::uint64_t const bits = (high_bits << 26U) + low_bits;
 
   double const uniform = (static_cast<double>(bits) + 0.5) * 0x1.0p-53;
 

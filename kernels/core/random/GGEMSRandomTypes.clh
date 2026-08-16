@@ -1,25 +1,110 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Declares OpenCL random-engine state layouts.
+ *
+ * Mirrors the host-side JKISS, PCG32, and Philox state structures used for state initialization and SVM transfer.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #ifndef GGEMS_CORE_RANDOM_GGEMS_RANDOM_TYPES_CLH
 #define GGEMS_CORE_RANDOM_GGEMS_RANDOM_TYPES_CLH
 
+/*!
+ * \brief Stores one OpenCL JKISS stream state.
+ *
+ * The field order and widths are mirrored exactly by the corresponding host-side GGEMS random-state structure.
+ */
 typedef struct GGEMSJKissState {
+  /*!
+   * \brief JKISS congruential component.
+   */
   uint x;
+  /*!
+   * \brief JKISS xorshift component.
+   */
   uint y;
+  /*!
+   * \brief JKISS multiply-with-carry state component.
+   */
   uint z;
+  /*!
+   * \brief JKISS multiply-with-carry state component.
+   */
   uint w;
+  /*!
+   * \brief JKISS carry component.
+   */
   uint c;
 } GGEMSJKissState;
 
+/*!
+ * \brief Stores one OpenCL PCG32 stream state.
+ *
+ * The field order and widths are mirrored exactly by the corresponding host-side GGEMS random-state structure.
+ */
 typedef struct GGEMSPCG32State {
+  /*!
+   * \brief Current PCG32 linear-congruential state.
+   */
   ulong state;
+  /*!
+   * \brief Odd PCG32 stream increment selecting the independent sequence.
+   */
   ulong increment;
 } GGEMSPCG32State;
 
+/*!
+ * \brief Stores one OpenCL Philox stream state.
+ *
+ * The field order and widths are mirrored exactly by the corresponding host-side GGEMS random-state structure.
+ */
 typedef struct GGEMSPhiloxState {
+  /*!
+   * \brief Least-significant Philox counter word advanced for each generated block.
+   */
   uint counter_0;
+  /*!
+   * \brief Second Philox counter word used for carry propagation.
+   */
   uint counter_1;
+  /*!
+   * \brief Low 32 bits of the Philox stream identifier.
+   */
   uint counter_2;
+  /*!
+   * \brief High 32 bits of the Philox stream identifier.
+   */
   uint counter_3;
+  /*!
+   * \brief Low 32 bits of the Philox key.
+   */
   uint key_0;
+  /*!
+   * \brief High 32 bits of the Philox key.
+   */
   uint key_1;
 } GGEMSPhiloxState;
 

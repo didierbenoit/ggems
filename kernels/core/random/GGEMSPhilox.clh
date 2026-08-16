@@ -1,18 +1,79 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Declares the OpenCL Philox 4x32 random-number engine.
+ *
+ * Provides Philox round functions, counter progression, raw scalar/vector output, and uniform scalar/vector sampling.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #ifndef GGEMS_CORE_RANDOM_GGEMS_PHILOX_CLH
+/// \cond
 #define GGEMS_CORE_RANDOM_GGEMS_PHILOX_CLH
+/// \endcond
 
 #include "core/random/GGEMSRandomCommon.clh"
 #include "core/random/GGEMSRandomTypes.clh"
 
+/*!
+ * \def GGEMS_PHILOX_M4X32_0
+ * \brief First Philox 4x32 multiplication constant.
+ */
 #define GGEMS_PHILOX_M4X32_0 0xD2511F53U
+/*!
+ * \def GGEMS_PHILOX_M4X32_1
+ * \brief Second Philox 4x32 multiplication constant.
+ */
 #define GGEMS_PHILOX_M4X32_1 0xCD9E8D57U
+/*!
+ * \def GGEMS_PHILOX_W32_0
+ * \brief First Philox key-bump constant.
+ */
 #define GGEMS_PHILOX_W32_0 0x9E3779B9U
+/*!
+ * \def GGEMS_PHILOX_W32_1
+ * \brief Second Philox key-bump constant.
+ */
 #define GGEMS_PHILOX_W32_1 0xBB67AE85U
 
+/*!
+ * \brief Returns the high 32 bits of an unsigned 32-by-32-bit product.
+ * \param[in] lhs Left factor.
+ * \param[in] rhs Right factor.
+ * \return High 32 bits of the product.
+ */
 static inline uint GGEMS_MulHi32(uint lhs, uint rhs) {
   return mul_hi(lhs, rhs);
 }
 
+/*!
+ * \brief Applies one Philox 4x32 round.
+ * \param[in] counter Four-word counter.
+ * \param[in] key Two-word key.
+ * \return Counter transformed by one Philox round.
+ */
 static inline uint4 GGEMS_Philox4x32Round(uint4 counter, uint2 key) {
   uint lo_0 = GGEMS_PHILOX_M4X32_0 * counter.x;
   uint hi_0 = GGEMS_MulHi32(GGEMS_PHILOX_M4X32_0, counter.x);
@@ -24,6 +85,12 @@ static inline uint4 GGEMS_Philox4x32Round(uint4 counter, uint2 key) {
                  lo_0);
 }
 
+/*!
+ * \brief Applies the ten-round Philox 4x32 transformation.
+ * \param[in] counter Four-word counter.
+ * \param[in] key Initial two-word key.
+ * \return Four generated 32-bit words.
+ */
 static inline uint4 GGEMS_Philox4x32(uint4 counter, uint2 key) {
   for (uint round = 0U; round < 10U; ++round) {
     counter = GGEMS_Philox4x32Round(counter, key);
@@ -36,6 +103,11 @@ static inline uint4 GGEMS_Philox4x32(uint4 counter, uint2 key) {
 }
 
 static inline void
+/*!
+ * \brief Advances the low 64 bits of one Philox stream counter.
+ * \param[in,out] states Array of Philox stream states.
+ * \param[in] index State index identifying the logical stream.
+ */
 GGEMS_PhiloxIncrementCounter(__global GGEMSPhiloxState *states, uint index) {
   states[index].counter_0 += 1U;
 
@@ -44,6 +116,12 @@ GGEMS_PhiloxIncrementCounter(__global GGEMSPhiloxState *states, uint index) {
   }
 }
 
+/*!
+ * \brief Generates the next four raw Philox words and advances the stream counter.
+ * \param[in,out] states Array of Philox stream states.
+ * \param[in] index State index identifying the logical stream.
+ * \return Four raw Philox words.
+ */
 static inline uint4 GGEMS_PhiloxNextUInt4(__global GGEMSPhiloxState *states,
                                           uint index) {
   uint4 counter = (uint4)(states[index].counter_0, states[index].counter_1,
@@ -57,11 +135,23 @@ static inline uint4 GGEMS_PhiloxNextUInt4(__global GGEMSPhiloxState *states,
   return value;
 }
 
+/*!
+ * \brief Generates the next scalar raw Philox value and advances the stream counter.
+ * \param[in,out] states Array of Philox stream states.
+ * \param[in] index State index identifying the logical stream.
+ * \return First word of the generated Philox block.
+ */
 static inline uint GGEMS_PhiloxNextUInt(__global GGEMSPhiloxState *states,
                                         uint index) {
   return GGEMS_PhiloxNextUInt4(states, index).x;
 }
 
+/*!
+ * \brief Generates four uniform binary32 values from a Philox stream.
+ * \param[in,out] states Array of Philox stream states.
+ * \param[in] index State index identifying the logical stream.
+ * \return Four uniform values in [0, 1).
+ */
 static inline float4 GGEMS_PhiloxUniform4(__global GGEMSPhiloxState *states,
                                           uint index) {
   uint4 values = GGEMS_PhiloxNextUInt4(states, index);
@@ -69,6 +159,12 @@ static inline float4 GGEMS_PhiloxUniform4(__global GGEMSPhiloxState *states,
   return GGEMS_UInt4ToUniform01(values);
 }
 
+/*!
+ * \brief Generates a scalar uniform binary32 value from a Philox stream.
+ * \param[in,out] states Array of Philox stream states.
+ * \param[in] index State index identifying the logical stream.
+ * \return Uniform value in [0, 1).
+ */
 static inline float GGEMS_PhiloxUniform(__global GGEMSPhiloxState *states,
                                         uint index) {
   uint value = GGEMS_PhiloxNextUInt(states, index);

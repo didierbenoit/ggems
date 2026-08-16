@@ -1,9 +1,46 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Declares the OpenCL PCG32 random-number engine.
+ *
+ * Provides raw 32-bit output and scalar uniform sampling from per-stream PCG32 state.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #ifndef GGEMS_CORE_RANDOM_GGEMS_PCG32_CLH
 #define GGEMS_CORE_RANDOM_GGEMS_PCG32_CLH
 
 #include "core/random/GGEMSRandomCommon.clh"
 #include "core/random/GGEMSRandomTypes.clh"
 
+/*!
+ * \brief Advances a PCG32 stream and returns the next raw 32-bit value.
+ * \param[in,out] states Array of PCG32 stream states.
+ * \param[in] index State index identifying the logical stream.
+ * \return Next raw PCG32 word.
+ */
 static inline uint GGEMS_PCG32NextUInt(__global GGEMSPCG32State *states,
                                        uint index) {
   ulong old_state = states[index].state;
@@ -18,6 +55,12 @@ static inline uint GGEMS_PCG32NextUInt(__global GGEMSPCG32State *states,
   return (xorshifted >> rotation) | (xorshifted << ((0U - rotation) & 31U));
 }
 
+/*!
+ * \brief Generates a scalar uniform value from a PCG32 stream.
+ * \param[in,out] states Array of PCG32 stream states.
+ * \param[in] index State index identifying the logical stream.
+ * \return Uniform binary32 value in [0, 1).
+ */
 static inline float GGEMS_PCG32Uniform(__global GGEMSPCG32State *states,
                                        uint index) {
   uint value = GGEMS_PCG32NextUInt(states, index);

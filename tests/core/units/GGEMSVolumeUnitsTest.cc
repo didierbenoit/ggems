@@ -1,3 +1,35 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Unit tests for GGEMS volume quantities and conversions.
+ *
+ * Validates registered cubic-length units, negative-value rejection, automatic ASCII/Unicode cubic formatting, and canonical cubic-picometer literals.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
 #include <array>
 #include <cmath>
 #include <limits>
@@ -5,11 +37,14 @@
 
 #include <gtest/gtest.h>
 
+/// \endcond
 #include "GGEMS/core/GGEMSLogger.hh"
 #include "GGEMS/core/units/GGEMSUnitConversion.hh"
 #include "GGEMS/core/units/GGEMSUnitFormatting.hh"
 #include "GGEMS/core/units/GGEMSVolumeUnits.hh"
 #include "GGEMSScopedLoggerEncoding.hh"
+
+/// \cond
 
 namespace {
 
@@ -80,3 +115,4 @@ TEST(GGEMSVolumeUnitsTest, LiteralStoresCubicPicometers) {
 }
 
 } // namespace
+/// \endcond

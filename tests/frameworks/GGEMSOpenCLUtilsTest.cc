@@ -1,3 +1,35 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Unit tests for GGEMS OpenCL utility helpers.
+ *
+ * Validates OpenCL error descriptions, contextual error checking, exact extension matching, and representative native information queries.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
 #include <array>
 #include <cstddef>
 #include <string>
@@ -6,11 +38,14 @@
 
 #include <gtest/gtest.h>
 
+/// \endcond
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLUtils.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
+
+/// \cond
 
 namespace {
 
@@ -140,3 +175,4 @@ TEST(GGEMSOpenCLUtilsTest,
     GTEST_SKIP() << "No GGEMS-discovered device advertises cl_khr_spir.";
   }
 }
+/// \endcond

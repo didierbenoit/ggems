@@ -1,3 +1,35 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Unit tests for deterministic GGEMS random-state initialization.
+ *
+ * Validates state-layout sizing, stream-range checks, deterministic initialization, stream separation, and invalid storage handling for every random engine.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -9,10 +41,13 @@
 
 #include <gtest/gtest.h>
 
+/// \endcond
 #include "GGEMS/core/GGEMSException.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
 #include "GGEMS/core/random/GGEMSRandomEngine.hh"
 #include "GGEMS/core/random/GGEMSRandomState.hh"
+
+/// \cond
 
 namespace {
 
@@ -25,9 +60,9 @@ using ggems::core::random::GGEMSRandomEngine;
 // =============================================================================
 // =============================================================================
 
-std::vector<std::byte> InitializeStateBytes(GGEMSRandom const &random,
-                                            std::uint64_t first_stream_id,
-                                            std::size_t state_count) {
+auto InitializeStateBytes(GGEMSRandom const &random,
+                          std::uint64_t first_stream_id,
+                          std::size_t state_count) -> std::vector<std::byte> {
   std::vector<std::byte> storage(state_count * random.GetStateSize());
 
   random.InitializeStates(first_stream_id,
@@ -40,11 +75,11 @@ std::vector<std::byte> InitializeStateBytes(GGEMSRandom const &random,
 // =============================================================================
 
 template <typename State>
-State ReadState(std::vector<std::byte> const &storage,
-                std::size_t state_index = 0U) {
+auto ReadState(std::vector<std::byte> const &storage,
+               std::size_t state_index = 0U) -> State {
   State state{};
 
-  std::memcpy(&state, storage.data() + state_index * sizeof(State),
+  std::memcpy(&state, storage.data() + (state_index * sizeof(State)),
               sizeof(State));
 
   return state;
@@ -213,7 +248,7 @@ TEST_P(GGEMSRandomStateInitializationTest,
   random.SetEngine(GetParam()).SetSeed(77'777ULL);
 
   std::array<std::byte, 3U * sizeof(GGEMSPhiloxState)> storage{};
-  std::fill(storage.begin(), storage.end(), std::byte{0x5A});
+  std::ranges::fill(storage, std::byte{0x5A});
   auto before = storage;
 
   std::span<std::byte> selected_storage{storage.data(),
@@ -271,7 +306,7 @@ TEST(GGEMSRandomStateInitializationContractTest,
   random.SetEngine(GGEMSRandomEngine::PCG32).SetSeed(77'777ULL);
 
   std::array<std::byte, sizeof(GGEMSPCG32State) + 1U> storage{};
-  std::fill(storage.begin(), storage.end(), std::byte{0x5A});
+  std::ranges::fill(storage, std::byte{0x5A});
   auto before = storage;
 
   EXPECT_THROW(random.InitializeStates(
@@ -290,7 +325,7 @@ TEST(GGEMSRandomStateInitializationContractTest,
   random.SetEngine(static_cast<GGEMSRandomEngine>(0U));
 
   std::array<std::byte, sizeof(GGEMSPhiloxState)> storage{};
-  std::fill(storage.begin(), storage.end(), std::byte{0x5A});
+  std::ranges::fill(storage, std::byte{0x5A});
   auto before = storage;
 
   EXPECT_THROW(random.InitializeStates(
@@ -307,3 +342,4 @@ INSTANTIATE_TEST_SUITE_P(AllEngines, GGEMSRandomStateInitializationTest,
                          ::testing::Values(GGEMSRandomEngine::JKISS,
                                            GGEMSRandomEngine::PCG32,
                                            GGEMSRandomEngine::Philox));
+/// \endcond

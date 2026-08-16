@@ -15,8 +15,8 @@
 #include <span>
 #include <utility>
 
-#include "GGEMS/frameworks/GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/core/random/GGEMSRandom.hh"
+#include "GGEMS/frameworks/GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/frameworks/GGEMSOpenCL.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
 #include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
@@ -459,7 +459,7 @@ auto GenerateRandomStream(Options const &options) -> void {
       std::format("-cl-std=CL2.0 -I\"{}\" {}", kernel_root.generic_string(),
                   random.GetKernelBuildDefinition());
 
-  auto &program = opencl.GetOrCreateProgram(
+  auto const &program = opencl.GetOrCreateProgram(
       context, validation_kernel_root, "random_uint32_stream", build_options);
 
   cl::Kernel raw_kernel = program.CreateKernel("random_uint32_stream");
