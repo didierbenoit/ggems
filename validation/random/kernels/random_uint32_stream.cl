@@ -1,4 +1,4 @@
-#include "core/random/GGEMSRandom.clh"
+#include "random/GGEMSRandom.clh"
 
 static inline uint4 GGEMSValidation_RndmUInt4(__global GGEMSRandomState *states,
                                               uint index) {

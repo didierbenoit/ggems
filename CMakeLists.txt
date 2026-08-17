@@ -81,15 +81,11 @@ find_package(pybind11 REQUIRED CONFIG)
 
 # ------------------------------------------------------------------------------
 # Core library
-file(
-  GLOB_RECURSE
-  GGEMS_CORE_SOURCES
-  CONFIGURE_DEPENDS
-  "${PROJECT_SOURCE_DIR}/src/core/*.cc"
-  "${PROJECT_SOURCE_DIR}/src/frameworks/*.cc"
-  "${PROJECT_SOURCE_DIR}/src/render/*.cc"
-  "${PROJECT_SOURCE_DIR}/src/utf/*.cc")
+file(GLOB_RECURSE GGEMS_CORE_SOURCES CONFIGURE_DEPENDS
+     "${PROJECT_SOURCE_DIR}/src/*.cc")
 
+# GuiMode is built separately as ggems_gui when requested.
+list(FILTER GGEMS_CORE_SOURCES EXCLUDE REGEX "/ui/")
 list(SORT GGEMS_CORE_SOURCES)
 
 add_library(ggems_core STATIC ${GGEMS_CORE_SOURCES})

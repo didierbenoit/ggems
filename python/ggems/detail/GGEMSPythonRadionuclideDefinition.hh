@@ -3,7 +3,7 @@
 #include <memory>
 #include <utility>
 
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
+#include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
 
 namespace ggems::python::detail {
 

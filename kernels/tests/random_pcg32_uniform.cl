@@ -29,7 +29,7 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-#include "core/random/GGEMSPCG32.clh"
+#include "random/GGEMSPCG32.clh"
 
 /// \cond
 

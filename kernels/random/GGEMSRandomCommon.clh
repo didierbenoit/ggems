@@ -1,0 +1,63 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Declares common OpenCL random-number conversion helpers.
+ *
+ * Provides conversion from 32-bit unsigned random words to scalar and vector uniform floating-point values in the unit interval.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_RANDOM_GGEMS_RANDOM_COMMON_CLH
+/// \cond
+#define GGEMS_RANDOM_GGEMS_RANDOM_COMMON_CLH
+/// \endcond
+
+/*!
+ * \def GGEMS_RANDOM_FLOAT_UNIT
+ * \brief Scale converting the high 24 bits of a uint to a binary32 value in [0, 1).
+ */
+#define GGEMS_RANDOM_FLOAT_UNIT 5.9604644775390625e-8f
+
+/*!
+ * \brief Converts a raw 32-bit random word to a scalar uniform binary32 value.
+ * \param[in] value Raw random word.
+ * \return Uniform value in the half-open interval [0, 1).
+ */
+static inline float GGEMS_UIntToUniform01(uint value) {
+  return (float)(value >> 8U) * GGEMS_RANDOM_FLOAT_UNIT;
+}
+
+/*!
+ * \brief Converts four raw random words to uniform binary32 values.
+ * \param[in] values Four raw random words.
+ * \return Four uniform values in the half-open interval [0, 1).
+ */
+static inline float4 GGEMS_UInt4ToUniform01(uint4 values) {
+  return (
+      float4)(GGEMS_UIntToUniform01(values.x), GGEMS_UIntToUniform01(values.y),
+              GGEMS_UIntToUniform01(values.z), GGEMS_UIntToUniform01(values.w));
+}
+
+#endif

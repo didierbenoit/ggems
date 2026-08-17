@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <array>
 
-#include "GGEMS/core/GGEMSLogger.hh"
-#include "GGEMS/core/GGEMSOutputState.hh"
+#include "GGEMS/logging/GGEMSLogger.hh"
+#include "GGEMS/logging/GGEMSOutputState.hh"
 
 namespace ggems::render {
 struct WrappedLine;

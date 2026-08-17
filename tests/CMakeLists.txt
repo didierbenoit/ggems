@@ -57,7 +57,7 @@ else()
 endif()
 
 # ==============================================================================
-# generic function adding test
+# Generic function adding one test executable per source directory
 function(ggems_add_test_suite target_name)
   set(one_value_args SOURCE_DIR)
   set(multi_value_args LINK_LIBRARIES COMPILE_DEFINITIONS INCLUDE_DIRECTORIES)
@@ -65,7 +65,7 @@ function(ggems_add_test_suite target_name)
   cmake_parse_arguments(TEST "" "${one_value_args}" "${multi_value_args}"
                         ${ARGN})
 
-  file(GLOB_RECURSE test_sources CONFIGURE_DEPENDS
+  file(GLOB test_sources CONFIGURE_DEPENDS
        "${CMAKE_CURRENT_SOURCE_DIR}/${TEST_SOURCE_DIR}/*.cc")
 
   add_executable(${target_name} ${test_sources})
@@ -90,32 +90,56 @@ function(ggems_add_test_suite target_name)
 endfunction()
 
 # ==============================================================================
-# Core unit tests
+# Core unit tests at the tests/ root
+set(GGEMS_TEST_TARGETS)
+
 ggems_add_test_suite(
   ggems_core_tests
   SOURCE_DIR
-  core
+  .
   LINK_LIBRARIES
   ggems_core
   COMPILE_DEFINITIONS
   GGEMS_TEST_KERNEL_ROOT="${PROJECT_SOURCE_DIR}/kernels")
 
-# ==============================================================================
-# Framework unit tests
-ggems_add_test_suite(
-  ggems_framework_tests
-  SOURCE_DIR
-  frameworks
-  LINK_LIBRARIES
-  ggems_core
-  COMPILE_DEFINITIONS
-  GGEMS_TEST_KERNEL_ROOT="${PROJECT_SOURCE_DIR}/kernels")
+list(APPEND GGEMS_TEST_TARGETS ggems_core_tests)
 
 # ==============================================================================
-# GuiMode unit tests
+# Core-domain unit tests
+set(GGEMS_CORE_TEST_DIRECTORIES
+    geometry
+    logging
+    observer
+    opencl
+    particles
+    radioactivity
+    random
+    render
+    sources
+    transport
+    units
+    utf)
+
+foreach(test_directory IN LISTS GGEMS_CORE_TEST_DIRECTORIES)
+  set(test_target "ggems_${test_directory}_tests")
+
+  ggems_add_test_suite(
+    ${test_target}
+    SOURCE_DIR
+    ${test_directory}
+    LINK_LIBRARIES
+    ggems_core
+    COMPILE_DEFINITIONS
+    GGEMS_TEST_KERNEL_ROOT="${PROJECT_SOURCE_DIR}/kernels")
+
+  list(APPEND GGEMS_TEST_TARGETS ${test_target})
+endforeach()
+
+# ==============================================================================
+# UI unit tests
 if(GGEMS_WITH_IMGUI)
   ggems_add_test_suite(
-    ggems_gui_tests
+    ggems_ui_tests
     SOURCE_DIR
     ui
     LINK_LIBRARIES
@@ -123,14 +147,10 @@ if(GGEMS_WITH_IMGUI)
     COMPILE_DEFINITIONS
     VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
     VULKAN_HPP_NO_STRUCT_CONSTRUCTORS=1)
+
+  list(APPEND GGEMS_TEST_TARGETS ggems_ui_tests)
 endif()
 
 # ==============================================================================
 # Test build target
-set(GGEMS_TEST_TARGETS ggems_core_tests ggems_framework_tests)
-
-if(GGEMS_WITH_IMGUI)
-  list(APPEND GGEMS_TEST_TARGETS ggems_gui_tests)
-endif()
-
 add_custom_target(tests DEPENDS ${GGEMS_TEST_TARGETS})

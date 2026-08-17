@@ -2,7 +2,7 @@
 
 namespace py = pybind11;
 
-void BindCore(py::module_ &module);
+void BindLogging(py::module_ &module);
 void BindOpenCL(py::module_ &module);
 void BindRandom(py::module_ &module);
 void BindRadionuclide(py::module_ &module);
@@ -22,7 +22,7 @@ PYBIND11_MODULE(ggems, module) {
     exposed to Python via Pybind11.
   )pbdoc";
 
-  auto core = module.def_submodule("core", "GGEMS core module");
+  auto logging = module.def_submodule("logging", "GGEMS logging module");
   auto opencl = module.def_submodule("opencl", "GGEMS OpenCL module");
   auto random = module.def_submodule("rndm", "GGEMS random module");
   auto source = module.def_submodule("source", "GGEMS source module");
@@ -33,7 +33,7 @@ PYBIND11_MODULE(ggems, module) {
   auto gui = module.def_submodule("gui", "GGEMS graphical interface module");
 #endif
 
-  BindCore(core);
+  BindLogging(logging);
   BindOpenCL(opencl);
   BindRadionuclide(module);
   BindRandom(random);

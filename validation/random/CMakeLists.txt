@@ -5,9 +5,8 @@ add_executable(ggems_random_stream_generator
 target_link_libraries(ggems_random_stream_generator
                       PRIVATE ggems_core GGEMS::CompilerOptions)
 
-target_include_directories(
-  ggems_random_stream_generator PRIVATE ${PROJECT_SOURCE_DIR}/include
-                                        ${PROJECT_SOURCE_DIR}/src/frameworks)
+target_include_directories(ggems_random_stream_generator
+                           PRIVATE ${PROJECT_SOURCE_DIR}/include)
 
 target_compile_definitions(
   ggems_random_stream_generator

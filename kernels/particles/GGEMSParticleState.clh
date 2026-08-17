@@ -1,0 +1,51 @@
+#ifndef GGEMS_PARTICLES_GGEMS_PARTICLE_STATE_CLH
+#define GGEMS_PARTICLES_GGEMS_PARTICLE_STATE_CLH
+
+#define GGEMS_INVALID_ID_U32 0xFFFFFFFFU
+#define GGEMS_INVALID_ID_U64 0xFFFFFFFFFFFFFFFFULL
+
+#define GGEMS_PARTICLE_TYPE_UNKNOWN 0U
+#define GGEMS_PARTICLE_TYPE_AIONINO 1U
+#define GGEMS_PARTICLE_TYPE_GAMMA 2U
+#define GGEMS_PARTICLE_TYPE_ELECTRON 3U
+#define GGEMS_PARTICLE_TYPE_POSITRON 4U
+#define GGEMS_PARTICLE_TYPE_PROTON 5U
+#define GGEMS_PARTICLE_TYPE_NEUTRON 6U
+#define GGEMS_PARTICLE_TYPE_ALPHA 7U
+
+#define GGEMS_PARTICLE_STATUS_INACTIVE 0U
+#define GGEMS_PARTICLE_STATUS_ALIVE 1U
+#define GGEMS_PARTICLE_STATUS_KILLED 2U
+#define GGEMS_PARTICLE_STATUS_ESCAPED_WORLD 3U
+#define GGEMS_PARTICLE_STATUS_ABSORBED 4U
+
+typedef struct GGEMSParticleState {
+  ulong global_particle_id;
+  ulong track_id;
+  ulong parent_track_id;
+  ulong time_ps;
+
+  long position_x_pm;
+  long position_y_pm;
+  long position_z_pm;
+
+  uint particle_type;
+  uint status;
+  uint generation;
+  uint flags;
+
+  uint current_navigator_id;
+  uint current_volume_id;
+  uint material_id;
+  uint region_id;
+
+  float direction_x;
+  float direction_y;
+  float direction_z;
+  float direction_w;
+
+  ulong energy_milli_eV;
+  float weight;
+} GGEMSParticleState;
+
+#endif

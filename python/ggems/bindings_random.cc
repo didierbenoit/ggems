@@ -39,8 +39,8 @@
 #include <pybind11/stl.h>
 
 /// \endcond
-#include "GGEMS/core/random/GGEMSRandom.hh"
-#include "GGEMS/core/random/GGEMSRandomEngine.hh"
+#include "GGEMS/random/GGEMSRandom.hh"
+#include "GGEMS/random/GGEMSRandomEngine.hh"
 
 namespace py = pybind11;
 

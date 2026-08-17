@@ -9,8 +9,8 @@ WORKER_COUNT = 4_194_304
 
 
 def main() -> None:
-    ggems.core.set_output_mode("term")
-    ggems.core.start_output_runtime()
+    ggems.logging.set_output_mode("term")
+    ggems.logging.start_output_runtime()
 
     try:
         opencl = ggems.opencl.GGEMSOpenCL()
@@ -58,7 +58,7 @@ def main() -> None:
         simulation.run()
 
     finally:
-        ggems.core.stop_output_runtime()
+        ggems.logging.stop_output_runtime()
 
 
 if __name__ == "__main__":

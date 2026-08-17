@@ -32,7 +32,7 @@
 
 #pragma once
 
-#include "GGEMS/core/GGEMSLogger.hh"
+#include "GGEMS/logging/GGEMSLogger.hh"
 
 namespace ggems::test {
 /*!

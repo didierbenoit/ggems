@@ -4,10 +4,10 @@
 
 #include "detail/GGEMSPythonQuantityConversion.hh"
 
-#include "GGEMS/core/random/GGEMSRandom.hh"
-#include "GGEMS/core/observer/GGEMSTransportObserver.hh"
-#include "GGEMS/core/GGEMSRun.hh"
-#include "GGEMS/core/units/GGEMSTimeUnits.hh"
+#include "GGEMS/random/GGEMSRandom.hh"
+#include "GGEMS/observer/GGEMSTransportObserver.hh"
+#include "GGEMS/GGEMSRun.hh"
+#include "GGEMS/units/GGEMSTimeUnits.hh"
 
 namespace py = pybind11;
 

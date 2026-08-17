@@ -28,10 +28,10 @@
 #include "GGEMS/ui/GGEMSDeviceStatus.hh"
 #include "GGEMS/ui/GGEMSVulkanColorConversion.hh"
 
-#include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSLogMacros.hh"
+#include "GGEMS/GGEMSException.hh"
+#include "GGEMS/logging/GGEMSLogMacros.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
-#include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
+#include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 
 #if defined(_WIN32)

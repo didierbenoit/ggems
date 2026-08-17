@@ -36,8 +36,8 @@
 #include <pybind11/pybind11.h>
 /// \endcond
 
-#include "GGEMS/core/units/GGEMSQuantity.hh"
-#include "GGEMS/core/units/GGEMSUnitConversion.hh"
+#include "GGEMS/units/GGEMSQuantity.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 
 namespace ggems::python::detail {
 

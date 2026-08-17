@@ -6,8 +6,8 @@
 
 #include <imgui.h>
 
-#include "GGEMS/core/GGEMSOutputState.hh"
-#include "GGEMS/core/GGEMSLogger.hh"
+#include "GGEMS/logging/GGEMSOutputState.hh"
+#include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/ui/GGEMSImGuiTheme.hh"
 #include "GGEMS/ui/GGEMSImGuiOutputPanel.hh"
 #include "GGEMS/render/GGEMSColor.hh"

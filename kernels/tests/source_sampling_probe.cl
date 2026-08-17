@@ -1,6 +1,6 @@
-#include "core/random/GGEMSRandom.clh"
-#include "core/sources/GGEMSSource.clh"
-#include "core/sources/GGEMSEnergyDistribution.clh"
+#include "random/GGEMSRandom.clh"
+#include "sources/GGEMSSource.clh"
+#include "sources/GGEMSEnergyDistribution.clh"
 
 // =============================================================================
 // =============================================================================

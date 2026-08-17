@@ -1,5 +1,5 @@
-#include "core/radioactivity/GGEMSRadioactiveTimeSampling.clh"
-#include "core/random/GGEMSRandom.clh"
+#include "radioactivity/GGEMSRadioactiveTimeSampling.clh"
+#include "random/GGEMSRandom.clh"
 
 __kernel void
 radioactive_time_random_probe(__global GGEMSRandomState *random_states,

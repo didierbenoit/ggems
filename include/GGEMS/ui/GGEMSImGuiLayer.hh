@@ -8,7 +8,7 @@
 
 #include "GGEMSImGuiOutputPanel.hh"
 #include "GGEMSDeviceStatus.hh"
-#include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
+#include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 
 namespace ggems::ui {

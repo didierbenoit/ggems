@@ -13,7 +13,7 @@
 #include "GGEMSVulkanDeviceSelection.hh"
 
 #include "GGEMS/render/GGEMSParticleTrace.hh"
-#include "GGEMS/core/sources/GGEMSSourceRunSnapshot.hh"
+#include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 
 struct GLFWwindow;
 

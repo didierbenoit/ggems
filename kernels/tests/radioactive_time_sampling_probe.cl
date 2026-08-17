@@ -1,4 +1,4 @@
-#include "core/radioactivity/GGEMSRadioactiveTimeSampling.clh"
+#include "radioactivity/GGEMSRadioactiveTimeSampling.clh"
 
 typedef struct GGEMSRadioactiveTimeSamplingResult {
   ulong time_ps;

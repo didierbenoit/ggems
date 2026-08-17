@@ -29,7 +29,7 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-#include "core/random/GGEMSPhilox.clh"
+#include "random/GGEMSPhilox.clh"
 
 /// \cond
 

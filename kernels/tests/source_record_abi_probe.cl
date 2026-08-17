@@ -1,5 +1,5 @@
-#include "core/sources/GGEMSSourceRecord.clh"
-#include "core/sources/GGEMSSourceRunRange.clh"
+#include "sources/GGEMSSourceRecord.clh"
+#include "sources/GGEMSSourceRunRange.clh"
 
 // =============================================================================
 // =============================================================================

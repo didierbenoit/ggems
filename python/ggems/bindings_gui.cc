@@ -7,8 +7,8 @@
 
 #include <pybind11/pybind11.h>
 
-#include "GGEMS/core/GGEMSRun.hh"
-#include "GGEMS/core/observer/GGEMSTransportObserver.hh"
+#include "GGEMS/GGEMSRun.hh"
+#include "GGEMS/observer/GGEMSTransportObserver.hh"
 #include "GGEMS/ui/GGEMSGuiApplication.hh"
 
 namespace py = pybind11;

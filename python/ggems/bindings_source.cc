@@ -12,16 +12,16 @@
 #include "detail/GGEMSPythonQuantityConversion.hh"
 #include "detail/GGEMSPythonRadionuclideDefinition.hh"
 
-#include "GGEMS/core/particles/GGEMSParticleTypes.hh"
-#include "GGEMS/core/sources/GGEMSSource.hh"
-#include "GGEMS/core/sources/GGEMSSourceTypes.hh"
-#include "GGEMS/core/sources/GGEMSSourcePopulation.hh"
-#include "GGEMS/core/units/GGEMSEnergyUnits.hh"
-#include "GGEMS/core/units/GGEMSAngularUnits.hh"
-#include "GGEMS/core/units/GGEMSLengthUnits.hh"
-#include "GGEMS/core/units/GGEMSActivityUnits.hh"
-#include "GGEMS/core/units/GGEMSTimeUnits.hh"
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
+#include "GGEMS/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/sources/GGEMSSource.hh"
+#include "GGEMS/sources/GGEMSSourceTypes.hh"
+#include "GGEMS/sources/GGEMSSourcePopulation.hh"
+#include "GGEMS/units/GGEMSEnergyUnits.hh"
+#include "GGEMS/units/GGEMSAngularUnits.hh"
+#include "GGEMS/units/GGEMSLengthUnits.hh"
+#include "GGEMS/units/GGEMSActivityUnits.hh"
+#include "GGEMS/units/GGEMSTimeUnits.hh"
+#include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
 
 namespace py = pybind11;
 

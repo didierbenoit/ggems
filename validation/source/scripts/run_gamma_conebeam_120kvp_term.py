@@ -16,8 +16,8 @@ def main() -> None:
     if not SPECTRUM_PATH.is_file():
         raise FileNotFoundError(f"GGEMS source spectrum was not found: {SPECTRUM_PATH}")
 
-    ggems.core.set_output_mode("term")
-    ggems.core.start_output_runtime()
+    ggems.logging.set_output_mode("term")
+    ggems.logging.start_output_runtime()
 
     try:
         opencl = ggems.opencl.GGEMSOpenCL()
@@ -63,7 +63,7 @@ def main() -> None:
         simulation.initialize()
         simulation.run()
     finally:
-        ggems.core.stop_output_runtime()
+        ggems.logging.stop_output_runtime()
 
 
 if __name__ == "__main__":

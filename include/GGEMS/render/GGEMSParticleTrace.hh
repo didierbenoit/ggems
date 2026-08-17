@@ -6,9 +6,9 @@
 #include <array>
 #include <vector>
 
-#include "GGEMS/core/observer/GGEMSObserverRecord.hh"
-#include "GGEMS/core/observer/GGEMSObserverTypes.hh"
-#include "GGEMS/core/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/observer/GGEMSObserverRecord.hh"
+#include "GGEMS/observer/GGEMSObserverTypes.hh"
+#include "GGEMS/particles/GGEMSParticleTypes.hh"
 
 namespace ggems::render {
 

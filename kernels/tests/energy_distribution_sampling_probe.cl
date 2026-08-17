@@ -1,4 +1,4 @@
-#include "core/sources/GGEMSEnergyDistribution.clh"
+#include "sources/GGEMSEnergyDistribution.clh"
 
 __kernel void energy_distribution_sampling_probe(
     __global GGEMSRandomState *sample_states,

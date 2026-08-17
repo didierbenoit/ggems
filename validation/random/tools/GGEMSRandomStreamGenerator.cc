@@ -15,12 +15,12 @@
 #include <span>
 #include <utility>
 
-#include "GGEMS/core/random/GGEMSRandom.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLLaunchGeometry.hh"
-#include "GGEMS/frameworks/GGEMSOpenCL.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLKernel.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLSVMBuffer.hh"
-#include "GGEMS/core/units/GGEMSBytesUnits.hh"
+#include "GGEMS/random/GGEMSRandom.hh"
+#include "GGEMS/opencl/GGEMSOpenCLLaunchGeometry.hh"
+#include "GGEMS/opencl/GGEMSOpenCL.hh"
+#include "GGEMS/opencl/GGEMSOpenCLKernel.hh"
+#include "GGEMS/opencl/GGEMSOpenCLSVMBuffer.hh"
+#include "GGEMS/units/GGEMSBytesUnits.hh"
 
 namespace {
 using ggems::core::random::GGEMSRandom;

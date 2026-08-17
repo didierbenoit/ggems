@@ -8,11 +8,11 @@
 #include "GGEMS/render/GGEMSColor.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/render/GGEMSParticleColors.hh"
-#include "GGEMS/core/observer/GGEMSObserverRecord.hh"
-#include "GGEMS/core/observer/GGEMSObserverTypes.hh"
-#include "GGEMS/core/particles/GGEMSParticleTypes.hh"
-#include "GGEMS/core/units/GGEMSLengthUnits.hh"
-#include "GGEMS/core/units/GGEMSUnitConversion.hh"
+#include "GGEMS/observer/GGEMSObserverRecord.hh"
+#include "GGEMS/observer/GGEMSObserverTypes.hh"
+#include "GGEMS/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/units/GGEMSLengthUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 
 namespace ggems::render {
 namespace {

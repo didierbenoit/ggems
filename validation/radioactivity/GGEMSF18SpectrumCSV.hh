@@ -7,7 +7,7 @@
 #include <span>
 #include <string_view>
 
-#include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
+#include "GGEMS/sources/GGEMSEnergyDistribution.hh"
 
 namespace ggems::validation::radioactivity {
 

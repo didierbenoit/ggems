@@ -1,4 +1,4 @@
-#include "core/particles/GGEMSParticleState.clh"
+#include "particles/GGEMSParticleState.clh"
 
 __kernel void particle_dummy_kill_alive(__global GGEMSParticleState *particles,
                                         __global uint *active_count,

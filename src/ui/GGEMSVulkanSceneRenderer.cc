@@ -16,11 +16,11 @@
 #include "GGEMS/ui/GGEMSVulkanSceneRenderer.hh"
 #include "GGEMS/ui/GGEMSVulkanColorConversion.hh"
 
-#include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/GGEMSLogMacros.hh"
+#include "GGEMS/GGEMSException.hh"
+#include "GGEMS/logging/GGEMSLogMacros.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
-#include "GGEMS/core/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/particles/GGEMSParticleTypes.hh"
 
 namespace {
 

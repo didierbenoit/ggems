@@ -1,0 +1,247 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Unit tests for GGEMS length, position, and displacement conversions.
+ *
+ * Validates all registered length tokens, signed coordinate/displacement conversion, half-picometer rounding, range checks, invalid inputs, and formatting.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
+#include <array>
+#include <cmath>
+#include <concepts>
+#include <cstdint>
+#include <limits>
+#include <string_view>
+
+#include <gtest/gtest.h>
+
+/// \endcond
+#include "GGEMS/logging/GGEMSLogger.hh"
+#include "GGEMS/units/GGEMSLengthUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
+#include "GGEMSScopedLoggerEncoding.hh"
+
+/// \cond
+
+namespace {
+
+using ggems::test::ScopedLoggerEncoding;
+using ggems::units::Displacement;
+using ggems::units::HumanReadableSignedLength;
+using ggems::units::Length;
+using ggems::units::MakeQuantity;
+using ggems::units::PositionCoordinate;
+using ggems::units::UnitConversionError;
+
+struct SignedConversionCase {
+  long double value;
+  std::string_view unit;
+  std::int64_t expected;
+};
+
+struct LengthConversionCase {
+  long double value;
+  std::string_view unit;
+  std::uint64_t expected;
+};
+
+template <typename QuantityValue>
+auto ExpectConversionError(long double value, std::string_view unit,
+                           UnitConversionError expected_error) -> void {
+  auto const conversion = MakeQuantity<QuantityValue>(value, unit);
+
+  ASSERT_FALSE(conversion.has_value());
+  EXPECT_EQ(conversion.error(), expected_error);
+}
+
+static_assert(!std::same_as<Length, PositionCoordinate>);
+static_assert(!std::convertible_to<Length, PositionCoordinate>);
+static_assert(!std::convertible_to<PositionCoordinate, Length>);
+
+} // namespace
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSLengthUnits, ConvertsEveryRegisteredLengthToken) {
+  constexpr std::array<LengthConversionCase, 8U> cases{{
+      {.value = 2.0L, .unit = "pm", .expected = 2ULL},
+      {.value = 2.0L, .unit = "nm", .expected = 2'000ULL},
+      {.value = 2.0L, .unit = "um", .expected = 2'000'000ULL},
+      {.value = 2.0L, .unit = "mm", .expected = 2'000'000'000ULL},
+      {.value = 2.0L, .unit = "cm", .expected = 20'000'000'000ULL},
+      {.value = 2.0L, .unit = "m", .expected = 2'000'000'000'000ULL},
+      {.value = 2.0L, .unit = "km", .expected = 2'000'000'000'000'000ULL},
+      {.value = 0.0L, .unit = "km", .expected = 0ULL},
+  }};
+
+  for (auto const &test_case : cases) {
+    auto const conversion =
+        MakeQuantity<Length>(test_case.value, test_case.unit);
+
+    ASSERT_TRUE(conversion.has_value()) << test_case.unit;
+    EXPECT_EQ(conversion->value, test_case.expected) << test_case.unit;
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSLengthUnits, ConvertsSignedPositionCoordinates) {
+  constexpr std::array<SignedConversionCase, 4U> cases{{
+      {.value = 2.0L, .unit = "pm", .expected = 2LL},
+      {.value = -2.0L, .unit = "nm", .expected = -2'000LL},
+      {.value = 2.0L, .unit = "cm", .expected = 20'000'000'000LL},
+      {.value = -2.0L, .unit = "km", .expected = -2'000'000'000'000'000LL},
+  }};
+
+  for (auto const &test_case : cases) {
+    auto const conversion =
+        MakeQuantity<PositionCoordinate>(test_case.value, test_case.unit);
+
+    ASSERT_TRUE(conversion.has_value()) << test_case.unit;
+    EXPECT_EQ(conversion->value, test_case.expected) << test_case.unit;
+  }
+}
+
+TEST(GGEMSLengthUnits, ConvertsSignedDisplacements) {
+  constexpr std::array<SignedConversionCase, 2U> cases{{
+      {.value = 2.0L, .unit = "nm", .expected = 2'000LL},
+      {.value = -2.0L, .unit = "cm", .expected = -20'000'000'000LL},
+  }};
+
+  for (auto const &test_case : cases) {
+    auto const conversion =
+        MakeQuantity<Displacement>(test_case.value, test_case.unit);
+
+    ASSERT_TRUE(conversion.has_value()) << test_case.unit;
+    EXPECT_EQ(conversion->value, test_case.expected) << test_case.unit;
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSLengthUnits, RoundsHalfPicometersAwayFromZero) {
+  constexpr std::array<SignedConversionCase, 8U> cases{{
+      {.value = 0.49L, .unit = "pm", .expected = 0LL},
+      {.value = 0.5L, .unit = "pm", .expected = 1LL},
+      {.value = 1.49L, .unit = "pm", .expected = 1LL},
+      {.value = 1.5L, .unit = "pm", .expected = 2LL},
+      {.value = -0.49L, .unit = "pm", .expected = 0LL},
+      {.value = -0.5L, .unit = "pm", .expected = -1LL},
+      {.value = -1.49L, .unit = "pm", .expected = -1LL},
+      {.value = -1.5L, .unit = "pm", .expected = -2LL},
+  }};
+
+  for (auto const &test_case : cases) {
+    auto const conversion =
+        MakeQuantity<PositionCoordinate>(test_case.value, test_case.unit);
+
+    ASSERT_TRUE(conversion.has_value());
+    EXPECT_EQ(conversion->value, test_case.expected);
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSLengthUnits, EnforcesSignedCanonicalRange) {
+  long double const upper_exclusive = std::ldexp(1.0L, 63);
+  long double const lower_inclusive = -upper_exclusive;
+  long double const below_lower = std::nextafter(
+      lower_inclusive, -std::numeric_limits<long double>::infinity());
+
+  auto const upper_accepted = MakeQuantity<PositionCoordinate>(
+      std::numeric_limits<std::int64_t>::max(), "pm");
+  auto const lower_accepted = MakeQuantity<PositionCoordinate>(
+      std::numeric_limits<std::int64_t>::min(), "pm");
+
+  ASSERT_TRUE(upper_accepted.has_value());
+  EXPECT_EQ(upper_accepted->value, std::numeric_limits<std::int64_t>::max());
+  ASSERT_TRUE(lower_accepted.has_value());
+  EXPECT_EQ(lower_accepted->value, std::numeric_limits<std::int64_t>::min());
+
+  ExpectConversionError<PositionCoordinate>(upper_exclusive, "pm",
+                                            UnitConversionError::OutOfRange);
+  ExpectConversionError<PositionCoordinate>(below_lower, "pm",
+                                            UnitConversionError::OutOfRange);
+  ExpectConversionError<PositionCoordinate>(
+      std::numeric_limits<long double>::max(), "m",
+      UnitConversionError::OutOfRange);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSLengthUnits, EnforcesNonNegativeCanonicalRange) {
+  long double const upper_exclusive = std::ldexp(1.0L, 64);
+
+  auto const accepted =
+      MakeQuantity<Length>(std::numeric_limits<std::uint64_t>::max(), "pm");
+  ASSERT_TRUE(accepted.has_value());
+  EXPECT_EQ(accepted->value, std::numeric_limits<std::uint64_t>::max());
+
+  auto const rounded_zero = MakeQuantity<Length>(0.49L, "pm");
+  ASSERT_TRUE(rounded_zero.has_value());
+  EXPECT_EQ(rounded_zero->value, 0ULL);
+
+  auto const negative_zero = MakeQuantity<Length>(-0.0L, "pm");
+  ASSERT_TRUE(negative_zero.has_value());
+  EXPECT_EQ(negative_zero->value, 0ULL);
+
+  ExpectConversionError<Length>(-0.49L, "pm",
+                                UnitConversionError::NegativeValue);
+  ExpectConversionError<Length>(upper_exclusive, "pm",
+                                UnitConversionError::OutOfRange);
+  ExpectConversionError<Length>(std::numeric_limits<long double>::max(), "km",
+                                UnitConversionError::OutOfRange);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSLengthUnits, RejectsNonFiniteValuesAndUnknownTokens) {
+  ExpectConversionError<Length>(std::numeric_limits<long double>::quiet_NaN(),
+                                "pm", UnitConversionError::NonFinite);
+  ExpectConversionError<Length>(std::numeric_limits<long double>::infinity(),
+                                "pm", UnitConversionError::NonFinite);
+  ExpectConversionError<PositionCoordinate>(
+      -std::numeric_limits<long double>::infinity(), "pm",
+      UnitConversionError::NonFinite);
+  ExpectConversionError<Length>(1.0L, "KM",
+                                UnitConversionError::UnsupportedUnit);
+  ExpectConversionError<Length>(1.0L, "inch",
+                                UnitConversionError::UnsupportedUnit);
+}
+
+TEST(GGEMSLengthUnits, FormatsSignedLengthThroughPublicHelper) {
+  ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
+
+  EXPECT_EQ(HumanReadableSignedLength(-1'000'000LL, 2), "-1.00 um");
+}
+/// \endcond

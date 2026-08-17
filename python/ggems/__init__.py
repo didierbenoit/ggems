@@ -42,7 +42,7 @@ except ImportError:
 
     from . import ggems
 
-core = ggems.core
+logging = ggems.logging
 opencl = ggems.opencl
 rndm = ggems.rndm
 source = ggems.source
@@ -53,7 +53,7 @@ Source = ggems.Source
 radionuclide = ggems.radionuclide
 
 __all__ = [
-    "core",
+    "logging",
     "opencl",
     "rndm",
     "source",

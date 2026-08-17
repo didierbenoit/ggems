@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GGEMS/core/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/render/GGEMSColor.hh"
 

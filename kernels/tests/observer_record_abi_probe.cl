@@ -1,4 +1,4 @@
-#include "core/observer/GGEMSObserverRecord.clh"
+#include "observer/GGEMSObserverRecord.clh"
 
 typedef struct GGEMSObserverConfigAlignmentProbe {
   uchar prefix;

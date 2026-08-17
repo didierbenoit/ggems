@@ -38,7 +38,7 @@
 #include <pybind11/stl.h>
 /// \endcond
 
-#include "GGEMS/frameworks/GGEMSOpenCL.hh"
+#include "GGEMS/opencl/GGEMSOpenCL.hh"
 
 namespace py = pybind11;
 

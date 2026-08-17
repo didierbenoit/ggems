@@ -40,10 +40,10 @@
 #include <vector>
 /// \endcond
 
-#include "GGEMS/frameworks/GGEMSOpenCL.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLPlatform.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLStrings.hh"
+#include "GGEMS/opencl/GGEMSOpenCL.hh"
+#include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
+#include "GGEMS/opencl/GGEMSOpenCLPlatform.hh"
+#include "GGEMS/opencl/GGEMSOpenCLStrings.hh"
 
 /*!
  * \namespace ggems::test

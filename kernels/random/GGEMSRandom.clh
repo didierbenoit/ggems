@@ -1,0 +1,195 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Declares the engine-independent OpenCL GGEMS random API.
+ *
+ * Selects the configured random engine at compile time and exposes common raw, scalar-uniform, and vector-uniform entry points.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_RANDOM_GGEMS_RANDOM_CLH
+/// \cond
+#define GGEMS_RANDOM_GGEMS_RANDOM_CLH
+/// \endcond
+
+/*!
+ * \def GGEMS_RANDOM_ENGINE_JKISS
+ * \brief Compile-time identifier selecting the JKISS backend.
+ */
+#define GGEMS_RANDOM_ENGINE_JKISS 1
+/*!
+ * \def GGEMS_RANDOM_ENGINE_PCG32
+ * \brief Compile-time identifier selecting the PCG32 backend.
+ */
+#define GGEMS_RANDOM_ENGINE_PCG32 2
+/*!
+ * \def GGEMS_RANDOM_ENGINE_PHILOX
+ * \brief Compile-time identifier selecting the Philox backend.
+ */
+#define GGEMS_RANDOM_ENGINE_PHILOX 3
+
+#ifndef GGEMS_RANDOM_ENGINE
+#error "GGEMS_RANDOM_ENGINE must be defined before including GGEMSRandom.clh."
+#endif
+
+#if GGEMS_RANDOM_ENGINE == GGEMS_RANDOM_ENGINE_JKISS
+
+#include "random/GGEMSJKiss.clh"
+
+/*!
+ * \brief Engine-specific state type used by the generic GGEMS OpenCL random API.
+ */
+typedef GGEMSJKissState GGEMSRandomState;
+
+/*!
+ * \brief Generates the next raw 32-bit value through the selected random engine.
+ * \param[in,out] states Array of generic random states.
+ * \param[in] index State index identifying the logical stream.
+ * \return Next raw 32-bit random value.
+ */
+static inline uint GGEMS_RndmUInt32(__global GGEMSRandomState *states,
+                                    uint const index) {
+  return GGEMS_JKissNextUInt(states, index);
+}
+
+/*!
+ * \brief Generates one scalar uniform value through the selected random engine.
+ * \param[in,out] states Array of generic random states.
+ * \param[in] index State index identifying the logical stream.
+ * \return Uniform binary32 value in [0, 1).
+ */
+static inline float GGEMS_RndmUniform(__global GGEMSRandomState *states,
+                                      uint const index) {
+  return GGEMS_JKissUniform(states, index);
+}
+
+/*!
+ * \brief Generates four uniform values through the selected random engine.
+ * \param[in,out] states Array of generic random states.
+ * \param[in] index State index identifying the logical stream.
+ * \return Four uniform binary32 values in [0, 1).
+ */
+static inline float4 GGEMS_RndmUniform4(__global GGEMSRandomState *states,
+                                        uint const index) {
+  float const x = GGEMS_JKissUniform(states, index);
+  float const y = GGEMS_JKissUniform(states, index);
+  float const z = GGEMS_JKissUniform(states, index);
+  float const w = GGEMS_JKissUniform(states, index);
+  return (float4)(x, y, z, w);
+}
+
+#elif GGEMS_RANDOM_ENGINE == GGEMS_RANDOM_ENGINE_PCG32
+
+#include "random/GGEMSPCG32.clh"
+
+/*!
+ * \brief Engine-specific state type used by the generic GGEMS OpenCL random API.
+ */
+typedef GGEMSPCG32State GGEMSRandomState;
+
+/*!
+ * \brief Generates the next raw 32-bit value through the selected random engine.
+ * \param[in,out] states Array of generic random states.
+ * \param[in] index State index identifying the logical stream.
+ * \return Next raw 32-bit random value.
+ */
+static inline uint GGEMS_RndmUInt32(__global GGEMSRandomState *states,
+                                    uint const index) {
+  return GGEMS_PCG32NextUInt(states, index);
+}
+
+/*!
+ * \brief Generates one scalar uniform value through the selected random engine.
+ * \param[in,out] states Array of generic random states.
+ * \param[in] index State index identifying the logical stream.
+ * \return Uniform binary32 value in [0, 1).
+ */
+static inline float GGEMS_RndmUniform(__global GGEMSRandomState *states,
+                                      uint const index) {
+  return GGEMS_PCG32Uniform(states, index);
+}
+
+/*!
+ * \brief Generates four uniform values through the selected random engine.
+ * \param[in,out] states Array of generic random states.
+ * \param[in] index State index identifying the logical stream.
+ * \return Four uniform binary32 values in [0, 1).
+ */
+static inline float4 GGEMS_RndmUniform4(__global GGEMSRandomState *states,
+                                        uint const index) {
+  float const x = GGEMS_PCG32Uniform(states, index);
+  float const y = GGEMS_PCG32Uniform(states, index);
+  float const z = GGEMS_PCG32Uniform(states, index);
+  float const w = GGEMS_PCG32Uniform(states, index);
+  return (float4)(x, y, z, w);
+}
+
+#elif GGEMS_RANDOM_ENGINE == GGEMS_RANDOM_ENGINE_PHILOX
+
+#include "random/GGEMSPhilox.clh"
+
+/*!
+ * \brief Engine-specific state type used by the generic GGEMS OpenCL random API.
+ */
+typedef GGEMSPhiloxState GGEMSRandomState;
+
+/*!
+ * \brief Generates the next raw 32-bit value through the selected random engine.
+ * \param[in,out] states Array of generic random states.
+ * \param[in] index State index identifying the logical stream.
+ * \return Next raw 32-bit random value.
+ */
+static inline uint GGEMS_RndmUInt32(__global GGEMSRandomState *states,
+                                    uint const index) {
+  return GGEMS_PhiloxNextUInt(states, index);
+}
+
+/*!
+ * \brief Generates one scalar uniform value through the selected random engine.
+ * \param[in,out] states Array of generic random states.
+ * \param[in] index State index identifying the logical stream.
+ * \return Uniform binary32 value in [0, 1).
+ */
+static inline float GGEMS_RndmUniform(__global GGEMSRandomState *states,
+                                      uint const index) {
+  return GGEMS_PhiloxUniform(states, index);
+}
+
+/*!
+ * \brief Generates four uniform values through the selected random engine.
+ * \param[in,out] states Array of generic random states.
+ * \param[in] index State index identifying the logical stream.
+ * \return Four uniform binary32 values in [0, 1).
+ */
+static inline float4 GGEMS_RndmUniform4(__global GGEMSRandomState *states,
+                                        uint const index) {
+  return GGEMS_PhiloxUniform4(states, index);
+}
+
+#else
+#error "Unsupported GGEMS_RANDOM_ENGINE value."
+#endif
+
+#endif

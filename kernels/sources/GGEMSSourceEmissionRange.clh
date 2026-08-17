@@ -1,0 +1,9 @@
+#ifndef GGEMS_SOURCES_GGEMS_SOURCE_EMISSION_RANGE_CLH
+#define GGEMS_SOURCES_GGEMS_SOURCE_EMISSION_RANGE_CLH
+
+typedef struct GGEMSSourceEmissionRange {
+  ulong source_local_primary_begin;
+  ulong primary_count;
+} GGEMSSourceEmissionRange;
+
+#endif

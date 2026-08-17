@@ -1,6 +1,6 @@
-#include "core/sources/GGEMSSourceEmissionRecord.clh"
-#include "core/sources/GGEMSSourceEmissionRange.clh"
-#include "core/sources/GGEMSSourcePopulationRecord.clh"
+#include "sources/GGEMSSourceEmissionRecord.clh"
+#include "sources/GGEMSSourceEmissionRange.clh"
+#include "sources/GGEMSSourcePopulationRecord.clh"
 
 typedef struct GGEMSSourcePopulationAlignmentProbe {
   uchar prefix;

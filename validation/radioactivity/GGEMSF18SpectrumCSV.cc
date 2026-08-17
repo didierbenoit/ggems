@@ -16,11 +16,11 @@
 #include <string_view>
 #include <utility>
 
-#include "GGEMS/core/particles/GGEMSParticleTypes.hh"
-#include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
-#include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
-#include "GGEMS/core/sources/GGEMSSourceTypes.hh"
+#include "GGEMS/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/GGEMSException.hh"
+#include "GGEMS/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
+#include "GGEMS/sources/GGEMSEnergyDistribution.hh"
+#include "GGEMS/sources/GGEMSSourceTypes.hh"
 #include "GGEMSF18SpectrumCSV.hh"
 
 namespace ggems::validation::radioactivity {

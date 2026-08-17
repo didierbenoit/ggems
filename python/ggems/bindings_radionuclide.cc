@@ -8,8 +8,8 @@
 
 #include "detail/GGEMSPythonRadionuclideDefinition.hh"
 
-#include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
-#include "GGEMS/core/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
+#include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
+#include "GGEMS/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
 
 namespace py = pybind11;
 

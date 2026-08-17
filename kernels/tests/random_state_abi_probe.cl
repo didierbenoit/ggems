@@ -29,7 +29,7 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-#include "core/random/GGEMSRandomTypes.clh"
+#include "random/GGEMSRandomTypes.clh"
 
 /// \cond
 

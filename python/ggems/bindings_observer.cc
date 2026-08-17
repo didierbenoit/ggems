@@ -2,7 +2,7 @@
 
 #include <pybind11/pybind11.h>
 
-#include "GGEMS/core/observer/GGEMSTransportObserver.hh"
+#include "GGEMS/observer/GGEMSTransportObserver.hh"
 
 namespace py = pybind11;
 

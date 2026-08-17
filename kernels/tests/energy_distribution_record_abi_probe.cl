@@ -1,4 +1,4 @@
-#include "core/sources/GGEMSEnergyDistributionRecord.clh"
+#include "sources/GGEMSEnergyDistributionRecord.clh"
 
 typedef struct GGEMSEnergyDistributionRecordAlignmentProbe {
   uchar prefix;

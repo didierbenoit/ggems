@@ -36,7 +36,7 @@
 #include <cstddef>
 /// \endcond
 
-#include "GGEMS/core/GGEMSLogger.hh"
+#include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
 #include "GGEMS/render/GGEMSColor.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"

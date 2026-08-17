@@ -37,9 +37,9 @@
 #include <vector>
 /// \endcond
 
-#include "GGEMS/frameworks/GGEMSOpenCLContext.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLDevice.hh"
-#include "GGEMS/frameworks/GGEMSOpenCLExternal.hh"
+#include "GGEMS/opencl/GGEMSOpenCLContext.hh"
+#include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
+#include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
 
 namespace ggems::test {

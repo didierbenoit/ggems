@@ -1,4 +1,4 @@
-#include "core/particles/GGEMSParticleState.clh"
+#include "particles/GGEMSParticleState.clh"
 
 __kernel void particle_generate_dummy_primary(
     __global GGEMSParticleState *particles, ulong global_particle_offset,

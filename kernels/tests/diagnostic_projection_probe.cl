@@ -1,4 +1,4 @@
-#include "core/transport/GGEMSDiagnosticProjection.clh"
+#include "transport/GGEMSDiagnosticProjection.clh"
 
 __kernel void diagnostic_projection_probe(
     __global float const *components, __global long *scaled_components,
