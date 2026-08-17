@@ -1,12 +1,10 @@
-#include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstddef>
 
 #include <gtest/gtest.h>
 
 #include "GGEMS/core/particles/GGEMSParticleTypes.hh"
-#include "GGEMS/core/radioactivity/GGEMSBetaSpectrumBuilder.hh"
-#include "GGEMS/core/radioactivity/GGEMSBetaTransition.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideEmission.hh"
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideLibrary.hh"
@@ -20,12 +18,6 @@ namespace {
 // =============================================================================
 
 using ggems::core::particles::GGEMSParticleType;
-using ggems::core::radioactivity::BuildBetaSpectrum;
-using ggems::core::radioactivity::GGEMSBetaSign;
-using ggems::core::radioactivity::GGEMSBetaSpectrumBuildResult;
-using ggems::core::radioactivity::GGEMSBetaSpectrumModel;
-using ggems::core::radioactivity::GGEMSBetaTransition;
-using ggems::core::radioactivity::GGEMSBetaTransitionClass;
 using ggems::core::radioactivity::GGEMSRadionuclideDefinition;
 using ggems::core::radioactivity::GGEMSRadionuclideEmission;
 using ggems::core::radioactivity::GGEMSRadionuclideLibrary;
@@ -38,26 +30,10 @@ using ggems::core::sources::k_energy_ticket_space_size;
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] auto BuildExpectedC11Spectrum() -> GGEMSBetaSpectrumBuildResult {
-  GGEMSBetaTransition const transition{GGEMSBetaSign::Plus, 5U, 11U,
-                                       960'500'000ULL,
-                                       GGEMSBetaTransitionClass::Allowed};
-  return BuildBetaSpectrum(
-      transition, {.model = GGEMSBetaSpectrumModel::AllowedPointCoulomb,
-                   .grid = {.target_maximum_bin_width_milli_eV = 500'000ULL}});
-}
-
-// =============================================================================
-// =============================================================================
-
 TEST(GGEMSC11Test, BuildsExactIdentityAndSinglePositronEmission) {
   GGEMSRadionuclideDefinition const definition = BuildC11Radionuclide();
 
   EXPECT_EQ(definition.GetCanonicalName(), "C-11");
-  ASSERT_EQ(definition.GetAliases().size(), 3U);
-  EXPECT_EQ(definition.GetAliases()[0U], "C11");
-  EXPECT_EQ(definition.GetAliases()[1U], "11C");
-  EXPECT_EQ(definition.GetAliases()[2U], "Carbon-11");
   EXPECT_EQ(definition.GetHalfLifeSeconds(), 1'221.66L);
 
   auto const emissions = definition.GetEmissions();
@@ -78,50 +54,48 @@ TEST(GGEMSC11Test, BuildsExactIdentityAndSinglePositronEmission) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSC11Test, BuildsReachableAllowedPointCoulombSpectrum) {
+TEST(GGEMSC11Test, PreservesTabulatedBetaShapeSpectrum) {
   GGEMSRadionuclideDefinition const definition = BuildC11Radionuclide();
   auto const &distribution =
       definition.GetEmissions()[0U].GetEnergyDistribution();
-  auto const expected = BuildExpectedC11Spectrum();
   auto const centers = distribution.GetEnergyValuesMilliElectronVolt();
   auto const weights = distribution.GetRelativeWeights();
   auto const tickets = distribution.GetCumulativeTicketUpperBounds();
 
   EXPECT_EQ(distribution.GetType(),
             GGEMSEnergyDistributionType::RegularSpectrum);
-  EXPECT_EQ(expected.diagnostics.model,
-            GGEMSBetaSpectrumModel::AllowedPointCoulomb);
-  EXPECT_EQ(expected.diagnostics.bin_count, 1'921U);
-  EXPECT_EQ(expected.diagnostics.bin_width_milli_eV, 499'998ULL);
-  EXPECT_EQ(expected.diagnostics.lower_edge_milli_eV, 3'842ULL);
-  EXPECT_EQ(expected.diagnostics.upper_edge_milli_eV, 960'500'000ULL);
-  EXPECT_GT(expected.diagnostics.minimum_assigned_ticket_count, 0ULL);
 
-  EXPECT_TRUE(std::ranges::equal(
-      centers, expected.distribution.GetEnergyValuesMilliElectronVolt()));
-  EXPECT_TRUE(
-      std::ranges::equal(weights, expected.distribution.GetRelativeWeights()));
-  EXPECT_TRUE(std::ranges::equal(
-      tickets, expected.distribution.GetCumulativeTicketUpperBounds()));
+  EXPECT_EQ(distribution.GetTableCount(), 1'921U);
+  EXPECT_EQ(distribution.GetRegularBinWidthMilliElectronVolt(), 499'998ULL);
+
+  ASSERT_EQ(centers.size(), 1'921U);
+  ASSERT_EQ(weights.size(), centers.size());
+  ASSERT_EQ(tickets.size(), centers.size());
+  EXPECT_EQ(centers.front() - 249'999ULL, 3'842ULL);
+  EXPECT_EQ(centers.back() + 249'999ULL, 960'500'000ULL);
 
   long double weight_sum{0.0L};
-  for (double const weight : weights) {
+  long double weighted_center_sum{0.0L};
+  std::uint64_t previous_ticket{0ULL};
+
+  for (std::size_t index = 0U; index < centers.size(); ++index) {
+    double const weight = weights[index];
     EXPECT_TRUE(std::isfinite(weight));
     EXPECT_GT(weight, 0.0);
     weight_sum += static_cast<long double>(weight);
-  }
-  EXPECT_NEAR(static_cast<double>(weight_sum), 1.0, 1.0e-12);
+    weighted_center_sum += static_cast<long double>(weight) *
+                           static_cast<long double>(centers[index]);
 
-  std::uint64_t previous_ticket{0ULL};
-  for (std::uint64_t const upper : tickets) {
-    EXPECT_GT(upper, previous_ticket);
-    previous_ticket = upper;
+    EXPECT_GT(tickets[index], previous_ticket);
+    previous_ticket = tickets[index];
   }
+
+  EXPECT_NEAR(static_cast<double>(weight_sum), 1.0, 1.0e-12);
   EXPECT_EQ(previous_ticket, k_energy_ticket_space_size);
-  ASSERT_FALSE(centers.empty());
-  EXPECT_EQ(centers.back() +
-                (distribution.GetRegularBinWidthMilliElectronVolt() / 2ULL),
-            960'500'000ULL);
+
+  long double const mean_energy_keV =
+      weighted_center_sum / weight_sum / 1'000'000.0L;
+  EXPECT_NEAR(static_cast<double>(mean_energy_keV), 385.33, 0.01);
 }
 
 // =============================================================================
@@ -141,9 +115,9 @@ TEST(GGEMSC11Test, LibraryRetainsStableImmutableDefinition) {
   static_cast<void>(library.Add(BuildO15Radionuclide()));
 
   EXPECT_EQ(library.Find("C-11"), registered);
-  EXPECT_EQ(library.Find(" c11 "), registered);
-  EXPECT_EQ(library.Find("11c"), registered);
-  EXPECT_EQ(library.Find("carbon-11"), registered);
+  EXPECT_EQ(library.Find(" c11 "), nullptr);
+  EXPECT_EQ(library.Find("11c"), nullptr);
+  EXPECT_EQ(library.Find("carbon-11"), nullptr);
 
   auto const after_growth = library.Find("C-11");
   ASSERT_EQ(after_growth, registered);

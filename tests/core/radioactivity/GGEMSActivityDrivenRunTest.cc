@@ -62,8 +62,7 @@ constexpr std::uint32_t k_source_record_kind =
       GGEMSEnergyDistribution::BuildMono(k_mono_energy_milli_eV));
 
   return std::make_shared<GGEMSRadionuclideDefinition const>(
-      "ActivityDrivenRunTest", std::vector<std::string>{}, 1.0e9L,
-      std::move(emissions));
+      "ActivityDrivenRunTest", 1.0e9L, std::move(emissions));
 }
 
 // =============================================================================

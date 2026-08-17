@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <filesystem>
 #include <memory>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -559,8 +558,8 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
   emissions.emplace_back(ParticleType::Gamma, 1.0L,
                          EnergyDistribution::BuildDiscreteLines(
                              k_line_energies_keV, k_line_weights, "keV"));
-  Definition definition{
-      "Synthetic-DiscreteLines", {}, 1'000.0L, std::move(emissions)};
+  Definition definition{"Synthetic-DiscreteLines", 1'000.0L,
+                        std::move(emissions)};
 
   Random const random = MakeRandom(0xD15C32ULL);
   ActivityScenario const scenario = MakeActivityScenario(

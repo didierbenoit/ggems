@@ -17,10 +17,13 @@ struct ExpectedBuiltIn {
 } // namespace
 
 TEST(GGEMSBuiltInRadionuclides, DispatchesOnlyExactCanonicalNames) {
-  constexpr std::array<ExpectedBuiltIn, 3U> expected{{
+  constexpr std::array<ExpectedBuiltIn, 4U> expected{{
       {.name = "F-18", .half_life_seconds = 6584.04L, .emission_count = 3U},
       {.name = "C-11", .half_life_seconds = 1221.66L, .emission_count = 1U},
       {.name = "O-15", .half_life_seconds = 122.266L, .emission_count = 1U},
+      {.name = "Lu-177",
+       .half_life_seconds = 574'067.52L,
+       .emission_count = 8U},
   }};
 
   for (auto const &entry : expected) {

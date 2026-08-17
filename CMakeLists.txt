@@ -1,9 +1,12 @@
+# ------------------------------------------------------------------------------
 # Minimum required CMake version
 cmake_minimum_required(VERSION 3.27 FATAL_ERROR)
 
+# ------------------------------------------------------------------------------
 # MSVC-compatible debug information
 set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug>:Embedded>")
 
+# ------------------------------------------------------------------------------
 # Project declaration
 project(
   GGEMS
@@ -11,15 +14,18 @@ project(
   LANGUAGES CXX
   DESCRIPTION "GPU Geant4-based Monte Carlo Simulations")
 
+# ------------------------------------------------------------------------------
 # General CMake configuration
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# ------------------------------------------------------------------------------
 # C++ language standard
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# ------------------------------------------------------------------------------
 # Supported build configurations
 set(GGEMS_SUPPORTED_BUILD_TYPES Debug Release)
 
@@ -44,21 +50,26 @@ else()
   endif()
 endif()
 
+# ------------------------------------------------------------------------------
 # Launcher configuration
 list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(CompilerLauncher)
 
+# ------------------------------------------------------------------------------
 # Display build context
 message(STATUS "CMake version in use: ${CMAKE_VERSION}")
 message(STATUS "Configuring project ${PROJECT_NAME} version ${PROJECT_VERSION}")
 
+# ------------------------------------------------------------------------------
 # Compiler configuration dispatch
 include(CompilerOptions)
 include(OptimizationOptions)
 
+# ------------------------------------------------------------------------------
 # Optional build features
 option(GGEMS_WITH_IMGUI "Enable ImGui / Vulkan interface" OFF)
 
+# ------------------------------------------------------------------------------
 # Dependencies
 find_package(OpenCL REQUIRED)
 set(OPENCL_HPP_INCLUDE_DIR
@@ -68,6 +79,7 @@ message(STATUS "OpenCL include path: ${OPENCL_HPP_INCLUDE_DIR}")
 
 find_package(pybind11 REQUIRED CONFIG)
 
+# ------------------------------------------------------------------------------
 # Core library
 file(
   GLOB_RECURSE
@@ -103,9 +115,11 @@ if(UNIX AND NOT APPLE)
   target_link_libraries(ggems_core PRIVATE atomic)
 endif()
 
+# ------------------------------------------------------------------------------
 # Release optimization policy
 ggems_apply_release_optimizations(ggems_core)
 
+# ------------------------------------------------------------------------------
 # Optional ImGui / Vulkan interface
 if(GGEMS_WITH_IMGUI)
   message(STATUS "GGEMS GuiMode enabled: Vulkan / Dear ImGui layer requested.")

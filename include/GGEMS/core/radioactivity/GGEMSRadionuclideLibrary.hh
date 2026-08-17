@@ -3,9 +3,7 @@
 #include <cstddef>
 #include <memory>
 #include <span>
-#include <string>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
 
 #include "GGEMS/core/radioactivity/GGEMSRadionuclideDefinition.hh"
@@ -32,7 +30,6 @@ public:
 
 private:
   std::vector<DefinitionPointer> definitions_;
-  std::unordered_map<std::string, DefinitionPointer> lookup_;
 };
 
 } // namespace ggems::core::radioactivity

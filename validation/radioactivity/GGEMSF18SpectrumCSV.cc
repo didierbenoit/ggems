@@ -16,8 +16,8 @@
 #include <string_view>
 #include <utility>
 
+#include "GGEMS/core/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/core/GGEMSException.hh"
-#include "GGEMS/core/radioactivity/GGEMSBetaSpectrumBuilder.hh"
 #include "GGEMS/core/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
 #include "GGEMS/core/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/core/sources/GGEMSSourceTypes.hh"
@@ -211,46 +211,57 @@ RunF18SpectrumValidationCLI(std::span<std::string_view const> arguments,
     }
 
     std::filesystem::path const output_path{std::string{arguments.front()}};
-    auto const beta_result =
-        core::radioactivity::builtins::BuildF18PositronSpectrum();
-    auto const &diagnostics = beta_result.diagnostics;
 
-    if (diagnostics.model !=
-        core::radioactivity::GGEMSBetaSpectrumModel::AllowedPointCoulomb) {
-      Reject("The F-18 positron spectrum does not use AllowedPointCoulomb.");
+    auto const definition =
+        core::radioactivity::builtins::BuildF18Radionuclide();
+    auto const emissions = definition.GetEmissions();
+
+    if (emissions.empty() || emissions.front().GetParticleType() !=
+                                 core::particles::GGEMSParticleType::Positron) {
+      Reject("The F-18 definition does not start with its positron emission.");
     }
+
+    auto const &distribution = emissions.front().GetEnergyDistribution();
+    auto const centers = distribution.GetEnergyValuesMilliElectronVolt();
+    auto const weights = distribution.GetRelativeWeights();
 
     GGEMSF18SpectrumCSVResult const export_result =
-        ExportF18SpectrumCSV(output_path, beta_result.distribution);
+        ExportF18SpectrumCSV(output_path, distribution);
 
-    if (export_result.row_count != diagnostics.bin_count ||
+    if (export_result.row_count != centers.size() ||
         export_result.final_cumulative_ticket_upper_bound !=
             core::sources::k_energy_ticket_space_size) {
-      Reject("The exported F-18 spectrum does not match its stored beta "
-             "diagnostics.");
+      Reject("The exported F-18 spectrum does not match the embedded table.");
     }
+
+    long double weight_sum{0.0L};
+    long double weighted_center_sum{0.0L};
+
+    for (std::size_t index = 0U; index < centers.size(); ++index) {
+      weight_sum += static_cast<long double>(weights[index]);
+      weighted_center_sum += static_cast<long double>(weights[index]) *
+                             static_cast<long double>(centers[index]);
+    }
+
+    if (!std::isfinite(weight_sum) || !(weight_sum > 0.0L)) {
+      Reject("The embedded F-18 spectrum has an invalid weight sum.");
+    }
+
+    std::uint64_t const half_width =
+        distribution.GetRegularBinWidthMilliElectronVolt() / 2ULL;
+    std::uint64_t const endpoint = centers.back() + half_width;
+    long double const tabulated_mean_keV =
+        weighted_center_sum / weight_sum / 1'000'000.0L;
 
     std::ostringstream summary;
     summary.imbue(std::locale::classic());
     summary << std::setprecision(
         std::numeric_limits<long double>::max_digits10);
     summary << "Radionuclide: F-18\n";
-    summary << "Beta model: AllowedPointCoulomb\n";
-    summary << "Bin count: " << diagnostics.bin_count << '\n';
-    summary << "Endpoint [milli-eV]: " << diagnostics.upper_edge_milli_eV
-            << '\n';
-    summary << "Continuous mean [keV]: "
-            << diagnostics.continuous_mean_energy_milli_eV / 1'000'000.0L
-            << '\n';
-    summary << "Represented mean [keV]: "
-            << diagnostics.represented_mean_energy_milli_eV / 1'000'000.0L
-            << '\n';
-    summary << "Excluded probability: " << diagnostics.excluded_probability
-            << '\n';
-    summary << "Minimum positive bin probability: "
-            << diagnostics.minimum_positive_bin_probability << '\n';
-    summary << "Minimum assigned ticket count: "
-            << diagnostics.minimum_assigned_ticket_count << '\n';
+    summary << "Spectrum source: LNHB BetaShape tabulated experimental shape\n";
+    summary << "Bin count: " << centers.size() << '\n';
+    summary << "Endpoint [milli-eV]: " << endpoint << '\n';
+    summary << "Tabulated mean [keV]: " << tabulated_mean_keV << '\n';
     summary << "Output path: " << output_path.generic_string() << '\n';
 
     standard_output << summary.str();

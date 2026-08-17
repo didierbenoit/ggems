@@ -26,6 +26,7 @@ using ggems::core::radioactivity::GGEMSRadionuclideEmission;
 using ggems::core::radioactivity::GGEMSRadionuclideLibrary;
 using ggems::core::radioactivity::builtins::BuildC11Radionuclide;
 using ggems::core::radioactivity::builtins::BuildF18Radionuclide;
+using ggems::core::radioactivity::builtins::BuildLu177Radionuclide;
 using ggems::core::radioactivity::builtins::BuildO15Radionuclide;
 using ggems::core::sources::GGEMSEnergyDistribution;
 
@@ -37,15 +38,13 @@ static_assert(std::is_const_v<std::remove_reference_t<
 // =============================================================================
 
 [[nodiscard]] auto MakeDefinition(std::string canonical_name,
-                                  std::vector<std::string> aliases = {},
                                   long double yield_per_decay = 1.0L)
     -> GGEMSRadionuclideDefinition {
   std::vector<GGEMSRadionuclideEmission> emissions;
   emissions.emplace_back(GGEMSParticleType::Gamma, yield_per_decay,
                          GGEMSEnergyDistribution::BuildMono(1ULL));
 
-  return {std::move(canonical_name), std::move(aliases), 100.0L,
-          std::move(emissions)};
+  return {std::move(canonical_name), 100.0L, std::move(emissions)};
 }
 
 // =============================================================================
@@ -66,7 +65,7 @@ static_assert(std::is_const_v<std::remove_reference_t<
       GGEMSParticleType::Electron, 1.0L,
       GGEMSEnergyDistribution::BuildRegularSpectrum(centers, weights, "keV"));
 
-  return {"Synthetic-Large", {"SL"}, 100.0L, std::move(emissions)};
+  return {"Synthetic-Large", 100.0L, std::move(emissions)};
 }
 } // namespace
 
@@ -85,54 +84,42 @@ TEST(GGEMSRadionuclideLibraryTest, EmptyLibraryIsValid) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSRadionuclideLibraryTest,
-     RegistersAndFindsCanonicalNameAndExplicitAliases) {
+TEST(GGEMSRadionuclideLibraryTest, RegistersAndFindsCanonicalName) {
   GGEMSRadionuclideLibrary library;
-  auto const registered =
-      library.Add(MakeDefinition("Synthetic-One", {"S1", "First synthetic"}));
+  auto const registered = library.Add(MakeDefinition("Synthetic-One"));
 
   ASSERT_NE(registered, nullptr);
   EXPECT_EQ(library.GetCount(), 1U);
   ASSERT_EQ(library.GetDefinitions().size(), 1U);
   EXPECT_EQ(library.GetDefinitions()[0U], registered);
   EXPECT_EQ(library.Find("Synthetic-One"), registered);
-  EXPECT_EQ(library.Find("S1"), registered);
-  EXPECT_EQ(library.Find("First synthetic"), registered);
   EXPECT_EQ(registered->GetCanonicalName(), "Synthetic-One");
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSRadionuclideLibraryTest,
-     LookupTrimsAsciiWhitespaceAndFoldsAsciiCaseOnly) {
+TEST(GGEMSRadionuclideLibraryTest, LookupUsesExactCanonicalName) {
   GGEMSRadionuclideLibrary library;
-  auto const registered = library.Add(
-      MakeDefinition("Synthetic-One", {"Alias_One", "Name With Space"}));
+  auto const registered = library.Add(MakeDefinition("Synthetic-One"));
 
-  EXPECT_EQ(library.Find(" \tSYNTHETIC-ONE\r\n"), registered);
-  EXPECT_EQ(library.Find("\falias_one\v"), registered);
-  EXPECT_EQ(library.Find("name with space"), registered);
+  EXPECT_EQ(library.Find("Synthetic-One"), registered);
 
+  EXPECT_EQ(library.Find("synthetic-one"), nullptr);
+  EXPECT_EQ(library.Find(" SYNTHETIC-ONE "), nullptr);
   EXPECT_EQ(library.Find("SyntheticOne"), nullptr);
   EXPECT_EQ(library.Find("Synthetic_One"), nullptr);
-  EXPECT_EQ(library.Find("NameWithSpace"), nullptr);
   EXPECT_EQ(registered->GetCanonicalName(), "Synthetic-One");
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSRadionuclideLibraryTest, RejectsEveryLookupCollisionDirection) {
+TEST(GGEMSRadionuclideLibraryTest, RejectsDuplicateCanonicalName) {
   GGEMSRadionuclideLibrary library;
-  auto const first =
-      library.Add(MakeDefinition("Synthetic-One", {"S1", "Common alias"}));
+  auto const first = library.Add(MakeDefinition("Synthetic-One"));
 
-  EXPECT_THROW((void)library.Add(MakeDefinition(" synthetic-one ")),
-               ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW((void)library.Add(MakeDefinition(" COMMON ALIAS ")),
-               ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW((void)library.Add(MakeDefinition("Synthetic-Two", {" s1 "})),
+  EXPECT_THROW((void)library.Add(MakeDefinition("Synthetic-One")),
                ggems::core::GGEMSExceptionBase);
 
   EXPECT_EQ(library.GetCount(), 1U);
@@ -143,33 +130,12 @@ TEST(GGEMSRadionuclideLibraryTest, RejectsEveryLookupCollisionDirection) {
 // =============================================================================
 
 TEST(GGEMSRadionuclideLibraryTest,
-     RejectsInvalidAndDuplicateAliasesWithinOneDefinition) {
+     FailedRegistrationPreservesDefinitionsAndOrder) {
   GGEMSRadionuclideLibrary library;
+  auto const first = library.Add(MakeDefinition("Synthetic-One"));
+  auto const second = library.Add(MakeDefinition("Synthetic-Two"));
 
-  EXPECT_THROW(
-      (void)library.Add(MakeDefinition("Synthetic-One", {"Alias", " alias "})),
-      ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW(
-      (void)library.Add(MakeDefinition("Synthetic-One", {" synthetic-one "})),
-      ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW((void)library.Add(MakeDefinition("Synthetic-One", {" \t"})),
-               ggems::core::GGEMSExceptionBase);
-
-  EXPECT_EQ(library.GetCount(), 0U);
-  EXPECT_TRUE(library.GetDefinitions().empty());
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSRadionuclideLibraryTest,
-     FailedRegistrationPreservesDefinitionsOrderAndAllLookupKeys) {
-  GGEMSRadionuclideLibrary library;
-  auto const first = library.Add(MakeDefinition("Synthetic-One", {"S1"}));
-  auto const second = library.Add(MakeDefinition("Synthetic-Two", {"S2"}));
-
-  EXPECT_THROW((void)library.Add(MakeDefinition("Synthetic-Rejected",
-                                                {"Fresh alias", " s2 "})),
+  EXPECT_THROW((void)library.Add(MakeDefinition("Synthetic-One")),
                ggems::core::GGEMSExceptionBase);
 
   ASSERT_EQ(library.GetCount(), 2U);
@@ -177,11 +143,7 @@ TEST(GGEMSRadionuclideLibraryTest,
   EXPECT_EQ(library.GetDefinitions()[0U], first);
   EXPECT_EQ(library.GetDefinitions()[1U], second);
   EXPECT_EQ(library.Find("Synthetic-One"), first);
-  EXPECT_EQ(library.Find("S1"), first);
   EXPECT_EQ(library.Find("Synthetic-Two"), second);
-  EXPECT_EQ(library.Find("S2"), second);
-  EXPECT_EQ(library.Find("Synthetic-Rejected"), nullptr);
-  EXPECT_EQ(library.Find("Fresh alias"), nullptr);
 }
 
 // =============================================================================
@@ -212,10 +174,10 @@ TEST(GGEMSRadionuclideLibraryTest,
                                   .GetEnergyValuesMilliElectronVolt();
   auto const *original_data = original_table.data();
 
-  auto const by_alias = library.Find("sl");
-  ASSERT_EQ(by_alias, registered);
-  EXPECT_EQ(by_alias.get(), registered.get());
-  EXPECT_EQ(by_alias->GetEmissions()[0U]
+  auto const by_name = library.Find("Synthetic-Large");
+  ASSERT_EQ(by_name, registered);
+  EXPECT_EQ(by_name.get(), registered.get());
+  EXPECT_EQ(by_name->GetEmissions()[0U]
                 .GetEnergyDistribution()
                 .GetEnergyValuesMilliElectronVolt()
                 .data(),
@@ -248,23 +210,29 @@ TEST(GGEMSRadionuclideLibraryTest,
   auto const f18 = library.Add(BuildF18Radionuclide());
   auto const c11 = library.Add(BuildC11Radionuclide());
   auto const o15 = library.Add(BuildO15Radionuclide());
+  auto const lu177 = library.Add(BuildLu177Radionuclide());
 
   auto const definitions = library.GetDefinitions();
-  ASSERT_EQ(definitions.size(), 3U);
+  ASSERT_EQ(definitions.size(), 4U);
   EXPECT_EQ(definitions[0U], f18);
   EXPECT_EQ(definitions[1U], c11);
   EXPECT_EQ(definitions[2U], o15);
+  EXPECT_EQ(definitions[3U], lu177);
 
-  EXPECT_EQ(library.Find("18f"), f18);
-  EXPECT_EQ(library.Find("carbon-11"), c11);
-  EXPECT_EQ(library.Find("15o"), o15);
-  EXPECT_EQ(library.Find("F-18").get(), f18.get());
-  EXPECT_EQ(library.Find("C-11").get(), c11.get());
-  EXPECT_EQ(library.Find("O-15").get(), o15.get());
+  EXPECT_EQ(library.Find("F-18"), f18);
+  EXPECT_EQ(library.Find("C-11"), c11);
+  EXPECT_EQ(library.Find("O-15"), o15);
+  EXPECT_EQ(library.Find("Lu-177"), lu177);
+
+  EXPECT_EQ(library.Find("18f"), nullptr);
+  EXPECT_EQ(library.Find("carbon-11"), nullptr);
+  EXPECT_EQ(library.Find("15o"), nullptr);
+  EXPECT_EQ(library.Find("lu-177"), nullptr);
 
   EXPECT_NE(f18->GetHalfLifeSeconds(), c11->GetHalfLifeSeconds());
   EXPECT_NE(f18->GetHalfLifeSeconds(), o15->GetHalfLifeSeconds());
   EXPECT_NE(c11->GetHalfLifeSeconds(), o15->GetHalfLifeSeconds());
+  EXPECT_NE(o15->GetHalfLifeSeconds(), lu177->GetHalfLifeSeconds());
 
   auto const &f18_energy = f18->GetEmissions()[0U].GetEnergyDistribution();
   auto const &c11_energy = c11->GetEmissions()[0U].GetEnergyDistribution();

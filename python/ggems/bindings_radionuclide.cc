@@ -46,7 +46,7 @@ auto BindRadionuclide(py::module_ &module) -> void {
         if (!definition.has_value()) {
           throw py::value_error(std::format(
               "Unknown built-in radionuclide '{}'. Supported canonical names "
-              "are F-18, C-11, and O-15.",
+              "are F-18, C-11, O-15 and Lu-177.",
               canonical_name));
         }
 

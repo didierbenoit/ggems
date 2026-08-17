@@ -75,8 +75,7 @@ constexpr ggems::core::GGEMSTimeWindow k_one_second_window{
   }
 
   return std::make_shared<Definition const>(
-      std::move(name), std::vector<std::string>{}, half_life_seconds,
-      std::move(emissions));
+      std::move(name), half_life_seconds, std::move(emissions));
 }
 
 // =============================================================================

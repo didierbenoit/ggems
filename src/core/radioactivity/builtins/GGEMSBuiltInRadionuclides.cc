@@ -11,12 +11,19 @@ namespace ggems::core::radioactivity::builtins {
   if (canonical_name == "F-18") {
     return BuildF18Radionuclide();
   }
+
   if (canonical_name == "C-11") {
     return BuildC11Radionuclide();
   }
+
   if (canonical_name == "O-15") {
     return BuildO15Radionuclide();
   }
+
+  if (canonical_name == "Lu-177") {
+    return BuildLu177Radionuclide();
+  }
+
   return std::nullopt;
 }
 

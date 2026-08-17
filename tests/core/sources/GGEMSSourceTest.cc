@@ -38,8 +38,7 @@
 
   return std::make_shared<
       ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
-      std::move(canonical_name), std::vector<std::string>{}, 10.0L,
-      std::move(emissions));
+      std::move(canonical_name), 10.0L, std::move(emissions));
 }
 
 // =============================================================================

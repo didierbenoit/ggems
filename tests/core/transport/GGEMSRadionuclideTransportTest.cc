@@ -4,7 +4,6 @@
 #include <filesystem>
 #include <limits>
 #include <memory>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -86,8 +85,8 @@ struct ActivityScenario {
           k_mono_energy_milli_eV));
 
   auto definition = std::make_shared<Definition const>(
-      "ChunkTransport", std::vector<std::string>{},
-      k_uniform_limit_half_life_seconds, std::move(emissions));
+      "ChunkTransport", k_uniform_limit_half_life_seconds,
+      std::move(emissions));
 
   auto source = std::make_shared<Source>();
   source->SetPointEmission()

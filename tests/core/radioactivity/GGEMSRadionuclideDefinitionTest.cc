@@ -67,10 +67,8 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSRadionuclideDefinitionTest,
-     OwnsEmissionsSelectionWeightsAndLookupKeys) {
+TEST(GGEMSRadionuclideDefinitionTest, OwnsEmissionsAndSelectionWeights) {
   std::string canonical_name{"Synthetic-Mixed"};
-  std::vector<std::string> aliases{"SM", "Synthetic mixed display alias"};
   std::vector<GGEMSRadionuclideEmission> emissions;
   emissions.push_back(MakeDiscreteEmission(GGEMSParticleType::Alpha, 1.0L));
   emissions.push_back(
@@ -78,17 +76,13 @@ TEST(GGEMSRadionuclideDefinitionTest,
   emissions.push_back(
       MakeSpectrumEmission(GGEMSParticleType::Electron, 1.675L));
 
-  GGEMSRadionuclideDefinition const definition{canonical_name, aliases,
-                                               4321.25L, emissions};
+  GGEMSRadionuclideDefinition const definition{canonical_name, 4321.25L,
+                                               emissions};
 
   canonical_name.clear();
-  aliases.clear();
   emissions.clear();
 
   EXPECT_EQ(definition.GetCanonicalName(), "Synthetic-Mixed");
-  ASSERT_EQ(definition.GetAliases().size(), 2U);
-  EXPECT_EQ(definition.GetAliases()[0U], "SM");
-  EXPECT_EQ(definition.GetAliases()[1U], "Synthetic mixed display alias");
   EXPECT_EQ(definition.GetHalfLifeSeconds(), 4321.25L);
 
   auto const stored_emissions = definition.GetEmissions();
@@ -115,13 +109,6 @@ TEST(GGEMSRadionuclideDefinitionTest,
                                  definition.GetTotalYieldPerDecay();
     EXPECT_EQ(selection_weights[index], expected);
   }
-
-  auto lookup_keys = definition.BuildLookupKeys();
-  EXPECT_EQ(lookup_keys,
-            (std::vector<std::string>{"synthetic-mixed", "sm",
-                                      "synthetic mixed display alias"}));
-  lookup_keys.clear();
-  EXPECT_EQ(definition.BuildLookupKeys().size(), 3U);
 }
 
 // =============================================================================
@@ -132,11 +119,10 @@ TEST(GGEMSRadionuclideDefinitionTest, RejectsInvalidNameHalfLifeAndEmissions) {
   valid_emissions.push_back(
       MakeMonoEmission(GGEMSParticleType::Gamma, 1.0L, 1ULL));
 
+  EXPECT_THROW(((void)GGEMSRadionuclideDefinition{"", 1.0L, valid_emissions}),
+               ggems::core::GGEMSExceptionBase);
   EXPECT_THROW(
-      ((void)GGEMSRadionuclideDefinition{"", {}, 1.0L, valid_emissions}),
-      ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW(
-      ((void)GGEMSRadionuclideDefinition{" \t\r\n", {}, 1.0L, valid_emissions}),
+      ((void)GGEMSRadionuclideDefinition{" \t\r\n", 1.0L, valid_emissions}),
       ggems::core::GGEMSExceptionBase);
 
   for (long double half_life :
@@ -144,31 +130,12 @@ TEST(GGEMSRadionuclideDefinitionTest, RejectsInvalidNameHalfLifeAndEmissions) {
         std::numeric_limits<long double>::infinity(),
         -std::numeric_limits<long double>::infinity()}) {
     SCOPED_TRACE(static_cast<double>(half_life));
-    EXPECT_THROW(((void)GGEMSRadionuclideDefinition{
-                     "Synthetic", {}, half_life, valid_emissions}),
+    EXPECT_THROW(((void)GGEMSRadionuclideDefinition{"Synthetic", half_life,
+                                                    valid_emissions}),
                  ggems::core::GGEMSExceptionBase);
   }
 
-  EXPECT_THROW(((void)GGEMSRadionuclideDefinition{"Synthetic", {}, 1.0L, {}}),
-               ggems::core::GGEMSExceptionBase);
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSRadionuclideDefinitionTest,
-     RejectsInvalidAndCollidingAliasesDuringDefinitionConstruction) {
-  std::vector<GGEMSRadionuclideEmission> emissions;
-  emissions.push_back(MakeMonoEmission(GGEMSParticleType::Gamma, 1.0L, 1ULL));
-
-  EXPECT_THROW(((void)GGEMSRadionuclideDefinition{
-                   "Synthetic-One", {" \t"}, 1.0L, emissions}),
-               ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW(((void)GGEMSRadionuclideDefinition{
-                   "Synthetic-One", {"Alias", " alias "}, 1.0L, emissions}),
-               ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW(((void)GGEMSRadionuclideDefinition{
-                   "Synthetic-One", {" synthetic-one "}, 1.0L, emissions}),
+  EXPECT_THROW(((void)GGEMSRadionuclideDefinition{"Synthetic", 1.0L, {}}),
                ggems::core::GGEMSExceptionBase);
 }
 
@@ -181,8 +148,8 @@ TEST(GGEMSRadionuclideDefinitionTest,
   emissions.push_back(MakeSpectrumEmission(GGEMSParticleType::Electron, 0.75L));
   emissions.push_back(MakeDiscreteEmission(GGEMSParticleType::Electron, 1.25L));
 
-  GGEMSRadionuclideDefinition const definition{
-      "Synthetic-Electrons", {}, 10.0L, std::move(emissions)};
+  GGEMSRadionuclideDefinition const definition{"Synthetic-Electrons", 10.0L,
+                                               std::move(emissions)};
 
   auto const stored = definition.GetEmissions();
   ASSERT_EQ(stored.size(), 2U);
@@ -207,8 +174,8 @@ TEST(GGEMSRadionuclideDefinitionTest,
   emissions.push_back(
       MakeMonoEmission(GGEMSParticleType::Electron, tiny_yield, 3ULL));
 
-  GGEMSRadionuclideDefinition const definition{
-      "Synthetic-Weak", {}, 100.0L, std::move(emissions)};
+  GGEMSRadionuclideDefinition const definition{"Synthetic-Weak", 100.0L,
+                                               std::move(emissions)};
 
   ASSERT_EQ(definition.GetEmissions().size(), 2U);
   ASSERT_EQ(definition.GetChannelSelectionWeights().size(), 2U);
@@ -233,8 +200,8 @@ TEST(GGEMSRadionuclideDefinitionTest, RejectsNonFiniteTotalYield) {
   emissions.push_back(
       MakeMonoEmission(GGEMSParticleType::Electron, maximum, 2ULL));
 
-  EXPECT_THROW(((void)GGEMSRadionuclideDefinition{
-                   "Synthetic-Overflow", {}, 1.0L, std::move(emissions)}),
+  EXPECT_THROW(((void)GGEMSRadionuclideDefinition{"Synthetic-Overflow", 1.0L,
+                                                  std::move(emissions)}),
                ggems::core::GGEMSExceptionBase);
 }
 
@@ -244,17 +211,14 @@ TEST(GGEMSRadionuclideDefinitionTest, RejectsNonFiniteTotalYield) {
 TEST(GGEMSRadionuclideDefinitionTest,
      FailedConstructionLeavesCallerOwnedInputsUnchanged) {
   std::string canonical_name{"Synthetic-Stable"};
-  std::vector<std::string> aliases{"Stable alias"};
   std::vector<GGEMSRadionuclideEmission> emissions;
   emissions.push_back(MakeMonoEmission(GGEMSParticleType::Gamma, 1.0L, 1ULL));
 
-  EXPECT_THROW(((void)GGEMSRadionuclideDefinition{canonical_name, aliases, 0.0L,
-                                                  emissions}),
-               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(
+      ((void)GGEMSRadionuclideDefinition{canonical_name, 0.0L, emissions}),
+      ggems::core::GGEMSExceptionBase);
 
   EXPECT_EQ(canonical_name, "Synthetic-Stable");
-  ASSERT_EQ(aliases.size(), 1U);
-  EXPECT_EQ(aliases[0U], "Stable alias");
   ASSERT_EQ(emissions.size(), 1U);
   EXPECT_EQ(emissions[0U].GetYieldPerDecay(), 1.0L);
 }

@@ -6,7 +6,6 @@
 #include <limits>
 #include <memory>
 #include <span>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -81,8 +80,8 @@ constexpr std::array<std::uint64_t, 3U> k_activity_energies{111ULL, 222ULL,
       ggems::core::sources::GGEMSEnergyDistribution::BuildMono(
           k_activity_energies[2U]));
 
-  return std::make_shared<Definition const>(
-      "MixedLookup", std::vector<std::string>{}, 1.0e12L, std::move(emissions));
+  return std::make_shared<Definition const>("MixedLookup", 1.0e12L,
+                                            std::move(emissions));
 }
 
 // =============================================================================

@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <memory>
 #include <numbers>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -78,9 +77,8 @@ MakeActivitySource(std::shared_ptr<Definition const> radionuclide,
       ggems::core::particles::GGEMSParticleType::Gamma, 0.75L,
       ggems::core::sources::GGEMSEnergyDistribution::BuildDiscreteLines(
           k_energies_keV, k_weights, "keV"));
-  return std::make_shared<Definition const>("Synthetic-Discrete",
-                                            std::vector<std::string>{"SD"},
-                                            60.0L, std::move(emissions));
+  return std::make_shared<Definition const>("Synthetic-Discrete", 60.0L,
+                                            std::move(emissions));
 }
 
 // =============================================================================
