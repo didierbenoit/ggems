@@ -24,25 +24,29 @@ namespace {
 // evaluation dated 26/11/2025. This is the authority for the half-life,
 // beta-branch yields and endpoints, and the six nuclear gamma lines.
 //
+// Detailed evaluated emissions:
+// CEA/LNE-LNHB, Nucleide-LARA, Lu-177 / Hf-177 decay data, 2025. The associated
+// evaluated emission data provide the five compact X-ray emissions used here
+// (XL, K-alpha-2, K-alpha-1, K-beta-1, K-beta-2) and the shell-resolved
+// K/L1/L2/L3/M/N internal-conversion electron energies and yields. The supplied
+// associated decay-data record reports evaluation date 23/10/2025.
+//
 // Beta spectral shapes:
 // LNHB BetaShape 2.2 (05/2021), Lu-177 transition tables. The BetaShape
 // transition files predate the 2025 LNHB evaluation, so only their energy axes
 // are rescaled offline to the current LNHB endpoints before regular-grid
 // integration. Their conditional shapes are otherwise preserved.
 //
-// Atomic radiations:
+// Auger electrons:
 // MIRDsoft MIRDspecs, "Lutetium-177", version 20250101,
 // Lu-177 Summary Spectrum.csv. MIRDspecs identifies ICRP Publication 107,
 // "Nuclear Decay Data for Dosimetric Calculations" (2008), as the spectra
-// source. GGEMS uses only the MIRD X-ray, Auger-electron, and
-// conversion-electron entries; MIRD beta and gamma rows are intentionally not
-// used because current LNHB data and BetaShape are the selected authorities for
-// those emissions. The MIRD atomic yields are not renormalized to the newer
-// LNHB gamma evaluation; the two source boundaries remain explicit.
+// source. GGEMS uses MIRD only for the detailed Auger-electron lines because
+// the compact LNHB/LARA data still aggregate the Auger groups into energy
+// ranges.
 //
-// MIRD energies below are converted offline from the published MeV values to
-// the nearest positive integer milli-electronvolt, matching GGEMS internal
-// energy storage without an intermediate binary floating-point unit conversion.
+// All external tabular energies below are converted offline to exact positive
+// integer milli-electronvolt values before being embedded in GGEMS.
 
 constexpr std::size_t k_emission_count{8U};
 constexpr long double k_half_life_seconds{574'067.52L};
@@ -981,34 +985,30 @@ constexpr std::array<double, 6U> k_gamma_line_yields{{
     0.002096,
 }};
 
-constexpr std::array<double, 60U> k_x_ray_energies_milli_eV{
-    {19'430.0,     33'137.0,     219'884.0,    482'000.0,    1'204'700.0,
-     1'639'030.0,  1'686'700.0,  6'982'300.0,  7'200'200.0,  7'459'310.0,
-     7'832'810.0,  7'889'590.0,  8'187'010.0,  8'663'990.0,  8'886'890.0,
-     9'032'610.0,  9'037'510.0,  9'123'050.0,  9'145'990.0,  9'182'490.0,
-     9'332'720.0,  9'343'580.0,  9'485'750.0,  9'511'960.0,  9'519'490.0,
-     9'520'190.0,  9'531'050.0,  9'532'910.0,  9'552'540.0,  9'553'120.0,
-     9'576'310.0,  10'237'300.0, 10'387'200.0, 10'537'400.0, 10'690'400.0,
-     10'724'900.0, 10'735'700.0, 10'757'300.0, 10'809'700.0, 10'869'200.0,
-     11'019'400.0, 11'030'300.0, 11'198'700.0, 11'206'900.0, 11'239'200.0,
-     11'239'800.0, 54'719'100.0, 55'923'700.0, 63'123'800.0, 63'383'100.0,
-     63'756'500.0, 63'813'300.0, 65'046'700.0, 65'106'300.0, 65'256'200.0,
-     65'267'100.0, 65'435'600.0, 65'443'900.0, 65'476'200.0, 65'476'600.0}};
+// CEA/LNE-LNHB Nucleide-LARA 2025 compact Hf X-ray emissions.
+// Intensities published per 100 disintegrations are stored as yields per parent
+// decay. XL, K-beta-1, and K-beta-2 are evaluated grouped emissions with the
+// representative energies published by LARA; no artificial sub-line splitting
+// is introduced in GGEMS.
+constexpr std::array<double, 5U> k_x_ray_energies_milli_eV{{
+    8'926'800.0,
+    54'612'000.0,
+    55'790'900.0,
+    63'292'000.0,
+    65'142'700.0,
+}};
 
-constexpr std::array<double, 60U> k_x_ray_line_yields{
-    {1.28087,     8.92734e-08, 9.09227e-05, 1.05223e-07, 1.23476e-07,
-     0.00388609,  1.05166e-05, 0.000875531, 7.14512e-06, 6.49705e-06,
-     0.00144873,  0.0127841,   0.000341356, 9.78774e-06, 0.00019394,
-     0.000153608, 0.0117562,   1.44032e-06, 0.000250033, 1.40939e-06,
-     0.000248019, 0.00222157,  3.06292e-05, 3.13077e-07, 5.3094e-06,
-     2.87791e-07, 9.73723e-07, 5.46714e-06, 2.62822e-06, 2.23545e-05,
-     7.9476e-06,  7.88938e-05, 2.49366e-06, 0.00213882,  1.4824e-05,
-     5.31428e-07, 4.8114e-06,  2.28504e-05, 4.70596e-05, 6.39197e-05,
-     7.36562e-07, 1.14621e-06, 6.73298e-06, 8.81527e-06, 7.53375e-09,
-     1.1183e-08,  0.0163172,   0.0285488,   0.00303923,  0.00587418,
-     6.16681e-05, 7.84966e-05, 0.000683509, 0.00132314,  1.45294e-05,
-     1.84032e-05, 0.000154461, 0.00032004,  1.60842e-07, 1.92701e-07}};
+constexpr std::array<double, 5U> k_x_ray_line_yields{{
+    0.0312,
+    0.01555,
+    0.0272,
+    0.00898,
+    0.00240,
+}};
 
+// MIRDspecs/ICRP-107 Auger-electron lines. These remain the only MIRD-derived
+// runtime emission data in this Lu-177 definition because the compact LNHB/LARA
+// material publishes the corresponding Auger groups only as energy ranges.
 constexpr std::array<double, 15U> k_auger_electron_energies_milli_eV{
     {10'732.0, 24'461.0, 159'973.0, 281'854.0, 303'459.0, 716'784.0,
      1'366'220.0, 1'545'490.0, 1'767'340.0, 6'202'910.0, 7'823'150.0,
@@ -1019,29 +1019,29 @@ constexpr std::array<double, 15U> k_auger_electron_line_yields{
      0.0102732, 0.000640929, 0.0633905, 0.0235413, 0.00220287, 0.00180948,
      0.000936766, 0.000116604}};
 
+// CEA/LNE-LNHB 2025 shell-resolved internal-conversion electrons. Each nuclear
+// transition contributes K, L1, L2, L3, M, and N conversion lines. The arrays
+// are sorted by increasing electron energy as required by DiscreteLines.
 constexpr std::array<double, 36U> k_conversion_electron_energies_milli_eV{
-    {6'164'010.0,   47'467'800.0,  60'401'000.0,  60'883'000.0,  62'087'700.0,
-     69'547'000.0,  71'242'800.0,  71'646'000.0,  101'705'000.0, 102'187'000.0,
-     103'392'000.0, 110'851'000.0, 112'950'000.0, 125'480'000.0, 125'962'000.0,
-     127'166'000.0, 134'626'000.0, 136'725'000.0, 142'884'000.0, 184'192'000.0,
-     197'121'000.0, 197'603'000.0, 198'808'000.0, 206'267'000.0, 208'366'000.0,
-     238'429'000.0, 238'911'000.0, 240'116'000.0, 247'575'000.0, 249'674'000.0,
-     255'834'000.0, 310'071'000.0, 310'553'000.0, 311'758'000.0, 319'217'000.0,
-     321'316'000.0}};
+    {6'291'700.0,   47'599'290.0,  60'371'800.0,  60'903'100.0,  62'081'800.0,
+     69'552'100.0,  71'373'800.0,  71'381'500.0,  101'679'390.0, 102'210'690.0,
+     103'389'390.0, 110'859'690.0, 112'689'060.0, 125'453'900.0, 125'985'200.0,
+     127'163'900.0, 134'634'200.0, 136'463'600.0, 143'015'430.0, 184'323'600.0,
+     197'095'530.0, 197'626'830.0, 198'805'530.0, 206'275'830.0, 208'105'200.0,
+     238'403'700.0, 238'935'000.0, 240'113'700.0, 247'584'000.0, 249'413'400.0,
+     255'965'400.0, 310'045'500.0, 310'576'800.0, 311'755'500.0, 319'225'800.0,
+     321'055'200.0}};
 
 constexpr std::array<double, 36U> k_conversion_electron_line_yields{
-    {0.00109753,  0.0517072,   0.000118801, 4.13544e-05, 5.09951e-05,
-     4.8452e-05,  0.00026802,  1.34486e-05, 0.00552802,  0.0347404,
-     0.0306777,   0.0177125,   0.00481564,  3.04142e-05, 0.000103191,
-     8.49289e-05, 5.42269e-05, 1.48186e-05, 0.00597023,  0.000191324,
-     0.000769803, 0.000123382, 0.000119152, 0.000231783, 6.60486e-05,
-     2.25367e-05, 3.53928e-05, 2.30467e-05, 1.97518e-05, 5.45466e-06,
-     6.25701e-05, 9.04148e-06, 1.13696e-06, 7.87446e-07, 2.52035e-06,
-     7.27062e-07}};
+    {0.00124,  0.0503,     0.000137,   0.0000458,  0.000058,   0.000055,
+     0.000255, 0.0000146,  0.00529,    0.033,      0.02919,    0.0168,
+     0.00439,  0.000028,   0.000101,   0.000083,   0.0000525,  0.0000138,
+     0.0049,   0.0001816,  0.00058,    0.000097,   0.000097,   0.000175,
+     0.000048, 0.00002117, 0.0000327,  0.00002133, 0.00001828, 0.00000484,
+     0.000084, 0.0000128,  0.00000161, 0.00000099, 0.0000036,  0.00000097}};
 
-// The MIRD summary spectrum publishes line yields directly per nuclear
-// transformation. Summing the embedded line yields keeps each flattened GGEMS
-// emission channel consistent with the same source table.
+// Each flattened discrete-line channel stores its source-table line yields as
+// relative weights and their sum as the global yield per parent decay.
 template <std::size_t Size>
 [[nodiscard]] constexpr auto
 SumLineYields(std::array<double, Size> const &line_yields) noexcept

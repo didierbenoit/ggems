@@ -101,19 +101,19 @@ TEST(GGEMSLu177Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
   EXPECT_EQ(emissions[4U].GetYieldPerDecay(), 0.1727721L);
 
   EXPECT_EQ(emissions[5U].GetParticleType(), GGEMSParticleType::Gamma);
-  EXPECT_NEAR(static_cast<double>(emissions[5U].GetYieldPerDecay()),
-              1.37405878911315, 1.0e-12);
+  EXPECT_NEAR(static_cast<double>(emissions[5U].GetYieldPerDecay()), 0.08533,
+              1.0e-15);
 
   EXPECT_EQ(emissions[6U].GetParticleType(), GGEMSParticleType::Electron);
   EXPECT_NEAR(static_cast<double>(emissions[6U].GetYieldPerDecay()),
               1.116556849, 1.0e-12);
 
   EXPECT_EQ(emissions[7U].GetParticleType(), GGEMSParticleType::Electron);
-  EXPECT_NEAR(static_cast<double>(emissions[7U].GetYieldPerDecay()),
-              0.154762329358, 1.0e-12);
+  EXPECT_NEAR(static_cast<double>(emissions[7U].GetYieldPerDecay()), 0.14733459,
+              1.0e-12);
 
   EXPECT_NEAR(static_cast<double>(definition.GetTotalYieldPerDecay()),
-              3.81808006747115, 1.0e-12);
+              2.521923539, 1.0e-12);
 
   long double selection_weight_sum{0.0L};
   for (long double const weight : definition.GetChannelSelectionWeights()) {
@@ -220,15 +220,15 @@ TEST(GGEMSLu177Test, PreservesSixExactGammaLinesAndGlobalYields) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSLu177Test, PreservesMirdAtomicRadiationsAsReachableDiscreteLines) {
+TEST(GGEMSLu177Test,
+     PreservesLaraAndMirdAtomicRadiationsAsReachableDiscreteLines) {
   GGEMSRadionuclideDefinition const definition = BuildLu177Radionuclide();
   auto const emissions = definition.GetEmissions();
   ASSERT_EQ(emissions.size(), 8U);
 
-  auto const check_channel =
-      [](GGEMSRadionuclideEmission const &emission,
-         GGEMSParticleType expected_particle_type,
-         std::size_t expected_line_count) -> void {
+  auto const check_channel = [](GGEMSRadionuclideEmission const &emission,
+                                GGEMSParticleType expected_particle_type,
+                                std::size_t expected_line_count) -> void {
     EXPECT_EQ(emission.GetParticleType(), expected_particle_type);
 
     auto const &distribution = emission.GetEnergyDistribution();
@@ -263,29 +263,28 @@ TEST(GGEMSLu177Test, PreservesMirdAtomicRadiationsAsReachableDiscreteLines) {
   };
 
   GGEMSRadionuclideEmission const &x_rays = emissions[5U];
-  check_channel(x_rays, GGEMSParticleType::Gamma, 60U);
+  check_channel(x_rays, GGEMSParticleType::Gamma, 5U);
 
   auto const x_ray_energies =
       x_rays.GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
-  auto const x_ray_yields =
-      x_rays.GetEnergyDistribution().GetRelativeWeights();
+  auto const x_ray_yields = x_rays.GetEnergyDistribution().GetRelativeWeights();
 
-  EXPECT_EQ(x_ray_energies.front(), 19'430ULL);
-  EXPECT_EQ(x_ray_energies[46U], 54'719'100ULL);
-  EXPECT_EQ(x_ray_energies[47U], 55'923'700ULL);
-  EXPECT_EQ(x_ray_energies[48U], 63'123'800ULL);
-  EXPECT_EQ(x_ray_energies.back(), 65'476'600ULL);
-  EXPECT_DOUBLE_EQ(x_ray_yields.front(), 1.28087);
-  EXPECT_DOUBLE_EQ(x_ray_yields[46U], 0.0163172);
-  EXPECT_DOUBLE_EQ(x_ray_yields[47U], 0.0285488);
-  EXPECT_DOUBLE_EQ(x_ray_yields[48U], 0.00303923);
-  EXPECT_DOUBLE_EQ(x_ray_yields.back(), 1.92701e-07);
+  EXPECT_EQ(x_ray_energies[0U], 8'926'800ULL);
+  EXPECT_EQ(x_ray_energies[1U], 54'612'000ULL);
+  EXPECT_EQ(x_ray_energies[2U], 55'790'900ULL);
+  EXPECT_EQ(x_ray_energies[3U], 63'292'000ULL);
+  EXPECT_EQ(x_ray_energies[4U], 65'142'700ULL);
+  EXPECT_DOUBLE_EQ(x_ray_yields[0U], 0.0312);
+  EXPECT_DOUBLE_EQ(x_ray_yields[1U], 0.01555);
+  EXPECT_DOUBLE_EQ(x_ray_yields[2U], 0.0272);
+  EXPECT_DOUBLE_EQ(x_ray_yields[3U], 0.00898);
+  EXPECT_DOUBLE_EQ(x_ray_yields[4U], 0.00240);
 
   GGEMSRadionuclideEmission const &auger_electrons = emissions[6U];
   check_channel(auger_electrons, GGEMSParticleType::Electron, 15U);
 
-  auto const auger_energies =
-      auger_electrons.GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
+  auto const auger_energies = auger_electrons.GetEnergyDistribution()
+                                  .GetEnergyValuesMilliElectronVolt();
   auto const auger_yields =
       auger_electrons.GetEnergyDistribution().GetRelativeWeights();
 
@@ -299,24 +298,23 @@ TEST(GGEMSLu177Test, PreservesMirdAtomicRadiationsAsReachableDiscreteLines) {
   GGEMSRadionuclideEmission const &conversion_electrons = emissions[7U];
   check_channel(conversion_electrons, GGEMSParticleType::Electron, 36U);
 
-  auto const conversion_energies =
-      conversion_electrons.GetEnergyDistribution()
-          .GetEnergyValuesMilliElectronVolt();
+  auto const conversion_energies = conversion_electrons.GetEnergyDistribution()
+                                       .GetEnergyValuesMilliElectronVolt();
   auto const conversion_yields =
       conversion_electrons.GetEnergyDistribution().GetRelativeWeights();
 
-  EXPECT_EQ(conversion_energies.front(), 6'164'010ULL);
-  EXPECT_EQ(conversion_energies[1U], 47'467'800ULL);
-  EXPECT_EQ(conversion_energies[9U], 102'187'000ULL);
-  EXPECT_EQ(conversion_energies[10U], 103'392'000ULL);
-  EXPECT_EQ(conversion_energies[11U], 110'851'000ULL);
-  EXPECT_EQ(conversion_energies.back(), 321'316'000ULL);
-  EXPECT_DOUBLE_EQ(conversion_yields.front(), 0.00109753);
-  EXPECT_DOUBLE_EQ(conversion_yields[1U], 0.0517072);
-  EXPECT_DOUBLE_EQ(conversion_yields[9U], 0.0347404);
-  EXPECT_DOUBLE_EQ(conversion_yields[10U], 0.0306777);
-  EXPECT_DOUBLE_EQ(conversion_yields[11U], 0.0177125);
-  EXPECT_DOUBLE_EQ(conversion_yields.back(), 7.27062e-07);
+  EXPECT_EQ(conversion_energies.front(), 6'291'700ULL);
+  EXPECT_EQ(conversion_energies[1U], 47'599'290ULL);
+  EXPECT_EQ(conversion_energies[9U], 102'210'690ULL);
+  EXPECT_EQ(conversion_energies[10U], 103'389'390ULL);
+  EXPECT_EQ(conversion_energies[11U], 110'859'690ULL);
+  EXPECT_EQ(conversion_energies.back(), 321'055'200ULL);
+  EXPECT_DOUBLE_EQ(conversion_yields.front(), 0.00124);
+  EXPECT_DOUBLE_EQ(conversion_yields[1U], 0.0503);
+  EXPECT_DOUBLE_EQ(conversion_yields[9U], 0.033);
+  EXPECT_DOUBLE_EQ(conversion_yields[10U], 0.02919);
+  EXPECT_DOUBLE_EQ(conversion_yields[11U], 0.0168);
+  EXPECT_DOUBLE_EQ(conversion_yields.back(), 0.00000097);
 }
 
 } // namespace

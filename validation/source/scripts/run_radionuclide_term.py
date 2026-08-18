@@ -1,7 +1,7 @@
 import ggems
 
 
-ACTIVITY_MBQ = 100.0
+ACTIVITY_MBQ = 10.0
 REFERENCE_TIME_S = 0.0
 
 ACQUISITION_TIME_US = 1000000.0
@@ -19,7 +19,7 @@ def main() -> None:
 
         random = ggems.rndm.GGEMSRandom().set_engine("philox").set_seed(120_015)
 
-        radionuclide = ggems.radionuclide("Lu-177")
+        radionuclide = ggems.radionuclide("Am-241")
         # print(f"Radionuclide: {radionuclide.name}")
         # print(f"Half-life: {radionuclide.half_life_seconds} s")
         # print(f"Emission count: {radionuclide.emission_count}")
