@@ -25,6 +25,8 @@ PYBIND11_MODULE(ggems, module) {
   auto logging = module.def_submodule("logging", "GGEMS logging module");
   auto opencl = module.def_submodule("opencl", "GGEMS OpenCL module");
   auto random = module.def_submodule("rndm", "GGEMS random module");
+  auto radionuclide =
+      module.def_submodule("radionuclide", "GGEMS radionuclide module");
   auto source = module.def_submodule("source", "GGEMS source module");
   auto run = module.def_submodule("run", "GGEMS run module");
   auto observer = module.def_submodule("observer", "GGEMS observer module");
@@ -35,10 +37,9 @@ PYBIND11_MODULE(ggems, module) {
 
   BindLogging(logging);
   BindOpenCL(opencl);
-  BindRadionuclide(module);
+  BindRadionuclide(radionuclide);
   BindRandom(random);
   BindSource(source);
-  module.attr("Source") = source.attr("GGEMSSource");
   BindRun(run);
   BindObserver(observer);
 

@@ -48,21 +48,9 @@ rndm = ggems.rndm
 source = ggems.source
 run = ggems.run
 observer = ggems.observer
-RadionuclideDefinition = ggems.RadionuclideDefinition
-Source = ggems.Source
 radionuclide = ggems.radionuclide
 
-__all__ = [
-    "logging",
-    "opencl",
-    "rndm",
-    "source",
-    "run",
-    "observer",
-    "RadionuclideDefinition",
-    "Source",
-    "radionuclide",
-]
+__all__ = ["logging", "opencl", "rndm", "source", "run", "observer", "radionuclide"]
 
 if hasattr(ggems, "gui"):
     gui = ggems.gui
