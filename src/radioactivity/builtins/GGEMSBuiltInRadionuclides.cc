@@ -158,6 +158,61 @@ constexpr GGEMSBuiltInRadionuclideInfo k_lu177_info{
         "their energy axes are rescaled to the current evaluated branch "
         "endpoints while preserving the conditional spectral shapes."};
 
+constexpr GGEMSBuiltInRadionuclideInfo k_i123_info{
+    .canonical_name = "I-123",
+    .element_name = "Iodine",
+    .atomic_number = 53U,
+    .mass_number = 123U,
+    .daughter_name = "Te-123",
+    .decay_mode = "electron capture",
+    .q_value_kilo_electron_volt = 1'234.0L,
+    .nuclear_data_source = "LNHB / DDEP 2003",
+    .beta_spectrum_source = "Not applicable (electron capture only)",
+    .atomic_data_source = "LNHB / DDEP + MIRDspecs / ICRP 107 (Auger only)",
+    .model_notes =
+        "Electron capture has no placeholder incident particle; capture "
+        "neutrinos and daughter recoil nuclei are not included. Evaluated Te "
+        "X-rays, Auger electrons, and conversion electrons are flattened at "
+        "parent decay time."};
+
+constexpr GGEMSBuiltInRadionuclideInfo k_i124_info{
+    .canonical_name = "I-124",
+    .element_name = "Iodine",
+    .atomic_number = 53U,
+    .mass_number = 124U,
+    .daughter_name = "Te-124",
+    .decay_mode = "beta+ / electron capture",
+    .q_value_kilo_electron_volt = 3'159.6L,
+    .nuclear_data_source = "LNHB / NIST / DDEP 2021",
+    .beta_spectrum_source =
+        "BetaShape 2.4 (DDEP yields; experimental + calculated)",
+    .atomic_data_source =
+        "LNHB / NIST / DDEP 2021 + MIRDspecs / ICRP 107 (Auger only)",
+    .model_notes =
+        "No source 511 keV annihilation photons; electron capture has no "
+        "placeholder emission. Eight beta-plus branches preserve DDEP yields. "
+        "The 510 conversion-electron lines are split into two numerical "
+        "transport groups for 32-bit ticket reachability; internal-pair "
+        "formation is not modelled."};
+
+constexpr GGEMSBuiltInRadionuclideInfo k_i125_info{
+    .canonical_name = "I-125",
+    .element_name = "Iodine",
+    .atomic_number = 53U,
+    .mass_number = 125U,
+    .daughter_name = "Te-125",
+    .decay_mode = "electron capture",
+    .q_value_kilo_electron_volt = 185.77L,
+    .nuclear_data_source = "LNHB / DDEP 2010",
+    .beta_spectrum_source = "Not applicable (electron capture only)",
+    .atomic_data_source =
+        "LNHB / DDEP 2010 + MIRDspecs / ICRP 107 (Auger only)",
+    .model_notes =
+        "Electron capture has no placeholder incident particle; capture "
+        "neutrinos and daughter recoil nuclei are not included. The 1.48 ns "
+        "Te-125 de-excitation and associated atomic relaxation emissions are "
+        "flattened at parent decay time."};
+
 constexpr GGEMSBuiltInRadionuclideInfo k_i131_info{
     .canonical_name = "I-131",
     .element_name = "Iodine",
@@ -219,7 +274,7 @@ struct BuiltInEntry {
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<BuiltInEntry, 11U> k_builtin_entries{{
+constexpr std::array<BuiltInEntry, 14U> k_builtin_entries{{
     {.canonical_name = "H-3",
      .builder = BuildH3Radionuclide,
      .info = &k_h3_info},
@@ -244,6 +299,15 @@ constexpr std::array<BuiltInEntry, 11U> k_builtin_entries{{
     {.canonical_name = "Lu-177",
      .builder = BuildLu177Radionuclide,
      .info = &k_lu177_info},
+    {.canonical_name = "I-123",
+     .builder = BuildI123Radionuclide,
+     .info = &k_i123_info},
+    {.canonical_name = "I-124",
+     .builder = BuildI124Radionuclide,
+     .info = &k_i124_info},
+    {.canonical_name = "I-125",
+     .builder = BuildI125Radionuclide,
+     .info = &k_i125_info},
     {.canonical_name = "I-131",
      .builder = BuildI131Radionuclide,
      .info = &k_i131_info},

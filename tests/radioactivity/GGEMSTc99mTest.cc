@@ -83,8 +83,8 @@ TEST(GGEMSTc99mTest, BuildsExactIdentityAndOrderedFlattenedEmissions) {
   EXPECT_EQ(emissions[2U].GetYieldPerDecay(), 7.4e-11L);
 
   EXPECT_EQ(emissions[3U].GetParticleType(), GGEMSParticleType::Gamma);
-  EXPECT_NEAR(static_cast<double>(emissions[3U].GetYieldPerDecay()),
-              0.08209, 1.0e-15);
+  EXPECT_NEAR(static_cast<double>(emissions[3U].GetYieldPerDecay()), 0.08209,
+              1.0e-15);
 
   EXPECT_EQ(emissions[4U].GetParticleType(), GGEMSParticleType::Electron);
   EXPECT_NEAR(static_cast<double>(emissions[4U].GetYieldPerDecay()),
@@ -139,9 +139,8 @@ TEST(GGEMSTc99mTest, PreservesCombinedBetaShapeSpectrum) {
     EXPECT_GT(weights[index], 0.0);
 
     weight_sum += static_cast<long double>(weights[index]);
-    weighted_center_sum +=
-        static_cast<long double>(weights[index]) *
-        static_cast<long double>(centers[index]);
+    weighted_center_sum += static_cast<long double>(weights[index]) *
+                           static_cast<long double>(centers[index]);
 
     EXPECT_GT(tickets[index], previous_ticket);
     previous_ticket = tickets[index];
@@ -152,8 +151,7 @@ TEST(GGEMSTc99mTest, PreservesCombinedBetaShapeSpectrum) {
 
   long double const mean_energy_keV =
       weighted_center_sum / weight_sum / 1'000'000.0L;
-  EXPECT_NEAR(static_cast<double>(mean_energy_keV),
-              113.562304553545, 0.001);
+  EXPECT_NEAR(static_cast<double>(mean_energy_keV), 113.562304553545, 0.001);
 }
 
 // =============================================================================
@@ -185,8 +183,7 @@ TEST(GGEMSTc99mTest, PreservesLaraGammaAndXRayEmissions) {
 
   auto const gamma_energies =
       gamma.GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
-  auto const gamma_yields =
-      gamma.GetEnergyDistribution().GetRelativeWeights();
+  auto const gamma_yields = gamma.GetEnergyDistribution().GetRelativeWeights();
 
   for (std::size_t index = 0U; index < expected_gamma_energies.size();
        ++index) {
@@ -198,9 +195,9 @@ TEST(GGEMSTc99mTest, PreservesLaraGammaAndXRayEmissions) {
   EXPECT_EQ(ultra_weak_gamma.GetParticleType(), GGEMSParticleType::Gamma);
   EXPECT_EQ(ultra_weak_gamma.GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::Mono);
-  EXPECT_EQ(ultra_weak_gamma.GetEnergyDistribution()
-                .GetMonoEnergyMilliElectronVolt(),
-            2'172'600ULL);
+  EXPECT_EQ(
+      ultra_weak_gamma.GetEnergyDistribution().GetMonoEnergyMilliElectronVolt(),
+      2'172'600ULL);
   EXPECT_EQ(ultra_weak_gamma.GetYieldPerDecay(), 7.4e-11L);
 
   GGEMSRadionuclideEmission const &x_rays = emissions[3U];
@@ -224,8 +221,7 @@ TEST(GGEMSTc99mTest, PreservesLaraGammaAndXRayEmissions) {
 
   auto const x_ray_energies =
       x_rays.GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
-  auto const x_ray_yields =
-      x_rays.GetEnergyDistribution().GetRelativeWeights();
+  auto const x_ray_yields = x_rays.GetEnergyDistribution().GetRelativeWeights();
 
   for (std::size_t index = 0U; index < expected_x_ray_energies.size();
        ++index) {

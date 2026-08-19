@@ -14,6 +14,9 @@
 
 namespace {
 
+// =============================================================================
+// =============================================================================
+
 using ggems::core::particles::GGEMSParticleType;
 using ggems::core::radioactivity::GGEMSRadionuclideDefinition;
 using ggems::core::radioactivity::GGEMSRadionuclideEmission;
@@ -32,6 +35,9 @@ struct ExpectedBetaBranch {
   std::uint64_t endpoint_milli_eV;
   double represented_mean_energy_keV;
 };
+
+// =============================================================================
+// =============================================================================
 
 constexpr std::array<ExpectedBetaBranch, 6U> k_expected_beta_branches{{
     {.yield_per_decay = 0.02130L,
@@ -72,27 +78,32 @@ constexpr std::array<ExpectedBetaBranch, 6U> k_expected_beta_branches{{
      .represented_mean_energy_keV = 282.17254},
 }};
 
-constexpr std::array<std::uint64_t, 18U>
-    k_expected_gamma_energies_milli_eV{{
-        80'185'000ULL,
-        85'900'000ULL,
-        177'214'000ULL,
-        232'180'000ULL,
-        272'498'000ULL,
-        284'305'000ULL,
-        295'800'000ULL,
-        302'400'000ULL,
-        318'088'000ULL,
-        324'651'000ULL,
-        325'789'000ULL,
-        358'400'000ULL,
-        364'489'000ULL,
-        404'814'000ULL,
-        503'004'000ULL,
-        636'989'000ULL,
-        642'719'000ULL,
-        722'911'000ULL,
-    }};
+// =============================================================================
+// =============================================================================
+
+constexpr std::array<std::uint64_t, 18U> k_expected_gamma_energies_milli_eV{{
+    80'185'000ULL,
+    85'900'000ULL,
+    177'214'000ULL,
+    232'180'000ULL,
+    272'498'000ULL,
+    284'305'000ULL,
+    295'800'000ULL,
+    302'400'000ULL,
+    318'088'000ULL,
+    324'651'000ULL,
+    325'789'000ULL,
+    358'400'000ULL,
+    364'489'000ULL,
+    404'814'000ULL,
+    503'004'000ULL,
+    636'989'000ULL,
+    642'719'000ULL,
+    722'911'000ULL,
+}};
+
+// =============================================================================
+// =============================================================================
 
 constexpr std::array<double, 18U> k_expected_gamma_line_yields{{
     0.02607,
@@ -310,7 +321,8 @@ TEST(GGEMSI131Test, PreservesLaraAndMirdAtomicRadiations) {
       x_rays.GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
   auto const x_ray_yields = x_rays.GetEnergyDistribution().GetRelativeWeights();
 
-  for (std::size_t index = 0U; index < expected_x_ray_energies.size(); ++index) {
+  for (std::size_t index = 0U; index < expected_x_ray_energies.size();
+       ++index) {
     EXPECT_EQ(x_ray_energies[index], expected_x_ray_energies[index]);
     EXPECT_DOUBLE_EQ(x_ray_yields[index], expected_x_ray_yields[index]);
   }
@@ -363,9 +375,10 @@ TEST(GGEMSI131Test, ExcludesDelayedXe131mDeexcitation) {
   EXPECT_EQ(emissions[5U].GetYieldPerDecay(), 0.00386L);
   auto const beta_centers =
       emissions[5U].GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
-  auto const beta_half_width =
-      emissions[5U].GetEnergyDistribution().GetRegularBinWidthMilliElectronVolt() /
-      2ULL;
+  auto const beta_half_width = emissions[5U]
+                                   .GetEnergyDistribution()
+                                   .GetRegularBinWidthMilliElectronVolt() /
+                               2ULL;
   ASSERT_FALSE(beta_centers.empty());
   EXPECT_EQ(beta_centers.back() + beta_half_width, 806'900'000ULL);
 

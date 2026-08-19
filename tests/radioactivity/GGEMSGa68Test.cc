@@ -14,6 +14,9 @@
 
 namespace {
 
+// =============================================================================
+// =============================================================================
+
 using ggems::core::particles::GGEMSParticleType;
 using ggems::core::radioactivity::GGEMSRadionuclideDefinition;
 using ggems::core::radioactivity::GGEMSRadionuclideEmission;
@@ -32,6 +35,9 @@ struct ExpectedPositronBranch {
   std::uint64_t endpoint_milli_eV;
   double represented_mean_energy_keV;
 };
+
+// =============================================================================
+// =============================================================================
 
 constexpr std::array<ExpectedPositronBranch, 3U> k_expected_positron_branches{{
     {.yield_per_decay = 0.8768L,
@@ -54,6 +60,9 @@ constexpr std::array<ExpectedPositronBranch, 3U> k_expected_positron_branches{{
      .represented_mean_energy_keV = 107.38222},
 }};
 
+// =============================================================================
+// =============================================================================
+
 constexpr std::array<std::uint64_t, 13U> k_expected_gamma_energies_milli_eV{{
     227'310'000ULL,
     483'350'000ULL,
@@ -69,6 +78,9 @@ constexpr std::array<std::uint64_t, 13U> k_expected_gamma_energies_milli_eV{{
     2'338'440'000ULL,
     2'821'730'000ULL,
 }};
+
+// =============================================================================
+// =============================================================================
 
 constexpr std::array<double, 13U> k_expected_gamma_line_yields{{
     1.2e-06,

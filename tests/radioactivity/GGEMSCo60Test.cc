@@ -14,6 +14,9 @@
 
 namespace {
 
+// =============================================================================
+// =============================================================================
+
 using ggems::core::particles::GGEMSParticleType;
 using ggems::core::radioactivity::GGEMSRadionuclideDefinition;
 using ggems::core::radioactivity::GGEMSRadionuclideEmission;
@@ -32,6 +35,9 @@ struct ExpectedBetaBranch {
   std::uint64_t endpoint_milli_eV;
   double represented_mean_energy_keV;
 };
+
+// =============================================================================
+// =============================================================================
 
 constexpr std::array<ExpectedBetaBranch, 3U> k_expected_beta_branches{{
     {.yield_per_decay = 0.9988L,
@@ -54,15 +60,20 @@ constexpr std::array<ExpectedBetaBranch, 3U> k_expected_beta_branches{{
      .represented_mean_energy_keV = 624.50478},
 }};
 
-constexpr std::array<std::uint64_t, 6U>
-    k_expected_gamma_energies_milli_eV{{
-        347'140'000ULL,
-        826'100'000ULL,
-        1'173'228'000ULL,
-        1'332'492'000ULL,
-        2'158'570'000ULL,
-        2'505'692'000ULL,
-    }};
+// =============================================================================
+// =============================================================================
+
+constexpr std::array<std::uint64_t, 6U> k_expected_gamma_energies_milli_eV{{
+    347'140'000ULL,
+    826'100'000ULL,
+    1'173'228'000ULL,
+    1'332'492'000ULL,
+    2'158'570'000ULL,
+    2'505'692'000ULL,
+}};
+
+// =============================================================================
+// =============================================================================
 
 constexpr std::array<double, 6U> k_expected_gamma_line_yields{{
     0.000075,

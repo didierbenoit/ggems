@@ -32,6 +32,9 @@ struct GGEMSBuiltInRadionuclideInfo {
 [[nodiscard]] auto BuildGa68Radionuclide() -> GGEMSRadionuclideDefinition;
 [[nodiscard]] auto BuildCo60Radionuclide() -> GGEMSRadionuclideDefinition;
 [[nodiscard]] auto BuildLu177Radionuclide() -> GGEMSRadionuclideDefinition;
+[[nodiscard]] auto BuildI123Radionuclide() -> GGEMSRadionuclideDefinition;
+[[nodiscard]] auto BuildI124Radionuclide() -> GGEMSRadionuclideDefinition;
+[[nodiscard]] auto BuildI125Radionuclide() -> GGEMSRadionuclideDefinition;
 [[nodiscard]] auto BuildI131Radionuclide() -> GGEMSRadionuclideDefinition;
 [[nodiscard]] auto BuildAm241Radionuclide() -> GGEMSRadionuclideDefinition;
 [[nodiscard]] auto BuildTc99mRadionuclide() -> GGEMSRadionuclideDefinition;

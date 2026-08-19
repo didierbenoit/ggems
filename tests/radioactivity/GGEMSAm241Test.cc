@@ -10,6 +10,7 @@
 #include "GGEMS/radioactivity/GGEMSRadionuclideEmission.hh"
 #include "GGEMS/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
 #include "GGEMS/sources/GGEMSEnergyDistribution.hh"
+#include "GGEMS/sources/GGEMSSourceTypes.hh"
 
 namespace {
 

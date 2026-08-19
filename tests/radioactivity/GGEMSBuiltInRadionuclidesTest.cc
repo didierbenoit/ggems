@@ -33,7 +33,7 @@ struct ExpectedIdentity {
 // =============================================================================
 
 TEST(GGEMSBuiltInRadionuclides, DispatchesOnlyExactCanonicalNames) {
-  constexpr std::array<ExpectedBuiltIn, 11U> expected{{
+  constexpr std::array<ExpectedBuiltIn, 14U> expected{{
       {.name = "H-3",
        .half_life_seconds = 388'500'000.0L,
        .emission_count = 1U},
@@ -50,6 +50,15 @@ TEST(GGEMSBuiltInRadionuclides, DispatchesOnlyExactCanonicalNames) {
       {.name = "Lu-177",
        .half_life_seconds = 574'067.52L,
        .emission_count = 8U},
+      {.name = "I-123",
+       .half_life_seconds = 47'604.24L,
+       .emission_count = 4U},
+      {.name = "I-124",
+       .half_life_seconds = 360'806.4L,
+       .emission_count = 13U},
+      {.name = "I-125",
+       .half_life_seconds = 5'131'123.2L,
+       .emission_count = 4U},
       {.name = "I-131",
        .half_life_seconds = 693'213.12L,
        .emission_count = 10U},
@@ -85,9 +94,10 @@ TEST(GGEMSBuiltInRadionuclides, DispatchesOnlyExactCanonicalNames) {
 
 TEST(GGEMSBuiltInRadionuclides,
      ListsEveryAvailableCanonicalNameInDispatchOrder) {
-  constexpr std::array<std::string_view, 11U> expected{
+  constexpr std::array<std::string_view, 14U> expected{
       "H-3",   "C-14",   "F-18",  "C-11",   "O-15",  "Ga-68",
-      "Co-60", "Lu-177", "I-131", "Am-241", "Tc-99m"};
+      "Co-60", "Lu-177", "I-123", "I-124", "I-125", "I-131", "Am-241",
+      "Tc-99m"};
 
   auto const available =
       ggems::core::radioactivity::builtins::GetAvailableRadionuclideNames();
@@ -157,7 +167,7 @@ TEST(GGEMSBuiltInRadionuclides, F18CatalogProvidesDetailedIdentityCard) {
 // =============================================================================
 
 TEST(GGEMSBuiltInRadionuclides, EveryBuiltInProvidesIdentityCardMetadata) {
-  constexpr std::array<ExpectedIdentity, 11U> expected{{
+  constexpr std::array<ExpectedIdentity, 14U> expected{{
       {.name = "H-3",
        .element_name = "Hydrogen",
        .atomic_number = 1U,
@@ -214,6 +224,27 @@ TEST(GGEMSBuiltInRadionuclides, EveryBuiltInProvidesIdentityCardMetadata) {
        .daughter_name = "Hf-177",
        .decay_mode = "beta-",
        .q_value_kilo_electron_volt = 496.8L},
+      {.name = "I-123",
+       .element_name = "Iodine",
+       .atomic_number = 53U,
+       .mass_number = 123U,
+       .daughter_name = "Te-123",
+       .decay_mode = "electron capture",
+       .q_value_kilo_electron_volt = 1'234.0L},
+      {.name = "I-124",
+       .element_name = "Iodine",
+       .atomic_number = 53U,
+       .mass_number = 124U,
+       .daughter_name = "Te-124",
+       .decay_mode = "beta+ / electron capture",
+       .q_value_kilo_electron_volt = 3'159.6L},
+      {.name = "I-125",
+       .element_name = "Iodine",
+       .atomic_number = 53U,
+       .mass_number = 125U,
+       .daughter_name = "Te-125",
+       .decay_mode = "electron capture",
+       .q_value_kilo_electron_volt = 185.77L},
       {.name = "I-131",
        .element_name = "Iodine",
        .atomic_number = 53U,
