@@ -8,7 +8,6 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMS/radioactivity/GGEMSRadioactiveTimeSampling.hh"
 #include "GGEMS/random/GGEMSHostRandomStream.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/random/GGEMSRandomEngine.hh"
@@ -20,11 +19,20 @@
 
 namespace {
 
+// =============================================================================
+// =============================================================================
+
 using Random = ggems::core::random::GGEMSRandom;
 using RandomEngine = ggems::core::random::GGEMSRandomEngine;
 
+// =============================================================================
+// =============================================================================
+
 constexpr std::array<RandomEngine, 3U> k_engines{
     RandomEngine::JKISS, RandomEngine::PCG32, RandomEngine::Philox};
+
+// =============================================================================
+// =============================================================================
 
 class GGEMSRadioactiveTimeRandomProgressionTest : public ::testing::Test {
 protected:
@@ -80,7 +88,7 @@ TEST_F(GGEMSRadioactiveTimeRandomProgressionTest,
     std::string const options =
         std::format("-cl-std=CL2.0 -I{} {}", root.generic_string(),
                     random.GetKernelBuildDefinition());
-    auto &program = opencl.GetOrCreateProgram(
+    auto const &program = opencl.GetOrCreateProgram(
         context, root / "tests", "radioactive_time_random_probe", options);
     ggems::ocl::GGEMSOpenCLKernel kernel{
         context, program.CreateKernel("radioactive_time_random_probe"),

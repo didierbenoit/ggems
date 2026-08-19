@@ -160,7 +160,7 @@ TEST_F(GGEMSActivitySourceRandomOrderTest,
     std::string const options =
         std::format("-cl-std=CL2.0 -I{} {}", root.generic_string(),
                     random.GetKernelBuildDefinition());
-    auto &program = opencl.GetOrCreateProgram(
+    auto const &program = opencl.GetOrCreateProgram(
         context, root / "tests", "activity_source_random_order_probe", options);
     ggems::ocl::GGEMSOpenCLKernel kernel{
         context, program.CreateKernel("activity_source_random_order_probe"),

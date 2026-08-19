@@ -22,7 +22,13 @@
 
 namespace {
 
+// =============================================================================
+// =============================================================================
+
 constexpr long double k_maximum_cdf_error{1.0e-5L};
+
+// =============================================================================
+// =============================================================================
 
 struct SamplingCase {
   std::uint64_t start_ps;
@@ -31,40 +37,59 @@ struct SamplingCase {
   std::uint32_t raw_word;
 };
 
+// =============================================================================
+// =============================================================================
+
 struct OpenCLSamplingResult {
   std::uint64_t time_ps;
   std::uint32_t ticket;
   float relative;
 };
 
+// =============================================================================
+// =============================================================================
+
 static_assert(sizeof(OpenCLSamplingResult) == 16U);
+
+// =============================================================================
+// =============================================================================
 
 [[nodiscard]] auto UniformFromRaw(std::uint32_t raw_word) noexcept
     -> long double {
   return static_cast<long double>(raw_word >> 8U) * 0x1.0p-24L;
 }
 
+// =============================================================================
+// =============================================================================
+
 [[nodiscard]] auto ReferenceRelative(std::uint32_t raw_word,
                                      float scaled_decay) noexcept
     -> long double {
   long double const uniform = UniformFromRaw(raw_word);
-  long double const x = static_cast<long double>(scaled_decay);
+  auto const relative = static_cast<long double>(scaled_decay);
 
-  if (x == 0.0L) {
+  if (relative == 0.0L) {
     return uniform;
   }
 
-  return -std::log1p(-uniform * -std::expm1(-x)) / x;
+  return -std::log1p(-uniform * -std::expm1(-relative)) / relative;
 }
+
+// =============================================================================
+// =============================================================================
 
 [[nodiscard]] auto NormalizedCDF(long double relative,
                                  float scaled_decay) noexcept -> long double {
-  auto const x = static_cast<long double>(scaled_decay);
-  if (x == 0.0L) {
+  auto const scaled_relative = static_cast<long double>(scaled_decay);
+  if (scaled_relative == 0.0L) {
     return relative;
   }
-  return -std::expm1(-x * relative) / -std::expm1(-x);
+  return -std::expm1(-scaled_relative * relative) /
+         -std::expm1(-scaled_relative);
 }
+
+// =============================================================================
+// =============================================================================
 
 [[nodiscard]] auto ExpectedTimeFromTicket(SamplingCase const &sample,
                                           std::uint32_t ticket) noexcept
@@ -77,6 +102,9 @@ static_assert(sizeof(OpenCLSamplingResult) == 16U);
   }
   return sample.start_ps + offset;
 }
+
+// =============================================================================
+// =============================================================================
 
 [[nodiscard]] auto BuildSamplingGrid() -> std::vector<SamplingCase> {
   constexpr std::array<std::uint32_t, 5U> k_words{0U, 1U, 0x7FFF'FFFFU,
@@ -99,7 +127,10 @@ static_assert(sizeof(OpenCLSamplingResult) == 16U);
   for (auto const &window : k_windows) {
     for (float decay : k_decays) {
       for (std::uint32_t word : k_words) {
-        result.push_back({window[0U], window[1U], decay, word});
+        result.push_back({.start_ps = window[0U],
+                          .stop_ps = window[1U],
+                          .scaled_decay = decay,
+                          .raw_word = word});
       }
     }
   }
@@ -113,13 +144,18 @@ static_assert(sizeof(OpenCLSamplingResult) == 16U);
     auto const scaled_decay = static_cast<float>(
         std::numbers::ln2_v<long double> / half_life_seconds);
     for (std::uint32_t word : k_words) {
-      result.push_back({k_representative_start_ps, k_representative_stop_ps,
-                        scaled_decay, word});
+      result.push_back({.start_ps = k_representative_start_ps,
+                        .stop_ps = k_representative_stop_ps,
+                        .scaled_decay = scaled_decay,
+                        .raw_word = word});
     }
   }
 
   return result;
 }
+
+// =============================================================================
+// =============================================================================
 
 class GGEMSRadioactiveTimeSamplingKernelTest : public ::testing::Test {
 protected:
@@ -228,7 +264,7 @@ TEST_F(GGEMSRadioactiveTimeSamplingKernelTest,
   std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
   std::string const options =
       std::format("-cl-std=CL2.0 -I{}", root.generic_string());
-  auto &program = opencl.GetOrCreateProgram(
+  auto const &program = opencl.GetOrCreateProgram(
       context, root / "tests", "radioactive_time_sampling_probe", options);
   ggems::ocl::GGEMSOpenCLKernel kernel{
       context, program.CreateKernel("radioactive_time_sampling_probe"),

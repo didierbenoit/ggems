@@ -4,6 +4,7 @@
 #include <limits>
 #include <type_traits>
 #include <utility>
+#include <numbers>
 
 #include <gtest/gtest.h>
 
@@ -180,8 +181,7 @@ TEST(GGEMSDecayStatisticsTest,
       std::numeric_limits<long double>::denorm_min();
 
   if (half_life_seconds == 0.0L ||
-      std::isfinite(0.693147180559945309417232121458176568L /
-                    half_life_seconds)) {
+      std::isfinite(std::numbers::ln2_v<long double> / half_life_seconds)) {
     GTEST_SKIP() << "The platform has no overflowing finite half-life case.";
   }
 
