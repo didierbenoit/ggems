@@ -109,6 +109,7 @@ list(APPEND GGEMS_TEST_TARGETS ggems_core_tests)
 set(GGEMS_CORE_TEST_DIRECTORIES
     geometry
     logging
+    materials
     observer
     opencl
     particles

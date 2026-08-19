@@ -238,10 +238,10 @@ TEST(GGEMSI124Test, PreservesDdepPhotonsWithoutSourceAnnihilationLine) {
   auto const gamma_yields = gamma.GetEnergyDistribution().GetRelativeWeights();
   EXPECT_EQ(gamma_energies.front(), 166'222'000ULL);
   EXPECT_EQ(gamma_energies[15U], 602'725'500ULL);
-  EXPECT_EQ(gamma_energies[68U], 1'690'971'600ULL);
+  EXPECT_EQ(gamma_energies[64U], 1'690'971'600ULL);
   EXPECT_EQ(gamma_energies.back(), 2'988'200'000ULL);
   EXPECT_DOUBLE_EQ(gamma_yields[15U], 0.623);
-  EXPECT_DOUBLE_EQ(gamma_yields[68U], 0.1089);
+  EXPECT_DOUBLE_EQ(gamma_yields[64U], 0.1089);
   for (std::uint64_t const energy : gamma_energies) {
     EXPECT_NE(energy, 511'000'000ULL);
     EXPECT_NE(energy, 1'658'000'000ULL);
