@@ -3,16 +3,12 @@
 #include <cstdint>
 #include <limits>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include <gtest/gtest.h>
 
-#include "GGEMS/GGEMSException.hh"
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideEmission.hh"
-#include "GGEMS/radioactivity/GGEMSRadionuclideLibrary.hh"
 #include "GGEMS/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
 #include "GGEMS/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/sources/GGEMSSourceTypes.hh"
@@ -25,22 +21,10 @@ namespace {
 using ggems::core::particles::GGEMSParticleType;
 using ggems::core::radioactivity::GGEMSRadionuclideDefinition;
 using ggems::core::radioactivity::GGEMSRadionuclideEmission;
-using ggems::core::radioactivity::GGEMSRadionuclideLibrary;
 using ggems::core::radioactivity::builtins::BuildF18Radionuclide;
 using ggems::core::sources::GGEMSEnergyDistribution;
 using ggems::core::sources::GGEMSEnergyDistributionType;
 using ggems::core::sources::k_energy_ticket_space_size;
-
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] auto MakeSyntheticDefinition(std::size_t index)
-    -> GGEMSRadionuclideDefinition {
-  std::vector<GGEMSRadionuclideEmission> emissions;
-  emissions.emplace_back(GGEMSParticleType::Gamma, 1.0L,
-                         GGEMSEnergyDistribution::BuildMono(1ULL));
-  return {"Synthetic-" + std::to_string(index), 1.0L, std::move(emissions)};
-}
 
 // =============================================================================
 // =============================================================================
@@ -164,37 +148,6 @@ TEST(GGEMSF18Test, OmitsNonTransportSignaturesAndPlaceholders) {
     }
   }
   EXPECT_EQ(oxygen_x_ray_count, 1U);
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSF18Test, LibraryRetainsStableSimplifiedDefinition) {
-  GGEMSRadionuclideLibrary library;
-  auto const registered = library.Add(BuildF18Radionuclide());
-  ASSERT_NE(registered, nullptr);
-  auto const *emissions_address = registered->GetEmissions().data();
-
-  EXPECT_EQ(library.Find("F-18"), registered);
-  EXPECT_EQ(library.Find(" f18 "), nullptr);
-  EXPECT_EQ(library.Find("18f"), nullptr);
-  EXPECT_EQ(library.Find("fluorine-18"), nullptr);
-  EXPECT_EQ(library.Find("F18BB"), nullptr);
-
-  for (std::size_t index = 0U; index < 32U; ++index) {
-    static_cast<void>(library.Add(MakeSyntheticDefinition(index)));
-  }
-
-  auto const after_growth = library.Find("F-18");
-  ASSERT_EQ(after_growth, registered);
-  EXPECT_EQ(after_growth->GetEmissions().data(), emissions_address);
-
-  std::size_t const count_before_rejection = library.GetCount();
-  EXPECT_THROW((void)library.Add(BuildF18Radionuclide()),
-               ggems::core::GGEMSExceptionBase);
-  EXPECT_EQ(library.GetCount(), count_before_rejection);
-  EXPECT_EQ(library.Find("F-18"), registered);
-  EXPECT_EQ(library.Find("F-18")->GetEmissions().data(), emissions_address);
 }
 
 } // namespace

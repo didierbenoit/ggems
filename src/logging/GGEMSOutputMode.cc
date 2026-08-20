@@ -21,7 +21,8 @@
 
 /*!
  * \file
- * \brief Implements process-wide GGEMS output configuration and runtime control.
+ * \brief Implements process-wide GGEMS output configuration and runtime
+ * control.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -66,7 +67,8 @@ namespace {
  */
 OutputMode g_mode{OutputMode::Term};
 /*!
- * \brief Indicates whether logger sinks have been configured for an output mode.
+ * \brief Indicates whether logger sinks have been configured for an output
+ * mode.
  */
 bool g_configured{false};
 
@@ -364,15 +366,12 @@ auto ClearOutputFile() -> void {
 // =============================================================================
 
 auto StartOutputRuntime() -> void {
-  if (!(g_configured)) {
-    throw ggems::core::GGEMSFatal(
-        "Output mode is not configured. "
-        "Call ggems.logging.set_output_mode('term'|'gui') before starting GGEMS "
-        "output runtime.");
-  }
-
   if (g_output_running.load(std::memory_order_relaxed)) {
     return;
+  }
+
+  if (!(g_configured)) {
+    ConfigureLoggerForMode(g_mode);
   }
 
   if (g_mode == OutputMode::Term) {

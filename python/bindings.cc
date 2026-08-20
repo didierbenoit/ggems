@@ -8,8 +8,8 @@ void BindRandom(py::module_ &module);
 void BindMaterials(py::module_ &module);
 void BindRadionuclide(py::module_ &module);
 void BindSource(py::module_ &module);
-void BindRun(py::module_ &module);
 void BindObserver(py::module_ &module);
+void BindRun(py::module_ &module);
 
 #ifdef GGEMS_WITH_IMGUI
 void BindGui(py::module_ &module);
@@ -23,7 +23,6 @@ PYBIND11_MODULE(ggems, module) {
     exposed to Python via Pybind11.
   )pbdoc";
 
-  auto logging = module.def_submodule("logging", "GGEMS logging module");
   auto opencl = module.def_submodule("opencl", "GGEMS OpenCL module");
   auto random = module.def_submodule("rndm", "GGEMS random module");
   auto materials = module.def_submodule("materials", "GGEMS materials module");
@@ -37,14 +36,14 @@ PYBIND11_MODULE(ggems, module) {
   auto gui = module.def_submodule("gui", "GGEMS graphical interface module");
 #endif
 
-  BindLogging(logging);
+  BindLogging(module);
   BindOpenCL(opencl);
   BindRadionuclide(radionuclide);
   BindRandom(random);
   BindMaterials(materials);
   BindSource(source);
-  BindRun(run);
   BindObserver(observer);
+  BindRun(run);
 
 #ifdef GGEMS_WITH_IMGUI
   BindGui(gui);

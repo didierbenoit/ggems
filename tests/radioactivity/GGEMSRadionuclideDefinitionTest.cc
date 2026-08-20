@@ -1,6 +1,5 @@
 #include <array>
 #include <cmath>
-#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <string>
@@ -67,7 +66,7 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSRadionuclideDefinitionTest, OwnsEmissionsAndSelectionWeights) {
+TEST(GGEMSRadionuclideDefinitionTest, OwnsEmissionsAndTotalYield) {
   std::string canonical_name{"Synthetic-Mixed"};
   std::vector<GGEMSRadionuclideEmission> emissions;
   emissions.push_back(MakeDiscreteEmission(GGEMSParticleType::Alpha, 1.0L));
@@ -86,9 +85,7 @@ TEST(GGEMSRadionuclideDefinitionTest, OwnsEmissionsAndSelectionWeights) {
   EXPECT_EQ(definition.GetHalfLifeSeconds(), 4321.25L);
 
   auto const stored_emissions = definition.GetEmissions();
-  auto const selection_weights = definition.GetChannelSelectionWeights();
   ASSERT_EQ(stored_emissions.size(), 3U);
-  ASSERT_EQ(selection_weights.size(), stored_emissions.size());
 
   EXPECT_EQ(stored_emissions[0U].GetParticleType(), GGEMSParticleType::Alpha);
   EXPECT_EQ(stored_emissions[1U].GetParticleType(), GGEMSParticleType::Gamma);
@@ -103,12 +100,6 @@ TEST(GGEMSRadionuclideDefinitionTest, OwnsEmissionsAndSelectionWeights) {
       std::numeric_limits<long double>::epsilon() * expected_total * 8.0L;
   EXPECT_LE(std::abs(definition.GetTotalYieldPerDecay() - expected_total),
             tolerance);
-
-  for (std::size_t index = 0U; index < stored_emissions.size(); ++index) {
-    long double const expected = stored_emissions[index].GetYieldPerDecay() /
-                                 definition.GetTotalYieldPerDecay();
-    EXPECT_EQ(selection_weights[index], expected);
-  }
 }
 
 // =============================================================================
@@ -178,11 +169,7 @@ TEST(GGEMSRadionuclideDefinitionTest,
                                                std::move(emissions)};
 
   ASSERT_EQ(definition.GetEmissions().size(), 2U);
-  ASSERT_EQ(definition.GetChannelSelectionWeights().size(), 2U);
   EXPECT_EQ(definition.GetEmissions()[1U].GetYieldPerDecay(), tiny_yield);
-  EXPECT_GT(definition.GetChannelSelectionWeights()[1U], 0.0L);
-  EXPECT_EQ(definition.GetChannelSelectionWeights()[1U],
-            tiny_yield / definition.GetTotalYieldPerDecay());
   EXPECT_TRUE(definition.GetEmissions()[1U]
                   .GetEnergyDistribution()
                   .GetCumulativeTicketUpperBounds()

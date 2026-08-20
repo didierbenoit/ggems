@@ -37,8 +37,6 @@ TEST(GGEMSC14Test, BuildsExactIdentityAndSingleBetaMinusEmission) {
   EXPECT_EQ(emissions[0U].GetParticleType(), GGEMSParticleType::Electron);
   EXPECT_EQ(emissions[0U].GetYieldPerDecay(), 1.0L);
   EXPECT_EQ(definition.GetTotalYieldPerDecay(), 1.0L);
-  ASSERT_EQ(definition.GetChannelSelectionWeights().size(), 1U);
-  EXPECT_EQ(definition.GetChannelSelectionWeights()[0U], 1.0L);
 
   for (GGEMSRadionuclideEmission const &emission : emissions) {
     EXPECT_NE(emission.GetParticleType(), GGEMSParticleType::Gamma);

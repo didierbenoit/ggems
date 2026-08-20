@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <utility>
 #include <vector>
+#include <numeric>
 
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
@@ -152,23 +153,22 @@ constexpr std::array<double, 36U> k_conversion_electron_line_yields{{
     0.0000215,   0.00000283, 0.00012,     0.000019,    0.00000335,  0.000000438,
 }};
 
-template <std::size_t Size>
-[[nodiscard]] constexpr auto
-SumLineYields(std::array<double, Size> const &line_yields) noexcept
-    -> long double {
-  long double total{0.0L};
-  for (double const line_yield : line_yields) {
-    total += static_cast<long double>(line_yield);
-  }
-  return total;
-}
+// =============================================================================
+// =============================================================================
 
-constexpr long double k_gamma_yield{SumLineYields(k_gamma_line_yields)};
-constexpr long double k_x_ray_yield{SumLineYields(k_x_ray_line_yields)};
+constexpr long double k_gamma_yield{std::accumulate(
+    k_gamma_line_yields.begin(), k_gamma_line_yields.end(), 0.0L)};
+
+constexpr long double k_x_ray_yield{std::accumulate(
+    k_x_ray_line_yields.begin(), k_x_ray_line_yields.end(), 0.0L)};
+
 constexpr long double k_auger_electron_yield{
-    SumLineYields(k_auger_electron_line_yields)};
+    std::accumulate(k_auger_electron_line_yields.begin(),
+                    k_auger_electron_line_yields.end(), 0.0L)};
+
 constexpr long double k_conversion_electron_yield{
-    SumLineYields(k_conversion_electron_line_yields)};
+    std::accumulate(k_conversion_electron_line_yields.begin(),
+                    k_conversion_electron_line_yields.end(), 0.0L)};
 
 } // namespace
 

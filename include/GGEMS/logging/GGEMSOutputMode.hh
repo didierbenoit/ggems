@@ -79,9 +79,11 @@ auto IsOutputRuntimeStarted() noexcept -> bool;
  * after configuration is rejected.
  *
  * \param[in] mode Output mode to configure.
- * \throws GGEMSFatal If a different mode has already been configured or a configured log file cannot be opened.
+ * \throws GGEMSFatal If a different mode has already been configured or a
+ * configured log file cannot be opened.
  */
 auto SetOutputMode(OutputMode mode) -> void;
+
 /*!
  * \brief Configures GGEMS output from a textual mode selector.
  *
@@ -89,7 +91,8 @@ auto SetOutputMode(OutputMode mode) -> void;
  * Matching is case-insensitive.
  *
  * \param[in] mode Textual output-mode selector.
- * \throws GGEMSFatal If the selector is unknown, a different mode has already been configured, or a configured log file cannot be opened.
+ * \throws GGEMSFatal If the selector is unknown, a different mode has already
+ * been configured, or a configured log file cannot be opened.
  */
 auto SetOutputMode(std::string_view mode) -> void;
 
@@ -97,9 +100,11 @@ auto SetOutputMode(std::string_view mode) -> void;
  * \brief Configures an optional plain-text log file.
  *
  * \param[in] path Non-empty destination path.
- * \throws GGEMSFatal If the path is empty, the output runtime is started, or the file cannot be opened after output configuration.
+ * \throws GGEMSFatal If the path is empty, the output runtime is started, or
+ * the file cannot be opened after output configuration.
  */
 auto SetOutputFile(std::string_view path) -> void;
+
 /*!
  * \brief Disables the optional output log file.
  *
@@ -108,14 +113,17 @@ auto SetOutputFile(std::string_view path) -> void;
 auto ClearOutputFile() -> void;
 
 /*!
- * \brief Starts the configured GGEMS output runtime.
+ * \brief Starts the GGEMS output runtime.
  *
- * Repeated calls while already started are ignored. Terminal mode prepares the
- * terminal and emits the GGEMS banner on first start after a stopped state.
+ * If no output mode has been configured explicitly, terminal mode is
+ * configured automatically. Repeated calls while already started are ignored.
+ * Terminal mode prepares the terminal and emits the GGEMS banner on each
+ * transition from stopped to started.
  *
- * \throws GGEMSFatal If no output mode has been configured.
+ * \throws GGEMSFatal If logger sink configuration fails.
  */
 auto StartOutputRuntime() -> void;
+
 /*!
  * \brief Marks the GGEMS output runtime as stopped.
  */

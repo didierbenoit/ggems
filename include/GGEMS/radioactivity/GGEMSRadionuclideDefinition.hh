@@ -28,20 +28,11 @@ public:
     return emissions_;
   }
 
-  [[nodiscard]] auto GetTotalYieldPerDecay() const noexcept -> long double {
-    return total_yield_per_decay_;
-  }
-
-  [[nodiscard]] auto GetChannelSelectionWeights() const noexcept
-      -> std::span<long double const> {
-    return channel_selection_weights_;
-  }
+  [[nodiscard]] auto GetTotalYieldPerDecay() const -> long double;
 
 private:
   std::string canonical_name_;
   long double half_life_seconds_;
   std::vector<GGEMSRadionuclideEmission> emissions_;
-  long double total_yield_per_decay_{0.0L};
-  std::vector<long double> channel_selection_weights_;
 };
 } // namespace ggems::core::radioactivity

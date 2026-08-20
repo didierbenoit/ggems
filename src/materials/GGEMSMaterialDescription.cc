@@ -1,12 +1,25 @@
 #include <format>
 #include <string>
+#include <string_view>
 
+#include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/logging/GGEMSLogMacros.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/GGEMSElementCatalog.hh"
 #include "GGEMS/materials/GGEMSMaterialDescription.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
+
+namespace {
+
+[[nodiscard]] auto NumberDensityUnit() noexcept -> std::string_view {
+  return ggems::core::GGEMSLogger::GetInstance().GetEncoding() ==
+                 ggems::core::Encoding::Ascii
+             ? "1/cm3"
+             : "1/cm³";
+}
+
+} // namespace
 
 namespace ggems::core::materials {
 
@@ -28,16 +41,17 @@ namespace ggems::core::materials {
     auto const &element =
         RequireElementByAtomicNumber(constituent.atomic_number);
 
-    description += std::format("  {:<2} {:<12} w={:.8g}  n={:.8g} 1/cm3\n",
-                               element.GetSymbol(), element.GetName(),
-                               constituent.mass_fraction,
-                               constituent.number_density_per_cubic_centimeter);
+    description += std::format(
+        "  {:<2} {:<12} w={:.8g}  n={:.8g} {}\n", element.GetSymbol(),
+        element.GetName(), constituent.mass_fraction,
+        constituent.number_density_per_cubic_centimeter, NumberDensityUnit());
   }
 
-  description += std::format("  Atom density     : {:.8g} 1/cm3\n"
-                             "  Electron density : {:.8g} 1/cm3",
-                             material.GetTotalAtomDensityPerCubicCentimeter(),
-                             material.GetElectronDensityPerCubicCentimeter());
+  description += std::format(
+      "  Atom density     : {:.8g} {}\n"
+      "  Electron density : {:.8g} {}",
+      material.GetTotalAtomDensityPerCubicCentimeter(), NumberDensityUnit(),
+      material.GetElectronDensityPerCubicCentimeter(), NumberDensityUnit());
 
   return description;
 }

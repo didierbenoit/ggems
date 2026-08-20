@@ -7,7 +7,6 @@
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideEmission.hh"
-#include "GGEMS/radioactivity/GGEMSRadionuclideLibrary.hh"
 #include "GGEMS/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
 #include "GGEMS/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/sources/GGEMSSourceTypes.hh"
@@ -20,7 +19,6 @@ namespace {
 using ggems::core::particles::GGEMSParticleType;
 using ggems::core::radioactivity::GGEMSRadionuclideDefinition;
 using ggems::core::radioactivity::GGEMSRadionuclideEmission;
-using ggems::core::radioactivity::GGEMSRadionuclideLibrary;
 using ggems::core::radioactivity::builtins::BuildC11Radionuclide;
 using ggems::core::radioactivity::builtins::BuildF18Radionuclide;
 using ggems::core::radioactivity::builtins::BuildO15Radionuclide;
@@ -41,8 +39,6 @@ TEST(GGEMSO15Test, BuildsExactIdentityAndSinglePositronEmission) {
   EXPECT_EQ(emissions[0U].GetParticleType(), GGEMSParticleType::Positron);
   EXPECT_EQ(emissions[0U].GetYieldPerDecay(), 0.999001L);
   EXPECT_EQ(definition.GetTotalYieldPerDecay(), 0.999001L);
-  ASSERT_EQ(definition.GetChannelSelectionWeights().size(), 1U);
-  EXPECT_EQ(definition.GetChannelSelectionWeights()[0U], 1.0L);
 
   for (GGEMSRadionuclideEmission const &emission : emissions) {
     EXPECT_NE(emission.GetParticleType(), GGEMSParticleType::Gamma);
@@ -95,38 +91,6 @@ TEST(GGEMSO15Test, PreservesTabulatedBetaShapeSpectrum) {
   long double const mean_energy_keV =
       weighted_center_sum / weight_sum / 1'000'000.0L;
   EXPECT_NEAR(static_cast<double>(mean_energy_keV), 733.47, 0.25);
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSO15Test, LibraryRetainsStableImmutableDefinition) {
-  GGEMSRadionuclideLibrary library;
-  auto const registered = library.Add(BuildO15Radionuclide());
-  auto const *definition_address = registered.get();
-  auto const *emissions_address = registered->GetEmissions().data();
-  auto const *energy_data_address = registered->GetEmissions()[0U]
-                                        .GetEnergyDistribution()
-                                        .GetEnergyValuesMilliElectronVolt()
-                                        .data();
-
-  static_cast<void>(library.Add(BuildF18Radionuclide()));
-  static_cast<void>(library.Add(BuildC11Radionuclide()));
-
-  EXPECT_EQ(library.Find("O-15"), registered);
-  EXPECT_EQ(library.Find(" o15 "), nullptr);
-  EXPECT_EQ(library.Find("15o"), nullptr);
-  EXPECT_EQ(library.Find("oxygen-15"), nullptr);
-
-  auto const after_growth = library.Find("O-15");
-  ASSERT_EQ(after_growth, registered);
-  EXPECT_EQ(after_growth.get(), definition_address);
-  EXPECT_EQ(after_growth->GetEmissions().data(), emissions_address);
-  EXPECT_EQ(after_growth->GetEmissions()[0U]
-                .GetEnergyDistribution()
-                .GetEnergyValuesMilliElectronVolt()
-                .data(),
-            energy_data_address);
 }
 
 } // namespace

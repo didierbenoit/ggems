@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <utility>
 #include <vector>
+#include <numeric>
 
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
@@ -379,28 +380,29 @@ constexpr std::array<double, 248U> k_conversion_electron_weak_line_yields{
      3.54E-12,  8.7E-11,   2.94E-11,  1.9E-11,   4.01E-12,  4.6E-13,
      5.9E-12,   2E-12}};
 
-// Each flattened discrete-line channel stores its source-table line yields as
-// relative weights and their sum as the global yield per parent decay.
-template <std::size_t Size>
-[[nodiscard]] constexpr auto
-SumLineYields(std::array<double, Size> const &line_yields) noexcept
-    -> long double {
-  long double total{0.0L};
-  for (double const line_yield : line_yields) {
-    total += static_cast<long double>(line_yield);
-  }
-  return total;
-}
+// =============================================================================
+// =============================================================================
 
-constexpr long double k_alpha_yield{SumLineYields(k_alpha_line_yields)};
-constexpr long double k_gamma_yield{SumLineYields(k_gamma_line_yields)};
-constexpr long double k_x_ray_yield{SumLineYields(k_x_ray_line_yields)};
+constexpr long double k_alpha_yield{std::accumulate(
+    k_alpha_line_yields.begin(), k_alpha_line_yields.end(), 0.0L)};
+
+constexpr long double k_gamma_yield{std::accumulate(
+    k_gamma_line_yields.begin(), k_gamma_line_yields.end(), 0.0L)};
+
+constexpr long double k_x_ray_yield{std::accumulate(
+    k_x_ray_line_yields.begin(), k_x_ray_line_yields.end(), 0.0L)};
+
 constexpr long double k_auger_electron_yield{
-    SumLineYields(k_auger_electron_line_yields)};
+    std::accumulate(k_auger_electron_line_yields.begin(),
+                    k_auger_electron_line_yields.end(), 0.0L)};
+
 constexpr long double k_conversion_electron_main_yield{
-    SumLineYields(k_conversion_electron_main_line_yields)};
+    std::accumulate(k_conversion_electron_main_line_yields.begin(),
+                    k_conversion_electron_main_line_yields.end(), 0.0L)};
+
 constexpr long double k_conversion_electron_weak_yield{
-    SumLineYields(k_conversion_electron_weak_line_yields)};
+    std::accumulate(k_conversion_electron_weak_line_yields.begin(),
+                    k_conversion_electron_weak_line_yields.end(), 0.0L)};
 
 } // namespace
 

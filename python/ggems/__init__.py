@@ -1,8 +1,7 @@
 import os as _os
 from pathlib import Path as _Path
 
-
-_dll_directory_handles = []
+_dll_directory_handles: list[object] = []
 
 try:
     from . import ggems
@@ -10,7 +9,7 @@ except ImportError:
     if _os.name != "nt":
         raise
 
-    _runtime_dirs = []
+    _runtime_dirs: list[_Path] = []
 
     _oneapi_root = _os.environ.get("ONEAPI_ROOT")
     if _oneapi_root:
@@ -44,7 +43,33 @@ except ImportError:
     from . import ggems
 
 
-logging = ggems.logging
+def start(mode: str | None = None) -> None:
+    if mode is None:
+        ggems.start()
+    else:
+        ggems.start(mode)
+
+
+def stop() -> None:
+    ggems.stop()
+
+
+def is_started() -> bool:
+    return ggems.is_started()
+
+
+def set_detail_level(detail: int = 1) -> None:
+    ggems.set_detail_level(detail)
+
+
+def set_output_file(path: str) -> None:
+    ggems.set_output_file(path)
+
+
+def clear_output_file() -> None:
+    ggems.clear_output_file()
+
+
 opencl = ggems.opencl
 rndm = ggems.rndm
 source = ggems.source
@@ -52,10 +77,15 @@ run = ggems.run
 observer = ggems.observer
 radionuclide = ggems.radionuclide
 
-from . import materials
+from . import materials  # noqa: E402
 
 __all__ = [
-    "logging",
+    "start",
+    "stop",
+    "is_started",
+    "set_detail_level",
+    "set_output_file",
+    "clear_output_file",
     "opencl",
     "rndm",
     "materials",

@@ -178,13 +178,6 @@ TEST(GGEMSI125Test, BuildsExactIdentityAndOrderedFlattenedEmissions) {
 
   EXPECT_NEAR(static_cast<double>(definition.GetTotalYieldPerDecay()),
               25.534623718, 1.0e-12);
-
-  long double selection_weight_sum{0.0L};
-  for (long double const weight : definition.GetChannelSelectionWeights()) {
-    EXPECT_GT(weight, 0.0L);
-    selection_weight_sum += weight;
-  }
-  EXPECT_NEAR(static_cast<double>(selection_weight_sum), 1.0, 1.0e-15);
 }
 
 // =============================================================================

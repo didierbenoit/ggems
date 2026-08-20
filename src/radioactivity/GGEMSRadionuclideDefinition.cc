@@ -73,30 +73,30 @@ GGEMSRadionuclideDefinition::GGEMSRadionuclideDefinition(
     throw ggems::core::GGEMSRecoverable(
         "Radionuclide canonical name must contain non-whitespace text.");
   }
+
   if (!(std::isfinite(half_life_seconds_))) {
     throw ggems::core::GGEMSRecoverable(
         "Radionuclide half-life must be finite.");
   }
+
   if (!(half_life_seconds_ > 0.0L)) {
     throw ggems::core::GGEMSRecoverable(
         "Radionuclide half-life must be strictly positive.");
   }
+
   if (emissions_.empty()) {
     throw ggems::core::GGEMSRecoverable(
         "Radionuclide definition requires at least one emission channel.");
   }
 
-  total_yield_per_decay_ = ComputeTotalYieldPerDecay(emissions_);
-  channel_selection_weights_.reserve(emissions_.size());
-
-  for (GGEMSRadionuclideEmission const &emission : emissions_) {
-    long double const selection_weight =
-        emission.GetYieldPerDecay() / total_yield_per_decay_;
-    if (!(std::isfinite(selection_weight))) {
-      throw ggems::core::GGEMSInternal(
-          "Radionuclide channel selection weight is not finite.");
-    }
-    channel_selection_weights_.push_back(selection_weight);
-  }
+  (void)ComputeTotalYieldPerDecay(emissions_);
 }
+
+// -----------------------------------------------------------------------------
+
+[[nodiscard]] auto GGEMSRadionuclideDefinition::GetTotalYieldPerDecay() const
+    -> long double {
+  return ComputeTotalYieldPerDecay(emissions_);
+}
+
 } // namespace ggems::core::radioactivity

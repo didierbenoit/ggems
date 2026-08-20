@@ -3,8 +3,15 @@ file(GLOB_RECURSE GGEMS_PYBIND_SOURCES CONFIGURE_DEPENDS
      ${CMAKE_CURRENT_SOURCE_DIR}/bindings.cc
      ${CMAKE_CURRENT_SOURCE_DIR}/ggems/bindings_*.cc)
 
+find_program(PYBIND11_STUBGEN_EXECUTABLE NAMES pybind11-stubgen REQUIRED)
+
 # Define the Python extension module
 pybind11_add_module(ggems MODULE ${GGEMS_PYBIND_SOURCES})
+
+install(
+  TARGETS ggems
+  LIBRARY DESTINATION ggems
+  RUNTIME DESTINATION ggems)
 
 # Ensure the compiled module is placed in the package directory
 set_target_properties(
@@ -28,3 +35,19 @@ target_include_directories(ggems PRIVATE ${PROJECT_SOURCE_DIR}/include)
 target_compile_features(ggems PRIVATE cxx_std_23)
 
 ggems_apply_release_optimizations(ggems)
+
+add_custom_command(
+  TARGET ggems
+  POST_BUILD
+  COMMAND
+    ${CMAKE_COMMAND} -E env "PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}"
+    "${PYBIND11_STUBGEN_EXECUTABLE}" ggems.ggems -o
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+  COMMENT "Generating GGEMS Python type stubs"
+  VERBATIM)
+
+install(
+  DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/ggems/ggems/"
+  DESTINATION "ggems/ggems"
+  FILES_MATCHING
+  PATTERN "*.pyi")
