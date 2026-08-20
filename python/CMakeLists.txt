@@ -1,5 +1,6 @@
 # Collect all Python binding sources
-file(GLOB_RECURSE GGEMS_PYBIND_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/bindings.cc
+file(GLOB_RECURSE GGEMS_PYBIND_SOURCES CONFIGURE_DEPENDS
+     ${CMAKE_CURRENT_SOURCE_DIR}/bindings.cc
      ${CMAKE_CURRENT_SOURCE_DIR}/ggems/bindings_*.cc)
 
 # Define the Python extension module

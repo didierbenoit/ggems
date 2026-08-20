@@ -208,3 +208,16 @@ TEST(GGEMSMaterialTest, RejectsInvalidInput) {
                    {{.atomic_number = 6U, .mass_fraction = 0.9L}})),
                ggems::core::GGEMSRecoverable);
 }
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSMaterialTest, SupportsVacuum) {
+  materials::GGEMSMaterial const material{
+      "Vacuum", units::Density{.value = 0.0L}, {}};
+
+  EXPECT_EQ(material.GetName(), "Vacuum");
+  EXPECT_TRUE(material.GetConstituents().empty());
+  EXPECT_EQ(material.GetTotalAtomDensityPerCubicCentimeter(), 0.0L);
+  EXPECT_EQ(material.GetElectronDensityPerCubicCentimeter(), 0.0L);
+}

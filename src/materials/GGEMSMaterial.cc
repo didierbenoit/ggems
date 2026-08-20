@@ -31,20 +31,31 @@ GGEMSMaterial::GGEMSMaterial(std::string name, units::Density density,
 
   auto const density_grams_per_cubic_centimeter =
       units::ConvertTo(density_, "g/cm3");
+
   if (!density_grams_per_cubic_centimeter.has_value() ||
-      !(*density_grams_per_cubic_centimeter > 0.0L)) {
-    throw GGEMSRecoverable{
-        "Material density must be finite and strictly positive."};
+      !std::isfinite(*density_grams_per_cubic_centimeter) ||
+      *density_grams_per_cubic_centimeter < 0.0L) {
+    throw GGEMSRecoverable{"Material density must be finite and non-negative."};
+  }
+
+  if (*density_grams_per_cubic_centimeter == 0.0L) {
+    if (!composition.empty()) {
+      throw GGEMSRecoverable{
+          "Zero-density Material must have an empty composition."};
+    }
+    return;
   }
 
   if (composition.empty()) {
-    throw GGEMSRecoverable{"Material composition must not be empty."};
+    throw GGEMSRecoverable{
+        "Positive-density Material must have a composition."};
   }
 
   std::ranges::sort(composition, {}, &GGEMSMaterialComponent::atomic_number);
 
   auto const duplicate = std::ranges::adjacent_find(
       composition, {}, &GGEMSMaterialComponent::atomic_number);
+
   if (duplicate != composition.end()) {
     throw GGEMSRecoverable{
         "Material composition contains duplicate atomic numbers."};

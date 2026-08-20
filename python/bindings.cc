@@ -5,6 +5,7 @@ namespace py = pybind11;
 void BindLogging(py::module_ &module);
 void BindOpenCL(py::module_ &module);
 void BindRandom(py::module_ &module);
+void BindMaterials(py::module_ &module);
 void BindRadionuclide(py::module_ &module);
 void BindSource(py::module_ &module);
 void BindRun(py::module_ &module);
@@ -25,6 +26,7 @@ PYBIND11_MODULE(ggems, module) {
   auto logging = module.def_submodule("logging", "GGEMS logging module");
   auto opencl = module.def_submodule("opencl", "GGEMS OpenCL module");
   auto random = module.def_submodule("rndm", "GGEMS random module");
+  auto materials = module.def_submodule("materials", "GGEMS materials module");
   auto radionuclide =
       module.def_submodule("radionuclide", "GGEMS radionuclide module");
   auto source = module.def_submodule("source", "GGEMS source module");
@@ -39,6 +41,7 @@ PYBIND11_MODULE(ggems, module) {
   BindOpenCL(opencl);
   BindRadionuclide(radionuclide);
   BindRandom(random);
+  BindMaterials(materials);
   BindSource(source);
   BindRun(run);
   BindObserver(observer);

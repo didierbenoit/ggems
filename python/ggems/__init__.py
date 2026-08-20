@@ -1,6 +1,7 @@
 import os as _os
 from pathlib import Path as _Path
 
+
 _dll_directory_handles = []
 
 try:
@@ -42,6 +43,7 @@ except ImportError:
 
     from . import ggems
 
+
 logging = ggems.logging
 opencl = ggems.opencl
 rndm = ggems.rndm
@@ -50,7 +52,18 @@ run = ggems.run
 observer = ggems.observer
 radionuclide = ggems.radionuclide
 
-__all__ = ["logging", "opencl", "rndm", "source", "run", "observer", "radionuclide"]
+from . import materials
+
+__all__ = [
+    "logging",
+    "opencl",
+    "rndm",
+    "materials",
+    "source",
+    "run",
+    "observer",
+    "radionuclide",
+]
 
 if hasattr(ggems, "gui"):
     gui = ggems.gui
