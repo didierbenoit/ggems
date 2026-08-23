@@ -1,9 +1,20 @@
-# Random number validation
-add_subdirectory(random)
+# ------------------------------------------------------------------------------
+# Scientific validation
 
+# Global validation build target
+add_custom_target(validation)
+
+# ------------------------------------------------------------------------------
+# Random number validation PractRand, Dieharder and TestU01 validation is
+# supported on Linux only
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_subdirectory(random)
+  add_dependencies(validation validation_random)
+endif()
+
+# ------------------------------------------------------------------------------
 # Radioactivity validation
-add_subdirectory(radioactivity)
 
-# Validation build target
-add_custom_target(validation DEPENDS ggems_random_stream_generator
-                                     ggems_validate_f18_spectrum)
+# add_subdirectory(radioactivity)
+
+# add_dependencies(validation validation_radioactivity)

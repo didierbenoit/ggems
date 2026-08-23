@@ -1,3 +1,8 @@
+# ------------------------------------------------------------------------------
+# Random validation build target
+add_custom_target(validation_random)
+
+# ------------------------------------------------------------------------------
 # Random stream generator
 add_executable(ggems_random_stream_generator
                tools/GGEMSRandomStreamGenerator.cc)
@@ -17,3 +22,7 @@ target_compile_definitions(
     GGEMS_VALIDATION_RANDOM_STREAM_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/streams")
 
 ggems_apply_release_optimizations(ggems_random_stream_generator)
+
+# ------------------------------------------------------------------------------
+# Random validation dependencies
+add_dependencies(validation_random ggems_random_stream_generator)
