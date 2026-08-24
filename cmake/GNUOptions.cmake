@@ -10,6 +10,7 @@ target_compile_options(
     "$<$<COMPILE_LANGUAGE:CXX>:-Wextra>"
     "$<$<COMPILE_LANGUAGE:CXX>:-Wpedantic>"
     "$<$<COMPILE_LANGUAGE:CXX>:-Wshadow>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wno-psabi>"
     "$<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor>"
     "$<$<COMPILE_LANGUAGE:CXX>:-Wconversion>"
     "$<$<COMPILE_LANGUAGE:CXX>:-Wsign-conversion>"

@@ -69,7 +69,7 @@ static auto LogLevelColor(LogLevel lvl) -> render::ColorKey {
   case LogLevel::Debug:
     return render::CYAN_Cryo;
   case LogLevel::Info:
-    return render::GREEN_Acid;
+    return render::GREEN_Neon;
   case LogLevel::Warn:
     return render::YELLOW_MotherAmber;
   case LogLevel::Error:
@@ -110,14 +110,14 @@ static auto LogLevelName(LogRecord const &rec) -> std::string {
 // =============================================================================
 
 /*!
- * \brief Formats a system-clock timestamp in local time with millisecond precision.
+ * \brief Formats a system-clock timestamp in local time with millisecond
+ * precision.
  *
  * \param[in] time_point Timestamp to format.
  * \return Timestamp formatted as ``YYYY-MM-DD HH:MM:SS.mmm``.
  */
-static auto
-FormatTimestamp(std::chrono::system_clock::time_point const &time_point)
-    -> std::string {
+static auto FormatTimestamp(
+    std::chrono::system_clock::time_point const &time_point) -> std::string {
   using namespace std::chrono;
   auto time = system_clock::to_time_t(time_point);
   auto m_sec =
@@ -141,7 +141,8 @@ FormatTimestamp(std::chrono::system_clock::time_point const &time_point)
 // =============================================================================
 
 /*!
- * \brief Reads an environment variable without transferring platform-owned storage.
+ * \brief Reads an environment variable without transferring platform-owned
+ * storage.
  *
  * \param[in] name Environment-variable name.
  * \return Variable value when present, otherwise an empty optional.
@@ -157,8 +158,10 @@ FormatTimestamp(std::chrono::system_clock::time_point const &time_point)
   }
   return std::nullopt;
 #else
-  if (const char *value = std::getenv(name))
+  if (const char *value = std::getenv(name)) {
     return std::string(value);
+  }
+
   return std::nullopt;
 #endif
 }
@@ -209,8 +212,8 @@ auto FileSink::Write(RenderedLogLine &&log_line) -> void {
 // =============================================================================
 // =============================================================================
 
-auto LogFormatter::Format(LogRecord const &rec, bool use_color)
-    -> RenderedLogLine {
+auto LogFormatter::Format(LogRecord const &rec,
+                          bool use_color) -> RenderedLogLine {
   RenderedLogLine log_line;
   log_line.msg = rec.message;
   log_line.level = rec.level;
@@ -242,8 +245,8 @@ auto GGEMSLogger::GetInstance() noexcept -> GGEMSLogger & {
 // -----------------------------------------------------------------------------
 
 auto GGEMSLogger::Log(LogLevel lvl, std::int32_t depth, std::string_view module,
-                      std::source_location const &loc, std::string_view msg)
-    -> void {
+                      std::source_location const &loc,
+                      std::string_view msg) -> void {
   LogRecord rec;
   rec.timestamp = std::chrono::system_clock::now();
   rec.level = lvl;

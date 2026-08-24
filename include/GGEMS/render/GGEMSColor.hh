@@ -167,8 +167,8 @@ constexpr auto MakeRedScale() noexcept -> std::array<RGB, color_shade_count> {
  *
  * \return Orange scale palette.
  */
-constexpr auto MakeOrangeScale() noexcept
-    -> std::array<RGB, color_shade_count> {
+constexpr auto
+MakeOrangeScale() noexcept -> std::array<RGB, color_shade_count> {
   return {MakeRGB(80, 32, 0),    MakeRGB(96, 40, 0),    MakeRGB(128, 64, 0),
           MakeRGB(160, 80, 0),   MakeRGB(192, 96, 0),   MakeRGB(210, 105, 30),
           MakeRGB(255, 127, 80), MakeRGB(255, 140, 0),  MakeRGB(255, 165, 0),
@@ -181,8 +181,8 @@ constexpr auto MakeOrangeScale() noexcept
  *
  * \return Yellow scale palette.
  */
-constexpr auto MakeYellowScale() noexcept
-    -> std::array<RGB, color_shade_count> {
+constexpr auto
+MakeYellowScale() noexcept -> std::array<RGB, color_shade_count> {
   return {
       MakeRGB(96, 96, 0),     MakeRGB(128, 128, 0),   MakeRGB(160, 144, 0),
       MakeRGB(192, 160, 0),   MakeRGB(210, 180, 0),   MakeRGB(238, 221, 130),
@@ -236,8 +236,8 @@ constexpr auto MakeBlueScale() noexcept -> std::array<RGB, color_shade_count> {
  *
  * \return Magenta scale palette.
  */
-constexpr auto MakeMagentaScale() noexcept
-    -> std::array<RGB, color_shade_count> {
+constexpr auto
+MakeMagentaScale() noexcept -> std::array<RGB, color_shade_count> {
   return {
       MakeRGB(64, 0, 64),     MakeRGB(96, 0, 96),     MakeRGB(128, 0, 128),
       MakeRGB(139, 0, 139),   MakeRGB(186, 85, 211),  MakeRGB(199, 21, 133),
@@ -422,10 +422,10 @@ inline auto AppendAnsiControl(std::string &out, AnsiControl control) -> void {
  * \param[in] layer Target color layer.
  * \return Constructed color key.
  */
-constexpr auto MakeColor(ColorFamily family, std::uint8_t shade,
-                         ColorVariant variant = ColorVariant::Normal,
-                         ColorLayer layer = ColorLayer::Foreground) noexcept
-    -> ColorKey {
+constexpr auto
+MakeColor(ColorFamily family, std::uint8_t shade,
+          ColorVariant variant = ColorVariant::Normal,
+          ColorLayer layer = ColorLayer::Foreground) noexcept -> ColorKey {
   return ColorKey{
       .family = family, .shade = shade, .variant = variant, .layer = layer};
 }

@@ -23,7 +23,8 @@
  * \file
  * \brief Declares the engine-independent OpenCL GGEMS random API.
  *
- * Selects the configured random engine at compile time and exposes common raw, scalar-uniform, and vector-uniform entry points.
+ * Selects the configured random engine at compile time and exposes common raw,
+ * scalar-uniform, and vector-uniform entry points.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -59,15 +60,16 @@
 #include "random/GGEMSJKiss.clh"
 
 /*!
- * \brief Engine-specific state type used by the generic GGEMS OpenCL random API.
+ * \brief Engine-specific state type used by the generic GGEMS OpenCL random
+ * API.
  */
 typedef GGEMSJKissState GGEMSRandomState;
 
 /*!
- * \brief Generates the next raw 32-bit value through the selected random engine.
- * \param[in,out] states Array of generic random states.
- * \param[in] index State index identifying the logical stream.
- * \return Next raw 32-bit random value.
+ * \brief Generates the next raw 32-bit value through the selected random
+ * engine. \param[in,out] states Array of generic random states. \param[in]
+ * index State index identifying the logical stream. \return Next raw 32-bit
+ * random value.
  */
 static inline uint GGEMS_RndmUInt32(__global GGEMSRandomState *states,
                                     uint const index) {
@@ -105,15 +107,16 @@ static inline float4 GGEMS_RndmUniform4(__global GGEMSRandomState *states,
 #include "random/GGEMSPCG32.clh"
 
 /*!
- * \brief Engine-specific state type used by the generic GGEMS OpenCL random API.
+ * \brief Engine-specific state type used by the generic GGEMS OpenCL random
+ * API.
  */
 typedef GGEMSPCG32State GGEMSRandomState;
 
 /*!
- * \brief Generates the next raw 32-bit value through the selected random engine.
- * \param[in,out] states Array of generic random states.
- * \param[in] index State index identifying the logical stream.
- * \return Next raw 32-bit random value.
+ * \brief Generates the next raw 32-bit value through the selected random
+ * engine. \param[in,out] states Array of generic random states. \param[in]
+ * index State index identifying the logical stream. \return Next raw 32-bit
+ * random value.
  */
 static inline uint GGEMS_RndmUInt32(__global GGEMSRandomState *states,
                                     uint const index) {
@@ -151,15 +154,16 @@ static inline float4 GGEMS_RndmUniform4(__global GGEMSRandomState *states,
 #include "random/GGEMSPhilox.clh"
 
 /*!
- * \brief Engine-specific state type used by the generic GGEMS OpenCL random API.
+ * \brief Engine-specific state type used by the generic GGEMS OpenCL random
+ * API.
  */
 typedef GGEMSPhiloxState GGEMSRandomState;
 
 /*!
- * \brief Generates the next raw 32-bit value through the selected random engine.
- * \param[in,out] states Array of generic random states.
- * \param[in] index State index identifying the logical stream.
- * \return Next raw 32-bit random value.
+ * \brief Generates the next raw 32-bit value through the selected random
+ * engine. \param[in,out] states Array of generic random states. \param[in]
+ * index State index identifying the logical stream. \return Next raw 32-bit
+ * random value.
  */
 static inline uint GGEMS_RndmUInt32(__global GGEMSRandomState *states,
                                     uint const index) {

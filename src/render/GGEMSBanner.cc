@@ -51,6 +51,7 @@ namespace {
  * \brief Number of text rows in each banner snapshot.
  */
 constexpr std::size_t number_lines = 17U;
+
 /*!
  * \brief Fixed-size view of all text rows forming one banner variant.
  */
@@ -114,7 +115,7 @@ constexpr BannerSnapshot unicode_banner{{
 /*!
  * \brief Color applied to every segment of the GGEMS banner.
  */
-constexpr ggems::render::ColorKey banner_color = ggems::render::GREEN_Acid;
+constexpr ggems::render::ColorKey banner_color = ggems::render::GREEN_Neon;
 
 // =============================================================================
 // =============================================================================

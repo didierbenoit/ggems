@@ -1,19 +1,19 @@
-#include <algorithm>
 #include <cstdint>
-#include <filesystem>
-#include <format>
-#include <fstream>
-#include <iostream>
-#include <limits>
-#include <stdexcept>
-#include <string>
-#include <string_view>
-#include <vector>
 #include <cstddef>
+#include <string>
+#include <filesystem>
+#include <iostream>
+#include <string_view>
+#include <format>
 #include <cstdlib>
-#include <exception>
-#include <span>
+#include <stdexcept>
 #include <utility>
+#include <exception>
+#include <limits>
+#include <fstream>
+#include <span>
+#include <algorithm>
+#include <vector>
 
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/opencl/GGEMSOpenCLLaunchGeometry.hh"
@@ -23,39 +23,70 @@
 #include "GGEMS/units/GGEMSBytesUnits.hh"
 
 namespace {
+
+// =============================================================================
+// =============================================================================
+
 using ggems::core::random::GGEMSRandom;
 
 // =============================================================================
 // =============================================================================
 
-enum class StreamType : std::int8_t { RawUInt32, FloatHigh24Bytes };
+enum class StreamLayout : std::uint8_t { WorkerMajor = 0U, Interleaved = 1U };
 
 // =============================================================================
 // =============================================================================
 
-auto ToString(StreamType stream_type) -> std::string {
-  switch (stream_type) {
-  case StreamType::RawUInt32:
-    return "raw_uint32";
-  case StreamType::FloatHigh24Bytes:
-    return "float_high24_bytes";
+auto ToString(StreamLayout layout) -> std::string_view {
+  switch (layout) {
+  case StreamLayout::WorkerMajor:
+    return "worker_major";
+  case StreamLayout::Interleaved:
+    return "interleaved";
   }
 
-  throw std::runtime_error("Unsupported stream type.");
+  throw std::runtime_error("Unsupported random stream layout.");
 }
 
 // =============================================================================
 // =============================================================================
 
-auto ToPractRandInputMode(StreamType stream_type) -> std::string {
-  switch (stream_type) {
-  case StreamType::RawUInt32:
-    return "stdin32";
-  case StreamType::FloatHigh24Bytes:
-    return "stdin8";
+auto ParseStreamLayout(std::string_view value) -> StreamLayout {
+  if (value == "worker_major") {
+    return StreamLayout::WorkerMajor;
   }
 
-  throw std::runtime_error("Unsupported stream type.");
+  if (value == "interleaved") {
+    return StreamLayout::Interleaved;
+  }
+
+  throw std::runtime_error(
+      std::format("Unsupported random stream layout '{}'.", value));
+}
+
+// =============================================================================
+// =============================================================================
+
+enum class StreamType : std::uint8_t {
+  RawUInt32 = 0U,
+  Uniform24Scalar,
+  Uniform24Vector4
+};
+
+// =============================================================================
+// =============================================================================
+
+auto ToString(StreamType stream_type) -> std::string_view {
+  switch (stream_type) {
+  case StreamType::RawUInt32:
+    return "raw_uint32";
+  case StreamType::Uniform24Scalar:
+    return "uniform24_scalar";
+  case StreamType::Uniform24Vector4:
+    return "uniform24_vector4";
+  }
+
+  throw std::runtime_error("Unsupported random stream type.");
 }
 
 // =============================================================================
@@ -66,26 +97,16 @@ auto ParseStreamType(std::string_view value) -> StreamType {
     return StreamType::RawUInt32;
   }
 
-  if (value == "float_high24_bytes") {
-    return StreamType::FloatHigh24Bytes;
+  if (value == "uniform24_scalar") {
+    return StreamType::Uniform24Scalar;
   }
 
-  throw std::runtime_error(std::format("Unsupported stream type '{}'.", value));
-}
-
-// =============================================================================
-// =============================================================================
-
-auto GetOutputByteCount(StreamType stream_type, std::uint64_t total_words)
-    -> std::uint64_t {
-  switch (stream_type) {
-  case StreamType::RawUInt32:
-    return total_words * 4ULL;
-  case StreamType::FloatHigh24Bytes:
-    return total_words * 3ULL;
+  if (value == "uniform24_vector4") {
+    return StreamType::Uniform24Vector4;
   }
 
-  throw std::runtime_error("Unsupported stream type.");
+  throw std::runtime_error(
+      std::format("Unsupported random stream type '{}'.", value));
 }
 
 // =============================================================================
@@ -94,40 +115,40 @@ auto GetOutputByteCount(StreamType stream_type, std::uint64_t total_words)
 struct Options {
   std::string engine{"philox"};
   std::uint64_t seed{77777ULL};
-  std::uint32_t particle_count{1024U};
-  std::uint32_t words_per_particle{1024U};
+  std::uint64_t stream_offset{0ULL};
+  std::uint32_t worker_count{1024U};
+  std::uint32_t samples_per_worker{1024U};
   std::size_t local_size{64U};
   std::string device_selector{"cpu"};
   bool force{false};
+  StreamLayout layout{StreamLayout::WorkerMajor};
   StreamType stream_type{StreamType::RawUInt32};
 
-  std::filesystem::path output_path{
-      std::filesystem::path{GGEMS_VALIDATION_RANDOM_STREAM_ROOT} /
-      "philox_uint32_smoke.bin"};
-
-  std::filesystem::path manifest_path{
-      std::filesystem::path{GGEMS_VALIDATION_RANDOM_RESULT_ROOT} / "summary" /
-      "random_uint32_stream_manifest.json"};
+  std::filesystem::path output_path{"random_uint32_stream.bin"};
+  std::filesystem::path manifest_path{"random_uint32_stream_manifest.json"};
 };
 
 // =============================================================================
 // =============================================================================
 
 auto PrintUsage(char const *executable_name) -> void {
-  std::cout << "Usage:\n"
-            << " " << executable_name << " [options]\n\n"
-            << "Options:\n"
-            << "  --engine <jkiss|pcg32|philox>\n"
-            << "  --seed <uint64>\n"
-            << "  --particles <uint32>\n"
-            << "  --words-per-particle <uint32>\n"
-            << "  --local-size <size_t>\n"
-            << "  --device <gpu|cpu|all|vendor token>\n"
-            << "  --output <path>\n"
-            << "  --manifest <path>\n"
-            << "  --stream-type <raw_uint32|float_high24_bytes>\n"
-            << "  --force\n"
-            << "  --help\n";
+  std::cout
+      << "Usage:\n"
+      << " " << executable_name << " [options]\n\n"
+      << "Options:\n"
+      << "  --engine <jkiss|pcg32|philox>\n"
+      << "  --seed <uint64>\n"
+      << "  --stream-offset <uint64>\n"
+      << "  --stream-type <raw_uint32|uniform24_scalar|uniform24_vector4>\n"
+      << "  --workers <uint32>\n"
+      << "  --samples-per-worker <uint32>\n"
+      << "  --local-size <size_t>\n"
+      << "  --device <gpu|cpu|all|vendor token>\n"
+      << "  --output <path>\n"
+      << "  --manifest <path>\n"
+      << "  --layout <worker_major|interleaved>\n"
+      << "  --force\n"
+      << "  --help\n";
 }
 
 // =============================================================================
@@ -162,11 +183,17 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
       options.engine = ReadArgumentValue(i, argc, argv, arg);
     } else if (arg == "--seed") {
       options.seed = std::stoull(ReadArgumentValue(i, argc, argv, arg));
-    } else if (arg == "--particles") {
-      options.particle_count = static_cast<std::uint32_t>(
+    } else if (arg == "--stream-offset") {
+      options.stream_offset =
+          std::stoull(ReadArgumentValue(i, argc, argv, arg));
+    } else if (arg == "--stream-type") {
+      options.stream_type =
+          ParseStreamType(ReadArgumentValue(i, argc, argv, arg));
+    } else if (arg == "--workers") {
+      options.worker_count = static_cast<std::uint32_t>(
           std::stoul(ReadArgumentValue(i, argc, argv, arg)));
-    } else if (arg == "--words-per-particle") {
-      options.words_per_particle = static_cast<std::uint32_t>(
+    } else if (arg == "--samples-per-worker") {
+      options.samples_per_worker = static_cast<std::uint32_t>(
           std::stoul(ReadArgumentValue(i, argc, argv, arg)));
     } else if (arg == "--local-size") {
       options.local_size = static_cast<std::size_t>(
@@ -175,24 +202,29 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
       options.device_selector = ReadArgumentValue(i, argc, argv, arg);
     } else if (arg == "--output") {
       options.output_path = ReadArgumentValue(i, argc, argv, arg);
+    } else if (arg == "--layout") {
+      options.layout = ParseStreamLayout(ReadArgumentValue(i, argc, argv, arg));
     } else if (arg == "--manifest") {
       options.manifest_path = ReadArgumentValue(i, argc, argv, arg);
     } else if (arg == "--force") {
       options.force = true;
-    } else if (arg == "--stream-type") {
-      options.stream_type =
-          ParseStreamType(ReadArgumentValue(i, argc, argv, arg));
     } else {
       throw std::runtime_error(std::format("Unknown argument '{}'.", arg));
     }
   }
 
-  if (options.particle_count == 0U) {
-    throw std::runtime_error("Particle count must be greater than zero.");
+  if (options.worker_count == 0U) {
+    throw std::runtime_error("Worker count must be greater than zero.");
   }
 
-  if (options.words_per_particle == 0U) {
-    throw std::runtime_error("Words per particle must be greater than zero.");
+  if (options.samples_per_worker == 0U) {
+    throw std::runtime_error("Samples per worker must be greater than zero.");
+  }
+
+  if (options.stream_type == StreamType::Uniform24Vector4 &&
+      (options.samples_per_worker % 4U) != 0U) {
+    throw std::runtime_error(
+        "Samples per worker must be a multiple of four for uniform24_vector4.");
   }
 
   if (options.local_size == 0U) {
@@ -250,9 +282,9 @@ auto WriteUInt32Binary(std::filesystem::path const &path,
 // =============================================================================
 // =============================================================================
 
-auto WriteFloatHigh24Bytes(std::filesystem::path const &path,
-                           std::uint32_t const *values, std::size_t value_count,
-                           bool force) -> void {
+auto WriteUniform24Binary(std::filesystem::path const &path,
+                          float const *values, std::size_t value_count,
+                          bool force) -> void {
   EnsureOutputCanBeWritten(path, force, "Stream");
 
   std::ofstream stream{path, std::ios::binary};
@@ -262,51 +294,39 @@ auto WriteFloatHigh24Bytes(std::filesystem::path const &path,
         std::format("Cannot open output stream '{}'.", path.string()));
   }
 
-  constexpr std::size_t k_chunk_value_count = 1U << 20U;
-
-  std::vector<char> buffer;
-  buffer.resize(k_chunk_value_count * 3U);
+  constexpr std::size_t kChunkSampleCount = 1U << 20U;
+  std::vector<std::uint8_t> buffer(kChunkSampleCount * 3U);
 
   for (std::size_t offset = 0U; offset < value_count;
-       offset += k_chunk_value_count) {
-    std::size_t current_count =
-        std::min(k_chunk_value_count, value_count - offset);
+       offset += kChunkSampleCount) {
+    std::size_t const sample_count =
+        std::min(kChunkSampleCount, value_count - offset);
 
-    for (std::size_t i = 0U; i < current_count; ++i) {
-      std::uint32_t useful_bits = values[offset + i] >> 8U;
+    for (std::size_t i = 0U; i < sample_count; ++i) {
+      float const uniform = values[offset + i];
 
-      buffer[(3U * i) + 0U] = static_cast<char>(useful_bits & 0xFFU);
-      buffer[(3U * i) + 1U] = static_cast<char>((useful_bits >> 8U) & 0xFFU);
-      buffer[(3U * i) + 2U] = static_cast<char>((useful_bits >> 16U) & 0xFFU);
+      auto const value = static_cast<std::uint32_t>(uniform * 16777216.0F);
+
+      if (value > 0x00FFFFFFU) {
+        throw std::runtime_error(
+            "Invalid GGEMS uniform value while packing 24-bit stream.");
+      }
+
+      buffer[(3U * i) + 0U] = static_cast<std::uint8_t>(value & 0xFFU);
+
+      buffer[(3U * i) + 1U] = static_cast<std::uint8_t>((value >> 8U) & 0xFFU);
+
+      buffer[(3U * i) + 2U] = static_cast<std::uint8_t>((value >> 16U) & 0xFFU);
     }
 
-    stream.write(buffer.data(),
-                 static_cast<std::streamsize>(current_count * 3U));
+    stream.write(reinterpret_cast<char const *>(buffer.data()),
+                 static_cast<std::streamsize>(sample_count * 3U));
 
     if (!stream) {
       throw std::runtime_error(
           std::format("Failed to write output stream '{}'.", path.string()));
     }
   }
-}
-
-// =============================================================================
-// =============================================================================
-
-void WriteRandomStream(std::filesystem::path const &path,
-                       StreamType stream_type, std::uint32_t const *values,
-                       std::size_t value_count, bool force) {
-  switch (stream_type) {
-  case StreamType::RawUInt32:
-    WriteUInt32Binary(path, values, value_count, force);
-    return;
-
-  case StreamType::FloatHigh24Bytes:
-    WriteFloatHigh24Bytes(path, values, value_count, force);
-    return;
-  }
-
-  throw std::runtime_error("Unsupported stream type");
 }
 
 // =============================================================================
@@ -348,8 +368,8 @@ auto JsonEscape(std::string_view text) -> std::string {
 auto WriteMinimalManifest(std::filesystem::path const &path,
                           Options const &options, GGEMSRandom const &random,
                           ggems::ocl::GGEMSOpenCLDevice const &device,
-                          std::uint64_t total_words, std::uint64_t output_bytes,
-                          std::string const &sha256) -> void {
+                          std::uint64_t total_samples,
+                          std::uint64_t output_bytes) -> void {
   if (!path.parent_path().empty()) {
     std::filesystem::create_directories(path.parent_path());
   }
@@ -366,15 +386,25 @@ auto WriteMinimalManifest(std::filesystem::path const &path,
   stream << "  \"random\": {\n";
   stream << R"(    "engine": ")" << random.GetEngineName() << "\",\n";
   stream << "    \"seed\": " << random.GetSeed() << ",\n";
-  stream << "    \"particle_count\": " << options.particle_count << ",\n";
-  stream << "    \"words_per_particle\": " << options.words_per_particle
-         << ",\n";
-  stream << "    \"total_words\": " << total_words << ",\n";
-  stream << "    \"byte_count\": " << output_bytes << ",\n";
+  stream << "    \"stream_offset\": " << options.stream_offset << ",\n";
   stream << R"(    "stream_type": ")" << ToString(options.stream_type)
          << "\",\n";
-  stream << R"(    "practrand_input_mode": ")"
-         << ToPractRandInputMode(options.stream_type) << "\"\n";
+  switch (options.stream_type) {
+  case StreamType::RawUInt32:
+    stream << "    \"sample_bits\": 32,\n";
+    break;
+
+  case StreamType::Uniform24Scalar:
+  case StreamType::Uniform24Vector4:
+    stream << "    \"sample_bits\": 24,\n";
+    break;
+  }
+  stream << R"(    "layout": ")" << ToString(options.layout) << "\",\n";
+  stream << "    \"worker_count\": " << options.worker_count << ",\n";
+  stream << "    \"samples_per_worker\": " << options.samples_per_worker
+         << ",\n";
+  stream << "    \"total_samples\": " << total_samples << ",\n";
+  stream << "    \"byte_count\": " << output_bytes << "\n";
   stream << "  },\n";
   stream << "  \"opencl\": {\n";
   stream << R"(    "device_selector": ")" << JsonEscape(options.device_selector)
@@ -392,10 +422,6 @@ auto WriteMinimalManifest(std::filesystem::path const &path,
   stream << "  \"output\": {\n";
   stream << R"(    "stream_path": ")" << options.output_path.generic_string()
          << "\"\n";
-  stream << "  },\n";
-  stream << "  \"integrity\": {\n";
-  stream << "    \"algorithm\": \"SHA-256\",\n";
-  stream << R"(    "value": ")" << sha256 << "\"\n";
   stream << "  }\n";
   stream << "}\n";
 
@@ -413,31 +439,44 @@ auto GenerateRandomStream(Options const &options) -> void {
   random.SetEngine(options.engine);
   random.SetSeed(options.seed);
 
-  std::uint64_t total_words =
-      static_cast<std::uint64_t>(options.particle_count) *
-      static_cast<std::uint64_t>(options.words_per_particle);
+  std::uint64_t total_samples =
+      static_cast<std::uint64_t>(options.worker_count) *
+      static_cast<std::uint64_t>(options.samples_per_worker);
 
-  if (total_words >
+  if (total_samples >
       static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max())) {
     throw std::runtime_error("Requested stream is too large for this host.");
   }
 
-  std::uint64_t state_bytes =
-      static_cast<std::uint64_t>(options.particle_count) *
-      static_cast<std::uint64_t>(random.GetStateSize());
+  std::uint64_t state_bytes = static_cast<std::uint64_t>(options.worker_count) *
+                              static_cast<std::uint64_t>(random.GetStateSize());
 
   std::uint64_t value_buffer_bytes =
-      total_words * static_cast<std::uint64_t>(sizeof(std::uint32_t));
+      total_samples * static_cast<std::uint64_t>(sizeof(std::uint32_t));
 
-  std::uint64_t output_bytes =
-      GetOutputByteCount(options.stream_type, total_words);
+  std::uint64_t output_bytes = 0ULL;
+
+  switch (options.stream_type) {
+  case StreamType::RawUInt32:
+    output_bytes =
+        total_samples * static_cast<std::uint64_t>(sizeof(std::uint32_t));
+    break;
+
+  case StreamType::Uniform24Scalar:
+  case StreamType::Uniform24Vector4:
+    output_bytes = total_samples * 3ULL;
+    break;
+  }
 
   std::cout << "GGEMS random stream generator\n";
   std::cout << "Engine             : " << random.GetEngineName() << '\n';
   std::cout << "Seed               : " << random.GetSeed() << '\n';
-  std::cout << "Particle count     : " << options.particle_count << '\n';
-  std::cout << "Words per particle : " << options.words_per_particle << '\n';
-  std::cout << "Total words        : " << total_words << '\n';
+  std::cout << "Stream offset      : " << options.stream_offset << '\n';
+  std::cout << "Stream type        : " << ToString(options.stream_type) << '\n';
+  std::cout << "Worker count       : " << options.worker_count << '\n';
+  std::cout << "Samples per worker : " << options.samples_per_worker << '\n';
+  std::cout << "Total samples      : " << total_samples << '\n';
+  std::cout << "Layout             : " << ToString(options.layout) << '\n';
 
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
@@ -459,13 +498,29 @@ auto GenerateRandomStream(Options const &options) -> void {
       std::format("-cl-std=CL2.0 -I\"{}\" {}", kernel_root.generic_string(),
                   random.GetKernelBuildDefinition());
 
-  auto const &program = opencl.GetOrCreateProgram(
-      context, validation_kernel_root, "random_uint32_stream", build_options);
+  std::string_view kernel_name;
 
-  cl::Kernel raw_kernel = program.CreateKernel("random_uint32_stream");
+  switch (options.stream_type) {
+  case StreamType::RawUInt32:
+    kernel_name = "random_uint32_stream";
+    break;
+
+  case StreamType::Uniform24Scalar:
+    kernel_name = "random_uniform24_scalar_stream";
+    break;
+
+  case StreamType::Uniform24Vector4:
+    kernel_name = "random_uniform24_vector4_stream";
+    break;
+  }
+
+  auto const &program = opencl.GetOrCreateProgram(
+      context, validation_kernel_root, std::string{kernel_name}, build_options);
+
+  cl::Kernel raw_kernel = program.CreateKernel(std::string{kernel_name});
 
   ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
-                                       "random_uint32_stream"};
+                                       std::string{kernel_name}};
 
   auto states_buffer =
       context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
@@ -477,23 +532,24 @@ auto GenerateRandomStream(Options const &options) -> void {
   auto state_storage =
       std::span<std::byte>{static_cast<std::byte *>(states_buffer.GetData()),
                            static_cast<std::size_t>(state_bytes)};
-  random.InitializeStates(0ULL, state_storage);
+  random.InitializeStates(options.stream_offset, state_storage);
 
   states_buffer.Unmap();
 
   values_buffer.Map(CL_MAP_WRITE);
   auto *values = static_cast<std::uint32_t *>(values_buffer.GetData());
-  std::fill(values, values + static_cast<std::size_t>(total_words), 0U);
+  std::fill(values, values + static_cast<std::size_t>(total_samples), 0U);
   values_buffer.Unmap();
 
   kernel.SetArgSVMPointer(0U, states_buffer.GetData());
   kernel.SetArgSVMPointer(1U, values_buffer.GetData());
-  kernel.SetArg(2U, static_cast<cl_uint>(options.particle_count));
-  kernel.SetArg(3U, static_cast<cl_uint>(options.words_per_particle));
+  kernel.SetArg(2U, static_cast<cl_uint>(options.worker_count));
+  kernel.SetArg(3U, static_cast<cl_uint>(options.samples_per_worker));
+  kernel.SetArg(4U, static_cast<cl_uint>(options.layout));
 
   auto const padded_global_work_size =
       ggems::ocl::detail::TryComputePaddedGlobalWorkSize(
-          static_cast<std::size_t>(options.particle_count), options.local_size);
+          static_cast<std::size_t>(options.worker_count), options.local_size);
   if (!padded_global_work_size.has_value()) {
     throw std::runtime_error(
         "Unable to compute the padded OpenCL global work size.");
@@ -504,16 +560,27 @@ auto GenerateRandomStream(Options const &options) -> void {
 
   values_buffer.Map(CL_MAP_READ);
 
-  WriteRandomStream(options.output_path, options.stream_type,
-                    static_cast<std::uint32_t const *>(values_buffer.GetData()),
-                    static_cast<std::size_t>(total_words), options.force);
+  switch (options.stream_type) {
+  case StreamType::RawUInt32:
+    WriteUInt32Binary(
+        options.output_path,
+        static_cast<std::uint32_t const *>(values_buffer.GetData()),
+        static_cast<std::size_t>(total_samples), options.force);
+    break;
+
+  case StreamType::Uniform24Scalar:
+  case StreamType::Uniform24Vector4:
+    WriteUniform24Binary(options.output_path,
+                         static_cast<float const *>(values_buffer.GetData()),
+                         static_cast<std::size_t>(total_samples),
+                         options.force);
+    break;
+  }
 
   values_buffer.Unmap();
 
-  std::string sha256{"manual"};
-
   WriteMinimalManifest(options.manifest_path, options, random, device,
-                       total_words, output_bytes, sha256);
+                       total_samples, output_bytes);
 
   std::cout << "Manifest generated : " << options.manifest_path.string()
             << '\n';
@@ -530,8 +597,11 @@ auto main(int argc, char **argv) -> int {
   try {
     Options options = ParseArguments(argc, argv);
     GenerateRandomStream(options);
+
+    return EXIT_SUCCESS;
   } catch (std::exception const &e) {
     std::cerr << "GGEMS random stream generation failed:\n" << e.what() << '\n';
+
+    return EXIT_FAILURE;
   }
-  return EXIT_SUCCESS;
 }

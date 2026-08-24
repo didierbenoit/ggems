@@ -3,9 +3,11 @@
 #define GGEMS_VALIDATION_LAYOUT_WORKER_MAJOR 0U
 #define GGEMS_VALIDATION_LAYOUT_INTERLEAVED 1U
 
-__kernel void random_uint32_stream(__global GGEMSRandomState *states,
-                                   __global uint *values, uint worker_count,
-                                   uint samples_per_worker, uint layout) {
+__kernel void random_uniform24_scalar_stream(__global GGEMSRandomState *states,
+                                             __global float *values,
+                                             uint worker_count,
+                                             uint samples_per_worker,
+                                             uint layout) {
   uint const worker_index = (uint)get_global_id(0);
 
   if (worker_index >= worker_count) {
@@ -25,7 +27,7 @@ __kernel void random_uint32_stream(__global GGEMSRandomState *states,
 
   for (uint sample_index = 0U; sample_index < samples_per_worker;
        ++sample_index) {
-    values[output_index] = GGEMS_RndmUInt32(states, worker_index);
+    values[output_index] = GGEMS_RndmUniform(states, worker_index);
 
     output_index += output_stride;
   }

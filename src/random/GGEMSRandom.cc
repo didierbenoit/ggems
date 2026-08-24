@@ -23,7 +23,8 @@
  * \file
  * \brief Implements GGEMS random-engine configuration and state initialization.
  *
- * Implements engine-name parsing, deterministic stream-state construction, range validation, and OpenCL-facing engine metadata.
+ * Implements engine-name parsing, deterministic stream-state construction,
+ * range validation, and OpenCL-facing engine metadata.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -99,8 +100,8 @@ auto SplitMix64(std::uint64_t value) noexcept -> std::uint64_t {
  * \param[in] stream_id 32-bit logical stream identifier.
  * \return Initialized JKISS state.
  */
-auto MakeJKissState(std::uint32_t seed, std::uint32_t stream_id) noexcept
-    -> GGEMSJKissState {
+auto MakeJKissState(std::uint32_t seed,
+                    std::uint32_t stream_id) noexcept -> GGEMSJKissState {
   return GGEMSJKissState{.x = seed + 123456789U + (1013904223U * stream_id),
                          .y = seed ^ (362436069U + (1664525U * stream_id)),
                          .z = seed + 521288629U + (69069U * stream_id),
@@ -117,8 +118,8 @@ auto MakeJKissState(std::uint32_t seed, std::uint32_t stream_id) noexcept
  * \param[in] stream_id Logical stream identifier.
  * \return Initialized PCG32 state with an odd stream increment.
  */
-auto MakePCG32State(std::uint64_t seed, std::uint64_t stream_id) noexcept
-    -> GGEMSPCG32State {
+auto MakePCG32State(std::uint64_t seed,
+                    std::uint64_t stream_id) noexcept -> GGEMSPCG32State {
   std::uint64_t state =
       SplitMix64(seed + (0xD1B54A32D192ED03ULL * (stream_id + 1ULL)));
 
@@ -133,11 +134,11 @@ auto MakePCG32State(std::uint64_t seed, std::uint64_t stream_id) noexcept
 /*!
  * \brief Constructs the deterministic initial state of one Philox stream.
  * \param[in] seed Configured seed used to derive the Philox key.
- * \param[in] stream_id Logical stream identifier encoded in the high counter words.
- * \return Initialized Philox state.
+ * \param[in] stream_id Logical stream identifier encoded in the high counter
+ * words. \return Initialized Philox state.
  */
-auto MakePhiloxState(std::uint64_t seed, std::uint64_t stream_id) noexcept
-    -> GGEMSPhiloxState {
+auto MakePhiloxState(std::uint64_t seed,
+                     std::uint64_t stream_id) noexcept -> GGEMSPhiloxState {
   std::uint64_t key = SplitMix64(seed);
 
   return GGEMSPhiloxState{.counter_0 = 0U,
@@ -153,12 +154,12 @@ auto MakePhiloxState(std::uint64_t seed, std::uint64_t stream_id) noexcept
 // =============================================================================
 
 /*!
- * \brief Validates state-storage sizing and returns the represented state count.
- * \param[in] state_size Selected engine state size in bytes.
- * \param[in] state_storage Raw state storage.
- * \return Number of complete states represented by the storage.
- * \throws ggems::core::GGEMSRecoverable If the storage size is not an exact multiple of the state size.
- * \throws ggems::core::GGEMSInternal If the state size is zero.
+ * \brief Validates state-storage sizing and returns the represented state
+ * count. \param[in] state_size Selected engine state size in bytes. \param[in]
+ * state_storage Raw state storage. \return Number of complete states
+ * represented by the storage. \throws ggems::core::GGEMSRecoverable If the
+ * storage size is not an exact multiple of the state size. \throws
+ * ggems::core::GGEMSInternal If the state size is zero.
  */
 auto CheckedStateCount(std::size_t state_size,
                        std::span<std::byte> state_storage) -> std::size_t {
@@ -180,14 +181,14 @@ auto CheckedStateCount(std::size_t state_size,
 // =============================================================================
 
 /*!
- * \brief Computes the last logical stream identifier of a contiguous state range.
- * \param[in] first_stream_id First stream identifier.
- * \param[in] state_count Number of states in the range.
- * \return Last stream identifier, or \p first_stream_id for an empty range.
- * \throws ggems::core::GGEMSRecoverable If the identifier range overflows uint64_t.
+ * \brief Computes the last logical stream identifier of a contiguous state
+ * range. \param[in] first_stream_id First stream identifier. \param[in]
+ * state_count Number of states in the range. \return Last stream identifier, or
+ * \p first_stream_id for an empty range. \throws ggems::core::GGEMSRecoverable
+ * If the identifier range overflows uint64_t.
  */
-auto CheckLastStreamId(std::uint64_t first_stream_id, std::size_t state_count)
-    -> std::uint64_t {
+auto CheckLastStreamId(std::uint64_t first_stream_id,
+                       std::size_t state_count) -> std::uint64_t {
   if (state_count == 0U) {
     return first_stream_id;
   }
@@ -208,11 +209,10 @@ auto CheckLastStreamId(std::uint64_t first_stream_id, std::size_t state_count)
 /*!
  * \brief Initializes a sequence of engine states into raw byte storage.
  * \tparam State Concrete random-engine state type.
- * \tparam Factory Callable that creates a state for a logical stream identifier.
- * \param[in] first_stream_id First stream identifier.
- * \param[in] state_count Number of states to initialize.
- * \param[out] state_storage Destination byte storage.
- * \param[in] make_state State-construction callable.
+ * \tparam Factory Callable that creates a state for a logical stream
+ * identifier. \param[in] first_stream_id First stream identifier. \param[in]
+ * state_count Number of states to initialize. \param[out] state_storage
+ * Destination byte storage. \param[in] make_state State-construction callable.
  */
 template <typename State, typename Factory>
 auto InitializeStateStorage(

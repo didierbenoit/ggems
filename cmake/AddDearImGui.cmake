@@ -24,8 +24,8 @@ function(add_dear_imgui_target target_name)
   add_library(GGEMS::ImGui ALIAS ${target_name})
 
   target_include_directories(
-    ${target_name} PUBLIC ${GGEMS_IMGUI_SOURCE_DIR}
-                          ${GGEMS_IMGUI_SOURCE_DIR}/backends)
+    ${target_name} SYSTEM PUBLIC ${GGEMS_IMGUI_SOURCE_DIR}
+                                 ${GGEMS_IMGUI_SOURCE_DIR}/backends)
 
   target_link_libraries(${target_name} PUBLIC Vulkan::Vulkan
                                               ${GGEMS_GLFW_TARGET})
