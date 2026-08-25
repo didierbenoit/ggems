@@ -23,7 +23,9 @@
  * \file
  * \brief Unit tests for GGEMS OpenCL contexts.
  *
- * Validates one-device context construction, command-queue coherence, native device association, and profiling-enabled queue properties for available devices.
+ * Validates one-device context construction, command-queue coherence, native
+ * device association, and profiling-enabled queue properties for available
+ * devices.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>

@@ -44,21 +44,26 @@ namespace ggems::ocl {
 using units::operator""_B;
 
 /*!
- * \brief Describes shared virtual memory capabilities available to an OpenCL context.
+ * \brief Describes shared virtual memory capabilities available to an OpenCL
+ * context.
  */
 struct SVMSupport {
   /*!
    * \brief Whether coarse-grain buffer SVM is supported.
    */
   bool coarse_grain_buffer{false};
+
   /*!
    * \brief Whether fine-grain buffer SVM is supported.
    */
   bool fine_grain_buffer{false};
+
   /*!
    * \brief Whether fine-grain system SVM is supported.
    */
+
   bool fine_grain_system{false};
+
   /*!
    * \brief Whether SVM atomic operations are supported.
    */
@@ -67,7 +72,8 @@ struct SVMSupport {
   /*!
    * \brief Returns the default supported SVM memory kind.
    *
-   * \return Preferred supported SVM memory kind, or SVMMemoryKind::None when SVM is unavailable.
+   * \return Preferred supported SVM memory kind, or SVMMemoryKind::None when
+   * SVM is unavailable.
    */
   [[nodiscard]] auto DefaultKind() const noexcept -> SVMMemoryKind {
     if (coarse_grain_buffer) {
@@ -122,6 +128,10 @@ struct SVMSupport {
 
 /*!
  * \brief Tracks OpenCL device memory usage attributed to GGEMS SVM allocations.
+ *
+ * The accounting includes only SVM allocations registered through this
+ * context. It does not query real-time memory consumed by the driver, other
+ * contexts, or other processes.
  */
 struct VRAMUsage {
   /*!
@@ -133,7 +143,7 @@ struct VRAMUsage {
    */
   units::Bytes allocated{0_B};
   /*!
-   * \brief Currently available memory after GGEMS allocations.
+   * \brief Remaining device global-memory budget after GGEMS allocations.
    */
   units::Bytes available{0_B};
   /*!
@@ -162,7 +172,8 @@ struct VRAMUsage {
 /*!
  * \brief Owns an OpenCL context and command queue for one GGEMS OpenCL device.
  *
- * The wrapper also records SVM capabilities and tracks GGEMS-owned SVM allocation accounting for the device.
+ * The wrapper also records SVM capabilities and tracks GGEMS-owned SVM
+ * allocation accounting for the device.
  */
 class GGEMSOpenCLContext {
 public:
@@ -278,9 +289,13 @@ public:
   }
 
   /*!
-   * \brief Returns the currently available memory after GGEMS allocations.
+   * \brief Returns the remaining GGEMS-tracked device memory budget.
    *
-   * \return Currently available memory.
+   * This value is the declared device global-memory capacity minus SVM
+   * allocations registered by this context. It is not a real-time query of
+   * memory used outside GGEMS.
+   *
+   * \return Remaining GGEMS-tracked device memory.
    */
   [[nodiscard]] auto GetAvailableVRAM() const noexcept -> units::Bytes {
     return vram_usage_.available;
@@ -316,10 +331,17 @@ public:
   /*!
    * \brief Creates an SVM buffer supported by this context.
    *
+   * Rejects allocations larger than CL_DEVICE_MAX_MEM_ALLOC_SIZE or the
+   * remaining GGEMS-tracked device memory. Oversized requests are not split or
+   * oversubscribed automatically.
+   *
    * \param[in] size Requested buffer size.
    * \param[in] kind Requested SVM memory kind.
    * \param[in] alignment Requested allocation alignment in bytes.
    * \return Owned SVM buffer.
+   * \throws ggems::core::GGEMSFatal If SVM is unavailable, the requested kind
+   * is invalid or unsupported, the requested size exceeds an allocation limit,
+   * or the OpenCL allocation fails.
    */
   [[nodiscard]] auto CreateSVMBuffer(units::Bytes size,
                                      SVMMemoryKind kind = SVMMemoryKind::Auto,
@@ -327,7 +349,8 @@ public:
       -> GGEMSOpenCLSVMBuffer;
 
   /*!
-   * \brief Maps SVM memory for host access and waits for the blocking map to complete.
+   * \brief Maps SVM memory for host access and waits for the blocking map to
+   * complete.
    *
    * \param[in,out] pointer SVM allocation to map.
    * \param[in] size Mapped byte count.

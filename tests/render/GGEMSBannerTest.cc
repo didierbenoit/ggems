@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for GGEMS banner rendering.
  *
- * Validates the complete banner output in both ASCII and Unicode encoding modes.
+ * Validates the complete banner output in both ASCII and Unicode encoding
+ * modes.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -121,7 +122,7 @@ auto ExpectBanner(ggems::core::Encoding encoding,
     ASSERT_EQ(lines[line_index].segments.size(), 1U);
 
     auto const &segment = lines[line_index].segments.front();
-    EXPECT_EQ(segment.color, ggems::render::GREEN_Acid);
+    EXPECT_EQ(segment.color, ggems::render::GREEN_Neon);
     EXPECT_EQ(segment.text, expected_lines[line_index]);
   }
 }

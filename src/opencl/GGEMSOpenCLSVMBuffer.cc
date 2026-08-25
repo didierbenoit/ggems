@@ -28,16 +28,20 @@
  */
 
 /// \cond
+#include <format>
 #include <utility>
 #include <exception>
 #include <cstddef>
+#include <cstdint>
 /// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 #include "GGEMS/opencl/GGEMSOpenCLSVMBuffer.hh"
 #include "GGEMS/opencl/GGEMSOpenCLSVMMemoryKind.hh"
+#include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
 #include "GGEMS/units/GGEMSBytesUnits.hh"
+#include "GGEMS/units/GGEMSUnitFormatting.hh"
 
 namespace ggems::ocl {
 
@@ -72,7 +76,17 @@ GGEMSOpenCLSVMBuffer::GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context,
       ctx(), flags_, static_cast<std::size_t>(size.value), opencl_alignment);
 
   if (svm_ptr == nullptr) {
-    throw ggems::core::GGEMSFatal("clSVMAlloc failed: returned nullptr.");
+    auto const maximum_allocation = units::Bytes{
+        static_cast<std::uint64_t>(context.GetDevice().GetMaxMemAllocSize())};
+
+    throw ggems::core::GGEMSFatal(std::format(
+        "clSVMAlloc failed on device '{}': requested={}, "
+        "CL_DEVICE_MAX_MEM_ALLOC_SIZE={}, GGEMS-tracked remaining device "
+        "memory={}. The OpenCL driver returned nullptr without a more "
+        "specific error code.",
+        context.GetDevice().GetName(), units::HumanReadable(size_),
+        units::HumanReadable(maximum_allocation),
+        units::HumanReadable(context.GetAvailableVRAM())));
   }
 
   ptr_ = svm_ptr;

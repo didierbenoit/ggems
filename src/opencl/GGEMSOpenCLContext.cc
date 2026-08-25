@@ -185,6 +185,30 @@ auto GGEMSOpenCLContext::CreateSVMBuffer(Bytes size, SVMMemoryKind kind,
         ToString(selected), device_.GetName()));
   }
 
+  auto const maximum_allocation =
+      units::Bytes{static_cast<std::uint64_t>(device_.GetMaxMemAllocSize())};
+
+  if (size > maximum_allocation) {
+    throw ggems::core::GGEMSFatal(std::format(
+        "Requested SVM allocation of {} exceeds "
+        "CL_DEVICE_MAX_MEM_ALLOC_SIZE ({}) for device '{}'. Reduce the "
+        "requested SVM buffer size.",
+        HumanReadable(size), HumanReadable(maximum_allocation),
+        device_.GetName()));
+  }
+
+  auto const available = vram_usage_.available;
+
+  if (size > available) {
+    throw ggems::core::GGEMSFatal(std::format(
+        "Requested SVM allocation of {} exceeds the GGEMS-tracked remaining "
+        "device memory ({}) for device '{}' (allocated={}, total={}). Reduce "
+        "the workload or requested SVM buffer size.",
+        HumanReadable(size), HumanReadable(available), device_.GetName(),
+        HumanReadable(vram_usage_.allocated),
+        HumanReadable(vram_usage_.total)));
+  }
+
   cl_svm_mem_flags flags = 0;
 
   switch (selected) {

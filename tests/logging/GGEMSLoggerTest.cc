@@ -23,7 +23,9 @@
  * \file
  * \brief Documents tests for the GGEMS logging pipeline.
  *
- * Validates log formatting, severity colors, plain-text file output, detail filtering, sink replacement, null-sink rejection, and forced color/encoding policies.
+ * Validates log formatting, severity colors, plain-text file output, detail
+ * filtering, sink replacement, null-sink rejection, and forced color/encoding
+ * policies.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
