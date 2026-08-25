@@ -55,6 +55,7 @@ class Arguments(Protocol):
     max_size: str | None
     rng_test: str
     summary: Path | None
+    multithreaded: bool
 
 
 # ------------------------------------------------------------------------------
@@ -90,6 +91,12 @@ def ParseArguments() -> Arguments:
         "--summary",
         type=Path,
         help="Path to the GGEMS PractRand summary JSON.",
+    )
+
+    _ = parser.add_argument(
+        "--multithreaded",
+        action="store_true",
+        help="Enable PractRand multithreaded test execution.",
     )
 
     return cast(Arguments, cast(object, parser.parse_args()))
@@ -445,6 +452,7 @@ def WriteSummary(
     test_result_count: int | None,
     anomalies: list[str],
     practrand_input: str,
+    multithreaded: bool,
 ) -> None:
     path = path.expanduser().resolve()
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -462,6 +470,7 @@ def WriteSummary(
             "max_size": max_size,
             "test_set": test_set,
             "folding": folding,
+            "multithreaded": multithreaded,
         },
         "input": {
             "manifest_path": str(manifest_path),
@@ -518,6 +527,9 @@ def main() -> int:
         max_size,
     ]
 
+    if args.multithreaded:
+        command.append("-multithreaded")
+
     print("GGEMS PractRand validation")
     print(f"Manifest    : {manifest_path}")
     print(f"Stream      : {stream_path}")
@@ -527,6 +539,7 @@ def main() -> int:
     print(f"Seed        : {random['seed']}")
     print(f"RNG_test    : {rng_test}")
     print(f"Max size    : {max_size}")
+    print(f"Multithread : {'yes' if args.multithreaded else 'no'}")
     print()
 
     return_code, output = RunPractRand(command, stream_path)
@@ -559,6 +572,7 @@ def main() -> int:
             test_result_count=test_result_count,
             anomalies=anomalies,
             practrand_input=practrand_input,
+            multithreaded=args.multithreaded,
         )
 
     print()
