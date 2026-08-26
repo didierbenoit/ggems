@@ -23,7 +23,9 @@
  * \file
  * \brief Declares GGEMS random-engine identifiers and conversion helpers.
  *
- * Defines the host-side engine identifiers shared with the OpenCL random subsystem and provides conversion between enum, string, and kernel identifiers.
+ * Defines the host-side engine identifiers shared with the OpenCL random
+ * subsystem and provides conversion between enum, string, and kernel
+ * identifiers.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -39,7 +41,8 @@
 
 /*!
  * \namespace ggems::core::random
- * \brief Provides random-engine configuration, state management, and stochastic sampling for GGEMS.
+ * \brief Provides random-engine configuration, state management, and stochastic
+ * sampling for GGEMS.
  */
 namespace ggems::core::random {
 
@@ -76,7 +79,8 @@ auto ToString(GGEMSRandomEngine engine) -> std::string;
 /*!
  * \brief Parses a user-facing random-engine name.
  *
- * Engine names are normalized case-insensitively and accept the documented short aliases.
+ * Engine names are normalized case-insensitively and accept the documented
+ * short aliases.
  *
  * \param[in] engine_name Engine name or supported alias.
  * \return Parsed random-engine identifier.
@@ -86,7 +90,8 @@ auto ToString(GGEMSRandomEngine engine) -> std::string;
 auto ParseRandomEngine(std::string_view engine_name) -> GGEMSRandomEngine;
 
 /*!
- * \brief Converts a host random-engine identifier to its OpenCL engine identifier.
+ * \brief Converts a host random-engine identifier to its OpenCL engine
+ * identifier.
  *
  * \param[in] engine Random engine to convert.
  * \return Numeric identifier passed to OpenCL kernel compilation.
