@@ -19,6 +19,8 @@ SAMPLES_PER_WORKER = 61_036
 STREAM_BYTE_COUNT = WORKER_COUNT * SAMPLES_PER_WORKER * 4
 STREAM_TYPE = "raw_uint32"
 MIN_FREE_MARGIN_BYTES = 8 * 1024**3
+FREE_SPACE_POLL_SECONDS = 2.0
+FREE_SPACE_TIMEOUT_SECONDS = 30.0 * 60.0
 
 ENGINE_DISPLAY_NAMES: dict[str, str] = {
     "philox": "Philox",
@@ -345,17 +347,42 @@ def RunCommand(command: list[str], description: str) -> float:
 # ------------------------------------------------------------------------------
 
 
-def CheckFreeSpace(stream_directory: Path, stream_path: Path) -> None:
-    disk = shutil.disk_usage(stream_directory)
-    reclaimable_bytes = stream_path.stat().st_size if stream_path.is_file() else 0
-    usable_bytes = disk.free + reclaimable_bytes
+def WaitForFreeSpace(stream_directory: Path, stream_path: Path) -> None:
     required_bytes = STREAM_BYTE_COUNT + MIN_FREE_MARGIN_BYTES
+    deadline = time.monotonic() + FREE_SPACE_TIMEOUT_SECONDS
+    waiting = False
 
-    if usable_bytes < required_bytes:
-        raise RuntimeError(
-            "Insufficient disk space for the next Dieharder stream: "
-            + f"usable={usable_bytes} bytes, required={required_bytes} bytes."
+    while True:
+        disk = shutil.disk_usage(stream_directory)
+        reclaimable_bytes = (
+            stream_path.stat().st_size if stream_path.is_file() else 0
         )
+        usable_bytes = disk.free + reclaimable_bytes
+
+        if usable_bytes >= required_bytes:
+            if waiting:
+                print(
+                    "Filesystem space recovered: "
+                    + f"{usable_bytes / 1024**3:.2f} GiB usable."
+                )
+            return
+
+        if time.monotonic() >= deadline:
+            raise RuntimeError(
+                "Timed out waiting for filesystem space for the next "
+                + "Dieharder stream: "
+                + f"usable={usable_bytes} bytes, required={required_bytes} bytes."
+            )
+
+        if not waiting:
+            print(
+                "Waiting for filesystem space to be reclaimed: "
+                + f"{usable_bytes / 1024**3:.2f} GiB usable, "
+                + f"{required_bytes / 1024**3:.2f} GiB required."
+            )
+            waiting = True
+
+        time.sleep(FREE_SPACE_POLL_SECONDS)
 
 
 # ------------------------------------------------------------------------------
@@ -515,7 +542,7 @@ def main() -> int:
                     + "Remove them or rerun the campaign with --force."
                 )
 
-            CheckFreeSpace(stream_directory, stream_path)
+            WaitForFreeSpace(stream_directory, stream_path)
 
             generation_elapsed = RunCommand(
                 BuildGeneratorCommand(
