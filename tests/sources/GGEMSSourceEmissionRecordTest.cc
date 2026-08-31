@@ -148,7 +148,7 @@ TEST_F(GGEMSSourceEmissionRecordKernelTest,
   std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
   std::filesystem::path const kernel_test_root = kernel_root / "tests";
   std::string const build_options =
-      std::format("-cl-std=CL2.0 -I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
   auto &program = opencl.GetOrCreateProgram(context, kernel_test_root,
                                             "source_emission_record_abi_probe",

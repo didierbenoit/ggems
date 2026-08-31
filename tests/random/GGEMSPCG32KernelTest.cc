@@ -23,7 +23,8 @@
  * \file
  * \brief OpenCL validation tests for the GGEMS PCG32 engine.
  *
- * Validates kernel-side PCG32 uniform output, deterministic state progression, stream independence, and host/kernel state agreement.
+ * Validates kernel-side PCG32 uniform output, deterministic state progression,
+ * stream independence, and host/kernel state agreement.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -134,8 +135,7 @@ TEST(GGEMSPCG32KernelTest, UniformValuesAreInsideUnitInterval) {
       continue;
     }
 
-    SCOPED_TRACE(
-        ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     ++tested_device_count;
 
@@ -145,7 +145,7 @@ TEST(GGEMSPCG32KernelTest, UniformValuesAreInsideUnitInterval) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-cl-std=CL2.0 -I{}", kernel_root.generic_string());
+        std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
         context, kernel_test_root, "random_pcg32_uniform", build_options);
@@ -197,8 +197,7 @@ TEST(GGEMSPCG32KernelTest, UniformValuesAreInsideUnitInterval) {
   }
 
   if (tested_device_count == 0U) {
-    GTEST_SKIP()
-        << "No compiler-capable GGEMS OpenCL device supports SVM.";
+    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
 
@@ -218,8 +217,7 @@ TEST(GGEMSPCG32KernelTest, SequenceContinuesBetweenKernelCalls) {
       continue;
     }
 
-    SCOPED_TRACE(
-        ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     ++tested_device_count;
 
@@ -229,7 +227,7 @@ TEST(GGEMSPCG32KernelTest, SequenceContinuesBetweenKernelCalls) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-cl-std=CL2.0 -I{}", kernel_root.generic_string());
+        std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
         context, kernel_test_root, "random_pcg32_uniform", build_options);
@@ -295,8 +293,7 @@ TEST(GGEMSPCG32KernelTest, SequenceContinuesBetweenKernelCalls) {
   }
 
   if (tested_device_count == 0U) {
-    GTEST_SKIP()
-        << "No compiler-capable GGEMS OpenCL device supports SVM.";
+    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
 
@@ -316,8 +313,7 @@ TEST(GGEMSPCG32KernelTest, SameSeedProducesSameFirstSequence) {
       continue;
     }
 
-    SCOPED_TRACE(
-        ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     ++tested_device_count;
 
@@ -327,7 +323,7 @@ TEST(GGEMSPCG32KernelTest, SameSeedProducesSameFirstSequence) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-cl-std=CL2.0 -I{}", kernel_root.generic_string());
+        std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
         context, kernel_test_root, "random_pcg32_uniform", build_options);
@@ -391,8 +387,7 @@ TEST(GGEMSPCG32KernelTest, SameSeedProducesSameFirstSequence) {
   }
 
   if (tested_device_count == 0U) {
-    GTEST_SKIP()
-        << "No compiler-capable GGEMS OpenCL device supports SVM.";
+    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
 
@@ -412,8 +407,7 @@ TEST(GGEMSPCG32KernelTest, DifferentSeedsProduceDifferentFirstSequence) {
       continue;
     }
 
-    SCOPED_TRACE(
-        ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     ++tested_device_count;
 
@@ -423,7 +417,7 @@ TEST(GGEMSPCG32KernelTest, DifferentSeedsProduceDifferentFirstSequence) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-cl-std=CL2.0 -I{}", kernel_root.generic_string());
+        std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
         context, kernel_test_root, "random_pcg32_uniform", build_options);
@@ -496,8 +490,7 @@ TEST(GGEMSPCG32KernelTest, DifferentSeedsProduceDifferentFirstSequence) {
   }
 
   if (tested_device_count == 0U) {
-    GTEST_SKIP()
-        << "No compiler-capable GGEMS OpenCL device supports SVM.";
+    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
 
@@ -517,8 +510,7 @@ TEST(GGEMSPCG32KernelTest, RandomStatesAreAdvancedByKernelExecution) {
       continue;
     }
 
-    SCOPED_TRACE(
-        ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     ++tested_device_count;
 
@@ -528,7 +520,7 @@ TEST(GGEMSPCG32KernelTest, RandomStatesAreAdvancedByKernelExecution) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-cl-std=CL2.0 -I{}", kernel_root.generic_string());
+        std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
         context, kernel_test_root, "random_pcg32_uniform", build_options);
@@ -599,8 +591,7 @@ TEST(GGEMSPCG32KernelTest, RandomStatesAreAdvancedByKernelExecution) {
   }
 
   if (tested_device_count == 0U) {
-    GTEST_SKIP()
-        << "No compiler-capable GGEMS OpenCL device supports SVM.";
+    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
 
@@ -620,8 +611,7 @@ TEST(GGEMSPCG32KernelTest, GenericRandomUniformUsesSelectedPCG32Engine) {
       continue;
     }
 
-    SCOPED_TRACE(
-        ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     ++tested_device_count;
 
@@ -630,9 +620,8 @@ TEST(GGEMSPCG32KernelTest, GenericRandomUniformUsesSelectedPCG32Engine) {
     std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
-    std::string build_options =
-        std::format("-cl-std=CL2.0 -I{} -DGGEMS_RANDOM_ENGINE=2",
-                    kernel_root.generic_string());
+    std::string build_options = std::format("-I{} -DGGEMS_RANDOM_ENGINE=2",
+                                            kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
         context, kernel_test_root, "random_generic_uniform", build_options);
@@ -695,8 +684,7 @@ TEST(GGEMSPCG32KernelTest, GenericRandomUniformUsesSelectedPCG32Engine) {
   }
 
   if (tested_device_count == 0U) {
-    GTEST_SKIP()
-        << "No compiler-capable GGEMS OpenCL device supports SVM.";
+    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
 
@@ -716,8 +704,7 @@ TEST(GGEMSPCG32KernelTest, GenericRandomUniform4UsesSelectedPCG32Engine) {
       continue;
     }
 
-    SCOPED_TRACE(
-        ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     ++tested_device_count;
 
@@ -726,9 +713,8 @@ TEST(GGEMSPCG32KernelTest, GenericRandomUniform4UsesSelectedPCG32Engine) {
     std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
-    std::string build_options =
-        std::format("-cl-std=CL2.0 -I{} -DGGEMS_RANDOM_ENGINE=2",
-                    kernel_root.generic_string());
+    std::string build_options = std::format("-I{} -DGGEMS_RANDOM_ENGINE=2",
+                                            kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
         context, kernel_test_root, "random_generic_uniform4", build_options);
@@ -791,8 +777,7 @@ TEST(GGEMSPCG32KernelTest, GenericRandomUniform4UsesSelectedPCG32Engine) {
   }
 
   if (tested_device_count == 0U) {
-    GTEST_SKIP()
-        << "No compiler-capable GGEMS OpenCL device supports SVM.";
+    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
 /// \endcond

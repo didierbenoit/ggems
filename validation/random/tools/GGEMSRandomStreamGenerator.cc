@@ -310,10 +310,9 @@ auto OpenOutputStream(std::filesystem::path const &path, bool force)
 // =============================================================================
 // =============================================================================
 
-auto WriteUInt32Chunk(std::ofstream &stream,
-                      std::filesystem::path const &path,
-                      std::uint32_t const *values,
-                      std::size_t value_count) -> void {
+auto WriteUInt32Chunk(std::ofstream &stream, std::filesystem::path const &path,
+                      std::uint32_t const *values, std::size_t value_count)
+    -> void {
   stream.write(
       reinterpret_cast<char const *>(values),
       static_cast<std::streamsize>(value_count * sizeof(std::uint32_t)));
@@ -328,8 +327,7 @@ auto WriteUInt32Chunk(std::ofstream &stream,
 // =============================================================================
 
 auto WriteUniform24Chunk(std::ofstream &stream,
-                         std::filesystem::path const &path,
-                         float const *values,
+                         std::filesystem::path const &path, float const *values,
                          std::size_t value_count) -> void {
   constexpr std::size_t kPackingChunkSampleCount = 1U << 20U;
   std::vector<std::uint8_t> buffer(kPackingChunkSampleCount * 3U);
@@ -351,11 +349,9 @@ auto WriteUniform24Chunk(std::ofstream &stream,
 
       buffer[(3U * i) + 0U] = static_cast<std::uint8_t>(value & 0xFFU);
 
-      buffer[(3U * i) + 1U] =
-          static_cast<std::uint8_t>((value >> 8U) & 0xFFU);
+      buffer[(3U * i) + 1U] = static_cast<std::uint8_t>((value >> 8U) & 0xFFU);
 
-      buffer[(3U * i) + 2U] =
-          static_cast<std::uint8_t>((value >> 16U) & 0xFFU);
+      buffer[(3U * i) + 2U] = static_cast<std::uint8_t>((value >> 16U) & 0xFFU);
     }
 
     stream.write(reinterpret_cast<char const *>(buffer.data()),
@@ -371,10 +367,7 @@ auto WriteUniform24Chunk(std::ofstream &stream,
 // =============================================================================
 // =============================================================================
 
-enum class ChunkStrategy : std::uint8_t {
-  SampleDepth = 0U,
-  WorkerGroups
-};
+enum class ChunkStrategy : std::uint8_t { SampleDepth = 0U, WorkerGroups };
 
 // =============================================================================
 // =============================================================================
@@ -422,13 +415,11 @@ auto ComputeChunkPlan(Options const &options, GGEMSRandom const &random,
     -> ChunkPlan {
   ChunkPlan plan;
 
-  plan.requested_max_value_buffer_bytes =
-      options.max_chunk_mib * kBytesPerMiB;
+  plan.requested_max_value_buffer_bytes = options.max_chunk_mib * kBytesPerMiB;
   plan.device_max_allocation_bytes =
       static_cast<std::uint64_t>(device.GetMaxMemAllocSize());
-  plan.effective_max_value_buffer_bytes =
-      std::min(plan.requested_max_value_buffer_bytes,
-               plan.device_max_allocation_bytes);
+  plan.effective_max_value_buffer_bytes = std::min(
+      plan.requested_max_value_buffer_bytes, plan.device_max_allocation_bytes);
 
   if (plan.effective_max_value_buffer_bytes == 0ULL) {
     throw std::runtime_error(
@@ -472,18 +463,17 @@ auto ComputeChunkPlan(Options const &options, GGEMSRandom const &random,
           "Maximum chunk size is too small for one interleaved sample round.");
     }
 
-    plan.samples_per_worker_per_chunk = static_cast<std::uint32_t>(
-        std::min<std::uint64_t>(options.samples_per_worker,
-                                max_samples_per_worker));
+    plan.samples_per_worker_per_chunk =
+        static_cast<std::uint32_t>(std::min<std::uint64_t>(
+            options.samples_per_worker, max_samples_per_worker));
 
     plan.state_buffer_bytes = state_buffer_bytes;
     plan.value_buffer_bytes =
         static_cast<std::uint64_t>(options.worker_count) *
         static_cast<std::uint64_t>(plan.samples_per_worker_per_chunk) *
         kSVMValueBytesPerSample;
-    plan.chunk_count =
-        DivideRoundUp(options.samples_per_worker,
-                      plan.samples_per_worker_per_chunk);
+    plan.chunk_count = DivideRoundUp(options.samples_per_worker,
+                                     plan.samples_per_worker_per_chunk);
 
     return plan;
   }
@@ -511,9 +501,8 @@ auto ComputeChunkPlan(Options const &options, GGEMSRandom const &random,
       std::min<std::uint64_t>(options.worker_count, max_workers));
   plan.state_buffer_bytes =
       static_cast<std::uint64_t>(plan.workers_per_chunk) * state_size;
-  plan.value_buffer_bytes =
-      static_cast<std::uint64_t>(plan.workers_per_chunk) *
-      value_bytes_per_worker;
+  plan.value_buffer_bytes = static_cast<std::uint64_t>(plan.workers_per_chunk) *
+                            value_bytes_per_worker;
   plan.chunk_count =
       DivideRoundUp(options.worker_count, plan.workers_per_chunk);
 
@@ -525,8 +514,8 @@ auto ComputeChunkPlan(Options const &options, GGEMSRandom const &random,
 
 auto InitializeStates(GGEMSRandom const &random,
                       ggems::ocl::GGEMSOpenCLSVMBuffer &states_buffer,
-                      std::uint64_t first_stream_id,
-                      std::uint32_t worker_count) -> void {
+                      std::uint64_t first_stream_id, std::uint32_t worker_count)
+    -> void {
   std::uint64_t const state_bytes =
       static_cast<std::uint64_t>(worker_count) *
       static_cast<std::uint64_t>(random.GetStateSize());
@@ -578,14 +567,13 @@ auto RunRandomKernel(ggems::ocl::GGEMSOpenCLKernel &kernel,
 // =============================================================================
 // =============================================================================
 
-auto WriteValueChunk(std::ofstream &stream,
-                     std::filesystem::path const &path,
+auto WriteValueChunk(std::ofstream &stream, std::filesystem::path const &path,
                      StreamType stream_type, void const *values,
                      std::size_t value_count) -> void {
   switch (stream_type) {
   case StreamType::RawUInt32:
-    WriteUInt32Chunk(stream, path,
-                     static_cast<std::uint32_t const *>(values), value_count);
+    WriteUInt32Chunk(stream, path, static_cast<std::uint32_t const *>(values),
+                     value_count);
     return;
 
   case StreamType::Uniform24Scalar:
@@ -748,13 +736,12 @@ auto GenerateRandomStream(Options const &options) -> void {
   std::uint64_t const output_bytes_per_sample =
       options.stream_type == StreamType::RawUInt32 ? 4ULL : 3ULL;
 
-  if (total_samples > std::numeric_limits<std::uint64_t>::max() /
-                          output_bytes_per_sample) {
+  if (total_samples >
+      std::numeric_limits<std::uint64_t>::max() / output_bytes_per_sample) {
     throw std::runtime_error("Requested stream byte count overflows uint64.");
   }
 
-  std::uint64_t const output_bytes =
-      total_samples * output_bytes_per_sample;
+  std::uint64_t const output_bytes = total_samples * output_bytes_per_sample;
 
   std::cout << "GGEMS random stream generator\n";
   std::cout << "Engine             : " << random.GetEngineName() << '\n';
@@ -800,7 +787,7 @@ auto GenerateRandomStream(Options const &options) -> void {
       GGEMS_VALIDATION_RANDOM_KERNEL_ROOT};
 
   std::string build_options =
-      std::format("-cl-std=CL2.0 -I\"{}\" {}", kernel_root.generic_string(),
+      std::format("-I\"{}\" {}", kernel_root.generic_string(),
                   random.GetKernelBuildDefinition());
 
   std::string_view kernel_name;
@@ -844,8 +831,7 @@ auto GenerateRandomStream(Options const &options) -> void {
 
     while (remaining_samples > 0U) {
       std::uint32_t const current_samples_per_worker =
-          std::min(chunk_plan.samples_per_worker_per_chunk,
-                   remaining_samples);
+          std::min(chunk_plan.samples_per_worker_per_chunk, remaining_samples);
 
       RunRandomKernel(kernel, options, states_buffer.GetData(),
                       values_buffer.GetData(), options.worker_count,
@@ -856,8 +842,7 @@ auto GenerateRandomStream(Options const &options) -> void {
           static_cast<std::uint64_t>(current_samples_per_worker);
 
       if (current_sample_count >
-          static_cast<std::uint64_t>(
-              std::numeric_limits<std::size_t>::max())) {
+          static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max())) {
         throw std::runtime_error(
             "Random value chunk is too large for host I/O.");
       }
@@ -875,9 +860,8 @@ auto GenerateRandomStream(Options const &options) -> void {
     std::uint32_t worker_offset{0U};
 
     while (worker_offset < options.worker_count) {
-      std::uint32_t const current_worker_count =
-          std::min(chunk_plan.workers_per_chunk,
-                   options.worker_count - worker_offset);
+      std::uint32_t const current_worker_count = std::min(
+          chunk_plan.workers_per_chunk, options.worker_count - worker_offset);
 
       std::uint64_t const first_stream_id =
           options.stream_offset + static_cast<std::uint64_t>(worker_offset);
@@ -894,8 +878,7 @@ auto GenerateRandomStream(Options const &options) -> void {
           static_cast<std::uint64_t>(options.samples_per_worker);
 
       if (current_sample_count >
-          static_cast<std::uint64_t>(
-              std::numeric_limits<std::size_t>::max())) {
+          static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max())) {
         throw std::runtime_error(
             "Random value chunk is too large for host I/O.");
       }
@@ -918,13 +901,12 @@ auto GenerateRandomStream(Options const &options) -> void {
   output_stream.close();
 
   if (!output_stream) {
-    throw std::runtime_error(
-        std::format("Failed to close output stream '{}'.",
-                    options.output_path.string()));
+    throw std::runtime_error(std::format("Failed to close output stream '{}'.",
+                                         options.output_path.string()));
   }
 
-  std::uint64_t const actual_output_bytes =
-      static_cast<std::uint64_t>(std::filesystem::file_size(options.output_path));
+  std::uint64_t const actual_output_bytes = static_cast<std::uint64_t>(
+      std::filesystem::file_size(options.output_path));
 
   if (actual_output_bytes != output_bytes) {
     throw std::runtime_error(

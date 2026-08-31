@@ -60,8 +60,7 @@ TEST_F(GGEMSParticleDummyPrimaryKernelTest, GeneratesAlivePrimaryParticles) {
   std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
   std::filesystem::path kernel_test_root = kernel_root / "tests";
 
-  std::string build_options =
-      std::format("-cl-std=CL2.0 -I{}", kernel_root.generic_string());
+  std::string build_options = std::format("-I{}", kernel_root.generic_string());
 
   auto &program = opencl.GetOrCreateProgram(context, kernel_test_root,
                                             "particle_generate_dummy_primary",

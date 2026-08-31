@@ -157,9 +157,8 @@ TEST_F(GGEMSActivitySourceRandomOrderTest,
     ggems::ocl::WriteSVMFromHost(value_buffer, std::span{sampled_values});
     ggems::ocl::WriteSVMFromHost(next_word_buffer, std::span{next_words});
 
-    std::string const options =
-        std::format("-cl-std=CL2.0 -I{} {}", root.generic_string(),
-                    random.GetKernelBuildDefinition());
+    std::string const options = std::format("-I{} {}", root.generic_string(),
+                                            random.GetKernelBuildDefinition());
     auto const &program = opencl.GetOrCreateProgram(
         context, root / "tests", "activity_source_random_order_probe", options);
     ggems::ocl::GGEMSOpenCLKernel kernel{

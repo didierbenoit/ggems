@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for GGEMS host random streams.
  *
- * Validates deterministic continuation, stream separation, raw output, and scalar uniform contracts across all supported engines.
+ * Validates deterministic continuation, stream separation, raw output, and
+ * scalar uniform contracts across all supported engines.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -305,8 +306,7 @@ TEST(GGEMSHostRandomStreamTest,
       continue;
     }
 
-    SCOPED_TRACE(
-        ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     ++tested_device_count;
 
@@ -315,7 +315,7 @@ TEST(GGEMSHostRandomStreamTest,
       random.SetEngine(engine);
 
       std::string const build_options =
-          std::format("-cl-std=CL2.0 -I{} {}", kernel_root.generic_string(),
+          std::format("-I{} {}", kernel_root.generic_string(),
                       random.GetKernelBuildDefinition());
       auto const &program = opencl.GetOrCreateProgram(
           context, kernel_test_root, "random_host_stream_probe", build_options);
@@ -335,23 +335,21 @@ TEST(GGEMSHostRandomStreamTest,
                                    stream_id));
 
           random.SetSeed(seed);
-          auto raw_state_buffer =
-              context.CreateSVMBuffer(ggems::units::Bytes{random.GetStateSize()});
-          auto uniform_state_buffer =
-              context.CreateSVMBuffer(ggems::units::Bytes{random.GetStateSize()});
-          auto raw_values_buffer = context.CreateSVMBuffer(
-              ggems::units::Bytes{k_probe_sample_count *
-                                  sizeof(std::uint32_t)});
+          auto raw_state_buffer = context.CreateSVMBuffer(
+              ggems::units::Bytes{random.GetStateSize()});
+          auto uniform_state_buffer = context.CreateSVMBuffer(
+              ggems::units::Bytes{random.GetStateSize()});
+          auto raw_values_buffer = context.CreateSVMBuffer(ggems::units::Bytes{
+              k_probe_sample_count * sizeof(std::uint32_t)});
           auto uniform_values_buffer = context.CreateSVMBuffer(
               ggems::units::Bytes{k_probe_sample_count * sizeof(float)});
 
           raw_state_buffer.Map(CL_MAP_WRITE);
           uniform_state_buffer.Map(CL_MAP_WRITE);
           random.InitializeStates(
-              stream_id,
-              std::span<std::byte>{
-                  static_cast<std::byte *>(raw_state_buffer.GetData()),
-                  random.GetStateSize()});
+              stream_id, std::span<std::byte>{static_cast<std::byte *>(
+                                                  raw_state_buffer.GetData()),
+                                              random.GetStateSize()});
           random.InitializeStates(
               stream_id,
               std::span<std::byte>{
@@ -390,8 +388,7 @@ TEST(GGEMSHostRandomStreamTest,
   }
 
   if (tested_device_count == 0U) {
-    GTEST_SKIP()
-        << "No compiler-capable GGEMS OpenCL device supports SVM.";
+    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
 /// \endcond

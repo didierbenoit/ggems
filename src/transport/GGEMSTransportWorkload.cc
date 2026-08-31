@@ -475,7 +475,7 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   std::filesystem::path const kernel_transport_root =
       kernel_root_ / "transport";
   std::string const build_options = std::format(
-      "-cl-std=CL2.0 -I{} {} "
+      "-I{} {} "
       "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
       kernel_root_.generic_string(), random_kernel_build_definition_);
   auto &program =

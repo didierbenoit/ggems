@@ -23,7 +23,8 @@
  * \file
  * \brief OpenCL validation tests for the GGEMS Philox engine.
  *
- * Validates scalar and vector Philox output, deterministic counter progression, stream independence, and host/kernel state agreement.
+ * Validates scalar and vector Philox output, deterministic counter progression,
+ * stream independence, and host/kernel state agreement.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -139,8 +140,7 @@ TEST(GGEMSPhiloxKernelTest, UniformValuesAreInsideUnitInterval) {
       continue;
     }
 
-    SCOPED_TRACE(
-        ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     ++tested_device_count;
 
@@ -150,7 +150,7 @@ TEST(GGEMSPhiloxKernelTest, UniformValuesAreInsideUnitInterval) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-cl-std=CL2.0 -I{}", kernel_root.generic_string());
+        std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
         context, kernel_test_root, "random_philox_uniform", build_options);
@@ -201,8 +201,7 @@ TEST(GGEMSPhiloxKernelTest, UniformValuesAreInsideUnitInterval) {
   }
 
   if (tested_device_count == 0U) {
-    GTEST_SKIP()
-        << "No compiler-capable GGEMS OpenCL device supports SVM.";
+    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
 
@@ -222,8 +221,7 @@ TEST(GGEMSPhiloxKernelTest, SequenceContinuesBetweenKernelCalls) {
       continue;
     }
 
-    SCOPED_TRACE(
-        ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     ++tested_device_count;
 
@@ -233,7 +231,7 @@ TEST(GGEMSPhiloxKernelTest, SequenceContinuesBetweenKernelCalls) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-cl-std=CL2.0 -I{}", kernel_root.generic_string());
+        std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
         context, kernel_test_root, "random_philox_uniform", build_options);
@@ -300,8 +298,7 @@ TEST(GGEMSPhiloxKernelTest, SequenceContinuesBetweenKernelCalls) {
   }
 
   if (tested_device_count == 0U) {
-    GTEST_SKIP()
-        << "No compiler-capable GGEMS OpenCL device supports SVM.";
+    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
 
@@ -321,8 +318,7 @@ TEST(GGEMSPhiloxKernelTest, SameSeedProducesSameFirstSequence) {
       continue;
     }
 
-    SCOPED_TRACE(
-        ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     ++tested_device_count;
 
@@ -332,7 +328,7 @@ TEST(GGEMSPhiloxKernelTest, SameSeedProducesSameFirstSequence) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-cl-std=CL2.0 -I{}", kernel_root.generic_string());
+        std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
         context, kernel_test_root, "random_philox_uniform", build_options);
@@ -396,8 +392,7 @@ TEST(GGEMSPhiloxKernelTest, SameSeedProducesSameFirstSequence) {
   }
 
   if (tested_device_count == 0U) {
-    GTEST_SKIP()
-        << "No compiler-capable GGEMS OpenCL device supports SVM.";
+    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
 
@@ -417,8 +412,7 @@ TEST(GGEMSPhiloxKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
       continue;
     }
 
-    SCOPED_TRACE(
-        ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     ++tested_device_count;
 
@@ -428,7 +422,7 @@ TEST(GGEMSPhiloxKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-cl-std=CL2.0 -I{}", kernel_root.generic_string());
+        std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
         context, kernel_test_root, "random_philox_uniform", build_options);
@@ -501,8 +495,7 @@ TEST(GGEMSPhiloxKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
   }
 
   if (tested_device_count == 0U) {
-    GTEST_SKIP()
-        << "No compiler-capable GGEMS OpenCL device supports SVM.";
+    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
 
@@ -522,8 +515,7 @@ TEST(GGEMSPhiloxKernelTest, RandomStatesAreAdvancedByKernelExecution) {
       continue;
     }
 
-    SCOPED_TRACE(
-        ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     ++tested_device_count;
 
@@ -533,7 +525,7 @@ TEST(GGEMSPhiloxKernelTest, RandomStatesAreAdvancedByKernelExecution) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-cl-std=CL2.0 -I{}", kernel_root.generic_string());
+        std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
         context, kernel_test_root, "random_philox_uniform", build_options);
@@ -560,7 +552,8 @@ TEST(GGEMSPhiloxKernelTest, RandomStatesAreAdvancedByKernelExecution) {
     values_buffer.Map(CL_MAP_WRITE);
 
     for (std::size_t i = 0U; i < k_particle_count; ++i) {
-      PhiloxState state = MakePhiloxState(k_seed, static_cast<std::uint64_t>(i));
+      PhiloxState state =
+          MakePhiloxState(k_seed, static_cast<std::uint64_t>(i));
 
       states[i] = state;
       initial_states[i] = state;
@@ -611,8 +604,7 @@ TEST(GGEMSPhiloxKernelTest, RandomStatesAreAdvancedByKernelExecution) {
   }
 
   if (tested_device_count == 0U) {
-    GTEST_SKIP()
-        << "No compiler-capable GGEMS OpenCL device supports SVM.";
+    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
 
@@ -620,7 +612,7 @@ TEST(GGEMSPhiloxKernelTest, RandomStatesAreAdvancedByKernelExecution) {
 // =============================================================================
 
 TEST(GGEMSPhiloxKernelTest,
-       Uniform4ValuesAreInsideUnitIntervalAndAdvanceByBlock) {
+     Uniform4ValuesAreInsideUnitIntervalAndAdvanceByBlock) {
   auto const &compiler_devices =
       ggems::test::GetOpenCLCompilerDeviceInventory();
 
@@ -633,8 +625,7 @@ TEST(GGEMSPhiloxKernelTest,
       continue;
     }
 
-    SCOPED_TRACE(
-        ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     ++tested_device_count;
 
@@ -644,7 +635,7 @@ TEST(GGEMSPhiloxKernelTest,
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-cl-std=CL2.0 -I{}", kernel_root.generic_string());
+        std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
         context, kernel_test_root, "random_philox_uniform4", build_options);
@@ -671,7 +662,8 @@ TEST(GGEMSPhiloxKernelTest,
     values_buffer.Map(CL_MAP_WRITE);
 
     for (std::size_t i = 0U; i < k_particle_count; ++i) {
-      PhiloxState state = MakePhiloxState(k_seed, static_cast<std::uint64_t>(i));
+      PhiloxState state =
+          MakePhiloxState(k_seed, static_cast<std::uint64_t>(i));
 
       states[i] = state;
       initial_states[i] = state;
@@ -714,8 +706,7 @@ TEST(GGEMSPhiloxKernelTest,
   }
 
   if (tested_device_count == 0U) {
-    GTEST_SKIP()
-        << "No compiler-capable GGEMS OpenCL device supports SVM.";
+    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
 
@@ -732,8 +723,7 @@ TEST(GGEMSPhiloxKernelTest, GenericRandomUniformUsesSelectedPhiloxEngine) {
       continue;
     }
 
-    SCOPED_TRACE(
-        ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     ++tested_device_count;
 
@@ -742,9 +732,8 @@ TEST(GGEMSPhiloxKernelTest, GenericRandomUniformUsesSelectedPhiloxEngine) {
     std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
-    std::string build_options =
-        std::format("-cl-std=CL2.0 -I{} -DGGEMS_RANDOM_ENGINE=3",
-                    kernel_root.generic_string());
+    std::string build_options = std::format("-I{} -DGGEMS_RANDOM_ENGINE=3",
+                                            kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
         context, kernel_test_root, "random_generic_uniform", build_options);
@@ -802,8 +791,7 @@ TEST(GGEMSPhiloxKernelTest, GenericRandomUniformUsesSelectedPhiloxEngine) {
   }
 
   if (tested_device_count == 0U) {
-    GTEST_SKIP()
-        << "No compiler-capable GGEMS OpenCL device supports SVM.";
+    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
 
@@ -823,8 +811,7 @@ TEST(GGEMSPhiloxKernelTest, GenericRandomUniform4UsesSelectedPhiloxEngine) {
       continue;
     }
 
-    SCOPED_TRACE(
-        ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
+    SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     ++tested_device_count;
 
@@ -833,9 +820,8 @@ TEST(GGEMSPhiloxKernelTest, GenericRandomUniform4UsesSelectedPhiloxEngine) {
     std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
-    std::string build_options =
-        std::format("-cl-std=CL2.0 -I{} -DGGEMS_RANDOM_ENGINE=3",
-                    kernel_root.generic_string());
+    std::string build_options = std::format("-I{} -DGGEMS_RANDOM_ENGINE=3",
+                                            kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
         context, kernel_test_root, "random_generic_uniform4", build_options);
@@ -863,7 +849,8 @@ TEST(GGEMSPhiloxKernelTest, GenericRandomUniform4UsesSelectedPhiloxEngine) {
     values_buffer.Map(CL_MAP_WRITE);
 
     for (std::size_t i = 0U; i < k_particle_count; ++i) {
-      PhiloxState state = MakePhiloxState(k_seed, static_cast<std::uint64_t>(i));
+      PhiloxState state =
+          MakePhiloxState(k_seed, static_cast<std::uint64_t>(i));
 
       states[i] = state;
       initial_states[i] = state;
@@ -906,8 +893,7 @@ TEST(GGEMSPhiloxKernelTest, GenericRandomUniform4UsesSelectedPhiloxEngine) {
   }
 
   if (tested_device_count == 0U) {
-    GTEST_SKIP()
-        << "No compiler-capable GGEMS OpenCL device supports SVM.";
+    GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
 /// \endcond

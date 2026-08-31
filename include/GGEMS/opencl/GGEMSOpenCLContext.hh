@@ -44,8 +44,11 @@ namespace ggems::ocl {
 using units::operator""_B;
 
 /*!
- * \brief Describes shared virtual memory capabilities available to an OpenCL
- * context.
+ * \brief Describes the SVM modes GGEMS can use with an OpenCL context.
+ *
+ * On native OpenCL backends, this support reflects device-reported SVM
+ * capabilities. On Apple, it reflects the coarse-only GGEMS compatibility
+ * implementation while the native device capability remains unavailable.
  */
 struct SVMSupport {
   /*!
@@ -172,8 +175,8 @@ struct VRAMUsage {
 /*!
  * \brief Owns an OpenCL context and command queue for one GGEMS OpenCL device.
  *
- * The wrapper also records SVM capabilities and tracks GGEMS-owned SVM
- * allocation accounting for the device.
+ * The wrapper also records effective GGEMS SVM support and tracks GGEMS-owned
+ * SVM allocation accounting for the device.
  */
 class GGEMSOpenCLContext {
 public:
@@ -239,9 +242,9 @@ public:
   }
 
   /*!
-   * \brief Returns the detected SVM capability set.
+   * \brief Returns the effective GGEMS SVM support set.
    *
-   * \return Detected SVM capabilities.
+   * \return Effective GGEMS SVM support.
    */
   [[nodiscard]] auto GetSVMSupport() const noexcept -> SVMSupport const & {
     return svm_support_;
@@ -461,7 +464,7 @@ private:
   auto CreateCommandQueue() -> void;
 
   /*!
-   * \brief Detects SVM support for the associated device.
+   * \brief Initializes effective GGEMS SVM support for the associated device.
    */
   auto InitSVMSupport() -> void;
 
@@ -479,18 +482,22 @@ private:
    * \brief GGEMS device associated with this context.
    */
   GGEMSOpenCLDevice const &device_;
+
   /*!
    * \brief Native OpenCL context.
    */
   cl::Context context_;
+
   /*!
    * \brief Native OpenCL command queue.
    */
   cl::CommandQueue command_queue_;
+
   /*!
-   * \brief Detected SVM capabilities.
+   * \brief Effective GGEMS SVM support.
    */
   SVMSupport svm_support_{};
+
   /*!
    * \brief GGEMS SVM allocation accounting.
    */

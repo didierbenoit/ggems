@@ -18,8 +18,7 @@ def _source(
 
 
 def main() -> None:
-    ggems.logging.set_output_mode("gui")
-    ggems.logging.start_output_runtime()
+    ggems.start("gui")
 
     try:
         opencl = ggems.opencl.GGEMSOpenCL()
@@ -73,7 +72,7 @@ def main() -> None:
         if failures:
             raise failures[0]
     finally:
-        ggems.logging.stop_output_runtime()
+        ggems.stop()
 
 
 if __name__ == "__main__":

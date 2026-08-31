@@ -1,6 +1,9 @@
 [submodule "external/OpenCL-CLHPP"]
 	path = external/OpenCL-CLHPP
 	url = https://github.com/KhronosGroup/OpenCL-CLHPP
+[submodule "external/OpenCL-Headers"]
+	path = external/OpenCL-Headers
+	url = https://github.com/KhronosGroup/OpenCL-Headers.git
 [submodule "external/imgui"]
 	path = external/imgui
 	url = https://github.com/ocornut/imgui.git

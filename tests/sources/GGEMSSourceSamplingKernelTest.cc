@@ -129,13 +129,13 @@ protected:
 
   [[nodiscard]] static auto BuildOptions(Random const &random) -> std::string {
     std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
-    return std::format("-cl-std=CL2.0 -I{} {}", kernel_root.generic_string(),
+    return std::format("-I{} {}", kernel_root.generic_string(),
                        random.GetKernelBuildDefinition());
   }
 
   [[nodiscard]] static auto FixedBuildOptions() -> std::string {
     std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
-    return std::format("-cl-std=CL2.0 -I{} -DGGEMS_RANDOM_ENGINE=3",
+    return std::format("-I{} -DGGEMS_RANDOM_ENGINE=3",
                        kernel_root.generic_string());
   }
 

@@ -23,7 +23,8 @@
  * \file
  * \brief Host/OpenCL ABI tests for GGEMS random-engine states.
  *
- * Validates host and OpenCL state sizes, member offsets, alignments, and array strides for JKISS, PCG32, and Philox.
+ * Validates host and OpenCL state sizes, member offsets, alignments, and array
+ * strides for JKISS, PCG32, and Philox.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -101,7 +102,7 @@ TEST(GGEMSRandomStateKernelTest,
   std::filesystem::path const kernel_test_root = kernel_root / "tests";
 
   std::string const build_options =
-      std::format("-cl-std=CL2.0 -I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
   std::size_t tested_device_count{0U};
 

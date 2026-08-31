@@ -52,8 +52,13 @@ constexpr bool k_enable_validation_layers{false};
 constexpr std::array<char const *, 1> k_validation_layers{
     "VK_LAYER_KHRONOS_validation"};
 
+#if defined(__APPLE__)
+constexpr std::array<char const *, 2> k_required_device_extensions{
+    vk::KHRSwapchainExtensionName, "VK_KHR_portability_subset"};
+#else
 constexpr std::array<char const *, 1> k_required_device_extensions{
     vk::KHRSwapchainExtensionName};
+#endif
 
 constexpr float k_imgui_min_ui_scale{1.0F};
 constexpr float k_imgui_max_ui_scale{2.5F};
@@ -140,6 +145,21 @@ auto AppendRejectionReason(std::string &diagnostic, std::string_view reason)
   candidates.emplace_back("C:/Windows/Fonts/CascadiaMono.ttf");
   candidates.emplace_back("C:/Windows/Fonts/CascadiaCode.ttf");
   candidates.emplace_back("C:/Windows/Fonts/consola.ttf");
+
+#if defined(__APPLE__)
+  if (char const *home = std::getenv("HOME"); home != nullptr) {
+    std::filesystem::path const user_fonts =
+        std::filesystem::path{home} / "Library/Fonts";
+
+    candidates.emplace_back(user_fonts / "JetBrainsMono-Regular.ttf");
+    candidates.emplace_back(user_fonts / "JetBrainsMonoNerdFont-Regular.ttf");
+    candidates.emplace_back(user_fonts /
+                            "JetBrainsMonoNerdFontMono-Regular.ttf");
+  }
+
+  candidates.emplace_back("/System/Library/Fonts/Menlo.ttc");
+  candidates.emplace_back("/System/Library/Fonts/Monaco.dfont");
+#endif
 
   if (char const *home = std::getenv("HOME"); home != nullptr) {
     std::filesystem::path const user_fonts =
@@ -329,7 +349,7 @@ auto GGEMSVulkanContext::CreateInstance() -> void {
     if (!(is_available)) {
       throw ggems::core::GGEMSRecoverable(
           std::format("Required Vulkan validation layer '{}' is unavailable.",
-                    required_layer));
+                      required_layer));
     }
   }
 
@@ -349,11 +369,18 @@ auto GGEMSVulkanContext::CreateInstance() -> void {
     if (!(is_available)) {
       throw ggems::core::GGEMSRecoverable(
           std::format("Required Vulkan instance extension '{}' is unavailable.",
-                    required_extension));
+                      required_extension));
     }
   }
 
+  vk::InstanceCreateFlags instance_flags{};
+
+#if defined(__APPLE__)
+  instance_flags |= vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;
+#endif
+
   vk::InstanceCreateInfo create_info{
+      .flags = instance_flags,
       .pApplicationInfo = &application_info,
       .enabledLayerCount = static_cast<std::uint32_t>(required_layers.size()),
       .ppEnabledLayerNames = required_layers.data(),
@@ -376,11 +403,15 @@ auto GGEMSVulkanContext::GetRequiredInstanceExtensions()
   if (!(glfw_extensions != nullptr && extension_count > 0)) {
     throw ggems::core::GGEMSRecoverable(
         "GLFW did not report the Vulkan instance extensions required by "
-      "GGEMS GuiMode.");
+        "GGEMS GuiMode.");
   }
 
   std::vector<char const *> extensions{glfw_extensions,
                                        glfw_extensions + extension_count};
+
+#if defined(__APPLE__)
+  extensions.push_back(vk::KHRPortabilityEnumerationExtensionName);
+#endif
 
   if (k_enable_validation_layers) {
     extensions.push_back(vk::EXTDebugUtilsExtensionName);
@@ -422,8 +453,9 @@ auto GGEMSVulkanContext::CreateSurface(GLFWwindow *window) -> void {
       glfwCreateWindowSurface(*instance_, window, nullptr, &raw_surface);
 
   if (!(result == VK_SUCCESS)) {
-    throw ggems::core::GGEMSRecoverable(std::format("Unable to create the Vulkan GLFW surface: {}.",
-                  vk::to_string(static_cast<vk::Result>(result))));
+    throw ggems::core::GGEMSRecoverable(
+        std::format("Unable to create the Vulkan GLFW surface: {}.",
+                    vk::to_string(static_cast<vk::Result>(result))));
   }
 
   surface_ = vk::raii::SurfaceKHR{instance_, raw_surface};
@@ -718,9 +750,9 @@ auto GGEMSVulkanContext::SelectPhysicalDevice(
 
   if (!(selected_candidate != candidates.end())) {
     throw ggems::core::GGEMSInternal(std::format(
-          "Selected Vulkan enumeration index {} is absent from the collected "
-          "candidate set.",
-          selection->enumeration_index));
+        "Selected Vulkan enumeration index {} is absent from the collected "
+        "candidate set.",
+        selection->enumeration_index));
   }
 
   vk::PhysicalDevice selected_handle = selected_candidate->physical_device;
@@ -731,11 +763,10 @@ auto GGEMSVulkanContext::SelectPhysicalDevice(
           -> bool { return *physical_device == selected_handle; });
 
   if (!(selected_physical_device != physical_devices.end())) {
-    throw ggems::core::GGEMSInternal(
-        std::format("Selected Vulkan candidate [{}] '{}' no longer refers to an "
-                  "enumerated physical device.",
-                  selected_candidate->enumeration_index,
-                  selected_candidate->name));
+    throw ggems::core::GGEMSInternal(std::format(
+        "Selected Vulkan candidate [{}] '{}' no longer refers to an "
+        "enumerated physical device.",
+        selected_candidate->enumeration_index, selected_candidate->name));
   }
 
   physical_device_ = *selected_physical_device;
@@ -799,7 +830,7 @@ auto GGEMSVulkanContext::CreateLogicalDevice() -> void {
   if (!(queue_family_indices_.IsComplete())) {
     throw ggems::core::GGEMSInternal(
         "Vulkan queue families must be identified before creating the logical "
-      "device.");
+        "device.");
   }
 
   float queue_priority{1.0F};
@@ -859,7 +890,8 @@ auto GGEMSVulkanContext::ChooseSwapchainSurfaceFormat(
     std::vector<vk::SurfaceFormatKHR> const &surface_formats)
     -> vk::SurfaceFormatKHR {
   if (surface_formats.empty()) {
-    throw ggems::core::GGEMSInternal("No Vulkan surface format is available for GuiMode.");
+    throw ggems::core::GGEMSInternal(
+        "No Vulkan surface format is available for GuiMode.");
   }
 
   for (vk::SurfaceFormatKHR const &surface_format : surface_formats) {
@@ -878,7 +910,8 @@ auto GGEMSVulkanContext::ChooseSwapchainPresentMode(
     std::vector<vk::PresentModeKHR> const &present_modes)
     -> vk::PresentModeKHR {
   if (present_modes.empty()) {
-    throw ggems::core::GGEMSInternal("No Vulkan present mode is available for GuiMode.");
+    throw ggems::core::GGEMSInternal(
+        "No Vulkan present mode is available for GuiMode.");
   }
 
   for (vk::PresentModeKHR const &present_mode : present_modes) {
@@ -930,7 +963,7 @@ auto GGEMSVulkanContext::CreateSwapchain(GLFWwindow *window) -> void {
   if (!(*physical_device_ != nullptr && *device_ != nullptr)) {
     throw ggems::core::GGEMSInternal(
         "A Vulkan physical device and logical device are required before"
-      "creating the GuiMode swapchain.");
+        "creating the GuiMode swapchain.");
   }
 
   SwapchainSupportDetails support_details =
@@ -1000,14 +1033,14 @@ auto GGEMSVulkanContext::CreateSwapchain(GLFWwindow *window) -> void {
 
 auto GGEMSVulkanContext::CreateSwapchainImageViews() -> void {
   if (!(*swapchain_ != nullptr)) {
-    throw ggems::core::GGEMSInternal(
-        "A Vulkan swapchain is required before creating swapchain image views.");
+    throw ggems::core::GGEMSInternal("A Vulkan swapchain is required before "
+                                     "creating swapchain image views.");
   }
 
   if (!(swapchain_image_format_ != vk::Format::eUndefined)) {
     throw ggems::core::GGEMSInternal(
         "A valid Vulkan swapchain image format is required before creating "
-      "swapchain image views.");
+        "swapchain image views.");
   }
 
   swapchain_image_views_.clear();
@@ -1043,7 +1076,7 @@ auto GGEMSVulkanContext::CreateCommandPool() -> void {
   if (!(queue_family_indices_.graphics.has_value())) {
     throw ggems::core::GGEMSInternal(
         "A Vulkan graphics queue family is required before creating the"
-      "GuiMode command pool.");
+        "GuiMode command pool.");
   }
 
   vk::CommandPoolCreateInfo create_info{
@@ -1063,13 +1096,13 @@ auto GGEMSVulkanContext::AllocateCommandBuffers() -> void {
   if (!(*command_pool_ != nullptr)) {
     throw ggems::core::GGEMSInternal(
         "A Vulkan command pool is required before allocating GuiMode command "
-      "buffers.");
+        "buffers.");
   }
 
   if (swapchain_images_.empty()) {
     throw ggems::core::GGEMSInternal(
         "Swapchain_images_are_required_before_allocating GuiMode command "
-      "buffers.");
+        "buffers.");
   }
 
   vk::CommandBufferAllocateInfo allocate_info{
@@ -1115,7 +1148,7 @@ auto GGEMSVulkanContext::CreateSwapchainSyncObjects() -> void {
   if (swapchain_images_.empty()) {
     throw ggems::core::GGEMSInternal(
         "Swapchain images are required before creating Vulkan swapchain "
-      "synchronization objects.");
+        "synchronization objects.");
   }
 
   vk::SemaphoreCreateInfo const semaphore_create_info{};
@@ -1253,23 +1286,25 @@ auto GGEMSVulkanContext::RenderFrame(GLFWwindow *window,
     if (!(wait_result == vk::Result::eSuccess)) {
       throw ggems::core::GGEMSRecoverable(
           std::format("Unable to wait for the Vulkan in-flight fence: {}.",
-                    vk::to_string(wait_result)));
+                      vk::to_string(wait_result)));
     }
 
     auto [result, image_index] = swapchain_.acquireNextImage(
         std::numeric_limits<std::uint64_t>::max(),
         *image_available_semaphores_[current_frame_], nullptr);
 
-    if (!(result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR)) {
+    if (!(result == vk::Result::eSuccess ||
+          result == vk::Result::eSuboptimalKHR)) {
       throw ggems::core::GGEMSRecoverable(
           std::format("Unable to acquire a Vulkan swapchain image: {}.",
-                    vk::to_string(result)));
+                      vk::to_string(result)));
     }
 
     if (!(image_index < swapchain_image_in_flight_fences_.size())) {
-      throw ggems::core::GGEMSInternal("The acquired Vulkan swapchain image index exceeds "
-                         "the number of tracked "
-                         "in-flight image fences.");
+      throw ggems::core::GGEMSInternal(
+          "The acquired Vulkan swapchain image index exceeds "
+          "the number of tracked "
+          "in-flight image fences.");
     }
 
     vk::Fence const image_in_flight_fence =
@@ -1282,8 +1317,8 @@ auto GGEMSVulkanContext::RenderFrame(GLFWwindow *window,
 
       if (!(wait_image_result == vk::Result::eSuccess)) {
         throw ggems::core::GGEMSRecoverable(std::format(
-              "Unable to wait for the Vulkan swapchain image fence: {}.",
-              vk::to_string(wait_image_result)));
+            "Unable to wait for the Vulkan swapchain image fence: {}.",
+            vk::to_string(wait_image_result)));
       }
     }
 
@@ -1335,7 +1370,7 @@ auto GGEMSVulkanContext::RenderFrame(GLFWwindow *window,
       if (!(present_result == vk::Result::eSuccess)) {
         throw ggems::core::GGEMSRecoverable(
             std::format("Unable to present a Vulkan swapchain image: {}.",
-                      vk::to_string(present_result)));
+                        vk::to_string(present_result)));
       }
     }
 
@@ -1368,8 +1403,9 @@ auto GGEMSVulkanContext::CleanupSwapchain() -> void {
 
 auto GGEMSVulkanContext::RecreateSwapchain(GLFWwindow *window) -> void {
   if (!(window != nullptr)) {
-    throw ggems::core::GGEMSInternal("A valid GLFW window is required before recreating the "
-                       "Vulkan swapchain.");
+    throw ggems::core::GGEMSInternal(
+        "A valid GLFW window is required before recreating the "
+        "Vulkan swapchain.");
   }
 
   int width{0};
@@ -1613,8 +1649,9 @@ auto GGEMSVulkanContext::ApplyPendingParticleTraceSegments() -> void {
 
 auto GGEMSVulkanContext::BuildImGuiFrame() -> void {
   if (!(imgui_initialized_)) {
-    throw ggems::core::GGEMSInternal("Dear ImGui must be initialized before building a GUI "
-                       "frame.");
+    throw ggems::core::GGEMSInternal(
+        "Dear ImGui must be initialized before building a GUI "
+        "frame.");
   }
 
   ApplyPendingSourceRunSnapshot();

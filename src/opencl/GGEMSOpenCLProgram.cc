@@ -59,6 +59,12 @@ namespace ggems::ocl {
 
 namespace {
 
+#if defined(__APPLE__)
+constexpr std::string_view k_opencl_standard_option{"-cl-std=CL1.2"};
+#else
+constexpr std::string_view k_opencl_standard_option{"-cl-std=CL2.0"};
+#endif
+
 // =============================================================================
 // =============================================================================
 
@@ -117,7 +123,8 @@ auto GetCacheRootDirectory() -> std::filesystem::path {
  * \brief Extracts a quoted local include from one source line.
  *
  * \param[in] line Source line to inspect.
- * \return Included relative path when a quoted include is found, otherwise an empty optional.
+ * \return Included relative path when a quoted include is found, otherwise an
+ * empty optional.
  */
 auto ExtractQuotedInclude(std::string_view line) -> std::optional<std::string> {
   auto include_pos = line.find("#include");
@@ -199,7 +206,8 @@ auto ExtractIncludeRoots(std::string_view build_options)
 // =============================================================================
 
 /*!
- * \brief Normalizes a filesystem path, preferring weak canonicalization when available.
+ * \brief Normalizes a filesystem path, preferring weak canonicalization when
+ * available.
  *
  * \param[in] path Path to normalize.
  * \return Normalized filesystem path.
@@ -219,12 +227,14 @@ auto NormalizePath(std::filesystem::path const &path) -> std::filesystem::path {
 // =============================================================================
 
 /*!
- * \brief Resolves a quoted include against the including directory and configured roots.
+ * \brief Resolves a quoted include against the including directory and
+ * configured roots.
  *
  * \param[in] include_name Quoted include path.
  * \param[in] including_dir Directory of the including source file.
  * \param[in] include_roots Configured include-search roots.
- * \return Resolved normalized source path, or an empty optional if no candidate exists.
+ * \return Resolved normalized source path, or an empty optional if no candidate
+ * exists.
  */
 auto ResolveLocalInclude(
     std::string const &include_name, std::filesystem::path const &including_dir,
@@ -283,6 +293,7 @@ GGEMSOpenCLProgram::GGEMSOpenCLProgram(GGEMSOpenCLContext const &context,
 auto GGEMSOpenCLProgram::BuildOptions() const -> std::vector<std::string> {
   std::vector<std::string> opts;
 
+  opts.emplace_back(k_opencl_standard_option);
   opts.emplace_back("-I\"" + kernel_root_.generic_string() + "\"");
 
 #ifdef GGEMS_DEBUG_MODE

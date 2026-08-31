@@ -3,7 +3,7 @@ from pathlib import Path
 import ggems
 
 
-PRIMARY_COUNT = 1_024
+PRIMARY_COUNT = 1_048
 WORKER_COUNT = 4_194_304
 CONE_HALF_ANGLE_DEG = 15.0
 SOURCE_DISTANCE_CM = 100.0
@@ -16,12 +16,11 @@ def main() -> None:
     if not SPECTRUM_PATH.is_file():
         raise FileNotFoundError(f"GGEMS source spectrum was not found: {SPECTRUM_PATH}")
 
-    ggems.logging.set_output_mode("term")
-    ggems.logging.start_output_runtime()
+    ggems.start()
 
     try:
         opencl = ggems.opencl.GGEMSOpenCL()
-        opencl.select_devices(["1"])
+        opencl.select_devices(["0"])
         opencl.initialize()
 
         random = ggems.rndm.GGEMSRandom().set_engine("philox").set_seed(120_015)
@@ -63,7 +62,7 @@ def main() -> None:
         simulation.initialize()
         simulation.run()
     finally:
-        ggems.logging.stop_output_runtime()
+        ggems.stop()
 
 
 if __name__ == "__main__":

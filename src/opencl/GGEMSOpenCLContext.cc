@@ -50,6 +50,25 @@ using namespace ggems::units;
 
 namespace ggems::ocl {
 
+#if defined(__APPLE__)
+namespace {
+
+/*!
+ * \brief Effective SVM modes supplied by the GGEMS Apple compatibility layer.
+ */
+constexpr SVMSupport k_apple_effective_svm_support{.coarse_grain_buffer = true,
+                                                   .fine_grain_buffer = false,
+                                                   .fine_grain_system = false,
+                                                   .atomics = false};
+
+static_assert(k_apple_effective_svm_support.coarse_grain_buffer);
+static_assert(!k_apple_effective_svm_support.fine_grain_buffer);
+static_assert(!k_apple_effective_svm_support.fine_grain_system);
+static_assert(!k_apple_effective_svm_support.atomics);
+
+} // namespace
+#endif
+
 // =============================================================================
 // =============================================================================
 
@@ -96,8 +115,14 @@ auto GGEMSOpenCLContext::CreateCommandQueue() -> void {
   cl_command_queue_properties props{0};
   props |= CL_QUEUE_PROFILING_ENABLE;
 
+#if defined(__APPLE__)
+  auto *const native_queue = clCreateCommandQueue(
+      context_(), device_.GetDeviceNative()(), props, &error);
+  command_queue_ = cl::CommandQueue{native_queue, false};
+#else
   command_queue_ =
       cl::CommandQueue(context_, device_.GetDeviceNative(), props, &error);
+#endif
 
   CheckCLError(error, "Failed to create command queue.");
 
@@ -108,6 +133,22 @@ auto GGEMSOpenCLContext::CreateCommandQueue() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLContext::InitSVMSupport() -> void {
+#if defined(__APPLE__)
+  svm_support_ = k_apple_effective_svm_support;
+
+  GGEMS_INFOEX(
+      "OpenCL", 2,
+      "Native SVM capabilities for '{}': unavailable (Apple OpenCL does not "
+      "support CL_DEVICE_SVM_CAPABILITIES; GGEMS did not issue the query).",
+      device_.GetName());
+
+  GGEMS_INFOEX("OpenCL", 2,
+               "Effective GGEMS Apple SVM compatibility for '{}': coarse={}, "
+               "fine-buffer={}, fine-system={}, atomics={}, auto={}.",
+               device_.GetName(), svm_support_.coarse_grain_buffer,
+               svm_support_.fine_grain_buffer, svm_support_.fine_grain_system,
+               svm_support_.atomics, ToString(svm_support_.DefaultKind()));
+#else
   auto const capabilities = device_.GetSVMCapabilities();
 
   if ((capabilities & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER) != 0) {
@@ -130,6 +171,7 @@ auto GGEMSOpenCLContext::InitSVMSupport() -> void {
       device_.GetName(), svm_support_.coarse_grain_buffer,
       svm_support_.fine_grain_buffer, svm_support_.fine_grain_system,
       svm_support_.atomics, ToString(svm_support_.DefaultKind()));
+#endif
 }
 
 // -----------------------------------------------------------------------------

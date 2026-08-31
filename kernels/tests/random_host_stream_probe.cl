@@ -23,7 +23,8 @@
  * \file
  * \brief OpenCL probe for host/kernel random-stream agreement.
  *
- * Produces raw and uniform samples from paired random states for direct comparison with the host stream implementation.
+ * Produces raw and uniform samples from paired random states for direct
+ * comparison with the host stream implementation.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -34,7 +35,7 @@
 /// \cond
 
 __kernel void
-random_host_stream_probe(__global GGEMSRandomState *raw_states,
+random_host_stream_probe(__global GGEMSRandomState *restrict raw_states,
                          __global GGEMSRandomState *uniform_states,
                          __global uint *raw_values,
                          __global float *uniform_values, uint sample_count) {

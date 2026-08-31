@@ -85,9 +85,8 @@ TEST_F(GGEMSRadioactiveTimeRandomProgressionTest,
     ggems::ocl::WriteSVMFromHost(raw_buffer, std::span{raw_values});
     ggems::ocl::WriteSVMFromHost(time_buffer, sampled_time);
 
-    std::string const options =
-        std::format("-cl-std=CL2.0 -I{} {}", root.generic_string(),
-                    random.GetKernelBuildDefinition());
+    std::string const options = std::format("-I{} {}", root.generic_string(),
+                                            random.GetKernelBuildDefinition());
     auto const &program = opencl.GetOrCreateProgram(
         context, root / "tests", "radioactive_time_random_probe", options);
     ggems::ocl::GGEMSOpenCLKernel kernel{

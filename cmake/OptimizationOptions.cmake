@@ -9,8 +9,17 @@ option(GGEMS_ENABLE_NATIVE
 # Effective optimization policy
 set(GGEMS_LTO_ENABLED "${GGEMS_ENABLE_LTO}")
 
+if(APPLE AND GGEMS_LTO_ENABLED)
+  message(
+    WARNING
+      "GGEMS LTO is currently disabled on Apple because it causes incorrect "
+      "runtime behavior.")
+  set(GGEMS_LTO_ENABLED OFF)
+endif()
+
 # Link-time optimization support
 set(GGEMS_LTO_SUPPORTED OFF)
+
 if(GGEMS_LTO_ENABLED)
   include(CheckIPOSupported)
 

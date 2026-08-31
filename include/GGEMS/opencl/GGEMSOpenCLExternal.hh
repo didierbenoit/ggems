@@ -33,7 +33,11 @@
 
 #define CL_HPP_TARGET_OPENCL_VERSION 300
 #define CL_TARGET_OPENCL_VERSION 300
+#if defined(__APPLE__)
+#define CL_HPP_MINIMUM_OPENCL_VERSION 120
+#else
 #define CL_HPP_MINIMUM_OPENCL_VERSION 200
+#endif
 
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -47,7 +51,11 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
+#if defined(GGEMS_OPENCL_C_API_ONLY)
+#include <CL/opencl.h>
+#else
 #include <CL/opencl.hpp>
+#endif
 
 #if defined(__clang__)
 #pragma clang diagnostic pop

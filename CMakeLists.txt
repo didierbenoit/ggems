@@ -14,6 +14,10 @@ project(
   LANGUAGES CXX
   DESCRIPTION "GPU Geant4-based Monte Carlo Simulations")
 
+if(APPLE)
+  enable_language(OBJCXX)
+endif()
+
 # ------------------------------------------------------------------------------
 # General CMake configuration
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -24,6 +28,12 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(APPLE)
+  set(CMAKE_OBJCXX_STANDARD 23)
+  set(CMAKE_OBJCXX_STANDARD_REQUIRED ON)
+  set(CMAKE_OBJCXX_EXTENSIONS OFF)
+endif()
 
 # ------------------------------------------------------------------------------
 # Supported build configurations
@@ -71,9 +81,32 @@ option(GGEMS_WITH_IMGUI "Enable ImGui / Vulkan interface" OFF)
 
 # ------------------------------------------------------------------------------
 # Dependencies
-find_package(OpenCL REQUIRED)
 set(OPENCL_HPP_INCLUDE_DIR
     "${PROJECT_SOURCE_DIR}/external/OpenCL-CLHPP/include")
+
+if(APPLE)
+  set(OPENCL_HEADERS_INCLUDE_DIR
+      "${PROJECT_SOURCE_DIR}/external/OpenCL-Headers")
+  set(OPENCL_APPLE_COMPAT_INCLUDE_DIR
+      "${PROJECT_SOURCE_DIR}/cmake/apple_opencl_compat")
+
+  if(NOT EXISTS "${OPENCL_HEADERS_INCLUDE_DIR}/CL/opencl.h")
+    message(
+      FATAL_ERROR
+        "The pinned external/OpenCL-Headers dependency is unavailable. "
+        "Initialize it before configuring GGEMS on Apple.")
+  endif()
+
+  find_library(OpenCL_LIBRARY OpenCL REQUIRED)
+  add_library(OpenCL::OpenCL INTERFACE IMPORTED)
+  set_target_properties(
+    OpenCL::OpenCL
+    PROPERTIES INTERFACE_LINK_LIBRARIES "${OpenCL_LIBRARY}"
+               INTERFACE_INCLUDE_DIRECTORIES "${OPENCL_HEADERS_INCLUDE_DIR}")
+else()
+  find_package(OpenCL REQUIRED)
+endif()
+
 message(STATUS "OpenCL library located at: ${OpenCL_LIBRARY}")
 message(STATUS "OpenCL include path: ${OPENCL_HPP_INCLUDE_DIR}")
 
@@ -83,6 +116,11 @@ find_package(pybind11 REQUIRED CONFIG)
 # Core library
 file(GLOB_RECURSE GGEMS_CORE_SOURCES CONFIGURE_DEPENDS
      "${PROJECT_SOURCE_DIR}/src/*.cc")
+
+if(APPLE)
+  list(APPEND GGEMS_CORE_SOURCES
+       "${PROJECT_SOURCE_DIR}/src/opencl/GGEMSOpenCLAppleSVM.mm")
+endif()
 
 # GuiMode is built separately as ggems_gui when requested.
 list(FILTER GGEMS_CORE_SOURCES EXCLUDE REGEX "/ui/")
@@ -95,6 +133,12 @@ target_compile_features(ggems_core PUBLIC cxx_std_23)
 
 target_include_directories(ggems_core PUBLIC ${PROJECT_SOURCE_DIR}/include
                                              ${OPENCL_HPP_INCLUDE_DIR})
+
+if(APPLE)
+  target_include_directories(
+    ggems_core BEFORE PUBLIC ${OPENCL_APPLE_COMPAT_INCLUDE_DIR}
+                             ${OPENCL_HEADERS_INCLUDE_DIR})
+endif()
 
 target_compile_definitions(
   ggems_core

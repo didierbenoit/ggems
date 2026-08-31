@@ -262,8 +262,7 @@ TEST_F(GGEMSRadioactiveTimeSamplingKernelTest,
   ggems::ocl::WriteSVMFromHost(result_buffer, std::span{results});
 
   std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
-  std::string const options =
-      std::format("-cl-std=CL2.0 -I{}", root.generic_string());
+  std::string const options = std::format("-I{}", root.generic_string());
   auto const &program = opencl.GetOrCreateProgram(
       context, root / "tests", "radioactive_time_sampling_probe", options);
   ggems::ocl::GGEMSOpenCLKernel kernel{

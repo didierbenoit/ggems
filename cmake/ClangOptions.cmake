@@ -7,18 +7,18 @@ if(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
   target_compile_options(
     ggems_compiler_options
     INTERFACE
-      "$<$<COMPILE_LANGUAGE:CXX>:-Wall>"
-      "$<$<COMPILE_LANGUAGE:CXX>:-Wextra>"
-      "$<$<COMPILE_LANGUAGE:CXX>:-Wpedantic>"
-      "$<$<COMPILE_LANGUAGE:CXX>:-Wshadow>"
-      "$<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor>"
-      "$<$<COMPILE_LANGUAGE:CXX>:-Wconversion>"
-      "$<$<COMPILE_LANGUAGE:CXX>:-Wsign-conversion>"
-      "$<$<COMPILE_LANGUAGE:CXX>:-Wfloat-conversion>"
-      "$<$<COMPILE_LANGUAGE:CXX>:-finput-charset=UTF-8>"
-      "$<$<COMPILE_LANGUAGE:CXX>:-fexec-charset=UTF-8>"
-      "$<$<COMPILE_LANGUAGE:CXX>:-fcolor-diagnostics>"
-      "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CONFIG:Debug>>:-fno-omit-frame-pointer>"
+      "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-Wall>"
+      "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-Wextra>"
+      "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-Wpedantic>"
+      "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-Wshadow>"
+      "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-Wnon-virtual-dtor>"
+      "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-Wconversion>"
+      "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-Wsign-conversion>"
+      "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-Wfloat-conversion>"
+      "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-finput-charset=UTF-8>"
+      "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-fexec-charset=UTF-8>"
+      "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-fcolor-diagnostics>"
+      "$<$<AND:$<COMPILE_LANGUAGE:CXX,OBJCXX>,$<CONFIG:Debug>>:-fno-omit-frame-pointer>"
   )
 
   # ELF and Mach-O visibility. Windows symbol visibility is managed through its
@@ -26,13 +26,14 @@ if(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
   if(NOT WIN32)
     target_compile_options(
       ggems_compiler_options
-      INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-fvisibility=hidden>"
-                "$<$<COMPILE_LANGUAGE:CXX>:-fvisibility-inlines-hidden>")
+      INTERFACE "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-fvisibility=hidden>"
+                "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-fvisibility-inlines-hidden>")
   endif()
 
   if(GGEMS_WARNINGS_AS_ERRORS)
-    target_compile_options(ggems_compiler_options
-                           INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-Werror>")
+    target_compile_options(
+      ggems_compiler_options
+      INTERFACE "$<$<COMPILE_LANGUAGE:CXX,OBJCXX>:-Werror>")
   endif()
 
   # MSVC-like frontend Used by: - clang-cl on Windows
