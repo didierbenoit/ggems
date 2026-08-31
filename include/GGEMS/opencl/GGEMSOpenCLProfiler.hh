@@ -43,36 +43,13 @@ namespace ggems::ocl {
  * \brief Stores timestamp and duration information for one OpenCL kernel event.
  */
 struct GGEMSOpenCLKernelTiming {
-  /*!
-   * \brief OpenCL event queued timestamp.
-   */
-  ggems::units::Time time_queued{0U};
-  /*!
-   * \brief OpenCL event submission timestamp.
-   */
-  ggems::units::Time time_submit{0U};
-  /*!
-   * \brief OpenCL event execution-start timestamp.
-   */
-  ggems::units::Time time_start{0U};
-  /*!
-   * \brief OpenCL event execution-end timestamp.
-   */
-  ggems::units::Time time_end{0U};
-
-  /*!
-   * \brief Duration from queueing to completion.
-   */
-  ggems::units::Duration command_time{0U};
-  /*!
-   * \brief Kernel execution duration from start to end.
-   */
-  ggems::units::Duration kernel_time{0U};
-
-  /*!
-   * \brief Whether kernel timing information is valid.
-   */
-  bool valid{false};
+  ggems::units::Time time_queued{0U};      /*!< Event queued timestamp. */
+  ggems::units::Time time_submit{0U};      /*!< Event submission timestamp. */
+  ggems::units::Time time_start{0U};       /*!< Event execution-start timestamp. */
+  ggems::units::Time time_end{0U};         /*!< Event execution-end timestamp. */
+  ggems::units::Duration command_time{0U}; /*!< Queue-to-completion duration. */
+  ggems::units::Duration kernel_time{0U};  /*!< Kernel execution duration. */
+  bool valid{false};                       /*!< Whether kernel timing is valid. */
 };
 
 /*!
@@ -84,6 +61,7 @@ public:
    * \brief Constructs an empty profiler.
    */
   GGEMSOpenCLProfiler() = default;
+
   /*!
    * \brief Destroys the profiler.
    */
@@ -93,20 +71,19 @@ public:
    * \brief Disables copy construction.
    */
   GGEMSOpenCLProfiler(GGEMSOpenCLProfiler const &) = delete;
+
   /*!
    * \brief Disables move construction.
    */
   GGEMSOpenCLProfiler(GGEMSOpenCLProfiler &&) = delete;
+
   /*!
    * \brief Disables copy assignment.
-   *
-   * \return Reference to this profiler.
    */
   auto operator=(GGEMSOpenCLProfiler const &) -> GGEMSOpenCLProfiler & = delete;
+
   /*!
    * \brief Disables move assignment.
-   *
-   * \return Reference to this profiler.
    */
   auto operator=(GGEMSOpenCLProfiler &&) -> GGEMSOpenCLProfiler & = delete;
 
@@ -114,10 +91,12 @@ public:
    * \brief Clears all host and kernel timing state.
    */
   auto Reset() noexcept -> void;
+
   /*!
    * \brief Starts host elapsed-time measurement.
    */
   auto Start() noexcept -> void;
+
   /*!
    * \brief Stops host elapsed-time measurement.
    */
@@ -161,12 +140,14 @@ public:
    * \return Measured host elapsed duration.
    */
   [[nodiscard]] auto GetElapsedTime() const noexcept -> ggems::units::Duration;
+
   /*!
    * \brief Returns the OpenCL kernel execution duration.
    *
    * \return Measured kernel execution duration.
    */
   [[nodiscard]] auto GetKernelTime() const noexcept -> ggems::units::Duration;
+
   /*!
    * \brief Returns the OpenCL command lifetime from queueing to completion.
    *
@@ -180,6 +161,7 @@ public:
    * \return Host elapsed time in seconds.
    */
   [[nodiscard]] auto GetElapsedSeconds() const noexcept -> double;
+
   /*!
    * \brief Returns the measured kernel time in seconds.
    *
@@ -228,28 +210,11 @@ private:
    */
   using Clock = std::chrono::steady_clock;
 
-  /*!
-   * \brief Host timing start point.
-   */
-  Clock::time_point start_;
-  /*!
-   * \brief Host timing stop point.
-   */
-  Clock::time_point stop_;
-
-  /*!
-   * \brief Whether host timing is currently active.
-   */
-  bool running_{false};
-  /*!
-   * \brief Whether a completed host measurement is available.
-   */
-  bool has_measurement_{false};
-
-  /*!
-   * \brief Most recently recorded kernel-event timing.
-   */
-  GGEMSOpenCLKernelTiming kernel_timing_{};
+  Clock::time_point start_;                   /*!< Host timing start point. */
+  Clock::time_point stop_;                    /*!< Host timing stop point. */
+  bool running_{false};                       /*!< Whether host timing is active. */
+  bool has_measurement_{false};               /*!< Whether a host measurement is available. */
+  GGEMSOpenCLKernelTiming kernel_timing_{};   /*!< Last kernel-event timing. */
 };
 
 } // namespace ggems::ocl

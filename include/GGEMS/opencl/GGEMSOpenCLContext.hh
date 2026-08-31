@@ -51,26 +51,10 @@ using units::operator""_B;
  * implementation while the native device capability remains unavailable.
  */
 struct SVMSupport {
-  /*!
-   * \brief Whether coarse-grain buffer SVM is supported.
-   */
-  bool coarse_grain_buffer{false};
-
-  /*!
-   * \brief Whether fine-grain buffer SVM is supported.
-   */
-  bool fine_grain_buffer{false};
-
-  /*!
-   * \brief Whether fine-grain system SVM is supported.
-   */
-
-  bool fine_grain_system{false};
-
-  /*!
-   * \brief Whether SVM atomic operations are supported.
-   */
-  bool atomics{false};
+  bool coarse_grain_buffer{false}; /*!< Whether coarse-grain buffer SVM is supported. */
+  bool fine_grain_buffer{false};   /*!< Whether fine-grain buffer SVM is supported. */
+  bool fine_grain_system{false};   /*!< Whether fine-grain system SVM is supported. */
+  bool atomics{false};             /*!< Whether SVM atomic operations are supported. */
 
   /*!
    * \brief Returns the default supported SVM memory kind.
@@ -137,26 +121,11 @@ struct SVMSupport {
  * contexts, or other processes.
  */
 struct VRAMUsage {
-  /*!
-   * \brief Total device global memory capacity.
-   */
-  units::Bytes total{0_B};
-  /*!
-   * \brief Currently allocated SVM memory.
-   */
-  units::Bytes allocated{0_B};
-  /*!
-   * \brief Remaining device global-memory budget after GGEMS allocations.
-   */
-  units::Bytes available{0_B};
-  /*!
-   * \brief Peak GGEMS SVM allocation observed.
-   */
-  units::Bytes peak{0_B};
-  /*!
-   * \brief Number of currently owned SVM allocations.
-   */
-  std::size_t allocation_count{0};
+  units::Bytes total{0_B};         /*!< Total device global memory. */
+  units::Bytes allocated{0_B};     /*!< Allocated GGEMS SVM memory. */
+  units::Bytes available{0_B};     /*!< Remaining tracked device-memory budget. */
+  units::Bytes peak{0_B};          /*!< Peak GGEMS SVM allocation. */
+  std::size_t allocation_count{0}; /*!< Current SVM allocation count. */
 
   /*!
    * \brief Returns the percentage of total VRAM currently allocated by GGEMS.
@@ -196,20 +165,19 @@ public:
    * \brief Disables copy construction.
    */
   GGEMSOpenCLContext(GGEMSOpenCLContext const &) = delete;
+
   /*!
    * \brief Move-constructs an OpenCL context wrapper.
    */
   GGEMSOpenCLContext(GGEMSOpenCLContext &&) noexcept = default;
+
   /*!
    * \brief Disables copy assignment.
-   *
-   * \return Reference to this context wrapper.
    */
   auto operator=(GGEMSOpenCLContext const &) -> GGEMSOpenCLContext & = delete;
+
   /*!
    * \brief Disables move assignment.
-   *
-   * \return Reference to this context wrapper.
    */
   auto operator=(GGEMSOpenCLContext &&) -> GGEMSOpenCLContext & = delete;
 
@@ -478,29 +446,10 @@ private:
    */
   auto UpdateVRAMUsage() noexcept -> void;
 
-  /*!
-   * \brief GGEMS device associated with this context.
-   */
-  GGEMSOpenCLDevice const &device_;
-
-  /*!
-   * \brief Native OpenCL context.
-   */
-  cl::Context context_;
-
-  /*!
-   * \brief Native OpenCL command queue.
-   */
-  cl::CommandQueue command_queue_;
-
-  /*!
-   * \brief Effective GGEMS SVM support.
-   */
-  SVMSupport svm_support_{};
-
-  /*!
-   * \brief GGEMS SVM allocation accounting.
-   */
-  VRAMUsage vram_usage_{};
+  GGEMSOpenCLDevice const &device_; /*!< Device associated with this context. */
+  cl::Context context_;             /*!< Native OpenCL context. */
+  cl::CommandQueue command_queue_;  /*!< Native OpenCL command queue. */
+  SVMSupport svm_support_{};        /*!< Effective GGEMS SVM support. */
+  VRAMUsage vram_usage_{};          /*!< GGEMS SVM allocation accounting. */
 };
 } // namespace ggems::ocl

@@ -71,20 +71,19 @@ public:
    * \brief Disables copy construction.
    */
   GGEMSOpenCLProgram(GGEMSOpenCLProgram const &) = delete;
+
   /*!
    * \brief Disables copy assignment.
-   *
-   * \return Reference to this program wrapper.
    */
   auto operator=(GGEMSOpenCLProgram const &) -> GGEMSOpenCLProgram & = delete;
+
   /*!
    * \brief Disables move construction.
    */
   GGEMSOpenCLProgram(GGEMSOpenCLProgram &&) noexcept = delete;
+
   /*!
    * \brief Disables move assignment.
-   *
-   * \return Reference to this program wrapper.
    */
   auto operator=(GGEMSOpenCLProgram &&) noexcept
       -> GGEMSOpenCLProgram & = delete;
@@ -273,49 +272,16 @@ private:
       std::unordered_set<std::string> &visited_sources,
       std::string &fingerprint_text) const -> void;
 
-  /*!
-   * \brief Retained native OpenCL context.
-   */
-  cl::Context context_;
-  /*!
-   * \brief Retained native OpenCL device.
-   */
-  cl::Device device_;
-  /*!
-   * \brief Kernel source root directory.
-   */
-  std::filesystem::path kernel_root_;
-  /*!
-   * \brief Kernel source name.
-   */
-  std::string kernel_name_;
-  /*!
-   * \brief Resolved kernel source path.
-   */
-  std::string source_path_;
-  /*!
-   * \brief User-supplied OpenCL build options.
-   */
-  std::string user_build_options_;
-  /*!
-   * \brief Effective merged OpenCL build options.
-   */
-  std::string build_options_;
-  /*!
-   * \brief Most recent OpenCL program build log.
-   */
-  std::string build_log_;
-  /*!
-   * \brief Native OpenCL program.
-   */
-  cl::Program program_;
-  /*!
-   * \brief Fingerprint hash of source text and recursively included local sources.
-   */
-  std::uint64_t source_hash_;
-  /*!
-   * \brief Fingerprint hash of the complete program build identity.
-   */
-  std::uint64_t global_hash_;
+  cl::Context context_;                     /*!< Retained native OpenCL context. */
+  cl::Device device_;                       /*!< Retained native OpenCL device. */
+  std::filesystem::path kernel_root_;        /*!< Kernel source root directory. */
+  std::string kernel_name_;                 /*!< Kernel source name. */
+  std::string source_path_;                 /*!< Resolved kernel source path. */
+  std::string user_build_options_;          /*!< User-supplied build options. */
+  std::string build_options_;               /*!< Effective OpenCL build options. */
+  std::string build_log_;                   /*!< Most recent program build log. */
+  cl::Program program_;                     /*!< Native OpenCL program. */
+  std::uint64_t source_hash_;               /*!< Source and local-include fingerprint. */
+  std::uint64_t global_hash_;               /*!< Complete build-identity fingerprint. */
 };
 } // namespace ggems::ocl

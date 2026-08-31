@@ -49,6 +49,7 @@
 #include "GGEMS/opencl/GGEMSOpenCLInfoTraits.hh"
 
 namespace ggems::ocl {
+
 /*!
  * \brief Returns the symbolic name of an OpenCL error code.
  *

@@ -40,6 +40,7 @@
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 
 namespace ggems::ocl {
+
 /*!
  * \brief Wraps one native OpenCL device and exposes its capability information.
  */
@@ -69,16 +70,14 @@ public:
    * \brief Disables copy construction.
    */
   GGEMSOpenCLDevice(GGEMSOpenCLDevice const &) = delete;
+
   /*!
    * \brief Disables copy assignment.
-   *
-   * \return Reference to this device wrapper.
    */
   auto operator=(GGEMSOpenCLDevice const &) -> GGEMSOpenCLDevice & = delete;
+
   /*!
    * \brief Disables move assignment.
-   *
-   * \return Reference to this device wrapper.
    */
   auto operator=(GGEMSOpenCLDevice &&) noexcept -> GGEMSOpenCLDevice & = delete;
 
@@ -1001,21 +1000,9 @@ private:
    */
   auto PrintExtensionsAndMisc() const -> void;
 
-  /*!
-   * \brief Native OpenCL device.
-   */
-  cl::Device device_;
-  /*!
-   * \brief GGEMS platform index.
-   */
-  std::size_t platform_index_;
-  /*!
-   * \brief GGEMS device index within the platform.
-   */
-  std::size_t device_index_;
-  /*!
-   * \brief Parsed OpenCL device extension names.
-   */
-  std::unordered_set<std::string> extensions_;
+  cl::Device device_;                              /*!< Native OpenCL device. */
+  std::size_t platform_index_;                    /*!< GGEMS platform index. */
+  std::size_t device_index_;                      /*!< Device index within the platform. */
+  std::unordered_set<std::string> extensions_;    /*!< Parsed OpenCL extensions. */
 };
 } // namespace ggems::ocl

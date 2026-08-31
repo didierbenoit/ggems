@@ -69,20 +69,19 @@ public:
    * \brief Disables copy construction.
    */
   GGEMSOpenCLPlatform(GGEMSOpenCLPlatform const &) = delete;
+
   /*!
    * \brief Disables copy assignment.
-   *
-   * \return Reference to this platform wrapper.
    */
   auto operator=(GGEMSOpenCLPlatform const &) -> GGEMSOpenCLPlatform & = delete;
+
   /*!
    * \brief Move-constructs an OpenCL platform wrapper.
    */
   GGEMSOpenCLPlatform(GGEMSOpenCLPlatform &&) noexcept = default;
+
   /*!
    * \brief Disables move assignment.
-   *
-   * \return Reference to this platform wrapper.
    */
   auto operator=(GGEMSOpenCLPlatform &&) -> GGEMSOpenCLPlatform & = delete;
 
@@ -182,26 +181,19 @@ private:
    * \brief Prints platform identity information.
    */
   auto PrintIdentity() const -> void;
+
   /*!
    * \brief Prints platform extension information.
    */
   auto PrintExtension() const -> void;
+
   /*!
    * \brief Discovers CPU and GPU OpenCL devices on this platform.
    */
   auto DiscoverDevices() -> void;
 
-  /*!
-   * \brief Native OpenCL platform.
-   */
-  cl::Platform platform_;
-  /*!
-   * \brief GGEMS platform index.
-   */
-  std::size_t platform_index_;
-  /*!
-   * \brief Devices discovered on the platform.
-   */
-  std::vector<GGEMSOpenCLDevice> devices_;
+  cl::Platform platform_;                    /*!< Native OpenCL platform. */
+  std::size_t platform_index_;              /*!< GGEMS platform index. */
+  std::vector<GGEMSOpenCLDevice> devices_;  /*!< Devices discovered on the platform. */
 };
 } // namespace ggems::ocl

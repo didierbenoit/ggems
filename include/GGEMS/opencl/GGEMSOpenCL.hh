@@ -65,24 +65,25 @@ public:
    * \param[in] openCL Source runtime manager.
    */
   GGEMSOpenCL(GGEMSOpenCL const &openCL) = delete;
+
   /*!
    * \brief Disables move construction of the OpenCL runtime manager.
    *
    * \param[in] openCL Source runtime manager.
    */
   GGEMSOpenCL(GGEMSOpenCL &&openCL) = delete;
+
   /*!
    * \brief Disables copy assignment of the OpenCL runtime manager.
    *
    * \param[in] openCL Source runtime manager.
-   * \return Reference to this runtime manager.
    */
   auto operator=(GGEMSOpenCL const &openCL) -> GGEMSOpenCL & = delete;
+
   /*!
    * \brief Disables move assignment of the OpenCL runtime manager.
    *
    * \param[in] openCL Source runtime manager.
-   * \return Reference to this runtime manager.
    */
   auto operator=(GGEMSOpenCL &&openCL) -> GGEMSOpenCL & = delete;
 
@@ -166,6 +167,7 @@ private:
    * \brief Constructs and initializes the process-lifetime OpenCL runtime manager.
    */
   GGEMSOpenCL();
+
   /*!
    * \brief Discovers available OpenCL platforms and devices.
    */
@@ -195,26 +197,11 @@ private:
    */
   static auto DisableNvidiaDriverKernelCache() -> void;
 
-  /*!
-   * \brief Discovered OpenCL platforms.
-   */
-  std::vector<GGEMSOpenCLPlatform> platforms_;
-  /*!
-   * \brief References to the currently selected OpenCL devices.
-   */
+  std::vector<GGEMSOpenCLPlatform> platforms_; /*!< Discovered OpenCL platforms. */
   std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>
-      selected_devices_;
-  /*!
-   * \brief OpenCL contexts created for the selected devices.
-   */
-  std::vector<GGEMSOpenCLContext> contexts_;
-  /*!
-   * \brief In-memory cache of built OpenCL programs.
-   */
-  std::vector<std::unique_ptr<GGEMSOpenCLProgram>> program_cache_;
-  /*!
-   * \brief Mutex protecting the in-memory program cache.
-   */
-  std::mutex program_cache_mutex_;
+      selected_devices_; /*!< Selected OpenCL devices. */
+  std::vector<GGEMSOpenCLContext> contexts_; /*!< Contexts for selected devices. */
+  std::vector<std::unique_ptr<GGEMSOpenCLProgram>> program_cache_; /*!< Cached OpenCL programs. */
+  std::mutex program_cache_mutex_; /*!< Mutex protecting the program cache. */
 };
 } // namespace ggems::ocl

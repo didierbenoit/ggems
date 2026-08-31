@@ -43,7 +43,7 @@
 namespace ggems::ocl {
 
 /*!
- * \brief Wraps a native OpenCL kernel together with its GGEMS context and identity.
+ * \brief Wraps a native OpenCL kernel with its GGEMS context and identity.
  */
 class GGEMSOpenCLKernel {
 public:
@@ -66,20 +66,19 @@ public:
    * \brief Disables copy construction.
    */
   GGEMSOpenCLKernel(GGEMSOpenCLKernel const &) = delete;
+
   /*!
    * \brief Disables copy assignment.
-   *
-   * \return Reference to this kernel wrapper.
    */
   auto operator=(GGEMSOpenCLKernel const &) -> GGEMSOpenCLKernel & = delete;
+
   /*!
    * \brief Disables move construction.
    */
   GGEMSOpenCLKernel(GGEMSOpenCLKernel &&) noexcept = delete;
+
   /*!
    * \brief Disables move assignment.
-   *
-   * \return Reference to this kernel wrapper.
    */
   auto operator=(GGEMSOpenCLKernel &&) noexcept -> GGEMSOpenCLKernel & = delete;
 
@@ -150,30 +149,35 @@ public:
    * \return Kernel function name.
    */
   [[nodiscard]] auto GetFunctionName() const -> std::string;
+
   /*!
    * \brief Returns the number of kernel arguments.
    *
    * \return Kernel argument count.
    */
   [[nodiscard]] auto GetNumArgs() const -> cl_uint;
+
   /*!
    * \brief Returns the OpenCL kernel reference count.
    *
    * \return Kernel reference count.
    */
   [[nodiscard]] auto GetReferenceCount() const -> cl_uint;
+
   /*!
    * \brief Returns the native OpenCL context associated with the kernel.
    *
    * \return Associated native OpenCL context.
    */
   [[nodiscard]] auto GetContextNative() const -> cl::Context;
+
   /*!
    * \brief Returns the native OpenCL program associated with the kernel.
    *
    * \return Associated native OpenCL program.
    */
   [[nodiscard]] auto GetProgramNative() const -> cl::Program;
+
   /*!
    * \brief Returns the OpenCL kernel attribute string.
    *
@@ -182,17 +186,19 @@ public:
   [[nodiscard]] auto GetAttributes() const -> std::string;
 
   /*!
-   * \brief Returns the maximum work-group size supported for this kernel and device.
+   * \brief Returns the maximum work-group size for this kernel and device.
    *
    * \return Maximum work-group size.
    */
   [[nodiscard]] auto GetWorkGroupSize() const -> std::size_t;
+
   /*!
    * \brief Returns the preferred work-group-size multiple.
    *
    * \return Preferred work-group-size multiple.
    */
   [[nodiscard]] auto GetPreferredWorkGroupSizeMultiple() const -> std::size_t;
+
   /*!
    * \brief Returns the compile-time work-group size.
    *
@@ -200,12 +206,14 @@ public:
    */
   [[nodiscard]] auto GetCompileWorkGroupSize() const
       -> std::array<std::size_t, 3>;
+
   /*!
    * \brief Returns the kernel local-memory usage.
    *
    * \return Local-memory usage in bytes.
    */
   [[nodiscard]] auto GetLocalMemSize() const -> cl_ulong;
+
   /*!
    * \brief Returns the kernel private-memory usage.
    *
@@ -220,6 +228,7 @@ public:
    * \return Kernel argument address-space qualifier.
    */
   [[nodiscard]] auto GetArgAddressQualifier(cl_uint index) const -> std::string;
+
   /*!
    * \brief Returns the access qualifier for a kernel argument.
    *
@@ -227,6 +236,7 @@ public:
    * \return Kernel argument access qualifier.
    */
   [[nodiscard]] auto GetArgAccessQualifier(cl_uint index) const -> std::string;
+
   /*!
    * \brief Returns the type name for a kernel argument.
    *
@@ -234,13 +244,15 @@ public:
    * \return Kernel argument type name.
    */
   [[nodiscard]] auto GetArgTypeName(cl_uint index) const -> std::string;
+
   /*!
    * \brief Returns the type qualifier for a kernel argument.
-   *
+
    * \param[in] index Kernel argument index.
    * \return Kernel argument type qualifier.
    */
   [[nodiscard]] auto GetArgTypeQualifier(cl_uint index) const -> std::string;
+
   /*!
    * \brief Returns the name for a kernel argument.
    *
@@ -250,17 +262,9 @@ public:
   [[nodiscard]] auto GetArgName(cl_uint index) const -> std::string;
 
 private:
-  /*!
-   * \brief GGEMS OpenCL context used for execution.
-   */
-  GGEMSOpenCLContext const &context_;
-  /*!
-   * \brief Native OpenCL kernel.
-   */
-  cl::Kernel kernel_;
-  /*!
-   * \brief Kernel function name.
-   */
-  std::string kernel_name_;
+  GGEMSOpenCLContext const &context_; /*!< OpenCL context used for execution. */
+  cl::Kernel kernel_;                 /*!< Native OpenCL kernel. */
+  std::string kernel_name_;           /*!< Kernel function name. */
 };
+
 } // namespace ggems::ocl

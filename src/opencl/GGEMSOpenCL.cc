@@ -169,26 +169,11 @@ TokenizeDeviceSelection(std::vector<std::string> const &filters)
  * \brief Stores the normalized criteria produced by OpenCL device-selector parsing.
  */
 struct DeviceSelectionCriteria {
-  /*!
-   * \brief Explicit device indices in selector order.
-   */
-  std::vector<std::size_t> numeric_indices;
-  /*!
-   * \brief Requested CPU/GPU device type, or zero when unspecified.
-   */
-  cl_device_type requested_type{0};
-  /*!
-   * \brief Requested normalized vendor name, or an empty view when unspecified.
-   */
-  std::string_view requested_vendor;
-  /*!
-   * \brief Whether any numeric selector was parsed.
-   */
-  bool has_numeric_selector{false};
-  /*!
-   * \brief Whether any textual selector was parsed.
-   */
-  bool has_textual_selector{false};
+  std::vector<std::size_t> numeric_indices; /*!< Explicit device indices in selector order. */
+  cl_device_type requested_type{0};         /*!< Requested CPU/GPU type, or zero. */
+  std::string_view requested_vendor;        /*!< Requested normalized vendor name. */
+  bool has_numeric_selector{false};         /*!< Whether a numeric selector was parsed. */
+  bool has_textual_selector{false};         /*!< Whether a textual selector was parsed. */
 };
 
 // =============================================================================

@@ -1,7 +1,37 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Implements the Apple OpenCL SVM compatibility layer.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #define GGEMS_OPENCL_C_API_ONLY
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #undef GGEMS_OPENCL_C_API_ONLY
 
+/// \cond
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
@@ -16,26 +46,51 @@
 #include <vector>
 
 #include <unistd.h>
+/// \endcond
 
 namespace {
 
+/*!
+ * \brief Maximum alignment accepted by the Apple SVM compatibility layer.
+ */
 constexpr std::size_t max_requested_alignment = 16U * sizeof(cl_long);
+
+/*!
+ * \brief OpenCL full-profile long16 size used to verify the alignment limit.
+ */
 constexpr std::size_t full_profile_long16_size = 128U;
 
 static_assert(max_requested_alignment == full_profile_long16_size);
 
+/*!
+ * \brief Stores one public SVM pointer and its backing mapped pointer.
+ */
 struct Mapping {
-  void *public_pointer{};
-  void *actual_pointer{};
+  void *public_pointer{}; /*!< Public pointer supplied to the SVM API. */
+  void *actual_pointer{}; /*!< Pointer returned by the backing buffer map. */
 };
 
+/*!
+ * \brief Owns resources and mapping state for one emulated SVM allocation.
+ */
 struct AllocationState {
+  /*!
+   * \brief Constructs an allocation state.
+   *
+   * \param[in] allocation_context OpenCL context owning the allocation.
+   * \param[in] allocation_buffer Backing OpenCL buffer.
+   * \param[in] allocation_pointer Public host pointer.
+   * \param[in] allocation_size Allocation size in bytes.
+   */
   AllocationState(cl_context allocation_context, cl_mem allocation_buffer,
                   void *allocation_pointer,
                   std::size_t allocation_size) noexcept
       : context(allocation_context), buffer(allocation_buffer),
         base_pointer(allocation_pointer), size(allocation_size) {}
 
+  /*!
+   * \brief Releases the backing OpenCL buffer when ownership remains enabled.
+   */
   ~AllocationState() {
     if (release_buffer.load(std::memory_order_relaxed) && buffer != nullptr) {
       // clSVMFree has no error return. If this release fails, retaining the
@@ -45,11 +100,31 @@ struct AllocationState {
     }
   }
 
+  /*!
+   * \brief Disables copy construction.
+   */
   AllocationState(AllocationState const &) = delete;
+
+  /*!
+   * \brief Disables copy assignment.
+   */
   auto operator=(AllocationState const &) -> AllocationState & = delete;
+
+  /*!
+   * \brief Disables move construction.
+   */
   AllocationState(AllocationState &&) = delete;
+
+  /*!
+   * \brief Disables move assignment.
+   */
   auto operator=(AllocationState &&) -> AllocationState & = delete;
 
+  /*!
+   * \brief Marks the allocation unusable and optionally preserves its resources.
+   *
+   * \param[in] preserve_resources Whether destruction must retain the backing buffer.
+   */
   auto Poison(bool preserve_resources) noexcept -> void {
     usable.store(false, std::memory_order_release);
 
@@ -58,86 +133,188 @@ struct AllocationState {
     }
   }
 
-  cl_context context{};
-  cl_mem buffer{};
-  void *base_pointer{};
-  std::size_t size{};
-  std::mutex mappings_mutex;
-  std::list<Mapping> mappings;
-  std::atomic<bool> usable{true};
-  std::atomic<bool> release_buffer{true};
+  cl_context context{}; /*!< OpenCL context owning the allocation. */
+  cl_mem buffer{};     /*!< Backing OpenCL buffer. */
+  void *base_pointer{}; /*!< Public host pointer exposed as the SVM allocation. */
+  std::size_t size{};   /*!< Allocation size in bytes. */
+  std::mutex mappings_mutex;              /*!< Mutex protecting mapping records. */
+  std::list<Mapping> mappings;              /*!< Active mapped regions. */
+  std::atomic<bool> usable{true};            /*!< Whether the allocation may be used. */
+  std::atomic<bool> release_buffer{true};    /*!< Whether destruction releases the buffer. */
 };
 
+/*!
+ * \brief Stores an allocation match and byte offset for a pointer lookup.
+ */
 struct AllocationMatch {
-  std::shared_ptr<AllocationState> allocation;
-  std::size_t offset{};
+  std::shared_ptr<AllocationState> allocation; /*!< Matched allocation state. */
+  std::size_t offset{};                        /*!< Byte offset from the allocation base. */
 };
 
+/*!
+ * \brief Owns one temporary OpenCL event.
+ */
 class EventHandle {
 public:
+  /*!
+   * \brief Constructs an empty event handle.
+   */
   EventHandle() = default;
 
+  /*!
+   * \brief Releases the owned OpenCL event.
+   */
   ~EventHandle() {
     if (event_ != nullptr) {
       (void)clReleaseEvent(event_);
     }
   }
 
+  /*!
+   * \brief Disables copy construction.
+   */
   EventHandle(EventHandle const &) = delete;
+
+  /*!
+   * \brief Disables copy assignment.
+   */
   auto operator=(EventHandle const &) -> EventHandle & = delete;
+
+  /*!
+   * \brief Disables move construction.
+   */
   EventHandle(EventHandle &&) = delete;
+
+  /*!
+   * \brief Disables move assignment.
+   */
   auto operator=(EventHandle &&) -> EventHandle & = delete;
 
+  /*!
+   * \brief Returns the address used to receive an OpenCL event.
+   *
+   * \return Address of the owned event handle.
+   */
   [[nodiscard]] auto Address() noexcept -> cl_event * { return &event_; }
 
+  /*!
+   * \brief Returns the owned OpenCL event.
+   *
+   * \return Owned OpenCL event, or null when empty.
+   */
   [[nodiscard]] auto Get() const noexcept -> cl_event { return event_; }
 
+  /*!
+   * \brief Releases ownership of the OpenCL event.
+   *
+   * \return Previously owned OpenCL event.
+   */
   [[nodiscard]] auto ReleaseOwnership() noexcept -> cl_event {
     return std::exchange(event_, nullptr);
   }
 
 private:
-  cl_event event_{};
+  cl_event event_{}; /*!< Owned OpenCL event. */
 };
 
+/*!
+ * \brief Owns one temporary OpenCL memory object.
+ */
 class MemObjectHandle {
 public:
+  /*!
+   * \brief Constructs a memory-object handle.
+   *
+   * \param[in] memory_object OpenCL memory object to own.
+   */
   explicit MemObjectHandle(cl_mem memory_object) noexcept
       : memory_object_(memory_object) {}
 
+  /*!
+   * \brief Releases the owned OpenCL memory object.
+   */
   ~MemObjectHandle() {
     if (memory_object_ != nullptr) {
       (void)clReleaseMemObject(memory_object_);
     }
   }
 
+  /*!
+   * \brief Disables copy construction.
+   */
   MemObjectHandle(MemObjectHandle const &) = delete;
+
+  /*!
+   * \brief Disables copy assignment.
+   */
   auto operator=(MemObjectHandle const &) -> MemObjectHandle & = delete;
+
+  /*!
+   * \brief Disables move construction.
+   */
   MemObjectHandle(MemObjectHandle &&) = delete;
+
+  /*!
+   * \brief Disables move assignment.
+   */
   auto operator=(MemObjectHandle &&) -> MemObjectHandle & = delete;
 
+  /*!
+   * \brief Returns the owned OpenCL memory object.
+   *
+   * \return Owned OpenCL memory object.
+   */
   [[nodiscard]] auto Get() const noexcept -> cl_mem { return memory_object_; }
 
+  /*!
+   * \brief Releases ownership of the OpenCL memory object.
+   *
+   * \return Previously owned OpenCL memory object.
+   */
   [[nodiscard]] auto ReleaseOwnership() noexcept -> cl_mem {
     return std::exchange(memory_object_, nullptr);
   }
 
 private:
-  cl_mem memory_object_{};
+  cl_mem memory_object_{}; /*!< Owned OpenCL memory object. */
 };
 
+/*!
+ * \brief Protects the process-wide emulated SVM allocation registry.
+ */
 std::mutex allocations_mutex;
+
+/*!
+ * \brief Maps public allocation base addresses to their allocation state.
+ */
 std::map<std::uintptr_t, std::shared_ptr<AllocationState>> allocations;
 
+/*!
+ * \brief Releases host storage when the backing OpenCL buffer is destroyed.
+ *
+ * \param[in] memory OpenCL memory object being destroyed.
+ * \param[in] user_data Host pointer registered for destruction.
+ */
 void CL_CALLBACK FreeHostPointer(cl_mem memory, void *user_data) noexcept {
   (void)memory;
   std::free(user_data);
 }
 
+/*!
+ * \brief Checks whether a size is a nonzero power of two.
+ *
+ * \param[in] value Value to test.
+ * \return True when the value is a power of two.
+ */
 [[nodiscard]] auto IsPowerOfTwo(std::size_t value) noexcept -> bool {
   return value != 0 && (value & (value - 1U)) == 0;
 }
 
+/*!
+ * \brief Returns a usable system page size or the compatibility fallback.
+ *
+ * \return Effective page size in bytes.
+ */
 [[nodiscard]] auto GetPageSize() noexcept -> std::size_t {
   auto const fallback_alignment =
       std::max(max_requested_alignment, alignof(std::max_align_t));
@@ -156,6 +333,12 @@ void CL_CALLBACK FreeHostPointer(cl_mem memory, void *user_data) noexcept {
   return page_size;
 }
 
+/*!
+ * \brief Computes the host allocation alignment for an SVM request.
+ *
+ * \param[in] requested_alignment Requested OpenCL SVM alignment.
+ * \return Effective host alignment in bytes.
+ */
 [[nodiscard]] auto GetEffectiveAlignment(cl_uint requested_alignment) noexcept
     -> std::size_t {
   auto const svm_alignment =
@@ -165,6 +348,13 @@ void CL_CALLBACK FreeHostPointer(cl_mem memory, void *user_data) noexcept {
   return std::max(GetPageSize(), svm_alignment);
 }
 
+/*!
+ * \brief Translates supported SVM flags to backing-buffer flags.
+ *
+ * \param[in] svm_flags Requested SVM allocation flags.
+ * \param[out] buffer_flags Backing OpenCL buffer flags.
+ * \return True when the requested flag combination is supported.
+ */
 [[nodiscard]] auto GetBufferFlags(cl_svm_mem_flags svm_flags,
                                   cl_mem_flags &buffer_flags) noexcept -> bool {
   constexpr cl_svm_mem_flags supported_flags =
@@ -194,6 +384,13 @@ void CL_CALLBACK FreeHostPointer(cl_mem memory, void *user_data) noexcept {
   return true;
 }
 
+/*!
+ * \brief Finds the smallest maximum allocation size across a context's devices.
+ *
+ * \param[in] context OpenCL context to inspect.
+ * \param[out] max_allocation_size Smallest device allocation limit in bytes.
+ * \return True when the context and device limits were queried successfully.
+ */
 [[nodiscard]] auto
 GetContextMaxAllocationSize(cl_context context,
                             std::size_t &max_allocation_size) noexcept -> bool {
@@ -242,6 +439,12 @@ GetContextMaxAllocationSize(cl_context context,
   }
 }
 
+/*!
+ * \brief Releases an unregistered backing buffer and host pointer when safe.
+ *
+ * \param[in] buffer Backing OpenCL buffer, or null.
+ * \param[in] host_pointer Host allocation backing the buffer.
+ */
 auto ReleaseUnregisteredBufferAndHostPointer(cl_mem buffer,
                                              void *host_pointer) noexcept
     -> void {
@@ -257,6 +460,14 @@ auto ReleaseUnregisteredBufferAndHostPointer(cl_mem buffer,
   // pointer while the CL_MEM_USE_HOST_PTR object may survive would be unsafe.
 }
 
+/*!
+ * \brief Validates an OpenCL event wait-list and output-event combination.
+ *
+ * \param[in] num_events_in_wait_list Number of wait-list events.
+ * \param[in] event_wait_list Input event wait list.
+ * \param[out] event Optional output event location.
+ * \return OpenCL status code.
+ */
 [[nodiscard]] auto ValidateEventArguments(cl_uint num_events_in_wait_list,
                                           cl_event const *event_wait_list,
                                           cl_event *event) noexcept -> cl_int {
@@ -296,6 +507,13 @@ auto ReleaseUnregisteredBufferAndHostPointer(cl_mem buffer,
   return CL_SUCCESS;
 }
 
+/*!
+ * \brief Finds the emulated SVM allocation containing a pointer range.
+ *
+ * \param[in] pointer First byte of the requested range.
+ * \param[in] range_size Requested range size in bytes.
+ * \return Matching allocation and offset, or an empty match.
+ */
 [[nodiscard]] auto FindAllocationContaining(void *pointer,
                                             std::size_t range_size)
     -> AllocationMatch {
@@ -326,6 +544,12 @@ auto ReleaseUnregisteredBufferAndHostPointer(cl_mem buffer,
   return match;
 }
 
+/*!
+ * \brief Maps backing-buffer kernel-argument errors to public SVM errors.
+ *
+ * \param[in] error Backing OpenCL error code.
+ * \return Public SVM-compatible error code.
+ */
 [[nodiscard]] auto NormalizeKernelArgumentError(cl_int error) noexcept
     -> cl_int {
   switch (error) {
@@ -341,6 +565,12 @@ auto ReleaseUnregisteredBufferAndHostPointer(cl_mem buffer,
   }
 }
 
+/*!
+ * \brief Maps backing-buffer map errors to public SVM-map errors.
+ *
+ * \param[in] error Backing OpenCL error code.
+ * \return Public SVM-compatible error code.
+ */
 [[nodiscard]] auto NormalizeMapError(cl_int error) noexcept -> cl_int {
   switch (error) {
   case CL_SUCCESS:
@@ -363,6 +593,12 @@ auto ReleaseUnregisteredBufferAndHostPointer(cl_mem buffer,
   }
 }
 
+/*!
+ * \brief Maps backing-buffer unmap errors to public SVM-unmap errors.
+ *
+ * \param[in] error Backing OpenCL error code.
+ * \return Public SVM-compatible error code.
+ */
 [[nodiscard]] auto NormalizeUnmapError(cl_int error) noexcept -> cl_int {
   switch (error) {
   case CL_SUCCESS:
@@ -384,6 +620,15 @@ auto ReleaseUnregisteredBufferAndHostPointer(cl_mem buffer,
   }
 }
 
+/*!
+ * \brief Enqueues a best-effort unmap after a rejected map result.
+ *
+ * \param[in] command_queue OpenCL command queue.
+ * \param[in] buffer Backing OpenCL buffer.
+ * \param[in] mapped_pointer Pointer returned by the backing map.
+ * \param[in] map_event Event produced by the backing map.
+ * \return True when cleanup was enqueued successfully.
+ */
 [[nodiscard]] auto EnqueueMapCleanup(cl_command_queue command_queue,
                                      cl_mem buffer, void *mapped_pointer,
                                      cl_event map_event) noexcept -> bool {
@@ -399,6 +644,16 @@ auto ReleaseUnregisteredBufferAndHostPointer(cl_mem buffer,
   return error == CL_SUCCESS;
 }
 
+/*!
+ * \brief Poisons an allocation and attempts cleanup after a map invariant fails.
+ *
+ * \param[in] allocation Allocation whose mapping was rejected.
+ * \param[in] command_queue OpenCL command queue.
+ * \param[in] mapped_pointer Pointer returned by the backing map.
+ * \param[in] map_event Event produced by the backing map.
+ * \param[in] public_error Error returned through the public SVM API.
+ * \return The supplied public error code.
+ */
 [[nodiscard]] auto
 RejectMappedRegion(std::shared_ptr<AllocationState> const &allocation,
                    cl_command_queue command_queue, void *mapped_pointer,
@@ -415,6 +670,15 @@ RejectMappedRegion(std::shared_ptr<AllocationState> const &allocation,
   return public_error;
 }
 
+/*!
+ * \brief Allocates host-backed storage and a buffer for emulated SVM.
+ *
+ * \param[in] context OpenCL context owning the allocation.
+ * \param[in] flags Requested SVM allocation flags.
+ * \param[in] size Allocation size in bytes.
+ * \param[in] alignment Requested alignment in bytes.
+ * \return Public SVM pointer, or null when allocation fails.
+ */
 [[nodiscard]] auto SVMAllocImpl(cl_context context, cl_svm_mem_flags flags,
                                 std::size_t size, cl_uint alignment) -> void * {
   if (context == nullptr || size == 0) {
@@ -485,6 +749,12 @@ RejectMappedRegion(std::shared_ptr<AllocationState> const &allocation,
   return pointer;
 }
 
+/*!
+ * \brief Releases an emulated SVM allocation registered for a context.
+ *
+ * \param[in] context OpenCL context owning the allocation.
+ * \param[in] svm_pointer Allocation base pointer to release.
+ */
 auto SVMFreeImpl(cl_context context, void *svm_pointer) -> void {
   if (svm_pointer == nullptr) {
     return;
@@ -510,6 +780,19 @@ auto SVMFreeImpl(cl_context context, void *svm_pointer) -> void {
   allocation.reset();
 }
 
+/*!
+ * \brief Maps an emulated SVM range through its backing OpenCL buffer.
+ *
+ * \param[in] command_queue OpenCL command queue.
+ * \param[in] blocking_map Whether the map must complete before returning.
+ * \param[in] map_flags OpenCL mapping flags.
+ * \param[in,out] svm_pointer Public SVM pointer to map.
+ * \param[in] size Mapped byte count.
+ * \param[in] num_events_in_wait_list Number of wait-list events.
+ * \param[in] event_wait_list Input event wait list.
+ * \param[out] event Optional output event.
+ * \return OpenCL status code.
+ */
 [[nodiscard]] auto
 EnqueueSVMMapImpl(cl_command_queue command_queue, cl_bool blocking_map,
                   cl_map_flags map_flags, void *svm_pointer, std::size_t size,
@@ -584,6 +867,16 @@ EnqueueSVMMapImpl(cl_command_queue command_queue, cl_bool blocking_map,
   return CL_SUCCESS;
 }
 
+/*!
+ * \brief Unmaps an emulated SVM range through its backing OpenCL buffer.
+ *
+ * \param[in] command_queue OpenCL command queue.
+ * \param[in,out] svm_pointer Public SVM pointer to unmap.
+ * \param[in] num_events_in_wait_list Number of wait-list events.
+ * \param[in] event_wait_list Input event wait list.
+ * \param[out] event Optional output event.
+ * \return OpenCL status code.
+ */
 [[nodiscard]] auto EnqueueSVMUnmapImpl(cl_command_queue command_queue,
                                        void *svm_pointer,
                                        cl_uint num_events_in_wait_list,
@@ -653,6 +946,14 @@ EnqueueSVMMapImpl(cl_command_queue command_queue, cl_bool blocking_map,
   return CL_SUCCESS;
 }
 
+/*!
+ * \brief Binds an emulated SVM allocation as a kernel buffer argument.
+ *
+ * \param[in] kernel OpenCL kernel.
+ * \param[in] argument_index Kernel argument index.
+ * \param[in] argument_value Public SVM allocation pointer.
+ * \return OpenCL status code.
+ */
 [[nodiscard]] auto SetKernelArgSVMPointerImpl(cl_kernel kernel,
                                               cl_uint argument_index,
                                               void const *argument_value)
@@ -687,6 +988,15 @@ EnqueueSVMMapImpl(cl_command_queue command_queue, cl_bool blocking_map,
 
 extern "C" {
 
+/*!
+ * \brief Implements the Apple compatibility entry point for clSVMAlloc.
+ *
+ * \param[in] context OpenCL context owning the allocation.
+ * \param[in] flags Requested SVM allocation flags.
+ * \param[in] size Allocation size in bytes.
+ * \param[in] alignment Requested alignment in bytes.
+ * \return Public SVM pointer, or null when allocation fails.
+ */
 CL_API_ENTRY void *CL_API_CALL clSVMAlloc(cl_context context,
                                           cl_svm_mem_flags flags, size_t size,
                                           cl_uint alignment) {
@@ -697,6 +1007,12 @@ CL_API_ENTRY void *CL_API_CALL clSVMAlloc(cl_context context,
   }
 }
 
+/*!
+ * \brief Implements the Apple compatibility entry point for clSVMFree.
+ *
+ * \param[in] context OpenCL context owning the allocation.
+ * \param[in] svm_pointer Allocation base pointer to release.
+ */
 CL_API_ENTRY void CL_API_CALL clSVMFree(cl_context context, void *svm_pointer) {
   try {
     SVMFreeImpl(context, svm_pointer);
@@ -707,6 +1023,19 @@ CL_API_ENTRY void CL_API_CALL clSVMFree(cl_context context, void *svm_pointer) {
   }
 }
 
+/*!
+ * \brief Implements the Apple compatibility entry point for clEnqueueSVMMap.
+ *
+ * \param[in] command_queue OpenCL command queue.
+ * \param[in] blocking_map Whether the map must complete before returning.
+ * \param[in] flags OpenCL mapping flags.
+ * \param[in,out] svm_ptr Public SVM pointer to map.
+ * \param[in] size Mapped byte count.
+ * \param[in] num_events_in_wait_list Number of wait-list events.
+ * \param[in] event_wait_list Input event wait list.
+ * \param[out] event Optional output event.
+ * \return OpenCL status code.
+ */
 CL_API_ENTRY cl_int CL_API_CALL clEnqueueSVMMap(
     cl_command_queue command_queue, cl_bool blocking_map, cl_map_flags flags,
     void *svm_ptr, size_t size, cl_uint num_events_in_wait_list,
@@ -730,6 +1059,16 @@ CL_API_ENTRY cl_int CL_API_CALL clEnqueueSVMMap(
   }
 }
 
+/*!
+ * \brief Implements the Apple compatibility entry point for clEnqueueSVMUnmap.
+ *
+ * \param[in] command_queue OpenCL command queue.
+ * \param[in,out] svm_ptr Public SVM pointer to unmap.
+ * \param[in] num_events_in_wait_list Number of wait-list events.
+ * \param[in] event_wait_list Input event wait list.
+ * \param[out] event Optional output event.
+ * \return OpenCL status code.
+ */
 CL_API_ENTRY cl_int CL_API_CALL
 clEnqueueSVMUnmap(cl_command_queue command_queue, void *svm_ptr,
                   cl_uint num_events_in_wait_list,
@@ -753,6 +1092,14 @@ clEnqueueSVMUnmap(cl_command_queue command_queue, void *svm_ptr,
   }
 }
 
+/*!
+ * \brief Implements the Apple compatibility entry point for clSetKernelArgSVMPointer.
+ *
+ * \param[in] kernel OpenCL kernel.
+ * \param[in] arg_index Kernel argument index.
+ * \param[in] arg_value Public SVM allocation pointer.
+ * \return OpenCL status code.
+ */
 CL_API_ENTRY cl_int CL_API_CALL clSetKernelArgSVMPointer(
     cl_kernel kernel, cl_uint arg_index, void const *arg_value) {
   try {
