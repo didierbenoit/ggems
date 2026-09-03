@@ -429,8 +429,7 @@ auto ComputeChunkPlan(Options const &options, GGEMSRandom const &random,
         "OpenCL device reports a zero maximum allocation size.");
   }
 
-  std::uint64_t const state_size =
-      static_cast<std::uint64_t>(random.GetStateSize());
+  auto const state_size = static_cast<std::uint64_t>(random.GetStateSize());
 
   if (state_size == 0ULL) {
     throw std::runtime_error("Random engine reports a zero state size.");
@@ -456,8 +455,7 @@ auto ComputeChunkPlan(Options const &options, GGEMSRandom const &random,
         plan.effective_max_value_buffer_bytes / bytes_per_sample_round;
 
     if (options.stream_type == StreamType::Uniform24Vector4) {
-      std::uint64_t const lanes_used =
-          static_cast<std::uint64_t>(options.lanes_used);
+      auto const lanes_used = static_cast<std::uint64_t>(options.lanes_used);
       max_samples_per_worker -= max_samples_per_worker % lanes_used;
     }
 
@@ -1009,7 +1007,7 @@ auto GenerateRandomStream(Options const &options) -> void {
                                          options.output_path.string()));
   }
 
-  std::uint64_t const actual_output_bytes = static_cast<std::uint64_t>(
+  auto const actual_output_bytes = static_cast<std::uint64_t>(
       std::filesystem::file_size(options.output_path));
 
   if (actual_output_bytes != output_bytes) {

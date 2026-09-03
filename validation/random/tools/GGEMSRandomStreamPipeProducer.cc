@@ -1,35 +1,3 @@
-// *****************************************************************************
-// * This file is part of GGEMS.                                               *
-// *                                                                           *
-// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
-// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
-// * Inserm.                                                                   *
-// *                                                                           *
-// * GGEMS is free software: you can redistribute it and/or modify             *
-// * it under the terms of the GNU General Public License as published by      *
-// * the Free Software Foundation, either version 3 of the License, or         *
-// * (at your option) any later version.                                       *
-// *                                                                           *
-// * GGEMS is distributed in the hope that it will be useful,                  *
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
-// * GNU General Public License for more details.                              *
-// *                                                                           *
-// * You should have received a copy of the GNU General Public License         *
-// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
-// *****************************************************************************
-
-/*!
- * \file
- * \brief Streams bounded canonical little-endian raw uint32 values to stdout.
- *
- * \author Julien BERT <julien.bert@univ-brest.fr>
- * \author Didier BENOIT <didier.benoit@inserm.fr>
- */
-
-#include "GGEMSRandomUInt32ChunkProducer.hh"
-
-/// \cond
 #include <algorithm>
 #include <cerrno>
 #include <charconv>
@@ -41,7 +9,6 @@
 #include <format>
 #include <iostream>
 #include <limits>
-#include <memory>
 #include <optional>
 #include <span>
 #include <stdexcept>
@@ -49,16 +16,18 @@
 #include <string_view>
 #include <system_error>
 #include <vector>
-
-#include <signal.h>
+#include <csignal>
+#include <sys/types.h>
 #include <unistd.h>
-/// \endcond
+#include <exception>
 
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/random/GGEMSRandomEngine.hh"
 #include "GGEMS/units/GGEMSBytesUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
+
+#include "GGEMSRandomUInt32ChunkProducer.hh"
 
 namespace {
 
@@ -72,7 +41,7 @@ constexpr std::uint32_t kByteMask{0xFFU};
 constexpr unsigned int kSecondByteShift{8U};
 constexpr unsigned int kThirdByteShift{16U};
 constexpr unsigned int kFourthByteShift{24U};
-constexpr std::size_t kSerializationBufferBytes{1024U * 1024U};
+constexpr std::size_t kSerializationBufferBytes{std::size_t{1024U} * 1024U};
 constexpr std::size_t kSerializationBufferWords{kSerializationBufferBytes /
                                                 kBytesPerWord};
 
@@ -215,15 +184,16 @@ auto FinalizeOptions(Options &options) -> void {
   options.logical_word_capacity =
       CheckedMultiply(options.worker_count, options.samples_per_worker,
                       "Logical raw uint32 word capacity");
-  options.output_word_limit =
-      options.requested_output_word_limit.value_or(options.logical_word_capacity);
+  options.output_word_limit = options.requested_output_word_limit.value_or(
+      options.logical_word_capacity);
   if (options.output_word_limit > options.logical_word_capacity) {
     throw std::runtime_error(
         "Output word limit exceeds the finite logical stream capacity.");
   }
 }
 
-[[nodiscard]] auto ParseArguments(int argc, char const *const *argv) -> Options {
+[[nodiscard]] auto ParseArguments(int argc, char const *const *argv)
+    -> Options {
   Options options;
   OptionPresence presence;
 
@@ -271,9 +241,8 @@ auto FinalizeOptions(Options &options) -> void {
           ReadArgumentValue(index, argc, argv, argument));
     } else if (argument == "--output-word-limit") {
       MarkPresent(presence.output_word_limit, argument);
-      options.requested_output_word_limit =
-          ParseUnsignedInteger<std::uint64_t>(
-              ReadArgumentValue(index, argc, argv, argument), argument);
+      options.requested_output_word_limit = ParseUnsignedInteger<std::uint64_t>(
+          ReadArgumentValue(index, argc, argv, argument), argument);
     } else {
       throw std::runtime_error(std::format("Unknown argument '{}'.", argument));
     }
@@ -295,8 +264,8 @@ auto FinalizeOptions(Options &options) -> void {
         ::write(STDOUT_FILENO, bytes.data() + offset, bytes.size() - offset);
     if (written > 0) {
       auto const written_size = static_cast<std::size_t>(written);
-      if (written_size > std::numeric_limits<std::uint64_t>::max() -
-                             written_byte_count) {
+      if (written_size >
+          std::numeric_limits<std::uint64_t>::max() - written_byte_count) {
         throw std::runtime_error("Written-byte counter overflowed uint64.");
       }
       written_byte_count += static_cast<std::uint64_t>(written_size);
@@ -418,7 +387,8 @@ auto main(int argc, char **argv) -> int {
               << '\n';
     return EXIT_FAILURE;
   } catch (...) {
-    std::cerr << "GGEMS random stream pipe producer failed: unknown exception.\n";
+    std::cerr
+        << "GGEMS random stream pipe producer failed: unknown exception.\n";
     return EXIT_FAILURE;
   }
 }
