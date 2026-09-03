@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import csv
 import json
@@ -93,20 +95,20 @@ type CsvRow = dict[str, CsvValue]
 
 def ParseArguments() -> Arguments:
     parser = argparse.ArgumentParser(
-        description="Aggregate the fixed GGEMS PractRand campaign results."
+        description="Aggregate the fixed GGEMS PractRand validation campaign."
     )
     _ = parser.add_argument(
         "--campaign-dir",
         type=Path,
         help=(
-            "Directory containing campaign summary JSON files and manifests/. "
+            "Campaign directory containing summary JSON files and manifests/. "
             "Defaults to validation/random/results/practrand/campaign."
         ),
     )
     _ = parser.add_argument(
         "--output-dir",
         type=Path,
-        help="Output directory. Defaults to <campaign-dir>/aggregate.",
+        help="Aggregate output directory. Defaults to <campaign-dir>/aggregate.",
     )
     _ = parser.add_argument(
         "--top",

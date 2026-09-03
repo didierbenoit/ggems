@@ -13,7 +13,10 @@
 #include <fstream>
 #include <span>
 #include <algorithm>
+#include <optional>
 #include <vector>
+
+#include "GGEMSRandomUInt32ChunkProducer.hh"
 
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/opencl/GGEMSOpenCLLaunchGeometry.hh"
@@ -716,6 +719,100 @@ auto WriteMinimalManifest(std::filesystem::path const &path,
 // =============================================================================
 // =============================================================================
 
+auto GenerateRawUInt32Stream(Options const &options, GGEMSRandom const &random,
+                             ggems::ocl::GGEMSOpenCLContext &context,
+                             std::uint64_t total_samples,
+                             std::uint64_t output_bytes) -> void {
+  using ggems::validation::random::GGEMSRandomUInt32ChunkProducer;
+  using ggems::validation::random::RandomUInt32StreamLayout;
+  using ggems::validation::random::RandomUInt32StreamSpecification;
+
+  RandomUInt32StreamSpecification specification{
+      .engine = random.GetEngine(),
+      .seed = random.GetSeed(),
+      .stream_offset = options.stream_offset,
+      .worker_count = options.worker_count,
+      .samples_per_worker = options.samples_per_worker,
+      .layout = options.layout == StreamLayout::Interleaved
+                    ? RandomUInt32StreamLayout::Interleaved
+                    : RandomUInt32StreamLayout::WorkerMajor,
+      .local_size = options.local_size,
+      .maximum_value_buffer_size =
+          ggems::units::Bytes{options.max_chunk_mib * kBytesPerMiB},
+  };
+
+  GGEMSRandomUInt32ChunkProducer producer{specification, context, std::nullopt};
+  auto const &raw_plan = producer.GetChunkPlan();
+  ChunkPlan const chunk_plan{
+      .strategy = raw_plan.strategy ==
+                          ggems::validation::random::RandomUInt32ChunkStrategy::
+                              SampleDepth
+                      ? ChunkStrategy::SampleDepth
+                      : ChunkStrategy::WorkerGroups,
+      .requested_max_value_buffer_bytes =
+          raw_plan.requested_max_value_buffer_size.value,
+      .effective_max_value_buffer_bytes =
+          raw_plan.effective_max_value_buffer_size.value,
+      .device_max_allocation_bytes = raw_plan.device_max_allocation_size.value,
+      .state_buffer_bytes = raw_plan.state_buffer_size.value,
+      .value_buffer_bytes = raw_plan.value_buffer_size.value,
+      .workers_per_chunk = raw_plan.workers_per_chunk,
+      .samples_per_worker_per_chunk = raw_plan.samples_per_worker_per_chunk,
+      .chunk_count = raw_plan.chunk_count,
+  };
+
+  std::cout << "Chunk strategy     : " << ToString(chunk_plan.strategy) << '\n';
+  std::cout << "Chunk count        : " << chunk_plan.chunk_count << '\n';
+  std::cout << "Max chunk request  : " << options.max_chunk_mib << " MiB\n";
+  std::cout << "Device max alloc   : "
+            << chunk_plan.device_max_allocation_bytes / kBytesPerMiB
+            << " MiB\n";
+  std::cout << "State SVM buffer   : "
+            << chunk_plan.state_buffer_bytes / kBytesPerMiB << " MiB\n";
+  std::cout << "Value SVM buffer   : "
+            << chunk_plan.value_buffer_bytes / kBytesPerMiB << " MiB\n";
+
+  auto output_stream = OpenOutputStream(options.output_path, options.force);
+  std::uint64_t written_samples{0ULL};
+  while (!producer.IsExhausted()) {
+    std::span<std::uint32_t const> const values = producer.NextChunk();
+    WriteUInt32Chunk(output_stream, options.output_path, values.data(),
+                     values.size());
+    written_samples += static_cast<std::uint64_t>(values.size());
+  }
+
+  if (written_samples != total_samples ||
+      producer.GetReturnedWordCount() != total_samples) {
+    throw std::runtime_error("Generated sample count does not match request.");
+  }
+
+  output_stream.close();
+  if (!output_stream) {
+    throw std::runtime_error(std::format("Failed to close output stream '{}'.",
+                                         options.output_path.string()));
+  }
+
+  auto const actual_output_bytes = static_cast<std::uint64_t>(
+      std::filesystem::file_size(options.output_path));
+  if (actual_output_bytes != output_bytes) {
+    throw std::runtime_error(
+        std::format("Output stream size mismatch: expected {} bytes, got {}.",
+                    output_bytes, actual_output_bytes));
+  }
+
+  WriteMinimalManifest(options.manifest_path, options, random,
+                       context.GetDevice(), chunk_plan, total_samples,
+                       output_bytes);
+
+  std::cout << "Manifest generated : " << options.manifest_path.string()
+            << '\n';
+  std::cout << "Stream generated   : " << options.output_path.string() << '\n';
+  std::cout << "Bytes written      : " << output_bytes << '\n';
+}
+
+// =============================================================================
+// =============================================================================
+
 auto GenerateRandomStream(Options const &options) -> void {
   GGEMSRandom random;
   random.SetEngine(options.engine);
@@ -769,6 +866,13 @@ auto GenerateRandomStream(Options const &options) -> void {
 
   auto &context = opencl.GetContext().front();
   auto const &device = context.GetDevice();
+
+  if (options.stream_type == StreamType::RawUInt32) {
+    GenerateRawUInt32Stream(options, random, context, total_samples,
+                            output_bytes);
+    return;
+  }
+
   ChunkPlan const chunk_plan = ComputeChunkPlan(options, random, device);
 
   std::cout << "Chunk strategy     : " << ToString(chunk_plan.strategy) << '\n';
