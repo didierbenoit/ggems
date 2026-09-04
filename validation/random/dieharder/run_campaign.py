@@ -169,7 +169,7 @@ def PrintCampaign(cases: tuple[CampaignCase, ...]) -> None:
     for case in cases:
         print(
             f"{case.stem:<13}{case.engine:<8}{case.seed:>11}  "
-            f"{case.layout:<13}{case.stream_offset:>10}"
+            + f"{case.layout:<13}{case.stream_offset:>10}"
         )
 
     print()
@@ -212,10 +212,14 @@ def CasePaths(case: CampaignCase) -> tuple[Path, Path, Path]:
 
 def LoadJsonObject(path: Path) -> dict[str, object] | None:
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
+        value = cast(object, json.loads(path.read_text(encoding="utf-8")))
     except (json.JSONDecodeError, OSError):
         return None
-    return value if isinstance(value, dict) else None
+
+    if not isinstance(value, dict):
+        return None
+
+    return cast(dict[str, object], value)
 
 
 # ------------------------------------------------------------------------------
@@ -225,15 +229,16 @@ def ManifestMatches(case: CampaignCase, path: Path) -> bool:
     root = LoadJsonObject(path)
     if root is None:
         return False
-    random = root.get("random")
-    if not isinstance(random, dict):
+    random_value = root.get("random")
+    if not isinstance(random_value, dict):
         return False
+    random = cast(dict[str, object], random_value)
 
     engine = random.get("engine")
     if not isinstance(engine, str) or engine.lower() != case.engine:
         return False
 
-    expected = {
+    expected: dict[str, object] = {
         "seed": case.seed,
         "stream_offset": case.stream_offset,
         "stream_type": STREAM_TYPE,
@@ -254,13 +259,19 @@ def IsCompletedCase(case: CampaignCase) -> bool:
     if summary is None or not ManifestMatches(case, manifest_path):
         return False
 
-    tool = summary.get("tool")
-    input_section = summary.get("input")
-    output = summary.get("output")
-    if not isinstance(tool, dict) or not isinstance(input_section, dict):
+    tool_value = summary.get("tool")
+    input_value = summary.get("input")
+    output_value = summary.get("output")
+
+    if not isinstance(tool_value, dict):
         return False
-    if not isinstance(output, dict):
+    if not isinstance(input_value, dict):
         return False
+    if not isinstance(output_value, dict):
+        return False
+
+    tool = cast(dict[str, object], tool_value)
+    output = cast(dict[str, object], output_value)
 
     if tool.get("version") != DIEHARDER_REFERENCE_VERSION:
         return False
@@ -294,7 +305,7 @@ def RunCommand(command: list[str], *, dry_run: bool) -> float:
         return 0.0
 
     started = time.perf_counter()
-    subprocess.run(command, check=True)
+    _ = subprocess.run(command, check=True)
     return time.perf_counter() - started
 
 
@@ -317,7 +328,7 @@ def WaitForFreeSpace(stream_directory: Path, stream_path: Path) -> None:
             )
         print(
             f"Waiting for disk space: {usable / 1024**3:.2f} GiB available, "
-            f"{required_bytes / 1024**3:.2f} GiB required."
+            + f"{required_bytes / 1024**3:.2f} GiB required."
         )
         time.sleep(FREE_SPACE_POLL_SECONDS)
 
@@ -436,7 +447,7 @@ def RunCase(
         if not force and (stream_path.exists() or manifest_path.exists()):
             raise RuntimeError(
                 f"Partial or incompatible generation artifacts for {case.stem}; "
-                "use --force to regenerate them."
+                + "use --force to regenerate them."
             )
         if not dry_run:
             WaitForFreeSpace(stream_path.parent, stream_path)

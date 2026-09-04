@@ -22,9 +22,7 @@ type RunStatus = Literal[
     "statistically_complete_no_testu01_suspects",
     "statistically_complete_with_testu01_suspects",
 ]
-type Classification = Literal[
-    "normal", "suspect_low", "suspect_high", "not_applicable"
-]
+type Classification = Literal["normal", "suspect_low", "suspect_high", "not_applicable"]
 type InputTransport = Literal["regular_file", "opencl_pipe"]
 
 CONSUMER_RESULT_SCHEMA = "ggems_testu01_consumer_result"
@@ -301,7 +299,8 @@ def LoadJsonObject(path: Path, description: str) -> dict[str, object]:
         text = path.read_text(encoding="utf-8")
     except OSError as error:
         raise OSError(f"Cannot read {description}: {path}") from error
-    return RequireObject(json.loads(text), description)
+    value = cast(object, json.loads(text))
+    return RequireObject(value, description)
 
 
 # ------------------------------------------------------------------------------
@@ -318,18 +317,14 @@ def LoadManifest(path: Path) -> ManifestRecord:
     stream_offset = ParseUnsigned(
         random_section.get("stream_offset"), "random.stream_offset"
     )
-    stream_type = RequireString(
-        random_section.get("stream_type"), "random.stream_type"
-    )
+    stream_type = RequireString(random_section.get("stream_type"), "random.stream_type")
     sample_bits = RequireInt(random_section.get("sample_bits"), "random.sample_bits")
     layout = ParseLayout(random_section.get("layout"), "random.layout")
     worker_count = ParseUnsigned(random_section.get("worker_count"), "worker_count")
     samples_per_worker = ParseUnsigned(
         random_section.get("samples_per_worker"), "samples_per_worker"
     )
-    total_samples = ParseUnsigned(
-        random_section.get("total_samples"), "total_samples"
-    )
+    total_samples = ParseUnsigned(random_section.get("total_samples"), "total_samples")
     byte_count = ParseUnsigned(random_section.get("byte_count"), "byte_count")
     stream_path_text = RequireString(
         output_section.get("stream_path"), "output.stream_path"
@@ -415,19 +410,19 @@ def LoadStreamingRequest(path: Path) -> StreamingRequestRecord:
     logical_words = worker_count * samples_per_worker
     logical_bytes = logical_words * WORD_BYTES
     declared_words = random_section.get("logical_word_capacity")
-    if declared_words is not None and ParseUnsigned(
-        declared_words, "logical_word_capacity"
-    ) != logical_words:
+    if (
+        declared_words is not None
+        and ParseUnsigned(declared_words, "logical_word_capacity") != logical_words
+    ):
         raise ValueError("logical_word_capacity is inconsistent")
     declared_bytes = random_section.get("logical_byte_capacity")
-    if declared_bytes is not None and ParseUnsigned(
-        declared_bytes, "logical_byte_capacity"
-    ) != logical_bytes:
+    if (
+        declared_bytes is not None
+        and ParseUnsigned(declared_bytes, "logical_byte_capacity") != logical_bytes
+    ):
         raise ValueError("logical_byte_capacity is inconsistent")
 
-    max_chunk_mib = ParseUnsigned(
-        opencl_section.get("max_chunk_mib"), "max_chunk_mib"
-    )
+    max_chunk_mib = ParseUnsigned(opencl_section.get("max_chunk_mib"), "max_chunk_mib")
     local_size = ParseUnsigned(opencl_section.get("local_size"), "local_size")
     device_selector = RequireString(
         opencl_section.get("device_selector"), "device_selector"
@@ -483,9 +478,7 @@ def RunConsumer(
             timed_out = True
             process.terminate()
             try:
-                stdout, stderr = process.communicate(
-                    timeout=TERMINATION_GRACE_SECONDS
-                )
+                stdout, stderr = process.communicate(timeout=TERMINATION_GRACE_SECONDS)
             except subprocess.TimeoutExpired:
                 process.kill()
                 stdout, stderr = process.communicate()
@@ -600,14 +593,16 @@ def RunStreamingPair(
                 )
                 producer_stdout.close()
 
-                while producer_process.poll() is None or consumer_process.poll() is None:
+                while (
+                    producer_process.poll() is None or consumer_process.poll() is None
+                ):
                     if time.monotonic() >= deadline:
                         timed_out = True
                         StopProcess(consumer_process)
                         StopProcess(producer_process)
                         break
                     time.sleep(0.05)
-            except Exception as error:
+            except (OSError, ValueError, subprocess.SubprocessError) as error:
                 lifecycle_error = f"Streaming supervision failed: {error}"
                 producer_stdout.close()
                 StopProcess(consumer_process)
@@ -663,7 +658,8 @@ def RunStreamingPair(
 def ParseConsumerResult(data: bytes | None) -> dict[str, object] | None:
     if data is None:
         return None
-    return RequireObject(json.loads(data.decode("utf-8")), "consumer result")
+    value = cast(object, json.loads(data.decode("utf-8")))
+    return RequireObject(value, "consumer result")
 
 
 def AssessSlot(value: object, expected_index: int) -> SlotAssessment:
@@ -673,9 +669,7 @@ def AssessSlot(value: object, expected_index: int) -> SlotAssessment:
         name_value = slot.get("name")
         name = None if name_value is None else RequireString(name_value, "slot name")
         p_value_hex = RequireString(slot.get("p_value_hex"), "p_value_hex")
-        p_value_decimal = RequireString(
-            slot.get("p_value_decimal"), "p_value_decimal"
-        )
+        p_value_decimal = RequireString(slot.get("p_value_decimal"), "p_value_decimal")
         not_computed = RequireBool(
             slot.get("testu01_not_computed"), "testu01_not_computed"
         )
@@ -714,7 +708,9 @@ def AssessSlot(value: object, expected_index: int) -> SlotAssessment:
             p_value=None,
             testu01_not_computed=True,
             classification="not_applicable",
-            invalid_reason=("; ".join(reasons) if reasons else "TestU01 did not compute this slot"),
+            invalid_reason=(
+                "; ".join(reasons) if reasons else "TestU01 did not compute this slot"
+            ),
         )
 
     if not 0.0 <= p_value <= 1.0:
@@ -746,7 +742,10 @@ def AssessConsumerResult(
         return TechnicalAssessment("Consumer result is unavailable")
 
     try:
-        if RequireString(root.get("schema"), "consumer schema") != CONSUMER_RESULT_SCHEMA:
+        if (
+            RequireString(root.get("schema"), "consumer schema")
+            != CONSUMER_RESULT_SCHEMA
+        ):
             raise ValueError("unsupported consumer result schema")
         if not RequireBool(root.get("terminal"), "consumer terminal"):
             raise ValueError("consumer result is nonterminal")
@@ -805,18 +804,14 @@ def AssessConsumerResult(
     if collection_status != "complete":
         reasons.append(f"result_collection_status={collection_status}")
 
-    slots = tuple(
-        AssessSlot(value, index) for index, value in enumerate(slot_values)
-    )
+    slots = tuple(AssessSlot(value, index) for index, value in enumerate(slot_values))
     for slot in slots:
         if slot.invalid_reason is not None:
             reasons.append(f"slot {slot.index}: {slot.invalid_reason}")
 
     if reasons:
         status: RunStatus = "result_invalid_or_incomplete"
-    elif any(
-        slot.classification in {"suspect_low", "suspect_high"} for slot in slots
-    ):
+    elif any(slot.classification in {"suspect_low", "suspect_high"} for slot in slots):
         status = "statistically_complete_with_testu01_suspects"
     else:
         status = "statistically_complete_no_testu01_suspects"
@@ -901,7 +896,7 @@ def BuildOutput(assessment: ResultAssessment) -> dict[str, object]:
 def WriteSummary(path: Path, summary: dict[str, object]) -> None:
     path = path.expanduser().resolve()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
+    _ = path.write_text(
         json.dumps(summary, indent=2, allow_nan=False) + "\n",
         encoding="utf-8",
     )
@@ -959,7 +954,12 @@ def ExecuteRegularFile(args: Arguments) -> tuple[dict[str, object], RunStatus]:
     else:
         try:
             raw_result = ParseConsumerResult(execution.result_bytes)
-        except (UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError) as error:
+        except (
+            UnicodeDecodeError,
+            json.JSONDecodeError,
+            TypeError,
+            ValueError,
+        ) as error:
             reasons.append(f"Cannot parse TestU01 consumer result: {error}")
 
     assessment = AssessConsumerResult(raw_result, battery)
@@ -1003,9 +1003,7 @@ def ExecuteStreaming(args: Arguments) -> tuple[dict[str, object], RunStatus]:
     battery = GetBatteryDefinition(args.battery)
     producer = ResolveExecutable(args.producer, "GGEMS OpenCL stream producer")
     consumer = ResolveExecutable(args.consumer, "TestU01 consumer")
-    pair = RunStreamingPair(
-        producer, consumer, request, battery, args.timeout_seconds
-    )
+    pair = RunStreamingPair(producer, consumer, request, battery, args.timeout_seconds)
 
     reasons: list[str] = []
     if pair.lifecycle_error is not None:
@@ -1017,12 +1015,15 @@ def ExecuteStreaming(args: Arguments) -> tuple[dict[str, object], RunStatus]:
         raw_result = None
     else:
         if pair.consumer.return_code != 0:
-            reasons.append(
-                f"TestU01 consumer exited with {pair.consumer.return_code}"
-            )
+            reasons.append(f"TestU01 consumer exited with {pair.consumer.return_code}")
         try:
             raw_result = ParseConsumerResult(pair.consumer.result_bytes)
-        except (UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError) as error:
+        except (
+            UnicodeDecodeError,
+            json.JSONDecodeError,
+            TypeError,
+            ValueError,
+        ) as error:
             raw_result = None
             reasons.append(f"Cannot parse TestU01 consumer result: {error}")
 

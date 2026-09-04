@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import argparse
 import csv
 import json
@@ -151,12 +149,7 @@ def ResolveCampaignDirectory(requested: Path | None) -> Path:
         return requested.expanduser().resolve()
 
     return (
-        ProjectRoot()
-        / "validation"
-        / "random"
-        / "results"
-        / "testu01"
-        / "campaign"
+        ProjectRoot() / "validation" / "random" / "results" / "testu01" / "campaign"
     ).resolve()
 
 
@@ -308,9 +301,7 @@ def BuildAnomalies(case: CaseRecord, results: list[object]) -> list[AnomalyRecor
                 test_name=RequireString(slot, "name", case.case_id),
                 p_value=RequireNumber(slot, "p_value", case.case_id),
                 p_value_hex=RequireString(slot, "p_value_hex", case.case_id),
-                p_value_decimal=RequireString(
-                    slot, "p_value_decimal", case.case_id
-                ),
+                p_value_decimal=RequireString(slot, "p_value_decimal", case.case_id),
                 classification=classification,
             )
         )
@@ -364,10 +355,13 @@ def LoadCase(
     if observed_slot_count != len(results):
         raise RuntimeError(f"Observed slot count mismatch for {case_id}.")
 
-    if status.startswith("statistically_complete_") and observed_slot_count != expected_slots:
+    if (
+        status.startswith("statistically_complete_")
+        and observed_slot_count != expected_slots
+    ):
         raise RuntimeError(
             f"Expected {expected_slots} TestU01 slots for completed case {case_id}, "
-            f"got {observed_slot_count}."
+            + f"got {observed_slot_count}."
         )
 
     producer_section = summary.get("producer")
@@ -394,9 +388,7 @@ def LoadCase(
         stream_offset=RequireInt(summary_input, "stream_offset", case_id),
         layout=RequireString(summary_input, "layout", case_id),
         worker_count=RequireInt(summary_input, "worker_count", case_id),
-        samples_per_worker=RequireInt(
-            summary_input, "samples_per_worker", case_id
-        ),
+        samples_per_worker=RequireInt(summary_input, "samples_per_worker", case_id),
         logical_word_capacity=RequireInt(
             summary_input, "logical_word_capacity", case_id
         ),
@@ -485,7 +477,9 @@ def PrintReport(
     print(f"SmallCrush         : {sum(c.battery_key == 'smallcrush' for c in cases)}")
     print(f"Crush              : {sum(c.battery_key == 'crush' for c in cases)}")
     print(f"BigCrush           : {sum(c.battery_key == 'bigcrush' for c in cases)}")
-    print(f"OpenCL selectors   : {', '.join(sorted({c.device_selector for c in cases}))}")
+    print(
+        f"OpenCL selectors   : {', '.join(sorted({c.device_selector for c in cases}))}"
+    )
 
     print()
     print("Case outcomes by engine")
@@ -497,8 +491,8 @@ def PrintReport(
         counts = CountOutcomes(selected)
         print(
             f"{engine:<8} {len(selected):>5} "
-            f"{counts['clean']:>6} {counts['suspect']:>8} "
-            f"{counts['incomplete']:>10} {counts['technical_error']:>10}"
+            + f"{counts['clean']:>6} {counts['suspect']:>8} "
+            + f"{counts['incomplete']:>10} {counts['technical_error']:>10}"
         )
 
     print()
@@ -518,8 +512,8 @@ def PrintReport(
             counts = CountOutcomes(selected)
             print(
                 f"{battery:<11} {engine:<8} {len(selected):>5} "
-                f"{counts['clean']:>6} {counts['suspect']:>8} "
-                f"{counts['incomplete']:>10} {counts['technical_error']:>10}"
+                + f"{counts['clean']:>6} {counts['suspect']:>8} "
+                + f"{counts['incomplete']:>10} {counts['technical_error']:>10}"
             )
 
     print()
@@ -531,26 +525,26 @@ def PrintReport(
         counts = CountSuspects(a for a in anomalies if a.engine == engine)
         print(
             f"{engine:<8} {counts['suspect_low']:>3} "
-            f"{counts['suspect_high']:>5} {sum(counts.values()):>6}"
+            + f"{counts['suspect_high']:>5} {sum(counts.values()):>6}"
         )
 
-    problematic = [case for case in cases if case.outcome in {"incomplete", "technical_error"}]
+    problematic = [
+        case for case in cases if case.outcome in {"incomplete", "technical_error"}
+    ]
     print()
     print("Incomplete or technical cases")
     print()
     if problematic:
         for case in problematic:
             print(
-                f"{case.case_id:<30} {case.engine:<6} "
-                f"{case.battery:<10} {case.outcome}"
+                f"{case.case_id:<30} {case.engine:<6} {case.battery:<10} {case.outcome}"
             )
     else:
         print("None")
 
     if top > 0:
         line_counts = Counter(
-            (a.engine, a.battery, a.test_name, a.classification)
-            for a in anomalies
+            (a.engine, a.battery, a.test_name, a.classification) for a in anomalies
         )
         case_sets: defaultdict[tuple[str, str, str, str], set[str]] = defaultdict(set)
         for anomaly in anomalies:
@@ -578,7 +572,7 @@ def PrintReport(
             side = "low" if classification == "suspect_low" else "high"
             print(
                 f"{engine:<8} {battery:<11} {side:<5} {test_name:<28} "
-                f"{len(case_sets[key]):>5} {line_counts[key]:>6}"
+                + f"{len(case_sets[key]):>5} {line_counts[key]:>6}"
             )
 
 
@@ -647,9 +641,7 @@ def BuildAggregate(
         selected = [case for case in cases if case.engine == engine]
         by_engine[engine] = {
             "case_count": len(selected),
-            "case_outcomes": CountsToJson(
-                CountOutcomes(selected), CASE_OUTCOME_ORDER
-            ),
+            "case_outcomes": CountsToJson(CountOutcomes(selected), CASE_OUTCOME_ORDER),
             "suspect_slots": CountsToJson(
                 CountSuspects(a for a in anomalies if a.engine == engine),
                 CLASSIFICATION_ORDER,
@@ -683,8 +675,7 @@ def BuildAggregate(
         by_battery_engine[battery] = battery_data
 
     line_counts = Counter(
-        (a.engine, a.battery, a.test_name, a.classification)
-        for a in anomalies
+        (a.engine, a.battery, a.test_name, a.classification) for a in anomalies
     )
     case_sets: defaultdict[tuple[str, str, str, str], set[str]] = defaultdict(set)
     for anomaly in anomalies:
@@ -723,12 +714,8 @@ def BuildAggregate(
             "battery_counts": dict(Counter(case.battery for case in cases)),
             "device_selectors": sorted({case.device_selector for case in cases}),
         },
-        "case_outcomes": CountsToJson(
-            CountOutcomes(cases), CASE_OUTCOME_ORDER
-        ),
-        "suspect_slots": CountsToJson(
-            CountSuspects(anomalies), CLASSIFICATION_ORDER
-        ),
+        "case_outcomes": CountsToJson(CountOutcomes(cases), CASE_OUTCOME_ORDER),
+        "suspect_slots": CountsToJson(CountSuspects(anomalies), CLASSIFICATION_ORDER),
         "by_engine": by_engine,
         "by_battery_engine": by_battery_engine,
         "recurrent_suspect_tests": recurrent_suspects,
@@ -759,9 +746,9 @@ def WriteCsv(path: Path, rows: list[CsvRow]) -> None:
 
     with path.open("w", encoding="utf-8", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=list(rows[0].keys()))
-        _ = writer.writeheader()
+        _ = cast(object, writer.writeheader())
         for row in rows:
-            _ = writer.writerow(row)
+            _ = cast(object, writer.writerow(row))
 
 
 def WriteOutputs(

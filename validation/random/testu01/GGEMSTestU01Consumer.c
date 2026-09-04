@@ -274,8 +274,11 @@ static bool write_json_string(FILE *stream, const char *value) {
 }
 
 static bool write_nullable_json_string(FILE *stream, const char *value) {
-  return value == NULL ? fputs("null", stream) != EOF
-                       : write_json_string(stream, value);
+  if (value == NULL) {
+    return (bool)(fputs("null", stream) != EOF);
+  }
+
+  return write_json_string(stream, value);
 }
 
 static bool write_common_result_prefix(FILE *stream, const char *status) {
@@ -309,8 +312,8 @@ static bool write_common_result_prefix(FILE *stream, const char *status) {
   }
 
   if (input_state.is_regular_file) {
-    return fprintf(stream, "\"%" PRIu64 "\",\n", input_state.regular_file_size) >=
-           0;
+    return fprintf(stream, "\"%" PRIu64 "\",\n",
+                   input_state.regular_file_size) >= 0;
   }
   return fputs("null,\n", stream) != EOF;
 }
@@ -325,14 +328,15 @@ static bool write_technical_result(const char *kind, const char *message,
   written = (bool)(write_common_result_prefix(result_file, "technical_error") &&
                    written);
   written = (bool)(fputs("  \"reported_slot_count\": null,\n"
-                          "  \"copied_slot_count\": 0,\n"
-                          "  \"result_collection_status\": null,\n"
-                          "  \"error\": {\n"
-                          "    \"kind\": ",
-                          result_file) != EOF &&
+                         "  \"copied_slot_count\": 0,\n"
+                         "  \"result_collection_status\": null,\n"
+                         "  \"error\": {\n"
+                         "    \"kind\": ",
+                         result_file) != EOF &&
                    written);
   written = (bool)(write_json_string(result_file, kind) && written);
-  written = (bool)(fputs(",\n    \"message\": ", result_file) != EOF && written);
+  written =
+      (bool)(fputs(",\n    \"message\": ", result_file) != EOF && written);
   written = (bool)(write_json_string(result_file, message) && written);
   written = (bool)(fprintf(result_file,
                            ",\n    \"system_errno\": %d\n"
@@ -527,32 +531,40 @@ static bool write_completed_result(const ResultSlot *slots,
   int index = 0;
   bool written = true;
 
-  written = (bool)(write_common_result_prefix(result_file, "battery_returned") &&
-                   written);
-  written = (bool)(fprintf(result_file,
-                           "  \"reported_slot_count\": %d,\n"
-                           "  \"copied_slot_count\": %d,\n"
-                           "  \"result_collection_status\": \"%s\",\n"
-                           "  \"error\": null,\n"
-                           "  \"slots\": [",
-                           reported_slot_count, copied_slot_count,
-                           reported_slot_count == active_battery->expected_slot_count
-                               ? "complete"
-                               : "slot_count_mismatch") >= 0 &&
-                   written);
+  written =
+      (bool)(write_common_result_prefix(result_file, "battery_returned") &&
+             written);
+  written =
+      (bool)(fprintf(result_file,
+                     "  \"reported_slot_count\": %d,\n"
+                     "  \"copied_slot_count\": %d,\n"
+                     "  \"result_collection_status\": \"%s\",\n"
+                     "  \"error\": null,\n"
+                     "  \"slots\": [",
+                     reported_slot_count, copied_slot_count,
+                     reported_slot_count == active_battery->expected_slot_count
+                         ? "complete"
+                         : "slot_count_mismatch") >= 0 &&
+             written);
 
   for (index = 0; index < copied_slot_count; ++index) {
     const double p_value = slots[index].p_value;
 
-    written = (bool)(fputs(index == 0 ? "\n" : ",\n", result_file) != EOF &&
-                     written);
+    written =
+        (bool)(fputs(index == 0 ? "\n" : ",\n", result_file) != EOF && written);
     written = (bool)(fprintf(result_file, "    {\"index\": %zu, \"name\": ",
                              slots[index].index) >= 0 &&
                      written);
-    written = (bool)(write_nullable_json_string(
-                         result_file,
-                         slots[index].name_present ? slots[index].name : NULL) &&
-                     written);
+
+    const char *slot_name = NULL;
+
+    if (slots[index].name_present) {
+      slot_name = slots[index].name;
+    }
+
+    written =
+        (bool)(write_nullable_json_string(result_file, slot_name) && written);
+
     written = (bool)(fprintf(result_file,
                              ", \"p_value_hex\": \"%a\", "
                              "\"p_value_decimal\": \"%.17g\", "
@@ -565,8 +577,9 @@ static bool write_completed_result(const ResultSlot *slots,
   if (copied_slot_count > 0) {
     written = (bool)(fputc('\n', result_file) != EOF && written);
   }
-  written = (bool)(fputs("  ],\n  \"terminal\": true\n}\n", result_file) != EOF &&
-                   written);
+  written =
+      (bool)(fputs("  ],\n  \"terminal\": true\n}\n", result_file) != EOF &&
+             written);
   if (fflush(result_file) == EOF || ferror(result_file) != 0) {
     written = false;
   }

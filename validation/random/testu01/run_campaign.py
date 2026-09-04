@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import argparse
 import json
 import shlex
@@ -267,15 +265,15 @@ def PrintCampaign(cases: list[CampaignCase]) -> None:
     print()
     print(
         f"{'Case':<29}{'Engine':<8}{'Battery':<11}{'Seed':>11}  "
-        f"{'Layout':<13}{'Offset':>11}  {'D':>8}"
+        + f"{'Layout':<13}{'Offset':>11}  {'D':>8}"
     )
     print("-" * 98)
 
     for case in cases:
         print(
             f"{case.stem:<29}{case.engine:<8}{case.battery:<11}{case.seed:>11}  "
-            f"{case.layout:<13}{case.stream_offset:>11}  "
-            f"{case.samples_per_worker:>8}"
+            + f"{case.layout:<13}{case.stream_offset:>11}  "
+            + f"{case.samples_per_worker:>8}"
         )
 
     counts = {
@@ -318,10 +316,10 @@ def CasePaths(case: CampaignCase) -> tuple[Path, Path]:
 
 def LoadJsonObject(path: Path) -> dict[str, object] | None:
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
+        value = cast(object, json.loads(path.read_text(encoding="utf-8")))
     except (json.JSONDecodeError, OSError):
         return None
-    return value if isinstance(value, dict) else None
+    return cast(dict[str, object], value) if isinstance(value, dict) else None
 
 
 # ------------------------------------------------------------------------------
@@ -333,10 +331,13 @@ def IsCompletedCase(case: CampaignCase) -> bool:
     if summary is None:
         return False
 
-    input_section = summary.get("input")
-    output = summary.get("output")
-    if not isinstance(input_section, dict) or not isinstance(output, dict):
+    input_value = summary.get("input")
+    output_value = summary.get("output")
+    if not isinstance(input_value, dict) or not isinstance(output_value, dict):
         return False
+
+    input_section = cast(dict[str, object], input_value)
+    output = cast(dict[str, object], output_value)
 
     status = output.get("status")
     if status not in {
@@ -458,7 +459,7 @@ def BuildTestU01Command(
 def RunCommand(command: list[str], *, dry_run: bool) -> None:
     print(f"$ {shlex.join(command)}")
     if not dry_run:
-        subprocess.run(command, check=True)
+        _ = subprocess.run(command, check=True)
 
 
 # ------------------------------------------------------------------------------

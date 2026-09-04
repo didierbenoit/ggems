@@ -4,7 +4,7 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Literal, Protocol, TypedDict, cast
+from typing import Literal, Protocol, TextIO, TypedDict, cast
 
 # ------------------------------------------------------------------------------
 
@@ -128,7 +128,7 @@ def ParsePractRandSize(value: str) -> int:
     if match is None:
         raise ValueError(
             f"Invalid PractRand maximum size '{value}'. "
-            "Expected for example 4MB, 1GB, or 4GB."
+            + "Expected for example 4MB, 1GB, or 4GB."
         )
 
     amount = int(match.group(1))
@@ -161,7 +161,7 @@ def FormatPractRandSize(byte_count: int) -> str:
 
     raise ValueError(
         f"GGEMS random stream size {byte_count} bytes cannot be expressed "
-        "exactly using PractRand KB/MB/GB/TB units."
+        + "exactly using PractRand KB/MB/GB/TB units."
     )
 
 
@@ -180,7 +180,7 @@ def ResolveMaxSize(
     if requested_bytes > stream_byte_count:
         raise ValueError(
             f"Requested PractRand size {requested_size} exceeds the "
-            f"GGEMS stream size of {stream_byte_count} bytes."
+            + f"GGEMS stream size of {stream_byte_count} bytes."
         )
 
     return requested_size
@@ -209,7 +209,9 @@ def RunPractRand(
         if stdout is None:
             raise RuntimeError("Failed to capture PractRand output.")
 
-        for line in stdout:
+        text_stdout = cast(TextIO, stdout)
+
+        for line in text_stdout:
             print(line, end="")
             output_lines.append(line)
 
@@ -322,9 +324,12 @@ def ExtractTestResultCount(
     output: str,
     anomaly_count: int,
 ) -> int | None:
-    matches = re.findall(
-        r"(?:no anomalies in|\.\.\.and)\s+(\d+)\s+test result\(s\)",
-        output,
+    matches = cast(
+        list[str],
+        re.findall(
+            r"(?:no anomalies in|\.\.\.and)\s+(\d+)\s+test result\(s\)",
+            output,
+        ),
     )
 
     if not matches:
@@ -374,7 +379,7 @@ def LoadManifest(path: Path) -> RandomManifest:
     )
 
     if not isinstance(data, dict):
-        raise ValueError(f"Invalid GGEMS random manifest: {path}")
+        raise TypeError(f"Invalid GGEMS random manifest: {path}")
 
     return cast(RandomManifest, cast(object, data))
 
@@ -395,8 +400,8 @@ def ResolveStreamPath(
 
     if actual_bytes != expected_bytes:
         raise ValueError(
-            f"GGEMS random stream size mismatch: "
-            f"expected {expected_bytes} bytes, got {actual_bytes} bytes."
+            "GGEMS random stream size mismatch: "
+            + f"expected {expected_bytes} bytes, got {actual_bytes} bytes."
         )
 
     return stream_path
@@ -495,7 +500,7 @@ def WriteSummary(
         },
     }
 
-    path.write_text(
+    _ = path.write_text(
         json.dumps(summary, indent=2) + "\n",
         encoding="utf-8",
     )
@@ -597,6 +602,6 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
-    except (FileNotFoundError, RuntimeError, ValueError) as error:
+    except (FileNotFoundError, RuntimeError, TypeError, ValueError) as error:
         print(f"GGEMS PractRand validation failed:\n{error}")
         raise SystemExit(1) from None

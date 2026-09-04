@@ -314,7 +314,7 @@ def PrintCampaign(cases: list[CampaignCase]) -> None:
     print()
     print(
         f"{'Case':<13}{'Engine':<8}{'Seed':>11}  "
-        f"{'Stream':<19}{'Lanes':>5}  {'Layout':<13}{'Offset':>10}"
+        + f"{'Stream':<19}{'Lanes':>5}  {'Layout':<13}{'Offset':>10}"
     )
     print("-" * 88)
 
@@ -322,8 +322,8 @@ def PrintCampaign(cases: list[CampaignCase]) -> None:
         lanes = "-" if case.lanes_used is None else str(case.lanes_used)
         print(
             f"{case.case_id:<13}{case.engine:<8}{case.seed:>11}  "
-            f"{case.stream_type:<19}{lanes:>5}  "
-            f"{case.layout:<13}{case.stream_offset:>10}"
+            + f"{case.stream_type:<19}{lanes:>5}  "
+            + f"{case.layout:<13}{case.stream_offset:>10}"
         )
 
     print()
@@ -367,10 +367,14 @@ def CasePaths(case: CampaignCase) -> tuple[Path, Path, Path]:
 
 def LoadJsonObject(path: Path) -> dict[str, object] | None:
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
+        value = cast(object, json.loads(path.read_text(encoding="utf-8")))
     except (json.JSONDecodeError, OSError):
         return None
-    return value if isinstance(value, dict) else None
+
+    if not isinstance(value, dict):
+        return None
+
+    return cast(dict[str, object], value)
 
 
 # ------------------------------------------------------------------------------
@@ -380,15 +384,17 @@ def ManifestMatches(case: CampaignCase, manifest_path: Path) -> bool:
     manifest = LoadJsonObject(manifest_path)
     if manifest is None:
         return False
-    random = manifest.get("random")
-    if not isinstance(random, dict):
+
+    random_value = manifest.get("random")
+    if not isinstance(random_value, dict):
         return False
+    random = cast(dict[str, object], random_value)
 
     engine = random.get("engine")
     if not isinstance(engine, str) or engine.lower() != case.engine:
         return False
 
-    expected = {
+    expected: dict[str, object] = {
         "seed": case.seed,
         "stream_offset": case.stream_offset,
         "stream_type": case.stream_type,
@@ -412,12 +418,22 @@ def IsCompletedCase(case: CampaignCase) -> bool:
     if summary is None or not ManifestMatches(case, manifest_path):
         return False
 
-    input_section = summary.get("input")
-    output = summary.get("output")
-    tool = summary.get("tool")
-    if not isinstance(input_section, dict) or not isinstance(output, dict):
+    input_value = summary.get("input")
+    output_value = summary.get("output")
+    tool_value = summary.get("tool")
+
+    if not isinstance(input_value, dict):
         return False
-    if not isinstance(tool, dict) or tool.get("multithreaded") is not True:
+    if not isinstance(output_value, dict):
+        return False
+    if not isinstance(tool_value, dict):
+        return False
+
+    input_section = cast(dict[str, object], input_value)
+    output = cast(dict[str, object], output_value)
+    tool = cast(dict[str, object], tool_value)
+
+    if tool.get("multithreaded") is not True:
         return False
 
     engine = input_section.get("engine")
@@ -451,7 +467,7 @@ def ResolveExecutable(value: str | Path, description: str) -> str:
 def RunCommand(command: list[str], *, dry_run: bool) -> None:
     print(f"$ {shlex.join(command)}")
     if not dry_run:
-        subprocess.run(command, check=True)
+        _ = subprocess.run(command, check=True)
 
 
 # ------------------------------------------------------------------------------
@@ -576,7 +592,7 @@ def RunCase(
         if not force and (stream_path.exists() or manifest_path.exists()):
             raise RuntimeError(
                 f"Partial or incompatible generation artifacts for {case.case_id}; "
-                "use --force to regenerate them."
+                + "use --force to regenerate them."
             )
         RunCommand(
             BuildGeneratorCommand(

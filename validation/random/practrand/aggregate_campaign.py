@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import argparse
 import csv
 import json
@@ -307,9 +305,7 @@ def LoadCase(
         layout=RequireString(summary_input, "layout", case_id),
         stream_offset=RequireInteger(summary_input, "stream_offset", case_id),
         worker_count=RequireInteger(summary_input, "worker_count", case_id),
-        samples_per_worker=RequireInteger(
-            summary_input, "samples_per_worker", case_id
-        ),
+        samples_per_worker=RequireInteger(summary_input, "samples_per_worker", case_id),
         byte_count=RequireInteger(summary_input, "byte_count", case_id),
         status=RequireString(output, "status", case_id),
         tested_length=RequireString(output, "tested_length", case_id),
@@ -717,6 +713,7 @@ def WriteOutputs(
     print(f"Summary   : {summary_path}")
     print(f"Cases CSV : {cases_path}")
     print(f"Anomalies : {anomalies_path}")
+
 
 def main() -> int:
     args = ParseArguments()

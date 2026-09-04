@@ -1104,9 +1104,9 @@ def WriteCsv(path: Path, rows: list[CsvRow]) -> None:
 
     with path.open("w", encoding="utf-8", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=list(rows[0].keys()))
-        _ = writer.writeheader()
+        _ = cast(object, writer.writeheader())
         for row in rows:
-            _ = writer.writerow(row)
+            _ = cast(object, writer.writerow(row))
 
 
 # ------------------------------------------------------------------------------
