@@ -13,8 +13,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 # ------------------------------------------------------------------------------
-# Radioactivity validation
-
-# add_subdirectory(radioactivity)
-
-# add_dependencies(validation validation_radioactivity)
+# Source validation
+add_subdirectory(source)
+add_dependencies(validation validation_source)
