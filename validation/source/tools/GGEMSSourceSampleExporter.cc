@@ -68,6 +68,11 @@ struct Options {
   std::uint32_t worker_count{};
   std::uint64_t seed{};
   std::array<std::uint64_t, 3U> dimensions_pm{};
+  std::array<long double, 3U> requested_center_mm{};
+  std::array<std::int64_t, 3U> center_pm{};
+  std::array<double, 3U> frame_direction{};
+  std::array<double, 3U> frame_up{};
+  bool has_orientation{false};
   std::string angular{"fixed"};
   // Requested theta min/max, then phi min/max, before central Units conversion.
   std::array<long double, 4U> angular_bounds_deg{};
@@ -94,7 +99,7 @@ struct Options {
 
 auto PrintUsage() -> void {
   std::cout
-      << "GGEMS Source / Geometry G1, Angle A1, Energy E1, Time T1 exporter\n"
+      << "GGEMS Source / G1, A1, E1, T1, Frame G2/A2 exporter\n"
       << "Required: --device <GGEMS selector> --geometry <name>\n"
       << "          --output <samples.csv> --metadata <metadata.json>\n"
       << "          --primaries <uint64> --workers <uint32> --seed <uint64>\n"
@@ -104,6 +109,15 @@ auto PrintUsage() -> void {
       << "          --size-z-mm <value> (default sizes are zero)\n"
       << "Supply complete widths/diameters/heights: circle X=Y, sphere\n"
       << "X=Y=Z, cylinder X=Y and Z=height; planar Z and Point sizes=0.\n"
+      << "Center:   --center-x-mm <value> --center-y-mm <value>\n"
+      << "          --center-z-mm <value> (all three, default origin)\n"
+      << "Frame:    --frame-direction-x <value> --frame-direction-y <value>\n"
+      << "          --frame-direction-z <value> --frame-up-x <value>\n"
+      << "          --frame-up-y <value> --frame-up-z <value>\n"
+      << "All six frame components are required together. They are passed\n"
+      << "to Source::SetOrientation(direction, up_reference); no arguments\n"
+      << "keep the default identity frame. Packed axes come from the "
+         "snapshot.\n"
       << "          --angular fixed|isotropic|bounded-isotropic|focused\n"
       << "          (default fixed; isotropic uses the no-argument API)\n"
       << "Bounded:  --theta-min-deg <value> --theta-max-deg <value>\n"
@@ -132,7 +146,7 @@ auto PrintUsage() -> void {
       << "configured chronology and an index in [1, sequence-runs).\n"
       << "CountDriven births equal the effective window start exactly.\n"
       << "Capture requires 2*N <= UINT32_MAX with the current Observer.\n"
-      << "One fresh CountDriven Gamma Source, identity frame, origin,\n"
+      << "One fresh CountDriven Gamma Source, default identity frame/origin,\n"
       << "default Fixed +Z, Mono 511 keV, static 0 ps, weight 1, Philox "
          "only.\n";
 }
@@ -256,6 +270,60 @@ auto CanonicalEnergy(long double value, std::string_view option)
 // =============================================================================
 // =============================================================================
 
+auto ParseFrameComponent(std::string_view text, std::string_view option)
+    -> double {
+  auto const value = ParseNumber(text, option);
+  if (std::abs(value) > std::numeric_limits<double>::max()) {
+    throw std::runtime_error(
+        std::format("{} must be representable in binary64.", option));
+  }
+  return static_cast<double>(value);
+}
+
+// =============================================================================
+// =============================================================================
+
+auto ValidatePoseOptions(Options &options,
+                         std::set<std::string_view> const &seen) -> void {
+  bool const has_center = seen.contains("--center-x-mm") ||
+                          seen.contains("--center-y-mm") ||
+                          seen.contains("--center-z-mm");
+  for (auto const *option :
+       {"--center-x-mm", "--center-y-mm", "--center-z-mm"}) {
+    if (seen.contains(option) != has_center) {
+      throw std::runtime_error("Supply all three center coordinates together.");
+    }
+  }
+
+  for (std::size_t axis = 0U; axis < options.center_pm.size(); ++axis) {
+    auto const converted =
+        ggems::units::MakeQuantity<ggems::units::PositionCoordinate>(
+            options.requested_center_mm[axis], "mm");
+    if (!converted) {
+      throw std::runtime_error(
+          "Source center must be representable in int64 pm.");
+    }
+    options.center_pm[axis] = converted->value;
+  }
+
+  constexpr std::array<std::string_view, 6U> k_frame_options{
+      "--frame-direction-x", "--frame-direction-y", "--frame-direction-z",
+      "--frame-up-x",        "--frame-up-y",        "--frame-up-z"};
+  options.has_orientation =
+      std::ranges::any_of(k_frame_options, [&seen](auto option) -> bool {
+        return seen.contains(option);
+      });
+  for (auto const option : k_frame_options) {
+    if (seen.contains(option) != options.has_orientation) {
+      throw std::runtime_error(
+          "Supply all six direction/up components together.");
+    }
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
 auto ParseArguments(int argc, char const *const *argv) -> Options {
   Options options;
   std::set<std::string_view> seen;
@@ -302,6 +370,24 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
       options.dimensions_pm[1U] = ParseLength(value, option);
     } else if (option == "--size-z-mm") {
       options.dimensions_pm[2U] = ParseLength(value, option);
+    } else if (option == "--center-x-mm") {
+      options.requested_center_mm[0U] = ParseNumber(value, option);
+    } else if (option == "--center-y-mm") {
+      options.requested_center_mm[1U] = ParseNumber(value, option);
+    } else if (option == "--center-z-mm") {
+      options.requested_center_mm[2U] = ParseNumber(value, option);
+    } else if (option == "--frame-direction-x") {
+      options.frame_direction[0U] = ParseFrameComponent(value, option);
+    } else if (option == "--frame-direction-y") {
+      options.frame_direction[1U] = ParseFrameComponent(value, option);
+    } else if (option == "--frame-direction-z") {
+      options.frame_direction[2U] = ParseFrameComponent(value, option);
+    } else if (option == "--frame-up-x") {
+      options.frame_up[0U] = ParseFrameComponent(value, option);
+    } else if (option == "--frame-up-y") {
+      options.frame_up[1U] = ParseFrameComponent(value, option);
+    } else if (option == "--frame-up-z") {
+      options.frame_up[2U] = ParseFrameComponent(value, option);
     } else if (option == "--angular") {
       options.angular = value;
     } else if (option == "--theta-min-deg") {
@@ -388,6 +474,8 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
   if (options.case_name.empty()) {
     options.case_name = "G1_" + options.geometry;
   }
+
+  ValidatePoseOptions(options, seen);
 
   if (options.angular != "fixed" && options.angular != "isotropic" &&
       options.angular != "bounded-isotropic" && options.angular != "focused") {
@@ -514,8 +602,15 @@ auto ConfigureSource(Options const &options) -> std::shared_ptr<GGEMSSource> {
       .SetCountDrivenPopulation(options.primary_count)
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetFixedAngularDistribution()
-      .SetPositionPicoMeter(0LL, 0LL, 0LL)
       .SetWeight(1.0F);
+
+  source->SetPositionPicoMeter(options.center_pm[0U], options.center_pm[1U],
+                               options.center_pm[2U]);
+
+  // Production owns normalization, orthogonalization, validation and packing.
+  if (options.has_orientation) {
+    source->SetOrientation(options.frame_direction, options.frame_up);
+  }
 
   // The public Source builders own conversion, ordering, grids, and tickets.
   // All configuration errors occur before OpenCL setup or output creation.
@@ -681,9 +776,10 @@ auto CollectSourceRecords(GGEMSTransportObserver const &observer,
     }
 
     if (options.geometry == "point" &&
-        (record->position_x_pm != 0LL || record->position_y_pm != 0LL ||
-         record->position_z_pm != 0LL)) {
-      throw std::runtime_error("Point Source produced a nonzero coordinate.");
+        (record->position_x_pm != source.position_x_pm ||
+         record->position_y_pm != source.position_y_pm ||
+         record->position_z_pm != source.position_z_pm)) {
+      throw std::runtime_error("Point Source differs from its exact center.");
     }
 
     ++expected_id;
@@ -930,6 +1026,24 @@ auto WriteMetadata(std::ostream &output, Options const &options,
 
   output << ']';
   WriteEnergyMetadata(output, options, snapshot);
+
+  output << ",\n  \"requested_center_mm\":";
+  WriteJsonArray(output, options.requested_center_mm);
+  output << ",\n  \"position_display_unit_pm\":"
+         << ggems::units::MakeQuantity<ggems::units::Length>(1U, "mm")
+                .value()
+                .value
+         << ",\n  \"frame_matrix_convention\":\"axes_as_columns\""
+         << ",\n  \"requested_frame\":";
+  if (options.has_orientation) {
+    output << R"({"api":"SetOrientation","direction":)";
+    WriteJsonArray(output, options.frame_direction);
+    output << ",\"up_reference\":";
+    WriteJsonArray(output, options.frame_up);
+    output << '}';
+  } else {
+    output << R"({"api":"default_identity"})";
+  }
 
   output << ",\n  \"chronology\":" << JsonString(options.chronology)
          << ",\n  \"observer\":{\"overflow_count\":"

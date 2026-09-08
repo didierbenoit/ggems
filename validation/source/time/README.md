@@ -227,8 +227,8 @@ python validation/source/time/analyze.py --metadata output/metadata.json --outpu
 
 The exact analysis uses the Python standard library. Matplotlib from the
 existing project environment generates the optional configured/reset figures;
-`--no-plots` avoids importing it. No NumPy or SciPy is needed. Do not install
-packages automatically.
+`--no-plots` avoids importing Matplotlib and its NumPy dependency. SciPy is not
+required. Do not install packages automatically.
 
 Default `256` primaries per Run and `64` workers are sufficient. Large
 publication-scale counts add no meaningful information to exact time equality

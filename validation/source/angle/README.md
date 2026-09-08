@@ -70,7 +70,8 @@ Bounded requires all four degree bounds; Focused requires all three
 `--focus-x-mm`, `--focus-y-mm`, `--focus-z-mm` coordinates, including zeros.
 Parameters belonging to another mode are rejected. Units conversion and
 configuration validation delegate to the central GGEMS Units and Source APIs.
-There are no frame/rotation controls. Specify `--case-name` for standalone A1
+Frame/rotation controls are documented in the [G2/A2 domain](../frame/README.md);
+A1 keeps the default identity frame. Specify `--case-name` for standalone A1
 analysis; the exporter's historical default remains `G1_<geometry>`.
 
 ## Extraction and backward compatibility
