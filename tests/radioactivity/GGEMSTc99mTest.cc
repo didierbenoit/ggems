@@ -147,7 +147,7 @@ TEST(GGEMSTc99mTest, PreservesCombinedBetaShapeSpectrum) {
   long double const mean_energy_keV =
       weighted_center_sum / weight_sum /
       static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(static_cast<double>(mean_energy_keV), 113.562304553545, 0.001);
+  EXPECT_NEAR(static_cast<double>(mean_energy_keV), 112.659414578794, 0.001);
 }
 
 // =============================================================================

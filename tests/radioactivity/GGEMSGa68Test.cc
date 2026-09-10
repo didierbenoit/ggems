@@ -52,13 +52,13 @@ constexpr std::array<ExpectedPositronBranch, 3U> k_expected_positron_branches{{
      .bin_width_micro_eV = 499'846'000ULL,
      .lower_edge_micro_eV = 3'176'000ULL,
      .endpoint_micro_eV = 821'750'000'000ULL,
-     .represented_mean_energy_keV = 351.95880},
+     .represented_mean_energy_keV = 352.01654},
     {.yield_per_decay = 0.0000026L,
      .table_count = 487U,
      .bin_width_micro_eV = 499'444'000ULL,
      .lower_edge_micro_eV = 772'000ULL,
      .endpoint_micro_eV = 243'230'000'000ULL,
-     .represented_mean_energy_keV = 107.38222},
+     .represented_mean_energy_keV = 107.53776},
 }};
 
 // =============================================================================

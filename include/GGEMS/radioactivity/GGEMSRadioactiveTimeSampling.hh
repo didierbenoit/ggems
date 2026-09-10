@@ -5,14 +5,25 @@
 #include <limits>
 
 namespace ggems::core::radioactivity {
+
 inline constexpr float k_radioactive_time_uniform_limit_scaled_decay{
     0x1.0p-14F};
+
+inline constexpr float k_radioactive_time_series_limit_scaled_decay{0.01F};
 
 [[nodiscard]] inline auto
 ComputeRadioactiveTimeRelative(float uniform, float scaled_decay) noexcept
     -> float {
   if (scaled_decay <= k_radioactive_time_uniform_limit_scaled_decay) {
     return uniform;
+  }
+
+  if (scaled_decay <= k_radioactive_time_series_limit_scaled_decay) {
+    float const uu = uniform * (uniform - 1.0F);
+
+    return uniform + (0.5F * scaled_decay * uu) +
+           (1.0F / 6.0F) * scaled_decay * (scaled_decay * uu) *
+               ((2.0F * uniform) - 1.0F);
   }
 
   float const decay_mass = -std::expm1(-scaled_decay);

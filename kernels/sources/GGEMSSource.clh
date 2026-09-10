@@ -245,7 +245,8 @@ static inline float3 GGEMS_SourceSampleDirectionFromUniforms(
       float cos_phi = 0.0f;
       float const sin_phi = sincos(phi, &cos_phi);
 
-      return (float3)(sin_theta * cos_phi, sin_theta * sin_phi, cos_theta);
+      return normalize(
+          (float3)(sin_theta * cos_phi, sin_theta * sin_phi, cos_theta));
     }
 
     float const cos_theta = source->isotropic_cos_theta_lower +

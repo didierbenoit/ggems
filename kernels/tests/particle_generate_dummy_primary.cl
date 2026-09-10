@@ -16,7 +16,7 @@ __kernel void particle_generate_dummy_primary(
   particle.global_particle_id = global_particle_id;
   particle.track_id = global_particle_id;
   particle.parent_track_id = GGEMS_INVALID_ID_U64;
-  particle.time_ps = 0ULL;
+  particle.time_ps = 0UL;
 
   particle.position_x_pm = 0L;
   particle.position_y_pm = 0L;

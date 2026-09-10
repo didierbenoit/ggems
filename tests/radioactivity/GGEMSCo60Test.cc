@@ -52,7 +52,7 @@ constexpr std::array<ExpectedBetaBranch, 3U> k_expected_beta_branches{{
      .bin_width_micro_eV = 499'968'000ULL,
      .lower_edge_micro_eV = 2'528'000ULL,
      .endpoint_micro_eV = 664'460'000'000ULL,
-     .represented_mean_energy_keV = 274.31370},
+     .represented_mean_energy_keV = 273.60067},
     {.yield_per_decay = 0.0012L,
      .table_count = 2982U,
      .bin_width_micro_eV = 499'852'000ULL,

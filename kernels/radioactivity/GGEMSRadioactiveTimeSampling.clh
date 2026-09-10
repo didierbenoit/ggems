@@ -6,6 +6,7 @@
 // The uniform-limit CDF error is bounded by x / 8 + O(x^2), so 2^-14
 // keeps the leading binary32 error below 1.0e-5.
 #define GGEMS_RADIOACTIVE_TIME_UNIFORM_LIMIT_SCALED_DECAY 0x1.0p-14f
+#define GGEMS_RADIOACTIVE_TIME_SERIES_LIMIT_SCALED_DECAY 0.01f
 
 // =============================================================================
 // =============================================================================
@@ -14,6 +15,14 @@ static inline float GGEMS_ComputeRadioactiveTimeRelative(float uniform,
                                                          float scaled_decay) {
   if (scaled_decay <= GGEMS_RADIOACTIVE_TIME_UNIFORM_LIMIT_SCALED_DECAY) {
     return uniform;
+  }
+
+  if (scaled_decay <= GGEMS_RADIOACTIVE_TIME_SERIES_LIMIT_SCALED_DECAY) {
+    float const uu = uniform * (uniform - 1.0f);
+
+    return uniform + 0.5f * scaled_decay * uu +
+           (1.0f / 6.0f) * scaled_decay * scaled_decay * uu *
+               (2.0f * uniform - 1.0f);
   }
 
   float const decay_mass = -expm1(-scaled_decay);
