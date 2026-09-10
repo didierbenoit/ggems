@@ -38,7 +38,7 @@ __kernel void source_record_abi_probe(__global ulong *layout,
   GGEMS_WRITE_RECORD_OFFSET(1, source_id);
   GGEMS_WRITE_RECORD_OFFSET(2, time_start_ps);
   GGEMS_WRITE_RECORD_OFFSET(3, time_stop_ps);
-  GGEMS_WRITE_RECORD_OFFSET(4, energy_milli_eV);
+  GGEMS_WRITE_RECORD_OFFSET(4, energy_micro_eV);
   GGEMS_WRITE_RECORD_OFFSET(5, position_x_pm);
   GGEMS_WRITE_RECORD_OFFSET(6, position_y_pm);
   GGEMS_WRITE_RECORD_OFFSET(7, position_z_pm);
@@ -101,7 +101,7 @@ __kernel void source_record_abi_probe(__global ulong *layout,
   host_values[0] = records[0].source_id;
   host_values[1] = records[0].time_start_ps;
   host_values[2] = records[0].time_stop_ps;
-  host_values[3] = records[0].energy_milli_eV;
+  host_values[3] = records[0].energy_micro_eV;
   host_values[4] = as_ulong(records[0].position_x_pm);
   host_values[5] = as_ulong(records[0].position_y_pm);
   host_values[6] = as_ulong(records[0].position_z_pm);
@@ -137,7 +137,7 @@ __kernel void source_record_abi_probe(__global ulong *layout,
   records[1].source_id = 201UL;
   records[1].time_start_ps = 202UL;
   records[1].time_stop_ps = 203UL;
-  records[1].energy_milli_eV = 204UL;
+  records[1].energy_micro_eV = 204UL;
   records[1].position_x_pm = -205L;
   records[1].position_y_pm = 206L;
   records[1].position_z_pm = -207L;

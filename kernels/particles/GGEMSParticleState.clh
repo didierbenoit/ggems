@@ -44,7 +44,7 @@ typedef struct GGEMSParticleState {
   float direction_z;
   float direction_w;
 
-  ulong energy_milli_eV;
+  ulong energy_micro_eV;
   float weight;
 } GGEMSParticleState;
 

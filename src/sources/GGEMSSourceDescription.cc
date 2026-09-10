@@ -150,16 +150,16 @@ DescribeEnergy(GGEMSSourceRecord const &source_record,
       FromKernelEnergyDistributionType(energy_record.distribution_type);
 
   if (distribution_type == GGEMSEnergyDistributionType::Mono) {
-    if (!(source_record.energy_milli_eV > 0ULL &&
-                             energy_record.table_offset == 0ULL &&
-                             energy_record.table_count == 0U &&
-                             energy_record.regular_bin_width_milli_eV == 0ULL)) {
+    if (!(source_record.energy_micro_eV > 0ULL &&
+          energy_record.table_offset == 0ULL &&
+          energy_record.table_count == 0U &&
+          energy_record.regular_bin_width_micro_eV == 0ULL)) {
       throw ggems::core::GGEMSInternal("Invalid Mono energy description record.");
     }
 
     return std::format("Energy: Mono ({})",
                        ggems::units::HumanReadable(ggems::units::Energy{
-                           source_record.energy_milli_eV}));
+                           source_record.energy_micro_eV}));
   }
 
   if (!(distribution_type == GGEMSEnergyDistributionType::DiscreteLines ||
@@ -196,7 +196,7 @@ DescribeEnergy(GGEMSSourceRecord const &source_record,
                      "Center range: [{}, {}] | Bin width: {}",
                      table_count, first, last,
                      ggems::units::HumanReadable(ggems::units::Energy{
-                         energy_record.regular_bin_width_milli_eV}));
+                         energy_record.regular_bin_width_micro_eV}));
 }
 
 } // namespace
@@ -213,7 +213,7 @@ auto DescribeSource(GGEMSSource const &source) -> std::string {
 
     return DescribeSource(
         source_record, source.GetPrimaryCount(), energy_record,
-        energy_distribution.GetEnergyValuesMilliElectronVolt());
+        energy_distribution.GetEnergyValuesMicroElectronVolt());
   }
 
   GGEMSSourceRecord const source_record = source.BuildExecutionRecord();
@@ -245,7 +245,7 @@ auto DescribeSource(GGEMSSource const &source) -> std::string {
 
 auto DescribeSource(GGEMSSourceRecord const &record,
                     std::uint64_t primary_count) -> std::string {
-  if (!(record.energy_milli_eV > 0ULL)) {
+  if (!(record.energy_micro_eV > 0ULL)) {
     throw ggems::core::GGEMSInternal("The energy-aware DescribeSource overload is required for a "
       "table-backed source.");
   }
@@ -364,7 +364,7 @@ auto DescribeSourceRunSlot(std::size_t source_index,
   return DescribeSourceRunSlot(source_index, records[source_index],
                                ranges[source_index],
                                energy_records[source_index],
-                               snapshot.GetEnergyValuesMilliElectronVolt());
+                               snapshot.GetEnergyValuesMicroElectronVolt());
 }
 
 // =============================================================================
@@ -373,7 +373,7 @@ auto DescribeSourceRunSlot(std::size_t source_index,
 auto DescribeSourceRunSlot(std::size_t source_index,
                            GGEMSSourceRecord const &record,
                            GGEMSSourceRunRange const &range) -> std::string {
-  if (!(record.energy_milli_eV > 0ULL)) {
+  if (!(record.energy_micro_eV > 0ULL)) {
     throw ggems::core::GGEMSInternal(
         "The energy-aware DescribeSourceRunSlot overload is required for a "
       "table-backed source.");

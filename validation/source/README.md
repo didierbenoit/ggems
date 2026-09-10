@@ -51,7 +51,7 @@ Current scientific storage is:
 
 - Positions and Source center: signed int64 pm; geometry dimensions: uint64 pm.
 - Directions and actual packed Source axes/angular limits: binary32.
-- Energy: uint64 **meV**, including exact table centers and regular-bin width.
+- Energy: uint64 **micro-eV**, including exact table centers and regular-bin width.
 - Time: uint64 ps; weight: binary32.
 - Tabulated energy probabilities: exact cumulative uint32-ticket boundaries
   stored in uint64, ending at 2^32.
@@ -67,7 +67,7 @@ spectrum as its exact execution authority.
 
 The project-wide Energy/EnergyChange migration to uint64/int64 micro-eV (ueV)
 was approved on September 8, 2026. It remains separate future implementation:
-this checkpoint executes meV. Focused E1 and I1 reruns are required after that
+this checkpoint executes micro-eV. Focused E1 and I1 reruns are required after that
 migration; the two scales must never be mixed.
 
 Philox qualification and Source validation are separate evidence. The

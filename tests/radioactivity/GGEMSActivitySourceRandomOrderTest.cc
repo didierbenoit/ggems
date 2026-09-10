@@ -90,14 +90,14 @@ TEST_F(GGEMSActivitySourceRandomOrderTest,
       .particle_type =
           ggems::core::particles::ToKernelParticleType(ParticleType::Gamma),
       .energy_distribution_record_index = 0U,
-      .mono_energy_milli_eV = 0ULL};
+      .mono_energy_micro_eV = 0ULL};
   EnergyDistributionRecord const energy_distribution{
-      .regular_bin_width_milli_eV = 0ULL,
+      .regular_bin_width_micro_eV = 0ULL,
       .table_offset = 0ULL,
       .distribution_type = ggems::core::sources::ToKernelEnergyDistributionType(
           EnergyType::DiscreteLines),
       .table_count = 2U};
-  constexpr std::array<std::uint64_t, 2U> k_energy_values{40ULL, 80ULL};
+  constexpr std::array<std::uint64_t, 2U> k_energy_values{40'000ULL, 80'000ULL};
   constexpr std::array<std::uint64_t, 2U> k_ticket_upper{2'147'483'648ULL,
                                                          4'294'967'296ULL};
 

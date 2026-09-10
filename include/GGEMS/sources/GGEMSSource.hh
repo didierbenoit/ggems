@@ -86,7 +86,7 @@ public:
   auto SetEmittedParticleType(particles::GGEMSParticleType particle_type)
       -> GGEMSSource &;
 
-  auto SetEnergyMilliElectronVolt(std::uint64_t energy_milli_eV)
+  auto SetEnergyMicroElectronVolt(std::uint64_t energy_micro_eV)
       -> GGEMSSource &;
 
   auto SetDiscreteEnergyLines(std::span<double const> energies,

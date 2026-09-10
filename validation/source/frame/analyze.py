@@ -42,7 +42,7 @@ CSV_COLUMNS = (
     "direction_x",
     "direction_y",
     "direction_z",
-    "energy_meV",
+    "energy_micro_eV",
     "time_ps",
     "weight",
     "record_kind",
@@ -215,8 +215,8 @@ def load_metadata(path: Path, case: FrameCase, *, reference: bool = False) -> Me
             )
     if _integer(raw.get("global_primary_last"), "global_primary_last") != count - 1:
         raise ValueError("Global primary range differs from the expected domain.")
-    if _integer(raw.get("energy_meV"), "energy_meV") != 511000000:
-        raise ValueError("Frame cases require Mono exactly 511000000 meV.")
+    if _integer(raw.get("energy_micro_eV"), "energy_micro_eV") != 511000000000:
+        raise ValueError("Frame cases require Mono exactly 511000000000 micro-eV.")
     if _number(raw.get("weight"), "weight") != 1.0:
         raise ValueError("Frame cases require unit weight.")
 
@@ -225,15 +225,15 @@ def load_metadata(path: Path, case: FrameCase, *, reference: bool = False) -> Me
         "distribution_type": 1,
         "table_offset": 0,
         "table_count": 0,
-        "regular_bin_width_meV": 0,
-        "mono_energy_meV": 511000000,
+        "regular_bin_width_micro_eV": 0,
+        "mono_energy_micro_eV": 511000000000,
     }.items():
         if _integer(energy.get(key), key) != expected:
             raise ValueError(f"Packed Mono metadata mismatch: {key}.")
-    if energy.get("representation") != "uint64 meV":
-        raise ValueError("Energy representation must be uint64 meV.")
+    if energy.get("representation") != "uint64 micro-eV":
+        raise ValueError("Energy representation must be uint64 micro-eV.")
     for key in (
-        "energy_values_meV",
+        "energy_values_micro_eV",
         "relative_weights",
         "cumulative_ticket_upper_bounds",
     ):
@@ -412,7 +412,7 @@ def load_samples(path: Path, metadata: Metadata) -> Samples:
                     raise ValueError("CSV direction exceeds binary32.")
                 directions[local, axis] = float(np.float32(number))
             if (
-                _decimal(row[9], 0, UINT64_MAX) != 511000000
+                _decimal(row[9], 0, UINT64_MAX) != 511000000000
                 or _decimal(row[10], 0, UINT64_MAX) != 0
             ):
                 raise ValueError(
@@ -758,7 +758,7 @@ def measure_case(
             "observer_overflow_count": 0,
             "source_records_only": True,
             "complete_unique_provenance": True,
-            "mono_energy_meV": 511000000,
+            "mono_energy_micro_eV": 511000000000,
             "static_time_ps": 0,
             "weight": 1,
             "particle": "Gamma; checked on every raw record by the exporter",

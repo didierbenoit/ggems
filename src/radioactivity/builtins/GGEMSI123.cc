@@ -1,4 +1,5 @@
 #include <array>
+#include <cstdint>
 #include <cstddef>
 #include <utility>
 #include <vector>
@@ -15,6 +16,9 @@ namespace {
 
 // =============================================================================
 // =============================================================================
+
+// Canonical Energy storage is now micro-electronvolts. The original meV
+// quantization described below is preserved by exact integer scaling by 1000.
 
 // Scientific references for this built-in:
 //
@@ -46,7 +50,7 @@ namespace {
 // emissions are intentionally excluded. This definition represents prompt
 // transportable particles emitted by one I-123 parent decay.
 //
-// All tabular energies below are converted offline to exact positive integer
+// All tabular energies below were converted offline to exact positive integer
 // milli-electronvolt values before being embedded in GGEMS.
 
 constexpr std::size_t k_emission_count{4U};
@@ -54,17 +58,21 @@ constexpr long double k_half_life_seconds{47'604.24L};
 
 // Current LNHB/LARA prompt nuclear gamma emissions. Intensities published per
 // 100 parent disintegrations are stored as yields per parent decay.
-constexpr std::array<double, 40U> k_gamma_energies_milli_eV{{
-    158'970'000.0, 174'200'000.0, 182'610'000.0,   192'170'000.0,
-    197'220'000.0, 198'230'000.0, 206'790'000.0,   207'800'000.0,
-    247'960'000.0, 257'510'000.0, 278'360'000.0,   281'030'000.0,
-    295'170'000.0, 329'380'000.0, 330'700'000.0,   343'730'000.0,
-    346'350'000.0, 405'020'000.0, 437'500'000.0,   440'020'000.0,
-    454'760'000.0, 505'330'000.0, 528'960'000.0,   538'540'000.0,
-    556'050'000.0, 562'790'000.0, 578'260'000.0,   599'690'000.0,
-    610'050'000.0, 624'570'000.0, 628'260'000.0,   687'950'000.0,
-    735'780'000.0, 783'590'000.0, 837'100'000.0,   877'520'000.0,
-    894'800'000.0, 909'120'000.0, 1'036'630'000.0, 1'068'120'000.0,
+constexpr std::array<std::uint64_t, 40U> k_gamma_energies_micro_eV{{
+    158'970'000'000ULL,   174'200'000'000ULL, 182'610'000'000ULL,
+    192'170'000'000ULL,   197'220'000'000ULL, 198'230'000'000ULL,
+    206'790'000'000ULL,   207'800'000'000ULL, 247'960'000'000ULL,
+    257'510'000'000ULL,   278'360'000'000ULL, 281'030'000'000ULL,
+    295'170'000'000ULL,   329'380'000'000ULL, 330'700'000'000ULL,
+    343'730'000'000ULL,   346'350'000'000ULL, 405'020'000'000ULL,
+    437'500'000'000ULL,   440'020'000'000ULL, 454'760'000'000ULL,
+    505'330'000'000ULL,   528'960'000'000ULL, 538'540'000'000ULL,
+    556'050'000'000ULL,   562'790'000'000ULL, 578'260'000'000ULL,
+    599'690'000'000ULL,   610'050'000'000ULL, 624'570'000'000ULL,
+    628'260'000'000ULL,   687'950'000'000ULL, 735'780'000'000ULL,
+    783'590'000'000ULL,   837'100'000'000ULL, 877'520'000'000ULL,
+    894'800'000'000ULL,   909'120'000'000ULL, 1'036'630'000'000ULL,
+    1'068'120'000'000ULL,
 }};
 
 constexpr std::array<double, 40U> k_gamma_line_yields{{
@@ -79,12 +87,12 @@ constexpr std::array<double, 40U> k_gamma_line_yields{{
 
 // CEA/LNE-LNHB Nucleide-LARA compact Te X-ray emissions. Grouped
 // representative energies are preserved without artificial sub-line splitting.
-constexpr std::array<double, 5U> k_x_ray_energies_milli_eV{{
-    4'078'000.0,
-    27'202'000.0,
-    27'472'600.0,
-    31'104'400.0,
-    31'762'300.0,
+constexpr std::array<std::uint64_t, 5U> k_x_ray_energies_micro_eV{{
+    4'078'000'000ULL,
+    27'202'000'000ULL,
+    27'472'600'000ULL,
+    31'104'400'000ULL,
+    31'762'300'000ULL,
 }};
 
 constexpr std::array<double, 5U> k_x_ray_line_yields{{
@@ -95,23 +103,23 @@ constexpr std::array<double, 5U> k_x_ray_line_yields{{
     0.0286,
 }};
 
-// MIRDspecs/ICRP-107 detailed Auger-electron lines. MIRD energies are rounded
-// offline to GGEMS integer milli-electronvolt storage. These are the only
+// MIRDspecs/ICRP-107 detailed Auger-electron lines. MIRD energies were rounded
+// offline to the original integer milli-electronvolt grid. These are the only
 // MIRD-derived runtime emission data in this I-123 definition.
-constexpr std::array<double, 13U> k_auger_electron_energies_milli_eV{{
-    22'924.0,
-    24'926.0,
-    121'020.0,
-    295'783.0,
-    449'494.0,
-    541'188.0,
-    687'637.0,
-    3'084'750.0,
-    3'678'860.0,
-    4'295'240.0,
-    22'665'300.0,
-    26'505'600.0,
-    30'346'100.0,
+constexpr std::array<std::uint64_t, 13U> k_auger_electron_energies_micro_eV{{
+    22'924'000ULL,
+    24'926'000ULL,
+    121'020'000ULL,
+    295'783'000ULL,
+    449'494'000ULL,
+    541'188'000ULL,
+    687'637'000ULL,
+    3'084'750'000ULL,
+    3'678'860'000ULL,
+    4'295'240'000ULL,
+    22'665'300'000ULL,
+    26'505'600'000ULL,
+    30'346'100'000ULL,
 }};
 
 constexpr std::array<double, 13U> k_auger_electron_line_yields{{
@@ -133,16 +141,21 @@ constexpr std::array<double, 13U> k_auger_electron_line_yields{{
 // CEA/LNE-LNHB LARA shell-resolved K/L prompt internal-conversion electrons.
 // The arrays are sorted by increasing electron energy as required by
 // DiscreteLines.
-constexpr std::array<double, 36U> k_conversion_electron_energies_milli_eV{{
-    127'180'000.0, 142'390'000.0, 150'800'000.0, 154'360'000.0, 160'370'000.0,
-    165'410'000.0, 166'440'000.0, 169'570'000.0, 174'980'000.0, 176'010'000.0,
-    177'980'000.0, 187'550'000.0, 192'590'000.0, 193'620'000.0, 202'160'000.0,
-    203'190'000.0, 216'150'000.0, 225'710'000.0, 243'330'000.0, 246'450'000.0,
-    249'220'000.0, 252'890'000.0, 273'630'000.0, 276'400'000.0, 298'900'000.0,
-    314'540'000.0, 326'080'000.0, 341'720'000.0, 408'210'000.0, 435'390'000.0,
-    473'530'000.0, 500'710'000.0, 506'730'000.0, 533'910'000.0, 592'800'000.0,
-    619'980'000.0,
-}};
+constexpr std::array<std::uint64_t, 36U>
+    k_conversion_electron_energies_micro_eV{{
+        127'180'000'000ULL, 142'390'000'000ULL, 150'800'000'000ULL,
+        154'360'000'000ULL, 160'370'000'000ULL, 165'410'000'000ULL,
+        166'440'000'000ULL, 169'570'000'000ULL, 174'980'000'000ULL,
+        176'010'000'000ULL, 177'980'000'000ULL, 187'550'000'000ULL,
+        192'590'000'000ULL, 193'620'000'000ULL, 202'160'000'000ULL,
+        203'190'000'000ULL, 216'150'000'000ULL, 225'710'000'000ULL,
+        243'330'000'000ULL, 246'450'000'000ULL, 249'220'000'000ULL,
+        252'890'000'000ULL, 273'630'000'000ULL, 276'400'000'000ULL,
+        298'900'000'000ULL, 314'540'000'000ULL, 326'080'000'000ULL,
+        341'720'000'000ULL, 408'210'000'000ULL, 435'390'000'000ULL,
+        473'530'000'000ULL, 500'710'000'000ULL, 506'730'000'000ULL,
+        533'910'000'000ULL, 592'800'000'000ULL, 619'980'000'000ULL,
+    }};
 
 constexpr std::array<double, 36U> k_conversion_electron_line_yields{{
     0.1372,      0.00000132, 0.000025,    0.01798,     0.0000235,   0.00000036,
@@ -179,27 +192,24 @@ constexpr long double k_conversion_electron_yield{
   std::vector<GGEMSRadionuclideEmission> emissions;
   emissions.reserve(k_emission_count);
 
-  emissions.emplace_back(
-      particles::GGEMSParticleType::Gamma, k_gamma_yield,
-      sources::GGEMSEnergyDistribution::BuildDiscreteLines(
-          k_gamma_energies_milli_eV, k_gamma_line_yields, "meV"));
-
-  emissions.emplace_back(
-      particles::GGEMSParticleType::Gamma, k_x_ray_yield,
-      sources::GGEMSEnergyDistribution::BuildDiscreteLines(
-          k_x_ray_energies_milli_eV, k_x_ray_line_yields, "meV"));
-
-  emissions.emplace_back(particles::GGEMSParticleType::Electron,
-                         k_auger_electron_yield,
+  emissions.emplace_back(particles::GGEMSParticleType::Gamma, k_gamma_yield,
                          sources::GGEMSEnergyDistribution::BuildDiscreteLines(
-                             k_auger_electron_energies_milli_eV,
-                             k_auger_electron_line_yields, "meV"));
+                             k_gamma_energies_micro_eV, k_gamma_line_yields));
+
+  emissions.emplace_back(particles::GGEMSParticleType::Gamma, k_x_ray_yield,
+                         sources::GGEMSEnergyDistribution::BuildDiscreteLines(
+                             k_x_ray_energies_micro_eV, k_x_ray_line_yields));
+
+  emissions.emplace_back(
+      particles::GGEMSParticleType::Electron, k_auger_electron_yield,
+      sources::GGEMSEnergyDistribution::BuildDiscreteLines(
+          k_auger_electron_energies_micro_eV, k_auger_electron_line_yields));
 
   emissions.emplace_back(particles::GGEMSParticleType::Electron,
                          k_conversion_electron_yield,
                          sources::GGEMSEnergyDistribution::BuildDiscreteLines(
-                             k_conversion_electron_energies_milli_eV,
-                             k_conversion_electron_line_yields, "meV"));
+                             k_conversion_electron_energies_micro_eV,
+                             k_conversion_electron_line_yields));
 
   return {"I-123", k_half_life_seconds, std::move(emissions)};
 }

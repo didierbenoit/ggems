@@ -31,10 +31,10 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 
 [[nodiscard]] auto MakeMonoEmission(GGEMSParticleType particle_type,
                                     long double yield_per_decay,
-                                    std::uint64_t energy_milli_eV)
+                                    std::uint64_t energy_micro_eV)
     -> GGEMSRadionuclideEmission {
   return {particle_type, yield_per_decay,
-          GGEMSEnergyDistribution::BuildMono(energy_milli_eV)};
+          GGEMSEnergyDistribution::BuildMono(energy_micro_eV)};
 }
 
 // =============================================================================
@@ -71,7 +71,7 @@ TEST(GGEMSRadionuclideDefinitionTest, OwnsEmissionsAndTotalYield) {
   std::vector<GGEMSRadionuclideEmission> emissions;
   emissions.push_back(MakeDiscreteEmission(GGEMSParticleType::Alpha, 1.0L));
   emissions.push_back(
-      MakeMonoEmission(GGEMSParticleType::Gamma, 0.3592L, 59'000'000ULL));
+      MakeMonoEmission(GGEMSParticleType::Gamma, 0.3592L, 59'000'000'000ULL));
   emissions.push_back(
       MakeSpectrumEmission(GGEMSParticleType::Electron, 1.675L));
 
@@ -108,7 +108,7 @@ TEST(GGEMSRadionuclideDefinitionTest, OwnsEmissionsAndTotalYield) {
 TEST(GGEMSRadionuclideDefinitionTest, RejectsInvalidNameHalfLifeAndEmissions) {
   std::vector<GGEMSRadionuclideEmission> valid_emissions;
   valid_emissions.push_back(
-      MakeMonoEmission(GGEMSParticleType::Gamma, 1.0L, 1ULL));
+      MakeMonoEmission(GGEMSParticleType::Gamma, 1.0L, 1'000ULL));
 
   EXPECT_THROW(((void)GGEMSRadionuclideDefinition{"", 1.0L, valid_emissions}),
                ggems::core::GGEMSExceptionBase);
@@ -161,9 +161,10 @@ TEST(GGEMSRadionuclideDefinitionTest,
      PreservesTinyPositiveYieldWithoutEnergyTicketQuantization) {
   constexpr long double tiny_yield{1.0e-12L};
   std::vector<GGEMSRadionuclideEmission> emissions;
-  emissions.push_back(MakeMonoEmission(GGEMSParticleType::Gamma, 1.0L, 2ULL));
   emissions.push_back(
-      MakeMonoEmission(GGEMSParticleType::Electron, tiny_yield, 3ULL));
+      MakeMonoEmission(GGEMSParticleType::Gamma, 1.0L, 2'000ULL));
+  emissions.push_back(
+      MakeMonoEmission(GGEMSParticleType::Electron, tiny_yield, 3'000ULL));
 
   GGEMSRadionuclideDefinition const definition{"Synthetic-Weak", 100.0L,
                                                std::move(emissions)};
@@ -183,9 +184,9 @@ TEST(GGEMSRadionuclideDefinitionTest, RejectsNonFiniteTotalYield) {
   long double const maximum = std::numeric_limits<long double>::max();
   std::vector<GGEMSRadionuclideEmission> emissions;
   emissions.push_back(
-      MakeMonoEmission(GGEMSParticleType::Gamma, maximum, 1ULL));
+      MakeMonoEmission(GGEMSParticleType::Gamma, maximum, 1'000ULL));
   emissions.push_back(
-      MakeMonoEmission(GGEMSParticleType::Electron, maximum, 2ULL));
+      MakeMonoEmission(GGEMSParticleType::Electron, maximum, 2'000ULL));
 
   EXPECT_THROW(((void)GGEMSRadionuclideDefinition{"Synthetic-Overflow", 1.0L,
                                                   std::move(emissions)}),
@@ -199,7 +200,8 @@ TEST(GGEMSRadionuclideDefinitionTest,
      FailedConstructionLeavesCallerOwnedInputsUnchanged) {
   std::string canonical_name{"Synthetic-Stable"};
   std::vector<GGEMSRadionuclideEmission> emissions;
-  emissions.push_back(MakeMonoEmission(GGEMSParticleType::Gamma, 1.0L, 1ULL));
+  emissions.push_back(
+      MakeMonoEmission(GGEMSParticleType::Gamma, 1.0L, 1'000ULL));
 
   EXPECT_THROW(
       ((void)GGEMSRadionuclideDefinition{canonical_name, 0.0L, emissions}),

@@ -31,7 +31,7 @@ struct GGEMSDummyTransportRunConfig {
   std::vector<sources::GGEMSSourceRecord> source_records{};
   std::vector<sources::GGEMSSourceRunRange> source_ranges{};
   observer::GGEMSObserverConfigRecord observer_config{};
-  std::uint64_t min_energy_milli_eV{10'000'000ULL};
+  std::uint64_t min_energy_micro_eV{10'000'000'000ULL};
   std::uint32_t max_generation{8U};
   std::uint32_t max_steps_per_track{32U};
 };

@@ -96,7 +96,7 @@ auto MakeLowEnergySource(std::uint64_t primary_count)
     -> std::shared_ptr<ggems::core::sources::GGEMSSource> {
   auto source = std::make_shared<ggems::core::sources::GGEMSSource>();
   source->SetPrimaryCount(primary_count)
-      .SetEnergyMilliElectronVolt(1'000'000ULL);
+      .SetEnergyMicroElectronVolt(1'000'000'000ULL);
   return source;
 }
 
@@ -130,8 +130,8 @@ auto ExpectObserverSourceMatches(
   EXPECT_FLOAT_EQ(observed.direction_z, expected.axis_z_z);
   EXPECT_FLOAT_EQ(observed.direction_w, 0.0F);
 
-  EXPECT_EQ(observed.energy_milli_eV, expected.energy_milli_eV);
-  EXPECT_EQ(observed.deposited_energy_milli_eV, 0ULL);
+  EXPECT_EQ(observed.energy_micro_eV, expected.energy_micro_eV);
+  EXPECT_EQ(observed.deposited_energy_micro_eV, 0ULL);
   EXPECT_FLOAT_EQ(observed.weight, expected.weight);
 }
 
@@ -550,7 +550,7 @@ TEST_F(GGEMSRunTest, UsesIndependentSourceSnapshotsAcrossSequentialRuns) {
 
   source->SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMilliElectronVolt(1'000'000ULL)
+      .SetEnergyMicroElectronVolt(1'000'000'000ULL)
       .SetPositionPicoMeter(10LL, -20LL, 30LL)
       .SetDirection(1.0F, 0.0F, 0.0F)
       .SetWeight(0.25F);
@@ -849,7 +849,7 @@ TEST_F(GGEMSRunTest, SetSourceReplacesEntireCollection) {
   replacement
       ->SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMilliElectronVolt(2'000'000ULL)
+      .SetEnergyMicroElectronVolt(2'000'000'000ULL)
       .SetPositionPicoMeter(-40LL, 50LL, -60LL)
       .SetDirection(0.0F, -1.0F, 0.0F)
       .SetWeight(0.75F);
@@ -913,11 +913,11 @@ TEST_F(GGEMSRunTest, RejectsCollectionMutationAfterInitialize) {
   initial_source->SetPositionPicoMeter(1LL, 2LL, 3LL)
       .SetDirection(1.0F, 0.0F, 0.0F);
 
-  replacement->SetEnergyMilliElectronVolt(2'000'000ULL)
+  replacement->SetEnergyMicroElectronVolt(2'000'000'000ULL)
       .SetPositionPicoMeter(4LL, 5LL, 6LL)
       .SetDirection(0.0F, 1.0F, 0.0F);
 
-  additional->SetEnergyMilliElectronVolt(3'000'000ULL)
+  additional->SetEnergyMicroElectronVolt(3'000'000'000ULL)
       .SetPositionPicoMeter(7LL, 8LL, 9LL)
       .SetDirection(0.0F, 0.0F, 1.0F);
 
@@ -959,13 +959,13 @@ TEST_F(GGEMSRunTest, RunsWithDisabledSlotBetweenActiveSources) {
       .SetDirection(1.0F, 0.0F, 0.0F)
       .SetWeight(0.25F);
 
-  source_1->SetEnergyMilliElectronVolt(3'000'000ULL)
+  source_1->SetEnergyMicroElectronVolt(3'000'000'000ULL)
       .SetPositionPicoMeter(40LL, 50LL, 60LL);
 
   source_2
       ->SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMilliElectronVolt(2'000'000ULL)
+      .SetEnergyMicroElectronVolt(2'000'000'000ULL)
       .SetPositionPicoMeter(-40LL, 50LL, -60LL)
       .SetDirection(0.0F, -1.0F, 0.0F)
       .SetWeight(0.75F);
@@ -1021,7 +1021,7 @@ TEST_F(GGEMSRunTest, AlternatesActiveSourceAcrossSequentialRuns) {
   source_b
       ->SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMilliElectronVolt(2'000'000ULL)
+      .SetEnergyMicroElectronVolt(2'000'000'000ULL)
       .SetPositionPicoMeter(-40LL, 50LL, -60LL)
       .SetDirection(0.0F, -1.0F, 0.0F)
       .SetWeight(0.75F);
@@ -1099,7 +1099,7 @@ TEST_F(GGEMSRunTest, RebuildsMultipleActiveSourceRangesAcrossSequentialRuns) {
   source_b
       ->SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMilliElectronVolt(2'000'000ULL)
+      .SetEnergyMicroElectronVolt(2'000'000'000ULL)
       .SetPositionPicoMeter(-40LL, 50LL, -60LL)
       .SetDirection(0.0F, -1.0F, 0.0F)
       .SetWeight(0.75F);
@@ -1258,7 +1258,7 @@ TEST_F(GGEMSRunTest, RejectsAllDisabledSourcesBeforeReservation) {
   source_b
       ->SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMilliElectronVolt(2'000'000ULL)
+      .SetEnergyMicroElectronVolt(2'000'000'000ULL)
       .SetPositionPicoMeter(-40LL, 50LL, -60LL)
       .SetDirection(0.0F, -1.0F, 0.0F);
 
@@ -1510,11 +1510,11 @@ TEST_F(GGEMSRunTest, ProducesOnlySourceAndTerminalAlongStoredSourceAxis) {
 
   EXPECT_FLOAT_EQ(records[0U].direction_x, 1.0F);
   EXPECT_FLOAT_EQ(records[1U].direction_x, 1.0F);
-  EXPECT_EQ(records[0U].energy_milli_eV, records[1U].energy_milli_eV);
+  EXPECT_EQ(records[0U].energy_micro_eV, records[1U].energy_micro_eV);
   EXPECT_EQ(records[0U].time_ps, records[1U].time_ps);
   EXPECT_FLOAT_EQ(records[0U].weight, records[1U].weight);
-  EXPECT_EQ(records[0U].deposited_energy_milli_eV, 0ULL);
-  EXPECT_EQ(records[1U].deposited_energy_milli_eV, 0ULL);
+  EXPECT_EQ(records[0U].deposited_energy_micro_eV, 0ULL);
+  EXPECT_EQ(records[1U].deposited_energy_micro_eV, 0ULL);
 }
 
 // =============================================================================

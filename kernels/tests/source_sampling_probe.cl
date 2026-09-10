@@ -42,7 +42,7 @@ __kernel void source_initialization_random_state_probe(
     __global GGEMSRandomState *reference_states,
     __global GGEMSSourceRecord const *source,
     __global GGEMSEnergyDistributionRecord const *energy_distribution,
-    __global ulong const *energy_values_milli_eV,
+    __global ulong const *energy_values_micro_eV,
     __global ulong const *cumulative_ticket_upper,
     uint expected_position_vector_draw_count,
     uint expected_direction_vector_draw_count,
@@ -55,7 +55,7 @@ __kernel void source_initialization_random_state_probe(
 
   GGEMSParticleState const particle = GGEMS_SourceInitializePrimary(
       19UL, source_local_primary_id, source, energy_distribution,
-      energy_values_milli_eV, cumulative_ticket_upper, sample_states, 0U);
+      energy_values_micro_eV, cumulative_ticket_upper, sample_states, 0U);
 
   float4 reference_position_uniforms = (float4)(0.0f);
   for (uint draw = 0U; draw < expected_position_vector_draw_count; ++draw) {
@@ -77,10 +77,10 @@ __kernel void source_initialization_random_state_probe(
   float3 const reference_direction = GGEMS_SourceSampleDirectionFromUniforms(
       source, reference_position, reference_direction_uniforms);
 
-  ulong reference_energy = source->energy_milli_eV;
+  ulong reference_energy = source->energy_micro_eV;
   if (expected_energy_raw_draw_count != 0U) {
     reference_energy = GGEMS_EnergyDistributionSampleWithTicket(
-        energy_distribution, energy_values_milli_eV, cumulative_ticket_upper,
+        energy_distribution, energy_values_micro_eV, cumulative_ticket_upper,
         reference_raw_ticket);
   }
 
@@ -100,6 +100,6 @@ __kernel void source_initialization_random_state_probe(
 
   sampled_values[0] = particle.time_ps;
   sampled_values[1] = source->time_start_ps;
-  sampled_values[2] = particle.energy_milli_eV;
+  sampled_values[2] = particle.energy_micro_eV;
   sampled_values[3] = reference_energy;
 }

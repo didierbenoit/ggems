@@ -33,7 +33,7 @@ auto CheckReachableDiscreteChannel(GGEMSRadionuclideEmission const &emission,
   EXPECT_EQ(distribution.GetType(), GGEMSEnergyDistributionType::DiscreteLines);
   EXPECT_EQ(distribution.GetTableCount(), expected_line_count);
 
-  auto const energies = distribution.GetEnergyValuesMilliElectronVolt();
+  auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
   auto const weights = distribution.GetRelativeWeights();
   auto const tickets = distribution.GetCumulativeTicketUpperBounds();
 
@@ -113,13 +113,13 @@ TEST(GGEMSAm241Test, PreservesLaraAlphaGammaAndXRayCatalogs) {
   CheckReachableDiscreteChannel(alpha, GGEMSParticleType::Alpha, 23U);
 
   auto const alpha_energies =
-      alpha.GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
+      alpha.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const alpha_yields = alpha.GetEnergyDistribution().GetRelativeWeights();
 
-  EXPECT_EQ(alpha_energies[16U], 5'388'250'000ULL);
-  EXPECT_EQ(alpha_energies[18U], 5'442'860'000ULL);
-  EXPECT_EQ(alpha_energies[20U], 5'485'560'000ULL);
-  EXPECT_EQ(alpha_energies[22U], 5'544'110'000ULL);
+  EXPECT_EQ(alpha_energies[16U], 5'388'250'000'000ULL);
+  EXPECT_EQ(alpha_energies[18U], 5'442'860'000'000ULL);
+  EXPECT_EQ(alpha_energies[20U], 5'485'560'000'000ULL);
+  EXPECT_EQ(alpha_energies[22U], 5'544'110'000'000ULL);
   EXPECT_DOUBLE_EQ(alpha_yields[16U], 0.0166);
   EXPECT_DOUBLE_EQ(alpha_yields[18U], 0.1323);
   EXPECT_DOUBLE_EQ(alpha_yields[20U], 0.8445);
@@ -129,13 +129,13 @@ TEST(GGEMSAm241Test, PreservesLaraAlphaGammaAndXRayCatalogs) {
   CheckReachableDiscreteChannel(gamma, GGEMSParticleType::Gamma, 179U);
 
   auto const gamma_energies =
-      gamma.GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
+      gamma.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const gamma_yields = gamma.GetEnergyDistribution().GetRelativeWeights();
 
-  EXPECT_EQ(gamma_energies.front(), 26'344'600ULL);
-  EXPECT_EQ(gamma_energies[8U], 59'540'900ULL);
-  EXPECT_EQ(gamma_energies[14U], 98'970'000ULL);
-  EXPECT_EQ(gamma_energies.back(), 1'014'330'000ULL);
+  EXPECT_EQ(gamma_energies.front(), 26'344'600'000ULL);
+  EXPECT_EQ(gamma_energies[8U], 59'540'900'000ULL);
+  EXPECT_EQ(gamma_energies[14U], 98'970'000'000ULL);
+  EXPECT_EQ(gamma_energies.back(), 1'014'330'000'000ULL);
   EXPECT_DOUBLE_EQ(gamma_yields.front(), 0.0231);
   EXPECT_DOUBLE_EQ(gamma_yields[8U], 0.3592);
   EXPECT_DOUBLE_EQ(gamma_yields[14U], 0.000203);
@@ -145,15 +145,15 @@ TEST(GGEMSAm241Test, PreservesLaraAlphaGammaAndXRayCatalogs) {
   CheckReachableDiscreteChannel(x_rays, GGEMSParticleType::Gamma, 9U);
 
   constexpr std::array<std::uint64_t, 9U> expected_x_ray_energies{{
-      11'890'000ULL,
-      13'852'000ULL,
-      15'876'000ULL,
-      16'960'000ULL,
-      21'160'000ULL,
-      97'069'000ULL,
-      101'059'000ULL,
-      114'149'700ULL,
-      117'922'700ULL,
+      11'890'000'000ULL,
+      13'852'000'000ULL,
+      15'876'000'000ULL,
+      16'960'000'000ULL,
+      21'160'000'000ULL,
+      97'069'000'000ULL,
+      101'059'000'000ULL,
+      114'149'700'000ULL,
+      117'922'700'000ULL,
   }};
 
   constexpr std::array<double, 9U> expected_x_ray_yields{{
@@ -169,7 +169,7 @@ TEST(GGEMSAm241Test, PreservesLaraAlphaGammaAndXRayCatalogs) {
   }};
 
   auto const x_ray_energies =
-      x_rays.GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
+      x_rays.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const x_ray_yields = x_rays.GetEnergyDistribution().GetRelativeWeights();
 
   for (std::size_t index = 0U; index < expected_x_ray_energies.size();
@@ -189,13 +189,13 @@ TEST(GGEMSAm241Test, PreservesMirdAugerCatalog) {
   CheckReachableDiscreteChannel(auger, GGEMSParticleType::Electron, 15U);
 
   auto const energies =
-      auger.GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
+      auger.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const yields = auger.GetEnergyDistribution().GetRelativeWeights();
 
-  EXPECT_EQ(energies.front(), 78'986ULL);
-  EXPECT_EQ(energies[2U], 190'572ULL);
-  EXPECT_EQ(energies[3U], 209'123ULL);
-  EXPECT_EQ(energies.back(), 110'844'000ULL);
+  EXPECT_EQ(energies.front(), 78'986'000ULL);
+  EXPECT_EQ(energies[2U], 190'572'000ULL);
+  EXPECT_EQ(energies[3U], 209'123'000ULL);
+  EXPECT_EQ(energies.back(), 110'844'000'000ULL);
   EXPECT_DOUBLE_EQ(yields.front(), 3.26431);
   EXPECT_DOUBLE_EQ(yields[2U], 1.69908);
   EXPECT_DOUBLE_EQ(yields[3U], 2.93263);
@@ -221,27 +221,27 @@ TEST(GGEMSAm241Test, PreservesAllLnhbConversionElectronLines) {
               0.910731387024082, 1.0e-12);
 
   auto const main_energies =
-      main_lines.GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
+      main_lines.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const main_yields =
       main_lines.GetEnergyDistribution().GetRelativeWeights();
 
-  EXPECT_EQ(main_energies.front(), 3'917'600ULL);
-  EXPECT_EQ(main_energies[5U], 10'769'300ULL);
-  EXPECT_EQ(main_energies[27U], 37'940'900ULL);
-  EXPECT_EQ(main_energies.back(), 699'533'000ULL);
+  EXPECT_EQ(main_energies.front(), 3'917'600'000ULL);
+  EXPECT_EQ(main_energies[5U], 10'769'300'000ULL);
+  EXPECT_EQ(main_energies[27U], 37'940'900'000ULL);
+  EXPECT_EQ(main_energies.back(), 699'533'000'000ULL);
   EXPECT_DOUBLE_EQ(main_yields.front(), 0.021);
   EXPECT_DOUBLE_EQ(main_yields[5U], 0.1039);
   EXPECT_DOUBLE_EQ(main_yields[27U], 0.171);
   EXPECT_DOUBLE_EQ(main_yields.back(), 1.582e-9);
 
   auto const weak_energies =
-      weak_lines.GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
+      weak_lines.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const weak_yields =
       weak_lines.GetEnergyDistribution().GetRelativeWeights();
 
-  EXPECT_EQ(weak_energies.front(), 78'090'000ULL);
-  EXPECT_EQ(weak_energies[1U], 129'851'000ULL);
-  EXPECT_EQ(weak_energies.back(), 804'870'000ULL);
+  EXPECT_EQ(weak_energies.front(), 78'090'000'000ULL);
+  EXPECT_EQ(weak_energies[1U], 129'851'000'000ULL);
+  EXPECT_EQ(weak_energies.back(), 804'870'000'000ULL);
   EXPECT_DOUBLE_EQ(weak_yields.front(), 4.0e-10);
   EXPECT_DOUBLE_EQ(weak_yields[1U], 7.04e-10);
   EXPECT_DOUBLE_EQ(weak_yields.back(), 2.0e-12);

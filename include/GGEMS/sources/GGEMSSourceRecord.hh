@@ -22,7 +22,7 @@ struct GGEMSSourceRecord {
   std::uint64_t time_stop_ps{0ULL};
 
   // Exact Mono energy; zero for table-backed energy distributions.
-  std::uint64_t energy_milli_eV{511'000'000ULL};
+  std::uint64_t energy_micro_eV{511'000'000'000ULL};
 
   std::int64_t position_x_pm{0ULL};
   std::int64_t position_y_pm{0ULL};
@@ -77,7 +77,7 @@ static_assert(alignof(GGEMSSourceRecord) == 8U);
 static_assert(offsetof(GGEMSSourceRecord, source_id) == 0U);
 static_assert(offsetof(GGEMSSourceRecord, time_start_ps) == 8U);
 static_assert(offsetof(GGEMSSourceRecord, time_stop_ps) == 16U);
-static_assert(offsetof(GGEMSSourceRecord, energy_milli_eV) == 24U);
+static_assert(offsetof(GGEMSSourceRecord, energy_micro_eV) == 24U);
 static_assert(offsetof(GGEMSSourceRecord, position_x_pm) == 32U);
 static_assert(offsetof(GGEMSSourceRecord, position_y_pm) == 40U);
 static_assert(offsetof(GGEMSSourceRecord, position_z_pm) == 48U);

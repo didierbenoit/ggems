@@ -60,7 +60,7 @@ TEST_F(GGEMSEnergyDistributionRecordKernelTest,
 
   std::array<EnergyRecord, 2U> records{{
       {
-          .regular_bin_width_milli_eV = 11ULL,
+          .regular_bin_width_micro_eV = 11ULL,
           .table_offset = 12ULL,
           .distribution_type = 13U,
           .table_count = 14U,
@@ -107,7 +107,7 @@ TEST_F(GGEMSEnergyDistributionRecordKernelTest,
 
   std::array<std::uint64_t, 7U> const expected_layout{{
       sizeof(EnergyRecord),
-      offsetof(EnergyRecord, regular_bin_width_milli_eV),
+      offsetof(EnergyRecord, regular_bin_width_micro_eV),
       offsetof(EnergyRecord, table_offset),
       offsetof(EnergyRecord, distribution_type),
       offsetof(EnergyRecord, table_count),
@@ -121,7 +121,7 @@ TEST_F(GGEMSEnergyDistributionRecordKernelTest,
   EXPECT_EQ(host_values[2U], 13ULL);
   EXPECT_EQ(host_values[3U], 14ULL);
 
-  EXPECT_EQ(records[1U].regular_bin_width_milli_eV, 101ULL);
+  EXPECT_EQ(records[1U].regular_bin_width_micro_eV, 101ULL);
   EXPECT_EQ(records[1U].table_offset, 102ULL);
   EXPECT_EQ(records[1U].distribution_type, 3U);
   EXPECT_EQ(records[1U].table_count, 103U);

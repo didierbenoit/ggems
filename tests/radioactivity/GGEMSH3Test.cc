@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideEmission.hh"
 #include "GGEMS/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
@@ -54,20 +55,20 @@ TEST(GGEMSH3Test, PreservesExperimentalBetaShapeSpectrum) {
   GGEMSRadionuclideDefinition const definition = BuildH3Radionuclide();
   auto const &distribution =
       definition.GetEmissions()[0U].GetEnergyDistribution();
-  auto const centers = distribution.GetEnergyValuesMilliElectronVolt();
+  auto const centers = distribution.GetEnergyValuesMicroElectronVolt();
   auto const weights = distribution.GetRelativeWeights();
   auto const tickets = distribution.GetCumulativeTicketUpperBounds();
 
   EXPECT_EQ(distribution.GetType(),
             GGEMSEnergyDistributionType::RegularSpectrum);
   EXPECT_EQ(distribution.GetTableCount(), 38U);
-  EXPECT_EQ(distribution.GetRegularBinWidthMilliElectronVolt(), 489236ULL);
+  EXPECT_EQ(distribution.GetRegularBinWidthMicroElectronVolt(), 489'236'000ULL);
 
   ASSERT_EQ(centers.size(), 38U);
   ASSERT_EQ(weights.size(), centers.size());
   ASSERT_EQ(tickets.size(), centers.size());
-  EXPECT_EQ(centers.front() - 244618ULL, 32ULL);
-  EXPECT_EQ(centers.back() + 244618ULL, 18'591'000ULL);
+  EXPECT_EQ(centers.front() - 244'618'000ULL, 32'000ULL);
+  EXPECT_EQ(centers.back() + 244'618'000ULL, 18'591'000'000ULL);
 
   long double weight_sum{0.0L};
   long double weighted_center_sum{0.0L};
@@ -89,7 +90,8 @@ TEST(GGEMSH3Test, PreservesExperimentalBetaShapeSpectrum) {
   EXPECT_EQ(previous_ticket, k_energy_ticket_space_size);
 
   long double const mean_energy_keV =
-      weighted_center_sum / weight_sum / 1'000'000.0L;
+      weighted_center_sum / weight_sum /
+      static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
   EXPECT_NEAR(static_cast<double>(mean_energy_keV), 5.69565, 0.005);
 }
 

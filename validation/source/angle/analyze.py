@@ -26,7 +26,7 @@ CSV_COLUMNS = (
     "direction_x",
     "direction_y",
     "direction_z",
-    "energy_meV",
+    "energy_micro_eV",
     "time_ps",
     "weight",
     "record_kind",
@@ -114,7 +114,7 @@ def load_metadata(path: Path) -> Metadata:
         "rng_engine": "Philox",
         "particle": "Gamma",
         "energy_mode": "Mono",
-        "energy_meV": 511_000_000,
+        "energy_micro_eV": 511_000_000_000,
         "chronology": "static",
         "time_ps": 0,
         "weight": 1,
@@ -129,7 +129,7 @@ def load_metadata(path: Path) -> Metadata:
                 f"Metadata violates A1 configuration: {key} must be {expected}."
             )
 
-    for key in ("energy_meV", "time_ps", "source_index", "global_primary_begin"):
+    for key in ("energy_micro_eV", "time_ps", "source_index", "global_primary_begin"):
         _ = _integer(raw.get(key), key)
     _ = _number(raw.get("weight"), "weight")
     for value in _triple(raw.get("source_center_pm"), "source_center_pm"):
@@ -298,7 +298,11 @@ def load_samples(path: Path, metadata: Metadata) -> tuple[IntArray, FloatArray]:
                 energy = _decimal(row[9], 0, (1 << 64) - 1)
                 time = _decimal(row[10], 0, (1 << 64) - 1)
                 weight = float(row[11])
-                if energy != metadata.raw["energy_meV"] or time != 0 or weight != 1.0:
+                if (
+                    energy != metadata.raw["energy_micro_eV"]
+                    or time != 0
+                    or weight != 1.0
+                ):
                     raise ValueError(
                         "Record violates the Mono energy, static time, or weight contract."
                     )

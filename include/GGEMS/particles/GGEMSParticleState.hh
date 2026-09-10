@@ -27,7 +27,7 @@ struct GGEMSParticleState {
   float direction_y{0.0f};
   float direction_z{1.0f};
   float direction_w{0.0f};
-  std::uint64_t energy_milli_eV{0ULL};
+  std::uint64_t energy_micro_eV{0ULL};
   float weight{1.0f};
 };
 

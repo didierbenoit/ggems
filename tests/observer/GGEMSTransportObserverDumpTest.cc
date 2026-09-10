@@ -170,8 +170,8 @@ TEST(GGEMSTransportObserverDump,
      FormatsEnergyDepositPositionAndDirectionIndependently) {
   GGEMSObserverRecord record = MakeRecord(8ULL, 10ULL);
 
-  record.energy_milli_eV = 123'456'000ULL;
-  record.deposited_energy_milli_eV = 7'890'000ULL;
+  record.energy_micro_eV = 123'456'000'000ULL;
+  record.deposited_energy_micro_eV = 7'890'000'000ULL;
 
   record.position_x_pm = -999'990'000'000LL;
   record.position_y_pm = 1'000'000'000'000LL;

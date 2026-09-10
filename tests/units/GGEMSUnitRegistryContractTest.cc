@@ -398,7 +398,7 @@ TEST(GGEMSUnitRegistryContractTest, ConvertsThroughCanonicalRepresentations) {
   EXPECT_NEAR(static_cast<double>(cubic_centimeter->value), 1.0e30, 1.0e15);
   EXPECT_EQ(barn->value, 1'000'000'000'000ULL);
   EXPECT_EQ(picobarn->value, 1ULL);
-  EXPECT_EQ(energy->value, 1ULL);
+  EXPECT_EQ(energy->value, 1'000ULL);
 
   auto const centimeter_round_trip = ConvertTo(*centimeter, "cm");
   auto const barn_in_picobarns = ConvertTo<std::uint64_t>(*barn, "pb");

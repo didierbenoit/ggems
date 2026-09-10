@@ -24,17 +24,21 @@ using ggems::core::sources::k_energy_ticket_space_size;
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<std::uint64_t, 40U> k_expected_gamma_energies_milli_eV{{
-    158'970'000ULL, 174'200'000ULL, 182'610'000ULL,   192'170'000ULL,
-    197'220'000ULL, 198'230'000ULL, 206'790'000ULL,   207'800'000ULL,
-    247'960'000ULL, 257'510'000ULL, 278'360'000ULL,   281'030'000ULL,
-    295'170'000ULL, 329'380'000ULL, 330'700'000ULL,   343'730'000ULL,
-    346'350'000ULL, 405'020'000ULL, 437'500'000ULL,   440'020'000ULL,
-    454'760'000ULL, 505'330'000ULL, 528'960'000ULL,   538'540'000ULL,
-    556'050'000ULL, 562'790'000ULL, 578'260'000ULL,   599'690'000ULL,
-    610'050'000ULL, 624'570'000ULL, 628'260'000ULL,   687'950'000ULL,
-    735'780'000ULL, 783'590'000ULL, 837'100'000ULL,   877'520'000ULL,
-    894'800'000ULL, 909'120'000ULL, 1'036'630'000ULL, 1'068'120'000ULL,
+constexpr std::array<std::uint64_t, 40U> k_expected_gamma_energies_micro_eV{{
+    158'970'000'000ULL,   174'200'000'000ULL, 182'610'000'000ULL,
+    192'170'000'000ULL,   197'220'000'000ULL, 198'230'000'000ULL,
+    206'790'000'000ULL,   207'800'000'000ULL, 247'960'000'000ULL,
+    257'510'000'000ULL,   278'360'000'000ULL, 281'030'000'000ULL,
+    295'170'000'000ULL,   329'380'000'000ULL, 330'700'000'000ULL,
+    343'730'000'000ULL,   346'350'000'000ULL, 405'020'000'000ULL,
+    437'500'000'000ULL,   440'020'000'000ULL, 454'760'000'000ULL,
+    505'330'000'000ULL,   528'960'000'000ULL, 538'540'000'000ULL,
+    556'050'000'000ULL,   562'790'000'000ULL, 578'260'000'000ULL,
+    599'690'000'000ULL,   610'050'000'000ULL, 624'570'000'000ULL,
+    628'260'000'000ULL,   687'950'000'000ULL, 735'780'000'000ULL,
+    783'590'000'000ULL,   837'100'000'000ULL, 877'520'000'000ULL,
+    894'800'000'000ULL,   909'120'000'000ULL, 1'036'630'000'000ULL,
+    1'068'120'000'000ULL,
 }};
 
 // =============================================================================
@@ -53,12 +57,12 @@ constexpr std::array<double, 40U> k_expected_gamma_line_yields{{
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<std::uint64_t, 5U> k_expected_x_ray_energies_milli_eV{{
-    4'078'000ULL,
-    27'202'000ULL,
-    27'472'600ULL,
-    31'104'400ULL,
-    31'762'300ULL,
+constexpr std::array<std::uint64_t, 5U> k_expected_x_ray_energies_micro_eV{{
+    4'078'000'000ULL,
+    27'202'000'000ULL,
+    27'472'600'000ULL,
+    31'104'400'000ULL,
+    31'762'300'000ULL,
 }};
 
 // =============================================================================
@@ -75,20 +79,20 @@ constexpr std::array<double, 5U> k_expected_x_ray_line_yields{{
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<std::uint64_t, 13U> k_expected_auger_energies_milli_eV{{
-    22'924ULL,
-    24'926ULL,
-    121'020ULL,
-    295'783ULL,
-    449'494ULL,
-    541'188ULL,
-    687'637ULL,
-    3'084'750ULL,
-    3'678'860ULL,
-    4'295'240ULL,
-    22'665'300ULL,
-    26'505'600ULL,
-    30'346'100ULL,
+constexpr std::array<std::uint64_t, 13U> k_expected_auger_energies_micro_eV{{
+    22'924'000ULL,
+    24'926'000ULL,
+    121'020'000ULL,
+    295'783'000ULL,
+    449'494'000ULL,
+    541'188'000ULL,
+    687'637'000ULL,
+    3'084'750'000ULL,
+    3'678'860'000ULL,
+    4'295'240'000ULL,
+    22'665'300'000ULL,
+    26'505'600'000ULL,
+    30'346'100'000ULL,
 }};
 
 // =============================================================================
@@ -114,16 +118,19 @@ constexpr std::array<double, 13U> k_expected_auger_line_yields{{
 // =============================================================================
 
 constexpr std::array<std::uint64_t, 36U>
-    k_expected_conversion_energies_milli_eV{{
-        127'180'000ULL, 142'390'000ULL, 150'800'000ULL, 154'360'000ULL,
-        160'370'000ULL, 165'410'000ULL, 166'440'000ULL, 169'570'000ULL,
-        174'980'000ULL, 176'010'000ULL, 177'980'000ULL, 187'550'000ULL,
-        192'590'000ULL, 193'620'000ULL, 202'160'000ULL, 203'190'000ULL,
-        216'150'000ULL, 225'710'000ULL, 243'330'000ULL, 246'450'000ULL,
-        249'220'000ULL, 252'890'000ULL, 273'630'000ULL, 276'400'000ULL,
-        298'900'000ULL, 314'540'000ULL, 326'080'000ULL, 341'720'000ULL,
-        408'210'000ULL, 435'390'000ULL, 473'530'000ULL, 500'710'000ULL,
-        506'730'000ULL, 533'910'000ULL, 592'800'000ULL, 619'980'000ULL,
+    k_expected_conversion_energies_micro_eV{{
+        127'180'000'000ULL, 142'390'000'000ULL, 150'800'000'000ULL,
+        154'360'000'000ULL, 160'370'000'000ULL, 165'410'000'000ULL,
+        166'440'000'000ULL, 169'570'000'000ULL, 174'980'000'000ULL,
+        176'010'000'000ULL, 177'980'000'000ULL, 187'550'000'000ULL,
+        192'590'000'000ULL, 193'620'000'000ULL, 202'160'000'000ULL,
+        203'190'000'000ULL, 216'150'000'000ULL, 225'710'000'000ULL,
+        243'330'000'000ULL, 246'450'000'000ULL, 249'220'000'000ULL,
+        252'890'000'000ULL, 273'630'000'000ULL, 276'400'000'000ULL,
+        298'900'000'000ULL, 314'540'000'000ULL, 326'080'000'000ULL,
+        341'720'000'000ULL, 408'210'000'000ULL, 435'390'000'000ULL,
+        473'530'000'000ULL, 500'710'000'000ULL, 506'730'000'000ULL,
+        533'910'000'000ULL, 592'800'000'000ULL, 619'980'000'000ULL,
     }};
 
 // =============================================================================
@@ -150,7 +157,7 @@ auto CheckReachableDiscreteChannel(GGEMSRadionuclideEmission const &emission,
   EXPECT_EQ(distribution.GetType(), GGEMSEnergyDistributionType::DiscreteLines);
   EXPECT_EQ(distribution.GetTableCount(), expected_line_count);
 
-  auto const energies = distribution.GetEnergyValuesMilliElectronVolt();
+  auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
   auto const weights = distribution.GetRelativeWeights();
   auto const tickets = distribution.GetCumulativeTicketUpperBounds();
 
@@ -218,15 +225,15 @@ TEST(GGEMSI123Test, PreservesFortyPromptLaraGammaLines) {
   GGEMSRadionuclideEmission const &gamma = definition.GetEmissions()[0U];
 
   CheckReachableDiscreteChannel(gamma, GGEMSParticleType::Gamma,
-                                k_expected_gamma_energies_milli_eV.size());
+                                k_expected_gamma_energies_micro_eV.size());
 
   auto const energies =
-      gamma.GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
+      gamma.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const yields = gamma.GetEnergyDistribution().GetRelativeWeights();
 
   for (std::size_t index = 0U;
-       index < k_expected_gamma_energies_milli_eV.size(); ++index) {
-    EXPECT_EQ(energies[index], k_expected_gamma_energies_milli_eV[index]);
+       index < k_expected_gamma_energies_micro_eV.size(); ++index) {
+    EXPECT_EQ(energies[index], k_expected_gamma_energies_micro_eV[index]);
     EXPECT_DOUBLE_EQ(yields[index], k_expected_gamma_line_yields[index]);
   }
 }
@@ -241,45 +248,45 @@ TEST(GGEMSI123Test, PreservesLaraAndMirdAtomicRadiations) {
 
   GGEMSRadionuclideEmission const &x_rays = emissions[1U];
   CheckReachableDiscreteChannel(x_rays, GGEMSParticleType::Gamma,
-                                k_expected_x_ray_energies_milli_eV.size());
+                                k_expected_x_ray_energies_micro_eV.size());
 
   auto const x_ray_energies =
-      x_rays.GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
+      x_rays.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const x_ray_yields = x_rays.GetEnergyDistribution().GetRelativeWeights();
 
   for (std::size_t index = 0U;
-       index < k_expected_x_ray_energies_milli_eV.size(); ++index) {
-    EXPECT_EQ(x_ray_energies[index], k_expected_x_ray_energies_milli_eV[index]);
+       index < k_expected_x_ray_energies_micro_eV.size(); ++index) {
+    EXPECT_EQ(x_ray_energies[index], k_expected_x_ray_energies_micro_eV[index]);
     EXPECT_DOUBLE_EQ(x_ray_yields[index], k_expected_x_ray_line_yields[index]);
   }
 
   GGEMSRadionuclideEmission const &auger = emissions[2U];
   CheckReachableDiscreteChannel(auger, GGEMSParticleType::Electron,
-                                k_expected_auger_energies_milli_eV.size());
+                                k_expected_auger_energies_micro_eV.size());
 
   auto const auger_energies =
-      auger.GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
+      auger.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const auger_yields = auger.GetEnergyDistribution().GetRelativeWeights();
 
   for (std::size_t index = 0U;
-       index < k_expected_auger_energies_milli_eV.size(); ++index) {
-    EXPECT_EQ(auger_energies[index], k_expected_auger_energies_milli_eV[index]);
+       index < k_expected_auger_energies_micro_eV.size(); ++index) {
+    EXPECT_EQ(auger_energies[index], k_expected_auger_energies_micro_eV[index]);
     EXPECT_DOUBLE_EQ(auger_yields[index], k_expected_auger_line_yields[index]);
   }
 
   GGEMSRadionuclideEmission const &conversion = emissions[3U];
   CheckReachableDiscreteChannel(conversion, GGEMSParticleType::Electron,
-                                k_expected_conversion_energies_milli_eV.size());
+                                k_expected_conversion_energies_micro_eV.size());
 
   auto const conversion_energies =
-      conversion.GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
+      conversion.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const conversion_yields =
       conversion.GetEnergyDistribution().GetRelativeWeights();
 
   for (std::size_t index = 0U;
-       index < k_expected_conversion_energies_milli_eV.size(); ++index) {
+       index < k_expected_conversion_energies_micro_eV.size(); ++index) {
     EXPECT_EQ(conversion_energies[index],
-              k_expected_conversion_energies_milli_eV[index]);
+              k_expected_conversion_energies_micro_eV[index]);
     EXPECT_DOUBLE_EQ(conversion_yields[index],
                      k_expected_conversion_line_yields[index]);
   }

@@ -22,7 +22,7 @@ one incorrect birth time is an immediate exact contract failure.
 
 All cases use one CountDriven Gamma Source with Point geometry at the origin,
 the default identity frame, Fixed +Z direction, Mono 511 keV (exactly
-`511000000 meV`), and weight 1. Philox is configured with seed 77777 by default.
+`511000000000 micro-eV`), and weight 1. Philox is configured with seed 77777 by default.
 The configured Source consumes zero time, position, angular, and energy random
 draws; source lookup also consumes none. T1 makes no RNG-state replay claim.
 
@@ -92,7 +92,7 @@ The existing `ggems_source_sample_exporter` executable serves G1, A1, E1, and
 T1. The single-Run CSV schema remains unchanged:
 
 ```text
-source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,z_pm,direction_x,direction_y,direction_z,energy_meV,time_ps,weight,record_kind
+source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,z_pm,direction_x,direction_y,direction_z,energy_micro_eV,time_ps,weight,record_kind
 ```
 
 The final `record_kind` column is the existing explicit `Source` tag. Integer
@@ -171,7 +171,7 @@ Before numerical output, the analyzer requires for every Run:
 - Exact CSV column names/count, `Source` tags, uint64 fields, unique provenance,
   source slot zero, complete source-local ids, and a consistent global range.
 - Point positions exactly zero, finite direction components exactly `(0,0,1)`,
-  Mono energy exactly `511000000 meV`, and weight exactly 1.
+  Mono energy exactly `511000000000 micro-eV`, and weight exactly 1.
 - The expected CountDriven/Gamma/Philox/identity/Mono configuration in metadata.
   Particle type and Run id are checked on raw records by C++; those fields are
   not added to the stable CSV schema.

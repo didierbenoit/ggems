@@ -47,7 +47,7 @@ static inline GGEMSParticleState GGEMS_MakeInactiveAionino(void) {
   particle.direction_z = 1.0f;
   particle.direction_w = 0.0f;
 
-  particle.energy_milli_eV = 0UL;
+  particle.energy_micro_eV = 0UL;
   particle.weight = 0.0f;
 
   return particle;
@@ -58,7 +58,7 @@ static inline GGEMSParticleState GGEMS_MakeInactiveAionino(void) {
 
 static inline GGEMSParticleState
 GGEMS_DummyMakeElectronSecondary(GGEMSParticleState parent,
-                                 ulong energy_milli_eV, uint generation,
+                                 ulong energy_micro_eV, uint generation,
                                  uint local_track_index, ulong base_track_id) {
   GGEMSParticleState secondary = parent;
 
@@ -70,7 +70,7 @@ GGEMS_DummyMakeElectronSecondary(GGEMSParticleState parent,
   secondary.generation = generation;
   secondary.flags = 0U;
 
-  secondary.energy_milli_eV = energy_milli_eV;
+  secondary.energy_micro_eV = energy_micro_eV;
 
   secondary.direction_x = 1.0f;
   secondary.direction_y = 0.0f;
@@ -99,9 +99,9 @@ static inline void GGEMS_DummyMoveParticle(__private GGEMSParticleState *p) {
 // =============================================================================
 
 static inline void GGEMS_DummyKillIfFinished(__private GGEMSParticleState *p,
-                                             ulong min_energy_milli_eV,
+                                             ulong min_energy_micro_eV,
                                              uint max_steps_per_track) {
-  if (p->energy_milli_eV <= min_energy_milli_eV ||
+  if (p->energy_micro_eV <= min_energy_micro_eV ||
       p->flags >= max_steps_per_track) {
     p->status = GGEMS_PARTICLE_STATUS_KILLED;
   }
@@ -117,7 +117,7 @@ __kernel void particle_dummy_stream_branching_transport(
     __global GGEMSSourceRecord const *source_records,
     __global GGEMSSourceRunRange const *source_ranges, uint source_count,
     uint total_primary_count, ulong projection_history_offset,
-    ulong device_primary_offset, ulong min_energy_milli_eV, uint max_generation,
+    ulong device_primary_offset, ulong min_energy_micro_eV, uint max_generation,
     uint max_steps_per_track,
     __global GGEMSObserverConfigRecord const *observer_config,
     volatile __global GGEMSObserverCounters *observer_counters,
@@ -231,17 +231,20 @@ __kernel void particle_dummy_stream_branching_transport(
         }
 #endif
 
-        GGEMS_DummyKillIfFinished(&current, min_energy_milli_eV,
+        GGEMS_DummyKillIfFinished(&current, min_energy_micro_eV,
                                   max_steps_per_track);
 
+        // Alive implies energy > min_energy, so subtraction is safe even
+        // when twice the canonical energy threshold would overflow ulong.
         if (current.status == GGEMS_PARTICLE_STATUS_ALIVE &&
             current.flags == 1U && current.generation < max_generation &&
-            current.energy_milli_eV > (min_energy_milli_eV << 1)) {
+            current.energy_micro_eV - min_energy_micro_eV >
+                min_energy_micro_eV) {
           float u = GGEMS_RndmUniform(random_states, worker_id);
 
           if (current.particle_type == GGEMS_PARTICLE_TYPE_GAMMA && u > 0.8f) {
-            ulong secondary_energy = current.energy_milli_eV >> 1;
-            current.energy_milli_eV -= secondary_energy;
+            ulong secondary_energy = current.energy_micro_eV >> 1;
+            current.energy_micro_eV -= secondary_energy;
 
             if (stack_size < GGEMS_DUMMY_LOCAL_STACK_CAPACITY) {
               stack[stack_size] = current;
@@ -275,8 +278,8 @@ __kernel void particle_dummy_stream_branching_transport(
             }
           } else if (current.particle_type == GGEMS_PARTICLE_TYPE_ELECTRON &&
                      u > 0.5f) {
-            ulong secondary_energy = current.energy_milli_eV >> 1;
-            current.energy_milli_eV -= secondary_energy;
+            ulong secondary_energy = current.energy_micro_eV >> 1;
+            current.energy_micro_eV -= secondary_energy;
 
             if (stack_size < GGEMS_DUMMY_LOCAL_STACK_CAPACITY) {
               stack[stack_size] = current;

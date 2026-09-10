@@ -77,7 +77,7 @@ TEST(GGEMSSourceEmissionRecord, HostLayoutsAndSentinelsAreExact) {
   EXPECT_EQ(alignof(EmissionRecord), 8U);
   EXPECT_EQ(offsetof(EmissionRecord, particle_type), 0U);
   EXPECT_EQ(offsetof(EmissionRecord, energy_distribution_record_index), 4U);
-  EXPECT_EQ(offsetof(EmissionRecord, mono_energy_milli_eV), 8U);
+  EXPECT_EQ(offsetof(EmissionRecord, mono_energy_micro_eV), 8U);
   EXPECT_EQ(offsetof(EmissionAlignmentProbe, record), 8U);
 
   EXPECT_TRUE(std::is_standard_layout_v<GroupRange>);
@@ -97,7 +97,7 @@ TEST(GGEMSSourceEmissionRecord, HostLayoutsAndSentinelsAreExact) {
   EmissionRecord const emission{};
   EXPECT_EQ(emission.particle_type, 0U);
   EXPECT_EQ(emission.energy_distribution_record_index, 0U);
-  EXPECT_EQ(emission.mono_energy_milli_eV, 0ULL);
+  EXPECT_EQ(emission.mono_energy_micro_eV, 0ULL);
 
   GroupRange const range{};
   EXPECT_EQ(range.source_local_primary_begin, 0ULL);
@@ -122,7 +122,7 @@ TEST_F(GGEMSSourceEmissionRecordKernelTest,
   std::array<EmissionRecord, 2U> emissions{{
       {.particle_type = 17U,
        .energy_distribution_record_index = 19U,
-       .mono_energy_milli_eV = 23ULL},
+       .mono_energy_micro_eV = 23ULL},
       {},
   }};
   std::array<GroupRange, 2U> groups{{
@@ -180,7 +180,7 @@ TEST_F(GGEMSSourceEmissionRecordKernelTest,
       sizeof(EmissionRecord),
       offsetof(EmissionRecord, particle_type),
       offsetof(EmissionRecord, energy_distribution_record_index),
-      offsetof(EmissionRecord, mono_energy_milli_eV),
+      offsetof(EmissionRecord, mono_energy_micro_eV),
       sizeof(EmissionRecord),
       offsetof(EmissionAlignmentProbe, record),
       sizeof(GroupRange),
@@ -203,10 +203,10 @@ TEST_F(GGEMSSourceEmissionRecordKernelTest,
 
   EXPECT_EQ(emissions[0U].particle_type, 17U);
   EXPECT_EQ(emissions[0U].energy_distribution_record_index, 19U);
-  EXPECT_EQ(emissions[0U].mono_energy_milli_eV, 23ULL);
+  EXPECT_EQ(emissions[0U].mono_energy_micro_eV, 23ULL);
   EXPECT_EQ(emissions[1U].particle_type, 47U);
   EXPECT_EQ(emissions[1U].energy_distribution_record_index, 53U);
-  EXPECT_EQ(emissions[1U].mono_energy_milli_eV, 59ULL);
+  EXPECT_EQ(emissions[1U].mono_energy_micro_eV, 59ULL);
 
   EXPECT_EQ(groups[0U].source_local_primary_begin, 29ULL);
   EXPECT_EQ(groups[0U].primary_count, 31ULL);

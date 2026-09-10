@@ -91,9 +91,9 @@ public:
     return energy_distribution_records_;
   }
 
-  [[nodiscard]] auto GetEnergyValuesMilliElectronVolt() const noexcept
+  [[nodiscard]] auto GetEnergyValuesMicroElectronVolt() const noexcept
       -> std::vector<std::uint64_t> const & {
-    return energy_values_milli_eV_;
+    return energy_values_micro_eV_;
   }
 
   [[nodiscard]] auto GetRelativeWeights() const noexcept
@@ -129,7 +129,7 @@ private:
   GGEMSSourceConfigurationSnapshot(
       std::size_t source_count,
       std::vector<GGEMSEnergyDistributionRecord> energy_distribution_records,
-      std::vector<std::uint64_t> energy_values_milli_eV,
+      std::vector<std::uint64_t> energy_values_micro_eV,
       std::vector<double> relative_weights,
       std::vector<std::uint64_t> cumulative_ticket_upper,
       std::vector<GGEMSSourceEmissionRecord> source_emission_records,
@@ -139,7 +139,7 @@ private:
 
   std::size_t source_count_{0U};
   std::vector<GGEMSEnergyDistributionRecord> energy_distribution_records_;
-  std::vector<std::uint64_t> energy_values_milli_eV_;
+  std::vector<std::uint64_t> energy_values_micro_eV_;
   std::vector<double> relative_weights_;
   std::vector<std::uint64_t> cumulative_ticket_upper_;
   std::vector<GGEMSSourceEmissionRecord> source_emission_records_;
@@ -207,9 +207,9 @@ public:
     return source_configuration_->GetEnergyDistributionRecords();
   }
 
-  [[nodiscard]] auto GetEnergyValuesMilliElectronVolt() const noexcept
+  [[nodiscard]] auto GetEnergyValuesMicroElectronVolt() const noexcept
       -> std::vector<std::uint64_t> const & {
-    return source_configuration_->GetEnergyValuesMilliElectronVolt();
+    return source_configuration_->GetEnergyValuesMicroElectronVolt();
   }
 
   [[nodiscard]] auto GetRelativeWeights() const noexcept

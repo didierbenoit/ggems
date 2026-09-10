@@ -21,7 +21,7 @@ namespace {
       snapshot.GetRecords().at(source_index),
       snapshot.GetRanges().at(source_index).primary_count,
       snapshot.GetEnergyDistributionRecords().at(source_index),
-      snapshot.GetEnergyValuesMilliElectronVolt());
+      snapshot.GetEnergyValuesMicroElectronVolt());
 }
 
 // =============================================================================
@@ -40,7 +40,7 @@ auto ExpectContains(std::string const &description, std::string_view expected)
 
 TEST(GGEMSEnergyDescription, DescribesExactMonoEnergy) {
   ggems::core::sources::GGEMSSource source{};
-  source.SetEnergyMilliElectronVolt(100'000'000ULL);
+  source.SetEnergyMicroElectronVolt(100'000'000'000ULL);
 
   auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(source);
   std::string const description = DescribeSnapshotSource(snapshot, 0U);

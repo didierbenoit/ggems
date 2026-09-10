@@ -2,7 +2,7 @@
 
 __kernel void particle_generate_dummy_primary(
     __global GGEMSParticleState *particles, ulong global_particle_offset,
-    uint particle_count, uint particle_type, ulong energy_milli_eV) {
+    uint particle_count, uint particle_type, ulong energy_micro_eV) {
   uint particle_index = get_global_id(0);
 
   if (particle_index >= particle_count) {
@@ -37,7 +37,7 @@ __kernel void particle_generate_dummy_primary(
   particle.direction_z = 1.0f;
   particle.direction_w = 0.0f;
 
-  particle.energy_milli_eV = energy_milli_eV;
+  particle.energy_micro_eV = energy_micro_eV;
   particle.weight = 1.0f;
 
   particles[particle_index] = particle;

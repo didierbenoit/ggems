@@ -36,6 +36,9 @@ static inline uint GGEMS_EnergyDistributionFindIndex(
 static inline ulong
 GGEMS_EnergyDistributionMapRegularOffset(ulong width, ulong ticket_span,
                                          ulong local_ticket) {
+  // Valid tickets satisfy local_ticket < ticket_span <= 2^32. Thus the
+  // remainder product fits in ulong, and the complete result is less than
+  // width even at ULONG_MAX. Keep this decomposition for micro-eV widths.
   ulong const quotient = width / ticket_span;
   ulong const remainder = width % ticket_span;
 
@@ -47,13 +50,13 @@ GGEMS_EnergyDistributionMapRegularOffset(ulong width, ulong ticket_span,
 
 static inline ulong GGEMS_EnergyDistributionSampleWithTicket(
     __global GGEMSEnergyDistributionRecord const *distribution,
-    __global ulong const *energy_values_milli_eV,
+    __global ulong const *energy_values_micro_eV,
     __global ulong const *cumulative_ticket_upper, uint raw_ticket) {
   uint const selected_index = GGEMS_EnergyDistributionFindIndex(
       distribution, cumulative_ticket_upper, raw_ticket);
   ulong const packed_index =
       distribution->table_offset + (ulong)(selected_index);
-  ulong const selected_energy = energy_values_milli_eV[packed_index];
+  ulong const selected_energy = energy_values_micro_eV[packed_index];
 
   if (distribution->distribution_type ==
       GGEMS_ENERGY_DISTRIBUTION_TYPE_DISCRETE_LINES) {
@@ -66,7 +69,7 @@ static inline ulong GGEMS_EnergyDistributionSampleWithTicket(
   ulong const ticket_span = ticket_upper - ticket_lower;
   ulong const local_ticket = (ulong)(raw_ticket)-ticket_lower;
 
-  ulong const bin_width = distribution->regular_bin_width_milli_eV;
+  ulong const bin_width = distribution->regular_bin_width_micro_eV;
   ulong const lower_edge = selected_energy - bin_width / 2UL;
   ulong const in_bin_offset = GGEMS_EnergyDistributionMapRegularOffset(
       bin_width, ticket_span, local_ticket);
@@ -78,18 +81,18 @@ static inline ulong GGEMS_EnergyDistributionSampleWithTicket(
 // =============================================================================
 
 static inline ulong GGEMS_EnergyDistributionSample(
-    ulong mono_energy_milli_eV,
+    ulong mono_energy_micro_eV,
     __global GGEMSEnergyDistributionRecord const *distribution,
-    __global ulong const *energy_values_milli_eV,
+    __global ulong const *energy_values_micro_eV,
     __global ulong const *cumulative_ticket_upper,
     __global GGEMSRandomState *random_states, uint worker_id) {
   if (distribution->distribution_type == GGEMS_ENERGY_DISTRIBUTION_TYPE_MONO) {
-    return mono_energy_milli_eV;
+    return mono_energy_micro_eV;
   }
 
   uint const raw_ticket = GGEMS_RndmUInt32(random_states, worker_id);
   return GGEMS_EnergyDistributionSampleWithTicket(
-      distribution, energy_values_milli_eV, cumulative_ticket_upper,
+      distribution, energy_values_micro_eV, cumulative_ticket_upper,
       raw_ticket);
 }
 

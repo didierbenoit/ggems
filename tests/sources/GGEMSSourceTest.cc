@@ -34,7 +34,7 @@
   std::vector<ggems::core::radioactivity::GGEMSRadionuclideEmission> emissions;
   emissions.emplace_back(
       ggems::core::particles::GGEMSParticleType::Gamma, 1.0L,
-      ggems::core::sources::GGEMSEnergyDistribution::BuildMono(1'000ULL));
+      ggems::core::sources::GGEMSEnergyDistribution::BuildMono(1'000'000ULL));
 
   return std::make_shared<
       ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
@@ -104,7 +104,7 @@ auto ExpectSourceRecordsEqual(
   EXPECT_EQ(actual.source_id, expected.source_id);
   EXPECT_EQ(actual.time_start_ps, expected.time_start_ps);
   EXPECT_EQ(actual.time_stop_ps, expected.time_stop_ps);
-  EXPECT_EQ(actual.energy_milli_eV, expected.energy_milli_eV);
+  EXPECT_EQ(actual.energy_micro_eV, expected.energy_micro_eV);
 
   EXPECT_EQ(actual.position_x_pm, expected.position_x_pm);
   EXPECT_EQ(actual.position_y_pm, expected.position_y_pm);
@@ -161,7 +161,7 @@ TEST(GGEMSSource, DefaultSourceIsAnalyticGammaPointSource) {
             ggems::core::particles::ToKernelParticleType(
                 ggems::core::particles::GGEMSParticleType::Gamma));
 
-  EXPECT_EQ(record.energy_milli_eV, 511'000'000ULL);
+  EXPECT_EQ(record.energy_micro_eV, 511'000'000'000ULL);
 
   EXPECT_EQ(record.time_start_ps, 0ULL);
   EXPECT_EQ(record.time_stop_ps, 0ULL);
@@ -510,7 +510,7 @@ TEST(GGEMSSource, ActivityDrivenRejectsSingleParticleConfiguration) {
   EXPECT_THROW(source.SetEmittedParticleType(
                    ggems::core::particles::GGEMSParticleType::Electron),
                ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW(source.SetEnergyMilliElectronVolt(2'000ULL),
+  EXPECT_THROW(source.SetEnergyMicroElectronVolt(2'000'000ULL),
                ggems::core::GGEMSExceptionBase);
   EXPECT_THROW(source.SetDiscreteEnergyLines(k_energies, k_weights, "keV"),
                ggems::core::GGEMSExceptionBase);
@@ -548,7 +548,7 @@ TEST(GGEMSSource, ExplicitlySwitchesBackToCountDrivenBeforeInitialization) {
   EXPECT_NO_THROW(source
                       .SetEmittedParticleType(
                           ggems::core::particles::GGEMSParticleType::Electron)
-                      .SetEnergyMilliElectronVolt(2'000ULL));
+                      .SetEnergyMicroElectronVolt(2'000'000ULL));
 }
 
 // =============================================================================
@@ -558,7 +558,7 @@ TEST(GGEMSSource,
      DirectFinalizationFreezesPopulationAndEnergyButKeepsCountMutable) {
   auto radionuclide = MakeTestRadionuclide();
   ggems::core::sources::GGEMSSource source{};
-  source.SetEnergyMilliElectronVolt(2'000ULL);
+  source.SetEnergyMicroElectronVolt(2'000'000ULL);
 
   source.FinalizeInitialization();
 
@@ -572,13 +572,13 @@ TEST(GGEMSSource,
       },
       k_population_finalized_diagnostic);
   ExpectGGEMSExceptionContaining(
-      [&source]() -> void { source.SetEnergyMilliElectronVolt(3'000ULL); },
+      [&source]() -> void { source.SetEnergyMicroElectronVolt(3'000'000ULL); },
       k_energy_finalized_diagnostic);
 
   EXPECT_EQ(source.GetPopulationMode(),
             ggems::core::sources::GGEMSSourcePopulationMode::CountDriven);
-  EXPECT_EQ(source.GetEnergyDistribution().GetMonoEnergyMilliElectronVolt(),
-            2'000ULL);
+  EXPECT_EQ(source.GetEnergyDistribution().GetMonoEnergyMicroElectronVolt(),
+            2'000'000ULL);
   EXPECT_EQ(source.GetPrimaryCount(), 4096ULL);
 
   EXPECT_NO_THROW(source.SetPrimaryCount(17ULL));
@@ -627,7 +627,7 @@ TEST(GGEMSSource,
       },
       k_activity_single_particle_diagnostic);
   ExpectGGEMSExceptionContaining(
-      [&source]() -> void { source.SetEnergyMilliElectronVolt(2'000ULL); },
+      [&source]() -> void { source.SetEnergyMicroElectronVolt(2'000'000ULL); },
       k_activity_single_particle_diagnostic);
   ExpectGGEMSExceptionContaining(
       [&source]() -> void { source.SetPrimaryCount(7ULL); },
@@ -671,7 +671,7 @@ TEST(GGEMSSource, CopiesAndMovesActivityConfigurationByManagedOwnership) {
 TEST(GGEMSSource, RejectsZeroEnergy) {
   ggems::core::sources::GGEMSSource source{};
 
-  EXPECT_THROW(source.SetEnergyMilliElectronVolt(0ULL),
+  EXPECT_THROW(source.SetEnergyMicroElectronVolt(0ULL),
                ggems::core::GGEMSExceptionBase);
 }
 
@@ -817,7 +817,7 @@ TEST(GGEMSSource, BuildRecordReturnsIndependentOwnedSnapshots) {
 
   source.SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMilliElectronVolt(111'000'000ULL)
+      .SetEnergyMicroElectronVolt(111'000'000'000ULL)
       .SetPositionPicoMeter(11LL, -22LL, 33LL)
       .SetDirection(1.0F, 0.0F, 0.0F)
       .SetWeight(0.25);
@@ -827,7 +827,7 @@ TEST(GGEMSSource, BuildRecordReturnsIndependentOwnedSnapshots) {
   source
       .SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMilliElectronVolt(222'000'000ULL)
+      .SetEnergyMicroElectronVolt(222'000'000'000ULL)
       .SetPositionPicoMeter(-44LL, 55LL, -66LL)
       .SetDirection(0.0F, -1.0F, 0.0F)
       .SetWeight(0.75);
@@ -841,7 +841,7 @@ TEST(GGEMSSource, BuildRecordReturnsIndependentOwnedSnapshots) {
   EXPECT_EQ(record_a.emitted_particle_type,
             ggems::core::particles::ToKernelParticleType(
                 ggems::core::particles::GGEMSParticleType::Gamma));
-  EXPECT_EQ(record_a.energy_milli_eV, 111'000'000ULL);
+  EXPECT_EQ(record_a.energy_micro_eV, 111'000'000'000ULL);
   EXPECT_EQ(record_a.time_start_ps, 0ULL);
   EXPECT_EQ(record_a.time_stop_ps, 0ULL);
   EXPECT_EQ(record_a.position_x_pm, 11LL);
@@ -863,7 +863,7 @@ TEST(GGEMSSource, BuildRecordReturnsIndependentOwnedSnapshots) {
             ggems::core::particles::ToKernelParticleType(
                 ggems::core::particles::GGEMSParticleType::Electron));
 
-  EXPECT_EQ(record_b.energy_milli_eV, 222'000'000ULL);
+  EXPECT_EQ(record_b.energy_micro_eV, 222'000'000'000ULL);
   EXPECT_EQ(record_b.time_start_ps, 0ULL);
   EXPECT_EQ(record_b.time_stop_ps, 0ULL);
   EXPECT_EQ(record_b.position_x_pm, -44LL);
@@ -889,7 +889,7 @@ TEST(GGEMSSource, ExecutionRecordPreservesSourceStateAcrossPopulationModes) {
 
   ggems::core::sources::GGEMSSource source{};
   source.SetEmittedParticleType(GGEMSParticleType::Electron)
-      .SetEnergyMilliElectronVolt(123'456ULL)
+      .SetEnergyMicroElectronVolt(123'456'000ULL)
       .SetBoxEmissionPicoMeter(11ULL, 13ULL, 17ULL)
       .SetPositionPicoMeter(101LL, -202LL, 303LL)
       .SetOrientation({1.0, 0.0, 0.0}, {0.0, 0.0, 1.0})
@@ -902,7 +902,7 @@ TEST(GGEMSSource, ExecutionRecordPreservesSourceStateAcrossPopulationModes) {
   auto expected_activity_record = count_driven_record;
   expected_activity_record.emitted_particle_type =
       ggems::core::particles::ToKernelParticleType(GGEMSParticleType::Unknown);
-  expected_activity_record.energy_milli_eV = 0ULL;
+  expected_activity_record.energy_micro_eV = 0ULL;
 
   source.SetRadionuclide(MakeTestRadionuclide(),
                                        ggems::units::Activity{7.5L}, 42ULL);

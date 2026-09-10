@@ -21,7 +21,7 @@ exact integer-pm center are read from exporter metadata.
 
 RegularSpectrum reuses E1: centers 25,35,45,55 keV, full bin width 10 keV,
 relative weights 1,1,2,4. DiscreteLines reuses E1: energies 20,40,60,80 keV,
-weights 1,0,1,2. Both retain the current uint64 meV representation.
+weights 1,0,1,2. Both retain the current uint64 micro-eV representation.
 Bounded Isotropic A requests theta 20..60 degrees, phi -45..90 degrees;
 B requests theta 10..35 degrees, phi 20..160 degrees.
 
@@ -119,7 +119,7 @@ operation, or a statistical independence proof.
 
 ## Structural and analytical definitions
 
-The unchanged CSV retains exact decimal int64 pm positions, uint64 meV energies
+The unchanged CSV retains exact decimal int64 pm positions, uint64 micro-eV energies
 and uint64 ps times. Directions are reconstructed as binary32 from the
 max_digits10 CSV decimals before binary64 analysis. The exporter validates Gamma
 on every raw Source record; Python verifies Gamma metadata because the current
@@ -199,8 +199,9 @@ pair member, seed 20260908. It is a compact integration checkpoint; retained
 150000-primary G1/A1/E1/G2-A2 results remain the higher-statistics reference.
 Statistical/numerical acceptance budgets, uncertainty presentation, broader
 device/compiler coverage, and later performant Output reruns remain separate.
-The approved future meV -> ueV migration is not implemented here and will
-require focused E1/I1 reruns after its dedicated code change.
+Canonical Energy now uses micro-eV. CSV and metadata energy fields use the
+`*_micro_eV` suffix; input and display units still use the central Units registry.
+The migration requires focused E1/I1 reruns against the updated exporter.
 
 Scratch-only analysis probes exercise malformed CSV/frame/provenance, support
 excursions, unreachable finite energies, wrong time/weight, corrupted exact

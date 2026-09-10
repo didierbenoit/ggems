@@ -197,10 +197,10 @@ auto ExpectNoUnsupportedF18Records(TransportRunReport const &report) -> void {
 
     EXPECT_NE(particle_type, ParticleType::Aionino);
     EXPECT_FALSE(particle_type == ParticleType::Gamma &&
-                 record.energy_milli_eV == 511'000'000ULL);
+                 record.energy_micro_eV == 511'000'000'000ULL);
     EXPECT_FALSE(particle_type == ParticleType::Electron &&
-                 record.energy_milli_eV >= 456'000ULL &&
-                 record.energy_milli_eV <= 502'000ULL);
+                 record.energy_micro_eV >= 456'000'000ULL &&
+                 record.energy_micro_eV <= 502'000'000ULL);
   }
 }
 
@@ -228,13 +228,13 @@ auto ExpectRegularSpectrumSamples(
     std::vector<ObserverRecord const *> const &source_records) -> void {
   auto const &record = GetEmissionEnergyRecord(scenario, 0U);
   auto const &energy_values =
-      scenario.source_configuration->GetEnergyValuesMilliElectronVolt();
+      scenario.source_configuration->GetEnergyValuesMicroElectronVolt();
 
   ASSERT_EQ(ggems::core::sources::FromKernelEnergyDistributionType(
                 record.distribution_type),
             EnergyDistributionType::RegularSpectrum);
   ASSERT_EQ(record.table_count, expected_table_count);
-  ASSERT_GT(record.regular_bin_width_milli_eV, 0ULL);
+  ASSERT_GT(record.regular_bin_width_micro_eV, 0ULL);
   ASSERT_LE(record.table_offset,
             static_cast<std::uint64_t>(energy_values.size()));
   ASSERT_LE(static_cast<std::uint64_t>(record.table_count),
@@ -242,7 +242,7 @@ auto ExpectRegularSpectrumSamples(
                 record.table_offset);
 
   auto const table_offset = static_cast<std::size_t>(record.table_offset);
-  std::uint64_t const half_width = record.regular_bin_width_milli_eV / 2ULL;
+  std::uint64_t const half_width = record.regular_bin_width_micro_eV / 2ULL;
   std::uint64_t const lower_edge = energy_values[table_offset] - half_width;
   std::uint64_t const upper_edge =
       energy_values[table_offset + record.table_count - 1U] + half_width;
@@ -254,19 +254,19 @@ auto ExpectRegularSpectrumSamples(
     EXPECT_EQ(ggems::core::particles::FromKernelParticleType(
                   source_record->particle_type),
               ParticleType::Positron);
-    EXPECT_GE(source_record->energy_milli_eV, lower_edge);
-    EXPECT_LT(source_record->energy_milli_eV, upper_edge);
+    EXPECT_GE(source_record->energy_micro_eV, lower_edge);
+    EXPECT_LT(source_record->energy_micro_eV, upper_edge);
 
     std::uint64_t const sampled_bin =
-        (source_record->energy_milli_eV - lower_edge) /
-        record.regular_bin_width_milli_eV;
+        (source_record->energy_micro_eV - lower_edge) /
+        record.regular_bin_width_micro_eV;
     ASSERT_LT(sampled_bin, record.table_count);
     std::uint64_t const selected_center =
         energy_values[table_offset + static_cast<std::size_t>(sampled_bin)];
     std::uint64_t const selected_lower_edge = selected_center - half_width;
-    EXPECT_GE(source_record->energy_milli_eV, selected_lower_edge);
-    EXPECT_LT(source_record->energy_milli_eV,
-              selected_lower_edge + record.regular_bin_width_milli_eV);
+    EXPECT_GE(source_record->energy_micro_eV, selected_lower_edge);
+    EXPECT_LT(source_record->energy_micro_eV,
+              selected_lower_edge + record.regular_bin_width_micro_eV);
   }
 }
 
@@ -298,11 +298,11 @@ protected:
 
 TEST_F(GGEMSBuiltInRadionuclideTransportTest,
        F18PreservesAllThreeDeviceSignaturesWithoutPlaceholders) {
-  constexpr std::uint64_t k_f18_endpoint_milli_eV{633'900'000ULL};
+  constexpr std::uint64_t k_f18_endpoint_micro_eV{633'900'000'000ULL};
   constexpr std::uint32_t k_f18_bin_count{1'268U};
-  constexpr std::uint64_t k_electron_energy_milli_eV{14'300ULL};
-  constexpr std::uint64_t k_gamma_energy_milli_eV{525'000ULL};
-  constexpr std::uint64_t k_annihilation_energy_milli_eV{511'000'000ULL};
+  constexpr std::uint64_t k_electron_energy_micro_eV{14'300'000ULL};
+  constexpr std::uint64_t k_gamma_energy_micro_eV{525'000'000ULL};
+  constexpr std::uint64_t k_annihilation_energy_micro_eV{511'000'000'000ULL};
   constexpr std::uint32_t k_observer_capacity{4U};
 
   Random const random = MakeRandom(0xF18B32ULL);
@@ -339,10 +339,10 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
   EXPECT_EQ(ggems::core::particles::FromKernelParticleType(
                 emission_records[2U].particle_type),
             ParticleType::Gamma);
-  EXPECT_EQ(emission_records[0U].mono_energy_milli_eV, 0ULL);
-  EXPECT_EQ(emission_records[1U].mono_energy_milli_eV,
-            k_electron_energy_milli_eV);
-  EXPECT_EQ(emission_records[2U].mono_energy_milli_eV, k_gamma_energy_milli_eV);
+  EXPECT_EQ(emission_records[0U].mono_energy_micro_eV, 0ULL);
+  EXPECT_EQ(emission_records[1U].mono_energy_micro_eV,
+            k_electron_energy_micro_eV);
+  EXPECT_EQ(emission_records[2U].mono_energy_micro_eV, k_gamma_energy_micro_eV);
 
   auto const &positron_energy = GetEmissionEnergyRecord(scenario, 0U);
   EXPECT_EQ(ggems::core::sources::FromKernelEnergyDistributionType(
@@ -356,14 +356,14 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
         emission_record.particle_type);
     EXPECT_NE(particle_type, ParticleType::Aionino);
     EXPECT_FALSE(particle_type == ParticleType::Gamma &&
-                 emission_record.mono_energy_milli_eV ==
-                     k_annihilation_energy_milli_eV);
+                 emission_record.mono_energy_micro_eV ==
+                     k_annihilation_energy_micro_eV);
     EXPECT_FALSE(particle_type == ParticleType::Electron &&
-                 emission_record.mono_energy_milli_eV >= 456'000ULL &&
-                 emission_record.mono_energy_milli_eV <= 502'000ULL);
+                 emission_record.mono_energy_micro_eV >= 456'000'000ULL &&
+                 emission_record.mono_energy_micro_eV <= 502'000'000ULL);
 
     if (particle_type == ParticleType::Gamma &&
-        emission_record.mono_energy_milli_eV == k_gamma_energy_milli_eV) {
+        emission_record.mono_energy_micro_eV == k_gamma_energy_micro_eV) {
       ++oxygen_x_ray_count;
     }
   }
@@ -419,8 +419,8 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
   EXPECT_EQ(ggems::core::particles::FromKernelParticleType(
                 gamma_record->particle_type),
             ParticleType::Gamma);
-  EXPECT_EQ(gamma_record->energy_milli_eV, k_gamma_energy_milli_eV);
-  ExpectRegularSpectrumSamples(scenario, k_f18_endpoint_milli_eV,
+  EXPECT_EQ(gamma_record->energy_micro_eV, k_gamma_energy_micro_eV);
+  ExpectRegularSpectrumSamples(scenario, k_f18_endpoint_micro_eV,
                                k_f18_bin_count, {positron_record});
 
   auto electron_config = MakeRunConfig(scenario);
@@ -439,9 +439,9 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
   EXPECT_EQ(ggems::core::particles::FromKernelParticleType(
                 electron_records[0U]->particle_type),
             ParticleType::Electron);
-  EXPECT_EQ(electron_records[0U]->energy_milli_eV, k_electron_energy_milli_eV);
-  EXPECT_FALSE(electron_records[0U]->energy_milli_eV >= 456'000ULL &&
-               electron_records[0U]->energy_milli_eV <= 502'000ULL);
+  EXPECT_EQ(electron_records[0U]->energy_micro_eV, k_electron_energy_micro_eV);
+  EXPECT_FALSE(electron_records[0U]->energy_micro_eV >= 456'000'000ULL &&
+               electron_records[0U]->energy_micro_eV <= 502'000'000ULL);
 }
 
 // =============================================================================
@@ -449,7 +449,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
 
 TEST_F(GGEMSBuiltInRadionuclideTransportTest,
        C11SamplesItsSinglePositronGridOnDevice) {
-  constexpr std::uint64_t k_endpoint_milli_eV{960'500'000ULL};
+  constexpr std::uint64_t k_endpoint_micro_eV{960'500'000'000ULL};
   constexpr std::uint32_t k_bin_count{1'921U};
   constexpr std::uint32_t k_observer_capacity{k_regular_capture_count * 2U};
 
@@ -489,7 +489,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
                         k_regular_capture_count);
   auto const source_records = GetSourceRecords(report);
   ASSERT_EQ(source_records.size(), k_regular_capture_count);
-  ExpectRegularSpectrumSamples(scenario, k_endpoint_milli_eV, k_bin_count,
+  ExpectRegularSpectrumSamples(scenario, k_endpoint_micro_eV, k_bin_count,
                                source_records);
 }
 
@@ -498,7 +498,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
 
 TEST_F(GGEMSBuiltInRadionuclideTransportTest,
        O15SamplesItsSinglePositronGridOnDevice) {
-  constexpr std::uint64_t k_endpoint_milli_eV{1'732'180'000ULL};
+  constexpr std::uint64_t k_endpoint_micro_eV{1'732'180'000'000ULL};
   constexpr std::uint32_t k_bin_count{3'465U};
   constexpr std::uint32_t k_observer_capacity{k_regular_capture_count * 2U};
 
@@ -538,7 +538,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
                         k_regular_capture_count);
   auto const source_records = GetSourceRecords(report);
   ASSERT_EQ(source_records.size(), k_regular_capture_count);
-  ExpectRegularSpectrumSamples(scenario, k_endpoint_milli_eV, k_bin_count,
+  ExpectRegularSpectrumSamples(scenario, k_endpoint_micro_eV, k_bin_count,
                                source_records);
 }
 
@@ -549,8 +549,8 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
        SyntheticDiscreteLinesRemainExactOnDevice) {
   constexpr std::array<double, 3U> k_line_energies_keV{10.0, 20.0, 40.0};
   constexpr std::array<double, 3U> k_line_weights{1.0, 1.0, 1.0};
-  constexpr std::array<std::uint64_t, 3U> k_line_energies_milli_eV{
-      10'000'000ULL, 20'000'000ULL, 40'000'000ULL};
+  constexpr std::array<std::uint64_t, 3U> k_line_energies_micro_eV{
+      10'000'000'000ULL, 20'000'000'000ULL, 40'000'000'000ULL};
   constexpr std::uint32_t k_capture_count{256U};
   constexpr std::uint32_t k_observer_capacity{k_capture_count * 2U};
 
@@ -576,7 +576,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
   EXPECT_EQ(ggems::core::sources::FromKernelEnergyDistributionType(
                 energy_record.distribution_type),
             EnergyDistributionType::DiscreteLines);
-  EXPECT_EQ(energy_record.table_count, k_line_energies_milli_eV.size());
+  EXPECT_EQ(energy_record.table_count, k_line_energies_micro_eV.size());
 
   TransportWorkload workload{GetContext(),
                              std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
@@ -596,7 +596,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
   auto const source_records = GetSourceRecords(report);
   ASSERT_EQ(source_records.size(), k_capture_count);
 
-  std::array<bool, k_line_energies_milli_eV.size()> seen_lines{};
+  std::array<bool, k_line_energies_micro_eV.size()> seen_lines{};
   for (ObserverRecord const *record : source_records) {
     ASSERT_NE(record, nullptr);
     ExpectCommonActivityRecord(*record);
@@ -605,10 +605,10 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
         ParticleType::Gamma);
 
     auto const line =
-        std::ranges::find(k_line_energies_milli_eV, record->energy_milli_eV);
-    ASSERT_NE(line, k_line_energies_milli_eV.end());
+        std::ranges::find(k_line_energies_micro_eV, record->energy_micro_eV);
+    ASSERT_NE(line, k_line_energies_micro_eV.end());
     seen_lines[static_cast<std::size_t>(
-        line - k_line_energies_milli_eV.begin())] = true;
+        line - k_line_energies_micro_eV.begin())] = true;
   }
 
   EXPECT_TRUE(std::ranges::all_of(seen_lines, [](bool seen) { return seen; }));

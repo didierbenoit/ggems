@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideEmission.hh"
 #include "GGEMS/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
@@ -73,16 +74,17 @@ TEST(GGEMSF18Test, PreservesExactEnergyDistributionsAndTabulatedSpectrum) {
   EXPECT_EQ(positron_energy.GetType(),
             GGEMSEnergyDistributionType::RegularSpectrum);
   EXPECT_EQ(positron_energy.GetTableCount(), 1268U);
-  EXPECT_EQ(positron_energy.GetRegularBinWidthMilliElectronVolt(), 499'920ULL);
+  EXPECT_EQ(positron_energy.GetRegularBinWidthMicroElectronVolt(),
+            499'920'000ULL);
 
-  auto const centers = positron_energy.GetEnergyValuesMilliElectronVolt();
+  auto const centers = positron_energy.GetEnergyValuesMicroElectronVolt();
   auto const weights = positron_energy.GetRelativeWeights();
   auto const tickets = positron_energy.GetCumulativeTicketUpperBounds();
   ASSERT_EQ(centers.size(), 1268U);
   ASSERT_EQ(weights.size(), centers.size());
   ASSERT_EQ(tickets.size(), centers.size());
-  EXPECT_EQ(centers.front() - 249'960ULL, 1'440ULL);
-  EXPECT_EQ(centers.back() + 249'960ULL, 633'900'000ULL);
+  EXPECT_EQ(centers.front() - 249'960'000ULL, 1'440'000ULL);
+  EXPECT_EQ(centers.back() + 249'960'000ULL, 633'900'000'000ULL);
 
   long double weight_sum{0.0L};
   long double weighted_center_sum{0.0L};
@@ -104,16 +106,17 @@ TEST(GGEMSF18Test, PreservesExactEnergyDistributionsAndTabulatedSpectrum) {
   EXPECT_EQ(previous_ticket, k_energy_ticket_space_size);
 
   long double const mean_energy_keV =
-      weighted_center_sum / weight_sum / 1'000'000.0L;
+      weighted_center_sum / weight_sum /
+      static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
   EXPECT_NEAR(static_cast<double>(mean_energy_keV), 250.50, 0.01);
 
   auto const &electron_energy = emissions[1U].GetEnergyDistribution();
   EXPECT_EQ(electron_energy.GetType(), GGEMSEnergyDistributionType::Mono);
-  EXPECT_EQ(electron_energy.GetMonoEnergyMilliElectronVolt(), 14'300ULL);
+  EXPECT_EQ(electron_energy.GetMonoEnergyMicroElectronVolt(), 14'300'000ULL);
 
   auto const &gamma_energy = emissions[2U].GetEnergyDistribution();
   EXPECT_EQ(gamma_energy.GetType(), GGEMSEnergyDistributionType::Mono);
-  EXPECT_EQ(gamma_energy.GetMonoEnergyMilliElectronVolt(), 525'000ULL);
+  EXPECT_EQ(gamma_energy.GetMonoEnergyMicroElectronVolt(), 525'000'000ULL);
 }
 
 // =============================================================================
@@ -136,14 +139,15 @@ TEST(GGEMSF18Test, OmitsNonTransportSignaturesAndPlaceholders) {
       continue;
     }
 
-    std::uint64_t const mono_energy = energy.GetMonoEnergyMilliElectronVolt();
+    std::uint64_t const mono_energy = energy.GetMonoEnergyMicroElectronVolt();
     EXPECT_FALSE(emission.GetParticleType() == GGEMSParticleType::Gamma &&
-                 mono_energy == 511'000'000ULL);
+                 mono_energy == 511'000'000'000ULL);
     EXPECT_FALSE(emission.GetParticleType() == GGEMSParticleType::Electron &&
-                 mono_energy >= 456'000ULL && mono_energy <= 502'000ULL);
+                 mono_energy >= 456'000'000ULL &&
+                 mono_energy <= 502'000'000ULL);
 
     if (emission.GetParticleType() == GGEMSParticleType::Gamma &&
-        mono_energy == 525'000ULL) {
+        mono_energy == 525'000'000ULL) {
       ++oxygen_x_ray_count;
     }
   }

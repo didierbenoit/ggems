@@ -50,7 +50,7 @@ TEST(GGEMSRadionuclideEmissionTest, AcceptsEveryCurrentPhysicalParticleType) {
   for (GGEMSParticleType particle_type : particle_types) {
     SCOPED_TRACE(static_cast<unsigned int>(particle_type));
     GGEMSRadionuclideEmission const emission{
-        particle_type, 1.0L, GGEMSEnergyDistribution::BuildMono(1ULL)};
+        particle_type, 1.0L, GGEMSEnergyDistribution::BuildMono(1'000ULL)};
     EXPECT_EQ(emission.GetParticleType(), particle_type);
   }
 }
@@ -65,7 +65,7 @@ TEST(GGEMSRadionuclideEmissionTest, RejectsNonPhysicalParticleTypes) {
     SCOPED_TRACE(static_cast<unsigned int>(particle_type));
     EXPECT_THROW(
         ((void)GGEMSRadionuclideEmission{
-            particle_type, 1.0L, GGEMSEnergyDistribution::BuildMono(1ULL)}),
+            particle_type, 1.0L, GGEMSEnergyDistribution::BuildMono(1'000ULL)}),
         ggems::core::GGEMSExceptionBase);
   }
 }
@@ -81,13 +81,13 @@ TEST(GGEMSRadionuclideEmissionTest, ValidatesYieldWithoutProbabilityCeiling) {
     SCOPED_TRACE(static_cast<double>(yield));
     EXPECT_THROW(((void)GGEMSRadionuclideEmission{
                      GGEMSParticleType::Gamma, yield,
-                     GGEMSEnergyDistribution::BuildMono(1ULL)}),
+                     GGEMSEnergyDistribution::BuildMono(1'000ULL)}),
                  ggems::core::GGEMSExceptionBase);
   }
 
   GGEMSRadionuclideEmission const emission{
       GGEMSParticleType::Electron, 3.5L,
-      GGEMSEnergyDistribution::BuildMono(1ULL)};
+      GGEMSEnergyDistribution::BuildMono(1'000ULL)};
   EXPECT_EQ(emission.GetYieldPerDecay(), 3.5L);
 }
 
@@ -97,7 +97,7 @@ TEST(GGEMSRadionuclideEmissionTest, ValidatesYieldWithoutProbabilityCeiling) {
 TEST(GGEMSRadionuclideEmissionTest, OwnsEverySupportedEnergyDistribution) {
   GGEMSRadionuclideEmission const mono{
       GGEMSParticleType::Gamma, 1.0L,
-      GGEMSEnergyDistribution::BuildMono(10'000'001ULL)};
+      GGEMSEnergyDistribution::BuildMono(10'000'001'000ULL)};
   GGEMSRadionuclideEmission const lines{GGEMSParticleType::Electron, 0.5L,
                                         BuildDiscreteLines()};
   GGEMSRadionuclideEmission const spectrum{GGEMSParticleType::Positron, 0.25L,
@@ -105,8 +105,8 @@ TEST(GGEMSRadionuclideEmissionTest, OwnsEverySupportedEnergyDistribution) {
 
   EXPECT_EQ(mono.GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::Mono);
-  EXPECT_EQ(mono.GetEnergyDistribution().GetMonoEnergyMilliElectronVolt(),
-            10'000'001ULL);
+  EXPECT_EQ(mono.GetEnergyDistribution().GetMonoEnergyMicroElectronVolt(),
+            10'000'001'000ULL);
   EXPECT_EQ(lines.GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::DiscreteLines);
   EXPECT_EQ(lines.GetEnergyDistribution().GetTableCount(), 3U);
@@ -130,14 +130,14 @@ TEST(GGEMSRadionuclideEmissionTest, OwnsCallerProvidedEnergyData) {
   weights.clear();
 
   auto const stored_energies =
-      emission.GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
+      emission.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const stored_weights =
       emission.GetEnergyDistribution().GetRelativeWeights();
 
   ASSERT_EQ(stored_energies.size(), 3U);
-  EXPECT_EQ(stored_energies[0U], 10'000'000ULL);
-  EXPECT_EQ(stored_energies[1U], 20'000'000ULL);
-  EXPECT_EQ(stored_energies[2U], 30'000'000ULL);
+  EXPECT_EQ(stored_energies[0U], 10'000'000'000ULL);
+  EXPECT_EQ(stored_energies[1U], 20'000'000'000ULL);
+  EXPECT_EQ(stored_energies[2U], 30'000'000'000ULL);
   ASSERT_EQ(stored_weights.size(), 3U);
   EXPECT_EQ(stored_weights[0U], 1.0);
   EXPECT_EQ(stored_weights[1U], 2.0);

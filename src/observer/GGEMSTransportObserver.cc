@@ -275,8 +275,8 @@ auto FormatTableTime(std::uint64_t time_ps) -> std::string {
 // =============================================================================
 // =============================================================================
 
-auto FormatTableEnergy(std::uint64_t energy_milli_eV) -> std::string {
-  return ggems::units::HumanReadable(ggems::units::Energy{energy_milli_eV}, 2);
+auto FormatTableEnergy(std::uint64_t energy_micro_eV) -> std::string {
+  return ggems::units::HumanReadable(ggems::units::Energy{energy_micro_eV}, 2);
 }
 
 // =============================================================================
@@ -476,8 +476,8 @@ auto BuildObserverTableRow(std::size_t record_index,
       FormatParentTrack(track_display_map, record.parent_track_id),
       std::string{RecordKindShortName(record_kind)},
       FormatParticleLabel(particle_type),
-      FormatTableEnergy(record.energy_milli_eV),
-      FormatTableEnergy(record.deposited_energy_milli_eV),
+      FormatTableEnergy(record.energy_micro_eV),
+      FormatTableEnergy(record.deposited_energy_micro_eV),
       FormatPosition(record),
       FormatDirection(record),
       std::format("{}", record.source_index),

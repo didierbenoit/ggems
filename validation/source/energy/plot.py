@@ -10,7 +10,7 @@ def plot_energy(
     energies: list[int],
     centers: tuple[int, ...],
     width: int,
-    display_unit_mev: int,
+    display_unit_micro_ev: int,
     rows: list[dict[str, object]],
     finite: list[dict[str, object]],
     output_dir: Path,
@@ -20,7 +20,7 @@ def plot_energy(
 
     # Exact membership checks precede all display conversions. The unit scale
     # comes from central GGEMS Units in the executed metadata.
-    display_centers = [value / display_unit_mev for value in centers]
+    display_centers = [value / display_unit_micro_ev for value in centers]
     expected = [cast(float, row["expected_probability"]) for row in rows]
     observed = [cast(float, row["observed_probability"]) for row in rows]
     residuals = [cast(float, row["probability_residual"]) for row in rows]
@@ -67,23 +67,26 @@ def plot_energy(
                 centers[0] - width // 2,
                 *(center + width // 2 for center in centers),
             ]
-            display_edges = [value / display_unit_mev for value in edges]
+            display_edges = [value / display_unit_micro_ev for value in edges]
             # Fine histogram for inspection; the dashed reference expresses
             # exact bin masses as constant density per keV. Integer sub-bin
             # structure is measured separately against the exact finite law.
             histogram_edges = [
-                (edges[0] + step * width // 10) / display_unit_mev
+                (edges[0] + step * width // 10) / display_unit_micro_ev
                 for step in range(10 * len(centers) + 1)
             ]
             _ = axes[0].hist(
-                [value / display_unit_mev for value in energies],
+                [value / display_unit_micro_ev for value in energies],
                 bins=histogram_edges,
                 density=True,
                 histtype="step",
                 label="GGEMS Source",
             )
             _ = axes[0].stairs(
-                [probability / (width / display_unit_mev) for probability in expected],
+                [
+                    probability / (width / display_unit_micro_ev)
+                    for probability in expected
+                ],
                 display_edges,
                 linestyle="--",
                 label="Exact bin mass / bin width",

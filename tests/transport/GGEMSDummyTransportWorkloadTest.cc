@@ -1,3 +1,4 @@
+#include <limits>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
@@ -94,8 +95,8 @@ auto ExpectSourceMatches(
   EXPECT_FLOAT_EQ(observed.direction_z, expected.axis_z_z);
   EXPECT_FLOAT_EQ(observed.direction_w, 0.0F);
 
-  EXPECT_EQ(observed.energy_milli_eV, expected.energy_milli_eV);
-  EXPECT_EQ(observed.deposited_energy_milli_eV, 0ULL);
+  EXPECT_EQ(observed.energy_micro_eV, expected.energy_micro_eV);
+  EXPECT_EQ(observed.deposited_energy_micro_eV, 0ULL);
   EXPECT_FLOAT_EQ(observed.weight, expected.weight);
 }
 
@@ -180,7 +181,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest, RunsBranchingAioninoPrototype) {
   ggems::core::sources::GGEMSSource source{};
   source.SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMilliElectronVolt(511'000'000ULL)
+      .SetEnergyMicroElectronVolt(511'000'000'000ULL)
       .SetPositionPicoMeter(0ULL, 0ULL, 0ULL)
       .SetDirection(0.0F, 0.0F, 1.0F)
       .SetWeight(1.0F);
@@ -292,7 +293,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest, CapturesFirstPrimaryHistories) {
   ggems::core::sources::GGEMSSource source{};
   source.SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMilliElectronVolt(511'000'000ULL)
+      .SetEnergyMicroElectronVolt(511'000'000'000ULL)
       .SetPositionPicoMeter(0ULL, 0ULL, 0ULL)
       .SetDirection(0.0F, 0.0F, 1.0F)
       .SetWeight(1.0F);
@@ -341,7 +342,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest, CapturesFirstPrimaryHistories) {
 
   for (auto const &record : records) {
     EXPECT_EQ(record.run_id, k_run_id);
-    EXPECT_EQ(record.deposited_energy_milli_eV, 0ULL);
+    EXPECT_EQ(record.deposited_energy_micro_eV, 0ULL);
 
     EXPECT_TRUE(record.global_primary_id == k_projection_history_offset ||
                 record.global_primary_id == k_projection_history_offset + 1ULL);
@@ -640,7 +641,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 
 TEST_F(GGEMSDummyTransportWorkloadTest,
        RecordsZeroDepositForLosslessMoveAndArtificialTermination) {
-  constexpr std::uint64_t k_source_energy_milli_eV{511'000'001ULL};
+  constexpr std::uint64_t k_source_energy_micro_eV{511'000'001'000ULL};
 
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
   random->SetEngine("philox");
@@ -648,7 +649,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 
   ggems::core::sources::GGEMSSource source{};
   source.SetAnalytic()
-      .SetEnergyMilliElectronVolt(k_source_energy_milli_eV)
+      .SetEnergyMicroElectronVolt(k_source_energy_micro_eV)
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma);
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
@@ -681,21 +682,21 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   EXPECT_EQ(records[2U].record_kind, k_terminal_record_kind);
 
   for (auto const &record : records) {
-    EXPECT_EQ(record.energy_milli_eV, k_source_energy_milli_eV);
-    EXPECT_EQ(record.deposited_energy_milli_eV, 0ULL);
+    EXPECT_EQ(record.energy_micro_eV, k_source_energy_micro_eV);
+    EXPECT_EQ(record.deposited_energy_micro_eV, 0ULL);
   }
 
   EXPECT_EQ(records[2U].status,
             ggems::core::particles::ToKernelParticleStatus(
                 ggems::core::particles::GGEMSParticleStatus::Killed));
 
-  EXPECT_EQ(records[0U].energy_milli_eV,
-            records[1U].energy_milli_eV +
-                records[1U].deposited_energy_milli_eV);
+  EXPECT_EQ(records[0U].energy_micro_eV,
+            records[1U].energy_micro_eV +
+                records[1U].deposited_energy_micro_eV);
 
-  EXPECT_EQ(records[1U].energy_milli_eV,
-            records[2U].energy_milli_eV +
-                records[2U].deposited_energy_milli_eV);
+  EXPECT_EQ(records[1U].energy_micro_eV,
+            records[2U].energy_micro_eV +
+                records[2U].deposited_energy_micro_eV);
 }
 
 // =============================================================================
@@ -710,21 +711,21 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   ggems::core::sources::GGEMSSource source_a{};
   source_a.SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMilliElectronVolt(1'000'000ULL)
+      .SetEnergyMicroElectronVolt(1'000'000'000ULL)
       .SetPositionPicoMeter(10LL, 20LL, 30LL)
       .SetDirection(1.0F, 0.0F, 0.0F)
       .SetWeight(0.25F);
 
   ggems::core::sources::GGEMSSource disabled_source{};
   disabled_source.SetAnalytic()
-      .SetEnergyMilliElectronVolt(3'000'000ULL)
+      .SetEnergyMicroElectronVolt(3'000'000'000ULL)
       .SetPositionPicoMeter(40LL, 50LL, 60LL);
 
   ggems::core::sources::GGEMSSource source_c{};
   source_c.SetAnalytic()
       .SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMilliElectronVolt(2'000'000ULL)
+      .SetEnergyMicroElectronVolt(2'000'000'000ULL)
       .SetPositionPicoMeter(-70LL, 80LL, -90LL)
       .SetDirection(0.0F, -1.0F, 0.0F)
       .SetWeight(0.75F);
@@ -791,8 +792,8 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
               k_expected_source_indices[index]);
     EXPECT_EQ(source_records[index].source_local_primary_id,
               k_expected_source_local_ids[index]);
-    EXPECT_NE(source_records[index].energy_milli_eV,
-              disabled_record.energy_milli_eV);
+    EXPECT_NE(source_records[index].energy_micro_eV,
+              disabled_record.energy_micro_eV);
 
     ExpectSourceMatches(source_records[index],
                         index < 2U ? expected_a : expected_c);
@@ -826,7 +827,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
     EXPECT_EQ(record.global_primary_id, k_global_begin + projection_primary_id);
     EXPECT_EQ(record.source_index, expected_source_index);
     EXPECT_EQ(record.source_local_primary_id, expected_source_local_primary_id);
-    EXPECT_NE(record.energy_milli_eV, disabled_record.energy_milli_eV);
+    EXPECT_NE(record.energy_micro_eV, disabled_record.energy_micro_eV);
 
     ExpectSourceMatches(record,
                         expected_source_index == 0U ? expected_a : expected_c);
@@ -877,7 +878,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
             allocation_count_after_construction);
 
   auto table_backed_config = config;
-  table_backed_config.source_records[0U].energy_milli_eV = 0ULL;
+  table_backed_config.source_records[0U].energy_micro_eV = 0ULL;
   EXPECT_THROW(workload.Run(table_backed_config),
                ggems::core::GGEMSExceptionBase);
 
@@ -977,7 +978,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   ggems::core::sources::GGEMSSource source{};
   source.SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMilliElectronVolt(511'000'001ULL)
+      .SetEnergyMicroElectronVolt(511'000'001'000ULL)
       .SetPositionPicoMeter(0LL, 0LL, 0LL)
       .SetDirection(0.0F, 0.0F, 1.0F)
       .SetWeight(1.0F);
@@ -1089,7 +1090,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   ggems::core::sources::GGEMSSource source{};
   source.SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMilliElectronVolt(511'000'000ULL);
+      .SetEnergyMicroElectronVolt(511'000'000'000ULL);
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
       GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
@@ -1123,7 +1124,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
     auto const &record = records[record_index];
     ASSERT_GE(record.global_primary_id, k_global_begin);
     ASSERT_LT(record.global_primary_id, k_global_begin + k_primary_count);
-    EXPECT_EQ(record.deposited_energy_milli_eV, 0ULL);
+    EXPECT_EQ(record.deposited_energy_micro_eV, 0ULL);
     EXPECT_EQ(record.source_index, 0U);
     EXPECT_EQ(record.source_local_primary_id,
               +record.global_primary_id - k_global_begin);
@@ -1156,14 +1157,14 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
     }
 
     ASSERT_NE(parent_after, nullptr);
-    ASSERT_LE(record.energy_milli_eV, parent_before.energy_milli_eV);
+    ASSERT_LE(record.energy_micro_eV, parent_before.energy_micro_eV);
 
-    EXPECT_EQ(parent_before.energy_milli_eV - record.energy_milli_eV,
-              parent_after->energy_milli_eV);
+    EXPECT_EQ(parent_before.energy_micro_eV - record.energy_micro_eV,
+              parent_after->energy_micro_eV);
 
-    EXPECT_EQ(parent_before.energy_milli_eV,
-              parent_after->energy_milli_eV + record.energy_milli_eV +
-                  record.deposited_energy_milli_eV);
+    EXPECT_EQ(parent_before.energy_micro_eV,
+              parent_after->energy_micro_eV + record.energy_micro_eV +
+                  record.deposited_energy_micro_eV);
   }
 
   EXPECT_TRUE(has_secondary_record);
@@ -1183,13 +1184,13 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   random->SetSeed(7'777'777ULL);
 
   ggems::core::sources::GGEMSSource source_a{};
-  source_a.SetPrimaryCount(4ULL).SetEnergyMilliElectronVolt(1'000'000ULL);
+  source_a.SetPrimaryCount(4ULL).SetEnergyMicroElectronVolt(1'000'000'000ULL);
 
   ggems::core::sources::GGEMSSource source_b{};
   source_b.SetPrimaryCount(4ULL)
       .SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMilliElectronVolt(1'000'000ULL);
+      .SetEnergyMicroElectronVolt(1'000'000'000ULL);
 
   auto source_record_a = source_a.BuildRecord();
   source_record_a.time_start_ps = k_time_start_ps;
@@ -1239,4 +1240,32 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
     EXPECT_EQ(record.time_ps, k_time_start_ps);
     EXPECT_LT(record.time_ps, k_time_stop_ps);
   }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSDummyTransportWorkloadTest,
+       LargeEnergyThresholdCannotWrapIntoBranching) {
+  ggems::core::random::GGEMSRandom random{};
+  random.SetEngine("philox").SetSeed(7'777'777ULL);
+  ggems::core::sources::GGEMSSource source{};
+  source.SetEnergyMicroElectronVolt(std::numeric_limits<std::uint64_t>::max());
+  ggems::core::transport::GGEMSDummyTransportWorkload workload{
+      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT}, random, 64U,
+      1U};
+  ggems::core::transport::GGEMSDummyTransportRunConfig config{};
+  config.total_primary_count = 64U;
+  config.source_records = {
+      WithTimeWindow(source.BuildRecord(), 0ULL, 1'000'000ULL)};
+  config.source_ranges = {
+      {.projection_primary_begin = 0ULL, .primary_count = 64ULL}};
+  config.min_energy_micro_eV = 1ULL << 63U;
+  config.max_steps_per_track = 2U;
+  auto const report = workload.Run(config);
+  EXPECT_EQ(report.counters.consumed_primary_count, 64U);
+  EXPECT_EQ(report.counters.completed_history_count, 64U);
+  EXPECT_EQ(report.counters.terminal_particle_count, 64U);
+  EXPECT_EQ(report.counters.created_secondary_count, 0U);
+  EXPECT_EQ(report.counters.overflow_count, 0U);
 }

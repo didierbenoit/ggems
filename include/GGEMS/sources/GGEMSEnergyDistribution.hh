@@ -27,7 +27,7 @@ public:
   auto operator=(GGEMSEnergyDistribution &&) noexcept
       -> GGEMSEnergyDistribution & = default;
 
-  [[nodiscard]] static auto BuildMono(std::uint64_t energy_milli_eV)
+  [[nodiscard]] static auto BuildMono(std::uint64_t energy_micro_eV)
       -> GGEMSEnergyDistribution;
 
   [[nodiscard]] static auto
@@ -40,6 +40,17 @@ public:
                        std::span<double const> relative_weights,
                        std::string_view unit) -> GGEMSEnergyDistribution;
 
+  // Exact canonical micro-electronvolt tables; no runtime unit token needed.
+  [[nodiscard]] static auto
+  BuildDiscreteLines(std::span<std::uint64_t const> energies_micro_eV,
+                     std::span<double const> relative_weights)
+      -> GGEMSEnergyDistribution;
+
+  [[nodiscard]] static auto
+  BuildRegularSpectrum(std::span<std::uint64_t const> bin_centers_micro_eV,
+                       std::span<double const> relative_weights)
+      -> GGEMSEnergyDistribution;
+
   [[nodiscard]] static auto
   LoadRegularSpectrum(std::filesystem::path const &filename,
                       std::string_view unit) -> GGEMSEnergyDistribution;
@@ -48,26 +59,26 @@ public:
     return type_;
   }
 
-  [[nodiscard]] auto GetMonoEnergyMilliElectronVolt() const noexcept
+  [[nodiscard]] auto GetMonoEnergyMicroElectronVolt() const noexcept
       -> std::uint64_t {
-    return mono_energy_milli_eV_;
+    return mono_energy_micro_eV_;
   }
 
-  [[nodiscard]] auto GetRegularBinWidthMilliElectronVolt() const noexcept
+  [[nodiscard]] auto GetRegularBinWidthMicroElectronVolt() const noexcept
       -> std::uint64_t {
-    return regular_bin_width_milli_eV_;
+    return regular_bin_width_micro_eV_;
   }
 
   [[nodiscard]] auto GetTableCount() const noexcept -> std::uint32_t {
-    return static_cast<std::uint32_t>(energy_values_milli_eV_.size());
+    return static_cast<std::uint32_t>(energy_values_micro_eV_.size());
   }
 
   [[nodiscard]] auto BuildRecord(std::uint64_t table_offset) const noexcept
       -> GGEMSEnergyDistributionRecord;
 
-  [[nodiscard]] auto GetEnergyValuesMilliElectronVolt() const noexcept
+  [[nodiscard]] auto GetEnergyValuesMicroElectronVolt() const noexcept
       -> std::span<std::uint64_t const> {
-    return energy_values_milli_eV_;
+    return energy_values_micro_eV_;
   }
 
   [[nodiscard]] auto GetRelativeWeights() const noexcept
@@ -82,9 +93,9 @@ public:
 
 private:
   GGEMSEnergyDistribution(GGEMSEnergyDistributionType type,
-                          std::uint64_t mono_energy_milli_eV,
-                          std::uint64_t regular_bin_width_milli_eV,
-                          std::vector<std::uint64_t> energy_values_milli_eV,
+                          std::uint64_t mono_energy_micro_eV,
+                          std::uint64_t regular_bin_width_micro_eV,
+                          std::vector<std::uint64_t> energy_values_micro_eV,
                           std::vector<double> relative_weights,
                           std::vector<std::uint64_t> cumulative_ticket_upper);
 
@@ -94,10 +105,20 @@ private:
       std::string_view filename, std::span<std::size_t const> line_numbers)
       -> GGEMSEnergyDistribution;
 
+  [[nodiscard]] static auto
+  BuildDiscreteLinesFromValues(std::vector<std::uint64_t> energy_values,
+                               std::span<double const> relative_weights)
+      -> GGEMSEnergyDistribution;
+
+  [[nodiscard]] static auto BuildRegularSpectrumFromValues(
+      std::vector<std::uint64_t> energy_values,
+      std::span<double const> relative_bin_weights, std::string_view filename,
+      std::span<std::size_t const> line_numbers) -> GGEMSEnergyDistribution;
+
   GGEMSEnergyDistributionType type_{GGEMSEnergyDistributionType::Mono};
-  std::uint64_t mono_energy_milli_eV_{511'000'000ULL};
-  std::uint64_t regular_bin_width_milli_eV_{0ULL};
-  std::vector<std::uint64_t> energy_values_milli_eV_;
+  std::uint64_t mono_energy_micro_eV_{511'000'000'000ULL};
+  std::uint64_t regular_bin_width_micro_eV_{0ULL};
+  std::vector<std::uint64_t> energy_values_micro_eV_;
   std::vector<double> relative_weights_;
   std::vector<std::uint64_t> cumulative_ticket_upper_;
 };

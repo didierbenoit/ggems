@@ -626,7 +626,7 @@ TEST_F(GGEMSSourceSamplingTransportTest,
       EXPECT_FLOAT_EQ(terminal->direction_x, source_observation.direction_x);
       EXPECT_FLOAT_EQ(terminal->direction_y, source_observation.direction_y);
       EXPECT_FLOAT_EQ(terminal->direction_z, source_observation.direction_z);
-      EXPECT_EQ(terminal->energy_milli_eV, source_observation.energy_milli_eV);
+      EXPECT_EQ(terminal->energy_micro_eV, source_observation.energy_micro_eV);
       EXPECT_EQ(terminal->source_index, source_observation.source_index);
       EXPECT_EQ(terminal->source_local_primary_id,
                 source_observation.source_local_primary_id);

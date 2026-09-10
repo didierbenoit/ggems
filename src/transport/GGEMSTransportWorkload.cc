@@ -159,19 +159,19 @@ ComputeObserverRecordsSize(std::uint32_t observer_record_capacity)
 [[nodiscard]] auto CheckedEnergyTableEntryCount(
     ggems::core::sources::GGEMSSourceConfigurationSnapshot const
         &source_configuration) -> std::uint64_t {
-  if (!(source_configuration.GetEnergyValuesMilliElectronVolt().size() ==
+  if (!(source_configuration.GetEnergyValuesMicroElectronVolt().size() ==
         source_configuration.GetCumulativeTicketUpperBounds().size())) {
     throw ggems::core::GGEMSInternal("Transport source configuration energy "
                                      "and ticket counts do not match.");
   }
   if (!(std::in_range<std::uint64_t>(
-          source_configuration.GetEnergyValuesMilliElectronVolt().size()))) {
+          source_configuration.GetEnergyValuesMicroElectronVolt().size()))) {
     throw ggems::core::GGEMSRecoverable(
         "Transport energy table entry count exceeds uint64 storage.");
   }
 
   return static_cast<std::uint64_t>(
-      source_configuration.GetEnergyValuesMilliElectronVolt().size());
+      source_configuration.GetEnergyValuesMicroElectronVolt().size());
 }
 
 // =============================================================================
@@ -524,8 +524,8 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
       source_configuration.GetEmissionRecords();
   auto const &energy_distribution_records =
       source_configuration.GetEnergyDistributionRecords();
-  auto const &energy_values_milli_eV =
-      source_configuration.GetEnergyValuesMilliElectronVolt();
+  auto const &energy_values_micro_eV =
+      source_configuration.GetEnergyValuesMicroElectronVolt();
   auto const &cumulative_ticket_upper =
       source_configuration.GetCumulativeTicketUpperBounds();
 
@@ -555,14 +555,14 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
       energy_distribution_records_buffer_,
       std::span<EnergyDistributionRecord const>{energy_distribution_records});
 
-  if (energy_values_milli_eV.empty()) {
+  if (energy_values_micro_eV.empty()) {
     ggems::ocl::WriteSVMFromHost(energy_values_buffer_, std::uint64_t{0ULL});
     ggems::ocl::WriteSVMFromHost(cumulative_ticket_upper_buffer_,
                                  std::uint64_t{0ULL});
   } else {
     ggems::ocl::WriteSVMFromHost(
         energy_values_buffer_,
-        std::span<std::uint64_t const>{energy_values_milli_eV});
+        std::span<std::uint64_t const>{energy_values_micro_eV});
     ggems::ocl::WriteSVMFromHost(
         cumulative_ticket_upper_buffer_,
         std::span<std::uint64_t const>{cumulative_ticket_upper});

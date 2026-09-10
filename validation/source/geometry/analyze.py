@@ -23,7 +23,7 @@ CSV_COLUMNS = (
     "direction_x",
     "direction_y",
     "direction_z",
-    "energy_meV",
+    "energy_micro_eV",
     "time_ps",
     "weight",
     "record_kind",
@@ -39,7 +39,7 @@ class Metadata:
     primary_count: int
     source_index: int
     global_primary_begin: int
-    energy_meV: int
+    energy_micro_eV: int
     time_ps: int
     weight: float
     raw: JsonObject
@@ -176,7 +176,7 @@ def load_metadata(path: Path) -> Metadata:
         global_primary_begin=_integer(
             raw.get("global_primary_begin"), "global_primary_begin"
         ),
-        energy_meV=_integer(raw.get("energy_meV"), "energy_meV", 1),
+        energy_micro_eV=_integer(raw.get("energy_micro_eV"), "energy_micro_eV", 1),
         time_ps=_integer(raw.get("time_ps"), "time_ps"),
         weight=_number(raw.get("weight"), "weight"),
         raw=raw,
@@ -229,7 +229,7 @@ def load_positions(path: Path, metadata: Metadata) -> IntArray:
                 weight = float(row[11])
                 if (
                     direction != (0.0, 0.0, 1.0)
-                    or energy != metadata.energy_meV
+                    or energy != metadata.energy_micro_eV
                     or time != metadata.time_ps
                     or weight != metadata.weight
                 ):

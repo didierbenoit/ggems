@@ -26,7 +26,7 @@ CSV_COLUMNS = (
     "direction_x",
     "direction_y",
     "direction_z",
-    "energy_meV",
+    "energy_micro_eV",
     "time_ps",
     "weight",
     "record_kind",
@@ -37,10 +37,10 @@ CSV_COLUMNS = (
 class Metadata:
     case: EnergyCase
     primary_count: int
-    energies_mev: tuple[int, ...]
+    energies_micro_ev: tuple[int, ...]
     ticket_counts: tuple[int, ...]
-    bin_width_mev: int
-    display_unit_mev: int
+    bin_width_micro_ev: int
+    display_unit_micro_ev: int
     raw: JsonObject
 
 
@@ -151,8 +151,8 @@ def load_metadata(path: Path) -> Metadata:
         _ = _integer(observer.get(key), key, 2 * primary_count, TICKET_SPACE - 1)
 
     energy = _object(raw.get("energy"), "energy")
-    if energy.get("representation") != "uint64 meV":
-        raise ValueError("Energy authority must be canonical uint64 meV.")
+    if energy.get("representation") != "uint64 micro-eV":
+        raise ValueError("Energy authority must be canonical uint64 micro-eV.")
     if _integer(energy.get("distribution_type"), "distribution_type") != type_id:
         raise ValueError("Packed distribution type disagrees with the E1 case.")
     if _integer(energy.get("table_offset"), "table_offset") != 0:
@@ -160,15 +160,17 @@ def load_metadata(path: Path) -> Metadata:
     if _integer(energy.get("ticket_space_size"), "ticket_space_size") != TICKET_SPACE:
         raise ValueError("Expected the complete raw uint32 ticket space.")
 
-    values = _integers(energy.get("energy_values_meV"), "energy_values_meV")
+    values = _integers(energy.get("energy_values_micro_eV"), "energy_values_micro_eV")
     bounds = _integers(energy.get("cumulative_ticket_upper_bounds"), "ticket bounds")
     weights = _numbers(energy.get("relative_weights"), "relative_weights")
     table_count = _integer(
         energy.get("table_count"), "table_count", 0, TICKET_SPACE - 1
     )
-    width = _integer(energy.get("regular_bin_width_meV"), "regular_bin_width_meV")
-    mono = _integer(energy.get("mono_energy_meV"), "mono_energy_meV")
-    if _integer(raw.get("energy_meV"), "energy_meV") != mono:
+    width = _integer(
+        energy.get("regular_bin_width_micro_eV"), "regular_bin_width_micro_eV"
+    )
+    mono = _integer(energy.get("mono_energy_micro_eV"), "mono_energy_micro_eV")
+    if _integer(raw.get("energy_micro_eV"), "energy_micro_eV") != mono:
         raise ValueError("Source-record energy disagrees with energy metadata.")
     if (
         table_count != len(values)
@@ -176,16 +178,18 @@ def load_metadata(path: Path) -> Metadata:
         or len(weights) != table_count
     ):
         raise ValueError("Packed energy table counts disagree.")
-    if width != case.bin_width_mev:
+    if width != case.bin_width_micro_ev:
         raise ValueError("Packed width disagrees with the canonical E1 width.")
 
     tickets: tuple[int, ...] = ()
     if case.mode == "mono":
-        if table_count or mono != case.energies_mev[0]:
-            raise ValueError("E1 Mono must be table-free and exactly 511000000 meV.")
+        if table_count or mono != case.energies_micro_ev[0]:
+            raise ValueError(
+                "E1 Mono must be table-free and exactly 511000000000 micro-eV."
+            )
         values = (mono,)
     else:
-        if mono != 0 or values != case.energies_mev or weights != case.weights:
+        if mono != 0 or values != case.energies_micro_ev or weights != case.weights:
             raise ValueError("Packed energies/weights disagree with the E1 table.")
         if any(left >= right for left, right in pairwise(values)):
             raise ValueError("Canonical energies must be strictly increasing.")
@@ -218,7 +222,9 @@ def load_metadata(path: Path) -> Metadata:
     requested = _object(raw.get("requested_energy"), "requested_energy")
     if requested.get("unit") != "keV" or energy.get("display_unit") != "keV":
         raise ValueError("E1 requested/display energies must use keV.")
-    display_unit = _integer(energy.get("display_unit_meV"), "display_unit_meV", 1)
+    display_unit = _integer(
+        energy.get("display_unit_micro_eV"), "display_unit_micro_eV", 1
+    )
     if any(
         value != display_unit * display
         for value, display in zip(values, case.values_kev, strict=True)
@@ -402,7 +408,7 @@ def measure_energy(energies: list[int], metadata: Metadata) -> JsonObject:
         },
         "metadata": metadata.raw,
         "numerical_representation": {
-            "input": "Exact decimal uint64 meV, parsed as Python integers",
+            "input": "Exact decimal uint64 micro-eV, parsed as Python integers",
             "authority": "Immutable run snapshot energies, width, and cumulative uint32-ticket bounds",
             "analysis": "Integer support/CDF arithmetic; exact rational probability differences; binary64 display only",
             "regular_law": "Finite integer image of tickets, not a continuous Uniform test",
@@ -412,38 +418,40 @@ def measure_energy(energies: list[int], metadata: Metadata) -> JsonObject:
         "repeated_sample_count": count - len(multiplicities),
         "repeated_energy_count": sum(value > 1 for value in multiplicities.values()),
         "maximum_multiplicity": max(multiplicities.values()),
-        "minimum_energy_meV": min(energies),
-        "maximum_energy_meV": max(energies),
+        "minimum_energy_micro_eV": min(energies),
+        "maximum_energy_micro_eV": max(energies),
         "support": {},
         "acceptance_thresholds": None,
     }
 
     if metadata.case.mode == "mono":
-        expected = metadata.energies_mev[0]
+        expected = metadata.energies_micro_ev[0]
         mismatches = sum(energy != expected for energy in energies)
         maximum = max(abs(energy - expected) for energy in energies)
         if mismatches:
             raise ValueError(
-                f"Mono contract failure: {mismatches} mismatches; maximum difference {maximum} meV."
+                f"Mono contract failure: {mismatches} mismatches; maximum difference {maximum} micro-eV."
             )
         summary["exact_mono"] = {
             "sample_count": count,
-            "expected_energy_meV": expected,
-            "minimum_energy_meV": min(energies),
-            "maximum_energy_meV": max(energies),
+            "expected_energy_micro_eV": expected,
+            "minimum_energy_micro_eV": min(energies),
+            "maximum_energy_micro_eV": max(energies),
             "mismatching_energy_count": mismatches,
-            "maximum_absolute_energy_difference_meV": maximum,
+            "maximum_absolute_energy_difference_micro_eV": maximum,
         }
         summary["support"] = {
             "mismatching_energy_count": 0,
-            "maximum_absolute_excursion_meV": 0,
+            "maximum_absolute_excursion_micro_eV": 0,
         }
 
     elif metadata.case.mode == "discrete-lines":
-        off_line = set(energies).difference(metadata.energies_mev)
+        off_line = set(energies).difference(metadata.energies_micro_ev)
         if off_line:
-            raise ValueError(f"Off-line DiscreteLines energy: {min(off_line)} meV.")
-        counts = [multiplicities[value] for value in metadata.energies_mev]
+            raise ValueError(
+                f"Off-line DiscreteLines energy: {min(off_line)} micro-eV."
+            )
+        counts = [multiplicities[value] for value in metadata.energies_micro_ev]
         if any(
             observed and ticket == 0
             for observed, ticket in zip(counts, metadata.ticket_counts, strict=True)
@@ -451,21 +459,24 @@ def measure_energy(energies: list[int], metadata: Metadata) -> JsonObject:
             raise ValueError("A zero-ticket DiscreteLines entry was emitted.")
 
         rows, metrics = probability_results(counts, metadata.ticket_counts, count)
-        for row, energy in zip(rows, metadata.energies_mev, strict=True):
+        for row, energy in zip(rows, metadata.energies_micro_ev, strict=True):
             row.update(
-                {"energy_meV": energy, "energy_keV": energy / metadata.display_unit_mev}
+                {
+                    "energy_micro_eV": energy,
+                    "energy_keV": energy / metadata.display_unit_micro_ev,
+                }
             )
         summary["line_results"] = rows
         summary["probability_metrics"] = metrics
         summary["support"] = {
             "off_line_count": 0,
             "zero_ticket_emission_count": 0,
-            "maximum_absolute_excursion_meV": 0,
+            "maximum_absolute_excursion_micro_eV": 0,
         }
 
     else:
-        width = metadata.bin_width_mev
-        lower_edges = [center - width // 2 for center in metadata.energies_mev]
+        width = metadata.bin_width_micro_ev
+        lower_edges = [center - width // 2 for center in metadata.energies_micro_ev]
         upper_edges = [lower + width for lower in lower_edges]
         offsets: list[list[int]] = [[] for _ in lower_edges]
 
@@ -479,7 +490,7 @@ def measure_energy(energies: list[int], metadata: Metadata) -> JsonObject:
             ]
             if len(memberships) != 1:
                 raise ValueError(
-                    f"Energy {energy} meV belongs to {len(memberships)} regular half-open bins."
+                    f"Energy {energy} micro-eV belongs to {len(memberships)} regular half-open bins."
                 )
             index = memberships[0]
             offsets[index].append(energy - lower_edges[index])
@@ -493,9 +504,9 @@ def measure_energy(energies: list[int], metadata: Metadata) -> JsonObject:
         ):
             rows[index].update(
                 {
-                    "center_energy_meV": metadata.energies_mev[index],
-                    "lower_energy_meV": lower_edges[index],
-                    "upper_energy_meV": upper_edges[index],
+                    "center_energy_micro_eV": metadata.energies_micro_ev[index],
+                    "lower_energy_micro_eV": lower_edges[index],
+                    "upper_energy_micro_eV": upper_edges[index],
                 }
             )
             finite.append(
@@ -503,8 +514,8 @@ def measure_energy(energies: list[int], metadata: Metadata) -> JsonObject:
                     "bin_index": index,
                     "sample_count": len(values),
                     "distinct_emitted_energy_count": len(set(values)),
-                    "minimum_offset_meV": min(values) if values else None,
-                    "maximum_offset_meV": max(values) if values else None,
+                    "minimum_offset_micro_eV": min(values) if values else None,
+                    "maximum_offset_micro_eV": max(values) if values else None,
                     "exact_finite_cdf_max_deviation": finite_cdf_max_deviation(
                         values, ticket_count, width
                     ),
@@ -517,7 +528,7 @@ def measure_energy(energies: list[int], metadata: Metadata) -> JsonObject:
             "outside_all_bins_count": 0,
             "ambiguous_bin_count": 0,
             "unattainable_offset_count": 0,
-            "maximum_absolute_excursion_meV": 0,
+            "maximum_absolute_excursion_micro_eV": 0,
         }
 
     return summary
@@ -556,9 +567,9 @@ def analyze_case(
             for path in plot_energy(
                 metadata.case,
                 energies,
-                metadata.energies_mev,
-                metadata.bin_width_mev,
-                metadata.display_unit_mev,
+                metadata.energies_micro_ev,
+                metadata.bin_width_micro_ev,
+                metadata.display_unit_micro_ev,
                 rows,
                 finite,
                 output_dir,

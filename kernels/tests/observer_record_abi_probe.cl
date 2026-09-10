@@ -39,8 +39,8 @@ observer_record_abi_probe(__global ulong *layout,
   GGEMS_WRITE_RECORD_OFFSET(16, direction_y);
   GGEMS_WRITE_RECORD_OFFSET(17, direction_z);
   GGEMS_WRITE_RECORD_OFFSET(18, direction_w);
-  GGEMS_WRITE_RECORD_OFFSET(19, energy_milli_eV);
-  GGEMS_WRITE_RECORD_OFFSET(20, deposited_energy_milli_eV);
+  GGEMS_WRITE_RECORD_OFFSET(19, energy_micro_eV);
+  GGEMS_WRITE_RECORD_OFFSET(20, deposited_energy_micro_eV);
   GGEMS_WRITE_RECORD_OFFSET(21, weight);
   GGEMS_WRITE_RECORD_OFFSET(22, source_index);
 
@@ -49,13 +49,13 @@ observer_record_abi_probe(__global ulong *layout,
   layout[23] = (ulong)((__global uchar const *)&records[1] -
                        (__global uchar const *)&records[0]);
 
-  records[0].energy_milli_eV = 101UL;
-  records[0].deposited_energy_milli_eV = 202UL;
+  records[0].energy_micro_eV = 101UL;
+  records[0].deposited_energy_micro_eV = 202UL;
   records[0].weight = 0.25f;
   records[0].source_index = 3U;
 
-  records[1].energy_milli_eV = 303UL;
-  records[1].deposited_energy_milli_eV = 404UL;
+  records[1].energy_micro_eV = 303UL;
+  records[1].deposited_energy_micro_eV = 404UL;
   records[1].weight = 0.75f;
   records[1].source_index = 5U;
 

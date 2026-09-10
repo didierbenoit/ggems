@@ -16,7 +16,7 @@ is used within its tested Random scope; E1 measures its energy transformations.
 
 | Case | Configuration in keV | Relative weights | Exact expected probabilities |
 |---|---|---|---|
-| `E1_mono` | 511 | None | Exact equality to 511000000 meV |
+| `E1_mono` | 511 | None | Exact equality to 511000000000 micro-eV |
 | `E1_discrete_lines` | Lines 20, 40, 60, 80 | 1, 0, 1, 2 | 1/4, 0, 1/4, 1/2 |
 | `E1_regular_spectrum` | Centers 25, 35, 45, 55; full width 10 | 1, 1, 2, 4 | 1/8, 1/8, 1/4, 1/2 |
 
@@ -93,21 +93,21 @@ standalone E1 analysis; the historical exporter default is `G1_<geometry>`.
 The exporter reads `GGEMSRun::GetLastSourceRunSnapshot()` after the run. Its
 immutable configuration supplies the actual distribution descriptor and arrays
 uploaded to OpenCL: `distribution_type`, `table_offset`, `table_count`, exact
-`energy_values_meV`, `regular_bin_width_meV`, `relative_weights`, and
+`energy_values_micro_eV`, `regular_bin_width_micro_eV`, `relative_weights`, and
 `cumulative_ticket_upper_bounds`. These are exposed in the metadata `energy`
-object with `ticket_space_size = 2^32` and `representation = "uint64 meV"`.
+object with `ticket_space_size = 2^32` and `representation = "uint64 micro-eV"`.
 The offset is an element index shared by the flattened energy and ticket arrays,
 not a byte offset. This single-source exporter requires offset zero and exports
 the complete arrays. Relative weights are descriptive host state; cumulative
 ticket bounds are the executed probability authority.
 
-Mono uses `mono_energy_meV` and empty arrays with zero table count, offset, and
-width. For tabulated modes `mono_energy_meV` and the retained top-level
-`energy_meV` are zero, reflecting the inactive Source-record Mono field; they
+Mono uses `mono_energy_micro_eV` and empty arrays with zero table count, offset, and
+width. For tabulated modes `mono_energy_micro_eV` and the retained top-level
+`energy_micro_eV` are zero, reflecting the inactive Source-record Mono field; they
 are not a sampled energy or an average. `energy_mode` is the current Source
 display name (`Mono`, `Discrete lines`, `Regular spectrum`), while
 `energy_configuration` retains the CLI spelling. `requested_energy` separately
-records the requested keV values, width, and weights. `display_unit_meV` comes
+records the requested keV values, width, and weights. `display_unit_micro_eV` comes
 from central GGEMS Units and is used only for plotting/display conversion.
 
 For these cases, the packed cumulative bounds must be:
@@ -125,7 +125,7 @@ bound belongs to the next nonempty interval; zero-width entries are skipped.
 The stable CSV is unchanged:
 
 ```text
-source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,z_pm,direction_x,direction_y,direction_z,energy_meV,time_ps,weight,record_kind
+source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,z_pm,direction_x,direction_y,direction_z,energy_micro_eV,time_ps,weight,record_kind
 ```
 
 Integer fields remain exact decimal integers. Floating serialization retains
@@ -169,7 +169,7 @@ to exactly one bin. Per-bin counts and global probability metrics use the
 same actual ticket widths as DiscreteLines.
 
 For within-bin analysis, let `M` be that bin's actual ticket width and `W` its
-integer meV width. The kernel maps its local ticket `t` in [0,M) to
+integer micro-eV width. The kernel maps its local ticket `t` in [0,M) to
 `offset = floor(W*t/M)`. The reference derives a counting CDF from this mapping;
 it does not generate tickets or copy the overflow-safe OpenCL implementation.
 For integer offset `k`, the exact number of tickets with emitted offset <= k is:

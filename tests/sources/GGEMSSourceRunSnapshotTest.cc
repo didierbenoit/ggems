@@ -68,7 +68,7 @@ auto ExpectSourceRecordsEqual(
   EXPECT_EQ(actual.source_id, expected.source_id);
   EXPECT_EQ(actual.time_start_ps, expected.time_start_ps);
   EXPECT_EQ(actual.time_stop_ps, expected.time_stop_ps);
-  EXPECT_EQ(actual.energy_milli_eV, expected.energy_milli_eV);
+  EXPECT_EQ(actual.energy_micro_eV, expected.energy_micro_eV);
 
   EXPECT_EQ(actual.position_x_pm, expected.position_x_pm);
   EXPECT_EQ(actual.position_y_pm, expected.position_y_pm);
@@ -182,16 +182,16 @@ auto ExpectSourceConfigurationsEqual(SourceConfiguration const &standalone,
     SCOPED_TRACE(index);
     auto const &standalone_record = standalone_energy_records[index];
     auto const &planned_record = planned_energy_records[index];
-    EXPECT_EQ(standalone_record.regular_bin_width_milli_eV,
-              planned_record.regular_bin_width_milli_eV);
+    EXPECT_EQ(standalone_record.regular_bin_width_micro_eV,
+              planned_record.regular_bin_width_micro_eV);
     EXPECT_EQ(standalone_record.table_offset, planned_record.table_offset);
     EXPECT_EQ(standalone_record.distribution_type,
               planned_record.distribution_type);
     EXPECT_EQ(standalone_record.table_count, planned_record.table_count);
   }
 
-  EXPECT_EQ(standalone.GetEnergyValuesMilliElectronVolt(),
-            planned.GetEnergyValuesMilliElectronVolt());
+  EXPECT_EQ(standalone.GetEnergyValuesMicroElectronVolt(),
+            planned.GetEnergyValuesMicroElectronVolt());
   EXPECT_EQ(standalone.GetRelativeWeights(), planned.GetRelativeWeights());
   EXPECT_EQ(standalone.GetCumulativeTicketUpperBounds(),
             planned.GetCumulativeTicketUpperBounds());
@@ -208,8 +208,8 @@ auto ExpectSourceConfigurationsEqual(SourceConfiguration const &standalone,
     EXPECT_EQ(standalone_record.particle_type, planned_record.particle_type);
     EXPECT_EQ(standalone_record.energy_distribution_record_index,
               planned_record.energy_distribution_record_index);
-    EXPECT_EQ(standalone_record.mono_energy_milli_eV,
-              planned_record.mono_energy_milli_eV);
+    EXPECT_EQ(standalone_record.mono_energy_micro_eV,
+              planned_record.mono_energy_micro_eV);
   }
 
   auto const &standalone_definitions = standalone.GetRadionuclideDefinitions();
@@ -300,7 +300,7 @@ TEST(GGEMSSourceRunSnapshot, BuildsExpectedMonoSourceSnapshot) {
       .SetAnalytic()
       .SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMilliElectronVolt(222'000'000ULL)
+      .SetEnergyMicroElectronVolt(222'000'000'000ULL)
       .SetPositionPicoMeter(-11LL, 22LL, -33LL)
       .SetDirection(0.0F, -4.0F, 0.0F)
       .SetWeight(0.25F);
@@ -323,7 +323,7 @@ TEST(GGEMSSourceRunSnapshot, BuildsExpectedMonoSourceSnapshot) {
   EXPECT_EQ(record.source_id, 0ULL);
   EXPECT_EQ(record.time_start_ps, 0ULL);
   EXPECT_EQ(record.time_stop_ps, 0ULL);
-  EXPECT_EQ(record.energy_milli_eV, 222'000'000ULL);
+  EXPECT_EQ(record.energy_micro_eV, 222'000'000'000ULL);
 
   EXPECT_EQ(record.position_x_pm, -11LL);
   EXPECT_EQ(record.position_y_pm, 22LL);
@@ -360,7 +360,7 @@ TEST(GGEMSSourceRunSnapshot, OwnsIndependentSourceState) {
   source.SetPrimaryCount(3ULL)
       .SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMilliElectronVolt(111'000'000ULL)
+      .SetEnergyMicroElectronVolt(111'000'000'000ULL)
       .SetPositionPicoMeter(11LL, -22LL, 33LL)
       .SetDirection(1.0F, 0.0F, 0.0F)
       .SetWeight(0.125F);
@@ -371,7 +371,7 @@ TEST(GGEMSSourceRunSnapshot, OwnsIndependentSourceState) {
   source.SetPrimaryCount(5ULL)
       .SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMilliElectronVolt(222'000'000ULL)
+      .SetEnergyMicroElectronVolt(222'000'000'000ULL)
       .SetPositionPicoMeter(-44LL, 55LL, -66LL)
       .SetDirection(0.0F, -1.0F, 0.0F)
       .SetWeight(0.875F);
@@ -441,7 +441,7 @@ TEST(GGEMSSourceRunSnapshot, BuildsOrderedMultiSourceSnapshot) {
   auto source_0 = MakeSource(3ULL);
   source_0->SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMilliElectronVolt(101'000'000ULL)
+      .SetEnergyMicroElectronVolt(101'000'000'000ULL)
       .SetPositionPicoMeter(10LL, 20LL, 30LL)
       .SetDirection(1.0F, 0.0F, 0.0F)
       .SetWeight(0.25F);
@@ -450,7 +450,7 @@ TEST(GGEMSSourceRunSnapshot, BuildsOrderedMultiSourceSnapshot) {
   source_1->SetAnalytic()
       .SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMilliElectronVolt(202'000'000ULL)
+      .SetEnergyMicroElectronVolt(202'000'000'000ULL)
       .SetPositionPicoMeter(-40LL, 50LL, 60LL)
       .SetDirection(0.0F, 1.0F, 0.0F)
       .SetWeight(0.50F);
@@ -459,7 +459,7 @@ TEST(GGEMSSourceRunSnapshot, BuildsOrderedMultiSourceSnapshot) {
   source_2->SetAnalytic()
       .SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Positron)
-      .SetEnergyMilliElectronVolt(303'000'000ULL)
+      .SetEnergyMicroElectronVolt(303'000'000'000ULL)
       .SetPositionPicoMeter(70LL, -80LL, 90LL)
       .SetDirection(0.0F, 0.0F, -1.0F)
       .SetWeight(0.75F);
@@ -484,7 +484,7 @@ TEST(GGEMSSourceRunSnapshot, BuildsOrderedMultiSourceSnapshot) {
   ExpectSourceRecordsEqual(records[1U], source_1->BuildRecord());
   ExpectSourceRecordsEqual(records[2U], source_2->BuildRecord());
 
-  EXPECT_EQ(records[0U].energy_milli_eV, 101'000'000ULL);
+  EXPECT_EQ(records[0U].energy_micro_eV, 101'000'000'000ULL);
   EXPECT_EQ(records[1U].position_x_pm, -40LL);
   EXPECT_EQ(records[2U].emitted_particle_type,
             ggems::core::particles::ToKernelParticleType(
@@ -590,12 +590,12 @@ TEST(GGEMSSourceRunSnapshot, BuildsEmptySnapshot) {
 
 TEST(GGEMSSourceRunSnapshot, OwnsIndependentMultiSourceState) {
   auto source_0 = MakeSource(2ULL);
-  source_0->SetEnergyMilliElectronVolt(111'000'000ULL)
+  source_0->SetEnergyMicroElectronVolt(111'000'000'000ULL)
       .SetPositionPicoMeter(1LL, 2LL, 3LL)
       .SetDirection(1.0F, 0.0F, 0.0F);
 
   auto source_1 = MakeSource(4ULL);
-  source_1->SetEnergyMilliElectronVolt(222'000'000ULL)
+  source_1->SetEnergyMicroElectronVolt(222'000'000'000ULL)
       .SetPositionPicoMeter(4LL, 5LL, 6LL)
       .SetDirection(0.0F, 1.0F, 0.0F);
 
@@ -606,12 +606,12 @@ TEST(GGEMSSourceRunSnapshot, OwnsIndependentMultiSourceState) {
   auto snapshot_a = ggems::core::sources::BuildSourceRunSnapshot(sources);
 
   source_0->SetPrimaryCount(5ULL)
-      .SetEnergyMilliElectronVolt(333'000'000ULL)
+      .SetEnergyMicroElectronVolt(333'000'000'000ULL)
       .SetPositionPicoMeter(-1LL, -2LL, -3LL)
       .SetDirection(0.0F, 1.0F, 0.0F);
 
   source_1->SetPrimaryCount(3ULL)
-      .SetEnergyMilliElectronVolt(444'000'000ULL)
+      .SetEnergyMicroElectronVolt(444'000'000'000ULL)
       .SetPositionPicoMeter(-4LL, -5LL, -6LL)
       .SetDirection(-1.0F, 0.0F, 0.0F);
 
@@ -636,8 +636,8 @@ TEST(GGEMSSourceRunSnapshot, OwnsIndependentMultiSourceState) {
   ExpectSourceRecordsEqual(snapshot_b.GetRecords()[0U], expected_b_0);
   ExpectSourceRecordsEqual(snapshot_b.GetRecords()[1U], expected_b_1);
 
-  EXPECT_NE(snapshot_a.GetRecords()[0U].energy_milli_eV,
-            snapshot_b.GetRecords()[0U].energy_milli_eV);
+  EXPECT_NE(snapshot_a.GetRecords()[0U].energy_micro_eV,
+            snapshot_b.GetRecords()[0U].energy_micro_eV);
   EXPECT_NE(snapshot_a.GetRecords()[1U].position_x_pm,
             snapshot_b.GetRecords()[1U].position_x_pm);
 }
@@ -670,7 +670,7 @@ TEST(GGEMSSourceRunSnapshot, RejectsNullSource) {
 
 TEST(GGEMSSourceRunSnapshot, AcceptsDuplicateSourceSlots) {
   auto source = MakeSource(7ULL);
-  source->SetEnergyMilliElectronVolt(123'000'000ULL)
+  source->SetEnergyMicroElectronVolt(123'000'000'000ULL)
       .SetPositionPicoMeter(11LL, 22LL, 33LL)
       .SetDirection(0.0F, 0.0F, 1.0F);
 
@@ -721,11 +721,11 @@ TEST(GGEMSSourceRunSnapshot, RejectsOverflowingTotal) {
   constexpr std::uint64_t k_maximum = std::numeric_limits<std::uint64_t>::max();
 
   auto source_0 = MakeSource(k_maximum);
-  source_0->SetEnergyMilliElectronVolt(111'000'000ULL)
+  source_0->SetEnergyMicroElectronVolt(111'000'000'000ULL)
       .SetPositionPicoMeter(1LL, 2LL, 3LL);
 
   auto source_1 = MakeSource(1ULL);
-  source_1->SetEnergyMilliElectronVolt(222'000'000ULL)
+  source_1->SetEnergyMicroElectronVolt(222'000'000'000ULL)
       .SetPositionPicoMeter(4LL, 5LL, 6LL);
 
   auto expected_0 = source_0->BuildRecord();
@@ -763,7 +763,7 @@ TEST(GGEMSSourceRunSnapshot, SingleSourceOverloadMatchesCollectionOverload) {
   auto source = MakeSource(19ULL);
   source->SetAnalytic()
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Proton)
-      .SetEnergyMilliElectronVolt(555'000'000ULL)
+      .SetEnergyMicroElectronVolt(555'000'000'000ULL)
       .SetPositionPicoMeter(-10LL, 20LL, -30LL)
       .SetDirection(1.0F, -1.0F, 0.0F)
       .SetWeight(0.625F);
@@ -802,7 +802,7 @@ TEST(GGEMSSourceRunSnapshot,
   source
       ->SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMilliElectronVolt(222'000'000ULL)
+      .SetEnergyMicroElectronVolt(222'000'000'000ULL)
       .SetPositionPicoMeter(-11LL, 22LL, -33LL)
       .SetWeight(0.25F);
   std::vector<GGEMSSourcePtr> sources{source};
@@ -841,13 +841,13 @@ TEST(GGEMSSourceRunSnapshot,
                                                        .stop_ps = 5'678ULL};
 
   auto source_0 = MakeSource(3ULL);
-  source_0->SetEnergyMilliElectronVolt(111'000'000ULL)
+  source_0->SetEnergyMicroElectronVolt(111'000'000'000ULL)
       .SetPositionPicoMeter(1LL, 2LL, 3LL);
   auto source_1 = MakeSource(0ULL);
-  source_1->SetEnergyMilliElectronVolt(222'000'000ULL)
+  source_1->SetEnergyMicroElectronVolt(222'000'000'000ULL)
       .SetPositionPicoMeter(4LL, 5LL, 6LL);
   auto source_2 = MakeSource(5ULL);
-  source_2->SetEnergyMilliElectronVolt(333'000'000ULL)
+  source_2->SetEnergyMicroElectronVolt(333'000'000'000ULL)
       .SetPositionPicoMeter(7LL, 8LL, 9LL);
 
   std::vector<GGEMSSourcePtr> sources{source_0, source_1, source_2};
@@ -891,7 +891,7 @@ TEST(GGEMSSourceRunSnapshot,
                                                        .stop_ps = 199ULL};
 
   auto source = MakeSource(k_primary_count);
-  source->SetEnergyMilliElectronVolt(444'000'000ULL)
+  source->SetEnergyMicroElectronVolt(444'000'000'000ULL)
       .SetPositionPicoMeter(-4LL, 5LL, -6LL);
   std::vector<GGEMSSourcePtr> sources{source, source};
   auto configuration =
@@ -985,12 +985,12 @@ TEST(GGEMSSourceRunSnapshot,
 
 TEST(GGEMSSourceRunSnapshot, PreservesZeroPrimaryAndDuplicateSlotsTogether) {
   auto positive_count_source = MakeSource(3ULL);
-  positive_count_source->SetEnergyMilliElectronVolt(123'000'000ULL)
+  positive_count_source->SetEnergyMicroElectronVolt(123'000'000'000ULL)
       .SetPositionPicoMeter(11LL, 22LL, 33LL)
       .SetDirection(0.0F, 0.0F, 1.0F);
 
   auto zero_primary_source = MakeSource(0ULL);
-  zero_primary_source->SetEnergyMilliElectronVolt(456'000'000ULL)
+  zero_primary_source->SetEnergyMicroElectronVolt(456'000'000'000ULL)
       .SetPositionPicoMeter(-11LL, -22LL, -33LL)
       .SetDirection(0.0F, 1.0F, 0.0F);
 
@@ -1064,7 +1064,7 @@ TEST(GGEMSSourceRunSnapshot,
   constexpr std::array<double, 3U> k_regular_weights{0.0, 1.0, 1.0};
 
   auto mono = MakeSource(1ULL);
-  mono->SetEnergyMilliElectronVolt(511'000'000ULL);
+  mono->SetEnergyMicroElectronVolt(511'000'000'000ULL);
 
   auto discrete = MakeSource(0ULL);
   discrete->SetDiscreteEnergyLines(k_discrete_energies, k_discrete_weights,
@@ -1080,7 +1080,7 @@ TEST(GGEMSSourceRunSnapshot,
   auto const &records = snapshot.GetRecords();
   auto const &ranges = snapshot.GetRanges();
   auto const &energy_records = snapshot.GetEnergyDistributionRecords();
-  auto const &values = snapshot.GetEnergyValuesMilliElectronVolt();
+  auto const &values = snapshot.GetEnergyValuesMicroElectronVolt();
   auto const &relative_weights = snapshot.GetRelativeWeights();
   auto const &ticket_bounds = snapshot.GetCumulativeTicketUpperBounds();
 
@@ -1094,10 +1094,10 @@ TEST(GGEMSSourceRunSnapshot,
   ExpectSourceRange(ranges[3U], 3ULL, 0ULL);
   EXPECT_EQ(snapshot.GetTotalPrimaryCount(), 3ULL);
 
-  EXPECT_EQ(records[0U].energy_milli_eV, 511'000'000ULL);
-  EXPECT_EQ(records[1U].energy_milli_eV, 0ULL);
-  EXPECT_EQ(records[2U].energy_milli_eV, 0ULL);
-  EXPECT_EQ(records[3U].energy_milli_eV, 0ULL);
+  EXPECT_EQ(records[0U].energy_micro_eV, 511'000'000'000ULL);
+  EXPECT_EQ(records[1U].energy_micro_eV, 0ULL);
+  EXPECT_EQ(records[2U].energy_micro_eV, 0ULL);
+  EXPECT_EQ(records[3U].energy_micro_eV, 0ULL);
 
   EXPECT_EQ(ggems::core::sources::FromKernelEnergyDistributionType(
                 energy_records[0U].distribution_type),
@@ -1116,15 +1116,16 @@ TEST(GGEMSSourceRunSnapshot,
             ggems::core::sources::GGEMSEnergyDistributionType::RegularSpectrum);
   EXPECT_EQ(energy_records[2U].table_offset, 3ULL);
   EXPECT_EQ(energy_records[2U].table_count, 3U);
-  EXPECT_EQ(energy_records[2U].regular_bin_width_milli_eV, 2'000'000'000ULL);
+  EXPECT_EQ(energy_records[2U].regular_bin_width_micro_eV,
+            2'000'000'000'000ULL);
 
   EXPECT_EQ(energy_records[3U].table_offset, 6ULL);
   EXPECT_EQ(energy_records[3U].table_count, 3U);
 
   std::vector<std::uint64_t> const expected_values{
-      1'000'000'000ULL,  2'000'000'000ULL,  3'000'000'000ULL,
-      10'000'000'000ULL, 12'000'000'000ULL, 14'000'000'000ULL,
-      1'000'000'000ULL,  2'000'000'000ULL,  3'000'000'000ULL};
+      1'000'000'000'000ULL,  2'000'000'000'000ULL,  3'000'000'000'000ULL,
+      10'000'000'000'000ULL, 12'000'000'000'000ULL, 14'000'000'000'000ULL,
+      1'000'000'000'000ULL,  2'000'000'000'000ULL,  3'000'000'000'000ULL};
   std::vector<double> const expected_relative_weights{1.0, 0.0, 3.0, 0.0, 1.0,
                                                       1.0, 1.0, 0.0, 3.0};
   std::vector<std::uint64_t> const expected_ticket_bounds{
@@ -1136,10 +1137,10 @@ TEST(GGEMSSourceRunSnapshot,
   EXPECT_EQ(relative_weights, expected_relative_weights);
   EXPECT_EQ(ticket_bounds, expected_ticket_bounds);
 
-  discrete->SetEnergyMilliElectronVolt(99'000'000ULL);
-  regular->SetEnergyMilliElectronVolt(88'000'000ULL);
+  discrete->SetEnergyMicroElectronVolt(99'000'000'000ULL);
+  regular->SetEnergyMicroElectronVolt(88'000'000'000ULL);
 
-  EXPECT_EQ(snapshot.GetEnergyValuesMilliElectronVolt(), expected_values);
+  EXPECT_EQ(snapshot.GetEnergyValuesMicroElectronVolt(), expected_values);
   EXPECT_EQ(snapshot.GetRelativeWeights(), expected_relative_weights);
   EXPECT_EQ(snapshot.GetCumulativeTicketUpperBounds(), expected_ticket_bounds);
   EXPECT_EQ(snapshot.GetEnergyDistributionRecords()[1U].table_offset, 0ULL);
@@ -1158,7 +1159,7 @@ TEST(GGEMSSourceRunSnapshot, AllMonoSourcesUseEmptyPackedEnergyTables) {
   auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(sources);
 
   ASSERT_EQ(snapshot.GetEnergyDistributionRecords().size(), 3U);
-  EXPECT_TRUE(snapshot.GetEnergyValuesMilliElectronVolt().empty());
+  EXPECT_TRUE(snapshot.GetEnergyValuesMicroElectronVolt().empty());
   EXPECT_TRUE(snapshot.GetRelativeWeights().empty());
   EXPECT_TRUE(snapshot.GetCumulativeTicketUpperBounds().empty());
 
@@ -1168,7 +1169,7 @@ TEST(GGEMSSourceRunSnapshot, AllMonoSourcesUseEmptyPackedEnergyTables) {
               ggems::core::sources::GGEMSEnergyDistributionType::Mono);
     EXPECT_EQ(record.table_offset, 0ULL);
     EXPECT_EQ(record.table_count, 0U);
-    EXPECT_EQ(record.regular_bin_width_milli_eV, 0ULL);
+    EXPECT_EQ(record.regular_bin_width_micro_eV, 0ULL);
   }
 }
 
@@ -1190,7 +1191,7 @@ TEST(GGEMSSourceRunSnapshot,
 
   auto const snapshot = ggems::core::sources::BuildSourceRunSnapshot(source);
   auto const &energy_records = snapshot.GetEnergyDistributionRecords();
-  auto const &values = snapshot.GetEnergyValuesMilliElectronVolt();
+  auto const &values = snapshot.GetEnergyValuesMicroElectronVolt();
   auto const &weights = snapshot.GetRelativeWeights();
   auto const &ticket_bounds = snapshot.GetCumulativeTicketUpperBounds();
 

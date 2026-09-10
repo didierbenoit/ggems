@@ -57,7 +57,7 @@ struct RawProbeResult {
 
 [[nodiscard]] auto MakeMonoInput() -> ProbeInput {
   ProbeInput input{};
-  input.source.energy_milli_eV = 511'000'000ULL;
+  input.source.energy_micro_eV = 511'000'000'000ULL;
   input.distribution.distribution_type =
       ggems::core::sources::ToKernelEnergyDistributionType(EnergyType::Mono);
   return input;
@@ -68,12 +68,13 @@ struct RawProbeResult {
 
 [[nodiscard]] auto MakeDiscreteInput() -> ProbeInput {
   ProbeInput input{};
-  input.source.energy_milli_eV = 0ULL;
+  input.source.energy_micro_eV = 0ULL;
   input.distribution.distribution_type =
       ggems::core::sources::ToKernelEnergyDistributionType(
           EnergyType::DiscreteLines);
   input.distribution.table_count = 3U;
-  input.energies = {2'000'000'000ULL, 4'000'000'000ULL, 6'000'000'000ULL};
+  input.energies = {2'000'000'000'000ULL, 4'000'000'000'000ULL,
+                    6'000'000'000'000ULL};
   input.cumulative_ticket_upper = {2'147'483'648ULL, 2'147'483'648ULL,
                                    4'294'967'296ULL};
   input.expected_draw_count = 1U;
@@ -85,13 +86,14 @@ struct RawProbeResult {
 
 [[nodiscard]] auto MakeRegularInput() -> ProbeInput {
   ProbeInput input{};
-  input.source.energy_milli_eV = 0ULL;
-  input.distribution.regular_bin_width_milli_eV = 2'000'000'000ULL;
+  input.source.energy_micro_eV = 0ULL;
+  input.distribution.regular_bin_width_micro_eV = 2'000'000'000'000ULL;
   input.distribution.distribution_type =
       ggems::core::sources::ToKernelEnergyDistributionType(
           EnergyType::RegularSpectrum);
   input.distribution.table_count = 3U;
-  input.energies = {10'000'000'000ULL, 12'000'000'000ULL, 14'000'000'000ULL};
+  input.energies = {10'000'000'000'000ULL, 12'000'000'000'000ULL,
+                    14'000'000'000'000ULL};
   input.cumulative_ticket_upper = {2'147'483'648ULL, 2'147'483'648ULL,
                                    4'294'967'296ULL};
   input.expected_draw_count = 1U;
@@ -405,9 +407,9 @@ TEST_F(GGEMSEnergyDistributionKernelTest,
   constexpr std::array<std::string_view, 3U> k_engines{"jkiss", "pcg32",
                                                        "philox"};
   constexpr std::array<std::uint64_t, 3U> k_expected_discrete{
-      2'000'000'000ULL, 2'000'000'000ULL, 6'000'000'000ULL};
+      2'000'000'000'000ULL, 2'000'000'000'000ULL, 6'000'000'000'000ULL};
   constexpr std::array<std::uint64_t, 3U> k_expected_regular{
-      9'158'310'669ULL, 10'960'490'062ULL, 13'659'263'106ULL};
+      9'158'310'669'474ULL, 10'960'490'062'832ULL, 13'659'263'106'063ULL};
 
   for (std::size_t engine_index = 0U; engine_index < k_engines.size();
        ++engine_index) {
@@ -416,7 +418,7 @@ TEST_F(GGEMSEnergyDistributionKernelTest,
     Random random{};
     random.SetEngine(engine).SetSeed(44'444ULL);
 
-    EXPECT_EQ(RunSamplingProbe(random, MakeMonoInput()), 511'000'000ULL);
+    EXPECT_EQ(RunSamplingProbe(random, MakeMonoInput()), 511'000'000'000ULL);
     EXPECT_EQ(RunSamplingProbe(random, MakeDiscreteInput()),
               k_expected_discrete[engine_index]);
     EXPECT_EQ(RunSamplingProbe(random, MakeRegularInput()),
@@ -446,12 +448,12 @@ TEST_F(GGEMSEnergyDistributionKernelTest,
 
   ProbeInput discrete = MakeDiscreteInput();
   discrete.cumulative_ticket_upper = {2ULL, 2ULL, 4'294'967'296ULL};
-  EXPECT_EQ(RunExplicitTicketProbe(discrete, 0U), 2'000'000'000ULL);
-  EXPECT_EQ(RunExplicitTicketProbe(discrete, 1U), 2'000'000'000ULL);
-  EXPECT_EQ(RunExplicitTicketProbe(discrete, 2U), 6'000'000'000ULL);
+  EXPECT_EQ(RunExplicitTicketProbe(discrete, 0U), 2'000'000'000'000ULL);
+  EXPECT_EQ(RunExplicitTicketProbe(discrete, 1U), 2'000'000'000'000ULL);
+  EXPECT_EQ(RunExplicitTicketProbe(discrete, 2U), 6'000'000'000'000ULL);
   EXPECT_EQ(RunExplicitTicketProbe(discrete,
                                    std::numeric_limits<std::uint32_t>::max()),
-            6'000'000'000ULL);
+            6'000'000'000'000ULL);
 }
 
 // =============================================================================
@@ -489,15 +491,17 @@ TEST_F(GGEMSEnergyDistributionKernelTest,
 TEST_F(GGEMSEnergyDistributionKernelTest,
        RegularMappingIsExactBoundedAndOverflowSafe) {
   ProbeInput regular = MakeRegularInput();
-  EXPECT_EQ(RunExplicitTicketProbe(regular, 0U), 9'000'000'000ULL);
-  EXPECT_EQ(RunExplicitTicketProbe(regular, 2'147'483'647U), 10'999'999'999ULL);
-  EXPECT_EQ(RunExplicitTicketProbe(regular, 2'147'483'648U), 13'000'000'000ULL);
+  EXPECT_EQ(RunExplicitTicketProbe(regular, 0U), 9'000'000'000'000ULL);
+  EXPECT_EQ(RunExplicitTicketProbe(regular, 2'147'483'647U),
+            10'999'999'999'068ULL);
+  EXPECT_EQ(RunExplicitTicketProbe(regular, 2'147'483'648U),
+            13'000'000'000'000ULL);
   EXPECT_EQ(RunExplicitTicketProbe(regular,
                                    std::numeric_limits<std::uint32_t>::max()),
-            14'999'999'999ULL);
+            14'999'999'999'068ULL);
 
   regular.cumulative_ticket_upper = {1ULL, 1ULL, 4'294'967'296ULL};
-  EXPECT_EQ(RunExplicitTicketProbe(regular, 0U), 9'000'000'000ULL);
+  EXPECT_EQ(RunExplicitTicketProbe(regular, 0U), 9'000'000'000'000ULL);
 
   constexpr std::array<std::uint64_t, 5U> k_width_3_expected{0ULL, 0ULL, 1ULL,
                                                              1ULL, 2ULL};
@@ -523,4 +527,42 @@ TEST_F(GGEMSEnergyDistributionKernelTest,
       RunRegularOffsetProbe(std::numeric_limits<std::uint64_t>::max() - 1ULL,
                             4'294'967'296ULL, 4'294'967'295ULL),
       18'446'744'069'414'584'318ULL);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSEnergyDistributionKernelTest, ThermalNeutronQuantumUsesNoMonoDraw) {
+  for (std::string_view const engine : {"jkiss", "pcg32", "philox"}) {
+    SCOPED_TRACE(engine);
+    Random random{};
+    random.SetEngine(engine).SetSeed(44'444ULL);
+    auto input = MakeMonoInput();
+    input.source.energy_micro_eV = 10ULL;
+    EXPECT_EQ(RunSamplingProbe(random, input), 10ULL);
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSEnergyDistributionKernelTest,
+       MicroScaleRefinesTheSameRegularTicketLaw) {
+  // Exact expectations use unbounded-integer W*t/S arithmetic. The scaled
+  // width would overflow a naive ulong product for the final three tickets.
+  constexpr std::array<std::uint64_t, 5U> tickets{
+      0ULL, 1ULL, 1'073'741'823ULL, 2'147'483'648ULL, 4'294'967'295ULL};
+  constexpr std::array<std::uint64_t, 5U> expected{
+      0ULL, 465ULL, 499'999'999'534ULL, 1'000'000'000'000ULL,
+      1'999'999'999'534ULL};
+  for (std::size_t index = 0U; index < tickets.size(); ++index) {
+    SCOPED_TRACE(tickets[index]);
+    auto const old_offset = RunRegularOffsetProbe(
+        2'000'000'000ULL, 4'294'967'296ULL, tickets[index]);
+    auto const new_offset = RunRegularOffsetProbe(
+        2'000'000'000'000ULL, 4'294'967'296ULL, tickets[index]);
+    EXPECT_EQ(new_offset, expected[index]);
+    EXPECT_EQ(new_offset / 1'000ULL, old_offset);
+    EXPECT_LT(new_offset, 2'000'000'000'000ULL);
+  }
 }

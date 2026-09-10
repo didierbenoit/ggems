@@ -41,7 +41,7 @@ namespace {
 struct PackedSourceConfiguration {
   std::size_t source_count{0U};
   std::vector<GGEMSEnergyDistributionRecord> energy_distribution_records;
-  std::vector<std::uint64_t> energy_values_milli_eV;
+  std::vector<std::uint64_t> energy_values_micro_eV;
   std::vector<double> relative_weights;
   std::vector<std::uint64_t> cumulative_ticket_upper;
   std::vector<GGEMSSourceEmissionRecord> source_emission_records;
@@ -66,7 +66,7 @@ auto CheckedAddSize(std::size_t lhs, std::size_t rhs, char const *diagnostic)
 auto AppendEnergyDistribution(PackedSourceConfiguration &packed,
                               GGEMSEnergyDistribution const &distribution)
     -> void {
-  auto const energy_values = distribution.GetEnergyValuesMilliElectronVolt();
+  auto const energy_values = distribution.GetEnergyValuesMicroElectronVolt();
   auto const relative_weights = distribution.GetRelativeWeights();
   auto const cumulative_ticket_upper =
       distribution.GetCumulativeTicketUpperBounds();
@@ -77,16 +77,16 @@ auto AppendEnergyDistribution(PackedSourceConfiguration &packed,
         "GGEMSSource energy value, weight, and ticket-bound counts do not "
       "match.");
   }
-  if (!(std::in_range<std::uint64_t>(packed.energy_values_milli_eV.size()))) {
+  if (!(std::in_range<std::uint64_t>(packed.energy_values_micro_eV.size()))) {
     throw ggems::core::GGEMSRecoverable(
         "Packed GGEMSSource energy table offset exceeds uint64 storage.");
   }
 
   auto const table_offset =
-      static_cast<std::uint64_t>(packed.energy_values_milli_eV.size());
+      static_cast<std::uint64_t>(packed.energy_values_micro_eV.size());
   packed.energy_distribution_records.push_back(
       distribution.BuildRecord(table_offset));
-  packed.energy_values_milli_eV.insert(packed.energy_values_milli_eV.end(),
+  packed.energy_values_micro_eV.insert(packed.energy_values_micro_eV.end(),
                                        energy_values.begin(),
                                        energy_values.end());
   packed.relative_weights.insert(packed.relative_weights.end(),
@@ -129,7 +129,7 @@ auto PackSourceConfiguration(std::span<GGEMSSource const *const> sources)
       total_table_count = CheckedAddSize(
           total_table_count,
           source->GetEnergyDistribution()
-              .GetEnergyValuesMilliElectronVolt()
+              .GetEnergyValuesMicroElectronVolt()
               .size(),
           "Packed GGEMSSource energy table size exceeds host storage.");
       continue;
@@ -150,7 +150,7 @@ auto PackSourceConfiguration(std::span<GGEMSSource const *const> sources)
       total_table_count = CheckedAddSize(
           total_table_count,
           emission.GetEnergyDistribution()
-              .GetEnergyValuesMilliElectronVolt()
+              .GetEnergyValuesMicroElectronVolt()
               .size(),
           "Packed GGEMSSource energy table size exceeds host storage.");
     }
@@ -172,15 +172,15 @@ auto PackSourceConfiguration(std::span<GGEMSSource const *const> sources)
         "Packed energy distribution record count exceeds uint32 storage.");
   }
 
-  if (!(total_table_count <= packed.energy_values_milli_eV.max_size() &&
-          total_table_count <= packed.relative_weights.max_size() &&
-          total_table_count <= packed.cumulative_ticket_upper.max_size())) {
+  if (!(total_table_count <= packed.energy_values_micro_eV.max_size() &&
+        total_table_count <= packed.relative_weights.max_size() &&
+        total_table_count <= packed.cumulative_ticket_upper.max_size())) {
     throw ggems::core::GGEMSRecoverable(
         "Packed GGEMSSource energy table size exceeds host vector storage.");
   }
 
   packed.energy_distribution_records.reserve(total_energy_record_count);
-  packed.energy_values_milli_eV.reserve(total_table_count);
+  packed.energy_values_micro_eV.reserve(total_table_count);
   packed.relative_weights.reserve(total_table_count);
   packed.cumulative_ticket_upper.reserve(total_table_count);
   packed.source_emission_records.reserve(total_emission_count);
@@ -217,16 +217,16 @@ auto PackSourceConfiguration(std::span<GGEMSSource const *const> sources)
       auto const energy_record_index =
           static_cast<std::uint32_t>(packed.energy_distribution_records.size());
       auto const &distribution = emission.GetEnergyDistribution();
-      std::uint64_t const mono_energy_milli_eV =
+      std::uint64_t const mono_energy_micro_eV =
           distribution.GetType() == GGEMSEnergyDistributionType::Mono
-              ? distribution.GetMonoEnergyMilliElectronVolt()
+              ? distribution.GetMonoEnergyMicroElectronVolt()
               : 0ULL;
 
       packed.source_emission_records.push_back(
           {.particle_type =
                particles::ToKernelParticleType(emission.GetParticleType()),
            .energy_distribution_record_index = energy_record_index,
-           .mono_energy_milli_eV = mono_energy_milli_eV});
+           .mono_energy_micro_eV = mono_energy_micro_eV});
       AppendEnergyDistribution(packed, distribution);
     }
   }
@@ -323,7 +323,7 @@ auto BuildScaledDecay(
 GGEMSSourceConfigurationSnapshot::GGEMSSourceConfigurationSnapshot(
     std::size_t source_count,
     std::vector<GGEMSEnergyDistributionRecord> energy_distribution_records,
-    std::vector<std::uint64_t> energy_values_milli_eV,
+    std::vector<std::uint64_t> energy_values_micro_eV,
     std::vector<double> relative_weights,
     std::vector<std::uint64_t> cumulative_ticket_upper,
     std::vector<GGEMSSourceEmissionRecord> source_emission_records,
@@ -332,7 +332,7 @@ GGEMSSourceConfigurationSnapshot::GGEMSSourceConfigurationSnapshot(
         radionuclide_definitions)
     : source_count_{source_count},
       energy_distribution_records_{std::move(energy_distribution_records)},
-      energy_values_milli_eV_{std::move(energy_values_milli_eV)},
+      energy_values_micro_eV_{std::move(energy_values_micro_eV)},
       relative_weights_{std::move(relative_weights)},
       cumulative_ticket_upper_{std::move(cumulative_ticket_upper)},
       source_emission_records_{std::move(source_emission_records)},
@@ -349,7 +349,7 @@ auto GGEMSSourceConfigurationSnapshot::Create(GGEMSSource const &source)
   return GGEMSSourceConfigurationSnapshotPtr{
       new GGEMSSourceConfigurationSnapshot{
           packed.source_count, std::move(packed.energy_distribution_records),
-          std::move(packed.energy_values_milli_eV),
+          std::move(packed.energy_values_micro_eV),
           std::move(packed.relative_weights),
           std::move(packed.cumulative_ticket_upper),
           std::move(packed.source_emission_records),
@@ -382,7 +382,7 @@ auto GGEMSSourceConfigurationSnapshot::Create(
   return GGEMSSourceConfigurationSnapshotPtr{
       new GGEMSSourceConfigurationSnapshot{
           packed.source_count, std::move(packed.energy_distribution_records),
-          std::move(packed.energy_values_milli_eV),
+          std::move(packed.energy_values_micro_eV),
           std::move(packed.relative_weights),
           std::move(packed.cumulative_ticket_upper),
           std::move(packed.source_emission_records),

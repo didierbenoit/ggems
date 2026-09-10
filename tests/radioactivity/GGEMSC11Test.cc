@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideEmission.hh"
 #include "GGEMS/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
@@ -54,7 +55,7 @@ TEST(GGEMSC11Test, PreservesTabulatedBetaShapeSpectrum) {
   GGEMSRadionuclideDefinition const definition = BuildC11Radionuclide();
   auto const &distribution =
       definition.GetEmissions()[0U].GetEnergyDistribution();
-  auto const centers = distribution.GetEnergyValuesMilliElectronVolt();
+  auto const centers = distribution.GetEnergyValuesMicroElectronVolt();
   auto const weights = distribution.GetRelativeWeights();
   auto const tickets = distribution.GetCumulativeTicketUpperBounds();
 
@@ -62,13 +63,13 @@ TEST(GGEMSC11Test, PreservesTabulatedBetaShapeSpectrum) {
             GGEMSEnergyDistributionType::RegularSpectrum);
 
   EXPECT_EQ(distribution.GetTableCount(), 1'921U);
-  EXPECT_EQ(distribution.GetRegularBinWidthMilliElectronVolt(), 499'998ULL);
+  EXPECT_EQ(distribution.GetRegularBinWidthMicroElectronVolt(), 499'998'000ULL);
 
   ASSERT_EQ(centers.size(), 1'921U);
   ASSERT_EQ(weights.size(), centers.size());
   ASSERT_EQ(tickets.size(), centers.size());
-  EXPECT_EQ(centers.front() - 249'999ULL, 3'842ULL);
-  EXPECT_EQ(centers.back() + 249'999ULL, 960'500'000ULL);
+  EXPECT_EQ(centers.front() - 249'999'000ULL, 3'842'000ULL);
+  EXPECT_EQ(centers.back() + 249'999'000ULL, 960'500'000'000ULL);
 
   long double weight_sum{0.0L};
   long double weighted_center_sum{0.0L};
@@ -90,7 +91,8 @@ TEST(GGEMSC11Test, PreservesTabulatedBetaShapeSpectrum) {
   EXPECT_EQ(previous_ticket, k_energy_ticket_space_size);
 
   long double const mean_energy_keV =
-      weighted_center_sum / weight_sum / 1'000'000.0L;
+      weighted_center_sum / weight_sum /
+      static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
   EXPECT_NEAR(static_cast<double>(mean_energy_keV), 385.33, 0.01);
 }
 

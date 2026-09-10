@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideEmission.hh"
 #include "GGEMS/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
@@ -30,9 +31,9 @@ using ggems::core::sources::k_energy_ticket_space_size;
 struct ExpectedBetaBranch {
   long double yield_per_decay;
   std::size_t table_count;
-  std::uint64_t bin_width_milli_eV;
-  std::uint64_t lower_edge_milli_eV;
-  std::uint64_t endpoint_milli_eV;
+  std::uint64_t bin_width_micro_eV;
+  std::uint64_t lower_edge_micro_eV;
+  std::uint64_t endpoint_micro_eV;
   double represented_mean_energy_keV;
 };
 
@@ -42,40 +43,40 @@ struct ExpectedBetaBranch {
 constexpr std::array<ExpectedBetaBranch, 4U> k_expected_beta_branches{{
     {.yield_per_decay = 0.1155L,
      .table_count = 351U,
-     .bin_width_milli_eV = 499'998ULL,
-     .lower_edge_milli_eV = 702ULL,
-     .endpoint_milli_eV = 175'500'000ULL,
+     .bin_width_micro_eV = 499'998'000ULL,
+     .lower_edge_micro_eV = 702'000ULL,
+     .endpoint_micro_eV = 175'500'000'000ULL,
      .represented_mean_energy_keV = 47.40062},
     {.yield_per_decay = 0.00003L,
      .table_count = 495U,
-     .bin_width_milli_eV = 499'190ULL,
-     .lower_edge_milli_eV = 950ULL,
-     .endpoint_milli_eV = 247'100'000ULL,
+     .bin_width_micro_eV = 499'190'000ULL,
+     .lower_edge_micro_eV = 950'000ULL,
+     .endpoint_micro_eV = 247'100'000'000ULL,
      .represented_mean_energy_keV = 78.38925},
     {.yield_per_decay = 0.0899L,
      .table_count = 768U,
-     .bin_width_milli_eV = 499'738ULL,
-     .lower_edge_milli_eV = 1'216ULL,
-     .endpoint_milli_eV = 383'800'000ULL,
+     .bin_width_micro_eV = 499'738'000ULL,
+     .lower_edge_micro_eV = 1'216'000ULL,
+     .endpoint_micro_eV = 383'800'000'000ULL,
      .represented_mean_energy_keV = 111.42761},
     {.yield_per_decay = 0.7945L,
      .table_count = 994U,
-     .bin_width_milli_eV = 499'798ULL,
-     .lower_edge_milli_eV = 788ULL,
-     .endpoint_milli_eV = 496'800'000ULL,
+     .bin_width_micro_eV = 499'798'000ULL,
+     .lower_edge_micro_eV = 788'000ULL,
+     .endpoint_micro_eV = 496'800'000'000ULL,
      .represented_mean_energy_keV = 149.11609},
 }};
 
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<std::uint64_t, 6U> k_expected_gamma_energies_milli_eV{{
-    71'642'500ULL,
-    112'950'050ULL,
-    136'724'500ULL,
-    208'366'100ULL,
-    249'674'200ULL,
-    321'315'900ULL,
+constexpr std::array<std::uint64_t, 6U> k_expected_gamma_energies_micro_eV{{
+    71'642'500'000ULL,
+    112'950'050'000ULL,
+    136'724'500'000ULL,
+    208'366'100'000ULL,
+    249'674'200'000ULL,
+    321'315'900'000ULL,
 }};
 
 // =============================================================================
@@ -142,23 +143,23 @@ TEST(GGEMSLu177Test, PreservesFourTabulatedBetaShapeSpectra) {
     ExpectedBetaBranch const &expected = k_expected_beta_branches[branch_index];
     GGEMSRadionuclideEmission const &emission = emissions[branch_index];
     auto const &distribution = emission.GetEnergyDistribution();
-    auto const centers = distribution.GetEnergyValuesMilliElectronVolt();
+    auto const centers = distribution.GetEnergyValuesMicroElectronVolt();
     auto const weights = distribution.GetRelativeWeights();
     auto const tickets = distribution.GetCumulativeTicketUpperBounds();
 
     EXPECT_EQ(distribution.GetType(),
               GGEMSEnergyDistributionType::RegularSpectrum);
     EXPECT_EQ(distribution.GetTableCount(), expected.table_count);
-    EXPECT_EQ(distribution.GetRegularBinWidthMilliElectronVolt(),
-              expected.bin_width_milli_eV);
+    EXPECT_EQ(distribution.GetRegularBinWidthMicroElectronVolt(),
+              expected.bin_width_micro_eV);
 
     ASSERT_EQ(centers.size(), expected.table_count);
     ASSERT_EQ(weights.size(), centers.size());
     ASSERT_EQ(tickets.size(), centers.size());
 
-    std::uint64_t const half_width = expected.bin_width_milli_eV / 2ULL;
-    EXPECT_EQ(centers.front() - half_width, expected.lower_edge_milli_eV);
-    EXPECT_EQ(centers.back() + half_width, expected.endpoint_milli_eV);
+    std::uint64_t const half_width = expected.bin_width_micro_eV / 2ULL;
+    EXPECT_EQ(centers.front() - half_width, expected.lower_edge_micro_eV);
+    EXPECT_EQ(centers.back() + half_width, expected.endpoint_micro_eV);
 
     long double weight_sum{0.0L};
     long double weighted_center_sum{0.0L};
@@ -180,7 +181,8 @@ TEST(GGEMSLu177Test, PreservesFourTabulatedBetaShapeSpectra) {
     EXPECT_EQ(previous_ticket, k_energy_ticket_space_size);
 
     long double const mean_energy_keV =
-        weighted_center_sum / weight_sum / 1'000'000.0L;
+        weighted_center_sum / weight_sum /
+        static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
     EXPECT_NEAR(static_cast<double>(mean_energy_keV),
                 expected.represented_mean_energy_keV, 0.01);
   }
@@ -196,13 +198,13 @@ TEST(GGEMSLu177Test, PreservesSixExactGammaLinesAndGlobalYields) {
 
   EXPECT_EQ(distribution.GetType(), GGEMSEnergyDistributionType::DiscreteLines);
   EXPECT_EQ(distribution.GetTableCount(),
-            k_expected_gamma_energies_milli_eV.size());
+            k_expected_gamma_energies_micro_eV.size());
 
-  auto const energies = distribution.GetEnergyValuesMilliElectronVolt();
+  auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
   auto const weights = distribution.GetRelativeWeights();
   auto const tickets = distribution.GetCumulativeTicketUpperBounds();
 
-  ASSERT_EQ(energies.size(), k_expected_gamma_energies_milli_eV.size());
+  ASSERT_EQ(energies.size(), k_expected_gamma_energies_micro_eV.size());
   ASSERT_EQ(weights.size(), k_expected_gamma_line_yields.size());
   ASSERT_EQ(tickets.size(), k_expected_gamma_line_yields.size());
 
@@ -210,7 +212,7 @@ TEST(GGEMSLu177Test, PreservesSixExactGammaLinesAndGlobalYields) {
   std::uint64_t previous_ticket{0ULL};
 
   for (std::size_t index = 0U; index < energies.size(); ++index) {
-    EXPECT_EQ(energies[index], k_expected_gamma_energies_milli_eV[index]);
+    EXPECT_EQ(energies[index], k_expected_gamma_energies_micro_eV[index]);
     EXPECT_DOUBLE_EQ(weights[index], k_expected_gamma_line_yields[index]);
     line_yield_sum += static_cast<long double>(weights[index]);
 
@@ -241,7 +243,7 @@ TEST(GGEMSLu177Test,
               GGEMSEnergyDistributionType::DiscreteLines);
     EXPECT_EQ(distribution.GetTableCount(), expected_line_count);
 
-    auto const energies = distribution.GetEnergyValuesMilliElectronVolt();
+    auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
     auto const weights = distribution.GetRelativeWeights();
     auto const tickets = distribution.GetCumulativeTicketUpperBounds();
 
@@ -271,14 +273,14 @@ TEST(GGEMSLu177Test,
   check_channel(x_rays, GGEMSParticleType::Gamma, 5U);
 
   auto const x_ray_energies =
-      x_rays.GetEnergyDistribution().GetEnergyValuesMilliElectronVolt();
+      x_rays.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const x_ray_yields = x_rays.GetEnergyDistribution().GetRelativeWeights();
 
-  EXPECT_EQ(x_ray_energies[0U], 8'926'800ULL);
-  EXPECT_EQ(x_ray_energies[1U], 54'612'000ULL);
-  EXPECT_EQ(x_ray_energies[2U], 55'790'900ULL);
-  EXPECT_EQ(x_ray_energies[3U], 63'292'000ULL);
-  EXPECT_EQ(x_ray_energies[4U], 65'142'700ULL);
+  EXPECT_EQ(x_ray_energies[0U], 8'926'800'000ULL);
+  EXPECT_EQ(x_ray_energies[1U], 54'612'000'000ULL);
+  EXPECT_EQ(x_ray_energies[2U], 55'790'900'000ULL);
+  EXPECT_EQ(x_ray_energies[3U], 63'292'000'000ULL);
+  EXPECT_EQ(x_ray_energies[4U], 65'142'700'000ULL);
   EXPECT_DOUBLE_EQ(x_ray_yields[0U], 0.0312);
   EXPECT_DOUBLE_EQ(x_ray_yields[1U], 0.01555);
   EXPECT_DOUBLE_EQ(x_ray_yields[2U], 0.0272);
@@ -289,13 +291,13 @@ TEST(GGEMSLu177Test,
   check_channel(auger_electrons, GGEMSParticleType::Electron, 15U);
 
   auto const auger_energies = auger_electrons.GetEnergyDistribution()
-                                  .GetEnergyValuesMilliElectronVolt();
+                                  .GetEnergyValuesMicroElectronVolt();
   auto const auger_yields =
       auger_electrons.GetEnergyDistribution().GetRelativeWeights();
 
-  EXPECT_EQ(auger_energies.front(), 10'732ULL);
-  EXPECT_EQ(auger_energies[9U], 6'202'910ULL);
-  EXPECT_EQ(auger_energies.back(), 61'687'800ULL);
+  EXPECT_EQ(auger_energies.front(), 10'732'000ULL);
+  EXPECT_EQ(auger_energies[9U], 6'202'910'000ULL);
+  EXPECT_EQ(auger_energies.back(), 61'687'800'000ULL);
   EXPECT_DOUBLE_EQ(auger_yields.front(), 0.111216);
   EXPECT_DOUBLE_EQ(auger_yields[9U], 0.0633905);
   EXPECT_DOUBLE_EQ(auger_yields.back(), 0.000116604);
@@ -304,16 +306,16 @@ TEST(GGEMSLu177Test,
   check_channel(conversion_electrons, GGEMSParticleType::Electron, 36U);
 
   auto const conversion_energies = conversion_electrons.GetEnergyDistribution()
-                                       .GetEnergyValuesMilliElectronVolt();
+                                       .GetEnergyValuesMicroElectronVolt();
   auto const conversion_yields =
       conversion_electrons.GetEnergyDistribution().GetRelativeWeights();
 
-  EXPECT_EQ(conversion_energies.front(), 6'291'700ULL);
-  EXPECT_EQ(conversion_energies[1U], 47'599'290ULL);
-  EXPECT_EQ(conversion_energies[9U], 102'210'690ULL);
-  EXPECT_EQ(conversion_energies[10U], 103'389'390ULL);
-  EXPECT_EQ(conversion_energies[11U], 110'859'690ULL);
-  EXPECT_EQ(conversion_energies.back(), 321'055'200ULL);
+  EXPECT_EQ(conversion_energies.front(), 6'291'700'000ULL);
+  EXPECT_EQ(conversion_energies[1U], 47'599'290'000ULL);
+  EXPECT_EQ(conversion_energies[9U], 102'210'690'000ULL);
+  EXPECT_EQ(conversion_energies[10U], 103'389'390'000ULL);
+  EXPECT_EQ(conversion_energies[11U], 110'859'690'000ULL);
+  EXPECT_EQ(conversion_energies.back(), 321'055'200'000ULL);
   EXPECT_DOUBLE_EQ(conversion_yields.front(), 0.00124);
   EXPECT_DOUBLE_EQ(conversion_yields[1U], 0.0503);
   EXPECT_DOUBLE_EQ(conversion_yields[9U], 0.033);

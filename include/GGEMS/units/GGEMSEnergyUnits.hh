@@ -53,18 +53,12 @@ template <> struct UnitRegistry<EnergyUnitSet> {
    * \brief Registered unit definitions for this quantity family.
    */
   static constexpr std::array<UnitDefinition, 6U> units{{
-      {.symbol = "meV",
-       .scale = DecimalScale(0)},
-      {.symbol = "eV",
-       .scale = DecimalScale(3)},
-      {.symbol = "keV",
-       .scale = DecimalScale(6)},
-      {.symbol = "MeV",
-       .scale = DecimalScale(9)},
-      {.symbol = "GeV",
-       .scale = DecimalScale(12)},
-      {.symbol = "TeV",
-       .scale = DecimalScale(15)},
+      {.symbol = "meV", .scale = DecimalScale(3)},
+      {.symbol = "eV", .scale = DecimalScale(6)},
+      {.symbol = "keV", .scale = DecimalScale(9)},
+      {.symbol = "MeV", .scale = DecimalScale(12)},
+      {.symbol = "GeV", .scale = DecimalScale(15)},
+      {.symbol = "TeV", .scale = DecimalScale(18)},
   }};
 };
 
@@ -133,11 +127,13 @@ template <> struct QuantityTraits<EnergyChangeTag> {
 };
 
 /*!
- * \brief Strongly typed nonnegative energy quantity stored canonically in milli-electron-volts.
+ * \brief Strongly typed nonnegative energy quantity stored canonically in
+ * micro-electron-volts.
  */
 using Energy = Quantity<EnergyTag, std::uint64_t>;
 /*!
- * \brief Strongly typed signed energy-change quantity stored canonically in milli-electron-volts.
+ * \brief Strongly typed signed energy-change quantity stored canonically in
+ * micro-electron-volts.
  */
 using EnergyChange = Quantity<EnergyChangeTag, std::int64_t>;
 

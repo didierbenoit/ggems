@@ -38,7 +38,7 @@ using TransportWorkload = ggems::core::transport::GGEMSTransportWorkload;
 template <typename T>
 concept HasPerRunEnergyTables = requires(T value) {
   value.energy_distribution_records;
-  value.energy_values_milli_eV;
+  value.energy_values_micro_eV;
   value.cumulative_ticket_upper;
 };
 
@@ -176,7 +176,7 @@ TEST_F(GGEMSEnergySamplingTransportTest,
   mono->SetPrimaryCount(2ULL)
       .SetPointEmission()
       .SetFixedAngularDistribution()
-      .SetEnergyMilliElectronVolt(511'000'000ULL);
+      .SetEnergyMicroElectronVolt(511'000'000'000ULL);
 
   auto discrete = std::make_shared<Source>();
   discrete->SetPrimaryCount(2ULL)
@@ -193,7 +193,7 @@ TEST_F(GGEMSEnergySamplingTransportTest,
   std::vector<std::shared_ptr<Source>> sources{mono, discrete, regular};
   auto const snapshot = ggems::core::sources::BuildSourceRunSnapshot(sources);
 
-  ASSERT_EQ(snapshot.GetEnergyValuesMilliElectronVolt().size(), 6U);
+  ASSERT_EQ(snapshot.GetEnergyValuesMicroElectronVolt().size(), 6U);
 
   for (std::string_view engine : k_engines) {
     SCOPED_TRACE(engine);
@@ -237,25 +237,25 @@ TEST_F(GGEMSEnergySamplingTransportTest,
 
       ObserverRecord const *terminal = FindTerminal(report, record);
       ASSERT_NE(terminal, nullptr);
-      EXPECT_EQ(terminal->energy_milli_eV, record.energy_milli_eV);
+      EXPECT_EQ(terminal->energy_micro_eV, record.energy_micro_eV);
 
       if (record.source_index == 0U) {
-        EXPECT_EQ(record.energy_milli_eV, 511'000'000ULL);
+        EXPECT_EQ(record.energy_micro_eV, 511'000'000'000ULL);
       } else if (record.source_index == 1U) {
-        EXPECT_TRUE(record.energy_milli_eV == 2'000'000'000ULL ||
-                    record.energy_milli_eV == 6'000'000'000ULL);
-        EXPECT_NE(record.energy_milli_eV, 4'000'000'000ULL);
+        EXPECT_TRUE(record.energy_micro_eV == 2'000'000'000'000ULL ||
+                    record.energy_micro_eV == 6'000'000'000'000ULL);
+        EXPECT_NE(record.energy_micro_eV, 4'000'000'000'000ULL);
       } else {
         bool const first_center_defined_bin =
-            record.energy_milli_eV >= 9'000'000'000ULL &&
-            record.energy_milli_eV < 11'000'000'000ULL;
+            record.energy_micro_eV >= 9'000'000'000'000ULL &&
+            record.energy_micro_eV < 11'000'000'000'000ULL;
         bool const third_center_defined_bin =
-            record.energy_milli_eV >= 13'000'000'000ULL &&
-            record.energy_milli_eV < 15'000'000'000ULL;
+            record.energy_micro_eV >= 13'000'000'000'000ULL &&
+            record.energy_micro_eV < 15'000'000'000'000ULL;
 
         EXPECT_TRUE(first_center_defined_bin || third_center_defined_bin);
-        EXPECT_FALSE(record.energy_milli_eV >= 11'000'000'000ULL &&
-                     record.energy_milli_eV < 13'000'000'000ULL);
+        EXPECT_FALSE(record.energy_micro_eV >= 11'000'000'000'000ULL &&
+                     record.energy_micro_eV < 13'000'000'000'000ULL);
       }
     }
 
@@ -285,7 +285,7 @@ TEST_F(GGEMSEnergySamplingTransportTest,
       SCOPED_TRACE(k_geometry_cases[geometry_case]);
 
       auto mono_source = MakeGeometrySource(geometry_case);
-      mono_source->SetEnergyMilliElectronVolt(511'000'000ULL);
+      mono_source->SetEnergyMicroElectronVolt(511'000'000'000ULL);
       auto table_source = MakeGeometrySource(geometry_case);
       table_source->SetDiscreteEnergyLines(k_line_energies, k_line_weights,
                                            "MeV");
@@ -339,9 +339,9 @@ TEST_F(GGEMSEnergySamplingTransportTest,
       EXPECT_EQ(FloatBits(mono_record->direction_z),
                 FloatBits(table_record->direction_z));
 
-      EXPECT_EQ(mono_record->energy_milli_eV, 511'000'000ULL);
-      EXPECT_TRUE(table_record->energy_milli_eV == 2'000'000'000ULL ||
-                  table_record->energy_milli_eV == 6'000'000'000ULL);
+      EXPECT_EQ(mono_record->energy_micro_eV, 511'000'000'000ULL);
+      EXPECT_TRUE(table_record->energy_micro_eV == 2'000'000'000'000ULL ||
+                  table_record->energy_micro_eV == 6'000'000'000'000ULL);
     }
   }
 }

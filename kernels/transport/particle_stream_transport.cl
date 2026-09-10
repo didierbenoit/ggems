@@ -29,7 +29,7 @@ __kernel void particle_stream_transport(
     __global GGEMSObserverRecord *observer_records,
     uint observer_record_capacity, ulong run_id, uint worker_count,
     __global GGEMSEnergyDistributionRecord const *energy_distribution_records,
-    __global ulong const *energy_values_milli_eV,
+    __global ulong const *energy_values_micro_eV,
     __global ulong const *cumulative_ticket_upper,
     __global GGEMSSourcePopulationRecord const *source_population_records,
     __global GGEMSSourceEmissionRecord const *source_emissions,
@@ -116,7 +116,7 @@ __kernel void particle_stream_transport(
     uint initialized = GGEMS_SourceTryInitializePrimary(
         global_primary_id, source_local_primary_id, selected_source_index,
         source, population, source_emissions, source_emission_ranges,
-        energy_distribution_records, energy_values_milli_eV,
+        energy_distribution_records, energy_values_micro_eV,
         cumulative_ticket_upper, random_states, worker_id, &particle);
 
     if (initialized == 0U) {

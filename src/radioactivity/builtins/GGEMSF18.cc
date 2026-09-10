@@ -26,8 +26,8 @@ constexpr long double k_oxygen_x_ray_yield{0.00020L};
 // regular GGEMS grid with an exact 633.9 keV upper edge and a maximum target
 // width of 0.5 keV. The stored values are normalized bin masses; the physical
 // beta+ yield remains k_positron_yield.
-constexpr std::uint64_t k_positron_spectrum_lower_edge_milli_eV{1'440ULL};
-constexpr std::uint64_t k_positron_spectrum_bin_width_milli_eV{499'920ULL};
+constexpr std::uint64_t k_positron_spectrum_lower_edge_micro_eV{1'440'000ULL};
+constexpr std::uint64_t k_positron_spectrum_bin_width_micro_eV{499'920'000ULL};
 constexpr std::array<double, 1268U> k_positron_spectrum_weights{
     {2.0827274635205574e-06, 6.2243229828650133e-06, 1.0365918502209478e-05,
      1.4507529445309638e-05, 2.1735825874946936e-05, 3.2023316048256388e-05,
@@ -458,8 +458,8 @@ constexpr std::array<double, 1268U> k_positron_spectrum_weights{
 
 [[nodiscard]] auto BuildPositronSpectrum() -> sources::GGEMSEnergyDistribution {
   return detail::BuildTabulatedSpectrum(
-      {.lower_edge_milli_eV = k_positron_spectrum_lower_edge_milli_eV,
-       .bin_width_milli_eV = k_positron_spectrum_bin_width_milli_eV},
+      {.lower_edge_micro_eV = k_positron_spectrum_lower_edge_micro_eV,
+       .bin_width_micro_eV = k_positron_spectrum_bin_width_micro_eV},
       k_positron_spectrum_weights);
 }
 
@@ -475,12 +475,12 @@ constexpr std::array<double, 1268U> k_positron_spectrum_weights{
                          k_positron_yield, BuildPositronSpectrum());
   emissions.emplace_back(
       particles::GGEMSParticleType::Electron, k_auger_l_yield,
-      sources::GGEMSEnergyDistribution::BuildMono(14'300ULL));
+      sources::GGEMSEnergyDistribution::BuildMono(14'300'000ULL));
 
   // The equal-energy X-ray yields 0.00007 and 0.00013 share one signature.
   emissions.emplace_back(
       particles::GGEMSParticleType::Gamma, k_oxygen_x_ray_yield,
-      sources::GGEMSEnergyDistribution::BuildMono(525'000ULL));
+      sources::GGEMSEnergyDistribution::BuildMono(525'000'000ULL));
 
   return {"F-18", k_half_life_seconds, std::move(emissions)};
 }

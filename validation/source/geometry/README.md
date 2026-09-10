@@ -103,7 +103,7 @@ The single fresh Run has slot `0`, source-local IDs `[0, N)`, and corresponding
 global IDs starting at `0`. CSV fields are:
 
 ```text
-source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,z_pm,direction_x,direction_y,direction_z,energy_meV,time_ps,weight,record_kind
+source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,z_pm,direction_x,direction_y,direction_z,energy_micro_eV,time_ps,weight,record_kind
 ```
 
 Scientific integer fields remain decimal integers, with no display rounding.

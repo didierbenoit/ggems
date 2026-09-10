@@ -10,7 +10,7 @@ __kernel void activity_source_random_order_probe(
     __global GGEMSSourcePopulationRecord const *population,
     __global GGEMSSourceEmissionRecord const *emission,
     __global GGEMSEnergyDistributionRecord const *energy_distribution,
-    __global ulong const *energy_values_milli_eV,
+    __global ulong const *energy_values_micro_eV,
     __global ulong const *cumulative_ticket_upper,
     __global long *sampled_positions, __global float *sampled_directions,
     __global ulong *sampled_values, __global uint *next_words) {
@@ -21,7 +21,7 @@ __kernel void activity_source_random_order_probe(
   GGEMSParticleState const particle =
       GGEMS_SourceInitializeActivityDrivenPrimary(
           19UL, 23UL, source, population, emission, energy_distribution,
-          energy_values_milli_eV, cumulative_ticket_upper, sample_states, 0U);
+          energy_values_micro_eV, cumulative_ticket_upper, sample_states, 0U);
 
   uint const reference_time_word = GGEMS_RndmUInt32(reference_states, 0U);
   float4 const reference_position_uniforms =
@@ -38,7 +38,7 @@ __kernel void activity_source_random_order_probe(
   float3 const reference_direction = GGEMS_SourceSampleDirectionFromUniforms(
       source, reference_position, reference_direction_uniforms);
   ulong const reference_energy = GGEMS_EnergyDistributionSampleWithTicket(
-      energy_distribution, energy_values_milli_eV, cumulative_ticket_upper,
+      energy_distribution, energy_values_micro_eV, cumulative_ticket_upper,
       reference_energy_word);
 
   sampled_positions[0] = particle.position_x_pm;
@@ -57,7 +57,7 @@ __kernel void activity_source_random_order_probe(
 
   sampled_values[0] = particle.time_ps;
   sampled_values[1] = reference_time;
-  sampled_values[2] = particle.energy_milli_eV;
+  sampled_values[2] = particle.energy_micro_eV;
   sampled_values[3] = reference_energy;
 
   next_words[0] = GGEMS_RndmUInt32(sample_states, 0U);

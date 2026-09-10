@@ -28,7 +28,7 @@
 namespace {
 
 constexpr std::uint64_t k_second_ps{1'000'000'000'000ULL};
-constexpr std::uint64_t k_mono_energy_milli_eV{123'456'789ULL};
+constexpr std::uint64_t k_mono_energy_micro_eV{123'456'789'000ULL};
 constexpr long double k_activity_bq{512.0L};
 
 constexpr std::uint32_t k_source_record_kind =
@@ -59,7 +59,7 @@ constexpr std::uint32_t k_source_record_kind =
   std::vector<GGEMSRadionuclideEmission> emissions;
   emissions.emplace_back(
       GGEMSParticleType::Gamma, 1.0L,
-      GGEMSEnergyDistribution::BuildMono(k_mono_energy_milli_eV));
+      GGEMSEnergyDistribution::BuildMono(k_mono_energy_micro_eV));
 
   return std::make_shared<GGEMSRadionuclideDefinition const>(
       "ActivityDrivenRunTest", 1.0e9L, std::move(emissions));
@@ -281,8 +281,8 @@ TEST_F(GGEMSActivityDrivenRunTest,
   auto activity_source =
       MakeActivitySource(radionuclide, k_empty_then_non_empty_activity_bq);
   auto count_source = std::make_shared<ggems::core::sources::GGEMSSource>();
-  count_source->SetPrimaryCount(0ULL).SetEnergyMilliElectronVolt(
-      k_mono_energy_milli_eV);
+  count_source->SetPrimaryCount(0ULL).SetEnergyMicroElectronVolt(
+      k_mono_energy_micro_eV);
   auto observer = MakeObserver();
   auto random = MakeRandom();
   random->SetSeed(k_empty_then_non_empty_seed);

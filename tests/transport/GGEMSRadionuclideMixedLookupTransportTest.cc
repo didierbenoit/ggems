@@ -58,8 +58,8 @@ constexpr std::uint32_t k_worker_count{64U};
 constexpr std::uint32_t k_chunk_primary_count{3U};
 constexpr std::array<ParticleType, 3U> k_activity_particles{
     ParticleType::Gamma, ParticleType::Electron, ParticleType::Positron};
-constexpr std::array<std::uint64_t, 3U> k_activity_energies{111ULL, 222ULL,
-                                                            333ULL};
+constexpr std::array<std::uint64_t, 3U> k_activity_energies{
+    111'000ULL, 222'000ULL, 333'000ULL};
 
 // =============================================================================
 // =============================================================================
@@ -91,7 +91,7 @@ constexpr std::array<std::uint64_t, 3U> k_activity_energies{111ULL, 222ULL,
   auto first_count = std::make_shared<Source>();
   first_count->SetPrimaryCount(2ULL)
       .SetEmittedParticleType(ParticleType::Gamma)
-      .SetEnergyMilliElectronVolt(1'001ULL)
+      .SetEnergyMicroElectronVolt(1'001'000ULL)
       .SetPositionPicoMeter(-1'000LL, 0LL, 0LL);
 
   auto activity = std::make_shared<Source>();
@@ -103,7 +103,7 @@ constexpr std::array<std::uint64_t, 3U> k_activity_energies{111ULL, 222ULL,
   auto last_count = std::make_shared<Source>();
   last_count->SetPrimaryCount(2ULL)
       .SetEmittedParticleType(ParticleType::Electron)
-      .SetEnergyMilliElectronVolt(3'003ULL)
+      .SetEnergyMicroElectronVolt(3'003'000ULL)
       .SetPositionPicoMeter(0LL, 0LL, 3'000LL);
 
   return {std::move(first_count), std::move(activity), std::move(last_count)};
@@ -299,7 +299,7 @@ auto ExpectSourceAndGroupLookup(SourceRunSnapshot const &snapshot,
     EXPECT_EQ(record.global_particle_id, record.global_primary_id);
     EXPECT_EQ(record.track_id, 0ULL);
     EXPECT_EQ(record.parent_track_id, ggems::core::particles::k_invalid_id_u64);
-    EXPECT_EQ(record.deposited_energy_milli_eV, 0ULL);
+    EXPECT_EQ(record.deposited_energy_micro_eV, 0ULL);
 
     std::uint32_t expected_source_index{0U};
     for (std::size_t source_index = 0U; source_index < ranges.size();
@@ -322,7 +322,7 @@ auto ExpectSourceAndGroupLookup(SourceRunSnapshot const &snapshot,
     if (expected_source_index != 1U) {
       auto const &source = source_host_records[expected_source_index];
       EXPECT_EQ(record.particle_type, source.emitted_particle_type);
-      EXPECT_EQ(record.energy_milli_eV, source.energy_milli_eV);
+      EXPECT_EQ(record.energy_micro_eV, source.energy_micro_eV);
       EXPECT_EQ(record.time_ps, k_time_window.start_ps);
       continue;
     }
@@ -347,7 +347,7 @@ auto ExpectSourceAndGroupLookup(SourceRunSnapshot const &snapshot,
     EXPECT_EQ(record.particle_type,
               ggems::core::particles::ToKernelParticleType(
                   k_activity_particles[expected_emission_index]));
-    EXPECT_EQ(record.energy_milli_eV,
+    EXPECT_EQ(record.energy_micro_eV,
               k_activity_energies[expected_emission_index]);
     EXPECT_GE(record.time_ps, k_time_window.start_ps);
     EXPECT_LT(record.time_ps, k_time_window.stop_ps);
@@ -377,9 +377,9 @@ auto ExpectSourceAndGroupLookup(SourceRunSnapshot const &snapshot,
         projection_begin + group.primary_count - 1ULL)];
     EXPECT_EQ(first.particle_type, ggems::core::particles::ToKernelParticleType(
                                        k_activity_particles[emission_index]));
-    EXPECT_EQ(first.energy_milli_eV, k_activity_energies[emission_index]);
+    EXPECT_EQ(first.energy_micro_eV, k_activity_energies[emission_index]);
     EXPECT_EQ(last.particle_type, first.particle_type);
-    EXPECT_EQ(last.energy_milli_eV, first.energy_milli_eV);
+    EXPECT_EQ(last.energy_micro_eV, first.energy_micro_eV);
   }
 
   EXPECT_TRUE(
@@ -387,7 +387,7 @@ auto ExpectSourceAndGroupLookup(SourceRunSnapshot const &snapshot,
         return record.particle_type ==
                    ggems::core::particles::ToKernelParticleType(
                        k_activity_particles[2U]) ||
-               record.energy_milli_eV == k_activity_energies[2U];
+               record.energy_micro_eV == k_activity_energies[2U];
       }));
 }
 

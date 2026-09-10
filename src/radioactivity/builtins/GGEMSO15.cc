@@ -25,8 +25,8 @@ constexpr long double k_positron_yield{0.999001L};
 // endpoint of 1732.18 keV, then integrated onto a regular GGEMS grid with a
 // maximum target width of 0.5 keV. The stored values are normalized bin masses;
 // the physical beta+ yield remains k_positron_yield.
-constexpr std::uint64_t k_positron_spectrum_lower_edge_milli_eV{5'710ULL};
-constexpr std::uint64_t k_positron_spectrum_bin_width_milli_eV{499'906ULL};
+constexpr std::uint64_t k_positron_spectrum_lower_edge_micro_eV{5'710'000ULL};
+constexpr std::uint64_t k_positron_spectrum_bin_width_micro_eV{499'906'000ULL};
 constexpr std::array<double, 3465U> k_positron_spectrum_weights{
     {6.7345418817666665e-07, 1.9902805940103037e-06, 3.307106999843938e-06,
      4.6239334056775754e-06, 5.9407598115112106e-06, 7.2575862173448407e-06,
@@ -1189,8 +1189,8 @@ constexpr std::array<double, 3465U> k_positron_spectrum_weights{
 
 [[nodiscard]] auto BuildPositronSpectrum() -> sources::GGEMSEnergyDistribution {
   return detail::BuildTabulatedSpectrum(
-      {.lower_edge_milli_eV = k_positron_spectrum_lower_edge_milli_eV,
-       .bin_width_milli_eV = k_positron_spectrum_bin_width_milli_eV},
+      {.lower_edge_micro_eV = k_positron_spectrum_lower_edge_micro_eV,
+       .bin_width_micro_eV = k_positron_spectrum_bin_width_micro_eV},
       k_positron_spectrum_weights);
 }
 

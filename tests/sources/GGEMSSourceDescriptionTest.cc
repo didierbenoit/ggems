@@ -78,7 +78,7 @@ constexpr std::string_view k_reconfigured_source_description{
       .SetAnalytic()
       .SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMilliElectronVolt(2'000'000'000ULL)
+      .SetEnergyMicroElectronVolt(2'000'000'000'000ULL)
       .SetPositionPicoMeter(1'000'000'000LL, -2'000'000'000LL, 0LL)
       .SetDirection(2.0F, 0.0F, 0.0F)
       .SetWeight(0.25F);
@@ -92,7 +92,7 @@ constexpr std::string_view k_reconfigured_source_description{
 auto ReconfigureSource(GGEMSSource &source) -> void {
   source.SetPrimaryCount(11ULL)
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMilliElectronVolt(511'000'000ULL)
+      .SetEnergyMicroElectronVolt(511'000'000'000ULL)
       .SetPositionPicoMeter(0LL, 0LL, 1'000'000LL)
       .SetDirection(0.0F, 2.0F, 0.0F)
       .SetWeight(0.5F);

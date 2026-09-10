@@ -70,7 +70,7 @@ plots and simple fixture checks. Python has no local unit conversion constant.
 ## Eight cases
 
 Every invocation uses one Analytic CountDriven Gamma Source, Philox, Mono 511 keV
-(511000000 meV), static time exactly 0 ps, and weight exactly 1. Seed defaults to
+(511000000000 micro-eV), static time exactly 0 ps, and weight exactly 1. Seed defaults to
 77777. Cases and dimensions belong in cases.py. "Translated" below means center
 (12,-7,25) mm. Bounded Isotropic requests theta 20..60 and phi -45..90 degrees.
 

@@ -261,7 +261,8 @@ auto CanonicalEnergy(long double value, std::string_view option)
 
   if (!converted || converted->value == 0ULL) {
     throw std::runtime_error(std::format(
-        "{} must convert to a positive representable energy in meV.", option));
+        "{} must convert to a positive representable energy in micro-eV.",
+        option));
   }
 
   return converted->value;
@@ -615,7 +616,7 @@ auto ConfigureSource(Options const &options) -> std::shared_ptr<GGEMSSource> {
   // The public Source builders own conversion, ordering, grids, and tickets.
   // All configuration errors occur before OpenCL setup or output creation.
   if (options.energy_mode == "mono") {
-    source->SetEnergyMilliElectronVolt(
+    source->SetEnergyMicroElectronVolt(
         CanonicalEnergy(options.mono_energy_kev, "--mono-energy-kev"));
   } else if (options.energy_mode == "discrete-lines") {
     source->SetDiscreteEnergyLines(options.energy_values_kev,
@@ -627,7 +628,7 @@ auto ConfigureSource(Options const &options) -> std::shared_ptr<GGEMSSource> {
         CanonicalEnergy(options.energy_bin_width_kev, "--energy-bin-width-kev");
 
     if (width !=
-        source->GetEnergyDistribution().GetRegularBinWidthMilliElectronVolt()) {
+        source->GetEnergyDistribution().GetRegularBinWidthMicroElectronVolt()) {
       throw std::runtime_error(
           "Requested bin width must equal the canonical center spacing.");
     }
@@ -760,7 +761,7 @@ auto CollectSourceRecords(GGEMSTransportObserver const &observer,
         !std::isfinite(record->direction_y) ||
         !std::isfinite(record->direction_z) ||
         (options.energy_mode == "mono" &&
-         record->energy_milli_eV != source.energy_milli_eV) ||
+         record->energy_micro_eV != source.energy_micro_eV) ||
         record->time_ps != source.time_start_ps ||
         record->weight != source.weight) {
       throw std::runtime_error(
@@ -797,17 +798,18 @@ auto WriteSamples(std::filesystem::path const &path,
   output.exceptions(std::ios::badbit | std::ios::failbit);
   output.imbue(std::locale::classic());
   output << std::setprecision(std::numeric_limits<float>::max_digits10);
-  output << "source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,"
-            "z_pm,"
-            "direction_x,direction_y,direction_z,energy_meV,time_ps,weight,"
-            "record_kind\n";
+  output
+      << "source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,"
+         "z_pm,"
+         "direction_x,direction_y,direction_z,energy_micro_eV,time_ps,weight,"
+         "record_kind\n";
 
   for (auto const *record : records) {
     output << record->source_index << ',' << record->source_local_primary_id
            << ',' << record->global_primary_id << ',' << record->position_x_pm
            << ',' << record->position_y_pm << ',' << record->position_z_pm
            << ',' << record->direction_x << ',' << record->direction_y << ','
-           << record->direction_z << ',' << record->energy_milli_eV << ','
+           << record->direction_z << ',' << record->energy_micro_eV << ','
            << record->time_ps << ',' << record->weight << ",Source\n";
   }
 
@@ -862,7 +864,7 @@ auto WriteJsonArray(std::ostream &output, auto const &values) -> void {
 auto WriteEnergyMetadata(std::ostream &output, Options const &options,
                          GGEMSSourceRunSnapshot const &snapshot) -> void {
   auto const &record = snapshot.GetEnergyDistributionRecords().at(0U);
-  auto const &energies = snapshot.GetEnergyValuesMilliElectronVolt();
+  auto const &energies = snapshot.GetEnergyValuesMicroElectronVolt();
   auto const &weights = snapshot.GetRelativeWeights();
   auto const &bounds = snapshot.GetCumulativeTicketUpperBounds();
 
@@ -878,22 +880,23 @@ auto WriteEnergyMetadata(std::ostream &output, Options const &options,
                 ggems::core::sources::FromKernelEnergyDistributionType(
                     record.distribution_type)))
          << ",\n  \"energy_configuration\":" << JsonString(options.energy_mode)
-         << ",\n  \"energy\":{\"representation\":\"uint64 meV\""
+         << ",\n  \"energy\":{\"representation\":\"uint64 micro-eV\""
          << ",\"distribution_type\":" << record.distribution_type
          << ",\"table_offset\":" << record.table_offset
-         << ",\"table_count\":" << record.table_count << ",\"mono_energy_meV\":"
-         << snapshot.GetRecords().at(0U).energy_milli_eV
-         << ",\"regular_bin_width_meV\":" << record.regular_bin_width_milli_eV
-         << ",\"ticket_space_size\":"
+         << ",\"table_count\":" << record.table_count
+         << ",\"mono_energy_micro_eV\":"
+         << snapshot.GetRecords().at(0U).energy_micro_eV
+         << ",\"regular_bin_width_micro_eV\":"
+         << record.regular_bin_width_micro_eV << ",\"ticket_space_size\":"
          << ggems::core::sources::k_energy_ticket_space_size
-         << ",\"energy_values_meV\":";
+         << ",\"energy_values_micro_eV\":";
   WriteJsonArray(output, energies);
   output << ",\"relative_weights\":";
   WriteJsonArray(output, weights);
   output << ",\"cumulative_ticket_upper_bounds\":";
   WriteJsonArray(output, bounds);
 
-  output << ",\"display_unit\":\"keV\",\"display_unit_meV\":"
+  output << ",\"display_unit\":\"keV\",\"display_unit_micro_eV\":"
          << ggems::units::MakeQuantity<ggems::units::Energy>(1U, "keV")
                 .value()
                 .value
@@ -983,7 +986,7 @@ auto WriteMetadata(std::ostream &output, Options const &options,
       << ',' << source.axis_z_y << ',' << source.axis_z_z << "]]"
       << ",\n  \"fixed_direction\":[" << source.axis_z_x << ','
       << source.axis_z_y << ',' << source.axis_z_z << ']'
-      << ",\n  \"energy_meV\":" << source.energy_milli_eV
+      << ",\n  \"energy_micro_eV\":" << source.energy_micro_eV
       << ",\n  \"time_ps\":" << source.time_start_ps
       << ",\n  \"weight\":" << source.weight
       << ",\n  \"population_mode\":\"CountDriven\",\n  "

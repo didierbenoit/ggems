@@ -91,7 +91,7 @@ GGEMSSource::GGEMSSource() {
   record_.time_start_ps = 0ULL;
   record_.time_stop_ps = 0ULL;
 
-  record_.energy_milli_eV = 511'000'000ULL;
+  record_.energy_micro_eV = 511'000'000'000ULL;
 
   record_.position_x_pm = 0LL;
   record_.position_y_pm = 0LL;
@@ -157,7 +157,7 @@ auto GGEMSSource::BuildExecutionRecord() const -> GGEMSSourceRecord {
   if (GetPopulationMode() == GGEMSSourcePopulationMode::ActivityDriven) {
     record.emitted_particle_type =
         particles::ToKernelParticleType(particles::GGEMSParticleType::Unknown);
-    record.energy_milli_eV = 0ULL;
+    record.energy_micro_eV = 0ULL;
   }
 
   ValidateAnalyticSourceRecord(record);
@@ -214,11 +214,11 @@ auto GGEMSSource::CommitEnergyDistribution(
     GGEMSEnergyDistribution distribution) noexcept -> void {
   std::uint64_t const source_record_energy =
       distribution.GetType() == GGEMSEnergyDistributionType::Mono
-          ? distribution.GetMonoEnergyMilliElectronVolt()
+          ? distribution.GetMonoEnergyMicroElectronVolt()
           : 0ULL;
 
   energy_distribution_ = std::move(distribution);
-  record_.energy_milli_eV = source_record_energy;
+  record_.energy_micro_eV = source_record_energy;
 }
 
 // -----------------------------------------------------------------------------
@@ -576,10 +576,10 @@ auto GGEMSSource::SetEmittedParticleType(
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSSource::SetEnergyMilliElectronVolt(std::uint64_t energy_milli_eV)
+auto GGEMSSource::SetEnergyMicroElectronVolt(std::uint64_t energy_micro_eV)
     -> GGEMSSource & {
   CheckEnergyConfigurationMutable();
-  CommitEnergyDistribution(GGEMSEnergyDistribution::BuildMono(energy_milli_eV));
+  CommitEnergyDistribution(GGEMSEnergyDistribution::BuildMono(energy_micro_eV));
   return *this;
 }
 
@@ -686,10 +686,10 @@ auto GGEMSSource::BuildRecord() const -> GGEMSSourceRecord {
   GGEMSSourceRecord const record = BuildExecutionRecord();
   std::uint64_t const expected_energy =
       energy_distribution_.GetType() == GGEMSEnergyDistributionType::Mono
-          ? energy_distribution_.GetMonoEnergyMilliElectronVolt()
+          ? energy_distribution_.GetMonoEnergyMicroElectronVolt()
           : 0ULL;
 
-  if (!(record.energy_milli_eV == expected_energy)) {
+  if (!(record.energy_micro_eV == expected_energy)) {
     throw ggems::core::GGEMSInternal(
         "GGEMSSource record and energy distribution are inconsistent.");
   }

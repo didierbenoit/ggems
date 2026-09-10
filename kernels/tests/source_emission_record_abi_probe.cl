@@ -57,7 +57,7 @@ __kernel void source_emission_record_abi_probe(
                           .energy_distribution_record_index -
                       emission_base);
   layout[10] =
-      (ulong)((__private uchar const *)&private_emission.mono_energy_milli_eV -
+      (ulong)((__private uchar const *)&private_emission.mono_energy_micro_eV -
               emission_base);
   layout[11] = (ulong)((__global uchar const *)&emissions[1] -
                        (__global uchar const *)&emissions[0]);
@@ -86,7 +86,7 @@ __kernel void source_emission_record_abi_probe(
 
   emissions[1].particle_type = 47U;
   emissions[1].energy_distribution_record_index = 53U;
-  emissions[1].mono_energy_milli_eV = 59UL;
+  emissions[1].mono_energy_micro_eV = 59UL;
 
   groups[1].source_local_primary_begin = 61UL;
   groups[1].primary_count = 67UL;

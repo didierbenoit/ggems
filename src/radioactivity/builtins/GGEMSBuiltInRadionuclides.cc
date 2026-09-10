@@ -83,10 +83,10 @@ DescribeEnergyDistribution(sources::GGEMSEnergyDistribution const &distribution)
   if (type == sources::GGEMSEnergyDistributionType::Mono) {
     return std::format("Mono {}",
                        ggems::units::HumanReadable(ggems::units::Energy{
-                           distribution.GetMonoEnergyMilliElectronVolt()}));
+                           distribution.GetMonoEnergyMicroElectronVolt()}));
   }
 
-  auto const energies = distribution.GetEnergyValuesMilliElectronVolt();
+  auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
 
   if (energies.empty()) {
     throw ggems::core::GGEMSInternal(
@@ -114,7 +114,7 @@ DescribeEnergyDistribution(sources::GGEMSEnergyDistribution const &distribution)
 
   if (type == sources::GGEMSEnergyDistributionType::RegularSpectrum) {
     std::uint64_t const bin_width =
-        distribution.GetRegularBinWidthMilliElectronVolt();
+        distribution.GetRegularBinWidthMicroElectronVolt();
     std::uint64_t const half_width = bin_width / 2ULL;
     std::uint64_t const lower_edge = energies.front() - half_width;
     std::uint64_t const upper_edge = energies.back() + half_width;

@@ -18,6 +18,9 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+// Canonical Energy storage is now micro-electronvolts. The original meV
+// quantization described below is preserved by exact integer scaling by 1000.
+
 // Scientific references for this built-in:
 //
 // Direct evaluated decay and emission data:
@@ -43,7 +46,7 @@ namespace {
 // Calculations" (2008), as the spectra source. GGEMS uses MIRD only for the
 // seven detailed Auger-electron lines because LNHB/LARA publishes the
 // corresponding Auger groups as energy ranges. The two sub-eV-resolution
-// MIRD energies are rounded to the nearest integer milli-electronvolt.
+// MIRD energies were rounded to the nearest integer milli-electronvolt.
 //
 // Internal pair formation:
 // The LNHB evaluation includes tiny internal-pair coefficients for the
@@ -55,7 +58,7 @@ namespace {
 // fabricated as independent monoenergetic emissions. A future pair-emission
 // channel can add them without changing the evaluated beta/gamma data below.
 //
-// All external tabular energies below are converted offline to exact positive
+// All external tabular energies below were converted offline to exact positive
 // integer milli-electronvolt values before being embedded in GGEMS.
 
 constexpr std::size_t k_emission_count{7U};
@@ -72,8 +75,8 @@ constexpr long double k_beta_1490_56_yield{0.0012L};
 // from these normalized conditional spectral weights.
 
 // 317.32 keV endpoint: experimental BetaShape column.
-constexpr std::uint64_t k_beta_317_32_lower_edge_milli_eV{340ULL};
-constexpr std::uint64_t k_beta_317_32_bin_width_milli_eV{499'716ULL};
+constexpr std::uint64_t k_beta_317_32_lower_edge_micro_eV{340'000ULL};
+constexpr std::uint64_t k_beta_317_32_bin_width_micro_eV{499'716'000ULL};
 constexpr std::array<double, 635U> k_beta_317_32_spectrum_weights{
     {0.0033003828112509051,  0.0032957625100624574,  0.0032911259726406393,
      0.0032864731693368239,  0.0032818029205996554,  0.0032771151150551301,
@@ -289,8 +292,8 @@ constexpr std::array<double, 635U> k_beta_317_32_spectrum_weights{
      8.1432386465337939e-08, 1.2389225764874543e-08}};
 
 // 664.46 keV endpoint: calculated BetaShape column.
-constexpr std::uint64_t k_beta_664_46_lower_edge_milli_eV{2'528ULL};
-constexpr std::uint64_t k_beta_664_46_bin_width_milli_eV{499'968ULL};
+constexpr std::uint64_t k_beta_664_46_lower_edge_micro_eV{2'528'000ULL};
+constexpr std::uint64_t k_beta_664_46_bin_width_micro_eV{499'968'000ULL};
 constexpr std::array<double, 1329U> k_beta_664_46_spectrum_weights{
     {0.0007222576339488857,  0.00072348498353635841, 0.00072471233312383122,
      0.00072593967957208718, 0.00072702949107083051, 0.0007279843740492719,
@@ -737,8 +740,8 @@ constexpr std::array<double, 1329U> k_beta_664_46_spectrum_weights{
      1.459217058673122e-07,  6.1373711031624532e-08, 6.9338524787344946e-09}};
 
 // 1490.56 keV endpoint: experimental BetaShape column.
-constexpr std::uint64_t k_beta_1490_56_lower_edge_milli_eV{1'336ULL};
-constexpr std::uint64_t k_beta_1490_56_bin_width_milli_eV{499'852ULL};
+constexpr std::uint64_t k_beta_1490_56_lower_edge_micro_eV{1'336'000ULL};
+constexpr std::uint64_t k_beta_1490_56_bin_width_micro_eV{499'852'000ULL};
 constexpr std::array<double, 2982U> k_beta_1490_56_spectrum_weights{
     {0.00028626812633362765, 0.00028636994118976525, 0.0002864717560459027,
      0.00028657357090204041, 0.00028667538575817764, 0.00028677720061431552,
@@ -1736,9 +1739,9 @@ constexpr std::array<double, 2982U> k_beta_1490_56_spectrum_weights{
      2.010445694434968e-08,  1.2062674166603225e-08, 4.0208913888677415e-09}};
 
 // CEA/LNE-LNHB Nucleide-LARA direct nuclear gamma emissions.
-constexpr std::array<double, 6U> k_gamma_line_energies_milli_eV{
-    {347'140'000.0, 826'100'000.0, 1'173'228'000.0, 1'332'492'000.0,
-     2'158'570'000.0, 2'505'692'000.0}};
+constexpr std::array<std::uint64_t, 6U> k_gamma_line_energies_micro_eV{
+    {347'140'000'000ULL, 826'100'000'000ULL, 1'173'228'000'000ULL,
+     1'332'492'000'000ULL, 2'158'570'000'000ULL, 2'505'692'000'000ULL}};
 
 constexpr std::array<double, 6U> k_gamma_line_yields{
     {0.000075, 0.000076, 0.9985, 0.999826, 0.000012, 0.00000002}};
@@ -1746,16 +1749,16 @@ constexpr std::array<double, 6U> k_gamma_line_yields{
 // CEA/LNE-LNHB Nucleide-LARA compact Ni X-ray emissions. The grouped XL and
 // K-beta value use the representative energies published by LARA; GGEMS does
 // not invent microscopic sub-line splitting.
-constexpr std::array<double, 4U> k_x_ray_energies_milli_eV{
-    {840'000.0, 7'460'970.0, 7'478'240.0, 8'296'700.0}};
+constexpr std::array<std::uint64_t, 4U> k_x_ray_energies_micro_eV{
+    {840'000'000ULL, 7'460'970'000ULL, 7'478'240'000ULL, 8'296'700'000ULL}};
 
 constexpr std::array<double, 4U> k_x_ray_line_yields{
     {0.000002, 0.0000334, 0.000065, 0.0000136}};
 
 // MIRDspecs/ICRP-107 detailed Auger-electron lines.
-constexpr std::array<double, 7U> k_auger_electron_energies_milli_eV{
-    {47'980.0, 78'787.0, 772'593.0, 818'380.0, 6'497'880.0, 7'313'620.0,
-     8'133'490.0}};
+constexpr std::array<std::uint64_t, 7U> k_auger_electron_energies_micro_eV{
+    {47'980'000ULL, 78'787'000ULL, 772'593'000ULL, 818'380'000ULL,
+     6'497'880'000ULL, 7'313'620'000ULL, 8'133'490'000ULL}};
 
 constexpr std::array<double, 7U> k_auger_electron_line_yields{
     {0.000583929, 0.0000732775, 0.000393729, 0.0000039767, 0.000124729,
@@ -1763,10 +1766,12 @@ constexpr std::array<double, 7U> k_auger_electron_line_yields{
 
 // CEA/LNE-LNHB LARA K/L internal-conversion electron rows. The arrays are
 // sorted by increasing electron energy as required by DiscreteLines.
-constexpr std::array<double, 12U> k_conversion_electron_energies_milli_eV{
-    {338'810'000.0, 346'230'000.0, 817'767'000.0, 825'188'000.0,
-     1'164'907'200.0, 1'172'328'400.0, 1'324'175'200.0, 1'331'596'400.0,
-     2'150'277'000.0, 2'157'698'000.0, 2'497'415'000.0, 2'504'836'000.0}};
+constexpr std::array<std::uint64_t, 12U>
+    k_conversion_electron_energies_micro_eV{
+        {338'810'000'000ULL, 346'230'000'000ULL, 817'767'000'000ULL,
+         825'188'000'000ULL, 1'164'907'200'000ULL, 1'172'328'400'000ULL,
+         1'324'175'200'000ULL, 1'331'596'400'000ULL, 2'150'277'000'000ULL,
+         2'157'698'000'000ULL, 2'497'415'000'000ULL, 2'504'836'000'000ULL}};
 
 constexpr std::array<double, 12U> k_conversion_electron_line_yields{
     {3.74e-7, 3.77e-8, 2.28e-8, 2.21e-9, 0.000151, 0.00001478, 0.000115,
@@ -1801,45 +1806,43 @@ constexpr long double k_conversion_electron_yield{
   emissions.emplace_back(
       particles::GGEMSParticleType::Electron, k_beta_317_32_yield,
       detail::BuildTabulatedSpectrum(
-          {.lower_edge_milli_eV = k_beta_317_32_lower_edge_milli_eV,
-           .bin_width_milli_eV = k_beta_317_32_bin_width_milli_eV},
+          {.lower_edge_micro_eV = k_beta_317_32_lower_edge_micro_eV,
+           .bin_width_micro_eV = k_beta_317_32_bin_width_micro_eV},
           k_beta_317_32_spectrum_weights));
 
   emissions.emplace_back(
       particles::GGEMSParticleType::Electron, k_beta_664_46_yield,
       detail::BuildTabulatedSpectrum(
-          {.lower_edge_milli_eV = k_beta_664_46_lower_edge_milli_eV,
-           .bin_width_milli_eV = k_beta_664_46_bin_width_milli_eV},
+          {.lower_edge_micro_eV = k_beta_664_46_lower_edge_micro_eV,
+           .bin_width_micro_eV = k_beta_664_46_bin_width_micro_eV},
           k_beta_664_46_spectrum_weights));
 
   emissions.emplace_back(
       particles::GGEMSParticleType::Electron, k_beta_1490_56_yield,
       detail::BuildTabulatedSpectrum(
-          {.lower_edge_milli_eV = k_beta_1490_56_lower_edge_milli_eV,
-           .bin_width_milli_eV = k_beta_1490_56_bin_width_milli_eV},
+          {.lower_edge_micro_eV = k_beta_1490_56_lower_edge_micro_eV,
+           .bin_width_micro_eV = k_beta_1490_56_bin_width_micro_eV},
           k_beta_1490_56_spectrum_weights));
 
   emissions.emplace_back(
       particles::GGEMSParticleType::Gamma, k_gamma_yield,
       sources::GGEMSEnergyDistribution::BuildDiscreteLines(
-          k_gamma_line_energies_milli_eV, k_gamma_line_yields, "meV"));
+          k_gamma_line_energies_micro_eV, k_gamma_line_yields));
+
+  emissions.emplace_back(particles::GGEMSParticleType::Gamma, k_x_ray_yield,
+                         sources::GGEMSEnergyDistribution::BuildDiscreteLines(
+                             k_x_ray_energies_micro_eV, k_x_ray_line_yields));
 
   emissions.emplace_back(
-      particles::GGEMSParticleType::Gamma, k_x_ray_yield,
+      particles::GGEMSParticleType::Electron, k_auger_electron_yield,
       sources::GGEMSEnergyDistribution::BuildDiscreteLines(
-          k_x_ray_energies_milli_eV, k_x_ray_line_yields, "meV"));
-
-  emissions.emplace_back(particles::GGEMSParticleType::Electron,
-                         k_auger_electron_yield,
-                         sources::GGEMSEnergyDistribution::BuildDiscreteLines(
-                             k_auger_electron_energies_milli_eV,
-                             k_auger_electron_line_yields, "meV"));
+          k_auger_electron_energies_micro_eV, k_auger_electron_line_yields));
 
   emissions.emplace_back(particles::GGEMSParticleType::Electron,
                          k_conversion_electron_yield,
                          sources::GGEMSEnergyDistribution::BuildDiscreteLines(
-                             k_conversion_electron_energies_milli_eV,
-                             k_conversion_electron_line_yields, "meV"));
+                             k_conversion_electron_energies_micro_eV,
+                             k_conversion_electron_line_yields));
 
   return {"Co-60", k_half_life_seconds, std::move(emissions)};
 }

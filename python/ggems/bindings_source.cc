@@ -281,7 +281,7 @@ auto BindSource(py::module_ &module) -> void {
           "set_energy",
           [](GGEMSSource &self, double energy,
              std::string const &unit) -> GGEMSSource & {
-            return self.SetEnergyMilliElectronVolt(
+            return self.SetEnergyMicroElectronVolt(
                 MakeQuantityOrThrow<ggems::units::Energy>(
                     energy, unit,
                     {.quantity_name = "Source energy",

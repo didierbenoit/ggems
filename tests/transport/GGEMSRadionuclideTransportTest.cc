@@ -47,7 +47,7 @@ using TransportRunConfig = ggems::core::transport::GGEMSTransportRunConfig;
 using TransportRunReport = ggems::core::transport::GGEMSTransportRunReport;
 using TransportWorkload = ggems::core::transport::GGEMSTransportWorkload;
 
-constexpr std::uint64_t k_mono_energy_milli_eV{123'456'789ULL};
+constexpr std::uint64_t k_mono_energy_micro_eV{123'456'789'000ULL};
 constexpr std::uint32_t k_worker_count{1U};
 constexpr std::uint32_t k_launch_primary_count_limit{3U};
 constexpr std::uint64_t k_projection_history_offset{9'000ULL};
@@ -82,7 +82,7 @@ struct ActivityScenario {
   emissions.emplace_back(
       ParticleType::Gamma, 1.0L,
       ggems::core::sources::GGEMSEnergyDistribution::BuildMono(
-          k_mono_energy_milli_eV));
+          k_mono_energy_micro_eV));
 
   auto definition = std::make_shared<Definition const>(
       "ChunkTransport", k_uniform_limit_half_life_seconds,
@@ -184,7 +184,7 @@ auto ExpectCompleteActivityRecords(TransportRunReport const &report,
     EXPECT_EQ(
         record.particle_type,
         ggems::core::particles::ToKernelParticleType(ParticleType::Gamma));
-    EXPECT_EQ(record.energy_milli_eV, k_mono_energy_milli_eV);
+    EXPECT_EQ(record.energy_micro_eV, k_mono_energy_micro_eV);
     EXPECT_GE(record.time_ps, time_window.start_ps);
     EXPECT_LT(record.time_ps, time_window.stop_ps);
     EXPECT_FLOAT_EQ(record.weight, 0.5F);

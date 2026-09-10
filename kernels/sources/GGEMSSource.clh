@@ -309,11 +309,11 @@ static inline float3 GGEMS_SourceSampleDirection(
 static inline ulong GGEMS_SourceSampleEnergy(
     __global GGEMSSourceRecord const *source,
     __global GGEMSEnergyDistributionRecord const *distribution,
-    __global ulong const *energy_values_milli_eV,
+    __global ulong const *energy_values_micro_eV,
     __global ulong const *cumulative_ticket_upper,
     __global GGEMSRandomState *random_states, uint worker_id) {
   return GGEMS_EnergyDistributionSample(
-      source->energy_milli_eV, distribution, energy_values_milli_eV,
+      source->energy_micro_eV, distribution, energy_values_micro_eV,
       cumulative_ticket_upper, random_states, worker_id);
 }
 
@@ -324,7 +324,7 @@ static inline GGEMSParticleState GGEMS_SourceInitializePrimary(
     ulong global_primary_id, ulong source_local_primary_id,
     __global GGEMSSourceRecord const *source,
     __global GGEMSEnergyDistributionRecord const *energy_distribution,
-    __global ulong const *energy_values_milli_eV,
+    __global ulong const *energy_values_micro_eV,
     __global ulong const *cumulative_ticket_upper,
     __global GGEMSRandomState *random_states, uint worker_id) {
   ulong const sampled_time_ps =
@@ -336,8 +336,8 @@ static inline GGEMSParticleState GGEMS_SourceInitializePrimary(
   float3 const sampled_direction = GGEMS_SourceSampleDirection(
       source, sampled_position, random_states, worker_id);
 
-  ulong const sampled_energy_milli_eV = GGEMS_SourceSampleEnergy(
-      source, energy_distribution, energy_values_milli_eV,
+  ulong const sampled_energy_micro_eV = GGEMS_SourceSampleEnergy(
+      source, energy_distribution, energy_values_micro_eV,
       cumulative_ticket_upper, random_states, worker_id);
 
   GGEMSParticleState particle;
@@ -367,7 +367,7 @@ static inline GGEMSParticleState GGEMS_SourceInitializePrimary(
   particle.direction_z = sampled_direction.z;
   particle.direction_w = 0.0F;
 
-  particle.energy_milli_eV = sampled_energy_milli_eV;
+  particle.energy_micro_eV = sampled_energy_micro_eV;
   particle.weight = source->weight;
 
   return particle;
@@ -382,7 +382,7 @@ static inline GGEMSParticleState GGEMS_SourceInitializeActivityDrivenPrimary(
     __global GGEMSSourcePopulationRecord const *population,
     __global GGEMSSourceEmissionRecord const *emission,
     __global GGEMSEnergyDistributionRecord const *energy_distribution,
-    __global ulong const *energy_values_milli_eV,
+    __global ulong const *energy_values_micro_eV,
     __global ulong const *cumulative_ticket_upper,
     __global GGEMSRandomState *random_states, uint worker_id) {
   (void)(source_local_primary_id);
@@ -398,9 +398,9 @@ static inline GGEMSParticleState GGEMS_SourceInitializeActivityDrivenPrimary(
   float3 const sampled_direction = GGEMS_SourceSampleDirection(
       source, sampled_position, random_states, worker_id);
 
-  ulong const sampled_energy_milli_eV = GGEMS_EnergyDistributionSample(
-      emission->mono_energy_milli_eV, energy_distribution,
-      energy_values_milli_eV, cumulative_ticket_upper, random_states,
+  ulong const sampled_energy_micro_eV = GGEMS_EnergyDistributionSample(
+      emission->mono_energy_micro_eV, energy_distribution,
+      energy_values_micro_eV, cumulative_ticket_upper, random_states,
       worker_id);
 
   GGEMSParticleState particle;
@@ -429,7 +429,7 @@ static inline GGEMSParticleState GGEMS_SourceInitializeActivityDrivenPrimary(
   particle.direction_z = sampled_direction.z;
   particle.direction_w = 0.0F;
 
-  particle.energy_milli_eV = sampled_energy_milli_eV;
+  particle.energy_micro_eV = sampled_energy_micro_eV;
   particle.weight = source->weight;
 
   return particle;
@@ -445,7 +445,7 @@ static inline uint GGEMS_SourceTryInitializePrimary(
     __global GGEMSSourceEmissionRecord const *source_emissions,
     __global GGEMSSourceEmissionRange const *source_emission_ranges,
     __global GGEMSEnergyDistributionRecord const *energy_distribution_records,
-    __global ulong const *energy_values_milli_eV,
+    __global ulong const *energy_values_micro_eV,
     __global ulong const *cumulative_ticket_upper,
     __global GGEMSRandomState *random_states, uint worker_id,
     GGEMSParticleState *particle) {
@@ -456,7 +456,7 @@ static inline uint GGEMS_SourceTryInitializePrimary(
 
     *particle = GGEMS_SourceInitializePrimary(
         global_primary_id, source_local_primary_id, source, energy_distribution,
-        energy_values_milli_eV, cumulative_ticket_upper, random_states,
+        energy_values_micro_eV, cumulative_ticket_upper, random_states,
         worker_id);
     return 1U;
   }
@@ -490,7 +490,7 @@ static inline uint GGEMS_SourceTryInitializePrimary(
 
   *particle = GGEMS_SourceInitializeActivityDrivenPrimary(
       global_primary_id, source_local_primary_id, source, population, emission,
-      energy_distribution, energy_values_milli_eV, cumulative_ticket_upper,
+      energy_distribution, energy_values_micro_eV, cumulative_ticket_upper,
       random_states, worker_id);
   return 1U;
 }
@@ -529,7 +529,7 @@ GGEMS_SourceReadAionino(ulong global_primary_id, ulong source_local_primary_id,
   particle.direction_z = source->axis_z_z;
   particle.direction_w = 0.0F;
 
-  particle.energy_milli_eV = source->energy_milli_eV;
+  particle.energy_micro_eV = source->energy_micro_eV;
   particle.weight = source->weight;
 
   return particle;

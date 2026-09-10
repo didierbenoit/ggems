@@ -4,7 +4,7 @@ from typing import Literal
 DEFAULT_PRIMARIES = 256
 DEFAULT_WORKERS = 64
 DEFAULT_SEED = 77777
-MONO_ENERGY_MEV = 511000000
+MONO_ENERGY_MICRO_EV = 511000000000
 
 
 @dataclass(frozen=True, slots=True)

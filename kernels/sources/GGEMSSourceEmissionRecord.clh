@@ -4,7 +4,7 @@
 typedef struct GGEMSSourceEmissionRecord {
   uint particle_type;
   uint energy_distribution_record_index;
-  ulong mono_energy_milli_eV;
+  ulong mono_energy_micro_eV;
 } GGEMSSourceEmissionRecord;
 
 #endif

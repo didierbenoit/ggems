@@ -77,7 +77,7 @@ struct ValidationContext {
     if (conversion->value == 0ULL) {
       RejectEntry(distribution_name, index, context,
                   "energy must remain strictly positive after conversion to "
-                  "milli-electronvolts.");
+                  "micro-electronvolts.");
     }
     return conversion->value;
   }
@@ -91,7 +91,7 @@ struct ValidationContext {
   if (conversion.error() == UnitConversionError::NegativeValue) {
     RejectEntry(distribution_name, index, context,
                 "energy must remain strictly positive after conversion to "
-                "milli-electronvolts.");
+                "micro-electronvolts.");
   }
 
   if (conversion.error() == UnitConversionError::UnsupportedUnit) {
@@ -100,8 +100,24 @@ struct ValidationContext {
   }
 
   RejectEntry(distribution_name, index, context,
-              "energy conversion exceeds uint64 milli-electronvolt "
+              "energy conversion exceeds uint64 micro-electronvolt "
               "storage.");
+}
+
+
+auto ValidateCanonicalEnergyValues(std::span<std::uint64_t const> energies,
+                                   std::string_view distribution_name) -> void {
+  for (std::size_t index = 0U; index < energies.size(); ++index) {
+    if (energies[index] == 0ULL) {
+      RejectEntry(
+          distribution_name, index, {},
+          "energy must remain strictly positive in micro-electronvolts.");
+    }
+    if (index > 0U && energies[index] <= energies[index - 1U]) {
+      RejectEntry(distribution_name, index, {},
+                  "canonical energies must be strictly increasing.");
+    }
+  }
 }
 
 // =============================================================================
@@ -125,7 +141,7 @@ struct ValidationContext {
       RejectEntry(
           distribution_name, index, context,
           "energies must be strictly increasing and remain distinct after "
-          "conversion to milli-electronvolts.");
+          "conversion to micro-electronvolts.");
     }
   }
 
@@ -358,27 +374,27 @@ BuildCumulativeTicketUpperBounds(std::span<double const> relative_weights,
 // =============================================================================
 
 GGEMSEnergyDistribution::GGEMSEnergyDistribution(
-    GGEMSEnergyDistributionType type, std::uint64_t mono_energy_milli_eV,
-    std::uint64_t regular_bin_width_milli_eV,
-    std::vector<std::uint64_t> energy_values_milli_eV,
+    GGEMSEnergyDistributionType type, std::uint64_t mono_energy_micro_eV,
+    std::uint64_t regular_bin_width_micro_eV,
+    std::vector<std::uint64_t> energy_values_micro_eV,
     std::vector<double> relative_weights,
     std::vector<std::uint64_t> cumulative_ticket_upper)
-    : type_{type}, mono_energy_milli_eV_{mono_energy_milli_eV},
-      regular_bin_width_milli_eV_{regular_bin_width_milli_eV},
-      energy_values_milli_eV_{std::move(energy_values_milli_eV)},
+    : type_{type}, mono_energy_micro_eV_{mono_energy_micro_eV},
+      regular_bin_width_micro_eV_{regular_bin_width_micro_eV},
+      energy_values_micro_eV_{std::move(energy_values_micro_eV)},
       relative_weights_{std::move(relative_weights)},
       cumulative_ticket_upper_{std::move(cumulative_ticket_upper)} {}
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSEnergyDistribution::BuildMono(std::uint64_t energy_milli_eV)
+auto GGEMSEnergyDistribution::BuildMono(std::uint64_t energy_micro_eV)
     -> GGEMSEnergyDistribution {
-  if (!(energy_milli_eV > 0ULL)) {
+  if (!(energy_micro_eV > 0ULL)) {
     throw ggems::core::GGEMSRecoverable("Source energy must be non-zero.");
   }
 
   return GGEMSEnergyDistribution{
-      GGEMSEnergyDistributionType::Mono, energy_milli_eV, 0ULL, {}, {}, {}};
+      GGEMSEnergyDistributionType::Mono, energy_micro_eV, 0ULL, {}, {}, {}};
 }
 
 // -----------------------------------------------------------------------------
@@ -403,6 +419,39 @@ auto GGEMSEnergyDistribution::BuildDiscreteLines(
 
   auto energy_values =
       ConvertEnergyValues(energies, unit, "Discrete energy lines", context);
+
+  return BuildDiscreteLinesFromValues(std::move(energy_values),
+                                      relative_weights);
+}
+
+
+auto GGEMSEnergyDistribution::BuildDiscreteLines(
+    std::span<std::uint64_t const> energies_micro_eV,
+    std::span<double const> relative_weights) -> GGEMSEnergyDistribution {
+  if (!(energies_micro_eV.size() == relative_weights.size())) {
+    throw ggems::core::GGEMSRecoverable(
+        "Discrete energy line and relative-weight counts must match.");
+  }
+  if (!(energies_micro_eV.size() >= 2U)) {
+    throw ggems::core::GGEMSRecoverable(
+        "Discrete energy distributions require at least two lines.");
+  }
+  if (!(energies_micro_eV.size() <=
+        static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()))) {
+    throw ggems::core::GGEMSRecoverable(
+        "Discrete energy line count exceeds uint32 storage.");
+  }
+
+  ValidateCanonicalEnergyValues(energies_micro_eV, "Discrete energy lines");
+  return BuildDiscreteLinesFromValues(
+      {energies_micro_eV.begin(), energies_micro_eV.end()}, relative_weights);
+}
+
+
+auto GGEMSEnergyDistribution::BuildDiscreteLinesFromValues(
+    std::vector<std::uint64_t> energy_values,
+    std::span<double const> relative_weights) -> GGEMSEnergyDistribution {
+  ValidationContext const context{};
 
   std::vector<double> prepared_relative_weights{relative_weights.begin(),
                                                 relative_weights.end()};
@@ -455,20 +504,58 @@ auto GGEMSEnergyDistribution::BuildRegularSpectrumWithContext(
   auto energy_values = ConvertEnergyValues(bin_centers, unit,
                                            "Regular energy spectrum", context);
 
+  return BuildRegularSpectrumFromValues(
+      std::move(energy_values), relative_bin_weights, filename, line_numbers);
+}
+
+
+auto GGEMSEnergyDistribution::BuildRegularSpectrum(
+    std::span<std::uint64_t const> bin_centers_micro_eV,
+    std::span<double const> relative_weights) -> GGEMSEnergyDistribution {
+  ValidationContext const context{};
+  if (!(bin_centers_micro_eV.size() == relative_weights.size())) {
+    throw ggems::core::GGEMSRecoverable(
+        "Regular spectrum center and relative-weight counts must match.");
+  }
+  if (bin_centers_micro_eV.size() < 2U) {
+    RejectEntry("Regular energy spectrum", 0U, context,
+                "requires at least two bins.");
+  }
+  if (!(bin_centers_micro_eV.size() <=
+        static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()))) {
+    throw ggems::core::GGEMSRecoverable(
+        "Regular spectrum bin count exceeds uint32 storage.");
+  }
+
+  ValidateCanonicalEnergyValues(bin_centers_micro_eV,
+                                "Regular energy spectrum");
+  return BuildRegularSpectrumFromValues(
+      {bin_centers_micro_eV.begin(), bin_centers_micro_eV.end()},
+      relative_weights, {}, {});
+}
+
+
+auto GGEMSEnergyDistribution::BuildRegularSpectrumFromValues(
+    std::vector<std::uint64_t> energy_values,
+    std::span<double const> relative_bin_weights, std::string_view filename,
+    std::span<std::size_t const> line_numbers) -> GGEMSEnergyDistribution {
+  ValidationContext const context{.filename = filename,
+                                  .line_numbers = line_numbers};
+
   std::uint64_t const bin_width = energy_values[1U] - energy_values[0U];
 
   for (std::size_t index = 2U; index < energy_values.size(); ++index) {
     if (energy_values[index] - energy_values[index - 1U] != bin_width) {
       RejectEntry("Regular energy spectrum", index, context,
                   "bin centers must form an exactly regular grid after "
-                  "conversion to milli-electronvolts.");
+                  "conversion to micro-electronvolts.");
     }
   }
 
   if ((bin_width & 1ULL) != 0ULL) {
     RejectEntry("Regular energy spectrum", 1U, context,
                 "internal bin width must be even so that both bin edges are "
-                "exact milli-electronvolt values.");
+                "exact micro-electronvolt values.");
   }
 
   std::uint64_t const half_width = bin_width / 2ULL;
@@ -481,7 +568,7 @@ auto GGEMSEnergyDistribution::BuildRegularSpectrumWithContext(
   if (energy_values.back() >
       std::numeric_limits<std::uint64_t>::max() - half_width) {
     RejectEntry("Regular energy spectrum", energy_values.size() - 1U, context,
-                "last upper bin edge exceeds uint64 milli-electronvolt "
+                "last upper bin edge exceeds uint64 micro-electronvolt "
                 "storage.");
   }
 
@@ -577,7 +664,7 @@ auto GGEMSEnergyDistribution::BuildRecord(std::uint64_t table_offset)
     const noexcept -> GGEMSEnergyDistributionRecord {
   if (type_ == GGEMSEnergyDistributionType::Mono) {
     return {
-        .regular_bin_width_milli_eV = 0ULL,
+        .regular_bin_width_micro_eV = 0ULL,
         .table_offset = 0ULL,
         .distribution_type = ToKernelEnergyDistributionType(type_),
         .table_count = 0U,
@@ -585,9 +672,9 @@ auto GGEMSEnergyDistribution::BuildRecord(std::uint64_t table_offset)
   }
 
   return {
-      .regular_bin_width_milli_eV =
+      .regular_bin_width_micro_eV =
           type_ == GGEMSEnergyDistributionType::RegularSpectrum
-              ? regular_bin_width_milli_eV_
+              ? regular_bin_width_micro_eV_
               : 0ULL,
       .table_offset = table_offset,
       .distribution_type = ToKernelEnergyDistributionType(type_),

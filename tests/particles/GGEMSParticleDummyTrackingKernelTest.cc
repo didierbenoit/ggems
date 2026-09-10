@@ -25,7 +25,7 @@ constexpr std::size_t k_particle_count{1024U};
 constexpr std::size_t k_local_size{64U};
 
 constexpr std::uint64_t k_global_particle_offset{987654ULL};
-constexpr std::uint64_t k_energy_milli_eV{511000000ULL};
+constexpr std::uint64_t k_energy_micro_eV{511'000'000'000ULL};
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
@@ -110,7 +110,7 @@ TEST_F(GGEMSParticleDummyTrackingKernelTest, KillsAlivePrimaryParticles) {
     kernel.SetArg(1U, static_cast<cl_ulong>(k_global_particle_offset));
     kernel.SetArg(2U, static_cast<cl_uint>(k_particle_count));
     kernel.SetArg(3U, static_cast<cl_uint>(particle_type));
-    kernel.SetArg(4U, static_cast<cl_ulong>(k_energy_milli_eV));
+    kernel.SetArg(4U, static_cast<cl_ulong>(k_energy_micro_eV));
 
     kernel.Run({global_size}, {k_local_size});
   }
@@ -167,7 +167,7 @@ TEST_F(GGEMSParticleDummyTrackingKernelTest, KillsAlivePrimaryParticles) {
     EXPECT_FLOAT_EQ(particle.direction_z, 1.0F);
     EXPECT_FLOAT_EQ(particle.direction_w, 0.0F);
 
-    EXPECT_EQ(particle.energy_milli_eV, k_energy_milli_eV);
+    EXPECT_EQ(particle.energy_micro_eV, k_energy_micro_eV);
     EXPECT_FLOAT_EQ(particle.weight, 1.0F);
   }
 

@@ -7,7 +7,7 @@
 #define GGEMS_ENERGY_DISTRIBUTION_TYPE_REGULAR_SPECTRUM 3U
 
 typedef struct GGEMSEnergyDistributionRecord {
-  ulong regular_bin_width_milli_eV;
+  ulong regular_bin_width_micro_eV;
   ulong table_offset;
   uint distribution_type;
   uint table_count;

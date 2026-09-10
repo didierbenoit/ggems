@@ -17,7 +17,7 @@ __kernel void energy_distribution_record_abi_probe(
 
   layout[0] = (ulong)(sizeof(GGEMSEnergyDistributionRecord));
   layout[1] = (ulong)((__private uchar const *)&private_record
-                          .regular_bin_width_milli_eV -
+                          .regular_bin_width_micro_eV -
                       record_base);
   layout[2] = (ulong)((__private uchar const *)&private_record.table_offset -
                       record_base);
@@ -33,12 +33,12 @@ __kernel void energy_distribution_record_abi_probe(
   layout[6] = (ulong)((__private uchar const *)&alignment_probe.record -
                       (__private uchar const *)&alignment_probe);
 
-  host_values[0] = records[0].regular_bin_width_milli_eV;
+  host_values[0] = records[0].regular_bin_width_micro_eV;
   host_values[1] = records[0].table_offset;
   host_values[2] = (ulong)(records[0].distribution_type);
   host_values[3] = (ulong)(records[0].table_count);
 
-  records[1].regular_bin_width_milli_eV = 101UL;
+  records[1].regular_bin_width_micro_eV = 101UL;
   records[1].table_offset = 102UL;
   records[1].distribution_type =
       GGEMS_ENERGY_DISTRIBUTION_TYPE_REGULAR_SPECTRUM;

@@ -196,13 +196,13 @@ protected:
     std::vector<std::byte> reference_state = initial_state;
 
     EnergyDistributionRecord distribution{
-        .regular_bin_width_milli_eV = 0ULL,
+        .regular_bin_width_micro_eV = 0ULL,
         .table_offset = 0ULL,
         .distribution_type =
             ggems::core::sources::ToKernelEnergyDistributionType(
                 table_energy ? EnergyType::DiscreteLines : EnergyType::Mono),
         .table_count = table_energy ? 2U : 0U};
-    constexpr std::array<std::uint64_t, 2U> energy_values{40ULL, 80ULL};
+    constexpr std::array<std::uint64_t, 2U> energy_values{40'000ULL, 80'000ULL};
     constexpr std::array<std::uint64_t, 2U> ticket_upper{2'147'483'648ULL,
                                                          4'294'967'296ULL};
     std::array<std::int64_t, 6U> sampled_positions{};

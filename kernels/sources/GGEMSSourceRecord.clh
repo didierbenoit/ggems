@@ -25,7 +25,7 @@ typedef struct GGEMSSourceRecord {
   ulong time_start_ps;
   ulong time_stop_ps;
 
-  ulong energy_milli_eV;
+  ulong energy_micro_eV;
 
   long position_x_pm;
   long position_y_pm;

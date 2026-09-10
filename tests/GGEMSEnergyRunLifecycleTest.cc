@@ -62,10 +62,10 @@ private:
 struct EnergyState {
 
   DistributionType type{DistributionType::Unknown};
-  std::uint64_t source_record_energy_milli_eV{0ULL};
-  std::uint64_t mono_energy_milli_eV{0ULL};
-  std::uint64_t regular_bin_width_milli_eV{0ULL};
-  std::vector<std::uint64_t> energy_values_milli_eV;
+  std::uint64_t source_record_energy_micro_eV{0ULL};
+  std::uint64_t mono_energy_micro_eV{0ULL};
+  std::uint64_t regular_bin_width_micro_eV{0ULL};
+  std::vector<std::uint64_t> energy_values_micro_eV;
   std::vector<double> relative_weights;
   std::vector<std::uint64_t> cumulative_ticket_upper;
 };
@@ -75,17 +75,17 @@ struct EnergyState {
 
 [[nodiscard]] auto CaptureEnergyState(Source const &source) -> EnergyState {
   auto const &distribution = source.GetEnergyDistribution();
-  auto const values = distribution.GetEnergyValuesMilliElectronVolt();
+  auto const values = distribution.GetEnergyValuesMicroElectronVolt();
   auto const weights = distribution.GetRelativeWeights();
   auto const ticket_bounds = distribution.GetCumulativeTicketUpperBounds();
 
   return {
       .type = distribution.GetType(),
-      .source_record_energy_milli_eV = source.BuildRecord().energy_milli_eV,
-      .mono_energy_milli_eV = distribution.GetMonoEnergyMilliElectronVolt(),
-      .regular_bin_width_milli_eV =
-          distribution.GetRegularBinWidthMilliElectronVolt(),
-      .energy_values_milli_eV = {values.begin(), values.end()},
+      .source_record_energy_micro_eV = source.BuildRecord().energy_micro_eV,
+      .mono_energy_micro_eV = distribution.GetMonoEnergyMicroElectronVolt(),
+      .regular_bin_width_micro_eV =
+          distribution.GetRegularBinWidthMicroElectronVolt(),
+      .energy_values_micro_eV = {values.begin(), values.end()},
       .relative_weights = {weights.begin(), weights.end()},
       .cumulative_ticket_upper = {ticket_bounds.begin(), ticket_bounds.end()},
   };
@@ -98,15 +98,15 @@ auto ExpectEnergyState(Source const &source, EnergyState const &expected)
     -> void {
   auto const &distribution = source.GetEnergyDistribution();
   EXPECT_EQ(distribution.GetType(), expected.type);
-  EXPECT_EQ(source.BuildRecord().energy_milli_eV,
-            expected.source_record_energy_milli_eV);
-  EXPECT_EQ(distribution.GetMonoEnergyMilliElectronVolt(),
-            expected.mono_energy_milli_eV);
-  EXPECT_EQ(distribution.GetRegularBinWidthMilliElectronVolt(),
-            expected.regular_bin_width_milli_eV);
+  EXPECT_EQ(source.BuildRecord().energy_micro_eV,
+            expected.source_record_energy_micro_eV);
+  EXPECT_EQ(distribution.GetMonoEnergyMicroElectronVolt(),
+            expected.mono_energy_micro_eV);
+  EXPECT_EQ(distribution.GetRegularBinWidthMicroElectronVolt(),
+            expected.regular_bin_width_micro_eV);
   EXPECT_TRUE(
-      std::ranges::equal(distribution.GetEnergyValuesMilliElectronVolt(),
-                         expected.energy_values_milli_eV));
+      std::ranges::equal(distribution.GetEnergyValuesMicroElectronVolt(),
+                         expected.energy_values_micro_eV));
   EXPECT_TRUE(std::ranges::equal(distribution.GetRelativeWeights(),
                                  expected.relative_weights));
   EXPECT_TRUE(std::ranges::equal(distribution.GetCumulativeTicketUpperBounds(),
@@ -226,7 +226,7 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
 
   EnergyState const finalized = CaptureEnergyState(*source);
   ExpectFinalizedRejection(
-      [&]() -> void { source->SetEnergyMilliElectronVolt(90'000'000ULL); });
+      [&]() -> void { source->SetEnergyMicroElectronVolt(90'000'000'000ULL); });
   ExpectEnergyState(*source, finalized);
 }
 
@@ -258,8 +258,9 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
     ExpectEnergyState(*source, finalized);
   };
 
-  ExpectFinalizedRejection(
-      [&]() -> void { source->SetEnergyMilliElectronVolt(511'000'000ULL); });
+  ExpectFinalizedRejection([&]() -> void {
+    source->SetEnergyMicroElectronVolt(511'000'000'000ULL);
+  });
   expect_unchanged();
   ExpectFinalizedRejection([&]() -> void {
     source->SetDiscreteEnergyLines(k_lines, k_line_weights, "MeV");
@@ -276,7 +277,7 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
   expect_unchanged();
 
   Source replacement{};
-  replacement.SetEnergyMilliElectronVolt(90'000'000ULL);
+  replacement.SetEnergyMicroElectronVolt(90'000'000'000ULL);
   ExpectFinalizedRejection([&]() -> void { *source = replacement; });
   expect_unchanged();
   ExpectFinalizedRejection([&]() -> void {
@@ -287,7 +288,7 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
 
   Source copied{*source};
   ExpectFinalizedRejection(
-      [&]() -> void { copied.SetEnergyMilliElectronVolt(90'000'000ULL); });
+      [&]() -> void { copied.SetEnergyMicroElectronVolt(90'000'000'000ULL); });
 }
 
 // =============================================================================
@@ -345,7 +346,7 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
 
   EnergyState const finalized = CaptureEnergyState(*source);
   ExpectFinalizedRejection(
-      [&]() -> void { source->SetEnergyMilliElectronVolt(90'000'000ULL); });
+      [&]() -> void { source->SetEnergyMicroElectronVolt(90'000'000'000ULL); });
   ExpectEnergyState(*source, finalized);
 }
 
@@ -399,13 +400,13 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
             second->GetEnergyDistributionRecords().size());
   EXPECT_EQ(first->GetEnergyDistributionRecords().data(),
             second->GetEnergyDistributionRecords().data());
-  EXPECT_EQ(first->GetEnergyValuesMilliElectronVolt(),
-            second->GetEnergyValuesMilliElectronVolt());
+  EXPECT_EQ(first->GetEnergyValuesMicroElectronVolt(),
+            second->GetEnergyValuesMicroElectronVolt());
   EXPECT_EQ(first->GetRelativeWeights(), second->GetRelativeWeights());
   EXPECT_EQ(first->GetCumulativeTicketUpperBounds(),
             second->GetCumulativeTicketUpperBounds());
-  EXPECT_EQ(first->GetEnergyValuesMilliElectronVolt().data(),
-            second->GetEnergyValuesMilliElectronVolt().data());
+  EXPECT_EQ(first->GetEnergyValuesMicroElectronVolt().data(),
+            second->GetEnergyValuesMicroElectronVolt().data());
   EXPECT_EQ(first->GetRelativeWeights().data(),
             second->GetRelativeWeights().data());
   EXPECT_EQ(first->GetCumulativeTicketUpperBounds().data(),

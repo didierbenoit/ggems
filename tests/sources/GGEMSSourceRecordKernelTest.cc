@@ -59,7 +59,7 @@ constexpr std::size_t k_source_range_count{2U};
   return {.source_id = 101ULL,
           .time_start_ps = 102ULL,
           .time_stop_ps = 103ULL,
-          .energy_milli_eV = 104ULL,
+          .energy_micro_eV = 104ULL,
           .position_x_pm = -105LL,
           .position_y_pm = 106LL,
           .position_z_pm = -107LL,
@@ -98,7 +98,7 @@ constexpr std::size_t k_source_range_count{2U};
   return {.source_id = 201ULL,
           .time_start_ps = 202ULL,
           .time_stop_ps = 203ULL,
-          .energy_milli_eV = 204ULL,
+          .energy_micro_eV = 204ULL,
           .position_x_pm = -205LL,
           .position_y_pm = 206LL,
           .position_z_pm = -207LL,
@@ -143,7 +143,7 @@ constexpr std::size_t k_source_range_count{2U};
       {record.source_id,
        record.time_start_ps,
        record.time_stop_ps,
-       record.energy_milli_eV,
+       record.energy_micro_eV,
        std::bit_cast<std::uint64_t>(record.position_x_pm),
        std::bit_cast<std::uint64_t>(record.position_y_pm),
        std::bit_cast<std::uint64_t>(record.position_z_pm),
@@ -196,7 +196,7 @@ auto ExpectSourceRecordsEqual(SourceRecord const &actual,
   EXPECT_EQ(actual.source_id, expected.source_id);
   EXPECT_EQ(actual.time_start_ps, expected.time_start_ps);
   EXPECT_EQ(actual.time_stop_ps, expected.time_stop_ps);
-  EXPECT_EQ(actual.energy_milli_eV, expected.energy_milli_eV);
+  EXPECT_EQ(actual.energy_micro_eV, expected.energy_micro_eV);
   EXPECT_EQ(actual.position_x_pm, expected.position_x_pm);
   EXPECT_EQ(actual.position_y_pm, expected.position_y_pm);
   EXPECT_EQ(actual.position_z_pm, expected.position_z_pm);
@@ -313,7 +313,7 @@ TEST_F(GGEMSSourceRecordKernelTest, HostAndKernelLayoutsAndValuesMatch) {
       static_cast<std::uint64_t>(offsetof(SourceRecord, source_id)),
       static_cast<std::uint64_t>(offsetof(SourceRecord, time_start_ps)),
       static_cast<std::uint64_t>(offsetof(SourceRecord, time_stop_ps)),
-      static_cast<std::uint64_t>(offsetof(SourceRecord, energy_milli_eV)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, energy_micro_eV)),
       static_cast<std::uint64_t>(offsetof(SourceRecord, position_x_pm)),
       static_cast<std::uint64_t>(offsetof(SourceRecord, position_y_pm)),
       static_cast<std::uint64_t>(offsetof(SourceRecord, position_z_pm)),

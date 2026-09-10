@@ -529,7 +529,7 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
   auto const &energy_records =
       source_run_snapshot_->GetEnergyDistributionRecords();
   auto const &energy_values =
-      source_run_snapshot_->GetEnergyValuesMilliElectronVolt();
+      source_run_snapshot_->GetEnergyValuesMicroElectronVolt();
 
   if (records.size() != ranges.size() ||
       records.size() != energy_records.size()) {
@@ -723,7 +723,7 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
       if (energy_distribution_type ==
           core::sources::GGEMSEnergyDistributionType::Mono) {
         std::string const energy =
-            units::HumanReadable(units::Energy{record.energy_milli_eV}, 3);
+            units::HumanReadable(units::Energy{record.energy_micro_eV}, 3);
         ImGui::Text("Energy: %s", energy.c_str());
       } else {
         bool const table_offset_fits =
@@ -756,7 +756,7 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
                      core::sources::GGEMSEnergyDistributionType::
                          RegularSpectrum) {
             std::string const width = units::HumanReadable(
-                units::Energy{energy_record.regular_bin_width_milli_eV}, 3);
+                units::Energy{energy_record.regular_bin_width_micro_eV}, 3);
             ImGui::Text("Bin count: %zu", table_count);
             ImGui::Text("Center range: %s - %s", first.c_str(), last.c_str());
             ImGui::Text("Bin width: %s", width.c_str());

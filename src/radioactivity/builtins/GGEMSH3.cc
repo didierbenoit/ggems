@@ -16,6 +16,9 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+// Canonical Energy storage is now micro-electronvolts. The original meV
+// quantization described below is preserved by exact integer scaling by 1000.
+
 // Scientific references for this built-in:
 //
 // Direct evaluated decay data:
@@ -42,8 +45,8 @@ namespace {
 constexpr long double k_half_life_seconds{388'500'000.0L};
 constexpr long double k_beta_minus_yield{1.0L};
 
-constexpr std::uint64_t k_beta_spectrum_lower_edge_milli_eV{32ULL};
-constexpr std::uint64_t k_beta_spectrum_bin_width_milli_eV{489236ULL};
+constexpr std::uint64_t k_beta_spectrum_lower_edge_micro_eV{32'000ULL};
+constexpr std::uint64_t k_beta_spectrum_bin_width_micro_eV{489'236'000ULL};
 
 // The lower edge is the minimal positive remainder that permits an exact
 // 18.591 keV upper edge with an even integer-meV bin width no larger than
@@ -75,8 +78,8 @@ constexpr std::array<double, 38U> k_beta_spectrum_weights{{
 
 [[nodiscard]] auto BuildBetaSpectrum() -> sources::GGEMSEnergyDistribution {
   return detail::BuildTabulatedSpectrum(
-      {.lower_edge_milli_eV = k_beta_spectrum_lower_edge_milli_eV,
-       .bin_width_milli_eV = k_beta_spectrum_bin_width_milli_eV},
+      {.lower_edge_micro_eV = k_beta_spectrum_lower_edge_micro_eV,
+       .bin_width_micro_eV = k_beta_spectrum_bin_width_micro_eV},
       k_beta_spectrum_weights);
 }
 

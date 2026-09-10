@@ -9,7 +9,7 @@ from typing import Protocol, cast
 # Direct script entry points; Python adds this directory to sys.path.
 from cases import (  # pyright: ignore[reportImplicitRelativeImport]
     CASES,
-    MONO_ENERGY_MEV,
+    MONO_ENERGY_MICRO_EV,
     TimeCase,
 )
 
@@ -27,7 +27,7 @@ CSV_COLUMNS = (
     "direction_x",
     "direction_y",
     "direction_z",
-    "energy_meV",
+    "energy_micro_eV",
     "time_ps",
     "weight",
     "record_kind",
@@ -128,23 +128,23 @@ def _validate_source(raw: JsonObject, case: TimeCase, primary_count: int) -> Non
         raise ValueError("T1 requires the identity frame.")
     if _number(raw.get("weight"), "weight") != 1:
         raise ValueError("T1 requires weight 1.")
-    if _integer(raw.get("energy_meV"), "energy_meV") != MONO_ENERGY_MEV:
-        raise ValueError("T1 requires exactly 511000000 meV.")
+    if _integer(raw.get("energy_micro_eV"), "energy_micro_eV") != MONO_ENERGY_MICRO_EV:
+        raise ValueError("T1 requires exactly 511000000000 micro-eV.")
 
     energy = _object(raw.get("energy"), "energy")
-    if energy.get("representation") != "uint64 meV":
-        raise ValueError("Mono energy authority must be canonical uint64 meV.")
+    if energy.get("representation") != "uint64 micro-eV":
+        raise ValueError("Mono energy authority must be canonical uint64 micro-eV.")
     for key, expected in {
         "distribution_type": 1,
         "table_offset": 0,
         "table_count": 0,
-        "regular_bin_width_meV": 0,
-        "mono_energy_meV": MONO_ENERGY_MEV,
+        "regular_bin_width_micro_eV": 0,
+        "mono_energy_micro_eV": MONO_ENERGY_MICRO_EV,
     }.items():
         if _integer(energy.get(key), key) != expected:
             raise ValueError(f"T1 packed Mono metadata mismatch: {key}.")
     for key in (
-        "energy_values_meV",
+        "energy_values_micro_eV",
         "relative_weights",
         "cumulative_ticket_upper_bounds",
     ):
@@ -337,10 +337,12 @@ def analyze_run(run: RunMetadata, metadata: Metadata) -> JsonObject:
                 1,
             ):
                 raise ValueError("T1 direction must equal Fixed +Z exactly.")
-            energy = _csv_integer(row[9], "energy_meV")
+            energy = _csv_integer(row[9], "energy_micro_eV")
             birth = _csv_integer(row[10], "time_ps")
-            if energy != MONO_ENERGY_MEV or float(row[11]) != 1:
-                raise ValueError("T1 requires exact Mono 511000000 meV and weight 1.")
+            if energy != MONO_ENERGY_MICRO_EV or float(row[11]) != 1:
+                raise ValueError(
+                    "T1 requires exact Mono 511000000000 micro-eV and weight 1."
+                )
             times.append(birth)
 
     if len(times) != metadata.primary_count:

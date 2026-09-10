@@ -1,3 +1,5 @@
+#include <cstdint>
+#include <cstddef>
 #include <cstdlib>
 #include <type_traits>
 
@@ -49,7 +51,7 @@ TEST(GGEMSParticleState, DefaultStateIsInactive) {
   EXPECT_FLOAT_EQ(particle.direction_y, 0.0F);
   EXPECT_FLOAT_EQ(particle.direction_z, 1.0F);
   EXPECT_FLOAT_EQ(particle.direction_w, 0.0F);
-  EXPECT_EQ(particle.energy_milli_eV, 0ULL);
+  EXPECT_EQ(particle.energy_micro_eV, 0ULL);
   EXPECT_FLOAT_EQ(particle.weight, 1.0F);
 }
 
@@ -109,4 +111,19 @@ TEST(GGEMSParticleState, ParticleTypeValuesAreKernelCompatible) {
   EXPECT_EQ(ggems::core::particles::ToKernelParticleStatus(
                 ggems::core::particles::GGEMSParticleStatus::Absorbed),
             4U);
+}
+
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+/* --------------------------------------------- */
+
+TEST(GGEMSParticleState, MicroElectronVoltEnergyPreservesLayoutAndWidth) {
+  using State = ggems::core::particles::GGEMSParticleState;
+  EXPECT_EQ(sizeof(State), 120U);
+  EXPECT_EQ(alignof(State), 8U);
+  EXPECT_EQ(offsetof(State, direction_w), 100U);
+  EXPECT_EQ(offsetof(State, energy_micro_eV), 104U);
+  EXPECT_EQ(offsetof(State, weight), 112U);
+  EXPECT_TRUE(
+      (std::is_same_v<decltype(State::energy_micro_eV), std::uint64_t>));
 }

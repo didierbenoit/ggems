@@ -8,8 +8,8 @@
 namespace ggems::core::radioactivity::detail {
 
 struct TabulatedSpectrumGrid {
-  std::uint64_t lower_edge_milli_eV{0ULL};
-  std::uint64_t bin_width_milli_eV{0ULL};
+  std::uint64_t lower_edge_micro_eV{0ULL};
+  std::uint64_t bin_width_micro_eV{0ULL};
 };
 
 [[nodiscard]] auto

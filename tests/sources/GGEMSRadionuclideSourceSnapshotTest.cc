@@ -95,7 +95,7 @@ TEST(GGEMSRadionuclideSourceSnapshot,
   auto discrete = MakeDiscreteDefinition();
 
   auto count_source = MakeCountSource(7ULL);
-  count_source->SetEnergyMilliElectronVolt(42'000ULL);
+  count_source->SetEnergyMicroElectronVolt(42'000'000ULL);
   std::vector<SourcePtr> sources{
       count_source,
       MakeActivitySource(f18, 1.0L),
@@ -150,8 +150,8 @@ TEST(GGEMSRadionuclideSourceSnapshot,
           ggems::core::particles::GGEMSParticleType::Gamma,
       };
   constexpr std::array<std::uint64_t, 9U> k_expected_mono_energies{
-      0ULL, 14'300ULL, 525'000ULL, 0ULL,       0ULL,
-      0ULL, 0ULL,      14'300ULL,  525'000ULL,
+      0ULL, 14'300'000ULL, 525'000'000ULL, 0ULL,           0ULL,
+      0ULL, 0ULL,          14'300'000ULL,  525'000'000ULL,
   };
 
   for (std::size_t index = 0U; index < emission_records.size(); ++index) {
@@ -161,7 +161,7 @@ TEST(GGEMSRadionuclideSourceSnapshot,
                   k_expected_particle_types[index]));
     EXPECT_EQ(emission.energy_distribution_record_index,
               k_source_count + index);
-    EXPECT_EQ(emission.mono_energy_milli_eV, k_expected_mono_energies[index]);
+    EXPECT_EQ(emission.mono_energy_micro_eV, k_expected_mono_energies[index]);
   }
 
   EXPECT_EQ(energy_records[6U].table_count, 1'268U);
@@ -174,7 +174,7 @@ TEST(GGEMSRadionuclideSourceSnapshot,
   EXPECT_EQ(energy_records[13U].table_count, 0U);
   EXPECT_EQ(energy_records[14U].table_count, 0U);
 
-  auto const &values = configuration->GetEnergyValuesMilliElectronVolt();
+  auto const &values = configuration->GetEnergyValuesMicroElectronVolt();
   auto const &relative_weights = configuration->GetRelativeWeights();
   auto const &tickets = configuration->GetCumulativeTicketUpperBounds();
   ASSERT_EQ(values.size(), 7'925U);
@@ -202,9 +202,9 @@ TEST(GGEMSRadionuclideSourceSnapshot,
   auto const discrete_offset =
       static_cast<std::size_t>(discrete_record.table_offset);
   ASSERT_LE(discrete_offset + discrete_record.table_count, values.size());
-  EXPECT_EQ(values[discrete_offset + 0U], 10'000'000ULL);
-  EXPECT_EQ(values[discrete_offset + 1U], 20'000'000ULL);
-  EXPECT_EQ(values[discrete_offset + 2U], 30'000'000ULL);
+  EXPECT_EQ(values[discrete_offset + 0U], 10'000'000'000ULL);
+  EXPECT_EQ(values[discrete_offset + 1U], 20'000'000'000ULL);
+  EXPECT_EQ(values[discrete_offset + 2U], 30'000'000'000ULL);
   EXPECT_DOUBLE_EQ(relative_weights[discrete_offset + 0U], 1.0);
   EXPECT_DOUBLE_EQ(relative_weights[discrete_offset + 1U], 2.0);
   EXPECT_DOUBLE_EQ(relative_weights[discrete_offset + 2U], 1.0);
@@ -294,11 +294,11 @@ TEST(GGEMSRadionuclideSourceSnapshot,
   EXPECT_EQ(records[1U].emitted_particle_type,
             ggems::core::particles::ToKernelParticleType(
                 ggems::core::particles::GGEMSParticleType::Unknown));
-  EXPECT_EQ(records[1U].energy_milli_eV, 0ULL);
+  EXPECT_EQ(records[1U].energy_micro_eV, 0ULL);
   EXPECT_EQ(records[3U].emitted_particle_type,
             ggems::core::particles::ToKernelParticleType(
                 ggems::core::particles::GGEMSParticleType::Unknown));
-  EXPECT_EQ(records[3U].energy_milli_eV, 0ULL);
+  EXPECT_EQ(records[3U].energy_micro_eV, 0ULL);
 
   EXPECT_EQ(populations[1U].first_emission_index, 0U);
   EXPECT_EQ(populations[1U].emission_count, 1U);
@@ -423,9 +423,9 @@ TEST(GGEMSRadionuclideSourceSnapshot,
     sources.clear();
   }
 
-  EXPECT_EQ(configuration->GetEnergyValuesMilliElectronVolt(),
-            (std::vector<std::uint64_t>{10'000'000ULL, 20'000'000ULL,
-                                        30'000'000ULL}));
+  EXPECT_EQ(configuration->GetEnergyValuesMicroElectronVolt(),
+            (std::vector<std::uint64_t>{10'000'000'000ULL, 20'000'000'000ULL,
+                                        30'000'000'000ULL}));
   EXPECT_EQ(configuration->GetRelativeWeights(),
             (std::vector<double>{1.0, 2.0, 1.0}));
   EXPECT_EQ(configuration->GetCumulativeTicketUpperBounds(),
@@ -439,7 +439,7 @@ TEST(GGEMSRadionuclideSourceSnapshot,
   EXPECT_EQ(record.emitted_particle_type,
             ggems::core::particles::ToKernelParticleType(
                 ggems::core::particles::GGEMSParticleType::Unknown));
-  EXPECT_EQ(record.energy_milli_eV, 0ULL);
+  EXPECT_EQ(record.energy_micro_eV, 0ULL);
   EXPECT_EQ(record.position_x_pm, 11LL);
   EXPECT_EQ(record.position_y_pm, -22LL);
   EXPECT_EQ(record.position_z_pm, 33LL);

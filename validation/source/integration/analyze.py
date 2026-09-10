@@ -50,7 +50,7 @@ CSV_COLUMNS = (
     "direction_x",
     "direction_y",
     "direction_z",
-    "energy_meV",
+    "energy_micro_eV",
     "time_ps",
     "weight",
     "record_kind",
@@ -69,10 +69,10 @@ class Metadata:
     inverse: FloatArray
     frame: JsonObject
     bounds: tuple[float, float, float, float]
-    energies_mev: tuple[int, ...]
+    energies_micro_ev: tuple[int, ...]
     ticket_counts: tuple[int, ...]
-    bin_width_mev: int
-    display_unit_mev: int
+    bin_width_micro_ev: int
+    display_unit_micro_ev: int
     raw: JsonObject
 
 
@@ -405,7 +405,7 @@ def load_metadata(
         "effective_stop_ps",
         "snapshot_time_start_ps",
         "snapshot_time_stop_ps",
-        "energy_meV",
+        "energy_micro_eV",
     ):
         if _integer(raw.get(key), key) != 0:
             raise ValueError(f"A fresh static non-Mono I1 run requires {key} == 0.")
@@ -507,11 +507,15 @@ def load_metadata(
 
     energy = _object(raw.get("energy"), "energy")
     regular = configuration.energy == "regular-spectrum"
-    energy_unit = _integer(energy.get("display_unit_meV"), "display_unit_meV", 1)
-    width = _integer(energy.get("regular_bin_width_meV"), "regular_bin_width_meV")
+    energy_unit = _integer(
+        energy.get("display_unit_micro_eV"), "display_unit_micro_eV", 1
+    )
+    width = _integer(
+        energy.get("regular_bin_width_micro_eV"), "regular_bin_width_micro_eV"
+    )
     energies = tuple(
         _integer(value, "energy value", 1)
-        for value in _list(energy.get("energy_values_meV"), "energy values")
+        for value in _list(energy.get("energy_values_micro_eV"), "energy values")
     )
     bounds = tuple(
         _integer(value, "ticket bound", 0, TICKET_SPACE)
@@ -525,16 +529,16 @@ def load_metadata(
         "distribution_type": 3 if regular else 2,
         "table_count": len(expected_values),
         "table_offset": 0,
-        "mono_energy_meV": 0,
+        "mono_energy_micro_eV": 0,
         "ticket_space_size": TICKET_SPACE,
     }.items():
         if _integer(energy.get(key), key) != expected:
             raise ValueError(f"Invalid packed energy descriptor: {key}.")
     if (
-        energy.get("representation") != "uint64 meV"
+        energy.get("representation") != "uint64 micro-eV"
         or energy.get("display_unit") != "keV"
     ):
-        raise ValueError("I1 requires the current uint64 meV representation.")
+        raise ValueError("I1 requires the current uint64 micro-eV representation.")
     if energies != tuple(value * energy_unit for value in expected_values):
         raise ValueError("Packed energies differ from the E1 fixture.")
     if width != (REGULAR_WIDTH_KEV * energy_unit if regular else 0):
@@ -721,9 +725,9 @@ def energy_measurements(
     # These finite-law definitions are the established E1 analytical counting
     # CDF. No tickets are generated, reconstructed, or exported by I1.
     regular = metadata.configuration.energy == "regular-spectrum"
-    width = metadata.bin_width_mev
-    lower_edges = [center - width // 2 for center in metadata.energies_mev]
-    offsets: list[list[int]] = [[] for _ in metadata.energies_mev]
+    width = metadata.bin_width_micro_ev
+    lower_edges = [center - width // 2 for center in metadata.energies_micro_ev]
+    offsets: list[list[int]] = [[] for _ in metadata.energies_micro_ev]
     bin_indices = np.empty(metadata.count, dtype=np.int64)
     for local_id, energy in enumerate(samples.energies):
         if regular:
@@ -735,12 +739,12 @@ def energy_measurements(
         else:
             memberships = [
                 index
-                for index, center in enumerate(metadata.energies_mev)
+                for index, center in enumerate(metadata.energies_micro_ev)
                 if energy == center
             ]
         if len(memberships) != 1:
             raise ValueError(
-                f"Energy {energy} meV belongs to {len(memberships)} intended bins/lines."
+                f"Energy {energy} micro-eV belongs to {len(memberships)} intended bins/lines."
             )
         index = memberships[0]
         if metadata.ticket_counts[index] == 0:
@@ -752,22 +756,22 @@ def energy_measurements(
         [len(values) for values in offsets], metadata.ticket_counts, metadata.count
     )
     for index, values in enumerate(offsets):
-        rows[index]["center_energy_meV"] = metadata.energies_mev[index]
+        rows[index]["center_energy_micro_eV"] = metadata.energies_micro_ev[index]
         if regular:
             rows[index].update(
                 {
-                    "lower_energy_meV": lower_edges[index],
-                    "upper_energy_meV": lower_edges[index] + width,
+                    "lower_energy_micro_eV": lower_edges[index],
+                    "upper_energy_micro_eV": lower_edges[index] + width,
                     "distinct_emitted_energy_count": len(set(values)),
-                    "minimum_offset_meV": min(values) if values else None,
-                    "maximum_offset_meV": max(values) if values else None,
+                    "minimum_offset_micro_eV": min(values) if values else None,
+                    "maximum_offset_micro_eV": max(values) if values else None,
                     "finite_conditional_cdf_max_deviation": finite_cdf_max_deviation(
                         values, metadata.ticket_counts[index], width
                     ),
                 }
             )
     return {
-        "representation": "uint64 meV",
+        "representation": "uint64 micro-eV",
         "packed_configuration": metadata.raw["energy"],
         "bin_results": rows,
         "probability_metrics": metrics,
@@ -869,7 +873,7 @@ def compare_pair(
             mismatches = sum(value != 0 for value in deltas)
             maximum = max(deltas)
             results[f"{field}_mismatch_count"] = mismatches
-            unit = "meV" if field == "energy" else "ps"
+            unit = "micro-eV" if field == "energy" else "ps"
             results[f"maximum_exact_{field}_difference_{unit}"] = maximum
         if mismatches:
             raise ValueError(
@@ -956,13 +960,13 @@ def analyze_case(
             "u_phi": angle_variables["u_phi"],
         }
         conditional: list[JsonObject] = []
-        for index, center in enumerate(reference_metadata.energies_mev):
+        for index, center in enumerate(reference_metadata.energies_micro_ev):
             in_bin = bin_indices == index
             phi_in_bin = bin_indices[defined_phi] == index
             conditional.append(
                 {
                     "bin_index": index,
-                    "center_energy_meV": center,
+                    "center_energy_micro_eV": center,
                     "sample_count": int(np.count_nonzero(in_bin)),
                     "phi_sample_count": int(np.count_nonzero(phi_in_bin)),
                     "means": {
@@ -999,7 +1003,7 @@ def analyze_case(
             "numerical_representation": {
                 "positions": "Committed int64 pm; exact integer center subtraction before binary64 inverse(M)",
                 "directions_and_frame": "Reconstructed actual binary32, then binary64 analysis",
-                "energy": "Current uint64 meV; exact packed integer ticket-induced law",
+                "energy": "Current uint64 micro-eV; exact packed integer ticket-induced law",
                 "future_energy_migration": "Approved ueV migration is separate and requires new E1/I1 validation",
                 "local_z": "Binary32 displacement/frame arithmetic and integer-pm commitment residuals; no clipping",
             },
@@ -1010,10 +1014,10 @@ def analyze_case(
         if make_figures:
             import plot  # pyright: ignore[reportImplicitRelativeImport]
 
-            width = reference_metadata.bin_width_mev
-            scale = reference_metadata.display_unit_mev
+            width = reference_metadata.bin_width_micro_ev
+            scale = reference_metadata.display_unit_micro_ev
             lower_edges = [
-                value - width // 2 for value in reference_metadata.energies_mev
+                value - width // 2 for value in reference_metadata.energies_micro_ev
             ]
             edges = (
                 np.array(lower_edges + [lower_edges[-1] + width], dtype=np.float64)

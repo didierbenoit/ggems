@@ -71,7 +71,7 @@ constexpr ggems::core::GGEMSTimeWindow k_one_second_window{
     emissions.emplace_back(
         ggems::core::particles::GGEMSParticleType::Gamma, yields[index],
         ggems::core::sources::GGEMSEnergyDistribution::BuildMono(
-            1'000ULL + static_cast<std::uint64_t>(index)));
+            (1'000ULL + static_cast<std::uint64_t>(index)) * 1'000ULL));
   }
 
   return std::make_shared<Definition const>(

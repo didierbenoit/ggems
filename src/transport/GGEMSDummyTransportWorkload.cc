@@ -250,7 +250,7 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
 
   for (std::size_t source_index = 0U;
        source_index < config.source_records.size(); ++source_index) {
-    if (!(config.source_records[source_index].energy_milli_eV > 0ULL)) {
+    if (!(config.source_records[source_index].energy_micro_eV > 0ULL)) {
       throw ggems::core::GGEMSRecoverable(std::format(
           "Dummy transport source {} must use an exact positive Mono "
           "energy.",
@@ -321,7 +321,7 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
   kernel.SetArg(argument_index++,
                 static_cast<cl_ulong>(config.device_primary_offset));
   kernel.SetArg(argument_index++,
-                static_cast<cl_ulong>(config.min_energy_milli_eV));
+                static_cast<cl_ulong>(config.min_energy_micro_eV));
   kernel.SetArg(argument_index++, static_cast<cl_uint>(config.max_generation));
   kernel.SetArg(argument_index++,
                 static_cast<cl_uint>(config.max_steps_per_track));

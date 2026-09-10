@@ -22,7 +22,7 @@ TEST(GGEMSSourceRecord, IsKernelFriendly) {
   EXPECT_EQ(offsetof(SourceRecord, source_id), 0U);
   EXPECT_EQ(offsetof(SourceRecord, time_start_ps), 8U);
   EXPECT_EQ(offsetof(SourceRecord, time_stop_ps), 16U);
-  EXPECT_EQ(offsetof(SourceRecord, energy_milli_eV), 24U);
+  EXPECT_EQ(offsetof(SourceRecord, energy_micro_eV), 24U);
 
   EXPECT_EQ(offsetof(SourceRecord, position_x_pm), 32U);
   EXPECT_EQ(offsetof(SourceRecord, position_y_pm), 40U);
@@ -71,7 +71,7 @@ TEST(GGEMSSourceRecord, DefaultSourceRecordIsAnalyticGammaPointSource) {
             ggems::core::particles::ToKernelParticleType(
                 ggems::core::particles::GGEMSParticleType::Gamma));
 
-  EXPECT_EQ(source.energy_milli_eV, 511'000'000ULL);
+  EXPECT_EQ(source.energy_micro_eV, 511'000'000'000ULL);
 
   EXPECT_EQ(source.position_x_pm, 0LL);
   EXPECT_EQ(source.position_y_pm, 0LL);
