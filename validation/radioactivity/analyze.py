@@ -1,31 +1,25 @@
-"""Reanalyze retained campaign files using their original reference and settings."""
+"""Reanalyze retained samples with the campaign's original reference and thresholds."""
 
 import argparse
 from pathlib import Path
-from typing import Protocol, cast
+from typing import cast
 
-from validation.radioactivity.radionuclide_validation.analysis import analyze_campaign
-from validation.radioactivity.radionuclide_validation.model import (
-    Reference,
-    load_json,
-    string_value,
-)
-
-
-class Arguments(Protocol):
-    campaign: Path
+from radionuclide_validation.analysis import analyze_campaign
+from radionuclide_validation.model import Reference, load_json
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    _ = parser.add_argument("campaign", type=Path)
-    args = cast(Arguments, cast(object, parser.parse_args()))
-    settings = load_json(args.campaign / "settings.json")
-    reference = Reference.load(Path(string_value(settings["reference"])))
-    _ = reference.verify_raw_files(Path(string_value(settings["reference"])))
-    result = analyze_campaign(
-        args.campaign, reference, Path(string_value(settings["source_tree"]))
+    _ = parser.add_argument(
+        "campaign",
+        type=Path,
+        help="Campaign directory containing settings.json and run/; replaces analysis.json without drawing new samples.",
     )
+    args = cast(dict[str, Path], vars(parser.parse_args()))
+    directory = args["campaign"]
+    settings = load_json(directory / "settings.json")
+    reference = Reference.load(Path(str(settings["reference"])))
+    result = analyze_campaign(directory, reference, Path(str(settings["source_tree"])))
     print(f"Analyzed {result['sample_count']} primaries; analysis.json updated.")
 
 

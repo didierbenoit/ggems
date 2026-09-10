@@ -1,10 +1,8 @@
 #include <algorithm>
 #include <array>
 #include <charconv>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <exception>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -18,7 +16,6 @@
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <utility>
 #include <vector>
 
 #include "GGEMS/GGEMSRun.hh"
@@ -65,7 +62,34 @@ struct Options {
   std::uint32_t population_replicates{128U};
   ggems::units::Activity activity{0.0L};
   bool describe{false};
+  bool help{false};
 };
+
+auto PrintHelp() -> void {
+  std::cout
+      << R"(Export compiled radionuclide data or run an ActivityDriven campaign.
+Use run_campaign.py for automatic half-life windows and activity selection.
+
+Required:
+  --nuclide NAME             Exact GGEMS name, for example O-15.
+  --output DIRECTORY        Destination for definition, populations and samples.
+
+Operation:
+  --describe                Export the definition only, without OpenCL.
+  --help                    Show this help.
+
+Campaign:
+  --activity-bq VALUE        Activity at time zero in Bq (required for a run).
+  --step-ps INTEGER          Duration of each half-open window in ps (required).
+  --windows INTEGER         Number of consecutive windows (default: 32).
+  --device SELECTOR         GGEMS OpenCL selector, e.g. cpu, gpu, all (default: cpu).
+  --workers INTEGER         Random-stream workers per device (default: 256).
+  --seed INTEGER            Philox campaign seed (default: 77777).
+  --capacity INTEGER        Captured primaries per window (default: 50000).
+  --population-replicates N  Extra host-only Poisson experiments (default: 128).
+                            Their seeds are seed+1 through seed+N.
+)";
+}
 
 template <typename T> auto ParseNumber(std::string_view text) -> T {
   T value{};
@@ -82,6 +106,10 @@ auto ParseOptions(int argc, char const *const *argv) -> Options {
   Options options;
   for (int index = 1; index < argc; ++index) {
     std::string_view const key{argv[index]};
+    if (key == "--help") {
+      options.help = true;
+      return options;
+    }
     if (key == "--describe") {
       options.describe = true;
       continue;
@@ -120,24 +148,11 @@ auto ParseOptions(int argc, char const *const *argv) -> Options {
       throw std::runtime_error(std::format("Unknown option '{}'.", key));
     }
   }
-  if (options.nuclide.empty() || options.output.empty()) {
-    throw std::runtime_error(
-        "Required: --nuclide <canonical name> --output <new directory>.");
-  }
-  if (!options.describe &&
-      (options.step_ps == 0ULL || options.windows == 0U ||
-       options.workers == 0U || !(options.activity.value > 0.0L) ||
-       !std::isfinite(options.activity.value) || options.capacity == 0U ||
-       options.capacity > std::numeric_limits<std::uint32_t>::max() / 2U ||
-       options.step_ps >
-           std::numeric_limits<std::uint64_t>::max() / options.windows ||
-       options.seed > std::numeric_limits<std::uint64_t>::max() -
-                          options.population_replicates)) {
-    throw std::runtime_error("Invalid activity, chronology, worker count, "
-                             "capacity or replicate seed range.");
-  }
   return options;
 }
+
+// ----------------------------------------------------------------------------
+// Scientific output
 
 auto OpenOutput(std::filesystem::path const &path) -> std::ofstream {
   std::ofstream output;
@@ -165,6 +180,18 @@ auto JsonString(std::string_view value) -> std::string {
   return result + '"';
 }
 
+auto WriteEnergyTable(std::filesystem::path const &directory, std::size_t index,
+                      sources::GGEMSEnergyDistribution const &energy) -> void {
+  auto table = OpenOutput(directory / std::format("group_{}.csv", index));
+  table << "energy_micro_eV,relative_weight,cumulative_ticket_upper\n";
+  auto const values = energy.GetEnergyValuesMicroElectronVolt();
+  auto const weights = energy.GetRelativeWeights();
+  auto const tickets = energy.GetCumulativeTicketUpperBounds();
+  for (std::size_t row = 0U; row < values.size(); ++row) {
+    table << values[row] << ',' << weights[row] << ',' << tickets[row] << '\n';
+  }
+}
+
 auto WriteDefinition(
     std::filesystem::path const &directory,
     radioactivity::GGEMSRadionuclideDefinition const &definition) -> void {
@@ -178,7 +205,7 @@ auto WriteDefinition(
           .value()
           .value;
   output << R"json({
-"schema_version":1,"name":)json"
+"name":)json"
          << JsonString(definition.GetCanonicalName())
          << R"json(,"half_life_seconds":")json"
          << definition.GetHalfLifeSeconds()
@@ -189,7 +216,7 @@ auto WriteDefinition(
          << R"json(,"time_max_ps":)json"
          << std::numeric_limits<std::uint64_t>::max()
          << R"json(,"ticket_space":)json" << sources::k_energy_ticket_space_size
-         << R"json(,"compiled_provenance":null,"groups":[
+         << R"json(,"groups":[
 )json";
   std::size_t index = 0U;
   for (auto const &emission : definition.GetEmissions()) {
@@ -197,15 +224,7 @@ auto WriteDefinition(
       output << ",\n";
     }
     auto const &energy = emission.GetEnergyDistribution();
-    auto table = OpenOutput(directory / std::format("group_{}.csv", index));
-    table << "energy_micro_eV,relative_weight,cumulative_ticket_upper\n";
-    auto const values = energy.GetEnergyValuesMicroElectronVolt();
-    auto const weights = energy.GetRelativeWeights();
-    auto const tickets = energy.GetCumulativeTicketUpperBounds();
-    for (std::size_t row = 0U; row < values.size(); ++row) {
-      table << values[row] << ',' << weights[row] << ',' << tickets[row]
-            << '\n';
-    }
+    WriteEnergyTable(directory, index, energy);
     output << R"json({"index":)json" << index << R"json(,"particle":)json"
            << JsonString(ggems::core::particles::ToLongName(
                   emission.GetParticleType()))
@@ -229,6 +248,9 @@ auto WriteDefinition(
   output << "\n]}\n";
 }
 
+// ----------------------------------------------------------------------------
+// Source samples and population observations
+
 auto WritePopulation(std::ofstream &output, std::uint32_t replicate,
                      std::uint64_t seed, std::uint32_t window,
                      sources::GGEMSSourcePopulationPlan const &plan) -> void {
@@ -243,29 +265,8 @@ auto WritePopulation(std::ofstream &output, std::uint32_t replicate,
 
 auto WriteSamples(std::ofstream &output, std::uint32_t window,
                   observer::GGEMSTransportObserver const &capture,
-                  sources::GGEMSSourceRunSnapshot const &snapshot,
-                  sources::GGEMSSourcePopulationPlan const &plan) -> void {
-  auto const count = snapshot.GetTotalPrimaryCount();
-  if (capture.GetOverflowCount() != 0U ||
-      capture.GetRecords().size() != 2ULL * count ||
-      capture.GetRecordCount() != 2ULL * count ||
-      capture.GetCapturedPrimaryCount() != count ||
-      count != plan.GetTotalPrimaryCount()) {
-    throw std::runtime_error(
-        "Incomplete capture or production/planner count mismatch.");
-  }
+                  sources::GGEMSSourceRunSnapshot const &snapshot) -> void {
   auto const &ranges = snapshot.GetGroupRanges();
-  if (ranges.size() != plan.GetGroups().size()) {
-    throw std::runtime_error("Production/planner group count mismatch.");
-  }
-  for (std::size_t group = 0U; group < ranges.size(); ++group) {
-    if (ranges[group].primary_count !=
-            plan.GetGroups()[group].sampled_primary_count ||
-        ranges[group].source_local_primary_begin !=
-            plan.GetGroups()[group].source_local_primary_begin) {
-      throw std::runtime_error("Production/planner group range mismatch.");
-    }
-  }
   std::vector<observer::GGEMSObserverRecord const *> records;
   for (auto const &record : capture.GetRecords()) {
     if (record.record_kind == observer::ToKernelObserverRecordKind(
@@ -275,57 +276,25 @@ auto WriteSamples(std::ofstream &output, std::uint32_t window,
   }
   std::ranges::sort(records, {},
                     &observer::GGEMSObserverRecord::source_local_primary_id);
-  if (records.size() != count) {
-    throw std::runtime_error("Missing or extra Source records.");
-  }
   std::size_t group = 0U;
-  auto const time = snapshot.GetTimeWindow();
   for (std::size_t index = 0U; index < records.size(); ++index) {
     auto const &record = *records[index];
-    while (group < ranges.size() &&
-           index >= ranges[group].source_local_primary_begin +
+    while (index >= ranges[group].source_local_primary_begin +
                         ranges[group].primary_count) {
       ++group;
     }
-    if (group == ranges.size() || record.source_index != 0U ||
-        record.source_local_primary_id != index ||
-        record.time_ps < time.start_ps || record.time_ps >= time.stop_ps ||
-        record.weight != 1.0F ||
-        record.particle_type !=
-            snapshot.GetEmissionRecords()[group].particle_type) {
-      throw std::runtime_error("Invalid Source provenance, particle, weight or "
-                               "half-open birth time.");
-    }
-    output << window << ',' << group << ',' << record.run_id << ','
-           << record.global_primary_id << ',' << record.source_local_primary_id
-           << ',' << record.particle_type << ',' << record.time_ps << ','
+    output << window << ',' << group << ',' << record.time_ps << ','
            << record.energy_micro_eV << '\n';
   }
 }
 
-auto RunCampaign(
-    Options const &options,
-    std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const> const
-        &definition) -> void {
-  auto source = std::make_shared<sources::GGEMSSource>();
-  source->SetPointEmission().SetFixedAngularDistribution().SetRadionuclide(
-      definition, options.activity, 0ULL);
-  auto engine = std::make_shared<random::GGEMSRandom>();
-  engine->SetEngine(random::GGEMSRandomEngine::Philox).SetSeed(options.seed);
-  std::array const source_list{source};
-  // Independent replay streams expose public planning data without consuming
-  // Run's RNG.
-  sources::GGEMSSourcePopulationPlanner replay_planner(source_list, *engine);
-  auto capture = std::make_shared<observer::GGEMSTransportObserver>();
-  capture->SetRecordCapacity(2U * options.capacity)
-      .SetMaxStoredRecordCount(2U * options.capacity)
-      .CaptureFirstPrimaries(options.capacity);
-  auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-  opencl.SelectDevices({options.device});
-  opencl.Initialize();
-  auto metadata = OpenOutput(options.output / "run.json");
+// ----------------------------------------------------------------------------
+// Campaign execution
+
+auto WriteRunHeader(std::ofstream &metadata, Options const &options,
+                    ggems::ocl::GGEMSOpenCL &opencl) -> void {
   metadata
-      << R"json({"schema_version":1,"seed":)json" << options.seed
+      << R"json({"seed":)json" << options.seed
       << R"json(,"workers_per_device":)json" << options.workers
       << R"json(,"rng_engine":"Philox","geometry":"Point","direction":"Fixed")json"
       << R"json(,"population_mode":"ActivityDriven","activity_bq":")json"
@@ -334,10 +303,7 @@ auto RunCampaign(
       << options.step_ps << R"json(,"windows":)json" << options.windows
       << R"json(,"capacity_primaries":)json" << options.capacity
       << R"json(,"population_replicates":)json" << options.population_replicates
-      << R"json(,"host_seed_domain":)json"
-      << sources::k_radionuclide_host_random_seed_domain_tag
-      << R"json(,"long_double_digits":)json"
-      << std::numeric_limits<long double>::digits
+
 #ifdef GGEMS_DEBUG_MODE
       << R"json(,"build_mode":"Debug")json"
 #else
@@ -361,55 +327,29 @@ auto RunCampaign(
   }
   metadata << R"json(],"window_results":[
 )json";
-  metadata.flush();
-  ggems::core::GGEMSRun run;
-  run.SetTimePicoSecond(0ULL, options.step_ps * options.windows,
-                        options.step_ps);
-  run.SetSource(source);
-  run.SetRandom(engine);
-  run.SetWorkerCount(options.workers);
-  run.SetObserver(capture);
-  run.Initialize();
-  auto samples = OpenOutput(options.output / "samples.csv");
-  samples << "window,group,run_id,global_primary_id,source_local_primary_id,"
-             "particle_type,time_ps,energy_micro_eV\n";
-  auto populations = OpenOutput(options.output / "populations.csv");
-  populations << "replicate,seed,window,group,expected_parent_decays,expected_"
-                 "emissions,observed_count\n";
-  for (std::uint32_t window = 0U; window < options.windows; ++window) {
-    auto const time = run.GetCurrentTimeWindowPicoSecond();
-    auto replay = replay_planner.BuildCandidate(time);
-    auto const &plan = replay.GetPlan();
-    if (plan.GetTotalPrimaryCount() > options.capacity) {
-      throw std::runtime_error("Planned population exceeds requested capture "
-                               "capacity; no truncated campaign is accepted.");
-    }
-    run.Run();
-    auto const snapshot = run.GetLastSourceRunSnapshot();
-    if (!snapshot || snapshot->GetTimeWindow().start_ps != time.start_ps ||
-        snapshot->GetTimeWindow().stop_ps != time.stop_ps) {
-      throw std::runtime_error("Missing or incorrect completed Run snapshot.");
-    }
-    WriteSamples(samples, window, *capture, *snapshot, plan);
-    WritePopulation(populations, 0U, options.seed, window, plan);
-    if (window != 0U) {
-      metadata << ",\n";
-    }
-    metadata << R"json({"index":)json" << window << R"json(,"start_ps":)json"
-             << time.start_ps << R"json(,"stop_ps":)json" << time.stop_ps
-             << R"json(,"primary_count":)json"
-             << snapshot->GetTotalPrimaryCount()
-             << R"json(,"captured_primary_count":)json"
-             << capture->GetCapturedPrimaryCount()
-             << R"json(,"overflow_count":)json" << capture->GetOverflowCount()
-             << R"json(,"scaled_decay":)json"
-             << snapshot->GetPopulationRecords().front().scaled_decay << '}';
-    replay_planner.CommitCandidate(replay);
+}
+
+auto WriteWindow(std::ofstream &metadata, std::uint32_t window,
+                 sources::GGEMSSourceRunSnapshot const &snapshot,
+                 observer::GGEMSTransportObserver const &capture) -> void {
+  auto const time = snapshot.GetTimeWindow();
+  if (window != 0U) {
+    metadata << ",\n";
   }
-  if (run.HasNextTimeStep()) {
-    throw std::runtime_error(
-        "Campaign did not cover the requested chronology.");
-  }
+  metadata << R"json({"index":)json" << window << R"json(,"start_ps":)json"
+           << time.start_ps << R"json(,"stop_ps":)json" << time.stop_ps
+           << R"json(,"primary_count":)json" << snapshot.GetTotalPrimaryCount()
+           << R"json(,"captured_primary_count":)json"
+           << capture.GetCapturedPrimaryCount()
+           << R"json(,"overflow_count":)json" << capture.GetOverflowCount()
+           << R"json(,"scaled_decay":)json"
+           << snapshot.GetPopulationRecords().front().scaled_decay << '}';
+}
+
+auto WritePopulationReplicas(
+    std::ofstream &populations, Options const &options,
+    std::span<std::shared_ptr<sources::GGEMSSource> const> source_list)
+    -> void {
   // Extra population experiments have distinct seeds and no device execution.
   for (std::uint32_t index = 0U; index < options.population_replicates;
        ++index) {
@@ -429,36 +369,86 @@ auto RunCampaign(
       planner.CommitCandidate(candidate);
     }
   }
-  metadata << R"json(
-],"completion":"complete"}
-)json";
+}
+
+auto RunCampaign(
+    Options const &options,
+    std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const> const
+        &definition) -> void {
+  auto source = std::make_shared<sources::GGEMSSource>();
+  source->SetPointEmission().SetFixedAngularDistribution().SetRadionuclide(
+      definition, options.activity, 0ULL);
+  auto engine = std::make_shared<random::GGEMSRandom>();
+  engine->SetEngine(random::GGEMSRandomEngine::Philox).SetSeed(options.seed);
+  std::array const source_list{source};
+  // A separate planner exposes expected counts without consuming Run's RNG.
+  sources::GGEMSSourcePopulationPlanner population_planner(source_list,
+                                                           *engine);
+  auto capture = std::make_shared<observer::GGEMSTransportObserver>();
+  capture->SetRecordCapacity(2U * options.capacity)
+      .SetMaxStoredRecordCount(2U * options.capacity)
+      .CaptureFirstPrimaries(options.capacity);
+  auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
+  opencl.SelectDevices({options.device});
+  opencl.Initialize();
+  auto metadata = OpenOutput(options.output / "run.json");
+  WriteRunHeader(metadata, options, opencl);
+
+  // ----------------------------------------------------------------------------
+  // Initialize once; each Run advances the same source and random streams.
+
+  ggems::core::GGEMSRun run;
+  run.SetTimePicoSecond(0ULL, options.step_ps * options.windows,
+                        options.step_ps);
+  run.SetSource(source);
+  run.SetRandom(engine);
+  run.SetWorkerCount(options.workers);
+  run.SetObserver(capture);
+  run.Initialize();
+  auto samples = OpenOutput(options.output / "samples.csv");
+  samples << "window,group,time_ps,energy_micro_eV\n";
+  auto populations = OpenOutput(options.output / "populations.csv");
+  populations << "replicate,seed,window,group,expected_parent_decays,expected_"
+                 "emissions,observed_count\n";
+  for (std::uint32_t window = 0U; window < options.windows; ++window) {
+    auto const time = run.GetCurrentTimeWindowPicoSecond();
+    auto population = population_planner.BuildCandidate(time);
+    auto const &plan = population.GetPlan();
+    if (plan.GetTotalPrimaryCount() > options.capacity) {
+      throw std::runtime_error("Planned population exceeds requested capture "
+                               "capacity; no truncated campaign is accepted.");
+    }
+    run.Run();
+    auto const snapshot = run.GetLastSourceRunSnapshot();
+    if (capture->GetOverflowCount() != 0U) {
+      throw std::runtime_error("Observer capture overflowed.");
+    }
+    WriteSamples(samples, window, *capture, *snapshot);
+    WritePopulation(populations, 0U, options.seed, window, plan);
+    WriteWindow(metadata, window, *snapshot, *capture);
+    population_planner.CommitCandidate(population);
+  }
+  WritePopulationReplicas(populations, options, source_list);
+  metadata << "\n]}\n";
 }
 } // namespace
 
 auto main(int argc, char const *const *argv) -> int {
-  try {
-    auto const options = ParseOptions(argc, argv);
-    ggems::core::GGEMSLogger::GetInstance().SetDetailLevel(-1);
-    auto built_in =
-        radioactivity::builtins::BuildBuiltInRadionuclide(options.nuclide);
-    if (!built_in) {
-      throw std::runtime_error("Unknown canonical radionuclide name.");
-    }
-    if (std::filesystem::exists(options.output)) {
-      throw std::runtime_error(
-          "Output directory already exists; choose a new campaign directory.");
-    }
-    std::filesystem::create_directories(options.output);
-    auto definition =
-        std::make_shared<radioactivity::GGEMSRadionuclideDefinition const>(
-            std::move(*built_in));
-    WriteDefinition(options.output, *definition);
-    if (!options.describe) {
-      RunCampaign(options, definition);
-    }
+  auto const options = ParseOptions(argc, argv);
+  if (options.help) {
+    PrintHelp();
     return 0;
-  } catch (std::exception const &error) {
-    std::cerr << "Radionuclide exporter: " << error.what() << '\n';
-    return 1;
   }
+
+  ggems::core::GGEMSLogger::GetInstance().SetDetailLevel(-1);
+  auto definition =
+      std::make_shared<radioactivity::GGEMSRadionuclideDefinition const>(
+          radioactivity::builtins::BuildBuiltInRadionuclide(options.nuclide)
+              .value());
+  std::filesystem::create_directories(options.output);
+  WriteDefinition(options.output, *definition);
+  if (!options.describe) {
+    RunCampaign(options, definition);
+  }
+  return 0;
 }

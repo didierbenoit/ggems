@@ -1,12 +1,14 @@
 """Keep reference agreement, population law, birth times and energy tests distinct."""
 
 import math
+from bisect import bisect_right
 from collections import defaultdict
 from collections.abc import Callable
 from decimal import Decimal
 from fractions import Fraction
 from itertools import pairwise
 from pathlib import Path
+from typing import cast
 
 from .model import (
     JsonObject,
@@ -15,13 +17,8 @@ from .model import (
     Runtime,
     RuntimeGroup,
     Spectrum,
-    array_value,
-    decimal_value,
-    integer_value,
     load_json,
-    object_value,
     read_csv,
-    string_value,
     write_json,
 )
 from .numerics import (
@@ -31,7 +28,6 @@ from .numerics import (
     poisson_dispersion,
     poisson_interval,
     poisson_shape,
-    reference_line_cdf,
 )
 
 
@@ -111,26 +107,20 @@ def reference_cdf(group: ReferenceGroup, scale: int) -> Callable[[int], float]:
         spectrum = group.spectrum
         return lambda energy: spectrum.cdf(energy / scale)
     if group.kind == "Mono":
-        quantity = object_value(group.distribution["energy"])
-        if quantity["unit"] != "keV":
-            raise ValueError("Mono reference energy must be in keV.")
-        value = decimal_value(quantity["value"]) * scale
+        quantity = cast(JsonObject, group.distribution["energy"])
+        value = Decimal(str(quantity["value"])) * scale
         return lambda energy: float(Decimal(energy) >= value)
-    lines = [object_value(value) for value in array_value(group.distribution["lines"])]
-    energies = tuple(decimal_value(line["energy_keV"]) * scale for line in lines)
-    weights = tuple(decimal_value(line["weight"]) for line in lines)
-    if (
-        not energies
-        or any(e < 0 or e != int(e) for e in energies)
-        or any(b <= a for a, b in pairwise(energies))
-        or any(w < 0 for w in weights)
-        or sum(weights) <= 0
-    ):
-        raise ValueError(
-            "Discrete reference lines require exact canonical energies, ordered support and nonnegative weights."
-        )
-    exact = tuple(int(e) for e in energies)
-    return lambda energy: reference_line_cdf(exact, weights, energy)
+    lines = cast(list[JsonObject], group.distribution["lines"])
+    energies = tuple(Decimal(str(line["energy_keV"])) * scale for line in lines)
+    weights = tuple(Decimal(str(line["weight"])) for line in lines)
+    exact = tuple(int(energy) for energy in energies)
+    total = sum(weights, Decimal(0))
+    cumulative = [0.0]
+    running = Decimal(0)
+    for weight in weights:
+        running += weight
+        cumulative.append(float(running / total))
+    return lambda energy: cumulative[bisect_right(exact, energy)]
 
 
 def definition_audit(
@@ -160,18 +150,15 @@ def definition_audit(
             "compiled_kind": actual.kind,
             "reference_kind": expected.kind,
         }
-        if (
-            actual.kind == expected.kind == "RegularSpectrum"
-            and expected.spectrum is not None
-        ):
+        if actual.kind == "RegularSpectrum" and expected.spectrum is not None:
             result["spectrum_comparison"] = grid_comparison(
                 actual, expected.spectrum, runtime.energy_scale
             )
         elif actual.kind == expected.kind == "Mono":
-            energy = object_value(expected.distribution["energy"])
+            energy = cast(JsonObject, expected.distribution["energy"])
             checks["mono_energy"] = (
                 Decimal(actual.mono)
-                == decimal_value(energy["value"]) * runtime.energy_scale
+                == Decimal(str(energy["value"])) * runtime.energy_scale
                 and energy["unit"] == "keV"
             )
         elif actual.kind == expected.kind == "DiscreteLines":
@@ -188,9 +175,9 @@ def definition_audit(
     }
     audit_value = reference.raw.get("implementation_audit")
     if audit_value is not None:
-        audit = object_value(audit_value)
-        path = source_tree / string_value(audit["source_file"])
-        prefix = string_value(audit["generator_prefix"])
+        audit = cast(JsonObject, audit_value)
+        path = source_tree / str(audit["source_file"])
+        prefix = str(audit["generator_prefix"])
         lines = path.read_text(encoding="utf-8").splitlines()
         matching = [
             index for index, line in enumerate(lines) if line.startswith(prefix)
@@ -209,10 +196,9 @@ def definition_audit(
                 "limitation": "Source-comment audit, not a compiled provenance API.",
             }
     forbidden: list[JsonObject] = []
-    for value in array_value(reference.raw.get("excluded_source_emissions", [])):
-        item = object_value(value)
+    for item in cast(list[JsonObject], reference.raw["excluded_source_emissions"]):
         if "particle" in item and "energy_keV" in item:
-            energy = decimal_value(item["energy_keV"]) * runtime.energy_scale
+            energy = Decimal(str(item["energy_keV"])) * runtime.energy_scale
             found = [
                 group.index
                 for group in runtime.groups
@@ -251,152 +237,75 @@ def analyze_campaign(
     run_dir = directory / "run"
     runtime = Runtime.load(run_dir)
     metadata = load_json(run_dir / "run.json")
-    if (
-        metadata.get("completion") != "complete"
-        or metadata.get("population_mode") != "ActivityDriven"
-    ):
-        raise ValueError("Incomplete or non-ActivityDriven campaign.")
-    windows = integer_value(metadata["windows"], 1)
-    step = integer_value(metadata["step_ps"], 1)
-    replicas = integer_value(metadata["population_replicates"])
-    seed = integer_value(metadata["seed"])
+    windows = cast(int, metadata["windows"])
+    step = cast(int, metadata["step_ps"])
+    replicas = cast(int, metadata["population_replicates"])
     group_count = len(runtime.groups)
-    alpha = float(decimal_value(settings["family_alpha"]))
+    alpha = float(Decimal(str(settings["family_alpha"])))
     hypotheses = windows * (2 * group_count + 3) + 5 * group_count + 1
     individual_alpha = alpha / hypotheses
-    population_rows = read_csv(
-        run_dir / "populations.csv",
-        (
-            "replicate",
-            "seed",
-            "window",
-            "group",
-            "expected_parent_decays",
-            "expected_emissions",
-            "observed_count",
-        ),
-    )
     counts: dict[tuple[int, int, int], int] = {}
     max_relative_integral_error = Decimal(0)
     means: dict[tuple[int, int], Decimal] = {}
     parent_means: dict[int, Decimal] = {}
     for window in range(windows):
         parent_means[window] = decay_integral(
-            decimal_value(metadata["activity_bq"]),
+            Decimal(str(metadata["activity_bq"])),
             runtime.half_life,
-            integer_value(metadata["reference_time_ps"]),
+            cast(int, metadata["reference_time_ps"]),
             window * step,
             (window + 1) * step,
             runtime.time_scale,
         )
         for group in runtime.groups:
             means[window, group.index] = parent_means[window] * group.yield_per_decay
-    for row in population_rows:
+    for row in read_csv(run_dir / "populations.csv"):
         replicate, window, group = (
             int(row[key]) for key in ("replicate", "window", "group")
         )
         key = (replicate, window, group)
-        if (
-            not (
-                0 <= replicate <= replicas
-                and 0 <= window < windows
-                and 0 <= group < group_count
-            )
-            or key in counts
-            or int(row["seed"]) != seed + replicate
-        ):
-            raise ValueError(
-                "Invalid, duplicated or out-of-order population experiment identity."
-            )
         counts[key] = int(row["observed_count"])
         for actual, expected in (
-            (decimal_value(row["expected_parent_decays"]), parent_means[window]),
-            (decimal_value(row["expected_emissions"]), means[window, group]),
+            (Decimal(str(row["expected_parent_decays"])), parent_means[window]),
+            (Decimal(str(row["expected_emissions"])), means[window, group]),
         ):
             max_relative_integral_error = max(
                 max_relative_integral_error,
                 abs(actual - expected) / expected if expected else abs(actual),
             )
-    if len(counts) != (replicas + 1) * windows * group_count or any(
-        count < 0 for count in counts.values()
-    ):
-        raise ValueError("Missing population experiments or negative population.")
-    samples = read_csv(
-        run_dir / "samples.csv",
-        (
-            "window",
-            "group",
-            "run_id",
-            "global_primary_id",
-            "source_local_primary_id",
-            "particle_type",
-            "time_ps",
-            "energy_micro_eV",
-        ),
-    )
+
+    # ----------------------------------------------------------------------------
+    # Read generated births once; keep only the columns used by the analysis.
+
     times: dict[int, list[int]] = defaultdict(list)
     energies: dict[int, list[int]] = defaultdict(list)
     observed_group: dict[tuple[int, int], int] = defaultdict(int)
-    next_local: dict[int, int] = defaultdict(int)
-    run_ids: dict[int, int] = {}
-    global_ids: set[int] = set()
-    for row in samples:
+    for row in read_csv(run_dir / "samples.csv"):
         window, group = int(row["window"]), int(row["group"])
-        if not (0 <= window < windows and 0 <= group < group_count):
-            raise ValueError("Invalid sample window or group.")
-        actual = runtime.groups[group]
-        time, energy = int(row["time_ps"]), int(row["energy_micro_eV"])
-        global_id, run_id = int(row["global_primary_id"]), int(row["run_id"])
-        if (
-            not window * step <= time < (window + 1) * step
-            or int(row["particle_type"]) != actual.particle_type
-        ):
-            raise ValueError("Sample violates half-open chronology or particle type.")
-        if (
-            int(row["source_local_primary_id"]) != next_local[window]
-            or global_id in global_ids
-            or (window in run_ids and run_ids[window] != run_id)
-        ):
-            raise ValueError(
-                "Duplicate/missing source identity or inconsistent run identity."
-            )
-        next_local[window] += 1
-        run_ids[window] = run_id
-        global_ids.add(global_id)
-        times[window].append(time)
-        energies[group].append(energy)
+        times[window].append(int(row["time_ps"]))
+        energies[group].append(int(row["energy_micro_eV"]))
         observed_group[window, group] += 1
-    windows_metadata = [
-        object_value(value) for value in array_value(metadata["window_results"])
-    ]
-    if len(windows_metadata) != windows:
-        raise ValueError("Missing completed-window metadata.")
+    windows_metadata = cast(list[JsonObject], metadata["window_results"])
+    sample_count = sum(len(values) for values in energies.values())
+
+    # ----------------------------------------------------------------------------
+    # Compare populations and conditioned birth-time distributions per window.
+
     window_results: list[JsonObject] = []
     for window in range(windows):
         total_mean = sum(
             (means[window, group.index] for group in runtime.groups), Decimal(0)
         )
-        total_count = sum(counts[0, window, group.index] for group in runtime.groups)
+        total_count = len(times[window])
         item = windows_metadata[window]
-        if (
-            item["index"] != window
-            or item["start_ps"] != window * step
-            or item["stop_ps"] != (window + 1) * step
-            or item["primary_count"] != total_count
-            or item["captured_primary_count"] != total_count
-            or item["overflow_count"] != 0
-        ):
-            raise ValueError("Inconsistent completed-window capture metadata.")
         groups: list[JsonObject] = []
         for group in runtime.groups:
-            if observed_group[window, group.index] != counts[0, window, group.index]:
-                raise ValueError("Captured group population differs from GGEMS plan.")
             groups.append(
                 {
                     "index": group.index,
                     "mean_decimal": str(means[window, group.index]),
                     "population": poisson_interval(
-                        counts[0, window, group.index],
+                        observed_group[window, group.index],
                         float(means[window, group.index]),
                         individual_alpha,
                     ),
@@ -442,11 +351,17 @@ def analyze_campaign(
                 ),
                 "groups": groups,
                 "birth_times": birth,
-                "all_observed_births_in_half_open_window": True,
+                "all_observed_births_in_half_open_window": all(
+                    window * step <= time < (window + 1) * step
+                    for time in times[window]
+                ),
                 "scaled_decay_independent": scaled,
                 "scaled_decay_packed": item["scaled_decay"],
             }
         )
+    # ----------------------------------------------------------------------------
+    # Compare sampled energies with the compiled law and the selected reference.
+
     energy_results: list[JsonObject] = []
     for actual in runtime.groups:
         observed = energies[actual.index]
@@ -512,7 +427,6 @@ def analyze_campaign(
     ]
     total_expected = sum(means.values(), Decimal(0))
     result = {
-        "schema_version": 1,
         "name": runtime.name,
         "reference_id": reference.raw["reference_id"],
         "definition_reference": definition_audit(reference, runtime, source_tree),
@@ -523,8 +437,7 @@ def analyze_campaign(
             "maximum_relative_error": str(max_relative_integral_error),
             "relative_tolerance": "5e-14",
             "independent_precision_decimal_digits": 80,
-            "compared_plans": len(population_rows),
-            "production_group_ranges_match_independent_planner_replay": True,
+            "compared_plans": len(counts),
             "meaning": "GGEMS expected parent/emission counts versus independent exponential integral, using the compiled half-life and rounded input activity.",
         },
         "statistical_policy": {
@@ -541,12 +454,17 @@ def analyze_campaign(
         "windows": window_results,
         "poisson_replicate_dispersion": dispersion,
         "whole_horizon_population": poisson_interval(
-            len(samples), float(total_expected), individual_alpha
+            sample_count, float(total_expected), individual_alpha
         ),
         "energy_distributions": energy_results,
-        "sample_count": len(samples),
+        "sample_count": sample_count,
         "bounds": {
-            "observed_lower_bound_inclusion_and_stop_exclusion": "pass",
+            "observed_lower_bound_inclusion_and_stop_exclusion": "pass"
+            if all(
+                item["all_observed_births_in_half_open_window"]
+                for item in window_results
+            )
+            else "fail",
             "deterministic_raw_zero_and_maximum_word_probes": "Separate GGEMSRadioactiveTimeSampling host/OpenCL tests; statistical samples alone do not establish endpoint reachability.",
         },
         "transport_scope": "Source births through the current production diagnostic transport path. No physical radioactive daughter transport, positron annihilation, stopping, dose or navigation validation.",

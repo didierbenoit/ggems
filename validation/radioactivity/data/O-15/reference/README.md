@@ -3,15 +3,13 @@
 `reference.json` selects the recovered LNHB evaluation by X. Mougeot, with
 literature through February 2026 and tables dated March 3, 2026. Decimal strings
 retain source precision and absolute standard uncertainties. Raw evidence paths
-are relative to `../raw/`; every recovered file has a SHA-256 in the manifest.
-The original files are evidence dependencies, including currently untracked files
-in the review workspace. No download date or executable identity is invented.
+are relative to `../raw/`. Source identities, evaluation dates, calculation
+options and transformations are recorded in `reference.json`.
 
 The selected half-life is **122.266(49) s**, Q+ **2754.18(49) keV**, beta+
 probability **99.9001(17)%**, EC probability **0.0999(17)%**, beta+ endpoint
 **1732.18(49) keV**, and beta+ mean energy **733.47(23) keV**. These come from
-`O-15_tables.pdf`, `O-15_com.pdf`, and the recovered LNHB input. The input supplied
-to BetaShape is byte-identical to `raw/lnhb/O-15.txt`.
+`O-15_tables.pdf`, `O-15_com.pdf`, and the recovered LNHB input. The BetaShape input is the recovered LNHB `O-15.txt` evaluation.
 
 The recovered calculation used **BetaShape 2.4 (06/2024)**:
 
@@ -22,7 +20,7 @@ The recovered calculation used **BetaShape 2.4 (06/2024)**:
 There is no Q-value override. `fixint=1` retains the adopted EC/beta+ split.
 The transition header reports allowed shape, screening, radiative and atomic
 overlap corrections, and no experimental shape factor. The executable was not
-rerun. Its hash and the original execution timestamp are unavailable.
+rerun. The original execution timestamp is unavailable.
 
 `positron_spectrum.csv` copies all 348 energy, calculated-density and uncertainty
 triples from `beta+_O15_trans0.bs` without numerical changes. The total-spectrum

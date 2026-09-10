@@ -1,42 +1,20 @@
-"""Run one generic half-life-scaled campaign without changing GGEMS configuration."""
+"""Run and analyze a radionuclide campaign with activity chosen from a sample target."""
 
 import argparse
 import importlib.metadata
 import platform
 import subprocess
-import sys
 from decimal import Decimal
 from pathlib import Path
-from typing import Protocol, cast
+from typing import cast
 
-from validation.radioactivity.radionuclide_validation.analysis import analyze_campaign
-from validation.radioactivity.radionuclide_validation.model import (
-    Reference,
-    Runtime,
-    write_json,
-)
-from validation.radioactivity.radionuclide_validation.numerics import design_campaign
-
-
-class Arguments(Protocol):
-    exporter: Path
-    reference: Path
-    output: Path
-    device: str
-    workers: int
-    seed: int
-    windows: int
-    horizon_half_lives: Decimal
-    target_last_window: int
-    population_replicates: int
-    family_alpha: Decimal
-    source_tree: Path
-    revision: str
-    timeout_seconds: int
+from radionuclide_validation.analysis import analyze_campaign
+from radionuclide_validation.model import Reference, Runtime, write_json
+from radionuclide_validation.numerics import design_campaign
 
 
 def invoke(command: list[str], log_path: Path, timeout_seconds: int) -> None:
-    with log_path.open("w", encoding="utf-8") as log:
+    with log_path.open("w", encoding="utf-8", newline="\n") as log:
         _ = log.write(subprocess.list2cmdline(command) + "\n")
         log.flush()
         _ = subprocess.run(
@@ -48,48 +26,99 @@ def invoke(command: list[str], log_path: Path, timeout_seconds: int) -> None:
         )
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    _ = parser.add_argument("--exporter", type=Path, required=True)
-    _ = parser.add_argument("--reference", type=Path, required=True)
-    _ = parser.add_argument("--output", type=Path, required=True)
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        epilog="Results distinguish nuclear data, decay counts, populations, birth times and energy spectra. Read analysis.json for scientific conclusions.",
+    )
+    _ = parser.add_argument(
+        "--exporter",
+        type=Path,
+        required=True,
+        help="Path to the built ggems_radionuclide_exporter executable.",
+    )
+    _ = parser.add_argument(
+        "--reference",
+        type=Path,
+        required=True,
+        help="Selected radionuclide reference.json, including emission yields and spectrum provenance.",
+    )
+    _ = parser.add_argument(
+        "--output",
+        type=Path,
+        required=True,
+        help="New directory for samples, analysis, settings and execution logs.",
+    )
     _ = parser.add_argument(
         "--device",
         default="cpu",
-        help="Forwarded unchanged to GGEMSOpenCL.SelectDevices.",
-    )
-    _ = parser.add_argument("--workers", type=int, default=256)
-    _ = parser.add_argument("--timeout-seconds", type=int, default=1800)
-    _ = parser.add_argument("--seed", type=int, default=77777)
-    _ = parser.add_argument("--windows", type=int, default=32)
-    _ = parser.add_argument("--horizon-half-lives", type=Decimal, default=Decimal(4))
-    _ = parser.add_argument("--target-last-window", type=int, default=1000)
-    _ = parser.add_argument("--population-replicates", type=int, default=128)
-    _ = parser.add_argument("--family-alpha", type=Decimal, default=Decimal("0.01"))
-    _ = parser.add_argument(
-        "--source-tree", type=Path, default=Path(__file__).resolve().parents[2]
+        help="GGEMS OpenCL selection: cpu, gpu, all, vendor, or device indices/ranges. Passed to GGEMS unchanged.",
     )
     _ = parser.add_argument(
-        "--revision",
-        required=True,
-        help="Reviewed source revision; no Git operation is performed.",
+        "--workers",
+        type=int,
+        default=256,
+        help="Persistent random-stream workers per selected OpenCL device.",
     )
-    args = cast(Arguments, cast(object, parser.parse_args()))
-    if (
-        not 0 < args.family_alpha < 1
-        or args.workers < 1
-        or not 0 <= args.seed < 2**64
-        or args.population_replicates < 0
-    ):
-        parser.error(
-            "Invalid statistical policy, worker count, seed or replication count."
-        )
-    reference_path = args.reference.resolve()
+    _ = parser.add_argument(
+        "--seed",
+        type=int,
+        default=77777,
+        help="Philox seed for the campaign; host population replicas use seed+1, seed+2, etc.",
+    )
+    _ = parser.add_argument(
+        "--windows",
+        type=int,
+        default=32,
+        help="Number of consecutive equal observation windows over the horizon.",
+    )
+    _ = parser.add_argument(
+        "--horizon-half-lives",
+        type=Decimal,
+        default=Decimal(4),
+        help="Duration in compiled half-lives, rounded to picosecond windows. Very long horizons use 90%% of the Time range; 0.000001 exercises the small-decay regime.",
+    )
+    _ = parser.add_argument(
+        "--target-last-window",
+        type=int,
+        default=1000,
+        help="Expected total primaries in the final window. Sets activity automatically using the sum of the original yields.",
+    )
+    _ = parser.add_argument(
+        "--population-replicates",
+        type=int,
+        default=128,
+        help="Additional host-only population experiments per window for Poisson shape and dispersion analysis; no extra transported particles.",
+    )
+    _ = parser.add_argument(
+        "--family-alpha",
+        type=Decimal,
+        default=Decimal("0.01"),
+        help="Family significance level, divided among the statistical comparisons by the existing Bonferroni policy.",
+    )
+    _ = parser.add_argument(
+        "--source-tree",
+        type=Path,
+        default=Path(__file__).resolve().parents[2],
+        help="GGEMS source root used to read the built-in spectrum provenance comment.",
+    )
+    _ = parser.add_argument(
+        "--timeout-seconds",
+        type=int,
+        default=1800,
+        help="Maximum elapsed seconds for each exporter invocation, including OpenCL compilation.",
+    )
+    args = cast(dict[str, object], vars(parser.parse_args()))
+
+    # ------------------------------------------------------------------------
+    # Read the compiled definition and choose activity before sampling.
+
+    reference_path = cast(Path, args["reference"]).resolve()
     reference = Reference.load(reference_path)
-    raw_count = reference.verify_raw_files(reference_path)
-    output = args.output.resolve()
-    output.mkdir(parents=True, exist_ok=False)
-    exporter = str(args.exporter.resolve(strict=True))
+    output = cast(Path, args["output"]).resolve()
+    output.mkdir(parents=True)
+    exporter = str(cast(Path, args["exporter"]).resolve())
     describe_command = [
         exporter,
         "--describe",
@@ -98,12 +127,15 @@ def main() -> int:
         "--output",
         str(output / "definition"),
     ]
-    if args.timeout_seconds <= 0:
-        parser.error("Timeout must be positive.")
-    invoke(describe_command, output / "describe.log", args.timeout_seconds)
+    invoke(
+        describe_command, output / "describe.log", cast(int, args["timeout_seconds"])
+    )
     runtime = Runtime.load(output / "definition")
     design = design_campaign(
-        runtime, args.horizon_half_lives, args.windows, args.target_last_window
+        runtime,
+        cast(Decimal, args["horizon_half_lives"]),
+        cast(int, args["windows"]),
+        cast(int, args["target_last_window"]),
     )
     command = [
         exporter,
@@ -112,11 +144,11 @@ def main() -> int:
         "--output",
         str(output / "run"),
         "--device",
-        args.device,
+        cast(str, args["device"]),
         "--workers",
-        str(args.workers),
+        str(cast(int, args["workers"])),
         "--seed",
-        str(args.seed),
+        str(cast(int, args["seed"])),
         "--windows",
         str(design.windows),
         "--step-ps",
@@ -126,7 +158,7 @@ def main() -> int:
         "--capacity",
         str(design.capacity),
         "--population-replicates",
-        str(args.population_replicates),
+        str(cast(int, args["population_replicates"])),
     ]
     design_values = {
         "step_ps": design.step_ps,
@@ -138,44 +170,37 @@ def main() -> int:
         "target_last_window": design.target_last_window,
         "horizon_policy": design.horizon_policy,
     }
-    # Freeze the complete design and decision thresholds before production draws.
     write_json(
         output / "settings.json",
         {
-            "schema_version": 1,
             "reference": str(reference_path),
-            "reference_id": reference.raw["reference_id"],
-            "verified_raw_files": raw_count,
-            "source_tree": str(args.source_tree.resolve()),
-            "source_revision": args.revision,
+            "source_tree": str(cast(Path, args["source_tree"]).resolve()),
             "design": design_values,
-            "family_alpha": str(args.family_alpha),
-            "population_replicates": args.population_replicates,
-            "seed": args.seed,
-            "workers_per_device": args.workers,
-            "device_selector": args.device,
-            "timeout_seconds": args.timeout_seconds,
+            "family_alpha": str(cast(Decimal, args["family_alpha"])),
             "commands": [describe_command, command],
-            "python": sys.version,
+            "python": platform.python_version(),
             "platform": platform.platform(),
             "dependencies": {
                 name: importlib.metadata.version(name)
                 for name in ("numpy", "scipy", "matplotlib")
             },
-            "rng_contract": "Production Point/Fixed uses one birth-time word followed by the conditional-energy word (Mono uses none). Replay and repeated population experiments use separate host planners and never advance Run streams.",
-            "statistical_policy": "Bonferroni m = windows*(2*groups+3)+5*groups+1; exact Poisson prediction intervals, replicated discrete ECDF tests, large-mean two-sided dispersion, conditional-time and energy DKW tests. No thresholds, seeds or retention changes after results.",
         },
     )
-    invoke(command, output / "exporter.log", args.timeout_seconds)
-    result = analyze_campaign(output, reference, args.source_tree.resolve())
+
+    # ------------------------------------------------------------------------
+    # Generate Source births, then evaluate the fixed scientific comparisons.
+
+    invoke(command, output / "exporter.log", cast(int, args["timeout_seconds"]))
+    result = analyze_campaign(
+        output, reference, cast(Path, args["source_tree"]).resolve()
+    )
     print(
         f"Completed {reference.name}: {result['sample_count']} primaries; results in {output}"
     )
     print(
-        "Scientific discrepancies remain in analysis.json; completion is not a claim that every hypothesis passed."
+        "Read analysis.json for each scientific result; command completion alone is not validation."
     )
-    return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

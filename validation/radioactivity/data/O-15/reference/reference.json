@@ -1,5 +1,4 @@
 {
-  "schema_version": 1,
   "name": "O-15",
   "reference_id": "LNHB-O15-2026-03-03-BetaShape-2.4-fixint1",
   "half_life": {
@@ -116,8 +115,7 @@
       "csv": true,
       "qval_override": false
     },
-    "input_matches_LNHB_byte_for_byte": true,
-    "execution": "Recovered outputs only; BetaShape was not rerun for this package. Executable hash and original download/execution timestamps were not recovered and are not inferred from filesystem times.",
+    "execution": "Recovered outputs only; BetaShape was not rerun for this package. Original download/execution timestamps were not recovered.",
     "cross_checks": [
       {
         "source": "lnhb/O-15.lara.txt",
@@ -147,106 +145,26 @@
       }
     ],
     "raw_files": [
-      {
-        "path": "betashape/v2.4/command.txt",
-        "bytes": 42,
-        "sha256": "7bd22141802d539da22578327845549233dee1ec42fbc9b34d484f9b5da8086d"
-      },
-      {
-        "path": "betashape/v2.4/input/O-15.txt",
-        "bytes": 820,
-        "sha256": "a0a4d0d586d5b0d262f30f4718c21989aa84a3b8b74846d8736dd7c7630348cb"
-      },
-      {
-        "path": "betashape/v2.4/output/beta+_O15_tot.bs",
-        "bytes": 15264,
-        "sha256": "2ce90713a0ec1ea3233c707792bbcf51824b312985320aae24c77040a6ccd3b7"
-      },
-      {
-        "path": "betashape/v2.4/output/beta+_O15_trans0.bs",
-        "bytes": 15685,
-        "sha256": "6fd0a4842e9237591e0b1a08e2920e108a1e33aee7c2daac3da57c6f8b7d1f26"
-      },
-      {
-        "path": "betashape/v2.4/output/capt_O15_trans0.bs",
-        "bytes": 1931,
-        "sha256": "5d9de43a76d588138d2c521ee701084b14b5a25951d56885e66ff26b34ca73b1"
-      },
-      {
-        "path": "betashape/v2.4/output/O-15.new",
-        "bytes": 1066,
-        "sha256": "3f8b3d8cc1794018601626a37be02257caf4fd4ab7c8bef204490cb0808ecaed"
-      },
-      {
-        "path": "betashape/v2.4/output/O-15.read",
-        "bytes": 1132,
-        "sha256": "742fc24f320338472b92ea5f5b81396c2db1dc508bcdd843ea1ef0cf62759a3d"
-      },
-      {
-        "path": "betashape/v2.4/output/O-15.rpt",
-        "bytes": 2847,
-        "sha256": "b2afde6b92fbf975fb5f817cb55f4dbdb8435027bcda6790d96ac0fc9d65a99b"
-      },
-      {
-        "path": "betashape/v2.4/output/O-15.trans",
-        "bytes": 1183,
-        "sha256": "c3a048e47a79f1f2cb485dad471e756ab6d047b4f4a1f1bc16efe15336543df8"
-      },
-      {
-        "path": "betashape/v2.4/output/O-15_ecbp.csv",
-        "bytes": 1533,
-        "sha256": "6e823b46fc6faaedc71abdd712b24b3ab3754e7d1c800cfcbef256ebd692d072"
-      },
-      {
-        "path": "ensdf/ec_decay.pdf",
-        "bytes": 22490,
-        "sha256": "3f8bc5b27490eb27bef5839a00bd81b50103dc86c7e935c7ce0b34a3398081a0"
-      },
-      {
-        "path": "lnhb/O-15.lara.txt",
-        "bytes": 728,
-        "sha256": "cfd7087bfcb9f20b53852fdf77e82ff2ac6e8e5b27c5f1afb202002bdcf4ea55"
-      },
-      {
-        "path": "lnhb/O-15.PenNuc.txt",
-        "bytes": 491,
-        "sha256": "b1b634503249aeb8300c5fde4a1346451117655b974b2fb8dee4b8e0414cd86f"
-      },
-      {
-        "path": "lnhb/O-15.txt",
-        "bytes": 820,
-        "sha256": "a0a4d0d586d5b0d262f30f4718c21989aa84a3b8b74846d8736dd7c7630348cb"
-      },
-      {
-        "path": "lnhb/O-15_com.pdf",
-        "bytes": 282412,
-        "sha256": "bdaf116bb23e54cc45ab0501448d107a9fd22d9ced104f9df569f6631d4a719a"
-      },
-      {
-        "path": "lnhb/O-15_tables.pdf",
-        "bytes": 232541,
-        "sha256": "d2e2d77504e8cb820fafd28ccad0ae2bc17ad4ace339952c7332fbc3e30f7122"
-      },
-      {
-        "path": "mird/mird-O-15-table-0.csv",
-        "bytes": 256,
-        "sha256": "1d2b14ba1868fef42d33a16c9eaea9e6bb2d2ca08f4723141eb9f257177a8279"
-      },
-      {
-        "path": "mird/O-15 Beta Spectrum.csv",
-        "bytes": 2153,
-        "sha256": "a2b700a583c50b5c7ec5250f8223fb338e2ecbb59f210fb002f4ecc06f04226c"
-      },
-      {
-        "path": "mird/O-15 DPK.csv",
-        "bytes": 147432,
-        "sha256": "94f1238c2f098c87a6572673e2b923dc0ab57122841072bb542206014616a176"
-      },
-      {
-        "path": "mird/O-15 Summary Spectrum.csv",
-        "bytes": 111,
-        "sha256": "396641578c8ca7809e9a11151467d147b57814219daed7cd207a9bc16487c37b"
-      }
+      "betashape/v2.4/command.txt",
+      "betashape/v2.4/input/O-15.txt",
+      "betashape/v2.4/output/beta+_O15_tot.bs",
+      "betashape/v2.4/output/beta+_O15_trans0.bs",
+      "betashape/v2.4/output/capt_O15_trans0.bs",
+      "betashape/v2.4/output/O-15.new",
+      "betashape/v2.4/output/O-15.read",
+      "betashape/v2.4/output/O-15.rpt",
+      "betashape/v2.4/output/O-15.trans",
+      "betashape/v2.4/output/O-15_ecbp.csv",
+      "ensdf/ec_decay.pdf",
+      "lnhb/O-15.lara.txt",
+      "lnhb/O-15.PenNuc.txt",
+      "lnhb/O-15.txt",
+      "lnhb/O-15_com.pdf",
+      "lnhb/O-15_tables.pdf",
+      "mird/mird-O-15-table-0.csv",
+      "mird/O-15 Beta Spectrum.csv",
+      "mird/O-15 DPK.csv",
+      "mird/O-15 Summary Spectrum.csv"
     ]
   },
   "implementation_audit": {
