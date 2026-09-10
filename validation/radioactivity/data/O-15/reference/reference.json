@@ -1,0 +1,257 @@
+{
+  "schema_version": 1,
+  "name": "O-15",
+  "reference_id": "LNHB-O15-2026-03-03-BetaShape-2.4-fixint1",
+  "half_life": {
+    "value": "122.266",
+    "standard_uncertainty": "0.049",
+    "unit": "s",
+    "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
+  },
+  "nuclear_quantities": {
+    "q_plus": {
+      "value": "2754.18",
+      "standard_uncertainty": "0.49",
+      "unit": "keV",
+      "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
+    },
+    "beta_plus_probability": {
+      "value": "99.9001",
+      "standard_uncertainty": "0.0017",
+      "unit": "%",
+      "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
+    },
+    "electron_capture_probability": {
+      "value": "0.0999",
+      "standard_uncertainty": "0.0017",
+      "unit": "%",
+      "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
+    },
+    "beta_plus_endpoint": {
+      "value": "1732.18",
+      "standard_uncertainty": "0.49",
+      "unit": "keV",
+      "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
+    },
+    "beta_plus_mean_energy": {
+      "value": "733.47",
+      "standard_uncertainty": "0.23",
+      "unit": "keV",
+      "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
+    },
+    "annihilation_photon_yield": {
+      "value": "199.8002",
+      "standard_uncertainty": "0.0034",
+      "unit": "per 100 disintegrations",
+      "source": "lnhb/O-15_tables.pdf, p. 2; lnhb/O-15_com.pdf, section 3"
+    }
+  },
+  "groups": [
+    {
+      "id": "beta_plus_to_ground_state",
+      "index": 0,
+      "particle": "Positron",
+      "yield_per_decay": {
+        "value": "0.999001",
+        "standard_uncertainty": "0.000017",
+        "unit": "primary/parent decay",
+        "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "reference_representation": "piecewise_linear_density",
+        "spectrum_file": "positron_spectrum.csv",
+        "energy_unit": "keV",
+        "endpoint": {
+          "value": "1732.18",
+          "standard_uncertainty": "0.49",
+          "unit": "keV",
+          "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
+        },
+        "mean_energy": {
+          "value": "733.47",
+          "standard_uncertainty": "0.23",
+          "unit": "keV",
+          "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
+        },
+        "generator": "BetaShape 2.4 (06/2024)",
+        "source": "betashape/v2.4/output/beta+_O15_trans0.bs",
+        "raw_grid_points": 348,
+        "raw_grid_step_keV": "5",
+        "last_interval_keV": "2.18",
+        "raw_trapezoid_integral": "0.998991212775914",
+        "conditional_piecewise_linear_mean_keV": "733.47520744597438834102999941580872388423191636253360439719373715347139473164995",
+        "transformation": "Copy all three decimal columns verbatim. For conditional shape comparisons only, linearly interpolate density and divide its integral by the recorded raw integral. No change to source emission yield; no rescaling of the energy axis.",
+        "uncertainty_policy": "Preserve supplied pointwise uncertainties; no covariance is supplied. Statistical tests condition on the tabulated central shape and do not constitute an uncertainty-aware evaluation equivalence test."
+      },
+      "mapping": "One ordered GGEMS Positron emission group for the allowed ground-state beta+ transition; conditional spectrum weights are separate from the physical yield."
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "annihilation",
+      "particle": "Gamma",
+      "energy_keV": "511",
+      "reason": "Reference information only. Annihilation belongs to positron transport and must not be a source-emission group."
+    },
+    {
+      "id": "electron_capture",
+      "reason": "Parent decay channel, not a transported GGEMS particle. Selected evaluation does not provide a resolved source-emission relaxation spectrum; do not import MIRD X-ray/Auger groups or add a zero-energy placeholder."
+    },
+    {
+      "id": "neutrino_and_daughter_recoil",
+      "reason": "Outside this Source validation mapping; neither is a current built-in O-15 source group."
+    }
+  ],
+  "provenance": {
+    "authority": "User-selected recovered local LNHB evaluation; no live web substitution.",
+    "evaluator": "X. Mougeot, LNE-LNHB/CEA",
+    "evaluation_literature_cutoff": "February 2026",
+    "table_date": "2026-03-03",
+    "scheme_and_PenNuc_date": "2026-02-27",
+    "betashape_version": "2.4 (06/2024)",
+    "betashape_command": ".\\betashape.exe O15\\O-15.txt fixint=1 -csv",
+    "betashape_options": {
+      "fixint": 1,
+      "csv": true,
+      "qval_override": false
+    },
+    "input_matches_LNHB_byte_for_byte": true,
+    "execution": "Recovered outputs only; BetaShape was not rerun for this package. Executable hash and original download/execution timestamps were not recovered and are not inferred from filesystem times.",
+    "cross_checks": [
+      {
+        "source": "lnhb/O-15.lara.txt",
+        "selection": "not selected for half-life",
+        "half_life_s": "122.268",
+        "uncertainty_s": "0.048",
+        "comment": "Differs from selected 122.266(49) s; consistent with rounded 2.0378(8) min multiplied by 60. This explanation is an inference; retain source values."
+      },
+      {
+        "source": "ensdf/ec_decay.pdf",
+        "selection": "independent cross-check",
+        "evaluation": "F. Ajzenberg-Selove, NP A523,1 (1991); cutoff 1990-07-01",
+        "half_life_s": "122.24",
+        "uncertainty_s": "0.16",
+        "q_plus_keV": "2754.0",
+        "beta_plus_percent": "99.9003",
+        "ec_percent": "0.0997",
+        "mean_beta_energy_keV": "735.28",
+        "comment": "Historical evaluation, not the selected LNHB values; no merge."
+      },
+      {
+        "source": "mird/mird-O-15-table-0.csv",
+        "selection": "independent cross-check",
+        "mean_beta_energy_MeV": "0.7352",
+        "beta_plus_yield_per_decay": "0.999",
+        "comment": "Also lists annihilation, X-rays and Auger electrons. No recovered evaluation identity/date in this CSV; none is invented and no group is imported."
+      }
+    ],
+    "raw_files": [
+      {
+        "path": "betashape/v2.4/command.txt",
+        "bytes": 42,
+        "sha256": "7bd22141802d539da22578327845549233dee1ec42fbc9b34d484f9b5da8086d"
+      },
+      {
+        "path": "betashape/v2.4/input/O-15.txt",
+        "bytes": 820,
+        "sha256": "a0a4d0d586d5b0d262f30f4718c21989aa84a3b8b74846d8736dd7c7630348cb"
+      },
+      {
+        "path": "betashape/v2.4/output/beta+_O15_tot.bs",
+        "bytes": 15264,
+        "sha256": "2ce90713a0ec1ea3233c707792bbcf51824b312985320aae24c77040a6ccd3b7"
+      },
+      {
+        "path": "betashape/v2.4/output/beta+_O15_trans0.bs",
+        "bytes": 15685,
+        "sha256": "6fd0a4842e9237591e0b1a08e2920e108a1e33aee7c2daac3da57c6f8b7d1f26"
+      },
+      {
+        "path": "betashape/v2.4/output/capt_O15_trans0.bs",
+        "bytes": 1931,
+        "sha256": "5d9de43a76d588138d2c521ee701084b14b5a25951d56885e66ff26b34ca73b1"
+      },
+      {
+        "path": "betashape/v2.4/output/O-15.new",
+        "bytes": 1066,
+        "sha256": "3f8b3d8cc1794018601626a37be02257caf4fd4ab7c8bef204490cb0808ecaed"
+      },
+      {
+        "path": "betashape/v2.4/output/O-15.read",
+        "bytes": 1132,
+        "sha256": "742fc24f320338472b92ea5f5b81396c2db1dc508bcdd843ea1ef0cf62759a3d"
+      },
+      {
+        "path": "betashape/v2.4/output/O-15.rpt",
+        "bytes": 2847,
+        "sha256": "b2afde6b92fbf975fb5f817cb55f4dbdb8435027bcda6790d96ac0fc9d65a99b"
+      },
+      {
+        "path": "betashape/v2.4/output/O-15.trans",
+        "bytes": 1183,
+        "sha256": "c3a048e47a79f1f2cb485dad471e756ab6d047b4f4a1f1bc16efe15336543df8"
+      },
+      {
+        "path": "betashape/v2.4/output/O-15_ecbp.csv",
+        "bytes": 1533,
+        "sha256": "6e823b46fc6faaedc71abdd712b24b3ab3754e7d1c800cfcbef256ebd692d072"
+      },
+      {
+        "path": "ensdf/ec_decay.pdf",
+        "bytes": 22490,
+        "sha256": "3f8bc5b27490eb27bef5839a00bd81b50103dc86c7e935c7ce0b34a3398081a0"
+      },
+      {
+        "path": "lnhb/O-15.lara.txt",
+        "bytes": 728,
+        "sha256": "cfd7087bfcb9f20b53852fdf77e82ff2ac6e8e5b27c5f1afb202002bdcf4ea55"
+      },
+      {
+        "path": "lnhb/O-15.PenNuc.txt",
+        "bytes": 491,
+        "sha256": "b1b634503249aeb8300c5fde4a1346451117655b974b2fb8dee4b8e0414cd86f"
+      },
+      {
+        "path": "lnhb/O-15.txt",
+        "bytes": 820,
+        "sha256": "a0a4d0d586d5b0d262f30f4718c21989aa84a3b8b74846d8736dd7c7630348cb"
+      },
+      {
+        "path": "lnhb/O-15_com.pdf",
+        "bytes": 282412,
+        "sha256": "bdaf116bb23e54cc45ab0501448d107a9fd22d9ced104f9df569f6631d4a719a"
+      },
+      {
+        "path": "lnhb/O-15_tables.pdf",
+        "bytes": 232541,
+        "sha256": "d2e2d77504e8cb820fafd28ccad0ae2bc17ad4ace339952c7332fbc3e30f7122"
+      },
+      {
+        "path": "mird/mird-O-15-table-0.csv",
+        "bytes": 256,
+        "sha256": "1d2b14ba1868fef42d33a16c9eaea9e6bb2d2ca08f4723141eb9f257177a8279"
+      },
+      {
+        "path": "mird/O-15 Beta Spectrum.csv",
+        "bytes": 2153,
+        "sha256": "a2b700a583c50b5c7ec5250f8223fb338e2ecbb59f210fb002f4ecc06f04226c"
+      },
+      {
+        "path": "mird/O-15 DPK.csv",
+        "bytes": 147432,
+        "sha256": "94f1238c2f098c87a6572673e2b923dc0ab57122841072bb542206014616a176"
+      },
+      {
+        "path": "mird/O-15 Summary Spectrum.csv",
+        "bytes": 111,
+        "sha256": "396641578c8ca7809e9a11151467d147b57814219daed7cd207a9bc16487c37b"
+      }
+    ]
+  },
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSO15.cc",
+    "generator_prefix": "// LNHB BetaShape ",
+    "selected_version": "2.4"
+  }
+}

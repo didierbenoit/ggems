@@ -1,0 +1,779 @@
+Input file:  .\I124\I-124.txt
+Output file: .\I124\I-124.new
+
+Input file: 404 lines
+Output file: 410 lines
+Added new lines: 6
+--> Output file is consistent.
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 0           0+                 STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.5974 (20) | L =  0.08054 (27) | M =  0.01762 (10) | N =  0.003951 (39) | O =  6.42E-4 (11)
+K/b+ =  1.992 (22) | L/b+ =  0.2686 (27) | M/b+ =  0.05877 (38) | N/b+ =  0.01318 (6) | O/b+ =  0.002143 (25) | EC/b+ =  2.335 (25)
+
+Branch splitting:  Iec 24.08 (33) %  and  Ib+ 10.32 (13) %
+                   Itot 34.40 (35) %
+EC component of log ft 9.305 (7)
+
+*    log ft
+124TE  E             10.32   1324.08   339.309                  34.40     35 1U - OLD CARD
+124TE  E             10.32   1324.08   339.305    7             34.40     35 1U - NEW CARD
+
+*    Probabilities
+124TE2 E EAV=975.2     8$CK=0.59727  20$CL=0.08051   8$CM=0.01762   8           - OLD CARD
+124TE2 E EAV= $CK=0.5974 20$CL=0.08054 27$CM+=0.02221 11                        - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 602.7271  212+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.5905 (22) | L =  0.07846 (30) | M =  0.01714 (10) | N =  0.003841 (39) | O =  6.25E-4 (11)
+K/b+ =  1.909 (23) | L/b+ =  0.2536 (27) | M/b+ =  0.05538 (41) | N/b+ =  0.01241 (7) | O/b+ =  0.002020 (25) | EC/b+ =  2.232 (26)
+
+Branch splitting:  Iec 25.55 (37) %  and  Ib+ 11.45 (15) %
+                   Itot 37.0 (4) %
+EC component of log ft 7.517 (7)
+
+*    log ft
+124TE  E             11.45   1525.55   377.522                  37.0       4    - OLD CARD
+124TE  E             11.45   1525.55   377.517    7             37.0       4    - NEW CARD
+
+*    Probabilities
+124TE2 E EAV=681.9     8$CK=0.5905    2$CL=0.07845   8$CM=0.01713   8           - OLD CARD
+124TE2 E EAV= $CK=0.5905 22$CL=0.07846 30$CM+=0.02161 11                        - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 1248.5811 254+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.83681 (37) | L =  0.11561 (12) | M =  0.02538 (11) | N =  0.00569 (5) | O =  9.24E-4 (15)
+K/b+ =  53.7 (9) | L/b+ =  7.42 (12) | M/b+ =  1.629 (20) | N/b+ =  0.3652 (38) | O/b+ =  0.0593 (10) | EC/b+ =  63.2 (10)
+
+Branch splitting:  Iec 0.0118 (10) %  and  Ib+ 1.88E-4 (16) %
+                   Itot 0.012 (1) %
+EC component of log ft 11.729 (37)
+
+*    log ft
+124TE  E             0.000188160.0118  1011.729                 0.012      1 1U - OLD CARD
+124TE  E             1.88E-4 160.0118  1011.729  37             0.012      1 1U - NEW CARD
+
+*    Probabilities
+124TE2 E EAV=420.4     8$CK=0.83674  30$CL=0.11559  12$CM=0.02538  12           - OLD CARD
+124TE2 E EAV= $CK=0.83681 37$CL=0.11561 12$CM+=0.03199 12                       - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 1325.5131 242+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8114 (7) | L =  0.10868 (14) | M =  0.02376 (11) | N =  0.00533 (5) | O =  8.67E-4 (14)
+K/b+ =  16.23 (27) | L/b+ =  2.174 (33) | M/b+ =  0.475 (6) | N/b+ =  0.1066 (11) | O/b+ =  0.01735 (29) | EC/b+ =  19.00 (31)
+
+Branch splitting:  Iec 5.43 (18) %  and  Ib+ 0.287 (10) %
+                   Itot 5.72 (18) %
+EC component of log ft 7.896 (15)
+
+*    log ft
+124TE  E             0.287   105.43    187.897                  5.72      18    - OLD CARD
+124TE  E             0.287   105.43    187.896   15             5.72      18    - NEW CARD
+
+*    Probabilities
+124TE2 E EAV=365.7     8$CK=0.81120  28$CL=0.10865  10$CM=0.02375  10           - OLD CARD
+124TE2 E EAV= $CK=0.8114 7$CL=0.10868 14$CM+=0.02996 12                         - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 1657.283  220+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.84674 (31) | L =  0.11909 (12) | M =  0.02621 (12) | N =  0.00588 (6) | O =  9.53E-4 (16)
+K/b+ =  747 (19) | L/b+ =  105.0 (26) | M/b+ =  23.1 (5) | N/b+ =  5.18 (10) | O/b+ =  0.840 (23) | EC/b+ =  881 (23)
+
+Branch splitting:  Iec 0.106 (8) %  and  Ib+ 1.21E-4 (10) %
+                   Itot 0.106 (8) %
+EC component of log ft 10.350 (33)
+
+*    log ft
+124TE  E             0.000121100.106    810.351                 0.106      8 1U - OLD CARD
+124TE  E             1.21E-4 100.106    810.350  33             0.106      8 1U - NEW CARD
+
+*    Probabilities
+124TE2 E EAV=238.4     9$CK=0.84675  31$CL=0.11907  12$CM=0.02620  12           - OLD CARD
+124TE2 E EAV= $CK=0.84674 31$CL=0.11909 12$CM+=0.03304 14                       - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  6
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 1882.92   3 0+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.84562 (32) | L =  0.12077 (13) | M =  0.02662 (12) | N =  0.00597 (6) | O =  9.67E-4 (16)
+K/b+ =  1.47E4 (7) | L/b+ =  2.11E3 (9) | M/b+ =  464 (19) | N/b+ =  104.1 (41) | O/b+ =  16.9 (8) | EC/b+ =  1.74E4 (8)
+
+Branch splitting:  Iec 0.025 (16) %  and  Ib+ 1.5E-6 (9) %
+                   Itot 0.025 (16) %
+EC component of log ft 10.69 (28)
+
+*    log ft
+124TE  E             1.5E-6   90.025   1610.69                  0.025     16 1U - OLD CARD
+124TE  E             1.5E-6   90.025   1610.69   28             0.025     16 1U - NEW CARD
+
+*    Probabilities
+124TE2 E EAV=132.8     9$CK=0.84563  32$CL=0.12075  13$CM=0.02663  12           - OLD CARD
+124TE2 E EAV= $CK=0.84562 32$CL=0.12077 13$CM+=0.03356 14                       - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  7
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2039.34   6 3+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.85164 (30) | L =  0.11623 (12) | M =  0.02548 (12) | N =  0.00572 (5) | O =  9.31E-4 (15)
+K/b+ =  1.32E5 (15) | L/b+ =  1.81E4 (20) | M/b+ =  3.96E3 (43) | N/b+ =  8.9E2 (9) | O/b+ =  145 (17) | EC/b+ =  1.55E5 (17)
+
+Branch splitting:  Iec 0.026 (16) %  and  Ib+ 1.8E-7 (11) %
+                   Itot 0.026 (16) %
+EC component of log ft 9.78 (27)
+
+*    log ft
+124TE  E             1.8E-7  110.026   169.78                   0.026     16 1  - OLD CARD
+124TE  E             1.8E-7  110.026   169.78    27             0.026     16    - NEW CARD
+
+*    Probabilities
+124TE2 E EAV=51.0      9$CK=0.85164  31$CL=0.11622  12$CM=0.02548  12           - OLD CARD
+124TE2 E EAV= $CK=0.85164 30$CL=0.11623 12$CM+=0.03213 13                       - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  8
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2091.603  172+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.85133 (31) | L =  0.11646 (12) | M =  0.02554 (12) | N =  0.00573 (5) | O =  9.33E-4 (15)
+K/b+ =  7.6E6 (21) | L/b+ =  1.05E6 (29) | M/b+ =  2.3E5 (6) | N/b+ =  5.1E4 (14) | O/b+ =  8.4E3 (24) | EC/b+ =  9.0E6 (25)
+
+Branch splitting:  Iec 0.192 (8) %  and  Ib+ 2.5E-8 (7) %
+                   Itot 0.192 (8) %
+EC component of log ft 8.868 (19)
+
+*    log ft
+124TE  E             2.5E-8   70.192    88.868                  0.192      8    - OLD CARD
+124TE  E             2.5E-8   70.192    88.868   19             0.192      8    - NEW CARD
+
+*    Probabilities
+124TE2 E EAV=24.9     10$CK=0.85134  31$CL=0.11646  12$CM=0.02554  12           - OLD CARD
+124TE2 E EAV= $CK=0.85133 31$CL=0.11646 12$CM+=0.03220 13                       - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  9
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2224.954  154+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.84033 (35) | L =  0.12482 (14) | M =  0.02765 (13) | N =  0.00620 (6) | O =  10.00E-4 (17)
+log ft 10.83 (17)
+
+*    log ft
+124TE  E                       0.005    210.83                  0.005      2 1U - OLD CARD
+124TE  E                       0.005    210.83   17             0.005      2 1U - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.84035  35$CL=0.12480  14$CM=0.02765  13$CN=0.00620   6            - OLD CARD
+124TE2 E CK=0.84033 35$CL=0.12482 14$CM+=0.03485 14                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  10
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2293.711  3 3-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.84975 (32) | L =  0.11765 (13) | M =  0.02585 (12) | N =  0.00580 (6) | O =  9.45E-4 (16)
+log ft 6.901 (11)
+
+*    log ft
+124TE  E                       11.54   256.901                  11.54     25    - OLD CARD
+124TE  E                       11.54   256.901   11             11.54     25    - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.84976  32$CL=0.11765  13$CM=0.02585  12$CN=0.00580   6            - OLD CARD
+124TE2 E CK=0.84975 32$CL=0.11765 13$CM+=0.03260 14                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  11
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2308.42   9 0+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.83825 (36) | L =  0.12640 (15) | M =  0.02805 (13) | N =  0.00628 (6) | O =  0.001012 (17)
+log ft 10.41 (10)
+
+*    log ft
+124TE  E                       0.009    210.41                  0.009      2 1U - OLD CARD
+124TE  E                       0.009    210.41   10             0.009      2 1U - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.83827  36$CL=0.12638  15$CM=0.02805  13$CN=0.00629   6            - OLD CARD
+124TE2 E CK=0.83825 36$CL=0.12640 15$CM+=0.03534 14                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  12
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2322.95   3 2+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.84946 (32) | L =  0.11788 (13) | M =  0.02590 (12) | N =  0.00581 (6) | O =  9.47E-4 (16)
+log ft 8.630 (26)
+
+*    log ft
+124TE  E                       0.201   128.63                   0.201     12    - OLD CARD
+124TE  E                       0.201   128.630   26             0.201     12    - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.84947  32$CL=0.11787  13$CM=0.02590  12$CN=0.00581   6            - OLD CARD
+124TE2 E CK=0.84946 32$CL=0.11788 13$CM+=0.03266 14                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  13
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2335.03   1 5-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '2U' transition assumed.
+K =  0.82093 (43) | L =  0.13965 (18) | M =  0.03135 (15) | N =  0.00698 (7) | O =  0.001093 (19)
+log ft 10.40 (22)
+
+*    log ft
+124TE  E                       0.02     110.4                   0.02       1 2U - OLD CARD
+124TE  E                       0.02     110.40   22             0.02       1 2U - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.82099  43$CL=0.13959  19$CM=0.03135  15$CN=0.00698   7            - OLD CARD
+124TE2 E CK=0.82093 43$CL=0.13965 18$CM+=0.03942 17                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  14
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2454.069  212+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.84782 (33) | L =  0.11911 (13) | M =  0.02622 (12) | N =  0.00589 (6) | O =  9.59E-4 (16)
+log ft 8.286 (41)
+
+*    log ft
+124TE  E                       0.311   298.286                  0.311     29    - OLD CARD
+124TE  E                       0.311   298.286   41             0.311     29    - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.84783  33$CL=0.11910  14$CM=0.02622  12$CN=0.00589   6            - OLD CARD
+124TE2 E CK=0.84782 33$CL=0.11911 13$CM+=0.03307 14                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  15
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2483.362  134+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.83181 (40) | L =  0.13130 (18) | M =  0.02928 (14) | N =  0.00655 (7) | O =  0.001048 (18)
+log ft 9.80 (22)
+
+*    log ft
+124TE  E                       0.014    79.8                    0.014      7 1U - OLD CARD
+124TE  E                       0.014    79.80    22             0.014      7 1U - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.83184  41$CL=0.13127  18$CM=0.02928  14$CN=0.00656   6            - OLD CARD
+124TE2 E CK=0.83181 40$CL=0.13130 18$CM+=0.03688 16                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  16
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2521.33   3 2+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.84670 (34) | L =  0.11996 (14) | M =  0.02644 (12) | N =  0.00594 (6) | O =  9.67E-4 (16)
+log ft 8.450 (16)
+
+*    log ft
+124TE  E                       0.173    68.45                   0.173      6    - OLD CARD
+124TE  E                       0.173    68.450   16             0.173      6    - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.84671  34$CL=0.11995  14$CM=0.02644  12$CN=0.00594   6            - OLD CARD
+124TE2 E CK=0.84670 34$CL=0.11996 14$CM+=0.03335 14                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  17
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2641.15   7 2+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.84394 (36) | L =  0.12204 (16) | M =  0.02697 (13) | N =  0.00606 (6) | O =  9.87E-4 (17)
+log ft 7.892 (17)
+
+*    log ft
+124TE  E                       0.404   157.892                  0.404     15    - OLD CARD
+124TE  E                       0.404   157.892   17             0.404     15    - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.84394  36$CL=0.12203  16$CM=0.02697  13$CN=0.00606   6            - OLD CARD
+124TE2 E CK=0.84394 36$CL=0.12204 16$CM+=0.03402 14                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  18
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2681.46   4 2+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.84267 (38) | L =  0.12300 (16) | M =  0.02722 (13) | N =  0.00612 (6) | O =  9.96E-4 (17)
+log ft 7.833 (23)
+
+*    log ft
+124TE  E                       0.39     27.833                  0.39       2    - OLD CARD
+124TE  E                       0.39     27.833   23             0.39       2    - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.84267  38$CL=0.12299  17$CM=0.02722  13$CN=0.00612   6            - OLD CARD
+124TE2 E CK=0.84267 38$CL=0.12300 16$CM+=0.03434 14                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  19
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2693.679  5 3-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.84223 (38) | L =  0.12333 (17) | M =  0.02730 (13) | N =  0.00614 (6) | O =  10.00E-4 (17)
+log ft 7.427 (16)
+
+*    log ft
+124TE  E                       0.94     37.427                  0.94       3    - OLD CARD
+124TE  E                       0.94     37.427   16             0.94       3    - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.84224  38$CL=0.12332  17$CM=0.02730  13$CN=0.00614   6            - OLD CARD
+124TE2 E CK=0.84223 38$CL=0.12333 17$CM+=0.03444 14                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  20
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2701.61   3 2-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.84194 (38) | L =  0.12355 (17) | M =  0.02736 (13) | N =  0.00615 (6) | O =  0.001002 (17)
+log ft 7.088 (10)
+
+*    log ft
+124TE  E                       1.98     37.088                  1.98       3    - OLD CARD
+124TE  E                       1.98     37.088   10             1.98       3    - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.84195  38$CL=0.12354  17$CM=0.02736  14$CN=0.00615   6            - OLD CARD
+124TE2 E CK=0.84194 38$CL=0.12355 17$CM+=0.03451 14                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  21
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2747.04   4 1-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.84002 (40) | L =  0.12499 (18) | M =  0.02773 (14) | N =  0.00624 (6) | O =  0.001016 (17)
+log ft 7.527 (16)
+
+*    log ft
+124TE  E                       0.577   187.527                  0.577     18    - OLD CARD
+124TE  E                       0.577   187.527   16             0.577     18    - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.84003  41$CL=0.12499  19$CM=0.02773  14$CN=0.00624   6            - OLD CARD
+124TE2 E CK=0.84002 40$CL=0.12499 18$CM+=0.03499 15                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  22
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2817.48   112+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.83591 (46) | L =  0.12809 (22) | M =  0.02853 (15) | N =  0.00642 (7) | O =  0.001046 (18)
+log ft 9.33 (7)
+
+*    log ft
+124TE  E                       0.006    19.33                   0.006      1    - OLD CARD
+124TE  E                       0.006    19.33     7             0.006      1    - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.83592  46$CL=0.12808  22$CM=0.02853  15$CN=0.00642   7            - OLD CARD
+124TE2 E CK=0.83591 46$CL=0.12809 22$CM+=0.03600 17                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  23
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2834.898  203-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.83459 (48) | L =  0.12909 (23) | M =  0.02879 (16) | N =  0.00648 (7) | O =  0.001056 (19)
+log ft 6.438 (12)
+
+*    log ft
+124TE  E                       4.22     76.438                  4.22       7    - OLD CARD
+124TE  E                       4.22     76.438   12             4.22       7    - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.83460  48$CL=0.12908  24$CM=0.02879  16$CN=0.00648   7            - OLD CARD
+124TE2 E CK=0.83459 48$CL=0.12909 23$CM+=0.03633 18                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  24
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2858.90   152+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8325 (5) | L =  0.13067 (26) | M =  0.02920 (16) | N =  0.00658 (7) | O =  0.001071 (19)
+log ft 9.51 (15)
+
+*    log ft
+124TE  E                       0.003    19.51                   0.003      1    - OLD CARD
+124TE  E                       0.003    19.51    15             0.003      1    - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.8325    5$CL=0.13067  26$CM=0.02920  16$CN=0.00658   7            - OLD CARD
+124TE2 E CK=0.8325 5$CL=0.13067 26$CM+=0.03685 18                               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  25
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2886.05   3 3-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8296 (6) | L =  0.13286 (29) | M =  0.02976 (18) | N =  0.00671 (7) | O =  0.001093 (20)
+log ft 6.850 (25)
+
+*    log ft
+124TE  E                       1.12     66.85                   1.12       6    - OLD CARD
+124TE  E                       1.12     66.850   25             1.12       6    - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.8296    6$CL=0.13285  29$CM=0.02976  18$CN=0.00671   7            - OLD CARD
+124TE2 E CK=0.8296 6$CL=0.13286 29$CM+=0.03756 19                               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  26
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2945.59   6 2+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8201 (8) | L =  0.13996 (43) | M =  0.03161 (22) | N =  0.00713 (9) | O =  0.001163 (22)
+log ft 8.197 (47)
+
+*    log ft
+124TE  E                       0.029    38.197                  0.029      3    - OLD CARD
+124TE  E                       0.029    38.197   47             0.029      3    - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.8201    8$CL=0.13995  43$CM=0.03161  22$CN=0.00713   9            - OLD CARD
+124TE2 E CK=0.8201 8$CL=0.13996 43$CM+=0.03990 24                               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  27
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2988.24   5 2+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8083 (11) | L =  0.1488 (7) | M =  0.03393 (29) | N =  0.00767 (10) | O =  0.001251 (26)
+log ft 8.02 (5)
+
+*    log ft
+124TE  E                       0.026    38.02                   0.026      3    - OLD CARD
+124TE  E                       0.026    38.02     5             0.026      3    - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.8083   11$CL=0.1488    7$CM=0.03393  29$CN=0.00767  10            - OLD CARD
+124TE2 E CK=0.8083 11$CL=0.1488 7$CM+=0.04285 31                                - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  28
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 3001.12   3 3-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8031 (12) | L =  0.1527 (8) | M =  0.03494 (32) | N =  0.00791 (11) | O =  0.001289 (28)
+log ft 6.822 (21)
+
+*    log ft
+124TE  E                       0.34     16.822                  0.34       1    - OLD CARD
+124TE  E                       0.34     16.822   21             0.34       1    - NEW CARD
+
+*    Probabilities
+124TE2 E CK=0.8032   12$CL=0.1527    8$CM=0.03494  32$CN=0.00791  11            - OLD CARD
+124TE2 E CK=0.8031 12$CL=0.1527 8$CM+=0.04414 34                                - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 28
+-------- Added lines: 1
+
+
+####################################################  B+ DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 0           0+                 STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 968.7 (8) keV   |   log ft (ec & beta +) 9.309 (5)
+
+From measured spectrum
+Emean 975.2 (8) keV   |   [For information] log ft (ec & beta +) 0
+
+*    log ft (ec & beta +)
+124TE  E             10.32   1324.08   339.309                  34.40     35 1U - OLD CARD
+124TE  E             10.32   1324.08   339.309    5             34.40     35 1U - NEW CARD
+
+*    Mean energy
+124TE2 E EAV=975.2     8$CK=0.59727  20$CL=0.08051   8$CM=0.01762   8           - OLD CARD
+124TE2 E EAV=975.2 8$CK=0.5974 20$CL=0.08054 27$CM+=0.02221 11                  - NEW CARD
+124TE2 E C1=-0.004 7 (1971BO01)                                                 - ADDITIONAL NEW CARD
+124TE DE $Cexp(W) = (1+C{-1}W)|*(q{+2}+|l{-2}p{+2})                             - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 602.7271  212+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 684.6 (8) keV   |   log ft (ec & beta +) 7.522 (6)
+
+From measured spectrum
+Emean 681.9 (8) keV   |   [For information] log ft (ec & beta +) 0
+
+*    log ft (ec & beta +)
+124TE  E             11.45   1525.55   377.522                  37.0       4    - OLD CARD
+124TE  E             11.45   1525.55   377.522    6             37.0       4    - NEW CARD
+
+*    Mean energy
+124TE2 E EAV=681.9     8$CK=0.5905    2$CL=0.07845   8$CM=0.01713   8           - OLD CARD
+124TE2 E EAV=681.9 8$CK=0.5905 22$CL=0.07846 30$CM+=0.02161 11                  - NEW CARD
+124TE2 E C1=-0.046 18 (1971BO01)                                                - ADDITIONAL NEW CARD
+124TE DE $Cexp(W) = 1+C{-1}W                                                    - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 1248.5811 254+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 420.6 (8) keV   |   log ft (ec & beta +) 11.729 (37)
+
+*    log ft (ec & beta +)
+124TE  E             0.000188160.0118  1011.729                 0.012      1 1U - OLD CARD
+124TE  E             1.88E-4 160.0118  1011.729  37             0.012      1 1U - NEW CARD
+
+*    Mean energy
+124TE2 E EAV=420.4     8$CK=0.83674  30$CL=0.11559  12$CM=0.02538  12           - OLD CARD
+124TE2 E EAV=420.6 8$CK=0.83681 37$CL=0.11561 12$CM+=0.03199 12                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 1325.5131 242+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 365.9 (8) keV   |   log ft (ec & beta +) 7.897 (14)
+
+*    log ft (ec & beta +)
+124TE  E             0.287   105.43    187.897                  5.72      18    - OLD CARD
+124TE  E             0.287   105.43    187.897   14             5.72      18    - NEW CARD
+
+*    Mean energy
+124TE2 E EAV=365.7     8$CK=0.81120  28$CL=0.10865  10$CM=0.02375  10           - OLD CARD
+124TE2 E EAV=365.9 8$CK=0.8114 7$CL=0.10868 14$CM+=0.02996 12                   - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 1657.283  220+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 238.8 (9) keV   |   log ft (ec & beta +) 10.351 (33)
+
+*    log ft (ec & beta +)
+124TE  E             0.000121100.106    810.351                 0.106      8 1U - OLD CARD
+124TE  E             1.21E-4 100.106    810.351  33             0.106      8 1U - NEW CARD
+
+*    Mean energy
+124TE2 E EAV=238.4     9$CK=0.84675  31$CL=0.11907  12$CM=0.02620  12           - OLD CARD
+124TE2 E EAV=238.8 9$CK=0.84674 31$CL=0.11909 12$CM+=0.03304 14                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  6
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 1882.92   3 0+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 133.3 (9) keV   |   log ft (ec & beta +) 10.69 (28)
+
+*    log ft (ec & beta +)
+124TE  E             1.5E-6   90.025   1610.69                  0.025     16 1U - OLD CARD
+124TE  E             1.5E-6   90.025   1610.69   28             0.025     16 1U - NEW CARD
+
+*    Mean energy
+124TE2 E EAV=132.8     9$CK=0.84563  32$CL=0.12075  13$CM=0.02663  12           - OLD CARD
+124TE2 E EAV=133.3 9$CK=0.84562 32$CL=0.12077 13$CM+=0.03356 14                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  7
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2039.34   6 3+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 51.6 (9) keV   |   log ft (ec & beta +) 9.78 (27)
+
+*    log ft (ec & beta +)
+124TE  E             1.8E-7  110.026   169.78                   0.026     16 1  - OLD CARD
+124TE  E             1.8E-7  110.026   169.78    27             0.026     16    - NEW CARD
+
+*    Mean energy
+124TE2 E EAV=51.0      9$CK=0.85164  31$CL=0.11622  12$CM=0.02548  12           - OLD CARD
+124TE2 E EAV=51.6 9$CK=0.85164 30$CL=0.11623 12$CM+=0.03213 13                  - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  8
+
+124I   P 0.0         2-                4.17600 D 29             3159.6    19    - PARENT
+124TE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+124TE  L 2091.603  172+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 25.6 (10) keV   |   log ft (ec & beta +) 8.868 (19)
+
+*    log ft (ec & beta +)
+124TE  E             2.5E-8   70.192    88.868                  0.192      8    - OLD CARD
+124TE  E             2.5E-8   70.192    88.868   19             0.192      8    - NEW CARD
+
+*    Mean energy
+124TE2 E EAV=24.9     10$CK=0.85134  31$CL=0.11646  12$CM=0.02554  12           - OLD CARD
+124TE2 E EAV=25.6 10$CK=0.85133 31$CL=0.11646 12$CM+=0.03220 13                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 8
+-------- Added lines: 5
+
+

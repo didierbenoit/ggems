@@ -1,0 +1,13 @@
+ 15N     15O EC DECAY (122.266 S)                                               
+ 15N  C  References:1934Li04, 1935Mc01, 1950Br29, 1954Kl36, 1955Ba83, 1955Ki28, 
+ 15N 2C  1957Ki22, 1957Pe12, 1959Ki99, 1960Ja12, 1963Cs02, 1963Va31, 1963Ne05,  
+ 15N 3C  1972Le33, 1977Az01, 1977Ba48, 1991Aj01, 1996Sc06, 2008DuZX, 2019Mo35,  
+ 15N 4C  2020Bu02, 2021Wa16, 2023Se01, 2023Mo21                                 
+ 15N  DE LOGFT,CK,CL,CM,CN$FROM BetaShape v2.4 (Jun-2024) 2019MO35.             
+ 15N  DE EAV,LOGFT$FROM BetaShape v2.4 (Jun-2024) 2023MO21.                     
+ 15O   P 0.0         1/2-              122.266 S 49             2754.18   49    
+ 15N   N 1.0         1.0       1         1.0                                    
+ 15N   L 0           1/2-               STABLE                                  
+ 15N   E             99.9001 170.0999  173.6449   6             100             
+ 15N 2 E EAV=733.47 23$CK=9.28E-4 16$CL=7.15E-5 13                              
+                                                                                

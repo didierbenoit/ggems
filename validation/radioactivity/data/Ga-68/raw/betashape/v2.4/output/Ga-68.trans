@@ -1,0 +1,107 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 31-Ga-68 [1+] g.s.  -->  Daughter nucleus: 30-Zn-68 [0+] g.s.
+Half-life of the parent nuclide: 4070 (12) s
+Electron capture transition. Order: allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 8.94 (41) %
+Log ft of the (ec + b+) transition: 5.2
+
+------------------------------------
+Parent nucleus: 31-Ga-68 [1+] g.s.  -->  Daughter nucleus: 30-Zn-68 [0+] g.s.
+Half-life of the parent nuclide: 4070 (12) s
+Beta + transition. Order: allowed
+Transition energy. Calculated Emax from Q-value and level energies: 1899.1 (12) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 87.68 (41) %
+Average energy of beta + spectrum: 836.0 (6) keV
+Log ft of the (ec + b+) transition: 5.2
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 31-Ga-68 [1+] g.s.  -->  Daughter nucleus: 30-Zn-68 [2+] 1077.35 (5) keV
+Half-life of the parent nuclide: 4070 (12) s
+Electron capture transition. Order: allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 1.80 (5) %
+Log ft of the (ec + b+) transition: 5.5
+
+------------------------------------
+Parent nucleus: 31-Ga-68 [1+] g.s.  -->  Daughter nucleus: 30-Zn-68 [2+] 1077.35 (5) keV
+Half-life of the parent nuclide: 4070 (12) s
+Beta + transition. Order: allowed
+Transition energy. Calculated Emax from Q-value and level energies: 821.8 (12) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 1.20 (4) %
+Average energy of beta + spectrum: 352.6 (6) keV
+Log ft of the (ec + b+) transition: 5.5
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 31-Ga-68 [1+] g.s.  -->  Daughter nucleus: 30-Zn-68 [0+] 1655.87 (14) keV
+Half-life of the parent nuclide: 4070 (12) s
+Electron capture transition. Order: allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.0335 (23) %
+Log ft of the (ec + b+) transition: 6.9
+
+------------------------------------
+Parent nucleus: 31-Ga-68 [1+] g.s.  -->  Daughter nucleus: 30-Zn-68 [0+] 1655.87 (14) keV
+Half-life of the parent nuclide: 4070 (12) s
+Beta + transition. Order: allowed
+Transition energy. Calculated Emax from Q-value and level energies: 243.2 (12) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 2.6E-4 (2) %
+Average energy of beta + spectrum: 107.6 (6) keV
+Log ft of the (ec + b+) transition: 6.9
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 31-Ga-68 [1+] g.s.  -->  Daughter nucleus: 30-Zn-68 [2+] 1883.19 (6) keV
+Half-life of the parent nuclide: 4070 (12) s
+Electron capture transition. Order: allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.234 (5) %
+Log ft of the (ec + b+) transition: 5.9
+
+------------------------------------
+Parent nucleus: 31-Ga-68 [1+] g.s.  -->  Daughter nucleus: 30-Zn-68 [2+] 1883.19 (6) keV
+Half-life of the parent nuclide: 4070 (12) s
+Beta + transition. Order: allowed
+Transition energy. Calculated Emax from Q-value and level energies: 15.9 (12) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0 %
+Log ft of the (ec + b+) transition: 5.9
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 31-Ga-68 [1+] g.s.  -->  Daughter nucleus: 30-Zn-68 [2+] 2338.44 (8) keV
+Half-life of the parent nuclide: 4070 (12) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.096 (3) %
+Log ft of the ec transition: 5.7
+
+------------------------------------
+Parent nucleus: 31-Ga-68 [1+] g.s.  -->  Daughter nucleus: 30-Zn-68 [2+] 2821.79 (14) keV
+Half-life of the parent nuclide: 4070 (12) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.0104 (5) %
+Log ft of the ec transition: 5.1
+
+
+####################################
+
+Summary
+
+1 nucleus and 10 transitions have been read.
+
+Parent nucleus: 31-Ga-68
+10 transitions have been read (6 EC, 4 B+).
+
+
+####################################

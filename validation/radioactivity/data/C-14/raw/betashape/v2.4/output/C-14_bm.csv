@@ -1,0 +1,11 @@
+# BetaShape
+# Version: 2.4 (06/2024)
+# Author: X. Mougeot (xavier.mougeot@cea.fr)
+# CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+# Please cite: [2023MO21] X. Mougeot, Applied Radiation and Isotopes 201, 111018 (2023)
+# 
+# Input file: .\C14\C-14.txt
+# Neutrino information: no
+# 
+# parent symbol, Z, A, Jpi, level energy, unc, daughter symbol, Z, A, Jpi, level energy, unc, Q, unc, half-life, unc, unit, transition nature, transition nature used, branching %, unc, log ft, unc, f-value, unc, transition energy, unc, mean energy calc, unc, mean energy exp, unc
+C, 6, 14, 0+, 0, 0, N, 7, 14, 1+, 0, 0, 156.476, 0.004, 1.799E11, 9e+08, s, A, A, 100, , 9.0466, 0.0022, 0.0061877, 5e-07, 156.476, 0.004, 49.2606, 0.0014, 48.9252, 0.0014

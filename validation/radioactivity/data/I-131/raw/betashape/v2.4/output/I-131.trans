@@ -1,0 +1,83 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 53-I-131 [7/2+] g.s.  -->  Daughter nucleus: 54-Xe-131 [11/2-] 163.930 (8) keV
+Half-life of the parent nuclide: 6.9321E5 (16) s
+Beta - transition. Order: 1st forbidden unique
+Transition energy calculated from Q-value and level energies: 806.9 (6) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 0.386 (23) %
+Average energy of beta - spectrum: 267.91 (23) keV
+Log ft of the beta - transition: 10.03
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 53-I-131 [7/2+] g.s.  -->  Daughter nucleus: 54-Xe-131 [9/2-] 341.144 (9) keV
+Half-life of the parent nuclide: 6.9321E5 (16) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 629.7 (6) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 0.060 (12) %
+Average energy of beta - spectrum: 200.23 (22) keV
+Log ft of the beta - transition: 9.8
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 53-I-131 [7/2+] g.s.  -->  Daughter nucleus: 54-Xe-131 [5/2+] 364.490 (4) keV
+Half-life of the parent nuclide: 6.9321E5 (16) s
+Beta - transition. Order: allowed
+Transition energy calculated from Q-value and level energies: 606.3 (6) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 89.4 (8) %
+Average energy of beta - spectrum: 191.59 (22) keV
+Log ft of the beta - transition: 6.64
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 53-I-131 [7/2+] g.s.  -->  Daughter nucleus: 54-Xe-131 [7/2+] 636.990 (4) keV
+Half-life of the parent nuclide: 6.9321E5 (16) s
+Beta - transition. Order: allowed
+Transition energy calculated from Q-value and level energies: 333.8 (6) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 7.20 (7) %
+Average energy of beta - spectrum: 96.61 (19) keV
+Log ft of the beta - transition: 6.86
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 53-I-131 [7/2+] g.s.  -->  Daughter nucleus: 54-Xe-131 [7/2-] 666.934 (9) keV
+Half-life of the parent nuclide: 6.9321E5 (16) s
+Beta - transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Transition energy calculated from Q-value and level energies: 303.9 (6) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 0.643 (27) %
+Average energy of beta - spectrum: 86.94 (19) keV
+Log ft of the beta - transition: 7.79
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 53-I-131 [7/2+] g.s.  -->  Daughter nucleus: 54-Xe-131 [5/2+] 722.909 (4) keV
+Half-life of the parent nuclide: 6.9321E5 (16) s
+Beta - transition. Order: allowed
+Transition energy calculated from Q-value and level energies: 247.9 (6) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 2.130 (21) %
+Average energy of beta - spectrum: 69.35 (19) keV
+Log ft of the beta - transition: 6.98
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 6 transitions have been read.
+
+Parent nucleus: 53-I-131
+6 transitions have been read (6 B-).
+
+
+####################################

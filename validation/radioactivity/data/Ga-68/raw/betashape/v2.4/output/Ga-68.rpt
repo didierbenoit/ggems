@@ -1,0 +1,223 @@
+Input file:  .\Ga68\Ga-68.txt
+Output file: .\Ga68\Ga-68.new
+
+Input file: 76 lines
+Output file: 80 lines
+Added new lines: 4
+--> Output file is consistent.
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 68GA  P 0.0         1+                67.83 M   20             2921.1    12    - PARENT
+ 68ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 68ZN  L 0           0+                 STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.0821 (22) | L =  0.00916 (25) | M =  0.001516 (41) | N =  1.206E-4 (42)
+K/b+ =  0.0905 (27) | L/b+ =  0.01010 (29) | M/b+ =  0.001671 (44) | N/b+ =  1.330E-4 (13) | EC/b+ =  0.1024 (31)
+
+Branch splitting:  Iec 8.94 (41) %  and  Ib+ 87.68 (41) %
+                   Itot 96.6 (6) %
+EC component of log ft 5.200 (24)
+
+*    log ft
+ 68ZN  E             87.68   418.94    415.2                                    - OLD CARD
+ 68ZN  E             87.68   418.94    415.200   24             96.6       6    - NEW CARD
+
+*    Probabilities
+ 68ZN2 E EAV=836.0     6$CK=0.08186  14$CL=0.00907  11$CM=0.001499 37           - OLD CARD
+ 68ZN2 E EAV= $CK=0.0821 22$CL=0.00916 25$CM+=0.001637 41                       - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 68GA  P 0.0         1+                67.83 M   20             2921.1    12    - PARENT
+ 68ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 68ZN  L 1077.35   5 2+                1.57 PS   4                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.531 (7) | L =  0.0595 (8) | M =  0.00984 (13) | N =  7.83E-4 (20)
+K/b+ =  1.330 (44) | L/b+ =  0.1490 (47) | M/b+ =  0.0247 (7) | N/b+ =  0.001962 (25) | EC/b+ =  1.506 (49)
+
+Branch splitting:  Iec 1.80 (5) %  and  Ib+ 1.20 (4) %
+                   Itot 3.00 (6) %
+EC component of log ft 5.494 (18)
+
+*    log ft
+ 68ZN  E             1.20     41.80     55.5                                    - OLD CARD
+ 68ZN  E             1.20     41.80     55.494   18             3.00       6    - NEW CARD
+
+*    Probabilities
+ 68ZN2 E EAV=352.6     6$CK=0.5306    9$CL=0.0590    8$CM=0.00972  30           - OLD CARD
+ 68ZN2 E EAV= $CK=0.531 7$CL=0.0595 8$CM+=0.01062 13                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+ 68GA  P 0.0         1+                67.83 M   20             2921.1    12    - PARENT
+ 68ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 68ZN  L 1655.87   140+                70 PS     35                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.87607 (40) | L =  0.09853 (15) | M =  0.01631 (6) | N =  0.001299 (28)
+K/b+ =  113 (5) | L/b+ =  12.7 (6) | M/b+ =  2.10 (9) | N/b+ =  0.1668 (46) | EC/b+ =  127 (6)
+
+Branch splitting:  Iec 0.0335 (23) %  and  Ib+ 2.6E-4 (2) %
+                   Itot 0.0338 (23) %
+EC component of log ft 6.894 (33)
+
+*    log ft
+ 68ZN  E             0.00026  20.0335  236.9                                    - OLD CARD
+ 68ZN  E             2.6E-4   20.0335  236.894   33             0.0338    23    - NEW CARD
+
+*    Probabilities
+ 68ZN2 E EAV=107.6     6$CK=0.8771   15$CL=0.0978   14$CM=0.01617  50           - OLD CARD
+ 68ZN2 E EAV= $CK=0.87607 40$CL=0.09853 15$CM+=0.01761 7                        - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+ 68GA  P 0.0         1+                67.83 M   20             2921.1    12    - PARENT
+ 68ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 68ZN  L 1883.19   6 2+                1.6 PS    3                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88264 (23) | L =  0.09956 (14) | M =  0.01649 (6) | N =  0.001313 (28)
+K/b+ =  4.3E7 (25) | L/b+ =  4.9E6 (28) | M/b+ =  8.1E5 (46) | N/b+ =  6.4E4 (35) | EC/b+ =  4.9E7 (28)
+
+Branch splitting:  Iec 0.234 (5) %  and  Ib+ 0 %
+                   Itot 0.234 (5) %
+EC component of log ft 5.877 (16)
+
+*    log ft
+ 68ZN  E                       0.234    55.9                                    - OLD CARD
+ 68ZN  E                       0.234    55.877   16             0.234      5    - NEW CARD
+
+*    Probabilities
+ 68ZN2 E CK=0.8836   15$CL=0.0989   14$CM=0.0164    5                           - OLD CARD
+ 68ZN2 E CK=0.88264 23$CL=0.09956 14$CM+=0.01780 7                              - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+ 68GA  P 0.0         1+                67.83 M   20             2921.1    12    - PARENT
+ 68ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 68ZN  L 2338.44   8 2+                0.24 PS                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88130 (24) | L =  0.10067 (15) | M =  0.01670 (6) | N =  0.001330 (28)
+log ft 5.756 (20)
+
+*    log ft
+ 68ZN  E                       0.096    35.7                                    - OLD CARD
+ 68ZN  E                       0.096    35.756   20             0.096      3    - NEW CARD
+
+*    Probabilities
+ 68ZN2 E CK=0.8823   16$CL=0.1000   15$CM=0.0166    5                           - OLD CARD
+ 68ZN2 E CK=0.88130 24$CL=0.10067 15$CM+=0.01803 7                              - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  6
+
+ 68GA  P 0.0         1+                67.83 M   20             2921.1    12    - PARENT
+ 68ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 68ZN  L 2821.79   142+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8646 (5) | L =  0.11455 (39) | M =  0.01933 (11) | N =  0.001543 (37)
+log ft 5.120 (32)
+
+*    log ft
+ 68ZN  E                       0.0104   55.1                                    - OLD CARD
+ 68ZN  E                       0.0104   55.120   32             0.0104     5    - NEW CARD
+
+*    Probabilities
+ 68ZN2 E CK=0.8653   18$CL=0.1141   17$CM=0.0192    5                           - OLD CARD
+ 68ZN2 E CK=0.8646 5$CL=0.11455 39$CM+=0.02087 12                               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 6
+-------- Added lines: 1
+
+
+####################################################  B+ DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 68GA  P 0.0         1+                67.83 M   20             2921.1    12    - PARENT
+ 68ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 68ZN  L 0           0+                 STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 833.4 (6) keV   |   log ft (ec & beta +) 5.2099 (34)
+
+From measured spectrum
+Emean 834.9 (5) keV   |   [For information] log ft (ec & beta +) 0
+
+*    log ft (ec & beta +)
+ 68ZN  E             87.68   418.94    415.2                                    - OLD CARD
+ 68ZN  E             87.68   418.94    415.2099  34             96.6       6    - NEW CARD
+
+*    Mean energy
+ 68ZN2 E EAV=836.0     6$CK=0.08186  14$CL=0.00907  11$CM=0.001499 37           - OLD CARD
+ 68ZN2 E EAV=834.9 5$CK=0.0821 22$CL=0.00916 25$CM+=0.001637 41                 - NEW CARD
+ 68ZN2 E C1=-0.01 1 (1972SL03)                                                  - ADDITIONAL NEW CARD
+ 68ZN DE $Cexp(W) = 1+C{-1}W                                                    - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 68GA  P 0.0         1+                67.83 M   20             2921.1    12    - PARENT
+ 68ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 68ZN  L 1077.35   5 2+                1.57 PS   4                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 352.0 (5) keV   |   log ft (ec & beta +) 5.498 (12)
+
+*    log ft (ec & beta +)
+ 68ZN  E             1.20     41.80     55.5                                    - OLD CARD
+ 68ZN  E             1.20     41.80     55.498   12             3.00       6    - NEW CARD
+
+*    Mean energy
+ 68ZN2 E EAV=352.6     6$CK=0.5306    9$CL=0.0590    8$CM=0.00972  30           - OLD CARD
+ 68ZN2 E EAV=352.0 5$CK=0.531 7$CL=0.0595 8$CM+=0.01062 13                      - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+ 68GA  P 0.0         1+                67.83 M   20             2921.1    12    - PARENT
+ 68ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 68ZN  L 1655.87   140+                70 PS     35                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 107.5 (5) keV   |   log ft (ec & beta +) 6.894 (32)
+
+*    log ft (ec & beta +)
+ 68ZN  E             0.00026  20.0335  236.9                                    - OLD CARD
+ 68ZN  E             2.6E-4   20.0335  236.894   32             0.0338    23    - NEW CARD
+
+*    Mean energy
+ 68ZN2 E EAV=107.6     6$CK=0.8771   15$CL=0.0978   14$CM=0.01617  50           - OLD CARD
+ 68ZN2 E EAV=107.5 5$CK=0.87607 40$CL=0.09853 15$CM+=0.01761 7                  - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 3
+-------- Added lines: 3
+
+

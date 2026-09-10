@@ -1,0 +1,136 @@
+Input file:  .\I131\I-131.txt
+Output file: .\I131\I-131.new
+
+Input file: 115 lines
+Output file: 118 lines
+Added new lines: 3
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+131I   P 0.0         7/2+              8.0233 D  19             970.8     6     - PARENT
+131XE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+131XE  L 163.930   8 11/2-             11.962 D  20                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 280.90 (23) keV   |   log ft 9.862 (26)
+
+*    log ft
+131XE  B 806.9     6 0.386   23          10.03                               1U - OLD CARD
+131XE  B 806.9     6 0.386   23          9.862   26                          1U - NEW CARD
+
+*    Mean energy
+131XES B EAV=267.91 23                                                          - OLD CARD
+131XES B EAV=280.90 23                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+131I   P 0.0         7/2+              8.0233 D  19             970.8     6     - PARENT
+131XE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+131XE  L 341.144   9 9/2-              1.6 NS    4                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 199.14 (22) keV   |   log ft 9.91 (9)
+
+*    log ft
+131XE  B 629.7     6 0.060   12          9.8                                 1  - OLD CARD
+131XE  B 629.7     6 0.060   12          9.91     9                             - NEW CARD
+
+*    Mean energy
+131XES B EAV=200.23 22                                                          - OLD CARD
+131XES B EAV=199.14 22                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+131I   P 0.0         7/2+              8.0233 D  19             970.8     6     - PARENT
+131XE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+131XE  L 364.490   4 5/2+              69 PS     2                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 190.49 (22) keV   |   log ft 6.6777 (42)
+
+From measured spectrum
+Emean 191.90 (22) keV   |   [For information] log ft 6.6939 (42)
+
+*    log ft
+131XE  B 606.3     6 89.4     8          6.64                                   - OLD CARD
+131XE  B 606.3     6 89.4     8          6.6777  42                             - NEW CARD
+
+*    Mean energy
+131XES B EAV=191.59 22                                                          - OLD CARD
+131XES B EAV=191.90 22                                                          - NEW CARD
+131XE2 B C1=0.02 2 (1964DA19)                                                   - ADDITIONAL NEW CARD
+131XE DB $Cexp(W) = 1+C{-1}W                                                    - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+131I   P 0.0         7/2+              8.0233 D  19             970.8     6     - PARENT
+131XE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+131XE  L 636.990   4 7/2+              6.1 PS    5                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 95.90 (19) keV   |   log ft 6.9027 (49)
+
+*    log ft
+131XE  B 333.8     6 7.20     7          6.86                                   - OLD CARD
+131XE  B 333.8     6 7.20     7          6.9027  49                             - NEW CARD
+
+*    Mean energy
+131XES B EAV=96.61 19                                                           - OLD CARD
+131XES B EAV=95.90 19                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+131I   P 0.0         7/2+              8.0233 D  19             970.8     6     - PARENT
+131XE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+131XE  L 666.934   9 7/2-              0.5 NS                                   - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 86.30 (19) keV   |   log ft 7.819 (18)
+
+*    log ft
+131XE  B 303.9     6 0.643   27          7.79                                   - OLD CARD
+131XE  B 303.9     6 0.643   27          7.819   18                             - NEW CARD
+
+*    Mean energy
+131XES B EAV=86.94 19                                                           - OLD CARD
+131XES B EAV=86.30 19                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  6
+
+131I   P 0.0         7/2+              8.0233 D  19             970.8     6     - PARENT
+131XE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+131XE  L 722.909   4 5/2+              0.53 PS   5                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 68.84 (18) keV   |   log ft 7.015 (5)
+
+*    log ft
+131XE  B 247.9     6 2.130   21          6.98                                   - OLD CARD
+131XE  B 247.9     6 2.130   21          7.015    5                             - NEW CARD
+
+*    Mean energy
+131XES B EAV=69.35 19                                                           - OLD CARD
+131XES B EAV=68.84 18                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 6
+-------- Added lines: 3
+
+

@@ -1,0 +1,116 @@
+Information read from the input file: .\I131\I-131.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 54   Daughter A: 131   Symbol: Xe
+Transition type: B-
+Estimated parent nuclide from identification record: Z 53, A 131
+
+Parent record has been found
+Parent Z: 53	Parent A: 131   Symbol: I
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 7/2+ | Treated as: 7/2+
+Parent half-life: 8.0233 (19) D or 6.9321E5 (16) S
+Parent Q-value: 970.8 (6) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 3/2+ | Treated as: 3/2+
+Level half-life: STABLE
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 80.1854 (19) keV
+Level spin and parity | Read: 1/2+ | Treated as: 1/2+
+Level half-life: 0.48 (3) NS or 4.8E-10 (3) S
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 163.930 (8) keV
+Level spin and parity | Read: 11/2- | Treated as: 11/2-
+Level half-life: 11.962 (20) D or 1.0335E6 (17) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 806.9 (6) keV
+Intensity of the beta - branch: 0.386 (23) %
+Transition order: 1st forbidden unique
+Log ft of the beta - transition: 10.03
+Average energy of beta - spectrum: 267.91 (23) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 341.144 (9) keV
+Level spin and parity | Read: 9/2- | Treated as: 9/2-
+Level half-life: 1.6 (4) NS or 1.6E-9 (4) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 629.7 (6) keV
+Intensity of the beta - branch: 0.060 (12) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 9.8
+Average energy of beta - spectrum: 200.23 (22) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 364.490 (4) keV
+Level spin and parity | Read: 5/2+ | Treated as: 5/2+
+Level half-life: 69 (2) PS or 6.9E-11 (2) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 606.3 (6) keV
+Intensity of the beta - branch: 89.4 (8) %
+Transition order: allowed
+Log ft of the beta - transition: 6.64
+Average energy of beta - spectrum: 191.59 (22) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 404.815 (4) keV
+Level spin and parity | Read: 3/2+ | Treated as: 3/2+
+Level half-life: 18 (3) PS or 1.8E-11 (3) S
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 636.990 (4) keV
+Level spin and parity | Read: 7/2+ | Treated as: 7/2+
+Level half-life: 6.1 (5) PS or 6.1E-12 (5) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 333.8 (6) keV
+Intensity of the beta - branch: 7.20 (7) %
+Transition order: allowed
+Log ft of the beta - transition: 6.86
+Average energy of beta - spectrum: 96.61 (19) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 666.934 (9) keV
+Level spin and parity | Read: 7/2- | Treated as: 7/2-
+Level half-life: 0.5 NS or 5E-10 S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 303.9 (6) keV
+Intensity of the beta - branch: 0.643 (27) %
+Transition order: allowed
+Log ft of the beta - transition: 7.79
+Average energy of beta - spectrum: 86.94 (19) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 722.909 (4) keV
+Level spin and parity | Read: 5/2+ | Treated as: 5/2+
+Level half-life: 0.53 (5) PS or 5.3E-13 (5) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 247.9 (6) keV
+Intensity of the beta - branch: 2.130 (21) %
+Transition order: allowed
+Log ft of the beta - transition: 6.98
+Average energy of beta - spectrum: 69.35 (19) keV
+
+####################################

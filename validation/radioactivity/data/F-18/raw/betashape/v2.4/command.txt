@@ -1,0 +1,1 @@
+.\betashape.exe F18\F-18.txt fixint=1 -csv

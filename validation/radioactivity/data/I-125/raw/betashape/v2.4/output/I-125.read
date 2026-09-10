@@ -1,0 +1,39 @@
+Information read from the input file: .\I125\I-125.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 52   Daughter A: 125   Symbol: Te
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 53, A 125
+
+Parent record has been found
+Parent Z: 53	Parent A: 125   Symbol: I
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 5/2+ | Treated as: 5/2+
+Parent half-life: 59.388 (28) D or 5.1311E6 (24) S
+Parent Q-value: 185.77 (6) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 1/2+ | Treated as: 1/2+
+Level half-life: STABLE
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 35.4922 (5) keV
+Level spin and parity | Read: 3/2+ | Treated as: 3/2+
+Level half-life: 1.48 NS or 1.48E-9 S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 100 %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 5.4
+
+####################################

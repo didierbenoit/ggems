@@ -1,0 +1,33 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 6-C-11 [3/2-] g.s.  -->  Daughter nucleus: 5-B-11 [3/2-] g.s.
+Half-life of the parent nuclide: 1221.7 (14) s
+Electron capture transition. Order: allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.250 (13) %
+
+------------------------------------
+Parent nucleus: 6-C-11 [3/2-] g.s.  -->  Daughter nucleus: 5-B-11 [3/2-] g.s.
+Half-life of the parent nuclide: 1221.7 (14) s
+Beta + transition. Order: allowed
+Transition energy. Calculated Emax from Q-value and level energies: 960.5 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 99.750 (13) %
+Average energy of beta + spectrum: 385.7 (4) keV
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 2 transitions have been read.
+
+Parent nucleus: 6-C-11
+2 transitions have been read (1 EC, 1 B+).
+
+
+####################################

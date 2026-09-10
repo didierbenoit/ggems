@@ -1,0 +1,41 @@
+Input file:  .\C14\C-14.txt
+Output file: .\C14\C-14.new
+
+Input file: 12 lines
+Output file: 15 lines
+Added new lines: 3
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 14C   P 0.0         0+                5700 Y    30             156.476   4     - PARENT
+ 14N   N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 14N   L 0           1+                 STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 49.2606 (14) keV   |   log ft 9.0466 (22)
+
+From measured spectrum
+Emean 48.9252 (14) keV   |   [For information] log ft 9.0319 (22)
+
+*    log ft
+ 14N   B 156.476   4 100                 9.04                                   - OLD CARD
+ 14N   B 156.476   4 100                 9.0466  22                             - NEW CARD
+
+*    Mean energy
+ 14N S B EAV=49.16 1                                                            - OLD CARD
+ 14N S B EAV=48.9252 14                                                         - NEW CARD
+ 14N 2 B C1=-4.30E-4 37 (2023SI12)                                              - ADDITIONAL NEW CARD
+ 14N  DB $Cexp(W) = 1+C{-1}m{-e}(W-1)                                           - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 1
+-------- Added lines: 3
+
+

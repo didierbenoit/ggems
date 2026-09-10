@@ -16,3 +16,6 @@ endif()
 # Source validation
 add_subdirectory(source)
 add_dependencies(validation validation_source)
+
+add_subdirectory(radioactivity)
+add_dependencies(validation validation_radioactivity)

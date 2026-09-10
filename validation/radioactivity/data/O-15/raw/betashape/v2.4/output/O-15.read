@@ -1,0 +1,35 @@
+Information read from the input file: .\O15\O-15.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 7   Daughter A: 15   Symbol: N
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 8, A 15
+
+Parent record has been found
+Parent Z: 8	Parent A: 15   Symbol: O
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 1/2- | Treated as: 1/2-
+Parent half-life: 122.266 (49) S
+Parent Q-value: 2754.18 (49) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 1/2- | Treated as: 1/2-
+Level half-life: STABLE
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the beta + branch: 99.9001 (17) %
+Intensity of the ec branch: 0.0999 (17) %
+Total intensity of the (ec & beta +) decay: 100.0000 (24) %
+Transition order: allowed
+Log ft of the (ec + b+) transition: 3.6449
+Average energy of beta + spectrum: 733.47 (23) keV
+
+####################################

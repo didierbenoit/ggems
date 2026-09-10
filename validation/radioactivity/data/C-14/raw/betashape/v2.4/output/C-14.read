@@ -1,0 +1,33 @@
+Information read from the input file: .\C14\C-14.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 7   Daughter A: 14   Symbol: N
+Transition type: B-
+Estimated parent nuclide from identification record: Z 6, A 14
+
+Parent record has been found
+Parent Z: 6	Parent A: 14   Symbol: C
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 0+ | Treated as: 0+
+Parent half-life: 5700 (30) Y or 1.799E11 (9) S
+Parent Q-value: 156.476 (4) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 1+ | Treated as: 1+
+Level half-life: STABLE
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 156.476 (4) keV
+Intensity of the beta - branch: 100 %
+Transition order: allowed
+Log ft of the beta - transition: 9.04
+Average energy of beta - spectrum: 49.16 (1) keV
+
+####################################

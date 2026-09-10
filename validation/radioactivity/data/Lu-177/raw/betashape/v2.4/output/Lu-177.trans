@@ -1,0 +1,61 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 71-Lu-177 [7/2+] g.s.  -->  Daughter nucleus: 72-Hf-177 [7/2-] g.s.
+Half-life of the parent nuclide: 5.7407E5 (8) s
+Beta - transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Transition energy calculated from Q-value and level energies: 496.8 (8) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 79.45 (29) %
+Average energy of beta - spectrum: 147.75 (27) keV
+Log ft of the beta - transition: 6.7653
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 71-Lu-177 [7/2+] g.s.  -->  Daughter nucleus: 72-Hf-177 [9/2-] 112.95009 (36) keV
+Half-life of the parent nuclide: 5.7407E5 (8) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 383.8 (8) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 8.99 (28) %
+Average energy of beta - spectrum: 110.23 (26) keV
+Log ft of the beta - transition: 7.342
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 71-Lu-177 [7/2+] g.s.  -->  Daughter nucleus: 72-Hf-177 [11/2-] 249.6744 (6) keV
+Half-life of the parent nuclide: 5.7407E5 (8) s
+Beta - transition. Order: 1st forbidden unique
+Transition energy calculated from Q-value and level energies: 247.1 (8) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 0.003 (21) %
+Average energy of beta - spectrum: 77.15 (26) keV
+Log ft of the beta - transition: 9.8
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 71-Lu-177 [7/2+] g.s.  -->  Daughter nucleus: 72-Hf-177 [9/2+] 321.3162 (6) keV
+Half-life of the parent nuclide: 5.7407E5 (8) s
+Beta - transition. Order: allowed
+Transition energy calculated from Q-value and level energies: 175.5 (8) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 11.55 (7) %
+Average energy of beta - spectrum: 46.70 (23) keV
+Log ft of the beta - transition: 6.152
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 4 transitions have been read.
+
+Parent nucleus: 71-Lu-177
+4 transitions have been read (4 B-).
+
+
+####################################

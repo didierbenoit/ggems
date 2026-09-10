@@ -1,0 +1,1 @@
+.\betashape.exe I131\I-131.txt -csv

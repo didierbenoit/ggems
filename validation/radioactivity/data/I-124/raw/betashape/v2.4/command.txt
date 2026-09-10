@@ -1,0 +1,1 @@
+.\betashape.exe I124\I-124.txt fixint=1 -csv

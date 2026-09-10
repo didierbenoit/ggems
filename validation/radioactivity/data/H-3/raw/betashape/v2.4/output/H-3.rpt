@@ -1,0 +1,40 @@
+Input file:  .\H3\H-3.txt
+Output file: .\H3\H-3.new
+
+Input file: 11 lines
+Output file: 13 lines
+Added new lines: 2
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+  3H   P 0.0         1/2+              12.312 Y  25             18.591    1     - PARENT
+  3HE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+  3HE  L 0           1/2+               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 5.68012 (32) keV   |   log ft 3.0549 (9)
+
+From measured spectrum
+Emean 5.69565 (32) keV   |   [For information] log ft 3.0496 (9)
+
+*    log ft
+  3HE  B 18.564    2 100                 3.05                                   - OLD CARD
+  3HE  B 18.564    2 100                 3.0549   9                             - NEW CARD
+
+*    Mean energy
+  3HES B EAV=5.68 1                                                             - OLD CARD
+  3HES B EAV=5.69565 32                                                         - NEW CARD
+  3HE DB $Cexp(W)=1 (1973PI01)                                                  - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 1
+-------- Added lines: 2
+
+

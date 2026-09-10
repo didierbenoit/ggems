@@ -1,0 +1,35 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 8-O-15 [1/2-] g.s.  -->  Daughter nucleus: 7-N-15 [1/2-] g.s.
+Half-life of the parent nuclide: 122.266 (49) s
+Electron capture transition. Order: allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.0999 (17) %
+Log ft of the (ec + b+) transition: 3.6449
+
+------------------------------------
+Parent nucleus: 8-O-15 [1/2-] g.s.  -->  Daughter nucleus: 7-N-15 [1/2-] g.s.
+Half-life of the parent nuclide: 122.266 (49) s
+Beta + transition. Order: allowed
+Transition energy. Calculated Emax from Q-value and level energies: 1732.18 (49) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 99.9001 (17) %
+Average energy of beta + spectrum: 733.47 (23) keV
+Log ft of the (ec + b+) transition: 3.6449
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 2 transitions have been read.
+
+Parent nucleus: 8-O-15
+2 transitions have been read (1 EC, 1 B+).
+
+
+####################################

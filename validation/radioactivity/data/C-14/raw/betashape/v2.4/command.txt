@@ -1,0 +1,1 @@
+.\betashape.exe C14\C-14.txt -csv

@@ -1,0 +1,74 @@
+Input file:  .\Tc99m\Tc-99m.txt
+Output file: .\Tc99m\Tc-99m.new
+
+Input file: 71 lines
+Output file: 72 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 99TC  P 142.683   1 1/2-              6.0067 H  10             293.52    20    - PARENT
+ 99RU  N 2.50E4      2.50E4    0.00004   2.50E4                                 - NORMALIZATION
+ 99RU  L 0           5/2+               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 151.21 (7) keV   |   log ft 9.40 (13)
+
+*    log ft
+ 99RU  B 436.3     2 0.0010   3          9.4                                 1U - OLD CARD
+ 99RU  B 436.3     2 0.0010   3          9.40    13                          1U - NEW CARD
+
+*    Mean energy
+ 99RUS B EAV=152.3 5                                                            - OLD CARD
+ 99RUS B EAV=151.21 7                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 99TC  P 142.683   1 1/2-              6.0067 H  10             293.52    20    - PARENT
+ 99RU  N 2.50E4      2.50E4    0.00004   2.50E4                                 - NORMALIZATION
+ 99RU  L 89.68     5 3/2+              20.5 NS   1                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 101.15 (7) keV   |   log ft 8.68 (8)
+
+*    log ft
+ 99RU  B 346.7     2 0.0026   5          8.7                                 1  - OLD CARD
+ 99RU  B 346.7     2 0.0026   5          8.68     8                             - NEW CARD
+
+*    Mean energy
+ 99RUS B EAV=102.1 5                                                            - OLD CARD
+ 99RUS B EAV=101.15 7                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+ 99TC  P 142.683   1 1/2-              6.0067 H  10             293.52    20    - PARENT
+ 99RU  N 2.50E4      2.50E4    0.00004   2.50E4                                 - NORMALIZATION
+ 99RU  L 322.38    6 (3/2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 29.68 (6) keV   |   log ft 8.533 (25)
+
+*    log ft
+ 99RU  B 113.9     2 0.000106 6          8.5                                 1  - OLD CARD
+ 99RU  B 113.9     2 0.000106 6          8.533   25                             - NEW CARD
+
+*    Mean energy
+ 99RUS B EAV=37.8 6                                                             - OLD CARD
+ 99RUS B EAV=29.68 6                                                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 3
+-------- Added lines: 1
+
+

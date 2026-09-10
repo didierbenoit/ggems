@@ -1,0 +1,105 @@
+Information read from the input file: .\Ga68\Ga-68.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 30   Daughter A: 68   Symbol: Zn
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 31, A 68
+
+Parent record has been found
+Parent Z: 31	Parent A: 68   Symbol: Ga
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 1+ | Treated as: 1+
+Parent half-life: 67.83 (20) M or 4070 (12) S
+Parent Q-value: 2921.1 (12) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life: STABLE
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the beta + branch: 87.68 (41) %
+Intensity of the ec branch: 8.94 (41) %
+Total intensity of the (ec & beta +) decay not given.
+Transition order: allowed
+Log ft of the (ec + b+) transition: 5.2
+Average energy of beta + spectrum: 836.0 (6) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1077.35 (5) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life: 1.57 (4) PS or 1.57E-12 (4) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the beta + branch: 1.20 (4) %
+Intensity of the ec branch: 1.80 (5) %
+Total intensity of the (ec & beta +) decay not given.
+Transition order: allowed
+Log ft of the (ec + b+) transition: 5.5
+Average energy of beta + spectrum: 352.6 (6) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1655.87 (14) keV
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life: 70 (35) PS or 7.0E-11 (35) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the beta + branch: 2.6E-4 (2) %
+Intensity of the ec branch: 0.0335 (23) %
+Total intensity of the (ec & beta +) decay not given.
+Transition order: allowed
+Log ft of the (ec + b+) transition: 6.9
+Average energy of beta + spectrum: 107.6 (6) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1883.19 (6) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life: 1.6 (3) PS or 1.6E-12 (3) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the beta + branch not given.
+Intensity of the ec branch: 0.234 (5) %
+Total intensity of the (ec & beta +) decay not given.
+Transition order: allowed
+Log ft of the (ec + b+) transition: 5.9
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 2338.44 (8) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life: 0.24 PS or 2.4E-13 S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 0.096 (3) %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 5.7
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 2821.79 (14) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life not given.
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 0.0104 (5) %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 5.1
+
+####################################

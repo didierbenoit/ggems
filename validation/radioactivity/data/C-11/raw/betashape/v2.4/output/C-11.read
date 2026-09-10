@@ -1,0 +1,35 @@
+Information read from the input file: .\C11\C-11.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 5   Daughter A: 11   Symbol: B
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 6, A 11
+
+Parent record has been found
+Parent Z: 6	Parent A: 11   Symbol: C
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 3/2- | Treated as: 3/2-
+Parent half-life: 20.361 (23) M or 1221.7 (14) S
+Parent Q-value: 1982.5 (9) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 3/2- | Treated as: 3/2-
+Level half-life: STABLE
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the beta + branch: 99.750 (13) %
+Intensity of the ec branch: 0.250 (13) %
+Total intensity of the (ec & beta +) decay not given.
+Transition order: allowed
+Log ft of the (ec + b+) transition not given.
+Average energy of beta + spectrum: 385.7 (4) keV
+
+####################################

@@ -1,0 +1,343 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [0+] g.s.
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 24.08 (33) %
+Log ft of the (ec + b+) transition: 9.309
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [0+] g.s.
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Beta + transition. Order: 1st forbidden unique
+Transition energy. Calculated Emax from Q-value and level energies: 2137.6 (19) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 10.32 (13) %
+Average energy of beta + spectrum: 975.2 (8) keV
+Log ft of the (ec + b+) transition: 9.309
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [2+] 602.7271 (21) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 25.55 (37) %
+Log ft of the (ec + b+) transition: 7.522
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [2+] 602.7271 (21) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Beta + transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Transition energy. Calculated Emax from Q-value and level energies: 1534.9 (19) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 11.45 (15) %
+Average energy of beta + spectrum: 681.9 (8) keV
+Log ft of the (ec + b+) transition: 7.522
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [4+] 1248.5811 (25) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.0118 (10) %
+Log ft of the (ec + b+) transition: 11.729
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [4+] 1248.5811 (25) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Beta + transition. Order: 1st forbidden unique
+Transition energy. Calculated Emax from Q-value and level energies: 889.0 (19) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 1.88E-4 (16) %
+Average energy of beta + spectrum: 420.4 (8) keV
+Log ft of the (ec + b+) transition: 11.729
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [2+] 1325.5131 (24) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 5.43 (18) %
+Log ft of the (ec + b+) transition: 7.897
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [2+] 1325.5131 (24) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Beta + transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Transition energy. Calculated Emax from Q-value and level energies: 812.1 (19) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.287 (10) %
+Average energy of beta + spectrum: 365.7 (8) keV
+Log ft of the (ec + b+) transition: 7.897
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [0+] 1657.283 (22) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.106 (8) %
+Log ft of the (ec + b+) transition: 10.351
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [0+] 1657.283 (22) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Beta + transition. Order: 1st forbidden unique
+Transition energy. Calculated Emax from Q-value and level energies: 480.3 (19) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 1.21E-4 (10) %
+Average energy of beta + spectrum: 238.4 (9) keV
+Log ft of the (ec + b+) transition: 10.351
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [0+] 1882.92 (3) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.025 (16) %
+Log ft of the (ec + b+) transition: 10.69
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [0+] 1882.92 (3) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Beta + transition. Order: 1st forbidden unique
+Transition energy. Calculated Emax from Q-value and level energies: 254.7 (19) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 1.5E-6 (9) %
+Average energy of beta + spectrum: 132.8 (9) keV
+Log ft of the (ec + b+) transition: 10.69
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [3+] 2039.34 (6) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.026 (16) %
+Log ft of the (ec + b+) transition: 9.78
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [3+] 2039.34 (6) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Beta + transition. Order: 1st forbidden non-unique
+Transition energy. Calculated Emax from Q-value and level energies: 98.3 (19) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 1.8E-7 (11) %
+Average energy of beta + spectrum: 51.0 (9) keV
+Log ft of the (ec + b+) transition: 9.78
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [2+] 2091.603 (17) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.192 (8) %
+Log ft of the (ec + b+) transition: 8.868
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [2+] 2091.603 (17) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Beta + transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Transition energy. Calculated Emax from Q-value and level energies: 46.0 (19) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 2.5E-8 (7) %
+Average energy of beta + spectrum: 24.9 (10) keV
+Log ft of the (ec + b+) transition: 8.868
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [4+] 2224.954 (15) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden unique
+Total normalization of the decay: 1
+Normalization of this transition: 0.005 (2) %
+Log ft of the ec transition: 10.83
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [3-] 2293.711 (3) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 11.54 (25) %
+Log ft of the ec transition: 6.901
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [0+] 2308.42 (9) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden unique
+Total normalization of the decay: 1
+Normalization of this transition: 0.009 (2) %
+Log ft of the ec transition: 10.41
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [2+] 2322.95 (3) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the decay: 1
+Normalization of this transition: 0.201 (12) %
+Log ft of the ec transition: 8.63
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [5-] 2335.03 (1) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 2nd forbidden unique
+Total normalization of the decay: 1
+Normalization of this transition: 0.02 (1) %
+Log ft of the ec transition: 10.4
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [2+] 2454.069 (21) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the decay: 1
+Normalization of this transition: 0.311 (29) %
+Log ft of the ec transition: 8.286
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [4+] 2483.362 (13) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden unique
+Total normalization of the decay: 1
+Normalization of this transition: 0.014 (7) %
+Log ft of the ec transition: 9.8
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [2+] 2521.33 (3) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the decay: 1
+Normalization of this transition: 0.173 (6) %
+Log ft of the ec transition: 8.45
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [2+] 2641.15 (7) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the decay: 1
+Normalization of this transition: 0.404 (15) %
+Log ft of the ec transition: 7.892
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [2+] 2681.46 (4) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the decay: 1
+Normalization of this transition: 0.39 (2) %
+Log ft of the ec transition: 7.833
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [3-] 2693.679 (5) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.94 (3) %
+Log ft of the ec transition: 7.427
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [2-] 2701.61 (3) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 1.98 (3) %
+Log ft of the ec transition: 7.088
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [1-] 2747.04 (4) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.577 (18) %
+Log ft of the ec transition: 7.527
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [2+] 2817.48 (11) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the decay: 1
+Normalization of this transition: 0.006 (1) %
+Log ft of the ec transition: 9.33
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [3-] 2834.898 (20) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 4.22 (7) %
+Log ft of the ec transition: 6.438
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [2+] 2858.90 (15) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the decay: 1
+Normalization of this transition: 0.003 (1) %
+Log ft of the ec transition: 9.51
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [3-] 2886.05 (3) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 1.12 (6) %
+Log ft of the ec transition: 6.85
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [2+] 2945.59 (6) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the decay: 1
+Normalization of this transition: 0.029 (3) %
+Log ft of the ec transition: 8.197
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [2+] 2988.24 (5) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the decay: 1
+Normalization of this transition: 0.026 (3) %
+Log ft of the ec transition: 8.02
+
+------------------------------------
+Parent nucleus: 53-I-124 [2-] g.s.  -->  Daughter nucleus: 52-Te-124 [3-] 3001.12 (3) keV
+Half-life of the parent nuclide: 3.60806E5 (25) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.34 (1) %
+Log ft of the ec transition: 6.822
+
+
+####################################
+
+Summary
+
+1 nucleus and 36 transitions have been read.
+
+Parent nucleus: 53-I-124
+36 transitions have been read (28 EC, 8 B+).
+
+
+####################################

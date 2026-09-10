@@ -1,0 +1,13 @@
+ 11B     11C EC DECAY (20.361 M)                                                
+ 11B   H TYP=UPD$AUT=V.CHISTE$CUT=01-NOV-2011$                                  
+ 11B 2 H TYP=FUL$AUT=V.CHISTE$CUT=30-MAR-2002$                                  
+ 11B  DE LOGFT,CK,CL,CM,CN$FROM BetaShape v2.4 (Jun-2024) 2019MO35.             
+ 11B  DE EAV,LOGFT$FROM BetaShape v2.4 (Jun-2024) 2023MO21.                     
+ 11C   P 0.0         3/2-              20.361 M  23             1982.5    9     
+ 11B   N 1.0         1.0       1         1.0                                    
+ 11B   L 0           3/2-               STABLE                                  
+ 11B   E             99.750  130.250   133.5996  17             100             
+ 11B 2 E EAV=385.33 39$CK=0.00208 7$CL=1.79E-4 6                                
+ 11B 2 E C1=-0.007 7 (1975BE28)                                                 
+ 11B  DE $Cexp(W) = 1+C{-1}W                                                    
+                                                                                

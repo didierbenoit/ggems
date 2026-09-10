@@ -1,0 +1,16 @@
+# BetaShape
+# Version: 2.4 (06/2024)
+# Author: X. Mougeot (xavier.mougeot@cea.fr)
+# CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+# Please cite: [2023MO21] X. Mougeot, Applied Radiation and Isotopes 201, 111018 (2023)
+# 
+# Input file: .\I131\I-131.txt
+# Neutrino information: no
+# 
+# parent symbol, Z, A, Jpi, level energy, unc, daughter symbol, Z, A, Jpi, level energy, unc, Q, unc, half-life, unc, unit, transition nature, transition nature used, branching %, unc, log ft, unc, f-value, unc, transition energy, unc, mean energy calc, unc, mean energy exp, unc
+I, 53, 131, 7/2+, 0, 0, Xe, 54, 131, 11/2-, 163.93, 0.008, 970.8, 0.6, 6.9321E5, 160, s, 1U, 1U, 0.386, 0.023, 9.862, 0.026, 40.52, 0.16, 806.9, 0.6, 280.9, 0.23, , 
+I, 53, 131, 7/2+, 0, 0, Xe, 54, 131, 9/2-, 341.144, 0.009, 970.8, 0.6, 6.9321E5, 160, s, 1N, A, 0.06, 0.012, 9.91, 0.09, 7, 0.023, 629.7, 0.6, 199.14, 0.22, , 
+I, 53, 131, 7/2+, 0, 0, Xe, 54, 131, 5/2+, 364.49, 0.004, 970.8, 0.6, 6.9321E5, 160, s, A, A, 89.4, 0.8, 6.6777, 0.0042, 6.14, 0.021, 606.3, 0.6, 190.49, 0.22, 191.9, 0.22
+I, 53, 131, 7/2+, 0, 0, Xe, 54, 131, 7/2+, 636.99, 0.004, 970.8, 0.6, 6.9321E5, 160, s, A, A, 7.2, 0.07, 6.9027, 0.0049, 0.8301, 0.0049, 333.8, 0.6, 95.9, 0.19, , 
+I, 53, 131, 7/2+, 0, 0, Xe, 54, 131, 7/2-, 666.934, 0.009, 970.8, 0.6, 6.9321E5, 160, s, 1N, A, 0.643, 0.027, 7.819, 0.018, 0.6119, 0.0039, 303.9, 0.6, 86.3, 0.19, , 
+I, 53, 131, 7/2+, 0, 0, Xe, 54, 131, 5/2+, 722.909, 0.004, 970.8, 0.6, 6.9321E5, 160, s, A, A, 2.13, 0.021, 7.015, 0.005, 0.3178, 0.0025, 247.9, 0.6, 68.84, 0.18, , 

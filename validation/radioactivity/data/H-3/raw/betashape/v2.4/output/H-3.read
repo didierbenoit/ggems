@@ -1,0 +1,33 @@
+Information read from the input file: .\H3\H-3.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 2   Daughter A: 3   Symbol: He
+Transition type: B-
+Estimated parent nuclide from identification record: Z 1, A 3
+
+Parent record has been found
+Parent Z: 1	Parent A: 3   Symbol: H
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 1/2+ | Treated as: 1/2+
+Parent half-life: 12.312 (25) Y or 3.885E8 (8) S
+Parent Q-value: 18.591 (1) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 1/2+ | Treated as: 1/2+
+Level half-life: STABLE
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 18.564 (2) keV
+Intensity of the beta - branch: 100 %
+Transition order: allowed
+Log ft of the beta - transition: 3.05
+Average energy of beta - spectrum: 5.68 (1) keV
+
+####################################

@@ -1,0 +1,65 @@
+Information read from the input file: .\Co60\Co-60.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 28   Daughter A: 60   Symbol: Ni
+Transition type: B-
+Estimated parent nuclide from identification record: Z 27, A 60
+
+Parent record has been found
+Parent Z: 27	Parent A: 60   Symbol: Co
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 5+ | Treated as: 5+
+Parent half-life: 5.2711 (8) Y or 1.66340E8 (25) S
+Parent Q-value: 2823.07 (21) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life: STABLE
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1332.508 (4) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life: 0.713 (11) PS or 7.13E-13 (11) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 1490.56 (21) keV
+Intensity of the beta - branch: 0.12 (3) %
+Transition order: 2nd forbidden unique
+Log ft of the beta - transition: 14.7
+Average energy of beta - spectrum: 625.6 (1) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 2158.61 (3) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life: 0.59 (17) PS or 5.9E-13 (17) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 664.46 (21) keV
+Intensity of the beta - branch: 0.002 %
+Transition order: 2nd forbidden unique
+Log ft of the beta - transition not given.
+Average energy of beta - spectrum: 274.8 (1) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 2505.748 (5) keV
+Level spin and parity | Read: 4+ | Treated as: 4+
+Level half-life: 0.30 (9) PS or 3.0E-13 (9) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 317.32 (21) keV
+Intensity of the beta - branch: 99.88 (3) %
+Transition order: allowed
+Log ft of the beta - transition: 7.51
+Average energy of beta - spectrum: 95.6 (1) keV
+
+####################################

@@ -1,0 +1,82 @@
+Input file:  .\Co60\Co-60.txt
+Output file: .\Co60\Co-60.new
+
+Input file: 50 lines
+Output file: 53 lines
+Added new lines: 3
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 60CO  P 0.0         5+                5.2711 Y  8              2823.07   21    - PARENT
+ 60NI  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 60NI  L 1332.508  4 2+                0.713 PS  11                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '2U' transition assumed.
+Emean 623.03 (9) keV   |   log ft 14.71 (11)
+
+From measured spectrum
+Emean 624.50 (9) keV   |   [For information] log ft 14.71 (11)
+
+*    log ft
+ 60NI  B 1490.56   210.12     3          14.7                                2U - OLD CARD
+ 60NI  B 1490.56   210.12     3          14.71   11                          2U - NEW CARD
+
+*    Mean energy
+ 60NIS B EAV=625.6 1                                                            - OLD CARD
+ 60NIS B EAV=624.50 9                                                           - NEW CARD
+ 60NI DB $Cexp(W)=q{+4}+(10/3)|l{-2}q{+2}p{+2}+|l{-3}p{+4} (1956WO09)           - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 60CO  P 0.0         5+                5.2711 Y  8              2823.07   21    - PARENT
+ 60NI  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 60NI  L 2158.61   3 2+                0.59 PS   17                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '2U' transition assumed.
+Emean 273.60 (9) keV   |   log ft 13.994
+
+*    log ft
+ 60NI  B 664.46    210.002                                                   2U - OLD CARD
+ 60NI  B 664.46    210.002               14.0                                2U - NEW CARD
+
+*    Mean energy
+ 60NIS B EAV=274.8 1                                                            - OLD CARD
+ 60NIS B EAV=273.60 9                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+ 60CO  P 0.0         5+                5.2711 Y  8              2823.07   21    - PARENT
+ 60NI  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 60NI  L 2505.748  5 4+                0.30 PS   9                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 94.73 (7) keV   |   log ft 7.5226 (10)
+
+From measured spectrum
+Emean 95.52 (7) keV   |   [For information] log ft 7.5204 (10)
+
+*    log ft
+ 60NI  B 317.32    2199.88    3          7.51                                   - OLD CARD
+ 60NI  B 317.32    2199.88    3          7.5226  10                             - NEW CARD
+
+*    Mean energy
+ 60NIS B EAV=95.6 1                                                             - OLD CARD
+ 60NIS B EAV=95.52 7                                                            - NEW CARD
+ 60NI DB $Cexp(W)=1 (1972SA**)                                                  - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 3
+-------- Added lines: 3
+
+

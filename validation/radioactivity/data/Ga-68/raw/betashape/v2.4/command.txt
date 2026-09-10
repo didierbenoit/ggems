@@ -1,0 +1,1 @@
+.\betashape.exe Ga68\Ga-68.txt -fixint=1 -csv

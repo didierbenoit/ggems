@@ -1,0 +1,35 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 9-F-18 [1+] g.s.  -->  Daughter nucleus: 8-O-18 [0+] g.s.
+Half-life of the parent nuclide: 6584.0 (8) s
+Electron capture transition. Order: allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 3.14 (19) %
+Log ft of the (ec + b+) transition: 3.57
+
+------------------------------------
+Parent nucleus: 9-F-18 [1+] g.s.  -->  Daughter nucleus: 8-O-18 [0+] g.s.
+Half-life of the parent nuclide: 6584.0 (8) s
+Beta + transition. Order: allowed
+Transition energy. Calculated Emax from Q-value and level energies: 633.9 (5) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 96.86 (19) %
+Average energy of beta + spectrum: 249.5 (3) keV
+Log ft of the (ec + b+) transition: 3.57
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 2 transitions have been read.
+
+Parent nucleus: 9-F-18
+2 transitions have been read (1 EC, 1 B+).
+
+
+####################################

@@ -1,0 +1,49 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 43-Tc-99m [1/2-] 142.683 (1) keV  -->  Daughter nucleus: 44-Ru-99 [5/2+] g.s.
+Half-life of the parent nuclide: 2.16241E4 (36) s
+Beta - transition. Order: 1st forbidden unique
+Transition energy calculated from Q-value and level energies: 436.2 (2) keV. For information, given measured Emax: 436.3 (2) keV.
+Total normalization of the beta - decay: 1
+Normalization of this transition: 0.0010 (3) %
+Average energy of beta - spectrum: 152.3 (5) keV
+Log ft of the beta - transition: 9.4
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 43-Tc-99m [1/2-] 142.683 (1) keV  -->  Daughter nucleus: 44-Ru-99 [3/2+] 89.68 (5) keV
+Half-life of the parent nuclide: 2.16241E4 (36) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 346.52 (21) keV. For information, given measured Emax: 346.7 (2) keV.
+Total normalization of the beta - decay: 1
+Normalization of this transition: 0.0026 (5) %
+Average energy of beta - spectrum: 102.1 (5) keV
+Log ft of the beta - transition: 8.7
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 43-Tc-99m [1/2-] 142.683 (1) keV  -->  Daughter nucleus: 44-Ru-99 [3/2+] 322.38 (6) keV
+Half-life of the parent nuclide: 2.16241E4 (36) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 113.82 (21) keV. For information, given measured Emax: 113.9 (2) keV.
+Total normalization of the beta - decay: 1
+Normalization of this transition: 1.06E-4 (6) %
+Average energy of beta - spectrum: 37.8 (6) keV
+Log ft of the beta - transition: 8.5
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 3 transitions have been read.
+
+Parent nucleus: 43-Tc-99
+3 transitions have been read (3 B-).
+
+
+####################################

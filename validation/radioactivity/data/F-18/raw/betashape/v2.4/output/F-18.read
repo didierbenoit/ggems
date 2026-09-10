@@ -1,0 +1,35 @@
+Information read from the input file: F18\F-18.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 8   Daughter A: 18   Symbol: O
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 9, A 18
+
+Parent record has been found
+Parent Z: 9	Parent A: 18   Symbol: F
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 1+ | Treated as: 1+
+Parent half-life: 1.82890 (23) H or 6584.0 (8) S
+Parent Q-value: 1655.9 (5) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life: STABLE
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the beta + branch: 96.86 (19) %
+Intensity of the ec branch: 3.14 (19) %
+Total intensity of the (ec & beta +) decay not given.
+Transition order: allowed
+Log ft of the (ec + b+) transition: 3.57
+Average energy of beta + spectrum: 249.5 (3) keV
+
+####################################

@@ -1,0 +1,1 @@
+.\betashape.exe Lu177\Lu-177.txt -csv

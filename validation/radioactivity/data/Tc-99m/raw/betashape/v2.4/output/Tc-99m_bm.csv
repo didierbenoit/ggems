@@ -1,0 +1,13 @@
+# BetaShape
+# Version: 2.4 (06/2024)
+# Author: X. Mougeot (xavier.mougeot@cea.fr)
+# CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+# Please cite: [2023MO21] X. Mougeot, Applied Radiation and Isotopes 201, 111018 (2023)
+# 
+# Input file: .\Tc99m\Tc-99m.txt
+# Neutrino information: no
+# 
+# parent symbol, Z, A, Jpi, level energy, unc, daughter symbol, Z, A, Jpi, level energy, unc, Q, unc, half-life, unc, unit, transition nature, transition nature used, branching %, unc, log ft, unc, f-value, unc, transition energy, unc, mean energy calc, unc, mean energy exp, unc
+Tc, 43, 99, 1/2-, 142.683, 0.001, Ru, 44, 99, 5/2+, 0, 0, 293.52, 0.2, 2.16241E4, 3.6, s, 1U, 1U, 0.001, 0.0003, 9.4, 0.13, 1.171, 0.0026, 436.2, 0.2, 151.21, 0.07, , 
+Tc, 43, 99, 1/2-, 142.683, 0.001, Ru, 44, 99, 3/2+, 89.68, 0.05, 293.52, 0.2, 2.16241E4, 3.6, s, 1N, A, 0.0026, 0.0005, 8.68, 0.08, 0.5727, 0.0011, 346.52, 0.21, 101.15, 0.07, , 
+Tc, 43, 99, 1/2-, 142.683, 0.001, Ru, 44, 99, (3/2)+, 322.38, 0.06, 293.52, 0.2, 2.16241E4, 3.6, s, 1N, A, 0.000106, 6e-06, 8.533, 0.025, 0.01672, 0.0001, 113.82, 0.21, 29.68, 0.06, , 

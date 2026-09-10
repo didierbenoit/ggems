@@ -1,0 +1,93 @@
+Input file:  .\Lu177\Lu-177.txt
+Output file: .\Lu177\Lu-177.new
+
+Input file: 70 lines
+Output file: 71 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+177LU  P 0.0         7/2+              6.6443 D  9              496.8     8     - PARENT
+177HF  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+177HF  L 0           7/2-               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 147.75 (27) keV   |   log ft 6.7653 (28)
+
+*    log ft
+177HF  B 496.8     8 79.45   29          6.7653                                 - OLD CARD
+177HF  B 496.8     8 79.45   29          6.7653  28                             - NEW CARD
+
+*    Mean energy
+177HFS B EAV=147.75 27                                                          - OLD CARD
+177HFS B EAV=147.75 27                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+177LU  P 0.0         7/2+              6.6443 D  9              496.8     8     - PARENT
+177HF  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+177HF  L 112.95009 369/2-              0.545 NS  15                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 110.23 (26) keV   |   log ft 7.342 (14)
+
+*    log ft
+177HF  B 383.8     8 8.99    28          7.342                               1  - OLD CARD
+177HF  B 383.8     8 8.99    28          7.342   14                             - NEW CARD
+
+*    Mean energy
+177HFS B EAV=110.23 26                                                          - OLD CARD
+177HFS B EAV=110.23 26                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+177LU  P 0.0         7/2+              6.6443 D  9              496.8     8     - PARENT
+177HF  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+177HF  L 249.6744  6 11/2-             95.5 PS   21                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 77.15 (26) keV   |   log ft 6.8 (GE)
+
+*    log ft
+177HF  B 247.1     8 0.003   21          9.8                                 1U - OLD CARD
+177HF  B 247.1     8 0.003   21          6.8     GE                          1U - NEW CARD
+
+*    Mean energy
+177HFS B EAV=77.15 26                                                           - OLD CARD
+177HFS B EAV=77.15 26                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+177LU  P 0.0         7/2+              6.6443 D  9              496.8     8     - PARENT
+177HF  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+177HF  L 321.3162  6 9/2+              0.688 NS  15                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 46.70 (23) keV   |   log ft 6.152 (7)
+
+*    log ft
+177HF  B 175.5     8 11.55    7          6.152                                  - OLD CARD
+177HF  B 175.5     8 11.55    7          6.152    7                             - NEW CARD
+
+*    Mean energy
+177HFS B EAV=46.70 23                                                           - OLD CARD
+177HFS B EAV=46.70 23                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 4
+-------- Added lines: 1
+
+

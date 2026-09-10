@@ -1,0 +1,11 @@
+# BetaShape
+# Version: 2.4 (06/2024)
+# Author: X. Mougeot (xavier.mougeot@cea.fr)
+# CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+# Please cite: [2019MO35] X. Mougeot, Applied Radiation and Isotopes 154, 108884 (2019)
+# 
+# Input file: .\O15\O-15.txt
+# Neutrino information: no
+# 
+# parent symbol, Z, A, Jpi, level energy, unc, daughter symbol, Z, A, Jpi, level energy, unc, Q, unc, half-life, unc, unit, transition nature, transition nature used, branching %, unc, log ft, unc, ftot-value, unc, ec branching %, unc, log ft ec, unc, fec-value, unc, ec transition energy, unc, b+ branching %, unc, log ft b+, unc, fb+-value, unc, b+ transition energy, unc, mean energy calc, unc, mean energy exp, unc, EC/b+, value, unc, nb shells, [shell name, relative proba, unc, proba, unc, proba/b+, unc] * nb shells, nb subshells, [subshell name, relative proba, unc, proba, unc, proba/b+, unc] * nb subshells
+O, 8, 15, 1/2-, 0, 0, N, 7, 15, 1/2-, 0, 0, 2754.18, 0.49, 122.266, 0.049, s, A, A, 100, , 3.6449, 0.0006, 36.11, 0.044, 0.0999, 0.0017, 3.636, 0.01, 0.0353, 0.0006, 2754.18, 0.49, 99.9001, 0.0017, 3.6449, 0.0006, 36.074, 0.044, 1732.18, 0.49, 733.47, 0.23, , , EC/b+, 0.001, 1.7e-05, 2, K, 0.9284, 0.0004, 0.000928, 1.6e-05, 0.000928, 1.6e-05, L, 0.0716, 0.0004, 7.15e-05, 1.3e-06, 7.16e-05, 8e-07, 3, PK, 0.9284, 0.0004, 0.000928, 1.6e-05, 0.000928, 1.6e-05, PL1, 0.07159, 0.0004, 7.15e-05, 1.3e-06, 7.16e-05, 8e-07, PL2, 1.099e-05, 1.5e-07, 1.098e-08, 2.4e-10, 1.0978e-08, 4.5e-11

@@ -1,0 +1,1 @@
+.\betashape.exe H3\H-3.txt -csv

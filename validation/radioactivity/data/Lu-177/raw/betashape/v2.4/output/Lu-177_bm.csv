@@ -1,0 +1,14 @@
+# BetaShape
+# Version: 2.4 (06/2024)
+# Author: X. Mougeot (xavier.mougeot@cea.fr)
+# CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+# Please cite: [2023MO21] X. Mougeot, Applied Radiation and Isotopes 201, 111018 (2023)
+# 
+# Input file: .\Lu177\Lu-177.txt
+# Neutrino information: no
+# 
+# parent symbol, Z, A, Jpi, level energy, unc, daughter symbol, Z, A, Jpi, level energy, unc, Q, unc, half-life, unc, unit, transition nature, transition nature used, branching %, unc, log ft, unc, f-value, unc, transition energy, unc, mean energy calc, unc, mean energy exp, unc
+Lu, 71, 177, 7/2+, 0, 0, Hf, 72, 177, 7/2-, 0, 0, 496.8, 0.8, 5.7407E5, 80, s, 1N, A, 79.45, 0.29, 6.7653, 0.0028, 8.062, 0.043, 496.8, 0.8, 147.75, 0.27, , 
+Lu, 71, 177, 7/2+, 0, 0, Hf, 72, 177, 9/2-, 112.95009, 0.00036, 496.8, 0.8, 5.7407E5, 80, s, 1N, A, 8.99, 0.28, 7.342, 0.014, 3.444, 0.023, 383.8, 0.8, 110.23, 0.26, , 
+Lu, 71, 177, 7/2+, 0, 0, Hf, 72, 177, 11/2-, 249.6744, 0.0006, 496.8, 0.8, 5.7407E5, 80, s, 1U, 1U, 0.003, 0.021, 6.8, GE, 0.3458, 0.0049, 247.1, 0.8, 77.15, 0.26, , 
+Lu, 71, 177, 7/2+, 0, 0, Hf, 72, 177, 9/2+, 321.3162, 0.0006, 496.8, 0.8, 5.7407E5, 80, s, A, A, 11.55, 0.07, 6.152, 0.007, 0.2857, 0.0041, 175.5, 0.8, 46.7, 0.23, , 

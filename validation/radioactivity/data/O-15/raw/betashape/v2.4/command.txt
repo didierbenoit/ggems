@@ -1,0 +1,1 @@
+.\betashape.exe O15\O-15.txt fixint=1 -csv

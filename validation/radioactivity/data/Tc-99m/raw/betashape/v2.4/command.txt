@@ -1,0 +1,1 @@
+.\betashape.exe Tc99m\Tc-99m -csv

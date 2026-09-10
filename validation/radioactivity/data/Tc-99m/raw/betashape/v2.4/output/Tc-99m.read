@@ -1,0 +1,60 @@
+Information read from the input file: .\Tc99m\Tc-99m.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 44   Daughter A: 99   Symbol: Ru
+Transition type: B-
+Estimated parent nuclide from identification record: Z 43, A 99
+
+Parent record has been found
+Parent Z: 43	Parent A: 99   Symbol: Tc
+Parent energy of the initial level: 142.683 (1) keV
+Parent spin and parity | Read: 1/2- | Treated as: 1/2-
+Parent half-life: 6.0067 (10) H or 2.16241E4 (36) S
+Parent Q-value: 293.52 (20) keV
+
+Total branching ratio: 4E-5
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 5/2+ | Treated as: 5/2+
+Level half-life: STABLE
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 436.3 (2) keV
+Intensity of the beta - branch: 0.0010 (3) %
+Transition order: 1st forbidden unique
+Log ft of the beta - transition: 9.4
+Average energy of beta - spectrum: 152.3 (5) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 89.68 (5) keV
+Level spin and parity | Read: 3/2+ | Treated as: 3/2+
+Level half-life: 20.5 (1) NS or 2.05E-8 (1) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 346.7 (2) keV
+Intensity of the beta - branch: 0.0026 (5) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 8.7
+Average energy of beta - spectrum: 102.1 (5) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 322.38 (6) keV
+Level spin and parity | Read: (3/2)+ | Treated as: 3/2+
+Daughter level not clearly defined.
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 113.9 (2) keV
+Intensity of the beta - branch: 1.06E-4 (6) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 8.5
+Average energy of beta - spectrum: 37.8 (6) keV
+
+####################################

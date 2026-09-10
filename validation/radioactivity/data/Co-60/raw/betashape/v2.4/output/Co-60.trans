@@ -1,0 +1,48 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 27-Co-60 [5+] g.s.  -->  Daughter nucleus: 28-Ni-60 [2+] 1332.508 (4) keV
+Half-life of the parent nuclide: 1.66340E8 (25) s
+Beta - transition. Order: 2nd forbidden unique
+Transition energy calculated from Q-value and level energies: 1490.56 (21) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 0.12 (3) %
+Average energy of beta - spectrum: 625.6 (1) keV
+Log ft of the beta - transition: 14.7
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 27-Co-60 [5+] g.s.  -->  Daughter nucleus: 28-Ni-60 [2+] 2158.61 (3) keV
+Half-life of the parent nuclide: 1.66340E8 (25) s
+Beta - transition. Order: 2nd forbidden unique
+Transition energy calculated from Q-value and level energies: 664.46 (21) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 0.002 %
+Average energy of beta - spectrum: 274.8 (1) keV
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 27-Co-60 [5+] g.s.  -->  Daughter nucleus: 28-Ni-60 [4+] 2505.748 (5) keV
+Half-life of the parent nuclide: 1.66340E8 (25) s
+Beta - transition. Order: allowed
+Transition energy calculated from Q-value and level energies: 317.32 (21) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 99.88 (3) %
+Average energy of beta - spectrum: 95.6 (1) keV
+Log ft of the beta - transition: 7.51
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 3 transitions have been read.
+
+Parent nucleus: 27-Co-60
+3 transitions have been read (3 B-).
+
+
+####################################

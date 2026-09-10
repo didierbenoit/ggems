@@ -1,0 +1,1 @@
+.\betashape.exe Co60\Co-60.txt -csv
