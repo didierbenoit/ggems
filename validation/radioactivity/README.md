@@ -136,10 +136,42 @@ outside this validation.
 - `run/populations.csv`: expected and sampled populations by replica/window/group.
 - `run/samples.csv`: `window,group,time_ps,energy_micro_eV`.
 - `analysis.json`: separate scientific results, distances and thresholds.
-- `plots/`: standalone population, birth-time and energy figures.
+- `plots/`: population and birth-time figures, detailed `energy_group_N.png`
+  emission figures, and `<nuclide>_emission_<particle>.png` aggregate figures.
 - `describe.log` and `exporter.log`: executed commands and diagnostics.
 
 Reanalysis and plotting use retained samples without new draws. Command success
 means execution completed; consult each scientific result in `analysis.json`.
 Files use LF line endings. GGEMS software regression tests remain in `tests/`
 and use GoogleTest; this directory contains scientific validation only.
+
+## Emission figures
+
+These are **source emission spectra**, not detected or measured spectra.
+Particle figures aggregate every group of the same runtime particle type.
+Filename tokens are `alpha`, `beta_plus` (positrons), `gamma`, and `electron`.
+GGEMS represents beta-minus, Auger and conversion electrons as `Electron`;
+their contributions remain together rather than inferring a new particle type
+from an emission group's origin. Detailed group figures retain that distinction.
+
+Aggregate curves retain the physical yields: each conditional distribution is
+multiplied by its group yield per parent decay before summation. Compiled
+continuous densities use the union of the original bin edges and finite-ticket
+bin masses. Reference curves sum the selected piecewise-linear densities only
+within their individual supports. No spectrum is extrapolated or independently
+rescaled to make its group contribution as large as another's.
+
+Mono and discrete groups use line spectra; identical canonical energies are
+combined. Line intensities are emissions per parent decay, with a logarithmic
+intensity axis to retain weak lines. Continuous densities are emissions per
+parent decay per keV. A particle with both kinds has two useful panels with
+these distinct units. No figure is created for an absent runtime particle type.
+
+Sample intensities are counts divided by the retained independent expected
+parent-decay integral (and by histogram width for a continuous density).
+The displayed `sqrt(N)` count error bars describe sampling noise; they are not
+new acceptance intervals or evaluated nuclear-data uncertainties. No samples
+are created for rare groups. Their deterministic contributions remain visible.
+Detailed continuous plots retain their conditional densities and available CDF
+comparisons. Discrete plots have one panel, and unavailable comparison panels
+and empty legends are omitted. Plotting does not modify `analysis.json`.
