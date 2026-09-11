@@ -444,7 +444,7 @@ def analyze_campaign(
             "family_alpha": alpha,
             "bonferroni_hypotheses_upper_bound": hypotheses,
             "individual_alpha": individual_alpha,
-            "minimum_samples_policy": "Empty groups are insufficient_samples, never passed; rare groups are not amplified.",
+            "minimum_samples_policy": "Empty samples and DKW comparisons with complete acceptance limit >= 1 are insufficient_samples; rare physical groups are never amplified to force a statistical pass.",
             "birth_cdf_numerical_budget": "Existing 1e-5 Source CDF contract + 2^-24 uniform step + one ps conditional CDF mass.",
             "parameter_fitting": "None; all null means and shapes are fixed before samples are read.",
             "population_replicates": replicas,

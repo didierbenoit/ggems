@@ -137,13 +137,18 @@ def dkw_test(
         return {"status": "insufficient_samples", "n": 0, "alpha": alpha}
     distance = ecdf_distance(values, cdf, left_cdf)
     statistical_limit = math.sqrt(math.log(2 / alpha) / (2 * len(values)))
+    limit = statistical_limit + numeric_budget
+    if limit >= 1.0:
+        status = "insufficient_samples"
+    else:
+        status = "pass" if distance <= limit else "fail"
     return {
-        "status": "pass" if distance <= statistical_limit + numeric_budget else "fail",
+        "status": status,
         "n": len(values),
         "distance": distance,
         "statistical_limit": statistical_limit,
         "numeric_budget": numeric_budget,
-        "limit": statistical_limit + numeric_budget,
+        "limit": limit,
         "alpha": alpha,
         "test": "two-sided ECDF with DKW-Massart bound",
     }

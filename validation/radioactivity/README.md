@@ -115,8 +115,10 @@ Bonferroni count `windows*(2*groups+3)+5*groups+1`. ECDF comparisons use the
 [DKW-Massart bound](https://doi.org/10.1214/aop/1176990746). Poisson probabilities,
 quantiles and chi-square tails use SciPy. Thresholds are recorded before sampling;
 seeds, thresholds and retained samples are not changed after observing a result.
-Empty groups are `insufficient_samples`, not `pass`. Plots omit empty-window
-statistical points.
+Empty samples and DKW comparisons whose complete acceptance limit (including
+any numerical budget) is >= 1 are `insufficient_samples`. Computed diagnostics
+are retained. Rare physical groups are never amplified to force a statistical
+PASS. Plots omit statistically insufficient window comparisons.
 
 Source RNG order remains birth time, then conditional energy for Point/Fixed;
 Mono consumes no energy word. Additional population experiments use separate
