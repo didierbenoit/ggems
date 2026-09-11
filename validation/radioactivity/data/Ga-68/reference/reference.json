@@ -1,0 +1,1084 @@
+{
+  "name": "Ga-68",
+  "reference_id": "LNHB-PTB-Ga68-2011-BetaShape-2.4-fixint1",
+  "half_life": {
+    "value": "4069.8",
+    "unit": "s",
+    "reported_uncertainty": "12.0",
+    "source_value": "67.83",
+    "source_uncertainty": "0.20",
+    "source_unit": "min",
+    "transformation": "Multiply the selected minutes and their uncertainty by exactly 60.",
+    "uncertainty_kind": "Adopted expanded uncertainty according to evaluation comments; a coverage factor is not specified.",
+    "source": "lnhb/Ga-68_tables.pdf, sections 1-2; lnhb/Ga-68_com.pdf, sections 2-2.2"
+  },
+  "nuclear_quantities": {
+    "q_plus": {
+      "value": "2921.1",
+      "standard_uncertainty": "1.2",
+      "unit": "keV",
+      "source": "lnhb/Ga-68_tables.pdf, sections 1-2; lnhb/Ga-68_com.pdf, sections 2-2.2"
+    },
+    "beta_plus_probability": {
+      "value": "88.88",
+      "standard_uncertainty": "0.41",
+      "unit": "%",
+      "source": "lnhb/Ga-68_tables.pdf, sections 1-2; lnhb/Ga-68_com.pdf, sections 2-2.2"
+    },
+    "electron_capture_probability": {
+      "value": "11.11",
+      "standard_uncertainty": "0.41",
+      "unit": "%",
+      "source": "lnhb/Ga-68_tables.pdf, sections 1-2; lnhb/Ga-68_com.pdf, sections 2-2.2"
+    },
+    "annihilation_photon_yield": {
+      "value": "177.8",
+      "standard_uncertainty": "0.8",
+      "unit": "per 100 disintegrations",
+      "source": "lnhb/Ga-68_tables.pdf, sections 1-2; lnhb/Ga-68_com.pdf, sections 2-2.2"
+    },
+    "selected_beta_yield_sum_per_decay": "0.8888026",
+    "rounding_policy": "Preserve the evaluation's rounded totals and explicit branch yields separately. Do not force the rounded totals to sum to 100% or normalize any yield."
+  },
+  "groups": [
+    {
+      "id": "beta_plus_1899_1_keV",
+      "index": 0,
+      "particle": "Positron",
+      "yield_per_decay": {
+        "value": "0.8768",
+        "standard_uncertainty": "0.0041",
+        "unit": "primary/parent decay",
+        "source": "lnhb/Ga-68.PenNuc.txt, line 37 (BEP)"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "reference_representation": "piecewise_linear_density",
+        "spectrum_file": "beta_plus_1899_1_keV.csv",
+        "energy_unit": "keV",
+        "endpoint": {
+          "value": "1899.1",
+          "standard_uncertainty": "1.2",
+          "unit": "keV",
+          "source": "lnhb/Ga-68.PenNuc.txt, line 37 (BEP)"
+        },
+        "generator": "BetaShape 2.4 (06/2024)",
+        "source": "betashape/v2.4/output/beta+_Ga68_trans0.bs",
+        "selected_density_column": "dN/dE exp.",
+        "raw_endpoint_keV": "1899.1",
+        "raw_grid_points": 318,
+        "energy_axis_scale_exact": "1899.1/1899.1",
+        "transformed_trapezoid_integral": "0.876800043852665",
+        "conditional_piecewise_linear_mean_keV": "834.88329963345089444151665005984822042645153451109761064731337209124111579507366",
+        "transformation": "Scale only the energy axis by selected_endpoint/raw_endpoint at 80 decimal digits. Copy density and uncertainty decimal tokens without alteration. Conditional shape comparisons divide the piecewise-linear integral by its full area; source yields are not normalized.",
+        "uncertainty_policy": "Retain supplied pointwise uncertainties. No covariance is supplied; comparisons condition on the central shape and do not establish uncertainty-aware evaluation equivalence.",
+        "experimental_shape_factor": "1 - 0.01*W",
+        "measurement_range_keV": [
+          "870",
+          "1845"
+        ],
+        "measurement_source": "[1972SL03] W.F. Slot, G.H. Dulfer, H. van der Molen, H. Verheul, Nucl. Phys. A 186, 28 (1972); identified in the recovered BetaShape header."
+      }
+    },
+    {
+      "id": "beta_plus_821_75_keV",
+      "index": 1,
+      "particle": "Positron",
+      "yield_per_decay": {
+        "value": "0.012",
+        "standard_uncertainty": "0.0004",
+        "unit": "primary/parent decay",
+        "source": "lnhb/Ga-68.PenNuc.txt, line 31 (BEP)"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "reference_representation": "piecewise_linear_density",
+        "spectrum_file": "beta_plus_821_75_keV.csv",
+        "energy_unit": "keV",
+        "endpoint": {
+          "value": "821.75",
+          "standard_uncertainty": "1.2",
+          "unit": "keV",
+          "source": "lnhb/Ga-68.PenNuc.txt, line 31 (BEP)"
+        },
+        "generator": "BetaShape 2.4 (06/2024)",
+        "source": "betashape/v2.4/output/beta+_Ga68_trans1.bs",
+        "selected_density_column": "dN/dE calc.",
+        "raw_endpoint_keV": "821.8",
+        "raw_grid_points": 412,
+        "energy_axis_scale_exact": "821.75/821.8",
+        "transformed_trapezoid_integral": "0.011999267215409830159406181552689218788026283767339985397907033341445607203699197",
+        "conditional_piecewise_linear_mean_keV": "352.01653820404644365955801480813805043746384171568617940507057404588990953216940",
+        "transformation": "Scale only the energy axis by selected_endpoint/raw_endpoint at 80 decimal digits. Copy density and uncertainty decimal tokens without alteration. Conditional shape comparisons divide the piecewise-linear integral by its full area; source yields are not normalized.",
+        "uncertainty_policy": "Retain supplied pointwise uncertainties. No covariance is supplied; comparisons condition on the central shape and do not establish uncertainty-aware evaluation equivalence."
+      }
+    },
+    {
+      "id": "beta_plus_243_23_keV",
+      "index": 2,
+      "particle": "Positron",
+      "yield_per_decay": {
+        "value": "0.0000026",
+        "standard_uncertainty": "0.0000002",
+        "unit": "primary/parent decay",
+        "source": "lnhb/Ga-68.PenNuc.txt, line 25 (BEP)"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "reference_representation": "piecewise_linear_density",
+        "spectrum_file": "beta_plus_243_23_keV.csv",
+        "energy_unit": "keV",
+        "endpoint": {
+          "value": "243.23",
+          "standard_uncertainty": "1.2",
+          "unit": "keV",
+          "source": "lnhb/Ga-68.PenNuc.txt, line 25 (BEP)"
+        },
+        "generator": "BetaShape 2.4 (06/2024)",
+        "source": "betashape/v2.4/output/beta+_Ga68_trans2.bs",
+        "selected_density_column": "dN/dE calc.",
+        "raw_endpoint_keV": "243.2",
+        "raw_grid_points": 305,
+        "energy_axis_scale_exact": "243.23/243.2",
+        "transformed_trapezoid_integral": "0.0000026003197847179983881578947368421052631578947368421052631578947368421052631578945",
+        "conditional_piecewise_linear_mean_keV": "107.53775623059226856653498039224830262823968856343674432190774990072014960385388",
+        "transformation": "Scale only the energy axis by selected_endpoint/raw_endpoint at 80 decimal digits. Copy density and uncertainty decimal tokens without alteration. Conditional shape comparisons divide the piecewise-linear integral by its full area; source yields are not normalized.",
+        "uncertainty_policy": "Retain supplied pointwise uncertainties. No covariance is supplied; comparisons condition on the central shape and do not establish uncertainty-aware evaluation equivalence."
+      }
+    },
+    {
+      "id": "direct_nuclear_gamma",
+      "index": 3,
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.03611589",
+        "unit": "primary/parent decay",
+        "source": "lnhb/Ga-68.lara.txt",
+        "derivation": "Exact decimal sum of the selected absolute line yields; no normalization. No summed uncertainty is inferred without covariance."
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "lnhb/Ga-68.lara.txt",
+        "weight_unit": "primary/parent decay (relative only within this conditional distribution)",
+        "lines": [
+          {
+            "energy_keV": "227.31",
+            "energy_standard_uncertainty_keV": "0.15",
+            "weight": "0.0000012",
+            "weight_standard_uncertainty": "4.9E-7",
+            "source_line": 19,
+            "emission": "g"
+          },
+          {
+            "energy_keV": "483.35",
+            "energy_standard_uncertainty_keV": "0.16",
+            "weight": "0.00000265",
+            "weight_standard_uncertainty": "2.9E-7",
+            "source_line": 20,
+            "emission": "g"
+          },
+          {
+            "energy_keV": "578.52",
+            "energy_standard_uncertainty_keV": "0.13",
+            "weight": "0.000343",
+            "weight_standard_uncertainty": "0.000023",
+            "source_line": 22,
+            "emission": "g"
+          },
+          {
+            "energy_keV": "682.57",
+            "energy_standard_uncertainty_keV": "0.16",
+            "weight": "0.00000314",
+            "weight_standard_uncertainty": "2E-7",
+            "source_line": 23,
+            "emission": "g"
+          },
+          {
+            "energy_keV": "805.83",
+            "energy_standard_uncertainty_keV": "0.08",
+            "weight": "0.000928",
+            "weight_standard_uncertainty": "0.000027",
+            "source_line": 24,
+            "emission": "g"
+          },
+          {
+            "energy_keV": "938.61",
+            "energy_standard_uncertainty_keV": "0.20",
+            "weight": "0.00000178",
+            "weight_standard_uncertainty": "1.6E-7",
+            "source_line": 25,
+            "emission": "g"
+          },
+          {
+            "energy_keV": "1077.34",
+            "energy_standard_uncertainty_keV": "0.05",
+            "weight": "0.03235",
+            "weight_standard_uncertainty": "0.0003",
+            "source_line": 26,
+            "emission": "g"
+          },
+          {
+            "energy_keV": "1165.92",
+            "energy_standard_uncertainty_keV": "0.15",
+            "weight": "1.6E-7",
+            "weight_standard_uncertainty": "1E-7",
+            "source_line": 27,
+            "emission": "g"
+          },
+          {
+            "energy_keV": "1261.08",
+            "energy_standard_uncertainty_keV": "0.09",
+            "weight": "0.000954",
+            "weight_standard_uncertainty": "0.000021",
+            "source_line": 28,
+            "emission": "g"
+          },
+          {
+            "energy_keV": "1744.42",
+            "energy_standard_uncertainty_keV": "0.13",
+            "weight": "0.000096",
+            "weight_standard_uncertainty": "0.000005",
+            "source_line": 29,
+            "emission": "g"
+          },
+          {
+            "energy_keV": "1883.16",
+            "energy_standard_uncertainty_keV": "0.06",
+            "weight": "0.00142",
+            "weight_standard_uncertainty": "0.000035",
+            "source_line": 30,
+            "emission": "g"
+          },
+          {
+            "energy_keV": "2338.44",
+            "energy_standard_uncertainty_keV": "0.08",
+            "weight": "0.0000113",
+            "weight_standard_uncertainty": "0.0000016",
+            "source_line": 31,
+            "emission": "g"
+          },
+          {
+            "energy_keV": "2821.73",
+            "energy_standard_uncertainty_keV": "0.14",
+            "weight": "0.00000466",
+            "weight_standard_uncertainty": "3.6E-7",
+            "source_line": 32,
+            "emission": "g"
+          }
+        ]
+      }
+    },
+    {
+      "id": "compact_zinc_x_rays",
+      "index": 4,
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.04919",
+        "unit": "primary/parent decay",
+        "source": "lnhb/Ga-68.lara.txt",
+        "derivation": "Exact decimal sum of the selected absolute line yields; no normalization. No summed uncertainty is inferred without covariance."
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "lnhb/Ga-68.lara.txt",
+        "weight_unit": "primary/parent decay (relative only within this conditional distribution)",
+        "lines": [
+          {
+            "energy_keV": "1.035",
+            "energy_standard_uncertainty_keV": null,
+            "weight": "0.00146",
+            "weight_standard_uncertainty": "0.00004",
+            "source_line": 15,
+            "emission": "XL"
+          },
+          {
+            "energy_keV": "8.61587",
+            "energy_standard_uncertainty_keV": null,
+            "weight": "0.0142",
+            "weight_standard_uncertainty": "0.0006",
+            "source_line": 16,
+            "emission": "XKa2"
+          },
+          {
+            "energy_keV": "8.63896",
+            "energy_standard_uncertainty_keV": null,
+            "weight": "0.0276",
+            "weight_standard_uncertainty": "0.0011",
+            "source_line": 17,
+            "emission": "XKa1"
+          },
+          {
+            "energy_keV": "9.611",
+            "energy_standard_uncertainty_keV": null,
+            "weight": "0.00593",
+            "weight_standard_uncertainty": "0.00024",
+            "source_line": 18,
+            "emission": "XK'b1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "detailed_auger_electrons",
+      "index": 5,
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.41082910426",
+        "unit": "primary/parent decay",
+        "source": "mird/Ga-68 Summary Spectrum.csv",
+        "derivation": "Exact decimal sum of the selected absolute line yields; no normalization. No summed uncertainty is inferred without covariance."
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "mird/Ga-68 Summary Spectrum.csv",
+        "weight_unit": "primary/parent decay (relative only within this conditional distribution)",
+        "lines": [
+          {
+            "energy_keV": "0.056775",
+            "source_energy_MeV": "5.67753e-05",
+            "source_energy_keV": "0.0567753000",
+            "weight": "0.188911",
+            "source_row_index": 42
+          },
+          {
+            "energy_keV": "0.089861",
+            "source_energy_MeV": "8.98614e-05",
+            "source_energy_keV": "0.0898614000",
+            "weight": "0.0265837",
+            "source_row_index": 43
+          },
+          {
+            "energy_keV": "0.118344",
+            "source_energy_MeV": "0.000118344",
+            "source_energy_keV": "0.118344000",
+            "weight": "1.81014e-05",
+            "source_row_index": 44
+          },
+          {
+            "energy_keV": "0.929539",
+            "source_energy_MeV": "0.000929539",
+            "source_energy_keV": "0.929539000",
+            "weight": "0.141792",
+            "source_row_index": 45
+          },
+          {
+            "energy_keV": "0.976632",
+            "source_energy_MeV": "0.000976632",
+            "source_energy_keV": "0.976632000",
+            "weight": "0.00112178",
+            "source_row_index": 46
+          },
+          {
+            "energy_keV": "1.077930",
+            "source_energy_MeV": "0.00107793",
+            "source_energy_keV": "1.07793000",
+            "weight": "3.73986e-06",
+            "source_row_index": 47
+          },
+          {
+            "energy_keV": "7.486970",
+            "source_energy_MeV": "0.00748697",
+            "source_energy_keV": "7.48697000",
+            "weight": "0.0411537",
+            "source_row_index": 48
+          },
+          {
+            "energy_keV": "8.455490",
+            "source_energy_MeV": "0.00845549",
+            "source_energy_keV": "8.45549000",
+            "weight": "0.0105055",
+            "source_row_index": 49
+          },
+          {
+            "energy_keV": "9.428040",
+            "source_energy_MeV": "0.00942804",
+            "source_energy_keV": "9.42804000",
+            "weight": "0.000739583",
+            "source_row_index": 50
+          }
+        ],
+        "transformation": "Convert recovered MeV to keV exactly, then apply the documented historical GGEMS nearest-meV quantization (half away from zero). The validator reads mapped energy_keV. Original energies remain in source_energy_MeV/source_energy_keV. Only 0.0567753 -> 0.056775 keV and 0.0898614 -> 0.089861 keV change; these are -300 and -400 micro-eV. This preserves the existing source representation, not exact agreement with unquantized MIRD line locations. No uncertainties are supplied in this CSV."
+      }
+    },
+    {
+      "id": "shell_resolved_conversion_electrons",
+      "index": 6,
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000009159860474",
+        "unit": "primary/parent decay",
+        "source": "lnhb/Ga-68.PenNuc.txt",
+        "derivation": "Exact decimal sum of the selected absolute line yields; no normalization. No summed uncertainty is inferred without covariance."
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "lnhb/Ga-68.PenNuc.txt",
+        "weight_unit": "primary/parent decay (relative only within this conditional distribution)",
+        "lines": [
+          {
+            "energy_keV": "217.65",
+            "energy_standard_uncertainty_keV": "0.15",
+            "weight": "0.000000032",
+            "weight_standard_uncertainty": "0.000000013",
+            "source_line": 106,
+            "shell": "K"
+          },
+          {
+            "energy_keV": "226.12",
+            "energy_standard_uncertainty_keV": "0.15",
+            "weight": "0.000000003",
+            "weight_standard_uncertainty": "0.0000000012",
+            "source_line": 107,
+            "shell": "L1"
+          },
+          {
+            "energy_keV": "226.27",
+            "energy_standard_uncertainty_keV": "0.15",
+            "weight": "0.00000000018",
+            "weight_standard_uncertainty": "0.00000000007",
+            "source_line": 108,
+            "shell": "L2"
+          },
+          {
+            "energy_keV": "226.29",
+            "energy_standard_uncertainty_keV": "0.15",
+            "weight": "0.00000000022",
+            "weight_standard_uncertainty": "0.00000000009",
+            "source_line": 109,
+            "shell": "L3"
+          },
+          {
+            "energy_keV": "227.24",
+            "energy_standard_uncertainty_keV": "0.15",
+            "weight": "0.00000000049",
+            "weight_standard_uncertainty": "0.0000000002",
+            "source_line": 110,
+            "shell": "M"
+          },
+          {
+            "energy_keV": "227.31",
+            "energy_standard_uncertainty_keV": "0.15",
+            "weight": "0.000000000018",
+            "weight_standard_uncertainty": "0.000000000007",
+            "source_line": 111,
+            "shell": "N"
+          },
+          {
+            "energy_keV": "473.69",
+            "energy_standard_uncertainty_keV": "0.16",
+            "weight": "0.000000004",
+            "weight_standard_uncertainty": "0.0000000009",
+            "source_line": 46,
+            "shell": "K"
+          },
+          {
+            "energy_keV": "482.16",
+            "energy_standard_uncertainty_keV": "0.16",
+            "weight": "0.0000000004",
+            "weight_standard_uncertainty": "0.00000000009",
+            "source_line": 47,
+            "shell": "L1"
+          },
+          {
+            "energy_keV": "482.31",
+            "energy_standard_uncertainty_keV": "0.16",
+            "weight": "0.0000000000093",
+            "weight_standard_uncertainty": "0.0000000000033",
+            "source_line": 48,
+            "shell": "L2"
+          },
+          {
+            "energy_keV": "482.33",
+            "energy_standard_uncertainty_keV": "0.16",
+            "weight": "0.000000000009",
+            "weight_standard_uncertainty": "0.0000000000044",
+            "source_line": 49,
+            "shell": "L3"
+          },
+          {
+            "energy_keV": "483.28",
+            "energy_standard_uncertainty_keV": "0.16",
+            "weight": "0.000000000058",
+            "weight_standard_uncertainty": "0.000000000012",
+            "source_line": 50,
+            "shell": "M"
+          },
+          {
+            "energy_keV": "483.35",
+            "energy_standard_uncertainty_keV": "0.16",
+            "weight": "0.00000000000231",
+            "weight_standard_uncertainty": "0.00000000000047",
+            "source_line": 51,
+            "shell": "N"
+          },
+          {
+            "energy_keV": "568.86",
+            "energy_standard_uncertainty_keV": "0.13",
+            "weight": "0.000000391",
+            "weight_standard_uncertainty": "0.000000027",
+            "source_line": 130,
+            "shell": "K"
+          },
+          {
+            "energy_keV": "577.33",
+            "energy_standard_uncertainty_keV": "0.13",
+            "weight": "0.0000000379",
+            "weight_standard_uncertainty": "0.0000000026",
+            "source_line": 131,
+            "shell": "L1"
+          },
+          {
+            "energy_keV": "577.48",
+            "energy_standard_uncertainty_keV": "0.13",
+            "weight": "0.00000000091",
+            "weight_standard_uncertainty": "0.00000000006",
+            "source_line": 132,
+            "shell": "L2"
+          },
+          {
+            "energy_keV": "577.5",
+            "energy_standard_uncertainty_keV": "0.13",
+            "weight": "0.00000000096",
+            "weight_standard_uncertainty": "0.00000000007",
+            "source_line": 133,
+            "shell": "L3"
+          },
+          {
+            "energy_keV": "578.45",
+            "energy_standard_uncertainty_keV": "0.13",
+            "weight": "0.00000000569",
+            "weight_standard_uncertainty": "0.0000000004",
+            "source_line": 134,
+            "shell": "M"
+          },
+          {
+            "energy_keV": "578.52",
+            "energy_standard_uncertainty_keV": "0.13",
+            "weight": "0.000000000223",
+            "weight_standard_uncertainty": "0.000000000015",
+            "source_line": 135,
+            "shell": "N"
+          },
+          {
+            "energy_keV": "672.91",
+            "energy_standard_uncertainty_keV": "0.16",
+            "weight": "0.00000000222",
+            "weight_standard_uncertainty": "0.00000000014",
+            "source_line": 83,
+            "shell": "K"
+          },
+          {
+            "energy_keV": "681.38",
+            "energy_standard_uncertainty_keV": "0.16",
+            "weight": "0.000000000216",
+            "weight_standard_uncertainty": "0.000000000014",
+            "source_line": 84,
+            "shell": "L1"
+          },
+          {
+            "energy_keV": "681.53",
+            "energy_standard_uncertainty_keV": "0.16",
+            "weight": "0.00000000000433",
+            "weight_standard_uncertainty": "0.00000000000028",
+            "source_line": 85,
+            "shell": "L2"
+          },
+          {
+            "energy_keV": "681.55",
+            "energy_standard_uncertainty_keV": "0.16",
+            "weight": "0.00000000000455",
+            "weight_standard_uncertainty": "0.0000000000003",
+            "source_line": 86,
+            "shell": "L3"
+          },
+          {
+            "energy_keV": "682.5",
+            "energy_standard_uncertainty_keV": "0.16",
+            "weight": "0.0000000000323",
+            "weight_standard_uncertainty": "0.0000000000022",
+            "source_line": 87,
+            "shell": "M"
+          },
+          {
+            "energy_keV": "682.57",
+            "energy_standard_uncertainty_keV": "0.16",
+            "weight": "0.00000000000127",
+            "weight_standard_uncertainty": "0.00000000000008",
+            "source_line": 88,
+            "shell": "N"
+          },
+          {
+            "energy_keV": "796.18",
+            "energy_standard_uncertainty_keV": "0.08",
+            "weight": "0.000000391",
+            "weight_standard_uncertainty": "0.000000013",
+            "source_line": 113,
+            "shell": "K"
+          },
+          {
+            "energy_keV": "804.65",
+            "energy_standard_uncertainty_keV": "0.08",
+            "weight": "0.0000000382",
+            "weight_standard_uncertainty": "0.0000000012",
+            "source_line": 114,
+            "shell": "L1"
+          },
+          {
+            "energy_keV": "804.8",
+            "energy_standard_uncertainty_keV": "0.08",
+            "weight": "0.000000000573",
+            "weight_standard_uncertainty": "0.00000000002",
+            "source_line": 115,
+            "shell": "L2"
+          },
+          {
+            "energy_keV": "804.82",
+            "energy_standard_uncertainty_keV": "0.08",
+            "weight": "0.000000000566",
+            "weight_standard_uncertainty": "0.00000000002",
+            "source_line": 116,
+            "shell": "L3"
+          },
+          {
+            "energy_keV": "805.77",
+            "energy_standard_uncertainty_keV": "0.08",
+            "weight": "0.00000000563",
+            "weight_standard_uncertainty": "0.00000000018",
+            "source_line": 117,
+            "shell": "M"
+          },
+          {
+            "energy_keV": "805.84",
+            "energy_standard_uncertainty_keV": "0.08",
+            "weight": "0.000000000225",
+            "weight_standard_uncertainty": "0.000000000008",
+            "source_line": 118,
+            "shell": "N"
+          },
+          {
+            "energy_keV": "928.96",
+            "energy_standard_uncertainty_keV": "0.2",
+            "weight": "0.000000000484",
+            "weight_standard_uncertainty": "0.000000000048",
+            "source_line": 53,
+            "shell": "K"
+          },
+          {
+            "energy_keV": "937.43",
+            "energy_standard_uncertainty_keV": "0.2",
+            "weight": "0.0000000000475",
+            "weight_standard_uncertainty": "0.0000000000046",
+            "source_line": 54,
+            "shell": "L1"
+          },
+          {
+            "energy_keV": "937.58",
+            "energy_standard_uncertainty_keV": "0.2",
+            "weight": "0.00000000000052",
+            "weight_standard_uncertainty": "0.00000000000008",
+            "source_line": 55,
+            "shell": "L2"
+          },
+          {
+            "energy_keV": "937.6",
+            "energy_standard_uncertainty_keV": "0.2",
+            "weight": "0.00000000000044",
+            "weight_standard_uncertainty": "0.00000000000011",
+            "source_line": 56,
+            "shell": "L3"
+          },
+          {
+            "energy_keV": "938.55",
+            "energy_standard_uncertainty_keV": "0.2",
+            "weight": "0.0000000000069",
+            "weight_standard_uncertainty": "0.0000000000007",
+            "source_line": 57,
+            "shell": "M"
+          },
+          {
+            "energy_keV": "938.62",
+            "energy_standard_uncertainty_keV": "0.2",
+            "weight": "0.000000000000279",
+            "weight_standard_uncertainty": "0.000000000000027",
+            "source_line": 58,
+            "shell": "N"
+          },
+          {
+            "energy_keV": "1067.69",
+            "energy_standard_uncertainty_keV": "0.05",
+            "weight": "0.00000715",
+            "weight_standard_uncertainty": "0.00000015",
+            "source_line": 139,
+            "shell": "K"
+          },
+          {
+            "energy_keV": "1076.16",
+            "energy_standard_uncertainty_keV": "0.05",
+            "weight": "0.000000699",
+            "weight_standard_uncertainty": "0.000000012",
+            "source_line": 140,
+            "shell": "L1"
+          },
+          {
+            "energy_keV": "1076.31",
+            "energy_standard_uncertainty_keV": "0.05",
+            "weight": "0.00000000831",
+            "weight_standard_uncertainty": "0.00000000015",
+            "source_line": 141,
+            "shell": "L2"
+          },
+          {
+            "energy_keV": "1076.33",
+            "energy_standard_uncertainty_keV": "0.05",
+            "weight": "0.00000000919",
+            "weight_standard_uncertainty": "0.00000000015",
+            "source_line": 142,
+            "shell": "L3"
+          },
+          {
+            "energy_keV": "1077.28",
+            "energy_standard_uncertainty_keV": "0.05",
+            "weight": "0.0000001029",
+            "weight_standard_uncertainty": "0.0000000019",
+            "source_line": 143,
+            "shell": "M"
+          },
+          {
+            "energy_keV": "1077.35",
+            "energy_standard_uncertainty_keV": "0.05",
+            "weight": "0.00000000412",
+            "weight_standard_uncertainty": "0.00000000007",
+            "source_line": 144,
+            "shell": "N"
+          },
+          {
+            "energy_keV": "1156.27",
+            "energy_standard_uncertainty_keV": "0.15",
+            "weight": "0.00000000003",
+            "weight_standard_uncertainty": "0.000000000019",
+            "source_line": 60,
+            "shell": "K"
+          },
+          {
+            "energy_keV": "1164.74",
+            "energy_standard_uncertainty_keV": "0.15",
+            "weight": "0.0000000000029",
+            "weight_standard_uncertainty": "0.0000000000018",
+            "source_line": 61,
+            "shell": "L1"
+          },
+          {
+            "energy_keV": "1164.89",
+            "energy_standard_uncertainty_keV": "0.15",
+            "weight": "0.000000000000031",
+            "weight_standard_uncertainty": "0.00000000000002",
+            "source_line": 62,
+            "shell": "L2"
+          },
+          {
+            "energy_keV": "1164.91",
+            "energy_standard_uncertainty_keV": "0.15",
+            "weight": "0.000000000000035",
+            "weight_standard_uncertainty": "0.000000000000022",
+            "source_line": 63,
+            "shell": "L3"
+          },
+          {
+            "energy_keV": "1165.86",
+            "energy_standard_uncertainty_keV": "0.15",
+            "weight": "0.00000000000042",
+            "weight_standard_uncertainty": "0.00000000000027",
+            "source_line": 64,
+            "shell": "M"
+          },
+          {
+            "energy_keV": "1165.93",
+            "energy_standard_uncertainty_keV": "0.15",
+            "weight": "0.000000000000017",
+            "weight_standard_uncertainty": "0.000000000000011",
+            "source_line": 65,
+            "shell": "N"
+          },
+          {
+            "energy_keV": "1251.43",
+            "energy_standard_uncertainty_keV": "0.09",
+            "weight": "0.0000001353",
+            "weight_standard_uncertainty": "0.0000000035",
+            "source_line": 90,
+            "shell": "K"
+          },
+          {
+            "energy_keV": "1259.9",
+            "energy_standard_uncertainty_keV": "0.09",
+            "weight": "0.00000001327",
+            "weight_standard_uncertainty": "0.00000000035",
+            "source_line": 91,
+            "shell": "L1"
+          },
+          {
+            "energy_keV": "1260.05",
+            "energy_standard_uncertainty_keV": "0.09",
+            "weight": "0.0000000000937",
+            "weight_standard_uncertainty": "0.0000000000025",
+            "source_line": 92,
+            "shell": "L2"
+          },
+          {
+            "energy_keV": "1260.07",
+            "energy_standard_uncertainty_keV": "0.09",
+            "weight": "0.0000000000788",
+            "weight_standard_uncertainty": "0.0000000000021",
+            "source_line": 93,
+            "shell": "L3"
+          },
+          {
+            "energy_keV": "1261.02",
+            "energy_standard_uncertainty_keV": "0.09",
+            "weight": "0.00000000193",
+            "weight_standard_uncertainty": "0.00000000005",
+            "source_line": 94,
+            "shell": "M"
+          },
+          {
+            "energy_keV": "1261.09",
+            "energy_standard_uncertainty_keV": "0.09",
+            "weight": "0.0000000000781",
+            "weight_standard_uncertainty": "0.0000000000021",
+            "source_line": 95,
+            "shell": "N"
+          },
+          {
+            "energy_keV": "1734.78",
+            "energy_standard_uncertainty_keV": "0.13",
+            "weight": "0.00000000739",
+            "weight_standard_uncertainty": "0.0000000004",
+            "source_line": 67,
+            "shell": "K"
+          },
+          {
+            "energy_keV": "1743.25",
+            "energy_standard_uncertainty_keV": "0.13",
+            "weight": "0.000000000725",
+            "weight_standard_uncertainty": "0.000000000039",
+            "source_line": 68,
+            "shell": "L1"
+          },
+          {
+            "energy_keV": "1743.4",
+            "energy_standard_uncertainty_keV": "0.13",
+            "weight": "0.00000000000396",
+            "weight_standard_uncertainty": "0.00000000000021",
+            "source_line": 69,
+            "shell": "L2"
+          },
+          {
+            "energy_keV": "1743.42",
+            "energy_standard_uncertainty_keV": "0.13",
+            "weight": "0.00000000000419",
+            "weight_standard_uncertainty": "0.00000000000023",
+            "source_line": 70,
+            "shell": "L3"
+          },
+          {
+            "energy_keV": "1744.37",
+            "energy_standard_uncertainty_keV": "0.13",
+            "weight": "0.000000000105",
+            "weight_standard_uncertainty": "0.000000000006",
+            "source_line": 71,
+            "shell": "M"
+          },
+          {
+            "energy_keV": "1744.44",
+            "energy_standard_uncertainty_keV": "0.13",
+            "weight": "0.00000000000426",
+            "weight_standard_uncertainty": "0.00000000000023",
+            "source_line": 72,
+            "shell": "N"
+          },
+          {
+            "energy_keV": "1873.53",
+            "energy_standard_uncertainty_keV": "0.06",
+            "weight": "0.000000099",
+            "weight_standard_uncertainty": "0.0000000028",
+            "source_line": 120,
+            "shell": "K"
+          },
+          {
+            "energy_keV": "1882",
+            "energy_standard_uncertainty_keV": "0.06",
+            "weight": "0.00000000967",
+            "weight_standard_uncertainty": "0.00000000028",
+            "source_line": 121,
+            "shell": "L1"
+          },
+          {
+            "energy_keV": "1882.15",
+            "energy_standard_uncertainty_keV": "0.06",
+            "weight": "0.0000000000601",
+            "weight_standard_uncertainty": "0.0000000000017",
+            "source_line": 122,
+            "shell": "L2"
+          },
+          {
+            "energy_keV": "1882.17",
+            "energy_standard_uncertainty_keV": "0.06",
+            "weight": "0.0000000000807",
+            "weight_standard_uncertainty": "0.0000000000023",
+            "source_line": 123,
+            "shell": "L3"
+          },
+          {
+            "energy_keV": "1883.12",
+            "energy_standard_uncertainty_keV": "0.06",
+            "weight": "0.000000001406",
+            "weight_standard_uncertainty": "0.000000000045",
+            "source_line": 124,
+            "shell": "M"
+          },
+          {
+            "energy_keV": "1883.19",
+            "energy_standard_uncertainty_keV": "0.06",
+            "weight": "0.0000000000569",
+            "weight_standard_uncertainty": "0.0000000000016",
+            "source_line": 125,
+            "shell": "N"
+          },
+          {
+            "energy_keV": "2328.82",
+            "energy_standard_uncertainty_keV": "0.08",
+            "weight": "0.00000000053",
+            "weight_standard_uncertainty": "0.00000000008",
+            "source_line": 97,
+            "shell": "K"
+          },
+          {
+            "energy_keV": "2337.29",
+            "energy_standard_uncertainty_keV": "0.08",
+            "weight": "0.000000000052",
+            "weight_standard_uncertainty": "0.000000000007",
+            "source_line": 98,
+            "shell": "L1"
+          },
+          {
+            "energy_keV": "2337.44",
+            "energy_standard_uncertainty_keV": "0.08",
+            "weight": "0.000000000000255",
+            "weight_standard_uncertainty": "0.000000000000036",
+            "source_line": 99,
+            "shell": "L2"
+          },
+          {
+            "energy_keV": "2337.46",
+            "energy_standard_uncertainty_keV": "0.08",
+            "weight": "0.00000000000038",
+            "weight_standard_uncertainty": "0.00000000000005",
+            "source_line": 100,
+            "shell": "L3"
+          },
+          {
+            "energy_keV": "2338.41",
+            "energy_standard_uncertainty_keV": "0.08",
+            "weight": "0.0000000000076",
+            "weight_standard_uncertainty": "0.0000000000011",
+            "source_line": 101,
+            "shell": "M"
+          },
+          {
+            "energy_keV": "2338.48",
+            "energy_standard_uncertainty_keV": "0.08",
+            "weight": "0.000000000000306",
+            "weight_standard_uncertainty": "0.000000000000044",
+            "source_line": 102,
+            "shell": "N"
+          },
+          {
+            "energy_keV": "2812.13",
+            "energy_standard_uncertainty_keV": "0.14",
+            "weight": "0.00000000016",
+            "weight_standard_uncertainty": "0.000000000013",
+            "source_line": 74,
+            "shell": "K"
+          },
+          {
+            "energy_keV": "2820.6",
+            "energy_standard_uncertainty_keV": "0.14",
+            "weight": "0.0000000000156",
+            "weight_standard_uncertainty": "0.0000000000012",
+            "source_line": 75,
+            "shell": "L1"
+          },
+          {
+            "energy_keV": "2820.75",
+            "energy_standard_uncertainty_keV": "0.14",
+            "weight": "0.000000000000063",
+            "weight_standard_uncertainty": "0.000000000000005",
+            "source_line": 76,
+            "shell": "L2"
+          },
+          {
+            "energy_keV": "2820.77",
+            "energy_standard_uncertainty_keV": "0.14",
+            "weight": "0.000000000000106",
+            "weight_standard_uncertainty": "0.000000000000008",
+            "source_line": 77,
+            "shell": "L3"
+          },
+          {
+            "energy_keV": "2821.72",
+            "energy_standard_uncertainty_keV": "0.14",
+            "weight": "0.00000000000226",
+            "weight_standard_uncertainty": "0.00000000000018",
+            "source_line": 78,
+            "shell": "M"
+          },
+          {
+            "energy_keV": "2821.79",
+            "energy_standard_uncertainty_keV": "0.14",
+            "weight": "0.000000000000092",
+            "weight_standard_uncertainty": "0.000000000000007",
+            "source_line": 79,
+            "shell": "N"
+          }
+        ]
+      }
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "annihilation",
+      "particle": "Gamma",
+      "energy_keV": "511",
+      "reason": "Reference information only. Annihilation belongs to positron transport, not parent source emission."
+    },
+    {
+      "id": "electron_capture",
+      "reason": "A parent decay channel, not an incident particle. Relaxation yields already cover the full parent scheme; no placeholder or extra EC multiplier."
+    },
+    {
+      "id": "unassigned_E0_gamma",
+      "reason": "No evaluated direct photon intensity for the possible 1655.87 keV E0 transition; do not invent a source gamma."
+    },
+    {
+      "id": "neutrino_and_recoil",
+      "reason": "Not part of the current GGEMS source-emission mapping."
+    }
+  ],
+  "provenance": {
+    "authority": "Recovered local LNHB/PTB Ga-68 evaluation selected for the existing GGEMS built-in.",
+    "evaluators": "M.-M. Be (LNHB), E. Schonfeld (PTB)",
+    "evaluation_review": "November 2011, as stated by Ga-68_com.pdf; table footer 21/01/1998 - 4/7/2012; PenNuc printed evaluation date 09/12/2011.",
+    "betashape_version": "2.4 (06/2024)",
+    "betashape_command": ".\\betashape.exe Ga68\\Ga-68.txt -fixint=1 -csv",
+    "betashape_input": "betashape/v2.4/input/Ga-68.txt",
+    "betashape_report": "betashape/v2.4/output/Ga-68.rpt",
+    "fixint_policy": "fixint=1 retains adopted EC/beta+ intensities; the recovered report confirms the branch splits. Do not replace these with calculated ratios.",
+    "execution": "Derived from recovered outputs; BetaShape was not rerun. Original download and execution timestamps are not recovered.",
+    "atomic_data_boundary": "LNHB/LARA for nuclear gamma, compact Zn X-rays and shell-resolved conversion electrons. Only detailed Auger lines use the recovered MIRD Summary Spectrum CSV, as explicitly documented in current GGEMSGa68.cc. Its source comment identifies MIRDspecs/ICRP Publication 107 (2008); the recovered CSV itself contains no evaluation identity or uncertainty columns.",
+    "independent_cross_checks": "ENSDF and all other MIRD data remain independent and unmerged. LNHB LARA rounded 4.070E3 s is not substituted for the selected 67.83 min.",
+    "compiled_provenance_limit": "The exporter has no compiled generator-provenance API. Current source comments identify a retained BetaShape 2.2 experimental table and two BetaShape 2.4 calculated tables; the selected reference uses recovered 2.4 experimental/calculated columns respectively. Their numerical agreement is assessed separately."
+  }
+}
