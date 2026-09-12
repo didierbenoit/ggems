@@ -24,10 +24,10 @@ namespace {
 //
 // Direct evaluated decay and emission data:
 // CEA/LNE-LNHB, Nucleide-LARA, I-123 / Te-123 decay data,
-// V. Chiste and M. M. Be evaluation (2001-2003). The LARA direct-emission
-// export is the authority for the half-life, Q value, nuclear gamma lines,
-// compact Te X-ray groups, and shell-resolved K/L internal-conversion
-// electrons.
+// V. Chiste and M. M. Be evaluation (2001, PenNuc 16/07/2003, tables updated
+// through 5/8/2004). LARA supplies the half-life, Q value, nuclear gamma lines
+// and compact Te X-ray groups. The associated LNHB/PenNuc EK/EL records supply
+// the selected K/L internal-conversion electrons.
 //
 // Companion evaluation:
 // CEA/LNE-LNHB, Table de Radionucleides, I-123. It documents the electron
@@ -41,10 +41,10 @@ namespace {
 // Auger-electron lines because the compact LNHB/LARA tables aggregate Auger
 // groups into energy ranges.
 //
-// BetaShape 2.2 provides the evaluated electron-capture branch and shell
-// probabilities used for audit only. I-123 has no beta spectrum in this GGEMS
-// definition, and electron capture itself creates no placeholder incident
-// particle.
+// Retained BetaShape 2.4 (06/2024), run with fixint=1, supports the selected
+// EC branches and zero beta-plus intensity; calculated shell probabilities
+// are audit information only. I-123 has no beta spectrum in this definition,
+// and electron capture itself creates no placeholder incident particle.
 //
 // Capture neutrinos, daughter recoil nuclei, and later daughter-chain
 // emissions are intentionally excluded. This definition represents prompt
@@ -138,7 +138,8 @@ constexpr std::array<double, 13U> k_auger_electron_line_yields{{
     0.00374455,
 }};
 
-// CEA/LNE-LNHB LARA shell-resolved K/L prompt internal-conversion electrons.
+// CEA/LNE-LNHB PenNuc EK/EL prompt internal-conversion electron records.
+// The selected runtime scope is K/L conversion, not all atomic shells.
 // The arrays are sorted by increasing electron energy as required by
 // DiscreteLines.
 constexpr std::array<std::uint64_t, 36U>

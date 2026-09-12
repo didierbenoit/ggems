@@ -21,7 +21,8 @@ constexpr long double k_positron_yield{0.9686L};
 constexpr long double k_auger_l_yield{0.00229L};
 constexpr long double k_oxygen_x_ray_yield{0.00020L};
 
-// LNHB BetaShape 2.2 (05/2021), F-18 beta+ transition.
+// LNHB BetaShape 2.4 (06/2024), F-18 beta+ transition, fixint=1.
+// The table retained from 2.2 is reproduced by the 2.4 experimental column.
 // The experimental-shape-factor dN/dE column was integrated offline onto a
 // regular GGEMS grid with an exact 633.9 keV upper edge and a maximum target
 // width of 0.5 keV. The stored values are normalized bin masses; the physical
@@ -473,6 +474,13 @@ constexpr std::array<double, 1268U> k_positron_spectrum_weights{
   emissions.reserve(3U);
   emissions.emplace_back(particles::GGEMSParticleType::Positron,
                          k_positron_yield, BuildPositronSpectrum());
+
+  // Modeled atomic marginals: LNHB L-Auger and O K-alpha X-rays.
+  // Known K-Auger emission (0.0289 +/- 0.0018 electron per parent decay,
+  // KLL range 0.456-0.502 keV) remains outside this model: no sufficiently
+  // supported conditional energy law has been recovered for the selected LNHB
+  // evaluation. Source-level 511 keV photons are excluded because the source
+  // emits the positron itself.
   emissions.emplace_back(
       particles::GGEMSParticleType::Electron, k_auger_l_yield,
       sources::GGEMSEnergyDistribution::BuildMono(14'300'000ULL));

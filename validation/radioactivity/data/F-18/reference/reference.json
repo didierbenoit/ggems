@@ -1,0 +1,117 @@
+{
+  "name": "F-18",
+  "reference_id": "LNHB-KRI-2014-F18-BetaShape-2.4-declared-three-group-model",
+  "half_life": {
+    "value": "6584.04000",
+    "standard_uncertainty": "0.82800",
+    "unit": "s",
+    "source_value": "1.82890",
+    "source_uncertainty": "0.00023",
+    "source_unit": "h",
+    "source": "../raw/lnhb/F-18.lara.txt, lines 6-7; ../raw/lnhb/F-18_tables.pdf, p. 1",
+    "transformation": "Convert the more precise selected hour value and uncertainty using exactly 3600 s/h; the published seconds table is rounded."
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_plus_to_ground_state",
+      "particle": "Positron",
+      "yield_per_decay": {
+        "value": "0.9686",
+        "standard_uncertainty": "0.0019",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/F-18.PenNuc.txt, line 10; ../raw/lnhb/F-18_tables.pdf, pp. 1-2"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "reference_representation": "piecewise_linear_density",
+        "spectrum_file": "beta_plus_633_9_keV.csv",
+        "energy_unit": "keV",
+        "endpoint": {
+          "value": "633.9",
+          "standard_uncertainty": "0.5",
+          "unit": "keV",
+          "source": "../raw/lnhb/F-18.PenNuc.txt, line 10; ../raw/lnhb/F-18_tables.pdf, pp. 1-2"
+        },
+        "generator": "BetaShape 2.4 (06/2024)",
+        "source": "../raw/betashape/v2.4/output/beta+_F18_trans0.bs",
+        "selected_density_column": "dN/dE exp.",
+        "raw_grid_points": 318,
+        "conditional_piecewise_linear_mean_keV": "250.4959511919271840104696691093177533903178350386320713440571002040288",
+        "experimental_shape_factor": "An experimental shape factor has been found: 1 + 0.0034*W",
+        "measurement_range": "Energy range of the measurement: 70 - 600 keV      In database, transition #9",
+        "measurement_source": "From [1964HO28] I. Hofmann, Acta Phys. Austriaca 18, 309 (1964)",
+        "transformation": "Copy retained energy, experimental density and uncertainty tokens unchanged. Use the full-support piecewise-linear interpolant, normalized only for conditional shape comparisons. No endpoint rescaling, physical-yield normalization or BetaShape rerun.",
+        "uncertainty_policy": "Pointwise uncertainties are preserved. No covariance is supplied; comparisons condition on the central spectrum."
+      }
+    },
+    {
+      "index": 1,
+      "id": "oxygen_l_auger",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00229",
+        "standard_uncertainty": "0.00021",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/F-18_tables.pdf, p. 2, sections 3.1.2 and 4"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "0.0143",
+          "unit": "keV",
+          "source": "../raw/lnhb/F-18_tables.pdf, p. 2, sections 3.1.2 and 4"
+        }
+      },
+      "mapping": "Selected LNHB L-Auger marginal only; this is not the complete physical F-18 electron-emission inventory."
+    },
+    {
+      "index": 2,
+      "id": "oxygen_k_alpha",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.00020",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/F-18.lara.txt, lines 14-15; ../raw/lnhb/F-18_tables.pdf, p. 3, section 5.1"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "0.525",
+          "unit": "keV",
+          "source": "../raw/lnhb/F-18.lara.txt, lines 14-15"
+        }
+      },
+      "mapping": "Merge the two evaluated equal-energy K-alpha signatures: 0.00007 + 0.00013 photon per parent decay. Individual uncertainties are documented in README; their covariance is unavailable."
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "unresolved_oxygen_k_auger",
+      "source": "../raw/lnhb/F-18_tables.pdf, p. 2, sections 3.1.2 and 4",
+      "reason": "Known physical emission, not currently modeled: LNHB K-Auger yield 0.0289 +/- 0.0018 electron per parent, KLL range 0.456-0.502 keV. A sufficiently supported conditional energy law for the selected evaluation has not been recovered. No zero-yield group, placeholder, MIRD mean or EADL distribution is inserted."
+    },
+    {
+      "id": "annihilation",
+      "particle": "Gamma",
+      "energy_keV": "511",
+      "reason": "Annihilation photons belong to subsequent positron transport; the source emits the positron itself."
+    },
+    {
+      "id": "electron_capture",
+      "reason": "A parent decay mode, not an incident particle. No EC placeholder is generated."
+    }
+  ],
+  "provenance": {
+    "authority": "Selected recovered LNHB/KRI 2014 F-18/O-18 evaluation; BetaShape 2.4 experimental positron shape.",
+    "evaluator": "V. Chiste, M.-M. Be and N. K. Kuzmenko",
+    "betashape_command": ".\\betashape.exe F18\\F-18.txt fixint=1 -csv",
+    "execution": "Retained outputs only; fixint=1 preserves the evaluated EC/beta-plus branch split. No qval override.",
+    "scope": "Validation reference for the GGEMS declared three-group F-18 source model. It does not certify full atomic-relaxation completeness. Physical inventory and source disagreements are documented in README.md."
+  },
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSF18.cc",
+    "generator_prefix": "// LNHB BetaShape ",
+    "selected_version": "2.4"
+  }
+}

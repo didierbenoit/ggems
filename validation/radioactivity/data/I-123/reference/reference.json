@@ -1,0 +1,1084 @@
+{
+  "name": "I-123",
+  "reference_id": "LNHB-DDEP-I123-LARA-PenNuc-MIRD-ICRP107-Auger",
+  "half_life": {
+    "value": "47604.2400",
+    "standard_uncertainty": "13.3200",
+    "unit": "s",
+    "source_value": "13.2234",
+    "source_uncertainty": "0.0037",
+    "source_unit": "h",
+    "source": "../raw/lnhb/I-123.lara.txt, lines 7-8; ../raw/lnhb/I-123_tables.pdf, section 2, page 1",
+    "transformation": "Multiply the selected hours and uncertainty by exactly 3600. Preserve the central value rather than substituting rounded LARA/BetaShape seconds."
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "nuclear_gamma",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.86195334",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/I-123.lara.txt; direct photon inventory, corroborated by GA records in ../raw/lnhb/I-123.PenNuc.txt and section 5.2 of ../raw/lnhb/I-123_tables.pdf",
+        "derivation": "Sum the selected absolute line yields without physical-yield normalization."
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "weight_unit": "primary/parent decay (relative only within this conditional distribution)",
+        "source": "../raw/lnhb/I-123.lara.txt; direct photon inventory, corroborated by GA records in ../raw/lnhb/I-123.PenNuc.txt and section 5.2 of ../raw/lnhb/I-123_tables.pdf",
+        "lines": [
+          {
+            "energy_keV": "158.97",
+            "weight": "0.8325",
+            "weight_standard_uncertainty": "0.0021",
+            "source_line": 20,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.05",
+            "upper_level_index": 1,
+            "lower_level_index": 0
+          },
+          {
+            "energy_keV": "174.2",
+            "weight": "0.0000083",
+            "weight_standard_uncertainty": "0.0000025",
+            "source_line": 21,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.3",
+            "upper_level_index": 13,
+            "lower_level_index": 10
+          },
+          {
+            "energy_keV": "182.61",
+            "weight": "0.00018",
+            "weight_standard_uncertainty": "0.00005",
+            "source_line": 22,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.06",
+            "upper_level_index": 6,
+            "lower_level_index": 4
+          },
+          {
+            "energy_keV": "192.17",
+            "weight": "0.000199",
+            "weight_standard_uncertainty": "0.000007",
+            "source_line": 23,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.07",
+            "upper_level_index": 7,
+            "lower_level_index": 4
+          },
+          {
+            "energy_keV": "197.22",
+            "weight": "0.0000033",
+            "weight_standard_uncertainty": "0.0000017",
+            "source_line": 24,
+            "label": "g",
+            "upper_level_index": 10,
+            "lower_level_index": 7
+          },
+          {
+            "energy_keV": "198.23",
+            "weight": "0.000035",
+            "weight_standard_uncertainty": "0.000007",
+            "source_line": 25,
+            "label": "g",
+            "upper_level_index": 6,
+            "lower_level_index": 3
+          },
+          {
+            "energy_keV": "206.79",
+            "weight": "0.000033",
+            "weight_standard_uncertainty": "0.000008",
+            "source_line": 26,
+            "label": "g",
+            "upper_level_index": 10,
+            "lower_level_index": 6
+          },
+          {
+            "energy_keV": "207.8",
+            "weight": "0.0000112",
+            "weight_standard_uncertainty": "0.0000032",
+            "source_line": 27,
+            "label": "g",
+            "upper_level_index": 7,
+            "lower_level_index": 3
+          },
+          {
+            "energy_keV": "247.96",
+            "weight": "0.000698",
+            "weight_standard_uncertainty": "0.000023",
+            "source_line": 28,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.05",
+            "upper_level_index": 6,
+            "lower_level_index": 2
+          },
+          {
+            "energy_keV": "257.51",
+            "weight": "0.000016",
+            "weight_standard_uncertainty": "0.000002",
+            "source_line": 29,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.15",
+            "upper_level_index": 7,
+            "lower_level_index": 2
+          },
+          {
+            "energy_keV": "278.36",
+            "weight": "0.000023",
+            "weight_standard_uncertainty": "0.000004",
+            "source_line": 30,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.12",
+            "upper_level_index": 9,
+            "lower_level_index": 4
+          },
+          {
+            "energy_keV": "281.03",
+            "weight": "0.000789",
+            "weight_standard_uncertainty": "0.000009",
+            "source_line": 31,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.05",
+            "upper_level_index": 2,
+            "lower_level_index": 1
+          },
+          {
+            "energy_keV": "295.17",
+            "weight": "0.00001582",
+            "weight_standard_uncertainty": "4E-8",
+            "source_line": 32,
+            "label": "g",
+            "upper_level_index": 10,
+            "lower_level_index": 5
+          },
+          {
+            "energy_keV": "329.38",
+            "weight": "0.000026",
+            "weight_standard_uncertainty": "0.000006",
+            "source_line": 33,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.17",
+            "upper_level_index": 8,
+            "lower_level_index": 2
+          },
+          {
+            "energy_keV": "330.70",
+            "weight": "0.0001164",
+            "weight_standard_uncertainty": "0.0000033",
+            "source_line": 34,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.08",
+            "upper_level_index": 3,
+            "lower_level_index": 1
+          },
+          {
+            "energy_keV": "343.73",
+            "weight": "0.000044",
+            "weight_standard_uncertainty": "0.000003",
+            "source_line": 35,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.14",
+            "upper_level_index": 9,
+            "lower_level_index": 2
+          },
+          {
+            "energy_keV": "346.35",
+            "weight": "0.001257",
+            "weight_standard_uncertainty": "0.000009",
+            "source_line": 36,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.05",
+            "upper_level_index": 4,
+            "lower_level_index": 1
+          },
+          {
+            "energy_keV": "405.02",
+            "weight": "0.0000298",
+            "weight_standard_uncertainty": "0.0000023",
+            "source_line": 37,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.13",
+            "upper_level_index": 10,
+            "lower_level_index": 3
+          },
+          {
+            "energy_keV": "437.5",
+            "weight": "0.000007",
+            "weight_standard_uncertainty": "0.000007",
+            "source_line": 38,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.3",
+            "upper_level_index": 12,
+            "lower_level_index": 5
+          },
+          {
+            "energy_keV": "440.02",
+            "weight": "0.004229",
+            "weight_standard_uncertainty": "0.000043",
+            "source_line": 39,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.05",
+            "upper_level_index": 2,
+            "lower_level_index": 0
+          },
+          {
+            "energy_keV": "454.76",
+            "weight": "0.0000412",
+            "weight_standard_uncertainty": "0.0000022",
+            "source_line": 40,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.15",
+            "upper_level_index": 10,
+            "lower_level_index": 2
+          },
+          {
+            "energy_keV": "505.33",
+            "weight": "0.00266",
+            "weight_standard_uncertainty": "0.00042",
+            "source_line": 41,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.05",
+            "upper_level_index": 4,
+            "lower_level_index": 0
+          },
+          {
+            "energy_keV": "528.96",
+            "weight": "0.0128",
+            "weight_standard_uncertainty": "0.0012",
+            "source_line": 42,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.05",
+            "upper_level_index": 6,
+            "lower_level_index": 1
+          },
+          {
+            "energy_keV": "538.54",
+            "weight": "0.003788",
+            "weight_standard_uncertainty": "0.000043",
+            "source_line": 43,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.05",
+            "upper_level_index": 7,
+            "lower_level_index": 1
+          },
+          {
+            "energy_keV": "556.05",
+            "weight": "0.000029",
+            "weight_standard_uncertainty": "0.000003",
+            "source_line": 44,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.13",
+            "upper_level_index": 11,
+            "lower_level_index": 2
+          },
+          {
+            "energy_keV": "562.79",
+            "weight": "0.0000115",
+            "weight_standard_uncertainty": "7E-7",
+            "source_line": 45,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.12",
+            "upper_level_index": 13,
+            "lower_level_index": 4
+          },
+          {
+            "energy_keV": "578.26",
+            "weight": "0.0000126",
+            "weight_standard_uncertainty": "8E-7",
+            "source_line": 46,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.20",
+            "upper_level_index": 13,
+            "lower_level_index": 3
+          },
+          {
+            "energy_keV": "599.69",
+            "weight": "0.0000266",
+            "weight_standard_uncertainty": "0.0000017",
+            "source_line": 47,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.16",
+            "upper_level_index": 5,
+            "lower_level_index": 0
+          },
+          {
+            "energy_keV": "610.05",
+            "weight": "0.000011",
+            "weight_standard_uncertainty": "0.000003",
+            "source_line": 48,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.23",
+            "upper_level_index": 8,
+            "lower_level_index": 1
+          },
+          {
+            "energy_keV": "624.57",
+            "weight": "0.000798",
+            "weight_standard_uncertainty": "0.00002",
+            "source_line": 49,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.05",
+            "upper_level_index": 9,
+            "lower_level_index": 1
+          },
+          {
+            "energy_keV": "628.26",
+            "weight": "0.0000164",
+            "weight_standard_uncertainty": "0.0000014",
+            "source_line": 50,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.22",
+            "upper_level_index": 13,
+            "lower_level_index": 2
+          },
+          {
+            "energy_keV": "687.95",
+            "weight": "0.000269",
+            "weight_standard_uncertainty": "0.000006",
+            "source_line": 51,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.10",
+            "upper_level_index": 6,
+            "lower_level_index": 0
+          },
+          {
+            "energy_keV": "735.78",
+            "weight": "0.000616",
+            "weight_standard_uncertainty": "0.000008",
+            "source_line": 52,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.07",
+            "upper_level_index": 10,
+            "lower_level_index": 1
+          },
+          {
+            "energy_keV": "783.59",
+            "weight": "0.000591",
+            "weight_standard_uncertainty": "0.000011",
+            "source_line": 53,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.06",
+            "upper_level_index": 9,
+            "lower_level_index": 0
+          },
+          {
+            "energy_keV": "837.1",
+            "weight": "0.00000582",
+            "weight_standard_uncertainty": "8E-8",
+            "source_line": 54,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.2",
+            "upper_level_index": 11,
+            "lower_level_index": 1
+          },
+          {
+            "energy_keV": "877.52",
+            "weight": "0.0000083",
+            "weight_standard_uncertainty": "7E-7",
+            "source_line": 55,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.17",
+            "upper_level_index": 12,
+            "lower_level_index": 1
+          },
+          {
+            "energy_keV": "894.8",
+            "weight": "0.0000101",
+            "weight_standard_uncertainty": "7E-7",
+            "source_line": 56,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.2",
+            "upper_level_index": 10,
+            "lower_level_index": 0
+          },
+          {
+            "energy_keV": "909.12",
+            "weight": "0.0000141",
+            "weight_standard_uncertainty": "8E-7",
+            "source_line": 57,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.12",
+            "upper_level_index": 13,
+            "lower_level_index": 1
+          },
+          {
+            "energy_keV": "1036.63",
+            "weight": "0.0000097",
+            "weight_standard_uncertainty": "7E-7",
+            "source_line": 58,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.17",
+            "upper_level_index": 12,
+            "lower_level_index": 0
+          },
+          {
+            "energy_keV": "1068.12",
+            "weight": "0.0000142",
+            "weight_standard_uncertainty": "7E-7",
+            "source_line": 59,
+            "label": "g",
+            "energy_standard_uncertainty_keV": "0.15",
+            "upper_level_index": 13,
+            "lower_level_index": 0
+          }
+        ]
+      }
+    },
+    {
+      "index": 1,
+      "id": "atomic_xray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.9569",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/I-123.lara.txt; selected grouped representative energies and absolute photon yields. See section 5.1 of ../raw/lnhb/I-123_tables.pdf and the T records of ../raw/lnhb/I-123.txt for component identities.",
+        "derivation": "Sum the selected absolute line yields without physical-yield normalization."
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "weight_unit": "primary/parent decay (relative only within this conditional distribution)",
+        "source": "../raw/lnhb/I-123.lara.txt; selected grouped representative energies and absolute photon yields. See section 5.1 of ../raw/lnhb/I-123_tables.pdf and the T records of ../raw/lnhb/I-123.txt for component identities.",
+        "lines": [
+          {
+            "energy_keV": "4.078",
+            "weight": "0.09",
+            "weight_standard_uncertainty": "0.004",
+            "source_line": 15,
+            "label": "XL"
+          },
+          {
+            "energy_keV": "27.202",
+            "weight": "0.2469",
+            "weight_standard_uncertainty": "0.002",
+            "source_line": 16,
+            "label": "XKa2"
+          },
+          {
+            "energy_keV": "27.4726",
+            "weight": "0.4598",
+            "weight_standard_uncertainty": "0.0029",
+            "source_line": 17,
+            "label": "XKa1"
+          },
+          {
+            "energy_keV": "31.1044",
+            "weight": "0.1316",
+            "weight_standard_uncertainty": "0.0017",
+            "source_line": 18,
+            "label": "XK'b1"
+          },
+          {
+            "energy_keV": "31.7623",
+            "weight": "0.0286",
+            "weight_standard_uncertainty": "0.0008",
+            "source_line": 19,
+            "label": "XK'b2"
+          }
+        ]
+      }
+    },
+    {
+      "index": 2,
+      "id": "auger_electrons",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "13.705816482",
+        "unit": "primary/parent decay",
+        "source": "../raw/mird/I-123 Summary Spectrum.csv; all 13 rows labeled Auger electron, zero-based source rows 94-106. Yield [#/nt] is electrons per nuclear transformation. Preserve raw energies separately; energy_keV applies the documented historical nearest-meV representation, now stored in integer micro-eV.",
+        "derivation": "Sum the selected absolute line yields without physical-yield normalization."
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "weight_unit": "primary/parent decay (relative only within this conditional distribution)",
+        "source": "../raw/mird/I-123 Summary Spectrum.csv; all 13 rows labeled Auger electron, zero-based source rows 94-106. Yield [#/nt] is electrons per nuclear transformation. Preserve raw energies separately; energy_keV applies the documented historical nearest-meV representation, now stored in integer micro-eV.",
+        "lines": [
+          {
+            "energy_keV": "0.022924",
+            "weight": "7.26733",
+            "source_row": 94,
+            "source_energy_MeV": "2.29238e-05",
+            "source_energy_keV": "0.0229238000",
+            "representation_residual_micro_eV": "200.0000000000"
+          },
+          {
+            "energy_keV": "0.024926",
+            "weight": "2.42736",
+            "source_row": 95,
+            "source_energy_MeV": "2.49261e-05",
+            "source_energy_keV": "0.0249261000",
+            "representation_residual_micro_eV": "-100.0000000000"
+          },
+          {
+            "energy_keV": "0.121020",
+            "weight": "0.83628",
+            "source_row": 96,
+            "source_energy_MeV": "0.00012102",
+            "source_energy_keV": "0.12102000",
+            "representation_residual_micro_eV": "0E-8"
+          },
+          {
+            "energy_keV": "0.295783",
+            "weight": "0.155577",
+            "source_row": 97,
+            "source_energy_MeV": "0.000295783",
+            "source_energy_keV": "0.295783000",
+            "representation_residual_micro_eV": "0E-9"
+          },
+          {
+            "energy_keV": "0.449494",
+            "weight": "1.86981",
+            "source_row": 98,
+            "source_energy_MeV": "0.000449494",
+            "source_energy_keV": "0.449494000",
+            "representation_residual_micro_eV": "0E-9"
+          },
+          {
+            "energy_keV": "0.541188",
+            "weight": "0.0720601",
+            "source_row": 99,
+            "source_energy_MeV": "0.000541188",
+            "source_energy_keV": "0.541188000",
+            "representation_residual_micro_eV": "0E-9"
+          },
+          {
+            "energy_keV": "0.687637",
+            "weight": "0.000271332",
+            "source_row": 100,
+            "source_energy_MeV": "0.000687637",
+            "source_energy_keV": "0.687637000",
+            "representation_residual_micro_eV": "0E-9"
+          },
+          {
+            "energy_keV": "3.084750",
+            "weight": "0.734409",
+            "source_row": 101,
+            "source_energy_MeV": "0.00308475",
+            "source_energy_keV": "3.08475000",
+            "representation_residual_micro_eV": "0E-8"
+          },
+          {
+            "energy_keV": "3.678860",
+            "weight": "0.207978",
+            "source_row": 102,
+            "source_energy_MeV": "0.00367886",
+            "source_energy_keV": "3.67886000",
+            "representation_residual_micro_eV": "0E-8"
+          },
+          {
+            "energy_keV": "4.295240",
+            "weight": "0.0147089",
+            "source_row": 103,
+            "source_energy_MeV": "0.00429524",
+            "source_energy_keV": "4.29524000",
+            "representation_residual_micro_eV": "0E-8"
+          },
+          {
+            "energy_keV": "22.665300",
+            "weight": "0.0807305",
+            "source_row": 104,
+            "source_energy_MeV": "0.0226653",
+            "source_energy_keV": "22.6653000",
+            "representation_residual_micro_eV": "0E-7"
+          },
+          {
+            "energy_keV": "26.505600",
+            "weight": "0.0355571",
+            "source_row": 105,
+            "source_energy_MeV": "0.0265056",
+            "source_energy_keV": "26.5056000",
+            "representation_residual_micro_eV": "0E-7"
+          },
+          {
+            "energy_keV": "30.346100",
+            "weight": "0.00374455",
+            "source_row": 106,
+            "source_energy_MeV": "0.0303461",
+            "source_energy_keV": "30.3461000",
+            "representation_residual_micro_eV": "0E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 3,
+      "id": "conversion_electrons_kl",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.155575455",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/I-123.PenNuc.txt; all EK and EL records. Parent GA and LED records identify the prompt transition. Direct LARA photon export does not contain these electron records.",
+        "derivation": "Sum the selected absolute line yields without physical-yield normalization."
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "weight_unit": "primary/parent decay (relative only within this conditional distribution)",
+        "source": "../raw/lnhb/I-123.PenNuc.txt; all EK and EL records. Parent GA and LED records identify the prompt transition. Direct LARA photon export does not contain these electron records.",
+        "lines": [
+          {
+            "energy_keV": "127.18",
+            "weight": "0.1372",
+            "weight_standard_uncertainty": "0.0014",
+            "energy_standard_uncertainty_keV": "0.05",
+            "shell": "K",
+            "parent_gamma_energy_keV": "158.97",
+            "upper_level_energy_keV": "158.99",
+            "upper_level_index": 1,
+            "lower_level_index": 0,
+            "source_line": 171
+          },
+          {
+            "energy_keV": "142.39",
+            "weight": "0.00000132",
+            "weight_standard_uncertainty": "0.00000048",
+            "energy_standard_uncertainty_keV": "0.3",
+            "shell": "K",
+            "parent_gamma_energy_keV": "174.2",
+            "upper_level_energy_keV": "1068.18",
+            "upper_level_index": 13,
+            "lower_level_index": 10,
+            "source_line": 74
+          },
+          {
+            "energy_keV": "150.8",
+            "weight": "0.000025",
+            "weight_standard_uncertainty": "0.000008",
+            "energy_standard_uncertainty_keV": "0.08",
+            "shell": "K",
+            "parent_gamma_energy_keV": "182.61",
+            "upper_level_energy_keV": "687.95",
+            "upper_level_index": 6,
+            "lower_level_index": 4,
+            "source_line": 134
+          },
+          {
+            "energy_keV": "154.36",
+            "weight": "0.01798",
+            "weight_standard_uncertainty": "0.00019",
+            "energy_standard_uncertainty_keV": "0.05",
+            "shell": "L",
+            "parent_gamma_energy_keV": "158.97",
+            "upper_level_energy_keV": "158.99",
+            "upper_level_index": 1,
+            "lower_level_index": 0,
+            "source_line": 172
+          },
+          {
+            "energy_keV": "160.37",
+            "weight": "0.0000235",
+            "weight_standard_uncertainty": "0.0000041",
+            "energy_standard_uncertainty_keV": "0.09",
+            "shell": "K",
+            "parent_gamma_energy_keV": "192.17",
+            "upper_level_energy_keV": "697.52",
+            "upper_level_index": 7,
+            "lower_level_index": 4,
+            "source_line": 120
+          },
+          {
+            "energy_keV": "165.41",
+            "weight": "0.00000036",
+            "weight_standard_uncertainty": "0.00000019",
+            "energy_standard_uncertainty_keV": "0.11",
+            "shell": "K",
+            "parent_gamma_energy_keV": "197.22",
+            "upper_level_energy_keV": "894.74",
+            "upper_level_index": 10,
+            "lower_level_index": 7,
+            "source_line": 93
+          },
+          {
+            "energy_keV": "166.44",
+            "weight": "0.0000037",
+            "weight_standard_uncertainty": "0.000001",
+            "energy_standard_uncertainty_keV": "0.12",
+            "shell": "K",
+            "parent_gamma_energy_keV": "198.23",
+            "upper_level_energy_keV": "687.95",
+            "upper_level_index": 6,
+            "lower_level_index": 3,
+            "source_line": 137
+          },
+          {
+            "energy_keV": "169.57",
+            "weight": "0.00000024",
+            "weight_standard_uncertainty": "0.00000012",
+            "energy_standard_uncertainty_keV": "0.3",
+            "shell": "L",
+            "parent_gamma_energy_keV": "174.2",
+            "upper_level_energy_keV": "1068.18",
+            "upper_level_index": 13,
+            "lower_level_index": 10,
+            "source_line": 75
+          },
+          {
+            "energy_keV": "174.98",
+            "weight": "0.0000031",
+            "weight_standard_uncertainty": "0.0000009",
+            "energy_standard_uncertainty_keV": "0.1",
+            "shell": "K",
+            "parent_gamma_energy_keV": "206.79",
+            "upper_level_energy_keV": "894.74",
+            "upper_level_index": 10,
+            "lower_level_index": 6,
+            "source_line": 96
+          },
+          {
+            "energy_keV": "176.01",
+            "weight": "0.00000104",
+            "weight_standard_uncertainty": "0.00000034",
+            "energy_standard_uncertainty_keV": "0.13",
+            "shell": "K",
+            "parent_gamma_energy_keV": "207.8",
+            "upper_level_energy_keV": "697.52",
+            "upper_level_index": 7,
+            "lower_level_index": 3,
+            "source_line": 123
+          },
+          {
+            "energy_keV": "177.98",
+            "weight": "0.0000043",
+            "weight_standard_uncertainty": "0.0000022",
+            "energy_standard_uncertainty_keV": "0.08",
+            "shell": "L",
+            "parent_gamma_energy_keV": "182.61",
+            "upper_level_energy_keV": "687.95",
+            "upper_level_index": 6,
+            "lower_level_index": 4,
+            "source_line": 135
+          },
+          {
+            "energy_keV": "187.55",
+            "weight": "0.000004",
+            "weight_standard_uncertainty": "0.0000016",
+            "energy_standard_uncertainty_keV": "0.09",
+            "shell": "L",
+            "parent_gamma_energy_keV": "192.17",
+            "upper_level_energy_keV": "697.52",
+            "upper_level_index": 7,
+            "lower_level_index": 4,
+            "source_line": 121
+          },
+          {
+            "energy_keV": "192.59",
+            "weight": "0.000000059",
+            "weight_standard_uncertainty": "0.000000038",
+            "energy_standard_uncertainty_keV": "0.11",
+            "shell": "L",
+            "parent_gamma_energy_keV": "197.22",
+            "upper_level_energy_keV": "894.74",
+            "upper_level_index": 10,
+            "lower_level_index": 7,
+            "source_line": 94
+          },
+          {
+            "energy_keV": "193.62",
+            "weight": "0.00000063",
+            "weight_standard_uncertainty": "0.00000028",
+            "energy_standard_uncertainty_keV": "0.12",
+            "shell": "L",
+            "parent_gamma_energy_keV": "198.23",
+            "upper_level_energy_keV": "687.95",
+            "upper_level_index": 6,
+            "lower_level_index": 3,
+            "source_line": 138
+          },
+          {
+            "energy_keV": "202.16",
+            "weight": "0.00000053",
+            "weight_standard_uncertainty": "0.00000021",
+            "energy_standard_uncertainty_keV": "0.1",
+            "shell": "L",
+            "parent_gamma_energy_keV": "206.79",
+            "upper_level_energy_keV": "894.74",
+            "upper_level_index": 10,
+            "lower_level_index": 6,
+            "source_line": 97
+          },
+          {
+            "energy_keV": "203.19",
+            "weight": "0.00000017",
+            "weight_standard_uncertainty": "0.00000007",
+            "energy_standard_uncertainty_keV": "0.13",
+            "shell": "L",
+            "parent_gamma_energy_keV": "207.8",
+            "upper_level_energy_keV": "697.52",
+            "upper_level_index": 7,
+            "lower_level_index": 3,
+            "source_line": 124
+          },
+          {
+            "energy_keV": "216.15",
+            "weight": "0.0000377",
+            "weight_standard_uncertainty": "0.0000037",
+            "energy_standard_uncertainty_keV": "0.08",
+            "shell": "K",
+            "parent_gamma_energy_keV": "247.96",
+            "upper_level_energy_keV": "687.95",
+            "upper_level_index": 6,
+            "lower_level_index": 2,
+            "source_line": 140
+          },
+          {
+            "energy_keV": "225.71",
+            "weight": "0.00000084",
+            "weight_standard_uncertainty": "0.00000011",
+            "energy_standard_uncertainty_keV": "0.09",
+            "shell": "K",
+            "parent_gamma_energy_keV": "257.51",
+            "upper_level_energy_keV": "697.52",
+            "upper_level_index": 7,
+            "lower_level_index": 2,
+            "source_line": 126
+          },
+          {
+            "energy_keV": "243.33",
+            "weight": "0.0000059",
+            "weight_standard_uncertainty": "0.0000015",
+            "energy_standard_uncertainty_keV": "0.08",
+            "shell": "L",
+            "parent_gamma_energy_keV": "247.96",
+            "upper_level_energy_keV": "687.95",
+            "upper_level_index": 6,
+            "lower_level_index": 2,
+            "source_line": 141
+          },
+          {
+            "energy_keV": "246.45",
+            "weight": "0.00000089",
+            "weight_standard_uncertainty": "0.00000016",
+            "energy_standard_uncertainty_keV": "0.08",
+            "shell": "K",
+            "parent_gamma_energy_keV": "278.36",
+            "upper_level_energy_keV": "783.6",
+            "upper_level_index": 9,
+            "lower_level_index": 4,
+            "source_line": 106
+          },
+          {
+            "energy_keV": "249.22",
+            "weight": "0.0000286",
+            "weight_standard_uncertainty": "0.0000016",
+            "energy_standard_uncertainty_keV": "0.07",
+            "shell": "K",
+            "parent_gamma_energy_keV": "281.03",
+            "upper_level_energy_keV": "440",
+            "upper_level_index": 2,
+            "lower_level_index": 1,
+            "source_line": 163
+          },
+          {
+            "energy_keV": "252.89",
+            "weight": "0.000000147",
+            "weight_standard_uncertainty": "0.000000019",
+            "energy_standard_uncertainty_keV": "0.09",
+            "shell": "L",
+            "parent_gamma_energy_keV": "257.51",
+            "upper_level_energy_keV": "697.52",
+            "upper_level_index": 7,
+            "lower_level_index": 2,
+            "source_line": 127
+          },
+          {
+            "energy_keV": "273.63",
+            "weight": "0.000000133",
+            "weight_standard_uncertainty": "0.000000034",
+            "energy_standard_uncertainty_keV": "0.08",
+            "shell": "L",
+            "parent_gamma_energy_keV": "278.36",
+            "upper_level_energy_keV": "783.6",
+            "upper_level_index": 9,
+            "lower_level_index": 4,
+            "source_line": 107
+          },
+          {
+            "energy_keV": "276.4",
+            "weight": "0.0000038",
+            "weight_standard_uncertainty": "0.0000009",
+            "energy_standard_uncertainty_keV": "0.07",
+            "shell": "L",
+            "parent_gamma_energy_keV": "281.03",
+            "upper_level_energy_keV": "440",
+            "upper_level_index": 2,
+            "lower_level_index": 1,
+            "source_line": 164
+          },
+          {
+            "energy_keV": "298.9",
+            "weight": "0.00000276",
+            "weight_standard_uncertainty": "0.00000011",
+            "energy_standard_uncertainty_keV": "0.11",
+            "shell": "K",
+            "parent_gamma_energy_keV": "330.7",
+            "upper_level_energy_keV": "489.7",
+            "upper_level_index": 3,
+            "lower_level_index": 1,
+            "source_line": 158
+          },
+          {
+            "energy_keV": "314.54",
+            "weight": "0.00002615",
+            "weight_standard_uncertainty": "0.00000026",
+            "energy_standard_uncertainty_keV": "0.07",
+            "shell": "K",
+            "parent_gamma_energy_keV": "346.35",
+            "upper_level_energy_keV": "505.34",
+            "upper_level_index": 4,
+            "lower_level_index": 1,
+            "source_line": 150
+          },
+          {
+            "energy_keV": "326.08",
+            "weight": "0.000000438",
+            "weight_standard_uncertainty": "0.000000018",
+            "energy_standard_uncertainty_keV": "0.11",
+            "shell": "L",
+            "parent_gamma_energy_keV": "330.7",
+            "upper_level_energy_keV": "489.7",
+            "upper_level_index": 3,
+            "lower_level_index": 1,
+            "source_line": 159
+          },
+          {
+            "energy_keV": "341.72",
+            "weight": "0.00000329",
+            "weight_standard_uncertainty": "0.00000037",
+            "energy_standard_uncertainty_keV": "0.07",
+            "shell": "L",
+            "parent_gamma_energy_keV": "346.35",
+            "upper_level_energy_keV": "505.34",
+            "upper_level_index": 4,
+            "lower_level_index": 1,
+            "source_line": 151
+          },
+          {
+            "energy_keV": "408.21",
+            "weight": "0.0000436",
+            "weight_standard_uncertainty": "0.000003",
+            "energy_standard_uncertainty_keV": "0.05",
+            "shell": "K",
+            "parent_gamma_energy_keV": "440.02",
+            "upper_level_energy_keV": "440",
+            "upper_level_index": 2,
+            "lower_level_index": 0,
+            "source_line": 166
+          },
+          {
+            "energy_keV": "435.39",
+            "weight": "0.00000614",
+            "weight_standard_uncertainty": "0.0000001",
+            "energy_standard_uncertainty_keV": "0.05",
+            "shell": "L",
+            "parent_gamma_energy_keV": "440.02",
+            "upper_level_energy_keV": "440",
+            "upper_level_index": 2,
+            "lower_level_index": 0,
+            "source_line": 167
+          },
+          {
+            "energy_keV": "473.53",
+            "weight": "0.0000215",
+            "weight_standard_uncertainty": "0.0000039",
+            "energy_standard_uncertainty_keV": "0.06",
+            "shell": "K",
+            "parent_gamma_energy_keV": "505.33",
+            "upper_level_energy_keV": "505.34",
+            "upper_level_index": 4,
+            "lower_level_index": 0,
+            "source_line": 153
+          },
+          {
+            "energy_keV": "500.71",
+            "weight": "0.00000283",
+            "weight_standard_uncertainty": "0.00000045",
+            "energy_standard_uncertainty_keV": "0.06",
+            "shell": "L",
+            "parent_gamma_energy_keV": "505.33",
+            "upper_level_energy_keV": "505.34",
+            "upper_level_index": 4,
+            "lower_level_index": 0,
+            "source_line": 154
+          },
+          {
+            "energy_keV": "506.73",
+            "weight": "0.00012",
+            "weight_standard_uncertainty": "0.0001",
+            "energy_standard_uncertainty_keV": "0.08",
+            "shell": "K",
+            "parent_gamma_energy_keV": "538.54",
+            "upper_level_energy_keV": "697.52",
+            "upper_level_index": 7,
+            "lower_level_index": 1,
+            "source_line": 129
+          },
+          {
+            "energy_keV": "533.91",
+            "weight": "0.000019",
+            "weight_standard_uncertainty": "0.000016",
+            "energy_standard_uncertainty_keV": "0.08",
+            "shell": "L",
+            "parent_gamma_energy_keV": "538.54",
+            "upper_level_energy_keV": "697.52",
+            "upper_level_index": 7,
+            "lower_level_index": 1,
+            "source_line": 130
+          },
+          {
+            "energy_keV": "592.8",
+            "weight": "0.00000335",
+            "weight_standard_uncertainty": "0.00000041",
+            "energy_standard_uncertainty_keV": "0.07",
+            "shell": "K",
+            "parent_gamma_energy_keV": "624.57",
+            "upper_level_energy_keV": "783.6",
+            "upper_level_index": 9,
+            "lower_level_index": 1,
+            "source_line": 110
+          },
+          {
+            "energy_keV": "619.98",
+            "weight": "0.000000438",
+            "weight_standard_uncertainty": "0.000000034",
+            "energy_standard_uncertainty_keV": "0.07",
+            "shell": "L",
+            "parent_gamma_energy_keV": "624.57",
+            "upper_level_energy_keV": "783.6",
+            "upper_level_index": 9,
+            "lower_level_index": 1,
+            "source_line": 111
+          }
+        ]
+      }
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "annihilation",
+      "particle": "Gamma",
+      "energy_keV": "511",
+      "reason": "No selected positron emission or parent-source annihilation signature."
+    },
+    {
+      "id": "positrons_and_ec_placeholders",
+      "reason": "Selected evaluated beta-plus intensity is zero; EC is a decay mode, not an incident particle. BetaShape fixint=1 retains that selection."
+    },
+    {
+      "id": "unselected_atomic_channels",
+      "reason": "Compact LNHB X rays and detailed MIRD Auger electrons are selected marginal models. MIRD X rays and conversion rows are not added; conversion scope is the retained LNHB/PenNuc K/L inventory."
+    },
+    {
+      "id": "neutrinos_recoil_daughter_chain",
+      "reason": "Capture neutrinos, daughter recoil nuclei and later Te-123 decay are outside this prompt source model."
+    }
+  ],
+  "provenance": {
+    "authority": "V. Chiste and M. M. Be, LNHB/DDEP I-123/Te-123 evaluation: comments dated 2001, PenNuc dated 16/07/2003, tables carrying 02/03/01 - 5/8/2004 updates. MIRDspecs/ICRP Publication 107 supplies only the detailed Auger spectrum.",
+    "betashape_command": ".\\betashape.exe I123\\I-123.txt fixint=1 -csv",
+    "betashape_role": "Retained BetaShape 2.4 EC audit with fixint=1; no beta spectrum is used and no new calculation is run.",
+    "scope": "Four selected prompt marginal-emission groups; see README.md for EC branches, cross-source differences and the K/L-only conversion scope."
+  }
+}

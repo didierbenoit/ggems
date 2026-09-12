@@ -1,0 +1,320 @@
+{
+  "name": "I-125",
+  "reference_id": "LNHB-DDEP-I125-LARA-PenNuc-MIRD-ICRP107-Auger",
+  "half_life": {
+    "value": "5131123.200",
+    "standard_uncertainty": "2419.200",
+    "unit": "s",
+    "source_value": "59.388",
+    "source_uncertainty": "0.028",
+    "source_unit": "d",
+    "source": "../raw/lnhb/I-125.lara.txt; ../raw/lnhb/I-125_tables.pdf, section 2; ../raw/lnhb/I-125_com.pdf, section 2.",
+    "transformation": "Multiply selected days and uncertainty by exactly 86400; do not substitute rounded LARA/BetaShape seconds."
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "nuclear_gamma",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.0663",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/I-125.lara.txt, gamma row; corroborated by GA in ../raw/lnhb/I-125.PenNuc.txt and section 5.2 of ../raw/lnhb/I-125_tables.pdf.",
+        "standard_uncertainty": "0.0006"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "35.4922",
+          "standard_uncertainty": "0.0005",
+          "unit": "keV",
+          "source": "../raw/lnhb/I-125.lara.txt, gamma row; corroborated by GA in ../raw/lnhb/I-125.PenNuc.txt and section 5.2 of ../raw/lnhb/I-125_tables.pdf."
+        }
+      }
+    },
+    {
+      "index": 1,
+      "id": "atomic_xray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "1.5264",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/I-125.lara.txt, all five X-ray rows: selected compact representative energies and absolute group intensities; underlying components in section 5.1 of ../raw/lnhb/I-125_tables.pdf.",
+        "derivation": "Sum the selected absolute line yields without physical-yield normalization."
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "weight_unit": "primary/parent decay (relative only within the conditional law)",
+        "source": "../raw/lnhb/I-125.lara.txt, all five X-ray rows: selected compact representative energies and absolute group intensities; underlying components in section 5.1 of ../raw/lnhb/I-125_tables.pdf.",
+        "lines": [
+          {
+            "energy_keV": "4.0788",
+            "weight": "0.147",
+            "weight_standard_uncertainty": "0.0028",
+            "label": "XL",
+            "source_line": 15
+          },
+          {
+            "energy_keV": "27.202",
+            "weight": "0.393",
+            "weight_standard_uncertainty": "0.005",
+            "label": "XKa2",
+            "source_line": 16
+          },
+          {
+            "energy_keV": "27.4726",
+            "weight": "0.732",
+            "weight_standard_uncertainty": "0.008",
+            "label": "XKa1",
+            "source_line": 17
+          },
+          {
+            "energy_keV": "31.0589",
+            "weight": "0.209",
+            "weight_standard_uncertainty": "0.003",
+            "label": "XK'b1",
+            "source_line": 18
+          },
+          {
+            "energy_keV": "31.7623",
+            "weight": "0.0454",
+            "weight_standard_uncertainty": "0.0013",
+            "label": "XK'b2",
+            "source_line": 19
+          }
+        ]
+      }
+    },
+    {
+      "index": 2,
+      "id": "auger_electrons",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "23.008143718",
+        "unit": "primary/parent decay",
+        "source": "../raw/mird/I-125 Summary Spectrum.csv, all 13 rows labeled Auger electron, source rows 50-58 and 60-63. Yield [#/nt] is emitted-electron multiplicity per nuclear transformation. These are the selected MIRD/ICRP 107 summary channels, not a complete microscopic transition list.",
+        "derivation": "Sum the selected absolute line yields without physical-yield normalization."
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "weight_unit": "primary/parent decay (relative only within the conditional law)",
+        "source": "../raw/mird/I-125 Summary Spectrum.csv, all 13 rows labeled Auger electron, source rows 50-58 and 60-63. Yield [#/nt] is emitted-electron multiplicity per nuclear transformation. These are the selected MIRD/ICRP 107 summary channels, not a complete microscopic transition list.",
+        "lines": [
+          {
+            "energy_keV": "0.022927",
+            "weight": "12.198",
+            "source_row": 50,
+            "source_energy_MeV": "2.29271e-05",
+            "category": "Auger electron",
+            "source_energy_keV": "0.0229271000",
+            "representation_residual_micro_eV": "-100.0000000000"
+          },
+          {
+            "energy_keV": "0.024922",
+            "weight": "4.08498",
+            "source_row": 51,
+            "source_energy_MeV": "2.49224e-05",
+            "category": "Auger electron",
+            "source_energy_keV": "0.0249224000",
+            "representation_residual_micro_eV": "-400.0000000000"
+          },
+          {
+            "energy_keV": "0.120899",
+            "weight": "1.41044",
+            "source_row": 52,
+            "source_energy_MeV": "0.000120899",
+            "category": "Auger electron",
+            "source_energy_keV": "0.120899000",
+            "representation_residual_micro_eV": "0E-9"
+          },
+          {
+            "energy_keV": "0.299843",
+            "weight": "0.275991",
+            "source_row": 53,
+            "source_energy_MeV": "0.000299843",
+            "category": "Auger electron",
+            "source_energy_keV": "0.299843000",
+            "representation_residual_micro_eV": "0E-9"
+          },
+          {
+            "energy_keV": "0.449679",
+            "weight": "3.12454",
+            "source_row": 54,
+            "source_energy_MeV": "0.000449679",
+            "category": "Auger electron",
+            "source_energy_keV": "0.449679000",
+            "representation_residual_micro_eV": "0E-9"
+          },
+          {
+            "energy_keV": "0.541735",
+            "weight": "0.120544",
+            "source_row": 55,
+            "source_energy_MeV": "0.000541735",
+            "category": "Auger electron",
+            "source_energy_keV": "0.541735000",
+            "representation_residual_micro_eV": "0E-9"
+          },
+          {
+            "energy_keV": "0.690006",
+            "weight": "0.000457128",
+            "source_row": 56,
+            "source_energy_MeV": "0.000690006",
+            "category": "Auger electron",
+            "source_energy_keV": "0.690006000",
+            "representation_residual_micro_eV": "0E-9"
+          },
+          {
+            "energy_keV": "3.088170",
+            "weight": "1.2264",
+            "source_row": 57,
+            "source_energy_MeV": "0.00308817",
+            "category": "Auger electron",
+            "source_energy_keV": "3.08817000",
+            "representation_residual_micro_eV": "0E-8"
+          },
+          {
+            "energy_keV": "3.682760",
+            "weight": "0.347461",
+            "source_row": 58,
+            "source_energy_MeV": "0.00368276",
+            "category": "Auger electron",
+            "source_energy_keV": "3.68276000",
+            "representation_residual_micro_eV": "0E-8"
+          },
+          {
+            "energy_keV": "4.299940",
+            "weight": "0.0245935",
+            "source_row": 60,
+            "source_energy_MeV": "0.00429994",
+            "category": "Auger electron",
+            "source_energy_keV": "4.29994000",
+            "representation_residual_micro_eV": "0E-8"
+          },
+          {
+            "energy_keV": "22.665300",
+            "weight": "0.130975",
+            "source_row": 61,
+            "source_energy_MeV": "0.0226653",
+            "category": "Auger electron",
+            "source_energy_keV": "22.6653000",
+            "representation_residual_micro_eV": "0E-7"
+          },
+          {
+            "energy_keV": "26.505600",
+            "weight": "0.057687",
+            "source_row": 62,
+            "source_energy_MeV": "0.0265056",
+            "category": "Auger electron",
+            "source_energy_keV": "26.5056000",
+            "representation_residual_micro_eV": "0E-7"
+          },
+          {
+            "energy_keV": "30.346100",
+            "weight": "0.00607509",
+            "source_row": 63,
+            "source_energy_MeV": "0.0303461",
+            "category": "Auger electron",
+            "source_energy_keV": "30.3461000",
+            "representation_residual_micro_eV": "0E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 3,
+      "id": "conversion_electrons",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.93378",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/I-125.PenNuc.txt, EK/EL1/EL2/EL3/EM/EN records, lines 19-24. Preserve the explicit EN record; see README.md for its comparison with the compact LNHB N-shell table and N+O coefficients.",
+        "derivation": "Sum the selected absolute line yields without physical-yield normalization."
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "weight_unit": "primary/parent decay (relative only within the conditional law)",
+        "source": "../raw/lnhb/I-125.PenNuc.txt, EK/EL1/EL2/EL3/EM/EN records, lines 19-24. Preserve the explicit EN record; see README.md for its comparison with the compact LNHB N-shell table and N+O coefficients.",
+        "lines": [
+          {
+            "energy_keV": "3.6784",
+            "weight": "0.776",
+            "weight_standard_uncertainty": "0.013",
+            "energy_standard_uncertainty_keV": "0.0005",
+            "shell": "K",
+            "parent_gamma_energy_keV": "35.4922",
+            "source_line": 19
+          },
+          {
+            "energy_keV": "30.553",
+            "weight": "0.0936",
+            "weight_standard_uncertainty": "0.0016",
+            "energy_standard_uncertainty_keV": "0.0005",
+            "shell": "L1",
+            "parent_gamma_energy_keV": "35.4922",
+            "source_line": 20
+          },
+          {
+            "energy_keV": "30.8802",
+            "weight": "0.0172",
+            "weight_standard_uncertainty": "0.002",
+            "energy_standard_uncertainty_keV": "0.0005",
+            "shell": "L2",
+            "parent_gamma_energy_keV": "35.4922",
+            "source_line": 21
+          },
+          {
+            "energy_keV": "31.1508",
+            "weight": "0.0159",
+            "weight_standard_uncertainty": "0.0033",
+            "energy_standard_uncertainty_keV": "0.0005",
+            "shell": "L3",
+            "parent_gamma_energy_keV": "35.4922",
+            "source_line": 22
+          },
+          {
+            "energy_keV": "34.7224",
+            "weight": "0.0256",
+            "weight_standard_uncertainty": "0.0011",
+            "energy_standard_uncertainty_keV": "0.0005",
+            "shell": "M",
+            "parent_gamma_energy_keV": "35.4922",
+            "source_line": 23
+          },
+          {
+            "energy_keV": "35.3985",
+            "weight": "0.00548",
+            "weight_standard_uncertainty": "0.00022",
+            "energy_standard_uncertainty_keV": "0.0005",
+            "shell": "N",
+            "parent_gamma_energy_keV": "35.4922",
+            "source_line": 24
+          }
+        ]
+      }
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "beta_positron_ec_placeholder",
+      "reason": "Selected decay is 100% EC. EC itself is not an incident particle; no beta, positron or annihilation-photon source group is selected."
+    },
+    {
+      "id": "alternative_atomic_rows",
+      "reason": "MIRD gamma, X-ray and conversion rows are cross-checks only. LNHB compact Auger totals are not added to the selected MIRD Auger channels. No separate EO electron entry is selected in PenNuc."
+    },
+    {
+      "id": "neutrinos_recoil_daughter_chain",
+      "reason": "Capture neutrinos and daughter recoil are outside the prompt source model. Te-125 ground state is stable; the 1.48-ns excited-level de-excitation is flattened at parent decay time."
+    }
+  ],
+  "provenance": {
+    "authority": "V. Chiste, E. Schonfeld and M. M. Be, LNHB/DDEP I-125/Te-125. Comments completed July 2010; PenNuc dated 12/04/2010; numerical tables carry 23/01/1998 - 7/9/2010, decay drawing 23/01/1998 - 12/04/2010.",
+    "betashape_command": ".\\betashape.exe I125\\I-125.txt -csv",
+    "betashape_role": "Retained BetaShape 2.4 (06/2024), without fixint, provides calculated EC shell comparisons only; no beta spectrum or new calculation.",
+    "energy_representation": "Raw MIRD energies are retained separately. energy_keV preserves the existing nearest-meV representation, now stored in integer micro-eV. Only the first two Auger entries have residuals: -100 and -400 micro-eV. Other selected energies are exact.",
+    "scope": "Four selected prompt marginal-emission groups. Physical yields are multiplicities and are never normalized. See README.md for source-model differences and the EN record."
+  }
+}

@@ -210,7 +210,7 @@ TEST(GGEMSI125Test, PreservesSingleEvaluatedGammaAndCompactXRayGroups) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSI125Test, PreservesMirdAugerAndLaraConversionElectrons) {
+TEST(GGEMSI125Test, PreservesMirdAugerAndPenNucConversionElectrons) {
   GGEMSRadionuclideDefinition const definition = BuildI125Radionuclide();
   auto const emissions = definition.GetEmissions();
 

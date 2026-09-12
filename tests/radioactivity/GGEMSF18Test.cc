@@ -40,11 +40,12 @@ TEST(GGEMSF18Test, BuildsExactIdentity) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSF18Test, BuildsThreeOrderedFlattenedEmissions) {
+TEST(GGEMSF18Test, UsesDeclaredThreeGroupSourceModel) {
   GGEMSRadionuclideDefinition const definition = BuildF18Radionuclide();
 
   auto const emissions = definition.GetEmissions();
 
+  // The known LNHB K-Auger marginal awaits a supported conditional energy law.
   ASSERT_EQ(emissions.size(), 3U);
   EXPECT_EQ(emissions[0U].GetParticleType(), GGEMSParticleType::Positron);
   EXPECT_EQ(emissions[1U].GetParticleType(), GGEMSParticleType::Electron);
@@ -122,7 +123,7 @@ TEST(GGEMSF18Test, PreservesExactEnergyDistributionsAndTabulatedSpectrum) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSF18Test, OmitsNonTransportSignaturesAndPlaceholders) {
+TEST(GGEMSF18Test, OmitsAnnihilationPhotonsAndPlaceholders) {
   GGEMSRadionuclideDefinition const definition = BuildF18Radionuclide();
   auto const emissions = definition.GetEmissions();
   ASSERT_EQ(emissions.size(), 3U);
@@ -142,9 +143,6 @@ TEST(GGEMSF18Test, OmitsNonTransportSignaturesAndPlaceholders) {
     std::uint64_t const mono_energy = energy.GetMonoEnergyMicroElectronVolt();
     EXPECT_FALSE(emission.GetParticleType() == GGEMSParticleType::Gamma &&
                  mono_energy == 511'000'000'000ULL);
-    EXPECT_FALSE(emission.GetParticleType() == GGEMSParticleType::Electron &&
-                 mono_energy >= 456'000'000ULL &&
-                 mono_energy <= 502'000'000ULL);
 
     if (emission.GetParticleType() == GGEMSParticleType::Gamma &&
         mono_energy == 525'000'000ULL) {

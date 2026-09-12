@@ -27,6 +27,8 @@ namespace {
 // M. M. Be, completed in 2010. The evaluation is the authority for the
 // half-life, Q value, 100% electron-capture decay, the 35.4922 keV gamma
 // emission, compact Te X-ray groups, and shell-resolved conversion electrons.
+// The selected EK/EL1/EL2/EL3/EM/EN entries are from I-125.PenNuc.txt;
+// the direct LARA export contains photon emissions only.
 //
 // Auger electrons:
 // MIRDsoft MIRDspecs, I-125 Summary Spectrum.csv. MIRDspecs identifies ICRP
@@ -34,10 +36,10 @@ namespace {
 // as the spectra source. GGEMS uses MIRD only for the 13 detailed Auger lines
 // because the DDEP tables publish the Auger emissions as aggregate groups.
 //
-// BetaShape provides the evaluated electron-capture branch and shell
-// probabilities for audit only. I-125 has no beta spectrum in this GGEMS
-// definition, and electron capture itself creates no placeholder incident
-// particle. Capture neutrinos and daughter recoil nuclei are intentionally
+// Retained BetaShape 2.4 (06/2024), run without fixint, provides calculated
+// EC shell probabilities for comparison only. I-125 has no beta spectrum.
+// Electron capture itself creates no placeholder incident particle.
+// Capture neutrinos and daughter recoil nuclei are intentionally
 // excluded. The 1.48 ns Te-125 de-excitation and associated atomic relaxation
 // emissions are flattened at parent decay time.
 //

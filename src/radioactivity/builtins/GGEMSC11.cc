@@ -19,7 +19,8 @@ namespace {
 constexpr long double k_half_life_seconds{1'221.66L};
 constexpr long double k_positron_yield{0.99750L};
 
-// LNHB BetaShape 2.2 (05/2021), C-11 beta+ transition.
+// LNHB BetaShape 2.4 (06/2024), C-11 beta+ transition, fixint=1.
+// The table retained from 2.2 is reproduced by the 2.4 experimental column.
 // The experimental-shape-factor dN/dE column was integrated offline onto a
 // regular GGEMS grid with an exact 960.5 keV upper edge and a maximum target
 // width of 0.5 keV. The stored values are normalized bin masses; the physical

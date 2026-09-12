@@ -1,0 +1,719 @@
+{
+  "name": "Tc-99m",
+  "reference_id": "LNHB-2004-BetaShape-2.4-MIRD-detailed-Auger",
+  "half_life": {
+    "value": "21624.1200",
+    "standard_uncertainty": "3.6000",
+    "unit": "s",
+    "source": "../raw/lnhb/Tc-99m.lara.txt, Half-life (h); Tc-99m_tables.pdf p.1",
+    "source_value": "6.0067",
+    "source_standard_uncertainty": "0.0010",
+    "source_unit": "h"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_minus_composite",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00003706",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Tc-99m.PenNuc.txt, BEM records"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "reference_representation": "piecewise_linear_density",
+        "spectrum_file": "beta_minus_composite.csv",
+        "energy_unit": "keV",
+        "endpoint": {
+          "value": "436.3",
+          "unit": "keV"
+        },
+        "branches": [
+          {
+            "endpoint_keV": "436.3",
+            "endpoint_standard_uncertainty_keV": "0.2",
+            "yield_per_decay": "0.00001",
+            "yield_standard_uncertainty": "0.000003",
+            "daughter_level": "0",
+            "source_line": 43,
+            "spectrum_source": "../raw/betashape/v2.4/output/beta-_Tc99m_trans0.bs",
+            "raw_endpoint_keV": "436.2",
+            "energy_axis_scale": "1.00022925263640531866116460339293901879871618523613021549748",
+            "raw_trapezoidal_area_per_decay": "0.00001000008095030",
+            "raw_interpolated_mean_keV": "151.206780897989760679280941733731570524257992349157527132672",
+            "mapped_interpolated_mean_keV": "151.241445451152986209010258776770023429009083131447567831235",
+            "source_knots": 438,
+            "calculation": [
+              "Calculation of the 1st forbidden unique transition from the beta - decay of Tc-99.",
+              "No tabulated experimental shape factor for this transition!"
+            ]
+          },
+          {
+            "endpoint_keV": "346.7",
+            "endpoint_standard_uncertainty_keV": "0.2",
+            "yield_per_decay": "0.000026",
+            "yield_standard_uncertainty": "0.000005",
+            "daughter_level": "1",
+            "source_line": 41,
+            "spectrum_source": "../raw/betashape/v2.4/output/beta-_Tc99m_trans1.bs",
+            "raw_endpoint_keV": "346.52",
+            "energy_axis_scale": "1.00051945053676555465773981299780676440032321366732078956482",
+            "raw_trapezoidal_area_per_decay": "0.00002600036945356420",
+            "raw_interpolated_mean_keV": "101.148531092338582140699292724888039909626003980523348420317",
+            "mapped_interpolated_mean_keV": "101.201072751107544811787039096498566999501718746529622813471",
+            "source_knots": 348,
+            "calculation": [
+              "This 1st forbidden non-unique transition from the beta - decay of Tc-99 is calculated as allowed.",
+              "This non-unique transition is calculated according to the Xi-approximation: me*alpha*Z/R = 11412.6 keV  vs  346.52 keV  -->  unpredictable: check with measurement if possible.",
+              "No tabulated experimental shape factor for this transition!"
+            ]
+          },
+          {
+            "endpoint_keV": "113.9",
+            "endpoint_standard_uncertainty_keV": "0.2",
+            "yield_per_decay": "0.00000106",
+            "yield_standard_uncertainty": "0.00000006",
+            "daughter_level": "2",
+            "source_line": 39,
+            "spectrum_source": "../raw/betashape/v2.4/output/beta-_Tc99m_trans2.bs",
+            "raw_endpoint_keV": "113.82",
+            "energy_axis_scale": "1.00070286417149885784572131435600070286417149885784572131436",
+            "raw_trapezoidal_area_per_decay": "0.0000010600214206092",
+            "raw_interpolated_mean_keV": "29.6844733545494758326755881241852940242908665755093930858488",
+            "mapped_interpolated_mean_keV": "29.7053375073202011715142284953848619694845343784090658274310",
+            "source_knots": 381,
+            "calculation": [
+              "This 1st forbidden non-unique transition from the beta - decay of Tc-99 is calculated as allowed.",
+              "This non-unique transition is calculated according to the Xi-approximation: me*alpha*Z/R = 11412.6 keV  vs  113.82 keV  -->  should be correct.",
+              "No tabulated experimental shape factor for this transition!"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "index": 1,
+      "id": "prompt_nuclear_gamma",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.885241444",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Tc-99m.lara.txt"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "../raw/lnhb/Tc-99m.lara.txt",
+        "lines": [
+          {
+            "energy_keV": "89.6",
+            "weight": "0.0000104",
+            "energy_standard_uncertainty_keV": "0.3",
+            "yield_standard_uncertainty": "0.000002",
+            "label": "g",
+            "emitting_nucleus": "Ru-99",
+            "level_start": "1",
+            "level_end": "0",
+            "source_line": 20
+          },
+          {
+            "energy_keV": "140.511",
+            "weight": "0.885",
+            "energy_standard_uncertainty_keV": "0.001",
+            "yield_standard_uncertainty": "0.002",
+            "label": "g",
+            "emitting_nucleus": "Tc-99",
+            "level_start": "1",
+            "level_end": "0",
+            "source_line": 21
+          },
+          {
+            "energy_keV": "142.683",
+            "weight": "0.00023",
+            "energy_standard_uncertainty_keV": "0.001",
+            "yield_standard_uncertainty": "0.00002",
+            "label": "g",
+            "emitting_nucleus": "Tc-99",
+            "level_start": "2",
+            "level_end": "0",
+            "source_line": 22
+          },
+          {
+            "energy_keV": "232.7",
+            "weight": "8.4E-8",
+            "energy_standard_uncertainty_keV": "0.2",
+            "yield_standard_uncertainty": "1.5E-8",
+            "label": "g",
+            "emitting_nucleus": "Ru-99",
+            "level_start": "2",
+            "level_end": "1",
+            "source_line": 23
+          },
+          {
+            "energy_keV": "322.4",
+            "weight": "9.6E-7",
+            "energy_standard_uncertainty_keV": "0.1",
+            "yield_standard_uncertainty": "6E-8",
+            "label": "g",
+            "emitting_nucleus": "Ru-99",
+            "level_start": "2",
+            "level_end": "0",
+            "source_line": 24
+          }
+        ]
+      }
+    },
+    {
+      "index": 2,
+      "id": "ultra_weak_2_1726_keV_gamma",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "7.4E-11",
+        "standard_uncertainty": "2E-12",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Tc-99m.lara.txt, 2.1726 keV gamma row"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "2.1726",
+          "standard_uncertainty": "0.0004",
+          "unit": "keV",
+          "source": "../raw/lnhb/Tc-99m.lara.txt",
+          "source_line": 14
+        }
+      }
+    },
+    {
+      "index": 3,
+      "id": "compact_tc_x_ray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.08209",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Tc-99m.lara.txt"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "../raw/lnhb/Tc-99m.lara.txt",
+        "lines": [
+          {
+            "energy_keV": "2.568",
+            "weight": "0.00482",
+            "energy_standard_uncertainty_keV": null,
+            "yield_standard_uncertainty": "0.00012",
+            "label": "XL",
+            "emitting_nucleus": "Tc-99",
+            "level_start": "",
+            "level_end": "",
+            "source_line": 15
+          },
+          {
+            "energy_keV": "18.251",
+            "weight": "0.0222",
+            "energy_standard_uncertainty_keV": null,
+            "yield_standard_uncertainty": "0.0007",
+            "label": "XKa2",
+            "emitting_nucleus": "Tc-99",
+            "level_start": "",
+            "level_end": "",
+            "source_line": 16
+          },
+          {
+            "energy_keV": "18.3672",
+            "weight": "0.0421",
+            "energy_standard_uncertainty_keV": null,
+            "yield_standard_uncertainty": "0.0012",
+            "label": "XKa1",
+            "emitting_nucleus": "Tc-99",
+            "level_start": "",
+            "level_end": "",
+            "source_line": 17
+          },
+          {
+            "energy_keV": "20.669",
+            "weight": "0.0112",
+            "energy_standard_uncertainty_keV": null,
+            "yield_standard_uncertainty": "0.0004",
+            "label": "XK'b1",
+            "emitting_nucleus": "Tc-99",
+            "level_start": "",
+            "level_end": "",
+            "source_line": 18
+          },
+          {
+            "energy_keV": "21.0235",
+            "weight": "0.00177",
+            "energy_standard_uncertainty_keV": null,
+            "yield_standard_uncertainty": "0.00008",
+            "label": "XK'b2",
+            "emitting_nucleus": "Tc-99",
+            "level_start": "",
+            "level_end": "",
+            "source_line": 19
+          }
+        ]
+      }
+    },
+    {
+      "index": 4,
+      "id": "detailed_auger_electron",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "4.4144146979128",
+        "unit": "primary/parent decay",
+        "source": "../raw/mird/Tc-99m Summary Spectrum.csv"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "../raw/mird/Tc-99m Summary Spectrum.csv",
+        "lines": [
+          {
+            "energy_keV": "0.029608",
+            "source_energy_MeV": "2.96081e-05",
+            "weight": "2.4663",
+            "source_line": 91,
+            "source_record": "89",
+            "label": "Auger electron",
+            "source_energy_keV": "0.0296081000",
+            "representation_residual_micro_eV": "-100.0000000000"
+          },
+          {
+            "energy_keV": "0.031469",
+            "source_energy_MeV": "3.14686e-05",
+            "weight": "5.56845e-05",
+            "source_line": 92,
+            "source_record": "90",
+            "label": "Auger electron",
+            "source_energy_keV": "0.0314686000",
+            "representation_residual_micro_eV": "400.0000000000"
+          },
+          {
+            "energy_keV": "0.106317",
+            "source_energy_MeV": "0.000106317",
+            "weight": "0.0207457",
+            "source_line": 93,
+            "source_record": "91",
+            "label": "Auger electron",
+            "source_energy_keV": "0.106317000",
+            "representation_residual_micro_eV": "0E-9"
+          },
+          {
+            "energy_keV": "0.106836",
+            "source_energy_MeV": "0.000106836",
+            "weight": "2.48421e-06",
+            "source_line": 94,
+            "source_record": "92",
+            "label": "Auger electron",
+            "source_energy_keV": "0.106836000",
+            "representation_residual_micro_eV": "0E-9"
+          },
+          {
+            "energy_keV": "0.114154",
+            "source_energy_MeV": "0.000114154",
+            "weight": "0.708794",
+            "source_line": 95,
+            "source_record": "93",
+            "label": "Auger electron",
+            "source_energy_keV": "0.114154000",
+            "representation_residual_micro_eV": "0E-9"
+          },
+          {
+            "energy_keV": "0.114712",
+            "source_energy_MeV": "0.000114712",
+            "weight": "1.26607e-05",
+            "source_line": 96,
+            "source_record": "94",
+            "label": "Auger electron",
+            "source_energy_keV": "0.114712000",
+            "representation_residual_micro_eV": "0E-9"
+          },
+          {
+            "energy_keV": "0.206128",
+            "source_energy_MeV": "0.000206128",
+            "weight": "1.08359",
+            "source_line": 97,
+            "source_record": "95",
+            "label": "Auger electron",
+            "source_energy_keV": "0.206128000",
+            "representation_residual_micro_eV": "0E-9"
+          },
+          {
+            "energy_keV": "0.23183",
+            "source_energy_MeV": "0.00023183",
+            "weight": "3.08584e-05",
+            "source_line": 98,
+            "source_record": "96",
+            "label": "Auger electron",
+            "source_energy_keV": "0.23183000",
+            "representation_residual_micro_eV": "0E-8"
+          },
+          {
+            "energy_keV": "0.246278",
+            "source_energy_MeV": "0.000246278",
+            "weight": "0.00895782",
+            "source_line": 99,
+            "source_record": "97",
+            "label": "Auger electron",
+            "source_energy_keV": "0.246278000",
+            "representation_residual_micro_eV": "0E-9"
+          },
+          {
+            "energy_keV": "0.276769",
+            "source_energy_MeV": "0.000276769",
+            "weight": "2.26426e-07",
+            "source_line": 100,
+            "source_record": "98",
+            "label": "Auger electron",
+            "source_energy_keV": "0.276769000",
+            "representation_residual_micro_eV": "0E-9"
+          },
+          {
+            "energy_keV": "2.05392",
+            "source_energy_MeV": "0.00205392",
+            "weight": "0.0903225",
+            "source_line": 102,
+            "source_record": "100",
+            "label": "Auger electron",
+            "source_energy_keV": "2.05392000",
+            "representation_residual_micro_eV": "0E-8"
+          },
+          {
+            "energy_keV": "2.15893",
+            "source_energy_MeV": "0.00215893",
+            "weight": "1.21851e-05",
+            "source_line": 103,
+            "source_record": "101",
+            "label": "Auger electron",
+            "source_energy_keV": "2.15893000",
+            "representation_residual_micro_eV": "0E-8"
+          },
+          {
+            "energy_keV": "2.33269",
+            "source_energy_MeV": "0.00233269",
+            "weight": "0.0140669",
+            "source_line": 105,
+            "source_record": "103",
+            "label": "Auger electron",
+            "source_energy_keV": "2.33269000",
+            "representation_residual_micro_eV": "0E-8"
+          },
+          {
+            "energy_keV": "2.46807",
+            "source_energy_MeV": "0.00246807",
+            "weight": "2.07551e-06",
+            "source_line": 106,
+            "source_record": "104",
+            "label": "Auger electron",
+            "source_energy_keV": "2.46807000",
+            "representation_residual_micro_eV": "0E-8"
+          },
+          {
+            "energy_keV": "2.64192",
+            "source_energy_MeV": "0.00264192",
+            "weight": "0.000635225",
+            "source_line": 107,
+            "source_record": "105",
+            "label": "Auger electron",
+            "source_energy_keV": "2.64192000",
+            "representation_residual_micro_eV": "0E-8"
+          },
+          {
+            "energy_keV": "2.80378",
+            "source_energy_MeV": "0.00280378",
+            "weight": "9.94305e-08",
+            "source_line": 108,
+            "source_record": "106",
+            "label": "Auger electron",
+            "source_energy_keV": "2.80378000",
+            "representation_residual_micro_eV": "0E-8"
+          },
+          {
+            "energy_keV": "15.4229",
+            "source_energy_MeV": "0.0154229",
+            "weight": "0.0147888",
+            "source_line": 109,
+            "source_record": "107",
+            "label": "Auger electron",
+            "source_energy_keV": "15.4229000",
+            "representation_residual_micro_eV": "0E-7"
+          },
+          {
+            "energy_keV": "16.157",
+            "source_energy_MeV": "0.016157",
+            "weight": "1.75768e-06",
+            "source_line": 110,
+            "source_record": "108",
+            "label": "Auger electron",
+            "source_energy_keV": "16.157000",
+            "representation_residual_micro_eV": "0.000000"
+          },
+          {
+            "energy_keV": "17.8238",
+            "source_energy_MeV": "0.0178238",
+            "weight": "0.00558618",
+            "source_line": 111,
+            "source_record": "109",
+            "label": "Auger electron",
+            "source_energy_keV": "17.8238000",
+            "representation_residual_micro_eV": "0E-7"
+          },
+          {
+            "energy_keV": "18.6981",
+            "source_energy_MeV": "0.0186981",
+            "weight": "6.76249e-07",
+            "source_line": 112,
+            "source_record": "110",
+            "label": "Auger electron",
+            "source_energy_keV": "18.6981000",
+            "representation_residual_micro_eV": "0E-7"
+          },
+          {
+            "energy_keV": "20.227",
+            "source_energy_MeV": "0.020227",
+            "weight": "0.000508802",
+            "source_line": 113,
+            "source_record": "111",
+            "label": "Auger electron",
+            "source_energy_keV": "20.227000",
+            "representation_residual_micro_eV": "0.000000"
+          },
+          {
+            "energy_keV": "21.2417",
+            "source_energy_MeV": "0.0212417",
+            "weight": "6.27073e-08",
+            "source_line": 114,
+            "source_record": "112",
+            "label": "Auger electron",
+            "source_energy_keV": "21.2417000",
+            "representation_residual_micro_eV": "0E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 5,
+      "id": "conversion_electron",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "1.1131270181",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Tc-99m.PenNuc.txt"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "../raw/lnhb/Tc-99m.PenNuc.txt",
+        "lines": [
+          {
+            "energy_keV": "1.78796",
+            "weight": "0.881",
+            "energy_standard_uncertainty_keV": "0.0004",
+            "yield_standard_uncertainty": "0.033",
+            "label": "EM",
+            "emitting_nucleus": "TC99",
+            "level_start_keV": "142.6833",
+            "level_end": "1",
+            "source_line": 16
+          },
+          {
+            "energy_keV": "2.14264",
+            "weight": "0.1169",
+            "energy_standard_uncertainty_keV": "0.0004",
+            "yield_standard_uncertainty": "0.0049",
+            "label": "EN",
+            "emitting_nucleus": "TC99",
+            "level_start_keV": "142.6833",
+            "level_end": "1",
+            "source_line": 17
+          },
+          {
+            "energy_keV": "67.48",
+            "weight": "0.0000122",
+            "energy_standard_uncertainty_keV": "0.3",
+            "yield_standard_uncertainty": "0.0000024",
+            "label": "EK",
+            "emitting_nucleus": "RU99",
+            "level_start_keV": "89.68",
+            "level_end": "0",
+            "source_line": 53
+          },
+          {
+            "energy_keV": "86.59",
+            "weight": "0.0000028",
+            "energy_standard_uncertainty_keV": "0.3",
+            "yield_standard_uncertainty": "0.0000005",
+            "label": "EL",
+            "emitting_nucleus": "RU99",
+            "level_start_keV": "89.68",
+            "level_end": "0",
+            "source_line": 54
+          },
+          {
+            "energy_keV": "119.467",
+            "weight": "0.092",
+            "energy_standard_uncertainty_keV": "0.001",
+            "yield_standard_uncertainty": "0.0027",
+            "label": "EK",
+            "emitting_nucleus": "TC99",
+            "level_start_keV": "140.5108",
+            "level_end": "0",
+            "source_line": 28
+          },
+          {
+            "energy_keV": "121.631",
+            "weight": "0.0067",
+            "energy_standard_uncertainty_keV": "0.025",
+            "yield_standard_uncertainty": "0.0006",
+            "label": "EK",
+            "emitting_nucleus": "TC99",
+            "level_start_keV": "142.6833",
+            "level_end": "0",
+            "source_line": 19
+          },
+          {
+            "energy_keV": "137.4685",
+            "weight": "0.01009",
+            "energy_standard_uncertainty_keV": "0.001",
+            "yield_standard_uncertainty": "0.0003",
+            "label": "EL1",
+            "emitting_nucleus": "TC99",
+            "level_start_keV": "140.5108",
+            "level_end": "0",
+            "source_line": 29
+          },
+          {
+            "energy_keV": "137.7178",
+            "weight": "0.000777",
+            "energy_standard_uncertainty_keV": "0.001",
+            "yield_standard_uncertainty": "0.000023",
+            "label": "EL2",
+            "emitting_nucleus": "TC99",
+            "level_start_keV": "140.5108",
+            "level_end": "0",
+            "source_line": 30
+          },
+          {
+            "energy_keV": "137.8341",
+            "weight": "0.000502",
+            "energy_standard_uncertainty_keV": "0.001",
+            "yield_standard_uncertainty": "0.000015",
+            "label": "EL3",
+            "emitting_nucleus": "TC99",
+            "level_start_keV": "140.5108",
+            "level_end": "0",
+            "source_line": 31
+          },
+          {
+            "energy_keV": "139.633",
+            "weight": "0.00116",
+            "energy_standard_uncertainty_keV": "0.025",
+            "yield_standard_uncertainty": "0.00011",
+            "label": "EL1",
+            "emitting_nucleus": "TC99",
+            "level_start_keV": "142.6833",
+            "level_end": "0",
+            "source_line": 20
+          },
+          {
+            "energy_keV": "139.882",
+            "weight": "0.000243",
+            "energy_standard_uncertainty_keV": "0.025",
+            "yield_standard_uncertainty": "0.000022",
+            "label": "EL2",
+            "emitting_nucleus": "TC99",
+            "level_start_keV": "142.6833",
+            "level_end": "0",
+            "source_line": 21
+          },
+          {
+            "energy_keV": "139.998",
+            "weight": "0.00075",
+            "energy_standard_uncertainty_keV": "0.025",
+            "yield_standard_uncertainty": "0.00007",
+            "label": "EL3",
+            "emitting_nucleus": "TC99",
+            "level_start_keV": "142.6833",
+            "level_end": "0",
+            "source_line": 22
+          },
+          {
+            "energy_keV": "140.1264",
+            "weight": "0.00209",
+            "energy_standard_uncertainty_keV": "0.001",
+            "yield_standard_uncertainty": "0.00006",
+            "label": "EM",
+            "emitting_nucleus": "TC99",
+            "level_start_keV": "140.5108",
+            "level_end": "0",
+            "source_line": 32
+          },
+          {
+            "energy_keV": "140.481",
+            "weight": "0.000396",
+            "energy_standard_uncertainty_keV": "0.001",
+            "yield_standard_uncertainty": "0.000012",
+            "label": "EN",
+            "emitting_nucleus": "TC99",
+            "level_start_keV": "140.5108",
+            "level_end": "0",
+            "source_line": 33
+          },
+          {
+            "energy_keV": "142.29",
+            "weight": "0.000428",
+            "energy_standard_uncertainty_keV": "0.025",
+            "yield_standard_uncertainty": "0.00004",
+            "label": "EM",
+            "emitting_nucleus": "TC99",
+            "level_start_keV": "142.6833",
+            "level_end": "0",
+            "source_line": 23
+          },
+          {
+            "energy_keV": "142.645",
+            "weight": "0.000076",
+            "energy_standard_uncertainty_keV": "0.025",
+            "yield_standard_uncertainty": "0.000007",
+            "label": "EN",
+            "emitting_nucleus": "TC99",
+            "level_start_keV": "142.6833",
+            "level_end": "0",
+            "source_line": 24
+          },
+          {
+            "energy_keV": "210.58",
+            "weight": "0.0000000035",
+            "energy_standard_uncertainty_keV": "0.2",
+            "yield_standard_uncertainty": "0.0000000006",
+            "label": "EK",
+            "emitting_nucleus": "RU99",
+            "level_start_keV": "322.38",
+            "level_end": "1",
+            "source_line": 47
+          },
+          {
+            "energy_keV": "300.28",
+            "weight": "0.0000000146",
+            "energy_standard_uncertainty_keV": "0.1",
+            "yield_standard_uncertainty": "0.000000001",
+            "label": "EK",
+            "emitting_nucleus": "RU99",
+            "level_start_keV": "322.38",
+            "level_end": "0",
+            "source_line": 49
+          }
+        ]
+      }
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "later_tc_99_decay",
+      "reason": "Later radioactive decay of the long-lived Tc-99 daughter is outside the prompt Tc-99m parent definition."
+    }
+  ]
+}

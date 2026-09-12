@@ -1,0 +1,501 @@
+{
+  "name": "Co-60",
+  "reference_id": "LNHB-2006-Co60-BetaShape-2.4-MIRD-Auger",
+  "half_life": {
+    "value": "1.66340E+8",
+    "standard_uncertainty": "2.5E+4",
+    "unit": "s",
+    "source_value": "5.2711",
+    "source_uncertainty": "0.0008",
+    "source_unit": "a",
+    "source": "../raw/lnhb/Co-60.lara.txt, lines 7-8; ../raw/lnhb/Co-60_com.pdf, section 2",
+    "transformation": "Use the selected explicit LARA seconds and uncertainty. Retain the evaluated years separately; do not introduce a new year conversion."
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_minus_317_32_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.9988",
+        "standard_uncertainty": "0.0003",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Co-60.PenNuc.txt, line 10; ../raw/lnhb/Co-60_tables.pdf, section 2.1"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "reference_representation": "piecewise_linear_density",
+        "spectrum_file": "beta_minus_317_32_keV.csv",
+        "energy_unit": "keV",
+        "generator": "BetaShape 2.4 (06/2024)",
+        "source": "../raw/betashape/v2.4/output/beta-_Co60_trans2.bs",
+        "selected_density_column": "dN/dE exp.",
+        "raw_grid_points": 319,
+        "conditional_piecewise_linear_mean_keV": "95.5242438516137118499806449399380222175979510207453408327793",
+        "transformation": "Retained energy, selected density and uncertainty tokens copied unchanged. No endpoint rescaling or regeneration. Conditional comparisons divide by the full piecewise-linear area; physical branch yields remain separate.",
+        "endpoint": {
+          "value": "317.32",
+          "standard_uncertainty": "0.21",
+          "unit": "keV",
+          "source": "../raw/lnhb/Co-60.PenNuc.txt, line 10; ../raw/lnhb/Co-60_tables.pdf, section 2.1"
+        },
+        "experimental_shape_factor": "An experimental shape factor has been found: 1",
+        "measurement": [
+          "Energy range of the measurement: 75 - 280 keV      In database, transition #34",
+          "From K.S.R. Sastry, Massachusetts University Report No. AD-752621 (1972) "
+        ]
+      }
+    },
+    {
+      "index": 1,
+      "id": "beta_minus_664_46_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00002",
+        "standard_uncertainty": null,
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Co-60.PenNuc.txt, line 12; ../raw/lnhb/Co-60_tables.pdf, section 2.1"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "reference_representation": "piecewise_linear_density",
+        "spectrum_file": "beta_minus_664_46_keV.csv",
+        "energy_unit": "keV",
+        "generator": "BetaShape 2.4 (06/2024)",
+        "source": "../raw/betashape/v2.4/output/beta-_Co60_trans1.bs",
+        "selected_density_column": "dN/dE calc.",
+        "raw_grid_points": 334,
+        "conditional_piecewise_linear_mean_keV": "273.599460849366941280884743860431921578479031199221252457384",
+        "transformation": "Retained energy, selected density and uncertainty tokens copied unchanged. No endpoint rescaling or regeneration. Conditional comparisons divide by the full piecewise-linear area; physical branch yields remain separate.",
+        "endpoint": {
+          "value": "664.46",
+          "standard_uncertainty": "0.21",
+          "unit": "keV",
+          "source": "../raw/lnhb/Co-60.PenNuc.txt, line 12; ../raw/lnhb/Co-60_tables.pdf, section 2.1"
+        },
+        "transition_model": "Unique second forbidden (2U); no tabulated experimental shape factor."
+      }
+    },
+    {
+      "index": 2,
+      "id": "beta_minus_1490_56_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0012",
+        "standard_uncertainty": "0.0003",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Co-60.PenNuc.txt, line 14; ../raw/lnhb/Co-60_tables.pdf, section 2.1"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "reference_representation": "piecewise_linear_density",
+        "spectrum_file": "beta_minus_1490_56_keV.csv",
+        "energy_unit": "keV",
+        "generator": "BetaShape 2.4 (06/2024)",
+        "source": "../raw/betashape/v2.4/output/beta-_Co60_trans0.bs",
+        "selected_density_column": "dN/dE exp.",
+        "raw_grid_points": 374,
+        "conditional_piecewise_linear_mean_keV": "624.504291110055491042488990711022272046579012334755692213968",
+        "transformation": "Retained energy, selected density and uncertainty tokens copied unchanged. No endpoint rescaling or regeneration. Conditional comparisons divide by the full piecewise-linear area; physical branch yields remain separate.",
+        "endpoint": {
+          "value": "1490.56",
+          "standard_uncertainty": "0.21",
+          "unit": "keV",
+          "source": "../raw/lnhb/Co-60.PenNuc.txt, line 14; ../raw/lnhb/Co-60_tables.pdf, section 2.1"
+        },
+        "experimental_shape_factor": "An experimental shape factor has been found: q^4 + (10/3)*l_2*q^2*p^2 + l_3*p^4",
+        "measurement": [
+          "Energy range of the measurement: 1350 - 1450 keV      In database, transition #35",
+          "From [1956WO09] J.L. Wolfson, Can. J. Phys. 34, 256 (1956) "
+        ]
+      }
+    },
+    {
+      "index": 3,
+      "id": "prompt_nuclear_gamma",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "1.99848902",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Co-60.lara.txt"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "../raw/lnhb/Co-60.lara.txt",
+        "lines": [
+          {
+            "energy_keV": "347.14",
+            "weight": "0.000075",
+            "energy_standard_uncertainty_keV": "0.07",
+            "yield_standard_uncertainty": "0.000004",
+            "label": "g",
+            "emitting_nucleus": "Ni-60",
+            "level_start": "3",
+            "level_end": "2",
+            "source_line": 19
+          },
+          {
+            "energy_keV": "826.10",
+            "weight": "0.000076",
+            "energy_standard_uncertainty_keV": "0.03",
+            "yield_standard_uncertainty": "0.000008",
+            "label": "g",
+            "emitting_nucleus": "Ni-60",
+            "level_start": "2",
+            "level_end": "1",
+            "source_line": 20
+          },
+          {
+            "energy_keV": "1173.228",
+            "weight": "0.9985",
+            "energy_standard_uncertainty_keV": "0.003",
+            "yield_standard_uncertainty": "0.0003",
+            "label": "g",
+            "emitting_nucleus": "Ni-60",
+            "level_start": "3",
+            "level_end": "1",
+            "source_line": 21
+          },
+          {
+            "energy_keV": "1332.492",
+            "weight": "0.999826",
+            "energy_standard_uncertainty_keV": "0.004",
+            "yield_standard_uncertainty": "0.000006",
+            "label": "g",
+            "emitting_nucleus": "Ni-60",
+            "level_start": "1",
+            "level_end": "0",
+            "source_line": 22
+          },
+          {
+            "energy_keV": "2158.57",
+            "weight": "0.000012",
+            "energy_standard_uncertainty_keV": "0.03",
+            "yield_standard_uncertainty": "0.000002",
+            "label": "g",
+            "emitting_nucleus": "Ni-60",
+            "level_start": "2",
+            "level_end": "0",
+            "source_line": 23
+          },
+          {
+            "energy_keV": "2505.692",
+            "weight": "2E-8",
+            "energy_standard_uncertainty_keV": "0.005",
+            "yield_standard_uncertainty": "4E-9",
+            "label": "g",
+            "emitting_nucleus": "Ni-60",
+            "level_start": "3",
+            "level_end": "0",
+            "source_line": 24
+          }
+        ]
+      }
+    },
+    {
+      "index": 4,
+      "id": "compact_ni_x_ray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.0001140",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Co-60.lara.txt"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "../raw/lnhb/Co-60.lara.txt",
+        "lines": [
+          {
+            "energy_keV": "0.84",
+            "weight": "0.000002",
+            "energy_standard_uncertainty_keV": null,
+            "yield_standard_uncertainty": null,
+            "label": "XL",
+            "emitting_nucleus": "Ni-60",
+            "level_start": "",
+            "level_end": "",
+            "source_line": 15
+          },
+          {
+            "energy_keV": "7.46097",
+            "weight": "0.0000334",
+            "energy_standard_uncertainty_keV": null,
+            "yield_standard_uncertainty": "0.0000012",
+            "label": "XKa2",
+            "emitting_nucleus": "Ni-60",
+            "level_start": "",
+            "level_end": "",
+            "source_line": 16
+          },
+          {
+            "energy_keV": "7.47824",
+            "weight": "0.000065",
+            "energy_standard_uncertainty_keV": null,
+            "yield_standard_uncertainty": "0.000003",
+            "label": "XKa1",
+            "emitting_nucleus": "Ni-60",
+            "level_start": "",
+            "level_end": "",
+            "source_line": 17
+          },
+          {
+            "energy_keV": "8.2967",
+            "weight": "0.0000136",
+            "energy_standard_uncertainty_keV": null,
+            "yield_standard_uncertainty": "5E-7",
+            "label": "XK'b1",
+            "emitting_nucleus": "Ni-60",
+            "level_start": "",
+            "level_end": "",
+            "source_line": 18
+          }
+        ]
+      }
+    },
+    {
+      "index": 5,
+      "id": "detailed_auger_electron",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00121289017",
+        "unit": "primary/parent decay",
+        "source": "../raw/mird/Co-60 Summary Spectrum.csv"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "../raw/mird/Co-60 Summary Spectrum.csv",
+        "lines": [
+          {
+            "energy_keV": "0.04798",
+            "source_energy_MeV": "4.79803e-05",
+            "weight": "0.000583929",
+            "source_line": 35,
+            "source_record": "33",
+            "label": "Auger electron",
+            "source_energy_keV": "0.0479803000",
+            "representation_residual_micro_eV": "-300.0000000000"
+          },
+          {
+            "energy_keV": "0.078787",
+            "source_energy_MeV": "7.87867e-05",
+            "weight": "7.32775e-05",
+            "source_line": 36,
+            "source_record": "34",
+            "label": "Auger electron",
+            "source_energy_keV": "0.0787867000",
+            "representation_residual_micro_eV": "300.0000000000"
+          },
+          {
+            "energy_keV": "0.772593",
+            "source_energy_MeV": "0.000772593",
+            "weight": "0.000393729",
+            "source_line": 37,
+            "source_record": "35",
+            "label": "Auger electron",
+            "source_energy_keV": "0.772593000",
+            "representation_residual_micro_eV": "0E-9"
+          },
+          {
+            "energy_keV": "0.81838",
+            "source_energy_MeV": "0.00081838",
+            "weight": "3.9767e-06",
+            "source_line": 38,
+            "source_record": "36",
+            "label": "Auger electron",
+            "source_energy_keV": "0.81838000",
+            "representation_residual_micro_eV": "0E-8"
+          },
+          {
+            "energy_keV": "6.49788",
+            "source_energy_MeV": "0.00649788",
+            "weight": "0.000124729",
+            "source_line": 39,
+            "source_record": "37",
+            "label": "Auger electron",
+            "source_energy_keV": "6.49788000",
+            "representation_residual_micro_eV": "0E-8"
+          },
+          {
+            "energy_keV": "7.31362",
+            "source_energy_MeV": "0.00731362",
+            "weight": "3.11916e-05",
+            "source_line": 40,
+            "source_record": "38",
+            "label": "Auger electron",
+            "source_energy_keV": "7.31362000",
+            "representation_residual_micro_eV": "0E-8"
+          },
+          {
+            "energy_keV": "8.13349",
+            "source_energy_MeV": "0.00813349",
+            "weight": "2.05737e-06",
+            "source_line": 41,
+            "source_record": "39",
+            "label": "Auger electron",
+            "source_energy_keV": "8.13349000",
+            "representation_residual_micro_eV": "0E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 6,
+      "id": "conversion_electron",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000292517293712",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Co-60.PenNuc.txt"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "../raw/lnhb/Co-60.PenNuc.txt",
+        "lines": [
+          {
+            "energy_keV": "338.81",
+            "weight": "0.000000374",
+            "energy_standard_uncertainty_keV": "0.07",
+            "yield_standard_uncertainty": "0.000000023",
+            "label": "EK",
+            "emitting_nucleus": "Ni-60",
+            "level_start_keV": "2505.748",
+            "level_end": "2",
+            "source_line": 19
+          },
+          {
+            "energy_keV": "346.23",
+            "weight": "0.0000000377",
+            "energy_standard_uncertainty_keV": "0.07",
+            "yield_standard_uncertainty": "0.0000000023",
+            "label": "EL",
+            "emitting_nucleus": "Ni-60",
+            "level_start_keV": "2505.748",
+            "level_end": "2",
+            "source_line": 20
+          },
+          {
+            "energy_keV": "817.767",
+            "weight": "0.0000000228",
+            "energy_standard_uncertainty_keV": "0.03",
+            "yield_standard_uncertainty": "0.0000000039",
+            "label": "EK",
+            "emitting_nucleus": "Ni-60",
+            "level_start_keV": "2158.61",
+            "level_end": "1",
+            "source_line": 30
+          },
+          {
+            "energy_keV": "825.188",
+            "weight": "0.00000000221",
+            "energy_standard_uncertainty_keV": "0.03",
+            "yield_standard_uncertainty": "0.00000000027",
+            "label": "EL",
+            "emitting_nucleus": "Ni-60",
+            "level_start_keV": "2158.61",
+            "level_end": "1",
+            "source_line": 31
+          },
+          {
+            "energy_keV": "1164.9072",
+            "weight": "0.000151",
+            "energy_standard_uncertainty_keV": "0.003",
+            "yield_standard_uncertainty": "0.000007",
+            "label": "EK",
+            "emitting_nucleus": "Ni-60",
+            "level_start_keV": "2505.748",
+            "level_end": "1",
+            "source_line": 22
+          },
+          {
+            "energy_keV": "1172.3284",
+            "weight": "0.00001478",
+            "energy_standard_uncertainty_keV": "0.003",
+            "yield_standard_uncertainty": "0.0000004",
+            "label": "EL",
+            "emitting_nucleus": "Ni-60",
+            "level_start_keV": "2505.748",
+            "level_end": "1",
+            "source_line": 23
+          },
+          {
+            "energy_keV": "1324.1752",
+            "weight": "0.000115",
+            "energy_standard_uncertainty_keV": "0.004",
+            "yield_standard_uncertainty": "0.000005",
+            "label": "EK",
+            "emitting_nucleus": "Ni-60",
+            "level_start_keV": "1332.508",
+            "level_end": "0",
+            "source_line": 38
+          },
+          {
+            "energy_keV": "1331.5964",
+            "weight": "0.0000113",
+            "energy_standard_uncertainty_keV": "0.004",
+            "yield_standard_uncertainty": "0.0000003",
+            "label": "EL",
+            "emitting_nucleus": "Ni-60",
+            "level_start_keV": "1332.508",
+            "level_end": "0",
+            "source_line": 39
+          },
+          {
+            "energy_keV": "2150.277",
+            "weight": "0.00000000053",
+            "energy_standard_uncertainty_keV": "0.03",
+            "yield_standard_uncertainty": "0.00000000009",
+            "label": "EK",
+            "emitting_nucleus": "Ni-60",
+            "level_start_keV": "2158.61",
+            "level_end": "0",
+            "source_line": 33
+          },
+          {
+            "energy_keV": "2157.698",
+            "weight": "0.000000000052",
+            "energy_standard_uncertainty_keV": "0.03",
+            "yield_standard_uncertainty": "0.000000000009",
+            "label": "EL",
+            "emitting_nucleus": "Ni-60",
+            "level_start_keV": "2158.61",
+            "level_end": "0",
+            "source_line": 34
+          },
+          {
+            "energy_keV": "2497.415",
+            "weight": "0.00000000000156",
+            "energy_standard_uncertainty_keV": "0.005",
+            "yield_standard_uncertainty": "0.00000000000031",
+            "label": "EK",
+            "emitting_nucleus": "Ni-60",
+            "level_start_keV": "2505.748",
+            "level_end": "0",
+            "source_line": 25
+          },
+          {
+            "energy_keV": "2504.836",
+            "weight": "0.000000000000152",
+            "energy_standard_uncertainty_keV": "0.005",
+            "yield_standard_uncertainty": "0.000000000000031",
+            "label": "EL",
+            "emitting_nucleus": "Ni-60",
+            "level_start_keV": "2505.748",
+            "level_end": "0",
+            "source_line": 26
+          }
+        ]
+      }
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "internal_pair_formation",
+      "source": "../raw/lnhb/Co-60_com.pdf, sections 2.2 and 4.2; ../raw/lnhb/Co-60_tables.pdf, sections 2.2 and 4; ../raw/lnhb/Co-60.txt, IPC records",
+      "reason": "Internal pairs at the 1173 and 1332 keV transitions require electron/positron energy sharing. The tabulated 310.51 keV is total pair kinetic energy, not one monoenergetic particle. These channels are outside the current independent-particle source representation; their omission does not change selected direct gamma yields."
+    }
+  ]
+}

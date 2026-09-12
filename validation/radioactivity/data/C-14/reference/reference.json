@@ -1,0 +1,56 @@
+{
+  "name": "C-14",
+  "reference_id": "LNHB-2012-C14-BetaShape-2.4-Singh-2023",
+  "half_life": {
+    "value": "1.799E+11",
+    "standard_uncertainty": "9E+8",
+    "unit": "s",
+    "source_value": "5.70E3",
+    "source_uncertainty": "0.03E3",
+    "source_unit": "a",
+    "source": "../raw/lnhb/C-14.lara.txt, lines 6-7; ../raw/lnhb/C-14_tables.pdf, section 2",
+    "transformation": "Use the explicit evaluated LARA seconds and uncertainty; retain the selected years separately without introducing a new year conversion."
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_minus_156_476_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "1",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/C-14.PenNuc.txt, line 10; ../raw/lnhb/C-14_tables.pdf, sections 1-2"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "reference_representation": "piecewise_linear_density",
+        "spectrum_file": "beta_minus_156_476_keV.csv",
+        "energy_unit": "keV",
+        "generator": "BetaShape 2.4 (06/2024)",
+        "source": "../raw/betashape/v2.4/output/beta-_C14_trans0.bs",
+        "selected_density_column": "dN/dE exp.",
+        "raw_grid_points": 314,
+        "conditional_piecewise_linear_mean_keV": "48.9253264459568678730532816271411735368178840392763497796990",
+        "transformation": "Retained energy, experimental density and uncertainty tokens copied unchanged. No endpoint rescaling or regeneration. Full-support piecewise-linear integration defines the conditional reference; the physical yield remains separate.",
+        "experimental_shape_factor": "An experimental shape factor has been found: 1 - 0.00043*me*(W-1)",
+        "coefficient_card": "C1=-4.30E-4 37 (2023SI12)",
+        "coefficient_standard_uncertainty": "0.000037",
+        "measurement_range": "Energy range of the measurement: 25 - 156 keV      In database, transition #8",
+        "measurement_source": "From [2023SI12] A. Singh, X. Mougeot, S. Leblond, M. Loidl, B. Sabot, A. Nourreddine, Nucl. Instr. Meth. Phys. Res. A 1053, 168354 (2023)",
+        "endpoint": {
+          "value": "156.476",
+          "standard_uncertainty": "0.004",
+          "unit": "keV",
+          "source": "../raw/lnhb/C-14.PenNuc.txt, line 10; ../raw/lnhb/C-14_tables.pdf, sections 1-2"
+        }
+      }
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "no_prompt_discrete_emissions",
+      "source": "../raw/lnhb/C-14_tables.pdf, sections 1-3; ../raw/lnhb/C-14.txt, stable ground-state daughter",
+      "reason": "The selected parent has one beta-minus branch to stable N-14 ground state and no selected prompt gamma or atomic-relaxation lines. Only the emitted beta electron is represented; no recoil, antineutrino or placeholder particle group is added."
+    }
+  ]
+}

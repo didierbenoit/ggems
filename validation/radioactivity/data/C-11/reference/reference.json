@@ -1,0 +1,76 @@
+{
+  "name": "C-11",
+  "reference_id": "LNHB-DDEP-2002-2011-C11-BetaShape-2.4-experimental",
+  "half_life": {
+    "value": "1221.660",
+    "standard_uncertainty": "1.380",
+    "unit": "s",
+    "source_value": "20.361",
+    "source_uncertainty": "0.023",
+    "source_unit": "min",
+    "source": "../raw/lnhb/C-11.lara.txt, lines 6-7; ../raw/lnhb/C-11_tables.pdf, p. 1",
+    "transformation": "Convert the selected minute value and uncertainty using exactly 60 s/min. LARA and the retained BetaShape input publish rounded seconds."
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_plus_to_ground_state",
+      "particle": "Positron",
+      "yield_per_decay": {
+        "value": "0.9975",
+        "standard_uncertainty": "0.00013",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/C-11.PenNuc.txt, BEP record; ../raw/lnhb/C-11_tables.pdf, pp. 1-2"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "reference_representation": "piecewise_linear_density",
+        "spectrum_file": "beta_plus_960_5_keV.csv",
+        "energy_unit": "keV",
+        "endpoint": {
+          "value": "960.5",
+          "standard_uncertainty": "0.9",
+          "unit": "keV",
+          "source": "../raw/lnhb/C-11.PenNuc.txt, BEP record; ../raw/lnhb/C-11_tables.pdf, pp. 1-2"
+        },
+        "generator": "BetaShape 2.4 (06/2024)",
+        "source": "../raw/betashape/v2.4/output/beta+_C11_trans0.bs",
+        "selected_density_column": "dN/dE exp.",
+        "raw_grid_points": 322,
+        "conditional_piecewise_linear_mean_keV": "385.33205746557349724579903196605878488578107794498910317500473707876824925438360",
+        "experimental_shape_factor": "An experimental shape factor has been found: 1 - 0.0074*W",
+        "measurement_range": "Energy range of the measurement: 266 - 892 keV      In database, transition #4",
+        "measurement_source": "From [1975BE28] H. Behrens, M. Kobelt, L. Szybisz, W.-G. Thies, Nucl. Phys. A 246, 317 (1975)",
+        "transformation": "Copy retained energy, experimental density and uncertainty tokens unchanged. Compare the full-support piecewise-linear interpolant, normalized only as a conditional energy law. No endpoint rescaling, physical-yield normalization or BetaShape rerun.",
+        "uncertainty_policy": "Pointwise uncertainties are preserved. No covariance is supplied; comparisons condition on the selected central spectrum."
+      }
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "annihilation",
+      "particle": "Gamma",
+      "energy_keV": "511",
+      "reason": "The selected LNHB 1.99500 photons per parent annihilation signature belongs to subsequent positron transport. The source emits the positron itself."
+    },
+    {
+      "id": "electron_capture",
+      "reason": "EC is a decay mode, not an incident particle. The selected LNHB K/L capture probabilities do not define Auger-electron yields."
+    },
+    {
+      "id": "alternative_atomic_model",
+      "reason": "Selected LNHB emission tables do not tabulate Auger or characteristic B X-ray marginals. Legacy MIRD atomic rows are retained as cross-checks only; no alternative atomic-relaxation model is transplanted. This reference does not claim physical absence of atomic relaxation."
+    }
+  ],
+  "provenance": {
+    "authority": "V. Chiste and M.-M. Be, LNHB/DDEP C-11/B-11 evaluation completed in 2002, half-life updated in 2011; retained BetaShape 2.4 experimental spectrum.",
+    "betashape_command": ".\\betashape.exe C11\\C-11.txt fixint=1 -csv",
+    "execution": "Retained outputs only; fixint=1 preserves the selected evaluated EC/beta-plus split. No qval override.",
+    "scope": "One-positron-group source-model reference. Atomic-emission audit, cross-source differences and half-life rounding are documented in README.md."
+  },
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSC11.cc",
+    "generator_prefix": "// LNHB BetaShape ",
+    "selected_version": "2.4"
+  }
+}

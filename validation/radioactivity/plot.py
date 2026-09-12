@@ -402,10 +402,17 @@ def make_plots(directory: Path) -> None:
             figsize=(10, 7 if comparison else 4.5), layout="constrained"
         )
         axis = figure.add_subplot(211 if comparison else 111)
+        lower = group.lower_edge / runtime.energy_scale
+        upper = group.upper_edge / runtime.energy_scale
+        if selected is not None and selected.spectrum is not None:
+            lower = min(lower, selected.spectrum.energy[0])
+            upper = max(upper, selected.spectrum.energy[-1])
+
         if data:
             _ = axis.hist(
                 [energy / runtime.energy_scale for energy in data],
                 bins=80,
+                range=(lower, upper),
                 density=True,
                 histtype="step",
                 color="#bb4a32",
@@ -460,12 +467,29 @@ def make_plots(directory: Path) -> None:
                         for index in range(0, len(data), stride)
                     ],
                     color="#bb4a32",
+                    marker="o" if len(data) == 1 else None,
                     label="Generated ECDF − selected reference CDF",
                 )
             grid = [
                 (group.lower_edge + index * group.width) / runtime.energy_scale
                 for index in range(len(group.energies) + 1)
             ]
+            knots = sorted(set(grid + list(spectrum.energy)))
+            grid = knots.copy()
+            # Use the same quadratic-piece extrema as analysis.grid_comparison.
+            # Extra CDF evaluations render the curvature between those extrema.
+            for a, b in pairwise(knots):
+                grid.extend(a + fraction * (b - a) for fraction in (0.25, 0.5, 0.75))
+                slope = (spectrum.pdf(b) - spectrum.pdf(a)) / (b - a)
+                grid_density = (
+                    group.continuous_cdf(b * runtime.energy_scale)
+                    - group.continuous_cdf(a * runtime.energy_scale)
+                ) / (b - a)
+                if slope != 0:
+                    stationary = a + (grid_density - spectrum.pdf(a)) / slope
+                    if a < stationary < b:
+                        grid.append(stationary)
+            grid = sorted(set(grid))
             _ = axis.plot(
                 grid,
                 [

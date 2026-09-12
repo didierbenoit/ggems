@@ -1,0 +1,63 @@
+{
+  "name": "H-3",
+  "reference_id": "LNHB-2006-H3-BetaShape-2.4-Piel-1973",
+  "half_life": {
+    "value": "3.885E+8",
+    "standard_uncertainty": "8E+5",
+    "unit": "s",
+    "source_value": "12.312",
+    "source_uncertainty": "0.025",
+    "source_unit": "a",
+    "source": "../raw/lnhb/H-3.lara.txt, lines 6-7; ../raw/lnhb/H-3_com.pdf, section 2",
+    "transformation": "Use the published LARA seconds and uncertainty; retain the evaluated years separately without a new year conversion."
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_minus_18_591_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "1",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/H-3.PenNuc.txt, line 10; ../raw/lnhb/H-3_com.pdf, sections 1-2.1"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "reference_representation": "piecewise_linear_density",
+        "spectrum_file": "beta_minus_18_591_keV.csv",
+        "energy_unit": "keV",
+        "generator": "BetaShape 2.4 (06/2024)",
+        "source": "../raw/betashape/v2.4/output/beta-_H3_trans0.bs",
+        "selected_density_column": "dN/dE exp.",
+        "raw_grid_points": 311,
+        "conditional_piecewise_linear_mean_keV": "5.69566766921864633539924959940320084989949183771268492524811",
+        "transformation": "Retained energy, experimental density and uncertainty tokens copied unchanged. No endpoint rescaling or regeneration. Full-support piecewise-linear integration defines the conditional reference; the unit physical yield remains separate.",
+        "experimental_shape_factor": "An experimental shape factor has been found: 1",
+        "coefficient_card": "Cexp(W)=1 (1973PI01)",
+        "measurement_range": "Energy range of the measurement: 11 - 18 keV      In database, transition #1",
+        "measurement_source": "From [1973PI01] W.F. Piel Jr, Nucl. Phys. A 203, 369 (1973)",
+        "endpoint": {
+          "value": "18.591",
+          "standard_uncertainty": "0.001",
+          "unit": "keV",
+          "meaning": "Endpoint of the retained BetaShape transition-energy axis computed from nuclear Q and ground-state level energies; distinct from the evaluated emitted-electron Emax.",
+          "source": "../raw/lnhb/H-3.PenNuc.txt, line 8; ../raw/betashape/v2.4/output/H-3.trans, line 9"
+        },
+        "evaluated_electron_endpoint": {
+          "value": "18.564",
+          "standard_uncertainty": "0.002",
+          "unit": "keV",
+          "source": "../raw/lnhb/H-3.PenNuc.txt, line 10; ../raw/lnhb/H-3_com.pdf, sections 1-2.1",
+          "qualification": "LNHB comments derive the atomic endpoint from Q, recoil and electronic binding/final-state terms; experimental endpoints depend on chemical form. BetaShape labels this given measured Emax, for information. The LNHB tables PDF separately prints uncertainty 0.003 keV; no averaging or spectrum-axis substitution is made."
+        }
+      }
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "no_prompt_discrete_emissions",
+      "source": "../raw/lnhb/H-3_com.pdf, section 1; ../raw/lnhb/H-3.txt, stable ground-state daughter",
+      "reason": "One beta-minus branch to stable He-3 ground state. No selected prompt gamma or atomic lines; no recoil, antineutrino or placeholder incident-particle group."
+    }
+  ]
+}
