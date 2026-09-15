@@ -8,43 +8,56 @@
  * -------------------------------------------------------------------------- */
 
 html {
-  /* GGEMS Light */
-  --ggems-primary: #213126;
-  --ggems-background: #ffffff;
-  --ggems-accent: #319b54;
-  --ggems-accent-secondary: #8a2be2;
-  --ggems-header-background: #f7fbf7;
-  --ggems-header-primary: #319b54;
-  --ggems-selected: #e4f4e8;
-  --ggems-hover: #f1f8f3;
-  --ggems-highlight: #fff9b8;
+  /* GGEMS website palette — Light */
+  --ggems-primary: #16221c;
+  --ggems-muted: #5e7067;
+  --ggems-subtle: #829087;
+
+  --ggems-background: #f4f7f5;
+  --ggems-background-soft: #edf2ef;
+  --ggems-surface: #ffffff;
+  --ggems-surface-raised: #f8faf9;
+
+  --ggems-accent: #50c070;
+  --ggems-accent-light: #80d0a0;
+  --ggems-accent-dark: #309050;
+  --ggems-accent-secondary: #8020e0;
+  --ggems-signal: #f0f000;
+
+  --ggems-header-background: #f4f7f5;
+  --ggems-header-primary: #309050;
+  --ggems-selected: #e4eee7;
+  --ggems-hover: #f8faf9;
+  --ggems-border: #dce4df;
+  --ggems-highlight: #fffbd6;
   --ggems-danger: #c84c4c;
-  --ggems-success: #319b54;
+  --ggems-success: #50c070;
 
   /* Page */
   --page-background-color: var(--ggems-background);
   --page-foreground-color: var(--ggems-primary);
-  --page-link-color: var(--ggems-accent);
+  --page-secondary-foreground-color: var(--ggems-muted);
+  --page-link-color: var(--ggems-accent-dark);
   --page-visited-link-color: var(--ggems-accent-secondary);
-  --page-external-link-color: var(--ggems-accent);
+  --page-external-link-color: var(--ggems-accent-dark);
 
   /* Index */
   --index-odd-item-bg-color: var(--ggems-hover);
   --index-even-item-bg-color: var(--ggems-background);
   --index-header-color: var(--ggems-primary);
-  --index-separator-color: var(--ggems-selected);
+  --index-separator-color: var(--ggems-border);
 
   /* Header */
   --header-background-color: var(--ggems-header-background);
-  --header-separator-color: var(--ggems-selected);
-  --group-header-separator-color: var(--ggems-selected);
-  --group-header-color: var(--ggems-header-primary);
+  --header-separator-color: var(--ggems-border);
+  --group-header-separator-color: var(--ggems-border);
+  --group-header-color: var(--ggems-accent-dark);
 
   /* Footer and titles */
-  --footer-foreground-color: var(--ggems-accent);
+  --footer-foreground-color: var(--ggems-subtle);
   --citation-label-color: var(--ggems-accent-secondary);
   --title-background-color: var(--ggems-background);
-  --title-separator-color: var(--ggems-selected);
+  --title-separator-color: var(--ggems-border);
 
   /* Blockquotes */
   --blockquote-background-color: var(--ggems-hover);
@@ -52,25 +65,25 @@ html {
 
   /* Scrollbars */
   --scrollbar-thumb-color: var(--ggems-accent);
-  --scrollbar-background-color: var(--ggems-header-background);
+  --scrollbar-background-color: var(--ggems-background-soft);
 
   /* Icons */
   --icon-background-color: var(--ggems-accent);
-  --icon-foreground-color: #ffffff;
+  --icon-foreground-color: #07111b;
   --icon-folder-open-fill-color: var(--ggems-selected);
   --icon-folder-fill-color: var(--ggems-hover);
-  --icon-folder-border-color: var(--ggems-accent);
+  --icon-folder-border-color: var(--ggems-accent-dark);
   --icon-doc-fill-color: var(--ggems-selected);
-  --icon-doc-border-color: var(--ggems-accent);
+  --icon-doc-border-color: var(--ggems-accent-dark);
 
   /* Brief member declarations */
   --memdecl-background-color: var(--ggems-hover);
   --memdecl-foreground-color: var(--ggems-primary);
   --memdecl-template-color: var(--ggems-accent-secondary);
-  --memdecl-border-color: var(--ggems-selected);
+  --memdecl-border-color: var(--ggems-border);
 
   /* Detailed member documentation */
-  --memdef-border-color: var(--ggems-selected);
+  --memdef-border-color: var(--ggems-border);
   --memdef-title-background-color: var(--ggems-selected);
   --memdef-proto-background-color: var(--ggems-hover);
   --memdef-proto-text-color: var(--ggems-primary);
@@ -78,72 +91,72 @@ html {
   --memdef-template-color: var(--ggems-accent-secondary);
 
   /* Tables */
-  --table-cell-border-color: var(--ggems-selected);
+  --table-cell-border-color: var(--ggems-border);
   --table-header-background-color: var(--ggems-accent);
-  --table-header-foreground-color: #ffffff;
+  --table-header-foreground-color: #07111b;
 
   /* Labels */
   --label-background-color: var(--ggems-accent);
   --label-left-top-border-color: var(--ggems-accent);
-  --label-right-bottom-border-color: var(--ggems-selected);
-  --label-foreground-color: #ffffff;
+  --label-right-bottom-border-color: var(--ggems-border);
+  --label-foreground-color: #07111b;
 
   /* Navigation */
-  --nav-background-color: var(--ggems-header-background);
-  --nav-foreground-color: var(--ggems-header-primary);
-  --nav-border-color: var(--ggems-selected);
-  --nav-breadcrumb-separator-color: var(--ggems-selected);
+  --nav-background-color: var(--ggems-background-soft);
+  --nav-foreground-color: var(--ggems-accent-dark);
+  --nav-border-color: var(--ggems-border);
+  --nav-breadcrumb-separator-color: var(--ggems-border);
   --nav-breadcrumb-active-bg: var(--ggems-selected);
-  --nav-breadcrumb-color: var(--ggems-accent);
-  --nav-splitbar-bg-color: var(--ggems-selected);
+  --nav-breadcrumb-color: var(--ggems-accent-dark);
+  --nav-splitbar-bg-color: var(--ggems-border);
   --nav-splitbar-handle-color: var(--ggems-accent);
   --nav-text-normal-color: var(--ggems-primary);
-  --nav-menu-button-color: var(--ggems-accent);
-  --nav-menu-background-color: var(--ggems-background);
+  --nav-menu-button-color: var(--ggems-accent-dark);
+  --nav-menu-background-color: var(--ggems-surface);
   --nav-menu-foreground-color: var(--ggems-primary);
   --nav-menu-active-bg: var(--ggems-selected);
-  --nav-menu-active-color: var(--ggems-accent);
-  --nav-arrow-color: var(--ggems-accent);
+  --nav-menu-active-color: var(--ggems-accent-dark);
+  --nav-arrow-color: var(--ggems-accent-dark);
   --nav-arrow-selected-color: var(--ggems-accent-secondary);
 
   /* Sync icon */
-  --sync-icon-border-color: var(--ggems-selected);
-  --sync-icon-background-color: var(--ggems-header-background);
+  --sync-icon-border-color: var(--ggems-border);
+  --sync-icon-background-color: var(--ggems-background-soft);
   --sync-icon-selected-background-color: var(--ggems-selected);
-  --sync-icon-color: var(--ggems-accent);
+  --sync-icon-color: var(--ggems-accent-dark);
   --sync-icon-selected-color: var(--ggems-accent-secondary);
 
   /* Table of contents */
   --toc-background-color: var(--ggems-hover);
-  --toc-border-color: var(--ggems-selected);
-  --toc-header-color: var(--ggems-accent);
+  --toc-border-color: var(--ggems-border);
+  --toc-header-color: var(--ggems-accent-dark);
 
   /* Search */
-  --search-background-color: var(--ggems-background);
+  --search-background-color: var(--ggems-surface);
   --search-foreground-color: var(--ggems-primary);
   --search-active-color: var(--ggems-primary);
-  --search-filter-background-color: var(--ggems-header-background);
+  --search-filter-background-color: var(--ggems-background-soft);
   --search-filter-foreground-color: var(--ggems-primary);
-  --search-filter-border-color: var(--ggems-selected);
-  --search-filter-highlight-text-color: #ffffff;
+  --search-filter-border-color: var(--ggems-border);
+  --search-filter-highlight-text-color: #07111b;
   --search-filter-highlight-bg-color: var(--ggems-accent);
-  --search-results-foreground-color: var(--ggems-accent);
-  --search-results-background-color: var(--ggems-background);
-  --search-results-border-color: var(--ggems-selected);
-  --search-box-border-color: var(--ggems-selected);
+  --search-results-foreground-color: var(--ggems-accent-dark);
+  --search-results-background-color: var(--ggems-surface);
+  --search-results-border-color: var(--ggems-border);
+  --search-box-border-color: var(--ggems-border);
   --search-close-icon-bg-color: var(--ggems-accent);
-  --search-close-icon-fg-color: #ffffff;
+  --search-close-icon-fg-color: #07111b;
 
   /* Source code containers.
    * Syntax colors themselves intentionally remain Doxygen defaults. */
   --fragment-foreground-color: var(--ggems-primary);
-  --fragment-background-color: var(--ggems-hover);
-  --fragment-border-color: var(--ggems-selected);
+  --fragment-background-color: var(--ggems-surface-raised);
+  --fragment-border-color: var(--ggems-border);
   --fragment-lineno-border-color: var(--ggems-accent);
-  --fragment-lineno-background-color: var(--ggems-selected);
-  --fragment-lineno-foreground-color: var(--ggems-primary);
-  --fragment-lineno-link-fg-color: var(--ggems-accent);
-  --fragment-lineno-link-bg-color: var(--ggems-selected);
+  --fragment-lineno-background-color: var(--ggems-background-soft);
+  --fragment-lineno-foreground-color: var(--ggems-muted);
+  --fragment-lineno-link-fg-color: var(--ggems-accent-dark);
+  --fragment-lineno-link-bg-color: var(--ggems-background-soft);
   --fragment-lineno-link-hover-fg-color: var(--ggems-accent-secondary);
   --fragment-lineno-link-hover-bg-color: var(--ggems-hover);
   --fragment-copy-ok-color: var(--ggems-success);
@@ -151,11 +164,11 @@ html {
 
   /* Tooltips */
   --tooltip-foreground-color: var(--ggems-primary);
-  --tooltip-background-color: var(--ggems-background);
-  --tooltip-arrow-background-color: var(--ggems-background);
-  --tooltip-border-color: var(--ggems-selected);
+  --tooltip-background-color: var(--ggems-surface);
+  --tooltip-arrow-background-color: var(--ggems-surface);
+  --tooltip-border-color: var(--ggems-border);
   --tooltip-doc-color: var(--ggems-primary);
-  --tooltip-declaration-color: var(--ggems-accent);
+  --tooltip-declaration-color: var(--ggems-accent-dark);
   --tooltip-link-color: var(--ggems-accent-secondary);
 
   /* Doxygen special sections */
@@ -163,7 +176,7 @@ html {
   --warning-color-hl: var(--ggems-danger);
   --warning-color-text: var(--ggems-primary);
 
-  --note-color-bg: var(--ggems-highlight);
+  --note-color-bg: var(--ggems-selected);
   --note-color-hl: var(--ggems-accent);
   --note-color-text: var(--ggems-primary);
 
@@ -186,23 +199,68 @@ html {
  * -------------------------------------------------------------------------- */
 
 html.dark-mode {
-  --ggems-primary: #e7f3ea;
-  --ggems-background: #101612;
-  --ggems-accent: #50c878;
-  --ggems-accent-secondary: #b388ff;
-  --ggems-header-background: #131c16;
-  --ggems-header-primary: #8adaa5;
-  --ggems-selected: #1d2a22;
-  --ggems-hover: #18231c;
-  --ggems-highlight: #403c12;
-  --ggems-danger: #e06a6a;
-  --ggems-success: #50c878;
+  /* GGEMS website palette — Dark */
+  --ggems-primary: #f5f8fb;
+  --ggems-muted: #aab7c5;
+  --ggems-subtle: #72808e;
 
-  --icon-foreground-color: #101612;
-  --table-header-foreground-color: #101612;
-  --label-foreground-color: #101612;
-  --search-filter-highlight-text-color: #101612;
-  --search-close-icon-fg-color: #101612;
+  --ggems-background: #07111b;
+  --ggems-background-soft: #0a1520;
+  --ggems-surface: #0b1723;
+  --ggems-surface-raised: #101e2c;
+
+  --ggems-accent: #50c070;
+  --ggems-accent-light: #80d0a0;
+  --ggems-accent-dark: #309050;
+  --ggems-accent-secondary: #8020e0;
+  --ggems-signal: #f0f000;
+
+  --ggems-header-background: #07111b;
+  --ggems-header-primary: #80d0a0;
+  --ggems-selected: #101e2c;
+  --ggems-hover: #0b1723;
+  --ggems-border: #1c2b38;
+  --ggems-highlight: #302f0a;
+  --ggems-danger: #e06a6a;
+  --ggems-success: #50c070;
+
+  --page-secondary-foreground-color: var(--ggems-muted);
+
+  --index-separator-color: var(--ggems-border);
+  --header-separator-color: var(--ggems-border);
+  --group-header-separator-color: var(--ggems-border);
+  --title-separator-color: var(--ggems-border);
+
+  --footer-foreground-color: var(--ggems-subtle);
+
+  --icon-foreground-color: #07111b;
+
+  --memdecl-border-color: var(--ggems-border);
+  --memdef-border-color: var(--ggems-border);
+
+  --table-cell-border-color: var(--ggems-border);
+  --table-header-foreground-color: #07111b;
+
+  --label-right-bottom-border-color: var(--ggems-border);
+  --label-foreground-color: #07111b;
+
+  --nav-border-color: var(--ggems-border);
+  --nav-breadcrumb-separator-color: var(--ggems-border);
+  --nav-splitbar-bg-color: var(--ggems-border);
+
+  --sync-icon-border-color: var(--ggems-border);
+  --toc-border-color: var(--ggems-border);
+
+  --search-filter-border-color: var(--ggems-border);
+  --search-results-border-color: var(--ggems-border);
+  --search-box-border-color: var(--ggems-border);
+  --search-filter-highlight-text-color: #07111b;
+  --search-close-icon-fg-color: #07111b;
+
+  --fragment-border-color: var(--ggems-border);
+  --fragment-lineno-foreground-color: var(--ggems-muted);
+
+  --tooltip-border-color: var(--ggems-border);
 
   --fragment-highlight-filter: 5;
 }
@@ -234,6 +292,18 @@ html.dark-mode {
   margin-top: 0;
 }
 
+
+#projectname {
+  color: var(--ggems-primary);
+}
+
+#projectnumber {
+  color: var(--ggems-muted);
+}
+
+#projectbrief {
+  color: var(--ggems-muted);
+}
 
 /* --------------------------------------------------------------------------
  * Source code
