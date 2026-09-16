@@ -48,9 +48,12 @@ class GGEMSOpenCLContext;
 class GGEMSOpenCLDevice;
 
 /*!
- * \brief Owns GGEMS OpenCL platform, device, context, and program runtime state.
+ * \brief Owns GGEMS OpenCL platform, device, context, and program runtime
+ * state.
  *
- * The process-lifetime singleton discovers OpenCL resources, applies device selection, creates one context per selected device, and caches built programs.
+ * The process-lifetime singleton discovers OpenCL resources, applies device
+ * selection, creates one context per selected device, and caches built
+ * programs.
  */
 class GGEMSOpenCL {
 public:
@@ -103,6 +106,9 @@ public:
   /*!
    * \brief Returns a cached program or creates and caches a matching program.
    *
+   * Cached programs are never evicted, so the returned reference stays valid
+   * for the process lifetime.
+   *
    * \param[in] ctx OpenCL context used to build the program.
    * \param[in] kernel_root Root directory containing the kernel sources.
    * \param[in] kernel_name Kernel source name.
@@ -143,12 +149,41 @@ public:
   /*!
    * \brief Selects OpenCL devices from the supplied selector expressions.
    *
+   * The device selection is frozen once the backend is initialized. After
+   * that, a request is resolved against the discovered devices and accepted
+   * only when it designates the devices of the active contexts, in the same
+   * order. Any request that would really change the selection is rejected
+   * before the stored selection is modified, so the selection and the active
+   * contexts stay consistent.
+   *
+   * Device selection and initialization are not synchronized; the caller
+   * serializes them.
+   *
    * \param[in] filters Ordered device selector expressions.
+   * \throws ggems::core::GGEMSFatal If the selectors are malformed, designate
+   * no device, or would change the selection after the backend was
+   * initialized.
    */
   auto SelectDevices(std::vector<std::string> const &filters) -> void;
 
   /*!
    * \brief Creates OpenCL contexts for the current device selection.
+   *
+   * The active contexts are created once and retained for the process
+   * lifetime because live SVM buffers, kernels, and transport workloads keep
+   * pointers and references to them. Creating the contexts also freezes the
+   * device selection; see SelectDevices().
+   *
+   * Calling this method again once the backend is initialized keeps the active
+   * contexts, and the program cache, unchanged.
+   *
+   * When no device is selected, no context is created and the backend stays
+   * uninitialized, so a later call can still create the contexts.
+   *
+   * Device selection and initialization are not synchronized; the caller
+   * serializes them.
+   *
+   * A context-creation failure terminates the process.
    */
   auto Initialize() -> void;
 
@@ -164,7 +199,8 @@ public:
 
 private:
   /*!
-   * \brief Constructs and initializes the process-lifetime OpenCL runtime manager.
+   * \brief Constructs and initializes the process-lifetime OpenCL runtime
+   * manager.
    */
   GGEMSOpenCL();
 
@@ -189,19 +225,51 @@ private:
 
   /*!
    * \brief Creates one OpenCL context for each selected device.
+   *
+   * Called only while no context exists yet.
    */
   auto CreateContexts() -> void;
 
   /*!
-   * \brief Disables the NVIDIA driver kernel cache for this process when applicable.
+   * \brief Resolves selector expressions into the devices they designate.
+   *
+   * \param[in] filters Device selector expressions.
+   * \param[in] all_devices Flattened discovered device inventory.
+   * \return Designated device references in selection order.
+   */
+  [[nodiscard]]
+  static auto ResolveDeviceSelection(
+      std::vector<std::string> const &filters,
+      std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const
+          &all_devices)
+      -> std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>;
+
+  /*!
+   * \brief Checks whether devices match the active contexts.
+   *
+   * \param[in] devices Device references compared with the active contexts.
+   * \return True if one active context exists per device, in the same order.
+   */
+  [[nodiscard]] auto MatchesActiveContexts(
+      std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const
+          &devices) const noexcept -> bool;
+
+  /*!
+   * \brief Disables the NVIDIA driver kernel cache for this process when
+   * applicable.
    */
   static auto DisableNvidiaDriverKernelCache() -> void;
 
-  std::vector<GGEMSOpenCLPlatform> platforms_; /*!< Discovered OpenCL platforms. */
+  std::vector<GGEMSOpenCLPlatform>
+      platforms_; /*!< Discovered OpenCL platforms. */
   std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>
       selected_devices_; /*!< Selected OpenCL devices. */
-  std::vector<GGEMSOpenCLContext> contexts_; /*!< Contexts for selected devices. */
-  std::vector<std::unique_ptr<GGEMSOpenCLProgram>> program_cache_; /*!< Cached OpenCL programs. */
+  std::vector<GGEMSOpenCLContext>
+      contexts_; /*!< Contexts for selected devices, retained for the process
+                    lifetime. */
+  std::vector<std::unique_ptr<GGEMSOpenCLProgram>>
+      program_cache_; /*!< Cached OpenCL programs, never evicted. */
   std::mutex program_cache_mutex_; /*!< Mutex protecting the program cache. */
+  bool is_initialized_{false};     /*!< Whether contexts were created. */
 };
 } // namespace ggems::ocl

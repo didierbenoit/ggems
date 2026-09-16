@@ -103,12 +103,26 @@ the active compute configuration.
            R"doc(Create OpenCL contexts for the currently selected devices.
 
 Call select_devices() first, then initialize() before running GGEMS workloads
-that require OpenCL contexts. Calling initialize() again recreates the current
-contexts for the selected devices.
+that require OpenCL contexts.
+
+The active contexts are created once and retained for the process lifetime
+because live SVM buffers, kernels, and transport workloads keep references to
+them. Creating the contexts also freezes the device selection, so
+select_devices() can no longer change it; running on another device selection
+requires a new process.
+
+Calling initialize() again once the backend is initialized keeps the active
+contexts, and the compiled-program cache, unchanged.
+
+Calling initialize() before select_devices() creates no context and leaves the
+backend uninitialized, so a later call can still create the contexts.
+
+Device selection and initialization are not synchronized; the caller
+serializes them.
 
 Note:
     Context-creation failures are treated as fatal backend initialization
-    errors by GGEMS.
+    errors by GGEMS and terminate the process.
 )doc")
 
       .def(
@@ -137,6 +151,16 @@ platforms. Numeric and textual selectors cannot be mixed.
 Special selector:
     "all"     select every discovered device; it must be used alone
 
+The device selection is frozen once the backend is initialized. After that, a
+selection that designates exactly the active devices, in the same order, is
+accepted and changes nothing, whichever selector expression is used. Any
+selection that would really change the active devices raises RuntimeError
+without modifying the current selection; running on another device selection
+requires a new process.
+
+Device selection and initialization are not synchronized; the caller
+serializes them.
+
 Examples:
     opencl.select_devices("gpu")
     opencl.select_devices("gpu;amd")
@@ -157,6 +181,16 @@ cannot be mixed. Duplicate numeric device indices are ignored.
 
 Passing an empty sequence selects the first discovered GPU, or the first
 available OpenCL device if no GPU is present.
+
+The device selection is frozen once the backend is initialized. After that, a
+selection that designates exactly the active devices, in the same order, is
+accepted and changes nothing, whichever selector expression is used. Any
+selection that would really change the active devices raises RuntimeError
+without modifying the current selection; running on another device selection
+requires a new process.
+
+Device selection and initialization are not synchronized; the caller
+serializes them.
 
 Examples:
     opencl.select_devices(["gpu", "nvidia"])

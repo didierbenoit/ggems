@@ -93,15 +93,20 @@ namespace {
  * \brief Maps accepted vendor aliases to normalized OpenCL vendor names.
  */
 constexpr std::array<std::pair<std::string_view, std::string_view>, 3>
-    vendor_aliases{{{"intel", "intel(r) corporation"},
-                    {"nvidia", "nvidia corporation"},
-                    {"amd", "advanced micro devices, inc."}}};
+    vendor_aliases{
+        {
+            {"intel", "intel(r) corporation"},
+            {"nvidia", "nvidia corporation"},
+            {"amd", "advanced micro devices, inc."},
+        },
+};
 
 // =============================================================================
 // =============================================================================
 
 /*!
- * \brief Splits device selector expressions into normalized semicolon-delimited tokens.
+ * \brief Splits device selector expressions into normalized semicolon-delimited
+ * tokens.
  *
  * \param[in] filters Device selector expressions.
  * \return Normalized selector tokens.
@@ -166,14 +171,20 @@ TokenizeDeviceSelection(std::vector<std::string> const &filters)
 // =============================================================================
 
 /*!
- * \brief Stores the normalized criteria produced by OpenCL device-selector parsing.
+ * \brief Stores the normalized criteria produced by OpenCL device-selector
+ * parsing.
  */
 struct DeviceSelectionCriteria {
-  std::vector<std::size_t> numeric_indices; /*!< Explicit device indices in selector order. */
-  cl_device_type requested_type{0};         /*!< Requested CPU/GPU type, or zero. */
-  std::string_view requested_vendor;        /*!< Requested normalized vendor name. */
-  bool has_numeric_selector{false};         /*!< Whether a numeric selector was parsed. */
-  bool has_textual_selector{false};         /*!< Whether a textual selector was parsed. */
+  std::vector<std::size_t>
+      numeric_indices; /*!< Explicit device indices in selector order. */
+  cl_device_type requested_type{0};  /*!< Requested CPU/GPU type, or zero. */
+  std::string_view requested_vendor; /*!< Requested normalized vendor name. */
+  bool has_numeric_selector{
+      false,
+  }; /*!< Whether a numeric selector was parsed. */
+  bool has_textual_selector{
+      false,
+  }; /*!< Whether a textual selector was parsed. */
 };
 
 // =============================================================================
@@ -428,7 +439,7 @@ auto GGEMSOpenCL::InitPlatformsAndDevices() -> void {
 
   std::vector<cl::Platform> platforms;
   {
-    auto const opencl_error_code = (cl::Platform::get(&platforms));
+    auto const opencl_error_code = cl::Platform::get(&platforms);
     ggems::ocl::CheckCLError(opencl_error_code,
                              "No OpenCL platforms detected on this system.");
   }
@@ -442,6 +453,49 @@ auto GGEMSOpenCL::InitPlatformsAndDevices() -> void {
 
   GGEMS_INFOEX("OpenCL", 1, "{} OpenCL platform(s) detected.",
                platforms_.size());
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSOpenCL::ResolveDeviceSelection(
+    std::vector<std::string> const &filters,
+    std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const
+        &all_devices)
+    -> std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> {
+  if (filters.empty()) {
+    auto it_gpu =
+        std::ranges::find_if(all_devices, [](auto const &device) -> bool {
+          return (device.get().GetType() & CL_DEVICE_TYPE_GPU) != 0;
+        });
+
+    return {it_gpu != all_devices.end() ? *it_gpu : all_devices.front()};
+  }
+
+  auto selected_devices = ParseDeviceFilters(filters, all_devices);
+
+  if (selected_devices.empty()) {
+    throw core::GGEMSFatal("No matching devices for given filters.");
+  }
+
+  return selected_devices;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSOpenCL::MatchesActiveContexts(
+    std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const &devices)
+    const noexcept -> bool {
+  if (contexts_.size() != devices.size()) {
+    return false;
+  }
+
+  for (std::size_t index = 0U; index < contexts_.size(); ++index) {
+    if (&contexts_[index].GetDevice() != &devices[index].get()) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 // -----------------------------------------------------------------------------
@@ -461,33 +515,42 @@ auto GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters)
     throw ggems::core::GGEMSFatal("No OpenCL devices found.");
   }
 
-  if (filters.empty()) {
-    auto it_gpu =
-        std::ranges::find_if(all_devices, [](auto const &device) -> bool {
-          return (device.get().GetType() & CL_DEVICE_TYPE_GPU) != 0;
-        });
+  // Resolve the request before touching any member so that a rejected request
+  // cannot leave a selection that no longer describes the active contexts.
+  auto requested_devices = ResolveDeviceSelection(filters, all_devices);
 
-    if (it_gpu != all_devices.end()) {
-      selected_devices_ = {*it_gpu};
-
-      GGEMS_INFO("OpenCL", "No filter specified; using first GPU device: {}",
-                 it_gpu->get().GetName());
-    } else {
-      selected_devices_ = {all_devices.front()};
-
-      GGEMS_INFO("OpenCL", "No GPU found; using first available device: {}",
-                 all_devices.front().get().GetName());
+  if (is_initialized_) {
+    if (!MatchesActiveContexts(requested_devices)) {
+      throw ggems::core::GGEMSFatal(
+          "The OpenCL device selection is frozen once the backend is "
+          "initialized. GGEMS keeps its OpenCL contexts for the process "
+          "lifetime because live SVM buffers, kernels, and transport "
+          "workloads depend on them. Use a new process to run on a different "
+          "device selection.");
     }
+
+    GGEMS_INFO("OpenCL",
+               "Requested OpenCL device selection already designates the {} "
+               "active context(s); the selection is unchanged.",
+               contexts_.size());
     return;
   }
 
-  auto selected_devices = ParseDeviceFilters(filters, all_devices);
+  selected_devices_ = std::move(requested_devices);
 
-  if (selected_devices.empty()) {
-    throw core::GGEMSFatal("No matching devices for given filters.");
+  if (filters.empty()) {
+    auto const &device = selected_devices_.front().get();
+
+    if ((device.GetType() & CL_DEVICE_TYPE_GPU) != 0) {
+      GGEMS_INFO("OpenCL", "No filter specified; using first GPU device: {}",
+                 device.GetName());
+    } else {
+      GGEMS_INFO("OpenCL", "No GPU found; using first available device: {}",
+                 device.GetName());
+    }
+
+    return;
   }
-
-  selected_devices_ = std::move(selected_devices);
 
   GGEMS_INFO("OpenCL", "{} OpenCL device(s) selected.",
              selected_devices_.size());
@@ -503,8 +566,22 @@ auto GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters)
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCL::Initialize() -> void {
+  if (is_initialized_) {
+    GGEMS_INFO("OpenCL",
+               "OpenCL backend is already initialized with {} context(s); the "
+               "active contexts are kept.",
+               contexts_.size());
+    return;
+  }
+
   try {
     CreateContexts();
+
+    // Latching the initialized state keeps the freeze independent of the
+    // contexts exposed by GetContext(), so no caller can reopen device
+    // selection or context creation by emptying that collection.
+    is_initialized_ = !contexts_.empty();
+
     GGEMS_INFOEX("OpenCL", 2, "OpenCL backend ready.");
   } catch (ggems::core::GGEMSExceptionBase &) {
     std::terminate();
@@ -518,12 +595,6 @@ auto GGEMSOpenCL::Initialize() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCL::CreateContexts() -> void {
-  {
-    std::scoped_lock lock{program_cache_mutex_};
-    program_cache_.clear();
-  }
-
-  contexts_.clear();
   contexts_.reserve(selected_devices_.size());
 
   for (auto const &dev : selected_devices_) {
