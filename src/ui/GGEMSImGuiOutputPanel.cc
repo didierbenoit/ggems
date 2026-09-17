@@ -18,6 +18,9 @@
 
 namespace {
 
+// =============================================================================
+// =============================================================================
+
 auto RenderTextLine(std::string_view text, ggems::render::ColorKey const &color)
     -> void {
   ImGui::PushStyleColor(ImGuiCol_Text, ggems::ui::ToImGuiColor(color));

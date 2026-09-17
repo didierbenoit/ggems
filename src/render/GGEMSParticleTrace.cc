@@ -129,9 +129,14 @@ MakeTraceVertex(GGEMSParticleTracePoint const &point,
 
   return GGEMSParticleTraceVertex{
       .position = {point.x_m, point.y_m, point.z_m},
-      .color = {static_cast<float>(rgb.red) * inverse_255,
-                static_cast<float>(rgb.green) * inverse_255,
-                static_cast<float>(rgb.blue) * inverse_255, 1.0F}};
+      .color =
+          {
+              static_cast<float>(rgb.red) * inverse_255,
+              static_cast<float>(rgb.green) * inverse_255,
+              static_cast<float>(rgb.blue) * inverse_255,
+              1.0F,
+          },
+  };
 }
 
 // =============================================================================
@@ -148,9 +153,10 @@ MakeTraceVertex(GGEMSParticleTracePoint const &point,
       continue;
     }
 
-    views.push_back(
-        ObserverRecordView{.original_index = static_cast<std::uint32_t>(index),
-                           .record = &records[index]});
+    views.push_back(ObserverRecordView{
+        .original_index = static_cast<std::uint32_t>(index),
+        .record = &records[index],
+    });
   }
 
   std::ranges::stable_sort(
@@ -200,7 +206,8 @@ auto ToParticleTracePointMeter(
       .y_m = static_cast<float>(*units::ConvertTo(
           units::PositionCoordinate{record.position_y_pm}, "m")),
       .z_m = static_cast<float>(*units::ConvertTo(
-          units::PositionCoordinate{record.position_z_pm}, "m"))};
+          units::PositionCoordinate{record.position_z_pm}, "m")),
+  };
 }
 
 // =============================================================================
@@ -289,7 +296,8 @@ auto BuildParticleTraceSegments(
           .begin_time_ps = previous->time_ps,
           .end_time_ps = current.time_ps,
           .begin = ToParticleTracePointMeter(*previous),
-          .end = ToParticleTracePointMeter(current)});
+          .end = ToParticleTracePointMeter(current),
+      });
     }
 
     previous = &current;
@@ -339,10 +347,11 @@ auto BuildParticleTraceDrawData(
   for (GGEMSParticleTraceSegment const *segment : grouped_segments) {
     if (draw_data.draw_ranges.empty() ||
         draw_data.draw_ranges.back().source_index != segment->source_index) {
-      draw_data.draw_ranges.push_back(
-          GGEMSParticleTraceDrawRange{.source_index = segment->source_index,
-                                      .first_vertex = draw_data.vertices.size(),
-                                      .vertex_count = 0U});
+      draw_data.draw_ranges.push_back(GGEMSParticleTraceDrawRange{
+          .source_index = segment->source_index,
+          .first_vertex = draw_data.vertices.size(),
+          .vertex_count = 0U,
+      });
     }
 
     draw_data.vertices.push_back(

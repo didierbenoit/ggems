@@ -1,14 +1,13 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
 #include <string_view>
 
 namespace ggems::core::particles {
 constexpr std::uint32_t k_invalid_id_u32{0xFFFFFFFFU};
 constexpr std::uint64_t k_invalid_id_u64{0xFFFFFFFFFFFFFFFFULL};
 
-enum class GGEMSParticleType : std::uint32_t {
+enum class GGEMSParticleType : std::uint8_t {
   Unknown = 0U,
   Aionino = 1U,
   Gamma = 2U,
@@ -16,15 +15,15 @@ enum class GGEMSParticleType : std::uint32_t {
   Positron = 4U,
   Proton = 5U,
   Neutron = 6U,
-  Alpha = 7U
+  Alpha = 7U,
 };
 
-enum class GGEMSParticleStatus : std::uint32_t {
+enum class GGEMSParticleStatus : std::uint8_t {
   Inactive = 0U,
   Alive = 1U,
   Killed = 2U,
   EscapedWorld = 3U,
-  Absorbed = 4U
+  Absorbed = 4U,
 };
 
 constexpr auto ToKernelParticleType(GGEMSParticleType particle_type) noexcept
@@ -59,9 +58,9 @@ constexpr auto ToKernelParticleStatus(GGEMSParticleStatus status) noexcept
   return static_cast<std::uint32_t>(status);
 }
 
-auto ToLongName(GGEMSParticleType particle_type) -> std::string;
+auto ToLongName(GGEMSParticleType particle_type) -> std::string_view;
 
-auto ToShortName(GGEMSParticleType particle_type) -> std::string;
+auto ToShortName(GGEMSParticleType particle_type) -> std::string_view;
 
 [[nodiscard]] auto ToAsciiSymbol(GGEMSParticleType particle_type)
     -> std::u32string_view;

@@ -33,7 +33,7 @@ auto NormalizeParticleName(std::string_view particle_name) -> std::string {
 // =============================================================================
 // =============================================================================
 
-auto ToLongName(GGEMSParticleType particle_type) -> std::string {
+auto ToLongName(GGEMSParticleType particle_type) -> std::string_view {
   switch (particle_type) {
   case GGEMSParticleType::Unknown:
     return "Unknown";
@@ -59,7 +59,7 @@ auto ToLongName(GGEMSParticleType particle_type) -> std::string {
 // =============================================================================
 // =============================================================================
 
-auto ToShortName(GGEMSParticleType particle_type) -> std::string {
+auto ToShortName(GGEMSParticleType particle_type) -> std::string_view {
   switch (particle_type) {
   case GGEMSParticleType::Unknown:
     return "?";

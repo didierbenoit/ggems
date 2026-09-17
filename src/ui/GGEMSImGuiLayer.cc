@@ -4,6 +4,7 @@
 #include <utility>
 #include <algorithm>
 #include <cmath>
+#include <string_view>
 
 #include <vulkan/vulkan.hpp>
 
@@ -543,23 +544,31 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
     auto const &range = ranges[source_index];
     auto const &energy_record = energy_records[source_index];
 
-    std::string const source_type{core::sources::ToLongName(
-        core::sources::FromKernelSourceType(record.source_type))};
+    std::string_view const source_type{
+        core::sources::ToLongName(
+            core::sources::FromKernelSourceType(record.source_type)),
+    };
 
-    std::string const particle_type = core::particles::ToLongName(
-        core::particles::FromKernelParticleType(record.emitted_particle_type));
+    std::string_view const particle_type{
+        core::particles::ToLongName(core::particles::FromKernelParticleType(
+            record.emitted_particle_type)),
+    };
 
-    auto const emission_geometry_type =
+    auto const emission_geometry_type{
         core::sources::FromKernelEmissionGeometryType(
-            record.emission_geometry_type);
+            record.emission_geometry_type),
+    };
 
-    auto const angular_distribution_type =
+    auto const angular_distribution_type{
         core::sources::FromKernelAngularDistributionType(
-            record.angular_distribution_type);
+            record.angular_distribution_type),
+    };
 
-    auto const energy_distribution_type =
+    auto const energy_distribution_type{
         core::sources::FromKernelEnergyDistributionType(
-            energy_record.distribution_type);
+            energy_record.distribution_type),
+    };
+
     std::string const energy_distribution{
         core::sources::ToLongName(energy_distribution_type)};
 
@@ -594,13 +603,16 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
         ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 
     bool const opened = ImGui::TreeNodeEx(
-        "##source_details", flags, "Source %zu - %s - %s", source_index,
-        source_type.c_str(), particle_type.c_str());
+        "##source_details", flags, "Source %zu - %.*s - %.*s", source_index,
+        static_cast<int>(source_type.size()), source_type.data(),
+        static_cast<int>(particle_type.size()), particle_type.data());
 
     if (opened) {
       ImGui::Text("Source index: %zu", source_index);
-      ImGui::Text("Type: %s", source_type.c_str());
-      ImGui::Text("Particle: %s", particle_type.c_str());
+      ImGui::Text("Type: %.*s", static_cast<int>(source_type.size()),
+                  source_type.data());
+      ImGui::Text("Particle: %.*s", static_cast<int>(particle_type.size()),
+                  particle_type.data());
       ImGui::Text("Primary count: %llu",
                   static_cast<unsigned long long>(range.primary_count));
       ImGui::Text(

@@ -17,7 +17,7 @@ Diagnostics:
       - modernize-*
       - readability-*
 
-    FastCheckFilter: Strict
+    FastCheckFilter: Loose
 
 ---
 If:

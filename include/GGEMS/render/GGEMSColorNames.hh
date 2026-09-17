@@ -54,7 +54,7 @@ enum class GreenShade : std::uint8_t {
   Olive = 3,   /*!< Olive green. */
   Pale = 1,    /*!< Pale green. */
   Dark = 6,    /*!< Dark green. */
-  Deep = 0     /*!< Deep green. */
+  Deep = 0,    /*!< Deep green. */
 };
 
 /*!
@@ -74,7 +74,7 @@ enum class BlueShade : std::uint8_t {
   Soft = 2,     /*!< Soft blue. */
   Dark = 6,     /*!< Dark blue. */
   Royal = 1,    /*!< Royal blue. */
-  Vibrant = 0   /*!< Vibrant blue. */
+  Vibrant = 0,  /*!< Vibrant blue. */
 };
 
 /*!
@@ -94,7 +94,7 @@ enum class RedShade : std::uint8_t {
   Dark = 6,       /*!< Dark red. */
   Deep = 7,       /*!< Deep red. */
   Neon = 1,       /*!< Neon red. */
-  Vibrant = 0     /*!< Vibrant red. */
+  Vibrant = 0,    /*!< Vibrant red. */
 };
 
 /*!
@@ -114,7 +114,7 @@ enum class CyanShade : std::uint8_t {
   Dark = 6,    /*!< Dark cyan. */
   Marine = 7,  /*!< Marine cyan. */
   Radiant = 1, /*!< Radiant cyan. */
-  Pure = 0     /*!< Pure cyan. */
+  Pure = 0,    /*!< Pure cyan. */
 };
 
 /*!
@@ -134,7 +134,7 @@ enum class MagentaShade : std::uint8_t {
   Electric = 7,     /*!< Electric magenta. */
   Rose = 2,         /*!< Rose magenta. */
   Sharp = 1,        /*!< Sharp magenta. */
-  Pure = 0          /*!< Pure magenta. */
+  Pure = 0,         /*!< Pure magenta. */
 };
 
 /*!
@@ -154,7 +154,7 @@ enum class YellowShade : std::uint8_t {
   Neon = 7,         /*!< Neon yellow. */
   Solar = 3,        /*!< Solar yellow. */
   Bright = 1,       /*!< Bright yellow. */
-  Pure = 0          /*!< Pure yellow. */
+  Pure = 0,         /*!< Pure yellow. */
 };
 
 /*!
@@ -174,7 +174,7 @@ enum class GrayShade : std::uint8_t {
   Pale = 1,     /*!< Pale gray. */
   Deep = 0,     /*!< Deep gray. */
   Fog = 10,     /*!< Fog gray. */
-  Smoke = 11    /*!< Smoke gray. */
+  Smoke = 11,   /*!< Smoke gray. */
 };
 
 /*!
@@ -194,7 +194,7 @@ enum class WhiteShade : std::uint8_t {
   Pale = 8,    /*!< Pale white. */
   Cold = 9,    /*!< Cold white. */
   Bright = 10, /*!< Bright white. */
-  Glare = 11   /*!< Glare white. */
+  Glare = 11,  /*!< Glare white. */
 };
 
 /*!
@@ -202,19 +202,19 @@ enum class WhiteShade : std::uint8_t {
  * \brief Named shades in the orange family.
  */
 enum class OrangeShade : std::uint8_t {
-  Deep = 0,         /*!< Deep orange. */
-  Dark = 1,         /*!< Dark orange. */
-  Burnt = 2,        /*!< Burnt orange. */
-  Copper = 3,       /*!< Copper orange. */
-  Rust = 4,         /*!< Rust orange. */
-  Chocolate = 5,    /*!< Chocolate orange. */
-  Coral = 6,        /*!< Coral orange. */
-  Flame = 7,        /*!< Flame orange. */
-  Pure = 8,         /*!< Pure orange. */
-  Tangerine = 9,    /*!< Tangerine orange. */
-  Soft = 10,        /*!< Soft orange. */
-  Pale = 11,        /*!< Pale orange. */
-  CopperSignal = 12 /*!< Signature copper-signal orange. */
+  Deep = 0,          /*!< Deep orange. */
+  Dark = 1,          /*!< Dark orange. */
+  Burnt = 2,         /*!< Burnt orange. */
+  Copper = 3,        /*!< Copper orange. */
+  Rust = 4,          /*!< Rust orange. */
+  Chocolate = 5,     /*!< Chocolate orange. */
+  Coral = 6,         /*!< Coral orange. */
+  Flame = 7,         /*!< Flame orange. */
+  Pure = 8,          /*!< Pure orange. */
+  Tangerine = 9,     /*!< Tangerine orange. */
+  Soft = 10,         /*!< Soft orange. */
+  Pale = 11,         /*!< Pale orange. */
+  CopperSignal = 12, /*!< Signature copper-signal orange. */
 };
 
 /// \cond

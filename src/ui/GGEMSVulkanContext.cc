@@ -18,6 +18,9 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_raii.hpp>
+
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
@@ -50,14 +53,18 @@ constexpr bool k_enable_validation_layers{false};
 #endif
 
 constexpr std::array<char const *, 1> k_validation_layers{
-    "VK_LAYER_KHRONOS_validation"};
+    "VK_LAYER_KHRONOS_validation",
+};
 
-#if defined(__APPLE__)
+#ifdef __APPLE__
 constexpr std::array<char const *, 2> k_required_device_extensions{
-    vk::KHRSwapchainExtensionName, "VK_KHR_portability_subset"};
+    vk::KHRSwapchainExtensionName,
+    "VK_KHR_portability_subset",
+};
 #else
 constexpr std::array<char const *, 1> k_required_device_extensions{
-    vk::KHRSwapchainExtensionName};
+    vk::KHRSwapchainExtensionName,
+};
 #endif
 
 constexpr float k_imgui_min_ui_scale{1.0F};
@@ -146,7 +153,7 @@ auto AppendRejectionReason(std::string &diagnostic, std::string_view reason)
   candidates.emplace_back("C:/Windows/Fonts/CascadiaCode.ttf");
   candidates.emplace_back("C:/Windows/Fonts/consola.ttf");
 
-#if defined(__APPLE__)
+#ifdef __APPLE__
   if (char const *home = std::getenv("HOME"); home != nullptr) {
     std::filesystem::path const user_fonts =
         std::filesystem::path{home} / "Library/Fonts";
@@ -235,7 +242,7 @@ void GGEMSVulkanContext::Initialize(
     SetupDebugMessenger();
     CreateSurface(window);
 
-#if defined(_WIN32)
+#ifdef _WIN32
     auto display_resolution = detail::ResolveWin32DisplayAdapter(window);
 
     if (display_resolution.has_value()) {
@@ -324,10 +331,11 @@ auto GGEMSVulkanContext::ClearParticleTraces() -> void {
 auto GGEMSVulkanContext::CreateInstance() -> void {
   constexpr vk::ApplicationInfo application_info{
       .pApplicationName = "GGEMS GuiMode",
-      .applicationVersion = VK_MAKE_API_VERSION(0, 2, 0, 0),
+      .applicationVersion = vk::makeApiVersion(0, 2, 0, 0),
       .pEngineName = "GGEMS",
-      .engineVersion = VK_MAKE_API_VERSION(0, 2, 0, 0),
-      .apiVersion = k_vulkan_api_version_};
+      .engineVersion = vk::makeApiVersion(0, 2, 0, 0),
+      .apiVersion = k_vulkan_api_version_,
+  };
 
   std::vector<char const *> required_layers{};
 
@@ -346,7 +354,7 @@ auto GGEMSVulkanContext::CreateInstance() -> void {
           return std::strcmp(layer.layerName, required_layer) == 0;
         });
 
-    if (!(is_available)) {
+    if (!is_available) {
       throw ggems::core::GGEMSRecoverable(
           std::format("Required Vulkan validation layer '{}' is unavailable.",
                       required_layer));
@@ -366,7 +374,7 @@ auto GGEMSVulkanContext::CreateInstance() -> void {
           return std::strcmp(extension.extensionName, required_extension) == 0;
         });
 
-    if (!(is_available)) {
+    if (!is_available) {
       throw ggems::core::GGEMSRecoverable(
           std::format("Required Vulkan instance extension '{}' is unavailable.",
                       required_extension));
@@ -375,7 +383,7 @@ auto GGEMSVulkanContext::CreateInstance() -> void {
 
   vk::InstanceCreateFlags instance_flags{};
 
-#if defined(__APPLE__)
+#ifdef __APPLE__
   instance_flags |= vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;
 #endif
 
@@ -386,7 +394,8 @@ auto GGEMSVulkanContext::CreateInstance() -> void {
       .ppEnabledLayerNames = required_layers.data(),
       .enabledExtensionCount =
           static_cast<std::uint32_t>(required_extensions.size()),
-      .ppEnabledExtensionNames = required_extensions.data()};
+      .ppEnabledExtensionNames = required_extensions.data(),
+  };
 
   instance_ = vk::raii::Instance{context_, create_info};
 }
@@ -409,7 +418,7 @@ auto GGEMSVulkanContext::GetRequiredInstanceExtensions()
   std::vector<char const *> extensions{glfw_extensions,
                                        glfw_extensions + extension_count};
 
-#if defined(__APPLE__)
+#ifdef __APPLE__
   extensions.push_back(vk::KHRPortabilityEnumerationExtensionName);
 #endif
 

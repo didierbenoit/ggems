@@ -23,12 +23,12 @@ struct GGEMSParticleState {
   std::uint32_t current_volume_id{k_invalid_id_u32};
   std::uint32_t material_id{k_invalid_id_u32};
   std::uint32_t region_id{k_invalid_id_u32};
-  float direction_x{0.0f};
-  float direction_y{0.0f};
-  float direction_z{1.0f};
-  float direction_w{0.0f};
+  float direction_x{0.0F};
+  float direction_y{0.0F};
+  float direction_z{1.0F};
+  float direction_w{0.0F};
   std::uint64_t energy_micro_eV{0ULL};
-  float weight{1.0f};
+  float weight{1.0F};
 };
 
 static_assert(std::is_standard_layout_v<GGEMSParticleState>);
