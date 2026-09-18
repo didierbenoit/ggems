@@ -59,11 +59,6 @@ namespace {
 }
 
 // -----------------------------------------------------------------------------
-//
-// Built-in Materials are created lazily. Repeated requests return the same
-// process-wide material index.
-//
-// -----------------------------------------------------------------------------
 
 [[nodiscard]] auto
 GGEMSMaterialManager::GetOrAddBuiltIn(std::string_view canonical_name)

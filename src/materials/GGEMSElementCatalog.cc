@@ -143,7 +143,8 @@ constexpr auto k_elements = std::array{
     MakeElementRow(89U, "Ac", "Actinium", 227.027750594L),
     MakeElementRow(90U, "Th", "Thorium", 232.0377L),
     MakeElementRow(91U, "Pa", "Protactinium", 231.03588L),
-    MakeElementRow(92U, "U", "Uranium", 238.02891L)};
+    MakeElementRow(92U, "U", "Uranium", 238.02891L),
+};
 
 // =============================================================================
 // =============================================================================

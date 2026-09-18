@@ -7,6 +7,7 @@
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSElementCatalog.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
+#include "GGEMS/materials/detail/GGEMSAvogadroConstant.hh"
 #include "GGEMS/units/GGEMSDensityUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
 
@@ -15,7 +16,7 @@ namespace ggems::core::materials {
 namespace {
 
 constexpr long double k_mass_fraction_sum_tolerance{1.0e-5L};
-constexpr long double k_avogadro_constant_per_mole{6.02214076e23L};
+using detail::k_avogadro_constant_per_mole;
 
 } // namespace
 
@@ -112,10 +113,13 @@ GGEMSMaterial::GGEMSMaterial(std::string name, units::Density density,
           "Material number-density calculation is out of range."};
     }
 
-    constituents_.push_back({.atomic_number = component.atomic_number,
-                             .mass_fraction = normalized_mass_fraction,
-                             .number_density_per_cubic_centimeter =
-                                 number_density_per_cubic_centimeter});
+    constituents_.push_back({
+        .atomic_number = component.atomic_number,
+        .mass_fraction = normalized_mass_fraction,
+        .number_density_per_cubic_centimeter =
+            number_density_per_cubic_centimeter,
+    });
+
     total_atom_density_per_cubic_centimeter_ = next_total_atom_density;
     electron_density_per_cubic_centimeter_ = next_electron_density;
   }
