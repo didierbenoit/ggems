@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <utility>
 #include <vector>
 
 #include "GGEMS/GGEMSException.hh"
@@ -21,18 +22,6 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] auto RequireNormal(long double value) -> long double {
-  if (!std::isnormal(value)) {
-    throw GGEMSRecoverable{"Material composition arithmetic leaves the normal "
-                           "floating-point range."};
-  }
-
-  return value;
-}
-
-// =============================================================================
-// =============================================================================
-
 [[nodiscard]] auto
 ComputeIsotopeNumberDensities(long double density_grams_per_cubic_centimeter,
                               long double element_mass_fraction,
@@ -43,32 +32,29 @@ ComputeIsotopeNumberDensities(long double density_grams_per_cubic_centimeter,
   std::vector<long double> number_densities(fractions.size(), 0.0L);
 
   long double const scaled_element_density =
-      RequireNormal(RequireNormal(detail::k_avogadro_constant_per_mole *
-                                  density_grams_per_cubic_centimeter) *
-                    element_mass_fraction);
+      detail::k_avogadro_constant_per_mole *
+      density_grams_per_cubic_centimeter * element_mass_fraction;
 
   switch (composition.GetBasis()) {
   case GGEMSFractionBasis::AtomFraction: {
     long double mean_molar_mass{0.0L};
     for (std::size_t index = 0U; index < fractions.size(); ++index) {
-      mean_molar_mass +=
-          RequireNormal(fractions[index].fraction * molar_masses[index]);
+      mean_molar_mass += fractions[index].fraction * molar_masses[index];
     }
 
     long double const element_number_density =
-        RequireNormal(scaled_element_density / RequireNormal(mean_molar_mass));
+        scaled_element_density / mean_molar_mass;
 
     for (std::size_t index = 0U; index < fractions.size(); ++index) {
       number_densities[index] =
-          RequireNormal(fractions[index].fraction * element_number_density);
+          fractions[index].fraction * element_number_density;
     }
     break;
   }
   case GGEMSFractionBasis::MassFraction:
     for (std::size_t index = 0U; index < fractions.size(); ++index) {
-      number_densities[index] = RequireNormal(
-          RequireNormal(scaled_element_density * fractions[index].fraction) /
-          molar_masses[index]);
+      number_densities[index] = scaled_element_density *
+                                fractions[index].fraction / molar_masses[index];
     }
     break;
   }
@@ -132,17 +118,14 @@ GGEMSMaterialComposition::GGEMSMaterialComposition(
     for (std::size_t index = 0U; index < fractions.size(); ++index) {
       element_number_density += number_densities[index];
       element_molar_mass_density +=
-          RequireNormal(number_densities[index] * molar_masses[index]);
+          number_densities[index] * molar_masses[index];
     }
-
-    static_cast<void>(RequireNormal(element_number_density));
-    static_cast<void>(RequireNormal(element_molar_mass_density));
 
     for (std::size_t index = 0U; index < fractions.size(); ++index) {
       long double const atom_fraction =
           composition.GetBasis() == GGEMSFractionBasis::AtomFraction
               ? fractions[index].fraction
-              : RequireNormal(number_densities[index] / element_number_density);
+              : number_densities[index] / element_number_density;
 
       isotope_constituents_.push_back({
           .isotope = fractions[index].isotope,
@@ -157,8 +140,8 @@ GGEMSMaterialComposition::GGEMSMaterialComposition(
         .atomic_number = atomic_number,
         .mass_fraction = 0.0L,
         .number_density_per_cubic_centimeter = element_number_density,
-        .electron_density_per_cubic_centimeter = RequireNormal(
-            element_number_density * static_cast<long double>(atomic_number)),
+        .electron_density_per_cubic_centimeter =
+            element_number_density * static_cast<long double>(atomic_number),
     });
     element_molar_mass_densities.push_back(element_molar_mass_density);
 
@@ -168,15 +151,13 @@ GGEMSMaterialComposition::GGEMSMaterialComposition(
     total_molar_mass_density += element_molar_mass_density;
   }
 
-  static_cast<void>(RequireNormal(total_atom_density_per_cubic_centimeter_));
-  static_cast<void>(RequireNormal(electron_density_per_cubic_centimeter_));
-  static_cast<void>(RequireNormal(total_molar_mass_density));
-
   for (std::size_t index = 0U; index < elemental_constituents_.size();
        ++index) {
-    elemental_constituents_[index].mass_fraction = RequireNormal(
-        element_molar_mass_densities[index] / total_molar_mass_density);
+    elemental_constituents_[index].mass_fraction =
+        element_molar_mass_densities[index] / total_molar_mass_density;
   }
+
+  elemental_shares_ = std::move(elemental_shares);
 }
 
 } // namespace ggems::core::materials

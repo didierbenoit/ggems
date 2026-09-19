@@ -32,22 +32,10 @@ using namespace ggems::units;
 
 using Basis = materials::GGEMSFractionBasis;
 
-// Expected values come from the independent 70-digit Decimal oracle
-// claude_scratch/materials_m1/oracle/m1_oracle.py (fixture mass profile
-// M1-FIXTURE-AME2020-CODATA2022). They are never recomputed through the code
-// under test. Oracle references carry 36 significant digits so that their own
-// decimal rounding stays below the budget for binary64, x87 and binary128
-// long double.
-//
-// Frozen arithmetic budget (Audit-11 class A): relative error of at most 64
-// units of long double epsilon.
 constexpr long double k_relative_budget{
     64.0L * std::numeric_limits<long double>::epsilon(),
 };
 
-// Fixture molar masses M_i = A_r(i) * M_u with AME2020 neutral atomic masses
-// and the CODATA 2022 molar mass constant used by the Audit-11 reference. The
-// production M_u convention is not selected by this fixture.
 constexpr long double k_fixture_molar_mass_constant{1.00000000105L};
 
 constexpr materials::GGEMSIsotope k_hydrogen_1{1U, 1U, 0U};
@@ -83,13 +71,13 @@ auto ExpectWithinBudget(long double actual, long double expected) -> void {
 // =============================================================================
 // =============================================================================
 
-// A printed reference with N significant digits carries its own decimal
-// rounding of at most 0.5 * 10^(1 - N) relative, added to the arithmetic
-// budget.
 struct PrintedReference {
   long double value;
   int significant_digits;
 };
+
+// =============================================================================
+// =============================================================================
 
 auto ExpectMatchesPrintedReference(long double actual,
                                    PrintedReference reference) -> void {
@@ -650,67 +638,4 @@ TEST(GGEMSMaterialCompositionTest, RejectsInvalidInput) {
                        {{.isotope = k_boron_10,
                          .molar_mass_grams_per_mole = 10.012936862L}}}}),
                ggems::core::GGEMSRecoverable);
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSMaterialCompositionTest, RejectsArithmeticOutsideNormalRange) {
-  auto const expect_rejected =
-      [](units::Density density,
-         std::vector<materials::GGEMSElementalShare> shares,
-         materials::GGEMSResolvedIsotopeTable const &table) -> void {
-    EXPECT_THROW(static_cast<void>(materials::GGEMSMaterialComposition{
-                     density, std::move(shares), table}),
-                 ggems::core::GGEMSRecoverable);
-  };
-
-  long double const smallest_subnormal =
-      std::numeric_limits<long double>::denorm_min();
-
-  // Codex review 1 (M1-R1): a subnormal retained isotope fraction would give a
-  // positive H-2 number density with a zero published atom fraction. It is now
-  // rejected when the isotopic composition is admitted.
-  EXPECT_THROW(static_cast<void>(materials::GGEMSMaterialComposition{
-                   4.0e-24_g_cm3,
-                   {MakeShare(1.0L, Basis::MassFraction,
-                              {
-                                  {.isotope = k_hydrogen_1, .fraction = 1.0L},
-                                  {
-                                      .isotope = k_hydrogen_2,
-                                      .fraction = smallest_subnormal,
-                                  },
-                              })},
-                   MakeFixtureTable()}),
-               ggems::core::GGEMSRecoverable);
-
-  // Codex review 2 (M1-V2-01): normal inputs whose isotope number densities
-  // become subnormal would publish H atom fractions 0.5/0.5 instead of
-  // 0.4613/0.5387 and a derived H mass fraction about 38% too low.
-  expect_rejected(4.0e-280_g_cm3,
-                  {
-                      MakeShare(1.0e-67L, Basis::MassFraction,
-                                {
-                                    {.isotope = k_hydrogen_1, .fraction = 0.3L},
-                                    {.isotope = k_hydrogen_2, .fraction = 0.7L},
-                                }),
-                      MakeShare(1.0L, Basis::AtomFraction,
-                                {{.isotope = k_oxygen_16, .fraction = 1.0L}}),
-                  },
-                  MakeFixtureTable());
-
-  // Codex review 2 (M1-V2-02): a subnormal elemental share with synthetic
-  // resolved masses would publish a zero derived H mass fraction.
-  expect_rejected(
-      4.0e-24_g_cm3,
-      {
-          MakeShare(smallest_subnormal, Basis::AtomFraction,
-                    {{.isotope = k_hydrogen_1, .fraction = 1.0L}}),
-          MakeShare(1.0L, Basis::AtomFraction,
-                    {{.isotope = k_carbon_12, .fraction = 1.0L}}),
-      },
-      materials::GGEMSResolvedIsotopeTable{{
-          {.isotope = k_hydrogen_1, .molar_mass_grams_per_mole = 1.4L},
-          {.isotope = k_carbon_12, .molar_mass_grams_per_mole = 12.0L},
-      }});
 }

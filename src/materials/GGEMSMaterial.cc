@@ -1,30 +1,26 @@
-#include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSElementCatalog.hh"
+#include "GGEMS/materials/GGEMSIsotopeMassAuthority.hh"
+#include "GGEMS/materials/GGEMSIsotopeProfile.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
-#include "GGEMS/materials/detail/GGEMSAvogadroConstant.hh"
+#include "GGEMS/materials/GGEMSMaterialComposition.hh"
 #include "GGEMS/units/GGEMSDensityUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
 
 namespace ggems::core::materials {
 
-namespace {
-
-constexpr long double k_mass_fraction_sum_tolerance{1.0e-5L};
-using detail::k_avogadro_constant_per_mole;
-
-} // namespace
-
 // =============================================================================
 // =============================================================================
 
-GGEMSMaterial::GGEMSMaterial(std::string name, units::Density density,
-                             std::vector<GGEMSMaterialComponent> composition)
+GGEMSMaterial::GGEMSMaterial(std::string name, units::Density density)
     : name_{std::move(name)}, density_{density} {
   if (name_.empty()) {
     throw GGEMSRecoverable{"Material name must not be empty."};
@@ -38,8 +34,16 @@ GGEMSMaterial::GGEMSMaterial(std::string name, units::Density density,
       *density_grams_per_cubic_centimeter < 0.0L) {
     throw GGEMSRecoverable{"Material density must be finite and non-negative."};
   }
+}
 
-  if (*density_grams_per_cubic_centimeter == 0.0L) {
+// =============================================================================
+// =============================================================================
+
+GGEMSMaterial::GGEMSMaterial(
+    std::string name, units::Density density,
+    std::vector<GGEMSMaterialComponent> const &composition)
+    : GGEMSMaterial{std::move(name), density} {
+  if (density_.value == 0.0L) {
     if (!composition.empty()) {
       throw GGEMSRecoverable{
           "Zero-density Material must have an empty composition."};
@@ -52,17 +56,9 @@ GGEMSMaterial::GGEMSMaterial(std::string name, units::Density density,
         "Positive-density Material must have a composition."};
   }
 
-  std::ranges::sort(composition, {}, &GGEMSMaterialComponent::atomic_number);
+  std::vector<GGEMSElementalShare> elemental_shares;
+  elemental_shares.reserve(composition.size());
 
-  auto const duplicate = std::ranges::adjacent_find(
-      composition, {}, &GGEMSMaterialComponent::atomic_number);
-
-  if (duplicate != composition.end()) {
-    throw GGEMSRecoverable{
-        "Material composition contains duplicate atomic numbers."};
-  }
-
-  long double mass_fraction_sum{0.0L};
   for (auto const &component : composition) {
     static_cast<void>(RequireElementByAtomicNumber(component.atomic_number));
 
@@ -72,57 +68,104 @@ GGEMSMaterial::GGEMSMaterial(std::string name, units::Density density,
           "Material mass fractions must be finite and strictly positive."};
     }
 
-    mass_fraction_sum += component.mass_fraction;
+    elemental_shares.push_back({
+        .mass_fraction = component.mass_fraction,
+        .isotopic_composition = ResolveIsotopeProfile(
+            SelectLegacyElementalIsotopeProfile(component.atomic_number),
+            component.atomic_number),
+    });
   }
 
-  if (!std::isfinite(mass_fraction_sum) ||
-      std::abs(mass_fraction_sum - 1.0L) > k_mass_fraction_sum_tolerance) {
-    throw GGEMSRecoverable{
-        "Material mass fractions must sum to one within 1.0e-5."};
-  }
+  Compile(std::move(elemental_shares), true);
+}
 
-  constituents_.reserve(composition.size());
+// =============================================================================
+// =============================================================================
 
-  for (auto const &component : composition) {
-    auto const &element = RequireElementByAtomicNumber(component.atomic_number);
+[[nodiscard]] auto GGEMSMaterial::FromIsotopicComposition(
+    std::string name, units::Density density,
+    std::vector<GGEMSElementalShare> elemental_shares) -> GGEMSMaterial {
+  GGEMSMaterial material{std::move(name), density};
 
-    long double const normalized_mass_fraction =
-        component.mass_fraction / mass_fraction_sum;
-
-    long double const number_density_per_cubic_centimeter =
-        k_avogadro_constant_per_mole * *density_grams_per_cubic_centimeter *
-        normalized_mass_fraction / element.GetMolarMass();
-
-    long double const electron_density_per_cubic_centimeter =
-        number_density_per_cubic_centimeter *
-        static_cast<long double>(component.atomic_number);
-
-    long double const next_total_atom_density =
-        total_atom_density_per_cubic_centimeter_ +
-        number_density_per_cubic_centimeter;
-
-    long double const next_electron_density =
-        electron_density_per_cubic_centimeter_ +
-        electron_density_per_cubic_centimeter;
-
-    if (!std::isfinite(number_density_per_cubic_centimeter) ||
-        !(number_density_per_cubic_centimeter > 0.0L) ||
-        !std::isfinite(next_total_atom_density) ||
-        !std::isfinite(next_electron_density)) {
+  if (material.density_.value == 0.0L) {
+    if (!elemental_shares.empty()) {
       throw GGEMSRecoverable{
-          "Material number-density calculation is out of range."};
+          "Zero-density Material must have an empty composition."};
+    }
+    return material;
+  }
+
+  material.Compile(std::move(elemental_shares), false);
+  return material;
+}
+
+// =============================================================================
+// =============================================================================
+
+auto GGEMSMaterial::Compile(std::vector<GGEMSElementalShare> elemental_shares,
+                            bool resolved_from_profiles) -> void {
+  auto const &composition = composition_.emplace(
+      density_, std::move(elemental_shares), GetIsotopeMassAuthority());
+
+  auto const shares = composition.GetElementalShares();
+  auto const elements = composition.GetElementalConstituents();
+
+  constituents_.reserve(elements.size());
+
+  for (std::size_t index = 0U; index < elements.size(); ++index) {
+    auto const atomic_number = elements[index].atomic_number;
+
+    std::optional<GGEMSIsotopeProfile> isotope_profile;
+    if (resolved_from_profiles) {
+      isotope_profile = SelectLegacyElementalIsotopeProfile(atomic_number);
     }
 
     constituents_.push_back({
-        .atomic_number = component.atomic_number,
-        .mass_fraction = normalized_mass_fraction,
+        .atomic_number = atomic_number,
+        .mass_fraction = shares[index].mass_fraction,
         .number_density_per_cubic_centimeter =
-            number_density_per_cubic_centimeter,
+            elements[index].number_density_per_cubic_centimeter,
+        .isotope_profile = isotope_profile,
     });
-
-    total_atom_density_per_cubic_centimeter_ = next_total_atom_density;
-    electron_density_per_cubic_centimeter_ = next_electron_density;
   }
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto GGEMSMaterial::GetIsotopeConstituents() const noexcept
+    -> std::span<GGEMSIsotopeConstituent const> {
+  if (!composition_.has_value()) {
+    return {};
+  }
+
+  return composition_->GetIsotopeConstituents();
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto
+GGEMSMaterial::GetTotalAtomDensityPerCubicCentimeter() const noexcept
+    -> long double {
+  if (!composition_.has_value()) {
+    return 0.0L;
+  }
+
+  return composition_->GetTotalAtomDensityPerCubicCentimeter();
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto
+GGEMSMaterial::GetElectronDensityPerCubicCentimeter() const noexcept
+    -> long double {
+  if (!composition_.has_value()) {
+    return 0.0L;
+  }
+
+  return composition_->GetElectronDensityPerCubicCentimeter();
 }
 
 } // namespace ggems::core::materials

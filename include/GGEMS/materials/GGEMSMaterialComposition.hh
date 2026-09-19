@@ -35,6 +35,11 @@ public:
                            std::vector<GGEMSElementalShare> elemental_shares,
                            GGEMSResolvedIsotopeTable const &resolved_isotopes);
 
+  [[nodiscard]] auto GetElementalShares() const noexcept
+      -> std::span<GGEMSElementalShare const> {
+    return elemental_shares_;
+  }
+
   [[nodiscard]] auto GetIsotopeConstituents() const noexcept
       -> std::span<GGEMSIsotopeConstituent const> {
     return isotope_constituents_;
@@ -56,6 +61,7 @@ public:
   }
 
 private:
+  std::vector<GGEMSElementalShare> elemental_shares_;
   std::vector<GGEMSIsotopeConstituent> isotope_constituents_;
   std::vector<GGEMSDerivedElementalConstituent> elemental_constituents_;
   long double total_atom_density_per_cubic_centimeter_{0.0L};
