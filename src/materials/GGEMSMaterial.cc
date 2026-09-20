@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <optional>
@@ -145,6 +146,18 @@ auto GGEMSMaterial::Compile(std::vector<GGEMSElementalShare> elemental_shares,
 // =============================================================================
 // =============================================================================
 
+[[nodiscard]] auto GGEMSMaterial::GetElementalConstituents() const noexcept
+    -> std::span<GGEMSDerivedElementalConstituent const> {
+  if (!composition_.has_value()) {
+    return {};
+  }
+
+  return composition_->GetElementalConstituents();
+}
+
+// =============================================================================
+// =============================================================================
+
 [[nodiscard]] auto
 GGEMSMaterial::GetTotalAtomDensityPerCubicCentimeter() const noexcept
     -> long double {
@@ -166,6 +179,17 @@ GGEMSMaterial::GetElectronDensityPerCubicCentimeter() const noexcept
   }
 
   return composition_->GetElectronDensityPerCubicCentimeter();
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto
+HasSameScientificIdentity(GGEMSMaterial const &first,
+                          GGEMSMaterial const &second) noexcept -> bool {
+  return first.GetDensity().value == second.GetDensity().value &&
+         std::ranges::equal(first.GetIsotopeConstituents(),
+                            second.GetIsotopeConstituents());
 }
 
 } // namespace ggems::core::materials

@@ -51,6 +51,9 @@ public:
   [[nodiscard]] auto GetIsotopeConstituents() const noexcept
       -> std::span<GGEMSIsotopeConstituent const>;
 
+  [[nodiscard]] auto GetElementalConstituents() const noexcept
+      -> std::span<GGEMSDerivedElementalConstituent const>;
+
   [[nodiscard]] auto GetTotalAtomDensityPerCubicCentimeter() const noexcept
       -> long double;
 
@@ -68,5 +71,9 @@ private:
   std::optional<GGEMSMaterialComposition> composition_;
   std::vector<GGEMSMaterialConstituent> constituents_;
 };
+
+[[nodiscard]] auto
+HasSameScientificIdentity(GGEMSMaterial const &first,
+                          GGEMSMaterial const &second) noexcept -> bool;
 
 } // namespace ggems::core::materials

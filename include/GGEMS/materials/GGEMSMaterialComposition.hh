@@ -20,6 +20,9 @@ struct GGEMSIsotopeConstituent {
   GGEMSIsotope isotope;
   long double atom_fraction_in_element;
   long double number_density_per_cubic_centimeter;
+
+  [[nodiscard]] auto operator==(GGEMSIsotopeConstituent const &) const
+      -> bool = default;
 };
 
 struct GGEMSDerivedElementalConstituent {
