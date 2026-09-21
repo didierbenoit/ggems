@@ -99,8 +99,6 @@ GGEMSSource::GGEMSSource() {
 
   StoreSourceFrame(record_, GGEMSSourceFrame{});
 
-  record_.weight = 1.0F;
-
   record_.emission_geometry_type =
       ToKernelEmissionGeometryType(GGEMSEmissionGeometryType::Point);
   record_.angular_distribution_type =
@@ -660,22 +658,6 @@ auto GGEMSSource::SetOrientation(std::array<double, 3U> const &direction,
   GGEMSSourceRecord candidate = record_;
   StoreSourceFrame(candidate, frame);
   CommitValidatedRecord(record_, candidate);
-  return *this;
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSSource::SetWeight(float weight) -> GGEMSSource & {
-  if (!(std::isfinite(weight))) {
-    throw ggems::core::GGEMSRecoverable("Source weight must be finite.");
-  }
-
-  if (!(weight >= 0.0F)) {
-    throw ggems::core::GGEMSRecoverable("Source weight must be positive or zero.");
-  }
-
-  record_.weight = weight;
-
   return *this;
 }
 

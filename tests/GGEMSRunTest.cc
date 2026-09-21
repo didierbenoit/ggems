@@ -132,7 +132,6 @@ auto ExpectObserverSourceMatches(
 
   EXPECT_EQ(observed.energy_micro_eV, expected.energy_micro_eV);
   EXPECT_EQ(observed.deposited_energy_micro_eV, 0ULL);
-  EXPECT_FLOAT_EQ(observed.weight, expected.weight);
 }
 
 // =============================================================================
@@ -552,8 +551,7 @@ TEST_F(GGEMSRunTest, UsesIndependentSourceSnapshotsAcrossSequentialRuns) {
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMicroElectronVolt(1'000'000'000ULL)
       .SetPositionPicoMeter(10LL, -20LL, 30LL)
-      .SetDirection(1.0F, 0.0F, 0.0F)
-      .SetWeight(0.25F);
+      .SetDirection(1.0F, 0.0F, 0.0F);
 
   auto expected_a = source->BuildRecord();
 
@@ -596,8 +594,7 @@ TEST_F(GGEMSRunTest, UsesIndependentSourceSnapshotsAcrossSequentialRuns) {
       ->SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetPositionPicoMeter(-40LL, 50LL, -60LL)
-      .SetDirection(0.0F, -1.0F, 0.0F)
-      .SetWeight(0.75F);
+      .SetDirection(0.0F, -1.0F, 0.0F);
 
   auto expected_b = source->BuildRecord();
 
@@ -806,8 +803,7 @@ TEST_F(GGEMSRunTest, FirstAddSourceReplacesImplicitDefault) {
   auto source = MakeLowEnergySource(3ULL);
 
   source->SetPositionPicoMeter(10LL, -20LL, 30LL)
-      .SetDirection(1.0F, 0.0F, 0.0F)
-      .SetWeight(0.25F);
+      .SetDirection(1.0F, 0.0F, 0.0F);
 
   auto expected_source_record = source->BuildRecord();
   auto observer = MakeCapturingObserver(3U);
@@ -851,8 +847,7 @@ TEST_F(GGEMSRunTest, SetSourceReplacesEntireCollection) {
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMicroElectronVolt(2'000'000'000ULL)
       .SetPositionPicoMeter(-40LL, 50LL, -60LL)
-      .SetDirection(0.0F, -1.0F, 0.0F)
-      .SetWeight(0.75F);
+      .SetDirection(0.0F, -1.0F, 0.0F);
 
   auto expected_replacement_record = replacement->BuildRecord();
   auto observer = MakeCapturingObserver(3U);
@@ -956,8 +951,7 @@ TEST_F(GGEMSRunTest, RunsWithDisabledSlotBetweenActiveSources) {
   auto source_2 = MakeLowEnergySource(3ULL);
 
   source_0->SetPositionPicoMeter(10LL, 20LL, 30LL)
-      .SetDirection(1.0F, 0.0F, 0.0F)
-      .SetWeight(0.25F);
+      .SetDirection(1.0F, 0.0F, 0.0F);
 
   source_1->SetEnergyMicroElectronVolt(3'000'000'000ULL)
       .SetPositionPicoMeter(40LL, 50LL, 60LL);
@@ -967,8 +961,7 @@ TEST_F(GGEMSRunTest, RunsWithDisabledSlotBetweenActiveSources) {
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMicroElectronVolt(2'000'000'000ULL)
       .SetPositionPicoMeter(-40LL, 50LL, -60LL)
-      .SetDirection(0.0F, -1.0F, 0.0F)
-      .SetWeight(0.75F);
+      .SetDirection(0.0F, -1.0F, 0.0F);
 
   auto expected_0 = source_0->BuildRecord();
   auto expected_2 = source_2->BuildRecord();
@@ -1015,16 +1008,14 @@ TEST_F(GGEMSRunTest, AlternatesActiveSourceAcrossSequentialRuns) {
   auto source_b = MakeLowEnergySource(0ULL);
 
   source_a->SetPositionPicoMeter(10LL, -20LL, 30LL)
-      .SetDirection(1.0F, 0.0F, 0.0F)
-      .SetWeight(0.25F);
+      .SetDirection(1.0F, 0.0F, 0.0F);
 
   source_b
       ->SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMicroElectronVolt(2'000'000'000ULL)
       .SetPositionPicoMeter(-40LL, 50LL, -60LL)
-      .SetDirection(0.0F, -1.0F, 0.0F)
-      .SetWeight(0.75F);
+      .SetDirection(0.0F, -1.0F, 0.0F);
 
   auto expected_a = source_a->BuildRecord();
   auto expected_b = source_b->BuildRecord();
@@ -1093,16 +1084,14 @@ TEST_F(GGEMSRunTest, RebuildsMultipleActiveSourceRangesAcrossSequentialRuns) {
   auto source_b = MakeLowEnergySource(5ULL);
 
   source_a->SetPositionPicoMeter(10LL, 20LL, 30LL)
-      .SetDirection(1.0F, 0.0F, 0.0F)
-      .SetWeight(0.25F);
+      .SetDirection(1.0F, 0.0F, 0.0F);
 
   source_b
       ->SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMicroElectronVolt(2'000'000'000ULL)
       .SetPositionPicoMeter(-40LL, 50LL, -60LL)
-      .SetDirection(0.0F, -1.0F, 0.0F)
-      .SetWeight(0.75F);
+      .SetDirection(0.0F, -1.0F, 0.0F);
 
   auto expected_a = source_a->BuildRecord();
   auto expected_b = source_b->BuildRecord();
@@ -1512,7 +1501,6 @@ TEST_F(GGEMSRunTest, ProducesOnlySourceAndTerminalAlongStoredSourceAxis) {
   EXPECT_FLOAT_EQ(records[1U].direction_x, 1.0F);
   EXPECT_EQ(records[0U].energy_micro_eV, records[1U].energy_micro_eV);
   EXPECT_EQ(records[0U].time_ps, records[1U].time_ps);
-  EXPECT_FLOAT_EQ(records[0U].weight, records[1U].weight);
   EXPECT_EQ(records[0U].deposited_energy_micro_eV, 0ULL);
   EXPECT_EQ(records[1U].deposited_energy_micro_eV, 0ULL);
 }

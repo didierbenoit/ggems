@@ -82,8 +82,7 @@ TEST(GGEMSObserverRecord, RecordIsKernelFriendly) {
 
   EXPECT_EQ(offsetof(ObserverRecord, energy_micro_eV), 112U);
   EXPECT_EQ(offsetof(ObserverRecord, deposited_energy_micro_eV), 120U);
-  EXPECT_EQ(offsetof(ObserverRecord, weight), 128U);
-  EXPECT_EQ(offsetof(ObserverRecord, source_index), 132U);
+  EXPECT_EQ(offsetof(ObserverRecord, source_index), 128U);
 }
 
 // =============================================================================
@@ -119,7 +118,6 @@ TEST(GGEMSObserverRecord, DefaultRecordIsEmptyAndInactive) {
   EXPECT_FLOAT_EQ(record.direction_z, 1.0F);
   EXPECT_EQ(record.energy_micro_eV, 0ULL);
   EXPECT_EQ(record.deposited_energy_micro_eV, 0ULL);
-  EXPECT_FLOAT_EQ(record.weight, 1.0F);
 }
 
 // =============================================================================

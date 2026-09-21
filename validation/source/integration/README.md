@@ -14,7 +14,7 @@ Philox implementation, raw RNG exporter, or hidden-state reconstruction.
 ## Cases and invocation
 
 Every run uses one Analytic CountDriven Gamma Source, static time exactly 0 ps,
-weight exactly 1, and Philox. Common center is (12,-7,25) mm. Orientation uses
+and Philox. Common center is (12,-7,25) mm. Orientation uses
 the existing public SetOrientation request already tested in G2/A2:
 direction (4,-4,-7), up_reference (8,1,4). Actual packed binary32 axes and the
 exact integer-pm center are read from exporter metadata.
@@ -124,7 +124,7 @@ and uint64 ps times. Directions are reconstructed as binary32 from the
 max_digits10 CSV decimals before binary64 analysis. The exporter validates Gamma
 on every raw Source record; Python verifies Gamma metadata because the current
 CSV has no particle column. Source-only rows, slot 0, complete unique local/global
-IDs [0,N), zero overflow, expected counts/capacities, exact 0 ps, unit weight,
+IDs [0,N), zero overflow, expected counts/capacities, exact 0 ps,
 and finite nonzero directions are mandatory. Point and Fixed members also retain
 their exact center/axis_z contracts.
 
@@ -204,7 +204,7 @@ Canonical Energy now uses micro-eV. CSV and metadata energy fields use the
 The migration requires focused E1/I1 reruns against the updated exporter.
 
 Scratch-only analysis probes exercise malformed CSV/frame/provenance, support
-excursions, unreachable finite energies, wrong time/weight, corrupted exact
+excursions, unreachable finite energies, wrong time, corrupted exact
 pair fields, provenance-domain mismatch, and reordered CSVs. Tiny M/W counting
 examples check the finite law, including unreachable offsets when W > M.
 They do not simulate Source or Philox. Execute one unchanged G1, A1, E1, T1,

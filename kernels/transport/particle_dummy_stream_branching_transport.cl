@@ -48,7 +48,6 @@ static inline GGEMSParticleState GGEMS_MakeInactiveAionino(void) {
   particle.direction_w = 0.0f;
 
   particle.energy_micro_eV = 0UL;
-  particle.weight = 0.0f;
 
   return particle;
 }

@@ -28,7 +28,6 @@ CSV_COLUMNS = (
     "direction_z",
     "energy_micro_eV",
     "time_ps",
-    "weight",
     "record_kind",
 )
 BOUND_FIELDS = (
@@ -117,7 +116,6 @@ def load_metadata(path: Path) -> Metadata:
         "energy_micro_eV": 511_000_000_000,
         "chronology": "static",
         "time_ps": 0,
-        "weight": 1,
         "source_center_pm": [0, 0, 0],
         "frame_axes": [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
         "fixed_direction": [0, 0, 1],
@@ -131,7 +129,6 @@ def load_metadata(path: Path) -> Metadata:
 
     for key in ("energy_micro_eV", "time_ps", "source_index", "global_primary_begin"):
         _ = _integer(raw.get(key), key)
-    _ = _number(raw.get("weight"), "weight")
     for value in _triple(raw.get("source_center_pm"), "source_center_pm"):
         _ = _integer(value, "source_center_pm", -(1 << 63), (1 << 63) - 1)
     for axis in _triple(raw.get("frame_axes"), "frame_axes"):
@@ -276,7 +273,7 @@ def load_samples(path: Path, metadata: Metadata) -> tuple[IntArray, FloatArray]:
                     raise ValueError(
                         "Missing, duplicate, unordered, or impossible primary provenance."
                     )
-                if row[12] != "Source":
+                if row[11] != "Source":
                     raise ValueError("Only Source records are accepted.")
 
                 for axis in range(3):
@@ -297,14 +294,12 @@ def load_samples(path: Path, metadata: Metadata) -> tuple[IntArray, FloatArray]:
 
                 energy = _decimal(row[9], 0, (1 << 64) - 1)
                 time = _decimal(row[10], 0, (1 << 64) - 1)
-                weight = float(row[11])
                 if (
                     energy != metadata.raw["energy_micro_eV"]
                     or time != 0
-                    or weight != 1.0
                 ):
                     raise ValueError(
-                        "Record violates the Mono energy, static time, or weight contract."
+                        "Record violates the Mono energy or static time contract."
                     )
             except ValueError as error:
                 raise ValueError(f"{path}, row {local_id + 2}: {error}") from error

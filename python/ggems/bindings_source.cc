@@ -352,9 +352,6 @@ auto BindSource(py::module_ &module) -> void {
            py::arg("direction"), py::arg("up"),
            py::return_value_policy::reference_internal)
 
-      .def("set_weight", &GGEMSSource::SetWeight, py::arg("weight"),
-           py::return_value_policy::reference_internal)
-
       .def("verbose", &GGEMSSource::Verbose)
 
       .def("__repr__", [](GGEMSSource const &source) -> std::string {

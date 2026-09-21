@@ -59,8 +59,7 @@ MakeSourceRecord(std::array<std::int64_t, 3U> const &position,
       .SetEmittedParticleType(particle_type)
       .SetEnergyMicroElectronVolt(5'000'000'000'000ULL)
       .SetPositionPicoMeter(position[0U], position[1U], position[2U])
-      .SetDirection(direction[0U], direction[1U], direction[2U])
-      .SetWeight(0.75F);
+      .SetDirection(direction[0U], direction[1U], direction[2U]);
 
   SourceRecord record = source.BuildRecord();
   record.time_start_ps = 123ULL;
@@ -210,7 +209,6 @@ auto ExpectHistory(TransportRunReport const &report, SourceRecord const &source,
     EXPECT_FLOAT_EQ(record.direction_w, 0.0F);
     EXPECT_EQ(record.energy_micro_eV, source.energy_micro_eV);
     EXPECT_EQ(record.deposited_energy_micro_eV, 0ULL);
-    EXPECT_FLOAT_EQ(record.weight, source.weight);
   }
 
   EXPECT_EQ(source_record.position_x_pm, source.position_x_pm);

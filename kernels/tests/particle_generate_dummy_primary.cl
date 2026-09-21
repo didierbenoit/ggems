@@ -38,7 +38,6 @@ __kernel void particle_generate_dummy_primary(
   particle.direction_w = 0.0f;
 
   particle.energy_micro_eV = energy_micro_eV;
-  particle.weight = 1.0f;
 
   particles[particle_index] = particle;
 }

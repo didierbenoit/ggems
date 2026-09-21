@@ -407,8 +407,7 @@ TEST(GGEMSRadionuclideSourceSnapshot,
     weak_definition = definition;
     auto source = MakeActivitySource(definition, 0.0L);
     source->SetBoxEmissionPicoMeter(101ULL, 103ULL, 107ULL)
-        .SetPositionPicoMeter(11LL, -22LL, 33LL)
-        .SetWeight(0.625F);
+        .SetPositionPicoMeter(11LL, -22LL, 33LL);
     std::vector<SourcePtr> sources{source};
     configuration =
         ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
@@ -449,7 +448,6 @@ TEST(GGEMSRadionuclideSourceSnapshot,
   EXPECT_EQ(record.geometry_size_x_pm, 101ULL);
   EXPECT_EQ(record.geometry_size_y_pm, 103ULL);
   EXPECT_EQ(record.geometry_size_z_pm, 107ULL);
-  EXPECT_FLOAT_EQ(record.weight, 0.625F);
 
   ASSERT_FALSE(weak_definition.expired());
   ASSERT_EQ(configuration->GetRadionuclideDefinitions().size(), 1U);

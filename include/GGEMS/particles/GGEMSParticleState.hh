@@ -28,11 +28,10 @@ struct GGEMSParticleState {
   float direction_z{1.0F};
   float direction_w{0.0F};
   std::uint64_t energy_micro_eV{0ULL};
-  float weight{1.0F};
 };
 
 static_assert(std::is_standard_layout_v<GGEMSParticleState>);
 static_assert(std::is_trivially_copyable_v<GGEMSParticleState>);
-static_assert(sizeof(GGEMSParticleState) == 120U);
+static_assert(sizeof(GGEMSParticleState) == 112U);
 
 } // namespace ggems::core::particles

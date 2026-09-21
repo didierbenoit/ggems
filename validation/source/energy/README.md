@@ -7,7 +7,7 @@ validation exporter -> exact Python analytical measurements -> Matplotlib.
 There is no alternative Monte Carlo sampler, ticket allocator, or production API.
 
 All three cases use one Analytic CountDriven Gamma source, Point at the exact
-origin, default identity frame, Fixed +Z, static time 0 ps, weight 1, and Philox.
+origin, default identity frame, Fixed +Z, static time 0 ps, and Philox.
 Position, direction, time, and source lookup consume no random draw. Mono uses
 no energy draw; each tabulated mode consumes one raw uint32 energy ticket.
 Those draw budgets are established by the production helpers and their focused
@@ -122,10 +122,11 @@ final bound 2^32, and each exact rational ticket fraction. It does not duplicate
 the host largest-remainder allocator. A raw ticket equal to a cumulative upper
 bound belongs to the next nonempty interval; zero-width entries are skipped.
 
-The stable CSV is unchanged:
+The stable CSV has no statistical-weight column (analog transport; older CSV
+files with a `weight` column must be regenerated):
 
 ```text
-source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,z_pm,direction_x,direction_y,direction_z,energy_micro_eV,time_ps,weight,record_kind
+source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,z_pm,direction_x,direction_y,direction_z,energy_micro_eV,time_ps,record_kind
 ```
 
 Integer fields remain exact decimal integers. Floating serialization retains
@@ -137,7 +138,7 @@ The exporter verifies raw per-record particle type as Gamma before writing CSV,
 whose existing schema has no particle column. Python checks Gamma metadata,
 zero overflow, exact Source/Terminal capture counts and capacities, Source-only
 rows, complete unique ordered provenance, slot 0 and local/global IDs [0,N),
-Point origin, exact Fixed +Z, static 0 ps, and unit weight. Malformed CSV,
+Point origin, exact Fixed +Z, and static 0 ps. Malformed CSV,
 metadata mismatch, or any structural contract failure stops analysis.
 
 Existing Geometry and Angle CLI behavior is preserved: absent energy options

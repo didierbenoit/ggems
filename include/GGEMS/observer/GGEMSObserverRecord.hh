@@ -65,7 +65,6 @@ struct GGEMSObserverRecord {
   float direction_w{0.0F};
   std::uint64_t energy_micro_eV{0ULL};
   std::uint64_t deposited_energy_micro_eV{0ULL};
-  float weight{1.0F};
   std::uint32_t source_index{particles::k_invalid_id_u32};
 };
 
@@ -94,7 +93,6 @@ static_assert(offsetof(GGEMSObserverRecord, direction_z) == 104U);
 static_assert(offsetof(GGEMSObserverRecord, direction_w) == 108U);
 static_assert(offsetof(GGEMSObserverRecord, energy_micro_eV) == 112U);
 static_assert(offsetof(GGEMSObserverRecord, deposited_energy_micro_eV) == 120U);
-static_assert(offsetof(GGEMSObserverRecord, weight) == 128U);
-static_assert(offsetof(GGEMSObserverRecord, source_index) == 132U);
+static_assert(offsetof(GGEMSObserverRecord, source_index) == 128U);
 
 } // namespace ggems::core::observer

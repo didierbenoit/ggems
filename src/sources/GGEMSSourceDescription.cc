@@ -225,7 +225,7 @@ auto DescribeSource(GGEMSSource const &source) -> std::string {
       "Type: {} | Population: ActivityDriven | Radionuclide: {} | "
       "Activity at reference time: {} | Reference time: {} | "
       "Emission count: {} | {} | {} | Position: ({}, {}, {}) | "
-      "Axis Z: ({}, {}, {}) | Weight: {}",
+      "Axis Z: ({}, {}, {})",
       ToLongName(FromKernelSourceType(source_record.source_type)),
       radionuclide.GetCanonicalName(),
       ggems::units::HumanReadable(configuration.activity_at_reference_time),
@@ -236,8 +236,7 @@ auto DescribeSource(GGEMSSource const &source) -> std::string {
       ggems::units::HumanReadableSignedLength(source_record.position_x_pm),
       ggems::units::HumanReadableSignedLength(source_record.position_y_pm),
       ggems::units::HumanReadableSignedLength(source_record.position_z_pm),
-      source_record.axis_z_x, source_record.axis_z_y, source_record.axis_z_z,
-      source_record.weight);
+      source_record.axis_z_x, source_record.axis_z_y, source_record.axis_z_z);
 }
 
 // =============================================================================
@@ -274,7 +273,7 @@ auto DescribeSource(GGEMSSourceRecord const &record,
   return std::format(
       "Type: {} | Primary count: {} | Particle: {} ({}) | "
       "{} | {} | {} | {} | Position: ({}, {}, {}) | "
-      "Axis Z: ({}, {}, {}) | Weight: {}",
+      "Axis Z: ({}, {}, {})",
       ToLongName(source_type), primary_count,
       particles::ToLongName(particle_type),
       particles::ToShortName(particle_type), DescribeEmission(record),
@@ -284,7 +283,7 @@ auto DescribeSource(GGEMSSourceRecord const &record,
       ggems::units::HumanReadableSignedLength(record.position_x_pm),
       ggems::units::HumanReadableSignedLength(record.position_y_pm),
       ggems::units::HumanReadableSignedLength(record.position_z_pm),
-      record.axis_z_x, record.axis_z_y, record.axis_z_z, record.weight);
+      record.axis_z_x, record.axis_z_y, record.axis_z_z);
 }
 
 // =============================================================================
@@ -349,7 +348,7 @@ auto DescribeSourceRunSlot(std::size_t source_index,
         "Source slot: {} | Projection primary begin: {} | Type: {} | "
         "Population: ActivityDriven | Radionuclide: {} | Primary count: {} | "
         "Emission groups: {} [{}] | {} | {} | {} | Position: ({}, {}, {}) | "
-        "Axis Z: ({}, {}, {}) | Weight: {}",
+        "Axis Z: ({}, {}, {})",
         source_index, range.projection_primary_begin,
         ToLongName(FromKernelSourceType(record.source_type)),
         definitions[source_index]->GetCanonicalName(), range.primary_count,
@@ -358,7 +357,7 @@ auto DescribeSourceRunSlot(std::size_t source_index,
         ggems::units::HumanReadableSignedLength(record.position_x_pm),
         ggems::units::HumanReadableSignedLength(record.position_y_pm),
         ggems::units::HumanReadableSignedLength(record.position_z_pm),
-        record.axis_z_x, record.axis_z_y, record.axis_z_z, record.weight);
+        record.axis_z_x, record.axis_z_y, record.axis_z_z);
   }
 
   return DescribeSourceRunSlot(source_index, records[source_index],

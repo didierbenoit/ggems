@@ -168,7 +168,6 @@ TEST_F(GGEMSParticleDummyTrackingKernelTest, KillsAlivePrimaryParticles) {
     EXPECT_FLOAT_EQ(particle.direction_w, 0.0F);
 
     EXPECT_EQ(particle.energy_micro_eV, k_energy_micro_eV);
-    EXPECT_FLOAT_EQ(particle.weight, 1.0F);
   }
 
   particles_buffer.Unmap();

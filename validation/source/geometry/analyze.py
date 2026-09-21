@@ -25,7 +25,6 @@ CSV_COLUMNS = (
     "direction_z",
     "energy_micro_eV",
     "time_ps",
-    "weight",
     "record_kind",
 )
 
@@ -41,7 +40,6 @@ class Metadata:
     global_primary_begin: int
     energy_micro_eV: int
     time_ps: int
-    weight: float
     raw: JsonObject
 
 
@@ -115,7 +113,6 @@ def load_metadata(path: Path) -> Metadata:
         "time_ps": 0,
         "source_index": 0,
         "global_primary_begin": 0,
-        "weight": 1,
     }.items():
         if raw.get(key) != expected:
             raise ValueError(
@@ -178,7 +175,6 @@ def load_metadata(path: Path) -> Metadata:
         ),
         energy_micro_eV=_integer(raw.get("energy_micro_eV"), "energy_micro_eV", 1),
         time_ps=_integer(raw.get("time_ps"), "time_ps"),
-        weight=_number(raw.get("weight"), "weight"),
         raw=raw,
     )
 
@@ -217,7 +213,7 @@ def load_positions(path: Path, metadata: Metadata) -> IntArray:
                     raise ValueError(
                         "Missing, duplicate, unordered, or impossible primary provenance."
                     )
-                if row[12] != "Source":
+                if row[11] != "Source":
                     raise ValueError("Only Source records are accepted.")
                 for axis in range(3):
                     positions[local_id, axis] = _decimal(
@@ -226,12 +222,10 @@ def load_positions(path: Path, metadata: Metadata) -> IntArray:
                 direction = tuple(float(value) for value in row[6:9])
                 energy = _decimal(row[9], 0, (1 << 64) - 1)
                 time = _decimal(row[10], 0, (1 << 64) - 1)
-                weight = float(row[11])
                 if (
                     direction != (0.0, 0.0, 1.0)
                     or energy != metadata.energy_micro_eV
                     or time != metadata.time_ps
-                    or weight != metadata.weight
                 ):
                     raise ValueError(
                         "Record does not match the fixed G1 initialization contract."

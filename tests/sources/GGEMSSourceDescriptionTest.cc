@@ -32,7 +32,7 @@ constexpr std::string_view k_source_description{
     "Energy: Mono (2.0000000 MeV) | "
     "Time: fixed at 0.0000000 ps | "
     "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
-    "Axis Z: (1, 0, 0) | Weight: 0.25"};
+    "Axis Z: (1, 0, 0)"};
 
 // =============================================================================
 // =============================================================================
@@ -43,7 +43,7 @@ constexpr std::string_view k_window_source_description{
     "Energy: Mono (2.0000000 MeV) | "
     "Time window: [1.0000000 ns, 2.0000000 ns) | "
     "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
-    "Axis Z: (1, 0, 0) | Weight: 0.25"};
+    "Axis Z: (1, 0, 0)"};
 
 // =============================================================================
 // =============================================================================
@@ -54,7 +54,7 @@ constexpr std::string_view k_zero_primary_source_description{
     "Energy: Mono (2.0000000 MeV) | "
     "Time: fixed at 0.0000000 ps | "
     "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
-    "Axis Z: (1, 0, 0) | Weight: 0.25"};
+    "Axis Z: (1, 0, 0)"};
 
 // =============================================================================
 // =============================================================================
@@ -65,7 +65,7 @@ constexpr std::string_view k_reconfigured_source_description{
     "Energy: Mono (511.0000000 keV) | "
     "Time: fixed at 0.0000000 ps | "
     "Position: (0.0000000 pm, 0.0000000 pm, 1.0000000 µm) | "
-    "Axis Z: (0, 1, 0) | Weight: 0.5"};
+    "Axis Z: (0, 1, 0)"};
 
 // =============================================================================
 // =============================================================================
@@ -80,8 +80,7 @@ constexpr std::string_view k_reconfigured_source_description{
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMicroElectronVolt(2'000'000'000'000ULL)
       .SetPositionPicoMeter(1'000'000'000LL, -2'000'000'000LL, 0LL)
-      .SetDirection(2.0F, 0.0F, 0.0F)
-      .SetWeight(0.25F);
+      .SetDirection(2.0F, 0.0F, 0.0F);
 
   return source;
 }
@@ -94,8 +93,7 @@ auto ReconfigureSource(GGEMSSource &source) -> void {
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMicroElectronVolt(511'000'000'000ULL)
       .SetPositionPicoMeter(0LL, 0LL, 1'000'000LL)
-      .SetDirection(0.0F, 2.0F, 0.0F)
-      .SetWeight(0.5F);
+      .SetDirection(0.0F, 2.0F, 0.0F);
 }
 
 // =============================================================================
@@ -138,8 +136,7 @@ TEST(GGEMSSourceDescription,
                                4'000'000'000ULL)
       .SetIsotropicAngularDistribution()
       .SetPositionPicoMeter(1'000'000'000LL, -2'000'000'000LL, 0LL)
-      .SetDirection(1.0, 0.0, 0.0)
-      .SetWeight(0.25F);
+      .SetDirection(1.0, 0.0, 0.0);
 
   std::string const description = ggems::core::sources::DescribeSource(source);
 
@@ -154,7 +151,6 @@ TEST(GGEMSSourceDescription,
   ExpectContains(description,
                  "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm)");
   ExpectContains(description, "Axis Z: (1, 0, 0)");
-  ExpectContains(description, "Weight: 0.25");
   EXPECT_EQ(description.find("Primary count:"), std::string::npos);
   EXPECT_EQ(description.find("Projection primary begin:"), std::string::npos);
   EXPECT_EQ(description.find("Emission groups:"), std::string::npos);

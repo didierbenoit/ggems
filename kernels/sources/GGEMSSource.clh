@@ -369,7 +369,6 @@ static inline GGEMSParticleState GGEMS_SourceInitializePrimary(
   particle.direction_w = 0.0F;
 
   particle.energy_micro_eV = sampled_energy_micro_eV;
-  particle.weight = source->weight;
 
   return particle;
 }
@@ -431,7 +430,6 @@ static inline GGEMSParticleState GGEMS_SourceInitializeActivityDrivenPrimary(
   particle.direction_w = 0.0F;
 
   particle.energy_micro_eV = sampled_energy_micro_eV;
-  particle.weight = source->weight;
 
   return particle;
 }
@@ -531,7 +529,6 @@ GGEMS_SourceReadAionino(ulong global_primary_id, ulong source_local_primary_id,
   particle.direction_w = 0.0F;
 
   particle.energy_micro_eV = source->energy_micro_eV;
-  particle.weight = source->weight;
 
   return particle;
 }

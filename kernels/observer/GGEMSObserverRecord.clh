@@ -61,7 +61,6 @@ typedef struct GGEMSObserverRecord {
   ulong energy_micro_eV;
   ulong deposited_energy_micro_eV;
 
-  float weight;
   uint source_index;
 } GGEMSObserverRecord;
 
@@ -155,7 +154,6 @@ static inline void GGEMS_ObserverRecordParticle(
   record->energy_micro_eV = particle.energy_micro_eV;
   record->deposited_energy_micro_eV = deposited_energy_micro_eV;
 
-  record->weight = particle.weight;
   record->source_index = source_index;
 }
 

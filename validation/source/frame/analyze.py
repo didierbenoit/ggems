@@ -44,7 +44,6 @@ CSV_COLUMNS = (
     "direction_z",
     "energy_micro_eV",
     "time_ps",
-    "weight",
     "record_kind",
 )
 
@@ -217,8 +216,6 @@ def load_metadata(path: Path, case: FrameCase, *, reference: bool = False) -> Me
         raise ValueError("Global primary range differs from the expected domain.")
     if _integer(raw.get("energy_micro_eV"), "energy_micro_eV") != 511000000000:
         raise ValueError("Frame cases require Mono exactly 511000000000 micro-eV.")
-    if _number(raw.get("weight"), "weight") != 1.0:
-        raise ValueError("Frame cases require unit weight.")
 
     energy = _object(raw.get("energy"), "energy")
     for key, expected in {
@@ -388,7 +385,7 @@ def load_samples(path: Path, metadata: Metadata) -> Samples:
         if tuple(next(reader, ())) != CSV_COLUMNS:
             raise ValueError("Malformed Source CSV header.")
         for row_number, row in enumerate(reader, start=2):
-            if len(row) != len(CSV_COLUMNS) or row[12] != "Source":
+            if len(row) != len(CSV_COLUMNS) or row[11] != "Source":
                 raise ValueError(
                     f"Malformed or non-Source record at CSV row {row_number}."
                 )
@@ -418,8 +415,6 @@ def load_samples(path: Path, metadata: Metadata) -> Samples:
                 raise ValueError(
                     "Frame cases require exact Mono 511 keV and static 0 ps."
                 )
-            if _number(float(row[11]), "weight") != 1.0:
-                raise ValueError("Frame cases require exact unit weight.")
     if len(seen) != metadata.count:
         raise ValueError(
             "Missing Source records or incomplete local primary ID domain."
@@ -687,7 +682,6 @@ def validate_pair(
         "energy",
         "chronology",
         "time_ps",
-        "weight",
         "particle",
     ):
         if reference.raw.get(key) != transformed.raw.get(key):
@@ -760,7 +754,6 @@ def measure_case(
             "complete_unique_provenance": True,
             "mono_energy_micro_eV": 511000000000,
             "static_time_ps": 0,
-            "weight": 1,
             "particle": "Gamma; checked on every raw record by the exporter",
         },
         "frame": metadata.frame,

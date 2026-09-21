@@ -89,7 +89,6 @@ auto ExpectSourceRecordsEqual(
   EXPECT_FLOAT_EQ(actual.axis_z_y, expected.axis_z_y);
   EXPECT_FLOAT_EQ(actual.axis_z_z, expected.axis_z_z);
 
-  EXPECT_FLOAT_EQ(actual.weight, expected.weight);
   EXPECT_EQ(actual.emission_geometry_type, expected.emission_geometry_type);
   EXPECT_EQ(actual.angular_distribution_type,
             expected.angular_distribution_type);
@@ -302,8 +301,7 @@ TEST(GGEMSSourceRunSnapshot, BuildsExpectedMonoSourceSnapshot) {
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMicroElectronVolt(222'000'000'000ULL)
       .SetPositionPicoMeter(-11LL, 22LL, -33LL)
-      .SetDirection(0.0F, -4.0F, 0.0F)
-      .SetWeight(0.25F);
+      .SetDirection(0.0F, -4.0F, 0.0F);
 
   auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(source);
 
@@ -348,7 +346,6 @@ TEST(GGEMSSourceRunSnapshot, BuildsExpectedMonoSourceSnapshot) {
   EXPECT_FLOAT_EQ(record.axis_z_y, -1.0F);
   EXPECT_FLOAT_EQ(record.axis_z_z, 0.0F);
 
-  EXPECT_FLOAT_EQ(record.weight, 0.25F);
 }
 
 // =============================================================================
@@ -362,8 +359,7 @@ TEST(GGEMSSourceRunSnapshot, OwnsIndependentSourceState) {
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMicroElectronVolt(111'000'000'000ULL)
       .SetPositionPicoMeter(11LL, -22LL, 33LL)
-      .SetDirection(1.0F, 0.0F, 0.0F)
-      .SetWeight(0.125F);
+      .SetDirection(1.0F, 0.0F, 0.0F);
 
   auto expected_a = source.BuildRecord();
   auto snapshot_a = ggems::core::sources::BuildSourceRunSnapshot(source);
@@ -373,8 +369,7 @@ TEST(GGEMSSourceRunSnapshot, OwnsIndependentSourceState) {
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMicroElectronVolt(222'000'000'000ULL)
       .SetPositionPicoMeter(-44LL, 55LL, -66LL)
-      .SetDirection(0.0F, -1.0F, 0.0F)
-      .SetWeight(0.875F);
+      .SetDirection(0.0F, -1.0F, 0.0F);
 
   auto expected_b = source.BuildRecord();
   auto snapshot_b = ggems::core::sources::BuildSourceRunSnapshot(source);
@@ -443,8 +438,7 @@ TEST(GGEMSSourceRunSnapshot, BuildsOrderedMultiSourceSnapshot) {
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMicroElectronVolt(101'000'000'000ULL)
       .SetPositionPicoMeter(10LL, 20LL, 30LL)
-      .SetDirection(1.0F, 0.0F, 0.0F)
-      .SetWeight(0.25F);
+      .SetDirection(1.0F, 0.0F, 0.0F);
 
   auto source_1 = MakeSource(5ULL);
   source_1->SetAnalytic()
@@ -452,8 +446,7 @@ TEST(GGEMSSourceRunSnapshot, BuildsOrderedMultiSourceSnapshot) {
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMicroElectronVolt(202'000'000'000ULL)
       .SetPositionPicoMeter(-40LL, 50LL, 60LL)
-      .SetDirection(0.0F, 1.0F, 0.0F)
-      .SetWeight(0.50F);
+      .SetDirection(0.0F, 1.0F, 0.0F);
 
   auto source_2 = MakeSource(2ULL);
   source_2->SetAnalytic()
@@ -461,8 +454,7 @@ TEST(GGEMSSourceRunSnapshot, BuildsOrderedMultiSourceSnapshot) {
           ggems::core::particles::GGEMSParticleType::Positron)
       .SetEnergyMicroElectronVolt(303'000'000'000ULL)
       .SetPositionPicoMeter(70LL, -80LL, 90LL)
-      .SetDirection(0.0F, 0.0F, -1.0F)
-      .SetWeight(0.75F);
+      .SetDirection(0.0F, 0.0F, -1.0F);
 
   std::vector<GGEMSSourcePtr> sources{source_0, source_1, source_2};
 
@@ -765,8 +757,7 @@ TEST(GGEMSSourceRunSnapshot, SingleSourceOverloadMatchesCollectionOverload) {
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Proton)
       .SetEnergyMicroElectronVolt(555'000'000'000ULL)
       .SetPositionPicoMeter(-10LL, 20LL, -30LL)
-      .SetDirection(1.0F, -1.0F, 0.0F)
-      .SetWeight(0.625F);
+      .SetDirection(1.0F, -1.0F, 0.0F);
 
   std::vector<GGEMSSourcePtr> sources{source};
 
@@ -803,8 +794,7 @@ TEST(GGEMSSourceRunSnapshot,
       ->SetEmittedParticleType(
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMicroElectronVolt(222'000'000'000ULL)
-      .SetPositionPicoMeter(-11LL, 22LL, -33LL)
-      .SetWeight(0.25F);
+      .SetPositionPicoMeter(-11LL, 22LL, -33LL);
   std::vector<GGEMSSourcePtr> sources{source};
   auto configuration =
       ggems::core::sources::BuildSourceConfigurationSnapshot(sources);

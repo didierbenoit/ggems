@@ -27,7 +27,7 @@ struct ObserverConfigAlignmentProbe {
   ObserverConfigRecord config;
 };
 
-constexpr std::size_t k_layout_value_count{32U};
+constexpr std::size_t k_layout_value_count{31U};
 constexpr std::size_t k_record_count{2U};
 constexpr std::size_t k_config_count{2U};
 
@@ -129,7 +129,6 @@ TEST_F(GGEMSObserverRecordKernelTest, HostAndKernelLayoutsMatch) {
        static_cast<std::uint64_t>(offsetof(ObserverRecord, energy_micro_eV)),
        static_cast<std::uint64_t>(
            offsetof(ObserverRecord, deposited_energy_micro_eV)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, weight)),
        static_cast<std::uint64_t>(offsetof(ObserverRecord, source_index)),
        static_cast<std::uint64_t>(sizeof(ObserverRecord)),
        static_cast<std::uint64_t>(sizeof(ObserverConfigRecord)),
@@ -158,12 +157,10 @@ TEST_F(GGEMSObserverRecordKernelTest, HostAndKernelLayoutsMatch) {
 
   EXPECT_EQ(records[0U].energy_micro_eV, 101ULL);
   EXPECT_EQ(records[0U].deposited_energy_micro_eV, 202ULL);
-  EXPECT_FLOAT_EQ(records[0U].weight, 0.25F);
   EXPECT_EQ(records[0U].source_index, 3U);
 
   EXPECT_EQ(records[1U].energy_micro_eV, 303ULL);
   EXPECT_EQ(records[1U].deposited_energy_micro_eV, 404ULL);
-  EXPECT_FLOAT_EQ(records[1U].weight, 0.75F);
   EXPECT_EQ(records[1U].source_index, 5U);
 
   records_buffer.Unmap();

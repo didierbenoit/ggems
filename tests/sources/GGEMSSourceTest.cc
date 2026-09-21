@@ -127,7 +127,6 @@ auto ExpectSourceRecordsEqual(
   EXPECT_FLOAT_EQ(actual.axis_z_y, expected.axis_z_y);
   EXPECT_FLOAT_EQ(actual.axis_z_z, expected.axis_z_z);
 
-  EXPECT_FLOAT_EQ(actual.weight, expected.weight);
   EXPECT_EQ(actual.emission_geometry_type, expected.emission_geometry_type);
   EXPECT_EQ(actual.angular_distribution_type,
             expected.angular_distribution_type);
@@ -179,7 +178,6 @@ TEST(GGEMSSource, DefaultSourceIsAnalyticGammaPointSource) {
   EXPECT_FLOAT_EQ(record.axis_z_x, 0.0F);
   EXPECT_FLOAT_EQ(record.axis_z_y, 0.0F);
   EXPECT_FLOAT_EQ(record.axis_z_z, 1.0F);
-  EXPECT_FLOAT_EQ(record.weight, 1.0F);
   EXPECT_EQ(record.emission_geometry_type,
             ggems::core::sources::ToKernelEmissionGeometryType(
                 ggems::core::sources::GGEMSEmissionGeometryType::Point));
@@ -528,8 +526,7 @@ TEST(GGEMSSource, ActivityDrivenRejectsSingleParticleConfiguration) {
   EXPECT_NO_THROW(source.Verbose());
 
   EXPECT_NO_THROW(source.SetPositionPicoMeter(1LL, 2LL, 3LL)
-                      .SetDirection(1.0, 0.0, 0.0)
-                      .SetWeight(0.5F));
+                      .SetDirection(1.0, 0.0, 0.0));
 }
 
 // =============================================================================
@@ -716,39 +713,6 @@ TEST(GGEMSSource, RejectsNonFiniteDirectionComponents) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSSource, RejectsNegativeWeight) {
-  ggems::core::sources::GGEMSSource source{};
-
-  EXPECT_THROW(source.SetWeight(-1.0F), ggems::core::GGEMSExceptionBase);
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSSource, RejectsNonFiniteWeight) {
-  ggems::core::sources::GGEMSSource source{};
-
-  float nan = std::numeric_limits<float>::quiet_NaN();
-  float infinity = std::numeric_limits<float>::infinity();
-
-  EXPECT_THROW(source.SetWeight(nan), ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW(source.SetWeight(infinity), ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW(source.SetWeight(-infinity), ggems::core::GGEMSExceptionBase);
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSSource, AcceptsZeroWeight) {
-  ggems::core::sources::GGEMSSource source{};
-
-  EXPECT_NO_THROW(source.SetWeight(0.0F));
-  EXPECT_FLOAT_EQ(source.BuildRecord().weight, 0.0F);
-}
-
-// =============================================================================
-// =============================================================================
-
 TEST(GGEMSSource, NormalizesDirection) {
   ggems::core::sources::GGEMSSource source{};
 
@@ -819,8 +783,7 @@ TEST(GGEMSSource, BuildRecordReturnsIndependentOwnedSnapshots) {
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMicroElectronVolt(111'000'000'000ULL)
       .SetPositionPicoMeter(11LL, -22LL, 33LL)
-      .SetDirection(1.0F, 0.0F, 0.0F)
-      .SetWeight(0.25);
+      .SetDirection(1.0F, 0.0F, 0.0F);
 
   auto record_a = source.BuildRecord();
 
@@ -829,8 +792,7 @@ TEST(GGEMSSource, BuildRecordReturnsIndependentOwnedSnapshots) {
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMicroElectronVolt(222'000'000'000ULL)
       .SetPositionPicoMeter(-44LL, 55LL, -66LL)
-      .SetDirection(0.0F, -1.0F, 0.0F)
-      .SetWeight(0.75);
+      .SetDirection(0.0F, -1.0F, 0.0F);
 
   auto record_b = source.BuildRecord();
 
@@ -856,7 +818,6 @@ TEST(GGEMSSource, BuildRecordReturnsIndependentOwnedSnapshots) {
   EXPECT_FLOAT_EQ(record_a.axis_z_x, 1.0F);
   EXPECT_FLOAT_EQ(record_a.axis_z_y, 0.0F);
   EXPECT_FLOAT_EQ(record_a.axis_z_z, 0.0F);
-  EXPECT_FLOAT_EQ(record_a.weight, 0.25F);
 
   EXPECT_EQ(record_b.source_type, analytic_source_type);
   EXPECT_EQ(record_b.emitted_particle_type,
@@ -878,7 +839,6 @@ TEST(GGEMSSource, BuildRecordReturnsIndependentOwnedSnapshots) {
   EXPECT_FLOAT_EQ(record_b.axis_z_x, 0.0F);
   EXPECT_FLOAT_EQ(record_b.axis_z_y, -1.0F);
   EXPECT_FLOAT_EQ(record_b.axis_z_z, 0.0F);
-  EXPECT_FLOAT_EQ(record_b.weight, 0.75F);
 }
 
 // =============================================================================
@@ -893,8 +853,7 @@ TEST(GGEMSSource, ExecutionRecordPreservesSourceStateAcrossPopulationModes) {
       .SetBoxEmissionPicoMeter(11ULL, 13ULL, 17ULL)
       .SetPositionPicoMeter(101LL, -202LL, 303LL)
       .SetOrientation({1.0, 0.0, 0.0}, {0.0, 0.0, 1.0})
-      .SetFocusedAngularDistributionPicoMeter(10'000LL, 20'000LL, -30'000LL)
-      .SetWeight(0.375F);
+      .SetFocusedAngularDistributionPicoMeter(10'000LL, 20'000LL, -30'000LL);
 
   auto const count_driven_record = source.BuildRecord();
   ExpectSourceRecordsEqual(source.BuildExecutionRecord(), count_driven_record);

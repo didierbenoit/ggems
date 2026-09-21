@@ -16,7 +16,7 @@ TEST(GGEMSParticleState, IsKernelFriendly) {
       std::is_standard_layout_v<ggems::core::particles::GGEMSParticleState>);
   EXPECT_TRUE(
       std::is_trivially_copyable_v<ggems::core::particles::GGEMSParticleState>);
-  EXPECT_EQ(sizeof(ggems::core::particles::GGEMSParticleState), 120U);
+  EXPECT_EQ(sizeof(ggems::core::particles::GGEMSParticleState), 112U);
 }
 
 /* --------------------------------------------- */
@@ -52,7 +52,6 @@ TEST(GGEMSParticleState, DefaultStateIsInactive) {
   EXPECT_FLOAT_EQ(particle.direction_z, 1.0F);
   EXPECT_FLOAT_EQ(particle.direction_w, 0.0F);
   EXPECT_EQ(particle.energy_micro_eV, 0ULL);
-  EXPECT_FLOAT_EQ(particle.weight, 1.0F);
 }
 
 /* --------------------------------------------- */
@@ -119,11 +118,10 @@ TEST(GGEMSParticleState, ParticleTypeValuesAreKernelCompatible) {
 
 TEST(GGEMSParticleState, MicroElectronVoltEnergyPreservesLayoutAndWidth) {
   using State = ggems::core::particles::GGEMSParticleState;
-  EXPECT_EQ(sizeof(State), 120U);
+  EXPECT_EQ(sizeof(State), 112U);
   EXPECT_EQ(alignof(State), 8U);
   EXPECT_EQ(offsetof(State, direction_w), 100U);
   EXPECT_EQ(offsetof(State, energy_micro_eV), 104U);
-  EXPECT_EQ(offsetof(State, weight), 112U);
   EXPECT_TRUE(
       (std::is_same_v<decltype(State::energy_micro_eV), std::uint64_t>));
 }

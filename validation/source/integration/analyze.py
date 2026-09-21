@@ -52,7 +52,6 @@ CSV_COLUMNS = (
     "direction_z",
     "energy_micro_eV",
     "time_ps",
-    "weight",
     "record_kind",
 )
 
@@ -411,8 +410,6 @@ def load_metadata(
             raise ValueError(f"A fresh static non-Mono I1 run requires {key} == 0.")
     if _integer(raw.get("global_primary_last"), "global_primary_last") != count - 1:
         raise ValueError("Global primary range differs from the expected domain.")
-    if _number(raw.get("weight"), "weight") != 1.0:
-        raise ValueError("I1 requires unit weight.")
 
     names = _list(raw.get("device_names"), "device_names")
     if not names or any(not isinstance(item, str) or not item for item in names):
@@ -598,7 +595,7 @@ def load_samples(path: Path, metadata: Metadata) -> Samples:
         if tuple(next(reader, ())) != CSV_COLUMNS:
             raise ValueError("Malformed Source CSV header.")
         for row_number, row in enumerate(reader, start=2):
-            if len(row) != len(CSV_COLUMNS) or row[12] != "Source":
+            if len(row) != len(CSV_COLUMNS) or row[11] != "Source":
                 raise ValueError(
                     f"Malformed or non-Source record at CSV row {row_number}."
                 )
@@ -625,8 +622,6 @@ def load_samples(path: Path, metadata: Metadata) -> Samples:
             times[local] = _decimal(row[10], 0, UINT64_MAX)
             if times[local] != 0:
                 raise ValueError("I1 requires exact static 0 ps.")
-            if _number(float(row[11]), "weight") != 1.0:
-                raise ValueError("I1 requires exact unit weight.")
     if len(seen) != metadata.count:
         raise ValueError(
             "Missing Source records or incomplete local primary ID domain."
@@ -793,7 +788,6 @@ def structural_status(metadata: Metadata) -> JsonObject:
         "complete_unique_provenance": True,
         "source_index": 0,
         "static_time_ps": 0,
-        "weight": 1,
         "particle": "Gamma; exporter verifies every raw Source record (no CSV particle column)",
     }
 

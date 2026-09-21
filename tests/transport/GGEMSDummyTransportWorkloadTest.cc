@@ -97,7 +97,6 @@ auto ExpectSourceMatches(
 
   EXPECT_EQ(observed.energy_micro_eV, expected.energy_micro_eV);
   EXPECT_EQ(observed.deposited_energy_micro_eV, 0ULL);
-  EXPECT_FLOAT_EQ(observed.weight, expected.weight);
 }
 
 // =============================================================================
@@ -183,8 +182,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest, RunsBranchingAioninoPrototype) {
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMicroElectronVolt(511'000'000'000ULL)
       .SetPositionPicoMeter(0ULL, 0ULL, 0ULL)
-      .SetDirection(0.0F, 0.0F, 1.0F)
-      .SetWeight(1.0F);
+      .SetDirection(0.0F, 0.0F, 1.0F);
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
       GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
@@ -295,8 +293,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest, CapturesFirstPrimaryHistories) {
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMicroElectronVolt(511'000'000'000ULL)
       .SetPositionPicoMeter(0ULL, 0ULL, 0ULL)
-      .SetDirection(0.0F, 0.0F, 1.0F)
-      .SetWeight(1.0F);
+      .SetDirection(0.0F, 0.0F, 1.0F);
 
   constexpr std::uint32_t k_observed_primary_count{2U};
   constexpr std::uint32_t k_observer_record_capacity{4'096U};
@@ -713,8 +710,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMicroElectronVolt(1'000'000'000ULL)
       .SetPositionPicoMeter(10LL, 20LL, 30LL)
-      .SetDirection(1.0F, 0.0F, 0.0F)
-      .SetWeight(0.25F);
+      .SetDirection(1.0F, 0.0F, 0.0F);
 
   ggems::core::sources::GGEMSSource disabled_source{};
   disabled_source.SetAnalytic()
@@ -727,8 +723,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
           ggems::core::particles::GGEMSParticleType::Electron)
       .SetEnergyMicroElectronVolt(2'000'000'000ULL)
       .SetPositionPicoMeter(-70LL, 80LL, -90LL)
-      .SetDirection(0.0F, -1.0F, 0.0F)
-      .SetWeight(0.75F);
+      .SetDirection(0.0F, -1.0F, 0.0F);
 
   auto expected_a = WithTimeWindow(source_a.BuildRecord(), 100ULL, 100ULL);
   auto disabled_record =
@@ -980,8 +975,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
       .SetEnergyMicroElectronVolt(511'000'001'000ULL)
       .SetPositionPicoMeter(0LL, 0LL, 0LL)
-      .SetDirection(0.0F, 0.0F, 1.0F)
-      .SetWeight(1.0F);
+      .SetDirection(0.0F, 0.0F, 1.0F);
 
   auto source_record = WithTimeWindow(source.BuildRecord(), 0ULL, 1'000ULL);
 

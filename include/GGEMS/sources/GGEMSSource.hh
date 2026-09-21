@@ -112,8 +112,6 @@ public:
                       std::array<double, 3U> const &up_reference)
       -> GGEMSSource &;
 
-  auto SetWeight(float weight) -> GGEMSSource &;
-
   [[nodiscard]] auto BuildExecutionRecord() const -> GGEMSSourceRecord;
 
   [[nodiscard]] auto BuildRecord() const -> GGEMSSourceRecord;

@@ -93,7 +93,6 @@ struct ActivityScenario {
       .SetFixedAngularDistribution()
       .SetPositionPicoMeter(11LL, 22LL, 33LL)
       .SetDirection(0.0, 0.0, 1.0)
-      .SetWeight(0.5F)
       .SetRadionuclide(std::move(definition),
                                      ggems::units::Activity{64.0L},
                                      k_time_window.start_ps);
@@ -187,7 +186,6 @@ auto ExpectCompleteActivityRecords(TransportRunReport const &report,
     EXPECT_EQ(record.energy_micro_eV, k_mono_energy_micro_eV);
     EXPECT_GE(record.time_ps, time_window.start_ps);
     EXPECT_LT(record.time_ps, time_window.stop_ps);
-    EXPECT_FLOAT_EQ(record.weight, 0.5F);
 
     switch (ggems::core::observer::FromKernelObserverRecordKind(
         record.record_kind)) {

@@ -42,9 +42,8 @@ TEST(GGEMSSourceRecord, IsKernelFriendly) {
   EXPECT_EQ(offsetof(SourceRecord, axis_z_x), 96U);
   EXPECT_EQ(offsetof(SourceRecord, axis_z_y), 100U);
   EXPECT_EQ(offsetof(SourceRecord, axis_z_z), 104U);
-  EXPECT_EQ(offsetof(SourceRecord, weight), 108U);
-  EXPECT_EQ(offsetof(SourceRecord, emission_geometry_type), 112U);
-  EXPECT_EQ(offsetof(SourceRecord, angular_distribution_type), 116U);
+  EXPECT_EQ(offsetof(SourceRecord, emission_geometry_type), 108U);
+  EXPECT_EQ(offsetof(SourceRecord, angular_distribution_type), 112U);
   EXPECT_EQ(offsetof(SourceRecord, geometry_size_x_pm), 120U);
   EXPECT_EQ(offsetof(SourceRecord, geometry_size_y_pm), 128U);
   EXPECT_EQ(offsetof(SourceRecord, focus_position_x_pm), 136U);
@@ -87,7 +86,6 @@ TEST(GGEMSSourceRecord, DefaultSourceRecordIsAnalyticGammaPointSource) {
   EXPECT_FLOAT_EQ(source.axis_z_y, 0.0F);
   EXPECT_FLOAT_EQ(source.axis_z_z, 1.0F);
 
-  EXPECT_FLOAT_EQ(source.weight, 1.0F);
 
   EXPECT_EQ(source.emission_geometry_type,
             ggems::core::sources::ToKernelEmissionGeometryType(

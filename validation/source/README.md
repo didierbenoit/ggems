@@ -52,7 +52,7 @@ Current scientific storage is:
 - Positions and Source center: signed int64 pm; geometry dimensions: uint64 pm.
 - Directions and actual packed Source axes/angular limits: binary32.
 - Energy: uint64 **micro-eV**, including exact table centers and regular-bin width.
-- Time: uint64 ps; weight: binary32.
+- Time: uint64 ps.
 - Tabulated energy probabilities: exact cumulative uint32-ticket boundaries
   stored in uint64, ending at 2^32.
 

@@ -47,8 +47,8 @@ struct SourceRunRangeAlignmentProbe {
 // =============================================================================
 // =============================================================================
 
-constexpr std::size_t k_layout_value_count{41U};
-constexpr std::size_t k_host_value_count{35U};
+constexpr std::size_t k_layout_value_count{40U};
+constexpr std::size_t k_host_value_count{34U};
 constexpr std::size_t k_source_record_count{2U};
 constexpr std::size_t k_source_range_count{2U};
 
@@ -76,7 +76,6 @@ constexpr std::size_t k_source_range_count{2U};
           .axis_z_x = -4.125F,
           .axis_z_y = 5.25F,
           .axis_z_z = -6.5F,
-          .weight = 0.875F,
           .emission_geometry_type = 112U,
           .angular_distribution_type = 113U,
           .geometry_size_x_pm = 114ULL,
@@ -115,7 +114,6 @@ constexpr std::size_t k_source_range_count{2U};
           .axis_z_x = -13.75F,
           .axis_z_y = 14.875F,
           .axis_z_z = -15.5F,
-          .weight = 0.625F,
           .emission_geometry_type =
               ggems::core::sources::ToKernelEmissionGeometryType(
                   ggems::core::sources::GGEMSEmissionGeometryType::Ellipse),
@@ -138,7 +136,7 @@ constexpr std::size_t k_source_range_count{2U};
 // =============================================================================
 
 [[nodiscard]] auto EncodeSourceRecord(SourceRecord const &record)
-    -> std::array<std::uint64_t, 33U> {
+    -> std::array<std::uint64_t, 32U> {
   return {
       {record.source_id,
        record.time_start_ps,
@@ -169,7 +167,6 @@ constexpr std::size_t k_source_range_count{2U};
            std::bit_cast<std::uint32_t>(record.axis_z_y)),
        static_cast<std::uint64_t>(
            std::bit_cast<std::uint32_t>(record.axis_z_z)),
-       static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.weight)),
        static_cast<std::uint64_t>(record.emission_geometry_type),
        static_cast<std::uint64_t>(record.angular_distribution_type),
        record.geometry_size_x_pm,
@@ -213,7 +210,6 @@ auto ExpectSourceRecordsEqual(SourceRecord const &actual,
   EXPECT_FLOAT_EQ(actual.axis_z_x, expected.axis_z_x);
   EXPECT_FLOAT_EQ(actual.axis_z_y, expected.axis_z_y);
   EXPECT_FLOAT_EQ(actual.axis_z_z, expected.axis_z_z);
-  EXPECT_FLOAT_EQ(actual.weight, expected.weight);
   EXPECT_EQ(actual.emission_geometry_type, expected.emission_geometry_type);
   EXPECT_EQ(actual.angular_distribution_type,
             expected.angular_distribution_type);
@@ -330,7 +326,6 @@ TEST_F(GGEMSSourceRecordKernelTest, HostAndKernelLayoutsAndValuesMatch) {
       static_cast<std::uint64_t>(offsetof(SourceRecord, axis_z_x)),
       static_cast<std::uint64_t>(offsetof(SourceRecord, axis_z_y)),
       static_cast<std::uint64_t>(offsetof(SourceRecord, axis_z_z)),
-      static_cast<std::uint64_t>(offsetof(SourceRecord, weight)),
       static_cast<std::uint64_t>(
           offsetof(SourceRecord, emission_geometry_type)),
       static_cast<std::uint64_t>(
@@ -369,8 +364,8 @@ TEST_F(GGEMSSourceRecordKernelTest, HostAndKernelLayoutsAndValuesMatch) {
     EXPECT_EQ(host_values[index], expected_host_record_values[index]) << index;
   }
 
-  EXPECT_EQ(host_values[33U], 301ULL);
-  EXPECT_EQ(host_values[34U], 302ULL);
+  EXPECT_EQ(host_values[32U], 301ULL);
+  EXPECT_EQ(host_values[33U], 302ULL);
 
   ExpectSourceRecordsEqual(source_records[1U], MakeDeviceSourceRecord());
   EXPECT_EQ(source_ranges[1U].projection_primary_begin, 401ULL);

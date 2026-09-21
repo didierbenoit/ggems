@@ -5,6 +5,7 @@
 #include <span>
 #include <type_traits>
 #include <vector>
+#include <optional>
 
 #include <gtest/gtest.h>
 
@@ -30,8 +31,6 @@ namespace units = ggems::units;
 using namespace ggems::units;
 using Channel = processes::GGEMSProductionCutChannel;
 
-// Authored Material indices. WaterAlias is scientifically identical to Water
-// under a different display name, so both intern to the same dense Material.
 constexpr std::uint32_t k_water{0U};
 constexpr std::uint32_t k_water_alias{1U};
 constexpr std::uint32_t k_aluminum{2U};
@@ -50,8 +49,11 @@ auto MakeMaterials() -> std::vector<materials::GGEMSMaterial> {
       materials::GGEMSMaterial{
           "WaterAlias",
           water.GetDensity(),
-          {{.atomic_number = 1U, .mass_fraction = 0.111898L},
-           {.atomic_number = 8U, .mass_fraction = 0.888102L}}},
+          {
+              {.atomic_number = 1U, .mass_fraction = 0.111898L},
+              {.atomic_number = 8U, .mass_fraction = 0.888102L},
+          },
+      },
       materials::builtins::BuildBuiltInMaterial("Aluminum"),
   };
 }
@@ -61,10 +63,13 @@ auto MakeMaterials() -> std::vector<materials::GGEMSMaterial> {
 
 auto MakePolicy() -> processes::GGEMSProductionCutPolicy {
   return {
-      .global = {.gamma = 1_mm,
-                 .electron = 1_mm,
-                 .positron = 1_mm,
-                 .proton = 1_mm},
+      .global =
+          {
+              .gamma = 1_mm,
+              .electron = 1_mm,
+              .positron = 1_mm,
+              .proton = 1_mm,
+          },
       .materials = {},
   };
 }
@@ -123,7 +128,16 @@ TEST_F(GGEMSMaterialCutCouplePackageTest, OneDifferentThresholdGivesNewCouple) {
   auto const policy = MakePolicy();
   std::vector<processes::GGEMSProductionCutContext> const contexts{
       {.material_index = k_water, .volume = {}},
-      {.material_index = k_water, .volume = {.positron = 2_mm}},
+      {
+          .material_index = k_water,
+          .volume =
+              {
+                  .gamma = std::nullopt,
+                  .electron = std::nullopt,
+                  .positron = 2_mm,
+                  .proton = std::nullopt,
+              },
+      },
   };
 
   processes::GGEMSMaterialCutCouplePackage const package{em_package_, policy,
@@ -169,7 +183,9 @@ TEST_F(GGEMSMaterialCutCouplePackageTest,
   EXPECT_NE(package.GetContextCoupleIds()[0], package.GetContextCoupleIds()[1]);
 
   processes::GGEMSMaterialCutCouple const same_thresholds{
-      .material_id = aluminum.material_id, .thresholds = water.thresholds};
+      .material_id = aluminum.material_id,
+      .thresholds = water.thresholds,
+  };
   EXPECT_NE(same_thresholds, water);
 }
 
@@ -180,16 +196,39 @@ TEST_F(GGEMSMaterialCutCouplePackageTest,
        DisplayNameAndProvenanceDoNotDefineIdentity) {
   auto policy = MakePolicy();
   policy.global.electron = 3_mm;
-  policy.materials.push_back(
-      {.material_index = k_water_alias, .lengths = {.electron = 1_mm}});
+  policy.materials.push_back({
+      .material_index = k_water_alias,
+      .lengths =
+          {
+              .gamma = std::nullopt,
+              .electron = 1_mm,
+              .positron = std::nullopt,
+              .proton = std::nullopt,
+          },
+  });
 
   std::vector<processes::GGEMSProductionCutContext> const contexts{
-      // Water, Electron 1 mm from a Volume override.
-      {.material_index = k_water, .volume = {.electron = 1_mm}},
-      // WaterAlias, Electron 1 mm from a Material override.
+      {
+          .material_index = k_water,
+          .volume =
+              {
+                  .gamma = std::nullopt,
+                  .electron = 1_mm,
+                  .positron = std::nullopt,
+                  .proton = std::nullopt,
+              },
+      },
       {.material_index = k_water_alias, .volume = {}},
-      // WaterAlias, Global Electron 3 mm overridden back to 1 mm by Volume.
-      {.material_index = k_water_alias, .volume = {.electron = 1_mm}},
+      {
+          .material_index = k_water_alias,
+          .volume =
+              {
+                  .gamma = std::nullopt,
+                  .electron = 1_mm,
+                  .positron = std::nullopt,
+                  .proton = std::nullopt,
+              },
+      },
   };
 
   processes::GGEMSMaterialCutCouplePackage const package{em_package_, policy,
@@ -206,14 +245,40 @@ TEST_F(GGEMSMaterialCutCouplePackageTest,
 
 TEST_F(GGEMSMaterialCutCouplePackageTest, IdsAreIndependentOfContextOrder) {
   auto policy = MakePolicy();
-  policy.materials.push_back(
-      {.material_index = k_aluminum, .lengths = {.gamma = 100_um}});
+  policy.materials.push_back({
+      .material_index = k_aluminum,
+      .lengths =
+          {
+              .gamma = 100_um,
+              .electron = std::nullopt,
+              .positron = std::nullopt,
+              .proton = std::nullopt,
+          },
+  });
 
   std::vector<processes::GGEMSProductionCutContext> contexts{
       {.material_index = k_aluminum, .volume = {}},
-      {.material_index = k_water, .volume = {.electron = 100_um}},
+      {
+          .material_index = k_water,
+          .volume =
+              {
+                  .gamma = std::nullopt,
+                  .electron = 100_um,
+                  .positron = std::nullopt,
+                  .proton = std::nullopt,
+              },
+      },
       {.material_index = k_water, .volume = {}},
-      {.material_index = k_aluminum, .volume = {.proton = 10_um}},
+      {
+          .material_index = k_aluminum,
+          .volume =
+              {
+                  .gamma = std::nullopt,
+                  .electron = std::nullopt,
+                  .positron = std::nullopt,
+                  .proton = 100_um,
+              },
+      },
       {.material_index = k_water_alias, .volume = {}},
   };
 
@@ -249,42 +314,85 @@ TEST_F(GGEMSMaterialCutCouplePackageTest, IdsAreIndependentOfContextOrder) {
 
 TEST_F(GGEMSMaterialCutCouplePackageTest, InvalidInputsAreRejected) {
   std::vector<processes::GGEMSProductionCutContext> const unknown_context{
-      {.material_index = 3U, .volume = {}}};
+      {.material_index = 3U, .volume = {}},
+  };
+
   EXPECT_THROW((processes::GGEMSMaterialCutCouplePackage{
                    em_package_, MakePolicy(), unknown_context}),
                ggems::core::GGEMSRecoverable);
 
   auto unknown_override = MakePolicy();
-  unknown_override.materials.push_back(
-      {.material_index = 3U, .lengths = {.gamma = 1_mm}});
+  unknown_override.materials.push_back({
+      .material_index = 3U,
+      .lengths =
+          {
+              .gamma = 1_mm,
+              .electron = std::nullopt,
+              .positron = std::nullopt,
+              .proton = std::nullopt,
+          },
+  });
+
   std::vector<processes::GGEMSProductionCutContext> const water_context{
-      {.material_index = k_water, .volume = {}}};
+      {.material_index = k_water, .volume = {}},
+  };
+
   EXPECT_THROW((processes::GGEMSMaterialCutCouplePackage{
                    em_package_, unknown_override, water_context}),
                ggems::core::GGEMSRecoverable);
 
   auto incomplete = MakePolicy();
   incomplete.global.proton.reset();
+
   EXPECT_THROW((processes::GGEMSMaterialCutCouplePackage{
                    em_package_, incomplete, water_context}),
                ggems::core::GGEMSRecoverable);
 
   std::vector<processes::GGEMSProductionCutContext> const no_context{};
+
   EXPECT_THROW((processes::GGEMSMaterialCutCouplePackage{
                    em_package_, incomplete, no_context}),
                ggems::core::GGEMSRecoverable);
 
   auto duplicate = MakePolicy();
-  duplicate.materials.push_back(
-      {.material_index = k_aluminum, .lengths = {.gamma = 1_mm}});
-  duplicate.materials.push_back(
-      {.material_index = k_aluminum, .lengths = {.proton = 1_mm}});
+  duplicate.materials.push_back({
+      .material_index = k_aluminum,
+      .lengths =
+          {
+              .gamma = 1_mm,
+              .electron = std::nullopt,
+              .positron = std::nullopt,
+              .proton = std::nullopt,
+          },
+  });
+  duplicate.materials.push_back({
+      .material_index = k_aluminum,
+      .lengths =
+          {
+              .gamma = std::nullopt,
+              .electron = std::nullopt,
+              .positron = std::nullopt,
+              .proton = 1_mm,
+          },
+  });
+
   EXPECT_THROW((processes::GGEMSMaterialCutCouplePackage{em_package_, duplicate,
                                                          no_context}),
                ggems::core::GGEMSRecoverable);
 
   std::vector<processes::GGEMSProductionCutContext> const below_domain{
-      {.material_index = k_water, .volume = {.gamma = 1_nm}}};
+      {
+          .material_index = k_water,
+          .volume =
+              {
+                  .gamma = 1_nm,
+                  .electron = std::nullopt,
+                  .positron = std::nullopt,
+                  .proton = std::nullopt,
+              },
+      },
+  };
+
   EXPECT_THROW((processes::GGEMSMaterialCutCouplePackage{
                    em_package_, MakePolicy(), below_domain}),
                ggems::core::GGEMSRecoverable);

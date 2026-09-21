@@ -28,7 +28,6 @@ CSV_COLUMNS = (
     "direction_z",
     "energy_micro_eV",
     "time_ps",
-    "weight",
     "record_kind",
 )
 
@@ -123,8 +122,6 @@ def load_metadata(path: Path) -> Metadata:
     )
     if axes != ((1, 0, 0), (0, 1, 0), (0, 0, 1)):
         raise ValueError("E1 requires the identity frame.")
-    if _number(raw.get("weight"), "weight") != 1:
-        raise ValueError("E1 requires weight 1.")
 
     primary_count = _integer(
         raw.get("primary_count"), "primary_count", 1, (TICKET_SPACE - 1) // 2
@@ -281,7 +278,7 @@ def load_samples(path: Path, metadata: Metadata) -> list[int]:
                     raise ValueError(
                         "Missing, duplicate, unordered, or impossible primary provenance."
                     )
-                if row[12] != "Source":
+                if row[11] != "Source":
                     raise ValueError("Only Source records are accepted.")
 
                 position = tuple(
@@ -292,8 +289,8 @@ def load_samples(path: Path, metadata: Metadata) -> list[int]:
                     raise ValueError(
                         "E1 requires exact origin and finite Fixed +Z direction."
                     )
-                if _decimal(row[10], 0, UINT64_MAX) != 0 or float(row[11]) != 1:
-                    raise ValueError("E1 requires static time 0 ps and weight 1.")
+                if _decimal(row[10], 0, UINT64_MAX) != 0:
+                    raise ValueError("E1 requires static time 0 ps.")
 
                 # No NumPy/float conversion of the sampled energy authority.
                 energies.append(_decimal(row[9], 0, UINT64_MAX))
@@ -403,7 +400,7 @@ def measure_energy(energies: list[int], metadata: Metadata) -> JsonObject:
             "observer_overflow_count": 0,
             "provenance_complete_unique_and_ordered": True,
             "source_records_only": True,
-            "point_origin_fixed_plus_z_static_zero_time_unit_weight": True,
+            "point_origin_fixed_plus_z_static_zero_time": True,
             "particle": "Gamma; exporter checks every raw record (no CSV particle column)",
         },
         "metadata": metadata.raw,

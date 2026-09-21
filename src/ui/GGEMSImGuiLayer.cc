@@ -785,7 +785,6 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
                     time_stop.c_str());
       }
 
-      ImGui::Text("Weight: %.9g", static_cast<double>(record.weight));
       ImGui::TreePop();
     }
 

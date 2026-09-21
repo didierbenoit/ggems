@@ -147,7 +147,7 @@ auto PrintUsage() -> void {
       << "CountDriven births equal the effective window start exactly.\n"
       << "Capture requires 2*N <= UINT32_MAX with the current Observer.\n"
       << "One fresh CountDriven Gamma Source, default identity frame/origin,\n"
-      << "default Fixed +Z, Mono 511 keV, static 0 ps, weight 1, Philox "
+      << "default Fixed +Z, Mono 511 keV, static 0 ps, Philox "
          "only.\n";
 }
 
@@ -602,8 +602,7 @@ auto ConfigureSource(Options const &options) -> std::shared_ptr<GGEMSSource> {
   source->SetAnalytic()
       .SetCountDrivenPopulation(options.primary_count)
       .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetFixedAngularDistribution()
-      .SetWeight(1.0F);
+      .SetFixedAngularDistribution();
 
   source->SetPositionPicoMeter(options.center_pm[0U], options.center_pm[1U],
                                options.center_pm[2U]);
@@ -762,8 +761,7 @@ auto CollectSourceRecords(GGEMSTransportObserver const &observer,
         !std::isfinite(record->direction_z) ||
         (options.energy_mode == "mono" &&
          record->energy_micro_eV != source.energy_micro_eV) ||
-        record->time_ps != source.time_start_ps ||
-        record->weight != source.weight) {
+        record->time_ps != source.time_start_ps) {
       throw std::runtime_error(
           "Source record violates the configured initialization contract.");
     }
@@ -801,7 +799,7 @@ auto WriteSamples(std::filesystem::path const &path,
   output
       << "source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,"
          "z_pm,"
-         "direction_x,direction_y,direction_z,energy_micro_eV,time_ps,weight,"
+         "direction_x,direction_y,direction_z,energy_micro_eV,time_ps,"
          "record_kind\n";
 
   for (auto const *record : records) {
@@ -810,7 +808,7 @@ auto WriteSamples(std::filesystem::path const &path,
            << ',' << record->position_y_pm << ',' << record->position_z_pm
            << ',' << record->direction_x << ',' << record->direction_y << ','
            << record->direction_z << ',' << record->energy_micro_eV << ','
-           << record->time_ps << ',' << record->weight << ",Source\n";
+           << record->time_ps << ",Source\n";
   }
 
   output.close();
@@ -988,7 +986,6 @@ auto WriteMetadata(std::ostream &output, Options const &options,
       << source.axis_z_y << ',' << source.axis_z_z << ']'
       << ",\n  \"energy_micro_eV\":" << source.energy_micro_eV
       << ",\n  \"time_ps\":" << source.time_start_ps
-      << ",\n  \"weight\":" << source.weight
       << ",\n  \"population_mode\":\"CountDriven\",\n  "
          "\"rng_engine\":\"Philox\""
       << ",\n  \"particle\":\"Gamma\",\n  \"angular_mode\":"

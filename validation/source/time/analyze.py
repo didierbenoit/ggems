@@ -29,7 +29,6 @@ CSV_COLUMNS = (
     "direction_z",
     "energy_micro_eV",
     "time_ps",
-    "weight",
     "record_kind",
 )
 
@@ -126,8 +125,6 @@ def _validate_source(raw: JsonObject, case: TimeCase, primary_count: int) -> Non
     )
     if axes != ((1, 0, 0), (0, 1, 0), (0, 0, 1)):
         raise ValueError("T1 requires the identity frame.")
-    if _number(raw.get("weight"), "weight") != 1:
-        raise ValueError("T1 requires weight 1.")
     if _integer(raw.get("energy_micro_eV"), "energy_micro_eV") != MONO_ENERGY_MICRO_EV:
         raise ValueError("T1 requires exactly 511000000000 micro-eV.")
 
@@ -310,7 +307,7 @@ def analyze_run(run: RunMetadata, metadata: Metadata) -> JsonObject:
         for row_number, row in enumerate(reader, start=2):
             if len(row) != len(CSV_COLUMNS):
                 raise ValueError(f"Malformed CSV row {row_number}: wrong field count.")
-            if row[12] != "Source":
+            if row[11] != "Source":
                 raise ValueError("Only Source records belong in T1 sample CSVs.")
 
             slot = _csv_integer(row[0], "source_index")
@@ -339,9 +336,9 @@ def analyze_run(run: RunMetadata, metadata: Metadata) -> JsonObject:
                 raise ValueError("T1 direction must equal Fixed +Z exactly.")
             energy = _csv_integer(row[9], "energy_micro_eV")
             birth = _csv_integer(row[10], "time_ps")
-            if energy != MONO_ENERGY_MICRO_EV or float(row[11]) != 1:
+            if energy != MONO_ENERGY_MICRO_EV:
                 raise ValueError(
-                    "T1 requires exact Mono 511000000000 micro-eV and weight 1."
+                    "T1 requires exact Mono 511000000000 micro-eV."
                 )
             times.append(birth)
 

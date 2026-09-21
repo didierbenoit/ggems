@@ -48,8 +48,6 @@ typedef struct GGEMSSourceRecord {
   float axis_z_y;
   float axis_z_z;
 
-  float weight;
-
   uint emission_geometry_type;
   uint angular_distribution_type;
 

@@ -7,7 +7,7 @@ Observer `Source` records -> the shared sample exporter -> NumPy -> Matplotlib.
 There is no alternative angular sampler or production API in this validation.
 
 All cases use one Analytic CountDriven Gamma source, center `(0, 0, 0) pm`,
-default identity frame, Mono `511 keV`, static time `0 ps`, weight `1`, and Philox.
+default identity frame, Mono `511 keV`, static time `0 ps`, and Philox.
 The prior Random qualification applies within its tested scope; A1 measures the
 angular transformations consuming those outputs. It is not another RNG campaign.
 
@@ -81,10 +81,10 @@ their exact-direction check. Geometry scripts and semantics are unchanged.
 The CSV remains:
 
 ```text
-source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,z_pm,direction_x,direction_y,direction_z,energy_micro_eV,time_ps,weight,record_kind
+source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,z_pm,direction_x,direction_y,direction_z,energy_micro_eV,time_ps,record_kind
 ```
 
-Integer fields remain exact decimal integers. Direction and weight serialization
+Integer fields remain exact decimal integers. Direction serialization
 retains `numeric_limits<float>::max_digits10`. A1 reconstructs each binary32
 direction before promoting it to binary64, so the decimal approximation itself
 does not contaminate norm/error measurements. Observer human-readable output is
@@ -94,7 +94,7 @@ positions do not enter the analysis.
 Capture is complete: the exporter checks zero overflow and the exact current
 Source/Terminal count, then exports Source only, sorted by slot and local ID.
 Python checks the exact CSV header, fields, count, sorted unique provenance,
-slot 0, source-local/global IDs `[0, N)`, Mono energy, static time, weight, and
+slot 0, source-local/global IDs `[0, N)`, Mono energy, static time, and
 finite directions. Point positions and the Rectangle Z=0 plane are exact checks.
 Malformed data are errors, not silently filtered or repaired. A zero direction
 cannot define a ray and is also an error.

@@ -9,7 +9,7 @@ projection and its `Terminal` positions are not geometry samples.
 
 Only geometry varies: one CountDriven Analytic Gamma source, center exactly
 `(0, 0, 0) pm`, default identity frame, Fixed direction `+Z`, Mono `511 keV`,
-weight `1`, static time `0 ps`, and Philox. Point consumes no position random
+static time `0 ps`, and Philox. Point consumes no position random
 draw; every other geometry consumes one position `Uniform4`. Fixed direction,
 Mono energy, static CountDriven time, and source lookup consume no random draw.
 The prior Philox qualification applies within its tested Random scope; this
@@ -103,18 +103,18 @@ The single fresh Run has slot `0`, source-local IDs `[0, N)`, and corresponding
 global IDs starting at `0`. CSV fields are:
 
 ```text
-source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,z_pm,direction_x,direction_y,direction_z,energy_micro_eV,time_ps,weight,record_kind
+source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,z_pm,direction_x,direction_y,direction_z,energy_micro_eV,time_ps,record_kind
 ```
 
 Scientific integer fields remain decimal integers, with no display rounding.
-`record_kind` is the literal `Source`. Binary32 direction and weight values use
+`record_kind` is the literal `Source`. Binary32 direction values use
 sufficient decimal precision for round-trip representation. Python reads integer
 columns as integers before constructing temporary numerical analysis arrays.
 The CSV is a validation boundary, not a GGEMS public production Output format.
 
 Metadata includes case, geometry, complete committed dimensions, count/workers,
 Philox seed, selector and selected device names, center, frame axes, direction,
-energy, chronology, weight, provenance origin, and Observer counts. The runner
+energy, chronology, provenance origin, and Observer counts. The runner
 adds `git_commit` when the checkout commit is available; it identifies the
 checkout and is not an executable attestation. No fingerprints or certification
 metadata are introduced.
