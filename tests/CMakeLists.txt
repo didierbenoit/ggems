@@ -113,6 +113,7 @@ set(GGEMS_CORE_TEST_DIRECTORIES
     observer
     opencl
     particles
+    processes
     radioactivity
     random
     render
