@@ -1,0 +1,9 @@
+{
+  "name": "CustomWater",
+  "density": 1.0,
+  "density_unit": "g/cm3",
+  "elements": {
+    "H": 0.111898,
+    "O": 0.888102
+  }
+}

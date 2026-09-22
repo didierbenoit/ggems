@@ -39,20 +39,23 @@ struct BuiltInEntry {
 // =============================================================================
 
 constexpr std::array<BuiltInEntry, 14U> k_builtin_entries{
-  {{.canonical_name = "H-3", .builder = BuildH3Radionuclide},
-   {.canonical_name = "C-14", .builder = BuildC14Radionuclide},
-   {.canonical_name = "F-18", .builder = BuildF18Radionuclide},
-   {.canonical_name = "C-11", .builder = BuildC11Radionuclide},
-   {.canonical_name = "O-15", .builder = BuildO15Radionuclide},
-   {.canonical_name = "Ga-68", .builder = BuildGa68Radionuclide},
-   {.canonical_name = "Co-60", .builder = BuildCo60Radionuclide},
-   {.canonical_name = "Lu-177", .builder = BuildLu177Radionuclide},
-   {.canonical_name = "I-123", .builder = BuildI123Radionuclide},
-   {.canonical_name = "I-124", .builder = BuildI124Radionuclide},
-   {.canonical_name = "I-125", .builder = BuildI125Radionuclide},
-   {.canonical_name = "I-131", .builder = BuildI131Radionuclide},
-   {.canonical_name = "Am-241", .builder = BuildAm241Radionuclide},
-   {.canonical_name = "Tc-99m", .builder = BuildTc99mRadionuclide}}};
+  {
+    {.canonical_name = "H-3", .builder = BuildH3Radionuclide},
+    {.canonical_name = "C-14", .builder = BuildC14Radionuclide},
+    {.canonical_name = "F-18", .builder = BuildF18Radionuclide},
+    {.canonical_name = "C-11", .builder = BuildC11Radionuclide},
+    {.canonical_name = "O-15", .builder = BuildO15Radionuclide},
+    {.canonical_name = "Ga-68", .builder = BuildGa68Radionuclide},
+    {.canonical_name = "Co-60", .builder = BuildCo60Radionuclide},
+    {.canonical_name = "Lu-177", .builder = BuildLu177Radionuclide},
+    {.canonical_name = "I-123", .builder = BuildI123Radionuclide},
+    {.canonical_name = "I-124", .builder = BuildI124Radionuclide},
+    {.canonical_name = "I-125", .builder = BuildI125Radionuclide},
+    {.canonical_name = "I-131", .builder = BuildI131Radionuclide},
+    {.canonical_name = "Am-241", .builder = BuildAm241Radionuclide},
+    {.canonical_name = "Tc-99m", .builder = BuildTc99mRadionuclide},
+  },
+};
 
 // =============================================================================
 // =============================================================================
@@ -83,7 +86,8 @@ DescribeEnergyDistribution(sources::GGEMSEnergyDistribution const &distribution)
   if (type == sources::GGEMSEnergyDistributionType::Mono) {
     return std::format("Mono {}",
                        ggems::units::HumanReadable(ggems::units::Energy{
-                         distribution.GetMonoEnergyMicroElectronVolt()}));
+                         distribution.GetMonoEnergyMicroElectronVolt(),
+                       }));
   }
 
   auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
@@ -214,14 +218,15 @@ DescribeBuiltInRadionuclide(GGEMSRadionuclideDefinition const &definition)
 
 auto VerboseBuiltInRadionuclide(GGEMSRadionuclideDefinition const &definition)
   -> void {
-  GGEMS_INFO("Radionuclide", "{}", DescribeBuiltInRadionuclide(definition));
+  GGEMS_INFO("Radionuclide", "\n{}\n", DescribeBuiltInRadionuclide(definition));
 }
 
 // =============================================================================
 // =============================================================================
 
 auto VerboseBuiltInRadionuclide(std::string_view canonical_name) -> void {
-  GGEMS_INFO("Radionuclide", "{}", DescribeBuiltInRadionuclide(canonical_name));
+  GGEMS_INFO("Radionuclide", "\n{}\n",
+             DescribeBuiltInRadionuclide(canonical_name));
 }
 
 } // namespace ggems::core::radioactivity::builtins

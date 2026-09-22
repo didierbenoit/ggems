@@ -89,27 +89,23 @@ energy-distribution summaries.
   // === === ===
   module.def(
     "available",
-    [] -> py::tuple {
+    [] -> void {
       auto const names =
         ggems::core::radioactivity::builtins::GetAvailableRadionuclideNames();
 
-      py::tuple result{names.size()};
-      for (std::size_t index = 0U; index < names.size(); ++index) {
-        result[index] = py::str{names[index]};
-      }
+      for (auto const name : names) {
+        auto definition =
+          ggems::core::radioactivity::builtins::BuildBuiltInRadionuclide(name);
 
-      return result;
+        ggems::core::radioactivity::builtins::VerboseBuiltInRadionuclide(
+          *definition);
+      }
     },
     R"pbdoc(
-Return the canonical names of all built-in GGEMS radionuclides.
+Print detailed information about all built-in GGEMS radionuclides.
 
-Returns:
-    tuple[str, ...]: Canonical radionuclide identifiers accepted by
-    ``ggems.radionuclide.load()``.
-
-Examples:
-    >>> "F-18" in ggems.radionuclide.available()
-    True
+Each radionuclide report includes the half-life, emission channels, emission
+yields, and energy-distribution summaries.
 )pbdoc");
 
   // === === ===

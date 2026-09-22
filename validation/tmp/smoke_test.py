@@ -8,7 +8,7 @@ ggems.start()
 opencl = ggems.opencl.GGEMSOpenCL()
 opencl.print_devices()
 
-opencl.select_devices("1")
+opencl.select_devices("2")
 opencl.initialize()
 
 opencl.print_contexts()
@@ -20,7 +20,7 @@ random.verbose()
 
 # ------------------------------------------------------------------------------
 
-print(ggems.radionuclide.available())
+ggems.radionuclide.available()
 
 am241 = ggems.radionuclide.load("Am-241")
 am241.verbose()
@@ -62,12 +62,15 @@ source_3 = (
 
 # ---------------------------------------------------------------------------
 
-print(source_1)
-print(source_2)
-print(source_3)
-
 source_1.verbose()
 source_2.verbose()
 source_3.verbose()
+
+# ---------------------------------------------------------------------------
+
+ggems.materials.load_json("validation/tmp/custom_material.json")
+ggems.materials.available()
+ggems.materials.registered()
+ggems.materials.verbose("Copper")
 
 ggems.stop()

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <span>
 #include <vector>
 
 #include "GGEMS/materials/GGEMSIsotope.hh"
@@ -16,11 +15,6 @@ class GGEMSResolvedIsotopeTable {
 public:
   explicit GGEMSResolvedIsotopeTable(
     std::vector<GGEMSResolvedIsotope> resolved_isotopes);
-
-  [[nodiscard]] auto GetResolvedIsotopes() const noexcept
-    -> std::span<GGEMSResolvedIsotope const> {
-    return resolved_isotopes_;
-  }
 
   [[nodiscard]] auto Find(GGEMSIsotope const &isotope) const noexcept
     -> GGEMSResolvedIsotope const *;

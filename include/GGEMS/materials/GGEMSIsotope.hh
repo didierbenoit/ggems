@@ -13,13 +13,8 @@ public:
                          std::uint32_t isomer_state)
       : atomic_number_{atomic_number}, mass_number_{mass_number},
         isomer_state_{isomer_state} {
-    if (atomic_number < 1U || atomic_number > 92U) {
-      throw GGEMSRecoverable{"Isotope atomic number must be in [1, 92]."};
-    }
-
-    if (mass_number < atomic_number) {
-      throw GGEMSRecoverable{
-        "Isotope mass number must not be smaller than its atomic number."};
+    if (atomic_number < 1U || atomic_number > 99U) {
+      throw GGEMSRecoverable{"Isotope atomic number must be in [1, 99]."};
     }
   }
 

@@ -28,16 +28,6 @@ class GGEMSEMMaterialPackage {
 public:
   explicit GGEMSEMMaterialPackage(std::span<GGEMSMaterial const> materials);
 
-  GGEMSEMMaterialPackage(GGEMSEMMaterialPackage const &) = default;
-  GGEMSEMMaterialPackage(GGEMSEMMaterialPackage &&) noexcept = default;
-  ~GGEMSEMMaterialPackage() = default;
-
-  auto operator=(GGEMSEMMaterialPackage const &)
-    -> GGEMSEMMaterialPackage & = delete;
-
-  auto operator=(GGEMSEMMaterialPackage &&)
-    -> GGEMSEMMaterialPackage & = delete;
-
   [[nodiscard]] auto GetDescriptors() const noexcept
     -> std::span<GGEMSEMMaterialDescriptor const> {
     return descriptors_;

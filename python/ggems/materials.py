@@ -8,31 +8,13 @@ from typing import cast
 from .ggems import materials as _native
 
 
-def available() -> tuple[str, ...]:
-    return cast(
-        tuple[str, ...],
-        _native.available(),  # pyright: ignore[reportUnknownMemberType]
-    )
-
-
-def registered() -> tuple[str, ...]:
-    return cast(
-        tuple[str, ...],
-        _native.registered(),  # pyright: ignore[reportUnknownMemberType]
-    )
-
-
 add = _native.add
 verbose = _native.verbose
-describe = _native.describe
-register = _native.register
-inspect = _native.inspect
-compile_registered = _native.compile_registered
-IsotopeProfile = _native.IsotopeProfile
-MaterialRegistration = _native.MaterialRegistration
+available = _native.available
+registered = _native.registered
 
 
-def load_json(path: str | PathLike[str]) -> int:
+def load_json(path: str | PathLike[str]) -> None:
     with Path(path).open("r", encoding="utf-8") as stream:
         raw = cast(object, json.load(stream))
 
@@ -88,4 +70,4 @@ def load_json(path: str | PathLike[str]) -> int:
 
         elements[symbol] = float(mass_fraction)
 
-    return add(name, float(density), elements, density_unit)
+    _native.add(name, float(density), elements, density_unit)

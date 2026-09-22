@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cmath>
 #include <format>
 #include <utility>
 #include <vector>
@@ -16,23 +15,7 @@ namespace ggems::core::materials {
 GGEMSResolvedIsotopeTable::GGEMSResolvedIsotopeTable(
   std::vector<GGEMSResolvedIsotope> resolved_isotopes)
     : resolved_isotopes_{std::move(resolved_isotopes)} {
-  for (auto const &resolved_isotope : resolved_isotopes_) {
-    long double const molar_mass = resolved_isotope.molar_mass_grams_per_mole;
-
-    if (!std::isnormal(molar_mass) || !(molar_mass > 0.0L)) {
-      throw GGEMSRecoverable{"Resolved isotope molar mass must be a finite, "
-                             "strictly positive normal value."};
-    }
-  }
-
   std::ranges::sort(resolved_isotopes_, {}, &GGEMSResolvedIsotope::isotope);
-
-  if (std::ranges::adjacent_find(resolved_isotopes_, {},
-                                 &GGEMSResolvedIsotope::isotope) !=
-      resolved_isotopes_.end()) {
-    throw GGEMSRecoverable{
-      "Resolved isotope table contains duplicate isotope keys."};
-  }
 }
 
 // -----------------------------------------------------------------------------

@@ -1,7 +1,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
-#include <limits>
 #include <optional>
 #include <span>
 #include <string_view>
@@ -35,15 +34,8 @@ namespace {
 
 [[nodiscard]] auto AddMaterial(std::vector<GGEMSMaterial> &materials,
                                GGEMSMaterial material) -> std::uint32_t {
-  if (materials.size() >=
-      static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max())) {
-    throw GGEMSRecoverable{"Too many Materials."};
-  }
-
   auto const material_index = static_cast<std::uint32_t>(materials.size());
-
   materials.push_back(std::move(material));
-
   return material_index;
 }
 
@@ -60,28 +52,26 @@ namespace {
 
 // -----------------------------------------------------------------------------
 
-[[nodiscard]] auto
-GGEMSMaterialManager::GetOrAddBuiltIn(std::string_view canonical_name)
+[[nodiscard]] auto GGEMSMaterialManager::GetOrAdd(std::string_view name)
   -> std::uint32_t {
-  if (auto const material_index = FindIndex(canonical_name);
-      material_index.has_value()) {
+  if (auto const material_index = FindIndex(name); material_index.has_value()) {
     return *material_index;
   }
 
-  return AddMaterial(materials_,
-                     builtins::BuildBuiltInMaterial(canonical_name));
+  if (IsBuiltInMaterialName(name)) {
+    return AddMaterial(materials_, builtins::BuildBuiltInMaterial(name));
+  }
+
+  if (auto const *material = FindCustom(name); material != nullptr) {
+    return AddMaterial(materials_, *material);
+  }
+
+  throw GGEMSRecoverable{std::format("Unknown Material '{}'.", name)};
 }
 
 // -----------------------------------------------------------------------------
-//
-// Custom Materials share the same process-wide index space as built-ins.
-// Built-in canonical names cannot be shadowed.
-//
-// -----------------------------------------------------------------------------
 
-[[nodiscard]] auto
-GGEMSMaterialManager::AddCustomMaterial(GGEMSMaterial material)
-  -> std::uint32_t {
+auto GGEMSMaterialManager::AddCustomMaterial(GGEMSMaterial material) -> void {
   auto const name = material.GetName();
 
   if (IsBuiltInMaterialName(name)) {
@@ -89,12 +79,12 @@ GGEMSMaterialManager::AddCustomMaterial(GGEMSMaterial material)
       "Custom Material '{}' conflicts with a built-in Material.", name)};
   }
 
-  if (Find(name) != nullptr) {
+  if (FindCustom(name) != nullptr) {
     throw GGEMSRecoverable{
-      std::format("Material '{}' is already registered.", name)};
+      std::format("Material '{}' is already defined.", name)};
   }
 
-  return AddMaterial(materials_, std::move(material));
+  custom_materials_.push_back(std::move(material));
 }
 
 // -----------------------------------------------------------------------------
@@ -135,6 +125,27 @@ GGEMSMaterialManager::Find(std::string_view name) const noexcept
 // -----------------------------------------------------------------------------
 
 [[nodiscard]] auto
+GGEMSMaterialManager::FindCustom(std::string_view name) const noexcept
+  -> GGEMSMaterial const * {
+  for (auto const &material : custom_materials_) {
+    if (material.GetName() == name) {
+      return &material;
+    }
+  }
+
+  return nullptr;
+}
+
+// -----------------------------------------------------------------------------
+
+[[nodiscard]] auto GGEMSMaterialManager::GetCustomMaterials() const noexcept
+  -> std::span<GGEMSMaterial const> {
+  return custom_materials_;
+}
+
+// -----------------------------------------------------------------------------
+
+[[nodiscard]] auto
 GGEMSMaterialManager::Require(std::uint32_t material_index) const
   -> GGEMSMaterial const & {
   if (material_index >= materials_.size()) {
@@ -143,19 +154,6 @@ GGEMSMaterialManager::Require(std::uint32_t material_index) const
   }
 
   return materials_[material_index];
-}
-
-// -----------------------------------------------------------------------------
-
-[[nodiscard]] auto GGEMSMaterialManager::Require(std::string_view name) const
-  -> GGEMSMaterial const & {
-  auto const *material = Find(name);
-
-  if (material == nullptr) {
-    throw GGEMSRecoverable{std::format("Unknown Material '{}'.", name)};
-  }
-
-  return *material;
 }
 
 } // namespace ggems::core::materials

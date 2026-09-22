@@ -6,7 +6,6 @@
 #include <string_view>
 #include <vector>
 
-#include "GGEMS/materials/GGEMSIsotopeProfile.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/GGEMSMaterialComposition.hh"
 #include "GGEMS/materials/GGEMSMaterialManager.hh"
@@ -24,7 +23,6 @@ struct GGEMSElementInspection {
   GGEMSDerivedElementalConstituent values;
   std::string symbol;
   std::string name;
-  std::optional<GGEMSIsotopeProfile> isotope_profile;
 };
 
 struct GGEMSMaterialInspection {
@@ -55,17 +53,8 @@ struct GGEMSMaterialInspection {
 [[nodiscard]] auto DescribeMaterial(GGEMSMaterialInspection const &inspection)
   -> std::string;
 
-[[nodiscard]] auto DescribeAvailableMaterials() -> std::string;
-
-[[nodiscard]] auto
-DescribeRegisteredMaterials(GGEMSMaterialManager const &manager) -> std::string;
-
 auto VerboseMaterial(GGEMSMaterial const &Material) -> void;
 
 auto VerboseMaterial(GGEMSMaterialInspection const &inspection) -> void;
-
-auto VerboseAvailableMaterials() -> void;
-
-auto VerboseRegisteredMaterials(GGEMSMaterialManager const &manager) -> void;
 
 } // namespace ggems::core::materials

@@ -1,16 +1,15 @@
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <format>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <algorithm>
 
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/logging/GGEMSLogMacros.hh"
 #include "GGEMS/materials/GGEMSElementCatalog.hh"
 #include "GGEMS/materials/GGEMSIsotope.hh"
-#include "GGEMS/materials/GGEMSIsotopeProfile.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/GGEMSMaterialDescription.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
@@ -32,25 +31,6 @@ namespace materials = ggems::core::materials;
              ggems::core::Encoding::Ascii
            ? "1/cm3"
            : "1/cm³";
-}
-
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] auto
-IsotopeProfileName(std::optional<materials::GGEMSIsotopeProfile> profile)
-  -> std::string_view {
-  if (!profile.has_value()) {
-    return "not retained";
-  }
-
-  switch (*profile) {
-  case materials::GGEMSIsotopeProfile::Nist41Natural:
-    return "NIST 4.1 representative natural composition";
-  case materials::GGEMSIsotopeProfile::LegacyReferenceIsotope:
-    return "legacy reference isotope (not a natural composition)";
-  }
-  return "unknown";
 }
 
 // =============================================================================
@@ -82,9 +62,9 @@ RegistrationLabel(materials::GGEMSMaterialInspection const &inspection)
   switch (inspection.registration) {
   case materials::GGEMSMaterialRegistration::Registered:
     return std::format("registered, manager material index {}",
-                       inspection.manager_index.value_or(0U));
+                       *inspection.manager_index);
   case materials::GGEMSMaterialRegistration::Unregistered:
-    return "available built-in, not registered";
+    return "available, not registered";
   case materials::GGEMSMaterialRegistration::Unknown:
     break;
   }
@@ -113,20 +93,13 @@ namespace ggems::core::materials {
       material.GetElectronDensityPerCubicCentimeter(),
   };
 
-  auto const authored = material.GetConstituents();
-
   for (auto const &values : material.GetElementalConstituents()) {
     auto const &element = RequireElementByAtomicNumber(values.atomic_number);
-
-    auto const retained = std::ranges::find(
-      authored, values.atomic_number, &GGEMSMaterialConstituent::atomic_number);
 
     inspection.elements.push_back({
       .values = values,
       .symbol = std::string{element.GetSymbol()},
       .name = std::string{element.GetName()},
-      .isotope_profile =
-        retained != authored.end() ? retained->isotope_profile : std::nullopt,
     });
   }
 
@@ -159,9 +132,21 @@ namespace ggems::core::materials {
     return InspectMaterial(manager, *manager_index);
   }
 
-  auto inspection = InspectMaterial(builtins::BuildBuiltInMaterial(name));
-  inspection.registration = GGEMSMaterialRegistration::Unregistered;
-  return inspection;
+  auto const builtin_names = builtins::GetAvailableMaterialNames();
+
+  if (std::ranges::find(builtin_names, name) != builtin_names.end()) {
+    auto inspection = InspectMaterial(builtins::BuildBuiltInMaterial(name));
+    inspection.registration = GGEMSMaterialRegistration::Unregistered;
+    return inspection;
+  }
+
+  if (auto const *material = manager.FindCustom(name); material != nullptr) {
+    auto inspection = InspectMaterial(*material);
+    inspection.registration = GGEMSMaterialRegistration::Unregistered;
+    return inspection;
+  }
+
+  return InspectMaterial(builtins::BuildBuiltInMaterial(name));
 }
 
 // =============================================================================
@@ -202,14 +187,11 @@ namespace ggems::core::materials {
       "\n    {} {} Z={}"
       "\n      derived mass fraction : {:.8g}"
       "\n      number density        : {:.8g} {}"
-      "\n      electron density      : {:.8g} {}"
-      "\n      isotope profile       : {}",
+      "\n      electron density      : {:.8g} {}",
       element.symbol, element.name, values.atomic_number, values.mass_fraction,
       values.number_density_per_cubic_centimeter, NumberDensityUnit(),
-      values.electron_density_per_cubic_centimeter, NumberDensityUnit(),
-      IsotopeProfileName(element.isotope_profile));
+      values.electron_density_per_cubic_centimeter, NumberDensityUnit());
 
-    // Isotope rows follow the canonical element order.
     for (; isotope_index < inspection.isotopes.size() &&
            inspection.isotopes[isotope_index].isotope.GetAtomicNumber() ==
              values.atomic_number;
@@ -238,64 +220,15 @@ namespace ggems::core::materials {
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] auto DescribeAvailableMaterials() -> std::string {
-  auto const names = builtins::GetAvailableMaterialNames();
-
-  std::string description =
-    std::format("Available built-in Materials: {}", names.size());
-
-  for (auto const name : names) {
-    description += std::format("\n  {}", name);
-  }
-
-  return description;
-}
-
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] auto
-DescribeRegisteredMaterials(GGEMSMaterialManager const &manager)
-  -> std::string {
-  auto const registered = manager.GetMaterials();
-
-  std::string description =
-    std::format("Registered Materials: {}", registered.size());
-
-  for (std::size_t index = 0U; index < registered.size(); ++index) {
-    description += std::format("\n  manager material index {}: {}", index,
-                               registered[index].GetName());
-  }
-
-  return description;
-}
-
-// =============================================================================
-// =============================================================================
-
 auto VerboseMaterial(GGEMSMaterial const &material) -> void {
-  GGEMS_INFO("Material", "{}", DescribeMaterial(material));
+  GGEMS_INFO("Material", "\n{}\n", DescribeMaterial(material));
 }
 
 // =============================================================================
 // =============================================================================
 
 auto VerboseMaterial(GGEMSMaterialInspection const &inspection) -> void {
-  GGEMS_INFO("Material", "{}", DescribeMaterial(inspection));
-}
-
-// =============================================================================
-// =============================================================================
-
-auto VerboseAvailableMaterials() -> void {
-  GGEMS_INFO("Material", "{}", DescribeAvailableMaterials());
-}
-
-// =============================================================================
-// =============================================================================
-
-auto VerboseRegisteredMaterials(GGEMSMaterialManager const &manager) -> void {
-  GGEMS_INFO("Material", "{}", DescribeRegisteredMaterials(manager));
+  GGEMS_INFO("Material", "\n{}\n", DescribeMaterial(inspection));
 }
 
 } // namespace ggems::core::materials

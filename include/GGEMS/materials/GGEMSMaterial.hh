@@ -7,7 +7,6 @@
 #include <string_view>
 #include <vector>
 
-#include "GGEMS/materials/GGEMSIsotopeProfile.hh"
 #include "GGEMS/materials/GGEMSMaterialComposition.hh"
 #include "GGEMS/units/GGEMSDensityUnits.hh"
 
@@ -22,7 +21,6 @@ struct GGEMSMaterialConstituent {
   std::uint32_t atomic_number;
   long double mass_fraction;
   long double number_density_per_cubic_centimeter;
-  std::optional<GGEMSIsotopeProfile> isotope_profile;
 };
 
 class GGEMSMaterial {
@@ -63,8 +61,7 @@ public:
 private:
   GGEMSMaterial(std::string name, units::Density density);
 
-  auto Compile(std::vector<GGEMSElementalShare> elemental_shares,
-               bool resolved_from_profiles) -> void;
+  auto Compile(std::vector<GGEMSElementalShare> elemental_shares) -> void;
 
   std::string name_;
   units::Density density_;

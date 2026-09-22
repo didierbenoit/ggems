@@ -44,4 +44,7 @@ private:
   std::vector<GGEMSIsotopeFraction> fractions_;
 };
 
+[[nodiscard]] auto BuildDefaultIsotopicComposition(std::uint32_t atomic_number)
+  -> GGEMSIsotopicComposition;
+
 } // namespace ggems::core::materials
