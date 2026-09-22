@@ -1,3 +1,39 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+# Authors:
+# Julien BERT <julien.bert@univ-brest.fr>
+# Didier BENOIT <didier.benoit@inserm.fr>
+
+"""GGEMS Python package.
+
+GGEMS - GPU Geant4-based Monte Carlo Simulations.
+
+This package exposes the GGEMS C++ engine through Python bindings and provides
+access to the main runtime, OpenCL, random, materials, production cuts, source,
+radionuclide, observer, run, and optional graphical-interface modules.
+
+Top-level functions control GGEMS logging and output runtime behavior.
+"""
+
 import os as _os
 from pathlib import Path as _Path
 
@@ -44,6 +80,13 @@ except ImportError:
 
 
 def start(mode: str | None = None) -> None:
+    """Start GGEMS output.
+
+    Terminal output is used by default when no mode is specified.
+
+    Args:
+        mode: Optional output mode. Accepted values are "term" and "gui".
+    """
     if mode is None:
         ggems.start()
     else:
@@ -51,22 +94,48 @@ def start(mode: str | None = None) -> None:
 
 
 def stop() -> None:
+    """Stop GGEMS output.
+
+    The selected output mode and configured sinks are retained and can be reused
+    by a later call to start().
+    """
     ggems.stop()
 
 
 def is_started() -> bool:
+    """Return whether GGEMS output is currently started.
+
+    Returns:
+        bool: True when GGEMS output is started.
+    """
     return ggems.is_started()
 
 
 def set_detail_level(detail: int = 1) -> None:
+    """Set the maximum GGEMS informational detail depth.
+
+    Args:
+        detail: Maximum accepted logging depth.
+    """
     ggems.set_detail_level(detail)
 
 
 def set_output_file(path: str) -> None:
+    """Enable an optional plain-text GGEMS log file.
+
+    The output file can only be changed while GGEMS output is stopped.
+
+    Args:
+        path: Destination log-file path.
+    """
     ggems.set_output_file(path)
 
 
 def clear_output_file() -> None:
+    """Disable the optional GGEMS log file.
+
+    This operation is only allowed while GGEMS output is stopped.
+    """
     ggems.clear_output_file()
 
 
@@ -107,5 +176,5 @@ __author__ = (
     "Didier Benoit <didier.benoit@inserm.fr>",
     "Julien Bert <julien.bert@univ-brest.fr>",
 )
-__license__ = "GPLv3"
+__license__ = "GPL-3.0-or-later"
 __description__ = "GPU Geant4-based Monte Carlo Simulations (GGEMS)"

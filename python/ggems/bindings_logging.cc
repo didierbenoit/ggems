@@ -27,32 +27,31 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <cstdint>
 #include <string>
 
 #include <pybind11/pybind11.h>
-/// \endcond
 
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/logging/GGEMSOutputMode.hh"
 
 namespace py = pybind11;
 
-/*!
- * \brief Registers GGEMS logging and output bindings in a Python module.
- *
- * \param[in,out] module Python module receiving the bindings.
- */
+// =============================================================================
+// =============================================================================
+
 void BindLogging(py::module_ &module) {
+
+  // === === ===
   module.def(
-    "start", []() -> void { ggems::core::StartOutputRuntime(); },
+    "start", [] -> void { ggems::core::StartOutputRuntime(); },
     R"doc(Start GGEMS output.
 
-Terminal output is used by default when no output mode has been selected.
+Terminal output is used by default when no mode is specified.
 Repeated calls while GGEMS output is already started are ignored.
 )doc");
 
+  // === === ===
   module.def(
     "start",
     [](std::string const &mode) -> void {
@@ -62,29 +61,29 @@ Repeated calls while GGEMS output is already started are ignored.
     py::arg("mode"),
     R"doc(Start GGEMS output using the requested mode.
 
-Accepted values are "term"/"terminal" and "gui"/"imgui".
-
-Parameters:
-    mode: Output mode to use.
+Args:
+    mode: Output mode. Accepted values are "term" and "gui".
 )doc");
 
+  // === === ===
   module.def(
-    "stop", []() -> void { ggems::core::StopOutputRuntime(); },
+    "stop", [] -> void { ggems::core::StopOutputRuntime(); },
     R"doc(Stop GGEMS output.
 
-The selected output mode and configured sinks are retained and may be reused by
+The selected output mode and configured sinks are retained and can be reused by
 a later call to start().
 )doc");
 
+  // === === ===
   module.def(
-    "is_started",
-    []() -> bool { return ggems::core::IsOutputRuntimeStarted(); },
+    "is_started", [] -> bool { return ggems::core::IsOutputRuntimeStarted(); },
     R"doc(Return whether GGEMS output is currently started.
 
 Returns:
     bool: True when GGEMS output is started.
 )doc");
 
+  // === === ===
   module.def(
     "set_detail_level",
     [](std::int32_t detail) -> void {
@@ -93,10 +92,11 @@ Returns:
     py::arg("detail") = 1,
     R"doc(Set the maximum GGEMS informational detail depth.
 
-Parameters:
+Args:
     detail: Maximum accepted logging depth.
 )doc");
 
+  // === === ===
   module.def(
     "set_output_file",
     [](std::string const &path) -> void { ggems::core::SetOutputFile(path); },
@@ -105,12 +105,13 @@ Parameters:
 
 The output file can only be changed while GGEMS output is stopped.
 
-Parameters:
+Args:
     path: Destination log-file path.
 )doc");
 
+  // === === ===
   module.def(
-    "clear_output_file", []() -> void { ggems::core::ClearOutputFile(); },
+    "clear_output_file", [] -> void { ggems::core::ClearOutputFile(); },
     R"doc(Disable the optional GGEMS log file.
 
 This operation is only allowed while GGEMS output is stopped.

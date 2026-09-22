@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief XXX
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <cstddef>
 #include <cstdint>
 #include <map>
@@ -117,11 +146,7 @@ auto BindMaterials(py::module_ &module) -> void {
       "density_g_cm3",
       [](materials::GGEMSMaterialInspection const &inspection) -> double {
         return ggems::python::detail::ConvertQuantityToDoubleOrThrow(
-          inspection.density, "g/cm3",
-          {
-            .quantity_name = "Material density",
-            .unsupported_unit_subject = "GGEMS density",
-          });
+          inspection.density, "g/cm3");
       })
 
     .def_readonly("registration",
@@ -170,7 +195,7 @@ auto BindMaterials(py::module_ &module) -> void {
       });
 
   // === === ===
-  module.def("available", []() -> py::tuple {
+  module.def("available", [] -> py::tuple {
     auto const names = builtins::GetAvailableMaterialNames();
 
     py::tuple result{names.size()};
@@ -183,7 +208,7 @@ auto BindMaterials(py::module_ &module) -> void {
   });
 
   // === === ===
-  module.def("registered", []() -> py::tuple {
+  module.def("registered", [] -> py::tuple {
     auto const registered =
       materials::GGEMSMaterialManager::GetInstance().GetMaterials();
 
@@ -204,11 +229,7 @@ auto BindMaterials(py::module_ &module) -> void {
        std::string const &density_unit) -> std::uint32_t {
       auto const material_density =
         ggems::python::detail::MakeQuantityOrThrow<ggems::units::Density>(
-          density, density_unit,
-          {
-            .quantity_name = "Material density",
-            .unsupported_unit_subject = "GGEMS density",
-          });
+          density, density_unit);
 
       std::vector<materials::GGEMSMaterialComponent> composition;
       composition.reserve(elements.size());
@@ -224,7 +245,7 @@ auto BindMaterials(py::module_ &module) -> void {
 
       return materials::GGEMSMaterialManager::GetInstance().AddCustomMaterial(
         materials::GGEMSMaterial{std::move(name), material_density,
-                                 std::move(composition)});
+                                 composition});
     },
     py::arg("name"), py::arg("density"), py::arg("elements"),
     py::arg("density_unit") = "g/cm3");

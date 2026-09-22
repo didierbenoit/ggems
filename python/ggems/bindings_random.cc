@@ -30,7 +30,6 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <string>
 #include <memory>
 #include <cstdint>
@@ -39,24 +38,19 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-/// \endcond
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/random/GGEMSRandomEngine.hh"
 
 namespace py = pybind11;
 
-/*!
- * \brief Registers GGEMS random-engine bindings in a Python module.
- *
- * Exposes GGEMSRandomEngine and GGEMSRandom, including engine selection, seed
- * configuration, verbose output, and a concise representation.
- *
- * \param[in,out] module Python module receiving the random bindings.
- */
+// =============================================================================
+// =============================================================================
+
 void BindRandom(py::module_ &module) {
   using ggems::core::random::GGEMSRandom;
   using ggems::core::random::GGEMSRandomEngine;
 
+  // === === ===
   py::enum_<GGEMSRandomEngine>(module, "GGEMSRandomEngine",
                                R"doc(Random-number engines available to GGEMS.
 
@@ -68,6 +62,7 @@ GGEMSRandom.set_engine() currently selects an engine by string name.
     .value("Philox", GGEMSRandomEngine::Philox,
            "Philox random-number engine used by default.");
 
+  // === === ===
   py::class_<GGEMSRandom, std::shared_ptr<GGEMSRandom>>(
     module, "GGEMSRandom",
     R"doc(Configure the random-number streams used by GGEMS simulations.
@@ -81,7 +76,7 @@ set_engine() and set_seed() return the same object, so configuration calls can
 be chained.
 
 Example:
-    rng = ggems.GGEMSRandom().set_engine("Philox").set_seed(12345)
+    rng = ggems.rndm.GGEMSRandom().set_engine("Philox").set_seed(12345)
     rng.verbose()
 )doc")
     .def(py::init<>(),
@@ -97,7 +92,7 @@ Example:
 Accepted names are "JKISS" (or "KISS"), "PCG32" (or "PCG"), and "Philox".
 Matching is case-insensitive, and spaces, hyphens, and underscores are ignored.
 
-Parameters:
+Args:
     engine: Engine name.
 
 Returns:
@@ -118,7 +113,7 @@ Example:
 Using a fixed engine and seed gives deterministic random-stream initialization.
 The accepted Python integer range is 0 through 2**64 - 1.
 
-Parameters:
+Args:
     seed: Unsigned 64-bit seed.
 
 Returns:

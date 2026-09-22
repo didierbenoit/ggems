@@ -3,6 +3,7 @@ file(GLOB_RECURSE GGEMS_PYBIND_SOURCES CONFIGURE_DEPENDS
      ${CMAKE_CURRENT_SOURCE_DIR}/bindings.cc
      ${CMAKE_CURRENT_SOURCE_DIR}/ggems/bindings_*.cc)
 
+find_package(Python REQUIRED COMPONENTS Interpreter)
 find_program(PYBIND11_STUBGEN_EXECUTABLE NAMES pybind11-stubgen REQUIRED)
 
 # Define the Python extension module
@@ -43,7 +44,9 @@ add_custom_command(
     ${CMAKE_COMMAND} -E env "PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}"
     "${PYBIND11_STUBGEN_EXECUTABLE}" ggems.ggems -o
     "${CMAKE_CURRENT_SOURCE_DIR}"
-  COMMENT "Generating GGEMS Python type stubs"
+  COMMAND "${Python_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/patch_stubs.py"
+          "${CMAKE_CURRENT_SOURCE_DIR}"
+  COMMENT "Generating and patching GGEMS Python type stubs"
   VERBATIM)
 
 install(

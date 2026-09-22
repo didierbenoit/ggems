@@ -30,24 +30,21 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <memory>
 #include <string>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-/// \endcond
 
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 
 namespace py = pybind11;
 
-/*!
- * \brief Registers the GGEMS OpenCL Python bindings.
- *
- * \param[in,out] module Python extension module receiving the OpenCL bindings.
- */
+// =============================================================================
+// =============================================================================
+
 void BindOpenCL(py::module_ &module) {
+  // === === ===
   py::class_<ggems::ocl::GGEMSOpenCL,
              std::unique_ptr<ggems::ocl::GGEMSOpenCL, py::nodelete>>(
     module, "GGEMSOpenCL",
@@ -59,7 +56,7 @@ instance and therefore shares device selection and context state.
 Platform and device discovery occurs when the singleton is first accessed.
 A typical setup is:
 
-    opencl = ggems.GGEMSOpenCL()
+    opencl = ggems.opencl.GGEMSOpenCL()
     opencl.print_devices()
     opencl.select_devices("gpu")
     opencl.initialize()
@@ -69,7 +66,7 @@ Text selectors are usually the most portable choice. Numeric selectors refer
 to the flattened discovery order across all platforms.
 )doc")
 
-    .def(py::init([]() -> ggems::ocl::GGEMSOpenCL * {
+    .def(py::init([] -> ggems::ocl::GGEMSOpenCL * {
            return &ggems::ocl::GGEMSOpenCL::GetInstance();
          }),
          py::return_value_policy::reference,
@@ -200,6 +197,6 @@ Examples:
          py::arg("devices"))
 
     .def("__repr__", [](ggems::ocl::GGEMSOpenCL const &) -> std::string {
-      return "<GGEMSOpenCL (singleton) — OpenCL 3.0 backend active>";
+      return "<GGEMSOpenCL (singleton) — OpenCL 3.0 backend>";
     });
 }

@@ -1,3 +1,33 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines the GGEMS Python extension module and registers its submodule
+ * bindings.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
@@ -18,7 +48,7 @@ void BindGui(py::module_ &module);
 
 PYBIND11_MODULE(ggems, module) {
   module.doc() = R"pbdoc(
-    GGEMS — GPU Geant4-based Monte Carlo Simulations
+    GGEMS - GPU Geant4-based Monte Carlo Simulations
     =================================================
     Modular C++ engine accelerated with OpenCL and
     exposed to Python via Pybind11.
@@ -56,5 +86,5 @@ PYBIND11_MODULE(ggems, module) {
   module.attr("__author__") =
     py::make_tuple("Didier Benoit <didier.benoit@inserm.fr>",
                    "Julien Bert <julien.bert@univ-brest.fr>");
-  module.attr("__license__") = "GPLv3";
+  module.attr("__license__") = "GPL-3.0-or-later";
 }

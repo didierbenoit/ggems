@@ -66,6 +66,7 @@ namespace {
  * \brief Process-wide selected output mode.
  */
 OutputMode g_mode{OutputMode::Term};
+
 /*!
  * \brief Indicates whether logger sinks have been configured for an output
  * mode.
@@ -81,6 +82,7 @@ std::optional<std::string> g_output_file_path{};
  * \brief Lazily created process-wide GUI output state.
  */
 std::unique_ptr<GGEMSOutputState> g_state{};
+
 /*!
  * \brief Process-wide output-runtime started flag.
  */
@@ -109,7 +111,7 @@ std::atomic<bool> g_output_running{false};
 // =============================================================================
 // =============================================================================
 
-#if defined(_WIN32)
+#ifdef _WIN32
 /*!
  * \brief Enables virtual-terminal processing for one Windows standard handle.
  *
@@ -163,11 +165,11 @@ void PrepareWindowsTerminal() noexcept {
 auto Parse(std::string_view mode) -> OutputMode {
   std::string const value = NormalizeOutputMode(mode);
 
-  if (value == "term" || value == "terminal") {
+  if (value == "term") {
     return OutputMode::Term;
   }
 
-  if (value == "gui" || value == "imgui") {
+  if (value == "gui") {
     return OutputMode::Gui;
   }
 
@@ -370,12 +372,12 @@ auto StartOutputRuntime() -> void {
     return;
   }
 
-  if (!(g_configured)) {
+  if (!g_configured) {
     ConfigureLoggerForMode(g_mode);
   }
 
   if (g_mode == OutputMode::Term) {
-#if defined(_WIN32)
+#ifdef _WIN32
     PrepareWindowsTerminal();
 #endif
   }

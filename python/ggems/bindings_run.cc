@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines Python bindings for GGEMS run configuration and execution.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <string>
 
 #include <pybind11/pybind11.h>
@@ -11,18 +40,11 @@
 
 namespace py = pybind11;
 
-namespace {
-
-constexpr auto k_run_time_conversion_context =
-  ggems::python::detail::QuantityConversionContext{
-    .quantity_name = "Run time", .unsupported_unit_subject = "Run time"};
-
-} // namespace
-
 // =============================================================================
 // =============================================================================
 
 void BindRun(py::module_ &module) {
+  // === === ===
   py::class_<ggems::core::GGEMSRun>(module, "GGEMSRun")
     .def(py::init<>())
 
@@ -40,25 +62,19 @@ void BindRun(py::module_ &module) {
     .def("set_observer", &ggems::core::GGEMSRun::SetObserver,
          py::arg("observer"))
 
-    .def("set_primary_count", &ggems::core::GGEMSRun::SetPrimaryCount,
-         py::arg("primary_count"))
-
-    .def("set_worker_count", &ggems::core::GGEMSRun::SetWorkerCount,
-         py::arg("worker_count"))
-
     .def(
       "set_time",
       [](ggems::core::GGEMSRun &self, double start, double stop, double step,
          std::string const &unit) -> void {
         self.SetTimePicoSecond(
           ggems::python::detail::MakeQuantityOrThrow<ggems::units::TimePoint>(
-            start, unit, k_run_time_conversion_context)
+            start, unit)
             .value,
           ggems::python::detail::MakeQuantityOrThrow<ggems::units::TimePoint>(
-            stop, unit, k_run_time_conversion_context)
+            stop, unit)
             .value,
           ggems::python::detail::MakeQuantityOrThrow<ggems::units::Duration>(
-            step, unit, k_run_time_conversion_context)
+            step, unit)
             .value);
       },
       py::arg("start"), py::arg("stop"), py::arg("step"), py::arg("unit") = "s")
@@ -74,7 +90,7 @@ void BindRun(py::module_ &module) {
       [](ggems::core::GGEMSRun const &self, std::string const &unit) -> double {
         return ggems::python::detail::ConvertQuantityToDoubleOrThrow(
           ggems::units::TimePoint{.value = self.GetCurrentTimePicoSecond()},
-          unit, k_run_time_conversion_context);
+          unit);
       },
       py::arg("unit") = "s")
 
@@ -85,11 +101,9 @@ void BindRun(py::module_ &module) {
         auto const window = self.GetCurrentTimeWindowPicoSecond();
         return py::make_tuple(
           ggems::python::detail::ConvertQuantityToDoubleOrThrow(
-            ggems::units::TimePoint{.value = window.start_ps}, unit,
-            k_run_time_conversion_context),
+            ggems::units::TimePoint{.value = window.start_ps}, unit),
           ggems::python::detail::ConvertQuantityToDoubleOrThrow(
-            ggems::units::TimePoint{.value = window.stop_ps}, unit,
-            k_run_time_conversion_context));
+            ggems::units::TimePoint{.value = window.stop_ps}, unit));
       },
       py::arg("unit") = "s");
 }
