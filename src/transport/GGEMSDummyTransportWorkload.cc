@@ -47,7 +47,7 @@ ComputeRandomStatesSize(ggems::core::random::GGEMSRandom const &random,
                         std::uint64_t first_stream_id) {
   if (!(worker_count > 0U)) {
     throw ggems::core::GGEMSRecoverable(
-        "Dummy transport worker count must be non-zero.");
+      "Dummy transport worker count must be non-zero.");
   }
 
   random.ValidateStateRange(first_stream_id, worker_count);
@@ -62,7 +62,7 @@ ComputeRandomStatesSize(ggems::core::random::GGEMSRandom const &random,
 ggems::units::Bytes ComputeWorkerFinalStatesSize(std::uint32_t worker_count) {
   if (!(worker_count > 0U)) {
     throw ggems::core::GGEMSRecoverable(
-        "Dummy transport worker count must be non-zero.");
+      "Dummy transport worker count must be non-zero.");
   }
 
   return ggems::units::Bytes{static_cast<std::uint64_t>(worker_count) *
@@ -76,12 +76,12 @@ ggems::units::Bytes
 ComputeObserverRecordsSize(std::uint32_t observer_record_capacity) {
   if (!(observer_record_capacity > 0U)) {
     throw ggems::core::GGEMSRecoverable(
-        "Dummy transport observer record capacity must be non-zero.");
+      "Dummy transport observer record capacity must be non-zero.");
   }
 
   return ggems::units::Bytes{
-      static_cast<std::uint64_t>(observer_record_capacity) *
-      sizeof(ObserverRecord)};
+    static_cast<std::uint64_t>(observer_record_capacity) *
+    sizeof(ObserverRecord)};
 }
 
 // =============================================================================
@@ -90,7 +90,7 @@ ComputeObserverRecordsSize(std::uint32_t observer_record_capacity) {
 std::uint32_t CheckedSourceCount(std::uint32_t source_count) {
   if (!(source_count > 0U)) {
     throw ggems::core::GGEMSRecoverable(
-        "Dummy transport source count must be non-zero.");
+      "Dummy transport source count must be non-zero.");
   }
 
   return source_count;
@@ -103,10 +103,10 @@ namespace ggems::core::transport {
 // =============================================================================
 
 GGEMSDummyTransportWorkload::GGEMSDummyTransportWorkload(
-    ggems::ocl::GGEMSOpenCLContext &context, std::filesystem::path kernel_root,
-    random::GGEMSRandom const &random, std::uint32_t worker_count,
-    std::uint32_t source_count, std::uint64_t random_stream_offset,
-    std::uint32_t context_index, std::uint32_t observer_record_capacity)
+  ggems::ocl::GGEMSOpenCLContext &context, std::filesystem::path kernel_root,
+  random::GGEMSRandom const &random, std::uint32_t worker_count,
+  std::uint32_t source_count, std::uint64_t random_stream_offset,
+  std::uint32_t context_index, std::uint32_t observer_record_capacity)
     : context_{&context}, kernel_root_{std::move(kernel_root)},
       random_{&random}, worker_count_{worker_count},
       source_count_{CheckedSourceCount(source_count)},
@@ -115,21 +115,21 @@ GGEMSDummyTransportWorkload::GGEMSDummyTransportWorkload(
       device_name_{context.GetDevice().GetName()},
       observer_record_capacity_{observer_record_capacity},
       random_states_buffer_{context.CreateSVMBuffer(
-          ComputeRandomStatesSize(random, worker_count, random_stream_offset))},
+        ComputeRandomStatesSize(random, worker_count, random_stream_offset))},
       worker_final_states_buffer_{
-          context.CreateSVMBuffer(ComputeWorkerFinalStatesSize(worker_count))},
+        context.CreateSVMBuffer(ComputeWorkerFinalStatesSize(worker_count))},
       counters_buffer_{context.CreateSVMBuffer(
-          ggems::units::Bytes{sizeof(TransportCounters)})},
+        ggems::units::Bytes{sizeof(TransportCounters)})},
       source_records_buffer_{context.CreateSVMBuffer(ggems::units::Bytes{
-          static_cast<std::uint64_t>(source_count_) * sizeof(SourceRecord)})},
+        static_cast<std::uint64_t>(source_count_) * sizeof(SourceRecord)})},
       source_ranges_buffer_{context.CreateSVMBuffer(ggems::units::Bytes{
-          static_cast<std::uint64_t>(source_count_) * sizeof(SourceRunRange)})},
+        static_cast<std::uint64_t>(source_count_) * sizeof(SourceRunRange)})},
       observer_config_buffer_{context.CreateSVMBuffer(
-          ggems::units::Bytes{sizeof(ObserverConfigRecord)})},
-      observer_counters_buffer_{context.CreateSVMBuffer(
-          ggems::units::Bytes{sizeof(ObserverCounters)})},
+        ggems::units::Bytes{sizeof(ObserverConfigRecord)})},
+      observer_counters_buffer_{
+        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(ObserverCounters)})},
       observer_records_buffer_{context.CreateSVMBuffer(
-          ComputeObserverRecordsSize(observer_record_capacity))} {
+        ComputeObserverRecordsSize(observer_record_capacity))} {
 
   InitializeRandomStatesInSVM();
   ClearWorkerFinalStatesInSVM();
@@ -144,18 +144,17 @@ void GGEMSDummyTransportWorkload::InitializeRandomStatesInSVM() {
 
   if (!(state_bytes <= std::numeric_limits<std::size_t>::max())) {
     throw ggems::core::GGEMSInternal(
-        "Random state buffer size exceeds host addressable storage.");
+      "Random state buffer size exceeds host addressable storage.");
   }
 
   auto *state_storage =
-      static_cast<std::byte *>(random_states_buffer_.GetData());
+    static_cast<std::byte *>(random_states_buffer_.GetData());
 
   random_states_buffer_.Map(CL_MAP_WRITE);
 
   random_->InitializeStates(
-      random_stream_offset_,
-      std::span<std::byte>{state_storage,
-                           static_cast<std::size_t>(state_bytes)});
+    random_stream_offset_,
+    std::span<std::byte>{state_storage, static_cast<std::size_t>(state_bytes)});
 
   random_states_buffer_.Unmap();
 }
@@ -197,7 +196,7 @@ void GGEMSDummyTransportWorkload::ResetObserverInSVM() {
 // -----------------------------------------------------------------------------
 
 void GGEMSDummyTransportWorkload::WriteObserverConfigToSVM(
-    observer::GGEMSObserverConfigRecord const &observer_config) {
+  observer::GGEMSObserverConfigRecord const &observer_config) {
   ggems::ocl::WriteSVMFromHost(observer_config_buffer_, observer_config);
 }
 
@@ -205,9 +204,9 @@ void GGEMSDummyTransportWorkload::WriteObserverConfigToSVM(
 
 std::vector<observer::GGEMSObserverRecord>
 GGEMSDummyTransportWorkload::ReadObserverRecordsFromSVM(
-    std::uint32_t record_count) {
+  std::uint32_t record_count) {
   std::uint32_t bounded_record_count =
-      std::min(record_count, observer_record_capacity_);
+    std::min(record_count, observer_record_capacity_);
 
   std::vector<ObserverRecord> records(bounded_record_count);
 
@@ -218,7 +217,7 @@ GGEMSDummyTransportWorkload::ReadObserverRecordsFromSVM(
   observer_records_buffer_.Map(CL_MAP_READ);
 
   auto const *device_records =
-      static_cast<ObserverRecord const *>(observer_records_buffer_.GetData());
+    static_cast<ObserverRecord const *>(observer_records_buffer_.GetData());
 
   std::copy(device_records, device_records + bounded_record_count,
             records.begin());
@@ -234,27 +233,27 @@ GGEMSDummyTransportRunReport
 GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
   if (!(config.total_primary_count > 0U)) {
     throw ggems::core::GGEMSRecoverable(
-        "Dummy transport primary count must be non-zero.");
+      "Dummy transport primary count must be non-zero.");
   }
 
   if (!(config.source_records.size() == config.source_ranges.size())) {
     throw ggems::core::GGEMSRecoverable(
-        "Dummy transport source record and range counts must match.");
+      "Dummy transport source record and range counts must match.");
   }
 
   if (!(config.source_records.size() ==
         static_cast<std::size_t>(source_count_))) {
     throw ggems::core::GGEMSRecoverable(
-        "Dummy transport source arrays do not match the stable source count.");
+      "Dummy transport source arrays do not match the stable source count.");
   }
 
   for (std::size_t source_index = 0U;
        source_index < config.source_records.size(); ++source_index) {
     if (!(config.source_records[source_index].energy_micro_eV > 0ULL)) {
-      throw ggems::core::GGEMSRecoverable(std::format(
-          "Dummy transport source {} must use an exact positive Mono "
-          "energy.",
-          source_index));
+      throw ggems::core::GGEMSRecoverable(
+        std::format("Dummy transport source {} must use an exact positive Mono "
+                    "energy.",
+                    source_index));
     }
   }
 
@@ -262,39 +261,39 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
   ClearWorkerFinalStatesInSVM();
   ResetObserverInSVM();
   ggems::ocl::WriteSVMFromHost(
-      source_records_buffer_,
-      std::span<SourceRecord const>{config.source_records});
+    source_records_buffer_,
+    std::span<SourceRecord const>{config.source_records});
   ggems::ocl::WriteSVMFromHost(
-      source_ranges_buffer_,
-      std::span<SourceRunRange const>{config.source_ranges});
+    source_ranges_buffer_,
+    std::span<SourceRunRange const>{config.source_ranges});
   WriteObserverConfigToSVM(config.observer_config);
 
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
   std::filesystem::path const kernel_transport_root =
-      kernel_root_ / "transport";
+    kernel_root_ / "transport";
 
   std::string observer_build_definition =
-      config.observer_config.enabled != 0U
-          ? "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=1"
-          : "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=0";
+    config.observer_config.enabled != 0U
+      ? "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=1"
+      : "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=0";
 
-  std::string const build_options = std::format(
-      "-I{} {} {} "
-      "-DGGEMS_DUMMY_LOCAL_STACK_CAPACITY=16",
-      kernel_root_.generic_string(), random_->GetKernelBuildDefinition(),
-      observer_build_definition);
+  std::string const build_options =
+    std::format("-I{} {} {} "
+                "-DGGEMS_DUMMY_LOCAL_STACK_CAPACITY=16",
+                kernel_root_.generic_string(),
+                random_->GetKernelBuildDefinition(), observer_build_definition);
 
   auto &program = opencl.GetOrCreateProgram(
-      *context_, kernel_transport_root,
-      "particle_dummy_stream_branching_transport", build_options);
+    *context_, kernel_transport_root,
+    "particle_dummy_stream_branching_transport", build_options);
 
   cl::Kernel raw_kernel =
-      program.CreateKernel("particle_dummy_stream_branching_transport");
+    program.CreateKernel("particle_dummy_stream_branching_transport");
 
   ggems::ocl::GGEMSOpenCLKernel kernel{
-      *context_, std::move(raw_kernel),
-      "particle_dummy_stream_branching_transport"};
+    *context_, std::move(raw_kernel),
+    "particle_dummy_stream_branching_transport"};
 
   auto *random_states = random_states_buffer_.GetData();
   auto *worker_final_states = worker_final_states_buffer_.GetData();
@@ -335,16 +334,16 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
 
   if (!(argument_index == k_expected_argument_count)) {
     throw ggems::core::GGEMSInternal(
-        "Dummy transport kernel argument count is inconsistent.");
+      "Dummy transport kernel argument count is inconsistent.");
   }
 
   constexpr std::size_t k_local_size{64U};
   auto const padded_global_work_size =
-      ggems::ocl::detail::TryComputePaddedGlobalWorkSize(worker_count_,
-                                                         k_local_size);
+    ggems::ocl::detail::TryComputePaddedGlobalWorkSize(worker_count_,
+                                                       k_local_size);
   if (!(padded_global_work_size.has_value())) {
     throw ggems::core::GGEMSInternal(
-        "Unable to compute the padded OpenCL global work size.");
+      "Unable to compute the padded OpenCL global work size.");
   }
   std::size_t const global_size = *padded_global_work_size;
 
@@ -360,7 +359,7 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
   GGEMSTransportCounters transport_counters = ReadCountersFromSVM();
   ObserverCounters observer_counters_report = ReadObserverCountersFromSVM();
   std::vector<ObserverRecord> observer_records_report =
-      ReadObserverRecordsFromSVM(observer_counters_report.record_count);
+    ReadObserverRecordsFromSVM(observer_counters_report.record_count);
 
   GGEMSDummyTransportRunReport report{};
   report.context_index = context_index_;
@@ -375,17 +374,17 @@ GGEMSDummyTransportWorkload::Run(GGEMSDummyTransportRunConfig const &config) {
   report.command_time = profiler.GetCommandTime();
 
   report.host_histories_per_second =
-      profiler.ComputeRatePerSecond(transport_counters.completed_history_count);
+    profiler.ComputeRatePerSecond(transport_counters.completed_history_count);
 
   report.kernel_histories_per_second = profiler.ComputeKernelRatePerSecond(
-      transport_counters.completed_history_count);
+    transport_counters.completed_history_count);
 
   report.host_terminal_particles_per_second =
-      profiler.ComputeRatePerSecond(transport_counters.terminal_particle_count);
+    profiler.ComputeRatePerSecond(transport_counters.terminal_particle_count);
 
   report.kernel_terminal_particles_per_second =
-      profiler.ComputeKernelRatePerSecond(
-          transport_counters.terminal_particle_count);
+    profiler.ComputeKernelRatePerSecond(
+      transport_counters.terminal_particle_count);
 
   return report;
 }

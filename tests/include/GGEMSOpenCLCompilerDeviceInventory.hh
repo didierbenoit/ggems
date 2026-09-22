@@ -19,12 +19,12 @@
 // * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
 // *****************************************************************************
 
-
 /*!
  * \file
  * \brief Shared inventory of compiler-capable OpenCL devices for tests.
  *
- * Builds stable test entries that pair discovered GGEMS devices with dedicated contexts when the device is available and exposes an OpenCL compiler.
+ * Builds stable test entries that pair discovered GGEMS devices with dedicated
+ * contexts when the device is available and exposes an OpenCL compiler.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -70,9 +70,9 @@ struct OpenCLCompilerDeviceInventoryEntry {
  * \return Stable read-only inventory of compiler-capable devices.
  */
 [[nodiscard]] inline auto GetOpenCLCompilerDeviceInventory()
-    -> std::vector<OpenCLCompilerDeviceInventoryEntry> const & {
+  -> std::vector<OpenCLCompilerDeviceInventoryEntry> const & {
   static auto const inventory =
-      [] -> std::vector<OpenCLCompilerDeviceInventoryEntry> {
+    [] -> std::vector<OpenCLCompilerDeviceInventoryEntry> {
     std::vector<OpenCLCompilerDeviceInventoryEntry> result;
 
     for (auto const &entry : GetOpenCLDeviceInventory()) {
@@ -83,8 +83,8 @@ struct OpenCLCompilerDeviceInventoryEntry {
       }
 
       result.push_back(OpenCLCompilerDeviceInventoryEntry{
-          .inventory = entry,
-          .context = std::make_unique<ocl::GGEMSOpenCLContext>(device),
+        .inventory = entry,
+        .context = std::make_unique<ocl::GGEMSOpenCLContext>(device),
       });
     }
 

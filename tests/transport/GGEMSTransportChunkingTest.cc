@@ -67,7 +67,7 @@ TEST(GGEMSTransportChunking, IteratesBoundaryTotalsWithoutMaterializedPlan) {
 TEST(GGEMSTransportChunking, SupportsUint64TotalsAndRejectsInvalidIntervals) {
   constexpr std::uint32_t k_workers{64U};
   std::uint32_t const safe_limit =
-      ggems::core::transport::ComputeSafeTransportLaunchPrimaryCount(k_workers);
+    ggems::core::transport::ComputeSafeTransportLaunchPrimaryCount(k_workers);
   EXPECT_EQ(safe_limit, std::numeric_limits<std::uint32_t>::max() - k_workers);
 
   std::uint64_t const total = static_cast<std::uint64_t>(safe_limit) + 123ULL;
@@ -81,19 +81,19 @@ TEST(GGEMSTransportChunking, SupportsUint64TotalsAndRejectsInvalidIntervals) {
 
   EXPECT_THROW((void)(ChunkIterator{0ULL, 1ULL, 0U}),
                ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW((void)(ChunkIterator{std::numeric_limits<std::uint64_t>::max(),
-                                    2ULL, 1U}),
-               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(
+    (void)(ChunkIterator{std::numeric_limits<std::uint64_t>::max(), 2ULL, 1U}),
+    ggems::core::GGEMSExceptionBase);
 
   ChunkIterator exhausted{0ULL, 0ULL, 1U};
   EXPECT_THROW((void)exhausted.Next(), ggems::core::GGEMSExceptionBase);
   EXPECT_THROW(
-      (void)ggems::core::transport::ComputeSafeTransportLaunchPrimaryCount(0U),
-      ggems::core::GGEMSExceptionBase);
+    (void)ggems::core::transport::ComputeSafeTransportLaunchPrimaryCount(0U),
+    ggems::core::GGEMSExceptionBase);
   EXPECT_THROW(
-      (void)ggems::core::transport::ComputeSafeTransportLaunchPrimaryCount(
-          std::numeric_limits<std::uint32_t>::max()),
-      ggems::core::GGEMSExceptionBase);
+    (void)ggems::core::transport::ComputeSafeTransportLaunchPrimaryCount(
+      std::numeric_limits<std::uint32_t>::max()),
+    ggems::core::GGEMSExceptionBase);
 }
 
 // =============================================================================
@@ -101,9 +101,9 @@ TEST(GGEMSTransportChunking, SupportsUint64TotalsAndRejectsInvalidIntervals) {
 
 TEST(GGEMSTransportChunking, DeviceSlicesAreDisjointExhaustiveAndUint64) {
   std::uint64_t const total =
-      2ULL * std::numeric_limits<std::uint32_t>::max() + 17ULL;
+    2ULL * std::numeric_limits<std::uint32_t>::max() + 17ULL;
   auto plan = ggems::core::transport::BuildEqualTransportWorkloadPlan(
-      9'000ULL, total, 3U, 64U);
+    9'000ULL, total, 3U, 64U);
 
   ASSERT_EQ(plan.size(), 3U);
   EXPECT_EQ(plan[0U].primary_count, total / 3ULL + 1ULL);
@@ -124,10 +124,10 @@ TEST(GGEMSTransportChunking, DeviceSlicesAreDisjointExhaustiveAndUint64) {
   }
 
   std::vector<WorkloadPlan> overflowing{
-      {.primary_count = std::numeric_limits<std::uint64_t>::max()},
-      {.primary_count = 1ULL},
+    {.primary_count = std::numeric_limits<std::uint64_t>::max()},
+    {.primary_count = 1ULL},
   };
   EXPECT_THROW(
-      (void)ggems::core::transport::CountAssignedPrimaries(overflowing),
-      ggems::core::GGEMSExceptionBase);
+    (void)ggems::core::transport::CountAssignedPrimaries(overflowing),
+    ggems::core::GGEMSExceptionBase);
 }

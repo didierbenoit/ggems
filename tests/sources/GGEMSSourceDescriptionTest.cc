@@ -27,60 +27,59 @@ using ggems::test::ScopedLoggerEncoding;
 // =============================================================================
 
 constexpr std::string_view k_source_description{
-    "Type: Analytic | Primary count: 7 | "
-    "Particle: Electron (b-) | Emission: Point | Angular: Fixed | "
-    "Energy: Mono (2.0000000 MeV) | "
-    "Time: fixed at 0.0000000 ps | "
-    "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
-    "Axis Z: (1, 0, 0)"};
+  "Type: Analytic | Primary count: 7 | "
+  "Particle: Electron (b-) | Emission: Point | Angular: Fixed | "
+  "Energy: Mono (2.0000000 MeV) | "
+  "Time: fixed at 0.0000000 ps | "
+  "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
+  "Axis Z: (1, 0, 0)"};
 
 // =============================================================================
 // =============================================================================
 
 constexpr std::string_view k_window_source_description{
-    "Type: Analytic | Primary count: 7 | "
-    "Particle: Electron (b-) | Emission: Point | Angular: Fixed | "
-    "Energy: Mono (2.0000000 MeV) | "
-    "Time window: [1.0000000 ns, 2.0000000 ns) | "
-    "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
-    "Axis Z: (1, 0, 0)"};
+  "Type: Analytic | Primary count: 7 | "
+  "Particle: Electron (b-) | Emission: Point | Angular: Fixed | "
+  "Energy: Mono (2.0000000 MeV) | "
+  "Time window: [1.0000000 ns, 2.0000000 ns) | "
+  "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
+  "Axis Z: (1, 0, 0)"};
 
 // =============================================================================
 // =============================================================================
 
 constexpr std::string_view k_zero_primary_source_description{
-    "Type: Analytic | Primary count: 0 | "
-    "Particle: Electron (b-) | Emission: Point | Angular: Fixed | "
-    "Energy: Mono (2.0000000 MeV) | "
-    "Time: fixed at 0.0000000 ps | "
-    "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
-    "Axis Z: (1, 0, 0)"};
+  "Type: Analytic | Primary count: 0 | "
+  "Particle: Electron (b-) | Emission: Point | Angular: Fixed | "
+  "Energy: Mono (2.0000000 MeV) | "
+  "Time: fixed at 0.0000000 ps | "
+  "Position: (1.0000000 mm, -2.0000000 mm, 0.0000000 pm) | "
+  "Axis Z: (1, 0, 0)"};
 
 // =============================================================================
 // =============================================================================
 
 constexpr std::string_view k_reconfigured_source_description{
-    "Type: Analytic | Primary count: 11 | "
-    "Particle: Gamma (g) | Emission: Point | Angular: Fixed | "
-    "Energy: Mono (511.0000000 keV) | "
-    "Time: fixed at 0.0000000 ps | "
-    "Position: (0.0000000 pm, 0.0000000 pm, 1.0000000 µm) | "
-    "Axis Z: (0, 1, 0)"};
+  "Type: Analytic | Primary count: 11 | "
+  "Particle: Gamma (g) | Emission: Point | Angular: Fixed | "
+  "Energy: Mono (511.0000000 keV) | "
+  "Time: fixed at 0.0000000 ps | "
+  "Position: (0.0000000 pm, 0.0000000 pm, 1.0000000 µm) | "
+  "Axis Z: (0, 1, 0)"};
 
 // =============================================================================
 // =============================================================================
 
 [[nodiscard]] auto MakeConfiguredSource(std::uint64_t primary_count)
-    -> GGEMSSourcePtr {
+  -> GGEMSSourcePtr {
   auto source = std::make_shared<GGEMSSource>();
 
   source->SetPrimaryCount(primary_count)
-      .SetAnalytic()
-      .SetEmittedParticleType(
-          ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMicroElectronVolt(2'000'000'000'000ULL)
-      .SetPositionPicoMeter(1'000'000'000LL, -2'000'000'000LL, 0LL)
-      .SetDirection(2.0F, 0.0F, 0.0F);
+    .SetAnalytic()
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Electron)
+    .SetEnergyMicroElectronVolt(2'000'000'000'000ULL)
+    .SetPositionPicoMeter(1'000'000'000LL, -2'000'000'000LL, 0LL)
+    .SetDirection(2.0F, 0.0F, 0.0F);
 
   return source;
 }
@@ -90,19 +89,19 @@ constexpr std::string_view k_reconfigured_source_description{
 
 auto ReconfigureSource(GGEMSSource &source) -> void {
   source.SetPrimaryCount(11ULL)
-      .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMicroElectronVolt(511'000'000'000ULL)
-      .SetPositionPicoMeter(0LL, 0LL, 1'000'000LL)
-      .SetDirection(0.0F, 2.0F, 0.0F);
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
+    .SetEnergyMicroElectronVolt(511'000'000'000ULL)
+    .SetPositionPicoMeter(0LL, 0LL, 1'000'000LL)
+    .SetDirection(0.0F, 2.0F, 0.0F);
 }
 
 // =============================================================================
 // =============================================================================
 
 auto ExpectContains(std::string const &description, std::string_view expected)
-    -> void {
+  -> void {
   EXPECT_NE(description.find(expected), std::string::npos)
-      << "Description: " << description;
+    << "Description: " << description;
 }
 } // namespace
 
@@ -126,17 +125,17 @@ TEST(GGEMSSourceDescription,
      DescribesStandaloneActivityDrivenConfigurationWithoutRunFacts) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Unicode};
   auto radionuclide = std::make_shared<
-      ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
-      ggems::core::radioactivity::builtins::BuildF18Radionuclide());
+    ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
+    ggems::core::radioactivity::builtins::BuildF18Radionuclide());
   GGEMSSource source{};
   source
-      .SetRadionuclide(radionuclide, ggems::units::Activity{100'000'000.0L},
-                       2'000'000'000ULL)
-      .SetBoxEmissionPicoMeter(2'000'000'000ULL, 3'000'000'000ULL,
-                               4'000'000'000ULL)
-      .SetIsotropicAngularDistribution()
-      .SetPositionPicoMeter(1'000'000'000LL, -2'000'000'000LL, 0LL)
-      .SetDirection(1.0, 0.0, 0.0);
+    .SetRadionuclide(radionuclide, ggems::units::Activity{100'000'000.0L},
+                     2'000'000'000ULL)
+    .SetBoxEmissionPicoMeter(2'000'000'000ULL, 3'000'000'000ULL,
+                             4'000'000'000ULL)
+    .SetIsotropicAngularDistribution()
+    .SetPositionPicoMeter(1'000'000'000LL, -2'000'000'000LL, 0LL)
+    .SetDirection(1.0, 0.0, 0.0);
 
   std::string const description = ggems::core::sources::DescribeSource(source);
 
@@ -182,12 +181,12 @@ TEST(GGEMSSourceDescription, DescribesSnapshotSlot) {
                                                MakeConfiguredSource(7ULL)};
 
   auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(
-      sources, {.start_ps = 1'000ULL, .stop_ps = 2'000ULL});
+    sources, {.start_ps = 1'000ULL, .stop_ps = 2'000ULL});
 
   EXPECT_EQ(ggems::core::sources::DescribeSourceRunSlot(
-                2U, snapshot.GetRecords()[2U], snapshot.GetRanges()[2U]),
+              2U, snapshot.GetRecords()[2U], snapshot.GetRanges()[2U]),
             std::string{"Source slot: 2 | Projection primary begin: 7 | "} +
-                std::string{k_window_source_description});
+              std::string{k_window_source_description});
 }
 
 // =============================================================================
@@ -199,17 +198,17 @@ TEST(GGEMSSourceDescription, PreservesZeroPrimarySlotWithoutCompaction) {
                                                MakeConfiguredSource(5ULL)};
 
   auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(
-      sources, {.start_ps = 1'000ULL, .stop_ps = 2'000ULL});
+    sources, {.start_ps = 1'000ULL, .stop_ps = 2'000ULL});
 
   ASSERT_EQ(snapshot.GetRecords().size(), 3U);
   ASSERT_EQ(snapshot.GetRanges().size(), 3U);
 
   std::string const zero_primary_slot =
-      ggems::core::sources::DescribeSourceRunSlot(1U, snapshot.GetRecords()[1U],
-                                                  snapshot.GetRanges()[1U]);
+    ggems::core::sources::DescribeSourceRunSlot(1U, snapshot.GetRecords()[1U],
+                                                snapshot.GetRanges()[1U]);
 
   std::string const third_slot = ggems::core::sources::DescribeSourceRunSlot(
-      2U, snapshot.GetRecords()[2U], snapshot.GetRanges()[2U]);
+    2U, snapshot.GetRecords()[2U], snapshot.GetRanges()[2U]);
 
   ExpectContains(zero_primary_slot,
                  "Source slot: 1 | Projection primary begin: 3 | ");
@@ -226,21 +225,21 @@ TEST(GGEMSSourceDescription, DistinguishesDuplicateSourceSlots) {
   std::array<GGEMSSourcePtr, 2U> const sources{source, source};
 
   auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(
-      sources, {.start_ps = 1'000ULL, .stop_ps = 2'000ULL});
+    sources, {.start_ps = 1'000ULL, .stop_ps = 2'000ULL});
 
   std::string const slot_0 = ggems::core::sources::DescribeSourceRunSlot(
-      0U, snapshot.GetRecords()[0U], snapshot.GetRanges()[0U]);
+    0U, snapshot.GetRecords()[0U], snapshot.GetRanges()[0U]);
 
   std::string const slot_1 = ggems::core::sources::DescribeSourceRunSlot(
-      1U, snapshot.GetRecords()[1U], snapshot.GetRanges()[1U]);
+    1U, snapshot.GetRecords()[1U], snapshot.GetRanges()[1U]);
 
   EXPECT_EQ(slot_0,
             std::string{"Source slot: 0 | Projection primary begin: 0 | "} +
-                std::string{k_window_source_description});
+              std::string{k_window_source_description});
 
   EXPECT_EQ(slot_1,
             std::string{"Source slot: 1 | Projection primary begin: 7 | "} +
-                std::string{k_window_source_description});
+              std::string{k_window_source_description});
 
   EXPECT_NE(slot_0, slot_1);
 }
@@ -253,12 +252,12 @@ TEST(GGEMSSourceDescription, ReflectsSequentialSourceMutation) {
   auto source = MakeConfiguredSource(7ULL);
 
   std::string const description_before = ggems::core::sources::DescribeSource(
-      source->BuildRecord(), source->GetPrimaryCount());
+    source->BuildRecord(), source->GetPrimaryCount());
 
   ReconfigureSource(*source);
 
   std::string const description_after = ggems::core::sources::DescribeSource(
-      source->BuildRecord(), source->GetPrimaryCount());
+    source->BuildRecord(), source->GetPrimaryCount());
 
   EXPECT_EQ(description_before, k_source_description);
   EXPECT_EQ(description_after, k_reconfigured_source_description);
@@ -274,14 +273,14 @@ TEST(GGEMSSourceDescription, DescribesOwnedSnapshotAfterSourceMutation) {
   std::array<GGEMSSourcePtr, 1U> const sources{source};
 
   auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(
-      sources, {.start_ps = 1'000ULL, .stop_ps = 2'000ULL});
+    sources, {.start_ps = 1'000ULL, .stop_ps = 2'000ULL});
 
   ReconfigureSource(*source);
 
   EXPECT_EQ(ggems::core::sources::DescribeSourceRunSlot(
-                0U, snapshot.GetRecords()[0U], snapshot.GetRanges()[0U]),
+              0U, snapshot.GetRecords()[0U], snapshot.GetRanges()[0U]),
             std::string{"Source slot: 0 | Projection primary begin: 0 | "} +
-                std::string{k_window_source_description});
+              std::string{k_window_source_description});
 
   EXPECT_EQ(ggems::core::sources::DescribeSource(source->BuildRecord(),
                                                  source->GetPrimaryCount()),
@@ -299,7 +298,7 @@ TEST(GGEMSSourceDescription, DistinguishesStaticSourceFromRunWindow) {
             k_source_description);
 
   auto const snapshot = ggems::core::sources::BuildSourceRunSnapshot(
-      *source, {.start_ps = 1'000ULL, .stop_ps = 2'000ULL});
+    *source, {.start_ps = 1'000ULL, .stop_ps = 2'000ULL});
   ASSERT_EQ(snapshot.GetRecords().size(), 1U);
 
   EXPECT_EQ(ggems::core::sources::DescribeSource(snapshot.GetRecords()[0U],
@@ -315,10 +314,10 @@ TEST(GGEMSSourceDescription, DistinguishesStaticSourceFromRunWindow) {
 TEST(GGEMSSourceDescription, DescribesGeometryAndFocusedDistribution) {
   auto source = MakeConfiguredSource(7ULL);
   source->SetEllipseEmissionPicoMeter(10'000'000'000ULL, 5'000'000'000ULL)
-      .SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 100'000'000'000LL);
+    .SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 100'000'000'000LL);
 
   std::string const description = ggems::core::sources::DescribeSource(
-      source->BuildRecord(), source->GetPrimaryCount());
+    source->BuildRecord(), source->GetPrimaryCount());
 
   ExpectContains(description, "Emission: Ellipse | Diameter: 10.0000000 mm x "
                               "5.0000000 mm");
@@ -336,18 +335,18 @@ TEST(GGEMSSourceDescription, DescribesVolumeGeometryMetadata) {
   source->SetBoxEmissionPicoMeter(10'000'000'000ULL, 5'000'000'000ULL,
                                   2'000'000'000ULL);
   std::string box = ggems::core::sources::DescribeSource(
-      source->BuildRecord(), source->GetPrimaryCount());
+    source->BuildRecord(), source->GetPrimaryCount());
   ExpectContains(box, "Emission: Box | Size: 10.0000000 mm x 5.0000000 mm x "
                       "2.0000000 mm");
 
   source->SetSphereEmissionPicoMeter(8'000'000'000ULL);
   std::string sphere = ggems::core::sources::DescribeSource(
-      source->BuildRecord(), source->GetPrimaryCount());
+    source->BuildRecord(), source->GetPrimaryCount());
   ExpectContains(sphere, "Emission: Sphere | Diameter: 8.0000000 mm");
 
   source->SetCylinderEmissionPicoMeter(6'000'000'000ULL, 12'000'000'000ULL);
   std::string cylinder = ggems::core::sources::DescribeSource(
-      source->BuildRecord(), source->GetPrimaryCount());
+    source->BuildRecord(), source->GetPrimaryCount());
   ExpectContains(cylinder, "Emission: Cylinder | Diameter: 6.0000000 mm | "
                            "Height: 12.0000000 mm");
 }
@@ -361,16 +360,16 @@ TEST(GGEMSSourceDescription, DescribesFullAndBoundedIsotropicDomainsInDegrees) {
   source->SetIsotropicAngularDistribution();
 
   std::string full_sphere = ggems::core::sources::DescribeSource(
-      source->BuildRecord(), source->GetPrimaryCount());
+    source->BuildRecord(), source->GetPrimaryCount());
   ExpectContains(full_sphere, "Angular: Isotropic | Domain: Full sphere");
 
   source->SetIsotropicAngularDistribution(
-      ggems::units::MakeRadians(0.25L * k_pi),
-      ggems::units::MakeRadians(0.5L * k_pi),
-      ggems::units::MakeRadians(-0.25L * k_pi),
-      ggems::units::MakeRadians(0.25L * k_pi));
+    ggems::units::MakeRadians(0.25L * k_pi),
+    ggems::units::MakeRadians(0.5L * k_pi),
+    ggems::units::MakeRadians(-0.25L * k_pi),
+    ggems::units::MakeRadians(0.25L * k_pi));
   std::string bounded = ggems::core::sources::DescribeSource(
-      source->BuildRecord(), source->GetPrimaryCount());
+    source->BuildRecord(), source->GetPrimaryCount());
 
   ExpectContains(bounded, "Angular: Isotropic | Theta:");
   ExpectContains(bounded, "Phi:");

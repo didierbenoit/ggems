@@ -23,7 +23,8 @@
  * \file
  * \brief Defines Python bindings for GGEMS random configuration.
  *
- * Exposes random-engine selection, seed configuration, verbosity, and representation through pybind11.
+ * Exposes random-engine selection, seed configuration, verbosity, and
+ * representation through pybind11.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -47,7 +48,8 @@ namespace py = pybind11;
 /*!
  * \brief Registers GGEMS random-engine bindings in a Python module.
  *
- * Exposes GGEMSRandomEngine and GGEMSRandom, including engine selection, seed configuration, verbose output, and a concise representation.
+ * Exposes GGEMSRandomEngine and GGEMSRandom, including engine selection, seed
+ * configuration, verbose output, and a concise representation.
  *
  * \param[in,out] module Python module receiving the random bindings.
  */
@@ -55,23 +57,20 @@ void BindRandom(py::module_ &module) {
   using ggems::core::random::GGEMSRandom;
   using ggems::core::random::GGEMSRandomEngine;
 
-  py::enum_<GGEMSRandomEngine>(
-      module, "GGEMSRandomEngine",
-      R"doc(Random-number engines available to GGEMS.
+  py::enum_<GGEMSRandomEngine>(module, "GGEMSRandomEngine",
+                               R"doc(Random-number engines available to GGEMS.
 
 This enum exposes the engine names used by the GGEMS random subsystem.
 GGEMSRandom.set_engine() currently selects an engine by string name.
 )doc")
-      .value("JKISS", GGEMSRandomEngine::JKISS,
-             "JKISS random-number engine.")
-      .value("PCG32", GGEMSRandomEngine::PCG32,
-             "PCG32 random-number engine.")
-      .value("Philox", GGEMSRandomEngine::Philox,
-             "Philox random-number engine used by default.");
+    .value("JKISS", GGEMSRandomEngine::JKISS, "JKISS random-number engine.")
+    .value("PCG32", GGEMSRandomEngine::PCG32, "PCG32 random-number engine.")
+    .value("Philox", GGEMSRandomEngine::Philox,
+           "Philox random-number engine used by default.");
 
   py::class_<GGEMSRandom, std::shared_ptr<GGEMSRandom>>(
-      module, "GGEMSRandom",
-      R"doc(Configure the random-number streams used by GGEMS simulations.
+    module, "GGEMSRandom",
+    R"doc(Configure the random-number streams used by GGEMS simulations.
 
 A new configuration uses the Philox engine with seed 77777.
 
@@ -85,15 +84,15 @@ Example:
     rng = ggems.GGEMSRandom().set_engine("Philox").set_seed(12345)
     rng.verbose()
 )doc")
-      .def(py::init<>(),
-           R"doc(Create a random configuration using Philox and seed 77777.)doc")
+    .def(py::init<>(),
+         R"doc(Create a random configuration using Philox and seed 77777.)doc")
 
-      .def(
-          "set_engine",
-          [](GGEMSRandom &self, std::string const &engine) -> GGEMSRandom & {
-            return self.SetEngine(engine);
-          },
-          R"doc(Select the GGEMS random engine by name.
+    .def(
+      "set_engine",
+      [](GGEMSRandom &self, std::string const &engine) -> GGEMSRandom & {
+        return self.SetEngine(engine);
+      },
+      R"doc(Select the GGEMS random engine by name.
 
 Accepted names are "JKISS" (or "KISS"), "PCG32" (or "PCG"), and "Philox".
 Matching is case-insensitive, and spaces, hyphens, and underscores are ignored.
@@ -107,14 +106,14 @@ Returns:
 Example:
     rng.set_engine("pcg32").set_seed(42)
 )doc",
-          py::arg("engine"), py::return_value_policy::reference_internal)
+      py::arg("engine"), py::return_value_policy::reference_internal)
 
-      .def(
-          "set_seed",
-          [](GGEMSRandom &self, std::uint64_t seed) -> GGEMSRandom & {
-            return self.SetSeed(seed);
-          },
-          R"doc(Set the unsigned 64-bit seed used to initialize GGEMS streams.
+    .def(
+      "set_seed",
+      [](GGEMSRandom &self, std::uint64_t seed) -> GGEMSRandom & {
+        return self.SetSeed(seed);
+      },
+      R"doc(Set the unsigned 64-bit seed used to initialize GGEMS streams.
 
 Using a fixed engine and seed gives deterministic random-stream initialization.
 The accepted Python integer range is 0 through 2**64 - 1.
@@ -125,18 +124,18 @@ Parameters:
 Returns:
     This GGEMSRandom object, allowing chained configuration.
 )doc",
-          py::arg("seed"), py::return_value_policy::reference_internal)
+      py::arg("seed"), py::return_value_policy::reference_internal)
 
-      .def(
-          "verbose", &GGEMSRandom::Verbose,
-          R"doc(Print the current GGEMS random configuration through the GGEMS logger.
+    .def(
+      "verbose", &GGEMSRandom::Verbose,
+      R"doc(Print the current GGEMS random configuration through the GGEMS logger.
 
 The report includes the selected engine, seed, state size, OpenCL engine ID,
 build definition, and generic kernel random APIs.
 )doc")
 
-      .def("__repr__", [](GGEMSRandom const &random) -> std::string {
-        return std::format("<GGEMSRandom engine='{}' seed={}>",
-                           random.GetEngineName(), random.GetSeed());
-      });
+    .def("__repr__", [](GGEMSRandom const &random) -> std::string {
+      return std::format("<GGEMSRandom engine='{}' seed={}>",
+                         random.GetEngineName(), random.GetSeed());
+    });
 }

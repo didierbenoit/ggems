@@ -62,13 +62,13 @@ struct GGEMSVulkanDeviceSelection {
 GetVulkanDeviceFallbackScore(vk::PhysicalDeviceType type) noexcept;
 
 [[nodiscard]] bool IsVulkanDisplayAdapterMismatch(
-    GGEMSVulkanDeviceCandidate const &candidate,
-    std::optional<GGEMSVulkanDisplayAdapter> const &display_adapter) noexcept;
+  GGEMSVulkanDeviceCandidate const &candidate,
+  std::optional<GGEMSVulkanDisplayAdapter> const &display_adapter) noexcept;
 
 [[nodiscard]] std::expected<GGEMSVulkanDeviceSelection, std::string>
 SelectVulkanDevice(
-    GGEMSVulkanDeviceSelector const &selector,
-    std::span<GGEMSVulkanDeviceCandidate const> candidates,
-    std::optional<GGEMSVulkanDisplayAdapter> const &display_adapter);
+  GGEMSVulkanDeviceSelector const &selector,
+  std::span<GGEMSVulkanDeviceCandidate const> candidates,
+  std::optional<GGEMSVulkanDisplayAdapter> const &display_adapter);
 
 } // namespace ggems::ui::detail

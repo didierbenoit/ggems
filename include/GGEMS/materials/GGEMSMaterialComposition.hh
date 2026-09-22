@@ -22,7 +22,7 @@ struct GGEMSIsotopeConstituent {
   long double number_density_per_cubic_centimeter;
 
   [[nodiscard]] auto operator==(GGEMSIsotopeConstituent const &) const
-      -> bool = default;
+    -> bool = default;
 };
 
 struct GGEMSDerivedElementalConstituent {
@@ -39,27 +39,27 @@ public:
                            GGEMSResolvedIsotopeTable const &resolved_isotopes);
 
   [[nodiscard]] auto GetElementalShares() const noexcept
-      -> std::span<GGEMSElementalShare const> {
+    -> std::span<GGEMSElementalShare const> {
     return elemental_shares_;
   }
 
   [[nodiscard]] auto GetIsotopeConstituents() const noexcept
-      -> std::span<GGEMSIsotopeConstituent const> {
+    -> std::span<GGEMSIsotopeConstituent const> {
     return isotope_constituents_;
   }
 
   [[nodiscard]] auto GetElementalConstituents() const noexcept
-      -> std::span<GGEMSDerivedElementalConstituent const> {
+    -> std::span<GGEMSDerivedElementalConstituent const> {
     return elemental_constituents_;
   }
 
   [[nodiscard]] auto GetTotalAtomDensityPerCubicCentimeter() const noexcept
-      -> long double {
+    -> long double {
     return total_atom_density_per_cubic_centimeter_;
   }
 
   [[nodiscard]] auto GetElectronDensityPerCubicCentimeter() const noexcept
-      -> long double {
+    -> long double {
     return electron_density_per_cubic_centimeter_;
   }
 

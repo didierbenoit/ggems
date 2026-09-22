@@ -10,13 +10,13 @@ namespace ggems::core::sources {
 
 [[nodiscard]] constexpr auto
 ToKernelSourcePopulationMode(GGEMSSourcePopulationMode mode) noexcept
-    -> std::uint32_t {
+  -> std::uint32_t {
   return mode == GGEMSSourcePopulationMode::ActivityDriven ? 1U : 0U;
 }
 
 struct GGEMSSourcePopulationRecord {
   std::uint32_t population_mode{
-      ToKernelSourcePopulationMode(GGEMSSourcePopulationMode::CountDriven)};
+    ToKernelSourcePopulationMode(GGEMSSourcePopulationMode::CountDriven)};
   std::uint32_t first_emission_index{0U};
   std::uint32_t emission_count{0U};
   float scaled_decay{0.0F};

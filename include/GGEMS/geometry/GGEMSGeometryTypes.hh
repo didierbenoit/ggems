@@ -37,7 +37,7 @@ constexpr auto MakePositionPM(CoordinatePM pos_x, CoordinatePM pos_y,
 
 constexpr auto MakeDisplacementPM(CoordinatePM dis_x, CoordinatePM dis_y,
                                   CoordinatePM dis_z) noexcept
-    -> Displacement3PM {
+  -> Displacement3PM {
   return Displacement3PM{.x = dis_x, .y = dis_y, .z = dis_z};
 }
 
@@ -56,27 +56,27 @@ constexpr auto operator-(Position3PM position,
 }
 
 constexpr auto operator-(Position3PM lhs, Position3PM rhs) noexcept
-    -> Displacement3PM {
+  -> Displacement3PM {
   return Displacement3PM{
-      .x = lhs.x - rhs.x, .y = lhs.y - rhs.y, .z = lhs.z - rhs.z};
+    .x = lhs.x - rhs.x, .y = lhs.y - rhs.y, .z = lhs.z - rhs.z};
 }
 
 constexpr auto operator+(Displacement3PM lhs, Displacement3PM rhs) noexcept
-    -> Displacement3PM {
+  -> Displacement3PM {
   return Displacement3PM{
-      .x = lhs.x + rhs.x, .y = lhs.y + rhs.y, .z = lhs.z + rhs.z};
+    .x = lhs.x + rhs.x, .y = lhs.y + rhs.y, .z = lhs.z + rhs.z};
 }
 
 constexpr auto operator-(Displacement3PM lhs, Displacement3PM rhs) noexcept
-    -> Displacement3PM {
+  -> Displacement3PM {
   return Displacement3PM{
-      .x = lhs.x - rhs.x, .y = lhs.y - rhs.y, .z = lhs.z - rhs.z};
+    .x = lhs.x - rhs.x, .y = lhs.y - rhs.y, .z = lhs.z - rhs.z};
 }
 
 constexpr auto operator-(Displacement3PM displacement) noexcept
-    -> Displacement3PM {
+  -> Displacement3PM {
   return Displacement3PM{
-      .x = -displacement.x, .y = -displacement.y, .z = -displacement.z};
+    .x = -displacement.x, .y = -displacement.y, .z = -displacement.z};
 }
 
 [[nodiscard]] inline auto SquaredNorm(Direction3 direction) noexcept -> float {
@@ -102,7 +102,7 @@ struct NormalizedVector3D {
 
 [[nodiscard]] inline auto TryNormalizeVector3D(double x_val, double y_val,
                                                double z_val) noexcept
-    -> std::optional<NormalizedVector3D> {
+  -> std::optional<NormalizedVector3D> {
   if (!std::isfinite(x_val) || !std::isfinite(y_val) || !std::isfinite(z_val)) {
     return std::nullopt;
   }
@@ -113,7 +113,7 @@ struct NormalizedVector3D {
   }
 
   NormalizedVector3D const result{
-      .x = x_val / norm, .y = y_val / norm, .z = z_val / norm};
+    .x = x_val / norm, .y = y_val / norm, .z = z_val / norm};
 
   if (!std::isfinite(result.x) || !std::isfinite(result.y) ||
       !std::isfinite(result.z)) {
@@ -126,7 +126,7 @@ struct NormalizedVector3D {
 
 [[nodiscard]] inline auto TryMakeDirection3(double dir_x, double dir_y,
                                             double dir_z) noexcept
-    -> std::optional<Direction3> {
+  -> std::optional<Direction3> {
   auto const precise = detail::TryNormalizeVector3D(dir_x, dir_y, dir_z);
   if (!precise.has_value()) {
     return std::nullopt;
@@ -145,10 +145,10 @@ struct NormalizedVector3D {
 }
 
 [[nodiscard]] inline auto Dot(Direction3 lhs, Direction3 rhs) noexcept
-    -> float {
+  -> float {
   return static_cast<float>(
-      (static_cast<double>(lhs.x) * static_cast<double>(rhs.x)) +
-      (static_cast<double>(lhs.y) * static_cast<double>(rhs.y)) +
-      (static_cast<double>(lhs.z) * static_cast<double>(rhs.z)));
+    (static_cast<double>(lhs.x) * static_cast<double>(rhs.x)) +
+    (static_cast<double>(lhs.y) * static_cast<double>(rhs.y)) +
+    (static_cast<double>(lhs.z) * static_cast<double>(rhs.z)));
 }
 } // namespace ggems::geometry

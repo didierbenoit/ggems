@@ -43,13 +43,13 @@ namespace ggems::ocl {
  * \brief Stores timestamp and duration information for one OpenCL kernel event.
  */
 struct GGEMSOpenCLKernelTiming {
-  ggems::units::Time time_queued{0U};      /*!< Event queued timestamp. */
-  ggems::units::Time time_submit{0U};      /*!< Event submission timestamp. */
-  ggems::units::Time time_start{0U};       /*!< Event execution-start timestamp. */
-  ggems::units::Time time_end{0U};         /*!< Event execution-end timestamp. */
+  ggems::units::Time time_queued{0U}; /*!< Event queued timestamp. */
+  ggems::units::Time time_submit{0U}; /*!< Event submission timestamp. */
+  ggems::units::Time time_start{0U};  /*!< Event execution-start timestamp. */
+  ggems::units::Time time_end{0U};    /*!< Event execution-end timestamp. */
   ggems::units::Duration command_time{0U}; /*!< Queue-to-completion duration. */
   ggems::units::Duration kernel_time{0U};  /*!< Kernel execution duration. */
-  bool valid{false};                       /*!< Whether kernel timing is valid. */
+  bool valid{false}; /*!< Whether kernel timing is valid. */
 };
 
 /*!
@@ -173,7 +173,8 @@ public:
    * \brief Computes a host elapsed-time throughput.
    *
    * \param[in] item_count Number of processed items.
-   * \return Items processed per second, or zero when no valid elapsed time is available.
+   * \return Items processed per second, or zero when no valid elapsed time is
+   * available.
    */
   [[nodiscard]] auto
   ComputeRatePerSecond(std::uint64_t item_count) const noexcept -> double;
@@ -182,7 +183,8 @@ public:
    * \brief Computes a kernel execution throughput.
    *
    * \param[in] item_count Number of processed items.
-   * \return Items processed per kernel second, or zero when no valid kernel time is available.
+   * \return Items processed per kernel second, or zero when no valid kernel
+   * time is available.
    */
   [[nodiscard]] auto
   ComputeKernelRatePerSecond(std::uint64_t item_count) const noexcept -> double;
@@ -193,13 +195,14 @@ public:
    * \return Kernel-event timing record.
    */
   [[nodiscard]] auto GetKernelTiming() const noexcept
-      -> GGEMSOpenCLKernelTiming const & {
+    -> GGEMSOpenCLKernelTiming const & {
     return kernel_timing_;
   }
 
 private:
   /*!
-   * \brief Returns the host elapsed time in seconds using long-double precision.
+   * \brief Returns the host elapsed time in seconds using long-double
+   * precision.
    *
    * \return Host elapsed time in seconds.
    */
@@ -210,11 +213,11 @@ private:
    */
   using Clock = std::chrono::steady_clock;
 
-  Clock::time_point start_;                   /*!< Host timing start point. */
-  Clock::time_point stop_;                    /*!< Host timing stop point. */
-  bool running_{false};                       /*!< Whether host timing is active. */
-  bool has_measurement_{false};               /*!< Whether a host measurement is available. */
-  GGEMSOpenCLKernelTiming kernel_timing_{};   /*!< Last kernel-event timing. */
+  Clock::time_point start_;     /*!< Host timing start point. */
+  Clock::time_point stop_;      /*!< Host timing stop point. */
+  bool running_{false};         /*!< Whether host timing is active. */
+  bool has_measurement_{false}; /*!< Whether a host measurement is available. */
+  GGEMSOpenCLKernelTiming kernel_timing_{}; /*!< Last kernel-event timing. */
 };
 
 } // namespace ggems::ocl

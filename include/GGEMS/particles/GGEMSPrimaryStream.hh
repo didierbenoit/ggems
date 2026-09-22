@@ -32,10 +32,10 @@ public:
   }
 
   [[nodiscard]] auto PrepareRun(std::uint64_t run_id)
-      -> GGEMSPrimaryStreamRunView;
+    -> GGEMSPrimaryStreamRunView;
   [[nodiscard]] auto PrepareRun(std::uint64_t run_id,
                                 std::uint64_t primary_count)
-      -> GGEMSPrimaryStreamRunView;
+    -> GGEMSPrimaryStreamRunView;
 
 private:
   std::uint64_t primary_count_{4096ULL};

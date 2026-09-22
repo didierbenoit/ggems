@@ -104,7 +104,7 @@ auto GGEMSOutputState::PushLogLine(RenderedLogLine rendered_line) -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOutputState::GetLastLogLinesSnapshot(std::size_t max_lines) const
-    -> std::vector<RenderedLogLine> {
+  -> std::vector<RenderedLogLine> {
   std::scoped_lock lock(mtx_);
 
   if (log_size_ == 0 || max_lines == 0) {

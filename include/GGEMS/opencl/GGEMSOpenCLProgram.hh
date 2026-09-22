@@ -44,9 +44,12 @@
 namespace ggems::ocl {
 
 /*!
- * \brief Builds, owns, fingerprints, and caches an OpenCL program for one device.
+ * \brief Builds, owns, fingerprints, and caches an OpenCL program for one
+ * device.
  *
- * The wrapper retains native OpenCL context and device handles so the program remains independent of the lifetime of the GGEMS context wrapper used at construction.
+ * The wrapper retains native OpenCL context and device handles so the program
+ * remains independent of the lifetime of the GGEMS context wrapper used at
+ * construction.
  */
 class GGEMSOpenCLProgram {
 public:
@@ -86,7 +89,7 @@ public:
    * \brief Disables move assignment.
    */
   auto operator=(GGEMSOpenCLProgram &&) noexcept
-      -> GGEMSOpenCLProgram & = delete;
+    -> GGEMSOpenCLProgram & = delete;
 
   /*!
    * \brief Creates a native OpenCL kernel from this program.
@@ -95,7 +98,7 @@ public:
    * \return Native OpenCL kernel.
    */
   [[nodiscard]] auto CreateKernel(std::string const &kernel_name) const
-      -> cl::Kernel;
+    -> cl::Kernel;
 
   /*!
    * \brief Returns the native OpenCL program.
@@ -153,10 +156,11 @@ public:
    * \return Compiled program binaries.
    */
   [[nodiscard]] auto GetBinaries() const
-      -> std::vector<std::vector<unsigned char>>;
+    -> std::vector<std::vector<unsigned char>>;
 
   /*!
-   * \brief Checks whether this cached program matches a requested build identity.
+   * \brief Checks whether this cached program matches a requested build
+   * identity.
    *
    * \param[in] context Requested OpenCL context.
    * \param[in] kernel_root Requested kernel root directory.
@@ -195,7 +199,7 @@ private:
    */
   [[nodiscard]] static auto MergeOptions(std::vector<std::string> const &base,
                                          std::string const &extra)
-      -> std::string;
+    -> std::string;
 
   /*!
    * \brief Resolves source paths and computes program fingerprints.
@@ -236,30 +240,34 @@ private:
   /*!
    * \brief Loads a cached OpenCL program binary when available.
    *
-   * \return Cached binary bytes, or an empty vector when no usable cache entry is available.
+   * \return Cached binary bytes, or an empty vector when no usable cache entry
+   * is available.
    */
   auto LoadBinaryFromCache() -> std::vector<std::uint8_t>;
 
   /*!
-   * \brief Builds normalized include-search roots used for source fingerprinting.
+   * \brief Builds normalized include-search roots used for source
+   * fingerprinting.
    *
    * \return Normalized include-search roots.
    */
   [[nodiscard]] auto BuildIncludeSearchRoots() const
-      -> std::vector<std::filesystem::path>;
+    -> std::vector<std::filesystem::path>;
 
   /*!
-   * \brief Builds deterministic fingerprint text for a source file and its local includes.
+   * \brief Builds deterministic fingerprint text for a source file and its
+   * local includes.
    *
    * \param[in] source_path Root source file to fingerprint.
    * \return Deterministic source fingerprint text.
    */
   [[nodiscard]] auto
   BuildSourceFingerprintText(std::filesystem::path const &source_path) const
-      -> std::string;
+    -> std::string;
 
   /*!
-   * \brief Appends one source file and recursively resolved local includes to fingerprint text.
+   * \brief Appends one source file and recursively resolved local includes to
+   * fingerprint text.
    *
    * \param[in] source_path Source file to append.
    * \param[in] include_roots Include-search roots.
@@ -267,21 +275,21 @@ private:
    * \param[in,out] fingerprint_text Accumulated fingerprint text.
    */
   auto AppendSourceFingerprintText(
-      std::filesystem::path const &source_path,
-      std::vector<std::filesystem::path> const &include_roots,
-      std::unordered_set<std::string> &visited_sources,
-      std::string &fingerprint_text) const -> void;
+    std::filesystem::path const &source_path,
+    std::vector<std::filesystem::path> const &include_roots,
+    std::unordered_set<std::string> &visited_sources,
+    std::string &fingerprint_text) const -> void;
 
-  cl::Context context_;                     /*!< Retained native OpenCL context. */
-  cl::Device device_;                       /*!< Retained native OpenCL device. */
-  std::filesystem::path kernel_root_;        /*!< Kernel source root directory. */
-  std::string kernel_name_;                 /*!< Kernel source name. */
-  std::string source_path_;                 /*!< Resolved kernel source path. */
-  std::string user_build_options_;          /*!< User-supplied build options. */
-  std::string build_options_;               /*!< Effective OpenCL build options. */
-  std::string build_log_;                   /*!< Most recent program build log. */
-  cl::Program program_;                     /*!< Native OpenCL program. */
-  std::uint64_t source_hash_;               /*!< Source and local-include fingerprint. */
-  std::uint64_t global_hash_;               /*!< Complete build-identity fingerprint. */
+  cl::Context context_;               /*!< Retained native OpenCL context. */
+  cl::Device device_;                 /*!< Retained native OpenCL device. */
+  std::filesystem::path kernel_root_; /*!< Kernel source root directory. */
+  std::string kernel_name_;           /*!< Kernel source name. */
+  std::string source_path_;           /*!< Resolved kernel source path. */
+  std::string user_build_options_;    /*!< User-supplied build options. */
+  std::string build_options_;         /*!< Effective OpenCL build options. */
+  std::string build_log_;             /*!< Most recent program build log. */
+  cl::Program program_;               /*!< Native OpenCL program. */
+  std::uint64_t source_hash_; /*!< Source and local-include fingerprint. */
+  std::uint64_t global_hash_; /*!< Complete build-identity fingerprint. */
 };
 } // namespace ggems::ocl

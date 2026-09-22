@@ -32,7 +32,7 @@ constexpr materials::GGEMSIsotope k_oxygen_18{8U, 18U, 0U};
 
 auto MakeComposition(Basis basis,
                      std::vector<materials::GGEMSIsotopeFraction> fractions)
-    -> materials::GGEMSIsotopicComposition {
+  -> materials::GGEMSIsotopicComposition {
   return materials::GGEMSIsotopicComposition{basis, std::move(fractions)};
 }
 
@@ -43,9 +43,9 @@ auto MakeComposition(Basis basis,
 
 TEST(GGEMSIsotopicCompositionTest, CanonicalOrderIsIndependentOfInputOrder) {
   std::vector<materials::GGEMSIsotopeFraction> const entries{
-      {.isotope = k_oxygen_18, .fraction = 0.00205L},
-      {.isotope = k_oxygen_16, .fraction = 0.99757L},
-      {.isotope = k_oxygen_17, .fraction = 0.00038L},
+    {.isotope = k_oxygen_18, .fraction = 0.00205L},
+    {.isotope = k_oxygen_16, .fraction = 0.99757L},
+    {.isotope = k_oxygen_17, .fraction = 0.00038L},
   };
 
   auto const reference = MakeComposition(Basis::AtomFraction, entries);
@@ -76,16 +76,16 @@ TEST(GGEMSIsotopicCompositionTest, CanonicalOrderIsIndependentOfInputOrder) {
 // =============================================================================
 
 TEST(GGEMSIsotopicCompositionTest, BasisIsPartOfTheComposition) {
-  auto const atom = MakeComposition(
-      Basis::AtomFraction, {
-                               {.isotope = k_boron_10, .fraction = 0.9L},
-                               {.isotope = k_boron_11, .fraction = 0.1L},
-                           });
-  auto const mass = MakeComposition(
-      Basis::MassFraction, {
-                               {.isotope = k_boron_10, .fraction = 0.9L},
-                               {.isotope = k_boron_11, .fraction = 0.1L},
-                           });
+  auto const atom = MakeComposition(Basis::AtomFraction,
+                                    {
+                                      {.isotope = k_boron_10, .fraction = 0.9L},
+                                      {.isotope = k_boron_11, .fraction = 0.1L},
+                                    });
+  auto const mass = MakeComposition(Basis::MassFraction,
+                                    {
+                                      {.isotope = k_boron_10, .fraction = 0.9L},
+                                      {.isotope = k_boron_11, .fraction = 0.1L},
+                                    });
 
   EXPECT_EQ(mass.GetBasis(), Basis::MassFraction);
   EXPECT_TRUE(std::ranges::equal(atom.GetFractions(), mass.GetFractions()));
@@ -100,12 +100,11 @@ TEST(GGEMSIsotopicCompositionTest, NormalizesAdmittedSumOnce) {
   // to 3/8 and 5/8.
   long double const scale = 1.0L + 0x1p-18L;
 
-  auto const composition =
-      MakeComposition(Basis::MassFraction,
-                      {
-                          {.isotope = k_boron_11, .fraction = 0.625L * scale},
-                          {.isotope = k_boron_10, .fraction = 0.375L * scale},
-                      });
+  auto const composition = MakeComposition(
+    Basis::MassFraction, {
+                           {.isotope = k_boron_11, .fraction = 0.625L * scale},
+                           {.isotope = k_boron_10, .fraction = 0.375L * scale},
+                         });
 
   auto const fractions = composition.GetFractions();
   ASSERT_EQ(fractions.size(), 2U);
@@ -120,12 +119,12 @@ TEST(GGEMSIsotopicCompositionTest, NormalizesAdmittedSumOnce) {
 
 TEST(GGEMSIsotopicCompositionTest, RemovesExplicitZeroEntries) {
   auto const with_zero = MakeComposition(
-      Basis::AtomFraction, {
-                               {.isotope = k_boron_11, .fraction = 0.0L},
-                               {.isotope = k_boron_10, .fraction = 1.0L},
-                           });
+    Basis::AtomFraction, {
+                           {.isotope = k_boron_11, .fraction = 0.0L},
+                           {.isotope = k_boron_10, .fraction = 1.0L},
+                         });
   auto const without_zero = MakeComposition(
-      Basis::AtomFraction, {{.isotope = k_boron_10, .fraction = 1.0L}});
+    Basis::AtomFraction, {{.isotope = k_boron_10, .fraction = 1.0L}});
 
   ASSERT_EQ(with_zero.GetFractions().size(), 1U);
   EXPECT_EQ(with_zero, without_zero);
@@ -136,7 +135,7 @@ TEST(GGEMSIsotopicCompositionTest, RemovesExplicitZeroEntries) {
 
 TEST(GGEMSIsotopicCompositionTest, AppliesProvisionalSumAdmissionPolicy) {
   auto const make_single =
-      [](long double fraction) -> materials::GGEMSIsotopicComposition {
+    [](long double fraction) -> materials::GGEMSIsotopicComposition {
     return MakeComposition(Basis::AtomFraction,
                            {{.isotope = k_boron_10, .fraction = fraction}});
   };
@@ -154,70 +153,70 @@ TEST(GGEMSIsotopicCompositionTest, AppliesProvisionalSumAdmissionPolicy) {
 
 TEST(GGEMSIsotopicCompositionTest, RejectsInvalidFractions) {
   auto const expect_rejected =
-      [](std::vector<materials::GGEMSIsotopeFraction> fractions) -> void {
-    EXPECT_THROW(static_cast<void>(MakeComposition(Basis::AtomFraction,
-                                                   std::move(fractions))),
+    [](std::vector<materials::GGEMSIsotopeFraction> fractions) -> void {
+    EXPECT_THROW(static_cast<void>(
+                   MakeComposition(Basis::AtomFraction, std::move(fractions))),
                  ggems::core::GGEMSRecoverable);
   };
 
   // Empty and all-zero.
   expect_rejected({});
   expect_rejected({
-      {.isotope = k_boron_10, .fraction = 0.0L},
-      {.isotope = k_boron_11, .fraction = 0.0L},
+    {.isotope = k_boron_10, .fraction = 0.0L},
+    {.isotope = k_boron_11, .fraction = 0.0L},
   });
 
   // Duplicate explicit keys, including an explicit zero duplicate.
   expect_rejected({
-      {.isotope = k_boron_10, .fraction = 0.5L},
-      {.isotope = k_boron_10, .fraction = 0.5L},
+    {.isotope = k_boron_10, .fraction = 0.5L},
+    {.isotope = k_boron_10, .fraction = 0.5L},
   });
   expect_rejected({
-      {.isotope = k_boron_10, .fraction = 1.0L},
-      {.isotope = k_boron_10, .fraction = 0.0L},
+    {.isotope = k_boron_10, .fraction = 1.0L},
+    {.isotope = k_boron_10, .fraction = 0.0L},
   });
 
   // Mixed chemical elements, including through an explicit zero entry.
   expect_rejected({
-      {.isotope = k_boron_10, .fraction = 0.5L},
-      {.isotope = k_carbon_12, .fraction = 0.5L},
+    {.isotope = k_boron_10, .fraction = 0.5L},
+    {.isotope = k_carbon_12, .fraction = 0.5L},
   });
   expect_rejected({
-      {.isotope = k_boron_10, .fraction = 1.0L},
-      {.isotope = k_carbon_12, .fraction = 0.0L},
+    {.isotope = k_boron_10, .fraction = 1.0L},
+    {.isotope = k_carbon_12, .fraction = 0.0L},
   });
 
   // Negative and nonfinite fractions.
   expect_rejected({
-      {.isotope = k_boron_10, .fraction = 1.25L},
-      {.isotope = k_boron_11, .fraction = -0.25L},
+    {.isotope = k_boron_10, .fraction = 1.25L},
+    {.isotope = k_boron_11, .fraction = -0.25L},
   });
   expect_rejected({
-      {
-          .isotope = k_boron_10,
-          .fraction = std::numeric_limits<long double>::infinity(),
-      },
+    {
+      .isotope = k_boron_10,
+      .fraction = std::numeric_limits<long double>::infinity(),
+    },
   });
   expect_rejected({
-      {
-          .isotope = k_boron_10,
-          .fraction = std::numeric_limits<long double>::quiet_NaN(),
-      },
+    {
+      .isotope = k_boron_10,
+      .fraction = std::numeric_limits<long double>::quiet_NaN(),
+    },
   });
 
   // Retained fraction outside the normal floating-point range.
   expect_rejected({
-      {.isotope = k_boron_10, .fraction = 1.0L},
-      {
-          .isotope = k_boron_11,
-          .fraction = std::numeric_limits<long double>::denorm_min(),
-      },
+    {.isotope = k_boron_10, .fraction = 1.0L},
+    {
+      .isotope = k_boron_11,
+      .fraction = std::numeric_limits<long double>::denorm_min(),
+    },
   });
 
   // Badly malformed totals.
   expect_rejected({{.isotope = k_boron_10, .fraction = 0.9L}});
   expect_rejected({
-      {.isotope = k_boron_10, .fraction = 0.6L},
-      {.isotope = k_boron_11, .fraction = 0.5L},
+    {.isotope = k_boron_10, .fraction = 0.6L},
+    {.isotope = k_boron_11, .fraction = 0.5L},
   });
 }

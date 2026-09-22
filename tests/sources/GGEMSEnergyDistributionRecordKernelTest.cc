@@ -59,24 +59,24 @@ TEST_F(GGEMSEnergyDistributionRecordKernelTest,
   auto &context = opencl.GetContext().front();
 
   std::array<EnergyRecord, 2U> records{{
-      {
-          .regular_bin_width_micro_eV = 11ULL,
-          .table_offset = 12ULL,
-          .distribution_type = 13U,
-          .table_count = 14U,
-      },
-      {},
+    {
+      .regular_bin_width_micro_eV = 11ULL,
+      .table_offset = 12ULL,
+      .distribution_type = 13U,
+      .table_count = 14U,
+    },
+    {},
   }};
 
   std::array<std::uint64_t, 7U> layout{};
   std::array<std::uint64_t, 4U> host_values{};
 
   auto layout_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{layout.size() * sizeof(std::uint64_t)});
+    ggems::units::Bytes{layout.size() * sizeof(std::uint64_t)});
   auto records_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{records.size() * sizeof(EnergyRecord)});
+    ggems::units::Bytes{records.size() * sizeof(EnergyRecord)});
   auto values_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{host_values.size() * sizeof(std::uint64_t)});
+    ggems::units::Bytes{host_values.size() * sizeof(std::uint64_t)});
 
   ggems::ocl::WriteSVMFromHost(layout_buffer, std::span{layout});
   ggems::ocl::WriteSVMFromHost(records_buffer, std::span{records});
@@ -85,13 +85,13 @@ TEST_F(GGEMSEnergyDistributionRecordKernelTest,
   std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
   std::filesystem::path const kernel_test_root = kernel_root / "tests";
   std::string const build_options =
-      std::format("-I{}", kernel_root.generic_string());
+    std::format("-I{}", kernel_root.generic_string());
 
   auto &program = opencl.GetOrCreateProgram(
-      context, kernel_test_root, "energy_distribution_record_abi_probe",
-      build_options);
+    context, kernel_test_root, "energy_distribution_record_abi_probe",
+    build_options);
   cl::Kernel raw_kernel =
-      program.CreateKernel("energy_distribution_record_abi_probe");
+    program.CreateKernel("energy_distribution_record_abi_probe");
 
   ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
                                        "energy_distribution_record_abi_probe"};
@@ -106,13 +106,13 @@ TEST_F(GGEMSEnergyDistributionRecordKernelTest,
   ggems::ocl::ReadSVMToHost(values_buffer, std::span{host_values});
 
   std::array<std::uint64_t, 7U> const expected_layout{{
-      sizeof(EnergyRecord),
-      offsetof(EnergyRecord, regular_bin_width_micro_eV),
-      offsetof(EnergyRecord, table_offset),
-      offsetof(EnergyRecord, distribution_type),
-      offsetof(EnergyRecord, table_count),
-      sizeof(EnergyRecord),
-      offsetof(AlignmentProbe, record),
+    sizeof(EnergyRecord),
+    offsetof(EnergyRecord, regular_bin_width_micro_eV),
+    offsetof(EnergyRecord, table_offset),
+    offsetof(EnergyRecord, distribution_type),
+    offsetof(EnergyRecord, table_count),
+    sizeof(EnergyRecord),
+    offsetof(AlignmentProbe, record),
   }};
 
   EXPECT_EQ(layout, expected_layout);

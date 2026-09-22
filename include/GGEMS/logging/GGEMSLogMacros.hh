@@ -44,9 +44,9 @@
  */
 #define GGEMS_DEBUG(MODULE, FMT, ...)                                          \
   ggems::core::GGEMSLogger::GetInstance()                                      \
-      .LogFmt<ggems::core::LogLevel::Debug>(-1, (MODULE), (FMT),               \
-                                            std::source_location::current()    \
-                                                __VA_OPT__(, __VA_ARGS__))
+    .LogFmt<ggems::core::LogLevel::Debug>(-1, (MODULE), (FMT),                 \
+                                          std::source_location::current()      \
+                                            __VA_OPT__(, __VA_ARGS__))
 
 /*!
  * \brief Logs a base informational message through the GGEMS logger.
@@ -57,8 +57,8 @@
  */
 #define GGEMS_INFO(MODULE, FMT, ...)                                           \
   ggems::core::GGEMSLogger::GetInstance().LogFmt<ggems::core::LogLevel::Info>( \
-      0, (MODULE), (FMT),                                                      \
-      std::source_location::current() __VA_OPT__(, __VA_ARGS__))
+    0, (MODULE), (FMT),                                                        \
+    std::source_location::current() __VA_OPT__(, __VA_ARGS__))
 
 /*!
  * \brief Logs a warning message through the GGEMS logger.
@@ -69,8 +69,8 @@
  */
 #define GGEMS_WARN(MODULE, FMT, ...)                                           \
   ggems::core::GGEMSLogger::GetInstance().LogFmt<ggems::core::LogLevel::Warn>( \
-      -1, (MODULE), (FMT),                                                     \
-      std::source_location::current() __VA_OPT__(, __VA_ARGS__))
+    -1, (MODULE), (FMT),                                                       \
+    std::source_location::current() __VA_OPT__(, __VA_ARGS__))
 
 /*!
  * \brief Logs an error message through the GGEMS logger.
@@ -81,9 +81,9 @@
  */
 #define GGEMS_ERROR(MODULE, FMT, ...)                                          \
   ggems::core::GGEMSLogger::GetInstance()                                      \
-      .LogFmt<ggems::core::LogLevel::Error>(-1, (MODULE), (FMT),               \
-                                            std::source_location::current()    \
-                                                __VA_OPT__(, __VA_ARGS__))
+    .LogFmt<ggems::core::LogLevel::Error>(-1, (MODULE), (FMT),                 \
+                                          std::source_location::current()      \
+                                            __VA_OPT__(, __VA_ARGS__))
 
 /*!
  * \brief Logs an informational message at an explicit verbosity depth.
@@ -94,5 +94,5 @@
  */
 #define GGEMS_INFOEX(MODULE, DEPTH, FMT, ...)                                  \
   ggems::core::GGEMSLogger::GetInstance().LogFmt<ggems::core::LogLevel::Info>( \
-      (DEPTH), (MODULE), (FMT),                                                \
-      std::source_location::current() __VA_OPT__(, __VA_ARGS__))
+    (DEPTH), (MODULE), (FMT),                                                  \
+    std::source_location::current() __VA_OPT__(, __VA_ARGS__))

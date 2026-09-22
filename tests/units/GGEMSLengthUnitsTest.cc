@@ -23,7 +23,9 @@
  * \file
  * \brief Unit tests for GGEMS length, position, and displacement conversions.
  *
- * Validates all registered length tokens, signed coordinate/displacement conversion, half-picometer rounding, range checks, invalid inputs, and formatting.
+ * Validates all registered length tokens, signed coordinate/displacement
+ * conversion, half-picometer rounding, range checks, invalid inputs, and
+ * formatting.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -89,19 +91,19 @@ static_assert(!std::convertible_to<PositionCoordinate, Length>);
 
 TEST(GGEMSLengthUnits, ConvertsEveryRegisteredLengthToken) {
   constexpr std::array<LengthConversionCase, 8U> cases{{
-      {.value = 2.0L, .unit = "pm", .expected = 2ULL},
-      {.value = 2.0L, .unit = "nm", .expected = 2'000ULL},
-      {.value = 2.0L, .unit = "um", .expected = 2'000'000ULL},
-      {.value = 2.0L, .unit = "mm", .expected = 2'000'000'000ULL},
-      {.value = 2.0L, .unit = "cm", .expected = 20'000'000'000ULL},
-      {.value = 2.0L, .unit = "m", .expected = 2'000'000'000'000ULL},
-      {.value = 2.0L, .unit = "km", .expected = 2'000'000'000'000'000ULL},
-      {.value = 0.0L, .unit = "km", .expected = 0ULL},
+    {.value = 2.0L, .unit = "pm", .expected = 2ULL},
+    {.value = 2.0L, .unit = "nm", .expected = 2'000ULL},
+    {.value = 2.0L, .unit = "um", .expected = 2'000'000ULL},
+    {.value = 2.0L, .unit = "mm", .expected = 2'000'000'000ULL},
+    {.value = 2.0L, .unit = "cm", .expected = 20'000'000'000ULL},
+    {.value = 2.0L, .unit = "m", .expected = 2'000'000'000'000ULL},
+    {.value = 2.0L, .unit = "km", .expected = 2'000'000'000'000'000ULL},
+    {.value = 0.0L, .unit = "km", .expected = 0ULL},
   }};
 
   for (auto const &test_case : cases) {
     auto const conversion =
-        MakeQuantity<Length>(test_case.value, test_case.unit);
+      MakeQuantity<Length>(test_case.value, test_case.unit);
 
     ASSERT_TRUE(conversion.has_value()) << test_case.unit;
     EXPECT_EQ(conversion->value, test_case.expected) << test_case.unit;
@@ -113,15 +115,15 @@ TEST(GGEMSLengthUnits, ConvertsEveryRegisteredLengthToken) {
 
 TEST(GGEMSLengthUnits, ConvertsSignedPositionCoordinates) {
   constexpr std::array<SignedConversionCase, 4U> cases{{
-      {.value = 2.0L, .unit = "pm", .expected = 2LL},
-      {.value = -2.0L, .unit = "nm", .expected = -2'000LL},
-      {.value = 2.0L, .unit = "cm", .expected = 20'000'000'000LL},
-      {.value = -2.0L, .unit = "km", .expected = -2'000'000'000'000'000LL},
+    {.value = 2.0L, .unit = "pm", .expected = 2LL},
+    {.value = -2.0L, .unit = "nm", .expected = -2'000LL},
+    {.value = 2.0L, .unit = "cm", .expected = 20'000'000'000LL},
+    {.value = -2.0L, .unit = "km", .expected = -2'000'000'000'000'000LL},
   }};
 
   for (auto const &test_case : cases) {
     auto const conversion =
-        MakeQuantity<PositionCoordinate>(test_case.value, test_case.unit);
+      MakeQuantity<PositionCoordinate>(test_case.value, test_case.unit);
 
     ASSERT_TRUE(conversion.has_value()) << test_case.unit;
     EXPECT_EQ(conversion->value, test_case.expected) << test_case.unit;
@@ -130,13 +132,13 @@ TEST(GGEMSLengthUnits, ConvertsSignedPositionCoordinates) {
 
 TEST(GGEMSLengthUnits, ConvertsSignedDisplacements) {
   constexpr std::array<SignedConversionCase, 2U> cases{{
-      {.value = 2.0L, .unit = "nm", .expected = 2'000LL},
-      {.value = -2.0L, .unit = "cm", .expected = -20'000'000'000LL},
+    {.value = 2.0L, .unit = "nm", .expected = 2'000LL},
+    {.value = -2.0L, .unit = "cm", .expected = -20'000'000'000LL},
   }};
 
   for (auto const &test_case : cases) {
     auto const conversion =
-        MakeQuantity<Displacement>(test_case.value, test_case.unit);
+      MakeQuantity<Displacement>(test_case.value, test_case.unit);
 
     ASSERT_TRUE(conversion.has_value()) << test_case.unit;
     EXPECT_EQ(conversion->value, test_case.expected) << test_case.unit;
@@ -148,19 +150,19 @@ TEST(GGEMSLengthUnits, ConvertsSignedDisplacements) {
 
 TEST(GGEMSLengthUnits, RoundsHalfPicometersAwayFromZero) {
   constexpr std::array<SignedConversionCase, 8U> cases{{
-      {.value = 0.49L, .unit = "pm", .expected = 0LL},
-      {.value = 0.5L, .unit = "pm", .expected = 1LL},
-      {.value = 1.49L, .unit = "pm", .expected = 1LL},
-      {.value = 1.5L, .unit = "pm", .expected = 2LL},
-      {.value = -0.49L, .unit = "pm", .expected = 0LL},
-      {.value = -0.5L, .unit = "pm", .expected = -1LL},
-      {.value = -1.49L, .unit = "pm", .expected = -1LL},
-      {.value = -1.5L, .unit = "pm", .expected = -2LL},
+    {.value = 0.49L, .unit = "pm", .expected = 0LL},
+    {.value = 0.5L, .unit = "pm", .expected = 1LL},
+    {.value = 1.49L, .unit = "pm", .expected = 1LL},
+    {.value = 1.5L, .unit = "pm", .expected = 2LL},
+    {.value = -0.49L, .unit = "pm", .expected = 0LL},
+    {.value = -0.5L, .unit = "pm", .expected = -1LL},
+    {.value = -1.49L, .unit = "pm", .expected = -1LL},
+    {.value = -1.5L, .unit = "pm", .expected = -2LL},
   }};
 
   for (auto const &test_case : cases) {
     auto const conversion =
-        MakeQuantity<PositionCoordinate>(test_case.value, test_case.unit);
+      MakeQuantity<PositionCoordinate>(test_case.value, test_case.unit);
 
     ASSERT_TRUE(conversion.has_value());
     EXPECT_EQ(conversion->value, test_case.expected);
@@ -174,12 +176,12 @@ TEST(GGEMSLengthUnits, EnforcesSignedCanonicalRange) {
   long double const upper_exclusive = std::ldexp(1.0L, 63);
   long double const lower_inclusive = -upper_exclusive;
   long double const below_lower = std::nextafter(
-      lower_inclusive, -std::numeric_limits<long double>::infinity());
+    lower_inclusive, -std::numeric_limits<long double>::infinity());
 
   auto const upper_accepted = MakeQuantity<PositionCoordinate>(
-      std::numeric_limits<std::int64_t>::max(), "pm");
+    std::numeric_limits<std::int64_t>::max(), "pm");
   auto const lower_accepted = MakeQuantity<PositionCoordinate>(
-      std::numeric_limits<std::int64_t>::min(), "pm");
+    std::numeric_limits<std::int64_t>::min(), "pm");
 
   ASSERT_TRUE(upper_accepted.has_value());
   EXPECT_EQ(upper_accepted->value, std::numeric_limits<std::int64_t>::max());
@@ -191,8 +193,8 @@ TEST(GGEMSLengthUnits, EnforcesSignedCanonicalRange) {
   ExpectConversionError<PositionCoordinate>(below_lower, "pm",
                                             UnitConversionError::OutOfRange);
   ExpectConversionError<PositionCoordinate>(
-      std::numeric_limits<long double>::max(), "m",
-      UnitConversionError::OutOfRange);
+    std::numeric_limits<long double>::max(), "m",
+    UnitConversionError::OutOfRange);
 }
 
 // =============================================================================
@@ -202,7 +204,7 @@ TEST(GGEMSLengthUnits, EnforcesNonNegativeCanonicalRange) {
   long double const upper_exclusive = std::ldexp(1.0L, 64);
 
   auto const accepted =
-      MakeQuantity<Length>(std::numeric_limits<std::uint64_t>::max(), "pm");
+    MakeQuantity<Length>(std::numeric_limits<std::uint64_t>::max(), "pm");
   ASSERT_TRUE(accepted.has_value());
   EXPECT_EQ(accepted->value, std::numeric_limits<std::uint64_t>::max());
 
@@ -231,8 +233,8 @@ TEST(GGEMSLengthUnits, RejectsNonFiniteValuesAndUnknownTokens) {
   ExpectConversionError<Length>(std::numeric_limits<long double>::infinity(),
                                 "pm", UnitConversionError::NonFinite);
   ExpectConversionError<PositionCoordinate>(
-      -std::numeric_limits<long double>::infinity(), "pm",
-      UnitConversionError::NonFinite);
+    -std::numeric_limits<long double>::infinity(), "pm",
+    UnitConversionError::NonFinite);
   ExpectConversionError<Length>(1.0L, "KM",
                                 UnitConversionError::UnsupportedUnit);
   ExpectConversionError<Length>(1.0L, "inch",

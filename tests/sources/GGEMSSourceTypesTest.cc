@@ -32,9 +32,9 @@ TEST(GGEMSSourceTypes, EmissionGeometryKernelIdsAreStable) {
   EXPECT_EQ(ggems::core::sources::ToLongName(Cylinder), "Cylinder");
   EXPECT_EQ(ggems::core::sources::ToLongName(Unknown), "Unknown");
   EXPECT_EQ(
-      ggems::core::sources::ToLongName(
-          static_cast<ggems::core::sources::GGEMSEmissionGeometryType>(99U)),
-      "Unknown");
+    ggems::core::sources::ToLongName(
+      static_cast<ggems::core::sources::GGEMSEmissionGeometryType>(99U)),
+    "Unknown");
 }
 
 // =============================================================================

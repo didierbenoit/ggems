@@ -136,7 +136,7 @@ TEST(GGEMSLogFormatterTest, PreservesRecordDataAndBuildsExpectedPrefix) {
   EXPECT_EQ(rendered.module, "transport");
   EXPECT_EQ(rendered.color, ggems::render::DEFAULT_FG);
   EXPECT_TRUE(
-      rendered.prefix.ends_with("[INFO2] {T42} [transport] (GGEMSRun::Run):"));
+    rendered.prefix.ends_with("[INFO2] {T42} [transport] (GGEMSRun::Run):"));
 }
 
 // =============================================================================
@@ -161,7 +161,7 @@ TEST(GGEMSLogFormatterTest, SelectsLevelColorWhenColorIsEnabled) {
 
 TEST(GGEMSFileSinkTest, WritesPrefixAndMessageAsPlainText) {
   std::filesystem::path const path =
-      std::filesystem::temp_directory_path() / "ggems_logger_test.log";
+    std::filesystem::temp_directory_path() / "ggems_logger_test.log";
   std::filesystem::remove(path);
 
   {

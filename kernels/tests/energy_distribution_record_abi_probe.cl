@@ -6,8 +6,8 @@ typedef struct GGEMSEnergyDistributionRecordAlignmentProbe {
 } GGEMSEnergyDistributionRecordAlignmentProbe;
 
 __kernel void energy_distribution_record_abi_probe(
-    __global ulong *layout, __global GGEMSEnergyDistributionRecord *records,
-    __global ulong *host_values) {
+  __global ulong *layout, __global GGEMSEnergyDistributionRecord *records,
+  __global ulong *host_values) {
   if (get_global_id(0) != 0U) {
     return;
   }
@@ -17,15 +17,15 @@ __kernel void energy_distribution_record_abi_probe(
 
   layout[0] = (ulong)(sizeof(GGEMSEnergyDistributionRecord));
   layout[1] = (ulong)((__private uchar const *)&private_record
-                          .regular_bin_width_micro_eV -
+                        .regular_bin_width_micro_eV -
                       record_base);
   layout[2] = (ulong)((__private uchar const *)&private_record.table_offset -
                       record_base);
   layout[3] =
-      (ulong)((__private uchar const *)&private_record.distribution_type -
-              record_base);
-  layout[4] = (ulong)((__private uchar const *)&private_record.table_count -
-                      record_base);
+    (ulong)((__private uchar const *)&private_record.distribution_type -
+            record_base);
+  layout[4] =
+    (ulong)((__private uchar const *)&private_record.table_count - record_base);
   layout[5] = (ulong)((__global uchar const *)&records[1] -
                       (__global uchar const *)&records[0]);
 
@@ -41,6 +41,6 @@ __kernel void energy_distribution_record_abi_probe(
   records[1].regular_bin_width_micro_eV = 101UL;
   records[1].table_offset = 102UL;
   records[1].distribution_type =
-      GGEMS_ENERGY_DISTRIBUTION_TYPE_REGULAR_SPECTRUM;
+    GGEMS_ENERGY_DISTRIBUTION_TYPE_REGULAR_SPECTRUM;
   records[1].table_count = 103U;
 }

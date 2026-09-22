@@ -58,8 +58,8 @@ namespace {
 // =============================================================================
 
 [[nodiscard]] std::string FormatCandidates(
-    std::vector<ggems::ui::detail::GGEMSVulkanDeviceCandidate const *> const
-        &candidates) {
+  std::vector<ggems::ui::detail::GGEMSVulkanDeviceCandidate const *> const
+    &candidates) {
   std::string result{};
 
   for (auto const *candidate : candidates) {
@@ -67,7 +67,7 @@ namespace {
       result += ", ";
     }
     result +=
-        std::format("[{}] {}", candidate->enumeration_index, candidate->name);
+      std::format("[{}] {}", candidate->enumeration_index, candidate->name);
   }
 
   return result;
@@ -80,13 +80,13 @@ namespace {
 MakeSelection(ggems::ui::detail::GGEMSVulkanDeviceCandidate const &candidate,
               std::string reason,
               std::optional<ggems::ui::detail::GGEMSVulkanDisplayAdapter> const
-                  &display_adapter) {
+                &display_adapter) {
   return ggems::ui::detail::GGEMSVulkanDeviceSelection{
-      .enumeration_index = candidate.enumeration_index,
-      .reason = std::move(reason),
-      .display_adapter_mismatch =
-          ggems::ui::detail::IsVulkanDisplayAdapterMismatch(candidate,
-                                                            display_adapter)};
+    .enumeration_index = candidate.enumeration_index,
+    .reason = std::move(reason),
+    .display_adapter_mismatch =
+      ggems::ui::detail::IsVulkanDisplayAdapterMismatch(candidate,
+                                                        display_adapter)};
 }
 
 // =============================================================================
@@ -95,20 +95,20 @@ MakeSelection(ggems::ui::detail::GGEMSVulkanDeviceCandidate const &candidate,
 [[nodiscard]] std::expected<ggems::ui::detail::GGEMSVulkanDeviceSelection,
                             std::string>
 SelectExplicitCandidate(
-    ggems::ui::detail::GGEMSVulkanDeviceCandidate const &candidate,
-    std::string reason,
-    std::optional<ggems::ui::detail::GGEMSVulkanDisplayAdapter> const
-        &display_adapter) {
+  ggems::ui::detail::GGEMSVulkanDeviceCandidate const &candidate,
+  std::string reason,
+  std::optional<ggems::ui::detail::GGEMSVulkanDisplayAdapter> const
+    &display_adapter) {
   if (!candidate.suitable) {
     std::string_view rejection_reason =
-        candidate.rejection_reason.empty()
-            ? std::string_view{"unspecified incompatibility"}
-            : std::string_view{candidate.rejection_reason};
+      candidate.rejection_reason.empty()
+        ? std::string_view{"unspecified incompatibility"}
+        : std::string_view{candidate.rejection_reason};
 
     return std::unexpected<std::string>{std::format(
-        "Vulkan physical device [{}] '{}' was explicitly selected but is "
-        "incompatible: {}.",
-        candidate.enumeration_index, candidate.name, rejection_reason)};
+      "Vulkan physical device [{}] '{}' was explicitly selected but is "
+      "incompatible: {}.",
+      candidate.enumeration_index, candidate.name, rejection_reason)};
   }
 
   return MakeSelection(candidate, std::move(reason), display_adapter);
@@ -135,8 +135,8 @@ GGEMSVulkanDeviceSelector::FromString(std::string selection) {
 GGEMSVulkanDeviceSelector
 GGEMSVulkanDeviceSelector::FromIndex(std::uint32_t enumeration_index) {
   return GGEMSVulkanDeviceSelector{
-      .kind = GGEMSVulkanDeviceSelectorKind::EnumerationIndex,
-      .enumeration_index = enumeration_index};
+    .kind = GGEMSVulkanDeviceSelectorKind::EnumerationIndex,
+    .enumeration_index = enumeration_index};
 }
 // =============================================================================
 
@@ -161,8 +161,8 @@ GetVulkanDeviceFallbackScore(vk::PhysicalDeviceType type) noexcept {
 // =============================================================================
 
 bool IsVulkanDisplayAdapterMismatch(
-    GGEMSVulkanDeviceCandidate const &candidate,
-    std::optional<GGEMSVulkanDisplayAdapter> const &display_adapter) noexcept {
+  GGEMSVulkanDeviceCandidate const &candidate,
+  std::optional<GGEMSVulkanDisplayAdapter> const &display_adapter) noexcept {
   return display_adapter.has_value() &&
          candidate.platform_adapter_id.has_value() &&
          candidate.platform_adapter_id.value() != display_adapter->platform_id;
@@ -172,19 +172,19 @@ bool IsVulkanDisplayAdapterMismatch(
 // =============================================================================
 
 std::expected<GGEMSVulkanDeviceSelection, std::string> SelectVulkanDevice(
-    GGEMSVulkanDeviceSelector const &selector,
-    std::span<GGEMSVulkanDeviceCandidate const> candidates,
-    std::optional<GGEMSVulkanDisplayAdapter> const &display_adapter) {
+  GGEMSVulkanDeviceSelector const &selector,
+  std::span<GGEMSVulkanDeviceCandidate const> candidates,
+  std::optional<GGEMSVulkanDisplayAdapter> const &display_adapter) {
   if (selector.kind == GGEMSVulkanDeviceSelectorKind::EnumerationIndex) {
     auto candidate = std::ranges::find_if(
-        candidates, [&selector](GGEMSVulkanDeviceCandidate const &entry) {
-          return entry.enumeration_index == selector.enumeration_index;
-        });
+      candidates, [&selector](GGEMSVulkanDeviceCandidate const &entry) {
+        return entry.enumeration_index == selector.enumeration_index;
+      });
 
     if (candidate == candidates.end()) {
       return std::unexpected<std::string>{std::format(
-          "Vulkan physical device enumeration index {} is unavailable.",
-          selector.enumeration_index)};
+        "Vulkan physical device enumeration index {} is unavailable.",
+        selector.enumeration_index)};
     }
 
     return SelectExplicitCandidate(*candidate, "explicit enumeration index",
@@ -194,7 +194,7 @@ std::expected<GGEMSVulkanDeviceSelection, std::string> SelectVulkanDevice(
   if (selector.kind == GGEMSVulkanDeviceSelectorKind::Name) {
     if (selector.name.empty()) {
       return std::unexpected<std::string>{
-          "Vulkan device name selection cannot be empty."};
+        "Vulkan device name selection cannot be empty."};
     }
 
     std::vector<GGEMSVulkanDeviceCandidate const *> matches{};
@@ -215,13 +215,13 @@ std::expected<GGEMSVulkanDeviceSelection, std::string> SelectVulkanDevice(
 
     if (matches.empty()) {
       return std::unexpected<std::string>{std::format(
-          "No Vulkan physical device name matches '{}'.", selector.name)};
+        "No Vulkan physical device name matches '{}'.", selector.name)};
     }
 
     if (matches.size() != 1U) {
       return std::unexpected<std::string>{
-          std::format("Vulkan device name '{}' is ambiguous. Candidates: {}.",
-                      selector.name, FormatCandidates(matches))};
+        std::format("Vulkan device name '{}' is ambiguous. Candidates: {}.",
+                    selector.name, FormatCandidates(matches))};
     }
 
     return SelectExplicitCandidate(*matches.front(),
@@ -235,13 +235,13 @@ std::expected<GGEMSVulkanDeviceSelection, std::string> SelectVulkanDevice(
     for (GGEMSVulkanDeviceCandidate const &candidate : candidates) {
       if (!candidate.suitable || !candidate.platform_adapter_id.has_value() ||
           candidate.platform_adapter_id.value() !=
-              display_adapter->platform_id) {
+            display_adapter->platform_id) {
         continue;
       }
 
       if (display_match == nullptr ||
           GetVulkanDeviceFallbackScore(candidate.type) >
-              GetVulkanDeviceFallbackScore(display_match->type)) {
+            GetVulkanDeviceFallbackScore(display_match->type)) {
         display_match = &candidate;
       }
     }
@@ -259,23 +259,22 @@ std::expected<GGEMSVulkanDeviceSelection, std::string> SelectVulkanDevice(
       continue;
     }
 
-    if (fallback == nullptr ||
-        GetVulkanDeviceFallbackScore(candidate.type) >
-            GetVulkanDeviceFallbackScore(fallback->type)) {
+    if (fallback == nullptr || GetVulkanDeviceFallbackScore(candidate.type) >
+                                 GetVulkanDeviceFallbackScore(fallback->type)) {
       fallback = &candidate;
     }
   }
 
   if (fallback == nullptr) {
     return std::unexpected<std::string>{
-        "No Vulkan physical device satisfies the GGEMS GuiMode requirements."};
+      "No Vulkan physical device satisfies the GGEMS GuiMode requirements."};
   }
 
   std::string reason =
-      display_adapter.has_value()
-          ? "automatic fallback: no suitable Vulkan device matches the "
-            "display adapter identity"
-          : "automatic fallback: display adapter identity unavailable";
+    display_adapter.has_value()
+      ? "automatic fallback: no suitable Vulkan device matches the "
+        "display adapter identity"
+      : "automatic fallback: display adapter identity unavailable";
 
   return MakeSelection(*fallback, std::move(reason), display_adapter);
 }

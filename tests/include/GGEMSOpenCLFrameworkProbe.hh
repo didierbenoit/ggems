@@ -19,12 +19,12 @@
 // * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
 // *****************************************************************************
 
-
 /*!
  * \file
  * \brief Shared OpenCL framework probe metadata for tests.
  *
- * Provides the common framework-probe kernel name and the filesystem location used by OpenCL program, kernel, and profiler tests.
+ * Provides the common framework-probe kernel name and the filesystem location
+ * used by OpenCL program, kernel, and profiler tests.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -43,7 +43,7 @@ namespace ggems::test {
  * \brief Basename of the shared OpenCL framework probe kernel.
  */
 inline const std::string k_opencl_framework_probe_name{
-    "opencl_framework_probe"};
+  "opencl_framework_probe"};
 
 /*!
  * \brief Returns the directory containing shared OpenCL test kernels.
@@ -51,7 +51,7 @@ inline const std::string k_opencl_framework_probe_name{
  * \return Path to the test-kernel directory below GGEMS_TEST_KERNEL_ROOT.
  */
 [[nodiscard]] inline auto GetOpenCLFrameworkProbeRoot()
-    -> std::filesystem::path {
+  -> std::filesystem::path {
   return std::filesystem::path{GGEMS_TEST_KERNEL_ROOT} / "tests";
 }
 } // namespace ggems::test

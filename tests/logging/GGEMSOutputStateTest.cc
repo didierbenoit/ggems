@@ -23,7 +23,9 @@
  * \file
  * \brief Documents tests for GGEMS output-state buffering.
  *
- * Validates run-status storage, capacity clamping, ring-buffer ordering and wraparound, newest-line snapshots, clearing, reuse, and output-state sink forwarding.
+ * Validates run-status storage, capacity clamping, ring-buffer ordering and
+ * wraparound, newest-line snapshots, clearing, reuse, and output-state sink
+ * forwarding.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -55,7 +57,7 @@ using ggems::core::RunStatus;
 // =============================================================================
 
 [[nodiscard]] auto MakeRenderedLine(std::string_view message)
-    -> RenderedLogLine {
+  -> RenderedLogLine {
   RenderedLogLine line{};
   line.msg = std::string{message};
   line.module = "GGEMSOutputStateTest";

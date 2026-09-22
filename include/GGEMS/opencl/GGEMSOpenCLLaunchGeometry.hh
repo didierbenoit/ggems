@@ -42,12 +42,13 @@ namespace ggems::ocl::detail {
  *
  * \param[in] logical_work_size Logical number of work-items to launch.
  * \param[in] local_work_size Requested local work-group size.
- * \return Padded global work size, or an empty optional if the local size is zero or padding would overflow.
+ * \return Padded global work size, or an empty optional if the local size is
+ * zero or padding would overflow.
  */
 [[nodiscard]] constexpr auto
 TryComputePaddedGlobalWorkSize(std::size_t logical_work_size,
                                std::size_t local_work_size) noexcept
-    -> std::optional<std::size_t> {
+  -> std::optional<std::size_t> {
   if (local_work_size == 0U) {
     return std::nullopt;
   }

@@ -19,12 +19,12 @@
 // * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
 // *****************************************************************************
 
-
 /*!
  * \file
  * \brief Shared OpenCL device inventory utilities for tests.
  *
- * Flattens GGEMS platform/device discovery into stable test records and provides a concise device description suitable for GoogleTest traces.
+ * Flattens GGEMS platform/device discovery into stable test records and
+ * provides a concise device description suitable for GoogleTest traces.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -68,20 +68,21 @@ struct OpenCLDeviceInventoryEntry {
 /*!
  * \brief Builds a flattened inventory of all GGEMS-discovered OpenCL devices.
  *
- * \return Device entries ordered by platform discovery order and then device order.
+ * \return Device entries ordered by platform discovery order and then device
+ * order.
  */
 [[nodiscard]] inline auto GetOpenCLDeviceInventory()
-    -> std::vector<OpenCLDeviceInventoryEntry> {
+  -> std::vector<OpenCLDeviceInventoryEntry> {
   std::vector<OpenCLDeviceInventoryEntry> inventory;
 
   auto const &platforms = ocl::GGEMSOpenCL::GetInstance().GetPlatforms();
   for (auto const &platform : platforms) {
     for (auto const &device : platform.GetDevices()) {
       inventory.push_back(OpenCLDeviceInventoryEntry{
-          .platform_index = platform.GetPlatformIndex(),
-          .device_index = device.GetDeviceIndex(),
-          .platform = std::cref(platform),
-          .device = std::cref(device),
+        .platform_index = platform.GetPlatformIndex(),
+        .device_index = device.GetDeviceIndex(),
+        .platform = std::cref(platform),
+        .device = std::cref(device),
       });
     }
   }

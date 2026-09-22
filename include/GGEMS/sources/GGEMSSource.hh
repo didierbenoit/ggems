@@ -35,19 +35,19 @@ public:
   auto SetCountDrivenPopulation(std::uint64_t primary_count) -> GGEMSSource &;
 
   auto SetRadionuclide(
-      std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>
-          radionuclide,
-      units::Activity activity_at_reference_time,
-      std::uint64_t reference_time_ps) -> GGEMSSource &;
+    std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>
+      radionuclide,
+    units::Activity activity_at_reference_time, std::uint64_t reference_time_ps)
+    -> GGEMSSource &;
 
   [[nodiscard]] auto GetPopulationMode() const noexcept
-      -> GGEMSSourcePopulationMode;
+    -> GGEMSSourcePopulationMode;
 
   [[nodiscard]] auto BuildActivityDrivenPopulationConfiguration() const
-      -> GGEMSActivityDrivenSourceConfiguration;
+    -> GGEMSActivityDrivenSourceConfiguration;
 
   auto ValidatePopulationForRunInitialization(
-      std::optional<GGEMSTimeWindow> const &initial_time_window) const -> void;
+    std::optional<GGEMSTimeWindow> const &initial_time_window) const -> void;
 
   auto SetAnalytic() noexcept -> GGEMSSource &;
 
@@ -58,7 +58,7 @@ public:
 
   auto SetEllipseEmissionPicoMeter(std::uint64_t diameter_x_pm,
                                    std::uint64_t diameter_y_pm)
-      -> GGEMSSource &;
+    -> GGEMSSource &;
 
   auto SetCircleEmissionPicoMeter(std::uint64_t diameter_pm) -> GGEMSSource &;
 
@@ -76,18 +76,18 @@ public:
                                        ggems::units::Angle theta_max,
                                        ggems::units::Angle phi_min,
                                        ggems::units::Angle phi_max)
-      -> GGEMSSource &;
+    -> GGEMSSource &;
 
   auto SetFocusedAngularDistributionPicoMeter(std::int64_t focus_x_pm,
                                               std::int64_t focus_y_pm,
                                               std::int64_t focus_z_pm)
-      -> GGEMSSource &;
+    -> GGEMSSource &;
 
   auto SetEmittedParticleType(particles::GGEMSParticleType particle_type)
-      -> GGEMSSource &;
+    -> GGEMSSource &;
 
   auto SetEnergyMicroElectronVolt(std::uint64_t energy_micro_eV)
-      -> GGEMSSource &;
+    -> GGEMSSource &;
 
   auto SetDiscreteEnergyLines(std::span<double const> energies,
                               std::span<double const> relative_weights,
@@ -101,7 +101,7 @@ public:
                                  std::string_view unit) -> GGEMSSource &;
 
   [[nodiscard]] auto GetEnergyDistribution() const
-      -> GGEMSEnergyDistribution const &;
+    -> GGEMSEnergyDistribution const &;
 
   auto SetPositionPicoMeter(std::int64_t x_pm, std::int64_t y_pm,
                             std::int64_t z_pm) -> GGEMSSource &;
@@ -110,7 +110,7 @@ public:
 
   auto SetOrientation(std::array<double, 3U> const &direction,
                       std::array<double, 3U> const &up_reference)
-      -> GGEMSSource &;
+    -> GGEMSSource &;
 
   [[nodiscard]] auto BuildExecutionRecord() const -> GGEMSSourceRecord;
 
@@ -126,10 +126,10 @@ private:
   auto CheckPopulationConfigurationMutable() const -> void;
 
   auto CommitEnergyDistribution(GGEMSEnergyDistribution distribution) noexcept
-      -> void;
+    -> void;
 
   GGEMSSourcePopulationConfiguration population_configuration_{
-      GGEMSCountDrivenSourceConfiguration{}};
+    GGEMSCountDrivenSourceConfiguration{}};
   GGEMSSourceRecord record_{};
   GGEMSEnergyDistribution energy_distribution_;
   bool initialization_finalized_{false};

@@ -58,9 +58,6 @@ typedef struct XXXStruct {
  * \param[in] value XXX.
  * \return XXX.
  */
-inline uint XXX(uint const value)
-{
-  return value;
-}
+inline uint XXX(uint const value) { return value; }
 
-#endif  // GGEMS_XXX_CLH
+#endif // GGEMS_XXX_CLH

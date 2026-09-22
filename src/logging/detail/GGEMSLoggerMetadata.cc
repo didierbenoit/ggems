@@ -47,7 +47,8 @@ namespace {
 // =============================================================================
 
 /*!
- * \brief Tests whether a character is one of the ASCII whitespace characters used by the simplifier.
+ * \brief Tests whether a character is one of the ASCII whitespace characters
+ * used by the simplifier.
  *
  * \param[in] character Character to test.
  * \return True for space, tab, line feed, or carriage return.
@@ -80,7 +81,7 @@ namespace {
  * \return Trimmed subview of \p text.
  */
 [[nodiscard]] auto TrimRight(std::string_view text) noexcept
-    -> std::string_view {
+  -> std::string_view {
   while (!text.empty() && IsAsciiSpace(text.back())) {
     text.remove_suffix(1);
   }
@@ -92,13 +93,14 @@ namespace {
 // =============================================================================
 
 /*!
- * \brief Finds the last top-level opening parenthesis outside template arguments.
+ * \brief Finds the last top-level opening parenthesis outside template
+ * arguments.
  *
  * \param[in] text Function spelling to scan.
  * \return Position of the last candidate parameter list, or ``npos``.
  */
 [[nodiscard]] auto FindLastParameterList(std::string_view text) noexcept
-    -> std::size_t {
+  -> std::size_t {
   std::size_t angle_depth = 0;
   std::size_t last = std::string_view::npos;
 
@@ -121,13 +123,14 @@ namespace {
 // =============================================================================
 
 /*!
- * \brief Removes a compiler-provided return-type prefix from a function spelling.
+ * \brief Removes a compiler-provided return-type prefix from a function
+ * spelling.
  *
  * \param[in] text Function spelling to simplify.
  * \return Subview beginning after the last top-level ASCII space when present.
  */
 [[nodiscard]] auto RemoveReturnType(std::string_view text) noexcept
-    -> std::string_view {
+  -> std::string_view {
   std::size_t angle_depth = 0;
   std::size_t last_space = std::string_view::npos;
 
@@ -160,7 +163,7 @@ namespace {
  * \return Simplified subview.
  */
 [[nodiscard]] auto RemoveTrailingEmptyCall(std::string_view text) noexcept
-    -> std::string_view {
+  -> std::string_view {
   if (text.ends_with("()")) {
     text.remove_suffix(2);
   }
@@ -178,7 +181,7 @@ namespace {
  * \return Simplified subview.
  */
 [[nodiscard]] auto StripLambdaSuffix(std::string_view text) noexcept
-    -> std::string_view {
+  -> std::string_view {
   if (auto const pos = text.find("::<lambda"); pos != std::string_view::npos) {
     return RemoveTrailingEmptyCall(text.substr(0, pos));
   }
@@ -203,7 +206,7 @@ namespace {
 [[nodiscard]] auto
 FindLastTopLevelScope(std::string_view text,
                       std::size_t limit = std::string_view::npos) noexcept
-    -> std::size_t {
+  -> std::size_t {
   if (limit == std::string_view::npos || limit > text.size()) {
     limit = text.size();
   }
@@ -238,10 +241,10 @@ FindLastTopLevelScope(std::string_view text,
  */
 [[nodiscard]] auto
 StripFunctionTemplateArguments(std::string_view text) noexcept
-    -> std::string_view {
+  -> std::string_view {
   auto const last_scope = FindLastTopLevelScope(text);
   std::size_t const start =
-      last_scope == std::string_view::npos ? 0 : last_scope + 2;
+    last_scope == std::string_view::npos ? 0 : last_scope + 2;
 
   std::size_t angle_depth = 0;
 
@@ -272,7 +275,7 @@ StripFunctionTemplateArguments(std::string_view text) noexcept
  * \return View containing the retained final scopes.
  */
 [[nodiscard]] auto KeepRelevantScopes(std::string_view text) noexcept
-    -> std::string_view {
+  -> std::string_view {
   auto const last = FindLastTopLevelScope(text);
   if (last == std::string_view::npos) {
     return text;
@@ -307,7 +310,7 @@ StripFunctionTemplateArguments(std::string_view text) noexcept
   thread_local unsigned idx = [&]() -> unsigned {
     std::scoped_lock lock(mutex);
     auto const iterator =
-        thread_tags.emplace(std::this_thread::get_id(), next++).first;
+      thread_tags.emplace(std::this_thread::get_id(), next++).first;
     return iterator->second;
   }();
 
@@ -318,7 +321,7 @@ StripFunctionTemplateArguments(std::string_view text) noexcept
 // =============================================================================
 
 [[nodiscard]] auto SimplifyFunctionName(std::string_view function_name) noexcept
-    -> std::string_view {
+  -> std::string_view {
   // Step 1: remove the final parameter list.
   // Use the last '(' to survive operator() and clang lambda spellings.
   if (auto const pos = FindLastParameterList(function_name);

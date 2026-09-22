@@ -16,7 +16,7 @@ namespace ggems::core::radioactivity::detail {
 [[nodiscard]] auto
 BuildTabulatedSpectrum(TabulatedSpectrumGrid grid,
                        std::span<const double> relative_bin_weights)
-    -> sources::GGEMSEnergyDistribution {
+  -> sources::GGEMSEnergyDistribution {
   if (grid.lower_edge_micro_eV == 0ULL || grid.bin_width_micro_eV == 0ULL ||
       (grid.bin_width_micro_eV & 1ULL) != 0ULL) {
     throw GGEMSInternal("Tabulated spectrum grid is invalid.");
@@ -46,7 +46,7 @@ BuildTabulatedSpectrum(TabulatedSpectrumGrid grid,
   }
 
   return sources::GGEMSEnergyDistribution::BuildRegularSpectrum(
-      centers, relative_bin_weights);
+    centers, relative_bin_weights);
 }
 
 } // namespace ggems::core::radioactivity::detail

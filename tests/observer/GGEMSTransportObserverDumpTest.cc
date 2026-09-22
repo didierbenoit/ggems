@@ -33,7 +33,7 @@ using ggems::test::ScopedLoggerEncoding;
 [[nodiscard]] auto
 MakeRecord(std::uint64_t track_id, std::uint64_t time_ps,
            GGEMSParticleType particle_type = GGEMSParticleType::Gamma)
-    -> GGEMSObserverRecord {
+  -> GGEMSObserverRecord {
   GGEMSObserverRecord record{};
 
   record.run_id = 0ULL;
@@ -44,11 +44,11 @@ MakeRecord(std::uint64_t track_id, std::uint64_t time_ps,
   record.parent_track_id = ggems::core::particles::k_invalid_id_u64;
   record.time_ps = time_ps;
   record.record_kind = ggems::core::observer::ToKernelObserverRecordKind(
-      GGEMSObserverRecordKind::Source);
+    GGEMSObserverRecordKind::Source);
   record.particle_type =
-      ggems::core::particles::ToKernelParticleType(particle_type);
-  record.status = ggems::core::particles::ToKernelParticleStatus(
-      GGEMSParticleStatus::Alive);
+    ggems::core::particles::ToKernelParticleType(particle_type);
+  record.status =
+    ggems::core::particles::ToKernelParticleStatus(GGEMSParticleStatus::Alive);
   record.source_index = 0U;
 
   return record;
@@ -94,7 +94,7 @@ BuildObserverDump(std::span<GGEMSObserverRecord const> records) -> std::string {
 
 TEST(GGEMSTransportObserverDump, UsesRequestedColumnOrderAndHeaders) {
   std::array<GGEMSObserverRecord, 1U> const records{{
-      MakeRecord(8ULL, 10ULL),
+    MakeRecord(8ULL, 10ULL),
   }};
 
   std::string const header = ExtractTableHeader(BuildObserverDump(records));
@@ -102,8 +102,8 @@ TEST(GGEMSTransportObserverDump, UsesRequestedColumnOrderAndHeaders) {
   ASSERT_FALSE(header.empty());
 
   std::array<std::string_view, 11U> const ordered_tokens{
-      "Trk",      "Par",       "Kind", "|  P |",    "Energy", "Edep",
-      "Position", "Direction", "Src",  "Time [ps]", "Record",
+    "Trk",      "Par",       "Kind", "|  P |",    "Energy", "Edep",
+    "Position", "Direction", "Src",  "Time [ps]", "Record",
   };
 
   std::size_t search_begin{0U};
@@ -112,7 +112,7 @@ TEST(GGEMSTransportObserverDump, UsesRequestedColumnOrderAndHeaders) {
     std::size_t const token_position = header.find(token, search_begin);
 
     ASSERT_NE(token_position, std::string::npos)
-        << "Missing or misplaced column: " << token << "\nHeader: " << header;
+      << "Missing or misplaced column: " << token << "\nHeader: " << header;
 
     search_begin = token_position + token.size();
   }
@@ -125,9 +125,9 @@ TEST(GGEMSTransportObserverDump, DisplaysAsciiParticleSymbols) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
 
   std::array<GGEMSObserverRecord, 3U> const records{{
-      MakeRecord(1ULL, 0ULL, GGEMSParticleType::Gamma),
-      MakeRecord(2ULL, 0ULL, GGEMSParticleType::Electron),
-      MakeRecord(3ULL, 0ULL, GGEMSParticleType::Positron),
+    MakeRecord(1ULL, 0ULL, GGEMSParticleType::Gamma),
+    MakeRecord(2ULL, 0ULL, GGEMSParticleType::Electron),
+    MakeRecord(3ULL, 0ULL, GGEMSParticleType::Positron),
   }};
 
   std::string const dump = BuildObserverDump(records);
@@ -144,19 +144,19 @@ TEST(GGEMSTransportObserverDump, DisplaysUnicodeParticleSymbols) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Unicode};
 
   std::array<GGEMSObserverRecord, 3U> const records{{
-      MakeRecord(1ULL, 0ULL, GGEMSParticleType::Gamma),
-      MakeRecord(2ULL, 0ULL, GGEMSParticleType::Electron),
-      MakeRecord(3ULL, 0ULL, GGEMSParticleType::Positron),
+    MakeRecord(1ULL, 0ULL, GGEMSParticleType::Gamma),
+    MakeRecord(2ULL, 0ULL, GGEMSParticleType::Electron),
+    MakeRecord(3ULL, 0ULL, GGEMSParticleType::Positron),
   }};
 
   std::string const dump = BuildObserverDump(records);
 
   std::string const gamma = ggems::utf::UTF32ToUTF8(
-      ggems::core::particles::ToUnicodeSymbol(GGEMSParticleType::Gamma));
+    ggems::core::particles::ToUnicodeSymbol(GGEMSParticleType::Gamma));
   std::string const electron = ggems::utf::UTF32ToUTF8(
-      ggems::core::particles::ToUnicodeSymbol(GGEMSParticleType::Electron));
+    ggems::core::particles::ToUnicodeSymbol(GGEMSParticleType::Electron));
   std::string const positron = ggems::utf::UTF32ToUTF8(
-      ggems::core::particles::ToUnicodeSymbol(GGEMSParticleType::Positron));
+    ggems::core::particles::ToUnicodeSymbol(GGEMSParticleType::Positron));
 
   EXPECT_NE(dump.find("|  " + gamma + " |"), std::string::npos);
   EXPECT_NE(dump.find("| " + electron + " |"), std::string::npos);
@@ -201,7 +201,7 @@ TEST(GGEMSTransportObserverDump,
   GGEMSObserverRecord record = MakeRecord(8ULL, 10ULL);
 
   record.status = ggems::core::particles::ToKernelParticleStatus(
-      GGEMSParticleStatus::EscapedWorld);
+    GGEMSParticleStatus::EscapedWorld);
   record.position_x_pm = 10'000LL;
   record.position_y_pm = 1'000'000'000'000LL;
   record.position_z_pm = 0LL;
@@ -218,8 +218,8 @@ TEST(GGEMSTransportObserverDump,
 
 TEST(GGEMSTransportObserverDump, KeepsOriginalRecordIndexAfterDisplaySorting) {
   std::array<GGEMSObserverRecord, 2U> const records{{
-      MakeRecord(8ULL, 20ULL),
-      MakeRecord(8ULL, 10ULL),
+    MakeRecord(8ULL, 20ULL),
+    MakeRecord(8ULL, 10ULL),
   }};
 
   std::string const dump = BuildObserverDump(records);
@@ -228,9 +228,9 @@ TEST(GGEMSTransportObserverDump, KeepsOriginalRecordIndexAfterDisplaySorting) {
   std::string const original_first_record_cell = std::format("| {:>10} |", 0U);
 
   std::size_t const original_second_record =
-      dump.find(original_second_record_cell);
+    dump.find(original_second_record_cell);
   std::size_t const original_first_record =
-      dump.find(original_first_record_cell);
+    dump.find(original_first_record_cell);
 
   ASSERT_NE(original_second_record, std::string::npos);
   ASSERT_NE(original_first_record, std::string::npos);

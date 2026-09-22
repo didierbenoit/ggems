@@ -23,7 +23,8 @@
  * \file
  * \brief Declares the OpenCL JKISS random-number engine.
  *
- * Provides raw 32-bit output and scalar uniform sampling from per-stream JKISS state.
+ * Provides raw 32-bit output and scalar uniform sampling from per-stream JKISS
+ * state.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>

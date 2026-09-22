@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for GGEMS angular quantities and arithmetic.
  *
- * Validates registered angle units, radian/degree helpers and literals, signed angles, arithmetic and comparisons, and human-readable/formatter behavior.
+ * Validates registered angle units, radian/degree helpers and literals, signed
+ * angles, arithmetic and comparisons, and human-readable/formatter behavior.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -49,8 +50,8 @@ constexpr long double k_tolerance{1.0e-12L};
 constexpr long double k_pi_reference{3.141592653589793238462643383279502884L};
 constexpr long double k_rounding_error_bound{8.0L};
 constexpr long double k_registered_token_tolerance{
-    k_rounding_error_bound * k_pi_reference *
-    std::numeric_limits<long double>::epsilon()};
+  k_rounding_error_bound * k_pi_reference *
+  std::numeric_limits<long double>::epsilon()};
 
 /* --------------------------------------------- */
 /* --------------------------------------------- */
@@ -111,7 +112,7 @@ TEST(GGEMSAngularUnits, MakeDegreesConvertsToRadians) {
 
 TEST(GGEMSAngularUnits, RadiansAreConvertedToDegrees) {
   ggems::units::Angle const angle =
-      ggems::units::MakeRadians(ggems::units::detail::k_pi);
+    ggems::units::MakeRadians(ggems::units::detail::k_pi);
 
   ExpectNearLongDouble(ggems::units::ToDegrees(angle), 180.0L);
 }

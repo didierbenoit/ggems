@@ -72,11 +72,11 @@ constexpr std::size_t k_local_size{64U};
 
 constexpr std::size_t k_uniform4_blocks_per_particle{2U};
 constexpr std::size_t k_uniform4_value_count{
-    k_particle_count * k_uniform4_blocks_per_particle * 4U};
+  k_particle_count * k_uniform4_blocks_per_particle * 4U};
 
 constexpr auto k_padded_global_work_size =
-    ggems::ocl::detail::TryComputePaddedGlobalWorkSize(k_particle_count,
-                                                       k_local_size);
+  ggems::ocl::detail::TryComputePaddedGlobalWorkSize(k_particle_count,
+                                                     k_local_size);
 
 static_assert(k_padded_global_work_size.has_value());
 
@@ -86,7 +86,7 @@ constexpr std::size_t k_global_work_size = *k_padded_global_work_size;
 // =============================================================================
 
 auto MakeJKissState(std::uint32_t seed, std::uint32_t index) noexcept
-    -> JKissState {
+  -> JKissState {
   return JKissState{.x = seed + 123456789U + (1013904223U * index),
                     .y = seed ^ (362436069U + (1664525U * index)),
                     .z = seed + 521288629U + (69069U * index),
@@ -98,7 +98,7 @@ auto MakeJKissState(std::uint32_t seed, std::uint32_t index) noexcept
 // =============================================================================
 
 auto AreStatesEqual(JKissState const &lhs, JKissState const &rhs) noexcept
-    -> bool {
+  -> bool {
   return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w == rhs.w &&
          lhs.c == rhs.c;
 }
@@ -113,7 +113,7 @@ auto AreStatesEqual(JKissState const &lhs, JKissState const &rhs) noexcept
 
 TEST(GGEMSJKissKernelTest, UniformValuesAreInsideUnitInterval) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -134,10 +134,10 @@ TEST(GGEMSJKissKernelTest, UniformValuesAreInsideUnitInterval) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_jkiss_uniform", build_options);
+      context, kernel_test_root, "random_jkiss_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_jkiss_uniform");
 
@@ -145,13 +145,13 @@ TEST(GGEMSJKissKernelTest, UniformValuesAreInsideUnitInterval) {
                                          "random_jkiss_uniform"};
 
     std::size_t state_bytes =
-        k_particle_count * sizeof(ggems::core::random::GGEMSJKissState);
+      k_particle_count * sizeof(ggems::core::random::GGEMSJKissState);
     std::size_t value_bytes = k_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<JKissState *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -195,7 +195,7 @@ TEST(GGEMSJKissKernelTest, UniformValuesAreInsideUnitInterval) {
 
 TEST(GGEMSJKissKernelTest, SequenceContinuesBetweenKernelCalls) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -216,10 +216,10 @@ TEST(GGEMSJKissKernelTest, SequenceContinuesBetweenKernelCalls) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_jkiss_uniform", build_options);
+      context, kernel_test_root, "random_jkiss_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_jkiss_uniform");
 
@@ -230,9 +230,9 @@ TEST(GGEMSJKissKernelTest, SequenceContinuesBetweenKernelCalls) {
     std::size_t value_bytes = k_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<JKissState *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -291,7 +291,7 @@ TEST(GGEMSJKissKernelTest, SequenceContinuesBetweenKernelCalls) {
 
 TEST(GGEMSJKissKernelTest, SameSeedProducesSameFirstSequence) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -312,10 +312,10 @@ TEST(GGEMSJKissKernelTest, SameSeedProducesSameFirstSequence) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_jkiss_uniform", build_options);
+      context, kernel_test_root, "random_jkiss_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_jkiss_uniform");
 
@@ -326,9 +326,9 @@ TEST(GGEMSJKissKernelTest, SameSeedProducesSameFirstSequence) {
     std::size_t value_bytes = k_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<JKissState *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -385,7 +385,7 @@ TEST(GGEMSJKissKernelTest, SameSeedProducesSameFirstSequence) {
 
 TEST(GGEMSJKissKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -406,10 +406,10 @@ TEST(GGEMSJKissKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_jkiss_uniform", build_options);
+      context, kernel_test_root, "random_jkiss_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_jkiss_uniform");
 
@@ -420,9 +420,9 @@ TEST(GGEMSJKissKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
     std::size_t value_bytes = k_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<JKissState *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -488,7 +488,7 @@ TEST(GGEMSJKissKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
 
 TEST(GGEMSJKissKernelTest, RandomStatesAreAdvancedByKernelExecution) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -509,10 +509,10 @@ TEST(GGEMSJKissKernelTest, RandomStatesAreAdvancedByKernelExecution) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_jkiss_uniform", build_options);
+      context, kernel_test_root, "random_jkiss_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_jkiss_uniform");
 
@@ -523,9 +523,9 @@ TEST(GGEMSJKissKernelTest, RandomStatesAreAdvancedByKernelExecution) {
     std::size_t value_bytes = k_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<JKissState *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -588,7 +588,7 @@ TEST(GGEMSJKissKernelTest, RandomStatesAreAdvancedByKernelExecution) {
 
 TEST(GGEMSJKissKernelTest, GenericRandomUniformUsesSelectedJKissEngine) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -608,11 +608,11 @@ TEST(GGEMSJKissKernelTest, GenericRandomUniformUsesSelectedJKissEngine) {
     std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
-    std::string build_options = std::format("-I{} -DGGEMS_RANDOM_ENGINE=1",
-                                            kernel_root.generic_string());
+    std::string build_options =
+      std::format("-I{} -DGGEMS_RANDOM_ENGINE=1", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_generic_uniform", build_options);
+      context, kernel_test_root, "random_generic_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_generic_uniform");
 
@@ -620,16 +620,16 @@ TEST(GGEMSJKissKernelTest, GenericRandomUniformUsesSelectedJKissEngine) {
                                          "random_generic_uniform"};
 
     std::size_t state_bytes =
-        k_particle_count * sizeof(ggems::core::random::GGEMSJKissState);
+      k_particle_count * sizeof(ggems::core::random::GGEMSJKissState);
 
     std::size_t value_count = k_particle_count * k_samples_per_particle;
 
     std::size_t value_bytes = value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<JKissState *>(states_buffer.GetData());
 
@@ -685,7 +685,7 @@ TEST(GGEMSJKissKernelTest, GenericRandomUniformUsesSelectedJKissEngine) {
 
 TEST(GGEMSJKissKernelTest, GenericRandomUniform4UsesSelectedJKissEngine) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -705,11 +705,11 @@ TEST(GGEMSJKissKernelTest, GenericRandomUniform4UsesSelectedJKissEngine) {
     std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
-    std::string build_options = std::format("-I{} -DGGEMS_RANDOM_ENGINE=1",
-                                            kernel_root.generic_string());
+    std::string build_options =
+      std::format("-I{} -DGGEMS_RANDOM_ENGINE=1", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_generic_uniform4", build_options);
+      context, kernel_test_root, "random_generic_uniform4", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_generic_uniform4");
 
@@ -717,14 +717,14 @@ TEST(GGEMSJKissKernelTest, GenericRandomUniform4UsesSelectedJKissEngine) {
                                          "random_generic_uniform4"};
 
     std::size_t state_bytes =
-        k_particle_count * sizeof(ggems::core::random::GGEMSJKissState);
+      k_particle_count * sizeof(ggems::core::random::GGEMSJKissState);
 
     std::size_t value_bytes = k_uniform4_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<JKissState *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());

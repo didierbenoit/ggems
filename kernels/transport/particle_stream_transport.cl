@@ -18,22 +18,22 @@
 // =============================================================================
 
 __kernel void particle_stream_transport(
-    __global GGEMSRandomState *random_states,
-    volatile __global GGEMSTransportCounters *counters,
-    __global GGEMSSourceRecord const *source_records,
-    __global GGEMSSourceRunRange const *source_ranges, uint source_count,
-    uint total_primary_count, ulong projection_history_offset,
-    ulong device_primary_offset,
-    __global GGEMSObserverConfigRecord const *observer_config,
-    volatile __global GGEMSObserverCounters *observer_counters,
-    __global GGEMSObserverRecord *observer_records,
-    uint observer_record_capacity, ulong run_id, uint worker_count,
-    __global GGEMSEnergyDistributionRecord const *energy_distribution_records,
-    __global ulong const *energy_values_micro_eV,
-    __global ulong const *cumulative_ticket_upper,
-    __global GGEMSSourcePopulationRecord const *source_population_records,
-    __global GGEMSSourceEmissionRecord const *source_emissions,
-    __global GGEMSSourceEmissionRange const *source_emission_ranges) {
+  __global GGEMSRandomState *random_states,
+  volatile __global GGEMSTransportCounters *counters,
+  __global GGEMSSourceRecord const *source_records,
+  __global GGEMSSourceRunRange const *source_ranges, uint source_count,
+  uint total_primary_count, ulong projection_history_offset,
+  ulong device_primary_offset,
+  __global GGEMSObserverConfigRecord const *observer_config,
+  volatile __global GGEMSObserverCounters *observer_counters,
+  __global GGEMSObserverRecord *observer_records, uint observer_record_capacity,
+  ulong run_id, uint worker_count,
+  __global GGEMSEnergyDistributionRecord const *energy_distribution_records,
+  __global ulong const *energy_values_micro_eV,
+  __global ulong const *cumulative_ticket_upper,
+  __global GGEMSSourcePopulationRecord const *source_population_records,
+  __global GGEMSSourceEmissionRecord const *source_emissions,
+  __global GGEMSSourceEmissionRange const *source_emission_ranges) {
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER == 0
   (void)(observer_config);
@@ -93,12 +93,12 @@ __kernel void particle_stream_transport(
     }
 
     ulong source_local_primary_id =
-        projection_primary_id -
-        source_ranges[selected_source_index].projection_primary_begin;
+      projection_primary_id -
+      source_ranges[selected_source_index].projection_primary_begin;
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER
     uint capture_history = GGEMS_ObserverShouldCapturePrimary(
-        observer_config, selected_source_index, source_local_primary_id);
+      observer_config, selected_source_index, source_local_primary_id);
 
     if (capture_history != 0U) {
       atomic_inc(&observer_counters->captured_primary_count);
@@ -108,16 +108,16 @@ __kernel void particle_stream_transport(
     atomic_inc(&counters->consumed_primary_count);
 
     __global GGEMSSourceRecord const *source =
-        &source_records[selected_source_index];
+      &source_records[selected_source_index];
     __global GGEMSSourcePopulationRecord const *population =
-        &source_population_records[selected_source_index];
+      &source_population_records[selected_source_index];
 
     GGEMSParticleState particle;
     uint initialized = GGEMS_SourceTryInitializePrimary(
-        global_primary_id, source_local_primary_id, selected_source_index,
-        source, population, source_emissions, source_emission_ranges,
-        energy_distribution_records, energy_values_micro_eV,
-        cumulative_ticket_upper, random_states, worker_id, &particle);
+      global_primary_id, source_local_primary_id, selected_source_index, source,
+      population, source_emissions, source_emission_ranges,
+      energy_distribution_records, energy_values_micro_eV,
+      cumulative_ticket_upper, random_states, worker_id, &particle);
 
     if (initialized == 0U) {
       atomic_inc(&counters->overflow_count);
@@ -127,9 +127,9 @@ __kernel void particle_stream_transport(
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER
     if (capture_history != 0U) {
       GGEMS_ObserverRecordParticle(
-          observer_counters, observer_records, observer_record_capacity,
-          GGEMS_OBSERVER_RECORD_KIND_SOURCE, run_id, global_primary_id,
-          source_local_primary_id, selected_source_index, particle, 0UL);
+        observer_counters, observer_records, observer_record_capacity,
+        GGEMS_OBSERVER_RECORD_KIND_SOURCE, run_id, global_primary_id,
+        source_local_primary_id, selected_source_index, particle, 0UL);
     }
 #endif
 
@@ -138,16 +138,16 @@ __kernel void particle_stream_transport(
     long displacement_z_pm = 0L;
 
     uint valid_projection = GGEMS_TryScaleDiagnosticProjectionComponent(
-        particle.direction_x, &displacement_x_pm);
+      particle.direction_x, &displacement_x_pm);
 
     if (valid_projection != 0U) {
       valid_projection = GGEMS_TryScaleDiagnosticProjectionComponent(
-          particle.direction_y, &displacement_y_pm);
+        particle.direction_y, &displacement_y_pm);
     }
 
     if (valid_projection != 0U) {
       valid_projection = GGEMS_TryScaleDiagnosticProjectionComponent(
-          particle.direction_z, &displacement_z_pm);
+        particle.direction_z, &displacement_z_pm);
     }
 
     long endpoint_x_pm = particle.position_x_pm;
@@ -156,17 +156,17 @@ __kernel void particle_stream_transport(
 
     if (valid_projection != 0U) {
       valid_projection = GGEMS_TryAddDiagnosticProjectionDisplacement(
-          particle.position_x_pm, displacement_x_pm, &endpoint_x_pm);
+        particle.position_x_pm, displacement_x_pm, &endpoint_x_pm);
     }
 
     if (valid_projection != 0U) {
       valid_projection = GGEMS_TryAddDiagnosticProjectionDisplacement(
-          particle.position_y_pm, displacement_y_pm, &endpoint_y_pm);
+        particle.position_y_pm, displacement_y_pm, &endpoint_y_pm);
     }
 
     if (valid_projection != 0U) {
       valid_projection = GGEMS_TryAddDiagnosticProjectionDisplacement(
-          particle.position_z_pm, displacement_z_pm, &endpoint_z_pm);
+        particle.position_z_pm, displacement_z_pm, &endpoint_z_pm);
     }
 
     if (valid_projection != 0U) {
@@ -182,9 +182,9 @@ __kernel void particle_stream_transport(
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER
     if (capture_history != 0U) {
       GGEMS_ObserverRecordParticle(
-          observer_counters, observer_records, observer_record_capacity,
-          GGEMS_OBSERVER_RECORD_KIND_TERMINAL, run_id, global_primary_id,
-          source_local_primary_id, selected_source_index, particle, 0UL);
+        observer_counters, observer_records, observer_record_capacity,
+        GGEMS_OBSERVER_RECORD_KIND_TERMINAL, run_id, global_primary_id,
+        source_local_primary_id, selected_source_index, particle, 0UL);
     }
 #endif
 

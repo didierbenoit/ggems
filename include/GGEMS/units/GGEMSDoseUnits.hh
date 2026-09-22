@@ -46,23 +46,20 @@ namespace ggems::units {
 struct DoseUnitSet {};
 
 /*!
- * \brief Defines the supported absorbed dose units and their canonical scale factors.
+ * \brief Defines the supported absorbed dose units and their canonical scale
+ * factors.
  */
 template <> struct UnitRegistry<DoseUnitSet> {
   /*!
    * \brief Registered unit definitions for this quantity family.
    */
   static constexpr std::array<UnitDefinition, 4U> units{{
-      {.symbol = "meV/pg",
-       .scale = DecimalScale(0),
-       .automatic_display = false},
-      {.symbol = "Gy",
-       .scale = SpecialScale(1.0L / 1.602176634e-7L)},
-      {.symbol = "mGy",
-       .scale = SpecialScale(1.0e-3L / 1.602176634e-7L)},
-      {.symbol = "uGy",
-       .scale = SpecialScale(1.0e-6L / 1.602176634e-7L),
-       .unicode_symbol = "µGy"},
+    {.symbol = "meV/pg", .scale = DecimalScale(0), .automatic_display = false},
+    {.symbol = "Gy", .scale = SpecialScale(1.0L / 1.602176634e-7L)},
+    {.symbol = "mGy", .scale = SpecialScale(1.0e-3L / 1.602176634e-7L)},
+    {.symbol = "uGy",
+     .scale = SpecialScale(1.0e-6L / 1.602176634e-7L),
+     .unicode_symbol = "µGy"},
   }};
 };
 
@@ -87,19 +84,22 @@ template <> struct QuantityTraits<DoseTag> {
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::AutomaticScale};
+    QuantityFormatPolicy::AutomaticScale};
   /*!
-   * \brief Fixed display unit, or an empty string when the policy selects units automatically.
+   * \brief Fixed display unit, or an empty string when the policy selects units
+   * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
   /*!
-   * \brief Default number of digits after the decimal point for formatted output.
+   * \brief Default number of digits after the decimal point for formatted
+   * output.
    */
   static constexpr std::int8_t default_precision{7};
 };
 
 /*!
- * \brief Strongly typed absorbed-dose quantity stored canonically in milli-electron-volts per picogram.
+ * \brief Strongly typed absorbed-dose quantity stored canonically in
+ * milli-electron-volts per picogram.
  */
 using Dose = Quantity<DoseTag, std::uint64_t>;
 

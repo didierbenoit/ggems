@@ -49,10 +49,10 @@ public:
   [[nodiscard]] auto HasNextTimeStep() const noexcept -> bool;
   [[nodiscard]] auto GetCurrentTimePicoSecond() const noexcept -> std::uint64_t;
   [[nodiscard]] auto GetCurrentTimeWindowPicoSecond() const noexcept
-      -> GGEMSTimeWindow;
+    -> GGEMSTimeWindow;
 
   [[nodiscard]] auto GetLastSourceRunSnapshot() const
-      -> std::optional<sources::GGEMSSourceRunSnapshot>;
+    -> std::optional<sources::GGEMSSourceRunSnapshot>;
   [[nodiscard]] auto HasObserver() const noexcept -> bool;
 
   void SetRandom(std::shared_ptr<random::GGEMSRandom> random);
@@ -87,10 +87,10 @@ private:
 
   sources::GGEMSSourceConfigurationSnapshotPtr source_configuration_snapshot_;
   std::unique_ptr<sources::GGEMSSourcePopulationPlanner>
-      source_population_planner_;
+    source_population_planner_;
 
   std::vector<std::unique_ptr<transport::GGEMSTransportWorkload>>
-      transport_workloads_;
+    transport_workloads_;
 
   std::uint32_t worker_count_{256U};
 };

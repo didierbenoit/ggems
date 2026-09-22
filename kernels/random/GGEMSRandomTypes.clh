@@ -23,7 +23,8 @@
  * \file
  * \brief Declares OpenCL random-engine state layouts.
  *
- * Mirrors the host-side JKISS, PCG32, and Philox state structures used for state initialization and SVM transfer.
+ * Mirrors the host-side JKISS, PCG32, and Philox state structures used for
+ * state initialization and SVM transfer.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -35,7 +36,8 @@
 /*!
  * \brief Stores one OpenCL JKISS stream state.
  *
- * The field order and widths are mirrored exactly by the corresponding host-side GGEMS random-state structure.
+ * The field order and widths are mirrored exactly by the corresponding
+ * host-side GGEMS random-state structure.
  */
 typedef struct GGEMSJKissState {
   /*!
@@ -63,7 +65,8 @@ typedef struct GGEMSJKissState {
 /*!
  * \brief Stores one OpenCL PCG32 stream state.
  *
- * The field order and widths are mirrored exactly by the corresponding host-side GGEMS random-state structure.
+ * The field order and widths are mirrored exactly by the corresponding
+ * host-side GGEMS random-state structure.
  */
 typedef struct GGEMSPCG32State {
   /*!
@@ -79,11 +82,13 @@ typedef struct GGEMSPCG32State {
 /*!
  * \brief Stores one OpenCL Philox stream state.
  *
- * The field order and widths are mirrored exactly by the corresponding host-side GGEMS random-state structure.
+ * The field order and widths are mirrored exactly by the corresponding
+ * host-side GGEMS random-state structure.
  */
 typedef struct GGEMSPhiloxState {
   /*!
-   * \brief Least-significant Philox counter word advanced for each generated block.
+   * \brief Least-significant Philox counter word advanced for each generated
+   * block.
    */
   uint counter_0;
   /*!

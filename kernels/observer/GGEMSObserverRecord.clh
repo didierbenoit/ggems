@@ -68,8 +68,8 @@ typedef struct GGEMSObserverRecord {
 // =============================================================================
 
 static inline uint GGEMS_ObserverShouldCapturePrimary(
-    __global GGEMSObserverConfigRecord const *config, uint source_index,
-    ulong source_local_primary_id) {
+  __global GGEMSObserverConfigRecord const *config, uint source_index,
+  ulong source_local_primary_id) {
   if (config->enabled == 0U) {
     return 0U;
   }
@@ -102,8 +102,8 @@ GGEMS_ObserverReserveRecord(volatile __global GGEMSObserverCounters *counters,
       return GGEMS_INVALID_ID_U32;
     }
 
-    uint previous = atomic_cmpxchg(&counters->record_count, record_index,
-                                   record_index + 1U);
+    uint previous =
+      atomic_cmpxchg(&counters->record_count, record_index, record_index + 1U);
 
     if (previous == record_index) {
       return record_index;
@@ -115,11 +115,11 @@ GGEMS_ObserverReserveRecord(volatile __global GGEMSObserverCounters *counters,
 // =============================================================================
 
 static inline void GGEMS_ObserverRecordParticle(
-    volatile __global GGEMSObserverCounters *counters,
-    __global GGEMSObserverRecord *records, uint record_capacity,
-    uint record_kind, ulong run_id, ulong global_primary_id,
-    ulong source_local_primary_id, uint source_index,
-    GGEMSParticleState particle, ulong deposited_energy_micro_eV) {
+  volatile __global GGEMSObserverCounters *counters,
+  __global GGEMSObserverRecord *records, uint record_capacity, uint record_kind,
+  ulong run_id, ulong global_primary_id, ulong source_local_primary_id,
+  uint source_index, GGEMSParticleState particle,
+  ulong deposited_energy_micro_eV) {
   uint record_index = GGEMS_ObserverReserveRecord(counters, record_capacity);
 
   if (record_index == GGEMS_INVALID_ID_U32) {

@@ -99,71 +99,71 @@ struct Options {
 
 auto PrintUsage() -> void {
   std::cout
-      << "GGEMS Source / G1, A1, E1, T1, Frame G2/A2 exporter\n"
-      << "Required: --device <GGEMS selector> --geometry <name>\n"
-      << "          --output <samples.csv> --metadata <metadata.json>\n"
-      << "          --primaries <uint64> --workers <uint32> --seed <uint64>\n"
-      << "Geometry: point|rectangle|ellipse|circle|box|sphere|cylinder\n"
-      << "Options:  --case-name <name> (default G1_<geometry>)\n"
-      << "          --size-x-mm <value> --size-y-mm <value>\n"
-      << "          --size-z-mm <value> (default sizes are zero)\n"
-      << "Supply complete widths/diameters/heights: circle X=Y, sphere\n"
-      << "X=Y=Z, cylinder X=Y and Z=height; planar Z and Point sizes=0.\n"
-      << "Center:   --center-x-mm <value> --center-y-mm <value>\n"
-      << "          --center-z-mm <value> (all three, default origin)\n"
-      << "Frame:    --frame-direction-x <value> --frame-direction-y <value>\n"
-      << "          --frame-direction-z <value> --frame-up-x <value>\n"
-      << "          --frame-up-y <value> --frame-up-z <value>\n"
-      << "All six frame components are required together. They are passed\n"
-      << "to Source::SetOrientation(direction, up_reference); no arguments\n"
-      << "keep the default identity frame. Packed axes come from the "
-         "snapshot.\n"
-      << "          --angular fixed|isotropic|bounded-isotropic|focused\n"
-      << "          (default fixed; isotropic uses the no-argument API)\n"
-      << "Bounded:  --theta-min-deg <value> --theta-max-deg <value>\n"
-      << "          --phi-min-deg <value> --phi-max-deg <value>\n"
-      << "Focused:  --focus-x-mm <value> --focus-y-mm <value>\n"
-      << "          --focus-z-mm <value> (global focus)\n"
-      << "All four bounds or all three focus coordinates are required for\n"
-      << "their mode; angular parameters in another mode are rejected.\n"
-      << "Energy:   --energy-mode mono|discrete-lines|regular-spectrum\n"
-      << "          (default mono, 511 keV)\n"
-      << "Mono:     --mono-energy-kev <value>\n"
-      << "Tables:   --energy-values-kev <ordered comma-separated values>\n"
-      << "          --energy-weights <comma-separated relative weights>\n"
-      << "Regular:  --energy-bin-width-kev <full bin width>\n"
-      << "Regular values are centers; width must equal their canonical\n"
-      << "spacing. Lists require matching counts, no empty fields/spaces.\n"
-      << "Energy parameters belonging to another mode are rejected.\n"
-      << "Time:     --chronology static|configured (default static)\n"
-      << "          --time-start-ns <value> --time-stop-ns <value>\n"
-      << "          --time-step-ns <value> (all required only if configured)\n"
-      << "Sequence: --sequence-dir <new directory> instead of --output\n"
-      << "          --sequence-runs <positive uint32> (default 1)\n"
-      << "          --reset-before-run <zero-based index> (optional)\n"
-      << "A sequence initializes one Run once, writes one CSV per Run,\n"
-      << "and writes an ordered manifest to --metadata. Reset requires\n"
-      << "configured chronology and an index in [1, sequence-runs).\n"
-      << "CountDriven births equal the effective window start exactly.\n"
-      << "Capture requires 2*N <= UINT32_MAX with the current Observer.\n"
-      << "One fresh CountDriven Gamma Source, default identity frame/origin,\n"
-      << "default Fixed +Z, Mono 511 keV, static 0 ps, Philox "
-         "only.\n";
+    << "GGEMS Source / G1, A1, E1, T1, Frame G2/A2 exporter\n"
+    << "Required: --device <GGEMS selector> --geometry <name>\n"
+    << "          --output <samples.csv> --metadata <metadata.json>\n"
+    << "          --primaries <uint64> --workers <uint32> --seed <uint64>\n"
+    << "Geometry: point|rectangle|ellipse|circle|box|sphere|cylinder\n"
+    << "Options:  --case-name <name> (default G1_<geometry>)\n"
+    << "          --size-x-mm <value> --size-y-mm <value>\n"
+    << "          --size-z-mm <value> (default sizes are zero)\n"
+    << "Supply complete widths/diameters/heights: circle X=Y, sphere\n"
+    << "X=Y=Z, cylinder X=Y and Z=height; planar Z and Point sizes=0.\n"
+    << "Center:   --center-x-mm <value> --center-y-mm <value>\n"
+    << "          --center-z-mm <value> (all three, default origin)\n"
+    << "Frame:    --frame-direction-x <value> --frame-direction-y <value>\n"
+    << "          --frame-direction-z <value> --frame-up-x <value>\n"
+    << "          --frame-up-y <value> --frame-up-z <value>\n"
+    << "All six frame components are required together. They are passed\n"
+    << "to Source::SetOrientation(direction, up_reference); no arguments\n"
+    << "keep the default identity frame. Packed axes come from the "
+       "snapshot.\n"
+    << "          --angular fixed|isotropic|bounded-isotropic|focused\n"
+    << "          (default fixed; isotropic uses the no-argument API)\n"
+    << "Bounded:  --theta-min-deg <value> --theta-max-deg <value>\n"
+    << "          --phi-min-deg <value> --phi-max-deg <value>\n"
+    << "Focused:  --focus-x-mm <value> --focus-y-mm <value>\n"
+    << "          --focus-z-mm <value> (global focus)\n"
+    << "All four bounds or all three focus coordinates are required for\n"
+    << "their mode; angular parameters in another mode are rejected.\n"
+    << "Energy:   --energy-mode mono|discrete-lines|regular-spectrum\n"
+    << "          (default mono, 511 keV)\n"
+    << "Mono:     --mono-energy-kev <value>\n"
+    << "Tables:   --energy-values-kev <ordered comma-separated values>\n"
+    << "          --energy-weights <comma-separated relative weights>\n"
+    << "Regular:  --energy-bin-width-kev <full bin width>\n"
+    << "Regular values are centers; width must equal their canonical\n"
+    << "spacing. Lists require matching counts, no empty fields/spaces.\n"
+    << "Energy parameters belonging to another mode are rejected.\n"
+    << "Time:     --chronology static|configured (default static)\n"
+    << "          --time-start-ns <value> --time-stop-ns <value>\n"
+    << "          --time-step-ns <value> (all required only if configured)\n"
+    << "Sequence: --sequence-dir <new directory> instead of --output\n"
+    << "          --sequence-runs <positive uint32> (default 1)\n"
+    << "          --reset-before-run <zero-based index> (optional)\n"
+    << "A sequence initializes one Run once, writes one CSV per Run,\n"
+    << "and writes an ordered manifest to --metadata. Reset requires\n"
+    << "configured chronology and an index in [1, sequence-runs).\n"
+    << "CountDriven births equal the effective window start exactly.\n"
+    << "Capture requires 2*N <= UINT32_MAX with the current Observer.\n"
+    << "One fresh CountDriven Gamma Source, default identity frame/origin,\n"
+    << "default Fixed +Z, Mono 511 keV, static 0 ps, Philox "
+       "only.\n";
 }
 
 // =============================================================================
 // =============================================================================
 
 auto ParseUnsigned(std::string_view text, std::string_view option)
-    -> std::uint64_t {
+  -> std::uint64_t {
   std::uint64_t value{};
 
   auto const result =
-      std::from_chars(text.data(), text.data() + text.size(), value);
+    std::from_chars(text.data(), text.data() + text.size(), value);
 
   if (result.ec != std::errc{} || result.ptr != text.data() + text.size()) {
     throw std::runtime_error(
-        std::format("Invalid uint64 for {}: '{}'.", option, text));
+      std::format("Invalid uint64 for {}: '{}'.", option, text));
   }
 
   return value;
@@ -173,16 +173,16 @@ auto ParseUnsigned(std::string_view text, std::string_view option)
 // =============================================================================
 
 auto ParseNumber(std::string_view text, std::string_view option)
-    -> long double {
+  -> long double {
   long double value{};
 
   auto const result =
-      std::from_chars(text.data(), text.data() + text.size(), value);
+    std::from_chars(text.data(), text.data() + text.size(), value);
 
   if (result.ec != std::errc{} || result.ptr != text.data() + text.size() ||
       !std::isfinite(value)) {
     throw std::runtime_error(
-        std::format("Invalid number for {}: '{}'.", option, text));
+      std::format("Invalid number for {}: '{}'.", option, text));
   }
 
   return value;
@@ -192,14 +192,14 @@ auto ParseNumber(std::string_view text, std::string_view option)
 // =============================================================================
 
 auto ParseLength(std::string_view text, std::string_view option)
-    -> std::uint64_t {
+  -> std::uint64_t {
   auto const value = ParseNumber(text, option);
   auto const converted =
-      ggems::units::MakeQuantity<ggems::units::Length>(value, "mm");
+    ggems::units::MakeQuantity<ggems::units::Length>(value, "mm");
 
   if (!converted) {
     throw std::runtime_error(std::format(
-        "{} must be a finite nonnegative length representable in pm.", option));
+      "{} must be a finite nonnegative length representable in pm.", option));
   }
 
   return converted->value;
@@ -209,14 +209,14 @@ auto ParseLength(std::string_view text, std::string_view option)
 // =============================================================================
 
 auto ParsePosition(std::string_view text, std::string_view option)
-    -> std::int64_t {
+  -> std::int64_t {
   auto const converted =
-      ggems::units::MakeQuantity<ggems::units::PositionCoordinate>(
-          ParseNumber(text, option), "mm");
+    ggems::units::MakeQuantity<ggems::units::PositionCoordinate>(
+      ParseNumber(text, option), "mm");
 
   if (!converted) {
     throw std::runtime_error(std::format(
-        "{} must be a finite signed position representable in pm.", option));
+      "{} must be a finite signed position representable in pm.", option));
   }
 
   return converted->value;
@@ -226,7 +226,7 @@ auto ParsePosition(std::string_view text, std::string_view option)
 // =============================================================================
 
 auto ParseEnergyList(std::string_view text, std::string_view option)
-    -> std::vector<double> {
+  -> std::vector<double> {
   std::vector<double> values;
 
   while (true) {
@@ -234,13 +234,13 @@ auto ParseEnergyList(std::string_view text, std::string_view option)
     auto const field = text.substr(0U, comma);
     double value{};
     auto const parsed =
-        std::from_chars(field.data(), field.data() + field.size(), value);
+      std::from_chars(field.data(), field.data() + field.size(), value);
 
     if (field.empty() || parsed.ec != std::errc{} ||
         parsed.ptr != field.data() + field.size() || !std::isfinite(value) ||
         value < 0.0) {
       throw std::runtime_error(std::format(
-          "{} requires comma-separated finite nonnegative numbers.", option));
+        "{} requires comma-separated finite nonnegative numbers.", option));
     }
 
     values.push_back(value);
@@ -255,14 +255,14 @@ auto ParseEnergyList(std::string_view text, std::string_view option)
 // =============================================================================
 
 auto CanonicalEnergy(long double value, std::string_view option)
-    -> std::uint64_t {
+  -> std::uint64_t {
   auto const converted =
-      ggems::units::MakeQuantity<ggems::units::Energy>(value, "keV");
+    ggems::units::MakeQuantity<ggems::units::Energy>(value, "keV");
 
   if (!converted || converted->value == 0ULL) {
     throw std::runtime_error(std::format(
-        "{} must convert to a positive representable energy in micro-eV.",
-        option));
+      "{} must convert to a positive representable energy in micro-eV.",
+      option));
   }
 
   return converted->value;
@@ -272,11 +272,11 @@ auto CanonicalEnergy(long double value, std::string_view option)
 // =============================================================================
 
 auto ParseFrameComponent(std::string_view text, std::string_view option)
-    -> double {
+  -> double {
   auto const value = ParseNumber(text, option);
   if (std::abs(value) > std::numeric_limits<double>::max()) {
     throw std::runtime_error(
-        std::format("{} must be representable in binary64.", option));
+      std::format("{} must be representable in binary64.", option));
   }
   return static_cast<double>(value);
 }
@@ -298,26 +298,26 @@ auto ValidatePoseOptions(Options &options,
 
   for (std::size_t axis = 0U; axis < options.center_pm.size(); ++axis) {
     auto const converted =
-        ggems::units::MakeQuantity<ggems::units::PositionCoordinate>(
-            options.requested_center_mm[axis], "mm");
+      ggems::units::MakeQuantity<ggems::units::PositionCoordinate>(
+        options.requested_center_mm[axis], "mm");
     if (!converted) {
       throw std::runtime_error(
-          "Source center must be representable in int64 pm.");
+        "Source center must be representable in int64 pm.");
     }
     options.center_pm[axis] = converted->value;
   }
 
   constexpr std::array<std::string_view, 6U> k_frame_options{
-      "--frame-direction-x", "--frame-direction-y", "--frame-direction-z",
-      "--frame-up-x",        "--frame-up-y",        "--frame-up-z"};
+    "--frame-direction-x", "--frame-direction-y", "--frame-direction-z",
+    "--frame-up-x",        "--frame-up-y",        "--frame-up-z"};
   options.has_orientation =
-      std::ranges::any_of(k_frame_options, [&seen](auto option) -> bool {
-        return seen.contains(option);
-      });
+    std::ranges::any_of(k_frame_options, [&seen](auto option) -> bool {
+      return seen.contains(option);
+    });
   for (auto const option : k_frame_options) {
     if (seen.contains(option) != options.has_orientation) {
       throw std::runtime_error(
-          "Supply all six direction/up components together.");
+        "Supply all six direction/up components together.");
     }
   }
 }
@@ -343,7 +343,7 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
 
     if (index + 1 >= argc) {
       throw std::runtime_error(
-          std::format("Missing value after '{}'.", option));
+        std::format("Missing value after '{}'.", option));
     }
 
     std::string_view const value{argv[++index]};
@@ -448,27 +448,27 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
       options.metadata_path.empty() || !seen.contains("--primaries") ||
       !seen.contains("--workers") || !seen.contains("--seed")) {
     throw std::runtime_error(
-        "--device, --geometry, --metadata, --primaries, --workers "
-        "and --seed are required.");
+      "--device, --geometry, --metadata, --primaries, --workers "
+      "and --seed are required.");
   }
 
   if (options.primary_count == 0ULL ||
       options.primary_count >
-          std::numeric_limits<std::uint32_t>::max() / 2ULL) {
+        std::numeric_limits<std::uint32_t>::max() / 2ULL) {
     throw std::runtime_error(
-        "--primaries must be in [1, 2147483647]: the current Observer needs "
-        "uint32 capacity for Source and Terminal records.");
+      "--primaries must be in [1, 2147483647]: the current Observer needs "
+      "uint32 capacity for Source and Terminal records.");
   }
 
   if (options.output_path.empty() == options.sequence_path.empty() ||
       (seen.contains("--output") && seen.contains("--sequence-dir"))) {
     throw std::runtime_error(
-        "Supply exactly one of --output and --sequence-dir.");
+      "Supply exactly one of --output and --sequence-dir.");
   }
 
   if (!options.output_path.empty() &&
       std::filesystem::absolute(options.output_path).lexically_normal() ==
-          std::filesystem::absolute(options.metadata_path).lexically_normal()) {
+        std::filesystem::absolute(options.metadata_path).lexically_normal()) {
     throw std::runtime_error("Sample and metadata paths must differ.");
   }
 
@@ -480,22 +480,22 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
 
   if (options.angular != "fixed" && options.angular != "isotropic" &&
       options.angular != "bounded-isotropic" && options.angular != "focused") {
-    throw std::runtime_error(std::format(
-        "Unsupported angular configuration '{}'.", options.angular));
+    throw std::runtime_error(
+      std::format("Unsupported angular configuration '{}'.", options.angular));
   }
 
   for (auto const *option : {"--theta-min-deg", "--theta-max-deg",
                              "--phi-min-deg", "--phi-max-deg"}) {
     if (seen.contains(option) != (options.angular == "bounded-isotropic")) {
       throw std::runtime_error(std::format(
-          "{} is required only with --angular bounded-isotropic.", option));
+        "{} is required only with --angular bounded-isotropic.", option));
     }
   }
 
   for (auto const *option : {"--focus-x-mm", "--focus-y-mm", "--focus-z-mm"}) {
     if (seen.contains(option) != (options.angular == "focused")) {
       throw std::runtime_error(
-          std::format("{} is required only with --angular focused.", option));
+        std::format("{} is required only with --angular focused.", option));
     }
   }
 
@@ -503,14 +503,14 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
       options.energy_mode != "discrete-lines" &&
       options.energy_mode != "regular-spectrum") {
     throw std::runtime_error(
-        std::format("Unsupported energy mode '{}'.", options.energy_mode));
+      std::format("Unsupported energy mode '{}'.", options.energy_mode));
   }
 
   bool const tabulated = options.energy_mode != "mono";
   for (auto const *option : {"--energy-values-kev", "--energy-weights"}) {
     if (seen.contains(option) != tabulated) {
       throw std::runtime_error(std::format(
-          "{} is required only for a tabulated energy mode.", option));
+        "{} is required only for a tabulated energy mode.", option));
     }
   }
 
@@ -521,14 +521,14 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
   if (seen.contains("--energy-bin-width-kev") !=
       (options.energy_mode == "regular-spectrum")) {
     throw std::runtime_error(
-        "--energy-bin-width-kev is required only for regular-spectrum.");
+      "--energy-bin-width-kev is required only for regular-spectrum.");
   }
 
   if (tabulated &&
       (options.energy_values_kev.size() < 2U ||
        options.energy_values_kev.size() != options.energy_weights.size())) {
     throw std::runtime_error(
-        "Energy values and weights require matching counts of at least two.");
+      "Energy values and weights require matching counts of at least two.");
   }
 
   if (options.chronology != "static" && options.chronology != "configured") {
@@ -539,20 +539,20 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
        {"--time-start-ns", "--time-stop-ns", "--time-step-ns"}) {
     if (seen.contains(option) != (options.chronology == "configured")) {
       throw std::runtime_error(std::format(
-          "{} is required only with --chronology configured.", option));
+        "{} is required only with --chronology configured.", option));
     }
   }
 
   if (options.chronology == "configured") {
     auto const start = ggems::units::MakeQuantity<ggems::units::TimePoint>(
-        options.requested_time_ns[0U], "ns");
+      options.requested_time_ns[0U], "ns");
     auto const stop = ggems::units::MakeQuantity<ggems::units::TimePoint>(
-        options.requested_time_ns[1U], "ns");
+      options.requested_time_ns[1U], "ns");
     auto const step = ggems::units::MakeQuantity<ggems::units::Duration>(
-        options.requested_time_ns[2U], "ns");
+      options.requested_time_ns[2U], "ns");
     if (!start || !stop || !step) {
       throw std::runtime_error(
-          "Time values must be representable in uint64 ps.");
+        "Time values must be representable in uint64 ps.");
     }
     options.configured_time_ps = {start->value, stop->value, step->value};
   }
@@ -561,7 +561,7 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
       (options.sequence_path.empty() &&
        (seen.contains("--sequence-runs") || options.reset_before_run))) {
     throw std::runtime_error(
-        "A positive --sequence-runs requires --sequence-dir.");
+      "A positive --sequence-runs requires --sequence-dir.");
   }
 
   if (options.reset_before_run &&
@@ -575,18 +575,18 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
       (std::filesystem::exists(options.sequence_path) ||
        std::filesystem::exists(options.metadata_path))) {
     throw std::runtime_error(
-        "Sequence directory and manifest must be new outputs.");
+      "Sequence directory and manifest must be new outputs.");
   }
 
   if (!options.sequence_path.empty()) {
     auto const relative_metadata =
-        std::filesystem::absolute(options.metadata_path)
-            .lexically_normal()
-            .lexically_relative(std::filesystem::absolute(options.sequence_path)
-                                    .lexically_normal());
+      std::filesystem::absolute(options.metadata_path)
+        .lexically_normal()
+        .lexically_relative(
+          std::filesystem::absolute(options.sequence_path).lexically_normal());
     if (!relative_metadata.empty() && *relative_metadata.begin() != "..") {
       throw std::runtime_error(
-          "Keep the manifest outside the sequence CSV directory.");
+        "Keep the manifest outside the sequence CSV directory.");
     }
   }
 
@@ -600,9 +600,9 @@ auto ConfigureSource(Options const &options) -> std::shared_ptr<GGEMSSource> {
   auto source = std::make_shared<GGEMSSource>();
 
   source->SetAnalytic()
-      .SetCountDrivenPopulation(options.primary_count)
-      .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetFixedAngularDistribution();
+    .SetCountDrivenPopulation(options.primary_count)
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
+    .SetFixedAngularDistribution();
 
   source->SetPositionPicoMeter(options.center_pm[0U], options.center_pm[1U],
                                options.center_pm[2U]);
@@ -616,7 +616,7 @@ auto ConfigureSource(Options const &options) -> std::shared_ptr<GGEMSSource> {
   // All configuration errors occur before OpenCL setup or output creation.
   if (options.energy_mode == "mono") {
     source->SetEnergyMicroElectronVolt(
-        CanonicalEnergy(options.mono_energy_kev, "--mono-energy-kev"));
+      CanonicalEnergy(options.mono_energy_kev, "--mono-energy-kev"));
   } else if (options.energy_mode == "discrete-lines") {
     source->SetDiscreteEnergyLines(options.energy_values_kev,
                                    options.energy_weights, "keV");
@@ -624,12 +624,12 @@ auto ConfigureSource(Options const &options) -> std::shared_ptr<GGEMSSource> {
     source->SetRegularEnergySpectrum(options.energy_values_kev,
                                      options.energy_weights, "keV");
     auto const width =
-        CanonicalEnergy(options.energy_bin_width_kev, "--energy-bin-width-kev");
+      CanonicalEnergy(options.energy_bin_width_kev, "--energy-bin-width-kev");
 
     if (width !=
         source->GetEnergyDistribution().GetRegularBinWidthMicroElectronVolt()) {
       throw std::runtime_error(
-          "Requested bin width must equal the canonical center spacing.");
+        "Requested bin width must equal the canonical center spacing.");
     }
   }
 
@@ -651,7 +651,7 @@ auto ConfigureSource(Options const &options) -> std::shared_ptr<GGEMSSource> {
     source->SetCylinderEmissionPicoMeter(size_x, size_z);
   } else {
     throw std::runtime_error(
-        std::format("Unsupported Source geometry '{}'.", options.geometry));
+      std::format("Unsupported Source geometry '{}'.", options.geometry));
   }
 
   auto const record = source->BuildRecord();
@@ -660,8 +660,8 @@ auto ConfigureSource(Options const &options) -> std::shared_ptr<GGEMSSource> {
       record.geometry_size_y_pm != size_y ||
       record.geometry_size_z_pm != size_z) {
     throw std::runtime_error(
-        "Supplied XYZ dimensions do not match the geometry's complete "
-        "widths/diameters/heights; see --help.");
+      "Supplied XYZ dimensions do not match the geometry's complete "
+      "widths/diameters/heights; see --help.");
   }
 
   if (options.angular == "isotropic") {
@@ -669,15 +669,12 @@ auto ConfigureSource(Options const &options) -> std::shared_ptr<GGEMSSource> {
     source->SetIsotropicAngularDistribution();
   } else if (options.angular == "bounded-isotropic") {
     auto const &[theta_min, theta_max, phi_min, phi_max] =
-        options.angular_bounds_deg;
+      options.angular_bounds_deg;
     source->SetIsotropicAngularDistribution(
-        ggems::units::MakeQuantity<ggems::units::Angle>(theta_min, "deg")
-            .value(),
-        ggems::units::MakeQuantity<ggems::units::Angle>(theta_max, "deg")
-            .value(),
-        ggems::units::MakeQuantity<ggems::units::Angle>(phi_min, "deg").value(),
-        ggems::units::MakeQuantity<ggems::units::Angle>(phi_max, "deg")
-            .value());
+      ggems::units::MakeQuantity<ggems::units::Angle>(theta_min, "deg").value(),
+      ggems::units::MakeQuantity<ggems::units::Angle>(theta_max, "deg").value(),
+      ggems::units::MakeQuantity<ggems::units::Angle>(phi_min, "deg").value(),
+      ggems::units::MakeQuantity<ggems::units::Angle>(phi_max, "deg").value());
   } else if (options.angular == "focused") {
     auto const &[focus_x, focus_y, focus_z] = options.focus_pm;
     source->SetFocusedAngularDistributionPicoMeter(focus_x, focus_y, focus_z);
@@ -692,7 +689,7 @@ auto ConfigureSource(Options const &options) -> std::shared_ptr<GGEMSSource> {
 auto CollectSourceRecords(GGEMSTransportObserver const &observer,
                           Options const &options,
                           GGEMSSourceRecord const &source)
-    -> std::vector<GGEMSObserverRecord const *> {
+  -> std::vector<GGEMSObserverRecord const *> {
   if (observer.GetOverflowCount() != 0U) {
     throw std::runtime_error("Observer overflow: samples are incomplete.");
   }
@@ -703,7 +700,7 @@ auto CollectSourceRecords(GGEMSTransportObserver const &observer,
       observer.GetRecordCount() != expected_records ||
       observer.GetCapturedPrimaryCount() != options.primary_count) {
     throw std::runtime_error(
-        "Observer count mismatch for complete Source/Terminal capture.");
+      "Observer count mismatch for complete Source/Terminal capture.");
   }
 
   std::vector<GGEMSObserverRecord const *> records;
@@ -716,7 +713,7 @@ auto CollectSourceRecords(GGEMSTransportObserver const &observer,
     } else if (record.record_kind !=
                ToKernelObserverRecordKind(GGEMSObserverRecordKind::Terminal)) {
       throw std::runtime_error(
-          "Unexpected record kind in Source diagnostic transport.");
+        "Unexpected record kind in Source diagnostic transport.");
     }
   }
 
@@ -732,7 +729,7 @@ auto CollectSourceRecords(GGEMSTransportObserver const &observer,
   auto const run_id = records.front()->run_id;
   auto const global_begin = records.front()->global_primary_id;
   if (global_begin > std::numeric_limits<std::uint64_t>::max() -
-                         (options.primary_count - 1ULL)) {
+                       (options.primary_count - 1ULL)) {
     throw std::runtime_error("Source global primary range overflows uint64.");
   }
 
@@ -752,7 +749,7 @@ auto CollectSourceRecords(GGEMSTransportObserver const &observer,
         record->global_particle_id != record->global_primary_id ||
         record->track_id != 0ULL) {
       throw std::runtime_error(
-          "Missing, duplicate, or impossible Source primary provenance.");
+        "Missing, duplicate, or impossible Source primary provenance.");
     }
 
     if (record->particle_type != source.emitted_particle_type ||
@@ -763,7 +760,7 @@ auto CollectSourceRecords(GGEMSTransportObserver const &observer,
          record->energy_micro_eV != source.energy_micro_eV) ||
         record->time_ps != source.time_start_ps) {
       throw std::runtime_error(
-          "Source record violates the configured initialization contract.");
+        "Source record violates the configured initialization contract.");
     }
 
     if (options.angular == "fixed" &&
@@ -771,7 +768,7 @@ auto CollectSourceRecords(GGEMSTransportObserver const &observer,
          record->direction_y != source.axis_z_y ||
          record->direction_z != source.axis_z_z)) {
       throw std::runtime_error(
-          "Source record violates the stored Fixed direction.");
+        "Source record violates the stored Fixed direction.");
     }
 
     if (options.geometry == "point" &&
@@ -796,11 +793,10 @@ auto WriteSamples(std::filesystem::path const &path,
   output.exceptions(std::ios::badbit | std::ios::failbit);
   output.imbue(std::locale::classic());
   output << std::setprecision(std::numeric_limits<float>::max_digits10);
-  output
-      << "source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,"
-         "z_pm,"
-         "direction_x,direction_y,direction_z,energy_micro_eV,time_ps,"
-         "record_kind\n";
+  output << "source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,"
+            "z_pm,"
+            "direction_x,direction_y,direction_z,energy_micro_eV,time_ps,"
+            "record_kind\n";
 
   for (auto const *record : records) {
     output << record->source_index << ',' << record->source_local_primary_id
@@ -875,8 +871,8 @@ auto WriteEnergyMetadata(std::ostream &output, Options const &options,
 
   output << ",\n  \"energy_mode\":"
          << JsonString(ggems::core::sources::ToLongName(
-                ggems::core::sources::FromKernelEnergyDistributionType(
-                    record.distribution_type)))
+              ggems::core::sources::FromKernelEnergyDistributionType(
+                record.distribution_type)))
          << ",\n  \"energy_configuration\":" << JsonString(options.energy_mode)
          << ",\n  \"energy\":{\"representation\":\"uint64 micro-eV\""
          << ",\"distribution_type\":" << record.distribution_type
@@ -894,11 +890,10 @@ auto WriteEnergyMetadata(std::ostream &output, Options const &options,
   output << ",\"cumulative_ticket_upper_bounds\":";
   WriteJsonArray(output, bounds);
 
-  output << ",\"display_unit\":\"keV\",\"display_unit_micro_eV\":"
-         << ggems::units::MakeQuantity<ggems::units::Energy>(1U, "keV")
-                .value()
-                .value
-         << "},\n  \"requested_energy\":{\"unit\":\"keV\",\"mono\":";
+  output
+    << ",\"display_unit\":\"keV\",\"display_unit_micro_eV\":"
+    << ggems::units::MakeQuantity<ggems::units::Energy>(1U, "keV").value().value
+    << "},\n  \"requested_energy\":{\"unit\":\"keV\",\"mono\":";
   if (options.energy_mode == "mono") {
     output << options.mono_energy_kev;
   } else {
@@ -941,8 +936,8 @@ auto WriteMetadata(std::ostream &output, Options const &options,
       output << ',';
     }
     output << ggems::units::ConvertTo(
-                  ggems::units::Length{options.dimensions_pm[index]}, "mm")
-                  .value();
+                ggems::units::Length{options.dimensions_pm[index]}, "mm")
+                .value();
   }
 
   output << "]"
@@ -959,51 +954,51 @@ auto WriteMetadata(std::ostream &output, Options const &options,
     output << JsonString(device_names[index]);
   }
 
-  output
-      << "]"
-      << ",\n  \"source_index\":0,\n  \"global_primary_begin\":"
-      << records.front()->global_primary_id
-      << ",\n  \"global_primary_last\":" << records.back()->global_primary_id
-      << ",\n  \"run_id\":" << records.front()->run_id
-      << ",\n  \"sequence_index\":" << sequence_index
-      << ",\n  \"samples_file\":"
-      << JsonString(
-             std::filesystem::relative(
-                 samples_path,
-                 std::filesystem::absolute(options.metadata_path).parent_path())
-                 .generic_string())
-      << ",\n  \"effective_start_ps\":" << snapshot.GetTimeWindow().start_ps
-      << ",\n  \"effective_stop_ps\":" << snapshot.GetTimeWindow().stop_ps
-      << ",\n  \"snapshot_time_start_ps\":" << source.time_start_ps
-      << ",\n  \"snapshot_time_stop_ps\":" << source.time_stop_ps
-      << ",\n  \"source_center_pm\":[" << source.position_x_pm << ','
-      << source.position_y_pm << ',' << source.position_z_pm << ']'
-      << ",\n  \"frame_axes\":[[" << source.axis_x_x << ',' << source.axis_x_y
-      << ',' << source.axis_x_z << "],[" << source.axis_y_x << ','
-      << source.axis_y_y << ',' << source.axis_y_z << "],[" << source.axis_z_x
-      << ',' << source.axis_z_y << ',' << source.axis_z_z << "]]"
-      << ",\n  \"fixed_direction\":[" << source.axis_z_x << ','
-      << source.axis_z_y << ',' << source.axis_z_z << ']'
-      << ",\n  \"energy_micro_eV\":" << source.energy_micro_eV
-      << ",\n  \"time_ps\":" << source.time_start_ps
-      << ",\n  \"population_mode\":\"CountDriven\",\n  "
-         "\"rng_engine\":\"Philox\""
-      << ",\n  \"particle\":\"Gamma\",\n  \"angular_mode\":"
-      << JsonString(ggems::core::sources::ToLongName(
-             ggems::core::sources::FromKernelAngularDistributionType(
-                 source.angular_distribution_type)))
-      << ",\n  \"angular_configuration\":" << JsonString(options.angular)
-      << ",\n  \"isotropic_cos_theta_lower\":"
-      << source.isotropic_cos_theta_lower
-      << ",\n  \"isotropic_cos_theta_upper\":"
-      << source.isotropic_cos_theta_upper
-      << ",\n  \"isotropic_phi_min_rad\":" << source.isotropic_phi_min_rad
-      << ",\n  \"isotropic_phi_max_rad\":" << source.isotropic_phi_max_rad
-      << ",\n  \"requested_bounded_degrees\":";
+  output << "]"
+         << ",\n  \"source_index\":0,\n  \"global_primary_begin\":"
+         << records.front()->global_primary_id
+         << ",\n  \"global_primary_last\":" << records.back()->global_primary_id
+         << ",\n  \"run_id\":" << records.front()->run_id
+         << ",\n  \"sequence_index\":" << sequence_index
+         << ",\n  \"samples_file\":"
+         << JsonString(
+              std::filesystem::relative(
+                samples_path,
+                std::filesystem::absolute(options.metadata_path).parent_path())
+                .generic_string())
+         << ",\n  \"effective_start_ps\":" << snapshot.GetTimeWindow().start_ps
+         << ",\n  \"effective_stop_ps\":" << snapshot.GetTimeWindow().stop_ps
+         << ",\n  \"snapshot_time_start_ps\":" << source.time_start_ps
+         << ",\n  \"snapshot_time_stop_ps\":" << source.time_stop_ps
+         << ",\n  \"source_center_pm\":[" << source.position_x_pm << ','
+         << source.position_y_pm << ',' << source.position_z_pm << ']'
+         << ",\n  \"frame_axes\":[[" << source.axis_x_x << ','
+         << source.axis_x_y << ',' << source.axis_x_z << "],["
+         << source.axis_y_x << ',' << source.axis_y_y << ',' << source.axis_y_z
+         << "],[" << source.axis_z_x << ',' << source.axis_z_y << ','
+         << source.axis_z_z << "]]"
+         << ",\n  \"fixed_direction\":[" << source.axis_z_x << ','
+         << source.axis_z_y << ',' << source.axis_z_z << ']'
+         << ",\n  \"energy_micro_eV\":" << source.energy_micro_eV
+         << ",\n  \"time_ps\":" << source.time_start_ps
+         << ",\n  \"population_mode\":\"CountDriven\",\n  "
+            "\"rng_engine\":\"Philox\""
+         << ",\n  \"particle\":\"Gamma\",\n  \"angular_mode\":"
+         << JsonString(ggems::core::sources::ToLongName(
+              ggems::core::sources::FromKernelAngularDistributionType(
+                source.angular_distribution_type)))
+         << ",\n  \"angular_configuration\":" << JsonString(options.angular)
+         << ",\n  \"isotropic_cos_theta_lower\":"
+         << source.isotropic_cos_theta_lower
+         << ",\n  \"isotropic_cos_theta_upper\":"
+         << source.isotropic_cos_theta_upper
+         << ",\n  \"isotropic_phi_min_rad\":" << source.isotropic_phi_min_rad
+         << ",\n  \"isotropic_phi_max_rad\":" << source.isotropic_phi_max_rad
+         << ",\n  \"requested_bounded_degrees\":";
 
   if (options.angular == "bounded-isotropic") {
     auto const &[theta_min, theta_max, phi_min, phi_max] =
-        options.angular_bounds_deg;
+      options.angular_bounds_deg;
     output << "{\"theta_min\":" << theta_min << ",\"theta_max\":" << theta_max
            << ",\"phi_min\":" << phi_min << ",\"phi_max\":" << phi_max << '}';
   } else {
@@ -1019,9 +1014,8 @@ auto WriteMetadata(std::ostream &output, Options const &options,
       output << ',';
     }
     output << ggems::units::ConvertTo(
-                  ggems::units::PositionCoordinate{options.focus_pm[index]},
-                  "mm")
-                  .value();
+                ggems::units::PositionCoordinate{options.focus_pm[index]}, "mm")
+                .value();
   }
 
   output << ']';
@@ -1029,12 +1023,11 @@ auto WriteMetadata(std::ostream &output, Options const &options,
 
   output << ",\n  \"requested_center_mm\":";
   WriteJsonArray(output, options.requested_center_mm);
-  output << ",\n  \"position_display_unit_pm\":"
-         << ggems::units::MakeQuantity<ggems::units::Length>(1U, "mm")
-                .value()
-                .value
-         << ",\n  \"frame_matrix_convention\":\"axes_as_columns\""
-         << ",\n  \"requested_frame\":";
+  output
+    << ",\n  \"position_display_unit_pm\":"
+    << ggems::units::MakeQuantity<ggems::units::Length>(1U, "mm").value().value
+    << ",\n  \"frame_matrix_convention\":\"axes_as_columns\""
+    << ",\n  \"requested_frame\":";
   if (options.has_orientation) {
     output << R"({"api":"SetOrientation","direction":)";
     WriteJsonArray(output, options.frame_direction);
@@ -1068,8 +1061,8 @@ auto WriteSequenceHeader(std::ostream &output, Options const &options) -> void {
          << ",\n  \"time_representation\":\"uint64 ps\""
          << ",\n  \"display_unit_ps\":"
          << ggems::units::MakeQuantity<ggems::units::Duration>(1U, "ns")
-                .value()
-                .value
+              .value()
+              .value
          << ",\n  \"requested_time_ns\":";
 
   if (options.chronology == "configured") {
@@ -1116,15 +1109,14 @@ auto main(int argc, char const *const *argv) -> int {
 
     auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
     random->SetEngine(ggems::core::random::GGEMSRandomEngine::Philox)
-        .SetSeed(options.seed);
+      .SetSeed(options.seed);
 
     auto observer = std::make_shared<GGEMSTransportObserver>();
     auto const capacity =
-        static_cast<std::uint32_t>(2ULL * options.primary_count);
+      static_cast<std::uint32_t>(2ULL * options.primary_count);
     observer->SetRecordCapacity(capacity)
-        .SetMaxStoredRecordCount(capacity)
-        .CaptureFirstPrimaries(
-            static_cast<std::uint32_t>(options.primary_count));
+      .SetMaxStoredRecordCount(capacity)
+      .CaptureFirstPrimaries(static_cast<std::uint32_t>(options.primary_count));
 
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
     opencl.SelectDevices({options.device_selector});
@@ -1164,7 +1156,7 @@ auto main(int argc, char const *const *argv) -> int {
           snapshot->GetEnergyDistributionRecords().size() != 1U ||
           snapshot->GetTotalPrimaryCount() != options.primary_count) {
         throw std::runtime_error(
-            "Missing or inconsistent single-source run snapshot.");
+          "Missing or inconsistent single-source run snapshot.");
       }
 
       auto const &source_record = snapshot->GetRecords().at(0U);
@@ -1172,11 +1164,11 @@ auto main(int argc, char const *const *argv) -> int {
       if (source_record.time_start_ps != window.start_ps ||
           source_record.time_stop_ps != window.stop_ps) {
         throw std::runtime_error(
-            "Source snapshot differs from its Run window.");
+          "Source snapshot differs from its Run window.");
       }
 
       auto const records =
-          CollectSourceRecords(*observer, options, source_record);
+        CollectSourceRecords(*observer, options, source_record);
       auto const run_id = records.front()->run_id;
       auto const global_begin = records.front()->global_primary_id;
 
@@ -1192,8 +1184,8 @@ auto main(int argc, char const *const *argv) -> int {
       }
 
       auto const samples_path =
-          sequence ? options.sequence_path / std::format("run_{:03}.csv", index)
-                   : options.output_path;
+        sequence ? options.sequence_path / std::format("run_{:03}.csv", index)
+                 : options.output_path;
       WriteSamples(samples_path, records);
 
       if (index == 0U) {

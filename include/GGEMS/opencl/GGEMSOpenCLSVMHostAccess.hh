@@ -54,7 +54,7 @@ namespace ggems::ocl {
  */
 template <typename T>
 concept SVMHostTransferValue =
-    std::is_trivially_copyable_v<T> && !std::is_volatile_v<T>;
+  std::is_trivially_copyable_v<T> && !std::is_volatile_v<T>;
 
 /*!
  * \namespace ggems::ocl::detail
@@ -90,7 +90,7 @@ template <SVMHostTransferValue T>
 auto CheckSVMHostAccessElementCount(std::size_t count) -> void {
   if (!(count <= std::numeric_limits<std::size_t>::max() / sizeof(T))) {
     throw ggems::core::GGEMSInternal(
-        "SVM host access byte count exceeds std::size_t.");
+      "SVM host access byte count exceeds std::size_t.");
   }
 }
 
@@ -105,7 +105,7 @@ inline auto CheckSVMHostAccessByteCapacity(GGEMSOpenCLSVMBuffer const &buffer,
                                            std::size_t byte_count) -> void {
   if (!(std::cmp_less_equal(byte_count, buffer.GetSize().value))) {
     throw ggems::core::GGEMSInternal(
-        "SVM buffer capacity is insufficient for the requested host access.");
+      "SVM buffer capacity is insufficient for the requested host access.");
   }
 }
 
@@ -142,9 +142,9 @@ inline auto WriteSVMBytesFromHost(GGEMSOpenCLSVMBuffer &buffer,
   }
 
   WithMappedSVMHostAccess(
-      buffer, CL_MAP_WRITE, [&buffer, source]() noexcept -> void {
-        std::memcpy(buffer.GetData(), source.data(), source.size());
-      });
+    buffer, CL_MAP_WRITE, [&buffer, source]() noexcept -> void {
+      std::memcpy(buffer.GetData(), source.data(), source.size());
+    });
 }
 
 /*!
@@ -162,9 +162,9 @@ inline auto ReadSVMBytesToHost(GGEMSOpenCLSVMBuffer &buffer,
   }
 
   WithMappedSVMHostAccess(
-      buffer, CL_MAP_READ, [&buffer, destination]() noexcept -> void {
-        std::memcpy(destination.data(), buffer.GetData(), destination.size());
-      });
+    buffer, CL_MAP_READ, [&buffer, destination]() noexcept -> void {
+      std::memcpy(destination.data(), buffer.GetData(), destination.size());
+    });
 }
 } // namespace detail
 
@@ -181,7 +181,7 @@ inline auto ReadSVMBytesToHost(GGEMSOpenCLSVMBuffer &buffer,
 template <typename T, std::size_t Extent>
   requires SVMHostTransferValue<T>
 auto WriteSVMFromHost(GGEMSOpenCLSVMBuffer &buffer, std::span<T, Extent> values)
-    -> void {
+  -> void {
   detail::CheckSVMHostAccessElementCount<T>(values.size());
   detail::WriteSVMBytesFromHost(buffer, std::as_bytes(values));
 }
@@ -257,13 +257,13 @@ auto FillSVMFromHost(GGEMSOpenCLSVMBuffer &buffer, std::size_t count,
   }
 
   detail::WithMappedSVMHostAccess(
-      buffer, CL_MAP_WRITE, [&buffer, count, &value]() noexcept -> void {
-        auto *destination = static_cast<std::byte *>(buffer.GetData());
-        for (std::size_t index = 0U; index < count; ++index) {
-          std::memcpy(destination, std::addressof(value), sizeof(T));
-          destination += sizeof(T);
-        }
-      });
+    buffer, CL_MAP_WRITE, [&buffer, count, &value]() noexcept -> void {
+      auto *destination = static_cast<std::byte *>(buffer.GetData());
+      for (std::size_t index = 0U; index < count; ++index) {
+        std::memcpy(destination, std::addressof(value), sizeof(T));
+        destination += sizeof(T);
+      }
+    });
 }
 
 /*!
@@ -289,14 +289,14 @@ auto GenerateSVMFromHost(GGEMSOpenCLSVMBuffer &buffer, std::size_t count,
   }
 
   detail::WithMappedSVMHostAccess(
-      buffer, CL_MAP_WRITE, [&buffer, count, &generator]() noexcept -> void {
-        auto *destination = static_cast<std::byte *>(buffer.GetData());
+    buffer, CL_MAP_WRITE, [&buffer, count, &generator]() noexcept -> void {
+      auto *destination = static_cast<std::byte *>(buffer.GetData());
 
-        for (std::size_t index = 0U; index < count; ++index) {
-          T value = std::invoke(generator, index);
-          std::memcpy(destination, std::addressof(value), sizeof(T));
-          destination += sizeof(T);
-        }
-      });
+      for (std::size_t index = 0U; index < count; ++index) {
+        T value = std::invoke(generator, index);
+        std::memcpy(destination, std::addressof(value), sizeof(T));
+        destination += sizeof(T);
+      }
+    });
 }
 } // namespace ggems::ocl

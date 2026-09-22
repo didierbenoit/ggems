@@ -141,7 +141,7 @@ public:
    */
   [[nodiscard]] auto RunAndGetEvent(std::array<std::size_t, 1> const &global,
                                     std::array<std::size_t, 1> const &local)
-      -> cl::Event;
+    -> cl::Event;
 
   /*!
    * \brief Returns the OpenCL kernel function name.
@@ -205,7 +205,7 @@ public:
    * \return Compile-time work-group dimensions.
    */
   [[nodiscard]] auto GetCompileWorkGroupSize() const
-      -> std::array<std::size_t, 3>;
+    -> std::array<std::size_t, 3>;
 
   /*!
    * \brief Returns the kernel local-memory usage.

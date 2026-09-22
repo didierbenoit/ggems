@@ -62,18 +62,18 @@ TEST(GGEMSDiagnosticProjection, ScalesExactAndBinary32Sentinels) {
   };
 
   constexpr std::array<Case, 11U> k_cases{{
-      {.component = 0.0F, .expected = 0LL},
-      {.component = -0.0F, .expected = 0LL},
-      {.component = 1.0F, .expected = 1'000'000'000'000LL},
-      {.component = -1.0F, .expected = -1'000'000'000'000LL},
-      {.component = 0.5F, .expected = 500'000'000'000LL},
-      {.component = -0.5F, .expected = -500'000'000'000LL},
-      {.component = 0x1p-13F, .expected = 122'070'313LL},
-      {.component = -0x1p-13F, .expected = -122'070'313LL},
-      {.component = std::numbers::inv_sqrt3_v<float>,
-       .expected = 577'350'258'827LL},
-      {.component = 0.1F, .expected = 100'000'001'490LL},
-      {.component = -0.1F, .expected = -100'000'001'490LL},
+    {.component = 0.0F, .expected = 0LL},
+    {.component = -0.0F, .expected = 0LL},
+    {.component = 1.0F, .expected = 1'000'000'000'000LL},
+    {.component = -1.0F, .expected = -1'000'000'000'000LL},
+    {.component = 0.5F, .expected = 500'000'000'000LL},
+    {.component = -0.5F, .expected = -500'000'000'000LL},
+    {.component = 0x1p-13F, .expected = 122'070'313LL},
+    {.component = -0x1p-13F, .expected = -122'070'313LL},
+    {.component = std::numbers::inv_sqrt3_v<float>,
+     .expected = 577'350'258'827LL},
+    {.component = 0.1F, .expected = 100'000'001'490LL},
+    {.component = -0.1F, .expected = -100'000'001'490LL},
   }};
 
   for (Case const &test : k_cases) {
@@ -88,14 +88,13 @@ TEST(GGEMSDiagnosticProjection, HandlesSubnormalAndRejectsInvalidValues) {
   std::int64_t result{k_output_sentinel};
 
   ASSERT_TRUE(TryScaleDiagnosticProjectionComponent(
-      std::numeric_limits<float>::denorm_min(), result));
+    std::numeric_limits<float>::denorm_min(), result));
   EXPECT_EQ(result, 0LL);
 
   constexpr std::array<float, 4U> k_invalid_values{
-      std::numeric_limits<float>::quiet_NaN(),
-      std::numeric_limits<float>::infinity(),
-      -std::numeric_limits<float>::infinity(),
-      std::numeric_limits<float>::max()};
+    std::numeric_limits<float>::quiet_NaN(),
+    std::numeric_limits<float>::infinity(),
+    -std::numeric_limits<float>::infinity(), std::numeric_limits<float>::max()};
 
   for (float value : k_invalid_values) {
     result = k_output_sentinel;
@@ -106,7 +105,7 @@ TEST(GGEMSDiagnosticProjection, HandlesSubnormalAndRejectsInvalidValues) {
 
 TEST(GGEMSDiagnosticProjection, IsSymmetricForRepresentablePairs) {
   constexpr std::array<float, 5U> k_values{
-      0.1F, 0.5F, 0x1p-13F, std::numbers::inv_sqrt3_v<float>, 1.25F};
+    0.1F, 0.5F, 0x1p-13F, std::numbers::inv_sqrt3_v<float>, 1.25F};
 
   for (float value : k_values) {
     std::int64_t positive{0LL};
@@ -131,41 +130,38 @@ TEST(GGEMSDiagnosticProjection, AddsWithoutSignedOverflowOrPartialWrite) {
   constexpr auto k_min = std::numeric_limits<std::int64_t>::min();
 
   constexpr std::array<Case, 7U> k_cases{{
-      {.position = 10LL,
-       .displacement = 5LL,
-       .succeeds = true,
-       .expected = 15LL},
-      {.position = k_max - 1LL,
-       .displacement = 1LL,
-       .succeeds = true,
-       .expected = k_max},
-      {.position = k_min + 1LL,
-       .displacement = -1LL,
-       .succeeds = true,
-       .expected = k_min},
-      {.position = 0LL,
-       .displacement = k_min,
-       .succeeds = true,
-       .expected = k_min},
-      {.position = 0LL,
-       .displacement = k_max,
-       .succeeds = true,
-       .expected = k_max},
-      {.position = k_max,
-       .displacement = 1LL,
-       .succeeds = false,
-       .expected = k_output_sentinel},
-      {.position = k_min,
-       .displacement = -1LL,
-       .succeeds = false,
-       .expected = k_output_sentinel},
+    {.position = 10LL, .displacement = 5LL, .succeeds = true, .expected = 15LL},
+    {.position = k_max - 1LL,
+     .displacement = 1LL,
+     .succeeds = true,
+     .expected = k_max},
+    {.position = k_min + 1LL,
+     .displacement = -1LL,
+     .succeeds = true,
+     .expected = k_min},
+    {.position = 0LL,
+     .displacement = k_min,
+     .succeeds = true,
+     .expected = k_min},
+    {.position = 0LL,
+     .displacement = k_max,
+     .succeeds = true,
+     .expected = k_max},
+    {.position = k_max,
+     .displacement = 1LL,
+     .succeeds = false,
+     .expected = k_output_sentinel},
+    {.position = k_min,
+     .displacement = -1LL,
+     .succeeds = false,
+     .expected = k_output_sentinel},
   }};
 
   for (Case const &test : k_cases) {
     std::int64_t endpoint{k_output_sentinel};
 
     EXPECT_EQ(TryAddDiagnosticProjectionDisplacement(
-                  test.position, test.displacement, endpoint),
+                test.position, test.displacement, endpoint),
               test.succeeds);
     EXPECT_EQ(endpoint, test.expected);
   }
@@ -200,7 +196,7 @@ TEST_F(GGEMSDiagnosticProjectionKernelTest, OpenCLMirrorMatchesHost) {
                                          0LL,  k_max,       k_min};
 
   std::array<std::int64_t, positions.size()> displacements{
-      5LL, 1LL, -1LL, k_min, k_max, 1LL, -1LL};
+    5LL, 1LL, -1LL, k_min, k_max, 1LL, -1LL};
 
   std::array<std::int64_t, positions.size()> endpoints{};
   endpoints.fill(k_output_sentinel);
@@ -211,7 +207,7 @@ TEST_F(GGEMSDiagnosticProjectionKernelTest, OpenCLMirrorMatchesHost) {
   auto &context = GetContext();
 
   auto make_buffer =
-      [&context](std::uint64_t size) -> ggems::ocl::GGEMSOpenCLSVMBuffer {
+    [&context](std::uint64_t size) -> ggems::ocl::GGEMSOpenCLSVMBuffer {
     return context.CreateSVMBuffer(ggems::units::Bytes{size});
   };
 
@@ -237,10 +233,10 @@ TEST_F(GGEMSDiagnosticProjectionKernelTest, OpenCLMirrorMatchesHost) {
   std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
   std::filesystem::path const kernel_test_root = kernel_root / "tests";
   std::string const build_options =
-      std::format("-I{}", kernel_root.generic_string());
+    std::format("-I{}", kernel_root.generic_string());
 
   auto &program = opencl.GetOrCreateProgram(
-      context, kernel_test_root, "diagnostic_projection_probe", build_options);
+    context, kernel_test_root, "diagnostic_projection_probe", build_options);
 
   cl::Kernel raw_kernel = program.CreateKernel("diagnostic_projection_probe");
 
@@ -272,7 +268,7 @@ TEST_F(GGEMSDiagnosticProjectionKernelTest, OpenCLMirrorMatchesHost) {
   for (std::size_t index = 0U; index < components.size(); ++index) {
     std::int64_t host_result{k_output_sentinel};
     bool const host_success =
-        TryScaleDiagnosticProjectionComponent(components[index], host_result);
+      TryScaleDiagnosticProjectionComponent(components[index], host_result);
 
     EXPECT_EQ(scale_success[index], host_success ? 1U : 0U) << index;
     EXPECT_EQ(scaled_components[index], host_result) << index;
@@ -281,7 +277,7 @@ TEST_F(GGEMSDiagnosticProjectionKernelTest, OpenCLMirrorMatchesHost) {
   for (std::size_t index = 0U; index < positions.size(); ++index) {
     std::int64_t host_result{k_output_sentinel};
     bool const host_success = TryAddDiagnosticProjectionDisplacement(
-        positions[index], displacements[index], host_result);
+      positions[index], displacements[index], host_result);
 
     EXPECT_EQ(addition_success[index], host_success ? 1U : 0U) << index;
     EXPECT_EQ(endpoints[index], host_result) << index;

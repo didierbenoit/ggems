@@ -24,7 +24,7 @@ public:
   }
 
   [[nodiscard]] auto GetEmissions() const noexcept
-      -> std::span<GGEMSRadionuclideEmission const> {
+    -> std::span<GGEMSRadionuclideEmission const> {
     return emissions_;
   }
 

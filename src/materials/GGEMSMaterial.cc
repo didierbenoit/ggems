@@ -28,7 +28,7 @@ GGEMSMaterial::GGEMSMaterial(std::string name, units::Density density)
   }
 
   auto const density_grams_per_cubic_centimeter =
-      units::ConvertTo(density_, "g/cm3");
+    units::ConvertTo(density_, "g/cm3");
 
   if (!density_grams_per_cubic_centimeter.has_value() ||
       !std::isfinite(*density_grams_per_cubic_centimeter) ||
@@ -41,20 +41,20 @@ GGEMSMaterial::GGEMSMaterial(std::string name, units::Density density)
 // =============================================================================
 
 GGEMSMaterial::GGEMSMaterial(
-    std::string name, units::Density density,
-    std::vector<GGEMSMaterialComponent> const &composition)
+  std::string name, units::Density density,
+  std::vector<GGEMSMaterialComponent> const &composition)
     : GGEMSMaterial{std::move(name), density} {
   if (density_.value == 0.0L) {
     if (!composition.empty()) {
       throw GGEMSRecoverable{
-          "Zero-density Material must have an empty composition."};
+        "Zero-density Material must have an empty composition."};
     }
     return;
   }
 
   if (composition.empty()) {
     throw GGEMSRecoverable{
-        "Positive-density Material must have a composition."};
+      "Positive-density Material must have a composition."};
   }
 
   std::vector<GGEMSElementalShare> elemental_shares;
@@ -66,14 +66,14 @@ GGEMSMaterial::GGEMSMaterial(
     if (!std::isfinite(component.mass_fraction) ||
         !(component.mass_fraction > 0.0L)) {
       throw GGEMSRecoverable{
-          "Material mass fractions must be finite and strictly positive."};
+        "Material mass fractions must be finite and strictly positive."};
     }
 
     elemental_shares.push_back({
-        .mass_fraction = component.mass_fraction,
-        .isotopic_composition = ResolveIsotopeProfile(
-            SelectLegacyElementalIsotopeProfile(component.atomic_number),
-            component.atomic_number),
+      .mass_fraction = component.mass_fraction,
+      .isotopic_composition = ResolveIsotopeProfile(
+        SelectLegacyElementalIsotopeProfile(component.atomic_number),
+        component.atomic_number),
     });
   }
 
@@ -84,14 +84,14 @@ GGEMSMaterial::GGEMSMaterial(
 // =============================================================================
 
 [[nodiscard]] auto GGEMSMaterial::FromIsotopicComposition(
-    std::string name, units::Density density,
-    std::vector<GGEMSElementalShare> elemental_shares) -> GGEMSMaterial {
+  std::string name, units::Density density,
+  std::vector<GGEMSElementalShare> elemental_shares) -> GGEMSMaterial {
   GGEMSMaterial material{std::move(name), density};
 
   if (material.density_.value == 0.0L) {
     if (!elemental_shares.empty()) {
       throw GGEMSRecoverable{
-          "Zero-density Material must have an empty composition."};
+        "Zero-density Material must have an empty composition."};
     }
     return material;
   }
@@ -106,7 +106,7 @@ GGEMSMaterial::GGEMSMaterial(
 auto GGEMSMaterial::Compile(std::vector<GGEMSElementalShare> elemental_shares,
                             bool resolved_from_profiles) -> void {
   auto const &composition = composition_.emplace(
-      density_, std::move(elemental_shares), GetIsotopeMassAuthority());
+    density_, std::move(elemental_shares), GetIsotopeMassAuthority());
 
   auto const shares = composition.GetElementalShares();
   auto const elements = composition.GetElementalConstituents();
@@ -122,11 +122,11 @@ auto GGEMSMaterial::Compile(std::vector<GGEMSElementalShare> elemental_shares,
     }
 
     constituents_.push_back({
-        .atomic_number = atomic_number,
-        .mass_fraction = shares[index].mass_fraction,
-        .number_density_per_cubic_centimeter =
-            elements[index].number_density_per_cubic_centimeter,
-        .isotope_profile = isotope_profile,
+      .atomic_number = atomic_number,
+      .mass_fraction = shares[index].mass_fraction,
+      .number_density_per_cubic_centimeter =
+        elements[index].number_density_per_cubic_centimeter,
+      .isotope_profile = isotope_profile,
     });
   }
 }
@@ -135,7 +135,7 @@ auto GGEMSMaterial::Compile(std::vector<GGEMSElementalShare> elemental_shares,
 // =============================================================================
 
 [[nodiscard]] auto GGEMSMaterial::GetIsotopeConstituents() const noexcept
-    -> std::span<GGEMSIsotopeConstituent const> {
+  -> std::span<GGEMSIsotopeConstituent const> {
   if (!composition_.has_value()) {
     return {};
   }
@@ -147,7 +147,7 @@ auto GGEMSMaterial::Compile(std::vector<GGEMSElementalShare> elemental_shares,
 // =============================================================================
 
 [[nodiscard]] auto GGEMSMaterial::GetElementalConstituents() const noexcept
-    -> std::span<GGEMSDerivedElementalConstituent const> {
+  -> std::span<GGEMSDerivedElementalConstituent const> {
   if (!composition_.has_value()) {
     return {};
   }
@@ -160,7 +160,7 @@ auto GGEMSMaterial::Compile(std::vector<GGEMSElementalShare> elemental_shares,
 
 [[nodiscard]] auto
 GGEMSMaterial::GetTotalAtomDensityPerCubicCentimeter() const noexcept
-    -> long double {
+  -> long double {
   if (!composition_.has_value()) {
     return 0.0L;
   }
@@ -173,7 +173,7 @@ GGEMSMaterial::GetTotalAtomDensityPerCubicCentimeter() const noexcept
 
 [[nodiscard]] auto
 GGEMSMaterial::GetElectronDensityPerCubicCentimeter() const noexcept
-    -> long double {
+  -> long double {
   if (!composition_.has_value()) {
     return 0.0L;
   }

@@ -110,7 +110,7 @@ public:
    * \return Parsed OpenCL device extension names.
    */
   [[nodiscard]] auto GetDeviceExtensions() const noexcept
-      -> std::unordered_set<std::string> const & {
+    -> std::unordered_set<std::string> const & {
     return extensions_;
   }
 
@@ -173,15 +173,17 @@ public:
   [[nodiscard]] auto GetOpenCLCVersion() const -> std::string;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_OPENCL_C_ALL_VERSIONS information value.
+   * \brief Returns the OpenCL CL_DEVICE_OPENCL_C_ALL_VERSIONS information
+   * value.
    *
    * \return Value reported for CL_DEVICE_OPENCL_C_ALL_VERSIONS.
    */
   [[nodiscard]] auto GetOpenCLCAllVersions() const
-      -> std::vector<cl_name_version>;
+    -> std::vector<cl_name_version>;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR information value.
+   * \brief Returns the OpenCL CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR
+   * information value.
    *
    * \return Value reported for CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR.
    */
@@ -195,7 +197,8 @@ public:
   [[nodiscard]] auto GetOpenCLCFeatures() const -> std::vector<cl_name_version>;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_CXX_FOR_OPENCL_NUMERIC_VERSION_EXT information value.
+   * \brief Returns the OpenCL CL_DEVICE_CXX_FOR_OPENCL_NUMERIC_VERSION_EXT
+   * information value.
    *
    * \return Value reported for CL_DEVICE_CXX_FOR_OPENCL_NUMERIC_VERSION_EXT.
    */
@@ -235,7 +238,7 @@ public:
    * \return Value reported for CL_DEVICE_LUID_KHR.
    */
   [[nodiscard]] auto GetLUIDKhr() const
-      -> std::array<cl_uchar, CL_LUID_SIZE_KHR>;
+    -> std::array<cl_uchar, CL_LUID_SIZE_KHR>;
 
   /*!
    * \brief Returns the OpenCL CL_DEVICE_VENDOR_ID information value.
@@ -273,7 +276,8 @@ public:
   [[nodiscard]] auto GetMaxWorkGroupSize() const -> std::size_t;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS information value.
+   * \brief Returns the OpenCL CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS information
+   * value.
    *
    * \return Value reported for CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS.
    */
@@ -287,105 +291,120 @@ public:
   [[nodiscard]] auto GetMaxWorkItemSizes() const -> std::vector<std::size_t>;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_MULTIPLE information value.
+   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_MULTIPLE
+   * information value.
    *
    * \return Value reported for CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_MULTIPLE.
    */
   [[nodiscard]] auto GetPreferredWorkGroupSizeMultiple() const -> std::size_t;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR information value.
+   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR information
+   * value.
    *
    * \return Value reported for CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR.
    */
   [[nodiscard]] auto GetPreferredVectorWidthChar() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT information value.
+   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT
+   * information value.
    *
    * \return Value reported for CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT.
    */
   [[nodiscard]] auto GetPreferredVectorWidthShort() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT information value.
+   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT information
+   * value.
    *
    * \return Value reported for CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT.
    */
   [[nodiscard]] auto GetPreferredVectorWidthInt() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG information value.
+   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG information
+   * value.
    *
    * \return Value reported for CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG.
    */
   [[nodiscard]] auto GetPreferredVectorWidthLong() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT information value.
+   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT
+   * information value.
    *
    * \return Value reported for CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT.
    */
   [[nodiscard]] auto GetPreferredVectorWidthFloat() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE information value.
+   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE
+   * information value.
    *
    * \return Value reported for CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE.
    */
   [[nodiscard]] auto GetPreferredVectorWidthDouble() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF information value.
+   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF information
+   * value.
    *
    * \return Value reported for CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF.
    */
   [[nodiscard]] auto GetPreferredVectorWidthHalf() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR information value.
+   * \brief Returns the OpenCL CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR information
+   * value.
    *
    * \return Value reported for CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR.
    */
   [[nodiscard]] auto GetNativeVectorWidthChar() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT information value.
+   * \brief Returns the OpenCL CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT information
+   * value.
    *
    * \return Value reported for CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT.
    */
   [[nodiscard]] auto GetNativeVectorWidthShort() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_NATIVE_VECTOR_WIDTH_INT information value.
+   * \brief Returns the OpenCL CL_DEVICE_NATIVE_VECTOR_WIDTH_INT information
+   * value.
    *
    * \return Value reported for CL_DEVICE_NATIVE_VECTOR_WIDTH_INT.
    */
   [[nodiscard]] auto GetNativeVectorWidthInt() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG information value.
+   * \brief Returns the OpenCL CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG information
+   * value.
    *
    * \return Value reported for CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG.
    */
   [[nodiscard]] auto GetNativeVectorWidthLong() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT information value.
+   * \brief Returns the OpenCL CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT information
+   * value.
    *
    * \return Value reported for CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT.
    */
   [[nodiscard]] auto GetNativeVectorWidthFloat() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE information value.
+   * \brief Returns the OpenCL CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE information
+   * value.
    *
    * \return Value reported for CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE.
    */
   [[nodiscard]] auto GetNativeVectorWidthDouble() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF information value.
+   * \brief Returns the OpenCL CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF information
+   * value.
    *
    * \return Value reported for CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF.
    */
@@ -455,7 +474,8 @@ public:
   [[nodiscard]] auto GetImage3DMaxDepth() const -> std::size_t;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_IMAGE_MAX_BUFFER_SIZE information value.
+   * \brief Returns the OpenCL CL_DEVICE_IMAGE_MAX_BUFFER_SIZE information
+   * value.
    *
    * \return Value reported for CL_DEVICE_IMAGE_MAX_BUFFER_SIZE.
    */
@@ -483,21 +503,24 @@ public:
   [[nodiscard]] auto GetMaxWriteImageArgs() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS information value.
+   * \brief Returns the OpenCL CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS information
+   * value.
    *
    * \return Value reported for CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS.
    */
   [[nodiscard]] auto GetMaxReadWriteImageArgs() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_IMAGE_PITCH_ALIGNMENT information value.
+   * \brief Returns the OpenCL CL_DEVICE_IMAGE_PITCH_ALIGNMENT information
+   * value.
    *
    * \return Value reported for CL_DEVICE_IMAGE_PITCH_ALIGNMENT.
    */
   [[nodiscard]] auto GetImagePitchAlignment() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT information value.
+   * \brief Returns the OpenCL CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT
+   * information value.
    *
    * \return Value reported for CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT.
    */
@@ -518,21 +541,24 @@ public:
   [[nodiscard]] auto GetGlobalMemSize() const -> cl_ulong;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_GLOBAL_MEM_CACHE_TYPE information value.
+   * \brief Returns the OpenCL CL_DEVICE_GLOBAL_MEM_CACHE_TYPE information
+   * value.
    *
    * \return Value reported for CL_DEVICE_GLOBAL_MEM_CACHE_TYPE.
    */
   [[nodiscard]] auto GetGlobalMemCacheType() const -> cl_device_mem_cache_type;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE information value.
+   * \brief Returns the OpenCL CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE information
+   * value.
    *
    * \return Value reported for CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE.
    */
   [[nodiscard]] auto GetGlobalMemCacheLineSize() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_GLOBAL_MEM_CACHE_SIZE information value.
+   * \brief Returns the OpenCL CL_DEVICE_GLOBAL_MEM_CACHE_SIZE information
+   * value.
    *
    * \return Value reported for CL_DEVICE_GLOBAL_MEM_CACHE_SIZE.
    */
@@ -560,7 +586,8 @@ public:
   [[nodiscard]] auto GetMaxMemAllocSize() const -> cl_ulong;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE information value.
+   * \brief Returns the OpenCL CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE information
+   * value.
    *
    * \return Value reported for CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE.
    */
@@ -581,7 +608,8 @@ public:
   [[nodiscard]] auto GetMemBaseAddrAlign() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE information value.
+   * \brief Returns the OpenCL CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE information
+   * value.
    *
    * \return Value reported for CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE.
    */
@@ -616,23 +644,26 @@ public:
   [[nodiscard]] auto GetSpirVersions() const -> std::string;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_QUEUE_ON_HOST_PROPERTIES information value.
+   * \brief Returns the OpenCL CL_DEVICE_QUEUE_ON_HOST_PROPERTIES information
+   * value.
    *
    * \return Value reported for CL_DEVICE_QUEUE_ON_HOST_PROPERTIES.
    */
   [[nodiscard]] auto GetQueueOnHostProperties() const
-      -> cl_command_queue_properties;
+    -> cl_command_queue_properties;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES information value.
+   * \brief Returns the OpenCL CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES information
+   * value.
    *
    * \return Value reported for CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES.
    */
   [[nodiscard]] auto GetQueueOnDeviceProperties() const
-      -> cl_command_queue_properties;
+    -> cl_command_queue_properties;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE information value.
+   * \brief Returns the OpenCL CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE
+   * information value.
    *
    * \return Value reported for CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE.
    */
@@ -660,20 +691,22 @@ public:
   [[nodiscard]] auto GetSVMCapabilities() const -> cl_device_svm_capabilities;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES information value.
+   * \brief Returns the OpenCL CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES information
+   * value.
    *
    * \return Value reported for CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES.
    */
   [[nodiscard]] auto GetAtomicMemoryCapabilities() const
-      -> cl_device_atomic_capabilities;
+    -> cl_device_atomic_capabilities;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_ATOMIC_FENCE_CAPABILITIES information value.
+   * \brief Returns the OpenCL CL_DEVICE_ATOMIC_FENCE_CAPABILITIES information
+   * value.
    *
    * \return Value reported for CL_DEVICE_ATOMIC_FENCE_CAPABILITIES.
    */
   [[nodiscard]] auto GetAtomicFenceCapabilities() const
-      -> cl_device_atomic_capabilities;
+    -> cl_device_atomic_capabilities;
 
   /*!
    * \brief Returns the OpenCL CL_DEVICE_MAX_NUM_SUB_GROUPS information value.
@@ -683,48 +716,56 @@ public:
   [[nodiscard]] auto GetMaxNumSubGroups() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS information value.
+   * \brief Returns the OpenCL CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS
+   * information value.
    *
-   * \return Value reported for CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS.
+   * \return Value reported for
+   * CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS.
    */
   [[nodiscard]] auto GetSubGroupIndependentForwardProgress() const -> cl_bool;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT information value.
+   * \brief Returns the OpenCL CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT
+   * information value.
    *
    * \return Value reported for CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT.
    */
   [[nodiscard]] auto GetNonUniformWorkGroupSupport() const -> cl_bool;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT information value.
+   * \brief Returns the OpenCL CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT
+   * information value.
    *
-   * \return Value reported for CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT.
+   * \return Value reported for
+   * CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT.
    */
   [[nodiscard]] auto GetWorkGroupCollectiveFunctionsSupport() const -> cl_bool;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT information value.
+   * \brief Returns the OpenCL CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT
+   * information value.
    *
    * \return Value reported for CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT.
    */
   [[nodiscard]] auto GetGenericAddressSpaceSupport() const -> cl_bool;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES information value.
+   * \brief Returns the OpenCL CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES information
+   * value.
    *
    * \return Value reported for CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES.
    */
   [[nodiscard]] auto GetDeviceEnqueueCapabilities() const
-      -> cl_device_device_enqueue_capabilities;
+    -> cl_device_device_enqueue_capabilities;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_EXECUTION_CAPABILITIES information value.
+   * \brief Returns the OpenCL CL_DEVICE_EXECUTION_CAPABILITIES information
+   * value.
    *
    * \return Value reported for CL_DEVICE_EXECUTION_CAPABILITIES.
    */
   [[nodiscard]] auto GetExecutionCapabilities() const
-      -> cl_device_exec_capabilities;
+    -> cl_device_exec_capabilities;
 
   /*!
    * \brief Returns the OpenCL CL_DEVICE_REFERENCE_COUNT information value.
@@ -734,14 +775,16 @@ public:
   [[nodiscard]] auto GetReferenceCount() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_LATEST_CONFORMANCE_VERSION_PASSED information value.
+   * \brief Returns the OpenCL CL_DEVICE_LATEST_CONFORMANCE_VERSION_PASSED
+   * information value.
    *
    * \return Value reported for CL_DEVICE_LATEST_CONFORMANCE_VERSION_PASSED.
    */
   [[nodiscard]] auto GetLatestConformanceVersionPassed() const -> std::string;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_PARTITION_MAX_SUB_DEVICES information value.
+   * \brief Returns the OpenCL CL_DEVICE_PARTITION_MAX_SUB_DEVICES information
+   * value.
    *
    * \return Value reported for CL_DEVICE_PARTITION_MAX_SUB_DEVICES.
    */
@@ -753,15 +796,16 @@ public:
    * \return Value reported for CL_DEVICE_PARTITION_PROPERTIES.
    */
   [[nodiscard]] auto GetPartitionProperties() const
-      -> std::vector<cl_device_partition_property>;
+    -> std::vector<cl_device_partition_property>;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_PARTITION_AFFINITY_DOMAIN information value.
+   * \brief Returns the OpenCL CL_DEVICE_PARTITION_AFFINITY_DOMAIN information
+   * value.
    *
    * \return Value reported for CL_DEVICE_PARTITION_AFFINITY_DOMAIN.
    */
   [[nodiscard]] auto GetPartitionAffinityDomain() const
-      -> cl_device_affinity_domain;
+    -> cl_device_affinity_domain;
 
   /*!
    * \brief Returns the OpenCL CL_DEVICE_PARTITION_TYPE information value.
@@ -769,7 +813,7 @@ public:
    * \return Value reported for CL_DEVICE_PARTITION_TYPE.
    */
   [[nodiscard]] auto GetPartitionType() const
-      -> std::vector<cl_device_partition_property>;
+    -> std::vector<cl_device_partition_property>;
 
   /*!
    * \brief Returns the OpenCL CL_DEVICE_EXTENSIONS information value.
@@ -779,12 +823,13 @@ public:
   [[nodiscard]] auto GetExtensions() const -> std::string;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_EXTENSIONS_WITH_VERSION information value.
+   * \brief Returns the OpenCL CL_DEVICE_EXTENSIONS_WITH_VERSION information
+   * value.
    *
    * \return Value reported for CL_DEVICE_EXTENSIONS_WITH_VERSION.
    */
   [[nodiscard]] auto GetExtensionsWithVersion() const
-      -> std::vector<cl_name_version>;
+    -> std::vector<cl_name_version>;
 
   /*!
    * \brief Returns the OpenCL CL_DEVICE_BUILT_IN_KERNELS information value.
@@ -794,29 +839,33 @@ public:
   [[nodiscard]] auto GetBuiltInKernels() const -> std::string;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION information value.
+   * \brief Returns the OpenCL CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION
+   * information value.
    *
    * \return Value reported for CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION.
    */
   [[nodiscard]] auto GetBuiltInKernelsWithVersion() const
-      -> std::vector<cl_name_version>;
+    -> std::vector<cl_name_version>;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT information value.
+   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT
+   * information value.
    *
    * \return Value reported for CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT.
    */
   [[nodiscard]] auto GetPreferredPlatformAtomicAlignment() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT information value.
+   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT
+   * information value.
    *
    * \return Value reported for CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT.
    */
   [[nodiscard]] auto GetPreferredGlobalAtomicAlignment() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT information value.
+   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT
+   * information value.
    *
    * \return Value reported for CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT.
    */
@@ -830,7 +879,8 @@ public:
   [[nodiscard]] auto GetAddressBits() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_PROFILING_TIMER_RESOLUTION information value.
+   * \brief Returns the OpenCL CL_DEVICE_PROFILING_TIMER_RESOLUTION information
+   * value.
    *
    * \return Value reported for CL_DEVICE_PROFILING_TIMER_RESOLUTION.
    */
@@ -865,7 +915,8 @@ public:
   [[nodiscard]] auto GetEndianLittle() const -> cl_bool;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_ERROR_CORRECTION_SUPPORT information value.
+   * \brief Returns the OpenCL CL_DEVICE_ERROR_CORRECTION_SUPPORT information
+   * value.
    *
    * \return Value reported for CL_DEVICE_ERROR_CORRECTION_SUPPORT.
    */
@@ -879,7 +930,8 @@ public:
   [[nodiscard]] auto GetPrintfBufferSize() const -> std::size_t;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_INTEROP_USER_SYNC information value.
+   * \brief Returns the OpenCL CL_DEVICE_PREFERRED_INTEROP_USER_SYNC information
+   * value.
    *
    * \return Value reported for CL_DEVICE_PREFERRED_INTEROP_USER_SYNC.
    */
@@ -893,7 +945,8 @@ public:
   [[nodiscard]] auto GetMaxPipeArgs() const -> cl_uint;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS information value.
+   * \brief Returns the OpenCL CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS
+   * information value.
    *
    * \return Value reported for CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS.
    */
@@ -914,14 +967,16 @@ public:
   [[nodiscard]] auto GetPipeSupport() const -> cl_bool;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE information value.
+   * \brief Returns the OpenCL CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE information
+   * value.
    *
    * \return Value reported for CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE.
    */
   [[nodiscard]] auto GetMaxGlobalVariableSize() const -> std::size_t;
 
   /*!
-   * \brief Returns the OpenCL CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE information value.
+   * \brief Returns the OpenCL CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE
+   * information value.
    *
    * \return Value reported for CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE.
    */
@@ -1000,9 +1055,9 @@ private:
    */
   auto PrintExtensionsAndMisc() const -> void;
 
-  cl::Device device_;                              /*!< Native OpenCL device. */
-  std::size_t platform_index_;                    /*!< GGEMS platform index. */
-  std::size_t device_index_;                      /*!< Device index within the platform. */
-  std::unordered_set<std::string> extensions_;    /*!< Parsed OpenCL extensions. */
+  cl::Device device_;          /*!< Native OpenCL device. */
+  std::size_t platform_index_; /*!< GGEMS platform index. */
+  std::size_t device_index_;   /*!< Device index within the platform. */
+  std::unordered_set<std::string> extensions_; /*!< Parsed OpenCL extensions. */
 };
 } // namespace ggems::ocl

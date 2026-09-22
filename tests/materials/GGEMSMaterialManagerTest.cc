@@ -45,12 +45,11 @@ TEST(GGEMSMaterialManagerTest, AddsCustomMaterial) {
 
   auto const size_before = manager.GetMaterials().size();
 
-  auto const material_index =
-      manager.AddCustomMaterial(materials::GGEMSMaterial{
-          "GGEMSTestCustomMaterial",
-          5.0_g_cm3,
-          {{.atomic_number = 48U, .mass_fraction = 0.5L},
-           {.atomic_number = 52U, .mass_fraction = 0.5L}}});
+  auto const material_index = manager.AddCustomMaterial(
+    materials::GGEMSMaterial{"GGEMSTestCustomMaterial",
+                             5.0_g_cm3,
+                             {{.atomic_number = 48U, .mass_fraction = 0.5L},
+                              {.atomic_number = 52U, .mass_fraction = 0.5L}}});
 
   EXPECT_EQ(material_index, size_before);
   EXPECT_EQ(manager.GetMaterials().size(), size_before + 1U);
@@ -74,19 +73,19 @@ TEST(GGEMSMaterialManagerTest, AddsCustomMaterial) {
 TEST(GGEMSMaterialManagerTest, RejectsDuplicateCustomMaterial) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
 
-  static_cast<void>(manager.AddCustomMaterial(materials::GGEMSMaterial{
-      "GGEMSTestDuplicateMaterial",
-      1.0_g_cm3,
-      {{.atomic_number = 6U, .mass_fraction = 1.0L}}}));
+  static_cast<void>(manager.AddCustomMaterial(
+    materials::GGEMSMaterial{"GGEMSTestDuplicateMaterial",
+                             1.0_g_cm3,
+                             {{.atomic_number = 6U, .mass_fraction = 1.0L}}}));
 
   auto const size_before = manager.GetMaterials().size();
 
   EXPECT_THROW(
-      static_cast<void>(manager.AddCustomMaterial(materials::GGEMSMaterial{
-          "GGEMSTestDuplicateMaterial",
-          2.0_g_cm3,
-          {{.atomic_number = 8U, .mass_fraction = 1.0L}}})),
-      ggems::core::GGEMSRecoverable);
+    static_cast<void>(manager.AddCustomMaterial(materials::GGEMSMaterial{
+      "GGEMSTestDuplicateMaterial",
+      2.0_g_cm3,
+      {{.atomic_number = 8U, .mass_fraction = 1.0L}}})),
+    ggems::core::GGEMSRecoverable);
 
   EXPECT_EQ(manager.GetMaterials().size(), size_before);
 }
@@ -100,12 +99,12 @@ TEST(GGEMSMaterialManagerTest, RejectsBuiltInNameForCustomMaterial) {
   auto const size_before = manager.GetMaterials().size();
 
   EXPECT_THROW(
-      static_cast<void>(manager.AddCustomMaterial(materials::GGEMSMaterial{
-          "Water",
-          1.0_g_cm3,
-          {{.atomic_number = 1U, .mass_fraction = 0.1L},
-           {.atomic_number = 8U, .mass_fraction = 0.9L}}})),
-      ggems::core::GGEMSRecoverable);
+    static_cast<void>(manager.AddCustomMaterial(materials::GGEMSMaterial{
+      "Water",
+      1.0_g_cm3,
+      {{.atomic_number = 1U, .mass_fraction = 0.1L},
+       {.atomic_number = 8U, .mass_fraction = 0.9L}}})),
+    ggems::core::GGEMSRecoverable);
 
   EXPECT_EQ(manager.GetMaterials().size(), size_before);
 }

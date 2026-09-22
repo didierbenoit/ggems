@@ -31,15 +31,15 @@ struct Point3 {
 
 [[nodiscard]] auto TransformPoint(Matrix4Rows const &matrix,
                                   Point3 const &point) noexcept
-    -> std::array<float, 4U> {
+  -> std::array<float, 4U> {
   return {(matrix.row_0[0] * point.x) + (matrix.row_0[1] * point.y) +
-              (matrix.row_0[2] * point.z) + matrix.row_0[3],
+            (matrix.row_0[2] * point.z) + matrix.row_0[3],
           (matrix.row_1[0] * point.x) + (matrix.row_1[1] * point.y) +
-              (matrix.row_1[2] * point.z) + matrix.row_1[3],
+            (matrix.row_1[2] * point.z) + matrix.row_1[3],
           (matrix.row_2[0] * point.x) + (matrix.row_2[1] * point.y) +
-              (matrix.row_2[2] * point.z) + matrix.row_2[3],
+            (matrix.row_2[2] * point.z) + matrix.row_2[3],
           (matrix.row_3[0] * point.x) + (matrix.row_3[1] * point.y) +
-              (matrix.row_3[2] * point.z) + matrix.row_3[3]};
+            (matrix.row_3[2] * point.z) + matrix.row_3[3]};
 }
 
 // =============================================================================
@@ -55,7 +55,7 @@ auto ExpectRowNear(std::array<float, 4U> const &actual,
 // =============================================================================
 // =============================================================================
 auto ExpectMatrixNear(Matrix4Rows const &actual, Matrix4Rows const &expected)
-    -> void {
+  -> void {
   ExpectRowNear(actual.row_0, expected.row_0);
   ExpectRowNear(actual.row_1, expected.row_1);
   ExpectRowNear(actual.row_2, expected.row_2);
@@ -75,10 +75,10 @@ TEST(GGEMSVulkanCamera, ResetRestoresCanonicalView) {
   camera.Reset();
 
   Matrix4Rows const expected{
-      .row_0 = {0.8F * k_sqrt_half, 0.0F, -0.8F * k_sqrt_half, 0.0F},
-      .row_1 = {-0.4F, 0.8F * k_sqrt_half, -0.4F, 0.0F},
-      .row_2 = {-0.025F, -0.05F * k_sqrt_half, -0.025F, 0.5F},
-      .row_3 = {0.0F, 0.0F, 0.0F, 1.0F}};
+    .row_0 = {0.8F * k_sqrt_half, 0.0F, -0.8F * k_sqrt_half, 0.0F},
+    .row_1 = {-0.4F, 0.8F * k_sqrt_half, -0.4F, 0.0F},
+    .row_2 = {-0.025F, -0.05F * k_sqrt_half, -0.025F, 0.5F},
+    .row_3 = {0.0F, 0.0F, 0.0F, 1.0F}};
 
   ExpectMatrixNear(camera.BuildWorldToClipMatrix(), expected);
 }
@@ -163,9 +163,9 @@ TEST(GGEMSVulkanCamera,
   wide_camera.Reset();
 
   auto const square_positive_x =
-      TransformPoint(square_camera.BuildWorldToClipMatrix(), Point3{.x = 1.0F});
+    TransformPoint(square_camera.BuildWorldToClipMatrix(), Point3{.x = 1.0F});
   auto const wide_positive_x =
-      TransformPoint(wide_camera.BuildWorldToClipMatrix(), Point3{.x = 1.0F});
+    TransformPoint(wide_camera.BuildWorldToClipMatrix(), Point3{.x = 1.0F});
 
   constexpr float k_sixteen_by_nine_inverse_aspect{9.0F / 16.0F};
 
@@ -187,7 +187,7 @@ TEST(GGEMSVulkanCamera, PanMovesTargetAlongBothViewAxes) {
   Matrix4Rows const matrix = camera.BuildWorldToClipMatrix();
   auto const origin = TransformPoint(matrix, Point3{});
   auto const target =
-      TransformPoint(matrix, Point3{.x = 0.0F, .y = -0.4F, .z = 0.2F});
+    TransformPoint(matrix, Point3{.x = 0.0F, .y = -0.4F, .z = 0.2F});
 
   EXPECT_NEAR(origin[0], 0.2F, k_tolerance);
   EXPECT_NEAR(origin[1], 0.4F, k_tolerance);
@@ -207,9 +207,9 @@ TEST(GGEMSVulkanCamera, ZoomScalesXYWithoutChangingDepth) {
 
   Matrix4Rows const before_matrix = camera.BuildWorldToClipMatrix();
   auto const positive_y_before =
-      TransformPoint(before_matrix, Point3{.y = 1.0F});
+    TransformPoint(before_matrix, Point3{.y = 1.0F});
   auto const positive_x_before =
-      TransformPoint(before_matrix, Point3{.x = 1.0F});
+    TransformPoint(before_matrix, Point3{.x = 1.0F});
 
   camera.ZoomBy(1.0F);
 

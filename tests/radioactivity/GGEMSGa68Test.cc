@@ -41,62 +41,62 @@ struct ExpectedPositronBranch {
 // =============================================================================
 
 constexpr std::array<ExpectedPositronBranch, 3U> k_expected_positron_branches{{
-    {.yield_per_decay = 0.8768L,
-     .table_count = 3799U,
-     .bin_width_micro_eV = 499'894'000ULL,
-     .lower_edge_micro_eV = 2'694'000ULL,
-     .endpoint_micro_eV = 1'899'100'000'000ULL,
-     .represented_mean_energy_keV = 834.88330},
-    {.yield_per_decay = 0.0120L,
-     .table_count = 1644U,
-     .bin_width_micro_eV = 499'846'000ULL,
-     .lower_edge_micro_eV = 3'176'000ULL,
-     .endpoint_micro_eV = 821'750'000'000ULL,
-     .represented_mean_energy_keV = 352.01654},
-    {.yield_per_decay = 0.0000026L,
-     .table_count = 487U,
-     .bin_width_micro_eV = 499'444'000ULL,
-     .lower_edge_micro_eV = 772'000ULL,
-     .endpoint_micro_eV = 243'230'000'000ULL,
-     .represented_mean_energy_keV = 107.53776},
+  {.yield_per_decay = 0.8768L,
+   .table_count = 3799U,
+   .bin_width_micro_eV = 499'894'000ULL,
+   .lower_edge_micro_eV = 2'694'000ULL,
+   .endpoint_micro_eV = 1'899'100'000'000ULL,
+   .represented_mean_energy_keV = 834.88330},
+  {.yield_per_decay = 0.0120L,
+   .table_count = 1644U,
+   .bin_width_micro_eV = 499'846'000ULL,
+   .lower_edge_micro_eV = 3'176'000ULL,
+   .endpoint_micro_eV = 821'750'000'000ULL,
+   .represented_mean_energy_keV = 352.01654},
+  {.yield_per_decay = 0.0000026L,
+   .table_count = 487U,
+   .bin_width_micro_eV = 499'444'000ULL,
+   .lower_edge_micro_eV = 772'000ULL,
+   .endpoint_micro_eV = 243'230'000'000ULL,
+   .represented_mean_energy_keV = 107.53776},
 }};
 
 // =============================================================================
 // =============================================================================
 
 constexpr std::array<std::uint64_t, 13U> k_expected_gamma_energies_micro_eV{{
-    227'310'000'000ULL,
-    483'350'000'000ULL,
-    578'520'000'000ULL,
-    682'570'000'000ULL,
-    805'830'000'000ULL,
-    938'610'000'000ULL,
-    1'077'340'000'000ULL,
-    1'165'920'000'000ULL,
-    1'261'080'000'000ULL,
-    1'744'420'000'000ULL,
-    1'883'160'000'000ULL,
-    2'338'440'000'000ULL,
-    2'821'730'000'000ULL,
+  227'310'000'000ULL,
+  483'350'000'000ULL,
+  578'520'000'000ULL,
+  682'570'000'000ULL,
+  805'830'000'000ULL,
+  938'610'000'000ULL,
+  1'077'340'000'000ULL,
+  1'165'920'000'000ULL,
+  1'261'080'000'000ULL,
+  1'744'420'000'000ULL,
+  1'883'160'000'000ULL,
+  2'338'440'000'000ULL,
+  2'821'730'000'000ULL,
 }};
 
 // =============================================================================
 // =============================================================================
 
 constexpr std::array<double, 13U> k_expected_gamma_line_yields{{
-    1.2e-06,
-    2.65e-06,
-    0.000343,
-    3.14e-06,
-    0.000928,
-    1.78e-06,
-    0.03235,
-    1.6e-07,
-    0.000954,
-    0.000096,
-    0.00142,
-    0.0000113,
-    0.00000466,
+  1.2e-06,
+  2.65e-06,
+  0.000343,
+  3.14e-06,
+  0.000928,
+  1.78e-06,
+  0.03235,
+  1.6e-07,
+  0.000954,
+  0.000096,
+  0.00142,
+  0.0000113,
+  0.00000466,
 }};
 
 // =============================================================================
@@ -196,7 +196,7 @@ TEST(GGEMSGa68Test, PreservesThreeTabulatedBetaShapePositronSpectra) {
   for (std::size_t branch_index = 0U;
        branch_index < k_expected_positron_branches.size(); ++branch_index) {
     ExpectedPositronBranch const &expected =
-        k_expected_positron_branches[branch_index];
+      k_expected_positron_branches[branch_index];
     GGEMSRadionuclideEmission const &emission = emissions[branch_index];
     auto const &distribution = emission.GetEnergyDistribution();
     auto const centers = distribution.GetEnergyValuesMicroElectronVolt();
@@ -237,8 +237,8 @@ TEST(GGEMSGa68Test, PreservesThreeTabulatedBetaShapePositronSpectra) {
     EXPECT_EQ(previous_ticket, k_energy_ticket_space_size);
 
     long double const mean_energy_keV =
-        weighted_center_sum / weight_sum /
-        static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
+      weighted_center_sum / weight_sum /
+      static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
     EXPECT_NEAR(static_cast<double>(mean_energy_keV),
                 expected.represented_mean_energy_keV, 0.01);
   }
@@ -255,7 +255,7 @@ TEST(GGEMSGa68Test, PreservesThirteenLaraNuclearGammasWithoutAnnihilationLine) {
                                 k_expected_gamma_energies_micro_eV.size());
 
   auto const energies =
-      gamma.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
+    gamma.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const yields = gamma.GetEnergyDistribution().GetRelativeWeights();
 
   for (std::size_t index = 0U;
@@ -278,7 +278,7 @@ TEST(GGEMSGa68Test, PreservesLaraAndMirdAtomicRadiations) {
   CheckReachableDiscreteChannel(x_rays, GGEMSParticleType::Gamma, 4U);
 
   auto const x_ray_energies =
-      x_rays.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
+    x_rays.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const x_ray_yields = x_rays.GetEnergyDistribution().GetRelativeWeights();
 
   EXPECT_EQ(x_ray_energies[0U], 1'035'000'000ULL);
@@ -294,7 +294,7 @@ TEST(GGEMSGa68Test, PreservesLaraAndMirdAtomicRadiations) {
   CheckReachableDiscreteChannel(auger, GGEMSParticleType::Electron, 9U);
 
   auto const auger_energies =
-      auger.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
+    auger.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const auger_yields = auger.GetEnergyDistribution().GetRelativeWeights();
 
   EXPECT_EQ(auger_energies.front(), 56'775'000ULL);
@@ -310,9 +310,9 @@ TEST(GGEMSGa68Test, PreservesLaraAndMirdAtomicRadiations) {
   CheckReachableDiscreteChannel(conversion, GGEMSParticleType::Electron, 78U);
 
   auto const conversion_energies =
-      conversion.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
+    conversion.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const conversion_yields =
-      conversion.GetEnergyDistribution().GetRelativeWeights();
+    conversion.GetEnergyDistribution().GetRelativeWeights();
 
   EXPECT_EQ(conversion_energies.front(), 217'650'000'000ULL);
   EXPECT_EQ(conversion_energies[12U], 568'860'000'000ULL);

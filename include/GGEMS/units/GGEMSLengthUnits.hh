@@ -21,7 +21,8 @@
 
 /*!
  * \file
- * \brief Declares strongly typed length, position-coordinate, and displacement units and literals.
+ * \brief Declares strongly typed length, position-coordinate, and displacement
+ * units and literals.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -55,22 +56,13 @@ template <> struct UnitRegistry<LengthUnitSet> {
    * \brief Registered unit definitions for this quantity family.
    */
   static constexpr std::array<UnitDefinition, 7U> units{{
-      {.symbol = "pm",
-       .scale = DecimalScale(0)},
-      {.symbol = "nm",
-       .scale = DecimalScale(3)},
-      {.symbol = "um",
-       .scale = DecimalScale(6),
-       .unicode_symbol = "µm"},
-      {.symbol = "mm",
-       .scale = DecimalScale(9)},
-      {.symbol = "cm",
-       .scale = DecimalScale(10),
-       .automatic_display = false},
-      {.symbol = "m",
-       .scale = DecimalScale(12)},
-      {.symbol = "km",
-       .scale = DecimalScale(15)},
+    {.symbol = "pm", .scale = DecimalScale(0)},
+    {.symbol = "nm", .scale = DecimalScale(3)},
+    {.symbol = "um", .scale = DecimalScale(6), .unicode_symbol = "µm"},
+    {.symbol = "mm", .scale = DecimalScale(9)},
+    {.symbol = "cm", .scale = DecimalScale(10), .automatic_display = false},
+    {.symbol = "m", .scale = DecimalScale(12)},
+    {.symbol = "km", .scale = DecimalScale(15)},
   }};
 };
 
@@ -95,13 +87,15 @@ template <> struct QuantityTraits<LengthTag> {
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::AutomaticScale};
+    QuantityFormatPolicy::AutomaticScale};
   /*!
-   * \brief Fixed display unit, or an empty string when the policy selects units automatically.
+   * \brief Fixed display unit, or an empty string when the policy selects units
+   * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
   /*!
-   * \brief Default number of digits after the decimal point for formatted output.
+   * \brief Default number of digits after the decimal point for formatted
+   * output.
    */
   static constexpr std::int8_t default_precision{7};
 };
@@ -112,7 +106,8 @@ template <> struct QuantityTraits<LengthTag> {
 struct PositionCoordinateTag {};
 
 /*!
- * \brief Defines conversion and formatting traits for PositionCoordinate quantities.
+ * \brief Defines conversion and formatting traits for PositionCoordinate
+ * quantities.
  */
 template <> struct QuantityTraits<PositionCoordinateTag> {
   /*!
@@ -127,13 +122,15 @@ template <> struct QuantityTraits<PositionCoordinateTag> {
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::AutomaticScale};
+    QuantityFormatPolicy::AutomaticScale};
   /*!
-   * \brief Fixed display unit, or an empty string when the policy selects units automatically.
+   * \brief Fixed display unit, or an empty string when the policy selects units
+   * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
   /*!
-   * \brief Default number of digits after the decimal point for formatted output.
+   * \brief Default number of digits after the decimal point for formatted
+   * output.
    */
   static constexpr std::int8_t default_precision{7};
 };
@@ -159,23 +156,27 @@ template <> struct QuantityTraits<DisplacementTag> {
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::AutomaticScale};
+    QuantityFormatPolicy::AutomaticScale};
   /*!
-   * \brief Fixed display unit, or an empty string when the policy selects units automatically.
+   * \brief Fixed display unit, or an empty string when the policy selects units
+   * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
   /*!
-   * \brief Default number of digits after the decimal point for formatted output.
+   * \brief Default number of digits after the decimal point for formatted
+   * output.
    */
   static constexpr std::int8_t default_precision{7};
 };
 
 /*!
- * \brief Strongly typed nonnegative length quantity stored canonically in picometers.
+ * \brief Strongly typed nonnegative length quantity stored canonically in
+ * picometers.
  */
 using Length = Quantity<LengthTag, std::uint64_t>;
 /*!
- * \brief Strongly typed signed position coordinate stored canonically in picometers.
+ * \brief Strongly typed signed position coordinate stored canonically in
+ * picometers.
  */
 using PositionCoordinate = Quantity<PositionCoordinateTag, std::int64_t>;
 /*!
@@ -189,17 +190,19 @@ static_assert(ValidateQuantityTraits<PositionCoordinateTag, std::int64_t>());
 static_assert(ValidateQuantityTraits<DisplacementTag, std::int64_t>());
 
 /*!
- * \brief Formats a signed picometer length using the GGEMS automatic length scale.
+ * \brief Formats a signed picometer length using the GGEMS automatic length
+ * scale.
  *
  * \param[in] value_pm Signed length value in picometers.
  * \param[in] precision Number of digits after the decimal point.
- * \param[in] width Optional formatted numeric field width; negative selects the default width.
+ * \param[in] width Optional formatted numeric field width; negative selects the
+ * default width.
  * \return Human-readable length string.
  */
 [[nodiscard]] inline auto HumanReadableSignedLength(std::int64_t value_pm,
                                                     std::int8_t precision = 7,
                                                     std::int8_t width = -1)
-    -> std::string {
+  -> std::string {
   return HumanReadable(PositionCoordinate{value_pm}, precision, width);
 }
 

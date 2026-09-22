@@ -22,7 +22,7 @@ auto CanonicalizeFractions(std::vector<Entry> &entries,
 
     if (!std::isfinite(fraction) || fraction < 0.0L) {
       throw GGEMSRecoverable{
-          std::format("{} fractions must be finite and nonnegative.", subject)};
+        std::format("{} fractions must be finite and nonnegative.", subject)};
     }
   }
 
@@ -31,7 +31,7 @@ auto CanonicalizeFractions(std::vector<Entry> &entries,
   if (std::ranges::adjacent_find(entries, {}, key_projection) !=
       entries.end()) {
     throw GGEMSRecoverable{
-        std::format("{} fractions contain duplicate keys.", subject)};
+      std::format("{} fractions contain duplicate keys.", subject)};
   }
 
   std::erase_if(entries, [fraction_member](Entry const &entry) -> bool {
@@ -40,7 +40,7 @@ auto CanonicalizeFractions(std::vector<Entry> &entries,
 
   if (entries.empty()) {
     throw GGEMSRecoverable{std::format(
-        "{} fractions must contain at least one positive fraction.", subject)};
+      "{} fractions must contain at least one positive fraction.", subject)};
   }
 
   long double fraction_sum{0.0L};
@@ -50,10 +50,10 @@ auto CanonicalizeFractions(std::vector<Entry> &entries,
 
   if (!std::isfinite(fraction_sum) ||
       std::abs(fraction_sum - 1.0L) > k_provisional_fraction_sum_tolerance) {
-    throw GGEMSRecoverable{std::format(
-        "{} fractions must sum to one within the provisional 1.0e-5 "
-        "admission tolerance.",
-        subject)};
+    throw GGEMSRecoverable{
+      std::format("{} fractions must sum to one within the provisional 1.0e-5 "
+                  "admission tolerance.",
+                  subject)};
   }
 
   for (auto &entry : entries) {
@@ -61,7 +61,7 @@ auto CanonicalizeFractions(std::vector<Entry> &entries,
 
     if (!std::isnormal(entry.*fraction_member)) {
       throw GGEMSRecoverable{std::format(
-          "{} fractions must be normal floating-point values.", subject)};
+        "{} fractions must be normal floating-point values.", subject)};
     }
   }
 }

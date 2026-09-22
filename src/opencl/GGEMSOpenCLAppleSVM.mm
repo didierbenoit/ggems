@@ -121,9 +121,11 @@ struct AllocationState {
   auto operator=(AllocationState &&) -> AllocationState & = delete;
 
   /*!
-   * \brief Marks the allocation unusable and optionally preserves its resources.
+   * \brief Marks the allocation unusable and optionally preserves its
+   * resources.
    *
-   * \param[in] preserve_resources Whether destruction must retain the backing buffer.
+   * \param[in] preserve_resources Whether destruction must retain the backing
+   * buffer.
    */
   auto Poison(bool preserve_resources) noexcept -> void {
     usable.store(false, std::memory_order_release);
@@ -134,13 +136,15 @@ struct AllocationState {
   }
 
   cl_context context{}; /*!< OpenCL context owning the allocation. */
-  cl_mem buffer{};     /*!< Backing OpenCL buffer. */
-  void *base_pointer{}; /*!< Public host pointer exposed as the SVM allocation. */
-  std::size_t size{};   /*!< Allocation size in bytes. */
-  std::mutex mappings_mutex;              /*!< Mutex protecting mapping records. */
-  std::list<Mapping> mappings;              /*!< Active mapped regions. */
-  std::atomic<bool> usable{true};            /*!< Whether the allocation may be used. */
-  std::atomic<bool> release_buffer{true};    /*!< Whether destruction releases the buffer. */
+  cl_mem buffer{};      /*!< Backing OpenCL buffer. */
+  void
+    *base_pointer{};  /*!< Public host pointer exposed as the SVM allocation. */
+  std::size_t size{}; /*!< Allocation size in bytes. */
+  std::mutex mappings_mutex;      /*!< Mutex protecting mapping records. */
+  std::list<Mapping> mappings;    /*!< Active mapped regions. */
+  std::atomic<bool> usable{true}; /*!< Whether the allocation may be used. */
+  std::atomic<bool> release_buffer{
+    true}; /*!< Whether destruction releases the buffer. */
 };
 
 /*!
@@ -148,7 +152,7 @@ struct AllocationState {
  */
 struct AllocationMatch {
   std::shared_ptr<AllocationState> allocation; /*!< Matched allocation state. */
-  std::size_t offset{};                        /*!< Byte offset from the allocation base. */
+  std::size_t offset{}; /*!< Byte offset from the allocation base. */
 };
 
 /*!
@@ -317,7 +321,7 @@ void CL_CALLBACK FreeHostPointer(cl_mem memory, void *user_data) noexcept {
  */
 [[nodiscard]] auto GetPageSize() noexcept -> std::size_t {
   auto const fallback_alignment =
-      std::max(max_requested_alignment, alignof(std::max_align_t));
+    std::max(max_requested_alignment, alignof(std::max_align_t));
   auto const system_page_size = ::sysconf(_SC_PAGESIZE);
 
   if (system_page_size <= 0) {
@@ -340,9 +344,9 @@ void CL_CALLBACK FreeHostPointer(cl_mem memory, void *user_data) noexcept {
  * \return Effective host alignment in bytes.
  */
 [[nodiscard]] auto GetEffectiveAlignment(cl_uint requested_alignment) noexcept
-    -> std::size_t {
-  auto const svm_alignment =
-      requested_alignment == 0 ? max_requested_alignment
+  -> std::size_t {
+  auto const svm_alignment = requested_alignment == 0
+                               ? max_requested_alignment
                                : static_cast<std::size_t>(requested_alignment);
 
   return std::max(GetPageSize(), svm_alignment);
@@ -358,7 +362,7 @@ void CL_CALLBACK FreeHostPointer(cl_mem memory, void *user_data) noexcept {
 [[nodiscard]] auto GetBufferFlags(cl_svm_mem_flags svm_flags,
                                   cl_mem_flags &buffer_flags) noexcept -> bool {
   constexpr cl_svm_mem_flags supported_flags =
-      CL_MEM_READ_WRITE | CL_MEM_WRITE_ONLY | CL_MEM_READ_ONLY;
+    CL_MEM_READ_WRITE | CL_MEM_WRITE_ONLY | CL_MEM_READ_ONLY;
 
   if ((svm_flags & ~supported_flags) != 0) {
     return false;
@@ -425,9 +429,9 @@ GetContextMaxAllocationSize(cl_context context,
       }
 
       auto const representable_limit =
-          device_limit > std::numeric_limits<std::size_t>::max()
-              ? std::numeric_limits<std::size_t>::max()
-              : static_cast<std::size_t>(device_limit);
+        device_limit > std::numeric_limits<std::size_t>::max()
+          ? std::numeric_limits<std::size_t>::max()
+          : static_cast<std::size_t>(device_limit);
 
       smallest_limit = std::min(smallest_limit, representable_limit);
     }
@@ -447,7 +451,7 @@ GetContextMaxAllocationSize(cl_context context,
  */
 auto ReleaseUnregisteredBufferAndHostPointer(cl_mem buffer,
                                              void *host_pointer) noexcept
-    -> void {
+  -> void {
   if (buffer == nullptr) {
     std::free(host_pointer);
     return;
@@ -485,7 +489,7 @@ auto ReleaseUnregisteredBufferAndHostPointer(cl_mem buffer,
   }
 
   auto const wait_list_begin =
-      reinterpret_cast<std::uintptr_t>(event_wait_list);
+    reinterpret_cast<std::uintptr_t>(event_wait_list);
   auto const event_begin = reinterpret_cast<std::uintptr_t>(event);
   auto const max_address = std::numeric_limits<std::uintptr_t>::max();
   auto const event_size = sizeof(cl_event);
@@ -496,8 +500,8 @@ auto ReleaseUnregisteredBufferAndHostPointer(cl_mem buffer,
   }
 
   auto const wait_list_end =
-      wait_list_begin +
-      (static_cast<std::uintptr_t>(num_events_in_wait_list) * event_size);
+    wait_list_begin +
+    (static_cast<std::uintptr_t>(num_events_in_wait_list) * event_size);
   auto const event_end = event_begin + event_size;
 
   if (event_begin < wait_list_end && wait_list_begin < event_end) {
@@ -516,7 +520,7 @@ auto ReleaseUnregisteredBufferAndHostPointer(cl_mem buffer,
  */
 [[nodiscard]] auto FindAllocationContaining(void *pointer,
                                             std::size_t range_size)
-    -> AllocationMatch {
+  -> AllocationMatch {
   auto const address = reinterpret_cast<std::uintptr_t>(pointer);
   AllocationMatch match;
 
@@ -551,7 +555,7 @@ auto ReleaseUnregisteredBufferAndHostPointer(cl_mem buffer,
  * \return Public SVM-compatible error code.
  */
 [[nodiscard]] auto NormalizeKernelArgumentError(cl_int error) noexcept
-    -> cl_int {
+  -> cl_int {
   switch (error) {
   case CL_SUCCESS:
   case CL_INVALID_KERNEL:
@@ -638,14 +642,15 @@ auto ReleaseUnregisteredBufferAndHostPointer(cl_mem buffer,
 
   EventHandle cleanup_event;
   auto const error =
-      clEnqueueUnmapMemObject(command_queue, buffer, mapped_pointer, 1,
-                              &map_event, cleanup_event.Address());
+    clEnqueueUnmapMemObject(command_queue, buffer, mapped_pointer, 1,
+                            &map_event, cleanup_event.Address());
 
   return error == CL_SUCCESS;
 }
 
 /*!
- * \brief Poisons an allocation and attempts cleanup after a map invariant fails.
+ * \brief Poisons an allocation and attempts cleanup after a map invariant
+ * fails.
  *
  * \param[in] allocation Allocation whose mapping was rejected.
  * \param[in] command_queue OpenCL command queue.
@@ -712,7 +717,7 @@ RejectMappedRegion(std::shared_ptr<AllocationState> const &allocation,
 
   cl_int error = CL_SUCCESS;
   auto *const buffer =
-      clCreateBuffer(context, buffer_flags, size, pointer, &error);
+    clCreateBuffer(context, buffer_flags, size, pointer, &error);
 
   if (error != CL_SUCCESS || buffer == nullptr) {
     ReleaseUnregisteredBufferAndHostPointer(buffer, pointer);
@@ -728,7 +733,7 @@ RejectMappedRegion(std::shared_ptr<AllocationState> const &allocation,
 
   MemObjectHandle buffer_owner(buffer);
   auto allocation = std::make_shared<AllocationState>(
-      context, buffer_owner.Get(), pointer, size);
+    context, buffer_owner.Get(), pointer, size);
   (void)buffer_owner.ReleaseOwnership();
 
   bool inserted = false;
@@ -736,9 +741,8 @@ RejectMappedRegion(std::shared_ptr<AllocationState> const &allocation,
   {
     std::scoped_lock lock(allocations_mutex);
     inserted =
-        allocations
-            .emplace(reinterpret_cast<std::uintptr_t>(pointer), allocation)
-            .second;
+      allocations.emplace(reinterpret_cast<std::uintptr_t>(pointer), allocation)
+        .second;
   }
 
   if (!inserted) {
@@ -822,23 +826,23 @@ EnqueueSVMMapImpl(cl_command_queue command_queue, cl_bool blocking_map,
   // after enqueue then uses no host allocation and list::splice cannot throw.
   std::list<Mapping> prepared_mapping;
   prepared_mapping.push_back(Mapping{
-      .public_pointer = svm_pointer,
-      .actual_pointer = nullptr,
+    .public_pointer = svm_pointer,
+    .actual_pointer = nullptr,
   });
 
   EventHandle map_event;
   cl_int error = CL_SUCCESS;
   auto *const mapped_pointer =
-      clEnqueueMapBuffer(command_queue, allocation->buffer, blocking_map,
-                         map_flags, match.offset, size, num_events_in_wait_list,
-                         event_wait_list, map_event.Address(), &error);
+    clEnqueueMapBuffer(command_queue, allocation->buffer, blocking_map,
+                       map_flags, match.offset, size, num_events_in_wait_list,
+                       event_wait_list, map_event.Address(), &error);
 
   if (error != CL_SUCCESS) {
     return NormalizeMapError(error);
   }
 
   auto *const expected_pointer =
-      static_cast<std::byte *>(allocation->base_pointer) + match.offset;
+    static_cast<std::byte *>(allocation->base_pointer) + match.offset;
 
   if (mapped_pointer != expected_pointer || map_event.Get() == nullptr) {
     return RejectMappedRegion(allocation, command_queue, mapped_pointer,
@@ -898,10 +902,10 @@ EnqueueSVMMapImpl(cl_command_queue command_queue, cl_bool blocking_map,
   {
     std::scoped_lock lock(allocation->mappings_mutex);
     auto const mapping_iterator =
-        std::find_if(allocation->mappings.begin(), allocation->mappings.end(),
-                     [svm_pointer](Mapping const &mapping) -> bool {
-                       return mapping.public_pointer == svm_pointer;
-                     });
+      std::find_if(allocation->mappings.begin(), allocation->mappings.end(),
+                   [svm_pointer](Mapping const &mapping) -> bool {
+                     return mapping.public_pointer == svm_pointer;
+                   });
 
     if (mapping_iterator == allocation->mappings.end()) {
       return CL_INVALID_OPERATION;
@@ -913,16 +917,15 @@ EnqueueSVMMapImpl(cl_command_queue command_queue, cl_bool blocking_map,
 
   EventHandle unmap_event;
   auto const error = clEnqueueUnmapMemObject(
-      command_queue, allocation->buffer,
-      detached_mapping.front().actual_pointer, num_events_in_wait_list,
-      event_wait_list, unmap_event.Address());
+    command_queue, allocation->buffer, detached_mapping.front().actual_pointer,
+    num_events_in_wait_list, event_wait_list, unmap_event.Address());
 
   if (error != CL_SUCCESS) {
     try {
       std::scoped_lock lock(allocation->mappings_mutex);
       allocation->mappings.splice(allocation->mappings.end(), detached_mapping);
     } catch (...) {
-     // The underlying mapping is still active but its record cannot be
+      // The underlying mapping is still active but its record cannot be
       // restored. Preserve the OpenCL buffer and host backing indefinitely.
       allocation->Poison(true);
     }
@@ -957,16 +960,16 @@ EnqueueSVMMapImpl(cl_command_queue command_queue, cl_bool blocking_map,
 [[nodiscard]] auto SetKernelArgSVMPointerImpl(cl_kernel kernel,
                                               cl_uint argument_index,
                                               void const *argument_value)
-    -> cl_int {
+  -> cl_int {
   if (argument_value == nullptr) {
     cl_mem null_buffer = nullptr;
     return NormalizeKernelArgumentError(
-        clSetKernelArg(kernel, argument_index, sizeof(cl_mem),
-                       static_cast<void const *>(&null_buffer)));
+      clSetKernelArg(kernel, argument_index, sizeof(cl_mem),
+                     static_cast<void const *>(&null_buffer)));
   }
 
   auto const match =
-      FindAllocationContaining(const_cast<void *>(argument_value), 0);
+    FindAllocationContaining(const_cast<void *>(argument_value), 0);
 
   if (match.allocation == nullptr || match.offset != 0) {
     return CL_INVALID_ARG_VALUE;
@@ -980,8 +983,8 @@ EnqueueSVMMapImpl(cl_command_queue command_queue, cl_bool blocking_map,
 
   auto *const argument_buffer = allocation->buffer;
   return NormalizeKernelArgumentError(
-      clSetKernelArg(kernel, argument_index, sizeof(cl_mem),
-                     static_cast<void const *>(&argument_buffer)));
+    clSetKernelArg(kernel, argument_index, sizeof(cl_mem),
+                   static_cast<void const *>(&argument_buffer)));
 }
 
 } // namespace
@@ -1037,11 +1040,11 @@ CL_API_ENTRY void CL_API_CALL clSVMFree(cl_context context, void *svm_pointer) {
  * \return OpenCL status code.
  */
 CL_API_ENTRY cl_int CL_API_CALL clEnqueueSVMMap(
-    cl_command_queue command_queue, cl_bool blocking_map, cl_map_flags flags,
-    void *svm_ptr, size_t size, cl_uint num_events_in_wait_list,
-    cl_event const *event_wait_list, cl_event *event) {
+  cl_command_queue command_queue, cl_bool blocking_map, cl_map_flags flags,
+  void *svm_ptr, size_t size, cl_uint num_events_in_wait_list,
+  cl_event const *event_wait_list, cl_event *event) {
   auto const event_error =
-      ValidateEventArguments(num_events_in_wait_list, event_wait_list, event);
+    ValidateEventArguments(num_events_in_wait_list, event_wait_list, event);
 
   if (event_error != CL_SUCCESS) {
     return event_error;
@@ -1074,7 +1077,7 @@ clEnqueueSVMUnmap(cl_command_queue command_queue, void *svm_ptr,
                   cl_uint num_events_in_wait_list,
                   cl_event const *event_wait_list, cl_event *event) {
   auto const event_error =
-      ValidateEventArguments(num_events_in_wait_list, event_wait_list, event);
+    ValidateEventArguments(num_events_in_wait_list, event_wait_list, event);
 
   if (event_error != CL_SUCCESS) {
     return event_error;
@@ -1093,7 +1096,8 @@ clEnqueueSVMUnmap(cl_command_queue command_queue, void *svm_ptr,
 }
 
 /*!
- * \brief Implements the Apple compatibility entry point for clSetKernelArgSVMPointer.
+ * \brief Implements the Apple compatibility entry point for
+ * clSetKernelArgSVMPointer.
  *
  * \param[in] kernel OpenCL kernel.
  * \param[in] arg_index Kernel argument index.
@@ -1101,7 +1105,7 @@ clEnqueueSVMUnmap(cl_command_queue command_queue, void *svm_ptr,
  * \return OpenCL status code.
  */
 CL_API_ENTRY cl_int CL_API_CALL clSetKernelArgSVMPointer(
-    cl_kernel kernel, cl_uint arg_index, void const *arg_value) {
+  cl_kernel kernel, cl_uint arg_index, void const *arg_value) {
   try {
     return SetKernelArgSVMPointerImpl(kernel, arg_index, arg_value);
   } catch (...) {

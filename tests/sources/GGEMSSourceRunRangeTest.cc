@@ -28,7 +28,7 @@ TEST(GGEMSSourceRunRange, IsKernelFriendly) {
 
 TEST(GGEMSSourceRunRange, SupportsZeroPrimarySourceRange) {
   ggems::core::sources::GGEMSSourceRunRange range{
-      .projection_primary_begin = 3ULL, .primary_count = 0ULL};
+    .projection_primary_begin = 3ULL, .primary_count = 0ULL};
 
   EXPECT_EQ(range.projection_primary_begin, 3ULL);
   EXPECT_EQ(range.primary_count, 0ULL);
@@ -41,10 +41,10 @@ TEST(GGEMSSourceRunRange, SupportsMaximumValues) {
   constexpr std::uint64_t k_maximum = std::numeric_limits<std::uint64_t>::max();
 
   ggems::core::sources::GGEMSSourceRunRange const maximum_begin{
-      .projection_primary_begin = k_maximum, .primary_count = 0ULL};
+    .projection_primary_begin = k_maximum, .primary_count = 0ULL};
 
   ggems::core::sources::GGEMSSourceRunRange const maximum_count{
-      .projection_primary_begin = 0ULL, .primary_count = k_maximum};
+    .projection_primary_begin = 0ULL, .primary_count = k_maximum};
 
   EXPECT_EQ(maximum_begin.projection_primary_begin, k_maximum);
   EXPECT_EQ(maximum_begin.primary_count, 0ULL);

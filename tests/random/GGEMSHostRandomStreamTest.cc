@@ -209,9 +209,9 @@ TEST(GGEMSHostRandomStreamTest, JKISSRejectsOutOfRangeStreamId) {
   random.SetEngine(GGEMSRandomEngine::JKISS);
 
   EXPECT_THROW((GGEMSHostRandomStream{
-                   random, static_cast<std::uint64_t>(
-                               std::numeric_limits<std::uint32_t>::max()) +
-                               1ULL}),
+                 random, static_cast<std::uint64_t>(
+                           std::numeric_limits<std::uint32_t>::max()) +
+                           1ULL}),
                ggems::core::GGEMSExceptionBase);
 }
 
@@ -267,9 +267,9 @@ TEST(GGEMSHostRandomStreamTest,
     GGEMSHostRandomStream reference{random, 42ULL};
 
     auto const high_bits =
-        static_cast<std::uint64_t>(reference.NextUInt32() >> 5U);
+      static_cast<std::uint64_t>(reference.NextUInt32() >> 5U);
     auto const low_bits =
-        static_cast<std::uint64_t>(reference.NextUInt32() >> 6U);
+      static_cast<std::uint64_t>(reference.NextUInt32() >> 6U);
     std::uint64_t const bits = (high_bits << 26U) + low_bits;
     double expected = (static_cast<double>(bits) + 0.5) * 0x1.0p-53;
     if (expected >= 1.0) {
@@ -287,7 +287,7 @@ TEST(GGEMSHostRandomStreamTest,
 TEST(GGEMSHostRandomStreamTest,
      ScalarHostProgressionMatchesScalarOpenCLProgression) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   if (compiler_devices.empty()) {
     GTEST_SKIP() << "No available GGEMS-discovered device has a compiler.";
@@ -315,18 +315,18 @@ TEST(GGEMSHostRandomStreamTest,
       random.SetEngine(engine);
 
       std::string const build_options =
-          std::format("-I{} {}", kernel_root.generic_string(),
-                      random.GetKernelBuildDefinition());
+        std::format("-I{} {}", kernel_root.generic_string(),
+                    random.GetKernelBuildDefinition());
       auto const &program = opencl.GetOrCreateProgram(
-          context, kernel_test_root, "random_host_stream_probe", build_options);
+        context, kernel_test_root, "random_host_stream_probe", build_options);
       cl::Kernel raw_kernel = program.CreateKernel("random_host_stream_probe");
       ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
                                            "random_host_stream_probe"};
 
       std::array<std::uint64_t, 2> const seeds{0ULL, 77'777ULL};
       std::array<std::uint64_t, 2> const stream_ids{
-          0ULL,
-          engine == GGEMSRandomEngine::JKISS ? 42ULL : (1ULL << 40U) + 42ULL};
+        0ULL,
+        engine == GGEMSRandomEngine::JKISS ? 42ULL : (1ULL << 40U) + 42ULL};
 
       for (std::uint64_t seed : seeds) {
         for (std::uint64_t stream_id : stream_ids) {
@@ -335,26 +335,25 @@ TEST(GGEMSHostRandomStreamTest,
                                    stream_id));
 
           random.SetSeed(seed);
-          auto raw_state_buffer = context.CreateSVMBuffer(
-              ggems::units::Bytes{random.GetStateSize()});
-          auto uniform_state_buffer = context.CreateSVMBuffer(
-              ggems::units::Bytes{random.GetStateSize()});
-          auto raw_values_buffer = context.CreateSVMBuffer(ggems::units::Bytes{
-              k_probe_sample_count * sizeof(std::uint32_t)});
+          auto raw_state_buffer =
+            context.CreateSVMBuffer(ggems::units::Bytes{random.GetStateSize()});
+          auto uniform_state_buffer =
+            context.CreateSVMBuffer(ggems::units::Bytes{random.GetStateSize()});
+          auto raw_values_buffer = context.CreateSVMBuffer(
+            ggems::units::Bytes{k_probe_sample_count * sizeof(std::uint32_t)});
           auto uniform_values_buffer = context.CreateSVMBuffer(
-              ggems::units::Bytes{k_probe_sample_count * sizeof(float)});
+            ggems::units::Bytes{k_probe_sample_count * sizeof(float)});
 
           raw_state_buffer.Map(CL_MAP_WRITE);
           uniform_state_buffer.Map(CL_MAP_WRITE);
           random.InitializeStates(
-              stream_id, std::span<std::byte>{static_cast<std::byte *>(
-                                                  raw_state_buffer.GetData()),
-                                              random.GetStateSize()});
+            stream_id, std::span<std::byte>{
+                         static_cast<std::byte *>(raw_state_buffer.GetData()),
+                         random.GetStateSize()});
           random.InitializeStates(
-              stream_id,
-              std::span<std::byte>{
-                  static_cast<std::byte *>(uniform_state_buffer.GetData()),
-                  random.GetStateSize()});
+            stream_id, std::span<std::byte>{static_cast<std::byte *>(
+                                              uniform_state_buffer.GetData()),
+                                            random.GetStateSize()});
           uniform_state_buffer.Unmap();
           raw_state_buffer.Unmap();
 
@@ -368,17 +367,17 @@ TEST(GGEMSHostRandomStreamTest,
           GGEMSHostRandomStream host_raw{random, stream_id};
           GGEMSHostRandomStream host_uniform{random, stream_id};
           auto const *raw_values =
-              static_cast<std::uint32_t const *>(raw_values_buffer.GetData());
+            static_cast<std::uint32_t const *>(raw_values_buffer.GetData());
           auto const *uniform_values =
-              static_cast<float const *>(uniform_values_buffer.GetData());
+            static_cast<float const *>(uniform_values_buffer.GetData());
 
           raw_values_buffer.Map(CL_MAP_READ);
           uniform_values_buffer.Map(CL_MAP_READ);
           for (std::size_t index = 0U; index < k_probe_sample_count; ++index) {
             EXPECT_EQ(host_raw.NextUInt32(), raw_values[index]);
             EXPECT_EQ(
-                std::bit_cast<std::uint32_t>(host_uniform.UniformFloat01()),
-                std::bit_cast<std::uint32_t>(uniform_values[index]));
+              std::bit_cast<std::uint32_t>(host_uniform.UniformFloat01()),
+              std::bit_cast<std::uint32_t>(uniform_values[index]));
           }
           uniform_values_buffer.Unmap();
           raw_values_buffer.Unmap();

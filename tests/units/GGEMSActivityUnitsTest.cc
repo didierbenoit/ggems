@@ -71,11 +71,11 @@ TEST(GGEMSActivityUnitsTest, ConvertsBecquerelSIPrefixesExactly) {
   };
 
   constexpr std::array<Case, 5> cases{
-      {{.unit = "Bq", .expected_becquerel = 1.25L},
-       {.unit = "kBq", .expected_becquerel = 1.25e3L},
-       {.unit = "MBq", .expected_becquerel = 1.25e6L},
-       {.unit = "GBq", .expected_becquerel = 1.25e9L},
-       {.unit = "TBq", .expected_becquerel = 1.25e12L}}};
+    {{.unit = "Bq", .expected_becquerel = 1.25L},
+     {.unit = "kBq", .expected_becquerel = 1.25e3L},
+     {.unit = "MBq", .expected_becquerel = 1.25e6L},
+     {.unit = "GBq", .expected_becquerel = 1.25e9L},
+     {.unit = "TBq", .expected_becquerel = 1.25e12L}}};
 
   for (Case const &test_case : cases) {
     SCOPED_TRACE(test_case.unit);
@@ -150,7 +150,7 @@ TEST(GGEMSActivityUnitsTest, RejectsUnsupportedUnit) {
 
 TEST(GGEMSActivityUnitsTest, RejectsConversionOverflow) {
   auto const converted =
-      MakeQuantity<Activity>(std::numeric_limits<long double>::max(), "TBq");
+    MakeQuantity<Activity>(std::numeric_limits<long double>::max(), "TBq");
 
   ASSERT_FALSE(converted.has_value());
   EXPECT_EQ(converted.error(), UnitConversionError::OutOfRange);

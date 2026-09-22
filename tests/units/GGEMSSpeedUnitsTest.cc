@@ -23,7 +23,9 @@
  * \file
  * \brief Unit tests for GGEMS speed quantities and helpers.
  *
- * Validates registered speed units, negative-value rejection, fixed meters-per-second formatting, equivalent literals, and speed construction from length and time.
+ * Validates registered speed units, negative-value rejection, fixed
+ * meters-per-second formatting, equivalent literals, and speed construction
+ * from length and time.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -62,8 +64,8 @@ TEST(GGEMSSpeedUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   };
 
   constexpr std::array<Case, 2U> cases{{
-      {.unit = "pm/ps", .expected_picometers_per_picosecond = 1.0L},
-      {.unit = "m/s", .expected_picometers_per_picosecond = 1.0L},
+    {.unit = "pm/ps", .expected_picometers_per_picosecond = 1.0L},
+    {.unit = "m/s", .expected_picometers_per_picosecond = 1.0L},
   }};
 
   for (auto const &test_case : cases) {

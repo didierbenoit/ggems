@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for GGEMS cross-section quantities and conversions.
  *
- * Validates supported barn-family units, exact barn-to-picobarn scaling, negative-value rejection, ASCII/Unicode formatting, and convenience literals.
+ * Validates supported barn-family units, exact barn-to-picobarn scaling,
+ * negative-value rejection, ASCII/Unicode formatting, and convenience literals.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -60,12 +61,12 @@ struct CrossSectionConversionCase {
 
 TEST(GGEMSCrossSectionUnits, ConvertsEveryOfficialRuntimeToken) {
   constexpr std::array<CrossSectionConversionCase, 6U> cases{{
-      {.unit = "pb", .expected = 1ULL},
-      {.unit = "nb", .expected = 1'000ULL},
-      {.unit = "ub", .expected = 1'000'000ULL},
-      {.unit = "mb", .expected = 1'000'000'000ULL},
-      {.unit = "barn", .expected = 1'000'000'000'000ULL},
-      {.unit = "kbarn", .expected = 1'000'000'000'000'000ULL},
+    {.unit = "pb", .expected = 1ULL},
+    {.unit = "nb", .expected = 1'000ULL},
+    {.unit = "ub", .expected = 1'000'000ULL},
+    {.unit = "mb", .expected = 1'000'000'000ULL},
+    {.unit = "barn", .expected = 1'000'000'000'000ULL},
+    {.unit = "kbarn", .expected = 1'000'000'000'000'000ULL},
   }};
 
   for (auto const &test_case : cases) {

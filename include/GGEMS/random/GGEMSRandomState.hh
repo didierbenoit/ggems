@@ -23,7 +23,8 @@
  * \file
  * \brief Declares host-side random-engine state layouts.
  *
- * Defines ABI-stable host representations of the JKISS, PCG32, and Philox states mirrored by the OpenCL kernels.
+ * Defines ABI-stable host representations of the JKISS, PCG32, and Philox
+ * states mirrored by the OpenCL kernels.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -103,11 +104,13 @@ static_assert(offsetof(GGEMSPCG32State, increment) == 8U);
 /*!
  * \brief Stores the host/OpenCL ABI state of one Philox stream.
  *
- * The counter identifies the current block and stream while the key is derived from the configured GGEMS seed.
+ * The counter identifies the current block and stream while the key is derived
+ * from the configured GGEMS seed.
  */
 struct GGEMSPhiloxState {
   /*!
-   * \brief Least-significant Philox counter word advanced for each generated block.
+   * \brief Least-significant Philox counter word advanced for each generated
+   * block.
    */
   std::uint32_t counter_0{0U};
   /*!

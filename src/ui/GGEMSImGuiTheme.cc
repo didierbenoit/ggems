@@ -11,7 +11,7 @@ namespace ggems::ui {
 
 auto ToImGuiColor(render::ColorKey const &color) noexcept -> ImVec4 {
   render::RGB rgb =
-      render::GetColorRGB(color.family, color.shade, color.variant);
+    render::GetColorRGB(color.family, color.shade, color.variant);
 
   constexpr float k_inverse_255{1.0F / 255.0F};
 
@@ -146,7 +146,7 @@ void ApplyGGEMSImGuiTheme() {
   colors[ImGuiCol_PlotLinesHovered] = ToImGuiColor(render::CYAN_Cryo_B);
   colors[ImGuiCol_PlotHistogram] = amber;
   colors[ImGuiCol_PlotHistogramHovered] =
-      ToImGuiColor(render::YELLOW_MotherAmber_B);
+    ToImGuiColor(render::YELLOW_MotherAmber_B);
 
   // Tables
   colors[ImGuiCol_TableHeaderBg] = ToImGuiColor(render::BLUE_Abyss);
@@ -154,7 +154,7 @@ void ApplyGGEMSImGuiTheme() {
   colors[ImGuiCol_TableBorderLight] = gunmetal_faint;
   colors[ImGuiCol_TableRowBg] = transparent;
   colors[ImGuiCol_TableRowBgAlt] =
-      WithAlpha(ToImGuiColor(render::BLUE_Abyss), 0.45F);
+    WithAlpha(ToImGuiColor(render::BLUE_Abyss), 0.45F);
 
   // Trees
   colors[ImGuiCol_TreeLines] = gunmetal_soft;
@@ -170,9 +170,9 @@ void ApplyGGEMSImGuiTheme() {
   colors[ImGuiCol_NavCursor] = WithAlpha(cryo, 0.85F);
   colors[ImGuiCol_NavWindowingHighlight] = WithAlpha(cryo, 0.55F);
   colors[ImGuiCol_NavWindowingDimBg] =
-      WithAlpha(ToImGuiColor(render::GRAY_Void), 0.65F);
+    WithAlpha(ToImGuiColor(render::GRAY_Void), 0.65F);
   colors[ImGuiCol_ModalWindowDimBg] =
-      WithAlpha(ToImGuiColor(render::GRAY_Void), 0.80F);
+    WithAlpha(ToImGuiColor(render::GRAY_Void), 0.80F);
 }
 
 } // namespace ggems::ui

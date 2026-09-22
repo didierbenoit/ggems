@@ -28,11 +28,11 @@ constexpr std::uint32_t k_non_finite_exponent{0xFFU};
 constexpr std::uint64_t k_int64_min_magnitude{0x8000'0000'0000'0000ULL};
 constexpr std::uint64_t k_max_binary32_significand{0x00FF'FFFFULL};
 constexpr float k_normalized_direction_component_bound{
-    std::bit_cast<float>(0x3F80'0001U)};
+  std::bit_cast<float>(0x3F80'0001U)};
 
 static_assert(k_max_binary32_significand <=
               std::numeric_limits<std::uint64_t>::max() /
-                  ggems::core::transport::k_diagnostic_projection_distance_pm);
+                ggems::core::transport::k_diagnostic_projection_distance_pm);
 
 // =============================================================================
 // =============================================================================
@@ -41,7 +41,7 @@ static_assert(k_max_binary32_significand <=
                                      std::int32_t exponent2,
                                      std::uint64_t magnitude_limit,
                                      std::uint64_t &magnitude) noexcept
-    -> bool {
+  -> bool {
   std::uint64_t rounded_magnitude{0ULL};
 
   if (exponent2 >= 0) {
@@ -84,7 +84,7 @@ namespace ggems::core::transport {
 // =============================================================================
 
 auto TryScaleDiagnosticProjectionComponent(
-    float component, std::int64_t &displacement_pm) noexcept -> bool {
+  float component, std::int64_t &displacement_pm) noexcept -> bool {
   auto const bits = std::bit_cast<std::uint32_t>(component);
   bool const negative = (bits & k_sign_mask) != 0U;
   std::uint32_t const exponent = (bits & k_exponent_mask) >> 23U;
@@ -111,12 +111,12 @@ auto TryScaleDiagnosticProjectionComponent(
   }
 
   std::uint64_t const product =
-      significand * k_diagnostic_projection_distance_pm;
+    significand * k_diagnostic_projection_distance_pm;
 
   std::uint64_t const magnitude_limit =
-      negative ? k_int64_min_magnitude
-               : static_cast<std::uint64_t>(
-                     std::numeric_limits<std::int64_t>::max());
+    negative
+      ? k_int64_min_magnitude
+      : static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max());
 
   std::uint64_t magnitude{0ULL};
 
@@ -144,16 +144,16 @@ auto TryScaleDiagnosticProjectionComponent(
 auto TryAddDiagnosticProjectionDisplacement(std::int64_t position_pm,
                                             std::int64_t displacement_pm,
                                             std::int64_t &endpoint_pm) noexcept
-    -> bool {
+  -> bool {
   if (displacement_pm > 0LL &&
       position_pm >
-          std::numeric_limits<std::int64_t>::max() - displacement_pm) {
+        std::numeric_limits<std::int64_t>::max() - displacement_pm) {
     return false;
   }
 
   if (displacement_pm < 0LL &&
       position_pm <
-          std::numeric_limits<std::int64_t>::min() - displacement_pm) {
+        std::numeric_limits<std::int64_t>::min() - displacement_pm) {
     return false;
   }
 
@@ -165,11 +165,11 @@ auto TryAddDiagnosticProjectionDisplacement(std::int64_t position_pm,
 // =============================================================================
 
 auto ValidateDiagnosticTransportSources(
-    std::span<sources::GGEMSSourceRecord const> source_records,
-    std::span<sources::GGEMSSourceRunRange const> source_ranges) -> void {
+  std::span<sources::GGEMSSourceRecord const> source_records,
+  std::span<sources::GGEMSSourceRunRange const> source_ranges) -> void {
   if (!(source_records.size() == source_ranges.size())) {
     throw ggems::core::GGEMSRecoverable(
-        "Diagnostic transport source record and range counts must match.");
+      "Diagnostic transport source record and range counts must match.");
   }
 
   constexpr std::array<std::string_view, 3U> k_axis_names{"X", "Y", "Z"};
@@ -185,26 +185,26 @@ auto ValidateDiagnosticTransportSources(
     sources::ValidateAnalyticSourceRecord(source);
 
     sources::GGEMSEmissionBounds const emission_bounds =
-        sources::BuildEmissionBounds(source);
+      sources::BuildEmissionBounds(source);
 
     sources::GGEMSAngularDistributionType const distribution_type =
-        sources::FromKernelAngularDistributionType(
-            source.angular_distribution_type);
+      sources::FromKernelAngularDistributionType(
+        source.angular_distribution_type);
 
     std::array<float, 3U> const direction{source.axis_z_x, source.axis_z_y,
                                           source.axis_z_z};
 
     std::array<std::int64_t, 3U> const position{
-        source.position_x_pm, source.position_y_pm, source.position_z_pm};
+      source.position_x_pm, source.position_y_pm, source.position_z_pm};
 
     if (distribution_type == sources::GGEMSAngularDistributionType::Fixed) {
       for (std::size_t axis = 0U; axis < direction.size(); ++axis) {
         std::int64_t displacement_pm{0LL};
 
         if (!(TryScaleDiagnosticProjectionComponent(direction[axis],
-                                                  displacement_pm))) {
+                                                    displacement_pm))) {
           throw ggems::core::GGEMSRecoverable(
-              std::format("Diagnostic projection cannot scale source slot {} "
+            std::format("Diagnostic projection cannot scale source slot {} "
                         "axis_z.{} into int64 picometers.",
                         source_index, k_axis_names[axis]));
         }
@@ -212,19 +212,19 @@ auto ValidateDiagnosticTransportSources(
         std::int64_t endpoint_center_pm{0ULL};
 
         if (!(TryAddDiagnosticProjectionDisplacement(
-                position[axis], displacement_pm, endpoint_center_pm))) {
+              position[axis], displacement_pm, endpoint_center_pm))) {
           throw ggems::core::GGEMSRecoverable(std::format(
-                "Diagnostic projection endpoint overflows int64 at source "
-                "slot {} axis {}.",
-                source_index, k_axis_names[axis]));
+            "Diagnostic projection endpoint overflows int64 at source "
+            "slot {} axis {}.",
+            source_index, k_axis_names[axis]));
         }
 
         if (!(sources::HasSignedPicoMeterEnvelope(
-                endpoint_center_pm, emission_bounds.component_radius_pm))) {
+              endpoint_center_pm, emission_bounds.component_radius_pm))) {
           throw ggems::core::GGEMSRecoverable(std::format(
-                "Diagnostic projection envelope overflows int64 at source "
-                "slot {} axis {}.",
-                source_index, k_axis_names[axis]));
+            "Diagnostic projection envelope overflows int64 at source "
+            "slot {} axis {}.",
+            source_index, k_axis_names[axis]));
         }
       }
 
@@ -234,29 +234,31 @@ auto ValidateDiagnosticTransportSources(
     std::int64_t direction_displacement_bound_pm{0LL};
 
     if (!(TryScaleDiagnosticProjectionComponent(
-            k_normalized_direction_component_bound,
-            direction_displacement_bound_pm))) {
-      throw ggems::core::GGEMSInternal("Cannot construct diagnostic normalized-direction bound.");
+          k_normalized_direction_component_bound,
+          direction_displacement_bound_pm))) {
+      throw ggems::core::GGEMSInternal(
+        "Cannot construct diagnostic normalized-direction bound.");
     }
 
     auto const displacement_bound_pm =
-        static_cast<std::uint64_t>(direction_displacement_bound_pm);
+      static_cast<std::uint64_t>(direction_displacement_bound_pm);
 
     if (!(emission_bounds.component_radius_pm <=
-            std::numeric_limits<std::uint64_t>::max() - displacement_bound_pm)) {
+          std::numeric_limits<std::uint64_t>::max() - displacement_bound_pm)) {
       throw ggems::core::GGEMSRecoverable(
-          "Diagnostic source and direction envelopes overflow uint64.");
+        "Diagnostic source and direction envelopes overflow uint64.");
     }
 
     std::uint64_t const total_radius_pm =
-        emission_bounds.component_radius_pm + displacement_bound_pm;
+      emission_bounds.component_radius_pm + displacement_bound_pm;
 
     for (std::size_t axis = 0U; axis < position.size(); ++axis) {
-      if (!(sources::HasSignedPicoMeterEnvelope(position[axis], total_radius_pm))) {
+      if (!(sources::HasSignedPicoMeterEnvelope(position[axis],
+                                                total_radius_pm))) {
         throw ggems::core::GGEMSRecoverable(std::format(
-              "Diagnostic projection envelope overflows int64 at source "
-              "slot {} axis {}.",
-              source_index, k_axis_names[axis]));
+          "Diagnostic projection envelope overflows int64 at source "
+          "slot {} axis {}.",
+          source_index, k_axis_names[axis]));
       }
     }
   }

@@ -7,13 +7,13 @@
 namespace ggems::core::radioactivity {
 
 inline constexpr float k_radioactive_time_uniform_limit_scaled_decay{
-    0x1.0p-14F};
+  0x1.0p-14F};
 
 inline constexpr float k_radioactive_time_series_limit_scaled_decay{0.01F};
 
 [[nodiscard]] inline auto
 ComputeRadioactiveTimeRelative(float uniform, float scaled_decay) noexcept
-    -> float {
+  -> float {
   if (scaled_decay <= k_radioactive_time_uniform_limit_scaled_decay) {
     return uniform;
   }
@@ -23,7 +23,7 @@ ComputeRadioactiveTimeRelative(float uniform, float scaled_decay) noexcept
 
     return uniform + (0.5F * scaled_decay * uu) +
            (1.0F / 6.0F) * scaled_decay * (scaled_decay * uu) *
-               ((2.0F * uniform) - 1.0F);
+             ((2.0F * uniform) - 1.0F);
   }
 
   float const decay_mass = -std::expm1(-scaled_decay);
@@ -53,7 +53,7 @@ ScaleRadioactiveTimeTicket(std::uint64_t window_width_ps,
                            std::uint32_t ticket) noexcept -> std::uint64_t {
   std::uint64_t const width_upper = window_width_ps >> 32U;
   std::uint64_t const width_lower =
-      window_width_ps & std::uint64_t{0xFFFF'FFFFULL};
+    window_width_ps & std::uint64_t{0xFFFF'FFFFULL};
   std::uint64_t const ticket_u64 = ticket;
 
   return (width_upper * ticket_u64) + ((width_lower * ticket_u64) >> 32U);

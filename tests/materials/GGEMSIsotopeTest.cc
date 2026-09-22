@@ -38,15 +38,15 @@ TEST(GGEMSIsotopeTest, IdentityIsTheCompleteKey) {
 
 TEST(GGEMSIsotopeTest, OrdersLexicographicallyByAtomicMassAndIsomerKeys) {
   std::vector<materials::GGEMSIsotope> isotopes{
-      {73U, 181U, 0U}, {5U, 11U, 0U},   {73U, 180U, 1U}, {1U, 2U, 0U},
-      {8U, 16U, 0U},   {73U, 180U, 0U}, {5U, 10U, 0U},   {1U, 1U, 0U},
+    {73U, 181U, 0U}, {5U, 11U, 0U},   {73U, 180U, 1U}, {1U, 2U, 0U},
+    {8U, 16U, 0U},   {73U, 180U, 0U}, {5U, 10U, 0U},   {1U, 1U, 0U},
   };
 
   std::ranges::sort(isotopes);
 
   std::vector<materials::GGEMSIsotope> const expected{
-      {1U, 1U, 0U},  {1U, 2U, 0U},    {5U, 10U, 0U},   {5U, 11U, 0U},
-      {8U, 16U, 0U}, {73U, 180U, 0U}, {73U, 180U, 1U}, {73U, 181U, 0U},
+    {1U, 1U, 0U},  {1U, 2U, 0U},    {5U, 10U, 0U},   {5U, 11U, 0U},
+    {8U, 16U, 0U}, {73U, 180U, 0U}, {73U, 180U, 1U}, {73U, 181U, 0U},
   };
 
   EXPECT_EQ(isotopes, expected);
@@ -63,8 +63,8 @@ TEST(GGEMSIsotopeTest, OrdersLexicographicallyByAtomicMassAndIsomerKeys) {
 
 TEST(GGEMSIsotopeTest, RejectsInvalidStructure) {
   auto const make_isotope =
-      [](std::uint32_t atomic_number, std::uint32_t mass_number,
-         std::uint32_t isomer_state) -> materials::GGEMSIsotope {
+    [](std::uint32_t atomic_number, std::uint32_t mass_number,
+       std::uint32_t isomer_state) -> materials::GGEMSIsotope {
     return materials::GGEMSIsotope{atomic_number, mass_number, isomer_state};
   };
 

@@ -21,7 +21,8 @@
 
 /*!
  * \file
- * \brief Declares strongly typed speed units, literals, and length-over-time construction.
+ * \brief Declares strongly typed speed units, literals, and length-over-time
+ * construction.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -55,11 +56,8 @@ template <> struct UnitRegistry<SpeedUnitSet> {
    * \brief Registered unit definitions for this quantity family.
    */
   static constexpr std::array<UnitDefinition, 2U> units{{
-      {.symbol = "pm/ps",
-       .scale = DecimalScale(0),
-       .automatic_display = false},
-      {.symbol = "m/s",
-       .scale = DecimalScale(0)},
+    {.symbol = "pm/ps", .scale = DecimalScale(0), .automatic_display = false},
+    {.symbol = "m/s", .scale = DecimalScale(0)},
   }};
 };
 
@@ -84,19 +82,22 @@ template <> struct QuantityTraits<SpeedTag> {
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::FixedUnit};
+    QuantityFormatPolicy::FixedUnit};
   /*!
-   * \brief Fixed display unit, or an empty string when the policy selects units automatically.
+   * \brief Fixed display unit, or an empty string when the policy selects units
+   * automatically.
    */
   static constexpr std::string_view fixed_display_unit{"m/s"};
   /*!
-   * \brief Default number of digits after the decimal point for formatted output.
+   * \brief Default number of digits after the decimal point for formatted
+   * output.
    */
   static constexpr std::int8_t default_precision{7};
 };
 
 /*!
- * \brief Strongly typed speed quantity stored canonically in picometers per picosecond.
+ * \brief Strongly typed speed quantity stored canonically in picometers per
+ * picosecond.
  */
 using Speed = Quantity<SpeedTag, long double>;
 

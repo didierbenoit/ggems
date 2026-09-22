@@ -46,28 +46,29 @@ namespace ggems::units {
 struct ActivityUnitSet {};
 
 /*!
- * \brief Defines the supported activity units and their canonical scale factors.
+ * \brief Defines the supported activity units and their canonical scale
+ * factors.
  */
 template <> struct UnitRegistry<ActivityUnitSet> {
   /*!
    * \brief Registered unit definitions for this quantity family.
    */
   static constexpr std::array<UnitDefinition, 8U> units{{
-      {.symbol = "Bq", .scale = DecimalScale(0)},
-      {.symbol = "kBq", .scale = DecimalScale(3)},
-      {.symbol = "MBq", .scale = DecimalScale(6)},
-      {.symbol = "GBq", .scale = DecimalScale(9)},
-      {.symbol = "TBq", .scale = DecimalScale(12)},
-      {.symbol = "Ci",
-       .scale = DecimalScale(0, 37'000'000'000ULL),
-       .automatic_display = false},
-      {.symbol = "mCi",
-       .scale = DecimalScale(0, 37'000'000ULL),
-       .automatic_display = false},
-      {.symbol = "uCi",
-       .scale = DecimalScale(0, 37'000ULL),
-       .unicode_symbol = "µCi",
-       .automatic_display = false},
+    {.symbol = "Bq", .scale = DecimalScale(0)},
+    {.symbol = "kBq", .scale = DecimalScale(3)},
+    {.symbol = "MBq", .scale = DecimalScale(6)},
+    {.symbol = "GBq", .scale = DecimalScale(9)},
+    {.symbol = "TBq", .scale = DecimalScale(12)},
+    {.symbol = "Ci",
+     .scale = DecimalScale(0, 37'000'000'000ULL),
+     .automatic_display = false},
+    {.symbol = "mCi",
+     .scale = DecimalScale(0, 37'000'000ULL),
+     .automatic_display = false},
+    {.symbol = "uCi",
+     .scale = DecimalScale(0, 37'000ULL),
+     .unicode_symbol = "µCi",
+     .automatic_display = false},
   }};
 };
 
@@ -92,13 +93,15 @@ template <> struct QuantityTraits<ActivityTag> {
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::AutomaticScale};
+    QuantityFormatPolicy::AutomaticScale};
   /*!
-   * \brief Fixed display unit, or an empty string when the policy selects units automatically.
+   * \brief Fixed display unit, or an empty string when the policy selects units
+   * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
   /*!
-   * \brief Default number of digits after the decimal point for formatted output.
+   * \brief Default number of digits after the decimal point for formatted
+   * output.
    */
   static constexpr std::int8_t default_precision{7};
 };

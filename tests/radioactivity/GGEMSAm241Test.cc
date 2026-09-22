@@ -113,7 +113,7 @@ TEST(GGEMSAm241Test, PreservesLaraAlphaGammaAndXRayCatalogs) {
   CheckReachableDiscreteChannel(alpha, GGEMSParticleType::Alpha, 23U);
 
   auto const alpha_energies =
-      alpha.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
+    alpha.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const alpha_yields = alpha.GetEnergyDistribution().GetRelativeWeights();
 
   EXPECT_EQ(alpha_energies[16U], 5'388'250'000'000ULL);
@@ -129,7 +129,7 @@ TEST(GGEMSAm241Test, PreservesLaraAlphaGammaAndXRayCatalogs) {
   CheckReachableDiscreteChannel(gamma, GGEMSParticleType::Gamma, 179U);
 
   auto const gamma_energies =
-      gamma.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
+    gamma.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const gamma_yields = gamma.GetEnergyDistribution().GetRelativeWeights();
 
   EXPECT_EQ(gamma_energies.front(), 26'344'600'000ULL);
@@ -145,31 +145,31 @@ TEST(GGEMSAm241Test, PreservesLaraAlphaGammaAndXRayCatalogs) {
   CheckReachableDiscreteChannel(x_rays, GGEMSParticleType::Gamma, 9U);
 
   constexpr std::array<std::uint64_t, 9U> expected_x_ray_energies{{
-      11'890'000'000ULL,
-      13'852'000'000ULL,
-      15'876'000'000ULL,
-      16'960'000'000ULL,
-      21'160'000'000ULL,
-      97'069'000'000ULL,
-      101'059'000'000ULL,
-      114'149'700'000ULL,
-      117'922'700'000ULL,
+    11'890'000'000ULL,
+    13'852'000'000ULL,
+    15'876'000'000ULL,
+    16'960'000'000ULL,
+    21'160'000'000ULL,
+    97'069'000'000ULL,
+    101'059'000'000ULL,
+    114'149'700'000ULL,
+    117'922'700'000ULL,
   }};
 
   constexpr std::array<double, 9U> expected_x_ray_yields{{
-      0.00844,
-      0.1302,
-      0.00384,
-      0.1858,
-      0.0483,
-      0.00001134,
-      0.0000181,
-      0.00000658,
-      0.00000226,
+    0.00844,
+    0.1302,
+    0.00384,
+    0.1858,
+    0.0483,
+    0.00001134,
+    0.0000181,
+    0.00000658,
+    0.00000226,
   }};
 
   auto const x_ray_energies =
-      x_rays.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
+    x_rays.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const x_ray_yields = x_rays.GetEnergyDistribution().GetRelativeWeights();
 
   for (std::size_t index = 0U; index < expected_x_ray_energies.size();
@@ -189,7 +189,7 @@ TEST(GGEMSAm241Test, PreservesMirdAugerCatalog) {
   CheckReachableDiscreteChannel(auger, GGEMSParticleType::Electron, 15U);
 
   auto const energies =
-      auger.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
+    auger.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const yields = auger.GetEnergyDistribution().GetRelativeWeights();
 
   EXPECT_EQ(energies.front(), 78'986'000ULL);
@@ -221,9 +221,9 @@ TEST(GGEMSAm241Test, PreservesAllLnhbConversionElectronLines) {
               0.910731387024082, 1.0e-12);
 
   auto const main_energies =
-      main_lines.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
+    main_lines.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const main_yields =
-      main_lines.GetEnergyDistribution().GetRelativeWeights();
+    main_lines.GetEnergyDistribution().GetRelativeWeights();
 
   EXPECT_EQ(main_energies.front(), 3'917'600'000ULL);
   EXPECT_EQ(main_energies[5U], 10'769'300'000ULL);
@@ -235,9 +235,9 @@ TEST(GGEMSAm241Test, PreservesAllLnhbConversionElectronLines) {
   EXPECT_DOUBLE_EQ(main_yields.back(), 1.582e-9);
 
   auto const weak_energies =
-      weak_lines.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
+    weak_lines.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const weak_yields =
-      weak_lines.GetEnergyDistribution().GetRelativeWeights();
+    weak_lines.GetEnergyDistribution().GetRelativeWeights();
 
   EXPECT_EQ(weak_energies.front(), 78'090'000'000ULL);
   EXPECT_EQ(weak_energies[1U], 129'851'000'000ULL);

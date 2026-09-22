@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for GGEMS absorbed-dose quantities and conversions.
  *
- * Validates registered dose units, canonical-to-gray conversion, negative-value rejection, ASCII/Unicode microgray formatting, and gray literal quantization.
+ * Validates registered dose units, canonical-to-gray conversion, negative-value
+ * rejection, ASCII/Unicode microgray formatting, and gray literal quantization.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -64,11 +65,10 @@ TEST(GGEMSDoseUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   };
 
   constexpr std::array<Case, 4U> cases{{
-      {.unit = "meV/pg", .expected_milli_electron_volts_per_picogram = 1ULL},
-      {.unit = "Gy",
-       .expected_milli_electron_volts_per_picogram = 6'241'509ULL},
-      {.unit = "mGy", .expected_milli_electron_volts_per_picogram = 6'242ULL},
-      {.unit = "uGy", .expected_milli_electron_volts_per_picogram = 6ULL},
+    {.unit = "meV/pg", .expected_milli_electron_volts_per_picogram = 1ULL},
+    {.unit = "Gy", .expected_milli_electron_volts_per_picogram = 6'241'509ULL},
+    {.unit = "mGy", .expected_milli_electron_volts_per_picogram = 6'242ULL},
+    {.unit = "uGy", .expected_milli_electron_volts_per_picogram = 6ULL},
   }};
 
   for (auto const &test_case : cases) {

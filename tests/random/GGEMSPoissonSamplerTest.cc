@@ -23,7 +23,9 @@
  * \file
  * \brief Unit tests for GGEMS Poisson sampling.
  *
- * Validates input rejection, deterministic continuation, inversion and PTRS sampling regimes, large representable means, and aggregate statistical plausibility.
+ * Validates input rejection, deterministic continuation, inversion and PTRS
+ * sampling regimes, large representable means, and aggregate statistical
+ * plausibility.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -84,12 +86,12 @@ TEST(GGEMSPoissonSamplerTest, RejectsInvalidMeans) {
 
   EXPECT_THROW((void)SamplePoisson(-1.0L, random),
                ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW((void)SamplePoisson(
-                   std::numeric_limits<long double>::quiet_NaN(), random),
-               ggems::core::GGEMSExceptionBase);
   EXPECT_THROW(
-      (void)SamplePoisson(std::numeric_limits<long double>::infinity(), random),
-      ggems::core::GGEMSExceptionBase);
+    (void)SamplePoisson(std::numeric_limits<long double>::quiet_NaN(), random),
+    ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(
+    (void)SamplePoisson(std::numeric_limits<long double>::infinity(), random),
+    ggems::core::GGEMSExceptionBase);
   EXPECT_THROW((void)SamplePoisson(18'446'744'073'709'551'616.0L, random),
                ggems::core::GGEMSExceptionBase);
 }
@@ -197,21 +199,20 @@ TEST(GGEMSPoissonSamplerTest, AggregateMeanAndVarianceArePlausible) {
 
     for (std::size_t index = 1U; index <= k_sample_count; ++index) {
       auto const value =
-          static_cast<long double>(SamplePoisson(expected_mean, random));
+        static_cast<long double>(SamplePoisson(expected_mean, random));
       long double const delta = value - sample_mean;
       sample_mean += delta / static_cast<long double>(index);
       sum_squared_deviation += delta * (value - sample_mean);
     }
 
     long double const sample_variance =
-        sum_squared_deviation / static_cast<long double>(k_sample_count - 1U);
-    long double const mean_tolerance = std::max(
-        0.05L, 8.0L * std::sqrt(expected_mean /
-                                static_cast<long double>(k_sample_count)));
+      sum_squared_deviation / static_cast<long double>(k_sample_count - 1U);
+    long double const mean_tolerance =
+      std::max(0.05L, 8.0L * std::sqrt(expected_mean / static_cast<long double>(
+                                                         k_sample_count)));
     long double const variance_tolerance = std::max(
-        0.2L,
-        10.0L * expected_mean *
-            std::sqrt(2.0L / static_cast<long double>(k_sample_count - 1U)));
+      0.2L, 10.0L * expected_mean *
+              std::sqrt(2.0L / static_cast<long double>(k_sample_count - 1U)));
 
     EXPECT_NEAR(static_cast<double>(sample_mean),
                 static_cast<double>(expected_mean),

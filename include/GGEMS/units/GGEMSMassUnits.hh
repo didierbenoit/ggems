@@ -53,19 +53,12 @@ template <> struct UnitRegistry<MassUnitSet> {
    * \brief Registered unit definitions for this quantity family.
    */
   static constexpr std::array<UnitDefinition, 6U> units{{
-      {.symbol = "pg",
-       .scale = DecimalScale(0)},
-      {.symbol = "ng",
-       .scale = DecimalScale(3)},
-      {.symbol = "ug",
-       .scale = DecimalScale(6),
-       .unicode_symbol = "µg"},
-      {.symbol = "mg",
-       .scale = DecimalScale(9)},
-      {.symbol = "g",
-       .scale = DecimalScale(12)},
-      {.symbol = "kg",
-       .scale = DecimalScale(15)},
+    {.symbol = "pg", .scale = DecimalScale(0)},
+    {.symbol = "ng", .scale = DecimalScale(3)},
+    {.symbol = "ug", .scale = DecimalScale(6), .unicode_symbol = "µg"},
+    {.symbol = "mg", .scale = DecimalScale(9)},
+    {.symbol = "g", .scale = DecimalScale(12)},
+    {.symbol = "kg", .scale = DecimalScale(15)},
   }};
 };
 
@@ -90,13 +83,15 @@ template <> struct QuantityTraits<MassTag> {
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::AutomaticScale};
+    QuantityFormatPolicy::AutomaticScale};
   /*!
-   * \brief Fixed display unit, or an empty string when the policy selects units automatically.
+   * \brief Fixed display unit, or an empty string when the policy selects units
+   * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
   /*!
-   * \brief Default number of digits after the decimal point for formatted output.
+   * \brief Default number of digits after the decimal point for formatted
+   * output.
    */
   static constexpr std::int8_t default_precision{7};
 };

@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for GGEMS byte quantities and conversions.
  *
- * Validates decimal and IEC byte units, negative-value rejection, automatic IEC display selection, and canonical byte literals.
+ * Validates decimal and IEC byte units, negative-value rejection, automatic IEC
+ * display selection, and canonical byte literals.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -60,15 +61,15 @@ struct BytesConversionCase {
 
 TEST(GGEMSBytesUnits, ConvertsEveryOfficialRuntimeToken) {
   constexpr std::array<BytesConversionCase, 9U> cases{{
-      {.unit = "B", .expected = 1ULL},
-      {.unit = "kB", .expected = 1'000ULL},
-      {.unit = "MB", .expected = 1'000'000ULL},
-      {.unit = "GB", .expected = 1'000'000'000ULL},
-      {.unit = "TB", .expected = 1'000'000'000'000ULL},
-      {.unit = "KiB", .expected = 1'024ULL},
-      {.unit = "MiB", .expected = 1'048'576ULL},
-      {.unit = "GiB", .expected = 1'073'741'824ULL},
-      {.unit = "TiB", .expected = 1'099'511'627'776ULL},
+    {.unit = "B", .expected = 1ULL},
+    {.unit = "kB", .expected = 1'000ULL},
+    {.unit = "MB", .expected = 1'000'000ULL},
+    {.unit = "GB", .expected = 1'000'000'000ULL},
+    {.unit = "TB", .expected = 1'000'000'000'000ULL},
+    {.unit = "KiB", .expected = 1'024ULL},
+    {.unit = "MiB", .expected = 1'048'576ULL},
+    {.unit = "GiB", .expected = 1'073'741'824ULL},
+    {.unit = "TiB", .expected = 1'099'511'627'776ULL},
   }};
 
   for (auto const &test_case : cases) {

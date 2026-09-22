@@ -16,7 +16,7 @@ __kernel void particle_state_abi_probe(__global ulong *layout,
 
 #define GGEMS_WRITE_PARTICLE_OFFSET(INDEX, FIELD)                              \
   layout[INDEX] =                                                              \
-      (ulong)((__private uchar const *)&private_particle.FIELD - base)
+    (ulong)((__private uchar const *)&private_particle.FIELD - base)
 
   layout[0] = (ulong)(sizeof(GGEMSParticleState));
   GGEMS_WRITE_PARTICLE_OFFSET(1, global_particle_id);
@@ -47,7 +47,7 @@ __kernel void particle_state_abi_probe(__global ulong *layout,
 
   GGEMSParticleStateAlignmentProbe alignment_probe;
   __private uchar const *alignment_base =
-      (__private uchar const *)&alignment_probe;
+    (__private uchar const *)&alignment_probe;
   layout[22] = (ulong)((__private uchar const *)&alignment_probe.particle -
                        alignment_base);
 

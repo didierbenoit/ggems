@@ -5,5 +5,5 @@
 namespace ggems::core::materials {
 
 [[nodiscard]] auto GetIsotopeMassAuthority()
-    -> GGEMSResolvedIsotopeTable const &;
+  -> GGEMSResolvedIsotopeTable const &;
 } // namespace ggems::core::materials

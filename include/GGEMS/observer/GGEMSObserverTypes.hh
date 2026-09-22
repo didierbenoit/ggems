@@ -16,12 +16,12 @@ enum class GGEMSObserverRecordKind : std::uint32_t {
 
 constexpr auto
 ToKernelObserverRecordKind(GGEMSObserverRecordKind record_kind) noexcept
-    -> std::uint32_t {
+  -> std::uint32_t {
   return static_cast<std::uint32_t>(record_kind);
 }
 
 constexpr auto FromKernelObserverRecordKind(std::uint32_t record_kind) noexcept
-    -> GGEMSObserverRecordKind {
+  -> GGEMSObserverRecordKind {
   switch (record_kind) {
   case 1U:
     return GGEMSObserverRecordKind::Source;
@@ -39,7 +39,7 @@ constexpr auto FromKernelObserverRecordKind(std::uint32_t record_kind) noexcept
 }
 
 constexpr auto ToLongName(GGEMSObserverRecordKind record_kind) noexcept
-    -> std::string_view {
+  -> std::string_view {
   switch (record_kind) {
   case GGEMSObserverRecordKind::Unknown:
     return "Unknown";

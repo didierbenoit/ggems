@@ -8,7 +8,7 @@ namespace ggems::render {
 
 constexpr auto
 GetParticleColorKey(core::particles::GGEMSParticleType particle_type) noexcept
-    -> ColorKey {
+  -> ColorKey {
   using core::particles::GGEMSParticleType;
 
   switch (particle_type) {
@@ -34,7 +34,7 @@ GetParticleColorKey(core::particles::GGEMSParticleType particle_type) noexcept
 
 constexpr auto
 GetParticleRGB(core::particles::GGEMSParticleType particle_type) noexcept
-    -> RGB {
+  -> RGB {
   ColorKey color = GetParticleColorKey(particle_type);
   return GetColorRGB(color.family, color.shade, color.variant);
 }

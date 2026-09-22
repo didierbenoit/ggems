@@ -39,15 +39,15 @@ private:
 
 [[nodiscard]] auto
 ComputeSafeTransportLaunchPrimaryCount(std::uint32_t worker_count)
-    -> std::uint32_t;
+  -> std::uint32_t;
 
 [[nodiscard]] auto BuildEqualTransportWorkloadPlan(
-    std::uint64_t projection_history_offset, std::uint64_t total_primary_count,
-    std::uint32_t workload_count, std::uint32_t worker_count_per_workload)
-    -> std::vector<GGEMSTransportWorkloadPlan>;
+  std::uint64_t projection_history_offset, std::uint64_t total_primary_count,
+  std::uint32_t workload_count, std::uint32_t worker_count_per_workload)
+  -> std::vector<GGEMSTransportWorkloadPlan>;
 
 [[nodiscard]] auto CountAssignedPrimaries(
-    std::vector<GGEMSTransportWorkloadPlan> const &workload_plan)
-    -> std::uint64_t;
+  std::vector<GGEMSTransportWorkloadPlan> const &workload_plan)
+  -> std::uint64_t;
 
 } // namespace ggems::core::transport

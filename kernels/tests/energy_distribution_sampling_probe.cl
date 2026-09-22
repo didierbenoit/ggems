@@ -1,16 +1,16 @@
 #include "sources/GGEMSEnergyDistribution.clh"
 
 __kernel void energy_distribution_sampling_probe(
-    __global GGEMSRandomState *sample_states,
-    __global GGEMSRandomState *reference_states,
-    __global GGEMSSourceRecord const *source,
-    __global GGEMSEnergyDistributionRecord const *distribution,
-    __global ulong const *energy_values_micro_eV,
-    __global ulong const *cumulative_ticket_upper, uint expected_draw_count,
-    __global ulong *sampled_energy) {
+  __global GGEMSRandomState *sample_states,
+  __global GGEMSRandomState *reference_states,
+  __global GGEMSSourceRecord const *source,
+  __global GGEMSEnergyDistributionRecord const *distribution,
+  __global ulong const *energy_values_micro_eV,
+  __global ulong const *cumulative_ticket_upper, uint expected_draw_count,
+  __global ulong *sampled_energy) {
   sampled_energy[0] = GGEMS_EnergyDistributionSample(
-      source->energy_micro_eV, distribution, energy_values_micro_eV,
-      cumulative_ticket_upper, sample_states, 0U);
+    source->energy_micro_eV, distribution, energy_values_micro_eV,
+    cumulative_ticket_upper, sample_states, 0U);
 
   for (uint draw = 0U; draw < expected_draw_count; ++draw) {
     (void)(GGEMS_RndmUInt32(reference_states, 0U));
@@ -21,24 +21,23 @@ __kernel void energy_distribution_sampling_probe(
 // =============================================================================
 
 __kernel void energy_distribution_find_index_probe(
-    __global GGEMSEnergyDistributionRecord const *distribution,
-    __global ulong const *cumulative_ticket_upper, uint raw_ticket,
-    __global uint *selected_index) {
+  __global GGEMSEnergyDistributionRecord const *distribution,
+  __global ulong const *cumulative_ticket_upper, uint raw_ticket,
+  __global uint *selected_index) {
   selected_index[0] = GGEMS_EnergyDistributionFindIndex(
-      distribution, cumulative_ticket_upper, raw_ticket);
+    distribution, cumulative_ticket_upper, raw_ticket);
 }
 
 // =============================================================================
 // =============================================================================
 
 __kernel void energy_distribution_sample_ticket_probe(
-    __global GGEMSEnergyDistributionRecord const *distribution,
-    __global ulong const *energy_values_micro_eV,
-    __global ulong const *cumulative_ticket_upper, uint raw_ticket,
-    __global ulong *sampled_energy) {
+  __global GGEMSEnergyDistributionRecord const *distribution,
+  __global ulong const *energy_values_micro_eV,
+  __global ulong const *cumulative_ticket_upper, uint raw_ticket,
+  __global ulong *sampled_energy) {
   sampled_energy[0] = GGEMS_EnergyDistributionSampleWithTicket(
-      distribution, energy_values_micro_eV, cumulative_ticket_upper,
-      raw_ticket);
+    distribution, energy_values_micro_eV, cumulative_ticket_upper, raw_ticket);
 }
 
 // =============================================================================
@@ -48,8 +47,8 @@ __kernel void energy_distribution_regular_offset_probe(ulong width,
                                                        ulong ticket_span,
                                                        ulong local_ticket,
                                                        __global ulong *offset) {
-  offset[0] = GGEMS_EnergyDistributionMapRegularOffset(width, ticket_span,
-                                                       local_ticket);
+  offset[0] =
+    GGEMS_EnergyDistributionMapRegularOffset(width, ticket_span, local_ticket);
 }
 
 // =============================================================================

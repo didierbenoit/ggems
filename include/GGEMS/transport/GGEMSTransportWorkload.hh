@@ -83,28 +83,26 @@ auto ValidateTransportRunConfig(GGEMSTransportRunConfig const &config,
                                 std::uint32_t stable_emission_count,
                                 std::uint32_t worker_count,
                                 std::uint32_t launch_primary_count_limit)
-    -> void;
+  -> void;
 
 class GGEMSTransportWorkload {
 public:
   GGEMSTransportWorkload(
-      ggems::ocl::GGEMSOpenCLContext &context,
-      std::filesystem::path kernel_root, random::GGEMSRandom const &random,
-      std::uint32_t worker_count,
-      sources::GGEMSSourceConfigurationSnapshot const &source_configuration,
-      std::uint64_t random_stream_offset = 0ULL,
-      std::uint32_t context_index = 0U,
-      std::uint32_t observer_record_capacity = 1U,
-      std::uint32_t launch_primary_count_limit = 0U);
+    ggems::ocl::GGEMSOpenCLContext &context, std::filesystem::path kernel_root,
+    random::GGEMSRandom const &random, std::uint32_t worker_count,
+    sources::GGEMSSourceConfigurationSnapshot const &source_configuration,
+    std::uint64_t random_stream_offset = 0ULL, std::uint32_t context_index = 0U,
+    std::uint32_t observer_record_capacity = 1U,
+    std::uint32_t launch_primary_count_limit = 0U);
 
   ~GGEMSTransportWorkload() = default;
 
   GGEMSTransportWorkload(GGEMSTransportWorkload const &) = delete;
   GGEMSTransportWorkload(GGEMSTransportWorkload &&) = delete;
   auto operator=(GGEMSTransportWorkload const &)
-      -> GGEMSTransportWorkload & = delete;
+    -> GGEMSTransportWorkload & = delete;
   auto operator=(GGEMSTransportWorkload &&)
-      -> GGEMSTransportWorkload & = delete;
+    -> GGEMSTransportWorkload & = delete;
 
   auto Run(GGEMSTransportRunConfig const &config) -> GGEMSTransportRunReport;
 
@@ -113,10 +111,10 @@ public:
   [[nodiscard]] auto ReadCountersFromSVM() -> GGEMSTransportCounters;
 
   [[nodiscard]] auto ReadObserverCountersFromSVM()
-      -> observer::GGEMSObserverCounters;
+    -> observer::GGEMSObserverCounters;
 
   [[nodiscard]] auto ReadObserverRecordsFromSVM(std::uint32_t record_count)
-      -> std::vector<observer::GGEMSObserverRecord>;
+    -> std::vector<observer::GGEMSObserverRecord>;
 
   [[nodiscard]] auto GetWorkerCount() const noexcept -> std::uint32_t {
     return worker_count_;
@@ -127,7 +125,7 @@ private:
   auto ResetCountersInSVM() -> void;
   auto ResetObserverCountersInSVM() -> void;
   auto WriteObserverConfigToSVM(
-      observer::GGEMSObserverConfigRecord const &observer_config) -> void;
+    observer::GGEMSObserverConfigRecord const &observer_config) -> void;
 
   ggems::ocl::GGEMSOpenCLContext *context_{nullptr};
   std::filesystem::path kernel_root_{};

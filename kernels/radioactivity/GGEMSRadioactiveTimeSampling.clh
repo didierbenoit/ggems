@@ -22,7 +22,7 @@ static inline float GGEMS_ComputeRadioactiveTimeRelative(float uniform,
 
     return uniform + 0.5f * scaled_decay * uu +
            (1.0f / 6.0f) * scaled_decay * scaled_decay * uu *
-               (2.0f * uniform - 1.0f);
+             (2.0f * uniform - 1.0f);
   }
 
   float const decay_mass = -expm1(-scaled_decay);
@@ -61,7 +61,7 @@ static inline ulong GGEMS_SampleRadioactiveTimeFromRaw(ulong time_start_ps,
 
   float const uniform = GGEMS_UIntToUniform01(raw_word);
   float const relative =
-      GGEMS_ComputeRadioactiveTimeRelative(uniform, scaled_decay);
+    GGEMS_ComputeRadioactiveTimeRelative(uniform, scaled_decay);
   uint const ticket = GGEMS_QuantizeRadioactiveTimeRelative(relative);
   ulong const window_width_ps = time_stop_ps - time_start_ps;
   ulong offset_ps = GGEMS_ScaleRadioactiveTimeTicket(window_width_ps, ticket);

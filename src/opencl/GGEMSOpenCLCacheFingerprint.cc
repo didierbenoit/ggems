@@ -47,7 +47,7 @@ constexpr std::uint64_t k_fnv1a64_prime{1099511628211ULL};
 } // namespace
 
 [[nodiscard]] auto HashFNV1a64(std::string_view bytes) noexcept
-    -> std::uint64_t {
+  -> std::uint64_t {
   auto hash = k_fnv1a64_offset_basis;
 
   for (char const byte : bytes) {

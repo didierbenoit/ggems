@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for OpenCL string conversion helpers.
  *
- * Validates formatting of versions, structured name-version values, scalars, flags, UUID/LUID byte arrays, and representative kernel argument qualifiers.
+ * Validates formatting of versions, structured name-version values, scalars,
+ * flags, UUID/LUID byte arrays, and representative kernel argument qualifiers.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -84,8 +85,8 @@ TEST(GGEMSOpenCLStringsTest, FormatsRepresentativeScalarAndFallbackValues) {
 
   EXPECT_EQ(ggems::ocl::CacheTypeToString(CL_NONE), "None");
   EXPECT_NE(ggems::ocl::CacheTypeToString(
-                static_cast<cl_device_mem_cache_type>(0x7fffU))
-                .find("Unknown"),
+              static_cast<cl_device_mem_cache_type>(0x7fffU))
+              .find("Unknown"),
             std::string::npos);
 }
 
@@ -95,8 +96,8 @@ TEST(GGEMSOpenCLStringsTest, FormatsRepresentativeScalarAndFallbackValues) {
 TEST(GGEMSOpenCLStringsTest, FormatsZeroSingleAndCombinedFlags) {
   EXPECT_EQ(ggems::ocl::DeviceTypeToString(CL_DEVICE_TYPE_CPU), "CPU");
   EXPECT_EQ(
-      ggems::ocl::DeviceTypeToString(CL_DEVICE_TYPE_CPU | CL_DEVICE_TYPE_GPU),
-      "CPU | GPU");
+    ggems::ocl::DeviceTypeToString(CL_DEVICE_TYPE_CPU | CL_DEVICE_TYPE_GPU),
+    "CPU | GPU");
   EXPECT_NE(ggems::ocl::DeviceTypeToString(0).find("Unknown"),
             std::string::npos);
 
@@ -104,15 +105,15 @@ TEST(GGEMSOpenCLStringsTest, FormatsZeroSingleAndCombinedFlags) {
   EXPECT_EQ(ggems::ocl::QueuePropertiesToString(CL_QUEUE_PROFILING_ENABLE),
             "Profiling enabled");
   EXPECT_EQ(
-      ggems::ocl::QueuePropertiesToString(
-          CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE | CL_QUEUE_PROFILING_ENABLE),
-      "Out-of-order execution, Profiling enabled");
+    ggems::ocl::QueuePropertiesToString(CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE |
+                                        CL_QUEUE_PROFILING_ENABLE),
+    "Out-of-order execution, Profiling enabled");
 
   EXPECT_EQ(ggems::ocl::SVMCapabilitiesToString(0), "None");
   EXPECT_EQ(
-      ggems::ocl::SVMCapabilitiesToString(CL_DEVICE_SVM_COARSE_GRAIN_BUFFER |
-                                          CL_DEVICE_SVM_FINE_GRAIN_BUFFER),
-      "Coarse-grain buffer, Fine-grain buffer");
+    ggems::ocl::SVMCapabilitiesToString(CL_DEVICE_SVM_COARSE_GRAIN_BUFFER |
+                                        CL_DEVICE_SVM_FINE_GRAIN_BUFFER),
+    "Coarse-grain buffer, Fine-grain buffer");
 
   EXPECT_EQ(ggems::ocl::FPConfigToString(0), "None");
   EXPECT_EQ(ggems::ocl::FPConfigToString(CL_FP_DENORM | CL_FP_INF_NAN),
@@ -142,14 +143,14 @@ TEST(GGEMSOpenCLStringsTest, FormatsUuidAndLuidBytes) {
 
 TEST(GGEMSOpenCLStringsTest, FormatsRepresentativeKernelArgumentQualifiers) {
   EXPECT_EQ(
-      ggems::ocl::ArgAddressQualifierToString(CL_KERNEL_ARG_ADDRESS_GLOBAL),
-      "CL_KERNEL_ARG_ADDRESS_GLOBAL");
+    ggems::ocl::ArgAddressQualifierToString(CL_KERNEL_ARG_ADDRESS_GLOBAL),
+    "CL_KERNEL_ARG_ADDRESS_GLOBAL");
   EXPECT_EQ(
-      ggems::ocl::ArgAddressQualifierToString(CL_KERNEL_ARG_ADDRESS_PRIVATE),
-      "CL_KERNEL_ARG_ADDRESS_PRIVATE");
+    ggems::ocl::ArgAddressQualifierToString(CL_KERNEL_ARG_ADDRESS_PRIVATE),
+    "CL_KERNEL_ARG_ADDRESS_PRIVATE");
   EXPECT_EQ(
-      ggems::ocl::ArgAccessQualifierToString(CL_KERNEL_ARG_ACCESS_READ_ONLY),
-      "CL_KERNEL_ARG_ACCESS_READ_ONLY");
+    ggems::ocl::ArgAccessQualifierToString(CL_KERNEL_ARG_ACCESS_READ_ONLY),
+    "CL_KERNEL_ARG_ACCESS_READ_ONLY");
   EXPECT_EQ(ggems::ocl::ArgAccessQualifierToString(CL_KERNEL_ARG_ACCESS_NONE),
             "CL_KERNEL_ARG_ACCESS_NONE");
   EXPECT_EQ(ggems::ocl::ArgTypeQualifierToString(CL_KERNEL_ARG_TYPE_CONST |

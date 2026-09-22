@@ -54,7 +54,7 @@ TEST(GGEMSO15Test, BuildsExactIdentityAndSinglePositronEmission) {
 TEST(GGEMSO15Test, PreservesTabulatedBetaShapeSpectrum) {
   GGEMSRadionuclideDefinition const definition = BuildO15Radionuclide();
   auto const &distribution =
-      definition.GetEmissions()[0U].GetEnergyDistribution();
+    definition.GetEmissions()[0U].GetEnergyDistribution();
   auto const centers = distribution.GetEnergyValuesMicroElectronVolt();
   auto const weights = distribution.GetRelativeWeights();
   auto const tickets = distribution.GetCumulativeTicketUpperBounds();
@@ -90,8 +90,8 @@ TEST(GGEMSO15Test, PreservesTabulatedBetaShapeSpectrum) {
   EXPECT_EQ(previous_ticket, k_energy_ticket_space_size);
 
   long double const mean_energy_keV =
-      weighted_center_sum / weight_sum /
-      static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
+    weighted_center_sum / weight_sum /
+    static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
   EXPECT_NEAR(static_cast<double>(mean_energy_keV), 733.47521, 0.01);
 }
 

@@ -24,13 +24,13 @@ struct GGEMSCountDrivenSourceConfiguration {
 
 struct GGEMSActivityDrivenSourceConfiguration {
   std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>
-      radionuclide;
+    radionuclide;
   units::Activity activity_at_reference_time{};
   std::uint64_t reference_time_ps{0ULL};
 };
 
 using GGEMSSourcePopulationConfiguration =
-    std::variant<GGEMSCountDrivenSourceConfiguration,
-                 GGEMSActivityDrivenSourceConfiguration>;
+  std::variant<GGEMSCountDrivenSourceConfiguration,
+               GGEMSActivityDrivenSourceConfiguration>;
 
 } // namespace ggems::core::sources

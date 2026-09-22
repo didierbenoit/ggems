@@ -118,9 +118,9 @@ TEST(GGEMSOpenCLTest, DiscoveryHierarchyIsCoherent) {
     auto const &device = entry.device.get();
 
     auto const platform_iterator =
-        std::ranges::find_if(platforms, [&](auto const &candidate) -> bool {
-          return &candidate == &platform;
-        });
+      std::ranges::find_if(platforms, [&](auto const &candidate) -> bool {
+        return &candidate == &platform;
+      });
     EXPECT_NE(platform_iterator, platforms.end());
     if (platform_iterator == platforms.end()) {
       continue;
@@ -128,9 +128,9 @@ TEST(GGEMSOpenCLTest, DiscoveryHierarchyIsCoherent) {
 
     auto const &devices = platform.GetDevices();
     auto const device_iterator =
-        std::ranges::find_if(devices, [&](auto const &candidate) -> bool {
-          return &candidate == &device;
-        });
+      std::ranges::find_if(devices, [&](auto const &candidate) -> bool {
+        return &candidate == &device;
+      });
     EXPECT_NE(device_iterator, devices.end());
 
     EXPECT_NE(platform.GetPlatformNative()(), nullptr);
@@ -147,7 +147,7 @@ TEST(GGEMSOpenCLTest, RejectsInvalidDeviceSelectors) {
   ASSERT_FALSE(inventory.empty());
 
   constexpr std::array<std::string_view, 7> invalid_selectors{
-      "toot", "all;gpu", "0;gpu", "1-0", "cpu;gpu", "intel;nvidia", "0;;1",
+    "toot", "all;gpu", "0;gpu", "1-0", "cpu;gpu", "intel;nvidia", "0;;1",
   };
 
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
@@ -169,9 +169,9 @@ TEST(GGEMSOpenCLTest, RejectsOutOfRangeDeviceIndex) {
 
   auto const out_of_range_index = std::to_string(inventory.size());
 
-  EXPECT_THROW(ggems::ocl::GGEMSOpenCL::GetInstance().SelectDevices(
-                   {out_of_range_index}),
-               ggems::core::GGEMSFatal);
+  EXPECT_THROW(
+    ggems::ocl::GGEMSOpenCL::GetInstance().SelectDevices({out_of_range_index}),
+    ggems::core::GGEMSFatal);
 }
 
 // =============================================================================
@@ -198,7 +198,7 @@ TEST(GGEMSOpenCLTest, FirstInitializeKeepsAlreadyCachedPrograms) {
 
   auto const probe_root = ggems::test::GetOpenCLFrameworkProbeRoot();
   auto const &program_before = opencl.GetOrCreateProgram(
-      owned_context, probe_root, ggems::test::k_opencl_framework_probe_name);
+    owned_context, probe_root, ggems::test::k_opencl_framework_probe_name);
   cl::Program const retained_program{program_before.GetProgramNative()};
 
   opencl.SelectDevices({std::to_string(usable_devices.front())});
@@ -207,7 +207,7 @@ TEST(GGEMSOpenCLTest, FirstInitializeKeepsAlreadyCachedPrograms) {
   ASSERT_FALSE(opencl.GetContext().empty());
 
   auto const &program_after = opencl.GetOrCreateProgram(
-      owned_context, probe_root, ggems::test::k_opencl_framework_probe_name);
+    owned_context, probe_root, ggems::test::k_opencl_framework_probe_name);
 
   EXPECT_EQ(&program_after, &program_before);
   EXPECT_EQ(program_after.GetProgramNative()(), retained_program());
@@ -243,13 +243,13 @@ TEST(GGEMSOpenCLTest, SecondInitializeWithSameSelectionKeepsBackendState) {
 
   auto const probe_root = ggems::test::GetOpenCLFrameworkProbeRoot();
   auto const &program = opencl.GetOrCreateProgram(
-      context, probe_root, ggems::test::k_opencl_framework_probe_name);
+    context, probe_root, ggems::test::k_opencl_framework_probe_name);
   auto const *const program_before = &program;
   cl::Program const retained_program{program.GetProgramNative()};
 
   ggems::ocl::GGEMSOpenCLKernel kernel{
-      context, program.CreateKernel(ggems::test::k_opencl_framework_probe_name),
-      ggems::test::k_opencl_framework_probe_name};
+    context, program.CreateKernel(ggems::test::k_opencl_framework_probe_name),
+    ggems::test::k_opencl_framework_probe_name};
 
   constexpr std::size_t k_value_count{4U};
   auto const allocation_count_before = context.GetAllocationCountVRAM();
@@ -258,7 +258,7 @@ TEST(GGEMSOpenCLTest, SecondInitializeWithSameSelectionKeepsBackendState) {
   std::optional<ggems::ocl::GGEMSOpenCLSVMBuffer> buffer;
   if (context.GetSVMSupport().HasAny()) {
     buffer.emplace(context.CreateSVMBuffer(
-        ggems::units::Bytes{k_value_count * sizeof(cl_uint)}));
+      ggems::units::Bytes{k_value_count * sizeof(cl_uint)}));
 
     std::array<cl_uint, k_value_count> const initial_values{1U, 2U, 3U, 4U};
     ggems::ocl::WriteSVMFromHost(*buffer, std::span{initial_values});
@@ -283,7 +283,7 @@ TEST(GGEMSOpenCLTest, SecondInitializeWithSameSelectionKeepsBackendState) {
   // A program reference obtained before the second initialization is still the
   // cached program.
   auto const &program_after = opencl.GetOrCreateProgram(
-      context_after, probe_root, ggems::test::k_opencl_framework_probe_name);
+    context_after, probe_root, ggems::test::k_opencl_framework_probe_name);
   EXPECT_EQ(&program_after, program_before);
   EXPECT_EQ(program_after.GetProgramNative()(), retained_program());
 
@@ -328,14 +328,14 @@ TEST(GGEMSOpenCLTest, FreezesDeviceSelectionAfterInitialize) {
   auto const range_text = active_text + "-" + active_text;
   std::vector<std::string> const range_selector{range_text};
   std::vector<std::string> const duplicate_selector{
-      active_text,
-      active_text,
+    active_text,
+    active_text,
   };
 
   // Before the contexts exist, the selection can still be changed freely.
   if (opencl.GetContext().empty() && usable_devices.size() >= 2U) {
     std::vector<std::string> const other_selector{
-        std::to_string(usable_devices[1]),
+      std::to_string(usable_devices[1]),
     };
     EXPECT_NO_THROW(opencl.SelectDevices(other_selector));
   }
@@ -355,7 +355,7 @@ TEST(GGEMSOpenCLTest, FreezesDeviceSelectionAfterInitialize) {
 
   auto const probe_root = ggems::test::GetOpenCLFrameworkProbeRoot();
   auto const &program_before = opencl.GetOrCreateProgram(
-      context, probe_root, ggems::test::k_opencl_framework_probe_name);
+    context, probe_root, ggems::test::k_opencl_framework_probe_name);
   cl::Program const retained_program{program_before.GetProgramNative()};
 
   // Requests are resolved to devices before they are compared, so selector
@@ -368,7 +368,7 @@ TEST(GGEMSOpenCLTest, FreezesDeviceSelectionAfterInitialize) {
   // A request that really designates other devices is rejected.
   if (usable_devices.size() >= 2U) {
     std::vector<std::string> const other_selector{
-        std::to_string(usable_devices[1]),
+      std::to_string(usable_devices[1]),
     };
     EXPECT_THROW(opencl.SelectDevices(other_selector), ggems::core::GGEMSFatal);
   }
@@ -395,7 +395,7 @@ TEST(GGEMSOpenCLTest, FreezesDeviceSelectionAfterInitialize) {
 
   // The program cache survived the rejected requests.
   auto const &program_after = opencl.GetOrCreateProgram(
-      context_after, probe_root, ggems::test::k_opencl_framework_probe_name);
+    context_after, probe_root, ggems::test::k_opencl_framework_probe_name);
   EXPECT_EQ(&program_after, &program_before);
   EXPECT_EQ(program_after.GetProgramNative()(), retained_program());
 
@@ -418,7 +418,7 @@ TEST(GGEMSOpenCLTest, KeepsBackendFrozenWhenTheContextCollectionIsEmptied) {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
   std::vector<std::string> const active_selector{
-      std::to_string(usable_devices.front()),
+    std::to_string(usable_devices.front()),
   };
 
   EXPECT_NO_THROW(opencl.SelectDevices(active_selector));
@@ -432,7 +432,7 @@ TEST(GGEMSOpenCLTest, KeepsBackendFrozenWhenTheContextCollectionIsEmptied) {
 
   if (usable_devices.size() >= 2U) {
     std::vector<std::string> const other_selector{
-        std::to_string(usable_devices[1]),
+      std::to_string(usable_devices[1]),
     };
     EXPECT_THROW(opencl.SelectDevices(other_selector), ggems::core::GGEMSFatal);
   }

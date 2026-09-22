@@ -35,7 +35,7 @@ using ggems::core::random::GGEMSRandom;
 constexpr std::uint64_t kBytesPerMiB{1024ULL * 1024ULL};
 constexpr std::uint64_t kDefaultMaxChunkMiB{256ULL};
 constexpr std::uint64_t kSVMValueBytesPerSample{
-    static_cast<std::uint64_t>(sizeof(std::uint32_t))};
+  static_cast<std::uint64_t>(sizeof(std::uint32_t))};
 
 static_assert(sizeof(float) == sizeof(std::uint32_t));
 
@@ -71,7 +71,7 @@ auto ParseStreamLayout(std::string_view value) -> StreamLayout {
   }
 
   throw std::runtime_error(
-      std::format("Unsupported random stream layout '{}'.", value));
+    std::format("Unsupported random stream layout '{}'.", value));
 }
 
 // =============================================================================
@@ -116,7 +116,7 @@ auto ParseStreamType(std::string_view value) -> StreamType {
   }
 
   throw std::runtime_error(
-      std::format("Unsupported random stream type '{}'.", value));
+    std::format("Unsupported random stream type '{}'.", value));
 }
 
 // =============================================================================
@@ -145,24 +145,24 @@ struct Options {
 
 auto PrintUsage(char const *executable_name) -> void {
   std::cout
-      << "Usage:\n"
-      << " " << executable_name << " [options]\n\n"
-      << "Options:\n"
-      << "  --engine <jkiss|pcg32|philox>\n"
-      << "  --seed <uint64>\n"
-      << "  --stream-offset <uint64>\n"
-      << "  --stream-type <raw_uint32|uniform24_scalar|uniform24_vector4>\n"
-      << "  --lanes-used <1|2|3|4>\n"
-      << "  --workers <uint32>\n"
-      << "  --samples-per-worker <uint32>\n"
-      << "  --max-chunk-mib <uint64>\n"
-      << "  --local-size <size_t>\n"
-      << "  --device <gpu|cpu|all|vendor token>\n"
-      << "  --output <path>\n"
-      << "  --manifest <path>\n"
-      << "  --layout <worker_major|interleaved>\n"
-      << "  --force\n"
-      << "  --help\n";
+    << "Usage:\n"
+    << " " << executable_name << " [options]\n\n"
+    << "Options:\n"
+    << "  --engine <jkiss|pcg32|philox>\n"
+    << "  --seed <uint64>\n"
+    << "  --stream-offset <uint64>\n"
+    << "  --stream-type <raw_uint32|uniform24_scalar|uniform24_vector4>\n"
+    << "  --lanes-used <1|2|3|4>\n"
+    << "  --workers <uint32>\n"
+    << "  --samples-per-worker <uint32>\n"
+    << "  --max-chunk-mib <uint64>\n"
+    << "  --local-size <size_t>\n"
+    << "  --device <gpu|cpu|all|vendor token>\n"
+    << "  --output <path>\n"
+    << "  --manifest <path>\n"
+    << "  --layout <worker_major|interleaved>\n"
+    << "  --force\n"
+    << "  --help\n";
 }
 
 // =============================================================================
@@ -172,7 +172,7 @@ auto ReadArgumentValue(int &index, int argc, char const *const *argv,
                        std::string_view option_name) -> std::string {
   if (index + 1 >= argc) {
     throw std::runtime_error(
-        std::format("Missing value after '{}'.", option_name));
+      std::format("Missing value after '{}'.", option_name));
   }
 
   ++index;
@@ -199,25 +199,25 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
       options.seed = std::stoull(ReadArgumentValue(i, argc, argv, arg));
     } else if (arg == "--stream-offset") {
       options.stream_offset =
-          std::stoull(ReadArgumentValue(i, argc, argv, arg));
+        std::stoull(ReadArgumentValue(i, argc, argv, arg));
     } else if (arg == "--stream-type") {
       options.stream_type =
-          ParseStreamType(ReadArgumentValue(i, argc, argv, arg));
+        ParseStreamType(ReadArgumentValue(i, argc, argv, arg));
     } else if (arg == "--lanes-used") {
       options.lanes_used = static_cast<std::uint32_t>(
-          std::stoul(ReadArgumentValue(i, argc, argv, arg)));
+        std::stoul(ReadArgumentValue(i, argc, argv, arg)));
     } else if (arg == "--workers") {
       options.worker_count = static_cast<std::uint32_t>(
-          std::stoul(ReadArgumentValue(i, argc, argv, arg)));
+        std::stoul(ReadArgumentValue(i, argc, argv, arg)));
     } else if (arg == "--samples-per-worker") {
       options.samples_per_worker = static_cast<std::uint32_t>(
-          std::stoul(ReadArgumentValue(i, argc, argv, arg)));
+        std::stoul(ReadArgumentValue(i, argc, argv, arg)));
     } else if (arg == "--max-chunk-mib") {
       options.max_chunk_mib =
-          std::stoull(ReadArgumentValue(i, argc, argv, arg));
+        std::stoull(ReadArgumentValue(i, argc, argv, arg));
     } else if (arg == "--local-size") {
       options.local_size = static_cast<std::size_t>(
-          std::stoull(ReadArgumentValue(i, argc, argv, arg)));
+        std::stoull(ReadArgumentValue(i, argc, argv, arg)));
     } else if (arg == "--device") {
       options.device_selector = ReadArgumentValue(i, argc, argv, arg);
     } else if (arg == "--output") {
@@ -248,17 +248,17 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
 
     if (options.lanes_used > 4U) {
       throw std::runtime_error(
-          "Lanes used must be between one and four for uniform24_vector4.");
+        "Lanes used must be between one and four for uniform24_vector4.");
     }
 
     if ((options.samples_per_worker % options.lanes_used) != 0U) {
       throw std::runtime_error(
-          "Samples per worker must be a multiple of lanes used for "
-          "uniform24_vector4.");
+        "Samples per worker must be a multiple of lanes used for "
+        "uniform24_vector4.");
     }
   } else if (options.lanes_used != 0U) {
     throw std::runtime_error(
-        "--lanes-used is only valid with uniform24_vector4.");
+      "--lanes-used is only valid with uniform24_vector4.");
   }
 
   if (options.max_chunk_mib == 0ULL) {
@@ -283,9 +283,9 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
 auto EnsureOutputCanBeWritten(std::filesystem::path const &path, bool force,
                               std::string_view label) -> void {
   if (std::filesystem::exists(path) && !force) {
-    throw std::runtime_error(std::format(
-        "{} file already exists: '{}'. Use --force to overwrite it.", label,
-        path.string()));
+    throw std::runtime_error(
+      std::format("{} file already exists: '{}'. Use --force to overwrite it.",
+                  label, path.string()));
   }
 
   if (!path.parent_path().empty()) {
@@ -297,14 +297,14 @@ auto EnsureOutputCanBeWritten(std::filesystem::path const &path, bool force,
 // =============================================================================
 
 auto OpenOutputStream(std::filesystem::path const &path, bool force)
-    -> std::ofstream {
+  -> std::ofstream {
   EnsureOutputCanBeWritten(path, force, "Stream");
 
   std::ofstream stream{path, std::ios::binary | std::ios::trunc};
 
   if (!stream) {
     throw std::runtime_error(
-        std::format("Cannot open output stream '{}'.", path.string()));
+      std::format("Cannot open output stream '{}'.", path.string()));
   }
 
   return stream;
@@ -315,14 +315,14 @@ auto OpenOutputStream(std::filesystem::path const &path, bool force)
 
 auto WriteUInt32Chunk(std::ofstream &stream, std::filesystem::path const &path,
                       std::uint32_t const *values, std::size_t value_count)
-    -> void {
+  -> void {
   stream.write(
-      reinterpret_cast<char const *>(values),
-      static_cast<std::streamsize>(value_count * sizeof(std::uint32_t)));
+    reinterpret_cast<char const *>(values),
+    static_cast<std::streamsize>(value_count * sizeof(std::uint32_t)));
 
   if (!stream) {
     throw std::runtime_error(
-        std::format("Failed to write output stream '{}'.", path.string()));
+      std::format("Failed to write output stream '{}'.", path.string()));
   }
 }
 
@@ -338,7 +338,7 @@ auto WriteUniform24Chunk(std::ofstream &stream,
   for (std::size_t offset = 0U; offset < value_count;
        offset += kPackingChunkSampleCount) {
     std::size_t const sample_count =
-        std::min(kPackingChunkSampleCount, value_count - offset);
+      std::min(kPackingChunkSampleCount, value_count - offset);
 
     for (std::size_t i = 0U; i < sample_count; ++i) {
       float const uniform = values[offset + i];
@@ -347,7 +347,7 @@ auto WriteUniform24Chunk(std::ofstream &stream,
 
       if (value > 0x00FFFFFFU) {
         throw std::runtime_error(
-            "Invalid GGEMS uniform value while packing 24-bit stream.");
+          "Invalid GGEMS uniform value while packing 24-bit stream.");
       }
 
       buffer[(3U * i) + 0U] = static_cast<std::uint8_t>(value & 0xFFU);
@@ -362,7 +362,7 @@ auto WriteUniform24Chunk(std::ofstream &stream,
 
     if (!stream) {
       throw std::runtime_error(
-          std::format("Failed to write output stream '{}'.", path.string()));
+        std::format("Failed to write output stream '{}'.", path.string()));
     }
   }
 }
@@ -405,7 +405,7 @@ struct ChunkPlan {
 // =============================================================================
 
 auto DivideRoundUp(std::uint64_t numerator, std::uint64_t denominator)
-    -> std::uint64_t {
+  -> std::uint64_t {
   return (numerator / denominator) +
          static_cast<std::uint64_t>((numerator % denominator) != 0ULL);
 }
@@ -415,18 +415,18 @@ auto DivideRoundUp(std::uint64_t numerator, std::uint64_t denominator)
 
 auto ComputeChunkPlan(Options const &options, GGEMSRandom const &random,
                       ggems::ocl::GGEMSOpenCLDevice const &device)
-    -> ChunkPlan {
+  -> ChunkPlan {
   ChunkPlan plan;
 
   plan.requested_max_value_buffer_bytes = options.max_chunk_mib * kBytesPerMiB;
   plan.device_max_allocation_bytes =
-      static_cast<std::uint64_t>(device.GetMaxMemAllocSize());
+    static_cast<std::uint64_t>(device.GetMaxMemAllocSize());
   plan.effective_max_value_buffer_bytes = std::min(
-      plan.requested_max_value_buffer_bytes, plan.device_max_allocation_bytes);
+    plan.requested_max_value_buffer_bytes, plan.device_max_allocation_bytes);
 
   if (plan.effective_max_value_buffer_bytes == 0ULL) {
     throw std::runtime_error(
-        "OpenCL device reports a zero maximum allocation size.");
+      "OpenCL device reports a zero maximum allocation size.");
   }
 
   auto const state_size = static_cast<std::uint64_t>(random.GetStateSize());
@@ -440,19 +440,19 @@ auto ComputeChunkPlan(Options const &options, GGEMSRandom const &random,
     plan.workers_per_chunk = options.worker_count;
 
     std::uint64_t const state_buffer_bytes =
-        static_cast<std::uint64_t>(options.worker_count) * state_size;
+      static_cast<std::uint64_t>(options.worker_count) * state_size;
 
     if (state_buffer_bytes > plan.device_max_allocation_bytes) {
       throw std::runtime_error(
-          "Random state buffer exceeds CL_DEVICE_MAX_MEM_ALLOC_SIZE.");
+        "Random state buffer exceeds CL_DEVICE_MAX_MEM_ALLOC_SIZE.");
     }
 
     std::uint64_t const bytes_per_sample_round =
-        static_cast<std::uint64_t>(options.worker_count) *
-        kSVMValueBytesPerSample;
+      static_cast<std::uint64_t>(options.worker_count) *
+      kSVMValueBytesPerSample;
 
     std::uint64_t max_samples_per_worker =
-        plan.effective_max_value_buffer_bytes / bytes_per_sample_round;
+      plan.effective_max_value_buffer_bytes / bytes_per_sample_round;
 
     if (options.stream_type == StreamType::Uniform24Vector4) {
       auto const lanes_used = static_cast<std::uint64_t>(options.lanes_used);
@@ -461,18 +461,18 @@ auto ComputeChunkPlan(Options const &options, GGEMSRandom const &random,
 
     if (max_samples_per_worker == 0ULL) {
       throw std::runtime_error(
-          "Maximum chunk size is too small for one interleaved sample round.");
+        "Maximum chunk size is too small for one interleaved sample round.");
     }
 
     plan.samples_per_worker_per_chunk =
-        static_cast<std::uint32_t>(std::min<std::uint64_t>(
-            options.samples_per_worker, max_samples_per_worker));
+      static_cast<std::uint32_t>(std::min<std::uint64_t>(
+        options.samples_per_worker, max_samples_per_worker));
 
     plan.state_buffer_bytes = state_buffer_bytes;
     plan.value_buffer_bytes =
-        static_cast<std::uint64_t>(options.worker_count) *
-        static_cast<std::uint64_t>(plan.samples_per_worker_per_chunk) *
-        kSVMValueBytesPerSample;
+      static_cast<std::uint64_t>(options.worker_count) *
+      static_cast<std::uint64_t>(plan.samples_per_worker_per_chunk) *
+      kSVMValueBytesPerSample;
     plan.chunk_count = DivideRoundUp(options.samples_per_worker,
                                      plan.samples_per_worker_per_chunk);
 
@@ -483,29 +483,29 @@ auto ComputeChunkPlan(Options const &options, GGEMSRandom const &random,
   plan.samples_per_worker_per_chunk = options.samples_per_worker;
 
   std::uint64_t const value_bytes_per_worker =
-      static_cast<std::uint64_t>(options.samples_per_worker) *
-      kSVMValueBytesPerSample;
+    static_cast<std::uint64_t>(options.samples_per_worker) *
+    kSVMValueBytesPerSample;
 
   std::uint64_t const max_workers_by_values =
-      plan.effective_max_value_buffer_bytes / value_bytes_per_worker;
+    plan.effective_max_value_buffer_bytes / value_bytes_per_worker;
   std::uint64_t const max_workers_by_states =
-      plan.device_max_allocation_bytes / state_size;
+    plan.device_max_allocation_bytes / state_size;
   std::uint64_t const max_workers =
-      std::min(max_workers_by_values, max_workers_by_states);
+    std::min(max_workers_by_values, max_workers_by_states);
 
   if (max_workers == 0ULL) {
     throw std::runtime_error(
-        "Maximum chunk size is too small for one worker-major stream.");
+      "Maximum chunk size is too small for one worker-major stream.");
   }
 
   plan.workers_per_chunk = static_cast<std::uint32_t>(
-      std::min<std::uint64_t>(options.worker_count, max_workers));
+    std::min<std::uint64_t>(options.worker_count, max_workers));
   plan.state_buffer_bytes =
-      static_cast<std::uint64_t>(plan.workers_per_chunk) * state_size;
-  plan.value_buffer_bytes = static_cast<std::uint64_t>(plan.workers_per_chunk) *
-                            value_bytes_per_worker;
+    static_cast<std::uint64_t>(plan.workers_per_chunk) * state_size;
+  plan.value_buffer_bytes =
+    static_cast<std::uint64_t>(plan.workers_per_chunk) * value_bytes_per_worker;
   plan.chunk_count =
-      DivideRoundUp(options.worker_count, plan.workers_per_chunk);
+    DivideRoundUp(options.worker_count, plan.workers_per_chunk);
 
   return plan;
 }
@@ -516,10 +516,10 @@ auto ComputeChunkPlan(Options const &options, GGEMSRandom const &random,
 auto InitializeStates(GGEMSRandom const &random,
                       ggems::ocl::GGEMSOpenCLSVMBuffer &states_buffer,
                       std::uint64_t first_stream_id, std::uint32_t worker_count)
-    -> void {
+  -> void {
   std::uint64_t const state_bytes =
-      static_cast<std::uint64_t>(worker_count) *
-      static_cast<std::uint64_t>(random.GetStateSize());
+    static_cast<std::uint64_t>(worker_count) *
+    static_cast<std::uint64_t>(random.GetStateSize());
 
   if (state_bytes >
       static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max())) {
@@ -529,8 +529,8 @@ auto InitializeStates(GGEMSRandom const &random,
   states_buffer.Map(CL_MAP_WRITE);
 
   auto state_storage =
-      std::span<std::byte>{static_cast<std::byte *>(states_buffer.GetData()),
-                           static_cast<std::size_t>(state_bytes)};
+    std::span<std::byte>{static_cast<std::byte *>(states_buffer.GetData()),
+                         static_cast<std::size_t>(state_bytes)};
   random.InitializeStates(first_stream_id, state_storage);
 
   states_buffer.Unmap();
@@ -554,12 +554,12 @@ auto RunRandomKernel(ggems::ocl::GGEMSOpenCLKernel &kernel,
   }
 
   auto const padded_global_work_size =
-      ggems::ocl::detail::TryComputePaddedGlobalWorkSize(
-          static_cast<std::size_t>(worker_count), options.local_size);
+    ggems::ocl::detail::TryComputePaddedGlobalWorkSize(
+      static_cast<std::size_t>(worker_count), options.local_size);
 
   if (!padded_global_work_size.has_value()) {
     throw std::runtime_error(
-        "Unable to compute the padded OpenCL global work size.");
+      "Unable to compute the padded OpenCL global work size.");
   }
 
   kernel.Run({*padded_global_work_size}, {options.local_size});
@@ -637,7 +637,7 @@ auto WriteMinimalManifest(std::filesystem::path const &path,
 
   if (!stream) {
     throw std::runtime_error(
-        std::format("Cannot open manifest file '{}'.", path.string()));
+      std::format("Cannot open manifest file '{}'.", path.string()));
   }
 
   stream << "{\n";
@@ -710,7 +710,7 @@ auto WriteMinimalManifest(std::filesystem::path const &path,
 
   if (!stream) {
     throw std::runtime_error(
-        std::format("Failed to write manifest file '{}'.", path.string()));
+      std::format("Failed to write manifest file '{}'.", path.string()));
   }
 }
 
@@ -726,37 +726,37 @@ auto GenerateRawUInt32Stream(Options const &options, GGEMSRandom const &random,
   using ggems::validation::random::RandomUInt32StreamSpecification;
 
   RandomUInt32StreamSpecification specification{
-      .engine = random.GetEngine(),
-      .seed = random.GetSeed(),
-      .stream_offset = options.stream_offset,
-      .worker_count = options.worker_count,
-      .samples_per_worker = options.samples_per_worker,
-      .layout = options.layout == StreamLayout::Interleaved
-                    ? RandomUInt32StreamLayout::Interleaved
-                    : RandomUInt32StreamLayout::WorkerMajor,
-      .local_size = options.local_size,
-      .maximum_value_buffer_size =
-          ggems::units::Bytes{options.max_chunk_mib * kBytesPerMiB},
+    .engine = random.GetEngine(),
+    .seed = random.GetSeed(),
+    .stream_offset = options.stream_offset,
+    .worker_count = options.worker_count,
+    .samples_per_worker = options.samples_per_worker,
+    .layout = options.layout == StreamLayout::Interleaved
+                ? RandomUInt32StreamLayout::Interleaved
+                : RandomUInt32StreamLayout::WorkerMajor,
+    .local_size = options.local_size,
+    .maximum_value_buffer_size =
+      ggems::units::Bytes{options.max_chunk_mib * kBytesPerMiB},
   };
 
   GGEMSRandomUInt32ChunkProducer producer{specification, context, std::nullopt};
   auto const &raw_plan = producer.GetChunkPlan();
   ChunkPlan const chunk_plan{
-      .strategy = raw_plan.strategy ==
-                          ggems::validation::random::RandomUInt32ChunkStrategy::
-                              SampleDepth
-                      ? ChunkStrategy::SampleDepth
-                      : ChunkStrategy::WorkerGroups,
-      .requested_max_value_buffer_bytes =
-          raw_plan.requested_max_value_buffer_size.value,
-      .effective_max_value_buffer_bytes =
-          raw_plan.effective_max_value_buffer_size.value,
-      .device_max_allocation_bytes = raw_plan.device_max_allocation_size.value,
-      .state_buffer_bytes = raw_plan.state_buffer_size.value,
-      .value_buffer_bytes = raw_plan.value_buffer_size.value,
-      .workers_per_chunk = raw_plan.workers_per_chunk,
-      .samples_per_worker_per_chunk = raw_plan.samples_per_worker_per_chunk,
-      .chunk_count = raw_plan.chunk_count,
+    .strategy =
+      raw_plan.strategy ==
+          ggems::validation::random::RandomUInt32ChunkStrategy::SampleDepth
+        ? ChunkStrategy::SampleDepth
+        : ChunkStrategy::WorkerGroups,
+    .requested_max_value_buffer_bytes =
+      raw_plan.requested_max_value_buffer_size.value,
+    .effective_max_value_buffer_bytes =
+      raw_plan.effective_max_value_buffer_size.value,
+    .device_max_allocation_bytes = raw_plan.device_max_allocation_size.value,
+    .state_buffer_bytes = raw_plan.state_buffer_size.value,
+    .value_buffer_bytes = raw_plan.value_buffer_size.value,
+    .workers_per_chunk = raw_plan.workers_per_chunk,
+    .samples_per_worker_per_chunk = raw_plan.samples_per_worker_per_chunk,
+    .chunk_count = raw_plan.chunk_count,
   };
 
   std::cout << "Chunk strategy     : " << ToString(chunk_plan.strategy) << '\n';
@@ -790,12 +790,12 @@ auto GenerateRawUInt32Stream(Options const &options, GGEMSRandom const &random,
                                          options.output_path.string()));
   }
 
-  auto const actual_output_bytes = static_cast<std::uint64_t>(
-      std::filesystem::file_size(options.output_path));
+  auto const actual_output_bytes =
+    static_cast<std::uint64_t>(std::filesystem::file_size(options.output_path));
   if (actual_output_bytes != output_bytes) {
     throw std::runtime_error(
-        std::format("Output stream size mismatch: expected {} bytes, got {}.",
-                    output_bytes, actual_output_bytes));
+      std::format("Output stream size mismatch: expected {} bytes, got {}.",
+                  output_bytes, actual_output_bytes));
   }
 
   WriteMinimalManifest(options.manifest_path, options, random,
@@ -820,16 +820,16 @@ auto GenerateRandomStream(Options const &options) -> void {
 
   if (static_cast<std::uint64_t>(options.worker_count) >
       std::numeric_limits<std::uint64_t>::max() /
-          static_cast<std::uint64_t>(options.samples_per_worker)) {
+        static_cast<std::uint64_t>(options.samples_per_worker)) {
     throw std::runtime_error("Requested stream sample count overflows uint64.");
   }
 
   std::uint64_t const total_samples =
-      static_cast<std::uint64_t>(options.worker_count) *
-      static_cast<std::uint64_t>(options.samples_per_worker);
+    static_cast<std::uint64_t>(options.worker_count) *
+    static_cast<std::uint64_t>(options.samples_per_worker);
 
   std::uint64_t const output_bytes_per_sample =
-      options.stream_type == StreamType::RawUInt32 ? 4ULL : 3ULL;
+    options.stream_type == StreamType::RawUInt32 ? 4ULL : 3ULL;
 
   if (total_samples >
       std::numeric_limits<std::uint64_t>::max() / output_bytes_per_sample) {
@@ -886,11 +886,11 @@ auto GenerateRandomStream(Options const &options) -> void {
 
   std::filesystem::path kernel_root{GGEMS_KERNEL_ROOT};
   std::filesystem::path validation_kernel_root{
-      GGEMS_VALIDATION_RANDOM_KERNEL_ROOT};
+    GGEMS_VALIDATION_RANDOM_KERNEL_ROOT};
 
   std::string build_options =
-      std::format("-I\"{}\" {}", kernel_root.generic_string(),
-                  random.GetKernelBuildDefinition());
+    std::format("-I\"{}\" {}", kernel_root.generic_string(),
+                random.GetKernelBuildDefinition());
 
   std::string_view kernel_name;
 
@@ -909,17 +909,17 @@ auto GenerateRandomStream(Options const &options) -> void {
   }
 
   auto const &program = opencl.GetOrCreateProgram(
-      context, validation_kernel_root, std::string{kernel_name}, build_options);
+    context, validation_kernel_root, std::string{kernel_name}, build_options);
 
   cl::Kernel raw_kernel = program.CreateKernel(std::string{kernel_name});
 
   ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
                                        std::string{kernel_name}};
 
-  auto states_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{chunk_plan.state_buffer_bytes});
-  auto values_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{chunk_plan.value_buffer_bytes});
+  auto states_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{chunk_plan.state_buffer_bytes});
+  auto values_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{chunk_plan.value_buffer_bytes});
 
   auto output_stream = OpenOutputStream(options.output_path, options.force);
 
@@ -933,20 +933,20 @@ auto GenerateRandomStream(Options const &options) -> void {
 
     while (remaining_samples > 0U) {
       std::uint32_t const current_samples_per_worker =
-          std::min(chunk_plan.samples_per_worker_per_chunk, remaining_samples);
+        std::min(chunk_plan.samples_per_worker_per_chunk, remaining_samples);
 
       RunRandomKernel(kernel, options, states_buffer.GetData(),
                       values_buffer.GetData(), options.worker_count,
                       current_samples_per_worker);
 
       std::uint64_t const current_sample_count =
-          static_cast<std::uint64_t>(options.worker_count) *
-          static_cast<std::uint64_t>(current_samples_per_worker);
+        static_cast<std::uint64_t>(options.worker_count) *
+        static_cast<std::uint64_t>(current_samples_per_worker);
 
       if (current_sample_count >
           static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max())) {
         throw std::runtime_error(
-            "Random value chunk is too large for host I/O.");
+          "Random value chunk is too large for host I/O.");
       }
 
       values_buffer.Map(CL_MAP_READ);
@@ -963,10 +963,10 @@ auto GenerateRandomStream(Options const &options) -> void {
 
     while (worker_offset < options.worker_count) {
       std::uint32_t const current_worker_count = std::min(
-          chunk_plan.workers_per_chunk, options.worker_count - worker_offset);
+        chunk_plan.workers_per_chunk, options.worker_count - worker_offset);
 
       std::uint64_t const first_stream_id =
-          options.stream_offset + static_cast<std::uint64_t>(worker_offset);
+        options.stream_offset + static_cast<std::uint64_t>(worker_offset);
 
       InitializeStates(random, states_buffer, first_stream_id,
                        current_worker_count);
@@ -976,13 +976,13 @@ auto GenerateRandomStream(Options const &options) -> void {
                       options.samples_per_worker);
 
       std::uint64_t const current_sample_count =
-          static_cast<std::uint64_t>(current_worker_count) *
-          static_cast<std::uint64_t>(options.samples_per_worker);
+        static_cast<std::uint64_t>(current_worker_count) *
+        static_cast<std::uint64_t>(options.samples_per_worker);
 
       if (current_sample_count >
           static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max())) {
         throw std::runtime_error(
-            "Random value chunk is too large for host I/O.");
+          "Random value chunk is too large for host I/O.");
       }
 
       values_buffer.Map(CL_MAP_READ);
@@ -1007,13 +1007,13 @@ auto GenerateRandomStream(Options const &options) -> void {
                                          options.output_path.string()));
   }
 
-  auto const actual_output_bytes = static_cast<std::uint64_t>(
-      std::filesystem::file_size(options.output_path));
+  auto const actual_output_bytes =
+    static_cast<std::uint64_t>(std::filesystem::file_size(options.output_path));
 
   if (actual_output_bytes != output_bytes) {
     throw std::runtime_error(
-        std::format("Output stream size mismatch: expected {} bytes, got {}.",
-                    output_bytes, actual_output_bytes));
+      std::format("Output stream size mismatch: expected {} bytes, got {}.",
+                  output_bytes, actual_output_bytes));
   }
 
   WriteMinimalManifest(options.manifest_path, options, random, device,

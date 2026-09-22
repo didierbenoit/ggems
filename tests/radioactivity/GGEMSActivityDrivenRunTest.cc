@@ -32,14 +32,14 @@ constexpr std::uint64_t k_mono_energy_micro_eV{123'456'789'000ULL};
 constexpr long double k_activity_bq{512.0L};
 
 constexpr std::uint32_t k_source_record_kind =
-    ggems::core::observer::ToKernelObserverRecordKind(
-        ggems::core::observer::GGEMSObserverRecordKind::Source);
+  ggems::core::observer::ToKernelObserverRecordKind(
+    ggems::core::observer::GGEMSObserverRecordKind::Source);
 
 // =============================================================================
 // =============================================================================
 
 [[nodiscard]] auto MakeRandom()
-    -> std::shared_ptr<ggems::core::random::GGEMSRandom> {
+  -> std::shared_ptr<ggems::core::random::GGEMSRandom> {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
   random->SetEngine("philox");
   random->SetSeed(0x1259'7A31'B460'D8EFULL);
@@ -50,7 +50,7 @@ constexpr std::uint32_t k_source_record_kind =
 // =============================================================================
 
 [[nodiscard]] auto MakeMonoRadionuclide() -> std::shared_ptr<
-    ggems::core::radioactivity::GGEMSRadionuclideDefinition const> {
+  ggems::core::radioactivity::GGEMSRadionuclideDefinition const> {
   using ggems::core::particles::GGEMSParticleType;
   using ggems::core::radioactivity::GGEMSRadionuclideDefinition;
   using ggems::core::radioactivity::GGEMSRadionuclideEmission;
@@ -58,22 +58,21 @@ constexpr std::uint32_t k_source_record_kind =
 
   std::vector<GGEMSRadionuclideEmission> emissions;
   emissions.emplace_back(
-      GGEMSParticleType::Gamma, 1.0L,
-      GGEMSEnergyDistribution::BuildMono(k_mono_energy_micro_eV));
+    GGEMSParticleType::Gamma, 1.0L,
+    GGEMSEnergyDistribution::BuildMono(k_mono_energy_micro_eV));
 
   return std::make_shared<GGEMSRadionuclideDefinition const>(
-      "ActivityDrivenRunTest", 1.0e9L, std::move(emissions));
+    "ActivityDrivenRunTest", 1.0e9L, std::move(emissions));
 }
 
 // =============================================================================
 // =============================================================================
 
 [[nodiscard]] auto MakeActivitySource(
-    std::shared_ptr<
-        ggems::core::radioactivity::GGEMSRadionuclideDefinition const>
-        radionuclide,
-    long double activity_bq = k_activity_bq)
-    -> std::shared_ptr<ggems::core::sources::GGEMSSource> {
+  std::shared_ptr<ggems::core::radioactivity::GGEMSRadionuclideDefinition const>
+    radionuclide,
+  long double activity_bq = k_activity_bq)
+  -> std::shared_ptr<ggems::core::sources::GGEMSSource> {
   auto source = std::make_shared<ggems::core::sources::GGEMSSource>();
   source->SetRadionuclide(std::move(radionuclide),
                           ggems::units::Activity{activity_bq}, 0ULL);
@@ -84,9 +83,9 @@ constexpr std::uint32_t k_source_record_kind =
 // =============================================================================
 
 [[nodiscard]] auto MakeObserver()
-    -> std::shared_ptr<ggems::core::observer::GGEMSTransportObserver> {
+  -> std::shared_ptr<ggems::core::observer::GGEMSTransportObserver> {
   auto observer =
-      std::make_shared<ggems::core::observer::GGEMSTransportObserver>();
+    std::make_shared<ggems::core::observer::GGEMSTransportObserver>();
   observer->CaptureFirstPrimaries(std::numeric_limits<std::uint32_t>::max());
   return observer;
 }
@@ -95,8 +94,8 @@ constexpr std::uint32_t k_source_record_kind =
 // =============================================================================
 
 [[nodiscard]] auto GetSortedSourceRecords(
-    ggems::core::observer::GGEMSTransportObserver const &observer)
-    -> std::vector<ggems::core::observer::GGEMSObserverRecord> {
+  ggems::core::observer::GGEMSTransportObserver const &observer)
+  -> std::vector<ggems::core::observer::GGEMSObserverRecord> {
   std::vector<ggems::core::observer::GGEMSObserverRecord> source_records;
 
   for (auto const &record : observer.GetRecords()) {
@@ -151,12 +150,12 @@ TEST_F(GGEMSActivityDrivenRunTest,
   EXPECT_THROW(run.Initialize(), ggems::core::GGEMSExceptionBase);
 
   EXPECT_NO_THROW(source->SetRadionuclide(
-      radionuclide, ggems::units::Activity{k_activity_bq}, k_second_ps));
+    radionuclide, ggems::units::Activity{k_activity_bq}, k_second_ps));
 
   ASSERT_NO_THROW(run.Initialize());
 
   auto const &configuration =
-      source->BuildActivityDrivenPopulationConfiguration();
+    source->BuildActivityDrivenPopulationConfiguration();
   EXPECT_EQ(configuration.radionuclide, radionuclide);
   EXPECT_EQ(configuration.activity_at_reference_time.value, k_activity_bq);
   EXPECT_EQ(configuration.reference_time_ps, k_second_ps);
@@ -173,24 +172,24 @@ TEST_F(GGEMSActivityDrivenRunTest,
   auto random = MakeRandom();
 
   std::vector<std::shared_ptr<ggems::core::sources::GGEMSSource>>
-      reference_sources{MakeActivitySource(radionuclide)};
+    reference_sources{MakeActivitySource(radionuclide)};
   auto reference_random = MakeRandom();
   ggems::core::sources::GGEMSSourcePopulationPlanner reference_planner{
-      reference_sources, *reference_random};
+    reference_sources, *reference_random};
   auto reference_first = reference_planner.BuildCandidate(
-      {.start_ps = 0ULL, .stop_ps = k_second_ps});
+    {.start_ps = 0ULL, .stop_ps = k_second_ps});
   std::uint64_t const expected_first_count =
-      reference_first.GetPlan().GetTotalPrimaryCount();
+    reference_first.GetPlan().GetTotalPrimaryCount();
   reference_planner.CommitCandidate(reference_first);
   auto reference_second = reference_planner.BuildCandidate(
-      {.start_ps = k_second_ps, .stop_ps = 2ULL * k_second_ps});
+    {.start_ps = k_second_ps, .stop_ps = 2ULL * k_second_ps});
   std::uint64_t const expected_second_count =
-      reference_second.GetPlan().GetTotalPrimaryCount();
+    reference_second.GetPlan().GetTotalPrimaryCount();
   reference_planner.CommitCandidate(reference_second);
   auto reference_after_reset = reference_planner.BuildCandidate(
-      {.start_ps = 0ULL, .stop_ps = k_second_ps});
+    {.start_ps = 0ULL, .stop_ps = k_second_ps});
   std::uint64_t const expected_after_reset_count =
-      reference_after_reset.GetPlan().GetTotalPrimaryCount();
+    reference_after_reset.GetPlan().GetTotalPrimaryCount();
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(random);
@@ -202,7 +201,7 @@ TEST_F(GGEMSActivityDrivenRunTest,
   ASSERT_NO_THROW(run.Initialize());
 
   EXPECT_THROW(source->SetRadionuclide(
-                   radionuclide, ggems::units::Activity{k_activity_bq}, 0ULL),
+                 radionuclide, ggems::units::Activity{k_activity_bq}, 0ULL),
                ggems::core::GGEMSExceptionBase);
   EXPECT_THROW(source->SetCountDrivenPopulation(1ULL),
                ggems::core::GGEMSExceptionBase);
@@ -266,7 +265,7 @@ TEST_F(GGEMSActivityDrivenRunTest,
   EXPECT_EQ(reset_source_records.front().run_id, 2ULL);
   EXPECT_EQ(reset_source_records.front().global_primary_id,
             first_snapshot->GetTotalPrimaryCount() +
-                second_snapshot->GetTotalPrimaryCount());
+              second_snapshot->GetTotalPrimaryCount());
 }
 
 // =============================================================================
@@ -279,35 +278,35 @@ TEST_F(GGEMSActivityDrivenRunTest,
 
   auto radionuclide = MakeMonoRadionuclide();
   auto activity_source =
-      MakeActivitySource(radionuclide, k_empty_then_non_empty_activity_bq);
+    MakeActivitySource(radionuclide, k_empty_then_non_empty_activity_bq);
   auto count_source = std::make_shared<ggems::core::sources::GGEMSSource>();
   count_source->SetPrimaryCount(0ULL).SetEnergyMicroElectronVolt(
-      k_mono_energy_micro_eV);
+    k_mono_energy_micro_eV);
   auto observer = MakeObserver();
   auto random = MakeRandom();
   random->SetSeed(k_empty_then_non_empty_seed);
 
   std::vector<std::shared_ptr<ggems::core::sources::GGEMSSource>>
-      reference_sources{
-          MakeActivitySource(radionuclide, k_empty_then_non_empty_activity_bq)};
+    reference_sources{
+      MakeActivitySource(radionuclide, k_empty_then_non_empty_activity_bq)};
   auto reference_random = MakeRandom();
   reference_random->SetSeed(k_empty_then_non_empty_seed);
   ggems::core::sources::GGEMSSourcePopulationPlanner reference_planner{
-      reference_sources, *reference_random};
+    reference_sources, *reference_random};
 
   auto reference_first = reference_planner.BuildCandidate(
-      {.start_ps = 0ULL, .stop_ps = k_second_ps});
+    {.start_ps = 0ULL, .stop_ps = k_second_ps});
   auto reference_second_without_commit = reference_planner.BuildCandidate(
-      {.start_ps = k_second_ps, .stop_ps = 2ULL * k_second_ps});
+    {.start_ps = k_second_ps, .stop_ps = 2ULL * k_second_ps});
   ASSERT_EQ(reference_first.GetPlan().GetTotalPrimaryCount(), 0ULL);
   ASSERT_EQ(reference_second_without_commit.GetPlan().GetTotalPrimaryCount(),
             0ULL);
 
   reference_planner.CommitCandidate(reference_first);
   auto reference_second_after_commit = reference_planner.BuildCandidate(
-      {.start_ps = k_second_ps, .stop_ps = 2ULL * k_second_ps});
+    {.start_ps = k_second_ps, .stop_ps = 2ULL * k_second_ps});
   std::uint64_t const expected_activity_primary_count =
-      reference_second_after_commit.GetPlan().GetTotalPrimaryCount();
+    reference_second_after_commit.GetPlan().GetTotalPrimaryCount();
   ASSERT_EQ(expected_activity_primary_count, 2ULL);
 
   ggems::core::GGEMSRun run{};
@@ -386,7 +385,7 @@ TEST_F(GGEMSActivityDrivenRunTest,
   std::string const first_observer_dump = observer->BuildDump();
 
   observer->CaptureFirstPrimaries(0U).CapturePrimary(
-      0U, std::numeric_limits<std::uint64_t>::max());
+    0U, std::numeric_limits<std::uint64_t>::max());
 
   EXPECT_THROW(run.Run(), ggems::core::GGEMSExceptionBase);
   EXPECT_EQ(run.GetCurrentTimePicoSecond(), k_second_ps);
@@ -401,7 +400,7 @@ TEST_F(GGEMSActivityDrivenRunTest,
   EXPECT_EQ(snapshot_after_failure->GetRecords()[0U].time_stop_ps, k_second_ps);
 
   observer->ClearCapturedPrimary().CaptureFirstPrimaries(
-      std::numeric_limits<std::uint32_t>::max());
+    std::numeric_limits<std::uint32_t>::max());
   ASSERT_NO_THROW(run.Run());
 
   auto const retry_snapshot = run.GetLastSourceRunSnapshot();
@@ -428,7 +427,7 @@ TEST_F(GGEMSActivityDrivenRunTest,
   ASSERT_NO_THROW(reference_run.Run());
 
   auto const reference_second_snapshot =
-      reference_run.GetLastSourceRunSnapshot();
+    reference_run.GetLastSourceRunSnapshot();
   ASSERT_TRUE(reference_second_snapshot.has_value());
   ASSERT_EQ(reference_second_snapshot->GetRecords().size(), 1U);
   EXPECT_EQ(retry_snapshot->GetTotalPrimaryCount(),

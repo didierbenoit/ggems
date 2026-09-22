@@ -19,7 +19,7 @@ TEST(GGEMSEnergyDistributionRecord, DefaultsToUnknownAndEmptyTable) {
   EXPECT_EQ(record.table_offset, 0ULL);
   EXPECT_EQ(record.distribution_type,
             ggems::core::sources::ToKernelEnergyDistributionType(
-                ggems::core::sources::GGEMSEnergyDistributionType::Unknown));
+              ggems::core::sources::GGEMSEnergyDistributionType::Unknown));
   EXPECT_EQ(record.table_count, 0U);
 }
 
@@ -42,11 +42,11 @@ TEST(GGEMSEnergyDistributionRecord, HasApprovedHostLayout) {
 
 TEST(GGEMSEnergyDistributionRecord, PreservesEveryField) {
   EnergyRecord const record{
-      .regular_bin_width_micro_eV = 2'000'000ULL,
-      .table_offset = 17ULL,
-      .distribution_type = ggems::core::sources::ToKernelEnergyDistributionType(
-          ggems::core::sources::GGEMSEnergyDistributionType::RegularSpectrum),
-      .table_count = 111U,
+    .regular_bin_width_micro_eV = 2'000'000ULL,
+    .table_offset = 17ULL,
+    .distribution_type = ggems::core::sources::ToKernelEnergyDistributionType(
+      ggems::core::sources::GGEMSEnergyDistributionType::RegularSpectrum),
+    .table_count = 111U,
   };
 
   EXPECT_EQ(record.regular_bin_width_micro_eV, 2'000'000ULL);

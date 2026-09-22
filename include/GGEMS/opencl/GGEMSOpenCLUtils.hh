@@ -57,7 +57,7 @@ namespace ggems::ocl {
  * \return Symbolic OpenCL error name, or CL_UNKNOWN_ERROR.
  */
 [[nodiscard]] inline auto GetErrorCodeName(cl_int err) noexcept
-    -> std::string_view {
+  -> std::string_view {
   switch (err) {
   case CL_SUCCESS:
     return "CL_SUCCESS";
@@ -196,7 +196,7 @@ namespace ggems::ocl {
  * \return Human-readable OpenCL error description.
  */
 [[nodiscard]] inline auto GetErrorDescription(cl_int err) noexcept
-    -> std::string_view {
+  -> std::string_view {
   switch (err) {
   case CL_SUCCESS:
     return "Operation completed successfully.";
@@ -351,7 +351,7 @@ template <core::GGEMSExceptionType ExceptionType = core::GGEMSFatal>
 inline auto
 CheckCLError(cl_int err, std::string_view context,
              std::source_location loc = std::source_location::current())
-    -> void {
+  -> void {
   if (err != CL_SUCCESS) {
     throw ExceptionType(std::format("{} (code {}): {}", context,
                                     static_cast<int>(err),
@@ -493,10 +493,10 @@ template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
     std::size_t size = 0;
     err = getter(obj(), Info, 0, nullptr, &size);
     CheckCLError<core::GGEMSRecoverable>(err, std::string(Traits::name) +
-                                                  " (query size)");
+                                                " (query size)");
 
     auto value =
-        detail::CLInfoReader<ReturnType>::Read(obj, Info, size, getter, err);
+      detail::CLInfoReader<ReturnType>::Read(obj, Info, size, getter, err);
     CheckCLError<core::GGEMSRecoverable>(err,
                                          std::string(Traits::name) + " (read)");
     return value;
@@ -549,7 +549,7 @@ HasExtension(std::unordered_set<std::string> const &extensions,
  */
 template <cl_uint Info, typename Object>
 [[nodiscard]] auto ExtractExtensions(Object const &obj)
-    -> std::unordered_set<std::string> {
+  -> std::unordered_set<std::string> {
   std::string ext_str = GetInfo<Info>(obj);
   std::unordered_set<std::string> result;
   std::istringstream iss(ext_str);

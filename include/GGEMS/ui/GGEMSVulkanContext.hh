@@ -37,10 +37,10 @@ public:
   auto RenderFrame(GLFWwindow *window, bool framebuffer_resized) -> void;
 
   auto SubmitSourceRunSnapshot(core::sources::GGEMSSourceRunSnapshot snapshot)
-      -> void;
+    -> void;
 
   auto SubmitParticleTraceSegments(
-      std::vector<ggems::render::GGEMSParticleTraceSegment> segments) -> void;
+    std::vector<ggems::render::GGEMSParticleTraceSegment> segments) -> void;
   auto ClearParticleTraces() -> void;
 
 private:
@@ -68,7 +68,7 @@ private:
   void CreateSurface(GLFWwindow *window);
 
   [[nodiscard]] static auto GetRequiredInstanceExtensions()
-      -> std::vector<char const *>;
+    -> std::vector<char const *>;
 
 #if VK_HEADER_VERSION >= 304
   static VKAPI_ATTR auto VKAPI_CALL
@@ -85,34 +85,34 @@ private:
 #endif
 
   auto SelectPhysicalDevice(
-      detail::GGEMSVulkanDeviceSelector const &device_selector,
-      std::optional<detail::GGEMSVulkanDisplayAdapter> const &display_adapter)
-      -> void;
+    detail::GGEMSVulkanDeviceSelector const &device_selector,
+    std::optional<detail::GGEMSVulkanDisplayAdapter> const &display_adapter)
+    -> void;
 
   [[nodiscard]] auto
   BuildPhysicalDeviceCandidate(vk::raii::PhysicalDevice const &physical_device,
                                std::uint32_t enumeration_index) const
-      -> detail::GGEMSVulkanDeviceCandidate;
+    -> detail::GGEMSVulkanDeviceCandidate;
 
   [[nodiscard]] auto
   FindQueueFamilies(vk::raii::PhysicalDevice const &physical_device) const
-      -> QueueFamilyIndices;
+    -> QueueFamilyIndices;
 
   [[nodiscard]] static auto SupportsRequiredDeviceExtensions(
-      vk::raii::PhysicalDevice const &physical_device) -> bool;
+    vk::raii::PhysicalDevice const &physical_device) -> bool;
 
   [[nodiscard]] static auto
   SupportsRequiredFeatures(vk::raii::PhysicalDevice const &physical_device)
-      -> bool;
+    -> bool;
 
   [[nodiscard]] auto
   SupportsSwapchain(vk::raii::PhysicalDevice const &physical_device) const
-      -> bool;
+    -> bool;
 
   auto WarnIfCrossAdapterPresentation(
-      GLFWwindow *window,
-      std::optional<detail::GGEMSVulkanDisplayAdapter> const &display_adapter)
-      const -> void;
+    GLFWwindow *window,
+    std::optional<detail::GGEMSVulkanDisplayAdapter> const &display_adapter)
+    const -> void;
 
   auto CreateLogicalDevice() -> void;
 
@@ -121,15 +121,14 @@ private:
 
   [[nodiscard]] auto
   QuerySwapchainSupport(vk::raii::PhysicalDevice const &physical_device) const
-      -> SwapchainSupportDetails;
+    -> SwapchainSupportDetails;
 
   [[nodiscard]] static auto ChooseSwapchainSurfaceFormat(
-      std::vector<vk::SurfaceFormatKHR> const &surface_formats)
-      -> vk::SurfaceFormatKHR;
+    std::vector<vk::SurfaceFormatKHR> const &surface_formats)
+    -> vk::SurfaceFormatKHR;
 
   [[nodiscard]] static auto ChooseSwapchainPresentMode(
-      std::vector<vk::PresentModeKHR> const &present_modes)
-      -> vk::PresentModeKHR;
+    std::vector<vk::PresentModeKHR> const &present_modes) -> vk::PresentModeKHR;
 
   [[nodiscard]] static auto
   ChooseSwapchainExtent(vk::SurfaceCapabilitiesKHR const &capabilities,
@@ -197,11 +196,11 @@ private:
 
   std::mutex pending_source_run_snapshot_mutex_;
   std::optional<core::sources::GGEMSSourceRunSnapshot>
-      pending_source_run_snapshot_;
+    pending_source_run_snapshot_;
 
   std::mutex pending_particle_trace_mutex_;
   std::vector<ggems::render::GGEMSParticleTraceSegment>
-      pending_particle_trace_segments_;
+    pending_particle_trace_segments_;
   bool has_pending_particle_trace_segments_{false};
   bool pending_particle_trace_clear_{false};
 

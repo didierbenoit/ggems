@@ -116,12 +116,13 @@ static auto LogLevelName(LogRecord const &rec) -> std::string {
  * \param[in] time_point Timestamp to format.
  * \return Timestamp formatted as ``YYYY-MM-DD HH:MM:SS.mmm``.
  */
-static auto FormatTimestamp(
-    std::chrono::system_clock::time_point const &time_point) -> std::string {
+static auto
+FormatTimestamp(std::chrono::system_clock::time_point const &time_point)
+  -> std::string {
   using namespace std::chrono;
   auto time = system_clock::to_time_t(time_point);
   auto m_sec =
-      duration_cast<milliseconds>(time_point.time_since_epoch()) % 1000;
+    duration_cast<milliseconds>(time_point.time_since_epoch()) % 1000;
   std::tm tm_buf{};
 #ifdef _WIN32
   localtime_s(&tm_buf, &time);
@@ -212,8 +213,8 @@ auto FileSink::Write(RenderedLogLine &&log_line) -> void {
 // =============================================================================
 // =============================================================================
 
-auto LogFormatter::Format(LogRecord const &rec,
-                          bool use_color) -> RenderedLogLine {
+auto LogFormatter::Format(LogRecord const &rec, bool use_color)
+  -> RenderedLogLine {
   RenderedLogLine log_line;
   log_line.msg = rec.message;
   log_line.level = rec.level;
@@ -229,8 +230,8 @@ auto LogFormatter::Format(LogRecord const &rec,
   std::string level_name = LogLevelName(rec);
 
   log_line.prefix =
-      std::format("{} [{}] {{{}}}{} ({}):", time_stamp, level_name,
-                  rec.thread_id, module_part, rec.function);
+    std::format("{} [{}] {{{}}}{} ({}):", time_stamp, level_name, rec.thread_id,
+                module_part, rec.function);
   return log_line;
 }
 
@@ -245,8 +246,8 @@ auto GGEMSLogger::GetInstance() noexcept -> GGEMSLogger & {
 // -----------------------------------------------------------------------------
 
 auto GGEMSLogger::Log(LogLevel lvl, std::int32_t depth, std::string_view module,
-                      std::source_location const &loc,
-                      std::string_view msg) -> void {
+                      std::source_location const &loc, std::string_view msg)
+  -> void {
   LogRecord rec;
   rec.timestamp = std::chrono::system_clock::now();
   rec.level = lvl;

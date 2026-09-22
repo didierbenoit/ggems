@@ -76,7 +76,7 @@ void TerminateHandler() noexcept {
       }
     } else {
       WriteEmergencyDiagnostic(
-          "[GGEMSException] Terminate called with no active exception");
+        "[GGEMSException] Terminate called with no active exception");
     }
   } catch (...) {
     std::fputs("[GGEMSException] Exception escaped TerminateHandler\n", stderr);

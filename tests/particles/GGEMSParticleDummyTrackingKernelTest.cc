@@ -69,14 +69,14 @@ TEST_F(GGEMSParticleDummyTrackingKernelTest, KillsAlivePrimaryParticles) {
   std::size_t particle_bytes = k_particle_count * sizeof(ParticleState);
 
   auto particles_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{particle_bytes});
+    context.CreateSVMBuffer(ggems::units::Bytes{particle_bytes});
 
   auto active_count_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(std::uint32_t)});
+    context.CreateSVMBuffer(ggems::units::Bytes{sizeof(std::uint32_t)});
 
   auto *particles = static_cast<ParticleState *>(particles_buffer.GetData());
   auto *active_count =
-      static_cast<std::uint32_t *>(active_count_buffer.GetData());
+    static_cast<std::uint32_t *>(active_count_buffer.GetData());
 
   particles_buffer.Map(CL_MAP_WRITE);
   std::fill(particles, particles + k_particle_count, ParticleState{});
@@ -87,13 +87,13 @@ TEST_F(GGEMSParticleDummyTrackingKernelTest, KillsAlivePrimaryParticles) {
   active_count_buffer.Unmap();
 
   auto const padded_global_work_size =
-      ggems::ocl::detail::TryComputePaddedGlobalWorkSize(k_particle_count,
-                                                         k_local_size);
+    ggems::ocl::detail::TryComputePaddedGlobalWorkSize(k_particle_count,
+                                                       k_local_size);
   ASSERT_TRUE(padded_global_work_size.has_value());
   std::size_t const global_size = *padded_global_work_size;
 
   std::uint32_t particle_type = ggems::core::particles::ToKernelParticleType(
-      ggems::core::particles::GGEMSParticleType::Aionino);
+    ggems::core::particles::GGEMSParticleType::Aionino);
 
   {
     auto &program = opencl.GetOrCreateProgram(context, kernel_test_root,
@@ -101,7 +101,7 @@ TEST_F(GGEMSParticleDummyTrackingKernelTest, KillsAlivePrimaryParticles) {
                                               build_options);
 
     cl::Kernel raw_kernel =
-        program.CreateKernel("particle_generate_dummy_primary");
+      program.CreateKernel("particle_generate_dummy_primary");
 
     ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
                                          "particle_generate_dummy_primary"};
@@ -117,7 +117,7 @@ TEST_F(GGEMSParticleDummyTrackingKernelTest, KillsAlivePrimaryParticles) {
 
   {
     auto &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "particle_dummy_kill_alive", build_options);
+      context, kernel_test_root, "particle_dummy_kill_alive", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("particle_dummy_kill_alive");
 
@@ -153,7 +153,7 @@ TEST_F(GGEMSParticleDummyTrackingKernelTest, KillsAlivePrimaryParticles) {
 
     EXPECT_EQ(particle.status,
               ggems::core::particles::ToKernelParticleStatus(
-                  ggems::core::particles::GGEMSParticleStatus::Killed));
+                ggems::core::particles::GGEMSParticleStatus::Killed));
 
     EXPECT_EQ(particle.time_ps, 1ULL);
     EXPECT_EQ(particle.flags & 1U, 1U);

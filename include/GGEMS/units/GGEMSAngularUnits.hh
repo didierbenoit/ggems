@@ -54,11 +54,9 @@ template <> struct UnitRegistry<AngleUnitSet> {
    * \brief Registered unit definitions for this quantity family.
    */
   static constexpr std::array<UnitDefinition, 2U> units{{
-      {.symbol = "rad",
-       .scale = DecimalScale(0),
-       .automatic_display = false},
-      {.symbol = "deg",
-       .scale = SpecialScale(std::numbers::pi_v<long double> / 180.0L)},
+    {.symbol = "rad", .scale = DecimalScale(0), .automatic_display = false},
+    {.symbol = "deg",
+     .scale = SpecialScale(std::numbers::pi_v<long double> / 180.0L)},
   }};
 };
 
@@ -83,13 +81,15 @@ template <> struct QuantityTraits<AngleTag> {
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::FixedUnit};
+    QuantityFormatPolicy::FixedUnit};
   /*!
-   * \brief Fixed display unit, or an empty string when the policy selects units automatically.
+   * \brief Fixed display unit, or an empty string when the policy selects units
+   * automatically.
    */
   static constexpr std::string_view fixed_display_unit{"deg"};
   /*!
-   * \brief Default number of digits after the decimal point for formatted output.
+   * \brief Default number of digits after the decimal point for formatted
+   * output.
    */
   static constexpr std::int8_t default_precision{3};
 };

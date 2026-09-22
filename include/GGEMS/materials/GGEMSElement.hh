@@ -29,12 +29,12 @@ public:
     if (!(molar_mass > 0.0L) ||
         !(molar_mass <= std::numeric_limits<long double>::max())) {
       throw GGEMSRecoverable{
-          "Molar mass must be finite and strictly positive."};
+        "Molar mass must be finite and strictly positive."};
     }
   }
 
   [[nodiscard]] constexpr auto GetAtomicNumber() const noexcept
-      -> std::uint32_t {
+    -> std::uint32_t {
     return atomic_number_;
   }
 

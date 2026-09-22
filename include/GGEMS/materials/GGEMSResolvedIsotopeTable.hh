@@ -15,18 +15,18 @@ struct GGEMSResolvedIsotope {
 class GGEMSResolvedIsotopeTable {
 public:
   explicit GGEMSResolvedIsotopeTable(
-      std::vector<GGEMSResolvedIsotope> resolved_isotopes);
+    std::vector<GGEMSResolvedIsotope> resolved_isotopes);
 
   [[nodiscard]] auto GetResolvedIsotopes() const noexcept
-      -> std::span<GGEMSResolvedIsotope const> {
+    -> std::span<GGEMSResolvedIsotope const> {
     return resolved_isotopes_;
   }
 
   [[nodiscard]] auto Find(GGEMSIsotope const &isotope) const noexcept
-      -> GGEMSResolvedIsotope const *;
+    -> GGEMSResolvedIsotope const *;
 
   [[nodiscard]] auto Require(GGEMSIsotope const &isotope) const
-      -> GGEMSResolvedIsotope const &;
+    -> GGEMSResolvedIsotope const &;
 
 private:
   std::vector<GGEMSResolvedIsotope> resolved_isotopes_;

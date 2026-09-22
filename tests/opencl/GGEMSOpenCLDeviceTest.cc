@@ -23,7 +23,9 @@
  * \file
  * \brief Unit tests for GGEMS OpenCL device metadata.
  *
- * Compares representative cached device properties with native OpenCL queries, checks extension parsing, and validates advertised device and driver UUID data.
+ * Compares representative cached device properties with native OpenCL queries,
+ * checks extension parsing, and validates advertised device and driver UUID
+ * data.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>

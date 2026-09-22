@@ -33,10 +33,10 @@ TEST(GGEMSPrimaryStream, ProducesContiguousDisjointFixedCountRanges) {
   EXPECT_LT(second.global_history_offset, third.global_history_offset);
 
   std::uint64_t first_end =
-      first.global_history_offset + first.source_primary_count;
+    first.global_history_offset + first.source_primary_count;
 
   std::uint64_t second_end =
-      second.global_history_offset + second.source_primary_count;
+    second.global_history_offset + second.source_primary_count;
 
   EXPECT_EQ(first_end, second.global_history_offset);
   EXPECT_EQ(second_end, third.global_history_offset);
@@ -161,7 +161,7 @@ TEST(GGEMSPrimaryStream, RejectsZeroReservationWithoutConsumingIndentifiers) {
 TEST(GGEMSPrimaryStream,
      PreservesStateAfterUnrepresentableRangeAndExhautsAtMaximumId) {
   constexpr std::uint64_t k_maximum_id{
-      std::numeric_limits<std::uint64_t>::max()};
+    std::numeric_limits<std::uint64_t>::max()};
 
   ggems::core::particles::GGEMSPrimaryStream stream{};
   stream.Initialize();

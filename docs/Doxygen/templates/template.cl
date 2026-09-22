@@ -38,12 +38,8 @@
  * \param[out] output XXX.
  * \param[in] count XXX.
  */
-__kernel void XXX(
-    __global float const* input,
-    __global float* output,
-    uint const count)
-{
-}
+__kernel void XXX(__global float const *input, __global float *output,
+                  uint const count) {}
 
 /*!
  * \brief Computes XXX.
@@ -53,7 +49,4 @@ __kernel void XXX(
  * \param[in] value XXX.
  * \return XXX.
  */
-inline uint XXXHelper(uint const value)
-{
-  return value;
-}
+inline uint XXXHelper(uint const value) { return value; }

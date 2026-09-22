@@ -17,7 +17,7 @@ struct GGEMSMaterialCutCouple {
   std::array<units::Energy, 4U> thresholds;
 
   [[nodiscard]] auto operator<=>(GGEMSMaterialCutCouple const &) const
-      -> std::strong_ordering = default;
+    -> std::strong_ordering = default;
 };
 
 struct GGEMSProductionCutContextProvenance {
@@ -28,22 +28,22 @@ struct GGEMSProductionCutContextProvenance {
 class GGEMSMaterialCutCouplePackage {
 public:
   GGEMSMaterialCutCouplePackage(
-      materials::GGEMSEMMaterialPackage const &materials,
-      GGEMSProductionCutPolicy const &policy,
-      std::span<GGEMSProductionCutContext const> contexts);
+    materials::GGEMSEMMaterialPackage const &materials,
+    GGEMSProductionCutPolicy const &policy,
+    std::span<GGEMSProductionCutContext const> contexts);
 
   [[nodiscard]] auto GetCouples() const noexcept
-      -> std::span<GGEMSMaterialCutCouple const> {
+    -> std::span<GGEMSMaterialCutCouple const> {
     return couples_;
   }
 
   [[nodiscard]] auto GetContextCoupleIds() const noexcept
-      -> std::span<std::uint32_t const> {
+    -> std::span<std::uint32_t const> {
     return context_couple_ids_;
   }
 
   [[nodiscard]] auto GetContextProvenance() const noexcept
-      -> std::span<GGEMSProductionCutContextProvenance const> {
+    -> std::span<GGEMSProductionCutContextProvenance const> {
     return context_provenance_;
   }
 

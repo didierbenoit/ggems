@@ -23,7 +23,8 @@
  * \file
  * \brief OpenCL probe for the engine-independent vector random API.
  *
- * Generates repeated four-value uniform blocks through GGEMS_RndmUniform4 for the compile-time-selected engine.
+ * Generates repeated four-value uniform blocks through GGEMS_RndmUniform4 for
+ * the compile-time-selected engine.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -48,7 +49,7 @@ __kernel void random_generic_uniform4(__global GGEMSRandomState *states,
     float4 random_values = GGEMS_RndmUniform4(states, particle_index);
 
     uint output_index =
-        (particle_index * blocks_per_particle + block_index) * 4U;
+      (particle_index * blocks_per_particle + block_index) * 4U;
 
     values[output_index + 0U] = random_values.x;
     values[output_index + 1U] = random_values.y;

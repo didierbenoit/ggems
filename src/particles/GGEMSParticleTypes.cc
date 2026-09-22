@@ -22,7 +22,7 @@ auto NormalizeParticleName(std::string_view particle_name) -> std::string {
     }
 
     normalized.push_back(
-        static_cast<char>(std::tolower(static_cast<unsigned char>(character))));
+      static_cast<char>(std::tolower(static_cast<unsigned char>(character))));
   }
 
   return normalized;
@@ -169,7 +169,7 @@ auto ParseParticleType(std::string_view particle_name) -> GGEMSParticleType {
   }
 
   throw ggems::core::GGEMSRecoverable(
-      std::format("Unsupported GGEMS particle type '{}'.", particle_name));
+    std::format("Unsupported GGEMS particle type '{}'.", particle_name));
 
   return GGEMSParticleType::Unknown;
 }

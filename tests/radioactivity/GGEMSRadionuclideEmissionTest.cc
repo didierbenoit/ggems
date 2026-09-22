@@ -43,14 +43,14 @@ using ggems::core::sources::GGEMSEnergyDistributionType;
 
 TEST(GGEMSRadionuclideEmissionTest, AcceptsEveryCurrentPhysicalParticleType) {
   constexpr std::array<GGEMSParticleType, 6U> particle_types{
-      GGEMSParticleType::Gamma,    GGEMSParticleType::Electron,
-      GGEMSParticleType::Positron, GGEMSParticleType::Proton,
-      GGEMSParticleType::Neutron,  GGEMSParticleType::Alpha};
+    GGEMSParticleType::Gamma,    GGEMSParticleType::Electron,
+    GGEMSParticleType::Positron, GGEMSParticleType::Proton,
+    GGEMSParticleType::Neutron,  GGEMSParticleType::Alpha};
 
   for (GGEMSParticleType particle_type : particle_types) {
     SCOPED_TRACE(static_cast<unsigned int>(particle_type));
     GGEMSRadionuclideEmission const emission{
-        particle_type, 1.0L, GGEMSEnergyDistribution::BuildMono(1'000ULL)};
+      particle_type, 1.0L, GGEMSEnergyDistribution::BuildMono(1'000ULL)};
     EXPECT_EQ(emission.GetParticleType(), particle_type);
   }
 }
@@ -64,9 +64,9 @@ TEST(GGEMSRadionuclideEmissionTest, RejectsNonPhysicalParticleTypes) {
         static_cast<GGEMSParticleType>(999U)}) {
     SCOPED_TRACE(static_cast<unsigned int>(particle_type));
     EXPECT_THROW(
-        ((void)GGEMSRadionuclideEmission{
-            particle_type, 1.0L, GGEMSEnergyDistribution::BuildMono(1'000ULL)}),
-        ggems::core::GGEMSExceptionBase);
+      ((void)GGEMSRadionuclideEmission{
+        particle_type, 1.0L, GGEMSEnergyDistribution::BuildMono(1'000ULL)}),
+      ggems::core::GGEMSExceptionBase);
   }
 }
 
@@ -80,14 +80,14 @@ TEST(GGEMSRadionuclideEmissionTest, ValidatesYieldWithoutProbabilityCeiling) {
         -std::numeric_limits<long double>::infinity()}) {
     SCOPED_TRACE(static_cast<double>(yield));
     EXPECT_THROW(((void)GGEMSRadionuclideEmission{
-                     GGEMSParticleType::Gamma, yield,
-                     GGEMSEnergyDistribution::BuildMono(1'000ULL)}),
+                   GGEMSParticleType::Gamma, yield,
+                   GGEMSEnergyDistribution::BuildMono(1'000ULL)}),
                  ggems::core::GGEMSExceptionBase);
   }
 
   GGEMSRadionuclideEmission const emission{
-      GGEMSParticleType::Electron, 3.5L,
-      GGEMSEnergyDistribution::BuildMono(1'000ULL)};
+    GGEMSParticleType::Electron, 3.5L,
+    GGEMSEnergyDistribution::BuildMono(1'000ULL)};
   EXPECT_EQ(emission.GetYieldPerDecay(), 3.5L);
 }
 
@@ -96,8 +96,8 @@ TEST(GGEMSRadionuclideEmissionTest, ValidatesYieldWithoutProbabilityCeiling) {
 
 TEST(GGEMSRadionuclideEmissionTest, OwnsEverySupportedEnergyDistribution) {
   GGEMSRadionuclideEmission const mono{
-      GGEMSParticleType::Gamma, 1.0L,
-      GGEMSEnergyDistribution::BuildMono(10'000'001'000ULL)};
+    GGEMSParticleType::Gamma, 1.0L,
+    GGEMSEnergyDistribution::BuildMono(10'000'001'000ULL)};
   GGEMSRadionuclideEmission const lines{GGEMSParticleType::Electron, 0.5L,
                                         BuildDiscreteLines()};
   GGEMSRadionuclideEmission const spectrum{GGEMSParticleType::Positron, 0.25L,
@@ -123,16 +123,16 @@ TEST(GGEMSRadionuclideEmissionTest, OwnsCallerProvidedEnergyData) {
   std::vector<double> weights{1.0, 2.0, 1.0};
 
   GGEMSRadionuclideEmission const emission{
-      GGEMSParticleType::Alpha, 1.25L,
-      GGEMSEnergyDistribution::BuildDiscreteLines(energies, weights, "keV")};
+    GGEMSParticleType::Alpha, 1.25L,
+    GGEMSEnergyDistribution::BuildDiscreteLines(energies, weights, "keV")};
 
   energies.assign(3U, 999.0);
   weights.clear();
 
   auto const stored_energies =
-      emission.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
+    emission.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt();
   auto const stored_weights =
-      emission.GetEnergyDistribution().GetRelativeWeights();
+    emission.GetEnergyDistribution().GetRelativeWeights();
 
   ASSERT_EQ(stored_energies.size(), 3U);
   EXPECT_EQ(stored_energies[0U], 10'000'000'000ULL);

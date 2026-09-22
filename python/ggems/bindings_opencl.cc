@@ -50,8 +50,8 @@ namespace py = pybind11;
 void BindOpenCL(py::module_ &module) {
   py::class_<ggems::ocl::GGEMSOpenCL,
              std::unique_ptr<ggems::ocl::GGEMSOpenCL, py::nodelete>>(
-      module, "GGEMSOpenCL",
-      R"doc(Access the process-wide GGEMS OpenCL backend.
+    module, "GGEMSOpenCL",
+    R"doc(Access the process-wide GGEMS OpenCL backend.
 
 GGEMSOpenCL is a singleton: every GGEMSOpenCL() call returns the same backend
 instance and therefore shares device selection and context state.
@@ -69,38 +69,37 @@ Text selectors are usually the most portable choice. Numeric selectors refer
 to the flattened discovery order across all platforms.
 )doc")
 
-      .def(py::init([]() -> ggems::ocl::GGEMSOpenCL * {
-             return &ggems::ocl::GGEMSOpenCL::GetInstance();
-           }),
-           py::return_value_policy::reference,
-           R"doc(Return the process-wide GGEMS OpenCL singleton.
+    .def(py::init([]() -> ggems::ocl::GGEMSOpenCL * {
+           return &ggems::ocl::GGEMSOpenCL::GetInstance();
+         }),
+         py::return_value_policy::reference,
+         R"doc(Return the process-wide GGEMS OpenCL singleton.
 
 Repeated construction does not create independent OpenCL backend instances.
 )doc")
 
-      .def(
-          "print_platforms", &ggems::ocl::GGEMSOpenCL::PrintPlatforms,
-          R"doc(Print detailed information about all discovered OpenCL platforms.
+    .def("print_platforms", &ggems::ocl::GGEMSOpenCL::PrintPlatforms,
+         R"doc(Print detailed information about all discovered OpenCL platforms.
 
 Output is written through the GGEMS logger.
 )doc")
 
-      .def("print_devices", &ggems::ocl::GGEMSOpenCL::PrintDevices,
-           R"doc(Print detailed information about all discovered OpenCL devices.
+    .def("print_devices", &ggems::ocl::GGEMSOpenCL::PrintDevices,
+         R"doc(Print detailed information about all discovered OpenCL devices.
 
 Output is written through the GGEMS logger. Each device report includes its
 platform/device pair and its OpenCL capabilities.
 )doc")
 
-      .def("print_contexts", &ggems::ocl::GGEMSOpenCL::PrintContexts,
-           R"doc(Print the currently active OpenCL contexts and command queues.
+    .def("print_contexts", &ggems::ocl::GGEMSOpenCL::PrintContexts,
+         R"doc(Print the currently active OpenCL contexts and command queues.
 
 Call initialize() after selecting devices before using this report to inspect
 the active compute configuration.
 )doc")
 
-      .def("initialize", &ggems::ocl::GGEMSOpenCL::Initialize,
-           R"doc(Create OpenCL contexts for the currently selected devices.
+    .def("initialize", &ggems::ocl::GGEMSOpenCL::Initialize,
+         R"doc(Create OpenCL contexts for the currently selected devices.
 
 Call select_devices() first, then initialize() before running GGEMS workloads
 that require OpenCL contexts.
@@ -125,11 +124,12 @@ Note:
     errors by GGEMS and terminate the process.
 )doc")
 
-      .def(
-          "select_devices",
-          [](ggems::ocl::GGEMSOpenCL &opencl, std::string const &devices)
-              -> void { opencl.SelectDevices({devices}); },
-          R"doc(Select OpenCL devices using one selector expression.
+    .def(
+      "select_devices",
+      [](ggems::ocl::GGEMSOpenCL &opencl, std::string const &devices) -> void {
+        opencl.SelectDevices({devices});
+      },
+      R"doc(Select OpenCL devices using one selector expression.
 
 The expression may contain semicolon-separated tokens.
 
@@ -167,10 +167,10 @@ Examples:
     opencl.select_devices("0-1")
     opencl.select_devices("all")
 )doc",
-          py::arg("devices"))
+      py::arg("devices"))
 
-      .def("select_devices", &ggems::ocl::GGEMSOpenCL::SelectDevices,
-           R"doc(Select OpenCL devices from a sequence of selector expressions.
+    .def("select_devices", &ggems::ocl::GGEMSOpenCL::SelectDevices,
+         R"doc(Select OpenCL devices from a sequence of selector expressions.
 
 Each sequence entry follows the same rules as the string overload and may
 itself contain semicolon-separated tokens.
@@ -197,9 +197,9 @@ Examples:
     opencl.select_devices(["0", "2-3"])
     opencl.select_devices([])
 )doc",
-           py::arg("devices"))
+         py::arg("devices"))
 
-      .def("__repr__", [](ggems::ocl::GGEMSOpenCL const &) -> std::string {
-        return "<GGEMSOpenCL (singleton) — OpenCL 3.0 backend active>";
-      });
+    .def("__repr__", [](ggems::ocl::GGEMSOpenCL const &) -> std::string {
+      return "<GGEMSOpenCL (singleton) — OpenCL 3.0 backend active>";
+    });
 }

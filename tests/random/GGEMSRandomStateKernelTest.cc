@@ -92,7 +92,7 @@ constexpr std::size_t k_state_count{2U};
 TEST(GGEMSRandomStateKernelTest,
      HostAndKernelLayoutsMatchOnEverySVMCompilerDevice) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   if (compiler_devices.empty()) {
     GTEST_SKIP() << "No available GGEMS-discovered device has a compiler.";
@@ -102,7 +102,7 @@ TEST(GGEMSRandomStateKernelTest,
   std::filesystem::path const kernel_test_root = kernel_root / "tests";
 
   std::string const build_options =
-      std::format("-I{}", kernel_root.generic_string());
+    std::format("-I{}", kernel_root.generic_string());
 
   std::size_t tested_device_count{0U};
 
@@ -120,20 +120,20 @@ TEST(GGEMSRandomStateKernelTest,
     std::array<std::uint64_t, k_layout_value_count> layout{};
 
     auto layout_buffer = context.CreateSVMBuffer(
-        ggems::units::Bytes{layout.size() * sizeof(std::uint64_t)});
+      ggems::units::Bytes{layout.size() * sizeof(std::uint64_t)});
 
     auto jkiss_buffer = context.CreateSVMBuffer(
-        ggems::units::Bytes{k_state_count * sizeof(JKissState)});
+      ggems::units::Bytes{k_state_count * sizeof(JKissState)});
 
     auto pcg32_buffer = context.CreateSVMBuffer(
-        ggems::units::Bytes{k_state_count * sizeof(PCG32State)});
+      ggems::units::Bytes{k_state_count * sizeof(PCG32State)});
 
     auto philox_buffer = context.CreateSVMBuffer(
-        ggems::units::Bytes{k_state_count * sizeof(PhiloxState)});
+      ggems::units::Bytes{k_state_count * sizeof(PhiloxState)});
 
     auto const &program =
-        ggems::ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
-            context, kernel_test_root, "random_state_abi_probe", build_options);
+      ggems::ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
+        context, kernel_test_root, "random_state_abi_probe", build_options);
 
     auto raw_kernel = program.CreateKernel("random_state_abi_probe");
 
@@ -150,30 +150,30 @@ TEST(GGEMSRandomStateKernelTest,
     ggems::ocl::ReadSVMToHost(layout_buffer, std::span{layout});
 
     std::array<std::uint64_t, k_layout_value_count> const expected_layout{{
-        static_cast<std::uint64_t>(sizeof(JKissState)),
-        static_cast<std::uint64_t>(offsetof(JKissState, x)),
-        static_cast<std::uint64_t>(offsetof(JKissState, y)),
-        static_cast<std::uint64_t>(offsetof(JKissState, z)),
-        static_cast<std::uint64_t>(offsetof(JKissState, w)),
-        static_cast<std::uint64_t>(offsetof(JKissState, c)),
-        static_cast<std::uint64_t>(sizeof(JKissState)),
-        static_cast<std::uint64_t>(offsetof(JKissStateAlignmentProbe, state)),
+      static_cast<std::uint64_t>(sizeof(JKissState)),
+      static_cast<std::uint64_t>(offsetof(JKissState, x)),
+      static_cast<std::uint64_t>(offsetof(JKissState, y)),
+      static_cast<std::uint64_t>(offsetof(JKissState, z)),
+      static_cast<std::uint64_t>(offsetof(JKissState, w)),
+      static_cast<std::uint64_t>(offsetof(JKissState, c)),
+      static_cast<std::uint64_t>(sizeof(JKissState)),
+      static_cast<std::uint64_t>(offsetof(JKissStateAlignmentProbe, state)),
 
-        static_cast<std::uint64_t>(sizeof(PCG32State)),
-        static_cast<std::uint64_t>(offsetof(PCG32State, state)),
-        static_cast<std::uint64_t>(offsetof(PCG32State, increment)),
-        static_cast<std::uint64_t>(sizeof(PCG32State)),
-        static_cast<std::uint64_t>(offsetof(PCG32StateAlignmentProbe, state)),
+      static_cast<std::uint64_t>(sizeof(PCG32State)),
+      static_cast<std::uint64_t>(offsetof(PCG32State, state)),
+      static_cast<std::uint64_t>(offsetof(PCG32State, increment)),
+      static_cast<std::uint64_t>(sizeof(PCG32State)),
+      static_cast<std::uint64_t>(offsetof(PCG32StateAlignmentProbe, state)),
 
-        static_cast<std::uint64_t>(sizeof(PhiloxState)),
-        static_cast<std::uint64_t>(offsetof(PhiloxState, counter_0)),
-        static_cast<std::uint64_t>(offsetof(PhiloxState, counter_1)),
-        static_cast<std::uint64_t>(offsetof(PhiloxState, counter_2)),
-        static_cast<std::uint64_t>(offsetof(PhiloxState, counter_3)),
-        static_cast<std::uint64_t>(offsetof(PhiloxState, key_0)),
-        static_cast<std::uint64_t>(offsetof(PhiloxState, key_1)),
-        static_cast<std::uint64_t>(sizeof(PhiloxState)),
-        static_cast<std::uint64_t>(offsetof(PhiloxStateAlignmentProbe, state)),
+      static_cast<std::uint64_t>(sizeof(PhiloxState)),
+      static_cast<std::uint64_t>(offsetof(PhiloxState, counter_0)),
+      static_cast<std::uint64_t>(offsetof(PhiloxState, counter_1)),
+      static_cast<std::uint64_t>(offsetof(PhiloxState, counter_2)),
+      static_cast<std::uint64_t>(offsetof(PhiloxState, counter_3)),
+      static_cast<std::uint64_t>(offsetof(PhiloxState, key_0)),
+      static_cast<std::uint64_t>(offsetof(PhiloxState, key_1)),
+      static_cast<std::uint64_t>(sizeof(PhiloxState)),
+      static_cast<std::uint64_t>(offsetof(PhiloxStateAlignmentProbe, state)),
     }};
 
     EXPECT_EQ(layout, expected_layout);

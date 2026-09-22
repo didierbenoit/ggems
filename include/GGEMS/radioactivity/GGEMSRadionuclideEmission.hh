@@ -8,11 +8,11 @@ namespace ggems::core::radioactivity {
 class GGEMSRadionuclideEmission {
 public:
   GGEMSRadionuclideEmission(
-      particles::GGEMSParticleType particle_type, long double yield_per_decay,
-      sources::GGEMSEnergyDistribution energy_distribution);
+    particles::GGEMSParticleType particle_type, long double yield_per_decay,
+    sources::GGEMSEnergyDistribution energy_distribution);
 
   [[nodiscard]] auto GetParticleType() const noexcept
-      -> particles::GGEMSParticleType {
+    -> particles::GGEMSParticleType {
     return particle_type_;
   }
 
@@ -21,7 +21,7 @@ public:
   }
 
   [[nodiscard]] auto GetEnergyDistribution() const noexcept
-      -> sources::GGEMSEnergyDistribution const & {
+    -> sources::GGEMSEnergyDistribution const & {
     return energy_distribution_;
   }
 

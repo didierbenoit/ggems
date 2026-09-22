@@ -65,16 +65,16 @@ TEST_F(GGEMSObserverRecordKernelTest, HostAndKernelLayoutsMatch) {
   std::filesystem::path const kernel_test_root = kernel_root / "tests";
 
   std::string const build_options =
-      std::format("-I{}", kernel_root.generic_string());
+    std::format("-I{}", kernel_root.generic_string());
 
   auto layout_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{k_layout_value_count * sizeof(std::uint64_t)});
+    ggems::units::Bytes{k_layout_value_count * sizeof(std::uint64_t)});
 
   auto records_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{k_record_count * sizeof(ObserverRecord)});
+    ggems::units::Bytes{k_record_count * sizeof(ObserverRecord)});
 
   auto configs_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{k_config_count * sizeof(ObserverConfigRecord)});
+    ggems::units::Bytes{k_config_count * sizeof(ObserverConfigRecord)});
 
   auto *layout = static_cast<std::uint64_t *>(layout_buffer.GetData());
   auto *records = static_cast<ObserverRecord *>(records_buffer.GetData());
@@ -93,7 +93,7 @@ TEST_F(GGEMSObserverRecordKernelTest, HostAndKernelLayoutsMatch) {
   configs_buffer.Unmap();
 
   auto &program = opencl.GetOrCreateProgram(
-      context, kernel_test_root, "observer_record_abi_probe", build_options);
+    context, kernel_test_root, "observer_record_abi_probe", build_options);
 
   cl::Kernel raw_kernel = program.CreateKernel("observer_record_abi_probe");
 
@@ -106,44 +106,44 @@ TEST_F(GGEMSObserverRecordKernelTest, HostAndKernelLayoutsMatch) {
   kernel.Run({1U}, {1U});
 
   std::array<std::uint64_t, k_layout_value_count> const expected_layout{
-      {static_cast<std::uint64_t>(sizeof(ObserverRecord)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, run_id)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, global_primary_id)),
-       static_cast<std::uint64_t>(
-           offsetof(ObserverRecord, source_local_primary_id)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, global_particle_id)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, track_id)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, parent_track_id)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, time_ps)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, position_x_pm)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, position_y_pm)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, position_z_pm)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, record_kind)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, particle_type)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, status)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, generation)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, direction_x)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, direction_y)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, direction_z)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, direction_w)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, energy_micro_eV)),
-       static_cast<std::uint64_t>(
-           offsetof(ObserverRecord, deposited_energy_micro_eV)),
-       static_cast<std::uint64_t>(offsetof(ObserverRecord, source_index)),
-       static_cast<std::uint64_t>(sizeof(ObserverRecord)),
-       static_cast<std::uint64_t>(sizeof(ObserverConfigRecord)),
-       static_cast<std::uint64_t>(offsetof(ObserverConfigRecord, enabled)),
-       static_cast<std::uint64_t>(offsetof(
-           ObserverConfigRecord, capture_first_primary_count_per_source)),
-       static_cast<std::uint64_t>(
-           offsetof(ObserverConfigRecord, capture_specific_primary_enabled)),
-       static_cast<std::uint64_t>(
-           offsetof(ObserverConfigRecord, capture_source_index)),
-       static_cast<std::uint64_t>(
-           offsetof(ObserverConfigRecord, capture_source_local_primary_id)),
-       static_cast<std::uint64_t>(sizeof(ObserverConfigRecord)),
-       static_cast<std::uint64_t>(
-           offsetof(ObserverConfigAlignmentProbe, config))}};
+    {static_cast<std::uint64_t>(sizeof(ObserverRecord)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, run_id)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, global_primary_id)),
+     static_cast<std::uint64_t>(
+       offsetof(ObserverRecord, source_local_primary_id)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, global_particle_id)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, track_id)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, parent_track_id)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, time_ps)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, position_x_pm)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, position_y_pm)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, position_z_pm)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, record_kind)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, particle_type)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, status)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, generation)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, direction_x)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, direction_y)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, direction_z)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, direction_w)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, energy_micro_eV)),
+     static_cast<std::uint64_t>(
+       offsetof(ObserverRecord, deposited_energy_micro_eV)),
+     static_cast<std::uint64_t>(offsetof(ObserverRecord, source_index)),
+     static_cast<std::uint64_t>(sizeof(ObserverRecord)),
+     static_cast<std::uint64_t>(sizeof(ObserverConfigRecord)),
+     static_cast<std::uint64_t>(offsetof(ObserverConfigRecord, enabled)),
+     static_cast<std::uint64_t>(
+       offsetof(ObserverConfigRecord, capture_first_primary_count_per_source)),
+     static_cast<std::uint64_t>(
+       offsetof(ObserverConfigRecord, capture_specific_primary_enabled)),
+     static_cast<std::uint64_t>(
+       offsetof(ObserverConfigRecord, capture_source_index)),
+     static_cast<std::uint64_t>(
+       offsetof(ObserverConfigRecord, capture_source_local_primary_id)),
+     static_cast<std::uint64_t>(sizeof(ObserverConfigRecord)),
+     static_cast<std::uint64_t>(
+       offsetof(ObserverConfigAlignmentProbe, config))}};
 
   layout_buffer.Map(CL_MAP_READ);
 

@@ -67,7 +67,7 @@ struct Options {
 
 auto PrintHelp() -> void {
   std::cout
-      << R"(Export compiled radionuclide data or run an ActivityDriven campaign.
+    << R"(Export compiled radionuclide data or run an ActivityDriven campaign.
 Use run_campaign.py for automatic half-life windows and activity selection.
 
 Required:
@@ -94,10 +94,10 @@ Campaign:
 template <typename T> auto ParseNumber(std::string_view text) -> T {
   T value{};
   auto const result =
-      std::from_chars(text.data(), text.data() + text.size(), value);
+    std::from_chars(text.data(), text.data() + text.size(), value);
   if (result.ec != std::errc{} || result.ptr != text.data() + text.size()) {
     throw std::runtime_error(
-        std::format("Invalid numeric argument '{}'.", text));
+      std::format("Invalid numeric argument '{}'.", text));
   }
   return value;
 }
@@ -138,10 +138,10 @@ auto ParseOptions(int argc, char const *const *argv) -> Options {
       options.population_replicates = ParseNumber<std::uint32_t>(value);
     } else if (key == "--activity-bq") {
       auto const converted = ggems::units::MakeQuantity<ggems::units::Activity>(
-          ParseNumber<long double>(value), "Bq");
+        ParseNumber<long double>(value), "Bq");
       if (!converted) {
         throw std::runtime_error(
-            "Activity is not representable in central Units.");
+          "Activity is not representable in central Units.");
       }
       options.activity = *converted;
     } else {
@@ -193,17 +193,13 @@ auto WriteEnergyTable(std::filesystem::path const &directory, std::size_t index,
 }
 
 auto WriteDefinition(
-    std::filesystem::path const &directory,
-    radioactivity::GGEMSRadionuclideDefinition const &definition) -> void {
+  std::filesystem::path const &directory,
+  radioactivity::GGEMSRadionuclideDefinition const &definition) -> void {
   auto output = OpenOutput(directory / "definition.json");
   auto const energy_scale =
-      ggems::units::MakeQuantity<ggems::units::Energy>(1ULL, "keV")
-          .value()
-          .value;
+    ggems::units::MakeQuantity<ggems::units::Energy>(1ULL, "keV").value().value;
   auto const time_scale =
-      ggems::units::MakeQuantity<ggems::units::Duration>(1ULL, "s")
-          .value()
-          .value;
+    ggems::units::MakeQuantity<ggems::units::Duration>(1ULL, "s").value().value;
   output << R"json({
 "name":)json"
          << JsonString(definition.GetCanonicalName())
@@ -226,11 +222,11 @@ auto WriteDefinition(
     auto const &energy = emission.GetEnergyDistribution();
     WriteEnergyTable(directory, index, energy);
     output << R"json({"index":)json" << index << R"json(,"particle":)json"
-           << JsonString(ggems::core::particles::ToLongName(
-                  emission.GetParticleType()))
+           << JsonString(
+                ggems::core::particles::ToLongName(emission.GetParticleType()))
            << R"json(,"particle_type":)json"
            << ggems::core::particles::ToKernelParticleType(
-                  emission.GetParticleType())
+                emission.GetParticleType())
            << R"json(,"yield_per_decay":")json" << emission.GetYieldPerDecay()
            << R"json(","distribution_type":)json"
            << sources::ToKernelEnergyDistributionType(energy.GetType())
@@ -270,7 +266,7 @@ auto WriteSamples(std::ofstream &output, std::uint32_t window,
   std::vector<observer::GGEMSObserverRecord const *> records;
   for (auto const &record : capture.GetRecords()) {
     if (record.record_kind == observer::ToKernelObserverRecordKind(
-                                  observer::GGEMSObserverRecordKind::Source)) {
+                                observer::GGEMSObserverRecordKind::Source)) {
       records.push_back(&record);
     }
   }
@@ -280,7 +276,7 @@ auto WriteSamples(std::ofstream &output, std::uint32_t window,
   for (std::size_t index = 0U; index < records.size(); ++index) {
     auto const &record = *records[index];
     while (index >= ranges[group].source_local_primary_begin +
-                        ranges[group].primary_count) {
+                      ranges[group].primary_count) {
       ++group;
     }
     output << window << ',' << group << ',' << record.time_ps << ','
@@ -294,24 +290,24 @@ auto WriteSamples(std::ofstream &output, std::uint32_t window,
 auto WriteRunHeader(std::ofstream &metadata, Options const &options,
                     ggems::ocl::GGEMSOpenCL &opencl) -> void {
   metadata
-      << R"json({"seed":)json" << options.seed
-      << R"json(,"workers_per_device":)json" << options.workers
-      << R"json(,"rng_engine":"Philox","geometry":"Point","direction":"Fixed")json"
-      << R"json(,"population_mode":"ActivityDriven","activity_bq":")json"
-      << options.activity.value
-      << R"json(","reference_time_ps":0,"start_ps":0,"step_ps":)json"
-      << options.step_ps << R"json(,"windows":)json" << options.windows
-      << R"json(,"capacity_primaries":)json" << options.capacity
-      << R"json(,"population_replicates":)json" << options.population_replicates
+    << R"json({"seed":)json" << options.seed
+    << R"json(,"workers_per_device":)json" << options.workers
+    << R"json(,"rng_engine":"Philox","geometry":"Point","direction":"Fixed")json"
+    << R"json(,"population_mode":"ActivityDriven","activity_bq":")json"
+    << options.activity.value
+    << R"json(","reference_time_ps":0,"start_ps":0,"step_ps":)json"
+    << options.step_ps << R"json(,"windows":)json" << options.windows
+    << R"json(,"capacity_primaries":)json" << options.capacity
+    << R"json(,"population_replicates":)json" << options.population_replicates
 
 #ifdef GGEMS_DEBUG_MODE
-      << R"json(,"build_mode":"Debug")json"
+    << R"json(,"build_mode":"Debug")json"
 #else
-      << R"json(,"build_mode":"Release")json"
+    << R"json(,"build_mode":"Release")json"
 #endif
-      << R"json(,"compiler":)json" << JsonString(GGEMS_VALIDATION_COMPILER)
-      << R"json(,"device_selector":)json" << JsonString(options.device)
-      << R"json(,"devices":[)json";
+    << R"json(,"compiler":)json" << JsonString(GGEMS_VALIDATION_COMPILER)
+    << R"json(,"device_selector":)json" << JsonString(options.device)
+    << R"json(,"devices":[)json";
   bool first = true;
   for (auto const &context : opencl.GetContext()) {
     if (!first) {
@@ -347,9 +343,8 @@ auto WriteWindow(std::ofstream &metadata, std::uint32_t window,
 }
 
 auto WritePopulationReplicas(
-    std::ofstream &populations, Options const &options,
-    std::span<std::shared_ptr<sources::GGEMSSource> const> source_list)
-    -> void {
+  std::ofstream &populations, Options const &options,
+  std::span<std::shared_ptr<sources::GGEMSSource> const> source_list) -> void {
   // Extra population experiments have distinct seeds and no device execution.
   for (std::uint32_t index = 0U; index < options.population_replicates;
        ++index) {
@@ -361,8 +356,8 @@ auto WritePopulationReplicas(
                                                   replicate_random);
     for (std::uint32_t window = 0U; window < options.windows; ++window) {
       ggems::core::GGEMSTimeWindow const time{
-          .start_ps = options.step_ps * window,
-          .stop_ps = options.step_ps * (window + 1ULL)};
+        .start_ps = options.step_ps * window,
+        .stop_ps = options.step_ps * (window + 1ULL)};
       auto candidate = planner.BuildCandidate(time);
       WritePopulation(populations, static_cast<std::uint32_t>(replicate), seed,
                       window, candidate.GetPlan());
@@ -372,12 +367,12 @@ auto WritePopulationReplicas(
 }
 
 auto RunCampaign(
-    Options const &options,
-    std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const> const
-        &definition) -> void {
+  Options const &options,
+  std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const> const
+    &definition) -> void {
   auto source = std::make_shared<sources::GGEMSSource>();
   source->SetPointEmission().SetFixedAngularDistribution().SetRadionuclide(
-      definition, options.activity, 0ULL);
+    definition, options.activity, 0ULL);
   auto engine = std::make_shared<random::GGEMSRandom>();
   engine->SetEngine(random::GGEMSRandomEngine::Philox).SetSeed(options.seed);
   std::array const source_list{source};
@@ -386,8 +381,8 @@ auto RunCampaign(
                                                            *engine);
   auto capture = std::make_shared<observer::GGEMSTransportObserver>();
   capture->SetRecordCapacity(2U * options.capacity)
-      .SetMaxStoredRecordCount(2U * options.capacity)
-      .CaptureFirstPrimaries(options.capacity);
+    .SetMaxStoredRecordCount(2U * options.capacity)
+    .CaptureFirstPrimaries(options.capacity);
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
   opencl.SelectDevices({options.device});
   opencl.Initialize();
@@ -442,9 +437,9 @@ auto main(int argc, char const *const *argv) -> int {
 
   ggems::core::GGEMSLogger::GetInstance().SetDetailLevel(-1);
   auto definition =
-      std::make_shared<radioactivity::GGEMSRadionuclideDefinition const>(
-          radioactivity::builtins::BuildBuiltInRadionuclide(options.nuclide)
-              .value());
+    std::make_shared<radioactivity::GGEMSRadionuclideDefinition const>(
+      radioactivity::builtins::BuildBuiltInRadionuclide(options.nuclide)
+        .value());
   std::filesystem::create_directories(options.output);
   WriteDefinition(options.output, *definition);
   if (!options.describe) {

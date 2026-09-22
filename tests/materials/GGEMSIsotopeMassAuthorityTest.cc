@@ -16,7 +16,7 @@ namespace {
 namespace materials = ggems::core::materials;
 
 constexpr long double k_relative_budget{
-    64.0L * std::numeric_limits<long double>::epsilon(),
+  64.0L * std::numeric_limits<long double>::epsilon(),
 };
 
 // Fixture convention of the Audit-10/11 oracle: M = A_r * M_u (CODATA 2022).
@@ -71,7 +71,7 @@ TEST(GGEMSIsotopeMassAuthorityTest, ResolvesNaturalTantalumIsomerMass) {
 
 TEST(GGEMSIsotopeMassAuthorityTest, ContainsOnlyProfileIsotopes) {
   auto const resolved =
-      materials::GetIsotopeMassAuthority().GetResolvedIsotopes();
+    materials::GetIsotopeMassAuthority().GetResolvedIsotopes();
 
   EXPECT_EQ(resolved.size(), 296U);
 
@@ -80,9 +80,9 @@ TEST(GGEMSIsotopeMassAuthorityTest, ContainsOnlyProfileIsotopes) {
     SCOPED_TRACE(atomic_number);
 
     auto const profile =
-        materials::SelectLegacyElementalIsotopeProfile(atomic_number);
+      materials::SelectLegacyElementalIsotopeProfile(atomic_number);
     auto const composition =
-        materials::ResolveIsotopeProfile(profile, atomic_number);
+      materials::ResolveIsotopeProfile(profile, atomic_number);
 
     bool found = false;
     for (auto const &fraction : composition.GetFractions()) {

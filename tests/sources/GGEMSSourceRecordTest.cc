@@ -64,11 +64,11 @@ TEST(GGEMSSourceRecord, DefaultSourceRecordIsAnalyticGammaPointSource) {
 
   EXPECT_EQ(source.source_type,
             ggems::core::sources::ToKernelSourceType(
-                ggems::core::sources::GGEMSSourceType::Analytic));
+              ggems::core::sources::GGEMSSourceType::Analytic));
 
   EXPECT_EQ(source.emitted_particle_type,
             ggems::core::particles::ToKernelParticleType(
-                ggems::core::particles::GGEMSParticleType::Gamma));
+              ggems::core::particles::GGEMSParticleType::Gamma));
 
   EXPECT_EQ(source.energy_micro_eV, 511'000'000'000ULL);
 
@@ -86,13 +86,12 @@ TEST(GGEMSSourceRecord, DefaultSourceRecordIsAnalyticGammaPointSource) {
   EXPECT_FLOAT_EQ(source.axis_z_y, 0.0F);
   EXPECT_FLOAT_EQ(source.axis_z_z, 1.0F);
 
-
   EXPECT_EQ(source.emission_geometry_type,
             ggems::core::sources::ToKernelEmissionGeometryType(
-                ggems::core::sources::GGEMSEmissionGeometryType::Point));
+              ggems::core::sources::GGEMSEmissionGeometryType::Point));
   EXPECT_EQ(source.angular_distribution_type,
             ggems::core::sources::ToKernelAngularDistributionType(
-                ggems::core::sources::GGEMSAngularDistributionType::Fixed));
+              ggems::core::sources::GGEMSAngularDistributionType::Fixed));
   EXPECT_EQ(source.geometry_size_x_pm, 0ULL);
   EXPECT_EQ(source.geometry_size_y_pm, 0ULL);
   EXPECT_EQ(source.geometry_size_z_pm, 0ULL);
@@ -100,11 +99,11 @@ TEST(GGEMSSourceRecord, DefaultSourceRecordIsAnalyticGammaPointSource) {
   EXPECT_EQ(source.focus_position_y_pm, 0LL);
   EXPECT_EQ(source.focus_position_z_pm, 0LL);
   EXPECT_FLOAT_EQ(
-      source.isotropic_cos_theta_lower,
-      ggems::core::sources::k_isotropic_full_sphere_cos_theta_lower);
+    source.isotropic_cos_theta_lower,
+    ggems::core::sources::k_isotropic_full_sphere_cos_theta_lower);
   EXPECT_FLOAT_EQ(
-      source.isotropic_cos_theta_upper,
-      ggems::core::sources::k_isotropic_full_sphere_cos_theta_upper);
+    source.isotropic_cos_theta_upper,
+    ggems::core::sources::k_isotropic_full_sphere_cos_theta_upper);
   EXPECT_FLOAT_EQ(source.isotropic_phi_min_rad,
                   ggems::core::sources::k_isotropic_full_sphere_phi_min_rad);
   EXPECT_FLOAT_EQ(source.isotropic_phi_max_rad,

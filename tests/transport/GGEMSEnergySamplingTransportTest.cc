@@ -50,7 +50,7 @@ static_assert(!HasPerRunEnergyTables<TransportConfig>);
 [[nodiscard]] auto MakeConfig(SourceSnapshot const &snapshot,
                               std::uint32_t workload_primary_count,
                               std::uint64_t device_primary_offset)
-    -> TransportConfig {
+  -> TransportConfig {
   TransportConfig config{};
   config.total_primary_count = workload_primary_count;
   config.projection_history_offset = 100ULL;
@@ -69,16 +69,16 @@ static_assert(!HasPerRunEnergyTables<TransportConfig>);
 
 [[nodiscard]] auto FindTerminal(TransportReport const &report,
                                 ObserverRecord const &source)
-    -> ObserverRecord const * {
+  -> ObserverRecord const * {
   auto const terminal_kind = ggems::core::observer::ToKernelObserverRecordKind(
-      ObserverRecordKind::Terminal);
+    ObserverRecordKind::Terminal);
 
   auto const terminal = std::ranges::find_if(
-      report.observer_records, [&](ObserverRecord const &record) -> bool {
-        return record.record_kind == terminal_kind &&
-               record.global_primary_id == source.global_primary_id &&
-               record.global_particle_id == source.global_particle_id;
-      });
+    report.observer_records, [&](ObserverRecord const &record) -> bool {
+      return record.record_kind == terminal_kind &&
+             record.global_primary_id == source.global_primary_id &&
+             record.global_particle_id == source.global_particle_id;
+    });
 
   return terminal == report.observer_records.end() ? nullptr : &*terminal;
 }
@@ -87,14 +87,14 @@ static_assert(!HasPerRunEnergyTables<TransportConfig>);
 // =============================================================================
 
 [[nodiscard]] auto FindSource(TransportReport const &report)
-    -> ObserverRecord const * {
+  -> ObserverRecord const * {
   constexpr auto source_kind =
-      ggems::core::observer::ToKernelObserverRecordKind(
-          ObserverRecordKind::Source);
+    ggems::core::observer::ToKernelObserverRecordKind(
+      ObserverRecordKind::Source);
   auto const source = std::ranges::find_if(
-      report.observer_records, [](ObserverRecord const &record) -> bool {
-        return record.record_kind == source_kind;
-      });
+    report.observer_records, [](ObserverRecord const &record) -> bool {
+      return record.record_kind == source_kind;
+    });
 
   return source == report.observer_records.end() ? nullptr : &*source;
 }
@@ -103,28 +103,28 @@ static_assert(!HasPerRunEnergyTables<TransportConfig>);
 // =============================================================================
 
 [[nodiscard]] auto MakeGeometrySource(std::size_t geometry_case)
-    -> std::shared_ptr<Source> {
+  -> std::shared_ptr<Source> {
   auto source = std::make_shared<Source>();
   source->SetPrimaryCount(1ULL);
 
   if (geometry_case == 0U) {
     source->SetRectangleEmissionPicoMeter(4'000'000ULL, 2'000'000ULL)
-        .SetFixedAngularDistribution();
+      .SetFixedAngularDistribution();
   } else if (geometry_case == 1U) {
     source->SetEllipseEmissionPicoMeter(4'000'000ULL, 2'000'000ULL)
-        .SetIsotropicAngularDistribution();
+      .SetIsotropicAngularDistribution();
   } else if (geometry_case == 2U) {
     source->SetRectangleEmissionPicoMeter(4'000'000ULL, 2'000'000ULL)
-        .SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 1'000'000'000'000LL);
+      .SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 1'000'000'000'000LL);
   } else if (geometry_case == 3U) {
     source->SetBoxEmissionPicoMeter(4'000'000ULL, 2'000'000ULL, 1'000'000ULL)
-        .SetFixedAngularDistribution();
+      .SetFixedAngularDistribution();
   } else if (geometry_case == 4U) {
     source->SetSphereEmissionPicoMeter(4'000'000ULL)
-        .SetIsotropicAngularDistribution();
+      .SetIsotropicAngularDistribution();
   } else {
     source->SetCylinderEmissionPicoMeter(4'000'000ULL, 2'000'000ULL)
-        .SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 1'000'000'000'000LL);
+      .SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 1'000'000'000'000LL);
   }
 
   return source;
@@ -174,21 +174,21 @@ TEST_F(GGEMSEnergySamplingTransportTest,
 
   auto mono = std::make_shared<Source>();
   mono->SetPrimaryCount(2ULL)
-      .SetPointEmission()
-      .SetFixedAngularDistribution()
-      .SetEnergyMicroElectronVolt(511'000'000'000ULL);
+    .SetPointEmission()
+    .SetFixedAngularDistribution()
+    .SetEnergyMicroElectronVolt(511'000'000'000ULL);
 
   auto discrete = std::make_shared<Source>();
   discrete->SetPrimaryCount(2ULL)
-      .SetPointEmission()
-      .SetFixedAngularDistribution()
-      .SetDiscreteEnergyLines(k_line_energies, k_line_weights, "MeV");
+    .SetPointEmission()
+    .SetFixedAngularDistribution()
+    .SetDiscreteEnergyLines(k_line_energies, k_line_weights, "MeV");
 
   auto regular = std::make_shared<Source>();
   regular->SetPrimaryCount(2ULL)
-      .SetPointEmission()
-      .SetFixedAngularDistribution()
-      .SetRegularEnergySpectrum(k_bin_centers, k_bin_weights, "MeV");
+    .SetPointEmission()
+    .SetFixedAngularDistribution()
+    .SetRegularEnergySpectrum(k_bin_centers, k_bin_weights, "MeV");
 
   std::vector<std::shared_ptr<Source>> sources{mono, discrete, regular};
   auto const snapshot = ggems::core::sources::BuildSourceRunSnapshot(sources);
@@ -224,7 +224,7 @@ TEST_F(GGEMSEnergySamplingTransportTest,
     EXPECT_EQ(report.observer_counters.overflow_count, 0U);
 
     auto const source_kind = ggems::core::observer::ToKernelObserverRecordKind(
-        ObserverRecordKind::Source);
+      ObserverRecordKind::Source);
     std::array<std::uint32_t, 3U> source_counts{};
 
     for (ObserverRecord const &record : report.observer_records) {
@@ -247,11 +247,11 @@ TEST_F(GGEMSEnergySamplingTransportTest,
         EXPECT_NE(record.energy_micro_eV, 4'000'000'000'000ULL);
       } else {
         bool const first_center_defined_bin =
-            record.energy_micro_eV >= 9'000'000'000'000ULL &&
-            record.energy_micro_eV < 11'000'000'000'000ULL;
+          record.energy_micro_eV >= 9'000'000'000'000ULL &&
+          record.energy_micro_eV < 11'000'000'000'000ULL;
         bool const third_center_defined_bin =
-            record.energy_micro_eV >= 13'000'000'000'000ULL &&
-            record.energy_micro_eV < 15'000'000'000'000ULL;
+          record.energy_micro_eV >= 13'000'000'000'000ULL &&
+          record.energy_micro_eV < 15'000'000'000'000ULL;
 
         EXPECT_TRUE(first_center_defined_bin || third_center_defined_bin);
         EXPECT_FALSE(record.energy_micro_eV >= 11'000'000'000'000ULL &&
@@ -273,8 +273,8 @@ TEST_F(GGEMSEnergySamplingTransportTest,
   constexpr std::array<std::string_view, 3U> k_engines{"jkiss", "pcg32",
                                                        "philox"};
   constexpr std::array<std::string_view, 6U> k_geometry_cases{
-      "Rectangle + Fixed", "Ellipse + Isotropic", "Rectangle + Focused",
-      "Box + Fixed",       "Sphere + Isotropic",  "Cylinder + Focused"};
+    "Rectangle + Fixed", "Ellipse + Isotropic", "Rectangle + Focused",
+    "Box + Fixed",       "Sphere + Isotropic",  "Cylinder + Focused"};
   constexpr std::array<double, 2U> k_line_energies{2.0, 6.0};
   constexpr std::array<double, 2U> k_line_weights{1.0, 1.0};
 
@@ -293,36 +293,36 @@ TEST_F(GGEMSEnergySamplingTransportTest,
       std::array<std::shared_ptr<Source>, 1U> mono_sources{mono_source};
       std::array<std::shared_ptr<Source>, 1U> table_sources{table_source};
       auto const mono_snapshot =
-          ggems::core::sources::BuildSourceRunSnapshot(mono_sources);
+        ggems::core::sources::BuildSourceRunSnapshot(mono_sources);
       auto const table_snapshot =
-          ggems::core::sources::BuildSourceRunSnapshot(table_sources);
+        ggems::core::sources::BuildSourceRunSnapshot(table_sources);
 
       ggems::core::random::GGEMSRandom random{};
       random.SetEngine(engine).SetSeed(91'337ULL);
 
       TransportWorkload mono_workload{
-          Context(),
-          std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-          random,
-          1U,
-          mono_snapshot.GetSourceConfiguration(),
-          0ULL,
-          0U,
-          4U};
+        Context(),
+        std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+        random,
+        1U,
+        mono_snapshot.GetSourceConfiguration(),
+        0ULL,
+        0U,
+        4U};
       TransportWorkload table_workload{
-          Context(),
-          std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-          random,
-          1U,
-          table_snapshot.GetSourceConfiguration(),
-          0ULL,
-          0U,
-          4U};
+        Context(),
+        std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+        random,
+        1U,
+        table_snapshot.GetSourceConfiguration(),
+        0ULL,
+        0U,
+        4U};
 
       auto const mono_report =
-          mono_workload.Run(MakeConfig(mono_snapshot, 1U, 0ULL));
+        mono_workload.Run(MakeConfig(mono_snapshot, 1U, 0ULL));
       auto const table_report =
-          table_workload.Run(MakeConfig(table_snapshot, 1U, 0ULL));
+        table_workload.Run(MakeConfig(table_snapshot, 1U, 0ULL));
 
       ObserverRecord const *mono_record = FindSource(mono_report);
       ObserverRecord const *table_record = FindSource(table_report);

@@ -53,85 +53,85 @@ constexpr std::uint64_t k_gamma_energy_micro_eV{35'492'200'000ULL};
 constexpr long double k_gamma_yield{0.0663L};
 
 constexpr std::array<std::uint64_t, 5U> k_x_ray_energies_micro_eV{{
-    4'078'800'000ULL,
-    27'202'000'000ULL,
-    27'472'600'000ULL,
-    31'058'900'000ULL,
-    31'762'300'000ULL,
+  4'078'800'000ULL,
+  27'202'000'000ULL,
+  27'472'600'000ULL,
+  31'058'900'000ULL,
+  31'762'300'000ULL,
 }};
 
 constexpr std::array<double, 5U> k_x_ray_line_yields{{
-    0.147,
-    0.393,
-    0.732,
-    0.209,
-    0.0454,
+  0.147,
+  0.393,
+  0.732,
+  0.209,
+  0.0454,
 }};
 
 constexpr std::array<std::uint64_t, 13U> k_auger_electron_energies_micro_eV{{
-    22'927'000ULL,
-    24'922'000ULL,
-    120'899'000ULL,
-    299'843'000ULL,
-    449'679'000ULL,
-    541'735'000ULL,
-    690'006'000ULL,
-    3'088'170'000ULL,
-    3'682'760'000ULL,
-    4'299'940'000ULL,
-    22'665'300'000ULL,
-    26'505'600'000ULL,
-    30'346'100'000ULL,
+  22'927'000ULL,
+  24'922'000ULL,
+  120'899'000ULL,
+  299'843'000ULL,
+  449'679'000ULL,
+  541'735'000ULL,
+  690'006'000ULL,
+  3'088'170'000ULL,
+  3'682'760'000ULL,
+  4'299'940'000ULL,
+  22'665'300'000ULL,
+  26'505'600'000ULL,
+  30'346'100'000ULL,
 }};
 
 constexpr std::array<double, 13U> k_auger_electron_line_yields{{
-    12.198,
-    4.08498,
-    1.41044,
-    0.275991,
-    3.12454,
-    0.120544,
-    0.000457128,
-    1.2264,
-    0.347461,
-    0.0245935,
-    0.130975,
-    0.057687,
-    0.00607509,
+  12.198,
+  4.08498,
+  1.41044,
+  0.275991,
+  3.12454,
+  0.120544,
+  0.000457128,
+  1.2264,
+  0.347461,
+  0.0245935,
+  0.130975,
+  0.057687,
+  0.00607509,
 }};
 
 constexpr std::array<std::uint64_t, 6U> k_conversion_electron_energies_micro_eV{
-    {
-        3'678'400'000ULL,
-        30'553'000'000ULL,
-        30'880'200'000ULL,
-        31'150'800'000ULL,
-        34'722'400'000ULL,
-        35'398'500'000ULL,
-    }};
+  {
+    3'678'400'000ULL,
+    30'553'000'000ULL,
+    30'880'200'000ULL,
+    31'150'800'000ULL,
+    34'722'400'000ULL,
+    35'398'500'000ULL,
+  }};
 
 constexpr std::array<double, 6U> k_conversion_electron_line_yields{{
-    0.776,
-    0.0936,
-    0.0172,
-    0.0159,
-    0.0256,
-    0.00548,
+  0.776,
+  0.0936,
+  0.0172,
+  0.0159,
+  0.0256,
+  0.00548,
 }};
 
 // =============================================================================
 // =============================================================================
 
 constexpr long double k_x_ray_yield{std::accumulate(
-    k_x_ray_line_yields.begin(), k_x_ray_line_yields.end(), 0.0L)};
+  k_x_ray_line_yields.begin(), k_x_ray_line_yields.end(), 0.0L)};
 
 constexpr long double k_auger_electron_yield{
-    std::accumulate(k_auger_electron_line_yields.begin(),
-                    k_auger_electron_line_yields.end(), 0.0L)};
+  std::accumulate(k_auger_electron_line_yields.begin(),
+                  k_auger_electron_line_yields.end(), 0.0L)};
 
 constexpr long double k_conversion_electron_yield{
-    std::accumulate(k_conversion_electron_line_yields.begin(),
-                    k_conversion_electron_line_yields.end(), 0.0L)};
+  std::accumulate(k_conversion_electron_line_yields.begin(),
+                  k_conversion_electron_line_yields.end(), 0.0L)};
 
 } // namespace
 
@@ -143,23 +143,23 @@ constexpr long double k_conversion_electron_yield{
   emissions.reserve(k_emission_count);
 
   emissions.emplace_back(
-      particles::GGEMSParticleType::Gamma, k_gamma_yield,
-      sources::GGEMSEnergyDistribution::BuildMono(k_gamma_energy_micro_eV));
+    particles::GGEMSParticleType::Gamma, k_gamma_yield,
+    sources::GGEMSEnergyDistribution::BuildMono(k_gamma_energy_micro_eV));
 
   emissions.emplace_back(particles::GGEMSParticleType::Gamma, k_x_ray_yield,
                          sources::GGEMSEnergyDistribution::BuildDiscreteLines(
-                             k_x_ray_energies_micro_eV, k_x_ray_line_yields));
+                           k_x_ray_energies_micro_eV, k_x_ray_line_yields));
 
   emissions.emplace_back(
-      particles::GGEMSParticleType::Electron, k_auger_electron_yield,
-      sources::GGEMSEnergyDistribution::BuildDiscreteLines(
-          k_auger_electron_energies_micro_eV, k_auger_electron_line_yields));
+    particles::GGEMSParticleType::Electron, k_auger_electron_yield,
+    sources::GGEMSEnergyDistribution::BuildDiscreteLines(
+      k_auger_electron_energies_micro_eV, k_auger_electron_line_yields));
 
   emissions.emplace_back(particles::GGEMSParticleType::Electron,
                          k_conversion_electron_yield,
                          sources::GGEMSEnergyDistribution::BuildDiscreteLines(
-                             k_conversion_electron_energies_micro_eV,
-                             k_conversion_electron_line_yields));
+                           k_conversion_electron_energies_micro_eV,
+                           k_conversion_electron_line_yields));
 
   return {"I-125", k_half_life_seconds, std::move(emissions)};
 }

@@ -13,9 +13,9 @@
 
 TEST(GGEMSParticleState, IsKernelFriendly) {
   EXPECT_TRUE(
-      std::is_standard_layout_v<ggems::core::particles::GGEMSParticleState>);
+    std::is_standard_layout_v<ggems::core::particles::GGEMSParticleState>);
   EXPECT_TRUE(
-      std::is_trivially_copyable_v<ggems::core::particles::GGEMSParticleState>);
+    std::is_trivially_copyable_v<ggems::core::particles::GGEMSParticleState>);
   EXPECT_EQ(sizeof(ggems::core::particles::GGEMSParticleState), 112U);
 }
 
@@ -33,11 +33,11 @@ TEST(GGEMSParticleState, DefaultStateIsInactive) {
 
   EXPECT_EQ(particle.particle_type,
             ggems::core::particles::ToKernelParticleType(
-                ggems::core::particles::GGEMSParticleType::Unknown));
+              ggems::core::particles::GGEMSParticleType::Unknown));
 
   EXPECT_EQ(particle.status,
             ggems::core::particles::ToKernelParticleStatus(
-                ggems::core::particles::GGEMSParticleStatus::Inactive));
+              ggems::core::particles::GGEMSParticleStatus::Inactive));
 
   EXPECT_EQ(particle.current_navigator_id,
             ggems::core::particles::k_invalid_id_u32);
@@ -60,55 +60,55 @@ TEST(GGEMSParticleState, DefaultStateIsInactive) {
 
 TEST(GGEMSParticleState, ParticleTypeValuesAreKernelCompatible) {
   EXPECT_EQ(ggems::core::particles::ToKernelParticleType(
-                ggems::core::particles::GGEMSParticleType::Unknown),
+              ggems::core::particles::GGEMSParticleType::Unknown),
             0U);
 
   EXPECT_EQ(ggems::core::particles::ToKernelParticleType(
-                ggems::core::particles::GGEMSParticleType::Aionino),
+              ggems::core::particles::GGEMSParticleType::Aionino),
             1U);
 
   EXPECT_EQ(ggems::core::particles::ToKernelParticleType(
-                ggems::core::particles::GGEMSParticleType::Gamma),
+              ggems::core::particles::GGEMSParticleType::Gamma),
             2U);
 
   EXPECT_EQ(ggems::core::particles::ToKernelParticleType(
-                ggems::core::particles::GGEMSParticleType::Electron),
+              ggems::core::particles::GGEMSParticleType::Electron),
             3U);
 
   EXPECT_EQ(ggems::core::particles::ToKernelParticleType(
-                ggems::core::particles::GGEMSParticleType::Positron),
+              ggems::core::particles::GGEMSParticleType::Positron),
             4U);
 
   EXPECT_EQ(ggems::core::particles::ToKernelParticleType(
-                ggems::core::particles::GGEMSParticleType::Proton),
+              ggems::core::particles::GGEMSParticleType::Proton),
             5U);
 
   EXPECT_EQ(ggems::core::particles::ToKernelParticleType(
-                ggems::core::particles::GGEMSParticleType::Neutron),
+              ggems::core::particles::GGEMSParticleType::Neutron),
             6U);
 
   EXPECT_EQ(ggems::core::particles::ToKernelParticleType(
-                ggems::core::particles::GGEMSParticleType::Alpha),
+              ggems::core::particles::GGEMSParticleType::Alpha),
             7U);
 
   EXPECT_EQ(ggems::core::particles::ToKernelParticleStatus(
-                ggems::core::particles::GGEMSParticleStatus::Inactive),
+              ggems::core::particles::GGEMSParticleStatus::Inactive),
             0U);
 
   EXPECT_EQ(ggems::core::particles::ToKernelParticleStatus(
-                ggems::core::particles::GGEMSParticleStatus::Alive),
+              ggems::core::particles::GGEMSParticleStatus::Alive),
             1U);
 
   EXPECT_EQ(ggems::core::particles::ToKernelParticleStatus(
-                ggems::core::particles::GGEMSParticleStatus::Killed),
+              ggems::core::particles::GGEMSParticleStatus::Killed),
             2U);
 
   EXPECT_EQ(ggems::core::particles::ToKernelParticleStatus(
-                ggems::core::particles::GGEMSParticleStatus::EscapedWorld),
+              ggems::core::particles::GGEMSParticleStatus::EscapedWorld),
             3U);
 
   EXPECT_EQ(ggems::core::particles::ToKernelParticleStatus(
-                ggems::core::particles::GGEMSParticleStatus::Absorbed),
+              ggems::core::particles::GGEMSParticleStatus::Absorbed),
             4U);
 }
 
@@ -123,5 +123,5 @@ TEST(GGEMSParticleState, MicroElectronVoltEnergyPreservesLayoutAndWidth) {
   EXPECT_EQ(offsetof(State, direction_w), 100U);
   EXPECT_EQ(offsetof(State, energy_micro_eV), 104U);
   EXPECT_TRUE(
-      (std::is_same_v<decltype(State::energy_micro_eV), std::uint64_t>));
+    (std::is_same_v<decltype(State::energy_micro_eV), std::uint64_t>));
 }

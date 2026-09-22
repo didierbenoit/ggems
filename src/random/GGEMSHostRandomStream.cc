@@ -23,7 +23,8 @@
  * \file
  * \brief Implements the host-side GGEMS random stream.
  *
- * Implements JKISS, PCG32, and Philox state progression and scalar uniform sampling on the host.
+ * Implements JKISS, PCG32, and Philox state progression and scalar uniform
+ * sampling on the host.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -69,7 +70,7 @@ constexpr std::uint32_t k_philox_w32_1{0xBB67AE85U};
  */
 template <typename State>
 auto InitializeState(GGEMSRandom const &random, std::uint64_t stream_id)
-    -> State {
+  -> State {
   State state{};
   random.InitializeStates(stream_id,
                           std::as_writable_bytes(std::span<State>{&state, 1U}));
@@ -117,7 +118,7 @@ auto NextPCG32(GGEMSPCG32State &state) noexcept -> std::uint32_t {
   state.state = (old_state * 6'364'136'223'846'793'005ULL) + state.increment;
 
   auto const xorshifted =
-      static_cast<std::uint32_t>(((old_state >> 18U) ^ old_state) >> 27U);
+    static_cast<std::uint32_t>(((old_state >> 18U) ^ old_state) >> 27U);
   auto const rotation = static_cast<std::uint32_t>(old_state >> 59U);
 
   return (xorshifted >> rotation) | (xorshifted << ((0U - rotation) & 31U));
@@ -133,10 +134,9 @@ auto NextPCG32(GGEMSPCG32State &state) noexcept -> std::uint32_t {
  * \return High 32 bits of the 64-bit product.
  */
 auto MultiplyHigh32(std::uint32_t lhs, std::uint32_t rhs) noexcept
-    -> std::uint32_t {
+  -> std::uint32_t {
   return static_cast<std::uint32_t>(
-      (static_cast<std::uint64_t>(lhs) * static_cast<std::uint64_t>(rhs)) >>
-      32U);
+    (static_cast<std::uint64_t>(lhs) * static_cast<std::uint64_t>(rhs)) >> 32U);
 }
 
 // =============================================================================
@@ -150,7 +150,7 @@ auto MultiplyHigh32(std::uint32_t lhs, std::uint32_t rhs) noexcept
  */
 auto PhiloxRound(std::array<std::uint32_t, 4> const &counter,
                  std::array<std::uint32_t, 2> const &key) noexcept
-    -> std::array<std::uint32_t, 4> {
+  -> std::array<std::uint32_t, 4> {
   std::uint32_t const lo_0 = k_philox_m4x32_0 * counter[0];
   std::uint32_t const hi_0 = MultiplyHigh32(k_philox_m4x32_0, counter[0]);
   std::uint32_t const lo_1 = k_philox_m4x32_1 * counter[2];
@@ -197,20 +197,20 @@ GGEMSHostRandomStream::GGEMSHostRandomStream(GGEMSRandom const &random,
   switch (engine_) {
   case GGEMSRandomEngine::JKISS:
     state_.emplace<GGEMSJKissState>(
-        InitializeState<GGEMSJKissState>(random, stream_id_));
+      InitializeState<GGEMSJKissState>(random, stream_id_));
     return;
   case GGEMSRandomEngine::PCG32:
     state_.emplace<GGEMSPCG32State>(
-        InitializeState<GGEMSPCG32State>(random, stream_id_));
+      InitializeState<GGEMSPCG32State>(random, stream_id_));
     return;
   case GGEMSRandomEngine::Philox:
     state_.emplace<GGEMSPhiloxState>(
-        InitializeState<GGEMSPhiloxState>(random, stream_id_));
+      InitializeState<GGEMSPhiloxState>(random, stream_id_));
     return;
   }
 
   throw ggems::core::GGEMSInternal(
-      "Unsupported GGEMS random engine for host stream.");
+    "Unsupported GGEMS random engine for host stream.");
 }
 
 // -----------------------------------------------------------------------------

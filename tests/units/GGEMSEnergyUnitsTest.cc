@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for GGEMS energy quantities and conversions.
  *
- * Validates registered energy units, nonnegative energy values, signed energy changes and rounding, automatic display-unit selection, and energy literals.
+ * Validates registered energy units, nonnegative energy values, signed energy
+ * changes and rounding, automatic display-unit selection, and energy literals.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -66,14 +67,13 @@ TEST(GGEMSEnergyUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   };
 
   constexpr std::array<Case, 6U> cases{{
-      {.unit = "meV", .expected_micro_electron_volts = 1'000ULL},
-      {.unit = "eV", .expected_micro_electron_volts = 1'000'000ULL},
-      {.unit = "keV", .expected_micro_electron_volts = 1'000'000'000ULL},
-      {.unit = "MeV", .expected_micro_electron_volts = 1'000'000'000'000ULL},
-      {.unit = "GeV",
-       .expected_micro_electron_volts = 1'000'000'000'000'000ULL},
-      {.unit = "TeV",
-       .expected_micro_electron_volts = 1'000'000'000'000'000'000ULL},
+    {.unit = "meV", .expected_micro_electron_volts = 1'000ULL},
+    {.unit = "eV", .expected_micro_electron_volts = 1'000'000ULL},
+    {.unit = "keV", .expected_micro_electron_volts = 1'000'000'000ULL},
+    {.unit = "MeV", .expected_micro_electron_volts = 1'000'000'000'000ULL},
+    {.unit = "GeV", .expected_micro_electron_volts = 1'000'000'000'000'000ULL},
+    {.unit = "TeV",
+     .expected_micro_electron_volts = 1'000'000'000'000'000'000ULL},
   }};
 
   for (auto const &test_case : cases) {
@@ -129,21 +129,21 @@ TEST(GGEMSEnergyUnitsTest, ResolvesMicroElectronVoltQuantaAndThermalNeutrons) {
     std::uint64_t expected;
   };
   constexpr std::array cases{
-      Case{.milli_electron_volts = 0.0L, .expected = 0ULL},
-      Case{.milli_electron_volts = 0.001L, .expected = 1ULL},
-      Case{.milli_electron_volts = 0.01L, .expected = 10ULL},
-      Case{.milli_electron_volts = 0.00049L, .expected = 0ULL},
-      Case{.milli_electron_volts = 0.0005L, .expected = 1ULL},
-      Case{.milli_electron_volts = 0.00051L, .expected = 1ULL},
-      Case{.milli_electron_volts = 0.0015L, .expected = 2ULL}};
+    Case{.milli_electron_volts = 0.0L, .expected = 0ULL},
+    Case{.milli_electron_volts = 0.001L, .expected = 1ULL},
+    Case{.milli_electron_volts = 0.01L, .expected = 10ULL},
+    Case{.milli_electron_volts = 0.00049L, .expected = 0ULL},
+    Case{.milli_electron_volts = 0.0005L, .expected = 1ULL},
+    Case{.milli_electron_volts = 0.00051L, .expected = 1ULL},
+    Case{.milli_electron_volts = 0.0015L, .expected = 2ULL}};
   for (auto const &test_case : cases) {
     SCOPED_TRACE(test_case.milli_electron_volts);
     auto const energy =
-        MakeQuantity<Energy>(test_case.milli_electron_volts, "meV");
+      MakeQuantity<Energy>(test_case.milli_electron_volts, "meV");
     ASSERT_TRUE(energy.has_value());
     EXPECT_EQ(energy->value, test_case.expected);
     auto const change =
-        MakeQuantity<EnergyChange>(-test_case.milli_electron_volts, "meV");
+      MakeQuantity<EnergyChange>(-test_case.milli_electron_volts, "meV");
     ASSERT_TRUE(change.has_value());
     EXPECT_EQ(change->value, -static_cast<std::int64_t>(test_case.expected));
   }
@@ -178,7 +178,7 @@ TEST(GGEMSEnergyUnitsTest, PreservesExactIntegralConversionAndRejectsOverflow) {
     EXPECT_EQ(inexact.error(), UnitConversionError::InexactConversion);
   }
   auto const exact_electron_volt =
-      ConvertTo<std::uint64_t>(Energy{1'000'000ULL}, "eV");
+    ConvertTo<std::uint64_t>(Energy{1'000'000ULL}, "eV");
   ASSERT_TRUE(exact_electron_volt.has_value());
   EXPECT_EQ(*exact_electron_volt, 1ULL);
   auto const zero = ConvertTo<std::uint64_t>(Energy{}, "TeV");
@@ -189,7 +189,7 @@ TEST(GGEMSEnergyUnitsTest, PreservesExactIntegralConversionAndRejectsOverflow) {
 TEST(GGEMSEnergyUnitsTest, PreservesSignedRangeAndExactNegativeOutput) {
   constexpr auto maximum = std::numeric_limits<std::int64_t>::max();
   constexpr EnergyChange minimum_change{
-      std::numeric_limits<std::int64_t>::min()};
+    std::numeric_limits<std::int64_t>::min()};
   EXPECT_EQ(minimum_change.value, (-9'223'372'036'854'775'807LL - 1LL));
   auto const exact = MakeQuantity<EnergyChange>(-(maximum / 1'000LL), "meV");
   ASSERT_TRUE(exact.has_value());
@@ -199,12 +199,12 @@ TEST(GGEMSEnergyUnitsTest, PreservesSignedRangeAndExactNegativeOutput) {
   EXPECT_EQ(*round_trip, -(maximum / 1'000LL));
   for (auto const sign : {-1LL, 1LL}) {
     auto const overflow =
-        MakeQuantity<EnergyChange>(sign * ((maximum / 1'000LL) + 1LL), "meV");
+      MakeQuantity<EnergyChange>(sign * ((maximum / 1'000LL) + 1LL), "meV");
     ASSERT_FALSE(overflow.has_value());
     EXPECT_EQ(overflow.error(), UnitConversionError::OutOfRange);
   }
   auto const negative_output =
-      ConvertTo<std::uint64_t>(EnergyChange{-1'000LL}, "meV");
+    ConvertTo<std::uint64_t>(EnergyChange{-1'000LL}, "meV");
   ASSERT_FALSE(negative_output.has_value());
   EXPECT_EQ(negative_output.error(), UnitConversionError::NegativeValue);
 }

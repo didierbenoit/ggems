@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for GGEMS bit quantities and conversions.
  *
- * Validates decimal and IEC bit units, negative-value rejection, automatic display policy, and bit literals.
+ * Validates decimal and IEC bit units, negative-value rejection, automatic
+ * display policy, and bit literals.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -60,15 +61,15 @@ struct BitsConversionCase {
 
 TEST(GGEMSBitsUnits, ConvertsEveryOfficialRuntimeToken) {
   constexpr std::array<BitsConversionCase, 9U> cases{{
-      {.unit = "bit", .expected = 1ULL},
-      {.unit = "kbit", .expected = 1'000ULL},
-      {.unit = "Mbit", .expected = 1'000'000ULL},
-      {.unit = "Gbit", .expected = 1'000'000'000ULL},
-      {.unit = "Tbit", .expected = 1'000'000'000'000ULL},
-      {.unit = "Kibit", .expected = 1'024ULL},
-      {.unit = "Mibit", .expected = 1'048'576ULL},
-      {.unit = "Gibit", .expected = 1'073'741'824ULL},
-      {.unit = "Tibit", .expected = 1'099'511'627'776ULL},
+    {.unit = "bit", .expected = 1ULL},
+    {.unit = "kbit", .expected = 1'000ULL},
+    {.unit = "Mbit", .expected = 1'000'000ULL},
+    {.unit = "Gbit", .expected = 1'000'000'000ULL},
+    {.unit = "Tbit", .expected = 1'000'000'000'000ULL},
+    {.unit = "Kibit", .expected = 1'024ULL},
+    {.unit = "Mibit", .expected = 1'048'576ULL},
+    {.unit = "Gibit", .expected = 1'073'741'824ULL},
+    {.unit = "Tibit", .expected = 1'099'511'627'776ULL},
   }};
 
   for (auto const &test_case : cases) {

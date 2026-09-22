@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for GGEMS volume quantities and conversions.
  *
- * Validates registered cubic-length units, negative-value rejection, automatic ASCII/Unicode cubic formatting, and canonical cubic-picometer literals.
+ * Validates registered cubic-length units, negative-value rejection, automatic
+ * ASCII/Unicode cubic formatting, and canonical cubic-picometer literals.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -55,7 +56,7 @@ using ggems::units::UnitConversionError;
 using ggems::units::Volume;
 
 constexpr long double k_volume_relative_tolerance =
-    64.0L * std::numeric_limits<long double>::epsilon();
+  64.0L * std::numeric_limits<long double>::epsilon();
 
 TEST(GGEMSVolumeUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   struct Case {
@@ -64,13 +65,13 @@ TEST(GGEMSVolumeUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   };
 
   constexpr std::array<Case, 7U> cases{{
-      {.unit = "pm3", .expected_cubic_picometers = 1.0L},
-      {.unit = "nm3", .expected_cubic_picometers = 1.0e9L},
-      {.unit = "um3", .expected_cubic_picometers = 1.0e18L},
-      {.unit = "mm3", .expected_cubic_picometers = 1.0e27L},
-      {.unit = "cm3", .expected_cubic_picometers = 1.0e30L},
-      {.unit = "m3", .expected_cubic_picometers = 1.0e36L},
-      {.unit = "km3", .expected_cubic_picometers = 1.0e45L},
+    {.unit = "pm3", .expected_cubic_picometers = 1.0L},
+    {.unit = "nm3", .expected_cubic_picometers = 1.0e9L},
+    {.unit = "um3", .expected_cubic_picometers = 1.0e18L},
+    {.unit = "mm3", .expected_cubic_picometers = 1.0e27L},
+    {.unit = "cm3", .expected_cubic_picometers = 1.0e30L},
+    {.unit = "m3", .expected_cubic_picometers = 1.0e36L},
+    {.unit = "km3", .expected_cubic_picometers = 1.0e45L},
   }};
 
   for (auto const &test_case : cases) {
@@ -79,8 +80,8 @@ TEST(GGEMSVolumeUnitsTest, ConvertsEveryOfficialRuntimeToken) {
 
     ASSERT_TRUE(converted.has_value());
     long double const tolerance =
-        std::abs(test_case.expected_cubic_picometers) *
-        k_volume_relative_tolerance;
+      std::abs(test_case.expected_cubic_picometers) *
+      k_volume_relative_tolerance;
     EXPECT_LE(std::abs(converted->value - test_case.expected_cubic_picometers),
               tolerance);
   }

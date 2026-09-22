@@ -46,26 +46,20 @@ namespace ggems::units {
 struct CrossSectionUnitSet {};
 
 /*!
- * \brief Defines the supported cross section units and their canonical scale factors.
+ * \brief Defines the supported cross section units and their canonical scale
+ * factors.
  */
 template <> struct UnitRegistry<CrossSectionUnitSet> {
   /*!
    * \brief Registered unit definitions for this quantity family.
    */
   static constexpr std::array<UnitDefinition, 6U> units{{
-      {.symbol = "pb",
-       .scale = DecimalScale(0)},
-      {.symbol = "nb",
-       .scale = DecimalScale(3)},
-      {.symbol = "ub",
-       .scale = DecimalScale(6),
-       .unicode_symbol = "µb"},
-      {.symbol = "mb",
-       .scale = DecimalScale(9)},
-      {.symbol = "barn",
-       .scale = DecimalScale(12)},
-      {.symbol = "kbarn",
-       .scale = DecimalScale(15)},
+    {.symbol = "pb", .scale = DecimalScale(0)},
+    {.symbol = "nb", .scale = DecimalScale(3)},
+    {.symbol = "ub", .scale = DecimalScale(6), .unicode_symbol = "µb"},
+    {.symbol = "mb", .scale = DecimalScale(9)},
+    {.symbol = "barn", .scale = DecimalScale(12)},
+    {.symbol = "kbarn", .scale = DecimalScale(15)},
   }};
 };
 
@@ -90,13 +84,15 @@ template <> struct QuantityTraits<CrossSectionTag> {
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::AutomaticScale};
+    QuantityFormatPolicy::AutomaticScale};
   /*!
-   * \brief Fixed display unit, or an empty string when the policy selects units automatically.
+   * \brief Fixed display unit, or an empty string when the policy selects units
+   * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
   /*!
-   * \brief Default number of digits after the decimal point for formatted output.
+   * \brief Default number of digits after the decimal point for formatted
+   * output.
    */
   static constexpr std::int8_t default_precision{7};
 };

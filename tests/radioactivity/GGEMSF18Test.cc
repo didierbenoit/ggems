@@ -55,11 +55,11 @@ TEST(GGEMSF18Test, UsesDeclaredThreeGroupSourceModel) {
   EXPECT_EQ(emissions[2U].GetYieldPerDecay(), 0.00020L);
 
   constexpr long double k_expected_total_yield{0.97109L};
-  long double const tolerance = std::numeric_limits<long double>::epsilon() *
-                                k_expected_total_yield * 8.0L;
+  long double const tolerance =
+    std::numeric_limits<long double>::epsilon() * k_expected_total_yield * 8.0L;
   EXPECT_LE(
-      std::abs(definition.GetTotalYieldPerDecay() - k_expected_total_yield),
-      tolerance);
+    std::abs(definition.GetTotalYieldPerDecay() - k_expected_total_yield),
+    tolerance);
 }
 
 // =============================================================================
@@ -107,8 +107,8 @@ TEST(GGEMSF18Test, PreservesExactEnergyDistributionsAndTabulatedSpectrum) {
   EXPECT_EQ(previous_ticket, k_energy_ticket_space_size);
 
   long double const mean_energy_keV =
-      weighted_center_sum / weight_sum /
-      static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
+    weighted_center_sum / weight_sum /
+    static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
   EXPECT_NEAR(static_cast<double>(mean_energy_keV), 250.50, 0.01);
 
   auto const &electron_energy = emissions[1U].GetEnergyDistribution();

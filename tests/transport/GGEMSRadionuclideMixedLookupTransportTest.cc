@@ -50,16 +50,16 @@ using TransportRunReport = ggems::core::transport::GGEMSTransportRunReport;
 using TransportWorkload = ggems::core::transport::GGEMSTransportWorkload;
 
 constexpr ggems::core::GGEMSTimeWindow k_time_window{
-    .start_ps = 0ULL, .stop_ps = 1'000'000'000'000ULL};
+  .start_ps = 0ULL, .stop_ps = 1'000'000'000'000ULL};
 constexpr std::uint64_t k_projection_history_offset{10'000ULL};
 constexpr std::uint64_t k_run_id{27ULL};
 constexpr std::uint32_t k_single_worker_count{1U};
 constexpr std::uint32_t k_worker_count{64U};
 constexpr std::uint32_t k_chunk_primary_count{3U};
 constexpr std::array<ParticleType, 3U> k_activity_particles{
-    ParticleType::Gamma, ParticleType::Electron, ParticleType::Positron};
+  ParticleType::Gamma, ParticleType::Electron, ParticleType::Positron};
 constexpr std::array<std::uint64_t, 3U> k_activity_energies{
-    111'000ULL, 222'000ULL, 333'000ULL};
+  111'000ULL, 222'000ULL, 333'000ULL};
 
 // =============================================================================
 // =============================================================================
@@ -68,17 +68,17 @@ constexpr std::array<std::uint64_t, 3U> k_activity_energies{
   std::vector<Emission> emissions;
   emissions.reserve(k_activity_particles.size());
   emissions.emplace_back(
-      k_activity_particles[0U], 1.0L,
-      ggems::core::sources::GGEMSEnergyDistribution::BuildMono(
-          k_activity_energies[0U]));
+    k_activity_particles[0U], 1.0L,
+    ggems::core::sources::GGEMSEnergyDistribution::BuildMono(
+      k_activity_energies[0U]));
   emissions.emplace_back(
-      k_activity_particles[1U], 1.0L,
-      ggems::core::sources::GGEMSEnergyDistribution::BuildMono(
-          k_activity_energies[1U]));
+    k_activity_particles[1U], 1.0L,
+    ggems::core::sources::GGEMSEnergyDistribution::BuildMono(
+      k_activity_energies[1U]));
   emissions.emplace_back(
-      k_activity_particles[2U], std::numeric_limits<long double>::min(),
-      ggems::core::sources::GGEMSEnergyDistribution::BuildMono(
-          k_activity_energies[2U]));
+    k_activity_particles[2U], std::numeric_limits<long double>::min(),
+    ggems::core::sources::GGEMSEnergyDistribution::BuildMono(
+      k_activity_energies[2U]));
 
   return std::make_shared<Definition const>("MixedLookup", 1.0e12L,
                                             std::move(emissions));
@@ -90,21 +90,20 @@ constexpr std::array<std::uint64_t, 3U> k_activity_energies{
 [[nodiscard]] auto MakeSources() -> std::vector<SourcePtr> {
   auto first_count = std::make_shared<Source>();
   first_count->SetPrimaryCount(2ULL)
-      .SetEmittedParticleType(ParticleType::Gamma)
-      .SetEnergyMicroElectronVolt(1'001'000ULL)
-      .SetPositionPicoMeter(-1'000LL, 0LL, 0LL);
+    .SetEmittedParticleType(ParticleType::Gamma)
+    .SetEnergyMicroElectronVolt(1'001'000ULL)
+    .SetPositionPicoMeter(-1'000LL, 0LL, 0LL);
 
   auto activity = std::make_shared<Source>();
   activity
-      ->SetRadionuclide(MakeDefinition(),
-                                      ggems::units::Activity{100.0L}, 0ULL)
-      .SetPositionPicoMeter(0LL, 2'000LL, 0LL);
+    ->SetRadionuclide(MakeDefinition(), ggems::units::Activity{100.0L}, 0ULL)
+    .SetPositionPicoMeter(0LL, 2'000LL, 0LL);
 
   auto last_count = std::make_shared<Source>();
   last_count->SetPrimaryCount(2ULL)
-      .SetEmittedParticleType(ParticleType::Electron)
-      .SetEnergyMicroElectronVolt(3'003'000ULL)
-      .SetPositionPicoMeter(0LL, 0LL, 3'000LL);
+    .SetEmittedParticleType(ParticleType::Electron)
+    .SetEnergyMicroElectronVolt(3'003'000ULL)
+    .SetPositionPicoMeter(0LL, 0LL, 3'000LL);
 
   return {std::move(first_count), std::move(activity), std::move(last_count)};
 }
@@ -124,7 +123,7 @@ constexpr std::array<std::uint64_t, 3U> k_activity_energies{
 [[nodiscard]] auto MakeRunConfig(SourceRunSnapshot const &snapshot,
                                  std::uint64_t device_primary_offset,
                                  std::uint64_t primary_count)
-    -> TransportRunConfig {
+  -> TransportRunConfig {
   TransportRunConfig config{};
   config.run_id = k_run_id;
   config.total_primary_count = primary_count;
@@ -136,7 +135,7 @@ constexpr std::array<std::uint64_t, 3U> k_activity_energies{
   config.source_emission_ranges = snapshot.GetGroupRanges();
   config.observer_config.enabled = 1U;
   config.observer_config.capture_first_primary_count_per_source =
-      std::numeric_limits<std::uint32_t>::max();
+    std::numeric_limits<std::uint32_t>::max();
   return config;
 }
 
@@ -146,9 +145,9 @@ constexpr std::array<std::uint64_t, 3U> k_activity_energies{
 [[nodiscard]] auto
 ExtractSourceRecords(std::span<TransportRunReport const> reports,
                      std::uint64_t total_primary_count)
-    -> std::vector<ObserverRecord> {
+  -> std::vector<ObserverRecord> {
   std::vector<ObserverRecord> records(
-      static_cast<std::size_t>(total_primary_count));
+    static_cast<std::size_t>(total_primary_count));
   std::vector<bool> seen(static_cast<std::size_t>(total_primary_count), false);
   std::uint64_t observed_count{0ULL};
 
@@ -156,7 +155,7 @@ ExtractSourceRecords(std::span<TransportRunReport const> reports,
     for (ObserverRecord const &record : report.observer_records) {
       if (record.record_kind !=
           ggems::core::observer::ToKernelObserverRecordKind(
-              ObserverRecordKind::Source)) {
+            ObserverRecordKind::Source)) {
         continue;
       }
 
@@ -166,7 +165,7 @@ ExtractSourceRecords(std::span<TransportRunReport const> reports,
       }
 
       std::uint64_t const projection_primary_id =
-          record.global_primary_id - k_projection_history_offset;
+        record.global_primary_id - k_projection_history_offset;
       EXPECT_LT(projection_primary_id, total_primary_count);
       if (projection_primary_id >= total_primary_count) {
         continue;
@@ -193,11 +192,11 @@ ExtractSourceRecords(std::span<TransportRunReport const> reports,
 // =============================================================================
 
 [[nodiscard]] auto CollectSourceTimes(TransportRunReport const &report)
-    -> std::vector<std::uint64_t> {
+  -> std::vector<std::uint64_t> {
   std::vector<std::pair<std::uint64_t, std::uint64_t>> indexed_times;
   for (ObserverRecord const &record : report.observer_records) {
     if (record.record_kind == ggems::core::observer::ToKernelObserverRecordKind(
-                                  ObserverRecordKind::Source)) {
+                                ObserverRecordKind::Source)) {
       indexed_times.emplace_back(record.global_primary_id, record.time_ps);
     }
   }
@@ -217,14 +216,14 @@ ExtractSourceRecords(std::span<TransportRunReport const> reports,
 [[nodiscard]] auto BuildExpectedSourceTimes(HostRandomStream &random,
                                             std::uint64_t primary_count,
                                             float scaled_decay)
-    -> std::vector<std::uint64_t> {
+  -> std::vector<std::uint64_t> {
   std::vector<std::uint64_t> times;
   times.reserve(static_cast<std::size_t>(primary_count));
 
   for (std::uint64_t index = 0ULL; index < primary_count; ++index) {
     times.push_back(ggems::core::radioactivity::SampleRadioactiveTimeFromRaw(
-        k_time_window.start_ps, k_time_window.stop_ps, scaled_decay,
-        random.NextUInt32()));
+      k_time_window.start_ps, k_time_window.stop_ps, scaled_decay,
+      random.NextUInt32()));
   }
 
   return times;
@@ -252,7 +251,7 @@ auto ExpectCounters(TransportRunReport const &report,
 
 auto ExpectSourceAndGroupLookup(SourceRunSnapshot const &snapshot,
                                 std::span<ObserverRecord const> source_records)
-    -> void {
+  -> void {
   auto const &ranges = snapshot.GetRanges();
   auto const &population_records = snapshot.GetPopulationRecords();
   auto const &group_ranges = snapshot.GetGroupRanges();
@@ -272,10 +271,9 @@ auto ExpectSourceAndGroupLookup(SourceRunSnapshot const &snapshot,
             ranges[1U].projection_primary_begin + ranges[1U].primary_count);
   EXPECT_EQ(ranges[2U].primary_count, 2ULL);
 
-  EXPECT_EQ(
-      population_records[1U].population_mode,
-      ggems::core::sources::ToKernelSourcePopulationMode(
-          ggems::core::sources::GGEMSSourcePopulationMode::ActivityDriven));
+  EXPECT_EQ(population_records[1U].population_mode,
+            ggems::core::sources::ToKernelSourcePopulationMode(
+              ggems::core::sources::GGEMSSourcePopulationMode::ActivityDriven));
   EXPECT_EQ(population_records[1U].first_emission_index, 0U);
   EXPECT_EQ(population_records[1U].emission_count, 3U);
 
@@ -307,7 +305,7 @@ auto ExpectSourceAndGroupLookup(SourceRunSnapshot const &snapshot,
       auto const &range = ranges[source_index];
       if (projection_primary_id >= range.projection_primary_begin &&
           projection_primary_id - range.projection_primary_begin <
-              range.primary_count) {
+            range.primary_count) {
         expected_source_index = static_cast<std::uint32_t>(source_index);
         break;
       }
@@ -315,7 +313,7 @@ auto ExpectSourceAndGroupLookup(SourceRunSnapshot const &snapshot,
 
     auto const &source_range = ranges[expected_source_index];
     std::uint64_t const source_local_primary_id =
-        projection_primary_id - source_range.projection_primary_begin;
+      projection_primary_id - source_range.projection_primary_begin;
     EXPECT_EQ(record.source_index, expected_source_index);
     EXPECT_EQ(record.source_local_primary_id, source_local_primary_id);
 
@@ -328,14 +326,14 @@ auto ExpectSourceAndGroupLookup(SourceRunSnapshot const &snapshot,
     }
 
     std::uint32_t expected_emission_index{
-        std::numeric_limits<std::uint32_t>::max()};
+      std::numeric_limits<std::uint32_t>::max()};
     for (std::uint32_t emission_index = 0U; emission_index < 3U;
          ++emission_index) {
       auto const &group = group_ranges[emission_index];
       if (group.primary_count != 0ULL &&
           source_local_primary_id >= group.source_local_primary_begin &&
           source_local_primary_id - group.source_local_primary_begin <
-              group.primary_count) {
+            group.primary_count) {
         expected_emission_index = emission_index;
         break;
       }
@@ -346,7 +344,7 @@ auto ExpectSourceAndGroupLookup(SourceRunSnapshot const &snapshot,
     EXPECT_LT(expected_emission_index, 2U);
     EXPECT_EQ(record.particle_type,
               ggems::core::particles::ToKernelParticleType(
-                  k_activity_particles[expected_emission_index]));
+                k_activity_particles[expected_emission_index]));
     EXPECT_EQ(record.energy_micro_eV,
               k_activity_energies[expected_emission_index]);
     EXPECT_GE(record.time_ps, k_time_window.start_ps);
@@ -357,10 +355,10 @@ auto ExpectSourceAndGroupLookup(SourceRunSnapshot const &snapshot,
        ++source_index) {
     auto const &range = ranges[source_index];
     ASSERT_NE(range.primary_count, 0ULL);
-    ObserverRecord const &first = source_records[static_cast<std::size_t>(
-        range.projection_primary_begin)];
+    ObserverRecord const &first =
+      source_records[static_cast<std::size_t>(range.projection_primary_begin)];
     ObserverRecord const &last = source_records[static_cast<std::size_t>(
-        range.projection_primary_begin + range.primary_count - 1ULL)];
+      range.projection_primary_begin + range.primary_count - 1ULL)];
     EXPECT_EQ(first.source_index, source_index);
     EXPECT_EQ(first.source_local_primary_id, 0ULL);
     EXPECT_EQ(last.source_index, source_index);
@@ -370,25 +368,25 @@ auto ExpectSourceAndGroupLookup(SourceRunSnapshot const &snapshot,
   for (std::size_t emission_index = 0U; emission_index < 2U; ++emission_index) {
     auto const &group = group_ranges[emission_index];
     std::uint64_t const projection_begin =
-        ranges[1U].projection_primary_begin + group.source_local_primary_begin;
+      ranges[1U].projection_primary_begin + group.source_local_primary_begin;
     ObserverRecord const &first =
-        source_records[static_cast<std::size_t>(projection_begin)];
+      source_records[static_cast<std::size_t>(projection_begin)];
     ObserverRecord const &last = source_records[static_cast<std::size_t>(
-        projection_begin + group.primary_count - 1ULL)];
+      projection_begin + group.primary_count - 1ULL)];
     EXPECT_EQ(first.particle_type, ggems::core::particles::ToKernelParticleType(
-                                       k_activity_particles[emission_index]));
+                                     k_activity_particles[emission_index]));
     EXPECT_EQ(first.energy_micro_eV, k_activity_energies[emission_index]);
     EXPECT_EQ(last.particle_type, first.particle_type);
     EXPECT_EQ(last.energy_micro_eV, first.energy_micro_eV);
   }
 
   EXPECT_TRUE(
-      std::ranges::none_of(source_records, [](ObserverRecord const &record) {
-        return record.particle_type ==
-                   ggems::core::particles::ToKernelParticleType(
-                       k_activity_particles[2U]) ||
-               record.energy_micro_eV == k_activity_energies[2U];
-      }));
+    std::ranges::none_of(source_records, [](ObserverRecord const &record) {
+      return record.particle_type ==
+               ggems::core::particles::ToKernelParticleType(
+                 k_activity_particles[2U]) ||
+             record.energy_micro_eV == k_activity_energies[2U];
+    }));
 }
 
 // =============================================================================
@@ -422,38 +420,38 @@ TEST_F(GGEMSRadionuclideMixedLookupTransportTest,
   auto sources = MakeSources();
   Random random = MakeRandom();
   auto source_configuration =
-      ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
+    ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
   Planner planner{sources, random};
   auto candidate = planner.BuildCandidate(k_time_window);
   SourceRunSnapshot snapshot = ggems::core::sources::BuildSourceRunSnapshot(
-      sources, source_configuration, candidate.GetPlan());
+    sources, source_configuration, candidate.GetPlan());
 
   std::uint64_t const total_primary_count = snapshot.GetTotalPrimaryCount();
   ASSERT_GT(total_primary_count, 8ULL);
-  ASSERT_LE(total_primary_count,
-            static_cast<std::uint64_t>(
-                std::numeric_limits<std::uint32_t>::max() / 2U));
+  ASSERT_LE(
+    total_primary_count,
+    static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max() / 2U));
   auto const observer_capacity =
-      static_cast<std::uint32_t>(2ULL * total_primary_count);
+    static_cast<std::uint32_t>(2ULL * total_primary_count);
 
   TransportWorkload complete_workload{
-      GetContext(),
-      std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      random,
-      k_single_worker_count,
-      snapshot.GetSourceConfiguration(),
-      0ULL,
-      0U,
-      observer_capacity,
-      k_chunk_primary_count};
+    GetContext(),
+    std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    random,
+    k_single_worker_count,
+    snapshot.GetSourceConfiguration(),
+    0ULL,
+    0U,
+    observer_capacity,
+    k_chunk_primary_count};
   TransportRunReport complete_report =
-      complete_workload.Run(MakeRunConfig(snapshot, 0ULL, total_primary_count));
+    complete_workload.Run(MakeRunConfig(snapshot, 0ULL, total_primary_count));
   ExpectCounters(complete_report, total_primary_count);
 
   std::array<TransportRunReport, 1U> complete_reports{
-      std::move(complete_report)};
+    std::move(complete_report)};
   auto complete_source_records =
-      ExtractSourceRecords(complete_reports, total_primary_count);
+    ExtractSourceRecords(complete_reports, total_primary_count);
   ExpectSourceAndGroupLookup(snapshot, complete_source_records);
 
   auto const &source_ranges = snapshot.GetRanges();
@@ -464,116 +462,113 @@ TEST_F(GGEMSRadionuclideMixedLookupTransportTest,
        ++source_local_primary_id) {
     std::uint32_t const time_word = random_reference.NextUInt32();
     std::uint64_t const expected_time =
-        ggems::core::radioactivity::SampleRadioactiveTimeFromRaw(
-            k_time_window.start_ps, k_time_window.stop_ps,
-            snapshot.GetPopulationRecords()[1U].scaled_decay, time_word);
+      ggems::core::radioactivity::SampleRadioactiveTimeFromRaw(
+        k_time_window.start_ps, k_time_window.stop_ps,
+        snapshot.GetPopulationRecords()[1U].scaled_decay, time_word);
     std::uint64_t const projection_primary_id =
-        source_ranges[1U].projection_primary_begin + source_local_primary_id;
+      source_ranges[1U].projection_primary_begin + source_local_primary_id;
     EXPECT_EQ(
-        complete_source_records[static_cast<std::size_t>(projection_primary_id)]
-            .time_ps,
-        expected_time);
+      complete_source_records[static_cast<std::size_t>(projection_primary_id)]
+        .time_ps,
+      expected_time);
   }
 
   ASSERT_GT(group_ranges[0U].primary_count, 2ULL);
   std::uint64_t const split_primary_offset =
-      source_ranges[1U].projection_primary_begin +
-      group_ranges[0U].source_local_primary_begin +
-      (group_ranges[0U].primary_count / 2ULL);
+    source_ranges[1U].projection_primary_begin +
+    group_ranges[0U].source_local_primary_begin +
+    (group_ranges[0U].primary_count / 2ULL);
   ASSERT_GT(split_primary_offset,
             source_ranges[1U].projection_primary_begin +
-                group_ranges[0U].source_local_primary_begin);
+              group_ranges[0U].source_local_primary_begin);
   ASSERT_LT(split_primary_offset,
             source_ranges[1U].projection_primary_begin +
-                group_ranges[0U].source_local_primary_begin +
-                group_ranges[0U].primary_count);
+              group_ranges[0U].source_local_primary_begin +
+              group_ranges[0U].primary_count);
 
   std::uint64_t const first_slice_count = split_primary_offset;
   std::uint64_t const second_slice_count =
-      total_primary_count - split_primary_offset;
+    total_primary_count - split_primary_offset;
   auto const first_slice_capacity =
-      static_cast<std::uint32_t>(2ULL * first_slice_count);
+    static_cast<std::uint32_t>(2ULL * first_slice_count);
   auto const second_slice_capacity =
-      static_cast<std::uint32_t>(2ULL * second_slice_count);
+    static_cast<std::uint32_t>(2ULL * second_slice_count);
 
   TransportWorkload first_slice_workload{
-      GetContext(),
-      std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      random,
-      k_worker_count,
-      snapshot.GetSourceConfiguration(),
-      k_worker_count,
-      0U,
-      first_slice_capacity,
-      k_chunk_primary_count};
+    GetContext(),
+    std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    random,
+    k_worker_count,
+    snapshot.GetSourceConfiguration(),
+    k_worker_count,
+    0U,
+    first_slice_capacity,
+    k_chunk_primary_count};
   TransportWorkload second_slice_workload{
-      GetContext(),
-      std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      random,
-      k_worker_count,
-      snapshot.GetSourceConfiguration(),
-      2ULL * k_worker_count,
-      1U,
-      second_slice_capacity,
-      k_chunk_primary_count};
+    GetContext(),
+    std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    random,
+    k_worker_count,
+    snapshot.GetSourceConfiguration(),
+    2ULL * k_worker_count,
+    1U,
+    second_slice_capacity,
+    k_chunk_primary_count};
 
   std::array<TransportRunReport, 2U> slice_reports{
-      first_slice_workload.Run(
-          MakeRunConfig(snapshot, 0ULL, first_slice_count)),
-      second_slice_workload.Run(
-          MakeRunConfig(snapshot, split_primary_offset, second_slice_count))};
+    first_slice_workload.Run(MakeRunConfig(snapshot, 0ULL, first_slice_count)),
+    second_slice_workload.Run(
+      MakeRunConfig(snapshot, split_primary_offset, second_slice_count))};
   ExpectCounters(slice_reports[0U], first_slice_count);
   ExpectCounters(slice_reports[1U], second_slice_count);
 
   auto sliced_source_records =
-      ExtractSourceRecords(slice_reports, total_primary_count);
+    ExtractSourceRecords(slice_reports, total_primary_count);
   ExpectSourceAndGroupLookup(snapshot, sliced_source_records);
 
   constexpr std::uint64_t k_first_stream_offset{512ULL};
   constexpr std::uint64_t k_second_stream_offset{1'024ULL};
   constexpr std::uint64_t k_stream_primary_count{3ULL};
   constexpr std::uint32_t k_stream_observer_capacity{
-      2U * static_cast<std::uint32_t>(k_stream_primary_count)};
+    2U * static_cast<std::uint32_t>(k_stream_primary_count)};
   ASSERT_GE(group_ranges[0U].primary_count, k_stream_primary_count);
 
   std::uint64_t const stream_projection_offset =
-      source_ranges[1U].projection_primary_begin +
-      group_ranges[0U].source_local_primary_begin;
+    source_ranges[1U].projection_primary_begin +
+    group_ranges[0U].source_local_primary_begin;
   TransportWorkload first_stream_workload{
-      GetContext(),
-      std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      random,
-      k_single_worker_count,
-      snapshot.GetSourceConfiguration(),
-      k_first_stream_offset,
-      2U,
-      k_stream_observer_capacity,
-      k_chunk_primary_count};
+    GetContext(),
+    std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    random,
+    k_single_worker_count,
+    snapshot.GetSourceConfiguration(),
+    k_first_stream_offset,
+    2U,
+    k_stream_observer_capacity,
+    k_chunk_primary_count};
   TransportWorkload second_stream_workload{
-      GetContext(),
-      std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      random,
-      k_single_worker_count,
-      snapshot.GetSourceConfiguration(),
-      k_second_stream_offset,
-      3U,
-      k_stream_observer_capacity,
-      k_chunk_primary_count};
+    GetContext(),
+    std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    random,
+    k_single_worker_count,
+    snapshot.GetSourceConfiguration(),
+    k_second_stream_offset,
+    3U,
+    k_stream_observer_capacity,
+    k_chunk_primary_count};
 
   HostRandomStream first_stream_reference{random, k_first_stream_offset};
   HostRandomStream second_stream_reference{random, k_second_stream_offset};
   float const scaled_decay = snapshot.GetPopulationRecords()[1U].scaled_decay;
 
-  auto const first_stream_first_report =
-      first_stream_workload.Run(MakeRunConfig(
-          snapshot, stream_projection_offset, k_stream_primary_count));
-  auto const second_stream_first_report =
-      second_stream_workload.Run(MakeRunConfig(
-          snapshot, stream_projection_offset, k_stream_primary_count));
+  auto const first_stream_first_report = first_stream_workload.Run(
+    MakeRunConfig(snapshot, stream_projection_offset, k_stream_primary_count));
+  auto const second_stream_first_report = second_stream_workload.Run(
+    MakeRunConfig(snapshot, stream_projection_offset, k_stream_primary_count));
   auto const expected_first_stream_first_times = BuildExpectedSourceTimes(
-      first_stream_reference, k_stream_primary_count, scaled_decay);
+    first_stream_reference, k_stream_primary_count, scaled_decay);
   auto const expected_second_stream_first_times = BuildExpectedSourceTimes(
-      second_stream_reference, k_stream_primary_count, scaled_decay);
+    second_stream_reference, k_stream_primary_count, scaled_decay);
 
   ASSERT_NE(expected_first_stream_first_times,
             expected_second_stream_first_times);
@@ -584,16 +579,14 @@ TEST_F(GGEMSRadionuclideMixedLookupTransportTest,
   EXPECT_EQ(CollectSourceTimes(second_stream_first_report),
             expected_second_stream_first_times);
 
-  auto const first_stream_second_report =
-      first_stream_workload.Run(MakeRunConfig(
-          snapshot, stream_projection_offset, k_stream_primary_count));
-  auto const second_stream_second_report =
-      second_stream_workload.Run(MakeRunConfig(
-          snapshot, stream_projection_offset, k_stream_primary_count));
+  auto const first_stream_second_report = first_stream_workload.Run(
+    MakeRunConfig(snapshot, stream_projection_offset, k_stream_primary_count));
+  auto const second_stream_second_report = second_stream_workload.Run(
+    MakeRunConfig(snapshot, stream_projection_offset, k_stream_primary_count));
   auto const expected_first_stream_second_times = BuildExpectedSourceTimes(
-      first_stream_reference, k_stream_primary_count, scaled_decay);
+    first_stream_reference, k_stream_primary_count, scaled_decay);
   auto const expected_second_stream_second_times = BuildExpectedSourceTimes(
-      second_stream_reference, k_stream_primary_count, scaled_decay);
+    second_stream_reference, k_stream_primary_count, scaled_decay);
 
   ASSERT_NE(expected_first_stream_first_times,
             expected_first_stream_second_times);

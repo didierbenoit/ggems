@@ -82,8 +82,8 @@ TEST(GGEMSOpenCLSVMBufferTest, AutoAllocationTracksOwnershipAndAccounting) {
     auto const allocation_count_before = context.GetAllocationCountVRAM();
 
     {
-      auto buffer = context.CreateSVMBuffer(k_buffer_size,
-                                            ggems::ocl::SVMMemoryKind::Auto);
+      auto buffer =
+        context.CreateSVMBuffer(k_buffer_size, ggems::ocl::SVMMemoryKind::Auto);
 
       EXPECT_NE(buffer.GetData(), nullptr);
       EXPECT_EQ(buffer.GetSize(), k_buffer_size);
@@ -136,7 +136,7 @@ TEST(GGEMSOpenCLSVMBufferTest,
       auto const source_kind = source.GetKind();
       auto const allocated_with_buffer = context.GetAllocatedVRAM();
       auto const allocation_count_with_buffer =
-          context.GetAllocationCountVRAM();
+        context.GetAllocationCountVRAM();
 
       ggems::ocl::GGEMSOpenCLSVMBuffer destination{std::move(source)};
 
@@ -229,10 +229,10 @@ TEST(GGEMSOpenCLSVMBufferTest,
 TEST(GGEMSOpenCLSVMBufferTest,
      RejectsInvalidAndUnsupportedAllocationsWithoutChangingAccounting) {
   constexpr std::array k_concrete_kinds{
-      ggems::ocl::SVMMemoryKind::CoarseGrainBuffer,
-      ggems::ocl::SVMMemoryKind::FineGrainBuffer,
-      ggems::ocl::SVMMemoryKind::FineGrainBufferAtomics,
-      ggems::ocl::SVMMemoryKind::FineGrainSystem,
+    ggems::ocl::SVMMemoryKind::CoarseGrainBuffer,
+    ggems::ocl::SVMMemoryKind::FineGrainBuffer,
+    ggems::ocl::SVMMemoryKind::FineGrainBufferAtomics,
+    ggems::ocl::SVMMemoryKind::FineGrainSystem,
   };
 
   std::size_t compatible_device_count{0U};
@@ -260,13 +260,13 @@ TEST(GGEMSOpenCLSVMBufferTest,
     EXPECT_EQ(context.GetAllocationCountVRAM(), allocation_count_before);
 
     EXPECT_THROW(
-        (void)context.CreateSVMBuffer(64_B, ggems::ocl::SVMMemoryKind::None),
-        ggems::core::GGEMSFatal);
+      (void)context.CreateSVMBuffer(64_B, ggems::ocl::SVMMemoryKind::None),
+      ggems::core::GGEMSFatal);
     EXPECT_EQ(context.GetAllocatedVRAM(), allocated_before);
     EXPECT_EQ(context.GetAllocationCountVRAM(), allocation_count_before);
 
     constexpr auto k_oversized_alignment = ggems::units::Bytes{
-        static_cast<std::uint64_t>(std::numeric_limits<cl_uint>::max()) + 1ULL};
+      static_cast<std::uint64_t>(std::numeric_limits<cl_uint>::max()) + 1ULL};
 
     EXPECT_THROW((void)context.CreateSVMBuffer(64_B,
                                                ggems::ocl::SVMMemoryKind::Auto,
@@ -313,17 +313,15 @@ TEST(GGEMSOpenCLSVMBufferTest,
     }
 
     auto const maximum_allocation = ggems::units::Bytes{
-        static_cast<std::uint64_t>(device.GetMaxMemAllocSize())};
-    if (maximum_allocation.value ==
-        std::numeric_limits<std::uint64_t>::max()) {
+      static_cast<std::uint64_t>(device.GetMaxMemAllocSize())};
+    if (maximum_allocation.value == std::numeric_limits<std::uint64_t>::max()) {
       continue;
     }
     ++compatible_device_count;
 
     auto const allocated_before = context.GetAllocatedVRAM();
     auto const allocation_count_before = context.GetAllocationCountVRAM();
-    auto const requested =
-        ggems::units::Bytes{maximum_allocation.value + 1ULL};
+    auto const requested = ggems::units::Bytes{maximum_allocation.value + 1ULL};
 
     try {
       (void)context.CreateSVMBuffer(requested);
@@ -374,7 +372,7 @@ TEST(GGEMSOpenCLSVMBufferTest,
     constexpr auto k_requested{64_B};
     constexpr auto k_remaining{32_B};
     auto const maximum_allocation = ggems::units::Bytes{
-        static_cast<std::uint64_t>(device.GetMaxMemAllocSize())};
+      static_cast<std::uint64_t>(device.GetMaxMemAllocSize())};
     auto const available_before = context.GetAvailableVRAM();
     if (maximum_allocation < k_requested || available_before <= k_remaining) {
       continue;
@@ -391,7 +389,7 @@ TEST(GGEMSOpenCLSVMBufferTest,
     try {
       (void)context.CreateSVMBuffer(k_requested);
       ADD_FAILURE()
-          << "Expected the GGEMS-tracked memory limit to reject the request.";
+        << "Expected the GGEMS-tracked memory limit to reject the request.";
     } catch (ggems::core::GGEMSFatal const &exception) {
       auto const diagnostic = std::string_view{exception.what()};
       auto const remaining_text = HumanReadable(k_remaining);

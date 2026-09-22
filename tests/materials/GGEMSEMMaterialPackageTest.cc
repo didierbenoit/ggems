@@ -27,17 +27,17 @@ namespace units = ggems::units;
 using namespace ggems::units;
 
 static_assert(
-    std::is_trivially_copyable_v<materials::GGEMSEMMaterialDescriptor>);
+  std::is_trivially_copyable_v<materials::GGEMSEMMaterialDescriptor>);
 static_assert(
-    std::is_trivially_copyable_v<materials::GGEMSEMElementalConstituent>);
+  std::is_trivially_copyable_v<materials::GGEMSEMElementalConstituent>);
 
 // =============================================================================
 // =============================================================================
 
 auto MakeMaterial(
-    std::string name, units::Density density,
-    std::vector<materials::GGEMSMaterialComponent> const &composition)
-    -> materials::GGEMSMaterial {
+  std::string name, units::Density density,
+  std::vector<materials::GGEMSMaterialComponent> const &composition)
+  -> materials::GGEMSMaterial {
   return materials::GGEMSMaterial{std::move(name), density, composition};
 }
 
@@ -46,34 +46,34 @@ auto MakeMaterial(
 
 auto MakeEnrichedBoron(std::string name, units::Density density,
                        long double boron_10_fraction)
-    -> materials::GGEMSMaterial {
+  -> materials::GGEMSMaterial {
   return materials::GGEMSMaterial::FromIsotopicComposition(
-      std::move(name), density,
+    std::move(name), density,
+    {
       {
-          {
-              .mass_fraction = 1.0L,
-              .isotopic_composition =
-                  materials::GGEMSIsotopicComposition{
-                      materials::GGEMSFractionBasis::AtomFraction,
-                      {
-                          {
-                              .isotope = {5U, 10U, 0U},
-                              .fraction = boron_10_fraction,
-                          },
-                          {
-                              .isotope = {5U, 11U, 0U},
-                              .fraction = 1.0L - boron_10_fraction,
-                          },
-                      }},
-          },
-      });
+        .mass_fraction = 1.0L,
+        .isotopic_composition =
+          materials::GGEMSIsotopicComposition{
+            materials::GGEMSFractionBasis::AtomFraction,
+            {
+              {
+                .isotope = {5U, 10U, 0U},
+                .fraction = boron_10_fraction,
+              },
+              {
+                .isotope = {5U, 11U, 0U},
+                .fraction = 1.0L - boron_10_fraction,
+              },
+            }},
+      },
+    });
 }
 
 // =============================================================================
 // =============================================================================
 
 auto Compile(std::vector<materials::GGEMSMaterial> const &materials)
-    -> materials::GGEMSEMMaterialPackage {
+  -> materials::GGEMSEMMaterialPackage {
   return materials::GGEMSEMMaterialPackage{materials};
 }
 
@@ -85,23 +85,23 @@ auto Compile(std::vector<materials::GGEMSMaterial> const &materials)
 TEST(GGEMSEMMaterialPackageTest, InternsIdenticalMaterialsUnderAnyName) {
   std::vector<materials::GGEMSMaterial> authored;
   authored.push_back(
-      MakeMaterial("water", 1.0_g_cm3,
-                   {
-                       {.atomic_number = 1U, .mass_fraction = 0.111898L},
-                       {.atomic_number = 8U, .mass_fraction = 0.888102L},
-                   }));
+    MakeMaterial("water", 1.0_g_cm3,
+                 {
+                   {.atomic_number = 1U, .mass_fraction = 0.111898L},
+                   {.atomic_number = 8U, .mass_fraction = 0.888102L},
+                 }));
   authored.push_back(
-      MakeMaterial("same water under another name", 1.0_g_cm3,
-                   {
-                       {.atomic_number = 1U, .mass_fraction = 0.111898L},
-                       {.atomic_number = 8U, .mass_fraction = 0.888102L},
-                   }));
+    MakeMaterial("same water under another name", 1.0_g_cm3,
+                 {
+                   {.atomic_number = 1U, .mass_fraction = 0.111898L},
+                   {.atomic_number = 8U, .mass_fraction = 0.888102L},
+                 }));
   authored.push_back(
-      MakeMaterial("reversed element order", 1.0_g_cm3,
-                   {
-                       {.atomic_number = 8U, .mass_fraction = 0.888102L},
-                       {.atomic_number = 1U, .mass_fraction = 0.111898L},
-                   }));
+    MakeMaterial("reversed element order", 1.0_g_cm3,
+                 {
+                   {.atomic_number = 8U, .mass_fraction = 0.888102L},
+                   {.atomic_number = 1U, .mass_fraction = 0.111898L},
+                 }));
 
   EXPECT_TRUE(HasSameScientificIdentity(authored[0], authored[1]));
   EXPECT_TRUE(HasSameScientificIdentity(authored[0], authored[2]));
@@ -123,10 +123,10 @@ TEST(GGEMSEMMaterialPackageTest, InternsIdenticalMaterialsUnderAnyName) {
 TEST(GGEMSEMMaterialPackageTest, SeparatesPhysicallyDifferentMaterials) {
   std::vector<materials::GGEMSMaterial> authored;
   authored.push_back(MakeMaterial(
-      "boron", 2.34_g_cm3, {{.atomic_number = 5U, .mass_fraction = 1.0L}}));
+    "boron", 2.34_g_cm3, {{.atomic_number = 5U, .mass_fraction = 1.0L}}));
   authored.push_back(
-      MakeMaterial("denser boron", 2.40_g_cm3,
-                   {{.atomic_number = 5U, .mass_fraction = 1.0L}}));
+    MakeMaterial("denser boron", 2.40_g_cm3,
+                 {{.atomic_number = 5U, .mass_fraction = 1.0L}}));
   authored.push_back(MakeEnrichedBoron("enriched boron", 2.34_g_cm3, 0.9L));
   authored.push_back(MakeEnrichedBoron("other enrichment", 2.34_g_cm3, 0.5L));
 
@@ -151,17 +151,17 @@ TEST(GGEMSEMMaterialPackageTest, SeparatesPhysicallyDifferentMaterials) {
 TEST(GGEMSEMMaterialPackageTest, EquivalentAuthoringRoutesShareOneIdentity) {
   std::vector<materials::GGEMSMaterial> authored;
   authored.push_back(
-      MakeMaterial("natural boron", 2.34_g_cm3,
-                   {{.atomic_number = 5U, .mass_fraction = 1.0L}}));
+    MakeMaterial("natural boron", 2.34_g_cm3,
+                 {{.atomic_number = 5U, .mass_fraction = 1.0L}}));
   authored.push_back(materials::GGEMSMaterial::FromIsotopicComposition(
-      "explicit natural boron", 2.34_g_cm3,
+    "explicit natural boron", 2.34_g_cm3,
+    {
       {
-          {
-              .mass_fraction = 1.0L,
-              .isotopic_composition = materials::ResolveIsotopeProfile(
-                  materials::GGEMSIsotopeProfile::Nist41Natural, 5U),
-          },
-      }));
+        .mass_fraction = 1.0L,
+        .isotopic_composition = materials::ResolveIsotopeProfile(
+          materials::GGEMSIsotopeProfile::Nist41Natural, 5U),
+      },
+    }));
 
   EXPECT_TRUE(HasSameScientificIdentity(authored[0], authored[1]));
 
@@ -180,17 +180,17 @@ TEST(GGEMSEMMaterialPackageTest,
   long double const oxygen{0.888102L};
 
   auto const first =
-      MakeMaterial("first water", 1.0_g_cm3,
-                   {
-                       {.atomic_number = 1U, .mass_fraction = first_hydrogen},
-                       {.atomic_number = 8U, .mass_fraction = oxygen},
-                   });
+    MakeMaterial("first water", 1.0_g_cm3,
+                 {
+                   {.atomic_number = 1U, .mass_fraction = first_hydrogen},
+                   {.atomic_number = 8U, .mass_fraction = oxygen},
+                 });
   auto const second =
-      MakeMaterial("second water", 1.0_g_cm3,
-                   {
-                       {.atomic_number = 1U, .mass_fraction = second_hydrogen},
-                       {.atomic_number = 8U, .mass_fraction = oxygen},
-                   });
+    MakeMaterial("second water", 1.0_g_cm3,
+                 {
+                   {.atomic_number = 1U, .mass_fraction = second_hydrogen},
+                   {.atomic_number = 8U, .mass_fraction = oxygen},
+                 });
 
   ASSERT_NE(first_hydrogen, second_hydrogen);
   ASSERT_TRUE(HasSameScientificIdentity(first, second));
@@ -228,10 +228,10 @@ TEST(GGEMSEMMaterialPackageTest, DeduplicatesVacuumAndKeepsItEmpty) {
   std::vector<materials::GGEMSMaterial> authored;
   authored.push_back(builtins::BuildBuiltInMaterial("Vacuum"));
   authored.push_back(
-      MakeMaterial("second vacuum", units::Density{.value = 0.0L}, {}));
+    MakeMaterial("second vacuum", units::Density{.value = 0.0L}, {}));
   authored.push_back(
-      MakeMaterial("air-like", 1.205e-3_g_cm3,
-                   {{.atomic_number = 7U, .mass_fraction = 1.0L}}));
+    MakeMaterial("air-like", 1.205e-3_g_cm3,
+                 {{.atomic_number = 7U, .mass_fraction = 1.0L}}));
 
   auto const package = Compile(authored);
 
@@ -362,7 +362,7 @@ TEST(GGEMSEMMaterialPackageTest, RebuildsIdenticalPackageFromTheSameInput) {
   }
 
   EXPECT_TRUE(
-      std::ranges::equal(first.GetMaterialIds(), second.GetMaterialIds()));
+    std::ranges::equal(first.GetMaterialIds(), second.GetMaterialIds()));
 }
 
 // =============================================================================
@@ -377,8 +377,8 @@ TEST(GGEMSEMMaterialPackageTest, CompilesManyAuthoredEntriesIntoFewIdentities) {
   for (std::size_t entry = 0U; entry < k_authored_entries; ++entry) {
     auto const variant = entry % k_distinct_materials;
     authored.push_back(
-        MakeEnrichedBoron("boron " + std::to_string(entry), 2.34_g_cm3,
-                          0.5L + (0.05L * static_cast<long double>(variant))));
+      MakeEnrichedBoron("boron " + std::to_string(entry), 2.34_g_cm3,
+                        0.5L + (0.05L * static_cast<long double>(variant))));
   }
 
   auto const package = Compile(authored);

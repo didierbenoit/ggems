@@ -98,12 +98,12 @@ TEST(GGEMSTransportObserver,
   observer.SetMaxStoredRecordCount(3U);
 
   std::array<ObserverRecord, 2U> const first_records{
-      ObserverRecord{.run_id = 11ULL}, ObserverRecord{.run_id = 12ULL}};
+    ObserverRecord{.run_id = 11ULL}, ObserverRecord{.run_id = 12ULL}};
   ObserverCounters const first_counters{
-      .record_count = 2U,
-      .overflow_count = k_counter_maximum - 2U,
-      .captured_primary_count = k_counter_maximum - 1U,
-      .reserved_0 = 0U,
+    .record_count = 2U,
+    .overflow_count = k_counter_maximum - 2U,
+    .captured_primary_count = k_counter_maximum - 1U,
+    .reserved_0 = 0U,
   };
 
   observer.Accumulate(first_records, first_counters);
@@ -114,12 +114,12 @@ TEST(GGEMSTransportObserver,
   EXPECT_EQ(observer.GetCapturedPrimaryCount(), k_counter_maximum - 1U);
 
   std::array<ObserverRecord, 2U> const second_records{
-      ObserverRecord{.run_id = 21ULL}, ObserverRecord{.run_id = 22ULL}};
+    ObserverRecord{.run_id = 21ULL}, ObserverRecord{.run_id = 22ULL}};
   ObserverCounters const second_counters{
-      .record_count = 2U,
-      .overflow_count = 1U,
-      .captured_primary_count = 2U,
-      .reserved_0 = 0U,
+    .record_count = 2U,
+    .overflow_count = 1U,
+    .captured_primary_count = 2U,
+    .reserved_0 = 0U,
   };
 
   observer.Accumulate(second_records, second_counters);
@@ -142,14 +142,14 @@ TEST(GGEMSTransportObserver,
   using ObserverCounters = ggems::core::observer::GGEMSObserverCounters;
   using ObserverRecord = ggems::core::observer::GGEMSObserverRecord;
   using RunResultCounters =
-      ggems::core::observer::GGEMSObserverRunResultCounters;
+    ggems::core::observer::GGEMSObserverRunResultCounters;
 
   Observer observer{};
   observer.SetMaxStoredRecordCount(3U).CaptureFirstPrimaries(7U).CapturePrimary(
-      2U, 9ULL);
+    2U, 9ULL);
 
   std::array<ObserverRecord, 1U> const previous_records{
-      ObserverRecord{.run_id = 1ULL}};
+    ObserverRecord{.run_id = 1ULL}};
   observer.Accumulate(previous_records,
                       ObserverCounters{.record_count = 1U,
                                        .overflow_count = 2U,
@@ -166,18 +166,18 @@ TEST(GGEMSTransportObserver,
   EXPECT_EQ(candidate->GetCapturedPrimaryCount(), 0U);
 
   std::array<ObserverRecord, 2U> const first_report_records{
-      ObserverRecord{.run_id = 11ULL}, ObserverRecord{.run_id = 12ULL}};
+    ObserverRecord{.run_id = 11ULL}, ObserverRecord{.run_id = 12ULL}};
   candidate->AccumulateRunResult(
-      first_report_records, RunResultCounters{.record_count = 2ULL,
-                                              .overflow_count = 4ULL,
-                                              .captured_primary_count = 1ULL});
+    first_report_records, RunResultCounters{.record_count = 2ULL,
+                                            .overflow_count = 4ULL,
+                                            .captured_primary_count = 1ULL});
 
   std::array<ObserverRecord, 2U> const second_report_records{
-      ObserverRecord{.run_id = 21ULL}, ObserverRecord{.run_id = 22ULL}};
+    ObserverRecord{.run_id = 21ULL}, ObserverRecord{.run_id = 22ULL}};
   candidate->AccumulateRunResult(
-      second_report_records, RunResultCounters{.record_count = 2ULL,
-                                               .overflow_count = 5ULL,
-                                               .captured_primary_count = 2ULL});
+    second_report_records, RunResultCounters{.record_count = 2ULL,
+                                             .overflow_count = 5ULL,
+                                             .captured_primary_count = 2ULL});
 
   ASSERT_EQ(candidate->GetRecords().size(), 3U);
   EXPECT_EQ(candidate->GetRecordCount(), 3U);
@@ -213,7 +213,7 @@ TEST(GGEMSTransportObserver,
   EXPECT_EQ(observer.GetCapturedPrimaryCount(), 3U);
 
   std::array<ObserverRecord, 1U> const additional_records{
-      ObserverRecord{.run_id = 31ULL}};
+    ObserverRecord{.run_id = 31ULL}};
   observer.Accumulate(additional_records,
                       ObserverCounters{.record_count = 1U,
                                        .overflow_count = 1U,
@@ -232,22 +232,22 @@ TEST(GGEMSTransportObserver, RunResultCandidateSaturatesWideLogicalCounters) {
   using Observer = ggems::core::observer::GGEMSTransportObserver;
   using ObserverRecord = ggems::core::observer::GGEMSObserverRecord;
   using RunResultCounters =
-      ggems::core::observer::GGEMSObserverRunResultCounters;
+    ggems::core::observer::GGEMSObserverRunResultCounters;
 
   constexpr auto k_counter_maximum = std::numeric_limits<std::uint32_t>::max();
   constexpr auto k_counter_maximum_wide =
-      static_cast<std::uint64_t>(k_counter_maximum);
+    static_cast<std::uint64_t>(k_counter_maximum);
 
   Observer observer{};
   auto candidate = observer.CreateRunResultCandidate();
   std::array<ObserverRecord, 1U> const records{ObserverRecord{.run_id = 41ULL}};
 
   candidate->AccumulateRunResult(
-      records, RunResultCounters{
-                   .record_count = 1ULL,
-                   .overflow_count = k_counter_maximum_wide + 7ULL,
-                   .captured_primary_count = k_counter_maximum_wide + 11ULL,
-               });
+    records, RunResultCounters{
+               .record_count = 1ULL,
+               .overflow_count = k_counter_maximum_wide + 7ULL,
+               .captured_primary_count = k_counter_maximum_wide + 11ULL,
+             });
 
   EXPECT_EQ(candidate->GetRecordCount(), 1U);
   EXPECT_EQ(candidate->GetOverflowCount(), k_counter_maximum);

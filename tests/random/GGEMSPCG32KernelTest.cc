@@ -72,11 +72,11 @@ constexpr std::size_t k_local_size{64U};
 
 constexpr std::size_t k_uniform4_blocks_per_particle{2U};
 constexpr std::size_t k_uniform4_value_count{
-    k_particle_count * k_uniform4_blocks_per_particle * 4U};
+  k_particle_count * k_uniform4_blocks_per_particle * 4U};
 
 constexpr auto k_padded_global_work_size =
-    ggems::ocl::detail::TryComputePaddedGlobalWorkSize(k_particle_count,
-                                                       k_local_size);
+  ggems::ocl::detail::TryComputePaddedGlobalWorkSize(k_particle_count,
+                                                     k_local_size);
 
 static_assert(k_padded_global_work_size.has_value());
 
@@ -98,7 +98,7 @@ auto SplitMix64(std::uint64_t value) noexcept -> std::uint64_t {
 // =============================================================================
 
 auto MakePCG32State(std::uint64_t seed, std::uint64_t index) noexcept
-    -> PCG32State {
+  -> PCG32State {
   auto state = SplitMix64(seed + (0xD1B54A32D192ED03ULL * (index + 1ULL)));
 
   std::uint64_t stream = SplitMix64(seed ^ (0xABC98388FB8FAC03ULL + index));
@@ -110,7 +110,7 @@ auto MakePCG32State(std::uint64_t seed, std::uint64_t index) noexcept
 // =============================================================================
 
 auto AreStatesEqual(PCG32State const &lhs, PCG32State const &rhs) noexcept
-    -> bool {
+  -> bool {
   return lhs.state == rhs.state && lhs.increment == rhs.increment;
 }
 
@@ -124,7 +124,7 @@ auto AreStatesEqual(PCG32State const &lhs, PCG32State const &rhs) noexcept
 
 TEST(GGEMSPCG32KernelTest, UniformValuesAreInsideUnitInterval) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -145,10 +145,10 @@ TEST(GGEMSPCG32KernelTest, UniformValuesAreInsideUnitInterval) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_pcg32_uniform", build_options);
+      context, kernel_test_root, "random_pcg32_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_pcg32_uniform");
 
@@ -159,9 +159,9 @@ TEST(GGEMSPCG32KernelTest, UniformValuesAreInsideUnitInterval) {
     std::size_t value_bytes = k_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<PCG32State *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -206,7 +206,7 @@ TEST(GGEMSPCG32KernelTest, UniformValuesAreInsideUnitInterval) {
 
 TEST(GGEMSPCG32KernelTest, SequenceContinuesBetweenKernelCalls) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -227,10 +227,10 @@ TEST(GGEMSPCG32KernelTest, SequenceContinuesBetweenKernelCalls) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_pcg32_uniform", build_options);
+      context, kernel_test_root, "random_pcg32_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_pcg32_uniform");
 
@@ -241,9 +241,9 @@ TEST(GGEMSPCG32KernelTest, SequenceContinuesBetweenKernelCalls) {
     std::size_t value_bytes = k_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<PCG32State *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -302,7 +302,7 @@ TEST(GGEMSPCG32KernelTest, SequenceContinuesBetweenKernelCalls) {
 
 TEST(GGEMSPCG32KernelTest, SameSeedProducesSameFirstSequence) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -323,10 +323,10 @@ TEST(GGEMSPCG32KernelTest, SameSeedProducesSameFirstSequence) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_pcg32_uniform", build_options);
+      context, kernel_test_root, "random_pcg32_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_pcg32_uniform");
 
@@ -337,9 +337,9 @@ TEST(GGEMSPCG32KernelTest, SameSeedProducesSameFirstSequence) {
     std::size_t value_bytes = k_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<PCG32State *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -396,7 +396,7 @@ TEST(GGEMSPCG32KernelTest, SameSeedProducesSameFirstSequence) {
 
 TEST(GGEMSPCG32KernelTest, DifferentSeedsProduceDifferentFirstSequence) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -417,10 +417,10 @@ TEST(GGEMSPCG32KernelTest, DifferentSeedsProduceDifferentFirstSequence) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_pcg32_uniform", build_options);
+      context, kernel_test_root, "random_pcg32_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_pcg32_uniform");
 
@@ -431,9 +431,9 @@ TEST(GGEMSPCG32KernelTest, DifferentSeedsProduceDifferentFirstSequence) {
     std::size_t value_bytes = k_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<PCG32State *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -499,7 +499,7 @@ TEST(GGEMSPCG32KernelTest, DifferentSeedsProduceDifferentFirstSequence) {
 
 TEST(GGEMSPCG32KernelTest, RandomStatesAreAdvancedByKernelExecution) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -520,10 +520,10 @@ TEST(GGEMSPCG32KernelTest, RandomStatesAreAdvancedByKernelExecution) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_pcg32_uniform", build_options);
+      context, kernel_test_root, "random_pcg32_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_pcg32_uniform");
 
@@ -534,9 +534,9 @@ TEST(GGEMSPCG32KernelTest, RandomStatesAreAdvancedByKernelExecution) {
     std::size_t value_bytes = k_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<PCG32State *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -600,7 +600,7 @@ TEST(GGEMSPCG32KernelTest, RandomStatesAreAdvancedByKernelExecution) {
 
 TEST(GGEMSPCG32KernelTest, GenericRandomUniformUsesSelectedPCG32Engine) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -620,11 +620,11 @@ TEST(GGEMSPCG32KernelTest, GenericRandomUniformUsesSelectedPCG32Engine) {
     std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
-    std::string build_options = std::format("-I{} -DGGEMS_RANDOM_ENGINE=2",
-                                            kernel_root.generic_string());
+    std::string build_options =
+      std::format("-I{} -DGGEMS_RANDOM_ENGINE=2", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_generic_uniform", build_options);
+      context, kernel_test_root, "random_generic_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_generic_uniform");
 
@@ -635,9 +635,9 @@ TEST(GGEMSPCG32KernelTest, GenericRandomUniformUsesSelectedPCG32Engine) {
     std::size_t value_bytes = k_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<PCG32State *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -693,7 +693,7 @@ TEST(GGEMSPCG32KernelTest, GenericRandomUniformUsesSelectedPCG32Engine) {
 
 TEST(GGEMSPCG32KernelTest, GenericRandomUniform4UsesSelectedPCG32Engine) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -713,11 +713,11 @@ TEST(GGEMSPCG32KernelTest, GenericRandomUniform4UsesSelectedPCG32Engine) {
     std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
-    std::string build_options = std::format("-I{} -DGGEMS_RANDOM_ENGINE=2",
-                                            kernel_root.generic_string());
+    std::string build_options =
+      std::format("-I{} -DGGEMS_RANDOM_ENGINE=2", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_generic_uniform4", build_options);
+      context, kernel_test_root, "random_generic_uniform4", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_generic_uniform4");
 
@@ -728,9 +728,9 @@ TEST(GGEMSPCG32KernelTest, GenericRandomUniform4UsesSelectedPCG32Engine) {
     std::size_t value_bytes = k_uniform4_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<PCG32State *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());

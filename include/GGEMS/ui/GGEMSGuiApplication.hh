@@ -40,9 +40,9 @@ public:
   auto SubmitLastRunSourceSnapshot(ggems::core::GGEMSRun const &run) -> void;
 
   void SubmitParticleTraceSegments(
-      std::vector<ggems::render::GGEMSParticleTraceSegment> segments);
+    std::vector<ggems::render::GGEMSParticleTraceSegment> segments);
   void SubmitParticleTracesFromObserver(
-      ggems::core::observer::GGEMSTransportObserver const &observer);
+    ggems::core::observer::GGEMSTransportObserver const &observer);
   void ClearParticleTraces();
 
   [[nodiscard]] auto IsInitialized() const noexcept -> bool;

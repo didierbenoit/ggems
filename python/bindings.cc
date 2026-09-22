@@ -29,7 +29,7 @@ PYBIND11_MODULE(ggems, module) {
   auto materials = module.def_submodule("materials", "GGEMS materials module");
   auto cuts = module.def_submodule("cuts", "GGEMS Production cuts module");
   auto radionuclide =
-      module.def_submodule("radionuclide", "GGEMS radionuclide module");
+    module.def_submodule("radionuclide", "GGEMS radionuclide module");
   auto source = module.def_submodule("source", "GGEMS source module");
   auto run = module.def_submodule("run", "GGEMS run module");
   auto observer = module.def_submodule("observer", "GGEMS observer module");
@@ -54,7 +54,7 @@ PYBIND11_MODULE(ggems, module) {
 
   module.attr("__version__") = "2.0.0";
   module.attr("__author__") =
-      py::make_tuple("Didier Benoit <didier.benoit@inserm.fr>",
-                     "Julien Bert <julien.bert@univ-brest.fr>");
+    py::make_tuple("Didier Benoit <didier.benoit@inserm.fr>",
+                   "Julien Bert <julien.bert@univ-brest.fr>");
   module.attr("__license__") = "GPLv3";
 }

@@ -25,20 +25,20 @@ namespace ggems::core::radioactivity::builtins {
 [[nodiscard]] auto BuildTc99mRadionuclide() -> GGEMSRadionuclideDefinition;
 
 [[nodiscard]] auto GetAvailableRadionuclideNames() noexcept
-    -> std::span<std::string_view const>;
+  -> std::span<std::string_view const>;
 
 [[nodiscard]] auto BuildBuiltInRadionuclide(std::string_view canonical_name)
-    -> std::optional<GGEMSRadionuclideDefinition>;
+  -> std::optional<GGEMSRadionuclideDefinition>;
 
 [[nodiscard]] auto
 DescribeBuiltInRadionuclide(GGEMSRadionuclideDefinition const &definition)
-    -> std::string;
+  -> std::string;
 
 [[nodiscard]] auto DescribeBuiltInRadionuclide(std::string_view canonical_name)
-    -> std::string;
+  -> std::string;
 
 auto VerboseBuiltInRadionuclide(GGEMSRadionuclideDefinition const &definition)
-    -> void;
+  -> void;
 
 auto VerboseBuiltInRadionuclide(std::string_view canonical_name) -> void;
 

@@ -12,21 +12,21 @@ namespace ggems::core::materials {
 
 [[nodiscard]] auto
 FindElementByAtomicNumber(std::uint32_t atomic_number) noexcept
-    -> GGEMSElement const *;
+  -> GGEMSElement const *;
 
 [[nodiscard]] auto FindElementBySymbol(std::string_view symbol) noexcept
-    -> GGEMSElement const *;
+  -> GGEMSElement const *;
 
 [[nodiscard]] auto FindElementByName(std::string_view canonical_name) noexcept
-    -> GGEMSElement const *;
+  -> GGEMSElement const *;
 
 [[nodiscard]] auto RequireElementByAtomicNumber(std::uint32_t atomic_number)
-    -> GGEMSElement const &;
+  -> GGEMSElement const &;
 
 [[nodiscard]] auto RequireElementBySymbol(std::string_view symbol)
-    -> GGEMSElement const &;
+  -> GGEMSElement const &;
 
 [[nodiscard]] auto RequireElementByName(std::string_view canonical_name)
-    -> GGEMSElement const &;
+  -> GGEMSElement const &;
 
 } // namespace ggems::core::materials

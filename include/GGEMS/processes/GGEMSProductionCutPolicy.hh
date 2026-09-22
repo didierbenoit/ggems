@@ -19,22 +19,22 @@ enum class GGEMSProductionCutChannel : std::uint8_t {
 };
 
 inline constexpr std::array<GGEMSProductionCutChannel, 4U>
-    k_production_cut_channels{
-        GGEMSProductionCutChannel::Gamma,
-        GGEMSProductionCutChannel::Electron,
-        GGEMSProductionCutChannel::Positron,
-        GGEMSProductionCutChannel::Proton,
+  k_production_cut_channels{
+    GGEMSProductionCutChannel::Gamma,
+    GGEMSProductionCutChannel::Electron,
+    GGEMSProductionCutChannel::Positron,
+    GGEMSProductionCutChannel::Proton,
 };
 
 [[nodiscard]] constexpr auto
 ProductionCutChannelIndex(GGEMSProductionCutChannel channel) noexcept
-    -> std::size_t {
+  -> std::size_t {
   return static_cast<std::size_t>(channel);
 }
 
 [[nodiscard]] constexpr auto
 ProductionCutChannelName(GGEMSProductionCutChannel channel) noexcept
-    -> std::string_view {
+  -> std::string_view {
   switch (channel) {
   case GGEMSProductionCutChannel::Gamma:
     return "Gamma";
@@ -56,7 +56,7 @@ enum class GGEMSProductionCutScope : std::uint8_t {
 
 [[nodiscard]] constexpr auto
 ProductionCutScopeName(GGEMSProductionCutScope scope) noexcept
-    -> std::string_view {
+  -> std::string_view {
   switch (scope) {
   case GGEMSProductionCutScope::Global:
     return "Global";
@@ -98,16 +98,16 @@ struct GGEMSResolvedProductionCuts {
 };
 
 auto RequireAdmissibleProductionCutPolicy(
-    GGEMSProductionCutPolicy const &policy) -> void;
+  GGEMSProductionCutPolicy const &policy) -> void;
 
 [[nodiscard]] auto
 ResolveProductionCuts(GGEMSProductionCutPolicy const &policy,
                       GGEMSProductionCutContext const &context)
-    -> GGEMSResolvedProductionCuts;
+  -> GGEMSResolvedProductionCuts;
 
 [[nodiscard]] auto
 ResolveProductionCutLengths(GGEMSProductionCutPolicy const &policy,
                             GGEMSProductionCutContext const &context)
-    -> GGEMSResolvedProductionCutLengths;
+  -> GGEMSResolvedProductionCutLengths;
 
 } // namespace ggems::core::processes

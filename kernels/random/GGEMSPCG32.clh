@@ -23,7 +23,8 @@
  * \file
  * \brief Declares the OpenCL PCG32 random-number engine.
  *
- * Provides raw 32-bit output and scalar uniform sampling from per-stream PCG32 state.
+ * Provides raw 32-bit output and scalar uniform sampling from per-stream PCG32
+ * state.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -46,7 +47,7 @@ static inline uint GGEMS_PCG32NextUInt(__global GGEMSPCG32State *states,
   ulong old_state = states[index].state;
 
   states[index].state =
-      old_state * 6364136223846793005UL + states[index].increment;
+    old_state * 6364136223846793005UL + states[index].increment;
 
   uint xorshifted = (uint)(((old_state >> 18U) ^ old_state) >> 27U);
 

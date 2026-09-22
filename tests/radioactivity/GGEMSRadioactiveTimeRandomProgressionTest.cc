@@ -29,7 +29,7 @@ using RandomEngine = ggems::core::random::GGEMSRandomEngine;
 // =============================================================================
 
 constexpr std::array<RandomEngine, 3U> k_engines{
-    RandomEngine::JKISS, RandomEngine::PCG32, RandomEngine::Philox};
+  RandomEngine::JKISS, RandomEngine::PCG32, RandomEngine::Philox};
 
 // =============================================================================
 // =============================================================================
@@ -67,17 +67,17 @@ TEST_F(GGEMSRadioactiveTimeRandomProgressionTest,
     std::uint32_t const expected_next_word = reference.NextUInt32();
 
     auto state_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{random.GetStateSize()});
-    auto raw_buffer = context.CreateSVMBuffer(
-        ggems::units::Bytes{2U * sizeof(std::uint32_t)});
+      context.CreateSVMBuffer(ggems::units::Bytes{random.GetStateSize()});
+    auto raw_buffer =
+      context.CreateSVMBuffer(ggems::units::Bytes{2U * sizeof(std::uint32_t)});
     auto time_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(std::uint64_t)});
+      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(std::uint64_t)});
 
     state_buffer.Map(CL_MAP_WRITE);
     random.InitializeStates(
-        0ULL,
-        std::span<std::byte>{static_cast<std::byte *>(state_buffer.GetData()),
-                             random.GetStateSize()});
+      0ULL,
+      std::span<std::byte>{static_cast<std::byte *>(state_buffer.GetData()),
+                           random.GetStateSize()});
     state_buffer.Unmap();
 
     std::array<std::uint32_t, 2U> raw_values{};
@@ -88,10 +88,10 @@ TEST_F(GGEMSRadioactiveTimeRandomProgressionTest,
     std::string const options = std::format("-I{} {}", root.generic_string(),
                                             random.GetKernelBuildDefinition());
     auto const &program = opencl.GetOrCreateProgram(
-        context, root / "tests", "radioactive_time_random_probe", options);
+      context, root / "tests", "radioactive_time_random_probe", options);
     ggems::ocl::GGEMSOpenCLKernel kernel{
-        context, program.CreateKernel("radioactive_time_random_probe"),
-        "radioactive_time_random_probe"};
+      context, program.CreateKernel("radioactive_time_random_probe"),
+      "radioactive_time_random_probe"};
 
     constexpr std::uint64_t k_start{8'000'000'000'000'000ULL};
     constexpr std::uint64_t k_stop{k_start + 1'000'000'000'000ULL};

@@ -19,12 +19,12 @@ public:
 
     if (mass_number < atomic_number) {
       throw GGEMSRecoverable{
-          "Isotope mass number must not be smaller than its atomic number."};
+        "Isotope mass number must not be smaller than its atomic number."};
     }
   }
 
   [[nodiscard]] constexpr auto GetAtomicNumber() const noexcept
-      -> std::uint32_t {
+    -> std::uint32_t {
     return atomic_number_;
   }
 
@@ -33,12 +33,12 @@ public:
   }
 
   [[nodiscard]] constexpr auto GetIsomerState() const noexcept
-      -> std::uint32_t {
+    -> std::uint32_t {
     return isomer_state_;
   }
 
   [[nodiscard]] constexpr auto operator<=>(GGEMSIsotope const &) const noexcept
-      -> std::strong_ordering = default;
+    -> std::strong_ordering = default;
 
 private:
   std::uint32_t atomic_number_;

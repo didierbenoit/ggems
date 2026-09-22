@@ -92,7 +92,7 @@ GGEMS_TryScaleDiagnosticProjectionComponent(float component,
 // =============================================================================
 
 static inline uint GGEMS_TryAddDiagnosticProjectionDisplacement(
-    long position_pm, long displacement_pm, __private long *endpoint_pm) {
+  long position_pm, long displacement_pm, __private long *endpoint_pm) {
   if (displacement_pm > 0L &&
       position_pm > GGEMS_DIAGNOSTIC_INT64_MAX - displacement_pm) {
     return 0U;

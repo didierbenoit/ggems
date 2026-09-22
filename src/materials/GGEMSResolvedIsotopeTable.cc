@@ -14,7 +14,7 @@ namespace ggems::core::materials {
 // =============================================================================
 
 GGEMSResolvedIsotopeTable::GGEMSResolvedIsotopeTable(
-    std::vector<GGEMSResolvedIsotope> resolved_isotopes)
+  std::vector<GGEMSResolvedIsotope> resolved_isotopes)
     : resolved_isotopes_{std::move(resolved_isotopes)} {
   for (auto const &resolved_isotope : resolved_isotopes_) {
     long double const molar_mass = resolved_isotope.molar_mass_grams_per_mole;
@@ -31,7 +31,7 @@ GGEMSResolvedIsotopeTable::GGEMSResolvedIsotopeTable(
                                  &GGEMSResolvedIsotope::isotope) !=
       resolved_isotopes_.end()) {
     throw GGEMSRecoverable{
-        "Resolved isotope table contains duplicate isotope keys."};
+      "Resolved isotope table contains duplicate isotope keys."};
   }
 }
 
@@ -39,7 +39,7 @@ GGEMSResolvedIsotopeTable::GGEMSResolvedIsotopeTable(
 
 [[nodiscard]] auto
 GGEMSResolvedIsotopeTable::Find(GGEMSIsotope const &isotope) const noexcept
-    -> GGEMSResolvedIsotope const * {
+  -> GGEMSResolvedIsotope const * {
   auto const found = std::ranges::lower_bound(resolved_isotopes_, isotope, {},
                                               &GGEMSResolvedIsotope::isotope);
 
@@ -54,14 +54,14 @@ GGEMSResolvedIsotopeTable::Find(GGEMSIsotope const &isotope) const noexcept
 
 [[nodiscard]] auto
 GGEMSResolvedIsotopeTable::Require(GGEMSIsotope const &isotope) const
-    -> GGEMSResolvedIsotope const & {
+  -> GGEMSResolvedIsotope const & {
   auto const *resolved_isotope = Find(isotope);
 
   if (resolved_isotope == nullptr) {
     throw GGEMSRecoverable{
-        std::format("No resolved molar mass for isotope (Z={}, A={}, M={}).",
-                    isotope.GetAtomicNumber(), isotope.GetMassNumber(),
-                    isotope.GetIsomerState())};
+      std::format("No resolved molar mass for isotope (Z={}, A={}, M={}).",
+                  isotope.GetAtomicNumber(), isotope.GetMassNumber(),
+                  isotope.GetIsomerState())};
   }
 
   return *resolved_isotope;

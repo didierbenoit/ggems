@@ -13,6 +13,6 @@ radioactive_time_random_probe(__global GGEMSRandomState *random_states,
   uint const time_word = GGEMS_RndmUInt32(random_states, 0U);
   raw_values[0] = time_word;
   sampled_time[0] = GGEMS_SampleRadioactiveTimeFromRaw(
-      time_start_ps, time_stop_ps, scaled_decay, time_word);
+    time_start_ps, time_stop_ps, scaled_decay, time_word);
   raw_values[1] = GGEMS_RndmUInt32(random_states, 0U);
 }

@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for GGEMS mass quantities and conversions.
  *
- * Validates registered mass units, negative-value rejection, ASCII/Unicode microgram formatting, and canonical picogram literals.
+ * Validates registered mass units, negative-value rejection, ASCII/Unicode
+ * microgram formatting, and canonical picogram literals.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -60,12 +61,12 @@ TEST(GGEMSMassUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   };
 
   constexpr std::array<Case, 6U> cases{{
-      {.unit = "pg", .expected_picograms = 1ULL},
-      {.unit = "ng", .expected_picograms = 1'000ULL},
-      {.unit = "ug", .expected_picograms = 1'000'000ULL},
-      {.unit = "mg", .expected_picograms = 1'000'000'000ULL},
-      {.unit = "g", .expected_picograms = 1'000'000'000'000ULL},
-      {.unit = "kg", .expected_picograms = 1'000'000'000'000'000ULL},
+    {.unit = "pg", .expected_picograms = 1ULL},
+    {.unit = "ng", .expected_picograms = 1'000ULL},
+    {.unit = "ug", .expected_picograms = 1'000'000ULL},
+    {.unit = "mg", .expected_picograms = 1'000'000'000ULL},
+    {.unit = "g", .expected_picograms = 1'000'000'000'000ULL},
+    {.unit = "kg", .expected_picograms = 1'000'000'000'000'000ULL},
   }};
 
   for (auto const &test_case : cases) {

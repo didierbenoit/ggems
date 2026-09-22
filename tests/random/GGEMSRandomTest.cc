@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for GGEMS random configuration.
  *
- * Validates engine parsing and selection, seed handling, kernel identifiers and build definitions, state-size reporting, and verbose summaries.
+ * Validates engine parsing and selection, seed handling, kernel identifiers and
+ * build definitions, state-size reporting, and verbose summaries.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>

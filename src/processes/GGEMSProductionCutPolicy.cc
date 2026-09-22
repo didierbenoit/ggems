@@ -16,7 +16,7 @@ namespace {
 
 [[nodiscard]] auto FindLength(GGEMSProductionCutLengths const &lengths,
                               GGEMSProductionCutChannel channel) noexcept
-    -> std::optional<units::Length> {
+  -> std::optional<units::Length> {
   switch (channel) {
   case GGEMSProductionCutChannel::Gamma:
     return lengths.gamma;
@@ -36,12 +36,12 @@ namespace {
 // =============================================================================
 
 auto RequireAdmissibleProductionCutPolicy(
-    GGEMSProductionCutPolicy const &policy) -> void {
+  GGEMSProductionCutPolicy const &policy) -> void {
   for (auto const channel : k_production_cut_channels) {
     if (!FindLength(policy.global, channel).has_value()) {
       throw GGEMSRecoverable{
-          std::format("Global Production-Cut policy has no {} length.",
-                      ProductionCutChannelName(channel))};
+        std::format("Global Production-Cut policy has no {} length.",
+                    ProductionCutChannelName(channel))};
     }
   }
 
@@ -51,8 +51,8 @@ auto RequireAdmissibleProductionCutPolicy(
     for (auto second = std::next(first); second != materials.end(); ++second) {
       if (first->material_index == second->material_index) {
         throw GGEMSRecoverable{std::format(
-            "Production-Cut policy defines Material {} more than once.",
-            first->material_index)};
+          "Production-Cut policy defines Material {} more than once.",
+          first->material_index)};
       }
     }
   }
@@ -63,16 +63,16 @@ auto RequireAdmissibleProductionCutPolicy(
 
 auto ResolveProductionCuts(GGEMSProductionCutPolicy const &policy,
                            GGEMSProductionCutContext const &context)
-    -> GGEMSResolvedProductionCuts {
+  -> GGEMSResolvedProductionCuts {
   RequireAdmissibleProductionCutPolicy(policy);
 
   auto const material_override =
-      std::ranges::find(policy.materials, context.material_index,
-                        &GGEMSMaterialProductionCuts::material_index);
+    std::ranges::find(policy.materials, context.material_index,
+                      &GGEMSMaterialProductionCuts::material_index);
 
   auto const *material = material_override != policy.materials.end()
-                             ? &material_override->lengths
-                             : nullptr;
+                           ? &material_override->lengths
+                           : nullptr;
 
   GGEMSResolvedProductionCuts resolved{};
 
@@ -104,7 +104,7 @@ auto ResolveProductionCuts(GGEMSProductionCutPolicy const &policy,
 
 auto ResolveProductionCutLengths(GGEMSProductionCutPolicy const &policy,
                                  GGEMSProductionCutContext const &context)
-    -> GGEMSResolvedProductionCutLengths {
+  -> GGEMSResolvedProductionCutLengths {
   return ResolveProductionCuts(policy, context).lengths;
 }
 

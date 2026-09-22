@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for GGEMS frequency quantities and conversions.
  *
- * Validates registered frequency units, negative-value rejection, automatic SI prefix formatting, and hertz literals.
+ * Validates registered frequency units, negative-value rejection, automatic SI
+ * prefix formatting, and hertz literals.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -60,11 +61,11 @@ TEST(GGEMSFrequencyUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   };
 
   constexpr std::array<Case, 5U> cases{{
-      {.unit = "Hz", .expected_hertz = 1ULL},
-      {.unit = "kHz", .expected_hertz = 1'000ULL},
-      {.unit = "MHz", .expected_hertz = 1'000'000ULL},
-      {.unit = "GHz", .expected_hertz = 1'000'000'000ULL},
-      {.unit = "THz", .expected_hertz = 1'000'000'000'000ULL},
+    {.unit = "Hz", .expected_hertz = 1ULL},
+    {.unit = "kHz", .expected_hertz = 1'000ULL},
+    {.unit = "MHz", .expected_hertz = 1'000'000ULL},
+    {.unit = "GHz", .expected_hertz = 1'000'000'000ULL},
+    {.unit = "THz", .expected_hertz = 1'000'000'000'000ULL},
   }};
 
   for (auto const &test_case : cases) {

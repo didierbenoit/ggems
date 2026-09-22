@@ -23,7 +23,9 @@
  * \file
  * \brief Unit tests for GGEMS OpenCL platform discovery.
  *
- * Compares representative platform properties with native OpenCL information and checks that discovered GGEMS devices match the native platform device set.
+ * Compares representative platform properties with native OpenCL information
+ * and checks that discovered GGEMS devices match the native platform device
+ * set.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -100,7 +102,7 @@ TEST(GGEMSOpenCLPlatformTest, DiscoveredDevicesMatchTheNativePlatformSet) {
 
     std::vector<cl::Device> native_devices;
     auto const error = platform.GetPlatformNative().getDevices(
-        CL_DEVICE_TYPE_CPU | CL_DEVICE_TYPE_GPU, &native_devices);
+      CL_DEVICE_TYPE_CPU | CL_DEVICE_TYPE_GPU, &native_devices);
     ggems::ocl::CheckCLError(error, "Failed to query native platform devices.");
 
     auto const &devices = platform.GetDevices();
@@ -114,9 +116,9 @@ TEST(GGEMSOpenCLPlatformTest, DiscoveredDevicesMatchTheNativePlatformSet) {
       SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(entry));
       auto const &device = entry.device.get();
       auto const native_iterator = std::ranges::find_if(
-          native_devices, [&](auto const &native_device) -> bool {
-            return native_device() == device.GetDeviceNative()();
-          });
+        native_devices, [&](auto const &native_device) -> bool {
+          return native_device() == device.GetDeviceNative()();
+        });
       EXPECT_NE(native_iterator, native_devices.end());
     }
   }

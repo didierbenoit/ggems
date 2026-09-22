@@ -59,9 +59,9 @@ auto GGEMSImGuiLayer::GetSceneSelectionName() const noexcept -> char const * {
 // =============================================================================
 
 auto GGEMSImGuiLayer::BuildFrame(
-    vk::Extent2D const &swapchain_extent, ImTextureID scene_texture_id,
-    vk::Extent2D const &scene_texture_extent,
-    detail::GGEMSDeviceStatusSnapshot const &device_status) -> void {
+  vk::Extent2D const &swapchain_extent, ImTextureID scene_texture_id,
+  vk::Extent2D const &scene_texture_extent,
+  detail::GGEMSDeviceStatusSnapshot const &device_status) -> void {
   reset_camera_requested_ = false;
 
   BuildMainDockspace();
@@ -91,7 +91,7 @@ auto GGEMSImGuiLayer::BuildFrame(
 // -----------------------------------------------------------------------------
 
 auto GGEMSImGuiLayer::SetSourceRunSnapshot(
-    core::sources::GGEMSSourceRunSnapshot snapshot) -> void {
+  core::sources::GGEMSSourceRunSnapshot snapshot) -> void {
   particle_trace_visibility_.ReconcileSourceCount(snapshot.GetRecords().size());
   source_run_snapshot_ = std::move(snapshot);
 }
@@ -117,7 +117,7 @@ auto GGEMSImGuiLayer::ShouldResetCamera() const noexcept -> bool {
 // -----------------------------------------------------------------------------
 
 auto GGEMSImGuiLayer::GetViewportState() const noexcept
-    -> GGEMSImGuiLayer::ViewportState const & {
+  -> GGEMSImGuiLayer::ViewportState const & {
   return viewport_state_;
 }
 
@@ -131,11 +131,11 @@ auto GGEMSImGuiLayer::BuildMainDockspace() -> void {
   ImGui::SetNextWindowViewport(viewport->ID);
 
   ImGuiWindowFlags const window_flags =
-      ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking |
-      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
-      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-      ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
-      ImGuiWindowFlags_NoBackground;
+    ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking |
+    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+    ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
+    ImGuiWindowFlags_NoBackground;
 
   ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0F);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0F);
@@ -165,7 +165,7 @@ auto GGEMSImGuiLayer::BuildMainDockspace() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSImGuiLayer::GetParticleTraceVisibility() const noexcept
-    -> render::GGEMSParticleTraceVisibility const & {
+  -> render::GGEMSParticleTraceVisibility const & {
   return particle_trace_visibility_;
 }
 
@@ -234,8 +234,8 @@ auto GGEMSImGuiLayer::BuildMainMenuBar() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSImGuiLayer::BuildStatusPanel(
-    vk::Extent2D const &swapchain_extent,
-    detail::GGEMSDeviceStatusSnapshot const &device_status) -> void {
+  vk::Extent2D const &swapchain_extent,
+  detail::GGEMSDeviceStatusSnapshot const &device_status) -> void {
   ImGui::Begin("GGEMS Status", &show_status_panel_);
 
   ImGui::TextUnformatted("GuiMode bootstrap");
@@ -251,9 +251,9 @@ auto GGEMSImGuiLayer::BuildStatusPanel(
   } else {
     ImGui::TextUnformatted("Vulkan renderer: initialized");
     ImGui::Text(
-        "Vulkan device: [%u] %s",
-        static_cast<unsigned int>(device_status.renderer.enumeration_index),
-        device_status.renderer.name.c_str());
+      "Vulkan device: [%u] %s",
+      static_cast<unsigned int>(device_status.renderer.enumeration_index),
+      device_status.renderer.name.c_str());
     ImGui::Text("Device type: %s", device_status.renderer.type.c_str());
     ImGui::Text("Selection: %s",
                 device_status.renderer.selection_reason.c_str());
@@ -301,10 +301,10 @@ auto GGEMSImGuiLayer::BuildStatusPanel(
 // -----------------------------------------------------------------------------
 
 auto GGEMSImGuiLayer::BuildViewportPlaceholder(
-    ImTextureID scene_texture_id, vk::Extent2D const &scene_texture_extent)
-    -> void {
+  ImTextureID scene_texture_id, vk::Extent2D const &scene_texture_extent)
+  -> void {
   ImGuiWindowFlags window_flags =
-      ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
   viewport_state_.orbit_delta_x_pixels = 0.0F;
   viewport_state_.orbit_delta_y_pixels = 0.0F;
@@ -318,13 +318,11 @@ auto GGEMSImGuiLayer::BuildViewportPlaceholder(
 
   ImVec2 available_size = ImGui::GetContentRegionAvail();
 
-  std::uint32_t width = available_size.x > 1.0F
-                            ? static_cast<std::uint32_t>(available_size.x)
-                            : 1U;
+  std::uint32_t width =
+    available_size.x > 1.0F ? static_cast<std::uint32_t>(available_size.x) : 1U;
 
-  std::uint32_t height = available_size.y > 1.0F
-                             ? static_cast<std::uint32_t>(available_size.y)
-                             : 1U;
+  std::uint32_t height =
+    available_size.y > 1.0F ? static_cast<std::uint32_t>(available_size.y) : 1U;
 
   bool texture_matches_viewport = scene_texture_id != ImTextureID{} &&
                                   scene_texture_extent.width == width &&
@@ -333,7 +331,7 @@ auto GGEMSImGuiLayer::BuildViewportPlaceholder(
   viewport_state_.extent = vk::Extent2D{.width = width, .height = height};
   viewport_state_.visible = show_viewport_placeholder_;
   viewport_state_.focused =
-      ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+    ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
 
   if (texture_matches_viewport) {
     ImGui::Image(scene_texture_id,
@@ -360,8 +358,8 @@ auto GGEMSImGuiLayer::BuildViewportPlaceholder(
       }
 
       bool allow_keyboard_pan =
-          (viewport_state_.hovered || viewport_state_.focused) &&
-          !imgui_io.WantTextInput;
+        (viewport_state_.hovered || viewport_state_.focused) &&
+        !imgui_io.WantTextInput;
 
       if (allow_keyboard_pan) {
         float keyboard_pan_speed_pixels_per_second = 360.0F;
@@ -375,7 +373,7 @@ auto GGEMSImGuiLayer::BuildViewportPlaceholder(
         }
 
         float keyboard_pan_delta_pixels =
-            keyboard_pan_speed_pixels_per_second * imgui_io.DeltaTime;
+          keyboard_pan_speed_pixels_per_second * imgui_io.DeltaTime;
 
         if (ImGui::IsKeyDown(ImGuiKey_LeftArrow)) {
           viewport_state_.pan_delta_x_pixels -= keyboard_pan_delta_pixels;
@@ -399,7 +397,7 @@ auto GGEMSImGuiLayer::BuildViewportPlaceholder(
     ImGui::TextDisabled("Viewport extent: %u x %u", width, height);
 
     viewport_state_.hovered =
-        ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
+      ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
   }
 
   ImGui::End();
@@ -409,7 +407,7 @@ auto GGEMSImGuiLayer::BuildViewportPlaceholder(
 
 auto GGEMSImGuiLayer::BuildDefaultDockspaceLayout(ImGuiID dockspace_id,
                                                   ImVec2 const &dockspace_size)
-    -> void {
+  -> void {
   ImGui::DockBuilderRemoveNode(dockspace_id);
 
   ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);
@@ -418,13 +416,13 @@ auto GGEMSImGuiLayer::BuildDefaultDockspaceLayout(ImGuiID dockspace_id,
   ImGuiID dockspace_main_id = dockspace_id;
 
   ImGuiID dock_bottom_id = ImGui::DockBuilderSplitNode(
-      dockspace_main_id, ImGuiDir_Down, 0.30F, nullptr, &dockspace_main_id);
+    dockspace_main_id, ImGuiDir_Down, 0.30F, nullptr, &dockspace_main_id);
 
   ImGuiID dock_left_id = ImGui::DockBuilderSplitNode(
-      dockspace_main_id, ImGuiDir_Left, 0.24F, nullptr, &dockspace_main_id);
+    dockspace_main_id, ImGuiDir_Left, 0.24F, nullptr, &dockspace_main_id);
 
   ImGuiID dock_right_id = ImGui::DockBuilderSplitNode(
-      dockspace_main_id, ImGuiDir_Right, 0.26F, nullptr, &dockspace_main_id);
+    dockspace_main_id, ImGuiDir_Right, 0.26F, nullptr, &dockspace_main_id);
 
   ImGui::DockBuilderDockWindow("GGEMS Output", dock_bottom_id);
   ImGui::DockBuilderDockWindow("GGEMS Status", dock_left_id);
@@ -528,9 +526,9 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
   auto const &records = source_run_snapshot_->GetRecords();
   auto const &ranges = source_run_snapshot_->GetRanges();
   auto const &energy_records =
-      source_run_snapshot_->GetEnergyDistributionRecords();
+    source_run_snapshot_->GetEnergyDistributionRecords();
   auto const &energy_values =
-      source_run_snapshot_->GetEnergyValuesMicroElectronVolt();
+    source_run_snapshot_->GetEnergyValuesMicroElectronVolt();
 
   if (records.size() != ranges.size() ||
       records.size() != energy_records.size()) {
@@ -545,46 +543,46 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
     auto const &energy_record = energy_records[source_index];
 
     std::string_view const source_type{
-        core::sources::ToLongName(
-            core::sources::FromKernelSourceType(record.source_type)),
+      core::sources::ToLongName(
+        core::sources::FromKernelSourceType(record.source_type)),
     };
 
     std::string_view const particle_type{
-        core::particles::ToLongName(core::particles::FromKernelParticleType(
-            record.emitted_particle_type)),
+      core::particles::ToLongName(
+        core::particles::FromKernelParticleType(record.emitted_particle_type)),
     };
 
     auto const emission_geometry_type{
-        core::sources::FromKernelEmissionGeometryType(
-            record.emission_geometry_type),
+      core::sources::FromKernelEmissionGeometryType(
+        record.emission_geometry_type),
     };
 
     auto const angular_distribution_type{
-        core::sources::FromKernelAngularDistributionType(
-            record.angular_distribution_type),
+      core::sources::FromKernelAngularDistributionType(
+        record.angular_distribution_type),
     };
 
     auto const energy_distribution_type{
-        core::sources::FromKernelEnergyDistributionType(
-            energy_record.distribution_type),
+      core::sources::FromKernelEnergyDistributionType(
+        energy_record.distribution_type),
     };
 
     std::string const energy_distribution{
-        core::sources::ToLongName(energy_distribution_type)};
+      core::sources::ToLongName(energy_distribution_type)};
 
     std::string const emission_geometry{
-        core::sources::ToLongName(emission_geometry_type)};
+      core::sources::ToLongName(emission_geometry_type)};
 
     std::string const angular_distribution{
-        core::sources::ToLongName(angular_distribution_type)};
+      core::sources::ToLongName(angular_distribution_type)};
 
     std::uint64_t const projection_primary_end =
-        range.projection_primary_begin + range.primary_count;
+      range.projection_primary_begin + range.primary_count;
 
     ImGui::PushID(static_cast<void const *>(&record));
 
     bool source_visible = particle_trace_visibility_.IsSourceVisible(
-        static_cast<std::uint32_t>(source_index));
+      static_cast<std::uint32_t>(source_index));
 
     if (ImGui::Checkbox("##trajectory_visibility", &source_visible)) {
       particle_trace_visibility_.SetSourceVisible(source_index, source_visible);
@@ -593,19 +591,19 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
     if (ImGui::IsItemHovered()) {
       ImGui::BeginTooltip();
       ImGui::TextUnformatted(
-          "Controls trajectory visibility only; source state is unchanged.");
+        "Controls trajectory visibility only; source state is unchanged.");
       ImGui::EndTooltip();
     }
 
     ImGui::SameLine();
 
     ImGuiTreeNodeFlags const flags =
-        ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+      ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 
     bool const opened = ImGui::TreeNodeEx(
-        "##source_details", flags, "Source %zu - %.*s - %.*s", source_index,
-        static_cast<int>(source_type.size()), source_type.data(),
-        static_cast<int>(particle_type.size()), particle_type.data());
+      "##source_details", flags, "Source %zu - %.*s - %.*s", source_index,
+      static_cast<int>(source_type.size()), source_type.data(),
+      static_cast<int>(particle_type.size()), particle_type.data());
 
     if (opened) {
       ImGui::Text("Source index: %zu", source_index);
@@ -616,9 +614,9 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
       ImGui::Text("Primary count: %llu",
                   static_cast<unsigned long long>(range.primary_count));
       ImGui::Text(
-          "Range: [%llu, %llu)",
-          static_cast<unsigned long long>(range.projection_primary_begin),
-          static_cast<unsigned long long>(projection_primary_end));
+        "Range: [%llu, %llu)",
+        static_cast<unsigned long long>(range.projection_primary_begin),
+        static_cast<unsigned long long>(projection_primary_end));
 
       ImGui::Separator();
 
@@ -627,42 +625,42 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
       if (emission_geometry_type ==
           core::sources::GGEMSEmissionGeometryType::Rectangle) {
         std::string const size_x =
-            units::HumanReadable(units::Length{record.geometry_size_x_pm}, 3);
+          units::HumanReadable(units::Length{record.geometry_size_x_pm}, 3);
         std::string const size_y =
-            units::HumanReadable(units::Length{record.geometry_size_y_pm}, 3);
+          units::HumanReadable(units::Length{record.geometry_size_y_pm}, 3);
 
         ImGui::Text("Size: %s x %s", size_x.c_str(), size_y.c_str());
       } else if (emission_geometry_type ==
                  core::sources::GGEMSEmissionGeometryType::Ellipse) {
         std::string const diameter_x =
-            units::HumanReadable(units::Length{record.geometry_size_x_pm}, 3);
+          units::HumanReadable(units::Length{record.geometry_size_x_pm}, 3);
         std::string const diameter_y =
-            units::HumanReadable(units::Length{record.geometry_size_y_pm}, 3);
+          units::HumanReadable(units::Length{record.geometry_size_y_pm}, 3);
 
         ImGui::Text("Diameter: %s x %s", diameter_x.c_str(),
                     diameter_y.c_str());
       } else if (emission_geometry_type ==
                  core::sources::GGEMSEmissionGeometryType::Box) {
         std::string const width =
-            units::HumanReadable(units::Length{record.geometry_size_x_pm}, 3);
+          units::HumanReadable(units::Length{record.geometry_size_x_pm}, 3);
         std::string const height =
-            units::HumanReadable(units::Length{record.geometry_size_y_pm}, 3);
+          units::HumanReadable(units::Length{record.geometry_size_y_pm}, 3);
         std::string const depth =
-            units::HumanReadable(units::Length{record.geometry_size_z_pm}, 3);
+          units::HumanReadable(units::Length{record.geometry_size_z_pm}, 3);
 
         ImGui::Text("Size: %s x %s x %s", width.c_str(), height.c_str(),
                     depth.c_str());
       } else if (emission_geometry_type ==
                  core::sources::GGEMSEmissionGeometryType::Sphere) {
         std::string const diameter =
-            units::HumanReadable(units::Length{record.geometry_size_x_pm}, 3);
+          units::HumanReadable(units::Length{record.geometry_size_x_pm}, 3);
         ImGui::Text("Diameter: %s", diameter.c_str());
       } else if (emission_geometry_type ==
                  core::sources::GGEMSEmissionGeometryType::Cylinder) {
         std::string const diameter =
-            units::HumanReadable(units::Length{record.geometry_size_x_pm}, 3);
+          units::HumanReadable(units::Length{record.geometry_size_x_pm}, 3);
         std::string const height =
-            units::HumanReadable(units::Length{record.geometry_size_z_pm}, 3);
+          units::HumanReadable(units::Length{record.geometry_size_z_pm}, 3);
         ImGui::Text("Diameter: %s", diameter.c_str());
         ImGui::Text("Height: %s", height.c_str());
       }
@@ -675,23 +673,23 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
           ImGui::TextUnformatted("Domain: Full sphere");
         } else {
           long double const theta_min_rad = std::acos(std::clamp(
-              static_cast<long double>(record.isotropic_cos_theta_upper), -1.0L,
-              1.0L));
+            static_cast<long double>(record.isotropic_cos_theta_upper), -1.0L,
+            1.0L));
           long double const theta_max_rad = std::acos(std::clamp(
-              static_cast<long double>(record.isotropic_cos_theta_lower), -1.0L,
-              1.0L));
+            static_cast<long double>(record.isotropic_cos_theta_lower), -1.0L,
+            1.0L));
           std::string const theta_min =
-              units::HumanReadable(units::MakeRadians(theta_min_rad), 3);
+            units::HumanReadable(units::MakeRadians(theta_min_rad), 3);
           std::string const theta_max =
-              units::HumanReadable(units::MakeRadians(theta_max_rad), 3);
+            units::HumanReadable(units::MakeRadians(theta_max_rad), 3);
           std::string const phi_min =
-              units::HumanReadable(units::MakeRadians(static_cast<long double>(
-                                       record.isotropic_phi_min_rad)),
-                                   3);
+            units::HumanReadable(units::MakeRadians(static_cast<long double>(
+                                   record.isotropic_phi_min_rad)),
+                                 3);
           std::string const phi_max =
-              units::HumanReadable(units::MakeRadians(static_cast<long double>(
-                                       record.isotropic_phi_max_rad)),
-                                   3);
+            units::HumanReadable(units::MakeRadians(static_cast<long double>(
+                                   record.isotropic_phi_max_rad)),
+                                 3);
 
           ImGui::Text("Theta: %s to %s", theta_min.c_str(), theta_max.c_str());
           ImGui::Text("Phi: %s to %s", phi_min.c_str(), phi_max.c_str());
@@ -699,11 +697,11 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
       } else if (angular_distribution_type ==
                  core::sources::GGEMSAngularDistributionType::Focused) {
         std::string const focus_x =
-            units::HumanReadableSignedLength(record.focus_position_x_pm, 3);
+          units::HumanReadableSignedLength(record.focus_position_x_pm, 3);
         std::string const focus_y =
-            units::HumanReadableSignedLength(record.focus_position_y_pm, 3);
+          units::HumanReadableSignedLength(record.focus_position_y_pm, 3);
         std::string const focus_z =
-            units::HumanReadableSignedLength(record.focus_position_z_pm, 3);
+          units::HumanReadableSignedLength(record.focus_position_z_pm, 3);
 
         ImGui::Text("Focus: (%s, %s, %s)", focus_x.c_str(), focus_y.c_str(),
                     focus_z.c_str());
@@ -712,16 +710,16 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
       ImGui::Separator();
 
       std::string const position_x =
-          units::HumanReadableSignedLength(record.position_x_pm, 3);
+        units::HumanReadableSignedLength(record.position_x_pm, 3);
       std::string const position_y =
-          units::HumanReadableSignedLength(record.position_y_pm, 3);
+        units::HumanReadableSignedLength(record.position_y_pm, 3);
       std::string const position_z =
-          units::HumanReadableSignedLength(record.position_z_pm, 3);
+        units::HumanReadableSignedLength(record.position_z_pm, 3);
 
       std::string const time_start =
-          units::HumanReadable(units::Time{record.time_start_ps}, 3);
+        units::HumanReadable(units::Time{record.time_start_ps}, 3);
       std::string const time_stop =
-          units::HumanReadable(units::Time{record.time_stop_ps}, 3);
+        units::HumanReadable(units::Time{record.time_stop_ps}, 3);
 
       ImGui::Text("Position: (%s, %s, %s)", position_x.c_str(),
                   position_y.c_str(), position_z.c_str());
@@ -735,29 +733,29 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
       if (energy_distribution_type ==
           core::sources::GGEMSEnergyDistributionType::Mono) {
         std::string const energy =
-            units::HumanReadable(units::Energy{record.energy_micro_eV}, 3);
+          units::HumanReadable(units::Energy{record.energy_micro_eV}, 3);
         ImGui::Text("Energy: %s", energy.c_str());
       } else {
         bool const table_offset_fits =
-            energy_record.table_offset <=
-            static_cast<std::uint64_t>(energy_values.size());
+          energy_record.table_offset <=
+          static_cast<std::uint64_t>(energy_values.size());
         std::size_t const table_offset =
-            table_offset_fits
-                ? static_cast<std::size_t>(energy_record.table_offset)
-                : 0U;
+          table_offset_fits
+            ? static_cast<std::size_t>(energy_record.table_offset)
+            : 0U;
         auto const table_count =
-            static_cast<std::size_t>(energy_record.table_count);
+          static_cast<std::size_t>(energy_record.table_count);
         bool const valid_table =
-            table_offset_fits && table_count >= 2U &&
-            table_count <= energy_values.size() - table_offset;
+          table_offset_fits && table_count >= 2U &&
+          table_count <= energy_values.size() - table_offset;
 
         if (!valid_table) {
           ImGui::TextDisabled("Invalid energy table metadata");
         } else {
-          std::string const first = units::HumanReadable(
-              units::Energy{energy_values[table_offset]}, 3);
+          std::string const first =
+            units::HumanReadable(units::Energy{energy_values[table_offset]}, 3);
           std::string const last = units::HumanReadable(
-              units::Energy{energy_values[table_offset + table_count - 1U]}, 3);
+            units::Energy{energy_values[table_offset + table_count - 1U]}, 3);
 
           if (energy_distribution_type ==
               core::sources::GGEMSEnergyDistributionType::DiscreteLines) {
@@ -766,9 +764,9 @@ auto GGEMSImGuiLayer::BuildSourceEntries() -> void {
                         last.c_str());
           } else if (energy_distribution_type ==
                      core::sources::GGEMSEnergyDistributionType::
-                         RegularSpectrum) {
+                       RegularSpectrum) {
             std::string const width = units::HumanReadable(
-                units::Energy{energy_record.regular_bin_width_micro_eV}, 3);
+              units::Energy{energy_record.regular_bin_width_micro_eV}, 3);
             ImGui::Text("Bin count: %zu", table_count);
             ImGui::Text("Center range: %s - %s", first.c_str(), last.c_str());
             ImGui::Text("Bin width: %s", width.c_str());
@@ -826,7 +824,7 @@ auto GGEMSImGuiLayer::BuildSceneNode(char const *label,
       break;
     case SceneSelection::Tracks: {
       ImGui::TextDisabled(
-          "Particle traces can be submitted from observer records.");
+        "Particle traces can be submitted from observer records.");
       ImGui::TextDisabled("Camera pan: middle mouse or arrow keys.");
       ImGui::TextDisabled("Shift + arrows: faster, Ctrl + arrows: precise.");
       bool show_particle_traces = particle_trace_visibility_.IsGlobalVisible();

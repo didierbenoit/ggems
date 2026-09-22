@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for GGEMS area quantities and conversions.
  *
- * Validates registered square-length units, negative-value rejection, automatic ASCII/Unicode formatting, and canonical square-picometer literals.
+ * Validates registered square-length units, negative-value rejection, automatic
+ * ASCII/Unicode formatting, and canonical square-picometer literals.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -69,13 +70,13 @@ auto ExpectScaleNear(long double actual, long double expected) -> void {
 
 TEST(GGEMSAreaUnits, ConvertsEveryOfficialRuntimeToken) {
   constexpr std::array<AreaConversionCase, 7U> cases{{
-      {.unit = "pm2", .expected = 1.0L},
-      {.unit = "nm2", .expected = 1.0e6L},
-      {.unit = "um2", .expected = 1.0e12L},
-      {.unit = "mm2", .expected = 1.0e18L},
-      {.unit = "cm2", .expected = 1.0e20L},
-      {.unit = "m2", .expected = 1.0e24L},
-      {.unit = "km2", .expected = 1.0e30L},
+    {.unit = "pm2", .expected = 1.0L},
+    {.unit = "nm2", .expected = 1.0e6L},
+    {.unit = "um2", .expected = 1.0e12L},
+    {.unit = "mm2", .expected = 1.0e18L},
+    {.unit = "cm2", .expected = 1.0e20L},
+    {.unit = "m2", .expected = 1.0e24L},
+    {.unit = "km2", .expected = 1.0e30L},
   }};
 
   for (auto const &test_case : cases) {

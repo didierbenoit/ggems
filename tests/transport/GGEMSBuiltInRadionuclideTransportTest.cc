@@ -36,9 +36,9 @@ using Definition = ggems::core::radioactivity::GGEMSRadionuclideDefinition;
 using Emission = ggems::core::radioactivity::GGEMSRadionuclideEmission;
 using EnergyDistribution = ggems::core::sources::GGEMSEnergyDistribution;
 using EnergyDistributionRecord =
-    ggems::core::sources::GGEMSEnergyDistributionRecord;
+  ggems::core::sources::GGEMSEnergyDistributionRecord;
 using EnergyDistributionType =
-    ggems::core::sources::GGEMSEnergyDistributionType;
+  ggems::core::sources::GGEMSEnergyDistributionType;
 using ObserverRecord = ggems::core::observer::GGEMSObserverRecord;
 using ObserverRecordKind = ggems::core::observer::GGEMSObserverRecordKind;
 using ParticleType = ggems::core::particles::GGEMSParticleType;
@@ -47,7 +47,7 @@ using Planner = ggems::core::sources::GGEMSSourcePopulationPlanner;
 using Random = ggems::core::random::GGEMSRandom;
 using Source = ggems::core::sources::GGEMSSource;
 using SourceConfigurationSnapshotPtr =
-    ggems::core::sources::GGEMSSourceConfigurationSnapshotPtr;
+  ggems::core::sources::GGEMSSourceConfigurationSnapshotPtr;
 using SourcePtr = std::shared_ptr<Source>;
 using SourceRunSnapshot = ggems::core::sources::GGEMSSourceRunSnapshot;
 using TransportRunConfig = ggems::core::transport::GGEMSTransportRunConfig;
@@ -59,7 +59,7 @@ constexpr std::uint64_t k_run_id{37ULL};
 constexpr std::uint64_t k_projection_history_offset{12'000ULL};
 constexpr std::uint32_t k_regular_capture_count{128U};
 constexpr ggems::core::GGEMSTimeWindow k_time_window{
-    .start_ps = 1'000'000'000'000ULL, .stop_ps = 1'001'000'000'000ULL};
+  .start_ps = 1'000'000'000'000ULL, .stop_ps = 1'001'000'000'000ULL};
 
 // =============================================================================
 // =============================================================================
@@ -86,23 +86,22 @@ struct ActivityScenario {
 [[nodiscard]] auto MakeActivityScenario(Definition definition,
                                         ggems::units::Activity activity,
                                         Random const &random)
-    -> ActivityScenario {
+  -> ActivityScenario {
   auto source = std::make_shared<Source>();
   source->SetPointEmission()
-      .SetFixedAngularDistribution()
-      .SetPositionPicoMeter(0LL, 0LL, 0LL)
-      .SetDirection(0.0, 0.0, 1.0)
-      .SetRadionuclide(
-          std::make_shared<Definition const>(std::move(definition)), activity,
-          k_time_window.start_ps);
+    .SetFixedAngularDistribution()
+    .SetPositionPicoMeter(0LL, 0LL, 0LL)
+    .SetDirection(0.0, 0.0, 1.0)
+    .SetRadionuclide(std::make_shared<Definition const>(std::move(definition)),
+                     activity, k_time_window.start_ps);
 
   std::vector<SourcePtr> sources{std::move(source)};
   auto source_configuration =
-      ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
+    ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
   Planner planner{sources, random};
   auto candidate = planner.BuildCandidate(k_time_window);
   auto source_snapshot = ggems::core::sources::BuildSourceRunSnapshot(
-      sources, source_configuration, candidate.GetPlan());
+    sources, source_configuration, candidate.GetPlan());
 
   return {.sources = std::move(sources),
           .source_configuration = std::move(source_configuration),
@@ -114,7 +113,7 @@ struct ActivityScenario {
 // =============================================================================
 
 [[nodiscard]] auto MakeRunConfig(ActivityScenario const &scenario)
-    -> TransportRunConfig {
+  -> TransportRunConfig {
   TransportRunConfig config{};
   config.run_id = k_run_id;
   config.total_primary_count = scenario.source_snapshot.GetTotalPrimaryCount();
@@ -122,7 +121,7 @@ struct ActivityScenario {
   config.device_primary_offset = 0ULL;
   config.source_records = scenario.source_snapshot.GetRecords();
   config.source_population_records =
-      scenario.source_snapshot.GetPopulationRecords();
+    scenario.source_snapshot.GetPopulationRecords();
   config.source_ranges = scenario.source_snapshot.GetRanges();
   config.source_emission_ranges = scenario.source_snapshot.GetGroupRanges();
   config.observer_config.enabled = 1U;
@@ -133,12 +132,12 @@ struct ActivityScenario {
 // =============================================================================
 
 [[nodiscard]] auto GetSourceRecords(TransportRunReport const &report)
-    -> std::vector<ObserverRecord const *> {
+  -> std::vector<ObserverRecord const *> {
   std::vector<ObserverRecord const *> records;
 
   for (ObserverRecord const &record : report.observer_records) {
     if (ggems::core::observer::FromKernelObserverRecordKind(
-            record.record_kind) == ObserverRecordKind::Source) {
+          record.record_kind) == ObserverRecordKind::Source) {
       records.push_back(&record);
     }
   }
@@ -152,7 +151,7 @@ struct ActivityScenario {
 auto ExpectTransportReport(TransportRunReport const &report,
                            std::uint64_t expected_primary_count,
                            std::uint32_t expected_captured_primary_count)
-    -> void {
+  -> void {
   EXPECT_EQ(report.counters.consumed_primary_count, expected_primary_count);
   EXPECT_EQ(report.counters.completed_history_count, expected_primary_count);
   EXPECT_EQ(report.counters.terminal_particle_count, expected_primary_count);
@@ -165,7 +164,7 @@ auto ExpectTransportReport(TransportRunReport const &report,
   EXPECT_EQ(report.counters.total_fake_step_count, 0ULL);
 
   auto const expected_record_count =
-      static_cast<std::uint64_t>(expected_captured_primary_count) * 2ULL;
+    static_cast<std::uint64_t>(expected_captured_primary_count) * 2ULL;
   EXPECT_EQ(report.logical_observer_counters.captured_primary_count,
             expected_captured_primary_count);
   EXPECT_EQ(report.logical_observer_counters.record_count,
@@ -193,7 +192,7 @@ auto ExpectCommonActivityRecord(ObserverRecord const &record) -> void {
 auto ExpectNoUnsupportedF18Records(TransportRunReport const &report) -> void {
   for (ObserverRecord const &record : report.observer_records) {
     auto const particle_type =
-        ggems::core::particles::FromKernelParticleType(record.particle_type);
+      ggems::core::particles::FromKernelParticleType(record.particle_type);
 
     EXPECT_NE(particle_type, ParticleType::Aionino);
     EXPECT_FALSE(particle_type == ParticleType::Gamma &&
@@ -209,29 +208,29 @@ auto ExpectNoUnsupportedF18Records(TransportRunReport const &report) -> void {
 
 [[nodiscard]] auto GetEmissionEnergyRecord(ActivityScenario const &scenario,
                                            std::size_t emission_index)
-    -> EnergyDistributionRecord const & {
+  -> EnergyDistributionRecord const & {
   auto const &emission_records =
-      scenario.source_configuration->GetEmissionRecords();
+    scenario.source_configuration->GetEmissionRecords();
   auto const &energy_records =
-      scenario.source_configuration->GetEnergyDistributionRecords();
+    scenario.source_configuration->GetEnergyDistributionRecords();
 
   return energy_records.at(
-      emission_records.at(emission_index).energy_distribution_record_index);
+    emission_records.at(emission_index).energy_distribution_record_index);
 }
 
 // =============================================================================
 // =============================================================================
 
 auto ExpectRegularSpectrumSamples(
-    ActivityScenario const &scenario, std::uint64_t expected_upper_edge,
-    std::uint32_t expected_table_count,
-    std::vector<ObserverRecord const *> const &source_records) -> void {
+  ActivityScenario const &scenario, std::uint64_t expected_upper_edge,
+  std::uint32_t expected_table_count,
+  std::vector<ObserverRecord const *> const &source_records) -> void {
   auto const &record = GetEmissionEnergyRecord(scenario, 0U);
   auto const &energy_values =
-      scenario.source_configuration->GetEnergyValuesMicroElectronVolt();
+    scenario.source_configuration->GetEnergyValuesMicroElectronVolt();
 
   ASSERT_EQ(ggems::core::sources::FromKernelEnergyDistributionType(
-                record.distribution_type),
+              record.distribution_type),
             EnergyDistributionType::RegularSpectrum);
   ASSERT_EQ(record.table_count, expected_table_count);
   ASSERT_GT(record.regular_bin_width_micro_eV, 0ULL);
@@ -239,30 +238,30 @@ auto ExpectRegularSpectrumSamples(
             static_cast<std::uint64_t>(energy_values.size()));
   ASSERT_LE(static_cast<std::uint64_t>(record.table_count),
             static_cast<std::uint64_t>(energy_values.size()) -
-                record.table_offset);
+              record.table_offset);
 
   auto const table_offset = static_cast<std::size_t>(record.table_offset);
   std::uint64_t const half_width = record.regular_bin_width_micro_eV / 2ULL;
   std::uint64_t const lower_edge = energy_values[table_offset] - half_width;
   std::uint64_t const upper_edge =
-      energy_values[table_offset + record.table_count - 1U] + half_width;
+    energy_values[table_offset + record.table_count - 1U] + half_width;
   ASSERT_EQ(upper_edge, expected_upper_edge);
 
   for (ObserverRecord const *source_record : source_records) {
     ASSERT_NE(source_record, nullptr);
     ExpectCommonActivityRecord(*source_record);
     EXPECT_EQ(ggems::core::particles::FromKernelParticleType(
-                  source_record->particle_type),
+                source_record->particle_type),
               ParticleType::Positron);
     EXPECT_GE(source_record->energy_micro_eV, lower_edge);
     EXPECT_LT(source_record->energy_micro_eV, upper_edge);
 
     std::uint64_t const sampled_bin =
-        (source_record->energy_micro_eV - lower_edge) /
-        record.regular_bin_width_micro_eV;
+      (source_record->energy_micro_eV - lower_edge) /
+      record.regular_bin_width_micro_eV;
     ASSERT_LT(sampled_bin, record.table_count);
     std::uint64_t const selected_center =
-        energy_values[table_offset + static_cast<std::size_t>(sampled_bin)];
+      energy_values[table_offset + static_cast<std::size_t>(sampled_bin)];
     std::uint64_t const selected_lower_edge = selected_center - half_width;
     EXPECT_GE(source_record->energy_micro_eV, selected_lower_edge);
     EXPECT_LT(source_record->energy_micro_eV,
@@ -307,11 +306,11 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
 
   Random const random = MakeRandom(0xF18B32ULL);
   ActivityScenario const scenario = MakeActivityScenario(
-      ggems::core::radioactivity::builtins::BuildF18Radionuclide(),
-      ggems::units::Activity{100'000'000.0L}, random);
+    ggems::core::radioactivity::builtins::BuildF18Radionuclide(),
+    ggems::units::Activity{100'000'000.0L}, random);
 
   auto const &emission_records =
-      scenario.source_configuration->GetEmissionRecords();
+    scenario.source_configuration->GetEmissionRecords();
   auto const plan_groups = scenario.emission_plan.GetGroups();
   auto const &group_ranges = scenario.source_snapshot.GetGroupRanges();
   ASSERT_EQ(emission_records.size(), 3U);
@@ -331,13 +330,13 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
   }
 
   EXPECT_EQ(ggems::core::particles::FromKernelParticleType(
-                emission_records[0U].particle_type),
+              emission_records[0U].particle_type),
             ParticleType::Positron);
   EXPECT_EQ(ggems::core::particles::FromKernelParticleType(
-                emission_records[1U].particle_type),
+              emission_records[1U].particle_type),
             ParticleType::Electron);
   EXPECT_EQ(ggems::core::particles::FromKernelParticleType(
-                emission_records[2U].particle_type),
+              emission_records[2U].particle_type),
             ParticleType::Gamma);
   EXPECT_EQ(emission_records[0U].mono_energy_micro_eV, 0ULL);
   EXPECT_EQ(emission_records[1U].mono_energy_micro_eV,
@@ -346,18 +345,18 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
 
   auto const &positron_energy = GetEmissionEnergyRecord(scenario, 0U);
   EXPECT_EQ(ggems::core::sources::FromKernelEnergyDistributionType(
-                positron_energy.distribution_type),
+              positron_energy.distribution_type),
             EnergyDistributionType::RegularSpectrum);
   EXPECT_EQ(positron_energy.table_count, k_f18_bin_count);
 
   std::size_t oxygen_x_ray_count{0U};
   for (auto const &emission_record : emission_records) {
     auto const particle_type = ggems::core::particles::FromKernelParticleType(
-        emission_record.particle_type);
+      emission_record.particle_type);
     EXPECT_NE(particle_type, ParticleType::Aionino);
     EXPECT_FALSE(particle_type == ParticleType::Gamma &&
                  emission_record.mono_energy_micro_eV ==
-                     k_annihilation_energy_micro_eV);
+                   k_annihilation_energy_micro_eV);
     EXPECT_FALSE(particle_type == ParticleType::Electron &&
                  emission_record.mono_energy_micro_eV >= 456'000'000ULL &&
                  emission_record.mono_energy_micro_eV <= 502'000'000ULL);
@@ -380,20 +379,20 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
 
   auto positron_and_gamma_config = MakeRunConfig(scenario);
   positron_and_gamma_config.observer_config
-      .capture_first_primary_count_per_source = 1U;
+    .capture_first_primary_count_per_source = 1U;
   positron_and_gamma_config.observer_config.capture_specific_primary_enabled =
-      1U;
+    1U;
   positron_and_gamma_config.observer_config.capture_source_index = 0U;
   positron_and_gamma_config.observer_config.capture_source_local_primary_id =
-      group_ranges[2U].source_local_primary_begin;
+    group_ranges[2U].source_local_primary_begin;
 
   auto const positron_and_gamma_report =
-      workload.Run(positron_and_gamma_config);
+    workload.Run(positron_and_gamma_config);
   ExpectTransportReport(positron_and_gamma_report,
                         scenario.source_snapshot.GetTotalPrimaryCount(), 2U);
   ExpectNoUnsupportedF18Records(positron_and_gamma_report);
   auto const positron_and_gamma_records =
-      GetSourceRecords(positron_and_gamma_report);
+    GetSourceRecords(positron_and_gamma_report);
   ASSERT_EQ(positron_and_gamma_records.size(), 2U);
 
   ObserverRecord const *positron_record{nullptr};
@@ -402,7 +401,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
     ASSERT_NE(record, nullptr);
     ExpectCommonActivityRecord(*record);
     auto const particle_type =
-        ggems::core::particles::FromKernelParticleType(record->particle_type);
+      ggems::core::particles::FromKernelParticleType(record->particle_type);
     EXPECT_NE(particle_type, ParticleType::Aionino);
 
     if (record->source_local_primary_id ==
@@ -416,9 +415,9 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
 
   ASSERT_NE(positron_record, nullptr);
   ASSERT_NE(gamma_record, nullptr);
-  EXPECT_EQ(ggems::core::particles::FromKernelParticleType(
-                gamma_record->particle_type),
-            ParticleType::Gamma);
+  EXPECT_EQ(
+    ggems::core::particles::FromKernelParticleType(gamma_record->particle_type),
+    ParticleType::Gamma);
   EXPECT_EQ(gamma_record->energy_micro_eV, k_gamma_energy_micro_eV);
   ExpectRegularSpectrumSamples(scenario, k_f18_endpoint_micro_eV,
                                k_f18_bin_count, {positron_record});
@@ -427,7 +426,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
   electron_config.observer_config.capture_specific_primary_enabled = 1U;
   electron_config.observer_config.capture_source_index = 0U;
   electron_config.observer_config.capture_source_local_primary_id =
-      group_ranges[1U].source_local_primary_begin;
+    group_ranges[1U].source_local_primary_begin;
 
   auto const electron_report = workload.Run(electron_config);
   ExpectTransportReport(electron_report,
@@ -437,7 +436,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
   ASSERT_EQ(electron_records.size(), 1U);
   ExpectCommonActivityRecord(*electron_records[0U]);
   EXPECT_EQ(ggems::core::particles::FromKernelParticleType(
-                electron_records[0U]->particle_type),
+              electron_records[0U]->particle_type),
             ParticleType::Electron);
   EXPECT_EQ(electron_records[0U]->energy_micro_eV, k_electron_energy_micro_eV);
   EXPECT_FALSE(electron_records[0U]->energy_micro_eV >= 456'000'000ULL &&
@@ -455,15 +454,13 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
 
   Random const random = MakeRandom(0xC11B32ULL);
   auto definition =
-      ggems::core::radioactivity::builtins::BuildC11Radionuclide();
+    ggems::core::radioactivity::builtins::BuildC11Radionuclide();
   ASSERT_EQ(definition.GetEmissions().size(), 1U);
   EXPECT_EQ(definition.GetEmissions()[0U].GetYieldPerDecay(), 0.99750L);
   ActivityScenario const scenario = MakeActivityScenario(
-      std::move(definition), ggems::units::Activity{1'024'000.0L}, random);
+    std::move(definition), ggems::units::Activity{1'024'000.0L}, random);
 
-  ASSERT_EQ(
-      scenario.source_configuration->GetEmissionRecords().size(),
-      1U);
+  ASSERT_EQ(scenario.source_configuration->GetEmissionRecords().size(), 1U);
   ASSERT_EQ(scenario.source_snapshot.GetGroupRanges().size(), 1U);
   ASSERT_EQ(scenario.emission_plan.GetGroups().size(), 1U);
   EXPECT_EQ(scenario.emission_plan.GetGroups()[0U].yield_per_decay, 0.99750L);
@@ -482,7 +479,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
                              k_observer_capacity};
   auto config = MakeRunConfig(scenario);
   config.observer_config.capture_first_primary_count_per_source =
-      k_regular_capture_count;
+    k_regular_capture_count;
 
   auto const report = workload.Run(config);
   ExpectTransportReport(report, scenario.source_snapshot.GetTotalPrimaryCount(),
@@ -504,15 +501,13 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
 
   Random const random = MakeRandom(0x015B32ULL);
   auto definition =
-      ggems::core::radioactivity::builtins::BuildO15Radionuclide();
+    ggems::core::radioactivity::builtins::BuildO15Radionuclide();
   ASSERT_EQ(definition.GetEmissions().size(), 1U);
   EXPECT_EQ(definition.GetEmissions()[0U].GetYieldPerDecay(), 0.999001L);
   ActivityScenario const scenario = MakeActivityScenario(
-      std::move(definition), ggems::units::Activity{1'024'000.0L}, random);
+    std::move(definition), ggems::units::Activity{1'024'000.0L}, random);
 
-  ASSERT_EQ(
-      scenario.source_configuration->GetEmissionRecords().size(),
-      1U);
+  ASSERT_EQ(scenario.source_configuration->GetEmissionRecords().size(), 1U);
   ASSERT_EQ(scenario.source_snapshot.GetGroupRanges().size(), 1U);
   ASSERT_EQ(scenario.emission_plan.GetGroups().size(), 1U);
   EXPECT_EQ(scenario.emission_plan.GetGroups()[0U].yield_per_decay, 0.999001L);
@@ -531,7 +526,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
                              k_observer_capacity};
   auto config = MakeRunConfig(scenario);
   config.observer_config.capture_first_primary_count_per_source =
-      k_regular_capture_count;
+    k_regular_capture_count;
 
   auto const report = workload.Run(config);
   ExpectTransportReport(report, scenario.source_snapshot.GetTotalPrimaryCount(),
@@ -550,31 +545,29 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
   constexpr std::array<double, 3U> k_line_energies_keV{10.0, 20.0, 40.0};
   constexpr std::array<double, 3U> k_line_weights{1.0, 1.0, 1.0};
   constexpr std::array<std::uint64_t, 3U> k_line_energies_micro_eV{
-      10'000'000'000ULL, 20'000'000'000ULL, 40'000'000'000ULL};
+    10'000'000'000ULL, 20'000'000'000ULL, 40'000'000'000ULL};
   constexpr std::uint32_t k_capture_count{256U};
   constexpr std::uint32_t k_observer_capacity{k_capture_count * 2U};
 
   std::vector<Emission> emissions;
   emissions.emplace_back(ParticleType::Gamma, 1.0L,
                          EnergyDistribution::BuildDiscreteLines(
-                             k_line_energies_keV, k_line_weights, "keV"));
+                           k_line_energies_keV, k_line_weights, "keV"));
   Definition definition{"Synthetic-DiscreteLines", 1'000.0L,
                         std::move(emissions)};
 
   Random const random = MakeRandom(0xD15C32ULL);
   ActivityScenario const scenario = MakeActivityScenario(
-      std::move(definition), ggems::units::Activity{1'024'000.0L}, random);
+    std::move(definition), ggems::units::Activity{1'024'000.0L}, random);
 
-  ASSERT_EQ(
-      scenario.source_configuration->GetEmissionRecords().size(),
-      1U);
+  ASSERT_EQ(scenario.source_configuration->GetEmissionRecords().size(), 1U);
   ASSERT_EQ(scenario.source_snapshot.GetGroupRanges().size(), 1U);
   ASSERT_GT(scenario.source_snapshot.GetGroupRanges()[0U].primary_count,
             k_capture_count);
 
   auto const &energy_record = GetEmissionEnergyRecord(scenario, 0U);
   EXPECT_EQ(ggems::core::sources::FromKernelEnergyDistributionType(
-                energy_record.distribution_type),
+              energy_record.distribution_type),
             EnergyDistributionType::DiscreteLines);
   EXPECT_EQ(energy_record.table_count, k_line_energies_micro_eV.size());
 
@@ -588,7 +581,7 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
                              k_observer_capacity};
   auto config = MakeRunConfig(scenario);
   config.observer_config.capture_first_primary_count_per_source =
-      k_capture_count;
+    k_capture_count;
 
   auto const report = workload.Run(config);
   ExpectTransportReport(report, scenario.source_snapshot.GetTotalPrimaryCount(),
@@ -601,14 +594,14 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
     ASSERT_NE(record, nullptr);
     ExpectCommonActivityRecord(*record);
     EXPECT_EQ(
-        ggems::core::particles::FromKernelParticleType(record->particle_type),
-        ParticleType::Gamma);
+      ggems::core::particles::FromKernelParticleType(record->particle_type),
+      ParticleType::Gamma);
 
     auto const line =
-        std::ranges::find(k_line_energies_micro_eV, record->energy_micro_eV);
+      std::ranges::find(k_line_energies_micro_eV, record->energy_micro_eV);
     ASSERT_NE(line, k_line_energies_micro_eV.end());
     seen_lines[static_cast<std::size_t>(
-        line - k_line_energies_micro_eV.begin())] = true;
+      line - k_line_energies_micro_eV.begin())] = true;
   }
 
   EXPECT_TRUE(std::ranges::all_of(seen_lines, [](bool seen) { return seen; }));

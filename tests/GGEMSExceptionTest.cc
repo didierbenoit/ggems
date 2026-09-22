@@ -9,7 +9,7 @@
 namespace {
 
 [[noreturn]] auto ThrowRecoverableFromKnownLine(std::int32_t &expected_line)
-    -> void {
+  -> void {
   expected_line = static_cast<std::int32_t>(__LINE__ + 1);
   throw ggems::core::GGEMSRecoverable{"source-location marker"};
 }

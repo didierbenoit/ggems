@@ -66,7 +66,7 @@ namespace ggems::ocl {
  */
 [[nodiscard]] inline auto
 ClNameVersionToString(std::vector<cl_name_version> const &name_versions)
-    -> std::string {
+  -> std::string {
   std::string output{};
   for (auto const &name_version : name_versions) {
     output += std::format("{} {} ", name_version.name,
@@ -82,7 +82,7 @@ ClNameVersionToString(std::vector<cl_name_version> const &name_versions)
  * \return Space-separated size values.
  */
 [[nodiscard]] inline auto SizeToString(std::vector<std::size_t> const &sizes)
-    -> std::string {
+  -> std::string {
   std::string output{};
   for (auto const size : sizes) {
     output += std::format("{} ", size);
@@ -97,7 +97,7 @@ ClNameVersionToString(std::vector<cl_name_version> const &name_versions)
  * \return Readable device-type description.
  */
 [[nodiscard]] inline auto DeviceTypeToString(cl_device_type device_type)
-    -> std::string {
+  -> std::string {
   std::ostringstream stream;
   bool first = true;
 
@@ -172,7 +172,7 @@ ClNameVersionToString(std::vector<cl_name_version> const &name_versions)
  * \return Readable cache-type name.
  */
 [[nodiscard]] inline auto CacheTypeToString(cl_device_mem_cache_type type)
-    -> std::string {
+  -> std::string {
   switch (type) {
   case CL_NONE:
     return "None";
@@ -205,7 +205,7 @@ ClNameVersionToString(std::vector<cl_name_version> const &name_versions)
  * \return Readable local-memory type.
  */
 [[nodiscard]] inline auto LocalMemTypeToString(cl_device_local_mem_type type)
-    -> std::string {
+  -> std::string {
   switch (type) {
   case CL_NONE:
     return "None";
@@ -229,7 +229,7 @@ ClNameVersionToString(std::vector<cl_name_version> const &name_versions)
  */
 [[nodiscard]] inline auto
 QueuePropertiesToString(cl_command_queue_properties const &properties)
-    -> std::string {
+  -> std::string {
   std::ostringstream stream;
   if ((properties & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) != 0) {
     stream << "Out-of-order execution, ";
@@ -266,7 +266,7 @@ QueuePropertiesToString(cl_command_queue_properties const &properties)
  */
 [[nodiscard]] inline auto
 SVMCapabilitiesToString(cl_device_svm_capabilities capabilities)
-    -> std::string {
+  -> std::string {
   std::ostringstream stream;
   if ((capabilities & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER) != 0) {
     stream << "Coarse-grain buffer, ";
@@ -297,7 +297,7 @@ SVMCapabilitiesToString(cl_device_svm_capabilities capabilities)
  * \return Bracketed comma-separated values.
  */
 [[nodiscard]] inline auto VectorToString(std::vector<std::size_t> const &values)
-    -> std::string {
+  -> std::string {
   if (values.empty()) {
     return "[]";
   }
@@ -321,7 +321,7 @@ SVMCapabilitiesToString(cl_device_svm_capabilities capabilities)
  */
 [[nodiscard]] inline auto
 AtomicCapabilitiesToString(cl_device_atomic_capabilities capabilities)
-    -> std::string {
+  -> std::string {
   std::ostringstream stream;
 #ifdef CL_DEVICE_ATOMIC_ORDER_RELAXED
   if ((capabilities & CL_DEVICE_ATOMIC_ORDER_RELAXED) != 0) {
@@ -375,7 +375,7 @@ AtomicCapabilitiesToString(cl_device_atomic_capabilities capabilities)
  * \return Readable device-enqueue capabilities.
  */
 [[nodiscard]] inline auto DeviceEnqueueCapabilitiesToString(
-    cl_device_device_enqueue_capabilities capabilities) -> std::string {
+  cl_device_device_enqueue_capabilities capabilities) -> std::string {
   std::ostringstream stream;
 #ifdef CL_DEVICE_QUEUE_SUPPORTED
   if ((capabilities & CL_DEVICE_QUEUE_SUPPORTED) != 0) {
@@ -414,8 +414,7 @@ AtomicCapabilitiesToString(cl_device_atomic_capabilities capabilities)
  * \return Readable partition properties.
  */
 [[nodiscard]] inline auto PartitionPropertiesToString(
-    std::vector<cl_device_partition_property> const &properties)
-    -> std::string {
+  std::vector<cl_device_partition_property> const &properties) -> std::string {
   if (properties.empty()) {
     return "None";
   }
@@ -536,9 +535,9 @@ UUIDToString(std::span<cl_uchar const, CL_UUID_SIZE_KHR> uuid) -> std::string {
  */
 [[nodiscard]] inline auto
 UUIDToString(std::array<cl_uchar, CL_UUID_SIZE_KHR> const &uuid)
-    -> std::string {
+  -> std::string {
   return UUIDToString(
-      std::span<cl_uchar const, CL_UUID_SIZE_KHR>(uuid.data(), uuid.size()));
+    std::span<cl_uchar const, CL_UUID_SIZE_KHR>(uuid.data(), uuid.size()));
 }
 
 /*!
@@ -568,9 +567,9 @@ LUIDToString(std::span<cl_uchar const, CL_LUID_SIZE_KHR> luid) -> std::string {
  */
 [[nodiscard]] inline auto
 LUIDToString(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid)
-    -> std::string {
+  -> std::string {
   return LUIDToString(
-      std::span<cl_uchar const, CL_LUID_SIZE_KHR>(luid.data(), luid.size()));
+    std::span<cl_uchar const, CL_LUID_SIZE_KHR>(luid.data(), luid.size()));
 }
 
 /*!
@@ -580,7 +579,7 @@ LUIDToString(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid)
  * \return Readable floating-point capabilities.
  */
 [[nodiscard]] inline auto FPConfigToString(cl_device_fp_config config)
-    -> std::string {
+  -> std::string {
   std::ostringstream stream;
   if ((config & CL_FP_DENORM) != 0) {
     stream << "Denormals, ";
@@ -651,7 +650,7 @@ DevicesToString(std::vector<cl::Device> const &devices) -> std::string {
  * \return OpenCL device name.
  */
 [[nodiscard]] inline auto DeviceToString(cl::Device const &device)
-    -> std::string {
+  -> std::string {
   return device.getInfo<CL_DEVICE_NAME>();
 }
 
@@ -663,7 +662,7 @@ DevicesToString(std::vector<cl::Device> const &devices) -> std::string {
  */
 [[nodiscard]] inline auto
 ExecCapabilitiesToString(cl_device_exec_capabilities capabilities)
-    -> std::string {
+  -> std::string {
   if (capabilities == 0) {
     return "None";
   }
@@ -696,7 +695,7 @@ ExecCapabilitiesToString(cl_device_exec_capabilities capabilities)
  * \return Readable queue property list.
  */
 [[nodiscard]] inline auto QueuePropertiesArrayToString(
-    std::vector<cl_queue_properties> const &queue_properties) -> std::string {
+  std::vector<cl_queue_properties> const &queue_properties) -> std::string {
   std::string output;
 
   for (std::size_t index = 0; index < queue_properties.size(); index += 2) {
@@ -728,8 +727,7 @@ ExecCapabilitiesToString(cl_device_exec_capabilities capabilities)
  * \return Readable context property list.
  */
 [[nodiscard]] inline auto ContextPropertiesToString(
-    std::vector<cl_context_properties> const &context_properties)
-    -> std::string {
+  std::vector<cl_context_properties> const &context_properties) -> std::string {
   std::string output;
 
   for (std::size_t index = 0; index < context_properties.size(); index += 2) {
@@ -752,7 +750,7 @@ ExecCapabilitiesToString(cl_device_exec_capabilities capabilities)
 
     default:
       output +=
-          std::format("UNKNOWN_PROPERTY({}) = 0x{:016x}", property, raw_value);
+        std::format("UNKNOWN_PROPERTY({}) = 0x{:016x}", property, raw_value);
       break;
     }
   }
@@ -768,7 +766,7 @@ ExecCapabilitiesToString(cl_device_exec_capabilities capabilities)
  */
 [[nodiscard]] inline auto
 ArgAddressQualifierToString(cl_kernel_arg_address_qualifier qualifier)
-    -> std::string {
+  -> std::string {
   switch (qualifier) {
   case CL_KERNEL_ARG_ADDRESS_GLOBAL:
     return "CL_KERNEL_ARG_ADDRESS_GLOBAL";
@@ -790,7 +788,7 @@ ArgAddressQualifierToString(cl_kernel_arg_address_qualifier qualifier)
  */
 [[nodiscard]] inline auto
 ArgAccessQualifierToString(cl_kernel_arg_access_qualifier qualifier)
-    -> std::string {
+  -> std::string {
   switch (qualifier) {
   case CL_KERNEL_ARG_ACCESS_READ_ONLY:
     return "CL_KERNEL_ARG_ACCESS_READ_ONLY";
@@ -812,7 +810,7 @@ ArgAccessQualifierToString(cl_kernel_arg_access_qualifier qualifier)
  */
 [[nodiscard]] inline auto
 ArgTypeQualifierToString(cl_kernel_arg_type_qualifier qualifier)
-    -> std::string {
+  -> std::string {
   std::string output;
   if ((qualifier & CL_KERNEL_ARG_TYPE_CONST) != 0) {
     output += "CL_KERNEL_ARG_TYPE_CONST ";

@@ -41,7 +41,7 @@ using TransportRunConfig = ggems::core::transport::GGEMSTransportRunConfig;
 using TransportRunReport = ggems::core::transport::GGEMSTransportRunReport;
 using TransportWorkload = ggems::core::transport::GGEMSTransportWorkload;
 using SourceConfigurationSnapshotPtr =
-    ggems::core::sources::GGEMSSourceConfigurationSnapshotPtr;
+  ggems::core::sources::GGEMSSourceConfigurationSnapshotPtr;
 
 constexpr std::int64_t k_one_meter_pm{1'000'000'000'000LL};
 
@@ -52,14 +52,14 @@ constexpr std::int64_t k_one_meter_pm{1'000'000'000'000LL};
 MakeSourceRecord(std::array<std::int64_t, 3U> const &position,
                  std::array<double, 3U> const &direction,
                  ParticleType particle_type = ParticleType::Aionino)
-    -> SourceRecord {
+  -> SourceRecord {
   ggems::core::sources::GGEMSSource source{};
 
   source.SetAnalytic()
-      .SetEmittedParticleType(particle_type)
-      .SetEnergyMicroElectronVolt(5'000'000'000'000ULL)
-      .SetPositionPicoMeter(position[0U], position[1U], position[2U])
-      .SetDirection(direction[0U], direction[1U], direction[2U]);
+    .SetEmittedParticleType(particle_type)
+    .SetEnergyMicroElectronVolt(5'000'000'000'000ULL)
+    .SetPositionPicoMeter(position[0U], position[1U], position[2U])
+    .SetDirection(direction[0U], direction[1U], direction[2U]);
 
   SourceRecord record = source.BuildRecord();
   record.time_start_ps = 123ULL;
@@ -71,7 +71,7 @@ MakeSourceRecord(std::array<std::int64_t, 3U> const &position,
 // =============================================================================
 
 [[nodiscard]] auto MakeMonoSourceConfiguration(std::size_t source_count)
-    -> SourceConfigurationSnapshotPtr {
+  -> SourceConfigurationSnapshotPtr {
   std::vector<std::shared_ptr<ggems::core::sources::GGEMSSource>> sources;
   sources.reserve(source_count);
 
@@ -87,7 +87,7 @@ MakeSourceRecord(std::array<std::int64_t, 3U> const &position,
 // =============================================================================
 
 [[nodiscard]] auto BuildRanges(std::span<std::uint64_t const> primary_counts)
-    -> std::vector<SourceRunRange> {
+  -> std::vector<SourceRunRange> {
   std::vector<SourceRunRange> ranges;
   ranges.reserve(primary_counts.size());
 
@@ -95,7 +95,7 @@ MakeSourceRecord(std::array<std::int64_t, 3U> const &position,
 
   for (std::uint64_t count : primary_counts) {
     ranges.push_back(
-        {.projection_primary_begin = begin, .primary_count = count});
+      {.projection_primary_begin = begin, .primary_count = count});
     begin += count;
   }
 
@@ -110,7 +110,7 @@ MakeSourceRecord(std::array<std::int64_t, 3U> const &position,
                               std::uint32_t workload_primary_count,
                               std::uint64_t projection_history_offset = 0ULL,
                               std::uint64_t device_primary_offset = 0ULL)
-    -> TransportRunConfig {
+  -> TransportRunConfig {
   TransportRunConfig config{};
   config.total_primary_count = workload_primary_count;
   config.projection_history_offset = projection_history_offset;
@@ -126,7 +126,7 @@ MakeSourceRecord(std::array<std::int64_t, 3U> const &position,
 
 [[nodiscard]] auto FindHistoryRecords(TransportRunReport const &report,
                                       std::uint64_t global_primary_id)
-    -> std::vector<ObserverRecord> {
+  -> std::vector<ObserverRecord> {
   std::vector<ObserverRecord> records;
 
   for (ObserverRecord const &record : report.observer_records) {
@@ -136,11 +136,11 @@ MakeSourceRecord(std::array<std::int64_t, 3U> const &position,
   }
 
   std::ranges::sort(
-      records,
-      [](ObserverRecord const &left, ObserverRecord const &right) -> bool {
-        return std::tie(left.record_kind, left.track_id) <
-               std::tie(right.record_kind, right.track_id);
-      });
+    records,
+    [](ObserverRecord const &left, ObserverRecord const &right) -> bool {
+      return std::tie(left.record_kind, left.track_id) <
+             std::tie(right.record_kind, right.track_id);
+    });
 
   return records;
 }
@@ -170,7 +170,7 @@ auto ExpectHistory(TransportRunReport const &report, SourceRecord const &source,
                    std::uint32_t source_index,
                    std::uint64_t source_local_primary_id,
                    std::array<std::int64_t, 3U> const &terminal_position)
-    -> void {
+  -> void {
   auto records = FindHistoryRecords(report, global_primary_id);
 
   ASSERT_EQ(records.size(), 2U);
@@ -180,17 +180,17 @@ auto ExpectHistory(TransportRunReport const &report, SourceRecord const &source,
 
   EXPECT_EQ(source_record.record_kind,
             ggems::core::observer::ToKernelObserverRecordKind(
-                ObserverRecordKind::Source));
+              ObserverRecordKind::Source));
   EXPECT_EQ(terminal_record.record_kind,
             ggems::core::observer::ToKernelObserverRecordKind(
-                ObserverRecordKind::Terminal));
+              ObserverRecordKind::Terminal));
 
   EXPECT_EQ(
-      source_record.status,
-      ggems::core::particles::ToKernelParticleStatus(ParticleStatus::Alive));
+    source_record.status,
+    ggems::core::particles::ToKernelParticleStatus(ParticleStatus::Alive));
   EXPECT_EQ(
-      terminal_record.status,
-      ggems::core::particles::ToKernelParticleStatus(ParticleStatus::Killed));
+    terminal_record.status,
+    ggems::core::particles::ToKernelParticleStatus(ParticleStatus::Killed));
 
   for (ObserverRecord const &record : records) {
     EXPECT_EQ(record.run_id, run_id);
@@ -249,37 +249,37 @@ protected:
 TEST_F(GGEMSTransportWorkloadTest,
        ProjectsSixCardinalSourcesAndPreservesState) {
   constexpr std::array<std::array<std::int64_t, 3U>, 6U> k_positions{{
-      {-1'500'000'000'000LL, 0LL, 0LL},
-      {1'500'000'000'000LL, 0LL, 0LL},
-      {0LL, -1'500'000'000'000LL, 0LL},
-      {0LL, 1'500'000'000'000LL, 0LL},
-      {0LL, 0LL, -1'500'000'000'000LL},
-      {0LL, 0LL, 1'500'000'000'000LL},
+    {-1'500'000'000'000LL, 0LL, 0LL},
+    {1'500'000'000'000LL, 0LL, 0LL},
+    {0LL, -1'500'000'000'000LL, 0LL},
+    {0LL, 1'500'000'000'000LL, 0LL},
+    {0LL, 0LL, -1'500'000'000'000LL},
+    {0LL, 0LL, 1'500'000'000'000LL},
   }};
 
   constexpr std::array<std::array<double, 3U>, 6U> k_directions{{
-      {1.0, 0.0, 0.0},
-      {-1.0, 0.0, 0.0},
-      {0.0, 1.0, 0.0},
-      {0.0, -1.0, 0.0},
-      {0.0, 0.0, 1.0},
-      {0.0, 0.0, -1.0},
+    {1.0, 0.0, 0.0},
+    {-1.0, 0.0, 0.0},
+    {0.0, 1.0, 0.0},
+    {0.0, -1.0, 0.0},
+    {0.0, 0.0, 1.0},
+    {0.0, 0.0, -1.0},
   }};
 
   constexpr std::array<std::array<std::int64_t, 3U>, 6U> k_terminals{{
-      {-500'000'000'000LL, 0LL, 0LL},
-      {500'000'000'000LL, 0LL, 0LL},
-      {0LL, -500'000'000'000LL, 0LL},
-      {0LL, 500'000'000'000LL, 0LL},
-      {0LL, 0LL, -500'000'000'000LL},
-      {0LL, 0LL, 500'000'000'000LL},
+    {-500'000'000'000LL, 0LL, 0LL},
+    {500'000'000'000LL, 0LL, 0LL},
+    {0LL, -500'000'000'000LL, 0LL},
+    {0LL, 500'000'000'000LL, 0LL},
+    {0LL, 0LL, -500'000'000'000LL},
+    {0LL, 0LL, 500'000'000'000LL},
   }};
 
   std::vector<SourceRecord> source_records;
 
   for (std::size_t index = 0U; index < k_positions.size(); ++index) {
     source_records.push_back(
-        MakeSourceRecord(k_positions[index], k_directions[index]));
+      MakeSourceRecord(k_positions[index], k_directions[index]));
   }
 
   constexpr std::array<std::uint64_t, 6U> k_counts{1ULL, 1ULL, 1ULL,
@@ -320,7 +320,7 @@ TEST_F(GGEMSTransportWorkloadTest,
 
 TEST_F(GGEMSTransportWorkloadTest, ProjectsStoredBinary32DiagonalExactly) {
   SourceRecord const source =
-      MakeSourceRecord({0LL, 0LL, 0LL}, {1.0, 1.0, 1.0});
+    MakeSourceRecord({0LL, 0LL, 0LL}, {1.0, 1.0, 1.0});
 
   EXPECT_FLOAT_EQ(source.axis_z_x, 0.5773502588272095F);
   EXPECT_FLOAT_EQ(source.axis_z_y, 0.5773502588272095F);
@@ -355,8 +355,8 @@ TEST_F(GGEMSTransportWorkloadTest, ProjectsStoredBinary32DiagonalExactly) {
 
 TEST_F(GGEMSTransportWorkloadTest,
        InitializesConfiguredParticleTypeGenerically) {
-  SourceRecord const source = MakeSourceRecord({0LL, 0LL, 0LL}, {0.0, 0.0, 1.0},
-                                               ParticleType::Electron);
+  SourceRecord const source =
+    MakeSourceRecord({0LL, 0LL, 0LL}, {0.0, 0.0, 1.0}, ParticleType::Electron);
 
   constexpr std::array<std::uint64_t, 1U> k_counts{1ULL};
 
@@ -388,9 +388,9 @@ TEST_F(GGEMSTransportWorkloadTest,
 TEST_F(GGEMSTransportWorkloadTest,
        PreservesZeroPrimaryAndDuplicateSourceSlots) {
   SourceRecord const source_a =
-      MakeSourceRecord({0LL, 0LL, 0LL}, {1.0, 0.0, 0.0});
+    MakeSourceRecord({0LL, 0LL, 0LL}, {1.0, 0.0, 0.0});
   SourceRecord const source_b =
-      MakeSourceRecord({0LL, 0LL, 0LL}, {0.0, -1.0, 0.0});
+    MakeSourceRecord({0LL, 0LL, 0LL}, {0.0, -1.0, 0.0});
 
   constexpr std::array<std::uint64_t, 4U> k_counts{2ULL, 0ULL, 2ULL, 1ULL};
 
@@ -434,9 +434,9 @@ TEST_F(GGEMSTransportWorkloadTest,
 TEST_F(GGEMSTransportWorkloadTest,
        CombinesObserverPoliciesWithoutDuplicateHistories) {
   SourceRecord const source_0 =
-      MakeSourceRecord({0LL, 0LL, 0LL}, {1.0, 0.0, 0.0});
+    MakeSourceRecord({0LL, 0LL, 0LL}, {1.0, 0.0, 0.0});
   SourceRecord const source_1 =
-      MakeSourceRecord({0LL, 0LL, 0LL}, {0.0, 0.0, 1.0});
+    MakeSourceRecord({0LL, 0LL, 0LL}, {0.0, 0.0, 1.0});
 
   constexpr std::array<std::uint64_t, 2U> k_counts{3ULL, 2ULL};
 
@@ -487,7 +487,7 @@ TEST_F(GGEMSTransportWorkloadTest,
 TEST_F(GGEMSTransportWorkloadTest,
        ObserverOverflowIsIndependentFromTransportOverflow) {
   SourceRecord const source =
-      MakeSourceRecord({0LL, 0LL, 0LL}, {0.0, 0.0, 1.0});
+    MakeSourceRecord({0LL, 0LL, 0LL}, {0.0, 0.0, 1.0});
   constexpr std::array<std::uint64_t, 1U> k_counts{1ULL};
 
   ggems::core::random::GGEMSRandom random{};
@@ -521,9 +521,9 @@ TEST_F(GGEMSTransportWorkloadTest,
 TEST_F(GGEMSTransportWorkloadTest,
        PreservesSourceLocalIdsAcrossADeviceSliceBoundary) {
   SourceRecord const source_0 =
-      MakeSourceRecord({0LL, 0LL, 0LL}, {1.0, 0.0, 0.0});
+    MakeSourceRecord({0LL, 0LL, 0LL}, {1.0, 0.0, 0.0});
   SourceRecord const source_1 =
-      MakeSourceRecord({0LL, 0LL, 0LL}, {0.0, 1.0, 0.0});
+    MakeSourceRecord({0LL, 0LL, 0LL}, {0.0, 1.0, 0.0});
   constexpr std::array<std::uint64_t, 2U> k_counts{2ULL, 3ULL};
 
   ggems::core::random::GGEMSRandom random{};
@@ -562,7 +562,7 @@ TEST_F(GGEMSTransportWorkloadTest,
   constexpr std::array<std::uint64_t, 1U> k_counts{2ULL};
 
   SourceRecord const source =
-      MakeSourceRecord({0LL, 0LL, 1'500'000'000'000LL}, {0.0, 0.0, -1.0});
+    MakeSourceRecord({0LL, 0LL, 1'500'000'000'000LL}, {0.0, 0.0, -1.0});
 
   for (std::string_view engine : k_engines) {
     SCOPED_TRACE(engine);
@@ -580,9 +580,9 @@ TEST_F(GGEMSTransportWorkloadTest,
                                4U};
 
     auto const allocated_after_construction =
-        GetContext().GetAllocatedVRAM().value;
+      GetContext().GetAllocatedVRAM().value;
     auto const allocation_count_after_construction =
-        GetContext().GetAllocationCountVRAM();
+      GetContext().GetAllocationCountVRAM();
 
     auto config = MakeConfig({source}, k_counts, 2U, 200ULL);
     config.observer_config.enabled = 1U;
@@ -619,12 +619,12 @@ TEST_F(GGEMSTransportWorkloadTest,
 TEST_F(GGEMSTransportWorkloadTest,
        IgnoresUnsupportedZeroPrimarySlotButRejectsItWhenNonZero) {
   SourceRecord unsupported = MakeSourceRecord(
-      {std::numeric_limits<std::int64_t>::max(), 0LL, 0LL}, {1.0, 0.0, 0.0});
+    {std::numeric_limits<std::int64_t>::max(), 0LL, 0LL}, {1.0, 0.0, 0.0});
   unsupported.source_type = ggems::core::sources::ToKernelSourceType(
-      ggems::core::sources::GGEMSSourceType::Voxelized);
+    ggems::core::sources::GGEMSSourceType::Voxelized);
 
   SourceRecord const analytic =
-      MakeSourceRecord({0LL, 0LL, 0LL}, {0.0, 0.0, 1.0});
+    MakeSourceRecord({0LL, 0LL, 0LL}, {0.0, 0.0, 1.0});
 
   ggems::core::random::GGEMSRandom random{};
   random.SetEngine("philox").SetSeed(8ULL);
@@ -660,7 +660,7 @@ TEST_F(GGEMSTransportWorkloadTest,
 TEST_F(GGEMSTransportWorkloadTest,
        RejectsEndpointOverflowAndInvalidSourceRanges) {
   SourceRecord const overflowing = MakeSourceRecord(
-      {std::numeric_limits<std::int64_t>::max(), 0LL, 0LL}, {1.0, 0.0, 0.0});
+    {std::numeric_limits<std::int64_t>::max(), 0LL, 0LL}, {1.0, 0.0, 0.0});
   constexpr std::array<std::uint64_t, 1U> k_counts{1ULL};
 
   ggems::core::random::GGEMSRandom random{};

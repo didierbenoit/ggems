@@ -23,7 +23,9 @@
  * \file
  * \brief Unit tests for OpenCL information traits and formatting.
  *
- * Validates representative trait types and formatting for scalar values, memory sizes, flags, vectors, structured version information, and unavailable values.
+ * Validates representative trait types and formatting for scalar values, memory
+ * sizes, flags, vectors, structured version information, and unavailable
+ * values.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -50,20 +52,20 @@
 namespace {
 
 using ClockFrequencyTraits =
-    ggems::ocl::InfoTraits<CL_DEVICE_MAX_CLOCK_FREQUENCY>;
+  ggems::ocl::InfoTraits<CL_DEVICE_MAX_CLOCK_FREQUENCY>;
 using PlatformNameTraits = ggems::ocl::InfoTraits<CL_PLATFORM_NAME>;
 using DeviceAvailableTraits = ggems::ocl::InfoTraits<CL_DEVICE_AVAILABLE>;
 using ComputeUnitTraits = ggems::ocl::InfoTraits<CL_DEVICE_MAX_COMPUTE_UNITS>;
 using WorkGroupSizeTraits =
-    ggems::ocl::InfoTraits<CL_DEVICE_MAX_WORK_GROUP_SIZE>;
+  ggems::ocl::InfoTraits<CL_DEVICE_MAX_WORK_GROUP_SIZE>;
 using GlobalMemoryTraits = ggems::ocl::InfoTraits<CL_DEVICE_GLOBAL_MEM_SIZE>;
 using QueuePropertiesTraits =
-    ggems::ocl::InfoTraits<CL_DEVICE_QUEUE_ON_HOST_PROPERTIES>;
+  ggems::ocl::InfoTraits<CL_DEVICE_QUEUE_ON_HOST_PROPERTIES>;
 using WorkItemSizesTraits =
-    ggems::ocl::InfoTraits<CL_DEVICE_MAX_WORK_ITEM_SIZES>;
+  ggems::ocl::InfoTraits<CL_DEVICE_MAX_WORK_ITEM_SIZES>;
 using BinarySizesTraits = ggems::ocl::InfoTraits<CL_PROGRAM_BINARY_SIZES>;
 using NameVersionsTraits =
-    ggems::ocl::InfoTraits<CL_DEVICE_OPENCL_C_ALL_VERSIONS>;
+  ggems::ocl::InfoTraits<CL_DEVICE_OPENCL_C_ALL_VERSIONS>;
 
 using ggems::test::ScopedLoggerEncoding;
 
@@ -113,7 +115,7 @@ TEST(GGEMSOpenCLInfoTraitsTest, FormatsRepresentativeScalarCategories) {
   EXPECT_EQ(ComputeUnitTraits::ToString(12U), "12");
   EXPECT_EQ(WorkGroupSizeTraits::ToString(std::size_t{256U}), "256");
   EXPECT_EQ(ggems::ocl::InfoTraits<CL_PLATFORM_NUMERIC_VERSION>::ToString(
-                CL_MAKE_VERSION(3, 0, 5)),
+              CL_MAKE_VERSION(3, 0, 5)),
             "3.0.5");
 }
 
@@ -130,7 +132,7 @@ TEST(GGEMSOpenCLInfoTraitsTest, FormatsMemoryAndFlagCategories) {
             "Profiling enabled");
 
   auto const alignment =
-      ggems::ocl::InfoTraits<CL_DEVICE_MEM_BASE_ADDR_ALIGN>::ToString(128U);
+    ggems::ocl::InfoTraits<CL_DEVICE_MEM_BASE_ADDR_ALIGN>::ToString(128U);
   EXPECT_NE(alignment.find("bit"), std::string::npos);
 }
 
@@ -139,7 +141,7 @@ TEST(GGEMSOpenCLInfoTraitsTest, FormatsMemoryAndFlagCategories) {
 
 TEST(GGEMSOpenCLInfoTraitsTest, FormatsVectorAndStructuredCategories) {
   auto const work_item_sizes =
-      WorkItemSizesTraits::ToString(std::vector<std::size_t>{4U, 8U, 16U});
+    WorkItemSizesTraits::ToString(std::vector<std::size_t>{4U, 8U, 16U});
   EXPECT_NE(work_item_sizes.find("4 8 16"), std::string::npos);
 
   EXPECT_EQ(BinarySizesTraits::ToString(std::vector<std::size_t>{4U, 8U}),

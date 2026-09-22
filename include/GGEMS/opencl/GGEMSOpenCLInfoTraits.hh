@@ -21,7 +21,8 @@
 
 /*!
  * \file
- * \brief Defines internal OpenCL information traits used by generic query helpers.
+ * \brief Defines internal OpenCL information traits used by generic query
+ * helpers.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -134,7 +135,7 @@ template <> struct InfoTraits<CL_PLATFORM_EXTENSIONS_WITH_VERSION> {
   using type = std::vector<cl_name_version>;
 
   static constexpr std::string_view name =
-      "CL_PLATFORM_EXTENSIONS_WITH_VERSION";
+    "CL_PLATFORM_EXTENSIONS_WITH_VERSION";
 
   [[nodiscard]] static auto ToString(type const &value) -> std::string {
     return ClNameVersionToString(value);
@@ -255,7 +256,7 @@ template <> struct InfoTraits<CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR> {
   using type = cl_version_khr;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR";
+    "CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return ClVersionToString(value);
@@ -276,7 +277,7 @@ template <> struct InfoTraits<CL_DEVICE_CXX_FOR_OPENCL_NUMERIC_VERSION_EXT> {
   using type = cl_version;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_CXX_FOR_OPENCL_NUMERIC_VERSION_EXT";
+    "CL_DEVICE_CXX_FOR_OPENCL_NUMERIC_VERSION_EXT";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return ClVersionToString(value);
@@ -375,7 +376,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_MULTIPLE> {
   using type = std::size_t;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_MULTIPLE";
+    "CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_MULTIPLE";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return std::to_string(value);
@@ -386,7 +387,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR";
+    "CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return UIntToString(value);
@@ -397,7 +398,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT";
+    "CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return UIntToString(value);
@@ -408,7 +409,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT";
+    "CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return UIntToString(value);
@@ -419,7 +420,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG";
+    "CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return UIntToString(value);
@@ -430,7 +431,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT";
+    "CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return UIntToString(value);
@@ -441,7 +442,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE";
+    "CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return UIntToString(value);
@@ -452,7 +453,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF";
+    "CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return UIntToString(value);
@@ -473,7 +474,7 @@ template <> struct InfoTraits<CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT";
+    "CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return UIntToString(value);
@@ -504,7 +505,7 @@ template <> struct InfoTraits<CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT";
+    "CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return UIntToString(value);
@@ -515,7 +516,7 @@ template <> struct InfoTraits<CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE";
+    "CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return UIntToString(value);
@@ -636,7 +637,7 @@ template <> struct InfoTraits<CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS";
+    "CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return UIntToString(value);
@@ -657,7 +658,7 @@ template <> struct InfoTraits<CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT";
+    "CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return UIntToString(value);
@@ -701,7 +702,7 @@ template <> struct InfoTraits<CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE";
+    "CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     auto bytes = Bytes{static_cast<std::uint64_t>(value)};
@@ -821,7 +822,7 @@ template <> struct InfoTraits<CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES> {
   using type = cl_command_queue_properties;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES";
+    "CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return QueuePropertiesToString(value);
@@ -832,7 +833,7 @@ template <> struct InfoTraits<CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE";
+    "CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE";
 
   static constexpr std::string_view unit = " bytes";
 
@@ -876,7 +877,7 @@ template <> struct InfoTraits<CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES> {
   using type = cl_device_atomic_capabilities;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES";
+    "CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return AtomicCapabilitiesToString(value);
@@ -887,7 +888,7 @@ template <> struct InfoTraits<CL_DEVICE_ATOMIC_FENCE_CAPABILITIES> {
   using type = cl_device_atomic_capabilities;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_ATOMIC_FENCE_CAPABILITIES";
+    "CL_DEVICE_ATOMIC_FENCE_CAPABILITIES";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return AtomicCapabilitiesToString(value);
@@ -909,7 +910,7 @@ struct InfoTraits<CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS> {
   using type = cl_bool;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS";
+    "CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return ClBoolToString(value);
@@ -930,7 +931,7 @@ template <> struct InfoTraits<CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT> {
   using type = cl_bool;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT";
+    "CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return ClBoolToString(value);
@@ -942,7 +943,7 @@ struct InfoTraits<CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT> {
   using type = cl_bool;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT";
+    "CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return ClBoolToString(value);
@@ -953,7 +954,7 @@ template <> struct InfoTraits<CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT> {
   using type = cl_bool;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT";
+    "CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return ClBoolToString(value);
@@ -964,7 +965,7 @@ template <> struct InfoTraits<CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES> {
   using type = cl_device_device_enqueue_capabilities;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES";
+    "CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return DeviceEnqueueCapabilitiesToString(value);
@@ -975,7 +976,7 @@ template <> struct InfoTraits<CL_DEVICE_PARTITION_MAX_SUB_DEVICES> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_PARTITION_MAX_SUB_DEVICES";
+    "CL_DEVICE_PARTITION_MAX_SUB_DEVICES";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return UIntToString(value);
@@ -996,7 +997,7 @@ template <> struct InfoTraits<CL_DEVICE_PARTITION_AFFINITY_DOMAIN> {
   using type = cl_device_affinity_domain;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_PARTITION_AFFINITY_DOMAIN";
+    "CL_DEVICE_PARTITION_AFFINITY_DOMAIN";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return AffinityDomainToString(value);
@@ -1037,7 +1038,7 @@ template <> struct InfoTraits<CL_DEVICE_LATEST_CONFORMANCE_VERSION_PASSED> {
   using type = std::string;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_LATEST_CONFORMANCE_VERSION_PASSED";
+    "CL_DEVICE_LATEST_CONFORMANCE_VERSION_PASSED";
 
   [[nodiscard]] static auto ToString(type value) noexcept -> std::string {
     return value;
@@ -1058,7 +1059,7 @@ template <> struct InfoTraits<CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION> {
   using type = std::vector<cl_name_version>;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION";
+    "CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION";
 
   [[nodiscard]] static auto ToString(type const &value) -> std::string {
     return ClNameVersionToString(value);
@@ -1069,7 +1070,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT";
+    "CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT";
 
   static constexpr std::string_view unit = " bytes";
 
@@ -1083,7 +1084,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT";
+    "CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     auto bytes = Bytes{static_cast<std::uint64_t>(value)};
@@ -1095,7 +1096,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT";
+    "CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     auto bytes = Bytes{static_cast<std::uint64_t>(value)};
@@ -1120,7 +1121,7 @@ template <> struct InfoTraits<CL_DEVICE_PROFILING_TIMER_RESOLUTION> {
   using type = std::size_t;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_PROFILING_TIMER_RESOLUTION";
+    "CL_DEVICE_PROFILING_TIMER_RESOLUTION";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     auto const duration = MakeQuantity<Duration>(value, "ns");
@@ -1206,7 +1207,7 @@ template <> struct InfoTraits<CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS> {
   using type = cl_uint;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS";
+    "CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return UIntToString(value);
@@ -1249,7 +1250,7 @@ template <> struct InfoTraits<CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE> {
   using type = std::size_t;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE";
+    "CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     auto bytes = Bytes{static_cast<std::uint64_t>(value)};
@@ -1341,7 +1342,7 @@ template <> struct InfoTraits<CL_DEVICE_PREFERRED_INTEROP_USER_SYNC> {
   using type = cl_bool;
 
   static constexpr std::string_view name =
-      "CL_DEVICE_PREFERRED_INTEROP_USER_SYNC";
+    "CL_DEVICE_PREFERRED_INTEROP_USER_SYNC";
 
   [[nodiscard]] static auto ToString(type value) -> std::string {
     return ClBoolToString(value);

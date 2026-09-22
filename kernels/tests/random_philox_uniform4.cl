@@ -46,7 +46,7 @@ __kernel void random_philox_uniform4(__global GGEMSPhiloxState *states,
   for (uint block_index = 0U; block_index < blocks_per_particle;
        ++block_index) {
     uint output_index =
-        (particle_index * blocks_per_particle + block_index) * 4U;
+      (particle_index * blocks_per_particle + block_index) * 4U;
 
     float4 random_values = GGEMS_PhiloxUniform4(states, particle_index);
 

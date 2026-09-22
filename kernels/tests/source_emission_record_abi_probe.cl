@@ -18,29 +18,29 @@ typedef struct GGEMSSourceEmissionRangeAlignmentProbe {
 } GGEMSSourceEmissionRangeAlignmentProbe;
 
 __kernel void source_emission_record_abi_probe(
-    __global ulong *layout, __global GGEMSSourcePopulationRecord *populations,
-    __global GGEMSSourceEmissionRecord *emissions,
-    __global GGEMSSourceEmissionRange *groups) {
+  __global ulong *layout, __global GGEMSSourcePopulationRecord *populations,
+  __global GGEMSSourceEmissionRecord *emissions,
+  __global GGEMSSourceEmissionRange *groups) {
   if (get_global_id(0) != 0U) {
     return;
   }
 
   GGEMSSourcePopulationRecord private_population;
   __private uchar const *population_base =
-      (__private uchar const *)&private_population;
+    (__private uchar const *)&private_population;
   layout[0] = (ulong)(sizeof(GGEMSSourcePopulationRecord));
   layout[1] =
-      (ulong)((__private uchar const *)&private_population.population_mode -
-              population_base);
-  layout[2] = (ulong)((__private uchar const *)&private_population
-                          .first_emission_index -
-                      population_base);
+    (ulong)((__private uchar const *)&private_population.population_mode -
+            population_base);
+  layout[2] =
+    (ulong)((__private uchar const *)&private_population.first_emission_index -
+            population_base);
   layout[3] =
-      (ulong)((__private uchar const *)&private_population.emission_count -
-              population_base);
+    (ulong)((__private uchar const *)&private_population.emission_count -
+            population_base);
   layout[4] =
-      (ulong)((__private uchar const *)&private_population.scaled_decay -
-              population_base);
+    (ulong)((__private uchar const *)&private_population.scaled_decay -
+            population_base);
   layout[5] = (ulong)((__global uchar const *)&populations[1] -
                       (__global uchar const *)&populations[0]);
   GGEMSSourcePopulationAlignmentProbe population_alignment;
@@ -49,16 +49,16 @@ __kernel void source_emission_record_abi_probe(
 
   GGEMSSourceEmissionRecord private_emission;
   __private uchar const *emission_base =
-      (__private uchar const *)&private_emission;
+    (__private uchar const *)&private_emission;
   layout[7] = (ulong)(sizeof(GGEMSSourceEmissionRecord));
   layout[8] = (ulong)((__private uchar const *)&private_emission.particle_type -
                       emission_base);
   layout[9] = (ulong)((__private uchar const *)&private_emission
-                          .energy_distribution_record_index -
+                        .energy_distribution_record_index -
                       emission_base);
   layout[10] =
-      (ulong)((__private uchar const *)&private_emission.mono_energy_micro_eV -
-              emission_base);
+    (ulong)((__private uchar const *)&private_emission.mono_energy_micro_eV -
+            emission_base);
   layout[11] = (ulong)((__global uchar const *)&emissions[1] -
                        (__global uchar const *)&emissions[0]);
   GGEMSSourceEmissionAlignmentProbe emission_alignment;
@@ -68,11 +68,11 @@ __kernel void source_emission_record_abi_probe(
   GGEMSSourceEmissionRange private_group;
   __private uchar const *group_base = (__private uchar const *)&private_group;
   layout[13] = (ulong)(sizeof(GGEMSSourceEmissionRange));
-  layout[14] = (ulong)((__private uchar const *)&private_group
-                           .source_local_primary_begin -
-                       group_base);
-  layout[15] = (ulong)((__private uchar const *)&private_group.primary_count -
-                       group_base);
+  layout[14] =
+    (ulong)((__private uchar const *)&private_group.source_local_primary_begin -
+            group_base);
+  layout[15] =
+    (ulong)((__private uchar const *)&private_group.primary_count - group_base);
   layout[16] = (ulong)((__global uchar const *)&groups[1] -
                        (__global uchar const *)&groups[0]);
   GGEMSSourceEmissionRangeAlignmentProbe group_alignment;

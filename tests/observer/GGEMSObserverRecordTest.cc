@@ -40,9 +40,9 @@ TEST(GGEMSObserverRecord, ConfigRecordIsKernelFriendly) {
 
 TEST(GGEMSObserverRecord, CountersAreKernelFriendly) {
   EXPECT_TRUE(
-      std::is_standard_layout_v<ggems::core::observer::GGEMSObserverCounters>);
-  EXPECT_TRUE(std::is_trivially_copyable_v<
-              ggems::core::observer::GGEMSObserverCounters>);
+    std::is_standard_layout_v<ggems::core::observer::GGEMSObserverCounters>);
+  EXPECT_TRUE(
+    std::is_trivially_copyable_v<ggems::core::observer::GGEMSObserverCounters>);
   EXPECT_EQ(sizeof(ggems::core::observer::GGEMSObserverCounters), 16U);
 }
 
@@ -103,15 +103,15 @@ TEST(GGEMSObserverRecord, DefaultRecordIsEmptyAndInactive) {
 
   EXPECT_EQ(record.record_kind,
             ggems::core::observer::ToKernelObserverRecordKind(
-                ggems::core::observer::GGEMSObserverRecordKind::Unknown));
+              ggems::core::observer::GGEMSObserverRecordKind::Unknown));
 
   EXPECT_EQ(record.particle_type,
             ggems::core::particles::ToKernelParticleType(
-                ggems::core::particles::GGEMSParticleType::Unknown));
+              ggems::core::particles::GGEMSParticleType::Unknown));
 
   EXPECT_EQ(record.status,
             ggems::core::particles::ToKernelParticleStatus(
-                ggems::core::particles::GGEMSParticleStatus::Inactive));
+              ggems::core::particles::GGEMSParticleStatus::Inactive));
 
   EXPECT_FLOAT_EQ(record.direction_x, 0.0F);
   EXPECT_FLOAT_EQ(record.direction_y, 0.0F);

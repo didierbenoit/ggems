@@ -39,26 +39,26 @@ struct BuiltInEntry {
 // =============================================================================
 
 constexpr std::array<BuiltInEntry, 14U> k_builtin_entries{
-    {{.canonical_name = "H-3", .builder = BuildH3Radionuclide},
-     {.canonical_name = "C-14", .builder = BuildC14Radionuclide},
-     {.canonical_name = "F-18", .builder = BuildF18Radionuclide},
-     {.canonical_name = "C-11", .builder = BuildC11Radionuclide},
-     {.canonical_name = "O-15", .builder = BuildO15Radionuclide},
-     {.canonical_name = "Ga-68", .builder = BuildGa68Radionuclide},
-     {.canonical_name = "Co-60", .builder = BuildCo60Radionuclide},
-     {.canonical_name = "Lu-177", .builder = BuildLu177Radionuclide},
-     {.canonical_name = "I-123", .builder = BuildI123Radionuclide},
-     {.canonical_name = "I-124", .builder = BuildI124Radionuclide},
-     {.canonical_name = "I-125", .builder = BuildI125Radionuclide},
-     {.canonical_name = "I-131", .builder = BuildI131Radionuclide},
-     {.canonical_name = "Am-241", .builder = BuildAm241Radionuclide},
-     {.canonical_name = "Tc-99m", .builder = BuildTc99mRadionuclide}}};
+  {{.canonical_name = "H-3", .builder = BuildH3Radionuclide},
+   {.canonical_name = "C-14", .builder = BuildC14Radionuclide},
+   {.canonical_name = "F-18", .builder = BuildF18Radionuclide},
+   {.canonical_name = "C-11", .builder = BuildC11Radionuclide},
+   {.canonical_name = "O-15", .builder = BuildO15Radionuclide},
+   {.canonical_name = "Ga-68", .builder = BuildGa68Radionuclide},
+   {.canonical_name = "Co-60", .builder = BuildCo60Radionuclide},
+   {.canonical_name = "Lu-177", .builder = BuildLu177Radionuclide},
+   {.canonical_name = "I-123", .builder = BuildI123Radionuclide},
+   {.canonical_name = "I-124", .builder = BuildI124Radionuclide},
+   {.canonical_name = "I-125", .builder = BuildI125Radionuclide},
+   {.canonical_name = "I-131", .builder = BuildI131Radionuclide},
+   {.canonical_name = "Am-241", .builder = BuildAm241Radionuclide},
+   {.canonical_name = "Tc-99m", .builder = BuildTc99mRadionuclide}}};
 
 // =============================================================================
 // =============================================================================
 
 [[nodiscard]] consteval auto BuildAvailableRadionuclideNames()
-    -> std::array<std::string_view, k_builtin_entries.size()> {
+  -> std::array<std::string_view, k_builtin_entries.size()> {
   std::array<std::string_view, k_builtin_entries.size()> names{};
   for (std::size_t index = 0U; index < k_builtin_entries.size(); ++index) {
     names[index] = k_builtin_entries[index].canonical_name;
@@ -70,27 +70,27 @@ constexpr std::array<BuiltInEntry, 14U> k_builtin_entries{
 // =============================================================================
 
 constexpr auto k_available_radionuclide_names =
-    BuildAvailableRadionuclideNames();
+  BuildAvailableRadionuclideNames();
 
 // =============================================================================
 // =============================================================================
 
 [[nodiscard]] auto
 DescribeEnergyDistribution(sources::GGEMSEnergyDistribution const &distribution)
-    -> std::string {
+  -> std::string {
   sources::GGEMSEnergyDistributionType const type = distribution.GetType();
 
   if (type == sources::GGEMSEnergyDistributionType::Mono) {
     return std::format("Mono {}",
                        ggems::units::HumanReadable(ggems::units::Energy{
-                           distribution.GetMonoEnergyMicroElectronVolt()}));
+                         distribution.GetMonoEnergyMicroElectronVolt()}));
   }
 
   auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
 
   if (energies.empty()) {
     throw ggems::core::GGEMSInternal(
-        "Built-in radionuclide table-backed energy distribution is empty.");
+      "Built-in radionuclide table-backed energy distribution is empty.");
   }
 
   if (type == sources::GGEMSEnergyDistributionType::DiscreteLines) {
@@ -104,31 +104,31 @@ DescribeEnergyDistribution(sources::GGEMSEnergyDistribution const &distribution)
     }
 
     return std::format(
-        "Discrete lines | {} lines | range [{}, {}] | strongest line {}",
-        energies.size(),
-        ggems::units::HumanReadable(ggems::units::Energy{energies.front()}),
-        ggems::units::HumanReadable(ggems::units::Energy{energies.back()}),
-        ggems::units::HumanReadable(
-            ggems::units::Energy{energies[strongest_index]}));
+      "Discrete lines | {} lines | range [{}, {}] | strongest line {}",
+      energies.size(),
+      ggems::units::HumanReadable(ggems::units::Energy{energies.front()}),
+      ggems::units::HumanReadable(ggems::units::Energy{energies.back()}),
+      ggems::units::HumanReadable(
+        ggems::units::Energy{energies[strongest_index]}));
   }
 
   if (type == sources::GGEMSEnergyDistributionType::RegularSpectrum) {
     std::uint64_t const bin_width =
-        distribution.GetRegularBinWidthMicroElectronVolt();
+      distribution.GetRegularBinWidthMicroElectronVolt();
     std::uint64_t const half_width = bin_width / 2ULL;
     std::uint64_t const lower_edge = energies.front() - half_width;
     std::uint64_t const upper_edge = energies.back() + half_width;
 
     return std::format(
-        "Regular spectrum | {} bins | range [{}, {}] | bin width {}",
-        energies.size(),
-        ggems::units::HumanReadable(ggems::units::Energy{lower_edge}),
-        ggems::units::HumanReadable(ggems::units::Energy{upper_edge}),
-        ggems::units::HumanReadable(ggems::units::Energy{bin_width}));
+      "Regular spectrum | {} bins | range [{}, {}] | bin width {}",
+      energies.size(),
+      ggems::units::HumanReadable(ggems::units::Energy{lower_edge}),
+      ggems::units::HumanReadable(ggems::units::Energy{upper_edge}),
+      ggems::units::HumanReadable(ggems::units::Energy{bin_width}));
   }
 
   throw ggems::core::GGEMSInternal(
-      "Unsupported built-in radionuclide energy distribution type.");
+    "Unsupported built-in radionuclide energy distribution type.");
 }
 
 // =============================================================================
@@ -136,12 +136,12 @@ DescribeEnergyDistribution(sources::GGEMSEnergyDistribution const &distribution)
 
 [[nodiscard]] auto DescribeEmission(std::size_t index,
                                     GGEMSRadionuclideEmission const &emission)
-    -> std::string {
+  -> std::string {
   return std::format(
-      "    [{}] {} | yield {:.8g} | {}", index,
-      particles::ToLongName(emission.GetParticleType()),
-      static_cast<double>(emission.GetYieldPerDecay()),
-      DescribeEnergyDistribution(emission.GetEnergyDistribution()));
+    "    [{}] {} | yield {:.8g} | {}", index,
+    particles::ToLongName(emission.GetParticleType()),
+    static_cast<double>(emission.GetYieldPerDecay()),
+    DescribeEnergyDistribution(emission.GetEnergyDistribution()));
 }
 
 } // namespace
@@ -150,7 +150,7 @@ DescribeEnergyDistribution(sources::GGEMSEnergyDistribution const &distribution)
 // =============================================================================
 
 [[nodiscard]] auto BuildBuiltInRadionuclide(std::string_view canonical_name)
-    -> std::optional<GGEMSRadionuclideDefinition> {
+  -> std::optional<GGEMSRadionuclideDefinition> {
   for (BuiltInEntry const &entry : k_builtin_entries) {
     if (canonical_name == entry.canonical_name) {
       return entry.builder();
@@ -164,7 +164,7 @@ DescribeEnergyDistribution(sources::GGEMSEnergyDistribution const &distribution)
 // =============================================================================
 
 [[nodiscard]] auto GetAvailableRadionuclideNames() noexcept
-    -> std::span<std::string_view const> {
+  -> std::span<std::string_view const> {
   return k_available_radionuclide_names;
 }
 
@@ -173,15 +173,15 @@ DescribeEnergyDistribution(sources::GGEMSEnergyDistribution const &distribution)
 
 [[nodiscard]] auto
 DescribeBuiltInRadionuclide(GGEMSRadionuclideDefinition const &definition)
-    -> std::string {
+  -> std::string {
   auto const emissions = definition.GetEmissions();
 
   std::string description = std::format(
-      "{}\n"
-      "  Half-life      : {:.8g} s\n"
-      "  Emissions      : {}\n",
-      definition.GetCanonicalName(),
-      static_cast<double>(definition.GetHalfLifeSeconds()), emissions.size());
+    "{}\n"
+    "  Half-life      : {:.8g} s\n"
+    "  Emissions      : {}\n",
+    definition.GetCanonicalName(),
+    static_cast<double>(definition.GetHalfLifeSeconds()), emissions.size());
 
   for (std::size_t index = 0U; index < emissions.size(); ++index) {
     description += DescribeEmission(index, emissions[index]);
@@ -189,8 +189,8 @@ DescribeBuiltInRadionuclide(GGEMSRadionuclideDefinition const &definition)
   }
 
   description +=
-      std::format("  Total yield    : {:.8g} particles/decay",
-                  static_cast<double>(definition.GetTotalYieldPerDecay()));
+    std::format("  Total yield    : {:.8g} particles/decay",
+                static_cast<double>(definition.GetTotalYieldPerDecay()));
 
   return description;
 }
@@ -199,11 +199,11 @@ DescribeBuiltInRadionuclide(GGEMSRadionuclideDefinition const &definition)
 // =============================================================================
 
 [[nodiscard]] auto DescribeBuiltInRadionuclide(std::string_view canonical_name)
-    -> std::string {
+  -> std::string {
   auto definition = BuildBuiltInRadionuclide(canonical_name);
   if (!definition.has_value()) {
     throw ggems::core::GGEMSRecoverable(
-        std::format("Unknown built-in radionuclide '{}'.", canonical_name));
+      std::format("Unknown built-in radionuclide '{}'.", canonical_name));
   }
 
   return DescribeBuiltInRadionuclide(*definition);
@@ -213,7 +213,7 @@ DescribeBuiltInRadionuclide(GGEMSRadionuclideDefinition const &definition)
 // =============================================================================
 
 auto VerboseBuiltInRadionuclide(GGEMSRadionuclideDefinition const &definition)
-    -> void {
+  -> void {
   GGEMS_INFO("Radionuclide", "{}", DescribeBuiltInRadionuclide(definition));
 }
 

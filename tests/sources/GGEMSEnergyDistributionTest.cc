@@ -59,7 +59,7 @@ private:
 // =============================================================================
 
 [[nodiscard]] auto CopyValues(Distribution const &distribution)
-    -> std::vector<std::uint64_t> {
+  -> std::vector<std::uint64_t> {
   auto values = distribution.GetEnergyValuesMicroElectronVolt();
   return {values.begin(), values.end()};
 }
@@ -68,7 +68,7 @@ private:
 // =============================================================================
 
 [[nodiscard]] auto CopyWeights(Distribution const &distribution)
-    -> std::vector<double> {
+  -> std::vector<double> {
   auto values = distribution.GetRelativeWeights();
   return {values.begin(), values.end()};
 }
@@ -77,7 +77,7 @@ private:
 // =============================================================================
 
 [[nodiscard]] auto CopyTicketBounds(Distribution const &distribution)
-    -> std::vector<std::uint64_t> {
+  -> std::vector<std::uint64_t> {
   auto values = distribution.GetCumulativeTicketUpperBounds();
   return {values.begin(), values.end()};
 }
@@ -86,13 +86,12 @@ private:
 // =============================================================================
 
 auto ExpectDistributionUnchanged(
-    ggems::core::sources::GGEMSSource const &source,
-    ggems::core::sources::GGEMSSourceRecord const &record,
-    DistributionType type, std::uint64_t mono_energy_micro_eV,
-    std::uint64_t regular_bin_width_micro_eV,
-    std::vector<std::uint64_t> const &values,
-    std::vector<double> const &relative_weights,
-    std::vector<std::uint64_t> const &ticket_bounds) -> void {
+  ggems::core::sources::GGEMSSource const &source,
+  ggems::core::sources::GGEMSSourceRecord const &record, DistributionType type,
+  std::uint64_t mono_energy_micro_eV, std::uint64_t regular_bin_width_micro_eV,
+  std::vector<std::uint64_t> const &values,
+  std::vector<double> const &relative_weights,
+  std::vector<std::uint64_t> const &ticket_bounds) -> void {
   Distribution const &distribution = source.GetEnergyDistribution();
   EXPECT_EQ(source.BuildRecord().energy_micro_eV, record.energy_micro_eV);
   EXPECT_EQ(distribution.GetType(), type);
@@ -139,26 +138,26 @@ TEST(GGEMSEnergyDistributionTypes, StableIdentifiersAndNames) {
 
 TEST(GGEMSEnergyUnits, GenericConversionUsesExactMicroElectronVolts) {
   auto const mev =
-      ggems::units::MakeQuantity<ggems::units::Energy>(0.120L, "MeV");
+    ggems::units::MakeQuantity<ggems::units::Energy>(0.120L, "MeV");
   ASSERT_TRUE(mev.has_value());
 
   EXPECT_EQ(mev->value, 120'000'000'000ULL);
 
   auto const zero =
-      ggems::units::MakeQuantity<ggems::units::Energy>(0.0L, "keV");
+    ggems::units::MakeQuantity<ggems::units::Energy>(0.0L, "keV");
   ASSERT_TRUE(zero.has_value());
   EXPECT_EQ(zero->value, 0ULL);
 
   auto const unsupported =
-      ggems::units::MakeQuantity<ggems::units::Energy>(1.0L, "joule");
+    ggems::units::MakeQuantity<ggems::units::Energy>(1.0L, "joule");
   auto const negative =
-      ggems::units::MakeQuantity<ggems::units::Energy>(-1.0L, "keV");
+    ggems::units::MakeQuantity<ggems::units::Energy>(-1.0L, "keV");
   auto const nan = ggems::units::MakeQuantity<ggems::units::Energy>(
-      std::numeric_limits<long double>::quiet_NaN(), "keV");
+    std::numeric_limits<long double>::quiet_NaN(), "keV");
   auto const infinity = ggems::units::MakeQuantity<ggems::units::Energy>(
-      std::numeric_limits<long double>::infinity(), "keV");
+    std::numeric_limits<long double>::infinity(), "keV");
   auto const overflow = ggems::units::MakeQuantity<ggems::units::Energy>(
-      std::ldexp(1.0L, 64), "meV");
+    std::ldexp(1.0L, 64), "meV");
 
   ASSERT_FALSE(negative.has_value());
   ASSERT_FALSE(nan.has_value());
@@ -204,13 +203,13 @@ TEST(GGEMSEnergyDistribution, DiscreteLinesNormalizeAndPreserveExactLines) {
   constexpr std::array<double, 4U> weights{1.0, 0.0, 2.0, 1.0};
 
   Distribution const distribution =
-      Distribution::BuildDiscreteLines(energies, weights, "keV");
+    Distribution::BuildDiscreteLines(energies, weights, "keV");
 
   EXPECT_EQ(distribution.GetType(), DistributionType::DiscreteLines);
   EXPECT_EQ(
-      CopyValues(distribution),
-      (std::vector<std::uint64_t>{40'000'000'000ULL, 60'000'000'000ULL,
-                                  80'000'000'000ULL, 120'000'000'000ULL}));
+    CopyValues(distribution),
+    (std::vector<std::uint64_t>{40'000'000'000ULL, 60'000'000'000ULL,
+                                80'000'000'000ULL, 120'000'000'000ULL}));
   EXPECT_EQ(CopyWeights(distribution),
             (std::vector<double>{1.0, 0.0, 2.0, 1.0}));
   EXPECT_EQ(CopyTicketBounds(distribution),
@@ -236,19 +235,19 @@ TEST(GGEMSEnergyDistribution, DiscreteLinesRejectInvalidInput) {
   constexpr std::array<double, 1U> one_weight{1.0};
 
   EXPECT_THROW(static_cast<void>(Distribution::BuildDiscreteLines(
-                   empty_energy, empty_weight, "keV")),
+                 empty_energy, empty_weight, "keV")),
                GGEMSException);
   EXPECT_THROW(static_cast<void>(Distribution::BuildDiscreteLines(
-                   one_energy, one_weight, "keV")),
+                 one_energy, one_weight, "keV")),
                GGEMSException);
-  EXPECT_THROW(static_cast<void>(Distribution::BuildDiscreteLines(
-                   std::span<double const>{valid_energy}.first(1U),
-                   valid_weight, "keV")),
-               GGEMSException);
-  EXPECT_THROW(static_cast<void>(Distribution::BuildDiscreteLines(
-                   valid_energy,
-                   std::span<double const>{valid_weight}.first(1U), "keV")),
-               GGEMSException);
+  EXPECT_THROW(
+    static_cast<void>(Distribution::BuildDiscreteLines(
+      std::span<double const>{valid_energy}.first(1U), valid_weight, "keV")),
+    GGEMSException);
+  EXPECT_THROW(
+    static_cast<void>(Distribution::BuildDiscreteLines(
+      valid_energy, std::span<double const>{valid_weight}.first(1U), "keV")),
+    GGEMSException);
 
   constexpr std::array<double, 2U> duplicate{40.0, 40.0};
   constexpr std::array<double, 2U> descending{80.0, 40.0};
@@ -257,39 +256,39 @@ TEST(GGEMSEnergyDistribution, DiscreteLinesRejectInvalidInput) {
   constexpr std::array<double, 2U> zero_weight{0.0, 0.0};
 
   EXPECT_THROW(static_cast<void>(Distribution::BuildDiscreteLines(
-                   duplicate, valid_weight, "keV")),
+                 duplicate, valid_weight, "keV")),
                GGEMSException);
   EXPECT_THROW(static_cast<void>(Distribution::BuildDiscreteLines(
-                   descending, valid_weight, "keV")),
+                 descending, valid_weight, "keV")),
                GGEMSException);
   EXPECT_THROW(static_cast<void>(Distribution::BuildDiscreteLines(
-                   zero_energy, valid_weight, "keV")),
+                 zero_energy, valid_weight, "keV")),
                GGEMSException);
   EXPECT_THROW(static_cast<void>(Distribution::BuildDiscreteLines(
-                   valid_energy, negative_weight, "keV")),
+                 valid_energy, negative_weight, "keV")),
                GGEMSException);
   EXPECT_THROW(static_cast<void>(Distribution::BuildDiscreteLines(
-                   valid_energy, zero_weight, "keV")),
+                 valid_energy, zero_weight, "keV")),
                GGEMSException);
 
   std::array<double, 2U> nonfinite_energy{
-      40.0, std::numeric_limits<double>::quiet_NaN()};
+    40.0, std::numeric_limits<double>::quiet_NaN()};
   std::array<double, 2U> nonfinite_weight{
-      1.0, std::numeric_limits<double>::infinity()};
+    1.0, std::numeric_limits<double>::infinity()};
 
   EXPECT_THROW(static_cast<void>(Distribution::BuildDiscreteLines(
-                   nonfinite_energy, valid_weight, "keV")),
+                 nonfinite_energy, valid_weight, "keV")),
                GGEMSException);
   EXPECT_THROW(static_cast<void>(Distribution::BuildDiscreteLines(
-                   valid_energy, nonfinite_weight, "keV")),
+                 valid_energy, nonfinite_weight, "keV")),
                GGEMSException);
   EXPECT_THROW(static_cast<void>(Distribution::BuildDiscreteLines(
-                   valid_energy, valid_weight, "invalid")),
+                 valid_energy, valid_weight, "invalid")),
                GGEMSException);
-  EXPECT_THROW(static_cast<void>(Distribution::BuildDiscreteLines(
-                   std::array<double, 2U>{1.0, std::ldexp(1.0, 64)},
-                   valid_weight, "meV")),
-               GGEMSException);
+  EXPECT_THROW(
+    static_cast<void>(Distribution::BuildDiscreteLines(
+      std::array<double, 2U>{1.0, std::ldexp(1.0, 64)}, valid_weight, "meV")),
+    GGEMSException);
 }
 
 // =============================================================================
@@ -300,7 +299,7 @@ TEST(GGEMSEnergyDistribution,
   constexpr std::array<double, 3U> equal_weights{1.0, 1.0, 1.0};
 
   Distribution const equal =
-      Distribution::BuildDiscreteLines(energies, equal_weights, "keV");
+    Distribution::BuildDiscreteLines(energies, equal_weights, "keV");
 
   EXPECT_EQ(CopyTicketBounds(equal),
             (std::vector<std::uint64_t>{1'431'655'766ULL, 2'863'311'531ULL,
@@ -308,12 +307,12 @@ TEST(GGEMSEnergyDistribution,
 
   constexpr std::array<double, 3U> rational_weights{1.0, 2.0, 3.0};
   Distribution const rational =
-      Distribution::BuildDiscreteLines(energies, rational_weights, "keV");
+    Distribution::BuildDiscreteLines(energies, rational_weights, "keV");
   auto const bounds = CopyTicketBounds(rational);
   ASSERT_EQ(bounds.size(), 3U);
 
   std::array<std::uint64_t, 3U> const ticket_counts{
-      bounds[0U], bounds[1U] - bounds[0U], bounds[2U] - bounds[1U]};
+    bounds[0U], bounds[1U] - bounds[0U], bounds[2U] - bounds[1U]};
   EXPECT_EQ(ticket_counts,
             (std::array<std::uint64_t, 3U>{715'827'883ULL, 1'431'655'765ULL,
                                            2'147'483'648ULL}));
@@ -324,10 +323,10 @@ TEST(GGEMSEnergyDistribution,
   for (std::size_t index = 0U; index < ticket_counts.size(); ++index) {
     std::uint64_t const effective_scaled = ticket_counts[index] * 6ULL;
     std::uint64_t const ideal_scaled =
-        integer_weights[index] * 4'294'967'296ULL;
+      integer_weights[index] * 4'294'967'296ULL;
     std::uint64_t const error = effective_scaled > ideal_scaled
-                                    ? effective_scaled - ideal_scaled
-                                    : ideal_scaled - effective_scaled;
+                                  ? effective_scaled - ideal_scaled
+                                  : ideal_scaled - effective_scaled;
     EXPECT_LT(error, 6ULL);
   }
 }
@@ -354,8 +353,8 @@ TEST(GGEMSEnergyDistribution,
   auto const ticket_bounds = CopyTicketBounds(distribution);
 
   EXPECT_THROW(
-      source.SetDiscreteEnergyLines(rejected_energies, rejected_weights, "keV"),
-      GGEMSException);
+    source.SetDiscreteEnergyLines(rejected_energies, rejected_weights, "keV"),
+    GGEMSException);
   ExpectDistributionUnchanged(source, record, type, mono_energy, regular_width,
                               values, weights, ticket_bounds);
 }
@@ -367,7 +366,7 @@ TEST(GGEMSEnergyDistribution, RegularSpectrumUsesCenterDefinedEvenGrid) {
   constexpr std::array<double, 3U> weights{1.0, 2.0, 1.0};
 
   Distribution const distribution =
-      Distribution::BuildRegularSpectrum(centers, weights, "keV");
+    Distribution::BuildRegularSpectrum(centers, weights, "keV");
 
   EXPECT_EQ(distribution.GetType(), DistributionType::RegularSpectrum);
   EXPECT_EQ(distribution.GetRegularBinWidthMicroElectronVolt(),
@@ -381,8 +380,8 @@ TEST(GGEMSEnergyDistribution, RegularSpectrumUsesCenterDefinedEvenGrid) {
                                         4'294'967'296ULL}));
 
   std::uint64_t const lower_edge =
-      distribution.GetEnergyValuesMicroElectronVolt().front() -
-      (distribution.GetRegularBinWidthMicroElectronVolt() / 2ULL);
+    distribution.GetEnergyValuesMicroElectronVolt().front() -
+    (distribution.GetRegularBinWidthMicroElectronVolt() / 2ULL);
   EXPECT_EQ(lower_edge, 19'000'000'000ULL);
 }
 
@@ -402,62 +401,62 @@ TEST(GGEMSEnergyDistribution, RegularSpectrumRejectsInvalidGridAndWeights) {
   constexpr std::array<double, 3U> zero_weight{0.0, 0.0, 0.0};
 
   EXPECT_THROW(static_cast<void>(Distribution::BuildRegularSpectrum(
-                   one_center, one_weight, "keV")),
+                 one_center, one_weight, "keV")),
+               GGEMSException);
+  EXPECT_THROW(
+    static_cast<void>(Distribution::BuildRegularSpectrum(
+      std::span<double const>{valid_centers}.first(2U), valid_weights, "keV")),
+    GGEMSException);
+  EXPECT_THROW(
+    static_cast<void>(Distribution::BuildRegularSpectrum(
+      valid_centers, std::span<double const>{valid_weights}.first(2U), "keV")),
+    GGEMSException);
+  EXPECT_THROW(static_cast<void>(Distribution::BuildRegularSpectrum(
+                 irregular, valid_weights, "keV")),
                GGEMSException);
   EXPECT_THROW(static_cast<void>(Distribution::BuildRegularSpectrum(
-                   std::span<double const>{valid_centers}.first(2U),
-                   valid_weights, "keV")),
+                 duplicate, valid_weights, "keV")),
                GGEMSException);
   EXPECT_THROW(static_cast<void>(Distribution::BuildRegularSpectrum(
-                   valid_centers,
-                   std::span<double const>{valid_weights}.first(2U), "keV")),
+                 descending, valid_weights, "keV")),
                GGEMSException);
   EXPECT_THROW(static_cast<void>(Distribution::BuildRegularSpectrum(
-                   irregular, valid_weights, "keV")),
+                 zero_energy, valid_weights, "keV")),
                GGEMSException);
   EXPECT_THROW(static_cast<void>(Distribution::BuildRegularSpectrum(
-                   duplicate, valid_weights, "keV")),
+                 negative_energy, valid_weights, "keV")),
                GGEMSException);
   EXPECT_THROW(static_cast<void>(Distribution::BuildRegularSpectrum(
-                   descending, valid_weights, "keV")),
+                 valid_centers, negative_weight, "keV")),
                GGEMSException);
   EXPECT_THROW(static_cast<void>(Distribution::BuildRegularSpectrum(
-                   zero_energy, valid_weights, "keV")),
-               GGEMSException);
-  EXPECT_THROW(static_cast<void>(Distribution::BuildRegularSpectrum(
-                   negative_energy, valid_weights, "keV")),
-               GGEMSException);
-  EXPECT_THROW(static_cast<void>(Distribution::BuildRegularSpectrum(
-                   valid_centers, negative_weight, "keV")),
-               GGEMSException);
-  EXPECT_THROW(static_cast<void>(Distribution::BuildRegularSpectrum(
-                   valid_centers, zero_weight, "keV")),
+                 valid_centers, zero_weight, "keV")),
                GGEMSException);
 
   constexpr std::array<double, 2U> odd_width_meV{0.010, 0.011};
   constexpr std::array<double, 2U> nonpositive_lower_edge_meV{1.0, 3.0};
   constexpr std::array<double, 2U> two_weights{1.0, 1.0};
   std::array<double, 3U> nonfinite_center{
-      20.0, 22.0, std::numeric_limits<double>::quiet_NaN()};
+    20.0, 22.0, std::numeric_limits<double>::quiet_NaN()};
   std::array<double, 3U> nonfinite_weight{
-      1.0, std::numeric_limits<double>::infinity(), 1.0};
+    1.0, std::numeric_limits<double>::infinity(), 1.0};
 
   EXPECT_THROW(static_cast<void>(Distribution::BuildRegularSpectrum(
-                   odd_width_meV, two_weights, "meV")),
+                 odd_width_meV, two_weights, "meV")),
                GGEMSException);
   EXPECT_THROW(static_cast<void>(Distribution::BuildRegularSpectrum(
-                   nonpositive_lower_edge_meV, two_weights, "meV")),
+                 nonpositive_lower_edge_meV, two_weights, "meV")),
                GGEMSException);
   EXPECT_THROW(static_cast<void>(Distribution::BuildRegularSpectrum(
-                   nonfinite_center, valid_weights, "keV")),
+                 nonfinite_center, valid_weights, "keV")),
                GGEMSException);
   EXPECT_THROW(static_cast<void>(Distribution::BuildRegularSpectrum(
-                   valid_centers, nonfinite_weight, "keV")),
+                 valid_centers, nonfinite_weight, "keV")),
                GGEMSException);
-  EXPECT_THROW(static_cast<void>(Distribution::BuildRegularSpectrum(
-                   std::array<double, 2U>{10.0, std::ldexp(1.0, 64)},
-                   two_weights, "meV")),
-               GGEMSException);
+  EXPECT_THROW(
+    static_cast<void>(Distribution::BuildRegularSpectrum(
+      std::array<double, 2U>{10.0, std::ldexp(1.0, 64)}, two_weights, "meV")),
+    GGEMSException);
 }
 
 // =============================================================================
@@ -490,12 +489,12 @@ TEST(GGEMSEnergyDistribution, InvalidSetterPreservesPreviousState) {
   expect_unchanged();
 
   EXPECT_THROW(source.SetRegularEnergySpectrum(
-                   std::array<double, 3U>{20.0, 22.0, 25.0}, weights, "keV"),
+                 std::array<double, 3U>{20.0, 22.0, 25.0}, weights, "keV"),
                GGEMSException);
   expect_unchanged();
 
   EXPECT_THROW(source.SetDiscreteEnergyLines(
-                   std::array<double, 3U>{40.0, 40.0, 120.0}, weights, "keV"),
+                 std::array<double, 3U>{40.0, 40.0, 120.0}, weights, "keV"),
                GGEMSException);
   expect_unchanged();
 
@@ -505,9 +504,8 @@ TEST(GGEMSEnergyDistribution, InvalidSetterPreservesPreviousState) {
 
   source.SetEnergyMicroElectronVolt(90'000'000'000ULL);
   EXPECT_EQ(source.GetEnergyDistribution().GetType(), DistributionType::Mono);
-  EXPECT_TRUE(source.GetEnergyDistribution()
-                  .GetEnergyValuesMicroElectronVolt()
-                  .empty());
+  EXPECT_TRUE(
+    source.GetEnergyDistribution().GetEnergyValuesMicroElectronVolt().empty());
   EXPECT_TRUE(source.GetEnergyDistribution().GetRelativeWeights().empty());
   EXPECT_EQ(source.BuildRecord().energy_micro_eV, 90'000'000'000ULL);
 }
@@ -523,9 +521,9 @@ TEST(GGEMSEnergyDistribution, SourceOwnsCopiedCallerTables) {
 
   auto const expected_line_values = CopyValues(source.GetEnergyDistribution());
   auto const expected_line_weights =
-      CopyWeights(source.GetEnergyDistribution());
+    CopyWeights(source.GetEnergyDistribution());
   auto const expected_line_tickets =
-      CopyTicketBounds(source.GetEnergyDistribution());
+    CopyTicketBounds(source.GetEnergyDistribution());
 
   line_energies.assign(2U, 999.0);
   line_weights.clear();
@@ -542,7 +540,7 @@ TEST(GGEMSEnergyDistribution, SourceOwnsCopiedCallerTables) {
   auto const expected_bin_values = CopyValues(source.GetEnergyDistribution());
   auto const expected_bin_weights = CopyWeights(source.GetEnergyDistribution());
   auto const expected_bin_tickets =
-      CopyTicketBounds(source.GetEnergyDistribution());
+    CopyTicketBounds(source.GetEnergyDistribution());
 
   bin_centers.clear();
   bin_weights.assign(3U, 0.0);
@@ -564,7 +562,7 @@ TEST(GGEMSEnergyDistribution, ParserAcceptsWhitespaceCommentsAndExplicitUnit) {
                                    "0.024 1.0\n"};
 
   Distribution const distribution =
-      Distribution::LoadRegularSpectrum(file.GetPath(), "MeV");
+    Distribution::LoadRegularSpectrum(file.GetPath(), "MeV");
 
   EXPECT_EQ(distribution.GetRegularBinWidthMicroElectronVolt(),
             2'000'000'000ULL);
@@ -590,8 +588,8 @@ TEST(GGEMSEnergyDistribution, ParserReportsFilenameAndLine) {
                                             "0.020 1.0\n"};
 
   auto const expect_line_diagnostic =
-      [](std::filesystem::path const &path,
-         std::string_view expected_line) -> void {
+    [](std::filesystem::path const &path,
+       std::string_view expected_line) -> void {
     try {
       static_cast<void>(Distribution::LoadRegularSpectrum(path, "MeV"));
       FAIL() << "Expected spectrum parser rejection.";
@@ -604,7 +602,7 @@ TEST(GGEMSEnergyDistribution, ParserReportsFilenameAndLine) {
 
   try {
     static_cast<void>(
-        Distribution::LoadRegularSpectrum(malformed.GetPath(), "MeV"));
+      Distribution::LoadRegularSpectrum(malformed.GetPath(), "MeV"));
     FAIL() << "Expected malformed spectrum rejection.";
   } catch (GGEMSException const &exception) {
     std::string const message = exception.what();
@@ -617,15 +615,15 @@ TEST(GGEMSEnergyDistribution, ParserReportsFilenameAndLine) {
   expect_line_diagnostic(nonfinite.GetPath(), "line 2");
   expect_line_diagnostic(one_valid_row.GetPath(), "line 1");
   EXPECT_THROW(static_cast<void>(
-                   Distribution::LoadRegularSpectrum(empty.GetPath(), "MeV")),
+                 Distribution::LoadRegularSpectrum(empty.GetPath(), "MeV")),
                GGEMSException);
   EXPECT_THROW(static_cast<void>(Distribution::LoadRegularSpectrum(
-                   empty.GetPath().parent_path(), "MeV")),
+                 empty.GetPath().parent_path(), "MeV")),
                GGEMSException);
   EXPECT_THROW(
-      static_cast<void>(Distribution::LoadRegularSpectrum(
-          empty.GetPath().parent_path() / "missing-spectrum.dat", "MeV")),
-      GGEMSException);
+    static_cast<void>(Distribution::LoadRegularSpectrum(
+      empty.GetPath().parent_path() / "missing-spectrum.dat", "MeV")),
+    GGEMSException);
 }
 
 // =============================================================================
@@ -633,11 +631,11 @@ TEST(GGEMSEnergyDistribution, ParserReportsFilenameAndLine) {
 
 TEST(GGEMSEnergyDistribution, Supplied120kVpSpectrumHasExpectedGrid) {
   std::filesystem::path const path =
-      std::filesystem::path{GGEMS_TEST_KERNEL_ROOT}.parent_path() /
-      "validation" / "source" / "data" / "spectrum_120kVp_2mmAl.dat";
+    std::filesystem::path{GGEMS_TEST_KERNEL_ROOT}.parent_path() / "validation" /
+    "source" / "data" / "spectrum_120kVp_2mmAl.dat";
 
   Distribution const distribution =
-      Distribution::LoadRegularSpectrum(path, "MeV");
+    Distribution::LoadRegularSpectrum(path, "MeV");
 
   EXPECT_EQ(distribution.GetTableCount(), 111U);
   EXPECT_EQ(distribution.GetRegularBinWidthMicroElectronVolt(),
@@ -667,8 +665,7 @@ TEST(GGEMSEnergyDistribution, Supplied120kVpSpectrumHasExpectedGrid) {
 
 TEST(GGEMSEnergyDistributionTest, CanonicalLinesPreserveFullIntegerPrecision) {
   constexpr std::array<std::uint64_t, 3U> energies{
-      1ULL, 9'007'199'254'740'993ULL,
-      std::numeric_limits<std::uint64_t>::max()};
+    1ULL, 9'007'199'254'740'993ULL, std::numeric_limits<std::uint64_t>::max()};
   constexpr std::array<double, 3U> weights{1.0, 2.0, 1.0};
   auto const distribution = Distribution::BuildDiscreteLines(energies, weights);
   EXPECT_EQ(CopyValues(distribution),
@@ -688,10 +685,10 @@ TEST(GGEMSEnergyDistributionTest, CanonicalLinesPreserveFullIntegerPrecision) {
 TEST(GGEMSEnergyDistributionTest, CanonicalSpectrumPreservesBoundsNearMaximum) {
   constexpr auto maximum = std::numeric_limits<std::uint64_t>::max();
   constexpr std::array<std::uint64_t, 3U> centers{
-      maximum - 7ULL, maximum - 5ULL, maximum - 3ULL};
+    maximum - 7ULL, maximum - 5ULL, maximum - 3ULL};
   constexpr std::array<double, 3U> weights{1.0, 2.0, 1.0};
   auto const distribution =
-      Distribution::BuildRegularSpectrum(centers, weights);
+    Distribution::BuildRegularSpectrum(centers, weights);
   EXPECT_EQ(CopyValues(distribution),
             (std::vector<std::uint64_t>{centers.begin(), centers.end()}));
   EXPECT_EQ(distribution.GetRegularBinWidthMicroElectronVolt(), 2ULL);
@@ -700,8 +697,8 @@ TEST(GGEMSEnergyDistributionTest, CanonicalSpectrumPreservesBoundsNearMaximum) {
   constexpr std::array<std::uint64_t, 2U> overflowing{maximum - 2ULL, maximum};
   constexpr std::array<double, 2U> two_weights{1.0, 1.0};
   EXPECT_THROW(
-      (void)Distribution::BuildRegularSpectrum(overflowing, two_weights),
-      GGEMSException);
+    (void)Distribution::BuildRegularSpectrum(overflowing, two_weights),
+    GGEMSException);
 }
 
 // =============================================================================
@@ -723,18 +720,18 @@ TEST(GGEMSEnergyDistributionTest,
                GGEMSException);
   constexpr std::array<std::uint64_t, 2U> zero_lower_edge{1ULL, 3ULL};
   EXPECT_THROW(
-      (void)Distribution::BuildRegularSpectrum(zero_lower_edge, weights),
-      GGEMSException);
+    (void)Distribution::BuildRegularSpectrum(zero_lower_edge, weights),
+    GGEMSException);
   constexpr std::array<std::uint64_t, 2U> valid{10ULL, 12ULL};
   constexpr std::array<double, 2U> negative_weight{1.0, -1.0};
   EXPECT_THROW((void)Distribution::BuildDiscreteLines(valid, negative_weight),
                GGEMSException);
   EXPECT_THROW((void)Distribution::BuildRegularSpectrum(valid, negative_weight),
                GGEMSException);
-  EXPECT_THROW((void)Distribution::BuildDiscreteLines(
-                   valid, std::span{weights}.first(1U)),
-               GGEMSException);
+  EXPECT_THROW(
+    (void)Distribution::BuildDiscreteLines(valid, std::span{weights}.first(1U)),
+    GGEMSException);
   EXPECT_THROW((void)Distribution::BuildRegularSpectrum(
-                   valid, std::span{weights}.first(1U)),
+                 valid, std::span{weights}.first(1U)),
                GGEMSException);
 }

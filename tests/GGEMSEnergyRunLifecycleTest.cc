@@ -80,14 +80,14 @@ struct EnergyState {
   auto const ticket_bounds = distribution.GetCumulativeTicketUpperBounds();
 
   return {
-      .type = distribution.GetType(),
-      .source_record_energy_micro_eV = source.BuildRecord().energy_micro_eV,
-      .mono_energy_micro_eV = distribution.GetMonoEnergyMicroElectronVolt(),
-      .regular_bin_width_micro_eV =
-          distribution.GetRegularBinWidthMicroElectronVolt(),
-      .energy_values_micro_eV = {values.begin(), values.end()},
-      .relative_weights = {weights.begin(), weights.end()},
-      .cumulative_ticket_upper = {ticket_bounds.begin(), ticket_bounds.end()},
+    .type = distribution.GetType(),
+    .source_record_energy_micro_eV = source.BuildRecord().energy_micro_eV,
+    .mono_energy_micro_eV = distribution.GetMonoEnergyMicroElectronVolt(),
+    .regular_bin_width_micro_eV =
+      distribution.GetRegularBinWidthMicroElectronVolt(),
+    .energy_values_micro_eV = {values.begin(), values.end()},
+    .relative_weights = {weights.begin(), weights.end()},
+    .cumulative_ticket_upper = {ticket_bounds.begin(), ticket_bounds.end()},
   };
 }
 
@@ -95,7 +95,7 @@ struct EnergyState {
 // =============================================================================
 
 auto ExpectEnergyState(Source const &source, EnergyState const &expected)
-    -> void {
+  -> void {
   auto const &distribution = source.GetEnergyDistribution();
   EXPECT_EQ(distribution.GetType(), expected.type);
   EXPECT_EQ(source.BuildRecord().energy_micro_eV,
@@ -105,8 +105,8 @@ auto ExpectEnergyState(Source const &source, EnergyState const &expected)
   EXPECT_EQ(distribution.GetRegularBinWidthMicroElectronVolt(),
             expected.regular_bin_width_micro_eV);
   EXPECT_TRUE(
-      std::ranges::equal(distribution.GetEnergyValuesMicroElectronVolt(),
-                         expected.energy_values_micro_eV));
+    std::ranges::equal(distribution.GetEnergyValuesMicroElectronVolt(),
+                       expected.energy_values_micro_eV));
   EXPECT_TRUE(std::ranges::equal(distribution.GetRelativeWeights(),
                                  expected.relative_weights));
   EXPECT_TRUE(std::ranges::equal(distribution.GetCumulativeTicketUpperBounds(),
@@ -117,7 +117,7 @@ auto ExpectEnergyState(Source const &source, EnergyState const &expected)
 // =============================================================================
 
 [[nodiscard]] auto MakeRandom()
-    -> std::shared_ptr<ggems::core::random::GGEMSRandom> {
+  -> std::shared_ptr<ggems::core::random::GGEMSRandom> {
   auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
   random->SetEngine("philox").SetSeed(9'876'543ULL);
   return random;
@@ -129,8 +129,8 @@ auto ExpectEnergyState(Source const &source, EnergyState const &expected)
 [[nodiscard]] auto MakeSource() -> std::shared_ptr<Source> {
   auto source = std::make_shared<Source>();
   source->SetPrimaryCount(1ULL)
-      .SetPointEmission()
-      .SetFixedAngularDistribution();
+    .SetPointEmission()
+    .SetFixedAngularDistribution();
   return source;
 }
 
@@ -172,7 +172,7 @@ auto ExpectFinalizedRejection(Function &&function) -> void {
     FAIL() << "Expected finalized source energy rejection.";
   } catch (ggems::core::GGEMSExceptionBase const &exception) {
     EXPECT_NE(std::string_view{exception.what()}.find(
-                  "after source initialization has been finalized."),
+                "after source initialization has been finalized."),
               std::string_view::npos);
   }
 }
@@ -219,14 +219,14 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
             ggems::core::sources::GGEMSSourcePopulationMode::CountDriven);
   EXPECT_EQ(source->GetPrimaryCount(), 2ULL);
   EXPECT_NO_THROW(
-      source->SetRegularEnergySpectrum(k_centers, k_bin_weights, "MeV"));
+    source->SetRegularEnergySpectrum(k_centers, k_bin_weights, "MeV"));
 
   run.SetRandom(MakeRandom());
   ASSERT_NO_THROW(run.Initialize());
 
   EnergyState const finalized = CaptureEnergyState(*source);
   ExpectFinalizedRejection(
-      [&]() -> void { source->SetEnergyMicroElectronVolt(90'000'000'000ULL); });
+    [&]() -> void { source->SetEnergyMicroElectronVolt(90'000'000'000ULL); });
   ExpectEnergyState(*source, finalized);
 }
 
@@ -258,9 +258,8 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
     ExpectEnergyState(*source, finalized);
   };
 
-  ExpectFinalizedRejection([&]() -> void {
-    source->SetEnergyMicroElectronVolt(511'000'000'000ULL);
-  });
+  ExpectFinalizedRejection(
+    [&]() -> void { source->SetEnergyMicroElectronVolt(511'000'000'000ULL); });
   expect_unchanged();
   ExpectFinalizedRejection([&]() -> void {
     source->SetDiscreteEnergyLines(k_lines, k_line_weights, "MeV");
@@ -288,7 +287,7 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
 
   Source copied{*source};
   ExpectFinalizedRejection(
-      [&]() -> void { copied.SetEnergyMicroElectronVolt(90'000'000'000ULL); });
+    [&]() -> void { copied.SetEnergyMicroElectronVolt(90'000'000'000ULL); });
 }
 
 // =============================================================================
@@ -305,14 +304,14 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
   ASSERT_NO_THROW(run.Initialize());
 
   auto radionuclide = std::make_shared<
-      ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
-      ggems::core::radioactivity::builtins::BuildF18Radionuclide());
+    ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
+    ggems::core::radioactivity::builtins::BuildF18Radionuclide());
 
   ExpectFinalizedRejection([&]() -> void {
     source->SetRadionuclide(radionuclide, ggems::units::Activity{100.0L}, 0ULL);
   });
   ExpectFinalizedRejection(
-      [&]() -> void { source->SetCountDrivenPopulation(7ULL); });
+    [&]() -> void { source->SetCountDrivenPopulation(7ULL); });
 
   EXPECT_EQ(source->GetPopulationMode(),
             ggems::core::sources::GGEMSSourcePopulationMode::CountDriven);
@@ -346,7 +345,7 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
 
   EnergyState const finalized = CaptureEnergyState(*source);
   ExpectFinalizedRejection(
-      [&]() -> void { source->SetEnergyMicroElectronVolt(90'000'000'000ULL); });
+    [&]() -> void { source->SetEnergyMicroElectronVolt(90'000'000'000ULL); });
   ExpectEnergyState(*source, finalized);
 }
 
@@ -360,9 +359,9 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
 
   auto source = MakeSource();
   source->SetPrimaryCount(2ULL)
-      .SetPositionPicoMeter(1LL, 2LL, 3LL)
-      .SetDirection(0.0, 0.0, 1.0)
-      .SetRegularEnergySpectrum(k_centers, k_weights, "MeV");
+    .SetPositionPicoMeter(1LL, 2LL, 3LL)
+    .SetDirection(0.0, 0.0, 1.0)
+    .SetRegularEnergySpectrum(k_centers, k_weights, "MeV");
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(MakeRandom());
@@ -384,8 +383,8 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
   EXPECT_EQ(GetTotalOpenCLAllocatedBytes(), allocated_bytes);
 
   source->SetPrimaryCount(3ULL)
-      .SetPositionPicoMeter(-4LL, 5LL, -6LL)
-      .SetOrientation({0.0, 1.0, 0.0}, {0.0, 0.0, 1.0});
+    .SetPositionPicoMeter(-4LL, 5LL, -6LL)
+    .SetOrientation({0.0, 1.0, 0.0}, {0.0, 0.0, 1.0});
 
   ASSERT_NO_THROW(run.Run());
   auto second = run.GetLastSourceRunSnapshot();

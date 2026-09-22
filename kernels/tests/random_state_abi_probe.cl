@@ -23,7 +23,8 @@
  * \file
  * \brief OpenCL ABI probe for GGEMS random-engine state layouts.
  *
- * Reports state sizes, member offsets, array strides, and alignment offsets for comparison with the host-side ABI.
+ * Reports state sizes, member offsets, array strides, and alignment offsets for
+ * comparison with the host-side ABI.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -102,13 +103,13 @@ __kernel void random_state_abi_probe(__global ulong *layout,
 
   layout[13] = (ulong)(sizeof(GGEMSPhiloxState));
   layout[14] =
-      (ulong)((__private uchar const *)&philox.counter_0 - philox_base);
+    (ulong)((__private uchar const *)&philox.counter_0 - philox_base);
   layout[15] =
-      (ulong)((__private uchar const *)&philox.counter_1 - philox_base);
+    (ulong)((__private uchar const *)&philox.counter_1 - philox_base);
   layout[16] =
-      (ulong)((__private uchar const *)&philox.counter_2 - philox_base);
+    (ulong)((__private uchar const *)&philox.counter_2 - philox_base);
   layout[17] =
-      (ulong)((__private uchar const *)&philox.counter_3 - philox_base);
+    (ulong)((__private uchar const *)&philox.counter_3 - philox_base);
   layout[18] = (ulong)((__private uchar const *)&philox.key_0 - philox_base);
   layout[19] = (ulong)((__private uchar const *)&philox.key_1 - philox_base);
   layout[20] = (ulong)((__global uchar const *)&philox_states[1] -

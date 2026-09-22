@@ -23,7 +23,9 @@
  * \file
  * \brief Unit tests for deterministic GGEMS random-state initialization.
  *
- * Validates state-layout sizing, stream-range checks, deterministic initialization, stream separation, and invalid storage handling for every random engine.
+ * Validates state-layout sizing, stream-range checks, deterministic
+ * initialization, stream separation, and invalid storage handling for every
+ * random engine.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -123,7 +125,7 @@ TEST(GGEMSRandomStateInitializationContractTest,
 
   random.SetEngine(GGEMSRandomEngine::JKISS);
   auto jkiss =
-      ReadState<GGEMSJKissState>(InitializeStateBytes(random, 42ULL, 1U));
+    ReadState<GGEMSJKissState>(InitializeStateBytes(random, 42ULL, 1U));
 
   EXPECT_EQ(jkiss.x, 4'052'806'268U);
   EXPECT_EQ(jkiss.y, 432'290'774U);
@@ -133,14 +135,14 @@ TEST(GGEMSRandomStateInitializationContractTest,
 
   random.SetEngine(GGEMSRandomEngine::PCG32);
   auto const pcg32 =
-      ReadState<GGEMSPCG32State>(InitializeStateBytes(random, 42ULL, 1U));
+    ReadState<GGEMSPCG32State>(InitializeStateBytes(random, 42ULL, 1U));
 
   EXPECT_EQ(pcg32.state, 0x2AFC81E9C4CF0395ULL);
   EXPECT_EQ(pcg32.increment, 0xE5E985F73D706249ULL);
 
   random.SetEngine(GGEMSRandomEngine::Philox);
   auto const philox =
-      ReadState<GGEMSPhiloxState>(InitializeStateBytes(random, 42ULL, 1U));
+    ReadState<GGEMSPhiloxState>(InitializeStateBytes(random, 42ULL, 1U));
 
   EXPECT_EQ(philox.counter_0, 0U);
   EXPECT_EQ(philox.counter_1, 0U);
@@ -210,10 +212,10 @@ TEST_P(GGEMSRandomStateInitializationTest,
 
   for (std::size_t index = 0U; index < k_state_count; ++index) {
     auto individual = InitializeStateBytes(
-        random, k_first_stream_id + static_cast<std::uint64_t>(index), 1U);
+      random, k_first_stream_id + static_cast<std::uint64_t>(index), 1U);
 
     auto batch_begin =
-        batch.begin() + static_cast<std::ptrdiff_t>(index * state_size);
+      batch.begin() + static_cast<std::ptrdiff_t>(index * state_size);
 
     EXPECT_TRUE(std::equal(individual.begin(), individual.end(), batch_begin));
   }
@@ -230,11 +232,10 @@ TEST_P(GGEMSRandomStateInitializationTest,
   EXPECT_NO_THROW((void)InitializeStateBytes(random, 0ULL, 1U));
 
   std::uint64_t first_stream_id =
-      GetParam() == GGEMSRandomEngine::JKISS
-          ? static_cast<std::uint64_t>(
-                std::numeric_limits<std::uint32_t>::max()) -
-                3ULL
-          : std::numeric_limits<std::uint64_t>::max() - 3ULL;
+    GetParam() == GGEMSRandomEngine::JKISS
+      ? static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max()) -
+          3ULL
+      : std::numeric_limits<std::uint64_t>::max() - 3ULL;
 
   EXPECT_NO_THROW((void)InitializeStateBytes(random, first_stream_id, 4U));
 }
@@ -255,7 +256,7 @@ TEST_P(GGEMSRandomStateInitializationTest,
                                         2U * random.GetStateSize()};
 
   EXPECT_THROW(random.InitializeStates(
-                   std::numeric_limits<std::uint64_t>::max(), selected_storage),
+                 std::numeric_limits<std::uint64_t>::max(), selected_storage),
                ggems::core::GGEMSExceptionBase);
 
   EXPECT_EQ(storage, before);
@@ -272,12 +273,12 @@ TEST(GGEMSRandomStateInitializationContractTest,
   auto storage = std::vector<std::byte>(random.GetStateSize(), std::byte{0x5A});
   auto before = storage;
 
-  EXPECT_THROW(random.InitializeStates(
-                   static_cast<std::uint64_t>(
-                       std::numeric_limits<std::uint32_t>::max()) +
-                       1ULL,
-                   std::span<std::byte>{storage.data(), storage.size()}),
-               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(
+    random.InitializeStates(
+      static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max()) +
+        1ULL,
+      std::span<std::byte>{storage.data(), storage.size()}),
+    ggems::core::GGEMSExceptionBase);
 
   EXPECT_EQ(storage, before);
 }
@@ -310,7 +311,7 @@ TEST(GGEMSRandomStateInitializationContractTest,
   auto before = storage;
 
   EXPECT_THROW(random.InitializeStates(
-                   0ULL, std::span<std::byte>{storage.data(), storage.size()}),
+                 0ULL, std::span<std::byte>{storage.data(), storage.size()}),
                ggems::core::GGEMSExceptionBase);
 
   EXPECT_EQ(storage, before);
@@ -329,7 +330,7 @@ TEST(GGEMSRandomStateInitializationContractTest,
   auto before = storage;
 
   EXPECT_THROW(random.InitializeStates(
-                   0ULL, std::span<std::byte>{storage.data(), storage.size()}),
+                 0ULL, std::span<std::byte>{storage.data(), storage.size()}),
                ggems::core::GGEMSExceptionBase);
 
   EXPECT_EQ(storage, before);

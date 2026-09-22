@@ -15,12 +15,12 @@
 namespace ggems::core::sources {
 
 inline constexpr std::uint64_t k_radionuclide_host_random_seed_domain_tag{
-    0x524144494F4E5543ULL};
+  0x524144494F4E5543ULL};
 
 struct GGEMSSourcePopulationPlanSource {
   std::uint32_t source_index{0U};
   GGEMSSourcePopulationMode population_mode{
-      GGEMSSourcePopulationMode::CountDriven};
+    GGEMSSourcePopulationMode::CountDriven};
   long double expected_parent_decay_count{0.0L};
   std::uint64_t emission_begin{0ULL};
   std::uint64_t emission_count{0ULL};
@@ -48,8 +48,8 @@ public:
          std::vector<GGEMSSourcePopulationPlanSource> sources,
          std::vector<GGEMSSourcePopulationPlanEmission> emissions,
          std::vector<
-             std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>>
-             radionuclide_definitions,
+           std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>>
+           radionuclide_definitions,
          std::uint64_t total_primary_count) -> GGEMSSourcePopulationPlan;
 
   ~GGEMSSourcePopulationPlan() = default;
@@ -57,26 +57,26 @@ public:
   GGEMSSourcePopulationPlan(GGEMSSourcePopulationPlan const &) = default;
   GGEMSSourcePopulationPlan(GGEMSSourcePopulationPlan &&) = default;
   auto operator=(GGEMSSourcePopulationPlan const &)
-      -> GGEMSSourcePopulationPlan & = default;
+    -> GGEMSSourcePopulationPlan & = default;
   auto operator=(GGEMSSourcePopulationPlan &&)
-      -> GGEMSSourcePopulationPlan & = default;
+    -> GGEMSSourcePopulationPlan & = default;
 
   [[nodiscard]] auto GetTimeWindow() const noexcept -> GGEMSTimeWindow {
     return time_window_;
   }
 
   [[nodiscard]] auto GetSources() const noexcept
-      -> std::span<GGEMSSourcePopulationPlanSource const> {
+    -> std::span<GGEMSSourcePopulationPlanSource const> {
     return sources_;
   }
 
   [[nodiscard]] auto GetGroups() const noexcept
-      -> std::span<GGEMSSourcePopulationPlanEmission const> {
+    -> std::span<GGEMSSourcePopulationPlanEmission const> {
     return emissions_;
   }
 
   [[nodiscard]] auto GetRadionuclideDefinitions() const noexcept -> std::span<
-      std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const> const> {
+    std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const> const> {
     return radionuclide_definitions_;
   }
 
@@ -86,19 +86,19 @@ public:
 
 private:
   GGEMSSourcePopulationPlan(
-      GGEMSTimeWindow time_window,
-      std::vector<GGEMSSourcePopulationPlanSource> sources,
-      std::vector<GGEMSSourcePopulationPlanEmission> emissions,
-      std::vector<
-          std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>>
-          radionuclide_definitions,
-      std::uint64_t total_primary_count);
+    GGEMSTimeWindow time_window,
+    std::vector<GGEMSSourcePopulationPlanSource> sources,
+    std::vector<GGEMSSourcePopulationPlanEmission> emissions,
+    std::vector<
+      std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>>
+      radionuclide_definitions,
+    std::uint64_t total_primary_count);
 
   GGEMSTimeWindow time_window_{};
   std::vector<GGEMSSourcePopulationPlanSource> sources_;
   std::vector<GGEMSSourcePopulationPlanEmission> emissions_;
   std::vector<std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>>
-      radionuclide_definitions_;
+    radionuclide_definitions_;
   std::uint64_t total_primary_count_{0ULL};
 };
 
@@ -108,21 +108,21 @@ public:
   Create(std::shared_ptr<void const> owner_identity,
          std::uint64_t base_revision, GGEMSSourcePopulationPlan plan,
          std::vector<random::GGEMSHostRandomStream> candidate_streams)
-      -> GGEMSSourcePopulationCandidate;
+    -> GGEMSSourcePopulationCandidate;
 
   ~GGEMSSourcePopulationCandidate() = default;
 
   GGEMSSourcePopulationCandidate(GGEMSSourcePopulationCandidate const &) =
-      delete;
+    delete;
   GGEMSSourcePopulationCandidate(
-      GGEMSSourcePopulationCandidate &&other) noexcept;
+    GGEMSSourcePopulationCandidate &&other) noexcept;
   auto operator=(GGEMSSourcePopulationCandidate const &)
-      -> GGEMSSourcePopulationCandidate & = delete;
+    -> GGEMSSourcePopulationCandidate & = delete;
   auto operator=(GGEMSSourcePopulationCandidate &&other) noexcept
-      -> GGEMSSourcePopulationCandidate &;
+    -> GGEMSSourcePopulationCandidate &;
 
   [[nodiscard]] auto GetPlan() const noexcept
-      -> GGEMSSourcePopulationPlan const & {
+    -> GGEMSSourcePopulationPlan const & {
     return plan_;
   }
 
@@ -135,13 +135,13 @@ public:
   auto CommitTo(std::shared_ptr<void const> const &owner_identity,
                 std::uint64_t &current_revision,
                 std::vector<random::GGEMSHostRandomStream> &persistent_streams)
-      -> void;
+    -> void;
 
 private:
   GGEMSSourcePopulationCandidate(
-      std::shared_ptr<void const> owner_identity, std::uint64_t base_revision,
-      GGEMSSourcePopulationPlan plan,
-      std::vector<random::GGEMSHostRandomStream> candidate_streams);
+    std::shared_ptr<void const> owner_identity, std::uint64_t base_revision,
+    GGEMSSourcePopulationPlan plan,
+    std::vector<random::GGEMSHostRandomStream> candidate_streams);
 
   std::shared_ptr<void const> owner_identity_;
   std::uint64_t base_revision_{0ULL};
@@ -153,19 +153,19 @@ private:
 class GGEMSSourcePopulationPlanner {
 public:
   GGEMSSourcePopulationPlanner(
-      std::span<std::shared_ptr<sources::GGEMSSource> const> sources,
-      random::GGEMSRandom const &random);
+    std::span<std::shared_ptr<sources::GGEMSSource> const> sources,
+    random::GGEMSRandom const &random);
   ~GGEMSSourcePopulationPlanner() = default;
 
   GGEMSSourcePopulationPlanner(GGEMSSourcePopulationPlanner const &) = delete;
   GGEMSSourcePopulationPlanner(GGEMSSourcePopulationPlanner &&) = delete;
   auto operator=(GGEMSSourcePopulationPlanner const &)
-      -> GGEMSSourcePopulationPlanner & = delete;
+    -> GGEMSSourcePopulationPlanner & = delete;
   auto operator=(GGEMSSourcePopulationPlanner &&)
-      -> GGEMSSourcePopulationPlanner & = delete;
+    -> GGEMSSourcePopulationPlanner & = delete;
 
   [[nodiscard]] auto BuildCandidate(GGEMSTimeWindow time_window) const
-      -> GGEMSSourcePopulationCandidate;
+    -> GGEMSSourcePopulationCandidate;
 
   auto CommitCandidate(GGEMSSourcePopulationCandidate &candidate) -> void;
 
@@ -177,9 +177,9 @@ private:
   struct StableSourceSlot {
     std::shared_ptr<GGEMSSource const> source;
     GGEMSSourcePopulationMode population_mode{
-        GGEMSSourcePopulationMode::CountDriven};
+      GGEMSSourcePopulationMode::CountDriven};
     std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>
-        radionuclide;
+      radionuclide;
     std::uint64_t first_stream_id{0ULL};
     std::uint64_t emission_count{0ULL};
   };

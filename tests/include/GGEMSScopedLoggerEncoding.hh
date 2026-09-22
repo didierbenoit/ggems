@@ -19,12 +19,12 @@
 // * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
 // *****************************************************************************
 
-
 /*!
  * \file
  * \brief Scoped logger-encoding helper for GGEMS tests.
  *
- * Provides a noncopyable RAII utility used by tests that must validate output under a specific ASCII or Unicode logger encoding.
+ * Provides a noncopyable RAII utility used by tests that must validate output
+ * under a specific ASCII or Unicode logger encoding.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -66,7 +66,7 @@ public:
   ScopedLoggerEncoding(ScopedLoggerEncoding &&) = delete;
   /*! \brief Copy assignment is disabled. */
   auto operator=(ScopedLoggerEncoding const &)
-      -> ScopedLoggerEncoding & = delete;
+    -> ScopedLoggerEncoding & = delete;
   /*! \brief Move assignment is disabled. */
   auto operator=(ScopedLoggerEncoding &&) -> ScopedLoggerEncoding & = delete;
 

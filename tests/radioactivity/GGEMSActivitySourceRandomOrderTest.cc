@@ -29,7 +29,7 @@
 namespace {
 
 using EnergyDistributionRecord =
-    ggems::core::sources::GGEMSEnergyDistributionRecord;
+  ggems::core::sources::GGEMSEnergyDistributionRecord;
 using EnergyType = ggems::core::sources::GGEMSEnergyDistributionType;
 using EmissionRecord = ggems::core::sources::GGEMSSourceEmissionRecord;
 using ParticleType = ggems::core::particles::GGEMSParticleType;
@@ -43,7 +43,7 @@ using SourceRecord = ggems::core::sources::GGEMSSourceRecord;
 // =============================================================================
 
 constexpr std::array<RandomEngine, 3U> k_engines{
-    RandomEngine::JKISS, RandomEngine::PCG32, RandomEngine::Philox};
+  RandomEngine::JKISS, RandomEngine::PCG32, RandomEngine::Philox};
 
 // =============================================================================
 // =============================================================================
@@ -73,30 +73,30 @@ TEST_F(GGEMSActivitySourceRandomOrderTest,
 
   Source source{};
   source.SetPositionPicoMeter(101LL, 202LL, 303LL)
-      .SetRectangleEmissionPicoMeter(20ULL, 10ULL)
-      .SetIsotropicAngularDistribution();
+    .SetRectangleEmissionPicoMeter(20ULL, 10ULL)
+    .SetIsotropicAngularDistribution();
   SourceRecord source_record = source.BuildRecord();
   source_record.time_start_ps = 8'000'000'000'000'000ULL;
   source_record.time_stop_ps =
-      source_record.time_start_ps + 1'000'000'000'000ULL;
+    source_record.time_start_ps + 1'000'000'000'000ULL;
 
   PopulationRecord const population{
-      .population_mode = ggems::core::sources::ToKernelSourcePopulationMode(
-          ggems::core::sources::GGEMSSourcePopulationMode::ActivityDriven),
-      .first_emission_index = 0U,
-      .emission_count = 1U,
-      .scaled_decay = 0.125F};
+    .population_mode = ggems::core::sources::ToKernelSourcePopulationMode(
+      ggems::core::sources::GGEMSSourcePopulationMode::ActivityDriven),
+    .first_emission_index = 0U,
+    .emission_count = 1U,
+    .scaled_decay = 0.125F};
   EmissionRecord const emission{
-      .particle_type =
-          ggems::core::particles::ToKernelParticleType(ParticleType::Gamma),
-      .energy_distribution_record_index = 0U,
-      .mono_energy_micro_eV = 0ULL};
+    .particle_type =
+      ggems::core::particles::ToKernelParticleType(ParticleType::Gamma),
+    .energy_distribution_record_index = 0U,
+    .mono_energy_micro_eV = 0ULL};
   EnergyDistributionRecord const energy_distribution{
-      .regular_bin_width_micro_eV = 0ULL,
-      .table_offset = 0ULL,
-      .distribution_type = ggems::core::sources::ToKernelEnergyDistributionType(
-          EnergyType::DiscreteLines),
-      .table_count = 2U};
+    .regular_bin_width_micro_eV = 0ULL,
+    .table_offset = 0ULL,
+    .distribution_type = ggems::core::sources::ToKernelEnergyDistributionType(
+      EnergyType::DiscreteLines),
+    .table_count = 2U};
   constexpr std::array<std::uint64_t, 2U> k_energy_values{40'000ULL, 80'000ULL};
   constexpr std::array<std::uint64_t, 2U> k_ticket_upper{2'147'483'648ULL,
                                                          4'294'967'296ULL};
@@ -117,29 +117,29 @@ TEST_F(GGEMSActivitySourceRandomOrderTest,
     std::array<std::uint32_t, 2U> next_words{};
 
     auto sample_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{sample_state.size()});
+      context.CreateSVMBuffer(ggems::units::Bytes{sample_state.size()});
     auto reference_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{reference_state.size()});
+      context.CreateSVMBuffer(ggems::units::Bytes{reference_state.size()});
     auto source_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(source_record)});
+      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(source_record)});
     auto population_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(population)});
+      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(population)});
     auto emission_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(emission)});
-    auto distribution_buffer = context.CreateSVMBuffer(
-        ggems::units::Bytes{sizeof(energy_distribution)});
+      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(emission)});
+    auto distribution_buffer =
+      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(energy_distribution)});
     auto energy_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(k_energy_values)});
+      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(k_energy_values)});
     auto ticket_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(k_ticket_upper)});
+      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(k_ticket_upper)});
     auto position_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(sampled_positions)});
-    auto direction_buffer = context.CreateSVMBuffer(
-        ggems::units::Bytes{sizeof(sampled_directions)});
+      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(sampled_positions)});
+    auto direction_buffer =
+      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(sampled_directions)});
     auto value_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(sampled_values)});
+      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(sampled_values)});
     auto next_word_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{sizeof(next_words)});
+      context.CreateSVMBuffer(ggems::units::Bytes{sizeof(next_words)});
 
     ggems::ocl::WriteSVMFromHost(sample_buffer,
                                  std::span<std::byte const>{sample_state});
@@ -160,10 +160,10 @@ TEST_F(GGEMSActivitySourceRandomOrderTest,
     std::string const options = std::format("-I{} {}", root.generic_string(),
                                             random.GetKernelBuildDefinition());
     auto const &program = opencl.GetOrCreateProgram(
-        context, root / "tests", "activity_source_random_order_probe", options);
+      context, root / "tests", "activity_source_random_order_probe", options);
     ggems::ocl::GGEMSOpenCLKernel kernel{
-        context, program.CreateKernel("activity_source_random_order_probe"),
-        "activity_source_random_order_probe"};
+      context, program.CreateKernel("activity_source_random_order_probe"),
+      "activity_source_random_order_probe"};
 
     kernel.SetArgSVMPointer(0U, sample_buffer.GetData());
     kernel.SetArgSVMPointer(1U, reference_buffer.GetData());

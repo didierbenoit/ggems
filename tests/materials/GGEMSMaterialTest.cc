@@ -41,9 +41,9 @@ auto ExpectRelativeNear(long double actual, long double expected) -> void {
 // =============================================================================
 
 auto ConstructMaterial(
-    std::string name, units::Density density,
-    std::vector<materials::GGEMSMaterialComponent> composition)
-    -> materials::GGEMSMaterial {
+  std::string name, units::Density density,
+  std::vector<materials::GGEMSMaterialComponent> composition)
+  -> materials::GGEMSMaterial {
   return materials::GGEMSMaterial{std::move(name), density,
                                   std::move(composition)};
 }
@@ -55,7 +55,7 @@ auto ConstructMaterial(
 
 TEST(GGEMSMaterialTest, PureElementComputesNumberDensities) {
   materials::GGEMSMaterial const material{
-      "carbon", 2.0_g_cm3, {{.atomic_number = 6U, .mass_fraction = 1.0L}}};
+    "carbon", 2.0_g_cm3, {{.atomic_number = 6U, .mass_fraction = 1.0L}}};
 
   EXPECT_EQ(material.GetName(), "carbon");
   EXPECT_EQ(material.GetDensity(), 2.0_g_cm3);
@@ -92,10 +92,10 @@ TEST(GGEMSMaterialTest, PureElementComputesNumberDensities) {
 
 TEST(GGEMSMaterialTest, BinaryMixtureComputesNumberDensities) {
   materials::GGEMSMaterial const material{
-      "hydrogen-oxygen mixture",
-      1.25_g_cm3,
-      {{.atomic_number = 1U, .mass_fraction = 0.25L},
-       {.atomic_number = 8U, .mass_fraction = 0.75L}}};
+    "hydrogen-oxygen mixture",
+    1.25_g_cm3,
+    {{.atomic_number = 1U, .mass_fraction = 0.25L},
+     {.atomic_number = 8U, .mass_fraction = 0.75L}}};
 
   auto const constituents = material.GetConstituents();
   ASSERT_EQ(constituents.size(), 2U);
@@ -140,10 +140,10 @@ TEST(GGEMSMaterialTest, BinaryMixtureComputesNumberDensities) {
 
 TEST(GGEMSMaterialTest, StoresConstituentsInAtomicNumberOrder) {
   materials::GGEMSMaterial const material{
-      "reverse input",
-      1.0_g_cm3,
-      {{.atomic_number = 8U, .mass_fraction = 0.75L},
-       {.atomic_number = 1U, .mass_fraction = 0.25L}}};
+    "reverse input",
+    1.0_g_cm3,
+    {{.atomic_number = 8U, .mass_fraction = 0.75L},
+     {.atomic_number = 1U, .mass_fraction = 0.25L}}};
 
   auto const constituents = material.GetConstituents();
   ASSERT_EQ(constituents.size(), 2U);
@@ -156,9 +156,9 @@ TEST(GGEMSMaterialTest, StoresConstituentsInAtomicNumberOrder) {
 
 TEST(GGEMSMaterialTest, NormalizesNearUnitMassFractionSum) {
   materials::GGEMSMaterial const material{
-      "near-unit carbon",
-      1.0_g_cm3,
-      {{.atomic_number = 6U, .mass_fraction = 1.0L - 5.0e-6L}}};
+    "near-unit carbon",
+    1.0_g_cm3,
+    {{.atomic_number = 6U, .mass_fraction = 1.0L - 5.0e-6L}}};
 
   auto const constituents = material.GetConstituents();
   ASSERT_EQ(constituents.size(), 1U);
@@ -171,74 +171,74 @@ TEST(GGEMSMaterialTest, NormalizesNearUnitMassFractionSum) {
 TEST(GGEMSMaterialTest, RejectsInvalidInput) {
   auto const valid_density = 1.0_g_cm3;
   std::vector<materials::GGEMSMaterialComponent> const valid_composition{
-      {.atomic_number = 6U, .mass_fraction = 1.0L}};
+    {.atomic_number = 6U, .mass_fraction = 1.0L}};
 
+  EXPECT_THROW(
+    static_cast<void>(ConstructMaterial("", valid_density, valid_composition)),
+    ggems::core::GGEMSRecoverable);
+  EXPECT_THROW(
+    static_cast<void>(ConstructMaterial(
+      "zero density", units::Density{.value = 0.0L}, valid_composition)),
+    ggems::core::GGEMSRecoverable);
+  EXPECT_THROW(
+    static_cast<void>(ConstructMaterial(
+      "negative density", units::Density{.value = -1.0L}, valid_composition)),
+    ggems::core::GGEMSRecoverable);
+  EXPECT_THROW(
+    static_cast<void>(ConstructMaterial(
+      "infinite density",
+      units::Density{.value = std::numeric_limits<long double>::infinity()},
+      valid_composition)),
+    ggems::core::GGEMSRecoverable);
+  EXPECT_THROW(
+    static_cast<void>(ConstructMaterial(
+      "NaN density",
+      units::Density{.value = std::numeric_limits<long double>::quiet_NaN()},
+      valid_composition)),
+    ggems::core::GGEMSRecoverable);
   EXPECT_THROW(static_cast<void>(
-                   ConstructMaterial("", valid_density, valid_composition)),
+                 ConstructMaterial("empty composition", valid_density, {})),
+               ggems::core::GGEMSRecoverable);
+  EXPECT_THROW(static_cast<void>(ConstructMaterial(
+                 "invalid Z", valid_density,
+                 {{.atomic_number = 0U, .mass_fraction = 1.0L}})),
+               ggems::core::GGEMSRecoverable);
+  EXPECT_THROW(static_cast<void>(ConstructMaterial(
+                 "Z above uranium", valid_density,
+                 {{.atomic_number = 93U, .mass_fraction = 1.0L}})),
+               ggems::core::GGEMSRecoverable);
+  EXPECT_THROW(static_cast<void>(ConstructMaterial(
+                 "zero fraction", valid_density,
+                 {{.atomic_number = 1U, .mass_fraction = 0.0L},
+                  {.atomic_number = 8U, .mass_fraction = 1.0L}})),
+               ggems::core::GGEMSRecoverable);
+  EXPECT_THROW(static_cast<void>(ConstructMaterial(
+                 "negative fraction", valid_density,
+                 {{.atomic_number = 1U, .mass_fraction = -0.25L},
+                  {.atomic_number = 8U, .mass_fraction = 1.25L}})),
                ggems::core::GGEMSRecoverable);
   EXPECT_THROW(
-      static_cast<void>(ConstructMaterial(
-          "zero density", units::Density{.value = 0.0L}, valid_composition)),
-      ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(static_cast<void>(ConstructMaterial(
-                   "negative density", units::Density{.value = -1.0L},
-                   valid_composition)),
-               ggems::core::GGEMSRecoverable);
+    static_cast<void>(ConstructMaterial(
+      "infinite fraction", valid_density,
+      {{.atomic_number = 1U,
+        .mass_fraction = std::numeric_limits<long double>::infinity()},
+       {.atomic_number = 8U, .mass_fraction = 1.0L}})),
+    ggems::core::GGEMSRecoverable);
   EXPECT_THROW(
-      static_cast<void>(ConstructMaterial(
-          "infinite density",
-          units::Density{.value = std::numeric_limits<long double>::infinity()},
-          valid_composition)),
-      ggems::core::GGEMSRecoverable);
+    static_cast<void>(ConstructMaterial(
+      "NaN fraction", valid_density,
+      {{.atomic_number = 1U,
+        .mass_fraction = std::numeric_limits<long double>::quiet_NaN()},
+       {.atomic_number = 8U, .mass_fraction = 1.0L}})),
+    ggems::core::GGEMSRecoverable);
   EXPECT_THROW(static_cast<void>(ConstructMaterial(
-                   "NaN density",
-                   units::Density{
-                       .value = std::numeric_limits<long double>::quiet_NaN()},
-                   valid_composition)),
-               ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(static_cast<void>(
-                   ConstructMaterial("empty composition", valid_density, {})),
+                 "duplicate Z", valid_density,
+                 {{.atomic_number = 6U, .mass_fraction = 0.5L},
+                  {.atomic_number = 6U, .mass_fraction = 0.5L}})),
                ggems::core::GGEMSRecoverable);
   EXPECT_THROW(static_cast<void>(ConstructMaterial(
-                   "invalid Z", valid_density,
-                   {{.atomic_number = 0U, .mass_fraction = 1.0L}})),
-               ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(static_cast<void>(ConstructMaterial(
-                   "Z above uranium", valid_density,
-                   {{.atomic_number = 93U, .mass_fraction = 1.0L}})),
-               ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(static_cast<void>(ConstructMaterial(
-                   "zero fraction", valid_density,
-                   {{.atomic_number = 1U, .mass_fraction = 0.0L},
-                    {.atomic_number = 8U, .mass_fraction = 1.0L}})),
-               ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(static_cast<void>(ConstructMaterial(
-                   "negative fraction", valid_density,
-                   {{.atomic_number = 1U, .mass_fraction = -0.25L},
-                    {.atomic_number = 8U, .mass_fraction = 1.25L}})),
-               ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(
-      static_cast<void>(ConstructMaterial(
-          "infinite fraction", valid_density,
-          {{.atomic_number = 1U,
-            .mass_fraction = std::numeric_limits<long double>::infinity()},
-           {.atomic_number = 8U, .mass_fraction = 1.0L}})),
-      ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(
-      static_cast<void>(ConstructMaterial(
-          "NaN fraction", valid_density,
-          {{.atomic_number = 1U,
-            .mass_fraction = std::numeric_limits<long double>::quiet_NaN()},
-           {.atomic_number = 8U, .mass_fraction = 1.0L}})),
-      ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(static_cast<void>(ConstructMaterial(
-                   "duplicate Z", valid_density,
-                   {{.atomic_number = 6U, .mass_fraction = 0.5L},
-                    {.atomic_number = 6U, .mass_fraction = 0.5L}})),
-               ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(static_cast<void>(ConstructMaterial(
-                   "bad fraction sum", valid_density,
-                   {{.atomic_number = 6U, .mass_fraction = 0.9L}})),
+                 "bad fraction sum", valid_density,
+                 {{.atomic_number = 6U, .mass_fraction = 0.9L}})),
                ggems::core::GGEMSRecoverable);
 }
 
@@ -247,7 +247,7 @@ TEST(GGEMSMaterialTest, RejectsInvalidInput) {
 
 TEST(GGEMSMaterialTest, SupportsVacuum) {
   materials::GGEMSMaterial const material{
-      "Vacuum", units::Density{.value = 0.0L}, {}};
+    "Vacuum", units::Density{.value = 0.0L}, {}};
 
   EXPECT_EQ(material.GetName(), "Vacuum");
   EXPECT_TRUE(material.GetConstituents().empty());
@@ -261,16 +261,16 @@ TEST(GGEMSMaterialTest, SupportsVacuum) {
 
 TEST(GGEMSMaterialTest, ResolvesNaturalHydrogenAndOxygen) {
   materials::GGEMSMaterial const hydrogen{
-      "hydrogen", 1.0_g_cm3, {{.atomic_number = 1U, .mass_fraction = 1.0L}}};
+    "hydrogen", 1.0_g_cm3, {{.atomic_number = 1U, .mass_fraction = 1.0L}}};
   materials::GGEMSMaterial const oxygen{
-      "oxygen", 1.0_g_cm3, {{.atomic_number = 8U, .mass_fraction = 1.0L}}};
+    "oxygen", 1.0_g_cm3, {{.atomic_number = 8U, .mass_fraction = 1.0L}}};
 
   ExpectRelativeNear(hydrogen.GetTotalAtomDensityPerCubicCentimeter(),
                      5.97469715499474725345795655484199765e+23L);
   ASSERT_EQ(hydrogen.GetIsotopeConstituents().size(), 2U);
   ExpectRelativeNear(
-      hydrogen.GetIsotopeConstituents()[1].number_density_per_cubic_centimeter,
-      6.87090172824395934147665003806829730e+19L);
+    hydrogen.GetIsotopeConstituents()[1].number_density_per_cubic_centimeter,
+    6.87090172824395934147665003806829730e+19L);
 
   ExpectRelativeNear(oxygen.GetTotalAtomDensityPerCubicCentimeter(),
                      3.76397796185559377067558729950724360e+22L);
@@ -278,8 +278,8 @@ TEST(GGEMSMaterialTest, ResolvesNaturalHydrogenAndOxygen) {
                      3.01118236948447501654046983960579488e+23L);
   ASSERT_EQ(oxygen.GetIsotopeConstituents().size(), 3U);
   ExpectRelativeNear(
-      oxygen.GetIsotopeConstituents()[2].number_density_per_cubic_centimeter,
-      7.71615482180396722988495396398984939e+19L);
+    oxygen.GetIsotopeConstituents()[2].number_density_per_cubic_centimeter,
+    7.71615482180396722988495396398984939e+19L);
 }
 
 // =============================================================================
@@ -287,9 +287,7 @@ TEST(GGEMSMaterialTest, ResolvesNaturalHydrogenAndOxygen) {
 
 TEST(GGEMSMaterialTest, UsesReferenceIsotopeOnlyWithoutNaturalProfile) {
   materials::GGEMSMaterial const technetium{
-      "technetium",
-      11.5_g_cm3,
-      {{.atomic_number = 43U, .mass_fraction = 1.0L}}};
+    "technetium", 11.5_g_cm3, {{.atomic_number = 43U, .mass_fraction = 1.0L}}};
 
   ASSERT_EQ(technetium.GetConstituents().size(), 1U);
   EXPECT_EQ(technetium.GetConstituents().front().isotope_profile,
@@ -308,44 +306,44 @@ TEST(GGEMSMaterialTest, UsesReferenceIsotopeOnlyWithoutNaturalProfile) {
 
 TEST(GGEMSMaterialTest, DistinguishesNaturalAndEnrichedBoron) {
   materials::GGEMSMaterial const natural{
-      "natural boron",
-      2.34_g_cm3,
-      {{.atomic_number = 5U, .mass_fraction = 1.0L}}};
+    "natural boron",
+    2.34_g_cm3,
+    {{.atomic_number = 5U, .mass_fraction = 1.0L}}};
 
   auto const enriched =
-      [](materials::GGEMSFractionBasis basis) -> materials::GGEMSMaterial {
+    [](materials::GGEMSFractionBasis basis) -> materials::GGEMSMaterial {
     return materials::GGEMSMaterial::FromIsotopicComposition(
-        "enriched boron", 2.34_g_cm3,
+      "enriched boron", 2.34_g_cm3,
+      {
         {
-            {
-                .mass_fraction = 1.0L,
-                .isotopic_composition =
-                    materials::GGEMSIsotopicComposition{
-                        basis,
-                        {
-                            {.isotope = {5U, 10U, 0U}, .fraction = 0.9L},
-                            {.isotope = {5U, 11U, 0U}, .fraction = 0.1L},
-                        }},
-            },
-        });
+          .mass_fraction = 1.0L,
+          .isotopic_composition =
+            materials::GGEMSIsotopicComposition{
+              basis,
+              {
+                {.isotope = {5U, 10U, 0U}, .fraction = 0.9L},
+                {.isotope = {5U, 11U, 0U}, .fraction = 0.1L},
+              }},
+        },
+      });
   };
 
   auto const atom = enriched(materials::GGEMSFractionBasis::AtomFraction);
   auto const mass = enriched(materials::GGEMSFractionBasis::MassFraction);
 
   ExpectRelativeNear(
-      natural.GetIsotopeConstituents()[0].number_density_per_cubic_centimeter,
-      2.59389772755087224628642281888082702e+22L);
+    natural.GetIsotopeConstituents()[0].number_density_per_cubic_centimeter,
+    2.59389772755087224628642281888082702e+22L);
   ExpectRelativeNear(natural.GetTotalAtomDensityPerCubicCentimeter(),
                      1.30346619474918203330976021049287790e+23L);
 
   // Audit-11 M01 reference through the production isotope mass authority.
   ExpectRelativeNear(
-      atom.GetIsotopeConstituents()[0].number_density_per_cubic_centimeter,
-      1.25414447528572653701066421125976271e+23L);
+    atom.GetIsotopeConstituents()[0].number_density_per_cubic_centimeter,
+    1.25414447528572653701066421125976271e+23L);
   ExpectRelativeNear(
-      mass.GetIsotopeConstituents()[0].number_density_per_cubic_centimeter,
-      1.26662422843940630766304315092920560e+23L);
+    mass.GetIsotopeConstituents()[0].number_density_per_cubic_centimeter,
+    1.26662422843940630766304315092920560e+23L);
   ExpectRelativeNear(mass.GetTotalAtomDensityPerCubicCentimeter(),
                      1.39462330877304341567647924449795543e+23L);
 
@@ -359,29 +357,29 @@ TEST(GGEMSMaterialTest, DistinguishesNaturalAndEnrichedBoron) {
 
 TEST(GGEMSMaterialTest, BuildsExplicitIsotopicMaterial) {
   auto const material = materials::GGEMSMaterial::FromIsotopicComposition(
-      "enriched boron carbon oxygen", 1.37_g_cm3,
+    "enriched boron carbon oxygen", 1.37_g_cm3,
+    {
       {
-          {
-              .mass_fraction = 0.65L,
-              .isotopic_composition = materials::ResolveIsotopeProfile(
-                  materials::GGEMSIsotopeProfile::Nist41Natural, 8U),
-          },
-          {
-              .mass_fraction = 0.25L,
-              .isotopic_composition =
-                  materials::GGEMSIsotopicComposition{
-                      materials::GGEMSFractionBasis::AtomFraction,
-                      {
-                          {.isotope = {5U, 11U, 0U}, .fraction = 0.05L},
-                          {.isotope = {5U, 10U, 0U}, .fraction = 0.95L},
-                      }},
-          },
-          {
-              .mass_fraction = 0.10L,
-              .isotopic_composition = materials::ResolveIsotopeProfile(
-                  materials::GGEMSIsotopeProfile::Nist41Natural, 6U),
-          },
-      });
+        .mass_fraction = 0.65L,
+        .isotopic_composition = materials::ResolveIsotopeProfile(
+          materials::GGEMSIsotopeProfile::Nist41Natural, 8U),
+      },
+      {
+        .mass_fraction = 0.25L,
+        .isotopic_composition =
+          materials::GGEMSIsotopicComposition{
+            materials::GGEMSFractionBasis::AtomFraction,
+            {
+              {.isotope = {5U, 11U, 0U}, .fraction = 0.05L},
+              {.isotope = {5U, 10U, 0U}, .fraction = 0.95L},
+            }},
+      },
+      {
+        .mass_fraction = 0.10L,
+        .isotopic_composition = materials::ResolveIsotopeProfile(
+          materials::GGEMSIsotopeProfile::Nist41Natural, 6U),
+      },
+    });
 
   auto const constituents = material.GetConstituents();
   ASSERT_EQ(constituents.size(), 3U);
@@ -418,23 +416,23 @@ TEST(GGEMSMaterialTest, BuildsExplicitIsotopicMaterial) {
 
 TEST(GGEMSMaterialTest, ElementalInputOrderDoesNotChangeResult) {
   materials::GGEMSMaterial const forward{
-      "forward",
-      1.03_g_cm3,
-      {
-          {.atomic_number = 1U, .mass_fraction = 0.107L},
-          {.atomic_number = 6U, .mass_fraction = 0.145L},
-          {.atomic_number = 8U, .mass_fraction = 0.712L},
-          {.atomic_number = 20U, .mass_fraction = 0.036L},
-      }};
+    "forward",
+    1.03_g_cm3,
+    {
+      {.atomic_number = 1U, .mass_fraction = 0.107L},
+      {.atomic_number = 6U, .mass_fraction = 0.145L},
+      {.atomic_number = 8U, .mass_fraction = 0.712L},
+      {.atomic_number = 20U, .mass_fraction = 0.036L},
+    }};
   materials::GGEMSMaterial const reversed{
-      "reversed",
-      1.03_g_cm3,
-      {
-          {.atomic_number = 20U, .mass_fraction = 0.036L},
-          {.atomic_number = 8U, .mass_fraction = 0.712L},
-          {.atomic_number = 1U, .mass_fraction = 0.107L},
-          {.atomic_number = 6U, .mass_fraction = 0.145L},
-      }};
+    "reversed",
+    1.03_g_cm3,
+    {
+      {.atomic_number = 20U, .mass_fraction = 0.036L},
+      {.atomic_number = 8U, .mass_fraction = 0.712L},
+      {.atomic_number = 1U, .mass_fraction = 0.107L},
+      {.atomic_number = 6U, .mass_fraction = 0.145L},
+    }};
 
   auto const forward_isotopes = forward.GetIsotopeConstituents();
   auto const reversed_isotopes = reversed.GetIsotopeConstituents();
@@ -456,34 +454,33 @@ TEST(GGEMSMaterialTest, ElementalInputOrderDoesNotChangeResult) {
 
 TEST(GGEMSMaterialTest, IsotopicAuthoringHandlesVacuumAndInvalidInput) {
   auto const vacuum = materials::GGEMSMaterial::FromIsotopicComposition(
-      "isotopic vacuum", units::Density{.value = 0.0L}, {});
+    "isotopic vacuum", units::Density{.value = 0.0L}, {});
   EXPECT_TRUE(vacuum.GetConstituents().empty());
   EXPECT_TRUE(vacuum.GetIsotopeConstituents().empty());
   EXPECT_EQ(vacuum.GetTotalAtomDensityPerCubicCentimeter(), 0.0L);
 
   auto const boron_share = []() -> materials::GGEMSElementalShare {
     return {
-        .mass_fraction = 1.0L,
-        .isotopic_composition = materials::ResolveIsotopeProfile(
-            materials::GGEMSIsotopeProfile::Nist41Natural, 5U),
+      .mass_fraction = 1.0L,
+      .isotopic_composition = materials::ResolveIsotopeProfile(
+        materials::GGEMSIsotopeProfile::Nist41Natural, 5U),
     };
   };
 
   EXPECT_THROW(
-      static_cast<void>(materials::GGEMSMaterial::FromIsotopicComposition(
-          "zero density matter", units::Density{.value = 0.0L},
-          {boron_share()})),
-      ggems::core::GGEMSRecoverable);
+    static_cast<void>(materials::GGEMSMaterial::FromIsotopicComposition(
+      "zero density matter", units::Density{.value = 0.0L}, {boron_share()})),
+    ggems::core::GGEMSRecoverable);
   EXPECT_THROW(
-      static_cast<void>(materials::GGEMSMaterial::FromIsotopicComposition(
-          "", 2.34_g_cm3, {boron_share()})),
-      ggems::core::GGEMSRecoverable);
+    static_cast<void>(materials::GGEMSMaterial::FromIsotopicComposition(
+      "", 2.34_g_cm3, {boron_share()})),
+    ggems::core::GGEMSRecoverable);
   EXPECT_THROW(
-      static_cast<void>(materials::GGEMSMaterial::FromIsotopicComposition(
-          "negative density", units::Density{.value = -1.0L}, {boron_share()})),
-      ggems::core::GGEMSRecoverable);
+    static_cast<void>(materials::GGEMSMaterial::FromIsotopicComposition(
+      "negative density", units::Density{.value = -1.0L}, {boron_share()})),
+    ggems::core::GGEMSRecoverable);
   EXPECT_THROW(
-      static_cast<void>(materials::GGEMSMaterial::FromIsotopicComposition(
-          "empty matter", 2.34_g_cm3, {})),
-      ggems::core::GGEMSRecoverable);
+    static_cast<void>(materials::GGEMSMaterial::FromIsotopicComposition(
+      "empty matter", 2.34_g_cm3, {})),
+    ggems::core::GGEMSRecoverable);
 }

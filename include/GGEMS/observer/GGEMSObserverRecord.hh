@@ -53,11 +53,11 @@ struct GGEMSObserverRecord {
   std::int64_t position_y_pm{0LL};
   std::int64_t position_z_pm{0LL};
   std::uint32_t record_kind{
-      ToKernelObserverRecordKind(GGEMSObserverRecordKind::Unknown)};
+    ToKernelObserverRecordKind(GGEMSObserverRecordKind::Unknown)};
   std::uint32_t particle_type{
-      particles::ToKernelParticleType(particles::GGEMSParticleType::Unknown)};
+    particles::ToKernelParticleType(particles::GGEMSParticleType::Unknown)};
   std::uint32_t status{particles::ToKernelParticleStatus(
-      particles::GGEMSParticleStatus::Inactive)};
+    particles::GGEMSParticleStatus::Inactive)};
   std::uint32_t generation{0U};
   float direction_x{0.0F};
   float direction_y{0.0F};

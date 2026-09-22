@@ -25,15 +25,15 @@ __kernel void random_uniform24_vector4_stream(__global GGEMSRandomState *states,
     for (uint lane_index = 0U; lane_index < lanes_used; ++lane_index) {
       if (layout == GGEMS_VALIDATION_LAYOUT_WORKER_MAJOR) {
         ulong const output_index =
-            ((ulong)worker_index * (ulong)samples_per_worker) +
-            (ulong)first_sample_index + (ulong)lane_index;
+          ((ulong)worker_index * (ulong)samples_per_worker) +
+          (ulong)first_sample_index + (ulong)lane_index;
 
         values[output_index] = lane_values[lane_index];
       } else {
         ulong const sample_index =
-            (ulong)first_sample_index + (ulong)lane_index;
+          (ulong)first_sample_index + (ulong)lane_index;
         ulong const output_index =
-            (sample_index * (ulong)worker_count) + (ulong)worker_index;
+          (sample_index * (ulong)worker_count) + (ulong)worker_index;
 
         values[output_index] = lane_values[lane_index];
       }

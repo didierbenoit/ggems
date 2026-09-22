@@ -51,10 +51,13 @@ using units::operator""_B;
  * implementation while the native device capability remains unavailable.
  */
 struct SVMSupport {
-  bool coarse_grain_buffer{false}; /*!< Whether coarse-grain buffer SVM is supported. */
-  bool fine_grain_buffer{false};   /*!< Whether fine-grain buffer SVM is supported. */
-  bool fine_grain_system{false};   /*!< Whether fine-grain system SVM is supported. */
-  bool atomics{false};             /*!< Whether SVM atomic operations are supported. */
+  bool coarse_grain_buffer{
+    false}; /*!< Whether coarse-grain buffer SVM is supported. */
+  bool fine_grain_buffer{
+    false}; /*!< Whether fine-grain buffer SVM is supported. */
+  bool fine_grain_system{
+    false};            /*!< Whether fine-grain system SVM is supported. */
+  bool atomics{false}; /*!< Whether SVM atomic operations are supported. */
 
   /*!
    * \brief Returns the default supported SVM memory kind.
@@ -121,10 +124,10 @@ struct SVMSupport {
  * contexts, or other processes.
  */
 struct VRAMUsage {
-  units::Bytes total{0_B};         /*!< Total device global memory. */
-  units::Bytes allocated{0_B};     /*!< Allocated GGEMS SVM memory. */
-  units::Bytes available{0_B};     /*!< Remaining tracked device-memory budget. */
-  units::Bytes peak{0_B};          /*!< Peak GGEMS SVM allocation. */
+  units::Bytes total{0_B};     /*!< Total device global memory. */
+  units::Bytes allocated{0_B}; /*!< Allocated GGEMS SVM memory. */
+  units::Bytes available{0_B}; /*!< Remaining tracked device-memory budget. */
+  units::Bytes peak{0_B};      /*!< Peak GGEMS SVM allocation. */
   std::size_t allocation_count{0}; /*!< Current SVM allocation count. */
 
   /*!
@@ -205,7 +208,7 @@ public:
    * \return Native OpenCL command queue.
    */
   [[nodiscard]] auto GetCommandQueueNative() const noexcept
-      -> cl::CommandQueue const & {
+    -> cl::CommandQueue const & {
     return command_queue_;
   }
 
@@ -317,7 +320,7 @@ public:
   [[nodiscard]] auto CreateSVMBuffer(units::Bytes size,
                                      SVMMemoryKind kind = SVMMemoryKind::Auto,
                                      units::Bytes alignment = 0_B)
-      -> GGEMSOpenCLSVMBuffer;
+    -> GGEMSOpenCLSVMBuffer;
 
   /*!
    * \brief Maps SVM memory for host access and waits for the blocking map to
@@ -329,7 +332,7 @@ public:
    */
   auto EnqueueSVMMap(void *pointer, units::Bytes size,
                      cl_map_flags flags = CL_MAP_READ | CL_MAP_WRITE) const
-      -> void;
+    -> void;
 
   /*!
    * \brief Unmaps SVM memory and waits for the unmap event to complete.
@@ -365,7 +368,7 @@ public:
    * \return OpenCL context properties.
    */
   [[nodiscard]] auto GetProperties() const
-      -> std::vector<cl_context_properties>;
+    -> std::vector<cl_context_properties>;
 
   /*!
    * \brief Prints native context information.
@@ -411,7 +414,7 @@ public:
    * \return Command-queue property array.
    */
   [[nodiscard]] auto GetQueuePropertiesArray() const
-      -> std::vector<cl_queue_properties>;
+    -> std::vector<cl_queue_properties>;
 
   /*!
    * \brief Returns the OpenCL device-queue size.

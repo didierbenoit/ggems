@@ -28,27 +28,27 @@ constexpr std::uint32_t k_worker_count{256U};
 constexpr std::uint32_t k_total_primary_count{4'096U};
 
 constexpr std::uint32_t k_source_record_kind =
-    ggems::core::observer::ToKernelObserverRecordKind(
-        ggems::core::observer::GGEMSObserverRecordKind::Source);
+  ggems::core::observer::ToKernelObserverRecordKind(
+    ggems::core::observer::GGEMSObserverRecordKind::Source);
 
 constexpr std::uint32_t k_step_record_kind =
-    ggems::core::observer::ToKernelObserverRecordKind(
-        ggems::core::observer::GGEMSObserverRecordKind::Step);
+  ggems::core::observer::ToKernelObserverRecordKind(
+    ggems::core::observer::GGEMSObserverRecordKind::Step);
 
 constexpr std::uint32_t k_secondary_step_record_kind =
-    ggems::core::observer::ToKernelObserverRecordKind(
-        ggems::core::observer::GGEMSObserverRecordKind::SecondaryStep);
+  ggems::core::observer::ToKernelObserverRecordKind(
+    ggems::core::observer::GGEMSObserverRecordKind::SecondaryStep);
 
 constexpr std::uint32_t k_terminal_record_kind =
-    ggems::core::observer::ToKernelObserverRecordKind(
-        ggems::core::observer::GGEMSObserverRecordKind::Terminal);
+  ggems::core::observer::ToKernelObserverRecordKind(
+    ggems::core::observer::GGEMSObserverRecordKind::Terminal);
 
 // =============================================================================
 // =============================================================================
 
 auto BuildSortedSourceRecords(
-    std::vector<ggems::core::observer::GGEMSObserverRecord> const &records)
-    -> std::vector<ggems::core::observer::GGEMSObserverRecord> {
+  std::vector<ggems::core::observer::GGEMSObserverRecord> const &records)
+  -> std::vector<ggems::core::observer::GGEMSObserverRecord> {
   std::vector<ggems::core::observer::GGEMSObserverRecord> result;
 
   for (auto const &record : records) {
@@ -58,8 +58,8 @@ auto BuildSortedSourceRecords(
   }
 
   std::ranges::sort(
-      result, std::ranges::less{},
-      &ggems::core::observer::GGEMSObserverRecord::global_primary_id);
+    result, std::ranges::less{},
+    &ggems::core::observer::GGEMSObserverRecord::global_primary_id);
 
   return result;
 }
@@ -70,7 +70,7 @@ auto BuildSortedSourceRecords(
 [[nodiscard]] auto
 WithTimeWindow(ggems::core::sources::GGEMSSourceRecord record,
                std::uint64_t time_start_ps, std::uint64_t time_stop_ps)
-    -> ggems::core::sources::GGEMSSourceRecord {
+  -> ggems::core::sources::GGEMSSourceRecord {
   record.time_start_ps = time_start_ps;
   record.time_stop_ps = time_stop_ps;
   return record;
@@ -80,8 +80,8 @@ WithTimeWindow(ggems::core::sources::GGEMSSourceRecord record,
 // =============================================================================
 
 auto ExpectSourceMatches(
-    ggems::core::observer::GGEMSObserverRecord const &observed,
-    ggems::core::sources::GGEMSSourceRecord const &expected) -> void {
+  ggems::core::observer::GGEMSObserverRecord const &observed,
+  ggems::core::sources::GGEMSSourceRecord const &expected) -> void {
   EXPECT_EQ(observed.record_kind, k_source_record_kind);
   EXPECT_EQ(observed.particle_type, expected.emitted_particle_type);
   EXPECT_EQ(observed.time_ps, expected.time_start_ps);
@@ -112,8 +112,8 @@ struct ExpectedCapturedPrimary {
 // =============================================================================
 
 auto ExpectCapturedHistories(
-    ggems::core::transport::GGEMSDummyTransportRunReport const &report,
-    std::span<ExpectedCapturedPrimary const> expected_histories) -> void {
+  ggems::core::transport::GGEMSDummyTransportRunReport const &report,
+  std::span<ExpectedCapturedPrimary const> expected_histories) -> void {
   EXPECT_EQ(report.observer_counters.captured_primary_count,
             static_cast<std::uint32_t>(expected_histories.size()));
 
@@ -132,12 +132,12 @@ auto ExpectCapturedHistories(
 
   for (auto const &record : report.observer_records) {
     auto const expected_history = std::ranges::find_if(
-        expected_histories,
-        [&record](ExpectedCapturedPrimary const &candidate) -> bool {
-          return candidate.source_index == record.source_index &&
-                 candidate.source_local_primary_id ==
-                     record.source_local_primary_id;
-        });
+      expected_histories,
+      [&record](ExpectedCapturedPrimary const &candidate) -> bool {
+        return candidate.source_index == record.source_index &&
+               candidate.source_local_primary_id ==
+                 record.source_local_primary_id;
+      });
 
     ASSERT_NE(expected_history, expected_histories.end());
     EXPECT_EQ(record.global_primary_id, expected_history->global_primary_id);
@@ -179,23 +179,23 @@ TEST_F(GGEMSDummyTransportWorkloadTest, RunsBranchingAioninoPrototype) {
 
   ggems::core::sources::GGEMSSource source{};
   source.SetAnalytic()
-      .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMicroElectronVolt(511'000'000'000ULL)
-      .SetPositionPicoMeter(0ULL, 0ULL, 0ULL)
-      .SetDirection(0.0F, 0.0F, 1.0F);
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
+    .SetEnergyMicroElectronVolt(511'000'000'000ULL)
+    .SetPositionPicoMeter(0ULL, 0ULL, 0ULL)
+    .SetDirection(0.0F, 0.0F, 1.0F);
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      *random,      k_worker_count,
-      1U,           0ULL,
-      0U,           1U};
+    GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    *random,      k_worker_count,
+    1U,           0ULL,
+    0U,           1U};
 
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.total_primary_count = k_total_primary_count;
   config.projection_history_offset = 10'000'000ULL;
   config.device_primary_offset = 200'000ULL;
   config.source_records = {
-      WithTimeWindow(source.BuildRecord(), 0ULL, 1'000'000ULL)};
+    WithTimeWindow(source.BuildRecord(), 0ULL, 1'000'000ULL)};
   config.source_ranges = {{.projection_primary_begin = 0ULL,
                            .primary_count = config.device_primary_offset +
                                             config.total_primary_count}};
@@ -224,7 +224,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest, RunsBranchingAioninoPrototype) {
 
   EXPECT_EQ(counters.created_secondary_count,
             counters.gamma_to_electron_count +
-                counters.electron_to_electron_count);
+              counters.electron_to_electron_count);
 
   EXPECT_EQ(counters.terminal_particle_count,
             counters.consumed_primary_count + counters.created_secondary_count);
@@ -254,17 +254,17 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   random->SetSeed(7'777'777ULL);
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      *random,      k_non_multiple_worker_count,
-      1U,           0ULL,
-      0U,           1U};
+    GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    *random,      k_non_multiple_worker_count,
+    1U,           0ULL,
+    0U,           1U};
 
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.total_primary_count = k_test_primary_count;
   config.max_generation = 0U;
   config.source_records = {ggems::core::sources::GGEMSSourceRecord{}};
-  config.source_ranges = {{.projection_primary_begin = 0ULL,
-                           .primary_count = k_test_primary_count}};
+  config.source_ranges = {
+    {.projection_primary_begin = 0ULL, .primary_count = k_test_primary_count}};
 
   auto report = workload.Run(config);
   auto const &counters = report.counters;
@@ -290,10 +290,10 @@ TEST_F(GGEMSDummyTransportWorkloadTest, CapturesFirstPrimaryHistories) {
 
   ggems::core::sources::GGEMSSource source{};
   source.SetAnalytic()
-      .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMicroElectronVolt(511'000'000'000ULL)
-      .SetPositionPicoMeter(0ULL, 0ULL, 0ULL)
-      .SetDirection(0.0F, 0.0F, 1.0F);
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
+    .SetEnergyMicroElectronVolt(511'000'000'000ULL)
+    .SetPositionPicoMeter(0ULL, 0ULL, 0ULL)
+    .SetDirection(0.0F, 0.0F, 1.0F);
 
   constexpr std::uint32_t k_observed_primary_count{2U};
   constexpr std::uint32_t k_observer_record_capacity{4'096U};
@@ -301,10 +301,10 @@ TEST_F(GGEMSDummyTransportWorkloadTest, CapturesFirstPrimaryHistories) {
   constexpr std::uint64_t k_projection_history_offset{10'000'000ULL};
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      *random,      k_worker_count,
-      1U,           0ULL,
-      0U,           k_observer_record_capacity};
+    GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    *random,      k_worker_count,
+    1U,           0ULL,
+    0U,           k_observer_record_capacity};
 
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.run_id = k_run_id;
@@ -312,12 +312,12 @@ TEST_F(GGEMSDummyTransportWorkloadTest, CapturesFirstPrimaryHistories) {
   config.projection_history_offset = k_projection_history_offset;
   config.device_primary_offset = 0ULL;
   config.source_records = {
-      WithTimeWindow(source.BuildRecord(), 0ULL, 1'000'000ULL)};
+    WithTimeWindow(source.BuildRecord(), 0ULL, 1'000'000ULL)};
   config.source_ranges = {{.projection_primary_begin = 0ULL,
                            .primary_count = config.total_primary_count}};
   config.observer_config.enabled = 1U;
   config.observer_config.capture_first_primary_count_per_source =
-      k_observed_primary_count;
+    k_observed_primary_count;
 
   auto report = workload.Run(config);
 
@@ -346,20 +346,20 @@ TEST_F(GGEMSDummyTransportWorkloadTest, CapturesFirstPrimaryHistories) {
 
     if (record.record_kind ==
         ggems::core::observer::ToKernelObserverRecordKind(
-            ggems::core::observer::GGEMSObserverRecordKind::Source)) {
+          ggems::core::observer::GGEMSObserverRecordKind::Source)) {
       has_source_record = true;
       ++source_record_count;
     }
 
     if (record.record_kind ==
         ggems::core::observer::ToKernelObserverRecordKind(
-            ggems::core::observer::GGEMSObserverRecordKind::Step)) {
+          ggems::core::observer::GGEMSObserverRecordKind::Step)) {
       has_step_record = true;
     }
 
     if (record.record_kind ==
         ggems::core::observer::ToKernelObserverRecordKind(
-            ggems::core::observer::GGEMSObserverRecordKind::Terminal)) {
+          ggems::core::observer::GGEMSObserverRecordKind::Terminal)) {
       has_terminal_record = true;
     }
   }
@@ -384,18 +384,18 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   constexpr std::uint64_t k_global_begin{20'000ULL};
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      *random,      4U,
-      2U,           0ULL,
-      0U,           64U};
+    GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    *random,      4U,
+    2U,           0ULL,
+    0U,           64U};
 
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.total_primary_count = 5U;
   config.projection_history_offset = k_global_begin;
   config.source_records = {source_record, source_record};
   config.source_ranges = {
-      {.projection_primary_begin = 0ULL, .primary_count = 1ULL},
-      {.projection_primary_begin = 1ULL, .primary_count = 4ULL}};
+    {.projection_primary_begin = 0ULL, .primary_count = 1ULL},
+    {.projection_primary_begin = 1ULL, .primary_count = 4ULL}};
   config.max_generation = 0U;
   config.max_steps_per_track = 1U;
   config.observer_config.enabled = 1U;
@@ -404,15 +404,15 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   auto const report = workload.Run(config);
 
   std::array<ExpectedCapturedPrimary, 3U> const expected{{
-      {.source_index = 0U,
-       .source_local_primary_id = 0ULL,
-       .global_primary_id = k_global_begin},
-      {.source_index = 1U,
-       .source_local_primary_id = 0ULL,
-       .global_primary_id = k_global_begin + 1ULL},
-      {.source_index = 1U,
-       .source_local_primary_id = 1ULL,
-       .global_primary_id = k_global_begin + 2ULL},
+    {.source_index = 0U,
+     .source_local_primary_id = 0ULL,
+     .global_primary_id = k_global_begin},
+    {.source_index = 1U,
+     .source_local_primary_id = 0ULL,
+     .global_primary_id = k_global_begin + 1ULL},
+    {.source_index = 1U,
+     .source_local_primary_id = 1ULL,
+     .global_primary_id = k_global_begin + 2ULL},
   }};
 
   EXPECT_EQ(report.observer_counters.overflow_count, 0U);
@@ -432,19 +432,19 @@ TEST_F(GGEMSDummyTransportWorkloadTest, CapturesAcrossZeroPrimarySourceSlots) {
   constexpr std::uint64_t k_global_begin{30'000ULL};
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      *random,      4U,
-      3U,           0ULL,
-      0U,           64U};
+    GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    *random,      4U,
+    3U,           0ULL,
+    0U,           64U};
 
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.total_primary_count = 5U;
   config.projection_history_offset = k_global_begin;
   config.source_records = {source_record, source_record, source_record};
   config.source_ranges = {
-      {.projection_primary_begin = 0ULL, .primary_count = 2ULL},
-      {.projection_primary_begin = 2ULL, .primary_count = 0ULL},
-      {.projection_primary_begin = 2ULL, .primary_count = 3ULL}};
+    {.projection_primary_begin = 0ULL, .primary_count = 2ULL},
+    {.projection_primary_begin = 2ULL, .primary_count = 0ULL},
+    {.projection_primary_begin = 2ULL, .primary_count = 3ULL}};
   config.max_generation = 0U;
   config.max_steps_per_track = 1U;
   config.observer_config.enabled = 1U;
@@ -453,12 +453,12 @@ TEST_F(GGEMSDummyTransportWorkloadTest, CapturesAcrossZeroPrimarySourceSlots) {
   auto const report = workload.Run(config);
 
   std::array<ExpectedCapturedPrimary, 2U> const expected{{
-      {.source_index = 0U,
-       .source_local_primary_id = 0ULL,
-       .global_primary_id = k_global_begin},
-      {.source_index = 2U,
-       .source_local_primary_id = 0ULL,
-       .global_primary_id = k_global_begin + 2ULL},
+    {.source_index = 0U,
+     .source_local_primary_id = 0ULL,
+     .global_primary_id = k_global_begin},
+    {.source_index = 2U,
+     .source_local_primary_id = 0ULL,
+     .global_primary_id = k_global_begin + 2ULL},
   }};
 
   EXPECT_EQ(report.observer_counters.overflow_count, 0U);
@@ -479,18 +479,18 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   constexpr std::uint64_t k_global_begin{40'000ULL};
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      *random,      4U,
-      2U,           0ULL,
-      0U,           64U};
+    GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    *random,      4U,
+    2U,           0ULL,
+    0U,           64U};
 
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.total_primary_count = 8U;
   config.projection_history_offset = k_global_begin;
   config.source_records = {source_record, source_record};
   config.source_ranges = {
-      {.projection_primary_begin = 0ULL, .primary_count = 4ULL},
-      {.projection_primary_begin = 4ULL, .primary_count = 4ULL}};
+    {.projection_primary_begin = 0ULL, .primary_count = 4ULL},
+    {.projection_primary_begin = 4ULL, .primary_count = 4ULL}};
   config.max_generation = 0U;
   config.max_steps_per_track = 1U;
   config.observer_config.enabled = 1U;
@@ -501,9 +501,9 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   auto const report = workload.Run(config);
 
   std::array<ExpectedCapturedPrimary, 1U> const expected{{
-      {.source_index = 1U,
-       .source_local_primary_id = 2ULL,
-       .global_primary_id = k_global_begin + 6ULL},
+    {.source_index = 1U,
+     .source_local_primary_id = 2ULL,
+     .global_primary_id = k_global_begin + 6ULL},
   }};
 
   EXPECT_EQ(report.observer_counters.overflow_count, 0U);
@@ -524,18 +524,18 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   constexpr std::uint64_t k_global_begin{50'000ULL};
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      *random,      4U,
-      2U,           0ULL,
-      0U,           64U};
+    GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    *random,      4U,
+    2U,           0ULL,
+    0U,           64U};
 
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.total_primary_count = 8U;
   config.projection_history_offset = k_global_begin;
   config.source_records = {source_record, source_record};
   config.source_ranges = {
-      {.projection_primary_begin = 0ULL, .primary_count = 4ULL},
-      {.projection_primary_begin = 4ULL, .primary_count = 4ULL}};
+    {.projection_primary_begin = 0ULL, .primary_count = 4ULL},
+    {.projection_primary_begin = 4ULL, .primary_count = 4ULL}};
   config.max_generation = 0U;
   config.max_steps_per_track = 1U;
   config.observer_config.enabled = 1U;
@@ -547,18 +547,18 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   auto const report = workload.Run(config);
 
   std::array<ExpectedCapturedPrimary, 4U> const expected{{
-      {.source_index = 0U,
-       .source_local_primary_id = 0ULL,
-       .global_primary_id = k_global_begin},
-      {.source_index = 0U,
-       .source_local_primary_id = 1ULL,
-       .global_primary_id = k_global_begin + 1ULL},
-      {.source_index = 1U,
-       .source_local_primary_id = 0ULL,
-       .global_primary_id = k_global_begin + 4ULL},
-      {.source_index = 1U,
-       .source_local_primary_id = 1ULL,
-       .global_primary_id = k_global_begin + 5ULL},
+    {.source_index = 0U,
+     .source_local_primary_id = 0ULL,
+     .global_primary_id = k_global_begin},
+    {.source_index = 0U,
+     .source_local_primary_id = 1ULL,
+     .global_primary_id = k_global_begin + 1ULL},
+    {.source_index = 1U,
+     .source_local_primary_id = 0ULL,
+     .global_primary_id = k_global_begin + 4ULL},
+    {.source_index = 1U,
+     .source_local_primary_id = 1ULL,
+     .global_primary_id = k_global_begin + 5ULL},
   }};
 
   EXPECT_EQ(report.observer_counters.overflow_count, 0U);
@@ -579,10 +579,10 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   constexpr std::uint64_t k_global_begin{60'000ULL};
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      *random,      4U,
-      2U,           0ULL,
-      0U,           64U};
+    GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    *random,      4U,
+    2U,           0ULL,
+    0U,           64U};
 
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.run_id = 1ULL;
@@ -591,8 +591,8 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   config.device_primary_offset = 0ULL;
   config.source_records = {source_record, source_record};
   config.source_ranges = {
-      {.projection_primary_begin = 0ULL, .primary_count = 4ULL},
-      {.projection_primary_begin = 4ULL, .primary_count = 4ULL}};
+    {.projection_primary_begin = 0ULL, .primary_count = 4ULL},
+    {.projection_primary_begin = 4ULL, .primary_count = 4ULL}};
   config.max_generation = 0U;
   config.max_steps_per_track = 1U;
   config.observer_config.enabled = 1U;
@@ -601,12 +601,12 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   auto const first_report = workload.Run(config);
 
   std::array<ExpectedCapturedPrimary, 2U> const first_expected{{
-      {.source_index = 0U,
-       .source_local_primary_id = 0ULL,
-       .global_primary_id = k_global_begin},
-      {.source_index = 0U,
-       .source_local_primary_id = 1ULL,
-       .global_primary_id = k_global_begin + 1ULL},
+    {.source_index = 0U,
+     .source_local_primary_id = 0ULL,
+     .global_primary_id = k_global_begin},
+    {.source_index = 0U,
+     .source_local_primary_id = 1ULL,
+     .global_primary_id = k_global_begin + 1ULL},
   }};
 
   ExpectCapturedHistories(first_report, first_expected);
@@ -618,18 +618,18 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   auto const second_report = workload.Run(config);
 
   std::array<ExpectedCapturedPrimary, 2U> const second_expected{{
-      {.source_index = 1U,
-       .source_local_primary_id = 0ULL,
-       .global_primary_id = k_global_begin + 4ULL},
-      {.source_index = 1U,
-       .source_local_primary_id = 1ULL,
-       .global_primary_id = k_global_begin + 5ULL},
+    {.source_index = 1U,
+     .source_local_primary_id = 0ULL,
+     .global_primary_id = k_global_begin + 4ULL},
+    {.source_index = 1U,
+     .source_local_primary_id = 1ULL,
+     .global_primary_id = k_global_begin + 5ULL},
   }};
 
   ExpectCapturedHistories(second_report, second_expected);
 
   EXPECT_EQ(first_report.observer_counters.captured_primary_count +
-                second_report.observer_counters.captured_primary_count,
+              second_report.observer_counters.captured_primary_count,
             4U);
 }
 
@@ -646,20 +646,20 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 
   ggems::core::sources::GGEMSSource source{};
   source.SetAnalytic()
-      .SetEnergyMicroElectronVolt(k_source_energy_micro_eV)
-      .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma);
+    .SetEnergyMicroElectronVolt(k_source_energy_micro_eV)
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma);
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      *random,      1U,
-      1U,           0ULL,
-      0U,           8U};
+    GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    *random,      1U,
+    1U,           0ULL,
+    0U,           8U};
 
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.total_primary_count = 1U;
   config.source_records = {source.BuildRecord()};
   config.source_ranges = {
-      {.projection_primary_begin = 0ULL, .primary_count = 1ULL}};
+    {.projection_primary_begin = 0ULL, .primary_count = 1ULL}};
   config.max_generation = 0U;
   config.max_steps_per_track = 1U;
   config.observer_config.enabled = 1U;
@@ -685,15 +685,15 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 
   EXPECT_EQ(records[2U].status,
             ggems::core::particles::ToKernelParticleStatus(
-                ggems::core::particles::GGEMSParticleStatus::Killed));
+              ggems::core::particles::GGEMSParticleStatus::Killed));
 
   EXPECT_EQ(records[0U].energy_micro_eV,
             records[1U].energy_micro_eV +
-                records[1U].deposited_energy_micro_eV);
+              records[1U].deposited_energy_micro_eV);
 
   EXPECT_EQ(records[1U].energy_micro_eV,
             records[2U].energy_micro_eV +
-                records[2U].deposited_energy_micro_eV);
+              records[2U].deposited_energy_micro_eV);
 }
 
 // =============================================================================
@@ -707,27 +707,26 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 
   ggems::core::sources::GGEMSSource source_a{};
   source_a.SetAnalytic()
-      .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMicroElectronVolt(1'000'000'000ULL)
-      .SetPositionPicoMeter(10LL, 20LL, 30LL)
-      .SetDirection(1.0F, 0.0F, 0.0F);
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
+    .SetEnergyMicroElectronVolt(1'000'000'000ULL)
+    .SetPositionPicoMeter(10LL, 20LL, 30LL)
+    .SetDirection(1.0F, 0.0F, 0.0F);
 
   ggems::core::sources::GGEMSSource disabled_source{};
   disabled_source.SetAnalytic()
-      .SetEnergyMicroElectronVolt(3'000'000'000ULL)
-      .SetPositionPicoMeter(40LL, 50LL, 60LL);
+    .SetEnergyMicroElectronVolt(3'000'000'000ULL)
+    .SetPositionPicoMeter(40LL, 50LL, 60LL);
 
   ggems::core::sources::GGEMSSource source_c{};
   source_c.SetAnalytic()
-      .SetEmittedParticleType(
-          ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMicroElectronVolt(2'000'000'000ULL)
-      .SetPositionPicoMeter(-70LL, 80LL, -90LL)
-      .SetDirection(0.0F, -1.0F, 0.0F);
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Electron)
+    .SetEnergyMicroElectronVolt(2'000'000'000ULL)
+    .SetPositionPicoMeter(-70LL, 80LL, -90LL)
+    .SetDirection(0.0F, -1.0F, 0.0F);
 
   auto expected_a = WithTimeWindow(source_a.BuildRecord(), 100ULL, 100ULL);
   auto disabled_record =
-      WithTimeWindow(disabled_source.BuildRecord(), 100ULL, 100ULL);
+    WithTimeWindow(disabled_source.BuildRecord(), 100ULL, 100ULL);
   auto expected_c = WithTimeWindow(source_c.BuildRecord(), 100ULL, 100ULL);
 
   constexpr std::uint32_t k_observer_capacity{64U};
@@ -736,10 +735,10 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   auto &context = GetContext();
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
-      context, std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      *random, 4U,
-      3U,      0ULL,
-      0U,      k_observer_capacity};
+    context, std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    *random, 4U,
+    3U,      0ULL,
+    0U,      k_observer_capacity};
 
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.run_id = 91ULL;
@@ -748,9 +747,9 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   config.device_primary_offset = 1ULL;
   config.source_records = {expected_a, disabled_record, expected_c};
   config.source_ranges = {
-      {.projection_primary_begin = 0ULL, .primary_count = 3ULL},
-      {.projection_primary_begin = 3ULL, .primary_count = 0ULL},
-      {.projection_primary_begin = 3ULL, .primary_count = 5ULL}};
+    {.projection_primary_begin = 0ULL, .primary_count = 3ULL},
+    {.projection_primary_begin = 3ULL, .primary_count = 0ULL},
+    {.projection_primary_begin = 3ULL, .primary_count = 5ULL}};
   config.max_generation = 0U;
   config.observer_config.enabled = 1U;
   config.observer_config.capture_first_primary_count_per_source = 8U;
@@ -777,7 +776,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
                                                                     2U, 2U};
 
   constexpr std::array<std::uint64_t, 5U> k_expected_source_local_ids{
-      1ULL, 2ULL, 0ULL, 1ULL, 2ULL};
+    1ULL, 2ULL, 0ULL, 1ULL, 2ULL};
 
   for (std::size_t index = 0U; index < source_records.size(); ++index) {
     EXPECT_EQ(source_records[index].run_id, 91ULL);
@@ -803,21 +802,21 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   EXPECT_EQ(second_report.observer_counters.captured_primary_count, 8U);
 
   auto second_source_records =
-      BuildSortedSourceRecords(second_report.observer_records);
+    BuildSortedSourceRecords(second_report.observer_records);
 
   ASSERT_EQ(second_source_records.size(), 8U);
 
   for (std::uint64_t projection_primary_id = 0ULL; projection_primary_id < 8ULL;
        ++projection_primary_id) {
     auto const &record =
-        second_source_records[static_cast<std::size_t>(projection_primary_id)];
+      second_source_records[static_cast<std::size_t>(projection_primary_id)];
 
     std::uint32_t expected_source_index =
-        projection_primary_id < 3ULL ? 0U : 2U;
+      projection_primary_id < 3ULL ? 0U : 2U;
 
     std::uint64_t expected_source_local_primary_id =
-        projection_primary_id < 3ULL ? projection_primary_id
-                                     : projection_primary_id - 3ULL;
+      projection_primary_id < 3ULL ? projection_primary_id
+                                   : projection_primary_id - 3ULL;
 
     EXPECT_EQ(record.global_primary_id, k_global_begin + projection_primary_id);
     EXPECT_EQ(record.source_index, expected_source_index);
@@ -845,17 +844,17 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   auto &context = GetContext();
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
-      context, std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      *random, 1U,
-      1U,      0ULL,
-      0U,      8U};
+    context, std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    *random, 1U,
+    1U,      0ULL,
+    0U,      8U};
 
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.total_primary_count = 1U;
   config.projection_history_offset = 10'000'000ULL;
   config.source_records = {ggems::core::sources::GGEMSSourceRecord{}};
   config.source_ranges = {
-      {.projection_primary_begin = 1ULL, .primary_count = 1ULL}};
+    {.projection_primary_begin = 1ULL, .primary_count = 1ULL}};
   config.max_generation = 0U;
   config.observer_config.enabled = 1U;
   config.observer_config.capture_first_primary_count_per_source = 1U;
@@ -906,10 +905,10 @@ TEST_F(GGEMSDummyTransportWorkloadTest, RejectsZeroStableSourceCount) {
 
   auto construct_workload = [&]() -> void {
     ggems::core::transport::GGEMSDummyTransportWorkload workload{
-        context, std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-        *random, 1U,
-        0U,      0ULL,
-        0U,      8U};
+      context, std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+      *random, 1U,
+      0U,      0ULL,
+      0U,      8U};
   };
 
   EXPECT_THROW(construct_workload(), ggems::core::GGEMSExceptionBase);
@@ -927,10 +926,10 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   auto &context = GetContext();
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
-      context, std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      *random, 1U,
-      1U,      0ULL,
-      0U,      8U};
+    context, std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    *random, 1U,
+    1U,      0ULL,
+    0U,      8U};
 
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.total_primary_count = 1U;
@@ -939,8 +938,8 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
                            ggems::core::sources::GGEMSSourceRecord{}};
 
   config.source_ranges = {
-      {.projection_primary_begin = 0ULL, .primary_count = 1ULL},
-      {.projection_primary_begin = 1ULL, .primary_count = 0ULL}};
+    {.projection_primary_begin = 0ULL, .primary_count = 1ULL},
+    {.projection_primary_begin = 1ULL, .primary_count = 0ULL}};
 
   ASSERT_EQ(config.source_records.size(), config.source_ranges.size());
   ASSERT_EQ(config.source_records.size(), 2U);
@@ -972,24 +971,24 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 
   ggems::core::sources::GGEMSSource source{};
   source.SetAnalytic()
-      .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMicroElectronVolt(511'000'001'000ULL)
-      .SetPositionPicoMeter(0LL, 0LL, 0LL)
-      .SetDirection(0.0F, 0.0F, 1.0F);
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
+    .SetEnergyMicroElectronVolt(511'000'001'000ULL)
+    .SetPositionPicoMeter(0LL, 0LL, 0LL)
+    .SetDirection(0.0F, 0.0F, 1.0F);
 
   auto source_record = WithTimeWindow(source.BuildRecord(), 0ULL, 1'000ULL);
 
   auto expect_report =
-      [&](ggems::core::transport::GGEMSDummyTransportRunReport const &report,
-          std::uint64_t expected_run_id,
-          std::uint64_t expected_history_offset) -> void {
+    [&](ggems::core::transport::GGEMSDummyTransportRunReport const &report,
+        std::uint64_t expected_run_id,
+        std::uint64_t expected_history_offset) -> void {
     EXPECT_EQ(report.counters.consumed_primary_count, k_test_primary_count);
     EXPECT_EQ(report.counters.completed_history_count, k_test_primary_count);
     EXPECT_EQ(report.counters.aionino_to_gamma_count, k_test_primary_count);
 
     EXPECT_EQ(report.counters.terminal_particle_count,
               report.counters.consumed_primary_count +
-                  report.counters.created_secondary_count);
+                report.counters.created_secondary_count);
 
     EXPECT_EQ(report.counters.overflow_count, 0U);
     EXPECT_LE(report.counters.max_stack_depth, 16U);
@@ -1027,10 +1026,10 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
     auto &context = GetContext();
 
     ggems::core::transport::GGEMSDummyTransportWorkload workload{
-        context, std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-        random,  k_test_worker_count,
-        1U,      k_random_stream_offset,
-        0U,      k_observer_record_capacity};
+      context, std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+      random,  k_test_worker_count,
+      1U,      k_random_stream_offset,
+      0U,      k_observer_record_capacity};
 
     auto allocated_after_construction = context.GetAllocatedVRAM().value;
     auto allocation_count_after_construction = context.GetAllocationCountVRAM();
@@ -1045,7 +1044,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
     config.max_generation = 1U;
     config.observer_config.enabled = 1U;
     config.observer_config.capture_first_primary_count_per_source =
-        k_captured_primary_count;
+      k_captured_primary_count;
 
     auto first_report = workload.Run(config);
     expect_report(first_report, config.run_id,
@@ -1083,27 +1082,27 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 
   ggems::core::sources::GGEMSSource source{};
   source.SetAnalytic()
-      .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMicroElectronVolt(511'000'000'000ULL);
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
+    .SetEnergyMicroElectronVolt(511'000'000'000ULL);
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      *random,      1U,
-      1U,           0ULL,
-      0U,           k_observer_capacity};
+    GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    *random,      1U,
+    1U,           0ULL,
+    0U,           k_observer_capacity};
 
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.total_primary_count = k_primary_count;
   config.projection_history_offset = k_global_begin;
   config.source_records = {
-      WithTimeWindow(source.BuildRecord(), 0ULL, 1'000ULL)};
+    WithTimeWindow(source.BuildRecord(), 0ULL, 1'000ULL)};
   config.source_ranges = {
-      {.projection_primary_begin = 0ULL, .primary_count = k_primary_count}};
+    {.projection_primary_begin = 0ULL, .primary_count = k_primary_count}};
   config.max_generation = 1U;
   config.max_steps_per_track = 2U;
   config.observer_config.enabled = 1U;
   config.observer_config.capture_first_primary_count_per_source =
-      k_primary_count;
+    k_primary_count;
 
   auto report = workload.Run(config);
 
@@ -1158,7 +1157,7 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 
     EXPECT_EQ(parent_before.energy_micro_eV,
               parent_after->energy_micro_eV + record.energy_micro_eV +
-                  record.deposited_energy_micro_eV);
+                record.deposited_energy_micro_eV);
   }
 
   EXPECT_TRUE(has_secondary_record);
@@ -1182,9 +1181,8 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
 
   ggems::core::sources::GGEMSSource source_b{};
   source_b.SetPrimaryCount(4ULL)
-      .SetEmittedParticleType(
-          ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMicroElectronVolt(1'000'000'000ULL);
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Electron)
+    .SetEnergyMicroElectronVolt(1'000'000'000ULL);
 
   auto source_record_a = source_a.BuildRecord();
   source_record_a.time_start_ps = k_time_start_ps;
@@ -1194,18 +1192,18 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   source_record_b.time_stop_ps = k_time_stop_ps;
 
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
-      *random,      4U,
-      2U,           0ULL,
-      0U,           64U};
+    GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT},
+    *random,      4U,
+    2U,           0ULL,
+    0U,           64U};
 
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.total_primary_count = 8U;
   config.projection_history_offset = k_global_begin;
   config.source_records = {source_record_a, source_record_b};
   config.source_ranges = {
-      {.projection_primary_begin = 0ULL, .primary_count = 4ULL},
-      {.projection_primary_begin = 4ULL, .primary_count = 4ULL}};
+    {.projection_primary_begin = 0ULL, .primary_count = 4ULL},
+    {.projection_primary_begin = 4ULL, .primary_count = 4ULL}};
   config.max_generation = 0U;
   config.observer_config.enabled = 1U;
   config.observer_config.capture_first_primary_count_per_source = 8U;
@@ -1219,14 +1217,14 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   for (std::uint64_t projection_primary_id = 0ULL; projection_primary_id < 8ULL;
        ++projection_primary_id) {
     auto const &record =
-        source_records[static_cast<std::size_t>(projection_primary_id)];
+      source_records[static_cast<std::size_t>(projection_primary_id)];
 
     std::uint32_t expected_source_index =
-        projection_primary_id < 4ULL ? 0U : 1U;
+      projection_primary_id < 4ULL ? 0U : 1U;
 
     std::uint64_t expected_source_local_primary_id =
-        projection_primary_id < 4ULL ? projection_primary_id
-                                     : projection_primary_id - 4ULL;
+      projection_primary_id < 4ULL ? projection_primary_id
+                                   : projection_primary_id - 4ULL;
 
     EXPECT_EQ(record.global_primary_id, k_global_begin + projection_primary_id);
     EXPECT_EQ(record.source_index, expected_source_index);
@@ -1246,14 +1244,14 @@ TEST_F(GGEMSDummyTransportWorkloadTest,
   ggems::core::sources::GGEMSSource source{};
   source.SetEnergyMicroElectronVolt(std::numeric_limits<std::uint64_t>::max());
   ggems::core::transport::GGEMSDummyTransportWorkload workload{
-      GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT}, random, 64U,
-      1U};
+    GetContext(), std::filesystem::path{GGEMS_TEST_KERNEL_ROOT}, random, 64U,
+    1U};
   ggems::core::transport::GGEMSDummyTransportRunConfig config{};
   config.total_primary_count = 64U;
   config.source_records = {
-      WithTimeWindow(source.BuildRecord(), 0ULL, 1'000'000ULL)};
+    WithTimeWindow(source.BuildRecord(), 0ULL, 1'000'000ULL)};
   config.source_ranges = {
-      {.projection_primary_begin = 0ULL, .primary_count = 64ULL}};
+    {.projection_primary_begin = 0ULL, .primary_count = 64ULL}};
   config.min_energy_micro_eV = 1ULL << 63U;
   config.max_steps_per_track = 2U;
   auto const report = workload.Run(config);

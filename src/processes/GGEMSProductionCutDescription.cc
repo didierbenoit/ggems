@@ -18,12 +18,12 @@ namespace ggems::core::processes {
 [[nodiscard]] auto
 InspectProductionCutContext(GGEMSMaterialCutCouplePackage const &package,
                             std::size_t context_index)
-    -> GGEMSProductionCutContextInspection {
+  -> GGEMSProductionCutContextInspection {
   auto const provenance = package.GetContextProvenance();
 
   if (context_index >= provenance.size()) {
     throw GGEMSRecoverable{
-        std::format("Unknown Production-Cut context {}.", context_index)};
+      std::format("Unknown Production-Cut context {}.", context_index)};
   }
 
   auto const &context = provenance[context_index];
@@ -36,19 +36,19 @@ InspectProductionCutContext(GGEMSMaterialCutCouplePackage const &package,
     auto const index = ProductionCutChannelIndex(channel);
 
     channels[index] = {
-        .channel = channel,
-        .effective_length = context.cuts.lengths[index],
-        .winning_scope = context.cuts.scopes[index],
-        .production_threshold = couple.thresholds[index],
+      .channel = channel,
+      .effective_length = context.cuts.lengths[index],
+      .winning_scope = context.cuts.scopes[index],
+      .production_threshold = couple.thresholds[index],
     };
   }
 
   return {
-      .context_index = context_index,
-      .authoring_material_index = context.material_index,
-      .snapshot_material_id = couple.material_id,
-      .snapshot_couple_id = couple_id,
-      .channels = channels,
+    .context_index = context_index,
+    .authoring_material_index = context.material_index,
+    .snapshot_material_id = couple.material_id,
+    .snapshot_couple_id = couple_id,
+    .channels = channels,
   };
 }
 
@@ -60,21 +60,21 @@ DescribeProductionCutContext(GGEMSMaterialCutCouplePackage const &package,
                              std::size_t context_index) -> std::string {
   auto const inspection = InspectProductionCutContext(package, context_index);
 
-  std::string description = std::format(
-      "Material/Cut context {}"
-      "\n  Material index (authoring)   : {}"
-      "\n  Material ID (snapshot-local) : {}"
-      "\n  Couple ID (snapshot-local)   : {}",
-      inspection.context_index, inspection.authoring_material_index,
-      inspection.snapshot_material_id, inspection.snapshot_couple_id);
+  std::string description =
+    std::format("Material/Cut context {}"
+                "\n  Material index (authoring)   : {}"
+                "\n  Material ID (snapshot-local) : {}"
+                "\n  Couple ID (snapshot-local)   : {}",
+                inspection.context_index, inspection.authoring_material_index,
+                inspection.snapshot_material_id, inspection.snapshot_couple_id);
 
   for (auto const &channel : inspection.channels) {
     description +=
-        std::format("\n  {:<8} : length {} ({}) -> production threshold {}",
-                    ProductionCutChannelName(channel.channel),
-                    units::HumanReadable(channel.effective_length),
-                    ProductionCutScopeName(channel.winning_scope),
-                    units::HumanReadable(channel.production_threshold));
+      std::format("\n  {:<8} : length {} ({}) -> production threshold {}",
+                  ProductionCutChannelName(channel.channel),
+                  units::HumanReadable(channel.effective_length),
+                  ProductionCutScopeName(channel.winning_scope),
+                  units::HumanReadable(channel.production_threshold));
   }
 
   return description;

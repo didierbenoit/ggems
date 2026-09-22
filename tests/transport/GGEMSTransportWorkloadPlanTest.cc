@@ -11,8 +11,8 @@
 
 TEST(GGEMSTransportWorkloadPlan, SplitsPrimariesEquallyWithRemainder) {
   std::vector<ggems::core::transport::GGEMSTransportWorkloadPlan> plan =
-      ggems::core::transport::BuildEqualTransportWorkloadPlan(10'000ULL, 4096U,
-                                                              3U, 256U);
+    ggems::core::transport::BuildEqualTransportWorkloadPlan(10'000ULL, 4096U,
+                                                            3U, 256U);
 
   ASSERT_EQ(plan.size(), 3U);
 
@@ -45,8 +45,7 @@ TEST(GGEMSTransportWorkloadPlan, SplitsPrimariesEquallyWithRemainder) {
 
 TEST(GGEMSTransportWorkloadPlan, AllowsMoreWorkloadsThanPrimaries) {
   std::vector<ggems::core::transport::GGEMSTransportWorkloadPlan> plan =
-      ggems::core::transport::BuildEqualTransportWorkloadPlan(0ULL, 2U, 4U,
-                                                              128U);
+    ggems::core::transport::BuildEqualTransportWorkloadPlan(0ULL, 2U, 4U, 128U);
 
   ASSERT_EQ(plan.size(), 4U);
 

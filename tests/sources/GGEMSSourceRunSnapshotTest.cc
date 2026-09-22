@@ -63,8 +63,8 @@ auto ExpectGGEMSExceptionContaining(Function &&function,
 // =============================================================================
 
 auto ExpectSourceRecordsEqual(
-    ggems::core::sources::GGEMSSourceRecord const &actual,
-    ggems::core::sources::GGEMSSourceRecord const &expected) -> void {
+  ggems::core::sources::GGEMSSourceRecord const &actual,
+  ggems::core::sources::GGEMSSourceRecord const &expected) -> void {
   EXPECT_EQ(actual.source_id, expected.source_id);
   EXPECT_EQ(actual.time_start_ps, expected.time_start_ps);
   EXPECT_EQ(actual.time_stop_ps, expected.time_stop_ps);
@@ -122,9 +122,9 @@ auto ExpectSourceRange(ggems::core::sources::GGEMSSourceRunRange const &range,
 using Planner = ggems::core::sources::GGEMSSourcePopulationPlanner;
 using Random = ggems::core::random::GGEMSRandom;
 using SourceConfiguration =
-    ggems::core::sources::GGEMSSourceConfigurationSnapshot;
+  ggems::core::sources::GGEMSSourceConfigurationSnapshot;
 using SourceConfigurationPtr =
-    ggems::core::sources::GGEMSSourceConfigurationSnapshotPtr;
+  ggems::core::sources::GGEMSSourceConfigurationSnapshotPtr;
 using SourceRunSnapshot = ggems::core::sources::GGEMSSourceRunSnapshot;
 
 // =============================================================================
@@ -133,7 +133,7 @@ using SourceRunSnapshot = ggems::core::sources::GGEMSSourceRunSnapshot;
 [[nodiscard]] auto MakePlannerRandom() -> Random {
   Random random{};
   random.SetEngine(ggems::core::random::GGEMSRandomEngine::PCG32)
-      .SetSeed(77'777ULL);
+    .SetSeed(77'777ULL);
   return random;
 }
 
@@ -141,9 +141,9 @@ using SourceRunSnapshot = ggems::core::sources::GGEMSSourceRunSnapshot;
 // =============================================================================
 
 [[nodiscard]] auto BuildPlanBasedCountSnapshot(
-    std::span<GGEMSSourcePtr const> sources,
-    SourceConfigurationPtr source_configuration, Planner const &planner,
-    ggems::core::GGEMSTimeWindow time_window) -> SourceRunSnapshot {
+  std::span<GGEMSSourcePtr const> sources,
+  SourceConfigurationPtr source_configuration, Planner const &planner,
+  ggems::core::GGEMSTimeWindow time_window) -> SourceRunSnapshot {
   auto const revision = planner.GetRevision();
   auto candidate = planner.BuildCandidate(time_window);
   auto const &plan = candidate.GetPlan();
@@ -160,7 +160,7 @@ using SourceRunSnapshot = ggems::core::sources::GGEMSSourceRunSnapshot;
   }
 
   return ggems::core::sources::BuildSourceRunSnapshot(
-      sources, std::move(source_configuration), plan);
+    sources, std::move(source_configuration), plan);
 }
 
 // =============================================================================
@@ -168,12 +168,12 @@ using SourceRunSnapshot = ggems::core::sources::GGEMSSourceRunSnapshot;
 
 auto ExpectSourceConfigurationsEqual(SourceConfiguration const &standalone,
                                      SourceConfiguration const &planned)
-    -> void {
+  -> void {
   EXPECT_EQ(standalone.GetSourceCount(), planned.GetSourceCount());
   EXPECT_EQ(standalone.GetEmissionCount(), planned.GetEmissionCount());
 
   auto const &standalone_energy_records =
-      standalone.GetEnergyDistributionRecords();
+    standalone.GetEnergyDistributionRecords();
   auto const &planned_energy_records = planned.GetEnergyDistributionRecords();
   ASSERT_EQ(standalone_energy_records.size(), planned_energy_records.size());
   for (std::size_t index = 0U; index < standalone_energy_records.size();
@@ -224,8 +224,8 @@ auto ExpectSourceConfigurationsEqual(SourceConfiguration const &standalone,
 // =============================================================================
 
 auto ExpectCountDrivenSnapshotsEqual(
-    SourceRunSnapshot const &standalone, SourceRunSnapshot const &planned,
-    ggems::core::GGEMSTimeWindow expected_window) -> void {
+  SourceRunSnapshot const &standalone, SourceRunSnapshot const &planned,
+  ggems::core::GGEMSTimeWindow expected_window) -> void {
   EXPECT_EQ(standalone.GetTotalPrimaryCount(), planned.GetTotalPrimaryCount());
   EXPECT_FALSE(standalone.HasActivityDrivenSource());
   EXPECT_FALSE(planned.HasActivityDrivenSource());
@@ -271,10 +271,9 @@ auto ExpectCountDrivenSnapshotsEqual(
               planned_population.emission_count);
     EXPECT_FLOAT_EQ(standalone_population.scaled_decay,
                     planned_population.scaled_decay);
-    EXPECT_EQ(
-        standalone_population.population_mode,
-        ggems::core::sources::ToKernelSourcePopulationMode(
-            ggems::core::sources::GGEMSSourcePopulationMode::CountDriven));
+    EXPECT_EQ(standalone_population.population_mode,
+              ggems::core::sources::ToKernelSourcePopulationMode(
+                ggems::core::sources::GGEMSSourcePopulationMode::CountDriven));
     EXPECT_EQ(standalone_population.first_emission_index, 0U);
     EXPECT_EQ(standalone_population.emission_count, 0U);
     EXPECT_FLOAT_EQ(standalone_population.scaled_decay, 0.0F);
@@ -296,12 +295,11 @@ TEST(GGEMSSourceRunSnapshot, BuildsExpectedMonoSourceSnapshot) {
 
   ggems::core::sources::GGEMSSource source{};
   source.SetPrimaryCount(k_primary_count)
-      .SetAnalytic()
-      .SetEmittedParticleType(
-          ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMicroElectronVolt(222'000'000'000ULL)
-      .SetPositionPicoMeter(-11LL, 22LL, -33LL)
-      .SetDirection(0.0F, -4.0F, 0.0F);
+    .SetAnalytic()
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Electron)
+    .SetEnergyMicroElectronVolt(222'000'000'000ULL)
+    .SetPositionPicoMeter(-11LL, 22LL, -33LL)
+    .SetDirection(0.0F, -4.0F, 0.0F);
 
   auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(source);
 
@@ -329,10 +327,10 @@ TEST(GGEMSSourceRunSnapshot, BuildsExpectedMonoSourceSnapshot) {
 
   EXPECT_EQ(record.source_type,
             ggems::core::sources::ToKernelSourceType(
-                ggems::core::sources::GGEMSSourceType::Analytic));
+              ggems::core::sources::GGEMSSourceType::Analytic));
   EXPECT_EQ(record.emitted_particle_type,
             ggems::core::particles::ToKernelParticleType(
-                ggems::core::particles::GGEMSParticleType::Electron));
+              ggems::core::particles::GGEMSParticleType::Electron));
   EXPECT_EQ(record.flags, 0U);
   EXPECT_EQ(record.reserved_0, 0U);
 
@@ -345,7 +343,6 @@ TEST(GGEMSSourceRunSnapshot, BuildsExpectedMonoSourceSnapshot) {
   EXPECT_FLOAT_EQ(record.axis_z_x, 0.0F);
   EXPECT_FLOAT_EQ(record.axis_z_y, -1.0F);
   EXPECT_FLOAT_EQ(record.axis_z_z, 0.0F);
-
 }
 
 // =============================================================================
@@ -355,21 +352,20 @@ TEST(GGEMSSourceRunSnapshot, OwnsIndependentSourceState) {
   ggems::core::sources::GGEMSSource source{};
 
   source.SetPrimaryCount(3ULL)
-      .SetAnalytic()
-      .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMicroElectronVolt(111'000'000'000ULL)
-      .SetPositionPicoMeter(11LL, -22LL, 33LL)
-      .SetDirection(1.0F, 0.0F, 0.0F);
+    .SetAnalytic()
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
+    .SetEnergyMicroElectronVolt(111'000'000'000ULL)
+    .SetPositionPicoMeter(11LL, -22LL, 33LL)
+    .SetDirection(1.0F, 0.0F, 0.0F);
 
   auto expected_a = source.BuildRecord();
   auto snapshot_a = ggems::core::sources::BuildSourceRunSnapshot(source);
 
   source.SetPrimaryCount(5ULL)
-      .SetEmittedParticleType(
-          ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMicroElectronVolt(222'000'000'000ULL)
-      .SetPositionPicoMeter(-44LL, 55LL, -66LL)
-      .SetDirection(0.0F, -1.0F, 0.0F);
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Electron)
+    .SetEnergyMicroElectronVolt(222'000'000'000ULL)
+    .SetPositionPicoMeter(-44LL, 55LL, -66LL)
+    .SetDirection(0.0F, -1.0F, 0.0F);
 
   auto expected_b = source.BuildRecord();
   auto snapshot_b = ggems::core::sources::BuildSourceRunSnapshot(source);
@@ -435,26 +431,24 @@ TEST(GGEMSSourceRunSnapshot, RangeAndTotalAreConsistent) {
 TEST(GGEMSSourceRunSnapshot, BuildsOrderedMultiSourceSnapshot) {
   auto source_0 = MakeSource(3ULL);
   source_0->SetAnalytic()
-      .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
-      .SetEnergyMicroElectronVolt(101'000'000'000ULL)
-      .SetPositionPicoMeter(10LL, 20LL, 30LL)
-      .SetDirection(1.0F, 0.0F, 0.0F);
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
+    .SetEnergyMicroElectronVolt(101'000'000'000ULL)
+    .SetPositionPicoMeter(10LL, 20LL, 30LL)
+    .SetDirection(1.0F, 0.0F, 0.0F);
 
   auto source_1 = MakeSource(5ULL);
   source_1->SetAnalytic()
-      .SetEmittedParticleType(
-          ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMicroElectronVolt(202'000'000'000ULL)
-      .SetPositionPicoMeter(-40LL, 50LL, 60LL)
-      .SetDirection(0.0F, 1.0F, 0.0F);
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Electron)
+    .SetEnergyMicroElectronVolt(202'000'000'000ULL)
+    .SetPositionPicoMeter(-40LL, 50LL, 60LL)
+    .SetDirection(0.0F, 1.0F, 0.0F);
 
   auto source_2 = MakeSource(2ULL);
   source_2->SetAnalytic()
-      .SetEmittedParticleType(
-          ggems::core::particles::GGEMSParticleType::Positron)
-      .SetEnergyMicroElectronVolt(303'000'000'000ULL)
-      .SetPositionPicoMeter(70LL, -80LL, 90LL)
-      .SetDirection(0.0F, 0.0F, -1.0F);
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Positron)
+    .SetEnergyMicroElectronVolt(303'000'000'000ULL)
+    .SetPositionPicoMeter(70LL, -80LL, 90LL)
+    .SetDirection(0.0F, 0.0F, -1.0F);
 
   std::vector<GGEMSSourcePtr> sources{source_0, source_1, source_2};
 
@@ -480,7 +474,7 @@ TEST(GGEMSSourceRunSnapshot, BuildsOrderedMultiSourceSnapshot) {
   EXPECT_EQ(records[1U].position_x_pm, -40LL);
   EXPECT_EQ(records[2U].emitted_particle_type,
             ggems::core::particles::ToKernelParticleType(
-                ggems::core::particles::GGEMSParticleType::Positron));
+              ggems::core::particles::GGEMSParticleType::Positron));
 }
 
 // =============================================================================
@@ -523,7 +517,7 @@ TEST(GGEMSSourceRunSnapshot,
   positive_count_source->SetPositionPicoMeter(1LL, 2LL, 3LL);
   zero_primary_source->SetPositionPicoMeter(4LL, 5LL, 6LL);
   std::vector<GGEMSSourcePtr> sources{
-      positive_count_source, zero_primary_source, positive_count_source};
+    positive_count_source, zero_primary_source, positive_count_source};
 
   auto const positive_count_before = positive_count_source->BuildRecord();
   auto const zero_primary_before = zero_primary_source->BuildRecord();
@@ -531,7 +525,7 @@ TEST(GGEMSSourceRunSnapshot,
                                                   .stop_ps = 125ULL};
 
   auto const snapshot =
-      ggems::core::sources::BuildSourceRunSnapshot(sources, k_window);
+    ggems::core::sources::BuildSourceRunSnapshot(sources, k_window);
 
   EXPECT_EQ(snapshot.GetTimeWindow(), k_window);
   ASSERT_EQ(snapshot.GetRecords().size(), 3U);
@@ -554,7 +548,7 @@ TEST(GGEMSSourceRunSnapshot,
   EXPECT_EQ(positive_count_source->BuildRecord().time_stop_ps, 0ULL);
 
   EXPECT_THROW(static_cast<void>(ggems::core::sources::BuildSourceRunSnapshot(
-                   sources, {.start_ps = 2ULL, .stop_ps = 1ULL})),
+                 sources, {.start_ps = 2ULL, .stop_ps = 1ULL})),
                ggems::core::GGEMSExceptionBase);
 }
 
@@ -567,7 +561,7 @@ TEST(GGEMSSourceRunSnapshot, BuildsEmptySnapshot) {
                                                   .stop_ps = 9ULL};
 
   auto snapshot =
-      ggems::core::sources::BuildSourceRunSnapshot(sources, k_window);
+    ggems::core::sources::BuildSourceRunSnapshot(sources, k_window);
 
   EXPECT_EQ(snapshot.GetTimeWindow(), k_window);
 
@@ -583,13 +577,13 @@ TEST(GGEMSSourceRunSnapshot, BuildsEmptySnapshot) {
 TEST(GGEMSSourceRunSnapshot, OwnsIndependentMultiSourceState) {
   auto source_0 = MakeSource(2ULL);
   source_0->SetEnergyMicroElectronVolt(111'000'000'000ULL)
-      .SetPositionPicoMeter(1LL, 2LL, 3LL)
-      .SetDirection(1.0F, 0.0F, 0.0F);
+    .SetPositionPicoMeter(1LL, 2LL, 3LL)
+    .SetDirection(1.0F, 0.0F, 0.0F);
 
   auto source_1 = MakeSource(4ULL);
   source_1->SetEnergyMicroElectronVolt(222'000'000'000ULL)
-      .SetPositionPicoMeter(4LL, 5LL, 6LL)
-      .SetDirection(0.0F, 1.0F, 0.0F);
+    .SetPositionPicoMeter(4LL, 5LL, 6LL)
+    .SetDirection(0.0F, 1.0F, 0.0F);
 
   std::vector<GGEMSSourcePtr> sources{source_0, source_1};
 
@@ -598,14 +592,14 @@ TEST(GGEMSSourceRunSnapshot, OwnsIndependentMultiSourceState) {
   auto snapshot_a = ggems::core::sources::BuildSourceRunSnapshot(sources);
 
   source_0->SetPrimaryCount(5ULL)
-      .SetEnergyMicroElectronVolt(333'000'000'000ULL)
-      .SetPositionPicoMeter(-1LL, -2LL, -3LL)
-      .SetDirection(0.0F, 1.0F, 0.0F);
+    .SetEnergyMicroElectronVolt(333'000'000'000ULL)
+    .SetPositionPicoMeter(-1LL, -2LL, -3LL)
+    .SetDirection(0.0F, 1.0F, 0.0F);
 
   source_1->SetPrimaryCount(3ULL)
-      .SetEnergyMicroElectronVolt(444'000'000'000ULL)
-      .SetPositionPicoMeter(-4LL, -5LL, -6LL)
-      .SetDirection(-1.0F, 0.0F, 0.0F);
+    .SetEnergyMicroElectronVolt(444'000'000'000ULL)
+    .SetPositionPicoMeter(-4LL, -5LL, -6LL)
+    .SetDirection(-1.0F, 0.0F, 0.0F);
 
   auto expected_b_0 = source_0->BuildRecord();
   auto expected_b_1 = source_1->BuildRecord();
@@ -663,8 +657,8 @@ TEST(GGEMSSourceRunSnapshot, RejectsNullSource) {
 TEST(GGEMSSourceRunSnapshot, AcceptsDuplicateSourceSlots) {
   auto source = MakeSource(7ULL);
   source->SetEnergyMicroElectronVolt(123'000'000'000ULL)
-      .SetPositionPicoMeter(11LL, 22LL, 33LL)
-      .SetDirection(0.0F, 0.0F, 1.0F);
+    .SetPositionPicoMeter(11LL, 22LL, 33LL)
+    .SetDirection(0.0F, 0.0F, 1.0F);
 
   std::vector<GGEMSSourcePtr> sources{source, source};
 
@@ -714,11 +708,11 @@ TEST(GGEMSSourceRunSnapshot, RejectsOverflowingTotal) {
 
   auto source_0 = MakeSource(k_maximum);
   source_0->SetEnergyMicroElectronVolt(111'000'000'000ULL)
-      .SetPositionPicoMeter(1LL, 2LL, 3LL);
+    .SetPositionPicoMeter(1LL, 2LL, 3LL);
 
   auto source_1 = MakeSource(1ULL);
   source_1->SetEnergyMicroElectronVolt(222'000'000'000ULL)
-      .SetPositionPicoMeter(4LL, 5LL, 6LL);
+    .SetPositionPicoMeter(4LL, 5LL, 6LL);
 
   auto expected_0 = source_0->BuildRecord();
   auto expected_1 = source_1->BuildRecord();
@@ -754,10 +748,10 @@ TEST(GGEMSSourceRunSnapshot, RejectsOverflowingTotal) {
 TEST(GGEMSSourceRunSnapshot, SingleSourceOverloadMatchesCollectionOverload) {
   auto source = MakeSource(19ULL);
   source->SetAnalytic()
-      .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Proton)
-      .SetEnergyMicroElectronVolt(555'000'000'000ULL)
-      .SetPositionPicoMeter(-10LL, 20LL, -30LL)
-      .SetDirection(1.0F, -1.0F, 0.0F);
+    .SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Proton)
+    .SetEnergyMicroElectronVolt(555'000'000'000ULL)
+    .SetPositionPicoMeter(-10LL, 20LL, -30LL)
+    .SetDirection(1.0F, -1.0F, 0.0F);
 
   std::vector<GGEMSSourcePtr> sources{source};
 
@@ -791,29 +785,29 @@ TEST(GGEMSSourceRunSnapshot,
 
   auto source = MakeSource(k_primary_count);
   source
-      ->SetEmittedParticleType(
-          ggems::core::particles::GGEMSParticleType::Electron)
-      .SetEnergyMicroElectronVolt(222'000'000'000ULL)
-      .SetPositionPicoMeter(-11LL, 22LL, -33LL);
+    ->SetEmittedParticleType(
+      ggems::core::particles::GGEMSParticleType::Electron)
+    .SetEnergyMicroElectronVolt(222'000'000'000ULL)
+    .SetPositionPicoMeter(-11LL, 22LL, -33LL);
   std::vector<GGEMSSourcePtr> sources{source};
   auto configuration =
-      ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
+    ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
   Random const random = MakePlannerRandom();
   Planner planner{sources, random};
 
   auto standalone_static =
-      ggems::core::sources::BuildSourceRunSnapshot(*source);
+    ggems::core::sources::BuildSourceRunSnapshot(*source);
   auto planned_static = BuildPlanBasedCountSnapshot(
-      sources, configuration, planner, ggems::core::GGEMSTimeWindow{});
+    sources, configuration, planner, ggems::core::GGEMSTimeWindow{});
   ExpectCountDrivenSnapshotsEqual(standalone_static, planned_static, {});
   ASSERT_EQ(standalone_static.GetRanges().size(), 1U);
   ExpectSourceRange(standalone_static.GetRanges()[0U], 0ULL, k_primary_count);
   EXPECT_EQ(standalone_static.GetTotalPrimaryCount(), k_primary_count);
 
   auto standalone_timed =
-      ggems::core::sources::BuildSourceRunSnapshot(*source, k_time_window);
-  auto planned_timed = BuildPlanBasedCountSnapshot(sources, configuration,
-                                                   planner, k_time_window);
+    ggems::core::sources::BuildSourceRunSnapshot(*source, k_time_window);
+  auto planned_timed =
+    BuildPlanBasedCountSnapshot(sources, configuration, planner, k_time_window);
   ExpectCountDrivenSnapshotsEqual(standalone_timed, planned_timed,
                                   k_time_window);
   ASSERT_EQ(standalone_timed.GetRanges().size(), 1U);
@@ -832,24 +826,24 @@ TEST(GGEMSSourceRunSnapshot,
 
   auto source_0 = MakeSource(3ULL);
   source_0->SetEnergyMicroElectronVolt(111'000'000'000ULL)
-      .SetPositionPicoMeter(1LL, 2LL, 3LL);
+    .SetPositionPicoMeter(1LL, 2LL, 3LL);
   auto source_1 = MakeSource(0ULL);
   source_1->SetEnergyMicroElectronVolt(222'000'000'000ULL)
-      .SetPositionPicoMeter(4LL, 5LL, 6LL);
+    .SetPositionPicoMeter(4LL, 5LL, 6LL);
   auto source_2 = MakeSource(5ULL);
   source_2->SetEnergyMicroElectronVolt(333'000'000'000ULL)
-      .SetPositionPicoMeter(7LL, 8LL, 9LL);
+    .SetPositionPicoMeter(7LL, 8LL, 9LL);
 
   std::vector<GGEMSSourcePtr> sources{source_0, source_1, source_2};
   auto configuration =
-      ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
+    ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
   Random const random = MakePlannerRandom();
   Planner planner{sources, random};
 
   auto standalone_static =
-      ggems::core::sources::BuildSourceRunSnapshot(sources);
+    ggems::core::sources::BuildSourceRunSnapshot(sources);
   auto planned_static = BuildPlanBasedCountSnapshot(
-      sources, configuration, planner, ggems::core::GGEMSTimeWindow{});
+    sources, configuration, planner, ggems::core::GGEMSTimeWindow{});
   ExpectCountDrivenSnapshotsEqual(standalone_static, planned_static, {});
   ASSERT_EQ(standalone_static.GetRanges().size(), 3U);
   ExpectSourceRange(standalone_static.GetRanges()[0U], 0ULL, 3ULL);
@@ -858,9 +852,9 @@ TEST(GGEMSSourceRunSnapshot,
   EXPECT_EQ(standalone_static.GetTotalPrimaryCount(), 8ULL);
 
   auto standalone_timed =
-      ggems::core::sources::BuildSourceRunSnapshot(sources, k_time_window);
-  auto planned_timed = BuildPlanBasedCountSnapshot(sources, configuration,
-                                                   planner, k_time_window);
+    ggems::core::sources::BuildSourceRunSnapshot(sources, k_time_window);
+  auto planned_timed =
+    BuildPlanBasedCountSnapshot(sources, configuration, planner, k_time_window);
   ExpectCountDrivenSnapshotsEqual(standalone_timed, planned_timed,
                                   k_time_window);
   ASSERT_EQ(standalone_timed.GetRanges().size(), 3U);
@@ -882,17 +876,17 @@ TEST(GGEMSSourceRunSnapshot,
 
   auto source = MakeSource(k_primary_count);
   source->SetEnergyMicroElectronVolt(444'000'000'000ULL)
-      .SetPositionPicoMeter(-4LL, 5LL, -6LL);
+    .SetPositionPicoMeter(-4LL, 5LL, -6LL);
   std::vector<GGEMSSourcePtr> sources{source, source};
   auto configuration =
-      ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
+    ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
   Random const random = MakePlannerRandom();
   Planner planner{sources, random};
 
   auto standalone_static =
-      ggems::core::sources::BuildSourceRunSnapshot(sources, configuration);
+    ggems::core::sources::BuildSourceRunSnapshot(sources, configuration);
   auto planned_static = BuildPlanBasedCountSnapshot(
-      sources, configuration, planner, ggems::core::GGEMSTimeWindow{});
+    sources, configuration, planner, ggems::core::GGEMSTimeWindow{});
   ExpectCountDrivenSnapshotsEqual(standalone_static, planned_static, {});
   EXPECT_EQ(&standalone_static.GetSourceConfiguration(), configuration.get());
   EXPECT_EQ(&planned_static.GetSourceConfiguration(), configuration.get());
@@ -906,9 +900,9 @@ TEST(GGEMSSourceRunSnapshot,
             &standalone_static.GetRecords()[1U]);
 
   auto standalone_timed = ggems::core::sources::BuildSourceRunSnapshot(
-      sources, configuration, k_time_window);
-  auto planned_timed = BuildPlanBasedCountSnapshot(sources, configuration,
-                                                   planner, k_time_window);
+    sources, configuration, k_time_window);
+  auto planned_timed =
+    BuildPlanBasedCountSnapshot(sources, configuration, planner, k_time_window);
   ExpectCountDrivenSnapshotsEqual(standalone_timed, planned_timed,
                                   k_time_window);
   EXPECT_EQ(&standalone_timed.GetSourceConfiguration(), configuration.get());
@@ -933,14 +927,14 @@ TEST(GGEMSSourceRunSnapshot,
   auto source_1 = MakeSource(4ULL);
   std::vector<GGEMSSourcePtr> sources{source_0, source_1};
   auto configuration =
-      ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
+    ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
   Random const random = MakePlannerRandom();
   Planner planner{sources, random};
 
   auto standalone_first = ggems::core::sources::BuildSourceRunSnapshot(
-      sources, configuration, k_time_window);
-  auto planned_first = BuildPlanBasedCountSnapshot(sources, configuration,
-                                                   planner, k_time_window);
+    sources, configuration, k_time_window);
+  auto planned_first =
+    BuildPlanBasedCountSnapshot(sources, configuration, planner, k_time_window);
   ExpectCountDrivenSnapshotsEqual(standalone_first, planned_first,
                                   k_time_window);
   ASSERT_EQ(standalone_first.GetRanges().size(), 2U);
@@ -952,9 +946,9 @@ TEST(GGEMSSourceRunSnapshot,
   source_1->SetPrimaryCount(0ULL);
 
   auto standalone_second = ggems::core::sources::BuildSourceRunSnapshot(
-      sources, configuration, k_time_window);
-  auto planned_second = BuildPlanBasedCountSnapshot(sources, configuration,
-                                                    planner, k_time_window);
+    sources, configuration, k_time_window);
+  auto planned_second =
+    BuildPlanBasedCountSnapshot(sources, configuration, planner, k_time_window);
   ExpectCountDrivenSnapshotsEqual(standalone_second, planned_second,
                                   k_time_window);
   ASSERT_EQ(standalone_second.GetRanges().size(), 2U);
@@ -976,16 +970,16 @@ TEST(GGEMSSourceRunSnapshot,
 TEST(GGEMSSourceRunSnapshot, PreservesZeroPrimaryAndDuplicateSlotsTogether) {
   auto positive_count_source = MakeSource(3ULL);
   positive_count_source->SetEnergyMicroElectronVolt(123'000'000'000ULL)
-      .SetPositionPicoMeter(11LL, 22LL, 33LL)
-      .SetDirection(0.0F, 0.0F, 1.0F);
+    .SetPositionPicoMeter(11LL, 22LL, 33LL)
+    .SetDirection(0.0F, 0.0F, 1.0F);
 
   auto zero_primary_source = MakeSource(0ULL);
   zero_primary_source->SetEnergyMicroElectronVolt(456'000'000'000ULL)
-      .SetPositionPicoMeter(-11LL, -22LL, -33LL)
-      .SetDirection(0.0F, 1.0F, 0.0F);
+    .SetPositionPicoMeter(-11LL, -22LL, -33LL)
+    .SetDirection(0.0F, 1.0F, 0.0F);
 
   std::vector<GGEMSSourcePtr> sources{
-      positive_count_source, zero_primary_source, positive_count_source};
+    positive_count_source, zero_primary_source, positive_count_source};
 
   auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(sources);
 
@@ -1012,13 +1006,13 @@ TEST(GGEMSSourceRunSnapshot, PreservesZeroPrimaryAndDuplicateSlotsTogether) {
 TEST(GGEMSSourceRunSnapshot, OwnsIndependentGeometryAndAngularConfiguration) {
   auto source = MakeSource(3ULL);
   source->SetRectangleEmissionPicoMeter(40ULL, 20ULL)
-      .SetIsotropicAngularDistribution();
+    .SetIsotropicAngularDistribution();
 
   std::vector<GGEMSSourcePtr> sources{source, source};
   auto first = ggems::core::sources::BuildSourceRunSnapshot(sources);
 
   source->SetEllipseEmissionPicoMeter(30ULL, 10ULL)
-      .SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 100LL);
+    .SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 100LL);
 
   auto second = ggems::core::sources::BuildSourceRunSnapshot(sources);
 
@@ -1026,17 +1020,17 @@ TEST(GGEMSSourceRunSnapshot, OwnsIndependentGeometryAndAngularConfiguration) {
   ASSERT_EQ(second.GetRecords().size(), 2U);
 
   EXPECT_EQ(ggems::core::sources::FromKernelEmissionGeometryType(
-                first.GetRecords()[0U].emission_geometry_type),
+              first.GetRecords()[0U].emission_geometry_type),
             ggems::core::sources::GGEMSEmissionGeometryType::Rectangle);
   EXPECT_EQ(ggems::core::sources::FromKernelAngularDistributionType(
-                first.GetRecords()[0U].angular_distribution_type),
+              first.GetRecords()[0U].angular_distribution_type),
             ggems::core::sources::GGEMSAngularDistributionType::Isotropic);
 
   EXPECT_EQ(ggems::core::sources::FromKernelEmissionGeometryType(
-                second.GetRecords()[0U].emission_geometry_type),
+              second.GetRecords()[0U].emission_geometry_type),
             ggems::core::sources::GGEMSEmissionGeometryType::Ellipse);
   EXPECT_EQ(ggems::core::sources::FromKernelAngularDistributionType(
-                second.GetRecords()[0U].angular_distribution_type),
+              second.GetRecords()[0U].angular_distribution_type),
             ggems::core::sources::GGEMSAngularDistributionType::Focused);
 
   ExpectSourceRecordsEqual(first.GetRecords()[0U], first.GetRecords()[1U]);
@@ -1090,19 +1084,19 @@ TEST(GGEMSSourceRunSnapshot,
   EXPECT_EQ(records[3U].energy_micro_eV, 0ULL);
 
   EXPECT_EQ(ggems::core::sources::FromKernelEnergyDistributionType(
-                energy_records[0U].distribution_type),
+              energy_records[0U].distribution_type),
             ggems::core::sources::GGEMSEnergyDistributionType::Mono);
   EXPECT_EQ(energy_records[0U].table_offset, 0ULL);
   EXPECT_EQ(energy_records[0U].table_count, 0U);
 
   EXPECT_EQ(ggems::core::sources::FromKernelEnergyDistributionType(
-                energy_records[1U].distribution_type),
+              energy_records[1U].distribution_type),
             ggems::core::sources::GGEMSEnergyDistributionType::DiscreteLines);
   EXPECT_EQ(energy_records[1U].table_offset, 0ULL);
   EXPECT_EQ(energy_records[1U].table_count, 3U);
 
   EXPECT_EQ(ggems::core::sources::FromKernelEnergyDistributionType(
-                energy_records[2U].distribution_type),
+              energy_records[2U].distribution_type),
             ggems::core::sources::GGEMSEnergyDistributionType::RegularSpectrum);
   EXPECT_EQ(energy_records[2U].table_offset, 3ULL);
   EXPECT_EQ(energy_records[2U].table_count, 3U);
@@ -1113,15 +1107,15 @@ TEST(GGEMSSourceRunSnapshot,
   EXPECT_EQ(energy_records[3U].table_count, 3U);
 
   std::vector<std::uint64_t> const expected_values{
-      1'000'000'000'000ULL,  2'000'000'000'000ULL,  3'000'000'000'000ULL,
-      10'000'000'000'000ULL, 12'000'000'000'000ULL, 14'000'000'000'000ULL,
-      1'000'000'000'000ULL,  2'000'000'000'000ULL,  3'000'000'000'000ULL};
+    1'000'000'000'000ULL,  2'000'000'000'000ULL,  3'000'000'000'000ULL,
+    10'000'000'000'000ULL, 12'000'000'000'000ULL, 14'000'000'000'000ULL,
+    1'000'000'000'000ULL,  2'000'000'000'000ULL,  3'000'000'000'000ULL};
   std::vector<double> const expected_relative_weights{1.0, 0.0, 3.0, 0.0, 1.0,
                                                       1.0, 1.0, 0.0, 3.0};
   std::vector<std::uint64_t> const expected_ticket_bounds{
-      1'073'741'824ULL, 1'073'741'824ULL, 4'294'967'296ULL, 0ULL,
-      2'147'483'648ULL, 4'294'967'296ULL, 1'073'741'824ULL, 1'073'741'824ULL,
-      4'294'967'296ULL};
+    1'073'741'824ULL, 1'073'741'824ULL, 4'294'967'296ULL, 0ULL,
+    2'147'483'648ULL, 4'294'967'296ULL, 1'073'741'824ULL, 1'073'741'824ULL,
+    4'294'967'296ULL};
 
   EXPECT_EQ(values, expected_values);
   EXPECT_EQ(relative_weights, expected_relative_weights);
@@ -1155,7 +1149,7 @@ TEST(GGEMSSourceRunSnapshot, AllMonoSourcesUseEmptyPackedEnergyTables) {
 
   for (auto const &record : snapshot.GetEnergyDistributionRecords()) {
     EXPECT_EQ(ggems::core::sources::FromKernelEnergyDistributionType(
-                  record.distribution_type),
+                record.distribution_type),
               ggems::core::sources::GGEMSEnergyDistributionType::Mono);
     EXPECT_EQ(record.table_offset, 0ULL);
     EXPECT_EQ(record.table_count, 0U);
@@ -1194,7 +1188,7 @@ TEST(GGEMSSourceRunSnapshot,
   EXPECT_EQ(ticket_bounds.back(),
             ggems::core::sources::k_energy_ticket_space_size);
   EXPECT_TRUE(std::ranges::all_of(
-      weights, [](double weight) -> bool { return weight == 1.0; }));
+    weights, [](double weight) -> bool { return weight == 1.0; }));
   EXPECT_TRUE(std::ranges::is_sorted(ticket_bounds));
   EXPECT_EQ(std::ranges::adjacent_find(ticket_bounds), ticket_bounds.end());
 }
@@ -1206,17 +1200,17 @@ TEST(GGEMSSourceRunSnapshot, OwnsVolumeAndBoundedAngularRecordFields) {
   constexpr long double k_pi{std::numbers::pi_v<long double>};
   ggems::core::sources::GGEMSSource source{};
   source.SetPrimaryCount(3ULL)
-      .SetBoxEmissionPicoMeter(40ULL, 20ULL, 10ULL)
-      .SetIsotropicAngularDistribution(ggems::units::MakeRadians(0.25L * k_pi),
-                                       ggems::units::MakeRadians(0.5L * k_pi),
-                                       ggems::units::MakeRadians(-0.25L * k_pi),
-                                       ggems::units::MakeRadians(0.25L * k_pi));
+    .SetBoxEmissionPicoMeter(40ULL, 20ULL, 10ULL)
+    .SetIsotropicAngularDistribution(ggems::units::MakeRadians(0.25L * k_pi),
+                                     ggems::units::MakeRadians(0.5L * k_pi),
+                                     ggems::units::MakeRadians(-0.25L * k_pi),
+                                     ggems::units::MakeRadians(0.25L * k_pi));
 
   auto const expected = source.BuildRecord();
   auto const snapshot = ggems::core::sources::BuildSourceRunSnapshot(source);
 
   source.SetCylinderEmissionPicoMeter(12ULL, 30ULL)
-      .SetFixedAngularDistribution();
+    .SetFixedAngularDistribution();
 
   ASSERT_EQ(snapshot.GetRecords().size(), 1U);
   ExpectSourceRecordsEqual(snapshot.GetRecords().front(), expected);
@@ -1231,14 +1225,14 @@ TEST(GGEMSSourceRunSnapshot, OwnsVolumeAndBoundedAngularRecordFields) {
 TEST(GGEMSSourceRunSnapshot,
      PacksActivityConfigurationButRequiresPlannerForRunSnapshot) {
   auto definition = std::make_shared<
-      ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
-      ggems::core::radioactivity::builtins::BuildF18Radionuclide());
+    ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
+    ggems::core::radioactivity::builtins::BuildF18Radionuclide());
   auto activity_source = std::make_shared<ggems::core::sources::GGEMSSource>();
   activity_source->SetRadionuclide(definition, ggems::units::Activity{1.0L},
                                    0ULL);
 
   auto const activity_configuration =
-      ggems::core::sources::BuildSourceConfigurationSnapshot(*activity_source);
+    ggems::core::sources::BuildSourceConfigurationSnapshot(*activity_source);
   ASSERT_EQ(activity_configuration->GetSourceCount(), 1U);
   ASSERT_EQ(activity_configuration->GetEmissionCount(), 3U);
   ASSERT_EQ(activity_configuration->GetRadionuclideDefinitions().size(), 1U);
@@ -1246,17 +1240,17 @@ TEST(GGEMSSourceRunSnapshot,
             definition);
 
   ExpectGGEMSExceptionContaining(
-      [&activity_source]() -> void {
-        (void)ggems::core::sources::BuildSourceRunSnapshot(
-            *activity_source,
-            ggems::core::GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1ULL});
-      },
-      "index 0 is ActivityDriven and requires a planner candidate");
+    [&activity_source]() -> void {
+      (void)ggems::core::sources::BuildSourceRunSnapshot(
+        *activity_source,
+        ggems::core::GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1ULL});
+    },
+    "index 0 is ActivityDriven and requires a planner candidate");
 
   std::vector<std::shared_ptr<ggems::core::sources::GGEMSSource>> sources{
-      MakeSource(1ULL), activity_source};
+    MakeSource(1ULL), activity_source};
   auto const mixed_configuration =
-      ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
+    ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
   ASSERT_EQ(mixed_configuration->GetSourceCount(), 2U);
   ASSERT_EQ(mixed_configuration->GetEmissionCount(), 3U);
   ASSERT_EQ(mixed_configuration->GetRadionuclideDefinitions().size(), 2U);
@@ -1264,27 +1258,27 @@ TEST(GGEMSSourceRunSnapshot,
   EXPECT_EQ(mixed_configuration->GetRadionuclideDefinitions()[1U], definition);
 
   ExpectGGEMSExceptionContaining(
-      [&sources]() -> void {
-        (void)ggems::core::sources::BuildSourceRunSnapshot(
-            sources,
-            ggems::core::GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1ULL});
-      },
-      "index 1 is ActivityDriven and requires a planner candidate");
+    [&sources]() -> void {
+      (void)ggems::core::sources::BuildSourceRunSnapshot(
+        sources,
+        ggems::core::GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1ULL});
+    },
+    "index 1 is ActivityDriven and requires a planner candidate");
 
   auto count_source = MakeSource(1ULL);
   std::vector<std::shared_ptr<ggems::core::sources::GGEMSSource>>
-      reconfigured_sources{count_source, MakeSource(2ULL)};
+    reconfigured_sources{count_source, MakeSource(2ULL)};
   auto stable_configuration =
-      ggems::core::sources::BuildSourceConfigurationSnapshot(
-          reconfigured_sources);
+    ggems::core::sources::BuildSourceConfigurationSnapshot(
+      reconfigured_sources);
   reconfigured_sources[1U]->SetRadionuclide(definition,
                                             ggems::units::Activity{2.0L}, 0ULL);
 
   ExpectGGEMSExceptionContaining(
-      [&reconfigured_sources, &stable_configuration]() -> void {
-        (void)ggems::core::sources::BuildSourceRunSnapshot(
-            reconfigured_sources, stable_configuration,
-            ggems::core::GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1ULL});
-      },
-      "index 1 is ActivityDriven and requires a planner candidate");
+    [&reconfigured_sources, &stable_configuration]() -> void {
+      (void)ggems::core::sources::BuildSourceRunSnapshot(
+        reconfigured_sources, stable_configuration,
+        ggems::core::GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1ULL});
+    },
+    "index 1 is ActivityDriven and requires a planner candidate");
 }

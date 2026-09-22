@@ -38,17 +38,17 @@ public:
                   ImTextureID scene_texture_id,
                   vk::Extent2D const &scene_texture_extent,
                   detail::GGEMSDeviceStatusSnapshot const &device_status)
-      -> void;
+    -> void;
 
   auto SetSourceRunSnapshot(core::sources::GGEMSSourceRunSnapshot snapshot)
-      -> void;
+    -> void;
 
   [[nodiscard]] auto GetViewportState() const noexcept -> ViewportState const &;
   [[nodiscard]] auto ShouldShowAxes() const noexcept -> bool;
   [[nodiscard]] auto ShouldShowParticleTraces() const noexcept -> bool;
   [[nodiscard]] auto ShouldResetCamera() const noexcept -> bool;
   [[nodiscard]] auto GetParticleTraceVisibility() const noexcept
-      -> render::GGEMSParticleTraceVisibility const &;
+    -> render::GGEMSParticleTraceVisibility const &;
 
 private:
   enum class SceneSelection : std::uint8_t {
@@ -68,11 +68,11 @@ private:
                                           ImVec2 const &dockspace_size) -> void;
   auto BuildStatusPanel(vk::Extent2D const &swapchain_extent,
                         detail::GGEMSDeviceStatusSnapshot const &device_status)
-      -> void;
+    -> void;
 
   auto BuildViewportPlaceholder(ImTextureID scene_texture_id,
                                 vk::Extent2D const &scene_texture_extent)
-      -> void;
+    -> void;
   auto BuildInspectorPanel() -> void;
   auto BuildScenePanel() -> void;
 

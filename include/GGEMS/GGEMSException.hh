@@ -60,8 +60,8 @@ public:
    * \param[in] loc Source location where the exception is created.
    */
   explicit GGEMSExceptionBase(
-      std::string msg, std::string cat,
-      std::source_location loc = std::source_location::current())
+    std::string msg, std::string cat,
+    std::source_location loc = std::source_location::current())
       : std::runtime_error(msg), file_(loc.file_name()),
         function_(loc.function_name()), category_(std::move(cat)),
         line_(static_cast<std::int32_t>(loc.line())) {
@@ -88,8 +88,8 @@ public:
   }
 
 private:
-  std::string full_; /*!< Formatted diagnostic returned by what(). */
-  char const *file_; /*!< Source file where the exception was created. */
+  std::string full_;     /*!< Formatted diagnostic returned by what(). */
+  char const *file_;     /*!< Source file where the exception was created. */
   char const *function_; /*!< Function where the exception was created. */
   std::string category_; /*!< Exception category. */
   std::int32_t line_{0}; /*!< Source line where the exception was created. */
@@ -107,8 +107,7 @@ public:
    * \param[in] loc Source location where the exception is created.
    */
   explicit GGEMSRecoverable(
-      std::string msg,
-      std::source_location loc = std::source_location::current())
+    std::string msg, std::source_location loc = std::source_location::current())
       : GGEMSExceptionBase(std::move(msg), "Recoverable", loc) {}
 };
 
@@ -123,8 +122,8 @@ public:
    * \param[in] msg Message associated with the exception.
    * \param[in] loc Source location where the exception is created.
    */
-  explicit GGEMSInternal(std::string msg, std::source_location loc =
-                                              std::source_location::current())
+  explicit GGEMSInternal(
+    std::string msg, std::source_location loc = std::source_location::current())
       : GGEMSExceptionBase(std::move(msg), "Internal", loc) {}
 };
 
@@ -139,8 +138,8 @@ public:
    * \param[in] msg Message associated with the exception.
    * \param[in] loc Source location where the exception is created.
    */
-  explicit GGEMSFatal(std::string msg, std::source_location loc =
-                                           std::source_location::current())
+  explicit GGEMSFatal(
+    std::string msg, std::source_location loc = std::source_location::current())
       : GGEMSExceptionBase(std::move(msg), "Fatal", loc) {}
 };
 

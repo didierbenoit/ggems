@@ -68,7 +68,7 @@ auto NormalizeEngineName(std::string_view engine_name) -> std::string {
     }
 
     normalized.push_back(
-        static_cast<char>(std::tolower(static_cast<unsigned char>(character))));
+      static_cast<char>(std::tolower(static_cast<unsigned char>(character))));
   }
 
   return normalized;
@@ -100,8 +100,8 @@ auto SplitMix64(std::uint64_t value) noexcept -> std::uint64_t {
  * \param[in] stream_id 32-bit logical stream identifier.
  * \return Initialized JKISS state.
  */
-auto MakeJKissState(std::uint32_t seed,
-                    std::uint32_t stream_id) noexcept -> GGEMSJKissState {
+auto MakeJKissState(std::uint32_t seed, std::uint32_t stream_id) noexcept
+  -> GGEMSJKissState {
   return GGEMSJKissState{.x = seed + 123456789U + (1013904223U * stream_id),
                          .y = seed ^ (362436069U + (1664525U * stream_id)),
                          .z = seed + 521288629U + (69069U * stream_id),
@@ -118,10 +118,10 @@ auto MakeJKissState(std::uint32_t seed,
  * \param[in] stream_id Logical stream identifier.
  * \return Initialized PCG32 state with an odd stream increment.
  */
-auto MakePCG32State(std::uint64_t seed,
-                    std::uint64_t stream_id) noexcept -> GGEMSPCG32State {
+auto MakePCG32State(std::uint64_t seed, std::uint64_t stream_id) noexcept
+  -> GGEMSPCG32State {
   std::uint64_t state =
-      SplitMix64(seed + (0xD1B54A32D192ED03ULL * (stream_id + 1ULL)));
+    SplitMix64(seed + (0xD1B54A32D192ED03ULL * (stream_id + 1ULL)));
 
   std::uint64_t stream = SplitMix64(seed ^ (0xABC98388FB8FAC03ULL + stream_id));
 
@@ -137,15 +137,15 @@ auto MakePCG32State(std::uint64_t seed,
  * \param[in] stream_id Logical stream identifier encoded in the high counter
  * words. \return Initialized Philox state.
  */
-auto MakePhiloxState(std::uint64_t seed,
-                     std::uint64_t stream_id) noexcept -> GGEMSPhiloxState {
+auto MakePhiloxState(std::uint64_t seed, std::uint64_t stream_id) noexcept
+  -> GGEMSPhiloxState {
   std::uint64_t key = SplitMix64(seed);
 
   return GGEMSPhiloxState{.counter_0 = 0U,
                           .counter_1 = 0U,
                           .counter_2 = static_cast<std::uint32_t>(stream_id),
                           .counter_3 =
-                              static_cast<std::uint32_t>(stream_id >> 32U),
+                            static_cast<std::uint32_t>(stream_id >> 32U),
                           .key_0 = static_cast<std::uint32_t>(key),
                           .key_1 = static_cast<std::uint32_t>(key >> 32U)};
 }
@@ -165,13 +165,13 @@ auto CheckedStateCount(std::size_t state_size,
                        std::span<std::byte> state_storage) -> std::size_t {
   if (!(state_size > 0U)) {
     throw ggems::core::GGEMSInternal(
-        "Unsupported GGEMS Random engine state size.");
+      "Unsupported GGEMS Random engine state size.");
   }
 
   if (!(state_storage.size() % state_size == 0U)) {
     throw ggems::core::GGEMSRecoverable(
-        "Random state storage size must be a multiple of the "
-        "selected engine state size.");
+      "Random state storage size must be a multiple of the "
+      "selected engine state size.");
   }
 
   return state_storage.size() / state_size;
@@ -187,17 +187,17 @@ auto CheckedStateCount(std::size_t state_size,
  * \p first_stream_id for an empty range. \throws ggems::core::GGEMSRecoverable
  * If the identifier range overflows uint64_t.
  */
-auto CheckLastStreamId(std::uint64_t first_stream_id,
-                       std::size_t state_count) -> std::uint64_t {
+auto CheckLastStreamId(std::uint64_t first_stream_id, std::size_t state_count)
+  -> std::uint64_t {
   if (state_count == 0U) {
     return first_stream_id;
   }
 
   if (!(std::cmp_less_equal(state_count - 1U,
                             std::numeric_limits<std::uint64_t>::max() -
-                                first_stream_id))) {
+                              first_stream_id))) {
     throw ggems::core::GGEMSRecoverable(
-        "Random stream identifier range overflow uint64_t.");
+      "Random stream identifier range overflow uint64_t.");
   }
 
   return first_stream_id + static_cast<std::uint64_t>(state_count - 1U);
@@ -216,13 +216,12 @@ auto CheckLastStreamId(std::uint64_t first_stream_id,
  */
 template <typename State, typename Factory>
 auto InitializeStateStorage(
-    std::uint64_t first_stream_id, std::size_t state_count,
-    std::span<std::byte> state_storage,
-    Factory make_state) noexcept(noexcept(make_state(first_stream_id)))
-    -> void {
+  std::uint64_t first_stream_id, std::size_t state_count,
+  std::span<std::byte> state_storage,
+  Factory make_state) noexcept(noexcept(make_state(first_stream_id))) -> void {
   for (std::size_t state_index = 0U; state_index < state_count; ++state_index) {
     auto state =
-        make_state(first_stream_id + static_cast<std::uint64_t>(state_index));
+      make_state(first_stream_id + static_cast<std::uint64_t>(state_index));
 
     std::memcpy(state_storage.data() + (state_index * sizeof(State)), &state,
                 sizeof(State));
@@ -266,7 +265,7 @@ auto ParseRandomEngine(std::string_view engine_name) -> GGEMSRandomEngine {
   }
 
   throw ggems::core::GGEMSRecoverable(
-      std::format("Unsupported GGEMS random engine '{}'.", engine_name));
+    std::format("Unsupported GGEMS random engine '{}'.", engine_name));
 }
 
 // =============================================================================
@@ -286,7 +285,7 @@ GGEMSRandom::GGEMSRandom() {
 // -----------------------------------------------------------------------------
 
 auto GGEMSRandom::SetEngine(GGEMSRandomEngine engine) noexcept
-    -> GGEMSRandom & {
+  -> GGEMSRandom & {
   engine_ = engine;
   return *this;
 }
@@ -354,17 +353,17 @@ auto GGEMSRandom::ValidateStateRange(std::uint64_t first_stream_id,
                                      std::size_t state_count) const -> void {
   if (!(GetStateSize() > 0U)) {
     throw ggems::core::GGEMSInternal(
-        "Unsupported GGEMS random engine state size.");
+      "Unsupported GGEMS random engine state size.");
   }
 
   std::uint64_t last_stream_id =
-      CheckLastStreamId(first_stream_id, state_count);
+    CheckLastStreamId(first_stream_id, state_count);
 
   if (engine_ == GGEMSRandomEngine::JKISS) {
     if (state_count != 0U &&
         last_stream_id > std::numeric_limits<std::uint32_t>::max()) {
       throw ggems::core::GGEMSRecoverable(
-          "JKISS stream identifier must fit uint32_t.");
+        "JKISS stream identifier must fit uint32_t.");
     }
   }
 }
@@ -373,7 +372,7 @@ auto GGEMSRandom::ValidateStateRange(std::uint64_t first_stream_id,
 
 auto GGEMSRandom::InitializeStates(std::uint64_t first_stream_id,
                                    std::span<std::byte> state_storage) const
-    -> void {
+  -> void {
   std::size_t state_count = CheckedStateCount(GetStateSize(), state_storage);
 
   ValidateStateRange(first_stream_id, state_count);
@@ -383,46 +382,46 @@ auto GGEMSRandom::InitializeStates(std::uint64_t first_stream_id,
     auto seed = static_cast<std::uint32_t>(seed_);
 
     InitializeStateStorage<GGEMSJKissState>(
-        first_stream_id, state_count, state_storage,
-        [seed](std::uint64_t stream_id) noexcept -> GGEMSJKissState {
-          return MakeJKissState(seed, static_cast<std::uint32_t>(stream_id));
-        });
+      first_stream_id, state_count, state_storage,
+      [seed](std::uint64_t stream_id) noexcept -> GGEMSJKissState {
+        return MakeJKissState(seed, static_cast<std::uint32_t>(stream_id));
+      });
     return;
   }
 
   case GGEMSRandomEngine::PCG32:
     InitializeStateStorage<GGEMSPCG32State>(
-        first_stream_id, state_count, state_storage,
-        [seed = seed_](std::uint64_t stream_id) noexcept -> GGEMSPCG32State {
-          return MakePCG32State(seed, stream_id);
-        });
+      first_stream_id, state_count, state_storage,
+      [seed = seed_](std::uint64_t stream_id) noexcept -> GGEMSPCG32State {
+        return MakePCG32State(seed, stream_id);
+      });
     return;
 
   case GGEMSRandomEngine::Philox:
     InitializeStateStorage<GGEMSPhiloxState>(
-        first_stream_id, state_count, state_storage,
-        [seed = seed_](std::uint64_t stream_id) noexcept -> GGEMSPhiloxState {
-          return MakePhiloxState(seed, stream_id);
-        });
+      first_stream_id, state_count, state_storage,
+      [seed = seed_](std::uint64_t stream_id) noexcept -> GGEMSPhiloxState {
+        return MakePhiloxState(seed, stream_id);
+      });
     return;
   }
 
   throw ggems::core::GGEMSInternal(
-      "Unsupported GGEMS random engine state initialization.");
+    "Unsupported GGEMS random engine state initialization.");
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSRandom::BuildSummaryLines() const -> std::vector<std::string> {
   return {
-      std::format("Random engine           : {}", GetEngineName()),
-      std::format("Seed                    : {}", seed_),
-      std::format("State size              : {} bytes", GetStateSize()),
-      std::format("OpenCL engine id        : {}", GetKernelEngineId()),
-      std::format("OpenCL build definition : {}", GetKernelBuildDefinition()),
-      "kernel raw API         : GGEMS_RndmUInt32",
-      "kernel scalar API      : GGEMS_RndmUniform",
-      "kernel vector API      : GGEMS_RndmUniform4"};
+    std::format("Random engine           : {}", GetEngineName()),
+    std::format("Seed                    : {}", seed_),
+    std::format("State size              : {} bytes", GetStateSize()),
+    std::format("OpenCL engine id        : {}", GetKernelEngineId()),
+    std::format("OpenCL build definition : {}", GetKernelBuildDefinition()),
+    "kernel raw API         : GGEMS_RndmUInt32",
+    "kernel scalar API      : GGEMS_RndmUniform",
+    "kernel vector API      : GGEMS_RndmUniform4"};
 }
 
 // -----------------------------------------------------------------------------

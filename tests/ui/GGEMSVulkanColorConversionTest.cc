@@ -14,7 +14,7 @@ namespace render = ggems::render;
 using ggems::ui::detail::ToVulkanClearColor;
 
 constexpr std::array<float, 4U> k_expected_blue_abyss{
-    0.011764707F, 0.019607844F, 0.027450982F, 1.0F};
+  0.011764707F, 0.019607844F, 0.027450982F, 1.0F};
 constexpr auto k_constexpr_blue_abyss = ToVulkanClearColor(render::BLUE_Abyss);
 
 static_assert(k_constexpr_blue_abyss == k_expected_blue_abyss);
@@ -96,10 +96,10 @@ TEST(GGEMSVulkanColorConversion, IgnoresForegroundAndBackgroundLayer) {
 
 TEST(GGEMSVulkanColorConversion, ClampsShadeAbovePaletteRange) {
   constexpr render::ColorKey out_of_range_color{
-      .family = render::ColorFamily::Blue,
-      .shade = std::numeric_limits<std::uint8_t>::max(),
-      .variant = render::ColorVariant::Normal,
-      .layer = render::ColorLayer::Foreground};
+    .family = render::ColorFamily::Blue,
+    .shade = std::numeric_limits<std::uint8_t>::max(),
+    .variant = render::ColorVariant::Normal,
+    .layer = render::ColorLayer::Foreground};
 
   ExpectVulkanColor(ToVulkanClearColor(out_of_range_color),
                     k_expected_blue_abyss);

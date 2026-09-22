@@ -73,14 +73,14 @@ auto ReadMaterial(materials::GGEMSEMMaterialPackage const &package,
                   std::uint32_t material_id) -> OracleMaterial {
   auto const &descriptor = package.GetDescriptors()[material_id];
   OracleMaterial material{
-      .elements = {},
-      .density_g_cm3 = *units::ConvertTo(descriptor.density, "g/cm3"),
+    .elements = {},
+    .density_g_cm3 = *units::ConvertTo(descriptor.density, "g/cm3"),
   };
   for (auto const &constituent : package.GetElementalConstituents().subspan(
-           descriptor.first_constituent, descriptor.constituent_count)) {
+         descriptor.first_constituent, descriptor.constituent_count)) {
     material.elements.push_back({
-        .z = static_cast<long double>(constituent.atomic_number),
-        .density = constituent.number_density_per_cubic_centimeter,
+      .z = static_cast<long double>(constituent.atomic_number),
+      .density = constituent.number_density_per_cubic_centimeter,
     });
   }
   return material;
@@ -91,17 +91,17 @@ auto GammaSigmaBarn(long double z, long double energy) -> long double {
   long double const tmin = 0.552L + 218.5L / z + 557.17L / (z * z);
   long double const tlow = 0.2L * std::exp(-7.355L / std::sqrt(z));
   long double const smin =
-      (0.01239L + 0.005585L * lz - 0.000923L * lz * lz) * std::exp(1.5L * lz);
+    (0.01239L + 0.005585L * lz - 0.000923L * lz * lz) * std::exp(1.5L * lz);
   long double const s200 =
-      (0.2651L - 0.1501L * lz + 0.02283L * lz * lz) * z * z;
+    (0.2651L - 0.1501L * lz + 0.02283L * lz * lz) * z * z;
   long double const cmin =
-      std::log(s200 / smin) / std::pow(std::log(tmin / 0.2L), 2.0L);
+    std::log(s200 / smin) / std::pow(std::log(tmin / 0.2L), 2.0L);
   long double const slow =
-      s200 * std::exp(0.042L * z * std::pow(std::log(0.2L / tlow), 2.0L));
+    s200 * std::exp(0.042L * z * std::pow(std::log(0.2L / tlow), 2.0L));
   long double const clow =
-      std::log(300.0L * z * z / slow) / std::log(tlow / 1e-3L);
+    std::log(300.0L * z * z / slow) / std::log(tlow / 1e-3L);
   long double const chigh =
-      (7.55e-5L - 0.0542e-5L * z) * z * z * z / std::log(100.0L / tmin);
+    (7.55e-5L - 0.0542e-5L * z) * z * z * z / std::log(100.0L / tmin);
 
   if (energy < tlow) {
     return slow * std::pow(tlow / std::max(energy, 1e-3L), clow);
@@ -117,7 +117,7 @@ auto GammaSigmaBarn(long double z, long double energy) -> long double {
 }
 
 auto GammaRange(OracleMaterial const &material, long double energy)
-    -> long double {
+  -> long double {
   long double sigma{0.0L};
   for (auto const &element : material.elements) {
     sigma += element.density * GammaSigmaBarn(element.z, energy) * 1.0e-24L;
@@ -133,29 +133,27 @@ auto LeptonStopping(OracleMaterial const &material, long double energy,
   long double const t = low ? tau_low : tau;
   long double const beta2 = t * (t + 2.0L) / ((t + 1.0L) * (t + 1.0L));
   long double const f =
-      positron
-          ? 2.0L * std::log(t) -
-                (6.0L * t + 1.5L * t * t -
-                 t * (1.0L - t * t / 3.0L) / (t + 2.0L) -
-                 t * t * (0.5L - t * t / 12.0L) / ((t + 2.0L) * (t + 2.0L))) /
-                    ((t + 1.0L) * (t + 1.0L))
-          : 1.0L - beta2 + std::log(t * t / 2.0L) +
-                (0.5L + 0.25L * t * t + (1.0L + 2.0L * t) * std::log(0.5L)) /
-                    ((t + 1.0L) * (t + 1.0L));
+    positron
+      ? 2.0L * std::log(t) -
+          (6.0L * t + 1.5L * t * t - t * (1.0L - t * t / 3.0L) / (t + 2.0L) -
+           t * t * (0.5L - t * t / 12.0L) / ((t + 2.0L) * (t + 2.0L))) /
+            ((t + 1.0L) * (t + 1.0L))
+      : 1.0L - beta2 + std::log(t * t / 2.0L) +
+          (0.5L + 0.25L * t * t + (1.0L + 2.0L * t) * std::log(0.5L)) /
+            ((t + 1.0L) * (t + 1.0L));
 
   long double sum{0.0L};
   for (auto const &element : material.elements) {
     long double const z = element.z;
     long double const ionisation =
-        1.6e-5L * std::pow(z, 0.9L) / k_electron_mass_mev;
+      1.6e-5L * std::pow(z, 0.9L) / k_electron_mass_mev;
     long double dedx =
-        z * (std::log(2.0L * t + 4.0L) - 2.0L * std::log(ionisation) + f) /
-        beta2;
+      z * (std::log(2.0L * t + 4.0L) - 2.0L * std::log(ionisation) + f) / beta2;
     if (low) {
       dedx *= std::sqrt(tau_low / tau);
     } else {
       long double const cbrem =
-          (0.02L - 5.7e-5L * z) * (1.0L + 0.072L * std::log(energy / 1000.0L));
+        (0.02L - 5.7e-5L * z) * (1.0L + 0.072L * std::log(energy / 1000.0L));
       dedx += z * (z + 1.0L) * cbrem * 0.1L * tau / beta2;
     }
     sum += element.density * dedx;
@@ -185,7 +183,7 @@ auto AdaptiveSimpson(std::function<long double(long double)> const &function,
 
 auto Integrate(std::function<long double(long double)> const &function,
                long double lower, long double upper, long double tolerance)
-    -> long double {
+  -> long double {
   long double const fa = function(lower);
   long double const fb = function(upper);
   long double const fm = function((lower + upper) / 2.0L);
@@ -199,12 +197,12 @@ auto LeptonRange(OracleMaterial const &material, long double energy,
   // Below 10 keV, E = x^2 removes the E^-1/2 stopping singularity.
   long double const low_upper = std::sqrt(std::min(energy, 0.01L));
   long double range = Integrate(
-      [&](long double x) -> long double {
-        return x == 0.0L
-                   ? 0.0L
-                   : 2.0L * x / LeptonStopping(material, x * x, positron, true);
-      },
-      0.0L, low_upper, 1e-14L);
+    [&](long double x) -> long double {
+      return x == 0.0L
+               ? 0.0L
+               : 2.0L * x / LeptonStopping(material, x * x, positron, true);
+    },
+    0.0L, low_upper, 1e-14L);
   if (energy <= 0.01L) {
     return range;
   }
@@ -213,11 +211,11 @@ auto LeptonRange(OracleMaterial const &material, long double energy,
   while (lower < energy) {
     long double const upper = std::min(lower * 10.0L, energy);
     range += Integrate(
-        [&](long double u) -> long double {
-          long double const e = std::exp(u);
-          return e / LeptonStopping(material, e, positron);
-        },
-        std::log(lower), std::log(upper), 1e-14L);
+      [&](long double u) -> long double {
+        long double const e = std::exp(u);
+        return e / LeptonStopping(material, e, positron);
+      },
+      std::log(lower), std::log(upper), 1e-14L);
     lower = upper;
   }
   return range;
@@ -232,7 +230,7 @@ struct OracleResult {
 };
 
 auto OracleGamma(OracleMaterial const &material, long double length_cm)
-    -> OracleResult {
+  -> OracleResult {
   long double const min_range = GammaRange(material, k_min_mev);
   if (min_range > length_cm) {
     return {.status = OracleStatus::BelowDomain,
@@ -260,9 +258,9 @@ auto OracleGamma(OracleMaterial const &material, long double length_cm)
   long double const energy = std::exp(upper);
   long double const step = 1.0e-6L;
   long double const slope =
-      (std::log(GammaRange(material, energy * std::exp(step))) -
-       std::log(GammaRange(material, energy * std::exp(-step)))) /
-      (2.0L * step);
+    (std::log(GammaRange(material, energy * std::exp(step))) -
+     std::log(GammaRange(material, energy * std::exp(-step)))) /
+    (2.0L * step);
   return {.status = OracleStatus::Admitted,
           .energy_mev = energy,
           .conditioning = 1.0L / slope};
@@ -281,14 +279,14 @@ auto OracleLepton(OracleMaterial const &material, long double length_cm,
   long double energy = 0.01L;
   for (int iteration = 0; iteration < 100; ++iteration) {
     long double const residual =
-        LeptonRange(material, energy, positron) - length_cm;
+      LeptonRange(material, energy, positron) - length_cm;
     if (residual >= 0.0L) {
       upper = energy;
     } else {
       lower = energy;
     }
     long double next =
-        energy - residual * LeptonStopping(material, energy, positron);
+      energy - residual * LeptonStopping(material, energy, positron);
     if (!(next > lower && next < upper)) {
       next = (lower + upper) / 2.0L;
     }
@@ -344,10 +342,10 @@ auto Oracle(Channel channel, OracleMaterial const &material,
 
 auto MakeC01Package() -> materials::GGEMSEMMaterialPackage {
   std::vector<materials::GGEMSMaterial> const list{
-      materials::builtins::BuildBuiltInMaterial("Water"),
-      materials::builtins::BuildBuiltInMaterial("Aluminum"),
-      materials::builtins::BuildBuiltInMaterial("Tungsten"),
-      materials::builtins::BuildBuiltInMaterial("Vacuum"),
+    materials::builtins::BuildBuiltInMaterial("Water"),
+    materials::builtins::BuildBuiltInMaterial("Aluminum"),
+    materials::builtins::BuildBuiltInMaterial("Tungsten"),
+    materials::builtins::BuildBuiltInMaterial("Vacuum"),
   };
   return materials::GGEMSEMMaterialPackage{list};
 }
@@ -380,11 +378,11 @@ auto ChannelLabel(Channel channel) -> std::string_view {
 
 TEST(GGEMSProductionCutConverterTest, ReturnsCanonicalEnergy) {
   static_assert(
-      std::is_same_v<
-          decltype(processes::ConvertProductionCutLength(
-              Channel::Proton, units::Length{},
-              std::declval<materials::GGEMSEMMaterialPackage const &>(), 0U)),
-          units::Energy>);
+    std::is_same_v<decltype(processes::ConvertProductionCutLength(
+                     Channel::Proton, units::Length{},
+                     std::declval<materials::GGEMSEMMaterialPackage const &>(),
+                     0U)),
+                   units::Energy>);
 }
 
 // =============================================================================
@@ -409,8 +407,8 @@ TEST(GGEMSProductionCutConverterTest, C01MatchesIndependentOracle) {
         if (reference.status != OracleStatus::Admitted) {
           ++rejected;
           EXPECT_THROW(
-              static_cast<void>(Convert(channel, length, package, material_id)),
-              ggems::core::GGEMSRecoverable);
+            static_cast<void>(Convert(channel, length, package, material_id)),
+            ggems::core::GGEMSRecoverable);
           continue;
         }
 
@@ -418,13 +416,13 @@ TEST(GGEMSProductionCutConverterTest, C01MatchesIndependentOracle) {
         auto const energy = Convert(channel, length, package, material_id);
         long double const reference_micro_ev = reference.energy_mev * 1.0e12L;
         long double const tolerance = 1.0L + k_range_relative_allowance *
-                                                 reference.conditioning *
-                                                 reference_micro_ev;
+                                               reference.conditioning *
+                                               reference_micro_ev;
         EXPECT_LE(std::fabs(static_cast<long double>(energy.value) -
                             reference_micro_ev),
                   tolerance)
-            << "production " << energy.value << " µeV, reference "
-            << static_cast<double>(reference_micro_ev) << " µeV";
+          << "production " << energy.value << " µeV, reference "
+          << static_cast<double>(reference_micro_ev) << " µeV";
       }
     }
   }
@@ -479,8 +477,8 @@ TEST(GGEMSProductionCutConverterTest, ProtonOverflowIsRejected) {
   auto const package = MakeC01Package();
 
   EXPECT_THROW(
-      static_cast<void>(Convert(Channel::Proton, 1000_km, package, k_water)),
-      ggems::core::GGEMSRecoverable);
+    static_cast<void>(Convert(Channel::Proton, 1000_km, package, k_water)),
+    ggems::core::GGEMSRecoverable);
 }
 
 // =============================================================================
@@ -496,14 +494,14 @@ TEST(GGEMSProductionCutConverterTest, OutOfDomainLengthsAreRejected) {
                    std::to_string(material_id));
 
       EXPECT_THROW(
-          static_cast<void>(Convert(channel, 0_pm, package, material_id)),
-          ggems::core::GGEMSRecoverable);
+        static_cast<void>(Convert(channel, 0_pm, package, material_id)),
+        ggems::core::GGEMSRecoverable);
       EXPECT_THROW(
-          static_cast<void>(Convert(channel, 1_nm, package, material_id)),
-          ggems::core::GGEMSRecoverable);
+        static_cast<void>(Convert(channel, 1_nm, package, material_id)),
+        ggems::core::GGEMSRecoverable);
       EXPECT_THROW(
-          static_cast<void>(Convert(channel, 1000_km, package, material_id)),
-          ggems::core::GGEMSRecoverable);
+        static_cast<void>(Convert(channel, 1000_km, package, material_id)),
+        ggems::core::GGEMSRecoverable);
     }
   }
 }
@@ -519,12 +517,12 @@ TEST(GGEMSProductionCutConverterTest, DomainEdgeIsNotClamped) {
   // equals the length. Just below it the crossing lies below the domain.
   long double const edge_cm = GammaRange(water, k_min_mev);
   auto const edge_pm =
-      static_cast<std::uint64_t>(std::floor(edge_cm * 1.0e10L));
+    static_cast<std::uint64_t>(std::floor(edge_cm * 1.0e10L));
 
   EXPECT_THROW(
-      static_cast<void>(Convert(Channel::Gamma, units::Length{edge_pm - 1U},
-                                package, k_water)),
-      ggems::core::GGEMSRecoverable);
+    static_cast<void>(
+      Convert(Channel::Gamma, units::Length{edge_pm - 1U}, package, k_water)),
+    ggems::core::GGEMSRecoverable);
 
   units::Length const above_length{edge_pm + 2U};
   auto const above = Convert(Channel::Gamma, above_length, package, k_water);
@@ -533,25 +531,25 @@ TEST(GGEMSProductionCutConverterTest, DomainEdgeIsNotClamped) {
   long double const reference_micro_ev = reference.energy_mev * 1.0e12L;
   EXPECT_GE(above, 990_eV);
   EXPECT_LE(
-      std::fabs(static_cast<long double>(above.value) - reference_micro_ev),
-      1.0L + k_range_relative_allowance * reference.conditioning *
-                 reference_micro_ev);
+    std::fabs(static_cast<long double>(above.value) - reference_micro_ev),
+    1.0L +
+      k_range_relative_allowance * reference.conditioning * reference_micro_ev);
 
   // Electron: find the smallest admitted length by bisection on the public
   // API; below it every length is rejected rather than clamped to 0.99 keV.
   std::uint64_t rejected_pm{1U};
   std::uint64_t admitted_pm{1'000'000'000U};
   ASSERT_THROW(
-      static_cast<void>(Convert(Channel::Electron, units::Length{rejected_pm},
-                                package, k_water)),
-      ggems::core::GGEMSRecoverable);
-  ASSERT_NO_THROW(static_cast<void>(Convert(
-      Channel::Electron, units::Length{admitted_pm}, package, k_water)));
+    static_cast<void>(
+      Convert(Channel::Electron, units::Length{rejected_pm}, package, k_water)),
+    ggems::core::GGEMSRecoverable);
+  ASSERT_NO_THROW(static_cast<void>(
+    Convert(Channel::Electron, units::Length{admitted_pm}, package, k_water)));
   while (admitted_pm - rejected_pm > 1U) {
     auto const middle = rejected_pm + (admitted_pm - rejected_pm) / 2U;
     try {
       static_cast<void>(
-          Convert(Channel::Electron, units::Length{middle}, package, k_water));
+        Convert(Channel::Electron, units::Length{middle}, package, k_water));
       admitted_pm = middle;
     } catch (ggems::core::GGEMSRecoverable const &) {
       rejected_pm = middle;
@@ -559,7 +557,7 @@ TEST(GGEMSProductionCutConverterTest, DomainEdgeIsNotClamped) {
   }
 
   auto const smallest =
-      Convert(Channel::Electron, units::Length{admitted_pm}, package, k_water);
+    Convert(Channel::Electron, units::Length{admitted_pm}, package, k_water);
   EXPECT_GE(smallest, 990_eV);
   EXPECT_LE(smallest, 991_eV);
 }
@@ -578,13 +576,13 @@ TEST(GGEMSProductionCutConverterTest, GammaCrossingNearProxyMaximumIsFound) {
   long double const peak_cm = GammaRange(tungsten, tmin);
 
   units::Length const below{static_cast<std::uint64_t>(
-      std::floor(peak_cm * (1.0L - 1.0e-7L) * 1.0e10L))};
+    std::floor(peak_cm * (1.0L - 1.0e-7L) * 1.0e10L))};
   units::Length const above{static_cast<std::uint64_t>(
-      std::ceil(peak_cm * (1.0L + 1.0e-7L) * 1.0e10L))};
+    std::ceil(peak_cm * (1.0L + 1.0e-7L) * 1.0e10L))};
 
   EXPECT_THROW(
-      static_cast<void>(Convert(Channel::Gamma, above, package, k_tungsten)),
-      ggems::core::GGEMSRecoverable);
+    static_cast<void>(Convert(Channel::Gamma, above, package, k_tungsten)),
+    ggems::core::GGEMSRecoverable);
 
   long double const length_cm = *units::ConvertTo(below, "cm");
   long double lower = std::log(k_min_mev);
@@ -600,16 +598,16 @@ TEST(GGEMSProductionCutConverterTest, GammaCrossingNearProxyMaximumIsFound) {
   long double const reference_micro_ev = std::exp(upper) * 1.0e12L;
   long double const step = 1.0e-6L;
   long double const slope =
-      (std::log(GammaRange(tungsten, std::exp(upper + step))) -
-       std::log(GammaRange(tungsten, std::exp(upper - step)))) /
-      (2.0L * step);
+    (std::log(GammaRange(tungsten, std::exp(upper + step))) -
+     std::log(GammaRange(tungsten, std::exp(upper - step)))) /
+    (2.0L * step);
 
   auto const energy = Convert(Channel::Gamma, below, package, k_tungsten);
   EXPECT_LE(
-      std::fabs(static_cast<long double>(energy.value) - reference_micro_ev),
-      1.0L + ((k_range_relative_allowance / slope) * reference_micro_ev))
-      << "production " << energy.value << " µeV, reference "
-      << static_cast<double>(reference_micro_ev) << " µeV";
+    std::fabs(static_cast<long double>(energy.value) - reference_micro_ev),
+    1.0L + ((k_range_relative_allowance / slope) * reference_micro_ev))
+    << "production " << energy.value << " µeV, reference "
+    << static_cast<double>(reference_micro_ev) << " µeV";
 }
 
 // =============================================================================

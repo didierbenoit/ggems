@@ -33,7 +33,7 @@ public:
   [[nodiscard]] static auto
   FromIsotopicComposition(std::string name, units::Density density,
                           std::vector<GGEMSElementalShare> elemental_shares)
-      -> GGEMSMaterial;
+    -> GGEMSMaterial;
 
   [[nodiscard]] auto GetName() const noexcept -> std::string_view {
     return name_;
@@ -44,21 +44,21 @@ public:
   }
 
   [[nodiscard]] auto GetConstituents() const noexcept
-      -> std::span<GGEMSMaterialConstituent const> {
+    -> std::span<GGEMSMaterialConstituent const> {
     return constituents_;
   }
 
   [[nodiscard]] auto GetIsotopeConstituents() const noexcept
-      -> std::span<GGEMSIsotopeConstituent const>;
+    -> std::span<GGEMSIsotopeConstituent const>;
 
   [[nodiscard]] auto GetElementalConstituents() const noexcept
-      -> std::span<GGEMSDerivedElementalConstituent const>;
+    -> std::span<GGEMSDerivedElementalConstituent const>;
 
   [[nodiscard]] auto GetTotalAtomDensityPerCubicCentimeter() const noexcept
-      -> long double;
+    -> long double;
 
   [[nodiscard]] auto GetElectronDensityPerCubicCentimeter() const noexcept
-      -> long double;
+    -> long double;
 
 private:
   GGEMSMaterial(std::string name, units::Density density);

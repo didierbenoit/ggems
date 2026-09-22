@@ -146,7 +146,7 @@ auto ExtractQuotedInclude(std::string_view line) -> std::optional<std::string> {
   }
 
   return std::string{
-      line.substr(first_quote + 1U, second_quote - first_quote - 1U)};
+    line.substr(first_quote + 1U, second_quote - first_quote - 1U)};
 }
 
 // =============================================================================
@@ -159,7 +159,7 @@ auto ExtractQuotedInclude(std::string_view line) -> std::optional<std::string> {
  * \return Include-root paths in option order.
  */
 auto ExtractIncludeRoots(std::string_view build_options)
-    -> std::vector<std::filesystem::path> {
+  -> std::vector<std::filesystem::path> {
   std::vector<std::filesystem::path> roots;
 
   for (std::size_t index = 0U; index < build_options.size(); ++index) {
@@ -172,7 +172,7 @@ auto ExtractIncludeRoots(std::string_view build_options)
 
     while (index < build_options.size() &&
            std::isspace(static_cast<unsigned char>(build_options[index])) !=
-               0) {
+             0) {
       ++index;
     }
 
@@ -188,7 +188,7 @@ auto ExtractIncludeRoots(std::string_view build_options)
     } else {
       while (index < build_options.size() &&
              std::isspace(static_cast<unsigned char>(build_options[index])) ==
-                 0) {
+               0) {
         include_path.push_back(build_options[index]);
         ++index;
       }
@@ -237,9 +237,9 @@ auto NormalizePath(std::filesystem::path const &path) -> std::filesystem::path {
  * exists.
  */
 auto ResolveLocalInclude(
-    std::string const &include_name, std::filesystem::path const &including_dir,
-    std::vector<std::filesystem::path> const &include_roots)
-    -> std::optional<std::filesystem::path> {
+  std::string const &include_name, std::filesystem::path const &including_dir,
+  std::vector<std::filesystem::path> const &include_roots)
+  -> std::optional<std::filesystem::path> {
   std::vector<std::filesystem::path> candidates;
   candidates.reserve(include_roots.size() + 1U);
 
@@ -338,11 +338,11 @@ auto GGEMSOpenCLProgram::Initialize() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProgram::BuildIncludeSearchRoots() const
-    -> std::vector<std::filesystem::path> {
+  -> std::vector<std::filesystem::path> {
   std::vector<std::filesystem::path> roots;
 
   std::filesystem::path source_dir =
-      std::filesystem::path{source_path_}.parent_path();
+    std::filesystem::path{source_path_}.parent_path();
 
   roots.emplace_back(source_dir);
   roots.emplace_back(kernel_root_);
@@ -352,7 +352,7 @@ auto GGEMSOpenCLProgram::BuildIncludeSearchRoots() const
   }
 
   std::vector<std::filesystem::path> option_roots =
-      ExtractIncludeRoots(build_options_);
+    ExtractIncludeRoots(build_options_);
 
   roots.insert(roots.end(), option_roots.begin(), option_roots.end());
 
@@ -369,7 +369,7 @@ auto GGEMSOpenCLProgram::BuildIncludeSearchRoots() const
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProgram::BuildSourceFingerprintText(
-    std::filesystem::path const &source_path) const -> std::string {
+  std::filesystem::path const &source_path) const -> std::string {
   std::vector<std::filesystem::path> include_roots = BuildIncludeSearchRoots();
 
   std::unordered_set<std::string> visited_sources;
@@ -384,10 +384,10 @@ auto GGEMSOpenCLProgram::BuildSourceFingerprintText(
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProgram::AppendSourceFingerprintText(
-    std::filesystem::path const &source_path,
-    std::vector<std::filesystem::path> const &include_roots,
-    std::unordered_set<std::string> &visited_sources,
-    std::string &fingerprint_text) const -> void {
+  std::filesystem::path const &source_path,
+  std::vector<std::filesystem::path> const &include_roots,
+  std::unordered_set<std::string> &visited_sources,
+  std::string &fingerprint_text) const -> void {
   std::filesystem::path normalized_source = NormalizePath(source_path);
   std::string source_key = normalized_source.generic_string();
 
@@ -418,7 +418,7 @@ auto GGEMSOpenCLProgram::AppendSourceFingerprintText(
     }
 
     std::optional<std::filesystem::path> include_path = ResolveLocalInclude(
-        *include_name, normalized_source.parent_path(), include_roots);
+      *include_name, normalized_source.parent_path(), include_roots);
 
     if (!include_path.has_value()) {
       fingerprint_text += "\n/* UNRESOLVED GGEMS INCLUDE: ";
@@ -438,7 +438,7 @@ auto GGEMSOpenCLProgram::Matches(GGEMSOpenCLContext const &context,
                                  std::filesystem::path const &kernel_root,
                                  std::string_view kernel_name,
                                  std::string_view user_build_options) const
-    -> bool {
+  -> bool {
   if (context_() != context.GetContextNative()()) {
     return false;
   }
@@ -456,10 +456,10 @@ auto GGEMSOpenCLProgram::Matches(GGEMSOpenCLContext const &context,
   }
 
   std::filesystem::path expected_source_path =
-      NormalizePath(kernel_root / (std::string{kernel_name} + ".cl"));
+    NormalizePath(kernel_root / (std::string{kernel_name} + ".cl"));
 
   std::filesystem::path current_source_path =
-      NormalizePath(std::filesystem::path{source_path_});
+    NormalizePath(std::filesystem::path{source_path_});
 
   return current_source_path == expected_source_path;
 }
@@ -499,9 +499,9 @@ auto GGEMSOpenCLProgram::Build() -> void {
       return;
     } catch (...) {
       GGEMS_INFOEX(
-          "OpenCL", 2,
-          "Cached binary for '{}' could not be used; falling back to source.",
-          kernel_name_);
+        "OpenCL", 2,
+        "Cached binary for '{}' could not be used; falling back to source.",
+        kernel_name_);
     }
   }
 
@@ -527,11 +527,11 @@ auto GGEMSOpenCLProgram::Build() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProgram::LoadTextFile(std::filesystem::path const &path)
-    -> std::string {
+  -> std::string {
   std::ifstream input_stream(path, std::ios::binary);
   if (!input_stream.good()) {
     throw ggems::core::GGEMSFatal(
-        std::format("Failed to open program source file '{}'.", path.string()));
+      std::format("Failed to open program source file '{}'.", path.string()));
   }
 
   std::ostringstream output_stream;
@@ -556,10 +556,10 @@ auto GGEMSOpenCLProgram::BuildFromSource(std::string const &source) -> void {
     GGEMS_ERROR("OpenCL", "Build log for program '{}' (file='{}'): {}",
                 kernel_name_, source_path_, build_log_);
     CheckCLError(
-        error,
-        std::format(
-            "Failed to build OpenCL program '{}' from source. Build log : {}",
-            kernel_name_, build_log_));
+      error,
+      std::format(
+        "Failed to build OpenCL program '{}' from source. Build log : {}",
+        kernel_name_, build_log_));
   }
 
   build_log_ = program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
@@ -577,7 +577,7 @@ auto GGEMSOpenCLProgram::BuildFromSource(std::string const &source) -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProgram::BuildFromBinary(
-    std::vector<std::uint8_t> const &binary) -> void {
+  std::vector<std::uint8_t> const &binary) -> void {
   auto const &context = context_;
   auto const &device = device_;
   cl_device_id device_id = device();
@@ -587,21 +587,20 @@ auto GGEMSOpenCLProgram::BuildFromBinary(
 
   std::size_t length = binary.size();
   auto const *binary_pointer =
-      reinterpret_cast<unsigned char const *>(binary.data());
+    reinterpret_cast<unsigned char const *>(binary.data());
 
-  cl_program native_program =
-      clCreateProgramWithBinary(context(), 1, &device_id, &length,
-                                &binary_pointer, &binary_status, &error);
-
-  CheckCLError(
-      error, std::format(
-                 "Failed to create program with binary for '{}' (source='{}').",
-                 kernel_name_, source_path_));
+  cl_program native_program = clCreateProgramWithBinary(
+    context(), 1, &device_id, &length, &binary_pointer, &binary_status, &error);
 
   CheckCLError(
-      binary_status,
-      std::format("Binary status error for program '{}' (source='{}').",
-                  kernel_name_, source_path_));
+    error,
+    std::format("Failed to create program with binary for '{}' (source='{}').",
+                kernel_name_, source_path_));
+
+  CheckCLError(
+    binary_status,
+    std::format("Binary status error for program '{}' (source='{}').",
+                kernel_name_, source_path_));
 
   program_ = cl::Program(native_program, false);
 
@@ -616,7 +615,7 @@ auto GGEMSOpenCLProgram::BuildFromBinary(
     }
 
     throw core::GGEMSFatal(std::format(
-        "Failed to build OpenCL program '{}' from binary.", kernel_name_));
+      "Failed to build OpenCL program '{}' from binary.", kernel_name_));
   }
 
   build_log_ = program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
@@ -665,14 +664,14 @@ auto GGEMSOpenCLProgram::ComputeCachePath() const -> std::filesystem::path {
 // -----------------------------------------------------------------------------
 
 [[nodiscard]] auto GGEMSOpenCLProgram::GetBinarySizes() const
-    -> std::vector<std::size_t> {
+  -> std::vector<std::size_t> {
   return GetInfo<CL_PROGRAM_BINARY_SIZES>(program_);
 }
 
 // -----------------------------------------------------------------------------
 
 [[nodiscard]] auto GGEMSOpenCLProgram::GetBinaries() const
-    -> std::vector<std::vector<unsigned char>> {
+  -> std::vector<std::vector<unsigned char>> {
   return GetInfo<CL_PROGRAM_BINARIES>(program_);
 }
 
@@ -757,7 +756,7 @@ auto GGEMSOpenCLProgram::LoadBinaryFromCache() -> std::vector<std::uint8_t> {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProgram::CreateKernel(std::string const &kernel_name) const
-    -> cl::Kernel {
+  -> cl::Kernel {
   GGEMS_INFOEX("OpenCL", 2, "Creating kernel '{}'", kernel_name);
 
   cl_int error{CL_SUCCESS};

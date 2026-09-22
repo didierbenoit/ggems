@@ -43,6 +43,6 @@ namespace ggems::ocl::detail {
  * \return 64-bit FNV-1a hash value.
  */
 [[nodiscard]] auto HashFNV1a64(std::string_view bytes) noexcept
-    -> std::uint64_t;
+  -> std::uint64_t;
 
 } // namespace ggems::ocl::detail

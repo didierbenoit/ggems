@@ -100,14 +100,14 @@ auto UTF8ToUTF32(std::string_view str8) -> std::u32string {
 
     while (consumed < expected_length && offset + consumed < str8.size()) {
       auto const continuation_byte =
-          static_cast<unsigned char>(str8[offset + consumed]);
+        static_cast<unsigned char>(str8[offset + consumed]);
 
       if (!IsUTF8ContinuationByte(continuation_byte)) {
         break;
       }
 
       code_point =
-          (code_point << 6U) | static_cast<char32_t>(continuation_byte & 0x3FU);
+        (code_point << 6U) | static_cast<char32_t>(continuation_byte & 0x3FU);
       ++consumed;
     }
 

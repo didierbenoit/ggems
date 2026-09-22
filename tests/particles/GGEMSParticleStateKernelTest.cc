@@ -66,12 +66,12 @@ TEST_F(GGEMSParticleStateKernelTest, HostAndKernelLayoutsMatch) {
   std::filesystem::path const kernel_test_root = kernel_root / "tests";
 
   std::string const build_options =
-      std::format("-I{}", kernel_root.generic_string());
+    std::format("-I{}", kernel_root.generic_string());
 
   auto layout_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{k_layout_value_count * sizeof(std::uint64_t)});
+    ggems::units::Bytes{k_layout_value_count * sizeof(std::uint64_t)});
   auto particles_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{k_particle_count * sizeof(ParticleState)});
+    ggems::units::Bytes{k_particle_count * sizeof(ParticleState)});
 
   auto *layout = static_cast<std::uint64_t *>(layout_buffer.GetData());
   auto *particles = static_cast<ParticleState *>(particles_buffer.GetData());
@@ -85,7 +85,7 @@ TEST_F(GGEMSParticleStateKernelTest, HostAndKernelLayoutsMatch) {
   particles_buffer.Unmap();
 
   auto const &program = opencl.GetOrCreateProgram(
-      context, kernel_test_root, "particle_state_abi_probe", build_options);
+    context, kernel_test_root, "particle_state_abi_probe", build_options);
 
   cl::Kernel raw_kernel = program.CreateKernel("particle_state_abi_probe");
 
@@ -97,29 +97,29 @@ TEST_F(GGEMSParticleStateKernelTest, HostAndKernelLayoutsMatch) {
   kernel.Run({1U}, {1U});
 
   std::array<std::uint64_t, k_layout_value_count> const expected_layout{
-      sizeof(ParticleState),
-      offsetof(ParticleState, global_particle_id),
-      offsetof(ParticleState, track_id),
-      offsetof(ParticleState, parent_track_id),
-      offsetof(ParticleState, time_ps),
-      offsetof(ParticleState, position_x_pm),
-      offsetof(ParticleState, position_y_pm),
-      offsetof(ParticleState, position_z_pm),
-      offsetof(ParticleState, particle_type),
-      offsetof(ParticleState, status),
-      offsetof(ParticleState, generation),
-      offsetof(ParticleState, flags),
-      offsetof(ParticleState, current_navigator_id),
-      offsetof(ParticleState, current_volume_id),
-      offsetof(ParticleState, material_id),
-      offsetof(ParticleState, region_id),
-      offsetof(ParticleState, direction_x),
-      offsetof(ParticleState, direction_y),
-      offsetof(ParticleState, direction_z),
-      offsetof(ParticleState, direction_w),
-      offsetof(ParticleState, energy_micro_eV),
-      sizeof(ParticleState),
-      offsetof(ParticleStateAlignmentProbe, particle),
+    sizeof(ParticleState),
+    offsetof(ParticleState, global_particle_id),
+    offsetof(ParticleState, track_id),
+    offsetof(ParticleState, parent_track_id),
+    offsetof(ParticleState, time_ps),
+    offsetof(ParticleState, position_x_pm),
+    offsetof(ParticleState, position_y_pm),
+    offsetof(ParticleState, position_z_pm),
+    offsetof(ParticleState, particle_type),
+    offsetof(ParticleState, status),
+    offsetof(ParticleState, generation),
+    offsetof(ParticleState, flags),
+    offsetof(ParticleState, current_navigator_id),
+    offsetof(ParticleState, current_volume_id),
+    offsetof(ParticleState, material_id),
+    offsetof(ParticleState, region_id),
+    offsetof(ParticleState, direction_x),
+    offsetof(ParticleState, direction_y),
+    offsetof(ParticleState, direction_z),
+    offsetof(ParticleState, direction_w),
+    offsetof(ParticleState, energy_micro_eV),
+    sizeof(ParticleState),
+    offsetof(ParticleStateAlignmentProbe, particle),
   };
 
   layout_buffer.Map(CL_MAP_READ);

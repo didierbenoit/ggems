@@ -32,7 +32,7 @@ __kernel void source_record_abi_probe(__global ulong *layout,
 
 #define GGEMS_WRITE_RECORD_OFFSET(INDEX, FIELD)                                \
   layout[INDEX] =                                                              \
-      (ulong)((__private uchar const *)&private_record.FIELD - record_base)
+    (ulong)((__private uchar const *)&private_record.FIELD - record_base)
 
   layout[0] = (ulong)(sizeof(GGEMSSourceRecord));
   GGEMS_WRITE_RECORD_OFFSET(1, source_id);
@@ -75,7 +75,7 @@ __kernel void source_record_abi_probe(__global ulong *layout,
 
   GGEMSSourceRecordAlignmentProbe record_alignment_probe;
   __private uchar const *record_alignment_base =
-      (__private uchar const *)&record_alignment_probe;
+    (__private uchar const *)&record_alignment_probe;
   layout[34] = (ulong)((__private uchar const *)&record_alignment_probe.record -
                        record_alignment_base);
 
@@ -84,16 +84,16 @@ __kernel void source_record_abi_probe(__global ulong *layout,
 
   layout[35] = (ulong)(sizeof(GGEMSSourceRunRange));
   layout[36] =
-      (ulong)((__private uchar const *)&private_range.projection_primary_begin -
-              range_base);
-  layout[37] = (ulong)((__private uchar const *)&private_range.primary_count -
-                       range_base);
+    (ulong)((__private uchar const *)&private_range.projection_primary_begin -
+            range_base);
+  layout[37] =
+    (ulong)((__private uchar const *)&private_range.primary_count - range_base);
   layout[38] = (ulong)((__global uchar const *)&ranges[1] -
                        (__global uchar const *)&ranges[0]);
 
   GGEMSSourceRunRangeAlignmentProbe range_alignment_probe;
   __private uchar const *range_alignment_base =
-      (__private uchar const *)&range_alignment_probe;
+    (__private uchar const *)&range_alignment_probe;
   layout[39] = (ulong)((__private uchar const *)&range_alignment_probe.range -
                        range_alignment_base);
 
@@ -154,7 +154,7 @@ __kernel void source_record_abi_probe(__global ulong *layout,
   records[1].axis_z_z = -15.5f;
   records[1].emission_geometry_type = GGEMS_EMISSION_GEOMETRY_TYPE_ELLIPSE;
   records[1].angular_distribution_type =
-      GGEMS_ANGULAR_DISTRIBUTION_TYPE_FOCUSED;
+    GGEMS_ANGULAR_DISTRIBUTION_TYPE_FOCUSED;
   records[1].geometry_size_x_pm = 212UL;
   records[1].geometry_size_y_pm = 213UL;
   records[1].focus_position_x_pm = -214L;

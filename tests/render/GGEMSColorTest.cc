@@ -23,7 +23,9 @@
  * \file
  * \brief Unit tests for GGEMS color primitives and ANSI encoding.
  *
- * Validates RGB construction, palette entries, channel transforms, color variants, shade clamping, foreground/background ANSI colors, and control sequences.
+ * Validates RGB construction, palette entries, channel transforms, color
+ * variants, shade clamping, foreground/background ANSI colors, and control
+ * sequences.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -49,7 +51,7 @@ namespace {
 namespace render = ggems::render;
 
 constexpr auto k_constexpr_rgb =
-    render::MakeRGB(std::uint8_t{12U}, std::uint8_t{34U}, std::uint8_t{56U});
+  render::MakeRGB(std::uint8_t{12U}, std::uint8_t{34U}, std::uint8_t{56U});
 
 // =============================================================================
 // =============================================================================
@@ -78,13 +80,13 @@ auto ExpectRGB(render::RGB const &color, std::uint8_t red, std::uint8_t green,
 TEST(GGEMSColorTest, BuildsRgbAndRepresentativePaletteEntries) {
   ExpectRGB(render::MakeRGB(12U, 34U, 56U), 12U, 34U, 56U);
   ExpectRGB(render::base_palette[static_cast<std::size_t>(
-                render::ColorFamily::Gray)][0U],
+              render::ColorFamily::Gray)][0U],
             16U, 16U, 16U);
   ExpectRGB(render::base_palette[static_cast<std::size_t>(
-                render::ColorFamily::Green)][6U],
+              render::ColorFamily::Green)][6U],
             0U, 255U, 0U);
   ExpectRGB(render::base_palette[static_cast<std::size_t>(
-                render::ColorFamily::Orange)][12U],
+              render::ColorFamily::Orange)][12U],
             180U, 88U, 38U);
 }
 
@@ -141,12 +143,12 @@ TEST(GGEMSColorTest, EncodesForegroundAndBackgroundAnsiColors) {
 
 TEST(GGEMSColorTest, AppendAnsiColorMatchesAnsiColor) {
   constexpr std::array keys{
-      render::MakeColor(render::ColorFamily::Red, 3U,
-                        render::ColorVariant::Bright,
-                        render::ColorLayer::Foreground),
-      render::MakeColor(render::ColorFamily::Cyan, 9U,
-                        render::ColorVariant::Faint,
-                        render::ColorLayer::Background),
+    render::MakeColor(render::ColorFamily::Red, 3U,
+                      render::ColorVariant::Bright,
+                      render::ColorLayer::Foreground),
+    render::MakeColor(render::ColorFamily::Cyan, 9U,
+                      render::ColorVariant::Faint,
+                      render::ColorLayer::Background),
   };
 
   for (auto const &key : keys) {
@@ -166,12 +168,12 @@ TEST(GGEMSColorTest, AnsiControlCodesMatchAppendOperation) {
   };
 
   constexpr std::array test_cases{
-      ControlCase{.control = render::AnsiControl::ResetAll,
-                  .expected = "\033[0m"},
-      ControlCase{.control = render::AnsiControl::ResetColor,
-                  .expected = "\033[39;49m"},
-      ControlCase{.control = render::AnsiControl::Bold, .expected = "\033[1m"},
-      ControlCase{.control = render::AnsiControl::Faint, .expected = "\033[2m"},
+    ControlCase{.control = render::AnsiControl::ResetAll,
+                .expected = "\033[0m"},
+    ControlCase{.control = render::AnsiControl::ResetColor,
+                .expected = "\033[39;49m"},
+    ControlCase{.control = render::AnsiControl::Bold, .expected = "\033[1m"},
+    ControlCase{.control = render::AnsiControl::Faint, .expected = "\033[2m"},
   };
 
   for (auto const &test_case : test_cases) {

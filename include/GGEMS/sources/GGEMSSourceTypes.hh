@@ -42,8 +42,7 @@ ToKernelSourceType(GGEMSSourceType source_type) noexcept -> std::uint32_t {
 }
 
 [[nodiscard]] constexpr auto
-FromKernelSourceType(std::uint32_t source_type) noexcept
-    -> GGEMSSourceType {
+FromKernelSourceType(std::uint32_t source_type) noexcept -> GGEMSSourceType {
   switch (source_type) {
   case 1U:
     return GGEMSSourceType::Analytic;
@@ -56,8 +55,8 @@ FromKernelSourceType(std::uint32_t source_type) noexcept
   }
 }
 
-[[nodiscard]] constexpr auto
-ToLongName(GGEMSSourceType source_type) noexcept -> std::string_view {
+[[nodiscard]] constexpr auto ToLongName(GGEMSSourceType source_type) noexcept
+  -> std::string_view {
   switch (source_type) {
   case GGEMSSourceType::Unknown:
     return "Unknown";
@@ -73,13 +72,13 @@ ToLongName(GGEMSSourceType source_type) noexcept -> std::string_view {
 }
 
 [[nodiscard]] constexpr auto ToKernelEnergyDistributionType(
-    GGEMSEnergyDistributionType distribution_type) noexcept -> std::uint32_t {
+  GGEMSEnergyDistributionType distribution_type) noexcept -> std::uint32_t {
   return static_cast<std::uint32_t>(distribution_type);
 }
 
 [[nodiscard]] constexpr auto
 FromKernelEnergyDistributionType(std::uint32_t distribution_type) noexcept
-    -> GGEMSEnergyDistributionType {
+  -> GGEMSEnergyDistributionType {
   switch (distribution_type) {
   case 1U:
     return GGEMSEnergyDistributionType::Mono;
@@ -94,7 +93,7 @@ FromKernelEnergyDistributionType(std::uint32_t distribution_type) noexcept
 
 [[nodiscard]] constexpr auto
 ToLongName(GGEMSEnergyDistributionType distribution_type) noexcept
-    -> std::string_view {
+  -> std::string_view {
   switch (distribution_type) {
   case GGEMSEnergyDistributionType::Mono:
     return "Mono";
@@ -111,13 +110,13 @@ ToLongName(GGEMSEnergyDistributionType distribution_type) noexcept
 
 [[nodiscard]] constexpr auto
 ToKernelEmissionGeometryType(GGEMSEmissionGeometryType geometry_type) noexcept
-    -> std::uint32_t {
+  -> std::uint32_t {
   return static_cast<std::uint32_t>(geometry_type);
 }
 
 [[nodiscard]] constexpr auto
 FromKernelEmissionGeometryType(std::uint32_t geometry_type) noexcept
-    -> GGEMSEmissionGeometryType {
+  -> GGEMSEmissionGeometryType {
   switch (geometry_type) {
   case 1U:
     return GGEMSEmissionGeometryType::Point;
@@ -138,7 +137,7 @@ FromKernelEmissionGeometryType(std::uint32_t geometry_type) noexcept
 
 [[nodiscard]] constexpr auto
 ToLongName(GGEMSEmissionGeometryType geometry_type) noexcept
-    -> std::string_view {
+  -> std::string_view {
   switch (geometry_type) {
   case GGEMSEmissionGeometryType::Point:
     return "Point";
@@ -160,13 +159,13 @@ ToLongName(GGEMSEmissionGeometryType geometry_type) noexcept
 }
 
 [[nodiscard]] constexpr auto ToKernelAngularDistributionType(
-    GGEMSAngularDistributionType distribution_type) noexcept -> std::uint32_t {
+  GGEMSAngularDistributionType distribution_type) noexcept -> std::uint32_t {
   return static_cast<std::uint32_t>(distribution_type);
 }
 
 [[nodiscard]] constexpr auto
 FromKernelAngularDistributionType(std::uint32_t distribution_type) noexcept
-    -> GGEMSAngularDistributionType {
+  -> GGEMSAngularDistributionType {
   switch (distribution_type) {
   case 1U:
     return GGEMSAngularDistributionType::Fixed;
@@ -181,7 +180,7 @@ FromKernelAngularDistributionType(std::uint32_t distribution_type) noexcept
 
 [[nodiscard]] constexpr auto
 ToLongName(GGEMSAngularDistributionType distribution_type) noexcept
-    -> std::string_view {
+  -> std::string_view {
   switch (distribution_type) {
   case GGEMSAngularDistributionType::Fixed:
     return "Fixed";

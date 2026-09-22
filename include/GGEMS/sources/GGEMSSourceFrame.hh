@@ -15,13 +15,13 @@ struct GGEMSSourceFrame {
 };
 
 [[nodiscard]] auto IsValidSourceFrame(GGEMSSourceFrame const &frame) noexcept
-    -> bool;
+  -> bool;
 
 [[nodiscard]] auto BuildSourceFrame(std::array<double, 3U> const &direction,
                                     std::array<double, 3U> const &up_reference)
-    -> GGEMSSourceFrame;
+  -> GGEMSSourceFrame;
 
 [[nodiscard]] auto
 BuildSourceFrameWithAutomaticUp(std::array<double, 3> const &direction)
-    -> GGEMSSourceFrame;
+  -> GGEMSSourceFrame;
 } // namespace ggems::core::sources

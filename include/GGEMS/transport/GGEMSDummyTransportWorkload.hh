@@ -91,7 +91,7 @@ private:
   void ClearWorkerFinalStatesInSVM();
   void ResetObserverInSVM();
   void WriteObserverConfigToSVM(
-      observer::GGEMSObserverConfigRecord const &observer_config);
+    observer::GGEMSObserverConfigRecord const &observer_config);
 
 private:
   ggems::ocl::GGEMSOpenCLContext *context_{nullptr};

@@ -59,7 +59,7 @@ enum class SVMMemoryKind : std::uint8_t {
  * \return Name of the SVM memory kind.
  */
 [[nodiscard]] constexpr auto ToString(SVMMemoryKind kind) noexcept
-    -> std::string_view {
+  -> std::string_view {
   switch (kind) {
   case SVMMemoryKind::None:
     return "None";
@@ -85,7 +85,7 @@ enum class SVMMemoryKind : std::uint8_t {
  * \return True if explicit mapping is required, false otherwise.
  */
 [[nodiscard]] constexpr auto RequiresExplicitMap(SVMMemoryKind kind) noexcept
-    -> bool {
+  -> bool {
   return kind == SVMMemoryKind::CoarseGrainBuffer;
 }
 

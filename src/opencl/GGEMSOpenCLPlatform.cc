@@ -107,7 +107,7 @@ auto GGEMSOpenCLPlatform::GetHostTimerResolution() const -> cl_ulong {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLPlatform::GetExtensionsWithVersion() const
-    -> std::vector<cl_name_version> {
+  -> std::vector<cl_name_version> {
   return GetInfo<CL_PLATFORM_EXTENSIONS_WITH_VERSION>(platform_);
 }
 

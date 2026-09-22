@@ -27,12 +27,12 @@ enum class GGEMSParticleStatus : std::uint8_t {
 };
 
 constexpr auto ToKernelParticleType(GGEMSParticleType particle_type) noexcept
-    -> std::uint32_t {
+  -> std::uint32_t {
   return static_cast<std::uint32_t>(particle_type);
 }
 
 constexpr auto FromKernelParticleType(std::uint32_t particle_type) noexcept
-    -> GGEMSParticleType {
+  -> GGEMSParticleType {
   switch (particle_type) {
   case 1U:
     return GGEMSParticleType::Aionino;
@@ -54,7 +54,7 @@ constexpr auto FromKernelParticleType(std::uint32_t particle_type) noexcept
 }
 
 constexpr auto ToKernelParticleStatus(GGEMSParticleStatus status) noexcept
-    -> std::uint32_t {
+  -> std::uint32_t {
   return static_cast<std::uint32_t>(status);
 }
 
@@ -63,10 +63,10 @@ auto ToLongName(GGEMSParticleType particle_type) -> std::string_view;
 auto ToShortName(GGEMSParticleType particle_type) -> std::string_view;
 
 [[nodiscard]] auto ToAsciiSymbol(GGEMSParticleType particle_type)
-    -> std::u32string_view;
+  -> std::u32string_view;
 
 [[nodiscard]] auto ToUnicodeSymbol(GGEMSParticleType particle_type)
-    -> std::u32string_view;
+  -> std::u32string_view;
 
 auto ParseParticleType(std::string_view particle_name) -> GGEMSParticleType;
 

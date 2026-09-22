@@ -53,13 +53,11 @@ template <> struct UnitRegistry<DensityUnitSet> {
    * \brief Registered unit definitions for this quantity family.
    */
   static constexpr std::array<UnitDefinition, 2U> units{{
-      {.symbol = "pg/pm3",
-       .scale = DecimalScale(0),
-       .unicode_symbol = "pg/pm³",
-       .automatic_display = false},
-      {.symbol = "g/cm3",
-       .scale = DecimalScale(-18),
-       .unicode_symbol = "g/cm³"},
+    {.symbol = "pg/pm3",
+     .scale = DecimalScale(0),
+     .unicode_symbol = "pg/pm³",
+     .automatic_display = false},
+    {.symbol = "g/cm3", .scale = DecimalScale(-18), .unicode_symbol = "g/cm³"},
   }};
 };
 
@@ -84,19 +82,22 @@ template <> struct QuantityTraits<DensityTag> {
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::FixedUnit};
+    QuantityFormatPolicy::FixedUnit};
   /*!
-   * \brief Fixed display unit, or an empty string when the policy selects units automatically.
+   * \brief Fixed display unit, or an empty string when the policy selects units
+   * automatically.
    */
   static constexpr std::string_view fixed_display_unit{"g/cm3"};
   /*!
-   * \brief Default number of digits after the decimal point for formatted output.
+   * \brief Default number of digits after the decimal point for formatted
+   * output.
    */
   static constexpr std::int8_t default_precision{7};
 };
 
 /*!
- * \brief Strongly typed density quantity stored canonically in picograms per cubic picometer.
+ * \brief Strongly typed density quantity stored canonically in picograms per
+ * cubic picometer.
  */
 using Density = Quantity<DensityTag, long double>;
 

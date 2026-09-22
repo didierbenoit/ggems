@@ -28,12 +28,12 @@ struct GGEMSParticleTraceSegment {
   std::uint32_t source_index{core::particles::k_invalid_id_u32};
 
   core::particles::GGEMSParticleType particle_type{
-      core::particles::GGEMSParticleType::Unknown};
+    core::particles::GGEMSParticleType::Unknown};
 
   core::observer::GGEMSObserverRecordKind begin_kind{
-      core::observer::GGEMSObserverRecordKind::Unknown};
+    core::observer::GGEMSObserverRecordKind::Unknown};
   core::observer::GGEMSObserverRecordKind end_kind{
-      core::observer::GGEMSObserverRecordKind::Unknown};
+    core::observer::GGEMSObserverRecordKind::Unknown};
 
   std::uint64_t begin_time_ps{0ULL};
   std::uint64_t end_time_ps{0ULL};
@@ -67,10 +67,10 @@ public:
 
   auto SetSourceVisible(std::size_t source_index, bool visible) -> void;
   [[nodiscard]] auto IsSourceVisible(std::uint32_t source_index) const noexcept
-      -> bool;
+    -> bool;
 
   [[nodiscard]] auto ShouldDraw(std::uint32_t source_index) const noexcept
-      -> bool;
+    -> bool;
 
 private:
   bool global_visible_{true};
@@ -78,18 +78,18 @@ private:
 };
 
 [[nodiscard]] auto ToParticleTracePointMeter(
-    core::observer::GGEMSObserverRecord const &record) noexcept
-    -> GGEMSParticleTracePoint;
+  core::observer::GGEMSObserverRecord const &record) noexcept
+  -> GGEMSParticleTracePoint;
 
 [[nodiscard]] auto BuildParticleTraceSegments(
-    std::span<core::observer::GGEMSObserverRecord const> records)
-    -> std::vector<GGEMSParticleTraceSegment>;
+  std::span<core::observer::GGEMSObserverRecord const> records)
+  -> std::vector<GGEMSParticleTraceSegment>;
 
 [[nodiscard]] auto
 BuildParticleTraceVertices(std::span<GGEMSParticleTraceSegment const> segments)
-    -> std::vector<GGEMSParticleTraceVertex>;
+  -> std::vector<GGEMSParticleTraceVertex>;
 
 [[nodiscard]] auto
 BuildParticleTraceDrawData(std::span<GGEMSParticleTraceSegment const> segments)
-    -> GGEMSParticleTraceDrawData;
+  -> GGEMSParticleTraceDrawData;
 } // namespace ggems::render

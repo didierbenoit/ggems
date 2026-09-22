@@ -23,7 +23,9 @@
  * \file
  * \brief Unit tests for GGEMS duration and time-point conversions.
  *
- * Validates registered time tokens, picosecond rounding, invalid-input and range handling, conversion from canonical picoseconds, and unsupported output units.
+ * Validates registered time tokens, picosecond rounding, invalid-input and
+ * range handling, conversion from canonical picoseconds, and unsupported output
+ * units.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -84,20 +86,20 @@ static_assert(!std::convertible_to<TimePoint, Duration>);
 
 TEST(GGEMSTimeUnits, ConvertsEveryRegisteredTimeTokenToPicoseconds) {
   constexpr std::array<ToPicosecondCase, 7U> cases{{
-      {.value = 2.0L, .unit = "ps", .expected = 2ULL},
-      {.value = 2.0L, .unit = "ns", .expected = 2'000ULL},
-      {.value = 2.0L, .unit = "us", .expected = 2'000'000ULL},
-      {.value = 2.0L, .unit = "ms", .expected = 2'000'000'000ULL},
-      {.value = 2.0L, .unit = "s", .expected = 2'000'000'000'000ULL},
-      {.value = 2.0L, .unit = "min", .expected = 120'000'000'000'000ULL},
-      {.value = 2.0L, .unit = "h", .expected = 7'200'000'000'000'000ULL},
+    {.value = 2.0L, .unit = "ps", .expected = 2ULL},
+    {.value = 2.0L, .unit = "ns", .expected = 2'000ULL},
+    {.value = 2.0L, .unit = "us", .expected = 2'000'000ULL},
+    {.value = 2.0L, .unit = "ms", .expected = 2'000'000'000ULL},
+    {.value = 2.0L, .unit = "s", .expected = 2'000'000'000'000ULL},
+    {.value = 2.0L, .unit = "min", .expected = 120'000'000'000'000ULL},
+    {.value = 2.0L, .unit = "h", .expected = 7'200'000'000'000'000ULL},
   }};
 
   for (auto const &test_case : cases) {
     auto const duration =
-        MakeQuantity<Duration>(test_case.value, test_case.unit);
+      MakeQuantity<Duration>(test_case.value, test_case.unit);
     auto const time_point =
-        MakeQuantity<TimePoint>(test_case.value, test_case.unit);
+      MakeQuantity<TimePoint>(test_case.value, test_case.unit);
 
     ASSERT_TRUE(duration.has_value()) << test_case.unit;
     EXPECT_EQ(duration->value, test_case.expected) << test_case.unit;
@@ -111,16 +113,16 @@ TEST(GGEMSTimeUnits, ConvertsEveryRegisteredTimeTokenToPicoseconds) {
 
 TEST(GGEMSTimeUnits, RoundsToTheNearestPicosecond) {
   constexpr std::array<ToPicosecondCase, 5U> cases{{
-      {.value = 0.0L, .unit = "ps", .expected = 0ULL},
-      {.value = 0.49L, .unit = "ps", .expected = 0ULL},
-      {.value = 0.5L, .unit = "ps", .expected = 1ULL},
-      {.value = 1.49L, .unit = "ps", .expected = 1ULL},
-      {.value = 1.5L, .unit = "ps", .expected = 2ULL},
+    {.value = 0.0L, .unit = "ps", .expected = 0ULL},
+    {.value = 0.49L, .unit = "ps", .expected = 0ULL},
+    {.value = 0.5L, .unit = "ps", .expected = 1ULL},
+    {.value = 1.49L, .unit = "ps", .expected = 1ULL},
+    {.value = 1.5L, .unit = "ps", .expected = 2ULL},
   }};
 
   for (auto const &test_case : cases) {
     auto const conversion =
-        MakeQuantity<Duration>(test_case.value, test_case.unit);
+      MakeQuantity<Duration>(test_case.value, test_case.unit);
 
     ASSERT_TRUE(conversion.has_value());
     EXPECT_EQ(conversion->value, test_case.expected);
@@ -140,8 +142,8 @@ TEST(GGEMSTimeUnits, RejectsInvalidInputAndUnsupportedUnits) {
   ExpectConversionError<Duration>(std::numeric_limits<long double>::infinity(),
                                   "ps", UnitConversionError::NonFinite);
   ExpectConversionError<TimePoint>(
-      -std::numeric_limits<long double>::infinity(), "ps",
-      UnitConversionError::NonFinite);
+    -std::numeric_limits<long double>::infinity(), "ps",
+    UnitConversionError::NonFinite);
   ExpectConversionError<Duration>(-1.0L, "ps",
                                   UnitConversionError::NegativeValue);
   ExpectConversionError<Duration>(1.0L, "fortnight",
@@ -157,7 +159,7 @@ TEST(GGEMSTimeUnits, ProtectsTheUint64PicosecondRange) {
   long double const upper_exclusive = std::ldexp(1.0L, 64);
 
   auto const accepted =
-      MakeQuantity<Duration>(std::numeric_limits<std::uint64_t>::max(), "ps");
+    MakeQuantity<Duration>(std::numeric_limits<std::uint64_t>::max(), "ps");
   ASSERT_TRUE(accepted.has_value());
   EXPECT_EQ(accepted->value, std::numeric_limits<std::uint64_t>::max());
 
@@ -173,18 +175,18 @@ TEST(GGEMSTimeUnits, ProtectsTheUint64PicosecondRange) {
 TEST(GGEMSTimeUnits, ConvertsPicosecondsToEveryRegisteredTimeToken) {
   constexpr std::uint64_t k_one_hour_ps{3'600'000'000'000'000ULL};
   constexpr std::array<FromPicosecondCase, 7U> cases{{
-      {.unit = "ps", .expected = 3'600'000'000'000'000.0L},
-      {.unit = "ns", .expected = 3'600'000'000'000.0L},
-      {.unit = "us", .expected = 3'600'000'000.0L},
-      {.unit = "ms", .expected = 3'600'000.0L},
-      {.unit = "s", .expected = 3'600.0L},
-      {.unit = "min", .expected = 60.0L},
-      {.unit = "h", .expected = 1.0L},
+    {.unit = "ps", .expected = 3'600'000'000'000'000.0L},
+    {.unit = "ns", .expected = 3'600'000'000'000.0L},
+    {.unit = "us", .expected = 3'600'000'000.0L},
+    {.unit = "ms", .expected = 3'600'000.0L},
+    {.unit = "s", .expected = 3'600.0L},
+    {.unit = "min", .expected = 60.0L},
+    {.unit = "h", .expected = 1.0L},
   }};
 
   for (auto const &test_case : cases) {
     auto const conversion =
-        ConvertTo(TimePoint{.value = k_one_hour_ps}, test_case.unit);
+      ConvertTo(TimePoint{.value = k_one_hour_ps}, test_case.unit);
 
     ASSERT_TRUE(conversion.has_value()) << test_case.unit;
     EXPECT_EQ(*conversion, test_case.expected) << test_case.unit;

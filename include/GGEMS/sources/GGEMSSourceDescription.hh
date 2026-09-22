@@ -25,17 +25,17 @@ DescribeSource(GGEMSSourceRecord const &record, std::uint64_t primary_count,
 
 [[nodiscard]] auto DescribeSourceRunSlot(std::size_t source_index,
                                          GGEMSSourceRunSnapshot const &snapshot)
-    -> std::string;
+  -> std::string;
 
 [[nodiscard]] auto DescribeSourceRunSlot(std::size_t source_index,
                                          GGEMSSourceRecord const &record,
                                          GGEMSSourceRunRange const &range)
-    -> std::string;
+  -> std::string;
 
 [[nodiscard]] auto
 DescribeSourceRunSlot(std::size_t source_index, GGEMSSourceRecord const &record,
                       GGEMSSourceRunRange const &range,
                       GGEMSEnergyDistributionRecord const &energy_record,
                       std::span<std::uint64_t const> energy_values)
-    -> std::string;
+  -> std::string;
 } // namespace ggems::core::sources

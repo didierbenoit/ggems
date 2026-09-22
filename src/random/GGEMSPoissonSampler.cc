@@ -23,7 +23,8 @@
  * \file
  * \brief Implements Poisson sampling for GGEMS host random streams.
  *
- * Uses inversion for small means and the PTRS transformed-rejection method for larger representable means.
+ * Uses inversion for small means and the PTRS transformed-rejection method for
+ * larger representable means.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -70,7 +71,8 @@ constexpr long double k_ptrs_vr_offset{0.9277L};
 constexpr long double k_ptrs_vr_scale{3.6224L};
 /*! \brief PTRS v-ratio denominator offset. */
 constexpr long double k_ptrs_vr_denominator_offset{2.0L};
-/*! \brief Center used to map a uniform variate to the symmetric PTRS coordinate. */
+/*! \brief Center used to map a uniform variate to the symmetric PTRS
+ * coordinate. */
 constexpr long double k_ptrs_center{0.5L};
 /*! \brief PTRS integer-candidate rounding offset. */
 constexpr long double k_ptrs_candidate_offset{0.43L};
@@ -83,7 +85,8 @@ constexpr long double k_ptrs_squeeze_us_max{0.013L};
 // =============================================================================
 
 /*!
- * \brief Checks whether a Poisson mean can be represented safely by the uint64_t result type.
+ * \brief Checks whether a Poisson mean can be represented safely by the
+ * uint64_t result type.
  * \param[in] mean Candidate Poisson mean.
  * \return True when the mean is within the representable count domain.
  */
@@ -107,7 +110,7 @@ auto IsRepresentableMean(long double mean) noexcept -> bool {
  * \return Sampled Poisson count.
  */
 auto SampleByInversion(long double mean, GGEMSHostRandomStream &random)
-    -> std::uint64_t {
+  -> std::uint64_t {
   auto const target = static_cast<long double>(random.UniformDoubleOpen01());
   long double probability = std::exp(-mean);
   long double cumulative = probability;
@@ -136,28 +139,30 @@ auto SampleByInversion(long double mean, GGEMSHostRandomStream &random)
 // =============================================================================
 
 /*!
- * \brief Samples a larger Poisson mean using the PTRS transformed-rejection method.
+ * \brief Samples a larger Poisson mean using the PTRS transformed-rejection
+ * method.
  * \param[in] mean Positive Poisson mean in the transformed-rejection regime.
  * \param[in,out] random Host random stream consumed by the sampler.
  * \return Sampled Poisson count.
- * \throws ggems::core::GGEMSRecoverable If a candidate is non-finite or outside uint64_t range.
+ * \throws ggems::core::GGEMSRecoverable If a candidate is non-finite or outside
+ * uint64_t range.
  */
 auto SampleByTransformedRejection(long double mean,
                                   GGEMSHostRandomStream &random)
-    -> std::uint64_t {
+  -> std::uint64_t {
   long double const sqrt_mean = std::sqrt(mean);
   long double const b = k_ptrs_b_offset + (k_ptrs_b_scale * sqrt_mean);
   long double const a = k_ptrs_a_offset + (k_ptrs_a_scale * b);
   long double const inverse_alpha =
-      k_ptrs_inverse_alpha_offset +
-      (k_ptrs_inverse_alpha_scale /
-       (b - k_ptrs_inverse_alpha_denominator_offset));
+    k_ptrs_inverse_alpha_offset +
+    (k_ptrs_inverse_alpha_scale /
+     (b - k_ptrs_inverse_alpha_denominator_offset));
   long double const vr =
-      k_ptrs_vr_offset - (k_ptrs_vr_scale / (b - k_ptrs_vr_denominator_offset));
+    k_ptrs_vr_offset - (k_ptrs_vr_scale / (b - k_ptrs_vr_denominator_offset));
 
   while (true) {
     long double const u =
-        static_cast<long double>(random.UniformDoubleOpen01()) - k_ptrs_center;
+      static_cast<long double>(random.UniformDoubleOpen01()) - k_ptrs_center;
     auto const v = static_cast<long double>(random.UniformDoubleOpen01());
     long double const us = k_ptrs_center - std::abs(u);
 
@@ -166,10 +171,11 @@ auto SampleByTransformedRejection(long double mean,
     }
 
     long double const candidate_value = std::floor(
-        ((((2.0L * a) / us) + b) * u) + mean + k_ptrs_candidate_offset);
+      ((((2.0L * a) / us) + b) * u) + mean + k_ptrs_candidate_offset);
 
     if (!std::isfinite(candidate_value)) {
-      throw ggems::core::GGEMSRecoverable("Sampled Poisson candidate is not finite.");
+      throw ggems::core::GGEMSRecoverable(
+        "Sampled Poisson candidate is not finite.");
     }
 
     if (candidate_value < 0.0L) {
@@ -177,7 +183,8 @@ auto SampleByTransformedRejection(long double mean,
     }
 
     if (!(candidate_value < k_uint64_upper_exclusive)) {
-      throw ggems::core::GGEMSRecoverable("Sampled Poisson candidate exceeds uint64_t range.");
+      throw ggems::core::GGEMSRecoverable(
+        "Sampled Poisson candidate exceeds uint64_t range.");
     }
 
     auto const candidate = static_cast<std::uint64_t>(candidate_value);
@@ -191,7 +198,7 @@ auto SampleByTransformedRejection(long double mean,
     }
 
     long double const log_acceptance =
-        std::log(v) + std::log(inverse_alpha) - std::log((a / (us * us)) + b);
+      std::log(v) + std::log(inverse_alpha) - std::log((a / (us * us)) + b);
     long double const log_probability = -mean +
                                         (candidate_value * std::log(mean)) -
                                         std::lgamma(candidate_value + 1.0L);
@@ -207,7 +214,7 @@ auto SampleByTransformedRejection(long double mean,
 // =============================================================================
 
 auto SamplePoisson(long double mean, GGEMSHostRandomStream &random)
-    -> std::uint64_t {
+  -> std::uint64_t {
   if (!(std::isfinite(mean))) {
     throw ggems::core::GGEMSRecoverable("Poisson mean must be finite.");
   }

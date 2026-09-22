@@ -27,7 +27,7 @@ public:
   auto SetZoom(float zoom) noexcept -> void;
 
   auto Orbit(float delta_yaw_degrees, float delta_pitch_degrees) noexcept
-      -> void;
+    -> void;
   auto Pan(float delta_x_pixels, float delta_y_pixels) noexcept -> void;
   auto ZoomBy(float wheel_delta) noexcept -> void;
   auto Reset() noexcept -> void;

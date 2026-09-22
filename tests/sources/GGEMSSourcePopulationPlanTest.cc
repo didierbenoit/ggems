@@ -44,9 +44,9 @@ using Source = ggems::core::sources::GGEMSSource;
 using SourcePtr = std::shared_ptr<Source>;
 
 constexpr std::array<RandomEngine, 3U> k_engines{
-    RandomEngine::JKISS, RandomEngine::PCG32, RandomEngine::Philox};
+  RandomEngine::JKISS, RandomEngine::PCG32, RandomEngine::Philox};
 constexpr ggems::core::GGEMSTimeWindow k_one_second_window{
-    .start_ps = 0ULL, .stop_ps = 1'000'000'000'000ULL};
+  .start_ps = 0ULL, .stop_ps = 1'000'000'000'000ULL};
 
 // =============================================================================
 // =============================================================================
@@ -62,20 +62,20 @@ constexpr ggems::core::GGEMSTimeWindow k_one_second_window{
 // =============================================================================
 
 [[nodiscard]] auto MakeSyntheticDefinition(
-    std::span<long double const> yields, long double half_life_seconds = 10.0L,
-    std::string name = "Synthetic") -> std::shared_ptr<Definition const> {
+  std::span<long double const> yields, long double half_life_seconds = 10.0L,
+  std::string name = "Synthetic") -> std::shared_ptr<Definition const> {
   std::vector<ggems::core::radioactivity::GGEMSRadionuclideEmission> emissions;
   emissions.reserve(yields.size());
 
   for (std::size_t index = 0U; index < yields.size(); ++index) {
     emissions.emplace_back(
-        ggems::core::particles::GGEMSParticleType::Gamma, yields[index],
-        ggems::core::sources::GGEMSEnergyDistribution::BuildMono(
-            (1'000ULL + static_cast<std::uint64_t>(index)) * 1'000ULL));
+      ggems::core::particles::GGEMSParticleType::Gamma, yields[index],
+      ggems::core::sources::GGEMSEnergyDistribution::BuildMono(
+        (1'000ULL + static_cast<std::uint64_t>(index)) * 1'000ULL));
   }
 
-  return std::make_shared<Definition const>(
-      std::move(name), half_life_seconds, std::move(emissions));
+  return std::make_shared<Definition const>(std::move(name), half_life_seconds,
+                                            std::move(emissions));
 }
 
 // =============================================================================
@@ -84,7 +84,7 @@ constexpr ggems::core::GGEMSTimeWindow k_one_second_window{
 [[nodiscard]] auto
 MakeActivitySource(std::shared_ptr<Definition const> const &definition,
                    long double activity, std::uint64_t reference_time_ps = 0ULL)
-    -> SourcePtr {
+  -> SourcePtr {
   auto source = std::make_shared<Source>();
   source->SetRadionuclide(definition, ggems::units::Activity{activity},
                           reference_time_ps);
@@ -146,16 +146,16 @@ auto ExpectPlansEqual(Plan const &actual, Plan const &expected) -> void {
 
 auto ExpectGroupCountMatchesReferenceStream(PlanGroup const &group,
                                             Random const &simulation_random)
-    -> void {
+  -> void {
   Random host_random = simulation_random;
   host_random.SetSeed(
-      simulation_random.GetSeed() ^
-      ggems::core::sources::k_radionuclide_host_random_seed_domain_tag);
+    simulation_random.GetSeed() ^
+    ggems::core::sources::k_radionuclide_host_random_seed_domain_tag);
   ggems::core::random::GGEMSHostRandomStream reference{host_random,
                                                        group.host_stream_id};
 
   std::uint64_t const expected_count = ggems::core::random::SamplePoisson(
-      group.expected_emission_count, reference);
+    group.expected_emission_count, reference);
   EXPECT_EQ(group.sampled_primary_count, expected_count);
 }
 
@@ -167,7 +167,7 @@ auto ExpectGroupCountMatchesReferenceStream(PlanGroup const &group,
 TEST(GGEMSSourcePopulationPlanTest,
      BuildsF18GroupsFromOriginalYieldsAndIndependentStreams) {
   auto definition = std::make_shared<Definition const>(
-      ggems::core::radioactivity::builtins::BuildF18Radionuclide());
+    ggems::core::radioactivity::builtins::BuildF18Radionuclide());
   std::vector<SourcePtr> sources{MakeActivitySource(definition, 100.0L)};
   Random const random = MakeRandom();
   Planner planner{sources, random};
@@ -186,9 +186,9 @@ TEST(GGEMSSourcePopulationPlanTest,
   EXPECT_EQ(source_entries[0U].emission_count, 3ULL);
 
   long double const expected_parent =
-      ggems::core::radioactivity::ComputeExpectedDecayEventCount(
-          ggems::units::Activity{100.0L}, definition->GetHalfLifeSeconds(),
-          0ULL, k_one_second_window);
+    ggems::core::radioactivity::ComputeExpectedDecayEventCount(
+      ggems::units::Activity{100.0L}, definition->GetHalfLifeSeconds(), 0ULL,
+      k_one_second_window);
   EXPECT_EQ(source_entries[0U].expected_parent_decay_count, expected_parent);
 
   constexpr std::array<long double, 3U> k_expected_yields{0.9686L, 0.00229L,
@@ -234,9 +234,9 @@ TEST(GGEMSSourcePopulationPlanTest,
 TEST(GGEMSSourcePopulationPlanTest,
      PreservesC11AndO15SourceAndSingleGroupOrder) {
   auto c11 = std::make_shared<Definition const>(
-      ggems::core::radioactivity::builtins::BuildC11Radionuclide());
+    ggems::core::radioactivity::builtins::BuildC11Radionuclide());
   auto o15 = std::make_shared<Definition const>(
-      ggems::core::radioactivity::builtins::BuildO15Radionuclide());
+    ggems::core::radioactivity::builtins::BuildO15Radionuclide());
   std::vector<SourcePtr> sources{MakeActivitySource(c11, 50.0L),
                                  MakeActivitySource(o15, 75.0L)};
   Planner planner{sources, MakeRandom(RandomEngine::Philox)};
@@ -278,7 +278,7 @@ TEST(GGEMSSourcePopulationPlanTest,
   auto const groups = candidate.GetPlan().GetGroups();
   ASSERT_EQ(groups.size(), k_yields.size());
   long double const expected_parent =
-      candidate.GetPlan().GetSources()[0U].expected_parent_decay_count;
+    candidate.GetPlan().GetSources()[0U].expected_parent_decay_count;
 
   for (std::size_t index = 0U; index < groups.size(); ++index) {
     EXPECT_EQ(groups[index].yield_per_decay, k_yields[index]);
@@ -319,7 +319,7 @@ TEST(GGEMSSourcePopulationPlanTest, BuildsMixedSourcesWithContiguousRanges) {
                                  MakeActivitySource(definition, 40.0L),
                                  MakeCountSource(2ULL)};
   constexpr ggems::core::GGEMSTimeWindow k_window{
-      .start_ps = 123ULL, .stop_ps = 1'000'000'000'123ULL};
+    .start_ps = 123ULL, .stop_ps = 1'000'000'000'123ULL};
   Planner planner{sources, MakeRandom()};
 
   auto candidate = planner.BuildCandidate(k_window);
@@ -339,7 +339,7 @@ TEST(GGEMSSourcePopulationPlanTest, BuildsMixedSourcesWithContiguousRanges) {
             source_entries[2U].run_primary_begin);
   EXPECT_EQ(source_entries[2U].run_primary_end, plan.GetTotalPrimaryCount());
   EXPECT_EQ(source_entries[2U].run_primary_end -
-                source_entries[2U].run_primary_begin,
+              source_entries[2U].run_primary_begin,
             2ULL);
   EXPECT_EQ(groups[0U].source_local_primary_begin, 0ULL);
   EXPECT_EQ(groups[0U].source_local_primary_end,
@@ -359,7 +359,7 @@ TEST(GGEMSSourcePopulationPlanTest,
   constexpr long double k_live_activity_bq{25.0L};
   constexpr std::uint64_t k_reference_time_ps{500'000'000'000ULL};
   constexpr ggems::core::GGEMSTimeWindow k_later_window{
-      .start_ps = 1'000'000'000'000ULL, .stop_ps = 2'000'000'000'000ULL};
+    .start_ps = 1'000'000'000'000ULL, .stop_ps = 2'000'000'000'000ULL};
 
   for (RandomEngine engine : k_engines) {
     SCOPED_TRACE(static_cast<std::uint32_t>(engine));
@@ -387,7 +387,7 @@ TEST(GGEMSSourcePopulationPlanTest,
     planner.CommitCandidate(zero_candidate);
 
     auto replacement_definition =
-        MakeSyntheticDefinition(k_yields, 10.0L, "Replacement");
+      MakeSyntheticDefinition(k_yields, 10.0L, "Replacement");
     source->SetRadionuclide(replacement_definition,
                             ggems::units::Activity{k_live_activity_bq},
                             k_reference_time_ps);
@@ -403,12 +403,12 @@ TEST(GGEMSSourcePopulationPlanTest,
     ASSERT_EQ(continued_sources.size(), 1U);
     EXPECT_EQ(continued_sources[0U].expected_parent_decay_count,
               ggems::core::radioactivity::ComputeExpectedDecayEventCount(
-                  ggems::units::Activity{k_live_activity_bq},
-                  definition->GetHalfLifeSeconds(), k_reference_time_ps,
-                  k_later_window));
+                ggems::units::Activity{k_live_activity_bq},
+                definition->GetHalfLifeSeconds(), k_reference_time_ps,
+                k_later_window));
 
     auto reference_source =
-        MakeActivitySource(definition, k_live_activity_bq, k_reference_time_ps);
+      MakeActivitySource(definition, k_live_activity_bq, k_reference_time_ps);
     std::vector<SourcePtr> reference_sources{reference_source};
     Planner reference{reference_sources, random};
     auto expected = reference.BuildCandidate(k_later_window);
@@ -440,11 +440,11 @@ TEST(GGEMSSourcePopulationPlanTest,
 
     Random host_random = simulation_random;
     host_random.SetSeed(
-        simulation_random.GetSeed() ^
-        ggems::core::sources::k_radionuclide_host_random_seed_domain_tag);
+      simulation_random.GetSeed() ^
+      ggems::core::sources::k_radionuclide_host_random_seed_domain_tag);
     ggems::core::random::GGEMSHostRandomStream reference{host_random, 0ULL};
     EXPECT_EQ(ggems::core::random::SamplePoisson(
-                  zero_groups[0U].expected_emission_count, reference),
+                zero_groups[0U].expected_emission_count, reference),
               0ULL);
 
     planner.CommitCandidate(zero_candidate);
@@ -454,7 +454,7 @@ TEST(GGEMSSourcePopulationPlanTest,
     ASSERT_EQ(continuation_groups.size(), 1U);
 
     std::uint64_t const expected_count = ggems::core::random::SamplePoisson(
-        continuation_groups[0U].expected_emission_count, reference);
+      continuation_groups[0U].expected_emission_count, reference);
     EXPECT_EQ(continuation_groups[0U].sampled_primary_count, expected_count);
   }
 }
@@ -545,15 +545,15 @@ TEST(GGEMSSourcePopulationPlanTest,
 
     Random host_random = simulation_random;
     host_random.SetSeed(
-        simulation_random.GetSeed() ^
-        ggems::core::sources::k_radionuclide_host_random_seed_domain_tag);
+      simulation_random.GetSeed() ^
+      ggems::core::sources::k_radionuclide_host_random_seed_domain_tag);
     ggems::core::random::GGEMSHostRandomStream reference{host_random, 0ULL};
 
     auto const first_groups = first.GetPlan().GetGroups();
     ASSERT_EQ(first_groups.size(), 1U);
     EXPECT_EQ(first_groups[0U].sampled_primary_count,
               ggems::core::random::SamplePoisson(
-                  first_groups[0U].expected_emission_count, reference));
+                first_groups[0U].expected_emission_count, reference));
 
     planner.CommitCandidate(first);
     EXPECT_EQ(planner.GetRevision(), 1ULL);
@@ -562,10 +562,9 @@ TEST(GGEMSSourcePopulationPlanTest,
       auto continuation = planner.BuildCandidate(k_one_second_window);
       auto const continuation_groups = continuation.GetPlan().GetGroups();
       ASSERT_EQ(continuation_groups.size(), 1U);
-      EXPECT_EQ(
-          continuation_groups[0U].sampled_primary_count,
-          ggems::core::random::SamplePoisson(
-              continuation_groups[0U].expected_emission_count, reference));
+      EXPECT_EQ(continuation_groups[0U].sampled_primary_count,
+                ggems::core::random::SamplePoisson(
+                  continuation_groups[0U].expected_emission_count, reference));
 
       planner.CommitCandidate(continuation);
       EXPECT_EQ(planner.GetRevision(), cycle + 1ULL);
@@ -586,7 +585,7 @@ TEST(GGEMSSourcePopulationPlanTest,
     auto definition = MakeSyntheticDefinition(k_yields);
     auto activity = MakeActivitySource(definition, 25.0L);
     auto overflowing =
-        MakeCountSource(std::numeric_limits<std::uint64_t>::max());
+      MakeCountSource(std::numeric_limits<std::uint64_t>::max());
     auto forcing_overflow = MakeCountSource(1ULL);
     std::vector<SourcePtr> sources{activity, overflowing, forcing_overflow};
     Random const random = MakeRandom(engine);
@@ -600,8 +599,8 @@ TEST(GGEMSSourcePopulationPlanTest,
     auto recovered = planner.BuildCandidate(k_one_second_window);
 
     std::vector<SourcePtr> reference_sources{
-        MakeActivitySource(definition, 25.0L), MakeCountSource(1ULL),
-        MakeCountSource(1ULL)};
+      MakeActivitySource(definition, 25.0L), MakeCountSource(1ULL),
+      MakeCountSource(1ULL)};
     Planner reference{reference_sources, random};
     auto expected = reference.BuildCandidate(k_one_second_window);
     ExpectPlansEqual(recovered.GetPlan(), expected.GetPlan());
@@ -617,7 +616,7 @@ TEST(GGEMSSourcePopulationPlanTest,
   constexpr std::array<long double, 1U> k_appended_yields{2.0L};
   auto first_definition = MakeSyntheticDefinition(k_first_yields);
   auto appended_definition =
-      MakeSyntheticDefinition(k_appended_yields, 12.0L, "Appended");
+    MakeSyntheticDefinition(k_appended_yields, 12.0L, "Appended");
   auto first_source = MakeActivitySource(first_definition, 40.0L);
   auto appended_source = MakeActivitySource(appended_definition, 30.0L);
   Random const random = MakeRandom(RandomEngine::Philox);
@@ -725,8 +724,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 TEST(GGEMSSourcePopulationPlanTest,
      CountDrivenCountAboveUint32BuildsCompactPlan) {
   constexpr std::uint64_t k_primary_count =
-      static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max()) +
-      17ULL;
+    static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max()) +
+    17ULL;
   std::vector<SourcePtr> sources{MakeCountSource(k_primary_count)};
   Planner planner{sources, MakeRandom()};
 
@@ -755,12 +754,12 @@ TEST(GGEMSSourcePopulationPlanTest,
      ClinicallyLargeF18BuildsThreeGroupCompactPlan) {
   constexpr long double k_activity_bq{1'000'000'000.0L};
   constexpr ggems::core::GGEMSTimeWindow k_ten_second_window{
-      .start_ps = 0ULL, .stop_ps = 10'000'000'000'000ULL};
+    .start_ps = 0ULL, .stop_ps = 10'000'000'000'000ULL};
   constexpr std::array<long double, 3U> k_expected_yields{0.9686L, 0.00229L,
                                                           0.00020L};
 
   auto definition = std::make_shared<Definition const>(
-      ggems::core::radioactivity::builtins::BuildF18Radionuclide());
+    ggems::core::radioactivity::builtins::BuildF18Radionuclide());
   std::vector<SourcePtr> sources{MakeActivitySource(definition, k_activity_bq)};
   Random const random = MakeRandom(RandomEngine::PCG32, 91'337ULL);
   Planner planner{sources, random};
@@ -779,9 +778,9 @@ TEST(GGEMSSourcePopulationPlanTest,
   EXPECT_EQ(source_entries[0U].run_primary_begin, 0ULL);
 
   long double const expected_parent =
-      ggems::core::radioactivity::ComputeExpectedDecayEventCount(
-          ggems::units::Activity{k_activity_bq},
-          definition->GetHalfLifeSeconds(), 0ULL, k_ten_second_window);
+    ggems::core::radioactivity::ComputeExpectedDecayEventCount(
+      ggems::units::Activity{k_activity_bq}, definition->GetHalfLifeSeconds(),
+      0ULL, k_ten_second_window);
   EXPECT_EQ(source_entries[0U].expected_parent_decay_count, expected_parent);
 
   std::uint64_t next_source_local_primary{0ULL};
@@ -803,10 +802,10 @@ TEST(GGEMSSourcePopulationPlanTest,
               group.sampled_primary_count);
 
     long double const deviation =
-        std::abs(static_cast<long double>(group.sampled_primary_count) -
-                 group.expected_emission_count);
+      std::abs(static_cast<long double>(group.sampled_primary_count) -
+               group.expected_emission_count);
     long double const conservative_bound =
-        (20.0L * std::sqrt(group.expected_emission_count)) + 1.0L;
+      (20.0L * std::sqrt(group.expected_emission_count)) + 1.0L;
     EXPECT_LE(deviation, conservative_bound);
     ExpectGroupCountMatchesReferenceStream(group, random);
 
@@ -817,8 +816,8 @@ TEST(GGEMSSourcePopulationPlanTest,
   EXPECT_EQ(source_entries[0U].run_primary_end, next_run_primary);
   EXPECT_EQ(plan.GetTotalPrimaryCount(), next_run_primary);
   EXPECT_GT(
-      plan.GetTotalPrimaryCount(),
-      static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max()));
+    plan.GetTotalPrimaryCount(),
+    static_cast<std::uint64_t>(std::numeric_limits<std::uint32_t>::max()));
 }
 
 // =============================================================================
@@ -827,20 +826,20 @@ TEST(GGEMSSourcePopulationPlanTest,
 TEST(GGEMSSourcePopulationPlanTest,
      RejectsExpectedCountAndCheckedTotalOverflowWithoutCommit) {
   constexpr std::array<long double, 1U> k_huge_yield{
-      std::numeric_limits<long double>::max()};
+    std::numeric_limits<long double>::max()};
   auto huge_definition = MakeSyntheticDefinition(k_huge_yield, 1.0e20L, "Huge");
   std::vector<SourcePtr> huge_sources{
-      MakeActivitySource(huge_definition, 1.0e300L)};
+    MakeActivitySource(huge_definition, 1.0e300L)};
   Planner huge_planner{huge_sources, MakeRandom()};
-  EXPECT_THROW((void)huge_planner.BuildCandidate(ggems::core::GGEMSTimeWindow{
-                   .start_ps = 0ULL,
-                   .stop_ps = std::numeric_limits<std::uint64_t>::max()}),
-               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(
+    (void)huge_planner.BuildCandidate(ggems::core::GGEMSTimeWindow{
+      .start_ps = 0ULL, .stop_ps = std::numeric_limits<std::uint64_t>::max()}),
+    ggems::core::GGEMSExceptionBase);
   EXPECT_EQ(huge_planner.GetRevision(), 0ULL);
 
   std::vector<SourcePtr> count_sources{
-      MakeCountSource(std::numeric_limits<std::uint64_t>::max()),
-      MakeCountSource(1ULL)};
+    MakeCountSource(std::numeric_limits<std::uint64_t>::max()),
+    MakeCountSource(1ULL)};
   Planner count_planner{count_sources, MakeRandom()};
   EXPECT_THROW((void)count_planner.BuildCandidate({}),
                ggems::core::GGEMSExceptionBase);
@@ -856,7 +855,7 @@ TEST(GGEMSSourcePopulationPlanTest,
   auto definition = MakeSyntheticDefinition(k_yields);
   std::weak_ptr<Definition const> retained = definition;
   std::unique_ptr<ggems::core::sources::GGEMSSourcePopulationCandidate>
-      candidate;
+    candidate;
 
   {
     auto source = MakeActivitySource(definition, 10.0L);
@@ -864,8 +863,8 @@ TEST(GGEMSSourcePopulationPlanTest,
     Planner planner{sources, MakeRandom()};
     auto local = planner.BuildCandidate(k_one_second_window);
     candidate =
-        std::make_unique<ggems::core::sources::GGEMSSourcePopulationCandidate>(
-            std::move(local));
+      std::make_unique<ggems::core::sources::GGEMSSourcePopulationCandidate>(
+        std::move(local));
     definition.reset();
     source.reset();
   }
@@ -873,8 +872,8 @@ TEST(GGEMSSourcePopulationPlanTest,
   ASSERT_FALSE(retained.expired());
   ASSERT_EQ(candidate->GetPlan().GetRadionuclideDefinitions().size(), 1U);
   EXPECT_EQ(
-      candidate->GetPlan().GetRadionuclideDefinitions()[0U]->GetCanonicalName(),
-      "Synthetic");
+    candidate->GetPlan().GetRadionuclideDefinitions()[0U]->GetCanonicalName(),
+    "Synthetic");
 }
 
 // =============================================================================

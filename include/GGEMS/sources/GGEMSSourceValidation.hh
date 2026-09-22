@@ -15,14 +15,14 @@ struct GGEMSEmissionBounds {
 
 [[nodiscard]] auto HasSignedPicoMeterEnvelope(std::int64_t center_pm,
                                               std::uint64_t radius_pm) noexcept
-    -> bool;
+  -> bool;
 
 [[nodiscard]] auto BuildEmissionBounds(GGEMSSourceRecord const &record)
-    -> GGEMSEmissionBounds;
+  -> GGEMSEmissionBounds;
 
 [[nodiscard]] auto
 IsDefaultFullSphereIsotropicDomain(GGEMSSourceRecord const &record) noexcept
-    -> bool;
+  -> bool;
 
 auto ValidateAnalyticSourceRecord(GGEMSSourceRecord const &record) -> void;
 

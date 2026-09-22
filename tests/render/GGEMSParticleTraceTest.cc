@@ -30,12 +30,12 @@ using ggems::core::particles::ToKernelParticleType;
 // =============================================================================
 
 [[nodiscard]] auto MakeRecord(
-    std::uint64_t run_id, std::uint64_t primary_id, std::uint64_t track_id,
-    std::uint64_t time_ps, GGEMSObserverRecordKind kind,
-    GGEMSParticleType particle_type, std::int64_t x_pm, std::int64_t y_pm,
-    std::int64_t z_pm, std::uint32_t source_index = 0U,
-    std::uint64_t source_local_primary_id = 0ULL,
-    std::uint64_t parent_track_id = k_invalid_id_u64) -> GGEMSObserverRecord {
+  std::uint64_t run_id, std::uint64_t primary_id, std::uint64_t track_id,
+  std::uint64_t time_ps, GGEMSObserverRecordKind kind,
+  GGEMSParticleType particle_type, std::int64_t x_pm, std::int64_t y_pm,
+  std::int64_t z_pm, std::uint32_t source_index = 0U,
+  std::uint64_t source_local_primary_id = 0ULL,
+  std::uint64_t parent_track_id = k_invalid_id_u64) -> GGEMSObserverRecord {
   GGEMSObserverRecord record{};
 
   record.run_id = run_id;
@@ -61,15 +61,15 @@ using ggems::core::particles::ToKernelParticleType;
 [[nodiscard]] auto MakeSegment(std::uint32_t source_index,
                                GGEMSParticleType particle_type,
                                float position_x)
-    -> ggems::render::GGEMSParticleTraceSegment {
+  -> ggems::render::GGEMSParticleTraceSegment {
   return ggems::render::GGEMSParticleTraceSegment{
-      .source_index = source_index,
-      .particle_type = particle_type,
-      .begin = ggems::render::GGEMSParticleTracePoint{.x_m = position_x,
-                                                      .y_m = 0.0F,
-                                                      .z_m = 0.0F},
-      .end = ggems::render::GGEMSParticleTracePoint{
-          .x_m = position_x + 0.5F, .y_m = 1.0F, .z_m = 0.0F}};
+    .source_index = source_index,
+    .particle_type = particle_type,
+    .begin = ggems::render::GGEMSParticleTracePoint{.x_m = position_x,
+                                                    .y_m = 0.0F,
+                                                    .z_m = 0.0F},
+    .end = ggems::render::GGEMSParticleTracePoint{
+      .x_m = position_x + 0.5F, .y_m = 1.0F, .z_m = 0.0F}};
 }
 
 // =============================================================================
@@ -104,8 +104,8 @@ TEST(GGEMSParticleTrace, EmptyRecordsProduceNoSegment) {
 
 TEST(GGEMSParticleTrace, SingleRecordProducesNoSegment) {
   std::vector<GGEMSObserverRecord> records{
-      MakeRecord(0ULL, 7ULL, 42ULL, 0ULL, GGEMSObserverRecordKind::Source,
-                 GGEMSParticleType::Gamma, 0LL, 0LL, 0LL)};
+    MakeRecord(0ULL, 7ULL, 42ULL, 0ULL, GGEMSObserverRecordKind::Source,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 0LL)};
 
   EXPECT_TRUE(ggems::render::BuildParticleTraceSegments(records).empty());
 }
@@ -115,17 +115,16 @@ TEST(GGEMSParticleTrace, SingleRecordProducesNoSegment) {
 
 TEST(GGEMSParticleTrace, ConsecutiveRecordsInSameTrackProduceSegments) {
   std::vector<GGEMSObserverRecord> records{
-      MakeRecord(0ULL, 7ULL, 42ULL, 0ULL, GGEMSObserverRecordKind::Source,
-                 GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 4U, 2ULL),
-      MakeRecord(0ULL, 7ULL, 42ULL, 10ULL, GGEMSObserverRecordKind::Step,
-                 GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL, 4U,
-                 2ULL),
-      MakeRecord(0ULL, 7ULL, 42ULL, 20ULL, GGEMSObserverRecordKind::Step,
-                 GGEMSParticleType::Gamma, 0LL, 0LL, 200'000'000'000LL, 4U,
-                 2ULL)};
+    MakeRecord(0ULL, 7ULL, 42ULL, 0ULL, GGEMSObserverRecordKind::Source,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 4U, 2ULL),
+    MakeRecord(0ULL, 7ULL, 42ULL, 10ULL, GGEMSObserverRecordKind::Step,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL, 4U, 2ULL),
+    MakeRecord(0ULL, 7ULL, 42ULL, 20ULL, GGEMSObserverRecordKind::Step,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 200'000'000'000LL, 4U,
+               2ULL)};
 
   std::vector<ggems::render::GGEMSParticleTraceSegment> segments =
-      ggems::render::BuildParticleTraceSegments(records);
+    ggems::render::BuildParticleTraceSegments(records);
 
   ASSERT_EQ(segments.size(), 2U);
 
@@ -151,13 +150,13 @@ TEST(GGEMSParticleTrace, ConsecutiveRecordsInSameTrackProduceSegments) {
 
 TEST(GGEMSParticleTrace, RecordsAreSortedBeforeSegmentConstruction) {
   std::vector<GGEMSObserverRecord> records{
-      MakeRecord(0ULL, 3ULL, 9ULL, 20ULL, GGEMSObserverRecordKind::Step,
-                 GGEMSParticleType::Electron, 100'000'000'000LL, 0LL, 0LL),
-      MakeRecord(0ULL, 3ULL, 9ULL, 0ULL, GGEMSObserverRecordKind::SecondaryStep,
-                 GGEMSParticleType::Electron, 0LL, 0LL, 0LL)};
+    MakeRecord(0ULL, 3ULL, 9ULL, 20ULL, GGEMSObserverRecordKind::Step,
+               GGEMSParticleType::Electron, 100'000'000'000LL, 0LL, 0LL),
+    MakeRecord(0ULL, 3ULL, 9ULL, 0ULL, GGEMSObserverRecordKind::SecondaryStep,
+               GGEMSParticleType::Electron, 0LL, 0LL, 0LL)};
 
   std::vector<ggems::render::GGEMSParticleTraceSegment> segments =
-      ggems::render::BuildParticleTraceSegments(records);
+    ggems::render::BuildParticleTraceSegments(records);
 
   ASSERT_EQ(segments.size(), 1U);
   EXPECT_EQ(segments[0].begin_kind, GGEMSObserverRecordKind::SecondaryStep);
@@ -171,20 +170,19 @@ TEST(GGEMSParticleTrace, RecordsAreSortedBeforeSegmentConstruction) {
 
 TEST(GGEMSParticleTrace, DifferentTrackAreNotConnectedTogether) {
   std::vector<GGEMSObserverRecord> records{
-      MakeRecord(0ULL, 1ULL, 10ULL, 0ULL, GGEMSObserverRecordKind::Source,
-                 GGEMSParticleType::Gamma, 0LL, 0LL, 0LL),
-      MakeRecord(0ULL, 1ULL, 10ULL, 10ULL, GGEMSObserverRecordKind::Step,
-                 GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL),
-      MakeRecord(0ULL, 1ULL, 11ULL, 15ULL,
-                 GGEMSObserverRecordKind::SecondaryStep,
-                 GGEMSParticleType::Electron, 0LL, 0LL, 100'000'000'000LL, 0U,
-                 0ULL, 10ULL),
-      MakeRecord(0ULL, 1ULL, 11ULL, 25ULL, GGEMSObserverRecordKind::Step,
-                 GGEMSParticleType::Electron, 50'000'000'000LL, 0LL,
-                 125'000'000'000LL, 0U, 0ULL, 10ULL)};
+    MakeRecord(0ULL, 1ULL, 10ULL, 0ULL, GGEMSObserverRecordKind::Source,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 0LL),
+    MakeRecord(0ULL, 1ULL, 10ULL, 10ULL, GGEMSObserverRecordKind::Step,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL),
+    MakeRecord(0ULL, 1ULL, 11ULL, 15ULL, GGEMSObserverRecordKind::SecondaryStep,
+               GGEMSParticleType::Electron, 0LL, 0LL, 100'000'000'000LL, 0U,
+               0ULL, 10ULL),
+    MakeRecord(0ULL, 1ULL, 11ULL, 25ULL, GGEMSObserverRecordKind::Step,
+               GGEMSParticleType::Electron, 50'000'000'000LL, 0LL,
+               125'000'000'000LL, 0U, 0ULL, 10ULL)};
 
   std::vector<ggems::render::GGEMSParticleTraceSegment> segments =
-      ggems::render::BuildParticleTraceSegments(records);
+    ggems::render::BuildParticleTraceSegments(records);
 
   ASSERT_EQ(segments.size(), 2U);
   EXPECT_EQ(segments[0].track_id, 10ULL);
@@ -199,20 +197,18 @@ TEST(GGEMSParticleTrace, DifferentTrackAreNotConnectedTogether) {
 
 TEST(GGEMSParticleTrace, RepeatedLocalIdentifiersAcrossRunsRemainSeparate) {
   std::vector<GGEMSObserverRecord> records{
-      MakeRecord(3ULL, 12ULL, 99ULL, 0ULL, GGEMSObserverRecordKind::Source,
-                 GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 2U, 5ULL),
-      MakeRecord(3ULL, 12ULL, 99ULL, 10ULL, GGEMSObserverRecordKind::Step,
-                 GGEMSParticleType::Gamma, 100'000'000'000LL, 0LL, 0LL, 2U,
-                 5ULL),
-      MakeRecord(4ULL, 12ULL, 99ULL, 0ULL, GGEMSObserverRecordKind::Source,
-                 GGEMSParticleType::Gamma, 200'000'000'000LL, 0LL, 0LL, 2U,
-                 5ULL),
-      MakeRecord(4ULL, 12ULL, 99ULL, 10ULL, GGEMSObserverRecordKind::Step,
-                 GGEMSParticleType::Gamma, 300'000'000'000LL, 0LL, 0LL, 2U,
-                 5ULL)};
+    MakeRecord(3ULL, 12ULL, 99ULL, 0ULL, GGEMSObserverRecordKind::Source,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 2U, 5ULL),
+    MakeRecord(3ULL, 12ULL, 99ULL, 10ULL, GGEMSObserverRecordKind::Step,
+               GGEMSParticleType::Gamma, 100'000'000'000LL, 0LL, 0LL, 2U, 5ULL),
+    MakeRecord(4ULL, 12ULL, 99ULL, 0ULL, GGEMSObserverRecordKind::Source,
+               GGEMSParticleType::Gamma, 200'000'000'000LL, 0LL, 0LL, 2U, 5ULL),
+    MakeRecord(4ULL, 12ULL, 99ULL, 10ULL, GGEMSObserverRecordKind::Step,
+               GGEMSParticleType::Gamma, 300'000'000'000LL, 0LL, 0LL, 2U,
+               5ULL)};
 
   std::vector<ggems::render::GGEMSParticleTraceSegment> segments =
-      ggems::render::BuildParticleTraceSegments(records);
+    ggems::render::BuildParticleTraceSegments(records);
 
   ASSERT_EQ(segments.size(), 2U);
 
@@ -233,11 +229,11 @@ TEST(GGEMSParticleTrace, RepeatedLocalIdentifiersAcrossRunsRemainSeparate) {
 TEST(GGEMSParticleTrace,
      DifferentGlobalPrimaryIdentifiersAreNotConnectedWhenLocalFieldsMatch) {
   std::vector<GGEMSObserverRecord> records{
-      MakeRecord(3ULL, 12ULL, 99ULL, 0ULL, GGEMSObserverRecordKind::Source,
-                 GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 2U, 5ULL),
-      MakeRecord(3ULL, 13ULL, 99ULL, 10ULL, GGEMSObserverRecordKind::Step,
-                 GGEMSParticleType::Gamma, 100'000'000'000LL, 0LL, 0LL, 2U,
-                 5ULL)};
+    MakeRecord(3ULL, 12ULL, 99ULL, 0ULL, GGEMSObserverRecordKind::Source,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 2U, 5ULL),
+    MakeRecord(3ULL, 13ULL, 99ULL, 10ULL, GGEMSObserverRecordKind::Step,
+               GGEMSParticleType::Gamma, 100'000'000'000LL, 0LL, 0LL, 2U,
+               5ULL)};
 
   EXPECT_TRUE(ggems::render::BuildParticleTraceSegments(records).empty());
 }
@@ -247,25 +243,25 @@ TEST(GGEMSParticleTrace,
 
 TEST(GGEMSParticleTrace, DifferentSourceProvenanceIsNotConnected) {
   std::vector<GGEMSObserverRecord> different_source_index{
-      MakeRecord(0ULL, 7ULL, 42ULL, 0ULL, GGEMSObserverRecordKind::Source,
-                 GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 0U, 4ULL),
-      MakeRecord(0ULL, 7ULL, 42ULL, 10ULL, GGEMSObserverRecordKind::Step,
-                 GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL, 2U,
-                 4ULL)};
+    MakeRecord(0ULL, 7ULL, 42ULL, 0ULL, GGEMSObserverRecordKind::Source,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 0U, 4ULL),
+    MakeRecord(0ULL, 7ULL, 42ULL, 10ULL, GGEMSObserverRecordKind::Step,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL, 2U,
+               4ULL)};
 
-  EXPECT_TRUE(ggems::render::BuildParticleTraceSegments(different_source_index)
-                  .empty());
+  EXPECT_TRUE(
+    ggems::render::BuildParticleTraceSegments(different_source_index).empty());
 
   std::vector<GGEMSObserverRecord> different_source_local_primary_id{
-      MakeRecord(0ULL, 7ULL, 42ULL, 0ULL, GGEMSObserverRecordKind::Source,
-                 GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 2U, 0ULL),
-      MakeRecord(0ULL, 7ULL, 42ULL, 10ULL, GGEMSObserverRecordKind::Step,
-                 GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL, 2U,
-                 1ULL)};
+    MakeRecord(0ULL, 7ULL, 42ULL, 0ULL, GGEMSObserverRecordKind::Source,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 2U, 0ULL),
+    MakeRecord(0ULL, 7ULL, 42ULL, 10ULL, GGEMSObserverRecordKind::Step,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL, 2U,
+               1ULL)};
 
-  EXPECT_TRUE(ggems::render::BuildParticleTraceSegments(
-                  different_source_local_primary_id)
-                  .empty());
+  EXPECT_TRUE(
+    ggems::render::BuildParticleTraceSegments(different_source_local_primary_id)
+      .empty());
 }
 
 // =============================================================================
@@ -273,15 +269,15 @@ TEST(GGEMSParticleTrace, DifferentSourceProvenanceIsNotConnected) {
 
 TEST(GGEMSParticleTrace, ZeroLengthTerminalRecordDoesNotCreateSegment) {
   std::vector<GGEMSObserverRecord> records{
-      MakeRecord(0ULL, 2ULL, 20ULL, 0ULL, GGEMSObserverRecordKind::Source,
-                 GGEMSParticleType::Gamma, 0LL, 0LL, 0LL),
-      MakeRecord(0ULL, 2ULL, 20ULL, 10ULL, GGEMSObserverRecordKind::Step,
-                 GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL),
-      MakeRecord(0ULL, 2ULL, 20ULL, 10ULL, GGEMSObserverRecordKind::Terminal,
-                 GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL)};
+    MakeRecord(0ULL, 2ULL, 20ULL, 0ULL, GGEMSObserverRecordKind::Source,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 0LL),
+    MakeRecord(0ULL, 2ULL, 20ULL, 10ULL, GGEMSObserverRecordKind::Step,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL),
+    MakeRecord(0ULL, 2ULL, 20ULL, 10ULL, GGEMSObserverRecordKind::Terminal,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL)};
 
   std::vector<ggems::render::GGEMSParticleTraceSegment> segments =
-      ggems::render::BuildParticleTraceSegments(records);
+    ggems::render::BuildParticleTraceSegments(records);
 
   ASSERT_EQ(segments.size(), 1U);
   EXPECT_EQ(segments[0].begin_kind, GGEMSObserverRecordKind::Source);
@@ -305,14 +301,13 @@ TEST(GGEMSParticleTrace, SegmentsBuildLineVertices) {
   ggems::render::GGEMSParticleTraceSegment segment{};
   segment.particle_type = GGEMSParticleType::Gamma;
   segment.begin = ggems::render::GGEMSParticleTracePoint{
-      .x_m = 1.0F, .y_m = 2.0F, .z_m = 3.0F};
+    .x_m = 1.0F, .y_m = 2.0F, .z_m = 3.0F};
   segment.end = ggems::render::GGEMSParticleTracePoint{
-      .x_m = 4.0F, .y_m = 5.0F, .z_m = 6.0F};
+    .x_m = 4.0F, .y_m = 5.0F, .z_m = 6.0F};
 
   std::vector<ggems::render::GGEMSParticleTraceVertex> const vertices =
-      ggems::render::BuildParticleTraceVertices(
-          std::span<ggems::render::GGEMSParticleTraceSegment const>{&segment,
-                                                                    1U});
+    ggems::render::BuildParticleTraceVertices(
+      std::span<ggems::render::GGEMSParticleTraceSegment const>{&segment, 1U});
 
   ASSERT_EQ(vertices.size(), 2U);
 
@@ -336,10 +331,10 @@ TEST(GGEMSParticleTrace, SegmentsBuildLineVertices) {
 
 TEST(GGEMSParticleTrace, InterleavedSegmentsAreGroupedBySourceIndex) {
   std::array<ggems::render::GGEMSParticleTraceSegment, 4U> segments{
-      MakeSegment(2U, GGEMSParticleType::Gamma, 20.0F),
-      MakeSegment(0U, GGEMSParticleType::Electron, 0.0F),
-      MakeSegment(2U, GGEMSParticleType::Proton, 21.0F),
-      MakeSegment(1U, GGEMSParticleType::Positron, 10.0F)};
+    MakeSegment(2U, GGEMSParticleType::Gamma, 20.0F),
+    MakeSegment(0U, GGEMSParticleType::Electron, 0.0F),
+    MakeSegment(2U, GGEMSParticleType::Proton, 21.0F),
+    MakeSegment(1U, GGEMSParticleType::Positron, 10.0F)};
 
   auto draw_data = ggems::render::BuildParticleTraceDrawData(segments);
 
@@ -369,11 +364,11 @@ TEST(GGEMSParticleTrace, InterleavedSegmentsAreGroupedBySourceIndex) {
 
 TEST(GGEMSParticleTrace, DrawRangesAreContiguous) {
   std::array<ggems::render::GGEMSParticleTraceSegment, 5U> segments{
-      MakeSegment(1U, GGEMSParticleType::Gamma, 1.0F),
-      MakeSegment(0U, GGEMSParticleType::Electron, 2.0F),
-      MakeSegment(2U, GGEMSParticleType::Positron, 3.0F),
-      MakeSegment(1U, GGEMSParticleType::Proton, 4.0F),
-      MakeSegment(0U, GGEMSParticleType::Neutron, 5.0F)};
+    MakeSegment(1U, GGEMSParticleType::Gamma, 1.0F),
+    MakeSegment(0U, GGEMSParticleType::Electron, 2.0F),
+    MakeSegment(2U, GGEMSParticleType::Positron, 3.0F),
+    MakeSegment(1U, GGEMSParticleType::Proton, 4.0F),
+    MakeSegment(0U, GGEMSParticleType::Neutron, 5.0F)};
 
   auto draw_data = ggems::render::BuildParticleTraceDrawData(segments);
 
@@ -394,9 +389,9 @@ TEST(GGEMSParticleTrace, DrawRangesAreContiguous) {
 
 TEST(GGEMSParticleTrace, GroupingPreservesParticleColors) {
   std::array<ggems::render::GGEMSParticleTraceSegment, 3U> segments{
-      MakeSegment(1U, GGEMSParticleType::Gamma, 1.0F),
-      MakeSegment(0U, GGEMSParticleType::Electron, 2.0F),
-      MakeSegment(1U, GGEMSParticleType::Proton, 3.0F)};
+    MakeSegment(1U, GGEMSParticleType::Gamma, 1.0F),
+    MakeSegment(0U, GGEMSParticleType::Electron, 2.0F),
+    MakeSegment(1U, GGEMSParticleType::Proton, 3.0F)};
 
   auto draw_data = ggems::render::BuildParticleTraceDrawData(segments);
 
@@ -471,42 +466,42 @@ TEST(GGEMSParticleTraceVisibility,
 TEST(GGEMSParticleTrace,
      DiagnosticCardinalAndDiagonalHistoriesBuildSevenFilteredRanges) {
   constexpr std::array<std::array<std::int64_t, 3U>, 7U> k_begin_pm{{
-      {-1'500'000'000'000LL, 0LL, 0LL},
-      {1'500'000'000'000LL, 0LL, 0LL},
-      {0LL, -1'500'000'000'000LL, 0LL},
-      {0LL, 1'500'000'000'000LL, 0LL},
-      {0LL, 0LL, -1'500'000'000'000LL},
-      {0LL, 0LL, 1'500'000'000'000LL},
-      {0LL, 0LL, 0LL},
+    {-1'500'000'000'000LL, 0LL, 0LL},
+    {1'500'000'000'000LL, 0LL, 0LL},
+    {0LL, -1'500'000'000'000LL, 0LL},
+    {0LL, 1'500'000'000'000LL, 0LL},
+    {0LL, 0LL, -1'500'000'000'000LL},
+    {0LL, 0LL, 1'500'000'000'000LL},
+    {0LL, 0LL, 0LL},
   }};
 
   constexpr std::array<std::array<std::int64_t, 3U>, 7U> k_end_pm{{
-      {-500'000'000'000LL, 0LL, 0LL},
-      {500'000'000'000LL, 0LL, 0LL},
-      {0LL, -500'000'000'000LL, 0LL},
-      {0LL, 500'000'000'000LL, 0LL},
-      {0LL, 0LL, -500'000'000'000LL},
-      {0LL, 0LL, 500'000'000'000LL},
-      {577'350'258'827LL, 577'350'258'827LL, 577'350'258'827LL},
+    {-500'000'000'000LL, 0LL, 0LL},
+    {500'000'000'000LL, 0LL, 0LL},
+    {0LL, -500'000'000'000LL, 0LL},
+    {0LL, 500'000'000'000LL, 0LL},
+    {0LL, 0LL, -500'000'000'000LL},
+    {0LL, 0LL, 500'000'000'000LL},
+    {577'350'258'827LL, 577'350'258'827LL, 577'350'258'827LL},
   }};
 
   std::vector<GGEMSObserverRecord> records;
   records.reserve(14U);
 
   for (std::size_t index = 0U; index < k_begin_pm.size(); ++index) {
-    auto terminal = MakeRecord(3ULL, static_cast<std::uint64_t>(index), 0ULL,
-                               0ULL, GGEMSObserverRecordKind::Terminal,
-                               GGEMSParticleType::Aionino, k_end_pm[index][0U],
-                               k_end_pm[index][1U], k_end_pm[index][2U],
-                               static_cast<std::uint32_t>(index));
+    auto terminal =
+      MakeRecord(3ULL, static_cast<std::uint64_t>(index), 0ULL, 0ULL,
+                 GGEMSObserverRecordKind::Terminal, GGEMSParticleType::Aionino,
+                 k_end_pm[index][0U], k_end_pm[index][1U], k_end_pm[index][2U],
+                 static_cast<std::uint32_t>(index));
 
     terminal.global_particle_id = static_cast<std::uint64_t>(index);
 
     auto source =
-        MakeRecord(3ULL, static_cast<std::uint64_t>(index), 0ULL, 0ULL,
-                   GGEMSObserverRecordKind::Source, GGEMSParticleType::Aionino,
-                   k_begin_pm[index][0U], k_begin_pm[index][1U],
-                   k_begin_pm[index][2U], static_cast<std::uint32_t>(index));
+      MakeRecord(3ULL, static_cast<std::uint64_t>(index), 0ULL, 0ULL,
+                 GGEMSObserverRecordKind::Source, GGEMSParticleType::Aionino,
+                 k_begin_pm[index][0U], k_begin_pm[index][1U],
+                 k_begin_pm[index][2U], static_cast<std::uint32_t>(index));
 
     source.global_particle_id = static_cast<std::uint64_t>(index);
 
@@ -572,17 +567,17 @@ TEST(GGEMSParticleTrace,
 TEST(GGEMSParticleTrace,
      SeparatesInterleavedParticlesWithDifferentGlobalParticleIds) {
   auto source_a =
-      MakeRecord(5ULL, 7ULL, 0ULL, 0ULL, GGEMSObserverRecordKind::Source,
-                 GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 2U, 3ULL);
+    MakeRecord(5ULL, 7ULL, 0ULL, 0ULL, GGEMSObserverRecordKind::Source,
+               GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 2U, 3ULL);
   auto terminal_a =
-      MakeRecord(5ULL, 7ULL, 0ULL, 1ULL, GGEMSObserverRecordKind::Terminal,
-                 GGEMSParticleType::Gamma, 100LL, 0LL, 0LL, 2U, 3ULL);
+    MakeRecord(5ULL, 7ULL, 0ULL, 1ULL, GGEMSObserverRecordKind::Terminal,
+               GGEMSParticleType::Gamma, 100LL, 0LL, 0LL, 2U, 3ULL);
   auto source_b =
-      MakeRecord(5ULL, 7ULL, 0ULL, 0ULL, GGEMSObserverRecordKind::Source,
-                 GGEMSParticleType::Gamma, 0LL, 100LL, 0LL, 2U, 3ULL);
+    MakeRecord(5ULL, 7ULL, 0ULL, 0ULL, GGEMSObserverRecordKind::Source,
+               GGEMSParticleType::Gamma, 0LL, 100LL, 0LL, 2U, 3ULL);
   auto terminal_b =
-      MakeRecord(5ULL, 7ULL, 0ULL, 1ULL, GGEMSObserverRecordKind::Terminal,
-                 GGEMSParticleType::Gamma, 0LL, 200LL, 0LL, 2U, 3ULL);
+    MakeRecord(5ULL, 7ULL, 0ULL, 1ULL, GGEMSObserverRecordKind::Terminal,
+               GGEMSParticleType::Gamma, 0LL, 200LL, 0LL, 2U, 3ULL);
 
   source_a.global_particle_id = 100ULL;
   terminal_a.global_particle_id = 100ULL;

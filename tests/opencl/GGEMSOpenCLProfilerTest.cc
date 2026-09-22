@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for the GGEMS OpenCL profiler.
  *
- * Validates host-side measurement state and ordered device-side kernel profiling timestamps without depending on absolute timing values.
+ * Validates host-side measurement state and ordered device-side kernel
+ * profiling timestamps without depending on absolute timing values.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -109,7 +110,7 @@ TEST(GGEMSOpenCLProfilerTest,
 TEST(GGEMSOpenCLProfilerTest,
      RecordsOrderedKernelTimestampsOnEveryCompilerDevice) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
   if (compiler_devices.empty()) {
     GTEST_SKIP() << "No available GGEMS-discovered device has a compiler.";
   }
@@ -120,11 +121,11 @@ TEST(GGEMSOpenCLProfilerTest,
 
     auto const &context = *compiler_device.context;
     auto const &program =
-        ggems::ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
-            context, probe_root, k_opencl_framework_probe_name);
+      ggems::ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
+        context, probe_root, k_opencl_framework_probe_name);
     ggems::ocl::GGEMSOpenCLKernel kernel{
-        context, program.CreateKernel(k_opencl_framework_probe_name),
-        k_opencl_framework_probe_name};
+      context, program.CreateKernel(k_opencl_framework_probe_name),
+      k_opencl_framework_probe_name};
 
     std::array<cl_uint, k_value_count> values{1U, 2U, 3U, 4U};
     cl_int error{CL_SUCCESS};

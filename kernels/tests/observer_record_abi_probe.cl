@@ -61,7 +61,7 @@ observer_record_abi_probe(__global ulong *layout,
 
 #define GGEMS_WRITE_CONFIG_OFFSET(INDEX, FIELD)                                \
   layout[INDEX] =                                                              \
-      (ulong)((__private uchar const *)&private_config.FIELD - config_base)
+    (ulong)((__private uchar const *)&private_config.FIELD - config_base)
 
   layout[23] = (ulong)(sizeof(GGEMSObserverConfigRecord));
   GGEMS_WRITE_CONFIG_OFFSET(24, enabled);
@@ -77,10 +77,10 @@ observer_record_abi_probe(__global ulong *layout,
 
   GGEMSObserverConfigAlignmentProbe alignment_probe;
   __private uchar const *alignment_base =
-      (__private uchar const *)&alignment_probe;
+    (__private uchar const *)&alignment_probe;
 
-  layout[30] = (ulong)((__private uchar const *)&alignment_probe.config -
-                       alignment_base);
+  layout[30] =
+    (ulong)((__private uchar const *)&alignment_probe.config - alignment_base);
 
   configs[0].enabled = 1U;
   configs[0].capture_first_primary_count_per_source = 3U;

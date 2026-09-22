@@ -39,21 +39,21 @@ struct GGEMSMaterialInspection {
 };
 
 [[nodiscard]] auto InspectMaterial(GGEMSMaterial const &material)
-    -> GGEMSMaterialInspection;
+  -> GGEMSMaterialInspection;
 
 [[nodiscard]] auto InspectMaterial(GGEMSMaterialManager const &manager,
                                    std::uint32_t manager_index)
-    -> GGEMSMaterialInspection;
+  -> GGEMSMaterialInspection;
 
 [[nodiscard]] auto InspectMaterial(GGEMSMaterialManager const &manager,
                                    std::string_view name)
-    -> GGEMSMaterialInspection;
+  -> GGEMSMaterialInspection;
 
 [[nodiscard]] auto DescribeMaterial(GGEMSMaterial const &material)
-    -> std::string;
+  -> std::string;
 
 [[nodiscard]] auto DescribeMaterial(GGEMSMaterialInspection const &inspection)
-    -> std::string;
+  -> std::string;
 
 [[nodiscard]] auto DescribeAvailableMaterials() -> std::string;
 

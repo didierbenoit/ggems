@@ -21,7 +21,8 @@
 
 /*!
  * \file
- * \brief Declares strongly typed energy and signed energy-change units and literals.
+ * \brief Declares strongly typed energy and signed energy-change units and
+ * literals.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -53,12 +54,12 @@ template <> struct UnitRegistry<EnergyUnitSet> {
    * \brief Registered unit definitions for this quantity family.
    */
   static constexpr std::array<UnitDefinition, 6U> units{{
-      {.symbol = "meV", .scale = DecimalScale(3)},
-      {.symbol = "eV", .scale = DecimalScale(6)},
-      {.symbol = "keV", .scale = DecimalScale(9)},
-      {.symbol = "MeV", .scale = DecimalScale(12)},
-      {.symbol = "GeV", .scale = DecimalScale(15)},
-      {.symbol = "TeV", .scale = DecimalScale(18)},
+    {.symbol = "meV", .scale = DecimalScale(3)},
+    {.symbol = "eV", .scale = DecimalScale(6)},
+    {.symbol = "keV", .scale = DecimalScale(9)},
+    {.symbol = "MeV", .scale = DecimalScale(12)},
+    {.symbol = "GeV", .scale = DecimalScale(15)},
+    {.symbol = "TeV", .scale = DecimalScale(18)},
   }};
 };
 
@@ -83,13 +84,15 @@ template <> struct QuantityTraits<EnergyTag> {
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::AutomaticScale};
+    QuantityFormatPolicy::AutomaticScale};
   /*!
-   * \brief Fixed display unit, or an empty string when the policy selects units automatically.
+   * \brief Fixed display unit, or an empty string when the policy selects units
+   * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
   /*!
-   * \brief Default number of digits after the decimal point for formatted output.
+   * \brief Default number of digits after the decimal point for formatted
+   * output.
    */
   static constexpr std::int8_t default_precision{7};
 };
@@ -115,13 +118,15 @@ template <> struct QuantityTraits<EnergyChangeTag> {
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::AutomaticScale};
+    QuantityFormatPolicy::AutomaticScale};
   /*!
-   * \brief Fixed display unit, or an empty string when the policy selects units automatically.
+   * \brief Fixed display unit, or an empty string when the policy selects units
+   * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
   /*!
-   * \brief Default number of digits after the decimal point for formatted output.
+   * \brief Default number of digits after the decimal point for formatted
+   * output.
    */
   static constexpr std::int8_t default_precision{7};
 };

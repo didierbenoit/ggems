@@ -30,7 +30,7 @@ struct GGEMSProductionCutContextInspection {
 [[nodiscard]] auto
 InspectProductionCutContext(GGEMSMaterialCutCouplePackage const &package,
                             std::size_t context_index)
-    -> GGEMSProductionCutContextInspection;
+  -> GGEMSProductionCutContextInspection;
 
 [[nodiscard]] auto
 DescribeProductionCutContext(GGEMSMaterialCutCouplePackage const &package,

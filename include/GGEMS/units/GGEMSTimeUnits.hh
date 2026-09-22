@@ -53,23 +53,17 @@ template <> struct UnitRegistry<TimeUnitSet> {
    * \brief Registered unit definitions for this quantity family.
    */
   static constexpr std::array<UnitDefinition, 7U> units{{
-      {.symbol = "ps",
-       .scale = DecimalScale(0)},
-      {.symbol = "ns",
-       .scale = DecimalScale(3)},
-      {.symbol = "us",
-       .scale = DecimalScale(6),
-       .unicode_symbol = "µs"},
-      {.symbol = "ms",
-       .scale = DecimalScale(9)},
-      {.symbol = "s",
-       .scale = DecimalScale(12)},
-      {.symbol = "min",
-       .scale = DecimalScale(12, 60ULL),
-       .automatic_display = false},
-      {.symbol = "h",
-       .scale = DecimalScale(12, 3'600ULL),
-       .automatic_display = false},
+    {.symbol = "ps", .scale = DecimalScale(0)},
+    {.symbol = "ns", .scale = DecimalScale(3)},
+    {.symbol = "us", .scale = DecimalScale(6), .unicode_symbol = "µs"},
+    {.symbol = "ms", .scale = DecimalScale(9)},
+    {.symbol = "s", .scale = DecimalScale(12)},
+    {.symbol = "min",
+     .scale = DecimalScale(12, 60ULL),
+     .automatic_display = false},
+    {.symbol = "h",
+     .scale = DecimalScale(12, 3'600ULL),
+     .automatic_display = false},
   }};
 };
 
@@ -94,13 +88,15 @@ template <> struct QuantityTraits<DurationTag> {
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::DurationBreakdown};
+    QuantityFormatPolicy::DurationBreakdown};
   /*!
-   * \brief Fixed display unit, or an empty string when the policy selects units automatically.
+   * \brief Fixed display unit, or an empty string when the policy selects units
+   * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
   /*!
-   * \brief Default number of digits after the decimal point for formatted output.
+   * \brief Default number of digits after the decimal point for formatted
+   * output.
    */
   static constexpr std::int8_t default_precision{7};
 };
@@ -126,13 +122,15 @@ template <> struct QuantityTraits<TimePointTag> {
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::AutomaticScale};
+    QuantityFormatPolicy::AutomaticScale};
   /*!
-   * \brief Fixed display unit, or an empty string when the policy selects units automatically.
+   * \brief Fixed display unit, or an empty string when the policy selects units
+   * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
   /*!
-   * \brief Default number of digits after the decimal point for formatted output.
+   * \brief Default number of digits after the decimal point for formatted
+   * output.
    */
   static constexpr std::int8_t default_precision{7};
 };
@@ -142,7 +140,8 @@ template <> struct QuantityTraits<TimePointTag> {
  */
 using Duration = Quantity<DurationTag, std::uint64_t>;
 /*!
- * \brief Strongly typed nonnegative time point stored canonically in picoseconds.
+ * \brief Strongly typed nonnegative time point stored canonically in
+ * picoseconds.
  */
 using TimePoint = Quantity<TimePointTag, std::uint64_t>;
 /*!

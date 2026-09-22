@@ -23,7 +23,8 @@
  * \file
  * \brief OpenCL probe for the engine-independent scalar random API.
  *
- * Generates repeated scalar uniform samples through GGEMS_RndmUniform for the compile-time-selected engine.
+ * Generates repeated scalar uniform samples through GGEMS_RndmUniform for the
+ * compile-time-selected engine.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>

@@ -23,7 +23,8 @@
  * \file
  * \brief Declares the host-side GGEMS random stream.
  *
- * Provides deterministic host sampling from the same JKISS, PCG32, and Philox state definitions used by GGEMS OpenCL kernels.
+ * Provides deterministic host sampling from the same JKISS, PCG32, and Philox
+ * state definitions used by GGEMS OpenCL kernels.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -45,7 +46,9 @@ namespace ggems::core::random {
 /*!
  * \brief Generates deterministic host random values from a GGEMS stream state.
  *
- * The host stream reproduces the state transition rules used by the corresponding OpenCL engine and owns the state of one logical stream identifier.
+ * The host stream reproduces the state transition rules used by the
+ * corresponding OpenCL engine and owns the state of one logical stream
+ * identifier.
  */
 class GGEMSHostRandomStream {
 public:
@@ -55,7 +58,8 @@ public:
    * \param[in] random Random-engine and seed configuration.
    * \param[in] stream_id Logical stream identifier.
    *
-   * \throws ggems::core::GGEMSRecoverable If the stream identifier is invalid for the selected engine.
+   * \throws ggems::core::GGEMSRecoverable If the stream identifier is invalid
+   * for the selected engine.
    * \throws ggems::core::GGEMSInternal If the selected engine is unsupported.
    */
   GGEMSHostRandomStream(GGEMSRandom const &random, std::uint64_t stream_id);
@@ -74,21 +78,25 @@ public:
   [[nodiscard]] auto GetStreamId() const noexcept -> std::uint64_t;
 
   /*!
-   * \brief Generates the next raw 32-bit random value and advances the stream state.
+   * \brief Generates the next raw 32-bit random value and advances the stream
+   * state.
    *
    * \return Next random 32-bit unsigned integer.
    */
   auto NextUInt32() noexcept -> std::uint32_t;
   /*!
-   * \brief Generates a single-precision uniform value in the half-open interval [0, 1).
+   * \brief Generates a single-precision uniform value in the half-open interval
+   * [0, 1).
    *
    * \return Uniform binary32 value.
    */
   auto UniformFloat01() noexcept -> float;
   /*!
-   * \brief Generates a double-precision uniform value in the open interval (0, 1).
+   * \brief Generates a double-precision uniform value in the open interval (0,
+   * 1).
    *
-   * \return Uniform binary64 value strictly greater than zero and strictly less than one.
+   * \return Uniform binary64 value strictly greater than zero and strictly less
+   * than one.
    */
   auto UniformDoubleOpen01() noexcept -> double;
 

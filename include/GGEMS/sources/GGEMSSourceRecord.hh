@@ -13,7 +13,7 @@ inline constexpr float k_isotropic_full_sphere_cos_theta_lower{-1.0F};
 inline constexpr float k_isotropic_full_sphere_cos_theta_upper{1.0F};
 inline constexpr float k_isotropic_full_sphere_phi_min_rad{0.0F};
 inline constexpr float k_isotropic_full_sphere_phi_max_rad{
-    6.28318530717958647692F};
+  6.28318530717958647692F};
 
 struct GGEMSSourceRecord {
   std::uint64_t source_id{0ULL};
@@ -31,7 +31,7 @@ struct GGEMSSourceRecord {
   std::uint32_t source_type{ToKernelSourceType(GGEMSSourceType::Analytic)};
 
   std::uint32_t emitted_particle_type{
-      particles::ToKernelParticleType(particles::GGEMSParticleType::Gamma)};
+    particles::ToKernelParticleType(particles::GGEMSParticleType::Gamma)};
 
   std::uint32_t flags{0U};
   std::uint32_t reserved_0{0U};
@@ -49,9 +49,9 @@ struct GGEMSSourceRecord {
   float axis_z_z{1.0F};
 
   std::uint32_t emission_geometry_type{
-      ToKernelEmissionGeometryType(GGEMSEmissionGeometryType::Point)};
+    ToKernelEmissionGeometryType(GGEMSEmissionGeometryType::Point)};
   std::uint32_t angular_distribution_type{
-      ToKernelAngularDistributionType(GGEMSAngularDistributionType::Fixed)};
+    ToKernelAngularDistributionType(GGEMSAngularDistributionType::Fixed)};
 
   std::uint64_t geometry_size_x_pm{0ULL};
   std::uint64_t geometry_size_y_pm{0ULL};

@@ -70,7 +70,8 @@ enum class RunStatus : std::uint8_t {
 };
 
 /*!
- * \brief Stores thread-safe user-facing run status and recent rendered log lines.
+ * \brief Stores thread-safe user-facing run status and recent rendered log
+ * lines.
  *
  * Log lines are retained in a bounded ring buffer. When capacity is reached,
  * newly pushed lines replace the oldest retained entries.
@@ -139,7 +140,7 @@ public:
    * \return Snapshot ordered from the oldest to the newest selected line.
    */
   [[nodiscard]] auto GetLastLogLinesSnapshot(std::size_t max_lines) const
-      -> std::vector<RenderedLogLine>;
+    -> std::vector<RenderedLogLine>;
 
   /*!
    * \brief Clears retained log lines without changing the configured capacity.

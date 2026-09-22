@@ -65,7 +65,7 @@ GGEMSOpenCLSVMBuffer::GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context,
 
   if (!(std::in_range<cl_uint>(alignment.value))) {
     throw core::GGEMSFatal(
-        "SVM allocation alignment exceeds OpenCL cl_uint range.");
+      "SVM allocation alignment exceeds OpenCL cl_uint range.");
   }
 
   auto const &ctx = context.GetContextNative();
@@ -73,20 +73,20 @@ GGEMSOpenCLSVMBuffer::GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context,
   auto const opencl_alignment = static_cast<cl_uint>(alignment.value);
 
   void *svm_ptr = clSVMAlloc(
-      ctx(), flags_, static_cast<std::size_t>(size.value), opencl_alignment);
+    ctx(), flags_, static_cast<std::size_t>(size.value), opencl_alignment);
 
   if (svm_ptr == nullptr) {
     auto const maximum_allocation = units::Bytes{
-        static_cast<std::uint64_t>(context.GetDevice().GetMaxMemAllocSize())};
+      static_cast<std::uint64_t>(context.GetDevice().GetMaxMemAllocSize())};
 
     throw ggems::core::GGEMSFatal(std::format(
-        "clSVMAlloc failed on device '{}': requested={}, "
-        "CL_DEVICE_MAX_MEM_ALLOC_SIZE={}, GGEMS-tracked remaining device "
-        "memory={}. The OpenCL driver returned nullptr without a more "
-        "specific error code.",
-        context.GetDevice().GetName(), units::HumanReadable(size_),
-        units::HumanReadable(maximum_allocation),
-        units::HumanReadable(context.GetAvailableVRAM())));
+      "clSVMAlloc failed on device '{}': requested={}, "
+      "CL_DEVICE_MAX_MEM_ALLOC_SIZE={}, GGEMS-tracked remaining device "
+      "memory={}. The OpenCL driver returned nullptr without a more "
+      "specific error code.",
+      context.GetDevice().GetName(), units::HumanReadable(size_),
+      units::HumanReadable(maximum_allocation),
+      units::HumanReadable(context.GetAvailableVRAM())));
   }
 
   ptr_ = svm_ptr;
@@ -96,14 +96,14 @@ GGEMSOpenCLSVMBuffer::GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context,
 // -----------------------------------------------------------------------------
 
 GGEMSOpenCLSVMBuffer::GGEMSOpenCLSVMBuffer(
-    GGEMSOpenCLSVMBuffer &&other) noexcept {
+  GGEMSOpenCLSVMBuffer &&other) noexcept {
   *this = std::move(other);
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLSVMBuffer::operator=(GGEMSOpenCLSVMBuffer &&other) noexcept
-    -> GGEMSOpenCLSVMBuffer & {
+  -> GGEMSOpenCLSVMBuffer & {
   if (this != &other) {
     Release();
     context_ = other.context_;

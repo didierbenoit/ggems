@@ -22,12 +22,12 @@ namespace {
 // =============================================================================
 
 [[nodiscard]] auto IsBuiltInMaterialName(std::string_view name) noexcept
-    -> bool {
+  -> bool {
   return std::ranges::any_of(
-      builtins::GetAvailableMaterialNames(),
-      [name](std::string_view built_in_name) noexcept -> bool {
-        return built_in_name == name;
-      });
+    builtins::GetAvailableMaterialNames(),
+    [name](std::string_view built_in_name) noexcept -> bool {
+      return built_in_name == name;
+    });
 }
 
 // =============================================================================
@@ -53,7 +53,7 @@ namespace {
 // =============================================================================
 
 [[nodiscard]] auto GGEMSMaterialManager::GetInstance() noexcept
-    -> GGEMSMaterialManager & {
+  -> GGEMSMaterialManager & {
   static GGEMSMaterialManager instance;
   return instance;
 }
@@ -62,7 +62,7 @@ namespace {
 
 [[nodiscard]] auto
 GGEMSMaterialManager::GetOrAddBuiltIn(std::string_view canonical_name)
-    -> std::uint32_t {
+  -> std::uint32_t {
   if (auto const material_index = FindIndex(canonical_name);
       material_index.has_value()) {
     return *material_index;
@@ -81,17 +81,17 @@ GGEMSMaterialManager::GetOrAddBuiltIn(std::string_view canonical_name)
 
 [[nodiscard]] auto
 GGEMSMaterialManager::AddCustomMaterial(GGEMSMaterial material)
-    -> std::uint32_t {
+  -> std::uint32_t {
   auto const name = material.GetName();
 
   if (IsBuiltInMaterialName(name)) {
     throw GGEMSRecoverable{std::format(
-        "Custom Material '{}' conflicts with a built-in Material.", name)};
+      "Custom Material '{}' conflicts with a built-in Material.", name)};
   }
 
   if (Find(name) != nullptr) {
     throw GGEMSRecoverable{
-        std::format("Material '{}' is already registered.", name)};
+      std::format("Material '{}' is already registered.", name)};
   }
 
   return AddMaterial(materials_, std::move(material));
@@ -100,7 +100,7 @@ GGEMSMaterialManager::AddCustomMaterial(GGEMSMaterial material)
 // -----------------------------------------------------------------------------
 
 [[nodiscard]] auto GGEMSMaterialManager::GetMaterials() const noexcept
-    -> std::span<GGEMSMaterial const> {
+  -> std::span<GGEMSMaterial const> {
   return materials_;
 }
 
@@ -108,7 +108,7 @@ GGEMSMaterialManager::AddCustomMaterial(GGEMSMaterial material)
 
 [[nodiscard]] auto
 GGEMSMaterialManager::FindIndex(std::string_view name) const noexcept
-    -> std::optional<std::uint32_t> {
+  -> std::optional<std::uint32_t> {
   for (std::size_t index = 0U; index < materials_.size(); ++index) {
     if (materials_[index].GetName() == name) {
       return static_cast<std::uint32_t>(index);
@@ -122,7 +122,7 @@ GGEMSMaterialManager::FindIndex(std::string_view name) const noexcept
 
 [[nodiscard]] auto
 GGEMSMaterialManager::Find(std::string_view name) const noexcept
-    -> GGEMSMaterial const * {
+  -> GGEMSMaterial const * {
   auto const material_index = FindIndex(name);
 
   if (!material_index.has_value()) {
@@ -136,10 +136,10 @@ GGEMSMaterialManager::Find(std::string_view name) const noexcept
 
 [[nodiscard]] auto
 GGEMSMaterialManager::Require(std::uint32_t material_index) const
-    -> GGEMSMaterial const & {
+  -> GGEMSMaterial const & {
   if (material_index >= materials_.size()) {
     throw GGEMSRecoverable{
-        std::format("Unknown Material index {}.", material_index)};
+      std::format("Unknown Material index {}.", material_index)};
   }
 
   return materials_[material_index];
@@ -148,7 +148,7 @@ GGEMSMaterialManager::Require(std::uint32_t material_index) const
 // -----------------------------------------------------------------------------
 
 [[nodiscard]] auto GGEMSMaterialManager::Require(std::string_view name) const
-    -> GGEMSMaterial const & {
+  -> GGEMSMaterial const & {
   auto const *material = Find(name);
 
   if (material == nullptr) {

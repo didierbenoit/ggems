@@ -59,6 +59,6 @@ namespace ggems::core::logging::detail {
  * \return View into \p function_name containing the simplified spelling.
  */
 [[nodiscard]] auto SimplifyFunctionName(std::string_view function_name) noexcept
-    -> std::string_view;
+  -> std::string_view;
 
 } // namespace ggems::core::logging::detail

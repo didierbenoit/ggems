@@ -19,7 +19,7 @@ public:
   GGEMSImGuiOutputPanel(GGEMSImGuiOutputPanel const &) = delete;
   GGEMSImGuiOutputPanel(GGEMSImGuiOutputPanel &&) = delete;
   auto operator=(GGEMSImGuiOutputPanel const &)
-      -> GGEMSImGuiOutputPanel & = delete;
+    -> GGEMSImGuiOutputPanel & = delete;
   auto operator=(GGEMSImGuiOutputPanel &&) -> GGEMSImGuiOutputPanel & = delete;
 
   auto Render(core::GGEMSOutputState &output_state) -> void;

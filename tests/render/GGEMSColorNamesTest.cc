@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for named GGEMS colors.
  *
- * Validates shade-family mapping, color-key construction, default colors, and representative named constants across variants and layers.
+ * Validates shade-family mapping, color-key construction, default colors, and
+ * representative named constants across variants and layers.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -50,8 +51,8 @@ namespace render = ggems::render;
 // =============================================================================
 
 constexpr auto k_defined_color = render::DefineColor(
-    render::OrangeShade::CopperSignal, render::ColorVariant::Faint,
-    render::ColorLayer::Background);
+  render::OrangeShade::CopperSignal, render::ColorVariant::Faint,
+  render::ColorLayer::Background);
 
 // =============================================================================
 // =============================================================================
@@ -59,7 +60,7 @@ constexpr auto k_defined_color = render::DefineColor(
 static_assert(k_defined_color ==
               render::ColorKey{.family = render::ColorFamily::Orange,
                                .shade = static_cast<std::uint8_t>(
-                                   render::OrangeShade::CopperSignal),
+                                 render::OrangeShade::CopperSignal),
                                .variant = render::ColorVariant::Faint,
                                .layer = render::ColorLayer::Background});
 
@@ -111,36 +112,33 @@ TEST(GGEMSColorNamesTest, RepresentativeNamedConstantsPreserveTheirKeys) {
   };
 
   constexpr std::array test_cases{
-      NamedColorCase{.label = "green acid",
-                     .actual = render::GREEN_Acid,
-                     .expected = render::DefineColor(render::GreenShade::Acid)},
-      NamedColorCase{.label = "bright blue abyss",
-                     .actual = render::BLUE_Abyss_B,
-                     .expected =
-                         render::DefineColor(render::BlueShade::Abyss,
-                                             render::ColorVariant::Bright)},
-      NamedColorCase{.label = "faint red tomato",
-                     .actual = render::RED_Tomato_F,
-                     .expected =
-                         render::DefineColor(render::RedShade::Tomato,
-                                             render::ColorVariant::Faint)},
-      NamedColorCase{.label = "orange copper signal background",
-                     .actual = render::ORANGE_CopperSignal_BG,
-                     .expected =
-                         render::DefineColor(render::OrangeShade::CopperSignal,
-                                             render::ColorVariant::Normal,
-                                             render::ColorLayer::Background)},
-      NamedColorCase{.label = "bright white glare background",
-                     .actual = render::WHITE_Glare_B_BG,
-                     .expected =
-                         render::DefineColor(render::WhiteShade::Glare,
-                                             render::ColorVariant::Bright,
-                                             render::ColorLayer::Background)},
-      NamedColorCase{.label = "faint cyan cryo background",
-                     .actual = render::CYAN_Cryo_F_BG,
-                     .expected = render::DefineColor(
-                         render::CyanShade::Cryo, render::ColorVariant::Faint,
-                         render::ColorLayer::Background)},
+    NamedColorCase{.label = "green acid",
+                   .actual = render::GREEN_Acid,
+                   .expected = render::DefineColor(render::GreenShade::Acid)},
+    NamedColorCase{.label = "bright blue abyss",
+                   .actual = render::BLUE_Abyss_B,
+                   .expected = render::DefineColor(
+                     render::BlueShade::Abyss, render::ColorVariant::Bright)},
+    NamedColorCase{.label = "faint red tomato",
+                   .actual = render::RED_Tomato_F,
+                   .expected = render::DefineColor(
+                     render::RedShade::Tomato, render::ColorVariant::Faint)},
+    NamedColorCase{.label = "orange copper signal background",
+                   .actual = render::ORANGE_CopperSignal_BG,
+                   .expected =
+                     render::DefineColor(render::OrangeShade::CopperSignal,
+                                         render::ColorVariant::Normal,
+                                         render::ColorLayer::Background)},
+    NamedColorCase{.label = "bright white glare background",
+                   .actual = render::WHITE_Glare_B_BG,
+                   .expected = render::DefineColor(
+                     render::WhiteShade::Glare, render::ColorVariant::Bright,
+                     render::ColorLayer::Background)},
+    NamedColorCase{.label = "faint cyan cryo background",
+                   .actual = render::CYAN_Cryo_F_BG,
+                   .expected = render::DefineColor(
+                     render::CyanShade::Cryo, render::ColorVariant::Faint,
+                     render::ColorLayer::Background)},
   };
 
   for (auto const &test_case : test_cases) {

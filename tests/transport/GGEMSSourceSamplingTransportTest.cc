@@ -41,13 +41,13 @@ using TransportRunConfig = ggems::core::transport::GGEMSTransportRunConfig;
 using TransportRunReport = ggems::core::transport::GGEMSTransportRunReport;
 using TransportWorkload = ggems::core::transport::GGEMSTransportWorkload;
 using SourceConfigurationSnapshotPtr =
-    ggems::core::sources::GGEMSSourceConfigurationSnapshotPtr;
+  ggems::core::sources::GGEMSSourceConfigurationSnapshotPtr;
 
 // =============================================================================
 // =============================================================================
 
 [[nodiscard]] auto MakeMonoSourceConfiguration(std::size_t source_count)
-    -> SourceConfigurationSnapshotPtr {
+  -> SourceConfigurationSnapshotPtr {
   std::vector<std::shared_ptr<ggems::core::sources::GGEMSSource>> sources;
   sources.reserve(source_count);
 
@@ -63,13 +63,13 @@ using SourceConfigurationSnapshotPtr =
 // =============================================================================
 
 [[nodiscard]] auto BuildRanges(std::span<std::uint64_t const> counts)
-    -> std::vector<SourceRunRange> {
+  -> std::vector<SourceRunRange> {
   std::vector<SourceRunRange> ranges;
   std::uint64_t begin{0ULL};
 
   for (std::uint64_t count : counts) {
     ranges.push_back(
-        {.projection_primary_begin = begin, .primary_count = count});
+      {.projection_primary_begin = begin, .primary_count = count});
     begin += count;
   }
 
@@ -81,16 +81,16 @@ using SourceConfigurationSnapshotPtr =
 
 [[nodiscard]] auto MakeConfig(std::vector<SourceRecord> records,
                               std::span<std::uint64_t const> counts)
-    -> TransportRunConfig {
+  -> TransportRunConfig {
   TransportRunConfig config{};
   config.total_primary_count = static_cast<std::uint32_t>(
-      std::ranges::fold_left(counts, 0ULL, std::plus{}));
+    std::ranges::fold_left(counts, 0ULL, std::plus{}));
   config.source_records = std::move(records);
   config.source_population_records.resize(config.source_records.size());
   config.source_ranges = BuildRanges(counts);
   config.observer_config.enabled = 1U;
   config.observer_config.capture_first_primary_count_per_source =
-      static_cast<std::uint32_t>(config.total_primary_count);
+    static_cast<std::uint32_t>(config.total_primary_count);
   return config;
 }
 
@@ -99,10 +99,10 @@ using SourceConfigurationSnapshotPtr =
 
 [[nodiscard]] auto RecordsOfKind(TransportRunReport const &report,
                                  ObserverRecordKind kind)
-    -> std::vector<ObserverRecord> {
+  -> std::vector<ObserverRecord> {
   std::vector<ObserverRecord> records;
   std::uint32_t const kernel_kind =
-      ggems::core::observer::ToKernelObserverRecordKind(kind);
+    ggems::core::observer::ToKernelObserverRecordKind(kind);
 
   std::ranges::copy_if(report.observer_records, std::back_inserter(records),
                        [kernel_kind](ObserverRecord const &record) -> bool {
@@ -117,16 +117,16 @@ using SourceConfigurationSnapshotPtr =
 
 [[nodiscard]] auto FindTerminal(TransportRunReport const &report,
                                 ObserverRecord const &source)
-    -> ObserverRecord const * {
+  -> ObserverRecord const * {
   auto const terminal_kind = ggems::core::observer::ToKernelObserverRecordKind(
-      ObserverRecordKind::Terminal);
+    ObserverRecordKind::Terminal);
 
   auto iterator = std::ranges::find_if(
-      report.observer_records, [&](ObserverRecord const &record) -> bool {
-        return record.record_kind == terminal_kind &&
-               record.global_primary_id == source.global_primary_id &&
-               record.global_particle_id == source.global_particle_id;
-      });
+    report.observer_records, [&](ObserverRecord const &record) -> bool {
+      return record.record_kind == terminal_kind &&
+             record.global_primary_id == source.global_primary_id &&
+             record.global_particle_id == source.global_particle_id;
+    });
 
   return iterator == report.observer_records.end() ? nullptr : &*iterator;
 }
@@ -142,15 +142,14 @@ auto ExpectDiagnosticProjection(TransportRunReport const &report,
   std::array<float, 3U> const direction{source.direction_x, source.direction_y,
                                         source.direction_z};
   std::array<std::int64_t, 3U> const begin{
-      source.position_x_pm, source.position_y_pm, source.position_z_pm};
-  std::array<std::int64_t, 3U> const end{terminal->position_x_pm,
-                                         terminal->position_y_pm,
-                                         terminal->position_z_pm};
+    source.position_x_pm, source.position_y_pm, source.position_z_pm};
+  std::array<std::int64_t, 3U> const end{
+    terminal->position_x_pm, terminal->position_y_pm, terminal->position_z_pm};
 
   for (std::size_t axis = 0U; axis < 3U; ++axis) {
     std::int64_t displacement{0LL};
     ASSERT_TRUE(ggems::core::transport::TryScaleDiagnosticProjectionComponent(
-        direction[axis], displacement));
+      direction[axis], displacement));
     EXPECT_EQ(end[axis], begin[axis] + displacement);
   }
 }
@@ -252,8 +251,8 @@ TEST_F(GGEMSSourceSamplingTransportTest,
        SamplesRectangleEllipseAndCircleInTheirLocalPlanes) {
   ggems::core::sources::GGEMSSource rectangle{};
   rectangle.SetPositionPicoMeter(100'000'000'000LL, 0LL, 0LL)
-      .SetOrientation({1.0, 0.0, 0.0}, {0.0, 0.0, 1.0})
-      .SetRectangleEmissionPicoMeter(40'000'000'000ULL, 20'000'000'000ULL);
+    .SetOrientation({1.0, 0.0, 0.0}, {0.0, 0.0, 1.0})
+    .SetRectangleEmissionPicoMeter(40'000'000'000ULL, 20'000'000'000ULL);
 
   ggems::core::sources::GGEMSSource ellipse{};
   ellipse.SetEllipseEmissionPicoMeter(30'000'000'000ULL, 10'000'000'000ULL);
@@ -276,17 +275,17 @@ TEST_F(GGEMSSourceSamplingTransportTest,
                              1'536U};
 
   auto const report = workload.Run(MakeConfig(
-      {rectangle.BuildRecord(), ellipse.BuildRecord(), circle.BuildRecord()},
-      k_counts));
+    {rectangle.BuildRecord(), ellipse.BuildRecord(), circle.BuildRecord()},
+    k_counts));
 
   auto const source_records = RecordsOfKind(report, ObserverRecordKind::Source);
   ASSERT_EQ(source_records.size(), 768U);
 
   std::array<std::set<std::tuple<std::int64_t, std::int64_t, std::int64_t>>, 3U>
-      distinct_positions;
+    distinct_positions;
 
   std::array<SourceRecord, 3U> const configured_sources{
-      rectangle.BuildRecord(), ellipse.BuildRecord(), circle.BuildRecord()};
+    rectangle.BuildRecord(), ellipse.BuildRecord(), circle.BuildRecord()};
 
   for (ObserverRecord const &record : source_records) {
     auto const source_index = static_cast<std::size_t>(record.source_index);
@@ -296,14 +295,14 @@ TEST_F(GGEMSSourceSamplingTransportTest,
     SourceRecord const &source = configured_sources[source_index];
 
     long double const delta_x_pm =
-        static_cast<long double>(record.position_x_pm) -
-        static_cast<long double>(source.position_x_pm);
+      static_cast<long double>(record.position_x_pm) -
+      static_cast<long double>(source.position_x_pm);
     long double const delta_y_pm =
-        static_cast<long double>(record.position_y_pm) -
-        static_cast<long double>(source.position_y_pm);
+      static_cast<long double>(record.position_y_pm) -
+      static_cast<long double>(source.position_y_pm);
     long double const delta_z_pm =
-        static_cast<long double>(record.position_z_pm) -
-        static_cast<long double>(source.position_z_pm);
+      static_cast<long double>(record.position_z_pm) -
+      static_cast<long double>(source.position_z_pm);
 
     long double const local_x = (delta_x_pm * source.axis_x_x) +
                                 (delta_y_pm * source.axis_x_y) +
@@ -318,9 +317,9 @@ TEST_F(GGEMSSourceSamplingTransportTest,
     EXPECT_NEAR(static_cast<double>(local_z), 0.0, 2.0);
 
     auto const geometry_size_x_pm =
-        static_cast<long double>(source.geometry_size_x_pm);
+      static_cast<long double>(source.geometry_size_x_pm);
     auto const geometry_size_y_pm =
-        static_cast<long double>(source.geometry_size_y_pm);
+      static_cast<long double>(source.geometry_size_y_pm);
 
     if (record.source_index == 0U) {
       EXPECT_LE(std::abs(local_x), (0.5L * geometry_size_x_pm) + 2.0L);
@@ -338,7 +337,7 @@ TEST_F(GGEMSSourceSamplingTransportTest,
     EXPECT_FLOAT_EQ(record.direction_z, source.axis_z_z);
 
     distinct_positions[record.source_index].emplace(
-        record.position_x_pm, record.position_y_pm, record.position_z_pm);
+      record.position_x_pm, record.position_y_pm, record.position_z_pm);
 
     ExpectDiagnosticProjection(report, record);
   }
@@ -377,7 +376,7 @@ TEST_F(GGEMSSourceSamplingTransportTest,
                                2U * k_primary_count};
 
     auto const report =
-        workload.Run(MakeConfig({source.BuildRecord()}, k_counts));
+      workload.Run(MakeConfig({source.BuildRecord()}, k_counts));
     auto const records = RecordsOfKind(report, ObserverRecordKind::Source);
     ASSERT_EQ(records.size(), k_primary_count);
 
@@ -387,7 +386,7 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 
     for (ObserverRecord const &record : records) {
       std::array<float, 3U> const direction{
-          record.direction_x, record.direction_y, record.direction_z};
+        record.direction_x, record.direction_y, record.direction_z};
 
       long double norm_squared{0.0L};
 
@@ -397,7 +396,7 @@ TEST_F(GGEMSSourceSamplingTransportTest,
         EXPECT_LE(direction[axis], 1.00001F);
 
         norm_squared +=
-            static_cast<long double>(direction[axis]) * direction[axis];
+          static_cast<long double>(direction[axis]) * direction[axis];
         sums[axis] += direction[axis];
         positive[axis] = positive[axis] || direction[axis] > 0.0F;
         negative[axis] = negative[axis] || direction[axis] < 0.0F;
@@ -421,7 +420,7 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 TEST_F(GGEMSSourceSamplingTransportTest,
        FocusedDirectionsUseEachSampledGlobalPosition) {
   constexpr std::array<std::int64_t, 3U> k_focus{
-      300'000'000'000LL, -200'000'000'000LL, 800'000'000'000LL};
+    300'000'000'000LL, -200'000'000'000LL, 800'000'000'000LL};
 
   ggems::core::sources::GGEMSSource point{};
   point.SetFocusedAngularDistributionPicoMeter(k_focus[0U], k_focus[1U],
@@ -429,14 +428,14 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 
   ggems::core::sources::GGEMSSource rectangle{};
   rectangle.SetRectangleEmissionPicoMeter(100'000'000'000ULL, 60'000'000'000ULL)
-      .SetFocusedAngularDistributionPicoMeter(k_focus[0U], k_focus[1U],
-                                              k_focus[2U]);
+    .SetFocusedAngularDistributionPicoMeter(k_focus[0U], k_focus[1U],
+                                            k_focus[2U]);
 
   ggems::core::sources::GGEMSSource ellipse{};
   ellipse.SetOrientation({1.0, 1.0, 1.0}, {0.0, 0.0, 1.0})
-      .SetEllipseEmissionPicoMeter(80'000'000'000ULL, 40'000'000'000ULL)
-      .SetFocusedAngularDistributionPicoMeter(k_focus[0U], k_focus[1U],
-                                              k_focus[2U]);
+    .SetEllipseEmissionPicoMeter(80'000'000'000ULL, 40'000'000'000ULL)
+    .SetFocusedAngularDistributionPicoMeter(k_focus[0U], k_focus[1U],
+                                            k_focus[2U]);
 
   SourceRecord invalid_zero_slot = point.BuildRecord();
   invalid_zero_slot.emission_geometry_type = 99U;
@@ -457,9 +456,9 @@ TEST_F(GGEMSSourceSamplingTransportTest,
                              770U};
 
   auto const report = workload.Run(MakeConfig(
-      {point.BuildRecord(), rectangle.BuildRecord(), ellipse.BuildRecord(),
-       invalid_zero_slot, rectangle.BuildRecord()},
-      k_counts));
+    {point.BuildRecord(), rectangle.BuildRecord(), ellipse.BuildRecord(),
+     invalid_zero_slot, rectangle.BuildRecord()},
+    k_counts));
 
   auto const records = RecordsOfKind(report, ObserverRecordKind::Source);
   ASSERT_EQ(records.size(), 385U);
@@ -468,14 +467,14 @@ TEST_F(GGEMSSourceSamplingTransportTest,
     ASSERT_NE(record.source_index, 3U);
 
     long double const delta_x_pm =
-        static_cast<long double>(k_focus[0U]) -
-        static_cast<long double>(record.position_x_pm);
+      static_cast<long double>(k_focus[0U]) -
+      static_cast<long double>(record.position_x_pm);
     long double const delta_y_pm =
-        static_cast<long double>(k_focus[1U]) -
-        static_cast<long double>(record.position_y_pm);
+      static_cast<long double>(k_focus[1U]) -
+      static_cast<long double>(record.position_y_pm);
     long double const delta_z_pm =
-        static_cast<long double>(k_focus[2U]) -
-        static_cast<long double>(record.position_z_pm);
+      static_cast<long double>(k_focus[2U]) -
+      static_cast<long double>(record.position_z_pm);
     long double const norm = std::hypot(delta_x_pm, delta_y_pm, delta_z_pm);
 
     long double const dot = (record.direction_x * delta_x_pm) +
@@ -527,17 +526,17 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 
     ASSERT_EQ(first_sources.size(), second_sources.size());
     EXPECT_FALSE(std::ranges::equal(
-        first_sources, second_sources, {},
-        [](ObserverRecord const &record)
-            -> std::tuple<std::int64_t, std::int64_t, std::int64_t> {
-          return std::tuple{record.position_x_pm, record.position_y_pm,
-                            record.position_z_pm};
-        },
-        [](ObserverRecord const &record)
-            -> std::tuple<std::int64_t, std::int64_t, std::int64_t> {
-          return std::tuple{record.position_x_pm, record.position_y_pm,
-                            record.position_z_pm};
-        }));
+      first_sources, second_sources, {},
+      [](ObserverRecord const &record)
+        -> std::tuple<std::int64_t, std::int64_t, std::int64_t> {
+        return std::tuple{record.position_x_pm, record.position_y_pm,
+                          record.position_z_pm};
+      },
+      [](ObserverRecord const &record)
+        -> std::tuple<std::int64_t, std::int64_t, std::int64_t> {
+        return std::tuple{record.position_x_pm, record.position_y_pm,
+                          record.position_z_pm};
+      }));
 
     EXPECT_EQ(Context().GetAllocatedVRAM().value, allocated);
     EXPECT_EQ(Context().GetAllocationCountVRAM(), allocation_count);
@@ -560,33 +559,33 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 
   ggems::core::sources::GGEMSSource rectangle{};
   rectangle.SetRectangleEmissionPicoMeter(40'000'000ULL, 20'000'000ULL)
-      .SetIsotropicAngularDistribution();
+    .SetIsotropicAngularDistribution();
 
   ggems::core::sources::GGEMSSource ellipse{};
   ellipse.SetEllipseEmissionPicoMeter(40'000'000ULL, 20'000'000ULL)
-      .SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 1'000'000'000LL);
+    .SetFocusedAngularDistributionPicoMeter(0LL, 0LL, 1'000'000'000LL);
 
   ggems::core::sources::GGEMSSource box{};
   box.SetBoxEmissionPicoMeter(40'000'000ULL, 20'000'000ULL, 10'000'000ULL)
-      .SetFixedAngularDistribution();
+    .SetFixedAngularDistribution();
 
   ggems::core::sources::GGEMSSource sphere{};
   sphere.SetSphereEmissionPicoMeter(30'000'000ULL)
-      .SetIsotropicAngularDistribution(
-          ggems::units::MakeDegrees(10.0L), ggems::units::MakeDegrees(60.0L),
-          ggems::units::MakeDegrees(-45.0L), ggems::units::MakeDegrees(45.0L));
+    .SetIsotropicAngularDistribution(
+      ggems::units::MakeDegrees(10.0L), ggems::units::MakeDegrees(60.0L),
+      ggems::units::MakeDegrees(-45.0L), ggems::units::MakeDegrees(45.0L));
 
   ggems::core::sources::GGEMSSource cylinder{};
   cylinder.SetCylinderEmissionPicoMeter(30'000'000ULL, 50'000'000ULL)
-      .SetIsotropicAngularDistribution();
+    .SetIsotropicAngularDistribution();
 
   SourceRecord invalid_zero_slot = point.BuildRecord();
   invalid_zero_slot.emission_geometry_type = 99U;
 
   std::vector<SourceRecord> const records{
-      point.BuildRecord(), rectangle.BuildRecord(), ellipse.BuildRecord(),
-      box.BuildRecord(),   sphere.BuildRecord(),    cylinder.BuildRecord(),
-      invalid_zero_slot,   box.BuildRecord()};
+    point.BuildRecord(), rectangle.BuildRecord(), ellipse.BuildRecord(),
+    box.BuildRecord(),   sphere.BuildRecord(),    cylinder.BuildRecord(),
+    invalid_zero_slot,   box.BuildRecord()};
 
   for (std::string_view const engine : k_engines) {
     SCOPED_TRACE(engine);
@@ -612,7 +611,7 @@ TEST_F(GGEMSSourceSamplingTransportTest,
     EXPECT_EQ(report.observer_counters.overflow_count, 0U);
 
     auto const source_observations =
-        RecordsOfKind(report, ObserverRecordKind::Source);
+      RecordsOfKind(report, ObserverRecordKind::Source);
     ASSERT_EQ(source_observations.size(), k_total_primary_count);
 
     for (ObserverRecord const &source_observation : source_observations) {

@@ -23,7 +23,8 @@
  * \file
  * \brief Declares common OpenCL random-number conversion helpers.
  *
- * Provides conversion from 32-bit unsigned random words to scalar and vector uniform floating-point values in the unit interval.
+ * Provides conversion from 32-bit unsigned random words to scalar and vector
+ * uniform floating-point values in the unit interval.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -36,7 +37,8 @@
 
 /*!
  * \def GGEMS_RANDOM_FLOAT_UNIT
- * \brief Scale converting the high 24 bits of a uint to a binary32 value in [0, 1).
+ * \brief Scale converting the high 24 bits of a uint to a binary32 value in [0,
+ * 1).
  */
 #define GGEMS_RANDOM_FLOAT_UNIT 5.9604644775390625e-8f
 
@@ -56,8 +58,8 @@ static inline float GGEMS_UIntToUniform01(uint value) {
  */
 static inline float4 GGEMS_UInt4ToUniform01(uint4 values) {
   return (
-      float4)(GGEMS_UIntToUniform01(values.x), GGEMS_UIntToUniform01(values.y),
-              GGEMS_UIntToUniform01(values.z), GGEMS_UIntToUniform01(values.w));
+    float4)(GGEMS_UIntToUniform01(values.x), GGEMS_UIntToUniform01(values.y),
+            GGEMS_UIntToUniform01(values.z), GGEMS_UIntToUniform01(values.w));
 }
 
 #endif

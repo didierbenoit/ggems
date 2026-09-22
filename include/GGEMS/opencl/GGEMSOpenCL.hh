@@ -119,7 +119,7 @@ public:
                           std::filesystem::path const &kernel_root,
                           std::string const &kernel_name,
                           std::string const &build_options = "")
-      -> GGEMSOpenCLProgram const &;
+    -> GGEMSOpenCLProgram const &;
 
   /*!
    * \brief Prints information for all discovered OpenCL platforms.
@@ -142,7 +142,7 @@ public:
    * \return Discovered OpenCL platforms.
    */
   [[nodiscard]] auto GetPlatforms() const noexcept
-      -> std::vector<GGEMSOpenCLPlatform> const & {
+    -> std::vector<GGEMSOpenCLPlatform> const & {
     return platforms_;
   }
 
@@ -218,10 +218,10 @@ private:
    */
   [[nodiscard]]
   static auto ParseDeviceFilters(
-      std::vector<std::string> const &filters,
-      std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const
-          &all_devices)
-      -> std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>;
+    std::vector<std::string> const &filters,
+    std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const
+      &all_devices)
+    -> std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>;
 
   /*!
    * \brief Creates one OpenCL context for each selected device.
@@ -239,10 +239,10 @@ private:
    */
   [[nodiscard]]
   static auto ResolveDeviceSelection(
-      std::vector<std::string> const &filters,
-      std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const
-          &all_devices)
-      -> std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>;
+    std::vector<std::string> const &filters,
+    std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const
+      &all_devices)
+    -> std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>;
 
   /*!
    * \brief Checks whether devices match the active contexts.
@@ -251,8 +251,8 @@ private:
    * \return True if one active context exists per device, in the same order.
    */
   [[nodiscard]] auto MatchesActiveContexts(
-      std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const
-          &devices) const noexcept -> bool;
+    std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const &devices)
+    const noexcept -> bool;
 
   /*!
    * \brief Disables the NVIDIA driver kernel cache for this process when
@@ -261,14 +261,14 @@ private:
   static auto DisableNvidiaDriverKernelCache() -> void;
 
   std::vector<GGEMSOpenCLPlatform>
-      platforms_; /*!< Discovered OpenCL platforms. */
+    platforms_; /*!< Discovered OpenCL platforms. */
   std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>
-      selected_devices_; /*!< Selected OpenCL devices. */
+    selected_devices_; /*!< Selected OpenCL devices. */
   std::vector<GGEMSOpenCLContext>
-      contexts_; /*!< Contexts for selected devices, retained for the process
-                    lifetime. */
+    contexts_; /*!< Contexts for selected devices, retained for the process
+                  lifetime. */
   std::vector<std::unique_ptr<GGEMSOpenCLProgram>>
-      program_cache_; /*!< Cached OpenCL programs, never evicted. */
+    program_cache_; /*!< Cached OpenCL programs, never evicted. */
   std::mutex program_cache_mutex_; /*!< Mutex protecting the program cache. */
   bool is_initialized_{false};     /*!< Whether contexts were created. */
 };

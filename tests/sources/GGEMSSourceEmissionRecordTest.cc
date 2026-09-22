@@ -113,32 +113,32 @@ TEST_F(GGEMSSourceEmissionRecordKernelTest,
   auto &context = opencl.GetContext().front();
 
   std::array<PopulationRecord, 2U> populations{{
-      {.population_mode = 7U,
-       .first_emission_index = 11U,
-       .emission_count = 13U,
-       .scaled_decay = 0.25F},
-      {},
+    {.population_mode = 7U,
+     .first_emission_index = 11U,
+     .emission_count = 13U,
+     .scaled_decay = 0.25F},
+    {},
   }};
   std::array<EmissionRecord, 2U> emissions{{
-      {.particle_type = 17U,
-       .energy_distribution_record_index = 19U,
-       .mono_energy_micro_eV = 23ULL},
-      {},
+    {.particle_type = 17U,
+     .energy_distribution_record_index = 19U,
+     .mono_energy_micro_eV = 23ULL},
+    {},
   }};
   std::array<GroupRange, 2U> groups{{
-      {.source_local_primary_begin = 29ULL, .primary_count = 31ULL},
-      {},
+    {.source_local_primary_begin = 29ULL, .primary_count = 31ULL},
+    {},
   }};
   std::array<std::uint64_t, 18U> layout{};
 
   auto layout_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{layout.size() * sizeof(std::uint64_t)});
+    ggems::units::Bytes{layout.size() * sizeof(std::uint64_t)});
   auto population_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{populations.size() * sizeof(PopulationRecord)});
+    ggems::units::Bytes{populations.size() * sizeof(PopulationRecord)});
   auto emission_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{emissions.size() * sizeof(EmissionRecord)});
+    ggems::units::Bytes{emissions.size() * sizeof(EmissionRecord)});
   auto group_buffer = context.CreateSVMBuffer(
-      ggems::units::Bytes{groups.size() * sizeof(GroupRange)});
+    ggems::units::Bytes{groups.size() * sizeof(GroupRange)});
 
   ggems::ocl::WriteSVMFromHost(layout_buffer, std::span{layout});
   ggems::ocl::WriteSVMFromHost(population_buffer, std::span{populations});
@@ -148,13 +148,13 @@ TEST_F(GGEMSSourceEmissionRecordKernelTest,
   std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
   std::filesystem::path const kernel_test_root = kernel_root / "tests";
   std::string const build_options =
-      std::format("-I{}", kernel_root.generic_string());
+    std::format("-I{}", kernel_root.generic_string());
 
   auto &program = opencl.GetOrCreateProgram(context, kernel_test_root,
                                             "source_emission_record_abi_probe",
                                             build_options);
   cl::Kernel raw_kernel =
-      program.CreateKernel("source_emission_record_abi_probe");
+    program.CreateKernel("source_emission_record_abi_probe");
   ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
                                        "source_emission_record_abi_probe"};
 
@@ -170,24 +170,24 @@ TEST_F(GGEMSSourceEmissionRecordKernelTest,
   ggems::ocl::ReadSVMToHost(group_buffer, std::span{groups});
 
   std::array<std::uint64_t, 18U> const expected_layout{{
-      sizeof(PopulationRecord),
-      offsetof(PopulationRecord, population_mode),
-      offsetof(PopulationRecord, first_emission_index),
-      offsetof(PopulationRecord, emission_count),
-      offsetof(PopulationRecord, scaled_decay),
-      sizeof(PopulationRecord),
-      offsetof(PopulationAlignmentProbe, record),
-      sizeof(EmissionRecord),
-      offsetof(EmissionRecord, particle_type),
-      offsetof(EmissionRecord, energy_distribution_record_index),
-      offsetof(EmissionRecord, mono_energy_micro_eV),
-      sizeof(EmissionRecord),
-      offsetof(EmissionAlignmentProbe, record),
-      sizeof(GroupRange),
-      offsetof(GroupRange, source_local_primary_begin),
-      offsetof(GroupRange, primary_count),
-      sizeof(GroupRange),
-      offsetof(GroupAlignmentProbe, range),
+    sizeof(PopulationRecord),
+    offsetof(PopulationRecord, population_mode),
+    offsetof(PopulationRecord, first_emission_index),
+    offsetof(PopulationRecord, emission_count),
+    offsetof(PopulationRecord, scaled_decay),
+    sizeof(PopulationRecord),
+    offsetof(PopulationAlignmentProbe, record),
+    sizeof(EmissionRecord),
+    offsetof(EmissionRecord, particle_type),
+    offsetof(EmissionRecord, energy_distribution_record_index),
+    offsetof(EmissionRecord, mono_energy_micro_eV),
+    sizeof(EmissionRecord),
+    offsetof(EmissionAlignmentProbe, record),
+    sizeof(GroupRange),
+    offsetof(GroupRange, source_local_primary_begin),
+    offsetof(GroupRange, primary_count),
+    sizeof(GroupRange),
+    offsetof(GroupAlignmentProbe, range),
   }};
 
   EXPECT_EQ(layout, expected_layout);

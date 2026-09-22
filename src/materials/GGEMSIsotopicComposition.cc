@@ -12,19 +12,19 @@ namespace ggems::core::materials {
 // =============================================================================
 
 GGEMSIsotopicComposition::GGEMSIsotopicComposition(
-    GGEMSFractionBasis basis, std::vector<GGEMSIsotopeFraction> fractions)
+  GGEMSFractionBasis basis, std::vector<GGEMSIsotopeFraction> fractions)
     : basis_{basis}, fractions_{std::move(fractions)} {
   // Every explicit entry, including an explicit zero, must name the same Z.
   if (!fractions_.empty()) {
     auto const atomic_number = fractions_.front().isotope.GetAtomicNumber();
 
     if (!std::ranges::all_of(
-            fractions_,
-            [atomic_number](GGEMSIsotopeFraction const &entry) -> bool {
-              return entry.isotope.GetAtomicNumber() == atomic_number;
-            })) {
+          fractions_,
+          [atomic_number](GGEMSIsotopeFraction const &entry) -> bool {
+            return entry.isotope.GetAtomicNumber() == atomic_number;
+          })) {
       throw GGEMSRecoverable{
-          "Isotopic composition must contain a single chemical element."};
+        "Isotopic composition must contain a single chemical element."};
     }
   }
 

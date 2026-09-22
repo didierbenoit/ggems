@@ -25,24 +25,24 @@ public:
   GGEMSTransportObserver(GGEMSTransportObserver const &) = delete;
   GGEMSTransportObserver(GGEMSTransportObserver &&) = delete;
   auto operator=(GGEMSTransportObserver const &)
-      -> GGEMSTransportObserver & = delete;
+    -> GGEMSTransportObserver & = delete;
   auto operator=(GGEMSTransportObserver &&)
-      -> GGEMSTransportObserver & = delete;
+    -> GGEMSTransportObserver & = delete;
 
   auto Enable(bool enabled = true) noexcept -> GGEMSTransportObserver &;
   auto Disable() noexcept -> GGEMSTransportObserver &;
 
   auto SetRecordCapacity(std::uint32_t record_capacity)
-      -> GGEMSTransportObserver &;
+    -> GGEMSTransportObserver &;
   auto SetMaxStoredRecordCount(std::uint32_t max_stored_record_count)
-      -> GGEMSTransportObserver &;
+    -> GGEMSTransportObserver &;
 
   auto CaptureFirstPrimaries(std::uint32_t primary_count_per_source) noexcept
-      -> GGEMSTransportObserver &;
+    -> GGEMSTransportObserver &;
 
   auto CapturePrimary(std::uint32_t source_index,
                       std::uint64_t source_local_primary_id) noexcept
-      -> GGEMSTransportObserver &;
+    -> GGEMSTransportObserver &;
   auto ClearCapturedPrimary() noexcept -> GGEMSTransportObserver &;
 
   void Clear() noexcept;
@@ -51,17 +51,17 @@ public:
                   GGEMSObserverCounters const &counters);
 
   [[nodiscard]] auto CreateRunResultCandidate() const
-      -> std::unique_ptr<GGEMSTransportObserver>;
+    -> std::unique_ptr<GGEMSTransportObserver>;
 
   auto
   AccumulateRunResult(std::span<GGEMSObserverRecord const> records,
                       GGEMSObserverRunResultCounters const &logical_counters)
-      -> void;
+    -> void;
 
   auto CommitRunResult(GGEMSTransportObserver &candidate) noexcept -> void;
 
   [[nodiscard]] auto BuildConfigRecord() const noexcept
-      -> GGEMSObserverConfigRecord;
+    -> GGEMSObserverConfigRecord;
 
   [[nodiscard]] auto IsEnabled() const noexcept -> bool;
   [[nodiscard]] auto GetRecordCapacity() const noexcept -> std::uint32_t;
@@ -70,7 +70,7 @@ public:
   [[nodiscard]] auto GetCapturedPrimaryCount() const noexcept -> std::uint32_t;
 
   [[nodiscard]] auto GetRecords() const noexcept
-      -> std::vector<GGEMSObserverRecord> const &;
+    -> std::vector<GGEMSObserverRecord> const &;
 
   [[nodiscard]] auto BuildDump() const -> std::string;
 

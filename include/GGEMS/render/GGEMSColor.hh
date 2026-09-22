@@ -109,18 +109,18 @@ struct ColorKey {
 
 /*! \brief Number of color families. */
 inline constexpr std::size_t color_family_count =
-    static_cast<std::size_t>(ColorFamily::Count);
+  static_cast<std::size_t>(ColorFamily::Count);
 
 /*! \brief Number of color variants. */
 inline constexpr std::size_t color_variant_count =
-    static_cast<std::size_t>(ColorVariant::Count);
+  static_cast<std::size_t>(ColorVariant::Count);
 
 /*! \brief Number of shades per family. */
 inline constexpr std::size_t color_shade_count = 13U;
 
 /*! \brief Palette storage for all GGEMS color families. */
 using ColorFamilyPalette =
-    std::array<std::array<RGB, color_shade_count>, color_family_count>;
+  std::array<std::array<RGB, color_shade_count>, color_family_count>;
 
 /*!
  * \brief Builds one RGB triplet.
@@ -142,11 +142,11 @@ constexpr auto MakeRGB(std::uint8_t red, std::uint8_t green,
  */
 constexpr auto MakeGrayScale() noexcept -> std::array<RGB, color_shade_count> {
   return {
-      MakeRGB(16, 16, 16),    MakeRGB(32, 32, 32),    MakeRGB(48, 48, 48),
-      MakeRGB(64, 64, 64),    MakeRGB(96, 96, 96),    MakeRGB(128, 128, 128),
-      MakeRGB(160, 160, 160), MakeRGB(192, 192, 192), MakeRGB(208, 208, 208),
-      MakeRGB(224, 224, 224), MakeRGB(240, 240, 240), MakeRGB(252, 252, 252),
-      MakeRGB(3, 3, 3)};
+    MakeRGB(16, 16, 16),    MakeRGB(32, 32, 32),    MakeRGB(48, 48, 48),
+    MakeRGB(64, 64, 64),    MakeRGB(96, 96, 96),    MakeRGB(128, 128, 128),
+    MakeRGB(160, 160, 160), MakeRGB(192, 192, 192), MakeRGB(208, 208, 208),
+    MakeRGB(224, 224, 224), MakeRGB(240, 240, 240), MakeRGB(252, 252, 252),
+    MakeRGB(3, 3, 3)};
 }
 
 /*!
@@ -167,8 +167,8 @@ constexpr auto MakeRedScale() noexcept -> std::array<RGB, color_shade_count> {
  *
  * \return Orange scale palette.
  */
-constexpr auto
-MakeOrangeScale() noexcept -> std::array<RGB, color_shade_count> {
+constexpr auto MakeOrangeScale() noexcept
+  -> std::array<RGB, color_shade_count> {
   return {MakeRGB(80, 32, 0),    MakeRGB(96, 40, 0),    MakeRGB(128, 64, 0),
           MakeRGB(160, 80, 0),   MakeRGB(192, 96, 0),   MakeRGB(210, 105, 30),
           MakeRGB(255, 127, 80), MakeRGB(255, 140, 0),  MakeRGB(255, 165, 0),
@@ -181,14 +181,14 @@ MakeOrangeScale() noexcept -> std::array<RGB, color_shade_count> {
  *
  * \return Yellow scale palette.
  */
-constexpr auto
-MakeYellowScale() noexcept -> std::array<RGB, color_shade_count> {
+constexpr auto MakeYellowScale() noexcept
+  -> std::array<RGB, color_shade_count> {
   return {
-      MakeRGB(96, 96, 0),     MakeRGB(128, 128, 0),   MakeRGB(160, 144, 0),
-      MakeRGB(192, 160, 0),   MakeRGB(210, 180, 0),   MakeRGB(238, 221, 130),
-      MakeRGB(240, 230, 140), MakeRGB(250, 250, 120), MakeRGB(255, 255, 0),
-      MakeRGB(255, 255, 80),  MakeRGB(255, 255, 160), MakeRGB(255, 255, 220),
-      MakeRGB(190, 145, 45)};
+    MakeRGB(96, 96, 0),     MakeRGB(128, 128, 0),   MakeRGB(160, 144, 0),
+    MakeRGB(192, 160, 0),   MakeRGB(210, 180, 0),   MakeRGB(238, 221, 130),
+    MakeRGB(240, 230, 140), MakeRGB(250, 250, 120), MakeRGB(255, 255, 0),
+    MakeRGB(255, 255, 80),  MakeRGB(255, 255, 160), MakeRGB(255, 255, 220),
+    MakeRGB(190, 145, 45)};
 }
 
 /*!
@@ -211,11 +211,11 @@ constexpr auto MakeGreenScale() noexcept -> std::array<RGB, color_shade_count> {
  */
 constexpr auto MakeCyanScale() noexcept -> std::array<RGB, color_shade_count> {
   return {
-      MakeRGB(0, 48, 48),     MakeRGB(0, 80, 80),     MakeRGB(0, 100, 100),
-      MakeRGB(0, 128, 128),   MakeRGB(0, 160, 160),   MakeRGB(0, 183, 235),
-      MakeRGB(0, 200, 255),   MakeRGB(0, 255, 255),   MakeRGB(80, 255, 255),
-      MakeRGB(135, 206, 235), MakeRGB(180, 230, 255), MakeRGB(210, 245, 255),
-      MakeRGB(58, 178, 190)};
+    MakeRGB(0, 48, 48),     MakeRGB(0, 80, 80),     MakeRGB(0, 100, 100),
+    MakeRGB(0, 128, 128),   MakeRGB(0, 160, 160),   MakeRGB(0, 183, 235),
+    MakeRGB(0, 200, 255),   MakeRGB(0, 255, 255),   MakeRGB(80, 255, 255),
+    MakeRGB(135, 206, 235), MakeRGB(180, 230, 255), MakeRGB(210, 245, 255),
+    MakeRGB(58, 178, 190)};
 }
 
 /*!
@@ -236,14 +236,14 @@ constexpr auto MakeBlueScale() noexcept -> std::array<RGB, color_shade_count> {
  *
  * \return Magenta scale palette.
  */
-constexpr auto
-MakeMagentaScale() noexcept -> std::array<RGB, color_shade_count> {
+constexpr auto MakeMagentaScale() noexcept
+  -> std::array<RGB, color_shade_count> {
   return {
-      MakeRGB(64, 0, 64),     MakeRGB(96, 0, 96),     MakeRGB(128, 0, 128),
-      MakeRGB(139, 0, 139),   MakeRGB(186, 85, 211),  MakeRGB(199, 21, 133),
-      MakeRGB(255, 0, 255),   MakeRGB(255, 30, 100),  MakeRGB(255, 105, 180),
-      MakeRGB(238, 130, 238), MakeRGB(255, 160, 255), MakeRGB(255, 200, 240),
-      MakeRGB(150, 62, 92)};
+    MakeRGB(64, 0, 64),     MakeRGB(96, 0, 96),     MakeRGB(128, 0, 128),
+    MakeRGB(139, 0, 139),   MakeRGB(186, 85, 211),  MakeRGB(199, 21, 133),
+    MakeRGB(255, 0, 255),   MakeRGB(255, 30, 100),  MakeRGB(255, 105, 180),
+    MakeRGB(238, 130, 238), MakeRGB(255, 160, 255), MakeRGB(255, 200, 240),
+    MakeRGB(150, 62, 92)};
 }
 
 /*!
@@ -253,11 +253,11 @@ MakeMagentaScale() noexcept -> std::array<RGB, color_shade_count> {
  */
 constexpr auto MakeWhiteScale() noexcept -> std::array<RGB, color_shade_count> {
   return {
-      MakeRGB(255, 255, 255), MakeRGB(250, 250, 250), MakeRGB(245, 245, 245),
-      MakeRGB(240, 240, 235), MakeRGB(235, 232, 220), MakeRGB(230, 230, 230),
-      MakeRGB(220, 220, 220), MakeRGB(210, 210, 210), MakeRGB(200, 200, 200),
-      MakeRGB(185, 185, 185), MakeRGB(255, 255, 240), MakeRGB(255, 255, 200),
-      MakeRGB(218, 214, 196)};
+    MakeRGB(255, 255, 255), MakeRGB(250, 250, 250), MakeRGB(245, 245, 245),
+    MakeRGB(240, 240, 235), MakeRGB(235, 232, 220), MakeRGB(230, 230, 230),
+    MakeRGB(220, 220, 220), MakeRGB(210, 210, 210), MakeRGB(200, 200, 200),
+    MakeRGB(185, 185, 185), MakeRGB(255, 255, 240), MakeRGB(255, 255, 200),
+    MakeRGB(218, 214, 196)};
 }
 
 /*!
@@ -267,9 +267,9 @@ constexpr auto MakeWhiteScale() noexcept -> std::array<RGB, color_shade_count> {
  */
 constexpr auto MakeBasePalette() noexcept -> ColorFamilyPalette {
   return ColorFamilyPalette{
-      MakeGrayScale(),   MakeRedScale(),     MakeOrangeScale(),
-      MakeYellowScale(), MakeGreenScale(),   MakeCyanScale(),
-      MakeBlueScale(),   MakeMagentaScale(), MakeWhiteScale()};
+    MakeGrayScale(),   MakeRedScale(),     MakeOrangeScale(),
+    MakeYellowScale(), MakeGreenScale(),   MakeCyanScale(),
+    MakeBlueScale(),   MakeMagentaScale(), MakeWhiteScale()};
 }
 
 /*! \brief Base palette for all GGEMS colors. */
@@ -332,7 +332,7 @@ constexpr auto GetColorRGB(ColorFamily family, std::uint8_t shade,
                            ColorVariant variant) noexcept -> RGB {
   auto const family_index = static_cast<std::size_t>(family);
   auto const shade_index = static_cast<std::size_t>(
-      std::min<std::uint8_t>(shade, color_shade_count - 1U));
+    std::min<std::uint8_t>(shade, color_shade_count - 1U));
 
   RGB const base = base_palette[family_index][shade_index];
   return ApplyVariant(base, variant);
@@ -399,8 +399,8 @@ inline auto AnsiColor(ColorKey const &key) -> std::string {
   int const code = (key.layer == ColorLayer::Foreground) ? 38 : 48;
 
   return std::format(
-      "\033[{};2;{};{};{}m", code, static_cast<unsigned>(rgb.red),
-      static_cast<unsigned>(rgb.green), static_cast<unsigned>(rgb.blue));
+    "\033[{};2;{};{};{}m", code, static_cast<unsigned>(rgb.red),
+    static_cast<unsigned>(rgb.green), static_cast<unsigned>(rgb.blue));
 }
 
 /*!
@@ -422,11 +422,11 @@ inline auto AppendAnsiControl(std::string &out, AnsiControl control) -> void {
  * \param[in] layer Target color layer.
  * \return Constructed color key.
  */
-constexpr auto
-MakeColor(ColorFamily family, std::uint8_t shade,
-          ColorVariant variant = ColorVariant::Normal,
-          ColorLayer layer = ColorLayer::Foreground) noexcept -> ColorKey {
+constexpr auto MakeColor(ColorFamily family, std::uint8_t shade,
+                         ColorVariant variant = ColorVariant::Normal,
+                         ColorLayer layer = ColorLayer::Foreground) noexcept
+  -> ColorKey {
   return ColorKey{
-      .family = family, .shade = shade, .variant = variant, .layer = layer};
+    .family = family, .shade = shade, .variant = variant, .layer = layer};
 }
 } // namespace ggems::render

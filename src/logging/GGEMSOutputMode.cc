@@ -100,7 +100,7 @@ std::atomic<bool> g_output_running{false};
 
   for (char &character : normalized) {
     character =
-        static_cast<char>(std::tolower(static_cast<unsigned char>(character)));
+      static_cast<char>(std::tolower(static_cast<unsigned char>(character)));
   }
 
   return normalized;
@@ -172,7 +172,7 @@ auto Parse(std::string_view mode) -> OutputMode {
   }
 
   throw ggems::core::GGEMSFatal(
-      "Unknown output mode. Expected: 'term' or 'gui'.");
+    "Unknown output mode. Expected: 'term' or 'gui'.");
 }
 
 // =============================================================================
@@ -311,8 +311,8 @@ auto SetOutputMode(OutputMode mode) -> void {
 
   if (g_configured) {
     throw ggems::core::GGEMSFatal(
-        "Output mode already configured; it must be set exactly once before "
-        "starting GGEMS output runtime.");
+      "Output mode already configured; it must be set exactly once before "
+      "starting GGEMS output runtime.");
   }
 
   g_mode = mode;
@@ -336,7 +336,7 @@ auto SetOutputFile(std::string_view path) -> void {
 
   if (g_output_running.load(std::memory_order_relaxed)) {
     throw ggems::core::GGEMSFatal(
-        "Output file cannot be changed while output runtime is started.");
+      "Output file cannot be changed while output runtime is started.");
   }
 
   g_output_file_path = std::string(path);
@@ -352,7 +352,7 @@ auto SetOutputFile(std::string_view path) -> void {
 auto ClearOutputFile() -> void {
   if (g_output_running.load(std::memory_order_relaxed)) {
     throw ggems::core::GGEMSFatal(
-        "Output file cannot be cleared while output runtime is started.");
+      "Output file cannot be cleared while output runtime is started.");
   }
 
   g_output_file_path.reset();

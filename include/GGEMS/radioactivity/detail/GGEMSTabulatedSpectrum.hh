@@ -15,6 +15,6 @@ struct TabulatedSpectrumGrid {
 [[nodiscard]] auto
 BuildTabulatedSpectrum(TabulatedSpectrumGrid grid,
                        std::span<double const> relative_bin_weights)
-    -> sources::GGEMSEnergyDistribution;
+  -> sources::GGEMSEnergyDistribution;
 
 } // namespace ggems::core::radioactivity::detail

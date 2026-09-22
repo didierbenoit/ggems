@@ -86,7 +86,7 @@ public:
    * \return Reference to this buffer.
    */
   auto operator=(GGEMSOpenCLSVMBuffer &&other) noexcept
-      -> GGEMSOpenCLSVMBuffer &;
+    -> GGEMSOpenCLSVMBuffer &;
 
   /*!
    * \brief Disables copy construction.
@@ -97,7 +97,7 @@ public:
    * \brief Disables copy assignment.
    */
   auto operator=(GGEMSOpenCLSVMBuffer const &)
-      -> GGEMSOpenCLSVMBuffer & = delete;
+    -> GGEMSOpenCLSVMBuffer & = delete;
 
   /*!
    * \brief Returns the SVM allocation pointer.
@@ -161,7 +161,7 @@ private:
   auto Release() noexcept -> void;
 
   GGEMSOpenCLContext *context_{
-      nullptr};               /*!< OpenCL context owning the allocation. */
+    nullptr};                 /*!< OpenCL context owning the allocation. */
   void *ptr_{nullptr};        /*!< Pointer to the SVM allocation. */
   units::Bytes size_{0ULL};   /*!< SVM allocation size. */
   cl_svm_mem_flags flags_{0}; /*!< OpenCL SVM allocation flags. */

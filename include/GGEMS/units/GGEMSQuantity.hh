@@ -21,7 +21,8 @@
 
 /*!
  * \file
- * \brief Declares the strongly typed quantity foundation used by the GGEMS unit system.
+ * \brief Declares the strongly typed quantity foundation used by the GGEMS unit
+ * system.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -36,12 +37,14 @@
 
 /*!
  * \namespace ggems::units
- * \brief Provides strongly typed physical quantities, unit conversion, literals, and formatting for GGEMS.
+ * \brief Provides strongly typed physical quantities, unit conversion,
+ * literals, and formatting for GGEMS.
  */
 namespace ggems::units {
 
 /*!
- * \brief Stores a strongly typed quantity in its canonical GGEMS representation.
+ * \brief Stores a strongly typed quantity in its canonical GGEMS
+ * representation.
  *
  * \tparam Tag Quantity-family tag type.
  * \tparam Representation Underlying arithmetic representation type.
@@ -93,7 +96,8 @@ concept QuantityType = IsQuantity<std::remove_cvref_t<Type>>::value;
 
 template <typename Type>
 /*!
- * \brief Constrains a type to a standard integral or floating-point arithmetic type.
+ * \brief Constrains a type to a standard integral or floating-point arithmetic
+ * type.
  *
  * \tparam Type Type to inspect.
  */
@@ -111,7 +115,7 @@ template <typename Tag, typename Representation>
  */
 constexpr auto operator+(Quantity<Tag, Representation> lhs,
                          Quantity<Tag, Representation> rhs) noexcept
-    -> Quantity<Tag, Representation> {
+  -> Quantity<Tag, Representation> {
   return {lhs.value + rhs.value};
 }
 
@@ -127,7 +131,7 @@ template <typename Tag, typename Representation>
  */
 constexpr auto operator-(Quantity<Tag, Representation> lhs,
                          Quantity<Tag, Representation> rhs) noexcept
-    -> Quantity<Tag, Representation> {
+  -> Quantity<Tag, Representation> {
   return {lhs.value - rhs.value};
 }
 
@@ -143,7 +147,7 @@ template <typename Tag, typename Representation>
   requires std::signed_integral<Representation> ||
            std::floating_point<Representation>
 constexpr auto operator-(Quantity<Tag, Representation> quantity) noexcept
-    -> Quantity<Tag, Representation> {
+  -> Quantity<Tag, Representation> {
   return {-quantity.value};
 }
 
@@ -161,7 +165,7 @@ template <typename Tag, typename Representation, Arithmetic Scalar>
   requires std::floating_point<Representation>
 constexpr auto operator*(Quantity<Tag, Representation> quantity,
                          Scalar scale) noexcept
-    -> Quantity<Tag, Representation> {
+  -> Quantity<Tag, Representation> {
   return {quantity.value * static_cast<long double>(scale)};
 }
 
@@ -179,7 +183,7 @@ template <typename Tag, typename Representation, Arithmetic Scalar>
   requires std::floating_point<Representation>
 constexpr auto operator*(Scalar scale,
                          Quantity<Tag, Representation> quantity) noexcept
-    -> Quantity<Tag, Representation> {
+  -> Quantity<Tag, Representation> {
   return quantity * scale;
 }
 
@@ -197,7 +201,7 @@ template <typename Tag, typename Representation, Arithmetic Scalar>
   requires std::floating_point<Representation>
 constexpr auto operator/(Quantity<Tag, Representation> quantity,
                          Scalar scale) noexcept
-    -> Quantity<Tag, Representation> {
+  -> Quantity<Tag, Representation> {
   return {quantity.value / static_cast<long double>(scale)};
 }
 

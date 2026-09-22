@@ -62,12 +62,12 @@ TEST_F(GGEMSParticleDummyPrimaryKernelTest, GeneratesAlivePrimaryParticles) {
 
   std::string build_options = std::format("-I{}", kernel_root.generic_string());
 
-  auto &program = opencl.GetOrCreateProgram(context, kernel_test_root,
-                                            "particle_generate_dummy_primary",
-                                            build_options);
+  auto &program =
+    opencl.GetOrCreateProgram(context, kernel_test_root,
+                              "particle_generate_dummy_primary", build_options);
 
   cl::Kernel raw_kernel =
-      program.CreateKernel("particle_generate_dummy_primary");
+    program.CreateKernel("particle_generate_dummy_primary");
 
   ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
                                        "particle_generate_dummy_primary"};
@@ -75,7 +75,7 @@ TEST_F(GGEMSParticleDummyPrimaryKernelTest, GeneratesAlivePrimaryParticles) {
   std::size_t particle_bytes = k_particle_count * sizeof(ParticleState);
 
   auto particles_buffer =
-      context.CreateSVMBuffer(ggems::units::Bytes{particle_bytes});
+    context.CreateSVMBuffer(ggems::units::Bytes{particle_bytes});
 
   auto *particles = static_cast<ParticleState *>(particles_buffer.GetData());
 
@@ -84,7 +84,7 @@ TEST_F(GGEMSParticleDummyPrimaryKernelTest, GeneratesAlivePrimaryParticles) {
   particles_buffer.Unmap();
 
   std::uint32_t particle_type = ggems::core::particles::ToKernelParticleType(
-      ggems::core::particles::GGEMSParticleType::Aionino);
+    ggems::core::particles::GGEMSParticleType::Aionino);
 
   kernel.SetArgSVMPointer(0U, particles);
   kernel.SetArg(1U, static_cast<cl_ulong>(k_global_particle_offset));
@@ -93,8 +93,8 @@ TEST_F(GGEMSParticleDummyPrimaryKernelTest, GeneratesAlivePrimaryParticles) {
   kernel.SetArg(4U, static_cast<cl_ulong>(k_energy_micro_eV));
 
   auto const padded_global_work_size =
-      ggems::ocl::detail::TryComputePaddedGlobalWorkSize(k_particle_count,
-                                                         k_local_size);
+    ggems::ocl::detail::TryComputePaddedGlobalWorkSize(k_particle_count,
+                                                       k_local_size);
   ASSERT_TRUE(padded_global_work_size.has_value());
   std::size_t const global_size = *padded_global_work_size;
 
@@ -118,7 +118,7 @@ TEST_F(GGEMSParticleDummyPrimaryKernelTest, GeneratesAlivePrimaryParticles) {
 
     EXPECT_EQ(particle.status,
               ggems::core::particles::ToKernelParticleStatus(
-                  ggems::core::particles::GGEMSParticleStatus::Alive));
+                ggems::core::particles::GGEMSParticleStatus::Alive));
 
     EXPECT_EQ(particle.generation, 0U);
     EXPECT_EQ(particle.time_ps, 0ULL);

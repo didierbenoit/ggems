@@ -66,10 +66,10 @@ using TrackDisplayMap = std::vector<TrackDisplayEntry>;
 auto ContainsGlobalTrackId(TrackDisplayMap const &track_display_map,
                            std::uint64_t global_track_id) -> bool {
   return std::ranges::find_if(
-             track_display_map,
-             [global_track_id](TrackDisplayEntry const &entry) -> bool {
-               return entry.global_track_id == global_track_id;
-             }) != track_display_map.end();
+           track_display_map,
+           [global_track_id](TrackDisplayEntry const &entry) -> bool {
+             return entry.global_track_id == global_track_id;
+           }) != track_display_map.end();
 }
 
 // =============================================================================
@@ -91,9 +91,8 @@ auto BuildTrackDisplayMap(std::vector<ObserverRecordView> const &views,
     }
 
     track_display_map.push_back(TrackDisplayEntry{
-        .global_track_id = record.track_id,
-        .local_track_id =
-            static_cast<std::uint32_t>(track_display_map.size())});
+      .global_track_id = record.track_id,
+      .local_track_id = static_cast<std::uint32_t>(track_display_map.size())});
   }
 
   return track_display_map;
@@ -153,46 +152,46 @@ auto RecordKindSortOrder(std::uint32_t record_kind) noexcept -> std::uint32_t {
 // =============================================================================
 
 auto BuildSortedRecordView(std::vector<GGEMSObserverRecord> const &records)
-    -> std::vector<ObserverRecordView> {
+  -> std::vector<ObserverRecordView> {
   std::vector<ObserverRecordView> views;
   views.reserve(records.size());
 
   for (std::size_t i = 0U; i < records.size(); ++i) {
     views.push_back(
-        ObserverRecordView{.record_index = i, .record = &records[i]});
+      ObserverRecordView{.record_index = i, .record = &records[i]});
   }
 
   std::ranges::stable_sort(
-      views,
-      [](ObserverRecordView const &first,
-         ObserverRecordView const &second) -> bool {
-        GGEMSObserverRecord const &left = *first.record;
-        GGEMSObserverRecord const &right = *second.record;
+    views,
+    [](ObserverRecordView const &first,
+       ObserverRecordView const &second) -> bool {
+      GGEMSObserverRecord const &left = *first.record;
+      GGEMSObserverRecord const &right = *second.record;
 
-        if (left.global_primary_id != right.global_primary_id) {
-          return left.global_primary_id < right.global_primary_id;
-        }
+      if (left.global_primary_id != right.global_primary_id) {
+        return left.global_primary_id < right.global_primary_id;
+      }
 
-        if (left.track_id != right.track_id) {
-          return left.track_id < right.track_id;
-        }
+      if (left.track_id != right.track_id) {
+        return left.track_id < right.track_id;
+      }
 
-        if (left.time_ps != right.time_ps) {
-          return left.time_ps < right.time_ps;
-        }
+      if (left.time_ps != right.time_ps) {
+        return left.time_ps < right.time_ps;
+      }
 
-        std::uint32_t const left_kind_order =
-            RecordKindSortOrder(left.record_kind);
+      std::uint32_t const left_kind_order =
+        RecordKindSortOrder(left.record_kind);
 
-        std::uint32_t const right_kind_order =
-            RecordKindSortOrder(right.record_kind);
+      std::uint32_t const right_kind_order =
+        RecordKindSortOrder(right.record_kind);
 
-        if (left_kind_order != right_kind_order) {
-          return left_kind_order < right_kind_order;
-        }
+      if (left_kind_order != right_kind_order) {
+        return left_kind_order < right_kind_order;
+      }
 
-        return first.record_index < second.record_index;
-      });
+      return first.record_index < second.record_index;
+    });
 
   return views;
 }
@@ -209,17 +208,17 @@ struct TableColumn {
 // =============================================================================
 
 constexpr std::array<TableColumn, 11U> k_observer_table_columns{
-    {{.title = "Trk", .width = 3U},
-     {.title = "Par", .width = 3U},
-     {.title = "Kind", .width = 4U},
-     {.title = "P", .width = 2U},
-     {.title = "Energy", .width = 10U},
-     {.title = "Edep", .width = 10U},
-     {.title = "Position", .width = 36U},
-     {.title = "Direction", .width = 21U},
-     {.title = "Src", .width = 3U},
-     {.title = "Time [ps]", .width = 16U},
-     {.title = "Record", .width = 10U}}};
+  {{.title = "Trk", .width = 3U},
+   {.title = "Par", .width = 3U},
+   {.title = "Kind", .width = 4U},
+   {.title = "P", .width = 2U},
+   {.title = "Energy", .width = 10U},
+   {.title = "Edep", .width = 10U},
+   {.title = "Position", .width = 36U},
+   {.title = "Direction", .width = 21U},
+   {.title = "Src", .width = 3U},
+   {.title = "Time [ps]", .width = 16U},
+   {.title = "Record", .width = 10U}}};
 
 // =============================================================================
 // =============================================================================
@@ -306,8 +305,8 @@ auto DisplayWidth(std::string_view text) -> std::size_t {
     std::size_t remaining_byte_count = text.size() - byte_index;
 
     std::size_t code_point_byte_count = std::min<std::size_t>(
-        UTF8CodePointByteCount(static_cast<unsigned char>(text[byte_index])),
-        remaining_byte_count);
+      UTF8CodePointByteCount(static_cast<unsigned char>(text[byte_index])),
+      remaining_byte_count);
 
     byte_index += code_point_byte_count;
     ++width;
@@ -320,7 +319,7 @@ auto DisplayWidth(std::string_view text) -> std::size_t {
 // =============================================================================
 
 auto TruncateToDisplayWidth(std::string_view text, std::size_t width)
-    -> std::string {
+  -> std::string {
   if (DisplayWidth(text) <= width) {
     return std::string{text};
   }
@@ -337,8 +336,8 @@ auto TruncateToDisplayWidth(std::string_view text, std::size_t width)
     std::size_t remaining_byte_count = text.size() - byte_index;
 
     std::size_t code_point_byte_count = std::min<std::size_t>(
-        UTF8CodePointByteCount(static_cast<unsigned char>(text[byte_index])),
-        remaining_byte_count);
+      UTF8CodePointByteCount(static_cast<unsigned char>(text[byte_index])),
+      remaining_byte_count);
 
     out.append(text.substr(byte_index, code_point_byte_count));
 
@@ -426,11 +425,11 @@ auto MakeTableHeader(std::span<TableColumn const> columns) -> std::string {
 // =============================================================================
 
 auto FormatParticleLabel(particles::GGEMSParticleType particle_type)
-    -> std::string {
+  -> std::string {
   auto const encoding = GGEMSLogger::GetInstance().GetEncoding();
   auto const symbol = encoding == Encoding::Ascii
-                          ? particles::ToAsciiSymbol(particle_type)
-                          : particles::ToUnicodeSymbol(particle_type);
+                        ? particles::ToAsciiSymbol(particle_type)
+                        : particles::ToUnicodeSymbol(particle_type);
 
   return utf::UTF32ToUTF8(symbol);
 }
@@ -439,7 +438,7 @@ auto FormatParticleLabel(particles::GGEMSParticleType particle_type)
 // =============================================================================
 
 auto RecordKindShortName(GGEMSObserverRecordKind record_kind) noexcept
-    -> std::string_view {
+  -> std::string_view {
   switch (record_kind) {
   case GGEMSObserverRecordKind::Unknown:
     return "?";
@@ -464,25 +463,25 @@ auto RecordKindShortName(GGEMSObserverRecordKind record_kind) noexcept
 auto BuildObserverTableRow(std::size_t record_index,
                            GGEMSObserverRecord const &record,
                            TrackDisplayMap const &track_display_map)
-    -> std::array<std::string, 11U> {
+  -> std::array<std::string, 11U> {
   GGEMSObserverRecordKind record_kind =
-      FromKernelObserverRecordKind(record.record_kind);
+    FromKernelObserverRecordKind(record.record_kind);
 
   particles::GGEMSParticleType particle_type =
-      particles::FromKernelParticleType(record.particle_type);
+    particles::FromKernelParticleType(record.particle_type);
 
   return {
-      FormatTrackDisplayId(track_display_map, record.track_id),
-      FormatParentTrack(track_display_map, record.parent_track_id),
-      std::string{RecordKindShortName(record_kind)},
-      FormatParticleLabel(particle_type),
-      FormatTableEnergy(record.energy_micro_eV),
-      FormatTableEnergy(record.deposited_energy_micro_eV),
-      FormatPosition(record),
-      FormatDirection(record),
-      std::format("{}", record.source_index),
-      FormatTableTime(record.time_ps),
-      std::format("{}", record_index),
+    FormatTrackDisplayId(track_display_map, record.track_id),
+    FormatParentTrack(track_display_map, record.parent_track_id),
+    std::string{RecordKindShortName(record_kind)},
+    FormatParticleLabel(particle_type),
+    FormatTableEnergy(record.energy_micro_eV),
+    FormatTableEnergy(record.deposited_energy_micro_eV),
+    FormatPosition(record),
+    FormatDirection(record),
+    std::format("{}", record.source_index),
+    FormatTableTime(record.time_ps),
+    std::format("{}", record_index),
   };
 }
 
@@ -544,7 +543,7 @@ auto ContainsPrimaryId(std::vector<std::uint64_t> const &primary_ids,
 // =============================================================================
 
 auto BuildPrimaryIds(std::vector<ObserverRecordView> const &views)
-    -> std::vector<std::uint64_t> {
+  -> std::vector<std::uint64_t> {
   std::vector<std::uint64_t> primary_ids;
 
   for (ObserverRecordView const &view : views) {
@@ -577,9 +576,9 @@ GGEMSTransportObserver::GGEMSTransportObserver(bool reserve_record_capacity) {
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::CreateRunResultCandidate() const
-    -> std::unique_ptr<GGEMSTransportObserver> {
-  auto candidate = std::unique_ptr<GGEMSTransportObserver>{
-      new GGEMSTransportObserver{false}};
+  -> std::unique_ptr<GGEMSTransportObserver> {
+  auto candidate =
+    std::unique_ptr<GGEMSTransportObserver>{new GGEMSTransportObserver{false}};
   candidate->max_stored_record_count_ = max_stored_record_count_;
   return candidate;
 }
@@ -587,7 +586,7 @@ auto GGEMSTransportObserver::CreateRunResultCandidate() const
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::Enable(bool enabled) noexcept
-    -> GGEMSTransportObserver & {
+  -> GGEMSTransportObserver & {
   enabled_ = enabled;
   return *this;
 }
@@ -602,10 +601,10 @@ auto GGEMSTransportObserver::Disable() noexcept -> GGEMSTransportObserver & {
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::SetRecordCapacity(std::uint32_t record_capacity)
-    -> GGEMSTransportObserver & {
+  -> GGEMSTransportObserver & {
   if (!(record_capacity > 0U)) {
     throw ggems::core::GGEMSRecoverable(
-        "Transport observer record capacity must be non-zero.");
+      "Transport observer record capacity must be non-zero.");
   }
 
   if (record_capacity > records_.capacity()) {
@@ -619,10 +618,10 @@ auto GGEMSTransportObserver::SetRecordCapacity(std::uint32_t record_capacity)
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::SetMaxStoredRecordCount(
-    std::uint32_t max_stored_record_count) -> GGEMSTransportObserver & {
+  std::uint32_t max_stored_record_count) -> GGEMSTransportObserver & {
   if (!(max_stored_record_count > 0U)) {
     throw ggems::core::GGEMSRecoverable(
-        "Transport observer maximum stored record count must be non-zero.");
+      "Transport observer maximum stored record count must be non-zero.");
   }
 
   max_stored_record_count_ = max_stored_record_count;
@@ -638,8 +637,7 @@ auto GGEMSTransportObserver::SetMaxStoredRecordCount(
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::CaptureFirstPrimaries(
-    std::uint32_t primary_count_per_source) noexcept
-    -> GGEMSTransportObserver & {
+  std::uint32_t primary_count_per_source) noexcept -> GGEMSTransportObserver & {
   enabled_ = true;
   capture_first_primary_count_per_source_ = primary_count_per_source;
   return *this;
@@ -648,8 +646,8 @@ auto GGEMSTransportObserver::CaptureFirstPrimaries(
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::CapturePrimary(
-    std::uint32_t source_index, std::uint64_t source_local_primary_id) noexcept
-    -> GGEMSTransportObserver & {
+  std::uint32_t source_index, std::uint64_t source_local_primary_id) noexcept
+  -> GGEMSTransportObserver & {
   enabled_ = true;
   capture_specific_primary_enabled_ = true;
   capture_source_index_ = source_index;
@@ -660,7 +658,7 @@ auto GGEMSTransportObserver::CapturePrimary(
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::ClearCapturedPrimary() noexcept
-    -> GGEMSTransportObserver & {
+  -> GGEMSTransportObserver & {
   capture_specific_primary_enabled_ = false;
   capture_source_index_ = particles::k_invalid_id_u32;
   capture_source_local_primary_id_ = particles::k_invalid_id_u64;
@@ -678,7 +676,7 @@ auto GGEMSTransportObserver::Clear() noexcept -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::CommitRunResult(
-    GGEMSTransportObserver &candidate) noexcept -> void {
+  GGEMSTransportObserver &candidate) noexcept -> void {
   std::swap(run_result_logical_counters_,
             candidate.run_result_logical_counters_);
   std::swap(counters_, candidate.counters_);
@@ -688,56 +686,56 @@ auto GGEMSTransportObserver::CommitRunResult(
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::Accumulate(
-    std::span<GGEMSObserverRecord const> records,
-    GGEMSObserverCounters const &counters) -> void {
+  std::span<GGEMSObserverRecord const> records,
+  GGEMSObserverCounters const &counters) -> void {
   std::size_t available_record_count =
-      std::min<std::size_t>(records.size(), counters.record_count);
+    std::min<std::size_t>(records.size(), counters.record_count);
 
   AccumulateRunResult(
-      records.first(available_record_count),
-      GGEMSObserverRunResultCounters{
-          .record_count = available_record_count,
-          .overflow_count = counters.overflow_count,
-          .captured_primary_count = counters.captured_primary_count,
-      });
+    records.first(available_record_count),
+    GGEMSObserverRunResultCounters{
+      .record_count = available_record_count,
+      .overflow_count = counters.overflow_count,
+      .captured_primary_count = counters.captured_primary_count,
+    });
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::AccumulateRunResult(
-    std::span<GGEMSObserverRecord const> records,
-    GGEMSObserverRunResultCounters const &logical_counters) -> void {
+  std::span<GGEMSObserverRecord const> records,
+  GGEMSObserverRunResultCounters const &logical_counters) -> void {
   if (!(logical_counters.record_count == records.size())) {
     throw ggems::core::GGEMSInternal(
-        "Transport logical Observer record count does not match its candidate "
-        "records.");
+      "Transport logical Observer record count does not match its candidate "
+      "records.");
   }
 
   CheckedAccumulateRunResultCounter(
-      run_result_logical_counters_.record_count, logical_counters.record_count,
-      "Observer logical record aggregation overflows uint64.");
+    run_result_logical_counters_.record_count, logical_counters.record_count,
+    "Observer logical record aggregation overflows uint64.");
   CheckedAccumulateRunResultCounter(
-      run_result_logical_counters_.overflow_count,
-      logical_counters.overflow_count,
-      "Observer logical overflow aggregation overflows uint64.");
+    run_result_logical_counters_.overflow_count,
+    logical_counters.overflow_count,
+    "Observer logical overflow aggregation overflows uint64.");
   CheckedAccumulateRunResultCounter(
-      run_result_logical_counters_.captured_primary_count,
-      logical_counters.captured_primary_count,
-      "Observer logical captured-primary aggregation overflows uint64.");
+    run_result_logical_counters_.captured_primary_count,
+    logical_counters.captured_primary_count,
+    "Observer logical captured-primary aggregation overflows uint64.");
 
   auto const reserve_count = static_cast<std::size_t>(std::min<std::uint64_t>(
-      run_result_logical_counters_.record_count, max_stored_record_count_));
+    run_result_logical_counters_.record_count, max_stored_record_count_));
   if (reserve_count > records_.capacity()) {
     records_.reserve(reserve_count);
   }
 
   std::size_t remaining_capacity =
-      records_.size() < max_stored_record_count_
-          ? static_cast<std::size_t>(max_stored_record_count_) - records_.size()
-          : 0U;
+    records_.size() < max_stored_record_count_
+      ? static_cast<std::size_t>(max_stored_record_count_) - records_.size()
+      : 0U;
 
   std::size_t copied_record_count =
-      std::min<std::size_t>(records.size(), remaining_capacity);
+    std::min<std::size_t>(records.size(), remaining_capacity);
 
   auto records_to_copy = records.first(copied_record_count);
 
@@ -746,29 +744,29 @@ auto GGEMSTransportObserver::AccumulateRunResult(
 
   if (copied_record_count < records.size()) {
     CheckedAccumulateRunResultCounter(
-        run_result_logical_counters_.overflow_count,
-        records.size() - copied_record_count,
-        "Observer host-drop aggregation overflows uint64.");
+      run_result_logical_counters_.overflow_count,
+      records.size() - copied_record_count,
+      "Observer host-drop aggregation overflows uint64.");
   }
 
   counters_.record_count = static_cast<std::uint32_t>(records_.size());
   counters_.overflow_count = detail::SaturateObserverCounter(
-      run_result_logical_counters_.overflow_count);
+    run_result_logical_counters_.overflow_count);
   counters_.captured_primary_count = detail::SaturateObserverCounter(
-      run_result_logical_counters_.captured_primary_count);
+    run_result_logical_counters_.captured_primary_count);
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::BuildConfigRecord() const noexcept
-    -> GGEMSObserverConfigRecord {
+  -> GGEMSObserverConfigRecord {
   GGEMSObserverConfigRecord config{};
 
   config.enabled = enabled_ ? 1U : 0U;
   config.capture_first_primary_count_per_source =
-      capture_first_primary_count_per_source_;
+    capture_first_primary_count_per_source_;
   config.capture_specific_primary_enabled =
-      capture_specific_primary_enabled_ ? 1U : 0U;
+    capture_specific_primary_enabled_ ? 1U : 0U;
   config.capture_source_index = capture_source_index_;
   config.capture_source_local_primary_id = capture_source_local_primary_id_;
 
@@ -784,7 +782,7 @@ auto GGEMSTransportObserver::IsEnabled() const noexcept -> bool {
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::GetRecordCapacity() const noexcept
-    -> std::uint32_t {
+  -> std::uint32_t {
   return record_capacity_;
 }
 
@@ -797,21 +795,21 @@ auto GGEMSTransportObserver::GetRecordCount() const noexcept -> std::uint32_t {
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::GetOverflowCount() const noexcept
-    -> std::uint32_t {
+  -> std::uint32_t {
   return counters_.overflow_count;
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::GetCapturedPrimaryCount() const noexcept
-    -> std::uint32_t {
+  -> std::uint32_t {
   return counters_.captured_primary_count;
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSTransportObserver::GetRecords() const noexcept
-    -> std::vector<GGEMSObserverRecord> const & {
+  -> std::vector<GGEMSObserverRecord> const & {
   return records_;
 }
 
@@ -858,10 +856,10 @@ auto GGEMSTransportObserver::BuildDump() const -> std::string {
     first_primary = false;
 
     std::uint32_t const primary_record_count =
-        CountRecordsForPrimary(views, primary_id);
+      CountRecordsForPrimary(views, primary_id);
 
     std::uint32_t const primary_track_count =
-        CountTracksForPrimary(views, primary_id);
+      CountTracksForPrimary(views, primary_id);
 
     result += "\n";
     result += std::format("Primary {}\n", primary_id);
@@ -889,7 +887,7 @@ auto GGEMSTransportObserver::BuildDump() const -> std::string {
       previous_track_id = record.track_id;
 
       std::array<std::string, 11U> const row =
-          BuildObserverTableRow(view.record_index, record, track_display_map);
+        BuildObserverTableRow(view.record_index, record, track_display_map);
 
       result += MakeTableRow(k_observer_table_columns, row);
     }

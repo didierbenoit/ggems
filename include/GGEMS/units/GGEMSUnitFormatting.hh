@@ -48,7 +48,7 @@ namespace ggems::units {
 namespace detail {
 
 [[nodiscard]] inline auto SelectUnitSymbol(UnitDefinition const &unit) noexcept
-    -> std::string_view {
+  -> std::string_view {
   if (ggems::core::GGEMSLogger::GetInstance().GetEncoding() ==
       ggems::core::Encoding::Ascii) {
     return unit.symbol;
@@ -60,7 +60,7 @@ template <typename QuantityType>
 auto FormatScaled(QuantityType const &quantity, UnitDefinition const &unit,
                   std::int8_t precision, std::int8_t width) -> std::string {
   long double const scaled =
-      static_cast<long double>(quantity.value) / ScaleFactor(unit.scale);
+    static_cast<long double>(quantity.value) / ScaleFactor(unit.scale);
 
   std::string_view const selected_symbol = SelectUnitSymbol(unit);
   std::string format;
@@ -82,14 +82,15 @@ template <QuantityType QuantityValue>
  * \tparam QuantityValue GGEMS quantity type to format.
  * \param[in] quantity Quantity to format.
  * \param[in] precision Number of digits after the decimal point.
- * \param[in] width Optional numeric field width; negative selects the default width.
+ * \param[in] width Optional numeric field width; negative selects the default
+ * width.
  * \return Human-readable quantity string including the selected unit symbol.
  */
 auto HumanReadable(
-    QuantityValue const &quantity,
-    std::int8_t precision =
-        QuantityTraits<typename QuantityValue::tag>::default_precision,
-    std::int8_t width = -1) -> std::string {
+  QuantityValue const &quantity,
+  std::int8_t precision =
+    QuantityTraits<typename QuantityValue::tag>::default_precision,
+  std::int8_t width = -1) -> std::string {
   using Traits = QuantityTraits<typename QuantityValue::tag>;
   using UnitSet = typename Traits::unit_set;
   if constexpr (Traits::format_policy == QuantityFormatPolicy::FixedUnit) {
@@ -100,10 +101,10 @@ auto HumanReadable(
     if constexpr (Traits::format_policy ==
                   QuantityFormatPolicy::DurationBreakdown) {
       auto const second_factor = static_cast<std::uint64_t>(
-          detail::ScaleFactor(FindUnit<UnitSet>("s")->scale));
+        detail::ScaleFactor(FindUnit<UnitSet>("s")->scale));
       if (quantity.value >= 60ULL * second_factor) {
         auto const millisecond_factor = static_cast<std::uint64_t>(
-            detail::ScaleFactor(FindUnit<UnitSet>("ms")->scale));
+          detail::ScaleFactor(FindUnit<UnitSet>("ms")->scale));
         auto const total_seconds = quantity.value / second_factor;
         auto const remainder = quantity.value % second_factor;
         auto const hours = total_seconds / 3'600ULL;
@@ -119,7 +120,7 @@ auto HumanReadable(
     }
 
     long double const magnitude =
-        std::abs(static_cast<long double>(quantity.value));
+      std::abs(static_cast<long double>(quantity.value));
 
     UnitDefinition const *selected{nullptr};
     long double selected_factor{-1.0L};
@@ -151,25 +152,26 @@ auto HumanReadable(
 namespace std {
 template <typename Tag, typename Representation>
 /*!
- * \brief Integrates GGEMS quantities with std::format by delegating to HumanReadable.
+ * \brief Integrates GGEMS quantities with std::format by delegating to
+ * HumanReadable.
  *
  * \tparam Tag Quantity-family tag type.
  * \tparam Representation Underlying quantity representation type.
  */
 struct formatter<ggems::units::Quantity<Tag, Representation>>
     : formatter<string> {
-/*!
- * \brief Formats a GGEMS quantity into a standard formatting context.
- *
- * \tparam FormatContext Standard formatting context type.
- * \param[in] quantity Quantity to format.
- * \param[in,out] context Destination formatting context.
- * \return Iterator to the end of the formatted output.
- */
+  /*!
+   * \brief Formats a GGEMS quantity into a standard formatting context.
+   *
+   * \tparam FormatContext Standard formatting context type.
+   * \param[in] quantity Quantity to format.
+   * \param[in,out] context Destination formatting context.
+   * \return Iterator to the end of the formatted output.
+   */
   template <typename FormatContext>
   auto format(ggems::units::Quantity<Tag, Representation> const &quantity,
               FormatContext &context) const ->
-      typename FormatContext::iterator {
+    typename FormatContext::iterator {
     return formatter<string>::format(ggems::units::HumanReadable(quantity),
                                      context);
   }

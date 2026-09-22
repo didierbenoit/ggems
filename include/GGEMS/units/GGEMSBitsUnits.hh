@@ -21,7 +21,8 @@
 
 /*!
  * \file
- * \brief Declares strongly typed bit-count units, byte conversions, and literals.
+ * \brief Declares strongly typed bit-count units, byte conversions, and
+ * literals.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -50,35 +51,31 @@ namespace ggems::units {
 struct BitsUnitSet {};
 
 /*!
- * \brief Defines the supported bit count units and their canonical scale factors.
+ * \brief Defines the supported bit count units and their canonical scale
+ * factors.
  */
 template <> struct UnitRegistry<BitsUnitSet> {
   /*!
    * \brief Registered unit definitions for this quantity family.
    */
   static constexpr std::array<UnitDefinition, 9U> units{{
-      {.symbol = "bit",
-       .scale = DecimalScale(0)},
-      {.symbol = "kbit",
-       .scale = DecimalScale(3)},
-      {.symbol = "Mbit",
-       .scale = DecimalScale(6)},
-      {.symbol = "Gbit",
-       .scale = DecimalScale(9)},
-      {.symbol = "Tbit",
-       .scale = DecimalScale(12)},
-      {.symbol = "Kibit",
-       .scale = DecimalScale(0, 1'024ULL),
-       .automatic_display = false},
-      {.symbol = "Mibit",
-       .scale = DecimalScale(0, 1'048'576ULL),
-       .automatic_display = false},
-      {.symbol = "Gibit",
-       .scale = DecimalScale(0, 1'073'741'824ULL),
-       .automatic_display = false},
-      {.symbol = "Tibit",
-       .scale = DecimalScale(0, 1'099'511'627'776ULL),
-       .automatic_display = false},
+    {.symbol = "bit", .scale = DecimalScale(0)},
+    {.symbol = "kbit", .scale = DecimalScale(3)},
+    {.symbol = "Mbit", .scale = DecimalScale(6)},
+    {.symbol = "Gbit", .scale = DecimalScale(9)},
+    {.symbol = "Tbit", .scale = DecimalScale(12)},
+    {.symbol = "Kibit",
+     .scale = DecimalScale(0, 1'024ULL),
+     .automatic_display = false},
+    {.symbol = "Mibit",
+     .scale = DecimalScale(0, 1'048'576ULL),
+     .automatic_display = false},
+    {.symbol = "Gibit",
+     .scale = DecimalScale(0, 1'073'741'824ULL),
+     .automatic_display = false},
+    {.symbol = "Tibit",
+     .scale = DecimalScale(0, 1'099'511'627'776ULL),
+     .automatic_display = false},
   }};
 };
 
@@ -103,13 +100,15 @@ template <> struct QuantityTraits<BitsTag> {
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::AutomaticScale};
+    QuantityFormatPolicy::AutomaticScale};
   /*!
-   * \brief Fixed display unit, or an empty string when the policy selects units automatically.
+   * \brief Fixed display unit, or an empty string when the policy selects units
+   * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
   /*!
-   * \brief Default number of digits after the decimal point for formatted output.
+   * \brief Default number of digits after the decimal point for formatted
+   * output.
    */
   static constexpr std::int8_t default_precision{7};
 };
@@ -130,7 +129,7 @@ static_assert(!std::is_same_v<Bits, Bytes>);
  * \return Converted bit count, or UnitConversionError::OutOfRange on overflow.
  */
 [[nodiscard]] constexpr auto TryConvertBytesToBits(Bytes bytes) noexcept
-    -> std::expected<Bits, UnitConversionError> {
+  -> std::expected<Bits, UnitConversionError> {
   if (bytes.value > std::numeric_limits<std::uint64_t>::max() / 8ULL) {
     return std::unexpected(UnitConversionError::OutOfRange);
   }
@@ -142,10 +141,11 @@ static_assert(!std::is_same_v<Bits, Bytes>);
  * \brief Converts a bit count to bytes when the conversion is exact.
  *
  * \param[in] bits Bit count to convert.
- * \return Converted byte count, or UnitConversionError::InexactConversion when the bit count is not byte-aligned.
+ * \return Converted byte count, or UnitConversionError::InexactConversion when
+ * the bit count is not byte-aligned.
  */
 [[nodiscard]] constexpr auto TryConvertBitsToBytes(Bits bits) noexcept
-    -> std::expected<Bytes, UnitConversionError> {
+  -> std::expected<Bytes, UnitConversionError> {
   if (bits.value % 8ULL != 0ULL) {
     return std::unexpected(UnitConversionError::InexactConversion);
   }

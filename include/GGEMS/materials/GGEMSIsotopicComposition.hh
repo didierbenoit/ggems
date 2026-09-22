@@ -15,7 +15,7 @@ struct GGEMSIsotopeFraction {
   long double fraction;
 
   [[nodiscard]] auto operator==(GGEMSIsotopeFraction const &) const
-      -> bool = default;
+    -> bool = default;
 };
 
 class GGEMSIsotopicComposition {
@@ -32,12 +32,12 @@ public:
   }
 
   [[nodiscard]] auto GetFractions() const noexcept
-      -> std::span<GGEMSIsotopeFraction const> {
+    -> std::span<GGEMSIsotopeFraction const> {
     return fractions_;
   }
 
   [[nodiscard]] auto operator==(GGEMSIsotopicComposition const &) const
-      -> bool = default;
+    -> bool = default;
 
 private:
   GGEMSFractionBasis basis_;

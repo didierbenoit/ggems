@@ -140,7 +140,7 @@ public:
    * \return OpenCL versioned platform extensions.
    */
   [[nodiscard]] auto GetExtensionsWithVersion() const
-      -> std::vector<cl_name_version>;
+    -> std::vector<cl_name_version>;
 
   /*!
    * \brief Prints platform identity, capability, and extension information.
@@ -162,7 +162,7 @@ public:
    * \return Native OpenCL platform.
    */
   [[nodiscard]] auto GetPlatformNative() const noexcept
-      -> cl::Platform const & {
+    -> cl::Platform const & {
     return platform_;
   }
 
@@ -172,7 +172,7 @@ public:
    * \return Discovered GGEMS OpenCL devices.
    */
   [[nodiscard]] auto GetDevices() const noexcept
-      -> std::vector<GGEMSOpenCLDevice> const & {
+    -> std::vector<GGEMSOpenCLDevice> const & {
     return devices_;
   }
 
@@ -192,8 +192,9 @@ private:
    */
   auto DiscoverDevices() -> void;
 
-  cl::Platform platform_;                    /*!< Native OpenCL platform. */
-  std::size_t platform_index_;              /*!< GGEMS platform index. */
-  std::vector<GGEMSOpenCLDevice> devices_;  /*!< Devices discovered on the platform. */
+  cl::Platform platform_;      /*!< Native OpenCL platform. */
+  std::size_t platform_index_; /*!< GGEMS platform index. */
+  std::vector<GGEMSOpenCLDevice>
+    devices_; /*!< Devices discovered on the platform. */
 };
 } // namespace ggems::ocl

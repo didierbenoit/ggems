@@ -56,42 +56,44 @@ constexpr std::uint64_t k_picoseconds_per_nanosecond{1000ULL};
  * \brief Converts a nonnegative duration in seconds to GGEMS picoseconds.
  *
  * \param[in] seconds Duration in seconds.
- * \return GGEMS duration rounded to picoseconds and saturated to its storage range.
+ * \return GGEMS duration rounded to picoseconds and saturated to its storage
+ * range.
  */
 auto MakeDurationFromSeconds(long double seconds) noexcept
-    -> ggems::units::Duration {
+  -> ggems::units::Duration {
   if (seconds < 0.0L) {
     return ggems::units::Duration{0U};
   }
 
   auto const duration =
-      ggems::units::MakeQuantity<ggems::units::Duration>(seconds, "s");
+    ggems::units::MakeQuantity<ggems::units::Duration>(seconds, "s");
 
   return duration.value_or(
-      ggems::units::Duration{std::numeric_limits<std::uint64_t>::max()});
+    ggems::units::Duration{std::numeric_limits<std::uint64_t>::max()});
 }
 
 // =============================================================================
 // =============================================================================
 
 /*!
- * \brief Converts an OpenCL nanosecond timestamp to a GGEMS picosecond time point.
+ * \brief Converts an OpenCL nanosecond timestamp to a GGEMS picosecond time
+ * point.
  *
  * \param[in] nanoseconds OpenCL profiling timestamp in nanoseconds.
  * \return GGEMS time point in picoseconds, saturated to its storage range.
  */
 auto MakeTimeFromNanoseconds(cl_ulong nanoseconds) noexcept
-    -> ggems::units::Time {
+  -> ggems::units::Time {
   if (nanoseconds > std::numeric_limits<std::uint64_t>::max() /
-                        k_picoseconds_per_nanosecond) {
+                      k_picoseconds_per_nanosecond) {
     return ggems::units::Time{std::numeric_limits<std::uint64_t>::max()};
   }
 
   auto const time =
-      ggems::units::MakeQuantity<ggems::units::Time>(nanoseconds, "ns");
+    ggems::units::MakeQuantity<ggems::units::Time>(nanoseconds, "ns");
 
   return time.value_or(
-      ggems::units::Time{std::numeric_limits<std::uint64_t>::max()});
+    ggems::units::Time{std::numeric_limits<std::uint64_t>::max()});
 }
 
 } // namespace
@@ -134,8 +136,8 @@ auto GGEMSOpenCLProfiler::Stop() noexcept -> void {
 auto GGEMSOpenCLProfiler::RecordKernelEvent(cl::Event const &event) -> void {
   if (running_) {
     throw ggems::core::GGEMSRecoverable(
-        "OpenCL kernel event profiling must be recorded after Stop() when host "
-        "timing is active.");
+      "OpenCL kernel event profiling must be recorded after Stop() when host "
+      "timing is active.");
   }
 
   cl_int error{0};
@@ -154,7 +156,7 @@ auto GGEMSOpenCLProfiler::RecordKernelEvent(cl::Event const &event) -> void {
 
   if (queued > submit || submit > start || start > end) {
     throw ggems::core::GGEMSRecoverable(
-        "Invalid OpenCL profiling timestamps ordering.");
+      "Invalid OpenCL profiling timestamps ordering.");
   }
 
   kernel_timing_.time_queued = MakeTimeFromNanoseconds(queued);
@@ -183,21 +185,21 @@ auto GGEMSOpenCLProfiler::GetElapsedSecondsRaw() const noexcept -> long double {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProfiler::GetElapsedTime() const noexcept
-    -> ggems::units::Duration {
+  -> ggems::units::Duration {
   return MakeDurationFromSeconds(GetElapsedSecondsRaw());
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProfiler::GetKernelTime() const noexcept
-    -> ggems::units::Duration {
+  -> ggems::units::Duration {
   return kernel_timing_.kernel_time;
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProfiler::GetCommandTime() const noexcept
-    -> ggems::units::Time {
+  -> ggems::units::Time {
   return kernel_timing_.command_time;
 }
 
@@ -222,7 +224,7 @@ auto GGEMSOpenCLProfiler::GetKernelSeconds() const noexcept -> double {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProfiler::ComputeRatePerSecond(
-    std::uint64_t item_count) const noexcept -> double {
+  std::uint64_t item_count) const noexcept -> double {
   double elapsed_seconds = GetElapsedSeconds();
 
   if (elapsed_seconds <= 0.0) {
@@ -235,7 +237,7 @@ auto GGEMSOpenCLProfiler::ComputeRatePerSecond(
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProfiler::ComputeKernelRatePerSecond(
-    std::uint64_t item_count) const noexcept -> double {
+  std::uint64_t item_count) const noexcept -> double {
   double const kernel_seconds = GetKernelSeconds();
 
   if (kernel_seconds <= 0.0) {

@@ -6,7 +6,7 @@
 
 namespace ggems::ui {
 [[nodiscard]] auto ToImGuiColor(render::ColorKey const &color) noexcept
-    -> ImVec4;
+  -> ImVec4;
 
 void ApplyGGEMSImGuiTheme();
 } // namespace ggems::ui

@@ -270,20 +270,20 @@ template <typename ShadeEnum>
 consteval auto DefineColor(ShadeEnum shade,
                            ColorVariant variant = ColorVariant::Normal,
                            ColorLayer layer = ColorLayer::Foreground)
-    -> ColorKey {
+  -> ColorKey {
   return MakeColor(FamilyOf(shade), static_cast<std::uint8_t>(shade), variant,
                    layer);
 }
 
 /*! \brief Default background color used by GGEMS text rendering. */
 inline constexpr ColorKey DEFAULT_BG =
-    MakeColor(ColorFamily::Gray, static_cast<std::uint8_t>(GrayShade::Steel),
-              ColorVariant::Normal, ColorLayer::Background);
+  MakeColor(ColorFamily::Gray, static_cast<std::uint8_t>(GrayShade::Steel),
+            ColorVariant::Normal, ColorLayer::Background);
 
 /*! \brief Default foreground color used by GGEMS text rendering. */
 inline constexpr ColorKey DEFAULT_FG =
-    MakeColor(ColorFamily::White, static_cast<std::uint8_t>(WhiteShade::Ivory),
-              ColorVariant::Normal, ColorLayer::Foreground);
+  MakeColor(ColorFamily::White, static_cast<std::uint8_t>(WhiteShade::Ivory),
+            ColorVariant::Normal, ColorLayer::Foreground);
 
 /*!
  * \brief Generates one family of named color constants.
@@ -293,17 +293,17 @@ inline constexpr ColorKey DEFAULT_FG =
  */
 #define GEN_COLOR_NAME(FAMILYNAME, SHADENAME, ENUMTYPE, VALUE)                 \
   inline constexpr ColorKey FAMILYNAME##_##SHADENAME =                         \
-      DefineColor(ENUMTYPE::VALUE);                                            \
+    DefineColor(ENUMTYPE::VALUE);                                              \
   inline constexpr ColorKey FAMILYNAME##_##SHADENAME##_B =                     \
-      DefineColor(ENUMTYPE::VALUE, ColorVariant::Bright);                      \
+    DefineColor(ENUMTYPE::VALUE, ColorVariant::Bright);                        \
   inline constexpr ColorKey FAMILYNAME##_##SHADENAME##_F =                     \
-      DefineColor(ENUMTYPE::VALUE, ColorVariant::Faint);                       \
+    DefineColor(ENUMTYPE::VALUE, ColorVariant::Faint);                         \
   inline constexpr ColorKey FAMILYNAME##_##SHADENAME##_BG = DefineColor(       \
-      ENUMTYPE::VALUE, ColorVariant::Normal, ColorLayer::Background);          \
+    ENUMTYPE::VALUE, ColorVariant::Normal, ColorLayer::Background);            \
   inline constexpr ColorKey FAMILYNAME##_##SHADENAME##_B_BG = DefineColor(     \
-      ENUMTYPE::VALUE, ColorVariant::Bright, ColorLayer::Background);          \
-  inline constexpr ColorKey FAMILYNAME##_##SHADENAME##_F_BG = DefineColor(     \
-      ENUMTYPE::VALUE, ColorVariant::Faint, ColorLayer::Background);
+    ENUMTYPE::VALUE, ColorVariant::Bright, ColorLayer::Background);            \
+  inline constexpr ColorKey FAMILYNAME##_##SHADENAME##_F_BG =                  \
+    DefineColor(ENUMTYPE::VALUE, ColorVariant::Faint, ColorLayer::Background);
 
 GEN_COLOR_NAME(GREEN, Matrix, GreenShade, Matrix)
 GEN_COLOR_NAME(GREEN, Emerald, GreenShade, Emerald)

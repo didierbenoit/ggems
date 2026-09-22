@@ -46,35 +46,23 @@ namespace ggems::units {
 struct BytesUnitSet {};
 
 /*!
- * \brief Defines the supported byte count units and their canonical scale factors.
+ * \brief Defines the supported byte count units and their canonical scale
+ * factors.
  */
 template <> struct UnitRegistry<BytesUnitSet> {
   /*!
    * \brief Registered unit definitions for this quantity family.
    */
   static constexpr std::array<UnitDefinition, 9U> units{{
-      {.symbol = "B",
-       .scale = DecimalScale(0)},
-      {.symbol = "kB",
-       .scale = DecimalScale(3),
-       .automatic_display = false},
-      {.symbol = "MB",
-       .scale = DecimalScale(6),
-       .automatic_display = false},
-      {.symbol = "GB",
-       .scale = DecimalScale(9),
-       .automatic_display = false},
-      {.symbol = "TB",
-       .scale = DecimalScale(12),
-       .automatic_display = false},
-      {.symbol = "KiB",
-       .scale = DecimalScale(0, 1'024ULL)},
-      {.symbol = "MiB",
-       .scale = DecimalScale(0, 1'048'576ULL)},
-      {.symbol = "GiB",
-       .scale = DecimalScale(0, 1'073'741'824ULL)},
-      {.symbol = "TiB",
-       .scale = DecimalScale(0, 1'099'511'627'776ULL)},
+    {.symbol = "B", .scale = DecimalScale(0)},
+    {.symbol = "kB", .scale = DecimalScale(3), .automatic_display = false},
+    {.symbol = "MB", .scale = DecimalScale(6), .automatic_display = false},
+    {.symbol = "GB", .scale = DecimalScale(9), .automatic_display = false},
+    {.symbol = "TB", .scale = DecimalScale(12), .automatic_display = false},
+    {.symbol = "KiB", .scale = DecimalScale(0, 1'024ULL)},
+    {.symbol = "MiB", .scale = DecimalScale(0, 1'048'576ULL)},
+    {.symbol = "GiB", .scale = DecimalScale(0, 1'073'741'824ULL)},
+    {.symbol = "TiB", .scale = DecimalScale(0, 1'099'511'627'776ULL)},
   }};
 };
 
@@ -99,13 +87,15 @@ template <> struct QuantityTraits<BytesTag> {
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::AutomaticScale};
+    QuantityFormatPolicy::AutomaticScale};
   /*!
-   * \brief Fixed display unit, or an empty string when the policy selects units automatically.
+   * \brief Fixed display unit, or an empty string when the policy selects units
+   * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
   /*!
-   * \brief Default number of digits after the decimal point for formatted output.
+   * \brief Default number of digits after the decimal point for formatted
+   * output.
    */
   static constexpr std::int8_t default_precision{7};
 };

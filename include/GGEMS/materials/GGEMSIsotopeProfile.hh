@@ -13,14 +13,14 @@ enum class GGEMSIsotopeProfile : std::uint8_t {
 
 [[nodiscard]] auto HasIsotopeProfile(GGEMSIsotopeProfile profile,
                                      std::uint32_t atomic_number) noexcept
-    -> bool;
+  -> bool;
 
 [[nodiscard]] auto ResolveIsotopeProfile(GGEMSIsotopeProfile profile,
                                          std::uint32_t atomic_number)
-    -> GGEMSIsotopicComposition;
+  -> GGEMSIsotopicComposition;
 
 [[nodiscard]] auto
 SelectLegacyElementalIsotopeProfile(std::uint32_t atomic_number)
-    -> GGEMSIsotopeProfile;
+  -> GGEMSIsotopeProfile;
 
 } // namespace ggems::core::materials

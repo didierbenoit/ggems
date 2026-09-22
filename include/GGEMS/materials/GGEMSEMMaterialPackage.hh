@@ -33,23 +33,23 @@ public:
   ~GGEMSEMMaterialPackage() = default;
 
   auto operator=(GGEMSEMMaterialPackage const &)
-      -> GGEMSEMMaterialPackage & = delete;
+    -> GGEMSEMMaterialPackage & = delete;
 
   auto operator=(GGEMSEMMaterialPackage &&)
-      -> GGEMSEMMaterialPackage & = delete;
+    -> GGEMSEMMaterialPackage & = delete;
 
   [[nodiscard]] auto GetDescriptors() const noexcept
-      -> std::span<GGEMSEMMaterialDescriptor const> {
+    -> std::span<GGEMSEMMaterialDescriptor const> {
     return descriptors_;
   }
 
   [[nodiscard]] auto GetElementalConstituents() const noexcept
-      -> std::span<GGEMSEMElementalConstituent const> {
+    -> std::span<GGEMSEMElementalConstituent const> {
     return elemental_constituents_;
   }
 
   [[nodiscard]] auto GetMaterialIds() const noexcept
-      -> std::span<std::uint32_t const> {
+    -> std::span<std::uint32_t const> {
     return material_ids_;
   }
 

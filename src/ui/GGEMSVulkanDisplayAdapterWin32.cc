@@ -53,7 +53,7 @@ using Microsoft::WRL::ComPtr;
 
   int source_length = static_cast<int>(text.size());
   int destination_length = WideCharToMultiByte(
-      CP_UTF8, 0, text.data(), source_length, nullptr, 0, nullptr, nullptr);
+    CP_UTF8, 0, text.data(), source_length, nullptr, 0, nullptr, nullptr);
 
   if (destination_length <= 0) {
     return {};
@@ -62,8 +62,8 @@ using Microsoft::WRL::ComPtr;
   std::string result(static_cast<std::size_t>(destination_length), '\0');
 
   int converted_length =
-      WideCharToMultiByte(CP_UTF8, 0, text.data(), source_length, result.data(),
-                          destination_length, nullptr, nullptr);
+    WideCharToMultiByte(CP_UTF8, 0, text.data(), source_length, result.data(),
+                        destination_length, nullptr, nullptr);
 
   if (converted_length != destination_length) {
     return {};
@@ -91,8 +91,8 @@ using Microsoft::WRL::ComPtr;
 [[nodiscard]] std::unexpected<std::string>
 MakeDxgiFailure(std::string_view operation, HRESULT result) {
   return std::unexpected<std::string>{
-      std::format("{} failed with HRESULT 0x{:08x}.", operation,
-                  static_cast<std::uint32_t>(result))};
+    std::format("{} failed with HRESULT 0x{:08x}.", operation,
+                static_cast<std::uint32_t>(result))};
 }
 
 } // namespace
@@ -113,20 +113,20 @@ ResolveWin32DisplayAdapter(GLFWwindow *window) {
 
   if (window_handle == nullptr) {
     return std::unexpected<std::string>{
-        "GLFW did not expose a Win32 HWND for the GuiMode window."};
+      "GLFW did not expose a Win32 HWND for the GuiMode window."};
   }
 
   HMONITOR monitor = MonitorFromWindow(window_handle, MONITOR_DEFAULTTONEAREST);
 
   if (monitor == nullptr) {
     return std::unexpected<std::string>{
-        "MonitorFromWindow did not identify a monitor for the GuiMode window."};
+      "MonitorFromWindow did not identify a monitor for the GuiMode window."};
   }
 
   ComPtr<IDXGIFactory1> factory{};
   HRESULT result = CreateDXGIFactory1(
-      IID_IDXGIFactory1,
-      reinterpret_cast<void **>(factory.ReleaseAndGetAddressOf()));
+    IID_IDXGIFactory1,
+    reinterpret_cast<void **>(factory.ReleaseAndGetAddressOf()));
 
   if (FAILED(result)) {
     return MakeDxgiFailure("CreateDXGIFactory1", result);
@@ -137,7 +137,7 @@ ResolveWin32DisplayAdapter(GLFWwindow *window) {
   for (UINT adapter_index = 0U;; ++adapter_index) {
     ComPtr<IDXGIAdapter1> adapter{};
     result =
-        factory->EnumAdapters1(adapter_index, adapter.ReleaseAndGetAddressOf());
+      factory->EnumAdapters1(adapter_index, adapter.ReleaseAndGetAddressOf());
 
     if (result == DXGI_ERROR_NOT_FOUND) {
       break;
@@ -157,7 +157,7 @@ ResolveWin32DisplayAdapter(GLFWwindow *window) {
     for (UINT output_index = 0U;; ++output_index) {
       ComPtr<IDXGIOutput> output{};
       result =
-          adapter->EnumOutputs(output_index, output.ReleaseAndGetAddressOf());
+        adapter->EnumOutputs(output_index, output.ReleaseAndGetAddressOf());
 
       if (result == DXGI_ERROR_NOT_FOUND) {
         break;
@@ -185,14 +185,14 @@ ResolveWin32DisplayAdapter(GLFWwindow *window) {
       }
 
       GGEMSVulkanDisplayAdapter candidate{
-          .platform_id = EncodeDxgiLuid(adapter_description.AdapterLuid),
-          .name = std::move(name)};
+        .platform_id = EncodeDxgiLuid(adapter_description.AdapterLuid),
+        .name = std::move(name)};
 
       if (matched_adapter.has_value() &&
           matched_adapter->platform_id != candidate.platform_id) {
         return std::unexpected<std::string>{
-            "Multiple DXGI adapters were associated with the selected "
-            "HMONITOR."};
+          "Multiple DXGI adapters were associated with the selected "
+          "HMONITOR."};
       }
 
       matched_adapter = std::move(candidate);
@@ -201,7 +201,7 @@ ResolveWin32DisplayAdapter(GLFWwindow *window) {
 
   if (!matched_adapter.has_value()) {
     return std::unexpected<std::string>{
-        "No DXGI output matches the HMONITOR containing the GuiMode window."};
+      "No DXGI output matches the HMONITOR containing the GuiMode window."};
   }
 
   return std::move(matched_adapter).value();
@@ -213,18 +213,18 @@ ResolveWin32DisplayAdapter(GLFWwindow *window) {
 std::optional<std::string>
 QueryWin32VulkanAdapterId(vk::raii::PhysicalDevice const &physical_device) {
   auto properties =
-      physical_device.getProperties2<vk::PhysicalDeviceProperties2,
-                                     vk::PhysicalDeviceIDProperties>();
+    physical_device.getProperties2<vk::PhysicalDeviceProperties2,
+                                   vk::PhysicalDeviceIDProperties>();
 
   vk::PhysicalDeviceIDProperties const &device_id =
-      properties.get<vk::PhysicalDeviceIDProperties>();
+    properties.get<vk::PhysicalDeviceIDProperties>();
 
   if (device_id.deviceLUIDValid != VK_TRUE) {
     return std::nullopt;
   }
 
   return EncodeLuid(
-      std::span<std::uint8_t const>{device_id.deviceLUID.data(), VK_LUID_SIZE});
+    std::span<std::uint8_t const>{device_id.deviceLUID.data(), VK_LUID_SIZE});
 }
 
 } // namespace ggems::ui::detail

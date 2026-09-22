@@ -1,8 +1,8 @@
 #include "particles/GGEMSParticleState.clh"
 
 __kernel void particle_generate_dummy_primary(
-    __global GGEMSParticleState *particles, ulong global_particle_offset,
-    uint particle_count, uint particle_type, ulong energy_micro_eV) {
+  __global GGEMSParticleState *particles, ulong global_particle_offset,
+  uint particle_count, uint particle_type, ulong energy_micro_eV) {
   uint particle_index = get_global_id(0);
 
   if (particle_index >= particle_count) {

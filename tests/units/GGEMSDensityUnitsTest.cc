@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for GGEMS density quantities and conversions.
  *
- * Validates registered density units, finite nonnegative input requirements, fixed grams-per-cubic-centimeter formatting, and canonical density literals.
+ * Validates registered density units, finite nonnegative input requirements,
+ * fixed grams-per-cubic-centimeter formatting, and canonical density literals.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -55,7 +56,7 @@ using ggems::units::MakeQuantity;
 using ggems::units::UnitConversionError;
 
 constexpr long double k_density_relative_tolerance =
-    32.0L * std::numeric_limits<long double>::epsilon();
+  32.0L * std::numeric_limits<long double>::epsilon();
 
 TEST(GGEMSDensityUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   struct Case {
@@ -65,23 +66,23 @@ TEST(GGEMSDensityUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   };
 
   constexpr std::array<Case, 2U> cases{{
-      {.value = 1.0L,
-       .unit = "pg/pm3",
-       .expected_picograms_per_cubic_picometer = 1.0L},
-      {.value = 1.0L,
-       .unit = "g/cm3",
-       .expected_picograms_per_cubic_picometer = 1.0e-18L},
+    {.value = 1.0L,
+     .unit = "pg/pm3",
+     .expected_picograms_per_cubic_picometer = 1.0L},
+    {.value = 1.0L,
+     .unit = "g/cm3",
+     .expected_picograms_per_cubic_picometer = 1.0e-18L},
   }};
 
   for (auto const &test_case : cases) {
     SCOPED_TRACE(test_case.unit);
     auto const converted =
-        MakeQuantity<Density>(test_case.value, test_case.unit);
+      MakeQuantity<Density>(test_case.value, test_case.unit);
 
     ASSERT_TRUE(converted.has_value());
     long double const tolerance =
-        std::abs(test_case.expected_picograms_per_cubic_picometer) *
-        k_density_relative_tolerance;
+      std::abs(test_case.expected_picograms_per_cubic_picometer) *
+      k_density_relative_tolerance;
     EXPECT_LE(std::abs(converted->value -
                        test_case.expected_picograms_per_cubic_picometer),
               tolerance);
@@ -91,9 +92,9 @@ TEST(GGEMSDensityUnitsTest, ConvertsEveryOfficialRuntimeToken) {
 TEST(GGEMSDensityUnitsTest, EnforcesFiniteNonNegativeInput) {
   auto const negative = MakeQuantity<Density>(-1.0L, "pg/pm3");
   auto const infinity = MakeQuantity<Density>(
-      std::numeric_limits<long double>::infinity(), "g/cm3");
+    std::numeric_limits<long double>::infinity(), "g/cm3");
   auto const not_a_number = MakeQuantity<Density>(
-      std::numeric_limits<long double>::quiet_NaN(), "pg/pm3");
+    std::numeric_limits<long double>::quiet_NaN(), "pg/pm3");
 
   ASSERT_FALSE(negative.has_value());
   ASSERT_FALSE(infinity.has_value());

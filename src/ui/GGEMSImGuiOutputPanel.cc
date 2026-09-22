@@ -22,7 +22,7 @@ namespace {
 // =============================================================================
 
 auto RenderTextLine(std::string_view text, ggems::render::ColorKey const &color)
-    -> void {
+  -> void {
   ImGui::PushStyleColor(ImGuiCol_Text, ggems::ui::ToImGuiColor(color));
 
   if (text.empty()) {
@@ -63,7 +63,7 @@ auto RenderMultilineText(std::string_view text,
 // =============================================================================
 
 auto RemoveLeadingBlockNewline(std::string_view text) noexcept
-    -> std::string_view {
+  -> std::string_view {
   if (!text.empty() && text.front() == '\n') {
     text.remove_prefix(1U);
   }
@@ -79,7 +79,7 @@ namespace ggems::ui {
 // =============================================================================
 
 auto GGEMSImGuiOutputPanel::RenderWrappedLine(render::WrappedLine const &line)
-    -> void {
+  -> void {
   if (line.segments.empty()) {
     ImGui::Spacing();
     return;
@@ -105,7 +105,7 @@ auto GGEMSImGuiOutputPanel::RenderWrappedLine(render::WrappedLine const &line)
 // -----------------------------------------------------------------------------
 
 auto GGEMSImGuiOutputPanel::ShouldDisplay(
-    core::RenderedLogLine const &line) const noexcept -> bool {
+  core::RenderedLogLine const &line) const noexcept -> bool {
   switch (line.level) {
   case core::LogLevel::Debug:
     return show_debug_;
@@ -135,7 +135,7 @@ auto GGEMSImGuiOutputPanel::ShouldDisplay(
 // -----------------------------------------------------------------------------
 
 auto GGEMSImGuiOutputPanel::Render(core::GGEMSOutputState &output_state)
-    -> void {
+  -> void {
   ImGui::Begin("GGEMS Output");
 
   std::size_t log_count = output_state.GetLogCount();
@@ -202,7 +202,7 @@ auto GGEMSImGuiOutputPanel::Render(core::GGEMSOutputState &output_state)
   }
 
   std::vector<core::RenderedLogLine> lines =
-      output_state.GetLastLogLinesSnapshot(max_visible_lines_);
+    output_state.GetLastLogLinesSnapshot(max_visible_lines_);
 
   for (core::RenderedLogLine const &line : lines) {
     if (!ShouldDisplay(line)) {

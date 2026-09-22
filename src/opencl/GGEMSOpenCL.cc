@@ -69,7 +69,7 @@ namespace {
  * \return Normalized selector text.
  */
 [[nodiscard]] auto NormalizeDeviceSelectionText(std::string text)
-    -> std::string {
+  -> std::string {
   auto const first = text.find_first_not_of(" \t\n\r\f\v");
   if (first == std::string::npos) {
     return {};
@@ -80,7 +80,7 @@ namespace {
 
   for (char &character : text) {
     character =
-        static_cast<char>(std::tolower(static_cast<unsigned char>(character)));
+      static_cast<char>(std::tolower(static_cast<unsigned char>(character)));
   }
 
   return text;
@@ -93,12 +93,12 @@ namespace {
  * \brief Maps accepted vendor aliases to normalized OpenCL vendor names.
  */
 constexpr std::array<std::pair<std::string_view, std::string_view>, 3>
-    vendor_aliases{
-        {
-            {"intel", "intel(r) corporation"},
-            {"nvidia", "nvidia corporation"},
-            {"amd", "advanced micro devices, inc."},
-        },
+  vendor_aliases{
+    {
+      {"intel", "intel(r) corporation"},
+      {"nvidia", "nvidia corporation"},
+      {"amd", "advanced micro devices, inc."},
+    },
 };
 
 // =============================================================================
@@ -113,7 +113,7 @@ constexpr std::array<std::pair<std::string_view, std::string_view>, 3>
  */
 [[nodiscard]] auto
 TokenizeDeviceSelection(std::vector<std::string> const &filters)
-    -> std::vector<std::string> {
+  -> std::vector<std::string> {
   std::vector<std::string> tokens;
 
   for (auto const &filter : filters) {
@@ -121,14 +121,14 @@ TokenizeDeviceSelection(std::vector<std::string> const &filters)
 
     while (begin <= filter.size()) {
       auto const separator = filter.find(';', begin);
-      auto const count = separator == std::string::npos ? std::string::npos
-                                                        : separator - begin;
+      auto const count =
+        separator == std::string::npos ? std::string::npos : separator - begin;
 
       auto token = NormalizeDeviceSelectionText(filter.substr(begin, count));
 
       if (token.empty()) {
         throw ggems::core::GGEMSFatal(
-            "OpenCL device selector contains an empty token.");
+          "OpenCL device selector contains an empty token.");
       }
 
       tokens.push_back(std::move(token));
@@ -157,7 +157,7 @@ TokenizeDeviceSelection(std::vector<std::string> const &filters)
   std::size_t index{0U};
 
   auto const result =
-      std::from_chars(token.data(), token.data() + token.size(), index);
+    std::from_chars(token.data(), token.data() + token.size(), index);
 
   if (result.ec != std::errc{} || result.ptr != token.data() + token.size()) {
     throw ggems::core::GGEMSFatal("Invalid OpenCL device index '" +
@@ -176,14 +176,14 @@ TokenizeDeviceSelection(std::vector<std::string> const &filters)
  */
 struct DeviceSelectionCriteria {
   std::vector<std::size_t>
-      numeric_indices; /*!< Explicit device indices in selector order. */
+    numeric_indices; /*!< Explicit device indices in selector order. */
   cl_device_type requested_type{0};  /*!< Requested CPU/GPU type, or zero. */
   std::string_view requested_vendor; /*!< Requested normalized vendor name. */
   bool has_numeric_selector{
-      false,
+    false,
   }; /*!< Whether a numeric selector was parsed. */
   bool has_textual_selector{
-      false,
+    false,
   }; /*!< Whether a textual selector was parsed. */
 };
 
@@ -214,11 +214,11 @@ struct DeviceSelectionCriteria {
  */
 auto AppendDeviceIndex(DeviceSelectionCriteria &criteria, std::size_t index,
                        std::string_view selector, std::size_t device_count)
-    -> void {
+  -> void {
   if (index >= device_count) {
     throw ggems::core::GGEMSFatal(
-        "OpenCL device index is out of range in selector '" +
-        std::string{selector} + "'.");
+      "OpenCL device index is out of range in selector '" +
+      std::string{selector} + "'.");
   }
 
   if (std::ranges::find(criteria.numeric_indices, index) ==
@@ -260,13 +260,13 @@ auto ParseNumericDeviceSelector(std::string const &token,
 
   if (start > end) {
     throw ggems::core::GGEMSFatal(
-        "OpenCL device range start exceeds range end in selector '" + token +
-        "'.");
+      "OpenCL device range start exceeds range end in selector '" + token +
+      "'.");
   }
 
   if (end >= device_count) {
     throw ggems::core::GGEMSFatal(
-        "OpenCL device index is out of range in selector '" + token + "'.");
+      "OpenCL device index is out of range in selector '" + token + "'.");
   }
 
   for (std::size_t index = start; index <= end; ++index) {
@@ -286,25 +286,26 @@ auto ParseNumericDeviceSelector(std::string const &token,
  */
 [[nodiscard]] auto ParseTextualDeviceSelector(std::string const &token,
                                               DeviceSelectionCriteria &criteria)
-    -> bool {
+  -> bool {
   if (token == "cpu" || token == "gpu") {
     criteria.has_textual_selector = true;
 
     cl_device_type const type =
-        token == "cpu" ? CL_DEVICE_TYPE_CPU : CL_DEVICE_TYPE_GPU;
+      token == "cpu" ? CL_DEVICE_TYPE_CPU : CL_DEVICE_TYPE_GPU;
 
     if (criteria.requested_type != 0 && criteria.requested_type != type) {
       throw ggems::core::GGEMSFatal(
-          "OpenCL device selector cannot combine 'cpu' and 'gpu'.");
+        "OpenCL device selector cannot combine 'cpu' and 'gpu'.");
     }
 
     criteria.requested_type = type;
     return true;
   }
 
-  auto const vendor_it = std::ranges::find_if(
-      vendor_aliases,
-      [&token](auto const &vendor) -> bool { return vendor.first == token; });
+  auto const vendor_it =
+    std::ranges::find_if(vendor_aliases, [&token](auto const &vendor) -> bool {
+      return vendor.first == token;
+    });
 
   if (vendor_it == vendor_aliases.end()) {
     return false;
@@ -315,7 +316,7 @@ auto ParseNumericDeviceSelector(std::string const &token,
   if (!criteria.requested_vendor.empty() &&
       criteria.requested_vendor != vendor_it->second) {
     throw ggems::core::GGEMSFatal(
-        "OpenCL device selector cannot combine multiple vendors.");
+      "OpenCL device selector cannot combine multiple vendors.");
   }
 
   criteria.requested_vendor = vendor_it->second;
@@ -335,7 +336,7 @@ auto ParseNumericDeviceSelector(std::string const &token,
 [[nodiscard]] auto
 ParseDeviceSelectionCriteria(std::vector<std::string> const &tokens,
                              std::size_t device_count)
-    -> DeviceSelectionCriteria {
+  -> DeviceSelectionCriteria {
   DeviceSelectionCriteria criteria;
 
   for (auto const &token : tokens) {
@@ -354,8 +355,8 @@ ParseDeviceSelectionCriteria(std::vector<std::string> const &tokens,
 
   if (criteria.has_numeric_selector && criteria.has_textual_selector) {
     throw ggems::core::GGEMSFatal(
-        "OpenCL device selector cannot combine numeric and textual "
-        "selectors.");
+      "OpenCL device selector cannot combine numeric and textual "
+      "selectors.");
   }
 
   return criteria;
@@ -387,8 +388,8 @@ GGEMSOpenCL::GGEMSOpenCL() {
 
 GGEMSOpenCL::~GGEMSOpenCL() {
   GGEMS_INFOEX(
-      "OpenCL", 3,
-      "GGEMSOpenCL singleton destroyed; memory intentionally retained.");
+    "OpenCL", 3,
+    "GGEMSOpenCL singleton destroyed; memory intentionally retained.");
 }
 
 // -----------------------------------------------------------------------------
@@ -397,7 +398,7 @@ auto GGEMSOpenCL::GetOrCreateProgram(GGEMSOpenCLContext const &ctx,
                                      std::filesystem::path const &kernel_root,
                                      std::string const &kernel_name,
                                      std::string const &build_options)
-    -> GGEMSOpenCLProgram const & {
+  -> GGEMSOpenCLProgram const & {
   std::scoped_lock lock{program_cache_mutex_};
 
   for (auto const &program : program_cache_) {
@@ -412,7 +413,7 @@ auto GGEMSOpenCL::GetOrCreateProgram(GGEMSOpenCLContext const &ctx,
   GGEMS_INFOEX("OpenCL", 2, "Creating OpenCL program '{}'.", kernel_name);
 
   auto program = std::make_unique<GGEMSOpenCLProgram>(
-      ctx, kernel_root, kernel_name, build_options);
+    ctx, kernel_root, kernel_name, build_options);
 
   GGEMSOpenCLProgram const &reference = *program;
   program_cache_.push_back(std::move(program));
@@ -458,15 +459,15 @@ auto GGEMSOpenCL::InitPlatformsAndDevices() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCL::ResolveDeviceSelection(
-    std::vector<std::string> const &filters,
-    std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const
-        &all_devices)
-    -> std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> {
+  std::vector<std::string> const &filters,
+  std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const
+    &all_devices)
+  -> std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> {
   if (filters.empty()) {
     auto it_gpu =
-        std::ranges::find_if(all_devices, [](auto const &device) -> bool {
-          return (device.get().GetType() & CL_DEVICE_TYPE_GPU) != 0;
-        });
+      std::ranges::find_if(all_devices, [](auto const &device) -> bool {
+        return (device.get().GetType() & CL_DEVICE_TYPE_GPU) != 0;
+      });
 
     return {it_gpu != all_devices.end() ? *it_gpu : all_devices.front()};
   }
@@ -483,8 +484,8 @@ auto GGEMSOpenCL::ResolveDeviceSelection(
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCL::MatchesActiveContexts(
-    std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const &devices)
-    const noexcept -> bool {
+  std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const &devices)
+  const noexcept -> bool {
   if (contexts_.size() != devices.size()) {
     return false;
   }
@@ -501,7 +502,7 @@ auto GGEMSOpenCL::MatchesActiveContexts(
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters)
-    -> void {
+  -> void {
   GGEMS_INFOEX("OpenCL", 1, "Selecting OpenCL devices.");
 
   std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> all_devices;
@@ -522,11 +523,11 @@ auto GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters)
   if (is_initialized_) {
     if (!MatchesActiveContexts(requested_devices)) {
       throw ggems::core::GGEMSFatal(
-          "The OpenCL device selection is frozen once the backend is "
-          "initialized. GGEMS keeps its OpenCL contexts for the process "
-          "lifetime because live SVM buffers, kernels, and transport "
-          "workloads depend on them. Use a new process to run on a different "
-          "device selection.");
+        "The OpenCL device selection is frozen once the backend is "
+        "initialized. GGEMS keeps its OpenCL contexts for the process "
+        "lifetime because live SVM buffers, kernels, and transport "
+        "workloads depend on them. Use a new process to run on a different "
+        "device selection.");
     }
 
     GGEMS_INFO("OpenCL",
@@ -607,24 +608,24 @@ auto GGEMSOpenCL::CreateContexts() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCL::ParseDeviceFilters(
-    std::vector<std::string> const &filters,
-    std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const
-        &all_devices)
-    -> std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> {
+  std::vector<std::string> const &filters,
+  std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> const
+    &all_devices)
+  -> std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> {
   auto const tokens = TokenizeDeviceSelection(filters);
 
   if (std::ranges::find(tokens, "all") != tokens.end()) {
     if (tokens.size() != 1U) {
       throw core::GGEMSFatal(
-          "OpenCL device selector 'all' cannot be combined with other "
-          "selectors.");
+        "OpenCL device selector 'all' cannot be combined with other "
+        "selectors.");
     }
 
     return all_devices;
   }
 
   auto const criteria =
-      ParseDeviceSelectionCriteria(tokens, all_devices.size());
+    ParseDeviceSelectionCriteria(tokens, all_devices.size());
 
   std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> selected;
 
@@ -648,7 +649,7 @@ auto GGEMSOpenCL::ParseDeviceFilters(
 
     if (!criteria.requested_vendor.empty() &&
         !NormalizeDeviceSelectionText(device.GetVendor())
-             .contains(criteria.requested_vendor)) {
+           .contains(criteria.requested_vendor)) {
       continue;
     }
 

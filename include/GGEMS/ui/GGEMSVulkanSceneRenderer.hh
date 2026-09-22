@@ -26,13 +26,13 @@ public:
   GGEMSVulkanSceneRenderer(GGEMSVulkanSceneRenderer const &) = delete;
   GGEMSVulkanSceneRenderer(GGEMSVulkanSceneRenderer &&) = delete;
   auto operator=(GGEMSVulkanSceneRenderer const &)
-      -> GGEMSVulkanSceneRenderer & = delete;
+    -> GGEMSVulkanSceneRenderer & = delete;
   auto operator=(GGEMSVulkanSceneRenderer &&)
-      -> GGEMSVulkanSceneRenderer & = delete;
+    -> GGEMSVulkanSceneRenderer & = delete;
 
   auto Initialize(vk::raii::PhysicalDevice const &physical_device,
                   vk::raii::Device const &device, vk::Format color_format)
-      -> void;
+    -> void;
 
   auto Shutdown() -> void;
 
@@ -48,18 +48,17 @@ public:
 
   [[nodiscard]] auto GetTextureID() const noexcept -> ImTextureID;
   auto RecordSceneCommands(
-      vk::raii::CommandBuffer const &command_buffer,
-      ggems::render::GGEMSParticleTraceVisibility const &visibility) -> void;
+    vk::raii::CommandBuffer const &command_buffer,
+    ggems::render::GGEMSParticleTraceVisibility const &visibility) -> void;
 
   auto SetShowAxes(bool show_axes) noexcept -> void;
   [[nodiscard]] auto ShouldShowAxes() const noexcept -> bool;
 
   auto SetParticleTraceSegments(
-      std::span<ggems::render::GGEMSParticleTraceSegment const> segments)
-      -> void;
+    std::span<ggems::render::GGEMSParticleTraceSegment const> segments) -> void;
   auto ClearParticleTraces() -> void;
   [[nodiscard]] auto GetParticleTraceVertexCount() const noexcept
-      -> std::uint32_t;
+    -> std::uint32_t;
 
   auto OrbitCamera(float delta_x_pixels, float delta_y_pixels) noexcept -> void;
   auto PanCamera(float delta_x_pixels, float delta_y_pixels) noexcept -> void;
@@ -72,18 +71,18 @@ private:
 
   [[nodiscard]] auto FindMemoryType(std::uint32_t type_filter,
                                     vk::MemoryPropertyFlags properties) const
-      -> std::uint32_t;
+    -> std::uint32_t;
 
   auto CreateAxesShaderModules() -> void;
   auto CleanupShaderModules() noexcept -> void;
 
   [[nodiscard]] static auto ReadSPIRVFile(std::filesystem::path const &path)
-      -> std::vector<std::uint32_t>;
+    -> std::vector<std::uint32_t>;
 
   auto CreateAxesPipeline() -> void;
   auto CleanupAxesPipeline() noexcept -> void;
   auto RecordAxesCommands(vk::raii::CommandBuffer const &command_buffer)
-      -> void;
+    -> void;
 
   auto CreateTraceShaderModules() -> void;
   auto CreateTracePipeline() -> void;
@@ -93,8 +92,8 @@ private:
   auto CreateTraceVertexBuffer() -> void;
   auto DestroyTraceVertexBuffer() noexcept -> void;
   auto RecordTraceCommands(
-      vk::raii::CommandBuffer const &command_buffer,
-      ggems::render::GGEMSParticleTraceVisibility const &visibility) -> void;
+    vk::raii::CommandBuffer const &command_buffer,
+    ggems::render::GGEMSParticleTraceVisibility const &visibility) -> void;
 
   auto CreateDepthTarget() -> void;
   [[nodiscard]] auto IsDepthFormatSupported(vk::Format format) const -> bool;

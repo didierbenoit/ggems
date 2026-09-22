@@ -23,7 +23,8 @@
  * \file
  * \brief Unit tests for GGEMS OpenCL utility helpers.
  *
- * Validates OpenCL error descriptions, contextual error checking, exact extension matching, and representative native information queries.
+ * Validates OpenCL error descriptions, contextual error checking, exact
+ * extension matching, and representative native information queries.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -65,12 +66,12 @@ TEST(GGEMSOpenCLUtilsTest, ReportsRepresentativeErrorCodes) {
   };
 
   constexpr std::array test_cases{
-      ErrorNameCase{.error_code = CL_SUCCESS, .expected_name = "CL_SUCCESS"},
-      ErrorNameCase{.error_code = CL_INVALID_VALUE,
-                    .expected_name = "CL_INVALID_VALUE"},
-      ErrorNameCase{.error_code = CL_INVALID_EVENT,
-                    .expected_name = "CL_INVALID_EVENT"},
-      ErrorNameCase{.error_code = 123'456, .expected_name = "CL_UNKNOWN_ERROR"},
+    ErrorNameCase{.error_code = CL_SUCCESS, .expected_name = "CL_SUCCESS"},
+    ErrorNameCase{.error_code = CL_INVALID_VALUE,
+                  .expected_name = "CL_INVALID_VALUE"},
+    ErrorNameCase{.error_code = CL_INVALID_EVENT,
+                  .expected_name = "CL_INVALID_EVENT"},
+    ErrorNameCase{.error_code = 123'456, .expected_name = "CL_UNKNOWN_ERROR"},
   };
 
   for (auto const &test_case : test_cases) {
@@ -167,7 +168,7 @@ TEST(GGEMSOpenCLUtilsTest,
     ++compatible_device_count;
 
     auto const versions =
-        ggems::ocl::GetInfo<CL_DEVICE_SPIR_VERSIONS>(device.GetDeviceNative());
+      ggems::ocl::GetInfo<CL_DEVICE_SPIR_VERSIONS>(device.GetDeviceNative());
     EXPECT_EQ(versions.find('\0'), std::string::npos);
   }
 

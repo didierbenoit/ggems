@@ -53,28 +53,16 @@ template <> struct UnitRegistry<VolumeUnitSet> {
    * \brief Registered unit definitions for this quantity family.
    */
   static constexpr std::array<UnitDefinition, 7U> units{{
-      {.symbol = "pm3",
-       .scale = DecimalScale(0),
-       .unicode_symbol = "pm³"},
-      {.symbol = "nm3",
-       .scale = DecimalScale(9),
-       .unicode_symbol = "nm³"},
-      {.symbol = "um3",
-       .scale = DecimalScale(18),
-       .unicode_symbol = "µm³"},
-      {.symbol = "mm3",
-       .scale = DecimalScale(27),
-       .unicode_symbol = "mm³"},
-      {.symbol = "cm3",
-       .scale = DecimalScale(30),
-       .unicode_symbol = "cm³",
-       .automatic_display = false},
-      {.symbol = "m3",
-       .scale = DecimalScale(36),
-       .unicode_symbol = "m³"},
-      {.symbol = "km3",
-       .scale = DecimalScale(45),
-       .unicode_symbol = "km³"},
+    {.symbol = "pm3", .scale = DecimalScale(0), .unicode_symbol = "pm³"},
+    {.symbol = "nm3", .scale = DecimalScale(9), .unicode_symbol = "nm³"},
+    {.symbol = "um3", .scale = DecimalScale(18), .unicode_symbol = "µm³"},
+    {.symbol = "mm3", .scale = DecimalScale(27), .unicode_symbol = "mm³"},
+    {.symbol = "cm3",
+     .scale = DecimalScale(30),
+     .unicode_symbol = "cm³",
+     .automatic_display = false},
+    {.symbol = "m3", .scale = DecimalScale(36), .unicode_symbol = "m³"},
+    {.symbol = "km3", .scale = DecimalScale(45), .unicode_symbol = "km³"},
   }};
 };
 
@@ -99,13 +87,15 @@ template <> struct QuantityTraits<VolumeTag> {
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::AutomaticScale};
+    QuantityFormatPolicy::AutomaticScale};
   /*!
-   * \brief Fixed display unit, or an empty string when the policy selects units automatically.
+   * \brief Fixed display unit, or an empty string when the policy selects units
+   * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
   /*!
-   * \brief Default number of digits after the decimal point for formatted output.
+   * \brief Default number of digits after the decimal point for formatted
+   * output.
    */
   static constexpr std::int8_t default_precision{7};
 };

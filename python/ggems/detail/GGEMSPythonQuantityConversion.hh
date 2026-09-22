@@ -75,24 +75,24 @@ ThrowQuantityConversionError(ggems::units::UnitConversionError error,
   switch (error) {
   case UnitConversionError::UnsupportedUnit:
     throw pybind11::value_error(std::format(
-        "Unsupported {} unit '{}'.", context.unsupported_unit_subject, unit));
+      "Unsupported {} unit '{}'.", context.unsupported_unit_subject, unit));
   case UnitConversionError::NonFinite:
     throw pybind11::value_error(
-        std::format("{} must be finite.", context.quantity_name));
+      std::format("{} must be finite.", context.quantity_name));
   case UnitConversionError::NegativeValue:
     throw pybind11::value_error(
-        std::format("{} must be positive or zero.", context.quantity_name));
+      std::format("{} must be positive or zero.", context.quantity_name));
   case UnitConversionError::OutOfRange:
     throw pybind11::value_error(
-        std::format("{} is too large.", context.quantity_name));
+      std::format("{} is too large.", context.quantity_name));
   case UnitConversionError::InexactConversion:
     throw pybind11::value_error(
-        std::format("{} cannot be represented in GGEMS canonical units.",
-                    context.quantity_name));
+      std::format("{} cannot be represented in GGEMS canonical units.",
+                  context.quantity_name));
   }
 
   throw pybind11::value_error(
-      std::format("{} conversion failed.", context.quantity_name));
+    std::format("{} conversion failed.", context.quantity_name));
 }
 
 /*!
@@ -111,7 +111,7 @@ template <ggems::units::QuantityType TargetQuantity>
 auto MakeQuantityOrThrow(double value, std::string_view unit,
                          QuantityConversionContext context) -> TargetQuantity {
   auto const conversion = ggems::units::MakeQuantity<TargetQuantity>(
-      static_cast<long double>(value), unit);
+    static_cast<long double>(value), unit);
 
   if (conversion.has_value()) {
     return *conversion;
@@ -136,7 +136,7 @@ template <ggems::units::QuantityType SourceQuantity>
 auto ConvertQuantityToDoubleOrThrow(SourceQuantity quantity,
                                     std::string_view unit,
                                     QuantityConversionContext context)
-    -> double {
+  -> double {
   auto const conversion = ggems::units::ConvertTo(quantity, unit);
 
   if (conversion.has_value()) {

@@ -23,7 +23,8 @@
  * \file
  * \brief Declares the OpenCL Philox 4x32 random-number engine.
  *
- * Provides Philox round functions, counter progression, raw scalar/vector output, and uniform scalar/vector sampling.
+ * Provides Philox round functions, counter progression, raw scalar/vector
+ * output, and uniform scalar/vector sampling.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -117,7 +118,8 @@ GGEMS_PhiloxIncrementCounter(__global GGEMSPhiloxState *states, uint index) {
 }
 
 /*!
- * \brief Generates the next four raw Philox words and advances the stream counter.
+ * \brief Generates the next four raw Philox words and advances the stream
+ * counter.
  * \param[in,out] states Array of Philox stream states.
  * \param[in] index State index identifying the logical stream.
  * \return Four raw Philox words.
@@ -136,7 +138,8 @@ static inline uint4 GGEMS_PhiloxNextUInt4(__global GGEMSPhiloxState *states,
 }
 
 /*!
- * \brief Generates the next scalar raw Philox value and advances the stream counter.
+ * \brief Generates the next scalar raw Philox value and advances the stream
+ * counter.
  * \param[in,out] states Array of Philox stream states.
  * \param[in] index State index identifying the logical stream.
  * \return First word of the generated Philox block.

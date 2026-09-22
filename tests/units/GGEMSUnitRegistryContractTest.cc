@@ -23,7 +23,9 @@
  * \file
  * \brief Contract tests for the GGEMS unit registry and conversion framework.
  *
- * Validates official unit symbols, canonical conversion paths, numeric boundaries, conversion error categories, bit/byte bridges, encoding-aware formatting, and quantity-specific display policies.
+ * Validates official unit symbols, canonical conversion paths, numeric
+ * boundaries, conversion error categories, bit/byte bridges, encoding-aware
+ * formatting, and quantity-specific display policies.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -79,7 +81,7 @@ struct EmptySymbolUnitSet {};
 
 template <> struct UnitRegistry<EmptySymbolUnitSet> {
   static constexpr std::array<UnitDefinition, 1U> units{{
-      {.symbol = "", .scale = DecimalScale(0)},
+    {.symbol = "", .scale = DecimalScale(0)},
   }};
 };
 
@@ -87,8 +89,8 @@ struct DuplicateSymbolUnitSet {};
 
 template <> struct UnitRegistry<DuplicateSymbolUnitSet> {
   static constexpr std::array<UnitDefinition, 2U> units{{
-      {.symbol = "shared", .scale = DecimalScale(0)},
-      {.symbol = "shared", .scale = DecimalScale(1)},
+    {.symbol = "shared", .scale = DecimalScale(0)},
+    {.symbol = "shared", .scale = DecimalScale(1)},
   }};
 };
 
@@ -96,7 +98,7 @@ struct InvalidScaleUnitSet {};
 
 template <> struct UnitRegistry<InvalidScaleUnitSet> {
   static constexpr std::array<UnitDefinition, 1U> units{{
-      {.symbol = "invalid", .scale = SpecialScale(-1.0L)},
+    {.symbol = "invalid", .scale = SpecialScale(-1.0L)},
   }};
 };
 
@@ -106,7 +108,7 @@ template <> struct QuantityTraits<SignedUnsignedTag> {
   using unit_set = LengthUnitSet;
   static constexpr QuantityDomain domain{QuantityDomain::Signed};
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::AutomaticScale};
+    QuantityFormatPolicy::AutomaticScale};
   static constexpr std::string_view fixed_display_unit{};
   static constexpr std::int8_t default_precision{7};
 };
@@ -117,7 +119,7 @@ template <> struct QuantityTraits<MissingFixedUnitTag> {
   using unit_set = LengthUnitSet;
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
   static constexpr QuantityFormatPolicy format_policy{
-      QuantityFormatPolicy::FixedUnit};
+    QuantityFormatPolicy::FixedUnit};
   static constexpr std::string_view fixed_display_unit{"absent"};
   static constexpr std::int8_t default_precision{7};
 };
@@ -256,45 +258,44 @@ static_assert(!std::is_convertible_v<Bits, Bytes>);
 
 consteval auto EveryPublicLiteralCompiles() -> bool {
   auto const activity = std::array{
-      1_Bq,   1_kBq,   1_MBq,   1_GBq,   1_TBq,   1_Ci,   1_mCi,   1_uCi,
-      1.0_Bq, 1.0_kBq, 1.0_MBq, 1.0_GBq, 1.0_TBq, 1.0_Ci, 1.0_mCi, 1.0_uCi};
+    1_Bq,   1_kBq,   1_MBq,   1_GBq,   1_TBq,   1_Ci,   1_mCi,   1_uCi,
+    1.0_Bq, 1.0_kBq, 1.0_MBq, 1.0_GBq, 1.0_TBq, 1.0_Ci, 1.0_mCi, 1.0_uCi};
   auto const angle = std::array{1_rad, 1_deg, 1.0_rad, 1.0_deg};
   auto const area =
-      std::array{1_pm2,   1_nm2,   1_um2,   1_mm2,   1_cm2,   1_m2,   1_km2,
-                 1.0_pm2, 1.0_nm2, 1.0_um2, 1.0_mm2, 1.0_cm2, 1.0_m2, 1.0_km2};
+    std::array{1_pm2,   1_nm2,   1_um2,   1_mm2,   1_cm2,   1_m2,   1_km2,
+               1.0_pm2, 1.0_nm2, 1.0_um2, 1.0_mm2, 1.0_cm2, 1.0_m2, 1.0_km2};
   auto const bits = std::array{
-      1_bit,     1_kbit,    1_Mbit,   1_Gbit,   1_Tbit,   1_Kibit,   1_Mibit,
-      1_Gibit,   1_Tibit,   1_b,      1_kb,     1_Mb,     1_Gb,      1_Tb,
-      1.0_bit,   1.0_kbit,  1.0_Mbit, 1.0_Gbit, 1.0_Tbit, 1.0_Kibit, 1.0_Mibit,
-      1.0_Gibit, 1.0_Tibit, 1.0_b,    1.0_kb,   1.0_Mb,   1.0_Gb,    1.0_Tb};
-  auto const bytes =
-      std::array{1_B,    1_kB,   1_MB,    1_GB,    1_TB,    1_KiB,
-                 1_MiB,  1_GiB,  1_TiB,   1.0_B,   1.0_kB,  1.0_MB,
-                 1.0_GB, 1.0_TB, 1.0_KiB, 1.0_MiB, 1.0_GiB, 1.0_TiB};
+    1_bit,     1_kbit,    1_Mbit,   1_Gbit,   1_Tbit,   1_Kibit,   1_Mibit,
+    1_Gibit,   1_Tibit,   1_b,      1_kb,     1_Mb,     1_Gb,      1_Tb,
+    1.0_bit,   1.0_kbit,  1.0_Mbit, 1.0_Gbit, 1.0_Tbit, 1.0_Kibit, 1.0_Mibit,
+    1.0_Gibit, 1.0_Tibit, 1.0_b,    1.0_kb,   1.0_Mb,   1.0_Gb,    1.0_Tb};
+  auto const bytes = std::array{
+    1_B,   1_kB,   1_MB,   1_GB,   1_TB,   1_KiB,   1_MiB,   1_GiB,   1_TiB,
+    1.0_B, 1.0_kB, 1.0_MB, 1.0_GB, 1.0_TB, 1.0_KiB, 1.0_MiB, 1.0_GiB, 1.0_TiB};
   auto const cross_section = std::array{
-      1_pb,     1_nb,      1_ub,      1_mb,      1_barn,    1_kbarn,  1_pbarn,
-      1_nbarn,  1_ubarn,   1_mbarn,   1.0_pb,    1.0_nb,    1.0_ub,   1.0_mb,
-      1.0_barn, 1.0_kbarn, 1.0_pbarn, 1.0_nbarn, 1.0_ubarn, 1.0_mbarn};
+    1_pb,     1_nb,      1_ub,      1_mb,      1_barn,    1_kbarn,  1_pbarn,
+    1_nbarn,  1_ubarn,   1_mbarn,   1.0_pb,    1.0_nb,    1.0_ub,   1.0_mb,
+    1.0_barn, 1.0_kbarn, 1.0_pbarn, 1.0_nbarn, 1.0_ubarn, 1.0_mbarn};
   auto const density = std::array{1_pg_pm3, 1_g_cm3, 1.0_pg_pm3, 1.0_g_cm3};
   auto const dose = std::array{1_meV_pg,   1_Gy,   1_mGy,   1_uGy,
                                1.0_meV_pg, 1.0_Gy, 1.0_mGy, 1.0_uGy};
   auto const energy =
-      std::array{1_meV,   1_eV,   1_keV,   1_MeV,   1_GeV,   1_TeV,
-                 1.0_meV, 1.0_eV, 1.0_keV, 1.0_MeV, 1.0_GeV, 1.0_TeV};
+    std::array{1_meV,   1_eV,   1_keV,   1_MeV,   1_GeV,   1_TeV,
+               1.0_meV, 1.0_eV, 1.0_keV, 1.0_MeV, 1.0_GeV, 1.0_TeV};
   auto const frequency = std::array{1_Hz,   1_kHz,   1_MHz,   1_GHz,   1_THz,
                                     1.0_Hz, 1.0_kHz, 1.0_MHz, 1.0_GHz, 1.0_THz};
   auto const length =
-      std::array{1_pm,   1_nm,   1_um,   1_mm,   1_cm,   1_m,   1_km,
-                 1.0_pm, 1.0_nm, 1.0_um, 1.0_mm, 1.0_cm, 1.0_m, 1.0_km};
+    std::array{1_pm,   1_nm,   1_um,   1_mm,   1_cm,   1_m,   1_km,
+               1.0_pm, 1.0_nm, 1.0_um, 1.0_mm, 1.0_cm, 1.0_m, 1.0_km};
   auto const mass = std::array{1_pg,   1_ng,   1_ug,   1_mg,   1_g,   1_kg,
                                1.0_pg, 1.0_ng, 1.0_ug, 1.0_mg, 1.0_g, 1.0_kg};
   auto const speed = std::array{1_pm_ps, 1_m_s, 1.0_pm_ps, 1.0_m_s};
   auto const time =
-      std::array{1_ps,   1_ns,   1_us,   1_ms,   1_s,   1_min,   1_h,
-                 1.0_ps, 1.0_ns, 1.0_us, 1.0_ms, 1.0_s, 1.0_min, 1.0_h};
+    std::array{1_ps,   1_ns,   1_us,   1_ms,   1_s,   1_min,   1_h,
+               1.0_ps, 1.0_ns, 1.0_us, 1.0_ms, 1.0_s, 1.0_min, 1.0_h};
   auto const volume =
-      std::array{1_pm3,   1_nm3,   1_um3,   1_mm3,   1_cm3,   1_m3,   1_km3,
-                 1.0_pm3, 1.0_nm3, 1.0_um3, 1.0_mm3, 1.0_cm3, 1.0_m3, 1.0_km3};
+    std::array{1_pm3,   1_nm3,   1_um3,   1_mm3,   1_cm3,   1_m3,   1_km3,
+               1.0_pm3, 1.0_nm3, 1.0_um3, 1.0_mm3, 1.0_cm3, 1.0_m3, 1.0_km3};
   static_cast<void>(activity);
   static_cast<void>(angle);
   static_cast<void>(area);
@@ -417,7 +418,7 @@ TEST(GGEMSUnitRegistryContractTest, AppliesTheNumericBoundaryContract) {
   auto const positive_above_half = MakeQuantity<Length>(1.5L, "pm");
   auto const negative_half = MakeQuantity<PositionCoordinate>(-0.5L, "pm");
   auto const negative_above_half =
-      MakeQuantity<PositionCoordinate>(-1.5L, "pm");
+    MakeQuantity<PositionCoordinate>(-1.5L, "pm");
   ASSERT_TRUE(positive_below_half.has_value());
   ASSERT_TRUE(positive_half.has_value());
   ASSERT_TRUE(positive_above_half.has_value());
@@ -430,9 +431,9 @@ TEST(GGEMSUnitRegistryContractTest, AppliesTheNumericBoundaryContract) {
   EXPECT_EQ(negative_above_half->value, -2LL);
 
   auto const maximum_length =
-      MakeQuantity<Length>(std::numeric_limits<std::uint64_t>::max(), "pm");
+    MakeQuantity<Length>(std::numeric_limits<std::uint64_t>::max(), "pm");
   auto const minimum_position = MakeQuantity<PositionCoordinate>(
-      std::numeric_limits<std::int64_t>::min(), "pm");
+    std::numeric_limits<std::int64_t>::min(), "pm");
   ASSERT_TRUE(maximum_length.has_value());
   ASSERT_TRUE(minimum_position.has_value());
   EXPECT_EQ(maximum_length->value, std::numeric_limits<std::uint64_t>::max());
@@ -459,10 +460,10 @@ TEST(GGEMSUnitRegistryContractTest, AppliesTheNumericBoundaryContract) {
 TEST(GGEMSUnitRegistryContractTest, ReportsEveryConversionErrorCategory) {
   auto const unsupported = MakeQuantity<Length>(1.0L, "parsec");
   auto const non_finite =
-      MakeQuantity<Length>(std::numeric_limits<long double>::infinity(), "pm");
+    MakeQuantity<Length>(std::numeric_limits<long double>::infinity(), "pm");
   auto const negative = MakeQuantity<Length>(-1, "pm");
   auto const overflow =
-      MakeQuantity<Length>(std::numeric_limits<std::uint64_t>::max(), "nm");
+    MakeQuantity<Length>(std::numeric_limits<std::uint64_t>::max(), "nm");
   auto const inexact = ConvertTo<std::uint64_t>(Length{1ULL}, "nm");
 
   ASSERT_FALSE(unsupported.has_value());
@@ -485,7 +486,7 @@ TEST(GGEMSUnitRegistryContractTest, BridgesBitsAndBytesExplicitlyAndExactly) {
   auto const bytes = TryConvertBitsToBytes(Bits{16ULL});
   auto const inexact_bytes = TryConvertBitsToBytes(Bits{7ULL});
   auto const overflowing_bits =
-      TryConvertBytesToBits(Bytes{std::numeric_limits<std::uint64_t>::max()});
+    TryConvertBytesToBits(Bytes{std::numeric_limits<std::uint64_t>::max()});
 
   ASSERT_TRUE(bits.has_value());
   ASSERT_TRUE(bytes.has_value());

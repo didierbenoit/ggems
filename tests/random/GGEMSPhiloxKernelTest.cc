@@ -72,11 +72,11 @@ constexpr std::size_t k_local_size{64U};
 
 constexpr std::size_t k_uniform4_blocks_per_particle{2U};
 constexpr std::size_t k_uniform4_value_count{
-    k_particle_count * k_uniform4_blocks_per_particle * 4U};
+  k_particle_count * k_uniform4_blocks_per_particle * 4U};
 
 constexpr auto k_padded_global_work_size =
-    ggems::ocl::detail::TryComputePaddedGlobalWorkSize(k_particle_count,
-                                                       k_local_size);
+  ggems::ocl::detail::TryComputePaddedGlobalWorkSize(k_particle_count,
+                                                     k_local_size);
 
 static_assert(k_padded_global_work_size.has_value());
 
@@ -98,7 +98,7 @@ auto SplitMix64(std::uint64_t value) noexcept -> std::uint64_t {
 // =============================================================================
 
 auto MakePhiloxState(std::uint64_t seed, std::uint64_t index) noexcept
-    -> PhiloxState {
+  -> PhiloxState {
   std::uint64_t key = SplitMix64(seed);
 
   return PhiloxState{.counter_0 = 0U,
@@ -113,7 +113,7 @@ auto MakePhiloxState(std::uint64_t seed, std::uint64_t index) noexcept
 // =============================================================================
 
 auto AreStatesEqual(PhiloxState const &lhs, PhiloxState const &rhs) noexcept
-    -> bool {
+  -> bool {
   return lhs.counter_0 == rhs.counter_0 && lhs.counter_1 == rhs.counter_1 &&
          lhs.counter_2 == rhs.counter_2 && lhs.counter_3 == rhs.counter_3 &&
          lhs.key_0 == rhs.key_0 && lhs.key_1 == rhs.key_1;
@@ -129,7 +129,7 @@ auto AreStatesEqual(PhiloxState const &lhs, PhiloxState const &rhs) noexcept
 
 TEST(GGEMSPhiloxKernelTest, UniformValuesAreInsideUnitInterval) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -150,10 +150,10 @@ TEST(GGEMSPhiloxKernelTest, UniformValuesAreInsideUnitInterval) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_philox_uniform", build_options);
+      context, kernel_test_root, "random_philox_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_philox_uniform");
 
@@ -164,9 +164,9 @@ TEST(GGEMSPhiloxKernelTest, UniformValuesAreInsideUnitInterval) {
     std::size_t value_bytes = k_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<PhiloxState *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -210,7 +210,7 @@ TEST(GGEMSPhiloxKernelTest, UniformValuesAreInsideUnitInterval) {
 
 TEST(GGEMSPhiloxKernelTest, SequenceContinuesBetweenKernelCalls) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -231,10 +231,10 @@ TEST(GGEMSPhiloxKernelTest, SequenceContinuesBetweenKernelCalls) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_philox_uniform", build_options);
+      context, kernel_test_root, "random_philox_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_philox_uniform");
 
@@ -245,9 +245,9 @@ TEST(GGEMSPhiloxKernelTest, SequenceContinuesBetweenKernelCalls) {
     std::size_t value_bytes = k_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<PhiloxState *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -307,7 +307,7 @@ TEST(GGEMSPhiloxKernelTest, SequenceContinuesBetweenKernelCalls) {
 
 TEST(GGEMSPhiloxKernelTest, SameSeedProducesSameFirstSequence) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -328,10 +328,10 @@ TEST(GGEMSPhiloxKernelTest, SameSeedProducesSameFirstSequence) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_philox_uniform", build_options);
+      context, kernel_test_root, "random_philox_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_philox_uniform");
 
@@ -342,9 +342,9 @@ TEST(GGEMSPhiloxKernelTest, SameSeedProducesSameFirstSequence) {
     std::size_t value_bytes = k_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<PhiloxState *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -401,7 +401,7 @@ TEST(GGEMSPhiloxKernelTest, SameSeedProducesSameFirstSequence) {
 
 TEST(GGEMSPhiloxKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -422,10 +422,10 @@ TEST(GGEMSPhiloxKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_philox_uniform", build_options);
+      context, kernel_test_root, "random_philox_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_philox_uniform");
 
@@ -436,9 +436,9 @@ TEST(GGEMSPhiloxKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
     std::size_t value_bytes = k_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<PhiloxState *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -504,7 +504,7 @@ TEST(GGEMSPhiloxKernelTest, DifferentSeedsProduceDifferentFirstSequence) {
 
 TEST(GGEMSPhiloxKernelTest, RandomStatesAreAdvancedByKernelExecution) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -525,10 +525,10 @@ TEST(GGEMSPhiloxKernelTest, RandomStatesAreAdvancedByKernelExecution) {
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_philox_uniform", build_options);
+      context, kernel_test_root, "random_philox_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_philox_uniform");
 
@@ -539,9 +539,9 @@ TEST(GGEMSPhiloxKernelTest, RandomStatesAreAdvancedByKernelExecution) {
     std::size_t value_bytes = k_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<PhiloxState *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -553,7 +553,7 @@ TEST(GGEMSPhiloxKernelTest, RandomStatesAreAdvancedByKernelExecution) {
 
     for (std::size_t i = 0U; i < k_particle_count; ++i) {
       PhiloxState state =
-          MakePhiloxState(k_seed, static_cast<std::uint64_t>(i));
+        MakePhiloxState(k_seed, static_cast<std::uint64_t>(i));
 
       states[i] = state;
       initial_states[i] = state;
@@ -583,7 +583,7 @@ TEST(GGEMSPhiloxKernelTest, RandomStatesAreAdvancedByKernelExecution) {
 
       EXPECT_EQ(states[i].counter_0,
                 initial_states[i].counter_0 +
-                    static_cast<std::uint32_t>(k_samples_per_particle));
+                  static_cast<std::uint32_t>(k_samples_per_particle));
 
       EXPECT_EQ(states[i].counter_1, initial_states[i].counter_1);
       EXPECT_EQ(states[i].counter_2, initial_states[i].counter_2);
@@ -614,7 +614,7 @@ TEST(GGEMSPhiloxKernelTest, RandomStatesAreAdvancedByKernelExecution) {
 TEST(GGEMSPhiloxKernelTest,
      Uniform4ValuesAreInsideUnitIntervalAndAdvanceByBlock) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -635,10 +635,10 @@ TEST(GGEMSPhiloxKernelTest,
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
     std::string build_options =
-        std::format("-I{}", kernel_root.generic_string());
+      std::format("-I{}", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_philox_uniform4", build_options);
+      context, kernel_test_root, "random_philox_uniform4", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_philox_uniform4");
 
@@ -649,9 +649,9 @@ TEST(GGEMSPhiloxKernelTest,
     std::size_t value_bytes = k_uniform4_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<PhiloxState *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -663,7 +663,7 @@ TEST(GGEMSPhiloxKernelTest,
 
     for (std::size_t i = 0U; i < k_particle_count; ++i) {
       PhiloxState state =
-          MakePhiloxState(k_seed, static_cast<std::uint64_t>(i));
+        MakePhiloxState(k_seed, static_cast<std::uint64_t>(i));
 
       states[i] = state;
       initial_states[i] = state;
@@ -692,7 +692,7 @@ TEST(GGEMSPhiloxKernelTest,
     for (std::size_t i = 0U; i < k_particle_count; ++i) {
       EXPECT_EQ(states[i].counter_0,
                 initial_states[i].counter_0 +
-                    static_cast<std::uint32_t>(k_uniform4_blocks_per_particle));
+                  static_cast<std::uint32_t>(k_uniform4_blocks_per_particle));
 
       EXPECT_EQ(states[i].counter_1, initial_states[i].counter_1);
       EXPECT_EQ(states[i].counter_2, initial_states[i].counter_2);
@@ -712,7 +712,7 @@ TEST(GGEMSPhiloxKernelTest,
 
 TEST(GGEMSPhiloxKernelTest, GenericRandomUniformUsesSelectedPhiloxEngine) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -732,11 +732,11 @@ TEST(GGEMSPhiloxKernelTest, GenericRandomUniformUsesSelectedPhiloxEngine) {
     std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
-    std::string build_options = std::format("-I{} -DGGEMS_RANDOM_ENGINE=3",
-                                            kernel_root.generic_string());
+    std::string build_options =
+      std::format("-I{} -DGGEMS_RANDOM_ENGINE=3", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_generic_uniform", build_options);
+      context, kernel_test_root, "random_generic_uniform", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_generic_uniform");
 
@@ -747,9 +747,9 @@ TEST(GGEMSPhiloxKernelTest, GenericRandomUniformUsesSelectedPhiloxEngine) {
     std::size_t value_bytes = k_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<PhiloxState *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -800,7 +800,7 @@ TEST(GGEMSPhiloxKernelTest, GenericRandomUniformUsesSelectedPhiloxEngine) {
 
 TEST(GGEMSPhiloxKernelTest, GenericRandomUniform4UsesSelectedPhiloxEngine) {
   auto const &compiler_devices =
-      ggems::test::GetOpenCLCompilerDeviceInventory();
+    ggems::test::GetOpenCLCompilerDeviceInventory();
 
   std::size_t tested_device_count{0U};
 
@@ -820,11 +820,11 @@ TEST(GGEMSPhiloxKernelTest, GenericRandomUniform4UsesSelectedPhiloxEngine) {
     std::filesystem::path kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path kernel_test_root = kernel_root / "tests";
 
-    std::string build_options = std::format("-I{} -DGGEMS_RANDOM_ENGINE=3",
-                                            kernel_root.generic_string());
+    std::string build_options =
+      std::format("-I{} -DGGEMS_RANDOM_ENGINE=3", kernel_root.generic_string());
 
     auto const &program = opencl.GetOrCreateProgram(
-        context, kernel_test_root, "random_generic_uniform4", build_options);
+      context, kernel_test_root, "random_generic_uniform4", build_options);
 
     cl::Kernel raw_kernel = program.CreateKernel("random_generic_uniform4");
 
@@ -835,10 +835,10 @@ TEST(GGEMSPhiloxKernelTest, GenericRandomUniform4UsesSelectedPhiloxEngine) {
     std::size_t value_bytes = k_uniform4_value_count * sizeof(float);
 
     auto states_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{state_bytes});
 
     auto values_buffer =
-        context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
+      context.CreateSVMBuffer(ggems::units::Bytes{value_bytes});
 
     auto *states = static_cast<PhiloxState *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
@@ -850,7 +850,7 @@ TEST(GGEMSPhiloxKernelTest, GenericRandomUniform4UsesSelectedPhiloxEngine) {
 
     for (std::size_t i = 0U; i < k_particle_count; ++i) {
       PhiloxState state =
-          MakePhiloxState(k_seed, static_cast<std::uint64_t>(i));
+        MakePhiloxState(k_seed, static_cast<std::uint64_t>(i));
 
       states[i] = state;
       initial_states[i] = state;
@@ -879,7 +879,7 @@ TEST(GGEMSPhiloxKernelTest, GenericRandomUniform4UsesSelectedPhiloxEngine) {
     for (std::size_t i = 0U; i < k_particle_count; ++i) {
       EXPECT_EQ(states[i].counter_0,
                 initial_states[i].counter_0 +
-                    static_cast<std::uint32_t>(k_uniform4_blocks_per_particle));
+                  static_cast<std::uint32_t>(k_uniform4_blocks_per_particle));
 
       EXPECT_EQ(states[i].counter_1, initial_states[i].counter_1);
       EXPECT_EQ(states[i].counter_2, initial_states[i].counter_2);

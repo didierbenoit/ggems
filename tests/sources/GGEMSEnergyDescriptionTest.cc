@@ -15,22 +15,22 @@ namespace {
 // =============================================================================
 
 [[nodiscard]] auto DescribeSnapshotSource(
-    ggems::core::sources::GGEMSSourceRunSnapshot const &snapshot,
-    std::size_t source_index) -> std::string {
+  ggems::core::sources::GGEMSSourceRunSnapshot const &snapshot,
+  std::size_t source_index) -> std::string {
   return ggems::core::sources::DescribeSource(
-      snapshot.GetRecords().at(source_index),
-      snapshot.GetRanges().at(source_index).primary_count,
-      snapshot.GetEnergyDistributionRecords().at(source_index),
-      snapshot.GetEnergyValuesMicroElectronVolt());
+    snapshot.GetRecords().at(source_index),
+    snapshot.GetRanges().at(source_index).primary_count,
+    snapshot.GetEnergyDistributionRecords().at(source_index),
+    snapshot.GetEnergyValuesMicroElectronVolt());
 }
 
 // =============================================================================
 // =============================================================================
 
 auto ExpectContains(std::string const &description, std::string_view expected)
-    -> void {
+  -> void {
   EXPECT_NE(description.find(expected), std::string::npos)
-      << "Description: " << description;
+    << "Description: " << description;
 }
 
 } // namespace
