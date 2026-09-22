@@ -386,8 +386,6 @@ IntegrateInverseStopping(LeptonSurrogateStopping const &stopping,
     }
   }
 
-  // The density correction only lowers the energy; reject first so that a
-  // zero length never reaches its division.
   if (provisional < min_energy) {
     throw GGEMSRecoverable{std::format(
         "{} Production Cut resolves below the 0.99 keV converter domain.",

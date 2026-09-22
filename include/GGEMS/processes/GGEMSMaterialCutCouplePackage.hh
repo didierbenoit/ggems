@@ -20,6 +20,11 @@ struct GGEMSMaterialCutCouple {
       -> std::strong_ordering = default;
 };
 
+struct GGEMSProductionCutContextProvenance {
+  std::uint32_t material_index;
+  GGEMSResolvedProductionCuts cuts;
+};
+
 class GGEMSMaterialCutCouplePackage {
 public:
   GGEMSMaterialCutCouplePackage(
@@ -37,9 +42,15 @@ public:
     return context_couple_ids_;
   }
 
+  [[nodiscard]] auto GetContextProvenance() const noexcept
+      -> std::span<GGEMSProductionCutContextProvenance const> {
+    return context_provenance_;
+  }
+
 private:
   std::vector<GGEMSMaterialCutCouple> couples_;
   std::vector<std::uint32_t> context_couple_ids_;
+  std::vector<GGEMSProductionCutContextProvenance> context_provenance_;
 };
 
 } // namespace ggems::core::processes

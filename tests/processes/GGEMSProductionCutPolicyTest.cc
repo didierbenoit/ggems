@@ -223,6 +223,100 @@ TEST(GGEMSProductionCutPolicyTest, ProvenanceDoesNotChangeResolvedLengths) {
 // =============================================================================
 // =============================================================================
 
+TEST(GGEMSProductionCutPolicyTest, ReportsTheWinningScopeOfEveryChannel) {
+  using Scope = processes::GGEMSProductionCutScope;
+
+  auto policy = MakeGlobalPolicy();
+  policy.materials.push_back({
+      .material_index = 5U,
+      .lengths =
+          {
+              .gamma = std::nullopt,
+              .electron = 20_um,
+              .positron = 30_um,
+              .proton = std::nullopt,
+          },
+  });
+
+  processes::GGEMSProductionCutContext const context{
+      .material_index = 5U,
+      .volume =
+          {
+              .gamma = std::nullopt,
+              .electron = std::nullopt,
+              .positron = 300_nm,
+              .proton = std::nullopt,
+          },
+  };
+
+  auto const resolved = processes::ResolveProductionCuts(policy, context);
+
+  EXPECT_EQ(resolved.lengths, (processes::GGEMSResolvedProductionCutLengths{
+                                  1_mm, 20_um, 300_nm, 4_mm}));
+  EXPECT_EQ(resolved.scopes, (std::array{Scope::Global, Scope::Material,
+                                         Scope::Volume, Scope::Global}));
+  EXPECT_EQ(resolved.lengths,
+            processes::ResolveProductionCutLengths(policy, context));
+
+  auto const unrelated = processes::ResolveProductionCuts(
+      policy, {.material_index = 6U, .volume = {}});
+  EXPECT_EQ(unrelated.scopes, (std::array{Scope::Global, Scope::Global,
+                                          Scope::Global, Scope::Global}));
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSProductionCutPolicyTest, AnOverrideWinsEvenWithTheGlobalValue) {
+  using Scope = processes::GGEMSProductionCutScope;
+
+  auto policy = MakeGlobalPolicy();
+  policy.materials.push_back({
+      .material_index = 0U,
+      .lengths =
+          {
+              .gamma = 1_mm,
+              .electron = std::nullopt,
+              .positron = std::nullopt,
+              .proton = std::nullopt,
+          },
+  });
+
+  auto const resolved = processes::ResolveProductionCuts(
+      policy, {
+                  .material_index = 0U,
+                  .volume =
+                      {
+                          .gamma = std::nullopt,
+                          .electron = 2_mm,
+                          .positron = units::Length{.value = 0U},
+                          .proton = std::nullopt,
+                      },
+              });
+
+  EXPECT_EQ(resolved.scopes[0], Scope::Material);
+  EXPECT_EQ(resolved.scopes[1], Scope::Volume);
+  EXPECT_EQ(resolved.scopes[2], Scope::Volume);
+  EXPECT_EQ(resolved.lengths[2].value, 0U);
+  EXPECT_EQ(resolved.scopes[3], Scope::Global);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSProductionCutPolicyTest, NamesChannelsAndScopes) {
+  using Scope = processes::GGEMSProductionCutScope;
+
+  EXPECT_EQ(processes::ProductionCutChannelName(Channel::Gamma), "Gamma");
+  EXPECT_EQ(processes::ProductionCutChannelName(Channel::Proton), "Proton");
+  EXPECT_EQ(processes::ProductionCutScopeName(Scope::Global), "Global");
+  EXPECT_EQ(processes::ProductionCutScopeName(Scope::Material), "Material");
+  EXPECT_EQ(processes::ProductionCutScopeName(Scope::Volume), "Volume");
+}
+
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSProductionCutPolicyTest, IncompleteGlobalPolicyIsRejected) {
   for (auto const channel : processes::k_production_cut_channels) {
     SCOPED_TRACE(processes::ProductionCutChannelIndex(channel));

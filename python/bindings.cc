@@ -6,6 +6,7 @@ void BindLogging(py::module_ &module);
 void BindOpenCL(py::module_ &module);
 void BindRandom(py::module_ &module);
 void BindMaterials(py::module_ &module);
+void BindCuts(py::module_ &module);
 void BindRadionuclide(py::module_ &module);
 void BindSource(py::module_ &module);
 void BindObserver(py::module_ &module);
@@ -26,6 +27,7 @@ PYBIND11_MODULE(ggems, module) {
   auto opencl = module.def_submodule("opencl", "GGEMS OpenCL module");
   auto random = module.def_submodule("rndm", "GGEMS random module");
   auto materials = module.def_submodule("materials", "GGEMS materials module");
+  auto cuts = module.def_submodule("cuts", "GGEMS Production cuts module");
   auto radionuclide =
       module.def_submodule("radionuclide", "GGEMS radionuclide module");
   auto source = module.def_submodule("source", "GGEMS source module");
@@ -41,6 +43,7 @@ PYBIND11_MODULE(ggems, module) {
   BindRadionuclide(radionuclide);
   BindRandom(random);
   BindMaterials(materials);
+  BindCuts(cuts);
   BindSource(source);
   BindObserver(observer);
   BindRun(run);

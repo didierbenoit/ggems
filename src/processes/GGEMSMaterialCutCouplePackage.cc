@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
-#include <limits>
 #include <span>
 #include <vector>
 
@@ -86,10 +85,19 @@ GGEMSMaterialCutCouplePackage::GGEMSMaterialCutCouplePackage(
 
   std::vector<ResolvedContext> resolved_contexts;
   resolved_contexts.reserve(contexts.size());
+  context_provenance_.reserve(contexts.size());
+
   for (auto const &context : contexts) {
+    auto const cuts = ResolveProductionCuts(policy, context);
+
     resolved_contexts.push_back({
         .material_id = RequireMaterialId(material_ids, context.material_index),
-        .lengths = ResolveProductionCutLengths(policy, context),
+        .lengths = cuts.lengths,
+    });
+
+    context_provenance_.push_back({
+        .material_index = context.material_index,
+        .cuts = cuts,
     });
   }
 

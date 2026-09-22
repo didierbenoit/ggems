@@ -48,6 +48,7 @@ struct QuantityConversionContext {
   /*!
    * \brief Human-readable quantity name used in diagnostics.
    */
+
   std::string_view quantity_name;
   /*!
    * \brief Subject used when reporting an unsupported unit.

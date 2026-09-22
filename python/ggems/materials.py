@@ -26,6 +26,10 @@ add = _native.add
 verbose = _native.verbose
 describe = _native.describe
 register = _native.register
+inspect = _native.inspect
+compile_registered = _native.compile_registered
+IsotopeProfile = _native.IsotopeProfile
+MaterialRegistration = _native.MaterialRegistration
 
 
 def load_json(path: str | PathLike[str]) -> int:

@@ -76,6 +76,7 @@ source = ggems.source
 run = ggems.run
 observer = ggems.observer
 radionuclide = ggems.radionuclide
+cuts = ggems.cuts
 
 from . import materials  # noqa: E402
 
@@ -89,6 +90,7 @@ __all__ = [
     "opencl",
     "rndm",
     "materials",
+    "cuts",
     "source",
     "run",
     "observer",

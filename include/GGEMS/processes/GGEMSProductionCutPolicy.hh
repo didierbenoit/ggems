@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <string_view>
 #include <vector>
 
 #include "GGEMS/units/GGEMSLengthUnits.hh"
@@ -31,6 +32,42 @@ ProductionCutChannelIndex(GGEMSProductionCutChannel channel) noexcept
   return static_cast<std::size_t>(channel);
 }
 
+[[nodiscard]] constexpr auto
+ProductionCutChannelName(GGEMSProductionCutChannel channel) noexcept
+    -> std::string_view {
+  switch (channel) {
+  case GGEMSProductionCutChannel::Gamma:
+    return "Gamma";
+  case GGEMSProductionCutChannel::Electron:
+    return "Electron";
+  case GGEMSProductionCutChannel::Positron:
+    return "Positron";
+  case GGEMSProductionCutChannel::Proton:
+    return "Proton";
+  }
+  return "Unknown";
+}
+
+enum class GGEMSProductionCutScope : std::uint8_t {
+  Global = 0U,
+  Material = 1U,
+  Volume = 2U,
+};
+
+[[nodiscard]] constexpr auto
+ProductionCutScopeName(GGEMSProductionCutScope scope) noexcept
+    -> std::string_view {
+  switch (scope) {
+  case GGEMSProductionCutScope::Global:
+    return "Global";
+  case GGEMSProductionCutScope::Material:
+    return "Material";
+  case GGEMSProductionCutScope::Volume:
+    return "Volume";
+  }
+  return "Unknown";
+}
+
 struct GGEMSProductionCutLengths {
   std::optional<units::Length> gamma;
   std::optional<units::Length> electron;
@@ -55,8 +92,18 @@ struct GGEMSProductionCutContext {
 
 using GGEMSResolvedProductionCutLengths = std::array<units::Length, 4U>;
 
+struct GGEMSResolvedProductionCuts {
+  GGEMSResolvedProductionCutLengths lengths;
+  std::array<GGEMSProductionCutScope, 4U> scopes;
+};
+
 auto RequireAdmissibleProductionCutPolicy(
     GGEMSProductionCutPolicy const &policy) -> void;
+
+[[nodiscard]] auto
+ResolveProductionCuts(GGEMSProductionCutPolicy const &policy,
+                      GGEMSProductionCutContext const &context)
+    -> GGEMSResolvedProductionCuts;
 
 [[nodiscard]] auto
 ResolveProductionCutLengths(GGEMSProductionCutPolicy const &policy,

@@ -2,6 +2,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <span>
 #include <type_traits>
 #include <vector>
@@ -238,6 +239,96 @@ TEST_F(GGEMSMaterialCutCouplePackageTest,
   EXPECT_EQ(package.GetContextCoupleIds()[0], 0U);
   EXPECT_EQ(package.GetContextCoupleIds()[1], 0U);
   EXPECT_EQ(package.GetContextCoupleIds()[2], 0U);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSMaterialCutCouplePackageTest,
+       ProvenanceStaysVisibleWithoutDefiningTheCouple) {
+  using Scope = processes::GGEMSProductionCutScope;
+
+  auto policy = MakePolicy();
+  policy.global.electron = 3_mm;
+  policy.materials.push_back({
+      .material_index = k_water_alias,
+      .lengths =
+          {
+              .gamma = std::nullopt,
+              .electron = 1_mm,
+              .positron = std::nullopt,
+              .proton = std::nullopt,
+          },
+  });
+  auto const global_electron = MakePolicy();
+
+  std::vector<processes::GGEMSProductionCutContext> const contexts{
+      {
+          .material_index = k_water,
+          .volume =
+              {
+                  .gamma = std::nullopt,
+                  .electron = 1_mm,
+                  .positron = std::nullopt,
+                  .proton = std::nullopt,
+              },
+      },
+      {.material_index = k_water_alias, .volume = {}},
+  };
+
+  processes::GGEMSMaterialCutCouplePackage const package{em_package_, policy,
+                                                         contexts};
+  processes::GGEMSMaterialCutCouplePackage const reference{
+      em_package_, global_electron, contexts};
+
+  auto const electron = processes::ProductionCutChannelIndex(Channel::Electron);
+  auto const provenance = package.GetContextProvenance();
+
+  ASSERT_EQ(provenance.size(), contexts.size());
+  EXPECT_EQ(provenance[0].material_index, k_water);
+  EXPECT_EQ(provenance[1].material_index, k_water_alias);
+  EXPECT_EQ(provenance[0].cuts.scopes[electron], Scope::Volume);
+  EXPECT_EQ(provenance[1].cuts.scopes[electron], Scope::Material);
+  EXPECT_EQ(provenance[0].cuts.lengths, provenance[1].cuts.lengths);
+
+  // Same Material identity and thresholds: one couple, whatever the scope.
+  ASSERT_EQ(package.GetCouples().size(), 1U);
+  EXPECT_TRUE(std::ranges::equal(package.GetCouples(), reference.GetCouples()));
+  EXPECT_EQ(package.GetContextCoupleIds()[0], package.GetContextCoupleIds()[1]);
+
+  for (std::size_t index = 0U; index < contexts.size(); ++index) {
+    auto const expected =
+        processes::ResolveProductionCuts(policy, contexts[index]);
+    EXPECT_EQ(provenance[index].cuts.lengths, expected.lengths);
+    EXPECT_EQ(provenance[index].cuts.scopes, expected.scopes);
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST_F(GGEMSMaterialCutCouplePackageTest,
+       ProvenanceOutlivesTheAuthoringInputs) {
+  auto policy =
+      std::make_unique<processes::GGEMSProductionCutPolicy>(MakePolicy());
+  auto contexts =
+      std::make_unique<std::vector<processes::GGEMSProductionCutContext>>(
+          std::vector<processes::GGEMSProductionCutContext>{
+              {.material_index = k_aluminum, .volume = {}},
+          });
+
+  processes::GGEMSMaterialCutCouplePackage const package{em_package_, *policy,
+                                                         *contexts};
+  auto const couples = std::vector<processes::GGEMSMaterialCutCouple>(
+      package.GetCouples().begin(), package.GetCouples().end());
+
+  policy->global.gamma = 9_mm;
+  policy.reset();
+  contexts.reset();
+
+  ASSERT_EQ(package.GetContextProvenance().size(), 1U);
+  EXPECT_EQ(package.GetContextProvenance()[0].cuts.lengths[0], 1_mm);
+  EXPECT_TRUE(std::ranges::equal(package.GetCouples(), couples));
 }
 
 // =============================================================================
