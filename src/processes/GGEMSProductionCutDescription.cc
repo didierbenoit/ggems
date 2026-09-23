@@ -1,14 +1,19 @@
 #include <array>
 #include <cstddef>
 #include <format>
+#include <span>
 #include <string>
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/logging/GGEMSLogMacros.hh"
 #include "GGEMS/processes/GGEMSMaterialCutCouplePackage.hh"
+#include "GGEMS/processes/GGEMSProductionCutConverter.hh"
 #include "GGEMS/processes/GGEMSProductionCutDescription.hh"
 #include "GGEMS/processes/GGEMSProductionCutPolicy.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
+#include "GGEMS/units/GGEMSLengthUnits.hh"
+#include "GGEMS/materials/GGEMSMaterial.hh"
+#include "GGEMS/materials/GGEMSEMMaterialPackage.hh"
 
 namespace ggems::core::processes {
 
@@ -20,11 +25,6 @@ InspectProductionCutContext(GGEMSMaterialCutCouplePackage const &package,
                             std::size_t context_index)
   -> GGEMSProductionCutContextInspection {
   auto const provenance = package.GetContextProvenance();
-
-  if (context_index >= provenance.size()) {
-    throw GGEMSRecoverable{
-      std::format("Unknown Production-Cut context {}.", context_index)};
-  }
 
   auto const &context = provenance[context_index];
   auto const couple_id = package.GetContextCoupleIds()[context_index];
@@ -87,6 +87,65 @@ auto VerboseProductionCutContext(GGEMSMaterialCutCouplePackage const &package,
                                  std::size_t context_index) -> void {
   GGEMS_INFO("Cuts", "{}",
              DescribeProductionCutContext(package, context_index));
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto DescribeProductionCuts() -> std::string {
+  auto const &global = GetProductionCutPolicy().global;
+
+  return std::format("Production Cuts"
+                     "\n  Gamma    : {}"
+                     "\n  Electron : {}"
+                     "\n  Positron : {}"
+                     "\n  Proton   : {}",
+                     units::HumanReadable(*global.gamma),
+                     units::HumanReadable(*global.electron),
+                     units::HumanReadable(*global.positron),
+                     units::HumanReadable(*global.proton));
+}
+
+// =============================================================================
+// =============================================================================
+
+auto VerboseProductionCuts() -> void {
+  GGEMS_INFO("Cuts", "\n{}\n", DescribeProductionCuts());
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto
+DescribeProductionCutsForMaterial(materials::GGEMSMaterial const &material,
+                                  units::Length reference_length)
+  -> std::string {
+  std::string description = std::format("  Production Cuts at {}",
+                                        units::HumanReadable(reference_length));
+
+  if (material.GetElementalConstituents().empty()) {
+    description += "\n    not applicable";
+    return description;
+  }
+
+  materials::GGEMSEMMaterialPackage const package{
+    std::span<materials::GGEMSMaterial const>{&material, 1U}};
+
+  for (auto const channel : k_production_cut_channels) {
+    try {
+      auto const threshold =
+        ConvertProductionCutLength(channel, reference_length, package, 0U);
+
+      description +=
+        std::format("\n    {:<8} : {}", ProductionCutChannelName(channel),
+                    units::HumanReadable(threshold));
+    } catch (GGEMSRecoverable const &) {
+      description += std::format("\n    {:<8} : outside converter domain",
+                                 ProductionCutChannelName(channel));
+    }
+  }
+
+  return description;
 }
 
 } // namespace ggems::core::processes

@@ -31,6 +31,7 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -39,6 +40,7 @@
 
 #include "detail/GGEMSPythonQuantityConversion.hh"
 
+#include "GGEMS/logging/GGEMSLogMacros.hh"
 #include "GGEMS/materials/GGEMSElementCatalog.hh"
 #include "GGEMS/materials/GGEMSIsotope.hh"
 #include "GGEMS/materials/GGEMSIsotopicComposition.hh"
@@ -47,13 +49,19 @@
 #include "GGEMS/materials/GGEMSMaterialDescription.hh"
 #include "GGEMS/materials/GGEMSMaterialManager.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
+#include "GGEMS/processes/GGEMSProductionCutDescription.hh"
 #include "GGEMS/units/GGEMSDensityUnits.hh"
+#include "GGEMS/units/GGEMSLengthUnits.hh"
 
 namespace py = pybind11;
 
 namespace {
 
 namespace materials = ggems::core::materials;
+namespace builtins = ggems::core::materials::builtins;
+namespace processes = ggems::core::processes;
+
+using ggems::units::operator""_mm;
 
 // =============================================================================
 // =============================================================================
@@ -112,6 +120,44 @@ namespace materials = ggems::core::materials;
   };
 }
 
+// =============================================================================
+// =============================================================================
+
+auto VerboseMaterial(materials::GGEMSMaterial const &material,
+                     materials::GGEMSMaterialInspection const &inspection)
+  -> void {
+  auto description = materials::DescribeMaterial(inspection);
+  description += '\n';
+  description += processes::DescribeProductionCutsForMaterial(material, 1_mm);
+
+  GGEMS_INFO("Material", "\n{}\n", description);
+}
+
+// =============================================================================
+// =============================================================================
+
+auto VerboseMaterial(materials::GGEMSMaterialManager const &manager,
+                     std::string_view name) -> void {
+  if (auto const index = manager.FindIndex(name); index.has_value()) {
+    VerboseMaterial(manager.Require(*index),
+                    materials::InspectMaterial(manager, *index));
+    return;
+  }
+
+  if (auto const *material = manager.FindCustom(name); material != nullptr) {
+    auto inspection = materials::InspectMaterial(*material);
+    inspection.registration =
+      materials::GGEMSMaterialRegistration::Unregistered;
+    VerboseMaterial(*material, inspection);
+    return;
+  }
+
+  auto material = builtins::BuildBuiltInMaterial(name);
+  auto inspection = materials::InspectMaterial(material);
+  inspection.registration = materials::GGEMSMaterialRegistration::Unregistered;
+  VerboseMaterial(material, inspection);
+}
+
 } // namespace
 
 // =============================================================================
@@ -123,8 +169,6 @@ namespace materials = ggems::core::materials;
  * \param module Python materials submodule.
  */
 auto BindMaterials(py::module_ &module) -> void {
-  namespace builtins = ggems::core::materials::builtins;
-
   // === === ===
   module.def(
     "available",
@@ -132,12 +176,11 @@ auto BindMaterials(py::module_ &module) -> void {
       auto const &manager = materials::GGEMSMaterialManager::GetInstance();
 
       for (auto const name : builtins::GetAvailableMaterialNames()) {
-        materials::VerboseMaterial(materials::InspectMaterial(manager, name));
+        VerboseMaterial(manager, name);
       }
 
       for (auto const &material : manager.GetCustomMaterials()) {
-        materials::VerboseMaterial(
-          materials::InspectMaterial(manager, material.GetName()));
+        VerboseMaterial(manager, material.GetName());
       }
     },
     R"doc(
@@ -145,6 +188,9 @@ Print all available GGEMS materials.
 
 The output includes all built-in materials and all custom materials that have
 been added by the user.
+
+Each material report includes reference Production-Cut thresholds evaluated at
+a 1 mm Cut length.
 
 Available materials are not necessarily registered. A material becomes
 registered when it is actually used by GGEMS.
@@ -158,12 +204,16 @@ registered when it is actually used by GGEMS.
       auto const registered = manager.GetMaterials();
 
       for (std::size_t index = 0U; index < registered.size(); ++index) {
-        materials::VerboseMaterial(materials::InspectMaterial(
-          manager, static_cast<std::uint32_t>(index)));
+        VerboseMaterial(registered[index],
+                        materials::InspectMaterial(
+                          manager, static_cast<std::uint32_t>(index)));
       }
     },
     R"doc(
 Print all materials currently registered by GGEMS.
+
+Each material report includes reference Production-Cut thresholds evaluated at
+a 1 mm Cut length.
 
 A registered material is a material that is actually referenced by the current
 GGEMS configuration. Materials that are merely available are not listed.
@@ -246,15 +296,15 @@ Examples:
   module.def(
     "verbose",
     [](std::string const &name) -> void {
-      materials::VerboseMaterial(materials::InspectMaterial(
-        materials::GGEMSMaterialManager::GetInstance(), name));
+      VerboseMaterial(materials::GGEMSMaterialManager::GetInstance(), name);
     },
     R"doc(
 Print the detailed scientific description of a material.
 
 The report includes the material density, elemental composition, isotopic
 composition, elemental number densities, electron densities, total atom density,
-and total electron density.
+total electron density, and reference Production-Cut thresholds evaluated at a
+1 mm Cut length.
 
 The material may be built-in, custom, or already registered.
 

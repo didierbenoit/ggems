@@ -80,8 +80,16 @@ struct GGEMSMaterialProductionCuts {
   GGEMSProductionCutLengths lengths;
 };
 
+inline constexpr auto k_default_production_cut_length =
+  units::operator""_mm(1ULL);
+
 struct GGEMSProductionCutPolicy {
-  GGEMSProductionCutLengths global;
+  GGEMSProductionCutLengths global{
+    .gamma = k_default_production_cut_length,
+    .electron = k_default_production_cut_length,
+    .positron = k_default_production_cut_length,
+    .proton = k_default_production_cut_length,
+  };
   std::vector<GGEMSMaterialProductionCuts> materials;
 };
 
@@ -97,17 +105,14 @@ struct GGEMSResolvedProductionCuts {
   std::array<GGEMSProductionCutScope, 4U> scopes;
 };
 
-auto RequireAdmissibleProductionCutPolicy(
-  GGEMSProductionCutPolicy const &policy) -> void;
+auto SetProductionCuts(GGEMSProductionCutLengths const &cuts) -> void;
+
+[[nodiscard]] auto GetProductionCutPolicy() noexcept
+  -> GGEMSProductionCutPolicy const &;
 
 [[nodiscard]] auto
 ResolveProductionCuts(GGEMSProductionCutPolicy const &policy,
                       GGEMSProductionCutContext const &context)
   -> GGEMSResolvedProductionCuts;
-
-[[nodiscard]] auto
-ResolveProductionCutLengths(GGEMSProductionCutPolicy const &policy,
-                            GGEMSProductionCutContext const &context)
-  -> GGEMSResolvedProductionCutLengths;
 
 } // namespace ggems::core::processes

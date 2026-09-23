@@ -3,11 +3,9 @@
 #include <compare>
 #include <cstddef>
 #include <cstdint>
-#include <format>
 #include <span>
 #include <vector>
 
-#include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSEMMaterialPackage.hh"
 #include "GGEMS/processes/GGEMSMaterialCutCouplePackage.hh"
 #include "GGEMS/processes/GGEMSProductionCutConverter.hh"
@@ -28,19 +26,6 @@ struct ResolvedContext {
   [[nodiscard]] auto operator<=>(ResolvedContext const &) const
     -> std::strong_ordering = default;
 };
-
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] auto
-RequireMaterialId(std::span<std::uint32_t const> material_ids,
-                  std::uint32_t material_index) -> std::uint32_t {
-  if (material_index >= material_ids.size()) {
-    throw GGEMSRecoverable{std::format(
-      "Production-Cut policy references unknown Material {}.", material_index)};
-  }
-  return material_ids[material_index];
-}
 
 // =============================================================================
 // =============================================================================
@@ -74,13 +59,7 @@ GGEMSMaterialCutCouplePackage::GGEMSMaterialCutCouplePackage(
   GGEMSProductionCutPolicy const &policy,
   std::span<GGEMSProductionCutContext const> contexts) {
 
-  RequireAdmissibleProductionCutPolicy(policy);
-
   auto const material_ids = materials.GetMaterialIds();
-
-  for (auto const &material : policy.materials) {
-    static_cast<void>(RequireMaterialId(material_ids, material.material_index));
-  }
 
   std::vector<ResolvedContext> resolved_contexts;
   resolved_contexts.reserve(contexts.size());
@@ -90,7 +69,7 @@ GGEMSMaterialCutCouplePackage::GGEMSMaterialCutCouplePackage(
     auto const cuts = ResolveProductionCuts(policy, context);
 
     resolved_contexts.push_back({
-      .material_id = RequireMaterialId(material_ids, context.material_index),
+      .material_id = material_ids[context.material_index],
       .lengths = cuts.lengths,
     });
 

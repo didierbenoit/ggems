@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 
+#include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/processes/GGEMSMaterialCutCouplePackage.hh"
 #include "GGEMS/processes/GGEMSProductionCutPolicy.hh"
 #include "GGEMS/units/GGEMSEnergyUnits.hh"
@@ -38,5 +39,14 @@ DescribeProductionCutContext(GGEMSMaterialCutCouplePackage const &package,
 
 auto VerboseProductionCutContext(GGEMSMaterialCutCouplePackage const &package,
                                  std::size_t context_index) -> void;
+
+[[nodiscard]] auto DescribeProductionCuts() -> std::string;
+
+auto VerboseProductionCuts() -> void;
+
+[[nodiscard]] auto
+DescribeProductionCutsForMaterial(materials::GGEMSMaterial const &material,
+                                  units::Length reference_length)
+  -> std::string;
 
 } // namespace ggems::core::processes

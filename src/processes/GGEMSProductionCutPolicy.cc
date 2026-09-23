@@ -1,15 +1,14 @@
 #include <algorithm>
-#include <format>
-#include <iterator>
 #include <optional>
 
-#include "GGEMS/GGEMSException.hh"
 #include "GGEMS/processes/GGEMSProductionCutPolicy.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
 namespace ggems::core::processes {
 
 namespace {
+
+GGEMSProductionCutPolicy g_production_cut_policy{};
 
 // =============================================================================
 // =============================================================================
@@ -35,27 +34,27 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-auto RequireAdmissibleProductionCutPolicy(
-  GGEMSProductionCutPolicy const &policy) -> void {
-  for (auto const channel : k_production_cut_channels) {
-    if (!FindLength(policy.global, channel).has_value()) {
-      throw GGEMSRecoverable{
-        std::format("Global Production-Cut policy has no {} length.",
-                    ProductionCutChannelName(channel))};
-    }
+auto SetProductionCuts(GGEMSProductionCutLengths const &cuts) -> void {
+  if (cuts.gamma.has_value()) {
+    g_production_cut_policy.global.gamma = cuts.gamma;
   }
-
-  auto const &materials = policy.materials;
-
-  for (auto first = materials.begin(); first != materials.end(); ++first) {
-    for (auto second = std::next(first); second != materials.end(); ++second) {
-      if (first->material_index == second->material_index) {
-        throw GGEMSRecoverable{std::format(
-          "Production-Cut policy defines Material {} more than once.",
-          first->material_index)};
-      }
-    }
+  if (cuts.electron.has_value()) {
+    g_production_cut_policy.global.electron = cuts.electron;
   }
+  if (cuts.positron.has_value()) {
+    g_production_cut_policy.global.positron = cuts.positron;
+  }
+  if (cuts.proton.has_value()) {
+    g_production_cut_policy.global.proton = cuts.proton;
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto GetProductionCutPolicy() noexcept
+  -> GGEMSProductionCutPolicy const & {
+  return g_production_cut_policy;
 }
 
 // =============================================================================
@@ -64,8 +63,6 @@ auto RequireAdmissibleProductionCutPolicy(
 auto ResolveProductionCuts(GGEMSProductionCutPolicy const &policy,
                            GGEMSProductionCutContext const &context)
   -> GGEMSResolvedProductionCuts {
-  RequireAdmissibleProductionCutPolicy(policy);
-
   auto const material_override =
     std::ranges::find(policy.materials, context.material_index,
                       &GGEMSMaterialProductionCuts::material_index);
@@ -97,15 +94,6 @@ auto ResolveProductionCuts(GGEMSProductionCutPolicy const &policy,
   }
 
   return resolved;
-}
-
-// =============================================================================
-// =============================================================================
-
-auto ResolveProductionCutLengths(GGEMSProductionCutPolicy const &policy,
-                                 GGEMSProductionCutContext const &context)
-  -> GGEMSResolvedProductionCutLengths {
-  return ResolveProductionCuts(policy, context).lengths;
 }
 
 } // namespace ggems::core::processes

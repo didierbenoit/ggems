@@ -108,4 +108,10 @@ ggems.materials.available()
 ggems.materials.registered()
 ggems.materials.verbose("Copper")
 
+# ------------------------------------------------------------------------------
+
+ggems.cuts.verbose()
+ggems.cuts.set_cut(gamma=5.0, electron=0.1, positron=2.5, proton=10.0, unit="mm")
+ggems.cuts.verbose()
+
 ggems.stop()

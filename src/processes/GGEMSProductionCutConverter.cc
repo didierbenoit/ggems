@@ -171,14 +171,17 @@ GammaAbsorptionCrossSectionBarn(GammaAbsorptionElement const &element,
              : element.slow *
                  std::exp(element.clow * std::log(element.tlow / energy));
   }
+
   if (energy < 0.2L) {
     auto const x = std::log(0.2L / energy);
     return element.s200 * std::exp(0.042L * element.atomic_number * x * x);
   }
+
   if (energy < element.tmin) {
     auto const x = std::log(element.tmin / energy);
     return element.smin * std::exp(element.cmin * x * x);
   }
+
   return element.smin + (element.chigh * std::log(energy / element.tmin));
 }
 
@@ -189,16 +192,19 @@ GammaAbsorptionCrossSectionBarn(GammaAbsorptionElement const &element,
                                 long double length_cm) -> long double {
   std::vector<GammaAbsorptionElement> elements;
   elements.reserve(constituents.size());
+
   for (auto const &constituent : constituents) {
     elements.push_back(MakeGammaAbsorptionElement(constituent));
   }
 
   auto const range = [&elements](long double energy) -> long double {
     long double sigma{0.0L};
+
     for (auto const &element : elements) {
       sigma += element.number_density *
                GammaAbsorptionCrossSectionBarn(element, energy);
     }
+
     return k_gamma_range_absorption_lengths / (sigma * k_barn_cm2);
   };
 
@@ -234,6 +240,7 @@ public:
   LeptonSurrogateStopping(Constituents constituents, bool positron)
       : constituents_{constituents}, positron_{positron} {
     ionisation_log_.reserve(constituents.size());
+
     for (auto const &constituent : constituents) {
       auto const z = static_cast<long double>(constituent.atomic_number);
       ionisation_log_.push_back(
@@ -241,23 +248,29 @@ public:
     }
 
     auto const tau = k_lepton_low_energy_mev / k_electron_mass_mev;
+
     long double sum{0.0L};
+
     for (std::size_t index = 0U; index < constituents_.size(); ++index) {
       auto const z =
         static_cast<long double>(constituents_[index].atomic_number);
       sum += constituents_[index].number_density_per_cubic_centimeter * z *
              CollisionTerm(tau, ionisation_log_[index]);
     }
+
     low_branch_at_low_energy_ = sum * k_twopi_mc2_rcl2_mev_cm2;
   }
 
   [[nodiscard]] auto operator()(long double energy) const -> long double {
     auto const tau = energy / k_electron_mass_mev;
+
     auto const beta2 = tau * (tau + 2.0L) / ((tau + 1.0L) * (tau + 1.0L));
+
     auto const brems_log =
       1.0L + (0.072L * std::log(energy / k_lepton_brems_reference_mev));
 
     long double sum{0.0L};
+
     for (std::size_t index = 0U; index < constituents_.size(); ++index) {
       auto const z =
         static_cast<long double>(constituents_[index].atomic_number);
@@ -266,6 +279,7 @@ public:
              ((z * CollisionTerm(tau, ionisation_log_[index])) +
               (z * (z + 1.0L) * cbrem * 0.1L * tau / beta2));
     }
+
     return sum * k_twopi_mc2_rcl2_mev_cm2;
   }
 
@@ -314,13 +328,18 @@ private:
 IntegrateInverseStopping(LeptonSurrogateStopping const &stopping,
                          long double lower_log, long double upper_log)
   -> long double {
+
   auto const half = (upper_log - lower_log) / 2.0L;
+
   auto const middle = lower_log + half;
+
   long double sum{0.0L};
+
   for (std::size_t index = 0U; index < k_gauss_nodes.size(); ++index) {
     auto const energy = std::exp(middle + (half * k_gauss_nodes[index]));
     sum += k_gauss_weights[index] * energy / stopping(energy);
   }
+
   return sum * half;
 }
 
@@ -342,6 +361,7 @@ IntegrateInverseStopping(LeptonSurrogateStopping const &stopping,
 
   auto const low_energy_range =
     stopping.LowEnergyRange(k_lepton_low_energy_mev);
+
   if (length_cm <= low_energy_range) {
     provisional = stopping.InverseLowEnergyRange(length_cm);
   } else {
@@ -450,29 +470,29 @@ auto ConvertProductionCutLength(
   materials::GGEMSEMMaterialPackage const &materials, std::uint32_t material_id)
   -> units::Energy {
   auto const descriptors = materials.GetDescriptors();
-  if (material_id >= descriptors.size()) {
-    throw GGEMSRecoverable{std::format(
-      "Production-Cut conversion references unknown Material ID {}.",
-      material_id)};
-  }
 
   auto const &descriptor = descriptors[material_id];
+
   auto const constituents = materials.GetElementalConstituents().subspan(
     descriptor.first_constituent, descriptor.constituent_count);
+
   auto const length_cm = *units::ConvertTo(length, "cm");
 
   switch (channel) {
   case GGEMSProductionCutChannel::Gamma:
     return QuantizeConvertedEnergy(
       ConvertGamma(RequireMatter(constituents), length_cm));
+
   case GGEMSProductionCutChannel::Electron:
     return QuantizeConvertedEnergy(ConvertLepton(
       RequireMatter(constituents),
       *units::ConvertTo(descriptor.density, "g/cm3"), length_cm, false));
+
   case GGEMSProductionCutChannel::Positron:
     return QuantizeConvertedEnergy(ConvertLepton(
       RequireMatter(constituents),
       *units::ConvertTo(descriptor.density, "g/cm3"), length_cm, true));
+
   case GGEMSProductionCutChannel::Proton:
     return ConvertProton(length);
   }
