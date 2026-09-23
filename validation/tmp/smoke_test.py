@@ -68,7 +68,42 @@ source_3.verbose()
 
 # ---------------------------------------------------------------------------
 
+ggems.materials.add(
+    "Deuterium",
+    0.00018,
+    {
+        "H": {
+            "mass_fraction": 1.0,
+            "isotopes": [
+                {
+                    "mass_number": 2,
+                    "fraction": 1.0,
+                }
+            ],
+        }
+    },
+    "g/cm3",
+)
+
+ggems.materials.add(
+    "Concrete, Barite (TYPE BA)",
+    3.350,
+    {
+        "H": 0.003585,
+        "O": 0.311622,
+        "Mg": 0.001195,
+        "Al": 0.004183,
+        "Si": 0.010457,
+        "S": 0.107858,
+        "Ca": 0.050194,
+        "Fe": 0.047505,
+        "Ba": 0.463400,
+    },
+    "g/cm3",
+)
+
 ggems.materials.load_json("validation/tmp/custom_material.json")
+
 ggems.materials.available()
 ggems.materials.registered()
 ggems.materials.verbose("Copper")

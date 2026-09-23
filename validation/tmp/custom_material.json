@@ -1,9 +1,56 @@
 {
-  "name": "CustomWater",
-  "density": 1.0,
-  "density_unit": "g/cm3",
-  "elements": {
-    "H": 0.111898,
-    "O": 0.888102
-  }
+  "materials": [
+    {
+      "name": "CustomWater",
+      "density": 1.0,
+      "density_unit": "g/cm3",
+      "elements": {
+        "H": 0.111898,
+        "O": 0.888102
+      }
+    },
+    {
+      "name": "Heavy Water",
+      "density": 1.1056,
+      "density_unit": "g/cm3",
+      "elements": {
+        "H": {
+          "mass_fraction": 0.2011325791,
+          "isotopes": [
+            {
+              "mass_number": 2,
+              "fraction": 1.0
+            }
+          ]
+        },
+        "O": 0.7988674209
+      }
+    },
+    {
+      "name": "Tritium",
+      "density": 0.000269,
+      "density_unit": "g/cm3",
+      "elements": {
+        "H": {
+          "mass_fraction": 1.0,
+          "isotopes": [
+            {
+              "mass_number": 3,
+              "fraction": 1.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Magnesium Tetroborate",
+      "density": 2.53,
+      "density_unit": "g/cm3",
+      "elements": {
+        "B": 0.240870,
+        "O": 0.623762,
+        "Mg": 0.135367
+      }
+    }
+  ]
 }

@@ -1,12 +1,52 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from os import PathLike
 from pathlib import Path
-from typing import cast
+from typing import NotRequired, Protocol, TypedDict, cast
 
-from .ggems import materials as _native
+from .ggems import materials as _native_module
 
+
+class _IsotopeDefinition(TypedDict):
+    mass_number: int
+    fraction: float
+    isomer_state: NotRequired[int]
+
+
+class _ElementDefinition(TypedDict):
+    mass_fraction: float
+    isotopes: NotRequired[list[_IsotopeDefinition]]
+
+
+type _ElementValue = float | _ElementDefinition
+type _Elements = dict[str, _ElementValue]
+
+
+class _MaterialDefinition(TypedDict):
+    name: str
+    density: float
+    elements: _Elements
+    density_unit: NotRequired[str]
+
+
+class _MaterialLibrary(TypedDict):
+    materials: list[_MaterialDefinition]
+
+
+class _NativeMaterials(Protocol):
+    add: Callable[[str, float, _Elements, str], None]
+    verbose: Callable[[str], None]
+    available: Callable[[], None]
+    registered: Callable[[], None]
+
+
+def _as_object(value: object) -> object:
+    return value
+
+
+_native = cast(_NativeMaterials, _as_object(_native_module))
 
 add = _native.add
 verbose = _native.verbose
@@ -15,59 +55,67 @@ registered = _native.registered
 
 
 def load_json(path: str | PathLike[str]) -> None:
+    """Load custom GGEMS materials from a JSON file.
+
+    A JSON material library contains a ``materials`` array. Each entry defines
+    one custom material.
+
+    Elements specified directly by a number use their default isotopic
+    composition. An element can instead provide ``mass_fraction`` and an
+    ``isotopes`` list. Isotope fractions are atom fractions. Isotopes are
+    identified numerically by ``mass_number`` and optional ``isomer_state``;
+    isotope names are never parsed.
+
+    Loading materials makes them available but does not register them.
+    Registration occurs when a material is actually used by GGEMS.
+
+    Args:
+        path: Path to the material-library JSON file.
+
+    Example:
+        A single file can contain one or more materials::
+
+            {
+              "materials": [
+                {
+                  "name": "CustomWater",
+                  "density": 1.0,
+                  "density_unit": "g/cm3",
+                  "elements": {
+                    "H": 0.111898,
+                    "O": 0.888102
+                  }
+                },
+                {
+                  "name": "Deuterium",
+                  "density": 0.000180,
+                  "density_unit": "g/cm3",
+                  "elements": {
+                    "H": {
+                      "mass_fraction": 1.0,
+                      "isotopes": [
+                        {
+                          "mass_number": 2,
+                          "fraction": 1.0
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+
+        Load the complete library with::
+
+            ggems.materials.load_json("materials.json")
+    """
     with Path(path).open("r", encoding="utf-8") as stream:
-        raw = cast(object, json.load(stream))
+        data = cast(_MaterialLibrary, json.load(stream))
 
-    if not isinstance(raw, dict):
-        raise ValueError("GGEMS Material JSON root must be an object.")
-
-    data = cast(dict[str, object], raw)
-
-    required = {"name", "density", "elements"}
-    missing = required - data.keys()
-
-    if missing:
-        names = ", ".join(sorted(missing))
-        raise ValueError(f"Missing GGEMS Material JSON field(s): {names}.")
-
-    allowed = required | {"density_unit"}
-    unknown = data.keys() - allowed
-
-    if unknown:
-        names = ", ".join(sorted(unknown))
-        raise ValueError(f"Unknown GGEMS Material JSON field(s): {names}.")
-
-    name = data["name"]
-    density = data["density"]
-    elements_raw = data["elements"]
-    density_unit = data.get("density_unit", "g/cm3")
-
-    if not isinstance(name, str):
-        raise ValueError("GGEMS Material JSON 'name' must be a string.")
-
-    if not isinstance(density, (int, float)) or isinstance(density, bool):
-        raise ValueError("GGEMS Material JSON 'density' must be a number.")
-
-    if not isinstance(density_unit, str):
-        raise ValueError("GGEMS Material JSON 'density_unit' must be a string.")
-
-    if not isinstance(elements_raw, dict):
-        raise ValueError("GGEMS Material JSON 'elements' must be an object.")
-
-    elements_data = cast(dict[object, object], elements_raw)
-    elements: dict[str, float] = {}
-
-    for symbol, mass_fraction in elements_data.items():
-        if not isinstance(symbol, str):
-            raise ValueError("GGEMS Material JSON element symbols must be strings.")
-
-        if not isinstance(mass_fraction, (int, float)) or isinstance(
-            mass_fraction, bool
-        ):
-            raise ValueError(
-                f"GGEMS Material JSON mass fraction for '{symbol}' must be a number."
-            )
-
-        elements[symbol] = float(mass_fraction)
-
-    _native.add(name, float(density), elements, density_unit)
+    for material in data["materials"]:
+        _native.add(
+            material["name"],
+            material["density"],
+            material["elements"],
+            material.get("density_unit", "g/cm3"),
+        )

@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief XXX
+ * \brief Defines Python bindings for GGEMS materials.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -40,72 +40,205 @@
 #include "detail/GGEMSPythonQuantityConversion.hh"
 
 #include "GGEMS/materials/GGEMSElementCatalog.hh"
+#include "GGEMS/materials/GGEMSIsotope.hh"
+#include "GGEMS/materials/GGEMSIsotopicComposition.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
+#include "GGEMS/materials/GGEMSMaterialComposition.hh"
+#include "GGEMS/materials/GGEMSMaterialDescription.hh"
 #include "GGEMS/materials/GGEMSMaterialManager.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
-#include "GGEMS/materials/GGEMSMaterialDescription.hh"
 #include "GGEMS/units/GGEMSDensityUnits.hh"
 
 namespace py = pybind11;
 
+namespace {
+
+namespace materials = ggems::core::materials;
+
 // =============================================================================
 // =============================================================================
 
+[[nodiscard]] auto MakeIsotopicComposition(std::uint32_t atomic_number,
+                                           py::dict const &definition)
+  -> materials::GGEMSIsotopicComposition {
+  if (!definition.contains("isotopes")) {
+    return materials::BuildDefaultIsotopicComposition(atomic_number);
+  }
+
+  std::vector<materials::GGEMSIsotopeFraction> fractions;
+
+  for (auto const item : definition["isotopes"].cast<py::iterable>()) {
+    auto const isotope = py::cast<py::dict>(item);
+
+    fractions.push_back({
+      .isotope =
+        materials::GGEMSIsotope{
+          atomic_number,
+          isotope["mass_number"].cast<std::uint32_t>(),
+          isotope.contains("isomer_state")
+            ? isotope["isomer_state"].cast<std::uint32_t>()
+            : 0U,
+        },
+      .fraction = isotope["fraction"].cast<long double>(),
+    });
+  }
+
+  return materials::GGEMSIsotopicComposition{
+    materials::GGEMSFractionBasis::AtomFraction, std::move(fractions)};
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto MakeElementalShare(std::string const &symbol,
+                                      py::handle definition)
+  -> materials::GGEMSElementalShare {
+  auto const &element = materials::RequireElementBySymbol(symbol);
+  auto const atomic_number = element.GetAtomicNumber();
+
+  if (!py::isinstance<py::dict>(definition)) {
+    return {
+      .mass_fraction = py::cast<long double>(definition),
+      .isotopic_composition =
+        materials::BuildDefaultIsotopicComposition(atomic_number),
+    };
+  }
+
+  auto const expanded = py::reinterpret_borrow<py::dict>(definition);
+
+  return {
+    .mass_fraction = expanded["mass_fraction"].cast<long double>(),
+    .isotopic_composition = MakeIsotopicComposition(atomic_number, expanded),
+  };
+}
+
+} // namespace
+
+// =============================================================================
+// =============================================================================
+
+/*!
+ * \brief Registers the GGEMS material Python interface.
+ *
+ * \param module Python materials submodule.
+ */
 auto BindMaterials(py::module_ &module) -> void {
-  namespace materials = ggems::core::materials;
   namespace builtins = ggems::core::materials::builtins;
 
   // === === ===
-  module.def("available", [] -> void {
-    auto const &manager = materials::GGEMSMaterialManager::GetInstance();
+  module.def(
+    "available",
+    [] -> void {
+      auto const &manager = materials::GGEMSMaterialManager::GetInstance();
 
-    for (auto const name : builtins::GetAvailableMaterialNames()) {
-      materials::VerboseMaterial(materials::InspectMaterial(manager, name));
-    }
+      for (auto const name : builtins::GetAvailableMaterialNames()) {
+        materials::VerboseMaterial(materials::InspectMaterial(manager, name));
+      }
 
-    for (auto const &material : manager.GetCustomMaterials()) {
-      materials::VerboseMaterial(
-        materials::InspectMaterial(manager, material.GetName()));
-    }
-  });
+      for (auto const &material : manager.GetCustomMaterials()) {
+        materials::VerboseMaterial(
+          materials::InspectMaterial(manager, material.GetName()));
+      }
+    },
+    R"doc(
+Print all available GGEMS materials.
+
+The output includes all built-in materials and all custom materials that have
+been added by the user.
+
+Available materials are not necessarily registered. A material becomes
+registered when it is actually used by GGEMS.
+)doc");
 
   // === === ===
-  module.def("registered", [] -> void {
-    auto const &manager = materials::GGEMSMaterialManager::GetInstance();
-    auto const registered = manager.GetMaterials();
+  module.def(
+    "registered",
+    [] -> void {
+      auto const &manager = materials::GGEMSMaterialManager::GetInstance();
+      auto const registered = manager.GetMaterials();
 
-    for (std::size_t index = 0U; index < registered.size(); ++index) {
-      materials::VerboseMaterial(
-        materials::InspectMaterial(manager, static_cast<std::uint32_t>(index)));
-    }
-  });
+      for (std::size_t index = 0U; index < registered.size(); ++index) {
+        materials::VerboseMaterial(materials::InspectMaterial(
+          manager, static_cast<std::uint32_t>(index)));
+      }
+    },
+    R"doc(
+Print all materials currently registered by GGEMS.
+
+A registered material is a material that is actually referenced by the current
+GGEMS configuration. Materials that are merely available are not listed.
+)doc");
 
   // === === ===
   module.def(
     "add",
     [](std::string name, double density,
-       std::map<std::string, double> const &elements,
+       std::map<std::string, py::object> const &elements,
        std::string const &density_unit) -> void {
       auto const material_density =
         ggems::python::detail::MakeQuantityOrThrow<ggems::units::Density>(
           density, density_unit);
 
-      std::vector<materials::GGEMSMaterialComponent> composition;
-      composition.reserve(elements.size());
+      std::vector<materials::GGEMSElementalShare> elemental_shares;
+      elemental_shares.reserve(elements.size());
 
-      for (auto const &[symbol, mass_fraction] : elements) {
-        auto const &element = materials::RequireElementBySymbol(symbol);
-
-        composition.push_back({
-          .atomic_number = element.GetAtomicNumber(),
-          .mass_fraction = static_cast<long double>(mass_fraction),
-        });
+      for (auto const &[symbol, definition] : elements) {
+        elemental_shares.push_back(MakeElementalShare(symbol, definition));
       }
 
       materials::GGEMSMaterialManager::GetInstance().AddCustomMaterial(
-        materials::GGEMSMaterial{std::move(name), material_density,
-                                 composition});
+        materials::GGEMSMaterial::FromIsotopicComposition(
+          std::move(name), material_density, std::move(elemental_shares)));
     },
+    R"doc(
+Add a custom material to the set of available GGEMS materials.
+
+An element can be specified directly by its mass fraction. In that form, GGEMS
+uses the element's default isotopic composition.
+
+An element can also be expanded with an explicit mass fraction and an optional
+isotope list. Isotope fractions are atom fractions. Each isotope is identified
+numerically by its mass number and, when needed, its isomer state. No isotope
+name parsing is performed.
+
+Adding a material makes it available but does not register it. Registration
+occurs when the material is actually used by GGEMS.
+
+Args:
+    name: Material name.
+    density: Material density.
+    elements: Elemental composition and optional isotopic compositions.
+    density_unit: Unit used for the density value. Defaults to "g/cm3".
+
+Examples:
+    Natural isotopic compositions::
+
+        ggems.materials.add(
+            "MyWater",
+            1.0,
+            {"H": 0.111898, "O": 0.888102},
+            "g/cm3",
+        )
+
+    Pure deuterium::
+
+        ggems.materials.add(
+            "Deuterium",
+            0.000180,
+            {
+                "H": {
+                    "mass_fraction": 1.0,
+                    "isotopes": [
+                        {
+                            "mass_number": 2,
+                            "fraction": 1.0,
+                        }
+                    ],
+                }
+            },
+            "g/cm3",
+        )
+)doc",
     py::arg("name"), py::arg("density"), py::arg("elements"),
     py::arg("density_unit") = "g/cm3");
 
@@ -116,5 +249,20 @@ auto BindMaterials(py::module_ &module) -> void {
       materials::VerboseMaterial(materials::InspectMaterial(
         materials::GGEMSMaterialManager::GetInstance(), name));
     },
+    R"doc(
+Print the detailed scientific description of a material.
+
+The report includes the material density, elemental composition, isotopic
+composition, elemental number densities, electron densities, total atom density,
+and total electron density.
+
+The material may be built-in, custom, or already registered.
+
+Args:
+    name: Name of the material to inspect.
+
+Example:
+    ggems.materials.verbose("Water")
+)doc",
     py::arg("name"));
 }
