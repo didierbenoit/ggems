@@ -897,8 +897,9 @@ auto GGEMSOpenCLDevice::PrintImages() const -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLDevice::PrintILSpirV() const -> void {
+  PrintInfo<CL_DEVICE_ILS_WITH_VERSION>(device_);
+
   if (HasExtension(extensions_, "cl_khr_spir")) {
-    PrintInfo<CL_DEVICE_ILS_WITH_VERSION>(device_);
     PrintInfo<CL_DEVICE_SPIR_VERSIONS>(device_);
   }
 }

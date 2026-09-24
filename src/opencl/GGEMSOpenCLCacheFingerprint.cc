@@ -36,15 +36,15 @@
 
 namespace ggems::ocl::detail {
 namespace {
-/*!
- * \brief FNV-1a 64-bit offset basis.
- */
-constexpr std::uint64_t k_fnv1a64_offset_basis{14695981039346656037ULL};
-/*!
- * \brief FNV-1a 64-bit prime.
- */
-constexpr std::uint64_t k_fnv1a64_prime{1099511628211ULL};
+constexpr std::uint64_t k_fnv1a64_offset_basis{
+  14695981039346656037ULL}; /*!< FNV-1a 64-bit offset basis. */
+
+constexpr std::uint64_t k_fnv1a64_prime{
+  1099511628211ULL}; /*!< FNV-1a 64-bit prime. */
 } // namespace
+
+// =============================================================================
+// =============================================================================
 
 [[nodiscard]] auto HashFNV1a64(std::string_view bytes) noexcept
   -> std::uint64_t {

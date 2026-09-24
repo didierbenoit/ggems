@@ -50,21 +50,18 @@ using namespace ggems::units;
 
 namespace ggems::ocl {
 
-#if defined(__APPLE__)
+#ifdef __APPLE__
 namespace {
 
 /*!
  * \brief Effective SVM modes supplied by the GGEMS Apple compatibility layer.
  */
-constexpr SVMSupport k_apple_effective_svm_support{.coarse_grain_buffer = true,
-                                                   .fine_grain_buffer = false,
-                                                   .fine_grain_system = false,
-                                                   .atomics = false};
-
-static_assert(k_apple_effective_svm_support.coarse_grain_buffer);
-static_assert(!k_apple_effective_svm_support.fine_grain_buffer);
-static_assert(!k_apple_effective_svm_support.fine_grain_system);
-static_assert(!k_apple_effective_svm_support.atomics);
+constexpr SVMSupport k_apple_effective_svm_support{
+  .coarse_grain_buffer = true,
+  .fine_grain_buffer = false,
+  .fine_grain_system = false,
+  .atomics = false}; /*!< Effective SVM modes supplied by the GGEMS Apple
+                        compatibility layer. */
 
 } // namespace
 #endif
@@ -112,10 +109,9 @@ auto GGEMSOpenCLContext::CreateCommandQueue() -> void {
 
   cl_int error{CL_SUCCESS};
 
-  cl_command_queue_properties props{0};
-  props |= CL_QUEUE_PROFILING_ENABLE;
+  cl_command_queue_properties const props{CL_QUEUE_PROFILING_ENABLE};
 
-#if defined(__APPLE__)
+#ifdef __APPLE__
   auto *const native_queue = clCreateCommandQueue(
     context_(), device_.GetDeviceNative()(), props, &error);
   command_queue_ = cl::CommandQueue{native_queue, false};
@@ -133,7 +129,7 @@ auto GGEMSOpenCLContext::CreateCommandQueue() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLContext::InitSVMSupport() -> void {
-#if defined(__APPLE__)
+#ifdef __APPLE__
   svm_support_ = k_apple_effective_svm_support;
 
   GGEMS_INFOEX(
@@ -151,18 +147,16 @@ auto GGEMSOpenCLContext::InitSVMSupport() -> void {
 #else
   auto const capabilities = device_.GetSVMCapabilities();
 
-  if ((capabilities & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER) != 0) {
-    svm_support_.coarse_grain_buffer = true;
-  }
-  if ((capabilities & CL_DEVICE_SVM_FINE_GRAIN_BUFFER) != 0) {
-    svm_support_.fine_grain_buffer = true;
-  }
-  if ((capabilities & CL_DEVICE_SVM_FINE_GRAIN_SYSTEM) != 0) {
-    svm_support_.fine_grain_system = true;
-  }
-  if ((capabilities & CL_DEVICE_SVM_ATOMICS) != 0) {
-    svm_support_.atomics = true;
-  }
+  svm_support_.coarse_grain_buffer =
+    (capabilities & CL_DEVICE_SVM_COARSE_GRAIN_BUFFER) != 0;
+
+  svm_support_.fine_grain_buffer =
+    (capabilities & CL_DEVICE_SVM_FINE_GRAIN_BUFFER) != 0;
+
+  svm_support_.fine_grain_system =
+    (capabilities & CL_DEVICE_SVM_FINE_GRAIN_SYSTEM) != 0;
+
+  svm_support_.atomics = (capabilities & CL_DEVICE_SVM_ATOMICS) != 0;
 
   GGEMS_INFOEX(
     "OpenCL", 2,
@@ -207,11 +201,6 @@ auto GGEMSOpenCLContext::CreateSVMBuffer(Bytes size, SVMMemoryKind kind,
 
   if (!svm_support.HasAny()) {
     throw ggems::core::GGEMSFatal("This context/device does not support SVM.");
-  }
-
-  if (kind == SVMMemoryKind::None) {
-    throw ggems::core::GGEMSFatal(
-      "Invalid SVMMemoryKind::None for allocation.");
   }
 
   SVMMemoryKind const selected =

@@ -202,7 +202,7 @@ private:
     -> std::string;
 
   /*!
-   * \brief Resolves source paths and computes program fingerprints.
+   * \brief Constructs and logs the kernel source path.
    */
   auto Initialize() -> void;
 
@@ -246,10 +246,10 @@ private:
   auto LoadBinaryFromCache() -> std::vector<std::uint8_t>;
 
   /*!
-   * \brief Builds normalized include-search roots used for source
-   * fingerprinting.
+   * \brief Extracts and normalizes include-search roots from the effective
+   * build options without changing their order.
    *
-   * \return Normalized include-search roots.
+   * \return Normalized include-search roots in build-option order.
    */
   [[nodiscard]] auto BuildIncludeSearchRoots() const
     -> std::vector<std::filesystem::path>;
@@ -257,6 +257,10 @@ private:
   /*!
    * \brief Builds deterministic fingerprint text for a source file and its
    * local includes.
+   *
+   * The scanner follows literal quoted includes containing the exact token
+   * \c \#include. It does not evaluate preprocessing conditions or remove
+   * comments, and does not resolve macro or angle-bracket includes.
    *
    * \param[in] source_path Root source file to fingerprint.
    * \return Deterministic source fingerprint text.
@@ -287,9 +291,7 @@ private:
   std::string source_path_;           /*!< Resolved kernel source path. */
   std::string user_build_options_;    /*!< User-supplied build options. */
   std::string build_options_;         /*!< Effective OpenCL build options. */
-  std::string build_log_;             /*!< Most recent program build log. */
   cl::Program program_;               /*!< Native OpenCL program. */
-  std::uint64_t source_hash_; /*!< Source and local-include fingerprint. */
   std::uint64_t global_hash_; /*!< Complete build-identity fingerprint. */
 };
 } // namespace ggems::ocl

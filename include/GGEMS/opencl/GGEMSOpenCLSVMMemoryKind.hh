@@ -49,7 +49,7 @@ enum class SVMMemoryKind : std::uint8_t {
   CoarseGrainBuffer,      /*!< Uses coarse-grain buffer SVM. */
   FineGrainBuffer,        /*!< Uses fine-grain buffer SVM. */
   FineGrainBufferAtomics, /*!< Uses fine-grain buffer SVM with atomic access. */
-  FineGrainSystem         /*!< Uses fine-grain system SVM. */
+  FineGrainSystem,        /*!< Uses fine-grain system SVM. */
 };
 
 /*!

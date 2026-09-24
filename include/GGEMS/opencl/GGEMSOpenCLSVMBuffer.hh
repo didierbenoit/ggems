@@ -48,6 +48,9 @@ using units::operator""_B;
  * The buffer stores its allocation metadata, registers the allocation with its
  * OpenCL context, and performs explicit map and unmap operations when required
  * by the selected SVM memory kind.
+ *
+ * The associated GGEMS OpenCL context must remain alive at the same address
+ * until the allocation is released.
  */
 class GGEMSOpenCLSVMBuffer {
 public:
@@ -59,9 +62,8 @@ public:
    * \param[in] flags OpenCL SVM allocation flags.
    * \param[in] kind SVM memory kind associated with the allocation.
    * \param[in] alignment Requested allocation alignment in bytes.
-   * \throws ggems::core::GGEMSFatal If the requested size is zero, the device
-   *                                does not support SVM, or the allocation
-   *                                fails.
+   * \throws ggems::core::GGEMSFatal If the requested size is zero, the
+   * alignment exceeds the cl_uint range, or the allocation fails.
    */
   GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context, units::Bytes size,
                        cl_svm_mem_flags flags, SVMMemoryKind kind,
@@ -75,12 +77,19 @@ public:
   /*!
    * \brief Move-constructs an OpenCL shared virtual memory buffer.
    *
+   * Leaves the source buffer empty, with a null pointer, zero size and flags,
+   * and SVMMemoryKind::None.
+   *
    * \param[in,out] other Buffer whose allocation is transferred.
    */
   GGEMSOpenCLSVMBuffer(GGEMSOpenCLSVMBuffer &&other) noexcept;
 
   /*!
    * \brief Move-assigns an OpenCL shared virtual memory buffer.
+   *
+   * Releases this buffer's previous allocation and leaves the source buffer
+   * empty, with a null pointer, zero size and flags, and SVMMemoryKind::None.
+   * Self-move assignment leaves the buffer unchanged.
    *
    * \param[in,out] other Buffer whose allocation is transferred.
    * \return Reference to this buffer.

@@ -44,11 +44,6 @@ namespace ggems::ocl {
 
 namespace {
 
-/*!
- * \brief Number of picoseconds in one nanosecond.
- */
-constexpr std::uint64_t k_picoseconds_per_nanosecond{1000ULL};
-
 // =============================================================================
 // =============================================================================
 
@@ -84,11 +79,6 @@ auto MakeDurationFromSeconds(long double seconds) noexcept
  */
 auto MakeTimeFromNanoseconds(cl_ulong nanoseconds) noexcept
   -> ggems::units::Time {
-  if (nanoseconds > std::numeric_limits<std::uint64_t>::max() /
-                      k_picoseconds_per_nanosecond) {
-    return ggems::units::Time{std::numeric_limits<std::uint64_t>::max()};
-  }
-
   auto const time =
     ggems::units::MakeQuantity<ggems::units::Time>(nanoseconds, "ns");
 
@@ -102,8 +92,8 @@ auto MakeTimeFromNanoseconds(cl_ulong nanoseconds) noexcept
 // =============================================================================
 
 auto GGEMSOpenCLProfiler::Reset() noexcept -> void {
-  start_ = Clock::time_point{};
-  stop_ = Clock::time_point{};
+  start_ = std::chrono::steady_clock::time_point{};
+  stop_ = std::chrono::steady_clock::time_point{};
   running_ = false;
   has_measurement_ = false;
   kernel_timing_ = GGEMSOpenCLKernelTiming{};
@@ -112,8 +102,8 @@ auto GGEMSOpenCLProfiler::Reset() noexcept -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProfiler::Start() noexcept -> void {
-  start_ = Clock::now();
-  stop_ = Clock::time_point{};
+  start_ = std::chrono::steady_clock::now();
+  stop_ = std::chrono::steady_clock::time_point{};
   running_ = true;
   has_measurement_ = false;
   kernel_timing_ = GGEMSOpenCLKernelTiming{};
@@ -126,7 +116,7 @@ auto GGEMSOpenCLProfiler::Stop() noexcept -> void {
     return;
   }
 
-  stop_ = Clock::now();
+  stop_ = std::chrono::steady_clock::now();
   running_ = false;
   has_measurement_ = true;
 }
@@ -134,12 +124,6 @@ auto GGEMSOpenCLProfiler::Stop() noexcept -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProfiler::RecordKernelEvent(cl::Event const &event) -> void {
-  if (running_) {
-    throw ggems::core::GGEMSRecoverable(
-      "OpenCL kernel event profiling must be recorded after Stop() when host "
-      "timing is active.");
-  }
-
   cl_int error{0};
 
   cl_ulong queued = event.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>(&error);
@@ -199,7 +183,7 @@ auto GGEMSOpenCLProfiler::GetKernelTime() const noexcept
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProfiler::GetCommandTime() const noexcept
-  -> ggems::units::Time {
+  -> ggems::units::Duration {
   return kernel_timing_.command_time;
 }
 

@@ -126,40 +126,38 @@ auto GGEMSOpenCLKernel::GetAttributes() const -> std::string {
 // -----------------------------------------------------------------------------
 
 [[nodiscard]] auto GGEMSOpenCLKernel::GetWorkGroupSize() const -> std::size_t {
-  auto const devices = context_.GetNativeDevices();
-  return GetWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>(kernel_, devices.front());
+  return GetWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>(
+    kernel_, context_.GetDevice().GetDeviceNative());
 }
 
 // -----------------------------------------------------------------------------
 
 [[nodiscard]] auto GGEMSOpenCLKernel::GetPreferredWorkGroupSizeMultiple() const
   -> std::size_t {
-  auto const devices = context_.GetNativeDevices();
   return GetWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
-    kernel_, devices.front());
+    kernel_, context_.GetDevice().GetDeviceNative());
 }
 
 // -----------------------------------------------------------------------------
 
 [[nodiscard]] auto GGEMSOpenCLKernel::GetCompileWorkGroupSize() const
   -> std::array<std::size_t, 3> {
-  auto const devices = context_.GetNativeDevices();
-  return GetWorkGroupInfo<CL_KERNEL_COMPILE_WORK_GROUP_SIZE>(kernel_,
-                                                             devices.front());
+  return GetWorkGroupInfo<CL_KERNEL_COMPILE_WORK_GROUP_SIZE>(
+    kernel_, context_.GetDevice().GetDeviceNative());
 }
 
 // -----------------------------------------------------------------------------
 
 [[nodiscard]] auto GGEMSOpenCLKernel::GetLocalMemSize() const -> cl_ulong {
-  auto const devices = context_.GetNativeDevices();
-  return GetWorkGroupInfo<CL_KERNEL_LOCAL_MEM_SIZE>(kernel_, devices.front());
+  return GetWorkGroupInfo<CL_KERNEL_LOCAL_MEM_SIZE>(
+    kernel_, context_.GetDevice().GetDeviceNative());
 }
 
 // -----------------------------------------------------------------------------
 
 [[nodiscard]] auto GGEMSOpenCLKernel::GetPrivateMemSize() const -> cl_ulong {
-  auto const devices = context_.GetNativeDevices();
-  return GetWorkGroupInfo<CL_KERNEL_PRIVATE_MEM_SIZE>(kernel_, devices.front());
+  return GetWorkGroupInfo<CL_KERNEL_PRIVATE_MEM_SIZE>(
+    kernel_, context_.GetDevice().GetDeviceNative());
 }
 
 // -----------------------------------------------------------------------------

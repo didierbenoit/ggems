@@ -147,12 +147,11 @@ auto GGEMSOpenCLPlatform::DiscoverDevices() -> void {
 
   std::vector<cl::Device> natives;
   {
-    auto const opencl_error_code = (platform_.getDevices(mask, &natives));
+    auto const opencl_error_code = platform_.getDevices(mask, &natives);
     ggems::ocl::CheckCLError(opencl_error_code,
                              "No OpenCL devices detected on this platform.");
   }
 
-  devices_.clear();
   devices_.reserve(natives.size());
 
   for (std::size_t i = 0; i < natives.size(); ++i) {

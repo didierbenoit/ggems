@@ -94,14 +94,19 @@ ClNameVersionToString(std::vector<cl_name_version> const &name_versions)
  * \brief Converts an OpenCL device-type bitfield to text.
  *
  * \param[in] device_type OpenCL device-type bitfield.
- * \return Readable device-type description.
+ * \return "All" for CL_DEVICE_TYPE_ALL, otherwise a readable device-type
+ * description.
  */
 [[nodiscard]] inline auto DeviceTypeToString(cl_device_type device_type)
   -> std::string {
+  if (device_type == CL_DEVICE_TYPE_ALL) {
+    return "All";
+  }
+
   std::ostringstream stream;
   bool first = true;
 
-  auto const append = [&](std::string const &name) -> void {
+  auto const append = [&](std::string_view name) -> void {
     if (!first) {
       stream << " | ";
     }
@@ -123,9 +128,6 @@ ClNameVersionToString(std::vector<cl_name_version> const &name_versions)
   }
   if (device_type == CL_DEVICE_TYPE_DEFAULT) {
     append("Default");
-  }
-  if (device_type == CL_DEVICE_TYPE_ALL) {
-    append("All");
   }
 
   if (first) {
@@ -237,16 +239,12 @@ QueuePropertiesToString(cl_command_queue_properties const &properties)
   if ((properties & CL_QUEUE_PROFILING_ENABLE) != 0) {
     stream << "Profiling enabled, ";
   }
-#ifdef CL_QUEUE_ON_DEVICE
   if ((properties & CL_QUEUE_ON_DEVICE) != 0) {
     stream << "On-device queue, ";
   }
-#endif
-#ifdef CL_QUEUE_ON_DEVICE_DEFAULT
   if ((properties & CL_QUEUE_ON_DEVICE_DEFAULT) != 0) {
     stream << "Default on-device queue, ";
   }
-#endif
 
   std::string result = stream.str();
   if (!result.empty()) {
@@ -298,10 +296,6 @@ SVMCapabilitiesToString(cl_device_svm_capabilities capabilities)
  */
 [[nodiscard]] inline auto VectorToString(std::vector<std::size_t> const &values)
   -> std::string {
-  if (values.empty()) {
-    return "[]";
-  }
-
   std::string output = "[";
   for (std::size_t index = 0; index < values.size(); ++index) {
     output.append(std::to_string(values[index]));
@@ -323,41 +317,27 @@ SVMCapabilitiesToString(cl_device_svm_capabilities capabilities)
 AtomicCapabilitiesToString(cl_device_atomic_capabilities capabilities)
   -> std::string {
   std::ostringstream stream;
-#ifdef CL_DEVICE_ATOMIC_ORDER_RELAXED
   if ((capabilities & CL_DEVICE_ATOMIC_ORDER_RELAXED) != 0) {
     stream << "Relaxed order, ";
   }
-#endif
-#ifdef CL_DEVICE_ATOMIC_ORDER_ACQ_REL
   if ((capabilities & CL_DEVICE_ATOMIC_ORDER_ACQ_REL) != 0) {
     stream << "Acquire/Release, ";
   }
-#endif
-#ifdef CL_DEVICE_ATOMIC_ORDER_SEQ_CST
   if ((capabilities & CL_DEVICE_ATOMIC_ORDER_SEQ_CST) != 0) {
     stream << "Sequentially consistent, ";
   }
-#endif
-#ifdef CL_DEVICE_ATOMIC_SCOPE_WORK_ITEM
   if ((capabilities & CL_DEVICE_ATOMIC_SCOPE_WORK_ITEM) != 0) {
     stream << "Scope: Work-item, ";
   }
-#endif
-#ifdef CL_DEVICE_ATOMIC_SCOPE_WORK_GROUP
   if ((capabilities & CL_DEVICE_ATOMIC_SCOPE_WORK_GROUP) != 0) {
     stream << "Scope: Work-group, ";
   }
-#endif
-#ifdef CL_DEVICE_ATOMIC_SCOPE_DEVICE
   if ((capabilities & CL_DEVICE_ATOMIC_SCOPE_DEVICE) != 0) {
     stream << "Scope: Device, ";
   }
-#endif
-#ifdef CL_DEVICE_ATOMIC_SCOPE_ALL_DEVICES
   if ((capabilities & CL_DEVICE_ATOMIC_SCOPE_ALL_DEVICES) != 0) {
     stream << "Scope: All devices, ";
   }
-#endif
 
   std::string result = stream.str();
   if (!result.empty()) {
@@ -377,26 +357,12 @@ AtomicCapabilitiesToString(cl_device_atomic_capabilities capabilities)
 [[nodiscard]] inline auto DeviceEnqueueCapabilitiesToString(
   cl_device_device_enqueue_capabilities capabilities) -> std::string {
   std::ostringstream stream;
-#ifdef CL_DEVICE_QUEUE_SUPPORTED
   if ((capabilities & CL_DEVICE_QUEUE_SUPPORTED) != 0) {
     stream << "Device queues supported, ";
   }
-#endif
-#ifdef CL_DEVICE_QUEUE_REPLACEABLE_DEFAULT
   if ((capabilities & CL_DEVICE_QUEUE_REPLACEABLE_DEFAULT) != 0) {
     stream << "Default queue replaceable, ";
   }
-#endif
-#ifdef CL_DEVICE_QUEUE_CROSS_DEVICE
-  if ((capabilities & CL_DEVICE_QUEUE_CROSS_DEVICE) != 0) {
-    stream << "Cross-device enqueue, ";
-  }
-#endif
-#ifdef CL_DEVICE_QUEUE_CROSS_CONTEXT
-  if ((capabilities & CL_DEVICE_QUEUE_CROSS_CONTEXT) != 0) {
-    stream << "Cross-context enqueue, ";
-  }
-#endif
 
   std::string result = stream.str();
   if (!result.empty()) {
@@ -415,10 +381,6 @@ AtomicCapabilitiesToString(cl_device_atomic_capabilities capabilities)
  */
 [[nodiscard]] inline auto PartitionPropertiesToString(
   std::vector<cl_device_partition_property> const &properties) -> std::string {
-  if (properties.empty()) {
-    return "None";
-  }
-
   std::ostringstream stream;
   for (auto const property : properties) {
     switch (property) {
@@ -455,36 +417,24 @@ AtomicCapabilitiesToString(cl_device_atomic_capabilities capabilities)
 AffinityDomainToString(cl_device_affinity_domain domain) -> std::string {
   std::ostringstream stream;
 
-#ifdef CL_DEVICE_AFFINITY_DOMAIN_NUMA
   if ((domain & CL_DEVICE_AFFINITY_DOMAIN_NUMA) != 0) {
     stream << "NUMA, ";
   }
-#endif
-#ifdef CL_DEVICE_AFFINITY_DOMAIN_L4_CACHE
   if ((domain & CL_DEVICE_AFFINITY_DOMAIN_L4_CACHE) != 0) {
     stream << "L4 cache, ";
   }
-#endif
-#ifdef CL_DEVICE_AFFINITY_DOMAIN_L3_CACHE
   if ((domain & CL_DEVICE_AFFINITY_DOMAIN_L3_CACHE) != 0) {
     stream << "L3 cache, ";
   }
-#endif
-#ifdef CL_DEVICE_AFFINITY_DOMAIN_L2_CACHE
   if ((domain & CL_DEVICE_AFFINITY_DOMAIN_L2_CACHE) != 0) {
     stream << "L2 cache, ";
   }
-#endif
-#ifdef CL_DEVICE_AFFINITY_DOMAIN_L1_CACHE
   if ((domain & CL_DEVICE_AFFINITY_DOMAIN_L1_CACHE) != 0) {
     stream << "L1 cache, ";
   }
-#endif
-#ifdef CL_DEVICE_AFFINITY_DOMAIN_NEXT_PARTITIONABLE
   if ((domain & CL_DEVICE_AFFINITY_DOMAIN_NEXT_PARTITIONABLE) != 0) {
     stream << "Next partitionable, ";
   }
-#endif
 
   std::string result = stream.str();
   if (!result.empty()) {
@@ -507,7 +457,8 @@ UUIDToString(std::span<cl_uchar const, CL_UUID_SIZE_KHR> uuid) -> std::string {
 
   auto const to_hex_pair = [](cl_uchar byte) -> std::array<char, 2> {
     constexpr std::string_view hex_digits{"0123456789abcdef"};
-    return {hex_digits[(byte >> 4) & 0xF], hex_digits[byte & 0xF]};
+    auto const value = static_cast<unsigned int>(byte);
+    return {hex_digits[(value >> 4U) & 0xFU], hex_digits[value & 0xFU]};
   };
 
   std::size_t position = 0;
@@ -553,8 +504,9 @@ LUIDToString(std::span<cl_uchar const, CL_LUID_SIZE_KHR> luid) -> std::string {
   constexpr std::string_view hex_digits{"0123456789abcdef"};
 
   for (auto byte : luid) {
-    output.push_back(hex_digits[(byte >> 4) & 0xF]);
-    output.push_back(hex_digits[byte & 0xF]);
+    auto const value = static_cast<unsigned int>(byte);
+    output.push_back(hex_digits[(value >> 4U) & 0xFU]);
+    output.push_back(hex_digits[value & 0xFU]);
   }
   return output;
 }
@@ -706,14 +658,11 @@ ExecCapabilitiesToString(cl_device_exec_capabilities capabilities)
 
     auto value = queue_properties[index + 1];
 
-    switch (property) {
-    case CL_QUEUE_PROPERTIES:
+    if (property == CL_QUEUE_PROPERTIES) {
       output += std::format("CL_QUEUE_PROPERTIES = {} ",
                             QueuePropertiesToString(value));
-      break;
-    default:
+    } else {
       output += std::format("UNKNOWN_PROPERTY({}) = {}", property, value);
-      break;
     }
   }
 
@@ -823,9 +772,6 @@ ArgTypeQualifierToString(cl_kernel_arg_type_qualifier qualifier)
   }
   if ((qualifier & CL_KERNEL_ARG_TYPE_PIPE) != 0) {
     output += "CL_KERNEL_ARG_TYPE_PIPE ";
-  }
-  if ((qualifier & CL_KERNEL_ARG_TYPE_NONE) != 0) {
-    output += "CL_KERNEL_ARG_TYPE_NONE ";
   }
 
   if (!output.empty()) {

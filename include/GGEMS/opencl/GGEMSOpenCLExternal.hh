@@ -30,7 +30,6 @@
 #pragma once
 
 /// \cond
-
 #define CL_HPP_TARGET_OPENCL_VERSION 300
 #define CL_TARGET_OPENCL_VERSION 300
 #if defined(__APPLE__)

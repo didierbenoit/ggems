@@ -516,7 +516,8 @@ auto PrintInfo(Object const &obj) -> void {
 
   try {
     auto value = GetInfo<Info>(obj);
-    GGEMS_INFO("OpenCL", "{}: {}", Traits::name, Traits::ToString(value));
+    GGEMS_INFO("OpenCL", "{}: {}", Traits::name,
+               Traits::ToString(std::move(value)));
   } catch (...) {
     GGEMS_INFO("OpenCL", "{}: N/A", Traits::name);
   }
@@ -535,8 +536,8 @@ HasExtension(std::unordered_set<std::string> const &extensions,
   if (name.empty()) {
     return false;
   }
-  auto it_extension = extensions.find(std::string{name});
-  return it_extension != extensions.end();
+
+  return extensions.contains(std::string{name});
 }
 
 /*!

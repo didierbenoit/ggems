@@ -44,23 +44,12 @@
 #include <mutex>
 #include <utility>
 #include <vector>
-
 #include <unistd.h>
 /// \endcond
 
 namespace {
 
-/*!
- * \brief Maximum alignment accepted by the Apple SVM compatibility layer.
- */
-constexpr std::size_t max_requested_alignment = 16U * sizeof(cl_long);
-
-/*!
- * \brief OpenCL full-profile long16 size used to verify the alignment limit.
- */
-constexpr std::size_t full_profile_long16_size = 128U;
-
-static_assert(max_requested_alignment == full_profile_long16_size);
+constexpr std::size_t max_requested_alignment = 16U * sizeof(cl_long); /*!< Maximum alignment accepted by the Apple SVM compatibility layer. */
 
 /*!
  * \brief Stores one public SVM pointer and its backing mapped pointer.
@@ -298,6 +287,7 @@ std::map<std::uintptr_t, std::shared_ptr<AllocationState>> allocations;
  *
  * \param[in] memory OpenCL memory object being destroyed.
  * \param[in] user_data Host pointer registered for destruction.
+ * \return No value.
  */
 void CL_CALLBACK FreeHostPointer(cl_mem memory, void *user_data) noexcept {
   (void)memory;
@@ -1015,6 +1005,7 @@ CL_API_ENTRY void *CL_API_CALL clSVMAlloc(cl_context context,
  *
  * \param[in] context OpenCL context owning the allocation.
  * \param[in] svm_pointer Allocation base pointer to release.
+ * \return No value.
  */
 CL_API_ENTRY void CL_API_CALL clSVMFree(cl_context context, void *svm_pointer) {
   try {

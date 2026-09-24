@@ -61,7 +61,7 @@ public:
   /*!
    * \brief Destroys the OpenCL runtime manager.
    */
-  ~GGEMSOpenCL();
+  ~GGEMSOpenCL() = default;
 
   /*!
    * \brief Disables copy construction of the OpenCL runtime manager.

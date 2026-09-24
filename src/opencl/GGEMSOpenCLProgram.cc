@@ -28,7 +28,6 @@
  */
 
 /// \cond
-#include <algorithm>
 #include <cctype>
 #include <cstdlib>
 #include <format>
@@ -59,17 +58,20 @@ namespace ggems::ocl {
 
 namespace {
 
-#if defined(__APPLE__)
-constexpr std::string_view k_opencl_standard_option{"-cl-std=CL1.2"};
+#ifdef __APPLE__
+constexpr std::string_view k_opencl_standard_option{
+  "-cl-std=CL1.2"}; /*!< Selects OpenCL C 1.2 for the Apple compatibility
+                       backend. */
 #else
-constexpr std::string_view k_opencl_standard_option{"-cl-std=CL2.0"};
+constexpr std::string_view k_opencl_standard_option{
+  "-cl-std=CL2.0"}; /*!< Selects OpenCL C 2.0 for the native SVM backend. */
 #endif
 
 // =============================================================================
 // =============================================================================
 
 /*!
- * \brief Schema identifier stored in GGEMS OpenCL cache entries.
+ * \brief Schema identifier included in the OpenCL cache identity hash.
  */
 constexpr std::string_view k_opencl_cache_schema{"GGEMS_OPENCL_CACHE"};
 
@@ -121,6 +123,10 @@ auto GetCacheRootDirectory() -> std::filesystem::path {
 
 /*!
  * \brief Extracts a quoted local include from one source line.
+ *
+ * Matches the exact token \c \#include followed by a quoted path. This is a
+ * textual scan: comments and preprocessing conditions are not interpreted.
+ * Whitespace between \c # and \c include is not recognized.
  *
  * \param[in] line Source line to inspect.
  * \return Included relative path when a quoted include is found, otherwise an
@@ -273,8 +279,7 @@ GGEMSOpenCLProgram::GGEMSOpenCLProgram(GGEMSOpenCLContext const &context,
       device_{context.GetDevice().GetDeviceNative()},
       kernel_root_{std::move(kernel_root)},
       kernel_name_{std::move(kernel_name)},
-      user_build_options_{std::move(build_options)}, source_hash_{0LL},
-      global_hash_{0LL} {
+      user_build_options_{std::move(build_options)}, global_hash_{0LL} {
   GGEMS_INFOEX("OpenCL", 2, "Initializing OpenCL program '{}'.", kernel_name_);
   GGEMS_INFOEX("OpenCL", 3, "OpenCL program source root: '{}'.",
                kernel_root_.string());
@@ -339,29 +344,12 @@ auto GGEMSOpenCLProgram::Initialize() -> void {
 
 auto GGEMSOpenCLProgram::BuildIncludeSearchRoots() const
   -> std::vector<std::filesystem::path> {
-  std::vector<std::filesystem::path> roots;
-
-  std::filesystem::path source_dir =
-    std::filesystem::path{source_path_}.parent_path();
-
-  roots.emplace_back(source_dir);
-  roots.emplace_back(kernel_root_);
-
-  if (kernel_root_.has_parent_path()) {
-    roots.emplace_back(kernel_root_.parent_path());
-  }
-
-  std::vector<std::filesystem::path> option_roots =
+  std::vector<std::filesystem::path> roots =
     ExtractIncludeRoots(build_options_);
-
-  roots.insert(roots.end(), option_roots.begin(), option_roots.end());
 
   for (std::filesystem::path &root : roots) {
     root = NormalizePath(root);
   }
-
-  std::ranges::sort(roots);
-  roots.erase(std::ranges::unique(roots).begin(), roots.end());
 
   return roots;
 }
@@ -473,7 +461,8 @@ auto GGEMSOpenCLProgram::Build() -> void {
 
   std::string source_fingerprint_text = BuildSourceFingerprintText(source_path);
 
-  source_hash_ = detail::HashFNV1a64(source_fingerprint_text);
+  std::uint64_t const source_hash =
+    detail::HashFNV1a64(source_fingerprint_text);
 
   std::string concat;
   concat.reserve(1024);
@@ -486,7 +475,7 @@ auto GGEMSOpenCLProgram::Build() -> void {
   concat += "\nDriverVersion=" + GetInfo<CL_DRIVER_VERSION>(device_);
   concat += "\nKernelName=" + kernel_name_;
   concat += "\nBuildOptions=" + build_options_;
-  concat += "\nSourceHash=" + std::format("{:016x}", source_hash_);
+  concat += "\nSourceHash=" + std::format("{:016x}", source_hash);
 
   global_hash_ = detail::HashFNV1a64(concat);
 
@@ -513,7 +502,7 @@ auto GGEMSOpenCLProgram::Build() -> void {
 
   GGEMS_INFOEX("OpenCL", 3,
                "OpenCL program '{}' source dependency hash: {:016x}.",
-               kernel_name_, source_hash_);
+               kernel_name_, source_hash);
 
   BuildFromSource(source);
 
@@ -551,21 +540,21 @@ auto GGEMSOpenCLProgram::BuildFromSource(std::string const &source) -> void {
   program_ = cl::Program(context, sources);
 
   cl_int error = program_.build({device}, build_options_.c_str());
+  std::string const build_log =
+    program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
   if (error != CL_SUCCESS) {
-    build_log_ = program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
     GGEMS_ERROR("OpenCL", "Build log for program '{}' (file='{}'): {}",
-                kernel_name_, source_path_, build_log_);
+                kernel_name_, source_path_, build_log);
     CheckCLError(
       error,
       std::format(
         "Failed to build OpenCL program '{}' from source. Build log : {}",
-        kernel_name_, build_log_));
+        kernel_name_, build_log));
   }
 
-  build_log_ = program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-  if (!build_log_.empty()) {
+  if (!build_log.empty()) {
     GGEMS_INFOEX("OpenCL", 3, "Build log for '{}' (file='{}'): {}",
-                 kernel_name_, source_path_, build_log_);
+                 kernel_name_, source_path_, build_log);
   }
   GGEMS_INFOEX("OpenCL", 2, "OpenCL program '{}' built from source.",
                kernel_name_);
@@ -605,23 +594,23 @@ auto GGEMSOpenCLProgram::BuildFromBinary(
   program_ = cl::Program(native_program, false);
 
   error = program_.build({device}, build_options_.c_str());
+  std::string const build_log =
+    program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
   if (error != CL_SUCCESS) {
-    build_log_ = program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
 
-    if (!build_log_.empty()) {
+    if (!build_log.empty()) {
       GGEMS_INFOEX("OpenCL", 3,
                    "Cached binary build log for '{}' (file='{}'): {}",
-                   kernel_name_, source_path_, build_log_);
+                   kernel_name_, source_path_, build_log);
     }
 
     throw core::GGEMSFatal(std::format(
       "Failed to build OpenCL program '{}' from binary.", kernel_name_));
   }
 
-  build_log_ = program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-  if (!build_log_.empty()) {
+  if (!build_log.empty()) {
     GGEMS_INFOEX("OpenCL", 3, "Build log for '{}' (file='{}'): {}",
-                 kernel_name_, source_path_, build_log_);
+                 kernel_name_, source_path_, build_log);
   }
   GGEMS_INFOEX("OpenCL", 2, "OpenCL program '{}' built from cached binary.",
                kernel_name_);
@@ -678,12 +667,9 @@ auto GGEMSOpenCLProgram::ComputeCachePath() const -> std::filesystem::path {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLProgram::SaveBinaryToCache() -> void {
-  auto const device_count = GetNumDevices();
-  auto const binary_sizes = GetBinarySizes();
   auto const binaries = GetBinaries();
 
-  if (device_count == 0 || binary_sizes.empty() || binaries.empty() ||
-      binary_sizes[0] == 0) {
+  if (binaries.empty() || binaries.front().empty()) {
     GGEMS_INFOEX("OpenCL", 3,
                  "No OpenCL binary available for '{}'; cache not written.",
                  kernel_name_);
@@ -703,8 +689,10 @@ auto GGEMSOpenCLProgram::SaveBinaryToCache() -> void {
     return;
   }
 
-  output_stream.write(reinterpret_cast<char const *>(binaries[0].data()),
-                      static_cast<std::streamsize>(binaries[0].size()));
+  output_stream.exceptions(std::ios::badbit | std::ios::failbit);
+  output_stream.write(reinterpret_cast<char const *>(binaries.front().data()),
+                      static_cast<std::streamsize>(binaries.front().size()));
+  output_stream.close();
 
   GGEMS_INFOEX("OpenCL", 2, "OpenCL binary cache saved for '{}'.",
                kernel_name_);

@@ -208,13 +208,8 @@ private:
    */
   [[nodiscard]] auto GetElapsedSecondsRaw() const noexcept -> long double;
 
-  /*!
-   * \brief Steady clock used for host elapsed-time measurements.
-   */
-  using Clock = std::chrono::steady_clock;
-
-  Clock::time_point start_;     /*!< Host timing start point. */
-  Clock::time_point stop_;      /*!< Host timing stop point. */
+  std::chrono::steady_clock::time_point start_; /*!< Host timing start point. */
+  std::chrono::steady_clock::time_point stop_;  /*!< Host timing stop point. */
   bool running_{false};         /*!< Whether host timing is active. */
   bool has_measurement_{false}; /*!< Whether a host measurement is available. */
   GGEMSOpenCLKernelTiming kernel_timing_{}; /*!< Last kernel-event timing. */

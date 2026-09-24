@@ -375,21 +375,9 @@ GGEMSOpenCL::GGEMSOpenCL() {
   try {
     InitPlatformsAndDevices();
     GGEMS_INFOEX("OpenCL", 2, "OpenCL backend initialized.");
-  } catch (core::GGEMSExceptionBase &) {
-    std::terminate();
-  } catch (std::exception const &) {
-    std::terminate();
   } catch (...) {
     std::terminate();
   }
-}
-
-// -----------------------------------------------------------------------------
-
-GGEMSOpenCL::~GGEMSOpenCL() {
-  GGEMS_INFOEX(
-    "OpenCL", 3,
-    "GGEMSOpenCL singleton destroyed; memory intentionally retained.");
 }
 
 // -----------------------------------------------------------------------------
@@ -451,7 +439,6 @@ auto GGEMSOpenCL::InitPlatformsAndDevices() -> void {
                              "No OpenCL platforms detected on this system.");
   }
 
-  platforms_.clear();
   platforms_.reserve(platforms.size());
   std::size_t plat_index{0};
   for (auto const &platform : platforms) {
@@ -629,7 +616,7 @@ auto GGEMSOpenCL::ParseDeviceFilters(
 
   std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>> selected;
 
-  if (criteria.has_numeric_selector) {
+  if (!criteria.numeric_indices.empty()) {
     selected.reserve(criteria.numeric_indices.size());
 
     for (auto const index : criteria.numeric_indices) {

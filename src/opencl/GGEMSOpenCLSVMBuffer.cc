@@ -58,12 +58,7 @@ GGEMSOpenCLSVMBuffer::GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context,
     throw ggems::core::GGEMSFatal("Cannot allocate zero-sized SVM buffer.");
   }
 
-  auto const &svm = context.GetSVMSupport();
-  if (!(svm.HasAny())) {
-    throw ggems::core::GGEMSFatal("Device does not support any form of SVM.");
-  }
-
-  if (!(std::in_range<cl_uint>(alignment.value))) {
+  if (!std::in_range<cl_uint>(alignment.value)) {
     throw core::GGEMSFatal(
       "SVM allocation alignment exceeds OpenCL cl_uint range.");
   }
@@ -77,7 +72,8 @@ GGEMSOpenCLSVMBuffer::GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context,
 
   if (svm_ptr == nullptr) {
     auto const maximum_allocation = units::Bytes{
-      static_cast<std::uint64_t>(context.GetDevice().GetMaxMemAllocSize())};
+      static_cast<std::uint64_t>(context.GetDevice().GetMaxMemAllocSize()),
+    };
 
     throw ggems::core::GGEMSFatal(std::format(
       "clSVMAlloc failed on device '{}': requested={}, "
@@ -148,33 +144,23 @@ auto GGEMSOpenCLSVMBuffer::Unmap() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSOpenCLSVMBuffer::Release() noexcept -> void {
-  if (context_ == nullptr || ptr_ == nullptr) {
-    context_ = nullptr;
-    ptr_ = nullptr;
-    size_ = 0_B;
-    flags_ = 0;
-    kind_ = SVMMemoryKind::None;
+  if (ptr_ == nullptr) {
     return;
   }
 
-  auto *context = context_;
-  auto *ptr = ptr_;
-  auto const size = size_;
-
-  auto const &queue = context->GetCommandQueueNative();
+  auto const &queue = context_->GetCommandQueueNative();
   if (clFinish(queue()) != CL_SUCCESS) {
     std::terminate();
   }
 
-  auto const &native_context = context->GetContextNative();
-  clSVMFree(native_context(), ptr);
+  auto const &native_context = context_->GetContextNative();
+  clSVMFree(native_context(), ptr_);
+  context_->RegisterSVMRelease(size_);
 
   context_ = nullptr;
   ptr_ = nullptr;
   size_ = 0_B;
   flags_ = 0;
   kind_ = SVMMemoryKind::None;
-
-  context->RegisterSVMRelease(size);
 }
 } // namespace ggems::ocl
