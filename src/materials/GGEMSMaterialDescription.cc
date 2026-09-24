@@ -1,3 +1,34 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Copies material inspection records and formats isotope-aware
+ * composition reports.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -5,6 +36,7 @@
 #include <string>
 #include <string_view>
 #include <algorithm>
+/// \endcond
 
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/logging/GGEMSLogMacros.hh"
@@ -26,6 +58,11 @@ namespace materials = ggems::core::materials;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Selects the number-density label for the current logger encoding.
+ *
+ * \return A static ASCII 1/cm3 or Unicode cubic-centimeter unit label.
+ */
 [[nodiscard]] auto NumberDensityUnit() noexcept -> std::string_view {
   return ggems::core::GGEMSLogger::GetInstance().GetEncoding() ==
              ggems::core::Encoding::Ascii
@@ -36,6 +73,16 @@ namespace materials = ggems::core::materials;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Formats an isotope with its element symbol and explicit isomer suffix.
+ *
+ * Ground states use Symbol-A, M=1 uses Symbol-Am, and larger keys use
+ * Symbol-AmM.
+ *
+ * \param[in] isotope Isotope identity to format.
+ * \return An owned label for display, not a parsed identity or source
+ * radionuclide.
+ */
 [[nodiscard]] auto IsotopeLabel(materials::GGEMSIsotope const &isotope)
   -> std::string {
   auto const symbol =
@@ -56,6 +103,14 @@ namespace materials = ggems::core::materials;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Formats known registration context for a material inspection.
+ *
+ * \param[in] inspection Inspection record; Registered requires a present
+ * manager_index.
+ * \return Registered/index text, available/unregistered text, or an empty
+ * string for Unknown.
+ */
 [[nodiscard]] auto
 RegistrationLabel(materials::GGEMSMaterialInspection const &inspection)
   -> std::string {

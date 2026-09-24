@@ -1,3 +1,34 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines elemental and compound material presets and exact-vacuum
+ * construction.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -6,6 +37,7 @@
 #include <string_view>
 #include <vector>
 #include <string>
+/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
@@ -24,24 +56,35 @@ using namespace ggems::units;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines a pure-element preset using default isotope composition.
+ */
 struct ElementalMaterialRow {
-  std::string_view canonical_name;
-  std::uint32_t atomic_number;
-  Density density;
+  std::string_view canonical_name; /*!< Static, case-sensitive preset name. */
+  std::uint32_t atomic_number;     /*!< Chemical identity Z. */
+  Density density;                 /*!< Bulk density in canonical pg/pm3. */
 };
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines a compound preset through borrowed elemental mass fractions.
+ */
 struct CompoundMaterialRow {
-  std::string_view canonical_name;
-  Density density;
-  std::span<GGEMSMaterialComponent const> composition;
+  std::string_view canonical_name; /*!< Static, case-sensitive preset name. */
+  Density density;                 /*!< Bulk density in canonical pg/pm3. */
+  std::span<GGEMSMaterialComponent const>
+    composition; /*!< Static elemental mass shares. */
 };
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Stores the 92 pure-element density presets from Hydrogen through
+ * Uranium.
+ */
 constexpr std::array<ElementalMaterialRow, 92U> k_elemental_materials{
   {
     {
@@ -601,6 +644,9 @@ constexpr std::array<ElementalMaterialRow, 92U> k_elemental_materials{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the Air preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 4U> k_air_composition{
   {
     {
@@ -625,6 +671,9 @@ constexpr std::array<GGEMSMaterialComponent, 4U> k_air_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the Water preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 2U> k_water_composition{
   {
     {
@@ -641,6 +690,9 @@ constexpr std::array<GGEMSMaterialComponent, 2U> k_water_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the Adipose preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 13U> k_adipose_composition{
   {
     {
@@ -713,6 +765,9 @@ constexpr std::array<GGEMSMaterialComponent, 13U> k_adipose_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the Blood preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 10U> k_blood_composition{
   {
     {
@@ -770,6 +825,9 @@ constexpr std::array<GGEMSMaterialComponent, 10U> k_blood_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the BloodIodine5 preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 11U> k_blood_iodine5_composition{
   {
     {
@@ -832,6 +890,9 @@ constexpr std::array<GGEMSMaterialComponent, 11U> k_blood_iodine5_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the BloodIodine10 preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 11U> k_blood_iodine10_composition{
   {
     {
@@ -894,6 +955,9 @@ constexpr std::array<GGEMSMaterialComponent, 11U> k_blood_iodine10_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the BloodIodine15 preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 11U> k_blood_iodine15_composition{
   {
     {
@@ -956,6 +1020,9 @@ constexpr std::array<GGEMSMaterialComponent, 11U> k_blood_iodine15_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the BloodIodine20 preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 11U> k_blood_iodine20_composition{
   {
     {
@@ -1018,6 +1085,9 @@ constexpr std::array<GGEMSMaterialComponent, 11U> k_blood_iodine20_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the Brain preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 13U> k_brain_composition{
   {
     {
@@ -1090,6 +1160,9 @@ constexpr std::array<GGEMSMaterialComponent, 13U> k_brain_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the Breast preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 8U> k_breast_composition{
   {
     {
@@ -1137,6 +1210,9 @@ constexpr std::array<GGEMSMaterialComponent, 8U> k_breast_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the Heart preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 9U> k_heart_composition{
   {
     {
@@ -1189,6 +1265,9 @@ constexpr std::array<GGEMSMaterialComponent, 9U> k_heart_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the Intestine preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 9U> k_intestine_composition{
   {
     {
@@ -1241,6 +1320,9 @@ constexpr std::array<GGEMSMaterialComponent, 9U> k_intestine_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the Kidney preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 10U> k_kidney_composition{
   {
     {
@@ -1298,6 +1380,9 @@ constexpr std::array<GGEMSMaterialComponent, 10U> k_kidney_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the Liver preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 9U> k_liver_composition{
   {
     {
@@ -1350,6 +1435,9 @@ constexpr std::array<GGEMSMaterialComponent, 9U> k_liver_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the Lung preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 9U> k_lung_composition{
   {
     {
@@ -1402,6 +1490,9 @@ constexpr std::array<GGEMSMaterialComponent, 9U> k_lung_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the RibBone preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 9U> k_rib_bone_composition{
   {
     {
@@ -1454,6 +1545,9 @@ constexpr std::array<GGEMSMaterialComponent, 9U> k_rib_bone_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the SpineBone preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 11U> k_spine_bone_composition{
   {
     {
@@ -1516,6 +1610,9 @@ constexpr std::array<GGEMSMaterialComponent, 11U> k_spine_bone_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the Spleen preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 9U> k_spleen_composition{
   {
     {
@@ -1568,6 +1665,9 @@ constexpr std::array<GGEMSMaterialComponent, 9U> k_spleen_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the CdTe preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 2U> k_cdte_composition{
   {
     {
@@ -1585,6 +1685,9 @@ constexpr std::array<GGEMSMaterialComponent, 2U> k_cdte_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the CsI preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 2U> k_csi_composition{
   {
     {
@@ -1602,6 +1705,9 @@ constexpr std::array<GGEMSMaterialComponent, 2U> k_csi_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the GaAs preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 2U> k_gaas_composition{
   {
     {
@@ -1619,6 +1725,9 @@ constexpr std::array<GGEMSMaterialComponent, 2U> k_gaas_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the GOS preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 3U> k_gos_composition{
   {
     {
@@ -1641,6 +1750,9 @@ constexpr std::array<GGEMSMaterialComponent, 3U> k_gos_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the LSO preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 3U> k_lso_composition{
   {
     {
@@ -1663,6 +1775,9 @@ constexpr std::array<GGEMSMaterialComponent, 3U> k_lso_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the elemental mass fractions of the NaI preset.
+ */
 constexpr std::array<GGEMSMaterialComponent, 2U> k_nai_composition{
   {
     {
@@ -1680,6 +1795,10 @@ constexpr std::array<GGEMSMaterialComponent, 2U> k_nai_composition{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Associates each compound preset name with density and elemental mass
+ * shares.
+ */
 constexpr std::array<CompoundMaterialRow, 24U> k_compound_materials{
   {
     {
@@ -1850,12 +1969,22 @@ constexpr std::array<CompoundMaterialRow, 24U> k_compound_materials{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Counts Vacuum, elemental presets, and compound presets in the name
+ * catalog.
+ */
 constexpr std::size_t k_builtin_material_count =
   1U + k_elemental_materials.size() + k_compound_materials.size();
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Builds the static preset-name list in its published iteration order.
+ *
+ * \return Vacuum first, then elemental names by Z, then compounds in table
+ * order.
+ */
 [[nodiscard]] consteval auto BuildAvailableMaterialNames()
   -> std::array<std::string_view, k_builtin_material_count> {
   std::array<std::string_view, k_builtin_material_count> names{};
@@ -1877,11 +2006,22 @@ constexpr std::size_t k_builtin_material_count =
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Owns the static views returned by the built-in name catalog.
+ */
 constexpr auto k_available_material_names = BuildAvailableMaterialNames();
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Expands a pure-element preset through the default isotope composition.
+ *
+ * \param[in] row Static elemental name, Z, and density preset.
+ * \return An independently owned material with a unit elemental mass fraction.
+ * \throws GGEMSRecoverable If default isotope or matter composition preparation
+ * fails.
+ */
 [[nodiscard]] auto BuildElementalMaterial(ElementalMaterialRow const &row)
   -> GGEMSMaterial {
   return GGEMSMaterial{
@@ -1893,6 +2033,14 @@ constexpr auto k_available_material_names = BuildAvailableMaterialNames();
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Copies a compound preset into isotope-aware material preparation.
+ *
+ * \param[in] row Preset name, density, and borrowed elemental mass fractions.
+ * \return An independently owned material.
+ * \throws GGEMSRecoverable If default isotope or matter composition preparation
+ * fails.
+ */
 [[nodiscard]] auto BuildCompoundMaterial(CompoundMaterialRow const &row)
   -> GGEMSMaterial {
   return GGEMSMaterial{std::string{row.canonical_name}, row.density,

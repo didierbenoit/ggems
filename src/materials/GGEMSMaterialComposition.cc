@@ -1,9 +1,41 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Resolves authored material shares into isotope number densities and
+ * elemental EM views.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <utility>
 #include <vector>
+/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSElementCatalog.hh"
@@ -22,6 +54,25 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Computes isotope densities from an element's mass share and fraction
+ * basis.
+ *
+ * For atom fractions a_i, divide the scaled elemental mass density by mean
+ * molar mass sum(a_i*M_i), then multiply by each a_i. For mass fractions f_i,
+ * divide each scaled contribution by its own molar mass M_i.
+ *
+ * \pre molar_masses must contain one entry per fraction; the composition basis
+ * must be valid.
+ *
+ * \param[in] density_grams_per_cubic_centimeter Bulk material density in g/cm3.
+ * \param[in] element_mass_fraction Dimensionless fraction of material mass
+ * assigned to this Z.
+ * \param[in] composition Canonical isotope shares for one element.
+ * \param[in] molar_masses Finite positive g/mol values in the same order as the
+ * fractions.
+ * \return Isotope atom densities in 1/cm3, in fraction order.
+ */
 [[nodiscard]] auto
 ComputeIsotopeNumberDensities(long double density_grams_per_cubic_centimeter,
                               long double element_mass_fraction,

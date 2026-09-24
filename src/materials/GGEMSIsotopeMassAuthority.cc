@@ -1,8 +1,40 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Builds the immutable isotope molar-mass authority from compiled mass
+ * and excitation data.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
 #include <array>
 #include <cstdint>
 #include <utility>
 #include <vector>
 #include <cstddef>
+/// \endcond
 
 #include "GGEMS/materials/GGEMSIsotope.hh"
 #include "GGEMS/materials/GGEMSIsotopeMassAuthority.hh"
@@ -15,15 +47,33 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Stores the ground-state atomic mass and excitation needed for one
+ * isotope state.
+ */
 struct IsotopeMassRow {
-  GGEMSIsotope isotope;
-  long double ground_state_relative_atomic_mass;
-  long double excitation_energy_kilo_electron_volts;
+  GGEMSIsotope isotope; /*!< Exact (Z, A, M) key. */
+  long double
+    ground_state_relative_atomic_mass; /*!< Neutral-atom mass relative to u. */
+  long double excitation_energy_kilo_electron_volts; /*!< State excitation
+                                                        energy in keV. */
 };
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Constructs one compiled mass-authority row.
+ *
+ * \param[in] atomic_number Proton number Z.
+ * \param[in] mass_number Nucleon number A.
+ * \param[in] isomer_state State key M; zero denotes ground state.
+ * \param[in] ground_state_relative_atomic_mass Dimensionless ground-state
+ * atomic mass relative to u.
+ * \param[in] excitation_energy_kilo_electron_volts Isomer excitation in keV,
+ * zero for ground state.
+ * \return A row preserving the supplied mass and excitation values.
+ */
 [[nodiscard]] consteval auto MakeIsotopeMassRow(
   std::uint32_t atomic_number, std::uint32_t mass_number,
   std::uint32_t isomer_state, long double ground_state_relative_atomic_mass,
@@ -39,14 +89,31 @@ struct IsotopeMassRow {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Converts excitation energy in keV to a relative atomic-mass increment.
+ */
 constexpr long double k_atomic_mass_unit_kilo_electron_volts{931494.10372L};
+
+/*!
+ * \brief Converts relative atomic mass to molar mass in g/mol.
+ */
 constexpr long double k_molar_mass_constant_grams_per_mole{1.00000000105L};
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Defines the number of compiled isotope mass-state records.
+ */
 constexpr std::size_t k_isotope_mass_count{3298U};
 
+/*!
+ * \brief Stores ground-state mass rows through Z=99 and the Ta-180m excitation
+ * row.
+ *
+ * Each row preserves the isotope identity separately from ground-state mass and
+ * excitation. Resolution adds excitation/u before converting to g/mol.
+ */
 constexpr std::array<IsotopeMassRow, k_isotope_mass_count> k_isotope_masses{
   {
     MakeIsotopeMassRow(1U, 1U, 0U, 1.007825031898L, 0.0L),
@@ -3353,6 +3420,16 @@ constexpr std::array<IsotopeMassRow, k_isotope_mass_count> k_isotope_masses{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Resolves compiled ground masses and state excitations into molar
+ * masses.
+ *
+ * For each row, the relative mass is ground mass plus excitation energy divided
+ * by the atomic mass unit in keV; multiplying by the molar mass constant gives
+ * the neutral-atom molar mass in g/mol.
+ *
+ * \return An owned table sorted for exact isotope-key lookup.
+ */
 [[nodiscard]] auto BuildIsotopeMassAuthority() -> GGEMSResolvedIsotopeTable {
   std::vector<GGEMSResolvedIsotope> resolved_isotopes;
   resolved_isotopes.reserve(k_isotope_masses.size());

@@ -1,3 +1,34 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines frozen default isotope mixtures and canonical authored
+ * fraction preparation.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -5,6 +36,7 @@
 #include <span>
 #include <utility>
 #include <vector>
+/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSIsotope.hh"
@@ -18,14 +50,28 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Stores one isotope's representative natural atom fraction.
+ */
 struct NaturalIsotopeRow {
-  GGEMSIsotope isotope;
-  long double atom_fraction;
+  GGEMSIsotope isotope; /*!< Exact isotope and state identity. */
+  long double
+    atom_fraction; /*!< Dimensionless isotope number share within Z. */
 };
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Constructs a representative natural-abundance row at compile time.
+ *
+ * \param[in] atomic_number Proton number Z.
+ * \param[in] mass_number Nucleon number A.
+ * \param[in] isomer_state State key M, including Ta-180m where specified.
+ * \param[in] atom_fraction Dimensionless isotope number fraction within the
+ * element.
+ * \return The compiled isotope and atom-fraction row.
+ */
 [[nodiscard]] consteval auto
 MakeNaturalRow(std::uint32_t atomic_number, std::uint32_t mass_number,
                std::uint32_t isomer_state, long double atom_fraction)
@@ -39,6 +85,14 @@ MakeNaturalRow(std::uint32_t atomic_number, std::uint32_t mass_number,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Constructs the explicit reference isotope for a non-natural default.
+ *
+ * \param[in] atomic_number Proton number Z.
+ * \param[in] mass_number Reference nucleon number A.
+ * \param[in] isomer_state Reference state key M.
+ * \return The reference isotope key.
+ */
 [[nodiscard]] consteval auto MakeReferenceIsotope(std::uint32_t atomic_number,
                                                   std::uint32_t mass_number,
                                                   std::uint32_t isomer_state)
@@ -49,6 +103,13 @@ MakeNaturalRow(std::uint32_t atomic_number, std::uint32_t mass_number,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Stores the frozen NIST 4.1 representative natural atom-fraction
+ * profile.
+ *
+ * Rows are grouped by Z for equal-range lookup; Ta-180 uses M=1. These fixed
+ * fractions do not represent all terrestrial abundance variation.
+ */
 constexpr auto k_nist41_natural_isotopes = std::array{
   MakeNaturalRow(1U, 1U, 0U, 0.999885L),
   MakeNaturalRow(1U, 2U, 0U, 0.000115L),
@@ -343,6 +404,13 @@ constexpr auto k_nist41_natural_isotopes = std::array{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Stores explicit single-isotope defaults where the natural table has no
+ * rows.
+ *
+ * These reference choices cover Tc, Pm, Po through Ac, and Np through Es; they
+ * do not assert natural isotope composition.
+ */
 constexpr auto k_reference_isotopes = std::array{
   MakeReferenceIsotope(43U, 97U, 0U),  MakeReferenceIsotope(61U, 145U, 0U),
   MakeReferenceIsotope(84U, 209U, 0U), MakeReferenceIsotope(85U, 210U, 0U),
@@ -357,6 +425,12 @@ constexpr auto k_reference_isotopes = std::array{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Finds the contiguous natural-profile rows for one Z.
+ *
+ * \param[in] atomic_number Proton number to locate.
+ * \return A span of static table storage, possibly empty.
+ */
 [[nodiscard]] auto FindNaturalIsotopes(std::uint32_t atomic_number) noexcept
   -> std::span<NaturalIsotopeRow const> {
   auto const rows = std::ranges::equal_range(
@@ -371,6 +445,12 @@ constexpr auto k_reference_isotopes = std::array{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Finds the explicit default reference isotope for one Z.
+ *
+ * \param[in] atomic_number Proton number to locate.
+ * \return A pointer to static storage, or nullptr if no reference is listed.
+ */
 [[nodiscard]] auto FindReferenceIsotope(std::uint32_t atomic_number) noexcept
   -> GGEMSIsotope const * {
   auto const found = std::ranges::find(k_reference_isotopes, atomic_number,

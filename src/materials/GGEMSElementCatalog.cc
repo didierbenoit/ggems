@@ -1,8 +1,40 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines static H-through-Es element metadata and exact catalog
+ * lookups.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
 #include <array>
 #include <cstdint>
 #include <format>
 #include <span>
 #include <string_view>
+/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSElement.hh"
@@ -14,6 +46,15 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Constructs an element catalog row at compile time.
+ *
+ * \param[in] atomic_number Proton number Z in [1, 99].
+ * \param[in] symbol Static chemical symbol.
+ * \param[in] name Static canonical element name.
+ * \param[in] molar_mass Representative catalog molar mass in g/mol.
+ * \return An element borrowing the supplied static labels.
+ */
 [[nodiscard]] consteval auto
 MakeElementRow(std::uint32_t atomic_number, std::string_view symbol,
                std::string_view name, long double molar_mass) -> GGEMSElement {
@@ -23,6 +64,13 @@ MakeElementRow(std::uint32_t atomic_number, std::string_view symbol,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Stores 99 element rows in contiguous Z order from Hydrogen to
+ * Einsteinium.
+ *
+ * Representative catalog masses are metadata, distinct from the resolved
+ * isotope molar masses used to calculate material number densities.
+ */
 constexpr auto k_elements = std::array{
   MakeElementRow(1U, "H", "Hydrogen", 1.0080L),
   MakeElementRow(2U, "He", "Helium", 4.002602L),

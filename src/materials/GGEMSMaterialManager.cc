@@ -1,3 +1,34 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Implements custom definitions and first-use registration by exact
+ * material name.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -7,6 +38,7 @@
 #include <utility>
 #include <vector>
 #include <algorithm>
+/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
@@ -20,6 +52,12 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Checks whether an exact name belongs to the compiled built-in catalog.
+ *
+ * \param[in] name Case-sensitive material name.
+ * \return True when the built-in name list contains name.
+ */
 [[nodiscard]] auto IsBuiltInMaterialName(std::string_view name) noexcept
   -> bool {
   return std::ranges::any_of(
@@ -32,6 +70,16 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Appends an owned material and returns its previous vector-end index.
+ *
+ * \pre The new index must fit std::uint32_t.
+ *
+ * \param[in,out] materials Registration vector to extend.
+ * \param[in] material Material value to move into the vector.
+ * \return The appended material's index; growth can invalidate prior borrowed
+ * views.
+ */
 [[nodiscard]] auto AddMaterial(std::vector<GGEMSMaterial> &materials,
                                GGEMSMaterial material) -> std::uint32_t {
   auto const material_index = static_cast<std::uint32_t>(materials.size());

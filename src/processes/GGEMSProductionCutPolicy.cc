@@ -1,5 +1,37 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Stores global cut lengths and resolves per-channel
+ * Volume/Material/Global precedence.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+/// \cond
 #include <algorithm>
 #include <optional>
+/// \endcond
 
 #include "GGEMS/processes/GGEMSProductionCutPolicy.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
@@ -8,11 +40,23 @@ namespace ggems::core::processes {
 
 namespace {
 
+/*!
+ * \brief Owns the process-wide cut configuration, initially 1 mm in every
+ * channel.
+ */
 GGEMSProductionCutPolicy g_production_cut_policy{};
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Reads one optional channel value from a length record.
+ *
+ * \param[in] lengths Optional per-channel lengths.
+ * \param[in] channel Requested channel.
+ * \return The channel value, or std::nullopt for an absent or unrecognized
+ * channel.
+ */
 [[nodiscard]] auto FindLength(GGEMSProductionCutLengths const &lengths,
                               GGEMSProductionCutChannel channel) noexcept
   -> std::optional<units::Length> {
