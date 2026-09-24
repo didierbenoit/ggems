@@ -44,8 +44,8 @@
 #include <string_view>
 #include <cstdint>
 #include <source_location>
-
 /// \endcond
+
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/GGEMSException.hh"
 
@@ -133,7 +133,7 @@ FormatTimestamp(std::chrono::system_clock::time_point const &time_point)
   std::snprintf(buf.data(), buf.size(), "%04d-%02d-%02d %02d:%02d:%02d.%03d",
                 tm_buf.tm_year + 1900, tm_buf.tm_mon + 1, tm_buf.tm_mday,
                 tm_buf.tm_hour, tm_buf.tm_min, tm_buf.tm_sec,
-                (int)m_sec.count());
+                static_cast<int>(m_sec.count()));
 
   return std::string{buf.data()};
 }
@@ -149,7 +149,7 @@ FormatTimestamp(std::chrono::system_clock::time_point const &time_point)
  * \return Variable value when present, otherwise an empty optional.
  */
 [[nodiscard]] auto GetEnvVar(const char *name) -> std::optional<std::string> {
-#if defined(_WIN32)
+#ifdef _WIN32
   char *buffer = nullptr;
   std::size_t len = 0;
   if (_dupenv_s(&buffer, &len, name) == 0 && buffer != nullptr) {
@@ -193,7 +193,7 @@ void StdoutSink::Write(RenderedLogLine &&log_line) {
 
 FileSink::FileSink(std::string path)
     : path_(std::move(path)), out_(path_, std::ios::out | std::ios::trunc) {
-  if (!(out_)) {
+  if (!out_) {
     throw ggems::core::GGEMSFatal("Cannot open log file: " + path_);
   }
 }
@@ -256,8 +256,6 @@ auto GGEMSLogger::Log(LogLevel lvl, std::int32_t depth, std::string_view module,
   rec.module = std::string(module);
   rec.message = msg;
   rec.function = logging::detail::SimplifyFunctionName(loc.function_name());
-  rec.file = loc.file_name();
-  rec.line = static_cast<int>(loc.line());
   Dispatch(rec);
 }
 
@@ -281,13 +279,6 @@ auto GGEMSLogger::AddSink(std::unique_ptr<LogSink> sink) -> void {
 
   std::scoped_lock lock(mtx_);
   sinks_.push_back(std::move(sink));
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSLogger::SetSink(std::unique_ptr<LogSink> sink) -> void {
-  ClearSinks();
-  AddSink(std::move(sink));
 }
 
 // -----------------------------------------------------------------------------

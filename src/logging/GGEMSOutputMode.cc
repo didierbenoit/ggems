@@ -36,20 +36,19 @@
 #include <string>
 #include <string_view>
 #include <cctype>
-
 /// \endcond
-#include "GGEMS/logging/GGEMSLogger.hh"
-#include "GGEMS/logging/GGEMSOutputMode.hh"
-#include "GGEMS/GGEMSException.hh"
 
+#include "GGEMS/GGEMSException.hh"
+#include "GGEMS/logging/GGEMSOutputMode.hh"
+#include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/logging/GGEMSOutputStateSink.hh"
 #include "GGEMS/logging/GGEMSOutputState.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
 #include "GGEMS/render/GGEMSVisualLine.hh"
-#include "GGEMS/utf/GGEMSUTF.hh"
 #include "GGEMS/render/GGEMSColor.hh"
+#include "GGEMS/utf/GGEMSUTF.hh"
 
-#if defined(_WIN32)
+#ifdef _WIN32
 /// \cond
 #include <windows.h>
 /// \endcond
@@ -211,18 +210,16 @@ auto ConfigureLoggerForMode(OutputMode mode) -> void {
   switch (mode) {
   case OutputMode::Term:
     logger.AddSink(std::make_unique<StdoutSink>());
-    AddOptionalFileSink(logger);
-    logger.SetForceColor(true);
-    logger.SetForceEncoding(Encoding::Unicode);
     break;
 
   case OutputMode::Gui:
     logger.AddSink(std::make_unique<GGEMSOutputStateSink>(GetOutputState()));
-    AddOptionalFileSink(logger);
-    logger.SetForceColor(true);
-    logger.SetForceEncoding(Encoding::Unicode);
     break;
   }
+
+  AddOptionalFileSink(logger);
+  logger.SetForceColor(true);
+  logger.SetForceEncoding(Encoding::Unicode);
 
   g_configured = true;
 }
@@ -274,16 +271,6 @@ auto EmitTerminalBanner() -> void {
   std::cout << '\n';
 }
 } // namespace
-
-// =============================================================================
-// =============================================================================
-
-auto GetOutputMode() noexcept -> OutputMode { return g_mode; }
-
-// =============================================================================
-// =============================================================================
-
-auto IsOutputConfigured() noexcept -> bool { return g_configured; }
 
 // =============================================================================
 // =============================================================================

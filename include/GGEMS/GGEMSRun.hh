@@ -56,8 +56,6 @@ public:
   [[nodiscard]] auto HasObserver() const noexcept -> bool;
 
   void SetRandom(std::shared_ptr<random::GGEMSRandom> random);
-  void SetPrimaryCount(std::uint32_t primary_count);
-  void SetSource(std::shared_ptr<sources::GGEMSSource> source);
   void AddSource(std::shared_ptr<sources::GGEMSSource> source);
   void SetObserver(std::shared_ptr<observer::GGEMSTransportObserver> observer);
 

@@ -31,8 +31,8 @@
 
 /// \cond
 #include <utility>
-
 /// \endcond
+
 #include "GGEMS/logging/GGEMSOutputState.hh"
 #include "GGEMS/logging/GGEMSLogger.hh"
 
@@ -63,7 +63,7 @@ public:
   }
 
 private:
-  /*! \brief Non-owning reference to the destination output state. */
-  GGEMSOutputState &state_;
+  GGEMSOutputState
+    &state_; /*!< Non-owning reference to the destination output state. */
 };
 } // namespace ggems::core

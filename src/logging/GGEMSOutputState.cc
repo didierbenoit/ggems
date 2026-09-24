@@ -33,8 +33,8 @@
 #include <utility>
 #include <vector>
 #include <algorithm>
-
 /// \endcond
+
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/logging/GGEMSOutputState.hh"
 
@@ -42,20 +42,6 @@ namespace ggems::core {
 
 // =============================================================================
 // =============================================================================
-
-auto GGEMSOutputState::SetRunStatus(RunStatus run_status) -> void {
-  std::scoped_lock lock(mtx_);
-  run_status_ = run_status;
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSOutputState::GetRunStatus() const -> RunStatus {
-  std::scoped_lock lock(mtx_);
-  return run_status_;
-}
-
-// -----------------------------------------------------------------------------
 
 auto GGEMSOutputState::SetLogCapacity(std::size_t capacity) -> void {
   std::scoped_lock lock(mtx_);

@@ -249,32 +249,7 @@ auto GGEMSRun::SetRandom(std::shared_ptr<random::GGEMSRandom> random) -> void {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSRun::SetSource(std::shared_ptr<sources::GGEMSSource> source) -> void {
-  if (!(source != nullptr)) {
-    throw ggems::core::GGEMSRecoverable(
-      "Cannot attach a null GGEMSSource to GGEMSRun.");
-  }
-
-  if (initialized_) {
-    throw ggems::core::GGEMSRecoverable(
-      "Cannot change GGEMSSource after Initialize.");
-  }
-
-  sources_.clear();
-  sources_.push_back(std::move(source));
-  uses_implicit_default_source_ = false;
-
-  GGEMS_INFO("Source", "GGEMSRun source attached.");
-}
-
-// -----------------------------------------------------------------------------
-
 auto GGEMSRun::AddSource(std::shared_ptr<sources::GGEMSSource> source) -> void {
-  if (!(source != nullptr)) {
-    throw ggems::core::GGEMSRecoverable(
-      "Cannot attach a null GGEMSSource to GGEMSRun.");
-  }
-
   if (initialized_) {
     throw ggems::core::GGEMSRecoverable(
       "Cannot add a GGEMSSource after Initialize.");
@@ -308,28 +283,6 @@ auto GGEMSRun::SetObserver(
   observer_ = std::move(observer);
 
   GGEMS_INFO("Observer", "GGEMSRun transport observer attached.");
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSRun::SetPrimaryCount(std::uint32_t primary_count) -> void {
-  if (initialized_) {
-    throw ggems::core::GGEMSRecoverable(
-      "Cannot change primary count after Initialize.");
-  }
-
-  if (!(primary_count > 0U)) {
-    throw ggems::core::GGEMSRecoverable(
-      "GGEMSRun primary count must be non-zero.");
-  }
-
-  if (!(sources_.size() == 1U)) {
-    throw ggems::core::GGEMSRecoverable(
-      "GGEMSRun::SetPrimaryCount is ambiguous with multiple sources. "
-      "Configure each GGEMSSource primary count directly.");
-  }
-
-  sources_.front()->SetPrimaryCount(primary_count);
 }
 
 // -----------------------------------------------------------------------------

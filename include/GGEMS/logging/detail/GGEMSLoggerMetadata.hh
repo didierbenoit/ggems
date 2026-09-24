@@ -32,8 +32,8 @@
 /// \cond
 #include <string>
 #include <string_view>
-
 /// \endcond
+
 /*!
  * \namespace ggems::core::logging::detail
  * \brief Provides internal metadata helpers used by the GGEMS logger.

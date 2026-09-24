@@ -36,8 +36,8 @@
 #include <string_view>
 #include <thread>
 #include <unordered_map>
-
 /// \endcond
+
 #include "GGEMS/logging/detail/GGEMSLoggerMetadata.hh"
 
 namespace ggems::core::logging::detail {

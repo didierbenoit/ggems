@@ -30,45 +30,14 @@
 #pragma once
 
 /// \cond
-#include <cstdint>
 #include <mutex>
 #include <vector>
 #include <cstddef>
-
 /// \endcond
+
 #include "GGEMS/logging/GGEMSLogger.hh"
 
 namespace ggems::core {
-/*!
- * \brief Describes the lifecycle state of a GGEMS run for user-facing output.
- */
-enum class RunStatus : std::uint8_t {
-  /*!
-   * \brief Run startup has begun.
-   */
-  Starting = 0,
-  /*!
-   * \brief Run configuration is in progress.
-   */
-  Configuring,
-  /*!
-   * \brief Run configuration is complete and ready to execute.
-   */
-  Ready,
-  /*!
-   * \brief Particle transport is running.
-   */
-  Running,
-  /*!
-   * \brief Run completed successfully.
-   */
-  Finished,
-  /*!
-   * \brief Run terminated with a failure.
-   */
-  Failed
-};
-
 /*!
  * \brief Stores thread-safe user-facing run status and recent rendered log
  * lines.
@@ -82,6 +51,7 @@ public:
    * \brief Constructs an empty output state with the default log capacity.
    */
   GGEMSOutputState() = default;
+
   /*!
    * \brief Destroys the output state.
    */
@@ -89,25 +59,15 @@ public:
 
   /*! \brief Copy construction is disabled. */
   GGEMSOutputState(GGEMSOutputState const &) = delete;
+
   /*! \brief Move construction is disabled. */
   GGEMSOutputState(GGEMSOutputState &&) = delete;
+
   /*! \brief Copy assignment is disabled. */
   auto operator=(GGEMSOutputState const &) -> GGEMSOutputState & = delete;
+
   /*! \brief Move assignment is disabled. */
   auto operator=(GGEMSOutputState &&) -> GGEMSOutputState & = delete;
-
-  /*!
-   * \brief Sets the current run status.
-   *
-   * \param[in] run_status New run status.
-   */
-  auto SetRunStatus(RunStatus run_status) -> void;
-  /*!
-   * \brief Returns the current run status.
-   *
-   * \return Current run status.
-   */
-  [[nodiscard]] auto GetRunStatus() const -> RunStatus;
 
   /*!
    * \brief Sets the retained-log capacity and clears all existing log lines.
@@ -117,6 +77,7 @@ public:
    * \param[in] capacity Requested maximum retained line count.
    */
   auto SetLogCapacity(std::size_t capacity) -> void;
+
   /*!
    * \brief Returns the current retained-log capacity.
    *
@@ -155,22 +116,18 @@ public:
   [[nodiscard]] auto GetLogCount() const -> std::size_t;
 
 private:
-  /*!
-   * \brief Default number of rendered log lines retained by a new state.
-   */
-  static constexpr std::size_t k_default_log_capacity{2000U};
-
-  /*! \brief Mutex protecting all mutable output-state data. */
-  mutable std::mutex mtx_;
-  /*! \brief Current user-facing run status. */
-  RunStatus run_status_{RunStatus::Starting};
-  /*! \brief Storage backing the bounded rendered-line ring buffer. */
-  std::vector<RenderedLogLine> log_ring_;
-  /*! \brief Maximum number of rendered lines retained. */
-  std::size_t log_capacity_{k_default_log_capacity};
-  /*! \brief Index of the oldest retained line when the ring is populated. */
-  std::size_t log_head_{0};
-  /*! \brief Number of valid rendered lines currently retained. */
-  std::size_t log_size_{0};
+  static constexpr std::size_t k_default_log_capacity{
+    2000U}; /*!< Default number of rendered log lines retained by a new state.
+             */
+  mutable std::mutex
+    mtx_; /*!< Mutex protecting all mutable output-state data. */
+  std::vector<RenderedLogLine>
+    log_ring_; /*!< Storage backing the bounded rendered-line ring buffer. */
+  std::size_t log_capacity_{
+    k_default_log_capacity}; /*!< Maximum number of rendered lines retained. */
+  std::size_t log_head_{
+    0}; /*!< Index of the oldest retained line when the ring is populated. */
+  std::size_t log_size_{
+    0}; /*!< Number of valid rendered lines currently retained. */
 };
 } // namespace ggems::core

@@ -43,8 +43,8 @@
 #include <optional>
 #include <vector>
 #include <format>
-
 /// \endcond
+
 #include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/render/GGEMSColor.hh"
 
@@ -53,91 +53,33 @@ namespace ggems::core {
 /*!
  * \brief Identifies the severity of a GGEMS log record.
  */
-enum class LogLevel : std::uint8_t { Debug = 0, Info, Warn, Error };
-
-/*!
- * \var ggems::core::LogLevel ggems::core::LogLevel::Debug
- * \brief Diagnostic message intended for development and debugging.
- */
-
-/*!
- * \var ggems::core::LogLevel ggems::core::LogLevel::Info
- * \brief Informational message.
- */
-
-/*!
- * \var ggems::core::LogLevel ggems::core::LogLevel::Warn
- * \brief Warning message.
- */
-
-/*!
- * \var ggems::core::LogLevel ggems::core::LogLevel::Error
- * \brief Error message.
- */
+enum class LogLevel : std::uint8_t {
+  Debug = 0, /*!<  Diagnostic message intended for development and debugging.*/
+  Info,      /*!< Informational message. */
+  Warn,      /*!< Warning message. */
+  Error,     /*!< Error message. */
+};
 
 /*!
  * \brief Identifies the character encoding used for GGEMS textual output.
  */
-enum class Encoding : std::uint8_t { Unicode = 0, Ascii };
-
-/*!
- * \var ggems::core::Encoding ggems::core::Encoding::Unicode
- * \brief Enables Unicode output where supported by the active sink.
- */
-
-/*!
- * \var ggems::core::Encoding ggems::core::Encoding::Ascii
- * \brief Restricts output to the portable ASCII representation.
- */
+enum class Encoding : std::uint8_t {
+  Unicode = 0, /*!< Enables Unicode output where supported by the active sink.*/
+  Ascii,       /*!< Restricts output to the portable ASCII representation. */
+};
 
 /*!
  * \brief Stores the metadata and message associated with one log event.
  */
 struct LogRecord {
-  /*!
-   * \brief Timestamp assigned when the record is created.
-   */
-  std::chrono::system_clock::time_point timestamp;
-
-  /*!
-   * \brief Severity of the record.
-   */
-  LogLevel level{LogLevel::Info};
-
-  /*!
-   * \brief Verbosity depth used for detail filtering.
-   */
-  std::int32_t depth{0};
-
-  /*!
-   * \brief Stable textual tag of the emitting thread.
-   */
-  std::string thread_id;
-
-  /*!
-   * \brief GGEMS module associated with the message.
-   */
-  std::string module;
-
-  /*!
-   * \brief Formatted message payload.
-   */
-  std::string message;
-
-  /*!
-   * \brief Simplified source function name.
-   */
-  std::string function;
-
-  /*!
-   * \brief Source file associated with the record.
-   */
-  std::string file;
-
-  /*!
-   * \brief Source line associated with the record.
-   */
-  std::int32_t line{0};
+  std::chrono::system_clock::time_point
+    timestamp; /*!< Timestamp assigned when the record is created. */
+  LogLevel level{LogLevel::Info}; /*!< Severity of the record. */
+  std::int32_t depth{0}; /*!< Verbosity depth used for detail filtering. */
+  std::string thread_id; /*!< Stable textual tag of the emitting thread. */
+  std::string module;    /*!< GGEMS module associated with the message */
+  std::string message;   /*!< Formatted message payload */
+  std::string function;  /*!< Simplified source function name */
 };
 
 /*!
@@ -145,35 +87,13 @@ struct LogRecord {
  * formatting.
  */
 struct RenderedLogLine {
-  /*!
-   * \brief Rendered metadata prefix.
-   */
-  std::string prefix;
-
-  /*!
-   * \brief Rendered message payload.
-   */
-  std::string msg;
-
-  /*!
-   * \brief Color associated with the rendered prefix.
-   */
-  render::ColorKey color{render::DEFAULT_FG};
-
-  /*!
-   * \brief Severity retained from the source record.
-   */
-  LogLevel level{LogLevel::Info};
-
-  /*!
-   * \brief Verbosity depth retained from the source record.
-   */
-  std::int32_t depth{0};
-
-  /*!
-   * \brief Module retained from the source record.
-   */
-  std::string module;
+  std::string prefix; /*!< Rendered metadata prefix. */
+  std::string msg;    /*!< Rendered message payload. */
+  render::ColorKey color{
+    render::DEFAULT_FG}; /*!< Color associated with the rendered prefix. */
+  LogLevel level{LogLevel::Info}; /*!< Original record severity. */
+  std::int32_t depth{0};          /*!< Original record verbosity. */
+  std::string module; /*!< Module retained from the source record. */
 };
 
 /*!
@@ -215,18 +135,9 @@ public:
   auto Write(RenderedLogLine &&log_line) -> void override;
 
 private:
-  /*!
-   * \brief Destination log-file path.
-   */
-  std::string path_;
-  /*!
-   * \brief Output stream owned by the sink.
-   */
-  std::ofstream out_;
-  /*!
-   * \brief Mutex serializing writes to the file stream.
-   */
-  std::mutex mtx_;
+  std::string path_;  /*!< Destination log-file path. */
+  std::ofstream out_; /*!< Output stream owned by the sink. */
+  std::mutex mtx_;    /*!< Mutex serializing writes to the file stream. */
 };
 
 /*!
@@ -249,10 +160,7 @@ public:
   auto Write(RenderedLogLine &&log_line) -> void override;
 
 private:
-  /*!
-   * \brief Mutex serializing writes to standard output.
-   */
-  std::mutex mtx_;
+  std::mutex mtx_; /*!< Mutex serializing writes to standard output. */
 };
 
 /*!
@@ -290,14 +198,17 @@ public:
    * \brief Copy construction is disabled.
    */
   GGEMSLogger(GGEMSLogger const &) = delete;
+
   /*!
    * \brief Move construction is disabled.
    */
   GGEMSLogger(GGEMSLogger &&) = delete;
+
   /*!
    * \brief Copy assignment is disabled.
    */
   auto operator=(GGEMSLogger const &) -> GGEMSLogger & = delete;
+
   /*!
    * \brief Move assignment is disabled.
    */
@@ -315,14 +226,6 @@ public:
    * \throws GGEMSFatal If \p sink is null.
    */
   auto AddSink(std::unique_ptr<LogSink> sink) -> void;
-
-  /*!
-   * \brief Replaces all active sinks with one owned sink.
-   *
-   * \param[in] sink Sink to install.
-   * \throws GGEMSFatal If \p sink is null.
-   */
-  auto SetSink(std::unique_ptr<LogSink> sink) -> void;
 
   /*!
    * \brief Forces the logger color policy to an explicit value.
@@ -426,45 +329,16 @@ private:
    */
   void Dispatch(LogRecord const &rec);
 
-#ifdef _WIN32
-  /*!
-   * \brief Configures the Windows-specific Unicode output hook.
-   *
-   * \return Whether the platform-specific configuration succeeds.
-   */
-  auto EnableUnicodeWin32() -> bool;
-#else
-  /*!
-   * \brief Configures the Unix-specific Unicode output hook.
-   *
-   * \return Whether the platform-specific configuration succeeds.
-   */
-  auto EnableUnicodeUnix() -> bool;
-#endif
-
-  /*!
-   * \brief Maximum accepted logging detail depth.
-   */
-  std::atomic<std::int32_t> detail_level_{1};
-
-  /*!
-   * \brief Mutex protecting logger configuration and sink dispatch.
-   */
-  mutable std::mutex mtx_;
-
-  /*!
-   * \brief Owned log sinks receiving rendered lines.
-   */
-  std::vector<std::unique_ptr<LogSink>> sinks_;
-
-  /*!
-   * \brief Optional explicit color-policy override.
-   */
-  std::optional<bool> force_color_;
-
-  /*!
-   * \brief Current text encoding used by GGEMS output.
-   */
-  Encoding encoding_{Encoding::Ascii};
+  std::atomic<std::int32_t> detail_level_{
+    1}; /*!< Maximum accepted logging detail depth. */
+  mutable std::mutex
+    mtx_; /*!< Mutex protecting logger configuration and sink dispatch. */
+  std::vector<std::unique_ptr<LogSink>>
+    sinks_; /*!< Owned log sinks receiving rendered lines. */
+  std::optional<bool>
+    force_color_; /*!< Optional explicit color-policy override. */
+  Encoding encoding_{
+    Encoding::Ascii,
+  }; /*!< Current text encoding used by GGEMS output. */
 };
 } // namespace ggems::core

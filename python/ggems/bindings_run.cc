@@ -55,8 +55,6 @@ void BindRun(py::module_ &module) {
 
     .def("set_random", &ggems::core::GGEMSRun::SetRandom, py::arg("random"))
 
-    .def("set_source", &ggems::core::GGEMSRun::SetSource, py::arg("source"))
-
     .def("add_source", &ggems::core::GGEMSRun::AddSource, py::arg("source"))
 
     .def("set_observer", &ggems::core::GGEMSRun::SetObserver,

@@ -33,8 +33,8 @@
 #include <string>
 #include <string_view>
 #include <cstdint>
-
 /// \endcond
+
 #include "GGEMS/logging/GGEMSOutputState.hh"
 
 namespace ggems::core {
@@ -42,29 +42,11 @@ namespace ggems::core {
 /*!
  * \brief Identifies the active GGEMS output destination mode.
  */
-enum class OutputMode : std::uint8_t { Term = 0, Gui };
-/*!
- * \var ggems::core::OutputMode ggems::core::OutputMode::Term
- * \brief Routes GGEMS output to the terminal logger sink.
- */
-/*!
- * \var ggems::core::OutputMode ggems::core::OutputMode::Gui
- * \brief Routes GGEMS output to the in-memory state used by the GUI.
- */
+enum class OutputMode : std::uint8_t {
+  Term = 0, /*!< Routes GGEMS output to the terminal logger sink. */
+  Gui,      /*!< Routes GGEMS output to the in-memory state used by the GUI. */
+};
 
-/*!
- * \brief Returns the currently selected output mode.
- *
- * \return Current output mode.
- */
-auto GetOutputMode() noexcept -> OutputMode;
-
-/*!
- * \brief Returns whether the output mode has configured the logger sinks.
- *
- * \return True after output configuration has been applied.
- */
-auto IsOutputConfigured() noexcept -> bool;
 /*!
  * \brief Returns whether the GGEMS output runtime is marked as started.
  *
@@ -87,7 +69,7 @@ auto SetOutputMode(OutputMode mode) -> void;
 /*!
  * \brief Configures GGEMS output from a textual mode selector.
  *
- * Accepted selectors are ``term``/``terminal`` and ``gui``/``imgui``.
+ * Accepted selectors are ``term`` and ``gui``.
  * Matching is case-insensitive.
  *
  * \param[in] mode Textual output-mode selector.
