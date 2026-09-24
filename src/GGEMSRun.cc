@@ -222,8 +222,10 @@ auto GGEMSRun::GetCurrentTimeWindowPicoSecond() const noexcept
   std::uint64_t const window_width_ps =
     std::min(time_step_ps_, remaining_time_ps);
 
-  return {.start_ps = current_time_ps,
-          .stop_ps = current_time_ps + window_width_ps};
+  return {
+    .start_ps = current_time_ps,
+    .stop_ps = current_time_ps + window_width_ps,
+  };
 }
 
 // -----------------------------------------------------------------------------
@@ -332,22 +334,6 @@ auto GGEMSRun::SetPrimaryCount(std::uint32_t primary_count) -> void {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSRun::SetWorkerCount(std::uint32_t worker_count) -> void {
-  if (!(worker_count > 0ULL)) {
-    throw ggems::core::GGEMSRecoverable(
-      "GGEMSRun worker count must be non-zero.");
-  }
-
-  if (initialized_) {
-    throw ggems::core::GGEMSRecoverable(
-      "Cannot change worker count after Initialize.");
-  }
-
-  worker_count_ = worker_count;
-}
-
-// -----------------------------------------------------------------------------
-
 auto GGEMSRun::Initialize() -> void {
   if (initialized_) {
     throw ggems::core::GGEMSRecoverable(
@@ -402,7 +388,9 @@ auto GGEMSRun::Initialize() -> void {
     throw ggems::core::GGEMSRecoverable(
       "GGEMSRun OpenCL context count exceeds uint32 storage.");
   }
-  (void)transport::ComputeSafeTransportLaunchPrimaryCount(worker_count_);
+
+  (void)transport::ComputeSafeTransportLaunchPrimaryCount(
+    opencl.GetWorkerCount());
 
   GGEMS_INFO("Core", "Initializing GGEMSRun stable state...");
 
@@ -425,20 +413,23 @@ auto GGEMSRun::Initialize() -> void {
 
   for (std::size_t context_index = 0U;
        context_index < opencl.GetContext().size(); ++context_index) {
-    if (!(context_index <= std::numeric_limits<std::uint64_t>::max() /
-                             static_cast<std::uint64_t>(worker_count_))) {
+    if (!(context_index <=
+          std::numeric_limits<std::uint64_t>::max() /
+            static_cast<std::uint64_t>(opencl.GetWorkerCount()))) {
       throw ggems::core::GGEMSRecoverable(
         "GGEMSRun random stream offset overflows uint64 storage.");
     }
+
     std::uint64_t random_stream_offset =
       static_cast<std::uint64_t>(context_index) *
-      static_cast<std::uint64_t>(worker_count_);
+      static_cast<std::uint64_t>(opencl.GetWorkerCount());
 
     new_transport_workloads.push_back(
       std::make_unique<transport::GGEMSTransportWorkload>(
         opencl.GetContext()[context_index], kernel_root, *random_,
-        worker_count_, *new_source_configuration, random_stream_offset,
-        static_cast<std::uint32_t>(context_index), observer_record_capacity));
+        opencl.GetWorkerCount(), *new_source_configuration,
+        random_stream_offset, static_cast<std::uint32_t>(context_index),
+        observer_record_capacity));
   }
 
   GGEMS_INFO("Core", "{} transport workload(s) prepared.",
@@ -464,7 +455,7 @@ auto GGEMSRun::Initialize() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSRun::Run() -> void {
-  if (!(initialized_)) {
+  if (!initialized_) {
     throw ggems::core::GGEMSRecoverable(
       "GGEMSRun::Run called before Initialize.");
   }
@@ -475,20 +466,24 @@ auto GGEMSRun::Run() -> void {
 
   RunningGuard running_guard{running_};
 
-  if (!(HasNextTimeStep())) {
+  if (!HasNextTimeStep()) {
     throw ggems::core::GGEMSRecoverable("GGEMSRun time schedule is exhausted.");
   }
 
   GGEMSTimeWindow const time_window = GetCurrentTimeWindowPicoSecond();
+
   if (!(next_run_id_ < std::numeric_limits<std::uint64_t>::max())) {
     throw ggems::core::GGEMSRecoverable(
       "GGEMSRun identifier space is exhausted.");
   }
+
   std::uint64_t const run_id = next_run_id_;
+
   if (!(source_population_planner_ != nullptr)) {
     throw ggems::core::GGEMSInternal(
       "GGEMSRun source population planner was not initialized.");
   }
+
   if (!(source_population_planner_->GetRevision() <
         std::numeric_limits<std::uint64_t>::max())) {
     throw ggems::core::GGEMSRecoverable(
@@ -573,10 +568,13 @@ auto GGEMSRun::Run() -> void {
     return;
   }
 
+  auto &opencl = ocl::GGEMSOpenCL::GetInstance();
+
   std::vector<transport::GGEMSTransportWorkloadPlan> workload_plan =
     transport::BuildEqualTransportWorkloadPlan(
       0ULL, total_primary_count,
-      static_cast<std::uint32_t>(transport_workloads_.size()), worker_count_);
+      static_cast<std::uint32_t>(transport_workloads_.size()),
+      opencl.GetWorkerCount());
 
   std::vector<transport::GGEMSTransportRunReport> reports{workload_plan.size()};
 
@@ -627,7 +625,7 @@ auto GGEMSRun::Run() -> void {
                run_id, reserved_primary_count,
                primary_view.global_history_offset);
   GGEMS_INFOEX("Core", 1, "Projection {} worker count: {}.", run_id,
-               worker_count_);
+               opencl.GetWorkerCount());
 
   {
     std::vector<std::jthread> transport_threads;
@@ -646,7 +644,7 @@ auto GGEMSRun::Run() -> void {
 
       transport_threads.emplace_back(
         [&, plan_index, context_index,
-         config = std::move(transport_configs[plan_index])]() -> void {
+         config = std::move(transport_configs[plan_index])] -> void {
           try {
             reports[plan_index] =
               transport_workloads_[context_index]->Run(config);

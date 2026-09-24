@@ -8,6 +8,7 @@ ggems.start()
 opencl = ggems.opencl.GGEMSOpenCL()
 opencl.print_devices()
 
+opencl.set_worker_count(256)
 opencl.select_devices("2")
 opencl.initialize()
 

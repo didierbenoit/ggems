@@ -122,6 +122,21 @@ Note:
 )doc")
 
     .def(
+      "set_worker_count", &ggems::ocl::GGEMSOpenCL::SetWorkerCount,
+      R"doc(Set the number of OpenCL workers used for each transport workload.
+
+The same worker count is used for every selected OpenCL context. GGEMS uses
+2,097,152 workers per context by default.
+
+GGEMS reads this value when transport workloads are created, so configure it
+before initializing a GGEMSRun.
+
+Args:
+    worker_count: Number of OpenCL workers used per context.
+)doc",
+      py::arg("worker_count"))
+
+    .def(
       "select_devices",
       [](ggems::ocl::GGEMSOpenCL &opencl, std::string const &devices) -> void {
         opencl.SelectDevices({devices});

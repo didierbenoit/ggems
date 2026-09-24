@@ -36,6 +36,7 @@
 #include <filesystem>
 #include <functional>
 #include <memory>
+#include <cstdint>
 /// \endcond
 
 #include "GGEMS/logging/GGEMSLogMacros.hh"
@@ -96,7 +97,7 @@ public:
    * \return OpenCL runtime manager singleton.
    */
   [[nodiscard]] static auto GetInstance() -> GGEMSOpenCL & {
-    static GGEMSOpenCL *instance = []() -> GGEMSOpenCL * {
+    static GGEMSOpenCL *instance = [] -> GGEMSOpenCL * {
       GGEMS_INFOEX("OpenCL", 3, "Creating GGEMSOpenCL singleton instance.");
       return new GGEMSOpenCL();
     }();
@@ -197,6 +198,26 @@ public:
     return contexts_;
   }
 
+  /*!
+   * \brief Sets the number of OpenCL workers used by each transport workload.
+   *
+   * The same worker count is currently used for every active OpenCL context.
+   * The value is read when GGEMS transport workloads are created.
+   *
+   * \param[in] worker_count Number of workers used per OpenCL context.
+   */
+  auto SetWorkerCount(std::uint32_t worker_count) -> void;
+
+  /*!
+   * \brief Returns the number of OpenCL workers used by each transport
+   * workload.
+   *
+   * \return Number of workers used per OpenCL context.
+   */
+  [[nodiscard]] auto GetWorkerCount() const noexcept -> std::uint32_t {
+    return worker_count_;
+  }
+
 private:
   /*!
    * \brief Constructs and initializes the process-lifetime OpenCL runtime
@@ -271,5 +292,7 @@ private:
     program_cache_; /*!< Cached OpenCL programs, never evicted. */
   std::mutex program_cache_mutex_; /*!< Mutex protecting the program cache. */
   bool is_initialized_{false};     /*!< Whether contexts were created. */
+  std::uint32_t worker_count_{
+    2'097'152}; /*!< Number of OpenCL workers used per transport workload. */
 };
 } // namespace ggems::ocl

@@ -57,7 +57,6 @@ public:
 
   void SetRandom(std::shared_ptr<random::GGEMSRandom> random);
   void SetPrimaryCount(std::uint32_t primary_count);
-  void SetWorkerCount(std::uint32_t worker_count);
   void SetSource(std::shared_ptr<sources::GGEMSSource> source);
   void AddSource(std::shared_ptr<sources::GGEMSSource> source);
   void SetObserver(std::shared_ptr<observer::GGEMSTransportObserver> observer);
@@ -91,7 +90,5 @@ private:
 
   std::vector<std::unique_ptr<transport::GGEMSTransportWorkload>>
     transport_workloads_;
-
-  std::uint32_t worker_count_{256U};
 };
 } // namespace ggems::core

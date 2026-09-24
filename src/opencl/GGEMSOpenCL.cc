@@ -38,6 +38,7 @@
 #include <memory>
 #include <vector>
 #include <mutex>
+#include <cstdint>
 #include <cstddef>
 #include <utility>
 #include <cstdlib>
@@ -48,7 +49,6 @@
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/logging/GGEMSLogMacros.hh"
-#include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLPlatform.hh"
 #include "GGEMS/opencl/GGEMSOpenCLUtils.hh"
@@ -394,6 +394,12 @@ GGEMSOpenCL::~GGEMSOpenCL() {
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSOpenCL::SetWorkerCount(std::uint32_t worker_count) -> void {
+  worker_count_ = worker_count;
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSOpenCL::GetOrCreateProgram(GGEMSOpenCLContext const &ctx,
                                      std::filesystem::path const &kernel_root,
                                      std::string const &kernel_name,
@@ -516,8 +522,6 @@ auto GGEMSOpenCL::SelectDevices(std::vector<std::string> const &filters)
     throw ggems::core::GGEMSFatal("No OpenCL devices found.");
   }
 
-  // Resolve the request before touching any member so that a rejected request
-  // cannot leave a selection that no longer describes the active contexts.
   auto requested_devices = ResolveDeviceSelection(filters, all_devices);
 
   if (is_initialized_) {
@@ -577,10 +581,6 @@ auto GGEMSOpenCL::Initialize() -> void {
 
   try {
     CreateContexts();
-
-    // Latching the initialized state keeps the freeze independent of the
-    // contexts exposed by GetContext(), so no caller can reopen device
-    // selection or context creation by emptying that collection.
     is_initialized_ = !contexts_.empty();
 
     GGEMS_INFOEX("OpenCL", 2, "OpenCL backend ready.");
