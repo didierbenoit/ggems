@@ -61,25 +61,17 @@ public:
    */
   [[nodiscard]] static auto GetInstance() noexcept -> GGEMSMaterialManager &;
 
-  /*!
-   * \brief Disallows copying the process-wide registry.
-   */
+  /*! \brief Disallows copying the process-wide registry. */
   GGEMSMaterialManager(GGEMSMaterialManager const &) = delete;
 
-  /*!
-   * \brief Disallows moving the process-wide registry.
-   */
+  /*! \brief Disallows moving the process-wide registry. */
   GGEMSMaterialManager(GGEMSMaterialManager &&) = delete;
 
-  /*!
-   * \brief Disallows copy assignment of the process-wide registry.
-   */
+  /*! \brief Disallows copy assignment of the process-wide registry. */
   auto operator=(GGEMSMaterialManager const &)
     -> GGEMSMaterialManager & = delete;
 
-  /*!
-   * \brief Disallows move assignment of the process-wide registry.
-   */
+  /*! \brief Disallows move assignment of the process-wide registry. */
   auto operator=(GGEMSMaterialManager &&) -> GGEMSMaterialManager & = delete;
 
   /*!
@@ -163,15 +155,14 @@ public:
     -> GGEMSMaterial const &;
 
 private:
-  /*!
-   * \brief Creates empty registered and custom-material collections.
-   */
+  /*! \brief Creates empty registered and custom-material collections. */
   GGEMSMaterialManager() = default;
 
-  std::vector<GGEMSMaterial>
-    materials_; /*!< Owned registered materials in first-use order. */
-  std::vector<GGEMSMaterial>
-    custom_materials_; /*!< Owned available custom definitions. */
+  /*! \brief Owned registered materials in first-use order. */
+  std::vector<GGEMSMaterial> materials_;
+
+  /*! \brief Owned available custom definitions. */
+  std::vector<GGEMSMaterial> custom_materials_;
 };
 
 } // namespace ggems::core::materials

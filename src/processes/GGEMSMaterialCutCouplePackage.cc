@@ -56,9 +56,11 @@ namespace {
  * quantization.
  */
 struct ResolvedContext {
-  std::uint32_t material_id; /*!< ID in the input EM package. */
-  GGEMSResolvedProductionCutLengths
-    lengths; /*!< Gamma/e-/e+/Proton lengths in pm. */
+  /*! \brief ID in the input EM package. */
+  std::uint32_t material_id;
+
+  /*! \brief Gamma/e-/e+/Proton lengths in pm. */
+  GGEMSResolvedProductionCutLengths lengths;
 
   /*!
    * \brief Orders conversion inputs by material ID and then all four exact

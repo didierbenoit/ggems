@@ -89,9 +89,7 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-/*!
- * \brief Maps accepted vendor aliases to normalized OpenCL vendor names.
- */
+/*! \brief Maps accepted vendor aliases to normalized OpenCL vendor names. */
 constexpr std::array<std::pair<std::string_view, std::string_view>, 3>
   vendor_aliases{
     {
@@ -110,6 +108,9 @@ constexpr std::array<std::pair<std::string_view, std::string_view>, 3>
  *
  * \param[in] filters Device selector expressions.
  * \return Normalized selector tokens.
+ *
+ * \throws ggems::core::GGEMSFatal If an expression contains an empty
+ * semicolon-delimited token.
  */
 [[nodiscard]] auto
 TokenizeDeviceSelection(std::vector<std::string> const &filters)
@@ -152,6 +153,9 @@ TokenizeDeviceSelection(std::vector<std::string> const &filters)
  *
  * \param[in] token Decimal index token.
  * \return Parsed device index.
+ *
+ * \throws ggems::core::GGEMSFatal If the entire token is not a representable
+ * decimal index.
  */
 [[nodiscard]] auto ParseDeviceIndex(std::string_view token) -> std::size_t {
   std::size_t index{0U};
@@ -175,16 +179,24 @@ TokenizeDeviceSelection(std::vector<std::string> const &filters)
  * parsing.
  */
 struct DeviceSelectionCriteria {
-  std::vector<std::size_t>
-    numeric_indices; /*!< Explicit device indices in selector order. */
-  cl_device_type requested_type{0};  /*!< Requested CPU/GPU type, or zero. */
-  std::string_view requested_vendor; /*!< Requested normalized vendor name. */
+  /*! \brief Explicit device indices in selector order. */
+  std::vector<std::size_t> numeric_indices;
+
+  /*! \brief Requested CPU/GPU type, or zero. */
+  cl_device_type requested_type{0};
+
+  /*! \brief Requested normalized vendor name. */
+  std::string_view requested_vendor;
+
+  /*! \brief Whether a numeric selector was parsed. */
   bool has_numeric_selector{
     false,
-  }; /*!< Whether a numeric selector was parsed. */
+  };
+
+  /*! \brief Whether a textual selector was parsed. */
   bool has_textual_selector{
     false,
-  }; /*!< Whether a textual selector was parsed. */
+  };
 };
 
 // =============================================================================
@@ -211,6 +223,9 @@ struct DeviceSelectionCriteria {
  * \param[in] index Device index to append.
  * \param[in] selector Original normalized selector used for diagnostics.
  * \param[in] device_count Number of discovered devices.
+ *
+ * \throws ggems::core::GGEMSFatal If the index is outside the discovered
+ * inventory.
  */
 auto AppendDeviceIndex(DeviceSelectionCriteria &criteria, std::size_t index,
                        std::string_view selector, std::size_t device_count)
@@ -236,6 +251,9 @@ auto AppendDeviceIndex(DeviceSelectionCriteria &criteria, std::size_t index,
  * \param[in] token Normalized numeric selector token.
  * \param[in] device_count Number of discovered devices.
  * \param[in,out] criteria Selection criteria being built.
+ *
+ * \throws ggems::core::GGEMSFatal If an index or range is malformed, reversed,
+ * or out of range.
  */
 auto ParseNumericDeviceSelector(std::string const &token,
                                 std::size_t device_count,
@@ -283,6 +301,9 @@ auto ParseNumericDeviceSelector(std::string const &token,
  * \param[in] token Normalized textual selector token.
  * \param[in,out] criteria Selection criteria being built.
  * \return True if the token is a recognized textual selector.
+ *
+ * \throws ggems::core::GGEMSFatal If conflicting device types or vendors are
+ * requested.
  */
 [[nodiscard]] auto ParseTextualDeviceSelector(std::string const &token,
                                               DeviceSelectionCriteria &criteria)
@@ -332,6 +353,9 @@ auto ParseNumericDeviceSelector(std::string const &token,
  * \param[in] tokens Normalized selector tokens.
  * \param[in] device_count Number of discovered devices.
  * \return Validated device-selection criteria.
+ *
+ * \throws ggems::core::GGEMSFatal If a token is unknown or numeric and textual
+ * selectors are mixed.
  */
 [[nodiscard]] auto
 ParseDeviceSelectionCriteria(std::vector<std::string> const &tokens,

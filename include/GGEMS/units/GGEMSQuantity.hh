@@ -48,21 +48,20 @@ namespace ggems::units {
  *
  * \tparam Tag Quantity-family tag type.
  * \tparam Representation Underlying arithmetic representation type.
+ *
+ * Aggregate construction and direct access to value do not validate finiteness,
+ * range, or QuantityDomain. Use MakeQuantity() for checked input conversion.
+ * Arithmetic uses the representation directly without applying the
+ * quantity-family sign policy.
  */
 template <typename Tag, typename Representation> struct Quantity {
-  /*!
-   * \brief Quantity-family tag type.
-   */
+  /*! \brief Quantity-family tag type. */
   using tag = Tag;
 
-  /*!
-   * \brief Underlying arithmetic representation type.
-   */
+  /*! \brief Underlying arithmetic representation type. */
   using representation = Representation;
 
-  /*!
-   * \brief Quantity value in the canonical unit of its family.
-   */
+  /*! \brief Quantity value in the canonical unit of its family. */
   Representation value{};
 
   /*!
@@ -115,6 +114,10 @@ template <typename Tag, typename Representation>
  * \param[in] lhs Left operand.
  * \param[in] rhs Right operand.
  * \return Sum in the same quantity type.
+ *
+ * \pre Signed integral results must fit Representation; unsigned integral
+ * arithmetic wraps modulo the representation range. No overflow or sign-domain
+ * check is performed.
  */
 constexpr auto operator+(Quantity<Tag, Representation> lhs,
                          Quantity<Tag, Representation> rhs) noexcept
@@ -131,6 +134,10 @@ template <typename Tag, typename Representation>
  * \param[in] lhs Left operand.
  * \param[in] rhs Right operand.
  * \return Difference in the same quantity type.
+ *
+ * \pre Signed integral results must fit Representation; unsigned integral
+ * arithmetic wraps modulo the representation range. No overflow or sign-domain
+ * check is performed.
  */
 constexpr auto operator-(Quantity<Tag, Representation> lhs,
                          Quantity<Tag, Representation> rhs) noexcept
@@ -145,6 +152,9 @@ constexpr auto operator-(Quantity<Tag, Representation> lhs,
  * \tparam Representation Signed integral or floating-point representation type.
  * \param[in] quantity Quantity to negate.
  * \return Negated quantity.
+ *
+ * \pre Negating a signed integral value must be representable; the minimum
+ * signed value is not accepted by this unchecked operation.
  */
 template <typename Tag, typename Representation>
   requires std::signed_integral<Representation> ||
@@ -199,6 +209,9 @@ constexpr auto operator*(Scalar scale,
  * \param[in] quantity Quantity to divide.
  * \param[in] scale Divisor.
  * \return Scaled quantity.
+ *
+ * The divisor is converted to Representation. Zero, nonfinite values, and
+ * nonfinite results are not rejected.
  */
 template <typename Tag, typename Representation, Arithmetic Scalar>
   requires std::floating_point<Representation>

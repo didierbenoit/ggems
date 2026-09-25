@@ -39,12 +39,13 @@
 
 namespace ggems::core::materials {
 
-/*!
- * \brief Selects the meaning of fractions within one element.
- */
+/*! \brief Selects the meaning of fractions within one element. */
 enum class GGEMSFractionBasis : std::uint8_t {
-  AtomFraction, /*!< Number share */
-  MassFraction, /*!< Mass share. */
+  /*! \brief Number share. */
+  AtomFraction,
+
+  /*! \brief Mass share. */
+  MassFraction,
 };
 
 /*!
@@ -52,8 +53,11 @@ enum class GGEMSFractionBasis : std::uint8_t {
  * fraction.
  */
 struct GGEMSIsotopeFraction {
-  GGEMSIsotope isotope; /*!< Exact isotope identity. */
-  long double fraction; /*!< Share on the composition's declared basis. */
+  /*! \brief Exact isotope identity. */
+  GGEMSIsotope isotope;
+
+  /*! \brief Share on the composition's declared basis. */
+  long double fraction;
 
   /*!
    * \brief Compares isotope identity and fraction by exact field equality.
@@ -132,9 +136,11 @@ public:
     -> bool = default;
 
 private:
-  GGEMSFractionBasis basis_; /*!< Retained atom or mass authoring basis. */
-  std::vector<GGEMSIsotopeFraction>
-    fractions_; /*!< Fractions by isotope key. */
+  /*! \brief Retained atom or mass authoring basis. */
+  GGEMSFractionBasis basis_;
+
+  /*! \brief Fractions by isotope key. */
+  std::vector<GGEMSIsotopeFraction> fractions_;
 };
 
 /*!

@@ -41,15 +41,34 @@ namespace ggems::ocl {
 
 /*!
  * \brief Stores timestamp and duration information for one OpenCL kernel event.
+ *
+ * All integer values use canonical picoseconds. Timestamps refer to the device
+ * profiling clock, not simulation time or the host steady clock. Nanosecond
+ * values and differences saturate independently at uint64_t maximum when
+ * conversion cannot fit; valid indicates successful queries and timestamp
+ * ordering, not absence of saturation.
  */
 struct GGEMSOpenCLKernelTiming {
-  ggems::units::Time time_queued{0U}; /*!< Event queued timestamp. */
-  ggems::units::Time time_submit{0U}; /*!< Event submission timestamp. */
-  ggems::units::Time time_start{0U};  /*!< Event execution-start timestamp. */
-  ggems::units::Time time_end{0U};    /*!< Event execution-end timestamp. */
-  ggems::units::Duration command_time{0U}; /*!< Queue-to-completion duration. */
-  ggems::units::Duration kernel_time{0U};  /*!< Kernel execution duration. */
-  bool valid{false}; /*!< Whether kernel timing is valid. */
+  /*! \brief Event queued timestamp. */
+  ggems::units::Time time_queued{0U};
+
+  /*! \brief Event submission timestamp. */
+  ggems::units::Time time_submit{0U};
+
+  /*! \brief Event execution-start timestamp. */
+  ggems::units::Time time_start{0U};
+
+  /*! \brief Event execution-end timestamp. */
+  ggems::units::Time time_end{0U};
+
+  /*! \brief Queue-to-completion duration. */
+  ggems::units::Duration command_time{0U};
+
+  /*! \brief Kernel execution duration. */
+  ggems::units::Duration kernel_time{0U};
+
+  /*! \brief Whether kernel timing is valid. */
+  bool valid{false};
 };
 
 /*!
@@ -57,48 +76,34 @@ struct GGEMSOpenCLKernelTiming {
  */
 class GGEMSOpenCLProfiler {
 public:
-  /*!
-   * \brief Constructs an empty profiler.
-   */
+  /*! \brief Constructs an empty profiler. */
   GGEMSOpenCLProfiler() = default;
 
-  /*!
-   * \brief Destroys the profiler.
-   */
+  /*! \brief Destroys the profiler. */
   ~GGEMSOpenCLProfiler() = default;
 
-  /*!
-   * \brief Disables copy construction.
-   */
+  /*! \brief Disables copy construction. */
   GGEMSOpenCLProfiler(GGEMSOpenCLProfiler const &) = delete;
 
-  /*!
-   * \brief Disables move construction.
-   */
+  /*! \brief Disables move construction. */
   GGEMSOpenCLProfiler(GGEMSOpenCLProfiler &&) = delete;
 
-  /*!
-   * \brief Disables copy assignment.
-   */
+  /*! \brief Disables copy assignment. */
   auto operator=(GGEMSOpenCLProfiler const &) -> GGEMSOpenCLProfiler & = delete;
 
-  /*!
-   * \brief Disables move assignment.
-   */
+  /*! \brief Disables move assignment. */
   auto operator=(GGEMSOpenCLProfiler &&) -> GGEMSOpenCLProfiler & = delete;
 
-  /*!
-   * \brief Clears all host and kernel timing state.
-   */
+  /*! \brief Clears all host and kernel timing state. */
   auto Reset() noexcept -> void;
 
   /*!
-   * \brief Starts host elapsed-time measurement.
+   * \brief Starts a fresh host measurement and clears previous timing results.
    */
   auto Start() noexcept -> void;
 
   /*!
-   * \brief Stops host elapsed-time measurement.
+   * \brief Completes a running host measurement; otherwise leaves it unchanged.
    */
   auto Stop() noexcept -> void;
 
@@ -106,6 +111,14 @@ public:
    * \brief Records profiling timestamps from a completed OpenCL event.
    *
    * \param[in] event OpenCL event whose profiling information is read.
+   *
+   * Requires a completed event with profiling information available. A failed
+   * query or ordering check leaves the previous timing record unchanged.
+   * Recording does not wait for the event.
+   *
+   * \throws ggems::core::GGEMSFatal If any profiling query fails.
+   * \throws ggems::core::GGEMSRecoverable If queued, submitted, started, and
+   * ended timestamps are not nondecreasing.
    */
   auto RecordKernelEvent(cl::Event const &event) -> void;
 
@@ -137,7 +150,8 @@ public:
   /*!
    * \brief Returns the measured host elapsed time.
    *
-   * \return Measured host elapsed duration.
+   * \return Completed host duration rounded to picoseconds, saturated on
+   * conversion failure; zero before Stop() completes a measurement.
    */
   [[nodiscard]] auto GetElapsedTime() const noexcept -> ggems::units::Duration;
 
@@ -158,7 +172,8 @@ public:
   /*!
    * \brief Returns the measured host elapsed time in seconds.
    *
-   * \return Host elapsed time in seconds.
+   * \return Completed host interval in seconds, or zero while running or before
+   * a measurement.
    */
   [[nodiscard]] auto GetElapsedSeconds() const noexcept -> double;
 
@@ -208,11 +223,20 @@ private:
    */
   [[nodiscard]] auto GetElapsedSecondsRaw() const noexcept -> long double;
 
-  std::chrono::steady_clock::time_point start_; /*!< Host timing start point. */
-  std::chrono::steady_clock::time_point stop_;  /*!< Host timing stop point. */
-  bool running_{false};         /*!< Whether host timing is active. */
-  bool has_measurement_{false}; /*!< Whether a host measurement is available. */
-  GGEMSOpenCLKernelTiming kernel_timing_{}; /*!< Last kernel-event timing. */
+  /*! \brief Host timing start point. */
+  std::chrono::steady_clock::time_point start_;
+
+  /*! \brief Host timing stop point. */
+  std::chrono::steady_clock::time_point stop_;
+
+  /*! \brief Whether host timing is active. */
+  bool running_{false};
+
+  /*! \brief Whether a host measurement is available. */
+  bool has_measurement_{false};
+
+  /*! \brief Last kernel-event timing. */
+  GGEMSOpenCLKernelTiming kernel_timing_{};
 };
 
 } // namespace ggems::ocl

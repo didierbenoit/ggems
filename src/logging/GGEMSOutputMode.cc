@@ -61,9 +61,7 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-/*!
- * \brief Process-wide selected output mode.
- */
+/*! \brief Process-wide selected output mode. */
 OutputMode g_mode{OutputMode::Term};
 
 /*!
@@ -72,19 +70,13 @@ OutputMode g_mode{OutputMode::Term};
  */
 bool g_configured{false};
 
-/*!
- * \brief Optional plain-text output file requested by the user.
- */
+/*! \brief Optional plain-text output file requested by the user. */
 std::optional<std::string> g_output_file_path{};
 
-/*!
- * \brief Lazily created process-wide GUI output state.
- */
+/*! \brief Lazily created process-wide GUI output state. */
 std::unique_ptr<GGEMSOutputState> g_state{};
 
-/*!
- * \brief Process-wide output-runtime started flag.
- */
+/*! \brief Process-wide output-runtime started flag. */
 std::atomic<bool> g_output_running{false};
 
 // =============================================================================
@@ -139,9 +131,7 @@ void EnableWindowsVirtualTerminal(DWORD standard_handle) noexcept {
 // =============================================================================
 // =============================================================================
 
-/*!
- * \brief Prepares the Windows console for UTF-8 and ANSI terminal output.
- */
+/*! \brief Prepares the Windows console for UTF-8 and ANSI terminal output. */
 void PrepareWindowsTerminal() noexcept {
   static_cast<void>(SetConsoleCP(CP_UTF8));
   static_cast<void>(SetConsoleOutputCP(CP_UTF8));
@@ -258,9 +248,7 @@ auto ToTerminalText(render::WrappedLine const &line) -> std::string {
 // =============================================================================
 // =============================================================================
 
-/*!
- * \brief Writes the GGEMS banner directly to the terminal stream.
- */
+/*! \brief Writes the GGEMS banner directly to the terminal stream. */
 auto EmitTerminalBanner() -> void {
   auto const lines = render::BuildBannerLines();
 

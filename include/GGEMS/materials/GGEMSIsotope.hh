@@ -103,10 +103,14 @@ public:
     -> std::strong_ordering = default;
 
 private:
-  std::uint32_t atomic_number_; /*!< Proton number Z. */
-  std::uint32_t mass_number_;   /*!< Nucleon number A. */
-  std::uint32_t
-    isomer_state_; /*!< State key M; zero denotes the ground state. */
+  /*! \brief Proton number Z. */
+  std::uint32_t atomic_number_;
+
+  /*! \brief Nucleon number A. */
+  std::uint32_t mass_number_;
+
+  /*! \brief State key M; zero denotes the ground state. */
+  std::uint32_t isomer_state_;
 };
 
 } // namespace ggems::core::materials

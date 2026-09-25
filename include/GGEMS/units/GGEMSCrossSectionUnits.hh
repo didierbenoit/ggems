@@ -23,6 +23,12 @@
  * \file
  * \brief Declares strongly typed cross-section units and literals.
  *
+ * Literals use MakeQuantity() during constant evaluation. Integral
+ * representations round floating inputs to the nearest canonical integer, with
+ * halfway values away from zero. A failed conversion makes the literal invalid
+ * in a constant expression. Direct aggregate construction bypasses conversion
+ * checks.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -40,9 +46,7 @@
 
 namespace ggems::units {
 
-/*!
- * \brief Marker type identifying the cross section unit registry.
- */
+/*! \brief Marker type identifying the cross section unit registry. */
 struct CrossSectionUnitSet {};
 
 /*!
@@ -50,9 +54,7 @@ struct CrossSectionUnitSet {};
  * factors.
  */
 template <> struct UnitRegistry<CrossSectionUnitSet> {
-  /*!
-   * \brief Registered unit definitions for this quantity family.
-   */
+  /*! \brief Registered unit definitions for this quantity family. */
   static constexpr std::array<UnitDefinition, 6U> units{
     {
       {
@@ -84,33 +86,29 @@ template <> struct UnitRegistry<CrossSectionUnitSet> {
   };
 };
 
-/*!
- * \brief Tag type identifying cross-section quantities.
- */
+/*! \brief Tag type identifying cross-section quantities. */
 struct CrossSectionTag {};
 
 /*!
  * \brief Defines conversion and formatting traits for CrossSection quantities.
  */
 template <> struct QuantityTraits<CrossSectionTag> {
-  /*!
-   * \brief Unit registry associated with this quantity type.
-   */
+  /*! \brief Unit registry associated with this quantity type. */
   using unit_set = CrossSectionUnitSet;
-  /*!
-   * \brief Allowed sign domain for this quantity type.
-   */
+
+  /*! \brief Allowed sign domain for this quantity type. */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
-  /*!
-   * \brief Formatting policy used for human-readable output.
-   */
+
+  /*! \brief Formatting policy used for human-readable output. */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.

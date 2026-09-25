@@ -54,15 +54,20 @@ namespace ggems::core::processes {
  * thresholds for existing tracks. There is no Neutron or Alpha channel.
  */
 enum class GGEMSProductionCutChannel : std::uint8_t {
-  Gamma = 0U,    /*!< Gamma secondary-production channel. */
-  Electron = 1U, /*!< Electron secondary-production channel. */
-  Positron = 2U, /*!< Positron secondary-production channel. */
-  Proton = 3U,   /*!< Proton/recoil production convention. */
+  /*! \brief Gamma secondary-production channel. */
+  Gamma = 0U,
+
+  /*! \brief Electron secondary-production channel. */
+  Electron = 1U,
+
+  /*! \brief Positron secondary-production channel. */
+  Positron = 2U,
+
+  /*! \brief Proton/recoil production convention. */
+  Proton = 3U,
 };
 
-/*!
- * \brief Defines the common Gamma, Electron, Positron, Proton array order.
- */
+/*! \brief Defines the common Gamma, Electron, Positron, Proton array order. */
 inline constexpr std::array<GGEMSProductionCutChannel, 4U>
   k_production_cut_channels{
     GGEMSProductionCutChannel::Gamma,
@@ -111,9 +116,14 @@ ProductionCutChannelName(GGEMSProductionCutChannel channel) noexcept
  * \brief Identifies the scope that supplied a resolved production-cut length.
  */
 enum class GGEMSProductionCutScope : std::uint8_t {
-  Global = 0U,   /*!< Lowest-precedence default. */
-  Material = 1U, /*!< Override for one authoring material index. */
-  Volume = 2U,   /*!< Highest-precedence context override. */
+  /*! \brief Lowest-precedence default. */
+  Global = 0U,
+
+  /*! \brief Override for one authoring material index. */
+  Material = 1U,
+
+  /*! \brief Highest-precedence context override. */
+  Volume = 2U,
 };
 
 /*!
@@ -144,23 +154,31 @@ ProductionCutScopeName(GGEMSProductionCutScope scope) noexcept
  * unchanged. A present zero length is a value, not an inheritance marker.
  */
 struct GGEMSProductionCutLengths {
-  std::optional<units::Length> gamma;    /*!< Optional Gamma length in pm. */
-  std::optional<units::Length> electron; /*!< Optional Electron length in pm. */
-  std::optional<units::Length> positron; /*!< Optional Positron length in pm. */
-  std::optional<units::Length> proton;   /*!< Optional Proton length in pm. */
+  /*! \brief Optional Gamma length in pm. */
+  std::optional<units::Length> gamma;
+
+  /*! \brief Optional Electron length in pm. */
+  std::optional<units::Length> electron;
+
+  /*! \brief Optional Positron length in pm. */
+  std::optional<units::Length> positron;
+
+  /*! \brief Optional Proton length in pm. */
+  std::optional<units::Length> proton;
 };
 
 /*!
  * \brief Associates material-level overrides with an authoring material index.
  */
 struct GGEMSMaterialProductionCuts {
-  std::uint32_t material_index; /*!< Index in the input material sequence. */
-  GGEMSProductionCutLengths lengths; /*!< Per-channel material overrides. */
+  /*! \brief Index in the input material sequence. */
+  std::uint32_t material_index;
+
+  /*! \brief Per-channel material overrides. */
+  GGEMSProductionCutLengths lengths;
 };
 
-/*!
- * \brief Defines the initial 1 mm production-cut length for every channel.
- */
+/*! \brief Defines the initial 1 mm production-cut length for every channel. */
 inline constexpr auto k_default_production_cut_length =
   units::operator""_mm(1ULL);
 
@@ -172,22 +190,27 @@ inline constexpr auto k_default_production_cut_length =
  * updates only global values; these records also support host-side resolution.
  */
 struct GGEMSProductionCutPolicy {
+  /*! \brief Global defaults, initially 1 mm for every channel. */
   GGEMSProductionCutLengths global{
     .gamma = k_default_production_cut_length,
     .electron = k_default_production_cut_length,
     .positron = k_default_production_cut_length,
     .proton = k_default_production_cut_length,
-  }; /*!< Global defaults, initially 1 mm for every channel. */
-  std::vector<GGEMSMaterialProductionCuts>
-    materials; /*!< Ordered material overrides. */
+  };
+
+  /*! \brief Ordered material overrides. */
+  std::vector<GGEMSMaterialProductionCuts> materials;
 };
 
 /*!
  * \brief Supplies one authoring material index and optional volume-level cuts.
  */
 struct GGEMSProductionCutContext {
-  std::uint32_t material_index; /*!< Index in the input material sequence. */
-  GGEMSProductionCutLengths volume; /*!< Per-channel context overrides. */
+  /*! \brief Index in the input material sequence. */
+  std::uint32_t material_index;
+
+  /*! \brief Per-channel context overrides. */
+  GGEMSProductionCutLengths volume;
 };
 
 /*!
@@ -199,10 +222,11 @@ using GGEMSResolvedProductionCutLengths = std::array<units::Length, 4U>;
  * \brief Carries effective lengths and their winning scopes in channel order.
  */
 struct GGEMSResolvedProductionCuts {
-  GGEMSResolvedProductionCutLengths
-    lengths; /*!< Effective lengths in canonical pm. */
-  std::array<GGEMSProductionCutScope, 4U>
-    scopes; /*!< Scope selected for each channel. */
+  /*! \brief Effective lengths in canonical pm. */
+  GGEMSResolvedProductionCutLengths lengths;
+
+  /*! \brief Scope selected for each channel. */
+  std::array<GGEMSProductionCutScope, 4U> scopes;
 };
 
 /*!

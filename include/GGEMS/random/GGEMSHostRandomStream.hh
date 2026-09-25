@@ -49,6 +49,10 @@ namespace ggems::core::random {
  * The host stream reproduces the state transition rules used by the
  * corresponding OpenCL engine and owns the state of one logical stream
  * identifier.
+ *
+ * The configuration is read only during construction; later configuration
+ * changes do not modify this stream. Sampling mutates the owned state and
+ * requires serialized access to one stream.
  */
 class GGEMSHostRandomStream {
 public:
@@ -91,6 +95,8 @@ public:
    * [0, 1).
    *
    * \return Uniform binary32 value.
+   *
+   * Consumes one NextUInt32() result and scales its high 24 bits by 2^-24.
    */
   auto UniformFloat01() noexcept -> float;
 
@@ -100,16 +106,22 @@ public:
    *
    * \return Uniform binary64 value strictly greater than zero and strictly less
    * than one.
+   *
+   * Consumes two NextUInt32() results to form 53 bits. A half-step offset
+   * excludes zero; the upper endpoint is limited to the largest double below
+   * one.
    */
   auto UniformDoubleOpen01() noexcept -> double;
 
 private:
-  GGEMSRandomEngine
-    engine_; /*!< Random engine selected when the stream was created */
-  std::uint64_t
-    stream_id_; /*!< Logical identifier of this deterministic stream. */
-  std::variant<GGEMSJKissState, GGEMSPCG32State, GGEMSPhiloxState>
-    state_; /*!< Mutable engine-specific stream state. */
+  /*! \brief Random engine selected when the stream was created. */
+  GGEMSRandomEngine engine_;
+
+  /*! \brief Logical identifier of this deterministic stream. */
+  std::uint64_t stream_id_;
+
+  /*! \brief Mutable engine-specific stream state. */
+  std::variant<GGEMSJKissState, GGEMSPCG32State, GGEMSPhiloxState> state_;
 };
 
 } // namespace ggems::core::random

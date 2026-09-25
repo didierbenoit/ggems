@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Declares the GGEMS OpenCL runtime manager.
+ * \brief Defines canonical picometer positions, displacements, and directions.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -35,6 +35,10 @@
 #include <optional>
 /// \endcond
 
+/*!
+ * \namespace ggems::geometry
+ * \brief Provides signed picometer geometry and dimensionless directions.
+ */
 namespace ggems::geometry {
 
 /*! \brief Signed coordinate or displacement component in picometers. */
@@ -50,9 +54,14 @@ using DistancePM = std::uint64_t;
  * Default initialization places the point at that origin.
  */
 struct Position3PM {
-  CoordinatePM x{0}; /*!< X coordinate in picometers. */
-  CoordinatePM y{0}; /*!< Y coordinate in picometers. */
-  CoordinatePM z{0}; /*!< Z coordinate in picometers. */
+  /*! \brief X coordinate in picometers. */
+  CoordinatePM x{0};
+
+  /*! \brief Y coordinate in picometers. */
+  CoordinatePM y{0};
+
+  /*! \brief Z coordinate in picometers. */
+  CoordinatePM z{0};
 
   /*!
    * \brief Compares positions lexicographically by x, then y, then z.
@@ -70,9 +79,14 @@ struct Position3PM {
  * Default initialization represents zero displacement.
  */
 struct Displacement3PM {
-  CoordinatePM x{0}; /*!< Signed displacement along X in picometers. */
-  CoordinatePM y{0}; /*!< Signed displacement along Y in picometers. */
-  CoordinatePM z{0}; /*!< Signed displacement along Z in picometers. */
+  /*! \brief Signed displacement along X in picometers. */
+  CoordinatePM x{0};
+
+  /*! \brief Signed displacement along Y in picometers. */
+  CoordinatePM y{0};
+
+  /*! \brief Signed displacement along Z in picometers. */
+  CoordinatePM z{0};
 
   /*!
    * \brief Compares displacements lexicographically by x, then y, then z.
@@ -90,9 +104,14 @@ struct Displacement3PM {
  * components. The default direction points along the positive Z axis.
  */
 struct Direction3 {
-  float x{0.0F}; /*!< Dimensionless X component. */
-  float y{0.0F}; /*!< Dimensionless Y component. */
-  float z{1.0F}; /*!< Dimensionless Z component. */
+  /*! \brief Dimensionless X component. */
+  float x{0.0F};
+
+  /*! \brief Dimensionless Y component. */
+  float y{0.0F};
+
+  /*! \brief Dimensionless Z component. */
+  float z{1.0F};
 };
 
 /*!
@@ -128,6 +147,9 @@ constexpr auto MakeDisplacementPM(CoordinatePM dis_x, CoordinatePM dis_y,
  * \param[in] position Initial position.
  * \param[in] displacement Translation to apply.
  * \return The position after adding each displacement component.
+ *
+ * \pre Every signed component result must fit CoordinatePM; overflow is not
+ * checked.
  */
 constexpr auto operator+(Position3PM position,
                          Displacement3PM displacement) noexcept -> Position3PM {
@@ -144,6 +166,9 @@ constexpr auto operator+(Position3PM position,
  * \param[in] position Initial position.
  * \param[in] displacement Translation to subtract.
  * \return The position after subtracting each displacement component.
+ *
+ * \pre Every signed component result must fit CoordinatePM; overflow is not
+ * checked.
  */
 constexpr auto operator-(Position3PM position,
                          Displacement3PM displacement) noexcept -> Position3PM {
@@ -160,6 +185,9 @@ constexpr auto operator-(Position3PM position,
  * \param[in] lhs Destination position.
  * \param[in] rhs Starting position.
  * \return The displacement that translates rhs to lhs.
+ *
+ * \pre Every signed component result must fit CoordinatePM; overflow is not
+ * checked.
  */
 constexpr auto operator-(Position3PM lhs, Position3PM rhs) noexcept
   -> Displacement3PM {
@@ -176,6 +204,9 @@ constexpr auto operator-(Position3PM lhs, Position3PM rhs) noexcept
  * \param[in] lhs First displacement.
  * \param[in] rhs Second displacement.
  * \return The combined displacement.
+ *
+ * \pre Every signed component result must fit CoordinatePM; overflow is not
+ * checked.
  */
 constexpr auto operator+(Displacement3PM lhs, Displacement3PM rhs) noexcept
   -> Displacement3PM {
@@ -192,6 +223,9 @@ constexpr auto operator+(Displacement3PM lhs, Displacement3PM rhs) noexcept
  * \param[in] lhs Initial displacement.
  * \param[in] rhs Displacement to subtract.
  * \return The component-wise difference lhs minus rhs.
+ *
+ * \pre Every signed component result must fit CoordinatePM; overflow is not
+ * checked.
  */
 constexpr auto operator-(Displacement3PM lhs, Displacement3PM rhs) noexcept
   -> Displacement3PM {
@@ -207,6 +241,9 @@ constexpr auto operator-(Displacement3PM lhs, Displacement3PM rhs) noexcept
  *
  * \param[in] displacement Displacement to reverse.
  * \return A displacement with each component negated.
+ *
+ * \pre Every signed component result must fit CoordinatePM; overflow is not
+ * checked.
  */
 constexpr auto operator-(Displacement3PM displacement) noexcept
   -> Displacement3PM {
@@ -247,6 +284,10 @@ constexpr auto operator-(Displacement3PM displacement) noexcept
                                        static_cast<double>(direction.z)));
 }
 
+/*!
+ * \namespace ggems::geometry::detail
+ * \brief Provides internal direction-normalization helpers.
+ */
 namespace detail {
 /*!
  * \brief Stores a vector-normalization result in double precision.
@@ -255,9 +296,14 @@ namespace detail {
  * before any conversion to the float components of Direction3.
  */
 struct NormalizedVector3D {
-  double x; /*!< Normalized X component. */
-  double y; /*!< Normalized Y component. */
-  double z; /*!< Normalized Z component. */
+  /*! \brief Normalized X component. */
+  double x;
+
+  /*! \brief Normalized Y component. */
+  double y;
+
+  /*! \brief Normalized Z component. */
+  double z;
 };
 
 /*!

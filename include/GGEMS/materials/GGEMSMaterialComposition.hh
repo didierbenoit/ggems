@@ -43,13 +43,13 @@
 
 namespace ggems::core::materials {
 
-/*!
- * \brief Authors one element's material mass share and its isotope mixture.
- */
+/*! \brief Authors one element's material mass share and its isotope mixture. */
 struct GGEMSElementalShare {
-  long double mass_fraction; /*!< Dimensionless share of total material mass. */
-  GGEMSIsotopicComposition
-    isotopic_composition; /*!< Owned isotope fractions for this element. */
+  /*! \brief Dimensionless share of total material mass. */
+  long double mass_fraction;
+
+  /*! \brief Owned isotope fractions for this element. */
+  GGEMSIsotopicComposition isotopic_composition;
 };
 
 /*!
@@ -57,11 +57,14 @@ struct GGEMSElementalShare {
  * share.
  */
 struct GGEMSIsotopeConstituent {
-  GGEMSIsotope isotope;                 /*!< Exact (Z, A, M) identity. */
-  long double atom_fraction_in_element; /*!< Atom share within this Z, not
-                                           within all matter. */
-  long double number_density_per_cubic_centimeter; /*!< Isotope atoms per cubic
-                                                      centimeter. */
+  /*! \brief Exact (Z, A, M) identity. */
+  GGEMSIsotope isotope;
+
+  /*! \brief Atom share within this Z, not within all matter. */
+  long double atom_fraction_in_element;
+
+  /*! \brief Isotope atoms per cubic centimeter. */
+  long double number_density_per_cubic_centimeter;
 
   /*!
    * \brief Compares all isotope-constituent fields exactly.
@@ -78,13 +81,17 @@ struct GGEMSIsotopeConstituent {
  * preparation.
  */
 struct GGEMSDerivedElementalConstituent {
-  std::uint32_t atomic_number; /*!< Chemical identity Z. */
-  long double
-    mass_fraction; /*!< Mass share derived from isotope densities and masses. */
-  long double number_density_per_cubic_centimeter;   /*!< Sum of isotope atom
-                                                        densities, in 1/cm3. */
-  long double electron_density_per_cubic_centimeter; /*!< Z times atom density,
-                                                        in 1/cm3. */
+  /*! \brief Chemical identity Z. */
+  std::uint32_t atomic_number;
+
+  /*! \brief Mass share derived from isotope densities and masses. */
+  long double mass_fraction;
+
+  /*! \brief Sum of isotope atom densities, in 1/cm3. */
+  long double number_density_per_cubic_centimeter;
+
+  /*! \brief Z times atom density, in 1/cm3. */
+  long double electron_density_per_cubic_centimeter;
 };
 
 /*!
@@ -186,16 +193,20 @@ public:
   }
 
 private:
-  std::vector<GGEMSElementalShare>
-    elemental_shares_; /*!< Owned normalized authoring data by Z. */
-  std::vector<GGEMSIsotopeConstituent>
-    isotope_constituents_; /*!< Densities by isotope key. */
-  std::vector<GGEMSDerivedElementalConstituent>
-    elemental_constituents_; /*!< EM rows by Z. */
-  long double total_atom_density_per_cubic_centimeter_{
-    0.0L}; /*!< Total atoms in 1/cm3. */
-  long double electron_density_per_cubic_centimeter_{
-    0.0L}; /*!< Total electrons in 1/cm3. */
+  /*! \brief Owned normalized authoring data by Z. */
+  std::vector<GGEMSElementalShare> elemental_shares_;
+
+  /*! \brief Densities by isotope key. */
+  std::vector<GGEMSIsotopeConstituent> isotope_constituents_;
+
+  /*! \brief EM rows by Z. */
+  std::vector<GGEMSDerivedElementalConstituent> elemental_constituents_;
+
+  /*! \brief Total atoms in 1/cm3. */
+  long double total_atom_density_per_cubic_centimeter_{0.0L};
+
+  /*! \brief Total electrons in 1/cm3. */
+  long double electron_density_per_cubic_centimeter_{0.0L};
 };
 
 } // namespace ggems::core::materials

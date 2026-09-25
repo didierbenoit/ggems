@@ -24,6 +24,12 @@
  * \brief Declares strongly typed bit-count units, byte conversions, and
  * literals.
  *
+ * Literals use MakeQuantity() during constant evaluation. Integral
+ * representations round floating inputs to the nearest canonical integer, with
+ * halfway values away from zero. A failed conversion makes the literal invalid
+ * in a constant expression. Direct aggregate construction bypasses conversion
+ * checks.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -45,9 +51,7 @@
 
 namespace ggems::units {
 
-/*!
- * \brief Marker type identifying the bit count unit registry.
- */
+/*! \brief Marker type identifying the bit count unit registry. */
 struct BitsUnitSet {};
 
 /*!
@@ -55,9 +59,7 @@ struct BitsUnitSet {};
  * factors.
  */
 template <> struct UnitRegistry<BitsUnitSet> {
-  /*!
-   * \brief Registered unit definitions for this quantity family.
-   */
+  /*! \brief Registered unit definitions for this quantity family. */
   static constexpr std::array<UnitDefinition, 9U> units{
     {
       {
@@ -104,28 +106,18 @@ template <> struct UnitRegistry<BitsUnitSet> {
   };
 };
 
-/*!
- * \brief Tag type identifying bit-count quantities.
- */
+/*! \brief Tag type identifying bit-count quantities. */
 struct BitsTag {};
 
-/*!
- * \brief Defines conversion and formatting traits for Bits quantities.
- */
+/*! \brief Defines conversion and formatting traits for Bits quantities. */
 template <> struct QuantityTraits<BitsTag> {
-  /*!
-   * \brief Unit registry associated with this quantity type.
-   */
+  /*! \brief Unit registry associated with this quantity type. */
   using unit_set = BitsUnitSet;
 
-  /*!
-   * \brief Allowed sign domain for this quantity type.
-   */
+  /*! \brief Allowed sign domain for this quantity type. */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
 
-  /*!
-   * \brief Formatting policy used for human-readable output.
-   */
+  /*! \brief Formatting policy used for human-readable output. */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
 
@@ -142,9 +134,7 @@ template <> struct QuantityTraits<BitsTag> {
   static constexpr std::int8_t default_precision{7};
 };
 
-/*!
- * \brief Strongly typed bit-count quantity stored canonically in bits.
- */
+/*! \brief Strongly typed bit-count quantity stored canonically in bits. */
 using Bits = Quantity<BitsTag, std::uint64_t>;
 
 /*!

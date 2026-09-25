@@ -88,16 +88,23 @@ public:
   }
 
 private:
-  std::string full_;     /*!< Formatted diagnostic returned by what(). */
-  char const *file_;     /*!< Source file where the exception was created. */
-  char const *function_; /*!< Function where the exception was created. */
-  std::string category_; /*!< Exception category. */
-  std::int32_t line_{0}; /*!< Source line where the exception was created. */
+  /*! \brief Formatted diagnostic returned by what(). */
+  std::string full_;
+
+  /*! \brief Source file where the exception was created. */
+  char const *file_;
+
+  /*! \brief Function where the exception was created. */
+  char const *function_;
+
+  /*! \brief Exception category. */
+  std::string category_;
+
+  /*! \brief Source line where the exception was created. */
+  std::int32_t line_{0};
 };
 
-/*!
- * \brief Represents a recoverable GGEMS exception.
- */
+/*! \brief Represents a recoverable GGEMS exception. */
 class GGEMSRecoverable : public GGEMSExceptionBase {
 public:
   /*!
@@ -111,9 +118,7 @@ public:
       : GGEMSExceptionBase(std::move(msg), "Recoverable", loc) {}
 };
 
-/*!
- * \brief Represents an internal GGEMS exception.
- */
+/*! \brief Represents an internal GGEMS exception. */
 class GGEMSInternal : public GGEMSExceptionBase {
 public:
   /*!
@@ -127,9 +132,7 @@ public:
       : GGEMSExceptionBase(std::move(msg), "Internal", loc) {}
 };
 
-/*!
- * \brief Represents a fatal GGEMS exception.
- */
+/*! \brief Represents a fatal GGEMS exception. */
 class GGEMSFatal : public GGEMSExceptionBase {
 public:
   /*!

@@ -23,6 +23,13 @@
  * \file
  * \brief Implements the Apple OpenCL SVM compatibility layer.
  *
+ * Implements coarse-grain buffer SVM using CL_MEM_USE_HOST_PTR buffers and
+ * aligned host storage. Fine-grain/atomic allocation flags are rejected. Kernel
+ * arguments accept allocation base pointers or null; map ranges may start
+ * inside an allocation. A backing-map pointer mismatch poisons the allocation
+ * and preserves resources. The exported C entry points contain C++ exceptions
+ * and return API error values instead.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -49,19 +56,19 @@
 
 namespace {
 
-constexpr std::size_t max_requested_alignment = 16U * sizeof(cl_long); /*!< Maximum alignment accepted by the Apple SVM compatibility layer. */
+/*! \brief Maximum alignment accepted by the Apple SVM compatibility layer. */
+constexpr std::size_t max_requested_alignment = 16U * sizeof(cl_long);
 
-/*!
- * \brief Stores one public SVM pointer and its backing mapped pointer.
- */
+/*! \brief Stores one public SVM pointer and its backing mapped pointer. */
 struct Mapping {
-  void *public_pointer{}; /*!< Public pointer supplied to the SVM API. */
-  void *actual_pointer{}; /*!< Pointer returned by the backing buffer map. */
+  /*! \brief Public pointer supplied to the SVM API. */
+  void *public_pointer{};
+
+  /*! \brief Pointer returned by the backing buffer map. */
+  void *actual_pointer{};
 };
 
-/*!
- * \brief Owns resources and mapping state for one emulated SVM allocation.
- */
+/*! \brief Owns resources and mapping state for one emulated SVM allocation. */
 struct AllocationState {
   /*!
    * \brief Constructs an allocation state.
@@ -89,24 +96,16 @@ struct AllocationState {
     }
   }
 
-  /*!
-   * \brief Disables copy construction.
-   */
+  /*! \brief Disables copy construction. */
   AllocationState(AllocationState const &) = delete;
 
-  /*!
-   * \brief Disables copy assignment.
-   */
+  /*! \brief Disables copy assignment. */
   auto operator=(AllocationState const &) -> AllocationState & = delete;
 
-  /*!
-   * \brief Disables move construction.
-   */
+  /*! \brief Disables move construction. */
   AllocationState(AllocationState &&) = delete;
 
-  /*!
-   * \brief Disables move assignment.
-   */
+  /*! \brief Disables move assignment. */
   auto operator=(AllocationState &&) -> AllocationState & = delete;
 
   /*!
@@ -124,69 +123,72 @@ struct AllocationState {
     }
   }
 
-  cl_context context{}; /*!< OpenCL context owning the allocation. */
-  cl_mem buffer{};      /*!< Backing OpenCL buffer. */
-  void
-    *base_pointer{};  /*!< Public host pointer exposed as the SVM allocation. */
-  std::size_t size{}; /*!< Allocation size in bytes. */
-  std::mutex mappings_mutex;      /*!< Mutex protecting mapping records. */
-  std::list<Mapping> mappings;    /*!< Active mapped regions. */
-  std::atomic<bool> usable{true}; /*!< Whether the allocation may be used. */
-  std::atomic<bool> release_buffer{
-    true}; /*!< Whether destruction releases the buffer. */
+  /*! \brief OpenCL context owning the allocation. */
+  cl_context context{};
+
+  /*! \brief Backing OpenCL buffer. */
+  cl_mem buffer{};
+
+  /*! \brief Public host pointer exposed as the SVM allocation. */
+  void *base_pointer{};
+
+  /*! \brief Allocation size in bytes. */
+  std::size_t size{};
+
+  /*! \brief Mutex protecting mapping records. */
+  std::mutex mappings_mutex;
+
+  /*! \brief Active mapped regions. */
+  std::list<Mapping> mappings;
+
+  /*! \brief Whether the allocation may be used. */
+  std::atomic<bool> usable{true};
+
+  /*! \brief Whether destruction releases the buffer. */
+  std::atomic<bool> release_buffer{true};
 };
 
-/*!
- * \brief Stores an allocation match and byte offset for a pointer lookup.
- */
+/*! \brief Stores an allocation match and byte offset for a pointer lookup. */
 struct AllocationMatch {
-  std::shared_ptr<AllocationState> allocation; /*!< Matched allocation state. */
-  std::size_t offset{}; /*!< Byte offset from the allocation base. */
+  /*! \brief Matched allocation state. */
+  std::shared_ptr<AllocationState> allocation;
+
+  /*! \brief Byte offset from the allocation base. */
+  std::size_t offset{};
 };
 
-/*!
- * \brief Owns one temporary OpenCL event.
- */
+/*! \brief Owns one temporary OpenCL event. */
 class EventHandle {
 public:
-  /*!
-   * \brief Constructs an empty event handle.
-   */
+  /*! \brief Constructs an empty event handle. */
   EventHandle() = default;
 
-  /*!
-   * \brief Releases the owned OpenCL event.
-   */
+  /*! \brief Releases the owned OpenCL event. */
   ~EventHandle() {
     if (event_ != nullptr) {
       (void)clReleaseEvent(event_);
     }
   }
 
-  /*!
-   * \brief Disables copy construction.
-   */
+  /*! \brief Disables copy construction. */
   EventHandle(EventHandle const &) = delete;
 
-  /*!
-   * \brief Disables copy assignment.
-   */
+  /*! \brief Disables copy assignment. */
   auto operator=(EventHandle const &) -> EventHandle & = delete;
 
-  /*!
-   * \brief Disables move construction.
-   */
+  /*! \brief Disables move construction. */
   EventHandle(EventHandle &&) = delete;
 
-  /*!
-   * \brief Disables move assignment.
-   */
+  /*! \brief Disables move assignment. */
   auto operator=(EventHandle &&) -> EventHandle & = delete;
 
   /*!
    * \brief Returns the address used to receive an OpenCL event.
    *
    * \return Address of the owned event handle.
+   *
+   * \pre The handle must be empty before an API writes through the returned
+   * address.
    */
   [[nodiscard]] auto Address() noexcept -> cl_event * { return &event_; }
 
@@ -207,12 +209,11 @@ public:
   }
 
 private:
-  cl_event event_{}; /*!< Owned OpenCL event. */
+  /*! \brief Owned OpenCL event. */
+  cl_event event_{};
 };
 
-/*!
- * \brief Owns one temporary OpenCL memory object.
- */
+/*! \brief Owns one temporary OpenCL memory object. */
 class MemObjectHandle {
 public:
   /*!
@@ -223,33 +224,23 @@ public:
   explicit MemObjectHandle(cl_mem memory_object) noexcept
       : memory_object_(memory_object) {}
 
-  /*!
-   * \brief Releases the owned OpenCL memory object.
-   */
+  /*! \brief Releases the owned OpenCL memory object. */
   ~MemObjectHandle() {
     if (memory_object_ != nullptr) {
       (void)clReleaseMemObject(memory_object_);
     }
   }
 
-  /*!
-   * \brief Disables copy construction.
-   */
+  /*! \brief Disables copy construction. */
   MemObjectHandle(MemObjectHandle const &) = delete;
 
-  /*!
-   * \brief Disables copy assignment.
-   */
+  /*! \brief Disables copy assignment. */
   auto operator=(MemObjectHandle const &) -> MemObjectHandle & = delete;
 
-  /*!
-   * \brief Disables move construction.
-   */
+  /*! \brief Disables move construction. */
   MemObjectHandle(MemObjectHandle &&) = delete;
 
-  /*!
-   * \brief Disables move assignment.
-   */
+  /*! \brief Disables move assignment. */
   auto operator=(MemObjectHandle &&) -> MemObjectHandle & = delete;
 
   /*!
@@ -269,17 +260,14 @@ public:
   }
 
 private:
-  cl_mem memory_object_{}; /*!< Owned OpenCL memory object. */
+  /*! \brief Owned OpenCL memory object. */
+  cl_mem memory_object_{};
 };
 
-/*!
- * \brief Protects the process-wide emulated SVM allocation registry.
- */
+/*! \brief Protects the process-wide emulated SVM allocation registry. */
 std::mutex allocations_mutex;
 
-/*!
- * \brief Maps public allocation base addresses to their allocation state.
- */
+/*! \brief Maps public allocation base addresses to their allocation state. */
 std::map<std::uintptr_t, std::shared_ptr<AllocationState>> allocations;
 
 /*!
@@ -461,6 +449,9 @@ auto ReleaseUnregisteredBufferAndHostPointer(cl_mem buffer,
  * \param[in] event_wait_list Input event wait list.
  * \param[out] event Optional output event location.
  * \return OpenCL status code.
+ *
+ * Checks count/pointer consistency and overlap with the output-event storage.
+ * It does not validate individual event handles or modify output storage.
  */
 [[nodiscard]] auto ValidateEventArguments(cl_uint num_events_in_wait_list,
                                           cl_event const *event_wait_list,
@@ -748,6 +739,10 @@ RejectMappedRegion(std::shared_ptr<AllocationState> const &allocation,
  *
  * \param[in] context OpenCL context owning the allocation.
  * \param[in] svm_pointer Allocation base pointer to release.
+ *
+ * Null, unregistered, interior, or wrong-context pointers are ignored. Removal
+ * from the registry does not wait for commands; callers must complete uses
+ * before freeing. Poisoned allocations may deliberately retain their resources.
  */
 auto SVMFreeImpl(cl_context context, void *svm_pointer) -> void {
   if (svm_pointer == nullptr) {
@@ -946,6 +941,10 @@ EnqueueSVMMapImpl(cl_command_queue command_queue, cl_bool blocking_map,
  * \param[in] argument_index Kernel argument index.
  * \param[in] argument_value Public SVM allocation pointer.
  * \return OpenCL status code.
+ *
+ * Only a registered allocation base or null is accepted. Interior pointers
+ * return CL_INVALID_ARG_VALUE; poisoned allocations return
+ * CL_INVALID_OPERATION.
  */
 [[nodiscard]] auto SetKernelArgSVMPointerImpl(cl_kernel kernel,
                                               cl_uint argument_index,

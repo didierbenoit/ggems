@@ -43,6 +43,11 @@ class GGEMSOpenCLDevice;
 
 /*!
  * \brief Represents one OpenCL platform and its discovered CPU/GPU devices.
+ *
+ * Owns the native platform wrapper and the discovered device wrappers.
+ * Reference accessors borrow members until destruction or move. Native
+ * information getters propagate GGEMSRecoverable when a query fails or is
+ * unavailable.
  */
 class GGEMSOpenCLPlatform {
 public:
@@ -51,38 +56,31 @@ public:
    *
    * \param[in] platform Native OpenCL platform.
    * \param[in] platform_index GGEMS platform index.
+   *
+   * \throws ggems::core::GGEMSFatal If CPU/GPU enumeration fails, including no
+   * matching device.
+   * \throws ggems::core::GGEMSRecoverable If a discovered device's extension
+   * query fails.
    */
   explicit GGEMSOpenCLPlatform(cl::Platform platform,
                                std::size_t platform_index);
 
-  /*!
-   * \brief Disables default construction.
-   */
+  /*! \brief Disables default construction. */
   GGEMSOpenCLPlatform() = delete;
 
-  /*!
-   * \brief Destroys the OpenCL platform wrapper.
-   */
+  /*! \brief Destroys the OpenCL platform wrapper. */
   ~GGEMSOpenCLPlatform();
 
-  /*!
-   * \brief Disables copy construction.
-   */
+  /*! \brief Disables copy construction. */
   GGEMSOpenCLPlatform(GGEMSOpenCLPlatform const &) = delete;
 
-  /*!
-   * \brief Disables copy assignment.
-   */
+  /*! \brief Disables copy assignment. */
   auto operator=(GGEMSOpenCLPlatform const &) -> GGEMSOpenCLPlatform & = delete;
 
-  /*!
-   * \brief Move-constructs an OpenCL platform wrapper.
-   */
+  /*! \brief Move-constructs an OpenCL platform wrapper. */
   GGEMSOpenCLPlatform(GGEMSOpenCLPlatform &&) noexcept = default;
 
-  /*!
-   * \brief Disables move assignment.
-   */
+  /*! \brief Disables move assignment. */
   auto operator=(GGEMSOpenCLPlatform &&) -> GGEMSOpenCLPlatform & = delete;
 
   /*!
@@ -128,9 +126,8 @@ public:
   [[nodiscard]] auto GetNumericVersion() const -> cl_version;
 
   /*!
-   * \brief Returns the OpenCL host timer resolution.
-   *
-   * \return OpenCL host timer resolution.
+   * \brief Returns the native host timer resolution.
+   * \return The OpenCL host timer resolution in nanoseconds.
    */
   [[nodiscard]] auto GetHostTimerResolution() const -> cl_ulong;
 
@@ -142,9 +139,7 @@ public:
   [[nodiscard]] auto GetExtensionsWithVersion() const
     -> std::vector<cl_name_version>;
 
-  /*!
-   * \brief Prints platform identity, capability, and extension information.
-   */
+  /*! \brief Prints platform identity, capability, and extension information. */
   auto Print() const -> void;
 
   /*!
@@ -177,24 +172,22 @@ public:
   }
 
 private:
-  /*!
-   * \brief Prints platform identity information.
-   */
+  /*! \brief Prints platform identity information. */
   auto PrintIdentity() const -> void;
 
-  /*!
-   * \brief Prints platform extension information.
-   */
+  /*! \brief Prints platform extension information. */
   auto PrintExtension() const -> void;
 
-  /*!
-   * \brief Discovers CPU and GPU OpenCL devices on this platform.
-   */
+  /*! \brief Discovers CPU and GPU OpenCL devices on this platform. */
   auto DiscoverDevices() -> void;
 
-  cl::Platform platform_;      /*!< Native OpenCL platform. */
-  std::size_t platform_index_; /*!< GGEMS platform index. */
-  std::vector<GGEMSOpenCLDevice>
-    devices_; /*!< Devices discovered on the platform. */
+  /*! \brief Native OpenCL platform. */
+  cl::Platform platform_;
+
+  /*! \brief GGEMS platform index. */
+  std::size_t platform_index_;
+
+  /*! \brief Devices discovered on the platform. */
+  std::vector<GGEMSOpenCLDevice> devices_;
 };
 } // namespace ggems::ocl

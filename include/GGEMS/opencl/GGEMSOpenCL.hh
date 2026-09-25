@@ -58,37 +58,19 @@ class GGEMSOpenCLDevice;
  */
 class GGEMSOpenCL {
 public:
-  /*!
-   * \brief Destroys the OpenCL runtime manager.
-   */
+  /*! \brief Destroys the OpenCL runtime manager. */
   ~GGEMSOpenCL() = default;
 
-  /*!
-   * \brief Disables copy construction of the OpenCL runtime manager.
-   *
-   * \param[in] openCL Source runtime manager.
-   */
+  /*! \brief Disables copy construction of the OpenCL runtime manager. */
   GGEMSOpenCL(GGEMSOpenCL const &openCL) = delete;
 
-  /*!
-   * \brief Disables move construction of the OpenCL runtime manager.
-   *
-   * \param[in] openCL Source runtime manager.
-   */
+  /*! \brief Disables move construction of the OpenCL runtime manager. */
   GGEMSOpenCL(GGEMSOpenCL &&openCL) = delete;
 
-  /*!
-   * \brief Disables copy assignment of the OpenCL runtime manager.
-   *
-   * \param[in] openCL Source runtime manager.
-   */
+  /*! \brief Disables copy assignment of the OpenCL runtime manager. */
   auto operator=(GGEMSOpenCL const &openCL) -> GGEMSOpenCL & = delete;
 
-  /*!
-   * \brief Disables move assignment of the OpenCL runtime manager.
-   *
-   * \param[in] openCL Source runtime manager.
-   */
+  /*! \brief Disables move assignment of the OpenCL runtime manager. */
   auto operator=(GGEMSOpenCL &&openCL) -> GGEMSOpenCL & = delete;
 
   /*!
@@ -115,6 +97,12 @@ public:
    * \param[in] kernel_name Kernel source name.
    * \param[in] build_options Additional OpenCL build options.
    * \return Matching cached or newly created OpenCL program.
+   *
+   * Memory-cache matching uses context/device handles, source path, kernel
+   * name, and user options; it does not reread source contents. Program
+   * construction retains native handles and does not borrow the GGEMS context
+   * wrapper. Build and source-loading failures propagate from
+   * GGEMSOpenCLProgram.
    */
   auto GetOrCreateProgram(GGEMSOpenCLContext const &ctx,
                           std::filesystem::path const &kernel_root,
@@ -122,25 +110,21 @@ public:
                           std::string const &build_options = "")
     -> GGEMSOpenCLProgram const &;
 
-  /*!
-   * \brief Prints information for all discovered OpenCL platforms.
-   */
+  /*! \brief Prints information for all discovered OpenCL platforms. */
   auto PrintPlatforms() const -> void;
 
-  /*!
-   * \brief Prints information for all discovered OpenCL devices.
-   */
+  /*! \brief Prints information for all discovered OpenCL devices. */
   auto PrintDevices() const -> void;
 
-  /*!
-   * \brief Prints information for all active OpenCL contexts.
-   */
+  /*! \brief Prints information for all active OpenCL contexts. */
   auto PrintContexts() const -> void;
 
   /*!
    * \brief Returns the discovered OpenCL platforms.
    *
    * \return Discovered OpenCL platforms.
+   *
+   * The collection is borrowed from the process-lifetime manager.
    */
   [[nodiscard]] auto GetPlatforms() const noexcept
     -> std::vector<GGEMSOpenCLPlatform> const & {
@@ -164,6 +148,12 @@ public:
    * \throws ggems::core::GGEMSFatal If the selectors are malformed, designate
    * no device, or would change the selection after the backend was
    * initialized.
+   *
+   * Selectors are case-insensitive, trimmed, and separated by semicolons. Use
+   * "all" alone, zero-based flattened device indices or inclusive ranges, or a
+   * CPU/GPU type optionally combined with one of intel/nvidia/amd. Numeric and
+   * textual selectors cannot be mixed. An empty filter list selects the first
+   * GPU, or the first device when no GPU exists.
    */
   auto SelectDevices(std::vector<std::string> const &filters) -> void;
 
@@ -192,6 +182,10 @@ public:
    * \brief Returns the active OpenCL contexts.
    *
    * \return Mutable collection of active OpenCL contexts.
+   *
+   * \pre Do not erase, replace, reorder, or move active contexts while buffers
+   * or kernels refer to them. This mutable accessor does not enforce the
+   * manager lifetime contract.
    */
   [[nodiscard]]
   auto GetContext() noexcept -> std::vector<GGEMSOpenCLContext> & {
@@ -205,6 +199,9 @@ public:
    * The value is read when GGEMS transport workloads are created.
    *
    * \param[in] worker_count Number of workers used per OpenCL context.
+   *
+   * The supplied count is stored without validation. Changing it does not
+   * resize already-created workloads.
    */
   auto SetWorkerCount(std::uint32_t worker_count) -> void;
 
@@ -225,9 +222,7 @@ private:
    */
   GGEMSOpenCL();
 
-  /*!
-   * \brief Discovers available OpenCL platforms and devices.
-   */
+  /*! \brief Discovers available OpenCL platforms and devices. */
   void InitPlatformsAndDevices();
 
   /*!
@@ -236,6 +231,9 @@ private:
    * \param[in] filters Device selector expressions.
    * \param[in] all_devices Flattened discovered device inventory.
    * \return Selected device references in selector order.
+   *
+   * \throws ggems::core::GGEMSFatal If selectors are malformed, out of range,
+   * or combined incompatibly.
    */
   [[nodiscard]]
   static auto ParseDeviceFilters(
@@ -257,6 +255,10 @@ private:
    * \param[in] filters Device selector expressions.
    * \param[in] all_devices Flattened discovered device inventory.
    * \return Designated device references in selection order.
+   *
+   * \pre all_devices must be nonempty for the default-selection path.
+   * \throws ggems::core::GGEMSFatal If explicit selectors are invalid or match
+   * no device.
    */
   [[nodiscard]]
   static auto ResolveDeviceSelection(
@@ -276,23 +278,35 @@ private:
     const noexcept -> bool;
 
   /*!
-   * \brief Disables the NVIDIA driver kernel cache for this process when
-   * applicable.
+   * \brief Requests disabling the NVIDIA kernel cache for this process.
+   *
+   * Sets CUDA_CACHE_DISABLE to "1" using the platform environment API without
+   * checking its return value.
    */
   static auto DisableNvidiaDriverKernelCache() -> void;
 
-  std::vector<GGEMSOpenCLPlatform>
-    platforms_; /*!< Discovered OpenCL platforms. */
+  /*! \brief Discovered OpenCL platforms. */
+  std::vector<GGEMSOpenCLPlatform> platforms_;
+
+  /*! \brief Selected OpenCL devices. */
   std::vector<std::reference_wrapper<GGEMSOpenCLDevice const>>
-    selected_devices_; /*!< Selected OpenCL devices. */
-  std::vector<GGEMSOpenCLContext>
-    contexts_; /*!< Contexts for selected devices, retained for the process
-                  lifetime. */
-  std::vector<std::unique_ptr<GGEMSOpenCLProgram>>
-    program_cache_; /*!< Cached OpenCL programs, never evicted. */
-  std::mutex program_cache_mutex_; /*!< Mutex protecting the program cache. */
-  bool is_initialized_{false};     /*!< Whether contexts were created. */
-  std::uint32_t worker_count_{
-    2'097'152}; /*!< Number of OpenCL workers used per transport workload. */
+    selected_devices_;
+
+  /*!
+   * \brief Contexts for selected devices, retained for the process lifetime.
+   */
+  std::vector<GGEMSOpenCLContext> contexts_;
+
+  /*! \brief Cached OpenCL programs, never evicted. */
+  std::vector<std::unique_ptr<GGEMSOpenCLProgram>> program_cache_;
+
+  /*! \brief Mutex protecting the program cache. */
+  std::mutex program_cache_mutex_;
+
+  /*! \brief Whether contexts were created. */
+  bool is_initialized_{false};
+
+  /*! \brief Number of OpenCL workers used per transport workload. */
+  std::uint32_t worker_count_{2'097'152};
 };
 } // namespace ggems::ocl

@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Declares sequential primary-identifier reservations across runs.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #pragma once
 
 #include <cstdint>
@@ -11,23 +40,26 @@ namespace ggems::core::particles {
  * within this reservation. This value object contains no particle data.
  */
 struct GGEMSPrimaryStreamRunView {
-  std::uint64_t run_id{0ULL}; /*!< Run label supplied by the caller. */
-  std::uint64_t source_primary_count{
-    0ULL}; /*!< Number of reserved primaries. */
-  std::uint64_t global_history_offset{
-    0ULL}; /*!< First reserved global identifier. */
+  /*! \brief Run label supplied by the caller. */
+  std::uint64_t run_id{0ULL};
+
+  /*! \brief Number of reserved primaries. */
+  std::uint64_t source_primary_count{0ULL};
+
+  /*! \brief First reserved global identifier. */
+  std::uint64_t global_history_offset{0ULL};
 };
 
 /*!
  * \brief Allocates consecutive global primary identifiers across runs.
- * \details A new stream is ready to use and starts at identifier zero.
- * Each successful reservation advances the stream, so its ranges are contiguous
- * and do not overlap. The caller supplies the primary count for each run.
  *
- * The value k_invalid_id_u64 is reserved for invalid identifiers and is never
- * allocated. A rejected reservation leaves the stream unchanged.
- * Run labels do not affect allocation and need not be consecutive or unique.
- * Calls on the same stream must be serialized by the caller.
+ * A new stream starts at zero. Each reservation advances the next identifier by
+ * the supplied count using unchecked unsigned arithmetic. Zero-count
+ * reservations leave the next identifier unchanged. Ranges remain disjoint only
+ * while the caller avoids wraparound and the reserved invalid identifier.
+ *
+ * Run labels are copied without affecting allocation and need not be unique.
+ * Calls on one stream must be serialized by the caller.
  */
 class GGEMSPrimaryStream {
 public:
@@ -36,59 +68,42 @@ public:
    */
   GGEMSPrimaryStream() = default;
 
-  /*!
-   * \brief Destroys the stream.
-   */
+  /*! \brief Destroys the stream. */
   ~GGEMSPrimaryStream() = default;
 
-  /*!
-   * \brief Prevents copying the identifier allocation state.
-   * \param other Stream that cannot be copied.
-   */
+  /*! \brief Prevents copying the identifier allocation state. */
   GGEMSPrimaryStream(GGEMSPrimaryStream const &other) = delete;
 
-  /*!
-   * \brief Prevents moving the identifier allocation state.
-   * \param other Stream that cannot be moved.
-   */
+  /*! \brief Prevents moving the identifier allocation state. */
   GGEMSPrimaryStream(GGEMSPrimaryStream &&other) = delete;
 
-  /*!
-   * \brief Prevents replacing the stream through copy assignment.
-   * \param other Stream that cannot be copied.
-   * \return No value is returned because this operation is deleted.
-   */
+  /*! \brief Prevents replacing the stream through copy assignment. */
   auto operator=(GGEMSPrimaryStream const &other)
     -> GGEMSPrimaryStream & = delete;
 
-  /*!
-   * \brief Prevents replacing the stream through move assignment.
-   * \param other Stream that cannot be moved.
-   * \return No value is returned because this operation is deleted.
-   */
+  /*! \brief Prevents replacing the stream through move assignment. */
   auto operator=(GGEMSPrimaryStream &&other) -> GGEMSPrimaryStream & = delete;
 
   /*!
    * \brief Reserves a consecutive range of global primary identifiers.
-   * \param run_id Caller-provided run label, copied into the returned view.
-   * \param primary_count Number of primary identifiers to reserve; must be
-   * positive.
-   * \return Run label, reserved count, and first global identifier of the
-   * range.
-   * \throws GGEMSRecoverable If primary_count is zero or exceeds the number of
-   * remaining valid identifiers.
-   * \details The last reserved identifier is global_history_offset plus
-   * source_primary_count minus one. On success, the next reservation starts
-   * immediately after this range. On failure, no identifiers are consumed.
+   *
+   * \pre The count must not exceed k_invalid_id_u64 minus the next identifier,
+   * so allocated identifiers remain valid and the addition does not wrap. This
+   * is a caller obligation, not a runtime check.
+   *
+   * \param[in] run_id Run label copied into the returned view.
+   * \param[in] primary_count Number of identifiers to reserve; zero is
+   * accepted.
+   * \return The run label, count, and first identifier before the unchecked
+   * advance. An empty reservation consumes no identifiers.
    */
   [[nodiscard]] auto PrepareRun(std::uint64_t run_id,
                                 std::uint64_t primary_count)
     -> GGEMSPrimaryStreamRunView;
 
 private:
-  /*! \brief Next available identifier, or k_invalid_id_u64 when exhausted. */
-  std::uint64_t next_global_primary_id_{
-    0ULL}; /*!<Next available identifier, or k_invalid_id_u64 when exhausted*/
+  /*! \brief Next identifier advanced by unchecked unsigned addition. */
+  std::uint64_t next_global_primary_id_{0ULL};
 };
 
 } // namespace ggems::core::particles

@@ -53,7 +53,7 @@ struct GGEMSJKissState {
   /*! \brief JKISS multiply-with-carry state component. */
   std::uint32_t z{0U};
 
-  /*! \brief JKISS multiply-with-carry state component.*/
+  /*! \brief JKISS multiply-with-carry state component. */
   std::uint32_t w{0U};
 
   /*! \brief JKISS carry component. */

@@ -23,6 +23,12 @@
  * \file
  * \brief Declares strongly typed mass units and literals.
  *
+ * Literals use MakeQuantity() during constant evaluation. Integral
+ * representations round floating inputs to the nearest canonical integer, with
+ * halfway values away from zero. A failed conversion makes the literal invalid
+ * in a constant expression. Direct aggregate construction bypasses conversion
+ * checks.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -40,18 +46,14 @@
 
 namespace ggems::units {
 
-/*!
- * \brief Marker type identifying the mass unit registry.
- */
+/*! \brief Marker type identifying the mass unit registry. */
 struct MassUnitSet {};
 
 /*!
  * \brief Defines the supported mass units and their canonical scale factors.
  */
 template <> struct UnitRegistry<MassUnitSet> {
-  /*!
-   * \brief Registered unit definitions for this quantity family.
-   */
+  /*! \brief Registered unit definitions for this quantity family. */
   static constexpr std::array<UnitDefinition, 6U> units{
     {
       {
@@ -83,28 +85,18 @@ template <> struct UnitRegistry<MassUnitSet> {
   };
 };
 
-/*!
- * \brief Tag type identifying mass quantities.
- */
+/*! \brief Tag type identifying mass quantities. */
 struct MassTag {};
 
-/*!
- * \brief Defines conversion and formatting traits for Mass quantities.
- */
+/*! \brief Defines conversion and formatting traits for Mass quantities. */
 template <> struct QuantityTraits<MassTag> {
-  /*!
-   * \brief Unit registry associated with this quantity type.
-   */
+  /*! \brief Unit registry associated with this quantity type. */
   using unit_set = MassUnitSet;
 
-  /*!
-   * \brief Allowed sign domain for this quantity type.
-   */
+  /*! \brief Allowed sign domain for this quantity type. */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
 
-  /*!
-   * \brief Formatting policy used for human-readable output.
-   */
+  /*! \brief Formatting policy used for human-readable output. */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
 
@@ -121,9 +113,7 @@ template <> struct QuantityTraits<MassTag> {
   static constexpr std::int8_t default_precision{7};
 };
 
-/*!
- * \brief Strongly typed mass quantity stored canonically in picograms.
- */
+/*! \brief Strongly typed mass quantity stored canonically in picograms. */
 using Mass = Quantity<MassTag, std::uint64_t>;
 
 /*!

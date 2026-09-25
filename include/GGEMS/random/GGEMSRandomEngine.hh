@@ -54,8 +54,10 @@ namespace ggems::core::random {
 enum class GGEMSRandomEngine : std::uint8_t {
   /*! \brief JKISS legacy random engine. */
   JKISS = 1U,
+
   /*! \brief PCG32 random engine. */
   PCG32 = 2U,
+
   /*! \brief Philox 4x32 counter-based random engine. */
   Philox = 3U,
 };
@@ -73,8 +75,8 @@ auto ToString(GGEMSRandomEngine engine) -> std::string;
 /*!
  * \brief Parses a user-facing random-engine name.
  *
- * Engine names are normalized case-insensitively and accept the documented
- * short aliases.
+ * Lowercases the name and removes ASCII spaces, underscores, and hyphens.
+ * Accepts JKISS/kiss, PCG32/pcg, and Philox.
  *
  * \param[in] engine_name Engine name or supported alias.
  * \return Parsed random-engine identifier.
@@ -89,6 +91,8 @@ auto ParseRandomEngine(std::string_view engine_name) -> GGEMSRandomEngine;
  *
  * \param[in] engine Random engine to convert.
  * \return Numeric identifier passed to OpenCL kernel compilation.
+ *
+ * The numeric conversion does not validate that the enumerator is supported.
  */
 auto ToKernelEngineId(GGEMSRandomEngine engine) noexcept -> std::uint32_t;
 } // namespace ggems::core::random

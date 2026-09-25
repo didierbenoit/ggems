@@ -114,10 +114,17 @@ public:
   }
 
 private:
-  std::uint32_t atomic_number_; /*!< Chemical identity Z. */
-  std::string_view symbol_;     /*!< Borrowed chemical symbol. */
-  std::string_view name_;       /*!< Borrowed element name. */
-  long double molar_mass_;      /*!< Representative molar mass in g/mol. */
+  /*! \brief Chemical identity Z. */
+  std::uint32_t atomic_number_;
+
+  /*! \brief Borrowed chemical symbol. */
+  std::string_view symbol_;
+
+  /*! \brief Borrowed element name. */
+  std::string_view name_;
+
+  /*! \brief Representative molar mass in g/mol. */
+  long double molar_mass_;
 };
 
 } // namespace ggems::core::materials

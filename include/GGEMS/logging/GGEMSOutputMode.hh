@@ -39,12 +39,13 @@
 
 namespace ggems::core {
 
-/*!
- * \brief Identifies the active GGEMS output destination mode.
- */
+/*! \brief Identifies the active GGEMS output destination mode. */
 enum class OutputMode : std::uint8_t {
-  Term = 0, /*!< Routes GGEMS output to the terminal logger sink. */
-  Gui,      /*!< Routes GGEMS output to the in-memory state used by the GUI. */
+  /*! \brief Routes GGEMS output to the terminal logger sink. */
+  Term = 0,
+
+  /*! \brief Routes GGEMS output to the in-memory state used by the GUI. */
+  Gui,
 };
 
 /*!
@@ -106,9 +107,7 @@ auto ClearOutputFile() -> void;
  */
 auto StartOutputRuntime() -> void;
 
-/*!
- * \brief Marks the GGEMS output runtime as stopped.
- */
+/*! \brief Marks the GGEMS output runtime as stopped. */
 auto StopOutputRuntime() noexcept -> void;
 
 /*!

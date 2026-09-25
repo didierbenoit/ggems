@@ -49,26 +49,37 @@ namespace ggems::core::processes {
  * \brief Copies one channel's resolved length, scope, and production threshold.
  */
 struct GGEMSProductionCutChannelInspection {
-  GGEMSProductionCutChannel channel; /*!< Secondary-production channel. */
-  units::Length effective_length;    /*!< Resolved length in canonical pm. */
-  GGEMSProductionCutScope
-    winning_scope; /*!< Scope that supplied this length. */
-  units::Energy
-    production_threshold; /*!< Resolved base threshold in micro-eV. */
+  /*! \brief Secondary-production channel. */
+  GGEMSProductionCutChannel channel;
+
+  /*! \brief Resolved length in canonical pm. */
+  units::Length effective_length;
+
+  /*! \brief Scope that supplied this length. */
+  GGEMSProductionCutScope winning_scope;
+
+  /*! \brief Resolved base threshold in micro-eV. */
+  units::Energy production_threshold;
 };
 
 /*!
  * \brief Copies context provenance and its resolved package-local identities.
  */
 struct GGEMSProductionCutContextInspection {
-  std::size_t context_index; /*!< Position in the original context sequence. */
-  std::uint32_t authoring_material_index; /*!< Position in the EM package's
-                                             input sequence. */
-  std::uint32_t snapshot_material_id;     /*!< Deduplicated EM descriptor ID. */
-  std::uint32_t
-    snapshot_couple_id; /*!< Deduplicated material/threshold tuple ID. */
-  std::array<GGEMSProductionCutChannelInspection, 4U>
-    channels; /*!< Gamma/e-/e+/Proton data. */
+  /*! \brief Position in the original context sequence. */
+  std::size_t context_index;
+
+  /*! \brief Position in the EM package's input sequence. */
+  std::uint32_t authoring_material_index;
+
+  /*! \brief Deduplicated EM descriptor ID. */
+  std::uint32_t snapshot_material_id;
+
+  /*! \brief Deduplicated material/threshold tuple ID. */
+  std::uint32_t snapshot_couple_id;
+
+  /*! \brief Gamma/e-/e+/Proton data. */
+  std::array<GGEMSProductionCutChannelInspection, 4U> channels;
 };
 
 /*!

@@ -23,6 +23,12 @@
  * \file
  * \brief Declares strongly typed volume units and literals.
  *
+ * Literals use MakeQuantity() during constant evaluation. Integral
+ * representations round floating inputs to the nearest canonical integer, with
+ * halfway values away from zero. A failed conversion makes the literal invalid
+ * in a constant expression. Direct aggregate construction bypasses conversion
+ * checks.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -40,18 +46,14 @@
 
 namespace ggems::units {
 
-/*!
- * \brief Marker type identifying the volume unit registry.
- */
+/*! \brief Marker type identifying the volume unit registry. */
 struct VolumeUnitSet {};
 
 /*!
  * \brief Defines the supported volume units and their canonical scale factors.
  */
 template <> struct UnitRegistry<VolumeUnitSet> {
-  /*!
-   * \brief Registered unit definitions for this quantity family.
-   */
+  /*! \brief Registered unit definitions for this quantity family. */
   static constexpr std::array<UnitDefinition, 7U> units{
     {
       {
@@ -94,28 +96,18 @@ template <> struct UnitRegistry<VolumeUnitSet> {
   };
 };
 
-/*!
- * \brief Tag type identifying volume quantities.
- */
+/*! \brief Tag type identifying volume quantities. */
 struct VolumeTag {};
 
-/*!
- * \brief Defines conversion and formatting traits for Volume quantities.
- */
+/*! \brief Defines conversion and formatting traits for Volume quantities. */
 template <> struct QuantityTraits<VolumeTag> {
-  /*!
-   * \brief Unit registry associated with this quantity type.
-   */
+  /*! \brief Unit registry associated with this quantity type. */
   using unit_set = VolumeUnitSet;
 
-  /*!
-   * \brief Allowed sign domain for this quantity type.
-   */
+  /*! \brief Allowed sign domain for this quantity type. */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
 
-  /*!
-   * \brief Formatting policy used for human-readable output.
-   */
+  /*! \brief Formatting policy used for human-readable output. */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
 

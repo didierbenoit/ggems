@@ -24,6 +24,12 @@
  * \brief Declares strongly typed energy and signed energy-change units and
  * literals.
  *
+ * Literals use MakeQuantity() during constant evaluation. Integral
+ * representations round floating inputs to the nearest canonical integer, with
+ * halfway values away from zero. A failed conversion makes the literal invalid
+ * in a constant expression. Direct aggregate construction bypasses conversion
+ * checks.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -41,18 +47,14 @@
 
 namespace ggems::units {
 
-/*!
- * \brief Marker type identifying the energy unit registry.
- */
+/*! \brief Marker type identifying the energy unit registry. */
 struct EnergyUnitSet {};
 
 /*!
  * \brief Defines the supported energy units and their canonical scale factors.
  */
 template <> struct UnitRegistry<EnergyUnitSet> {
-  /*!
-   * \brief Registered unit definitions for this quantity family.
-   */
+  /*! \brief Registered unit definitions for this quantity family. */
   static constexpr std::array<UnitDefinition, 6U> units{
     {
       {
@@ -83,28 +85,18 @@ template <> struct UnitRegistry<EnergyUnitSet> {
   };
 };
 
-/*!
- * \brief Tag type identifying nonnegative energy quantities.
- */
+/*! \brief Tag type identifying nonnegative energy quantities. */
 struct EnergyTag {};
 
-/*!
- * \brief Defines conversion and formatting traits for Energy quantities.
- */
+/*! \brief Defines conversion and formatting traits for Energy quantities. */
 template <> struct QuantityTraits<EnergyTag> {
-  /*!
-   * \brief Unit registry associated with this quantity type.
-   */
+  /*! \brief Unit registry associated with this quantity type. */
   using unit_set = EnergyUnitSet;
 
-  /*!
-   * \brief Allowed sign domain for this quantity type.
-   */
+  /*! \brief Allowed sign domain for this quantity type. */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
 
-  /*!
-   * \brief Formatting policy used for human-readable output.
-   */
+  /*! \brief Formatting policy used for human-readable output. */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
 
@@ -121,28 +113,20 @@ template <> struct QuantityTraits<EnergyTag> {
   static constexpr std::int8_t default_precision{7};
 };
 
-/*!
- * \brief Tag type identifying signed energy-change quantities.
- */
+/*! \brief Tag type identifying signed energy-change quantities. */
 struct EnergyChangeTag {};
 
 /*!
  * \brief Defines conversion and formatting traits for EnergyChange quantities.
  */
 template <> struct QuantityTraits<EnergyChangeTag> {
-  /*!
-   * \brief Unit registry associated with this quantity type.
-   */
+  /*! \brief Unit registry associated with this quantity type. */
   using unit_set = EnergyUnitSet;
 
-  /*!
-   * \brief Allowed sign domain for this quantity type.
-   */
+  /*! \brief Allowed sign domain for this quantity type. */
   static constexpr QuantityDomain domain{QuantityDomain::Signed};
 
-  /*!
-   * \brief Formatting policy used for human-readable output.
-   */
+  /*! \brief Formatting policy used for human-readable output. */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
 
@@ -164,6 +148,7 @@ template <> struct QuantityTraits<EnergyChangeTag> {
  * micro-electron-volts.
  */
 using Energy = Quantity<EnergyTag, std::uint64_t>;
+
 /*!
  * \brief Strongly typed signed energy-change quantity stored canonically in
  * micro-electron-volts.
@@ -171,7 +156,7 @@ using Energy = Quantity<EnergyTag, std::uint64_t>;
 using EnergyChange = Quantity<EnergyChangeTag, std::int64_t>;
 
 /*!
- * \brief Creates a energy quantity from a \c _meV literal.
+ * \brief Creates an energy quantity from a \c _meV literal.
  *
  * \param[in] value Literal value expressed in meV.
  * \return Energy converted to its canonical GGEMS representation.
@@ -181,7 +166,7 @@ consteval auto operator""_meV(unsigned long long value) -> Energy {
 }
 
 /*!
- * \brief Creates a energy quantity from a \c _meV literal.
+ * \brief Creates an energy quantity from a \c _meV literal.
  *
  * \param[in] value Literal value expressed in meV.
  * \return Energy converted to its canonical GGEMS representation.
@@ -191,7 +176,7 @@ consteval auto operator""_meV(long double value) -> Energy {
 }
 
 /*!
- * \brief Creates a energy quantity from a \c _eV literal.
+ * \brief Creates an energy quantity from a \c _eV literal.
  *
  * \param[in] value Literal value expressed in eV.
  * \return Energy converted to its canonical GGEMS representation.
@@ -201,7 +186,7 @@ consteval auto operator""_eV(unsigned long long value) -> Energy {
 }
 
 /*!
- * \brief Creates a energy quantity from a \c _eV literal.
+ * \brief Creates an energy quantity from a \c _eV literal.
  *
  * \param[in] value Literal value expressed in eV.
  * \return Energy converted to its canonical GGEMS representation.
@@ -211,7 +196,7 @@ consteval auto operator""_eV(long double value) -> Energy {
 }
 
 /*!
- * \brief Creates a energy quantity from a \c _keV literal.
+ * \brief Creates an energy quantity from a \c _keV literal.
  *
  * \param[in] value Literal value expressed in keV.
  * \return Energy converted to its canonical GGEMS representation.
@@ -221,7 +206,7 @@ consteval auto operator""_keV(unsigned long long value) -> Energy {
 }
 
 /*!
- * \brief Creates a energy quantity from a \c _keV literal.
+ * \brief Creates an energy quantity from a \c _keV literal.
  *
  * \param[in] value Literal value expressed in keV.
  * \return Energy converted to its canonical GGEMS representation.
@@ -231,7 +216,7 @@ consteval auto operator""_keV(long double value) -> Energy {
 }
 
 /*!
- * \brief Creates a energy quantity from a \c _MeV literal.
+ * \brief Creates an energy quantity from a \c _MeV literal.
  *
  * \param[in] value Literal value expressed in MeV.
  * \return Energy converted to its canonical GGEMS representation.
@@ -241,7 +226,7 @@ consteval auto operator""_MeV(unsigned long long value) -> Energy {
 }
 
 /*!
- * \brief Creates a energy quantity from a \c _MeV literal.
+ * \brief Creates an energy quantity from a \c _MeV literal.
  *
  * \param[in] value Literal value expressed in MeV.
  * \return Energy converted to its canonical GGEMS representation.
@@ -251,7 +236,7 @@ consteval auto operator""_MeV(long double value) -> Energy {
 }
 
 /*!
- * \brief Creates a energy quantity from a \c _GeV literal.
+ * \brief Creates an energy quantity from a \c _GeV literal.
  *
  * \param[in] value Literal value expressed in GeV.
  * \return Energy converted to its canonical GGEMS representation.
@@ -261,7 +246,7 @@ consteval auto operator""_GeV(unsigned long long value) -> Energy {
 }
 
 /*!
- * \brief Creates a energy quantity from a \c _GeV literal.
+ * \brief Creates an energy quantity from a \c _GeV literal.
  *
  * \param[in] value Literal value expressed in GeV.
  * \return Energy converted to its canonical GGEMS representation.
@@ -271,7 +256,7 @@ consteval auto operator""_GeV(long double value) -> Energy {
 }
 
 /*!
- * \brief Creates a energy quantity from a \c _TeV literal.
+ * \brief Creates an energy quantity from a \c _TeV literal.
  *
  * \param[in] value Literal value expressed in TeV.
  * \return Energy converted to its canonical GGEMS representation.
@@ -281,7 +266,7 @@ consteval auto operator""_TeV(unsigned long long value) -> Energy {
 }
 
 /*!
- * \brief Creates a energy quantity from a \c _TeV literal.
+ * \brief Creates an energy quantity from a \c _TeV literal.
  *
  * \param[in] value Literal value expressed in TeV.
  * \return Energy converted to its canonical GGEMS representation.

@@ -60,34 +60,34 @@ public:
    * \param[in] kernel_root Root directory containing kernel sources.
    * \param[in] kernel_name Kernel source name.
    * \param[in] build_options Additional user build options.
+   *
+   * Reads kernel_root / (kernel_name + ".cl") and its resolved quoted includes
+   * to fingerprint the build. A cached-binary build failure falls back to
+   * source; failure to save the resulting binary is logged without invalidating
+   * a successful build.
+   *
+   * \throws ggems::core::GGEMSFatal If a source file cannot be opened or the
+   * source build fails.
+   * \throws ggems::core::GGEMSRecoverable If a required OpenCL information
+   * query fails.
    */
   GGEMSOpenCLProgram(GGEMSOpenCLContext const &context,
                      std::filesystem::path kernel_root, std::string kernel_name,
                      std::string build_options = {});
 
-  /*!
-   * \brief Destroys the OpenCL program wrapper.
-   */
+  /*! \brief Destroys the OpenCL program wrapper. */
   ~GGEMSOpenCLProgram() = default;
 
-  /*!
-   * \brief Disables copy construction.
-   */
+  /*! \brief Disables copy construction. */
   GGEMSOpenCLProgram(GGEMSOpenCLProgram const &) = delete;
 
-  /*!
-   * \brief Disables copy assignment.
-   */
+  /*! \brief Disables copy assignment. */
   auto operator=(GGEMSOpenCLProgram const &) -> GGEMSOpenCLProgram & = delete;
 
-  /*!
-   * \brief Disables move construction.
-   */
+  /*! \brief Disables move construction. */
   GGEMSOpenCLProgram(GGEMSOpenCLProgram &&) noexcept = delete;
 
-  /*!
-   * \brief Disables move assignment.
-   */
+  /*! \brief Disables move assignment. */
   auto operator=(GGEMSOpenCLProgram &&) noexcept
     -> GGEMSOpenCLProgram & = delete;
 
@@ -96,6 +96,8 @@ public:
    *
    * \param[in] kernel_name Kernel function name.
    * \return Native OpenCL kernel.
+   *
+   * \throws ggems::core::GGEMSFatal If OpenCL cannot create the named kernel.
    */
   [[nodiscard]] auto CreateKernel(std::string const &kernel_name) const
     -> cl::Kernel;
@@ -146,7 +148,7 @@ public:
   /*!
    * \brief Returns the compiled binary sizes for associated devices.
    *
-   * \return Compiled binary sizes.
+   * \return Owned byte counts in associated-device order.
    */
   [[nodiscard]] auto GetBinarySizes() const -> std::vector<std::size_t>;
 
@@ -167,6 +169,11 @@ public:
    * \param[in] kernel_name Requested kernel source name.
    * \param[in] user_build_options Requested user build options.
    * \return True if this program matches the requested build identity.
+   *
+   * Compares native context/device identities, the normalized source path,
+   * kernel name, and exact user-option text. It does not reread sources or
+   * recompute the content hash, so edits on disk do not invalidate an existing
+   * in-memory match.
    */
   [[nodiscard]] auto Matches(GGEMSOpenCLContext const &context,
                              std::filesystem::path const &kernel_root,
@@ -179,6 +186,8 @@ private:
    *
    * \param[in] path File path to read.
    * \return Complete text file contents.
+   *
+   * \throws ggems::core::GGEMSFatal If the source file cannot be opened.
    */
   [[nodiscard]]
   static auto LoadTextFile(std::filesystem::path const &path) -> std::string;
@@ -201,14 +210,10 @@ private:
                                          std::string const &extra)
     -> std::string;
 
-  /*!
-   * \brief Constructs and logs the kernel source path.
-   */
+  /*! \brief Constructs and logs the kernel source path. */
   auto Initialize() -> void;
 
-  /*!
-   * \brief Builds the program from cache or source.
-   */
+  /*! \brief Builds the program from cache or source. */
   auto Build() -> void;
 
   /*!
@@ -229,19 +234,21 @@ private:
    * \brief Computes the persistent cache path for this program identity.
    *
    * \return Persistent program-cache path.
+   *
+   * Attempts to create the device-specific cache directory. Directory creation
+   * failure is logged and the intended path is still returned.
    */
   [[nodiscard]] auto ComputeCachePath() const -> std::filesystem::path;
 
-  /*!
-   * \brief Writes the built program binary to the persistent cache.
-   */
+  /*! \brief Writes the built program binary to the persistent cache. */
   auto SaveBinaryToCache() -> void;
 
   /*!
    * \brief Loads a cached OpenCL program binary when available.
    *
-   * \return Cached binary bytes, or an empty vector when no usable cache entry
-   * is available.
+   * \return Owned file bytes, or an empty vector when the entry is absent,
+   * empty, or unreadable. OpenCL binary validity is checked only during the
+   * subsequent build.
    */
   auto LoadBinaryFromCache() -> std::vector<std::uint8_t>;
 
@@ -284,14 +291,31 @@ private:
     std::unordered_set<std::string> &visited_sources,
     std::string &fingerprint_text) const -> void;
 
-  cl::Context context_;               /*!< Retained native OpenCL context. */
-  cl::Device device_;                 /*!< Retained native OpenCL device. */
-  std::filesystem::path kernel_root_; /*!< Kernel source root directory. */
-  std::string kernel_name_;           /*!< Kernel source name. */
-  std::string source_path_;           /*!< Resolved kernel source path. */
-  std::string user_build_options_;    /*!< User-supplied build options. */
-  std::string build_options_;         /*!< Effective OpenCL build options. */
-  cl::Program program_;               /*!< Native OpenCL program. */
-  std::uint64_t global_hash_; /*!< Complete build-identity fingerprint. */
+  /*! \brief Retained native OpenCL context. */
+  cl::Context context_;
+
+  /*! \brief Retained native OpenCL device. */
+  cl::Device device_;
+
+  /*! \brief Kernel source root directory. */
+  std::filesystem::path kernel_root_;
+
+  /*! \brief Kernel source name. */
+  std::string kernel_name_;
+
+  /*! \brief Resolved kernel source path. */
+  std::string source_path_;
+
+  /*! \brief User-supplied build options. */
+  std::string user_build_options_;
+
+  /*! \brief Effective OpenCL build options. */
+  std::string build_options_;
+
+  /*! \brief Native OpenCL program. */
+  cl::Program program_;
+
+  /*! \brief Complete build-identity fingerprint. */
+  std::uint64_t global_hash_;
 };
 } // namespace ggems::ocl

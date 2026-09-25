@@ -37,13 +37,13 @@
 
 namespace ggems::core::materials {
 
-/*!
- * \brief Associates an isotope key with its neutral-atom molar mass.
- */
+/*! \brief Associates an isotope key with its neutral-atom molar mass. */
 struct GGEMSResolvedIsotope {
-  GGEMSIsotope isotope; /*!< Exact (Z, A, M) key. */
-  long double
-    molar_mass_grams_per_mole; /*!< Neutral-atom molar mass in g/mol. */
+  /*! \brief Exact (Z, A, M) key. */
+  GGEMSIsotope isotope;
+
+  /*! \brief Neutral-atom molar mass in g/mol. */
+  long double molar_mass_grams_per_mole;
 };
 
 /*!
@@ -84,8 +84,8 @@ public:
     -> GGEMSResolvedIsotope const &;
 
 private:
-  std::vector<GGEMSResolvedIsotope>
-    resolved_isotopes_; /*!< Owned rows ordered by isotope key. */
+  /*! \brief Owned rows ordered by isotope key. */
+  std::vector<GGEMSResolvedIsotope> resolved_isotopes_;
 };
 
 } // namespace ggems::core::materials

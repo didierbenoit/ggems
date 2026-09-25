@@ -56,12 +56,10 @@ namespace {
 /*!
  * \brief Effective SVM modes supplied by the GGEMS Apple compatibility layer.
  */
-constexpr SVMSupport k_apple_effective_svm_support{
-  .coarse_grain_buffer = true,
-  .fine_grain_buffer = false,
-  .fine_grain_system = false,
-  .atomics = false}; /*!< Effective SVM modes supplied by the GGEMS Apple
-                        compatibility layer. */
+constexpr SVMSupport k_apple_effective_svm_support{.coarse_grain_buffer = true,
+                                                   .fine_grain_buffer = false,
+                                                   .fine_grain_system = false,
+                                                   .atomics = false};
 
 } // namespace
 #endif

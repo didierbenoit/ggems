@@ -63,7 +63,7 @@ public:
   }
 
 private:
-  GGEMSOutputState
-    &state_; /*!< Non-owning reference to the destination output state. */
+  /*! \brief Non-owning reference to the destination output state. */
+  GGEMSOutputState &state_;
 };
 } // namespace ggems::core

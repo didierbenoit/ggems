@@ -66,6 +66,9 @@ public:
    *
    * \param[in] engine Random engine to use.
    * \return Reference to this configuration.
+   *
+   * Stores the value without validating it. Use a supported enumerator;
+   * initialization rejects an unsupported engine later.
    */
   auto SetEngine(GGEMSRandomEngine engine) noexcept -> GGEMSRandom &;
 
@@ -98,6 +101,9 @@ public:
    *
    * \param[in] seed New seed value.
    * \return Reference to this configuration.
+   *
+   * JKISS initialization uses only the low 32 seed bits. PCG32 and Philox
+   * initialization use the full 64-bit seed.
    */
   auto SetSeed(std::uint64_t seed) noexcept -> GGEMSRandom &;
 
@@ -138,8 +144,8 @@ public:
    *
    * \throws ggems::core::GGEMSRecoverable If the range overflows uint64_t or a
    * JKISS stream identifier exceeds uint32_t.
-   * \throws ggems::core::GGEMSInternal If the selected engine has no valid
-   * state size.
+   * An empty range is accepted. This method does not validate the selected
+   * engine value or its state size.
    */
   auto ValidateStateRange(std::uint64_t first_stream_id,
                           std::size_t state_count) const -> void;
@@ -170,9 +176,7 @@ public:
    */
   [[nodiscard]] auto BuildSummaryLines() const -> std::vector<std::string>;
 
-  /*!
-   * \brief Writes the random configuration summary to the GGEMS logger.
-   */
+  /*! \brief Writes the random configuration summary to the GGEMS logger. */
   auto Verbose() const -> void;
 
 private:

@@ -49,19 +49,26 @@ namespace ggems::core::materials {
  * \brief Describes whether inspection established registration in a manager.
  */
 enum class GGEMSMaterialRegistration : std::uint8_t {
-  Unknown = 0U,      /*!< No manager registration lookup was performed. */
-  Unregistered = 1U, /*!< Available definition not registered in the manager. */
-  Registered = 2U,   /*!< A manager index identifies the registered material. */
+  /*! \brief No manager registration lookup was performed. */
+  Unknown = 0U,
+
+  /*! \brief Available definition not registered in the manager. */
+  Unregistered = 1U,
+
+  /*! \brief A manager index identifies the registered material. */
+  Registered = 2U,
 };
 
-/*!
- * \brief Owns an elemental EM row together with copied catalog labels.
- */
+/*! \brief Owns an elemental EM row together with copied catalog labels. */
 struct GGEMSElementInspection {
-  GGEMSDerivedElementalConstituent
-    values;           /*!< Copied elemental EM properties. */
-  std::string symbol; /*!< Owned chemical symbol. */
-  std::string name;   /*!< Owned display name. */
+  /*! \brief Copied elemental EM properties. */
+  GGEMSDerivedElementalConstituent values;
+
+  /*! \brief Owned chemical symbol. */
+  std::string symbol;
+
+  /*! \brief Owned display name. */
+  std::string name;
 };
 
 /*!
@@ -74,20 +81,29 @@ struct GGEMSElementInspection {
  * package-local material ID.
  */
 struct GGEMSMaterialInspection {
-  std::string name;       /*!< Owned display name. */
-  units::Density density; /*!< Bulk density in pg/pm3. */
-  GGEMSMaterialRegistration
-    registration; /*!< Result of registration inspection. */
-  std::optional<std::uint32_t>
-    manager_index; /*!< Present for a registered material. */
-  std::vector<GGEMSElementInspection>
-    elements; /*!< Owned elemental rows by Z. */
-  std::vector<GGEMSIsotopeConstituent>
-    isotopes; /*!< Owned isotope rows by (Z, A, M). */
-  long double
-    total_atom_density_per_cubic_centimeter; /*!< Total atoms in 1/cm3. */
-  long double
-    electron_density_per_cubic_centimeter; /*!< Total electrons in 1/cm3. */
+  /*! \brief Owned display name. */
+  std::string name;
+
+  /*! \brief Bulk density in pg/pm3. */
+  units::Density density;
+
+  /*! \brief Result of registration inspection. */
+  GGEMSMaterialRegistration registration;
+
+  /*! \brief Present for a registered material. */
+  std::optional<std::uint32_t> manager_index;
+
+  /*! \brief Owned elemental rows by Z. */
+  std::vector<GGEMSElementInspection> elements;
+
+  /*! \brief Owned isotope rows by (Z, A, M). */
+  std::vector<GGEMSIsotopeConstituent> isotopes;
+
+  /*! \brief Total atoms in 1/cm3. */
+  long double total_atom_density_per_cubic_centimeter;
+
+  /*! \brief Total electrons in 1/cm3. */
+  long double electron_density_per_cubic_centimeter;
 };
 
 /*!

@@ -24,6 +24,12 @@
  * \brief Declares strongly typed speed units, literals, and length-over-time
  * construction.
  *
+ * Literals use MakeQuantity() during constant evaluation. Integral
+ * representations round floating inputs to the nearest canonical integer, with
+ * halfway values away from zero. A failed conversion makes the literal invalid
+ * in a constant expression. Direct aggregate construction bypasses conversion
+ * checks.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -43,18 +49,14 @@
 
 namespace ggems::units {
 
-/*!
- * \brief Marker type identifying the speed unit registry.
- */
+/*! \brief Marker type identifying the speed unit registry. */
 struct SpeedUnitSet {};
 
 /*!
  * \brief Defines the supported speed units and their canonical scale factors.
  */
 template <> struct UnitRegistry<SpeedUnitSet> {
-  /*!
-   * \brief Registered unit definitions for this quantity family.
-   */
+  /*! \brief Registered unit definitions for this quantity family. */
   static constexpr std::array<UnitDefinition, 2U> units{
     {
       {
@@ -70,28 +72,18 @@ template <> struct UnitRegistry<SpeedUnitSet> {
   };
 };
 
-/*!
- * \brief Tag type identifying speed quantities.
- */
+/*! \brief Tag type identifying speed quantities. */
 struct SpeedTag {};
 
-/*!
- * \brief Defines conversion and formatting traits for Speed quantities.
- */
+/*! \brief Defines conversion and formatting traits for Speed quantities. */
 template <> struct QuantityTraits<SpeedTag> {
-  /*!
-   * \brief Unit registry associated with this quantity type.
-   */
+  /*! \brief Unit registry associated with this quantity type. */
   using unit_set = SpeedUnitSet;
 
-  /*!
-   * \brief Allowed sign domain for this quantity type.
-   */
+  /*! \brief Allowed sign domain for this quantity type. */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
 
-  /*!
-   * \brief Formatting policy used for human-readable output.
-   */
+  /*! \brief Formatting policy used for human-readable output. */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::FixedUnit};
 
@@ -160,6 +152,9 @@ consteval auto operator""_m_s(long double value) -> Speed {
  * \param[in] length Distance traveled.
  * \param[in] duration Elapsed duration.
  * \return Speed computed from the canonical length and time representations.
+ *
+ * \pre duration must be positive for a finite physical speed. This helper
+ * divides canonical pm by ps without checking a zero divisor.
  */
 inline auto MakeSpeed(Length length, Time duration) noexcept -> Speed {
   return Speed{static_cast<long double>(length.value) /

@@ -50,36 +50,52 @@
 
 namespace ggems::core {
 
-/*!
- * \brief Identifies the severity of a GGEMS log record.
- */
+/*! \brief Identifies the severity of a GGEMS log record. */
 enum class LogLevel : std::uint8_t {
-  Debug = 0, /*!<  Diagnostic message intended for development and debugging.*/
-  Info,      /*!< Informational message. */
-  Warn,      /*!< Warning message. */
-  Error,     /*!< Error message. */
+  /*! \brief Diagnostic message intended for development and debugging. */
+  Debug = 0,
+
+  /*! \brief Informational message. */
+  Info,
+
+  /*! \brief Warning message. */
+  Warn,
+
+  /*! \brief Error message. */
+  Error,
 };
 
-/*!
- * \brief Identifies the character encoding used for GGEMS textual output.
- */
+/*! \brief Identifies the character encoding used for GGEMS textual output. */
 enum class Encoding : std::uint8_t {
-  Unicode = 0, /*!< Enables Unicode output where supported by the active sink.*/
-  Ascii,       /*!< Restricts output to the portable ASCII representation. */
+  /*! \brief Enables Unicode output where supported by the active sink. */
+  Unicode = 0,
+
+  /*! \brief Restricts output to the portable ASCII representation. */
+  Ascii,
 };
 
-/*!
- * \brief Stores the metadata and message associated with one log event.
- */
+/*! \brief Stores the metadata and message associated with one log event. */
 struct LogRecord {
-  std::chrono::system_clock::time_point
-    timestamp; /*!< Timestamp assigned when the record is created. */
-  LogLevel level{LogLevel::Info}; /*!< Severity of the record. */
-  std::int32_t depth{0}; /*!< Verbosity depth used for detail filtering. */
-  std::string thread_id; /*!< Stable textual tag of the emitting thread. */
-  std::string module;    /*!< GGEMS module associated with the message */
-  std::string message;   /*!< Formatted message payload */
-  std::string function;  /*!< Simplified source function name */
+  /*! \brief Timestamp assigned when the record is created. */
+  std::chrono::system_clock::time_point timestamp;
+
+  /*! \brief Severity of the record. */
+  LogLevel level{LogLevel::Info};
+
+  /*! \brief Verbosity depth used for detail filtering. */
+  std::int32_t depth{0};
+
+  /*! \brief Stable textual tag of the emitting thread. */
+  std::string thread_id;
+
+  /*! \brief GGEMS module associated with the message. */
+  std::string module;
+
+  /*! \brief Formatted message payload. */
+  std::string message;
+
+  /*! \brief Simplified source function name. */
+  std::string function;
 };
 
 /*!
@@ -87,23 +103,29 @@ struct LogRecord {
  * formatting.
  */
 struct RenderedLogLine {
-  std::string prefix; /*!< Rendered metadata prefix. */
-  std::string msg;    /*!< Rendered message payload. */
-  render::ColorKey color{
-    render::DEFAULT_FG}; /*!< Color associated with the rendered prefix. */
-  LogLevel level{LogLevel::Info}; /*!< Original record severity. */
-  std::int32_t depth{0};          /*!< Original record verbosity. */
-  std::string module; /*!< Module retained from the source record. */
+  /*! \brief Rendered metadata prefix. */
+  std::string prefix;
+
+  /*! \brief Rendered message payload. */
+  std::string msg;
+
+  /*! \brief Color associated with the rendered prefix. */
+  render::ColorKey color{render::DEFAULT_FG};
+
+  /*! \brief Original record severity. */
+  LogLevel level{LogLevel::Info};
+
+  /*! \brief Original record verbosity. */
+  std::int32_t depth{0};
+
+  /*! \brief Module retained from the source record. */
+  std::string module;
 };
 
-/*!
- * \brief Defines the interface implemented by GGEMS log destinations.
- */
+/*! \brief Defines the interface implemented by GGEMS log destinations. */
 class LogSink {
 public:
-  /*!
-   * \brief Destroys the log sink.
-   */
+  /*! \brief Destroys the log sink. */
   virtual ~LogSink() = default;
 
   /*!
@@ -114,9 +136,7 @@ public:
   virtual auto Write(RenderedLogLine &&log_line) -> void = 0;
 };
 
-/*!
- * \brief Writes rendered GGEMS log lines to a plain-text file.
- */
+/*! \brief Writes rendered GGEMS log lines to a plain-text file. */
 class FileSink final : public LogSink {
 public:
   /*!
@@ -128,26 +148,27 @@ public:
   explicit FileSink(std::string path);
 
   /*!
-   * \brief Writes a rendered line without ANSI color control sequences.
+   * \brief Writes a rendered line without adding ANSI color sequences.
    *
    * \param[in] log_line Rendered line transferred to the file sink.
    */
   auto Write(RenderedLogLine &&log_line) -> void override;
 
 private:
-  std::string path_;  /*!< Destination log-file path. */
-  std::ofstream out_; /*!< Output stream owned by the sink. */
-  std::mutex mtx_;    /*!< Mutex serializing writes to the file stream. */
+  /*! \brief Destination log-file path. */
+  std::string path_;
+
+  /*! \brief Output stream owned by the sink. */
+  std::ofstream out_;
+
+  /*! \brief Mutex serializing writes to the file stream. */
+  std::mutex mtx_;
 };
 
-/*!
- * \brief Writes rendered GGEMS log lines to standard output.
- */
+/*! \brief Writes rendered GGEMS log lines to standard output. */
 class StdoutSink : public LogSink {
 public:
-  /*!
-   * \brief Constructs a standard-output sink.
-   */
+  /*! \brief Constructs a standard-output sink. */
   StdoutSink() = default;
 
   /*!
@@ -160,12 +181,11 @@ public:
   auto Write(RenderedLogLine &&log_line) -> void override;
 
 private:
-  std::mutex mtx_; /*!< Mutex serializing writes to standard output. */
+  /*! \brief Mutex serializing writes to standard output. */
+  std::mutex mtx_;
 };
 
-/*!
- * \brief Converts structured log records into sink-ready rendered lines.
- */
+/*! \brief Converts structured log records into sink-ready rendered lines. */
 class LogFormatter {
 public:
   /*!
@@ -184,6 +204,10 @@ public:
  *
  * The singleton owns the active log sinks, detail filter, color policy, and
  * output encoding used by GGEMS logging front ends.
+ *
+ * Sink dispatch is serialized by the logger mutex. Encoding and color policy
+ * must be configured without racing with readers of that policy; their
+ * accessors do not acquire the mutex.
  */
 class GGEMSLogger {
 public:
@@ -194,29 +218,19 @@ public:
    */
   static auto GetInstance() noexcept -> GGEMSLogger &;
 
-  /*!
-   * \brief Copy construction is disabled.
-   */
+  /*! \brief Copy construction is disabled. */
   GGEMSLogger(GGEMSLogger const &) = delete;
 
-  /*!
-   * \brief Move construction is disabled.
-   */
+  /*! \brief Move construction is disabled. */
   GGEMSLogger(GGEMSLogger &&) = delete;
 
-  /*!
-   * \brief Copy assignment is disabled.
-   */
+  /*! \brief Copy assignment is disabled. */
   auto operator=(GGEMSLogger const &) -> GGEMSLogger & = delete;
 
-  /*!
-   * \brief Move assignment is disabled.
-   */
+  /*! \brief Move assignment is disabled. */
   auto operator=(GGEMSLogger &&) -> GGEMSLogger & = delete;
 
-  /*!
-   * \brief Removes all currently installed log sinks.
-   */
+  /*! \brief Removes all currently installed log sinks. */
   auto ClearSinks() -> void;
 
   /*!
@@ -286,8 +300,8 @@ public:
   /*!
    * \brief Formats and logs a message at a compile-time severity level.
    *
-   * Messages above the configured detail level are discarded before the format
-   * string is evaluated.
+   * Messages above the configured detail level are discarded before message
+   * formatting.
    *
    * \tparam Level Compile-time log severity.
    * \tparam Args Format-argument types.
@@ -296,6 +310,10 @@ public:
    * \param[in] fmt_runtime Runtime format string.
    * \param[in] loc Source location associated with the record.
    * \param[in] args Arguments consumed by the runtime formatter.
+   *
+   * Call arguments are evaluated before this method is entered. With no
+   * formatting arguments, the format text is copied literally rather than
+   * parsed.
    */
   template <LogLevel Level, typename... Args>
   auto LogFmt(std::int32_t depth, std::string_view module,
@@ -317,9 +335,7 @@ public:
   }
 
 private:
-  /*!
-   * \brief Constructs the process-wide logger instance.
-   */
+  /*! \brief Constructs the process-wide logger instance. */
   GGEMSLogger() = default;
 
   /*!
@@ -329,16 +345,21 @@ private:
    */
   void Dispatch(LogRecord const &rec);
 
-  std::atomic<std::int32_t> detail_level_{
-    1}; /*!< Maximum accepted logging detail depth. */
-  mutable std::mutex
-    mtx_; /*!< Mutex protecting logger configuration and sink dispatch. */
-  std::vector<std::unique_ptr<LogSink>>
-    sinks_; /*!< Owned log sinks receiving rendered lines. */
-  std::optional<bool>
-    force_color_; /*!< Optional explicit color-policy override. */
+  /*! \brief Maximum accepted logging detail depth. */
+  std::atomic<std::int32_t> detail_level_{1};
+
+  /*! \brief Mutex protecting logger configuration and sink dispatch. */
+  mutable std::mutex mtx_;
+
+  /*! \brief Owned log sinks receiving rendered lines. */
+  std::vector<std::unique_ptr<LogSink>> sinks_;
+
+  /*! \brief Optional explicit color-policy override. */
+  std::optional<bool> force_color_;
+
+  /*! \brief Current text encoding used by GGEMS output. */
   Encoding encoding_{
     Encoding::Ascii,
-  }; /*!< Current text encoding used by GGEMS output. */
+  };
 };
 } // namespace ggems::core

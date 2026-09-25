@@ -23,6 +23,12 @@
  * \file
  * \brief Declares strongly typed area units and literals.
  *
+ * Literals use MakeQuantity() during constant evaluation. Integral
+ * representations round floating inputs to the nearest canonical integer, with
+ * halfway values away from zero. A failed conversion makes the literal invalid
+ * in a constant expression. Direct aggregate construction bypasses conversion
+ * checks.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -40,18 +46,14 @@
 
 namespace ggems::units {
 
-/*!
- * \brief Marker type identifying the area unit registry.
- */
+/*! \brief Marker type identifying the area unit registry. */
 struct AreaUnitSet {};
 
 /*!
  * \brief Defines the supported area units and their canonical scale factors.
  */
 template <> struct UnitRegistry<AreaUnitSet> {
-  /*!
-   * \brief Registered unit definitions for this quantity family.
-   */
+  /*! \brief Registered unit definitions for this quantity family. */
   static constexpr std::array<UnitDefinition, 7U> units{
     {
       {
@@ -94,28 +96,18 @@ template <> struct UnitRegistry<AreaUnitSet> {
   };
 };
 
-/*!
- * \brief Tag type identifying area quantities.
- */
+/*! \brief Tag type identifying area quantities. */
 struct AreaTag {};
 
-/*!
- * \brief Defines conversion and formatting traits for Area quantities.
- */
+/*! \brief Defines conversion and formatting traits for Area quantities. */
 template <> struct QuantityTraits<AreaTag> {
-  /*!
-   * \brief Unit registry associated with this quantity type.
-   */
+  /*! \brief Unit registry associated with this quantity type. */
   using unit_set = AreaUnitSet;
 
-  /*!
-   * \brief Allowed sign domain for this quantity type.
-   */
+  /*! \brief Allowed sign domain for this quantity type. */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
 
-  /*!
-   * \brief Formatting policy used for human-readable output.
-   */
+  /*! \brief Formatting policy used for human-readable output. */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
 
@@ -138,7 +130,7 @@ template <> struct QuantityTraits<AreaTag> {
 using Area = Quantity<AreaTag, long double>;
 
 /*!
- * \brief Creates a area quantity from a \c _pm2 literal.
+ * \brief Creates an area quantity from a \c _pm2 literal.
  *
  * \param[in] value Literal value expressed in pm2.
  * \return Area converted to its canonical GGEMS representation.
@@ -148,7 +140,7 @@ consteval auto operator""_pm2(unsigned long long value) -> Area {
 }
 
 /*!
- * \brief Creates a area quantity from a \c _pm2 literal.
+ * \brief Creates an area quantity from a \c _pm2 literal.
  *
  * \param[in] value Literal value expressed in pm2.
  * \return Area converted to its canonical GGEMS representation.
@@ -158,7 +150,7 @@ consteval auto operator""_pm2(long double value) -> Area {
 }
 
 /*!
- * \brief Creates a area quantity from a \c _nm2 literal.
+ * \brief Creates an area quantity from a \c _nm2 literal.
  *
  * \param[in] value Literal value expressed in nm2.
  * \return Area converted to its canonical GGEMS representation.
@@ -168,7 +160,7 @@ consteval auto operator""_nm2(unsigned long long value) -> Area {
 }
 
 /*!
- * \brief Creates a area quantity from a \c _nm2 literal.
+ * \brief Creates an area quantity from a \c _nm2 literal.
  *
  * \param[in] value Literal value expressed in nm2.
  * \return Area converted to its canonical GGEMS representation.
@@ -178,7 +170,7 @@ consteval auto operator""_nm2(long double value) -> Area {
 }
 
 /*!
- * \brief Creates a area quantity from a \c _um2 literal.
+ * \brief Creates an area quantity from a \c _um2 literal.
  *
  * \param[in] value Literal value expressed in um2.
  * \return Area converted to its canonical GGEMS representation.
@@ -188,7 +180,7 @@ consteval auto operator""_um2(unsigned long long value) -> Area {
 }
 
 /*!
- * \brief Creates a area quantity from a \c _um2 literal.
+ * \brief Creates an area quantity from a \c _um2 literal.
  *
  * \param[in] value Literal value expressed in um2.
  * \return Area converted to its canonical GGEMS representation.
@@ -198,7 +190,7 @@ consteval auto operator""_um2(long double value) -> Area {
 }
 
 /*!
- * \brief Creates a area quantity from a \c _mm2 literal.
+ * \brief Creates an area quantity from a \c _mm2 literal.
  *
  * \param[in] value Literal value expressed in mm2.
  * \return Area converted to its canonical GGEMS representation.
@@ -208,7 +200,7 @@ consteval auto operator""_mm2(unsigned long long value) -> Area {
 }
 
 /*!
- * \brief Creates a area quantity from a \c _mm2 literal.
+ * \brief Creates an area quantity from a \c _mm2 literal.
  *
  * \param[in] value Literal value expressed in mm2.
  * \return Area converted to its canonical GGEMS representation.
@@ -218,7 +210,7 @@ consteval auto operator""_mm2(long double value) -> Area {
 }
 
 /*!
- * \brief Creates a area quantity from a \c _cm2 literal.
+ * \brief Creates an area quantity from a \c _cm2 literal.
  *
  * \param[in] value Literal value expressed in cm2.
  * \return Area converted to its canonical GGEMS representation.
@@ -228,7 +220,7 @@ consteval auto operator""_cm2(unsigned long long value) -> Area {
 }
 
 /*!
- * \brief Creates a area quantity from a \c _cm2 literal.
+ * \brief Creates an area quantity from a \c _cm2 literal.
  *
  * \param[in] value Literal value expressed in cm2.
  * \return Area converted to its canonical GGEMS representation.
@@ -238,7 +230,7 @@ consteval auto operator""_cm2(long double value) -> Area {
 }
 
 /*!
- * \brief Creates a area quantity from a \c _m2 literal.
+ * \brief Creates an area quantity from a \c _m2 literal.
  *
  * \param[in] value Literal value expressed in m2.
  * \return Area converted to its canonical GGEMS representation.
@@ -248,7 +240,7 @@ consteval auto operator""_m2(unsigned long long value) -> Area {
 }
 
 /*!
- * \brief Creates a area quantity from a \c _m2 literal.
+ * \brief Creates an area quantity from a \c _m2 literal.
  *
  * \param[in] value Literal value expressed in m2.
  * \return Area converted to its canonical GGEMS representation.
@@ -258,7 +250,7 @@ consteval auto operator""_m2(long double value) -> Area {
 }
 
 /*!
- * \brief Creates a area quantity from a \c _km2 literal.
+ * \brief Creates an area quantity from a \c _km2 literal.
  *
  * \param[in] value Literal value expressed in km2.
  * \return Area converted to its canonical GGEMS representation.
@@ -268,7 +260,7 @@ consteval auto operator""_km2(unsigned long long value) -> Area {
 }
 
 /*!
- * \brief Creates a area quantity from a \c _km2 literal.
+ * \brief Creates an area quantity from a \c _km2 literal.
  *
  * \param[in] value Literal value expressed in km2.
  * \return Area converted to its canonical GGEMS representation.

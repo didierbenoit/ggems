@@ -45,25 +45,37 @@ namespace ggems::core::materials {
  * \brief Stores one isotope-derived elemental contribution in a flat EM array.
  */
 struct GGEMSEMElementalConstituent {
-  std::uint32_t atomic_number; /*!< Chemical identity Z. */
-  long double mass_fraction;   /*!< Derived share of material mass. */
-  long double
-    number_density_per_cubic_centimeter; /*!< Element atoms in 1/cm3. */
-  long double
-    electron_density_per_cubic_centimeter; /*!< Electron density in 1/cm3. */
+  /*! \brief Chemical identity Z. */
+  std::uint32_t atomic_number;
+
+  /*! \brief Derived share of material mass. */
+  long double mass_fraction;
+
+  /*! \brief Element atoms in 1/cm3. */
+  long double number_density_per_cubic_centimeter;
+
+  /*! \brief Electron density in 1/cm3. */
+  long double electron_density_per_cubic_centimeter;
 };
 
 /*!
  * \brief Locates one material's elemental rows and stores its bulk properties.
  */
 struct GGEMSEMMaterialDescriptor {
-  units::Density density;          /*!< Bulk density in canonical pg/pm3. */
-  std::uint32_t first_constituent; /*!< Offset into the flat elemental array. */
-  std::uint32_t constituent_count; /*!< Number of elemental rows. */
-  long double
-    total_atom_density_per_cubic_centimeter; /*!< Total atoms in 1/cm3. */
-  long double
-    electron_density_per_cubic_centimeter; /*!< Electron density in 1/cm3. */
+  /*! \brief Bulk density in canonical pg/pm3. */
+  units::Density density;
+
+  /*! \brief Offset into the flat elemental array. */
+  std::uint32_t first_constituent;
+
+  /*! \brief Number of elemental rows. */
+  std::uint32_t constituent_count;
+
+  /*! \brief Total atoms in 1/cm3. */
+  long double total_atom_density_per_cubic_centimeter;
+
+  /*! \brief Electron density in 1/cm3. */
+  long double electron_density_per_cubic_centimeter;
 };
 
 /*!
@@ -122,12 +134,14 @@ public:
   }
 
 private:
-  std::vector<GGEMSEMMaterialDescriptor>
-    descriptors_; /*!< Owned unique-material descriptors. */
-  std::vector<GGEMSEMElementalConstituent>
-    elemental_constituents_; /*!< Flat EM rows. */
-  std::vector<std::uint32_t>
-    material_ids_; /*!< Input-index to descriptor-ID mapping. */
+  /*! \brief Owned unique-material descriptors. */
+  std::vector<GGEMSEMMaterialDescriptor> descriptors_;
+
+  /*! \brief Flat EM rows. */
+  std::vector<GGEMSEMElementalConstituent> elemental_constituents_;
+
+  /*! \brief Input-index to descriptor-ID mapping. */
+  std::vector<std::uint32_t> material_ids_;
 };
 
 } // namespace ggems::core::materials

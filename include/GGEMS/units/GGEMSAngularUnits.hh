@@ -23,6 +23,12 @@
  * \file
  * \brief Declares strongly typed angular units, conversions, and literals.
  *
+ * Literals use MakeQuantity() during constant evaluation. Integral
+ * representations round floating inputs to the nearest canonical integer, with
+ * halfway values away from zero. A failed conversion makes the literal invalid
+ * in a constant expression. Direct aggregate construction bypasses conversion
+ * checks.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -41,18 +47,14 @@
 
 namespace ggems::units {
 
-/*!
- * \brief Marker type identifying the angle unit registry.
- */
+/*! \brief Marker type identifying the angle unit registry. */
 struct AngleUnitSet {};
 
 /*!
  * \brief Defines the supported angle units and their canonical scale factors.
  */
 template <> struct UnitRegistry<AngleUnitSet> {
-  /*!
-   * \brief Registered unit definitions for this quantity family.
-   */
+  /*! \brief Registered unit definitions for this quantity family. */
   static constexpr std::array<UnitDefinition, 2U> units{{
     {.symbol = "rad", .scale = DecimalScale(0), .automatic_display = false},
     {.symbol = "deg",
@@ -60,28 +62,18 @@ template <> struct UnitRegistry<AngleUnitSet> {
   }};
 };
 
-/*!
- * \brief Tag type identifying angle quantities.
- */
+/*! \brief Tag type identifying angle quantities. */
 struct AngleTag {};
 
-/*!
- * \brief Defines conversion and formatting traits for Angle quantities.
- */
+/*! \brief Defines conversion and formatting traits for Angle quantities. */
 template <> struct QuantityTraits<AngleTag> {
-  /*!
-   * \brief Unit registry associated with this quantity type.
-   */
+  /*! \brief Unit registry associated with this quantity type. */
   using unit_set = AngleUnitSet;
 
-  /*!
-   * \brief Allowed sign domain for this quantity type.
-   */
+  /*! \brief Allowed sign domain for this quantity type. */
   static constexpr QuantityDomain domain{QuantityDomain::Signed};
 
-  /*!
-   * \brief Formatting policy used for human-readable output.
-   */
+  /*! \brief Formatting policy used for human-readable output. */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::FixedUnit};
 
@@ -98,9 +90,7 @@ template <> struct QuantityTraits<AngleTag> {
   static constexpr std::int8_t default_precision{3};
 };
 
-/*!
- * \brief Strongly typed angle quantity stored canonically in radians.
- */
+/*! \brief Strongly typed angle quantity stored canonically in radians. */
 using Angle = Quantity<AngleTag, long double>;
 
 /*!
@@ -108,6 +98,8 @@ using Angle = Quantity<AngleTag, long double>;
  *
  * \param[in] radians Angle value in radians.
  * \return Angle storing the supplied radian value.
+ *
+ * This helper performs no finite-value check or angular wrapping.
  */
 constexpr auto MakeRadians(long double radians) noexcept -> Angle {
   return Angle{radians};
@@ -118,6 +110,8 @@ constexpr auto MakeRadians(long double radians) noexcept -> Angle {
  *
  * \param[in] degrees Angle value in degrees.
  * \return Angle converted to the canonical radian representation.
+ *
+ * This helper performs no finite-value check or angular wrapping.
  */
 constexpr auto MakeDegrees(long double degrees) noexcept -> Angle {
   return Angle{degrees *
@@ -146,7 +140,7 @@ constexpr auto ToDegrees(Angle angle) noexcept -> long double {
 }
 
 /*!
- * \brief Creates a angle quantity from a \c _rad literal.
+ * \brief Creates an angle quantity from a \c _rad literal.
  *
  * \param[in] value Literal value expressed in rad.
  * \return Angle converted to its canonical GGEMS representation.
@@ -156,7 +150,7 @@ consteval auto operator""_rad(long double value) -> Angle {
 }
 
 /*!
- * \brief Creates a angle quantity from a \c _rad literal.
+ * \brief Creates an angle quantity from a \c _rad literal.
  *
  * \param[in] value Literal value expressed in rad.
  * \return Angle converted to its canonical GGEMS representation.
@@ -166,7 +160,7 @@ consteval auto operator""_rad(unsigned long long value) -> Angle {
 }
 
 /*!
- * \brief Creates a angle quantity from a \c _deg literal.
+ * \brief Creates an angle quantity from a \c _deg literal.
  *
  * \param[in] value Literal value expressed in deg.
  * \return Angle converted to its canonical GGEMS representation.
@@ -176,7 +170,7 @@ consteval auto operator""_deg(long double value) -> Angle {
 }
 
 /*!
- * \brief Creates a angle quantity from a \c _deg literal.
+ * \brief Creates an angle quantity from a \c _deg literal.
  *
  * \param[in] value Literal value expressed in deg.
  * \return Angle converted to its canonical GGEMS representation.

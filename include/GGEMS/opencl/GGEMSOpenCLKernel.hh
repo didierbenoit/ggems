@@ -44,6 +44,11 @@ namespace ggems::ocl {
 
 /*!
  * \brief Wraps a native OpenCL kernel with its GGEMS context and identity.
+ *
+ * The native kernel handle and name are owned; the GGEMS context is borrowed
+ * and must outlive this wrapper at a stable address. Setting arguments and
+ * launching one kernel require caller serialization. Information getters
+ * propagate GGEMSRecoverable on failed native queries.
  */
 class GGEMSOpenCLKernel {
 public:
@@ -57,29 +62,19 @@ public:
   GGEMSOpenCLKernel(GGEMSOpenCLContext const &context, cl::Kernel kernel,
                     std::string kernel_name);
 
-  /*!
-   * \brief Destroys the OpenCL kernel wrapper.
-   */
+  /*! \brief Destroys the OpenCL kernel wrapper. */
   ~GGEMSOpenCLKernel() = default;
 
-  /*!
-   * \brief Disables copy construction.
-   */
+  /*! \brief Disables copy construction. */
   GGEMSOpenCLKernel(GGEMSOpenCLKernel const &) = delete;
 
-  /*!
-   * \brief Disables copy assignment.
-   */
+  /*! \brief Disables copy assignment. */
   auto operator=(GGEMSOpenCLKernel const &) -> GGEMSOpenCLKernel & = delete;
 
-  /*!
-   * \brief Disables move construction.
-   */
+  /*! \brief Disables move construction. */
   GGEMSOpenCLKernel(GGEMSOpenCLKernel &&) noexcept = delete;
 
-  /*!
-   * \brief Disables move assignment.
-   */
+  /*! \brief Disables move assignment. */
   auto operator=(GGEMSOpenCLKernel &&) noexcept -> GGEMSOpenCLKernel & = delete;
 
   /*!
@@ -106,6 +101,9 @@ public:
    * \tparam T Kernel argument value type.
    * \param[in] index Kernel argument index.
    * \param[in] value Kernel argument value.
+   *
+   * \throws ggems::core::GGEMSFatal If the corresponding OpenCL set, enqueue,
+   * or queue-finish operation fails.
    */
   template <typename T> auto SetArg(cl_uint index, T const &value) -> void {
     cl_int error = kernel_.setArg(index, value);
@@ -120,6 +118,13 @@ public:
    *
    * \param[in] index Kernel argument index.
    * \param[in] pointer SVM pointer value.
+   *
+   * \throws ggems::core::GGEMSFatal If the corresponding OpenCL set, enqueue,
+   * or queue-finish operation fails.
+   *
+   * The caller retains the allocation and ensures that it belongs to the
+   * execution context and survives every launch using the argument. Binding
+   * does not map the allocation or transfer ownership.
    */
   auto SetArgSVMPointer(cl_uint index, void const *pointer) -> void;
 
@@ -128,6 +133,13 @@ public:
    *
    * \param[in] global One-dimensional global work size.
    * \param[in] local One-dimensional local work size.
+   *
+   * \throws ggems::core::GGEMSFatal If the corresponding OpenCL set, enqueue,
+   * or queue-finish operation fails.
+   *
+   * Uses the supplied global/local work sizes without padding or selecting a
+   * local size. Finishes the associated queue before returning; this also waits
+   * for earlier work in that queue.
    */
   auto Run(std::array<std::size_t, 1> const &global,
            std::array<std::size_t, 1> const &local) -> void;
@@ -138,6 +150,13 @@ public:
    * \param[in] global One-dimensional global work size.
    * \param[in] local One-dimensional local work size.
    * \return Completed OpenCL kernel event.
+   *
+   * \throws ggems::core::GGEMSFatal If the corresponding OpenCL set, enqueue,
+   * or queue-finish operation fails.
+   *
+   * Uses the supplied global/local work sizes without padding or selecting a
+   * local size. Finishes the associated queue before returning; this also waits
+   * for earlier work in that queue.
    */
   [[nodiscard]] auto RunAndGetEvent(std::array<std::size_t, 1> const &global,
                                     std::array<std::size_t, 1> const &local)
@@ -262,9 +281,14 @@ public:
   [[nodiscard]] auto GetArgName(cl_uint index) const -> std::string;
 
 private:
-  GGEMSOpenCLContext const &context_; /*!< OpenCL context used for execution. */
-  cl::Kernel kernel_;                 /*!< Native OpenCL kernel. */
-  std::string kernel_name_;           /*!< Kernel function name. */
+  /*! \brief OpenCL context used for execution. */
+  GGEMSOpenCLContext const &context_;
+
+  /*! \brief Native OpenCL kernel. */
+  cl::Kernel kernel_;
+
+  /*! \brief Kernel function name. */
+  std::string kernel_name_;
 };
 
 } // namespace ggems::ocl

@@ -61,9 +61,7 @@ using units::operator""_GeV;
 // =============================================================================
 // =============================================================================
 
-/*!
- * \brief Borrows a material's isotope-derived elemental EM contributions.
- */
+/*! \brief Borrows a material's isotope-derived elemental EM contributions. */
 using Constituents = std::span<materials::GGEMSEMElementalConstituent const>;
 
 // =============================================================================
@@ -74,9 +72,7 @@ using Constituents = std::span<materials::GGEMSEMElementalConstituent const>;
  */
 constexpr units::Energy k_converter_min_energy{990_eV};
 
-/*!
- * \brief Defines the 10 GeV upper lepton conversion energy.
- */
+/*! \brief Defines the 10 GeV upper lepton conversion energy. */
 constexpr units::Energy k_converter_max_energy{10_GeV};
 
 // =============================================================================
@@ -87,29 +83,19 @@ constexpr units::Energy k_converter_max_energy{10_GeV};
  */
 constexpr long double k_electron_mass_mev{0.510998910L};
 
-/*!
- * \brief Defines the lepton stopping scale 2*pi*m*c^2*r_e^2 in MeV cm2.
- */
+/*! \brief Defines the lepton stopping scale 2*pi*m*c^2*r_e^2 in MeV cm2. */
 constexpr long double k_twopi_mc2_rcl2_mev_cm2{2.549549767053704080525235e-25L};
 
-/*!
- * \brief Converts microscopic cross sections from barns to cm2.
- */
+/*! \brief Converts microscopic cross sections from barns to cm2. */
 constexpr long double k_barn_cm2{1.0e-24L};
 
-/*!
- * \brief Defines the Gamma cut proxy as five absorption lengths.
- */
+/*! \brief Defines the Gamma cut proxy as five absorption lengths. */
 constexpr long double k_gamma_range_absorption_lengths{5.0L};
 
-/*!
- * \brief Defines the 10 keV analytic-to-integrated lepton range boundary.
- */
+/*! \brief Defines the 10 keV analytic-to-integrated lepton range boundary. */
 constexpr long double k_lepton_low_energy_mev{0.01L};
 
-/*!
- * \brief Defines the bremsstrahlung logarithm's reference energy in MeV.
- */
+/*! \brief Defines the bremsstrahlung logarithm's reference energy in MeV. */
 constexpr long double k_lepton_brems_reference_mev{1000.0L};
 
 /*!
@@ -117,9 +103,7 @@ constexpr long double k_lepton_brems_reference_mev{1000.0L};
  */
 constexpr long double k_density_correction_energy_mev{0.03L};
 
-/*!
- * \brief Defines the empirical density-correction scale in g/cm2.
- */
+/*! \brief Defines the empirical density-correction scale in g/cm2. */
 constexpr long double k_density_correction_tune_g_cm2{0.0025L};
 
 /*!
@@ -131,9 +115,7 @@ constexpr std::size_t k_lepton_cells_per_decade{50U};
 // =============================================================================
 // =============================================================================
 
-/*!
- * \brief Stores five-point Gauss-Legendre nodes on the interval [-1, 1].
- */
+/*! \brief Stores five-point Gauss-Legendre nodes on the interval [-1, 1]. */
 constexpr std::array<long double, 5U> k_gauss_nodes{
   -0.906179845938663992797626878299392965L,
   -0.538469310105683091036314420700208805L,
@@ -145,9 +127,7 @@ constexpr std::array<long double, 5U> k_gauss_nodes{
 // =============================================================================
 // =============================================================================
 
-/*!
- * \brief Stores weights paired with the five Gauss-Legendre nodes.
- */
+/*! \brief Stores weights paired with the five Gauss-Legendre nodes. */
 constexpr std::array<long double, 5U> k_gauss_weights{
   0.236926885056189087514264040719917363L,
   0.478628670499366468041291514835638193L,
@@ -212,17 +192,38 @@ template <typename Range>
  * coefficients.
  */
 struct GammaAbsorptionElement {
-  long double number_density; /*!< Atoms per cubic centimeter. */
-  long double atomic_number;  /*!< Proton number as a working floating value. */
-  long double tmin;    /*!< Energy of minimum proxy cross section, in MeV. */
-  long double tlow;    /*!< Low-energy branch boundary in MeV. */
-  long double smin;    /*!< Proxy cross section at tmin, in barns. */
-  long double s200;    /*!< Proxy cross section at 0.2 MeV, in barns. */
-  long double cmin;    /*!< Dimensionless intermediate-branch curvature. */
-  long double slow;    /*!< Proxy cross section at tlow, in barns. */
-  long double clow;    /*!< Dimensionless low-energy power exponent. */
-  long double logtlow; /*!< Natural logarithm of tlow divided by 1 keV. */
-  long double chigh;   /*!< High-energy logarithm coefficient in barns. */
+  /*! \brief Atoms per cubic centimeter. */
+  long double number_density;
+
+  /*! \brief Proton number as a working floating value. */
+  long double atomic_number;
+
+  /*! \brief Energy of minimum proxy cross section, in MeV. */
+  long double tmin;
+
+  /*! \brief Low-energy branch boundary in MeV. */
+  long double tlow;
+
+  /*! \brief Proxy cross section at tmin, in barns. */
+  long double smin;
+
+  /*! \brief Proxy cross section at 0.2 MeV, in barns. */
+  long double s200;
+
+  /*! \brief Dimensionless intermediate-branch curvature. */
+  long double cmin;
+
+  /*! \brief Proxy cross section at tlow, in barns. */
+  long double slow;
+
+  /*! \brief Dimensionless low-energy power exponent. */
+  long double clow;
+
+  /*! \brief Natural logarithm of tlow divided by 1 keV. */
+  long double logtlow;
+
+  /*! \brief High-energy logarithm coefficient in barns. */
+  long double chigh;
 };
 
 // =============================================================================
@@ -504,13 +505,17 @@ private:
            beta2;
   }
 
-  Constituents constituents_; /*!< Borrowed elemental EM rows. */
-  bool
-    positron_; /*!< Selects Positron instead of Electron collision formulas. */
-  std::vector<long double>
-    ionisation_log_; /*!< Per-element dimensionless excitation logs. */
-  long double low_branch_at_low_energy_{
-    0.0L}; /*!< 10 keV collision stopping in MeV/cm. */
+  /*! \brief Borrowed elemental EM rows. */
+  Constituents constituents_;
+
+  /*! \brief Selects Positron instead of Electron collision formulas. */
+  bool positron_;
+
+  /*! \brief Per-element dimensionless excitation logs. */
+  std::vector<long double> ionisation_log_;
+
+  /*! \brief 10 keV collision stopping in MeV/cm. */
+  long double low_branch_at_low_energy_{0.0L};
 };
 
 // =============================================================================

@@ -63,6 +63,8 @@ namespace ggems::ocl {
  *
  * \param[in] name_versions OpenCL name/version entries.
  * \return Readable name/version list.
+ *
+ * \pre Each name array must contain a null-terminated string.
  */
 [[nodiscard]] inline auto
 ClNameVersionToString(std::vector<cl_name_version> const &name_versions)
@@ -261,6 +263,9 @@ QueuePropertiesToString(cl_command_queue_properties const &properties)
  *
  * \param[in] capabilities SVM capability bitfield.
  * \return Readable SVM capabilities.
+ *
+ * Only recognized bits are rendered. Returns "None" when none of those bits is
+ * set.
  */
 [[nodiscard]] inline auto
 SVMCapabilitiesToString(cl_device_svm_capabilities capabilities)
@@ -312,6 +317,9 @@ SVMCapabilitiesToString(cl_device_svm_capabilities capabilities)
  *
  * \param[in] capabilities Atomic capability bitfield.
  * \return Readable atomic capabilities.
+ *
+ * Only recognized bits are rendered. Returns "None" when none of those bits is
+ * set.
  */
 [[nodiscard]] inline auto
 AtomicCapabilitiesToString(cl_device_atomic_capabilities capabilities)
@@ -353,6 +361,9 @@ AtomicCapabilitiesToString(cl_device_atomic_capabilities capabilities)
  *
  * \param[in] capabilities Device-enqueue capability bitfield.
  * \return Readable device-enqueue capabilities.
+ *
+ * Only recognized bits are rendered. Returns "None" when none of those bits is
+ * set.
  */
 [[nodiscard]] inline auto DeviceEnqueueCapabilitiesToString(
   cl_device_device_enqueue_capabilities capabilities) -> std::string {
@@ -412,6 +423,9 @@ AtomicCapabilitiesToString(cl_device_atomic_capabilities capabilities)
  *
  * \param[in] domain Affinity-domain bitfield.
  * \return Readable affinity domains.
+ *
+ * Only recognized bits are rendered. Returns "None" when none of those bits is
+ * set.
  */
 [[nodiscard]] inline auto
 AffinityDomainToString(cl_device_affinity_domain domain) -> std::string {
@@ -529,6 +543,9 @@ LUIDToString(std::array<cl_uchar, CL_LUID_SIZE_KHR> const &luid)
  *
  * \param[in] config Floating-point capability bitfield.
  * \return Readable floating-point capabilities.
+ *
+ * Only recognized bits are rendered. Returns "None" when none of those bits is
+ * set.
  */
 [[nodiscard]] inline auto FPConfigToString(cl_device_fp_config config)
   -> std::string {
@@ -611,6 +628,9 @@ DevicesToString(std::vector<cl::Device> const &devices) -> std::string {
  *
  * \param[in] capabilities Execution capability bitfield.
  * \return Readable execution capabilities.
+ *
+ * Zero returns "None". Unrecognized bits are ignored, so a nonzero value
+ * containing only unknown bits produces an empty string.
  */
 [[nodiscard]] inline auto
 ExecCapabilitiesToString(cl_device_exec_capabilities capabilities)
@@ -645,6 +665,9 @@ ExecCapabilitiesToString(cl_device_exec_capabilities capabilities)
  *
  * \param[in] queue_properties OpenCL queue property array.
  * \return Readable queue property list.
+ *
+ * \pre Every nonzero property key must have a following value. A zero key
+ * terminates the list; malformed odd-length input is not checked.
  */
 [[nodiscard]] inline auto QueuePropertiesArrayToString(
   std::vector<cl_queue_properties> const &queue_properties) -> std::string {
@@ -674,6 +697,9 @@ ExecCapabilitiesToString(cl_device_exec_capabilities capabilities)
  *
  * \param[in] context_properties OpenCL context property array.
  * \return Readable context property list.
+ *
+ * \pre Every nonzero property key must have a following value. A zero key
+ * terminates the list; malformed odd-length input is not checked.
  */
 [[nodiscard]] inline auto ContextPropertiesToString(
   std::vector<cl_context_properties> const &context_properties) -> std::string {
@@ -712,6 +738,8 @@ ExecCapabilitiesToString(cl_device_exec_capabilities capabilities)
  *
  * \param[in] qualifier Kernel-argument address qualifier.
  * \return Readable address qualifier.
+ *
+ * An unrecognized value uses the private-address qualifier label.
  */
 [[nodiscard]] inline auto
 ArgAddressQualifierToString(cl_kernel_arg_address_qualifier qualifier)
@@ -734,6 +762,8 @@ ArgAddressQualifierToString(cl_kernel_arg_address_qualifier qualifier)
  *
  * \param[in] qualifier Kernel-argument access qualifier.
  * \return Readable access qualifier.
+ *
+ * An unrecognized value uses the no-access-qualifier label.
  */
 [[nodiscard]] inline auto
 ArgAccessQualifierToString(cl_kernel_arg_access_qualifier qualifier)

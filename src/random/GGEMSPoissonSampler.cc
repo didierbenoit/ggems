@@ -24,7 +24,7 @@
  * \brief Implements Poisson sampling for GGEMS host random streams.
  *
  * Uses inversion for small means and the PTRS transformed-rejection method for
- * larger representable means.
+ * larger means without input or candidate-range validation.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -49,6 +49,9 @@ namespace {
  * \param[in] mean Positive Poisson mean below the inversion threshold.
  * \param[in,out] random Host random stream consumed by the sampler.
  * \return Sampled Poisson count.
+ *
+ * Uses compensated cumulative addition and returns the current candidate if the
+ * next cumulative value no longer changes in working precision.
  */
 auto SampleByInversion(long double mean, GGEMSHostRandomStream &random)
   -> std::uint64_t {
@@ -80,13 +83,13 @@ auto SampleByInversion(long double mean, GGEMSHostRandomStream &random)
 // =============================================================================
 
 /*!
- * \brief Samples a larger Poisson mean using the PTRS transformed-rejection
- * method.
- * \param[in] mean Positive Poisson mean in the transformed-rejection regime.
- * \param[in,out] random Host random stream consumed by the sampler.
- * \return Sampled Poisson count.
- * \throws ggems::core::GGEMSRecoverable If a candidate is non-finite or outside
- * uint64_t range.
+ * \brief Samples a mean of at least 30 using PTRS transformed rejection.
+ *
+ * \pre mean must be finite and at least 30. Every nonnegative candidate must be
+ * finite and fit uint64_t; the cast is unchecked.
+ * \param[in] mean Dimensionless expected count.
+ * \param[in,out] random Host stream consumed by the sampler.
+ * \return The accepted Poisson count.
  */
 auto SampleByTransformedRejection(long double mean,
                                   GGEMSHostRandomStream &random)

@@ -52,9 +52,11 @@ namespace ggems::core::processes {
  * package.
  */
 struct GGEMSMaterialCutCouple {
-  std::uint32_t material_id; /*!< ID in the associated EM material package. */
-  std::array<units::Energy, 4U>
-    thresholds; /*!< Gamma/e-/e+/Proton energies in micro-eV. */
+  /*! \brief ID in the associated EM material package. */
+  std::uint32_t material_id;
+
+  /*! \brief Gamma/e-/e+/Proton energies in micro-eV. */
+  std::array<units::Energy, 4U> thresholds;
 
   /*!
    * \brief Orders couples by material ID and then the four integer thresholds.
@@ -71,9 +73,11 @@ struct GGEMSMaterialCutCouple {
  * identity.
  */
 struct GGEMSProductionCutContextProvenance {
-  std::uint32_t material_index; /*!< Original input-material index. */
-  GGEMSResolvedProductionCuts
-    cuts; /*!< Effective lengths and winning scopes. */
+  /*! \brief Original input-material index. */
+  std::uint32_t material_index;
+
+  /*! \brief Effective lengths and winning scopes. */
+  GGEMSResolvedProductionCuts cuts;
 };
 
 /*!
@@ -141,12 +145,14 @@ public:
   }
 
 private:
-  std::vector<GGEMSMaterialCutCouple>
-    couples_; /*!< Owned sorted unique couples. */
-  std::vector<std::uint32_t>
-    context_couple_ids_; /*!< Context-to-couple-ID mapping. */
-  std::vector<GGEMSProductionCutContextProvenance>
-    context_provenance_; /*!< Context metadata. */
+  /*! \brief Owned sorted unique couples. */
+  std::vector<GGEMSMaterialCutCouple> couples_;
+
+  /*! \brief Context-to-couple-ID mapping. */
+  std::vector<std::uint32_t> context_couple_ids_;
+
+  /*! \brief Context metadata. */
+  std::vector<GGEMSProductionCutContextProvenance> context_provenance_;
 };
 
 } // namespace ggems::core::processes

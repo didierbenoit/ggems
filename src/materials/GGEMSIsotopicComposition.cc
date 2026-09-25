@@ -50,13 +50,13 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-/*!
- * \brief Stores one isotope's representative natural atom fraction.
- */
+/*! \brief Stores one isotope's representative natural atom fraction. */
 struct NaturalIsotopeRow {
-  GGEMSIsotope isotope; /*!< Exact isotope and state identity. */
-  long double
-    atom_fraction; /*!< Dimensionless isotope number share within Z. */
+  /*! \brief Exact isotope and state identity. */
+  GGEMSIsotope isotope;
+
+  /*! \brief Dimensionless isotope number share within Z. */
+  long double atom_fraction;
 };
 
 // =============================================================================

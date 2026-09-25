@@ -43,18 +43,21 @@
 
 namespace ggems::units {
 
-/*! \brief Specifies whether a quantity may represent negative values. */
+/*!
+ * \brief Selects the sign policy enforced by MakeQuantity().
+ *
+ * Direct construction, arithmetic, and ConvertTo() do not enforce this policy.
+ */
 enum class QuantityDomain : std::uint8_t {
-  /*! \brief Quantity values must be nonnegative */
+  /*! \brief Quantity values must be nonnegative. */
   NonNegative,
 
-  /*! \brief Quantity values may be negative or positive */
+  /*! \brief Quantity values may be negative or positive. */
   Signed,
 };
 
 /*!
- * \brief Selects the human-readable formatting strategy for a quantity
- * family.
+ * \brief Selects the human-readable formatting strategy for a quantity family.
  */
 enum class QuantityFormatPolicy : std::uint8_t {
   /*!
@@ -75,23 +78,23 @@ enum class QuantityFormatPolicy : std::uint8_t {
 
 /*! \brief Reports failures produced by checked GGEMS unit conversions. */
 enum class UnitConversionError : std::uint8_t {
-  /*! \brief The requested unit symbol is not registered */
+  /*! \brief The requested unit symbol is not registered. */
   UnsupportedUnit,
 
-  /*! \brief The supplied floating-point value is not finite */
+  /*! \brief The supplied floating-point value is not finite. */
   NonFinite,
 
-  /*! \brief A negative value was supplied for a nonnegative quantity */
+  /*! \brief A negative value was supplied for a nonnegative quantity. */
   NegativeValue,
 
   /*!
-   * \brief The converted value cannot be represented by the destination type
+   * \brief The converted value cannot be represented by the destination type.
    */
   OutOfRange,
 
   /*!
    * \brief An exact integral conversion was requested but the value is not
-   * exactly representable
+   * exactly representable.
    */
   InexactConversion,
 };
@@ -124,6 +127,10 @@ struct UnitScale {
  * \param[in] numerator Rational scale numerator.
  * \param[in] denominator Rational scale denominator.
  * \return UnitScale describing the requested exact scale.
+ *
+ * \pre Use a nonzero numerator and denominator and an exponent yielding a
+ * finite positive factor when the scale is used in a conversion. These
+ * conditions are not validated here.
  */
 consteval auto DecimalScale(std::int16_t exponent,
                             std::uint64_t numerator = 1ULL,
@@ -141,6 +148,9 @@ consteval auto DecimalScale(std::int16_t exponent,
  *
  * \param[in] factor Scale factor relative to the canonical unit.
  * \return UnitScale using the supplied special factor.
+ *
+ * \pre Use a finite positive factor. Zero is reserved to select the rational
+ * representation rather than a special zero scale.
  */
 consteval auto SpecialScale(long double factor) -> UnitScale {
   return {
@@ -151,7 +161,12 @@ consteval auto SpecialScale(long double factor) -> UnitScale {
   };
 }
 
-/*! \brief Describes one accepted unit symbol and its conversion metadata. */
+/*!
+ * \brief Describes one accepted unit symbol and its conversion metadata.
+ *
+ * Symbol views borrow their character storage. Registry definitions and their
+ * symbol storage must outlive lookups and formatting.
+ */
 struct UnitDefinition {
   /*! \brief ASCII unit symbol accepted by conversion functions. */
   std::string_view symbol;
@@ -344,6 +359,9 @@ template <typename UnitSet>
  * \param[in] symbol ASCII unit symbol to locate.
  * \return Pointer to the matching unit definition, or nullptr when the symbol
  * is unsupported.
+ *
+ * Matching is exact and case-sensitive, without trimming or Unicode aliases.
+ * The returned pointer borrows the static registry entry.
  */
 constexpr auto FindUnit(std::string_view symbol) noexcept
   -> UnitDefinition const * {
@@ -365,6 +383,12 @@ template <QuantityType TargetQuantity>
  * \param[in] unit_symbol ASCII symbol of the input unit.
  * \return Constructed quantity, or a UnitConversionError describing the failed
  * conversion.
+ *
+ * After checking the input sign and finiteness, conversion multiplies by the
+ * working long-double scale. Integral destinations round to the nearest
+ * canonical integer, with halfway values away from zero; floating destinations
+ * use a representation cast. Nonfinite or unrepresentable canonical results
+ * report OutOfRange.
  */
 [[nodiscard]] constexpr auto MakeQuantity(long double value,
                                           std::string_view unit_symbol)
@@ -405,6 +429,11 @@ template <QuantityType TargetQuantity>
  * \param[in] unit_symbol ASCII symbol of the input unit.
  * \return Constructed quantity, or a UnitConversionError describing the failed
  * conversion.
+ *
+ * For a representable positive integral scale, multiplication and range checks
+ * use integer arithmetic. Other scales fall back to the long-double overload
+ * and its rounding policy; this overload does not require an exact result in
+ * that case.
  */
 template <QuantityType TargetQuantity, detail::ExactIntegral SourceInteger>
   requires detail::ExactIntegral<typename TargetQuantity::representation>
@@ -453,6 +482,10 @@ template <QuantityType SourceQuantity>
  * \param[in] unit_symbol ASCII symbol of the destination unit.
  * \return Converted value, or a UnitConversionError when the unit is
  * unsupported or the result is not finite.
+ *
+ * The stored canonical value is divided by the long-double scale. The
+ * quantity-family sign policy is not revalidated, and conversion to long double
+ * can lose integer precision.
  */
 [[nodiscard]] constexpr auto ConvertTo(SourceQuantity quantity,
                                        std::string_view unit_symbol)
@@ -487,6 +520,11 @@ template <QuantityType SourceQuantity>
  * \param[in] unit_symbol ASCII symbol of the destination unit.
  * \return Exact converted value, or a UnitConversionError when the unit is
  * unsupported, the conversion is inexact, or the value is out of range.
+ *
+ * A supported unit converts zero exactly. For nonzero values, only scales
+ * accepted as positive integral factors are handled, and the canonical
+ * magnitude must be divisible by that factor. Other scales report
+ * InexactConversion even when a mathematically exact quotient might exist.
  */
 template <detail::ExactIntegral TargetRepresentation,
           QuantityType SourceQuantity>

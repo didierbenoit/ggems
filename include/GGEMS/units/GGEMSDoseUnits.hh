@@ -23,6 +23,12 @@
  * \file
  * \brief Declares strongly typed absorbed-dose units and literals.
  *
+ * Literals use MakeQuantity() during constant evaluation. Integral
+ * representations round floating inputs to the nearest canonical integer, with
+ * halfway values away from zero. A failed conversion makes the literal invalid
+ * in a constant expression. Direct aggregate construction bypasses conversion
+ * checks.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -40,9 +46,7 @@
 
 namespace ggems::units {
 
-/*!
- * \brief Marker type identifying the absorbed dose unit registry.
- */
+/*! \brief Marker type identifying the absorbed dose unit registry. */
 struct DoseUnitSet {};
 
 /*!
@@ -50,9 +54,7 @@ struct DoseUnitSet {};
  * factors.
  */
 template <> struct UnitRegistry<DoseUnitSet> {
-  /*!
-   * \brief Registered unit definitions for this quantity family.
-   */
+  /*! \brief Registered unit definitions for this quantity family. */
   static constexpr std::array<UnitDefinition, 4U> units{
     {
       {
@@ -77,28 +79,18 @@ template <> struct UnitRegistry<DoseUnitSet> {
   };
 };
 
-/*!
- * \brief Tag type identifying absorbed-dose quantities.
- */
+/*! \brief Tag type identifying absorbed-dose quantities. */
 struct DoseTag {};
 
-/*!
- * \brief Defines conversion and formatting traits for Dose quantities.
- */
+/*! \brief Defines conversion and formatting traits for Dose quantities. */
 template <> struct QuantityTraits<DoseTag> {
-  /*!
-   * \brief Unit registry associated with this quantity type.
-   */
+  /*! \brief Unit registry associated with this quantity type. */
   using unit_set = DoseUnitSet;
 
-  /*!
-   * \brief Allowed sign domain for this quantity type.
-   */
+  /*! \brief Allowed sign domain for this quantity type. */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
 
-  /*!
-   * \brief Formatting policy used for human-readable output.
-   */
+  /*! \brief Formatting policy used for human-readable output. */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
 
@@ -122,7 +114,7 @@ template <> struct QuantityTraits<DoseTag> {
 using Dose = Quantity<DoseTag, std::uint64_t>;
 
 /*!
- * \brief Creates a absorbed-dose quantity from a \c _meV_pg literal.
+ * \brief Creates an absorbed-dose quantity from a \c _meV_pg literal.
  *
  * \param[in] value Literal value expressed in meV/pg.
  * \return Dose converted to its canonical GGEMS representation.
@@ -132,7 +124,7 @@ consteval auto operator""_meV_pg(unsigned long long value) -> Dose {
 }
 
 /*!
- * \brief Creates a absorbed-dose quantity from a \c _meV_pg literal.
+ * \brief Creates an absorbed-dose quantity from a \c _meV_pg literal.
  *
  * \param[in] value Literal value expressed in meV/pg.
  * \return Dose converted to its canonical GGEMS representation.
@@ -142,7 +134,7 @@ consteval auto operator""_meV_pg(long double value) -> Dose {
 }
 
 /*!
- * \brief Creates a absorbed-dose quantity from a \c _Gy literal.
+ * \brief Creates an absorbed-dose quantity from a \c _Gy literal.
  *
  * \param[in] value Literal value expressed in Gy.
  * \return Dose converted to its canonical GGEMS representation.
@@ -152,7 +144,7 @@ consteval auto operator""_Gy(unsigned long long value) -> Dose {
 }
 
 /*!
- * \brief Creates a absorbed-dose quantity from a \c _Gy literal.
+ * \brief Creates an absorbed-dose quantity from a \c _Gy literal.
  *
  * \param[in] value Literal value expressed in Gy.
  * \return Dose converted to its canonical GGEMS representation.
@@ -162,7 +154,7 @@ consteval auto operator""_Gy(long double value) -> Dose {
 }
 
 /*!
- * \brief Creates a absorbed-dose quantity from a \c _mGy literal.
+ * \brief Creates an absorbed-dose quantity from a \c _mGy literal.
  *
  * \param[in] value Literal value expressed in mGy.
  * \return Dose converted to its canonical GGEMS representation.
@@ -172,7 +164,7 @@ consteval auto operator""_mGy(unsigned long long value) -> Dose {
 }
 
 /*!
- * \brief Creates a absorbed-dose quantity from a \c _mGy literal.
+ * \brief Creates an absorbed-dose quantity from a \c _mGy literal.
  *
  * \param[in] value Literal value expressed in mGy.
  * \return Dose converted to its canonical GGEMS representation.
@@ -182,7 +174,7 @@ consteval auto operator""_mGy(long double value) -> Dose {
 }
 
 /*!
- * \brief Creates a absorbed-dose quantity from a \c _uGy literal.
+ * \brief Creates an absorbed-dose quantity from a \c _uGy literal.
  *
  * \param[in] value Literal value expressed in uGy.
  * \return Dose converted to its canonical GGEMS representation.
@@ -192,7 +184,7 @@ consteval auto operator""_uGy(unsigned long long value) -> Dose {
 }
 
 /*!
- * \brief Creates a absorbed-dose quantity from a \c _uGy literal.
+ * \brief Creates an absorbed-dose quantity from a \c _uGy literal.
  *
  * \param[in] value Literal value expressed in uGy.
  * \return Dose converted to its canonical GGEMS representation.

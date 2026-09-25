@@ -37,9 +37,7 @@ namespace ggems::ocl {
 
 class GGEMSOpenCLContext;
 
-/*!
- * \brief Makes the GGEMS byte literal available in the OpenCL namespace.
- */
+/*! \brief Makes the GGEMS byte literal available in the OpenCL namespace. */
 using units::operator""_B;
 
 /*!
@@ -51,6 +49,12 @@ using units::operator""_B;
  *
  * The associated GGEMS OpenCL context must remain alive at the same address
  * until the allocation is released.
+ *
+ * GetData() borrows storage until release or ownership transfer. Host access
+ * must obey the selected memory-kind synchronization rules; retrieving the
+ * pointer does not map or synchronize it. Release waits for the associated
+ * context queue and terminates the process if that wait fails; callers must
+ * complete uses on any other queue before release.
  */
 class GGEMSOpenCLSVMBuffer {
 public:
@@ -64,14 +68,16 @@ public:
    * \param[in] alignment Requested allocation alignment in bytes.
    * \throws ggems::core::GGEMSFatal If the requested size is zero, the
    * alignment exceeds the cl_uint range, or the allocation fails.
+   *
+   * \pre size must fit std::size_t, and flags and kind must describe the same
+   * supported mode. This direct constructor does not perform the capacity/kind
+   * checks provided by GGEMSOpenCLContext::CreateSVMBuffer().
    */
   GGEMSOpenCLSVMBuffer(GGEMSOpenCLContext &context, units::Bytes size,
                        cl_svm_mem_flags flags, SVMMemoryKind kind,
                        units::Bytes alignment = 0_B);
 
-  /*!
-   * \brief Destroys the OpenCL shared virtual memory buffer.
-   */
+  /*! \brief Destroys the OpenCL shared virtual memory buffer. */
   ~GGEMSOpenCLSVMBuffer() noexcept;
 
   /*!
@@ -97,14 +103,10 @@ public:
   auto operator=(GGEMSOpenCLSVMBuffer &&other) noexcept
     -> GGEMSOpenCLSVMBuffer &;
 
-  /*!
-   * \brief Disables copy construction.
-   */
+  /*! \brief Disables copy construction. */
   GGEMSOpenCLSVMBuffer(GGEMSOpenCLSVMBuffer const &) = delete;
 
-  /*!
-   * \brief Disables copy assignment.
-   */
+  /*! \brief Disables copy assignment. */
   auto operator=(GGEMSOpenCLSVMBuffer const &)
     -> GGEMSOpenCLSVMBuffer & = delete;
 
@@ -152,6 +154,12 @@ public:
    * explicit host mapping.
    *
    * \param[in] flags OpenCL map flags.
+   *
+   * For fine-grain kinds and an empty moved-from buffer this is a no-op,
+   * including synchronization. Coarse-grain calls wait for the map/unmap
+   * operation on the associated queue.
+   *
+   * \throws ggems::core::GGEMSFatal If the required OpenCL operation fails.
    */
   auto Map(cl_map_flags flags = CL_MAP_READ | CL_MAP_WRITE) -> void;
 
@@ -160,20 +168,32 @@ public:
    *
    * No unmap operation is performed for SVM memory kinds that do not require
    * explicit host mapping.
+   *
+   * For fine-grain kinds and an empty moved-from buffer this is a no-op,
+   * including synchronization. Coarse-grain calls wait for the map/unmap
+   * operation on the associated queue.
+   *
+   * \throws ggems::core::GGEMSFatal If the required OpenCL operation fails.
    */
   auto Unmap() -> void;
 
 private:
-  /*!
-   * \brief Releases the SVM allocation and resets the buffer state.
-   */
+  /*! \brief Releases the SVM allocation and resets the buffer state. */
   auto Release() noexcept -> void;
 
-  GGEMSOpenCLContext *context_{
-    nullptr};                 /*!< OpenCL context owning the allocation. */
-  void *ptr_{nullptr};        /*!< Pointer to the SVM allocation. */
-  units::Bytes size_{0ULL};   /*!< SVM allocation size. */
-  cl_svm_mem_flags flags_{0}; /*!< OpenCL SVM allocation flags. */
-  SVMMemoryKind kind_{SVMMemoryKind::None}; /*!< SVM memory kind. */
+  /*! \brief OpenCL context owning the allocation. */
+  GGEMSOpenCLContext *context_{nullptr};
+
+  /*! \brief Pointer to the SVM allocation. */
+  void *ptr_{nullptr};
+
+  /*! \brief SVM allocation size. */
+  units::Bytes size_{0ULL};
+
+  /*! \brief OpenCL SVM allocation flags. */
+  cl_svm_mem_flags flags_{0};
+
+  /*! \brief SVM memory kind. */
+  SVMMemoryKind kind_{SVMMemoryKind::None};
 };
 } // namespace ggems::ocl

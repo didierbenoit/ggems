@@ -40,23 +40,32 @@
  */
 namespace ggems::ocl {
 
-/*!
- * \brief Specifies the shared virtual memory mode used by an OpenCL buffer.
- */
+/*! \brief Specifies the shared virtual memory mode used by an OpenCL buffer. */
 enum class SVMMemoryKind : std::uint8_t {
-  None,                   /*!< No SVM memory mode is selected. */
-  Auto,                   /*!< Selects the SVM memory mode automatically. */
-  CoarseGrainBuffer,      /*!< Uses coarse-grain buffer SVM. */
-  FineGrainBuffer,        /*!< Uses fine-grain buffer SVM. */
-  FineGrainBufferAtomics, /*!< Uses fine-grain buffer SVM with atomic access. */
-  FineGrainSystem,        /*!< Uses fine-grain system SVM. */
+  /*! \brief No SVM memory mode is selected. */
+  None,
+
+  /*! \brief Selects the SVM memory mode automatically. */
+  Auto,
+
+  /*! \brief Uses coarse-grain buffer SVM. */
+  CoarseGrainBuffer,
+
+  /*! \brief Uses fine-grain buffer SVM. */
+  FineGrainBuffer,
+
+  /*! \brief Uses fine-grain buffer SVM with atomic access. */
+  FineGrainBufferAtomics,
+
+  /*! \brief Uses fine-grain system SVM. */
+  FineGrainSystem,
 };
 
 /*!
  * \brief Returns the name of an SVM memory kind.
  *
  * \param[in] kind SVM memory kind to convert.
- * \return Name of the SVM memory kind.
+ * \return A static-lifetime name, or "Unknown" for an invalid enumerator.
  */
 [[nodiscard]] constexpr auto ToString(SVMMemoryKind kind) noexcept
   -> std::string_view {
@@ -82,7 +91,8 @@ enum class SVMMemoryKind : std::uint8_t {
  * \brief Checks whether an SVM memory kind requires explicit host mapping.
  *
  * \param[in] kind SVM memory kind to check.
- * \return True if explicit mapping is required, false otherwise.
+ * \return True only for CoarseGrainBuffer. This predicate does not validate
+ * support or synchronize memory.
  */
 [[nodiscard]] constexpr auto RequiresExplicitMap(SVMMemoryKind kind) noexcept
   -> bool {

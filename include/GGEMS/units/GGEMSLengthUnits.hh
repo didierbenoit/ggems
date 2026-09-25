@@ -24,6 +24,12 @@
  * \brief Declares strongly typed length, position-coordinate, and displacement
  * units and literals.
  *
+ * Literals use MakeQuantity() during constant evaluation. Integral
+ * representations round floating inputs to the nearest canonical integer, with
+ * halfway values away from zero. A failed conversion makes the literal invalid
+ * in a constant expression. Direct aggregate construction bypasses conversion
+ * checks.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -41,18 +47,14 @@
 
 namespace ggems::units {
 
-/*!
- * \brief Marker type identifying the length unit registry.
- */
+/*! \brief Marker type identifying the length unit registry. */
 struct LengthUnitSet {};
 
 /*!
  * \brief Defines the supported length units and their canonical scale factors.
  */
 template <> struct UnitRegistry<LengthUnitSet> {
-  /*!
-   * \brief Registered unit definitions for this quantity family.
-   */
+  /*! \brief Registered unit definitions for this quantity family. */
   static constexpr std::array<UnitDefinition, 7U> units{
     {
       {
@@ -89,28 +91,18 @@ template <> struct UnitRegistry<LengthUnitSet> {
   };
 };
 
-/*!
- * \brief Tag type identifying nonnegative length quantities.
- */
+/*! \brief Tag type identifying nonnegative length quantities. */
 struct LengthTag {};
 
-/*!
- * \brief Defines conversion and formatting traits for Length quantities.
- */
+/*! \brief Defines conversion and formatting traits for Length quantities. */
 template <> struct QuantityTraits<LengthTag> {
-  /*!
-   * \brief Unit registry associated with this quantity type.
-   */
+  /*! \brief Unit registry associated with this quantity type. */
   using unit_set = LengthUnitSet;
 
-  /*!
-   * \brief Allowed sign domain for this quantity type.
-   */
+  /*! \brief Allowed sign domain for this quantity type. */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
 
-  /*!
-   * \brief Formatting policy used for human-readable output.
-   */
+  /*! \brief Formatting policy used for human-readable output. */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
 
@@ -127,9 +119,7 @@ template <> struct QuantityTraits<LengthTag> {
   static constexpr std::int8_t default_precision{7};
 };
 
-/*!
- * \brief Tag type identifying signed position-coordinate quantities.
- */
+/*! \brief Tag type identifying signed position-coordinate quantities. */
 struct PositionCoordinateTag {};
 
 /*!
@@ -137,19 +127,13 @@ struct PositionCoordinateTag {};
  * quantities.
  */
 template <> struct QuantityTraits<PositionCoordinateTag> {
-  /*!
-   * \brief Unit registry associated with this quantity type.
-   */
+  /*! \brief Unit registry associated with this quantity type. */
   using unit_set = LengthUnitSet;
 
-  /*!
-   * \brief Allowed sign domain for this quantity type.
-   */
+  /*! \brief Allowed sign domain for this quantity type. */
   static constexpr QuantityDomain domain{QuantityDomain::Signed};
 
-  /*!
-   * \brief Formatting policy used for human-readable output.
-   */
+  /*! \brief Formatting policy used for human-readable output. */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
 
@@ -166,28 +150,20 @@ template <> struct QuantityTraits<PositionCoordinateTag> {
   static constexpr std::int8_t default_precision{7};
 };
 
-/*!
- * \brief Tag type identifying signed displacement quantities.
- */
+/*! \brief Tag type identifying signed displacement quantities. */
 struct DisplacementTag {};
 
 /*!
  * \brief Defines conversion and formatting traits for Displacement quantities.
  */
 template <> struct QuantityTraits<DisplacementTag> {
-  /*!
-   * \brief Unit registry associated with this quantity type.
-   */
+  /*! \brief Unit registry associated with this quantity type. */
   using unit_set = LengthUnitSet;
 
-  /*!
-   * \brief Allowed sign domain for this quantity type.
-   */
+  /*! \brief Allowed sign domain for this quantity type. */
   static constexpr QuantityDomain domain{QuantityDomain::Signed};
 
-  /*!
-   * \brief Formatting policy used for human-readable output.
-   */
+  /*! \brief Formatting policy used for human-readable output. */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
 

@@ -23,6 +23,12 @@
  * \file
  * \brief Declares strongly typed density units and literals.
  *
+ * Literals use MakeQuantity() during constant evaluation. Integral
+ * representations round floating inputs to the nearest canonical integer, with
+ * halfway values away from zero. A failed conversion makes the literal invalid
+ * in a constant expression. Direct aggregate construction bypasses conversion
+ * checks.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -40,18 +46,14 @@
 
 namespace ggems::units {
 
-/*!
- * \brief Marker type identifying the density unit registry.
- */
+/*! \brief Marker type identifying the density unit registry. */
 struct DensityUnitSet {};
 
 /*!
  * \brief Defines the supported density units and their canonical scale factors.
  */
 template <> struct UnitRegistry<DensityUnitSet> {
-  /*!
-   * \brief Registered unit definitions for this quantity family.
-   */
+  /*! \brief Registered unit definitions for this quantity family. */
   static constexpr std::array<UnitDefinition, 2U> units{
     {
       {
@@ -69,33 +71,27 @@ template <> struct UnitRegistry<DensityUnitSet> {
   };
 };
 
-/*!
- * \brief Tag type identifying density quantities.
- */
+/*! \brief Tag type identifying density quantities. */
 struct DensityTag {};
 
-/*!
- * \brief Defines conversion and formatting traits for Density quantities.
- */
+/*! \brief Defines conversion and formatting traits for Density quantities. */
 template <> struct QuantityTraits<DensityTag> {
-  /*!
-   * \brief Unit registry associated with this quantity type.
-   */
+  /*! \brief Unit registry associated with this quantity type. */
   using unit_set = DensityUnitSet;
-  /*!
-   * \brief Allowed sign domain for this quantity type.
-   */
+
+  /*! \brief Allowed sign domain for this quantity type. */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
-  /*!
-   * \brief Formatting policy used for human-readable output.
-   */
+
+  /*! \brief Formatting policy used for human-readable output. */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::FixedUnit};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{"g/cm3"};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.

@@ -52,11 +52,14 @@ namespace {
  * isotope state.
  */
 struct IsotopeMassRow {
-  GGEMSIsotope isotope; /*!< Exact (Z, A, M) key. */
-  long double
-    ground_state_relative_atomic_mass; /*!< Neutral-atom mass relative to u. */
-  long double excitation_energy_kilo_electron_volts; /*!< State excitation
-                                                        energy in keV. */
+  /*! \brief Exact (Z, A, M) key. */
+  GGEMSIsotope isotope;
+
+  /*! \brief Neutral-atom mass relative to u. */
+  long double ground_state_relative_atomic_mass;
+
+  /*! \brief State excitation energy in keV. */
+  long double excitation_energy_kilo_electron_volts;
 };
 
 // =============================================================================
@@ -94,17 +97,13 @@ struct IsotopeMassRow {
  */
 constexpr long double k_atomic_mass_unit_kilo_electron_volts{931494.10372L};
 
-/*!
- * \brief Converts relative atomic mass to molar mass in g/mol.
- */
+/*! \brief Converts relative atomic mass to molar mass in g/mol. */
 constexpr long double k_molar_mass_constant_grams_per_mole{1.00000000105L};
 
 // =============================================================================
 // =============================================================================
 
-/*!
- * \brief Defines the number of compiled isotope mass-state records.
- */
+/*! \brief Defines the number of compiled isotope mass-state records. */
 constexpr std::size_t k_isotope_mass_count{3298U};
 
 /*!

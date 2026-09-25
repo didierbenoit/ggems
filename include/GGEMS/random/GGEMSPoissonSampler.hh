@@ -23,7 +23,7 @@
  * \file
  * \brief Declares Poisson sampling from a GGEMS host random stream.
  *
- * Provides exact small-mean inversion sampling and transformed-rejection
+ * Provides finite-precision small-mean inversion and transformed-rejection
  * sampling for larger Poisson means.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
@@ -43,13 +43,17 @@ class GGEMSHostRandomStream;
 /*!
  * \brief Samples a Poisson-distributed unsigned count.
  *
- * \param[in] mean Expected Poisson count; must be finite, nonnegative, and
- * representable by uint64_t.
- * \param[in,out] random Host random stream consumed by the sampler.
- * \return Sampled Poisson count.
+ * A zero mean returns zero without consuming the stream. Positive means below
+ * 30 use cumulative inversion; other means use PTRS transformed rejection.
+ * Neither the input nor the representability of a PTRS candidate is checked.
  *
- * \throws ggems::core::GGEMSRecoverable If the mean is invalid or a
- * transformed-rejection candidate cannot be represented safely.
+ * \pre The mean must be finite and nonnegative. Every nonnegative PTRS
+ * candidate must be finite and representable as uint64_t before its unchecked
+ * cast; merely keeping the mean within that range is not sufficient.
+ *
+ * \param[in] mean Dimensionless expected count.
+ * \param[in,out] random Owned caller stream advanced by sampling.
+ * \return The sampled unsigned count.
  */
 [[nodiscard]] auto SamplePoisson(long double mean,
                                  GGEMSHostRandomStream &random)

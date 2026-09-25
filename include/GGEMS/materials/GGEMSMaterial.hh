@@ -49,18 +49,23 @@ namespace ggems::core::materials {
  * mixture.
  */
 struct GGEMSMaterialComponent {
-  std::uint32_t atomic_number; /*!< Chemical identity Z. */
-  long double mass_fraction;   /*!< Dimensionless fraction of material mass. */
+  /*! \brief Chemical identity Z. */
+  std::uint32_t atomic_number;
+
+  /*! \brief Dimensionless fraction of material mass. */
+  long double mass_fraction;
 };
 
-/*!
- * \brief Represents an elemental mass share and atom number density.
- */
+/*! \brief Represents an elemental mass share and atom number density. */
 struct GGEMSMaterialConstituent {
-  std::uint32_t atomic_number; /*!< Chemical identity Z. */
-  long double mass_fraction;   /*!< Dimensionless fraction of material mass. */
-  long double number_density_per_cubic_centimeter; /*!< Element atoms per cubic
-                                                      centimeter. */
+  /*! \brief Chemical identity Z. */
+  std::uint32_t atomic_number;
+
+  /*! \brief Dimensionless fraction of material mass. */
+  long double mass_fraction;
+
+  /*! \brief Element atoms per cubic centimeter. */
+  long double number_density_per_cubic_centimeter;
 };
 
 /*!
@@ -202,12 +207,17 @@ private:
    */
   auto Compile(std::vector<GGEMSElementalShare> elemental_shares) -> void;
 
-  std::string name_;       /*!< Owned display and lookup name. */
-  units::Density density_; /*!< Bulk mass density in pg/pm3. */
-  std::optional<GGEMSMaterialComposition>
-    composition_; /*!< Optional owned matter data. */
-  std::vector<GGEMSMaterialConstituent>
-    constituents_; /*!< Currently unpopulated. */
+  /*! \brief Owned display and lookup name. */
+  std::string name_;
+
+  /*! \brief Bulk mass density in pg/pm3. */
+  units::Density density_;
+
+  /*! \brief Optional owned matter data. */
+  std::optional<GGEMSMaterialComposition> composition_;
+
+  /*! \brief Currently unpopulated. */
+  std::vector<GGEMSMaterialConstituent> constituents_;
 };
 
 /*!

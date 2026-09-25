@@ -23,6 +23,12 @@
  * \file
  * \brief Declares strongly typed activity units and literals.
  *
+ * Literals use MakeQuantity() during constant evaluation. Integral
+ * representations round floating inputs to the nearest canonical integer, with
+ * halfway values away from zero. A failed conversion makes the literal invalid
+ * in a constant expression. Direct aggregate construction bypasses conversion
+ * checks.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -119,13 +125,11 @@ template <> struct QuantityTraits<ActivityTag> {
   static constexpr std::int8_t default_precision{7};
 };
 
-/*!
- * \brief Strongly typed activity quantity stored canonically in becquerels.
- */
+/*! \brief Strongly typed activity quantity stored canonically in becquerels. */
 using Activity = Quantity<ActivityTag, long double>;
 
 /*!
- * \brief Creates a activity quantity from a \c _Bq literal.
+ * \brief Creates an activity quantity from a \c _Bq literal.
  *
  * \param[in] value Literal value expressed in Bq.
  * \return Activity converted to its canonical GGEMS representation.
@@ -135,7 +139,7 @@ consteval auto operator""_Bq(unsigned long long value) -> Activity {
 }
 
 /*!
- * \brief Creates a activity quantity from a \c _Bq literal.
+ * \brief Creates an activity quantity from a \c _Bq literal.
  *
  * \param[in] value Literal value expressed in Bq.
  * \return Activity converted to its canonical GGEMS representation.
@@ -145,7 +149,7 @@ consteval auto operator""_Bq(long double value) -> Activity {
 }
 
 /*!
- * \brief Creates a activity quantity from a \c _kBq literal.
+ * \brief Creates an activity quantity from a \c _kBq literal.
  *
  * \param[in] value Literal value expressed in kBq.
  * \return Activity converted to its canonical GGEMS representation.
@@ -155,7 +159,7 @@ consteval auto operator""_kBq(unsigned long long value) -> Activity {
 }
 
 /*!
- * \brief Creates a activity quantity from a \c _kBq literal.
+ * \brief Creates an activity quantity from a \c _kBq literal.
  *
  * \param[in] value Literal value expressed in kBq.
  * \return Activity converted to its canonical GGEMS representation.
@@ -165,7 +169,7 @@ consteval auto operator""_kBq(long double value) -> Activity {
 }
 
 /*!
- * \brief Creates a activity quantity from a \c _MBq literal.
+ * \brief Creates an activity quantity from a \c _MBq literal.
  *
  * \param[in] value Literal value expressed in MBq.
  * \return Activity converted to its canonical GGEMS representation.
@@ -175,7 +179,7 @@ consteval auto operator""_MBq(unsigned long long value) -> Activity {
 }
 
 /*!
- * \brief Creates a activity quantity from a \c _MBq literal.
+ * \brief Creates an activity quantity from a \c _MBq literal.
  *
  * \param[in] value Literal value expressed in MBq.
  * \return Activity converted to its canonical GGEMS representation.
@@ -185,7 +189,7 @@ consteval auto operator""_MBq(long double value) -> Activity {
 }
 
 /*!
- * \brief Creates a activity quantity from a \c _GBq literal.
+ * \brief Creates an activity quantity from a \c _GBq literal.
  *
  * \param[in] value Literal value expressed in GBq.
  * \return Activity converted to its canonical GGEMS representation.
@@ -195,7 +199,7 @@ consteval auto operator""_GBq(unsigned long long value) -> Activity {
 }
 
 /*!
- * \brief Creates a activity quantity from a \c _GBq literal.
+ * \brief Creates an activity quantity from a \c _GBq literal.
  *
  * \param[in] value Literal value expressed in GBq.
  * \return Activity converted to its canonical GGEMS representation.
@@ -205,7 +209,7 @@ consteval auto operator""_GBq(long double value) -> Activity {
 }
 
 /*!
- * \brief Creates a activity quantity from a \c _TBq literal.
+ * \brief Creates an activity quantity from a \c _TBq literal.
  *
  * \param[in] value Literal value expressed in TBq.
  * \return Activity converted to its canonical GGEMS representation.
@@ -215,7 +219,7 @@ consteval auto operator""_TBq(unsigned long long value) -> Activity {
 }
 
 /*!
- * \brief Creates a activity quantity from a \c _TBq literal.
+ * \brief Creates an activity quantity from a \c _TBq literal.
  *
  * \param[in] value Literal value expressed in TBq.
  * \return Activity converted to its canonical GGEMS representation.
@@ -225,7 +229,7 @@ consteval auto operator""_TBq(long double value) -> Activity {
 }
 
 /*!
- * \brief Creates a activity quantity from a \c _Ci literal.
+ * \brief Creates an activity quantity from a \c _Ci literal.
  *
  * \param[in] value Literal value expressed in Ci.
  * \return Activity converted to its canonical GGEMS representation.
@@ -235,7 +239,7 @@ consteval auto operator""_Ci(unsigned long long value) -> Activity {
 }
 
 /*!
- * \brief Creates a activity quantity from a \c _Ci literal.
+ * \brief Creates an activity quantity from a \c _Ci literal.
  *
  * \param[in] value Literal value expressed in Ci.
  * \return Activity converted to its canonical GGEMS representation.
@@ -245,7 +249,7 @@ consteval auto operator""_Ci(long double value) -> Activity {
 }
 
 /*!
- * \brief Creates a activity quantity from a \c _mCi literal.
+ * \brief Creates an activity quantity from a \c _mCi literal.
  *
  * \param[in] value Literal value expressed in mCi.
  * \return Activity converted to its canonical GGEMS representation.
@@ -255,7 +259,7 @@ consteval auto operator""_mCi(unsigned long long value) -> Activity {
 }
 
 /*!
- * \brief Creates a activity quantity from a \c _mCi literal.
+ * \brief Creates an activity quantity from a \c _mCi literal.
  *
  * \param[in] value Literal value expressed in mCi.
  * \return Activity converted to its canonical GGEMS representation.
@@ -265,7 +269,7 @@ consteval auto operator""_mCi(long double value) -> Activity {
 }
 
 /*!
- * \brief Creates a activity quantity from a \c _uCi literal.
+ * \brief Creates an activity quantity from a \c _uCi literal.
  *
  * \param[in] value Literal value expressed in uCi.
  * \return Activity converted to its canonical GGEMS representation.
@@ -275,7 +279,7 @@ consteval auto operator""_uCi(unsigned long long value) -> Activity {
 }
 
 /*!
- * \brief Creates a activity quantity from a \c _uCi literal.
+ * \brief Creates an activity quantity from a \c _uCi literal.
  *
  * \param[in] value Literal value expressed in uCi.
  * \return Activity converted to its canonical GGEMS representation.

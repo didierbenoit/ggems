@@ -23,6 +23,12 @@
  * \file
  * \brief Declares strongly typed frequency units and literals.
  *
+ * Literals use MakeQuantity() during constant evaluation. Integral
+ * representations round floating inputs to the nearest canonical integer, with
+ * halfway values away from zero. A failed conversion makes the literal invalid
+ * in a constant expression. Direct aggregate construction bypasses conversion
+ * checks.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -40,9 +46,7 @@
 
 namespace ggems::units {
 
-/*!
- * \brief Marker type identifying the frequency unit registry.
- */
+/*! \brief Marker type identifying the frequency unit registry. */
 struct FrequencyUnitSet {};
 
 /*!
@@ -50,9 +54,7 @@ struct FrequencyUnitSet {};
  * factors.
  */
 template <> struct UnitRegistry<FrequencyUnitSet> {
-  /*!
-   * \brief Registered unit definitions for this quantity family.
-   */
+  /*! \brief Registered unit definitions for this quantity family. */
   static constexpr std::array<UnitDefinition, 5U> units{
     {
       {
@@ -79,28 +81,18 @@ template <> struct UnitRegistry<FrequencyUnitSet> {
   };
 };
 
-/*!
- * \brief Tag type identifying frequency quantities.
- */
+/*! \brief Tag type identifying frequency quantities. */
 struct FrequencyTag {};
 
-/*!
- * \brief Defines conversion and formatting traits for Frequency quantities.
- */
+/*! \brief Defines conversion and formatting traits for Frequency quantities. */
 template <> struct QuantityTraits<FrequencyTag> {
-  /*!
-   * \brief Unit registry associated with this quantity type.
-   */
+  /*! \brief Unit registry associated with this quantity type. */
   using unit_set = FrequencyUnitSet;
 
-  /*!
-   * \brief Allowed sign domain for this quantity type.
-   */
+  /*! \brief Allowed sign domain for this quantity type. */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
 
-  /*!
-   * \brief Formatting policy used for human-readable output.
-   */
+  /*! \brief Formatting policy used for human-readable output. */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
 
@@ -117,9 +109,7 @@ template <> struct QuantityTraits<FrequencyTag> {
   static constexpr std::int8_t default_precision{7};
 };
 
-/*!
- * \brief Strongly typed frequency quantity stored canonically in hertz.
- */
+/*! \brief Strongly typed frequency quantity stored canonically in hertz. */
 using Frequency = Quantity<FrequencyTag, std::uint64_t>;
 
 /*!
@@ -181,6 +171,7 @@ consteval auto operator""_MHz(unsigned long long value) -> Frequency {
 consteval auto operator""_MHz(long double value) -> Frequency {
   return detail::MakeLiteralQuantity<Frequency>(value, "MHz");
 }
+
 /*!
  * \brief Creates a frequency quantity from a \c _GHz literal.
  *

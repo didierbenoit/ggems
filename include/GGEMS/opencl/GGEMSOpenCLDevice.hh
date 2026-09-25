@@ -43,6 +43,12 @@ namespace ggems::ocl {
 
 /*!
  * \brief Wraps one native OpenCL device and exposes its capability information.
+ *
+ * The native handle and the extension-name set are owned. Reference accessors
+ * borrow members until the wrapper is destroyed or moved. Native capability
+ * getters use driver queries and propagate GGEMSRecoverable when a selector is
+ * unsupported or the query fails; optional capabilities are not synthesized.
+ * Print helpers generally display "N/A" for unavailable queries.
  */
 class GGEMSOpenCLDevice {
 public:
@@ -52,38 +58,29 @@ public:
    * \param[in] device Native OpenCL device.
    * \param[in] platform_index GGEMS platform index.
    * \param[in] device_index GGEMS device index within the platform.
+   *
+   * \throws ggems::core::GGEMSRecoverable If querying the device extension set
+   * fails.
    */
   explicit GGEMSOpenCLDevice(cl::Device device, std::size_t platform_index,
                              std::size_t device_index);
 
-  /*!
-   * \brief Disables default construction.
-   */
+  /*! \brief Disables default construction. */
   GGEMSOpenCLDevice() = delete;
 
-  /*!
-   * \brief Destroys the OpenCL device wrapper.
-   */
+  /*! \brief Destroys the OpenCL device wrapper. */
   ~GGEMSOpenCLDevice() = default;
 
-  /*!
-   * \brief Disables copy construction.
-   */
+  /*! \brief Disables copy construction. */
   GGEMSOpenCLDevice(GGEMSOpenCLDevice const &) = delete;
 
-  /*!
-   * \brief Disables copy assignment.
-   */
+  /*! \brief Disables copy assignment. */
   auto operator=(GGEMSOpenCLDevice const &) -> GGEMSOpenCLDevice & = delete;
 
-  /*!
-   * \brief Disables move assignment.
-   */
+  /*! \brief Disables move assignment. */
   auto operator=(GGEMSOpenCLDevice &&) noexcept -> GGEMSOpenCLDevice & = delete;
 
-  /*!
-   * \brief Move-constructs an OpenCL device wrapper.
-   */
+  /*! \brief Move-constructs an OpenCL device wrapper. */
   GGEMSOpenCLDevice(GGEMSOpenCLDevice &&) noexcept = default;
 
   /*!
@@ -214,28 +211,30 @@ public:
   /*!
    * \brief Returns the OpenCL CL_DEVICE_UUID_KHR information value.
    *
-   * \return Value reported for CL_DEVICE_UUID_KHR.
+   * \return Owned lowercase hexadecimal UUID text in 8-4-4-4-12 form.
    */
   [[nodiscard]] auto GetUUIDKhr() const -> std::string;
 
   /*!
    * \brief Returns the OpenCL CL_DRIVER_UUID_KHR information value.
    *
-   * \return Value reported for CL_DRIVER_UUID_KHR.
+   * \return Owned lowercase hexadecimal UUID text in 8-4-4-4-12 form.
    */
   [[nodiscard]] auto GetDriverUUIDKhr() const -> std::string;
 
   /*!
    * \brief Returns the OpenCL CL_DEVICE_LUID_VALID_KHR information value.
    *
-   * \return Value reported for CL_DEVICE_LUID_VALID_KHR.
+   * \return CL_FALSE without cl_khr_device_uuid; otherwise the driver-reported
+   * validity flag.
    */
   [[nodiscard]] auto GetLUIDValidKhr() const -> cl_bool;
 
   /*!
    * \brief Returns the OpenCL CL_DEVICE_LUID_KHR information value.
    *
-   * \return Value reported for CL_DEVICE_LUID_KHR.
+   * \return Driver LUID bytes when GetLUIDValidKhr() is true, otherwise a
+   * zero-filled array.
    */
   [[nodiscard]] auto GetLUIDKhr() const
     -> std::array<cl_uchar, CL_LUID_SIZE_KHR>;
@@ -264,7 +263,7 @@ public:
   /*!
    * \brief Returns the OpenCL CL_DEVICE_MAX_CLOCK_FREQUENCY information value.
    *
-   * \return Value reported for CL_DEVICE_MAX_CLOCK_FREQUENCY.
+   * \return Device-reported value in MHz.
    */
   [[nodiscard]] auto GetMaxClockFrequency() const -> cl_uint;
 
@@ -536,7 +535,7 @@ public:
   /*!
    * \brief Returns the OpenCL CL_DEVICE_GLOBAL_MEM_SIZE information value.
    *
-   * \return Value reported for CL_DEVICE_GLOBAL_MEM_SIZE.
+   * \return Device-reported value in bytes.
    */
   [[nodiscard]] auto GetGlobalMemSize() const -> cl_ulong;
 
@@ -552,7 +551,7 @@ public:
    * \brief Returns the OpenCL CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE information
    * value.
    *
-   * \return Value reported for CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE.
+   * \return Device-reported value in bytes.
    */
   [[nodiscard]] auto GetGlobalMemCacheLineSize() const -> cl_uint;
 
@@ -560,14 +559,14 @@ public:
    * \brief Returns the OpenCL CL_DEVICE_GLOBAL_MEM_CACHE_SIZE information
    * value.
    *
-   * \return Value reported for CL_DEVICE_GLOBAL_MEM_CACHE_SIZE.
+   * \return Device-reported value in bytes.
    */
   [[nodiscard]] auto GetGlobalMemCacheSize() const -> cl_ulong;
 
   /*!
    * \brief Returns the OpenCL CL_DEVICE_LOCAL_MEM_SIZE information value.
    *
-   * \return Value reported for CL_DEVICE_LOCAL_MEM_SIZE.
+   * \return Device-reported value in bytes.
    */
   [[nodiscard]] auto GetLocalMemSize() const -> cl_ulong;
 
@@ -581,7 +580,7 @@ public:
   /*!
    * \brief Returns the OpenCL CL_DEVICE_MAX_MEM_ALLOC_SIZE information value.
    *
-   * \return Value reported for CL_DEVICE_MAX_MEM_ALLOC_SIZE.
+   * \return Device-reported value in bytes.
    */
   [[nodiscard]] auto GetMaxMemAllocSize() const -> cl_ulong;
 
@@ -589,7 +588,7 @@ public:
    * \brief Returns the OpenCL CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE information
    * value.
    *
-   * \return Value reported for CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE.
+   * \return Device-reported value in bytes.
    */
   [[nodiscard]] auto GetMaxConstantBufferSize() const -> cl_ulong;
 
@@ -611,7 +610,7 @@ public:
    * \brief Returns the OpenCL CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE information
    * value.
    *
-   * \return Value reported for CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE.
+   * \return Device-reported value in bytes.
    */
   [[nodiscard]] auto GetMinDataTypeAlignSize() const -> cl_uint;
 
@@ -665,7 +664,7 @@ public:
    * \brief Returns the OpenCL CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE
    * information value.
    *
-   * \return Value reported for CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE.
+   * \return Device-reported value in bytes.
    */
   [[nodiscard]] auto GetQueueOnDevicePreferredSize() const -> cl_uint;
 
@@ -851,7 +850,7 @@ public:
    * \brief Returns the OpenCL CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT
    * information value.
    *
-   * \return Value reported for CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT.
+   * \return Device-reported value in bytes.
    */
   [[nodiscard]] auto GetPreferredPlatformAtomicAlignment() const -> cl_uint;
 
@@ -859,7 +858,7 @@ public:
    * \brief Returns the OpenCL CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT
    * information value.
    *
-   * \return Value reported for CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT.
+   * \return Device-reported value in bytes.
    */
   [[nodiscard]] auto GetPreferredGlobalAtomicAlignment() const -> cl_uint;
 
@@ -867,14 +866,14 @@ public:
    * \brief Returns the OpenCL CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT
    * information value.
    *
-   * \return Value reported for CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT.
+   * \return Device-reported value in bytes.
    */
   [[nodiscard]] auto GetPreferredLocalAtomicAlignment() const -> cl_uint;
 
   /*!
    * \brief Returns the OpenCL CL_DEVICE_ADDRESS_BITS information value.
    *
-   * \return Value reported for CL_DEVICE_ADDRESS_BITS.
+   * \return Device-reported value in bits.
    */
   [[nodiscard]] auto GetAddressBits() const -> cl_uint;
 
@@ -882,7 +881,7 @@ public:
    * \brief Returns the OpenCL CL_DEVICE_PROFILING_TIMER_RESOLUTION information
    * value.
    *
-   * \return Value reported for CL_DEVICE_PROFILING_TIMER_RESOLUTION.
+   * \return Device-reported value in nanoseconds.
    */
   [[nodiscard]] auto GetProfilingTimerResolution() const -> std::size_t;
 
@@ -925,7 +924,7 @@ public:
   /*!
    * \brief Returns the OpenCL CL_DEVICE_PRINTF_BUFFER_SIZE information value.
    *
-   * \return Value reported for CL_DEVICE_PRINTF_BUFFER_SIZE.
+   * \return Device-reported value in bytes.
    */
   [[nodiscard]] auto GetPrintfBufferSize() const -> std::size_t;
 
@@ -955,7 +954,7 @@ public:
   /*!
    * \brief Returns the OpenCL CL_DEVICE_PIPE_MAX_PACKET_SIZE information value.
    *
-   * \return Value reported for CL_DEVICE_PIPE_MAX_PACKET_SIZE.
+   * \return Device-reported value in bytes.
    */
   [[nodiscard]] auto GetPipeMaxPacketSize() const -> cl_uint;
 
@@ -970,7 +969,7 @@ public:
    * \brief Returns the OpenCL CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE information
    * value.
    *
-   * \return Value reported for CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE.
+   * \return Device-reported value in bytes.
    */
   [[nodiscard]] auto GetMaxGlobalVariableSize() const -> std::size_t;
 
@@ -978,7 +977,7 @@ public:
    * \brief Returns the OpenCL CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE
    * information value.
    *
-   * \return Value reported for CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE.
+   * \return Device-reported value in bytes.
    */
   [[nodiscard]] auto GetGlobalVariablePreferredTotalSize() const -> std::size_t;
 
@@ -989,75 +988,56 @@ public:
    */
   [[nodiscard]] auto GetMaxParameterSize() const -> std::size_t;
 
-  /*!
-   * \brief Prints the complete GGEMS OpenCL device report.
-   */
+  /*! \brief Prints the complete GGEMS OpenCL device report. */
   auto Print() const -> void;
 
 private:
-  /*!
-   * \brief Prints device identity information.
-   */
+  /*! \brief Prints device identity information. */
   auto PrintIdentity() const -> void;
 
-  /*!
-   * \brief Prints device type and identifier information.
-   */
+  /*! \brief Prints device type and identifier information. */
   auto PrintTypeID() const -> void;
 
-  /*!
-   * \brief Prints compute information.
-   */
+  /*! \brief Prints compute information. */
   auto PrintCompute() const -> void;
 
-  /*!
-   * \brief Prints vectorization information.
-   */
+  /*! \brief Prints vectorization information. */
   auto PrintVectorization() const -> void;
 
-  /*!
-   * \brief Prints floating-point information.
-   */
+  /*! \brief Prints floating-point information. */
   auto PrintFloatingPoint() const -> void;
 
-  /*!
-   * \brief Prints memory information.
-   */
+  /*! \brief Prints memory information. */
   auto PrintMemory() const -> void;
 
-  /*!
-   * \brief Prints image information.
-   */
+  /*! \brief Prints image information. */
   auto PrintImages() const -> void;
 
-  /*!
-   * \brief Prints intermediate-language and SPIR-V information.
-   */
+  /*! \brief Prints intermediate-language and SPIR-V information. */
   auto PrintILSpirV() const -> void;
 
-  /*!
-   * \brief Prints device-side queue information.
-   */
+  /*! \brief Prints device-side queue information. */
   auto PrintQueueDeviceSide() const -> void;
 
-  /*!
-   * \brief Prints pipe information.
-   */
+  /*! \brief Prints pipe information. */
   auto PrintPipe() const -> void;
 
-  /*!
-   * \brief Prints partitioning information.
-   */
+  /*! \brief Prints partitioning information. */
   auto PrintPartition() const -> void;
 
-  /*!
-   * \brief Prints extension and miscellaneous information.
-   */
+  /*! \brief Prints extension and miscellaneous information. */
   auto PrintExtensionsAndMisc() const -> void;
 
-  cl::Device device_;          /*!< Native OpenCL device. */
-  std::size_t platform_index_; /*!< GGEMS platform index. */
-  std::size_t device_index_;   /*!< Device index within the platform. */
-  std::unordered_set<std::string> extensions_; /*!< Parsed OpenCL extensions. */
+  /*! \brief Native OpenCL device. */
+  cl::Device device_;
+
+  /*! \brief GGEMS platform index. */
+  std::size_t platform_index_;
+
+  /*! \brief Device index within the platform. */
+  std::size_t device_index_;
+
+  /*! \brief Parsed OpenCL extensions. */
+  std::unordered_set<std::string> extensions_;
 };
 } // namespace ggems::ocl

@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Declares the GGEMS OpenCL runtime manager.
+ * \brief Defines the half-open source emission window in picoseconds.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -39,10 +39,16 @@ namespace ggems::core {
  * Sources emit particles within this window. Both bounds are expressed in
  * picoseconds on the simulation clock: start_ps is included, while stop_ps
  * is excluded.
+ *
+ * This value record does not validate endpoint order; consumers validate the
+ * window before sampling source times.
  */
 struct GGEMSTimeWindow {
-  std::uint64_t start_ps{0ULL}; /*!< Inclusive start time in picoseconds. */
-  std::uint64_t stop_ps{0ULL};  /*!< Exclusive stop time in picoseconds. */
+  /*! \brief Inclusive start time in picoseconds. */
+  std::uint64_t start_ps{0ULL};
+
+  /*! \brief Exclusive stop time in picoseconds. */
+  std::uint64_t stop_ps{0ULL};
 
   /*!
    * \brief Compares both time-window endpoints for equality.

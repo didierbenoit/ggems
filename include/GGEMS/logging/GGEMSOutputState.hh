@@ -39,22 +39,17 @@
 
 namespace ggems::core {
 /*!
- * \brief Stores thread-safe user-facing run status and recent rendered log
- * lines.
+ * \brief Stores recent rendered log lines in a thread-safe bounded ring.
  *
  * Log lines are retained in a bounded ring buffer. When capacity is reached,
  * newly pushed lines replace the oldest retained entries.
  */
 class GGEMSOutputState {
 public:
-  /*!
-   * \brief Constructs an empty output state with the default log capacity.
-   */
+  /*! \brief Constructs an empty output state with the default log capacity. */
   GGEMSOutputState() = default;
 
-  /*!
-   * \brief Destroys the output state.
-   */
+  /*! \brief Destroys the output state. */
   ~GGEMSOutputState() = default;
 
   /*! \brief Copy construction is disabled. */
@@ -116,18 +111,22 @@ public:
   [[nodiscard]] auto GetLogCount() const -> std::size_t;
 
 private:
-  static constexpr std::size_t k_default_log_capacity{
-    2000U}; /*!< Default number of rendered log lines retained by a new state.
-             */
-  mutable std::mutex
-    mtx_; /*!< Mutex protecting all mutable output-state data. */
-  std::vector<RenderedLogLine>
-    log_ring_; /*!< Storage backing the bounded rendered-line ring buffer. */
-  std::size_t log_capacity_{
-    k_default_log_capacity}; /*!< Maximum number of rendered lines retained. */
-  std::size_t log_head_{
-    0}; /*!< Index of the oldest retained line when the ring is populated. */
-  std::size_t log_size_{
-    0}; /*!< Number of valid rendered lines currently retained. */
+  /*! \brief Default number of rendered log lines retained by a new state. */
+  static constexpr std::size_t k_default_log_capacity{2000U};
+
+  /*! \brief Mutex protecting all mutable output-state data. */
+  mutable std::mutex mtx_;
+
+  /*! \brief Storage backing the bounded rendered-line ring buffer. */
+  std::vector<RenderedLogLine> log_ring_;
+
+  /*! \brief Maximum number of rendered lines retained. */
+  std::size_t log_capacity_{k_default_log_capacity};
+
+  /*! \brief Index of the oldest retained line when the ring is populated. */
+  std::size_t log_head_{0};
+
+  /*! \brief Number of valid rendered lines currently retained. */
+  std::size_t log_size_{0};
 };
 } // namespace ggems::core

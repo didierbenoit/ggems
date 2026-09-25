@@ -346,6 +346,9 @@ namespace ggems::ocl {
  * \param[in] err OpenCL status code to check.
  * \param[in] context Diagnostic context prepended to the error message.
  * \param[in] loc Source location associated with the failure.
+ *
+ * \throws ExceptionType If err differs from CL_SUCCESS; the default exception
+ * type is GGEMSFatal.
  */
 template <core::GGEMSExceptionType ExceptionType = core::GGEMSFatal>
 inline auto
@@ -439,6 +442,9 @@ template <> struct CLGetter<cl::Kernel> {
  * \param[in] kernel Kernel queried for argument information.
  * \param[in] index Kernel argument index.
  * \return Requested kernel-argument information value.
+ *
+ * \throws core::GGEMSRecoverable If the OpenCL information query fails,
+ * including an unsupported selector.
  */
 template <cl_uint Info, typename Kernel>
 auto GetArgInfo(Kernel const &kernel, cl_uint index) {
@@ -457,6 +463,9 @@ auto GetArgInfo(Kernel const &kernel, cl_uint index) {
  * \param[in] kernel Kernel queried for work-group information.
  * \param[in] device Device associated with the work-group query.
  * \return Requested work-group information value.
+ *
+ * \throws core::GGEMSRecoverable If the OpenCL information query fails,
+ * including an unsupported selector.
  */
 template <cl_uint Info, typename Kernel, typename Device>
 auto GetWorkGroupInfo(Kernel const &kernel, Device const &device) {
@@ -474,6 +483,9 @@ auto GetWorkGroupInfo(Kernel const &kernel, Device const &device) {
  * \tparam Object OpenCL C++ wrapper type.
  * \param[in] obj OpenCL object to query.
  * \return Requested information value.
+ *
+ * \throws core::GGEMSRecoverable If the OpenCL information query fails,
+ * including an unsupported selector.
  */
 template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
   using Traits = InfoTraits<Info>;
@@ -509,6 +521,9 @@ template <cl_uint Info, typename Object> auto GetInfo(Object const &obj) {
  * \tparam Info OpenCL information selector.
  * \tparam Object OpenCL C++ wrapper type.
  * \param[in] obj OpenCL object to query.
+ *
+ * Catches failures from the query or its formatting and logs "N/A" for that
+ * selector. Failure of that fallback logging itself is not caught.
  */
 template <cl_uint Info, typename Object>
 auto PrintInfo(Object const &obj) -> void {
@@ -547,6 +562,9 @@ HasExtension(std::unordered_set<std::string> const &extensions,
  * \tparam Object OpenCL object type.
  * \param[in] obj OpenCL object to query.
  * \return Set of parsed extension names.
+ *
+ * \throws core::GGEMSRecoverable If the OpenCL information query fails,
+ * including an unsupported selector.
  */
 template <cl_uint Info, typename Object>
 [[nodiscard]] auto ExtractExtensions(Object const &obj)

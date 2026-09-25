@@ -23,6 +23,13 @@
  * \file
  * \brief Provides host-side transfer utilities for OpenCL SVM buffers.
  *
+ * Transfers start at byte offset zero and copy object representations without
+ * endian or layout conversion. Caller-owned spans must remain valid and must
+ * not overlap the SVM range used by memcpy. The caller completes conflicting
+ * device operations before host access, especially for fine-grain kinds where
+ * Map() and Unmap() are no-ops. Empty spans and zero counts perform no mapping.
+ * Buffers remain owned by the caller.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -116,6 +123,9 @@ inline auto CheckSVMHostAccessByteCapacity(GGEMSOpenCLSVMBuffer const &buffer,
  * \param[in,out] buffer SVM buffer accessed by the operation.
  * \param[in] flags OpenCL map flags.
  * \param[in] operation Host operation to invoke while the buffer is accessible.
+ *
+ * \throws ggems::core::GGEMSFatal If a required coarse-grain map or unmap
+ * fails.
  */
 template <typename Operation>
   requires std::is_nothrow_invocable_v<Operation &>
@@ -132,6 +142,9 @@ auto WithMappedSVMHostAccess(GGEMSOpenCLSVMBuffer &buffer, cl_map_flags flags,
  * \param[in,out] buffer Destination SVM buffer.
  * \param[in] source Host byte sequence to copy.
  * \throws ggems::core::GGEMSInternal If the buffer capacity is insufficient.
+ *
+ * \throws ggems::core::GGEMSFatal If a required coarse-grain map or unmap
+ * fails.
  */
 inline auto WriteSVMBytesFromHost(GGEMSOpenCLSVMBuffer &buffer,
                                   std::span<std::byte const> source) -> void {
@@ -153,6 +166,9 @@ inline auto WriteSVMBytesFromHost(GGEMSOpenCLSVMBuffer &buffer,
  * \param[in,out] buffer Source SVM buffer.
  * \param[out] destination Host byte sequence receiving the data.
  * \throws ggems::core::GGEMSInternal If the buffer capacity is insufficient.
+ *
+ * \throws ggems::core::GGEMSFatal If a required coarse-grain map or unmap
+ * fails.
  */
 inline auto ReadSVMBytesToHost(GGEMSOpenCLSVMBuffer &buffer,
                                std::span<std::byte> destination) -> void {
@@ -176,7 +192,10 @@ inline auto ReadSVMBytesToHost(GGEMSOpenCLSVMBuffer &buffer,
  * \param[in,out] buffer Destination SVM buffer.
  * \param[in] values Host values to copy.
  * \throws ggems::core::GGEMSInternal If the byte count overflows std::size_t or
- *                                   the buffer capacity is insufficient.
+ * the buffer capacity is insufficient.
+ *
+ * \throws ggems::core::GGEMSFatal If a required coarse-grain map or unmap
+ * fails.
  */
 template <typename T, std::size_t Extent>
   requires SVMHostTransferValue<T>
@@ -193,7 +212,10 @@ auto WriteSVMFromHost(GGEMSOpenCLSVMBuffer &buffer, std::span<T, Extent> values)
  * \param[in,out] buffer Destination SVM buffer.
  * \param[in] value Host value to copy.
  * \throws ggems::core::GGEMSInternal If the byte count overflows std::size_t or
- *                                   the buffer capacity is insufficient.
+ * the buffer capacity is insufficient.
+ *
+ * \throws ggems::core::GGEMSFatal If a required coarse-grain map or unmap
+ * fails.
  */
 template <SVMHostTransferValue T>
   requires(!detail::IsSpan<std::remove_cvref_t<T>>::value)
@@ -208,6 +230,11 @@ auto WriteSVMFromHost(GGEMSOpenCLSVMBuffer &buffer, T const &value) -> void {
  * \param[in,out] buffer Source SVM buffer.
  * \return Value read from the SVM buffer.
  * \throws ggems::core::GGEMSInternal If the buffer capacity is insufficient.
+ *
+ * \throws ggems::core::GGEMSFatal If a required coarse-grain map or unmap
+ * fails.
+ *
+ * \pre The stored bytes must be a valid object representation of T.
  */
 template <SVMHostTransferValue T>
 [[nodiscard]] auto ReadSVMToHost(GGEMSOpenCLSVMBuffer &buffer) -> T {
@@ -226,7 +253,10 @@ template <SVMHostTransferValue T>
  * \param[in,out] buffer Source SVM buffer.
  * \param[out] destination Host span receiving the values.
  * \throws ggems::core::GGEMSInternal If the byte count overflows std::size_t or
- *                                   the buffer capacity is insufficient.
+ * the buffer capacity is insufficient.
+ *
+ * \throws ggems::core::GGEMSFatal If a required coarse-grain map or unmap
+ * fails.
  */
 template <typename T, std::size_t Extent>
   requires SVMHostTransferValue<T> && (!std::is_const_v<T>)
@@ -244,7 +274,10 @@ auto ReadSVMToHost(GGEMSOpenCLSVMBuffer &buffer,
  * \param[in] count Number of values to write.
  * \param[in] value Host value to repeat.
  * \throws ggems::core::GGEMSInternal If the byte count overflows std::size_t or
- *                                   the buffer capacity is insufficient.
+ * the buffer capacity is insufficient.
+ *
+ * \throws ggems::core::GGEMSFatal If a required coarse-grain map or unmap
+ * fails.
  */
 template <SVMHostTransferValue T>
 auto FillSVMFromHost(GGEMSOpenCLSVMBuffer &buffer, std::size_t count,
@@ -275,7 +308,14 @@ auto FillSVMFromHost(GGEMSOpenCLSVMBuffer &buffer, std::size_t count,
  * \param[in] count Number of values to generate.
  * \param[in] generator Callable that generates a value for each element index.
  * \throws ggems::core::GGEMSInternal If the byte count overflows std::size_t or
- *                                   the buffer capacity is insufficient.
+ * the buffer capacity is insufficient.
+ *
+ * \throws ggems::core::GGEMSFatal If a required coarse-grain map or unmap
+ * fails.
+ *
+ * Invokes the generator once for each index from zero through count minus one,
+ * in increasing order. The generator must be nothrow as required by the
+ * template constraint.
  */
 template <SVMHostTransferValue T, typename Generator>
   requires std::is_nothrow_invocable_r_v<T, Generator &, std::size_t>

@@ -84,6 +84,19 @@ template <QuantityType QuantityValue>
  * \param[in] width Optional numeric field width; negative selects the default
  * width.
  * \return Human-readable quantity string including the selected unit symbol.
+ *
+ * Automatic formatting uses the largest eligible scale not exceeding the
+ * absolute magnitude, or the smallest eligible scale for smaller values and
+ * zero. Fixed-unit families use their configured unit. Durations of at least 60
+ * seconds use an h/min/s/ms breakdown, discard submillisecond remainder, and
+ * ignore precision and width. Other results use fixed-point formatting and the
+ * logger's ASCII/Unicode symbol policy.
+ *
+ * \pre precision must be nonnegative. The quantity traits must name a valid
+ * fixed unit or provide at least one automatic-display unit. Directly stored
+ * nonfinite values and sign-domain violations are not rejected here.
+ * \throws std::format_error If the requested dynamic formatting arguments are
+ * invalid.
  */
 auto HumanReadable(
   QuantityValue const &quantity,
@@ -157,6 +170,9 @@ auto HumanReadable(
  * \param[in] width Optional formatted numeric field width; negative selects the
  * default width.
  * \return Human-readable length string.
+ *
+ * \pre precision must be nonnegative; the shared HumanReadable() formatting
+ * contract applies.
  */
 [[nodiscard]] inline auto HumanReadableSignedLength(std::int64_t value_pm,
                                                     std::int8_t precision = 7,

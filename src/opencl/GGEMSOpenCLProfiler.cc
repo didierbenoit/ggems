@@ -51,8 +51,9 @@ namespace {
  * \brief Converts a nonnegative duration in seconds to GGEMS picoseconds.
  *
  * \param[in] seconds Duration in seconds.
- * \return GGEMS duration rounded to picoseconds and saturated to its storage
- * range.
+ * \return Zero for negative seconds, nearest picoseconds with ties away from
+ * zero for valid inputs, or uint64_t maximum on any conversion failure,
+ * including a nonfinite input.
  */
 auto MakeDurationFromSeconds(long double seconds) noexcept
   -> ggems::units::Duration {

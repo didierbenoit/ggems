@@ -44,6 +44,10 @@ namespace ggems::ocl::detail {
  * \param[in] local_work_size Requested local work-group size.
  * \return Padded global work size, or an empty optional if the local size is
  * zero or padding would overflow.
+ *
+ * A zero logical size returns zero when local_work_size is nonzero. This
+ * arithmetic helper does not validate device/kernel limits or launch work;
+ * kernels must guard padded work-items beyond the logical count.
  */
 [[nodiscard]] constexpr auto
 TryComputePaddedGlobalWorkSize(std::size_t logical_work_size,
