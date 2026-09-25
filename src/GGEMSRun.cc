@@ -390,8 +390,6 @@ auto GGEMSRun::Initialize() -> void {
   GGEMS_INFO("Source", "GGEMSRun source collection prepared with {} slot(s).",
              source_count);
 
-  primary_stream_.Initialize();
-
   transport_workloads_.swap(new_transport_workloads);
   source_configuration_snapshot_ = std::move(new_source_configuration);
   source_population_planner_ = std::move(new_source_population_planner);

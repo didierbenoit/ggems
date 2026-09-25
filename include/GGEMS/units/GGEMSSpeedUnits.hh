@@ -55,10 +55,19 @@ template <> struct UnitRegistry<SpeedUnitSet> {
   /*!
    * \brief Registered unit definitions for this quantity family.
    */
-  static constexpr std::array<UnitDefinition, 2U> units{{
-    {.symbol = "pm/ps", .scale = DecimalScale(0), .automatic_display = false},
-    {.symbol = "m/s", .scale = DecimalScale(0)},
-  }};
+  static constexpr std::array<UnitDefinition, 2U> units{
+    {
+      {
+        .symbol = "pm/ps",
+        .scale = DecimalScale(0),
+        .automatic_display = false,
+      },
+      {
+        .symbol = "m/s",
+        .scale = DecimalScale(0),
+      },
+    },
+  };
 };
 
 /*!
@@ -74,20 +83,24 @@ template <> struct QuantityTraits<SpeedTag> {
    * \brief Unit registry associated with this quantity type.
    */
   using unit_set = SpeedUnitSet;
+
   /*!
    * \brief Allowed sign domain for this quantity type.
    */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
+
   /*!
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::FixedUnit};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{"m/s"};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.
@@ -100,9 +113,6 @@ template <> struct QuantityTraits<SpeedTag> {
  * picosecond.
  */
 using Speed = Quantity<SpeedTag, long double>;
-
-static_assert(ValidateUnitSet<SpeedUnitSet>());
-static_assert(ValidateQuantityTraits<SpeedTag, long double>());
 
 /*!
  * \brief Creates a speed quantity from a \c _pm_ps literal.

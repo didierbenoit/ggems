@@ -53,14 +53,35 @@ template <> struct UnitRegistry<CrossSectionUnitSet> {
   /*!
    * \brief Registered unit definitions for this quantity family.
    */
-  static constexpr std::array<UnitDefinition, 6U> units{{
-    {.symbol = "pb", .scale = DecimalScale(0)},
-    {.symbol = "nb", .scale = DecimalScale(3)},
-    {.symbol = "ub", .scale = DecimalScale(6), .unicode_symbol = "µb"},
-    {.symbol = "mb", .scale = DecimalScale(9)},
-    {.symbol = "barn", .scale = DecimalScale(12)},
-    {.symbol = "kbarn", .scale = DecimalScale(15)},
-  }};
+  static constexpr std::array<UnitDefinition, 6U> units{
+    {
+      {
+        .symbol = "pb",
+        .scale = DecimalScale(0),
+      },
+      {
+        .symbol = "nb",
+        .scale = DecimalScale(3),
+      },
+      {
+        .symbol = "ub",
+        .scale = DecimalScale(6),
+        .unicode_symbol = "µb",
+      },
+      {
+        .symbol = "mb",
+        .scale = DecimalScale(9),
+      },
+      {
+        .symbol = "barn",
+        .scale = DecimalScale(12),
+      },
+      {
+        .symbol = "kbarn",
+        .scale = DecimalScale(15),
+      },
+    },
+  };
 };
 
 /*!
@@ -101,9 +122,6 @@ template <> struct QuantityTraits<CrossSectionTag> {
  * \brief Strongly typed cross-section quantity stored canonically in picobarns.
  */
 using CrossSection = Quantity<CrossSectionTag, std::uint64_t>;
-
-static_assert(ValidateUnitSet<CrossSectionUnitSet>());
-static_assert(ValidateQuantityTraits<CrossSectionTag, std::uint64_t>());
 
 /*!
  * \brief Creates a cross-section quantity from a \c _pb literal.

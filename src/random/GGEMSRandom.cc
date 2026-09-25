@@ -42,8 +42,8 @@
 #include <string>
 #include <cstdint>
 #include <string_view>
-
 /// \endcond
+
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/logging/GGEMSLogMacros.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
@@ -102,8 +102,11 @@ auto SplitMix64(std::uint64_t value) noexcept -> std::uint64_t {
  */
 auto MakeJKissState(std::uint32_t seed, std::uint32_t stream_id) noexcept
   -> GGEMSJKissState {
+  std::uint32_t const y = seed ^ (362436069U + (1664525U * stream_id));
+
+  // A zero xorshift state would remain zero for every draw.
   return GGEMSJKissState{.x = seed + 123456789U + (1013904223U * stream_id),
-                         .y = seed ^ (362436069U + (1664525U * stream_id)),
+                         .y = y == 0U ? 1U : y,
                          .z = seed + 521288629U + (69069U * stream_id),
                          .w = seed ^ (88675123U + (22695477U * stream_id)),
                          .c = stream_id & 1U};
@@ -120,10 +123,11 @@ auto MakeJKissState(std::uint32_t seed, std::uint32_t stream_id) noexcept
  */
 auto MakePCG32State(std::uint64_t seed, std::uint64_t stream_id) noexcept
   -> GGEMSPCG32State {
-  std::uint64_t state =
+  std::uint64_t const state =
     SplitMix64(seed + (0xD1B54A32D192ED03ULL * (stream_id + 1ULL)));
 
-  std::uint64_t stream = SplitMix64(seed ^ (0xABC98388FB8FAC03ULL + stream_id));
+  std::uint64_t const stream =
+    SplitMix64(seed ^ (0xABC98388FB8FAC03ULL + stream_id));
 
   return GGEMSPCG32State{.state = state, .increment = stream | 1ULL};
 }
@@ -139,7 +143,7 @@ auto MakePCG32State(std::uint64_t seed, std::uint64_t stream_id) noexcept
  */
 auto MakePhiloxState(std::uint64_t seed, std::uint64_t stream_id) noexcept
   -> GGEMSPhiloxState {
-  std::uint64_t key = SplitMix64(seed);
+  std::uint64_t const key = SplitMix64(seed);
 
   return GGEMSPhiloxState{.counter_0 = 0U,
                           .counter_1 = 0U,
@@ -250,7 +254,7 @@ auto ToString(GGEMSRandomEngine engine) -> std::string {
 // =============================================================================
 
 auto ParseRandomEngine(std::string_view engine_name) -> GGEMSRandomEngine {
-  std::string normalized = NormalizeEngineName(engine_name);
+  std::string const normalized = NormalizeEngineName(engine_name);
 
   if (normalized == "jkiss" || normalized == "kiss") {
     return GGEMSRandomEngine::JKISS;
@@ -351,20 +355,13 @@ auto GGEMSRandom::GetStateSize() const noexcept -> std::size_t {
 
 auto GGEMSRandom::ValidateStateRange(std::uint64_t first_stream_id,
                                      std::size_t state_count) const -> void {
-  if (!(GetStateSize() > 0U)) {
-    throw ggems::core::GGEMSInternal(
-      "Unsupported GGEMS random engine state size.");
-  }
-
-  std::uint64_t last_stream_id =
+  std::uint64_t const last_stream_id =
     CheckLastStreamId(first_stream_id, state_count);
 
-  if (engine_ == GGEMSRandomEngine::JKISS) {
-    if (state_count != 0U &&
-        last_stream_id > std::numeric_limits<std::uint32_t>::max()) {
-      throw ggems::core::GGEMSRecoverable(
-        "JKISS stream identifier must fit uint32_t.");
-    }
+  if (engine_ == GGEMSRandomEngine::JKISS && state_count != 0U &&
+      last_stream_id > std::numeric_limits<std::uint32_t>::max()) {
+    throw ggems::core::GGEMSRecoverable(
+      "JKISS stream identifier must fit uint32_t.");
   }
 }
 
@@ -373,13 +370,14 @@ auto GGEMSRandom::ValidateStateRange(std::uint64_t first_stream_id,
 auto GGEMSRandom::InitializeStates(std::uint64_t first_stream_id,
                                    std::span<std::byte> state_storage) const
   -> void {
-  std::size_t state_count = CheckedStateCount(GetStateSize(), state_storage);
+  std::size_t const state_count =
+    CheckedStateCount(GetStateSize(), state_storage);
 
   ValidateStateRange(first_stream_id, state_count);
 
   switch (engine_) {
   case GGEMSRandomEngine::JKISS: {
-    auto seed = static_cast<std::uint32_t>(seed_);
+    auto const seed = static_cast<std::uint32_t>(seed_);
 
     InitializeStateStorage<GGEMSJKissState>(
       first_stream_id, state_count, state_storage,
@@ -421,7 +419,8 @@ auto GGEMSRandom::BuildSummaryLines() const -> std::vector<std::string> {
     std::format("OpenCL build definition : {}", GetKernelBuildDefinition()),
     "kernel raw API         : GGEMS_RndmUInt32",
     "kernel scalar API      : GGEMS_RndmUniform",
-    "kernel vector API      : GGEMS_RndmUniform4"};
+    "kernel vector API      : GGEMS_RndmUniform4",
+  };
 }
 
 // -----------------------------------------------------------------------------

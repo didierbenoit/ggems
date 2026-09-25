@@ -52,13 +52,21 @@ template <> struct UnitRegistry<DensityUnitSet> {
   /*!
    * \brief Registered unit definitions for this quantity family.
    */
-  static constexpr std::array<UnitDefinition, 2U> units{{
-    {.symbol = "pg/pm3",
-     .scale = DecimalScale(0),
-     .unicode_symbol = "pg/pm³",
-     .automatic_display = false},
-    {.symbol = "g/cm3", .scale = DecimalScale(-18), .unicode_symbol = "g/cm³"},
-  }};
+  static constexpr std::array<UnitDefinition, 2U> units{
+    {
+      {
+        .symbol = "pg/pm3",
+        .scale = DecimalScale(0),
+        .unicode_symbol = "pg/pm³",
+        .automatic_display = false,
+      },
+      {
+        .symbol = "g/cm3",
+        .scale = DecimalScale(-18),
+        .unicode_symbol = "g/cm³",
+      },
+    },
+  };
 };
 
 /*!
@@ -100,9 +108,6 @@ template <> struct QuantityTraits<DensityTag> {
  * cubic picometer.
  */
 using Density = Quantity<DensityTag, long double>;
-
-static_assert(ValidateUnitSet<DensityUnitSet>());
-static_assert(ValidateQuantityTraits<DensityTag, long double>());
 
 /*!
  * \brief Creates a density quantity from a \c _pg_pm3 literal.

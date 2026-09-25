@@ -35,8 +35,8 @@
 /// \cond
 #include <cstdint>
 #include <variant>
-
 /// \endcond
+
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/random/GGEMSRandomState.hh"
 #include "GGEMS/random/GGEMSRandomEngine.hh"
@@ -70,6 +70,7 @@ public:
    * \return Random-engine identifier.
    */
   [[nodiscard]] auto GetEngine() const noexcept -> GGEMSRandomEngine;
+
   /*!
    * \brief Returns the logical stream identifier.
    *
@@ -84,6 +85,7 @@ public:
    * \return Next random 32-bit unsigned integer.
    */
   auto NextUInt32() noexcept -> std::uint32_t;
+
   /*!
    * \brief Generates a single-precision uniform value in the half-open interval
    * [0, 1).
@@ -91,6 +93,7 @@ public:
    * \return Uniform binary32 value.
    */
   auto UniformFloat01() noexcept -> float;
+
   /*!
    * \brief Generates a double-precision uniform value in the open interval (0,
    * 1).
@@ -101,18 +104,12 @@ public:
   auto UniformDoubleOpen01() noexcept -> double;
 
 private:
-  /*!
-   * \brief Random engine selected when the stream was created.
-   */
-  GGEMSRandomEngine engine_;
-  /*!
-   * \brief Logical identifier of this deterministic stream.
-   */
-  std::uint64_t stream_id_;
-  /*!
-   * \brief Mutable engine-specific stream state.
-   */
-  std::variant<GGEMSJKissState, GGEMSPCG32State, GGEMSPhiloxState> state_;
+  GGEMSRandomEngine
+    engine_; /*!< Random engine selected when the stream was created */
+  std::uint64_t
+    stream_id_; /*!< Logical identifier of this deterministic stream. */
+  std::variant<GGEMSJKissState, GGEMSPCG32State, GGEMSPhiloxState>
+    state_; /*!< Mutable engine-specific stream state. */
 };
 
 } // namespace ggems::core::random

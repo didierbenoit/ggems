@@ -53,17 +53,50 @@ template <> struct UnitRegistry<BytesUnitSet> {
   /*!
    * \brief Registered unit definitions for this quantity family.
    */
-  static constexpr std::array<UnitDefinition, 9U> units{{
-    {.symbol = "B", .scale = DecimalScale(0)},
-    {.symbol = "kB", .scale = DecimalScale(3), .automatic_display = false},
-    {.symbol = "MB", .scale = DecimalScale(6), .automatic_display = false},
-    {.symbol = "GB", .scale = DecimalScale(9), .automatic_display = false},
-    {.symbol = "TB", .scale = DecimalScale(12), .automatic_display = false},
-    {.symbol = "KiB", .scale = DecimalScale(0, 1'024ULL)},
-    {.symbol = "MiB", .scale = DecimalScale(0, 1'048'576ULL)},
-    {.symbol = "GiB", .scale = DecimalScale(0, 1'073'741'824ULL)},
-    {.symbol = "TiB", .scale = DecimalScale(0, 1'099'511'627'776ULL)},
-  }};
+  static constexpr std::array<UnitDefinition, 9U> units{
+    {
+      {
+        .symbol = "B",
+        .scale = DecimalScale(0),
+      },
+      {
+        .symbol = "kB",
+        .scale = DecimalScale(3),
+        .automatic_display = false,
+      },
+      {
+        .symbol = "MB",
+        .scale = DecimalScale(6),
+        .automatic_display = false,
+      },
+      {
+        .symbol = "GB",
+        .scale = DecimalScale(9),
+        .automatic_display = false,
+      },
+      {
+        .symbol = "TB",
+        .scale = DecimalScale(12),
+        .automatic_display = false,
+      },
+      {
+        .symbol = "KiB",
+        .scale = DecimalScale(0, 1'024ULL),
+      },
+      {
+        .symbol = "MiB",
+        .scale = DecimalScale(0, 1'048'576ULL),
+      },
+      {
+        .symbol = "GiB",
+        .scale = DecimalScale(0, 1'073'741'824ULL),
+      },
+      {
+        .symbol = "TiB",
+        .scale = DecimalScale(0, 1'099'511'627'776ULL),
+      },
+    },
+  };
 };
 
 /*!
@@ -79,20 +112,24 @@ template <> struct QuantityTraits<BytesTag> {
    * \brief Unit registry associated with this quantity type.
    */
   using unit_set = BytesUnitSet;
+
   /*!
    * \brief Allowed sign domain for this quantity type.
    */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
+
   /*!
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.
@@ -104,9 +141,6 @@ template <> struct QuantityTraits<BytesTag> {
  * \brief Strongly typed byte-count quantity stored canonically in bytes.
  */
 using Bytes = Quantity<BytesTag, std::uint64_t>;
-
-static_assert(ValidateUnitSet<BytesUnitSet>());
-static_assert(ValidateQuantityTraits<BytesTag, std::uint64_t>());
 
 /*!
  * \brief Creates a byte-count quantity from a \c _B literal.

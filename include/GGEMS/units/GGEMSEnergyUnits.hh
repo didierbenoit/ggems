@@ -53,14 +53,34 @@ template <> struct UnitRegistry<EnergyUnitSet> {
   /*!
    * \brief Registered unit definitions for this quantity family.
    */
-  static constexpr std::array<UnitDefinition, 6U> units{{
-    {.symbol = "meV", .scale = DecimalScale(3)},
-    {.symbol = "eV", .scale = DecimalScale(6)},
-    {.symbol = "keV", .scale = DecimalScale(9)},
-    {.symbol = "MeV", .scale = DecimalScale(12)},
-    {.symbol = "GeV", .scale = DecimalScale(15)},
-    {.symbol = "TeV", .scale = DecimalScale(18)},
-  }};
+  static constexpr std::array<UnitDefinition, 6U> units{
+    {
+      {
+        .symbol = "meV",
+        .scale = DecimalScale(3),
+      },
+      {
+        .symbol = "eV",
+        .scale = DecimalScale(6),
+      },
+      {
+        .symbol = "keV",
+        .scale = DecimalScale(9),
+      },
+      {
+        .symbol = "MeV",
+        .scale = DecimalScale(12),
+      },
+      {
+        .symbol = "GeV",
+        .scale = DecimalScale(15),
+      },
+      {
+        .symbol = "TeV",
+        .scale = DecimalScale(18),
+      },
+    },
+  };
 };
 
 /*!
@@ -76,20 +96,24 @@ template <> struct QuantityTraits<EnergyTag> {
    * \brief Unit registry associated with this quantity type.
    */
   using unit_set = EnergyUnitSet;
+
   /*!
    * \brief Allowed sign domain for this quantity type.
    */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
+
   /*!
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.
@@ -110,20 +134,24 @@ template <> struct QuantityTraits<EnergyChangeTag> {
    * \brief Unit registry associated with this quantity type.
    */
   using unit_set = EnergyUnitSet;
+
   /*!
    * \brief Allowed sign domain for this quantity type.
    */
   static constexpr QuantityDomain domain{QuantityDomain::Signed};
+
   /*!
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.
@@ -141,10 +169,6 @@ using Energy = Quantity<EnergyTag, std::uint64_t>;
  * micro-electron-volts.
  */
 using EnergyChange = Quantity<EnergyChangeTag, std::int64_t>;
-
-static_assert(ValidateUnitSet<EnergyUnitSet>());
-static_assert(ValidateQuantityTraits<EnergyTag, std::uint64_t>());
-static_assert(ValidateQuantityTraits<EnergyChangeTag, std::int64_t>());
 
 /*!
  * \brief Creates a energy quantity from a \c _meV literal.

@@ -58,25 +58,50 @@ template <> struct UnitRegistry<BitsUnitSet> {
   /*!
    * \brief Registered unit definitions for this quantity family.
    */
-  static constexpr std::array<UnitDefinition, 9U> units{{
-    {.symbol = "bit", .scale = DecimalScale(0)},
-    {.symbol = "kbit", .scale = DecimalScale(3)},
-    {.symbol = "Mbit", .scale = DecimalScale(6)},
-    {.symbol = "Gbit", .scale = DecimalScale(9)},
-    {.symbol = "Tbit", .scale = DecimalScale(12)},
-    {.symbol = "Kibit",
-     .scale = DecimalScale(0, 1'024ULL),
-     .automatic_display = false},
-    {.symbol = "Mibit",
-     .scale = DecimalScale(0, 1'048'576ULL),
-     .automatic_display = false},
-    {.symbol = "Gibit",
-     .scale = DecimalScale(0, 1'073'741'824ULL),
-     .automatic_display = false},
-    {.symbol = "Tibit",
-     .scale = DecimalScale(0, 1'099'511'627'776ULL),
-     .automatic_display = false},
-  }};
+  static constexpr std::array<UnitDefinition, 9U> units{
+    {
+      {
+        .symbol = "bit",
+        .scale = DecimalScale(0),
+      },
+      {
+        .symbol = "kbit",
+        .scale = DecimalScale(3),
+      },
+      {
+        .symbol = "Mbit",
+        .scale = DecimalScale(6),
+      },
+      {
+        .symbol = "Gbit",
+        .scale = DecimalScale(9),
+      },
+      {
+        .symbol = "Tbit",
+        .scale = DecimalScale(12),
+      },
+      {
+        .symbol = "Kibit",
+        .scale = DecimalScale(0, 1'024ULL),
+        .automatic_display = false,
+      },
+      {
+        .symbol = "Mibit",
+        .scale = DecimalScale(0, 1'048'576ULL),
+        .automatic_display = false,
+      },
+      {
+        .symbol = "Gibit",
+        .scale = DecimalScale(0, 1'073'741'824ULL),
+        .automatic_display = false,
+      },
+      {
+        .symbol = "Tibit",
+        .scale = DecimalScale(0, 1'099'511'627'776ULL),
+        .automatic_display = false,
+      },
+    },
+  };
 };
 
 /*!
@@ -92,20 +117,24 @@ template <> struct QuantityTraits<BitsTag> {
    * \brief Unit registry associated with this quantity type.
    */
   using unit_set = BitsUnitSet;
+
   /*!
    * \brief Allowed sign domain for this quantity type.
    */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
+
   /*!
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.
@@ -117,10 +146,6 @@ template <> struct QuantityTraits<BitsTag> {
  * \brief Strongly typed bit-count quantity stored canonically in bits.
  */
 using Bits = Quantity<BitsTag, std::uint64_t>;
-
-static_assert(ValidateUnitSet<BitsUnitSet>());
-static_assert(ValidateQuantityTraits<BitsTag, std::uint64_t>());
-static_assert(!std::is_same_v<Bits, Bytes>);
 
 /*!
  * \brief Converts an exact byte count to bits with overflow checking.

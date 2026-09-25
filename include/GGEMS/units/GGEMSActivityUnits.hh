@@ -40,9 +40,7 @@
 
 namespace ggems::units {
 
-/*!
- * \brief Marker type identifying the activity unit registry.
- */
+/*! \brief Marker type identifying the activity unit registry. */
 struct ActivityUnitSet {};
 
 /*!
@@ -50,55 +48,70 @@ struct ActivityUnitSet {};
  * factors.
  */
 template <> struct UnitRegistry<ActivityUnitSet> {
-  /*!
-   * \brief Registered unit definitions for this quantity family.
-   */
-  static constexpr std::array<UnitDefinition, 8U> units{{
-    {.symbol = "Bq", .scale = DecimalScale(0)},
-    {.symbol = "kBq", .scale = DecimalScale(3)},
-    {.symbol = "MBq", .scale = DecimalScale(6)},
-    {.symbol = "GBq", .scale = DecimalScale(9)},
-    {.symbol = "TBq", .scale = DecimalScale(12)},
-    {.symbol = "Ci",
-     .scale = DecimalScale(0, 37'000'000'000ULL),
-     .automatic_display = false},
-    {.symbol = "mCi",
-     .scale = DecimalScale(0, 37'000'000ULL),
-     .automatic_display = false},
-    {.symbol = "uCi",
-     .scale = DecimalScale(0, 37'000ULL),
-     .unicode_symbol = "µCi",
-     .automatic_display = false},
-  }};
+  /*! \brief Registered unit definitions for this quantity family. */
+  static constexpr std::array<UnitDefinition, 8U> units{
+    {
+      {
+        .symbol = "Bq",
+        .scale = DecimalScale(0),
+      },
+      {
+        .symbol = "kBq",
+        .scale = DecimalScale(3),
+      },
+      {
+        .symbol = "MBq",
+        .scale = DecimalScale(6),
+      },
+      {
+        .symbol = "GBq",
+        .scale = DecimalScale(9),
+      },
+      {
+        .symbol = "TBq",
+        .scale = DecimalScale(12),
+      },
+      {
+        .symbol = "Ci",
+        .scale = DecimalScale(0, 37'000'000'000ULL),
+        .automatic_display = false,
+      },
+      {
+        .symbol = "mCi",
+        .scale = DecimalScale(0, 37'000'000ULL),
+        .automatic_display = false,
+      },
+      {
+        .symbol = "uCi",
+        .scale = DecimalScale(0, 37'000ULL),
+        .unicode_symbol = "µCi",
+        .automatic_display = false,
+      },
+    },
+  };
 };
 
-/*!
- * \brief Tag type identifying activity quantities.
- */
+/*! \brief Tag type identifying activity quantities. */
 struct ActivityTag {};
 
-/*!
- * \brief Defines conversion and formatting traits for Activity quantities.
- */
+/*! \brief Defines conversion and formatting traits for Activity quantities. */
 template <> struct QuantityTraits<ActivityTag> {
-  /*!
-   * \brief Unit registry associated with this quantity type.
-   */
+  /*! \brief Unit registry associated with this quantity type. */
   using unit_set = ActivityUnitSet;
-  /*!
-   * \brief Allowed sign domain for this quantity type.
-   */
+
+  /*! \brief Allowed sign domain for this quantity type. */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
-  /*!
-   * \brief Formatting policy used for human-readable output.
-   */
+
+  /*! \brief Formatting policy used for human-readable output. */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.
@@ -110,9 +123,6 @@ template <> struct QuantityTraits<ActivityTag> {
  * \brief Strongly typed activity quantity stored canonically in becquerels.
  */
 using Activity = Quantity<ActivityTag, long double>;
-
-static_assert(ValidateUnitSet<ActivityUnitSet>());
-static_assert(ValidateQuantityTraits<ActivityTag, long double>());
 
 /*!
  * \brief Creates a activity quantity from a \c _Bq literal.

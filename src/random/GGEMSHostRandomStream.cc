@@ -34,8 +34,8 @@
 #include <array>
 #include <cstdint>
 #include <span>
-
 /// \endcond
+
 #include "GGEMS/GGEMSException.hh"
 
 #include "GGEMS/random/GGEMSHostRandomStream.hh"
@@ -51,10 +51,13 @@ namespace {
 
 /*! \brief First Philox 4x32 multiplication constant. */
 constexpr std::uint32_t k_philox_m4x32_0{0xD2511F53U};
+
 /*! \brief Second Philox 4x32 multiplication constant. */
 constexpr std::uint32_t k_philox_m4x32_1{0xCD9E8D57U};
+
 /*! \brief First Philox key-bump constant. */
 constexpr std::uint32_t k_philox_w32_0{0x9E3779B9U};
+
 /*! \brief Second Philox key-bump constant. */
 constexpr std::uint32_t k_philox_w32_1{0xBB67AE85U};
 
@@ -168,8 +171,13 @@ auto PhiloxRound(std::array<std::uint32_t, 4> const &counter,
  * \return First 32-bit word of the generated Philox block.
  */
 auto NextPhilox(GGEMSPhiloxState &state) noexcept -> std::uint32_t {
-  std::array<std::uint32_t, 4> counter{state.counter_0, state.counter_1,
-                                       state.counter_2, state.counter_3};
+  std::array<std::uint32_t, 4> counter{
+    state.counter_0,
+    state.counter_1,
+    state.counter_2,
+    state.counter_3,
+  };
+
   std::array<std::uint32_t, 2> key{state.key_0, state.key_1};
 
   for (std::uint32_t round = 0U; round < 10U; ++round) {
@@ -192,17 +200,18 @@ auto NextPhilox(GGEMSPhiloxState &state) noexcept -> std::uint32_t {
 
 GGEMSHostRandomStream::GGEMSHostRandomStream(GGEMSRandom const &random,
                                              std::uint64_t stream_id)
-    : engine_{random.GetEngine()}, stream_id_{stream_id},
-      state_{GGEMSJKissState{}} {
+    : engine_{random.GetEngine()}, stream_id_{stream_id} {
   switch (engine_) {
   case GGEMSRandomEngine::JKISS:
     state_.emplace<GGEMSJKissState>(
       InitializeState<GGEMSJKissState>(random, stream_id_));
     return;
+
   case GGEMSRandomEngine::PCG32:
     state_.emplace<GGEMSPCG32State>(
       InitializeState<GGEMSPCG32State>(random, stream_id_));
     return;
+
   case GGEMSRandomEngine::Philox:
     state_.emplace<GGEMSPhiloxState>(
       InitializeState<GGEMSPhiloxState>(random, stream_id_));
@@ -231,8 +240,10 @@ auto GGEMSHostRandomStream::NextUInt32() noexcept -> std::uint32_t {
   switch (engine_) {
   case GGEMSRandomEngine::JKISS:
     return NextJKiss(std::get<GGEMSJKissState>(state_));
+
   case GGEMSRandomEngine::PCG32:
     return NextPCG32(std::get<GGEMSPCG32State>(state_));
+
   case GGEMSRandomEngine::Philox:
     return NextPhilox(std::get<GGEMSPhiloxState>(state_));
   }
@@ -243,8 +254,7 @@ auto GGEMSHostRandomStream::NextUInt32() noexcept -> std::uint32_t {
 // -----------------------------------------------------------------------------
 
 auto GGEMSHostRandomStream::UniformFloat01() noexcept -> float {
-  constexpr float k_uint32_to_float{5.9604644775390625e-8F};
-  return static_cast<float>(NextUInt32() >> 8U) * k_uint32_to_float;
+  return static_cast<float>(NextUInt32() >> 8U) * 5.9604644775390625e-8F;
 }
 
 // -----------------------------------------------------------------------------
@@ -256,9 +266,7 @@ auto GGEMSHostRandomStream::UniformDoubleOpen01() noexcept -> double {
 
   double const uniform = (static_cast<double>(bits) + 0.5) * 0x1.0p-53;
 
-  // The top midpoint rounds to 1.0 in binary64; keep the contract open.
-  constexpr double k_largest_open_unit{0x1.fffffffffffffp-1};
-  return uniform < 1.0 ? uniform : k_largest_open_unit;
+  return uniform < 1.0 ? uniform : 0x1.fffffffffffffp-1;
 }
 
 } // namespace ggems::core::random

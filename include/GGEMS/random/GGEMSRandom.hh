@@ -39,8 +39,8 @@
 #include <string>
 #include <string_view>
 #include <vector>
-
 /// \endcond
+
 #include "GGEMS/random/GGEMSRandomEngine.hh"
 
 namespace ggems::core::random {
@@ -68,6 +68,7 @@ public:
    * \return Reference to this configuration.
    */
   auto SetEngine(GGEMSRandomEngine engine) noexcept -> GGEMSRandom &;
+
   /*!
    * \brief Selects the random engine from a user-facing name.
    *
@@ -84,6 +85,7 @@ public:
    * \return Selected random-engine identifier.
    */
   [[nodiscard]] auto GetEngine() const noexcept -> GGEMSRandomEngine;
+
   /*!
    * \brief Returns the canonical name of the selected random engine.
    *
@@ -98,6 +100,7 @@ public:
    * \return Reference to this configuration.
    */
   auto SetSeed(std::uint64_t seed) noexcept -> GGEMSRandom &;
+
   /*!
    * \brief Returns the configured random seed.
    *
@@ -111,6 +114,7 @@ public:
    * \return OpenCL engine identifier.
    */
   [[nodiscard]] auto GetKernelEngineId() const noexcept -> std::uint32_t;
+
   /*!
    * \brief Builds the OpenCL preprocessor definition selecting the random
    * engine.
@@ -165,25 +169,18 @@ public:
    * metadata.
    */
   [[nodiscard]] auto BuildSummaryLines() const -> std::vector<std::string>;
+
   /*!
    * \brief Writes the random configuration summary to the GGEMS logger.
    */
-  void Verbose() const;
+  auto Verbose() const -> void;
 
 private:
-  /*!
-   * \brief Default deterministic GGEMS random seed.
-   */
-  static constexpr std::uint64_t k_default_seed{77'777ULL};
-
-  /*!
-   * \brief Currently selected random engine.
-   */
+  /*! \brief Currently selected random engine. */
   GGEMSRandomEngine engine_{GGEMSRandomEngine::Philox};
-  /*!
-   * \brief Seed used to initialize deterministic stream states.
-   */
-  std::uint64_t seed_{k_default_seed};
+
+  /*! \brief Seed used to initialize deterministic stream states. */
+  std::uint64_t seed_{7'777'777ULL};
 };
 
 } // namespace ggems::core::random

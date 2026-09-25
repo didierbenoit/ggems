@@ -33,72 +33,13 @@
 /// \cond
 #include <cmath>
 #include <cstdint>
-#include <limits>
-
 /// \endcond
-#include "GGEMS/GGEMSException.hh"
 
 #include "GGEMS/random/GGEMSHostRandomStream.hh"
 #include "GGEMS/random/GGEMSPoissonSampler.hh"
 
 namespace ggems::core::random {
 namespace {
-
-// =============================================================================
-// =============================================================================
-
-/*! \brief Mean below which direct inversion sampling is used. */
-constexpr long double k_inversion_threshold{30.0L};
-/*! \brief Exact upper bound used when checking uint64_t representability. */
-constexpr long double k_uint64_upper_exclusive{18'446'744'073'709'551'616.0L};
-/*! \brief PTRS b-parameter offset. */
-constexpr long double k_ptrs_b_offset{0.931L};
-/*! \brief PTRS b-parameter square-root scale. */
-constexpr long double k_ptrs_b_scale{2.53L};
-/*! \brief PTRS a-parameter offset. */
-constexpr long double k_ptrs_a_offset{-0.059L};
-/*! \brief PTRS a-parameter scale. */
-constexpr long double k_ptrs_a_scale{0.02483L};
-/*! \brief PTRS inverse-alpha offset. */
-constexpr long double k_ptrs_inverse_alpha_offset{1.1239L};
-/*! \brief PTRS inverse-alpha numerator scale. */
-constexpr long double k_ptrs_inverse_alpha_scale{1.1328L};
-/*! \brief PTRS inverse-alpha denominator offset. */
-constexpr long double k_ptrs_inverse_alpha_denominator_offset{3.4L};
-/*! \brief PTRS fast-acceptance v-ratio offset. */
-constexpr long double k_ptrs_vr_offset{0.9277L};
-/*! \brief PTRS fast-acceptance v-ratio scale. */
-constexpr long double k_ptrs_vr_scale{3.6224L};
-/*! \brief PTRS v-ratio denominator offset. */
-constexpr long double k_ptrs_vr_denominator_offset{2.0L};
-/*! \brief Center used to map a uniform variate to the symmetric PTRS
- * coordinate. */
-constexpr long double k_ptrs_center{0.5L};
-/*! \brief PTRS integer-candidate rounding offset. */
-constexpr long double k_ptrs_candidate_offset{0.43L};
-/*! \brief PTRS threshold enabling the fast-acceptance branch. */
-constexpr long double k_ptrs_fast_acceptance_us_min{0.07L};
-/*! \brief PTRS threshold for the early rejection squeeze. */
-constexpr long double k_ptrs_squeeze_us_max{0.013L};
-
-// =============================================================================
-// =============================================================================
-
-/*!
- * \brief Checks whether a Poisson mean can be represented safely by the
- * uint64_t result type.
- * \param[in] mean Candidate Poisson mean.
- * \return True when the mean is within the representable count domain.
- */
-auto IsRepresentableMean(long double mean) noexcept -> bool {
-  if constexpr (std::numeric_limits<long double>::digits >
-                std::numeric_limits<std::uint64_t>::digits) {
-    return mean <=
-           static_cast<long double>(std::numeric_limits<std::uint64_t>::max());
-  }
-
-  return mean < k_uint64_upper_exclusive;
-}
 
 // =============================================================================
 // =============================================================================
@@ -151,56 +92,39 @@ auto SampleByTransformedRejection(long double mean,
                                   GGEMSHostRandomStream &random)
   -> std::uint64_t {
   long double const sqrt_mean = std::sqrt(mean);
-  long double const b = k_ptrs_b_offset + (k_ptrs_b_scale * sqrt_mean);
-  long double const a = k_ptrs_a_offset + (k_ptrs_a_scale * b);
-  long double const inverse_alpha =
-    k_ptrs_inverse_alpha_offset +
-    (k_ptrs_inverse_alpha_scale /
-     (b - k_ptrs_inverse_alpha_denominator_offset));
-  long double const vr =
-    k_ptrs_vr_offset - (k_ptrs_vr_scale / (b - k_ptrs_vr_denominator_offset));
+  long double const b = 0.931L + (2.53L * sqrt_mean);
+  long double const a = -0.059L + (0.02483L * b);
+  long double const inverse_alpha = 1.1239L + (1.1328L / (b - 3.4L));
+  long double const vr = 0.9277L - (3.6224L / (b - 2.0L));
+  long double const log_mean = std::log(mean);
+  long double const log_inverse_alpha = std::log(inverse_alpha);
 
   while (true) {
     long double const u =
-      static_cast<long double>(random.UniformDoubleOpen01()) - k_ptrs_center;
+      static_cast<long double>(random.UniformDoubleOpen01()) - 0.5L;
     auto const v = static_cast<long double>(random.UniformDoubleOpen01());
-    long double const us = k_ptrs_center - std::abs(u);
+    long double const us = 0.5L - std::abs(u);
 
-    if (!(us > 0.0L)) {
-      continue;
-    }
-
-    long double const candidate_value = std::floor(
-      ((((2.0L * a) / us) + b) * u) + mean + k_ptrs_candidate_offset);
-
-    if (!std::isfinite(candidate_value)) {
-      throw ggems::core::GGEMSRecoverable(
-        "Sampled Poisson candidate is not finite.");
-    }
+    long double const candidate_value =
+      std::floor(((((2.0L * a) / us) + b) * u) + mean + 0.43L);
 
     if (candidate_value < 0.0L) {
       continue;
     }
 
-    if (!(candidate_value < k_uint64_upper_exclusive)) {
-      throw ggems::core::GGEMSRecoverable(
-        "Sampled Poisson candidate exceeds uint64_t range.");
-    }
-
     auto const candidate = static_cast<std::uint64_t>(candidate_value);
 
-    if (us >= k_ptrs_fast_acceptance_us_min && v <= vr) {
+    if (us >= 0.07L && v <= vr) {
       return candidate;
     }
 
-    if (us < k_ptrs_squeeze_us_max && v > us) {
+    if (us < 0.013L && v > us) {
       continue;
     }
 
     long double const log_acceptance =
-      std::log(v) + std::log(inverse_alpha) - std::log((a / (us * us)) + b);
-    long double const log_probability = -mean +
-                                        (candidate_value * std::log(mean)) -
+      std::log(v) + log_inverse_alpha - std::log((a / (us * us)) + b);
+    long double const log_probability = -mean + (candidate_value * log_mean) -
                                         std::lgamma(candidate_value + 1.0L);
 
     if (log_acceptance <= log_probability) {
@@ -215,21 +139,11 @@ auto SampleByTransformedRejection(long double mean,
 
 auto SamplePoisson(long double mean, GGEMSHostRandomStream &random)
   -> std::uint64_t {
-  if (!(std::isfinite(mean))) {
-    throw ggems::core::GGEMSRecoverable("Poisson mean must be finite.");
-  }
-  if (!(mean >= 0.0L)) {
-    throw ggems::core::GGEMSRecoverable("Poisson mean must be non-negative.");
-  }
-  if (!(IsRepresentableMean(mean))) {
-    throw ggems::core::GGEMSRecoverable("Poisson mean exceeds uint64_t range.");
-  }
-
   if (mean == 0.0L) {
     return 0ULL;
   }
 
-  if (mean < k_inversion_threshold) {
+  if (mean < 30.0L) {
     return SampleByInversion(mean, random);
   }
 

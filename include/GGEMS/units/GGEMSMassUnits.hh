@@ -52,14 +52,35 @@ template <> struct UnitRegistry<MassUnitSet> {
   /*!
    * \brief Registered unit definitions for this quantity family.
    */
-  static constexpr std::array<UnitDefinition, 6U> units{{
-    {.symbol = "pg", .scale = DecimalScale(0)},
-    {.symbol = "ng", .scale = DecimalScale(3)},
-    {.symbol = "ug", .scale = DecimalScale(6), .unicode_symbol = "µg"},
-    {.symbol = "mg", .scale = DecimalScale(9)},
-    {.symbol = "g", .scale = DecimalScale(12)},
-    {.symbol = "kg", .scale = DecimalScale(15)},
-  }};
+  static constexpr std::array<UnitDefinition, 6U> units{
+    {
+      {
+        .symbol = "pg",
+        .scale = DecimalScale(0),
+      },
+      {
+        .symbol = "ng",
+        .scale = DecimalScale(3),
+      },
+      {
+        .symbol = "ug",
+        .scale = DecimalScale(6),
+        .unicode_symbol = "µg",
+      },
+      {
+        .symbol = "mg",
+        .scale = DecimalScale(9),
+      },
+      {
+        .symbol = "g",
+        .scale = DecimalScale(12),
+      },
+      {
+        .symbol = "kg",
+        .scale = DecimalScale(15),
+      },
+    },
+  };
 };
 
 /*!
@@ -75,20 +96,24 @@ template <> struct QuantityTraits<MassTag> {
    * \brief Unit registry associated with this quantity type.
    */
   using unit_set = MassUnitSet;
+
   /*!
    * \brief Allowed sign domain for this quantity type.
    */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
+
   /*!
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.
@@ -100,9 +125,6 @@ template <> struct QuantityTraits<MassTag> {
  * \brief Strongly typed mass quantity stored canonically in picograms.
  */
 using Mass = Quantity<MassTag, std::uint64_t>;
-
-static_assert(ValidateUnitSet<MassUnitSet>());
-static_assert(ValidateQuantityTraits<MassTag, std::uint64_t>());
 
 /*!
  * \brief Creates a mass quantity from a \c _pg literal.

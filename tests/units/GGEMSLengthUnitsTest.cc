@@ -45,6 +45,7 @@
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
+#include "GGEMS/units/GGEMSUnitFormatting.hh"
 #include "GGEMSScopedLoggerEncoding.hh"
 
 /// \cond

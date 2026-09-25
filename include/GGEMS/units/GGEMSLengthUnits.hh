@@ -33,13 +33,11 @@
 /// \cond
 #include <array>
 #include <cstdint>
-#include <string>
 #include <string_view>
 /// \endcond
 
 #include "GGEMS/units/GGEMSQuantity.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
-#include "GGEMS/units/GGEMSUnitFormatting.hh"
 
 namespace ggems::units {
 
@@ -55,15 +53,40 @@ template <> struct UnitRegistry<LengthUnitSet> {
   /*!
    * \brief Registered unit definitions for this quantity family.
    */
-  static constexpr std::array<UnitDefinition, 7U> units{{
-    {.symbol = "pm", .scale = DecimalScale(0)},
-    {.symbol = "nm", .scale = DecimalScale(3)},
-    {.symbol = "um", .scale = DecimalScale(6), .unicode_symbol = "µm"},
-    {.symbol = "mm", .scale = DecimalScale(9)},
-    {.symbol = "cm", .scale = DecimalScale(10), .automatic_display = false},
-    {.symbol = "m", .scale = DecimalScale(12)},
-    {.symbol = "km", .scale = DecimalScale(15)},
-  }};
+  static constexpr std::array<UnitDefinition, 7U> units{
+    {
+      {
+        .symbol = "pm",
+        .scale = DecimalScale(0),
+      },
+      {
+        .symbol = "nm",
+        .scale = DecimalScale(3),
+      },
+      {
+        .symbol = "um",
+        .scale = DecimalScale(6),
+        .unicode_symbol = "µm",
+      },
+      {
+        .symbol = "mm",
+        .scale = DecimalScale(9),
+      },
+      {
+        .symbol = "cm",
+        .scale = DecimalScale(10),
+        .automatic_display = false,
+      },
+      {
+        .symbol = "m",
+        .scale = DecimalScale(12),
+      },
+      {
+        .symbol = "km",
+        .scale = DecimalScale(15),
+      },
+    },
+  };
 };
 
 /*!
@@ -79,20 +102,24 @@ template <> struct QuantityTraits<LengthTag> {
    * \brief Unit registry associated with this quantity type.
    */
   using unit_set = LengthUnitSet;
+
   /*!
    * \brief Allowed sign domain for this quantity type.
    */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
+
   /*!
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.
@@ -114,20 +141,24 @@ template <> struct QuantityTraits<PositionCoordinateTag> {
    * \brief Unit registry associated with this quantity type.
    */
   using unit_set = LengthUnitSet;
+
   /*!
    * \brief Allowed sign domain for this quantity type.
    */
   static constexpr QuantityDomain domain{QuantityDomain::Signed};
+
   /*!
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.
@@ -148,20 +179,24 @@ template <> struct QuantityTraits<DisplacementTag> {
    * \brief Unit registry associated with this quantity type.
    */
   using unit_set = LengthUnitSet;
+
   /*!
    * \brief Allowed sign domain for this quantity type.
    */
   static constexpr QuantityDomain domain{QuantityDomain::Signed};
+
   /*!
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.
@@ -174,37 +209,17 @@ template <> struct QuantityTraits<DisplacementTag> {
  * picometers.
  */
 using Length = Quantity<LengthTag, std::uint64_t>;
+
 /*!
  * \brief Strongly typed signed position coordinate stored canonically in
  * picometers.
  */
 using PositionCoordinate = Quantity<PositionCoordinateTag, std::int64_t>;
+
 /*!
  * \brief Strongly typed signed displacement stored canonically in picometers.
  */
 using Displacement = Quantity<DisplacementTag, std::int64_t>;
-
-static_assert(ValidateUnitSet<LengthUnitSet>());
-static_assert(ValidateQuantityTraits<LengthTag, std::uint64_t>());
-static_assert(ValidateQuantityTraits<PositionCoordinateTag, std::int64_t>());
-static_assert(ValidateQuantityTraits<DisplacementTag, std::int64_t>());
-
-/*!
- * \brief Formats a signed picometer length using the GGEMS automatic length
- * scale.
- *
- * \param[in] value_pm Signed length value in picometers.
- * \param[in] precision Number of digits after the decimal point.
- * \param[in] width Optional formatted numeric field width; negative selects the
- * default width.
- * \return Human-readable length string.
- */
-[[nodiscard]] inline auto HumanReadableSignedLength(std::int64_t value_pm,
-                                                    std::int8_t precision = 7,
-                                                    std::int8_t width = -1)
-  -> std::string {
-  return HumanReadable(PositionCoordinate{value_pm}, precision, width);
-}
 
 /*!
  * \brief Creates a length quantity from a \c _pm literal.

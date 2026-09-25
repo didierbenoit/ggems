@@ -52,19 +52,41 @@ template <> struct UnitRegistry<TimeUnitSet> {
   /*!
    * \brief Registered unit definitions for this quantity family.
    */
-  static constexpr std::array<UnitDefinition, 7U> units{{
-    {.symbol = "ps", .scale = DecimalScale(0)},
-    {.symbol = "ns", .scale = DecimalScale(3)},
-    {.symbol = "us", .scale = DecimalScale(6), .unicode_symbol = "µs"},
-    {.symbol = "ms", .scale = DecimalScale(9)},
-    {.symbol = "s", .scale = DecimalScale(12)},
-    {.symbol = "min",
-     .scale = DecimalScale(12, 60ULL),
-     .automatic_display = false},
-    {.symbol = "h",
-     .scale = DecimalScale(12, 3'600ULL),
-     .automatic_display = false},
-  }};
+  static constexpr std::array<UnitDefinition, 7U> units{
+    {
+      {
+        .symbol = "ps",
+        .scale = DecimalScale(0),
+      },
+      {
+        .symbol = "ns",
+        .scale = DecimalScale(3),
+      },
+      {
+        .symbol = "us",
+        .scale = DecimalScale(6),
+        .unicode_symbol = "µs",
+      },
+      {
+        .symbol = "ms",
+        .scale = DecimalScale(9),
+      },
+      {
+        .symbol = "s",
+        .scale = DecimalScale(12),
+      },
+      {
+        .symbol = "min",
+        .scale = DecimalScale(12, 60ULL),
+        .automatic_display = false,
+      },
+      {
+        .symbol = "h",
+        .scale = DecimalScale(12, 3'600ULL),
+        .automatic_display = false,
+      },
+    },
+  };
 };
 
 /*!
@@ -80,20 +102,24 @@ template <> struct QuantityTraits<DurationTag> {
    * \brief Unit registry associated with this quantity type.
    */
   using unit_set = TimeUnitSet;
+
   /*!
    * \brief Allowed sign domain for this quantity type.
    */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
+
   /*!
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::DurationBreakdown};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.
@@ -114,20 +140,24 @@ template <> struct QuantityTraits<TimePointTag> {
    * \brief Unit registry associated with this quantity type.
    */
   using unit_set = TimeUnitSet;
+
   /*!
    * \brief Allowed sign domain for this quantity type.
    */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
+
   /*!
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.
@@ -139,19 +169,17 @@ template <> struct QuantityTraits<TimePointTag> {
  * \brief Strongly typed duration stored canonically in picoseconds.
  */
 using Duration = Quantity<DurationTag, std::uint64_t>;
+
 /*!
  * \brief Strongly typed nonnegative time point stored canonically in
  * picoseconds.
  */
 using TimePoint = Quantity<TimePointTag, std::uint64_t>;
+
 /*!
  * \brief Compatibility alias for Duration.
  */
 using Time = Duration;
-
-static_assert(ValidateUnitSet<TimeUnitSet>());
-static_assert(ValidateQuantityTraits<DurationTag, std::uint64_t>());
-static_assert(ValidateQuantityTraits<TimePointTag, std::uint64_t>());
 
 /*!
  * \brief Creates a duration quantity from a \c _ps literal.

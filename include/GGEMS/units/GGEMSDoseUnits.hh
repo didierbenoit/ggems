@@ -53,14 +53,28 @@ template <> struct UnitRegistry<DoseUnitSet> {
   /*!
    * \brief Registered unit definitions for this quantity family.
    */
-  static constexpr std::array<UnitDefinition, 4U> units{{
-    {.symbol = "meV/pg", .scale = DecimalScale(0), .automatic_display = false},
-    {.symbol = "Gy", .scale = SpecialScale(1.0L / 1.602176634e-7L)},
-    {.symbol = "mGy", .scale = SpecialScale(1.0e-3L / 1.602176634e-7L)},
-    {.symbol = "uGy",
-     .scale = SpecialScale(1.0e-6L / 1.602176634e-7L),
-     .unicode_symbol = "µGy"},
-  }};
+  static constexpr std::array<UnitDefinition, 4U> units{
+    {
+      {
+        .symbol = "meV/pg",
+        .scale = DecimalScale(0),
+        .automatic_display = false,
+      },
+      {
+        .symbol = "Gy",
+        .scale = SpecialScale(1.0L / 1.602176634e-7L),
+      },
+      {
+        .symbol = "mGy",
+        .scale = SpecialScale(1.0e-3L / 1.602176634e-7L),
+      },
+      {
+        .symbol = "uGy",
+        .scale = SpecialScale(1.0e-6L / 1.602176634e-7L),
+        .unicode_symbol = "µGy",
+      },
+    },
+  };
 };
 
 /*!
@@ -76,20 +90,24 @@ template <> struct QuantityTraits<DoseTag> {
    * \brief Unit registry associated with this quantity type.
    */
   using unit_set = DoseUnitSet;
+
   /*!
    * \brief Allowed sign domain for this quantity type.
    */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
+
   /*!
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.
@@ -102,9 +120,6 @@ template <> struct QuantityTraits<DoseTag> {
  * milli-electron-volts per picogram.
  */
 using Dose = Quantity<DoseTag, std::uint64_t>;
-
-static_assert(ValidateUnitSet<DoseUnitSet>());
-static_assert(ValidateQuantityTraits<DoseTag, std::uint64_t>());
 
 /*!
  * \brief Creates a absorbed-dose quantity from a \c _meV_pg literal.

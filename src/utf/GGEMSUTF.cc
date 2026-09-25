@@ -31,13 +31,12 @@
 #include <cstddef>
 #include <string>
 #include <string_view>
-
 /// \endcond
+
 #include "GGEMS/utf/GGEMSUTF.hh"
 
 namespace {
 
-/// \cond
 /*!
  * \brief Tests whether a byte has the UTF-8 continuation-byte prefix.
  *
@@ -47,7 +46,6 @@ namespace {
 [[nodiscard]] auto IsUTF8ContinuationByte(unsigned char byte) noexcept -> bool {
   return (byte & 0xC0U) == 0x80U;
 }
-/// \endcond
 
 } // namespace
 
@@ -74,13 +72,11 @@ auto UTF8ToUTF32(std::string_view str8) -> std::u32string {
     std::size_t expected_length{0U};
     char32_t code_point{0};
     char32_t minimum_code_point{0};
-    bool valid_leading_byte{true};
 
     if (first_byte >= 0xC0U && first_byte <= 0xDFU) {
       expected_length = 2U;
       code_point = static_cast<char32_t>(first_byte & 0x1FU);
       minimum_code_point = 0x80;
-      valid_leading_byte = first_byte >= 0xC2U;
     } else if (first_byte >= 0xE0U && first_byte <= 0xEFU) {
       expected_length = 3U;
       code_point = static_cast<char32_t>(first_byte & 0x0FU);
@@ -89,7 +85,6 @@ auto UTF8ToUTF32(std::string_view str8) -> std::u32string {
       expected_length = 4U;
       code_point = static_cast<char32_t>(first_byte & 0x07U);
       minimum_code_point = 0x10000;
-      valid_leading_byte = first_byte <= 0xF4U;
     } else {
       output.push_back(U'?');
       ++offset;
@@ -121,8 +116,8 @@ auto UTF8ToUTF32(std::string_view str8) -> std::u32string {
 
     bool const is_surrogate = code_point >= 0xD800 && code_point <= 0xDFFF;
 
-    if (!valid_leading_byte || code_point < minimum_code_point ||
-        is_surrogate || code_point > 0x10FFFF) {
+    if (code_point < minimum_code_point || is_surrogate ||
+        code_point > 0x10FFFF) {
       output.push_back(U'?');
       continue;
     }
@@ -142,18 +137,18 @@ auto UTF32ToUTF8(char32_t ch32) -> std::string {
   if (ch32 <= 0x7F) {
     out.push_back(static_cast<char>(ch32));
   } else if (ch32 <= 0x7FF) {
-    out.push_back(static_cast<char>(0xC0 | ((ch32 >> 6) & 0x1F)));
+    out.push_back(static_cast<char>(0xC0 | ((ch32 >> 6U) & 0x1F)));
     out.push_back(static_cast<char>(0x80 | (ch32 & 0x3F)));
   } else if (ch32 >= 0xD800 && ch32 <= 0xDFFF) {
     return "?";
   } else if (ch32 <= 0xFFFF) {
-    out.push_back(static_cast<char>(0xE0 | ((ch32 >> 12) & 0x0F)));
-    out.push_back(static_cast<char>(0x80 | ((ch32 >> 6) & 0x3F)));
+    out.push_back(static_cast<char>(0xE0 | ((ch32 >> 12U) & 0x0F)));
+    out.push_back(static_cast<char>(0x80 | ((ch32 >> 6U) & 0x3F)));
     out.push_back(static_cast<char>(0x80 | (ch32 & 0x3F)));
   } else if (ch32 <= 0x10FFFF) {
-    out.push_back(static_cast<char>(0xF0 | ((ch32 >> 18) & 0x07)));
-    out.push_back(static_cast<char>(0x80 | ((ch32 >> 12) & 0x3F)));
-    out.push_back(static_cast<char>(0x80 | ((ch32 >> 6) & 0x3F)));
+    out.push_back(static_cast<char>(0xF0 | ((ch32 >> 18U) & 0x07)));
+    out.push_back(static_cast<char>(0x80 | ((ch32 >> 12U) & 0x3F)));
+    out.push_back(static_cast<char>(0x80 | ((ch32 >> 6U) & 0x3F)));
     out.push_back(static_cast<char>(0x80 | (ch32 & 0x3F)));
   } else {
     out = "?";

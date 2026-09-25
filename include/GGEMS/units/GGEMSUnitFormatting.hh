@@ -39,6 +39,7 @@
 /// \endcond
 
 #include "GGEMS/logging/GGEMSLogger.hh"
+#include "GGEMS/units/GGEMSLengthUnits.hh"
 #include "GGEMS/units/GGEMSQuantity.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
 
@@ -63,13 +64,11 @@ auto FormatScaled(QuantityType const &quantity, UnitDefinition const &unit,
     static_cast<long double>(quantity.value) / ScaleFactor(unit.scale);
 
   std::string_view const selected_symbol = SelectUnitSymbol(unit);
-  std::string format;
   if (width < 0) {
-    format = std::format("{{:.{}f}} {}", precision, selected_symbol);
-  } else {
-    format = std::format("{{:{}.{}f}} {}", width, precision, selected_symbol);
+    return std::format("{:.{}f} {}", scaled, precision, selected_symbol);
   }
-  return std::vformat(format, std::make_format_args(scaled));
+
+  return std::format("{:{}.{}f} {}", scaled, width, precision, selected_symbol);
 }
 
 } // namespace detail
@@ -92,7 +91,8 @@ auto HumanReadable(
     QuantityTraits<typename QuantityValue::tag>::default_precision,
   std::int8_t width = -1) -> std::string {
   using Traits = QuantityTraits<typename QuantityValue::tag>;
-  using UnitSet = typename Traits::unit_set;
+  using UnitSet = Traits::unit_set;
+
   if constexpr (Traits::format_policy == QuantityFormatPolicy::FixedUnit) {
     return detail::FormatScaled(quantity,
                                 *FindUnit<UnitSet>(Traits::fixed_display_unit),
@@ -102,6 +102,7 @@ auto HumanReadable(
                   QuantityFormatPolicy::DurationBreakdown) {
       auto const second_factor = static_cast<std::uint64_t>(
         detail::ScaleFactor(FindUnit<UnitSet>("s")->scale));
+
       if (quantity.value >= 60ULL * second_factor) {
         auto const millisecond_factor = static_cast<std::uint64_t>(
           detail::ScaleFactor(FindUnit<UnitSet>("ms")->scale));
@@ -147,6 +148,23 @@ auto HumanReadable(
   }
 }
 
+/*!
+ * \brief Formats a signed picometer length using the GGEMS automatic length
+ * scale.
+ *
+ * \param[in] value_pm Signed length value in picometers.
+ * \param[in] precision Number of digits after the decimal point.
+ * \param[in] width Optional formatted numeric field width; negative selects the
+ * default width.
+ * \return Human-readable length string.
+ */
+[[nodiscard]] inline auto HumanReadableSignedLength(std::int64_t value_pm,
+                                                    std::int8_t precision = 7,
+                                                    std::int8_t width = -1)
+  -> std::string {
+  return HumanReadable(PositionCoordinate{value_pm}, precision, width);
+}
+
 } // namespace ggems::units
 
 namespace std {
@@ -170,8 +188,7 @@ struct formatter<ggems::units::Quantity<Tag, Representation>>
    */
   template <typename FormatContext>
   auto format(ggems::units::Quantity<Tag, Representation> const &quantity,
-              FormatContext &context) const ->
-    typename FormatContext::iterator {
+              FormatContext &context) const -> FormatContext::iterator {
     return formatter<string>::format(ggems::units::HumanReadable(quantity),
                                      context);
   }

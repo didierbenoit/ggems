@@ -53,13 +53,30 @@ template <> struct UnitRegistry<FrequencyUnitSet> {
   /*!
    * \brief Registered unit definitions for this quantity family.
    */
-  static constexpr std::array<UnitDefinition, 5U> units{{
-    {.symbol = "Hz", .scale = DecimalScale(0)},
-    {.symbol = "kHz", .scale = DecimalScale(3)},
-    {.symbol = "MHz", .scale = DecimalScale(6)},
-    {.symbol = "GHz", .scale = DecimalScale(9)},
-    {.symbol = "THz", .scale = DecimalScale(12)},
-  }};
+  static constexpr std::array<UnitDefinition, 5U> units{
+    {
+      {
+        .symbol = "Hz",
+        .scale = DecimalScale(0),
+      },
+      {
+        .symbol = "kHz",
+        .scale = DecimalScale(3),
+      },
+      {
+        .symbol = "MHz",
+        .scale = DecimalScale(6),
+      },
+      {
+        .symbol = "GHz",
+        .scale = DecimalScale(9),
+      },
+      {
+        .symbol = "THz",
+        .scale = DecimalScale(12),
+      },
+    },
+  };
 };
 
 /*!
@@ -75,20 +92,24 @@ template <> struct QuantityTraits<FrequencyTag> {
    * \brief Unit registry associated with this quantity type.
    */
   using unit_set = FrequencyUnitSet;
+
   /*!
    * \brief Allowed sign domain for this quantity type.
    */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
+
   /*!
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.
@@ -100,9 +121,6 @@ template <> struct QuantityTraits<FrequencyTag> {
  * \brief Strongly typed frequency quantity stored canonically in hertz.
  */
 using Frequency = Quantity<FrequencyTag, std::uint64_t>;
-
-static_assert(ValidateUnitSet<FrequencyUnitSet>());
-static_assert(ValidateQuantityTraits<FrequencyTag, std::uint64_t>());
 
 /*!
  * \brief Creates a frequency quantity from a \c _Hz literal.

@@ -54,14 +54,17 @@ template <typename Tag, typename Representation> struct Quantity {
    * \brief Quantity-family tag type.
    */
   using tag = Tag;
+
   /*!
    * \brief Underlying arithmetic representation type.
    */
   using representation = Representation;
+
   /*!
    * \brief Quantity value in the canonical unit of its family.
    */
   Representation value{};
+
   /*!
    * \brief Compares two quantities in their canonical representation.
    *
@@ -166,7 +169,7 @@ template <typename Tag, typename Representation, Arithmetic Scalar>
 constexpr auto operator*(Quantity<Tag, Representation> quantity,
                          Scalar scale) noexcept
   -> Quantity<Tag, Representation> {
-  return {quantity.value * static_cast<long double>(scale)};
+  return {quantity.value * static_cast<Representation>(scale)};
 }
 
 /*!
@@ -202,7 +205,7 @@ template <typename Tag, typename Representation, Arithmetic Scalar>
 constexpr auto operator/(Quantity<Tag, Representation> quantity,
                          Scalar scale) noexcept
   -> Quantity<Tag, Representation> {
-  return {quantity.value / static_cast<long double>(scale)};
+  return {quantity.value / static_cast<Representation>(scale)};
 }
 
 } // namespace ggems::units

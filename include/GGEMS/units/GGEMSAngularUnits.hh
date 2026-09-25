@@ -73,20 +73,24 @@ template <> struct QuantityTraits<AngleTag> {
    * \brief Unit registry associated with this quantity type.
    */
   using unit_set = AngleUnitSet;
+
   /*!
    * \brief Allowed sign domain for this quantity type.
    */
   static constexpr QuantityDomain domain{QuantityDomain::Signed};
+
   /*!
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::FixedUnit};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{"deg"};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.
@@ -98,15 +102,6 @@ template <> struct QuantityTraits<AngleTag> {
  * \brief Strongly typed angle quantity stored canonically in radians.
  */
 using Angle = Quantity<AngleTag, long double>;
-
-static_assert(ValidateUnitSet<AngleUnitSet>());
-static_assert(ValidateQuantityTraits<AngleTag, long double>());
-
-/// \cond
-namespace detail {
-inline constexpr long double k_pi{std::numbers::pi_v<long double>};
-}
-/// \endcond
 
 /*!
  * \brief Creates an angle directly from a value expressed in radians.

@@ -52,18 +52,46 @@ template <> struct UnitRegistry<VolumeUnitSet> {
   /*!
    * \brief Registered unit definitions for this quantity family.
    */
-  static constexpr std::array<UnitDefinition, 7U> units{{
-    {.symbol = "pm3", .scale = DecimalScale(0), .unicode_symbol = "pm³"},
-    {.symbol = "nm3", .scale = DecimalScale(9), .unicode_symbol = "nm³"},
-    {.symbol = "um3", .scale = DecimalScale(18), .unicode_symbol = "µm³"},
-    {.symbol = "mm3", .scale = DecimalScale(27), .unicode_symbol = "mm³"},
-    {.symbol = "cm3",
-     .scale = DecimalScale(30),
-     .unicode_symbol = "cm³",
-     .automatic_display = false},
-    {.symbol = "m3", .scale = DecimalScale(36), .unicode_symbol = "m³"},
-    {.symbol = "km3", .scale = DecimalScale(45), .unicode_symbol = "km³"},
-  }};
+  static constexpr std::array<UnitDefinition, 7U> units{
+    {
+      {
+        .symbol = "pm3",
+        .scale = DecimalScale(0),
+        .unicode_symbol = "pm³",
+      },
+      {
+        .symbol = "nm3",
+        .scale = DecimalScale(9),
+        .unicode_symbol = "nm³",
+      },
+      {
+        .symbol = "um3",
+        .scale = DecimalScale(18),
+        .unicode_symbol = "µm³",
+      },
+      {
+        .symbol = "mm3",
+        .scale = DecimalScale(27),
+        .unicode_symbol = "mm³",
+      },
+      {
+        .symbol = "cm3",
+        .scale = DecimalScale(30),
+        .unicode_symbol = "cm³",
+        .automatic_display = false,
+      },
+      {
+        .symbol = "m3",
+        .scale = DecimalScale(36),
+        .unicode_symbol = "m³",
+      },
+      {
+        .symbol = "km3",
+        .scale = DecimalScale(45),
+        .unicode_symbol = "km³",
+      },
+    },
+  };
 };
 
 /*!
@@ -79,20 +107,24 @@ template <> struct QuantityTraits<VolumeTag> {
    * \brief Unit registry associated with this quantity type.
    */
   using unit_set = VolumeUnitSet;
+
   /*!
    * \brief Allowed sign domain for this quantity type.
    */
   static constexpr QuantityDomain domain{QuantityDomain::NonNegative};
+
   /*!
    * \brief Formatting policy used for human-readable output.
    */
   static constexpr QuantityFormatPolicy format_policy{
     QuantityFormatPolicy::AutomaticScale};
+
   /*!
    * \brief Fixed display unit, or an empty string when the policy selects units
    * automatically.
    */
   static constexpr std::string_view fixed_display_unit{};
+
   /*!
    * \brief Default number of digits after the decimal point for formatted
    * output.
@@ -104,9 +136,6 @@ template <> struct QuantityTraits<VolumeTag> {
  * \brief Strongly typed volume quantity stored canonically in cubic picometers.
  */
 using Volume = Quantity<VolumeTag, long double>;
-
-static_assert(ValidateUnitSet<VolumeUnitSet>());
-static_assert(ValidateQuantityTraits<VolumeTag, long double>());
 
 /*!
  * \brief Creates a volume quantity from a \c _pm3 literal.

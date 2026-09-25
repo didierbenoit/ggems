@@ -32,7 +32,6 @@
 
 /// \cond
 #include <concepts>
-#include <cstddef>
 #include <cstdint>
 #include <expected>
 #include <limits>
@@ -44,90 +43,73 @@
 
 namespace ggems::units {
 
-/*!
- * \brief Specifies whether a quantity may represent negative values.
- */
-enum class QuantityDomain : std::uint8_t { NonNegative, Signed };
-/*!
- * \var QuantityDomain QuantityDomain::NonNegative
- * \brief Quantity values must be nonnegative.
- */
-/*!
- * \var QuantityDomain QuantityDomain::Signed
- * \brief Quantity values may be negative or positive.
- */
+/*! \brief Specifies whether a quantity may represent negative values. */
+enum class QuantityDomain : std::uint8_t {
+  /*! \brief Quantity values must be nonnegative */
+  NonNegative,
+
+  /*! \brief Quantity values may be negative or positive */
+  Signed,
+};
 
 /*!
- * \brief Selects the human-readable formatting strategy for a quantity family.
+ * \brief Selects the human-readable formatting strategy for a quantity
+ * family.
  */
 enum class QuantityFormatPolicy : std::uint8_t {
+  /*!
+   * \brief Selects a display unit automatically from the registered unit
+   * scales.
+   */
   AutomaticScale,
-  FixedUnit,
-  DurationBreakdown
-};
-/*!
- * \var QuantityFormatPolicy QuantityFormatPolicy::AutomaticScale
- * \brief Selects a display unit automatically from the registered unit scales.
- */
-/*!
- * \var QuantityFormatPolicy QuantityFormatPolicy::FixedUnit
- * \brief Always formats using the configured fixed display unit.
- */
-/*!
- * \var QuantityFormatPolicy QuantityFormatPolicy::DurationBreakdown
- * \brief Formats long durations as hours, minutes, seconds, and milliseconds
- * when appropriate.
- */
 
-/*!
- * \brief Reports failures produced by checked GGEMS unit conversions.
- */
-enum class UnitConversionError : std::uint8_t {
-  UnsupportedUnit,
-  NonFinite,
-  NegativeValue,
-  OutOfRange,
-  InexactConversion
+  /*! \brief Always formats using the configured fixed display unit. */
+  FixedUnit,
+
+  /*!
+   * \brief Formats long durations as hours, minutes, seconds, and milliseconds
+   * when appropriate.
+   */
+  DurationBreakdown,
 };
-/*!
- * \var UnitConversionError UnitConversionError::UnsupportedUnit
- * \brief The requested unit symbol is not registered.
- */
-/*!
- * \var UnitConversionError UnitConversionError::NonFinite
- * \brief The supplied floating-point value is not finite.
- */
-/*!
- * \var UnitConversionError UnitConversionError::NegativeValue
- * \brief A negative value was supplied for a nonnegative quantity.
- */
-/*!
- * \var UnitConversionError UnitConversionError::OutOfRange
- * \brief The converted value cannot be represented by the destination type.
- */
-/*!
- * \var UnitConversionError UnitConversionError::InexactConversion
- * \brief An exact integral conversion was requested but the value is not
- * exactly representable.
- */
+
+/*! \brief Reports failures produced by checked GGEMS unit conversions. */
+enum class UnitConversionError : std::uint8_t {
+  /*! \brief The requested unit symbol is not registered */
+  UnsupportedUnit,
+
+  /*! \brief The supplied floating-point value is not finite */
+  NonFinite,
+
+  /*! \brief A negative value was supplied for a nonnegative quantity */
+  NegativeValue,
+
+  /*!
+   * \brief The converted value cannot be represented by the destination type
+   */
+  OutOfRange,
+
+  /*!
+   * \brief An exact integral conversion was requested but the value is not
+   * exactly representable
+   */
+  InexactConversion,
+};
 
 /*!
  * \brief Describes a unit scale relative to the canonical unit of its quantity
  * family.
  */
 struct UnitScale {
-  /*!
-   * \brief Rational scale numerator.
-   */
+  /*! \brief Rational scale numerator. */
   std::uint64_t numerator{1ULL};
-  /*!
-   * \brief Rational scale denominator.
-   */
+
+  /*! \brief Rational scale denominator. */
   std::uint64_t denominator{1ULL};
-  /*!
-   * \brief Base-10 exponent applied to the rational scale.
-   */
+
+  /*! \brief Base-10 exponent applied to the rational scale. */
   std::int16_t decimal_exponent{0};
+
   /*!
    * \brief Explicit scale factor used when a rational decimal scale is
    * unsuitable; zero selects the rational representation.
@@ -146,10 +128,12 @@ struct UnitScale {
 consteval auto DecimalScale(std::int16_t exponent,
                             std::uint64_t numerator = 1ULL,
                             std::uint64_t denominator = 1ULL) -> UnitScale {
-  return {.numerator = numerator,
-          .denominator = denominator,
-          .decimal_exponent = exponent,
-          .special_factor = 0.0L};
+  return {
+    .numerator = numerator,
+    .denominator = denominator,
+    .decimal_exponent = exponent,
+    .special_factor = 0.0L,
+  };
 };
 
 /*!
@@ -159,31 +143,26 @@ consteval auto DecimalScale(std::int16_t exponent,
  * \return UnitScale using the supplied special factor.
  */
 consteval auto SpecialScale(long double factor) -> UnitScale {
-  return {.numerator = 1ULL,
-          .denominator = 1ULL,
-          .decimal_exponent = 0,
-          .special_factor = factor};
+  return {
+    .numerator = 1ULL,
+    .denominator = 1ULL,
+    .decimal_exponent = 0,
+    .special_factor = factor,
+  };
 }
 
-/*!
- * \brief Describes one accepted unit symbol and its conversion metadata.
- */
+/*! \brief Describes one accepted unit symbol and its conversion metadata. */
 struct UnitDefinition {
-  /*!
-   * \brief ASCII unit symbol accepted by conversion functions.
-   */
+  /*! \brief ASCII unit symbol accepted by conversion functions. */
   std::string_view symbol;
-  /*!
-   * \brief Scale relative to the canonical quantity representation.
-   */
+
+  /*! \brief Scale relative to the canonical quantity representation. */
   UnitScale scale;
-  /*!
-   * \brief Optional Unicode symbol used for formatted output.
-   */
+
+  /*! \brief Optional Unicode symbol used for formatted output. */
   std::string_view unicode_symbol{};
-  /*!
-   * \brief Whether automatic formatting may select this unit.
-   */
+
+  /*! \brief Whether automatic formatting may select this unit. */
   bool automatic_display{true};
 };
 
@@ -267,6 +246,7 @@ constexpr auto ConvertCanonical(long double value)
          ++digit) {
       upper *= 2.0L;
     }
+
     if constexpr (std::unsigned_integral<Representation>) {
       if (value < 0.0L) {
         return std::unexpected(UnitConversionError::NegativeValue);
@@ -277,6 +257,7 @@ constexpr auto ConvertCanonical(long double value)
     } else if (value < -upper || value >= upper) {
       return std::unexpected(UnitConversionError::OutOfRange);
     }
+
     auto converted = static_cast<Representation>(value);
     long double const remainder = value - static_cast<long double>(converted);
     if (remainder >= 0.5L) {
@@ -330,69 +311,30 @@ constexpr auto ConvertIntegralMagnitude(std::uint64_t magnitude, bool negative)
       auto const negative_limit =
         static_cast<std::uint64_t>(std::numeric_limits<Representation>::max()) +
         1ULL;
+
       if (magnitude > negative_limit) {
         return std::unexpected(UnitConversionError::OutOfRange);
       }
+
       if (magnitude == negative_limit) {
         return std::numeric_limits<Representation>::min();
       }
+
       return static_cast<Representation>(
         -static_cast<Representation>(magnitude));
     }
   }
+
   if (magnitude >
       static_cast<std::uint64_t>(std::numeric_limits<Representation>::max())) {
     return std::unexpected(UnitConversionError::OutOfRange);
   }
+
   return static_cast<Representation>(magnitude);
 }
 
 } // namespace detail
 /// \endcond
-
-template <typename UnitSet>
-/*!
- * \brief Checks whether a unit-set type has a UnitRegistry specialization.
- *
- * \tparam UnitSet Unit-set marker type.
- */
-concept HasUnitRegistry = requires { UnitRegistry<UnitSet>::units; };
-
-/*!
- * \brief Validates a unit registry at compile time.
- *
- * \tparam UnitSet Unit-set marker type.
- * \return true when the registry is nonempty, finite, positive, and free of
- * duplicate ASCII symbols; otherwise false.
- */
-template <typename UnitSet> consteval auto ValidateUnitSet() -> bool {
-  if constexpr (!HasUnitRegistry<UnitSet>) {
-    return false;
-  } else {
-    auto const &units = UnitRegistry<UnitSet>::units;
-    if (units.empty()) {
-      return false;
-    }
-    for (std::size_t lhs_index = 0U; lhs_index < units.size(); ++lhs_index) {
-      auto const &lhs = units[lhs_index];
-      if (lhs.symbol.empty() || lhs.scale.numerator == 0ULL ||
-          lhs.scale.denominator == 0ULL) {
-        return false;
-      }
-      long double const factor = detail::ScaleFactor(lhs.scale);
-      if (!detail::IsFinite(factor) || factor <= 0.0L) {
-        return false;
-      }
-      for (std::size_t rhs_index = lhs_index + 1U; rhs_index < units.size();
-           ++rhs_index) {
-        if (lhs.symbol == units[rhs_index].symbol) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-}
 
 template <typename UnitSet>
 /*!
@@ -405,91 +347,12 @@ template <typename UnitSet>
  */
 constexpr auto FindUnit(std::string_view symbol) noexcept
   -> UnitDefinition const * {
-  static_assert(ValidateUnitSet<UnitSet>());
   for (auto const &unit : UnitRegistry<UnitSet>::units) {
     if (unit.symbol == symbol) {
       return &unit;
     }
   }
   return nullptr;
-}
-
-template <typename Tag, typename Representation>
-/*!
- * \brief Validates quantity traits and representation compatibility at compile
- * time.
- *
- * \tparam Tag Quantity-family tag type.
- * \tparam Representation Underlying arithmetic representation type.
- * \return true when the traits and representation satisfy the GGEMS unit-system
- * requirements; otherwise false.
- */
-consteval auto ValidateQuantityTraits() -> bool {
-  if constexpr (!requires {
-                  typename QuantityTraits<Tag>::unit_set;
-                  {
-                    QuantityTraits<Tag>::domain
-                  } -> std::same_as<QuantityDomain const &>;
-                  {
-                    QuantityTraits<Tag>::format_policy
-                  } -> std::same_as<QuantityFormatPolicy const &>;
-                  {
-                    QuantityTraits<Tag>::fixed_display_unit
-                  } -> std::convertible_to<std::string_view>;
-                  {
-                    QuantityTraits<Tag>::default_precision
-                  } -> std::convertible_to<std::int8_t>;
-                } || !std::is_arithmetic_v<Representation>) {
-    return false;
-  } else {
-    using Traits = QuantityTraits<Tag>;
-    using UnitSet = typename Traits::unit_set;
-    if constexpr (!ValidateUnitSet<UnitSet>()) {
-      return false;
-    } else {
-      if (Traits::default_precision < 0 ||
-          (Traits::domain == QuantityDomain::Signed &&
-           std::unsigned_integral<Representation>)) {
-        return false;
-      }
-
-      if (Traits::format_policy == QuantityFormatPolicy::FixedUnit) {
-        return FindUnit<UnitSet>(Traits::fixed_display_unit) != nullptr;
-      }
-
-      bool has_automatic_unit{false};
-      for (auto const &unit : UnitRegistry<UnitSet>::units) {
-        has_automatic_unit = has_automatic_unit || unit.automatic_display;
-      }
-
-      if (!has_automatic_unit) {
-        return false;
-      }
-
-      if (Traits::format_policy == QuantityFormatPolicy::DurationBreakdown) {
-        if constexpr (!std::unsigned_integral<Representation>) {
-          return false;
-        } else {
-          auto const *second = FindUnit<UnitSet>("s");
-          auto const *millisecond = FindUnit<UnitSet>("ms");
-
-          if (second == nullptr || millisecond == nullptr) {
-            return false;
-          }
-
-          std::uint64_t second_factor{0ULL};
-          std::uint64_t millisecond_factor{0ULL};
-          return detail::ExactIntegralFactor(second->scale, second_factor) &&
-                 detail::ExactIntegralFactor(millisecond->scale,
-                                             millisecond_factor) &&
-                 millisecond_factor <=
-                   std::numeric_limits<std::uint64_t>::max() / 1'000ULL &&
-                 second_factor == millisecond_factor * 1'000ULL;
-        }
-      }
-      return true;
-    }
-  }
 }
 
 template <QuantityType TargetQuantity>
@@ -549,7 +412,7 @@ template <QuantityType TargetQuantity, detail::ExactIntegral SourceInteger>
                                           std::string_view unit_symbol)
   -> std::expected<TargetQuantity, UnitConversionError> {
   using Traits = QuantityTraits<typename TargetQuantity::tag>;
-  using Representation = typename TargetQuantity::representation;
+  using Representation = TargetQuantity::representation;
 
   auto const *unit = FindUnit<typename Traits::unit_set>(unit_symbol);
   if (unit == nullptr) {
@@ -634,6 +497,7 @@ template <detail::ExactIntegral TargetRepresentation,
   using Traits = QuantityTraits<typename SourceQuantity::tag>;
 
   auto const *unit = FindUnit<typename Traits::unit_set>(unit_symbol);
+
   if (unit == nullptr) {
     return std::unexpected(UnitConversionError::UnsupportedUnit);
   }
@@ -664,46 +528,22 @@ template <QuantityType QuantityValue>
 consteval auto MakeLiteralQuantity(unsigned long long value,
                                    std::string_view unit_symbol)
   -> QuantityValue {
-  using Representation = typename QuantityValue::representation;
-  using Traits = QuantityTraits<typename QuantityValue::tag>;
+  using Representation = QuantityValue::representation;
+  using Input = std::conditional_t<std::floating_point<Representation>,
+                                   long double, unsigned long long>;
 
-  auto const *unit = FindUnit<typename Traits::unit_set>(unit_symbol);
-  if (unit == nullptr) {
-    throw "Unsupported GGEMS quantity literal unit.";
-  }
-
-  if constexpr (std::integral<Representation>) {
-    std::uint64_t factor{0ULL};
-    if (detail::ExactIntegralFactor(unit->scale, factor)) {
-      auto const maximum =
-        static_cast<std::uint64_t>(std::numeric_limits<Representation>::max());
-      if (factor == 0ULL || value > maximum / factor) {
-        throw "GGEMS quantity literal is out of range.";
-      }
-      return QuantityValue{static_cast<Representation>(value * factor)};
-    }
-  }
-
-  auto const result =
-    MakeQuantity<QuantityValue>(static_cast<long double>(value), unit_symbol);
-  if (!result.has_value()) {
-    throw "Invalid GGEMS quantity literal.";
-  }
-
-  return *result;
+  return MakeQuantity<QuantityValue>(static_cast<Input>(value), unit_symbol)
+    .value();
 }
 
 template <QuantityType QuantityValue>
 consteval auto MakeLiteralQuantity(long double value,
                                    std::string_view unit_symbol)
   -> QuantityValue {
-  auto const result = MakeQuantity<QuantityValue>(value, unit_symbol);
-  if (!result.has_value()) {
-    throw "Invalid GGEMS quantity literal.";
-  }
-  return *result;
+  return MakeQuantity<QuantityValue>(value, unit_symbol).value();
 }
 
 } // namespace detail
 /// \endcond
+
 } // namespace ggems::units

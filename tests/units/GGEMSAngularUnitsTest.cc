@@ -34,6 +34,7 @@
 #include <cmath>
 #include <format>
 #include <limits>
+#include <numbers>
 
 #include <gtest/gtest.h>
 
@@ -103,7 +104,7 @@ TEST(GGEMSAngularUnits, MakeDegreesConvertsToRadians) {
   ggems::units::Angle angle = ggems::units::MakeDegrees(180.0L);
 
   ExpectNearLongDouble(ggems::units::ToRadians(angle),
-                       ggems::units::detail::k_pi);
+                       std::numbers::pi_v<long double>);
 }
 
 /* --------------------------------------------- */
@@ -112,7 +113,7 @@ TEST(GGEMSAngularUnits, MakeDegreesConvertsToRadians) {
 
 TEST(GGEMSAngularUnits, RadiansAreConvertedToDegrees) {
   ggems::units::Angle const angle =
-    ggems::units::MakeRadians(ggems::units::detail::k_pi);
+    ggems::units::MakeRadians(std::numbers::pi_v<long double>);
 
   ExpectNearLongDouble(ggems::units::ToDegrees(angle), 180.0L);
 }
@@ -126,7 +127,7 @@ TEST(GGEMSAngularUnits, DegreeLiteralStoresRadiansInternally) {
 
   Angle angle = 90.0_deg;
 
-  ExpectNearLongDouble(ToRadians(angle), detail::k_pi / 2.0L);
+  ExpectNearLongDouble(ToRadians(angle), std::numbers::pi_v<long double> / 2.0L);
   ExpectNearLongDouble(ToDegrees(angle), 90.0L);
 }
 
@@ -139,7 +140,8 @@ TEST(GGEMSAngularUnits, IntegerDegreeLiteralStoresRadiansInternally) {
 
   Angle angle = 270_deg;
 
-  ExpectNearLongDouble(ToRadians(angle), 3.0L * detail::k_pi / 2.0L);
+  ExpectNearLongDouble(ToRadians(angle),
+                       3.0L * std::numbers::pi_v<long double> / 2.0L);
   ExpectNearLongDouble(ToDegrees(angle), 270.0L);
 }
 
@@ -177,7 +179,7 @@ TEST(GGEMSAngularUnits, SupportsNegativeAngles) {
   Angle angle = -45.0_deg;
 
   ExpectNearLongDouble(ToDegrees(angle), -45.0L);
-  ExpectNearLongDouble(ToRadians(angle), -detail::k_pi / 4.0L);
+  ExpectNearLongDouble(ToRadians(angle), -std::numbers::pi_v<long double> / 4.0L);
 }
 
 /* --------------------------------------------- */
@@ -250,7 +252,8 @@ TEST(GGEMSAngularUnits, DivisionByScalarPreservesAngleSemantics) {
 TEST(GGEMSAngularUnits, SpaceshipComparisonUsesRadians) {
   using namespace ggems::units;
 
-  EXPECT_EQ(90.0_deg, MakeRadians(detail::k_pi / 2.0L));
+  EXPECT_EQ(90.0_deg,
+            MakeRadians(std::numbers::pi_v<long double> / 2.0L));
   EXPECT_LT(45.0_deg, 90.0_deg);
   EXPECT_GT(180.0_deg, 90.0_deg);
 }

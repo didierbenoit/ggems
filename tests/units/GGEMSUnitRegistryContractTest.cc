@@ -134,6 +134,128 @@ namespace {
 using namespace ggems::units;
 using ggems::test::ScopedLoggerEncoding;
 
+template <typename UnitSet>
+/*!
+ * \brief Checks whether a unit-set type has a UnitRegistry specialization.
+ *
+ * \tparam UnitSet Unit-set marker type.
+ */
+concept HasUnitRegistry = requires { UnitRegistry<UnitSet>::units; };
+
+/*!
+ * \brief Validates a unit registry at compile time.
+ *
+ * \tparam UnitSet Unit-set marker type.
+ * \return true when the registry is nonempty, finite, positive, and free of
+ * duplicate ASCII symbols; otherwise false.
+ */
+template <typename UnitSet> consteval auto ValidateUnitSet() -> bool {
+  if constexpr (!HasUnitRegistry<UnitSet>) {
+    return false;
+  } else {
+    auto const &units = UnitRegistry<UnitSet>::units;
+    if (units.empty()) {
+      return false;
+    }
+    for (std::size_t lhs_index = 0U; lhs_index < units.size(); ++lhs_index) {
+      auto const &lhs = units[lhs_index];
+      if (lhs.symbol.empty() || lhs.scale.numerator == 0ULL ||
+          lhs.scale.denominator == 0ULL) {
+        return false;
+      }
+      long double const factor = detail::ScaleFactor(lhs.scale);
+      if (!detail::IsFinite(factor) || factor <= 0.0L) {
+        return false;
+      }
+      for (std::size_t rhs_index = lhs_index + 1U; rhs_index < units.size();
+           ++rhs_index) {
+        if (lhs.symbol == units[rhs_index].symbol) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+}
+
+template <typename Tag, typename Representation>
+/*!
+ * \brief Validates quantity traits and representation compatibility at compile
+ * time.
+ *
+ * \tparam Tag Quantity-family tag type.
+ * \tparam Representation Underlying arithmetic representation type.
+ * \return true when the traits and representation satisfy the GGEMS unit-system
+ * requirements; otherwise false.
+ */
+consteval auto ValidateQuantityTraits() -> bool {
+  if constexpr (!requires {
+                  typename QuantityTraits<Tag>::unit_set;
+                  {
+                    QuantityTraits<Tag>::domain
+                  } -> std::same_as<QuantityDomain const &>;
+                  {
+                    QuantityTraits<Tag>::format_policy
+                  } -> std::same_as<QuantityFormatPolicy const &>;
+                  {
+                    QuantityTraits<Tag>::fixed_display_unit
+                  } -> std::convertible_to<std::string_view>;
+                  {
+                    QuantityTraits<Tag>::default_precision
+                  } -> std::convertible_to<std::int8_t>;
+                } || !std::is_arithmetic_v<Representation>) {
+    return false;
+  } else {
+    using Traits = QuantityTraits<Tag>;
+    using UnitSet = typename Traits::unit_set;
+    if constexpr (!ValidateUnitSet<UnitSet>()) {
+      return false;
+    } else {
+      if (Traits::default_precision < 0 ||
+          (Traits::domain == QuantityDomain::Signed &&
+           std::unsigned_integral<Representation>)) {
+        return false;
+      }
+
+      if (Traits::format_policy == QuantityFormatPolicy::FixedUnit) {
+        return FindUnit<UnitSet>(Traits::fixed_display_unit) != nullptr;
+      }
+
+      bool has_automatic_unit{false};
+      for (auto const &unit : UnitRegistry<UnitSet>::units) {
+        has_automatic_unit = has_automatic_unit || unit.automatic_display;
+      }
+
+      if (!has_automatic_unit) {
+        return false;
+      }
+
+      if (Traits::format_policy == QuantityFormatPolicy::DurationBreakdown) {
+        if constexpr (!std::unsigned_integral<Representation>) {
+          return false;
+        } else {
+          auto const *second = FindUnit<UnitSet>("s");
+          auto const *millisecond = FindUnit<UnitSet>("ms");
+
+          if (second == nullptr || millisecond == nullptr) {
+            return false;
+          }
+
+          std::uint64_t second_factor{0ULL};
+          std::uint64_t millisecond_factor{0ULL};
+          return detail::ExactIntegralFactor(second->scale, second_factor) &&
+                 detail::ExactIntegralFactor(millisecond->scale,
+                                             millisecond_factor) &&
+                 millisecond_factor <=
+                   std::numeric_limits<std::uint64_t>::max() / 1'000ULL &&
+                 second_factor == millisecond_factor * 1'000ULL;
+        }
+      }
+      return true;
+    }
+  }
+}
+
 // =============================================================================
 // =============================================================================
 

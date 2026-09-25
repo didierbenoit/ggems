@@ -53,7 +53,7 @@ auto ToLongName(GGEMSParticleType particle_type) -> std::string_view {
     return "Alpha";
   }
 
-  throw ggems::core::GGEMSInternal("Unsupported GGEMS particle type.");
+  return "Unknown";
 }
 
 // =============================================================================
@@ -79,7 +79,7 @@ auto ToShortName(GGEMSParticleType particle_type) -> std::string_view {
     return "a";
   }
 
-  throw ggems::core::GGEMSInternal("Unsupported GGEMS particle type.");
+  return "?";
 }
 
 // =============================================================================
@@ -105,7 +105,7 @@ auto ToAsciiSymbol(GGEMSParticleType particle_type) -> std::u32string_view {
     return U"a";
   }
 
-  throw ggems::core::GGEMSInternal("Unsupported GGEMS particle type.");
+  return U"?";
 }
 
 // =============================================================================
@@ -131,7 +131,7 @@ auto ToUnicodeSymbol(GGEMSParticleType particle_type) -> std::u32string_view {
     return U"α";
   }
 
-  throw ggems::core::GGEMSInternal("Unsupported GGEMS particle type.");
+  return U"?";
 }
 
 // =============================================================================
@@ -170,8 +170,6 @@ auto ParseParticleType(std::string_view particle_name) -> GGEMSParticleType {
 
   throw ggems::core::GGEMSRecoverable(
     std::format("Unsupported GGEMS particle type '{}'.", particle_name));
-
-  return GGEMSParticleType::Unknown;
 }
 
 } // namespace ggems::core::particles

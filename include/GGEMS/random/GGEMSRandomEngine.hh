@@ -52,18 +52,12 @@ namespace ggems::core::random {
  * Numeric values are shared with the OpenCL compile-time engine identifiers.
  */
 enum class GGEMSRandomEngine : std::uint8_t {
-  /*!
-   * \brief JKISS legacy random engine.
-   */
+  /*! \brief JKISS legacy random engine. */
   JKISS = 1U,
-  /*!
-   * \brief PCG32 random engine.
-   */
+  /*! \brief PCG32 random engine. */
   PCG32 = 2U,
-  /*!
-   * \brief Philox 4x32 counter-based random engine.
-   */
-  Philox = 3U
+  /*! \brief Philox 4x32 counter-based random engine. */
+  Philox = 3U,
 };
 
 /*!
