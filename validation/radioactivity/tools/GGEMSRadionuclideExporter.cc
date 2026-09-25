@@ -211,7 +211,7 @@ auto WriteDefinition(
          << R"json(,"time_ps_per_s":)json" << time_scale
          << R"json(,"time_max_ps":)json"
          << std::numeric_limits<std::uint64_t>::max()
-         << R"json(,"ticket_space":)json" << sources::k_energy_ticket_space_size
+         << R"json(,"ticket_space":)json" << (1ULL << 32U)
          << R"json(,"groups":[
 )json";
   std::size_t index = 0U;
@@ -385,6 +385,7 @@ auto RunCampaign(
     .CaptureFirstPrimaries(options.capacity);
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
   opencl.SelectDevices({options.device});
+  opencl.SetWorkerCount(options.workers);
   opencl.Initialize();
   auto metadata = OpenOutput(options.output / "run.json");
   WriteRunHeader(metadata, options, opencl);
@@ -395,9 +396,8 @@ auto RunCampaign(
   ggems::core::GGEMSRun run;
   run.SetTimePicoSecond(0ULL, options.step_ps * options.windows,
                         options.step_ps);
-  run.SetSource(source);
+  run.AddSource(source);
   run.SetRandom(engine);
-  run.SetWorkerCount(options.workers);
   run.SetObserver(capture);
   run.Initialize();
   auto samples = OpenOutput(options.output / "samples.csv");

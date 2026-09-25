@@ -881,8 +881,8 @@ auto WriteEnergyMetadata(std::ostream &output, Options const &options,
          << ",\"mono_energy_micro_eV\":"
          << snapshot.GetRecords().at(0U).energy_micro_eV
          << ",\"regular_bin_width_micro_eV\":"
-         << record.regular_bin_width_micro_eV << ",\"ticket_space_size\":"
-         << ggems::core::sources::k_energy_ticket_space_size
+         << record.regular_bin_width_micro_eV
+         << ",\"ticket_space_size\":" << (1ULL << 32U)
          << ",\"energy_values_micro_eV\":";
   WriteJsonArray(output, energies);
   output << ",\"relative_weights\":";
@@ -1120,6 +1120,7 @@ auto main(int argc, char const *const *argv) -> int {
 
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
     opencl.SelectDevices({options.device_selector});
+    opencl.SetWorkerCount(options.worker_count);
     opencl.Initialize();
     std::vector<std::string> device_names;
     for (auto const &context : opencl.GetContext()) {
@@ -1127,9 +1128,8 @@ auto main(int argc, char const *const *argv) -> int {
     }
 
     run.SetRandom(random);
-    run.SetSource(source);
+    run.AddSource(source);
     run.SetObserver(observer);
-    run.SetWorkerCount(options.worker_count);
     run.Initialize();
 
     bool const sequence = !options.sequence_path.empty();
