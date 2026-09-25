@@ -19,17 +19,11 @@ using Vector3D = std::array<double, 3U>;
 
 [[nodiscard]] auto RequireNormalized(Vector3D const &vector,
                                      std::string_view name) -> PreciseAxis {
-  if (!(std::isfinite(vector[0U]) && std::isfinite(vector[1U]) &&
-        std::isfinite(vector[2U]))) {
-    throw ggems::core::GGEMSRecoverable(
-      std::format("Source {} must contain finite values.", name));
-  }
-
   auto const normalized =
     geometry::detail::TryNormalizeVector3D(vector[0], vector[1], vector[2]);
 
-  if (!(normalized.has_value())) {
-    throw ggems::core::GGEMSRecoverable(std::format(
+  if (!normalized.has_value()) {
+    throw GGEMSRecoverable(std::format(
       "Source {} must have a finite, strictly positive norm.", name));
   }
 
@@ -48,9 +42,11 @@ using Vector3D = std::array<double, 3U>;
 
 [[nodiscard]] auto Cross(PreciseAxis lhs, PreciseAxis rhs) noexcept
   -> Vector3D {
-  return Vector3D{(lhs.y * rhs.z) - (lhs.z * rhs.y),
-                  (lhs.z * rhs.x) - (lhs.x * rhs.z),
-                  (lhs.x * rhs.y) - (lhs.y * rhs.x)};
+  return Vector3D{
+    (lhs.y * rhs.z) - (lhs.z * rhs.y),
+    (lhs.z * rhs.x) - (lhs.x * rhs.z),
+    (lhs.x * rhs.y) - (lhs.y * rhs.x),
+  };
 }
 
 // =============================================================================
@@ -65,18 +61,13 @@ using Vector3D = std::array<double, 3U>;
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] auto ToFloatDirection(PreciseAxis direction)
+[[nodiscard]] auto ToFloatDirection(PreciseAxis direction) noexcept
   -> geometry::Direction3 {
-  auto const converted =
-    geometry::TryMakeDirection3(direction.x, direction.y, direction.z);
-
-  if (!(converted.has_value())) {
-    throw ggems::core::GGEMSInternal(
-      "Source orientation cannot be represented by a finite, "
-      "non-zero float direction.");
-  }
-
-  return *converted;
+  return {
+    .x = static_cast<float>(direction.x),
+    .y = static_cast<float>(direction.y),
+    .z = static_cast<float>(direction.z),
+  };
 }
 
 // =============================================================================
@@ -87,9 +78,11 @@ using Vector3D = std::array<double, 3U>;
   double const cross_x =
     (static_cast<double>(frame.axis_x.y) * frame.axis_y.z) -
     (static_cast<double>(frame.axis_x.z) * frame.axis_y.y);
+
   double const cross_y =
     (static_cast<double>(frame.axis_x.z) * frame.axis_y.x) -
     (static_cast<double>(frame.axis_x.x) * frame.axis_y.z);
+
   double const cross_z =
     (static_cast<double>(frame.axis_x.x) * frame.axis_y.y) -
     (static_cast<double>(frame.axis_x.y) * frame.axis_y.x);
@@ -136,10 +129,9 @@ auto BuildSourceFrameFromNormalized(PreciseAxis direction,
                                     PreciseAxis up_reference)
   -> GGEMSSourceFrame {
   if (IsTooParallel(direction, up_reference)) {
-    throw ggems::core::GGEMSRecoverable(
-      std::format("Source direction and up are too close "
-                  "to parallel (1 - abs(dot) <= {}).",
-                  k_source_frame_parallel_tolerance));
+    throw GGEMSRecoverable(std::format("Source direction and up are too close "
+                                       "to parallel (1 - abs(dot) <= {}).",
+                                       k_source_frame_parallel_tolerance));
   }
 
   PreciseAxis const axis_x =
@@ -147,15 +139,11 @@ auto BuildSourceFrameFromNormalized(PreciseAxis direction,
   PreciseAxis const axis_y =
     RequireNormalized(Cross(direction, axis_x), "frame vertical axis");
 
-  GGEMSSourceFrame const frame = {.axis_x = ToFloatDirection(axis_x),
-                                  .axis_y = ToFloatDirection(axis_y),
-                                  .axis_z = ToFloatDirection(direction)};
-
-  if (!(IsValidFloatFrame(frame))) {
-    throw ggems::core::GGEMSInternal(
-      "Source orientation cannot be represented by a "
-      "sufficiently orthonormal right-handed float frame.");
-  }
+  GGEMSSourceFrame const frame = {
+    .axis_x = ToFloatDirection(axis_x),
+    .axis_y = ToFloatDirection(axis_y),
+    .axis_z = ToFloatDirection(direction),
+  };
 
   return frame;
 }

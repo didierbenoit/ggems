@@ -12,9 +12,6 @@
 
 namespace ggems::core::sources {
 
-inline constexpr std::uint64_t k_energy_ticket_space_size{std::uint64_t{1U}
-                                                          << 32U};
-
 class GGEMSEnergyDistribution {
 public:
   GGEMSEnergyDistribution() = default;
@@ -40,7 +37,6 @@ public:
                        std::span<double const> relative_weights,
                        std::string_view unit) -> GGEMSEnergyDistribution;
 
-  // Exact canonical micro-electronvolt tables; no runtime unit token needed.
   [[nodiscard]] static auto
   BuildDiscreteLines(std::span<std::uint64_t const> energies_micro_eV,
                      std::span<double const> relative_weights)

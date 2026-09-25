@@ -114,8 +114,8 @@ public:
 
   GGEMSSourcePopulationCandidate(GGEMSSourcePopulationCandidate const &) =
     delete;
-  GGEMSSourcePopulationCandidate(
-    GGEMSSourcePopulationCandidate &&other) noexcept;
+  GGEMSSourcePopulationCandidate(GGEMSSourcePopulationCandidate &&) noexcept =
+    default;
   auto operator=(GGEMSSourcePopulationCandidate const &)
     -> GGEMSSourcePopulationCandidate & = delete;
   auto operator=(GGEMSSourcePopulationCandidate &&other) noexcept

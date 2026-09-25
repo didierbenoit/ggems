@@ -14,12 +14,11 @@ namespace ggems::core::sources {
 
 enum class GGEMSSourcePopulationMode : std::uint8_t {
   CountDriven = 0U,
-  ActivityDriven
+  ActivityDriven,
 };
 
 struct GGEMSCountDrivenSourceConfiguration {
-  static constexpr std::uint64_t k_default_primary_count{4096ULL};
-  std::uint64_t primary_count{k_default_primary_count};
+  std::uint64_t primary_count{4096ULL};
 };
 
 struct GGEMSActivityDrivenSourceConfiguration {

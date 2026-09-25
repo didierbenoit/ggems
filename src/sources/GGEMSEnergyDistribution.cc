@@ -6,7 +6,6 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
-#include <limits>
 #include <span>
 #include <string>
 #include <string_view>
@@ -28,6 +27,11 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+constexpr std::uint64_t k_energy_ticket_space_size{1ULL << 32U};
+
+// =============================================================================
+// =============================================================================
+
 struct ValidationContext {
   std::string_view filename;
   std::span<std::size_t const> line_numbers;
@@ -36,31 +40,16 @@ struct ValidationContext {
 // =============================================================================
 // =============================================================================
 
-[[noreturn]] auto Reject(std::string message) -> void {
-  throw GGEMSRecoverable(std::move(message));
-}
-
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] auto EntryPrefix(std::string_view distribution_name,
-                               std::size_t index, ValidationContext context)
-  -> std::string {
-  if (!context.filename.empty() && index < context.line_numbers.size()) {
-    return std::format("{}: line {}: ", context.filename,
-                       context.line_numbers[index]);
-  }
-
-  return std::format("{} entry {}: ", distribution_name, index);
-}
-
-// =============================================================================
-// =============================================================================
-
 [[noreturn]] auto RejectEntry(std::string_view distribution_name,
                               std::size_t index, ValidationContext context,
                               std::string_view message) -> void {
-  Reject(EntryPrefix(distribution_name, index, context) + std::string{message});
+  if (!context.filename.empty() && index < context.line_numbers.size()) {
+    throw GGEMSRecoverable(std::format("{}: line {}: {}", context.filename,
+                                       context.line_numbers[index], message));
+  }
+
+  throw GGEMSRecoverable(
+    std::format("{} entry {}: {}", distribution_name, index, message));
 }
 
 // =============================================================================
@@ -103,6 +92,9 @@ struct ValidationContext {
               "energy conversion exceeds uint64 micro-electronvolt "
               "storage.");
 }
+
+// =============================================================================
+// =============================================================================
 
 auto ValidateCanonicalEnergyValues(std::span<std::uint64_t const> energies,
                                    std::string_view distribution_name) -> void {
@@ -167,11 +159,6 @@ struct TicketRemainder {
   for (std::size_t index = 0U; index < relative_weights.size(); ++index) {
     double const weight = relative_weights[index];
 
-    if (!std::isfinite(weight)) {
-      RejectEntry(distribution_name, index, context,
-                  "relative weight must be finite.");
-    }
-
     if (weight < 0.0) {
       RejectEntry(distribution_name, index, context,
                   "relative weight must be positive or zero.");
@@ -182,28 +169,20 @@ struct TicketRemainder {
     }
 
     total_weight += static_cast<long double>(weight);
-
-    if (!std::isfinite(total_weight)) {
-      RejectEntry(distribution_name, index, context,
-                  "relative-weight sum is not finite.");
-    }
   }
 
-  if (!(total_weight > 0.0L)) {
-    RejectEntry(distribution_name, 0U, context,
-                "at least one relative weight must be strictly positive.");
-  }
-
-  if (positive_weight_count > k_energy_ticket_space_size) {
-    Reject(
-      std::format("{} has more positive entries than the 32-bit ticket space.",
-                  distribution_name));
+  if (total_weight == 0.0L) {
+    throw GGEMSRecoverable(std::format(
+      "{} requires at least one strictly positive weight.", distribution_name));
   }
 
   std::vector<std::uint64_t> ticket_counts(relative_weights.size(), 0ULL);
+
   std::vector<TicketRemainder> remainders;
   remainders.reserve(positive_weight_count);
+
   std::uint64_t assigned_ticket_count{0ULL};
+
   auto const ticket_space =
     static_cast<long double>(k_energy_ticket_space_size);
 
@@ -218,18 +197,12 @@ struct TicketRemainder {
       static_cast<long double>(weight) / total_weight * ticket_space;
     long double const base = std::floor(quota);
 
-    if (!std::isfinite(quota) || quota < 0.0L || quota > ticket_space ||
-        base < 0.0L || base > ticket_space) {
-      RejectEntry(distribution_name, index, context,
-                  "32-bit ticket quota is not representable.");
-    }
-
     auto const base_ticket_count = static_cast<std::uint64_t>(base);
 
     if (base_ticket_count >
         k_energy_ticket_space_size - assigned_ticket_count) {
-      Reject(std::format("{} 32-bit ticket floors exceed the ticket space.",
-                         distribution_name));
+      throw GGEMSRecoverable(std::format(
+        "{} 32-bit ticket floors exceed the ticket space.", distribution_name));
     }
 
     ticket_counts[index] = base_ticket_count;
@@ -246,7 +219,7 @@ struct TicketRemainder {
     k_energy_ticket_space_size - assigned_ticket_count;
 
   if (remaining_ticket_count > static_cast<std::uint64_t>(remainders.size())) {
-    Reject(std::format(
+    throw GGEMSRecoverable(std::format(
       "{} 32-bit ticket remainders cannot complete the ticket space.",
       distribution_name));
   }
@@ -279,21 +252,8 @@ struct TicketRemainder {
         "in the 32-bit random space.");
     }
 
-    if (ticket_counts[index] >
-        k_energy_ticket_space_size - cumulative_ticket_count) {
-      Reject(std::format(
-        "{} cumulative 32-bit ticket count overflows its ticket space.",
-        distribution_name));
-    }
-
     cumulative_ticket_count += ticket_counts[index];
     cumulative_ticket_upper.push_back(cumulative_ticket_count);
-  }
-
-  if (cumulative_ticket_count != k_energy_ticket_space_size) {
-    Reject(
-      std::format("{} cumulative ticket upper bound must end at exactly 2^32.",
-                  distribution_name));
   }
 
   return cumulative_ticket_upper;
@@ -354,13 +314,14 @@ struct TicketRemainder {
                                       value, std::chars_format::general);
 
   if (result.ec != std::errc{} || result.ptr != field.data() + field.size()) {
-    Reject(std::format("{}: line {}: malformed {} '{}'.", filename, line_number,
-                       field_name, field));
+    throw GGEMSRecoverable(std::format("{}: line {}: malformed {} '{}'.",
+                                       filename, line_number, field_name,
+                                       field));
   }
 
   if (!std::isfinite(value)) {
-    Reject(std::format("{}: line {}: {} must be finite.", filename, line_number,
-                       field_name));
+    throw GGEMSRecoverable(std::format("{}: line {}: {} must be finite.",
+                                       filename, line_number, field_name));
   }
 
   return value;
@@ -387,7 +348,7 @@ GGEMSEnergyDistribution::GGEMSEnergyDistribution(
 auto GGEMSEnergyDistribution::BuildMono(std::uint64_t energy_micro_eV)
   -> GGEMSEnergyDistribution {
   if (!(energy_micro_eV > 0ULL)) {
-    throw ggems::core::GGEMSRecoverable("Source energy must be non-zero.");
+    throw GGEMSRecoverable("Source energy must be non-zero.");
   }
 
   return GGEMSEnergyDistribution{
@@ -399,18 +360,15 @@ auto GGEMSEnergyDistribution::BuildMono(std::uint64_t energy_micro_eV)
 auto GGEMSEnergyDistribution::BuildDiscreteLines(
   std::span<double const> energies, std::span<double const> relative_weights,
   std::string_view unit) -> GGEMSEnergyDistribution {
+
   if (!(energies.size() == relative_weights.size())) {
-    throw ggems::core::GGEMSRecoverable(
+    throw GGEMSRecoverable(
       "Discrete energy line and relative-weight counts must match.");
   }
+
   if (!(energies.size() >= 2U)) {
-    throw ggems::core::GGEMSRecoverable(
+    throw GGEMSRecoverable(
       "Discrete energy distributions require at least two lines.");
-  }
-  if (!(energies.size() <=
-        static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()))) {
-    throw ggems::core::GGEMSRecoverable(
-      "Discrete energy line count exceeds uint32 storage.");
   }
 
   ValidationContext const context{};
@@ -422,27 +380,28 @@ auto GGEMSEnergyDistribution::BuildDiscreteLines(
                                       relative_weights);
 }
 
+// -----------------------------------------------------------------------------
+
 auto GGEMSEnergyDistribution::BuildDiscreteLines(
   std::span<std::uint64_t const> energies_micro_eV,
   std::span<double const> relative_weights) -> GGEMSEnergyDistribution {
+
   if (!(energies_micro_eV.size() == relative_weights.size())) {
-    throw ggems::core::GGEMSRecoverable(
+    throw GGEMSRecoverable(
       "Discrete energy line and relative-weight counts must match.");
   }
+
   if (!(energies_micro_eV.size() >= 2U)) {
-    throw ggems::core::GGEMSRecoverable(
+    throw GGEMSRecoverable(
       "Discrete energy distributions require at least two lines.");
-  }
-  if (!(energies_micro_eV.size() <=
-        static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()))) {
-    throw ggems::core::GGEMSRecoverable(
-      "Discrete energy line count exceeds uint32 storage.");
   }
 
   ValidateCanonicalEnergyValues(energies_micro_eV, "Discrete energy lines");
   return BuildDiscreteLinesFromValues(
     {energies_micro_eV.begin(), energies_micro_eV.end()}, relative_weights);
 }
+
+// -----------------------------------------------------------------------------
 
 auto GGEMSEnergyDistribution::BuildDiscreteLinesFromValues(
   std::vector<std::uint64_t> energy_values,
@@ -481,21 +440,19 @@ auto GGEMSEnergyDistribution::BuildRegularSpectrumWithContext(
   std::span<double const> relative_bin_weights, std::string_view unit,
   std::string_view filename, std::span<std::size_t const> line_numbers)
   -> GGEMSEnergyDistribution {
-  ValidationContext const context{.filename = filename,
-                                  .line_numbers = line_numbers};
+  ValidationContext const context{
+    .filename = filename,
+    .line_numbers = line_numbers,
+  };
 
   if (!(bin_centers.size() == relative_bin_weights.size())) {
     throw ggems::core::GGEMSRecoverable(
       "Regular spectrum center and relative-weight counts must match.");
   }
+
   if (bin_centers.size() < 2U) {
     RejectEntry("Regular energy spectrum", 0U, context,
                 "requires at least two bins.");
-  }
-  if (!(bin_centers.size() <=
-        static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()))) {
-    throw ggems::core::GGEMSRecoverable(
-      "Regular spectrum bin count exceeds uint32 storage.");
   }
 
   auto energy_values =
@@ -505,37 +462,41 @@ auto GGEMSEnergyDistribution::BuildRegularSpectrumWithContext(
     std::move(energy_values), relative_bin_weights, filename, line_numbers);
 }
 
+// -----------------------------------------------------------------------------
+
 auto GGEMSEnergyDistribution::BuildRegularSpectrum(
   std::span<std::uint64_t const> bin_centers_micro_eV,
   std::span<double const> relative_weights) -> GGEMSEnergyDistribution {
   ValidationContext const context{};
+
   if (!(bin_centers_micro_eV.size() == relative_weights.size())) {
     throw ggems::core::GGEMSRecoverable(
       "Regular spectrum center and relative-weight counts must match.");
   }
+
   if (bin_centers_micro_eV.size() < 2U) {
     RejectEntry("Regular energy spectrum", 0U, context,
                 "requires at least two bins.");
   }
-  if (!(bin_centers_micro_eV.size() <=
-        static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()))) {
-    throw ggems::core::GGEMSRecoverable(
-      "Regular spectrum bin count exceeds uint32 storage.");
-  }
 
   ValidateCanonicalEnergyValues(bin_centers_micro_eV,
                                 "Regular energy spectrum");
+
   return BuildRegularSpectrumFromValues(
     {bin_centers_micro_eV.begin(), bin_centers_micro_eV.end()},
     relative_weights, {}, {});
 }
 
+// -----------------------------------------------------------------------------
+
 auto GGEMSEnergyDistribution::BuildRegularSpectrumFromValues(
   std::vector<std::uint64_t> energy_values,
   std::span<double const> relative_bin_weights, std::string_view filename,
   std::span<std::size_t const> line_numbers) -> GGEMSEnergyDistribution {
-  ValidationContext const context{.filename = filename,
-                                  .line_numbers = line_numbers};
+  ValidationContext const context{
+    .filename = filename,
+    .line_numbers = line_numbers,
+  };
 
   std::uint64_t const bin_width = energy_values[1U] - energy_values[0U];
 
@@ -560,15 +521,10 @@ auto GGEMSEnergyDistribution::BuildRegularSpectrumFromValues(
                 "first lower bin edge must be strictly positive.");
   }
 
-  if (energy_values.back() >
-      std::numeric_limits<std::uint64_t>::max() - half_width) {
-    RejectEntry("Regular energy spectrum", energy_values.size() - 1U, context,
-                "last upper bin edge exceeds uint64 micro-electronvolt "
-                "storage.");
-  }
-
-  std::vector<double> prepared_relative_weights{relative_bin_weights.begin(),
-                                                relative_bin_weights.end()};
+  std::vector<double> prepared_relative_weights{
+    relative_bin_weights.begin(),
+    relative_bin_weights.end(),
+  };
 
   auto cumulative_ticket_upper = BuildCumulativeTicketUpperBounds(
     prepared_relative_weights, "Regular energy spectrum", context);
@@ -588,23 +544,10 @@ auto GGEMSEnergyDistribution::LoadRegularSpectrum(
   -> GGEMSEnergyDistribution {
   std::string const filename_text = filename.string();
 
-  std::error_code filesystem_error;
-  bool const file_exists = std::filesystem::exists(filename, filesystem_error);
-
-  if (filesystem_error) {
-    Reject(std::format("{}: cannot inspect regular spectrum file: {}.",
-                       filename_text, filesystem_error.message()));
-  }
-
-  if (!file_exists) {
-    Reject(
-      std::format("{}: regular spectrum file does not exist.", filename_text));
-  }
-
   std::ifstream input{filename};
 
   if (!input.is_open()) {
-    Reject(
+    throw GGEMSRecoverable(
       std::format("{}: regular spectrum file is not readable.", filename_text));
   }
 
@@ -625,7 +568,7 @@ auto GGEMSEnergyDistribution::LoadRegularSpectrum(
     }
 
     if (fields.size() != 2U) {
-      Reject(std::format(
+      throw GGEMSRecoverable(std::format(
         "{}: line {}: expected exactly two numeric fields before any "
         "comment, found {}.",
         filename_text, line_number, fields.size()));
@@ -633,19 +576,22 @@ auto GGEMSEnergyDistribution::LoadRegularSpectrum(
 
     bin_centers.push_back(
       ParseNumber(fields[0U], filename_text, line_number, "energy center"));
+
     relative_bin_weights.push_back(ParseNumber(
       fields[1U], filename_text, line_number, "relative bin weight"));
+
     line_numbers.push_back(line_number);
   }
 
   if (input.bad()) {
-    Reject(std::format("{}: line {}: failed while reading regular spectrum "
-                       "file.",
-                       filename_text, line_number + 1U));
+    throw GGEMSRecoverable(
+      std::format("{}: line {}: failed while reading regular spectrum "
+                  "file.",
+                  filename_text, line_number + 1U));
   }
 
   if (bin_centers.empty()) {
-    Reject(
+    throw GGEMSRecoverable(
       std::format("{}: regular spectrum contains no data.", filename_text));
   }
 
@@ -667,10 +613,7 @@ auto GGEMSEnergyDistribution::BuildRecord(
   }
 
   return {
-    .regular_bin_width_micro_eV =
-      type_ == GGEMSEnergyDistributionType::RegularSpectrum
-        ? regular_bin_width_micro_eV_
-        : 0ULL,
+    .regular_bin_width_micro_eV = regular_bin_width_micro_eV_,
     .table_offset = table_offset,
     .distribution_type = ToKernelEnergyDistributionType(type_),
     .table_count = GetTableCount(),

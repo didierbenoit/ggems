@@ -22,6 +22,7 @@ struct GGEMSSourceFrame {
   -> GGEMSSourceFrame;
 
 [[nodiscard]] auto
-BuildSourceFrameWithAutomaticUp(std::array<double, 3> const &direction)
+BuildSourceFrameWithAutomaticUp(std::array<double, 3U> const &direction)
   -> GGEMSSourceFrame;
+
 } // namespace ggems::core::sources

@@ -147,14 +147,6 @@ DescribeEnergy(GGEMSSourceRecord const &source_record,
     FromKernelEnergyDistributionType(energy_record.distribution_type);
 
   if (distribution_type == GGEMSEnergyDistributionType::Mono) {
-    if (!(source_record.energy_micro_eV > 0ULL &&
-          energy_record.table_offset == 0ULL &&
-          energy_record.table_count == 0U &&
-          energy_record.regular_bin_width_micro_eV == 0ULL)) {
-      throw ggems::core::GGEMSInternal(
-        "Invalid Mono energy description record.");
-    }
-
     return std::format("Energy: Mono ({})",
                        ggems::units::HumanReadable(
                          ggems::units::Energy{source_record.energy_micro_eV}));
@@ -162,28 +154,28 @@ DescribeEnergy(GGEMSSourceRecord const &source_record,
 
   if (!(distribution_type == GGEMSEnergyDistributionType::DiscreteLines ||
         distribution_type == GGEMSEnergyDistributionType::RegularSpectrum)) {
-    throw ggems::core::GGEMSInternal(
+    throw GGEMSInternal(
       "Unsupported source energy distribution in description.");
   }
 
   if (!(energy_record.table_offset <=
         static_cast<std::uint64_t>(energy_values.size()))) {
-    throw ggems::core::GGEMSInternal(
-      "Source energy description table offset is invalid.");
+    throw GGEMSInternal("Source energy description table offset is invalid.");
   }
 
   auto const table_offset =
     static_cast<std::size_t>(energy_record.table_offset);
+
   auto const table_count = static_cast<std::size_t>(energy_record.table_count);
 
   if (!(table_count >= 2U &&
         table_count <= energy_values.size() - table_offset)) {
-    throw ggems::core::GGEMSInternal(
-      "Source energy description table range is invalid.");
+    throw GGEMSInternal("Source energy description table range is invalid.");
   }
 
   std::string const first = ggems::units::HumanReadable(
     ggems::units::Energy{energy_values[table_offset]});
+
   std::string const last = ggems::units::HumanReadable(
     ggems::units::Energy{energy_values[table_offset + table_count - 1U]});
 
@@ -197,7 +189,8 @@ DescribeEnergy(GGEMSSourceRecord const &source_record,
                      "Center range: [{}, {}] | Bin width: {}",
                      table_count, first, last,
                      ggems::units::HumanReadable(ggems::units::Energy{
-                       energy_record.regular_bin_width_micro_eV}));
+                       energy_record.regular_bin_width_micro_eV,
+                     }));
 }
 
 } // namespace
@@ -246,7 +239,7 @@ auto DescribeSource(GGEMSSource const &source) -> std::string {
 auto DescribeSource(GGEMSSourceRecord const &record,
                     std::uint64_t primary_count) -> std::string {
   if (!(record.energy_micro_eV > 0ULL)) {
-    throw ggems::core::GGEMSInternal(
+    throw GGEMSInternal(
       "The energy-aware DescribeSource overload is required for a "
       "table-backed source.");
   }
@@ -297,10 +290,8 @@ auto DescribeSourceRunSlot(std::size_t source_index,
   auto const &population_records = snapshot.GetPopulationRecords();
   auto const &energy_records = snapshot.GetEnergyDistributionRecords();
 
-  if (!(source_index < records.size() && source_index < ranges.size() &&
-        source_index < population_records.size() &&
-        source_index < energy_records.size())) {
-    throw ggems::core::GGEMSInternal(
+  if (source_index >= records.size()) {
+    throw GGEMSInternal(
       "Source description index is outside the run snapshot.");
   }
 
@@ -313,31 +304,17 @@ auto DescribeSourceRunSlot(std::size_t source_index,
     auto const &group_ranges = snapshot.GetGroupRanges();
     auto const &definitions = snapshot.GetRadionuclideDefinitions();
 
-    if (!(source_index < definitions.size() &&
-          definitions[source_index] != nullptr &&
-          population.first_emission_index <= emission_records.size() &&
-          population.emission_count <=
-            emission_records.size() - population.first_emission_index &&
-          group_ranges.size() == emission_records.size())) {
-      throw ggems::core::GGEMSInternal(
-        "ActivityDriven source description metadata is inconsistent.");
-    }
-
     std::string groups;
     for (std::uint32_t offset = 0U; offset < population.emission_count;
          ++offset) {
       std::size_t const emission_index =
         static_cast<std::size_t>(population.first_emission_index) + offset;
       auto const &emission = emission_records[emission_index];
-      if (!(emission.energy_distribution_record_index <
-            energy_records.size())) {
-        throw ggems::core::GGEMSInternal(
-          "ActivityDriven energy record index is outside the snapshot.");
-      }
 
       if (!groups.empty()) {
         groups += "; ";
       }
+
       groups +=
         std::format("#{} {} count={}", offset,
                     particles::ToLongName(particles::FromKernelParticleType(
@@ -372,17 +349,9 @@ auto DescribeSourceRunSlot(std::size_t source_index,
 auto DescribeSourceRunSlot(std::size_t source_index,
                            GGEMSSourceRecord const &record,
                            GGEMSSourceRunRange const &range) -> std::string {
-  if (!(record.energy_micro_eV > 0ULL)) {
-    throw ggems::core::GGEMSInternal(
-      "The energy-aware DescribeSourceRunSlot overload is required for a "
-      "table-backed source.");
-  }
-
-  GGEMSEnergyDistributionRecord const energy_record{
-    .distribution_type =
-      ToKernelEnergyDistributionType(GGEMSEnergyDistributionType::Mono)};
-
-  return DescribeSourceRunSlot(source_index, record, range, energy_record, {});
+  return std::format("Source slot: {} | Projection primary begin: {} | {}",
+                     source_index, range.projection_primary_begin,
+                     DescribeSource(record, range.primary_count));
 }
 
 // =============================================================================

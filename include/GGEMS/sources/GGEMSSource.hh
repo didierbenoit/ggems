@@ -20,7 +20,7 @@ namespace ggems::core::sources {
 
 class GGEMSSource {
 public:
-  GGEMSSource();
+  GGEMSSource() = default;
   ~GGEMSSource() = default;
 
   GGEMSSource(GGEMSSource const &) = default;

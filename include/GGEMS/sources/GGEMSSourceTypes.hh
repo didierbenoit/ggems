@@ -5,35 +5,35 @@
 
 namespace ggems::core::sources {
 
-enum class GGEMSSourceType : std::uint32_t {
+enum class GGEMSSourceType : std::uint8_t {
   Unknown = 0U,
   Analytic = 1U,
   Voxelized = 2U,
-  PhaseSpace = 3U
+  PhaseSpace = 3U,
 };
 
-enum class GGEMSEmissionGeometryType : std::uint32_t {
+enum class GGEMSEmissionGeometryType : std::uint8_t {
   Unknown = 0U,
   Point = 1U,
   Rectangle = 2U,
   Ellipse = 3U,
   Box = 4U,
   Sphere = 5U,
-  Cylinder = 6U
+  Cylinder = 6U,
 };
 
-enum class GGEMSAngularDistributionType : std::uint32_t {
+enum class GGEMSAngularDistributionType : std::uint8_t {
   Unknown = 0U,
   Fixed = 1U,
   Isotropic = 2U,
-  Focused = 3U
+  Focused = 3U,
 };
 
-enum class GGEMSEnergyDistributionType : std::uint32_t {
+enum class GGEMSEnergyDistributionType : std::uint8_t {
   Unknown = 0U,
   Mono = 1U,
   DiscreteLines = 2U,
-  RegularSpectrum = 3U
+  RegularSpectrum = 3U,
 };
 
 [[nodiscard]] constexpr auto
@@ -43,16 +43,7 @@ ToKernelSourceType(GGEMSSourceType source_type) noexcept -> std::uint32_t {
 
 [[nodiscard]] constexpr auto
 FromKernelSourceType(std::uint32_t source_type) noexcept -> GGEMSSourceType {
-  switch (source_type) {
-  case 1U:
-    return GGEMSSourceType::Analytic;
-  case 2U:
-    return GGEMSSourceType::Voxelized;
-  case 3U:
-    return GGEMSSourceType::PhaseSpace;
-  default:
-    return GGEMSSourceType::Unknown;
-  }
+  return static_cast<GGEMSSourceType>(source_type);
 }
 
 [[nodiscard]] constexpr auto ToLongName(GGEMSSourceType source_type) noexcept
@@ -79,16 +70,7 @@ FromKernelSourceType(std::uint32_t source_type) noexcept -> GGEMSSourceType {
 [[nodiscard]] constexpr auto
 FromKernelEnergyDistributionType(std::uint32_t distribution_type) noexcept
   -> GGEMSEnergyDistributionType {
-  switch (distribution_type) {
-  case 1U:
-    return GGEMSEnergyDistributionType::Mono;
-  case 2U:
-    return GGEMSEnergyDistributionType::DiscreteLines;
-  case 3U:
-    return GGEMSEnergyDistributionType::RegularSpectrum;
-  default:
-    return GGEMSEnergyDistributionType::Unknown;
-  }
+  return static_cast<GGEMSEnergyDistributionType>(distribution_type);
 }
 
 [[nodiscard]] constexpr auto
@@ -117,22 +99,7 @@ ToKernelEmissionGeometryType(GGEMSEmissionGeometryType geometry_type) noexcept
 [[nodiscard]] constexpr auto
 FromKernelEmissionGeometryType(std::uint32_t geometry_type) noexcept
   -> GGEMSEmissionGeometryType {
-  switch (geometry_type) {
-  case 1U:
-    return GGEMSEmissionGeometryType::Point;
-  case 2U:
-    return GGEMSEmissionGeometryType::Rectangle;
-  case 3U:
-    return GGEMSEmissionGeometryType::Ellipse;
-  case 4U:
-    return GGEMSEmissionGeometryType::Box;
-  case 5U:
-    return GGEMSEmissionGeometryType::Sphere;
-  case 6U:
-    return GGEMSEmissionGeometryType::Cylinder;
-  default:
-    return GGEMSEmissionGeometryType::Unknown;
-  }
+  return static_cast<GGEMSEmissionGeometryType>(geometry_type);
 }
 
 [[nodiscard]] constexpr auto
@@ -166,16 +133,7 @@ ToLongName(GGEMSEmissionGeometryType geometry_type) noexcept
 [[nodiscard]] constexpr auto
 FromKernelAngularDistributionType(std::uint32_t distribution_type) noexcept
   -> GGEMSAngularDistributionType {
-  switch (distribution_type) {
-  case 1U:
-    return GGEMSAngularDistributionType::Fixed;
-  case 2U:
-    return GGEMSAngularDistributionType::Isotropic;
-  case 3U:
-    return GGEMSAngularDistributionType::Focused;
-  default:
-    return GGEMSAngularDistributionType::Unknown;
-  }
+  return static_cast<GGEMSAngularDistributionType>(distribution_type);
 }
 
 [[nodiscard]] constexpr auto

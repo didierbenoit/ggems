@@ -2,7 +2,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
-#include <limits>
 #include <memory>
 #include <span>
 #include <string>
@@ -23,31 +22,6 @@
 #include "GGEMS/sources/GGEMSSourcePopulationPlan.hh"
 
 namespace ggems::core::sources {
-namespace {
-
-// =============================================================================
-// =============================================================================
-
-auto CheckedAdd(std::uint64_t lhs, std::uint64_t rhs,
-                std::string const &diagnostic) -> std::uint64_t {
-  if (!(rhs <= std::numeric_limits<std::uint64_t>::max() - lhs)) {
-    throw ggems::core::GGEMSRecoverable(diagnostic);
-  }
-  return lhs + rhs;
-}
-
-// =============================================================================
-// =============================================================================
-
-auto CheckedVectorOffset(std::size_t offset, std::string const &diagnostic)
-  -> std::uint64_t {
-  if (!(std::in_range<std::uint64_t>(offset))) {
-    throw ggems::core::GGEMSRecoverable(diagnostic);
-  }
-  return static_cast<std::uint64_t>(offset);
-}
-
-} // namespace
 
 // =============================================================================
 // =============================================================================
@@ -100,15 +74,6 @@ GGEMSSourcePopulationCandidate::GGEMSSourcePopulationCandidate(
 
 // -----------------------------------------------------------------------------
 
-GGEMSSourcePopulationCandidate::GGEMSSourcePopulationCandidate(
-  GGEMSSourcePopulationCandidate &&other) noexcept
-    : owner_identity_{std::move(other.owner_identity_)},
-      base_revision_{other.base_revision_}, committed_{other.committed_},
-      plan_{std::move(other.plan_)},
-      candidate_streams_{std::move(other.candidate_streams_)} {}
-
-// -----------------------------------------------------------------------------
-
 auto GGEMSSourcePopulationCandidate::operator=(
   GGEMSSourcePopulationCandidate &&other) noexcept
   -> GGEMSSourcePopulationCandidate & {
@@ -130,23 +95,22 @@ auto GGEMSSourcePopulationCandidate::CommitTo(
   std::shared_ptr<void const> const &owner_identity,
   std::uint64_t &current_revision,
   std::vector<random::GGEMSHostRandomStream> &persistent_streams) -> void {
-  if (!(owner_identity_ == owner_identity)) {
+  if (owner_identity_ != owner_identity) {
     throw ggems::core::GGEMSRecoverable(
       "Cannot commit an emission-plan candidate from another planner.");
   }
+
   if (committed_) {
     throw ggems::core::GGEMSRecoverable(
       "Emission-plan candidate was already committed.");
   }
-  if (!(base_revision_ == current_revision)) {
+
+  if (base_revision_ != current_revision) {
     throw ggems::core::GGEMSRecoverable(
       "Emission-plan candidate is stale for the current planner revision.");
   }
-  if (!(current_revision < std::numeric_limits<std::uint64_t>::max())) {
-    throw ggems::core::GGEMSRecoverable(
-      "Emission-plan planner revision overflows uint64 storage.");
-  }
-  if (!(candidate_streams_.size() == persistent_streams.size())) {
+
+  if (candidate_streams_.size() != persistent_streams.size()) {
     throw ggems::core::GGEMSInternal(
       "Emission-plan candidate stream count does not match its planner.");
   }
@@ -167,11 +131,6 @@ GGEMSSourcePopulationPlanner::GGEMSSourcePopulationPlanner(
     throw ggems::core::GGEMSRecoverable(
       "GGEMSSourcePopulationPlanner requires at least one source slot.");
   }
-  if (!(sources.size() <=
-        static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()))) {
-    throw ggems::core::GGEMSRecoverable(
-      "Emission-plan source slot count exceeds uint32 storage.");
-  }
 
   source_slots_.reserve(sources.size());
   std::uint64_t total_stream_count{0ULL};
@@ -179,56 +138,34 @@ GGEMSSourcePopulationPlanner::GGEMSSourcePopulationPlanner(
   for (std::size_t source_index = 0U; source_index < sources.size();
        ++source_index) {
     auto const &source = sources[source_index];
-    if (!(source != nullptr)) {
+    if (source == nullptr) {
       throw ggems::core::GGEMSRecoverable(
         std::format("Emission-plan source slot {} is null.", source_index));
     }
 
-    StableSourceSlot slot{.source = source,
-                          .population_mode = source->GetPopulationMode(),
-                          .radionuclide = nullptr,
-                          .first_stream_id = total_stream_count,
-                          .emission_count = 0ULL};
+    StableSourceSlot slot{
+      .source = source,
+      .population_mode = source->GetPopulationMode(),
+      .radionuclide = nullptr,
+      .first_stream_id = total_stream_count,
+      .emission_count = 0ULL,
+    };
 
     if (slot.population_mode == GGEMSSourcePopulationMode::ActivityDriven) {
       auto const configuration =
         source->BuildActivityDrivenPopulationConfiguration();
-      if (!(configuration.radionuclide != nullptr)) {
-        throw ggems::core::GGEMSInternal(
-          "ActivityDriven source has a null radionuclide definition.");
-      }
 
       auto const emissions = configuration.radionuclide->GetEmissions();
-      if (!(emissions.size() <= static_cast<std::size_t>(
-                                  std::numeric_limits<std::uint32_t>::max()))) {
-        throw ggems::core::GGEMSRecoverable(
-          "Radionuclide emission count exceeds uint32 storage.");
-      }
-      if (!(std::in_range<std::uint64_t>(emissions.size()))) {
-        throw ggems::core::GGEMSRecoverable(
-          "Radionuclide emission count exceeds uint64 storage.");
-      }
 
       slot.radionuclide = configuration.radionuclide;
       slot.emission_count = static_cast<std::uint64_t>(emissions.size());
-      total_stream_count =
-        CheckedAdd(total_stream_count, slot.emission_count,
-                   "Host radionuclide stream count overflows uint64 storage.");
+      total_stream_count += slot.emission_count;
     }
 
     source_slots_.push_back(std::move(slot));
   }
 
-  if (!(std::in_range<std::size_t>(total_stream_count))) {
-    throw ggems::core::GGEMSRecoverable(
-      "Host radionuclide stream count exceeds host vector storage.");
-  }
   auto const stream_count = static_cast<std::size_t>(total_stream_count);
-  if (!(stream_count <= persistent_streams_.max_size())) {
-    throw ggems::core::GGEMSRecoverable(
-      "Host radionuclide stream count exceeds host vector "
-      "storage.");
-  }
 
   random::GGEMSRandom host_random = random;
   host_random.SetSeed(random.GetSeed() ^
@@ -246,13 +183,13 @@ GGEMSSourcePopulationPlanner::GGEMSSourcePopulationPlanner(
 
 auto GGEMSSourcePopulationPlanner::BuildCandidate(
   GGEMSTimeWindow time_window) const -> GGEMSSourcePopulationCandidate {
-  if (!(time_window.start_ps <= time_window.stop_ps)) {
+  if (time_window.start_ps > time_window.stop_ps) {
     throw ggems::core::GGEMSRecoverable(
       "Emission-plan time window stop precedes its start.");
   }
 
   bool const has_activity_source = !persistent_streams_.empty();
-  if (!(!has_activity_source || time_window.start_ps < time_window.stop_ps)) {
+  if (has_activity_source && time_window.start_ps == time_window.stop_ps) {
     throw ggems::core::GGEMSRecoverable(
       "ActivityDriven sources require a non-empty GGEMSRun time window.");
   }
@@ -273,11 +210,7 @@ auto GGEMSSourcePopulationPlanner::BuildCandidate(
   for (std::size_t source_index = 0U; source_index < source_slots_.size();
        ++source_index) {
     StableSourceSlot const &slot = source_slots_[source_index];
-    if (!(slot.source != nullptr)) {
-      throw ggems::core::GGEMSInternal(
-        "Stable emission-plan source slot is null.");
-    }
-    if (!(slot.source->GetPopulationMode() == slot.population_mode)) {
+    if (slot.source->GetPopulationMode() != slot.population_mode) {
       throw ggems::core::GGEMSRecoverable(
         std::format("Emission-plan source slot {} changed population mode "
                     "after planner construction.",
@@ -285,21 +218,22 @@ auto GGEMSSourcePopulationPlanner::BuildCandidate(
     }
 
     auto const source_index_u32 = static_cast<std::uint32_t>(source_index);
-    std::uint64_t const emission_begin = CheckedVectorOffset(
-      plan_emissions.size(), "Population-plan emission offset exceeds uint64.");
+
+    auto const emission_begin =
+      static_cast<std::uint64_t>(plan_emissions.size());
+
     std::uint64_t const source_primary_begin = total_primary_count;
+
     long double expected_parent_decay_count{0.0L};
 
     if (slot.population_mode == GGEMSSourcePopulationMode::CountDriven) {
       std::uint64_t const primary_count = slot.source->GetPrimaryCount();
-      total_primary_count =
-        CheckedAdd(total_primary_count, primary_count,
-                   "Emission-plan total primary count overflows uint64.");
+      total_primary_count += primary_count;
       radionuclide_definitions.push_back(nullptr);
     } else {
       auto const configuration =
         slot.source->BuildActivityDrivenPopulationConfiguration();
-      if (!(configuration.radionuclide == slot.radionuclide)) {
+      if (configuration.radionuclide != slot.radionuclide) {
         throw ggems::core::GGEMSRecoverable(
           std::format("Emission-plan source slot {} changed radionuclide "
                       "definition after planner construction.",
@@ -314,8 +248,7 @@ auto GGEMSSourcePopulationPlanner::BuildCandidate(
           configuration.reference_time_ps, time_window);
 
       auto const emissions = slot.radionuclide->GetEmissions();
-      if (!(emissions.size() ==
-            static_cast<std::size_t>(slot.emission_count))) {
+      if (emissions.size() != static_cast<std::size_t>(slot.emission_count)) {
         throw ggems::core::GGEMSInternal(
           "Stable radionuclide emission count changed.");
       }
@@ -338,54 +271,47 @@ auto GGEMSSourcePopulationPlanner::BuildCandidate(
                         source_index, emission_index));
         }
 
-        std::uint64_t const stream_id = CheckedAdd(
-          slot.first_stream_id, static_cast<std::uint64_t>(emission_index),
-          "Host radionuclide stream identifier overflows.");
-        if (!(std::in_range<std::size_t>(stream_id) &&
-              static_cast<std::size_t>(stream_id) < candidate_streams.size())) {
-          throw ggems::core::GGEMSInternal(
-            "Host radionuclide stream identifier is outside candidate state.");
-        }
+        std::uint64_t const stream_id =
+          slot.first_stream_id + static_cast<std::uint64_t>(emission_index);
         auto &stream = candidate_streams[static_cast<std::size_t>(stream_id)];
 
         std::uint64_t const sampled_primary_count =
           random::SamplePoisson(expected_emission_count, stream);
         std::uint64_t const source_local_primary_end =
-          CheckedAdd(source_local_primary_begin, sampled_primary_count,
-                     "Source-local emission range overflows uint64.");
+          source_local_primary_begin + sampled_primary_count;
         std::uint64_t const run_primary_begin = total_primary_count;
         std::uint64_t const run_primary_end =
-          CheckedAdd(run_primary_begin, sampled_primary_count,
-                     "Emission-plan total primary count overflows uint64.");
+          run_primary_begin + sampled_primary_count;
 
-        plan_emissions.push_back(
-          {.source_index = source_index_u32,
-           .emission_index = static_cast<std::uint32_t>(emission_index),
-           .host_stream_id = stream_id,
-           .yield_per_decay = yield_per_decay,
-           .expected_emission_count = expected_emission_count,
-           .sampled_primary_count = sampled_primary_count,
-           .source_local_primary_begin = source_local_primary_begin,
-           .source_local_primary_end = source_local_primary_end,
-           .run_primary_begin = run_primary_begin,
-           .run_primary_end = run_primary_end});
+        plan_emissions.push_back({
+          .source_index = source_index_u32,
+          .emission_index = static_cast<std::uint32_t>(emission_index),
+          .host_stream_id = stream_id,
+          .yield_per_decay = yield_per_decay,
+          .expected_emission_count = expected_emission_count,
+          .sampled_primary_count = sampled_primary_count,
+          .source_local_primary_begin = source_local_primary_begin,
+          .source_local_primary_end = source_local_primary_end,
+          .run_primary_begin = run_primary_begin,
+          .run_primary_end = run_primary_end,
+        });
 
         source_local_primary_begin = source_local_primary_end;
         total_primary_count = run_primary_end;
       }
     }
 
-    std::uint64_t const emission_end = CheckedVectorOffset(
-      plan_emissions.size(), "Population-plan emission offset exceeds uint64.");
+    auto const emission_end = static_cast<std::uint64_t>(plan_emissions.size());
 
-    plan_sources.push_back(
-      {.source_index = source_index_u32,
-       .population_mode = slot.population_mode,
-       .expected_parent_decay_count = expected_parent_decay_count,
-       .emission_begin = emission_begin,
-       .emission_count = emission_end - emission_begin,
-       .run_primary_begin = source_primary_begin,
-       .run_primary_end = total_primary_count});
+    plan_sources.push_back({
+      .source_index = source_index_u32,
+      .population_mode = slot.population_mode,
+      .expected_parent_decay_count = expected_parent_decay_count,
+      .emission_begin = emission_begin,
+      .emission_count = emission_end - emission_begin,
+      .run_primary_begin = source_primary_begin,
+      .run_primary_end = total_primary_count,
+    });
   }
 
   GGEMSSourcePopulationPlan plan = GGEMSSourcePopulationPlan::Create(
