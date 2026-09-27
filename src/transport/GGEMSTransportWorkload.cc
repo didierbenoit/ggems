@@ -30,7 +30,6 @@
 #include "GGEMS/transport/GGEMSTransportWorkload.hh"
 #include "GGEMS/transport/GGEMSTransportWorkloadPlan.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
-#include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/opencl/GGEMSOpenCLKernel.hh"
 #include "GGEMS/opencl/GGEMSOpenCLProfiler.hh"
 #include "GGEMS/opencl/GGEMSOpenCLSVMHostAccess.hh"
@@ -53,7 +52,6 @@ using SourcePopulationRecord =
 using SourceRecord = ggems::core::sources::GGEMSSourceRecord;
 using SourceRunRange = ggems::core::sources::GGEMSSourceRunRange;
 using TransportCounters = ggems::core::transport::GGEMSTransportCounters;
-using TransportRunConfig = ggems::core::transport::GGEMSTransportRunConfig;
 using EnergyDistributionRecord =
   ggems::core::sources::GGEMSEnergyDistributionRecord;
 
@@ -100,12 +98,6 @@ ComputeObserverRecordsSize(std::uint32_t observer_record_capacity)
   std::uint64_t const physical_entry_count =
     std::max(std::uint64_t{1U}, logical_entry_count);
 
-  if (!(physical_entry_count <=
-        std::numeric_limits<std::uint64_t>::max() / element_size)) {
-    throw ggems::core::GGEMSRecoverable(
-      "Transport array buffer size overflows uint64 storage.");
-  }
-
   return ggems::units::Bytes{physical_entry_count * element_size};
 }
 
@@ -119,38 +111,7 @@ ComputeObserverRecordsSize(std::uint32_t observer_record_capacity)
       "Transport source count must be non-zero.");
   }
 
-  if (!(std::in_range<std::uint32_t>(source_count))) {
-    throw ggems::core::GGEMSRecoverable(
-      "Transport source count exceeds uint32 storage.");
-  }
   return static_cast<std::uint32_t>(source_count);
-}
-
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] auto CheckedEmissionCount(std::size_t emission_count)
-  -> std::uint32_t {
-  if (!(std::in_range<std::uint32_t>(emission_count))) {
-    throw ggems::core::GGEMSRecoverable(
-      "Transport emission count exceeds uint32 storage.");
-  }
-  return static_cast<std::uint32_t>(emission_count);
-}
-
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] auto CheckedEnergyDistributionRecordCount(
-  ggems::core::sources::GGEMSSourceConfigurationSnapshot const
-    &source_configuration) -> std::uint64_t {
-  if (!(std::in_range<std::uint64_t>(
-        source_configuration.GetEnergyDistributionRecords().size()))) {
-    throw ggems::core::GGEMSRecoverable(
-      "Transport energy-distribution record count exceeds uint64 storage.");
-  }
-  return static_cast<std::uint64_t>(
-    source_configuration.GetEnergyDistributionRecords().size());
 }
 
 // =============================================================================
@@ -163,11 +124,6 @@ ComputeObserverRecordsSize(std::uint32_t observer_record_capacity)
         source_configuration.GetCumulativeTicketUpperBounds().size())) {
     throw ggems::core::GGEMSInternal("Transport source configuration energy "
                                      "and ticket counts do not match.");
-  }
-  if (!(std::in_range<std::uint64_t>(
-        source_configuration.GetEnergyValuesMicroElectronVolt().size()))) {
-    throw ggems::core::GGEMSRecoverable(
-      "Transport energy table entry count exceeds uint64 storage.");
   }
 
   return static_cast<std::uint64_t>(
@@ -214,14 +170,17 @@ ComputeObserverSafeLaunchPrimaryCount(std::uint32_t transport_limit,
   return requested_limit;
 }
 
+} // namespace
+
+namespace ggems::core::transport {
+
 // =============================================================================
 // =============================================================================
 
-auto ValidateRunConfigImpl(TransportRunConfig const &config,
-                           std::uint32_t stable_source_count,
-                           std::uint32_t stable_emission_count,
-                           std::uint32_t worker_count,
-                           std::uint32_t launch_primary_count_limit) -> void {
+auto ValidateTransportRunConfig(GGEMSTransportRunConfig const &config,
+                                std::uint32_t stable_source_count,
+                                std::uint32_t stable_emission_count,
+                                std::uint32_t, std::uint32_t) -> void {
   if (!(config.total_primary_count > 0U)) {
     throw ggems::core::GGEMSRecoverable(
       "Transport primary count must be non-zero.");
@@ -238,17 +197,6 @@ auto ValidateRunConfigImpl(TransportRunConfig const &config,
         static_cast<std::size_t>(stable_source_count))) {
     throw ggems::core::GGEMSRecoverable(
       "Transport source arrays do not match the stable source count.");
-  }
-
-  std::uint32_t const safe_atomic_primary_count =
-    ggems::core::transport::ComputeSafeTransportLaunchPrimaryCount(
-      worker_count);
-
-  if (!(launch_primary_count_limit > 0U &&
-        launch_primary_count_limit <= safe_atomic_primary_count)) {
-    throw ggems::core::GGEMSRecoverable(
-      "Transport launch-primary limit exceeds the safe uint32 atomic stream "
-      "capacity.");
   }
 
   if (!(config.source_emission_ranges.size() ==
@@ -277,12 +225,6 @@ auto ValidateRunConfigImpl(TransportRunConfig const &config,
         range.projection_primary_begin, projection_primary_count));
     }
 
-    if (!(range.primary_count <= std::numeric_limits<std::uint64_t>::max() -
-                                   projection_primary_count)) {
-      throw ggems::core::GGEMSRecoverable(std::format(
-        "Transport source range {} overflows uint64.", source_index));
-    }
-
     projection_primary_count += range.primary_count;
 
     std::uint32_t const count_driven_mode =
@@ -293,28 +235,12 @@ auto ValidateRunConfigImpl(TransportRunConfig const &config,
         ggems::core::sources::GGEMSSourcePopulationMode::ActivityDriven);
 
     if (population.population_mode == count_driven_mode) {
-      if (!(population.first_emission_index == 0U &&
-            population.emission_count == 0U &&
-            population.scaled_decay == 0.0F)) {
-        throw ggems::core::GGEMSRecoverable(
-          std::format("CountDriven source population record {} is not "
-                      "canonical.",
-                      source_index));
-      }
       continue;
     }
 
     if (!(population.population_mode == activity_driven_mode)) {
       throw ggems::core::GGEMSRecoverable(std::format(
         "Source population record {} has an unknown mode.", source_index));
-    }
-
-    if (!(std::isfinite(population.scaled_decay) &&
-          population.scaled_decay >= 0.0F)) {
-      throw ggems::core::GGEMSRecoverable(
-        std::format("ActivityDriven source population record {} has invalid "
-                    "scaled decay.",
-                    source_index));
     }
 
     if (!(population.first_emission_index == next_emission_index)) {
@@ -348,12 +274,6 @@ auto ValidateRunConfigImpl(TransportRunConfig const &config,
                       source_local_primary_count));
       }
 
-      if (!(emission_range.primary_count <=
-            std::numeric_limits<std::uint64_t>::max() -
-              source_local_primary_count)) {
-        throw ggems::core::GGEMSRecoverable(std::format(
-          "Source emission range {} overflows uint64.", emission_index));
-      }
       source_local_primary_count += emission_range.primary_count;
     }
 
@@ -373,13 +293,6 @@ auto ValidateRunConfigImpl(TransportRunConfig const &config,
 
   std::uint64_t const workload_primary_count = config.total_primary_count;
 
-  if (!(config.device_primary_offset <=
-        std::numeric_limits<std::uint64_t>::max() -
-          (workload_primary_count - 1ULL))) {
-    throw ggems::core::GGEMSRecoverable(
-      "Transport workload projection-primary interval overflows uint64.");
-  }
-
   std::uint64_t const last_projection_primary_id =
     config.device_primary_offset + workload_primary_count - 1ULL;
 
@@ -387,29 +300,6 @@ auto ValidateRunConfigImpl(TransportRunConfig const &config,
     throw ggems::core::GGEMSRecoverable(
       "Transport workload primary interval is outside the source ranges.");
   }
-
-  if (!(config.projection_history_offset <=
-        std::numeric_limits<std::uint64_t>::max() -
-          last_projection_primary_id)) {
-    throw ggems::core::GGEMSRecoverable(
-      "Transport workload global-primary interval overflows uint64.");
-  }
-}
-} // namespace
-
-namespace ggems::core::transport {
-
-// =============================================================================
-// =============================================================================
-
-auto ValidateTransportRunConfig(GGEMSTransportRunConfig const &config,
-                                std::uint32_t stable_source_count,
-                                std::uint32_t stable_emission_count,
-                                std::uint32_t worker_count,
-                                std::uint32_t launch_primary_count_limit)
-  -> void {
-  ValidateRunConfigImpl(config, stable_source_count, stable_emission_count,
-                        worker_count, launch_primary_count_limit);
 }
 
 // =============================================================================
@@ -422,14 +312,10 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   std::uint64_t random_stream_offset, std::uint32_t context_index,
   std::uint32_t observer_record_capacity,
   std::uint32_t launch_primary_count_limit)
-    : context_{&context}, kernel_root_{std::move(kernel_root)},
-      random_{&random},
-      random_kernel_build_definition_{random.GetKernelBuildDefinition()},
-      worker_count_{worker_count},
+    : context_{&context}, worker_count_{worker_count},
       source_count_{CheckedSourceCount(source_configuration.GetSourceCount())},
       emission_count_{
-        CheckedEmissionCount(source_configuration.GetEmissionCount())},
-      random_stream_offset_{random_stream_offset},
+        static_cast<std::uint32_t>(source_configuration.GetEmissionCount())},
       context_index_{context_index},
       device_name_{context.GetDevice().GetName()},
       observer_record_capacity_{observer_record_capacity},
@@ -452,7 +338,8 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
         ComputeArrayBufferSize(emission_count_, sizeof(SourceEmissionRange)))},
       energy_distribution_records_buffer_{
         context.CreateSVMBuffer(ComputeArrayBufferSize(
-          CheckedEnergyDistributionRecordCount(source_configuration),
+          static_cast<std::uint64_t>(
+            source_configuration.GetEnergyDistributionRecords().size()),
           sizeof(EnergyDistributionRecord)))},
       energy_values_buffer_{context.CreateSVMBuffer(ComputeArrayBufferSize(
         CheckedEnergyTableEntryCount(source_configuration),
@@ -468,12 +355,11 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
       observer_records_buffer_{context.CreateSVMBuffer(
         ComputeObserverRecordsSize(observer_record_capacity))} {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-  std::filesystem::path const kernel_transport_root =
-    kernel_root_ / "transport";
-  std::string const build_options =
-    std::format("-I{} {} "
-                "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
-                kernel_root_.generic_string(), random_kernel_build_definition_);
+  std::filesystem::path const kernel_transport_root = kernel_root / "transport";
+  std::string const build_options = std::format(
+    "-I{} {} "
+    "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
+    kernel_root.generic_string(), random.GetKernelBuildDefinition());
   auto &program =
     opencl.GetOrCreateProgram(*context_, kernel_transport_root,
                               "particle_stream_transport", build_options);
@@ -481,7 +367,6 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   kernel_ = std::make_unique<ggems::ocl::GGEMSOpenCLKernel>(
     *context_, std::move(raw_kernel), "particle_stream_transport");
 
-  constexpr cl_uint k_expected_argument_count{20U};
   cl_uint argument_index{0U};
   kernel_->SetArgSVMPointer(argument_index++, random_states_buffer_.GetData());
   kernel_->SetArgSVMPointer(argument_index++, counters_buffer_.GetData());
@@ -511,10 +396,6 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
                             source_emission_records_buffer_.GetData());
   kernel_->SetArgSVMPointer(argument_index++,
                             source_emission_ranges_buffer_.GetData());
-  if (!(argument_index == k_expected_argument_count)) {
-    throw ggems::core::GGEMSInternal(
-      "Transport kernel argument count is inconsistent.");
-  }
 
   auto const &source_emission_records =
     source_configuration.GetEmissionRecords();
@@ -524,17 +405,6 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
     source_configuration.GetEnergyValuesMicroElectronVolt();
   auto const &cumulative_ticket_upper =
     source_configuration.GetCumulativeTicketUpperBounds();
-
-  if (!(source_emission_records.size() == emission_count_)) {
-    throw ggems::core::GGEMSInternal(
-      "Transport immutable source emission count is inconsistent.");
-  }
-
-  if (!(energy_distribution_records.size() >= source_count_)) {
-    throw ggems::core::GGEMSInternal(
-      "Transport immutable energy configuration lacks source-indexed "
-      "records.");
-  }
 
   if (source_emission_records.empty()) {
     ggems::ocl::WriteSVMFromHost(source_emission_records_buffer_,
@@ -564,7 +434,7 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
       std::span<std::uint64_t const>{cumulative_ticket_upper});
   }
 
-  InitializeRandomStatesInSVM();
+  InitializeRandomStatesInSVM(random, random_stream_offset);
   ResetCountersInSVM();
   ResetObserverCountersInSVM();
   ggems::ocl::FillSVMFromHost(observer_records_buffer_,
@@ -581,21 +451,18 @@ auto GGEMSTransportWorkload::ValidateRunConfig(
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSTransportWorkload::InitializeRandomStatesInSVM() -> void {
+auto GGEMSTransportWorkload::InitializeRandomStatesInSVM(
+  random::GGEMSRandom const &random, std::uint64_t random_stream_offset)
+  -> void {
   std::uint64_t const state_bytes = random_states_buffer_.GetSize().value;
-
-  if (!(state_bytes <= std::numeric_limits<std::size_t>::max())) {
-    throw ggems::core::GGEMSInternal(
-      "Random state buffer size exceeds host addressable storage.");
-  }
 
   auto *state_storage =
     static_cast<std::byte *>(random_states_buffer_.GetData());
 
   random_states_buffer_.Map(CL_MAP_WRITE);
 
-  random_->InitializeStates(
-    random_stream_offset_,
+  random.InitializeStates(
+    random_stream_offset,
     std::span<std::byte>{state_storage, static_cast<std::size_t>(state_bytes)});
 
   random_states_buffer_.Unmap();
@@ -656,8 +523,6 @@ auto GGEMSTransportWorkload::ReadObserverRecordsFromSVM(
 
 auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
   -> GGEMSTransportRunReport {
-  ValidateRunConfig(config);
-
   ggems::ocl::WriteSVMFromHost(
     source_records_buffer_,
     std::span<SourceRecord const>{config.source_records});
@@ -678,9 +543,6 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
 
   WriteObserverConfigToSVM(config.observer_config);
 
-  if (!(kernel_ != nullptr)) {
-    throw ggems::core::GGEMSInternal("Transport kernel is not initialized.");
-  }
   kernel_->SetArg(6U, static_cast<cl_ulong>(config.projection_history_offset));
   kernel_->SetArg(12U, static_cast<cl_ulong>(config.run_id));
 
@@ -698,14 +560,6 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
   report.context_index = context_index_;
   report.device_name = device_name_;
   report.observer_records.reserve(observer_record_capacity_);
-
-  auto checked_add = [](std::uint64_t &destination, std::uint64_t value,
-                        char const *diagnostic) -> void {
-    if (!(value <= std::numeric_limits<std::uint64_t>::max() - destination)) {
-      throw ggems::core::GGEMSInternal(diagnostic);
-    }
-    destination += value;
-  };
 
   std::uint32_t const logical_launch_primary_count_limit =
     ComputeObserverSafeLaunchPrimaryCount(launch_primary_count_limit_,
@@ -743,44 +597,25 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
       throw ggems::core::GGEMSInternal(
         "Transport chunk primary cursor stopped before its assigned range.");
     }
-    checked_add(report.counters.next_primary_id, chunk.primary_count,
-                "Logical next-primary total overflows uint64.");
-    checked_add(report.counters.consumed_primary_count,
-                counters.consumed_primary_count,
-                "Logical consumed-primary total overflows uint64.");
-    checked_add(report.counters.completed_history_count,
-                counters.completed_history_count,
-                "Logical completed-history total overflows uint64.");
-    checked_add(report.counters.terminal_particle_count,
-                counters.terminal_particle_count,
-                "Logical terminal-particle total overflows uint64.");
-    checked_add(report.counters.created_secondary_count,
-                counters.created_secondary_count,
-                "Logical created-secondary total overflows uint64.");
-    checked_add(report.counters.aionino_to_gamma_count,
-                counters.aionino_to_gamma_count,
-                "Logical Aionino-to-gamma total overflows uint64.");
-    checked_add(report.counters.gamma_to_electron_count,
-                counters.gamma_to_electron_count,
-                "Logical gamma-to-electron total overflows uint64.");
-    checked_add(report.counters.electron_to_electron_count,
-                counters.electron_to_electron_count,
-                "Logical electron-to-electron total overflows uint64.");
-    checked_add(report.counters.overflow_count, counters.overflow_count,
-                "Logical transport-overflow total overflows uint64.");
-    checked_add(report.counters.total_fake_step_count,
-                counters.total_fake_step_count,
-                "Logical fake-step total overflows uint64.");
+    report.counters.next_primary_id += chunk.primary_count;
+    report.counters.consumed_primary_count += counters.consumed_primary_count;
+    report.counters.completed_history_count += counters.completed_history_count;
+    report.counters.terminal_particle_count += counters.terminal_particle_count;
+    report.counters.created_secondary_count += counters.created_secondary_count;
+    report.counters.aionino_to_gamma_count += counters.aionino_to_gamma_count;
+    report.counters.gamma_to_electron_count += counters.gamma_to_electron_count;
+    report.counters.electron_to_electron_count +=
+      counters.electron_to_electron_count;
+    report.counters.overflow_count += counters.overflow_count;
+    report.counters.total_fake_step_count += counters.total_fake_step_count;
     report.counters.max_stack_depth =
       std::max(report.counters.max_stack_depth,
                static_cast<std::uint64_t>(counters.max_stack_depth));
 
-    checked_add(report.logical_observer_counters.captured_primary_count,
-                observer_counters.captured_primary_count,
-                "Logical captured-primary total overflows uint64.");
-    checked_add(report.logical_observer_counters.overflow_count,
-                observer_counters.overflow_count,
-                "Logical observer-overflow total overflows uint64.");
+    report.logical_observer_counters.captured_primary_count +=
+      observer_counters.captured_primary_count;
+    report.logical_observer_counters.overflow_count +=
+      observer_counters.overflow_count;
 
     if (!(observer_records.size() <= remaining_observer_capacity)) {
       throw ggems::core::GGEMSInternal(
@@ -790,12 +625,9 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
                                    observer_records.begin(),
                                    observer_records.end());
 
-    checked_add(report.host_time.value, profiler.GetElapsedTime().value,
-                "Logical host time overflows uint64 picoseconds.");
-    checked_add(report.kernel_time.value, profiler.GetKernelTime().value,
-                "Logical kernel time overflows uint64 picoseconds.");
-    checked_add(report.command_time.value, profiler.GetCommandTime().value,
-                "Logical command time overflows uint64 picoseconds.");
+    report.host_time.value += profiler.GetElapsedTime().value;
+    report.kernel_time.value += profiler.GetKernelTime().value;
+    report.command_time.value += profiler.GetCommandTime().value;
   }
 
   report.logical_observer_counters.record_count =
@@ -816,10 +648,8 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
       return 0.0;
     }
 
-    auto const seconds = ggems::units::ConvertTo(duration, "s");
-    return seconds.has_value() && *seconds > 0.0L
-             ? static_cast<double>(count) / static_cast<double>(*seconds)
-             : 0.0;
+    auto const seconds = *ggems::units::ConvertTo(duration, "s");
+    return static_cast<double>(count) / static_cast<double>(seconds);
   };
 
   report.host_histories_per_second =

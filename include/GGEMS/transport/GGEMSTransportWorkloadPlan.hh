@@ -38,7 +38,7 @@ private:
 };
 
 [[nodiscard]] auto
-ComputeSafeTransportLaunchPrimaryCount(std::uint32_t worker_count)
+ComputeSafeTransportLaunchPrimaryCount(std::uint32_t worker_count) noexcept
   -> std::uint32_t;
 
 [[nodiscard]] auto BuildEqualTransportWorkloadPlan(

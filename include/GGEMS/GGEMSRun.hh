@@ -2,7 +2,6 @@
 
 #include <atomic>
 #include <cstdint>
-#include <thread>
 #include <vector>
 #include <memory>
 #include <mutex>
@@ -38,8 +37,8 @@ public:
   auto operator=(GGEMSRun const &) -> GGEMSRun & = delete;
   auto operator=(GGEMSRun &&) -> GGEMSRun & = delete;
 
-  void Initialize();
-  void Run();
+  auto Initialize() -> void;
+  auto Run() -> void;
 
   auto SetTimePicoSecond(std::uint64_t start_ps, std::uint64_t stop_ps,
                          std::uint64_t step_ps) -> void;
@@ -55,12 +54,12 @@ public:
     -> std::optional<sources::GGEMSSourceRunSnapshot>;
   [[nodiscard]] auto HasObserver() const noexcept -> bool;
 
-  void SetRandom(std::shared_ptr<random::GGEMSRandom> random);
-  void AddSource(std::shared_ptr<sources::GGEMSSource> source);
-  void SetObserver(std::shared_ptr<observer::GGEMSTransportObserver> observer);
+  auto SetRandom(std::shared_ptr<random::GGEMSRandom> random) -> void;
+  auto AddSource(std::shared_ptr<sources::GGEMSSource> source) -> void;
+  auto SetObserver(std::shared_ptr<observer::GGEMSTransportObserver> observer)
+    -> void;
 
 private:
-  std::vector<std::thread> workers_;
   std::atomic<bool> running_{false};
 
   std::shared_ptr<random::GGEMSRandom> random_{nullptr};

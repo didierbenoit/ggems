@@ -32,7 +32,7 @@ namespace ggems::core::transport {
 
 struct GGEMSTransportRunConfig {
   std::uint64_t run_id{0ULL};
-  std::uint64_t total_primary_count{4096ULL};
+  std::uint64_t total_primary_count{0ULL};
   std::uint64_t projection_history_offset{0ULL};
   std::uint64_t device_primary_offset{0ULL};
   std::vector<sources::GGEMSSourceRecord> source_records;
@@ -104,6 +104,7 @@ public:
   auto operator=(GGEMSTransportWorkload &&)
     -> GGEMSTransportWorkload & = delete;
 
+  // Call ValidateRunConfig before executing a new configuration.
   auto Run(GGEMSTransportRunConfig const &config) -> GGEMSTransportRunReport;
 
   auto ValidateRunConfig(GGEMSTransportRunConfig const &config) const -> void;
@@ -121,21 +122,18 @@ public:
   }
 
 private:
-  auto InitializeRandomStatesInSVM() -> void;
+  auto InitializeRandomStatesInSVM(random::GGEMSRandom const &random,
+                                   std::uint64_t random_stream_offset) -> void;
   auto ResetCountersInSVM() -> void;
   auto ResetObserverCountersInSVM() -> void;
   auto WriteObserverConfigToSVM(
     observer::GGEMSObserverConfigRecord const &observer_config) -> void;
 
   ggems::ocl::GGEMSOpenCLContext *context_{nullptr};
-  std::filesystem::path kernel_root_{};
-  random::GGEMSRandom const *random_{nullptr};
-  std::string random_kernel_build_definition_;
 
   std::uint32_t worker_count_{0U};
   std::uint32_t source_count_{0U};
   std::uint32_t emission_count_{0U};
-  std::uint64_t random_stream_offset_{0ULL};
   std::uint32_t context_index_{0U};
   std::string device_name_;
   std::uint32_t observer_record_capacity_{1U};
