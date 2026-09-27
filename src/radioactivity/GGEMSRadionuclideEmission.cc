@@ -41,14 +41,11 @@ GGEMSRadionuclideEmission::GGEMSRadionuclideEmission(
   sources::GGEMSEnergyDistribution energy_distribution)
     : particle_type_{particle_type}, yield_per_decay_{yield_per_decay},
       energy_distribution_{std::move(energy_distribution)} {
-  if (!(IsPhysicalParticleType(particle_type_))) {
+  if (!IsPhysicalParticleType(particle_type_)) {
     throw ggems::core::GGEMSRecoverable(
       "Radionuclide emission particle type must be a physical particle.");
   }
-  if (!(std::isfinite(yield_per_decay_))) {
-    throw ggems::core::GGEMSRecoverable(
-      "Radionuclide emission yield must be finite.");
-  }
+
   if (!(yield_per_decay_ > 0.0L)) {
     throw ggems::core::GGEMSRecoverable(
       "Radionuclide emission yield must be strictly positive.");

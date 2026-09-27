@@ -6,19 +6,14 @@
 
 namespace ggems::core::radioactivity {
 
-inline constexpr float k_radioactive_time_uniform_limit_scaled_decay{
-  0x1.0p-14F};
-
-inline constexpr float k_radioactive_time_series_limit_scaled_decay{0.01F};
-
 [[nodiscard]] inline auto
 ComputeRadioactiveTimeRelative(float uniform, float scaled_decay) noexcept
   -> float {
-  if (scaled_decay <= k_radioactive_time_uniform_limit_scaled_decay) {
+  if (scaled_decay <= 0x1.0p-14F) {
     return uniform;
   }
 
-  if (scaled_decay <= k_radioactive_time_series_limit_scaled_decay) {
+  if (scaled_decay <= 0.01F) {
     float const uu = uniform * (uniform - 1.0F);
 
     return uniform + (0.5F * scaled_decay * uu) +
@@ -32,13 +27,11 @@ ComputeRadioactiveTimeRelative(float uniform, float scaled_decay) noexcept
 
 [[nodiscard]] inline auto
 QuantizeRadioactiveTimeRelative(float relative) noexcept -> std::uint32_t {
-  constexpr double k_ticket_scale{4'294'967'296.0};
-
   if (!(relative > 0.0F)) {
     return 0U;
   }
 
-  double const scaled_ticket = static_cast<double>(relative) * k_ticket_scale;
+  double const scaled_ticket = static_cast<double>(relative) * 4'294'967'296.0;
 
   if (scaled_ticket >=
       static_cast<double>(std::numeric_limits<std::uint32_t>::max())) {
@@ -71,11 +64,8 @@ SampleRadioactiveTimeFromRaw(std::uint64_t time_start_ps,
   float const relative = ComputeRadioactiveTimeRelative(uniform, scaled_decay);
   std::uint32_t const ticket = QuantizeRadioactiveTimeRelative(relative);
   std::uint64_t const window_width_ps = time_stop_ps - time_start_ps;
-  std::uint64_t offset_ps = ScaleRadioactiveTimeTicket(window_width_ps, ticket);
-
-  if (offset_ps >= window_width_ps) {
-    offset_ps = window_width_ps - 1ULL;
-  }
+  std::uint64_t const offset_ps =
+    ScaleRadioactiveTimeTicket(window_width_ps, ticket);
 
   return time_start_ps + offset_ps;
 }

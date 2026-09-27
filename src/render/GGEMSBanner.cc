@@ -33,12 +33,10 @@
 #include <string_view>
 #include <utility>
 #include <vector>
-#include <cstddef>
 /// \endcond
 
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
-#include "GGEMS/render/GGEMSColor.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/render/GGEMSVisualLine.hh"
 
@@ -48,14 +46,9 @@ namespace {
 // =============================================================================
 
 /*!
- * \brief Number of text rows in each banner snapshot.
- */
-constexpr std::size_t number_lines = 17U;
-
-/*!
  * \brief Fixed-size view of all text rows forming one banner variant.
  */
-using BannerSnapshot = std::array<std::u32string_view, number_lines>;
+using BannerSnapshot = std::array<std::u32string_view, 17U>;
 
 // =============================================================================
 // =============================================================================
@@ -63,25 +56,27 @@ using BannerSnapshot = std::array<std::u32string_view, number_lines>;
 /*!
  * \brief ASCII-only GGEMS banner used when ASCII output is selected.
  */
-constexpr BannerSnapshot ascii_banner{{
-  U"+****************************************************+",
-  U"*                                                    *",
-  U"*    ######   ######  ####### ###    ### #######     *",
-  U"*   ##       ##       ##      ####  #### ##          *",
-  U"*   ##   ### ##   ### #####   ## #### ## #######     *",
-  U"*   ##    ## ##    ## ##      ##  ##  ##      ##     *",
-  U"*    ######   ######  ####### ##      ## #######     *",
-  U"*   ******** ******** ******* ********** *******     *",
-  U"*                                                    *",
-  U"+----------------------------------------------------+",
-  U"*                                                    *",
-  U"*      GPU Geant4-based Monte Carlo Simulations      *",
-  U"*    Version 2.0 . GGEMS Team . https://ggems.fr     *",
-  U"*       Authors: Julien Bert & Didier Benoit         *",
-  U"*   Copyright (C) 2026 Licensed under GNU GPL v3.0   *",
-  U"*                                                    *",
-  U"+****************************************************+",
-}};
+constexpr BannerSnapshot ascii_banner{
+  {
+    U"+****************************************************+",
+    U"*                                                    *",
+    U"*    ######   ######  ####### ###    ### #######     *",
+    U"*   ##       ##       ##      ####  #### ##          *",
+    U"*   ##   ### ##   ### #####   ## #### ## #######     *",
+    U"*   ##    ## ##    ## ##      ##  ##  ##      ##     *",
+    U"*    ######   ######  ####### ##      ## #######     *",
+    U"*   ******** ******** ******* ********** *******     *",
+    U"*                                                    *",
+    U"+----------------------------------------------------+",
+    U"*                                                    *",
+    U"*      GPU Geant4-based Monte Carlo Simulations      *",
+    U"*    Version 2.0 . GGEMS Team . https://ggems.fr     *",
+    U"*       Authors: Julien Bert & Didier Benoit         *",
+    U"*   Copyright (C) 2026 Licensed under GNU GPL v3.0   *",
+    U"*                                                    *",
+    U"+****************************************************+",
+  },
+};
 
 // =============================================================================
 // =============================================================================
@@ -89,33 +84,27 @@ constexpr BannerSnapshot ascii_banner{{
 /*!
  * \brief Unicode GGEMS banner used when Unicode output is selected.
  */
-constexpr BannerSnapshot unicode_banner{{
-  U"╔════════════════════════════════════════════════════╗",
-  U"║                                                    ║",
-  U"║    ██████╗  ██████╗ ███████╗███╗   ███╗███████╗    ║",
-  U"║   ██╔════╝ ██╔════╝ ██╔════╝████╗ ████║██╔════╝    ║",
-  U"║   ██║  ███╗██║  ███╗█████╗  ██╔████╔██║███████╗    ║",
-  U"║   ██║   ██║██║   ██║██╔══╝  ██║╚██╔╝██║╚════██║    ║",
-  U"║   ╚██████╔╝╚██████╔╝███████╗██║ ╚═╝ ██║███████║    ║",
-  U"║    ╚═════╝  ╚═════╝ ╚══════╝╚═╝     ╚═╝╚══════╝    ║",
-  U"║                                                    ║",
-  U"╟────────────────────────────────────────────────────╢",
-  U"║                                                    ║",
-  U"║      GPU Geant4-based Monte Carlo Simulations      ║",
-  U"║    Version 2.0 • GGEMS Team • https://ggems.fr     ║",
-  U"║       Authors: Julien Bert & Didier Benoit         ║",
-  U"║   Copyright (C) 2026 Licensed under GNU GPL v3.0   ║",
-  U"║                                                    ║",
-  U"╚════════════════════════════════════════════════════╝",
-}};
-
-// =============================================================================
-// =============================================================================
-
-/*!
- * \brief Color applied to every segment of the GGEMS banner.
- */
-constexpr ggems::render::ColorKey banner_color = ggems::render::GREEN_Neon;
+constexpr BannerSnapshot unicode_banner{
+  {
+    U"╔════════════════════════════════════════════════════╗",
+    U"║                                                    ║",
+    U"║    ██████╗  ██████╗ ███████╗███╗   ███╗███████╗    ║",
+    U"║   ██╔════╝ ██╔════╝ ██╔════╝████╗ ████║██╔════╝    ║",
+    U"║   ██║  ███╗██║  ███╗█████╗  ██╔████╔██║███████╗    ║",
+    U"║   ██║   ██║██║   ██║██╔══╝  ██║╚██╔╝██║╚════██║    ║",
+    U"║   ╚██████╔╝╚██████╔╝███████╗██║ ╚═╝ ██║███████║    ║",
+    U"║    ╚═════╝  ╚═════╝ ╚══════╝╚═╝     ╚═╝╚══════╝    ║",
+    U"║                                                    ║",
+    U"╟────────────────────────────────────────────────────╢",
+    U"║                                                    ║",
+    U"║      GPU Geant4-based Monte Carlo Simulations      ║",
+    U"║    Version 2.0 • GGEMS Team • https://ggems.fr     ║",
+    U"║       Authors: Julien Bert & Didier Benoit         ║",
+    U"║   Copyright (C) 2026 Licensed under GNU GPL v3.0   ║",
+    U"║                                                    ║",
+    U"╚════════════════════════════════════════════════════╝",
+  },
+};
 
 // =============================================================================
 // =============================================================================
@@ -150,7 +139,7 @@ auto BuildBannerLines() -> std::vector<WrappedLine> {
   for (auto const text : snapshot) {
     WrappedLine line;
     line.segments.push_back(
-      {.text = std::u32string{text}, .color = banner_color});
+      {.text = std::u32string{text}, .color = GREEN_Neon});
     lines.push_back(std::move(line));
   }
 

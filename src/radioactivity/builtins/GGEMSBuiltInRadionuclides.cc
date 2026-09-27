@@ -38,24 +38,22 @@ struct BuiltInEntry {
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<BuiltInEntry, 14U> k_builtin_entries{
-  {
-    {.canonical_name = "H-3", .builder = BuildH3Radionuclide},
-    {.canonical_name = "C-14", .builder = BuildC14Radionuclide},
-    {.canonical_name = "F-18", .builder = BuildF18Radionuclide},
-    {.canonical_name = "C-11", .builder = BuildC11Radionuclide},
-    {.canonical_name = "O-15", .builder = BuildO15Radionuclide},
-    {.canonical_name = "Ga-68", .builder = BuildGa68Radionuclide},
-    {.canonical_name = "Co-60", .builder = BuildCo60Radionuclide},
-    {.canonical_name = "Lu-177", .builder = BuildLu177Radionuclide},
-    {.canonical_name = "I-123", .builder = BuildI123Radionuclide},
-    {.canonical_name = "I-124", .builder = BuildI124Radionuclide},
-    {.canonical_name = "I-125", .builder = BuildI125Radionuclide},
-    {.canonical_name = "I-131", .builder = BuildI131Radionuclide},
-    {.canonical_name = "Am-241", .builder = BuildAm241Radionuclide},
-    {.canonical_name = "Tc-99m", .builder = BuildTc99mRadionuclide},
-  },
-};
+constexpr auto k_builtin_entries = std::to_array<BuiltInEntry>({
+  {.canonical_name = "H-3", .builder = BuildH3Radionuclide},
+  {.canonical_name = "C-14", .builder = BuildC14Radionuclide},
+  {.canonical_name = "F-18", .builder = BuildF18Radionuclide},
+  {.canonical_name = "C-11", .builder = BuildC11Radionuclide},
+  {.canonical_name = "O-15", .builder = BuildO15Radionuclide},
+  {.canonical_name = "Ga-68", .builder = BuildGa68Radionuclide},
+  {.canonical_name = "Co-60", .builder = BuildCo60Radionuclide},
+  {.canonical_name = "Lu-177", .builder = BuildLu177Radionuclide},
+  {.canonical_name = "I-123", .builder = BuildI123Radionuclide},
+  {.canonical_name = "I-124", .builder = BuildI124Radionuclide},
+  {.canonical_name = "I-125", .builder = BuildI125Radionuclide},
+  {.canonical_name = "I-131", .builder = BuildI131Radionuclide},
+  {.canonical_name = "Am-241", .builder = BuildAm241Radionuclide},
+  {.canonical_name = "Tc-99m", .builder = BuildTc99mRadionuclide},
+});
 
 // =============================================================================
 // =============================================================================
@@ -63,9 +61,11 @@ constexpr std::array<BuiltInEntry, 14U> k_builtin_entries{
 [[nodiscard]] consteval auto BuildAvailableRadionuclideNames()
   -> std::array<std::string_view, k_builtin_entries.size()> {
   std::array<std::string_view, k_builtin_entries.size()> names{};
+
   for (std::size_t index = 0U; index < k_builtin_entries.size(); ++index) {
     names[index] = k_builtin_entries[index].canonical_name;
   }
+
   return names;
 }
 
@@ -91,11 +91,6 @@ DescribeEnergyDistribution(sources::GGEMSEnergyDistribution const &distribution)
   }
 
   auto const energies = distribution.GetEnergyValuesMicroElectronVolt();
-
-  if (energies.empty()) {
-    throw ggems::core::GGEMSInternal(
-      "Built-in radionuclide table-backed energy distribution is empty.");
-  }
 
   if (type == sources::GGEMSEnergyDistributionType::DiscreteLines) {
     auto const weights = distribution.GetRelativeWeights();
@@ -144,7 +139,7 @@ DescribeEnergyDistribution(sources::GGEMSEnergyDistribution const &distribution)
   return std::format(
     "    [{}] {} | yield {:.8g} | {}", index,
     particles::ToLongName(emission.GetParticleType()),
-    static_cast<double>(emission.GetYieldPerDecay()),
+    emission.GetYieldPerDecay(),
     DescribeEnergyDistribution(emission.GetEnergyDistribution()));
 }
 
@@ -180,21 +175,20 @@ DescribeBuiltInRadionuclide(GGEMSRadionuclideDefinition const &definition)
   -> std::string {
   auto const emissions = definition.GetEmissions();
 
-  std::string description = std::format(
-    "{}\n"
-    "  Half-life      : {:.8g} s\n"
-    "  Emissions      : {}\n",
-    definition.GetCanonicalName(),
-    static_cast<double>(definition.GetHalfLifeSeconds()), emissions.size());
+  std::string description =
+    std::format("{}\n"
+                "  Half-life      : {:.8g} s\n"
+                "  Emissions      : {}\n",
+                definition.GetCanonicalName(), definition.GetHalfLifeSeconds(),
+                emissions.size());
 
   for (std::size_t index = 0U; index < emissions.size(); ++index) {
     description += DescribeEmission(index, emissions[index]);
     description.push_back('\n');
   }
 
-  description +=
-    std::format("  Total yield    : {:.8g} particles/decay",
-                static_cast<double>(definition.GetTotalYieldPerDecay()));
+  description += std::format("  Total yield    : {:.8g} particles/decay",
+                             definition.GetTotalYieldPerDecay());
 
   return description;
 }

@@ -32,6 +32,7 @@ struct GGEMSParticleTraceSegment {
 
   core::observer::GGEMSObserverRecordKind begin_kind{
     core::observer::GGEMSObserverRecordKind::Unknown};
+
   core::observer::GGEMSObserverRecordKind end_kind{
     core::observer::GGEMSObserverRecordKind::Unknown};
 

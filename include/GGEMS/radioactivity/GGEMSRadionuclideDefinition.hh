@@ -28,7 +28,7 @@ public:
     return emissions_;
   }
 
-  [[nodiscard]] auto GetTotalYieldPerDecay() const -> long double;
+  [[nodiscard]] auto GetTotalYieldPerDecay() const noexcept -> long double;
 
 private:
   std::string canonical_name_;

@@ -20,14 +20,6 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-struct ObserverRecordView {
-  std::uint32_t original_index{0U};
-  core::observer::GGEMSObserverRecord const *record{nullptr};
-};
-
-// =============================================================================
-// =============================================================================
-
 [[nodiscard]] auto
 RecordKindSortOrder(core::observer::GGEMSObserverRecordKind kind) noexcept
   -> std::uint32_t {
@@ -65,7 +57,7 @@ IsTraceableRecord(core::observer::GGEMSObserverRecord const &record) noexcept
     return false;
   }
 
-  core::observer::GGEMSObserverRecordKind kind =
+  core::observer::GGEMSObserverRecordKind const kind =
     core::observer::FromKernelObserverRecordKind(record.record_kind);
 
   return kind != core::observer::GGEMSObserverRecordKind::Unknown &&
@@ -92,7 +84,7 @@ SameTrace(core::observer::GGEMSObserverRecord const &first,
 [[nodiscard]] auto
 SamePosition(core::observer::GGEMSObserverRecord const &first,
              core::observer::GGEMSObserverRecord const &second) noexcept
-  -> auto {
+  -> bool {
   return first.position_x_pm == second.position_x_pm &&
          first.position_y_pm == second.position_y_pm &&
          first.position_z_pm == second.position_z_pm;
@@ -123,7 +115,7 @@ GetRecordKind(core::observer::GGEMSObserverRecord const &record) noexcept
 MakeTraceVertex(GGEMSParticleTracePoint const &point,
                 core::particles::GGEMSParticleType particle_type) noexcept
   -> GGEMSParticleTraceVertex {
-  RGB rgb = GetParticleRGB(particle_type);
+  RGB const rgb = GetParticleRGB(particle_type);
 
   constexpr float inverse_255{1.0F / 255.0F};
 
@@ -144,27 +136,22 @@ MakeTraceVertex(GGEMSParticleTracePoint const &point,
 
 [[nodiscard]] auto BuildSortedRecordView(
   std::span<core::observer::GGEMSObserverRecord const> records)
-  -> std::vector<ObserverRecordView> {
-  std::vector<ObserverRecordView> views{};
+  -> std::vector<core::observer::GGEMSObserverRecord const *> {
+  std::vector<core::observer::GGEMSObserverRecord const *> views{};
   views.reserve(records.size());
 
-  for (std::size_t index = 0U; index < records.size(); ++index) {
-    if (!IsTraceableRecord(records[index])) {
-      continue;
+  for (auto const &record : records) {
+    if (IsTraceableRecord(record)) {
+      views.push_back(&record);
     }
-
-    views.push_back(ObserverRecordView{
-      .original_index = static_cast<std::uint32_t>(index),
-      .record = &records[index],
-    });
   }
 
   std::ranges::stable_sort(
     views,
-    [](ObserverRecordView const &first,
-       ObserverRecordView const &second) -> bool {
-      core::observer::GGEMSObserverRecord const &left = *first.record;
-      core::observer::GGEMSObserverRecord const &right = *second.record;
+    [](core::observer::GGEMSObserverRecord const *first,
+       core::observer::GGEMSObserverRecord const *second) -> bool {
+      core::observer::GGEMSObserverRecord const &left = *first;
+      core::observer::GGEMSObserverRecord const &right = *second;
 
       if (left.run_id != right.run_id) {
         return left.run_id < right.run_id;
@@ -178,15 +165,16 @@ MakeTraceVertex(GGEMSParticleTracePoint const &point,
         return left.track_id < right.track_id;
       }
 
-      std::uint32_t left_kind_order = RecordKindSortOrder(GetRecordKind(left));
-      std::uint32_t right_kind_order =
+      std::uint32_t const left_kind_order =
+        RecordKindSortOrder(GetRecordKind(left));
+      std::uint32_t const right_kind_order =
         RecordKindSortOrder(GetRecordKind(right));
 
       if (left_kind_order != right_kind_order) {
         return left_kind_order < right_kind_order;
       }
 
-      return first.original_index < second.original_index;
+      return false;
     });
 
   return views;
@@ -261,7 +249,7 @@ auto GGEMSParticleTraceVisibility::ShouldDraw(
 auto BuildParticleTraceSegments(
   std::span<core::observer::GGEMSObserverRecord const> records)
   -> std::vector<GGEMSParticleTraceSegment> {
-  std::vector<ObserverRecordView> views = BuildSortedRecordView(records);
+  auto const views = BuildSortedRecordView(records);
 
   std::vector<GGEMSParticleTraceSegment> segments{};
 
@@ -273,8 +261,8 @@ auto BuildParticleTraceSegments(
 
   core::observer::GGEMSObserverRecord const *previous = nullptr;
 
-  for (ObserverRecordView const &view : views) {
-    core::observer::GGEMSObserverRecord const &current = *view.record;
+  for (auto const *record : views) {
+    core::observer::GGEMSObserverRecord const &current = *record;
 
     if (previous == nullptr || !SameTrace(*previous, current)) {
       previous = &current;
@@ -341,7 +329,6 @@ auto BuildParticleTraceDrawData(
 
   GGEMSParticleTraceDrawData draw_data{};
   draw_data.vertices.reserve(segments.size() * 2U);
-  draw_data.draw_ranges.reserve(segments.size());
 
   for (GGEMSParticleTraceSegment const *segment : grouped_segments) {
     if (draw_data.draw_ranges.empty() ||

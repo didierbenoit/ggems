@@ -35,7 +35,7 @@ GetParticleColorKey(core::particles::GGEMSParticleType particle_type) noexcept
 constexpr auto
 GetParticleRGB(core::particles::GGEMSParticleType particle_type) noexcept
   -> RGB {
-  ColorKey color = GetParticleColorKey(particle_type);
+  ColorKey const color = GetParticleColorKey(particle_type);
   return GetColorRGB(color.family, color.shade, color.variant);
 }
 
