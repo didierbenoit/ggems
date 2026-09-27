@@ -51,6 +51,7 @@
 
 #include "GGEMS/render/GGEMSColor.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/logging/detail/GGEMSLoggerMetadata.hh"
 
 namespace ggems::core {
@@ -69,7 +70,7 @@ static auto LogLevelColor(LogLevel lvl) -> render::ColorKey {
   case LogLevel::Debug:
     return render::CYAN_Cryo;
   case LogLevel::Info:
-    return render::GREEN_Neon;
+    return render::GREEN_SeaGreen;
   case LogLevel::Warn:
     return render::YELLOW_MotherAmber;
   case LogLevel::Error:

@@ -139,7 +139,7 @@ auto BuildBannerLines() -> std::vector<WrappedLine> {
   for (auto const text : snapshot) {
     WrappedLine line;
     line.segments.push_back(
-      {.text = std::u32string{text}, .color = GREEN_Neon});
+      {.text = std::u32string{text}, .color = GREEN_SeaGreen});
     lines.push_back(std::move(line));
   }
 
