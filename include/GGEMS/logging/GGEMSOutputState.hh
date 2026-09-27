@@ -90,7 +90,7 @@ public:
   void PushLogLine(RenderedLogLine rendered_line);
 
   /*!
-   * \brief Copies the newest retained log lines in chronological order.
+   * \brief Copies the newest retained log lines in insertion order.
    *
    * \param[in] max_lines Maximum number of newest lines to return.
    * \return Snapshot ordered from the oldest to the newest selected line.

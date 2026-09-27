@@ -58,12 +58,12 @@ namespace ggems::ocl {
 
 namespace {
 
-/*! \brief Selects OpenCL C 1.2 for the Apple compatibility backend. */
 #ifdef __APPLE__
+/*! \brief Selects OpenCL C 1.2 for the Apple compatibility backend. */
 constexpr std::string_view k_opencl_standard_option{"-cl-std=CL1.2"};
 
-/*! \brief Selects OpenCL C 2.0 for the native SVM backend. */
 #else
+/*! \brief Selects OpenCL C 2.0 for the native SVM backend. */
 constexpr std::string_view k_opencl_standard_option{"-cl-std=CL2.0"};
 #endif
 

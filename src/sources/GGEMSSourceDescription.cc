@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Formats source shapes, energy laws, and run population descriptions.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -31,6 +60,12 @@ namespace ggems::core::sources {
 // =============================================================================
 
 namespace {
+/*!
+ * \brief Formats a source time window or fixed birth time.
+ *
+ * \param[in] record Source record to describe.
+ * \return Time description in centrally formatted units.
+ */
 [[nodiscard]] auto DescribeTime(GGEMSSourceRecord const &record)
   -> std::string {
   std::string const time_start =
@@ -49,6 +84,12 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Formats the spatial shape and its full sizes or diameters.
+ *
+ * \param[in] record Source record to describe.
+ * \return Spatial-law description.
+ */
 [[nodiscard]] auto DescribeEmission(GGEMSSourceRecord const &record)
   -> std::string {
   GGEMSEmissionGeometryType const geometry_type =
@@ -100,6 +141,12 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Formats the direction law and any angular or global focus bounds.
+ *
+ * \param[in] record Source record to describe.
+ * \return Angular-law description.
+ */
 [[nodiscard]] auto DescribeAngularDistribution(GGEMSSourceRecord const &record)
   -> std::string {
   GGEMSAngularDistributionType const distribution_type =
@@ -139,6 +186,15 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Formats monoenergy or a checked table descriptor.
+ *
+ * \param[in] source_record Source carrying the monoenergy when applicable.
+ * \param[in] energy_record Energy-law kind and table slice.
+ * \param[in] energy_values Packed canonical energy table in micro-eV.
+ * \return Energy-law description.
+ * \throws GGEMSInternal If kind, offset, or table count is inconsistent.
+ */
 [[nodiscard]] auto
 DescribeEnergy(GGEMSSourceRecord const &source_record,
                GGEMSEnergyDistributionRecord const &energy_record,

@@ -82,6 +82,11 @@ auto SetOutputMode(std::string_view mode) -> void;
 /*!
  * \brief Configures an optional plain-text log file.
  *
+ * When output is already configured, this rebuilds the sinks and opens the file
+ * with truncation, even for the same path. Sink configuration restores Unicode
+ * encoding and enabled color output. Otherwise file creation is deferred until
+ * output configuration.
+ *
  * \param[in] path Non-empty destination path.
  * \throws GGEMSFatal If the path is empty, the output runtime is started, or
  * the file cannot be opened after output configuration.
@@ -113,7 +118,9 @@ auto StopOutputRuntime() noexcept -> void;
 /*!
  * \brief Returns the process-wide in-memory output state.
  *
- * The state is created lazily on first access.
+ * The state is created lazily on first access. Initial access and output
+ * configuration/start/stop calls require caller serialization; the atomic
+ * running flag does not synchronize the other configuration state.
  *
  * \return Reference to the process-wide output state.
  */
@@ -123,7 +130,7 @@ auto GetOutputState() -> GGEMSOutputState &;
  * \brief Returns the canonical string representation of an output mode.
  *
  * \param[in] mode Output mode to convert.
- * \return ``term`` for terminal mode or ``gui`` for GUI mode.
+ * \return ``gui`` for GUI mode; ``term`` for terminal or unknown values.
  */
 [[nodiscard]] inline auto ToString(OutputMode mode) -> std::string {
   switch (mode) {

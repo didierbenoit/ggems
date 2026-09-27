@@ -1,3 +1,33 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Computes source support bounds and rejects degenerate focused
+ * directions.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -17,12 +47,23 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*! \brief Relative allowance for binary32 transforms of sampled positions. */
 constexpr long double k_binary32_sampling_margin{1.0e-5L};
+
+/*!
+ * \brief Sign-bit bias mapping signed coordinates to ordered unsigned values.
+ */
 constexpr std::uint64_t k_signed_ordinal_bias{0x8000'0000'0000'0000ULL};
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Extracts the local-to-global basis from the packed record.
+ *
+ * \param[in] record Analytic source record supplying the stored frame or shape.
+ * \return Source frame with the stored binary32 axes.
+ */
 [[nodiscard]] auto BuildRecordFrame(GGEMSSourceRecord const &record) noexcept
   -> GGEMSSourceFrame {
   return {
@@ -50,6 +91,12 @@ constexpr std::uint64_t k_signed_ordinal_bias{0x8000'0000'0000'0000ULL};
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Computes the largest stretch of the stored xy basis.
+ *
+ * \param[in] record Analytic source record supplying the stored frame or shape.
+ * \return Square root of the largest eigenvalue of the two-axis Gram matrix.
+ */
 [[nodiscard]] auto
 ComputePlanarBasisScale(GGEMSSourceRecord const &record) noexcept
   -> long double {
@@ -78,6 +125,12 @@ ComputePlanarBasisScale(GGEMSSourceRecord const &record) noexcept
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Bounds a transformed vector component using basis row norms.
+ *
+ * \param[in] record Analytic source record supplying the stored frame or shape.
+ * \return Largest Euclidean norm of a local-to-global matrix row.
+ */
 [[nodiscard]] auto
 ComputeSpatialComponentScale(GGEMSSourceRecord const &record) noexcept
   -> long double {
@@ -96,6 +149,13 @@ ComputeSpatialComponentScale(GGEMSSourceRecord const &record) noexcept
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Subtracts signed coordinates without signed-integer overflow.
+ *
+ * \param[in] lhs Minuend in pm.
+ * \param[in] rhs Subtrahend in pm.
+ * \return Difference in pm converted from an unsigned magnitude.
+ */
 [[nodiscard]] auto SignedDifferenceToLongDouble(std::int64_t lhs,
                                                 std::int64_t rhs) noexcept
   -> long double {
@@ -115,6 +175,14 @@ ComputeSpatialComponentScale(GGEMSSourceRecord const &record) noexcept
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Projects a half-tick coordinate rounding envelope onto an axis.
+ *
+ * \param[in] x Axis x component.
+ * \param[in] y Axis y component.
+ * \param[in] z Axis z component.
+ * \return Half the sum of absolute components, in pm.
+ */
 [[nodiscard]] auto IntegerRoundingBand(float x, float y, float z) noexcept
   -> long double {
   return 0.5L * (std::abs(static_cast<long double>(x)) +
@@ -125,6 +193,12 @@ ComputeSpatialComponentScale(GGEMSSourceRecord const &record) noexcept
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Recognizes the supported volumetric emission shapes.
+ *
+ * \param[in] geometry_type Spatial-law kind.
+ * \return True for Box, Sphere, or Cylinder.
+ */
 [[nodiscard]] auto
 IsVolumeGeometry(GGEMSEmissionGeometryType geometry_type) noexcept -> bool {
   return geometry_type == GGEMSEmissionGeometryType::Box ||
@@ -135,6 +209,16 @@ IsVolumeGeometry(GGEMSEmissionGeometryType geometry_type) noexcept -> bool {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Requires the global focus to avoid reachable emission support.
+ *
+ * \param[in] record Record with global focus and source origin.
+ * \param[in] geometry_type Validated shape kind.
+ * \param[in] bounds Prepared local extents and conservative rounding radius.
+ * \throws GGEMSRecoverable If a point focus coincides with its origin, a planar
+ * focus lies in its emission plane band, or a volume focus lies in reachable
+ * support.
+ */
 auto ValidateFocusedDistribution(GGEMSSourceRecord const &record,
                                  GGEMSEmissionGeometryType geometry_type,
                                  GGEMSEmissionBounds const bounds) -> void {

@@ -351,7 +351,6 @@ constexpr auto ConvertIntegralMagnitude(std::uint64_t magnitude, bool negative)
 } // namespace detail
 /// \endcond
 
-template <typename UnitSet>
 /*!
  * \brief Finds a unit definition by its ASCII symbol.
  *
@@ -363,6 +362,7 @@ template <typename UnitSet>
  * Matching is exact and case-sensitive, without trimming or Unicode aliases.
  * The returned pointer borrows the static registry entry.
  */
+template <typename UnitSet>
 constexpr auto FindUnit(std::string_view symbol) noexcept
   -> UnitDefinition const * {
   for (auto const &unit : UnitRegistry<UnitSet>::units) {
@@ -373,7 +373,6 @@ constexpr auto FindUnit(std::string_view symbol) noexcept
   return nullptr;
 }
 
-template <QuantityType TargetQuantity>
 /*!
  * \brief Constructs a quantity from a floating-point value and unit symbol with
  * checked conversion.
@@ -390,6 +389,7 @@ template <QuantityType TargetQuantity>
  * use a representation cast. Nonfinite or unrepresentable canonical results
  * report OutOfRange.
  */
+template <QuantityType TargetQuantity>
 [[nodiscard]] constexpr auto MakeQuantity(long double value,
                                           std::string_view unit_symbol)
   -> std::expected<TargetQuantity, UnitConversionError> {
@@ -473,7 +473,6 @@ template <QuantityType TargetQuantity, detail::ExactIntegral SourceInteger>
   return TargetQuantity{*converted};
 }
 
-template <QuantityType SourceQuantity>
 /*!
  * \brief Converts a quantity to a floating-point value in another unit.
  *
@@ -487,6 +486,7 @@ template <QuantityType SourceQuantity>
  * quantity-family sign policy is not revalidated, and conversion to long double
  * can lose integer precision.
  */
+template <QuantityType SourceQuantity>
 [[nodiscard]] constexpr auto ConvertTo(SourceQuantity quantity,
                                        std::string_view unit_symbol)
   -> std::expected<long double, UnitConversionError> {

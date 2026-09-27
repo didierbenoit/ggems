@@ -19,6 +19,14 @@
 // * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
 // *****************************************************************************
 
+/*!
+ * \file
+ * \brief Defines palette indices, RGB values, and typed display-color keys.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #pragma once
 
 /// \cond
@@ -27,52 +35,83 @@
 #include <cstdint>
 /// \endcond
 
+/*!
+ * \namespace ggems::render
+ * \brief Provides shared color, text-layout, and diagnostic trace data.
+ *
+ * The palette contains nine families of 64 shades. A shade index selects a row,
+ * not a uniform brightness step. Normal, Bright, and Faint variants transform
+ * that RGB row; foreground/background layers select the ANSI output target.
+ */
 namespace ggems::render {
 
-/*!
- * \brief Stores one RGB color.
- */
+/*! \brief Stores one RGB color. */
 struct RGB {
-  std::uint8_t red;   /*!< Red channel in the range [0, 255]. */
-  std::uint8_t green; /*!< Green channel in the range [0, 255]. */
-  std::uint8_t blue;  /*!< Blue channel in the range [0, 255]. */
+  /*! \brief Red channel in the range [0, 255]. */
+  std::uint8_t red;
+
+  /*! \brief Green channel in the range [0, 255]. */
+  std::uint8_t green;
+
+  /*! \brief Blue channel in the range [0, 255]. */
+  std::uint8_t blue;
 };
 
-/*!
- * \enum ColorFamily
- * \brief Identifies a GGEMS color family.
- */
+/*! \brief Identifies a GGEMS color family. */
 enum class ColorFamily : std::uint8_t {
-  Gray = 0, /*!< Gray family. */
-  Red,      /*!< Red family. */
-  Orange,   /*!< Orange family. */
-  Yellow,   /*!< Yellow family. */
-  Green,    /*!< Green family. */
-  Cyan,     /*!< Cyan family. */
-  Blue,     /*!< Blue family. */
-  Magenta,  /*!< Magenta family. */
-  White,    /*!< White family. */
-  Count,    /*!< Number of color families. */
+  /*! \brief Gray family. */
+  Gray = 0,
+
+  /*! \brief Red family. */
+  Red,
+
+  /*! \brief Orange family. */
+  Orange,
+
+  /*! \brief Yellow family. */
+  Yellow,
+
+  /*! \brief Green family. */
+  Green,
+
+  /*! \brief Cyan family. */
+  Cyan,
+
+  /*! \brief Blue family. */
+  Blue,
+
+  /*! \brief Magenta family. */
+  Magenta,
+
+  /*! \brief White family. */
+  White,
+
+  /*! \brief Number of color families. */
+  Count,
 };
 
-/*!
- * \enum ColorVariant
- * \brief Selects a visual variant derived from one base shade.
- */
+/*! \brief Selects a visual variant derived from one base shade. */
 enum class ColorVariant : std::uint8_t {
-  Normal = 0, /*!< Base color variant. */
-  Bright,     /*!< Brightened color variant. */
-  Faint,      /*!< Dimmed color variant. */
-  Count,      /*!< Number of color variants. */
+  /*! \brief Base color variant. */
+  Normal = 0,
+
+  /*! \brief Brightened color variant. */
+  Bright,
+
+  /*! \brief Dimmed color variant. */
+  Faint,
+
+  /*! \brief Number of color variants. */
+  Count,
 };
 
-/*!
- * \enum ColorLayer
- * \brief Selects whether a color is applied to foreground or background.
- */
+/*! \brief Selects whether a color is applied to foreground or background. */
 enum class ColorLayer : std::uint8_t {
-  Foreground = 0, /*!< Foreground text color. */
-  Background,     /*!< Background color. */
+  /*! \brief Foreground text color. */
+  Foreground = 0,
+
+  /*! \brief Background color. */
+  Background,
 };
 
 /*!
@@ -81,15 +120,22 @@ enum class ColorLayer : std::uint8_t {
  * Combines family, shade, variant, and layer into one compact key.
  */
 struct ColorKey {
-  ColorFamily family{}; /*!< Color family. */
-  std::uint8_t shade{}; /*!< Shade index in the selected family. */
-  ColorVariant variant{ColorVariant::Normal}; /*!< Color variant. */
-  ColorLayer layer{ColorLayer::Foreground};   /*!< Target color layer. */
+  /*! \brief Color family. */
+  ColorFamily family{};
+
+  /*! \brief Shade index in the selected family. */
+  std::uint8_t shade{};
+
+  /*! \brief Color variant. */
+  ColorVariant variant{ColorVariant::Normal};
+
+  /*! \brief Target color layer. */
+  ColorLayer layer{ColorLayer::Foreground};
 
   /*!
    * \brief Compares two color keys.
    *
-   * \return Comparison result for the two color keys.
+   * \return Lexicographic order by family, shade, variant, then layer.
    */
   constexpr auto operator<=>(ColorKey const &) const = default;
 };
@@ -126,7 +172,7 @@ constexpr auto MakeRGB(std::uint8_t red, std::uint8_t green,
  * \brief Builds one GGEMS color key.
  *
  * \param[in] family Color family.
- * \param[in] shade Shade index.
+ * \param[in] shade Stored shade index; no clamping occurs in this factory.
  * \param[in] variant Color variant.
  * \param[in] layer Target color layer.
  * \return Constructed color key.
@@ -150,7 +196,7 @@ template <typename ShadeEnum> consteval auto FamilyOf(ShadeEnum) -> ColorFamily;
 /*!
  * \brief Builds one named GGEMS color key.
  *
- * \tparam ShadeEnum Shade enumeration type.
+ * \tparam ShadeEnum One of the nine palette shade enumeration types.
  * \param[in] shade Selected named shade.
  * \param[in] variant Color variant.
  * \param[in] layer Target color layer.

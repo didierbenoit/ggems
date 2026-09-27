@@ -73,7 +73,7 @@ inline constexpr ColorFamilyPalette base_palette = MakeBasePalette();
  * \brief Brightens one color channel.
  *
  * \param[in] color Base channel value.
- * \return Brightened channel value.
+ * \return color + floor((255 - color) / 3).
  */
 constexpr auto BrightenChannel(std::uint8_t color) noexcept -> std::uint8_t {
   return static_cast<std::uint8_t>(color + ((255U - color) / 3U));
@@ -83,7 +83,7 @@ constexpr auto BrightenChannel(std::uint8_t color) noexcept -> std::uint8_t {
  * \brief Dims one color channel.
  *
  * \param[in] color Base channel value.
- * \return Faint channel value.
+ * \return floor(2 * color / 3).
  */
 constexpr auto FaintChannel(std::uint8_t color) noexcept -> std::uint8_t {
   return static_cast<std::uint8_t>((static_cast<std::uint16_t>(color) * 2U) /
@@ -121,8 +121,8 @@ constexpr auto ApplyVariant(RGB base, ColorVariant variant) noexcept -> RGB {
 /*!
  * \brief Retrieves one RGB color from the GGEMS palette.
  *
- * \param[in] family Color family.
- * \param[in] shade Shade index in the selected family.
+ * \param[in] family Valid palette family, excluding Count.
+ * \param[in] shade Family row index; values above 63 are clamped to 63.
  * \param[in] variant Variant to apply.
  * \return RGB color associated with the key.
  */
@@ -136,15 +136,19 @@ constexpr auto GetColorRGB(ColorFamily family, std::uint8_t shade,
   return ApplyVariant(base, variant);
 }
 
-/*!
- * \enum AnsiControl
- * \brief Identifies one ANSI text-control sequence.
- */
+/*! \brief Identifies one ANSI text-control sequence. */
 enum class AnsiControl : std::uint8_t {
-  ResetAll,   /*!< Resets all terminal styling. */
-  ResetColor, /*!< Resets only color styling. */
-  Bold,       /*!< Enables bold styling. */
-  Faint,      /*!< Enables faint styling. */
+  /*! \brief Resets all terminal styling. */
+  ResetAll,
+
+  /*! \brief Resets only color styling. */
+  ResetColor,
+
+  /*! \brief Enables bold styling. */
+  Bold,
+
+  /*! \brief Enables faint styling. */
+  Faint,
 };
 
 /*!
@@ -172,7 +176,7 @@ inline auto AnsiControlCode(AnsiControl control) noexcept -> std::string_view {
  * \brief Appends one ANSI color escape sequence to a string.
  *
  * \param[in,out] out Destination string.
- * \param[in] key Color key to encode.
+ * \param[in] key Key with a valid palette family, excluding Count.
  */
 inline auto AppendAnsiColor(std::string &out, ColorKey const &key) -> void {
   RGB const rgb = GetColorRGB(key.family, key.shade, key.variant);
@@ -188,7 +192,7 @@ inline auto AppendAnsiColor(std::string &out, ColorKey const &key) -> void {
 /*!
  * \brief Builds one ANSI color escape sequence.
  *
- * \param[in] key Color key to encode.
+ * \param[in] key Key with a valid palette family, excluding Count.
  * \return ANSI escape sequence.
  */
 inline auto AnsiColor(ColorKey const &key) -> std::string {

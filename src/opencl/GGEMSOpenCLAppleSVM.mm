@@ -447,7 +447,7 @@ auto ReleaseUnregisteredBufferAndHostPointer(cl_mem buffer,
  *
  * \param[in] num_events_in_wait_list Number of wait-list events.
  * \param[in] event_wait_list Input event wait list.
- * \param[out] event Optional output event location.
+ * \param[in] event Optional output-event address checked for overlap.
  * \return OpenCL status code.
  *
  * Checks count/pointer consistency and overlap with the output-event storage.

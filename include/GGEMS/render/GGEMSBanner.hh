@@ -41,7 +41,7 @@ namespace ggems::render {
  * \brief Builds the styled lines that form the GGEMS banner.
  *
  * Selects the ASCII or Unicode banner according to the active logger encoding
- * and applies the configured banner color to every line.
+ * and applies the SeaGreen palette color to every line.
  *
  * \return Styled banner lines ready for rendering.
  */

@@ -45,17 +45,13 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-/*!
- * \brief Fixed-size view of all text rows forming one banner variant.
- */
+/*! \brief Fixed-size view of all text rows forming one banner variant. */
 using BannerSnapshot = std::array<std::u32string_view, 17U>;
 
 // =============================================================================
 // =============================================================================
 
-/*!
- * \brief ASCII-only GGEMS banner used when ASCII output is selected.
- */
+/*! \brief ASCII-only GGEMS banner used when ASCII output is selected. */
 constexpr BannerSnapshot ascii_banner{
   {
     U"+****************************************************+",
@@ -81,9 +77,7 @@ constexpr BannerSnapshot ascii_banner{
 // =============================================================================
 // =============================================================================
 
-/*!
- * \brief Unicode GGEMS banner used when Unicode output is selected.
- */
+/*! \brief Unicode GGEMS banner used when Unicode output is selected. */
 constexpr BannerSnapshot unicode_banner{
   {
     U"╔════════════════════════════════════════════════════╗",

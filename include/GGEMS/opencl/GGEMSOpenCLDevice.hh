@@ -602,7 +602,7 @@ public:
   /*!
    * \brief Returns the OpenCL CL_DEVICE_MEM_BASE_ADDR_ALIGN information value.
    *
-   * \return Value reported for CL_DEVICE_MEM_BASE_ADDR_ALIGN.
+   * \return Device-reported base-address alignment in bits.
    */
   [[nodiscard]] auto GetMemBaseAddrAlign() const -> cl_uint;
 

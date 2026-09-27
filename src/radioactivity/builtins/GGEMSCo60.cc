@@ -1,3 +1,71 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines the compiled Co-60 marginal source-emission tables.
+ *
+ * Canonical Energy storage is now micro-electronvolts. The original meV
+ * quantization described below is preserved by exact integer scaling by 1000.
+ *
+ * Scientific references for this built-in:
+ *
+ * Direct evaluated decay and emission data: CEA/LNE-LNHB, Nucleide-LARA and
+ * Table de Radionucleides, Co-60 / Ni-60, R. G. Helmer evaluation with M.-M. Be
+ * review, January 2006. LNHB/LARA is the authority for the half-life, three
+ * beta-minus branch yields/endpoints, six direct nuclear gamma emissions,
+ * compact Ni X-ray emissions, and the explicit K/L internal-conversion electron
+ * rows.
+ *
+ * Beta spectral shapes: The dominant 317.32 keV and 1490.56 keV experimental
+ * shape-factor tables are retained from LNHB BetaShape 2.2 (05/2021). The very
+ * weak 664.46 keV unique second-forbidden branch has no tabulated experimental
+ * shape factor and uses the recovered BetaShape 2.4 (06/2024) calculated
+ * column. Each differential density is integrated offline onto an exact regular
+ * GGEMS grid with a maximum target width of 0.5 keV and normalized
+ * conditionally. The evaluated branch yields remain separate.
+ *
+ * Auger electrons: MIRDsoft MIRDspecs, "Cobalt-60", Co-60 Summary Spectrum.csv.
+ * MIRDspecs identifies ICRP Publication 107, "Nuclear Decay Data for Dosimetric
+ * Calculations" (2008), as the spectra source. GGEMS uses MIRD only for the
+ * seven detailed Auger-electron lines because LNHB/LARA publishes the
+ * corresponding Auger groups as energy ranges. The two sub-eV-resolution MIRD
+ * energies were rounded to the nearest integer milli-electronvolt.
+ *
+ * Internal pair formation: The LNHB evaluation includes tiny internal-pair
+ * coefficients for the 1173 and 1332 keV transitions. LARA quotes 310.51 keV as
+ * the total kinetic energy released by the 1332-keV pair channel, not as a
+ * monoenergetic single-particle line. GGEMS radionuclide emissions currently
+ * describe independent single particles and do not yet carry a correlated e-/e+
+ * pair energy-sharing law. Those pair channels are therefore intentionally not
+ * fabricated as independent monoenergetic emissions. A future pair-emission
+ * channel can add them without changing the evaluated beta/gamma data below.
+ *
+ * All external tabular energies below were converted offline to exact positive
+ * integer milli-electronvolt values before being embedded in GGEMS.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -18,52 +86,25 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-// Canonical Energy storage is now micro-electronvolts. The original meV
-// quantization described below is preserved by exact integer scaling by 1000.
-
-// Scientific references for this built-in:
-//
-// Direct evaluated decay and emission data:
-// CEA/LNE-LNHB, Nucleide-LARA and Table de Radionucleides, Co-60 / Ni-60,
-// R. G. Helmer evaluation with M.-M. Be review, January 2006. LNHB/LARA is
-// the authority for the half-life, three beta-minus branch yields/endpoints,
-// six direct nuclear gamma emissions, compact Ni X-ray emissions, and the
-// explicit K/L internal-conversion electron rows.
-//
-// Beta spectral shapes:
-// The dominant 317.32 keV and 1490.56 keV experimental shape-factor tables
-// are retained from LNHB BetaShape 2.2 (05/2021). The very weak 664.46 keV
-// unique second-forbidden branch has no tabulated experimental shape
-// factor and uses the recovered BetaShape 2.4 (06/2024) calculated column. Each
-// differential density is integrated offline onto an exact regular GGEMS grid
-// with a maximum target width of 0.5 keV and normalized conditionally. The
-// evaluated branch yields remain separate.
-//
-// Auger electrons:
-// MIRDsoft MIRDspecs, "Cobalt-60", Co-60 Summary Spectrum.csv. MIRDspecs
-// identifies ICRP Publication 107, "Nuclear Decay Data for Dosimetric
-// Calculations" (2008), as the spectra source. GGEMS uses MIRD only for the
-// seven detailed Auger-electron lines because LNHB/LARA publishes the
-// corresponding Auger groups as energy ranges. The two sub-eV-resolution
-// MIRD energies were rounded to the nearest integer milli-electronvolt.
-//
-// Internal pair formation:
-// The LNHB evaluation includes tiny internal-pair coefficients for the
-// 1173 and 1332 keV transitions. LARA quotes 310.51 keV as the total kinetic
-// energy released by the 1332-keV pair channel, not as a monoenergetic
-// single-particle line. GGEMS radionuclide emissions currently describe
-// independent single particles and do not yet carry a correlated e-/e+ pair
-// energy-sharing law. Those pair channels are therefore intentionally not
-// fabricated as independent monoenergetic emissions. A future pair-emission
-// channel can add them without changing the evaluated beta/gamma data below.
-//
-// All external tabular energies below were converted offline to exact positive
-// integer milli-electronvolt values before being embedded in GGEMS.
-
+/*! \brief Co-60 parent half-life in seconds. */
 constexpr long double k_half_life_seconds{166'340'000.0L};
 
+/*!
+ * \brief Expected electrons per parent decay for the 317.32 keV endpoint
+ * branch.
+ */
 constexpr long double k_beta_317_32_yield{0.9988L};
+
+/*!
+ * \brief Expected electrons per parent decay for the 664.46 keV endpoint
+ * branch.
+ */
 constexpr long double k_beta_664_46_yield{0.00002L};
+
+/*!
+ * \brief Expected electrons per parent decay for the 1490.56 keV endpoint
+ * branch.
+ */
 constexpr long double k_beta_1490_56_yield{0.0012L};
 
 // Co-60 beta-minus transitions: retained 2.2 experimental tables and
@@ -73,9 +114,22 @@ constexpr long double k_beta_1490_56_yield{0.0012L};
 // an exact GGEMS regular grid. Global LNHB branch yields remain separate
 // from these normalized conditional spectral weights.
 
-// 317.32 keV endpoint: experimental BetaShape column.
+/*!
+ * \brief First bin lower edge in micro-eV for the 317.32 keV endpoint branch.
+ *
+ * 317.32 keV endpoint: experimental BetaShape column.
+ */
 constexpr std::uint64_t k_beta_317_32_lower_edge_micro_eV{340'000ULL};
+
+/*! \brief Common bin width in micro-eV for the 317.32 keV endpoint branch. */
 constexpr std::uint64_t k_beta_317_32_bin_width_micro_eV{499'716'000ULL};
+
+/*!
+ * \brief Conditional integrated bin masses for the 317.32 keV endpoint branch.
+ *
+ * The physical branch yield is stored separately from these normalized bin
+ * masses.
+ */
 constexpr std::array<double, 635U> k_beta_317_32_spectrum_weights{
   {
     0.0033003828112509051,  0.0032957625100624574,  0.0032911259726406393,
@@ -293,9 +347,22 @@ constexpr std::array<double, 635U> k_beta_317_32_spectrum_weights{
   },
 };
 
-// 664.46 keV endpoint: calculated BetaShape 2.4 column.
+/*!
+ * \brief First bin lower edge in micro-eV for the 664.46 keV endpoint branch.
+ *
+ * 664.46 keV endpoint: calculated BetaShape 2.4 column.
+ */
 constexpr std::uint64_t k_beta_664_46_lower_edge_micro_eV{2'528'000ULL};
+
+/*! \brief Common bin width in micro-eV for the 664.46 keV endpoint branch. */
 constexpr std::uint64_t k_beta_664_46_bin_width_micro_eV{499'968'000ULL};
+
+/*!
+ * \brief Conditional integrated bin masses for the 664.46 keV endpoint branch.
+ *
+ * The physical branch yield is stored separately from these normalized bin
+ * masses.
+ */
 constexpr std::array<double, 1329U> k_beta_664_46_spectrum_weights{
   {
     0.00084561334368339093, 0.00083607964450223575, 0.00082654594532108067,
@@ -744,9 +811,22 @@ constexpr std::array<double, 1329U> k_beta_664_46_spectrum_weights{
   },
 };
 
-// 1490.56 keV endpoint: experimental BetaShape column.
+/*!
+ * \brief First bin lower edge in micro-eV for the 1490.56 keV endpoint branch.
+ *
+ * 1490.56 keV endpoint: experimental BetaShape column.
+ */
 constexpr std::uint64_t k_beta_1490_56_lower_edge_micro_eV{1'336'000ULL};
+
+/*! \brief Common bin width in micro-eV for the 1490.56 keV endpoint branch. */
 constexpr std::uint64_t k_beta_1490_56_bin_width_micro_eV{499'852'000ULL};
+
+/*!
+ * \brief Conditional integrated bin masses for the 1490.56 keV endpoint branch.
+ *
+ * The physical branch yield is stored separately from these normalized bin
+ * masses.
+ */
 constexpr std::array<double, 2982U> k_beta_1490_56_spectrum_weights{
   {
     0.00028626812633362765, 0.00028636994118976525, 0.0002864717560459027,
@@ -1746,7 +1826,11 @@ constexpr std::array<double, 2982U> k_beta_1490_56_spectrum_weights{
   },
 };
 
-// CEA/LNE-LNHB Nucleide-LARA direct nuclear gamma emissions.
+/*!
+ * \brief Nuclear gamma line energies in canonical micro-eV.
+ *
+ * CEA/LNE-LNHB Nucleide-LARA direct nuclear gamma emissions.
+ */
 constexpr std::array<std::uint64_t, 6U> k_gamma_line_energies_micro_eV{
   {
     347'140'000'000ULL,
@@ -1758,6 +1842,12 @@ constexpr std::array<std::uint64_t, 6U> k_gamma_line_energies_micro_eV{
   },
 };
 
+/*!
+ * \brief Nuclear gamma photons per parent decay, parallel to line energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 6U> k_gamma_line_yields{
   {
     0.000075,
@@ -1769,9 +1859,13 @@ constexpr std::array<double, 6U> k_gamma_line_yields{
   },
 };
 
-// CEA/LNE-LNHB Nucleide-LARA compact Ni X-ray emissions. The grouped XL and
-// K-beta value use the representative energies published by LARA; GGEMS does
-// not invent microscopic sub-line splitting.
+/*!
+ * \brief X-ray line energies in canonical micro-eV.
+ *
+ * CEA/LNE-LNHB Nucleide-LARA compact Ni X-ray emissions. The grouped XL and
+ * K-beta value use the representative energies published by LARA; GGEMS does
+ * not invent microscopic sub-line splitting.
+ */
 constexpr std::array<std::uint64_t, 4U> k_x_ray_energies_micro_eV{
   {
     840'000'000ULL,
@@ -1781,6 +1875,12 @@ constexpr std::array<std::uint64_t, 4U> k_x_ray_energies_micro_eV{
   },
 };
 
+/*!
+ * \brief X-ray photons per parent decay, parallel to line energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 4U> k_x_ray_line_yields{
   {
     0.000002,
@@ -1790,7 +1890,11 @@ constexpr std::array<double, 4U> k_x_ray_line_yields{
   },
 };
 
-// MIRDspecs/ICRP-107 detailed Auger-electron lines.
+/*!
+ * \brief Auger-electron line energies in canonical micro-eV.
+ *
+ * MIRDspecs/ICRP-107 detailed Auger-electron lines.
+ */
 constexpr std::array<std::uint64_t, 7U> k_auger_electron_energies_micro_eV{
   {
     47'980'000ULL,
@@ -1803,6 +1907,12 @@ constexpr std::array<std::uint64_t, 7U> k_auger_electron_energies_micro_eV{
   },
 };
 
+/*!
+ * \brief Auger electrons per parent decay, parallel to line energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 7U> k_auger_electron_line_yields{
   {
     0.000583929,
@@ -1815,8 +1925,12 @@ constexpr std::array<double, 7U> k_auger_electron_line_yields{
   },
 };
 
-// CEA/LNE-LNHB LARA K/L internal-conversion electron rows. The arrays are
-// sorted by increasing electron energy as required by DiscreteLines.
+/*!
+ * \brief Conversion-electron line energies in canonical micro-eV.
+ *
+ * CEA/LNE-LNHB LARA K/L internal-conversion electron rows. The arrays are
+ * sorted by increasing electron energy as required by DiscreteLines.
+ */
 constexpr std::array<std::uint64_t, 12U>
   k_conversion_electron_energies_micro_eV{
     {
@@ -1835,6 +1949,12 @@ constexpr std::array<std::uint64_t, 12U>
     },
 };
 
+/*!
+ * \brief Conversion electrons per parent decay, parallel to line energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 12U> k_conversion_electron_line_yields{
   {
     3.74e-7,
@@ -1855,16 +1975,20 @@ constexpr std::array<double, 12U> k_conversion_electron_line_yields{
 // =============================================================================
 // =============================================================================
 
+/*! \brief Nuclear gamma photons per parent decay in this emission group. */
 constexpr long double k_gamma_yield{std::accumulate(
   k_gamma_line_yields.begin(), k_gamma_line_yields.end(), 0.0L)};
 
+/*! \brief X-ray photons per parent decay in this emission group. */
 constexpr long double k_x_ray_yield{std::accumulate(
   k_x_ray_line_yields.begin(), k_x_ray_line_yields.end(), 0.0L)};
 
+/*! \brief Auger electrons per parent decay in this emission group. */
 constexpr long double k_auger_electron_yield{
   std::accumulate(k_auger_electron_line_yields.begin(),
                   k_auger_electron_line_yields.end(), 0.0L)};
 
+/*! \brief Conversion electrons per parent decay in this emission group. */
 constexpr long double k_conversion_electron_yield{
   std::accumulate(k_conversion_electron_line_yields.begin(),
                   k_conversion_electron_line_yields.end(), 0.0L)};

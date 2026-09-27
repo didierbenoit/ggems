@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Implements analytic source authoring and initialization locks.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -32,6 +61,12 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Copies an orientation basis into a shared source record.
+ *
+ * \param[in,out] record Destination record.
+ * \param[in] frame Prepared local-to-global basis.
+ */
 auto StoreSourceFrame(GGEMSSourceRecord &record,
                       GGEMSSourceFrame const &frame) noexcept -> void {
   record.axis_x_x = frame.axis_x.x;
@@ -50,6 +85,13 @@ auto StoreSourceFrame(GGEMSSourceRecord &record,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Validates a candidate before replacing the current source record.
+ *
+ * \param[in,out] record Destination preserved if validation fails.
+ * \param[in] candidate Proposed record.
+ * \throws GGEMSRecoverable If analytic-record validation fails.
+ */
 auto CommitValidatedRecord(GGEMSSourceRecord &record,
                            GGEMSSourceRecord candidate) -> void {
   ValidateAnalyticSourceRecord(candidate);
@@ -59,6 +101,11 @@ auto CommitValidatedRecord(GGEMSSourceRecord &record,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Restores the full-sphere cosine and azimuth bounds.
+ *
+ * \param[in,out] record Record whose angular domain is reset.
+ */
 auto StoreFullSphereIsotropicDomain(GGEMSSourceRecord &record) noexcept
   -> void {
   record.isotropic_cos_theta_lower = -1.0F;

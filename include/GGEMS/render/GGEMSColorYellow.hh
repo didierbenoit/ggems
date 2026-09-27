@@ -19,6 +19,14 @@
 // * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
 // *****************************************************************************
 
+/*!
+ * \file
+ * \brief Defines the 64 named shades and RGB rows of the yellow family.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #pragma once
 
 /// \cond
@@ -30,10 +38,17 @@
 
 namespace ggems::render {
 
-// Named hues (CSS values where a CSS name is used, GGEMS signature and
-// kept baseline colors, descriptive names), completed by Shade<p>,
-// Tint<p> and Tone<p>: the Pure hue mixed p% toward black, white or mid
-// gray (128); candidates equal to an earlier entry are skipped.
+/*!
+ * \brief Enumerates the 64 yellow palette rows in shade-index order.
+ *
+ * Named hues (CSS values where a CSS name is used, GGEMS signature and kept
+ * baseline colors, descriptive names), completed by Shade followed by a
+ * percentage, Tint followed by a percentage and Tone followed by a percentage:
+ * the Pure hue mixed p% toward black, white or mid gray (128); candidates equal
+ * to an earlier entry are skipped.
+ *
+ * \param[in] X Row consumer called as X(NAME, R, G, B).
+ */
 #define GGEMS_COLOR_YELLOW_SHADES(X)                                           \
   X(Pure, 255, 255, 0)                                                         \
   X(Gold, 255, 215, 0)                                                         \
@@ -100,15 +115,28 @@ namespace ggems::render {
   X(Tone80, 153, 153, 102)                                                     \
   X(Tone90, 141, 141, 115)
 
-/*!
- * \enum YellowShade
- * \brief Named shades in the yellow family, in palette index order.
- */
+/*! \brief Named shades in the yellow family, in palette index order. */
 enum class YellowShade : std::uint8_t {
+/*!
+ * \brief Projects a palette row into its shade enumerator.
+ * \param[in] NAME Named shade identifier.
+ * \param[in] R Red channel, unused by the enumerator projection.
+ * \param[in] G Green channel, unused by the enumerator projection.
+ * \param[in] B Blue channel, unused by the enumerator projection.
+ */
 #define GGEMS_COLOR_SHADE_ENUMERATOR(NAME, R, G, B) NAME,
   GGEMS_COLOR_YELLOW_SHADES(GGEMS_COLOR_SHADE_ENUMERATOR)
 #undef GGEMS_COLOR_SHADE_ENUMERATOR
 };
+
+/*!
+ * \def GGEMS_COLOR_SHADE_RGB(NAME, R, G, B)
+ * \brief Projects a palette row into its RGB initializer.
+ * \param[in] NAME Named shade, unused by the RGB projection.
+ * \param[in] R Red channel in [0, 255].
+ * \param[in] G Green channel in [0, 255].
+ * \param[in] B Blue channel in [0, 255].
+ */
 
 /*!
  * \brief Builds the yellow family palette.

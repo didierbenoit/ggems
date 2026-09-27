@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Converts energy inputs and apportions finite selection tickets.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <charconv>
 #include <cmath>
@@ -27,19 +56,33 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*! \brief Number of equally likely values in one 32-bit random word. */
 constexpr std::uint64_t k_energy_ticket_space_size{1ULL << 32U};
 
 // =============================================================================
 // =============================================================================
 
+/*! \brief Carries optional file provenance for spectrum admission errors. */
 struct ValidationContext {
+  /*! \brief Borrowed filename used to qualify input errors. */
   std::string_view filename;
+
+  /*! \brief Borrowed source line numbers parallel to input entries. */
   std::span<std::size_t const> line_numbers;
 };
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Raises a distribution error with entry or file-line context.
+ *
+ * \param[in] distribution_name Human-readable energy-law name.
+ * \param[in] index Zero-based offending entry.
+ * \param[in] context Optional file and line mapping.
+ * \param[in] message Reason for rejection.
+ * \throws GGEMSRecoverable Always, with the qualified diagnostic.
+ */
 [[noreturn]] auto RejectEntry(std::string_view distribution_name,
                               std::size_t index, ValidationContext context,
                               std::string_view message) -> void {
@@ -55,6 +98,17 @@ struct ValidationContext {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Converts one authoring energy to strictly positive micro-eV.
+ *
+ * \param[in] energy Energy to convert.
+ * \param[in] unit Exact ASCII unit.
+ * \param[in] distribution_name Law name for errors.
+ * \param[in] index Input entry index.
+ * \param[in] context Optional file provenance.
+ * \return Positive canonical micro-eV.
+ * \throws GGEMSRecoverable If unit conversion fails or rounds to zero.
+ */
 [[nodiscard]] auto ConvertEnergy(double energy, std::string_view unit,
                                  std::string_view distribution_name,
                                  std::size_t index, ValidationContext context)
@@ -96,6 +150,13 @@ struct ValidationContext {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Requires positive strictly increasing canonical energies.
+ *
+ * \param[in] energies Canonical micro-eV values.
+ * \param[in] distribution_name Law name for errors.
+ * \throws GGEMSRecoverable If an energy is zero or not strictly increasing.
+ */
 auto ValidateCanonicalEnergyValues(std::span<std::uint64_t const> energies,
                                    std::string_view distribution_name) -> void {
   for (std::size_t index = 0U; index < energies.size(); ++index) {
@@ -114,6 +175,17 @@ auto ValidateCanonicalEnergyValues(std::span<std::uint64_t const> energies,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Converts an ordered energy sequence to canonical micro-eV.
+ *
+ * \param[in] energies Authoring energies.
+ * \param[in] unit Exact ASCII unit.
+ * \param[in] distribution_name Law name for errors.
+ * \param[in] context Optional file provenance.
+ * \return Converted strictly increasing energies.
+ * \throws GGEMSRecoverable If conversion fails or canonical values are not
+ * increasing.
+ */
 [[nodiscard]] auto ConvertEnergyValues(std::span<double const> energies,
                                        std::string_view unit,
                                        std::string_view distribution_name,
@@ -142,14 +214,28 @@ auto ValidateCanonicalEnergyValues(std::span<std::uint64_t const> energies,
 // =============================================================================
 // =============================================================================
 
+/*! \brief Ranks one positive entry for largest-remainder ticket allocation. */
 struct TicketRemainder {
+  /*! \brief Fractional quota left after allocating whole selection tickets. */
   long double remainder{0.0L};
+
+  /*! \brief Original entry index used to break equal-remainder ties. */
   std::size_t index{0U};
 };
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Apportions 2^32 tickets using largest remainders.
+ *
+ * \param[in] relative_weights Finite nonnegative weights with positive total.
+ * \param[in] distribution_name Law name for errors.
+ * \param[in] context Optional entry provenance.
+ * \return Exclusive cumulative bounds with the same entry order.
+ * \throws GGEMSRecoverable If signs, total, ticket arithmetic, or
+ * positive-entry reachability fail.
+ */
 [[nodiscard]] auto BuildCumulativeTicketUpperBounds(
   std::span<double const> relative_weights, std::string_view distribution_name,
   ValidationContext context) -> std::vector<std::uint64_t> {
@@ -262,6 +348,12 @@ struct TicketRemainder {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Recognizes whitespace accepted between spectrum fields.
+ *
+ * \param[in] character Character to classify.
+ * \return True for space, tab, or carriage return.
+ */
 [[nodiscard]] constexpr auto IsSeparator(char character) noexcept -> bool {
   return character == ' ' || character == '\t' || character == '\r';
 }
@@ -269,6 +361,12 @@ struct TicketRemainder {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Splits spectrum fields before an optional # comment.
+ *
+ * \param[in] line Borrowed input line.
+ * \return Views into line; the caller must keep its storage alive.
+ */
 [[nodiscard]] auto SplitDataFields(std::string_view line)
   -> std::vector<std::string_view> {
   std::size_t const comment = line.find('#');
@@ -304,6 +402,16 @@ struct TicketRemainder {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Parses a complete finite floating-point spectrum field.
+ *
+ * \param[in] field Numeric token.
+ * \param[in] filename Diagnostic filename.
+ * \param[in] line_number One-based input line.
+ * \param[in] field_name Column meaning for errors.
+ * \return Finite parsed double.
+ * \throws GGEMSRecoverable If parsing is incomplete, invalid, or nonfinite.
+ */
 [[nodiscard]] auto ParseNumber(std::string_view field,
                                std::string_view filename,
                                std::size_t line_number,

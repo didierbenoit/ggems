@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Registers and describes compiled radioactive source definitions.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <optional>
 #include <string_view>
 #include <array>
@@ -25,19 +54,25 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*! \brief Builds an owned definition from compiled source data. */
 using Builder = GGEMSRadionuclideDefinition (*)();
 
 // =============================================================================
 // =============================================================================
 
+/*! \brief Associates an exact canonical label with its catalog builder. */
 struct BuiltInEntry {
+  /*! \brief Canonical label backed by a string literal. */
   std::string_view canonical_name;
+
+  /*! \brief Factory for this catalog entry. */
   Builder builder;
 };
 
 // =============================================================================
 // =============================================================================
 
+/*! \brief Canonical catalog order and owning definition factories. */
 constexpr auto k_builtin_entries = std::to_array<BuiltInEntry>({
   {.canonical_name = "H-3", .builder = BuildH3Radionuclide},
   {.canonical_name = "C-14", .builder = BuildC14Radionuclide},
@@ -58,6 +93,11 @@ constexpr auto k_builtin_entries = std::to_array<BuiltInEntry>({
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Projects the static catalog into its ordered label array.
+ *
+ * \return Canonical names in the same order as the builder registry.
+ */
 [[nodiscard]] consteval auto BuildAvailableRadionuclideNames()
   -> std::array<std::string_view, k_builtin_entries.size()> {
   std::array<std::string_view, k_builtin_entries.size()> names{};
@@ -72,12 +112,20 @@ constexpr auto k_builtin_entries = std::to_array<BuiltInEntry>({
 // =============================================================================
 // =============================================================================
 
+/*! \brief Static labels exposed by the catalog enumeration API. */
 constexpr auto k_available_radionuclide_names =
   BuildAvailableRadionuclideNames();
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Formats energy support and table shape for an emission law.
+ *
+ * \param[in] distribution Valid prepared energy law.
+ * \return Monoenergy, line summary, or spectrum-bin summary.
+ * \throws GGEMSInternal If the energy-law kind is unsupported.
+ */
 [[nodiscard]] auto
 DescribeEnergyDistribution(sources::GGEMSEnergyDistribution const &distribution)
   -> std::string {
@@ -133,6 +181,13 @@ DescribeEnergyDistribution(sources::GGEMSEnergyDistribution const &distribution)
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Formats one indexed marginal emission description.
+ *
+ * \param[in] index Zero-based group index in the definition.
+ * \param[in] emission Emission whose kind, yield, and energy law are described.
+ * \return One indented description line.
+ */
 [[nodiscard]] auto DescribeEmission(std::size_t index,
                                     GGEMSRadionuclideEmission const &emission)
   -> std::string {

@@ -1,3 +1,57 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines the compiled C-14 marginal source-emission tables.
+ *
+ * Canonical Energy storage is now micro-electronvolts. The original meV
+ * quantization described below is preserved by exact integer scaling by 1000.
+ *
+ * Scientific references for this built-in:
+ *
+ * Direct evaluated decay data: CEA/LNE-LNHB, Nucleide-LARA and Table de
+ * Radionucleides, C-14 / N-14, M.-M. Be and V. P. Chechev, evaluation updated
+ * January 2012. LNHB is the authority for the 5700 y half-life, the 100 %
+ * beta-minus branch directly to stable N-14, the 156.476 keV Q value, and the
+ * 49.16 keV evaluated mean beta energy. No prompt gamma or atomic-relaxation
+ * emission is part of this decay.
+ *
+ * Beta spectral shape: LNHB BetaShape 2.4 (06/2024), C-14 beta-minus
+ * transition. The experimental shape-factor dN/dE column from Singh et al.
+ * (2023SI12, 2023) is used. BetaShape reports a 48.9252 keV mean energy for
+ * this experimental shape factor on the selected 156.476 keV endpoint.
+ *
+ * The differential density is integrated offline onto an exact regular GGEMS
+ * grid with a maximum target width of 0.5 keV and normalized conditionally. The
+ * physical beta-minus yield remains one electron per C-14 decay.
+ *
+ * MIRDspecs/ICRP-107 was used only as an independent cross-check that C-14 has
+ * one beta emission channel with unit yield; no MIRD spectral values are
+ * embedded here.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstdint>
 #include <utility>
@@ -16,41 +70,28 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-// Canonical Energy storage is now micro-electronvolts. The original meV
-// quantization described below is preserved by exact integer scaling by 1000.
-
-// Scientific references for this built-in:
-//
-// Direct evaluated decay data:
-// CEA/LNE-LNHB, Nucleide-LARA and Table de Radionucleides, C-14 / N-14,
-// M.-M. Be and V. P. Chechev, evaluation updated January 2012. LNHB is the
-// authority for the 5700 y half-life, the 100 % beta-minus branch directly to
-// stable N-14, the 156.476 keV Q value, and the 49.16 keV evaluated mean beta
-// energy. No prompt gamma or atomic-relaxation emission is part of this decay.
-//
-// Beta spectral shape:
-// LNHB BetaShape 2.4 (06/2024), C-14 beta-minus transition. The experimental
-// shape-factor dN/dE column from Singh et al. (2023SI12, 2023) is used.
-// BetaShape reports a 48.9252 keV mean energy for this experimental shape
-// factor on the selected 156.476 keV endpoint.
-//
-// The differential density is integrated offline onto an exact regular GGEMS
-// grid with a maximum target width of 0.5 keV and normalized conditionally.
-// The physical beta-minus yield remains one electron per C-14 decay.
-//
-// MIRDspecs/ICRP-107 was used only as an independent cross-check that C-14 has
-// one beta emission channel with unit yield; no MIRD spectral values are
-// embedded here.
-
+/*! \brief C-14 parent half-life in seconds. */
 constexpr long double k_half_life_seconds{179'900'000'000.0L};
+
+/*! \brief Beta-minus electrons per parent decay in this emission group. */
 constexpr long double k_beta_minus_yield{1.0L};
 
+/*! \brief First bin lower edge in micro-eV for the selected beta branch. */
 constexpr std::uint64_t k_beta_spectrum_lower_edge_micro_eV{414'000ULL};
+
+/*! \brief Common bin width in micro-eV for the selected beta branch. */
 constexpr std::uint64_t k_beta_spectrum_bin_width_micro_eV{499'922'000ULL};
 
-// The lower edge is the minimal positive remainder that permits an exact
-// 156.476 keV upper edge with an even integer-meV bin width no larger than
-// 0.5 keV.
+/*!
+ * \brief Conditional integrated bin masses for the selected beta branch.
+ *
+ * The physical branch yield is stored separately from these normalized bin
+ * masses.
+ *
+ * The lower edge is the minimal positive remainder that permits an exact
+ * 156.476 keV upper edge with an even integer-meV bin width no larger than 0.5
+ * keV.
+ */
 constexpr std::array<double, 313U> k_beta_spectrum_weights{
   {
     0.0050275605776573494,  0.0050189020066040667,  0.0050306338670819736,
@@ -164,6 +205,11 @@ constexpr std::array<double, 313U> k_beta_spectrum_weights{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Builds the conditional C-14 beta-minus energy law.
+ *
+ * \return Owned regular-bin distribution with quantized selection tickets.
+ */
 [[nodiscard]] auto BuildBetaSpectrum() -> sources::GGEMSEnergyDistribution {
   return detail::BuildTabulatedSpectrum(
     {.lower_edge_micro_eV = k_beta_spectrum_lower_edge_micro_eV,

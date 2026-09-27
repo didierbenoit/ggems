@@ -19,6 +19,14 @@
 // * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
 // *****************************************************************************
 
+/*!
+ * \file
+ * \brief Defines the 64 named shades and RGB rows of the white family.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #pragma once
 
 /// \cond
@@ -30,8 +38,14 @@
 
 namespace ggems::render {
 
-// White and near-white shades: CSS off-whites, Bone, the kept baseline
-// tints and generated Warm/Cool/Rose/Mint tint ramps (index 1..8).
+/*!
+ * \brief Enumerates the 64 white palette rows in shade-index order.
+ *
+ * White and near-white shades: CSS off-whites, Bone, the kept baseline tints
+ * and generated Warm/Cool/Rose/Mint tint ramps (index 1..8).
+ *
+ * \param[in] X Row consumer called as X(NAME, R, G, B).
+ */
 #define GGEMS_COLOR_WHITE_SHADES(X)                                            \
   X(White, 255, 255, 255)                                                      \
   X(Snow, 255, 250, 250)                                                       \
@@ -98,15 +112,28 @@ namespace ggems::render {
   X(Mint7, 220, 255, 234)                                                      \
   X(Mint8, 215, 255, 231)
 
-/*!
- * \enum WhiteShade
- * \brief Named shades in the white family, in palette index order.
- */
+/*! \brief Named shades in the white family, in palette index order. */
 enum class WhiteShade : std::uint8_t {
+/*!
+ * \brief Projects a palette row into its shade enumerator.
+ * \param[in] NAME Named shade identifier.
+ * \param[in] R Red channel, unused by the enumerator projection.
+ * \param[in] G Green channel, unused by the enumerator projection.
+ * \param[in] B Blue channel, unused by the enumerator projection.
+ */
 #define GGEMS_COLOR_SHADE_ENUMERATOR(NAME, R, G, B) NAME,
   GGEMS_COLOR_WHITE_SHADES(GGEMS_COLOR_SHADE_ENUMERATOR)
 #undef GGEMS_COLOR_SHADE_ENUMERATOR
 };
+
+/*!
+ * \def GGEMS_COLOR_SHADE_RGB(NAME, R, G, B)
+ * \brief Projects a palette row into its RGB initializer.
+ * \param[in] NAME Named shade, unused by the RGB projection.
+ * \param[in] R Red channel in [0, 255].
+ * \param[in] G Green channel in [0, 255].
+ * \param[in] B Blue channel in [0, 255].
+ */
 
 /*!
  * \brief Builds the white family palette.

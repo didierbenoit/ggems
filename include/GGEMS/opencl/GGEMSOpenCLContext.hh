@@ -362,8 +362,7 @@ public:
    * \param[in] size Mapped byte count.
    * \param[in] flags OpenCL host mapping flags.
    *
-   * \throws ggems::core::GGEMSFatal If the OpenCL map/unmap request or required
-   * wait fails.
+   * \throws ggems::core::GGEMSFatal If the blocking map fails.
    */
   auto EnqueueSVMMap(void *pointer, units::Bytes size,
                      cl_map_flags flags = CL_MAP_READ | CL_MAP_WRITE) const
@@ -374,8 +373,7 @@ public:
    *
    * \param[in,out] pointer SVM allocation to unmap.
    *
-   * \throws ggems::core::GGEMSFatal If the OpenCL map/unmap request or required
-   * wait fails.
+   * \throws ggems::core::GGEMSFatal If enqueueing or waiting for unmap fails.
    */
   auto EnqueueSVMUnmap(void *pointer) const -> void;
 

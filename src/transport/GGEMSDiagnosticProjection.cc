@@ -1,3 +1,33 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Scales diagnostic displacements with explicit rounding and overflow
+ * checks.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <bit>
 #include <cstddef>
@@ -20,13 +50,28 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*! \brief Binary32 sign-bit mask. */
 constexpr std::uint32_t k_sign_mask{0x8000'0000U};
+
+/*! \brief Binary32 encoded exponent mask. */
 constexpr std::uint32_t k_exponent_mask{0x7F80'0000U};
+
+/*! \brief Binary32 stored fraction mask. */
 constexpr std::uint32_t k_fraction_mask{0x007F'FFFFU};
+
+/*! \brief Implicit leading significand bit for normal binary32 values. */
 constexpr std::uint32_t k_implicit_significand_bit{0x0080'0000U};
+
+/*! \brief Encoded binary32 exponent identifying infinities and NaNs. */
 constexpr std::uint32_t k_non_finite_exponent{0xFFU};
+
+/*! \brief Unsigned magnitude of the most negative signed pm coordinate. */
 constexpr std::uint64_t k_int64_min_magnitude{0x8000'0000'0000'0000ULL};
+
+/*! \brief Largest integer significand used by exact component scaling. */
 constexpr std::uint64_t k_max_binary32_significand{0x00FF'FFFFULL};
+
+/*! \brief One binary32 ULP above one for conservative normalized components. */
 constexpr float k_normalized_direction_component_bound{
   std::bit_cast<float>(0x3F80'0001U)};
 
@@ -37,6 +82,15 @@ static_assert(k_max_binary32_significand <=
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Rounds an integer times a power of two within a magnitude limit.
+ *
+ * \param[in] product Unsigned scaled significand.
+ * \param[in] exponent2 Power-of-two exponent.
+ * \param[in] magnitude_limit Largest admitted rounded magnitude.
+ * \param[out] magnitude Rounded result, unchanged on failure.
+ * \return True if half-up magnitude rounding fits the supplied limit.
+ */
 [[nodiscard]] auto TryRoundMagnitude(std::uint64_t product,
                                      std::int32_t exponent2,
                                      std::uint64_t magnitude_limit,

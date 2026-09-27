@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines the compiled C-11 marginal source-emission tables.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstdint>
 #include <utility>
@@ -16,17 +45,33 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*! \brief C-11 parent half-life in seconds. */
 constexpr long double k_half_life_seconds{1'221.66L};
+
+/*! \brief Positrons per parent decay in this emission group. */
 constexpr long double k_positron_yield{0.99750L};
 
-// LNHB BetaShape 2.4 (06/2024), C-11 beta+ transition, fixint=1.
-// The table retained from 2.2 is reproduced by the 2.4 experimental column.
-// The experimental-shape-factor dN/dE column was integrated offline onto a
-// regular GGEMS grid with an exact 960.5 keV upper edge and a maximum target
-// width of 0.5 keV. The stored values are normalized bin masses; the physical
-// beta+ yield remains k_positron_yield.
+/*!
+ * \brief First bin lower edge in micro-eV for the selected beta branch.
+ *
+ * LNHB BetaShape 2.4 (06/2024), C-11 beta+ transition, fixint=1. The table
+ * retained from 2.2 is reproduced by the 2.4 experimental column. The
+ * experimental-shape-factor dN/dE column was integrated offline onto a regular
+ * GGEMS grid with an exact 960.5 keV upper edge and a maximum target width of
+ * 0.5 keV. The stored values are normalized bin masses; the physical beta+
+ * yield remains k_positron_yield.
+ */
 constexpr std::uint64_t k_positron_spectrum_lower_edge_micro_eV{3'842'000ULL};
+
+/*! \brief Common bin width in micro-eV for the selected beta branch. */
 constexpr std::uint64_t k_positron_spectrum_bin_width_micro_eV{499'998'000ULL};
+
+/*!
+ * \brief Conditional integrated bin masses for the selected beta branch.
+ *
+ * The physical branch yield is stored separately from these normalized bin
+ * masses.
+ */
 constexpr std::array<double, 1921U> k_positron_spectrum_weights{
   {
     2.918203405842593e-06,  8.6662735226262723e-06, 1.4414343639409947e-05,
@@ -676,6 +721,11 @@ constexpr std::array<double, 1921U> k_positron_spectrum_weights{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Builds the conditional C-11 positron energy law.
+ *
+ * \return Owned regular-bin distribution with quantized selection tickets.
+ */
 [[nodiscard]] auto BuildPositronSpectrum() -> sources::GGEMSEnergyDistribution {
   return detail::BuildTabulatedSpectrum(
     {.lower_edge_micro_eV = k_positron_spectrum_lower_edge_micro_eV,

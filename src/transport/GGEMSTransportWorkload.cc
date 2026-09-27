@@ -1,3 +1,33 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Executes validated device assignments and aggregates launch
+ * diagnostics.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 
 #include <cmath>
@@ -42,22 +72,51 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*! \brief Shared diagnostic-selection record copied into workload SVM. */
 using ObserverConfigRecord = ggems::core::observer::GGEMSObserverConfigRecord;
+
+/*! \brief Raw per-launch uint32 diagnostic-capture counters. */
 using ObserverCounters = ggems::core::observer::GGEMSObserverCounters;
+
+/*! \brief Shared captured-particle record stored in the bounded SVM buffer. */
 using ObserverRecord = ggems::core::observer::GGEMSObserverRecord;
+
+/*! \brief Immutable radioactive particle/energy descriptor uploaded to SVM. */
 using SourceEmissionRecord = ggems::core::sources::GGEMSSourceEmissionRecord;
+
+/*! \brief Per-run source-local primary interval uploaded for each emission. */
 using SourceEmissionRange = ggems::core::sources::GGEMSSourceEmissionRange;
+
+/*! \brief Per-source mode and radioactive-time descriptor uploaded to SVM. */
 using SourcePopulationRecord =
   ggems::core::sources::GGEMSSourcePopulationRecord;
+
+/*! \brief Packed source pose and analytic birth law uploaded each run. */
 using SourceRecord = ggems::core::sources::GGEMSSourceRecord;
+
+/*! \brief Source interval within the concatenated run population. */
 using SourceRunRange = ggems::core::sources::GGEMSSourceRunRange;
+
+/*! \brief Shared raw uint32 counters copied from each completed launch. */
 using TransportCounters = ggems::core::transport::GGEMSTransportCounters;
+
+/*! \brief Packed descriptor into immutable SVM energy-selection arrays. */
 using EnergyDistributionRecord =
   ggems::core::sources::GGEMSEnergyDistributionRecord;
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Checks a worker stream range and computes its SVM byte count.
+ *
+ * \param[in] random Selected engine.
+ * \param[in] worker_count Positive number of worker states.
+ * \param[in] first_stream_id First assigned worker stream.
+ * \return Bytes required by the selected engine.
+ * \throws GGEMSRecoverable If worker count is zero or the engine rejects the
+ * stream range.
+ */
 [[nodiscard]] auto
 ComputeRandomStatesSize(ggems::core::random::GGEMSRandom const &random,
                         std::uint32_t worker_count,
@@ -76,6 +135,13 @@ ComputeRandomStatesSize(ggems::core::random::GGEMSRandom const &random,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Computes the storage for a positive diagnostic capture capacity.
+ *
+ * \param[in] observer_record_capacity Positive maximum record count.
+ * \return Capture buffer size in bytes.
+ * \throws GGEMSRecoverable If capacity is zero.
+ */
 [[nodiscard]] auto
 ComputeObserverRecordsSize(std::uint32_t observer_record_capacity)
   -> ggems::units::Bytes {
@@ -92,6 +158,13 @@ ComputeObserverRecordsSize(std::uint32_t observer_record_capacity)
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Reserves at least one SVM element for possibly empty logical arrays.
+ *
+ * \param[in] logical_entry_count Logical entry count.
+ * \param[in] element_size Element size in bytes; product must fit uint64.
+ * \return Byte count for max(1, logical_entry_count) elements.
+ */
 [[nodiscard]] auto ComputeArrayBufferSize(std::uint64_t logical_entry_count,
                                           std::uint64_t element_size)
   -> ggems::units::Bytes {
@@ -104,6 +177,14 @@ ComputeObserverRecordsSize(std::uint32_t observer_record_capacity)
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Rejects an empty source configuration before narrowing its count.
+ *
+ * \param[in] source_count Nonzero source count, required by the caller to fit
+ * uint32.
+ * \return Count narrowed to the shared uint32 field.
+ * \throws GGEMSRecoverable If source_count is zero.
+ */
 [[nodiscard]] auto CheckedSourceCount(std::size_t source_count)
   -> std::uint32_t {
   if (!(source_count > 0U)) {
@@ -117,6 +198,13 @@ ComputeObserverRecordsSize(std::uint32_t observer_record_capacity)
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Checks that packed energy and ticket arrays have equal lengths.
+ *
+ * \param[in] source_configuration Immutable source assets.
+ * \return Number of entries in either parallel array.
+ * \throws GGEMSInternal If the array lengths differ.
+ */
 [[nodiscard]] auto CheckedEnergyTableEntryCount(
   ggems::core::sources::GGEMSSourceConfigurationSnapshot const
     &source_configuration) -> std::uint64_t {
@@ -133,8 +221,17 @@ ComputeObserverRecordsSize(std::uint32_t observer_record_capacity)
 // =============================================================================
 // =============================================================================
 
+/*! \brief Maximum diagnostic source and terminal records per primary. */
 inline constexpr std::uint32_t k_observer_records_per_primary{2U};
 
+/*!
+ * \brief Bounds launches to keep diagnostic record counts representable.
+ *
+ * \param[in] transport_limit Admitted transport primary limit.
+ * \param[in] observer_enabled Whether capture may produce source and terminal
+ * records.
+ * \return Transport limit, reduced to UINT32_MAX/2 when observation is enabled.
+ */
 [[nodiscard]] auto
 ComputeObserverSafeLaunchPrimaryCount(std::uint32_t transport_limit,
                                       bool observer_enabled) noexcept
@@ -151,6 +248,14 @@ ComputeObserverSafeLaunchPrimaryCount(std::uint32_t transport_limit,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Selects or checks a chunk limit preserving atomic-cursor headroom.
+ *
+ * \param[in] worker_count Number of workers that each perform a terminal claim.
+ * \param[in] requested_limit Requested limit, or zero for the computed maximum.
+ * \return Limit at most UINT32_MAX - worker_count.
+ * \throws GGEMSRecoverable If a nonzero request exceeds the computed limit.
+ */
 [[nodiscard]] auto ResolveLaunchPrimaryCountLimit(std::uint32_t worker_count,
                                                   std::uint32_t requested_limit)
   -> std::uint32_t {

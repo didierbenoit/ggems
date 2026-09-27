@@ -67,7 +67,8 @@ template <typename Tag, typename Representation> struct Quantity {
   /*!
    * \brief Compares two quantities in their canonical representation.
    *
-   * \return Three-way comparison result.
+   * \return Ordering of the stored numeric values. Floating representations can
+   * yield an unordered result when either value is NaN.
    */
   constexpr auto operator<=>(Quantity const &) const = default;
 };
@@ -79,33 +80,32 @@ template <typename Tag, typename Representation> struct Quantity {
  */
 template <typename Type> struct IsQuantity : std::false_type {};
 
-template <typename Tag, typename Representation>
 /*!
  * \brief Marks Quantity specializations as GGEMS quantity types.
  *
  * \tparam Tag Quantity-family tag type.
  * \tparam Representation Underlying arithmetic representation type.
  */
+template <typename Tag, typename Representation>
 struct IsQuantity<Quantity<Tag, Representation>> : std::true_type {};
 
-template <typename Type>
 /*!
  * \brief Constrains a type to a GGEMS Quantity specialization.
  *
  * \tparam Type Type to inspect.
  */
+template <typename Type>
 concept QuantityType = IsQuantity<std::remove_cvref_t<Type>>::value;
 
-template <typename Type>
 /*!
  * \brief Constrains a type to a standard integral or floating-point arithmetic
  * type.
  *
  * \tparam Type Type to inspect.
  */
+template <typename Type>
 concept Arithmetic = std::integral<Type> || std::floating_point<Type>;
 
-template <typename Tag, typename Representation>
 /*!
  * \brief Adds two quantities of the same family and representation.
  *
@@ -119,13 +119,13 @@ template <typename Tag, typename Representation>
  * arithmetic wraps modulo the representation range. No overflow or sign-domain
  * check is performed.
  */
+template <typename Tag, typename Representation>
 constexpr auto operator+(Quantity<Tag, Representation> lhs,
                          Quantity<Tag, Representation> rhs) noexcept
   -> Quantity<Tag, Representation> {
   return {lhs.value + rhs.value};
 }
 
-template <typename Tag, typename Representation>
 /*!
  * \brief Subtracts two quantities of the same family and representation.
  *
@@ -139,6 +139,7 @@ template <typename Tag, typename Representation>
  * arithmetic wraps modulo the representation range. No overflow or sign-domain
  * check is performed.
  */
+template <typename Tag, typename Representation>
 constexpr auto operator-(Quantity<Tag, Representation> lhs,
                          Quantity<Tag, Representation> rhs) noexcept
   -> Quantity<Tag, Representation> {

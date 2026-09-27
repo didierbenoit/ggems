@@ -287,6 +287,8 @@ public:
   /*!
    * \brief Creates and dispatches one structured log record.
    *
+   * This entry point does not apply the detail filter used by LogFmt().
+   *
    * \param[in] lvl Severity level.
    * \param[in] depth Verbosity depth associated with the message.
    * \param[in] module GGEMS module name.

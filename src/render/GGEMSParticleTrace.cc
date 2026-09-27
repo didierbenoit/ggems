@@ -1,3 +1,33 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Orders captured particle records and prepares diagnostic line-list
+ * data.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -20,6 +50,13 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Assigns capture-kind precedence for display connectivity.
+ *
+ * \param[in] kind Capture kind to rank.
+ * \return Source=0, SecondaryStep=1, Step=2, Terminal=3, Anomaly=4, otherwise
+ * 5.
+ */
 [[nodiscard]] auto
 RecordKindSortOrder(core::observer::GGEMSObserverRecordKind kind) noexcept
   -> std::uint32_t {
@@ -46,6 +83,12 @@ RecordKindSortOrder(core::observer::GGEMSObserverRecordKind kind) noexcept
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Selects records with usable primary/track IDs and ordinary kinds.
+ *
+ * \param[in] record Capture to classify.
+ * \return False for invalid primary or track IDs, Unknown, or Anomaly.
+ */
 [[nodiscard]] auto
 IsTraceableRecord(core::observer::GGEMSObserverRecord const &record) noexcept
   -> bool {
@@ -67,6 +110,14 @@ IsTraceableRecord(core::observer::GGEMSObserverRecord const &record) noexcept
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Checks all identity fields required to connect two captures.
+ *
+ * \param[in] first First captured point.
+ * \param[in] second Second captured point.
+ * \return True for equal run, global-particle, primary, track, source, and
+ * source-local IDs.
+ */
 [[nodiscard]] auto
 SameTrace(core::observer::GGEMSObserverRecord const &first,
           core::observer::GGEMSObserverRecord const &second) noexcept -> bool {
@@ -81,6 +132,13 @@ SameTrace(core::observer::GGEMSObserverRecord const &first,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Compares positions before conversion to display precision.
+ *
+ * \param[in] first First captured point.
+ * \param[in] second Second captured point.
+ * \return True when all three signed picometer coordinates match exactly.
+ */
 [[nodiscard]] auto
 SamePosition(core::observer::GGEMSObserverRecord const &first,
              core::observer::GGEMSObserverRecord const &second) noexcept
@@ -93,6 +151,12 @@ SamePosition(core::observer::GGEMSObserverRecord const &first,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Decodes the captured device particle tag.
+ *
+ * \param[in] record Capture whose particle tag is read.
+ * \return Host particle kind, or Unknown for an unsupported tag.
+ */
 [[nodiscard]] auto
 GetParticleType(core::observer::GGEMSObserverRecord const &record) noexcept
   -> core::particles::GGEMSParticleType {
@@ -102,6 +166,12 @@ GetParticleType(core::observer::GGEMSObserverRecord const &record) noexcept
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Decodes the captured device record-kind tag.
+ *
+ * \param[in] record Capture whose kind tag is read.
+ * \return Host capture kind, or Unknown for an unsupported tag.
+ */
 [[nodiscard]] auto
 GetRecordKind(core::observer::GGEMSObserverRecord const &record) noexcept
   -> core::observer::GGEMSObserverRecordKind {
@@ -111,6 +181,13 @@ GetRecordKind(core::observer::GGEMSObserverRecord const &record) noexcept
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Attaches the particle palette color to one display point.
+ *
+ * \param[in] point Global position in meters.
+ * \param[in] particle_type Particle kind selecting the display color.
+ * \return Vertex with normalized RGB channels and opaque alpha.
+ */
 [[nodiscard]] auto
 MakeTraceVertex(GGEMSParticleTracePoint const &point,
                 core::particles::GGEMSParticleType particle_type) noexcept
@@ -134,6 +211,13 @@ MakeTraceVertex(GGEMSParticleTracePoint const &point,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Filters captures and stably orders pointers for trace connectivity.
+ *
+ * \param[in] records Captures whose storage must outlive the returned pointers.
+ * \return Borrowed pointers ordered by run, global-particle ID, track, and
+ * kind.
+ */
 [[nodiscard]] auto BuildSortedRecordView(
   std::span<core::observer::GGEMSObserverRecord const> records)
   -> std::vector<core::observer::GGEMSObserverRecord const *> {

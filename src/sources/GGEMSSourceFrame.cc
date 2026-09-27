@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Normalizes source axes and builds right-handed binary32 frames.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cmath>
 #include <format>
@@ -11,12 +40,23 @@
 namespace ggems::core::sources {
 namespace {
 
+/*! \brief Normalized binary64 working axis used before binary32 packing. */
 using PreciseAxis = geometry::detail::NormalizedVector3D;
+
+/*! \brief Three binary64 components used for source-frame construction. */
 using Vector3D = std::array<double, 3U>;
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Normalizes a finite nonzero working vector.
+ *
+ * \param[in] vector Working vector components.
+ * \param[in] name Vector role included in failure diagnostics.
+ * \return Normalized binary64 axis.
+ * \throws GGEMSRecoverable If normalization fails.
+ */
 [[nodiscard]] auto RequireNormalized(Vector3D const &vector,
                                      std::string_view name) -> PreciseAxis {
   auto const normalized =
@@ -33,6 +73,13 @@ using Vector3D = std::array<double, 3U>;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Computes the scalar product of two working axes.
+ *
+ * \param[in] lhs Left axis.
+ * \param[in] rhs Right axis.
+ * \return Dimensionless dot product.
+ */
 [[nodiscard]] auto Dot(PreciseAxis lhs, PreciseAxis rhs) noexcept -> double {
   return (lhs.x * rhs.x) + (lhs.y * rhs.y) + (lhs.z * rhs.z);
 }
@@ -40,6 +87,13 @@ using Vector3D = std::array<double, 3U>;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Computes the right-handed cross product of two working axes.
+ *
+ * \param[in] lhs Left axis.
+ * \param[in] rhs Right axis.
+ * \return Three unnormalized binary64 components.
+ */
 [[nodiscard]] auto Cross(PreciseAxis lhs, PreciseAxis rhs) noexcept
   -> Vector3D {
   return Vector3D{
@@ -52,6 +106,13 @@ using Vector3D = std::array<double, 3U>;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Checks the normalized direction/up separation threshold.
+ *
+ * \param[in] direction Unit forward axis.
+ * \param[in] up_reference Unit up reference.
+ * \return True when 1 - abs(dot) is no greater than the parallel tolerance.
+ */
 [[nodiscard]] auto IsTooParallel(PreciseAxis direction,
                                  PreciseAxis up_reference) noexcept -> bool {
   return 1.0 - std::abs(Dot(direction, up_reference)) <=
@@ -61,6 +122,12 @@ using Vector3D = std::array<double, 3U>;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Narrows a normalized working axis to shared binary32 components.
+ *
+ * \param[in] direction Normalized binary64 axis.
+ * \return Binary32 direction without further normalization.
+ */
 [[nodiscard]] auto ToFloatDirection(PreciseAxis direction) noexcept
   -> geometry::Direction3 {
   return {
@@ -73,6 +140,12 @@ using Vector3D = std::array<double, 3U>;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Measures orientation using the scalar triple product.
+ *
+ * \param[in] frame Binary32 source frame.
+ * \return (axis_x cross axis_y) dot axis_z evaluated in binary64.
+ */
 [[nodiscard]] auto FloatHandedness(GGEMSSourceFrame const &frame) noexcept
   -> double {
   double const cross_x =
@@ -94,6 +167,12 @@ using Vector3D = std::array<double, 3U>;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Checks finite axes, unit norms, orthogonality, and handedness.
+ *
+ * \param[in] frame Binary32 frame to inspect.
+ * \return True when all checks satisfy the source-frame tolerance.
+ */
 [[nodiscard]] auto IsValidFloatFrame(GGEMSSourceFrame const &frame) noexcept
   -> bool {
   auto const finite = [](geometry::Direction3 axis) noexcept -> bool {
@@ -125,6 +204,15 @@ using Vector3D = std::array<double, 3U>;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Constructs the transverse axes from normalized forward and up.
+ *
+ * \param[in] direction Normalized forward axis.
+ * \param[in] up_reference Normalized up reference.
+ * \return Right-handed binary32 frame.
+ * \throws GGEMSRecoverable If the axes are too parallel or transverse
+ * normalization fails.
+ */
 auto BuildSourceFrameFromNormalized(PreciseAxis direction,
                                     PreciseAxis up_reference)
   -> GGEMSSourceFrame {

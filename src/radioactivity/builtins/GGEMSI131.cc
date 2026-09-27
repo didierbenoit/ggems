@@ -1,3 +1,70 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines the compiled I-131 marginal source-emission tables.
+ *
+ * Canonical Energy storage is now micro-electronvolts. The original meV
+ * quantization described below is preserved by exact integer scaling by 1000.
+ *
+ * Scientific references for this built-in:
+ *
+ * Direct evaluated decay and emission data: CEA/LNE-LNHB, Nucleide-LARA and
+ * Table de Radionucleides, I-131 / Xe-131, V. Chiste and M. M. Be, evaluation
+ * updated January 2014. LNHB/LARA is the authority for the half-life, six
+ * beta-minus branch yields/endpoints, prompt nuclear gamma emissions, five
+ * compact Xe X-ray emissions, and shell/group-resolved internal-conversion
+ * electrons.
+ *
+ * Beta spectral shapes: The five calculated transition spectra use recovered
+ * LNHB BetaShape 2.4 (06/2024) outputs. The experimental 606.3 keV table is
+ * retained from 2.2 (05/2021). All six spectra use the selected LNHB endpoints
+ * directly. Their differential densities are integrated offline onto exact
+ * regular GGEMS grids with a maximum target width of 0.5 keV and normalized
+ * conditionally. Five branches use the calculated BetaShape column. The
+ * dominant 606.3 keV allowed branch uses the supplied experimental shape-factor
+ * column.
+ *
+ * Auger electrons: MIRDsoft MIRDspecs, "Iodine-131", I-131 Summary
+ * Spectrum.csv. MIRDspecs identifies ICRP Publication 107, "Nuclear Decay Data
+ * for Dosimetric Calculations" (2008), as the spectra source. GGEMS uses MIRD
+ * only for the 13 detailed Auger-electron lines because LNHB/LARA publishes the
+ * corresponding Auger emissions as grouped energy ranges.
+ *
+ * Delayed daughter-state boundary: The 806.9 keV beta-minus branch populating
+ * Xe-131m is part of the I-131 parent decay and is represented below. Xe-131m
+ * has a 11.962 d half-life. Its delayed 163.930 keV transition to the Xe-131
+ * ground state, including its conversion electrons, is intentionally excluded
+ * from this parent definition. LARA states that the quoted 163.9 keV gamma
+ * intensity is valid only at the I-131 / Xe-131m equilibrium time. A future
+ * decay-chain model or separate Xe-131m definition owns that delayed emission.
+ *
+ * All external tabular energies below were converted offline to exact positive
+ * integer milli-electronvolt values before being embedded in GGEMS.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -18,53 +85,37 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-// Canonical Energy storage is now micro-electronvolts. The original meV
-// quantization described below is preserved by exact integer scaling by 1000.
-
-// Scientific references for this built-in:
-//
-// Direct evaluated decay and emission data:
-// CEA/LNE-LNHB, Nucleide-LARA and Table de Radionucleides, I-131 / Xe-131,
-// V. Chiste and M. M. Be, evaluation updated January 2014. LNHB/LARA is the
-// authority for the half-life, six beta-minus branch yields/endpoints, prompt
-// nuclear gamma emissions, five compact Xe X-ray emissions, and
-// shell/group-resolved internal-conversion electrons.
-//
-// Beta spectral shapes:
-// The five calculated transition spectra use recovered LNHB BetaShape 2.4
-// (06/2024) outputs. The experimental 606.3 keV table is retained from 2.2
-// (05/2021). All six spectra use the selected LNHB endpoints directly. Their
-// differential densities are integrated offline onto exact regular GGEMS grids
-// with a maximum target width of 0.5 keV and normalized conditionally. Five
-// branches use the calculated BetaShape column. The dominant 606.3 keV allowed
-// branch uses the supplied experimental shape-factor column.
-//
-// Auger electrons:
-// MIRDsoft MIRDspecs, "Iodine-131", I-131 Summary Spectrum.csv. MIRDspecs
-// identifies ICRP Publication 107, "Nuclear Decay Data for Dosimetric
-// Calculations" (2008), as the spectra source. GGEMS uses MIRD only for the 13
-// detailed Auger-electron lines because LNHB/LARA publishes the corresponding
-// Auger emissions as grouped energy ranges.
-//
-// Delayed daughter-state boundary:
-// The 806.9 keV beta-minus branch populating Xe-131m is part of the I-131
-// parent decay and is represented below. Xe-131m has a 11.962 d half-life.
-// Its delayed 163.930 keV transition to the Xe-131 ground state, including its
-// conversion electrons, is intentionally excluded from this parent definition.
-// LARA states that the quoted 163.9 keV gamma intensity is valid only at the
-// I-131 / Xe-131m equilibrium time. A future decay-chain model or separate
-// Xe-131m definition owns that delayed emission.
-//
-// All external tabular energies below were converted offline to exact positive
-// integer milli-electronvolt values before being embedded in GGEMS.
-
+/*! \brief I-131 parent half-life in seconds. */
 constexpr long double k_half_life_seconds{693'213.12L};
 
+/*!
+ * \brief Expected electrons per parent decay for the 247.9 keV endpoint branch.
+ */
 constexpr long double k_beta_247_9_yield{0.02130L};
+
+/*!
+ * \brief Expected electrons per parent decay for the 303.9 keV endpoint branch.
+ */
 constexpr long double k_beta_303_9_yield{0.00643L};
+
+/*!
+ * \brief Expected electrons per parent decay for the 333.8 keV endpoint branch.
+ */
 constexpr long double k_beta_333_8_yield{0.0720L};
+
+/*!
+ * \brief Expected electrons per parent decay for the 606.3 keV endpoint branch.
+ */
 constexpr long double k_beta_606_3_yield{0.894L};
+
+/*!
+ * \brief Expected electrons per parent decay for the 629.7 keV endpoint branch.
+ */
 constexpr long double k_beta_629_7_yield{0.0006L};
+
+/*!
+ * \brief Expected electrons per parent decay for the 806.9 keV endpoint branch.
+ */
 constexpr long double k_beta_806_9_yield{0.00386L};
 
 // I-131 beta-minus transitions: recovered 2.4 calculated tables and
@@ -74,10 +125,22 @@ constexpr long double k_beta_806_9_yield{0.00386L};
 // an exact GGEMS regular grid. Global LNHB branch yields remain separate
 // from these normalized conditional spectral weights.
 
-// 247.9 keV endpoint: calculated BetaShape 2.4 column.
+/*!
+ * \brief First bin lower edge in micro-eV for the 247.9 keV endpoint branch.
+ *
+ * 247.9 keV endpoint: calculated BetaShape 2.4 column.
+ */
 constexpr std::uint64_t k_beta_247_9_lower_edge_micro_eV{192'000ULL};
+
+/*! \brief Common bin width in micro-eV for the 247.9 keV endpoint branch. */
 constexpr std::uint64_t k_beta_247_9_bin_width_micro_eV{499'798'000ULL};
 
+/*!
+ * \brief Conditional integrated bin masses for the 247.9 keV endpoint branch.
+ *
+ * The physical branch yield is stored separately from these normalized bin
+ * masses.
+ */
 constexpr std::array<double, 496U> k_beta_247_9_spectrum_weights{
   {
     0.0042328992496038897,  0.0044562065362093572,  0.0046219550029609939,
@@ -249,10 +312,22 @@ constexpr std::array<double, 496U> k_beta_247_9_spectrum_weights{
   },
 };
 
-// 303.9 keV endpoint: calculated BetaShape 2.4 column.
+/*!
+ * \brief First bin lower edge in micro-eV for the 303.9 keV endpoint branch.
+ *
+ * 303.9 keV endpoint: calculated BetaShape 2.4 column.
+ */
 constexpr std::uint64_t k_beta_303_9_lower_edge_micro_eV{928'000ULL};
+
+/*! \brief Common bin width in micro-eV for the 303.9 keV endpoint branch. */
 constexpr std::uint64_t k_beta_303_9_bin_width_micro_eV{499'834'000ULL};
 
+/*!
+ * \brief Conditional integrated bin masses for the 303.9 keV endpoint branch.
+ *
+ * The physical branch yield is stored separately from these normalized bin
+ * masses.
+ */
 constexpr std::array<double, 608U> k_beta_303_9_spectrum_weights{
   {
     0.0033466274992118988,  0.0034944231523485179,  0.0036153690737391092,
@@ -461,10 +536,22 @@ constexpr std::array<double, 608U> k_beta_303_9_spectrum_weights{
   },
 };
 
-// 333.8 keV endpoint: calculated BetaShape 2.4 column.
+/*!
+ * \brief First bin lower edge in micro-eV for the 333.8 keV endpoint branch.
+ *
+ * 333.8 keV endpoint: calculated BetaShape 2.4 column.
+ */
 constexpr std::uint64_t k_beta_333_8_lower_edge_micro_eV{400'000ULL};
+
+/*! \brief Common bin width in micro-eV for the 333.8 keV endpoint branch. */
 constexpr std::uint64_t k_beta_333_8_bin_width_micro_eV{499'700'000ULL};
 
+/*!
+ * \brief Conditional integrated bin masses for the 333.8 keV endpoint branch.
+ *
+ * The physical branch yield is stored separately from these normalized bin
+ * masses.
+ */
 constexpr std::array<double, 668U> k_beta_333_8_spectrum_weights{
   {
     0.0029754459683238813,  0.0031078353983130303,  0.003216443120387596,
@@ -693,10 +780,22 @@ constexpr std::array<double, 668U> k_beta_333_8_spectrum_weights{
   },
 };
 
-// 606.3 keV endpoint: experimental BetaShape shape-factor column.
+/*!
+ * \brief First bin lower edge in micro-eV for the 606.3 keV endpoint branch.
+ *
+ * 606.3 keV endpoint: experimental BetaShape shape-factor column.
+ */
 constexpr std::uint64_t k_beta_606_3_lower_edge_micro_eV{1'358'000ULL};
+
+/*! \brief Common bin width in micro-eV for the 606.3 keV endpoint branch. */
 constexpr std::uint64_t k_beta_606_3_bin_width_micro_eV{499'834'000ULL};
 
+/*!
+ * \brief Conditional integrated bin masses for the 606.3 keV endpoint branch.
+ *
+ * The physical branch yield is stored separately from these normalized bin
+ * masses.
+ */
 constexpr std::array<double, 1213U> k_beta_606_3_spectrum_weights{
   {
     0.0015056570071556464,  0.0015056989257896817,  0.0015057408444237174,
@@ -1107,10 +1206,22 @@ constexpr std::array<double, 1213U> k_beta_606_3_spectrum_weights{
   },
 };
 
-// 629.7 keV endpoint: calculated BetaShape 2.4 column.
+/*!
+ * \brief First bin lower edge in micro-eV for the 629.7 keV endpoint branch.
+ *
+ * 629.7 keV endpoint: calculated BetaShape 2.4 column.
+ */
 constexpr std::uint64_t k_beta_629_7_lower_edge_micro_eV{2'400'000ULL};
+
+/*! \brief Common bin width in micro-eV for the 629.7 keV endpoint branch. */
 constexpr std::uint64_t k_beta_629_7_bin_width_micro_eV{499'760'000ULL};
 
+/*!
+ * \brief Conditional integrated bin masses for the 629.7 keV endpoint branch.
+ *
+ * The physical branch yield is stored separately from these normalized bin
+ * masses.
+ */
 constexpr std::array<double, 1260U> k_beta_629_7_spectrum_weights{
   {
     0.0013382244634540957,  0.0013614843011368553,  0.0013847441388196151,
@@ -1536,10 +1647,22 @@ constexpr std::array<double, 1260U> k_beta_629_7_spectrum_weights{
   },
 };
 
-// 806.9 keV endpoint: calculated BetaShape 2.4 column.
+/*!
+ * \brief First bin lower edge in micro-eV for the 806.9 keV endpoint branch.
+ *
+ * 806.9 keV endpoint: calculated BetaShape 2.4 column.
+ */
 constexpr std::uint64_t k_beta_806_9_lower_edge_micro_eV{68'000ULL};
+
+/*! \brief Common bin width in micro-eV for the 806.9 keV endpoint branch. */
 constexpr std::uint64_t k_beta_806_9_bin_width_micro_eV{499'938'000ULL};
 
+/*!
+ * \brief Conditional integrated bin masses for the 806.9 keV endpoint branch.
+ *
+ * The physical branch yield is stored separately from these normalized bin
+ * masses.
+ */
 constexpr std::array<double, 1614U> k_beta_806_9_spectrum_weights{
   {
     0.00097421285278975333, 0.00099099050488426197, 0.0010077681569787707,
@@ -2083,8 +2206,12 @@ constexpr std::array<double, 1614U> k_beta_806_9_spectrum_weights{
   },
 };
 
-// Current LNHB/LARA prompt nuclear gamma emissions. The delayed 163.930 keV
-// Xe-131m transition is intentionally absent.
+/*!
+ * \brief Nuclear gamma line energies in canonical micro-eV.
+ *
+ * Current LNHB/LARA prompt nuclear gamma emissions. The delayed 163.930 keV
+ * Xe-131m transition is intentionally absent.
+ */
 constexpr std::array<std::uint64_t, 18U> k_gamma_line_energies_micro_eV{
   {
     80'185'000'000ULL,
@@ -2108,6 +2235,12 @@ constexpr std::array<std::uint64_t, 18U> k_gamma_line_energies_micro_eV{
   },
 };
 
+/*!
+ * \brief Nuclear gamma photons per parent decay, parallel to line energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 18U> k_gamma_line_yields{
   {
     0.02607,
@@ -2131,10 +2264,13 @@ constexpr std::array<double, 18U> k_gamma_line_yields{
   },
 };
 
-// CEA/LNE-LNHB Nucleide-LARA compact Xe X-ray emissions. Intensities
-// published per 100 parent disintegrations are stored as yields per parent
-// decay. Grouped representative energies are preserved without artificial
-// sub-line splitting.
+/*!
+ * \brief X-ray line energies in canonical micro-eV.
+ *
+ * CEA/LNE-LNHB Nucleide-LARA compact Xe X-ray emissions. Intensities published
+ * per 100 parent disintegrations are stored as yields per parent decay. Grouped
+ * representative energies are preserved without artificial sub-line splitting.
+ */
 constexpr std::array<std::uint64_t, 5U> k_x_ray_energies_micro_eV{
   {
     4'470'000'000ULL,
@@ -2145,6 +2281,12 @@ constexpr std::array<std::uint64_t, 5U> k_x_ray_energies_micro_eV{
   },
 };
 
+/*!
+ * \brief X-ray photons per parent decay, parallel to line energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 5U> k_x_ray_line_yields{
   {
     0.00631,
@@ -2155,8 +2297,12 @@ constexpr std::array<double, 5U> k_x_ray_line_yields{
   },
 };
 
-// MIRDspecs/ICRP-107 Auger-electron lines. These are the only MIRD-derived
-// runtime emission data in this I-131 definition.
+/*!
+ * \brief Auger-electron line energies in canonical micro-eV.
+ *
+ * MIRDspecs/ICRP-107 Auger-electron lines. These are the only MIRD-derived
+ * runtime emission data in this I-131 definition.
+ */
 constexpr std::array<std::uint64_t, 13U> k_auger_electron_energies_micro_eV{
   {
     26'150'000ULL,
@@ -2175,6 +2321,12 @@ constexpr std::array<std::uint64_t, 13U> k_auger_electron_energies_micro_eV{
   },
 };
 
+/*!
+ * \brief Auger electrons per parent decay, parallel to line energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 13U> k_auger_electron_line_yields{
   {
     0.118727,
@@ -2193,10 +2345,14 @@ constexpr std::array<double, 13U> k_auger_electron_line_yields{
   },
 };
 
-// CEA/LNE-LNHB LARA shell/group-resolved prompt internal-conversion
-// electrons. The six conversion lines belonging to the delayed 163.930 keV
-// Xe-131m transition are intentionally omitted. The arrays are sorted by
-// increasing electron energy as required by DiscreteLines.
+/*!
+ * \brief Conversion-electron line energies in canonical micro-eV.
+ *
+ * CEA/LNE-LNHB LARA shell/group-resolved prompt internal-conversion electrons.
+ * The six conversion lines belonging to the delayed 163.930 keV Xe-131m
+ * transition are intentionally omitted. The arrays are sorted by increasing
+ * electron energy as required by DiscreteLines.
+ */
 constexpr std::array<std::uint64_t, 104U>
   k_conversion_electron_energies_micro_eV{
     {
@@ -2238,6 +2394,12 @@ constexpr std::array<std::uint64_t, 104U>
     },
 };
 
+/*!
+ * \brief Conversion electrons per parent decay, parallel to line energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 104U> k_conversion_electron_line_yields{
   {
     0.0344,   7.7e-05,   0.0042,    0.00031,   7.35e-05,  0.000939, 0.0002161,
@@ -2261,16 +2423,20 @@ constexpr std::array<double, 104U> k_conversion_electron_line_yields{
 // =============================================================================
 // =============================================================================
 
+/*! \brief Nuclear gamma photons per parent decay in this emission group. */
 constexpr long double k_gamma_yield{std::accumulate(
   k_gamma_line_yields.begin(), k_gamma_line_yields.end(), 0.0L)};
 
+/*! \brief X-ray photons per parent decay in this emission group. */
 constexpr long double k_x_ray_yield{std::accumulate(
   k_x_ray_line_yields.begin(), k_x_ray_line_yields.end(), 0.0L)};
 
+/*! \brief Auger electrons per parent decay in this emission group. */
 constexpr long double k_auger_electron_yield{
   std::accumulate(k_auger_electron_line_yields.begin(),
                   k_auger_electron_line_yields.end(), 0.0L)};
 
+/*! \brief Conversion electrons per parent decay in this emission group. */
 constexpr long double k_conversion_electron_yield{
   std::accumulate(k_conversion_electron_line_yields.begin(),
                   k_conversion_electron_line_yields.end(), 0.0L)};

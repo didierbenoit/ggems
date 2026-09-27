@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Implements run setup, population commits, and device orchestration.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <filesystem>
 #include <algorithm>
 #include <memory>
@@ -38,14 +67,23 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*! \brief Releases the run/reset guard on every exit path. */
 struct RunningGuard {
+  /*! \brief Borrowed guard that must outlive this scope. */
   std::atomic<bool> &running;
+
+  /*! \brief Clears the borrowed guard, including during exception unwinding. */
   ~RunningGuard() { running.store(false); }
 };
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Sums additive diagnostics and retains the largest stack depth.
+ * \param[in,out] dst Aggregate updated in place.
+ * \param[in] src One device report; counts must fit the aggregate types.
+ */
 auto AccumulateTransportCounters(
   transport::GGEMSTransportLogicalCounters &dst,
   transport::GGEMSTransportLogicalCounters const &src) noexcept -> void {
@@ -66,6 +104,13 @@ auto AccumulateTransportCounters(
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Checks an explicitly selected primary against this run population.
+ * \param[in] config Diagnostic selection controls.
+ * \param[in] source_ranges Current source-local primary ranges.
+ * \throws GGEMSRecoverable If an enabled specific-primary selection is outside
+ * the current source or primary range.
+ */
 auto ValidateObserverCapture(
   observer::GGEMSObserverConfigRecord const &config,
   std::span<sources::GGEMSSourceRunRange const> source_ranges) -> void {

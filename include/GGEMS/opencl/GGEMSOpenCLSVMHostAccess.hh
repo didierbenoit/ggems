@@ -65,7 +65,7 @@ concept SVMHostTransferValue =
 
 /*!
  * \namespace ggems::ocl::detail
- * \brief Provides internal helpers for SVM host-access operations.
+ * \brief Provides OpenCL cache hashing, launch arithmetic, and SVM helpers.
  */
 namespace detail {
 

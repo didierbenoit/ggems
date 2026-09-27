@@ -1,3 +1,60 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines the compiled Am-241 marginal source-emission tables.
+ *
+ * Canonical Energy storage is now micro-electronvolts. The original meV
+ * quantization described below is preserved by exact integer scaling by 1000.
+ *
+ * Scientific references for this built-in:
+ *
+ * Direct evaluated decay and emission data: CEA/LNE-LNHB, Nucleide-LARA, Am-241
+ * / Np-237 decay data, KRI evaluation (V. P. Chechev and N. K. Kuzmenko, 2009).
+ * The LARA direct-emission export is the authority for the half-life, alpha
+ * lines, nuclear gamma lines, compact Np X-ray emissions, and the detailed
+ * emission-data file used for shell-resolved internal-conversion electrons.
+ *
+ * Companion evaluation: CEA/LNE-LNHB, Table de Radionucleides, Am-241, KRI/V.
+ * P. Chechev and N. K. Kuzmenko, evaluation updated September 2009. It
+ * documents the decay scheme, recommended alpha/gamma data, internal-conversion
+ * coefficients, and atomic-data methodology.
+ *
+ * Auger electrons: MIRDsoft MIRDspecs, "Americium-241", version 20250101,
+ * Am-241 Summary Spectrum.csv. MIRDspecs identifies ICRP Publication 107,
+ * "Nuclear Decay Data for Dosimetric Calculations" (2008), as the spectra
+ * source. GGEMS uses MIRD only for the 15 detailed Auger-electron lines because
+ * the compact LNHB/LARA tables still aggregate the Auger groups into ranges.
+ *
+ * Daughter-chain emissions and alpha-recoil nuclei are intentionally excluded.
+ * This definition represents particles emitted by one Am-241 parent decay.
+ *
+ * All tabular energies below were converted offline to exact positive integer
+ * milli-electronvolt values before being embedded in GGEMS.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstdint>
 #include <cstddef>
@@ -17,44 +74,18 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-// Canonical Energy storage is now micro-electronvolts. The original meV
-// quantization described below is preserved by exact integer scaling by 1000.
-
-// Scientific references for this built-in:
-//
-// Direct evaluated decay and emission data:
-// CEA/LNE-LNHB, Nucleide-LARA, Am-241 / Np-237 decay data, KRI evaluation
-// (V. P. Chechev and N. K. Kuzmenko, 2009). The LARA direct-emission export is
-// the authority for the half-life, alpha lines, nuclear gamma lines, compact
-// Np X-ray emissions, and the detailed emission-data file used for
-// shell-resolved internal-conversion electrons.
-//
-// Companion evaluation:
-// CEA/LNE-LNHB, Table de Radionucleides, Am-241, KRI/V. P. Chechev and
-// N. K. Kuzmenko, evaluation updated September 2009. It documents the decay
-// scheme, recommended alpha/gamma data, internal-conversion coefficients, and
-// atomic-data methodology.
-//
-// Auger electrons:
-// MIRDsoft MIRDspecs, "Americium-241", version 20250101,
-// Am-241 Summary Spectrum.csv. MIRDspecs identifies ICRP Publication 107,
-// "Nuclear Decay Data for Dosimetric Calculations" (2008), as the spectra
-// source. GGEMS uses MIRD only for the 15 detailed Auger-electron lines because
-// the compact LNHB/LARA tables still aggregate the Auger groups into ranges.
-//
-// Daughter-chain emissions and alpha-recoil nuclei are intentionally excluded.
-// This definition represents particles emitted by one Am-241 parent decay.
-//
-// All tabular energies below were converted offline to exact positive integer
-// milli-electronvolt values before being embedded in GGEMS.
-
+/*! \brief Am-241 parent half-life in seconds. */
 constexpr long double k_half_life_seconds{13'652'000'000.0L};
 
-// Nuclide-LARA direct alpha emission list. The LARA export supplies explicit
-// numerical intensities for all 23 lines below. In particular, it exports
-// 0.04 % for 5469.47 keV, while the companion table prints this line as
-// "< 0.04 %". GGEMS preserves the explicit LARA export and does not renormalize
-// the evaluated alpha-line yields.
+/*!
+ * \brief Alpha-particle line energies in canonical micro-eV.
+ *
+ * Nuclide-LARA direct alpha emission list. The LARA export supplies explicit
+ * numerical intensities for all 23 lines below. In particular, it exports 0.04
+ * % for 5469.47 keV, while the companion table prints this line as "< 0.04 %".
+ * GGEMS preserves the explicit LARA export and does not renormalize the
+ * evaluated alpha-line yields.
+ */
 constexpr std::array<std::uint64_t, 23U> k_alpha_energies_micro_eV{
   {
     4'757'580'000'000ULL, 4'800'990'000'000ULL, 4'834'150'000'000ULL,
@@ -68,6 +99,12 @@ constexpr std::array<std::uint64_t, 23U> k_alpha_energies_micro_eV{
   },
 };
 
+/*!
+ * \brief Alpha particles per parent decay, parallel to line energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 23U> k_alpha_line_yields{
   {
     0.0000004, 0.00000086, 0.000007, 0.000001, 0.0000011, 0.000004,
@@ -77,9 +114,13 @@ constexpr std::array<double, 23U> k_alpha_line_yields{
   },
 };
 
-// Nuclide-LARA direct Am-241 nuclear gamma emissions. All positive-yield gamma
-// rows belonging to the Am-241 parent section are preserved, including the
-// very weak evaluated lines.
+/*!
+ * \brief Nuclear gamma line energies in canonical micro-eV.
+ *
+ * Nuclide-LARA direct Am-241 nuclear gamma emissions. All positive-yield gamma
+ * rows belonging to the Am-241 parent section are preserved, including the very
+ * weak evaluated lines.
+ */
 constexpr std::array<std::uint64_t, 179U> k_gamma_energies_micro_eV{
   {
     26'344'600'000ULL,  32'183'000'000ULL,    33'196'300'000ULL,
@@ -145,6 +186,12 @@ constexpr std::array<std::uint64_t, 179U> k_gamma_energies_micro_eV{
   },
 };
 
+/*!
+ * \brief Nuclear gamma photons per parent decay, parallel to line energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 179U> k_gamma_line_yields{
   {
     0.0231,     0.000174,    0.001215,    0.000055,   0.000669,   0.00000026,
@@ -180,9 +227,13 @@ constexpr std::array<double, 179U> k_gamma_line_yields{
   },
 };
 
-// Nuclide-LARA compact Np X-ray emissions associated with Am-241 decay:
-// Ll, L-alpha, L-eta, L-beta, L-gamma, K-alpha-2, K-alpha-1, K-beta-1,
-// and K-beta-2.
+/*!
+ * \brief X-ray line energies in canonical micro-eV.
+ *
+ * Nuclide-LARA compact Np X-ray emissions associated with Am-241 decay: Ll,
+ * L-alpha, L-eta, L-beta, L-gamma, K-alpha-2, K-alpha-1, K-beta-1, and
+ * K-beta-2.
+ */
 constexpr std::array<std::uint64_t, 9U> k_x_ray_energies_micro_eV{
   {
     11'890'000'000ULL,
@@ -197,6 +248,12 @@ constexpr std::array<std::uint64_t, 9U> k_x_ray_energies_micro_eV{
   },
 };
 
+/*!
+ * \brief X-ray photons per parent decay, parallel to line energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 9U> k_x_ray_line_yields{
   {
     0.00844,
@@ -211,8 +268,12 @@ constexpr std::array<double, 9U> k_x_ray_line_yields{
   },
 };
 
-// MIRDspecs/ICRP-107 detailed Auger-electron lines. These are the only
-// MIRD-derived runtime data in the Am-241 definition.
+/*!
+ * \brief Auger-electron line energies in canonical micro-eV.
+ *
+ * MIRDspecs/ICRP-107 detailed Auger-electron lines. These are the only
+ * MIRD-derived runtime data in the Am-241 definition.
+ */
 constexpr std::array<std::uint64_t, 15U> k_auger_electron_energies_micro_eV{
   {
     78'986'000ULL,
@@ -233,6 +294,12 @@ constexpr std::array<std::uint64_t, 15U> k_auger_electron_energies_micro_eV{
   },
 };
 
+/*!
+ * \brief Auger electrons per parent decay, parallel to line energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 15U> k_auger_electron_line_yields{
   {
     3.26431,
@@ -253,16 +320,21 @@ constexpr std::array<double, 15U> k_auger_electron_line_yields{
   },
 };
 
-// The LNHB emission-data record contains 516 positive shell-resolved
-// internal-conversion electron lines. Their yields span too many orders of
-// magnitude for every positive line to remain reachable in one fixed 2^32
-// DiscreteLines ticket table.
-//
-// They are therefore partitioned offline into two purely numerical transport
-// groups at yield_per_decay = 1e-9. No line is dropped and no yield is
-// renormalized. Poisson splitting followed by conditional line sampling
-// preserves the linewise Poisson marginals while keeping every positive line
-// reachable in the existing GGEMS ticket model.
+/*!
+ * \brief Main-partition conversion-electron line energies in canonical
+ * micro-eV.
+ *
+ * The LNHB emission-data record contains 516 positive shell-resolved
+ * internal-conversion electron lines. Their yields span too many orders of
+ * magnitude for every positive line to remain reachable in one fixed 2^32
+ * DiscreteLines ticket table.
+ *
+ * They are therefore partitioned offline into two purely numerical transport
+ * groups at yield_per_decay = 1e-9. No line is dropped and no yield is
+ * renormalized. Poisson splitting followed by conditional line sampling
+ * preserves the linewise Poisson marginals while keeping every positive line
+ * reachable in the existing GGEMS ticket model.
+ */
 constexpr std::array<std::uint64_t, 268U>
   k_conversion_electron_main_energies_micro_eV{
     {
@@ -359,6 +431,13 @@ constexpr std::array<std::uint64_t, 268U>
     },
 };
 
+/*!
+ * \brief Main-partition conversion electrons per parent decay, parallel to line
+ * energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 268U> k_conversion_electron_main_line_yields{
   {
     0.021,       0.00000184,   0.088,       0.00000935,   0.03,
@@ -418,6 +497,10 @@ constexpr std::array<double, 268U> k_conversion_electron_main_line_yields{
   },
 };
 
+/*!
+ * \brief Weak-partition conversion-electron line energies in canonical
+ * micro-eV.
+ */
 constexpr std::array<std::uint64_t, 248U>
   k_conversion_electron_weak_energies_micro_eV{
     {
@@ -507,6 +590,13 @@ constexpr std::array<std::uint64_t, 248U>
     },
 };
 
+/*!
+ * \brief Weak-partition conversion electrons per parent decay, parallel to line
+ * energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 248U> k_conversion_electron_weak_line_yields{
   {
     4E-10,     7.04E-10,  6.18E-10,  2.605E-11, 2.3E-10,   1.01E-10,  7.6E-11,
@@ -551,23 +641,35 @@ constexpr std::array<double, 248U> k_conversion_electron_weak_line_yields{
 // =============================================================================
 // =============================================================================
 
+/*! \brief Alpha particles per parent decay in this emission group. */
 constexpr long double k_alpha_yield{std::accumulate(
   k_alpha_line_yields.begin(), k_alpha_line_yields.end(), 0.0L)};
 
+/*! \brief Nuclear gamma photons per parent decay in this emission group. */
 constexpr long double k_gamma_yield{std::accumulate(
   k_gamma_line_yields.begin(), k_gamma_line_yields.end(), 0.0L)};
 
+/*! \brief X-ray photons per parent decay in this emission group. */
 constexpr long double k_x_ray_yield{std::accumulate(
   k_x_ray_line_yields.begin(), k_x_ray_line_yields.end(), 0.0L)};
 
+/*! \brief Auger electrons per parent decay in this emission group. */
 constexpr long double k_auger_electron_yield{
   std::accumulate(k_auger_electron_line_yields.begin(),
                   k_auger_electron_line_yields.end(), 0.0L)};
 
+/*!
+ * \brief Main-partition conversion electrons per parent decay in this emission
+ * group.
+ */
 constexpr long double k_conversion_electron_main_yield{
   std::accumulate(k_conversion_electron_main_line_yields.begin(),
                   k_conversion_electron_main_line_yields.end(), 0.0L)};
 
+/*!
+ * \brief Weak-partition conversion electrons per parent decay in this emission
+ * group.
+ */
 constexpr long double k_conversion_electron_weak_yield{
   std::accumulate(k_conversion_electron_weak_line_yields.begin(),
                   k_conversion_electron_weak_line_yields.end(), 0.0L)};

@@ -19,6 +19,14 @@
 // * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
 // *****************************************************************************
 
+/*!
+ * \file
+ * \brief Defines the 64 named shades and RGB rows of the gray family.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #pragma once
 
 /// \cond
@@ -30,9 +38,15 @@
 
 namespace ggems::render {
 
-// Neutral progression: black, the signature Void, the CSS grays and
-// Neutral<level> entries (level = channel value) every fourth level
-// from 8 to 252.
+/*!
+ * \brief Enumerates the 64 gray palette rows in shade-index order.
+ *
+ * Neutral progression: black, the signature Void, the CSS grays and Neutral
+ * followed by a channel level entries (level = channel value) every fourth
+ * level from 8 to 252.
+ *
+ * \param[in] X Row consumer called as X(NAME, R, G, B).
+ */
 #define GGEMS_COLOR_GRAY_SHADES(X)                                             \
   X(Black, 0, 0, 0)                                                            \
   X(Void, 3, 3, 3)                                                             \
@@ -99,15 +113,28 @@ namespace ggems::render {
   X(Neutral248, 248, 248, 248)                                                 \
   X(Neutral252, 252, 252, 252)
 
-/*!
- * \enum GrayShade
- * \brief Named shades in the gray family, in palette index order.
- */
+/*! \brief Named shades in the gray family, in palette index order. */
 enum class GrayShade : std::uint8_t {
+/*!
+ * \brief Projects a palette row into its shade enumerator.
+ * \param[in] NAME Named shade identifier.
+ * \param[in] R Red channel, unused by the enumerator projection.
+ * \param[in] G Green channel, unused by the enumerator projection.
+ * \param[in] B Blue channel, unused by the enumerator projection.
+ */
 #define GGEMS_COLOR_SHADE_ENUMERATOR(NAME, R, G, B) NAME,
   GGEMS_COLOR_GRAY_SHADES(GGEMS_COLOR_SHADE_ENUMERATOR)
 #undef GGEMS_COLOR_SHADE_ENUMERATOR
 };
+
+/*!
+ * \def GGEMS_COLOR_SHADE_RGB(NAME, R, G, B)
+ * \brief Projects a palette row into its RGB initializer.
+ * \param[in] NAME Named shade, unused by the RGB projection.
+ * \param[in] R Red channel in [0, 255].
+ * \param[in] G Green channel in [0, 255].
+ * \param[in] B Blue channel in [0, 255].
+ */
 
 /*!
  * \brief Builds the gray family palette.

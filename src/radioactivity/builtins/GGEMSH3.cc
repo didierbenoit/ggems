@@ -1,3 +1,58 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines the compiled H-3 marginal source-emission tables.
+ *
+ * Canonical Energy storage is now micro-electronvolts. The original meV
+ * quantization described below is preserved by exact integer scaling by 1000.
+ *
+ * Scientific references for this built-in:
+ *
+ * Direct evaluated decay data: CEA/LNE-LNHB, Nucleide-LARA and Table de
+ * Radionucleides, H-3 / He-3, V. P. Chechev, evaluation updated May/June 2006.
+ * LNHB is the authority for the 12.312 y half-life, the 100 % beta-minus branch
+ * to stable He-3, the 18.591 keV Q value, and the evaluated 18.564 keV atomic
+ * beta endpoint.
+ *
+ * Beta spectral shape: LNHB BetaShape 2.2 (05/2021), H-3 beta-minus transition.
+ * The experimental shape-factor dN/dE column is used. BetaShape evaluates that
+ * spectrum on an 18.591 keV endpoint and reports a 5.69565 keV mean energy.
+ * GGEMS preserves that supplied BetaShape energy axis rather than rescaling it
+ * to the separate 18.564 keV atomic endpoint quoted by the 2006 LNHB
+ * evaluation.
+ *
+ * The differential density is integrated offline onto an exact regular GGEMS
+ * grid with a maximum target width of 0.5 keV and normalized conditionally. The
+ * physical beta-minus yield remains one electron per H-3 decay.
+ *
+ * MIRDspecs/ICRP-107 was used only as an independent cross-check that H-3 has
+ * one beta emission channel with unit yield; no MIRD spectral values are
+ * embedded here.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstdint>
 #include <utility>
@@ -16,41 +71,27 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-// Canonical Energy storage is now micro-electronvolts. The original meV
-// quantization described below is preserved by exact integer scaling by 1000.
-
-// Scientific references for this built-in:
-//
-// Direct evaluated decay data:
-// CEA/LNE-LNHB, Nucleide-LARA and Table de Radionucleides, H-3 / He-3,
-// V. P. Chechev, evaluation updated May/June 2006. LNHB is the authority for
-// the 12.312 y half-life, the 100 % beta-minus branch to stable He-3, the
-// 18.591 keV Q value, and the evaluated 18.564 keV atomic beta endpoint.
-//
-// Beta spectral shape:
-// LNHB BetaShape 2.2 (05/2021), H-3 beta-minus transition. The experimental
-// shape-factor dN/dE column is used. BetaShape evaluates that spectrum on an
-// 18.591 keV endpoint and reports a 5.69565 keV mean energy. GGEMS preserves
-// that supplied BetaShape energy axis rather than rescaling it to the separate
-// 18.564 keV atomic endpoint quoted by the 2006 LNHB evaluation.
-//
-// The differential density is integrated offline onto an exact regular GGEMS
-// grid with a maximum target width of 0.5 keV and normalized conditionally.
-// The physical beta-minus yield remains one electron per H-3 decay.
-//
-// MIRDspecs/ICRP-107 was used only as an independent cross-check that H-3 has
-// one beta emission channel with unit yield; no MIRD spectral values are
-// embedded here.
-
+/*! \brief H-3 parent half-life in seconds. */
 constexpr long double k_half_life_seconds{388'500'000.0L};
+
+/*! \brief Beta-minus electrons per parent decay in this emission group. */
 constexpr long double k_beta_minus_yield{1.0L};
 
+/*! \brief First bin lower edge in micro-eV for the selected beta branch. */
 constexpr std::uint64_t k_beta_spectrum_lower_edge_micro_eV{32'000ULL};
+
+/*! \brief Common bin width in micro-eV for the selected beta branch. */
 constexpr std::uint64_t k_beta_spectrum_bin_width_micro_eV{489'236'000ULL};
 
-// The lower edge is the minimal positive remainder that permits an exact
-// 18.591 keV upper edge with an even integer-meV bin width no larger than
-// 0.5 keV.
+/*!
+ * \brief Conditional integrated bin masses for the selected beta branch.
+ *
+ * The physical branch yield is stored separately from these normalized bin
+ * masses.
+ *
+ * The lower edge is the minimal positive remainder that permits an exact 18.591
+ * keV upper edge with an even integer-meV bin width no larger than 0.5 keV.
+ */
 constexpr std::array<double, 38U> k_beta_spectrum_weights{
   {
     0.041613017273717766,  0.045490541359481704,   0.04810627469021117,
@@ -72,6 +113,11 @@ constexpr std::array<double, 38U> k_beta_spectrum_weights{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Builds the conditional H-3 beta-minus energy law.
+ *
+ * \return Owned regular-bin distribution with quantized selection tickets.
+ */
 [[nodiscard]] auto BuildBetaSpectrum() -> sources::GGEMSEnergyDistribution {
   return detail::BuildTabulatedSpectrum(
     {

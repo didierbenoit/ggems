@@ -102,8 +102,7 @@ public:
    * \param[in] index Kernel argument index.
    * \param[in] value Kernel argument value.
    *
-   * \throws ggems::core::GGEMSFatal If the corresponding OpenCL set, enqueue,
-   * or queue-finish operation fails.
+   * \throws ggems::core::GGEMSFatal If setting the typed argument fails.
    */
   template <typename T> auto SetArg(cl_uint index, T const &value) -> void {
     cl_int error = kernel_.setArg(index, value);
@@ -119,8 +118,7 @@ public:
    * \param[in] index Kernel argument index.
    * \param[in] pointer SVM pointer value.
    *
-   * \throws ggems::core::GGEMSFatal If the corresponding OpenCL set, enqueue,
-   * or queue-finish operation fails.
+   * \throws ggems::core::GGEMSFatal If binding the SVM pointer fails.
    *
    * The caller retains the allocation and ensures that it belongs to the
    * execution context and survives every launch using the argument. Binding
@@ -134,8 +132,8 @@ public:
    * \param[in] global One-dimensional global work size.
    * \param[in] local One-dimensional local work size.
    *
-   * \throws ggems::core::GGEMSFatal If the corresponding OpenCL set, enqueue,
-   * or queue-finish operation fails.
+   * \throws ggems::core::GGEMSFatal If kernel enqueue or queue completion
+   * fails.
    *
    * Uses the supplied global/local work sizes without padding or selecting a
    * local size. Finishes the associated queue before returning; this also waits
@@ -151,8 +149,8 @@ public:
    * \param[in] local One-dimensional local work size.
    * \return Completed OpenCL kernel event.
    *
-   * \throws ggems::core::GGEMSFatal If the corresponding OpenCL set, enqueue,
-   * or queue-finish operation fails.
+   * \throws ggems::core::GGEMSFatal If kernel enqueue or queue completion
+   * fails.
    *
    * Uses the supplied global/local work sizes without padding or selecting a
    * local size. Finishes the associated queue before returning; this also waits

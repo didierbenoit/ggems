@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines the compiled O-15 marginal source-emission tables.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstdint>
 #include <utility>
@@ -16,17 +45,33 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*! \brief O-15 parent half-life in seconds. */
 constexpr long double k_half_life_seconds{122.266L};
+
+/*! \brief Positrons per parent decay in this emission group. */
 constexpr long double k_positron_yield{0.999001L};
 
-// LNHB BetaShape 2.4 (06/2024), O-15 beta+ transition, using the selected
-// 2026 LNHB input with fixint=1 to preserve the adopted EC/beta+ split.
-// The calculated dN/dE column is integrated directly at the selected
-// 1732.18 keV endpoint onto the existing regular GGEMS grid. The stored
-// values are normalized conditional bin masses; the physical beta+ yield
-// remains k_positron_yield.
+/*!
+ * \brief First bin lower edge in micro-eV for the selected beta branch.
+ *
+ * LNHB BetaShape 2.4 (06/2024), O-15 beta+ transition, using the selected 2026
+ * LNHB input with fixint=1 to preserve the adopted EC/beta+ split. The
+ * calculated dN/dE column is integrated directly at the selected 1732.18 keV
+ * endpoint onto the existing regular GGEMS grid. The stored values are
+ * normalized conditional bin masses; the physical beta+ yield remains
+ * k_positron_yield.
+ */
 constexpr std::uint64_t k_positron_spectrum_lower_edge_micro_eV{5'710'000ULL};
+
+/*! \brief Common bin width in micro-eV for the selected beta branch. */
 constexpr std::uint64_t k_positron_spectrum_bin_width_micro_eV{499'906'000ULL};
+
+/*!
+ * \brief Conditional integrated bin masses for the selected beta branch.
+ *
+ * The physical branch yield is stored separately from these normalized bin
+ * masses.
+ */
 constexpr std::array<double, 3465U> k_positron_spectrum_weights{
   {
     6.7992123904232191e-07, 2.0093928752379818e-06, 3.3388645114336415e-06,
@@ -1190,6 +1235,11 @@ constexpr std::array<double, 3465U> k_positron_spectrum_weights{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Builds the conditional O-15 positron energy law.
+ *
+ * \return Owned regular-bin distribution with quantized selection tickets.
+ */
 [[nodiscard]] auto BuildPositronSpectrum() -> sources::GGEMSEnergyDistribution {
   return detail::BuildTabulatedSpectrum(
     {

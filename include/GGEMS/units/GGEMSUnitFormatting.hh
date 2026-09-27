@@ -74,7 +74,6 @@ auto FormatScaled(QuantityType const &quantity, UnitDefinition const &unit,
 } // namespace detail
 /// \endcond
 
-template <QuantityType QuantityValue>
 /*!
  * \brief Formats a GGEMS quantity using its configured display policy.
  *
@@ -98,6 +97,7 @@ template <QuantityType QuantityValue>
  * \throws std::format_error If the requested dynamic formatting arguments are
  * invalid.
  */
+template <QuantityType QuantityValue>
 auto HumanReadable(
   QuantityValue const &quantity,
   std::int8_t precision =
@@ -184,7 +184,6 @@ auto HumanReadable(
 } // namespace ggems::units
 
 namespace std {
-template <typename Tag, typename Representation>
 /*!
  * \brief Integrates GGEMS quantities with std::format by delegating to
  * HumanReadable.
@@ -192,6 +191,7 @@ template <typename Tag, typename Representation>
  * \tparam Tag Quantity-family tag type.
  * \tparam Representation Underlying quantity representation type.
  */
+template <typename Tag, typename Representation>
 struct formatter<ggems::units::Quantity<Tag, Representation>>
     : formatter<string> {
   /*!

@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Packs immutable source assets and captures planned run snapshots.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <algorithm>
 #include <cstdint>
@@ -39,13 +68,29 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*! \brief Stages parallel source energy arrays before immutable publication. */
 struct PackedSourceConfiguration {
+  /*! \brief Number of source slots being packed. */
   std::size_t source_count{0U};
+
+  /*! \brief Descriptors into the parallel energy and selection arrays. */
   std::vector<GGEMSEnergyDistributionRecord> energy_distribution_records;
+
+  /*! \brief Concatenated canonical line energies or spectrum centers. */
   std::vector<std::uint64_t> energy_values_micro_eV;
+
+  /*! \brief Concatenated unnormalized line or integrated bin masses. */
   std::vector<double> relative_weights;
+
+  /*! \brief Concatenated exclusive ticket bounds for each law. */
   std::vector<std::uint64_t> cumulative_ticket_upper;
+
+  /*! \brief Packed independent radioactive emission descriptors. */
   std::vector<GGEMSSourceEmissionRecord> source_emission_records;
+
+  /*!
+   * \brief Retained definitions parallel to source slots, null for CountDriven.
+   */
   std::vector<std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>>
     radionuclide_definitions;
 };
@@ -53,6 +98,12 @@ struct PackedSourceConfiguration {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Appends one descriptor and its parallel energy-selection tables.
+ *
+ * \param[in,out] packed Staging arrays extended in lockstep.
+ * \param[in] distribution Prepared energy law whose data are copied.
+ */
 auto AppendEnergyDistribution(PackedSourceConfiguration &packed,
                               GGEMSEnergyDistribution const &distribution)
   -> void {
@@ -79,6 +130,14 @@ auto AppendEnergyDistribution(PackedSourceConfiguration &packed,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Copies ordered source energy and emission assets into flat arrays.
+ *
+ * \param[in] sources Borrowed ordered source pointers.
+ * \return Owning staging arrays.
+ * \throws GGEMSRecoverable If a source pointer is null or its configuration is
+ * unavailable.
+ */
 auto PackSourceConfiguration(std::span<GGEMSSource const *const> sources)
   -> PackedSourceConfiguration {
 
@@ -174,6 +233,12 @@ auto PackSourceConfiguration(std::span<GGEMSSource const *const> sources)
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Checks the order of the source-window endpoints.
+ *
+ * \param[in] time_window Half-open absolute interval in ps; empty is allowed.
+ * \throws GGEMSRecoverable If stop precedes start.
+ */
 auto ValidateTimeWindow(GGEMSTimeWindow time_window) -> void {
   if (time_window.start_ps > time_window.stop_ps) {
     throw ggems::core::GGEMSRecoverable(
@@ -184,6 +249,21 @@ auto ValidateTimeWindow(GGEMSTimeWindow time_window) -> void {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Appends one current count-driven source and its primary interval.
+ *
+ * \param[in,out] records Destination source records.
+ * \param[in,out] ranges Destination run-wide source ranges.
+ * \param[in,out] population_records Destination count-driven population
+ * records.
+ * \param[in,out] total_primary_count Running total, increased by this source
+ * count.
+ * \param[in] source Source configuration to capture.
+ * \param[in] source_index Source slot used in diagnostics.
+ * \param[in] time_window Common source window in ps.
+ * \throws GGEMSRecoverable If the source is activity-driven or its record is
+ * invalid.
+ */
 auto AppendCountDrivenRunSnapshotEntry(
   std::vector<GGEMSSourceRecord> &records,
   std::vector<GGEMSSourceRunRange> &ranges,
@@ -216,6 +296,16 @@ auto AppendCountDrivenRunSnapshotEntry(
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Converts a window and parent half-life to binary32 scaled decay.
+ *
+ * \param[in] time_window Ordered source window in ps.
+ * \param[in] definition Parent supplying a positive finite half-life in
+ * seconds.
+ * \return Dimensionless ln(2) * window duration / half-life.
+ * \throws GGEMSRecoverable If the result is nonfinite, negative, or outside
+ * binary32 range.
+ */
 auto BuildScaledDecay(
   GGEMSTimeWindow time_window,
   radioactivity::GGEMSRadionuclideDefinition const &definition) -> float {

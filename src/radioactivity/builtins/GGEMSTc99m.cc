@@ -1,3 +1,70 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines the compiled Tc-99m marginal source-emission tables.
+ *
+ * Canonical Energy storage is now micro-electronvolts. The original meV
+ * quantization described below is preserved by exact integer scaling by 1000.
+ *
+ * Scientific references for this built-in:
+ *
+ * Direct evaluated decay and emission data: CEA/LNE-LNHB, Nucleide-LARA, Tc-99m
+ * decay data, C. Morillon, M. M. Be, V. Chechev and A. Egorov, evaluation
+ * updated January 2004. LARA is the authority for the half-life, beta-branch
+ * yields/endpoints, direct gamma emissions, compact Tc X-ray emissions, and
+ * shell/group-resolved internal-conversion electrons.
+ *
+ * Companion evaluation: CEA/LNE-LNHB, Table de Radionucleides, Tc-99m. It
+ * documents the dominant isomeric transition, the very weak Tc-99m -> Ru-99
+ * beta-minus branch, internal-conversion coefficients, and atomic-data
+ * methodology.
+ *
+ * Beta spectral shape: LNHB BetaShape 2.4 (06/2024), Tc-99m beta-minus
+ * transition files. Each of the three calculated transition shapes is rescaled
+ * offline on its energy axis from the BetaShape endpoint to the current LARA
+ * endpoint, normalized, weighted by the current LARA branch yield, and combined
+ * into one conditional GGEMS beta-minus spectrum. The 346.7 keV non-unique
+ * first-forbidden branch is explicitly marked "unpredictable" by BetaShape
+ * under the Xi approximation.
+ *
+ * Auger electrons: MIRDsoft MIRDspecs, "Technetium-99m", Tc-99m Summary
+ * Spectrum.csv. MIRDspecs identifies ICRP Publication 107, "Nuclear Decay Data
+ * for Dosimetric Calculations" (2008), as the spectra source. GGEMS uses MIRD
+ * only for the 22 detailed Auger-electron lines because LNHB/LARA publishes the
+ * corresponding Auger emissions as grouped energy ranges.
+ *
+ * The rare Ru-99 gamma and conversion-electron emissions below are direct
+ * consequences of the Tc-99m beta-minus branch and therefore belong to this
+ * parent definition. Later radioactive decay of Tc-99 is intentionally
+ * excluded.
+ *
+ * All external tabular energies below were converted offline to exact positive
+ * integer milli-electronvolt values before being embedded in GGEMS.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -18,58 +85,33 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-// Canonical Energy storage is now micro-electronvolts. The original meV
-// quantization described below is preserved by exact integer scaling by 1000.
-
-// Scientific references for this built-in:
-//
-// Direct evaluated decay and emission data:
-// CEA/LNE-LNHB, Nucleide-LARA, Tc-99m decay data, C. Morillon, M. M. Be,
-// V. Chechev and A. Egorov, evaluation updated January 2004. LARA is the
-// authority for the half-life, beta-branch yields/endpoints, direct gamma
-// emissions, compact Tc X-ray emissions, and shell/group-resolved
-// internal-conversion electrons.
-//
-// Companion evaluation:
-// CEA/LNE-LNHB, Table de Radionucleides, Tc-99m. It documents the dominant
-// isomeric transition, the very weak Tc-99m -> Ru-99 beta-minus branch,
-// internal-conversion coefficients, and atomic-data methodology.
-//
-// Beta spectral shape:
-// LNHB BetaShape 2.4 (06/2024), Tc-99m beta-minus transition files. Each of
-// the three calculated transition shapes is rescaled offline on its energy
-// axis from the BetaShape endpoint to the current LARA endpoint, normalized,
-// weighted by the current LARA branch yield, and combined into one conditional
-// GGEMS beta-minus spectrum. The 346.7 keV non-unique first-forbidden branch
-// is explicitly marked "unpredictable" by BetaShape under the Xi approximation.
-//
-// Auger electrons:
-// MIRDsoft MIRDspecs, "Technetium-99m", Tc-99m Summary Spectrum.csv.
-// MIRDspecs identifies ICRP Publication 107, "Nuclear Decay Data for
-// Dosimetric Calculations" (2008), as the spectra source. GGEMS uses MIRD only
-// for the 22 detailed Auger-electron lines because LNHB/LARA publishes the
-// corresponding Auger emissions as grouped energy ranges.
-//
-// The rare Ru-99 gamma and conversion-electron emissions below are direct
-// consequences of the Tc-99m beta-minus branch and therefore belong to this
-// parent definition. Later radioactive decay of Tc-99 is intentionally
-// excluded.
-//
-// All external tabular energies below were converted offline to exact positive
-// integer milli-electronvolt values before being embedded in GGEMS.
-
+/*! \brief Tc-99m parent half-life in seconds. */
 constexpr long double k_half_life_seconds{21'624.12L};
+
+/*! \brief Beta-minus electrons per parent decay in this emission group. */
 constexpr long double k_beta_minus_yield{3.706e-5L};
 
-// BetaShape transition endpoints are rescaled branch-by-branch:
-//   436.20 -> 436.3 keV, yield 1.00e-5 / decay
-//   346.52 -> 346.7 keV, yield 2.60e-5 / decay
-//   113.82 -> 113.9 keV, yield 1.06e-6 / decay
-// The three conditional shapes are then mixed on this regular grid. The lower
-// edge is the minimal positive remainder that permits an exact 436.3 keV upper
-// edge with an even integer-meV bin width no larger than 0.5 keV.
+/*!
+ * \brief First bin lower edge in micro-eV for the selected beta branch.
+ *
+ * BetaShape transition endpoints are rescaled branch-by-branch: 436.20 -> 436.3
+ * keV, yield 1.00e-5 / decay 346.52 -> 346.7 keV, yield 2.60e-5 / decay 113.82
+ * -> 113.9 keV, yield 1.06e-6 / decay The three conditional shapes are then
+ * mixed on this regular grid. The lower edge is the minimal positive remainder
+ * that permits an exact 436.3 keV upper edge with an even integer-meV bin width
+ * no larger than 0.5 keV.
+ */
 constexpr std::uint64_t k_beta_spectrum_lower_edge_micro_eV{790'000ULL};
+
+/*! \brief Common bin width in micro-eV for the selected beta branch. */
 constexpr std::uint64_t k_beta_spectrum_bin_width_micro_eV{499'770'000ULL};
+
+/*!
+ * \brief Conditional integrated bin masses for the selected beta branch.
+ *
+ * The physical branch yield is stored separately from these normalized bin
+ * masses.
+ */
 constexpr std::array<double, 873U> k_beta_spectrum_weights{
   {
     0.0034005264978359171,  0.0033537837646793606,  0.0033173013245546964,
@@ -366,8 +408,12 @@ constexpr std::array<double, 873U> k_beta_spectrum_weights{
   },
 };
 
-// LARA direct nuclear gamma emissions except the ultra-weak 2.1726 keV line.
-// The Ru-99 lines arise immediately from the rare Tc-99m beta-minus branch.
+/*!
+ * \brief Nuclear gamma line energies in canonical micro-eV.
+ *
+ * LARA direct nuclear gamma emissions except the ultra-weak 2.1726 keV line.
+ * The Ru-99 lines arise immediately from the rare Tc-99m beta-minus branch.
+ */
 constexpr std::array<std::uint64_t, 5U> k_gamma_energies_micro_eV{
   {
     89'600'000'000ULL,
@@ -378,6 +424,12 @@ constexpr std::array<std::uint64_t, 5U> k_gamma_energies_micro_eV{
   },
 };
 
+/*!
+ * \brief Nuclear gamma photons per parent decay, parallel to line energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 5U> k_gamma_line_yields{
   {
     1.04e-05,
@@ -388,16 +440,30 @@ constexpr std::array<double, 5U> k_gamma_line_yields{
   },
 };
 
-// The 2.1726 keV photon has a yield of only 7.4e-11 per parent decay. If mixed
-// with the 0.885-yield 140.511 keV line it receives less than one ticket in the
-// fixed 2^32 DiscreteLines random space. A dedicated Mono emission group keeps
-// this evaluated positive line reachable without changing its physical yield.
+/*!
+ * \brief Separately represented ultra-weak gamma photons energy in canonical
+ * micro-eV.
+ *
+ * The 2.1726 keV photon has a yield of only 7.4e-11 per parent decay. If mixed
+ * with the 0.885-yield 140.511 keV line it receives less than one ticket in the
+ * fixed 2^32 DiscreteLines random space. A dedicated Mono emission group keeps
+ * this evaluated positive line reachable without changing its physical yield.
+ */
 constexpr std::uint64_t k_ultra_weak_gamma_energy_micro_eV{2'172'600'000ULL};
+
+/*!
+ * \brief Separately represented ultra-weak gamma photons per parent decay in
+ * this emission group.
+ */
 constexpr long double k_ultra_weak_gamma_yield{7.4e-11L};
 
-// LARA compact Tc X-ray emissions: XL, K-alpha-2, K-alpha-1, K-beta-1,
-// and K-beta-2. The grouped XL/K-beta energies are the effective energies
-// published by LARA; GGEMS does not invent microscopic sub-lines.
+/*!
+ * \brief X-ray line energies in canonical micro-eV.
+ *
+ * LARA compact Tc X-ray emissions: XL, K-alpha-2, K-alpha-1, K-beta-1, and
+ * K-beta-2. The grouped XL/K-beta energies are the effective energies published
+ * by LARA; GGEMS does not invent microscopic sub-lines.
+ */
 constexpr std::array<std::uint64_t, 5U> k_x_ray_energies_micro_eV{
   {
     2'568'000'000ULL,
@@ -408,6 +474,12 @@ constexpr std::array<std::uint64_t, 5U> k_x_ray_energies_micro_eV{
   },
 };
 
+/*!
+ * \brief X-ray photons per parent decay, parallel to line energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 5U> k_x_ray_line_yields{
   {
     0.00482,
@@ -418,7 +490,11 @@ constexpr std::array<double, 5U> k_x_ray_line_yields{
   },
 };
 
-// MIRDspecs/ICRP-107 detailed Auger-electron lines.
+/*!
+ * \brief Auger-electron line energies in canonical micro-eV.
+ *
+ * MIRDspecs/ICRP-107 detailed Auger-electron lines.
+ */
 constexpr std::array<std::uint64_t, 22U> k_auger_electron_energies_micro_eV{
   {
     29'608'000ULL,     31'469'000ULL,     106'317'000ULL,    106'836'000ULL,
@@ -430,6 +506,12 @@ constexpr std::array<std::uint64_t, 22U> k_auger_electron_energies_micro_eV{
   },
 };
 
+/*!
+ * \brief Auger electrons per parent decay, parallel to line energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 22U> k_auger_electron_line_yields{
   {
     2.4663,     5.56845e-05, 0.0207457,   2.48421e-06, 0.708794,  1.26607e-05,
@@ -439,9 +521,13 @@ constexpr std::array<double, 22U> k_auger_electron_line_yields{
   },
 };
 
-// LARA shell/group-resolved internal-conversion electrons from the Tc-99m
-// isomeric transitions plus the direct Ru-99 de-excitations reached by the
-// rare beta-minus branch. The list is sorted by increasing electron energy.
+/*!
+ * \brief Conversion-electron line energies in canonical micro-eV.
+ *
+ * LARA shell/group-resolved internal-conversion electrons from the Tc-99m
+ * isomeric transitions plus the direct Ru-99 de-excitations reached by the rare
+ * beta-minus branch. The list is sorted by increasing electron energy.
+ */
 constexpr std::array<std::uint64_t, 18U>
   k_conversion_electron_energies_micro_eV{
     {
@@ -466,6 +552,12 @@ constexpr std::array<std::uint64_t, 18U>
     },
 };
 
+/*!
+ * \brief Conversion electrons per parent decay, parallel to line energies.
+ *
+ * These absolute yields serve as relative weights within the discrete group;
+ * the group yield carries their physical total.
+ */
 constexpr std::array<double, 18U> k_conversion_electron_line_yields{
   {
     0.881,
@@ -492,16 +584,20 @@ constexpr std::array<double, 18U> k_conversion_electron_line_yields{
 // Each flattened discrete-line channel stores source-table line yields as
 // relative weights and their sum as the global yield per parent decay.
 
+/*! \brief Nuclear gamma photons per parent decay in this emission group. */
 constexpr long double k_gamma_yield{std::accumulate(
   k_gamma_line_yields.begin(), k_gamma_line_yields.end(), 0.0L)};
 
+/*! \brief X-ray photons per parent decay in this emission group. */
 constexpr long double k_x_ray_yield{std::accumulate(
   k_x_ray_line_yields.begin(), k_x_ray_line_yields.end(), 0.0L)};
 
+/*! \brief Auger electrons per parent decay in this emission group. */
 constexpr long double k_auger_electron_yield{
   std::accumulate(k_auger_electron_line_yields.begin(),
                   k_auger_electron_line_yields.end(), 0.0L)};
 
+/*! \brief Conversion electrons per parent decay in this emission group. */
 constexpr long double k_conversion_electron_yield{
   std::accumulate(k_conversion_electron_line_yields.begin(),
                   k_conversion_electron_line_yields.end(), 0.0L)};
