@@ -336,6 +336,7 @@ TEST_F(GGEMSTransportWorkloadTest,
   config.observer_config.enabled = 1U;
   config.observer_config.capture_first_primary_count_per_source = 1U;
 
+  ASSERT_NO_THROW(workload.ValidateRunConfig(config));
   auto const report = workload.Run(config);
 
   ExpectMinimalCounters(report, 6U);
@@ -685,7 +686,8 @@ TEST_F(GGEMSTransportWorkloadTest,
   constexpr std::array<std::uint64_t, 2U> k_unsupported_active{1ULL, 0ULL};
   config.source_ranges = BuildRanges(k_unsupported_active);
 
-  EXPECT_THROW(workload.Run(config), ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(workload.ValidateRunConfig(config),
+               ggems::core::GGEMSRecoverable);
 }
 
 // =============================================================================
@@ -710,16 +712,21 @@ TEST_F(GGEMSTransportWorkloadTest,
                              2U};
 
   auto config = MakeConfig({overflowing}, k_counts, 1U);
-  EXPECT_THROW(workload.Run(config), ggems::core::GGEMSExceptionBase);
+
+  EXPECT_THROW(workload.ValidateRunConfig(config),
+               ggems::core::GGEMSRecoverable);
 
   SourceRecord const valid = MakeSourceRecord({0LL, 0LL, 0LL}, {0.0, 0.0, 1.0});
 
   config = MakeConfig({valid}, k_counts, 1U);
   config.source_ranges.clear();
-  EXPECT_THROW(workload.Run(config), ggems::core::GGEMSExceptionBase);
+
+  EXPECT_THROW(workload.ValidateRunConfig(config),
+               ggems::core::GGEMSRecoverable);
 
   config = MakeConfig({valid}, k_counts, 1U, 0ULL, 1ULL);
-  EXPECT_THROW(workload.Run(config), ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(workload.ValidateRunConfig(config),
+               ggems::core::GGEMSRecoverable);
 }
 
 TEST_F(GGEMSTransportWorkloadTest, RejectsZeroStableSourceCount) {
