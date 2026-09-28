@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <bit>
 #include <cstddef>
@@ -138,42 +165,45 @@ constexpr std::size_t k_source_range_count{2U};
 [[nodiscard]] auto EncodeSourceRecord(SourceRecord const &record)
   -> std::array<std::uint64_t, 32U> {
   return {
-    {record.source_id,
-     record.time_start_ps,
-     record.time_stop_ps,
-     record.energy_micro_eV,
-     std::bit_cast<std::uint64_t>(record.position_x_pm),
-     std::bit_cast<std::uint64_t>(record.position_y_pm),
-     std::bit_cast<std::uint64_t>(record.position_z_pm),
-     static_cast<std::uint64_t>(record.source_type),
-     static_cast<std::uint64_t>(record.emitted_particle_type),
-     static_cast<std::uint64_t>(record.flags),
-     static_cast<std::uint64_t>(record.reserved_0),
-     static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_x_x)),
-     static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_x_y)),
-     static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_x_z)),
-     static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_y_x)),
-     static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_y_y)),
-     static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_y_z)),
-     static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_z_x)),
-     static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_z_y)),
-     static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_z_z)),
-     static_cast<std::uint64_t>(record.emission_geometry_type),
-     static_cast<std::uint64_t>(record.angular_distribution_type),
-     record.geometry_size_x_pm,
-     record.geometry_size_y_pm,
-     std::bit_cast<std::uint64_t>(record.focus_position_x_pm),
-     std::bit_cast<std::uint64_t>(record.focus_position_y_pm),
-     std::bit_cast<std::uint64_t>(record.focus_position_z_pm),
-     record.geometry_size_z_pm,
-     static_cast<std::uint64_t>(
-       std::bit_cast<std::uint32_t>(record.isotropic_cos_theta_lower)),
-     static_cast<std::uint64_t>(
-       std::bit_cast<std::uint32_t>(record.isotropic_cos_theta_upper)),
-     static_cast<std::uint64_t>(
-       std::bit_cast<std::uint32_t>(record.isotropic_phi_min_rad)),
-     static_cast<std::uint64_t>(
-       std::bit_cast<std::uint32_t>(record.isotropic_phi_max_rad))}};
+    {
+      record.source_id,
+      record.time_start_ps,
+      record.time_stop_ps,
+      record.energy_micro_eV,
+      std::bit_cast<std::uint64_t>(record.position_x_pm),
+      std::bit_cast<std::uint64_t>(record.position_y_pm),
+      std::bit_cast<std::uint64_t>(record.position_z_pm),
+      static_cast<std::uint64_t>(record.source_type),
+      static_cast<std::uint64_t>(record.emitted_particle_type),
+      static_cast<std::uint64_t>(record.flags),
+      static_cast<std::uint64_t>(record.reserved_0),
+      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_x_x)),
+      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_x_y)),
+      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_x_z)),
+      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_y_x)),
+      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_y_y)),
+      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_y_z)),
+      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_z_x)),
+      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_z_y)),
+      static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(record.axis_z_z)),
+      static_cast<std::uint64_t>(record.emission_geometry_type),
+      static_cast<std::uint64_t>(record.angular_distribution_type),
+      record.geometry_size_x_pm,
+      record.geometry_size_y_pm,
+      std::bit_cast<std::uint64_t>(record.focus_position_x_pm),
+      std::bit_cast<std::uint64_t>(record.focus_position_y_pm),
+      std::bit_cast<std::uint64_t>(record.focus_position_z_pm),
+      record.geometry_size_z_pm,
+      static_cast<std::uint64_t>(
+        std::bit_cast<std::uint32_t>(record.isotropic_cos_theta_lower)),
+      static_cast<std::uint64_t>(
+        std::bit_cast<std::uint32_t>(record.isotropic_cos_theta_upper)),
+      static_cast<std::uint64_t>(
+        std::bit_cast<std::uint32_t>(record.isotropic_phi_min_rad)),
+      static_cast<std::uint64_t>(
+        std::bit_cast<std::uint32_t>(record.isotropic_phi_max_rad)),
+    },
+  };
 }
 
 // =============================================================================
@@ -249,7 +279,9 @@ TEST_F(GGEMSSourceRecordKernelTest, HostAndKernelLayoutsAndValuesMatch) {
   auto &context = GetContext();
 
   std::array<SourceRecord, k_source_record_count> source_records{
-    MakeHostSourceRecord(), SourceRecord{}};
+    MakeHostSourceRecord(),
+    SourceRecord{},
+  };
   std::array<SourceRunRange, k_source_range_count> source_ranges{
     SourceRunRange{.projection_primary_begin = 301ULL, .primary_count = 302ULL},
     SourceRunRange{}};
@@ -294,52 +326,55 @@ TEST_F(GGEMSSourceRecordKernelTest, HostAndKernelLayoutsAndValuesMatch) {
   ggems::ocl::ReadSVMToHost(source_ranges_buffer, std::span{source_ranges});
   ggems::ocl::ReadSVMToHost(host_values_buffer, std::span{host_values});
 
-  std::array<std::uint64_t, k_layout_value_count> const expected_layout{{
-    static_cast<std::uint64_t>(sizeof(SourceRecord)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, source_id)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, time_start_ps)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, time_stop_ps)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, energy_micro_eV)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, position_x_pm)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, position_y_pm)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, position_z_pm)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, source_type)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, emitted_particle_type)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, flags)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, reserved_0)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, axis_x_x)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, axis_x_y)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, axis_x_z)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, axis_y_x)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, axis_y_y)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, axis_y_z)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, axis_z_x)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, axis_z_y)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, axis_z_z)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, emission_geometry_type)),
-    static_cast<std::uint64_t>(
-      offsetof(SourceRecord, angular_distribution_type)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, geometry_size_x_pm)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, geometry_size_y_pm)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, focus_position_x_pm)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, focus_position_y_pm)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, focus_position_z_pm)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, geometry_size_z_pm)),
-    static_cast<std::uint64_t>(
-      offsetof(SourceRecord, isotropic_cos_theta_lower)),
-    static_cast<std::uint64_t>(
-      offsetof(SourceRecord, isotropic_cos_theta_upper)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, isotropic_phi_min_rad)),
-    static_cast<std::uint64_t>(offsetof(SourceRecord, isotropic_phi_max_rad)),
-    static_cast<std::uint64_t>(sizeof(SourceRecord)),
-    static_cast<std::uint64_t>(offsetof(SourceRecordAlignmentProbe, record)),
-    static_cast<std::uint64_t>(sizeof(SourceRunRange)),
-    static_cast<std::uint64_t>(
-      offsetof(SourceRunRange, projection_primary_begin)),
-    static_cast<std::uint64_t>(offsetof(SourceRunRange, primary_count)),
-    static_cast<std::uint64_t>(sizeof(SourceRunRange)),
-    static_cast<std::uint64_t>(offsetof(SourceRunRangeAlignmentProbe, range)),
-  }};
+  std::array<std::uint64_t, k_layout_value_count> const expected_layout{
+    {
+      static_cast<std::uint64_t>(sizeof(SourceRecord)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, source_id)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, time_start_ps)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, time_stop_ps)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, energy_micro_eV)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, position_x_pm)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, position_y_pm)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, position_z_pm)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, source_type)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, emitted_particle_type)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, flags)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, reserved_0)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, axis_x_x)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, axis_x_y)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, axis_x_z)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, axis_y_x)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, axis_y_y)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, axis_y_z)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, axis_z_x)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, axis_z_y)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, axis_z_z)),
+      static_cast<std::uint64_t>(
+        offsetof(SourceRecord, emission_geometry_type)),
+      static_cast<std::uint64_t>(
+        offsetof(SourceRecord, angular_distribution_type)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, geometry_size_x_pm)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, geometry_size_y_pm)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, focus_position_x_pm)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, focus_position_y_pm)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, focus_position_z_pm)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, geometry_size_z_pm)),
+      static_cast<std::uint64_t>(
+        offsetof(SourceRecord, isotropic_cos_theta_lower)),
+      static_cast<std::uint64_t>(
+        offsetof(SourceRecord, isotropic_cos_theta_upper)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, isotropic_phi_min_rad)),
+      static_cast<std::uint64_t>(offsetof(SourceRecord, isotropic_phi_max_rad)),
+      static_cast<std::uint64_t>(sizeof(SourceRecord)),
+      static_cast<std::uint64_t>(offsetof(SourceRecordAlignmentProbe, record)),
+      static_cast<std::uint64_t>(sizeof(SourceRunRange)),
+      static_cast<std::uint64_t>(
+        offsetof(SourceRunRange, projection_primary_begin)),
+      static_cast<std::uint64_t>(offsetof(SourceRunRange, primary_count)),
+      static_cast<std::uint64_t>(sizeof(SourceRunRange)),
+      static_cast<std::uint64_t>(offsetof(SourceRunRangeAlignmentProbe, range)),
+    },
+  };
 
   for (std::size_t index = 0U; index < expected_layout.size(); ++index) {
     EXPECT_EQ(layout[index], expected_layout[index]) << index;

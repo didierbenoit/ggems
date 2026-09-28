@@ -1,4 +1,30 @@
-#include <algorithm>
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -9,35 +35,45 @@
 #include <gtest/gtest.h>
 
 #include "GGEMS/GGEMSException.hh"
-#include "GGEMS/materials/GGEMSIsotopeProfile.hh"
+#include "GGEMS/materials/GGEMSIsotopicComposition.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
 #include "GGEMS/units/GGEMSDensityUnits.hh"
 
 namespace {
 
+// =============================================================================
+// =============================================================================
+
 namespace materials = ggems::core::materials;
 namespace builtins = ggems::core::materials::builtins;
 
 using namespace ggems::units;
 
-constexpr std::array<std::string_view, 24U> k_compound_names{{
-  "Air",           "Water",         "Adipose",       "Blood", "BloodIodine5",
-  "BloodIodine10", "BloodIodine15", "BloodIodine20", "Brain", "Breast",
-  "Heart",         "Intestine",     "Kidney",        "Liver", "Lung",
-  "RibBone",       "SpineBone",     "Spleen",        "CdTe",  "CsI",
-  "GaAs",          "GOS",           "LSO",           "NaI",
-}};
+// =============================================================================
+// =============================================================================
 
-constexpr std::array<std::uint32_t, 8U> k_reference_elements{
-  43U, 61U, 84U, 85U, 86U, 87U, 88U, 89U,
+constexpr std::array<std::string_view, 24U> k_compound_names{
+  {
+    "Air",           "Water",         "Adipose",       "Blood", "BloodIodine5",
+    "BloodIodine10", "BloodIodine15", "BloodIodine20", "Brain", "Breast",
+    "Heart",         "Intestine",     "Kidney",        "Liver", "Lung",
+    "RibBone",       "SpineBone",     "Spleen",        "CdTe",  "CsI",
+    "GaAs",          "GOS",           "LSO",           "NaI",
+  },
 };
+
+// =============================================================================
+// =============================================================================
 
 struct ExpectedTotals {
   std::string_view name;
   long double total_atom_density;
   long double electron_density;
 };
+
+// =============================================================================
+// =============================================================================
 
 constexpr std::array<ExpectedTotals, 116U> k_expected_totals{
   {
@@ -635,7 +671,6 @@ TEST(GGEMSBuiltInMaterialsTest, ExposesCanonicalNamesInRegistryOrder) {
   ASSERT_EQ(available.size(), 117U);
   EXPECT_EQ(available.front(), "Vacuum");
 
-  // Vacuum occupies slot 0; the 92 elemental Materials follow in Z order.
   EXPECT_EQ(available[1U], "Hydrogen");
   EXPECT_EQ(available[13U], "Aluminum");
   EXPECT_EQ(available[53U], "Iodine");
@@ -666,7 +701,7 @@ TEST(GGEMSBuiltInMaterialsTest, BuildsVacuum) {
 
   EXPECT_EQ(material.GetName(), "Vacuum");
   EXPECT_EQ(material.GetDensity(), 0.0_g_cm3);
-  EXPECT_TRUE(material.GetConstituents().empty());
+  EXPECT_TRUE(material.GetElementalConstituents().empty());
   EXPECT_EQ(material.GetTotalAtomDensityPerCubicCentimeter(), 0.0L);
   EXPECT_EQ(material.GetElectronDensityPerCubicCentimeter(), 0.0L);
 }
@@ -677,19 +712,21 @@ TEST(GGEMSBuiltInMaterialsTest, BuildsVacuum) {
 TEST(GGEMSBuiltInMaterialsTest, BuildsCommonMedia) {
   auto const water = builtins::BuildBuiltInMaterial("Water");
   EXPECT_EQ(water.GetDensity(), 1.000_g_cm3);
-  ASSERT_EQ(water.GetConstituents().size(), 2U);
-  EXPECT_EQ(water.GetConstituents()[0U].atomic_number, 1U);
-  EXPECT_EQ(water.GetConstituents()[0U].mass_fraction, 0.111898L);
-  EXPECT_EQ(water.GetConstituents()[1U].atomic_number, 8U);
-  EXPECT_EQ(water.GetConstituents()[1U].mass_fraction, 0.888102L);
+  ASSERT_EQ(water.GetElementalConstituents().size(), 2U);
+  EXPECT_EQ(water.GetElementalConstituents()[0U].atomic_number, 1U);
+  EXPECT_NEAR(water.GetElementalConstituents()[0U].mass_fraction, 0.111898L,
+              64.0L * std::numeric_limits<long double>::epsilon());
+  EXPECT_EQ(water.GetElementalConstituents()[1U].atomic_number, 8U);
+  EXPECT_NEAR(water.GetElementalConstituents()[1U].mass_fraction, 0.888102L,
+              64.0L * std::numeric_limits<long double>::epsilon());
 
   auto const air = builtins::BuildBuiltInMaterial("Air");
   EXPECT_EQ(air.GetDensity(), 1.205e-3_g_cm3);
-  ASSERT_EQ(air.GetConstituents().size(), 4U);
-  EXPECT_EQ(air.GetConstituents()[0U].atomic_number, 6U);
-  EXPECT_EQ(air.GetConstituents()[1U].atomic_number, 7U);
-  EXPECT_EQ(air.GetConstituents()[2U].atomic_number, 8U);
-  EXPECT_EQ(air.GetConstituents()[3U].atomic_number, 18U);
+  ASSERT_EQ(air.GetElementalConstituents().size(), 4U);
+  EXPECT_EQ(air.GetElementalConstituents()[0U].atomic_number, 6U);
+  EXPECT_EQ(air.GetElementalConstituents()[1U].atomic_number, 7U);
+  EXPECT_EQ(air.GetElementalConstituents()[2U].atomic_number, 8U);
+  EXPECT_EQ(air.GetElementalConstituents()[3U].atomic_number, 18U);
 }
 
 // =============================================================================
@@ -704,17 +741,35 @@ TEST(GGEMSBuiltInMaterialsTest, BuildsRepresentativeElementalMaterials) {
 
   constexpr std::array expected{
     ExpectedMaterial{
-      .name = "Aluminum", .atomic_number = 13U, .density = 2.699_g_cm3},
+      .name = "Aluminum",
+      .atomic_number = 13U,
+      .density = 2.699_g_cm3,
+    },
     ExpectedMaterial{
-      .name = "Silicon", .atomic_number = 14U, .density = 2.330_g_cm3},
+      .name = "Silicon",
+      .atomic_number = 14U,
+      .density = 2.330_g_cm3,
+    },
     ExpectedMaterial{
-      .name = "Copper", .atomic_number = 29U, .density = 8.960_g_cm3},
+      .name = "Copper",
+      .atomic_number = 29U,
+      .density = 8.960_g_cm3,
+    },
     ExpectedMaterial{
-      .name = "Tungsten", .atomic_number = 74U, .density = 19.30_g_cm3},
+      .name = "Tungsten",
+      .atomic_number = 74U,
+      .density = 19.30_g_cm3,
+    },
     ExpectedMaterial{
-      .name = "Lead", .atomic_number = 82U, .density = 11.35_g_cm3},
+      .name = "Lead",
+      .atomic_number = 82U,
+      .density = 11.35_g_cm3,
+    },
     ExpectedMaterial{
-      .name = "Uranium", .atomic_number = 92U, .density = 18.95_g_cm3},
+      .name = "Uranium",
+      .atomic_number = 92U,
+      .density = 18.95_g_cm3,
+    },
   };
 
   for (auto const &expected_material : expected) {
@@ -726,11 +781,12 @@ TEST(GGEMSBuiltInMaterialsTest, BuildsRepresentativeElementalMaterials) {
     EXPECT_EQ(material.GetName(), expected_material.name);
     EXPECT_EQ(material.GetDensity(), expected_material.density);
 
-    auto const constituents = material.GetConstituents();
+    auto const constituents = material.GetElementalConstituents();
     ASSERT_EQ(constituents.size(), 1U);
     EXPECT_EQ(constituents.front().atomic_number,
               expected_material.atomic_number);
-    EXPECT_EQ(constituents.front().mass_fraction, 1.0L);
+    EXPECT_NEAR(constituents.front().mass_fraction, 1.0L,
+                64.0L * std::numeric_limits<long double>::epsilon());
   }
 }
 
@@ -740,23 +796,25 @@ TEST(GGEMSBuiltInMaterialsTest, BuildsRepresentativeElementalMaterials) {
 TEST(GGEMSBuiltInMaterialsTest, BuildsRepresentativeMedicalMaterials) {
   auto const brain = builtins::BuildBuiltInMaterial("Brain");
   EXPECT_EQ(brain.GetDensity(), 1.03_g_cm3);
-  EXPECT_EQ(brain.GetConstituents().size(), 13U);
+  EXPECT_EQ(brain.GetElementalConstituents().size(), 13U);
 
   auto const lung = builtins::BuildBuiltInMaterial("Lung");
   EXPECT_EQ(lung.GetDensity(), 0.26_g_cm3);
-  EXPECT_EQ(lung.GetConstituents().size(), 9U);
+  EXPECT_EQ(lung.GetElementalConstituents().size(), 9U);
 
   auto const lso = builtins::BuildBuiltInMaterial("LSO");
   EXPECT_EQ(lso.GetDensity(), 7.4_g_cm3);
-  EXPECT_EQ(lso.GetConstituents().size(), 3U);
+  EXPECT_EQ(lso.GetElementalConstituents().size(), 3U);
 
   auto const cdte = builtins::BuildBuiltInMaterial("CdTe");
   EXPECT_EQ(cdte.GetDensity(), 6.200_g_cm3);
-  ASSERT_EQ(cdte.GetConstituents().size(), 2U);
-  EXPECT_EQ(cdte.GetConstituents()[0U].atomic_number, 48U);
-  EXPECT_EQ(cdte.GetConstituents()[0U].mass_fraction, 0.468358L);
-  EXPECT_EQ(cdte.GetConstituents()[1U].atomic_number, 52U);
-  EXPECT_EQ(cdte.GetConstituents()[1U].mass_fraction, 0.531642L);
+  ASSERT_EQ(cdte.GetElementalConstituents().size(), 2U);
+  EXPECT_EQ(cdte.GetElementalConstituents()[0U].atomic_number, 48U);
+  EXPECT_NEAR(cdte.GetElementalConstituents()[0U].mass_fraction, 0.468358L,
+              64.0L * std::numeric_limits<long double>::epsilon());
+  EXPECT_EQ(cdte.GetElementalConstituents()[1U].atomic_number, 52U);
+  EXPECT_NEAR(cdte.GetElementalConstituents()[1U].mass_fraction, 0.531642L,
+              64.0L * std::numeric_limits<long double>::epsilon());
 }
 
 // =============================================================================
@@ -785,30 +843,45 @@ TEST(GGEMSBuiltInMaterialsTest, RejectsUnknownOrInexactNames) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSBuiltInMaterialsTest, ResolvesEveryElementThroughIsotopeProfiles) {
+TEST(GGEMSBuiltInMaterialsTest, ResolvesEveryElementThroughDefaultIsotopes) {
   for (auto const name : builtins::GetAvailableMaterialNames()) {
     SCOPED_TRACE(name);
 
     auto const material = builtins::BuildBuiltInMaterial(name);
+    auto const elements = material.GetElementalConstituents();
+    auto const isotopes = material.GetIsotopeConstituents();
 
     if (name == "Vacuum") {
-      EXPECT_TRUE(material.GetConstituents().empty());
-      EXPECT_TRUE(material.GetIsotopeConstituents().empty());
+      EXPECT_TRUE(elements.empty());
+      EXPECT_TRUE(isotopes.empty());
       continue;
     }
 
-    EXPECT_FALSE(material.GetIsotopeConstituents().empty());
+    ASSERT_FALSE(elements.empty());
+    ASSERT_FALSE(isotopes.empty());
 
-    for (auto const &constituent : material.GetConstituents()) {
-      bool const reference =
-        std::ranges::find(k_reference_elements, constituent.atomic_number) !=
-        k_reference_elements.end();
+    std::size_t isotope_index{0U};
 
-      EXPECT_EQ(constituent.isotope_profile,
-                reference
-                  ? materials::GGEMSIsotopeProfile::LegacyReferenceIsotope
-                  : materials::GGEMSIsotopeProfile::Nist41Natural);
+    for (auto const &element : elements) {
+      SCOPED_TRACE(element.atomic_number);
+
+      auto const expected_composition =
+        materials::BuildDefaultIsotopicComposition(element.atomic_number);
+
+      for (auto const &expected : expected_composition.GetFractions()) {
+        ASSERT_LT(isotope_index, isotopes.size());
+
+        auto const &actual = isotopes[isotope_index];
+
+        EXPECT_EQ(actual.isotope, expected.isotope);
+        EXPECT_NEAR(actual.atom_fraction_in_element, expected.fraction,
+                    64.0L * std::numeric_limits<long double>::epsilon());
+
+        ++isotope_index;
+      }
     }
+
+    EXPECT_EQ(isotope_index, isotopes.size());
   }
 }
 
@@ -816,8 +889,6 @@ TEST(GGEMSBuiltInMaterialsTest, ResolvesEveryElementThroughIsotopeProfiles) {
 // =============================================================================
 
 TEST(GGEMSBuiltInMaterialsTest, MatchesIndependentIsotopicOracle) {
-  // Independent Decimal oracle of the M2 migration (NIST 4.1 natural profiles
-  // or legacy reference isotopes, AME2020/NUBASE2020 masses, CODATA 2022 M_u).
   constexpr long double k_relative_budget{
     64.0L * std::numeric_limits<long double>::epsilon(),
   };

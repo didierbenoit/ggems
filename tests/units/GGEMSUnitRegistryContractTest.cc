@@ -21,17 +21,10 @@
 
 /*!
  * \file
- * \brief Contract tests for the GGEMS unit registry and conversion framework.
- *
- * Validates official unit symbols, canonical conversion paths, numeric
- * boundaries, conversion error categories, bit/byte bridges, encoding-aware
- * formatting, and quantity-specific display policies.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <cstdint>
 #include <format>
@@ -39,10 +32,11 @@
 #include <string>
 #include <type_traits>
 #include <string_view>
+#include <concepts>
+#include <cstddef>
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/units/GGEMSQuantity.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
@@ -63,8 +57,6 @@
 #include "GGEMS/units/GGEMSTimeUnits.hh"
 #include "GGEMS/units/GGEMSVolumeUnits.hh"
 #include "GGEMSScopedLoggerEncoding.hh"
-
-/// \cond
 
 namespace ggems::units {
 
@@ -97,9 +89,11 @@ template <> struct UnitRegistry<DuplicateSymbolUnitSet> {
 struct InvalidScaleUnitSet {};
 
 template <> struct UnitRegistry<InvalidScaleUnitSet> {
-  static constexpr std::array<UnitDefinition, 1U> units{{
-    {.symbol = "invalid", .scale = SpecialScale(-1.0L)},
-  }};
+  static constexpr std::array<UnitDefinition, 1U> units{
+    {
+      {.symbol = "invalid", .scale = SpecialScale(-1.0L)},
+    },
+  };
 };
 
 struct SignedUnsignedTag {};
@@ -135,20 +129,8 @@ using namespace ggems::units;
 using ggems::test::ScopedLoggerEncoding;
 
 template <typename UnitSet>
-/*!
- * \brief Checks whether a unit-set type has a UnitRegistry specialization.
- *
- * \tparam UnitSet Unit-set marker type.
- */
 concept HasUnitRegistry = requires { UnitRegistry<UnitSet>::units; };
 
-/*!
- * \brief Validates a unit registry at compile time.
- *
- * \tparam UnitSet Unit-set marker type.
- * \return true when the registry is nonempty, finite, positive, and free of
- * duplicate ASCII symbols; otherwise false.
- */
 template <typename UnitSet> consteval auto ValidateUnitSet() -> bool {
   if constexpr (!HasUnitRegistry<UnitSet>) {
     return false;
@@ -179,15 +161,6 @@ template <typename UnitSet> consteval auto ValidateUnitSet() -> bool {
 }
 
 template <typename Tag, typename Representation>
-/*!
- * \brief Validates quantity traits and representation compatibility at compile
- * time.
- *
- * \tparam Tag Quantity-family tag type.
- * \tparam Representation Underlying arithmetic representation type.
- * \return true when the traits and representation satisfy the GGEMS unit-system
- * requirements; otherwise false.
- */
 consteval auto ValidateQuantityTraits() -> bool {
   if constexpr (!requires {
                   typename QuantityTraits<Tag>::unit_set;
@@ -207,7 +180,7 @@ consteval auto ValidateQuantityTraits() -> bool {
     return false;
   } else {
     using Traits = QuantityTraits<Tag>;
-    using UnitSet = typename Traits::unit_set;
+    using UnitSet = Traits::unit_set;
     if constexpr (!ValidateUnitSet<UnitSet>()) {
       return false;
     } else {
@@ -381,43 +354,85 @@ static_assert(!std::is_convertible_v<Bits, Bytes>);
 consteval auto EveryPublicLiteralCompiles() -> bool {
   auto const activity = std::array{
     1_Bq,   1_kBq,   1_MBq,   1_GBq,   1_TBq,   1_Ci,   1_mCi,   1_uCi,
-    1.0_Bq, 1.0_kBq, 1.0_MBq, 1.0_GBq, 1.0_TBq, 1.0_Ci, 1.0_mCi, 1.0_uCi};
-  auto const angle = std::array{1_rad, 1_deg, 1.0_rad, 1.0_deg};
-  auto const area =
-    std::array{1_pm2,   1_nm2,   1_um2,   1_mm2,   1_cm2,   1_m2,   1_km2,
-               1.0_pm2, 1.0_nm2, 1.0_um2, 1.0_mm2, 1.0_cm2, 1.0_m2, 1.0_km2};
+    1.0_Bq, 1.0_kBq, 1.0_MBq, 1.0_GBq, 1.0_TBq, 1.0_Ci, 1.0_mCi, 1.0_uCi,
+  };
+
+  auto const angle = std::array{
+    1_rad,
+    1_deg,
+    1.0_rad,
+    1.0_deg,
+  };
+
+  auto const area = std::array{
+    1_pm2,   1_nm2,   1_um2,   1_mm2,   1_cm2,   1_m2,   1_km2,
+    1.0_pm2, 1.0_nm2, 1.0_um2, 1.0_mm2, 1.0_cm2, 1.0_m2, 1.0_km2,
+  };
+
   auto const bits = std::array{
     1_bit,     1_kbit,    1_Mbit,   1_Gbit,   1_Tbit,   1_Kibit,   1_Mibit,
     1_Gibit,   1_Tibit,   1_b,      1_kb,     1_Mb,     1_Gb,      1_Tb,
     1.0_bit,   1.0_kbit,  1.0_Mbit, 1.0_Gbit, 1.0_Tbit, 1.0_Kibit, 1.0_Mibit,
-    1.0_Gibit, 1.0_Tibit, 1.0_b,    1.0_kb,   1.0_Mb,   1.0_Gb,    1.0_Tb};
+    1.0_Gibit, 1.0_Tibit, 1.0_b,    1.0_kb,   1.0_Mb,   1.0_Gb,    1.0_Tb,
+  };
+
   auto const bytes = std::array{
     1_B,   1_kB,   1_MB,   1_GB,   1_TB,   1_KiB,   1_MiB,   1_GiB,   1_TiB,
-    1.0_B, 1.0_kB, 1.0_MB, 1.0_GB, 1.0_TB, 1.0_KiB, 1.0_MiB, 1.0_GiB, 1.0_TiB};
+    1.0_B, 1.0_kB, 1.0_MB, 1.0_GB, 1.0_TB, 1.0_KiB, 1.0_MiB, 1.0_GiB, 1.0_TiB,
+  };
+
   auto const cross_section = std::array{
-    1_pb,     1_nb,      1_ub,      1_mb,      1_barn,    1_kbarn,  1_pbarn,
-    1_nbarn,  1_ubarn,   1_mbarn,   1.0_pb,    1.0_nb,    1.0_ub,   1.0_mb,
-    1.0_barn, 1.0_kbarn, 1.0_pbarn, 1.0_nbarn, 1.0_ubarn, 1.0_mbarn};
-  auto const density = std::array{1_pg_pm3, 1_g_cm3, 1.0_pg_pm3, 1.0_g_cm3};
-  auto const dose = std::array{1_meV_pg,   1_Gy,   1_mGy,   1_uGy,
-                               1.0_meV_pg, 1.0_Gy, 1.0_mGy, 1.0_uGy};
-  auto const energy =
-    std::array{1_meV,   1_eV,   1_keV,   1_MeV,   1_GeV,   1_TeV,
-               1.0_meV, 1.0_eV, 1.0_keV, 1.0_MeV, 1.0_GeV, 1.0_TeV};
-  auto const frequency = std::array{1_Hz,   1_kHz,   1_MHz,   1_GHz,   1_THz,
-                                    1.0_Hz, 1.0_kHz, 1.0_MHz, 1.0_GHz, 1.0_THz};
-  auto const length =
-    std::array{1_pm,   1_nm,   1_um,   1_mm,   1_cm,   1_m,   1_km,
-               1.0_pm, 1.0_nm, 1.0_um, 1.0_mm, 1.0_cm, 1.0_m, 1.0_km};
-  auto const mass = std::array{1_pg,   1_ng,   1_ug,   1_mg,   1_g,   1_kg,
-                               1.0_pg, 1.0_ng, 1.0_ug, 1.0_mg, 1.0_g, 1.0_kg};
-  auto const speed = std::array{1_pm_ps, 1_m_s, 1.0_pm_ps, 1.0_m_s};
-  auto const time =
-    std::array{1_ps,   1_ns,   1_us,   1_ms,   1_s,   1_min,   1_h,
-               1.0_ps, 1.0_ns, 1.0_us, 1.0_ms, 1.0_s, 1.0_min, 1.0_h};
-  auto const volume =
-    std::array{1_pm3,   1_nm3,   1_um3,   1_mm3,   1_cm3,   1_m3,   1_km3,
-               1.0_pm3, 1.0_nm3, 1.0_um3, 1.0_mm3, 1.0_cm3, 1.0_m3, 1.0_km3};
+    1_pb,     1_nb,      1_ub,      1_mb,      1_barn,    1_kbarn,   1_pbarn,
+    1_nbarn,  1_ubarn,   1_mbarn,   1.0_pb,    1.0_nb,    1.0_ub,    1.0_mb,
+    1.0_barn, 1.0_kbarn, 1.0_pbarn, 1.0_nbarn, 1.0_ubarn, 1.0_mbarn,
+  };
+
+  auto const density = std::array{
+    1_pg_pm3,
+    1_g_cm3,
+    1.0_pg_pm3,
+    1.0_g_cm3,
+  };
+
+  auto const dose = std::array{
+    1_meV_pg, 1_Gy, 1_mGy, 1_uGy, 1.0_meV_pg, 1.0_Gy, 1.0_mGy, 1.0_uGy,
+  };
+  auto const energy = std::array{
+    1_meV,   1_eV,   1_keV,   1_MeV,   1_GeV,   1_TeV,
+    1.0_meV, 1.0_eV, 1.0_keV, 1.0_MeV, 1.0_GeV, 1.0_TeV,
+  };
+
+  auto const frequency = std::array{
+    1_Hz,   1_kHz,   1_MHz,   1_GHz,   1_THz,
+    1.0_Hz, 1.0_kHz, 1.0_MHz, 1.0_GHz, 1.0_THz,
+  };
+  auto const length = std::array{
+    1_pm,   1_nm,   1_um,   1_mm,   1_cm,   1_m,   1_km,
+    1.0_pm, 1.0_nm, 1.0_um, 1.0_mm, 1.0_cm, 1.0_m, 1.0_km,
+  };
+
+  auto const mass = std::array{
+    1_pg,   1_ng,   1_ug,   1_mg,   1_g,   1_kg,
+    1.0_pg, 1.0_ng, 1.0_ug, 1.0_mg, 1.0_g, 1.0_kg,
+  };
+
+  auto const speed = std::array{
+    1_pm_ps,
+    1_m_s,
+    1.0_pm_ps,
+    1.0_m_s,
+  };
+
+  auto const time = std::array{
+    1_ps,   1_ns,   1_us,   1_ms,   1_s,   1_min,   1_h,
+    1.0_ps, 1.0_ns, 1.0_us, 1.0_ms, 1.0_s, 1.0_min, 1.0_h,
+  };
+
+  auto const volume = std::array{
+    1_pm3,   1_nm3,   1_um3,   1_mm3,   1_cm3,   1_m3,   1_km3,
+    1.0_pm3, 1.0_nm3, 1.0_um3, 1.0_mm3, 1.0_cm3, 1.0_m3, 1.0_km3,
+  };
+
   static_cast<void>(activity);
   static_cast<void>(angle);
   static_cast<void>(area);
@@ -447,6 +462,8 @@ static_assert((1_kB).value == 1'000ULL);
 static_assert((1_Kibit).value == 1'024ULL);
 static_assert((1_kbit).value == 1'000ULL);
 static_assert((1_Gy).value == 6'241'509ULL);
+
+} // namespace
 
 // =============================================================================
 // =============================================================================
@@ -688,6 +705,3 @@ TEST(GGEMSUnitRegistryContractTest, AppliesQuantitySpecificDisplayPolicies) {
   EXPECT_EQ(HumanReadable(12.3456_deg, 1), "12.3 deg");
   EXPECT_EQ(std::format("{:>20}", Length{1ULL}), "        1.0000000 pm");
 }
-
-} // namespace
-/// \endcond

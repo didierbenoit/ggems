@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -22,7 +49,6 @@ using ggems::core::radioactivity::GGEMSRadionuclideDefinition;
 using ggems::core::radioactivity::GGEMSRadionuclideEmission;
 using ggems::core::radioactivity::builtins::BuildI125Radionuclide;
 using ggems::core::sources::GGEMSEnergyDistributionType;
-using ggems::core::sources::k_energy_ticket_space_size;
 
 // =============================================================================
 // =============================================================================
@@ -32,61 +58,69 @@ constexpr std::uint64_t k_expected_gamma_energy_micro_eV{35'492'200'000ULL};
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<std::uint64_t, 5U> k_expected_x_ray_energies_micro_eV{{
-  4'078'800'000ULL,
-  27'202'000'000ULL,
-  27'472'600'000ULL,
-  31'058'900'000ULL,
-  31'762'300'000ULL,
-}};
+constexpr std::array<std::uint64_t, 5U> k_expected_x_ray_energies_micro_eV{
+  {
+    4'078'800'000ULL,
+    27'202'000'000ULL,
+    27'472'600'000ULL,
+    31'058'900'000ULL,
+    31'762'300'000ULL,
+  },
+};
 
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<double, 5U> k_expected_x_ray_line_yields{{
-  0.147,
-  0.393,
-  0.732,
-  0.209,
-  0.0454,
-}};
+constexpr std::array<double, 5U> k_expected_x_ray_line_yields{
+  {
+    0.147,
+    0.393,
+    0.732,
+    0.209,
+    0.0454,
+  },
+};
 
 // =============================================================================
 // =============================================================================
-constexpr std::array<std::uint64_t, 13U> k_expected_auger_energies_micro_eV{{
-  22'927'000ULL,
-  24'922'000ULL,
-  120'899'000ULL,
-  299'843'000ULL,
-  449'679'000ULL,
-  541'735'000ULL,
-  690'006'000ULL,
-  3'088'170'000ULL,
-  3'682'760'000ULL,
-  4'299'940'000ULL,
-  22'665'300'000ULL,
-  26'505'600'000ULL,
-  30'346'100'000ULL,
-}};
+constexpr std::array<std::uint64_t, 13U> k_expected_auger_energies_micro_eV{
+  {
+    22'927'000ULL,
+    24'922'000ULL,
+    120'899'000ULL,
+    299'843'000ULL,
+    449'679'000ULL,
+    541'735'000ULL,
+    690'006'000ULL,
+    3'088'170'000ULL,
+    3'682'760'000ULL,
+    4'299'940'000ULL,
+    22'665'300'000ULL,
+    26'505'600'000ULL,
+    30'346'100'000ULL,
+  },
+};
 
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<double, 13U> k_expected_auger_line_yields{{
-  12.198,
-  4.08498,
-  1.41044,
-  0.275991,
-  3.12454,
-  0.120544,
-  0.000457128,
-  1.2264,
-  0.347461,
-  0.0245935,
-  0.130975,
-  0.057687,
-  0.00607509,
-}};
+constexpr std::array<double, 13U> k_expected_auger_line_yields{
+  {
+    12.198,
+    4.08498,
+    1.41044,
+    0.275991,
+    3.12454,
+    0.120544,
+    0.000457128,
+    1.2264,
+    0.347461,
+    0.0245935,
+    0.130975,
+    0.057687,
+    0.00607509,
+  },
+};
 
 // =============================================================================
 // =============================================================================
@@ -99,19 +133,22 @@ constexpr std::array<std::uint64_t, 6U> k_expected_conversion_energies_micro_eV{
     31'150'800'000ULL,
     34'722'400'000ULL,
     35'398'500'000ULL,
-  }};
+  },
+};
 
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<double, 6U> k_expected_conversion_line_yields{{
-  0.776,
-  0.0936,
-  0.0172,
-  0.0159,
-  0.0256,
-  0.00548,
-}};
+constexpr std::array<double, 6U> k_expected_conversion_line_yields{
+  {
+    0.776,
+    0.0936,
+    0.0172,
+    0.0159,
+    0.0256,
+    0.00548,
+  },
+};
 
 // =============================================================================
 // =============================================================================
@@ -148,7 +185,7 @@ auto CheckReachableDiscreteChannel(GGEMSRadionuclideEmission const &emission,
 
   EXPECT_NEAR(static_cast<double>(line_yield_sum),
               static_cast<double>(emission.GetYieldPerDecay()), 1.0e-12);
-  EXPECT_EQ(previous_ticket, k_energy_ticket_space_size);
+  EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
 }
 
 // =============================================================================

@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -140,18 +167,13 @@ auto ExpectObserverSourceMatches(
 template <typename Function>
 auto ExpectGGEMSExceptionContaining(Function &&function,
                                     std::string_view expected_message) -> void {
-  bool exception_caught = false;
-
   try {
     std::forward<Function>(function)();
-  } catch (ggems::core::GGEMSExceptionBase const &exception) {
-    exception_caught = true;
-
-    std::string_view diagnostic{exception.what()};
+    FAIL() << "Expected GGEMSRecoverable containing: " << expected_message;
+  } catch (ggems::core::GGEMSRecoverable const &exception) {
+    std::string_view const diagnostic{exception.what()};
     EXPECT_NE(diagnostic.find(expected_message), std::string_view::npos);
   }
-
-  EXPECT_TRUE(exception_caught);
 }
 
 // =============================================================================
@@ -169,8 +191,33 @@ protected:
 
     ASSERT_FALSE(opencl.GetContext().empty());
   }
+
+  auto SetUp() -> void override {
+    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
+    previous_worker_count_ = opencl.GetWorkerCount();
+    opencl.SetWorkerCount(64U);
+  }
+
+  auto TearDown() -> void override {
+    ggems::ocl::GGEMSOpenCL::GetInstance().SetWorkerCount(
+      previous_worker_count_);
+  }
+
+private:
+  std::uint32_t previous_worker_count_{0U};
 };
 } // namespace
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSRun, RejectsRunBeforeInitializeWithoutPublishingSnapshot) {
+  ggems::core::GGEMSRun run{};
+
+  EXPECT_THROW(run.Run(), ggems::core::GGEMSRecoverable);
+  EXPECT_FALSE(run.GetLastSourceRunSnapshot().has_value());
+  EXPECT_EQ(run.GetCurrentTimePicoSecond(), 0ULL);
+}
 
 // =============================================================================
 // =============================================================================
@@ -202,11 +249,11 @@ TEST(GGEMSRun, ExposesStaticAndConfiguredTimeStateBeforeInitialize) {
   EXPECT_NO_THROW(run.ResetTime());
 
   EXPECT_THROW(run.SetTimePicoSecond(5ULL, 5ULL, 1ULL),
-               ggems::core::GGEMSExceptionBase);
+               ggems::core::GGEMSRecoverable);
   EXPECT_THROW(run.SetTimePicoSecond(6ULL, 5ULL, 1ULL),
-               ggems::core::GGEMSExceptionBase);
+               ggems::core::GGEMSRecoverable);
   EXPECT_THROW(run.SetTimePicoSecond(5ULL, 6ULL, 0ULL),
-               ggems::core::GGEMSExceptionBase);
+               ggems::core::GGEMSRecoverable);
   EXPECT_FALSE(run.HasTimeConfiguration());
 
   EXPECT_NO_THROW(run.SetTimePicoSecond(10ULL, 20ULL, 50ULL));
@@ -232,10 +279,10 @@ TEST(GGEMSRun,
   source->SetRadionuclide(radionuclide, ggems::units::Activity{100.0L}, 0ULL);
 
   ggems::core::GGEMSRun run{};
-  run.SetSource(source);
+  run.AddSource(source);
 
   ExpectGGEMSExceptionContaining(
-    [&run]() -> void { run.Initialize(); },
+    [&run] -> void { run.Initialize(); },
     "ActivityDriven GGEMSRun sources require a configured non-empty time "
     "schedule");
 
@@ -244,20 +291,20 @@ TEST(GGEMSRun,
   EXPECT_NO_THROW(run.SetTimePicoSecond(10ULL, 20ULL, 10ULL));
 
   ExpectGGEMSExceptionContaining(
-    [&run]() -> void { run.Initialize(); },
+    [&run] -> void { run.Initialize(); },
     "ActivityDriven source reference time must not follow the "
     "configured GGEMSRun start time");
 
   EXPECT_NO_THROW(source->SetRadionuclide(
     radionuclide, ggems::units::Activity{125.0L}, 9ULL));
   ExpectGGEMSExceptionContaining(
-    [&run]() -> void { run.Initialize(); },
+    [&run] -> void { run.Initialize(); },
     "GGEMSRun cannot be initialized without a GGEMSRandom");
 
   EXPECT_NO_THROW(source->SetRadionuclide(
     radionuclide, ggems::units::Activity{125.0L}, 10ULL));
   ExpectGGEMSExceptionContaining(
-    [&run]() -> void { run.Initialize(); },
+    [&run] -> void { run.Initialize(); },
     "GGEMSRun cannot be initialized without a GGEMSRandom");
 
   EXPECT_NO_THROW(source->SetCountDrivenPopulation(3ULL));
@@ -276,9 +323,8 @@ TEST_F(GGEMSRunTest, RepeatedStaticRunsKeepPrimaryBirthTimeAtZero) {
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(random);
-  run.SetSource(source);
+  run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
 
   ASSERT_NO_THROW(run.Initialize());
 
@@ -312,14 +358,14 @@ TEST_F(GGEMSRunTest, AdvancesConfiguredWindowsAndResetOnlyRewindsTime) {
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(random);
-  run.SetSource(source);
+  run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorkerCount(1U);
+  ggems::ocl::GGEMSOpenCL::GetInstance().SetWorkerCount(1U);
   run.SetTimePicoSecond(10ULL, 25ULL, 8ULL);
 
   ASSERT_NO_THROW(run.Initialize());
   EXPECT_THROW(run.SetTimePicoSecond(0ULL, 1ULL, 1ULL),
-               ggems::core::GGEMSExceptionBase);
+               ggems::core::GGEMSRecoverable);
   EXPECT_EQ(
     run.GetCurrentTimeWindowPicoSecond(),
     (ggems::core::GGEMSTimeWindow{.start_ps = 10ULL, .stop_ps = 18ULL}));
@@ -351,7 +397,7 @@ TEST_F(GGEMSRunTest, AdvancesConfiguredWindowsAndResetOnlyRewindsTime) {
   EXPECT_EQ(snapshot_before_exhaustion->GetRecords()[0U].time_stop_ps, 25ULL);
   std::string const dump_before_exhaustion = observer->BuildDump();
 
-  ExpectGGEMSExceptionContaining([&run]() -> void { run.Run(); },
+  ExpectGGEMSExceptionContaining([&run] -> void { run.Run(); },
                                  "time schedule is exhausted");
   EXPECT_EQ(run.GetCurrentTimePicoSecond(), 25ULL);
   EXPECT_EQ(observer->BuildDump(), dump_before_exhaustion);
@@ -378,9 +424,8 @@ TEST_F(GGEMSRunTest, AdvancesConfiguredWindowsAndResetOnlyRewindsTime) {
 
   ggems::core::GGEMSRun reference_run{};
   reference_run.SetRandom(MakePhiloxRandom());
-  reference_run.SetSource(reference_source);
+  reference_run.AddSource(reference_source);
   reference_run.SetObserver(reference_observer);
-  reference_run.SetWorkerCount(1U);
   ASSERT_NO_THROW(reference_run.Initialize());
 
   ASSERT_NO_THROW(reference_run.Run());
@@ -415,9 +460,9 @@ TEST_F(GGEMSRunTest, GivesEveryDeviceTheSameEffectiveWindow) {
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(MakePhiloxRandom());
-  run.SetSource(source);
+  run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorkerCount(1U);
+  ggems::ocl::GGEMSOpenCL::GetInstance().SetWorkerCount(1U);
   run.SetTimePicoSecond(50ULL, 75ULL, 25ULL);
 
   ASSERT_NO_THROW(run.Initialize());
@@ -450,9 +495,9 @@ TEST_F(GGEMSRunTest,
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(random);
-  run.SetSource(source);
+  run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorkerCount(1U);
+  ggems::ocl::GGEMSOpenCL::GetInstance().SetWorkerCount(1U);
   run.SetTimePicoSecond(0ULL, 3ULL, 1ULL);
 
   ASSERT_NO_THROW(run.Initialize());
@@ -494,9 +539,8 @@ TEST_F(GGEMSRunTest,
 
   ggems::core::GGEMSRun reference_run{};
   reference_run.SetRandom(reference_random);
-  reference_run.SetSource(reference_source);
+  reference_run.AddSource(reference_source);
   reference_run.SetObserver(reference_observer);
-  reference_run.SetWorkerCount(1U);
   ASSERT_NO_THROW(reference_run.Initialize());
 
   ASSERT_NO_THROW(reference_run.Run());
@@ -520,18 +564,12 @@ TEST_F(GGEMSRunTest,
 // =============================================================================
 
 TEST_F(GGEMSRunTest, RejectsSecondInitializeAndRemainsUsable) {
-  auto random = std::make_shared<ggems::core::random::GGEMSRandom>();
-  random->SetEngine("philox");
-  random->SetSeed(7777777ULL);
-
   ggems::core::GGEMSRun run{};
-  run.SetRandom(random);
-  run.SetPrimaryCount(1U);
-  run.SetWorkerCount(64U);
+  run.SetRandom(MakePhiloxRandom());
+  run.AddSource(MakeLowEnergySource(1ULL));
 
   ASSERT_NO_THROW(run.Initialize());
-
-  EXPECT_THROW(run.Initialize(), ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(run.Initialize(), ggems::core::GGEMSRecoverable);
 
   EXPECT_NO_THROW(run.Run());
   EXPECT_NO_THROW(run.Run());
@@ -563,10 +601,9 @@ TEST_F(GGEMSRunTest, UsesIndependentSourceSnapshotsAcrossSequentialRuns) {
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(random);
-  run.SetSource(source);
+  run.AddSource(source);
   run.SetObserver(observer);
-  run.SetPrimaryCount(1U);
-  run.SetWorkerCount(64U);
+  source->SetPrimaryCount(1ULL);
 
   ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
@@ -637,49 +674,15 @@ TEST_F(GGEMSRunTest, UsesIndependentSourceSnapshotsAcrossSequentialRuns) {
 // =============================================================================
 // =============================================================================
 
-TEST_F(GGEMSRunTest, LegacyPrimaryCountSetterDelegatesToCurrentSource) {
-  auto random = MakePhiloxRandom();
-  auto source = MakeLowEnergySource(7ULL);
-  auto observer = MakeCapturingObserver(3U);
-
-  ggems::core::GGEMSRun run{};
-  run.SetRandom(random);
-  run.SetSource(source);
-  run.SetObserver(observer);
-  run.SetPrimaryCount(3U);
-  run.SetWorkerCount(64U);
-
-  EXPECT_EQ(source->GetPrimaryCount(), 3ULL);
-
-  ASSERT_NO_THROW(run.Initialize());
-  ASSERT_NO_THROW(run.Run());
-
-  EXPECT_EQ(observer->GetCapturedPrimaryCount(), 3U);
-
-  auto source_records = BuildSortedSourceRecordSnapshot(observer->GetRecords());
-
-  ASSERT_EQ(source_records.size(), 3U);
-
-  for (std::size_t index = 0U; index < source_records.size(); ++index) {
-    EXPECT_EQ(source_records[index].global_primary_id,
-              static_cast<std::uint64_t>(index));
-  }
-}
-
-// =============================================================================
-// =============================================================================
-
 TEST_F(GGEMSRunTest, UsesPrimaryCountOwnedByAttachedSource) {
   auto random = MakePhiloxRandom();
   auto source = MakeLowEnergySource(3ULL);
   auto observer = MakeCapturingObserver(16U);
 
   ggems::core::GGEMSRun run{};
-  run.SetPrimaryCount(11U);
   run.SetRandom(random);
-  run.SetSource(source);
+  run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
 
   EXPECT_EQ(source->GetPrimaryCount(), 3ULL);
 
@@ -709,9 +712,8 @@ TEST_F(GGEMSRunTest, ReservesDisjointRangesForVariableSequentialSourceCounts) {
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(random);
-  run.SetSource(source);
+  run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
 
   ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
@@ -763,13 +765,12 @@ TEST_F(GGEMSRunTest, RejectsZeroSourcePrimaryCountBeforeReservingRange) {
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(random);
-  run.SetSource(source);
+  run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
 
   ASSERT_NO_THROW(run.Initialize());
 
-  EXPECT_THROW(run.Run(), ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(run.Run(), ggems::core::GGEMSRecoverable);
   EXPECT_TRUE(observer->GetRecords().empty());
   EXPECT_EQ(observer->GetCapturedPrimaryCount(), 0U);
 
@@ -789,15 +790,6 @@ TEST_F(GGEMSRunTest, RejectsZeroSourcePrimaryCountBeforeReservingRange) {
 // =============================================================================
 // =============================================================================
 
-TEST_F(GGEMSRunTest, LegacyPrimaryCountSetterRejectsZero) {
-  ggems::core::GGEMSRun run{};
-
-  EXPECT_THROW(run.SetPrimaryCount(0U), ggems::core::GGEMSExceptionBase);
-}
-
-// =============================================================================
-// =============================================================================
-
 TEST_F(GGEMSRunTest, FirstAddSourceReplacesImplicitDefault) {
   auto random = MakePhiloxRandom();
   auto source = MakeLowEnergySource(3ULL);
@@ -812,7 +804,6 @@ TEST_F(GGEMSRunTest, FirstAddSourceReplacesImplicitDefault) {
   run.SetRandom(random);
   run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
 
   ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
@@ -836,106 +827,32 @@ TEST_F(GGEMSRunTest, FirstAddSourceReplacesImplicitDefault) {
 // =============================================================================
 // =============================================================================
 
-TEST_F(GGEMSRunTest, SetSourceReplacesEntireCollection) {
-  auto random = MakePhiloxRandom();
-  auto source_a = MakeLowEnergySource(2ULL);
-  auto source_b = MakeLowEnergySource(4ULL);
-  auto replacement = MakeLowEnergySource(3ULL);
-
-  replacement
-    ->SetEmittedParticleType(
-      ggems::core::particles::GGEMSParticleType::Electron)
-    .SetEnergyMicroElectronVolt(2'000'000'000ULL)
-    .SetPositionPicoMeter(-40LL, 50LL, -60LL)
-    .SetDirection(0.0F, -1.0F, 0.0F);
-
-  auto expected_replacement_record = replacement->BuildRecord();
-  auto observer = MakeCapturingObserver(3U);
-
-  ggems::core::GGEMSRun run{};
-  run.SetRandom(random);
-  run.AddSource(source_a);
-  run.AddSource(source_b);
-  run.SetSource(replacement);
-  run.SetObserver(observer);
-  run.SetWorkerCount(64U);
-
-  ASSERT_NO_THROW(run.Initialize());
-  ASSERT_NO_THROW(run.Run());
-
-  EXPECT_EQ(observer->GetCapturedPrimaryCount(), 3U);
-
-  auto source_records = BuildSortedSourceRecordSnapshot(observer->GetRecords());
-
-  ASSERT_EQ(source_records.size(), 3U);
-
-  for (std::size_t index = 0U; index < source_records.size(); ++index) {
-    EXPECT_EQ(source_records[index].global_primary_id,
-              static_cast<std::uint64_t>(index));
-    ExpectObserverSourceMatches(source_records[index],
-                                expected_replacement_record);
-  }
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST_F(GGEMSRunTest, LegacyPrimaryCountSetterRejectsMultipleSources) {
-  auto source_a = MakeLowEnergySource(0ULL);
-  auto source_b = MakeLowEnergySource(0ULL);
-
-  ggems::core::GGEMSRun run{};
-  run.SetSource(source_a);
-  run.AddSource(source_b);
-
-  ExpectGGEMSExceptionContaining(
-    [&run]() -> void { run.SetPrimaryCount(5U); },
-    "GGEMSRun::SetPrimaryCount is ambiguous with multiple sources.");
-
-  EXPECT_EQ(source_a->GetPrimaryCount(), 0ULL);
-  EXPECT_EQ(source_b->GetPrimaryCount(), 0ULL);
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST_F(GGEMSRunTest, RejectsCollectionMutationAfterInitialize) {
-  auto random = MakePhiloxRandom();
+TEST_F(GGEMSRunTest, RejectsAttachmentChangesAfterInitialize) {
   auto initial_source = MakeLowEnergySource(1ULL);
-  auto replacement = MakeLowEnergySource(2ULL);
-  auto additional = MakeLowEnergySource(3ULL);
-
   initial_source->SetPositionPicoMeter(1LL, 2LL, 3LL)
     .SetDirection(1.0F, 0.0F, 0.0F);
 
-  replacement->SetEnergyMicroElectronVolt(2'000'000'000ULL)
-    .SetPositionPicoMeter(4LL, 5LL, 6LL)
-    .SetDirection(0.0F, 1.0F, 0.0F);
-
-  additional->SetEnergyMicroElectronVolt(3'000'000'000ULL)
-    .SetPositionPicoMeter(7LL, 8LL, 9LL)
-    .SetDirection(0.0F, 0.0F, 1.0F);
-
-  auto expected_initial_record = initial_source->BuildRecord();
-  auto observer = MakeCapturingObserver(8U);
+  auto const expected_initial_record = initial_source->BuildRecord();
+  auto observer = MakeCapturingObserver(1U);
 
   ggems::core::GGEMSRun run{};
-  run.SetRandom(random);
+  run.SetRandom(MakePhiloxRandom());
   run.AddSource(initial_source);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
-
   ASSERT_NO_THROW(run.Initialize());
 
-  EXPECT_THROW(run.SetSource(replacement), ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW(run.AddSource(additional), ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(run.AddSource(MakeLowEnergySource(3ULL)),
+               ggems::core::GGEMSRecoverable);
+  EXPECT_THROW(run.SetRandom(MakePhiloxRandom()),
+               ggems::core::GGEMSRecoverable);
+  EXPECT_THROW(run.SetObserver(MakeCapturingObserver(1U)),
+               ggems::core::GGEMSRecoverable);
 
   ASSERT_NO_THROW(run.Run());
 
   EXPECT_EQ(observer->GetCapturedPrimaryCount(), 1U);
-
-  auto source_records = BuildSortedSourceRecordSnapshot(observer->GetRecords());
-
+  auto const source_records =
+    BuildSortedSourceRecordSnapshot(observer->GetRecords());
   ASSERT_EQ(source_records.size(), 1U);
   EXPECT_EQ(source_records[0U].global_primary_id, 0ULL);
   ExpectObserverSourceMatches(source_records[0U], expected_initial_record);
@@ -973,7 +890,6 @@ TEST_F(GGEMSRunTest, RunsWithDisabledSlotBetweenActiveSources) {
   run.AddSource(source_1);
   run.AddSource(source_2);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
 
   ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
@@ -1026,7 +942,6 @@ TEST_F(GGEMSRunTest, AlternatesActiveSourceAcrossSequentialRuns) {
   run.AddSource(source_a);
   run.AddSource(source_b);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
 
   ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
@@ -1102,7 +1017,6 @@ TEST_F(GGEMSRunTest, RebuildsMultipleActiveSourceRangesAcrossSequentialRuns) {
   run.AddSource(source_a);
   run.AddSource(source_b);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
 
   ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
@@ -1165,9 +1079,8 @@ TEST_F(GGEMSRunTest, PreservesObserverResultWhenNextCaptureIsInvalid) {
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(random);
-  run.SetSource(source);
+  run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
 
   ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
@@ -1185,7 +1098,7 @@ TEST_F(GGEMSRunTest, PreservesObserverResultWhenNextCaptureIsInvalid) {
   observer->CapturePrimary(1U, 0ULL);
 
   ExpectGGEMSExceptionContaining(
-    [&run]() -> void { run.Run(); },
+    [&run] -> void { run.Run(); },
     "Observer source index 1 is outside the current source snapshot.");
 
   EXPECT_EQ(observer->GetRecordCount(), successful_record_count);
@@ -1213,9 +1126,8 @@ TEST_F(GGEMSRunTest, ClearsObserverAfterSuccessfulRunWithDisabledSnapshot) {
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(random);
-  run.SetSource(source);
+  run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
 
   ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
@@ -1259,11 +1171,10 @@ TEST_F(GGEMSRunTest, RejectsAllDisabledSourcesBeforeReservation) {
   run.AddSource(source_a);
   run.AddSource(source_b);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
 
   ASSERT_NO_THROW(run.Initialize());
 
-  ExpectGGEMSExceptionContaining([&run]() -> void { run.Run(); },
+  ExpectGGEMSExceptionContaining([&run] -> void { run.Run(); },
                                  "non-zero total primary count");
 
   EXPECT_TRUE(observer->GetRecords().empty());
@@ -1308,7 +1219,6 @@ TEST_F(GGEMSRunTest, RunsDuplicateSourceSlots) {
   EXPECT_NO_THROW(run.AddSource(source));
 
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
 
   ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
@@ -1343,7 +1253,6 @@ TEST_F(GGEMSRunTest, CapturesFirstPrimariesFromEverySourceSlot) {
   run.AddSource(source_0);
   run.AddSource(source_1);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
 
   ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
@@ -1401,25 +1310,24 @@ TEST_F(GGEMSRunTest,
   run.AddSource(source_0);
   run.AddSource(source_1);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
 
   ASSERT_NO_THROW(run.Initialize());
 
   ExpectGGEMSExceptionContaining(
-    [&run]() -> void { run.Run(); },
+    [&run] -> void { run.Run(); },
     "Observer source index 2 is outside the current source snapshot.");
 
   observer->CapturePrimary(1U, 0ULL);
 
   ExpectGGEMSExceptionContaining(
-    [&run]() -> void { run.Run(); },
+    [&run] -> void { run.Run(); },
     "Observer primary index 0 is outside source slot 1, which contains 0 "
     "primaries.");
 
   observer->CapturePrimary(0U, 2ULL);
 
   ExpectGGEMSExceptionContaining(
-    [&run]() -> void { run.Run(); },
+    [&run] -> void { run.Run(); },
     "Observer primary index 2 is outside source slot 0, which contains 2 "
     "primaries.");
 
@@ -1457,9 +1365,9 @@ TEST_F(GGEMSRunTest, ProducesOnlySourceAndTerminalAlongStoredSourceAxis) {
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(random);
-  run.SetSource(source);
+  run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorkerCount(65U);
+  ggems::ocl::GGEMSOpenCL::GetInstance().SetWorkerCount(65U);
 
   ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
@@ -1517,9 +1425,8 @@ TEST_F(GGEMSRunTest,
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(random);
-  run.SetSource(source);
+  run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
   run.SetTimePicoSecond(0ULL, 3ULL, 1ULL);
 
   ASSERT_NO_THROW(run.Initialize());
@@ -1535,7 +1442,7 @@ TEST_F(GGEMSRunTest,
   source->SetPositionPicoMeter(std::numeric_limits<std::int64_t>::max(), 0LL,
                                0LL);
 
-  EXPECT_THROW(run.Run(), ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(run.Run(), ggems::core::GGEMSRecoverable);
 
   EXPECT_EQ(run.GetCurrentTimePicoSecond(), 1ULL);
   EXPECT_EQ(observer->BuildDump(), successful_dump);
@@ -1586,7 +1493,6 @@ TEST_F(GGEMSRunTest,
   run.AddSource(isotropic);
   run.AddSource(focused);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
 
   ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());

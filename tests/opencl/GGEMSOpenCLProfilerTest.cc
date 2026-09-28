@@ -21,22 +21,16 @@
 
 /*!
  * \file
- * \brief Unit tests for the GGEMS OpenCL profiler.
- *
- * Validates host-side measurement state and ordered device-side kernel
- * profiling timestamps without depending on absolute timing values.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <cstddef>
+#include <string>
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
@@ -48,8 +42,6 @@
 #include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMSOpenCLFrameworkProbe.hh"
 
-/// \cond
-
 namespace {
 
 constexpr std::size_t k_value_count{4U};
@@ -58,9 +50,6 @@ using ggems::test::GetOpenCLFrameworkProbeRoot;
 using ggems::test::k_opencl_framework_probe_name;
 
 } // namespace
-
-// =============================================================================
-// =============================================================================
 
 TEST(GGEMSOpenCLProfilerTest,
      MaintainsHostMeasurementStateWithoutTimingAssumptions) {
@@ -82,11 +71,12 @@ TEST(GGEMSOpenCLProfilerTest,
   EXPECT_TRUE(profiler.IsRunning());
   EXPECT_FALSE(profiler.HasMeasurement());
   EXPECT_THROW(profiler.RecordKernelEvent(cl::Event{}),
-               ggems::core::GGEMSRecoverable);
+               ggems::core::GGEMSFatal);
 
   profiler.Stop();
   EXPECT_FALSE(profiler.IsRunning());
   EXPECT_TRUE(profiler.HasMeasurement());
+
   auto const elapsed_after_stop = profiler.GetElapsedTime();
   profiler.Stop();
   EXPECT_EQ(profiler.GetElapsedTime().value, elapsed_after_stop.value);
@@ -111,21 +101,24 @@ TEST(GGEMSOpenCLProfilerTest,
      RecordsOrderedKernelTimestampsOnEveryCompilerDevice) {
   auto const &compiler_devices =
     ggems::test::GetOpenCLCompilerDeviceInventory();
+
   if (compiler_devices.empty()) {
     GTEST_SKIP() << "No available GGEMS-discovered device has a compiler.";
   }
 
   auto const probe_root = GetOpenCLFrameworkProbeRoot();
+  std::string const probe_name{k_opencl_framework_probe_name};
+
   for (auto const &compiler_device : compiler_devices) {
     SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     auto const &context = *compiler_device.context;
     auto const &program =
       ggems::ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
-        context, probe_root, k_opencl_framework_probe_name);
+        context, probe_root, probe_name);
+
     ggems::ocl::GGEMSOpenCLKernel kernel{
-      context, program.CreateKernel(k_opencl_framework_probe_name),
-      k_opencl_framework_probe_name};
+      context, program.CreateKernel(probe_name), probe_name};
 
     std::array<cl_uint, k_value_count> values{1U, 2U, 3U, 4U};
     cl_int error{CL_SUCCESS};
@@ -133,6 +126,7 @@ TEST(GGEMSOpenCLProfilerTest,
                       CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(values),
                       values.data(), &error);
     ggems::ocl::CheckCLError(error, "Failed to create profiler probe buffer.");
+
     kernel.SetArg(0U, buffer);
     kernel.SetArg(1U, cl_uint{1U});
 
@@ -143,10 +137,8 @@ TEST(GGEMSOpenCLProfilerTest,
     profiler.RecordKernelEvent(event);
 
     EXPECT_TRUE(profiler.HasMeasurement());
-    EXPECT_TRUE(profiler.HasKernelTiming());
-    if (!profiler.HasKernelTiming()) {
-      continue;
-    }
+    ASSERT_TRUE(profiler.HasKernelTiming());
+
     auto const &timing = profiler.GetKernelTiming();
     EXPECT_LE(timing.time_queued.value, timing.time_submit.value);
     EXPECT_LE(timing.time_submit.value, timing.time_start.value);
@@ -159,4 +151,3 @@ TEST(GGEMSOpenCLProfilerTest,
     EXPECT_DOUBLE_EQ(profiler.ComputeKernelRatePerSecond(0U), 0.0);
   }
 }
-/// \endcond

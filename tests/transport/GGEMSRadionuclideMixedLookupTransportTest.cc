@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -50,16 +77,24 @@ using TransportRunReport = ggems::core::transport::GGEMSTransportRunReport;
 using TransportWorkload = ggems::core::transport::GGEMSTransportWorkload;
 
 constexpr ggems::core::GGEMSTimeWindow k_time_window{
-  .start_ps = 0ULL, .stop_ps = 1'000'000'000'000ULL};
+  .start_ps = 0ULL,
+  .stop_ps = 1'000'000'000'000ULL,
+};
 constexpr std::uint64_t k_projection_history_offset{10'000ULL};
 constexpr std::uint64_t k_run_id{27ULL};
 constexpr std::uint32_t k_single_worker_count{1U};
 constexpr std::uint32_t k_worker_count{64U};
 constexpr std::uint32_t k_chunk_primary_count{3U};
 constexpr std::array<ParticleType, 3U> k_activity_particles{
-  ParticleType::Gamma, ParticleType::Electron, ParticleType::Positron};
+  ParticleType::Gamma,
+  ParticleType::Electron,
+  ParticleType::Positron,
+};
 constexpr std::array<std::uint64_t, 3U> k_activity_energies{
-  111'000ULL, 222'000ULL, 333'000ULL};
+  111'000ULL,
+  222'000ULL,
+  333'000ULL,
+};
 
 // =============================================================================
 // =============================================================================
@@ -171,7 +206,7 @@ ExtractSourceRecords(std::span<TransportRunReport const> reports,
         continue;
       }
 
-      std::size_t const index = static_cast<std::size_t>(projection_primary_id);
+      auto const index = static_cast<std::size_t>(projection_primary_id);
       EXPECT_FALSE(seen[index]);
       if (seen[index]) {
         continue;
@@ -184,7 +219,8 @@ ExtractSourceRecords(std::span<TransportRunReport const> reports,
   }
 
   EXPECT_EQ(observed_count, total_primary_count);
-  EXPECT_TRUE(std::ranges::all_of(seen, [](bool value) { return value; }));
+  EXPECT_TRUE(
+    std::ranges::all_of(seen, [](bool value) -> bool { return value; }));
   return records;
 }
 
@@ -380,8 +416,8 @@ auto ExpectSourceAndGroupLookup(SourceRunSnapshot const &snapshot,
     EXPECT_EQ(last.energy_micro_eV, first.energy_micro_eV);
   }
 
-  EXPECT_TRUE(
-    std::ranges::none_of(source_records, [](ObserverRecord const &record) {
+  EXPECT_TRUE(std::ranges::none_of(
+    source_records, [](ObserverRecord const &record) -> bool {
       return record.particle_type ==
                ggems::core::particles::ToKernelParticleType(
                  k_activity_particles[2U]) ||

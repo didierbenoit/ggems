@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -9,7 +36,7 @@
 #include <system_error>
 #include <utility>
 #include <vector>
-#include <iostream>
+#include <ios>
 
 #include <gtest/gtest.h>
 
@@ -40,7 +67,9 @@ public:
   TemporarySpectrumFile(std::string_view name, std::string_view content)
       : path_{std::filesystem::path{::testing::TempDir()} / name} {
     std::ofstream output{path_, std::ios::binary};
+    output.exceptions(std::ios::failbit | std::ios::badbit);
     output << content;
+    output.close();
   }
 
   ~TemporarySpectrumFile() {
@@ -60,7 +89,6 @@ private:
 // =============================================================================
 
 struct EnergyState {
-
   DistributionType type{DistributionType::Unknown};
   std::uint64_t source_record_energy_micro_eV{0ULL};
   std::uint64_t mono_energy_micro_eV{0ULL};
@@ -169,8 +197,8 @@ template <typename Function>
 auto ExpectFinalizedRejection(Function &&function) -> void {
   try {
     std::forward<Function>(function)();
-    FAIL() << "Expected finalized source energy rejection.";
-  } catch (ggems::core::GGEMSExceptionBase const &exception) {
+    FAIL() << "Expected finalized source configuration rejection.";
+  } catch (ggems::core::GGEMSRecoverable const &exception) {
     EXPECT_NE(std::string_view{exception.what()}.find(
                 "after source initialization has been finalized."),
               std::string_view::npos);
@@ -192,6 +220,20 @@ protected:
 
     ASSERT_FALSE(opencl.GetContext().empty());
   }
+
+  auto SetUp() -> void override {
+    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
+    previous_worker_count_ = opencl.GetWorkerCount();
+    opencl.SetWorkerCount(64U);
+  }
+
+  auto TearDown() -> void override {
+    ggems::ocl::GGEMSOpenCL::GetInstance().SetWorkerCount(
+      previous_worker_count_);
+  }
+
+private:
+  std::uint32_t previous_worker_count_{0U};
 };
 
 } // namespace
@@ -210,10 +252,9 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
   source->SetDiscreteEnergyLines(k_lines, k_weights, "MeV");
 
   ggems::core::GGEMSRun run{};
-  run.SetSource(source);
-  run.SetWorkerCount(64U);
+  run.AddSource(source);
 
-  EXPECT_THROW(run.Initialize(), ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(run.Initialize(), ggems::core::GGEMSRecoverable);
   EXPECT_NO_THROW(source->SetCountDrivenPopulation(2ULL));
   EXPECT_EQ(source->GetPopulationMode(),
             ggems::core::sources::GGEMSSourcePopulationMode::CountDriven);
@@ -226,7 +267,7 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
 
   EnergyState const finalized = CaptureEnergyState(*source);
   ExpectFinalizedRejection(
-    [&]() -> void { source->SetEnergyMicroElectronVolt(90'000'000'000ULL); });
+    [&] -> void { source->SetEnergyMicroElectronVolt(90'000'000'000ULL); });
   ExpectEnergyState(*source, finalized);
 }
 
@@ -249,37 +290,36 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(MakeRandom());
-  run.SetSource(source);
-  run.SetWorkerCount(64U);
+  run.AddSource(source);
   ASSERT_NO_THROW(run.Initialize());
 
   EnergyState const finalized = CaptureEnergyState(*source);
-  auto const expect_unchanged = [&]() -> void {
+  auto const expect_unchanged = [&] -> void {
     ExpectEnergyState(*source, finalized);
   };
 
   ExpectFinalizedRejection(
-    [&]() -> void { source->SetEnergyMicroElectronVolt(511'000'000'000ULL); });
+    [&] -> void { source->SetEnergyMicroElectronVolt(511'000'000'000ULL); });
   expect_unchanged();
-  ExpectFinalizedRejection([&]() -> void {
+  ExpectFinalizedRejection([&] -> void {
     source->SetDiscreteEnergyLines(k_lines, k_line_weights, "MeV");
   });
   expect_unchanged();
-  ExpectFinalizedRejection([&]() -> void {
+  ExpectFinalizedRejection([&] -> void {
     source->SetRegularEnergySpectrum(k_replacement_centers,
                                      k_replacement_weights, "MeV");
   });
   expect_unchanged();
-  ExpectFinalizedRejection([&]() -> void {
+  ExpectFinalizedRejection([&] -> void {
     source->LoadRegularEnergySpectrum(valid_file.GetPath(), "MeV");
   });
   expect_unchanged();
 
   Source replacement{};
   replacement.SetEnergyMicroElectronVolt(90'000'000'000ULL);
-  ExpectFinalizedRejection([&]() -> void { *source = replacement; });
+  ExpectFinalizedRejection([&] -> void { *source = replacement; });
   expect_unchanged();
-  ExpectFinalizedRejection([&]() -> void {
+  ExpectFinalizedRejection([&] -> void {
     Source moved{std::move(*source)};
     static_cast<void>(moved);
   });
@@ -287,7 +327,8 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
 
   Source copied{*source};
   ExpectFinalizedRejection(
-    [&]() -> void { copied.SetEnergyMicroElectronVolt(90'000'000'000ULL); });
+    [&] -> void { copied.SetEnergyMicroElectronVolt(90'000'000'000ULL); });
+  ExpectEnergyState(copied, finalized);
 }
 
 // =============================================================================
@@ -299,19 +340,18 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(MakeRandom());
-  run.SetSource(source);
-  run.SetWorkerCount(64U);
+  run.AddSource(source);
   ASSERT_NO_THROW(run.Initialize());
 
   auto radionuclide = std::make_shared<
     ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
     ggems::core::radioactivity::builtins::BuildF18Radionuclide());
 
-  ExpectFinalizedRejection([&]() -> void {
+  ExpectFinalizedRejection([&] -> void {
     source->SetRadionuclide(radionuclide, ggems::units::Activity{100.0L}, 0ULL);
   });
   ExpectFinalizedRejection(
-    [&]() -> void { source->SetCountDrivenPopulation(7ULL); });
+    [&] -> void { source->SetCountDrivenPopulation(7ULL); });
 
   EXPECT_EQ(source->GetPopulationMode(),
             ggems::core::sources::GGEMSSourcePopulationMode::CountDriven);
@@ -334,13 +374,11 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
   first_run.SetRandom(MakeRandom());
   first_run.AddSource(source);
   first_run.AddSource(source);
-  first_run.SetWorkerCount(64U);
   ASSERT_NO_THROW(first_run.Initialize());
 
   ggems::core::GGEMSRun second_run{};
   second_run.SetRandom(MakeRandom());
-  second_run.SetSource(source);
-  second_run.SetWorkerCount(64U);
+  second_run.AddSource(source);
   ASSERT_NO_THROW(second_run.Initialize());
 
   EnergyState const finalized = CaptureEnergyState(*source);
@@ -365,8 +403,7 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(MakeRandom());
-  run.SetSource(source);
-  run.SetWorkerCount(64U);
+  run.AddSource(source);
   ASSERT_NO_THROW(run.Initialize());
 
   std::size_t const allocation_count = GetTotalOpenCLAllocationCount();
@@ -394,6 +431,10 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
   EXPECT_EQ(second->GetRanges()[0U].primary_count, 3ULL);
   EXPECT_EQ(second->GetRecords()[0U].position_x_pm, -4LL);
   EXPECT_FLOAT_EQ(second->GetRecords()[0U].axis_z_y, 1.0F);
+
+  EXPECT_EQ(first->GetRanges()[0U].primary_count, 2ULL);
+  EXPECT_EQ(first->GetRecords()[0U].position_x_pm, 1LL);
+  EXPECT_FLOAT_EQ(first->GetRecords()[0U].axis_z_z, 1.0F);
 
   ASSERT_EQ(first->GetEnergyDistributionRecords().size(),
             second->GetEnergyDistributionRecords().size());

@@ -21,16 +21,10 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS activity quantities and conversions.
- *
- * Validates becquerel and curie conversions, invalid-input handling,
- * human-readable formatting, activity literals, and aggregate-header exposure.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <limits>
 #include <string_view>
@@ -38,13 +32,10 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/units/GGEMSActivityUnits.hh"
 #include "GGEMS/units/GGEMSFrequencyUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
-
-/// \cond
 
 namespace {
 
@@ -71,11 +62,14 @@ TEST(GGEMSActivityUnitsTest, ConvertsBecquerelSIPrefixesExactly) {
   };
 
   constexpr std::array<Case, 5> cases{
-    {{.unit = "Bq", .expected_becquerel = 1.25L},
-     {.unit = "kBq", .expected_becquerel = 1.25e3L},
-     {.unit = "MBq", .expected_becquerel = 1.25e6L},
-     {.unit = "GBq", .expected_becquerel = 1.25e9L},
-     {.unit = "TBq", .expected_becquerel = 1.25e12L}}};
+    {
+      {.unit = "Bq", .expected_becquerel = 1.25L},
+      {.unit = "kBq", .expected_becquerel = 1.25e3L},
+      {.unit = "MBq", .expected_becquerel = 1.25e6L},
+      {.unit = "GBq", .expected_becquerel = 1.25e9L},
+      {.unit = "TBq", .expected_becquerel = 1.25e12L},
+    },
+  };
 
   for (Case const &test_case : cases) {
     SCOPED_TRACE(test_case.unit);
@@ -125,9 +119,11 @@ TEST(GGEMSActivityUnitsTest, RejectsNegativeActivity) {
 // =============================================================================
 
 TEST(GGEMSActivityUnitsTest, RejectsNonFiniteActivity) {
-  for (long double value : {std::numeric_limits<long double>::quiet_NaN(),
-                            std::numeric_limits<long double>::infinity(),
-                            -std::numeric_limits<long double>::infinity()}) {
+  for (long double value : {
+         std::numeric_limits<long double>::quiet_NaN(),
+         std::numeric_limits<long double>::infinity(),
+         -std::numeric_limits<long double>::infinity(),
+       }) {
     auto const converted = MakeQuantity<Activity>(value, "Bq");
 
     ASSERT_FALSE(converted.has_value());
@@ -209,4 +205,3 @@ TEST(GGEMSActivityUnitsTest, AggregateHeaderExposesActivity) {
 }
 
 } // namespace
-/// \endcond

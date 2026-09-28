@@ -21,11 +21,6 @@
 
 /*!
  * \file
- * \brief Scoped logger-encoding helper for GGEMS tests.
- *
- * Provides a noncopyable RAII utility used by tests that must validate output
- * under a specific ASCII or Unicode logger encoding.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -35,45 +30,27 @@
 #include "GGEMS/logging/GGEMSLogger.hh"
 
 namespace ggems::test {
-/*!
- * \brief RAII helper that temporarily forces the GGEMS logger encoding.
- *
- * Restores the previous logger encoding when the helper leaves scope.
- */
-class ScopedLoggerEncoding final {
+
+class ScopedLoggerEncoding {
 public:
-  /*!
-   * \brief Forces a logger encoding for the lifetime of this helper.
-   *
-   * \param[in] encoding Encoding to force while the helper is alive.
-   */
   explicit ScopedLoggerEncoding(core::Encoding encoding)
       : logger_{core::GGEMSLogger::GetInstance()},
         previous_encoding_{logger_.GetEncoding()} {
     logger_.SetForceEncoding(encoding);
   }
 
-  /*!
-   * \brief Restores the logger encoding active at construction time.
-   */
   ~ScopedLoggerEncoding() noexcept {
     logger_.SetForceEncoding(previous_encoding_);
   }
 
-  /*! \brief Copy construction is disabled. */
   ScopedLoggerEncoding(ScopedLoggerEncoding const &) = delete;
-  /*! \brief Move construction is disabled. */
   ScopedLoggerEncoding(ScopedLoggerEncoding &&) = delete;
-  /*! \brief Copy assignment is disabled. */
   auto operator=(ScopedLoggerEncoding const &)
     -> ScopedLoggerEncoding & = delete;
-  /*! \brief Move assignment is disabled. */
   auto operator=(ScopedLoggerEncoding &&) -> ScopedLoggerEncoding & = delete;
 
 private:
-  /*! \brief GGEMS logger instance whose encoding is temporarily overridden. */
   core::GGEMSLogger &logger_;
-  /*! \brief Logger encoding saved for restoration at destruction. */
   core::Encoding previous_encoding_;
 };
 } // namespace ggems::test

@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -59,7 +86,9 @@ constexpr std::uint64_t k_run_id{37ULL};
 constexpr std::uint64_t k_projection_history_offset{12'000ULL};
 constexpr std::uint32_t k_regular_capture_count{128U};
 constexpr ggems::core::GGEMSTimeWindow k_time_window{
-  .start_ps = 1'000'000'000'000ULL, .stop_ps = 1'001'000'000'000ULL};
+  .start_ps = 1'000'000'000'000ULL,
+  .stop_ps = 1'001'000'000'000ULL,
+};
 
 // =============================================================================
 // =============================================================================
@@ -103,10 +132,12 @@ struct ActivityScenario {
   auto source_snapshot = ggems::core::sources::BuildSourceRunSnapshot(
     sources, source_configuration, candidate.GetPlan());
 
-  return {.sources = std::move(sources),
-          .source_configuration = std::move(source_configuration),
-          .emission_plan = candidate.GetPlan(),
-          .source_snapshot = std::move(source_snapshot)};
+  return {
+    .sources = std::move(sources),
+    .source_configuration = std::move(source_configuration),
+    .emission_plan = candidate.GetPlan(),
+    .source_snapshot = std::move(source_snapshot),
+  };
 }
 
 // =============================================================================
@@ -319,8 +350,11 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
   ASSERT_GT(group_ranges[0U].primary_count, 0ULL);
   ASSERT_GT(group_ranges[1U].primary_count, 0ULL);
   ASSERT_GT(group_ranges[2U].primary_count, 0ULL);
-  constexpr std::array<long double, 3U> k_expected_yields{0.9686L, 0.00229L,
-                                                          0.00020L};
+  constexpr std::array<long double, 3U> k_expected_yields{
+    0.9686L,
+    0.00229L,
+    0.00020L,
+  };
   for (std::size_t index = 0U; index < plan_groups.size(); ++index) {
     EXPECT_EQ(plan_groups[index].yield_per_decay, k_expected_yields[index]);
     EXPECT_EQ(group_ranges[index].source_local_primary_begin,
@@ -545,7 +579,10 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
   constexpr std::array<double, 3U> k_line_energies_keV{10.0, 20.0, 40.0};
   constexpr std::array<double, 3U> k_line_weights{1.0, 1.0, 1.0};
   constexpr std::array<std::uint64_t, 3U> k_line_energies_micro_eV{
-    10'000'000'000ULL, 20'000'000'000ULL, 40'000'000'000ULL};
+    10'000'000'000ULL,
+    20'000'000'000ULL,
+    40'000'000'000ULL,
+  };
   constexpr std::uint32_t k_capture_count{256U};
   constexpr std::uint32_t k_observer_capacity{k_capture_count * 2U};
 
@@ -604,5 +641,6 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
       line - k_line_energies_micro_eV.begin())] = true;
   }
 
-  EXPECT_TRUE(std::ranges::all_of(seen_lines, [](bool seen) { return seen; }));
+  EXPECT_TRUE(
+    std::ranges::all_of(seen_lines, [](bool seen) -> bool { return seen; }));
 }

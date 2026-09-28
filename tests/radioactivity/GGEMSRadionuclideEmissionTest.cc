@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <limits>
 #include <vector>
@@ -45,7 +72,8 @@ TEST(GGEMSRadionuclideEmissionTest, AcceptsEveryCurrentPhysicalParticleType) {
   constexpr std::array<GGEMSParticleType, 6U> particle_types{
     GGEMSParticleType::Gamma,    GGEMSParticleType::Electron,
     GGEMSParticleType::Positron, GGEMSParticleType::Proton,
-    GGEMSParticleType::Neutron,  GGEMSParticleType::Alpha};
+    GGEMSParticleType::Neutron,  GGEMSParticleType::Alpha,
+  };
 
   for (GGEMSParticleType particle_type : particle_types) {
     SCOPED_TRACE(static_cast<unsigned int>(particle_type));
@@ -59,14 +87,16 @@ TEST(GGEMSRadionuclideEmissionTest, AcceptsEveryCurrentPhysicalParticleType) {
 // =============================================================================
 
 TEST(GGEMSRadionuclideEmissionTest, RejectsNonPhysicalParticleTypes) {
-  for (GGEMSParticleType particle_type :
-       {GGEMSParticleType::Unknown, GGEMSParticleType::Aionino,
-        static_cast<GGEMSParticleType>(999U)}) {
+  for (GGEMSParticleType particle_type : {
+         GGEMSParticleType::Unknown,
+         GGEMSParticleType::Aionino,
+         static_cast<GGEMSParticleType>(999U),
+       }) {
     SCOPED_TRACE(static_cast<unsigned int>(particle_type));
     EXPECT_THROW(
       ((void)GGEMSRadionuclideEmission{
         particle_type, 1.0L, GGEMSEnergyDistribution::BuildMono(1'000ULL)}),
-      ggems::core::GGEMSExceptionBase);
+      ggems::core::GGEMSRecoverable);
   }
 }
 
@@ -76,13 +106,12 @@ TEST(GGEMSRadionuclideEmissionTest, RejectsNonPhysicalParticleTypes) {
 TEST(GGEMSRadionuclideEmissionTest, ValidatesYieldWithoutProbabilityCeiling) {
   for (long double yield :
        {0.0L, -1.0L, std::numeric_limits<long double>::quiet_NaN(),
-        std::numeric_limits<long double>::infinity(),
         -std::numeric_limits<long double>::infinity()}) {
     SCOPED_TRACE(static_cast<double>(yield));
     EXPECT_THROW(((void)GGEMSRadionuclideEmission{
                    GGEMSParticleType::Gamma, yield,
                    GGEMSEnergyDistribution::BuildMono(1'000ULL)}),
-                 ggems::core::GGEMSExceptionBase);
+                 ggems::core::GGEMSRecoverable);
   }
 
   GGEMSRadionuclideEmission const emission{

@@ -21,16 +21,10 @@
 
 /*!
  * \file
- * \brief OpenCL validation tests for the GGEMS Philox engine.
- *
- * Validates scalar and vector Philox output, deterministic counter progression,
- * stream independence, and host/kernel state agreement.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -42,7 +36,6 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/opencl/GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
@@ -52,8 +45,6 @@
 #include "GGEMS/random/GGEMSRandomState.hh"
 #include "GGEMSOpenCLCompilerDeviceInventory.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
-
-/// \cond
 
 namespace {
 
@@ -349,7 +340,7 @@ TEST(GGEMSPhiloxKernelTest, SameSeedProducesSameFirstSequence) {
     auto *states = static_cast<PhiloxState *>(states_buffer.GetData());
     auto *values = static_cast<float *>(values_buffer.GetData());
 
-    auto initialize_states = [&]() -> void {
+    auto initialize_states = [&] -> void {
       states_buffer.Map(CL_MAP_WRITE);
       values_buffer.Map(CL_MAP_WRITE);
 
@@ -896,4 +887,3 @@ TEST(GGEMSPhiloxKernelTest, GenericRandomUniform4UsesSelectedPhiloxEngine) {
     GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
-/// \endcond

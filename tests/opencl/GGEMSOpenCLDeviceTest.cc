@@ -21,17 +21,10 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS OpenCL device metadata.
- *
- * Compares representative cached device properties with native OpenCL queries,
- * checks extension parsing, and validates advertised device and driver UUID
- * data.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <cstddef>
 #include <sstream>
 #include <string>
@@ -39,15 +32,12 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/opencl/GGEMSOpenCLPlatform.hh"
 #include "GGEMS/opencl/GGEMSOpenCLStrings.hh"
 #include "GGEMS/opencl/GGEMSOpenCLUtils.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
-
-/// \cond
 
 namespace {
 
@@ -160,4 +150,3 @@ TEST(GGEMSOpenCLDeviceTest, AdvertisedDeviceUuidInformationIsQueryable) {
     GTEST_SKIP() << "No GGEMS-discovered device advertises cl_khr_device_uuid.";
   }
 }
-/// \endcond

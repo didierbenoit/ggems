@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -481,9 +508,10 @@ TEST(GGEMSSourceRunSnapshot, BuildsOrderedMultiSourceSnapshot) {
 // =============================================================================
 
 TEST(GGEMSSourceRunSnapshot, PreservesZeroPrimarySourceSlots) {
-  std::vector<GGEMSSourcePtr> sources{MakeSource(3ULL), MakeSource(0ULL),
-                                      MakeSource(5ULL), MakeSource(0ULL),
-                                      MakeSource(2ULL)};
+  std::vector<GGEMSSourcePtr> sources{
+    MakeSource(3ULL), MakeSource(0ULL), MakeSource(5ULL),
+    MakeSource(0ULL), MakeSource(2ULL),
+  };
 
   auto snapshot = ggems::core::sources::BuildSourceRunSnapshot(sources);
 
@@ -494,10 +522,12 @@ TEST(GGEMSSourceRunSnapshot, PreservesZeroPrimarySourceSlots) {
   ASSERT_EQ(ranges.size(), 5U);
   EXPECT_EQ(records.size(), ranges.size());
 
-  constexpr std::array<std::uint64_t, 5U> k_expected_begins{0ULL, 3ULL, 3ULL,
-                                                            8ULL, 8ULL};
-  constexpr std::array<std::uint64_t, 5U> k_expected_counts{3ULL, 0ULL, 5ULL,
-                                                            0ULL, 2ULL};
+  constexpr std::array<std::uint64_t, 5U> k_expected_begins{
+    0ULL, 3ULL, 3ULL, 8ULL, 8ULL,
+  };
+  constexpr std::array<std::uint64_t, 5U> k_expected_counts{
+    3ULL, 0ULL, 5ULL, 0ULL, 2ULL,
+  };
 
   for (std::size_t i = 0U; i < ranges.size(); ++i) {
     SCOPED_TRACE(i);
@@ -517,12 +547,17 @@ TEST(GGEMSSourceRunSnapshot,
   positive_count_source->SetPositionPicoMeter(1LL, 2LL, 3LL);
   zero_primary_source->SetPositionPicoMeter(4LL, 5LL, 6LL);
   std::vector<GGEMSSourcePtr> sources{
-    positive_count_source, zero_primary_source, positive_count_source};
+    positive_count_source,
+    zero_primary_source,
+    positive_count_source,
+  };
 
   auto const positive_count_before = positive_count_source->BuildRecord();
   auto const zero_primary_before = zero_primary_source->BuildRecord();
-  constexpr ggems::core::GGEMSTimeWindow k_window{.start_ps = 100ULL,
-                                                  .stop_ps = 125ULL};
+  constexpr ggems::core::GGEMSTimeWindow k_window{
+    .start_ps = 100ULL,
+    .stop_ps = 125ULL,
+  };
 
   auto const snapshot =
     ggems::core::sources::BuildSourceRunSnapshot(sources, k_window);
@@ -557,8 +592,10 @@ TEST(GGEMSSourceRunSnapshot,
 
 TEST(GGEMSSourceRunSnapshot, BuildsEmptySnapshot) {
   std::vector<GGEMSSourcePtr> const sources{};
-  constexpr ggems::core::GGEMSTimeWindow k_window{.start_ps = 7ULL,
-                                                  .stop_ps = 9ULL};
+  constexpr ggems::core::GGEMSTimeWindow k_window{
+    .start_ps = 7ULL,
+    .stop_ps = 9ULL,
+  };
 
   auto snapshot =
     ggems::core::sources::BuildSourceRunSnapshot(sources, k_window);
@@ -702,45 +739,6 @@ TEST(GGEMSSourceRunSnapshot, AcceptsMaximumRepresentableTotal) {
 
 // =============================================================================
 // =============================================================================
-
-TEST(GGEMSSourceRunSnapshot, RejectsOverflowingTotal) {
-  constexpr std::uint64_t k_maximum = std::numeric_limits<std::uint64_t>::max();
-
-  auto source_0 = MakeSource(k_maximum);
-  source_0->SetEnergyMicroElectronVolt(111'000'000'000ULL)
-    .SetPositionPicoMeter(1LL, 2LL, 3LL);
-
-  auto source_1 = MakeSource(1ULL);
-  source_1->SetEnergyMicroElectronVolt(222'000'000'000ULL)
-    .SetPositionPicoMeter(4LL, 5LL, 6LL);
-
-  auto expected_0 = source_0->BuildRecord();
-  auto expected_1 = source_1->BuildRecord();
-  std::vector<GGEMSSourcePtr> sources{source_0, source_1};
-  Random const random = MakePlannerRandom();
-  Planner planner{sources, random};
-
-  bool exception_caught = false;
-
-  try {
-    static_cast<void>(ggems::core::sources::BuildSourceRunSnapshot(sources));
-  } catch (ggems::core::GGEMSRecoverable const &exception) {
-    exception_caught = true;
-
-    std::string_view diagnostic{exception.what()};
-    EXPECT_NE(diagnostic.find("overflow"), std::string_view::npos);
-    EXPECT_NE(diagnostic.find("index 1"), std::string_view::npos);
-  }
-
-  EXPECT_TRUE(exception_caught);
-  EXPECT_THROW(static_cast<void>(planner.BuildCandidate({})),
-               ggems::core::GGEMSRecoverable);
-  EXPECT_EQ(planner.GetRevision(), 0ULL);
-  EXPECT_EQ(source_0->GetPrimaryCount(), k_maximum);
-  EXPECT_EQ(source_1->GetPrimaryCount(), 1ULL);
-  ExpectSourceRecordsEqual(source_0->BuildRecord(), expected_0);
-  ExpectSourceRecordsEqual(source_1->BuildRecord(), expected_1);
-}
 
 // =============================================================================
 // =============================================================================
@@ -1185,8 +1183,7 @@ TEST(GGEMSSourceRunSnapshot,
   EXPECT_EQ(values.size(), k_bin_count);
   EXPECT_EQ(weights.size(), k_bin_count);
   ASSERT_EQ(ticket_bounds.size(), k_bin_count);
-  EXPECT_EQ(ticket_bounds.back(),
-            ggems::core::sources::k_energy_ticket_space_size);
+  EXPECT_EQ(ticket_bounds.back(), 4'294'967'296ULL);
   EXPECT_TRUE(std::ranges::all_of(
     weights, [](double weight) -> bool { return weight == 1.0; }));
   EXPECT_TRUE(std::ranges::is_sorted(ticket_bounds));

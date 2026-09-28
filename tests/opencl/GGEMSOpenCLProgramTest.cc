@@ -21,29 +21,20 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS OpenCL program management.
- *
- * Validates build metadata, in-memory program-cache reuse, and cached-program
- * lifetime independently of the context wrapper used to create it.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <filesystem>
 #include <string>
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLProgram.hh"
 #include "GGEMSOpenCLCompilerDeviceInventory.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMSOpenCLFrameworkProbe.hh"
-
-/// \cond
 
 namespace {
 
@@ -52,53 +43,47 @@ using ggems::test::k_opencl_framework_probe_name;
 
 } // namespace
 
-// =============================================================================
-// =============================================================================
-
 TEST(GGEMSOpenCLProgramTest,
      BuildsAndReportsCoherentMetadataOnEveryCompilerDevice) {
   auto const &compiler_devices =
     ggems::test::GetOpenCLCompilerDeviceInventory();
+
   if (compiler_devices.empty()) {
     GTEST_SKIP() << "No available GGEMS-discovered device has a compiler.";
   }
 
   auto const probe_root = GetOpenCLFrameworkProbeRoot();
+  std::string const probe_name{k_opencl_framework_probe_name};
+  auto const expected_source = probe_root / (probe_name + ".cl");
+
   for (auto const &compiler_device : compiler_devices) {
     SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
     auto const &context = *compiler_device.context;
     auto const &program =
       ggems::ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
-        context, probe_root, k_opencl_framework_probe_name);
+        context, probe_root, probe_name);
 
     EXPECT_NE(program.GetProgramNative()(), nullptr);
-    EXPECT_EQ(program.GetKernelName(), k_opencl_framework_probe_name);
+    EXPECT_EQ(program.GetKernelName(), probe_name);
     EXPECT_FALSE(program.GetBuildOptions().empty());
     EXPECT_EQ(program.GetNumDevices(), 1U);
 
-    auto const expected_source =
-      probe_root / (std::string{k_opencl_framework_probe_name} + ".cl");
     EXPECT_EQ(std::filesystem::weakly_canonical(program.GetSourcePath()),
               std::filesystem::weakly_canonical(expected_source));
 
     auto const binary_sizes = program.GetBinarySizes();
     auto const binaries = program.GetBinaries();
-    EXPECT_EQ(binary_sizes.size(), 1U);
-    EXPECT_EQ(binaries.size(), 1U);
-    if (binary_sizes.size() == 1U && binaries.size() == 1U) {
-      EXPECT_EQ(binaries.front().size(), binary_sizes.front());
-    }
+    ASSERT_EQ(binary_sizes.size(), 1U);
+    ASSERT_EQ(binaries.size(), 1U);
+    EXPECT_EQ(binaries.front().size(), binary_sizes.front());
 
-    EXPECT_TRUE(
-      program.Matches(context, probe_root, k_opencl_framework_probe_name, ""));
-    EXPECT_TRUE(program.Matches(context, probe_root / ".",
-                                k_opencl_framework_probe_name, ""));
+    EXPECT_TRUE(program.Matches(context, probe_root, probe_name, ""));
+    EXPECT_TRUE(program.Matches(context, probe_root / ".", probe_name, ""));
     EXPECT_FALSE(program.Matches(context, probe_root, "different_probe", ""));
-    EXPECT_FALSE(program.Matches(context, probe_root.parent_path(),
-                                 k_opencl_framework_probe_name, ""));
-    EXPECT_FALSE(program.Matches(context, probe_root,
-                                 k_opencl_framework_probe_name,
+    EXPECT_FALSE(
+      program.Matches(context, probe_root.parent_path(), probe_name, ""));
+    EXPECT_FALSE(program.Matches(context, probe_root, probe_name,
                                  "-DGGEMS_TEST_OPTION=1"));
   }
 }
@@ -109,18 +94,20 @@ TEST(GGEMSOpenCLProgramTest,
 TEST(GGEMSOpenCLProgramTest, ReusesEquivalentProgramFromMemoryCache) {
   auto const &compiler_devices =
     ggems::test::GetOpenCLCompilerDeviceInventory();
+
   if (compiler_devices.empty()) {
     GTEST_SKIP() << "No available GGEMS-discovered device has a compiler.";
   }
 
   auto const &context = *compiler_devices.front().context;
   auto const probe_root = GetOpenCLFrameworkProbeRoot();
+  std::string const probe_name{k_opencl_framework_probe_name};
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-  auto const &first = opencl.GetOrCreateProgram(context, probe_root,
-                                                k_opencl_framework_probe_name);
-  auto const &second = opencl.GetOrCreateProgram(context, probe_root,
-                                                 k_opencl_framework_probe_name);
+  auto const &first =
+    opencl.GetOrCreateProgram(context, probe_root, probe_name);
+  auto const &second =
+    opencl.GetOrCreateProgram(context, probe_root / ".", probe_name);
 
   EXPECT_EQ(&first, &second);
 }
@@ -138,6 +125,7 @@ TEST(GGEMSOpenCLProgramTest, CachedProgramOutlivesContextWrapper) {
 
   auto const &device = compiler_devices.front().inventory.device.get();
   auto const probe_root = GetOpenCLFrameworkProbeRoot();
+  std::string const probe_name{k_opencl_framework_probe_name};
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
   ggems::ocl::GGEMSOpenCLProgram const *cached_program{nullptr};
@@ -145,20 +133,16 @@ TEST(GGEMSOpenCLProgramTest, CachedProgramOutlivesContextWrapper) {
   {
     ggems::ocl::GGEMSOpenCLContext context{device};
 
-    cached_program = &opencl.GetOrCreateProgram(context, probe_root,
-                                                k_opencl_framework_probe_name);
+    cached_program =
+      &opencl.GetOrCreateProgram(context, probe_root, probe_name);
 
-    EXPECT_TRUE(cached_program->Matches(context, probe_root,
-                                        k_opencl_framework_probe_name, ""));
+    EXPECT_TRUE(cached_program->Matches(context, probe_root, probe_name, ""));
   }
 
   ASSERT_NE(cached_program, nullptr);
   EXPECT_NE(cached_program->GetProgramNative()(), nullptr);
   EXPECT_EQ(cached_program->GetNumDevices(), 1U);
 
-  auto const kernel =
-    cached_program->CreateKernel(k_opencl_framework_probe_name);
-
+  auto const kernel = cached_program->CreateKernel(probe_name);
   EXPECT_NE(kernel(), nullptr);
 }
-/// \endcond

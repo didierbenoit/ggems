@@ -21,16 +21,10 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS density quantities and conversions.
- *
- * Validates registered density units, finite nonnegative input requirements,
- * fixed grams-per-cubic-centimeter formatting, and canonical density literals.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <cmath>
 #include <limits>
@@ -38,14 +32,11 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/units/GGEMSDensityUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
 #include "GGEMSScopedLoggerEncoding.hh"
-
-/// \cond
 
 namespace {
 
@@ -57,6 +48,10 @@ using ggems::units::UnitConversionError;
 
 constexpr long double k_density_relative_tolerance =
   32.0L * std::numeric_limits<long double>::epsilon();
+} // namespace
+
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSDensityUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   struct Case {
@@ -65,14 +60,20 @@ TEST(GGEMSDensityUnitsTest, ConvertsEveryOfficialRuntimeToken) {
     long double expected_picograms_per_cubic_picometer;
   };
 
-  constexpr std::array<Case, 2U> cases{{
-    {.value = 1.0L,
-     .unit = "pg/pm3",
-     .expected_picograms_per_cubic_picometer = 1.0L},
-    {.value = 1.0L,
-     .unit = "g/cm3",
-     .expected_picograms_per_cubic_picometer = 1.0e-18L},
-  }};
+  constexpr std::array<Case, 2U> cases{
+    {
+      {
+        .value = 1.0L,
+        .unit = "pg/pm3",
+        .expected_picograms_per_cubic_picometer = 1.0L,
+      },
+      {
+        .value = 1.0L,
+        .unit = "g/cm3",
+        .expected_picograms_per_cubic_picometer = 1.0e-18L,
+      },
+    },
+  };
 
   for (auto const &test_case : cases) {
     SCOPED_TRACE(test_case.unit);
@@ -89,6 +90,9 @@ TEST(GGEMSDensityUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   }
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSDensityUnitsTest, EnforcesFiniteNonNegativeInput) {
   auto const negative = MakeQuantity<Density>(-1.0L, "pg/pm3");
   auto const infinity = MakeQuantity<Density>(
@@ -104,6 +108,9 @@ TEST(GGEMSDensityUnitsTest, EnforcesFiniteNonNegativeInput) {
   EXPECT_EQ(not_a_number.error(), UnitConversionError::NonFinite);
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSDensityUnitsTest, UsesFixedGramsPerCubicCentimeterDisplay) {
   Density const density{1.0e-18L};
 
@@ -117,6 +124,9 @@ TEST(GGEMSDensityUnitsTest, UsesFixedGramsPerCubicCentimeterDisplay) {
   }
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSDensityUnitsTest, LiteralsStoreCanonicalDensity) {
   using namespace ggems::units;
 
@@ -127,6 +137,3 @@ TEST(GGEMSDensityUnitsTest, LiteralsStoreCanonicalDensity) {
   EXPECT_LE(std::abs(laboratory_density.value - 2.0e-18L),
             2.0e-18L * k_density_relative_tolerance);
 }
-
-} // namespace
-/// \endcond

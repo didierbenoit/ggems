@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -139,12 +166,21 @@ auto ExpectDiagnosticProjection(TransportRunReport const &report,
   ObserverRecord const *terminal = FindTerminal(report, source);
   ASSERT_NE(terminal, nullptr);
 
-  std::array<float, 3U> const direction{source.direction_x, source.direction_y,
-                                        source.direction_z};
+  std::array<float, 3U> const direction{
+    source.direction_x,
+    source.direction_y,
+    source.direction_z,
+  };
   std::array<std::int64_t, 3U> const begin{
-    source.position_x_pm, source.position_y_pm, source.position_z_pm};
+    source.position_x_pm,
+    source.position_y_pm,
+    source.position_z_pm,
+  };
   std::array<std::int64_t, 3U> const end{
-    terminal->position_x_pm, terminal->position_y_pm, terminal->position_z_pm};
+    terminal->position_x_pm,
+    terminal->position_y_pm,
+    terminal->position_z_pm,
+  };
 
   for (std::size_t axis = 0U; axis < 3U; ++axis) {
     std::int64_t displacement{0LL};
@@ -181,8 +217,11 @@ protected:
 
 TEST_F(GGEMSSourceSamplingTransportTest,
        PointFixedAndFocusedDoNotConsumeRandom) {
-  constexpr std::array<std::string_view, 3U> k_engines{"jkiss", "pcg32",
-                                                       "philox"};
+  constexpr std::array<std::string_view, 3U> k_engines{
+    "jkiss",
+    "pcg32",
+    "philox",
+  };
   constexpr std::array<std::uint64_t, 1U> k_eight{8ULL};
   constexpr std::array<std::uint64_t, 1U> k_one{1ULL};
 
@@ -285,7 +324,10 @@ TEST_F(GGEMSSourceSamplingTransportTest,
     distinct_positions;
 
   std::array<SourceRecord, 3U> const configured_sources{
-    rectangle.BuildRecord(), ellipse.BuildRecord(), circle.BuildRecord()};
+    rectangle.BuildRecord(),
+    ellipse.BuildRecord(),
+    circle.BuildRecord(),
+  };
 
   for (ObserverRecord const &record : source_records) {
     auto const source_index = static_cast<std::size_t>(record.source_index);
@@ -352,8 +394,11 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 
 TEST_F(GGEMSSourceSamplingTransportTest,
        SamplesFullSphereIsotropicDirectionsForEveryEngine) {
-  constexpr std::array<std::string_view, 3U> k_engines{"jkiss", "pcg32",
-                                                       "philox"};
+  constexpr std::array<std::string_view, 3U> k_engines{
+    "jkiss",
+    "pcg32",
+    "philox",
+  };
   constexpr std::uint32_t k_primary_count{2'048U};
   constexpr std::array<std::uint64_t, 1U> k_counts{k_primary_count};
 
@@ -386,7 +431,10 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 
     for (ObserverRecord const &record : records) {
       std::array<float, 3U> const direction{
-        record.direction_x, record.direction_y, record.direction_z};
+        record.direction_x,
+        record.direction_y,
+        record.direction_z,
+      };
 
       long double norm_squared{0.0L};
 
@@ -420,7 +468,10 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 TEST_F(GGEMSSourceSamplingTransportTest,
        FocusedDirectionsUseEachSampledGlobalPosition) {
   constexpr std::array<std::int64_t, 3U> k_focus{
-    300'000'000'000LL, -200'000'000'000LL, 800'000'000'000LL};
+    300'000'000'000LL,
+    -200'000'000'000LL,
+    800'000'000'000LL,
+  };
 
   ggems::core::sources::GGEMSSource point{};
   point.SetFocusedAngularDistributionPicoMeter(k_focus[0U], k_focus[1U],
@@ -440,8 +491,9 @@ TEST_F(GGEMSSourceSamplingTransportTest,
   SourceRecord invalid_zero_slot = point.BuildRecord();
   invalid_zero_slot.emission_geometry_type = 99U;
 
-  constexpr std::array<std::uint64_t, 5U> k_counts{1ULL, 128ULL, 128ULL, 0ULL,
-                                                   128ULL};
+  constexpr std::array<std::uint64_t, 5U> k_counts{
+    1ULL, 128ULL, 128ULL, 0ULL, 128ULL,
+  };
 
   ggems::core::random::GGEMSRandom random{};
   random.SetEngine("pcg32").SetSeed(10'101ULL);
@@ -456,8 +508,13 @@ TEST_F(GGEMSSourceSamplingTransportTest,
                              770U};
 
   auto const report = workload.Run(MakeConfig(
-    {point.BuildRecord(), rectangle.BuildRecord(), ellipse.BuildRecord(),
-     invalid_zero_slot, rectangle.BuildRecord()},
+    {
+      point.BuildRecord(),
+      rectangle.BuildRecord(),
+      ellipse.BuildRecord(),
+      invalid_zero_slot,
+      rectangle.BuildRecord(),
+    },
     k_counts));
 
   auto const records = RecordsOfKind(report, ObserverRecordKind::Source);
@@ -493,8 +550,11 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 
 TEST_F(GGEMSSourceSamplingTransportTest,
        RandomStateContinuesWithoutPerRunAllocation) {
-  constexpr std::array<std::string_view, 3U> k_engines{"jkiss", "pcg32",
-                                                       "philox"};
+  constexpr std::array<std::string_view, 3U> k_engines{
+    "jkiss",
+    "pcg32",
+    "philox",
+  };
   constexpr std::array<std::uint64_t, 1U> k_counts{8ULL};
 
   for (std::string_view engine : k_engines) {
@@ -548,10 +608,14 @@ TEST_F(GGEMSSourceSamplingTransportTest,
 
 TEST_F(GGEMSSourceSamplingTransportTest,
        MixedLegacyAndVolumeSourcesPreserveObserverAndPaddingContracts) {
-  constexpr std::array<std::string_view, 3U> k_engines{"jkiss", "pcg32",
-                                                       "philox"};
-  constexpr std::array<std::uint64_t, 8U> k_counts{1ULL, 2ULL, 2ULL, 2ULL,
-                                                   2ULL, 2ULL, 0ULL, 2ULL};
+  constexpr std::array<std::string_view, 3U> k_engines{
+    "jkiss",
+    "pcg32",
+    "philox",
+  };
+  constexpr std::array<std::uint64_t, 8U> k_counts{
+    1ULL, 2ULL, 2ULL, 2ULL, 2ULL, 2ULL, 0ULL, 2ULL,
+  };
   constexpr std::uint32_t k_total_primary_count{13U};
 
   ggems::core::sources::GGEMSSource point{};
@@ -585,7 +649,8 @@ TEST_F(GGEMSSourceSamplingTransportTest,
   std::vector<SourceRecord> const records{
     point.BuildRecord(), rectangle.BuildRecord(), ellipse.BuildRecord(),
     box.BuildRecord(),   sphere.BuildRecord(),    cylinder.BuildRecord(),
-    invalid_zero_slot,   box.BuildRecord()};
+    invalid_zero_slot,   box.BuildRecord(),
+  };
 
   for (std::string_view const engine : k_engines) {
     SCOPED_TRACE(engine);

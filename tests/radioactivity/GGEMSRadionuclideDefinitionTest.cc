@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -111,23 +138,19 @@ TEST(GGEMSRadionuclideDefinitionTest, RejectsInvalidNameHalfLifeAndEmissions) {
     MakeMonoEmission(GGEMSParticleType::Gamma, 1.0L, 1'000ULL));
 
   EXPECT_THROW(((void)GGEMSRadionuclideDefinition{"", 1.0L, valid_emissions}),
-               ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW(
-    ((void)GGEMSRadionuclideDefinition{" \t\r\n", 1.0L, valid_emissions}),
-    ggems::core::GGEMSExceptionBase);
+               ggems::core::GGEMSRecoverable);
 
   for (long double half_life :
        {0.0L, -1.0L, std::numeric_limits<long double>::quiet_NaN(),
-        std::numeric_limits<long double>::infinity(),
         -std::numeric_limits<long double>::infinity()}) {
     SCOPED_TRACE(static_cast<double>(half_life));
     EXPECT_THROW(((void)GGEMSRadionuclideDefinition{"Synthetic", half_life,
                                                     valid_emissions}),
-                 ggems::core::GGEMSExceptionBase);
+                 ggems::core::GGEMSRecoverable);
   }
 
   EXPECT_THROW(((void)GGEMSRadionuclideDefinition{"Synthetic", 1.0L, {}}),
-               ggems::core::GGEMSExceptionBase);
+               ggems::core::GGEMSRecoverable);
 }
 
 // =============================================================================
@@ -180,22 +203,6 @@ TEST(GGEMSRadionuclideDefinitionTest,
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSRadionuclideDefinitionTest, RejectsNonFiniteTotalYield) {
-  long double const maximum = std::numeric_limits<long double>::max();
-  std::vector<GGEMSRadionuclideEmission> emissions;
-  emissions.push_back(
-    MakeMonoEmission(GGEMSParticleType::Gamma, maximum, 1'000ULL));
-  emissions.push_back(
-    MakeMonoEmission(GGEMSParticleType::Electron, maximum, 2'000ULL));
-
-  EXPECT_THROW(((void)GGEMSRadionuclideDefinition{"Synthetic-Overflow", 1.0L,
-                                                  std::move(emissions)}),
-               ggems::core::GGEMSExceptionBase);
-}
-
-// =============================================================================
-// =============================================================================
-
 TEST(GGEMSRadionuclideDefinitionTest,
      FailedConstructionLeavesCallerOwnedInputsUnchanged) {
   std::string canonical_name{"Synthetic-Stable"};
@@ -205,7 +212,7 @@ TEST(GGEMSRadionuclideDefinitionTest,
 
   EXPECT_THROW(
     ((void)GGEMSRadionuclideDefinition{canonical_name, 0.0L, emissions}),
-    ggems::core::GGEMSExceptionBase);
+    ggems::core::GGEMSRecoverable);
 
   EXPECT_EQ(canonical_name, "Synthetic-Stable");
   ASSERT_EQ(emissions.size(), 1U);

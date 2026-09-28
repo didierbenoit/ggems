@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <cstddef>
 #include <string>
@@ -8,7 +35,6 @@
 #include <gtest/gtest.h>
 
 #include "GGEMS/materials/GGEMSEMMaterialPackage.hh"
-#include "GGEMS/materials/GGEMSIsotopeProfile.hh"
 #include "GGEMS/materials/GGEMSIsotopicComposition.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/GGEMSMaterialManager.hh"
@@ -57,11 +83,21 @@ auto MakeEnrichedBoron(std::string name, units::Density density,
             materials::GGEMSFractionBasis::AtomFraction,
             {
               {
-                .isotope = {5U, 10U, 0U},
+                .isotope =
+                  {
+                    5U,
+                    10U,
+                    0U,
+                  },
                 .fraction = boron_10_fraction,
               },
               {
-                .isotope = {5U, 11U, 0U},
+                .isotope =
+                  {
+                    5U,
+                    11U,
+                    0U,
+                  },
                 .fraction = 1.0L - boron_10_fraction,
               },
             }},
@@ -90,12 +126,14 @@ TEST(GGEMSEMMaterialPackageTest, InternsIdenticalMaterialsUnderAnyName) {
                    {.atomic_number = 1U, .mass_fraction = 0.111898L},
                    {.atomic_number = 8U, .mass_fraction = 0.888102L},
                  }));
+
   authored.push_back(
     MakeMaterial("same water under another name", 1.0_g_cm3,
                  {
                    {.atomic_number = 1U, .mass_fraction = 0.111898L},
                    {.atomic_number = 8U, .mass_fraction = 0.888102L},
                  }));
+
   authored.push_back(
     MakeMaterial("reversed element order", 1.0_g_cm3,
                  {
@@ -124,10 +162,13 @@ TEST(GGEMSEMMaterialPackageTest, SeparatesPhysicallyDifferentMaterials) {
   std::vector<materials::GGEMSMaterial> authored;
   authored.push_back(MakeMaterial(
     "boron", 2.34_g_cm3, {{.atomic_number = 5U, .mass_fraction = 1.0L}}));
+
   authored.push_back(
     MakeMaterial("denser boron", 2.40_g_cm3,
                  {{.atomic_number = 5U, .mass_fraction = 1.0L}}));
+
   authored.push_back(MakeEnrichedBoron("enriched boron", 2.34_g_cm3, 0.9L));
+
   authored.push_back(MakeEnrichedBoron("other enrichment", 2.34_g_cm3, 0.5L));
 
   auto const package = Compile(authored);
@@ -153,13 +194,13 @@ TEST(GGEMSEMMaterialPackageTest, EquivalentAuthoringRoutesShareOneIdentity) {
   authored.push_back(
     MakeMaterial("natural boron", 2.34_g_cm3,
                  {{.atomic_number = 5U, .mass_fraction = 1.0L}}));
+
   authored.push_back(materials::GGEMSMaterial::FromIsotopicComposition(
     "explicit natural boron", 2.34_g_cm3,
     {
       {
         .mass_fraction = 1.0L,
-        .isotopic_composition = materials::ResolveIsotopeProfile(
-          materials::GGEMSIsotopeProfile::Nist41Natural, 5U),
+        .isotopic_composition = materials::BuildDefaultIsotopicComposition(5U),
       },
     }));
 
@@ -175,30 +216,21 @@ TEST(GGEMSEMMaterialPackageTest, EquivalentAuthoringRoutesShareOneIdentity) {
 
 TEST(GGEMSEMMaterialPackageTest,
      PublishesTheDerivedElementalViewOfTheIdentity) {
-  long double const first_hydrogen{0.111898000000000094611L};
-  long double const second_hydrogen{0.111898000000000108489L};
-  long double const oxygen{0.888102L};
-
   auto const first =
     MakeMaterial("first water", 1.0_g_cm3,
                  {
-                   {.atomic_number = 1U, .mass_fraction = first_hydrogen},
-                   {.atomic_number = 8U, .mass_fraction = oxygen},
+                   {.atomic_number = 1U, .mass_fraction = 0.111898L},
+                   {.atomic_number = 8U, .mass_fraction = 0.888102L},
                  });
+
   auto const second =
     MakeMaterial("second water", 1.0_g_cm3,
                  {
-                   {.atomic_number = 1U, .mass_fraction = second_hydrogen},
-                   {.atomic_number = 8U, .mass_fraction = oxygen},
+                   {.atomic_number = 8U, .mass_fraction = 0.888102L},
+                   {.atomic_number = 1U, .mass_fraction = 0.111898L},
                  });
 
-  ASSERT_NE(first_hydrogen, second_hydrogen);
   ASSERT_TRUE(HasSameScientificIdentity(first, second));
-  // The authored elemental shares still differ; the derived view does not.
-  ASSERT_NE(first.GetConstituents()[0].mass_fraction,
-            second.GetConstituents()[0].mass_fraction);
-  ASSERT_EQ(first.GetElementalConstituents()[0].mass_fraction,
-            second.GetElementalConstituents()[0].mass_fraction);
 
   auto const forward = Compile({first, second});
   auto const reversed = Compile({second, first});
@@ -227,8 +259,10 @@ TEST(GGEMSEMMaterialPackageTest,
 TEST(GGEMSEMMaterialPackageTest, DeduplicatesVacuumAndKeepsItEmpty) {
   std::vector<materials::GGEMSMaterial> authored;
   authored.push_back(builtins::BuildBuiltInMaterial("Vacuum"));
+
   authored.push_back(
     MakeMaterial("second vacuum", units::Density{.value = 0.0L}, {}));
+
   authored.push_back(
     MakeMaterial("air-like", 1.205e-3_g_cm3,
                  {{.atomic_number = 7U, .mass_fraction = 1.0L}}));
@@ -262,7 +296,6 @@ TEST(GGEMSEMMaterialPackageTest, CompilesEveryBuiltInIntoADenseFlatPackage) {
   ASSERT_EQ(ids.size(), authored.size());
   EXPECT_EQ(descriptors.size(), 117U);
 
-  // Dense ids, contiguous non-overlapping ranges covering the flat array.
   std::size_t expected_offset{0U};
   for (std::size_t identifier = 0U; identifier < descriptors.size();
        ++identifier) {
@@ -398,8 +431,8 @@ TEST(GGEMSEMMaterialPackageTest, CompilesManyAuthoredEntriesIntoFewIdentities) {
 
 TEST(GGEMSEMMaterialPackageTest, CompilesTheAuthoringRegistrySnapshot) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
-  static_cast<void>(manager.GetOrAddBuiltIn("Water"));
-  static_cast<void>(manager.GetOrAddBuiltIn("Air"));
+  static_cast<void>(manager.GetOrAdd("Water"));
+  static_cast<void>(manager.GetOrAdd("Air"));
 
   auto const authored = manager.GetMaterials();
   materials::GGEMSEMMaterialPackage const package{authored};

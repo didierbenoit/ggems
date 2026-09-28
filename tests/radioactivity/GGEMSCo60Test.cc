@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -23,7 +50,6 @@ using ggems::core::radioactivity::GGEMSRadionuclideDefinition;
 using ggems::core::radioactivity::GGEMSRadionuclideEmission;
 using ggems::core::radioactivity::builtins::BuildCo60Radionuclide;
 using ggems::core::sources::GGEMSEnergyDistributionType;
-using ggems::core::sources::k_energy_ticket_space_size;
 
 // =============================================================================
 // =============================================================================
@@ -40,50 +66,62 @@ struct ExpectedBetaBranch {
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<ExpectedBetaBranch, 3U> k_expected_beta_branches{{
-  {.yield_per_decay = 0.9988L,
-   .table_count = 635U,
-   .bin_width_micro_eV = 499'716'000ULL,
-   .lower_edge_micro_eV = 340'000ULL,
-   .endpoint_micro_eV = 317'320'000'000ULL,
-   .represented_mean_energy_keV = 95.52460},
-  {.yield_per_decay = 0.00002L,
-   .table_count = 1329U,
-   .bin_width_micro_eV = 499'968'000ULL,
-   .lower_edge_micro_eV = 2'528'000ULL,
-   .endpoint_micro_eV = 664'460'000'000ULL,
-   .represented_mean_energy_keV = 273.60067},
-  {.yield_per_decay = 0.0012L,
-   .table_count = 2982U,
-   .bin_width_micro_eV = 499'852'000ULL,
-   .lower_edge_micro_eV = 1'336'000ULL,
-   .endpoint_micro_eV = 1'490'560'000'000ULL,
-   .represented_mean_energy_keV = 624.50478},
-}};
+constexpr std::array<ExpectedBetaBranch, 3U> k_expected_beta_branches{
+  {
+    {
+      .yield_per_decay = 0.9988L,
+      .table_count = 635U,
+      .bin_width_micro_eV = 499'716'000ULL,
+      .lower_edge_micro_eV = 340'000ULL,
+      .endpoint_micro_eV = 317'320'000'000ULL,
+      .represented_mean_energy_keV = 95.52460,
+    },
+    {
+      .yield_per_decay = 0.00002L,
+      .table_count = 1329U,
+      .bin_width_micro_eV = 499'968'000ULL,
+      .lower_edge_micro_eV = 2'528'000ULL,
+      .endpoint_micro_eV = 664'460'000'000ULL,
+      .represented_mean_energy_keV = 273.60067,
+    },
+    {
+      .yield_per_decay = 0.0012L,
+      .table_count = 2982U,
+      .bin_width_micro_eV = 499'852'000ULL,
+      .lower_edge_micro_eV = 1'336'000ULL,
+      .endpoint_micro_eV = 1'490'560'000'000ULL,
+      .represented_mean_energy_keV = 624.50478,
+    },
+  },
+};
 
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<std::uint64_t, 6U> k_expected_gamma_energies_micro_eV{{
-  347'140'000'000ULL,
-  826'100'000'000ULL,
-  1'173'228'000'000ULL,
-  1'332'492'000'000ULL,
-  2'158'570'000'000ULL,
-  2'505'692'000'000ULL,
-}};
+constexpr std::array<std::uint64_t, 6U> k_expected_gamma_energies_micro_eV{
+  {
+    347'140'000'000ULL,
+    826'100'000'000ULL,
+    1'173'228'000'000ULL,
+    1'332'492'000'000ULL,
+    2'158'570'000'000ULL,
+    2'505'692'000'000ULL,
+  },
+};
 
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<double, 6U> k_expected_gamma_line_yields{{
-  0.000075,
-  0.000076,
-  0.9985,
-  0.999826,
-  0.000012,
-  0.00000002,
-}};
+constexpr std::array<double, 6U> k_expected_gamma_line_yields{
+  {
+    0.000075,
+    0.000076,
+    0.9985,
+    0.999826,
+    0.000012,
+    0.00000002,
+  },
+};
 
 // =============================================================================
 // =============================================================================
@@ -122,7 +160,7 @@ auto CheckReachableDiscreteChannel(GGEMSRadionuclideEmission const &emission,
 
   EXPECT_NEAR(static_cast<double>(line_yield_sum),
               static_cast<double>(emission.GetYieldPerDecay()), 1.0e-12);
-  EXPECT_EQ(previous_ticket, k_energy_ticket_space_size);
+  EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
 }
 
 // =============================================================================
@@ -217,7 +255,7 @@ TEST(GGEMSCo60Test, PreservesThreeTabulatedBetaShapeSpectra) {
     }
 
     EXPECT_NEAR(static_cast<double>(weight_sum), 1.0, 1.0e-12);
-    EXPECT_EQ(previous_ticket, k_energy_ticket_space_size);
+    EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
 
     long double const mean_energy_keV =
       weighted_center_sum / weight_sum /

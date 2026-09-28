@@ -21,16 +21,10 @@
 
 /*!
  * \file
- * \brief Unit tests for OpenCL string conversion helpers.
- *
- * Validates formatting of versions, structured name-version values, scalars,
- * flags, UUID/LUID byte arrays, and representative kernel argument qualifiers.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -40,11 +34,8 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/opencl/GGEMSOpenCLStrings.hh"
-
-/// \cond
 
 namespace {
 
@@ -159,4 +150,3 @@ TEST(GGEMSOpenCLStringsTest, FormatsRepresentativeKernelArgumentQualifiers) {
   EXPECT_EQ(ggems::ocl::ArgTypeQualifierToString(CL_KERNEL_ARG_TYPE_NONE),
             "None");
 }
-/// \endcond

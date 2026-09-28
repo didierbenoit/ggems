@@ -21,17 +21,10 @@
 
 /*!
  * \file
- * \brief Unit tests for deterministic GGEMS random-state initialization.
- *
- * Validates state-layout sizing, stream-range checks, deterministic
- * initialization, stream separation, and invalid storage handling for every
- * random engine.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -43,13 +36,10 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/random/GGEMSRandomEngine.hh"
 #include "GGEMS/random/GGEMSRandomState.hh"
-
-/// \cond
 
 namespace {
 
@@ -343,4 +333,3 @@ INSTANTIATE_TEST_SUITE_P(AllEngines, GGEMSRandomStateInitializationTest,
                          ::testing::Values(GGEMSRandomEngine::JKISS,
                                            GGEMSRandomEngine::PCG32,
                                            GGEMSRandomEngine::Philox));
-/// \endcond

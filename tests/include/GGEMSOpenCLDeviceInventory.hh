@@ -21,56 +21,38 @@
 
 /*!
  * \file
- * \brief Shared OpenCL device inventory utilities for tests.
- *
- * Flattens GGEMS platform/device discovery into stable test records and
- * provides a concise device description suitable for GoogleTest traces.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
 #pragma once
 
-/// \cond
 #include <cstddef>
 #include <format>
 #include <functional>
 #include <string>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
 #include "GGEMS/opencl/GGEMSOpenCLPlatform.hh"
 #include "GGEMS/opencl/GGEMSOpenCLStrings.hh"
 
-/*!
- * \namespace ggems::test
- * \brief Utilities shared by GGEMS test suites.
- */
 namespace ggems::test {
 
-/*!
- * \brief Describes one GGEMS-discovered OpenCL device.
- */
+// =============================================================================
+// =============================================================================
+
 struct OpenCLDeviceInventoryEntry {
-  /*! \brief Zero-based GGEMS platform index. */
   std::size_t platform_index;
-  /*! \brief Zero-based GGEMS device index within the platform. */
   std::size_t device_index;
-  /*! \brief Reference to the discovered GGEMS platform. */
   std::reference_wrapper<ocl::GGEMSOpenCLPlatform const> platform;
-  /*! \brief Reference to the discovered GGEMS device. */
   std::reference_wrapper<ocl::GGEMSOpenCLDevice const> device;
 };
 
-/*!
- * \brief Builds a flattened inventory of all GGEMS-discovered OpenCL devices.
- *
- * \return Device entries ordered by platform discovery order and then device
- * order.
- */
+// =============================================================================
+// =============================================================================
+
 [[nodiscard]] inline auto GetOpenCLDeviceInventory()
   -> std::vector<OpenCLDeviceInventoryEntry> {
   std::vector<OpenCLDeviceInventoryEntry> inventory;
@@ -90,12 +72,9 @@ struct OpenCLDeviceInventoryEntry {
   return inventory;
 }
 
-/*!
- * \brief Builds a concise diagnostic description of an OpenCL device entry.
- *
- * \param[in] entry Device inventory entry to describe.
- * \return Human-readable platform, device, name, vendor, and type summary.
- */
+// =============================================================================
+// =============================================================================
+
 [[nodiscard]] inline auto
 DescribeOpenCLDevice(OpenCLDeviceInventoryEntry const &entry) -> std::string {
   auto const &device = entry.device.get();

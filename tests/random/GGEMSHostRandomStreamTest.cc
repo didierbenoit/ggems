@@ -21,16 +21,10 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS host random streams.
- *
- * Validates deterministic continuation, stream separation, raw output, and
- * scalar uniform contracts across all supported engines.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <bit>
 #include <cstddef>
@@ -44,7 +38,6 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/random/GGEMSHostRandomStream.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
@@ -56,8 +49,6 @@
 #include "GGEMS/opencl/GGEMSOpenCLSVMBuffer.hh"
 #include "GGEMSOpenCLCompilerDeviceInventory.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
-
-/// \cond
 
 namespace {
 
@@ -71,9 +62,11 @@ using ggems::core::random::GGEMSRandomEngine;
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<GGEMSRandomEngine, 3> k_engines{GGEMSRandomEngine::JKISS,
-                                                     GGEMSRandomEngine::PCG32,
-                                                     GGEMSRandomEngine::Philox};
+constexpr std::array<GGEMSRandomEngine, 3> k_engines{
+  GGEMSRandomEngine::JKISS,
+  GGEMSRandomEngine::PCG32,
+  GGEMSRandomEngine::Philox,
+};
 constexpr std::size_t k_sequence_size{32U};
 constexpr std::size_t k_probe_sample_count{16U};
 
@@ -326,7 +319,8 @@ TEST(GGEMSHostRandomStreamTest,
       std::array<std::uint64_t, 2> const seeds{0ULL, 77'777ULL};
       std::array<std::uint64_t, 2> const stream_ids{
         0ULL,
-        engine == GGEMSRandomEngine::JKISS ? 42ULL : (1ULL << 40U) + 42ULL};
+        engine == GGEMSRandomEngine::JKISS ? 42ULL : (1ULL << 40U) + 42ULL,
+      };
 
       for (std::uint64_t seed : seeds) {
         for (std::uint64_t stream_id : stream_ids) {
@@ -390,4 +384,3 @@ TEST(GGEMSHostRandomStreamTest,
     GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
-/// \endcond

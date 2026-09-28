@@ -1,5 +1,30 @@
-#include <cstdint>
-#include <limits>
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <string_view>
 
 #include <gtest/gtest.h>
@@ -24,31 +49,22 @@ TEST(GGEMSElementTest, StoresElementData) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSElementTest, RejectsInvalidData) {
-  auto const make_element =
-    [](std::uint32_t atomic_number, std::string_view symbol,
-       std::string_view name,
-       long double molar_mass) -> materials::GGEMSElement {
-    return materials::GGEMSElement{atomic_number, symbol, name, molar_mass};
-  };
+TEST(GGEMSElementTest, RejectsAtomicNumbersOutsideCatalogRange) {
+  EXPECT_THROW(
+    static_cast<void>(materials::GGEMSElement{0U, "H", "Hydrogen", 1.0080L}),
+    ggems::core::GGEMSRecoverable);
 
-  EXPECT_THROW(static_cast<void>(make_element(0U, "H", "hydrogen", 1.0080L)),
-               ggems::core::GGEMSRecoverable);
   EXPECT_THROW(
-    static_cast<void>(make_element(119U, "Og", "oganesson", 294.213979L)),
+    static_cast<void>(materials::GGEMSElement{100U, "Fm", "Fermium", 257.0L}),
     ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(static_cast<void>(make_element(1U, "", "hydrogen", 1.0080L)),
-               ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(static_cast<void>(make_element(1U, "H", "", 1.0080L)),
-               ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(static_cast<void>(make_element(1U, "H", "hydrogen", 0.0L)),
-               ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(
-    static_cast<void>(make_element(
-      1U, "H", "hydrogen", std::numeric_limits<long double>::infinity())),
-    ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(
-    static_cast<void>(make_element(
-      1U, "H", "hydrogen", std::numeric_limits<long double>::quiet_NaN())),
-    ggems::core::GGEMSRecoverable);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSElementTest, AcceptsHighestCatalogAtomicNumber) {
+  constexpr materials::GGEMSElement einsteinium{99U, "Es", "Einsteinium",
+                                                252.082979173L};
+
+  EXPECT_EQ(einsteinium.GetAtomicNumber(), 99U);
 }

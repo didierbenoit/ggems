@@ -21,16 +21,10 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS OpenCL utility helpers.
- *
- * Validates OpenCL error descriptions, contextual error checking, exact
- * extension matching, and representative native information queries.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <cstddef>
 #include <string>
@@ -39,14 +33,11 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/opencl/GGEMSOpenCLUtils.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
-
-/// \cond
 
 namespace {
 
@@ -100,6 +91,10 @@ TEST(GGEMSOpenCLUtilsTest, BuildsLongErrorDescription) {
 TEST(GGEMSOpenCLUtilsTest,
      CheckCLErrorAcceptsSuccessAndPreservesFailureContext) {
   EXPECT_NO_THROW(ggems::ocl::CheckCLError(CL_SUCCESS, "OpenCL success"));
+
+  EXPECT_THROW(
+    ggems::ocl::CheckCLError(CL_INVALID_VALUE, "OpenCL default failure"),
+    ggems::core::GGEMSFatal);
 
   try {
     ggems::ocl::CheckCLError<ggems::core::GGEMSRecoverable>(CL_INVALID_VALUE,
@@ -176,4 +171,3 @@ TEST(GGEMSOpenCLUtilsTest,
     GTEST_SKIP() << "No GGEMS-discovered device advertises cl_khr_spir.";
   }
 }
-/// \endcond

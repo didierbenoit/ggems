@@ -21,30 +21,21 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS frequency quantities and conversions.
- *
- * Validates registered frequency units, negative-value rejection, automatic SI
- * prefix formatting, and hertz literals.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <cstdint>
 #include <string_view>
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/units/GGEMSFrequencyUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
 #include "GGEMSScopedLoggerEncoding.hh"
-
-/// \cond
 
 namespace {
 
@@ -54,19 +45,26 @@ using ggems::units::HumanReadable;
 using ggems::units::MakeQuantity;
 using ggems::units::UnitConversionError;
 
+} // namespace
+
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSFrequencyUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   struct Case {
     std::string_view unit;
     std::uint64_t expected_hertz;
   };
 
-  constexpr std::array<Case, 5U> cases{{
-    {.unit = "Hz", .expected_hertz = 1ULL},
-    {.unit = "kHz", .expected_hertz = 1'000ULL},
-    {.unit = "MHz", .expected_hertz = 1'000'000ULL},
-    {.unit = "GHz", .expected_hertz = 1'000'000'000ULL},
-    {.unit = "THz", .expected_hertz = 1'000'000'000'000ULL},
-  }};
+  constexpr std::array<Case, 5U> cases{
+    {
+      {.unit = "Hz", .expected_hertz = 1ULL},
+      {.unit = "kHz", .expected_hertz = 1'000ULL},
+      {.unit = "MHz", .expected_hertz = 1'000'000ULL},
+      {.unit = "GHz", .expected_hertz = 1'000'000'000ULL},
+      {.unit = "THz", .expected_hertz = 1'000'000'000'000ULL},
+    },
+  };
 
   for (auto const &test_case : cases) {
     SCOPED_TRACE(test_case.unit);
@@ -77,6 +75,9 @@ TEST(GGEMSFrequencyUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   }
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSFrequencyUnitsTest, RejectsNegativeFrequency) {
   auto const converted = MakeQuantity<Frequency>(-1, "Hz");
 
@@ -84,11 +85,17 @@ TEST(GGEMSFrequencyUnitsTest, RejectsNegativeFrequency) {
   EXPECT_EQ(converted.error(), UnitConversionError::NegativeValue);
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSFrequencyUnitsTest, AutomaticallyDisplaysSIPrefixes) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
 
   EXPECT_EQ(HumanReadable(Frequency{2'500'000ULL}, 2), "2.50 MHz");
 }
+
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSFrequencyUnitsTest, LiteralStoresHertz) {
   using namespace ggems::units;
@@ -97,6 +104,3 @@ TEST(GGEMSFrequencyUnitsTest, LiteralStoresHertz) {
 
   EXPECT_EQ(frequency.value, 3'000'000'000ULL);
 }
-
-} // namespace
-/// \endcond

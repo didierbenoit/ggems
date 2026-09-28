@@ -21,16 +21,10 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS absorbed-dose quantities and conversions.
- *
- * Validates registered dose units, canonical-to-gray conversion, negative-value
- * rejection, ASCII/Unicode microgray formatting, and gray literal quantization.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -38,14 +32,11 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/units/GGEMSDoseUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
 #include "GGEMSScopedLoggerEncoding.hh"
-
-/// \cond
 
 namespace {
 
@@ -57,6 +48,10 @@ using ggems::units::MakeQuantity;
 using ggems::units::UnitConversionError;
 
 constexpr long double k_gray_per_canonical_unit = 1.602176634e-7L;
+} // namespace
+
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSDoseUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   struct Case {
@@ -81,6 +76,9 @@ TEST(GGEMSDoseUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   }
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSDoseUnitsTest, ConvertsIntegerCanonicalDoseBackToGray) {
   auto const gray = ConvertTo(Dose{6'241'509ULL}, "Gy");
 
@@ -88,12 +86,18 @@ TEST(GGEMSDoseUnitsTest, ConvertsIntegerCanonicalDoseBackToGray) {
   EXPECT_LE(std::abs(*gray - 1.0L), 0.5L * k_gray_per_canonical_unit);
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSDoseUnitsTest, RejectsNegativeDose) {
   auto const converted = MakeQuantity<Dose>(-1.0L, "Gy");
 
   ASSERT_FALSE(converted.has_value());
   EXPECT_EQ(converted.error(), UnitConversionError::NegativeValue);
 }
+
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSDoseUnitsTest, PresentsMicrograyInAsciiAndUnicode) {
   Dose const quantum{1ULL};
@@ -108,6 +112,9 @@ TEST(GGEMSDoseUnitsTest, PresentsMicrograyInAsciiAndUnicode) {
   }
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSDoseUnitsTest, GrayLiteralUsesCanonicalIntegerQuantization) {
   using namespace ggems::units;
 
@@ -115,6 +122,3 @@ TEST(GGEMSDoseUnitsTest, GrayLiteralUsesCanonicalIntegerQuantization) {
 
   EXPECT_EQ(gray.value, 6'241'509ULL);
 }
-
-} // namespace
-/// \endcond

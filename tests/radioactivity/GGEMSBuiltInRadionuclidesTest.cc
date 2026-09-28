@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstddef>
 #include <string>
@@ -22,28 +49,52 @@ struct ExpectedBuiltIn {
 // =============================================================================
 
 TEST(GGEMSBuiltInRadionuclides, DispatchesOnlyExactCanonicalNames) {
-  constexpr std::array<ExpectedBuiltIn, 14U> expected{{
-    {.name = "H-3", .half_life_seconds = 388'500'000.0L, .emission_count = 1U},
-    {.name = "C-14",
-     .half_life_seconds = 179'900'000'000.0L,
-     .emission_count = 1U},
-    {.name = "F-18", .half_life_seconds = 6584.04L, .emission_count = 3U},
-    {.name = "C-11", .half_life_seconds = 1221.66L, .emission_count = 1U},
-    {.name = "O-15", .half_life_seconds = 122.266L, .emission_count = 1U},
-    {.name = "Ga-68", .half_life_seconds = 4'069.8L, .emission_count = 7U},
-    {.name = "Co-60",
-     .half_life_seconds = 166'340'000.0L,
-     .emission_count = 7U},
-    {.name = "Lu-177", .half_life_seconds = 574'067.52L, .emission_count = 8U},
-    {.name = "I-123", .half_life_seconds = 47'604.24L, .emission_count = 4U},
-    {.name = "I-124", .half_life_seconds = 360'806.4L, .emission_count = 13U},
-    {.name = "I-125", .half_life_seconds = 5'131'123.2L, .emission_count = 4U},
-    {.name = "I-131", .half_life_seconds = 693'213.12L, .emission_count = 10U},
-    {.name = "Am-241",
-     .half_life_seconds = 13'652'000'000.0L,
-     .emission_count = 6U},
-    {.name = "Tc-99m", .half_life_seconds = 21'624.12L, .emission_count = 6U},
-  }};
+  constexpr std::array<ExpectedBuiltIn, 14U> expected{
+    {
+      {
+        .name = "H-3",
+        .half_life_seconds = 388'500'000.0L,
+        .emission_count = 1U,
+      },
+      {
+        .name = "C-14",
+        .half_life_seconds = 179'900'000'000.0L,
+        .emission_count = 1U,
+      },
+      {.name = "F-18", .half_life_seconds = 6584.04L, .emission_count = 3U},
+      {.name = "C-11", .half_life_seconds = 1221.66L, .emission_count = 1U},
+      {.name = "O-15", .half_life_seconds = 122.266L, .emission_count = 1U},
+      {.name = "Ga-68", .half_life_seconds = 4'069.8L, .emission_count = 7U},
+      {
+        .name = "Co-60",
+        .half_life_seconds = 166'340'000.0L,
+        .emission_count = 7U,
+      },
+      {
+        .name = "Lu-177",
+        .half_life_seconds = 574'067.52L,
+        .emission_count = 8U,
+      },
+      {.name = "I-123", .half_life_seconds = 47'604.24L, .emission_count = 4U},
+      {.name = "I-124", .half_life_seconds = 360'806.4L, .emission_count = 13U},
+      {
+        .name = "I-125",
+        .half_life_seconds = 5'131'123.2L,
+        .emission_count = 4U,
+      },
+      {
+        .name = "I-131",
+        .half_life_seconds = 693'213.12L,
+        .emission_count = 10U,
+      },
+      {
+        .name = "Am-241",
+        .half_life_seconds = 13'652'000'000.0L,
+        .emission_count = 6U,
+      },
+      {.name = "Tc-99m", .half_life_seconds = 21'624.12L, .emission_count = 6U},
+    },
+  };
 
   for (auto const &entry : expected) {
     auto definition =
@@ -73,7 +124,8 @@ TEST(GGEMSBuiltInRadionuclides,
      ListsEveryAvailableCanonicalNameInDispatchOrder) {
   constexpr std::array<std::string_view, 14U> expected{
     "H-3",    "C-14",  "F-18",  "C-11",  "O-15",  "Ga-68",  "Co-60",
-    "Lu-177", "I-123", "I-124", "I-125", "I-131", "Am-241", "Tc-99m"};
+    "Lu-177", "I-123", "I-124", "I-125", "I-131", "Am-241", "Tc-99m",
+  };
 
   auto const available =
     ggems::core::radioactivity::builtins::GetAvailableRadionuclideNames();

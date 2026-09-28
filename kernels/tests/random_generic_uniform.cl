@@ -21,24 +21,17 @@
 
 /*!
  * \file
- * \brief OpenCL probe for the engine-independent scalar random API.
- *
- * Generates repeated scalar uniform samples through GGEMS_RndmUniform for the
- * compile-time-selected engine.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
 #include "random/GGEMSRandom.clh"
 
-/// \cond
-
 __kernel void random_generic_uniform(__global GGEMSRandomState *states,
                                      __global float *values,
                                      uint particle_count,
                                      uint samples_per_particle) {
-  uint particle_index = get_global_id(0);
+  uint const particle_index = (uint)get_global_id(0);
 
   if (particle_index >= particle_count) {
     return;
@@ -46,9 +39,9 @@ __kernel void random_generic_uniform(__global GGEMSRandomState *states,
 
   for (uint sample_index = 0U; sample_index < samples_per_particle;
        ++sample_index) {
-    uint output_index = particle_index * samples_per_particle + sample_index;
+    size_t const output_index =
+      (size_t)particle_index * samples_per_particle + sample_index;
 
     values[output_index] = GGEMS_RndmUniform(states, particle_index);
   }
 }
-/// \endcond

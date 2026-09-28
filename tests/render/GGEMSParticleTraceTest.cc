@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstddef>
 #include <vector>
@@ -11,7 +38,7 @@
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/render/GGEMSParticleColors.hh"
-#include "GGEMS/render/GGEMSColor.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
 
 namespace {
 
@@ -65,11 +92,19 @@ using ggems::core::particles::ToKernelParticleType;
   return ggems::render::GGEMSParticleTraceSegment{
     .source_index = source_index,
     .particle_type = particle_type,
-    .begin = ggems::render::GGEMSParticleTracePoint{.x_m = position_x,
-                                                    .y_m = 0.0F,
-                                                    .z_m = 0.0F},
-    .end = ggems::render::GGEMSParticleTracePoint{
-      .x_m = position_x + 0.5F, .y_m = 1.0F, .z_m = 0.0F}};
+    .begin =
+      ggems::render::GGEMSParticleTracePoint{
+        .x_m = position_x,
+        .y_m = 0.0F,
+        .z_m = 0.0F,
+      },
+    .end =
+      ggems::render::GGEMSParticleTracePoint{
+        .x_m = position_x + 0.5F,
+        .y_m = 1.0F,
+        .z_m = 0.0F,
+      },
+  };
 }
 
 // =============================================================================
@@ -105,7 +140,8 @@ TEST(GGEMSParticleTrace, EmptyRecordsProduceNoSegment) {
 TEST(GGEMSParticleTrace, SingleRecordProducesNoSegment) {
   std::vector<GGEMSObserverRecord> records{
     MakeRecord(0ULL, 7ULL, 42ULL, 0ULL, GGEMSObserverRecordKind::Source,
-               GGEMSParticleType::Gamma, 0LL, 0LL, 0LL)};
+               GGEMSParticleType::Gamma, 0LL, 0LL, 0LL),
+  };
 
   EXPECT_TRUE(ggems::render::BuildParticleTraceSegments(records).empty());
 }
@@ -153,7 +189,8 @@ TEST(GGEMSParticleTrace, RecordsAreSortedBeforeSegmentConstruction) {
     MakeRecord(0ULL, 3ULL, 9ULL, 20ULL, GGEMSObserverRecordKind::Step,
                GGEMSParticleType::Electron, 100'000'000'000LL, 0LL, 0LL),
     MakeRecord(0ULL, 3ULL, 9ULL, 0ULL, GGEMSObserverRecordKind::SecondaryStep,
-               GGEMSParticleType::Electron, 0LL, 0LL, 0LL)};
+               GGEMSParticleType::Electron, 0LL, 0LL, 0LL),
+  };
 
   std::vector<ggems::render::GGEMSParticleTraceSegment> segments =
     ggems::render::BuildParticleTraceSegments(records);
@@ -256,8 +293,8 @@ TEST(GGEMSParticleTrace, DifferentSourceProvenanceIsNotConnected) {
     MakeRecord(0ULL, 7ULL, 42ULL, 0ULL, GGEMSObserverRecordKind::Source,
                GGEMSParticleType::Gamma, 0LL, 0LL, 0LL, 2U, 0ULL),
     MakeRecord(0ULL, 7ULL, 42ULL, 10ULL, GGEMSObserverRecordKind::Step,
-               GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL, 2U,
-               1ULL)};
+               GGEMSParticleType::Gamma, 0LL, 0LL, 100'000'000'000LL, 2U, 1ULL),
+  };
 
   EXPECT_TRUE(
     ggems::render::BuildParticleTraceSegments(different_source_local_primary_id)
@@ -465,25 +502,29 @@ TEST(GGEMSParticleTraceVisibility,
 
 TEST(GGEMSParticleTrace,
      DiagnosticCardinalAndDiagonalHistoriesBuildSevenFilteredRanges) {
-  constexpr std::array<std::array<std::int64_t, 3U>, 7U> k_begin_pm{{
-    {-1'500'000'000'000LL, 0LL, 0LL},
-    {1'500'000'000'000LL, 0LL, 0LL},
-    {0LL, -1'500'000'000'000LL, 0LL},
-    {0LL, 1'500'000'000'000LL, 0LL},
-    {0LL, 0LL, -1'500'000'000'000LL},
-    {0LL, 0LL, 1'500'000'000'000LL},
-    {0LL, 0LL, 0LL},
-  }};
+  constexpr std::array<std::array<std::int64_t, 3U>, 7U> k_begin_pm{
+    {
+      {-1'500'000'000'000LL, 0LL, 0LL},
+      {1'500'000'000'000LL, 0LL, 0LL},
+      {0LL, -1'500'000'000'000LL, 0LL},
+      {0LL, 1'500'000'000'000LL, 0LL},
+      {0LL, 0LL, -1'500'000'000'000LL},
+      {0LL, 0LL, 1'500'000'000'000LL},
+      {0LL, 0LL, 0LL},
+    },
+  };
 
-  constexpr std::array<std::array<std::int64_t, 3U>, 7U> k_end_pm{{
-    {-500'000'000'000LL, 0LL, 0LL},
-    {500'000'000'000LL, 0LL, 0LL},
-    {0LL, -500'000'000'000LL, 0LL},
-    {0LL, 500'000'000'000LL, 0LL},
-    {0LL, 0LL, -500'000'000'000LL},
-    {0LL, 0LL, 500'000'000'000LL},
-    {577'350'258'827LL, 577'350'258'827LL, 577'350'258'827LL},
-  }};
+  constexpr std::array<std::array<std::int64_t, 3U>, 7U> k_end_pm{
+    {
+      {-500'000'000'000LL, 0LL, 0LL},
+      {500'000'000'000LL, 0LL, 0LL},
+      {0LL, -500'000'000'000LL, 0LL},
+      {0LL, 500'000'000'000LL, 0LL},
+      {0LL, 0LL, -500'000'000'000LL},
+      {0LL, 0LL, 500'000'000'000LL},
+      {577'350'258'827LL, 577'350'258'827LL, 577'350'258'827LL},
+    },
+  };
 
   std::vector<GGEMSObserverRecord> records;
   records.reserve(14U);

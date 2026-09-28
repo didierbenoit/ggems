@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -11,6 +38,7 @@
 
 #include "GGEMS/GGEMSTimeWindow.hh"
 #include "GGEMS/observer/GGEMSObserverTypes.hh"
+#include "GGEMS/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideEmission.hh"
@@ -53,7 +81,9 @@ constexpr std::uint32_t k_launch_primary_count_limit{3U};
 constexpr std::uint64_t k_projection_history_offset{9'000ULL};
 constexpr long double k_uniform_limit_half_life_seconds{1.0e12L};
 constexpr ggems::core::GGEMSTimeWindow k_time_window{
-  .start_ps = 2'000'000'000'000ULL, .stop_ps = 3'000'000'000'000ULL};
+  .start_ps = 2'000'000'000'000ULL,
+  .stop_ps = 3'000'000'000'000ULL,
+};
 
 // =============================================================================
 // =============================================================================
@@ -103,9 +133,11 @@ struct ActivityScenario {
   auto source_snapshot = ggems::core::sources::BuildSourceRunSnapshot(
     sources, source_configuration, candidate.GetPlan());
 
-  return {.sources = std::move(sources),
-          .source_configuration = std::move(source_configuration),
-          .source_snapshot = std::move(source_snapshot)};
+  return {
+    .sources = std::move(sources),
+    .source_configuration = std::move(source_configuration),
+    .source_snapshot = std::move(source_snapshot),
+  };
 }
 
 // =============================================================================
@@ -204,10 +236,14 @@ auto ExpectCompleteActivityRecords(TransportRunReport const &report,
     }
   }
 
+  EXPECT_TRUE(
+    std::ranges::all_of(source_record_counts, [](std::uint32_t count) -> bool {
+      return count == 1U;
+    }));
+
   EXPECT_TRUE(std::ranges::all_of(
-    source_record_counts, [](std::uint32_t count) { return count == 1U; }));
-  EXPECT_TRUE(std::ranges::all_of(
-    terminal_record_counts, [](std::uint32_t count) { return count == 1U; }));
+    terminal_record_counts,
+    [](std::uint32_t count) -> bool { return count == 1U; }));
 }
 
 // =============================================================================
@@ -286,7 +322,8 @@ TEST_F(GGEMSRadionuclideTransportTest,
     scenario.source_snapshot.GetTotalPrimaryCount();
   constexpr ggems::core::GGEMSTimeWindow k_grown_time_window{
     .start_ps = k_time_window.start_ps,
-    .stop_ps = k_time_window.start_ps + 4'000'000'000'000ULL};
+    .stop_ps = k_time_window.start_ps + 4'000'000'000'000ULL,
+  };
   Planner grown_planner{scenario.sources, random};
   auto grown_candidate = grown_planner.BuildCandidate(k_grown_time_window);
   auto grown_snapshot = ggems::core::sources::BuildSourceRunSnapshot(
@@ -440,11 +477,12 @@ TEST_F(GGEMSRadionuclideTransportTest,
   ASSERT_EQ(report.observer_records.size(), k_observer_capacity);
 
   bool const has_record_before_chunk_boundary = std::ranges::any_of(
-    report.observer_records, [](ObserverRecord const &record) {
+    report.observer_records, [](ObserverRecord const &record) -> bool {
       return record.source_local_primary_id < k_launch_primary_count_limit;
     });
+
   bool const has_record_after_chunk_boundary = std::ranges::any_of(
-    report.observer_records, [](ObserverRecord const &record) {
+    report.observer_records, [](ObserverRecord const &record) -> bool {
       return record.source_local_primary_id >= k_launch_primary_count_limit;
     });
 

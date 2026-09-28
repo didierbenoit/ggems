@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <array>
 #include <bit>
@@ -165,8 +192,11 @@ protected:
 
 TEST_F(GGEMSEnergySamplingTransportTest,
        SamplesMixedModesAcrossSourceBoundaryPaddingAndAllEngines) {
-  constexpr std::array<std::string_view, 3U> k_engines{"jkiss", "pcg32",
-                                                       "philox"};
+  constexpr std::array<std::string_view, 3U> k_engines{
+    "jkiss",
+    "pcg32",
+    "philox",
+  };
   constexpr std::array<double, 3U> k_line_energies{2.0, 4.0, 6.0};
   constexpr std::array<double, 3U> k_line_weights{1.0, 0.0, 1.0};
   constexpr std::array<double, 3U> k_bin_centers{10.0, 12.0, 14.0};
@@ -270,11 +300,15 @@ TEST_F(GGEMSEnergySamplingTransportTest,
 
 TEST_F(GGEMSEnergySamplingTransportTest,
        SamplesEnergyAfterGeometryAndDirectionForEveryEngine) {
-  constexpr std::array<std::string_view, 3U> k_engines{"jkiss", "pcg32",
-                                                       "philox"};
+  constexpr std::array<std::string_view, 3U> k_engines{
+    "jkiss",
+    "pcg32",
+    "philox",
+  };
   constexpr std::array<std::string_view, 6U> k_geometry_cases{
     "Rectangle + Fixed", "Ellipse + Isotropic", "Rectangle + Focused",
-    "Box + Fixed",       "Sphere + Isotropic",  "Cylinder + Focused"};
+    "Box + Fixed",       "Sphere + Isotropic",  "Cylinder + Focused",
+  };
   constexpr std::array<double, 2U> k_line_energies{2.0, 6.0};
   constexpr std::array<double, 2U> k_line_weights{1.0, 1.0};
 

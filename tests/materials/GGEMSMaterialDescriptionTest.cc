@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -8,10 +35,10 @@
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSEMMaterialPackage.hh"
-#include "GGEMS/materials/GGEMSIsotopeProfile.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/GGEMSMaterialDescription.hh"
 #include "GGEMS/materials/GGEMSMaterialManager.hh"
+#include "GGEMS/materials/GGEMSIsotopicComposition.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
 #include "GGEMS/units/GGEMSDensityUnits.hh"
 
@@ -55,23 +82,29 @@ TEST(GGEMSMaterialDescriptionTest, InspectsWaterFromTheMaterialAuthorities) {
   EXPECT_FALSE(inspection.manager_index.has_value());
 
   auto const elements = material.GetElementalConstituents();
+
+  ASSERT_EQ(inspection.elements.size(), 2U);
   ASSERT_EQ(inspection.elements.size(), elements.size());
+
   for (std::size_t index = 0U; index < elements.size(); ++index) {
     auto const &element = inspection.elements[index];
+
     EXPECT_EQ(element.values.atomic_number, elements[index].atomic_number);
     EXPECT_EQ(element.values.mass_fraction, elements[index].mass_fraction);
     EXPECT_EQ(element.values.number_density_per_cubic_centimeter,
               elements[index].number_density_per_cubic_centimeter);
     EXPECT_EQ(element.values.electron_density_per_cubic_centimeter,
               elements[index].electron_density_per_cubic_centimeter);
-    EXPECT_EQ(element.isotope_profile,
-              materials::GGEMSIsotopeProfile::Nist41Natural);
   }
+
   EXPECT_EQ(inspection.elements[0].symbol, "H");
   EXPECT_EQ(inspection.elements[1].name, "Oxygen");
 
   auto const isotopes = material.GetIsotopeConstituents();
+
   ASSERT_EQ(inspection.isotopes.size(), 5U);
+  ASSERT_EQ(inspection.isotopes.size(), isotopes.size());
+
   for (std::size_t index = 0U; index < isotopes.size(); ++index) {
     EXPECT_EQ(inspection.isotopes[index], isotopes[index]);
   }
@@ -93,6 +126,7 @@ TEST(GGEMSMaterialDescriptionTest, DescribesIsotopesAndDerivedElementalView) {
   for (auto const *isotope : {"H-1 ", "H-2 ", "O-16 ", "O-17 ", "O-18 "}) {
     EXPECT_TRUE(description.contains(isotope)) << isotope;
   }
+
   EXPECT_TRUE(description.contains("Z=8 A=17 M=0"));
 
   for (auto const &isotope : material.GetIsotopeConstituents()) {
@@ -110,8 +144,6 @@ TEST(GGEMSMaterialDescriptionTest, DescribesIsotopesAndDerivedElementalView) {
                   element.electron_density_per_cubic_centimeter)));
   }
 
-  EXPECT_TRUE(description.contains(
-    "isotope profile       : NIST 4.1 representative natural composition"));
   EXPECT_TRUE(description.contains(
     std::format("Atom density     : {:.8g}",
                 material.GetTotalAtomDensityPerCubicCentimeter())));
@@ -133,20 +165,16 @@ TEST(GGEMSMaterialDescriptionTest, DescribesSingleElementMaterial) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSMaterialDescriptionTest, ReportsRetainedProfilesTruthfully) {
+TEST(GGEMSMaterialDescriptionTest, DescribesReferenceIsotopeAndIsomer) {
   auto const technetium =
-    materials::InspectMaterial(builtins::BuildBuiltInMaterial("Technetium"));
-  ASSERT_EQ(technetium.elements.size(), 1U);
-  EXPECT_EQ(technetium.elements[0].isotope_profile,
-            materials::GGEMSIsotopeProfile::LegacyReferenceIsotope);
+    materials::DescribeMaterial(builtins::BuildBuiltInMaterial("Technetium"));
 
-  auto const description = materials::DescribeMaterial(technetium);
-  EXPECT_TRUE(description.contains("Tc-97 "));
-  EXPECT_TRUE(description.contains("legacy reference isotope"));
-  EXPECT_FALSE(description.contains("NIST"));
+  EXPECT_TRUE(technetium.contains("Tc-97 "));
+  EXPECT_TRUE(technetium.contains("Z=43 A=97 M=0"));
 
   auto const tantalum =
     materials::DescribeMaterial(builtins::BuildBuiltInMaterial("Tantalum"));
+
   EXPECT_TRUE(tantalum.contains("Ta-180m "));
   EXPECT_TRUE(tantalum.contains("Z=73 A=180 M=1"));
 }
@@ -154,28 +182,28 @@ TEST(GGEMSMaterialDescriptionTest, ReportsRetainedProfilesTruthfully) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSMaterialDescriptionTest, ExplicitCompositionRetainsNoProfile) {
-  // Numerically the natural boron profile, but authored explicitly: no profile
-  // is retained, so none may be reported.
+TEST(GGEMSMaterialDescriptionTest, DescribesExplicitIsotopicComposition) {
   auto const material = materials::GGEMSMaterial::FromIsotopicComposition(
     "explicit boron", 2.34_g_cm3,
     {
       {
         .mass_fraction = 1.0L,
-        .isotopic_composition = materials::ResolveIsotopeProfile(
-          materials::GGEMSIsotopeProfile::Nist41Natural, 5U),
+        .isotopic_composition = materials::BuildDefaultIsotopicComposition(5U),
       },
     });
 
   auto const inspection = materials::InspectMaterial(material);
+
   ASSERT_EQ(inspection.elements.size(), 1U);
-  EXPECT_FALSE(inspection.elements[0].isotope_profile.has_value());
+  EXPECT_EQ(inspection.elements.front().values.atomic_number, 5U);
+  ASSERT_EQ(inspection.isotopes.size(), 2U);
 
   auto const description = materials::DescribeMaterial(inspection);
-  EXPECT_TRUE(description.contains("isotope profile       : not retained"));
+
+  EXPECT_TRUE(description.contains("Material: explicit boron"));
   EXPECT_TRUE(description.contains("B-10 "));
-  EXPECT_FALSE(description.contains("natural"));
-  EXPECT_FALSE(description.contains("enrich"));
+  EXPECT_TRUE(description.contains("B-11 "));
+  EXPECT_FALSE(description.contains("isotope profile"));
 }
 
 // =============================================================================
@@ -204,7 +232,8 @@ TEST(GGEMSMaterialDescriptionTest, DescribesVacuum) {
 
 TEST(GGEMSMaterialDescriptionTest, InspectsRegisteredCustomMaterial) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
-  auto const manager_index = manager.AddCustomMaterial(materials::GGEMSMaterial{
+
+  manager.AddCustomMaterial(materials::GGEMSMaterial{
     "DescriptionTestCustomWater",
     1.0_g_cm3,
     {
@@ -212,6 +241,8 @@ TEST(GGEMSMaterialDescriptionTest, InspectsRegisteredCustomMaterial) {
       {.atomic_number = 8U, .mass_fraction = 0.888102L},
     },
   });
+
+  auto const manager_index = manager.GetOrAdd("DescriptionTestCustomWater");
 
   auto const by_name =
     materials::InspectMaterial(manager, "DescriptionTestCustomWater");
@@ -224,9 +255,6 @@ TEST(GGEMSMaterialDescriptionTest, InspectsRegisteredCustomMaterial) {
   EXPECT_TRUE(materials::DescribeMaterial(by_name).contains(
     std::format("Registration     : registered, manager material index {}",
                 manager_index)));
-  EXPECT_TRUE(
-    materials::DescribeRegisteredMaterials(manager).contains(std::format(
-      "manager material index {}: DescriptionTestCustomWater", manager_index)));
 }
 
 // =============================================================================
@@ -234,6 +262,7 @@ TEST(GGEMSMaterialDescriptionTest, InspectsRegisteredCustomMaterial) {
 
 TEST(GGEMSMaterialDescriptionTest, InspectingAvailableBuiltInDoesNotRegister) {
   auto const &manager = materials::GGEMSMaterialManager::GetInstance();
+
   ASSERT_FALSE(manager.FindIndex("Technetium").has_value());
 
   auto const registered_count = manager.GetMaterials().size();
@@ -243,9 +272,8 @@ TEST(GGEMSMaterialDescriptionTest, InspectingAvailableBuiltInDoesNotRegister) {
 
   EXPECT_EQ(inspection.registration, Registration::Unregistered);
   EXPECT_FALSE(inspection.manager_index.has_value());
-  EXPECT_TRUE(
-    materials::DescribeMaterial(inspection)
-      .contains("Registration     : available built-in, not registered"));
+  EXPECT_TRUE(materials::DescribeMaterial(inspection)
+                .contains("Registration     : available, not registered"));
   EXPECT_EQ(manager.GetMaterials().size(), registered_count);
   EXPECT_FALSE(manager.FindIndex("Technetium").has_value());
 }
@@ -256,8 +284,10 @@ TEST(GGEMSMaterialDescriptionTest, InspectingAvailableBuiltInDoesNotRegister) {
 TEST(GGEMSMaterialDescriptionTest,
      DistinctManagerEntriesCanShareOneSnapshotMaterialId) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
-  auto const water = manager.GetOrAddBuiltIn("Water");
-  auto const copy = manager.AddCustomMaterial(materials::GGEMSMaterial{
+
+  auto const water = manager.GetOrAdd("Water");
+
+  manager.AddCustomMaterial(materials::GGEMSMaterial{
     "DescriptionTestWaterCopy",
     1.0_g_cm3,
     {
@@ -266,16 +296,20 @@ TEST(GGEMSMaterialDescriptionTest,
     },
   });
 
+  auto const copy = manager.GetOrAdd("DescriptionTestWaterCopy");
+
   ASSERT_NE(water, copy);
   ASSERT_TRUE(materials::HasSameScientificIdentity(manager.Require(water),
                                                    manager.Require(copy)));
 
   materials::GGEMSEMMaterialPackage const package{manager.GetMaterials()};
+
   EXPECT_EQ(package.GetMaterialIds()[water], package.GetMaterialIds()[copy]);
 
-  // A Material report names its manager index and never a Material ID.
+  // The report identifies the manager entry, not the package-local material.
   auto const description =
     materials::DescribeMaterial(materials::InspectMaterial(manager, copy));
+
   EXPECT_TRUE(
     description.contains(std::format("manager material index {}", copy)));
   EXPECT_FALSE(description.contains("Material ID"));
@@ -295,19 +329,4 @@ TEST(GGEMSMaterialDescriptionTest, UnknownMaterialsAreRejected) {
                  manager, static_cast<std::uint32_t>(registered_count))),
                ggems::core::GGEMSRecoverable);
   EXPECT_EQ(manager.GetMaterials().size(), registered_count);
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSMaterialDescriptionTest, DescribesAvailableMaterials) {
-  auto const description = materials::DescribeAvailableMaterials();
-
-  EXPECT_TRUE(description.contains("Available built-in Materials: 117"));
-  EXPECT_TRUE(description.contains("Vacuum"));
-  EXPECT_TRUE(description.contains("Hydrogen"));
-  EXPECT_TRUE(description.contains("Uranium"));
-  EXPECT_TRUE(description.contains("Brain"));
-  EXPECT_TRUE(description.contains("LSO"));
-  EXPECT_TRUE(description.contains("CdTe"));
 }

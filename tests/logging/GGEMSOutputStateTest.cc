@@ -21,29 +21,19 @@
 
 /*!
  * \file
- * \brief Documents tests for GGEMS output-state buffering.
- *
- * Validates run-status storage, capacity clamping, ring-buffer ordering and
- * wraparound, newest-line snapshots, clearing, reuse, and output-state sink
- * forwarding.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <string>
 #include <string_view>
 #include <utility>
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/logging/GGEMSOutputState.hh"
 #include "GGEMS/logging/GGEMSOutputStateSink.hh"
-
-/// \cond
 
 namespace {
 
@@ -51,7 +41,6 @@ using ggems::core::GGEMSOutputState;
 using ggems::core::GGEMSOutputStateSink;
 using ggems::core::LogLevel;
 using ggems::core::RenderedLogLine;
-using ggems::core::RunStatus;
 
 // =============================================================================
 // =============================================================================
@@ -69,26 +58,12 @@ using ggems::core::RunStatus;
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSOutputStateTest, StartsEmptyWithStartingStatus) {
+TEST(GGEMSOutputStateTest, StartsWithEmptyLogBuffer) {
   GGEMSOutputState state{};
 
-  EXPECT_EQ(state.GetRunStatus(), RunStatus::Starting);
   EXPECT_EQ(state.GetLogCount(), 0U);
   EXPECT_TRUE(state.GetLastLogLinesSnapshot(state.GetLogCapacity()).empty());
   EXPECT_GT(state.GetLogCapacity(), 0U);
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSOutputStateTest, RunStatusRoundTrips) {
-  GGEMSOutputState state{};
-
-  state.SetRunStatus(RunStatus::Running);
-  EXPECT_EQ(state.GetRunStatus(), RunStatus::Running);
-
-  state.SetRunStatus(RunStatus::Finished);
-  EXPECT_EQ(state.GetRunStatus(), RunStatus::Finished);
 }
 
 // =============================================================================
@@ -214,4 +189,3 @@ TEST(GGEMSOutputStateTest, SinkForwardsRenderedLineWithoutLosingMetadata) {
   EXPECT_EQ(snapshot.front().depth, 7);
   EXPECT_EQ(snapshot.front().module, "sink-test");
 }
-/// \endcond

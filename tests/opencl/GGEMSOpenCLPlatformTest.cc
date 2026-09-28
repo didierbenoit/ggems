@@ -21,32 +21,21 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS OpenCL platform discovery.
- *
- * Compares representative platform properties with native OpenCL information
- * and checks that discovered GGEMS devices match the native platform device
- * set.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <algorithm>
 #include <format>
 #include <vector>
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/opencl/GGEMSOpenCLPlatform.hh"
 #include "GGEMS/opencl/GGEMSOpenCLUtils.hh"
-#include "GGEMSOpenCLDeviceInventory.hh"
-
-/// \cond
 
 namespace {
 
@@ -95,7 +84,6 @@ TEST(GGEMSOpenCLPlatformTest,
 TEST(GGEMSOpenCLPlatformTest, DiscoveredDevicesMatchTheNativePlatformSet) {
   auto const &platforms = ggems::ocl::GGEMSOpenCL::GetInstance().GetPlatforms();
   ASSERT_FALSE(platforms.empty());
-  auto const inventory = ggems::test::GetOpenCLDeviceInventory();
 
   for (auto const &platform : platforms) {
     SCOPED_TRACE(std::format("platform={}", platform.GetPlatformIndex()));
@@ -106,21 +94,22 @@ TEST(GGEMSOpenCLPlatformTest, DiscoveredDevicesMatchTheNativePlatformSet) {
     ggems::ocl::CheckCLError(error, "Failed to query native platform devices.");
 
     auto const &devices = platform.GetDevices();
-    EXPECT_EQ(devices.size(), native_devices.size());
+    ASSERT_EQ(devices.size(), native_devices.size());
 
-    for (auto const &entry : inventory) {
-      if (&entry.platform.get() != &platform) {
-        continue;
-      }
+    std::vector<cl_device_id> discovered_ids;
+    discovered_ids.reserve(devices.size());
 
-      SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(entry));
-      auto const &device = entry.device.get();
-      auto const native_iterator = std::ranges::find_if(
-        native_devices, [&](auto const &native_device) -> bool {
-          return native_device() == device.GetDeviceNative()();
-        });
-      EXPECT_NE(native_iterator, native_devices.end());
+    for (auto const &device : devices) {
+      discovered_ids.push_back(device.GetDeviceNative()());
     }
+
+    std::vector<cl_device_id> native_ids;
+    native_ids.reserve(native_devices.size());
+
+    for (auto const &device : native_devices) {
+      native_ids.push_back(device());
+    }
+
+    EXPECT_TRUE(std::ranges::is_permutation(discovered_ids, native_ids));
   }
 }
-/// \endcond

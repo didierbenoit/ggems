@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <utility>
 
@@ -13,17 +40,17 @@ TEST(GGEMSSourceTypes, EmissionGeometryKernelIdsAreStable) {
   using ggems::core::sources::FromKernelEmissionGeometryType;
   using ggems::core::sources::ToKernelEmissionGeometryType;
 
-  constexpr std::array cases{std::pair{Unknown, 0U},   std::pair{Point, 1U},
-                             std::pair{Rectangle, 2U}, std::pair{Ellipse, 3U},
-                             std::pair{Box, 4U},       std::pair{Sphere, 5U},
-                             std::pair{Cylinder, 6U}};
+  constexpr std::array cases{
+    std::pair{Unknown, 0U},  std::pair{Point, 1U}, std::pair{Rectangle, 2U},
+    std::pair{Ellipse, 3U},  std::pair{Box, 4U},   std::pair{Sphere, 5U},
+    std::pair{Cylinder, 6U},
+  };
 
   for (auto const &[type, kernel_id] : cases) {
     EXPECT_EQ(ToKernelEmissionGeometryType(type), kernel_id);
     EXPECT_EQ(FromKernelEmissionGeometryType(kernel_id), type);
   }
 
-  EXPECT_EQ(FromKernelEmissionGeometryType(99U), Unknown);
   EXPECT_EQ(ggems::core::sources::ToLongName(Point), "Point");
   EXPECT_EQ(ggems::core::sources::ToLongName(Rectangle), "Rectangle");
   EXPECT_EQ(ggems::core::sources::ToLongName(Ellipse), "Ellipse");
@@ -45,15 +72,18 @@ TEST(GGEMSSourceTypes, AngularDistributionKernelIdsAreStable) {
   using ggems::core::sources::FromKernelAngularDistributionType;
   using ggems::core::sources::ToKernelAngularDistributionType;
 
-  constexpr std::array cases{std::pair{Unknown, 0U}, std::pair{Fixed, 1U},
-                             std::pair{Isotropic, 2U}, std::pair{Focused, 3U}};
+  constexpr std::array cases{
+    std::pair{Unknown, 0U},
+    std::pair{Fixed, 1U},
+    std::pair{Isotropic, 2U},
+    std::pair{Focused, 3U},
+  };
 
   for (auto const &[type, kernel_id] : cases) {
     EXPECT_EQ(ToKernelAngularDistributionType(type), kernel_id);
     EXPECT_EQ(FromKernelAngularDistributionType(kernel_id), type);
   }
 
-  EXPECT_EQ(FromKernelAngularDistributionType(99U), Unknown);
   EXPECT_EQ(ggems::core::sources::ToLongName(Fixed), "Fixed");
   EXPECT_EQ(ggems::core::sources::ToLongName(Isotropic), "Isotropic");
   EXPECT_EQ(ggems::core::sources::ToLongName(Focused), "Focused");

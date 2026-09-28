@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#include <cstdint>
+
 #include <gtest/gtest.h>
 
 #include "GGEMS/GGEMSException.hh"
@@ -10,6 +39,8 @@ namespace {
 namespace materials = ggems::core::materials;
 
 using namespace ggems::units;
+
+} // namespace
 
 // =============================================================================
 // =============================================================================
@@ -27,10 +58,10 @@ TEST(GGEMSMaterialManagerTest, IsProcessWideSingleton) {
 TEST(GGEMSMaterialManagerTest, GetsOrAddsBuiltInOnce) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
 
-  auto const first_index = manager.GetOrAddBuiltIn("Brain");
+  auto const first_index = manager.GetOrAdd("Brain");
   auto const size_after_first = manager.GetMaterials().size();
 
-  auto const second_index = manager.GetOrAddBuiltIn("Brain");
+  auto const second_index = manager.GetOrAdd("Brain");
 
   EXPECT_EQ(second_index, first_index);
   EXPECT_EQ(manager.GetMaterials().size(), size_after_first);
@@ -40,19 +71,36 @@ TEST(GGEMSMaterialManagerTest, GetsOrAddsBuiltInOnce) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSMaterialManagerTest, AddsCustomMaterial) {
+TEST(GGEMSMaterialManagerTest, DefinesCustomMaterialAndRegistersItOnDemand) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
 
-  auto const size_before = manager.GetMaterials().size();
+  auto const registered_before = manager.GetMaterials().size();
+  auto const custom_before = manager.GetCustomMaterials().size();
 
-  auto const material_index = manager.AddCustomMaterial(
-    materials::GGEMSMaterial{"GGEMSTestCustomMaterial",
-                             5.0_g_cm3,
-                             {{.atomic_number = 48U, .mass_fraction = 0.5L},
-                              {.atomic_number = 52U, .mass_fraction = 0.5L}}});
+  manager.AddCustomMaterial(materials::GGEMSMaterial{
+    "GGEMSTestCustomMaterial",
+    5.0_g_cm3,
+    {
+      {.atomic_number = 48U, .mass_fraction = 0.5L},
+      {.atomic_number = 52U, .mass_fraction = 0.5L},
+    },
+  });
 
-  EXPECT_EQ(material_index, size_before);
-  EXPECT_EQ(manager.GetMaterials().size(), size_before + 1U);
+  EXPECT_EQ(manager.GetCustomMaterials().size(), custom_before + 1U);
+  EXPECT_EQ(manager.GetMaterials().size(), registered_before);
+  EXPECT_FALSE(manager.FindIndex("GGEMSTestCustomMaterial").has_value());
+  EXPECT_EQ(manager.Find("GGEMSTestCustomMaterial"), nullptr);
+
+  auto const *definition = manager.FindCustom("GGEMSTestCustomMaterial");
+
+  ASSERT_NE(definition, nullptr);
+  EXPECT_EQ(definition->GetName(), "GGEMSTestCustomMaterial");
+  EXPECT_EQ(definition->GetDensity(), 5.0_g_cm3);
+
+  auto const material_index = manager.GetOrAdd("GGEMSTestCustomMaterial");
+
+  EXPECT_EQ(material_index, registered_before);
+  EXPECT_EQ(manager.GetMaterials().size(), registered_before + 1U);
   EXPECT_EQ(manager.Require(material_index).GetName(),
             "GGEMSTestCustomMaterial");
 
@@ -64,7 +112,12 @@ TEST(GGEMSMaterialManagerTest, AddsCustomMaterial) {
   auto const *found = manager.Find("GGEMSTestCustomMaterial");
 
   ASSERT_NE(found, nullptr);
-  EXPECT_EQ(found->GetName(), "GGEMSTestCustomMaterial");
+  EXPECT_EQ(found, &manager.Require(material_index));
+  EXPECT_EQ(found->GetDensity(), 5.0_g_cm3);
+
+  EXPECT_EQ(manager.GetOrAdd("GGEMSTestCustomMaterial"), material_index);
+  EXPECT_EQ(manager.GetMaterials().size(), registered_before + 1U);
+  EXPECT_EQ(manager.GetCustomMaterials().size(), custom_before + 1U);
 }
 
 // =============================================================================
@@ -73,21 +126,29 @@ TEST(GGEMSMaterialManagerTest, AddsCustomMaterial) {
 TEST(GGEMSMaterialManagerTest, RejectsDuplicateCustomMaterial) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
 
-  static_cast<void>(manager.AddCustomMaterial(
-    materials::GGEMSMaterial{"GGEMSTestDuplicateMaterial",
-                             1.0_g_cm3,
-                             {{.atomic_number = 6U, .mass_fraction = 1.0L}}}));
+  manager.AddCustomMaterial(materials::GGEMSMaterial{
+    "GGEMSTestDuplicateMaterial",
+    1.0_g_cm3,
+    {{.atomic_number = 6U, .mass_fraction = 1.0L}},
+  });
 
-  auto const size_before = manager.GetMaterials().size();
+  auto const registered_before = manager.GetMaterials().size();
+  auto const custom_before = manager.GetCustomMaterials().size();
 
-  EXPECT_THROW(
-    static_cast<void>(manager.AddCustomMaterial(materials::GGEMSMaterial{
-      "GGEMSTestDuplicateMaterial",
-      2.0_g_cm3,
-      {{.atomic_number = 8U, .mass_fraction = 1.0L}}})),
-    ggems::core::GGEMSRecoverable);
+  EXPECT_THROW(manager.AddCustomMaterial(materials::GGEMSMaterial{
+                 "GGEMSTestDuplicateMaterial",
+                 2.0_g_cm3,
+                 {{.atomic_number = 8U, .mass_fraction = 1.0L}},
+               }),
+               ggems::core::GGEMSRecoverable);
 
-  EXPECT_EQ(manager.GetMaterials().size(), size_before);
+  EXPECT_EQ(manager.GetMaterials().size(), registered_before);
+  EXPECT_EQ(manager.GetCustomMaterials().size(), custom_before);
+
+  auto const *definition = manager.FindCustom("GGEMSTestDuplicateMaterial");
+
+  ASSERT_NE(definition, nullptr);
+  EXPECT_EQ(definition->GetDensity(), 1.0_g_cm3);
 }
 
 // =============================================================================
@@ -96,31 +157,38 @@ TEST(GGEMSMaterialManagerTest, RejectsDuplicateCustomMaterial) {
 TEST(GGEMSMaterialManagerTest, RejectsBuiltInNameForCustomMaterial) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
 
-  auto const size_before = manager.GetMaterials().size();
+  auto const registered_before = manager.GetMaterials().size();
+  auto const custom_before = manager.GetCustomMaterials().size();
 
-  EXPECT_THROW(
-    static_cast<void>(manager.AddCustomMaterial(materials::GGEMSMaterial{
-      "Water",
-      1.0_g_cm3,
-      {{.atomic_number = 1U, .mass_fraction = 0.1L},
-       {.atomic_number = 8U, .mass_fraction = 0.9L}}})),
-    ggems::core::GGEMSRecoverable);
+  EXPECT_THROW(manager.AddCustomMaterial(materials::GGEMSMaterial{
+                 "Water",
+                 1.0_g_cm3,
+                 {
+                   {.atomic_number = 1U, .mass_fraction = 0.1L},
+                   {.atomic_number = 8U, .mass_fraction = 0.9L},
+                 },
+               }),
+               ggems::core::GGEMSRecoverable);
 
-  EXPECT_EQ(manager.GetMaterials().size(), size_before);
+  EXPECT_EQ(manager.GetMaterials().size(), registered_before);
+  EXPECT_EQ(manager.GetCustomMaterials().size(), custom_before);
+  EXPECT_EQ(manager.FindCustom("Water"), nullptr);
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSMaterialManagerTest, RejectsUnknownBuiltInWithoutMutation) {
+TEST(GGEMSMaterialManagerTest, RejectsUnknownMaterialWithoutMutation) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
 
-  auto const size_before = manager.GetMaterials().size();
+  auto const registered_before = manager.GetMaterials().size();
+  auto const custom_before = manager.GetCustomMaterials().size();
 
-  EXPECT_THROW(static_cast<void>(manager.GetOrAddBuiltIn("Unobtainium")),
+  EXPECT_THROW(static_cast<void>(manager.GetOrAdd("Unobtainium")),
                ggems::core::GGEMSRecoverable);
 
-  EXPECT_EQ(manager.GetMaterials().size(), size_before);
+  EXPECT_EQ(manager.GetMaterials().size(), registered_before);
+  EXPECT_EQ(manager.GetCustomMaterials().size(), custom_before);
 }
 
 // =============================================================================
@@ -130,11 +198,12 @@ TEST(GGEMSMaterialManagerTest, RejectsUnknownLookup) {
   auto &manager = materials::GGEMSMaterialManager::GetInstance();
 
   EXPECT_FALSE(manager.FindIndex("GGEMSTestUnknownMaterial").has_value());
-
   EXPECT_EQ(manager.Find("GGEMSTestUnknownMaterial"), nullptr);
+  EXPECT_EQ(manager.FindCustom("GGEMSTestUnknownMaterial"), nullptr);
 
-  EXPECT_THROW(static_cast<void>(manager.Require("GGEMSTestUnknownMaterial")),
+  auto const invalid_index =
+    static_cast<std::uint32_t>(manager.GetMaterials().size());
+
+  EXPECT_THROW(static_cast<void>(manager.Require(invalid_index)),
                ggems::core::GGEMSRecoverable);
 }
-
-} // namespace

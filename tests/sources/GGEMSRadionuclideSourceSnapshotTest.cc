@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -192,8 +219,7 @@ TEST(GGEMSRadionuclideSourceSnapshot,
         static_cast<std::size_t>(record.table_offset) +
         static_cast<std::size_t>(record.table_count) - 1U;
       ASSERT_LT(final_ticket_index, tickets.size());
-      EXPECT_EQ(tickets[final_ticket_index],
-                ggems::core::sources::k_energy_ticket_space_size);
+      EXPECT_EQ(tickets[final_ticket_index], 4'294'967'296ULL);
     }
   }
 
@@ -210,8 +236,7 @@ TEST(GGEMSRadionuclideSourceSnapshot,
   EXPECT_DOUBLE_EQ(relative_weights[discrete_offset + 2U], 1.0);
   EXPECT_EQ(tickets[discrete_offset + 0U], 1'073'741'824ULL);
   EXPECT_EQ(tickets[discrete_offset + 1U], 3'221'225'472ULL);
-  EXPECT_EQ(tickets[discrete_offset + 2U],
-            ggems::core::sources::k_energy_ticket_space_size);
+  EXPECT_EQ(tickets[discrete_offset + 2U], 4'294'967'296ULL);
 }
 
 // =============================================================================

@@ -21,21 +21,14 @@
 
 /*!
  * \file
- * \brief Shared inventory of compiler-capable OpenCL devices for tests.
- *
- * Builds stable test entries that pair discovered GGEMS devices with dedicated
- * contexts when the device is available and exposes an OpenCL compiler.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
 #pragma once
 
-/// \cond
 #include <memory>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 #include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
@@ -44,31 +37,17 @@
 
 namespace ggems::test {
 
-/*!
- * \brief Compiler-capable OpenCL device entry used by framework tests.
- */
+// =============================================================================
+// =============================================================================
+
 struct OpenCLCompilerDeviceInventoryEntry {
-  /*!
-   * \brief Discovered platform/device inventory entry.
-   */
   OpenCLDeviceInventoryEntry inventory;
-  /*!
-   * \brief Dedicated OpenCL context for the compiler-capable device.
-   */
   std::unique_ptr<ocl::GGEMSOpenCLContext> context;
 };
 
 // =============================================================================
 // =============================================================================
 
-/*!
- * \brief Returns compiler-capable OpenCL devices with dedicated contexts.
- *
- * The inventory is constructed once and excludes devices that are unavailable
- * or do not report an OpenCL compiler.
- *
- * \return Stable read-only inventory of compiler-capable devices.
- */
 [[nodiscard]] inline auto GetOpenCLCompilerDeviceInventory()
   -> std::vector<OpenCLCompilerDeviceInventoryEntry> const & {
   static auto const inventory =

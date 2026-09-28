@@ -21,27 +21,17 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS OpenCL contexts.
- *
- * Validates one-device context construction, command-queue coherence, native
- * device association, and profiling-enabled queue properties for available
- * devices.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <type_traits>
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
-
-/// \cond
 
 static_assert(!std::is_copy_constructible_v<ggems::ocl::GGEMSOpenCLContext>);
 static_assert(!std::is_copy_assignable_v<ggems::ocl::GGEMSOpenCLContext>);
@@ -77,10 +67,9 @@ TEST(GGEMSOpenCLContextTest,
     EXPECT_EQ(context.GetNumDevices(), 1U);
 
     auto const native_devices = context.GetNativeDevices();
-    EXPECT_EQ(native_devices.size(), 1U);
-    if (native_devices.size() == 1U) {
-      EXPECT_EQ(native_devices.front()(), device.GetDeviceNative()());
-    }
+
+    ASSERT_EQ(native_devices.size(), 1U);
+    EXPECT_EQ(native_devices.front()(), device.GetDeviceNative()());
 
     EXPECT_EQ(context.GetQueueContext()(), context.GetContextNative()());
     EXPECT_EQ(context.GetQueueDevice()(), device.GetDeviceNative()());
@@ -88,4 +77,3 @@ TEST(GGEMSOpenCLContextTest,
               static_cast<cl_command_queue_properties>(0));
   }
 }
-/// \endcond

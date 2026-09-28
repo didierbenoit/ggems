@@ -21,17 +21,10 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS OpenCL SVM buffers.
- *
- * Validates automatic allocation, ownership transfer through move operations,
- * allocation accounting, device allocation limits, and rejection of invalid
- * or unsupported requests.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <cstddef>
 #include <utility>
@@ -42,7 +35,6 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/units/GGEMSBytesUnits.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
@@ -51,8 +43,6 @@
 #include "GGEMS/opencl/GGEMSOpenCLSVMBuffer.hh"
 #include "GGEMS/opencl/GGEMSOpenCLSVMMemoryKind.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
-
-/// \cond
 
 using namespace ggems::units;
 
@@ -415,4 +405,3 @@ TEST(GGEMSOpenCLSVMBufferTest,
     GTEST_SKIP() << "No testable GGEMS-discovered SVM device was available.";
   }
 }
-/// \endcond

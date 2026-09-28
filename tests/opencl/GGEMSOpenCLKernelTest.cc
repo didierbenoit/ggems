@@ -21,23 +21,16 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS OpenCL kernel execution.
- *
- * Builds and executes the shared OpenCL framework probe on every
- * compiler-capable device and validates coherent kernel metadata and results.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <cstddef>
 #include <string>
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
@@ -46,8 +39,6 @@
 #include "GGEMSOpenCLCompilerDeviceInventory.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMSOpenCLFrameworkProbe.hh"
-
-/// \cond
 
 namespace {
 
@@ -93,11 +84,14 @@ TEST(GGEMSOpenCLKernelTest,
      ExecutesAndReportsCoherentMetadataOnEveryCompilerDevice) {
   auto const &compiler_devices =
     ggems::test::GetOpenCLCompilerDeviceInventory();
+
   if (compiler_devices.empty()) {
     GTEST_SKIP() << "No available GGEMS-discovered device has a compiler.";
   }
 
   auto const probe_root = GetOpenCLFrameworkProbeRoot();
+  std::string const probe_name{k_opencl_framework_probe_name};
+
   for (auto const &compiler_device : compiler_devices) {
     SCOPED_TRACE(ggems::test::DescribeOpenCLDevice(compiler_device.inventory));
 
@@ -105,11 +99,10 @@ TEST(GGEMSOpenCLKernelTest,
 
     auto const &program =
       ggems::ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
-        context, probe_root, k_opencl_framework_probe_name);
+        context, probe_root, probe_name);
 
     ggems::ocl::GGEMSOpenCLKernel kernel{
-      context, program.CreateKernel(k_opencl_framework_probe_name),
-      k_opencl_framework_probe_name};
+      context, program.CreateKernel(probe_name), probe_name};
 
     std::array<cl_uint, k_value_count> initial_values{1U, 2U, 3U, 4U};
     auto buffer = CreateProbeBuffer(context, initial_values);
@@ -117,13 +110,12 @@ TEST(GGEMSOpenCLKernelTest,
     kernel.SetArg(0U, buffer);
     kernel.SetArg(1U, cl_uint{3U});
     kernel.Run({k_value_count}, {1U});
+
     EXPECT_EQ(ReadProbeBuffer(context, buffer),
               (std::array<cl_uint, k_value_count>{4U, 5U, 6U, 7U}));
 
     kernel.SetArg(1U, cl_uint{2U});
     auto const event = kernel.RunAndGetEvent({k_value_count}, {1U});
-    EXPECT_EQ(ReadProbeBuffer(context, buffer),
-              (std::array<cl_uint, k_value_count>{6U, 7U, 8U, 9U}));
 
     cl_int error{CL_SUCCESS};
     auto const execution_status =
@@ -137,8 +129,11 @@ TEST(GGEMSOpenCLKernelTest,
                              "Failed to query probe event command type.");
     EXPECT_EQ(command_type, CL_COMMAND_NDRANGE_KERNEL);
 
-    EXPECT_EQ(kernel.GetKernelName(), k_opencl_framework_probe_name);
-    EXPECT_EQ(kernel.GetFunctionName(), k_opencl_framework_probe_name);
+    EXPECT_EQ(ReadProbeBuffer(context, buffer),
+              (std::array<cl_uint, k_value_count>{6U, 7U, 8U, 9U}));
+
+    EXPECT_EQ(kernel.GetKernelName(), probe_name);
+    EXPECT_EQ(kernel.GetFunctionName(), probe_name);
     EXPECT_EQ(kernel.GetNumArgs(), 2U);
     EXPECT_EQ(kernel.GetContextNative()(), context.GetContextNative()());
     EXPECT_EQ(kernel.GetProgramNative()(), program.GetProgramNative()());
@@ -148,4 +143,3 @@ TEST(GGEMSOpenCLKernelTest,
     EXPECT_GE(kernel.GetPreferredWorkGroupSizeMultiple(), 1U);
   }
 }
-/// \endcond

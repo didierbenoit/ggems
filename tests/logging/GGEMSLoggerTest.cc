@@ -21,17 +21,10 @@
 
 /*!
  * \file
- * \brief Documents tests for the GGEMS logging pipeline.
- *
- * Validates log formatting, severity colors, plain-text file output, detail
- * filtering, sink replacement, null-sink rejection, and forced color/encoding
- * policies.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -44,12 +37,9 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
-
-/// \cond
 
 namespace {
 
@@ -214,7 +204,7 @@ TEST_F(GGEMSLoggerTest, DispatchesFormattedMessageAndHonorsDetailLevel) {
 // =============================================================================
 // =============================================================================
 
-TEST_F(GGEMSLoggerTest, SetSinkReplacesPreviouslyInstalledSinks) {
+TEST_F(GGEMSLoggerTest, ClearSinksRemovesPreviouslyInstalledSinks) {
   auto first_capture = std::make_shared<CapturedLines>();
   auto second_capture = std::make_shared<CapturedLines>();
   auto &logger = GGEMSLogger::GetInstance();
@@ -223,7 +213,8 @@ TEST_F(GGEMSLoggerTest, SetSinkReplacesPreviouslyInstalledSinks) {
   logger.Log(LogLevel::Info, 0, "logger-test", std::source_location::current(),
              "before");
 
-  logger.SetSink(std::make_unique<CapturingSink>(second_capture));
+  logger.ClearSinks();
+  logger.AddSink(std::make_unique<CapturingSink>(second_capture));
   logger.Log(LogLevel::Warn, 0, "logger-test", std::source_location::current(),
              "after");
 

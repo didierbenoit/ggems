@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -24,8 +51,6 @@ using ggems::core::radioactivity::GGEMSRadionuclideEmission;
 using ggems::core::radioactivity::builtins::BuildI124Radionuclide;
 using ggems::core::sources::GGEMSEnergyDistributionType;
 
-constexpr std::uint64_t k_energy_ticket_space_size{1ULL << 32U};
-
 // =============================================================================
 // =============================================================================
 
@@ -41,56 +66,74 @@ struct ExpectedPositronBranch {
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<ExpectedPositronBranch, 8U> k_expected_positron_branches{{
-  {.yield_per_decay = 0.1032L,
-   .table_count = 306U,
-   .lower_edge_micro_eV = 280'000ULL,
-   .bin_width_micro_eV = 6'985'620'000ULL,
-   .endpoint_micro_eV = 2'137'600'000'000ULL,
-   .represented_mean_energy_keV = 975.15341844},
-  {.yield_per_decay = 0.1145L,
-   .table_count = 307U,
-   .lower_edge_micro_eV = 82'000ULL,
-   .bin_width_micro_eV = 4'999'674'000ULL,
-   .endpoint_micro_eV = 1'534'900'000'000ULL,
-   .represented_mean_energy_keV = 681.867638504},
-  {.yield_per_decay = 1.88e-06L,
-   .table_count = 445U,
-   .lower_edge_micro_eV = 360'000ULL,
-   .bin_width_micro_eV = 1'997'752'000ULL,
-   .endpoint_micro_eV = 889'000'000'000ULL,
-   .represented_mean_energy_keV = 420.633952159},
-  {.yield_per_decay = 0.00287L,
-   .table_count = 407U,
-   .lower_edge_micro_eV = 690'000ULL,
-   .bin_width_micro_eV = 1'995'330'000ULL,
-   .endpoint_micro_eV = 812'100'000'000ULL,
-   .represented_mean_energy_keV = 365.865892205},
-  {.yield_per_decay = 1.21e-06L,
-   .table_count = 481U,
-   .lower_edge_micro_eV = 336'000ULL,
-   .bin_width_micro_eV = 998'544'000ULL,
-   .endpoint_micro_eV = 480'300'000'000ULL,
-   .represented_mean_energy_keV = 238.786505926},
-  {.yield_per_decay = 1.5e-08L,
-   .table_count = 319U,
-   .lower_edge_micro_eV = 192'000ULL,
-   .bin_width_micro_eV = 798'432'000ULL,
-   .endpoint_micro_eV = 254'700'000'000ULL,
-   .represented_mean_energy_keV = 133.292204559},
-  {.yield_per_decay = 1.8e-09L,
-   .table_count = 328U,
-   .lower_edge_micro_eV = 368'000ULL,
-   .bin_width_micro_eV = 299'694'000ULL,
-   .endpoint_micro_eV = 98'300'000'000ULL,
-   .represented_mean_energy_keV = 51.5744083795},
-  {.yield_per_decay = 2.5e-10L,
-   .table_count = 461U,
-   .lower_edge_micro_eV = 498'000ULL,
-   .bin_width_micro_eV = 99'782'000ULL,
-   .endpoint_micro_eV = 46'000'000'000ULL,
-   .represented_mean_energy_keV = 25.6395521213},
-}};
+constexpr std::array<ExpectedPositronBranch, 8U> k_expected_positron_branches{
+  {
+    {
+      .yield_per_decay = 0.1032L,
+      .table_count = 306U,
+      .lower_edge_micro_eV = 280'000ULL,
+      .bin_width_micro_eV = 6'985'620'000ULL,
+      .endpoint_micro_eV = 2'137'600'000'000ULL,
+      .represented_mean_energy_keV = 975.15341844,
+    },
+    {
+      .yield_per_decay = 0.1145L,
+      .table_count = 307U,
+      .lower_edge_micro_eV = 82'000ULL,
+      .bin_width_micro_eV = 4'999'674'000ULL,
+      .endpoint_micro_eV = 1'534'900'000'000ULL,
+      .represented_mean_energy_keV = 681.867638504,
+    },
+    {
+      .yield_per_decay = 1.88e-06L,
+      .table_count = 445U,
+      .lower_edge_micro_eV = 360'000ULL,
+      .bin_width_micro_eV = 1'997'752'000ULL,
+      .endpoint_micro_eV = 889'000'000'000ULL,
+      .represented_mean_energy_keV = 420.633952159,
+    },
+    {
+      .yield_per_decay = 0.00287L,
+      .table_count = 407U,
+      .lower_edge_micro_eV = 690'000ULL,
+      .bin_width_micro_eV = 1'995'330'000ULL,
+      .endpoint_micro_eV = 812'100'000'000ULL,
+      .represented_mean_energy_keV = 365.865892205,
+    },
+    {
+      .yield_per_decay = 1.21e-06L,
+      .table_count = 481U,
+      .lower_edge_micro_eV = 336'000ULL,
+      .bin_width_micro_eV = 998'544'000ULL,
+      .endpoint_micro_eV = 480'300'000'000ULL,
+      .represented_mean_energy_keV = 238.786505926,
+    },
+    {
+      .yield_per_decay = 1.5e-08L,
+      .table_count = 319U,
+      .lower_edge_micro_eV = 192'000ULL,
+      .bin_width_micro_eV = 798'432'000ULL,
+      .endpoint_micro_eV = 254'700'000'000ULL,
+      .represented_mean_energy_keV = 133.292204559,
+    },
+    {
+      .yield_per_decay = 1.8e-09L,
+      .table_count = 328U,
+      .lower_edge_micro_eV = 368'000ULL,
+      .bin_width_micro_eV = 299'694'000ULL,
+      .endpoint_micro_eV = 98'300'000'000ULL,
+      .represented_mean_energy_keV = 51.5744083795,
+    },
+    {
+      .yield_per_decay = 2.5e-10L,
+      .table_count = 461U,
+      .lower_edge_micro_eV = 498'000ULL,
+      .bin_width_micro_eV = 99'782'000ULL,
+      .endpoint_micro_eV = 46'000'000'000ULL,
+      .represented_mean_energy_keV = 25.6395521213,
+    },
+  },
+};
 
 // =============================================================================
 // =============================================================================
@@ -122,7 +165,7 @@ auto CheckReachableDiscreteChannel(GGEMSRadionuclideEmission const &emission,
     previous_energy = energies[index];
     previous_ticket = tickets[index];
   }
-  EXPECT_EQ(previous_ticket, k_energy_ticket_space_size);
+  EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
 }
 
 // =============================================================================
@@ -216,7 +259,7 @@ TEST(GGEMSI124Test, PreservesEightBetaShape24PositronBranches) {
       previous_ticket = tickets[index];
     }
     EXPECT_NEAR(static_cast<double>(weight_sum), 1.0, 1.0e-12);
-    EXPECT_EQ(previous_ticket, k_energy_ticket_space_size);
+    EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
 
     long double const mean_energy_keV =
       weighted_center_sum / weight_sum /

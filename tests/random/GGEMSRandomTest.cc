@@ -21,16 +21,10 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS random configuration.
- *
- * Validates engine parsing and selection, seed handling, kernel identifiers and
- * build definitions, state-size reporting, and verbose summaries.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -38,12 +32,9 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/random/GGEMSRandomEngine.hh"
-
-/// \cond
 
 namespace {
 
@@ -63,7 +54,7 @@ TEST(GGEMSRandomTest, DefaultsToPhilox) {
 
   EXPECT_EQ(random.GetEngine(), GGEMSRandomEngine::Philox);
   EXPECT_EQ(random.GetEngineName(), "Philox");
-  EXPECT_EQ(random.GetSeed(), 77'777ULL);
+  EXPECT_EQ(random.GetSeed(), 7'777'777ULL);
 }
 
 // =============================================================================
@@ -135,4 +126,3 @@ TEST(GGEMSRandomTest, SummaryReflectsCurrentConfiguration) {
   EXPECT_TRUE(std::ranges::contains(lines, "OpenCL build definition : "
                                            "-DGGEMS_RANDOM_ENGINE=2"));
 }
-/// \endcond

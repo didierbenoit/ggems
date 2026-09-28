@@ -1,10 +1,36 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
-#include <string_view>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -12,7 +38,6 @@
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSIsotope.hh"
 #include "GGEMS/materials/GGEMSIsotopeMassAuthority.hh"
-#include "GGEMS/materials/GGEMSIsotopeProfile.hh"
 #include "GGEMS/materials/GGEMSIsotopicComposition.hh"
 
 namespace {
@@ -22,15 +47,11 @@ namespace {
 
 namespace materials = ggems::core::materials;
 
-using Profile = materials::GGEMSIsotopeProfile;
-
 constexpr long double k_relative_budget{
   64.0L * std::numeric_limits<long double>::epsilon(),
 };
 
-// Elements without a NIST 4.1 composition and their documented legacy
-// reference isotope (element catalog).
-constexpr std::array<materials::GGEMSIsotope, 8U> k_reference_isotopes{
+constexpr std::array<materials::GGEMSIsotope, 15U> k_reference_isotopes{
   {
     {43U, 97U, 0U},
     {61U, 145U, 0U},
@@ -40,8 +61,18 @@ constexpr std::array<materials::GGEMSIsotope, 8U> k_reference_isotopes{
     {87U, 223U, 0U},
     {88U, 226U, 0U},
     {89U, 227U, 0U},
+    {93U, 237U, 0U},
+    {94U, 244U, 0U},
+    {95U, 243U, 0U},
+    {96U, 247U, 0U},
+    {97U, 247U, 0U},
+    {98U, 251U, 0U},
+    {99U, 252U, 0U},
   },
 };
+
+// =============================================================================
+// =============================================================================
 
 struct ExpectedFraction {
   materials::GGEMSIsotope isotope;
@@ -56,7 +87,7 @@ auto ExpectProfile(std::uint32_t atomic_number,
   SCOPED_TRACE(atomic_number);
 
   auto const composition =
-    materials::ResolveIsotopeProfile(Profile::Nist41Natural, atomic_number);
+    materials::BuildDefaultIsotopicComposition(atomic_number);
 
   EXPECT_EQ(composition.GetBasis(),
             materials::GGEMSFractionBasis::AtomFraction);
@@ -89,7 +120,6 @@ auto IsReferenceElement(std::uint32_t atomic_number) -> bool {
 // =============================================================================
 
 TEST(GGEMSIsotopeProfileTest, ResolvesNist41ValidationFixtures) {
-  // Audit-10 retained NIST 4.1 fixture values.
   ExpectProfile(1U, {
                       {.isotope = {1U, 1U, 0U}, .fraction = 0.999885L},
                       {.isotope = {1U, 2U, 0U}, .fraction = 0.000115L},
@@ -139,7 +169,6 @@ TEST(GGEMSIsotopeProfileTest, ResolvesHeavyMultiIsotopeElements) {
 // =============================================================================
 
 TEST(GGEMSIsotopeProfileTest, MapsNaturalTantalum180ToItsIsomer) {
-  // NIST 4.1 lists Ta-180; the naturally occurring state is NUBASE2020 180Tam.
   ExpectProfile(73U, {
                        {.isotope = {73U, 180U, 1U}, .fraction = 0.0001201L},
                        {.isotope = {73U, 181U, 0U}, .fraction = 0.9998799L},
@@ -149,41 +178,46 @@ TEST(GGEMSIsotopeProfileTest, MapsNaturalTantalum180ToItsIsomer) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSIsotopeProfileTest, ProfilesAreCanonicalAndMassResolvable) {
+TEST(GGEMSIsotopeProfileTest, DefaultsAreCanonicalAndMassResolvable) {
   auto const &masses = materials::GetIsotopeMassAuthority();
 
   std::size_t natural_elements{0U};
   std::size_t natural_isotopes{0U};
 
-  for (std::uint32_t atomic_number = 1U; atomic_number <= 92U;
+  for (std::uint32_t atomic_number = 1U; atomic_number <= 99U;
        ++atomic_number) {
     SCOPED_TRACE(atomic_number);
 
-    for (auto const profile :
-         {Profile::Nist41Natural, Profile::LegacyReferenceIsotope}) {
-      if (!materials::HasIsotopeProfile(profile, atomic_number)) {
-        continue;
+    auto const composition =
+      materials::BuildDefaultIsotopicComposition(atomic_number);
+    auto const fractions = composition.GetFractions();
+
+    ASSERT_FALSE(fractions.empty());
+    EXPECT_EQ(composition.GetAtomicNumber(), atomic_number);
+    EXPECT_EQ(composition.GetBasis(),
+              materials::GGEMSFractionBasis::AtomFraction);
+
+    long double fraction_sum{0.0L};
+
+    for (std::size_t index = 0U; index < fractions.size(); ++index) {
+      auto const &fraction = fractions[index];
+
+      EXPECT_EQ(fraction.isotope.GetAtomicNumber(), atomic_number);
+      EXPECT_GT(fraction.fraction, 0.0L);
+
+      if (index > 0U) {
+        EXPECT_LT(fractions[index - 1U].isotope, fraction.isotope);
       }
 
-      auto const composition =
-        materials::ResolveIsotopeProfile(profile, atomic_number);
-      auto const fractions = composition.GetFractions();
+      EXPECT_NE(masses.Find(fraction.isotope), nullptr);
+      fraction_sum += fraction.fraction;
+    }
 
-      long double fraction_sum{0.0L};
-      for (std::size_t index = 0U; index < fractions.size(); ++index) {
-        EXPECT_EQ(fractions[index].isotope.GetAtomicNumber(), atomic_number);
-        if (index > 0U) {
-          EXPECT_LT(fractions[index - 1U].isotope, fractions[index].isotope);
-        }
-        EXPECT_NE(masses.Find(fractions[index].isotope), nullptr);
-        fraction_sum += fractions[index].fraction;
-      }
-      EXPECT_LE(std::abs(fraction_sum - 1.0L), k_relative_budget);
+    EXPECT_LE(std::abs(fraction_sum - 1.0L), k_relative_budget);
 
-      if (profile == Profile::Nist41Natural) {
-        ++natural_elements;
-        natural_isotopes += fractions.size();
-      }
+    if (!IsReferenceElement(atomic_number)) {
+      ++natural_elements;
+      natural_isotopes += fractions.size();
     }
   }
 
@@ -194,70 +228,30 @@ TEST(GGEMSIsotopeProfileTest, ProfilesAreCanonicalAndMassResolvable) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSIsotopeProfileTest, ClassifiesEveryMaterialElement) {
-  for (std::uint32_t atomic_number = 1U; atomic_number <= 92U;
-       ++atomic_number) {
-    SCOPED_TRACE(atomic_number);
-
-    bool const reference = IsReferenceElement(atomic_number);
-
-    EXPECT_EQ(
-      materials::HasIsotopeProfile(Profile::Nist41Natural, atomic_number),
-      !reference);
-    EXPECT_EQ(materials::HasIsotopeProfile(Profile::LegacyReferenceIsotope,
-                                           atomic_number),
-              reference);
-    EXPECT_EQ(materials::SelectLegacyElementalIsotopeProfile(atomic_number),
-              reference ? Profile::LegacyReferenceIsotope
-                        : Profile::Nist41Natural);
-  }
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSIsotopeProfileTest, ResolvesDocumentedReferenceIsotopesOnly) {
+TEST(GGEMSIsotopeProfileTest, ResolvesExplicitDefaultReferenceIsotopes) {
   for (auto const &isotope : k_reference_isotopes) {
     auto const atomic_number = isotope.GetAtomicNumber();
     SCOPED_TRACE(atomic_number);
 
-    auto const composition = materials::ResolveIsotopeProfile(
-      Profile::LegacyReferenceIsotope, atomic_number);
+    auto const composition =
+      materials::BuildDefaultIsotopicComposition(atomic_number);
+    auto const fractions = composition.GetFractions();
 
-    ASSERT_EQ(composition.GetFractions().size(), 1U);
-    EXPECT_EQ(composition.GetFractions().front().isotope, isotope);
-    EXPECT_EQ(composition.GetFractions().front().fraction, 1.0L);
-
-    // No natural composition can be requested for these elements.
-    EXPECT_THROW(static_cast<void>(materials::ResolveIsotopeProfile(
-                   Profile::Nist41Natural, atomic_number)),
-                 ggems::core::GGEMSRecoverable);
+    ASSERT_EQ(fractions.size(), 1U);
+    EXPECT_EQ(fractions.front().isotope, isotope);
+    EXPECT_EQ(fractions.front().fraction, 1.0L);
   }
-
-  // A natural element has no legacy reference isotope.
-  EXPECT_THROW(static_cast<void>(materials::ResolveIsotopeProfile(
-                 Profile::LegacyReferenceIsotope, 6U)),
-               ggems::core::GGEMSRecoverable);
 }
 
 // =============================================================================
 // =============================================================================
 
 TEST(GGEMSIsotopeProfileTest, RejectsElementsOutsideMaterialsDomain) {
-  for (std::uint32_t const atomic_number : {0U, 93U, 95U, 118U}) {
+  for (std::uint32_t const atomic_number : {0U, 100U, 118U}) {
     SCOPED_TRACE(atomic_number);
 
-    for (auto const profile :
-         {Profile::Nist41Natural, Profile::LegacyReferenceIsotope}) {
-      EXPECT_FALSE(materials::HasIsotopeProfile(profile, atomic_number));
-      EXPECT_THROW(static_cast<void>(
-                     materials::ResolveIsotopeProfile(profile, atomic_number)),
-                   ggems::core::GGEMSRecoverable);
-    }
-
-    EXPECT_THROW(
-      static_cast<void>(
-        materials::SelectLegacyElementalIsotopeProfile(atomic_number)),
-      ggems::core::GGEMSRecoverable);
+    EXPECT_THROW(static_cast<void>(
+                   materials::BuildDefaultIsotopicComposition(atomic_number)),
+                 ggems::core::GGEMSRecoverable);
   }
 }

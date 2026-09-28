@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -172,7 +199,7 @@ protected:
 
     std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path const kernel_test_root = kernel_root / "tests";
-    auto &program = opencl.GetOrCreateProgram(
+    auto const &program = opencl.GetOrCreateProgram(
       context, kernel_test_root, "energy_distribution_sampling_probe",
       BuildOptions(random));
     cl::Kernel raw_kernel =
@@ -225,7 +252,7 @@ protected:
 
     std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path const kernel_test_root = kernel_root / "tests";
-    auto &program = opencl.GetOrCreateProgram(
+    auto const &program = opencl.GetOrCreateProgram(
       context, kernel_test_root, "energy_distribution_sampling_probe",
       FixedBuildOptions());
     cl::Kernel raw_kernel =
@@ -268,7 +295,7 @@ protected:
 
     std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path const kernel_test_root = kernel_root / "tests";
-    auto &program = opencl.GetOrCreateProgram(
+    auto const &program = opencl.GetOrCreateProgram(
       context, kernel_test_root, "energy_distribution_sampling_probe",
       FixedBuildOptions());
     cl::Kernel raw_kernel =
@@ -298,7 +325,7 @@ protected:
 
     std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path const kernel_test_root = kernel_root / "tests";
-    auto &program = opencl.GetOrCreateProgram(
+    auto const &program = opencl.GetOrCreateProgram(
       context, kernel_test_root, "energy_distribution_sampling_probe",
       FixedBuildOptions());
     cl::Kernel raw_kernel =
@@ -343,7 +370,7 @@ protected:
 
     std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path const kernel_test_root = kernel_root / "tests";
-    auto &program = opencl.GetOrCreateProgram(
+    auto const &program = opencl.GetOrCreateProgram(
       context, kernel_test_root, "energy_distribution_sampling_probe",
       BuildOptions(random));
     cl::Kernel raw_kernel =
@@ -378,10 +405,17 @@ protected:
 
 TEST_F(GGEMSEnergyDistributionKernelTest,
        RawApiMatchesScalarStateProgressionAndRetainsAllBits) {
-  constexpr std::array<std::string_view, 3U> k_engines{"jkiss", "pcg32",
-                                                       "philox"};
+  constexpr std::array<std::string_view, 3U> k_engines{
+    "jkiss",
+    "pcg32",
+    "philox",
+  };
+
   constexpr std::array<std::uint32_t, 3U> k_expected_raw{
-    169'984'787U, 2'105'060'176U, 2'855'362'018U};
+    169'984'787U,
+    2'105'060'176U,
+    2'855'362'018U,
+  };
 
   for (std::size_t engine_index = 0U; engine_index < k_engines.size();
        ++engine_index) {
@@ -403,12 +437,23 @@ TEST_F(GGEMSEnergyDistributionKernelTest,
 
 TEST_F(GGEMSEnergyDistributionKernelTest,
        ExactEnergyDrawCountForEveryEngineAndMode) {
-  constexpr std::array<std::string_view, 3U> k_engines{"jkiss", "pcg32",
-                                                       "philox"};
+  constexpr std::array<std::string_view, 3U> k_engines{
+    "jkiss",
+    "pcg32",
+    "philox",
+  };
+
   constexpr std::array<std::uint64_t, 3U> k_expected_discrete{
-    2'000'000'000'000ULL, 2'000'000'000'000ULL, 6'000'000'000'000ULL};
+    2'000'000'000'000ULL,
+    2'000'000'000'000ULL,
+    6'000'000'000'000ULL,
+  };
+
   constexpr std::array<std::uint64_t, 3U> k_expected_regular{
-    9'158'310'669'474ULL, 10'960'490'062'832ULL, 13'659'263'106'063ULL};
+    9'158'310'669'474ULL,
+    10'960'490'062'832ULL,
+    13'659'263'106'063ULL,
+  };
 
   for (std::size_t engine_index = 0U; engine_index < k_engines.size();
        ++engine_index) {
@@ -431,7 +476,8 @@ TEST_F(GGEMSEnergyDistributionKernelTest,
 TEST_F(GGEMSEnergyDistributionKernelTest,
        RawTicketBoundariesSkipZeroWidthEntries) {
   constexpr std::array<std::uint64_t, 5U> k_bounds{
-    2ULL, 2ULL, 5ULL, 4'294'967'296ULL, 4'294'967'296ULL};
+    2ULL, 2ULL, 5ULL, 4'294'967'296ULL, 4'294'967'296ULL,
+  };
   EXPECT_EQ(RunFindIndexProbe(k_bounds, 0U), 0U);
   EXPECT_EQ(RunFindIndexProbe(k_bounds, 1U), 0U);
   EXPECT_EQ(RunFindIndexProbe(k_bounds, 2U), 2U);
@@ -440,8 +486,12 @@ TEST_F(GGEMSEnergyDistributionKernelTest,
   EXPECT_EQ(
     RunFindIndexProbe(k_bounds, std::numeric_limits<std::uint32_t>::max()), 3U);
 
-  constexpr std::array<std::uint64_t, 4U> k_leading_plateau{0ULL, 0ULL, 3ULL,
-                                                            4'294'967'296ULL};
+  constexpr std::array<std::uint64_t, 4U> k_leading_plateau{
+    0ULL,
+    0ULL,
+    3ULL,
+    4'294'967'296ULL,
+  };
   EXPECT_EQ(RunFindIndexProbe(k_leading_plateau, 0U), 2U);
 
   ProbeInput discrete = MakeDiscreteInput();
@@ -501,12 +551,15 @@ TEST_F(GGEMSEnergyDistributionKernelTest,
   regular.cumulative_ticket_upper = {1ULL, 1ULL, 4'294'967'296ULL};
   EXPECT_EQ(RunExplicitTicketProbe(regular, 0U), 9'000'000'000'000ULL);
 
-  constexpr std::array<std::uint64_t, 5U> k_width_3_expected{0ULL, 0ULL, 1ULL,
-                                                             1ULL, 2ULL};
-  constexpr std::array<std::uint64_t, 5U> k_width_5_expected{0ULL, 1ULL, 2ULL,
-                                                             3ULL, 4ULL};
-  constexpr std::array<std::uint64_t, 5U> k_width_13_expected{0ULL, 2ULL, 5ULL,
-                                                              7ULL, 10ULL};
+  constexpr std::array<std::uint64_t, 5U> k_width_3_expected{
+    0ULL, 0ULL, 1ULL, 1ULL, 2ULL,
+  };
+  constexpr std::array<std::uint64_t, 5U> k_width_5_expected{
+    0ULL, 1ULL, 2ULL, 3ULL, 4ULL,
+  };
+  constexpr std::array<std::uint64_t, 5U> k_width_13_expected{
+    0ULL, 2ULL, 5ULL, 7ULL, 10ULL,
+  };
 
   for (std::uint64_t local = 0ULL; local < 5ULL; ++local) {
     EXPECT_EQ(RunRegularOffsetProbe(3ULL, 5ULL, local),
@@ -546,13 +599,18 @@ TEST_F(GGEMSEnergyDistributionKernelTest, ThermalNeutronQuantumUsesNoMonoDraw) {
 
 TEST_F(GGEMSEnergyDistributionKernelTest,
        MicroScaleRefinesTheSameRegularTicketLaw) {
-  // Exact expectations use unbounded-integer W*t/S arithmetic. The scaled
-  // width would overflow a naive ulong product for the final three tickets.
   constexpr std::array<std::uint64_t, 5U> tickets{
-    0ULL, 1ULL, 1'073'741'823ULL, 2'147'483'648ULL, 4'294'967'295ULL};
+    0ULL, 1ULL, 1'073'741'823ULL, 2'147'483'648ULL, 4'294'967'295ULL,
+  };
+
   constexpr std::array<std::uint64_t, 5U> expected{
-    0ULL, 465ULL, 499'999'999'534ULL, 1'000'000'000'000ULL,
-    1'999'999'999'534ULL};
+    0ULL,
+    465ULL,
+    499'999'999'534ULL,
+    1'000'000'000'000ULL,
+    1'999'999'999'534ULL,
+  };
+
   for (std::size_t index = 0U; index < tickets.size(); ++index) {
     SCOPED_TRACE(tickets[index]);
     auto const old_offset =

@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -44,9 +71,14 @@ using Source = ggems::core::sources::GGEMSSource;
 using SourcePtr = std::shared_ptr<Source>;
 
 constexpr std::array<RandomEngine, 3U> k_engines{
-  RandomEngine::JKISS, RandomEngine::PCG32, RandomEngine::Philox};
+  RandomEngine::JKISS,
+  RandomEngine::PCG32,
+  RandomEngine::Philox,
+};
 constexpr ggems::core::GGEMSTimeWindow k_one_second_window{
-  .start_ps = 0ULL, .stop_ps = 1'000'000'000'000ULL};
+  .start_ps = 0ULL,
+  .stop_ps = 1'000'000'000'000ULL,
+};
 
 // =============================================================================
 // =============================================================================
@@ -315,11 +347,17 @@ TEST(GGEMSSourcePopulationPlanTest,
 TEST(GGEMSSourcePopulationPlanTest, BuildsMixedSourcesWithContiguousRanges) {
   constexpr std::array<long double, 2U> k_yields{1.0L, 0.5L};
   auto definition = MakeSyntheticDefinition(k_yields);
-  std::vector<SourcePtr> sources{MakeCountSource(3ULL),
-                                 MakeActivitySource(definition, 40.0L),
-                                 MakeCountSource(2ULL)};
+  std::vector<SourcePtr> sources{
+    MakeCountSource(3ULL),
+    MakeActivitySource(definition, 40.0L),
+    MakeCountSource(2ULL),
+  };
+
   constexpr ggems::core::GGEMSTimeWindow k_window{
-    .start_ps = 123ULL, .stop_ps = 1'000'000'000'123ULL};
+    .start_ps = 123ULL,
+    .stop_ps = 1'000'000'000'123ULL,
+  };
+
   Planner planner{sources, MakeRandom()};
 
   auto candidate = planner.BuildCandidate(k_window);
@@ -359,7 +397,9 @@ TEST(GGEMSSourcePopulationPlanTest,
   constexpr long double k_live_activity_bq{25.0L};
   constexpr std::uint64_t k_reference_time_ps{500'000'000'000ULL};
   constexpr ggems::core::GGEMSTimeWindow k_later_window{
-    .start_ps = 1'000'000'000'000ULL, .stop_ps = 2'000'000'000'000ULL};
+    .start_ps = 1'000'000'000'000ULL,
+    .stop_ps = 2'000'000'000'000ULL,
+  };
 
   for (RandomEngine engine : k_engines) {
     SCOPED_TRACE(static_cast<std::uint32_t>(engine));
@@ -584,10 +624,10 @@ TEST(GGEMSSourcePopulationPlanTest,
 
     auto definition = MakeSyntheticDefinition(k_yields);
     auto activity = MakeActivitySource(definition, 25.0L);
-    auto overflowing =
-      MakeCountSource(std::numeric_limits<std::uint64_t>::max());
-    auto forcing_overflow = MakeCountSource(1ULL);
-    std::vector<SourcePtr> sources{activity, overflowing, forcing_overflow};
+    auto invalid = MakeActivitySource(definition, 25.0L);
+    invalid->SetRadionuclide(definition, ggems::units::Activity{25.0L},
+                             k_one_second_window.stop_ps);
+    std::vector<SourcePtr> sources{activity, invalid};
     Random const random = MakeRandom(engine);
     Planner planner{sources, random};
 
@@ -595,12 +635,12 @@ TEST(GGEMSSourcePopulationPlanTest,
                  ggems::core::GGEMSExceptionBase);
     EXPECT_EQ(planner.GetRevision(), 0ULL);
 
-    overflowing->SetPrimaryCount(1ULL);
+    invalid->SetRadionuclide(definition, ggems::units::Activity{25.0L}, 0ULL);
     auto recovered = planner.BuildCandidate(k_one_second_window);
 
     std::vector<SourcePtr> reference_sources{
-      MakeActivitySource(definition, 25.0L), MakeCountSource(1ULL),
-      MakeCountSource(1ULL)};
+      MakeActivitySource(definition, 25.0L),
+      MakeActivitySource(definition, 25.0L)};
     Planner reference{reference_sources, random};
     auto expected = reference.BuildCandidate(k_one_second_window);
     ExpectPlansEqual(recovered.GetPlan(), expected.GetPlan());
@@ -754,9 +794,14 @@ TEST(GGEMSSourcePopulationPlanTest,
      ClinicallyLargeF18BuildsThreeGroupCompactPlan) {
   constexpr long double k_activity_bq{1'000'000'000.0L};
   constexpr ggems::core::GGEMSTimeWindow k_ten_second_window{
-    .start_ps = 0ULL, .stop_ps = 10'000'000'000'000ULL};
-  constexpr std::array<long double, 3U> k_expected_yields{0.9686L, 0.00229L,
-                                                          0.00020L};
+    .start_ps = 0ULL,
+    .stop_ps = 10'000'000'000'000ULL,
+  };
+  constexpr std::array<long double, 3U> k_expected_yields{
+    0.9686L,
+    0.00229L,
+    0.00020L,
+  };
 
   auto definition = std::make_shared<Definition const>(
     ggems::core::radioactivity::builtins::BuildF18Radionuclide());
@@ -824,7 +869,7 @@ TEST(GGEMSSourcePopulationPlanTest,
 // =============================================================================
 
 TEST(GGEMSSourcePopulationPlanTest,
-     RejectsExpectedCountAndCheckedTotalOverflowWithoutCommit) {
+     RejectsNonFiniteExpectedCountWithoutCommit) {
   constexpr std::array<long double, 1U> k_huge_yield{
     std::numeric_limits<long double>::max()};
   auto huge_definition = MakeSyntheticDefinition(k_huge_yield, 1.0e20L, "Huge");
@@ -836,14 +881,6 @@ TEST(GGEMSSourcePopulationPlanTest,
       .start_ps = 0ULL, .stop_ps = std::numeric_limits<std::uint64_t>::max()}),
     ggems::core::GGEMSExceptionBase);
   EXPECT_EQ(huge_planner.GetRevision(), 0ULL);
-
-  std::vector<SourcePtr> count_sources{
-    MakeCountSource(std::numeric_limits<std::uint64_t>::max()),
-    MakeCountSource(1ULL)};
-  Planner count_planner{count_sources, MakeRandom()};
-  EXPECT_THROW((void)count_planner.BuildCandidate({}),
-               ggems::core::GGEMSExceptionBase);
-  EXPECT_EQ(count_planner.GetRevision(), 0ULL);
 }
 
 // =============================================================================

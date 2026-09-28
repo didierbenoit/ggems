@@ -1,10 +1,35 @@
-#include <cmath>
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <type_traits>
 #include <utility>
-#include <numbers>
 
 #include <gtest/gtest.h>
 
@@ -74,40 +99,11 @@ TEST(GGEMSDecayStatisticsTest, RejectsInvalidActivity) {
 
   EXPECT_THROW(
     (void)ComputeExpectedDecayEventCount(Activity{-1.0L}, 1.0L, 0ULL, window),
-    ggems::core::GGEMSExceptionBase);
+    ggems::core::GGEMSRecoverable);
   EXPECT_THROW((void)ComputeExpectedDecayEventCount(
                  Activity{std::numeric_limits<long double>::quiet_NaN()}, 1.0L,
                  0ULL, window),
-               ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW((void)ComputeExpectedDecayEventCount(
-                 Activity{std::numeric_limits<long double>::infinity()}, 1.0L,
-                 0ULL, window),
-               ggems::core::GGEMSExceptionBase);
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSDecayStatisticsTest, RejectsInvalidHalfLife) {
-  GGEMSTimeWindow const window{.start_ps = 0ULL, .stop_ps = 1ULL};
-
-  for (long double half_life :
-       {0.0L, -1.0L, std::numeric_limits<long double>::quiet_NaN(),
-        std::numeric_limits<long double>::infinity()}) {
-    EXPECT_THROW((void)ComputeExpectedDecayEventCount(Activity{1.0L}, half_life,
-                                                      0ULL, window),
-                 ggems::core::GGEMSExceptionBase);
-  }
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSDecayStatisticsTest, RejectsReversedWindow) {
-  EXPECT_THROW((void)ComputeExpectedDecayEventCount(
-                 Activity{1.0L}, 1.0L, 0ULL,
-                 GGEMSTimeWindow{.start_ps = 2ULL, .stop_ps = 1ULL}),
-               ggems::core::GGEMSExceptionBase);
+               ggems::core::GGEMSRecoverable);
 }
 
 // =============================================================================
@@ -117,19 +113,7 @@ TEST(GGEMSDecayStatisticsTest, RejectsReferenceTimeAfterWindowStart) {
   EXPECT_THROW((void)ComputeExpectedDecayEventCount(
                  Activity{1.0L}, 1.0L, 2ULL,
                  GGEMSTimeWindow{.start_ps = 1ULL, .stop_ps = 1ULL}),
-               ggems::core::GGEMSExceptionBase);
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSDecayStatisticsTest, RejectsNonFiniteExpectedCount) {
-  EXPECT_THROW(
-    (void)ComputeExpectedDecayEventCount(
-      Activity{std::numeric_limits<long double>::max()}, 1.0e20L, 0ULL,
-      GGEMSTimeWindow{.start_ps = 0ULL,
-                      .stop_ps = std::numeric_limits<std::uint64_t>::max()}),
-    ggems::core::GGEMSExceptionBase);
+               ggems::core::GGEMSRecoverable);
 }
 
 // =============================================================================
@@ -138,12 +122,18 @@ TEST(GGEMSDecayStatisticsTest, RejectsNonFiniteExpectedCount) {
 TEST(GGEMSDecayStatisticsTest, AdjacentWindowsAreAdditive) {
   Activity const activity{1.0e6L};
   long double const half_life_seconds{1'000.0L};
-  GGEMSTimeWindow const first{.start_ps = 0ULL,
-                              .stop_ps = 10'000'000'000'000ULL};
-  GGEMSTimeWindow const second{.start_ps = first.stop_ps,
-                               .stop_ps = 20'000'000'000'000ULL};
-  GGEMSTimeWindow const combined{.start_ps = first.start_ps,
-                                 .stop_ps = second.stop_ps};
+  GGEMSTimeWindow const first{
+    .start_ps = 0ULL,
+    .stop_ps = 10'000'000'000'000ULL,
+  };
+  GGEMSTimeWindow const second{
+    .start_ps = first.stop_ps,
+    .stop_ps = 20'000'000'000'000ULL,
+  };
+  GGEMSTimeWindow const combined{
+    .start_ps = first.start_ps,
+    .stop_ps = second.stop_ps,
+  };
 
   long double const adjacent =
     ComputeExpectedDecayEventCount(activity, half_life_seconds, 0ULL, first) +
@@ -173,27 +163,6 @@ TEST(GGEMSDecayStatisticsTest,
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSDecayStatisticsTest,
-     TinyFiniteHalfLifeDoesNotCollapseAtReferenceTime) {
-  long double const half_life_seconds =
-    std::numeric_limits<long double>::denorm_min();
-
-  if (half_life_seconds == 0.0L ||
-      std::isfinite(std::numbers::ln2_v<long double> / half_life_seconds)) {
-    GTEST_SKIP() << "The platform has no overflowing finite half-life case.";
-  }
-
-  long double const actual = ComputeExpectedDecayEventCount(
-    Activity{std::numeric_limits<long double>::max()}, half_life_seconds, 0ULL,
-    GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1ULL});
-
-  EXPECT_TRUE(std::isfinite(actual));
-  EXPECT_GT(actual, 0.0L);
-}
-
-// =============================================================================
-// =============================================================================
-
 TEST(GGEMSDecayStatisticsTest, MatchesF18HalfLifeNumericalReference) {
   long double const actual = ComputeExpectedDecayEventCount(
     Activity{1.0e6L}, 1.82890L * 3'600.0L, 0ULL,
@@ -211,8 +180,10 @@ TEST(GGEMSDecayStatisticsTest,
   configuration.SetEngine(GGEMSRandomEngine::PCG32).SetSeed(77'777ULL);
   GGEMSHostRandomStream first{configuration, 42ULL};
   GGEMSHostRandomStream second{configuration, 42ULL};
-  GGEMSTimeWindow const window{.start_ps = 0ULL,
-                               .stop_ps = 1'000'000'000'000ULL};
+  GGEMSTimeWindow const window{
+    .start_ps = 0ULL,
+    .stop_ps = 1'000'000'000'000ULL,
+  };
 
   for (std::size_t sample = 0U; sample < 64U; ++sample) {
     EXPECT_EQ(

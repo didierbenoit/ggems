@@ -21,16 +21,10 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS volume quantities and conversions.
- *
- * Validates registered cubic-length units, negative-value rejection, automatic
- * ASCII/Unicode cubic formatting, and canonical cubic-picometer literals.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <cmath>
 #include <limits>
@@ -38,14 +32,11 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
 #include "GGEMS/units/GGEMSVolumeUnits.hh"
 #include "GGEMSScopedLoggerEncoding.hh"
-
-/// \cond
 
 namespace {
 
@@ -57,6 +48,10 @@ using ggems::units::Volume;
 
 constexpr long double k_volume_relative_tolerance =
   64.0L * std::numeric_limits<long double>::epsilon();
+} // namespace
+
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSVolumeUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   struct Case {
@@ -64,15 +59,17 @@ TEST(GGEMSVolumeUnitsTest, ConvertsEveryOfficialRuntimeToken) {
     long double expected_cubic_picometers;
   };
 
-  constexpr std::array<Case, 7U> cases{{
-    {.unit = "pm3", .expected_cubic_picometers = 1.0L},
-    {.unit = "nm3", .expected_cubic_picometers = 1.0e9L},
-    {.unit = "um3", .expected_cubic_picometers = 1.0e18L},
-    {.unit = "mm3", .expected_cubic_picometers = 1.0e27L},
-    {.unit = "cm3", .expected_cubic_picometers = 1.0e30L},
-    {.unit = "m3", .expected_cubic_picometers = 1.0e36L},
-    {.unit = "km3", .expected_cubic_picometers = 1.0e45L},
-  }};
+  constexpr std::array<Case, 7U> cases{
+    {
+      {.unit = "pm3", .expected_cubic_picometers = 1.0L},
+      {.unit = "nm3", .expected_cubic_picometers = 1.0e9L},
+      {.unit = "um3", .expected_cubic_picometers = 1.0e18L},
+      {.unit = "mm3", .expected_cubic_picometers = 1.0e27L},
+      {.unit = "cm3", .expected_cubic_picometers = 1.0e30L},
+      {.unit = "m3", .expected_cubic_picometers = 1.0e36L},
+      {.unit = "km3", .expected_cubic_picometers = 1.0e45L},
+    },
+  };
 
   for (auto const &test_case : cases) {
     SCOPED_TRACE(test_case.unit);
@@ -87,12 +84,18 @@ TEST(GGEMSVolumeUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   }
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSVolumeUnitsTest, RejectsNegativeVolume) {
   auto const converted = MakeQuantity<Volume>(-1.0L, "cm3");
 
   ASSERT_FALSE(converted.has_value());
   EXPECT_EQ(converted.error(), UnitConversionError::NegativeValue);
 }
+
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSVolumeUnitsTest, AutomaticallyDisplaysCubicUnits) {
   {
@@ -106,6 +109,9 @@ TEST(GGEMSVolumeUnitsTest, AutomaticallyDisplaysCubicUnits) {
   }
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSVolumeUnitsTest, LiteralStoresCubicPicometers) {
   using namespace ggems::units;
 
@@ -114,6 +120,3 @@ TEST(GGEMSVolumeUnitsTest, LiteralStoresCubicPicometers) {
   EXPECT_LE(std::abs(volume.value - 2.0e18L),
             2.0e18L * k_volume_relative_tolerance);
 }
-
-} // namespace
-/// \endcond

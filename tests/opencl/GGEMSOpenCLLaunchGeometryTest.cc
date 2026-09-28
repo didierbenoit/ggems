@@ -21,26 +21,17 @@
 
 /*!
  * \file
- * \brief Unit tests for OpenCL launch-geometry helpers.
- *
- * Validates padded global work-size computation, rejection of zero local work
- * sizes, representative explicit cases, and size-limit boundary handling.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <cstddef>
 #include <limits>
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/opencl/GGEMSOpenCLLaunchGeometry.hh"
-
-/// \cond
 
 namespace {
 struct PaddedGlobalWorkSizeCase {
@@ -65,48 +56,70 @@ TEST(GGEMSOpenCLLaunchGeometryTest, RejectsZeroLocalWorkSize) {
 // =============================================================================
 
 TEST(GGEMSOpenCLLaunchGeometryTest, ComputesExplicitRepresentativeCases) {
-  constexpr std::array<PaddedGlobalWorkSizeCase, 10U> test_cases{{
-    {.label = "zero logical work size",
-     .logical_work_size = 0U,
-     .local_work_size = 64U,
-     .expected_global_work_size = 0U},
-    {.label = "local work size one",
-     .logical_work_size = 257U,
-     .local_work_size = 1U,
-     .expected_global_work_size = 257U},
-    {.label = "exact multiple",
-     .logical_work_size = 128U,
-     .local_work_size = 64U,
-     .expected_global_work_size = 128U},
-    {.label = "ordinary non-multiple",
-     .logical_work_size = 17U,
-     .local_work_size = 8U,
-     .expected_global_work_size = 24U},
-    {.label = "one below a multiple",
-     .logical_work_size = 127U,
-     .local_work_size = 64U,
-     .expected_global_work_size = 128U},
-    {.label = "non-power-of-two local work size",
-     .logical_work_size = 10U,
-     .local_work_size = 6U,
-     .expected_global_work_size = 12U},
-    {.label = "GGEMS aligned launch",
-     .logical_work_size = 64U,
-     .local_work_size = 64U,
-     .expected_global_work_size = 64U},
-    {.label = "GGEMS one-over launch",
-     .logical_work_size = 65U,
-     .local_work_size = 64U,
-     .expected_global_work_size = 128U},
-    {.label = "GGEMS multi-group launch",
-     .logical_work_size = 257U,
-     .local_work_size = 64U,
-     .expected_global_work_size = 320U},
-    {.label = "local work size larger than logical work size",
-     .logical_work_size = 5U,
-     .local_work_size = 8U,
-     .expected_global_work_size = 8U},
-  }};
+  constexpr std::array<PaddedGlobalWorkSizeCase, 10U> test_cases{
+    {
+      {
+        .label = "zero logical work size",
+        .logical_work_size = 0U,
+        .local_work_size = 64U,
+        .expected_global_work_size = 0U,
+      },
+      {
+        .label = "local work size one",
+        .logical_work_size = 257U,
+        .local_work_size = 1U,
+        .expected_global_work_size = 257U,
+      },
+      {
+        .label = "exact multiple",
+        .logical_work_size = 128U,
+        .local_work_size = 64U,
+        .expected_global_work_size = 128U,
+      },
+      {
+        .label = "ordinary non-multiple",
+        .logical_work_size = 17U,
+        .local_work_size = 8U,
+        .expected_global_work_size = 24U,
+      },
+      {
+        .label = "one below a multiple",
+        .logical_work_size = 127U,
+        .local_work_size = 64U,
+        .expected_global_work_size = 128U,
+      },
+      {
+        .label = "non-power-of-two local work size",
+        .logical_work_size = 10U,
+        .local_work_size = 6U,
+        .expected_global_work_size = 12U,
+      },
+      {
+        .label = "GGEMS aligned launch",
+        .logical_work_size = 64U,
+        .local_work_size = 64U,
+        .expected_global_work_size = 64U,
+      },
+      {
+        .label = "GGEMS one-over launch",
+        .logical_work_size = 65U,
+        .local_work_size = 64U,
+        .expected_global_work_size = 128U,
+      },
+      {
+        .label = "GGEMS multi-group launch",
+        .logical_work_size = 257U,
+        .local_work_size = 64U,
+        .expected_global_work_size = 320U,
+      },
+      {
+        .label = "local work size larger than logical work size",
+        .logical_work_size = 5U,
+        .local_work_size = 8U,
+        .expected_global_work_size = 8U,
+      },
+    },
+  };
 
   for (auto const &test_case : test_cases) {
     SCOPED_TRACE(test_case.label);
@@ -138,4 +151,3 @@ TEST(GGEMSOpenCLLaunchGeometryTest, HandlesSizeMaximumBoundaries) {
     ggems::ocl::detail::TryComputePaddedGlobalWorkSize(k_max_size, 2U);
   EXPECT_FALSE(overflowing_work_size.has_value());
 }
-/// \endcond

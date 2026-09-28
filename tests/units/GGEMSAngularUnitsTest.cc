@@ -21,16 +21,10 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS angular quantities and arithmetic.
- *
- * Validates registered angle units, radian/degree helpers and literals, signed
- * angles, arithmetic and comparisons, and human-readable/formatter behavior.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <cmath>
 #include <format>
 #include <limits>
@@ -38,40 +32,37 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
 
-/// \cond
-
 namespace {
 
 constexpr long double k_tolerance{1.0e-12L};
-constexpr long double k_pi_reference{3.141592653589793238462643383279502884L};
+constexpr long double k_pi_reference{std::numbers::pi_v<long double>};
 constexpr long double k_rounding_error_bound{8.0L};
 constexpr long double k_registered_token_tolerance{
   k_rounding_error_bound * k_pi_reference *
   std::numeric_limits<long double>::epsilon()};
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 void ExpectNearLongDouble(long double value, long double reference,
                           long double tolerance = k_tolerance) {
   EXPECT_LE(std::abs(value - reference), tolerance);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, DefaultAngleIsZeroRadians) {
   ggems::units::Angle angle{};
   ExpectNearLongDouble(ggems::units::ToRadians(angle), 0.0L);
   ExpectNearLongDouble(ggems::units::ToDegrees(angle), 0.0L);
 }
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, ConvertsEveryRegisteredAngleToken) {
   using namespace ggems::units;
@@ -86,9 +77,8 @@ TEST(GGEMSAngularUnits, ConvertsEveryRegisteredAngleToken) {
                        k_registered_token_tolerance);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, MakeRadiansStoresRadiansDirectly) {
   ggems::units::Angle angle = ggems::units::MakeRadians(2.5L);
@@ -96,9 +86,8 @@ TEST(GGEMSAngularUnits, MakeRadiansStoresRadiansDirectly) {
   ExpectNearLongDouble(ggems::units::ToRadians(angle), 2.5L);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, MakeDegreesConvertsToRadians) {
   ggems::units::Angle angle = ggems::units::MakeDegrees(180.0L);
@@ -107,9 +96,8 @@ TEST(GGEMSAngularUnits, MakeDegreesConvertsToRadians) {
                        std::numbers::pi_v<long double>);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, RadiansAreConvertedToDegrees) {
   ggems::units::Angle const angle =
@@ -118,9 +106,8 @@ TEST(GGEMSAngularUnits, RadiansAreConvertedToDegrees) {
   ExpectNearLongDouble(ggems::units::ToDegrees(angle), 180.0L);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, DegreeLiteralStoresRadiansInternally) {
   using namespace ggems::units;
@@ -132,9 +119,8 @@ TEST(GGEMSAngularUnits, DegreeLiteralStoresRadiansInternally) {
   ExpectNearLongDouble(ToDegrees(angle), 90.0L);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, IntegerDegreeLiteralStoresRadiansInternally) {
   using namespace ggems::units;
@@ -146,9 +132,8 @@ TEST(GGEMSAngularUnits, IntegerDegreeLiteralStoresRadiansInternally) {
   ExpectNearLongDouble(ToDegrees(angle), 270.0L);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, RadianLiteralStoresRadiansDirectly) {
   using namespace ggems::units;
@@ -158,9 +143,8 @@ TEST(GGEMSAngularUnits, RadianLiteralStoresRadiansDirectly) {
   ExpectNearLongDouble(ToRadians(angle), 2.0L);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, IntegerRadianLiteralStoresRadiansDirectly) {
   using namespace ggems::units;
@@ -170,9 +154,8 @@ TEST(GGEMSAngularUnits, IntegerRadianLiteralStoresRadiansDirectly) {
   ExpectNearLongDouble(ToRadians(angle), 2.0L);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, SupportsNegativeAngles) {
   using namespace ggems::units;
@@ -184,9 +167,8 @@ TEST(GGEMSAngularUnits, SupportsNegativeAngles) {
                        -std::numbers::pi_v<long double> / 4.0L);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, AdditionPreservesAngleSemantics) {
   using namespace ggems::units;
@@ -197,9 +179,8 @@ TEST(GGEMSAngularUnits, AdditionPreservesAngleSemantics) {
   ExpectNearLongDouble(ToDegrees(lhs + rhs), 45.0L);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, SubtractionPreservesAngleSemantics) {
   using namespace ggems::units;
@@ -210,9 +191,8 @@ TEST(GGEMSAngularUnits, SubtractionPreservesAngleSemantics) {
   ExpectNearLongDouble(ToDegrees(lhs - rhs), 15.0L);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, UnaryMinusPreservesAngleSemantics) {
   using namespace ggems::units;
@@ -222,9 +202,8 @@ TEST(GGEMSAngularUnits, UnaryMinusPreservesAngleSemantics) {
   ExpectNearLongDouble(ToDegrees(-angle), -30.0L);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, MultiplicationByScalarPreservesAngleSemantics) {
   using namespace ggems::units;
@@ -235,9 +214,8 @@ TEST(GGEMSAngularUnits, MultiplicationByScalarPreservesAngleSemantics) {
   ExpectNearLongDouble(ToDegrees(2.0L * angle), 60.0L);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, DivisionByScalarPreservesAngleSemantics) {
   using namespace ggems::units;
@@ -247,9 +225,8 @@ TEST(GGEMSAngularUnits, DivisionByScalarPreservesAngleSemantics) {
   ExpectNearLongDouble(ToDegrees(angle / 2.0L), 15.0L);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, SpaceshipComparisonUsesRadians) {
   using namespace ggems::units;
@@ -259,9 +236,8 @@ TEST(GGEMSAngularUnits, SpaceshipComparisonUsesRadians) {
   EXPECT_GT(180.0_deg, 90.0_deg);
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, HumanReadableUsesDegreesByDefault) {
   using namespace ggems::units;
@@ -271,9 +247,8 @@ TEST(GGEMSAngularUnits, HumanReadableUsesDegreesByDefault) {
   EXPECT_EQ(HumanReadable(angle), "45.000 deg");
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, HumanReadableSupportsPrecision) {
   using namespace ggems::units;
@@ -286,9 +261,8 @@ TEST(GGEMSAngularUnits, HumanReadableSupportsPrecision) {
   EXPECT_EQ(HumanReadable(angle, 3), "12.346 deg");
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, HumanReadableSupportsWidth) {
   using namespace ggems::units;
@@ -298,9 +272,8 @@ TEST(GGEMSAngularUnits, HumanReadableSupportsWidth) {
   EXPECT_EQ(HumanReadable(angle, 1, 6), "  12.5 deg");
 }
 
-/* --------------------------------------------- */
-/* --------------------------------------------- */
-/* --------------------------------------------- */
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSAngularUnits, StdFormatterUsesDefaultHumanReadableDegrees) {
   using namespace ggems::units;
@@ -310,4 +283,3 @@ TEST(GGEMSAngularUnits, StdFormatterUsesDefaultHumanReadableDegrees) {
   EXPECT_EQ(std::format("{}", angle), "12.346 deg");
 }
 } // namespace
-/// \endcond

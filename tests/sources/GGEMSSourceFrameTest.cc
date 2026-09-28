@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <limits>
 #include <numbers>
@@ -51,7 +78,8 @@ auto ExpectOrthonormalRightHanded(GGEMSSourceFrame const &frame) -> void {
   Direction3 const cross{
     .x = (frame.axis_x.y * frame.axis_y.z) - (frame.axis_x.z * frame.axis_y.y),
     .y = (frame.axis_x.z * frame.axis_y.x) - (frame.axis_x.x * frame.axis_y.z),
-    .z = (frame.axis_x.x * frame.axis_y.y) - (frame.axis_x.y * frame.axis_y.x)};
+    .z = (frame.axis_x.x * frame.axis_y.y) - (frame.axis_x.y * frame.axis_y.x),
+  };
 
   ExpectAxis(cross, frame.axis_z);
 }
@@ -72,44 +100,101 @@ struct CardinalCase {
 // =============================================================================
 
 TEST(GGEMSSourceFrame, BuildsSixCardinalRightHandedFrames) {
-  std::array<CardinalCase, 6U> const cases{{
-    {.name = "+X",
-     .direction = {1.0, 0.0, 0.0},
-     .up = {0.0, 0.0, 1.0},
-     .expected = {.axis_x = {.x = 0.0F, .y = 1.0F, .z = 0.0F},
-                  .axis_y = {.x = 0.0F, .y = 0.0F, .z = 1.0F},
-                  .axis_z = {.x = 1.0F, .y = 0.0F, .z = 0.0F}}},
-    {.name = "-X",
-     .direction = {-1.0, 0.0, 0.0},
-     .up = {0.0, 0.0, 1.0},
-     .expected = {.axis_x = {.x = 0.0F, .y = -1.0F, .z = 0.0F},
-                  .axis_y = {.x = 0.0F, .y = 0.0F, .z = 1.0F},
-                  .axis_z = {.x = -1.0F, .y = 0.0F, .z = 0.0F}}},
-    {.name = "+Y",
-     .direction = {0.0, 1.0, 0.0},
-     .up = {0.0, 0.0, 1.0},
-     .expected = {.axis_x = {.x = -1.0F, .y = 0.0F, .z = 0.0F},
-                  .axis_y = {.x = 0.0F, .y = 0.0F, .z = 1.0F},
-                  .axis_z = {.x = 0.0F, .y = 1.0F, .z = 0.0F}}},
-    {.name = "-Y",
-     .direction = {0.0, -1.0, 0.0},
-     .up = {0.0, 0.0, 1.0},
-     .expected = {.axis_x = {.x = 1.0F, .y = 0.0F, .z = 0.0F},
-                  .axis_y = {.x = 0.0F, .y = 0.0F, .z = 1.0F},
-                  .axis_z = {.x = 0.0F, .y = -1.0F, .z = 0.0F}}},
-    {.name = "+Z",
-     .direction = {0.0, 0.0, 1.0},
-     .up = {0.0, 1.0, 0.0},
-     .expected = {.axis_x = {.x = 1.0F, .y = 0.0F, .z = 0.0F},
-                  .axis_y = {.x = 0.0F, .y = 1.0F, .z = 0.0F},
-                  .axis_z = {.x = 0.0F, .y = 0.0F, .z = 1.0F}}},
-    {.name = "-Z",
-     .direction = {0.0, 0.0, -1.0},
-     .up = {0.0, 1.0, 0.0},
-     .expected = {.axis_x = {.x = -1.0F, .y = 0.0F, .z = 0.0F},
-                  .axis_y = {.x = 0.0F, .y = 1.0F, .z = 0.0F},
-                  .axis_z = {.x = 0.0F, .y = 0.0F, .z = -1.0F}}},
-  }};
+  std::array<CardinalCase, 6U> const cases{
+    {
+      {
+        .name = "+X",
+        .direction = {1.0, 0.0, 0.0},
+        .up = {0.0, 0.0, 1.0},
+        .expected =
+          {
+            .axis_x = {.x = 0.0F, .y = 1.0F, .z = 0.0F},
+            .axis_y = {.x = 0.0F, .y = 0.0F, .z = 1.0F},
+            .axis_z = {.x = 1.0F, .y = 0.0F, .z = 0.0F},
+          },
+      },
+      {
+        .name = "-X",
+        .direction = {-1.0, 0.0, 0.0},
+        .up = {0.0, 0.0, 1.0},
+        .expected =
+          {
+            .axis_x = {.x = 0.0F, .y = -1.0F, .z = 0.0F},
+            .axis_y = {.x = 0.0F, .y = 0.0F, .z = 1.0F},
+            .axis_z =
+              {
+                .x = -1.0F,
+                .y = 0.0F,
+                .z = 0.0F,
+              },
+          },
+      },
+      {
+        .name = "+Y",
+        .direction = {0.0, 1.0, 0.0},
+        .up = {0.0, 0.0, 1.0},
+        .expected =
+          {
+            .axis_x = {.x = -1.0F, .y = 0.0F, .z = 0.0F},
+            .axis_y = {.x = 0.0F, .y = 0.0F, .z = 1.0F},
+            .axis_z =
+              {
+                .x = 0.0F,
+                .y = 1.0F,
+                .z = 0.0F,
+              },
+          },
+      },
+      {
+        .name = "-Y",
+        .direction = {0.0, -1.0, 0.0},
+        .up = {0.0, 0.0, 1.0},
+        .expected =
+          {
+            .axis_x = {.x = 1.0F, .y = 0.0F, .z = 0.0F},
+            .axis_y = {.x = 0.0F, .y = 0.0F, .z = 1.0F},
+            .axis_z =
+              {
+                .x = 0.0F,
+                .y = -1.0F,
+                .z = 0.0F,
+              },
+          },
+      },
+      {
+        .name = "+Z",
+        .direction = {0.0, 0.0, 1.0},
+        .up = {0.0, 1.0, 0.0},
+        .expected =
+          {
+            .axis_x = {.x = 1.0F, .y = 0.0F, .z = 0.0F},
+            .axis_y = {.x = 0.0F, .y = 1.0F, .z = 0.0F},
+            .axis_z =
+              {
+                .x = 0.0F,
+                .y = 0.0F,
+                .z = 1.0F,
+              },
+          },
+      },
+      {
+        .name = "-Z",
+        .direction = {0.0, 0.0, -1.0},
+        .up = {0.0, 1.0, 0.0},
+        .expected =
+          {
+            .axis_x = {.x = -1.0F, .y = 0.0F, .z = 0.0F},
+            .axis_y = {.x = 0.0F, .y = 1.0F, .z = 0.0F},
+            .axis_z =
+              {
+                .x = 0.0F,
+                .y = 0.0F,
+                .z = -1.0F,
+              },
+          },
+      },
+    },
+  };
 
   for (auto const &test_case : cases) {
     SCOPED_TRACE(test_case.name);

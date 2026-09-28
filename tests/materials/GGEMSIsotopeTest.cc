@@ -1,5 +1,31 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
-#include <cstdint>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -51,7 +77,6 @@ TEST(GGEMSIsotopeTest, OrdersLexicographicallyByAtomicMassAndIsomerKeys) {
 
   EXPECT_EQ(isotopes, expected);
 
-  // Z dominates A, and A dominates M.
   EXPECT_LT((materials::GGEMSIsotope{5U, 20U, 9U}),
             (materials::GGEMSIsotope{6U, 11U, 0U}));
   EXPECT_LT((materials::GGEMSIsotope{73U, 180U, 1U}),
@@ -61,24 +86,23 @@ TEST(GGEMSIsotopeTest, OrdersLexicographicallyByAtomicMassAndIsomerKeys) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSIsotopeTest, RejectsInvalidStructure) {
-  auto const make_isotope =
-    [](std::uint32_t atomic_number, std::uint32_t mass_number,
-       std::uint32_t isomer_state) -> materials::GGEMSIsotope {
-    return materials::GGEMSIsotope{atomic_number, mass_number, isomer_state};
-  };
-
-  EXPECT_THROW(static_cast<void>(make_isotope(0U, 1U, 0U)),
-               ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(static_cast<void>(make_isotope(119U, 300U, 0U)),
-               ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(static_cast<void>(make_isotope(5U, 4U, 0U)),
+TEST(GGEMSIsotopeTest, RejectsAtomicNumbersOutsideCatalogRange) {
+  EXPECT_THROW(static_cast<void>(materials::GGEMSIsotope{0U, 1U, 0U}),
                ggems::core::GGEMSRecoverable);
 
-  // Structural validity only: acceptance does not claim that an evaluated
-  // mass/state authority contains these keys.
-  EXPECT_NO_THROW(static_cast<void>(make_isotope(1U, 1U, 0U)));
-  EXPECT_NO_THROW(static_cast<void>(make_isotope(92U, 238U, 0U)));
-  EXPECT_NO_THROW(static_cast<void>(make_isotope(5U, 30U, 0U)));
-  EXPECT_NO_THROW(static_cast<void>(make_isotope(73U, 180U, 2U)));
+  EXPECT_THROW(static_cast<void>(materials::GGEMSIsotope{100U, 257U, 0U}),
+               ggems::core::GGEMSRecoverable);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSIsotopeTest, AcceptsKeysWithoutRequiringTabulatedMasses) {
+  EXPECT_NO_THROW(static_cast<void>(materials::GGEMSIsotope{1U, 1U, 0U}));
+
+  EXPECT_NO_THROW(static_cast<void>(materials::GGEMSIsotope{99U, 252U, 0U}));
+
+  EXPECT_NO_THROW(static_cast<void>(materials::GGEMSIsotope{5U, 30U, 0U}));
+
+  EXPECT_NO_THROW(static_cast<void>(materials::GGEMSIsotope{73U, 180U, 2U}));
 }

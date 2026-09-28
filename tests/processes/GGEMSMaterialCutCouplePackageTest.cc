@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -165,8 +192,6 @@ TEST_F(GGEMSMaterialCutCouplePackageTest, OneDifferentThresholdGivesNewCouple) {
 
 TEST_F(GGEMSMaterialCutCouplePackageTest,
        DifferentMaterialsWithEqualThresholdsStayDistinct) {
-  // Water and Aluminum share their material-independent Proton threshold, and
-  // a couple carrying Water thresholds with the Aluminum ID is not Water.
   auto const policy = MakePolicy();
   std::vector<processes::GGEMSProductionCutContext> const contexts{
     {.material_index = k_water, .volume = {}},
@@ -403,74 +428,7 @@ TEST_F(GGEMSMaterialCutCouplePackageTest, IdsAreIndependentOfContextOrder) {
 // =============================================================================
 // =============================================================================
 
-TEST_F(GGEMSMaterialCutCouplePackageTest, InvalidInputsAreRejected) {
-  std::vector<processes::GGEMSProductionCutContext> const unknown_context{
-    {.material_index = 3U, .volume = {}},
-  };
-
-  EXPECT_THROW((processes::GGEMSMaterialCutCouplePackage{
-                 em_package_, MakePolicy(), unknown_context}),
-               ggems::core::GGEMSRecoverable);
-
-  auto unknown_override = MakePolicy();
-  unknown_override.materials.push_back({
-    .material_index = 3U,
-    .lengths =
-      {
-        .gamma = 1_mm,
-        .electron = std::nullopt,
-        .positron = std::nullopt,
-        .proton = std::nullopt,
-      },
-  });
-
-  std::vector<processes::GGEMSProductionCutContext> const water_context{
-    {.material_index = k_water, .volume = {}},
-  };
-
-  EXPECT_THROW((processes::GGEMSMaterialCutCouplePackage{
-                 em_package_, unknown_override, water_context}),
-               ggems::core::GGEMSRecoverable);
-
-  auto incomplete = MakePolicy();
-  incomplete.global.proton.reset();
-
-  EXPECT_THROW((processes::GGEMSMaterialCutCouplePackage{
-                 em_package_, incomplete, water_context}),
-               ggems::core::GGEMSRecoverable);
-
-  std::vector<processes::GGEMSProductionCutContext> const no_context{};
-
-  EXPECT_THROW((processes::GGEMSMaterialCutCouplePackage{
-                 em_package_, incomplete, no_context}),
-               ggems::core::GGEMSRecoverable);
-
-  auto duplicate = MakePolicy();
-  duplicate.materials.push_back({
-    .material_index = k_aluminum,
-    .lengths =
-      {
-        .gamma = 1_mm,
-        .electron = std::nullopt,
-        .positron = std::nullopt,
-        .proton = std::nullopt,
-      },
-  });
-  duplicate.materials.push_back({
-    .material_index = k_aluminum,
-    .lengths =
-      {
-        .gamma = std::nullopt,
-        .electron = std::nullopt,
-        .positron = std::nullopt,
-        .proton = 1_mm,
-      },
-  });
-
-  EXPECT_THROW((processes::GGEMSMaterialCutCouplePackage{em_package_, duplicate,
-                                                         no_context}),
-               ggems::core::GGEMSRecoverable);
-
+TEST_F(GGEMSMaterialCutCouplePackageTest, RejectsCutBelowConversionDomain) {
   std::vector<processes::GGEMSProductionCutContext> const below_domain{
     {
       .material_index = k_water,

@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <bit>
 #include <cmath>
@@ -162,7 +189,7 @@ protected:
 
     std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path const kernel_test_root = kernel_root / "tests";
-    auto &program = opencl.GetOrCreateProgram(
+    auto const &program = opencl.GetOrCreateProgram(
       context, kernel_test_root, "source_sampling_probe", FixedBuildOptions());
     cl::Kernel raw_kernel =
       program.CreateKernel("source_sampling_imposed_probe");
@@ -243,7 +270,7 @@ protected:
 
     std::filesystem::path const kernel_root{GGEMS_TEST_KERNEL_ROOT};
     std::filesystem::path const kernel_test_root = kernel_root / "tests";
-    auto &program = opencl.GetOrCreateProgram(
+    auto const &program = opencl.GetOrCreateProgram(
       context, kernel_test_root, "source_sampling_probe", BuildOptions(random));
     cl::Kernel raw_kernel =
       program.CreateKernel("source_initialization_random_state_probe");
@@ -377,8 +404,9 @@ TEST_F(GGEMSSourceSamplingKernelTest,
     .SetOrientation({1.0, 0.0, 0.0}, {0.0, 0.0, 1.0})
     .SetIsotropicAngularDistribution();
 
-  std::array<float, 8U> const uniforms{0.0F,  0.0F,   0.0F, 0.0F,
-                                       0.25F, 0.375F, 0.7F, 0.2F};
+  std::array<float, 8U> const uniforms{
+    0.0F, 0.0F, 0.0F, 0.0F, 0.25F, 0.375F, 0.7F, 0.2F,
+  };
   auto const result_a = RunImposedProbe(source_a.BuildRecord(), uniforms);
   auto const result_b = RunImposedProbe(source_b.BuildRecord(), uniforms);
 
@@ -431,9 +459,16 @@ TEST_F(GGEMSSourceSamplingKernelTest, SamplesBoxCenterAndHalfOpenSides) {
                                           -k_half_size_pm}));
 
   float const upper_uniform = std::nextafter(1.0F, 0.0F);
-  auto const upper = RunImposedProbe(
-    box.BuildRecord(), {upper_uniform, upper_uniform, upper_uniform, 0.0F, 0.0F,
-                        0.0F, 0.0F, 0.0F});
+  auto const upper = RunImposedProbe(box.BuildRecord(), {
+                                                          upper_uniform,
+                                                          upper_uniform,
+                                                          upper_uniform,
+                                                          0.0F,
+                                                          0.0F,
+                                                          0.0F,
+                                                          0.0F,
+                                                          0.0F,
+                                                        });
   EXPECT_EQ(upper.position, (std::array<std::int64_t, 3U>{
                               k_half_size_pm - 1LL, k_half_size_pm - 1LL,
                               k_half_size_pm - 1LL}));
@@ -544,14 +579,22 @@ TEST_F(GGEMSSourceSamplingKernelTest,
 
 TEST_F(GGEMSSourceSamplingKernelTest,
        ExactSourceInitializationDrawPlanForEveryEngine) {
-  constexpr std::array<std::string_view, 3U> k_engines{"jkiss", "pcg32",
-                                                       "philox"};
+  constexpr std::array<std::string_view, 3U> k_engines{
+    "jkiss",
+    "pcg32",
+    "philox",
+  };
+
   constexpr std::array<GeometryType, 6U> k_geometries{
     GeometryType::Point, GeometryType::Rectangle, GeometryType::Ellipse,
-    GeometryType::Box,   GeometryType::Sphere,    GeometryType::Cylinder};
+    GeometryType::Box,   GeometryType::Sphere,    GeometryType::Cylinder,
+  };
 
   constexpr std::array<AngularType, 3U> k_angular_distributions{
-    AngularType::Fixed, AngularType::Focused, AngularType::Isotropic};
+    AngularType::Fixed,
+    AngularType::Focused,
+    AngularType::Isotropic,
+  };
 
   for (std::string_view const engine : k_engines) {
     for (GeometryType const geometry : k_geometries) {

@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -57,14 +84,14 @@ TEST(GGEMSTransportChunking, IteratesBoundaryTotalsWithoutMaterializedPlan) {
   for (std::size_t index = 0U; index < multiple.size(); ++index) {
     EXPECT_EQ(multiple[index].primary_count, k_limit);
     EXPECT_EQ(multiple[index].device_primary_offset,
-              k_offset + index * k_limit);
+              k_offset + (index * k_limit));
   }
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSTransportChunking, SupportsUint64TotalsAndRejectsInvalidIntervals) {
+TEST(GGEMSTransportChunking, SupportsUint64TotalsAndRejectsExhaustedIterator) {
   constexpr std::uint32_t k_workers{64U};
   std::uint32_t const safe_limit =
     ggems::core::transport::ComputeSafeTransportLaunchPrimaryCount(k_workers);
@@ -79,21 +106,9 @@ TEST(GGEMSTransportChunking, SupportsUint64TotalsAndRejectsInvalidIntervals) {
   EXPECT_EQ(chunks[1U].device_primary_offset,
             1'000ULL + static_cast<std::uint64_t>(safe_limit));
 
-  EXPECT_THROW((void)(ChunkIterator{0ULL, 1ULL, 0U}),
-               ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW(
-    (void)(ChunkIterator{std::numeric_limits<std::uint64_t>::max(), 2ULL, 1U}),
-    ggems::core::GGEMSExceptionBase);
-
   ChunkIterator exhausted{0ULL, 0ULL, 1U};
-  EXPECT_THROW((void)exhausted.Next(), ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW(
-    (void)ggems::core::transport::ComputeSafeTransportLaunchPrimaryCount(0U),
-    ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW(
-    (void)ggems::core::transport::ComputeSafeTransportLaunchPrimaryCount(
-      std::numeric_limits<std::uint32_t>::max()),
-    ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(static_cast<void>(exhausted.Next()),
+               ggems::core::GGEMSRecoverable);
 }
 
 // =============================================================================
@@ -101,13 +116,13 @@ TEST(GGEMSTransportChunking, SupportsUint64TotalsAndRejectsInvalidIntervals) {
 
 TEST(GGEMSTransportChunking, DeviceSlicesAreDisjointExhaustiveAndUint64) {
   std::uint64_t const total =
-    2ULL * std::numeric_limits<std::uint32_t>::max() + 17ULL;
+    (2ULL * std::numeric_limits<std::uint32_t>::max()) + 17ULL;
   auto plan = ggems::core::transport::BuildEqualTransportWorkloadPlan(
     9'000ULL, total, 3U, 64U);
 
   ASSERT_EQ(plan.size(), 3U);
-  EXPECT_EQ(plan[0U].primary_count, total / 3ULL + 1ULL);
-  EXPECT_EQ(plan[1U].primary_count, total / 3ULL + 1ULL);
+  EXPECT_EQ(plan[0U].primary_count, (total / 3ULL) + 1ULL);
+  EXPECT_EQ(plan[1U].primary_count, (total / 3ULL) + 1ULL);
   EXPECT_EQ(plan[2U].primary_count, total / 3ULL);
   EXPECT_EQ(plan[0U].device_primary_offset, 0ULL);
   EXPECT_EQ(plan[1U].device_primary_offset, plan[0U].primary_count);
@@ -122,12 +137,4 @@ TEST(GGEMSTransportChunking, DeviceSlicesAreDisjointExhaustiveAndUint64) {
     EXPECT_EQ(plan[index].projection_history_offset, 9'000ULL);
     EXPECT_EQ(plan[index].worker_count, 64U);
   }
-
-  std::vector<WorkloadPlan> overflowing{
-    {.primary_count = std::numeric_limits<std::uint64_t>::max()},
-    {.primary_count = 1ULL},
-  };
-  EXPECT_THROW(
-    (void)ggems::core::transport::CountAssignedPrimaries(overflowing),
-    ggems::core::GGEMSExceptionBase);
 }

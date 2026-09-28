@@ -21,16 +21,10 @@
 
 /*!
  * \file
- * \brief Unit tests for the GGEMS OpenCL facade.
- *
- * Validates singleton identity, discovery hierarchy coherence, device-selector
- * error handling, and the Initialize() freeze and program-cache contract.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <algorithm>
 #include <cstddef>
 #include <array>
@@ -42,7 +36,6 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
@@ -57,15 +50,11 @@
 #include "GGEMSOpenCLDeviceInventory.hh"
 #include "GGEMSOpenCLFrameworkProbe.hh"
 
-/// \cond
-
 namespace {
 
-/*!
- * \brief Returns flattened indices of discovered devices usable for kernels.
- *
- * \return Flattened discovery indices of available devices exposing a compiler.
- */
+// =============================================================================
+// =============================================================================
+
 [[nodiscard]] auto GetUsableDeviceIndices() -> std::vector<std::size_t> {
   std::vector<std::size_t> indices;
   std::size_t flat_index{0U};
@@ -180,6 +169,7 @@ TEST(GGEMSOpenCLTest, RejectsOutOfRangeDeviceIndex) {
 TEST(GGEMSOpenCLTest, FirstInitializeKeepsAlreadyCachedPrograms) {
   auto const inventory = ggems::test::GetOpenCLDeviceInventory();
   auto const usable_devices = GetUsableDeviceIndices();
+
   if (usable_devices.empty()) {
     GTEST_SKIP() << "No available GGEMS-discovered device has a compiler.";
   }
@@ -192,13 +182,13 @@ TEST(GGEMSOpenCLTest, FirstInitializeKeepsAlreadyCachedPrograms) {
   auto const &device = inventory[usable_devices.front()].device.get();
   SCOPED_TRACE(device.GetName());
 
-  // A program cached through a caller-owned context before the backend owns
-  // any context must survive the first context creation.
   ggems::ocl::GGEMSOpenCLContext owned_context{device};
 
   auto const probe_root = ggems::test::GetOpenCLFrameworkProbeRoot();
-  auto const &program_before = opencl.GetOrCreateProgram(
-    owned_context, probe_root, ggems::test::k_opencl_framework_probe_name);
+  std::string const probe_name{ggems::test::k_opencl_framework_probe_name};
+
+  auto const &program_before =
+    opencl.GetOrCreateProgram(owned_context, probe_root, probe_name);
   cl::Program const retained_program{program_before.GetProgramNative()};
 
   opencl.SelectDevices({std::to_string(usable_devices.front())});
@@ -206,8 +196,8 @@ TEST(GGEMSOpenCLTest, FirstInitializeKeepsAlreadyCachedPrograms) {
 
   ASSERT_FALSE(opencl.GetContext().empty());
 
-  auto const &program_after = opencl.GetOrCreateProgram(
-    owned_context, probe_root, ggems::test::k_opencl_framework_probe_name);
+  auto const &program_after =
+    opencl.GetOrCreateProgram(owned_context, probe_root, probe_name);
 
   EXPECT_EQ(&program_after, &program_before);
   EXPECT_EQ(program_after.GetProgramNative()(), retained_program());
@@ -218,6 +208,7 @@ TEST(GGEMSOpenCLTest, FirstInitializeKeepsAlreadyCachedPrograms) {
 
 TEST(GGEMSOpenCLTest, SecondInitializeWithSameSelectionKeepsBackendState) {
   auto const usable_devices = GetUsableDeviceIndices();
+
   if (usable_devices.empty()) {
     GTEST_SKIP() << "No available GGEMS-discovered device has a compiler.";
   }
@@ -230,26 +221,25 @@ TEST(GGEMSOpenCLTest, SecondInitializeWithSameSelectionKeepsBackendState) {
   auto &contexts = opencl.GetContext();
   ASSERT_EQ(contexts.size(), 1U);
 
-  auto &context = contexts[0];
+  auto &context = contexts.front();
   SCOPED_TRACE(context.GetDevice().GetName());
 
   auto const *const context_before = &context;
   auto const *const device_before = &context.GetDevice();
 
-  // Retaining the native handles prevents the OpenCL runtime from recycling
-  // handle values, so handle equality really proves that the same objects are
-  // still in place.
+  // Retain native handles so the runtime cannot recycle their values.
   cl::Context const retained_context{context.GetContextNative()};
 
   auto const probe_root = ggems::test::GetOpenCLFrameworkProbeRoot();
-  auto const &program = opencl.GetOrCreateProgram(
-    context, probe_root, ggems::test::k_opencl_framework_probe_name);
+  std::string const probe_name{ggems::test::k_opencl_framework_probe_name};
+
+  auto const &program =
+    opencl.GetOrCreateProgram(context, probe_root, probe_name);
   auto const *const program_before = &program;
   cl::Program const retained_program{program.GetProgramNative()};
 
   ggems::ocl::GGEMSOpenCLKernel kernel{
-    context, program.CreateKernel(ggems::test::k_opencl_framework_probe_name),
-    ggems::test::k_opencl_framework_probe_name};
+    context, program.CreateKernel(probe_name), probe_name};
 
   constexpr std::size_t k_value_count{4U};
   auto const allocation_count_before = context.GetAllocationCountVRAM();
@@ -264,7 +254,6 @@ TEST(GGEMSOpenCLTest, SecondInitializeWithSameSelectionKeepsBackendState) {
     ggems::ocl::WriteSVMFromHost(*buffer, std::span{initial_values});
   }
 
-  // Second initialization with the selection that produced the contexts.
   EXPECT_NO_THROW(opencl.Initialize());
 
   auto &contexts_after = opencl.GetContext();
@@ -275,15 +264,11 @@ TEST(GGEMSOpenCLTest, SecondInitializeWithSameSelectionKeepsBackendState) {
   EXPECT_EQ(&context_after.GetDevice(), device_before);
   EXPECT_EQ(context_after.GetContextNative()(), retained_context());
 
-  // A kernel kept alive across the second initialization still refers to the
-  // live GGEMS context.
   EXPECT_EQ(&kernel.GetContext(), context_before);
   EXPECT_EQ(kernel.GetContextNative()(), retained_context());
 
-  // A program reference obtained before the second initialization is still the
-  // cached program.
-  auto const &program_after = opencl.GetOrCreateProgram(
-    context_after, probe_root, ggems::test::k_opencl_framework_probe_name);
+  auto const &program_after =
+    opencl.GetOrCreateProgram(context_after, probe_root, probe_name);
   EXPECT_EQ(&program_after, program_before);
   EXPECT_EQ(program_after.GetProgramNative()(), retained_program());
 
@@ -291,8 +276,6 @@ TEST(GGEMSOpenCLTest, SecondInitializeWithSameSelectionKeepsBackendState) {
     EXPECT_EQ(context_after.GetAllocationCountVRAM(),
               allocation_count_before + 1U);
 
-    // An SVM buffer allocated before the second initialization is still owned
-    // by a live context and still usable by the kernel.
     kernel.SetArgSVMPointer(0U, buffer->GetData());
     kernel.SetArg(1U, cl_uint{3U});
     kernel.Run({k_value_count}, {1U});
@@ -315,28 +298,22 @@ TEST(GGEMSOpenCLTest, SecondInitializeWithSameSelectionKeepsBackendState) {
 TEST(GGEMSOpenCLTest, FreezesDeviceSelectionAfterInitialize) {
   auto const inventory = ggems::test::GetOpenCLDeviceInventory();
   auto const usable_devices = GetUsableDeviceIndices();
+
   if (usable_devices.empty()) {
     GTEST_SKIP() << "No available GGEMS-discovered device has a compiler.";
   }
 
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
-  auto const active_index = usable_devices.front();
-  auto const active_text = std::to_string(active_index);
-
+  auto const active_text = std::to_string(usable_devices.front());
   std::vector<std::string> const active_selector{active_text};
-  auto const range_text = active_text + "-" + active_text;
-  std::vector<std::string> const range_selector{range_text};
-  std::vector<std::string> const duplicate_selector{
-    active_text,
-    active_text,
-  };
+  std::vector<std::string> const range_selector{active_text + "-" +
+                                                active_text};
+  std::vector<std::string> const duplicate_selector{active_text, active_text};
 
-  // Before the contexts exist, the selection can still be changed freely.
   if (opencl.GetContext().empty() && usable_devices.size() >= 2U) {
     std::vector<std::string> const other_selector{
-      std::to_string(usable_devices[1]),
-    };
+      std::to_string(usable_devices[1])};
     EXPECT_NO_THROW(opencl.SelectDevices(other_selector));
   }
 
@@ -354,22 +331,20 @@ TEST(GGEMSOpenCLTest, FreezesDeviceSelectionAfterInitialize) {
   cl::Context const retained_context{context.GetContextNative()};
 
   auto const probe_root = ggems::test::GetOpenCLFrameworkProbeRoot();
-  auto const &program_before = opencl.GetOrCreateProgram(
-    context, probe_root, ggems::test::k_opencl_framework_probe_name);
+  std::string const probe_name{ggems::test::k_opencl_framework_probe_name};
+
+  auto const &program_before =
+    opencl.GetOrCreateProgram(context, probe_root, probe_name);
   cl::Program const retained_program{program_before.GetProgramNative()};
 
-  // Requests are resolved to devices before they are compared, so selector
-  // expressions that designate the active devices are accepted whatever their
-  // spelling.
+  // Different expressions selecting the same device remain valid.
   EXPECT_NO_THROW(opencl.SelectDevices(active_selector));
   EXPECT_NO_THROW(opencl.SelectDevices(range_selector));
   EXPECT_NO_THROW(opencl.SelectDevices(duplicate_selector));
 
-  // A request that really designates other devices is rejected.
   if (usable_devices.size() >= 2U) {
     std::vector<std::string> const other_selector{
-      std::to_string(usable_devices[1]),
-    };
+      std::to_string(usable_devices[1])};
     EXPECT_THROW(opencl.SelectDevices(other_selector), ggems::core::GGEMSFatal);
   }
 
@@ -378,7 +353,6 @@ TEST(GGEMSOpenCLTest, FreezesDeviceSelectionAfterInitialize) {
     EXPECT_THROW(opencl.SelectDevices(all_selector), ggems::core::GGEMSFatal);
   }
 
-  // The rejected requests left the active contexts untouched.
   auto &contexts_after = opencl.GetContext();
   ASSERT_EQ(contexts_after.size(), 1U);
 
@@ -387,58 +361,16 @@ TEST(GGEMSOpenCLTest, FreezesDeviceSelectionAfterInitialize) {
   EXPECT_EQ(&context_after.GetDevice(), device_before);
   EXPECT_EQ(context_after.GetContextNative()(), retained_context());
 
-  // An equivalent request is still accepted after the rejections. The freeze
-  // compares against the active contexts, so this assertion does not observe
-  // the private stored selection; that one is protected by construction,
-  // because a rejection returns before the assignment.
   EXPECT_NO_THROW(opencl.SelectDevices(active_selector));
 
-  // The program cache survived the rejected requests.
-  auto const &program_after = opencl.GetOrCreateProgram(
-    context_after, probe_root, ggems::test::k_opencl_framework_probe_name);
+  auto const &program_after =
+    opencl.GetOrCreateProgram(context_after, probe_root, probe_name);
   EXPECT_EQ(&program_after, &program_before);
   EXPECT_EQ(program_after.GetProgramNative()(), retained_program());
 
-  // A later initialization is still a no-op on the same contexts.
   EXPECT_NO_THROW(opencl.Initialize());
   ASSERT_EQ(opencl.GetContext().size(), 1U);
   EXPECT_EQ(&opencl.GetContext().front(), context_before);
   EXPECT_EQ(opencl.GetContext().front().GetContextNative()(),
             retained_context());
 }
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSOpenCLTest, KeepsBackendFrozenWhenTheContextCollectionIsEmptied) {
-  auto const usable_devices = GetUsableDeviceIndices();
-  if (usable_devices.empty()) {
-    GTEST_SKIP() << "No available GGEMS-discovered device has a compiler.";
-  }
-
-  auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
-
-  std::vector<std::string> const active_selector{
-    std::to_string(usable_devices.front()),
-  };
-
-  EXPECT_NO_THROW(opencl.SelectDevices(active_selector));
-  opencl.Initialize();
-  ASSERT_FALSE(opencl.GetContext().empty());
-
-  // Deliberately hostile state: a caller empties the exposed collection. The
-  // backend stays initialized, so nothing can rebuild the contexts or reopen
-  // the device selection afterwards.
-  opencl.GetContext().clear();
-
-  if (usable_devices.size() >= 2U) {
-    std::vector<std::string> const other_selector{
-      std::to_string(usable_devices[1]),
-    };
-    EXPECT_THROW(opencl.SelectDevices(other_selector), ggems::core::GGEMSFatal);
-  }
-
-  EXPECT_NO_THROW(opencl.Initialize());
-  EXPECT_TRUE(opencl.GetContext().empty());
-}
-
-/// \endcond

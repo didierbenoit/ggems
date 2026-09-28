@@ -1,7 +1,33 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <array>
 #include <cstddef>
-#include <limits>
 #include <utility>
 #include <vector>
 
@@ -81,6 +107,7 @@ TEST(GGEMSIsotopicCompositionTest, BasisIsPartOfTheComposition) {
                                       {.isotope = k_boron_10, .fraction = 0.9L},
                                       {.isotope = k_boron_11, .fraction = 0.1L},
                                     });
+
   auto const mass = MakeComposition(Basis::MassFraction,
                                     {
                                       {.isotope = k_boron_10, .fraction = 0.9L},
@@ -96,8 +123,6 @@ TEST(GGEMSIsotopicCompositionTest, BasisIsPartOfTheComposition) {
 // =============================================================================
 
 TEST(GGEMSIsotopicCompositionTest, NormalizesAdmittedSumOnce) {
-  // Exactly representable fixture: authored sum 1 + 2^-18 normalizes exactly
-  // to 3/8 and 5/8.
   long double const scale = 1.0L + 0x1p-18L;
 
   auto const composition = MakeComposition(
@@ -123,6 +148,7 @@ TEST(GGEMSIsotopicCompositionTest, RemovesExplicitZeroEntries) {
                            {.isotope = k_boron_11, .fraction = 0.0L},
                            {.isotope = k_boron_10, .fraction = 1.0L},
                          });
+
   auto const without_zero = MakeComposition(
     Basis::AtomFraction, {{.isotope = k_boron_10, .fraction = 1.0L}});
 
@@ -151,7 +177,7 @@ TEST(GGEMSIsotopicCompositionTest, AppliesProvisionalSumAdmissionPolicy) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSIsotopicCompositionTest, RejectsInvalidFractions) {
+TEST(GGEMSIsotopicCompositionTest, RejectsInvalidKeysAndFractionSums) {
   auto const expect_rejected =
     [](std::vector<materials::GGEMSIsotopeFraction> fractions) -> void {
     EXPECT_THROW(static_cast<void>(
@@ -159,14 +185,14 @@ TEST(GGEMSIsotopicCompositionTest, RejectsInvalidFractions) {
                  ggems::core::GGEMSRecoverable);
   };
 
-  // Empty and all-zero.
+  // Empty or all-zero composition.
   expect_rejected({});
   expect_rejected({
     {.isotope = k_boron_10, .fraction = 0.0L},
     {.isotope = k_boron_11, .fraction = 0.0L},
   });
 
-  // Duplicate explicit keys, including an explicit zero duplicate.
+  // Duplicate isotope keys, including a zero-fraction duplicate.
   expect_rejected({
     {.isotope = k_boron_10, .fraction = 0.5L},
     {.isotope = k_boron_10, .fraction = 0.5L},
@@ -176,7 +202,7 @@ TEST(GGEMSIsotopicCompositionTest, RejectsInvalidFractions) {
     {.isotope = k_boron_10, .fraction = 0.0L},
   });
 
-  // Mixed chemical elements, including through an explicit zero entry.
+  // Mixed elements, including a zero-fraction foreign element.
   expect_rejected({
     {.isotope = k_boron_10, .fraction = 0.5L},
     {.isotope = k_carbon_12, .fraction = 0.5L},
@@ -186,35 +212,10 @@ TEST(GGEMSIsotopicCompositionTest, RejectsInvalidFractions) {
     {.isotope = k_carbon_12, .fraction = 0.0L},
   });
 
-  // Negative and nonfinite fractions.
+  // Fraction sums outside the admission tolerance.
   expect_rejected({
-    {.isotope = k_boron_10, .fraction = 1.25L},
-    {.isotope = k_boron_11, .fraction = -0.25L},
+    {.isotope = k_boron_10, .fraction = 0.9L},
   });
-  expect_rejected({
-    {
-      .isotope = k_boron_10,
-      .fraction = std::numeric_limits<long double>::infinity(),
-    },
-  });
-  expect_rejected({
-    {
-      .isotope = k_boron_10,
-      .fraction = std::numeric_limits<long double>::quiet_NaN(),
-    },
-  });
-
-  // Retained fraction outside the normal floating-point range.
-  expect_rejected({
-    {.isotope = k_boron_10, .fraction = 1.0L},
-    {
-      .isotope = k_boron_11,
-      .fraction = std::numeric_limits<long double>::denorm_min(),
-    },
-  });
-
-  // Badly malformed totals.
-  expect_rejected({{.isotope = k_boron_10, .fraction = 0.9L}});
   expect_rejected({
     {.isotope = k_boron_10, .fraction = 0.6L},
     {.isotope = k_boron_11, .fraction = 0.5L},

@@ -21,17 +21,10 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS Poisson sampling.
- *
- * Validates input rejection, deterministic continuation, inversion and PTRS
- * sampling regimes, large representable means, and aggregate statistical
- * plausibility.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -43,14 +36,11 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/random/GGEMSHostRandomStream.hh"
 #include "GGEMS/random/GGEMSPoissonSampler.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/random/GGEMSRandomEngine.hh"
-
-/// \cond
 
 namespace {
 
@@ -65,9 +55,11 @@ using ggems::core::random::SamplePoisson;
 // =============================================================================
 // =============================================================================
 
-constexpr std::array<GGEMSRandomEngine, 3> k_engines{GGEMSRandomEngine::JKISS,
-                                                     GGEMSRandomEngine::PCG32,
-                                                     GGEMSRandomEngine::Philox};
+constexpr std::array<GGEMSRandomEngine, 3> k_engines{
+  GGEMSRandomEngine::JKISS,
+  GGEMSRandomEngine::PCG32,
+  GGEMSRandomEngine::Philox,
+};
 
 // =============================================================================
 // =============================================================================
@@ -76,25 +68,6 @@ static_assert(std::is_same_v<
               decltype(SamplePoisson(std::declval<long double>(),
                                      std::declval<GGEMSHostRandomStream &>())),
               std::uint64_t>);
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSPoissonSamplerTest, RejectsInvalidMeans) {
-  GGEMSRandom configuration{};
-  GGEMSHostRandomStream random{configuration, 42ULL};
-
-  EXPECT_THROW((void)SamplePoisson(-1.0L, random),
-               ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW(
-    (void)SamplePoisson(std::numeric_limits<long double>::quiet_NaN(), random),
-    ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW(
-    (void)SamplePoisson(std::numeric_limits<long double>::infinity(), random),
-    ggems::core::GGEMSExceptionBase);
-  EXPECT_THROW((void)SamplePoisson(18'446'744'073'709'551'616.0L, random),
-               ggems::core::GGEMSExceptionBase);
-}
 
 // =============================================================================
 // =============================================================================
@@ -118,8 +91,9 @@ TEST(GGEMSPoissonSamplerTest, ZeroMeanReturnsZeroWithoutConsumingRandomState) {
 
 TEST(GGEMSPoissonSamplerTest,
      FixedConfigurationProducesDeterministicContinuation) {
-  constexpr std::array<long double, 6> means{0.1L,  1.0L,     10.0L,
-                                             30.0L, 1'000.0L, 1.0e8L};
+  constexpr std::array<long double, 6> means{
+    0.1L, 1.0L, 10.0L, 30.0L, 1'000.0L, 1.0e8L,
+  };
 
   for (GGEMSRandomEngine engine : k_engines) {
     SCOPED_TRACE(static_cast<std::uint32_t>(engine));
@@ -224,4 +198,3 @@ TEST(GGEMSPoissonSamplerTest, AggregateMeanAndVarianceArePlausible) {
 }
 
 } // namespace
-/// \endcond

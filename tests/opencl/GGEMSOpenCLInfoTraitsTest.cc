@@ -21,17 +21,10 @@
 
 /*!
  * \file
- * \brief Unit tests for OpenCL information traits and formatting.
- *
- * Validates representative trait types and formatting for scalar values, memory
- * sizes, flags, vectors, structured version information, and unavailable
- * values.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <algorithm>
 #include <cstddef>
 #include <string>
@@ -41,13 +34,10 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/opencl/GGEMSOpenCLInfoTraits.hh"
 #include "GGEMSScopedLoggerEncoding.hh"
-
-/// \cond
 
 namespace {
 

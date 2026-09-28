@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -116,6 +143,18 @@ constexpr std::uint32_t k_source_record_kind =
 
 class GGEMSActivityDrivenRunTest : public ::testing::Test {
 protected:
+  auto SetUp() -> void override {
+    auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
+    saved_worker_count_ = opencl.GetWorkerCount();
+    opencl.SetWorkerCount(64U);
+  }
+
+  auto TearDown() -> void override {
+    ggems::ocl::GGEMSOpenCL::GetInstance().SetWorkerCount(saved_worker_count_);
+  }
+
+  std::uint32_t saved_worker_count_{0U};
+
   static auto SetUpTestSuite() -> void {
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
@@ -142,9 +181,8 @@ TEST_F(GGEMSActivityDrivenRunTest,
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(MakeRandom());
-  run.SetSource(source);
   run.AddSource(source);
-  run.SetWorkerCount(64U);
+  run.AddSource(source);
   run.SetTimePicoSecond(2ULL * k_second_ps, 3ULL * k_second_ps, k_second_ps);
 
   EXPECT_THROW(run.Initialize(), ggems::core::GGEMSExceptionBase);
@@ -193,9 +231,8 @@ TEST_F(GGEMSActivityDrivenRunTest,
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(random);
-  run.SetSource(source);
+  run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
   run.SetTimePicoSecond(0ULL, 3ULL * k_second_ps, k_second_ps);
 
   ASSERT_NO_THROW(run.Initialize());
@@ -311,10 +348,9 @@ TEST_F(GGEMSActivityDrivenRunTest,
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(random);
-  run.SetSource(activity_source);
+  run.AddSource(activity_source);
   run.AddSource(count_source);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
   run.SetTimePicoSecond(0ULL, 2ULL * k_second_ps, k_second_ps);
 
   ASSERT_NO_THROW(run.Initialize());
@@ -370,9 +406,8 @@ TEST_F(GGEMSActivityDrivenRunTest,
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(MakeRandom());
-  run.SetSource(source);
+  run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorkerCount(64U);
   run.SetTimePicoSecond(0ULL, 3ULL * k_second_ps, k_second_ps);
 
   ASSERT_NO_THROW(run.Initialize());
@@ -418,8 +453,7 @@ TEST_F(GGEMSActivityDrivenRunTest,
   auto reference_source = MakeActivitySource(radionuclide);
   ggems::core::GGEMSRun reference_run{};
   reference_run.SetRandom(MakeRandom());
-  reference_run.SetSource(reference_source);
-  reference_run.SetWorkerCount(64U);
+  reference_run.AddSource(reference_source);
   reference_run.SetTimePicoSecond(0ULL, 3ULL * k_second_ps, k_second_ps);
 
   ASSERT_NO_THROW(reference_run.Initialize());

@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -107,46 +134,65 @@ static_assert(sizeof(OpenCLSamplingResult) == 16U);
 // =============================================================================
 
 [[nodiscard]] auto BuildSamplingGrid() -> std::vector<SamplingCase> {
-  constexpr std::array<std::uint32_t, 5U> k_words{0U, 1U, 0x7FFF'FFFFU,
-                                                  0x8000'0000U, 0xFFFF'FFFFU};
-  constexpr float k_limit =
-    ggems::core::radioactivity::k_radioactive_time_uniform_limit_scaled_decay;
+  constexpr std::array<std::uint32_t, 5U> k_words{
+    0U, 1U, 0x7FFF'FFFFU, 0x8000'0000U, 0xFFFF'FFFFU,
+  };
+
+  constexpr float k_limit{0x1.0p-14F};
+
   constexpr std::array<float, 8U> k_decays{
-    0.0F, 0.5F * k_limit, k_limit, 2.0F * k_limit, 0.001F, 0.01F, 1.0F, 20.0F};
-  constexpr std::array<std::array<std::uint64_t, 2U>, 4U> k_windows{{
-    {17ULL, 18ULL},
-    {9'000'000'000'000'000ULL, 9'001'000'000'000'000ULL},
-    {std::numeric_limits<std::uint64_t>::max() - 1'000'000ULL,
-     std::numeric_limits<std::uint64_t>::max()},
-    {123ULL, 10'000'000'000'000ULL + 123ULL},
-  }};
+    0.0F, 0.5F * k_limit, k_limit, 2.0F * k_limit, 0.001F, 0.01F, 1.0F, 20.0F,
+  };
+
+  constexpr std::array<std::array<std::uint64_t, 2U>, 4U> k_windows{
+    {
+      {17ULL, 18ULL},
+      {9'000'000'000'000'000ULL, 9'001'000'000'000'000ULL},
+      {
+        std::numeric_limits<std::uint64_t>::max() - 1'000'000ULL,
+        std::numeric_limits<std::uint64_t>::max(),
+      },
+      {123ULL, 10'000'000'000'000ULL + 123ULL},
+    },
+  };
 
   std::vector<SamplingCase> result;
   result.reserve(k_words.size() * k_decays.size() * k_windows.size());
   for (auto const &window : k_windows) {
     for (float decay : k_decays) {
       for (std::uint32_t word : k_words) {
-        result.push_back({.start_ps = window[0U],
-                          .stop_ps = window[1U],
-                          .scaled_decay = decay,
-                          .raw_word = word});
+        result.push_back({
+          .start_ps = window[0U],
+          .stop_ps = window[1U],
+          .scaled_decay = decay,
+          .raw_word = word,
+        });
       }
     }
   }
 
   constexpr std::array<long double, 3U> k_built_in_half_lives_seconds{
-    6'584.04L, 1'221.66L, 122.266L};
+    6'584.04L,
+    1'221.66L,
+    122.266L,
+  };
+
   constexpr std::uint64_t k_representative_start_ps{8'000'000'000'000'000ULL};
-  constexpr std::uint64_t k_representative_stop_ps{k_representative_start_ps +
-                                                   1'000'000'000'000ULL};
+
+  constexpr std::uint64_t k_representative_stop_ps{
+    k_representative_start_ps + 1'000'000'000'000ULL,
+  };
+
   for (long double half_life_seconds : k_built_in_half_lives_seconds) {
     auto const scaled_decay =
       static_cast<float>(std::numbers::ln2_v<long double> / half_life_seconds);
     for (std::uint32_t word : k_words) {
-      result.push_back({.start_ps = k_representative_start_ps,
-                        .stop_ps = k_representative_stop_ps,
-                        .scaled_decay = scaled_decay,
-                        .raw_word = word});
+      result.push_back({
+        .start_ps = k_representative_start_ps,
+        .stop_ps = k_representative_stop_ps,
+        .scaled_decay = scaled_decay,
+        .raw_word = word,
+      });
     }
   }
 
@@ -174,10 +220,6 @@ protected:
 // =============================================================================
 
 TEST(GGEMSRadioactiveTimeSampling, HostBoundsScaleAndCDFContractAreExact) {
-  constexpr float k_limit =
-    ggems::core::radioactivity::k_radioactive_time_uniform_limit_scaled_decay;
-  EXPECT_EQ(k_limit, 0x1.0p-14F);
-
   for (SamplingCase const &sample : BuildSamplingGrid()) {
     SCOPED_TRACE(std::format("start={} stop={} x={} raw={}", sample.start_ps,
                              sample.stop_ps, sample.scaled_decay,

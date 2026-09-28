@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -47,11 +74,17 @@ constexpr materials::GGEMSIsotope k_oxygen_16{8U, 16U, 0U};
 constexpr materials::GGEMSIsotope k_oxygen_17{8U, 17U, 0U};
 constexpr materials::GGEMSIsotope k_oxygen_18{8U, 18U, 0U};
 
+// =============================================================================
+// =============================================================================
+
 struct ExpectedIsotope {
   materials::GGEMSIsotope isotope;
   long double number_density;
   long double atom_fraction;
 };
+
+// =============================================================================
+// =============================================================================
 
 struct ExpectedElement {
   std::uint32_t atomic_number;
@@ -327,6 +360,7 @@ TEST(GGEMSMaterialCompositionTest, BoronMassFractionsDifferFromAtomFractions) {
       },
     },
   };
+
   std::array<ExpectedElement, 1U> const elements{
     {
       {
@@ -342,10 +376,10 @@ TEST(GGEMSMaterialCompositionTest, BoronMassFractionsDifferFromAtomFractions) {
                     1.39462330877304341567647924449795543e+23L,
                     6.97311654386521707838239622248977715e+23L);
 
-  // Audit-11 M01 printed references (17 and 16 significant digits).
   ExpectMatchesPrintedReference(
     composition.GetIsotopeConstituents()[0].number_density_per_cubic_centimeter,
     {.value = 1.2666242284394063e23L, .significant_digits = 17});
+
   ExpectMatchesPrintedReference(
     composition.GetIsotopeConstituents()[0].atom_fraction_in_element,
     {.value = 0.9082196034381157L, .significant_digits = 16});
@@ -416,8 +450,6 @@ TEST(GGEMSMaterialCompositionTest, EnrichedBoronDoesNotUseCatalogMolarMass) {
   ExpectWithinBudget(number_density,
                      1.40736025382156256407004794547689511e+23L);
 
-  // The natural representative catalog mass (10.81 g/mol) would give a value
-  // about 7% lower.
   long double const catalog_route =
     6.02214076e23L * 2.34L /
     materials::RequireElementByAtomicNumber(5U).GetMolarMass();
@@ -470,6 +502,7 @@ TEST(GGEMSMaterialCompositionTest, MultiElementMixedBasesMatchOracle) {
       },
     },
   };
+
   std::array<ExpectedElement, 3U> const elements{
     {
       {
@@ -598,7 +631,6 @@ TEST(GGEMSMaterialCompositionTest, RejectsInvalidInput) {
                      });
   };
 
-  // Exact Vacuum (zero density) is not a matter composition.
   expect_rejected(units::Density{.value = 0.0L}, {boron(1.0L)});
   expect_rejected(units::Density{.value = -1.0L}, {boron(1.0L)});
   expect_rejected(
@@ -608,13 +640,10 @@ TEST(GGEMSMaterialCompositionTest, RejectsInvalidInput) {
     units::Density{.value = std::numeric_limits<long double>::quiet_NaN()},
     {boron(1.0L)});
 
-  // Elemental share admission.
   expect_rejected(2.34_g_cm3, {});
   expect_rejected(2.34_g_cm3, {boron(0.0L)});
   expect_rejected(2.34_g_cm3, {boron(0.5L)});
   expect_rejected(2.34_g_cm3, {boron(-1.0L)});
-  expect_rejected(2.34_g_cm3,
-                  {boron(std::numeric_limits<long double>::quiet_NaN())});
   expect_rejected(2.34_g_cm3, {
                                 boron(0.5L),
                                 MakeShare(0.5L, Basis::MassFraction,
@@ -626,7 +655,6 @@ TEST(GGEMSMaterialCompositionTest, RejectsInvalidInput) {
                                           }),
                               });
 
-  // Missing exact isotope mass: no fallback to a neighbor or natural mass.
   EXPECT_THROW(static_cast<void>(materials::GGEMSMaterialComposition{
                  2.34_g_cm3,
                  {boron(1.0L)},

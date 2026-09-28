@@ -21,16 +21,10 @@
 
 /*!
  * \file
- * \brief Documents tests for GGEMS logger metadata helpers.
- *
- * Validates function-name simplification together with stable, distinct compact
- * thread tags.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <barrier>
 #include <cstddef>
@@ -41,10 +35,7 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/logging/detail/GGEMSLoggerMetadata.hh"
-
-/// \cond
 
 namespace {
 
@@ -86,60 +77,97 @@ static_assert(noexcept(SimplifyFunctionName(std::string_view{})));
 // =============================================================================
 
 TEST(GGEMSLoggerMetadataTest, SimplifiesFunctionNamesWithCurrentHeuristics) {
-  constexpr std::array<FunctionNameCase, 16U> test_cases{{
-    {.label = "GGEMS free function",
-     .input = "void ggems::core::FreeFunction()",
-     .expected = "FreeFunction"},
-    {.label = "GGEMS class method",
-     .input = "void ggems::core::GGEMSLogger::Dispatch()",
-     .expected = "GGEMSLogger::Dispatch"},
-    {.label = "nested scopes",
-     .input = "void ggems::core::logging::detail::Parse()",
-     .expected = "detail::Parse"},
-    {.label = "nested template arguments",
-     .input = "void ggems::core::Widget<std::vector<std::pair<int, float>>>::"
-              "Run<std::tuple<int, float>>(int)",
-     .expected = "Widget<std::vector<std::pair<int, float>>>::Run"},
-    {.label = "call operator",
-     .input = "void ggems::core::Functor::operator()()",
-     .expected = "Functor::operator()"},
-    {.label = "angle operator defect",
-     .input = "bool ggems::core::Comparator::operator<(int)",
-     .expected = "Comparator::operator"},
-    {.label = "function-pointer parameter defect",
-     .input = "void ggems::core::Handler::Register(void (*callback)(int))",
-     .expected = "Handler::Register(void (*callback)"},
-    {.label = "external calling convention",
-     .input = "class std::vector<int> __cdecl external::Widget::Run(double)",
-     .expected = "Widget::Run"},
-    {.label = "Clang-like lambda",
-     .input = "void ggems::core::Worker::Run()::<lambda()>()",
-     .expected = "Worker::Run"},
-    {.label = "alternate lambda",
-     .input = "void ggems::core::Worker::Run()::(lambda)()",
-     .expected = "Worker::Run"},
-    {.label = "trailing space",
-     .input = "void ggems::core::Whitespace::Function ",
-     .expected = "Whitespace::Function"},
-    {.label = "trailing tab",
-     .input = "void ggems::core::Whitespace::Function\t",
-     .expected = "Whitespace::Function"},
-    {.label = "trailing LF",
-     .input = "void ggems::core::Whitespace::Function\n",
-     .expected = "Whitespace::Function"},
-    {.label = "trailing CR",
-     .input = "void ggems::core::Whitespace::Function\r",
-     .expected = "Whitespace::Function"},
-    {.label = "empty string", .input = "", .expected = ""},
-    {.label = "no parameter list",
-     .input = "void ggems::core::Worker::Tick",
-     .expected = "Worker::Tick"},
-  }};
+  constexpr std::array<FunctionNameCase, 14U> test_cases{
+    {
+      {
+        .label = "GGEMS free function",
+        .input = "void ggems::core::FreeFunction()",
+        .expected = "FreeFunction",
+      },
+      {
+        .label = "GGEMS class method",
+        .input = "void ggems::core::GGEMSLogger::Dispatch()",
+        .expected = "GGEMSLogger::Dispatch",
+      },
+      {
+        .label = "nested scopes",
+        .input = "void ggems::core::logging::detail::Parse()",
+        .expected = "detail::Parse",
+      },
+      {
+        .label = "nested template arguments",
+        .input =
+          "void ggems::core::Widget<std::vector<std::pair<int, float>>>::"
+          "Run<std::tuple<int, float>>(int)",
+        .expected = "Widget<std::vector<std::pair<int, float>>>::Run",
+      },
+      {
+        .label = "call operator",
+        .input = "void ggems::core::Functor::operator()()",
+        .expected = "Functor::operator()",
+      },
+      {
+        .label = "external calling convention",
+        .input = "class std::vector<int> __cdecl external::Widget::Run(double)",
+        .expected = "Widget::Run",
+      },
+      {
+        .label = "Clang-like lambda",
+        .input = "void ggems::core::Worker::Run()::<lambda()>()",
+        .expected = "Worker::Run",
+      },
+      {
+        .label = "alternate lambda",
+        .input = "void ggems::core::Worker::Run()::(lambda)()",
+        .expected = "Worker::Run",
+      },
+      {
+        .label = "trailing space",
+        .input = "void ggems::core::Whitespace::Function ",
+        .expected = "Whitespace::Function",
+      },
+      {
+        .label = "trailing tab",
+        .input = "void ggems::core::Whitespace::Function\t",
+        .expected = "Whitespace::Function",
+      },
+      {
+        .label = "trailing LF",
+        .input = "void ggems::core::Whitespace::Function\n",
+        .expected = "Whitespace::Function",
+      },
+      {
+        .label = "trailing CR",
+        .input = "void ggems::core::Whitespace::Function\r",
+        .expected = "Whitespace::Function",
+      },
+      {.label = "empty string", .input = "", .expected = ""},
+      {
+        .label = "no parameter list",
+        .input = "void ggems::core::Worker::Tick",
+        .expected = "Worker::Tick",
+      },
+    },
+  };
 
   for (auto const &test_case : test_cases) {
     SCOPED_TRACE(test_case.label);
     EXPECT_EQ(SimplifyFunctionName(test_case.input), test_case.expected);
   }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSLoggerMetadataTest,
+     PreservesKnownFunctionNameSimplificationLimitations) {
+  EXPECT_EQ(
+    SimplifyFunctionName("bool ggems::core::Comparator::operator<(int)"),
+    "Comparator::operator");
+
+  EXPECT_EQ(SimplifyFunctionName(
+              "void ggems::core::Handler::Register(void (*callback)(int))"),
+            "Handler::Register(void (*callback)");
 }
 
 // =============================================================================
@@ -183,4 +211,3 @@ TEST(GGEMSLoggerMetadataTest, SimultaneousWorkersHaveStableDistinctTags) {
 
   EXPECT_NE(worker_tags[0U].first, worker_tags[1U].first);
 }
-/// \endcond

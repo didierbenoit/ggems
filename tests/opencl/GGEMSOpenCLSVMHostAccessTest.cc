@@ -21,16 +21,10 @@
 
 /*!
  * \file
- * \brief Unit tests for typed host access to OpenCL SVM buffers.
- *
- * Validates object, span, array, fill, and generated transfers together with
- * zero-length behavior, capacity checks, and element-count overflow protection.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -41,14 +35,11 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/opencl/GGEMSOpenCLSVMBuffer.hh"
 #include "GGEMS/opencl/GGEMSOpenCLSVMHostAccess.hh"
 #include "GGEMS/units/GGEMSBytesUnits.hh"
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
-
-/// \cond
 
 namespace {
 
@@ -379,8 +370,8 @@ TEST(GGEMSOpenCLSVMHostAccessTest, RejectsInsufficientCapacityBeforeAnyAccess) {
 
     constexpr std::size_t k_buffer_element_count{2U};
 
-    auto allocated_before = context.GetAllocatedVRAM().value;
-    auto allocation_count_before = context.GetAllocationCountVRAM();
+    auto const allocated_before = context.GetAllocatedVRAM().value;
+    auto const allocation_count_before = context.GetAllocationCountVRAM();
 
     {
       auto buffer = context.CreateSVMBuffer(
@@ -403,7 +394,7 @@ TEST(GGEMSOpenCLSVMHostAccessTest, RejectsInsufficientCapacityBeforeAnyAccess) {
 
       EXPECT_THROW(
         ggems::ocl::WriteSVMFromHost(buffer, std::span{oversized_values}),
-        ggems::core::GGEMSExceptionBase);
+        ggems::core::GGEMSInternal);
 
       EXPECT_EQ(ReadHostAccessRecords<k_buffer_element_count>(buffer),
                 sentinels);
@@ -414,11 +405,11 @@ TEST(GGEMSOpenCLSVMHostAccessTest, RejectsInsufficientCapacityBeforeAnyAccess) {
           {.identifier = 12ULL, .value = 12, .weight = 0.12F},
           {.identifier = 13ULL, .value = 13, .weight = 0.13F},
         }};
-      auto destination_before = oversized_destination;
+      auto const destination_before = oversized_destination;
 
       EXPECT_THROW(
         ggems::ocl::ReadSVMToHost(buffer, std::span{oversized_destination}),
-        ggems::core::GGEMSExceptionBase);
+        ggems::core::GGEMSInternal);
 
       EXPECT_EQ(oversized_destination, destination_before);
       EXPECT_EQ(ReadHostAccessRecords<k_buffer_element_count>(buffer),
@@ -426,7 +417,7 @@ TEST(GGEMSOpenCLSVMHostAccessTest, RejectsInsufficientCapacityBeforeAnyAccess) {
 
       EXPECT_THROW(ggems::ocl::FillSVMFromHost(
                      buffer, k_buffer_element_count + 1U, HostAccessRecord{}),
-                   ggems::core::GGEMSExceptionBase);
+                   ggems::core::GGEMSInternal);
 
       EXPECT_EQ(ReadHostAccessRecords<k_buffer_element_count>(buffer),
                 sentinels);
@@ -441,7 +432,7 @@ TEST(GGEMSOpenCLSVMHostAccessTest, RejectsInsufficientCapacityBeforeAnyAccess) {
 
       EXPECT_THROW(ggems::ocl::GenerateSVMFromHost<HostAccessRecord>(
                      buffer, k_buffer_element_count + 1U, generator),
-                   ggems::core::GGEMSExceptionBase);
+                   ggems::core::GGEMSInternal);
 
       EXPECT_EQ(invocation_count, 0U);
       EXPECT_EQ(ReadHostAccessRecords<k_buffer_element_count>(buffer),
@@ -526,4 +517,3 @@ TEST(GGEMSOpenCLSVMHostAccessTest, RejectsElementCountOverflowBeforeAnyAccess) {
     GTEST_SKIP() << "No available GGEMS-discovered device supports SVM.";
   }
 }
-/// \endcond

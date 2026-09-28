@@ -21,18 +21,11 @@
 
 /*!
  * \file
- * \brief OpenCL ABI probe for GGEMS random-engine state layouts.
- *
- * Reports state sizes, member offsets, array strides, and alignment offsets for
- * comparison with the host-side ABI.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
 #include "random/GGEMSRandomTypes.clh"
-
-/// \cond
 
 // =============================================================================
 // =============================================================================
@@ -119,4 +112,3 @@ __kernel void random_state_abi_probe(__global ulong *layout,
   layout[21] = (ulong)((__private uchar const *)&philox_alignment.state -
                        (__private uchar const *)&philox_alignment);
 }
-/// \endcond

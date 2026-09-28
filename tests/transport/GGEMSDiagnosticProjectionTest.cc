@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstdint>
 #include <filesystem>
@@ -70,8 +97,10 @@ TEST(GGEMSDiagnosticProjection, ScalesExactAndBinary32Sentinels) {
     {.component = -0.5F, .expected = -500'000'000'000LL},
     {.component = 0x1p-13F, .expected = 122'070'313LL},
     {.component = -0x1p-13F, .expected = -122'070'313LL},
-    {.component = std::numbers::inv_sqrt3_v<float>,
-     .expected = 577'350'258'827LL},
+    {
+      .component = std::numbers::inv_sqrt3_v<float>,
+      .expected = 577'350'258'827LL,
+    },
     {.component = 0.1F, .expected = 100'000'001'490LL},
     {.component = -0.1F, .expected = -100'000'001'490LL},
   }};
@@ -94,7 +123,9 @@ TEST(GGEMSDiagnosticProjection, HandlesSubnormalAndRejectsInvalidValues) {
   constexpr std::array<float, 4U> k_invalid_values{
     std::numeric_limits<float>::quiet_NaN(),
     std::numeric_limits<float>::infinity(),
-    -std::numeric_limits<float>::infinity(), std::numeric_limits<float>::max()};
+    -std::numeric_limits<float>::infinity(),
+    std::numeric_limits<float>::max(),
+  };
 
   for (float value : k_invalid_values) {
     result = k_output_sentinel;
@@ -105,7 +136,8 @@ TEST(GGEMSDiagnosticProjection, HandlesSubnormalAndRejectsInvalidValues) {
 
 TEST(GGEMSDiagnosticProjection, IsSymmetricForRepresentablePairs) {
   constexpr std::array<float, 5U> k_values{
-    0.1F, 0.5F, 0x1p-13F, std::numbers::inv_sqrt3_v<float>, 1.25F};
+    0.1F, 0.5F, 0x1p-13F, std::numbers::inv_sqrt3_v<float>, 1.25F,
+  };
 
   for (float value : k_values) {
     std::int64_t positive{0LL};
@@ -129,33 +161,52 @@ TEST(GGEMSDiagnosticProjection, AddsWithoutSignedOverflowOrPartialWrite) {
   constexpr auto k_max = std::numeric_limits<std::int64_t>::max();
   constexpr auto k_min = std::numeric_limits<std::int64_t>::min();
 
-  constexpr std::array<Case, 7U> k_cases{{
-    {.position = 10LL, .displacement = 5LL, .succeeds = true, .expected = 15LL},
-    {.position = k_max - 1LL,
-     .displacement = 1LL,
-     .succeeds = true,
-     .expected = k_max},
-    {.position = k_min + 1LL,
-     .displacement = -1LL,
-     .succeeds = true,
-     .expected = k_min},
-    {.position = 0LL,
-     .displacement = k_min,
-     .succeeds = true,
-     .expected = k_min},
-    {.position = 0LL,
-     .displacement = k_max,
-     .succeeds = true,
-     .expected = k_max},
-    {.position = k_max,
-     .displacement = 1LL,
-     .succeeds = false,
-     .expected = k_output_sentinel},
-    {.position = k_min,
-     .displacement = -1LL,
-     .succeeds = false,
-     .expected = k_output_sentinel},
-  }};
+  constexpr std::array<Case, 7U> k_cases{
+    {
+      {
+        .position = 10LL,
+        .displacement = 5LL,
+        .succeeds = true,
+        .expected = 15LL,
+      },
+      {
+        .position = k_max - 1LL,
+        .displacement = 1LL,
+        .succeeds = true,
+        .expected = k_max,
+      },
+      {
+        .position = k_min + 1LL,
+        .displacement = -1LL,
+        .succeeds = true,
+        .expected = k_min,
+      },
+      {
+        .position = 0LL,
+        .displacement = k_min,
+        .succeeds = true,
+        .expected = k_min,
+      },
+      {
+        .position = 0LL,
+        .displacement = k_max,
+        .succeeds = true,
+        .expected = k_max,
+      },
+      {
+        .position = k_max,
+        .displacement = 1LL,
+        .succeeds = false,
+        .expected = k_output_sentinel,
+      },
+      {
+        .position = k_min,
+        .displacement = -1LL,
+        .succeeds = false,
+        .expected = k_output_sentinel,
+      },
+    },
+  };
 
   for (Case const &test : k_cases) {
     std::int64_t endpoint{k_output_sentinel};
@@ -171,29 +222,32 @@ TEST_F(GGEMSDiagnosticProjectionKernelTest, OpenCLMirrorMatchesHost) {
   constexpr auto k_max = std::numeric_limits<std::int64_t>::max();
   constexpr auto k_min = std::numeric_limits<std::int64_t>::min();
 
-  std::array<float, 16U> components{0.0F,
-                                    -0.0F,
-                                    1.0F,
-                                    -1.0F,
-                                    0.5F,
-                                    -0.5F,
-                                    0x1p-13F,
-                                    -0x1p-13F,
-                                    std::numbers::inv_sqrt3_v<float>,
-                                    -std::numbers::inv_sqrt3_v<float>,
-                                    0.1F,
-                                    -0.1F,
-                                    std::numeric_limits<float>::denorm_min(),
-                                    std::numeric_limits<float>::quiet_NaN(),
-                                    std::numeric_limits<float>::infinity(),
-                                    std::numeric_limits<float>::max()};
+  std::array<float, 16U> components{
+    0.0F,
+    -0.0F,
+    1.0F,
+    -1.0F,
+    0.5F,
+    -0.5F,
+    0x1p-13F,
+    -0x1p-13F,
+    std::numbers::inv_sqrt3_v<float>,
+    -std::numbers::inv_sqrt3_v<float>,
+    0.1F,
+    -0.1F,
+    std::numeric_limits<float>::denorm_min(),
+    std::numeric_limits<float>::quiet_NaN(),
+    std::numeric_limits<float>::infinity(),
+    std::numeric_limits<float>::max(),
+  };
 
   std::array<std::int64_t, components.size()> scaled_components{};
   scaled_components.fill(k_output_sentinel);
   std::array<std::uint32_t, components.size()> scale_success{};
 
-  std::array<std::int64_t, 7U> positions{10LL, k_max - 1LL, k_min + 1LL, 0LL,
-                                         0LL,  k_max,       k_min};
+  std::array<std::int64_t, 7U> positions{
+    10LL, k_max - 1LL, k_min + 1LL, 0LL, 0LL, k_max, k_min,
+  };
 
   std::array<std::int64_t, positions.size()> displacements{
     5LL, 1LL, -1LL, k_min, k_max, 1LL, -1LL};
@@ -235,7 +289,7 @@ TEST_F(GGEMSDiagnosticProjectionKernelTest, OpenCLMirrorMatchesHost) {
   std::string const build_options =
     std::format("-I{}", kernel_root.generic_string());
 
-  auto &program = opencl.GetOrCreateProgram(
+  auto const &program = opencl.GetOrCreateProgram(
     context, kernel_test_root, "diagnostic_projection_probe", build_options);
 
   cl::Kernel raw_kernel = program.CreateKernel("diagnostic_projection_probe");

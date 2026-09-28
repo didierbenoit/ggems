@@ -21,16 +21,10 @@
 
 /*!
  * \file
- * \brief Host/OpenCL ABI tests for GGEMS random-engine states.
- *
- * Validates host and OpenCL state sizes, member offsets, alignments, and array
- * strides for JKISS, PCG32, and Philox.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -42,7 +36,6 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/random/GGEMSRandomState.hh"
 #include "GGEMS/units/GGEMSBytesUnits.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
@@ -51,8 +44,6 @@
 #include "GGEMS/opencl/GGEMSOpenCLSVMHostAccess.hh"
 #include "GGEMSOpenCLCompilerDeviceInventory.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
-
-/// \cond
 
 namespace {
 
@@ -183,4 +174,3 @@ TEST(GGEMSRandomStateKernelTest,
     GTEST_SKIP() << "No compiler-capable GGEMS OpenCL device supports SVM.";
   }
 }
-/// \endcond

@@ -21,17 +21,10 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS length, position, and displacement conversions.
- *
- * Validates all registered length tokens, signed coordinate/displacement
- * conversion, half-picometer rounding, range checks, invalid inputs, and
- * formatting.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <cmath>
 #include <concepts>
@@ -41,17 +34,16 @@
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
 #include "GGEMSScopedLoggerEncoding.hh"
 
-/// \cond
-
 namespace {
 
+// =============================================================================
+// =============================================================================
 using ggems::test::ScopedLoggerEncoding;
 using ggems::units::Displacement;
 using ggems::units::HumanReadableSignedLength;
@@ -60,17 +52,26 @@ using ggems::units::MakeQuantity;
 using ggems::units::PositionCoordinate;
 using ggems::units::UnitConversionError;
 
+// =============================================================================
+// =============================================================================
+
 struct SignedConversionCase {
   long double value;
   std::string_view unit;
   std::int64_t expected;
 };
 
+// =============================================================================
+// =============================================================================
+
 struct LengthConversionCase {
   long double value;
   std::string_view unit;
   std::uint64_t expected;
 };
+
+// =============================================================================
+// =============================================================================
 
 template <typename QuantityValue>
 auto ExpectConversionError(long double value, std::string_view unit,
@@ -80,6 +81,9 @@ auto ExpectConversionError(long double value, std::string_view unit,
   ASSERT_FALSE(conversion.has_value());
   EXPECT_EQ(conversion.error(), expected_error);
 }
+
+// =============================================================================
+// =============================================================================
 
 static_assert(!std::same_as<Length, PositionCoordinate>);
 static_assert(!std::convertible_to<Length, PositionCoordinate>);
@@ -91,16 +95,18 @@ static_assert(!std::convertible_to<PositionCoordinate, Length>);
 // =============================================================================
 
 TEST(GGEMSLengthUnits, ConvertsEveryRegisteredLengthToken) {
-  constexpr std::array<LengthConversionCase, 8U> cases{{
-    {.value = 2.0L, .unit = "pm", .expected = 2ULL},
-    {.value = 2.0L, .unit = "nm", .expected = 2'000ULL},
-    {.value = 2.0L, .unit = "um", .expected = 2'000'000ULL},
-    {.value = 2.0L, .unit = "mm", .expected = 2'000'000'000ULL},
-    {.value = 2.0L, .unit = "cm", .expected = 20'000'000'000ULL},
-    {.value = 2.0L, .unit = "m", .expected = 2'000'000'000'000ULL},
-    {.value = 2.0L, .unit = "km", .expected = 2'000'000'000'000'000ULL},
-    {.value = 0.0L, .unit = "km", .expected = 0ULL},
-  }};
+  constexpr std::array<LengthConversionCase, 8U> cases{
+    {
+      {.value = 2.0L, .unit = "pm", .expected = 2ULL},
+      {.value = 2.0L, .unit = "nm", .expected = 2'000ULL},
+      {.value = 2.0L, .unit = "um", .expected = 2'000'000ULL},
+      {.value = 2.0L, .unit = "mm", .expected = 2'000'000'000ULL},
+      {.value = 2.0L, .unit = "cm", .expected = 20'000'000'000ULL},
+      {.value = 2.0L, .unit = "m", .expected = 2'000'000'000'000ULL},
+      {.value = 2.0L, .unit = "km", .expected = 2'000'000'000'000'000ULL},
+      {.value = 0.0L, .unit = "km", .expected = 0ULL},
+    },
+  };
 
   for (auto const &test_case : cases) {
     auto const conversion =
@@ -115,12 +121,14 @@ TEST(GGEMSLengthUnits, ConvertsEveryRegisteredLengthToken) {
 // =============================================================================
 
 TEST(GGEMSLengthUnits, ConvertsSignedPositionCoordinates) {
-  constexpr std::array<SignedConversionCase, 4U> cases{{
-    {.value = 2.0L, .unit = "pm", .expected = 2LL},
-    {.value = -2.0L, .unit = "nm", .expected = -2'000LL},
-    {.value = 2.0L, .unit = "cm", .expected = 20'000'000'000LL},
-    {.value = -2.0L, .unit = "km", .expected = -2'000'000'000'000'000LL},
-  }};
+  constexpr std::array<SignedConversionCase, 4U> cases{
+    {
+      {.value = 2.0L, .unit = "pm", .expected = 2LL},
+      {.value = -2.0L, .unit = "nm", .expected = -2'000LL},
+      {.value = 2.0L, .unit = "cm", .expected = 20'000'000'000LL},
+      {.value = -2.0L, .unit = "km", .expected = -2'000'000'000'000'000LL},
+    },
+  };
 
   for (auto const &test_case : cases) {
     auto const conversion =
@@ -132,10 +140,12 @@ TEST(GGEMSLengthUnits, ConvertsSignedPositionCoordinates) {
 }
 
 TEST(GGEMSLengthUnits, ConvertsSignedDisplacements) {
-  constexpr std::array<SignedConversionCase, 2U> cases{{
-    {.value = 2.0L, .unit = "nm", .expected = 2'000LL},
-    {.value = -2.0L, .unit = "cm", .expected = -20'000'000'000LL},
-  }};
+  constexpr std::array<SignedConversionCase, 2U> cases{
+    {
+      {.value = 2.0L, .unit = "nm", .expected = 2'000LL},
+      {.value = -2.0L, .unit = "cm", .expected = -20'000'000'000LL},
+    },
+  };
 
   for (auto const &test_case : cases) {
     auto const conversion =
@@ -150,16 +160,18 @@ TEST(GGEMSLengthUnits, ConvertsSignedDisplacements) {
 // =============================================================================
 
 TEST(GGEMSLengthUnits, RoundsHalfPicometersAwayFromZero) {
-  constexpr std::array<SignedConversionCase, 8U> cases{{
-    {.value = 0.49L, .unit = "pm", .expected = 0LL},
-    {.value = 0.5L, .unit = "pm", .expected = 1LL},
-    {.value = 1.49L, .unit = "pm", .expected = 1LL},
-    {.value = 1.5L, .unit = "pm", .expected = 2LL},
-    {.value = -0.49L, .unit = "pm", .expected = 0LL},
-    {.value = -0.5L, .unit = "pm", .expected = -1LL},
-    {.value = -1.49L, .unit = "pm", .expected = -1LL},
-    {.value = -1.5L, .unit = "pm", .expected = -2LL},
-  }};
+  constexpr std::array<SignedConversionCase, 8U> cases{
+    {
+      {.value = 0.49L, .unit = "pm", .expected = 0LL},
+      {.value = 0.5L, .unit = "pm", .expected = 1LL},
+      {.value = 1.49L, .unit = "pm", .expected = 1LL},
+      {.value = 1.5L, .unit = "pm", .expected = 2LL},
+      {.value = -0.49L, .unit = "pm", .expected = 0LL},
+      {.value = -0.5L, .unit = "pm", .expected = -1LL},
+      {.value = -1.49L, .unit = "pm", .expected = -1LL},
+      {.value = -1.5L, .unit = "pm", .expected = -2LL},
+    },
+  };
 
   for (auto const &test_case : cases) {
     auto const conversion =
@@ -242,9 +254,11 @@ TEST(GGEMSLengthUnits, RejectsNonFiniteValuesAndUnknownTokens) {
                                 UnitConversionError::UnsupportedUnit);
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSLengthUnits, FormatsSignedLengthThroughPublicHelper) {
   ScopedLoggerEncoding const encoding{ggems::core::Encoding::Ascii};
 
   EXPECT_EQ(HumanReadableSignedLength(-1'000'000LL, 2), "-1.00 um");
 }
-/// \endcond

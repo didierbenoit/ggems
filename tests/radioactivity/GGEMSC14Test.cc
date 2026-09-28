@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -22,7 +49,6 @@ using ggems::core::radioactivity::GGEMSRadionuclideDefinition;
 using ggems::core::radioactivity::GGEMSRadionuclideEmission;
 using ggems::core::radioactivity::builtins::BuildC14Radionuclide;
 using ggems::core::sources::GGEMSEnergyDistributionType;
-using ggems::core::sources::k_energy_ticket_space_size;
 
 // =============================================================================
 // =============================================================================
@@ -85,7 +111,7 @@ TEST(GGEMSC14Test, PreservesExperimentalBetaShapeSpectrum) {
   }
 
   EXPECT_NEAR(static_cast<double>(weight_sum), 1.0, 1.0e-12);
-  EXPECT_EQ(previous_ticket, k_energy_ticket_space_size);
+  EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
 
   long double const mean_energy_keV =
     weighted_center_sum / weight_sum /

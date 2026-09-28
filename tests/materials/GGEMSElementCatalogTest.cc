@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -32,51 +59,81 @@ struct ExpectedElement {
 // =============================================================================
 
 constexpr std::array<ExpectedElement, 12U> k_expected_elements{
-  {{.atomic_number = 1U,
-    .symbol = "H",
-    .name = "Hydrogen",
-    .molar_mass = 1.0080L},
-   {.atomic_number = 6U,
-    .symbol = "C",
-    .name = "Carbon",
-    .molar_mass = 12.011L},
-   {.atomic_number = 13U,
-    .symbol = "Al",
-    .name = "Aluminum",
-    .molar_mass = 26.9815384L},
-   {.atomic_number = 15U,
-    .symbol = "P",
-    .name = "Phosphorus",
-    .molar_mass = 30.973761998L},
-   {.atomic_number = 23U,
-    .symbol = "V",
-    .name = "Vanadium",
-    .molar_mass = 50.9415L},
-   {.atomic_number = 26U,
-    .symbol = "Fe",
-    .name = "Iron",
-    .molar_mass = 55.845L},
-   {.atomic_number = 43U,
-    .symbol = "Tc",
-    .name = "Technetium",
-    .molar_mass = 96.906360720L},
-   {.atomic_number = 55U,
-    .symbol = "Cs",
-    .name = "Cesium",
-    .molar_mass = 132.90545196L},
-   {.atomic_number = 64U,
-    .symbol = "Gd",
-    .name = "Gadolinium",
-    .molar_mass = 157.249L},
-   {.atomic_number = 71U,
-    .symbol = "Lu",
-    .name = "Lutetium",
-    .molar_mass = 174.96669L},
-   {.atomic_number = 82U, .symbol = "Pb", .name = "Lead", .molar_mass = 207.2L},
-   {.atomic_number = 92U,
-    .symbol = "U",
-    .name = "Uranium",
-    .molar_mass = 238.02891L}}};
+  {
+    {
+      .atomic_number = 1U,
+      .symbol = "H",
+      .name = "Hydrogen",
+      .molar_mass = 1.0080L,
+    },
+    {
+      .atomic_number = 6U,
+      .symbol = "C",
+      .name = "Carbon",
+      .molar_mass = 12.011L,
+    },
+    {
+      .atomic_number = 13U,
+      .symbol = "Al",
+      .name = "Aluminum",
+      .molar_mass = 26.9815384L,
+    },
+    {
+      .atomic_number = 15U,
+      .symbol = "P",
+      .name = "Phosphorus",
+      .molar_mass = 30.973761998L,
+    },
+    {
+      .atomic_number = 23U,
+      .symbol = "V",
+      .name = "Vanadium",
+      .molar_mass = 50.9415L,
+    },
+    {
+      .atomic_number = 26U,
+      .symbol = "Fe",
+      .name = "Iron",
+      .molar_mass = 55.845L,
+    },
+    {
+      .atomic_number = 43U,
+      .symbol = "Tc",
+      .name = "Technetium",
+      .molar_mass = 96.906360720L,
+    },
+    {
+      .atomic_number = 55U,
+      .symbol = "Cs",
+      .name = "Cesium",
+      .molar_mass = 132.90545196L,
+    },
+    {
+      .atomic_number = 64U,
+      .symbol = "Gd",
+      .name = "Gadolinium",
+      .molar_mass = 157.249L,
+    },
+    {
+      .atomic_number = 71U,
+      .symbol = "Lu",
+      .name = "Lutetium",
+      .molar_mass = 174.96669L,
+    },
+    {
+      .atomic_number = 82U,
+      .symbol = "Pb",
+      .name = "Lead",
+      .molar_mass = 207.2L,
+    },
+    {
+      .atomic_number = 92U,
+      .symbol = "U",
+      .name = "Uranium",
+      .molar_mass = 238.02891L,
+    },
+  },
+};
 
 } // namespace
 
@@ -86,7 +143,7 @@ constexpr std::array<ExpectedElement, 12U> k_expected_elements{
 TEST(GGEMSElementCatalogTest, ProvidesAllElementsInAtomicNumberOrder) {
   auto const elements = materials::GetElements();
 
-  ASSERT_EQ(elements.size(), 92U);
+  ASSERT_EQ(elements.size(), 99U);
 
   std::set<std::string_view> symbols;
   std::set<std::string_view> names;
@@ -124,25 +181,25 @@ TEST(GGEMSElementCatalogTest, ProvidesAllElementsInAtomicNumberOrder) {
 
 TEST(GGEMSElementCatalogTest, RejectsInvalidOrInexactLookup) {
   EXPECT_EQ(materials::FindElementByAtomicNumber(0U), nullptr);
-  EXPECT_EQ(materials::FindElementByAtomicNumber(93U), nullptr);
+  EXPECT_EQ(materials::FindElementByAtomicNumber(100U), nullptr);
 
   EXPECT_EQ(materials::FindElementBySymbol(""), nullptr);
   EXPECT_EQ(materials::FindElementBySymbol("h"), nullptr);
   EXPECT_EQ(materials::FindElementBySymbol(" H "), nullptr);
-  EXPECT_EQ(materials::FindElementBySymbol("Np"), nullptr);
+  EXPECT_EQ(materials::FindElementBySymbol("Fm"), nullptr);
 
   EXPECT_EQ(materials::FindElementByName(""), nullptr);
   EXPECT_EQ(materials::FindElementByName("hydrogen"), nullptr);
   EXPECT_EQ(materials::FindElementByName(" Hydrogen "), nullptr);
-  EXPECT_EQ(materials::FindElementByName("Neptunium"), nullptr);
+  EXPECT_EQ(materials::FindElementByName("Fermium"), nullptr);
 
   EXPECT_THROW(static_cast<void>(materials::RequireElementByAtomicNumber(0U)),
                ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(static_cast<void>(materials::RequireElementByAtomicNumber(93U)),
+  EXPECT_THROW(static_cast<void>(materials::RequireElementByAtomicNumber(100U)),
                ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(static_cast<void>(materials::RequireElementBySymbol("Np")),
+  EXPECT_THROW(static_cast<void>(materials::RequireElementBySymbol("Fm")),
                ggems::core::GGEMSRecoverable);
-  EXPECT_THROW(static_cast<void>(materials::RequireElementByName("Neptunium")),
+  EXPECT_THROW(static_cast<void>(materials::RequireElementByName("Fermium")),
                ggems::core::GGEMSRecoverable);
 }
 

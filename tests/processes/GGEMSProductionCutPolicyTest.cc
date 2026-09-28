@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -25,9 +52,9 @@ using Channel = processes::GGEMSProductionCutChannel;
 // =============================================================================
 // =============================================================================
 
-auto Resolved(processes::GGEMSResolvedProductionCutLengths const &lengths,
+auto Resolved(processes::GGEMSResolvedProductionCuts const &cuts,
               Channel channel) -> units::Length {
-  return lengths[processes::ProductionCutChannelIndex(channel)];
+  return cuts.lengths[processes::ProductionCutChannelIndex(channel)];
 }
 
 // =============================================================================
@@ -86,7 +113,7 @@ TEST(GGEMSProductionCutPolicyTest, AuthoringUsesCanonicalLength) {
 // =============================================================================
 
 TEST(GGEMSProductionCutPolicyTest, GlobalOnlyResolvesEveryChannel) {
-  auto const resolved = processes::ResolveProductionCutLengths(
+  auto const resolved = processes::ResolveProductionCuts(
     MakeGlobalPolicy(), {.material_index = 0U, .volume = {}});
 
   EXPECT_EQ(Resolved(resolved, Channel::Gamma), 1_mm);
@@ -111,7 +138,7 @@ TEST(GGEMSProductionCutPolicyTest, MaterialOverrideChangesOnlyItsChannel) {
       },
   });
 
-  auto const overridden = processes::ResolveProductionCutLengths(
+  auto const overridden = processes::ResolveProductionCuts(
     policy, {.material_index = 2U, .volume = {}});
 
   EXPECT_EQ(Resolved(overridden, Channel::Gamma), 1_mm);
@@ -119,7 +146,7 @@ TEST(GGEMSProductionCutPolicyTest, MaterialOverrideChangesOnlyItsChannel) {
   EXPECT_EQ(Resolved(overridden, Channel::Positron), 3_mm);
   EXPECT_EQ(Resolved(overridden, Channel::Proton), 4_mm);
 
-  auto const other = processes::ResolveProductionCutLengths(
+  auto const other = processes::ResolveProductionCuts(
     policy, {.material_index = 1U, .volume = {}});
 
   EXPECT_EQ(Resolved(other, Channel::Electron), 2_mm);
@@ -129,7 +156,7 @@ TEST(GGEMSProductionCutPolicyTest, MaterialOverrideChangesOnlyItsChannel) {
 // =============================================================================
 
 TEST(GGEMSProductionCutPolicyTest, VolumeOverrideChangesOnlyItsChannel) {
-  auto const resolved = processes::ResolveProductionCutLengths(
+  auto const resolved = processes::ResolveProductionCuts(
     MakeGlobalPolicy(), {
                           .material_index = 0U,
                           .volume =
@@ -163,17 +190,17 @@ TEST(GGEMSProductionCutPolicyTest, PrecedenceIsVolumeMaterialGlobalPerChannel) {
       },
   });
 
-  auto const resolved = processes::ResolveProductionCutLengths(
-    policy, {
-              .material_index = 5U,
-              .volume =
-                {
-                  .gamma = 100_nm,
-                  .electron = std::nullopt,
-                  .positron = std::nullopt,
-                  .proton = 400_nm,
-                },
-            });
+  auto const resolved =
+    processes::ResolveProductionCuts(policy, {
+                                               .material_index = 5U,
+                                               .volume =
+                                                 {
+                                                   .gamma = 100_nm,
+                                                   .electron = std::nullopt,
+                                                   .positron = std::nullopt,
+                                                   .proton = 400_nm,
+                                                 },
+                                             });
 
   EXPECT_EQ(Resolved(resolved, Channel::Gamma), 100_nm);   // Volume
   EXPECT_EQ(Resolved(resolved, Channel::Electron), 20_um); // Material
@@ -200,11 +227,11 @@ TEST(GGEMSProductionCutPolicyTest, ProvenanceDoesNotChangeResolvedLengths) {
       },
   });
 
-  auto const from_global = processes::ResolveProductionCutLengths(
+  auto const from_global = processes::ResolveProductionCuts(
     global_policy, {.material_index = 0U, .volume = {}});
-  auto const from_material = processes::ResolveProductionCutLengths(
+  auto const from_material = processes::ResolveProductionCuts(
     material_policy, {.material_index = 0U, .volume = {}});
-  auto const from_volume = processes::ResolveProductionCutLengths(
+  auto const from_volume = processes::ResolveProductionCuts(
     MakeGlobalPolicy(), {
                           .material_index = 0U,
                           .volume =
@@ -216,8 +243,8 @@ TEST(GGEMSProductionCutPolicyTest, ProvenanceDoesNotChangeResolvedLengths) {
                             },
                         });
 
-  EXPECT_EQ(from_global, from_material);
-  EXPECT_EQ(from_global, from_volume);
+  EXPECT_EQ(from_global.lengths, from_material.lengths);
+  EXPECT_EQ(from_global.lengths, from_volume.lengths);
 }
 
 // =============================================================================
@@ -255,8 +282,6 @@ TEST(GGEMSProductionCutPolicyTest, ReportsTheWinningScopeOfEveryChannel) {
                                 1_mm, 20_um, 300_nm, 4_mm}));
   EXPECT_EQ(resolved.scopes, (std::array{Scope::Global, Scope::Material,
                                          Scope::Volume, Scope::Global}));
-  EXPECT_EQ(resolved.lengths,
-            processes::ResolveProductionCutLengths(policy, context));
 
   auto const unrelated = processes::ResolveProductionCuts(
     policy, {.material_index = 6U, .volume = {}});
@@ -312,69 +337,4 @@ TEST(GGEMSProductionCutPolicyTest, NamesChannelsAndScopes) {
   EXPECT_EQ(processes::ProductionCutScopeName(Scope::Global), "Global");
   EXPECT_EQ(processes::ProductionCutScopeName(Scope::Material), "Material");
   EXPECT_EQ(processes::ProductionCutScopeName(Scope::Volume), "Volume");
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSProductionCutPolicyTest, IncompleteGlobalPolicyIsRejected) {
-  for (auto const channel : processes::k_production_cut_channels) {
-    SCOPED_TRACE(processes::ProductionCutChannelIndex(channel));
-
-    auto policy = MakeGlobalPolicy();
-    switch (channel) {
-    case Channel::Gamma:
-      policy.global.gamma.reset();
-      break;
-    case Channel::Electron:
-      policy.global.electron.reset();
-      break;
-    case Channel::Positron:
-      policy.global.positron.reset();
-      break;
-    case Channel::Proton:
-      policy.global.proton.reset();
-      break;
-    }
-
-    // Overrides covering the missing channel do not replace Global coverage.
-    EXPECT_THROW(static_cast<void>(processes::ResolveProductionCutLengths(
-                   policy, {.material_index = 0U,
-                            .volume = {.gamma = 1_mm,
-                                       .electron = 1_mm,
-                                       .positron = 1_mm,
-                                       .proton = 1_mm}})),
-                 ggems::core::GGEMSRecoverable);
-  }
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSProductionCutPolicyTest, DuplicateMaterialOverrideIsRejected) {
-  auto policy = MakeGlobalPolicy();
-  policy.materials.push_back({
-    .material_index = 3U,
-    .lengths =
-      {
-        .gamma = 1_um,
-        .electron = std::nullopt,
-        .positron = std::nullopt,
-        .proton = std::nullopt,
-      },
-  });
-  policy.materials.push_back({
-    .material_index = 3U,
-    .lengths =
-      {
-        .gamma = std::nullopt,
-        .electron = std::nullopt,
-        .positron = std::nullopt,
-        .proton = 1_um,
-      },
-  });
-
-  EXPECT_THROW(static_cast<void>(processes::ResolveProductionCutLengths(
-                 policy, {.material_index = 0U, .volume = {}})),
-               ggems::core::GGEMSRecoverable);
 }

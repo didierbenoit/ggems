@@ -21,30 +21,21 @@
 
 /*!
  * \file
- * \brief Unit tests for GGEMS mass quantities and conversions.
- *
- * Validates registered mass units, negative-value rejection, ASCII/Unicode
- * microgram formatting, and canonical picogram literals.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <cstdint>
 #include <string_view>
 
 #include <gtest/gtest.h>
 
-/// \endcond
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/units/GGEMSMassUnits.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"
 #include "GGEMS/units/GGEMSUnitFormatting.hh"
 #include "GGEMSScopedLoggerEncoding.hh"
-
-/// \cond
 
 namespace {
 
@@ -53,6 +44,10 @@ using ggems::units::HumanReadable;
 using ggems::units::MakeQuantity;
 using ggems::units::Mass;
 using ggems::units::UnitConversionError;
+} // namespace
+
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSMassUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   struct Case {
@@ -60,14 +55,16 @@ TEST(GGEMSMassUnitsTest, ConvertsEveryOfficialRuntimeToken) {
     std::uint64_t expected_picograms;
   };
 
-  constexpr std::array<Case, 6U> cases{{
-    {.unit = "pg", .expected_picograms = 1ULL},
-    {.unit = "ng", .expected_picograms = 1'000ULL},
-    {.unit = "ug", .expected_picograms = 1'000'000ULL},
-    {.unit = "mg", .expected_picograms = 1'000'000'000ULL},
-    {.unit = "g", .expected_picograms = 1'000'000'000'000ULL},
-    {.unit = "kg", .expected_picograms = 1'000'000'000'000'000ULL},
-  }};
+  constexpr std::array<Case, 6U> cases{
+    {
+      {.unit = "pg", .expected_picograms = 1ULL},
+      {.unit = "ng", .expected_picograms = 1'000ULL},
+      {.unit = "ug", .expected_picograms = 1'000'000ULL},
+      {.unit = "mg", .expected_picograms = 1'000'000'000ULL},
+      {.unit = "g", .expected_picograms = 1'000'000'000'000ULL},
+      {.unit = "kg", .expected_picograms = 1'000'000'000'000'000ULL},
+    },
+  };
 
   for (auto const &test_case : cases) {
     SCOPED_TRACE(test_case.unit);
@@ -78,12 +75,18 @@ TEST(GGEMSMassUnitsTest, ConvertsEveryOfficialRuntimeToken) {
   }
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSMassUnitsTest, RejectsNegativeMass) {
   auto const converted = MakeQuantity<Mass>(-1, "pg");
 
   ASSERT_FALSE(converted.has_value());
   EXPECT_EQ(converted.error(), UnitConversionError::NegativeValue);
 }
+
+// =============================================================================
+// =============================================================================
 
 TEST(GGEMSMassUnitsTest, PresentsMicrogramsInAsciiAndUnicode) {
   Mass const mass{2'000'000ULL};
@@ -98,6 +101,9 @@ TEST(GGEMSMassUnitsTest, PresentsMicrogramsInAsciiAndUnicode) {
   }
 }
 
+// =============================================================================
+// =============================================================================
+
 TEST(GGEMSMassUnitsTest, LiteralStoresPicograms) {
   using namespace ggems::units;
 
@@ -105,6 +111,3 @@ TEST(GGEMSMassUnitsTest, LiteralStoresPicograms) {
 
   EXPECT_EQ(mass.value, 3'000'000'000ULL);
 }
-
-} // namespace
-/// \endcond

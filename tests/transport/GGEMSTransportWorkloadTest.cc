@@ -1,3 +1,30 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -248,32 +275,38 @@ protected:
 
 TEST_F(GGEMSTransportWorkloadTest,
        ProjectsSixCardinalSourcesAndPreservesState) {
-  constexpr std::array<std::array<std::int64_t, 3U>, 6U> k_positions{{
-    {-1'500'000'000'000LL, 0LL, 0LL},
-    {1'500'000'000'000LL, 0LL, 0LL},
-    {0LL, -1'500'000'000'000LL, 0LL},
-    {0LL, 1'500'000'000'000LL, 0LL},
-    {0LL, 0LL, -1'500'000'000'000LL},
-    {0LL, 0LL, 1'500'000'000'000LL},
-  }};
+  constexpr std::array<std::array<std::int64_t, 3U>, 6U> k_positions{
+    {
+      {-1'500'000'000'000LL, 0LL, 0LL},
+      {1'500'000'000'000LL, 0LL, 0LL},
+      {0LL, -1'500'000'000'000LL, 0LL},
+      {0LL, 1'500'000'000'000LL, 0LL},
+      {0LL, 0LL, -1'500'000'000'000LL},
+      {0LL, 0LL, 1'500'000'000'000LL},
+    },
+  };
 
-  constexpr std::array<std::array<double, 3U>, 6U> k_directions{{
-    {1.0, 0.0, 0.0},
-    {-1.0, 0.0, 0.0},
-    {0.0, 1.0, 0.0},
-    {0.0, -1.0, 0.0},
-    {0.0, 0.0, 1.0},
-    {0.0, 0.0, -1.0},
-  }};
+  constexpr std::array<std::array<double, 3U>, 6U> k_directions{
+    {
+      {1.0, 0.0, 0.0},
+      {-1.0, 0.0, 0.0},
+      {0.0, 1.0, 0.0},
+      {0.0, -1.0, 0.0},
+      {0.0, 0.0, 1.0},
+      {0.0, 0.0, -1.0},
+    },
+  };
 
-  constexpr std::array<std::array<std::int64_t, 3U>, 6U> k_terminals{{
-    {-500'000'000'000LL, 0LL, 0LL},
-    {500'000'000'000LL, 0LL, 0LL},
-    {0LL, -500'000'000'000LL, 0LL},
-    {0LL, 500'000'000'000LL, 0LL},
-    {0LL, 0LL, -500'000'000'000LL},
-    {0LL, 0LL, 500'000'000'000LL},
-  }};
+  constexpr std::array<std::array<std::int64_t, 3U>, 6U> k_terminals{
+    {
+      {-500'000'000'000LL, 0LL, 0LL},
+      {500'000'000'000LL, 0LL, 0LL},
+      {0LL, -500'000'000'000LL, 0LL},
+      {0LL, 500'000'000'000LL, 0LL},
+      {0LL, 0LL, -500'000'000'000LL},
+      {0LL, 0LL, 500'000'000'000LL},
+    },
+  };
 
   std::vector<SourceRecord> source_records;
 
@@ -282,8 +315,9 @@ TEST_F(GGEMSTransportWorkloadTest,
       MakeSourceRecord(k_positions[index], k_directions[index]));
   }
 
-  constexpr std::array<std::uint64_t, 6U> k_counts{1ULL, 1ULL, 1ULL,
-                                                   1ULL, 1ULL, 1ULL};
+  constexpr std::array<std::uint64_t, 6U> k_counts{
+    1ULL, 1ULL, 1ULL, 1ULL, 1ULL, 1ULL,
+  };
 
   ggems::core::random::GGEMSRandom random{};
   random.SetEngine("philox").SetSeed(7'777'777ULL);

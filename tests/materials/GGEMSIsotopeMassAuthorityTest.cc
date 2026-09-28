@@ -1,12 +1,39 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <cmath>
 #include <limits>
-#include <string_view>
 
 #include <gtest/gtest.h>
 
 #include "GGEMS/materials/GGEMSIsotope.hh"
 #include "GGEMS/materials/GGEMSIsotopeMassAuthority.hh"
-#include "GGEMS/materials/GGEMSIsotopeProfile.hh"
+#include "GGEMS/materials/GGEMSElementCatalog.hh"
+#include "GGEMS/materials/GGEMSIsotopicComposition.hh"
 
 namespace {
 
@@ -19,7 +46,6 @@ constexpr long double k_relative_budget{
   64.0L * std::numeric_limits<long double>::epsilon(),
 };
 
-// Fixture convention of the Audit-10/11 oracle: M = A_r * M_u (CODATA 2022).
 constexpr long double k_molar_mass_constant{1.00000000105L};
 
 // =============================================================================
@@ -56,38 +82,28 @@ TEST(GGEMSIsotopeMassAuthorityTest, ResolvesAme2020MolarMasses) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSIsotopeMassAuthorityTest, ResolvesNaturalTantalumIsomerMass) {
-  // (179.947467589 u + 75.3 keV / 931494.10242 keV/u) * M_u, Decimal oracle.
-  ExpectMolarMass({73U, 180U, 1U}, 1.79947548615815830636932285612193216e+2L);
-  ExpectMolarMass({73U, 181U, 0U}, 180.947998528L * k_molar_mass_constant);
+TEST(GGEMSIsotopeMassAuthorityTest, ResolvesTantalumGroundAndIsomerMasses) {
+  ExpectMolarMass({73U, 180U, 0U}, 179.947467589L * k_molar_mass_constant);
 
-  // The ground state is neither natural nor a reference isotope.
-  EXPECT_EQ(materials::GetIsotopeMassAuthority().Find({73U, 180U, 0U}),
-            nullptr);
+  ExpectMolarMass({73U, 180U, 1U}, 179.94754861581571781900690434961243L);
+
+  ExpectMolarMass({73U, 181U, 0U}, 180.947998528L * k_molar_mass_constant);
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSIsotopeMassAuthorityTest, ContainsOnlyProfileIsotopes) {
-  auto const resolved =
-    materials::GetIsotopeMassAuthority().GetResolvedIsotopes();
+TEST(GGEMSIsotopeMassAuthorityTest, CoversEveryDefaultIsotopicComposition) {
+  auto const &authority = materials::GetIsotopeMassAuthority();
 
-  EXPECT_EQ(resolved.size(), 296U);
+  for (auto const &element : materials::GetElements()) {
+    SCOPED_TRACE(element.GetAtomicNumber());
 
-  for (auto const &entry : resolved) {
-    auto const atomic_number = entry.isotope.GetAtomicNumber();
-    SCOPED_TRACE(atomic_number);
-
-    auto const profile =
-      materials::SelectLegacyElementalIsotopeProfile(atomic_number);
     auto const composition =
-      materials::ResolveIsotopeProfile(profile, atomic_number);
+      materials::BuildDefaultIsotopicComposition(element.GetAtomicNumber());
 
-    bool found = false;
     for (auto const &fraction : composition.GetFractions()) {
-      found = found || fraction.isotope == entry.isotope;
+      EXPECT_NE(authority.Find(fraction.isotope), nullptr);
     }
-    EXPECT_TRUE(found);
   }
 }
