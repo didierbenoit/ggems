@@ -44,14 +44,14 @@
  */
 static inline uint GGEMS_PCG32NextUInt(__global GGEMSPCG32State *states,
                                        uint index) {
-  ulong old_state = states[index].state;
+  ulong const old_state = states[index].state;
 
   states[index].state =
     old_state * 6364136223846793005UL + states[index].increment;
 
-  uint xorshifted = (uint)(((old_state >> 18U) ^ old_state) >> 27U);
+  uint const xorshifted = (uint)(((old_state >> 18U) ^ old_state) >> 27U);
 
-  uint rotation = (uint)(old_state >> 59U);
+  uint const rotation = (uint)(old_state >> 59U);
 
   return (xorshifted >> rotation) | (xorshifted << ((0U - rotation) & 31U));
 }
@@ -64,7 +64,7 @@ static inline uint GGEMS_PCG32NextUInt(__global GGEMSPCG32State *states,
  */
 static inline float GGEMS_PCG32Uniform(__global GGEMSPCG32State *states,
                                        uint index) {
-  uint value = GGEMS_PCG32NextUInt(states, index);
+  uint const value = GGEMS_PCG32NextUInt(states, index);
 
   return GGEMS_UIntToUniform01(value);
 }

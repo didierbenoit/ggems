@@ -55,7 +55,7 @@ static inline uint GGEMS_JKissNextUInt(__global GGEMSJKissState *states,
 
   states[index].y = y;
 
-  uint t = states[index].z + states[index].w + states[index].c;
+  uint const t = states[index].z + states[index].w + states[index].c;
 
   states[index].z = states[index].w;
   states[index].c = t >> 31;
@@ -76,7 +76,7 @@ static inline uint GGEMS_JKissNextUInt(__global GGEMSJKissState *states,
  */
 static inline float GGEMS_JKissUniform(__global GGEMSJKissState *states,
                                        uint index) {
-  uint value = GGEMS_JKissNextUInt(states, index);
+  uint const value = GGEMS_JKissNextUInt(states, index);
 
   return GGEMS_UIntToUniform01(value);
 }

@@ -303,9 +303,9 @@ auto GGEMSOpenCLProgram::BuildOptions() const -> std::vector<std::string> {
   opts.emplace_back("-g");
   opts.emplace_back("-cl-opt-disable");
 #else
-  //  opts.emplace_back("-cl-fast-relaxed-math");
-  opts.emplace_back("-cl-mad-enable");
-  opts.emplace_back("-cl-no-signed-zeros");
+  opts.emplace_back("-cl-fast-relaxed-math");
+  // opts.emplace_back("-cl-mad-enable");
+  // opts.emplace_back("-cl-no-signed-zeros");
 #endif
 
   return opts;

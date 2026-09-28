@@ -40,11 +40,13 @@
  * \brief Compile-time identifier selecting the JKISS backend.
  */
 #define GGEMS_RANDOM_ENGINE_JKISS 1
+
 /*!
  * \def GGEMS_RANDOM_ENGINE_PCG32
  * \brief Compile-time identifier selecting the PCG32 backend.
  */
 #define GGEMS_RANDOM_ENGINE_PCG32 2
+
 /*!
  * \def GGEMS_RANDOM_ENGINE_PHILOX
  * \brief Compile-time identifier selecting the Philox backend.

@@ -44,18 +44,22 @@ typedef struct GGEMSJKissState {
    * \brief JKISS congruential component.
    */
   uint x;
+
   /*!
    * \brief JKISS xorshift component.
    */
   uint y;
+
   /*!
    * \brief JKISS multiply-with-carry state component.
    */
   uint z;
+
   /*!
    * \brief JKISS multiply-with-carry state component.
    */
   uint w;
+
   /*!
    * \brief JKISS carry component.
    */
@@ -73,6 +77,7 @@ typedef struct GGEMSPCG32State {
    * \brief Current PCG32 linear-congruential state.
    */
   ulong state;
+
   /*!
    * \brief Odd PCG32 stream increment selecting the independent sequence.
    */
@@ -91,22 +96,27 @@ typedef struct GGEMSPhiloxState {
    * block.
    */
   uint counter_0;
+
   /*!
    * \brief Second Philox counter word used for carry propagation.
    */
   uint counter_1;
+
   /*!
    * \brief Low 32 bits of the Philox stream identifier.
    */
   uint counter_2;
+
   /*!
    * \brief High 32 bits of the Philox stream identifier.
    */
   uint counter_3;
+
   /*!
    * \brief Low 32 bits of the Philox key.
    */
   uint key_0;
+
   /*!
    * \brief High 32 bits of the Philox key.
    */

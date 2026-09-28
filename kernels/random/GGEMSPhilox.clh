@@ -43,31 +43,24 @@
  * \brief First Philox 4x32 multiplication constant.
  */
 #define GGEMS_PHILOX_M4X32_0 0xD2511F53U
+
 /*!
  * \def GGEMS_PHILOX_M4X32_1
  * \brief Second Philox 4x32 multiplication constant.
  */
 #define GGEMS_PHILOX_M4X32_1 0xCD9E8D57U
+
 /*!
  * \def GGEMS_PHILOX_W32_0
  * \brief First Philox key-bump constant.
  */
 #define GGEMS_PHILOX_W32_0 0x9E3779B9U
+
 /*!
  * \def GGEMS_PHILOX_W32_1
  * \brief Second Philox key-bump constant.
  */
 #define GGEMS_PHILOX_W32_1 0xBB67AE85U
-
-/*!
- * \brief Returns the high 32 bits of an unsigned 32-by-32-bit product.
- * \param[in] lhs Left factor.
- * \param[in] rhs Right factor.
- * \return High 32 bits of the product.
- */
-static inline uint GGEMS_MulHi32(uint lhs, uint rhs) {
-  return mul_hi(lhs, rhs);
-}
 
 /*!
  * \brief Applies one Philox 4x32 round.
@@ -76,11 +69,11 @@ static inline uint GGEMS_MulHi32(uint lhs, uint rhs) {
  * \return Counter transformed by one Philox round.
  */
 static inline uint4 GGEMS_Philox4x32Round(uint4 counter, uint2 key) {
-  uint lo_0 = GGEMS_PHILOX_M4X32_0 * counter.x;
-  uint hi_0 = GGEMS_MulHi32(GGEMS_PHILOX_M4X32_0, counter.x);
+  uint const lo_0 = GGEMS_PHILOX_M4X32_0 * counter.x;
+  uint const hi_0 = mul_hi(GGEMS_PHILOX_M4X32_0, counter.x);
 
-  uint lo_1 = GGEMS_PHILOX_M4X32_1 * counter.z;
-  uint hi_1 = GGEMS_MulHi32(GGEMS_PHILOX_M4X32_1, counter.z);
+  uint const lo_1 = GGEMS_PHILOX_M4X32_1 * counter.z;
+  uint const hi_1 = mul_hi(GGEMS_PHILOX_M4X32_1, counter.z);
 
   return (uint4)(hi_1 ^ counter.y ^ key.x, lo_1, hi_0 ^ counter.w ^ key.y,
                  lo_0);
@@ -103,12 +96,12 @@ static inline uint4 GGEMS_Philox4x32(uint4 counter, uint2 key) {
   return counter;
 }
 
-static inline void
 /*!
  * \brief Advances the low 64 bits of one Philox stream counter.
  * \param[in,out] states Array of Philox stream states.
  * \param[in] index State index identifying the logical stream.
  */
+static inline void
 GGEMS_PhiloxIncrementCounter(__global GGEMSPhiloxState *states, uint index) {
   states[index].counter_0 += 1U;
 
@@ -126,12 +119,13 @@ GGEMS_PhiloxIncrementCounter(__global GGEMSPhiloxState *states, uint index) {
  */
 static inline uint4 GGEMS_PhiloxNextUInt4(__global GGEMSPhiloxState *states,
                                           uint index) {
-  uint4 counter = (uint4)(states[index].counter_0, states[index].counter_1,
-                          states[index].counter_2, states[index].counter_3);
+  uint4 const counter =
+    (uint4)(states[index].counter_0, states[index].counter_1,
+            states[index].counter_2, states[index].counter_3);
 
-  uint2 key = (uint2)(states[index].key_0, states[index].key_1);
+  uint2 const key = (uint2)(states[index].key_0, states[index].key_1);
 
-  uint4 value = GGEMS_Philox4x32(counter, key);
+  uint4 const value = GGEMS_Philox4x32(counter, key);
 
   GGEMS_PhiloxIncrementCounter(states, index);
   return value;
@@ -157,7 +151,7 @@ static inline uint GGEMS_PhiloxNextUInt(__global GGEMSPhiloxState *states,
  */
 static inline float4 GGEMS_PhiloxUniform4(__global GGEMSPhiloxState *states,
                                           uint index) {
-  uint4 values = GGEMS_PhiloxNextUInt4(states, index);
+  uint4 const values = GGEMS_PhiloxNextUInt4(states, index);
 
   return GGEMS_UInt4ToUniform01(values);
 }
@@ -170,7 +164,7 @@ static inline float4 GGEMS_PhiloxUniform4(__global GGEMSPhiloxState *states,
  */
 static inline float GGEMS_PhiloxUniform(__global GGEMSPhiloxState *states,
                                         uint index) {
-  uint value = GGEMS_PhiloxNextUInt(states, index);
+  uint const value = GGEMS_PhiloxNextUInt(states, index);
 
   return GGEMS_UIntToUniform01(value);
 }

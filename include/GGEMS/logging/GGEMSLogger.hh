@@ -46,7 +46,7 @@
 /// \endcond
 
 #include "GGEMS/render/GGEMSColorNames.hh"
-#include "GGEMS/render/GGEMSColor.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
 
 namespace ggems::core {
 

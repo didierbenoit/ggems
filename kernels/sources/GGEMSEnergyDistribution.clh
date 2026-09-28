@@ -3,7 +3,6 @@
 
 #include "random/GGEMSRandom.clh"
 #include "sources/GGEMSEnergyDistributionRecord.clh"
-#include "sources/GGEMSSourceRecord.clh"
 
 // =============================================================================
 // =============================================================================
@@ -15,7 +14,7 @@ static inline uint GGEMS_EnergyDistributionFindIndex(
   uint lower = 0U;
   uint upper = distribution->table_count;
 
-  for (uint iteration = 0U; iteration < 32U && lower < upper; ++iteration) {
+  while (lower < upper) {
     uint const middle = lower + (upper - lower) / 2U;
     ulong const ticket_upper =
       cumulative_ticket_upper[distribution->table_offset + (ulong)(middle)];
@@ -36,9 +35,6 @@ static inline uint GGEMS_EnergyDistributionFindIndex(
 static inline ulong
 GGEMS_EnergyDistributionMapRegularOffset(ulong width, ulong ticket_span,
                                          ulong local_ticket) {
-  // Valid tickets satisfy local_ticket < ticket_span <= 2^32. Thus the
-  // remainder product fits in ulong, and the complete result is less than
-  // width even at ULONG_MAX. Keep this decomposition for micro-eV widths.
   ulong const quotient = width / ticket_span;
   ulong const remainder = width % ticket_span;
 
@@ -54,8 +50,10 @@ static inline ulong GGEMS_EnergyDistributionSampleWithTicket(
   __global ulong const *cumulative_ticket_upper, uint raw_ticket) {
   uint const selected_index = GGEMS_EnergyDistributionFindIndex(
     distribution, cumulative_ticket_upper, raw_ticket);
+
   ulong const packed_index =
     distribution->table_offset + (ulong)(selected_index);
+
   ulong const selected_energy = energy_values_micro_eV[packed_index];
 
   if (distribution->distribution_type ==
@@ -66,11 +64,15 @@ static inline ulong GGEMS_EnergyDistributionSampleWithTicket(
   ulong const ticket_lower =
     selected_index == 0U ? 0UL : cumulative_ticket_upper[packed_index - 1UL];
   ulong const ticket_upper = cumulative_ticket_upper[packed_index];
+
   ulong const ticket_span = ticket_upper - ticket_lower;
+
   ulong const local_ticket = (ulong)(raw_ticket)-ticket_lower;
 
   ulong const bin_width = distribution->regular_bin_width_micro_eV;
+
   ulong const lower_edge = selected_energy - bin_width / 2UL;
+
   ulong const in_bin_offset = GGEMS_EnergyDistributionMapRegularOffset(
     bin_width, ticket_span, local_ticket);
 
