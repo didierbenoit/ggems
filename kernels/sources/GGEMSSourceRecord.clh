@@ -1,68 +1,192 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines the shared source pose, emission geometry, and direction data.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #ifndef GGEMS_SOURCES_GGEMS_SOURCE_RECORD_CLH
+
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_SOURCES_GGEMS_SOURCE_RECORD_CLH
 
+/*! \brief Unspecified source kind. */
 #define GGEMS_SOURCE_TYPE_UNKNOWN 0U
+
+/*! \brief Analytic source kind used by the current sampler. */
 #define GGEMS_SOURCE_TYPE_ANALYTIC 1U
+
+/*! \brief Reserved voxelized-source kind; no sampler is implemented here. */
 #define GGEMS_SOURCE_TYPE_VOXELIZED 2U
+
+/*! \brief Reserved phase-space kind; no sampler is implemented here. */
 #define GGEMS_SOURCE_TYPE_PHASE_SPACE 3U
 
+/*! \brief Unspecified emission geometry. */
 #define GGEMS_EMISSION_GEOMETRY_TYPE_UNKNOWN 0U
+
+/*! \brief Emission at the exact stored source origin. */
 #define GGEMS_EMISSION_GEOMETRY_TYPE_POINT 1U
+
+/*! \brief Uniform local XY rectangle centered on the origin. */
 #define GGEMS_EMISSION_GEOMETRY_TYPE_RECTANGLE 2U
+
+/*! \brief Uniform local XY ellipse centered on the origin. */
 #define GGEMS_EMISSION_GEOMETRY_TYPE_ELLIPSE 3U
+
+/*! \brief Uniform local XYZ box centered on the origin. */
 #define GGEMS_EMISSION_GEOMETRY_TYPE_BOX 4U
+
+/*! \brief Uniform solid sphere centered on the origin. */
 #define GGEMS_EMISSION_GEOMETRY_TYPE_SPHERE 5U
+
+/*! \brief Uniform solid cylinder along the local Z axis. */
 #define GGEMS_EMISSION_GEOMETRY_TYPE_CYLINDER 6U
 
+/*! \brief Unspecified angular law. */
 #define GGEMS_ANGULAR_DISTRIBUTION_TYPE_UNKNOWN 0U
+
+/*! \brief Emission along the stored local Z axis in global coordinates. */
 #define GGEMS_ANGULAR_DISTRIBUTION_TYPE_FIXED 1U
+
+/*! \brief Uniform solid-angle emission over the configured angular domain. */
 #define GGEMS_ANGULAR_DISTRIBUTION_TYPE_ISOTROPIC 2U
+
+/*! \brief Emission from the sampled point toward the global focus. */
 #define GGEMS_ANGULAR_DISTRIBUTION_TYPE_FOCUSED 3U
 
+/*!
+ * \brief Packs the host-resolved pose and analytic source birth laws.
+ *
+ * Field order and scalar widths match the host record. Axis columns map local
+ * coordinates to the global frame. The host prepares the frame and validates
+ * the shape, angular domain, and focus; device helpers consume those values
+ * without repeating that validation. Full widths/diameters are in integer pm.
+ * The record does not imply unconditional direction normalization.
+ *
+ * Population and energy-table descriptors are separate. Source-array slot
+ * indices drive execution lookup; source_id is metadata and is not copied into
+ * the current particle record.
+ */
 typedef struct GGEMSSourceRecord {
+  /*! \brief Host source identity; not the source-array slot index. */
   ulong source_id;
 
+  /*! \brief Inclusive source-window start in absolute simulation ps. */
   ulong time_start_ps;
+
+  /*! \brief Exclusive source-window stop in absolute simulation ps. */
   ulong time_stop_ps;
 
+  /*! \brief Count-driven mono energy in micro-eV; unused for table laws. */
   ulong energy_micro_eV;
 
+  /*! \brief Global X coordinate of the source origin in signed pm. */
   long position_x_pm;
+
+  /*! \brief Global Y coordinate of the source origin in signed pm. */
   long position_y_pm;
+
+  /*! \brief Global Z coordinate of the source origin in signed pm. */
   long position_z_pm;
 
+  /*! \brief Source-kind code; the current sampler uses analytic records. */
   uint source_type;
+
+  /*! \brief Count-driven species code; activity-driven births use emissions. */
   uint emitted_particle_type;
+
+  /*! \brief Reserved source flags, currently zero in host records. */
   uint flags;
+
+  /*! \brief Reserved host/device layout word, currently zero. */
   uint reserved_0;
 
+  /*! \brief Global X component of the host-prepared local X axis. */
   float axis_x_x;
+
+  /*! \brief Global Y component of the host-prepared local X axis. */
   float axis_x_y;
+
+  /*! \brief Global Z component of the host-prepared local X axis. */
   float axis_x_z;
 
+  /*! \brief Global X component of the host-prepared local Y axis. */
   float axis_y_x;
+
+  /*! \brief Global Y component of the host-prepared local Y axis. */
   float axis_y_y;
+
+  /*! \brief Global Z component of the host-prepared local Y axis. */
   float axis_y_z;
 
+  /*! \brief Global X component of the host-prepared local Z axis. */
   float axis_z_x;
+
+  /*! \brief Global Y component of the host-prepared local Z axis. */
   float axis_z_y;
+
+  /*! \brief Global Z component of the host-prepared local Z axis. */
   float axis_z_z;
 
+  /*! \brief Local spatial emission-shape code. */
   uint emission_geometry_type;
+
+  /*! \brief Emission direction-law code. */
   uint angular_distribution_type;
 
+  /*! \brief Full X width or diameter in pm, according to shape. */
   ulong geometry_size_x_pm;
+
+  /*! \brief Full Y width or repeated radial diameter in pm. */
   ulong geometry_size_y_pm;
 
+  /*! \brief Global X coordinate of the focus in signed pm. */
   long focus_position_x_pm;
+
+  /*! \brief Global Y coordinate of the focus in signed pm. */
   long focus_position_y_pm;
+
+  /*! \brief Global Z coordinate of the focus in signed pm. */
   long focus_position_z_pm;
 
+  /*!
+   * \brief Full Z width, cylinder height, or repeated sphere diameter in pm.
+   */
   ulong geometry_size_z_pm;
 
+  /*! \brief Lower dimensionless cosine bound; larger polar angle. */
   float isotropic_cos_theta_lower;
+
+  /*! \brief Upper dimensionless cosine bound; smaller polar angle. */
   float isotropic_cos_theta_upper;
+
+  /*! \brief Lower local azimuth bound in radians. */
   float isotropic_phi_min_rad;
+
+  /*! \brief Upper local azimuth bound in radians. */
   float isotropic_phi_max_rad;
 } GGEMSSourceRecord;
 

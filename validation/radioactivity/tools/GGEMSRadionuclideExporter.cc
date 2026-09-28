@@ -211,8 +211,7 @@ auto WriteDefinition(
          << R"json(,"time_ps_per_s":)json" << time_scale
          << R"json(,"time_max_ps":)json"
          << std::numeric_limits<std::uint64_t>::max()
-         << R"json(,"ticket_space":)json" << (1ULL << 32U)
-         << R"json(,"groups":[
+         << R"json(,"ticket_space":)json" << (1ULL << 32U) << R"json(,"groups":[
 )json";
   std::size_t index = 0U;
   for (auto const &emission : definition.GetEmissions()) {

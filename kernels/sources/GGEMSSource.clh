@@ -1,4 +1,46 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Samples primary birth states from host-prepared source records.
+ *
+ * Global positions use signed integer picometers, times use unsigned integer
+ * picoseconds, and energies use unsigned integer microelectronvolts. Local
+ * geometry and direction calculations use binary32. The host validates source
+ * tags, geometry, frames, focus, table ranges, and array capacities; these
+ * helpers do not repeat that validation.
+ *
+ * Random-state indices select worker-owned buffer elements. A source-local
+ * primary index selects an emission range; it does not seed the RNG. These
+ * helpers initialize primaries and do not perform navigation, physical
+ * interactions, or secondary production.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #ifndef GGEMS_SOURCES_GGEMS_SOURCE_CLH
+
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_SOURCES_GGEMS_SOURCE_CLH
 
 #include "particles/GGEMSParticleState.clh"
@@ -12,14 +54,27 @@
 #include "sources/GGEMSEnergyDistributionRecord.clh"
 
 #ifndef GGEMS_SOURCE_TRACK_BRANCH_BITS
+
+/*! \brief Low track-ID bits reserved by the diagnostic base-track helper. */
 #define GGEMS_SOURCE_TRACK_BRANCH_BITS 16U
 #endif
 
+/*! \brief Binary32 full azimuth angle, in radians. */
 #define GGEMS_SOURCE_TWO_PI_F 6.28318530717958647692f
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Builds the diagnostic base track ID.
+ *
+ * The caller must ensure the shift count is below 64 and the primary ID fits
+ * the remaining high bits. No overflow check is performed. Regular primary
+ * initialization uses track_id = 0 instead.
+ *
+ * \param[in] global_primary_id Global identity assigned to the new primary.
+ * \return Primary ID shifted left by GGEMS_SOURCE_TRACK_BRANCH_BITS.
+ */
 static inline ulong GGEMS_SourceMakeBaseTrackId(ulong global_primary_id) {
   return global_primary_id << GGEMS_SOURCE_TRACK_BRANCH_BITS;
 }
@@ -27,6 +82,12 @@ static inline ulong GGEMS_SourceMakeBaseTrackId(ulong global_primary_id) {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Recognizes supported volume emission geometries.
+ *
+ * \param[in] geometry_type Emission-geometry tag from the source record.
+ * \return One for box, sphere, or cylinder; zero for all other tags.
+ */
 static inline uint GGEMS_SourceIsVolumeGeometry(uint geometry_type) {
   return geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_BOX ||
          geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_SPHERE ||
@@ -36,6 +97,22 @@ static inline uint GGEMS_SourceIsVolumeGeometry(uint geometry_type) {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Samples a planar offset in the source frame.
+ *
+ * Uses x/y uniform components for a rectangle or ellipse; z/w are ignored.
+ * Rectangle sizes are full widths and ellipse sizes are full diameters. The
+ * area-uniform ellipse transform uses
+ * \f[
+ * (x,y) = (a\sqrt{u_x}\cos(2\pi u_y),\; b\sqrt{u_x}\sin(2\pi u_y)),
+ * \f]
+ * where a and b are half the stored diameters. No RNG state is accessed.
+ *
+ * \param[in] source Host-validated source record in global memory.
+ * \param[in] random_values Supplied dimensionless uniform components in [0, 1).
+ * \return Binary32 local x/y offset in picometers; zero for other geometry
+ * tags.
+ */
 static inline float2
 GGEMS_SourceSampleLocalPosition(__global GGEMSSourceRecord const *source,
                                 float4 random_values) {
@@ -65,6 +142,21 @@ GGEMS_SourceSampleLocalPosition(__global GGEMSSourceRecord const *source,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Samples a volume offset in the source frame.
+ *
+ * Uses x/y/z uniform components; w is ignored. Box sizes are full widths. A
+ * sphere uses radius \f$R u_x^{1/3}\f$, cosine \f$1-2u_y\f$, and azimuth
+ * \f$2\pi u_z\f$, where R is half geometry_size_x_pm. A cylinder uses radius
+ * \f$R\sqrt{u_x}\f$, azimuth \f$2\pi u_y\f$, and axial offset \f$H(u_z-1/2)\f$,
+ * where H is geometry_size_z_pm. These radial laws sample volume uniformly
+ * before floating-point rounding. No RNG state is accessed.
+ *
+ * \param[in] source Host-validated source record in global memory.
+ * \param[in] random_values Supplied dimensionless uniform components in [0, 1).
+ * \return Binary32 local x/y/z offset in picometers; zero for other geometry
+ * tags.
+ */
 static inline float3
 GGEMS_SourceSampleLocalVolumePosition(__global GGEMSSourceRecord const *source,
                                       float4 random_values) {
@@ -108,6 +200,19 @@ GGEMS_SourceSampleLocalVolumePosition(__global GGEMSSourceRecord const *source,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Maps a sampled local offset to integer global coordinates.
+ *
+ * A point returns the stored origin directly. Other geometries rotate the local
+ * offset with the stored axes in binary32, round each component to the nearest
+ * picometer with ties away from zero, convert with signed saturation, and add
+ * to the integer origin with saturation. Unsupported geometry tags produce zero
+ * local offsets. No RNG state is accessed.
+ *
+ * \param[in] source Host-validated source record in global memory.
+ * \param[in] random_values Supplied dimensionless uniform components in [0, 1).
+ * \return Global position in signed integer picometers.
+ */
 static inline long3
 GGEMS_SourceSamplePositionFromUniforms(__global GGEMSSourceRecord const *source,
                                        float4 random_values) {
@@ -165,6 +270,20 @@ GGEMS_SourceSamplePositionFromUniforms(__global GGEMSSourceRecord const *source,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Samples an integer global birth position.
+ *
+ * A point consumes no random numbers. Every other geometry consumes one
+ * GGEMS_RndmUniform4 call, including components unused by the selected
+ * geometry. See GGEMS_SourceSamplePositionFromUniforms for rotation and integer
+ * rounding.
+ *
+ * \param[in] source Host-validated source record in global memory.
+ * \param[in,out] random_states Global RNG-state array; the selected element is
+ * exclusively owned.
+ * \param[in] worker_id Valid RNG-state buffer index for this worker.
+ * \return Global position in signed integer picometers.
+ */
 static inline long3
 GGEMS_SourceSamplePosition(__global GGEMSSourceRecord const *source,
                            __global GGEMSRandomState *random_states,
@@ -180,6 +299,13 @@ GGEMS_SourceSamplePosition(__global GGEMSSourceRecord const *source,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Computes a signed integer magnitude without signed overflow.
+ *
+ * \param[in] value Signed 64-bit integer, including the minimum representable
+ * value.
+ * \return Exact unsigned magnitude, in the same units as value.
+ */
 static inline ulong GGEMS_SourceSignedMagnitude(long value) {
   return value < 0L ? (ulong)(-(value + 1L)) + 1UL : (ulong)(value);
 }
@@ -187,6 +313,17 @@ static inline ulong GGEMS_SourceSignedMagnitude(long value) {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Converts an integer difference without overflowing signed arithmetic.
+ *
+ * Computes an exact unsigned magnitude before floating-point conversion,
+ * avoiding subtraction of separately rounded coordinates. The binary32 result
+ * can still round the integer difference.
+ *
+ * \param[in] lhs Left signed integer coordinate in picometers.
+ * \param[in] rhs Right signed integer coordinate in picometers.
+ * \return Binary32 approximation to lhs minus rhs, in picometers.
+ */
 static inline float GGEMS_SourceDifferenceToFloat(long lhs, long rhs) {
   uint const different_signs = (lhs < 0L) != (rhs < 0L);
   ulong magnitude = 0UL;
@@ -207,6 +344,16 @@ static inline float GGEMS_SourceDifferenceToFloat(long lhs, long rhs) {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Checks the stored bounds for the full-sphere special case.
+ *
+ * Uses exact floating-point equality and does not check the
+ * angular-distribution tag.
+ *
+ * \param[in] source Host-validated source record in global memory.
+ * \return One when the cosine bounds are -1 and +1 and the azimuth bounds are 0
+ * and GGEMS_SOURCE_TWO_PI_F; zero otherwise.
+ */
 static inline uint
 GGEMS_SourceUsesDefaultFullSphere(__global GGEMSSourceRecord const *source) {
   return source->isotropic_cos_theta_lower == -1.0f &&
@@ -218,6 +365,31 @@ GGEMS_SourceUsesDefaultFullSphere(__global GGEMSSourceRecord const *source) {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Constructs a dimensionless global birth direction.
+ *
+ * Fixed emission returns axis_z verbatim, without normalization. Isotropic
+ * emission uses x/y uniform components for cosine and azimuth; z/w are ignored.
+ * The full-sphere special case samples in global axes. Restricted bounds sample
+ * cosine and azimuth uniformly in the stored source frame, rotate with the
+ * stored axes, and normalize.
+ *
+ * Every other tag follows the focused branch. It forms the integer
+ * focus-minus-position difference before conversion and evaluates
+ * \f[
+ * \mathbf{d} = \operatorname{normalize}(\boldsymbol{\Delta}/s),
+ * \qquad s=\max_i |\Delta_i|.
+ * \f]
+ * The host must exclude coincident focus and sampled position and provide valid
+ * finite frame data. This helper performs no zero-length or finiteness check.
+ * It does not access RNG state.
+ *
+ * \param[in] source Host-validated source record in global memory.
+ * \param[in] sampled_position Sampled global position in signed integer
+ * picometers.
+ * \param[in] random_values Supplied dimensionless uniform components in [0, 1).
+ * \return Binary32 direction produced by the selected angular branch.
+ */
 static inline float3 GGEMS_SourceSampleDirectionFromUniforms(
   __global GGEMSSourceRecord const *source, long3 sampled_position,
   float4 random_values) {
@@ -288,6 +460,22 @@ static inline float3 GGEMS_SourceSampleDirectionFromUniforms(
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Samples a direction using the worker RNG only for isotropic emission.
+ *
+ * Isotropic emission consumes one GGEMS_RndmUniform4 call. Fixed and focused
+ * emission consume no random numbers. See
+ * GGEMS_SourceSampleDirectionFromUniforms for normalization and focus
+ * preconditions.
+ *
+ * \param[in] source Host-validated source record in global memory.
+ * \param[in] sampled_position Sampled global position in signed integer
+ * picometers.
+ * \param[in,out] random_states Global RNG-state array; the selected element is
+ * exclusively owned.
+ * \param[in] worker_id Valid RNG-state buffer index for this worker.
+ * \return Dimensionless binary32 global direction.
+ */
 static inline float3 GGEMS_SourceSampleDirection(
   __global GGEMSSourceRecord const *source, long3 sampled_position,
   __global GGEMSRandomState *random_states, uint worker_id) {
@@ -305,6 +493,31 @@ static inline float3 GGEMS_SourceSampleDirection(
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Initializes a count-driven primary birth state.
+ *
+ * The returned state is alive with generation and flags zero, track_id zero, an
+ * invalid parent ID, invalid navigation/material/region IDs, and direction_w
+ * zero. Time is the stored window start and particle type comes from the
+ * source. Draw order is position, direction, then energy; point, fixed/focused,
+ * and monoenergetic branches skip their respective draws. The source-local
+ * index is not used to choose the RNG state.
+ *
+ * \param[in] global_primary_id Global identity assigned to the new primary.
+ * \param[in] source_local_primary_id Source-local primary index; unused by this
+ * initializer.
+ * \param[in] source Host-validated source record in global memory.
+ * \param[in] energy_distribution Host-prepared global energy descriptor with
+ * valid table ranges.
+ * \param[in] energy_values_micro_eV Global integer-microelectronvolt energy
+ * table addressed by the descriptor.
+ * \param[in] cumulative_ticket_upper Global exclusive cumulative ticket bounds
+ * ending at 2^32 per distribution.
+ * \param[in,out] random_states Global RNG-state array; the selected element is
+ * exclusively owned.
+ * \param[in] worker_id Valid RNG-state buffer index for this worker.
+ * \return Fully initialized primary state by value.
+ */
 static inline GGEMSParticleState GGEMS_SourceInitializePrimary(
   ulong global_primary_id, ulong source_local_primary_id,
   __global GGEMSSourceRecord const *source,
@@ -361,6 +574,37 @@ static inline GGEMSParticleState GGEMS_SourceInitializePrimary(
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Initializes a primary from an activity-driven emission.
+ *
+ * The returned state is alive with generation and flags zero, track_id zero, an
+ * invalid parent ID, invalid navigation/material/region IDs, and direction_w
+ * zero. Consumes one raw word for the conditional radioactive birth time, then
+ * samples position, direction, and energy in that order. The time word is
+ * consumed even when an empty window makes the time helper return its start.
+ * Particle type and monoenergetic fallback come from the emission. Emission
+ * populations have already been realized on the host; this helper does not
+ * sample their counts.
+ *
+ * \param[in] global_primary_id Global identity assigned to the new primary.
+ * \param[in] source_local_primary_id Source-local primary index; unused by this
+ * initializer.
+ * \param[in] source Host-validated source record in global memory.
+ * \param[in] population Global population record with dimensionless scaled
+ * decay and emission indices.
+ * \param[in] emission Global emission record supplying particle type and
+ * monoenergetic fallback.
+ * \param[in] energy_distribution Host-prepared global energy descriptor with
+ * valid table ranges.
+ * \param[in] energy_values_micro_eV Global integer-microelectronvolt energy
+ * table addressed by the descriptor.
+ * \param[in] cumulative_ticket_upper Global exclusive cumulative ticket bounds
+ * ending at 2^32 per distribution.
+ * \param[in,out] random_states Global RNG-state array; the selected element is
+ * exclusively owned.
+ * \param[in] worker_id Valid RNG-state buffer index for this worker.
+ * \return Fully initialized primary state by value.
+ */
 static inline GGEMSParticleState GGEMS_SourceInitializeActivityDrivenPrimary(
   ulong global_primary_id, ulong source_local_primary_id,
   __global GGEMSSourceRecord const *source,
@@ -421,6 +665,41 @@ static inline GGEMSParticleState GGEMS_SourceInitializeActivityDrivenPrimary(
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Selects a source emission and initializes one primary.
+ *
+ * Count-driven mode directly uses energy_distribution_records[source_index].
+ * Every other mode searches the population emission slice and selects the first
+ * nonempty matching range. Its emission selects the energy descriptor. The
+ * caller supplies consistent indices, counts, and array capacities; no bounds
+ * checks are performed. A failed range search consumes no random numbers.
+ *
+ * \param[in] global_primary_id Global identity assigned to the new primary.
+ * \param[in] source_local_primary_id Index within this source population, used
+ * to select a half-open emission range.
+ * \param[in] source_index Source array slot selecting the count-driven energy
+ * descriptor, not source_id.
+ * \param[in] source Host-validated source record in global memory.
+ * \param[in] population Global population record with dimensionless scaled
+ * decay and emission indices.
+ * \param[in] source_emissions Global emission records addressed by population
+ * indices.
+ * \param[in] source_emission_ranges Global source-local ranges parallel to
+ * source_emissions.
+ * \param[in] energy_distribution_records Global descriptors: source-indexed
+ * count-driven entries and emission-indexed entries.
+ * \param[in] energy_values_micro_eV Global integer-microelectronvolt energy
+ * table addressed by the descriptor.
+ * \param[in] cumulative_ticket_upper Global exclusive cumulative ticket bounds
+ * ending at 2^32 per distribution.
+ * \param[in,out] random_states Global RNG-state array; the selected element is
+ * exclusively owned.
+ * \param[in] worker_id Valid RNG-state buffer index for this worker.
+ * \param[out] particle Writable private result; left unchanged when no emission
+ * range matches.
+ * \return One after successful initialization; zero if the emission search
+ * finds no matching range.
+ */
 static inline uint GGEMS_SourceTryInitializePrimary(
   ulong global_primary_id, ulong source_local_primary_id, uint source_index,
   __global GGEMSSourceRecord const *source,
@@ -478,6 +757,22 @@ static inline uint GGEMS_SourceTryInitializePrimary(
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Reads a diagnostic birth state directly from a source record.
+ *
+ * Copies the stored position, start time, axis_z direction, energy, and emitted
+ * particle type. Despite the helper name, it neither forces nor checks the
+ * aionino particle tag. It does not dispatch geometry, angle, or energy laws,
+ * consume RNG state, or normalize the direction. Generation, flags, and
+ * direction_w are zero. The base-track helper preconditions apply.
+ *
+ * \param[in] global_primary_id Global identity assigned to the new primary.
+ * \param[in] source_local_primary_id Source-local primary index; unused by this
+ * initializer.
+ * \param[in] source Host-validated source record in global memory.
+ * \return Alive diagnostic state with a shifted base track ID and invalid
+ * parent and navigation IDs.
+ */
 static inline GGEMSParticleState
 GGEMS_SourceReadAionino(ulong global_primary_id, ulong source_local_primary_id,
                         __global GGEMSSourceRecord const *source) {

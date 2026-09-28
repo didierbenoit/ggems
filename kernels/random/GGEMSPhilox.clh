@@ -26,6 +26,11 @@
  * Provides Philox round functions, counter progression, raw scalar/vector
  * output, and uniform scalar/vector sampling.
  *
+ * The caller supplies host-initialized global states and a valid buffer index.
+ * Each concurrent worker must exclusively own its selected state element; these
+ * helpers perform no bounds checks or atomic updates. The buffer index is not
+ * itself the global stream identifier.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -67,6 +72,9 @@
  * \param[in] counter Four-word counter.
  * \param[in] key Two-word key.
  * \return Counter transformed by one Philox round.
+ *
+ * A pure unsigned-word transformation; neither argument refers to stored stream
+ * state.
  */
 static inline uint4 GGEMS_Philox4x32Round(uint4 counter, uint2 key) {
   uint const lo_0 = GGEMS_PHILOX_M4X32_0 * counter.x;
@@ -84,6 +92,9 @@ static inline uint4 GGEMS_Philox4x32Round(uint4 counter, uint2 key) {
  * \param[in] counter Four-word counter.
  * \param[in] key Initial two-word key.
  * \return Four generated 32-bit words.
+ *
+ * All ten rounds and key bumps operate on local copies. This helper does not
+ * advance a stored stream counter.
  */
 static inline uint4 GGEMS_Philox4x32(uint4 counter, uint2 key) {
   for (uint round = 0U; round < 10U; ++round) {
@@ -99,7 +110,10 @@ static inline uint4 GGEMS_Philox4x32(uint4 counter, uint2 key) {
 /*!
  * \brief Advances the low 64 bits of one Philox stream counter.
  * \param[in,out] states Array of Philox stream states.
- * \param[in] index State index identifying the logical stream.
+ * \param[in] index Index of the exclusively owned state element.
+ *
+ * Increments counter_0 with carry into counter_1, modulo 2^64. Counter words 2
+ * and 3 and both key words remain unchanged. Wraparound is not reported.
  */
 static inline void
 GGEMS_PhiloxIncrementCounter(__global GGEMSPhiloxState *states, uint index) {
@@ -114,8 +128,11 @@ GGEMS_PhiloxIncrementCounter(__global GGEMSPhiloxState *states, uint index) {
  * \brief Generates the next four raw Philox words and advances the stream
  * counter.
  * \param[in,out] states Array of Philox stream states.
- * \param[in] index State index identifying the logical stream.
+ * \param[in] index Index of the exclusively owned state element.
  * \return Four raw Philox words.
+ *
+ * Uses the current counter and key, then advances the low 64-bit block counter
+ * once. No generated words are buffered for later calls.
  */
 static inline uint4 GGEMS_PhiloxNextUInt4(__global GGEMSPhiloxState *states,
                                           uint index) {
@@ -135,8 +152,11 @@ static inline uint4 GGEMS_PhiloxNextUInt4(__global GGEMSPhiloxState *states,
  * \brief Generates the next scalar raw Philox value and advances the stream
  * counter.
  * \param[in,out] states Array of Philox stream states.
- * \param[in] index State index identifying the logical stream.
+ * \param[in] index Index of the exclusively owned state element.
  * \return First word of the generated Philox block.
+ *
+ * Consumes a complete four-word block and returns only its x component; the
+ * other three words are discarded.
  */
 static inline uint GGEMS_PhiloxNextUInt(__global GGEMSPhiloxState *states,
                                         uint index) {
@@ -146,8 +166,11 @@ static inline uint GGEMS_PhiloxNextUInt(__global GGEMSPhiloxState *states,
 /*!
  * \brief Generates four uniform binary32 values from a Philox stream.
  * \param[in,out] states Array of Philox stream states.
- * \param[in] index State index identifying the logical stream.
+ * \param[in] index Index of the exclusively owned state element.
  * \return Four uniform values in [0, 1).
+ *
+ * Consumes one four-word block and converts each word using its upper 24 bits.
+ * Four scalar calls instead consume four blocks.
  */
 static inline float4 GGEMS_PhiloxUniform4(__global GGEMSPhiloxState *states,
                                           uint index) {
@@ -159,8 +182,11 @@ static inline float4 GGEMS_PhiloxUniform4(__global GGEMSPhiloxState *states,
 /*!
  * \brief Generates a scalar uniform binary32 value from a Philox stream.
  * \param[in,out] states Array of Philox stream states.
- * \param[in] index State index identifying the logical stream.
+ * \param[in] index Index of the exclusively owned state element.
  * \return Uniform value in [0, 1).
+ *
+ * Consumes one complete block, discards its last three words, and converts the
+ * first word using its upper 24 bits.
  */
 static inline float GGEMS_PhiloxUniform(__global GGEMSPhiloxState *states,
                                         uint index) {

@@ -1,49 +1,166 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines the shared device particle record and numeric species codes.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #ifndef GGEMS_PARTICLES_GGEMS_PARTICLE_STATE_CLH
+
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_PARTICLES_GGEMS_PARTICLE_STATE_CLH
 
+/*! \brief All-ones sentinel for an absent 32-bit identifier. */
 #define GGEMS_INVALID_ID_U32 0xFFFFFFFFU
+
+/*! \brief All-ones sentinel for an absent 64-bit identifier. */
 #define GGEMS_INVALID_ID_U64 0xFFFFFFFFFFFFFFFFUL
 
+/*! \brief Unspecified particle species. */
 #define GGEMS_PARTICLE_TYPE_UNKNOWN 0U
+
+/*! \brief Diagnostic particle without physical interactions. */
 #define GGEMS_PARTICLE_TYPE_AIONINO 1U
+
+/*! \brief Photon species code. */
 #define GGEMS_PARTICLE_TYPE_GAMMA 2U
+
+/*! \brief Electron species code. */
 #define GGEMS_PARTICLE_TYPE_ELECTRON 3U
+
+/*! \brief Positron species code. */
 #define GGEMS_PARTICLE_TYPE_POSITRON 4U
+
+/*! \brief Proton species code. */
 #define GGEMS_PARTICLE_TYPE_PROTON 5U
+
+/*! \brief Neutron species code. */
 #define GGEMS_PARTICLE_TYPE_NEUTRON 6U
+
+/*! \brief Alpha-particle species code. */
 #define GGEMS_PARTICLE_TYPE_ALPHA 7U
 
+/*! \brief Inactive particle slot. */
 #define GGEMS_PARTICLE_STATUS_INACTIVE 0U
+
+/*! \brief Particle eligible for further transport. */
 #define GGEMS_PARTICLE_STATUS_ALIVE 1U
+
+/*! \brief Particle marked as terminated. */
 #define GGEMS_PARTICLE_STATUS_KILLED 2U
+
+/*! \brief Particle marked as having left the world. */
 #define GGEMS_PARTICLE_STATUS_ESCAPED_WORLD 3U
+
+/*! \brief Particle marked as absorbed. */
 #define GGEMS_PARTICLE_STATUS_ABSORBED 4U
 
+/*!
+ * \brief Stores the 112-byte device counterpart of the host particle state.
+ *
+ * Positions are global signed integer pm, time is absolute unsigned integer ps,
+ * and kinetic energy is unsigned integer micro-eV. Direction components are
+ * dimensionless binary32 values; the record itself does not normalize them or
+ * initialize its fields. Species/status codes describe stored state, not
+ * implemented physical processes.
+ *
+ * The current stream kernel creates primaries with global_particle_id equal to
+ * the reserved primary ID and track_id equal to zero. Other diagnostic paths
+ * may use different track/particle ID assignments; global_particle_id is not a
+ * universal primary-history identifier.
+ */
 typedef struct GGEMSParticleState {
+  /*! \brief Particle identifier assigned by its source/transport path. */
   ulong global_particle_id;
+
+  /*! \brief Track identifier within the owning transport path. */
   ulong track_id;
+
+  /*! \brief Parent track identifier, or GGEMS_INVALID_ID_U64 for a primary. */
   ulong parent_track_id;
+
+  /*! \brief Absolute simulation time in integer picoseconds. */
   ulong time_ps;
 
+  /*! \brief Global X position in signed integer picometers. */
   long position_x_pm;
+
+  /*! \brief Global Y position in signed integer picometers. */
   long position_y_pm;
+
+  /*! \brief Global Z position in signed integer picometers. */
   long position_z_pm;
 
+  /*! \brief Numeric species code shared with host particle types. */
   uint particle_type;
+
+  /*! \brief Numeric lifecycle status shared with the host. */
   uint status;
+
+  /*! \brief Descendant generation; source primaries use zero. */
   uint generation;
+
+  /*! \brief Transport-specific flags; source primaries use zero. */
   uint flags;
 
+  /*!
+   * \brief Navigator identifier; source initialization uses
+   * GGEMS_INVALID_ID_U32.
+   */
   uint current_navigator_id;
+
+  /*!
+   * \brief Physical volume identifier; source initialization uses
+   * GGEMS_INVALID_ID_U32.
+   */
   uint current_volume_id;
+
+  /*!
+   * \brief Material identifier; source initialization uses
+   * GGEMS_INVALID_ID_U32.
+   */
   uint material_id;
+
+  /*!
+   * \brief Region identifier; source initialization uses GGEMS_INVALID_ID_U32.
+   */
   uint region_id;
 
+  /*! \brief Dimensionless X direction component. */
   float direction_x;
+
+  /*! \brief Dimensionless Y direction component. */
   float direction_y;
+
+  /*! \brief Dimensionless Z direction component. */
   float direction_z;
+
+  /*! \brief Reserved direction component; source primaries use zero. */
   float direction_w;
 
+  /*! \brief Nonnegative kinetic energy in integer micro-eV. */
   ulong energy_micro_eV;
 } GGEMSParticleState;
 

@@ -26,6 +26,10 @@
  * Mirrors the host-side JKISS, PCG32, and Philox state structures used for
  * state initialization and SVM transfer.
  *
+ * These integer records contain mutable RNG state, not particle identities or
+ * physical units. Host initialization establishes each stream; device callers
+ * must provide exclusive access to an element while advancing it.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -40,29 +44,19 @@
  * host-side GGEMS random-state structure.
  */
 typedef struct GGEMSJKissState {
-  /*!
-   * \brief JKISS congruential component.
-   */
+  /*! \brief JKISS congruential component. */
   uint x;
 
-  /*!
-   * \brief JKISS xorshift component.
-   */
+  /*! \brief JKISS xorshift component. */
   uint y;
 
-  /*!
-   * \brief JKISS multiply-with-carry state component.
-   */
+  /*! \brief JKISS add-with-carry state component. */
   uint z;
 
-  /*!
-   * \brief JKISS multiply-with-carry state component.
-   */
+  /*! \brief JKISS add-with-carry state component. */
   uint w;
 
-  /*!
-   * \brief JKISS carry component.
-   */
+  /*! \brief JKISS carry component. */
   uint c;
 } GGEMSJKissState;
 
@@ -73,14 +67,10 @@ typedef struct GGEMSJKissState {
  * host-side GGEMS random-state structure.
  */
 typedef struct GGEMSPCG32State {
-  /*!
-   * \brief Current PCG32 linear-congruential state.
-   */
+  /*! \brief Current PCG32 linear-congruential state. */
   ulong state;
 
-  /*!
-   * \brief Odd PCG32 stream increment selecting the independent sequence.
-   */
+  /*! \brief Odd PCG32 increment selecting the stream sequence. */
   ulong increment;
 } GGEMSPCG32State;
 
@@ -91,35 +81,25 @@ typedef struct GGEMSPCG32State {
  * host-side GGEMS random-state structure.
  */
 typedef struct GGEMSPhiloxState {
-  /*!
-   * \brief Least-significant Philox counter word advanced for each generated
-   * block.
-   */
+  /*! \brief Low word of the mutable 64-bit Philox block counter. */
   uint counter_0;
 
   /*!
-   * \brief Second Philox counter word used for carry propagation.
+   * \brief High word of the block counter, wrapping without changing the stream
+   * ID.
    */
   uint counter_1;
 
-  /*!
-   * \brief Low 32 bits of the Philox stream identifier.
-   */
+  /*! \brief Low 32 bits of the Philox stream identifier. */
   uint counter_2;
 
-  /*!
-   * \brief High 32 bits of the Philox stream identifier.
-   */
+  /*! \brief High 32 bits of the Philox stream identifier. */
   uint counter_3;
 
-  /*!
-   * \brief Low 32 bits of the Philox key.
-   */
+  /*! \brief Low 32 bits of the Philox key. */
   uint key_0;
 
-  /*!
-   * \brief High 32 bits of the Philox key.
-   */
+  /*! \brief High 32 bits of the Philox key. */
   uint key_1;
 } GGEMSPhiloxState;
 

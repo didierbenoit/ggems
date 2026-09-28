@@ -1,3 +1,37 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Samples source energies from exact 32-bit ticket partitions.
+ *
+ * Host-prepared descriptors index parallel global arrays of micro-eV line
+ * energies or bin centers and exclusive cumulative ticket bounds. Table lookup
+ * assumes those descriptors and arrays are consistent. Monoenergetic sampling
+ * bypasses the tables and consumes no RNG word.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #ifndef GGEMS_SOURCES_GGEMS_ENERGY_DISTRIBUTION_CLH
 #define GGEMS_SOURCES_GGEMS_ENERGY_DISTRIBUTION_CLH
 
@@ -7,6 +41,20 @@
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Finds the first cumulative upper bound above a raw ticket.
+ *
+ * Bounds are nondecreasing and the final bound is 2^32 in a valid table.
+ * Equality belongs to the next interval; repeated bounds skip zero-weight
+ * entries. The returned index does not include table_offset.
+ *
+ * \param[in] distribution Descriptor for a nonempty host-prepared table.
+ * \param[in] cumulative_ticket_upper Global packed exclusive bounds, addressed
+ * from table_offset.
+ * \param[in] raw_ticket Ticket in the complete uint range [0, 2^32).
+ * \return Table-relative index, or table_count if no upper bound exceeds the
+ * ticket.
+ */
 static inline uint GGEMS_EnergyDistributionFindIndex(
   __global GGEMSEnergyDistributionRecord const *distribution,
   __global ulong const *cumulative_ticket_upper, uint raw_ticket) {
@@ -32,6 +80,19 @@ static inline uint GGEMS_EnergyDistributionFindIndex(
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Maps a selected bin ticket to an integer energy offset.
+ *
+ * Computes \f$\lfloor wq/n\rfloor\f$ by quotient/remainder decomposition of w.
+ * The stated ticket bounds keep both intermediate products representable
+ * without a wider integer type.
+ *
+ * \param[in] width Positive bin width w in micro-eV.
+ * \param[in] ticket_span Bin ticket count n, with 1 <= n <= 2^32.
+ * \param[in] local_ticket Ticket q relative to the bin lower bound, with 0 <= q
+ * < n.
+ * \return Floor(w * q / n) micro-eV, in [0, w).
+ */
 static inline ulong
 GGEMS_EnergyDistributionMapRegularOffset(ulong width, ulong ticket_span,
                                          ulong local_ticket) {
@@ -44,6 +105,26 @@ GGEMS_EnergyDistributionMapRegularOffset(ulong width, ulong ticket_span,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Samples a tabulated energy using one supplied ticket.
+ *
+ * Discrete lines return the stored energy. Every other type follows the
+ * regular-spectrum branch, so callers must supply a supported tabulated law.
+ * For center E and even width w, the lower edge is E - w/2 and the offset is
+ * floor(w * local_ticket / ticket_span). The upper edge is excluded. No second
+ * draw is made, and a valid selected entry and representable bin arithmetic are
+ * caller-established.
+ *
+ * \param[in] distribution Valid DiscreteLines or RegularSpectrum descriptor.
+ * \param[in] energy_values_micro_eV Global packed line energies or regular-bin
+ * centers in micro-eV.
+ * \param[in] cumulative_ticket_upper Parallel global exclusive ticket bounds
+ * ending at 2^32.
+ * \param[in] raw_ticket Raw uint ticket shared by entry selection and in-bin
+ * mapping.
+ * \return The exact selected line energy, or an integer energy inside the
+ * selected half-open bin.
+ */
 static inline ulong GGEMS_EnergyDistributionSampleWithTicket(
   __global GGEMSEnergyDistributionRecord const *distribution,
   __global ulong const *energy_values_micro_eV,
@@ -82,6 +163,25 @@ static inline ulong GGEMS_EnergyDistributionSampleWithTicket(
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Samples a monoenergetic or tabulated source energy.
+ *
+ * Mono returns the supplied energy without a draw or table access. A tabulated
+ * law consumes one GGEMS_RndmUInt32() call; with Philox this advances one whole
+ * block and uses its first word.
+ *
+ * \param[in] mono_energy_micro_eV Exact micro-eV energy used only for a Mono
+ * descriptor.
+ * \param[in] distribution Host-prepared energy-law descriptor.
+ * \param[in] energy_values_micro_eV Packed global energy values for tabulated
+ * laws.
+ * \param[in] cumulative_ticket_upper Parallel global exclusive ticket bounds.
+ * \param[in,out] random_states Mutable global RNG array, with worker_id as a
+ * valid index.
+ * \param[in] worker_id Buffer-local worker state index, exclusively owned
+ * during this call.
+ * \return Sampled kinetic energy in integer micro-eV.
+ */
 static inline ulong GGEMS_EnergyDistributionSample(
   ulong mono_energy_micro_eV,
   __global GGEMSEnergyDistributionRecord const *distribution,

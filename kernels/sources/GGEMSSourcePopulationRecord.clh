@@ -1,13 +1,62 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines per-source population selection and radioactive time data.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #ifndef GGEMS_SOURCES_GGEMS_SOURCE_POPULATION_RECORD_CLH
+
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_SOURCES_GGEMS_SOURCE_POPULATION_RECORD_CLH
 
+/*! \brief Host-specified count with births at the window start. */
 #define GGEMS_SOURCE_POPULATION_MODE_COUNT_DRIVEN 0U
+
+/*! \brief Host-sampled emission counts with radioactive birth times. */
 #define GGEMS_SOURCE_POPULATION_MODE_ACTIVITY_DRIVEN 1U
 
+/*!
+ * \brief Selects count-driven or activity-driven source initialization.
+ *
+ * There is one record per source slot. Activity-driven records address matching
+ * slices of the emission descriptors and per-run emission ranges. The host
+ * samples group populations; the device selects the owning group by its primary
+ * range.
+ */
 typedef struct GGEMSSourcePopulationRecord {
+  /*! \brief Numeric mode selecting count-driven or activity-driven births. */
   uint population_mode;
+
+  /*! \brief First entry in the packed emission descriptor and range arrays. */
   uint first_emission_index;
+
+  /*! \brief Emission group count; zero for a count-driven source. */
   uint emission_count;
+
+  /*! \brief Dimensionless ln(2) times window duration divided by half-life. */
   float scaled_decay;
 } GGEMSSourcePopulationRecord;
 

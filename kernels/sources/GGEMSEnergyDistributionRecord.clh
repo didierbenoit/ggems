@@ -1,15 +1,69 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines the packed descriptor for a source energy law.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #ifndef GGEMS_SOURCES_GGEMS_ENERGY_DISTRIBUTION_RECORD_CLH
+
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_SOURCES_GGEMS_ENERGY_DISTRIBUTION_RECORD_CLH
 
+/*! \brief Unspecified energy-law code. */
 #define GGEMS_ENERGY_DISTRIBUTION_TYPE_UNKNOWN 0U
+
+/*! \brief One exact energy carried by the source or emission record. */
 #define GGEMS_ENERGY_DISTRIBUTION_TYPE_MONO 1U
+
+/*! \brief Weighted exact micro-eV energy lines. */
 #define GGEMS_ENERGY_DISTRIBUTION_TYPE_DISCRETE_LINES 2U
+
+/*! \brief Weighted bins with a common integer micro-eV width. */
 #define GGEMS_ENERGY_DISTRIBUTION_TYPE_REGULAR_SPECTRUM 3U
 
+/*!
+ * \brief Locates one energy law in parallel device energy and ticket arrays.
+ *
+ * The field order and scalar widths match the host record. For a table, energy
+ * entries are exact line energies or regular-bin centers in micro-eV.
+ * Cumulative upper bounds partition the 2^32 raw-word ticket space; the last
+ * bound is 2^32 and repeated bounds represent zero-weight entries.
+ * Offsets/counts are elements, not bytes. Mono laws use neither table.
+ */
 typedef struct GGEMSEnergyDistributionRecord {
+  /*! \brief Common spectrum-bin width in micro-eV; zero for mono and lines. */
   ulong regular_bin_width_micro_eV;
+
+  /*! \brief Element offset shared by the packed energy and ticket arrays. */
   ulong table_offset;
+
+  /*! \brief Numeric energy-law code shared with the host. */
   uint distribution_type;
+
+  /*! \brief Table entry count; zero for a monoenergetic law. */
   uint table_count;
 } GGEMSEnergyDistributionRecord;
 

@@ -1,3 +1,37 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Samples radioactive birth times inside a source window.
+ *
+ * These helpers transform a supplied random word; they do not advance an RNG.
+ * The host supplies a dimensionless decay constant times the window duration.
+ * Integer ticket scaling keeps a nonempty window half-open in absolute
+ * picoseconds.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #ifndef GGEMS_RADIOACTIVITY_GGEMS_RADIOACTIVE_TIME_SAMPLING_CLH
 #define GGEMS_RADIOACTIVITY_GGEMS_RADIOACTIVE_TIME_SAMPLING_CLH
 
@@ -6,6 +40,27 @@
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Approximates the inverse truncated-exponential birth-time CDF.
+ *
+ * For a window width W and decay rate lambda expressed in reciprocal units of
+ * W, let \f$s=\lambda W\f$. The target inverse is
+ * \f[
+ * r(u,s)=-\frac{\log\left(1-u(1-e^{-s})\right)}{s}.
+ * \f]
+ * For \f$s\le 2^{-14}\f$, the implementation returns u. For \f$2^{-14}<s\le
+ * 0.01\f$, it evaluates the second-order approximation
+ * \f[
+ * r(u,s)\approx u+\frac{s}{2}u(u-1)+\frac{s^2}{6}u(u-1)(2u-1).
+ * \f]
+ * Larger s uses expm1 and log1p in binary32. Input finiteness and range are
+ * supplied by the caller, not checked by this helper.
+ *
+ * \param[in] uniform Dimensionless uniform variate u in [0, 1).
+ * \param[in] scaled_decay Finite nonnegative s = ln(2) times window width /
+ * half-life.
+ * \return Dimensionless relative offset r measured from the window start.
+ */
 static inline float GGEMS_ComputeRadioactiveTimeRelative(float uniform,
                                                          float scaled_decay) {
   if (scaled_decay <= 0x1.0p-14f) {
@@ -27,6 +82,16 @@ static inline float GGEMS_ComputeRadioactiveTimeRelative(float uniform,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Quantizes a relative time to a 32-bit fractional-window ticket.
+ *
+ * For nonnegative inputs this is a floor operation; a relative value of one
+ * maps to 2^32 - 1. This ticket quantization is not the general host
+ * quantity-rounding policy.
+ *
+ * \param[in] relative Finite dimensionless relative offset, normally in [0, 1].
+ * \return Truncated 2^32 times relative, saturated to the uint range.
+ */
 static inline uint GGEMS_QuantizeRadioactiveTimeRelative(float relative) {
   return convert_uint_sat_rtz(relative * 4294967296.0f);
 }
@@ -34,6 +99,17 @@ static inline uint GGEMS_QuantizeRadioactiveTimeRelative(float relative) {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Maps a fractional-window ticket to an integer ps offset.
+ *
+ * Splitting W into high and low 32-bit words evaluates \f$\lfloor
+ * Wq/2^{32}\rfloor\f$ without forming a wider full product. No floating-point
+ * multiplication of the absolute time is used.
+ *
+ * \param[in] window_width_ps Nonnegative window width W in integer picoseconds.
+ * \param[in] ticket Unsigned 32-bit fractional-window ticket q.
+ * \return Floor(W * q / 2^32), in [0, W) for positive W; zero for W = 0.
+ */
 static inline ulong GGEMS_ScaleRadioactiveTimeTicket(ulong window_width_ps,
                                                      uint ticket) {
   ulong const width_upper = window_width_ps >> 32U;
@@ -46,6 +122,21 @@ static inline ulong GGEMS_ScaleRadioactiveTimeTicket(ulong window_width_ps,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Maps one raw random word to an absolute radioactive birth time.
+ *
+ * A nonempty window uses the relative inverse, saturating ticket quantization,
+ * and exact integer width scaling. The supplied word is converted but no random
+ * state is read or advanced.
+ *
+ * \param[in] time_start_ps Inclusive absolute source-window start in ps.
+ * \param[in] time_stop_ps Exclusive absolute source-window stop in ps.
+ * \param[in] scaled_decay Finite nonnegative decay rate times the window
+ * duration.
+ * \param[in] raw_word Raw word whose high 24 bits supply the uniform variate.
+ * \return An integer time in [time_start_ps, time_stop_ps), or time_start_ps
+ * when stop is not greater than start.
+ */
 static inline ulong GGEMS_SampleRadioactiveTimeFromRaw(ulong time_start_ps,
                                                        ulong time_stop_ps,
                                                        float scaled_decay,

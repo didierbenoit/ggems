@@ -1,15 +1,73 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Computes checked endpoints for the current one-meter diagnostic path.
+ *
+ * The float-bit decomposition implements this diagnostic projection only. It is
+ * not a production navigation or physical transport algorithm, does not advance
+ * time, and does not impose or verify a unit direction vector.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #ifndef GGEMS_TRANSPORT_GGEMS_DIAGNOSTIC_PROJECTION_CLH
+
+/*! \brief Prevents repeated inclusion of this OpenCL header. */
 #define GGEMS_TRANSPORT_GGEMS_DIAGNOSTIC_PROJECTION_CLH
 
+/*! \brief One-meter diagnostic distance in integer picometers. */
 #define GGEMS_DIAGNOSTIC_PROJECTION_DISTANCE_PM 1000000000000UL
+
+/*! \brief Largest representable signed pm coordinate. */
 #define GGEMS_DIAGNOSTIC_INT64_MAX 9223372036854775807L
+
+/*! \brief Smallest representable signed pm coordinate. */
 #define GGEMS_DIAGNOSTIC_INT64_MIN (-9223372036854775807L - 1L)
+
+/*! \brief Unsigned magnitude of the minimum signed coordinate. */
 #define GGEMS_DIAGNOSTIC_INT64_MIN_MAGNITUDE 0x8000000000000000UL
+
+/*! \brief Largest unsigned identifier value used in checked additions. */
 #define GGEMS_DIAGNOSTIC_UINT64_MAX 0xffffffffffffffffUL
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Converts one direction component to a diagnostic displacement.
+ *
+ * Decomposes the supplied float bits and rounds \f$10^{12}c\f$ to the nearest
+ * integer pm, with halfway values away from zero, where c is the component.
+ * Signed zero produces zero. It does not normalize c or require its magnitude
+ * to be at most one.
+ *
+ * \param[in] component Dimensionless binary32 direction component.
+ * \param[out] displacement_pm Private destination written only when conversion
+ * succeeds.
+ * \return One on success; zero for nonfinite input or an unrepresentable signed
+ * result.
+ */
 static inline uint
 GGEMS_TryScaleDiagnosticProjectionComponent(float component,
                                             __private long *displacement_pm) {
@@ -91,6 +149,16 @@ GGEMS_TryScaleDiagnosticProjectionComponent(float component,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Adds a diagnostic displacement without signed overflow.
+ *
+ * \param[in] position_pm Global starting coordinate in signed integer pm.
+ * \param[in] displacement_pm Signed displacement in integer pm.
+ * \param[out] endpoint_pm Private destination written only when addition
+ * succeeds.
+ * \return One with the exact sum on success; zero without writing the endpoint
+ * on overflow.
+ */
 static inline uint GGEMS_TryAddDiagnosticProjectionDisplacement(
   long position_pm, long displacement_pm, __private long *endpoint_pm) {
   if (displacement_pm > 0L &&

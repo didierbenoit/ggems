@@ -1,20 +1,83 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines shared counters for one diagnostic transport launch.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #ifndef GGEMS_TRANSPORT_GGEMS_TRANSPORT_COUNTERS_CLH
 #define GGEMS_TRANSPORT_GGEMS_TRANSPORT_COUNTERS_CLH
 
+/*!
+ * \brief Mirrors the host counters used by diagnostic transport kernels.
+ *
+ * The host resets this record for each chunk and limits claim counts to avoid
+ * uint overflow, including terminating claims by workers. Updated stream-kernel
+ * counters use global atomics. The claim cursor can exceed the assigned primary
+ * count and is not a completion count. Legacy branching/stack fields remain
+ * available for other diagnostic kernels; the current stream kernel leaves them
+ * unchanged.
+ */
 typedef struct GGEMSTransportCounters {
+  /*! \brief Atomic chunk-local claim cursor, including terminating claims. */
   uint next_primary_id;
 
+  /*! \brief Primaries matched to a source before birth initialization. */
   uint consumed_primary_count;
+
+  /*! \brief Histories reaching termination, even after projection failure. */
   uint completed_history_count;
+
+  /*! \brief Initialized particles marked Killed by the stream kernel. */
   uint terminal_particle_count;
+
+  /*! \brief Created secondary count; untouched by the stream kernel. */
   uint created_secondary_count;
 
+  /*!
+   * \brief Synthetic Aionino-to-Gamma count; untouched by the stream kernel.
+   */
   uint aionino_to_gamma_count;
+
+  /*!
+   * \brief Synthetic Gamma-to-Electron count; untouched by the stream kernel.
+   */
   uint gamma_to_electron_count;
+
+  /*!
+   * \brief Synthetic Electron branching count; untouched by the stream kernel.
+   */
   uint electron_to_electron_count;
 
+  /*! \brief Failed ID, source/emission lookup, or projection operations. */
   uint overflow_count;
+
+  /*! \brief Maximum synthetic stack depth; untouched by the stream kernel. */
   uint max_stack_depth;
+
+  /*! \brief Synthetic step count; untouched by the stream kernel. */
   uint total_fake_step_count;
 } GGEMSTransportCounters;
 

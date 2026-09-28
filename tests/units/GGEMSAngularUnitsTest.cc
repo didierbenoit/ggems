@@ -127,7 +127,8 @@ TEST(GGEMSAngularUnits, DegreeLiteralStoresRadiansInternally) {
 
   Angle angle = 90.0_deg;
 
-  ExpectNearLongDouble(ToRadians(angle), std::numbers::pi_v<long double> / 2.0L);
+  ExpectNearLongDouble(ToRadians(angle),
+                       std::numbers::pi_v<long double> / 2.0L);
   ExpectNearLongDouble(ToDegrees(angle), 90.0L);
 }
 
@@ -179,7 +180,8 @@ TEST(GGEMSAngularUnits, SupportsNegativeAngles) {
   Angle angle = -45.0_deg;
 
   ExpectNearLongDouble(ToDegrees(angle), -45.0L);
-  ExpectNearLongDouble(ToRadians(angle), -std::numbers::pi_v<long double> / 4.0L);
+  ExpectNearLongDouble(ToRadians(angle),
+                       -std::numbers::pi_v<long double> / 4.0L);
 }
 
 /* --------------------------------------------- */
@@ -252,8 +254,7 @@ TEST(GGEMSAngularUnits, DivisionByScalarPreservesAngleSemantics) {
 TEST(GGEMSAngularUnits, SpaceshipComparisonUsesRadians) {
   using namespace ggems::units;
 
-  EXPECT_EQ(90.0_deg,
-            MakeRadians(std::numbers::pi_v<long double> / 2.0L));
+  EXPECT_EQ(90.0_deg, MakeRadians(std::numbers::pi_v<long double> / 2.0L));
   EXPECT_LT(45.0_deg, 90.0_deg);
   EXPECT_GT(180.0_deg, 90.0_deg);
 }

@@ -1,8 +1,48 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines the primary interval assigned to a source for one run.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #ifndef GGEMS_SOURCES_GGEMS_SOURCE_RUN_RANGE_CLH
 #define GGEMS_SOURCES_GGEMS_SOURCE_RUN_RANGE_CLH
 
+/*!
+ * \brief Locates one source slot in the concatenated run population.
+ *
+ * The half-open interval is [projection_primary_begin, projection_primary_begin
+ * + primary_count). Despite the historical projection name, the index is
+ * run-wide. Device chunks intersect these ranges; they do not renumber them.
+ * Field order and widths match the host record.
+ */
 typedef struct GGEMSSourceRunRange {
+  /*! \brief Inclusive first primary index in the run-wide population. */
   ulong projection_primary_begin;
+
+  /*! \brief Number of primaries assigned to this source; zero is allowed. */
   ulong primary_count;
 } GGEMSSourceRunRange;
 

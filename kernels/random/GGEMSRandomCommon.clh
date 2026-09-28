@@ -39,6 +39,14 @@
  * \brief Converts a raw 32-bit random word to a scalar uniform binary32 value.
  * \param[in] value Raw random word.
  * \return Uniform value in the half-open interval [0, 1).
+ *
+ * The conversion is
+ * \f[
+ * u = \left\lfloor v / 2^8 \right\rfloor 2^{-24}.
+ * \f]
+ * It discards the low eight bits and can return zero but never one. The mapping
+ * is uniform on this grid when the input word is uniform; it does not access or
+ * advance RNG state.
  */
 static inline float GGEMS_UIntToUniform01(uint value) {
   return (float)(value >> 8U) * 0x1.0p-24f;
@@ -48,6 +56,9 @@ static inline float GGEMS_UIntToUniform01(uint value) {
  * \brief Converts four raw random words to uniform binary32 values.
  * \param[in] values Four raw random words.
  * \return Four uniform values in the half-open interval [0, 1).
+ *
+ * Applies GGEMS_UIntToUniform01 independently to x, y, z, and w, preserving
+ * component order without accessing RNG state.
  */
 static inline float4 GGEMS_UInt4ToUniform01(uint4 values) {
   return (

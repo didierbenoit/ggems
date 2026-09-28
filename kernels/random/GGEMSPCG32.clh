@@ -26,6 +26,11 @@
  * Provides raw 32-bit output and scalar uniform sampling from per-stream PCG32
  * state.
  *
+ * The caller supplies host-initialized global states and a valid buffer index.
+ * Each concurrent worker must exclusively own its selected state element; these
+ * helpers perform no bounds checks or atomic updates. The buffer index is not
+ * itself the global stream identifier.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -39,8 +44,12 @@
 /*!
  * \brief Advances a PCG32 stream and returns the next raw 32-bit value.
  * \param[in,out] states Array of PCG32 stream states.
- * \param[in] index State index identifying the logical stream.
+ * \param[in] index Index of the exclusively owned state element.
  * \return Next raw PCG32 word.
+ *
+ * Returns the permutation of the old state, then leaves the stored state
+ * advanced by one linear-congruential step modulo 2^64. The host-initialized
+ * odd increment is unchanged.
  */
 static inline uint GGEMS_PCG32NextUInt(__global GGEMSPCG32State *states,
                                        uint index) {
@@ -59,8 +68,11 @@ static inline uint GGEMS_PCG32NextUInt(__global GGEMSPCG32State *states,
 /*!
  * \brief Generates a scalar uniform value from a PCG32 stream.
  * \param[in,out] states Array of PCG32 stream states.
- * \param[in] index State index identifying the logical stream.
+ * \param[in] index Index of the exclusively owned state element.
  * \return Uniform binary32 value in [0, 1).
+ *
+ * Consumes one raw PCG32 word and maps its upper 24 bits to the binary32 grid
+ * with spacing 2^-24.
  */
 static inline float GGEMS_PCG32Uniform(__global GGEMSPCG32State *states,
                                        uint index) {

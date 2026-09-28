@@ -26,6 +26,17 @@
  * Selects the configured random engine at compile time and exposes common raw,
  * scalar-uniform, and vector-uniform entry points.
  *
+ * The caller supplies host-initialized global states and a valid buffer index.
+ * Each concurrent worker must exclusively own its selected state element; these
+ * helpers perform no bounds checks or atomic updates. The buffer index is not
+ * itself the global stream identifier.
+ *
+ * GGEMS_RANDOM_ENGINE must select JKISS, PCG32, or Philox before inclusion.
+ * Scalar calls advance one engine step (one complete block for Philox). A
+ * vector call advances four JKISS or PCG32 steps, but only one Philox block.
+ * The API does not guarantee a fixed primary-to-stream assignment under
+ * concurrent work claiming.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -68,10 +79,15 @@
 typedef GGEMSJKissState GGEMSRandomState;
 
 /*!
- * \brief Generates the next raw 32-bit value through the selected random
- * engine. \param[in,out] states Array of generic random states. \param[in]
- * index State index identifying the logical stream. \return Next raw 32-bit
- * random value.
+ * \brief Generates one raw word through the selected random engine.
+ *
+ * Philox advances one block and discards its final three words; JKISS and PCG32
+ * advance one scalar step.
+ *
+ * \param[in,out] states Host-initialized global array of selected-engine
+ * states.
+ * \param[in] index Index of the exclusively owned state element.
+ * \return Next unsigned 32-bit word.
  */
 static inline uint GGEMS_RndmUInt32(__global GGEMSRandomState *states,
                                     uint const index) {
@@ -79,10 +95,15 @@ static inline uint GGEMS_RndmUInt32(__global GGEMSRandomState *states,
 }
 
 /*!
- * \brief Generates one scalar uniform value through the selected random engine.
- * \param[in,out] states Array of generic random states.
- * \param[in] index State index identifying the logical stream.
- * \return Uniform binary32 value in [0, 1).
+ * \brief Generates one uniform value through the selected random engine.
+ *
+ * Consumes one raw-word call and retains its upper 24 bits. Philox therefore
+ * advances a whole block.
+ *
+ * \param[in,out] states Host-initialized global array of selected-engine
+ * states.
+ * \param[in] index Index of the exclusively owned state element.
+ * \return Binary32 value on the grid with spacing 2^-24 in [0, 1).
  */
 static inline float GGEMS_RndmUniform(__global GGEMSRandomState *states,
                                       uint const index) {
@@ -91,9 +112,14 @@ static inline float GGEMS_RndmUniform(__global GGEMSRandomState *states,
 
 /*!
  * \brief Generates four uniform values through the selected random engine.
- * \param[in,out] states Array of generic random states.
- * \param[in] index State index identifying the logical stream.
- * \return Four uniform binary32 values in [0, 1).
+ *
+ * Consumes four sequential scalar steps for JKISS or PCG32, or one four-word
+ * Philox block. Each output uses the upper 24 bits of its raw word.
+ *
+ * \param[in,out] states Host-initialized global array of selected-engine
+ * states.
+ * \param[in] index Index of the exclusively owned state element.
+ * \return Four binary32 values in [0, 1), in x, y, z, w draw order.
  */
 static inline float4 GGEMS_RndmUniform4(__global GGEMSRandomState *states,
                                         uint const index) {
@@ -115,10 +141,15 @@ static inline float4 GGEMS_RndmUniform4(__global GGEMSRandomState *states,
 typedef GGEMSPCG32State GGEMSRandomState;
 
 /*!
- * \brief Generates the next raw 32-bit value through the selected random
- * engine. \param[in,out] states Array of generic random states. \param[in]
- * index State index identifying the logical stream. \return Next raw 32-bit
- * random value.
+ * \brief Generates one raw word through the selected random engine.
+ *
+ * Philox advances one block and discards its final three words; JKISS and PCG32
+ * advance one scalar step.
+ *
+ * \param[in,out] states Host-initialized global array of selected-engine
+ * states.
+ * \param[in] index Index of the exclusively owned state element.
+ * \return Next unsigned 32-bit word.
  */
 static inline uint GGEMS_RndmUInt32(__global GGEMSRandomState *states,
                                     uint const index) {
@@ -126,10 +157,15 @@ static inline uint GGEMS_RndmUInt32(__global GGEMSRandomState *states,
 }
 
 /*!
- * \brief Generates one scalar uniform value through the selected random engine.
- * \param[in,out] states Array of generic random states.
- * \param[in] index State index identifying the logical stream.
- * \return Uniform binary32 value in [0, 1).
+ * \brief Generates one uniform value through the selected random engine.
+ *
+ * Consumes one raw-word call and retains its upper 24 bits. Philox therefore
+ * advances a whole block.
+ *
+ * \param[in,out] states Host-initialized global array of selected-engine
+ * states.
+ * \param[in] index Index of the exclusively owned state element.
+ * \return Binary32 value on the grid with spacing 2^-24 in [0, 1).
  */
 static inline float GGEMS_RndmUniform(__global GGEMSRandomState *states,
                                       uint const index) {
@@ -138,9 +174,14 @@ static inline float GGEMS_RndmUniform(__global GGEMSRandomState *states,
 
 /*!
  * \brief Generates four uniform values through the selected random engine.
- * \param[in,out] states Array of generic random states.
- * \param[in] index State index identifying the logical stream.
- * \return Four uniform binary32 values in [0, 1).
+ *
+ * Consumes four sequential scalar steps for JKISS or PCG32, or one four-word
+ * Philox block. Each output uses the upper 24 bits of its raw word.
+ *
+ * \param[in,out] states Host-initialized global array of selected-engine
+ * states.
+ * \param[in] index Index of the exclusively owned state element.
+ * \return Four binary32 values in [0, 1), in x, y, z, w draw order.
  */
 static inline float4 GGEMS_RndmUniform4(__global GGEMSRandomState *states,
                                         uint const index) {
@@ -162,10 +203,15 @@ static inline float4 GGEMS_RndmUniform4(__global GGEMSRandomState *states,
 typedef GGEMSPhiloxState GGEMSRandomState;
 
 /*!
- * \brief Generates the next raw 32-bit value through the selected random
- * engine. \param[in,out] states Array of generic random states. \param[in]
- * index State index identifying the logical stream. \return Next raw 32-bit
- * random value.
+ * \brief Generates one raw word through the selected random engine.
+ *
+ * Philox advances one block and discards its final three words; JKISS and PCG32
+ * advance one scalar step.
+ *
+ * \param[in,out] states Host-initialized global array of selected-engine
+ * states.
+ * \param[in] index Index of the exclusively owned state element.
+ * \return Next unsigned 32-bit word.
  */
 static inline uint GGEMS_RndmUInt32(__global GGEMSRandomState *states,
                                     uint const index) {
@@ -173,10 +219,15 @@ static inline uint GGEMS_RndmUInt32(__global GGEMSRandomState *states,
 }
 
 /*!
- * \brief Generates one scalar uniform value through the selected random engine.
- * \param[in,out] states Array of generic random states.
- * \param[in] index State index identifying the logical stream.
- * \return Uniform binary32 value in [0, 1).
+ * \brief Generates one uniform value through the selected random engine.
+ *
+ * Consumes one raw-word call and retains its upper 24 bits. Philox therefore
+ * advances a whole block.
+ *
+ * \param[in,out] states Host-initialized global array of selected-engine
+ * states.
+ * \param[in] index Index of the exclusively owned state element.
+ * \return Binary32 value on the grid with spacing 2^-24 in [0, 1).
  */
 static inline float GGEMS_RndmUniform(__global GGEMSRandomState *states,
                                       uint const index) {
@@ -185,9 +236,14 @@ static inline float GGEMS_RndmUniform(__global GGEMSRandomState *states,
 
 /*!
  * \brief Generates four uniform values through the selected random engine.
- * \param[in,out] states Array of generic random states.
- * \param[in] index State index identifying the logical stream.
- * \return Four uniform binary32 values in [0, 1).
+ *
+ * Consumes four sequential scalar steps for JKISS or PCG32, or one four-word
+ * Philox block. Each output uses the upper 24 bits of its raw word.
+ *
+ * \param[in,out] states Host-initialized global array of selected-engine
+ * states.
+ * \param[in] index Index of the exclusively owned state element.
+ * \return Four binary32 values in [0, 1), in x, y, z, w draw order.
  */
 static inline float4 GGEMS_RndmUniform4(__global GGEMSRandomState *states,
                                         uint const index) {

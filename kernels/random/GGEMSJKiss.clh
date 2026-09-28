@@ -26,6 +26,11 @@
  * Provides raw 32-bit output and scalar uniform sampling from per-stream JKISS
  * state.
  *
+ * The caller supplies host-initialized global states and a valid buffer index.
+ * Each concurrent worker must exclusively own its selected state element; these
+ * helpers perform no bounds checks or atomic updates. The buffer index is not
+ * itself the global stream identifier.
+ *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -42,8 +47,11 @@
 /*!
  * \brief Advances a JKISS stream and returns the next raw 32-bit value.
  * \param[in,out] states Array of JKISS stream states.
- * \param[in] index State index identifying the logical stream.
+ * \param[in] index Index of the exclusively owned state element.
  * \return Next raw JKISS word.
+ *
+ * One call updates all five words of states[index]. Unsigned arithmetic wraps
+ * at 32 bits.
  */
 static inline uint GGEMS_JKissNextUInt(__global GGEMSJKissState *states,
                                        uint index) {
@@ -71,8 +79,11 @@ static inline uint GGEMS_JKissNextUInt(__global GGEMSJKissState *states,
 /*!
  * \brief Generates a scalar uniform value from a JKISS stream.
  * \param[in,out] states Array of JKISS stream states.
- * \param[in] index State index identifying the logical stream.
+ * \param[in] index Index of the exclusively owned state element.
  * \return Uniform binary32 value in [0, 1).
+ *
+ * Consumes one raw JKISS word and maps its upper 24 bits to the binary32 grid
+ * with spacing 2^-24.
  */
 static inline float GGEMS_JKissUniform(__global GGEMSJKissState *states,
                                        uint index) {
