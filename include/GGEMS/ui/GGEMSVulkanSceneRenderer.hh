@@ -44,7 +44,6 @@ public:
   [[nodiscard]] auto GetViewportExtent() const noexcept -> vk::Extent2D const &;
   [[nodiscard]] auto GetColorFormat() const noexcept -> vk::Format;
   [[nodiscard]] auto GetColorImageView() const noexcept -> vk::ImageView;
-  [[nodiscard]] auto GetSampler() const noexcept -> vk::Sampler;
 
   [[nodiscard]] auto GetTextureID() const noexcept -> ImTextureID;
   auto RecordSceneCommands(
@@ -88,7 +87,6 @@ private:
   auto CreateTracePipeline() -> void;
   auto CleanupTracePipeline() noexcept -> void;
   auto CleanupTraceResources() noexcept -> void;
-  auto CreateDemoTraceVertices() -> void;
   auto CreateTraceVertexBuffer() -> void;
   auto DestroyTraceVertexBuffer() noexcept -> void;
   auto RecordTraceCommands(
@@ -102,8 +100,6 @@ private:
   vk::raii::Device const *device_{nullptr};
 
   vk::Extent2D viewport_extent_{};
-
-  vk::raii::Sampler sampler_{nullptr};
 
   vk::Format color_format_{vk::Format::eUndefined};
   vk::raii::Image color_image_{nullptr};

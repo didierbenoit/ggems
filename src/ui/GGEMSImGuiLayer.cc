@@ -64,6 +64,15 @@ auto GGEMSImGuiLayer::BuildFrame(
   detail::GGEMSDeviceStatusSnapshot const &device_status) -> void {
   reset_camera_requested_ = false;
 
+  viewport_state_.orbit_delta_x_pixels = 0.0F;
+  viewport_state_.orbit_delta_y_pixels = 0.0F;
+  viewport_state_.pan_delta_x_pixels = 0.0F;
+  viewport_state_.pan_delta_y_pixels = 0.0F;
+  viewport_state_.zoom_delta = 0.0F;
+  viewport_state_.visible = false;
+  viewport_state_.hovered = false;
+  viewport_state_.focused = false;
+
   BuildMainDockspace();
 
   if (show_output_panel_) {
@@ -305,14 +314,6 @@ auto GGEMSImGuiLayer::BuildViewportPlaceholder(
   -> void {
   ImGuiWindowFlags window_flags =
     ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
-
-  viewport_state_.orbit_delta_x_pixels = 0.0F;
-  viewport_state_.orbit_delta_y_pixels = 0.0F;
-  viewport_state_.pan_delta_x_pixels = 0.0F;
-  viewport_state_.pan_delta_y_pixels = 0.0F;
-  viewport_state_.zoom_delta = 0.0F;
-  viewport_state_.hovered = false;
-  viewport_state_.focused = false;
 
   ImGui::Begin("GGEMS Viewport", &show_viewport_placeholder_, window_flags);
 

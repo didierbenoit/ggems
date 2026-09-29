@@ -1,8 +1,6 @@
 # GUI dependencies
 find_package(Vulkan 1.3 REQUIRED)
 find_package(glfw3 REQUIRED)
-find_package(glm REQUIRED)
-find_package(Python REQUIRED COMPONENTS Interpreter)
 
 if(TARGET glfw)
   set(GGEMS_GLFW_TARGET glfw)
@@ -14,19 +12,8 @@ else()
       "GLFW was found, but no supported imported CMake target is available.")
 endif()
 
-if(TARGET glm::glm)
-  set(GGEMS_GLM_TARGET glm::glm)
-elseif(TARGET glm)
-  set(GGEMS_GLM_TARGET glm)
-else()
-  message(
-    FATAL_ERROR
-      "GLM was found, but no supported imported CMAKE target is available.")
-endif()
-
 message(STATUS "Vulkan GUI dependency located.")
 message(STATUS "GLFW GUI target          : ${GGEMS_GLFW_TARGET}")
-message(STATUS "GLM target               : ${GGEMS_GLM_TARGET}")
 
 # Dear ImGui
 include(AddDearImGui)

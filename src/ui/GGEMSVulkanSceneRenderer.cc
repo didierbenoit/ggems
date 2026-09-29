@@ -20,7 +20,6 @@
 #include "GGEMS/logging/GGEMSLogMacros.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
-#include "GGEMS/particles/GGEMSParticleTypes.hh"
 
 namespace {
 
@@ -156,12 +155,6 @@ auto GGEMSVulkanSceneRenderer::GetColorImageView() const noexcept
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanSceneRenderer::GetSampler() const noexcept -> vk::Sampler {
-  return *sampler_;
-}
-
-// -----------------------------------------------------------------------------
-
 auto GGEMSVulkanSceneRenderer::IsDepthFormatSupported(vk::Format format) const
   -> bool {
   if (!(physical_device_ != nullptr)) {
@@ -198,8 +191,7 @@ auto GGEMSVulkanSceneRenderer::CreateColorTarget() -> void {
     .samples = vk::SampleCountFlagBits::e1,
     .tiling = vk::ImageTiling::eOptimal,
     .usage = vk::ImageUsageFlagBits::eColorAttachment |
-             vk::ImageUsageFlagBits::eSampled |
-             vk::ImageUsageFlagBits::eTransferDst,
+             vk::ImageUsageFlagBits::eSampled,
     .sharingMode = vk::SharingMode::eExclusive,
     .initialLayout = vk::ImageLayout::eUndefined};
 
@@ -230,28 +222,8 @@ auto GGEMSVulkanSceneRenderer::CreateColorTarget() -> void {
 
   color_image_view_ = vk::raii::ImageView{*device_, image_view_create_info};
 
-  vk::SamplerCreateInfo sampler_create_info{
-    .magFilter = vk::Filter::eLinear,
-    .minFilter = vk::Filter::eLinear,
-    .mipmapMode = vk::SamplerMipmapMode::eNearest,
-    .addressModeU = vk::SamplerAddressMode::eClampToEdge,
-    .addressModeV = vk::SamplerAddressMode::eClampToEdge,
-    .addressModeW = vk::SamplerAddressMode::eClampToEdge,
-    .mipLodBias = 0.0F,
-    .anisotropyEnable = vk::False,
-    .maxAnisotropy = 1.0F,
-    .compareEnable = vk::False,
-    .compareOp = vk::CompareOp::eAlways,
-    .minLod = 0.0F,
-    .maxLod = 0.0F,
-    .borderColor = vk::BorderColor::eFloatOpaqueBlack,
-    .unnormalizedCoordinates = vk::False};
-
-  sampler_ = vk::raii::Sampler{*device_, sampler_create_info};
-
   imgui_descriptor_set_ =
-    ImGui_ImplVulkan_AddTexture(static_cast<VkSampler>(*sampler_),
-                                static_cast<VkImageView>(*color_image_view_),
+    ImGui_ImplVulkan_AddTexture(static_cast<VkImageView>(*color_image_view_),
                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
   color_image_layout_ = vk::ImageLayout::eUndefined;
@@ -272,7 +244,7 @@ auto GGEMSVulkanSceneRenderer::CreateDepthTarget() -> void {
   }
 
   if (!(IsDepthFormatSupported(depth_format_))) {
-    throw ggems::core::GGEMSInternal(
+    throw ggems::core::GGEMSRecoverable(
       std::format("Vulkan depth format '{}' is not supported as a depth "
                   "attachment.",
                   vk::to_string(depth_format_)));
@@ -335,7 +307,6 @@ auto GGEMSVulkanSceneRenderer::CleanupRenderTargets() noexcept -> void {
     imgui_descriptor_set_ = VK_NULL_HANDLE;
   }
 
-  sampler_ = nullptr;
   color_image_view_ = nullptr;
   color_memory_ = nullptr;
   color_image_ = nullptr;
@@ -953,60 +924,6 @@ auto GGEMSVulkanSceneRenderer::CreateTracePipeline() -> void {
   trace_pipeline_ = vk::raii::Pipeline{*device_, nullptr, pipeline_create_info};
 
   GGEMS_INFOEX("Vulkan", 2, "Vulkan scene trace pipeline created.");
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanSceneRenderer::CreateDemoTraceVertices() -> void {
-  using core::particles::GGEMSParticleType;
-
-  std::vector<ggems::render::GGEMSParticleTraceSegment> demo_segments{};
-  demo_segments.reserve(10);
-
-  auto append_segment =
-    [&demo_segments](GGEMSParticleType particle_type,
-                     std::array<float, 3U> const &first,
-                     std::array<float, 3U> const &second) -> void {
-    demo_segments.push_back(ggems::render::GGEMSParticleTraceSegment{
-      .particle_type = particle_type,
-      .begin = ggems::render::GGEMSParticleTracePoint{.x_m = first[0],
-                                                      .y_m = first[1],
-                                                      .z_m = first[2]},
-      .end = ggems::render::GGEMSParticleTracePoint{
-        .x_m = second[0], .y_m = second[1], .z_m = second[2]}});
-  };
-
-  append_segment(GGEMSParticleType::Aionino, {0.0F, 0.0F, -0.90F},
-                 {0.0F, 0.0F, -0.45F});
-
-  append_segment(GGEMSParticleType::Gamma, {0.0F, 0.0F, -0.45F},
-                 {0.0F, 0.0F, 0.10F});
-  append_segment(GGEMSParticleType::Gamma, {0.0F, 0.0F, 0.10F},
-                 {0.0F, 0.0F, 0.82F});
-
-  append_segment(GGEMSParticleType::Electron, {0.0F, 0.0F, 0.10F},
-                 {0.38F, 0.10F, 0.30F});
-  append_segment(GGEMSParticleType::Electron, {0.38F, 0.10F, 0.30F},
-                 {0.72F, 0.20F, 0.46F});
-
-  append_segment(GGEMSParticleType::Positron, {0.0F, 0.0F, -0.04F},
-                 {-0.32F, 0.18F, 0.18F});
-  append_segment(GGEMSParticleType::Positron, {-0.32F, 0.18F, 0.18F},
-                 {-0.56F, 0.32F, 0.42F});
-
-  append_segment(GGEMSParticleType::Proton, {-0.50F, -0.36F, -0.55F},
-                 {-0.08F, -0.24F, -0.18F});
-  append_segment(GGEMSParticleType::Neutron, {0.42F, -0.36F, -0.55F},
-                 {0.06F, -0.18F, -0.20F});
-  append_segment(GGEMSParticleType::Alpha, {-0.22F, 0.42F, -0.42F},
-                 {0.28F, 0.34F, -0.02F});
-
-  auto draw_data = ggems::render::BuildParticleTraceDrawData(demo_segments);
-  trace_vertices_ = std::move(draw_data.vertices);
-  trace_draw_ranges_ = std::move(draw_data.draw_ranges);
-
-  GGEMS_INFOEX("Vulkan", 2, "Created {} demo particle trace vertex/vertices.",
-               trace_vertices_.size());
 }
 
 // -----------------------------------------------------------------------------

@@ -1004,6 +1004,26 @@ auto GGEMSVulkanContext::CreateSwapchain(GLFWwindow *window) -> void {
     queue_family_index_data = queue_family_indices.data();
   }
 
+  constexpr std::array k_composite_alpha_modes{
+    vk::CompositeAlphaFlagBitsKHR::eOpaque,
+    vk::CompositeAlphaFlagBitsKHR::eInherit,
+    vk::CompositeAlphaFlagBitsKHR::ePreMultiplied,
+    vk::CompositeAlphaFlagBitsKHR::ePostMultiplied,
+  };
+
+  auto const composite_alpha = std::ranges::find_if(
+    k_composite_alpha_modes,
+    [&support_details](vk::CompositeAlphaFlagBitsKHR mode) -> bool {
+      return static_cast<bool>(
+        support_details.capabilities.supportedCompositeAlpha & mode);
+    });
+
+  if (composite_alpha == k_composite_alpha_modes.end()) {
+    throw ggems::core::GGEMSRecoverable(
+      "No supported Vulkan swapchain composite alpha mode is available for "
+      "GuiMode.");
+  }
+
   vk::SwapchainCreateInfoKHR create_info{
     .surface = *surface_,
     .minImageCount = image_count,
@@ -1016,9 +1036,10 @@ auto GGEMSVulkanContext::CreateSwapchain(GLFWwindow *window) -> void {
     .queueFamilyIndexCount = queue_family_index_count,
     .pQueueFamilyIndices = queue_family_index_data,
     .preTransform = support_details.capabilities.currentTransform,
-    .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
+    .compositeAlpha = *composite_alpha,
     .presentMode = present_mode,
-    .clipped = vk::True};
+    .clipped = vk::True,
+  };
 
   swapchain_ = vk::raii::SwapchainKHR{device_, create_info};
   swapchain_images_ = swapchain_.getImages();
@@ -1176,7 +1197,8 @@ auto GGEMSVulkanContext::CreateSwapchainSyncObjects() -> void {
 auto GGEMSVulkanContext::TransitionSwapchainImageLayout(
   std::uint32_t image_index, vk::ImageLayout old_layout,
   vk::ImageLayout new_layout) -> void {
-  vk::PipelineStageFlags2 source_stage{vk::PipelineStageFlagBits2::eNone};
+  vk::PipelineStageFlags2 source_stage{
+    vk::PipelineStageFlagBits2::eColorAttachmentOutput};
   vk::AccessFlags2 source_access{vk::AccessFlagBits2::eNone};
 
   vk::PipelineStageFlags2 destination_stage{
@@ -1185,7 +1207,6 @@ auto GGEMSVulkanContext::TransitionSwapchainImageLayout(
     vk::AccessFlagBits2::eColorAttachmentWrite};
 
   if (new_layout == vk::ImageLayout::ePresentSrcKHR) {
-    source_stage = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
     source_access = vk::AccessFlagBits2::eColorAttachmentWrite;
     destination_stage = vk::PipelineStageFlagBits2::eNone;
     destination_access = vk::AccessFlagBits2::eNone;
@@ -1281,6 +1302,10 @@ auto GGEMSVulkanContext::RenderFrame(GLFWwindow *window,
       RecreateSwapchain(window);
     }
 
+    if (glfwWindowShouldClose(window) == GLFW_TRUE) {
+      return;
+    }
+
     vk::Result wait_result =
       device_.waitForFences(*in_flight_fences_[current_frame_], vk::True,
                             std::numeric_limits<std::uint64_t>::max());
@@ -1365,15 +1390,9 @@ auto GGEMSVulkanContext::RenderFrame(GLFWwindow *window,
 
     vk::Result present_result = presentation_queue_.presentKHR(present_info);
 
-    if (present_result == vk::Result::eErrorOutOfDateKHR ||
+    if (result == vk::Result::eSuboptimalKHR ||
         present_result == vk::Result::eSuboptimalKHR) {
       RecreateSwapchain(window);
-    } else {
-      if (!(present_result == vk::Result::eSuccess)) {
-        throw ggems::core::GGEMSRecoverable(
-          std::format("Unable to present a Vulkan swapchain image: {}.",
-                      vk::to_string(present_result)));
-      }
     }
 
     current_frame_ = (current_frame_ + 1U) % k_max_frames_in_flight_;
@@ -1415,9 +1434,14 @@ auto GGEMSVulkanContext::RecreateSwapchain(GLFWwindow *window) -> void {
 
   glfwGetFramebufferSize(window, &width, &height);
 
-  while (width == 0 || height == 0) {
+  while ((width == 0 || height == 0) &&
+         glfwWindowShouldClose(window) == GLFW_FALSE) {
     glfwWaitEvents();
     glfwGetFramebufferSize(window, &width, &height);
+  }
+
+  if (glfwWindowShouldClose(window) == GLFW_TRUE) {
+    return;
   }
 
   device_.waitIdle();
