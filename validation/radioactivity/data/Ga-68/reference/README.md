@@ -1,5 +1,9 @@
 # Selected Ga-68 reference
 
+For build instructions, campaign commands, and result interpretation, see the
+[radionuclide validation guide](../../../README.md). Select this package with
+`--reference validation/radioactivity/data/Ga-68/reference/reference.json`.
+
 This package maps the recovered LNHB/PTB evaluation and BetaShape 2.4 output to
 the seven existing GGEMS source groups. It supplies data to the existing generic
 radioactivity validator. Raw paths below are relative to `../raw/`.
@@ -106,14 +110,14 @@ The exporter has no compiled provenance API. Source-comment provenance and
 numerical comparison are separate; a retained generator label alone does not
 establish a spectral discrepancy.
 
-## Existing campaign
+## Running a campaign
 
-From the source root, after building `validation_radioactivity` in an isolated
-source copy where required by workspace protection:
+From the repository root, after building `validation_radioactivity`, use the
+exporter path appropriate to your platform and build configuration:
 
 ```powershell
-python ./validation/radioactivity/run_campaign.py --exporter ./build/validation/radioactivity/ggems_radionuclide_exporter.exe --reference ./validation/radioactivity/data/Ga-68/reference/reference.json --output ./codex_scratch/ga68_cpu --device cpu
-python ./validation/radioactivity/plot.py ./codex_scratch/ga68_cpu
+python ./validation/radioactivity/run_campaign.py --exporter ./build/validation/radioactivity/ggems_radionuclide_exporter.exe --reference ./validation/radioactivity/data/Ga-68/reference/reference.json --output validation/radioactivity/results/ga68_cpu --device cpu
+python ./validation/radioactivity/plot.py validation/radioactivity/results/ga68_cpu
 ```
 
 Use a new output directory and `--device gpu` for a GPU campaign. Existing defaults

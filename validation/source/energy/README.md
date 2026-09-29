@@ -1,7 +1,7 @@
 # Source / Energy: E1 canonical energy validation
 
 E1 measures the energies emitted by the current production CountDriven Source.
-The authority is `GGEMSSource` configuration -> ordinary `GGEMSRun` -> production
+Samples follow this path: `GGEMSSource` configuration -> ordinary `GGEMSRun` -> production
 OpenCL primary initialization -> raw Observer `Source` records -> the shared
 validation exporter -> exact Python analytical measurements -> Matplotlib.
 There is no alternative Monte Carlo sampler, ticket allocator, or production API.
@@ -29,14 +29,14 @@ it does not interpolate between spectrum centers.
 
 ## Build and run
 
-Use the existing GGEMS toolchain and installed dependencies. The executable is
-still `ggems_source_sample_exporter`; E1 needs no additional CMake option or
-target. Configure an out-of-source build with the local dependency settings:
+See the [shared build and prerequisites](../README.md#build-and-prerequisites)
+for Windows paths, build configurations, and Python dependencies.
+
+Build `ggems_source_sample_exporter` using the configured GGEMS toolchain:
 
 ```console
-cmake -S . -B codex_scratch/build
-cmake --build codex_scratch/build --target ggems_source_sample_exporter
-python validation/source/energy/run_campaign.py --exporter codex_scratch/build/validation/source/ggems_source_sample_exporter --device 0 --primaries 4096 --workers 4096 --seed 77777 --output-dir codex_scratch/e1_smoke
+cmake --build build --target ggems_source_sample_exporter
+python validation/source/energy/run_campaign.py --exporter build/validation/source/ggems_source_sample_exporter --device 0 --primaries 4096 --workers 4096 --seed 77777 --output-dir validation/source/results/energy/example
 ```
 
 Use `.exe` on Windows and the configuration subdirectory for multi-configuration
@@ -49,8 +49,8 @@ a missing plotting dependency is an error. `MPLBACKEND=Agg` supports headless us
 `--device` is required and is passed unchanged to `GGEMSOpenCL::SelectDevices()`.
 Actual device names are recorded in selection order. `--cases` accepts any of
 the three complete case names. `cases.py` owns the configurations and modest
-development defaults: 4,096 primaries, 4,096 workers, seed 77,777. These defaults
-are implementation checks, not publication statistics.
+defaults: 4,096 primaries, 4,096 workers, and seed 77,777. Increase `--primaries`
+for larger distribution samples.
 
 Outputs default to the ignored `validation/source/results/energy/`, or to a
 caller-selected `--output-dir`. Each case directory must be new, so a failed
@@ -58,12 +58,11 @@ rerun cannot leave stale scientific results. Successful cases contain
 `samples.csv`, `metadata.json`, `export.log`, and `summary.json`. The two
 statistical cases also produce `energy.png` and `energy.pdf` unless plots were
 explicitly disabled. Mono needs only an exact deterministic summary. Generated
-CSV, JSON, logs, and figures do not belong in the code patch.
 
 Standalone tabulated extraction and analysis:
 
 ```console
-codex_scratch/build/validation/source/ggems_source_sample_exporter --device 0 --geometry point --angular fixed --case-name E1_discrete_lines --energy-mode discrete-lines --energy-values-kev 20,40,60,80 --energy-weights 1,0,1,2 --primaries 4096 --workers 4096 --seed 77777 --output samples.csv --metadata metadata.json
+build/validation/source/ggems_source_sample_exporter --device 0 --geometry point --angular fixed --case-name E1_discrete_lines --energy-mode discrete-lines --energy-values-kev 20,40,60,80 --energy-weights 1,0,1,2 --primaries 4096 --workers 4096 --seed 77777 --output samples.csv --metadata metadata.json
 python validation/source/energy/analyze.py --samples samples.csv --metadata metadata.json --output-dir analysis
 ```
 
@@ -84,9 +83,8 @@ mode are rejected. Units conversion remains in GGEMS.
 
 The public RegularSpectrum API derives its canonical width from center spacing.
 The exporter converts the requested CLI width with central Units and requires
-exact agreement with that derived width. It neither constructs a second grid
-nor introduces a production API. An explicit `--case-name` is needed for
-standalone E1 analysis; the historical exporter default is `G1_<geometry>`.
+exact agreement with that derived width. Specify `--case-name` for standalone
+E1 analysis; the exporter default is `G1_<geometry>`.
 
 ## Executed metadata and extraction contract
 
@@ -141,11 +139,9 @@ rows, complete unique ordered provenance, slot 0 and local/global IDs [0,N),
 Point origin, exact Fixed +Z, and static 0 ps. Malformed CSV,
 metadata mismatch, or any structural contract failure stops analysis.
 
-Existing Geometry and Angle CLI behavior is preserved: absent energy options
-still configure Mono 511 keV, and all old metadata fields retain their values.
-G1 and A1 scripts do not need changes. The runner records the checkout commit
-through the same lightweight `git rev-parse HEAD` path when available. There
-are no hashes, driver fingerprints, or qualification certificates.
+Without energy options, the exporter uses Mono 511 keV. The runner records the
+checkout commit when available. This identifies the checkout used to launch
+the campaign, which may differ from the exporter build.
 
 ## Exact energy analysis
 
@@ -208,7 +204,7 @@ structural status, case metrics, figure paths/status, and
 `acceptance_thresholds = null`. Successful exact support diagnostics are zero;
 violations stop execution with the offending contract identified.
 
-## Figures and review scope
+## Figures and interpretation
 
 DiscreteLines shows observed versus exact expected probability and residuals,
 including the configured 40 keV zero-weight line. RegularSpectrum shows a fine
@@ -218,36 +214,13 @@ deviation by bin. The constant density is the bin-scale spectrum representation;
 the exact integer sub-bin law is assessed separately by the finite CDF. Both
 figures are saved as PNG and PDF without a statistical acceptance line.
 
-For implementation review, run all three E1 cases and one unchanged G1 and A1
-campaign with the modified exporter. Also check the analysis in disposable
-probes: malformed CSV, off-line and zero-ticket emission, malformed ticket
-bounds, exact lower/shared/final upper edges, samples outside the bins, repeated
-offsets, and metadata mismatch. Tiny M/W examples may enumerate all tickets in
-those probes to independently verify the analytical CDF and both jump limits.
-
-Run the available quality tools on the candidate:
-
-```console
-python -m py_compile validation/source/energy/cases.py validation/source/energy/run_campaign.py validation/source/energy/analyze.py validation/source/energy/plot.py
-ruff check --no-cache validation/source/energy/
-ruff format --check validation/source/energy/
-basedpyright --pythonpath <project-python> validation/source/energy/
-python clangd-check.py validation/source/tools/GGEMSSourceSampleExporter.cc
-clang-format --dry-run --Werror validation/source/tools/GGEMSSourceSampleExporter.cc
-```
-
-Direct-script imports retain the existing narrow BasedPyright annotation for
-that import mode. Matplotlib's partially typed APIs can emit third-party type
-warnings; inspect them without hiding them to force a zero-warning result.
-
 The current Observer capture requires `2*N <= UINT32_MAX`. The ordinary Run
 still constructs its dump, including costly per-history rescans, even when
 logging is filtered; practical full captures are much smaller. Worker/device
 assignment and scheduling may change which persistent stream supplies a
 primary. Sorted provenance is not a bitwise per-primary reproducibility promise.
 
-Scientific sample counts, uncertainty reporting, accepted statistical error
-budgets, device coverage, and publication criteria remain open. E1 stops at
-these canonical energy configurations. Realistic 120 kVp spectra, Time,
-G2/A2 frames/rotations, ActivityDriven/radionuclides, physical transport, and
-external Monte Carlo comparisons are outside this patch.
+E1 covers these three canonical energy configurations. Realistic 120 kVp
+spectra, chronology, frame transforms, ActivityDriven/radionuclide emission,
+physical transport, and external Monte Carlo comparisons are outside this
+campaign.

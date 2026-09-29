@@ -1,3 +1,31 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Analyze GGEMS Source integration samples and metadata.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 import argparse
 import csv
 import json
@@ -6,12 +34,11 @@ from collections import Counter
 from dataclasses import dataclass
 from fractions import Fraction
 from pathlib import Path
-from typing import Protocol, cast
 
 import numpy as np
 
 # Direct script entry points: Python adds this directory to sys.path.
-from cases import (  # pyright: ignore[reportImplicitRelativeImport]
+from cases import (
     CASES,
     CENTER_MM,
     FRAME_DIRECTION,
@@ -88,13 +115,15 @@ class Samples:
 def _object(value: object, name: str) -> JsonObject:
     if not isinstance(value, dict):
         raise TypeError(f"{name} must be a JSON object.")
-    return cast(JsonObject, value)
+
+    return value
 
 
 def _list(value: object, name: str) -> list[object]:
     if not isinstance(value, list):
         raise TypeError(f"{name} must be a JSON array.")
-    return cast(list[object], value)
+
+    return value
 
 
 def _integer(
@@ -102,17 +131,21 @@ def _integer(
 ) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
         raise TypeError(f"{name} must be an integer.")
+
     if not minimum <= value <= maximum:
         raise ValueError(f"{name} is outside its integer range.")
+
     return value
 
 
 def _number(value: object, name: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError(f"{name} must be numeric.")
+
     number = float(value)
     if not math.isfinite(number):
         raise ValueError(f"{name} must be finite.")
+
     return number
 
 
@@ -120,10 +153,12 @@ def _binary32(value: object, name: str) -> float:
     number = _number(value, name)
     if abs(number) > float(np.finfo(np.float32).max):
         raise ValueError(f"{name} is outside finite binary32.")
+
     packed = float(np.float32(number))
     # Metadata is written at host max_digits10, unlike the compact CSV.
     if packed != number:
         raise ValueError(f"{name} is not an actual packed binary32 value.")
+
     return packed
 
 
@@ -131,6 +166,7 @@ def _triple(value: object, name: str) -> list[object]:
     values = _list(value, name)
     if len(values) != 3:
         raise ValueError(f"{name} must contain exactly three components.")
+
     return values
 
 
@@ -145,6 +181,7 @@ def frame_matrix(raw: JsonObject) -> tuple[FloatArray, FloatArray, JsonObject]:
     """Read execution axes; invert the packed matrix, never its ideal rotation."""
     if raw.get("frame_matrix_convention") != CONVENTION:
         raise ValueError("Frame convention must be axes_as_columns.")
+
     axes = np.array(
         [
             [_binary32(item, "frame component") for item in _triple(axis, "frame axis")]
@@ -154,13 +191,16 @@ def frame_matrix(raw: JsonObject) -> tuple[FloatArray, FloatArray, JsonObject]:
     )
     if np.any(np.abs(axes) > 1.0):
         raise ValueError("A normalized frame component cannot exceed one.")
+
     matrix = axes.T.copy()
     determinant = float(np.linalg.det(matrix))
     if not math.isfinite(determinant) or determinant <= 0.0:
         raise ValueError("Frame must be nonsingular and right-handed.")
+
     inverse = np.linalg.inv(matrix)
     if not np.all(np.isfinite(inverse)):
         raise ValueError("Frame inverse is not finite.")
+
     norms = np.linalg.norm(axes, axis=1)
     return (
         matrix,
@@ -191,6 +231,7 @@ def _decimal(value: str, minimum: int, maximum: int) -> int:
     digits = value.removeprefix("-")
     if not digits or not digits.isascii() or not digits.isdecimal():
         raise ValueError(f"Expected an exact decimal integer, received {value!r}.")
+
     return _integer(int(value), "CSV integer", minimum, maximum)
 
 
@@ -202,6 +243,7 @@ def integer_delta(positions: IntArray, center: IntVector) -> FloatArray:
         raise ValueError(
             "Position displacement exceeds exact binary64 integer analysis domain."
         )
+
     return np.array(rows, dtype=np.float64)
 
 
@@ -219,6 +261,7 @@ def scalar_statistics(values: FloatArray) -> JsonObject:
             "mean": None,
             "variance": None,
         }
+
     return {
         "sample_count": int(values.size),
         "minimum": float(np.min(values)),
@@ -235,6 +278,7 @@ def uniform_statistics(values: FloatArray) -> JsonObject:
     )
     if not values.size:
         return result
+
     ordered = np.sort(values)
     # Evaluate the analytical CDF at unmodified observations, including tails.
     cdf = np.where(ordered < 0.0, 0.0, np.where(ordered > 1.0, 1.0, ordered))
@@ -260,7 +304,9 @@ def correlations(variables: dict[str, FloatArray]) -> JsonObject:
             if left.size >= 2 and np.var(left) > 0.0 and np.var(right) > 0.0:
                 value = float(np.corrcoef(left, right)[0, 1])
             row.append(value)
+
         matrix.append(row)
+
     return {
         "variables": names,
         "sample_count": int(next(iter(variables.values())).size),
@@ -291,8 +337,10 @@ def finite_cdf_ticket_count(offset: int, ticket_count: int, width: int) -> int:
     """Count tickets with floor(W*t/M) <= offset, without enumerating tickets."""
     if ticket_count <= 0 or width <= 0:
         raise ValueError("The finite law requires positive M and W.")
+
     if offset < 0:
         return 0
+
     if offset >= width - 1:
         return ticket_count
 
@@ -307,6 +355,7 @@ def finite_cdf_max_deviation(
     """Supremum of |empirical CDF - exact discrete CDF|, including both jumps."""
     if ticket_count <= 0 or width <= 0:
         raise ValueError("The finite law requires positive M and W.")
+
     if not offsets:
         return None
 
@@ -316,6 +365,7 @@ def finite_cdf_max_deviation(
     for offset, multiplicity in sorted(Counter(offsets).items()):
         if not 0 <= offset < width:
             raise ValueError("Offset is outside its half-open bin.")
+
         exact_before = finite_cdf_ticket_count(offset - 1, ticket_count, width)
         exact_after = finite_cdf_ticket_count(offset, ticket_count, width)
         if exact_before == exact_after:
@@ -373,7 +423,7 @@ def probability_results(
 def load_metadata(
     path: Path, configuration: Configuration, name: str, *, paired: bool
 ) -> Metadata:
-    raw = _object(cast(object, json.loads(path.read_text(encoding="utf-8"))), str(path))
+    raw = _object(json.loads(path.read_text(encoding="utf-8")), str(path))
     for key, expected in {
         "case_name": name,
         "geometry": configuration.geometry,
@@ -393,7 +443,7 @@ def load_metadata(
 
     count = _integer(raw.get("primary_count"), "primary_count", 1, UINT32_MAX // 2)
     workers = _integer(raw.get("worker_count"), "worker_count", 1, UINT32_MAX)
-    _ = _integer(raw.get("seed"), "seed")
+    _integer(raw.get("seed"), "seed")
     for key in (
         "source_index",
         "run_id",
@@ -408,15 +458,18 @@ def load_metadata(
     ):
         if _integer(raw.get(key), key) != 0:
             raise ValueError(f"A fresh static non-Mono I1 run requires {key} == 0.")
+
     if _integer(raw.get("global_primary_last"), "global_primary_last") != count - 1:
         raise ValueError("Global primary range differs from the expected domain.")
 
     names = _list(raw.get("device_names"), "device_names")
     if not names or any(not isinstance(item, str) or not item for item in names):
         raise ValueError("Actual selected device names are required.")
+
     selector = raw.get("device_selector")
     if not isinstance(selector, str) or not selector:
         raise ValueError("A nonempty device selector is required.")
+
     if paired and (workers != PAIR_WORKERS or len(names) != 1):
         raise ValueError("I1 exact pairs require exactly one worker and one device.")
 
@@ -429,8 +482,9 @@ def load_metadata(
     }.items():
         if _integer(observer.get(key), key) != expected:
             raise ValueError(f"Incomplete Observer capture: {key}.")
+
     for key in ("capacity_per_device", "host_capacity"):
-        _ = _integer(observer.get(key), key, 2 * count, UINT32_MAX)
+        _integer(observer.get(key), key, 2 * count, UINT32_MAX)
 
     # Physical fixtures use scales exported by central GGEMS Units.
     unit = _integer(raw.get("position_display_unit_pm"), "position_display_unit_pm", 1)
@@ -438,8 +492,10 @@ def load_metadata(
     dimensions = _int_vector(raw.get("dimensions_pm"), "dimensions_pm")
     if center != tuple(value * unit for value in CENTER_MM):
         raise ValueError("Committed center differs from the I1 fixture.")
+
     if dimensions != tuple(value * unit for value in configuration.dimensions_mm):
         raise ValueError("Committed dimensions differ from the I1 fixture.")
+
     for key, expected_vector in (
         ("requested_center_mm", CENTER_MM),
         ("dimensions_mm", configuration.dimensions_mm),
@@ -449,12 +505,14 @@ def load_metadata(
             != expected_vector
         ):
             raise ValueError(f"I1 metadata mismatch: {key}.")
+
     if _int_vector(raw.get("focus_position_pm"), "focus_position_pm") != (0, 0, 0):
         raise ValueError("I1 has no Focused configuration.")
 
     requested = _object(raw.get("requested_frame"), "requested_frame")
     if requested.get("api") != "SetOrientation":
         raise ValueError("I1 requires the public SetOrientation request.")
+
     for key, expected_vector in (
         ("direction", FRAME_DIRECTION),
         ("up_reference", FRAME_UP),
@@ -462,6 +520,7 @@ def load_metadata(
         values = tuple(_number(item, key) for item in _triple(requested.get(key), key))
         if values != expected_vector:
             raise ValueError(f"Requested frame {key} differs from the I1 fixture.")
+
     matrix, inverse, frame = frame_matrix(raw)
     fixed = [
         _binary32(item, "fixed_direction")
@@ -490,6 +549,7 @@ def load_metadata(
         ):
             if _number(requested_bounds.get(key), key) != expected:
                 raise ValueError("Requested bounded law differs from the I1 fixture.")
+
         # Both selected sectors fit atan2's nonwrapping interval. Packed values
         # supply the law; requested degrees are never used to rebuild its limits.
         if not (0.0 < lower < upper < 1.0 and -math.pi < phi_min < phi_max < math.pi):
@@ -531,23 +591,29 @@ def load_metadata(
     }.items():
         if _integer(energy.get(key), key) != expected:
             raise ValueError(f"Invalid packed energy descriptor: {key}.")
+
     if (
         energy.get("representation") != "uint64 micro-eV"
         or energy.get("display_unit") != "keV"
     ):
         raise ValueError("I1 requires the current uint64 micro-eV representation.")
+
     if energies != tuple(value * energy_unit for value in expected_values):
         raise ValueError("Packed energies differ from the E1 fixture.")
+
     if width != (REGULAR_WIDTH_KEV * energy_unit if regular else 0):
         raise ValueError("Packed bin width differs from the E1 fixture.")
+
     if regular and (width <= 0 or width % 2 or energies[0] <= width // 2):
         raise ValueError("RegularSpectrum needs an even width and positive first edge.")
+
     actual_weights = tuple(
         _number(value, "relative weight")
         for value in _list(energy.get("relative_weights"), "relative weights")
     )
     if actual_weights != weights or len(bounds) != len(energies):
         raise ValueError("Malformed energy weights/ticket table.")
+
     tickets = tuple(
         upper - lower for lower, upper in zip((0,) + bounds[:-1], bounds, strict=True)
     )
@@ -594,6 +660,7 @@ def load_samples(path: Path, metadata: Metadata) -> Samples:
         reader = csv.reader(stream, strict=True)
         if tuple(next(reader, ())) != CSV_COLUMNS:
             raise ValueError("Malformed Source CSV header.")
+
         for row_number, row in enumerate(reader, start=2):
             if len(row) != len(CSV_COLUMNS) or row[11] != "Source":
                 raise ValueError(
@@ -622,20 +689,25 @@ def load_samples(path: Path, metadata: Metadata) -> Samples:
             times[local] = _decimal(row[10], 0, UINT64_MAX)
             if times[local] != 0:
                 raise ValueError("I1 requires exact static 0 ps.")
+
     if len(seen) != metadata.count:
         raise ValueError(
             "Missing Source records or incomplete local primary ID domain."
         )
+
     if np.any(np.linalg.norm(directions, axis=1) == 0.0):
         raise ValueError("Zero Source direction.")
+
     if metadata.configuration.geometry == "point" and np.any(
         positions != metadata.center_pm
     ):
         raise ValueError("Point position differs from the committed center.")
+
     if metadata.configuration.angular == "fixed" and np.any(
         directions != metadata.matrix[:, 2]
     ):
         raise ValueError("Fixed direction differs from packed axis_z.")
+
     return Samples(provenance, positions, directions, tuple(energies), tuple(times))
 
 
@@ -656,6 +728,7 @@ def position_measurements(
             float(np.max(np.abs(local[:, axis]))) - metadata.dimensions_pm[axis] / 2.0,
         )
         support[name] = item
+
     residual = np.abs(local[:, 2])
     return {
         "transformed_variables": {
@@ -682,6 +755,7 @@ def angular_measurements(
     norms = np.linalg.norm(local_raw, axis=1)
     if np.any(norms == 0.0):
         raise ValueError("Undefined inverse-frame direction.")
+
     local = local_raw / norms[:, None]
     defined_phi = (local[:, 0] != 0.0) | (local[:, 1] != 0.0)
     lower, upper, phi_min, phi_max = metadata.bounds
@@ -737,13 +811,16 @@ def energy_measurements(
                 for index, center in enumerate(metadata.energies_micro_ev)
                 if energy == center
             ]
+
         if len(memberships) != 1:
             raise ValueError(
                 f"Energy {energy} micro-eV belongs to {len(memberships)} intended bins/lines."
             )
+
         index = memberships[0]
         if metadata.ticket_counts[index] == 0:
             raise ValueError("A zero-ticket energy entry was emitted.")
+
         bin_indices[local_id] = index
         offsets[index].append(energy - lower_edges[index])
 
@@ -765,6 +842,7 @@ def energy_measurements(
                     ),
                 }
             )
+
     return {
         "representation": "uint64 micro-eV",
         "packed_configuration": metadata.raw["energy"],
@@ -801,6 +879,7 @@ def compare_pair(
 ) -> JsonObject:
     if not np.array_equal(reference.provenance, comparison.provenance):
         raise ValueError("Paired provenance domains differ.")
+
     for key in (
         "seed",
         "worker_count",
@@ -817,8 +896,10 @@ def compare_pair(
     ):
         if reference_metadata.raw[key] != comparison_metadata.raw[key]:
             raise ValueError(f"Paired execution configuration differs: {key}.")
+
     if reference_metadata.raw["worker_count"] != PAIR_WORKERS:
         raise ValueError("Exact I1 pairing requires one worker.")
+
     if (
         reference_metadata.configuration.angular
         == comparison_metadata.configuration.angular
@@ -829,6 +910,7 @@ def compare_pair(
         and reference_metadata.bounds != comparison_metadata.bounds
     ):
         raise ValueError("Identical angular requests produced different packed bounds.")
+
     if (
         reference_metadata.configuration.energy
         == comparison_metadata.configuration.energy
@@ -869,10 +951,12 @@ def compare_pair(
             results[f"{field}_mismatch_count"] = mismatches
             unit = "micro-eV" if field == "energy" else "ps"
             results[f"maximum_exact_{field}_difference_{unit}"] = maximum
+
         if mismatches:
             raise ValueError(
                 f"{case.name}: exact {field} contract failed: {mismatches} mismatches; maximum {maximum}."
             )
+
     return results
 
 
@@ -889,6 +973,7 @@ def analyze_case(
         raise FileExistsError(
             f"Refusing to overwrite an existing summary: {summary_path}"
         )
+
     paired = case.comparison is not None
     reference_name = case.name + ("_reference" if paired else "")
     reference_dir = case_dir / "reference" if paired else case_dir
@@ -979,6 +1064,7 @@ def analyze_case(
                     },
                 }
             )
+
         correlation = correlations(common)
         summary = {
             "case_name": case.name,
@@ -1006,7 +1092,7 @@ def analyze_case(
             "figure_status": "not_requested" if not make_figures else "pending",
         }
         if make_figures:
-            import plot  # pyright: ignore[reportImplicitRelativeImport]
+            import plot
 
             width = reference_metadata.bin_width_micro_ev
             scale = reference_metadata.display_unit_micro_ev
@@ -1033,38 +1119,30 @@ def analyze_case(
                 output_dir,
             )
             summary["figure_status"] = "generated_png_and_pdf"
+
         print(
             f"{case.name}: N={reference_metadata.count}; lateral outside={position['outside_lateral_support_count']}; "
             + f"energy {energy['probability_metrics']}; figures={summary['figure_status']}",
             flush=True,
         )
 
-    _ = summary_path.write_text(
+    summary_path.write_text(
         json.dumps(summary, indent=2, allow_nan=False) + "\n", encoding="utf-8"
     )
     return summary
-
-
-class Arguments(Protocol):
-    case: str
-    case_dir: Path
-    output_dir: Path
-    no_plots: bool
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Analyze actual I1 Source CSV/metadata, including exact pairs."
     )
-    _ = parser.add_argument(
-        "--case", choices=[case.name for case in CASES], required=True
-    )
-    _ = parser.add_argument("--case-dir", type=Path, required=True)
-    _ = parser.add_argument("--output-dir", type=Path, required=True)
-    _ = parser.add_argument("--no-plots", action="store_true")
-    args = cast(Arguments, cast(object, parser.parse_args()))
+    parser.add_argument("--case", choices=[case.name for case in CASES], required=True)
+    parser.add_argument("--case-dir", type=Path, required=True)
+    parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--no-plots", action="store_true")
+    args = parser.parse_args()
     case = next(case for case in CASES if case.name == args.case)
-    _ = analyze_case(
+    analyze_case(
         case,
         args.case_dir.resolve(),
         args.output_dir.resolve(),

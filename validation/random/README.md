@@ -38,9 +38,10 @@ than mechanically producing passing results.
 
 "Validated" here does not mean mathematically proven random, cryptographically
 secure, or universally valid for every possible seed, device, stream count, or
-future execution policy. It means that the current GGEMS implementation passed
-the fixed statistical campaigns described below without a recurring severe
-failure pattern.
+future execution policy. It means that the implementation used for the
+September 2026 reference campaign passed the fixed statistical campaigns
+described below without a recurring severe failure pattern. These results apply
+to that campaign's revision and execution configurations.
 
 ## Scope
 
@@ -201,7 +202,7 @@ PractRand through its byte-oriented input mode.
 
 ## Directory layout
 
-Tracked source structure:
+Campaign tools and scripts:
 
 ```text
 validation/random/
@@ -289,10 +290,9 @@ The generator supports:
 - bounded OpenCL chunks;
 - normal GGEMS OpenCL device selectors.
 
-Device-selection semantics belong to `GGEMSOpenCL::SelectDevices()`. The
-validation code passes the selector to the central GGEMS OpenCL authority and
-must not maintain a private interpretation of values such as `gpu`, `cpu`,
-`nvidia`, `amd`, `intel`, `all`, indices, or ranges.
+`--device` uses the standard GGEMS selector: `gpu`, `cpu`, `nvidia`, `amd`,
+`intel`, `all`, numeric indices, or ranges. Select devices available in your
+local OpenCL runtime.
 
 ### `ggems_random_stream_pipe_producer`
 
@@ -307,17 +307,19 @@ RAM allocation or temporary file.
 
 ### `GGEMSRandomUInt32ChunkProducer`
 
-Validation-private C++ infrastructure shared by the finite-file generator and
+C++ component shared by the finite-file generator and
 the TestU01 pipe producer.
 
-It reuses the normal GGEMS random/OpenCL authorities and must not become an
-independent random implementation.
+Both executables call the production GGEMS random functions through OpenCL.
 
 ## Build and prerequisites
 
-Random statistical validation is currently enabled on Linux.
+Random statistical validation is enabled on Linux only. The Python runners
+require Python 3.12 or newer and use the standard library; NumPy and Matplotlib
+are not required.
 
-Build the validation executables from the repository root:
+Build the validation executables from the repository root using the existing
+GGEMS CMake configuration and OpenCL dependencies:
 
 ```bash
 cmake --build build --target validation_random
@@ -328,6 +330,9 @@ The aggregate `validation` target may also be used:
 ```bash
 cmake --build build --target validation
 ```
+
+These targets build executables; they do not run statistical batteries. The
+aggregate target also builds the other enabled validation domains.
 
 External statistical tools are not GGEMS runtime dependencies.
 
@@ -348,7 +353,9 @@ supplied explicitly with `--dieharder`.
 TestU01 requires its development headers and libraries at CMake configure time.
 If they are unavailable, GGEMS simply does not build the TestU01 consumer. The
 TestU01 dependency is validation-only and does not affect the GGEMS runtime
-library.
+library. A successful `validation_random` build therefore does not guarantee
+that the TestU01 consumer exists. If it is missing, install the development
+files, reconfigure the build, and build again before running that campaign.
 
 ## Campaign policy
 
@@ -861,17 +868,7 @@ python validation/random/testu01/aggregate_campaign.py
 Review all three `campaign_summary.json` files and the corresponding
 `anomalies.csv` files before drawing a project-level conclusion.
 
-## Relationship to later GGEMS validation
-
-Random validation is the first layer of the current scientific-validation
-sequence:
-
-```text
-Random
-  -> generic Source distributions
-  -> Radionuclide source emission
-  -> later transport/physics validation
-```
+## Scope of the results
 
 Passing random validation does not validate source geometry, angular
 distributions, energy spectra, radionuclide yields, decay timing, particle

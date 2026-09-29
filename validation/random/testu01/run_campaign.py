@@ -1,3 +1,31 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Run the GGEMS TestU01 validation campaign.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 import argparse
 import json
 import shlex
@@ -6,7 +34,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Protocol, cast
+from typing import Literal
 
 # ------------------------------------------------------------------------------
 
@@ -82,24 +110,6 @@ class CampaignCase:
 # ------------------------------------------------------------------------------
 
 
-class Arguments(Protocol):
-    list: bool
-    case: str | None
-    all: bool
-    dry_run: bool
-    runner: Path
-    producer: Path
-    consumer: Path
-    device: str
-    local_size: int
-    max_chunk_mib: int
-    timeout_seconds: int | None
-    force: bool
-
-
-# ------------------------------------------------------------------------------
-
-
 def RepositoryRoot() -> Path:
     return Path(__file__).resolve().parents[3]
 
@@ -107,81 +117,81 @@ def RepositoryRoot() -> Path:
 # ------------------------------------------------------------------------------
 
 
-def ParseArguments() -> Arguments:
+def ParseArguments() -> argparse.Namespace:
     root = RepositoryRoot()
     parser = argparse.ArgumentParser(
         description="Run the fixed GGEMS TestU01 validation campaign."
     )
 
     action = parser.add_mutually_exclusive_group()
-    _ = action.add_argument(
+    action.add_argument(
         "--list",
         action="store_true",
         help="List every fixed TestU01 campaign case.",
     )
-    _ = action.add_argument(
+    action.add_argument(
         "--case",
         metavar="CASE_ID",
         help="Run exactly one fixed campaign case, for example A01-philox-bigcrush.",
     )
-    _ = action.add_argument(
+    action.add_argument(
         "--all",
         action="store_true",
         help="Run all fixed campaign cases sequentially.",
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print commands without executing them.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--runner",
         type=Path,
         default=root / "validation/random/testu01/run_testu01.py",
         help="GGEMS TestU01 single-run wrapper.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--producer",
         type=Path,
         default=root / "build/validation/random/ggems_random_stream_pipe_producer",
         help="GGEMS OpenCL random stream producer executable.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--consumer",
         type=Path,
         default=root / "build/validation/random/testu01/ggems_testu01_consumer",
         help="GGEMS TestU01 consumer executable.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--device",
         default="gpu",
         help="GGEMS device selector (default: gpu).",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--local-size",
         type=int,
         default=64,
         help="OpenCL local work-group size (default: 64).",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--max-chunk-mib",
         type=int,
         default=256,
         help="Maximum OpenCL value chunk size in MiB (default: 256).",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--timeout-seconds",
         type=int,
         help="Override the battery-specific watchdog duration.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--force",
         action="store_true",
         help="Rerun completed cases.",
     )
 
-    return cast(Arguments, cast(object, parser.parse_args()))
+    return parser.parse_args()
 
 
 # ------------------------------------------------------------------------------
@@ -316,10 +326,10 @@ def CasePaths(case: CampaignCase) -> tuple[Path, Path]:
 
 def LoadJsonObject(path: Path) -> dict[str, object] | None:
     try:
-        value = cast(object, json.loads(path.read_text(encoding="utf-8")))
+        value = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return None
-    return cast(dict[str, object], value) if isinstance(value, dict) else None
+    return value if isinstance(value, dict) else None
 
 
 # ------------------------------------------------------------------------------
@@ -336,8 +346,8 @@ def IsCompletedCase(case: CampaignCase) -> bool:
     if not isinstance(input_value, dict) or not isinstance(output_value, dict):
         return False
 
-    input_section = cast(dict[str, object], input_value)
-    output = cast(dict[str, object], output_value)
+    input_section = input_value
+    output = output_value
 
     status = output.get("status")
     if status not in {
@@ -420,7 +430,7 @@ def WriteRequest(
     # recreated from the current campaign definition and runtime options for
     # every execution and are never treated as source-controlled state.
     path.parent.mkdir(parents=True, exist_ok=True)
-    _ = path.write_text(json.dumps(request, indent=2) + "\n", encoding="utf-8")
+    path.write_text(json.dumps(request, indent=2) + "\n", encoding="utf-8")
 
 
 # ------------------------------------------------------------------------------
@@ -459,7 +469,7 @@ def BuildTestU01Command(
 def RunCommand(command: list[str], *, dry_run: bool) -> None:
     print(f"$ {shlex.join(command)}")
     if not dry_run:
-        _ = subprocess.run(command, check=True)
+        subprocess.run(command, check=True)
 
 
 # ------------------------------------------------------------------------------
@@ -613,7 +623,7 @@ def main() -> int:
         consumer = ResolveExecutable(args.consumer, "GGEMS TestU01 consumer")
 
     if args.case is not None:
-        _ = RunCase(
+        RunCase(
             FindCase(cases, args.case),
             runner=runner,
             producer=producer,

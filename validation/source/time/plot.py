@@ -1,7 +1,35 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Plot GGEMS Source time validation results.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-from cases import TimeCase  # pyright: ignore[reportImplicitRelativeImport]
+from cases import TimeCase
 
 
 def plot_chronology(
@@ -18,10 +46,10 @@ def plot_chronology(
         for index, (start_ps, stop_ps) in enumerate(windows_ps):
             start = start_ps / display_unit_ps
             stop = stop_ps / display_unit_ps
-            _ = axis.plot(
+            axis.plot(
                 [start, stop], [index, index], color="tab:blue", linewidth=5, alpha=0.5
             )
-            _ = axis.plot(
+            axis.plot(
                 [start],
                 [index],
                 "o",
@@ -29,7 +57,7 @@ def plot_chronology(
                 markersize=8,
                 label="All Source births = window start" if index == 0 else None,
             )
-            _ = axis.plot(
+            axis.plot(
                 [stop],
                 [index],
                 "o",
@@ -43,7 +71,7 @@ def plot_chronology(
                 label += " (shortened final window)"
             if case.reset_before_run == index:
                 label += " (after ResetTime)"
-            _ = axis.text(
+            axis.text(
                 0.02,
                 index - 0.16,
                 label,
@@ -51,18 +79,18 @@ def plot_chronology(
                 transform=axis.get_yaxis_transform(),
             )
 
-        _ = axis.set_yticks(
+        axis.set_yticks(
             list(range(len(windows_ps))),
             [f"Run sequence {i}" for i in range(len(windows_ps))],
         )
-        _ = axis.set_xlabel("Run chronology [ns]")
-        _ = axis.set_title(
+        axis.set_xlabel("Run chronology [ns]")
+        axis.set_title(
             f"{case.name}\nCountDriven birth times follow the committed window start exactly"
         )
-        _ = axis.set_xlim(0, max(stop for _, stop in windows_ps) / display_unit_ps + 5)
-        _ = axis.set_ylim(len(windows_ps) - 0.5, -0.6)
+        axis.set_xlim(0, max(stop for _, stop in windows_ps) / display_unit_ps + 5)
+        axis.set_ylim(len(windows_ps) - 0.5, -0.6)
         axis.grid(axis="x", alpha=0.25)
-        _ = axis.legend(
+        axis.legend(
             loc="lower center", bbox_to_anchor=(0.5, -0.32), frameon=False, ncols=2
         )
 
@@ -71,6 +99,7 @@ def plot_chronology(
             path = output / f"chronology.{extension}"
             figure.savefig(path, dpi=180)
             paths.append(str(path.resolve()))
+
         return paths
     finally:
         plt.close(figure)

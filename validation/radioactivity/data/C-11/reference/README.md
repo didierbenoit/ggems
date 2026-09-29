@@ -1,8 +1,12 @@
 # C-11 source-model validation reference
 
+For build instructions, campaign commands, and result interpretation, see the
+[radionuclide validation guide](../../../README.md). Select this package with
+`--reference validation/radioactivity/data/C-11/reference/reference.json`.
+
 This independent reference describes the selected single-positron C-11 source
 model. It was recovered from the raw evaluation and BetaShape files before
-comparison with GGEMS constants, tables or GoogleTests. It does not certify
+comparison with GGEMS constants or tables. It does not certify
 complete atomic relaxation or assert that atomic emissions are physically absent.
 
 ## Selected nuclear evaluation

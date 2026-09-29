@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Writes little-endian random validation streams to standard output.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <cerrno>
 #include <charconv>
@@ -5,10 +34,11 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <csignal>
 #include <cstdlib>
+#include <exception>
 #include <format>
 #include <iostream>
-#include <limits>
 #include <optional>
 #include <span>
 #include <stdexcept>
@@ -16,10 +46,9 @@
 #include <string_view>
 #include <system_error>
 #include <vector>
-#include <csignal>
+
 #include <sys/types.h>
 #include <unistd.h>
-#include <exception>
 
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
@@ -36,18 +65,12 @@ using ggems::validation::random::RandomUInt32StreamLayout;
 using ggems::validation::random::RandomUInt32StreamSpecification;
 
 constexpr std::size_t kBytesPerWord{sizeof(std::uint32_t)};
-constexpr int kRequiredBitsPerByte{8};
-constexpr std::uint32_t kByteMask{0xFFU};
-constexpr unsigned int kSecondByteShift{8U};
-constexpr unsigned int kThirdByteShift{16U};
-constexpr unsigned int kFourthByteShift{24U};
 constexpr std::size_t kSerializationBufferBytes{std::size_t{1024U} * 1024U};
 constexpr std::size_t kSerializationBufferWords{kSerializationBufferBytes /
                                                 kBytesPerWord};
 
-static_assert(CHAR_BIT == kRequiredBitsPerByte);
+static_assert(CHAR_BIT == 8);
 static_assert(sizeof(std::uint32_t) == 4U);
-static_assert(kSerializationBufferBytes % kBytesPerWord == 0U);
 
 // =============================================================================
 // =============================================================================
@@ -66,7 +89,6 @@ struct Options {
   RandomUInt32StreamLayout layout{RandomUInt32StreamLayout::Interleaved};
   std::optional<std::uint64_t> requested_output_word_limit;
   std::uint64_t output_word_limit{0ULL};
-  std::uint64_t logical_word_capacity{0ULL};
 };
 
 struct OptionPresence {
@@ -115,6 +137,7 @@ auto PrintUsage(char const *executable_name) -> void {
     throw std::runtime_error(
       std::format("Missing value after '{}'.", option_name));
   }
+
   ++index;
   return argv[index];
 }
@@ -124,6 +147,7 @@ auto MarkPresent(bool &present, std::string_view option_name) -> void {
     throw std::runtime_error(
       std::format("Option '{}' may be specified only once.", option_name));
   }
+
   present = true;
 }
 
@@ -134,41 +158,29 @@ template <std::unsigned_integral Integer>
   Integer parsed{0};
   auto const result =
     std::from_chars(value.data(), value.data() + value.size(), parsed);
+
   if (value.empty() || result.ec != std::errc{} ||
       result.ptr != value.data() + value.size()) {
     throw std::runtime_error(
       std::format("Invalid decimal value '{}' for '{}'.", value, option_name));
   }
+
   return parsed;
-}
-
-[[nodiscard]] auto CheckedMultiply(std::uint64_t lhs, std::uint64_t rhs,
-                                   std::string_view label) -> std::uint64_t {
-  if (lhs != 0ULL && rhs > std::numeric_limits<std::uint64_t>::max() / lhs) {
-    throw std::runtime_error(std::format("{} overflows uint64.", label));
-  }
-  return lhs * rhs;
-}
-
-auto ValidateRequiredOptions(OptionPresence const &presence) -> void {
-  if (!presence.engine || !presence.seed || !presence.stream_offset ||
-      !presence.worker_count || !presence.samples_per_worker ||
-      !presence.max_chunk_mib || !presence.local_size ||
-      !presence.device_selector || !presence.layout) {
-    throw std::runtime_error("A required producer option is missing.");
-  }
 }
 
 auto FinalizeOptions(Options &options) -> void {
   if (options.worker_count == 0U || options.samples_per_worker == 0U) {
     throw std::runtime_error("Stream dimensions must be greater than zero.");
   }
+
   if (options.max_chunk_mib == 0ULL) {
     throw std::runtime_error("Maximum chunk size must be greater than zero.");
   }
+
   if (options.local_size == 0U) {
     throw std::runtime_error("Local size must be greater than zero.");
   }
+
   if (options.device_selector.empty()) {
     throw std::runtime_error("Device selector must not be empty.");
   }
@@ -176,17 +188,21 @@ auto FinalizeOptions(Options &options) -> void {
   auto const maximum_value_buffer_size =
     ggems::units::MakeQuantity<ggems::units::Bytes>(options.max_chunk_mib,
                                                     "MiB");
+
   if (!maximum_value_buffer_size.has_value()) {
     throw std::runtime_error(
       "Maximum chunk size cannot be represented exactly in bytes.");
   }
+
   options.maximum_value_buffer_size = *maximum_value_buffer_size;
-  options.logical_word_capacity =
-    CheckedMultiply(options.worker_count, options.samples_per_worker,
-                    "Logical raw uint32 word capacity");
+
+  std::uint64_t const logical_word_capacity =
+    static_cast<std::uint64_t>(options.worker_count) *
+    options.samples_per_worker;
   options.output_word_limit =
-    options.requested_output_word_limit.value_or(options.logical_word_capacity);
-  if (options.output_word_limit > options.logical_word_capacity) {
+    options.requested_output_word_limit.value_or(logical_word_capacity);
+
+  if (options.output_word_limit > logical_word_capacity) {
     throw std::runtime_error(
       "Output word limit exceeds the finite logical stream capacity.");
   }
@@ -204,6 +220,7 @@ auto FinalizeOptions(Options &options) -> void {
       PrintUsage(argv[0]);
       std::exit(EXIT_SUCCESS);
     }
+
     if (argument == "--engine") {
       MarkPresent(presence.engine, argument);
       options.engine = ggems::core::random::ParseRandomEngine(
@@ -248,8 +265,15 @@ auto FinalizeOptions(Options &options) -> void {
     }
   }
 
-  ValidateRequiredOptions(presence);
+  if (!presence.engine || !presence.seed || !presence.stream_offset ||
+      !presence.worker_count || !presence.samples_per_worker ||
+      !presence.max_chunk_mib || !presence.local_size ||
+      !presence.device_selector || !presence.layout) {
+    throw std::runtime_error("A required producer option is missing.");
+  }
+
   FinalizeOptions(options);
+
   return options;
 }
 
@@ -259,22 +283,22 @@ auto FinalizeOptions(Options &options) -> void {
 [[nodiscard]] auto WriteAll(std::span<std::uint8_t const> bytes,
                             std::uint64_t &written_byte_count) -> WriteStatus {
   std::size_t offset{0U};
+
   while (offset < bytes.size()) {
     ssize_t const written =
       ::write(STDOUT_FILENO, bytes.data() + offset, bytes.size() - offset);
+
     if (written > 0) {
       auto const written_size = static_cast<std::size_t>(written);
-      if (written_size >
-          std::numeric_limits<std::uint64_t>::max() - written_byte_count) {
-        throw std::runtime_error("Written-byte counter overflowed uint64.");
-      }
       written_byte_count += static_cast<std::uint64_t>(written_size);
       offset += written_size;
       continue;
     }
+
     if (written < 0 && errno == EINTR) {
       continue;
     }
+
     if (written < 0 && errno == EPIPE) {
       return WriteStatus::DownstreamClosed;
     }
@@ -283,6 +307,7 @@ auto FinalizeOptions(Options &options) -> void {
     throw std::system_error{error_number, std::generic_category(),
                             "stdout write failed"};
   }
+
   return WriteStatus::Complete;
 }
 
@@ -295,30 +320,31 @@ auto FinalizeOptions(Options &options) -> void {
   while (word_offset < words.size()) {
     std::size_t const word_count =
       std::min(kSerializationBufferWords, words.size() - word_offset);
+
     for (std::size_t index = 0U; index < word_count; ++index) {
       std::uint32_t const value = words[word_offset + index];
       std::size_t const byte_offset = index * kBytesPerWord;
-      buffer[byte_offset] = static_cast<std::uint8_t>(value & kByteMask);
-      buffer[byte_offset + 1U] =
-        static_cast<std::uint8_t>((value >> kSecondByteShift) & kByteMask);
-      buffer[byte_offset + 2U] =
-        static_cast<std::uint8_t>((value >> kThirdByteShift) & kByteMask);
-      buffer[byte_offset + 3U] =
-        static_cast<std::uint8_t>((value >> kFourthByteShift) & kByteMask);
+      buffer[byte_offset] = static_cast<std::uint8_t>(value);
+      buffer[byte_offset + 1U] = static_cast<std::uint8_t>(value >> 8U);
+      buffer[byte_offset + 2U] = static_cast<std::uint8_t>(value >> 16U);
+      buffer[byte_offset + 3U] = static_cast<std::uint8_t>(value >> 24U);
     }
 
     WriteStatus const status = WriteAll(
       std::span<std::uint8_t const>{buffer}.first(word_count * kBytesPerWord),
       written_byte_count);
+
     if (status == WriteStatus::DownstreamClosed) {
       return status;
     }
+
     word_offset += word_count;
   }
+
   return WriteStatus::Complete;
 }
 
-[[nodiscard]] auto RunProducer(Options const &options) -> bool {
+auto RunProducer(Options const &options) -> void {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
   opencl.SelectDevices({options.device_selector});
   opencl.Initialize();
@@ -338,32 +364,33 @@ auto FinalizeOptions(Options &options) -> void {
     .local_size = options.local_size,
     .maximum_value_buffer_size = options.maximum_value_buffer_size,
   };
-  GGEMSRandomUInt32ChunkProducer producer{specification, contexts.front(),
-                                          options.output_word_limit};
+
+  GGEMSRandomUInt32ChunkProducer producer{
+    specification,
+    contexts.front(),
+    options.output_word_limit,
+  };
+
+  std::uint64_t const expected_bytes =
+    options.output_word_limit * kBytesPerWord;
 
   std::vector<std::uint8_t> serialization_buffer(kSerializationBufferBytes);
   std::uint64_t written_byte_count{0ULL};
+
   while (!producer.IsExhausted()) {
     auto const words = producer.NextChunk();
-    if (words.empty()) {
-      throw std::runtime_error(
-        "Chunk producer returned an empty chunk before exhaustion.");
-    }
+
     if (EncodeAndWrite(words, serialization_buffer, written_byte_count) ==
         WriteStatus::DownstreamClosed) {
-      return true;
+      return;
     }
   }
 
-  std::uint64_t const expected_bytes = CheckedMultiply(
-    options.output_word_limit, static_cast<std::uint64_t>(kBytesPerWord),
-    "Requested output byte count");
   if (producer.GetReturnedWordCount() != options.output_word_limit ||
       written_byte_count != expected_bytes) {
     throw std::runtime_error(
       "Producer stopped before writing the requested logical prefix.");
   }
-  return false;
 }
 
 } // namespace
@@ -376,11 +403,12 @@ auto main(int argc, char **argv) -> int {
 
   try {
     Options const options = ParseArguments(argc, argv);
+
     if (::signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
       throw std::runtime_error("Failed to ignore SIGPIPE for stdout.");
     }
 
-    static_cast<void>(RunProducer(options));
+    RunProducer(options);
     return EXIT_SUCCESS;
   } catch (std::exception const &error) {
     std::cerr << "GGEMS random stream pipe producer failed: " << error.what()

@@ -1,3 +1,31 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Aggregate GGEMS TestU01 campaign results.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 import argparse
 import csv
 import json
@@ -6,7 +34,6 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol, cast
 
 # ------------------------------------------------------------------------------
 
@@ -96,21 +123,14 @@ class AnomalyRecord:
     classification: str
 
 
-class Arguments(Protocol):
-    campaign_dir: Path | None
-    output_dir: Path | None
-    top: int
-    no_write: bool
-
-
 # ------------------------------------------------------------------------------
 
 
-def ParseArguments() -> Arguments:
+def ParseArguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Aggregate the fixed GGEMS TestU01 validation campaign."
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--campaign-dir",
         type=Path,
         help=(
@@ -118,23 +138,23 @@ def ParseArguments() -> Arguments:
             "Defaults to validation/random/results/testu01/campaign."
         ),
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--output-dir",
         type=Path,
         help="Aggregate output directory. Defaults to <campaign-dir>/aggregate.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--top",
         type=int,
         default=15,
         help="Number of recurrent suspect tests to print (default: 15).",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--no-write",
         action="store_true",
         help="Print the report without writing JSON or CSV files.",
     )
-    return cast(Arguments, cast(object, parser.parse_args()))
+    return parser.parse_args()
 
 
 # ------------------------------------------------------------------------------
@@ -158,28 +178,28 @@ def ResolveCampaignDirectory(requested: Path | None) -> Path:
 
 def LoadJson(path: Path) -> JsonObject:
     try:
-        value = cast(object, json.loads(path.read_text(encoding="utf-8")))
+        value = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as error:
         raise RuntimeError(f"Failed to read JSON file {path}: {error}") from error
 
     if not isinstance(value, dict):
         raise TypeError(f"Expected a JSON object in {path}.")
 
-    return cast(JsonObject, value)
+    return value
 
 
 def RequireObject(section: JsonObject, key: str, context: str) -> JsonObject:
     value = section.get(key)
     if not isinstance(value, dict):
         raise TypeError(f"Expected object field '{key}' for {context}.")
-    return cast(JsonObject, value)
+    return value
 
 
 def RequireList(section: JsonObject, key: str, context: str) -> list[object]:
     value = section.get(key)
     if not isinstance(value, list):
         raise TypeError(f"Expected array field '{key}' for {context}.")
-    return cast(list[object], value)
+    return value
 
 
 def RequireString(section: JsonObject, key: str, context: str) -> str:
@@ -282,7 +302,7 @@ def BuildAnomalies(case: CaseRecord, results: list[object]) -> list[AnomalyRecor
     for value in results:
         if not isinstance(value, dict):
             raise TypeError(f"Invalid TestU01 result slot for {case.case_id}.")
-        slot = cast(JsonObject, value)
+        slot = value
         classification = RequireString(slot, "classification", case.case_id)
 
         if classification not in CLASSIFICATION_ORDER:
@@ -367,12 +387,12 @@ def LoadCase(
     producer_section = summary.get("producer")
     consumer_section = summary.get("consumer")
     producer_elapsed = (
-        OptionalNumber(cast(JsonObject, producer_section), "elapsed_seconds", case_id)
+        OptionalNumber(producer_section, "elapsed_seconds", case_id)
         if isinstance(producer_section, dict)
         else None
     )
     consumer_elapsed = (
-        OptionalNumber(cast(JsonObject, consumer_section), "elapsed_seconds", case_id)
+        OptionalNumber(consumer_section, "elapsed_seconds", case_id)
         if isinstance(consumer_section, dict)
         else None
     )
@@ -731,24 +751,24 @@ def BuildAggregate(
 
 
 def CaseToRow(case: CaseRecord) -> CsvRow:
-    return cast(CsvRow, CaseToJson(case))
+    return CaseToJson(case)
 
 
 def AnomalyToRow(anomaly: AnomalyRecord) -> CsvRow:
-    return cast(CsvRow, AnomalyToJson(anomaly))
+    return AnomalyToJson(anomaly)
 
 
 def WriteCsv(path: Path, rows: list[CsvRow]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if not rows:
-        _ = path.write_text("", encoding="utf-8")
+        path.write_text("", encoding="utf-8")
         return
 
     with path.open("w", encoding="utf-8", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=list(rows[0].keys()))
-        _ = cast(object, writer.writeheader())
+        writer.writeheader()
         for row in rows:
-            _ = cast(object, writer.writerow(row))
+            writer.writerow(row)
 
 
 def WriteOutputs(
@@ -761,7 +781,7 @@ def WriteOutputs(
     cases_path = output_dir / "cases.csv"
     anomalies_path = output_dir / "anomalies.csv"
 
-    _ = summary_path.write_text(
+    summary_path.write_text(
         json.dumps(BuildAggregate(cases, anomalies), indent=2) + "\n",
         encoding="utf-8",
     )

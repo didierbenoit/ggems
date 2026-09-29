@@ -1,17 +1,16 @@
 # Source frame / pose: G2 Geometry and A2 Angle
 
 G1/A1 measure canonical sampler laws. G2/A2 measures how production Source
-translation and orientation carry those laws into global space. The authority
-remains public GGEMSSource configuration -> immutable Source run snapshot ->
+translation and orientation carry those laws into global space. Samples follow
+this path: public GGEMSSource configuration -> immutable Source run snapshot ->
 ordinary CountDriven GGEMSRun and production OpenCL primary initialization ->
 raw Observer Source records -> the existing validation exporter -> NumPy
 exact/analytical analysis -> Matplotlib.
 
-The campaign has no alternative Monte Carlo sampler, frame builder, RNG engine,
-transport, or Observer abstraction. The shared exporter is extended in place;
-the G1, A1, E1, and T1 analyzers and runners remain unchanged.
+The campaign analyzes samples from the production Source path using the shared
+exporter.
 
-## Configuration and execution authority
+## Frame configuration
 
 The public pose interface is:
 
@@ -25,20 +24,6 @@ Y from direction cross X. The production geometry helpers normalize the axes
 before binary32 packing. Up is a reference, not an independently stored axis.
 The public Source API rejects near-parallel inputs and invalid frames.
 Changing the pose does not select an angular mode or consume random draws.
-
-Relevant current implementation and focused evidence:
-
-- src/sources/GGEMSSource.cc: public pose setters and atomic validation.
-- src/sources/GGEMSSourceFrame.cc and
-  include/GGEMS/geometry/GGEMSGeometryTypes.hh: frame construction,
-  normalization, packing, and existing host validity checks.
-- include/GGEMS/sources/GGEMSSourceRecord.hh and
-  kernels/sources/GGEMSSourceRecord.clh: shared int64 center and binary32 axes.
-- src/sources/GGEMSSourceRunSnapshot.cc: copied per-Run Source records.
-- kernels/sources/GGEMSSource.clh: executed position and direction laws.
-- tests/sources/GGEMSSourceFrameTest.cc, GGEMSSourceTest.cc,
-  GGEMSSourceSamplingKernelTest.cc, and
-  tests/transport/GGEMSSourceSamplingTransportTest.cc: focused contract evidence.
 
 The exporter reads actual axes and center from
 GetLastSourceRunSnapshot()->GetRecords()[0] after execution. It neither
@@ -102,24 +87,11 @@ and applies workers=1 for both members. The --workers option controls unpaired
 cases. Actual device selection is checked through exporter metadata; the runner
 never duplicates GGEMS selector parsing.
 
-This restriction is necessary in the current production path:
-
-1. src/random/GGEMSRandom.cc derives the Philox key from SplitMix64(seed).
-   Low counter words start at zero; high counter words encode the stream ID.
-2. src/GGEMSRun.cc assigns stream offsets as selected-context index times worker
-   count. GGEMSTransportWorkload initializes one persistent stream per worker.
-3. particle_stream_transport.cl assigns primaries through an atomic queue.
-   Worker ID selects RNG state; primary ID is not a Philox key/counter input.
-4. GGEMS_PhiloxUniform4 consumes one block and advances the low counter.
-   Each paired case uses exactly one block per primary: Box position plus Fixed,
-   or Point plus Isotropic. Mono, static time, lookup, and pose consume none.
-
-Equal seeds and worker counts alone do **not** guarantee per-primary replay with
-multiple workers. One worker in the first selected context uses stream 0 and
-processes consecutive local IDs deterministically. Padded work-items return
-before taking primaries. Fresh exporter processes reproduce the required
-tickets without RNG implementation in Python. Unpaired statistical captures
-make no bitwise replay claim.
+GGEMS keeps one random stream per worker and schedules primaries dynamically.
+Equal seeds and worker counts therefore do not guarantee per-primary replay
+with multiple workers. One worker on one device processes consecutive local
+IDs using the same stream in both captures. Each paired case consumes one
+Philox block per primary, so the streams remain aligned.
 
 CSV records are indexed by verified source_local_primary_id, never paired by
 append/row order. Each run requires slot 0, unique complete local/global IDs
@@ -134,12 +106,10 @@ All component differences must be zero. Full-sphere directions must match
 exactly. Bounded cyclic directions must equal (dz_reference, dx_reference,
 dy_reference) after CSV binary32 reconstruction.
 
-The bounded branch normalizes after frame multiplication. The 256-primary T800
-implementation smoke observed exact component permutation. This campaign
-retains that exact test and has no fallback tolerance. If another runtime's
-normalization/compiler reduction order produces a mismatch, inspect its exact
-implementation reason before changing the comparison. This smoke is not a
-cross-vendor promise of bitwise normalization equivalence.
+The bounded branch normalizes after frame multiplication. Its cyclic pair
+requires exact component permutation and reports a mismatch as an error.
+This comparison applies within the selected runtime; it does not establish
+bitwise equivalence across different devices or compilers.
 
 ## Analytical and numerical definitions
 
@@ -198,18 +168,21 @@ deviations and oblique residuals have no arbitrary p-value or epsilon threshold.
 
 ## Build, run, and artifacts
 
-Build the existing ggems_source_sample_exporter target with the project toolchain
-and installed dependencies. For patch-only work, run from a scratch mirror:
+See the [shared build and prerequisites](../README.md#build-and-prerequisites)
+for Windows paths, build configurations, and Python dependencies.
+
+Build the existing ggems_source_sample_exporter target with the configured
+project toolchain:
 
     cmake --build build --target ggems_source_sample_exporter
-    python validation/source/frame/run_campaign.py --exporter build/validation/source/ggems_source_sample_exporter.exe --device 0 --exact-primaries 256 --statistical-primaries 1024 --workers 64 --seed 77777 --output-dir validation/source/results/frame/smoke
+    python validation/source/frame/run_campaign.py --exporter build/validation/source/ggems_source_sample_exporter --device 0 --exact-primaries 256 --statistical-primaries 1024 --workers 64 --seed 77777 --output-dir validation/source/results/frame/example
 
 Use the executable suffix/location appropriate to the platform and configuration.
 --device is mandatory and forwarded unchanged. --cases accepts any of the eight
-complete names. Defaults are small implementation checks: 256 per exact case,
-1024 per descriptive oblique case, and 64 workers for unpaired runs. The current
-ordinary Run still constructs an expensive Observer dump; large campaigns are
-inappropriate during implementation.
+complete names. Defaults are 256 primaries per exact case, 1024 per descriptive
+oblique case, and 64 workers for unpaired runs. The current Run constructs an
+expensive Observer dump, so check runtime and memory use before increasing the
+population.
 
 Python 3.12+, NumPy, and Matplotlib support the complete campaign. No SciPy or new
 dependencies are installed automatically. MPLBACKEND=Agg supports headless use.
@@ -228,15 +201,15 @@ The three descriptive cases produce frame.png and frame.pdf:
 - Bounded oblique: recovered equal-solid-angle density, marginals and ECDFs.
 - Focused: recovered local XY density, miss-distance histogram and angular-error CDF.
 
-Exact cases need no decorative plot; JSON comparisons are the authority.
-Generated CSV, JSON campaign evidence, PNG/PDF, logs and probes stay in the
-already ignored results area or caller-selected scratch directories.
+Exact cases report their comparisons in JSON without figures.
+Generated CSV, JSON, PNG/PDF figures, and logs go under the results directory
+or the selected `--output-dir`.
 
 Standalone paired reanalysis:
 
-    python validation/source/frame/analyze.py --samples validation/source/results/frame/smoke/G2_box_signed_permutation/transformed/samples.csv --metadata validation/source/results/frame/smoke/G2_box_signed_permutation/transformed/metadata.json --reference-samples validation/source/results/frame/smoke/G2_box_signed_permutation/reference/samples.csv --reference-metadata validation/source/results/frame/smoke/G2_box_signed_permutation/reference/metadata.json --output-dir reanalysis/G2_box_signed_permutation
+    python validation/source/frame/analyze.py --samples validation/source/results/frame/example/G2_box_signed_permutation/transformed/samples.csv --metadata validation/source/results/frame/example/G2_box_signed_permutation/transformed/metadata.json --reference-samples validation/source/results/frame/example/G2_box_signed_permutation/reference/samples.csv --reference-metadata validation/source/results/frame/example/G2_box_signed_permutation/reference/metadata.json --output-dir reanalysis/G2_box_signed_permutation
 
-Added exporter pose flags:
+Exporter pose flags:
 
     --center-x-mm 12 --center-y-mm -7 --center-z-mm 25
     --frame-direction-x 4 --frame-direction-y -4 --frame-direction-z -7
@@ -244,34 +217,15 @@ Added exporter pose flags:
 
 Supply all three center components together and all six direction/up components
 together. With neither group, origin and default identity remain unchanged.
-The public API handles orientation validity before OpenCL setup. CSV schema,
-device selection, energy/time modes and Observer harvesting remain unchanged.
-Point extraction now checks the actual snapshot center, preserving exact origin
-equality for every previous Point case.
+GGEMS checks orientation validity before OpenCL setup. Point cases compare
+each position with the actual snapshot center.
 
-## Review checks and open scientific decisions
+## Scope
 
-    python -m py_compile validation/source/frame/cases.py validation/source/frame/run_campaign.py validation/source/frame/analyze.py validation/source/frame/plot.py
-    ruff check --no-cache validation/source/frame/
-    ruff format --check --no-cache validation/source/frame/
-    basedpyright --pythonpath <project-python> validation/source/frame/
-    python clangd-check.py validation/source/tools/GGEMSSourceSampleExporter.cc
-    clang-format --dry-run --Werror validation/source/tools/GGEMSSourceSampleExporter.cc
-
-Inspect every diagnostic, including successful-exit clangd warnings. The
-established explicit CLI and harvesting can trigger complexity heuristics.
-NumPy shape/scalar overloads and Matplotlib keyword interfaces have incomplete
-stub types; classify those warnings without blanket suppression.
-
-Scratch self-checks cover invalid/singular frames, malformed metadata, matrix
-conventions, known inverse vectors/plane residuals, exact cyclic and invariant
-pairs, deliberately corrupted samples, mismatching/duplicate provenance, and
-Focused references from committed integers including nonforward rejection.
-Tiny matrix probes test analysis arithmetic; they do not generate GGEMS samples.
-Run one unchanged G1, A1, E1 and T1 smoke against the extended exporter.
-
-Statistical acceptance, oblique numerical budgets, publication counts, and
-broader device/compiler coverage remain open. This patch stops at frame/pose.
-It does not begin ActivityDriven, radionuclides, realistic 120 kVp, multi-source
-validation, physical transport, or combined position/angle/energy RNG-chain
-qualification.
+G2/A2 covers frame translation and rotation, exact paired transformations,
+and descriptive oblique geometry and angle measurements. Statistical and
+oblique residuals are reported without an automatic acceptance threshold.
+ActivityDriven/radionuclide emission, realistic 120 kVp spectra, multi-source
+configurations, physical transport, and combined position/angle/energy sampling
+are outside this campaign. See [I1](../integration/README.md) for the combined
+sampling cases.

@@ -1,9 +1,13 @@
 # Lu-177 selected reference
 
+For build instructions, campaign commands, and result interpretation, see the
+[radionuclide validation guide](../../../README.md). Select this package with
+`--reference validation/radioactivity/data/Lu-177/reference/reference.json`.
+
 This package independently reconstructs the eight current GGEMS Lu-177 emission
 groups from the recovered evidence in [../raw](../raw/). It uses the existing
 reference schema. Scientific values were read from the raw files, not copied
-from the built-in or GoogleTests. Group order and the documented historical
+from the built-in. Group order and the documented historical
 energy representation are the implementation mapping being compared.
 
 ## Authority and half-life

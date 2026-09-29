@@ -1,5 +1,9 @@
 # I-131 selected reference
 
+For build instructions, campaign commands, and result interpretation, see the
+[radionuclide validation guide](../../../README.md). Select this package with
+`--reference validation/radioactivity/data/I-131/reference/reference.json`.
+
 This package reconstructs the ten ordered emission groups from the recovered
 files in [../raw](../raw/). Scientific values were recovered before inspecting
 the I-131 built-in. The CSVs contain retained reference densities, not GGEMS

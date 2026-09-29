@@ -1,5 +1,9 @@
 # I-124 independent reference
 
+For build instructions, campaign commands, and result interpretation, see the
+[radionuclide validation guide](../../../README.md). Select this package with
+`--reference validation/radioactivity/data/I-124/reference/reference.json`.
+
 The selected authority is the B. E. Zimmerman LNE-LNHB / NIST DDEP
 I-124 / Te-124 evaluation updated in 2021. All scientific values and spectra
 were recovered from [the local raw evidence](../raw/) before inspecting the

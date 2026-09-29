@@ -1,5 +1,9 @@
 # Selected O-15 reference
 
+For build instructions, campaign commands, and result interpretation, see the
+[radionuclide validation guide](../../../README.md). Select this package with
+`--reference validation/radioactivity/data/O-15/reference/reference.json`.
+
 `reference.json` selects the recovered LNHB evaluation by X. Mougeot, with
 literature through February 2026 and tables dated March 3, 2026. Decimal strings
 retain source precision and absolute standard uncertainties. Raw evidence paths

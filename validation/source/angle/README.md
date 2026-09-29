@@ -21,20 +21,20 @@ angular transformations consuming those outputs. It is not another RNG campaign.
 CountDriven static time, Mono energy, and source lookup consume no RNG. Isotropic
 uses X/Y of one angular Uniform4 and discards Z/W. Focused consumes no angular
 random value: its direction is determined by the sampled, committed position.
-These draw budgets come from the current production helpers and existing draw
-tests; A1 does not instrument RNG states or duplicate the sampling formulas.
+These draw counts describe the production Source sampling path.
 
 ## Build and run
 
-Use the configured GGEMS toolchain and existing dependencies. The target remains
-`ggems_source_sample_exporter`; no additional executable or CMake option is needed.
+See the [shared build and prerequisites](../README.md#build-and-prerequisites)
+for Windows paths, build configurations, and Python dependencies.
+
+Use the configured GGEMS toolchain to build `ggems_source_sample_exporter`.
 The `validation_source` and aggregate `validation` targets build without running
-a scientific campaign. Build and generated data can stay entirely in scratch:
+a scientific campaign. From the repository root:
 
 ```console
-cmake -S . -B codex_scratch/build
-cmake --build codex_scratch/build --target ggems_source_sample_exporter
-python validation/source/angle/run_campaign.py --exporter codex_scratch/build/validation/source/ggems_source_sample_exporter --device 0 --primaries 256 --workers 64 --seed 77777 --output-dir codex_scratch/a1_smoke
+cmake --build build --target ggems_source_sample_exporter
+python validation/source/angle/run_campaign.py --exporter build/validation/source/ggems_source_sample_exporter --device 0 --primaries 256 --workers 64 --seed 77777 --output-dir validation/source/results/angle/example
 ```
 
 Use the `.exe` suffix on Windows, and the configuration subdirectory when using
@@ -48,20 +48,19 @@ Matplotlib's `Agg` backend with `MPLBACKEND=Agg`.
 `--device` is required and forwarded unchanged to `GGEMSOpenCL::SelectDevices()`.
 The metadata identifies the actual selected devices in selection order.
 `--cases` selects one or more exact case names from the table. `cases.py` owns
-the four configurations and modest development defaults: 4,096 primaries,
-4,096 workers, seed 77,777. Publication sample sizes remain undecided.
+the four configurations and defaults: 4,096 primaries, 4,096 workers, and
+seed 77,777. Increase `--primaries` for larger distribution samples.
 
 The default output is the ignored `validation/source/results/angle/`. A supplied
 `--output-dir` is also supported. Each case directory must be new, preventing a
 failed rerun from leaving an apparently current summary or figure. Successful
 cases contain `samples.csv`, `metadata.json`, `export.log`, `summary.json`, and,
-except Fixed or `--no-plots`, `angle.png` and `angle.pdf`. Generated data and
-figures do not belong in the source patch.
+except Fixed or `--no-plots`, `angle.png` and `angle.pdf`.
 
 Standalone bounded extraction and analysis:
 
 ```console
-codex_scratch/build/validation/source/ggems_source_sample_exporter --device 0 --geometry point --case-name A1_isotropic_bounded --angular bounded-isotropic --theta-min-deg 20 --theta-max-deg 60 --phi-min-deg -45 --phi-max-deg 90 --primaries 256 --workers 64 --seed 77777 --output samples.csv --metadata metadata.json
+build/validation/source/ggems_source_sample_exporter --device 0 --geometry point --case-name A1_isotropic_bounded --angular bounded-isotropic --theta-min-deg 20 --theta-max-deg 60 --phi-min-deg -45 --phi-max-deg 90 --primaries 256 --workers 64 --seed 77777 --output samples.csv --metadata metadata.json
 python validation/source/angle/analyze.py --samples samples.csv --metadata metadata.json --output-dir analysis
 ```
 
@@ -72,13 +71,11 @@ Parameters belonging to another mode are rejected. Units conversion and
 configuration validation delegate to the central GGEMS Units and Source APIs.
 Frame/rotation controls are documented in the [G2/A2 domain](../frame/README.md);
 A1 keeps the default identity frame. Specify `--case-name` for standalone A1
-analysis; the exporter's historical default remains `G1_<geometry>`.
+analysis; the exporter's default is `G1_<geometry>`.
 
-## Extraction and backward compatibility
+## Capture and metadata
 
-Existing G1 invocations without angular options still mean Fixed +Z and retain
-their exact-direction check. Geometry scripts and semantics are unchanged.
-The CSV remains:
+Without angular options, the exporter uses Fixed +Z. The CSV fields are:
 
 ```text
 source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,z_pm,direction_x,direction_y,direction_z,energy_micro_eV,time_ps,record_kind
@@ -102,16 +99,15 @@ cannot define a ray and is also an error.
 The current Observer needs capacity `2*N <= UINT32_MAX`. Both device and host
 capacities are set before initialization. Practical capture sizes are much
 smaller: the current Run still constructs its human-readable dump even when
-logging is filtered, including expensive per-history rescans. A1 preserves that
-production path without redesigning Observer or Output.
+logging is filtered, including expensive per-history rescans.
 
-Metadata keeps G1 fields and adds the requested angular configuration,
+Metadata includes the requested angular configuration,
 `requested_bounded_degrees`, all four actual packed `isotropic_cos_theta_*` and
 `isotropic_phi_*_rad` fields, and exact `focus_position_pm` plus its central Units
 conversion to mm. Existing `frame_axes` and `fixed_direction` remain the actual
 stored axes. The runner adds the checkout `git_commit` when available through
-the same lightweight `git rev-parse HEAD` path as G1. This is checkout provenance,
-not an executable fingerprint or qualification certificate.
+`git rev-parse HEAD`. It identifies the checkout used to launch the campaign,
+which may differ from the exporter build.
 
 ## Analytical measurements
 
@@ -171,7 +167,7 @@ approach when the focus is forward, as required by this canonical configuration.
 Inspect the nonforward count together with miss and angular errors. Focused is
 a deterministic geometric constraint, not an independent probability density.
 
-## Figures, interpretation, and open decisions
+## Figures and interpretation
 
 The two Isotropic cases produce a compact equal-solid-angle `u_phi` versus
 `u_cos` density, both uniform marginals, and both ECDF comparisons. Rectangle
@@ -186,12 +182,11 @@ measurements, exclusions, support, figure paths/status, and
 Binary32 direction/trigonometric arithmetic and finite high-24-bit uniform grids
 are compared with ideal continuous laws. Picometer storage does not imply
 picometer directional accuracy over a 100 mm flight. No norm, angular, support,
-miss-distance, or statistical acceptance tolerance is frozen here. Structural
-failures remain immediate errors. Suitable scientific sample counts, uncertainty
-reporting, accepted error budgets, device coverage, and publication criteria
-remain open. Scheduling and worker/device choices can alter primary-to-stream
-assignment; sorted output is not a bitwise per-primary reproducibility guarantee.
+miss-distance, or statistical acceptance tolerance is defined here. Structural
+failures remain immediate errors. Scheduling and worker/device choices can alter
+primary-to-stream assignment; sorted output is not a bitwise per-primary
+reproducibility guarantee.
 
 A1 stops at the default identity frame. A2 rotations/source frames, Energy,
 Time, ActivityDriven/radionuclides, external Monte Carlo comparisons, and physical
-transport validation are outside this slice.
+transport validation are outside this campaign.

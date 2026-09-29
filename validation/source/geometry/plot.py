@@ -1,3 +1,31 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Plot GGEMS Source geometry validation results.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -16,8 +44,8 @@ def _density(
 ) -> None:
     # Automatic limits retain every measured point, including support excursions.
     _, _, _, mesh = axis.hist2d(horizontal, vertical, bins=64)
-    _ = axis.figure.colorbar(mesh, ax=axis, label="Source records / bin")
-    _ = axis.set(xlabel=labels[0], ylabel=labels[1])
+    axis.figure.colorbar(mesh, ax=axis, label="Source records / bin")
+    axis.set(xlabel=labels[0], ylabel=labels[1])
     axis.set_aspect("equal", adjustable="box")
 
 
@@ -25,10 +53,11 @@ def _uniform_histogram(axis: Axes, variables: dict[str, FloatArray]) -> None:
     for name, values in variables.items():
         finite = values[np.isfinite(values)]
         if finite.size:
-            _ = axis.hist(finite, bins=50, density=True, histtype="step", label=name)
-    _ = axis.plot([0.0, 1.0], [1.0, 1.0], linestyle="--", label="Ideal Uniform[0,1]")
-    _ = axis.set(xlabel="Normalized coordinate", ylabel="Probability density")
-    _ = axis.legend()
+            axis.hist(finite, bins=50, density=True, histtype="step", label=name)
+
+    axis.plot([0.0, 1.0], [1.0, 1.0], linestyle="--", label="Ideal Uniform[0,1]")
+    axis.set(xlabel="Normalized coordinate", ylabel="Probability density")
+    axis.legend()
 
 
 def _ecdf(axis: Axes, variables: dict[str, FloatArray]) -> None:
@@ -38,23 +67,24 @@ def _ecdf(axis: Axes, variables: dict[str, FloatArray]) -> None:
             probability = (
                 np.arange(1, ordered.size + 1, dtype=np.float64) / ordered.size
             )
-            _ = axis.step(ordered, probability, where="post", label=f"{name} empirical")
-    _ = axis.plot([0.0, 1.0], [0.0, 1.0], linestyle="--", label="Ideal Uniform[0,1]")
-    _ = axis.set(xlabel="Normalized coordinate", ylabel="Cumulative probability")
-    _ = axis.legend()
+            axis.step(ordered, probability, where="post", label=f"{name} empirical")
+
+    axis.plot([0.0, 1.0], [0.0, 1.0], linestyle="--", label="Ideal Uniform[0,1]")
+    axis.set(xlabel="Normalized coordinate", ylabel="Cumulative probability")
+    axis.legend()
 
 
 def _radial_histogram(axis: Axes, radius: FloatArray, dimension: int) -> None:
-    _ = axis.hist(radius, bins=50, density=True, histtype="step", label="GGEMS Source")
+    axis.hist(radius, bins=50, density=True, histtype="step", label="GGEMS Source")
     reference = np.linspace(0.0, 1.0, 201)
-    _ = axis.plot(
+    axis.plot(
         reference,
         dimension * reference ** (dimension - 1),
         linestyle="--",
         label=f"Ideal {dimension}D radial law",
     )
-    _ = axis.set(xlabel="r / R", ylabel="Probability density")
-    _ = axis.legend()
+    axis.set(xlabel="r / R", ylabel="Probability density")
+    axis.legend()
 
 
 def plot_geometry(
@@ -68,6 +98,7 @@ def plot_geometry(
 ) -> list[Path]:
     if geometry == "point":
         return []
+
     # The exporter obtains both units through GGEMS Units. No local unit scale.
     reference_axis = next(index for index, size in enumerate(dimensions_pm) if size > 0)
     mm_per_pm = dimensions_mm[reference_axis] / dimensions_pm[reference_axis]
@@ -99,7 +130,8 @@ def plot_geometry(
         _uniform_histogram(axes[1], {"u_z": variables["u_z"]})
         _radial_histogram(axes[2], np.sqrt(variables["q_r"]), 2)
         _ecdf(axes[3], {"q_r": variables["q_r"]})
-    _ = figure.suptitle(
+
+    figure.suptitle(
         f"{case_name}: canonical Source geometry, N = {positions.shape[0]:,}"
     )
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -109,4 +141,5 @@ def plot_geometry(
             figure.savefig(path, dpi=180)
     finally:
         plt.close(figure)
+
     return paths

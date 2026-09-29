@@ -1,3 +1,31 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Plot GGEMS Source integration validation results.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -20,8 +48,8 @@ def plot_integrated(
     figure = plt.figure(figsize=(10, 8), layout="constrained")
     try:
         position = figure.add_subplot(2, 2, 1)
-        _ = position.hist2d(local_mm[:, 0], local_mm[:, 1], bins=40)
-        _ = position.set(
+        position.hist2d(local_mm[:, 0], local_mm[:, 1], bins=40)
+        position.set(
             xlabel="Recovered local X (mm)",
             ylabel="Recovered local Y (mm)",
             title="Rectangle position",
@@ -29,8 +57,8 @@ def plot_integrated(
         )
 
         angular = figure.add_subplot(2, 2, 2)
-        _ = angular.hist2d(common["u_phi"], common["u_cos"], bins=40)
-        _ = angular.set(
+        angular.hist2d(common["u_phi"], common["u_cos"], bins=40)
+        angular.set(
             xlabel=r"Recovered $u_\phi$",
             ylabel=r"Recovered $u_{\cos\theta}$",
             title="Equal-solid-angle coordinates",
@@ -38,7 +66,7 @@ def plot_integrated(
         )
 
         energy = figure.add_subplot(2, 2, 3)
-        _ = energy.hist(
+        energy.hist(
             energies_kev,
             bins=[
                 float(edge)
@@ -48,13 +76,13 @@ def plot_integrated(
             histtype="step",
             label="GGEMS",
         )
-        _ = energy.stairs(expected_density, edges_kev, label="Exact bin mass / width")
-        _ = energy.set(
+        energy.stairs(expected_density, edges_kev, label="Exact bin mass / width")
+        energy.set(
             xlabel="Energy (keV)",
             ylabel="Density (1/keV)",
             title="RegularSpectrum (finite CDF in JSON)",
         )
-        _ = energy.legend()
+        energy.legend()
 
         correlation = figure.add_subplot(2, 2, 4)
         names = list(common)
@@ -63,7 +91,7 @@ def plot_integrated(
         shown = correlation.imshow(
             np.ma.masked_invalid(correlation_matrix), vmin=-1.0, vmax=1.0
         )
-        _ = correlation.set(
+        correlation.set(
             xticks=range(4),
             yticks=range(4),
             xticklabels=names,
@@ -74,17 +102,19 @@ def plot_integrated(
             for column in range(4):
                 value = correlation_matrix[row, column]
                 label = f"{value:.3f}" if np.isfinite(value) else "undefined"
-                _ = correlation.text(
+                correlation.text(
                     column, row, label, ha="center", va="center", fontsize=9
                 )
-        _ = figure.colorbar(shown, ax=correlation, shrink=0.8)
-        _ = figure.suptitle(f"{case_name} — N={energies_kev.size}, Philox")
+
+        figure.colorbar(shown, ax=correlation, shrink=0.8)
+        figure.suptitle(f"{case_name} — N={energies_kev.size}, Philox")
 
         paths: list[str] = []
         for extension in ("png", "pdf"):
             path = output_dir / f"integration.{extension}"
             figure.savefig(path, dpi=180)
             paths.append(str(path.resolve()))
+
         return paths
     finally:
         plt.close(figure)

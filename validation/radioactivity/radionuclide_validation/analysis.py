@@ -1,3 +1,28 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+# Authors:
+#     Julien BERT <julien.bert@univ-brest.fr>
+#     Didier BENOIT <didier.benoit@inserm.fr>
+
 """Keep reference agreement, population law, birth times and energy tests distinct."""
 
 import math
@@ -8,7 +33,6 @@ from decimal import Decimal
 from fractions import Fraction
 from itertools import pairwise
 from pathlib import Path
-from typing import cast
 
 from .model import (
     JsonObject,
@@ -62,6 +86,7 @@ def grid_comparison(group: RuntimeGroup, spectrum: Spectrum, scale: int) -> Json
                         - spectrum.cdf(stationary)
                     )
                 )
+
     numerator = 0
     for index, upper in enumerate(group.upper_tickets):
         count = upper - (group.upper_tickets[index - 1] if index else 0)
@@ -70,6 +95,7 @@ def grid_comparison(group: RuntimeGroup, spectrum: Spectrum, scale: int) -> Json
                 (group.width - 1) * (count - 1) + math.gcd(group.width, count) - 1
             ) // 2
             numerator += count * (group.lower_edge + index * group.width) + floor_sum
+
     finite_mean = Fraction(numerator, group.ticket_space * scale)
     return {
         "status": "comparison_only",
@@ -106,11 +132,13 @@ def reference_cdf(group: ReferenceGroup, scale: int) -> Callable[[int], float]:
     if group.spectrum is not None:
         spectrum = group.spectrum
         return lambda energy: spectrum.cdf(energy / scale)
+
     if group.kind == "Mono":
-        quantity = cast(JsonObject, group.distribution["energy"])
+        quantity = group.distribution["energy"]
         value = Decimal(str(quantity["value"])) * scale
         return lambda energy: float(Decimal(energy) >= value)
-    lines = cast(list[JsonObject], group.distribution["lines"])
+
+    lines = group.distribution["lines"]
     energies = tuple(Decimal(str(line["energy_keV"])) * scale for line in lines)
     weights = tuple(Decimal(str(line["weight"])) for line in lines)
     exact = tuple(int(energy) for energy in energies)
@@ -120,6 +148,7 @@ def reference_cdf(group: ReferenceGroup, scale: int) -> Callable[[int], float]:
     for weight in weights:
         running += weight
         cumulative.append(float(running / total))
+
     return lambda energy: cumulative[bisect_right(exact, energy)]
 
 
@@ -155,7 +184,7 @@ def definition_audit(
                 actual, expected.spectrum, runtime.energy_scale
             )
         elif actual.kind == expected.kind == "Mono":
-            energy = cast(JsonObject, expected.distribution["energy"])
+            energy = expected.distribution["energy"]
             checks["mono_energy"] = (
                 Decimal(actual.mono)
                 == Decimal(str(energy["value"])) * runtime.energy_scale
@@ -167,15 +196,17 @@ def definition_audit(
                 abs(actual.ticket_cdf(e) / actual.ticket_space - cdf(e))
                 for e in actual.energies
             )
+
         groups.append(result)
         matches[f"group_{actual.index}"] = all(checks.values())
+
     provenance: JsonObject = {
         "status": "unavailable",
         "reason": "The compiled definition exposes no generator/provenance field.",
     }
     audit_value = reference.raw.get("implementation_audit")
     if audit_value is not None:
-        audit = cast(JsonObject, audit_value)
+        audit = audit_value
         path = source_tree / str(audit["source_file"])
         prefix = str(audit["generator_prefix"])
         lines = path.read_text(encoding="utf-8").splitlines()
@@ -195,8 +226,9 @@ def definition_audit(
                 "source_comment": "\n".join(lines[index : index + 6]),
                 "limitation": "Source-comment audit, not a compiled provenance API.",
             }
+
     forbidden: list[JsonObject] = []
-    for item in cast(list[JsonObject], reference.raw["excluded_source_emissions"]):
+    for item in reference.raw["excluded_source_emissions"]:
         if "particle" in item and "energy_keV" in item:
             energy = Decimal(str(item["energy_keV"])) * runtime.energy_scale
             found = [
@@ -215,6 +247,7 @@ def definition_audit(
                     "status": "fail" if found else "pass",
                 }
             )
+
     return {
         "nuclear_scalars_and_mapping": "match"
         if all(matches.values())
@@ -237,9 +270,9 @@ def analyze_campaign(
     run_dir = directory / "run"
     runtime = Runtime.load(run_dir)
     metadata = load_json(run_dir / "run.json")
-    windows = cast(int, metadata["windows"])
-    step = cast(int, metadata["step_ps"])
-    replicas = cast(int, metadata["population_replicates"])
+    windows = metadata["windows"]
+    step = metadata["step_ps"]
+    replicas = metadata["population_replicates"]
     group_count = len(runtime.groups)
     alpha = float(Decimal(str(settings["family_alpha"])))
     hypotheses = windows * (2 * group_count + 3) + 5 * group_count + 1
@@ -252,13 +285,14 @@ def analyze_campaign(
         parent_means[window] = decay_integral(
             Decimal(str(metadata["activity_bq"])),
             runtime.half_life,
-            cast(int, metadata["reference_time_ps"]),
+            metadata["reference_time_ps"],
             window * step,
             (window + 1) * step,
             runtime.time_scale,
         )
         for group in runtime.groups:
             means[window, group.index] = parent_means[window] * group.yield_per_decay
+
     for row in read_csv(run_dir / "populations.csv"):
         replicate, window, group = (
             int(row[key]) for key in ("replicate", "window", "group")
@@ -285,7 +319,8 @@ def analyze_campaign(
         times[window].append(int(row["time_ps"]))
         energies[group].append(int(row["energy_micro_eV"]))
         observed_group[window, group] += 1
-    windows_metadata = cast(list[JsonObject], metadata["window_results"])
+
+    windows_metadata = metadata["window_results"]
     sample_count = sum(len(values) for values in energies.values())
 
     # ----------------------------------------------------------------------------
@@ -319,6 +354,7 @@ def analyze_campaign(
                     ),
                 }
             )
+
         scaled = float(
             Decimal(2).ln()
             * Decimal(step)
@@ -407,7 +443,9 @@ def analyze_campaign(
                 result["reference_support_status"] = (
                     "pass" if result["outside_reference_support"] == 0 else "fail"
                 )
+
         energy_results.append(result)
+
     dispersion = [
         {
             "index": group.index,

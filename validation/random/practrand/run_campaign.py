@@ -1,5 +1,33 @@
 #!/usr/bin/env python3
 
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Run the GGEMS PractRand validation campaign.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 import argparse
 import json
 import shlex
@@ -8,7 +36,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Protocol, cast
+from typing import Literal
 
 # ------------------------------------------------------------------------------
 
@@ -66,23 +94,6 @@ class CampaignCase:
 # ------------------------------------------------------------------------------
 
 
-class Arguments(Protocol):
-    list: bool
-    case: str | None
-    all: bool
-    dry_run: bool
-    generator: Path
-    runner: Path
-    rng_test: str
-    device: str
-    local_size: int
-    force: bool
-    keep_stream: bool
-
-
-# ------------------------------------------------------------------------------
-
-
 def RepositoryRoot() -> Path:
     return Path(__file__).resolve().parents[3]
 
@@ -90,74 +101,74 @@ def RepositoryRoot() -> Path:
 # ------------------------------------------------------------------------------
 
 
-def ParseArguments() -> Arguments:
+def ParseArguments() -> argparse.Namespace:
     root = RepositoryRoot()
     parser = argparse.ArgumentParser(
         description="Run the fixed GGEMS PractRand validation campaign."
     )
 
     action = parser.add_mutually_exclusive_group()
-    _ = action.add_argument(
+    action.add_argument(
         "--list",
         action="store_true",
         help="List every fixed PractRand campaign case.",
     )
-    _ = action.add_argument(
+    action.add_argument(
         "--case",
         metavar="CASE_ID",
         help="Run exactly one fixed campaign case, for example A01-philox.",
     )
-    _ = action.add_argument(
+    action.add_argument(
         "--all",
         action="store_true",
         help="Run all fixed campaign cases sequentially.",
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print commands without executing them.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--generator",
         type=Path,
         default=root / "build/validation/random/ggems_random_stream_generator",
         help="GGEMS random stream generator executable.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--runner",
         type=Path,
         default=root / "validation/random/practrand/run_practrand.py",
         help="GGEMS PractRand single-run wrapper.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--rng-test",
         default="RNG_test",
         help="PractRand RNG_test executable or path.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--device",
         default="gpu",
         help="GGEMS device selector (default: gpu).",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--local-size",
         type=int,
         default=64,
         help="OpenCL local work-group size (default: 64).",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--force",
         action="store_true",
         help="Rerun completed cases and overwrite existing campaign artifacts.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--keep-stream",
         action="store_true",
         help="Keep the generated stream after a single-case run; not valid with --all.",
     )
 
-    return cast(Arguments, cast(object, parser.parse_args()))
+    return parser.parse_args()
 
 
 # ------------------------------------------------------------------------------
@@ -367,14 +378,14 @@ def CasePaths(case: CampaignCase) -> tuple[Path, Path, Path]:
 
 def LoadJsonObject(path: Path) -> dict[str, object] | None:
     try:
-        value = cast(object, json.loads(path.read_text(encoding="utf-8")))
+        value = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return None
 
     if not isinstance(value, dict):
         return None
 
-    return cast(dict[str, object], value)
+    return value
 
 
 # ------------------------------------------------------------------------------
@@ -388,7 +399,7 @@ def ManifestMatches(case: CampaignCase, manifest_path: Path) -> bool:
     random_value = manifest.get("random")
     if not isinstance(random_value, dict):
         return False
-    random = cast(dict[str, object], random_value)
+    random = random_value
 
     engine = random.get("engine")
     if not isinstance(engine, str) or engine.lower() != case.engine:
@@ -429,9 +440,9 @@ def IsCompletedCase(case: CampaignCase) -> bool:
     if not isinstance(tool_value, dict):
         return False
 
-    input_section = cast(dict[str, object], input_value)
-    output = cast(dict[str, object], output_value)
-    tool = cast(dict[str, object], tool_value)
+    input_section = input_value
+    output = output_value
+    tool = tool_value
 
     if tool.get("multithreaded") is not True:
         return False
@@ -467,7 +478,7 @@ def ResolveExecutable(value: str | Path, description: str) -> str:
 def RunCommand(command: list[str], *, dry_run: bool) -> None:
     print(f"$ {shlex.join(command)}")
     if not dry_run:
-        _ = subprocess.run(command, check=True)
+        subprocess.run(command, check=True)
 
 
 # ------------------------------------------------------------------------------
@@ -526,7 +537,7 @@ def BuildPractRandCommand(
     manifest_path: Path,
     summary_path: Path,
 ) -> list[str]:
-    _ = case
+
     return [
         sys.executable,
         runner,
@@ -697,7 +708,7 @@ def main() -> int:
         rng_test = ResolveExecutable(args.rng_test, "PractRand RNG_test")
 
     if args.case is not None:
-        _ = RunCase(
+        RunCase(
             FindCase(cases, args.case),
             generator=generator,
             runner=runner,

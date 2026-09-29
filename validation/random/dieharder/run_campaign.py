@@ -1,5 +1,33 @@
 #!/usr/bin/env python3
 
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Run the GGEMS Dieharder validation campaign.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 import argparse
 import json
 import shlex
@@ -9,7 +37,6 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol, cast
 
 # ------------------------------------------------------------------------------
 
@@ -61,23 +88,6 @@ CAMPAIGN_CASES: tuple[CampaignCase, ...] = (
 # ------------------------------------------------------------------------------
 
 
-class Arguments(Protocol):
-    list: bool
-    case: str | None
-    all: bool
-    dry_run: bool
-    generator: Path
-    runner: Path
-    dieharder: str
-    device: str
-    local_size: int
-    force: bool
-    keep_stream: bool
-
-
-# ------------------------------------------------------------------------------
-
-
 def RepositoryRoot() -> Path:
     return Path(__file__).resolve().parents[3]
 
@@ -85,68 +95,68 @@ def RepositoryRoot() -> Path:
 # ------------------------------------------------------------------------------
 
 
-def ParseArguments() -> Arguments:
+def ParseArguments() -> argparse.Namespace:
     root = RepositoryRoot()
     parser = argparse.ArgumentParser(
         description="Run the fixed 13-case GGEMS Dieharder reference campaign."
     )
 
     action = parser.add_mutually_exclusive_group()
-    _ = action.add_argument(
+    action.add_argument(
         "--list",
         action="store_true",
         help="List every fixed Dieharder campaign case.",
     )
-    _ = action.add_argument(
+    action.add_argument(
         "--case",
         metavar="CASE_ID",
         help="Run exactly one fixed campaign case, for example A01-philox.",
     )
-    _ = action.add_argument(
+    action.add_argument(
         "--all",
         action="store_true",
         help="Run all fixed campaign cases sequentially.",
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print commands without executing them.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--generator",
         type=Path,
         default=root / "build/validation/random/ggems_random_stream_generator",
         help="GGEMS random stream generator executable.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--runner",
         type=Path,
         default=root / "validation/random/dieharder/run_dieharder.py",
         help="GGEMS Dieharder single-run wrapper.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--dieharder",
         default="dieharder",
         help="Dieharder executable or path.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--device",
         default="gpu",
         help="GGEMS device selector (default: gpu).",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--local-size",
         type=int,
         default=64,
         help="OpenCL local work-group size (default: 64).",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--force",
         action="store_true",
         help="Rerun completed cases and overwrite existing campaign artifacts.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--keep-stream",
         "--keep-streams",
         dest="keep_stream",
@@ -154,7 +164,7 @@ def ParseArguments() -> Arguments:
         help="Keep the generated stream after a single-case run; not valid with --all.",
     )
 
-    return cast(Arguments, cast(object, parser.parse_args()))
+    return parser.parse_args()
 
 
 # ------------------------------------------------------------------------------
@@ -212,14 +222,14 @@ def CasePaths(case: CampaignCase) -> tuple[Path, Path, Path]:
 
 def LoadJsonObject(path: Path) -> dict[str, object] | None:
     try:
-        value = cast(object, json.loads(path.read_text(encoding="utf-8")))
+        value = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return None
 
     if not isinstance(value, dict):
         return None
 
-    return cast(dict[str, object], value)
+    return value
 
 
 # ------------------------------------------------------------------------------
@@ -232,7 +242,7 @@ def ManifestMatches(case: CampaignCase, path: Path) -> bool:
     random_value = root.get("random")
     if not isinstance(random_value, dict):
         return False
-    random = cast(dict[str, object], random_value)
+    random = random_value
 
     engine = random.get("engine")
     if not isinstance(engine, str) or engine.lower() != case.engine:
@@ -270,8 +280,8 @@ def IsCompletedCase(case: CampaignCase) -> bool:
     if not isinstance(output_value, dict):
         return False
 
-    tool = cast(dict[str, object], tool_value)
-    output = cast(dict[str, object], output_value)
+    tool = tool_value
+    output = output_value
 
     if tool.get("version") != DIEHARDER_REFERENCE_VERSION:
         return False
@@ -305,7 +315,7 @@ def RunCommand(command: list[str], *, dry_run: bool) -> float:
         return 0.0
 
     started = time.perf_counter()
-    _ = subprocess.run(command, check=True)
+    subprocess.run(command, check=True)
     return time.perf_counter() - started
 
 
@@ -556,7 +566,7 @@ def main() -> int:
         dieharder = ResolveExecutable(args.dieharder, "Dieharder")
 
     if args.case is not None:
-        _ = RunCase(
+        RunCase(
             FindCase(args.case),
             generator=generator,
             runner=runner,

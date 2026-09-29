@@ -1,4 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <iostream>
+#include <initializer_list>
 #include <exception>
 #include <string>
 #include <cstdint>
@@ -244,6 +272,7 @@ auto ParseEnergyList(std::string_view text, std::string_view option)
     }
 
     values.push_back(value);
+
     if (comma == std::string_view::npos) {
       return values;
     }
@@ -274,10 +303,12 @@ auto CanonicalEnergy(long double value, std::string_view option)
 auto ParseFrameComponent(std::string_view text, std::string_view option)
   -> double {
   auto const value = ParseNumber(text, option);
+
   if (std::abs(value) > std::numeric_limits<double>::max()) {
     throw std::runtime_error(
       std::format("{} must be representable in binary64.", option));
   }
+
   return static_cast<double>(value);
 }
 
@@ -289,6 +320,7 @@ auto ValidatePoseOptions(Options &options,
   bool const has_center = seen.contains("--center-x-mm") ||
                           seen.contains("--center-y-mm") ||
                           seen.contains("--center-z-mm");
+
   for (auto const *option :
        {"--center-x-mm", "--center-y-mm", "--center-z-mm"}) {
     if (seen.contains(option) != has_center) {
@@ -300,6 +332,7 @@ auto ValidatePoseOptions(Options &options,
     auto const converted =
       ggems::units::MakeQuantity<ggems::units::PositionCoordinate>(
         options.requested_center_mm[axis], "mm");
+
     if (!converted) {
       throw std::runtime_error(
         "Source center must be representable in int64 pm.");
@@ -314,6 +347,7 @@ auto ValidatePoseOptions(Options &options,
     std::ranges::any_of(k_frame_options, [&seen](auto option) -> bool {
       return seen.contains(option);
     });
+
   for (auto const option : k_frame_options) {
     if (seen.contains(option) != options.has_orientation) {
       throw std::runtime_error(
@@ -334,6 +368,7 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
 
     if (option == "--help") {
       options.help = true;
+
       return options;
     }
 
@@ -360,6 +395,7 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
       options.seed = ParseUnsigned(value, option);
     } else if (option == "--workers") {
       auto const workers = ParseUnsigned(value, option);
+
       if (workers == 0ULL ||
           workers > std::numeric_limits<std::uint32_t>::max()) {
         throw std::runtime_error("--workers must be a positive uint32.");
@@ -427,9 +463,11 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
       options.sequence_path = value;
     } else if (option == "--sequence-runs" || option == "--reset-before-run") {
       auto const sequence_value = ParseUnsigned(value, option);
+
       if (sequence_value > std::numeric_limits<std::uint32_t>::max()) {
         throw std::runtime_error(std::format("{} requires a uint32.", option));
       }
+
       if (option == "--sequence-runs") {
         options.sequence_runs = static_cast<std::uint32_t>(sequence_value);
       } else {
@@ -484,8 +522,12 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
       std::format("Unsupported angular configuration '{}'.", options.angular));
   }
 
-  for (auto const *option : {"--theta-min-deg", "--theta-max-deg",
-                             "--phi-min-deg", "--phi-max-deg"}) {
+  for (auto const *option : {
+         "--theta-min-deg",
+         "--theta-max-deg",
+         "--phi-min-deg",
+         "--phi-max-deg",
+       }) {
     if (seen.contains(option) != (options.angular == "bounded-isotropic")) {
       throw std::runtime_error(std::format(
         "{} is required only with --angular bounded-isotropic.", option));
@@ -507,6 +549,7 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
   }
 
   bool const tabulated = options.energy_mode != "mono";
+
   for (auto const *option : {"--energy-values-kev", "--energy-weights"}) {
     if (seen.contains(option) != tabulated) {
       throw std::runtime_error(std::format(
@@ -550,6 +593,7 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
       options.requested_time_ns[1U], "ns");
     auto const step = ggems::units::MakeQuantity<ggems::units::Duration>(
       options.requested_time_ns[2U], "ns");
+
     if (!start || !stop || !step) {
       throw std::runtime_error(
         "Time values must be representable in uint64 ps.");
@@ -584,6 +628,7 @@ auto ParseArguments(int argc, char const *const *argv) -> Options {
         .lexically_normal()
         .lexically_relative(
           std::filesystem::absolute(options.sequence_path).lexically_normal());
+
     if (!relative_metadata.empty() && *relative_metadata.begin() != "..") {
       throw std::runtime_error(
         "Keep the manifest outside the sequence CSV directory.");
@@ -607,13 +652,10 @@ auto ConfigureSource(Options const &options) -> std::shared_ptr<GGEMSSource> {
   source->SetPositionPicoMeter(options.center_pm[0U], options.center_pm[1U],
                                options.center_pm[2U]);
 
-  // Production owns normalization, orthogonalization, validation and packing.
   if (options.has_orientation) {
     source->SetOrientation(options.frame_direction, options.frame_up);
   }
 
-  // The public Source builders own conversion, ordering, grids, and tickets.
-  // All configuration errors occur before OpenCL setup or output creation.
   if (options.energy_mode == "mono") {
     source->SetEnergyMicroElectronVolt(
       CanonicalEnergy(options.mono_energy_kev, "--mono-energy-kev"));
@@ -728,19 +770,19 @@ auto CollectSourceRecords(GGEMSTransportObserver const &observer,
 
   auto const run_id = records.front()->run_id;
   auto const global_begin = records.front()->global_primary_id;
+
   if (global_begin > std::numeric_limits<std::uint64_t>::max() -
                        (options.primary_count - 1ULL)) {
     throw std::runtime_error("Source global primary range overflows uint64.");
   }
 
-  // Preserve the fresh single-Run contract; sequences validate relative
-  // progression after harvesting each actual Observer result.
   if (options.sequence_path.empty() &&
       (run_id != 0ULL || global_begin != 0ULL)) {
     throw std::runtime_error("Unexpected fresh single-Run provenance.");
   }
 
   std::uint64_t expected_id{};
+
   for (auto const *record : records) {
     if (record->source_index != 0U ||
         record->source_local_primary_id != expected_id ||
@@ -833,6 +875,7 @@ auto JsonString(std::string_view text) -> std::string {
   }
 
   result += '"';
+
   return result;
 }
 
@@ -841,7 +884,8 @@ auto JsonString(std::string_view text) -> std::string {
 
 auto WriteJsonArray(std::ostream &output, auto const &values) -> void {
   output << '[';
-  bool first = true;
+  bool first{true};
+
   for (auto const value : values) {
     if (!first) {
       output << ',';
@@ -857,7 +901,7 @@ auto WriteJsonArray(std::ostream &output, auto const &values) -> void {
 
 auto WriteEnergyMetadata(std::ostream &output, Options const &options,
                          GGEMSSourceRunSnapshot const &snapshot) -> void {
-  auto const &record = snapshot.GetEnergyDistributionRecords().at(0U);
+  auto const &record = snapshot.GetEnergyDistributionRecords().front();
   auto const &energies = snapshot.GetEnergyValuesMicroElectronVolt();
   auto const &weights = snapshot.GetRelativeWeights();
   auto const &bounds = snapshot.GetCumulativeTicketUpperBounds();
@@ -879,7 +923,7 @@ auto WriteEnergyMetadata(std::ostream &output, Options const &options,
          << ",\"table_offset\":" << record.table_offset
          << ",\"table_count\":" << record.table_count
          << ",\"mono_energy_micro_eV\":"
-         << snapshot.GetRecords().at(0U).energy_micro_eV
+         << snapshot.GetRecords().front().energy_micro_eV
          << ",\"regular_bin_width_micro_eV\":"
          << record.regular_bin_width_micro_eV
          << ",\"ticket_space_size\":" << (1ULL << 32U)
@@ -894,6 +938,7 @@ auto WriteEnergyMetadata(std::ostream &output, Options const &options,
     << ",\"display_unit\":\"keV\",\"display_unit_micro_eV\":"
     << ggems::units::MakeQuantity<ggems::units::Energy>(1U, "keV").value().value
     << "},\n  \"requested_energy\":{\"unit\":\"keV\",\"mono\":";
+
   if (options.energy_mode == "mono") {
     output << options.mono_energy_kev;
   } else {
@@ -904,6 +949,7 @@ auto WriteEnergyMetadata(std::ostream &output, Options const &options,
   output << ",\"relative_weights\":";
   WriteJsonArray(output, options.energy_weights);
   output << ",\"bin_width\":";
+
   if (options.energy_mode == "regular-spectrum") {
     output << options.energy_bin_width_kev;
   } else {
@@ -922,7 +968,7 @@ auto WriteMetadata(std::ostream &output, Options const &options,
                    std::span<GGEMSObserverRecord const *const> records,
                    std::uint32_t sequence_index,
                    std::filesystem::path const &samples_path) -> void {
-  auto const &source = snapshot.GetRecords().at(0U);
+  auto const &source = snapshot.GetRecords().front();
   output.imbue(std::locale::classic());
   output << std::setprecision(std::numeric_limits<long double>::max_digits10);
   output << "{\n  \"case_name\":" << JsonString(options.case_name)
@@ -1028,6 +1074,7 @@ auto WriteMetadata(std::ostream &output, Options const &options,
     << ggems::units::MakeQuantity<ggems::units::Length>(1U, "mm").value().value
     << ",\n  \"frame_matrix_convention\":\"axes_as_columns\""
     << ",\n  \"requested_frame\":";
+
   if (options.has_orientation) {
     output << R"({"api":"SetOrientation","direction":)";
     WriteJsonArray(output, options.frame_direction);
@@ -1074,6 +1121,7 @@ auto WriteSequenceHeader(std::ostream &output, Options const &options) -> void {
   }
 
   output << ",\n  \"reset_before_sequence_index\":";
+
   if (options.reset_before_run) {
     output << *options.reset_before_run;
   } else {
@@ -1093,15 +1141,16 @@ auto main(int argc, char const *const *argv) -> int {
 
     if (options.help) {
       PrintUsage();
+
       return 0;
     }
 
     ggems::core::GGEMSLogger::GetInstance().SetDetailLevel(-1);
 
-    auto source = ConfigureSource(options);
+    auto const source = ConfigureSource(options);
 
-    // GGEMSRun owns chronology validation and effective window calculation.
     ggems::core::GGEMSRun run;
+
     if (options.chronology == "configured") {
       auto const &[start, stop, step] = options.configured_time_ps;
       run.SetTimePicoSecond(start, stop, step);
@@ -1123,6 +1172,7 @@ auto main(int argc, char const *const *argv) -> int {
     opencl.SetWorkerCount(options.worker_count);
     opencl.Initialize();
     std::vector<std::string> device_names;
+
     for (auto const &context : opencl.GetContext()) {
       device_names.push_back(context.GetDevice().GetName());
     }
@@ -1133,6 +1183,7 @@ auto main(int argc, char const *const *argv) -> int {
     run.Initialize();
 
     bool const sequence = !options.sequence_path.empty();
+
     if (sequence) {
       std::filesystem::create_directories(options.sequence_path);
     }
@@ -1149,9 +1200,8 @@ auto main(int argc, char const *const *argv) -> int {
       }
       run.Run();
 
-      // Copy the committed snapshot and harvest this Observer result before
-      // the next successful Run replaces it. Never read live Source time.
       auto const snapshot = run.GetLastSourceRunSnapshot();
+
       if (!snapshot || snapshot->GetRecords().size() != 1U ||
           snapshot->GetEnergyDistributionRecords().size() != 1U ||
           snapshot->GetTotalPrimaryCount() != options.primary_count) {
@@ -1159,8 +1209,9 @@ auto main(int argc, char const *const *argv) -> int {
           "Missing or inconsistent single-source run snapshot.");
       }
 
-      auto const &source_record = snapshot->GetRecords().at(0U);
+      auto const &source_record = snapshot->GetRecords().front();
       auto const window = snapshot->GetTimeWindow();
+
       if (source_record.time_start_ps != window.start_ps ||
           source_record.time_stop_ps != window.stop_ps) {
         throw std::runtime_error(
@@ -1177,6 +1228,7 @@ auto main(int argc, char const *const *argv) -> int {
            run_id != *previous_run_id + 1ULL)) {
         throw std::runtime_error("Successful Run identities did not continue.");
       }
+
       if (previous_global_last &&
           (*previous_global_last == std::numeric_limits<std::uint64_t>::max() ||
            global_begin != *previous_global_last + 1ULL)) {
@@ -1190,6 +1242,7 @@ auto main(int argc, char const *const *argv) -> int {
 
       if (index == 0U) {
         metadata.open(options.metadata_path);
+
         if (sequence) {
           WriteSequenceHeader(metadata, options);
         }
@@ -1204,6 +1257,7 @@ auto main(int argc, char const *const *argv) -> int {
 
       previous_run_id = run_id;
       previous_global_last = records.back()->global_primary_id;
+
       if (sequence) {
         std::cout << options.case_name << ": run " << index << " (id " << run_id
                   << "); [" << window.start_ps << ',' << window.stop_ps
@@ -1225,6 +1279,7 @@ auto main(int argc, char const *const *argv) -> int {
     return 0;
   } catch (std::exception const &error) {
     std::cerr << "GGEMS Source exporter:" << error.what() << '\n';
+
     return 1;
   }
 }

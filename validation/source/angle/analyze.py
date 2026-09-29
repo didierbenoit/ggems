@@ -1,16 +1,43 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Analyze GGEMS Source angle samples and metadata.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 import argparse
 import csv
 import json
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol, cast
 
 import numpy as np
-from numpy.typing import NDArray
 
 # Direct script entry points use the modules beside this file.
-from cases import CASES, AngleCase  # pyright: ignore[reportImplicitRelativeImport]
+from cases import CASES, AngleCase
+from numpy.typing import NDArray
 
 type FloatArray = NDArray[np.float64]
 type IntArray = NDArray[np.int64]
@@ -52,7 +79,8 @@ class Metadata:
 def _object(value: object, name: str) -> JsonObject:
     if not isinstance(value, dict):
         raise TypeError(f"{name} must be a JSON object.")
-    return cast(JsonObject, value)
+
+    return value
 
 
 def _integer(
@@ -60,17 +88,21 @@ def _integer(
 ) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
         raise TypeError(f"{name} must be an integer.")
+
     if not minimum <= value <= maximum:
         raise ValueError(f"{name} is outside its integer field range.")
+
     return value
 
 
 def _number(value: object, name: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError(f"{name} must be numeric.")
+
     result = float(value)
     if not math.isfinite(result):
         raise ValueError(f"{name} must be finite.")
+
     return result
 
 
@@ -81,20 +113,22 @@ def _binary32(value: object, name: str) -> float:
         or float(np.float32(result)) != result
     ):
         raise ValueError(f"{name} must preserve the exact packed binary32 value.")
+
     return result
 
 
 def _triple(value: object, name: str) -> list[object]:
     if not isinstance(value, list):
         raise TypeError(f"{name} must contain three coordinates.")
-    result = cast(list[object], value)
-    if len(result) != 3:
+
+    if len(value) != 3:
         raise ValueError(f"{name} must contain three coordinates.")
-    return result
+
+    return value
 
 
 def load_metadata(path: Path) -> Metadata:
-    raw = _object(cast(object, json.loads(path.read_text(encoding="utf-8"))), str(path))
+    raw = _object(json.loads(path.read_text(encoding="utf-8")), str(path))
     case = next((item for item in CASES if item.name == raw.get("case_name")), None)
     if case is None:
         raise ValueError("Unknown canonical A1 case in metadata.")
@@ -128,12 +162,14 @@ def load_metadata(path: Path) -> Metadata:
             )
 
     for key in ("energy_micro_eV", "time_ps", "source_index", "global_primary_begin"):
-        _ = _integer(raw.get(key), key)
+        _integer(raw.get(key), key)
+
     for value in _triple(raw.get("source_center_pm"), "source_center_pm"):
-        _ = _integer(value, "source_center_pm", -(1 << 63), (1 << 63) - 1)
+        _integer(value, "source_center_pm", -(1 << 63), (1 << 63) - 1)
+
     for axis in _triple(raw.get("frame_axes"), "frame_axes"):
         for value in _triple(axis, "frame axis"):
-            _ = _binary32(value, "frame axis")
+            _binary32(value, "frame axis")
 
     fixed = tuple(
         _binary32(value, "fixed_direction")
@@ -149,6 +185,7 @@ def load_metadata(path: Path) -> Metadata:
     )
     if display != case.dimensions_mm:
         raise ValueError("Dimensions do not describe the selected A1 case.")
+
     if case.geometry == "point":
         if dimensions != (0, 0, 0):
             raise ValueError("Point dimensions must be exactly zero.")
@@ -159,6 +196,7 @@ def load_metadata(path: Path) -> Metadata:
     lower, upper, phi_min, phi_max = bounds
     if not (-1.0 <= lower < upper <= 1.0 and phi_min < phi_max):
         raise ValueError("Invalid packed angular domain.")
+
     requested = raw.get("requested_bounded_degrees")
     if case.bounds_deg is not None:
         requested_bounds = _object(requested, "requested_bounded_degrees")
@@ -170,12 +208,14 @@ def load_metadata(path: Path) -> Metadata:
             raise ValueError(
                 "Requested bounds do not match the canonical bounded A1 case."
             )
+
         if not (-math.pi < phi_min < phi_max < math.pi):
             raise ValueError(
                 "A1 bounded phi must lie inside atan2's ordinary interval."
             )
     elif requested is not None:
         raise ValueError("Only the bounded case may specify requested angular bounds.")
+
     if case.angular == "isotropic" and bounds != (
         -1.0,
         1.0,
@@ -196,6 +236,7 @@ def load_metadata(path: Path) -> Metadata:
     )
     if focus_display != (case.focus_mm or (0.0, 0.0, 0.0)):
         raise ValueError("Focus does not match the selected A1 case.")
+
     if case.angular == "focused":
         if focus[0] != 0 or focus[1] != 0 or focus[2] <= 0:
             raise ValueError("Canonical Focused requires a global focus on positive Z.")
@@ -205,15 +246,17 @@ def load_metadata(path: Path) -> Metadata:
     primary_count = _integer(
         raw.get("primary_count"), "primary_count", 1, ((1 << 32) - 1) // 2
     )
-    _ = _integer(raw.get("worker_count"), "worker_count", 1, (1 << 32) - 1)
-    _ = _integer(raw.get("seed"), "seed")
+    _integer(raw.get("worker_count"), "worker_count", 1, (1 << 32) - 1)
+    _integer(raw.get("seed"), "seed")
     selector = raw.get("device_selector")
     if not isinstance(selector, str) or not selector:
         raise ValueError("Metadata must contain a nonempty device_selector.")
+
     device_names = raw.get("device_names")
     if not isinstance(device_names, list):
         raise TypeError("Metadata device_names must be a list.")
-    names = cast(list[object], device_names)
+
+    names = device_names
     if not names or any(not isinstance(name, str) or not name for name in names):
         raise ValueError("Metadata must identify the selected devices.")
 
@@ -226,16 +269,17 @@ def load_metadata(path: Path) -> Metadata:
     }.items():
         if _integer(observer.get(key), f"observer.{key}") != expected:
             raise ValueError(f"Incomplete Observer capture: {key} must be {expected}.")
+
     for key in ("capacity_per_device", "host_capacity"):
-        _ = _integer(observer.get(key), f"observer.{key}", 1, (1 << 32) - 1)
+        _integer(observer.get(key), f"observer.{key}", 1, (1 << 32) - 1)
 
     return Metadata(
         case=case,
         primary_count=primary_count,
-        dimensions_pm=cast(tuple[int, int, int], dimensions),
-        fixed_direction=cast(tuple[float, float, float], fixed),
-        bounds=cast(tuple[float, float, float, float], bounds),
-        focus_pm=cast(tuple[int, int, int], focus),
+        dimensions_pm=dimensions,
+        fixed_direction=fixed,
+        bounds=bounds,
+        focus_pm=focus,
         raw=raw,
     )
 
@@ -244,9 +288,11 @@ def _decimal(value: str, minimum: int, maximum: int) -> int:
     digits = value.removeprefix("-")
     if not digits or not digits.isascii() or not digits.isdecimal():
         raise ValueError(f"Expected an exact decimal integer, received {value!r}.")
+
     result = int(value)
     if not minimum <= result <= maximum:
         raise ValueError(f"Integer {value!r} is outside its serialized field range.")
+
     return result
 
 
@@ -281,9 +327,8 @@ def load_samples(path: Path, metadata: Metadata) -> tuple[IntArray, FloatArray]:
                         row[3 + axis], -(1 << 63), (1 << 63) - 1
                     )
                     value = float(row[6 + axis])
-                    if (
-                        not math.isfinite(value)
-                        or abs(value) > float(np.finfo(np.float32).max)
+                    if not math.isfinite(value) or abs(value) > float(
+                        np.finfo(np.float32).max
                     ):
                         raise ValueError(
                             "Direction components must be finite binary32 values."
@@ -294,10 +339,7 @@ def load_samples(path: Path, metadata: Metadata) -> tuple[IntArray, FloatArray]:
 
                 energy = _decimal(row[9], 0, (1 << 64) - 1)
                 time = _decimal(row[10], 0, (1 << 64) - 1)
-                if (
-                    energy != metadata.raw["energy_micro_eV"]
-                    or time != 0
-                ):
+                if energy != metadata.raw["energy_micro_eV"] or time != 0:
                     raise ValueError(
                         "Record violates the Mono energy or static time contract."
                     )
@@ -309,8 +351,10 @@ def load_samples(path: Path, metadata: Metadata) -> tuple[IntArray, FloatArray]:
         raise ValueError(
             f"Expected {metadata.primary_count} Source records, found {count}."
         )
+
     if metadata.case.geometry == "point" and np.any(positions != 0):
         raise ValueError("Canonical Point must emit at the exact origin.")
+
     if metadata.case.geometry == "rectangle" and np.any(positions[:, 2] != 0):
         raise ValueError("Canonical Rectangle must emit in the exact Z=0 plane.")
 
@@ -363,7 +407,7 @@ def norm_statistics(norms: FloatArray) -> JsonObject:
 def measure_angle(
     positions: IntArray, directions: FloatArray, metadata: Metadata
 ) -> tuple[JsonObject, dict[str, FloatArray]]:
-    norms = cast(FloatArray, np.linalg.norm(directions, axis=1))
+    norms = np.linalg.norm(directions, axis=1)
     if np.any(norms == 0.0):
         raise ValueError("A zero direction does not define an emitted ray.")
 
@@ -441,7 +485,8 @@ def measure_angle(
         paired_cos = u_cos[valid_phi]
         correlation = None
         if u_phi.size >= 2 and np.var(paired_cos) > 0.0 and np.var(u_phi) > 0.0:
-            correlation = float(cast(np.float64, np.corrcoef(paired_cos, u_phi)[0, 1]))
+            correlation = float(np.corrcoef(paired_cos, u_phi)[0, 1])
+
         summary["correlations"] = {
             "variables": ["u_cos", "u_phi"],
             "sample_count": int(u_phi.size),
@@ -452,6 +497,7 @@ def measure_angle(
             excursion = max(
                 excursion, -float(np.min(u_phi)), float(np.max(u_phi)) - 1.0
             )
+
         summary["support"] = {
             "below_cos_lower_count": int(np.count_nonzero(dz < lower)),
             "above_cos_upper_count": int(np.count_nonzero(dz > upper)),
@@ -494,9 +540,11 @@ def measure_angle(
                 dtype=np.float64,
                 count=metadata.primary_count,
             )
-        distance = cast(FloatArray, np.linalg.norm(displacement, axis=1))
+
+        distance = np.linalg.norm(displacement, axis=1)
         if np.any(distance == 0.0):
             raise ValueError("An emission at the focus has no line-of-sight direction.")
+
         reference = displacement / distance[:, None]
         observed_unit = directions / norms[:, None]
         dot = np.sum(observed_unit * reference, axis=1)
@@ -550,7 +598,7 @@ def analyze_case(
     if metadata.case.angular == "fixed":
         summary["figure_status"] = "not_required"
     elif make_figures:
-        from plot import plot_angle  # pyright: ignore[reportImplicitRelativeImport]
+        from plot import plot_angle
 
         summary["figures"] = [
             str(path)
@@ -559,51 +607,45 @@ def analyze_case(
                 positions,
                 metadata.dimensions_pm,
                 variables,
-                cast(JsonObject, summary["exclusions"]),
+                summary["exclusions"],
                 output_dir,
             )
         ]
         summary["figure_status"] = "generated"
 
-    _ = (output_dir / "summary.json").write_text(
+    (output_dir / "summary.json").write_text(
         json.dumps(summary, indent=2, allow_nan=False) + "\n", encoding="utf-8"
     )
     print(
         f"{metadata.case.name}: {metadata.primary_count} Source records; structure complete; overflow=0"
     )
     print(f"  norm: {summary['norm']}")
-    for name, stats in cast(
-        dict[str, JsonObject], summary["transformed_variables"]
-    ).items():
+    for name, stats in summary["transformed_variables"].items():
         print(
             f"  {name}: n={stats['sample_count']}, mean={stats['mean']}, variance={stats['variance']}, D={stats['ecdf_max_deviation']}"
         )
+
     if summary["exact_fixed"] is not None:
         print(f"  exact Fixed: {summary['exact_fixed']}")
+
     if summary["focused"] is not None:
         print(f"  Focused: {summary['focused']}")
+
     print(f"  support: {summary['support']}; exclusions: {summary['exclusions']}")
     print(f"  summary: {output_dir / 'summary.json'}")
     return summary
-
-
-class Arguments(Protocol):
-    samples: Path
-    metadata: Path
-    output_dir: Path
-    no_plots: bool
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Measure canonical A1 laws from production Source records."
     )
-    _ = parser.add_argument("--samples", type=Path, required=True)
-    _ = parser.add_argument("--metadata", type=Path, required=True)
-    _ = parser.add_argument("--output-dir", type=Path, required=True)
-    _ = parser.add_argument("--no-plots", action="store_true")
-    args = cast(Arguments, cast(object, parser.parse_args()))
-    _ = analyze_case(
+    parser.add_argument("--samples", type=Path, required=True)
+    parser.add_argument("--metadata", type=Path, required=True)
+    parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--no-plots", action="store_true")
+    args = parser.parse_args()
+    analyze_case(
         args.samples, args.metadata, args.output_dir, make_figures=not args.no_plots
     )
 

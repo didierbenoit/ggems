@@ -1,15 +1,14 @@
 # Source Integration: I1
 
-I1 closes the current analytical CountDriven Source checkpoint by exercising
+I1 validates analytical CountDriven Source composition by exercising
 position, angle, energy, and frame together. G1, A1, E1, T1, and G2/A2 establish
 the separate responsibilities; I1 measures their composition through the same
 production OpenCL primary-initialization path.
 
-The authority remains public GGEMSSource configuration -> immutable Source run
+Samples follow this path: public GGEMSSource configuration -> immutable Source run
 snapshot -> ordinary CountDriven GGEMSRun -> raw Observer Source records ->
 the existing ggems_source_sample_exporter -> exact/analytical Python analysis.
-The exporter is unchanged. There is no replacement Source sampler, Python
-Philox implementation, raw RNG exporter, or hidden-state reconstruction.
+All samples come from the production Source kernels.
 
 ## Cases and invocation
 
@@ -40,18 +39,19 @@ to 2048 primaries per member and **exactly one worker**. Seed defaults to 202609
 cases.py owns these definitions. The runner permits count/seed overrides and
 an integrated worker override; it deliberately offers no multi-worker pair mode.
 
-Build only the existing exporter with the configured GGEMS toolchain. For a
-patch workflow, execute these commands from a scratch mirror:
+See the [shared build and prerequisites](../README.md#build-and-prerequisites)
+for Windows paths, build configurations, and Python dependencies.
+
+Build the existing exporter with the configured GGEMS toolchain:
 
     cmake --build build --target ggems_source_sample_exporter
-    python validation/source/integration/run_campaign.py --exporter build/validation/source/ggems_source_sample_exporter.exe --device 0 --integrated-primaries 8192 --pair-primaries 2048 --workers 64 --seed 20260908 --output-dir validation/source/results/integration/smoke
+    python validation/source/integration/run_campaign.py --exporter build/validation/source/ggems_source_sample_exporter --device 0 --integrated-primaries 8192 --pair-primaries 2048 --workers 64 --seed 20260908 --output-dir validation/source/results/integration/example
 
 Use the executable suffix/location appropriate to the platform and generator.
 --device is required and forwarded unchanged to GGEMSOpenCL::SelectDevices.
 Pairs also require exactly one actual selected device, checked in returned
 metadata without parsing the selector in Python. --cases selects complete names.
-No device marketing name is hard-coded. NumPy and Matplotlib must already be
-installed with Python 3.12+; nothing is installed automatically.
+Use Python 3.12+ with NumPy and Matplotlib installed.
 
 The integrated directory contains samples.csv, metadata.json, export.log,
 summary.json, integration.png, and integration.pdf. Pair directories contain
@@ -59,18 +59,16 @@ reference/ and comparison/ captures plus one summary.json. Exact pairs need no
 figure. --no-plots explicitly disables the integrated figure; otherwise a
 missing plotting dependency is an error. MPLBACKEND=Agg supports headless use.
 Case directories must be new, preventing stale evidence after a failed rerun.
-Generated files stay in the already ignored results area or caller-selected
-scratch directories, never in the source patch.
+Generated files go under the results directory or the selected `--output-dir`.
 
 Standalone reanalysis uses a new output directory:
 
-    python validation/source/integration/analyze.py --case I1_integrated_oblique --case-dir validation/source/results/integration/smoke/I1_integrated_oblique --output-dir codex_scratch/i1_reanalysis
-    python validation/source/integration/analyze.py --case I1_pair_draw_owner_swap --case-dir validation/source/results/integration/smoke/I1_pair_draw_owner_swap --output-dir codex_scratch/i1_pair_reanalysis
+    python validation/source/integration/analyze.py --case I1_integrated_oblique --case-dir validation/source/results/integration/example/I1_integrated_oblique --output-dir validation/source/results/integration/reanalysis
+    python validation/source/integration/analyze.py --case I1_pair_draw_owner_swap --case-dir validation/source/results/integration/example/I1_pair_draw_owner_swap --output-dir validation/source/results/integration/pair_reanalysis
 
 ## Production draw ownership and exact-pair scope
 
-The current code, checked against the September 7 Source audit and the
-September 5 Random validation report, establishes:
+The paired cases use the following production random draw counts:
 
 | Source responsibility | Calls per primary | Philox blocks |
 | --- | --- | --- |
@@ -97,12 +95,8 @@ block. The energy-configuration pair consumes three in both members. Equal total
 budgets preserve stream alignment for the next primary as well as this one.
 Changing energy mapping cannot alter earlier position/direction draws.
 
-src/random/GGEMSRandom.cc derives Philox keys from SplitMix64(seed), starts
-the low counter at zero, and places stream ID in the high words.
-src/GGEMSRun.cc assigns context_index * worker_count stream offsets;
-GGEMSTransportWorkload owns persistent worker states initialized once.
-particle_stream_transport.cl assigns primaries through an atomic cursor and
-indexes RNG state by worker ID. Primary IDs do not select RNG streams.
+GGEMS keeps persistent random streams indexed by worker, while primaries are
+assigned dynamically. Primary identifiers do not select random streams.
 
 Independent multi-worker runs therefore do not guarantee per-primary replay.
 One worker on one device uses stream 0, processes consecutive local IDs, and
@@ -119,7 +113,7 @@ operation, or a statistical independence proof.
 
 ## Structural and analytical definitions
 
-The unchanged CSV retains exact decimal int64 pm positions, uint64 micro-eV energies
+The CSV retains exact decimal int64 pm positions, uint64 micro-eV energies
 and uint64 ps times. Directions are reconstructed as binary32 from the
 max_digits10 CSV decimals before binary64 analysis. The exporter validates Gamma
 on every raw Source record; Python verifies Gamma metadata because the current
@@ -192,35 +186,18 @@ provenance, malformed captures, energy support/reachability violations and
 fixed-field violations fail immediately. No p-values or arbitrary epsilons
 weaken those exact contracts.
 
-## Checkpoint and review
+## Interpretation and scope
 
-The implementation smoke uses 8192/64 for the integrated case and 2048/1 for each
-pair member, seed 20260908. It is a compact integration checkpoint; retained
-150000-primary G1/A1/E1/G2-A2 results remain the higher-statistics reference.
-Statistical/numerical acceptance budgets, uncertainty presentation, broader
-device/compiler coverage, and later performant Output reruns remain separate.
-Canonical Energy now uses micro-eV. CSV and metadata energy fields use the
-`*_micro_eV` suffix; input and display units still use the central Units registry.
-The migration requires focused E1/I1 reruns against the updated exporter.
+The integrated case reports marginal distributions, numerical residuals, and
+cross-component correlations. These descriptive statistics have no automatic
+acceptance threshold. The four paired cases require exact equality of the
+fields listed in the case table; a mismatch stops the analysis.
 
-Scratch-only analysis probes exercise malformed CSV/frame/provenance, support
-excursions, unreachable finite energies, wrong time, corrupted exact
-pair fields, provenance-domain mismatch, and reordered CSVs. Tiny M/W counting
-examples check the finite law, including unreachable offsets when W > M.
-They do not simulate Source or Philox. Execute one unchanged G1, A1, E1, T1,
-and G2/A2 case against the existing exporter.
+CSV and metadata energy fields use the `*_micro_eV` suffix. Captures using a
+different energy representation must be regenerated with the current exporter
+before analysis.
 
-    python -m py_compile validation/source/integration/cases.py validation/source/integration/run_campaign.py validation/source/integration/analyze.py validation/source/integration/plot.py
-    ruff check --no-cache validation/source/integration/
-    ruff format --check --no-cache validation/source/integration/
-    basedpyright --pythonpath <project-python> validation/source/integration/
-
-No C++ file changes, so I1 needs no new clangd/clang-format pass.
-Review all Python diagnostics; NumPy shape/scalar overloads and Matplotlib
-keyword stubs can produce warnings without an actionable implementation defect.
-Do not suppress them merely to reach zero warnings.
-
-I1 validates analytical CountDriven primary generation within the tested scope.
-ActivityDriven/radionuclides, realistic 120 kVp, multi-source campaigns,
-Voxelized/PhaseSpace Source, physical transport, Navigation, and clinical
-accuracy are outside this checkpoint.
+I1 covers analytical CountDriven primary generation. ActivityDriven/radionuclide
+emission, realistic 120 kVp spectra, multi-source configurations, voxelized and
+phase-space sources, physical transport, navigation, and clinical accuracy are
+outside this campaign.

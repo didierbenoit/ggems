@@ -1,5 +1,9 @@
 # I-125 selected-source validation reference
 
+For build instructions, campaign commands, and result interpretation, see the
+[radionuclide validation guide](../../../README.md). Select this package with
+`--reference validation/radioactivity/data/I-125/reference/reference.json`.
+
 This reference was recovered from the retained raw scientific files before
 inspection of the I-125 production arrays, tests or compiled export. It validates
 the four selected prompt marginal-emission groups. Physical yields are emitted

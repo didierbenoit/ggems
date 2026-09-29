@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Generates binary random streams and their validation manifests.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <cstdint>
 #include <cstddef>
 #include <string>
@@ -21,6 +50,9 @@
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/opencl/GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
+#include "GGEMS/opencl/GGEMSOpenCLContext.hh"
+#include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
+#include "GGEMS/opencl/GGEMSOpenCLProgram.hh"
 #include "GGEMS/opencl/GGEMSOpenCLKernel.hh"
 #include "GGEMS/opencl/GGEMSOpenCLSVMBuffer.hh"
 #include "GGEMS/units/GGEMSBytesUnits.hh"
@@ -80,7 +112,7 @@ auto ParseStreamLayout(std::string_view value) -> StreamLayout {
 enum class StreamType : std::uint8_t {
   RawUInt32 = 0U,
   Uniform24Scalar,
-  Uniform24Vector4
+  Uniform24Vector4,
 };
 
 // =============================================================================
@@ -343,17 +375,15 @@ auto WriteUniform24Chunk(std::ofstream &stream,
     for (std::size_t i = 0U; i < sample_count; ++i) {
       float const uniform = values[offset + i];
 
-      auto const value = static_cast<std::uint32_t>(uniform * 16777216.0F);
-
-      if (value > 0x00FFFFFFU) {
+      if (!(uniform >= 0.0F && uniform < 1.0F)) {
         throw std::runtime_error(
           "Invalid GGEMS uniform value while packing 24-bit stream.");
       }
 
-      buffer[(3U * i) + 0U] = static_cast<std::uint8_t>(value & 0xFFU);
+      auto const value = static_cast<std::uint32_t>(uniform * 16777216.0F);
 
+      buffer[3U * i] = static_cast<std::uint8_t>(value & 0xFFU);
       buffer[(3U * i) + 1U] = static_cast<std::uint8_t>((value >> 8U) & 0xFFU);
-
       buffer[(3U * i) + 2U] = static_cast<std::uint8_t>((value >> 16U) & 0xFFU);
     }
 
@@ -430,10 +460,6 @@ auto ComputeChunkPlan(Options const &options, GGEMSRandom const &random,
   }
 
   auto const state_size = static_cast<std::uint64_t>(random.GetStateSize());
-
-  if (state_size == 0ULL) {
-    throw std::runtime_error("Random engine reports a zero state size.");
-  }
 
   if (options.layout == StreamLayout::Interleaved) {
     plan.strategy = ChunkStrategy::SampleDepth;
@@ -568,28 +594,6 @@ auto RunRandomKernel(ggems::ocl::GGEMSOpenCLKernel &kernel,
 // =============================================================================
 // =============================================================================
 
-auto WriteValueChunk(std::ofstream &stream, std::filesystem::path const &path,
-                     StreamType stream_type, void const *values,
-                     std::size_t value_count) -> void {
-  switch (stream_type) {
-  case StreamType::RawUInt32:
-    WriteUInt32Chunk(stream, path, static_cast<std::uint32_t const *>(values),
-                     value_count);
-    return;
-
-  case StreamType::Uniform24Scalar:
-  case StreamType::Uniform24Vector4:
-    WriteUniform24Chunk(stream, path, static_cast<float const *>(values),
-                        value_count);
-    return;
-  }
-
-  throw std::runtime_error("Unsupported random stream type.");
-}
-
-// =============================================================================
-// =============================================================================
-
 auto JsonEscape(std::string_view text) -> std::string {
   std::string escaped;
   escaped.reserve(text.size());
@@ -703,8 +707,8 @@ auto WriteMinimalManifest(std::filesystem::path const &path,
   stream << "    \"local_size\": " << options.local_size << "\n";
   stream << "  },\n";
   stream << "  \"output\": {\n";
-  stream << R"(    "stream_path": ")" << options.output_path.generic_string()
-         << "\"\n";
+  stream << R"(    "stream_path": ")"
+         << JsonEscape(options.output_path.generic_string()) << "\"\n";
   stream << "  }\n";
   stream << "}\n";
 
@@ -818,12 +822,6 @@ auto GenerateRandomStream(Options const &options) -> void {
 
   random.ValidateStateRange(options.stream_offset, options.worker_count);
 
-  if (static_cast<std::uint64_t>(options.worker_count) >
-      std::numeric_limits<std::uint64_t>::max() /
-        static_cast<std::uint64_t>(options.samples_per_worker)) {
-    throw std::runtime_error("Requested stream sample count overflows uint64.");
-  }
-
   std::uint64_t const total_samples =
     static_cast<std::uint64_t>(options.worker_count) *
     static_cast<std::uint64_t>(options.samples_per_worker);
@@ -892,29 +890,18 @@ auto GenerateRandomStream(Options const &options) -> void {
     std::format("-I\"{}\" {}", kernel_root.generic_string(),
                 random.GetKernelBuildDefinition());
 
-  std::string_view kernel_name;
-
-  switch (options.stream_type) {
-  case StreamType::RawUInt32:
-    kernel_name = "random_uint32_stream";
-    break;
-
-  case StreamType::Uniform24Scalar:
-    kernel_name = "random_uniform24_scalar_stream";
-    break;
-
-  case StreamType::Uniform24Vector4:
-    kernel_name = "random_uniform24_vector4_stream";
-    break;
-  }
+  std::string const kernel_name =
+    options.stream_type == StreamType::Uniform24Scalar
+      ? "random_uniform24_scalar_stream"
+      : "random_uniform24_vector4_stream";
 
   auto const &program = opencl.GetOrCreateProgram(
-    context, validation_kernel_root, std::string{kernel_name}, build_options);
+    context, validation_kernel_root, kernel_name, build_options);
 
-  cl::Kernel raw_kernel = program.CreateKernel(std::string{kernel_name});
+  cl::Kernel raw_kernel = program.CreateKernel(kernel_name);
 
   ggems::ocl::GGEMSOpenCLKernel kernel{context, std::move(raw_kernel),
-                                       std::string{kernel_name}};
+                                       kernel_name};
 
   auto states_buffer =
     context.CreateSVMBuffer(ggems::units::Bytes{chunk_plan.state_buffer_bytes});
@@ -950,9 +937,9 @@ auto GenerateRandomStream(Options const &options) -> void {
       }
 
       values_buffer.Map(CL_MAP_READ);
-      WriteValueChunk(output_stream, options.output_path, options.stream_type,
-                      values_buffer.GetData(),
-                      static_cast<std::size_t>(current_sample_count));
+      WriteUniform24Chunk(output_stream, options.output_path,
+                          static_cast<float const *>(values_buffer.GetData()),
+                          static_cast<std::size_t>(current_sample_count));
       values_buffer.Unmap();
 
       written_samples += current_sample_count;
@@ -986,9 +973,9 @@ auto GenerateRandomStream(Options const &options) -> void {
       }
 
       values_buffer.Map(CL_MAP_READ);
-      WriteValueChunk(output_stream, options.output_path, options.stream_type,
-                      values_buffer.GetData(),
-                      static_cast<std::size_t>(current_sample_count));
+      WriteUniform24Chunk(output_stream, options.output_path,
+                          static_cast<float const *>(values_buffer.GetData()),
+                          static_cast<std::size_t>(current_sample_count));
       values_buffer.Unmap();
 
       written_samples += current_sample_count;

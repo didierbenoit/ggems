@@ -1,8 +1,12 @@
 # I-123 selected source-model reference
 
+For build instructions, campaign commands, and result interpretation, see the
+[radionuclide validation guide](../../../README.md). Select this package with
+`--reference validation/radioactivity/data/I-123/reference/reference.json`.
+
 This reference independently reconstructs the four selected prompt marginal
 emission groups from retained scientific files. It is not a reconstruction
-from GGEMS arrays, GoogleTest expectations or compiled exports. All numerical
+from GGEMS arrays or compiled exports. All numerical
 source data come from [the retained raw evidence](../raw/). No continuous
 spectrum is needed for this entirely discrete source model.
 

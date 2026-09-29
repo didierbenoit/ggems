@@ -1,10 +1,38 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Run PractRand on a GGEMS random stream.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 import argparse
 import json
 import re
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Literal, Protocol, TextIO, TypedDict, cast
+from typing import Literal
 
 # ------------------------------------------------------------------------------
 
@@ -18,62 +46,19 @@ type PractRandStatus = Literal[
 # ------------------------------------------------------------------------------
 
 
-class RandomSection(TypedDict):
-    engine: str
-    seed: int
-    worker_count: int
-    samples_per_worker: int
-    total_samples: int
-    byte_count: int
-    stream_type: str
-    layout: str
-    stream_offset: int
-    sample_bits: int
-
-
-# ------------------------------------------------------------------------------
-
-
-class OutputSection(TypedDict):
-    stream_path: str
-
-
-# ------------------------------------------------------------------------------
-
-
-class RandomManifest(TypedDict):
-    schema_version: int
-    random: RandomSection
-    output: OutputSection
-
-
-# ------------------------------------------------------------------------------
-
-
-class Arguments(Protocol):
-    manifest: Path
-    max_size: str | None
-    rng_test: str
-    summary: Path | None
-    multithreaded: bool
-
-
-# ------------------------------------------------------------------------------
-
-
-def ParseArguments() -> Arguments:
+def ParseArguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run PractRand on a GGEMS random stream."
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         "--manifest",
         type=Path,
         required=True,
         help="GGEMS random stream manifest.",
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         "--max-size",
         help=(
             "Optional maximum PractRand test size. "
@@ -81,25 +66,25 @@ def ParseArguments() -> Arguments:
         ),
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         "--rng-test",
         default="RNG_test",
         help="Path to PractRand RNG_test, or RNG_test if available in PATH.",
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         "--summary",
         type=Path,
         help="Path to the GGEMS PractRand summary JSON.",
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         "--multithreaded",
         action="store_true",
         help="Enable PractRand multithreaded test execution.",
     )
 
-    return cast(Arguments, cast(object, parser.parse_args()))
+    return parser.parse_args()
 
 
 # ------------------------------------------------------------------------------
@@ -209,9 +194,7 @@ def RunPractRand(
         if stdout is None:
             raise RuntimeError("Failed to capture PractRand output.")
 
-        text_stdout = cast(TextIO, stdout)
-
-        for line in text_stdout:
+        for line in stdout:
             print(line, end="")
             output_lines.append(line)
 
@@ -324,12 +307,9 @@ def ExtractTestResultCount(
     output: str,
     anomaly_count: int,
 ) -> int | None:
-    matches = cast(
-        list[str],
-        re.findall(
-            r"(?:no anomalies in|\.\.\.and)\s+(\d+)\s+test result\(s\)",
-            output,
-        ),
+    matches = re.findall(
+        r"(?:no anomalies in|\.\.\.and)\s+(\d+)\s+test result\(s\)",
+        output,
     )
 
     if not matches:
@@ -367,28 +347,25 @@ def ExtractPractRandConfiguration(
 # ------------------------------------------------------------------------------
 
 
-def LoadManifest(path: Path) -> RandomManifest:
+def LoadManifest(path: Path) -> dict[str, object]:
     path = path.expanduser().resolve()
 
     if not path.is_file():
         raise FileNotFoundError(f"GGEMS random manifest not found: {path}")
 
-    data = cast(
-        object,
-        json.loads(path.read_text(encoding="utf-8")),
-    )
+    data = json.loads(path.read_text(encoding="utf-8"))
 
     if not isinstance(data, dict):
         raise TypeError(f"Invalid GGEMS random manifest: {path}")
 
-    return cast(RandomManifest, cast(object, data))
+    return data
 
 
 # ------------------------------------------------------------------------------
 
 
 def ResolveStreamPath(
-    manifest: RandomManifest,
+    manifest: dict[str, object],
 ) -> Path:
     stream_path = Path(manifest["output"]["stream_path"]).expanduser().resolve()
 
@@ -410,7 +387,7 @@ def ResolveStreamPath(
 # ------------------------------------------------------------------------------
 
 
-def ResolvePractRandInput(manifest: RandomManifest) -> str:
+def ResolvePractRandInput(manifest: dict[str, object]) -> str:
     random = manifest["random"]
     stream_type = random["stream_type"]
     sample_bits = random["sample_bits"]
@@ -443,7 +420,7 @@ def WriteSummary(
     path: Path,
     *,
     manifest_path: Path,
-    manifest: RandomManifest,
+    manifest: dict[str, object],
     stream_path: Path,
     rng_test: Path,
     command: list[str],
@@ -500,7 +477,7 @@ def WriteSummary(
         },
     }
 
-    _ = path.write_text(
+    path.write_text(
         json.dumps(summary, indent=2) + "\n",
         encoding="utf-8",
     )

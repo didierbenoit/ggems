@@ -1,11 +1,38 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Run the GGEMS Source integration validation campaign.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 import argparse
 import json
 import subprocess
 from pathlib import Path
-from typing import Protocol, cast
 
 # Direct script entry points: Python adds this directory to sys.path.
-from cases import (  # pyright: ignore[reportImplicitRelativeImport]
+from cases import (
     CASES,
     CENTER_MM,
     DEFAULT_INTEGRATED_PRIMARIES,
@@ -24,22 +51,11 @@ from cases import (  # pyright: ignore[reportImplicitRelativeImport]
 )
 
 
-class Arguments(Protocol):
-    exporter: Path
-    device: str
-    cases: list[str]
-    integrated_primaries: int
-    pair_primaries: int
-    workers: int
-    seed: int
-    output_dir: Path
-    no_plots: bool
-
-
 def nonnegative_integer(value: str) -> int:
     number = int(value)
     if number < 0:
         raise argparse.ArgumentTypeError("Expected a nonnegative integer.")
+
     return number
 
 
@@ -47,45 +63,46 @@ def positive_integer(value: str) -> int:
     number = nonnegative_integer(value)
     if number == 0:
         raise argparse.ArgumentTypeError("Expected a positive integer.")
+
     return number
 
 
-def parse_arguments() -> Arguments:
+def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run I1 integrated Source sampling and exact RNG-budget pairs."
     )
-    _ = parser.add_argument("--exporter", type=Path, required=True)
-    _ = parser.add_argument(
+    parser.add_argument("--exporter", type=Path, required=True)
+    parser.add_argument(
         "--device", required=True, help="Forwarded unchanged to GGEMS SelectDevices."
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--cases",
         nargs="+",
         choices=[case.name for case in CASES],
         default=[case.name for case in CASES],
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--integrated-primaries",
         type=positive_integer,
         default=DEFAULT_INTEGRATED_PRIMARIES,
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--pair-primaries", type=positive_integer, default=DEFAULT_PAIR_PRIMARIES
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--workers",
         type=positive_integer,
         default=DEFAULT_WORKERS,
         help="Integrated case only; exact pairs always use one worker and require one device.",
     )
-    _ = parser.add_argument("--seed", type=nonnegative_integer, default=DEFAULT_SEED)
-    _ = parser.add_argument(
+    parser.add_argument("--seed", type=nonnegative_integer, default=DEFAULT_SEED)
+    parser.add_argument(
         "--output-dir",
         type=Path,
         default=Path(__file__).resolve().parents[1] / "results" / "integration",
     )
-    _ = parser.add_argument("--no-plots", action="store_true")
-    return cast(Arguments, cast(object, parser.parse_args()))
+    parser.add_argument("--no-plots", action="store_true")
+    return parser.parse_args()
 
 
 def checkout_commit() -> str | None:
@@ -100,6 +117,7 @@ def checkout_commit() -> str | None:
         )
     except (OSError, subprocess.CalledProcessError):
         return None
+
     return result.stdout.strip() or None
 
 
@@ -108,12 +126,12 @@ def export_run(
     configuration: Configuration,
     name: str,
     output: Path,
-    args: Arguments,
+    args: argparse.Namespace,
     commit: str | None,
     *,
     paired: bool,
 ) -> None:
-    from analyze import load_metadata  # pyright: ignore[reportImplicitRelativeImport]
+    from analyze import load_metadata
 
     count = args.pair_primaries if paired else args.integrated_primaries
     workers = PAIR_WORKERS if paired else args.workers
@@ -161,9 +179,11 @@ def export_run(
                 str(coordinate),
             ]
         )
+
     for vector, values in (("direction", FRAME_DIRECTION), ("up", FRAME_UP)):
         for axis, value in zip("xyz", values, strict=True):
             command.extend([f"--frame-{vector}-{axis}", str(value)])
+
     if configuration.bounds_deg is not None:
         for flag, value in zip(
             ("theta-min", "theta-max", "phi-min", "phi-max"),
@@ -171,6 +191,7 @@ def export_run(
             strict=True,
         ):
             command.extend([f"--{flag}-deg", str(value)])
+
     if regular:
         command.extend(["--energy-bin-width-kev", str(REGULAR_WIDTH_KEV)])
 
@@ -180,7 +201,7 @@ def export_run(
     )
     with (output / "export.log").open("w", encoding="utf-8") as log:
         try:
-            _ = subprocess.run(
+            subprocess.run(
                 command, cwd=output, stdout=log, stderr=subprocess.STDOUT, check=True
             )
         except (OSError, subprocess.CalledProcessError) as error:
@@ -200,27 +221,31 @@ def export_run(
     ):
         if metadata.raw[key] != expected:
             raise ValueError(f"Exporter did not execute the requested {key}.")
+
     if commit is not None:
         metadata.raw["git_commit"] = commit
-        _ = path.write_text(
+        path.write_text(
             json.dumps(metadata.raw, indent=2, allow_nan=False) + "\n", encoding="utf-8"
         )
+
     print(f"  actual devices: {metadata.raw['device_names']}", flush=True)
 
 
 def main() -> int:
     args = parse_arguments()
-    from analyze import analyze_case  # pyright: ignore[reportImplicitRelativeImport]
+    from analyze import analyze_case
 
     exporter = args.exporter.resolve()
     if not exporter.is_file():
         raise FileNotFoundError(f"Source sample exporter not found: {exporter}")
+
     output_root = args.output_dir.resolve()
     commit = checkout_commit()
 
     for case in CASES:
         if case.name not in args.cases:
             continue
+
         output = output_root / case.name
         # A failed capture must not inherit old samples, summaries or figures.
         output.mkdir(parents=True, exist_ok=False)
@@ -248,7 +273,9 @@ def main() -> int:
                 commit,
                 paired=True,
             )
-        _ = analyze_case(case, output, output, make_figures=not args.no_plots)
+
+        analyze_case(case, output, output, make_figures=not args.no_plots)
+
     return 0
 
 

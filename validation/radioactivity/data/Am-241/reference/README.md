@@ -1,5 +1,9 @@
 # Am-241 selected reference
 
+For build instructions, campaign commands, and result interpretation, see the
+[radionuclide validation guide](../../../README.md). Select this package with
+`--reference validation/radioactivity/data/Am-241/reference/reference.json`.
+
 This package maps recovered local evidence to the six current GGEMS Am-241
 Source emission groups. It preserves the current numerical choices, including
 an unresolved evaluated upper limit. It is not a new nuclear evaluation.
@@ -90,17 +94,17 @@ is supplied, so no combined group uncertainty is invented. The validator
 compares the selected central yields and mapped line energies; it does not
 fit parameters or resolve evaluation qualifiers through sampling.
 
-## Existing campaign
+## Running a campaign
 
 From the repository root, use the existing `run_campaign.py` with this
-`reference.json`, the rebuilt exporter, and a new scratch output directory.
-The normal options are `--windows 32 --horizon-half-lives 4
---target-last-window 1000 --seed 77777 --workers 256`. Run `--device cpu`,
+`reference.json`, the rebuilt exporter, and a new output directory.
+The defaults are 32 windows, four half-lives, 1000 expected primaries in the
+final window, seed 77777, and 256 workers per device. Run `--device cpu`,
 then `--device gpu` with a different output directory. The existing policy
 caps this long-lived nuclide at 90% of the representable Time range; the
-half-life is never rescaled. Use the unchanged `plot.py` on each output.
+half-life is never rescaled. Use `plot.py` on each output.
 
 Sparse groups or individual lines cannot be claimed statistically validated
 merely because a group-level comparison passes. Rare emissions are not
-amplified. Existing discrete-energy figures may contain empty comparison
-panels; the machine-readable results carry the statistical conclusions.
+amplified. Read the statistical conclusions in `analysis.json` alongside the
+emission figures.

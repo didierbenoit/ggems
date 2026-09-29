@@ -19,13 +19,21 @@
 // * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
 // *****************************************************************************
 
+/*!
+ * \file
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <bbattery.h>
 #include <unif01.h>
 
 #include <errno.h>
+#include <fcntl.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,7 +41,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <fcntl.h>
 
 // =============================================================================
 // =============================================================================
@@ -102,16 +109,7 @@ typedef enum {
 
 static const char *const RESULT_SCHEMA = "ggems_testu01_consumer_result";
 
-static InputState input_state = {
-    .descriptor = -1,
-    .descriptor_owned = false,
-    .is_regular_file = false,
-    .regular_file_size = 0,
-    .begin = 0,
-    .end = 0,
-    .bytes_read = 0,
-    .words_delivered = 0,
-};
+static InputState input_state = {.descriptor = -1};
 
 static FILE *result_file = NULL;
 static const BatteryConfiguration *active_battery = NULL;
@@ -126,6 +124,9 @@ static void print_usage(FILE *stream, const char *program_name) {
                 "--input <path|-> --result <path>\n",
                 program_name);
 }
+
+// =============================================================================
+// =============================================================================
 
 static bool parse_battery(const char *value, Battery *battery) {
   if (strcmp(value, "smallcrush") == 0) {
@@ -143,14 +144,17 @@ static bool parse_battery(const char *value, Battery *battery) {
   return false;
 }
 
+// =============================================================================
+// =============================================================================
+
 static bool parse_options(int argc, char *argv[], Options *options) {
   int index = 1;
 
   *options = (Options){
-      .input_path = NULL,
-      .result_path = NULL,
-      .battery = BATTERY_SMALLCRUSH,
-      .battery_set = false,
+    .input_path = NULL,
+    .result_path = NULL,
+    .battery = BATTERY_SMALLCRUSH,
+    .battery_set = false,
   };
 
   while (index < argc) {
@@ -205,16 +209,18 @@ static bool parse_options(int argc, char *argv[], Options *options) {
   return true;
 }
 
+// =============================================================================
+// =============================================================================
+
 static const BatteryConfiguration *get_battery_configuration(Battery battery) {
   static const BatteryConfiguration configurations[] = {
-      {BATTERY_SMALLCRUSH, "smallcrush", 15, bbattery_SmallCrush},
-      {BATTERY_CRUSH, "crush", 144, bbattery_Crush},
-      {BATTERY_BIGCRUSH, "bigcrush", 160, bbattery_BigCrush},
+    {BATTERY_SMALLCRUSH, "smallcrush", 15, bbattery_SmallCrush},
+    {BATTERY_CRUSH, "crush", 144, bbattery_Crush},
+    {BATTERY_BIGCRUSH, "bigcrush", 160, bbattery_BigCrush},
   };
-  size_t index = 0;
 
-  for (index = 0; index < sizeof(configurations) / sizeof(configurations[0]);
-       ++index) {
+  for (size_t index = 0;
+       index < sizeof(configurations) / sizeof(configurations[0]); ++index) {
     if (configurations[index].battery == battery) {
       return &configurations[index];
     }
@@ -273,13 +279,19 @@ static bool write_json_string(FILE *stream, const char *value) {
   return fputc('"', stream) != EOF;
 }
 
+// =============================================================================
+// =============================================================================
+
 static bool write_nullable_json_string(FILE *stream, const char *value) {
   if (value == NULL) {
-    return (bool)(fputs("null", stream) != EOF);
+    return fputs("null", stream) != EOF;
   }
 
   return write_json_string(stream, value);
 }
+
+// =============================================================================
+// =============================================================================
 
 static bool write_common_result_prefix(FILE *stream, const char *status) {
   if (fprintf(stream,
@@ -318,6 +330,9 @@ static bool write_common_result_prefix(FILE *stream, const char *status) {
   return fputs("null,\n", stream) != EOF;
 }
 
+// =============================================================================
+// =============================================================================
+
 static bool write_technical_result(const char *kind, const char *message,
                                    int system_errno) {
   bool written = true;
@@ -325,37 +340,36 @@ static bool write_technical_result(const char *kind, const char *message,
   if (result_file == NULL || active_battery == NULL) {
     return false;
   }
-  written = (bool)(write_common_result_prefix(result_file, "technical_error") &&
-                   written);
-  written = (bool)(fputs("  \"reported_slot_count\": null,\n"
-                         "  \"copied_slot_count\": 0,\n"
-                         "  \"result_collection_status\": null,\n"
-                         "  \"error\": {\n"
-                         "    \"kind\": ",
-                         result_file) != EOF &&
-                   written);
-  written = (bool)(write_json_string(result_file, kind) && written);
-  written =
-      (bool)(fputs(",\n    \"message\": ", result_file) != EOF && written);
-  written = (bool)(write_json_string(result_file, message) && written);
-  written = (bool)(fprintf(result_file,
-                           ",\n    \"system_errno\": %d\n"
-                           "  },\n"
-                           "  \"slots\": [],\n"
-                           "  \"terminal\": true\n"
-                           "}\n",
-                           system_errno) >= 0 &&
-                   written);
+  written &= write_common_result_prefix(result_file, "technical_error");
+  written &= fputs("  \"reported_slot_count\": null,\n"
+                   "  \"copied_slot_count\": 0,\n"
+                   "  \"result_collection_status\": null,\n"
+                   "  \"error\": {\n"
+                   "    \"kind\": ",
+                   result_file) != EOF;
+  written &= write_json_string(result_file, kind);
+  written &= fputs(",\n    \"message\": ", result_file) != EOF;
+  written &= write_json_string(result_file, message);
+  written &= fprintf(result_file,
+                     ",\n    \"system_errno\": %d\n"
+                     "  },\n"
+                     "  \"slots\": [],\n"
+                     "  \"terminal\": true\n"
+                     "}\n",
+                     system_errno) >= 0;
   if (fflush(result_file) == EOF || ferror(result_file) != 0) {
     written = false;
   }
   return written;
 }
 
+// =============================================================================
+// =============================================================================
+
 _Noreturn static void terminate_technical(const char *kind, int system_errno,
                                           const char *message) {
   const bool result_written =
-      write_technical_result(kind, message, system_errno);
+    write_technical_result(kind, message, system_errno);
 
   (void)fprintf(stderr, "ggems_testu01_consumer: %s: %s", kind, message);
   if (system_errno != 0) {
@@ -380,6 +394,9 @@ static void checked_add_bytes_read(size_t amount) {
   input_state.bytes_read += (uint64_t)amount;
 }
 
+// =============================================================================
+// =============================================================================
+
 static void checked_record_delivered_word(void) {
   if (input_state.words_delivered == UINT64_MAX) {
     terminate_technical("word_counter_overflow", 0,
@@ -387,6 +404,9 @@ static void checked_record_delivered_word(void) {
   }
   ++input_state.words_delivered;
 }
+
+// =============================================================================
+// =============================================================================
 
 static void make_word_available(void) {
   size_t available = input_state.end - input_state.begin;
@@ -427,17 +447,18 @@ static void make_word_available(void) {
   }
 }
 
-static unsigned int next_ggems_word(void) {
-  const uint8_t *bytes = NULL;
-  uint32_t word = 0;
+// =============================================================================
+// =============================================================================
 
+static unsigned int next_ggems_word(void) {
   if ((input_state.end - input_state.begin) < sizeof(uint32_t)) {
     make_word_available();
   }
 
-  bytes = input_state.buffer + input_state.begin;
-  word = (uint32_t)bytes[0] | ((uint32_t)bytes[1] << 8U) |
-         ((uint32_t)bytes[2] << 16U) | ((uint32_t)bytes[3] << 24U);
+  const uint8_t *const bytes = input_state.buffer + input_state.begin;
+  const uint32_t word = (uint32_t)bytes[0] | ((uint32_t)bytes[1] << 8U) |
+                        ((uint32_t)bytes[2] << 16U) |
+                        ((uint32_t)bytes[3] << 24U);
   input_state.begin += sizeof(uint32_t);
   checked_record_delivered_word();
   return (unsigned int)word;
@@ -492,7 +513,6 @@ static ResultSlot *copy_battery_results(int expected_slot_count,
                                         CopyStatus *copy_status,
                                         int *failing_slot_index) {
   ResultSlot *slots = NULL;
-  int index = 0;
 
   *copied_slot_count = 0;
   *failing_slot_index = -1;
@@ -502,7 +522,7 @@ static ResultSlot *copy_battery_results(int expected_slot_count,
     return NULL;
   }
 
-  for (index = 0; index < expected_slot_count; ++index) {
+  for (int index = 0; index < expected_slot_count; ++index) {
     const char *source_name = bbattery_TestNames[index];
 
     slots[index].index = (size_t)index;
@@ -525,17 +545,16 @@ static ResultSlot *copy_battery_results(int expected_slot_count,
   return slots;
 }
 
+// =============================================================================
+// =============================================================================
+
 static bool write_completed_result(const ResultSlot *slots,
                                    int reported_slot_count,
                                    int copied_slot_count) {
-  int index = 0;
   bool written = true;
 
-  written =
-      (bool)(write_common_result_prefix(result_file, "battery_returned") &&
-             written);
-  written =
-      (bool)(fprintf(result_file,
+  written &= write_common_result_prefix(result_file, "battery_returned");
+  written &= fprintf(result_file,
                      "  \"reported_slot_count\": %d,\n"
                      "  \"copied_slot_count\": %d,\n"
                      "  \"result_collection_status\": \"%s\",\n"
@@ -543,43 +562,34 @@ static bool write_completed_result(const ResultSlot *slots,
                      "  \"slots\": [",
                      reported_slot_count, copied_slot_count,
                      reported_slot_count == active_battery->expected_slot_count
-                         ? "complete"
-                         : "slot_count_mismatch") >= 0 &&
-             written);
+                       ? "complete"
+                       : "slot_count_mismatch") >= 0;
 
-  for (index = 0; index < copied_slot_count; ++index) {
+  for (int index = 0; index < copied_slot_count; ++index) {
     const double p_value = slots[index].p_value;
 
-    written =
-        (bool)(fputs(index == 0 ? "\n" : ",\n", result_file) != EOF && written);
-    written = (bool)(fprintf(result_file, "    {\"index\": %zu, \"name\": ",
-                             slots[index].index) >= 0 &&
-                     written);
+    written &= fputs(index == 0 ? "\n" : ",\n", result_file) != EOF;
+    written &=
+      fprintf(result_file,
+              "    {\"index\": %zu, \"name\": ", slots[index].index) >= 0;
 
-    const char *slot_name = NULL;
+    const char *const slot_name =
+      slots[index].name_present ? slots[index].name : NULL;
 
-    if (slots[index].name_present) {
-      slot_name = slots[index].name;
-    }
+    written &= write_nullable_json_string(result_file, slot_name);
 
-    written =
-        (bool)(write_nullable_json_string(result_file, slot_name) && written);
-
-    written = (bool)(fprintf(result_file,
-                             ", \"p_value_hex\": \"%a\", "
-                             "\"p_value_decimal\": \"%.17g\", "
-                             "\"testu01_not_computed\": %s}",
-                             p_value, p_value,
-                             p_value == -1.0 ? "true" : "false") >= 0 &&
-                     written);
+    written &=
+      fprintf(result_file,
+              ", \"p_value_hex\": \"%a\", "
+              "\"p_value_decimal\": \"%.17g\", "
+              "\"testu01_not_computed\": %s}",
+              p_value, p_value, p_value == -1.0 ? "true" : "false") >= 0;
   }
 
   if (copied_slot_count > 0) {
-    written = (bool)(fputc('\n', result_file) != EOF && written);
+    written &= fputc('\n', result_file) != EOF;
   }
-  written =
-      (bool)(fputs("  ],\n  \"terminal\": true\n}\n", result_file) != EOF &&
-             written);
+  written &= fputs("  ],\n  \"terminal\": true\n}\n", result_file) != EOF;
   if (fflush(result_file) == EOF || ferror(result_file) != 0) {
     written = false;
   }
@@ -634,9 +644,9 @@ int main(int argc, char *argv[]) {
   active_battery->run(generator);
 
   reported_slot_count = bbattery_NTests;
-  slots = copy_battery_results(active_battery->expected_slot_count,
-                               &copied_slot_count, &copy_status,
-                               &failing_slot_index);
+  slots =
+    copy_battery_results(active_battery->expected_slot_count,
+                         &copied_slot_count, &copy_status, &failing_slot_index);
   unif01_DeleteExternGenBits(generator);
   generator = NULL;
 

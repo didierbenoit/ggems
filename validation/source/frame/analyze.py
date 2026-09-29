@@ -1,15 +1,42 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Analyze GGEMS Source frame samples and metadata.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 import argparse
 import csv
 import json
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol, cast
 
 import numpy as np
 
 # Direct script entry points: Python adds this directory to sys.path.
-from cases import (  # pyright: ignore[reportImplicitRelativeImport]
+from cases import (
     BOUNDS_DEG,
     CASES,
     FOCUS_MM,
@@ -74,13 +101,15 @@ class Samples:
 def _object(value: object, name: str) -> JsonObject:
     if not isinstance(value, dict):
         raise TypeError(f"{name} must be a JSON object.")
-    return cast(JsonObject, value)
+
+    return value
 
 
 def _list(value: object, name: str) -> list[object]:
     if not isinstance(value, list):
         raise TypeError(f"{name} must be a JSON array.")
-    return cast(list[object], value)
+
+    return value
 
 
 def _integer(
@@ -88,17 +117,21 @@ def _integer(
 ) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
         raise TypeError(f"{name} must be an integer.")
+
     if not minimum <= value <= maximum:
         raise ValueError(f"{name} is outside its integer range.")
+
     return value
 
 
 def _number(value: object, name: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError(f"{name} must be numeric.")
+
     number = float(value)
     if not math.isfinite(number):
         raise ValueError(f"{name} must be finite.")
+
     return number
 
 
@@ -106,10 +139,12 @@ def _binary32(value: object, name: str) -> float:
     number = _number(value, name)
     if abs(number) > float(np.finfo(np.float32).max):
         raise ValueError(f"{name} is outside finite binary32.")
+
     packed = float(np.float32(number))
     # Metadata is written at host max_digits10, unlike the compact CSV.
     if packed != number:
         raise ValueError(f"{name} is not an actual packed binary32 value.")
+
     return packed
 
 
@@ -117,6 +152,7 @@ def _triple(value: object, name: str) -> list[object]:
     values = _list(value, name)
     if len(values) != 3:
         raise ValueError(f"{name} must contain exactly three components.")
+
     return values
 
 
@@ -131,6 +167,7 @@ def frame_matrix(raw: JsonObject) -> tuple[FloatArray, FloatArray, JsonObject]:
     """Read execution axes; invert the packed matrix, never its ideal rotation."""
     if raw.get("frame_matrix_convention") != CONVENTION:
         raise ValueError("Frame convention must be axes_as_columns.")
+
     axes = np.array(
         [
             [_binary32(item, "frame component") for item in _triple(axis, "frame axis")]
@@ -140,13 +177,16 @@ def frame_matrix(raw: JsonObject) -> tuple[FloatArray, FloatArray, JsonObject]:
     )
     if np.any(np.abs(axes) > 1.0):
         raise ValueError("A normalized frame component cannot exceed one.")
+
     matrix = axes.T.copy()
     determinant = float(np.linalg.det(matrix))
     if not math.isfinite(determinant) or determinant <= 0.0:
         raise ValueError("Frame must be nonsingular and right-handed.")
+
     inverse = np.linalg.inv(matrix)
     if not np.all(np.isfinite(inverse)):
         raise ValueError("Frame inverse is not finite.")
+
     norms = np.linalg.norm(axes, axis=1)
     return (
         matrix,
@@ -174,7 +214,7 @@ def frame_matrix(raw: JsonObject) -> tuple[FloatArray, FloatArray, JsonObject]:
 
 
 def load_metadata(path: Path, case: FrameCase, *, reference: bool = False) -> Metadata:
-    raw = _object(cast(object, json.loads(path.read_text(encoding="utf-8"))), str(path))
+    raw = _object(json.loads(path.read_text(encoding="utf-8")), str(path))
     expected_name = case.name + ("_reference" if reference else "")
     angular_name = {"fixed": "Fixed", "focused": "Focused"}.get(
         case.angular, "Isotropic"
@@ -196,7 +236,7 @@ def load_metadata(path: Path, case: FrameCase, *, reference: bool = False) -> Me
 
     count = _integer(raw.get("primary_count"), "primary_count", 1, UINT32_MAX // 2)
     workers = _integer(raw.get("worker_count"), "worker_count", 1, UINT32_MAX)
-    _ = _integer(raw.get("seed"), "seed")
+    _integer(raw.get("seed"), "seed")
     for key in (
         "source_index",
         "run_id",
@@ -212,8 +252,10 @@ def load_metadata(path: Path, case: FrameCase, *, reference: bool = False) -> Me
             raise ValueError(
                 f"A fresh static single-Run frame case requires {key} == 0."
             )
+
     if _integer(raw.get("global_primary_last"), "global_primary_last") != count - 1:
         raise ValueError("Global primary range differs from the expected domain.")
+
     if _integer(raw.get("energy_micro_eV"), "energy_micro_eV") != 511000000000:
         raise ValueError("Frame cases require Mono exactly 511000000000 micro-eV.")
 
@@ -227,8 +269,10 @@ def load_metadata(path: Path, case: FrameCase, *, reference: bool = False) -> Me
     }.items():
         if _integer(energy.get(key), key) != expected:
             raise ValueError(f"Packed Mono metadata mismatch: {key}.")
+
     if energy.get("representation") != "uint64 micro-eV":
         raise ValueError("Energy representation must be uint64 micro-eV.")
+
     for key in (
         "energy_values_micro_eV",
         "relative_weights",
@@ -240,9 +284,11 @@ def load_metadata(path: Path, case: FrameCase, *, reference: bool = False) -> Me
     names = _list(raw.get("device_names"), "device_names")
     if not names or any(not isinstance(name, str) or not name for name in names):
         raise ValueError("Actual selected device names are required.")
+
     selector = raw.get("device_selector")
     if not isinstance(selector, str) or not selector:
         raise ValueError("A nonempty device selector is required.")
+
     if case.paired and (workers != 1 or len(names) != 1):
         raise ValueError("Paired replay requires exactly one worker and one device.")
 
@@ -255,8 +301,9 @@ def load_metadata(path: Path, case: FrameCase, *, reference: bool = False) -> Me
     }.items():
         if _integer(observer.get(key), key) != expected:
             raise ValueError(f"Incomplete Observer capture: {key}.")
+
     for key in ("capacity_per_device", "host_capacity"):
-        _ = _integer(observer.get(key), key, 2 * count, UINT32_MAX)
+        _integer(observer.get(key), key, 2 * count, UINT32_MAX)
 
     unit = _integer(raw.get("position_display_unit_pm"), "position_display_unit_pm", 1)
     center = _int_vector(raw.get("source_center_pm"), "source_center_pm")
@@ -265,8 +312,10 @@ def load_metadata(path: Path, case: FrameCase, *, reference: bool = False) -> Me
     center_mm = ORIGIN if reference else case.center_mm
     if center != tuple(value * unit for value in center_mm):
         raise ValueError("Committed center differs from the frame case fixture.")
+
     if dimensions != tuple(value * unit for value in case.dimensions_mm):
         raise ValueError("Committed dimensions differ from the frame case fixture.")
+
     if (
         tuple(
             _number(item, "dimensions_mm")
@@ -275,6 +324,7 @@ def load_metadata(path: Path, case: FrameCase, *, reference: bool = False) -> Me
         != case.dimensions_mm
     ):
         raise ValueError("Displayed dimensions disagree with the case.")
+
     if (
         tuple(
             _number(item, "requested center")
@@ -283,6 +333,7 @@ def load_metadata(path: Path, case: FrameCase, *, reference: bool = False) -> Me
         != center_mm
     ):
         raise ValueError("Requested center disagrees with the case.")
+
     expected_focus = FOCUS_MM if case.angular == "focused" else ORIGIN
     if focus != tuple(value * unit for value in expected_focus):
         raise ValueError("Committed global focus differs from the case fixture.")
@@ -296,6 +347,7 @@ def load_metadata(path: Path, case: FrameCase, *, reference: bool = False) -> Me
     else:
         if requested.get("api") != "SetOrientation":
             raise ValueError("Frame requires the public SetOrientation API.")
+
         for key, expected_vector in zip(
             ("direction", "up_reference"), request, strict=True
         ):
@@ -304,11 +356,13 @@ def load_metadata(path: Path, case: FrameCase, *, reference: bool = False) -> Me
             )
             if values != expected_vector:
                 raise ValueError(f"Requested {key} differs from the frame case.")
+
     matrix, inverse, frame = frame_matrix(raw)
     if frame_name in ("identity", "cyclic"):
         expected_axes = IDENTITY_AXES if frame_name == "identity" else CYCLIC_AXES
         if not np.array_equal(matrix.T, np.array(expected_axes, dtype=np.float64)):
             raise ValueError("Exact identity/cyclic axes differ from the contract.")
+
     stored_fixed = np.array(
         [
             _binary32(item, "fixed_direction")
@@ -330,6 +384,7 @@ def load_metadata(path: Path, case: FrameCase, *, reference: bool = False) -> Me
     )
     if not (-1.0 <= lower < upper <= 1.0 and phi_min < phi_max):
         raise ValueError("Invalid packed angular bounds.")
+
     if case.angular == "bounded-isotropic":
         requested_bounds = _object(
             raw.get("requested_bounded_degrees"), "bounds request"
@@ -339,6 +394,7 @@ def load_metadata(path: Path, case: FrameCase, *, reference: bool = False) -> Me
         ):
             if _number(requested_bounds.get(key), key) != expected:
                 raise ValueError("Requested bounded angular law differs from the case.")
+
         if not (
             0.0 < lower < upper < 1.0 and -math.pi < phi_min < 0.0 < phi_max < math.pi
         ):
@@ -353,6 +409,7 @@ def load_metadata(path: Path, case: FrameCase, *, reference: bool = False) -> Me
             phi_max,
         ) != (-1.0, 1.0, 0.0, float(np.float32(math.tau))):
             raise ValueError("Expected the canonical no-bounds full-sphere descriptor.")
+
     return Metadata(
         case,
         count,
@@ -372,6 +429,7 @@ def _decimal(value: str, minimum: int, maximum: int) -> int:
     digits = value.removeprefix("-")
     if not digits or not digits.isascii() or not digits.isdecimal():
         raise ValueError(f"Expected an exact decimal integer, received {value!r}.")
+
     return _integer(int(value), "CSV integer", minimum, maximum)
 
 
@@ -384,6 +442,7 @@ def load_samples(path: Path, metadata: Metadata) -> Samples:
         reader = csv.reader(stream, strict=True)
         if tuple(next(reader, ())) != CSV_COLUMNS:
             raise ValueError("Malformed Source CSV header.")
+
         for row_number, row in enumerate(reader, start=2):
             if len(row) != len(CSV_COLUMNS) or row[11] != "Source":
                 raise ValueError(
@@ -415,12 +474,15 @@ def load_samples(path: Path, metadata: Metadata) -> Samples:
                 raise ValueError(
                     "Frame cases require exact Mono 511 keV and static 0 ps."
                 )
+
     if len(seen) != metadata.count:
         raise ValueError(
             "Missing Source records or incomplete local primary ID domain."
         )
+
     if np.any(np.linalg.norm(directions, axis=1) == 0.0):
         raise ValueError("Zero Source direction.")
+
     return Samples(provenance, positions, directions)
 
 
@@ -432,6 +494,7 @@ def integer_delta(positions: IntArray, center: IntVector) -> FloatArray:
         raise ValueError(
             "Position displacement exceeds exact binary64 integer analysis domain."
         )
+
     return np.array(rows, dtype=np.float64)
 
 
@@ -449,6 +512,7 @@ def scalar_statistics(values: FloatArray) -> JsonObject:
             "mean": None,
             "variance": None,
         }
+
     return {
         "sample_count": int(values.size),
         "minimum": float(np.min(values)),
@@ -465,6 +529,7 @@ def uniform_statistics(values: FloatArray) -> JsonObject:
     )
     if not values.size:
         return result
+
     ordered = np.sort(values)
     # Evaluate the analytical CDF at unmodified observations, including tails.
     cdf = np.where(ordered < 0.0, 0.0, np.where(ordered > 1.0, 1.0, ordered))
@@ -490,7 +555,9 @@ def correlations(variables: dict[str, FloatArray]) -> JsonObject:
             if left.size >= 2 and np.var(left) > 0.0 and np.var(right) > 0.0:
                 value = float(np.corrcoef(left, right)[0, 1])
             row.append(value)
+
         matrix.append(row)
+
     return {
         "variables": names,
         "sample_count": int(next(iter(variables.values())).size),
@@ -535,6 +602,7 @@ def geometry_measurements(
             float(np.max(np.abs(local[:, axis]))) - metadata.dimensions_pm[axis] / 2.0,
         )
         supports[name] = support
+
     result: JsonObject = {
         "transformed_variables": {
             name: uniform_statistics(values) for name, values in variables.items()
@@ -554,6 +622,7 @@ def geometry_measurements(
         # Report ideal zero-thickness support separately from lateral support.
         result["outside_lateral_support_count"] = int(np.count_nonzero(outside))
         outside |= z != 0.0
+
     result["outside_ideal_support_count"] = int(np.count_nonzero(outside))
     return result, variables
 
@@ -570,6 +639,7 @@ def angular_measurements(
         scales = np.linalg.norm(raw, axis=1)
         if np.any(scales == 0.0) or not np.all(np.isfinite(scales)):
             raise ValueError("Invalid recovered local direction scale.")
+
         local = raw / scales[:, None]
 
     valid_phi = (local[:, 0] != 0.0) | (local[:, 1] != 0.0)
@@ -582,6 +652,7 @@ def angular_measurements(
         # This case's actual packed sector lies strictly within [-pi, pi].
         u_cos = (local[:, 2] - lower) / (upper - lower)
         u_phi = (phi - phi_min) / (phi_max - phi_min)
+
     variables = {"u_cos": u_cos, "u_phi": u_phi, "u_cos_for_phi": u_cos[valid_phi]}
     result: JsonObject = {
         "direction_norm": norm_diagnostics(directions),
@@ -611,6 +682,7 @@ def angular_measurements(
             "second": 1.0 / 3.0,
             "cross": 0.0,
         }
+
     return result, variables
 
 
@@ -619,6 +691,7 @@ def compare_positions(
 ) -> JsonObject:
     if actual.shape != reference.shape:
         raise ValueError("Exact position pair has incompatible shapes.")
+
     mismatch = 0
     maximum = 0
     for observed, local in zip(actual, reference, strict=True):
@@ -630,18 +703,21 @@ def compare_positions(
         differences = [abs(int(observed[axis]) - expected[axis]) for axis in range(3)]
         mismatch += any(differences)
         maximum = max(maximum, *differences)
+
     metrics: JsonObject = {
         "mismatching_position_count": mismatch,
         "maximum_component_difference_pm": maximum,
     }
     if mismatch:
         raise ValueError(f"Exact cyclic position contract violated: {metrics}")
+
     return metrics
 
 
 def compare_directions(actual: FloatArray, expected: FloatArray) -> JsonObject:
     if actual.shape != expected.shape:
         raise ValueError("Exact direction comparison has incompatible shapes.")
+
     delta = actual - expected
     mismatch = int(np.count_nonzero(np.any(delta != 0.0, axis=1)))
     metrics: JsonObject = {
@@ -653,6 +729,7 @@ def compare_directions(actual: FloatArray, expected: FloatArray) -> JsonObject:
         raise ValueError(
             f"Exact direction contract violated (no tolerance applied): {metrics}"
         )
+
     return metrics
 
 
@@ -661,6 +738,7 @@ def validate_pair(
 ) -> JsonObject:
     if not np.array_equal(left.provenance, right.provenance):
         raise ValueError("Paired Source provenance domains differ.")
+
     for key in (
         "primary_count",
         "worker_count",
@@ -686,6 +764,7 @@ def validate_pair(
     ):
         if reference.raw.get(key) != transformed.raw.get(key):
             raise ValueError(f"Paired execution configurations differ: {key}.")
+
     if (
         reference.raw.get("worker_count") != 1
         or len(_list(reference.raw.get("device_names"), "devices")) != 1
@@ -693,6 +772,7 @@ def validate_pair(
         raise ValueError(
             "Per-primary paired replay requires one worker and one device."
         )
+
     return {
         "reference_case": reference.raw["case_name"],
         "transformed_case": transformed.raw["case_name"],
@@ -713,12 +793,14 @@ def focused_measurements(
     norms = np.linalg.norm(directions, axis=1)
     if np.any(distances == 0.0) or np.any(norms == 0.0):
         raise ValueError("Focused reference or emitted direction is undefined.")
+
     reference = displacement / distances[:, None]
     observed = directions / norms[:, None]
     dot = np.sum(reference * observed, axis=1)
     nonforward = int(np.count_nonzero(dot <= 0.0))
     if nonforward:
         raise ValueError(f"Nonforward Focused directions: {nonforward}.")
+
     cross = np.linalg.norm(np.cross(reference, observed), axis=1)
     angular_error = np.arctan2(cross, dot)
     miss = np.linalg.norm(np.cross(displacement, observed), axis=1)
@@ -783,6 +865,7 @@ def measure_case(
             raise ValueError(
                 f"Point differs from its exact committed center: {metrics}"
             )
+
         summary["exact_point"] = metrics
     else:
         summary["geometry"], variables = geometry_measurements(local, metadata)
@@ -799,6 +882,7 @@ def measure_case(
     if case.paired:
         if reference is None or reference_metadata is None:
             raise ValueError("This case requires reference samples and metadata.")
+
         summary["pair"] = validate_pair(
             reference, samples, reference_metadata, metadata
         )
@@ -808,7 +892,7 @@ def measure_case(
             summary["exact_pair"] = compare_positions(
                 samples.positions, reference.positions, metadata.center_pm
             )
-            _ = compare_directions(
+            compare_directions(
                 reference.directions,
                 np.broadcast_to(
                     reference_metadata.matrix[:, 2], reference.directions.shape
@@ -836,6 +920,7 @@ def measure_case(
             and reference_metadata is not None
         ):
             angular_samples, angular_metadata = reference, reference_metadata
+
         summary["angle"], variables = angular_measurements(
             angular_samples.directions,
             angular_metadata,
@@ -846,6 +931,7 @@ def measure_case(
             samples.positions, samples.directions, metadata.focus_pm
         )
         variables.update(focus_variables)
+
     return summary, local, variables
 
 
@@ -862,14 +948,15 @@ def analyze_case(
         raise FileExistsError(
             "Use a new analysis directory; summary.json already exists."
         )
-    raw = _object(
-        cast(object, json.loads(metadata_path.read_text(encoding="utf-8"))), "metadata"
-    )
+
+    raw = _object(json.loads(metadata_path.read_text(encoding="utf-8")), "metadata")
     case = next((case for case in CASES if case.name == raw.get("case_name")), None)
     if case is None:
         raise ValueError("Unknown G2/A2 frame case.")
+
     if (reference_samples is None) != (reference_metadata is None):
         raise ValueError("Supply both reference samples and reference metadata.")
+
     metadata = load_metadata(metadata_path, case)
     samples = load_samples(samples_path, metadata)
     ref_meta = (
@@ -890,7 +977,7 @@ def analyze_case(
     if case.statistical:
         summary["figure_status"] = "disabled_by_request"
         if make_figures:
-            from plot import plot_frame  # pyright: ignore[reportImplicitRelativeImport]
+            from plot import plot_frame
 
             summary["figures"] = plot_frame(
                 case,
@@ -901,44 +988,38 @@ def analyze_case(
                 output,
             )
             summary["figure_status"] = "generated"
-    _ = (output / "summary.json").write_text(
+
+    (output / "summary.json").write_text(
         json.dumps(summary, indent=2, allow_nan=False) + "\n", encoding="utf-8"
     )
     print(f"{case.name}: N={metadata.count}; complete Source capture; overflow=0")
     for key in ("exact_point", "exact_fixed", "exact_pair", "focused"):
         if key in summary:
             print(f"  {key}: {summary[key]}")
+
     for key in ("geometry", "angle"):
         if key in summary:
             metrics = _object(summary[key], key)
             print(f"  {key}: {metrics['transformed_variables']}")
+
     print(
         f"  figures: {summary['figure_status']}; {output / 'summary.json'}", flush=True
     )
     return summary
 
 
-class Arguments(Protocol):
-    samples: Path
-    metadata: Path
-    reference_samples: Path | None
-    reference_metadata: Path | None
-    output_dir: Path
-    no_plots: bool
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Analyze production Source G2/A2 frame captures."
     )
-    _ = parser.add_argument("--samples", type=Path, required=True)
-    _ = parser.add_argument("--metadata", type=Path, required=True)
-    _ = parser.add_argument("--reference-samples", type=Path)
-    _ = parser.add_argument("--reference-metadata", type=Path)
-    _ = parser.add_argument("--output-dir", type=Path, required=True)
-    _ = parser.add_argument("--no-plots", action="store_true")
-    args = cast(Arguments, cast(object, parser.parse_args()))
-    _ = analyze_case(
+    parser.add_argument("--samples", type=Path, required=True)
+    parser.add_argument("--metadata", type=Path, required=True)
+    parser.add_argument("--reference-samples", type=Path)
+    parser.add_argument("--reference-metadata", type=Path)
+    parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--no-plots", action="store_true")
+    args = parser.parse_args()
+    analyze_case(
         args.samples,
         args.metadata,
         args.output_dir,

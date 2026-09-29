@@ -1,5 +1,9 @@
 # C-14 selected source reference
 
+For build instructions, campaign commands, and result interpretation, see the
+[radionuclide validation guide](../../../README.md). Select this package with
+`--reference validation/radioactivity/data/C-14/reference/reference.json`.
+
 The scientific reference was recovered from `../raw/` before inspecting the
 current GGEMS built-in. It uses the existing generic JSON/CSV reference format.
 

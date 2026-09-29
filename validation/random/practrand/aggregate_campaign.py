@@ -1,3 +1,31 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Aggregate GGEMS PractRand campaign results.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 import argparse
 import csv
 import json
@@ -6,7 +34,6 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol, cast
 
 EXPECTED_SERIES_CASES = {"A": 36, "B": 36, "C": 9, "D": 9, "E": 9, "F": 3}
 EXPECTED_CASE_COUNT = sum(EXPECTED_SERIES_CASES.values())
@@ -79,23 +106,16 @@ class AnomalyRecord:
     raw_line: str
 
 
-class Arguments(Protocol):
-    campaign_dir: Path | None
-    output_dir: Path | None
-    top: int
-    no_write: bool
-
-
 type JsonObject = dict[str, object]
 type CsvValue = str | int | bool | None
 type CsvRow = dict[str, CsvValue]
 
 
-def ParseArguments() -> Arguments:
+def ParseArguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Aggregate the fixed GGEMS PractRand validation campaign."
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--campaign-dir",
         type=Path,
         help=(
@@ -103,23 +123,23 @@ def ParseArguments() -> Arguments:
             "Defaults to validation/random/results/practrand/campaign."
         ),
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--output-dir",
         type=Path,
         help="Aggregate output directory. Defaults to <campaign-dir>/aggregate.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--top",
         type=int,
         default=15,
         help="Number of recurring anomaly families to print (default: 15).",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--no-write",
         action="store_true",
         help="Print the report without writing JSON or CSV files.",
     )
-    return cast(Arguments, cast(object, parser.parse_args()))
+    return parser.parse_args()
 
 
 def ProjectRoot() -> Path:
@@ -137,17 +157,14 @@ def ResolveCampaignDirectory(requested: Path | None) -> Path:
 
 def LoadJson(path: Path) -> JsonObject:
     try:
-        value = cast(
-            object,
-            json.loads(path.read_text(encoding="utf-8")),
-        )
+        value = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as error:
         raise RuntimeError(f"Failed to read JSON file {path}: {error}") from error
 
     if not isinstance(value, dict):
         raise TypeError(f"Expected a JSON object in {path}.")
 
-    return cast(JsonObject, value)
+    return value
 
 
 def RequireObject(section: JsonObject, key: str, context: str) -> JsonObject:
@@ -155,7 +172,7 @@ def RequireObject(section: JsonObject, key: str, context: str) -> JsonObject:
     if not isinstance(value, dict):
         raise TypeError(f"Expected object field '{key}' for {context}.")
 
-    return cast(JsonObject, value)
+    return value
 
 
 def RequireString(section: JsonObject, key: str, context: str) -> str:
@@ -204,11 +221,11 @@ def RequireStringList(section: JsonObject, key: str, context: str) -> list[str]:
     if not isinstance(value, list):
         raise TypeError(f"Expected string array field '{key}' for {context}.")
 
-    items = cast(list[object], value)
+    items = value
     if not all(isinstance(item, str) for item in items):
         raise TypeError(f"Expected string array field '{key}' for {context}.")
 
-    return cast(list[str], items)
+    return items
 
 
 def ParseCaseId(case_id: str) -> tuple[str, int]:
@@ -683,7 +700,7 @@ def BuildAggregate(
 def WriteCsv(path: Path, rows: list[CsvRow]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if not rows:
-        _ = path.write_text("", encoding="utf-8")
+        path.write_text("", encoding="utf-8")
         return
 
     with path.open("w", encoding="utf-8", newline="") as stream:
@@ -700,7 +717,7 @@ def WriteOutputs(
     cases_path = output_dir / "cases.csv"
     anomalies_path = output_dir / "anomalies.csv"
 
-    _ = summary_path.write_text(
+    summary_path.write_text(
         json.dumps(BuildAggregate(cases, anomalies), indent=2) + "\n",
         encoding="utf-8",
     )

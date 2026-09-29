@@ -21,15 +21,12 @@
 
 /*!
  * \file
- * \brief Implements validation-private OpenCL raw uint32 chunk production.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
 #include "GGEMSRandomUInt32ChunkProducer.hh"
 
-/// \cond
 #include <algorithm>
 #include <climits>
 #include <cstddef>
@@ -44,8 +41,6 @@
 #include <string>
 #include <string_view>
 #include <vector>
-
-/// \endcond
 
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
@@ -64,18 +59,9 @@ namespace {
 // =============================================================================
 
 constexpr std::uint64_t k_bytes_per_word{sizeof(std::uint32_t)};
-constexpr int k_required_bits_per_byte{8};
 
-static_assert(CHAR_BIT == k_required_bits_per_byte);
+static_assert(CHAR_BIT == 8);
 static_assert(sizeof(std::uint32_t) == 4U);
-
-[[nodiscard]] auto CheckedMultiply(std::uint64_t lhs, std::uint64_t rhs,
-                                   std::string_view label) -> std::uint64_t {
-  if (lhs != 0ULL && rhs > std::numeric_limits<std::uint64_t>::max() / lhs) {
-    throw std::runtime_error(std::format("{} overflows uint64.", label));
-  }
-  return lhs * rhs;
-}
 
 // =============================================================================
 // =============================================================================
@@ -99,12 +85,6 @@ static_assert(sizeof(std::uint32_t) == 4U);
   using ggems::validation::random::RandomUInt32ChunkStrategy;
   using ggems::validation::random::RandomUInt32StreamLayout;
 
-  if (specification.worker_count == 0U ||
-      specification.samples_per_worker == 0U) {
-    throw std::runtime_error(
-      "Raw uint32 chunk planning requires nonzero stream dimensions.");
-  }
-
   RandomUInt32ChunkPlan plan;
   plan.requested_max_value_buffer_size =
     specification.maximum_value_buffer_size;
@@ -120,6 +100,7 @@ static_assert(sizeof(std::uint32_t) == 4U);
   }
 
   auto const state_size = static_cast<std::uint64_t>(random.GetStateSize());
+
   if (state_size == 0ULL) {
     throw std::runtime_error("Random engine reports a zero state size.");
   }
@@ -128,8 +109,7 @@ static_assert(sizeof(std::uint32_t) == 4U);
     plan.strategy = RandomUInt32ChunkStrategy::SampleDepth;
     plan.workers_per_chunk = specification.worker_count;
     plan.state_buffer_size = ggems::units::Bytes{
-      CheckedMultiply(specification.worker_count, state_size,
-                      "Random state buffer byte count")};
+      static_cast<std::uint64_t>(specification.worker_count) * state_size};
 
     if (plan.state_buffer_size.value > plan.device_max_allocation_size.value) {
       throw std::runtime_error(
@@ -137,10 +117,10 @@ static_assert(sizeof(std::uint32_t) == 4U);
     }
 
     std::uint64_t const bytes_per_sample_round =
-      CheckedMultiply(specification.worker_count, k_bytes_per_word,
-                      "Interleaved sample-round byte count");
+      static_cast<std::uint64_t>(specification.worker_count) * k_bytes_per_word;
     std::uint64_t const maximum_depth =
       plan.effective_max_value_buffer_size.value / bytes_per_sample_round;
+
     if (maximum_depth == 0ULL) {
       throw std::runtime_error(
         "Maximum chunk size is too small for one interleaved sample round.");
@@ -149,26 +129,25 @@ static_assert(sizeof(std::uint32_t) == 4U);
     plan.samples_per_worker_per_chunk = static_cast<std::uint32_t>(
       std::min<std::uint64_t>(specification.samples_per_worker, maximum_depth));
     plan.value_buffer_size = ggems::units::Bytes{
-      CheckedMultiply(CheckedMultiply(specification.worker_count,
-                                      plan.samples_per_worker_per_chunk,
-                                      "Interleaved chunk word count"),
-                      k_bytes_per_word, "Interleaved chunk byte count")};
+      bytes_per_sample_round * plan.samples_per_worker_per_chunk};
     plan.chunk_count = DivideRoundUp(specification.samples_per_worker,
                                      plan.samples_per_worker_per_chunk);
+
     return plan;
   }
 
   plan.strategy = RandomUInt32ChunkStrategy::WorkerGroups;
   plan.samples_per_worker_per_chunk = specification.samples_per_worker;
   std::uint64_t const value_bytes_per_worker =
-    CheckedMultiply(specification.samples_per_worker, k_bytes_per_word,
-                    "Worker-major worker byte count");
+    static_cast<std::uint64_t>(specification.samples_per_worker) *
+    k_bytes_per_word;
   std::uint64_t const maximum_workers_by_values =
     plan.effective_max_value_buffer_size.value / value_bytes_per_worker;
   std::uint64_t const maximum_workers_by_states =
     plan.device_max_allocation_size.value / state_size;
   std::uint64_t const maximum_workers =
     std::min(maximum_workers_by_values, maximum_workers_by_states);
+
   if (maximum_workers == 0ULL) {
     throw std::runtime_error(
       "Maximum chunk size is too small for one worker-major stream.");
@@ -177,13 +156,13 @@ static_assert(sizeof(std::uint32_t) == 4U);
   plan.workers_per_chunk = static_cast<std::uint32_t>(
     std::min<std::uint64_t>(specification.worker_count, maximum_workers));
   plan.state_buffer_size = ggems::units::Bytes{
-    CheckedMultiply(plan.workers_per_chunk, state_size,
-                    "Worker-major state buffer byte count")};
-  plan.value_buffer_size = ggems::units::Bytes{
-    CheckedMultiply(plan.workers_per_chunk, value_bytes_per_worker,
-                    "Worker-major value buffer byte count")};
+    static_cast<std::uint64_t>(plan.workers_per_chunk) * state_size};
+  plan.value_buffer_size =
+    ggems::units::Bytes{static_cast<std::uint64_t>(plan.workers_per_chunk) *
+                        value_bytes_per_worker};
   plan.chunk_count =
     DivideRoundUp(specification.worker_count, plan.workers_per_chunk);
+
   return plan;
 }
 
@@ -201,24 +180,29 @@ auto ToString(RandomUInt32StreamLayout layout) -> std::string_view {
   case RandomUInt32StreamLayout::Interleaved:
     return "interleaved";
   }
+
   throw std::runtime_error("Unsupported random uint32 stream layout.");
 }
 
-// ----------------------------------------------------------------------------
+// ============================================================================
+// ============================================================================
 
 auto ParseRandomUInt32StreamLayout(std::string_view value)
   -> RandomUInt32StreamLayout {
   if (value == "worker_major") {
     return RandomUInt32StreamLayout::WorkerMajor;
   }
+
   if (value == "interleaved") {
     return RandomUInt32StreamLayout::Interleaved;
   }
+
   throw std::runtime_error(
     std::format("Unsupported random uint32 stream layout '{}'.", value));
 }
 
-// ----------------------------------------------------------------------------
+// ============================================================================
+// ============================================================================
 
 auto ToString(RandomUInt32ChunkStrategy strategy) -> std::string_view {
   switch (strategy) {
@@ -227,6 +211,7 @@ auto ToString(RandomUInt32ChunkStrategy strategy) -> std::string_view {
   case RandomUInt32ChunkStrategy::WorkerGroups:
     return "worker_groups";
   }
+
   throw std::runtime_error("Unsupported random uint32 chunk strategy.");
 }
 
@@ -246,14 +231,19 @@ public:
     random_.ValidateStateRange(specification_.stream_offset,
                                specification_.worker_count);
 
-    total_word_count_ = CheckedMultiply(specification_.worker_count,
-                                        specification_.samples_per_worker,
-                                        "Logical raw uint32 word count");
-    static_cast<void>(CheckedMultiply(total_word_count_, k_bytes_per_word,
-                                      "Logical raw uint32 byte count"));
+    std::uint64_t const total_word_count =
+      static_cast<std::uint64_t>(specification_.worker_count) *
+      specification_.samples_per_worker;
 
-    output_word_limit_ = output_word_limit.value_or(total_word_count_);
-    if (output_word_limit_ > total_word_count_) {
+    if (total_word_count >
+        std::numeric_limits<std::uint64_t>::max() / k_bytes_per_word) {
+      throw std::runtime_error(
+        "Logical raw uint32 byte count overflows uint64.");
+    }
+
+    output_word_limit_ = output_word_limit.value_or(total_word_count);
+
+    if (output_word_limit_ > total_word_count) {
       throw std::runtime_error(
         "Output word limit exceeds the finite logical stream capacity.");
     }
@@ -264,10 +254,8 @@ public:
 
     if (specification_.layout == RandomUInt32StreamLayout::Interleaved &&
         output_word_limit_ != 0ULL) {
-      InitializeStates({
-        .first_stream_id = specification_.stream_offset,
-        .worker_count = specification_.worker_count,
-      });
+      InitializeStates(specification_.stream_offset,
+                       specification_.worker_count);
     }
   }
 
@@ -276,7 +264,8 @@ public:
       return {};
     }
 
-    std::uint64_t generated_this_chunk = 0ULL;
+    std::uint64_t generated_this_chunk{0ULL};
+
     if (specification_.layout == RandomUInt32StreamLayout::Interleaved) {
       std::uint32_t const remaining_depth =
         specification_.samples_per_worker - next_sample_depth_;
@@ -284,8 +273,7 @@ public:
         std::min(chunk_plan_.samples_per_worker_per_chunk, remaining_depth);
       RunKernel(specification_.worker_count, current_depth);
       generated_this_chunk =
-        CheckedMultiply(specification_.worker_count, current_depth,
-                        "Generated interleaved chunk word count");
+        static_cast<std::uint64_t>(specification_.worker_count) * current_depth;
       next_sample_depth_ += current_depth;
     } else {
       std::uint32_t const current_worker_count =
@@ -293,21 +281,13 @@ public:
                  specification_.worker_count - next_worker_index_);
       std::uint64_t const first_stream_id =
         specification_.stream_offset + next_worker_index_;
-      InitializeStates({
-        .first_stream_id = first_stream_id,
-        .worker_count = current_worker_count,
-      });
+      InitializeStates(first_stream_id, current_worker_count);
       RunKernel(current_worker_count, specification_.samples_per_worker);
-      generated_this_chunk =
-        CheckedMultiply(current_worker_count, specification_.samples_per_worker,
-                        "Generated worker-major chunk word count");
+      generated_this_chunk = static_cast<std::uint64_t>(current_worker_count) *
+                             specification_.samples_per_worker;
       next_worker_index_ += current_worker_count;
     }
 
-    if (generated_this_chunk > host_values_.size()) {
-      throw std::runtime_error(
-        "Generated chunk exceeds the bounded host staging buffer.");
-    }
     auto generated_values = std::span{host_values_}.first(
       static_cast<std::size_t>(generated_this_chunk));
     ggems::ocl::ReadSVMToHost(*values_buffer_, generated_values);
@@ -317,6 +297,7 @@ public:
     std::uint64_t const returned_this_chunk =
       std::min(generated_this_chunk, remaining_limit);
     returned_word_count_ += returned_this_chunk;
+
     return std::span<std::uint32_t const>{host_values_}.first(
       static_cast<std::size_t>(returned_this_chunk));
   }
@@ -335,11 +316,6 @@ public:
   }
 
 private:
-  struct StateInitializationRequest {
-    std::uint64_t first_stream_id;
-    std::uint32_t worker_count;
-  };
-
   auto ValidateSpecification() const -> void {
     switch (specification_.layout) {
     case RandomUInt32StreamLayout::WorkerMajor:
@@ -348,15 +324,19 @@ private:
     default:
       throw std::runtime_error("Unsupported random uint32 stream layout.");
     }
+
     if (specification_.worker_count == 0U) {
       throw std::runtime_error("Worker count must be greater than zero.");
     }
+
     if (specification_.samples_per_worker == 0U) {
       throw std::runtime_error("Samples per worker must be greater than zero.");
     }
+
     if (specification_.local_size == 0U) {
       throw std::runtime_error("Local size must be greater than zero.");
     }
+
     if (specification_.maximum_value_buffer_size.value == 0ULL) {
       throw std::runtime_error(
         "Maximum value-buffer size must be greater than zero.");
@@ -398,18 +378,14 @@ private:
       chunk_plan_.value_buffer_size.value / k_bytes_per_word));
   }
 
-  auto InitializeStates(StateInitializationRequest const &request) -> void {
-    std::uint64_t const state_bytes = CheckedMultiply(
-      request.worker_count, static_cast<std::uint64_t>(random_.GetStateSize()),
-      "Random state chunk byte count");
-    if (state_bytes > host_states_.size()) {
-      throw std::runtime_error(
-        "Random state chunk exceeds the bounded host staging buffer.");
-    }
+  auto InitializeStates(std::uint64_t first_stream_id,
+                        std::uint32_t worker_count) -> void {
+    std::uint64_t const state_bytes =
+      static_cast<std::uint64_t>(worker_count) * random_.GetStateSize();
 
     auto state_storage =
       std::span{host_states_}.first(static_cast<std::size_t>(state_bytes));
-    random_.InitializeStates(request.first_stream_id, state_storage);
+    random_.InitializeStates(first_stream_id, state_storage);
     ggems::ocl::WriteSVMFromHost(*states_buffer_,
                                  std::span<std::byte const>{state_storage});
   }
@@ -425,10 +401,12 @@ private:
     auto const padded_global_work_size =
       ggems::ocl::detail::TryComputePaddedGlobalWorkSize(
         static_cast<std::size_t>(worker_count), specification_.local_size);
+
     if (!padded_global_work_size.has_value()) {
       throw std::runtime_error(
         "Unable to compute the padded OpenCL global work size.");
     }
+
     kernel_->Run({*padded_global_work_size}, {specification_.local_size});
   }
 
@@ -441,7 +419,6 @@ private:
   std::unique_ptr<ggems::ocl::GGEMSOpenCLSVMBuffer> values_buffer_;
   std::vector<std::byte> host_states_;
   std::vector<std::uint32_t> host_values_;
-  std::uint64_t total_word_count_{0ULL};
   std::uint64_t output_word_limit_{0ULL};
   std::uint64_t returned_word_count_{0ULL};
   std::uint32_t next_sample_depth_{0U};
@@ -457,6 +434,8 @@ GGEMSRandomUInt32ChunkProducer::GGEMSRandomUInt32ChunkProducer(
   std::optional<std::uint64_t> output_word_limit)
     : implementation_{std::make_unique<Implementation>(specification, context,
                                                        output_word_limit)} {}
+
+// ----------------------------------------------------------------------------
 
 GGEMSRandomUInt32ChunkProducer::~GGEMSRandomUInt32ChunkProducer() = default;
 

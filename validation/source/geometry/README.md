@@ -1,7 +1,7 @@
 # Source / Geometry: G1 canonical frame
 
-This development campaign measures the positions emitted by the current GGEMS
-CountDriven Source against continuous analytical geometry laws. The authority is
+This campaign measures the positions emitted by the current GGEMS
+CountDriven Source against continuous analytical geometry laws. Samples follow this path:
 `GGEMSSource` configuration -> ordinary `GGEMSRun` production OpenCL primary
 initialization -> raw Observer `Source` records -> CSV -> NumPy -> Matplotlib.
 The exporter contains no alternative position sampler. The diagnostic one-meter
@@ -21,12 +21,14 @@ transport. Exact fixed-field checks only establish the G1 extraction contract.
 
 ## Build and run
 
+See the [shared build and prerequisites](../README.md#build-and-prerequisites)
+for Windows paths, build configurations, and Python dependencies.
+
 Use the existing GGEMS CMake configuration and dependencies. Source validation
 is available on every supported GGEMS host platform and is separate from the
-Linux-only Random external test suites. It adds no production library or API.
+Linux-only Random external test suites.
 
 ```console
-cmake -S . -B build
 cmake --build build --target ggems_source_sample_exporter
 python validation/source/geometry/run_campaign.py --exporter build/validation/source/ggems_source_sample_exporter --device gpu
 ```
@@ -47,24 +49,22 @@ The device selector is required and passed unchanged to
 no device index or vendor is assumed by the campaign. A selected set of devices
 is supported, and metadata records their actual names in selection order.
 
-For a small infrastructure smoke run:
+For a quick first run:
 
 ```console
-python validation/source/geometry/run_campaign.py --exporter build/validation/source/ggems_source_sample_exporter --device 0 --cases point rectangle --primaries 256 --workers 64 --seed 77777 --output-dir codex_scratch/g1_smoke
+python validation/source/geometry/run_campaign.py --exporter build/validation/source/ggems_source_sample_exporter --device 0 --cases point rectangle --primaries 256 --workers 64 --seed 77777 --output-dir validation/source/results/geometry/example
 ```
 
 Counts, workers, seed, and output location are configurable. `cases.py` owns the
-complete dimensions and the development defaults: 4,096 primaries, 4,096 workers,
-and seed 77,777. Those counts are for implementation inspection, not article
-statistics. Use `--primaries 100000` when deliberately increasing the sample
-size after inspecting the extraction cost.
+complete dimensions and defaults: 4,096 primaries, 4,096 workers, and seed 77,777.
+For larger distribution samples, increase `--primaries`, for example to 100000,
+after checking the runtime and memory cost of a small capture.
 
 The default generated location is `validation/source/results/geometry/`, which
 is ignored by Git. Each selected `G1_<geometry>` directory must be new; choose a
 different `--output-dir` for a rerun. This prevents stale summaries or figures
 from appearing to describe a failed new extraction. Each case contains
 `samples.csv`, `metadata.json`, `export.log`, `summary.json`, and its figures.
-Only code and analytical definitions belong in the source patch.
 
 The standalone extraction boundary is also usable directly:
 
@@ -94,7 +94,7 @@ The current `GGEMSRun` constructs its human-readable Observer dump even when
 logging is filtered. Its per-primary track-map construction rescans the records, so
 large full captures can be expensive in time and host memory. This campaign
 suppresses printing through the existing Logger detail filter but cannot suppress that work
-through the current public API. It does not redesign Observer or bypass Run.
+through the current public API.
 
 Overflow, missing records, duplicate provenance, wrong slot/kind, malformed
 files, and violations of the exact G1 configuration fail execution. Source
@@ -116,8 +116,7 @@ Metadata includes case, geometry, complete committed dimensions, count/workers,
 Philox seed, selector and selected device names, center, frame axes, direction,
 energy, chronology, provenance origin, and Observer counts. The runner
 adds `git_commit` when the checkout commit is available; it identifies the
-checkout and is not an executable attestation. No fingerprints or certification
-metadata are introduced.
+checkout used to launch the campaign, which may differ from the exporter build.
 
 Sorting gives a deterministic row order, not bitwise sample reproducibility.
 The production path assigns histories to persistent worker streams through
@@ -172,11 +171,10 @@ Support membership uses exact integer polynomial comparisons. Radial excess
 subtracts exact integers before binary64 division, preserving tiny excursions
 that would disappear in a direct floating radius-minus-boundary subtraction.
 
-Report tiny radial or endpoint excursions as measurements. Do not clip, repair,
-label them automatically as bugs, or impose an unapproved tolerance. No p-value,
+Tiny radial or endpoint excursions are reported without clipping. No p-value,
 KS threshold, or statistical PASS/FAIL is defined. Exact Point and structural
-contract failures do fail. Final scientific acceptance criteria, useful sample
-sizes, supported numerical domain, and article statistics remain open for review.
+contract failures stop the analysis. Read the residuals together with the
+population size and numerical representation.
 
 Matplotlib saves compact PNG and PDF figures using its default color cycle.
 Density projections, transformed marginal distributions/CDFs, and radial or

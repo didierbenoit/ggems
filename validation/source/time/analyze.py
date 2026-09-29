@@ -1,13 +1,40 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Analyze GGEMS Source time samples and metadata.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 import argparse
 import csv
 import json
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol, cast
 
 # Direct script entry points; Python adds this directory to sys.path.
-from cases import (  # pyright: ignore[reportImplicitRelativeImport]
+from cases import (
     CASES,
     MONO_ENERGY_MICRO_EV,
     TimeCase,
@@ -57,13 +84,15 @@ class Metadata:
 def _object(value: object, name: str) -> JsonObject:
     if not isinstance(value, dict):
         raise TypeError(f"{name} must be a JSON object.")
-    return cast(JsonObject, value)
+
+    return value
 
 
 def _list(value: object, name: str) -> list[object]:
     if not isinstance(value, list):
         raise TypeError(f"{name} must be a JSON array.")
-    return cast(list[object], value)
+
+    return value
 
 
 def _integer(
@@ -71,17 +100,21 @@ def _integer(
 ) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
         raise TypeError(f"{name} must be an integer.")
+
     if not minimum <= value <= maximum:
         raise ValueError(f"{name} is outside its integer field range.")
+
     return value
 
 
 def _number(value: object, name: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError(f"{name} must be numeric.")
+
     number = float(value)
     if not math.isfinite(number):
         raise ValueError(f"{name} must be finite.")
+
     return number
 
 
@@ -111,26 +144,33 @@ def _validate_source(raw: JsonObject, case: TimeCase, primary_count: int) -> Non
 
     if _integer(raw.get("primary_count"), "primary_count") != primary_count:
         raise ValueError("Per-Run primary count differs from the sequence count.")
+
     if _integer(raw.get("source_index"), "source_index") != 0:
         raise ValueError("T1 requires source slot zero.")
+
     for key in ("source_center_pm", "dimensions_pm"):
         if _integers(raw.get(key), key) != (0, 0, 0):
             raise ValueError(f"T1 requires {key} == [0, 0, 0].")
+
     if _numbers(raw.get("dimensions_mm"), "dimensions_mm") != (0, 0, 0):
         raise ValueError("Point dimensions must be zero.")
+
     if _numbers(raw.get("fixed_direction"), "fixed_direction") != (0, 0, 1):
         raise ValueError("T1 requires exact stored Fixed +Z.")
+
     axes = tuple(
         _numbers(axis, "frame axis") for axis in _list(raw.get("frame_axes"), "axes")
     )
     if axes != ((1, 0, 0), (0, 1, 0), (0, 0, 1)):
         raise ValueError("T1 requires the identity frame.")
+
     if _integer(raw.get("energy_micro_eV"), "energy_micro_eV") != MONO_ENERGY_MICRO_EV:
         raise ValueError("T1 requires exactly 511000000000 micro-eV.")
 
     energy = _object(raw.get("energy"), "energy")
     if energy.get("representation") != "uint64 micro-eV":
         raise ValueError("Mono energy authority must be canonical uint64 micro-eV.")
+
     for key, expected in {
         "distribution_type": 1,
         "table_offset": 0,
@@ -140,6 +180,7 @@ def _validate_source(raw: JsonObject, case: TimeCase, primary_count: int) -> Non
     }.items():
         if _integer(energy.get(key), key) != expected:
             raise ValueError(f"T1 packed Mono metadata mismatch: {key}.")
+
     for key in (
         "energy_values_micro_eV",
         "relative_weights",
@@ -148,11 +189,12 @@ def _validate_source(raw: JsonObject, case: TimeCase, primary_count: int) -> Non
         if _list(energy.get(key), key):
             raise ValueError("T1 Mono must have no energy table.")
 
-    _ = _integer(raw.get("worker_count"), "worker_count", 1, UINT32_MAX)
-    _ = _integer(raw.get("seed"), "seed")
+    _integer(raw.get("worker_count"), "worker_count", 1, UINT32_MAX)
+    _integer(raw.get("seed"), "seed")
     selector = raw.get("device_selector")
     if not isinstance(selector, str) or not selector:
         raise ValueError("Metadata must contain a nonempty device selector.")
+
     names = _list(raw.get("device_names"), "device_names")
     if not names or any(not isinstance(name, str) or not name for name in names):
         raise ValueError("Metadata must identify the selected devices.")
@@ -166,17 +208,20 @@ def _validate_source(raw: JsonObject, case: TimeCase, primary_count: int) -> Non
     }.items():
         if _integer(observer.get(key), key) != expected:
             raise ValueError(f"Incomplete Observer capture: {key} must be {expected}.")
+
     for key in ("capacity_per_device", "host_capacity"):
-        _ = _integer(observer.get(key), key, 2 * primary_count, UINT32_MAX)
+        _integer(observer.get(key), key, 2 * primary_count, UINT32_MAX)
 
 
 def load_metadata(path: Path) -> Metadata:
-    raw = _object(cast(object, json.loads(path.read_text(encoding="utf-8"))), str(path))
+    raw = _object(json.loads(path.read_text(encoding="utf-8")), str(path))
     case = next((item for item in CASES if item.name == raw.get("case_name")), None)
     if case is None:
         raise ValueError("Unknown canonical T1 case in metadata.")
+
     if raw.get("chronology_mode") != case.chronology:
         raise ValueError("Chronology mode differs from the canonical case.")
+
     if raw.get("time_representation") != "uint64 ps":
         raise ValueError("Time authority must be canonical uint64 ps.")
 
@@ -186,9 +231,11 @@ def load_metadata(path: Path) -> Metadata:
     length = _integer(raw.get("sequence_length"), "sequence_length", 1, UINT32_MAX)
     if length != len(case.windows_ps):
         raise ValueError("Sequence length differs from the canonical T1 case.")
+
     reset = raw.get("reset_before_sequence_index")
     if reset is not None:
         reset = _integer(reset, "reset_before_sequence_index", 1, length - 1)
+
     if reset != case.reset_before_run:
         raise ValueError("Reset operation position differs from the canonical case.")
 
@@ -206,6 +253,7 @@ def load_metadata(path: Path) -> Metadata:
             raise ValueError(
                 "Canonical time configuration differs from the T1 fixture."
             )
+
         if (
             _numbers(raw.get("requested_time_ns"), "requested_time_ns")
             != case.requested_ns
@@ -235,6 +283,7 @@ def load_metadata(path: Path) -> Metadata:
         last = _integer(current.get("global_primary_last"), "global_primary_last")
         if last - begin + 1 != count:
             raise ValueError("Per-Run global primary range has the wrong size.")
+
         if runs:
             if begin != runs[-1].global_last + 1:
                 raise ValueError(
@@ -257,6 +306,7 @@ def load_metadata(path: Path) -> Metadata:
             raise ValueError(
                 f"Run {index}: committed Source snapshot has the wrong window."
             )
+
         if (
             _integer(current.get("effective_start_ps"), "effective start") != start
             or _integer(current.get("effective_stop_ps"), "effective stop") != stop
@@ -269,6 +319,7 @@ def load_metadata(path: Path) -> Metadata:
         filename = current.get("samples_file")
         if not isinstance(filename, str) or not filename:
             raise ValueError("Each logical Run must identify its CSV file.")
+
         relative = Path(filename)
         sample_path = (path.parent / relative).resolve()
         if relative.is_absolute() or not sample_path.is_relative_to(
@@ -277,8 +328,10 @@ def load_metadata(path: Path) -> Metadata:
             raise ValueError(
                 "Per-Run samples must be relative files within the case directory."
             )
+
         if sample_path in paths or not sample_path.is_file():
             raise ValueError("Missing or reused logical Run CSV data.")
+
         paths.add(sample_path)
         runs.append(
             RunMetadata(index, run_id, sample_path, begin, last, start, stop, current)
@@ -291,6 +344,7 @@ def _csv_integer(text: str, name: str, minimum: int = 0) -> int:
     digits = text.removeprefix("-")
     if not digits or not digits.isascii() or not digits.isdecimal():
         raise ValueError(f"{name} must be an exact decimal integer in the CSV.")
+
     return _integer(int(text), name, minimum)
 
 
@@ -337,13 +391,12 @@ def analyze_run(run: RunMetadata, metadata: Metadata) -> JsonObject:
             energy = _csv_integer(row[9], "energy_micro_eV")
             birth = _csv_integer(row[10], "time_ps")
             if energy != MONO_ENERGY_MICRO_EV:
-                raise ValueError(
-                    "T1 requires exact Mono 511000000000 micro-eV."
-                )
+                raise ValueError("T1 requires exact Mono 511000000000 micro-eV.")
             times.append(birth)
 
     if len(times) != metadata.primary_count:
         raise ValueError("Missing or extra Source records in one logical Run.")
+
     # Uniqueness and bounds above imply complete local coverage. Append order
     # is irrelevant: no sorting, filling, or repair of malformed input is needed.
     if min(global_ids) != run.global_begin or max(global_ids) != run.global_last:
@@ -398,6 +451,7 @@ def analyze_case(
         raise FileExistsError(
             "Use a new analysis directory; summary.json already exists."
         )
+
     metadata = load_metadata(metadata_path)
     results = [analyze_run(run, metadata) for run in metadata.runs]
 
@@ -423,7 +477,7 @@ def analyze_case(
     if metadata.case.chronology == "configured":
         figure_status = "disabled_by_request"
         if make_figures:
-            from plot import (  # pyright: ignore[reportImplicitRelativeImport]
+            from plot import (
                 plot_chronology,
             )
 
@@ -456,7 +510,7 @@ def analyze_case(
         "figures": figures,
         "figure_status": figure_status,
     }
-    _ = (output / "summary.json").write_text(
+    (output / "summary.json").write_text(
         json.dumps(summary, indent=2, allow_nan=False) + "\n", encoding="utf-8"
     )
 
@@ -470,25 +524,20 @@ def analyze_case(
             + f"{metadata.primary_count}/{metadata.primary_count} births exactly {run.start_ps} ps; "
             + f"global IDs [{run.global_begin},{run.global_last}]; overflow=0"
         )
+
     print(f"  figures: {figure_status}; {output / 'summary.json'}", flush=True)
     return summary
-
-
-class Arguments(Protocol):
-    metadata: Path
-    output_dir: Path
-    no_plots: bool
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Check exact T1 CountDriven chronology and birth times."
     )
-    _ = parser.add_argument("--metadata", type=Path, required=True)
-    _ = parser.add_argument("--output-dir", type=Path, required=True)
-    _ = parser.add_argument("--no-plots", action="store_true")
-    args = cast(Arguments, cast(object, parser.parse_args()))
-    _ = analyze_case(args.metadata, args.output_dir, make_figures=not args.no_plots)
+    parser.add_argument("--metadata", type=Path, required=True)
+    parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--no-plots", action="store_true")
+    args = parser.parse_args()
+    analyze_case(args.metadata, args.output_dir, make_figures=not args.no_plots)
     return 0
 
 

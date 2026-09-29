@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Exports radionuclide data and ActivityDriven samples.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <array>
 #include <charconv>
@@ -8,6 +37,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <ios>
 #include <limits>
 #include <locale>
 #include <memory>
@@ -54,13 +84,16 @@ struct Options {
   std::string nuclide;
   std::string device{"cpu"};
   std::filesystem::path output;
+
   std::uint64_t seed{77'777ULL};
   std::uint64_t step_ps{0ULL};
   std::uint32_t windows{32U};
   std::uint32_t workers{256U};
   std::uint32_t capacity{50'000U};
   std::uint32_t population_replicates{128U};
+
   ggems::units::Activity activity{0.0L};
+
   bool describe{false};
   bool help{false};
 };
@@ -95,29 +128,38 @@ template <typename T> auto ParseNumber(std::string_view text) -> T {
   T value{};
   auto const result =
     std::from_chars(text.data(), text.data() + text.size(), value);
+
   if (result.ec != std::errc{} || result.ptr != text.data() + text.size()) {
     throw std::runtime_error(
       std::format("Invalid numeric argument '{}'.", text));
   }
+
   return value;
 }
 
 auto ParseOptions(int argc, char const *const *argv) -> Options {
   Options options;
+
   for (int index = 1; index < argc; ++index) {
     std::string_view const key{argv[index]};
+
     if (key == "--help") {
       options.help = true;
+
       return options;
     }
+
     if (key == "--describe") {
       options.describe = true;
       continue;
     }
+
     if (++index == argc) {
       throw std::runtime_error("Missing option value.");
     }
+
     std::string_view const value{argv[index]};
+
     if (key == "--nuclide") {
       options.nuclide = value;
     } else if (key == "--output") {
@@ -139,6 +181,7 @@ auto ParseOptions(int argc, char const *const *argv) -> Options {
     } else if (key == "--activity-bq") {
       auto const converted = ggems::units::MakeQuantity<ggems::units::Activity>(
         ParseNumber<long double>(value), "Bq");
+
       if (!converted) {
         throw std::runtime_error(
           "Activity is not representable in central Units.");
@@ -148,6 +191,7 @@ auto ParseOptions(int argc, char const *const *argv) -> Options {
       throw std::runtime_error(std::format("Unknown option '{}'.", key));
     }
   }
+
   return options;
 }
 
@@ -160,14 +204,17 @@ auto OpenOutput(std::filesystem::path const &path) -> std::ofstream {
   output.open(path, std::ios::binary);
   output.imbue(std::locale::classic());
   output << std::setprecision(std::numeric_limits<long double>::max_digits10);
+
   return output;
 }
 
 auto JsonString(std::string_view value) -> std::string {
   constexpr unsigned char k_first_printable_ascii{0x20U};
   std::string result{R"json(")json"};
+
   for (char character : value) {
     auto const byte = static_cast<unsigned char>(character);
+
     if (character == '"' || character == '\\') {
       result += '\\';
       result += character;
@@ -177,6 +224,7 @@ auto JsonString(std::string_view value) -> std::string {
       result += character;
     }
   }
+
   return result + '"';
 }
 
@@ -184,9 +232,11 @@ auto WriteEnergyTable(std::filesystem::path const &directory, std::size_t index,
                       sources::GGEMSEnergyDistribution const &energy) -> void {
   auto table = OpenOutput(directory / std::format("group_{}.csv", index));
   table << "energy_micro_eV,relative_weight,cumulative_ticket_upper\n";
+
   auto const values = energy.GetEnergyValuesMicroElectronVolt();
   auto const weights = energy.GetRelativeWeights();
   auto const tickets = energy.GetCumulativeTicketUpperBounds();
+
   for (std::size_t row = 0U; row < values.size(); ++row) {
     table << values[row] << ',' << weights[row] << ',' << tickets[row] << '\n';
   }
@@ -196,8 +246,10 @@ auto WriteDefinition(
   std::filesystem::path const &directory,
   radioactivity::GGEMSRadionuclideDefinition const &definition) -> void {
   auto output = OpenOutput(directory / "definition.json");
+
   auto const energy_scale =
     ggems::units::MakeQuantity<ggems::units::Energy>(1ULL, "keV").value().value;
+
   auto const time_scale =
     ggems::units::MakeQuantity<ggems::units::Duration>(1ULL, "s").value().value;
   output << R"json({
@@ -213,11 +265,14 @@ auto WriteDefinition(
          << std::numeric_limits<std::uint64_t>::max()
          << R"json(,"ticket_space":)json" << (1ULL << 32U) << R"json(,"groups":[
 )json";
+
   std::size_t index = 0U;
+
   for (auto const &emission : definition.GetEmissions()) {
     if (index != 0U) {
       output << ",\n";
     }
+
     auto const &energy = emission.GetEnergyDistribution();
     WriteEnergyTable(directory, index, energy);
     output << R"json({"index":)json" << index << R"json(,"particle":)json"
@@ -263,17 +318,22 @@ auto WriteSamples(std::ofstream &output, std::uint32_t window,
                   sources::GGEMSSourceRunSnapshot const &snapshot) -> void {
   auto const &ranges = snapshot.GetGroupRanges();
   std::vector<observer::GGEMSObserverRecord const *> records;
+
   for (auto const &record : capture.GetRecords()) {
     if (record.record_kind == observer::ToKernelObserverRecordKind(
                                 observer::GGEMSObserverRecordKind::Source)) {
       records.push_back(&record);
     }
   }
+
   std::ranges::sort(records, {},
                     &observer::GGEMSObserverRecord::source_local_primary_id);
+
   std::size_t group = 0U;
+
   for (std::size_t index = 0U; index < records.size(); ++index) {
     auto const &record = *records[index];
+
     while (index >= ranges[group].source_local_primary_begin +
                       ranges[group].primary_count) {
       ++group;
@@ -307,12 +367,14 @@ auto WriteRunHeader(std::ofstream &metadata, Options const &options,
     << R"json(,"compiler":)json" << JsonString(GGEMS_VALIDATION_COMPILER)
     << R"json(,"device_selector":)json" << JsonString(options.device)
     << R"json(,"devices":[)json";
-  bool first = true;
+  bool first{true};
+
   for (auto const &context : opencl.GetContext()) {
     if (!first) {
       metadata << ',';
     }
     first = false;
+
     auto const &device = context.GetDevice();
     metadata << R"json({"name":)json" << JsonString(device.GetName())
              << R"json(,"vendor":)json" << JsonString(device.GetVendor())
@@ -328,6 +390,7 @@ auto WriteWindow(std::ofstream &metadata, std::uint32_t window,
                  sources::GGEMSSourceRunSnapshot const &snapshot,
                  observer::GGEMSTransportObserver const &capture) -> void {
   auto const time = snapshot.GetTimeWindow();
+
   if (window != 0U) {
     metadata << ",\n";
   }
@@ -349,14 +412,17 @@ auto WritePopulationReplicas(
        ++index) {
     auto const replicate = index + 1ULL;
     random::GGEMSRandom replicate_random;
+
     auto const seed = options.seed + replicate;
     replicate_random.SetEngine(random::GGEMSRandomEngine::Philox).SetSeed(seed);
     sources::GGEMSSourcePopulationPlanner planner(source_list,
                                                   replicate_random);
+
     for (std::uint32_t window = 0U; window < options.windows; ++window) {
       ggems::core::GGEMSTimeWindow const time{
         .start_ps = options.step_ps * window,
         .stop_ps = options.step_ps * (window + 1ULL)};
+
       auto candidate = planner.BuildCandidate(time);
       WritePopulation(populations, static_cast<std::uint32_t>(replicate), seed,
                       window, candidate.GetPlan());
@@ -369,23 +435,28 @@ auto RunCampaign(
   Options const &options,
   std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const> const
     &definition) -> void {
-  auto source = std::make_shared<sources::GGEMSSource>();
+  auto const source = std::make_shared<sources::GGEMSSource>();
   source->SetPointEmission().SetFixedAngularDistribution().SetRadionuclide(
     definition, options.activity, 0ULL);
-  auto engine = std::make_shared<random::GGEMSRandom>();
+
+  auto const engine = std::make_shared<random::GGEMSRandom>();
   engine->SetEngine(random::GGEMSRandomEngine::Philox).SetSeed(options.seed);
+
   std::array const source_list{source};
   // A separate planner exposes expected counts without consuming Run's RNG.
   sources::GGEMSSourcePopulationPlanner population_planner(source_list,
                                                            *engine);
-  auto capture = std::make_shared<observer::GGEMSTransportObserver>();
+
+  auto const capture = std::make_shared<observer::GGEMSTransportObserver>();
   capture->SetRecordCapacity(2U * options.capacity)
     .SetMaxStoredRecordCount(2U * options.capacity)
     .CaptureFirstPrimaries(options.capacity);
+
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
   opencl.SelectDevices({options.device});
   opencl.SetWorkerCount(options.workers);
   opencl.Initialize();
+
   auto metadata = OpenOutput(options.output / "run.json");
   WriteRunHeader(metadata, options, opencl);
 
@@ -399,21 +470,27 @@ auto RunCampaign(
   run.SetRandom(engine);
   run.SetObserver(capture);
   run.Initialize();
+
   auto samples = OpenOutput(options.output / "samples.csv");
   samples << "window,group,time_ps,energy_micro_eV\n";
+
   auto populations = OpenOutput(options.output / "populations.csv");
   populations << "replicate,seed,window,group,expected_parent_decays,expected_"
                  "emissions,observed_count\n";
+
   for (std::uint32_t window = 0U; window < options.windows; ++window) {
     auto const time = run.GetCurrentTimeWindowPicoSecond();
     auto population = population_planner.BuildCandidate(time);
     auto const &plan = population.GetPlan();
+
     if (plan.GetTotalPrimaryCount() > options.capacity) {
       throw std::runtime_error("Planned population exceeds requested capture "
                                "capacity; no truncated campaign is accepted.");
     }
     run.Run();
+
     auto const snapshot = run.GetLastSourceRunSnapshot();
+
     if (capture->GetOverflowCount() != 0U) {
       throw std::runtime_error("Observer capture overflowed.");
     }
@@ -429,20 +506,26 @@ auto RunCampaign(
 
 auto main(int argc, char const *const *argv) -> int {
   auto const options = ParseOptions(argc, argv);
+
   if (options.help) {
     PrintHelp();
+
     return 0;
   }
 
   ggems::core::GGEMSLogger::GetInstance().SetDetailLevel(-1);
-  auto definition =
+
+  auto const definition =
     std::make_shared<radioactivity::GGEMSRadionuclideDefinition const>(
       radioactivity::builtins::BuildBuiltInRadionuclide(options.nuclide)
         .value());
+
   std::filesystem::create_directories(options.output);
   WriteDefinition(options.output, *definition);
+
   if (!options.describe) {
     RunCampaign(options, definition);
   }
+
   return 0;
 }

@@ -1,3 +1,28 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+# Authors:
+#     Julien BERT <julien.bert@univ-brest.fr>
+#     Didier BENOIT <didier.benoit@inserm.fr>
+
 """Independent decay integrals, adaptive sample sizing and distribution tests."""
 
 import math
@@ -39,6 +64,7 @@ def decay_integral(
                 order += 1
         else:
             mass = (1 - (-x).exp()) / x
+
         return +(activity * (-rate * elapsed).exp() * width * mass)
 
 
@@ -71,6 +97,7 @@ def design_campaign(
             raise ValueError(
                 "Requested windows are not representable in canonical Time."
             )
+
         late = decay_integral(
             Decimal(1),
             runtime.half_life,
@@ -106,6 +133,7 @@ def design_campaign(
 def conditioned_time_cdf(relative: float, scaled_decay: float) -> float:
     if scaled_decay == 0:
         return relative
+
     return -math.expm1(-scaled_decay * relative) / -math.expm1(-scaled_decay)
 
 
@@ -123,6 +151,7 @@ def ecdf_distance(
             abs((previous + frequency) / len(values) - cdf(value)),
         )
         previous += frequency
+
     return distance
 
 
@@ -135,6 +164,7 @@ def dkw_test(
 ) -> JsonObject:
     if not values:
         return {"status": "insufficient_samples", "n": 0, "alpha": alpha}
+
     distance = ecdf_distance(values, cdf, left_cdf)
     statistical_limit = math.sqrt(math.log(2 / alpha) / (2 * len(values)))
     limit = statistical_limit + numeric_budget
@@ -142,6 +172,7 @@ def dkw_test(
         status = "insufficient_samples"
     else:
         status = "pass" if distance <= limit else "fail"
+
     return {
         "status": status,
         "n": len(values),
@@ -188,6 +219,7 @@ def poisson_dispersion(
             "status": "not_applicable",
             "reason": "The large-mean chi-square approximation requires every mean >= 100; retain exact interval/ECDF tests.",
         }
+
     statistic = math.fsum(
         (count - mean) ** 2 / mean for count, mean in counts_and_means
     )

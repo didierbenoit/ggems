@@ -1,3 +1,31 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Run Dieharder on a GGEMS random stream.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 import argparse
 import ctypes
 import json
@@ -12,10 +40,9 @@ import sys
 import tempfile
 import time
 from collections import Counter
-from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Protocol, TypedDict, cast
+from typing import Literal
 
 # ------------------------------------------------------------------------------
 
@@ -63,47 +90,6 @@ VERSION_PATTERN = re.compile(r"\bdieharder version ([0-9]+(?:\.[0-9]+)+)\b")
 CATALOG_PATTERN = re.compile(r"^\s*-d\s+(\d+)\s+(.+?)\s+(Do Not Use|Suspect|Good)\s*$")
 STDIN_ERROR_PATTERN = re.compile(r"^\s*#\s*stdin_input_raw\(\):\s*Error:", re.MULTILINE)
 PREPARING_PATTERN = re.compile(r"^\s*Preparing to run test\s+\d+", re.MULTILINE)
-
-# ------------------------------------------------------------------------------
-
-
-class RandomSection(TypedDict):
-    engine: str
-    seed: int
-    stream_offset: int
-    stream_type: str
-    sample_bits: int
-    layout: str
-    worker_count: int
-    samples_per_worker: int
-    total_samples: int
-    byte_count: int
-
-
-# ------------------------------------------------------------------------------
-
-
-class OutputSection(TypedDict):
-    stream_path: str
-
-
-# ------------------------------------------------------------------------------
-
-
-class RandomManifest(TypedDict):
-    schema_version: int
-    random: RandomSection
-    output: OutputSection
-
-
-# ------------------------------------------------------------------------------
-
-
-class Arguments(Protocol):
-    manifest: Path
-    dieharder: str
-    summary: Path
-
 
 # ------------------------------------------------------------------------------
 
@@ -175,30 +161,30 @@ class RuntimeEnvironment:
 # ------------------------------------------------------------------------------
 
 
-def ParseArguments() -> Arguments:
+def ParseArguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run the GGEMS Dieharder 3.31.1 reference validation."
     )
 
-    _ = parser.add_argument(
+    parser.add_argument(
         "--manifest",
         type=Path,
         required=True,
         help="GGEMS raw uint32 stream manifest.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--dieharder",
         default="dieharder",
         help="Dieharder executable or path (default: dieharder).",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--summary",
         type=Path,
         required=True,
         help="Output path for the complete GGEMS Dieharder summary JSON.",
     )
 
-    return cast(Arguments, cast(object, parser.parse_args()))
+    return parser.parse_args()
 
 
 # ------------------------------------------------------------------------------
@@ -221,27 +207,24 @@ def ResolveExecutable(executable: str) -> Path:
 # ------------------------------------------------------------------------------
 
 
-def LoadManifest(path: Path) -> RandomManifest:
+def LoadManifest(path: Path) -> dict[str, object]:
     path = path.expanduser().resolve()
 
     if not path.is_file():
         raise FileNotFoundError(f"GGEMS random manifest not found: {path}")
 
-    data = cast(
-        object,
-        json.loads(path.read_text(encoding="utf-8")),
-    )
+    data = json.loads(path.read_text(encoding="utf-8"))
 
     if not isinstance(data, dict):
         raise TypeError(f"Invalid GGEMS random manifest type: {path}")
 
-    return cast(RandomManifest, cast(object, data))
+    return data
 
 
 # ------------------------------------------------------------------------------
 
 
-def ResolveStreamPath(manifest: RandomManifest) -> Path:
+def ResolveStreamPath(manifest: dict[str, object]) -> Path:
     stream_path = Path(manifest["output"]["stream_path"]).expanduser().resolve()
 
     if not stream_path.is_file():
@@ -253,7 +236,7 @@ def ResolveStreamPath(manifest: RandomManifest) -> Path:
 # ------------------------------------------------------------------------------
 
 
-def ValidateManifest(manifest: RandomManifest, stream_path: Path) -> None:
+def ValidateManifest(manifest: dict[str, object], stream_path: Path) -> None:
     random = manifest["random"]
 
     if random["stream_type"] != "raw_uint32":
@@ -588,9 +571,7 @@ def RunDieharder(
         if stdout is None:
             raise RuntimeError("Failed to capture Dieharder stdout.")
 
-        stdout_iterable = cast(Iterable[str], cast(object, stdout))
-
-        for line in stdout_iterable:
+        for line in stdout:
             print(line, end="")
             stdout_lines.append(line)
 
@@ -606,7 +587,7 @@ def RunDieharder(
 
         remaining_input_bytes = stream_byte_count - input_file_offset_bytes
 
-        _ = stderr_stream.seek(0)
+        stderr_stream.seek(0)
         stderr_output = stderr_stream.read()
 
     return DieharderExecution(
@@ -796,7 +777,7 @@ def WriteSummary(
     path: Path,
     *,
     manifest_path: Path,
-    manifest: RandomManifest,
+    manifest: dict[str, object],
     stream_path: Path,
     executable: Path,
     inspection: ToolInspection,
@@ -885,7 +866,7 @@ def WriteSummary(
         },
     }
 
-    _ = path.write_text(
+    path.write_text(
         json.dumps(summary, indent=2) + "\n",
         encoding="utf-8",
     )

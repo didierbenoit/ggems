@@ -1,13 +1,16 @@
 # GGEMS declared F-18 source-model validation reference
 
+For build instructions, campaign commands, and result interpretation, see the
+[radionuclide validation guide](../../../README.md). Select this package with
+`--reference validation/radioactivity/data/F-18/reference/reference.json`.
+
 This package validates the **three emissions currently modeled by GGEMS**. It
 does not certify complete F-18 atomic relaxation. The known physical K-Auger
 marginal is documented below and deliberately absent from the generated-group
 reference because its selected conditional energy law remains unresolved.
 
 All scientific source paths below are relative to `../raw/`. The reference was
-recovered from those files independently of the production arrays and GoogleTest
-expectations.
+recovered from those files independently of the production arrays.
 
 ## Selected physical evidence
 

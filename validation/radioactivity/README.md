@@ -2,45 +2,99 @@
 
 Run an ActivityDriven source, then compare its populations, birth times and
 energies with independent calculations and a selected nuclear reference. The
-first reference is O-15. Scientific discrepancies remain in `analysis.json`;
-this workflow never changes a built-in.
+reference packages cover fourteen radionuclides. Scientific comparisons are
+reported in `analysis.json`; the campaign does not modify the built-in data.
 
-## Build and use
+## Build and run
 
-From the repository root, with the normal GGEMS build and a Python environment
-containing NumPy, SciPy and Matplotlib:
+Run commands from the repository root. Use an already configured GGEMS build
+and Python 3.12 or newer with NumPy, SciPy, and Matplotlib installed.
+The `validation_radioactivity` target builds the exporter without running a
+campaign:
 
-```powershell
+```console
 cmake --build build --target validation_radioactivity
-
-python ./validation/radioactivity/run_campaign.py --help
-python ./validation/radioactivity/run_campaign.py --exporter ./build/validation/radioactivity/ggems_radionuclide_exporter.exe --reference ./validation/radioactivity/data/O-15/reference/reference.json --output ./codex_scratch/o15_cpu --device cpu
-
-python ./validation/radioactivity/plot.py ./codex_scratch/o15_cpu
-python ./validation/radioactivity/analyze.py ./codex_scratch/o15_cpu
+python validation/radioactivity/run_campaign.py --help
 ```
 
-Use `--device gpu` and a new output directory for a GPU campaign. Selectors go
-directly to `GGEMSOpenCL::SelectDevices()`. The scripts launch directly; no module
-invocation is needed. The exporter also accepts `--help` and
-`--describe --nuclide O-15 --output <directory>` to export a compiled definition
-without OpenCL.
+For a Windows multi-configuration build, select the configuration and use its
+executable directory:
 
-For a protected live checkout, use an isolated source copy: the normal Python
-build generates binding/stub files in its source tree. The campaign keeps the
-existing Point/Fixed source, Philox seed 77777 and 256 workers per device. Every
-CLI option explains its meaning and default. Exporter invocations have a
-configurable 1800-second timeout; failed operations retain their logs.
+```powershell
+cmake --build build --config Release --target validation_radioactivity
+python validation/radioactivity/run_campaign.py --exporter build/validation/radioactivity/Release/ggems_radionuclide_exporter.exe --reference validation/radioactivity/data/O-15/reference/reference.json --output validation/radioactivity/results/o15_cpu --device cpu
+```
+
+For a single-configuration build, the executable has no `Release/` directory.
+On Windows it retains the `.exe` suffix; on Linux and macOS, use:
+
+```console
+python validation/radioactivity/run_campaign.py --exporter build/validation/radioactivity/ggems_radionuclide_exporter --reference validation/radioactivity/data/O-15/reference/reference.json --output validation/radioactivity/results/o15_cpu --device cpu
+```
+
+The runner extracts and analyzes samples. Generate figures separately:
+
+```console
+python validation/radioactivity/plot.py validation/radioactivity/results/o15_cpu
+```
+
+Use `--device gpu` and a new output directory for a GPU campaign. Device
+selectors use the standard GGEMS OpenCL selection rules. Change `--reference`
+to select another radionuclide from the table below. The output directory must
+not already exist.
+
+Defaults are Point geometry, Fixed direction, Philox seed 77777, and 256 workers
+per device. The runner chooses activity from the sample target described below;
+`--target-last-window` controls that target. Larger populations increase capture
+and analysis costs. Each exporter invocation has a configurable 1800-second
+timeout (`--timeout-seconds`); failed operations retain their logs.
+
+To analyze the same samples again without a new simulation:
+
+```console
+python validation/radioactivity/analyze.py validation/radioactivity/results/o15_cpu
+```
+
+Reanalysis replaces `analysis.json` and reads the reference and source-tree paths
+recorded in `settings.json`. Keep those locations available when moving results.
+Run `plot.py` again to refresh figures after reanalysis.
+
+The exporter can also write a compiled definition without initializing OpenCL:
+
+```console
+build/validation/radioactivity/ggems_radionuclide_exporter --describe --nuclide O-15 --output validation/radioactivity/results/o15_definition
+```
+
+Adapt the executable path to the platform and configuration as above.
 
 ## Reference and compiled data
 
-The [O-15 reference package](data/O-15/reference/README.md) records the selected
-LNHB evaluation and BetaShape 2.4 calculation, decimal values and uncertainties,
-source filenames, transformations, exclusions and ordered emission-group mapping.
-ENSDF and MIRD remain independent cross-checks. Raw evidence is documentary;
-campaigns read the selected reference JSON and spectrum CSV.
+Each package documents its selected evaluation, source files, uncertainties,
+transformations, exclusions, and ordered emission groups. Read its README before
+interpreting comparisons, especially where the modeled emissions form only a
+subset of the physical inventory.
 
-The three existing conditional energy descriptions are:
+| Radionuclide | Reference documentation | Campaign input |
+| --- | --- | --- |
+| H-3 | [H-3 reference](data/H-3/reference/README.md) | `data/H-3/reference/reference.json` |
+| C-11 | [C-11 reference](data/C-11/reference/README.md) | `data/C-11/reference/reference.json` |
+| C-14 | [C-14 reference](data/C-14/reference/README.md) | `data/C-14/reference/reference.json` |
+| O-15 | [O-15 reference](data/O-15/reference/README.md) | `data/O-15/reference/reference.json` |
+| F-18 | [F-18 reference](data/F-18/reference/README.md) | `data/F-18/reference/reference.json` |
+| Co-60 | [Co-60 reference](data/Co-60/reference/README.md) | `data/Co-60/reference/reference.json` |
+| Ga-68 | [Ga-68 reference](data/Ga-68/reference/README.md) | `data/Ga-68/reference/reference.json` |
+| Tc-99m | [Tc-99m reference](data/Tc-99m/reference/README.md) | `data/Tc-99m/reference/reference.json` |
+| I-123 | [I-123 reference](data/I-123/reference/README.md) | `data/I-123/reference/reference.json` |
+| I-124 | [I-124 reference](data/I-124/reference/README.md) | `data/I-124/reference/reference.json` |
+| I-125 | [I-125 reference](data/I-125/reference/README.md) | `data/I-125/reference/reference.json` |
+| I-131 | [I-131 reference](data/I-131/reference/README.md) | `data/I-131/reference/reference.json` |
+| Lu-177 | [Lu-177 reference](data/Lu-177/reference/README.md) | `data/Lu-177/reference/reference.json` |
+| Am-241 | [Am-241 reference](data/Am-241/reference/README.md) | `data/Am-241/reference/reference.json` |
+
+Raw evaluation files provide provenance and independent comparisons. Campaigns
+read the selected `reference.json` and any referenced spectrum CSV files.
+
+The three conditional energy descriptions are:
 
 - `Mono`: an `energy` object with `value`, `standard_uncertainty`, `unit: "keV"`
   and source identity.
@@ -54,13 +108,13 @@ Global yields are expected primaries per parent decay; they are never normalized
 Conditional energy weights and normalization are separate. O-15 maps to one
 Positron group. The 511 keV annihilation radiation is reference information only;
 annihilation belongs to positron transport. EC creates no placeholder primary.
-Other nuclides use the same code once their evaluations and mappings are selected.
+The other packages supply their own ordered emission groups to the same runner.
 
 The compiled definition export contains half-life, ordered particles/yields,
 distribution kinds, mono energies, full tables and ticket CDFs. Energy is integer
 micro-eV and Time is integer ps; conversion factors come from central GGEMS Units.
-Dose remains independent. The optional source-comment audit identifies generator
-provenance separately because the compiled definition has no provenance API.
+Generator provenance is reported separately from source-file comments when the
+reference requests it. These comments do not identify the compiled binary.
 
 ## Campaign and statistical meaning
 
@@ -75,9 +129,8 @@ decay integral at 1 Bq. Rare groups do not enlarge the campaign. Capture capacit
 uses the first-window mean plus 12 standard deviations and 64 primaries. A
 population exceeding that capacity or an Observer overflow stops the export.
 
-Use `--horizon-half-lives 0.000001` to exercise the existing small-decay numerical
-regime. Activity is still derived from the sample target; no production half-life
-or RNG draw changes.
+Use `--horizon-half-lives 0.000001` for a short observation horizon relative to
+the half-life. Activity is still derived from the sample target.
 
 The analysis keeps these conclusions separate:
 
@@ -102,15 +155,15 @@ The analysis keeps these conclusions separate:
 4. **Birth times:** per-window ECDF comparison with the exponential distribution
    conditioned to `[start, stop)`, with explicit observed-bound checks. Numerical
    allowance remains the Source 1e-5 CDF contract, the high-24-bit uniform quantum,
-   and one ps of conditional probability mass. Existing GGEMS GoogleTests cover
-   deterministic raw-zero inclusion and maximum-word stop exclusion.
+   and one ps of conditional probability mass. Statistical samples alone do not
+   establish whether every exact endpoint is reachable.
 5. **Energy:** sampled support and full ECDF versus both the selected reference
    and the compiled finite-ticket law. The exact integer CDF inverts
    `floor(width * local_ticket / bin_ticket_count)`. The observed reference/grid
    discrepancy is never added to the acceptance threshold. Statistical
    non-rejection does not establish identical nuclear tables.
 
-The family significance level is 0.01, divided by the unchanged conservative
+The family significance level is 0.01, divided by the conservative
 Bonferroni count `windows*(2*groups+3)+5*groups+1`. ECDF comparisons use the
 [DKW-Massart bound](https://doi.org/10.1214/aop/1176990746). Poisson probabilities,
 quantiles and chi-square tails use SciPy. Thresholds are recorded before sampling;
@@ -144,8 +197,10 @@ outside this validation.
 
 Reanalysis and plotting use retained samples without new draws. Command success
 means execution completed; consult each scientific result in `analysis.json`.
-Files use LF line endings. GGEMS software regression tests remain in `tests/`
-and use GoogleTest; this directory contains scientific validation only.
+`pass` and `fail` refer to the recorded comparison and threshold.
+`insufficient_samples` means the available sample cannot support that test;
+`comparison_only` reports a deterministic difference without a pass/fail decision.
+`not_applicable` indicates that the stated conditions for a test are not met.
 
 ## Emission figures
 

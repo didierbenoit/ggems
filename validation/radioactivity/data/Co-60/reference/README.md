@@ -1,5 +1,9 @@
 # Co-60 selected source reference
 
+For build instructions, campaign commands, and result interpretation, see the
+[radionuclide validation guide](../../../README.md). Select this package with
+`--reference validation/radioactivity/data/Co-60/reference/reference.json`.
+
 This package reconstructs the selected Co-60 independent-particle emission
 definition from the recovered files in `../raw/`. Raw scientific values and the
 three spectrum CSVs were recovered before inspecting the current built-in.

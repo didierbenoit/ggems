@@ -1,5 +1,9 @@
 # H-3 selected scientific reference
 
+For build instructions, campaign commands, and result interpretation, see the
+[radionuclide validation guide](../../../README.md). Select this package with
+`--reference validation/radioactivity/data/H-3/reference/reference.json`.
+
 ## Authority and decay
 
 Primary nuclear authority is the LNHB/DDEP H-3 / He-3 evaluation by

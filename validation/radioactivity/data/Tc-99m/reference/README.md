@@ -1,5 +1,9 @@
 # Tc-99m independent reference
 
+For build instructions, campaign commands, and result interpretation, see the
+[radionuclide validation guide](../../../README.md). Select this package with
+`--reference validation/radioactivity/data/Tc-99m/reference/reference.json`.
+
 The reference was recovered from the local `../raw/` evidence before comparing
 the production definition. Physical intensities are particles per parent decay,
 not mutually exclusive probabilities. They are never normalized to one.

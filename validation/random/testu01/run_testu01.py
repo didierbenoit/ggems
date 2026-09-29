@@ -1,3 +1,31 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Run TestU01 on a GGEMS random stream.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 import argparse
 import json
 import math
@@ -10,7 +38,7 @@ import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal, Protocol, cast
+from typing import Literal
 
 # ------------------------------------------------------------------------------
 
@@ -39,16 +67,6 @@ WORD_BYTES = 4
 TERMINATION_GRACE_SECONDS = 5.0
 
 # ------------------------------------------------------------------------------
-
-
-class Arguments(Protocol):
-    manifest: Path | None
-    stream_request: Path | None
-    battery: BatteryName
-    consumer: str
-    producer: str
-    summary: Path
-    timeout_seconds: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -179,7 +197,7 @@ def ParsePositiveInteger(value: str) -> int:
     return parsed
 
 
-def ParseArguments() -> Arguments:
+def ParseArguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Run one TestU01 battery from a GGEMS raw file or OpenCL stream "
@@ -187,26 +205,24 @@ def ParseArguments() -> Arguments:
         )
     )
     transport = parser.add_mutually_exclusive_group(required=True)
-    _ = transport.add_argument(
+    transport.add_argument(
         "--manifest", type=Path, help="GGEMS raw uint32 stream manifest."
     )
-    _ = transport.add_argument(
+    transport.add_argument(
         "--stream-request",
         type=Path,
         help="GGEMS OpenCL-pipe stream request.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--battery",
         choices=("smallcrush", "crush", "bigcrush"),
         required=True,
     )
-    _ = parser.add_argument("--consumer", default=str(DefaultConsumerPath()))
-    _ = parser.add_argument("--producer", default=str(DefaultProducerPath()))
-    _ = parser.add_argument("--summary", type=Path, required=True)
-    _ = parser.add_argument(
-        "--timeout-seconds", type=ParsePositiveInteger, required=True
-    )
-    return cast(Arguments, cast(object, parser.parse_args()))
+    parser.add_argument("--consumer", default=str(DefaultConsumerPath()))
+    parser.add_argument("--producer", default=str(DefaultProducerPath()))
+    parser.add_argument("--summary", type=Path, required=True)
+    parser.add_argument("--timeout-seconds", type=ParsePositiveInteger, required=True)
+    return parser.parse_args()
 
 
 def GetBatteryDefinition(name: BatteryName) -> BatteryDefinition:
@@ -238,9 +254,8 @@ def ResolveExecutable(value: str, description: str) -> Path:
 def RequireObject(value: object, description: str) -> dict[str, object]:
     if not isinstance(value, dict):
         raise TypeError(f"{description} must be a JSON object")
-    source = cast(dict[object, object], value)
     result: dict[str, object] = {}
-    for key, member in source.items():
+    for key, member in value.items():
         if not isinstance(key, str):
             raise TypeError(f"{description} contains a non-string key")
         result[key] = member
@@ -250,7 +265,7 @@ def RequireObject(value: object, description: str) -> dict[str, object]:
 def RequireList(value: object, description: str) -> list[object]:
     if not isinstance(value, list):
         raise TypeError(f"{description} must be a JSON array")
-    return cast(list[object], value)
+    return value
 
 
 def RequireString(value: object, description: str) -> str:
@@ -299,7 +314,7 @@ def LoadJsonObject(path: Path, description: str) -> dict[str, object]:
         text = path.read_text(encoding="utf-8")
     except OSError as error:
         raise OSError(f"Cannot read {description}: {path}") from error
-    value = cast(object, json.loads(text))
+    value = json.loads(text)
     return RequireObject(value, description)
 
 
@@ -532,10 +547,10 @@ def StopProcess(process: subprocess.Popen[bytes] | None) -> None:
         return
     process.terminate()
     try:
-        _ = process.wait(timeout=TERMINATION_GRACE_SECONDS)
+        process.wait(timeout=TERMINATION_GRACE_SECONDS)
     except subprocess.TimeoutExpired:
         process.kill()
-        _ = process.wait()
+        process.wait()
 
 
 def RunStreamingPair(
@@ -658,7 +673,7 @@ def RunStreamingPair(
 def ParseConsumerResult(data: bytes | None) -> dict[str, object] | None:
     if data is None:
         return None
-    value = cast(object, json.loads(data.decode("utf-8")))
+    value = json.loads(data.decode("utf-8"))
     return RequireObject(value, "consumer result")
 
 
@@ -896,7 +911,7 @@ def BuildOutput(assessment: ResultAssessment) -> dict[str, object]:
 def WriteSummary(path: Path, summary: dict[str, object]) -> None:
     path = path.expanduser().resolve()
     path.parent.mkdir(parents=True, exist_ok=True)
-    _ = path.write_text(
+    path.write_text(
         json.dumps(summary, indent=2, allow_nan=False) + "\n",
         encoding="utf-8",
     )
@@ -932,7 +947,7 @@ def BaseSummary(
 # ------------------------------------------------------------------------------
 
 
-def ExecuteRegularFile(args: Arguments) -> tuple[dict[str, object], RunStatus]:
+def ExecuteRegularFile(args: argparse.Namespace) -> tuple[dict[str, object], RunStatus]:
     if args.manifest is None:
         raise ValueError("--manifest is required for the regular-file backend")
 
@@ -995,7 +1010,7 @@ def ExecuteRegularFile(args: Arguments) -> tuple[dict[str, object], RunStatus]:
     return summary, assessment.status
 
 
-def ExecuteStreaming(args: Arguments) -> tuple[dict[str, object], RunStatus]:
+def ExecuteStreaming(args: argparse.Namespace) -> tuple[dict[str, object], RunStatus]:
     if args.stream_request is None:
         raise ValueError("--stream-request is required for the OpenCL backend")
 
@@ -1091,7 +1106,7 @@ def ExecuteStreaming(args: Arguments) -> tuple[dict[str, object], RunStatus]:
 # ------------------------------------------------------------------------------
 
 
-def Execute(args: Arguments) -> tuple[dict[str, object], RunStatus]:
+def Execute(args: argparse.Namespace) -> tuple[dict[str, object], RunStatus]:
     if args.manifest is not None:
         return ExecuteRegularFile(args)
     return ExecuteStreaming(args)

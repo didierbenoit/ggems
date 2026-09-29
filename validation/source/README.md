@@ -1,7 +1,7 @@
 # Source scientific validation
 
 This is the entry point for scientific validation of the current GGEMS 2.0
-analytical CountDriven **primary-generation** path. The retained campaign covers
+analytical CountDriven **primary-generation** path. The campaigns cover
 geometry, angular distributions, energy distributions, chronology, pose/frame
 transforms, and integrated sampler composition, with Philox as the reference RNG.
 Claims apply within the tested cases, numerical representations, and execution
@@ -18,9 +18,8 @@ Source validation measures actual production OpenCL output:
         -> Matplotlib PNG and PDF figures
 
 No validation sampler generates substitute GGEMS results. The shared executable
-is ggems_source_sample_exporter in tools/. Observer is temporary extraction
-infrastructure. Its scheduling-dependent append order is not scientific
-provenance: analysis uses source_index and source_local_primary_id, with global
+is `ggems_source_sample_exporter` in `tools/`. It extracts raw Observer records.
+Their append order depends on scheduling: analysis uses source_index and source_local_primary_id, with global
 IDs retained and checked. Human-readable dumps, rendered traces, and Terminal
 positions are not Source samples.
 
@@ -41,9 +40,35 @@ under Source rotation. Bounded Isotropic is local and rotates with the frame;
 Fixed follows stored axis_z. Focused aims from each actual committed global
 position toward one global focus point.
 
-The exporter composes existing public Source options and reads executed
-configuration from the last successful immutable snapshot. It remains
-validation-only; it adds no production Source/Output API.
+The shared exporter reads the executed configuration from the last successful
+Source snapshot, so metadata describes the samples actually captured.
+
+## Build and prerequisites
+
+Run commands from the repository root using an already configured GGEMS build.
+The `validation_source` target builds the shared exporter without running a
+campaign:
+
+```console
+cmake --build build --target validation_source
+```
+
+The domain examples use `build/validation/source/ggems_source_sample_exporter`.
+On Windows, add `.exe`. For a multi-configuration generator, select the build
+configuration and include its directory in the exporter path, for example:
+
+```console
+cmake --build build --config Release --target validation_source
+python validation/source/geometry/run_campaign.py --exporter build/validation/source/Release/ggems_source_sample_exporter.exe --device gpu --cases point rectangle --primaries 256 --workers 64 --output-dir validation/source/results/geometry/example
+```
+
+For a single-configuration generator, the profile is selected when configuring
+the build; there is no `Release/` executable subdirectory. Adapt `build/` and
+`--device` to the local setup. Each rerun needs a new case output directory.
+
+Use Python 3.12 or newer. Geometry, angle, frame, and integration analysis require
+NumPy. Energy and time analysis use the standard library. Matplotlib is needed
+for requested figures; `--no-plots` skips them.
 
 ## Numerical representation and interpretation
 
@@ -65,10 +90,9 @@ support/plane residuals; no silent clipping or arbitrary tolerance hides them.
 RegularSpectrum uses an exact finite counting CDF, not an idealized continuous
 spectrum as its exact execution authority.
 
-The project-wide Energy/EnergyChange migration to uint64/int64 micro-eV (ueV)
-was approved on September 8, 2026. It remains separate future implementation:
-this checkpoint executes micro-eV. Focused E1 and I1 reruns are required after that
-migration; the two scales must never be mixed.
+Energy fields already use micro-eV in the current exporter and analyzers.
+Captures made with another energy scale are not compatible with this schema;
+do not relabel their values as micro-eV.
 
 Philox qualification and Source validation are separate evidence. The
 [Random campaign](../random/README.md) qualifies the engine in its tested scope;
@@ -83,37 +107,38 @@ correlations and oblique numerical residuals remain descriptive, with
 acceptance_thresholds = null. No p-values or arbitrary statistical acceptance
 thresholds are introduced. Small correlations do not prove independence.
 
-## Reference campaigns, generated evidence, and boundary
+## Running a campaign and reading its results
 
-Keep deterministic cases small: exact Point/Fixed/Mono/Time and exact frame pairs
-gain little from large captures. The retained **150000-primary statistical
-G1/A1/E1/G2-A2 results** are the higher-statistics reference campaign; individual
-domain development defaults are smaller infrastructure smokes. I1 is the compact
-final composition checkpoint: 8192 primaries/64 workers for the integrated case
-and 2048 primaries/one worker per exact-pair member, seed 20260908 by default.
-Do not rerun publication-scale captures merely to test an implementation patch.
+Start with the small example in a domain README, then adjust `--primaries`,
+`--workers`, and `--seed` for the distributions you want to measure. Exact
+Point, Fixed, Mono, and Time checks need few samples. Distribution measurements
+benefit from larger populations, at the cost of longer runs and larger captures.
+The current Observer capture can be expensive in both runtime and host memory.
 
-Each domain README documents its explicit device selection, case CLI, metadata,
-analysis and figure outputs. Build the common target with the configured
-toolchain; all runners use installed Python/NumPy/Matplotlib dependencies.
-Generated CSV/JSON/PNG/PDF/logs belong under the ignored results/ directory or
-caller-selected output directories. They are evidence, not ordinary source
-files. The current Observer path constructs expensive diagnostic dumps; later
-high-statistics reruns should use performant scientific Output when available.
+Each domain provides `run_campaign.py` to extract and analyze samples and
+`analyze.py` to reanalyze an existing capture. Use `--help` on either script for
+its options. `--cases` selects individual cases; omitting it runs all cases in
+the domain. Frame and integration pairs require a single selected device and
+use one worker to reproduce the same random sequence.
 
-The precise checkpoint statement is:
+Generated files go under `validation/source/results/` by default, or under the
+chosen `--output-dir`. Use a new case directory for each run. Keep the raw CSV,
+`metadata.json`, and `export.log` together with `summary.json` and any PNG/PDF
+figures so that each measurement can be traced to its capture.
 
-> The current analytical CountDriven Source primary-generation path has been
-> validated within the tested scope for geometry, angular distribution, energy
-> distribution, chronology, pose/frame transforms, and integrated sampler
-> composition using Philox as the reference RNG.
+Read `summary.json` alongside the figures. Exact field and provenance checks
+must pass. Distribution statistics and numerical residuals are measurements,
+not an automatic statistical pass/fail decision. Compare results using their
+recorded seed, population, worker count, devices, and numerical representation.
 
-After Source initialization, current production transport is still the
-diagnostic one-meter projection. It does not establish physical transport,
-Navigation, interaction physics, clinical accuracy, or time of flight.
-ActivityDriven execution exists but ActivityDriven/radionuclide scientific
-validation is separate and is not covered by this checkpoint.
-Voxelized Source and PhaseSpace Source remain future unimplemented families.
-Realistic 120 kVp, multi-source campaigns, external-reference radionuclide
-validation, and future performant Output campaigns are separate work. The useful
-120 kVp file in data/ is preserved as input data, not a claim of validation.
+## Scope
+
+These campaigns cover analytical CountDriven Source primary generation:
+geometry, angular distribution, energy distribution, chronology, frame
+transforms, and their composition. They use the initialized Source records,
+not the later diagnostic transport positions.
+
+ActivityDriven/radionuclide emission, voxelized and phase-space sources,
+multi-source configurations, physical transport, interaction physics, and
+clinical accuracy are outside this validation. The 120 kVp spectrum in `data/`
+is an available input file, not a validated campaign case.

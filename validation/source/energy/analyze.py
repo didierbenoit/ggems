@@ -1,3 +1,31 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Analyze GGEMS Source energy samples and metadata.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 import argparse
 import csv
 import json
@@ -7,10 +35,9 @@ from dataclasses import dataclass
 from fractions import Fraction
 from itertools import pairwise
 from pathlib import Path
-from typing import Protocol, cast
 
 # These entry points run directly; Python adds this directory to sys.path.
-from cases import CASES, EnergyCase  # pyright: ignore[reportImplicitRelativeImport]
+from cases import CASES, EnergyCase
 
 type JsonObject = dict[str, object]
 
@@ -46,13 +73,15 @@ class Metadata:
 def _object(value: object, name: str) -> JsonObject:
     if not isinstance(value, dict):
         raise TypeError(f"{name} must be a JSON object.")
-    return cast(JsonObject, value)
+
+    return value
 
 
 def _list(value: object, name: str) -> list[object]:
     if not isinstance(value, list):
         raise TypeError(f"{name} must be a JSON array.")
-    return cast(list[object], value)
+
+    return value
 
 
 def _integer(
@@ -60,17 +89,21 @@ def _integer(
 ) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
         raise TypeError(f"{name} must be an integer.")
+
     if not minimum <= value <= maximum:
         raise ValueError(f"{name} is outside its integer field range.")
+
     return value
 
 
 def _number(value: object, name: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError(f"{name} must be numeric.")
+
     result = float(value)
     if not math.isfinite(result):
         raise ValueError(f"{name} must be finite.")
+
     return result
 
 
@@ -83,7 +116,7 @@ def _numbers(value: object, name: str) -> tuple[float, ...]:
 
 
 def load_metadata(path: Path) -> Metadata:
-    raw = _object(cast(object, json.loads(path.read_text(encoding="utf-8"))), str(path))
+    raw = _object(json.loads(path.read_text(encoding="utf-8")), str(path))
     case = next((item for item in CASES if item.name == raw.get("case_name")), None)
     if case is None:
         raise ValueError("Unknown canonical E1 case in metadata.")
@@ -110,13 +143,17 @@ def load_metadata(path: Path) -> Metadata:
     for key in ("time_ps", "source_index", "global_primary_begin"):
         if _integer(raw.get(key), key) != 0:
             raise ValueError(f"E1 metadata requires {key} == 0.")
+
     for key in ("source_center_pm", "dimensions_pm"):
         if _integers(raw.get(key), key) != (0, 0, 0):
             raise ValueError(f"E1 metadata requires {key} == [0, 0, 0].")
+
     if _numbers(raw.get("dimensions_mm"), "dimensions_mm") != (0, 0, 0):
         raise ValueError("Point dimensions must be zero.")
+
     if _numbers(raw.get("fixed_direction"), "fixed_direction") != (0, 0, 1):
         raise ValueError("E1 requires exact stored Fixed +Z.")
+
     axes = tuple(
         _numbers(axis, "frame axis") for axis in _list(raw.get("frame_axes"), "axes")
     )
@@ -126,11 +163,12 @@ def load_metadata(path: Path) -> Metadata:
     primary_count = _integer(
         raw.get("primary_count"), "primary_count", 1, (TICKET_SPACE - 1) // 2
     )
-    _ = _integer(raw.get("worker_count"), "worker_count", 1, TICKET_SPACE - 1)
-    _ = _integer(raw.get("seed"), "seed")
+    _integer(raw.get("worker_count"), "worker_count", 1, TICKET_SPACE - 1)
+    _integer(raw.get("seed"), "seed")
     selector = raw.get("device_selector")
     if not isinstance(selector, str) or not selector:
         raise ValueError("Metadata must contain a nonempty device_selector.")
+
     names = _list(raw.get("device_names"), "device_names")
     if not names or any(not isinstance(name, str) or not name for name in names):
         raise ValueError("Metadata must identify the selected devices.")
@@ -144,16 +182,20 @@ def load_metadata(path: Path) -> Metadata:
     }.items():
         if _integer(observer.get(key), f"observer.{key}") != expected:
             raise ValueError(f"Incomplete Observer capture: {key} must be {expected}.")
+
     for key in ("capacity_per_device", "host_capacity"):
-        _ = _integer(observer.get(key), key, 2 * primary_count, TICKET_SPACE - 1)
+        _integer(observer.get(key), key, 2 * primary_count, TICKET_SPACE - 1)
 
     energy = _object(raw.get("energy"), "energy")
     if energy.get("representation") != "uint64 micro-eV":
         raise ValueError("Energy authority must be canonical uint64 micro-eV.")
+
     if _integer(energy.get("distribution_type"), "distribution_type") != type_id:
         raise ValueError("Packed distribution type disagrees with the E1 case.")
+
     if _integer(energy.get("table_offset"), "table_offset") != 0:
         raise ValueError("This single-source exporter requires table offset zero.")
+
     if _integer(energy.get("ticket_space_size"), "ticket_space_size") != TICKET_SPACE:
         raise ValueError("Expected the complete raw uint32 ticket space.")
 
@@ -169,12 +211,14 @@ def load_metadata(path: Path) -> Metadata:
     mono = _integer(energy.get("mono_energy_micro_eV"), "mono_energy_micro_eV")
     if _integer(raw.get("energy_micro_eV"), "energy_micro_eV") != mono:
         raise ValueError("Source-record energy disagrees with energy metadata.")
+
     if (
         table_count != len(values)
         or len(bounds) != table_count
         or len(weights) != table_count
     ):
         raise ValueError("Packed energy table counts disagree.")
+
     if width != case.bin_width_micro_ev:
         raise ValueError("Packed width disagrees with the canonical E1 width.")
 
@@ -184,20 +228,25 @@ def load_metadata(path: Path) -> Metadata:
             raise ValueError(
                 "E1 Mono must be table-free and exactly 511000000000 micro-eV."
             )
+
         values = (mono,)
     else:
         if mono != 0 or values != case.energies_micro_ev or weights != case.weights:
             raise ValueError("Packed energies/weights disagree with the E1 table.")
+
         if any(left >= right for left, right in pairwise(values)):
             raise ValueError("Canonical energies must be strictly increasing.")
+
         if not bounds or bounds[-1] != TICKET_SPACE:
             raise ValueError("Final cumulative ticket bound must be 2^32.")
+
         tickets = tuple(
             upper - lower
             for lower, upper in zip((0, *bounds[:-1]), bounds, strict=True)
         )
         if any(count < 0 for count in tickets):
             raise ValueError("Cumulative ticket bounds must be nondecreasing.")
+
         # Check these binary-friendly fixtures against ACTUAL packed intervals.
         # This verifies the requested fractions; it does not allocate tickets.
         for count, weight in zip(tickets, case.weights, strict=True):
@@ -211,14 +260,17 @@ def load_metadata(path: Path) -> Metadata:
             raise ValueError(
                 "Regular bins require even positive width and positive lower edges."
             )
+
         if any(right - left != width for left, right in pairwise(values)):
             raise ValueError("Regular centers must be separated by one full bin width.")
+
         if values[-1] + width // 2 > UINT64_MAX:
             raise ValueError("Regular upper edge exceeds uint64 storage.")
 
     requested = _object(raw.get("requested_energy"), "requested_energy")
     if requested.get("unit") != "keV" or energy.get("display_unit") != "keV":
         raise ValueError("E1 requested/display energies must use keV.")
+
     display_unit = _integer(
         energy.get("display_unit_micro_eV"), "display_unit_micro_eV", 1
     )
@@ -229,16 +281,20 @@ def load_metadata(path: Path) -> Metadata:
         raise ValueError(
             "Central display conversion disagrees with canonical E1 energies."
         )
+
     expected_values = () if case.mode == "mono" else case.values_kev
     if _numbers(requested.get("values"), "requested values") != expected_values:
         raise ValueError("Requested energies disagree with the E1 case.")
+
     if _numbers(requested.get("relative_weights"), "requested weights") != case.weights:
         raise ValueError("Requested weights disagree with the E1 case.")
+
     if case.mode == "mono":
         if _number(requested.get("mono"), "requested mono") != case.values_kev[0]:
             raise ValueError("Requested Mono energy disagrees with E1.")
     elif requested.get("mono") is not None:
         raise ValueError("Mono request is inactive in a tabulated mode.")
+
     if case.bin_width_kev is not None:
         if _number(requested.get("bin_width"), "requested width") != case.bin_width_kev:
             raise ValueError("Requested regular bin width disagrees with E1.")
@@ -252,9 +308,11 @@ def _decimal(value: str, minimum: int, maximum: int) -> int:
     digits = value.removeprefix("-")
     if not digits or not digits.isascii() or not digits.isdecimal():
         raise ValueError(f"Expected an exact decimal integer, received {value!r}.")
+
     result = int(value)
     if not minimum <= result <= maximum:
         raise ValueError(f"Integer {value!r} is outside its serialized field range.")
+
     return result
 
 
@@ -301,6 +359,7 @@ def load_samples(path: Path, metadata: Metadata) -> list[int]:
         raise ValueError(
             f"Expected {metadata.primary_count} Source records, found {len(energies)}."
         )
+
     return energies
 
 
@@ -308,8 +367,10 @@ def finite_cdf_ticket_count(offset: int, ticket_count: int, width: int) -> int:
     """Count tickets with floor(W*t/M) <= offset, without enumerating tickets."""
     if ticket_count <= 0 or width <= 0:
         raise ValueError("The finite law requires positive M and W.")
+
     if offset < 0:
         return 0
+
     if offset >= width - 1:
         return ticket_count
 
@@ -324,6 +385,7 @@ def finite_cdf_max_deviation(
     """Supremum of |empirical CDF - exact discrete CDF|, including both jumps."""
     if ticket_count <= 0 or width <= 0:
         raise ValueError("The finite law requires positive M and W.")
+
     if not offsets:
         return None
 
@@ -333,6 +395,7 @@ def finite_cdf_max_deviation(
     for offset, multiplicity in sorted(Counter(offsets).items()):
         if not 0 <= offset < width:
             raise ValueError("Offset is outside its half-open bin.")
+
         exact_before = finite_cdf_ticket_count(offset - 1, ticket_count, width)
         exact_after = finite_cdf_ticket_count(offset, ticket_count, width)
         if exact_before == exact_after:
@@ -391,6 +454,7 @@ def measure_energy(energies: list[int], metadata: Metadata) -> JsonObject:
     count = len(energies)
     if count != metadata.primary_count:
         raise ValueError("Sample count differs from metadata.")
+
     multiplicities = Counter(energies)
     summary: JsonObject = {
         "case_name": metadata.case.name,
@@ -429,6 +493,7 @@ def measure_energy(energies: list[int], metadata: Metadata) -> JsonObject:
             raise ValueError(
                 f"Mono contract failure: {mismatches} mismatches; maximum difference {maximum} micro-eV."
             )
+
         summary["exact_mono"] = {
             "sample_count": count,
             "expected_energy_micro_eV": expected,
@@ -448,6 +513,7 @@ def measure_energy(energies: list[int], metadata: Metadata) -> JsonObject:
             raise ValueError(
                 f"Off-line DiscreteLines energy: {min(off_line)} micro-eV."
             )
+
         counts = [multiplicities[value] for value in metadata.energies_micro_ev]
         if any(
             observed and ticket == 0
@@ -463,6 +529,7 @@ def measure_energy(energies: list[int], metadata: Metadata) -> JsonObject:
                     "energy_keV": energy / metadata.display_unit_micro_ev,
                 }
             )
+
         summary["line_results"] = rows
         summary["probability_metrics"] = metrics
         summary["support"] = {
@@ -518,6 +585,7 @@ def measure_energy(energies: list[int], metadata: Metadata) -> JsonObject:
                     ),
                 }
             )
+
         summary["bin_results"] = rows
         summary["probability_metrics"] = metrics
         summary["finite_within_bin_results"] = finite
@@ -548,17 +616,12 @@ def analyze_case(
     if metadata.case.mode == "mono":
         summary["figure_status"] = "not_required"
     elif make_figures:
-        from plot import plot_energy  # pyright: ignore[reportImplicitRelativeImport]
+        from plot import plot_energy
 
-        rows = cast(
-            list[JsonObject],
-            summary[
-                "line_results"
-                if metadata.case.mode == "discrete-lines"
-                else "bin_results"
-            ],
-        )
-        finite = cast(list[JsonObject], summary.get("finite_within_bin_results", []))
+        rows = summary[
+            "line_results" if metadata.case.mode == "discrete-lines" else "bin_results"
+        ]
+        finite = summary.get("finite_within_bin_results", [])
         summary["figures"] = [
             str(path)
             for path in plot_energy(
@@ -574,7 +637,7 @@ def analyze_case(
         ]
         summary["figure_status"] = "generated"
 
-    _ = (output_dir / "summary.json").write_text(
+    (output_dir / "summary.json").write_text(
         json.dumps(summary, indent=2, allow_nan=False) + "\n", encoding="utf-8"
     )
     print(
@@ -584,31 +647,26 @@ def analyze_case(
         print(f"  exact Mono: {summary['exact_mono']}")
     else:
         print(f"  probabilities: {summary['probability_metrics']}")
+
     if "finite_within_bin_results" in summary:
         print(f"  finite within-bin: {summary['finite_within_bin_results']}")
+
     print(
         f"  figures: {summary['figure_status']}; summary: {output_dir / 'summary.json'}"
     )
     return summary
 
 
-class Arguments(Protocol):
-    samples: Path
-    metadata: Path
-    output_dir: Path
-    no_plots: bool
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Measure exact canonical E1 energy laws from production Source records."
     )
-    _ = parser.add_argument("--samples", type=Path, required=True)
-    _ = parser.add_argument("--metadata", type=Path, required=True)
-    _ = parser.add_argument("--output-dir", type=Path, required=True)
-    _ = parser.add_argument("--no-plots", action="store_true")
-    args = cast(Arguments, cast(object, parser.parse_args()))
-    _ = analyze_case(
+    parser.add_argument("--samples", type=Path, required=True)
+    parser.add_argument("--metadata", type=Path, required=True)
+    parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--no-plots", action="store_true")
+    args = parser.parse_args()
+    analyze_case(
         args.samples, args.metadata, args.output_dir, make_figures=not args.no_plots
     )
 

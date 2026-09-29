@@ -1,8 +1,36 @@
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Plot GGEMS Source frame validation results.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from cases import FrameCase  # pyright: ignore[reportImplicitRelativeImport]
+from cases import FrameCase
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
 
@@ -12,21 +40,23 @@ type IntArray = NDArray[np.int64]
 
 def density(axis: Axes, x: FloatArray, y: FloatArray, xlabel: str, ylabel: str) -> None:
     if x.size:
-        _ = axis.hist2d(x, y, bins=40)
+        axis.hist2d(x, y, bins=40)
     else:
-        _ = axis.text(
+        axis.text(
             0.5, 0.5, "No defined azimuths", ha="center", transform=axis.transAxes
         )
-    _ = axis.set(xlabel=xlabel, ylabel=ylabel)
+
+    axis.set(xlabel=xlabel, ylabel=ylabel)
     axis.set_aspect("equal", adjustable="box")
 
 
 def empirical_cdf(axis: Axes, values: FloatArray, label: str) -> None:
     if not values.size:
         return
+
     distinct, counts = np.unique(values, return_counts=True)
     probability = np.cumsum(counts, dtype=np.float64) / values.size
-    _ = axis.step(
+    axis.step(
         np.concatenate((distinct[:1], distinct)),
         np.concatenate((np.array([0.0]), probability)),
         where="post",
@@ -41,20 +71,21 @@ def uniform_panels(
         if values.size:
             # Automatic data bounds include excursions; do not limit the data
             # range to [0,1] or renormalize after discarding observations.
-            _ = density_axis.hist(
+            density_axis.hist(
                 values, bins=30, density=True, histtype="step", label=name
             )
             empirical_cdf(cdf_axis, values, name)
-    _ = density_axis.plot([0.0, 1.0], [1.0, 1.0], "--", label="Ideal U(0,1)")
-    _ = cdf_axis.plot([0.0, 1.0], [0.0, 1.0], "--", label="Ideal U(0,1)")
-    _ = density_axis.set(
+
+    density_axis.plot([0.0, 1.0], [1.0, 1.0], "--", label="Ideal U(0,1)")
+    cdf_axis.plot([0.0, 1.0], [0.0, 1.0], "--", label="Ideal U(0,1)")
+    density_axis.set(
         xlabel="Recovered local uniform coordinate", ylabel="Probability density"
     )
-    _ = cdf_axis.set(
+    cdf_axis.set(
         xlabel="Recovered local uniform coordinate", ylabel="Cumulative probability"
     )
-    _ = density_axis.legend()
-    _ = cdf_axis.legend()
+    density_axis.legend()
+    cdf_axis.legend()
 
 
 def plot_frame(
@@ -69,6 +100,7 @@ def plot_frame(
     # assessed by provenance-paired JSON comparisons.
     if not case.statistical:
         return []
+
     geometry_only = case.name == "G2_rectangle_oblique"
     figure = plt.figure(
         figsize=(13, 8) if geometry_only else (13, 4.5), layout="constrained"
@@ -109,7 +141,7 @@ def plot_frame(
                 "Recovered local u_phi",
                 "Recovered local u_cos",
             )
-            _ = axes[0].set_title("Equal solid angle coordinates")
+            axes[0].set_title("Equal solid angle coordinates")
             uniform_panels(
                 axes[1],
                 axes[2],
@@ -123,16 +155,17 @@ def plot_frame(
                 "Recovered local X [mm]",
                 "Recovered local Y [mm]",
             )
-            _ = axes[1].hist(variables["miss_distance_pm"], bins=30, histtype="step")
-            _ = axes[1].set(
+            axes[1].hist(variables["miss_distance_pm"], bins=30, histtype="step")
+            axes[1].set(
                 xlabel="Global focus miss distance [pm]", ylabel="Source primary count"
             )
             empirical_cdf(axes[2], variables["angular_error_rad"], "Observed error")
-            _ = axes[2].set(
+            axes[2].set(
                 xlabel="Direction angular error [rad]",
                 ylabel="Empirical cumulative probability",
             )
-        _ = figure.suptitle(
+
+        figure.suptitle(
             f"{case.name}: N={positions.shape[0]:,}; actual packed frame; no statistical threshold"
         )
         paths: list[str] = []
@@ -140,6 +173,7 @@ def plot_frame(
             path = output / f"frame.{extension}"
             figure.savefig(path, dpi=180)
             paths.append(str(path.resolve()))
+
         return paths
     finally:
         plt.close(figure)

@@ -1,5 +1,33 @@
 #!/usr/bin/env python3
 
+# *****************************************************************************
+# * This file is part of GGEMS.                                               *
+# *                                                                           *
+# * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+# * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+# * Inserm.                                                                   *
+# *                                                                           *
+# * GGEMS is free software: you can redistribute it and/or modify             *
+# * it under the terms of the GNU General Public License as published by      *
+# * the Free Software Foundation, either version 3 of the License, or         *
+# * (at your option) any later version.                                       *
+# *                                                                           *
+# * GGEMS is distributed in the hope that it will be useful,                  *
+# * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+# * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+# * GNU General Public License for more details.                              *
+# *                                                                           *
+# * You should have received a copy of the GNU General Public License         *
+# * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+# *****************************************************************************
+
+"""Aggregate GGEMS Dieharder campaign results.
+
+Authors:
+    Julien BERT <julien.bert@univ-brest.fr>
+    Didier BENOIT <didier.benoit@inserm.fr>
+"""
+
 import argparse
 import csv
 import json
@@ -7,7 +35,6 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol, cast
 
 # ------------------------------------------------------------------------------
 
@@ -117,21 +144,11 @@ class AnomalyRecord:
 # ------------------------------------------------------------------------------
 
 
-class Arguments(Protocol):
-    campaign_dir: Path | None
-    output_dir: Path | None
-    top: int
-    no_write: bool
-
-
-# ------------------------------------------------------------------------------
-
-
-def ParseArguments() -> Arguments:
+def ParseArguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Aggregate the fixed GGEMS Dieharder validation campaign."
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--campaign-dir",
         type=Path,
         help=(
@@ -139,23 +156,23 @@ def ParseArguments() -> Arguments:
             + "Defaults to validation/random/results/dieharder/campaign."
         ),
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--output-dir",
         type=Path,
         help="Aggregate output directory. Defaults to <campaign-dir>/aggregate.",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--top",
         type=int,
         default=15,
         help="Number of recurrent primary anomaly tests to print (default: 15).",
     )
-    _ = parser.add_argument(
+    parser.add_argument(
         "--no-write",
         action="store_true",
         help="Print the report without writing JSON or CSV files.",
     )
-    return cast(Arguments, cast(object, parser.parse_args()))
+    return parser.parse_args()
 
 
 # ------------------------------------------------------------------------------
@@ -173,12 +190,7 @@ def ResolveCampaignDirectory(requested: Path | None) -> Path:
         return requested.expanduser().resolve()
 
     return (
-        ProjectRoot()
-        / "validation"
-        / "random"
-        / "results"
-        / "dieharder"
-        / "campaign"
+        ProjectRoot() / "validation" / "random" / "results" / "dieharder" / "campaign"
     ).resolve()
 
 
@@ -187,14 +199,14 @@ def ResolveCampaignDirectory(requested: Path | None) -> Path:
 
 def LoadJson(path: Path) -> JsonObject:
     try:
-        value = cast(object, json.loads(path.read_text(encoding="utf-8")))
+        value = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as error:
         raise RuntimeError(f"Failed to read JSON file {path}: {error}") from error
 
     if not isinstance(value, dict):
         raise TypeError(f"Expected a JSON object in {path}.")
 
-    return cast(JsonObject, value)
+    return value
 
 
 # ------------------------------------------------------------------------------
@@ -204,7 +216,7 @@ def RequireObject(section: JsonObject, key: str, context: str) -> JsonObject:
     value = section.get(key)
     if not isinstance(value, dict):
         raise TypeError(f"Expected object field '{key}' for {context}.")
-    return cast(JsonObject, value)
+    return value
 
 
 # ------------------------------------------------------------------------------
@@ -214,7 +226,7 @@ def RequireList(section: JsonObject, key: str, context: str) -> list[object]:
     value = section.get(key)
     if not isinstance(value, list):
         raise TypeError(f"Expected array field '{key}' for {context}.")
-    return cast(list[object], value)
+    return value
 
 
 # ------------------------------------------------------------------------------
@@ -364,7 +376,7 @@ def CountAssessmentObjects(
         if not isinstance(value, dict):
             raise TypeError(f"Invalid assessment object for {case_id}.")
 
-        assessment = cast(JsonObject, value)
+        assessment = value
         context = f"assessment in {case_id}"
         assessment_name = RequireString(assessment, "assessment", context)
         reliability = RequireString(assessment, "reliability", context)
@@ -411,7 +423,7 @@ def BuildAnomalies(
         if not isinstance(value, dict):
             raise TypeError(f"Invalid assessment object for {case.case_id}.")
 
-        assessment = cast(JsonObject, value)
+        assessment = value
         context = f"assessment in {case.case_id}"
         assessment_name = RequireString(assessment, "assessment", context)
 
@@ -517,9 +529,7 @@ def LoadCase(
         )
 
     assessment_counts = RequireObject(output, "assessment_counts", case_id)
-    primary_summary_counts = RequireObject(
-        output, "primary_assessment_counts", case_id
-    )
+    primary_summary_counts = RequireObject(output, "primary_assessment_counts", case_id)
 
     for assessment_name in ASSESSMENT_ORDER:
         if (
@@ -553,9 +563,7 @@ def LoadCase(
         layout=expected.layout,
         stream_offset=expected.stream_offset,
         worker_count=RequireInt(summary_input, "worker_count", case_id),
-        samples_per_worker=RequireInt(
-            summary_input, "samples_per_worker", case_id
-        ),
+        samples_per_worker=RequireInt(summary_input, "samples_per_worker", case_id),
         byte_count=RequireInt(summary_input, "byte_count", case_id),
         status=status,
         outcome=OutcomeFromPrimaryCounts(primary_counts),
@@ -567,9 +575,7 @@ def LoadCase(
         primary_weak_count=primary_counts["WEAK"],
         primary_failed_count=primary_counts["FAILED"],
         elapsed_seconds=OptionalNumber(output, "elapsed_seconds", case_id),
-        input_file_offset_bytes=OptionalInt(
-            output, "input_file_offset_bytes", case_id
-        ),
+        input_file_offset_bytes=OptionalInt(output, "input_file_offset_bytes", case_id),
         remaining_input_bytes=OptionalInt(output, "remaining_input_bytes", case_id),
         dieharder_version=dieharder_version,
         tool_return_code=tool_return_code,
@@ -742,9 +748,7 @@ def PrintReport(
     )
     for engine, layout in layout_keys:
         selected = [
-            case
-            for case in cases
-            if case.engine == engine and case.layout == layout
+            case for case in cases if case.engine == engine and case.layout == layout
         ]
         counts = CountAssessments(selected, primary=True)
         print(
@@ -828,7 +832,9 @@ def PrintReport(
         print("Execution metrics")
         print()
         print(f"Timed cases         : {len(elapsed_values)}")
-        print(f"Mean elapsed        : {sum(elapsed_values) / len(elapsed_values):.3f} s")
+        print(
+            f"Mean elapsed        : {sum(elapsed_values) / len(elapsed_values):.3f} s"
+        )
         print(f"Min elapsed         : {min(elapsed_values):.3f} s")
         print(f"Max elapsed         : {max(elapsed_values):.3f} s")
 
@@ -915,7 +921,9 @@ def AnomalyToJson(anomaly: AnomalyRecord) -> JsonObject:
 # ------------------------------------------------------------------------------
 
 
-def BuildAggregate(cases: list[CaseRecord], anomalies: list[AnomalyRecord]) -> JsonObject:
+def BuildAggregate(
+    cases: list[CaseRecord], anomalies: list[AnomalyRecord]
+) -> JsonObject:
     sample = cases[0]
     by_engine: JsonObject = {}
 
@@ -961,9 +969,7 @@ def BuildAggregate(cases: list[CaseRecord], anomalies: list[AnomalyRecord]) -> J
         key=lambda item: (ENGINE_ORDER.index(item[0]), item[1]),
     ):
         selected = [
-            case
-            for case in cases
-            if case.engine == engine and case.layout == layout
+            case for case in cases if case.engine == engine and case.layout == layout
         ]
         by_engine_layout[f"{engine}/{layout}"] = {
             "case_count": len(selected),
@@ -1037,8 +1043,8 @@ def BuildAggregate(cases: list[CaseRecord], anomalies: list[AnomalyRecord]) -> J
         runtime["elapsed_seconds_min"] = min(elapsed_values)
         runtime["elapsed_seconds_max"] = max(elapsed_values)
     if remaining_values:
-        runtime["remaining_input_bytes_mean"] = (
-            sum(remaining_values) / len(remaining_values)
+        runtime["remaining_input_bytes_mean"] = sum(remaining_values) / len(
+            remaining_values
         )
         runtime["remaining_input_bytes_min"] = min(remaining_values)
         runtime["remaining_input_bytes_max"] = max(remaining_values)
@@ -1083,14 +1089,14 @@ def BuildAggregate(cases: list[CaseRecord], anomalies: list[AnomalyRecord]) -> J
 
 
 def CaseToRow(case: CaseRecord) -> CsvRow:
-    return cast(CsvRow, CaseToJson(case))
+    return CaseToJson(case)
 
 
 # ------------------------------------------------------------------------------
 
 
 def AnomalyToRow(anomaly: AnomalyRecord) -> CsvRow:
-    return cast(CsvRow, AnomalyToJson(anomaly))
+    return AnomalyToJson(anomaly)
 
 
 # ------------------------------------------------------------------------------
@@ -1099,14 +1105,14 @@ def AnomalyToRow(anomaly: AnomalyRecord) -> CsvRow:
 def WriteCsv(path: Path, rows: list[CsvRow]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if not rows:
-        _ = path.write_text("", encoding="utf-8")
+        path.write_text("", encoding="utf-8")
         return
 
     with path.open("w", encoding="utf-8", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=list(rows[0].keys()))
-        _ = cast(object, writer.writeheader())
+        writer.writeheader()
         for row in rows:
-            _ = cast(object, writer.writerow(row))
+            writer.writerow(row)
 
 
 # ------------------------------------------------------------------------------
@@ -1122,7 +1128,7 @@ def WriteOutputs(
     cases_path = output_dir / "cases.csv"
     anomalies_path = output_dir / "anomalies.csv"
 
-    _ = summary_path.write_text(
+    summary_path.write_text(
         json.dumps(BuildAggregate(cases, anomalies), indent=2) + "\n",
         encoding="utf-8",
     )

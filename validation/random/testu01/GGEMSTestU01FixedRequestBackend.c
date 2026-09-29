@@ -21,8 +21,6 @@
 
 /*!
  * \file
- * \brief Implements a non-statistical fixed-request TestU01 transport probe.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -39,6 +37,7 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -91,8 +90,8 @@ typedef struct {
 // =============================================================================
 
 const char ggems_testu01_fixed_request_backend_identity[] =
-    "GGEMS_TESTU01_FIXED_REQUEST_BACKEND_V1; no TestU01 statistical battery "
-    "was executed";
+  "GGEMS_TESTU01_FIXED_REQUEST_BACKEND_V1; no TestU01 statistical battery "
+  "was executed";
 
 // =============================================================================
 // =============================================================================
@@ -105,10 +104,10 @@ int bbattery_NTests;
 // =============================================================================
 
 static char smallcrush_names[SMALLCRUSH_SLOT_COUNT][TESTU01_NAME_CAPACITY] = {
-    "BirthdaySpacings", "Collision",     "Gap",           "SimpPoker",
-    "CouponCollector",  "MaxOft",        "MaxOft AD",     "WeightDistrib",
-    "MatrixRank",       "HammingIndep",  "RandomWalk1 H", "RandomWalk1 M",
-    "RandomWalk1 J",    "RandomWalk1 R", "RandomWalk1 C",
+  "BirthdaySpacings", "Collision",     "Gap",           "SimpPoker",
+  "CouponCollector",  "MaxOft",        "MaxOft AD",     "WeightDistrib",
+  "MatrixRank",       "HammingIndep",  "RandomWalk1 H", "RandomWalk1 M",
+  "RandomWalk1 J",    "RandomWalk1 R", "RandomWalk1 C",
 };
 
 // =============================================================================
@@ -116,11 +115,7 @@ static char smallcrush_names[SMALLCRUSH_SLOT_COUNT][TESTU01_NAME_CAPACITY] = {
 
 static unsigned int (*external_callback)(void) = NULL;
 static unif01_Gen external_generator = {0};
-static TraceState trace_state = {
-    .descriptor = -1,
-    .begin = 0,
-    .end = 0,
-};
+static TraceState trace_state = {.descriptor = -1};
 static uint64_t requested_word_count = 0;
 static uint64_t returned_word_count = 0;
 static bool trace_cleanup_registered = false;
@@ -252,12 +247,11 @@ static bool parse_uint64_decimal(const char *text, uint64_t *value) {
 static void open_trace(void) {
   const char *const word_count_text = getenv("GGEMS_FIXED_REQUEST_WORD_COUNT");
   const char *const trace_path = getenv("GGEMS_FIXED_REQUEST_TRACE_PATH");
-  int descriptor = -1;
 
   if (word_count_text == NULL ||
       !parse_uint64_decimal(word_count_text, &requested_word_count)) {
     fail_technical(
-        "GGEMS_FIXED_REQUEST_WORD_COUNT must be a canonical uint64 decimal");
+      "GGEMS_FIXED_REQUEST_WORD_COUNT must be a canonical uint64 decimal");
   }
   if (trace_path == NULL || trace_path[0] == '\0' ||
       strcmp(trace_path, "-") == 0) {
@@ -270,8 +264,8 @@ static void open_trace(void) {
     trace_cleanup_registered = true;
   }
 
-  descriptor = open(trace_path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC,
-                    S_IRUSR | S_IWUSR);
+  const int descriptor = open(
+    trace_path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, S_IRUSR | S_IWUSR);
   if (descriptor < 0) {
     const int open_errno = errno;
     fail_technical_errno("could not create the callback trace exclusively",
@@ -296,11 +290,11 @@ static void append_trace_word(uint32_t word) {
 
   trace_state.buffer[trace_state.end] = (uint8_t)(word & UINT32_C(0xff));
   trace_state.buffer[trace_state.end + 1U] =
-      (uint8_t)((word >> BYTE_SHIFT_1) & UINT32_C(0xff));
+    (uint8_t)((word >> BYTE_SHIFT_1) & UINT32_C(0xff));
   trace_state.buffer[trace_state.end + 2U] =
-      (uint8_t)((word >> BYTE_SHIFT_2) & UINT32_C(0xff));
+    (uint8_t)((word >> BYTE_SHIFT_2) & UINT32_C(0xff));
   trace_state.buffer[trace_state.end + 3U] =
-      (uint8_t)((word >> BYTE_SHIFT_3) & UINT32_C(0xff));
+    (uint8_t)((word >> BYTE_SHIFT_3) & UINT32_C(0xff));
   trace_state.end += sizeof(uint32_t);
 
   if (trace_state.end == TRACE_BUFFER_SIZE && !flush_trace_buffer()) {
@@ -314,8 +308,6 @@ static void append_trace_word(uint32_t word) {
 // =============================================================================
 
 static void close_trace(void) {
-  int descriptor = -1;
-
   if (trace_state.descriptor < 0) {
     fail_technical("the callback trace was not open at normal completion");
   }
@@ -324,7 +316,7 @@ static void close_trace(void) {
     fail_technical_errno("flushing the callback trace failed", write_errno);
   }
 
-  descriptor = trace_state.descriptor;
+  const int descriptor = trace_state.descriptor;
   trace_state.descriptor = -1;
   if (close(descriptor) != 0) {
     const int close_errno = errno;
@@ -338,8 +330,6 @@ static void close_trace(void) {
 // The TestU01 unif01_Gen.GetBits ABI fixes two adjacent void-pointer
 // parameters; changing that signature would invalidate the interposition.
 static unsigned long get_bits(void *parameter, void *state) {
-  unsigned int callback_word = 0;
-
   (void)parameter;
   (void)state;
 
@@ -350,7 +340,7 @@ static unsigned long get_bits(void *parameter, void *state) {
     fail_technical("the fixed-request backend received an extra word request");
   }
 
-  callback_word = external_callback();
+  const unsigned int callback_word = external_callback();
   append_trace_word((uint32_t)callback_word);
   ++returned_word_count;
   return (unsigned long)callback_word;
@@ -395,10 +385,8 @@ void unif01_DeleteExternGenBits(unif01_Gen *generator) {
 // =============================================================================
 
 static void populate_smallcrush_results(void) {
-  int index = 0;
-
   bbattery_NTests = SMALLCRUSH_SLOT_COUNT;
-  for (index = 0; index < SMALLCRUSH_SLOT_COUNT; ++index) {
+  for (int index = 0; index < SMALLCRUSH_SLOT_COUNT; ++index) {
     bbattery_TestNames[index] = smallcrush_names[index];
     bbattery_pVal[index] = fixed_probe_p_value;
   }
@@ -432,7 +420,7 @@ void bbattery_SmallCrush(unif01_Gen *generator) {
   open_trace();
   while (returned_word_count < requested_word_count) {
     const unsigned long word =
-        generator->GetBits(generator->param, generator->state);
+      generator->GetBits(generator->param, generator->state);
 
     if (word > (unsigned long)UINT32_MAX) {
       fail_technical("the TestU01 GetBits adapter returned more than 32 bits");

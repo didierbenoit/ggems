@@ -46,51 +46,16 @@ cover `0..N-1` separately in each Run. The analyzer checks relative progression;
 it does not prescribe an absolute first Run-id number or derive global ids from
 `run_id * N`.
 
-## Production authorities
+## Sample extraction
 
-The executed path is:
+Birth times are read from raw Source records captured immediately after
+production OpenCL primary initialization. The exporter compares them with the
+committed Source snapshot for each Run; Python then checks exact integer times.
 
-```text
-GGEMSRun::SetTimePicoSecond / ordinary static mode
-    -> one Initialize(), sequential Run(), optional ResetTime()
-    -> GGEMSSourceRunSnapshot and copied GGEMSSourceRecord time bounds
-    -> production particle_stream_transport.cl
-    -> GGEMS_SourceTryInitializePrimary / GGEMS_SourceSampleTimePs
-    -> raw GGEMSObserverRecord of kind Source
-    -> ggems_source_sample_exporter
-    -> exact Python integer analysis
-```
+## Exporter options and sequence files
 
-Relevant current implementation and focused evidence:
-
-- `src/GGEMSRun.cc`: effective-window ownership, success-only clock advancement,
-  snapshot publication, Observer result replacement, and clock-only reset.
-- `include/GGEMS/GGEMSTimeWindow.hh`: canonical uint64 ps bounds.
-- `src/sources/GGEMSSourceRunSnapshot.cc`: window injection into copied records;
-  the attached Source objects are not mutated.
-- `include/GGEMS/sources/GGEMSSourceRunSnapshot.hh`: owned snapshot copy,
-  `GetTimeWindow()`, and `GetRecords()`.
-- `kernels/sources/GGEMSSource.clh`: CountDriven returns `time_start_ps` without
-  drawing randomness or using the stop to distribute births.
-- `kernels/transport/particle_stream_transport.cl` and
-  `kernels/observer/GGEMSObserverRecord.clh`: Source capture immediately after
-  primary initialization, including exact birth time and actual provenance.
-- `src/particles/GGEMSPrimaryStream.cc`: reservation of monotone global primary
-  ranges independently of the Run labels.
-- `tests/GGEMSRunTest.cc`: repeated static Runs, shortened configured windows,
-  reset, zero-count windows, exhaustion, and last-successful snapshot behavior.
-- `tests/sources/GGEMSSourceRunSnapshotTest.cc` and
-  `tests/transport/GGEMSDummyTransportWorkloadTest.cc`: copied-window and
-  window-start propagation evidence. T1 itself uses production transport.
-
-Existing focused lifecycle tests explain the contract. They are not the T1
-scientific result and are not duplicated as additional campaign cases.
-
-## Exporter interface and harvesting
-
-The existing `ggems_source_sample_exporter` executable serves G1, A1, E1, and
-T1. The single-Run CSV schema has no statistical-weight column (analog
-transport; older CSV files with a `weight` column must be regenerated):
+The shared `ggems_source_sample_exporter` executable produces single-Run CSV
+files with these fields:
 
 ```text
 source_index,source_local_primary_id,global_primary_id,x_pm,y_pm,z_pm,direction_x,direction_y,direction_z,energy_micro_eV,time_ps,record_kind
@@ -101,7 +66,7 @@ quantities remain exact decimal integers. Direction serialization
 retains binary32 `max_digits10` precision. The human-readable Observer dump is
 never scientific input.
 
-New CLI options are:
+Chronology options are:
 
 ```text
 --chronology static|configured                 # default static
@@ -120,34 +85,19 @@ The sequence directory and manifest must not already exist. `--output` and
 `[1, sequence-runs)`. Time parameters in static mode, incomplete configured
 triples, repeated flags, and invalid indices are rejected explicitly.
 
-Start/stop use central `MakeQuantity<TimePoint>(value, "ns")`; step uses
-`MakeQuantity<Duration>(value, "ns")`. `GGEMSRun::SetTimePicoSecond` validates the
-canonical configured interval. GGEMS alone calculates effective windows and
-advances the clock. There is no Source time setter or local C++ conversion
-factor.
+GGEMS converts the requested nanoseconds to integer picoseconds, calculates
+the effective windows, and advances the Run clock. After each successful Run,
+the exporter checks the snapshot bounds, Observer counts, and complete primary
+identifiers, then writes `run_000.csv`, `run_001.csv`, or `run_002.csv` and the
+corresponding metadata.
 
-The exporter harvests each successful logical Run immediately:
-
-1. Take the owned copy returned by `GetLastSourceRunSnapshot()`.
-2. Verify its window equals the copied Source-record bounds.
-3. Check Observer counts and select raw Source records; verify actual particle
-   and Run ids on every selected raw record.
-4. Check complete per-Run provenance and continuation from the preceding Run.
-5. Write `run_000.csv`, `run_001.csv`, or `run_002.csv`, then serialize that
-   Run's metadata before the next `Run()` call replaces the public result.
-
-Only pointers into the current Observer result are used during that iteration;
-none survive into the next Run. The exporter does not substitute subsequently
-mutated live Source state for the committed snapshot. A failed extraction does
-not produce a valid complete sequence manifest; the campaign runner stops.
-
-Without time-specific options, the existing single-Run static behavior, sample
-schema, defaults, device-selector delegation, and G1/A1/E1 configuration remain
-compatible. Extra metadata fields are additive.
+A failed extraction stops the campaign without producing a valid complete
+sequence manifest. Without chronology options, the exporter produces a single
+static Run.
 
 ## Metadata and exact analysis
 
-The sequence manifest `metadata.json` separates three authorities:
+The sequence manifest `metadata.json` contains three configuration descriptions:
 
 - Requested configuration: `requested_time_ns`, ordered as start/stop/step;
   null for ordinary static chronology.
@@ -198,13 +148,14 @@ different windows.
 
 ## Build and run
 
-Build the existing exporter target using the project's configured toolchain.
-For a patch-only workflow, these commands must be run from a candidate mirror
-inside `codex_scratch/`, with an out-of-source build there:
+See the [shared build and prerequisites](../README.md#build-and-prerequisites)
+for Windows paths, build configurations, and Python dependencies.
+
+Build the existing exporter target using the project's configured toolchain:
 
 ```text
 cmake --build build --target ggems_source_sample_exporter
-python validation/source/time/run_campaign.py --exporter build/validation/source/ggems_source_sample_exporter.exe --device 0 --primaries 256 --workers 64 --seed 77777 --output-dir validation/source/results/time/smoke
+python validation/source/time/run_campaign.py --exporter build/validation/source/ggems_source_sample_exporter --device 0 --primaries 256 --workers 64 --seed 77777 --output-dir validation/source/results/time/example
 ```
 
 The executable suffix/path depends on the platform and build configuration.
@@ -216,7 +167,7 @@ be new, so an unsuccessful extraction cannot inherit old results.
 For direct configured-sequence extraction:
 
 ```text
-ggems_source_sample_exporter --device 0 --geometry point --angular fixed --energy-mode mono --mono-energy-kev 511 --primaries 256 --workers 64 --seed 77777 --case-name T1_configured_windows --chronology configured --time-start-ns 10 --time-stop-ns 65 --time-step-ns 20 --sequence-runs 3 --sequence-dir output/runs --metadata output/metadata.json
+build/validation/source/ggems_source_sample_exporter --device 0 --geometry point --angular fixed --energy-mode mono --mono-energy-kev 511 --primaries 256 --workers 64 --seed 77777 --case-name T1_configured_windows --chronology configured --time-start-ns 10 --time-stop-ns 65 --time-step-ns 20 --sequence-runs 3 --sequence-dir output/runs --metadata output/metadata.json
 ```
 
 Create the parent `output/` directory first. To analyze that capture separately,
@@ -229,11 +180,11 @@ python validation/source/time/analyze.py --metadata output/metadata.json --outpu
 The exact analysis uses the Python standard library. Matplotlib from the
 existing project environment generates the optional configured/reset figures;
 `--no-plots` avoids importing Matplotlib and its NumPy dependency. SciPy is not
-required. Do not install packages automatically.
+required.
 
 Default `256` primaries per Run and `64` workers are sufficient. Large
-publication-scale counts add no meaningful information to exact time equality
-and waste the temporary Observer path's storage and dump-construction work.
+sample counts add no information to exact time equality and increase capture
+storage and runtime.
 
 ## Figures, checks, and scope
 
@@ -244,37 +195,10 @@ chronological endpoint. The final shortened window and the reset operation are
 annotated. Static time is summary-only. No thousands of identical birth points
 or time-distribution histogram are plotted.
 
-Project checks for the candidate:
-
-```text
-python -m py_compile validation/source/time/cases.py validation/source/time/run_campaign.py validation/source/time/analyze.py validation/source/time/plot.py
-ruff check --no-cache validation/source/time/
-ruff format --check --no-cache validation/source/time/
-basedpyright --pythonpath <existing-project-python> validation/source/time/
-python clangd-check.py validation/source/tools/GGEMSSourceSampleExporter.cc
-clang-format --dry-run --Werror validation/source/tools/GGEMSSourceSampleExporter.cc
-```
-
-Inspect diagnostics, including those emitted by `clangd-check.py` despite a
-successful exit. The explicit CLI parser and Run harvesting may trigger
-complexity heuristics. Partially typed Matplotlib APIs may produce unknown-type
-warnings; do not suppress them merely to obtain a zero-warning result.
-
-Implementation validation uses all three T1 smokes plus the unchanged G1 Point,
-A1 Fixed, and E1 Mono scripts against the modified exporter. Scratch-only
-analysis probes cover malformed CSV, missing Run data, duplicate provenance,
-wrong snapshot start/stop, one wrong birth, multiple distinct births, the shortened
-final window, reset with continuing ids, overlapping reset ranges, and unordered
-sequence metadata. They also check exact integer ids beyond binary64's consecutive
-integer range and reject float-form time fields.
-
-Generated CSV, JSON, PNG, PDF, logs, probes, and caches stay in the ignored
-results area or a caller-selected scratch directory. Only code and documentation
-belong in the patch.
+Generated CSV, JSON, PNG/PDF figures, and logs go under the selected results
+directory. Keep sequence metadata together with its referenced CSV files.
 
 T1 does not validate ActivityDriven, radionuclides, decay-time laws, time of
 flight, transport time, RNG replay, realistic 120 kVp spectra, or G2/A2 pose/frame
-behavior. Multi-device and failure/exhaustion lifecycle coverage remain the
-domain of the existing focused tests; the T1 smoke result is limited to the
-selected device and these three successful canonical sequences. No scientific
-acceptance threshold remains to choose for this exact CountDriven time law.
+behavior. Results describe the selected devices and the three configured
+sequences above.
