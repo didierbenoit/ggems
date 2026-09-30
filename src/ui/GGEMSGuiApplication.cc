@@ -116,6 +116,21 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+[[nodiscard]] auto GetFramebufferExtent(GLFWwindow *window) -> vk::Extent2D {
+  int width{0};
+  int height{0};
+
+  glfwGetFramebufferSize(window, &width, &height);
+
+  return vk::Extent2D{
+    .width = static_cast<std::uint32_t>(width),
+    .height = static_cast<std::uint32_t>(height),
+  };
+}
+
+// =============================================================================
+// =============================================================================
+
 [[nodiscard]] auto GetGLFWErrorMessage(std::string_view context)
   -> std::string {
   char const *description{nullptr};
@@ -277,8 +292,8 @@ auto GGEMSGuiApplication::Initialize() -> void {
       device_ =
         std::make_unique<detail::GGEMSVulkanDevice>(window_, device_selector);
 
-      presenter_ =
-        std::make_unique<detail::GGEMSVulkanPresenter>(*device_, window_);
+      presenter_ = std::make_unique<detail::GGEMSVulkanPresenter>(
+        *device_, GetFramebufferExtent(window_));
 
       imgui_integration_ = std::make_unique<detail::GGEMSImGuiIntegration>();
       imgui_integration_->Initialize(
@@ -323,15 +338,26 @@ void GGEMSGuiApplication::Run() {
       "GGEMS GuiMode must be initialized before entering its event loop.");
   }
 
+  if (rendering_failed_) {
+    throw ggems::core::GGEMSRecoverable(
+      "GGEMS GuiMode rendering cannot resume after a terminal frame "
+      "failure.");
+  }
+
   GGEMS_INFOEX("Gui", 1, "GGEMS GuiMode event loop started.");
 
-  while (glfwWindowShouldClose(window_) == GLFW_FALSE) {
-    glfwPollEvents();
+  try {
+    while (glfwWindowShouldClose(window_) == GLFW_FALSE) {
+      glfwPollEvents();
 
-    bool framebuffer_resized = framebuffer_resized_;
-    framebuffer_resized_ = false;
+      bool framebuffer_resized = framebuffer_resized_;
+      framebuffer_resized_ = false;
 
-    RenderFrame(framebuffer_resized);
+      RenderFrame(framebuffer_resized);
+    }
+  } catch (...) {
+    rendering_failed_ = true;
+    throw;
   }
 
   GGEMS_INFOEX("Gui", 1, "GGEMS GuiMode event loop stopped.");
@@ -390,7 +416,19 @@ auto GGEMSGuiApplication::RenderFrame(bool framebuffer_resized) -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSGuiApplication::RecreateSwapchain() -> void {
-  presenter_->RecreateSwapchain(window_);
+  vk::Extent2D framebuffer_extent = GetFramebufferExtent(window_);
+
+  while ((framebuffer_extent.width == 0U || framebuffer_extent.height == 0U) &&
+         glfwWindowShouldClose(window_) == GLFW_FALSE) {
+    glfwWaitEventsTimeout(0.1);
+    framebuffer_extent = GetFramebufferExtent(window_);
+  }
+
+  if (glfwWindowShouldClose(window_) == GLFW_TRUE) {
+    return;
+  }
+
+  presenter_->RecreateSwapchain(framebuffer_extent);
   imgui_integration_->UpdateVulkanBackend(BuildImGuiBackendEpoch(*presenter_));
 }
 

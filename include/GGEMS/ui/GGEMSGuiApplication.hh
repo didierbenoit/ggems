@@ -99,6 +99,7 @@ private:
 
   bool glfw_initialized_{false};
   bool framebuffer_resized_{false};
+  bool rendering_failed_{false};
   bool missing_observer_warning_emitted_{false};
 };
 
