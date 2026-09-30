@@ -5,7 +5,6 @@
 #include <span>
 #include <vector>
 
-#include <imgui.h>
 #include <vulkan/vulkan_raii.hpp>
 
 #include "GGEMSVulkanCamera.hh"
@@ -37,7 +36,7 @@ public:
   auto Shutdown() -> void;
 
   auto SetViewportExtent(vk::Extent2D const &extent) -> void;
-  auto RecreateRenderTargetsIfNeeded() -> void;
+  auto RecreateRenderTargets() -> void;
 
   [[nodiscard]] auto IsInitialized() const noexcept -> bool;
   [[nodiscard]] auto RequiresResize() const noexcept -> bool;
@@ -45,7 +44,6 @@ public:
   [[nodiscard]] auto GetColorFormat() const noexcept -> vk::Format;
   [[nodiscard]] auto GetColorImageView() const noexcept -> vk::ImageView;
 
-  [[nodiscard]] auto GetTextureID() const noexcept -> ImTextureID;
   auto RecordSceneCommands(
     vk::raii::CommandBuffer const &command_buffer,
     ggems::render::GGEMSParticleTraceVisibility const &visibility) -> void;
@@ -115,8 +113,6 @@ private:
 
   bool initialized_{false};
   bool requires_resize_{false};
-
-  VkDescriptorSet imgui_descriptor_set_{VK_NULL_HANDLE};
 
   vk::raii::ShaderModule axes_vertex_shader_module_{nullptr};
   vk::raii::ShaderModule axes_fragment_shader_module_{nullptr};

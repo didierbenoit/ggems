@@ -11,6 +11,7 @@
 #include "GGEMSImGuiLayer.hh"
 #include "GGEMSVulkanSceneRenderer.hh"
 #include "GGEMSVulkanDeviceSelection.hh"
+#include "detail/GGEMSImGuiIntegration.hh"
 
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
@@ -149,16 +150,13 @@ private:
   auto CleanupSwapchain() -> void;
   auto RecreateSwapchain(GLFWwindow *window) -> void;
 
-  auto CreateImGuiDescriptorPool() -> void;
-  auto InitializeImGui(GLFWwindow *window) -> void;
-  auto ShutdownImGui() noexcept -> void;
+  [[nodiscard]] auto BuildImGuiBackendEpoch() const noexcept
+    -> detail::GGEMSImGuiIntegration::VulkanBackendEpoch;
+
   auto BuildImGuiFrame() -> void;
+  auto RecreateSceneRenderTargets() -> void;
   auto ApplyPendingSourceRunSnapshot() -> void;
   auto ApplyPendingParticleTraceSegments() -> void;
-
-  auto LoadImGuiFonts() -> void;
-
-  static auto CheckImGuiVkResult(VkResult result) noexcept -> void;
 
   auto InitializeSceneRenderer() -> void;
   auto ShutdownSceneRenderer() -> void;
@@ -171,7 +169,6 @@ private:
   vk::raii::Device device_{nullptr};
   vk::raii::Queue graphics_queue_{nullptr};
   vk::raii::Queue presentation_queue_{nullptr};
-  vk::raii::DescriptorPool imgui_descriptor_pool_{nullptr};
   vk::raii::CommandPool command_pool_{nullptr};
   vk::raii::SwapchainKHR swapchain_{nullptr};
   std::vector<vk::Image> swapchain_images_;
@@ -187,9 +184,7 @@ private:
   vk::Format swapchain_image_format_{vk::Format::eUndefined};
   vk::Extent2D swapchain_extent_{};
 
-  VkFormat imgui_color_attachment_format_{VK_FORMAT_UNDEFINED};
-  VkPipelineRenderingCreateInfo imgui_pipeline_rendering_create_info_{};
-
+  detail::GGEMSImGuiIntegration imgui_integration_;
   GGEMSImGuiLayer imgui_layer_;
   GGEMSVulkanSceneRenderer scene_renderer_;
   detail::GGEMSDeviceStatusSnapshot device_status_{};
@@ -203,10 +198,6 @@ private:
     pending_particle_trace_segments_;
   bool has_pending_particle_trace_segments_{false};
   bool pending_particle_trace_clear_{false};
-
-  float imgui_ui_scale_{1.0F};
-  float imgui_font_size_{15.0F};
-  bool imgui_initialized_{false};
 
   QueueFamilyIndices queue_family_indices_{};
   detail::GGEMSVulkanDeviceCandidate selected_physical_device_candidate_{};

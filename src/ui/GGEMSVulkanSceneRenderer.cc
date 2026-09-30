@@ -11,8 +11,6 @@
 #include <ios>
 #include <span>
 
-#include <backends/imgui_impl_vulkan.h>
-
 #include "GGEMS/ui/GGEMSVulkanSceneRenderer.hh"
 #include "GGEMS/ui/GGEMSVulkanColorConversion.hh"
 
@@ -97,11 +95,7 @@ auto GGEMSVulkanSceneRenderer::SetViewportExtent(vk::Extent2D const &extent)
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanSceneRenderer::RecreateRenderTargetsIfNeeded() -> void {
-  if (!initialized_ || !requires_resize_) {
-    return;
-  }
-
+auto GGEMSVulkanSceneRenderer::RecreateRenderTargets() -> void {
   if (!(device_ != nullptr)) {
     throw ggems::core::GGEMSInternal(
       "A Vulkan device is required before recreating scene render targets.");
@@ -113,7 +107,6 @@ auto GGEMSVulkanSceneRenderer::RecreateRenderTargetsIfNeeded() -> void {
       "recreating scene render targets.");
   }
 
-  device_->waitIdle();
   CleanupRenderTargets();
   CreateColorTarget();
   CreateDepthTarget();
@@ -222,10 +215,6 @@ auto GGEMSVulkanSceneRenderer::CreateColorTarget() -> void {
 
   color_image_view_ = vk::raii::ImageView{*device_, image_view_create_info};
 
-  imgui_descriptor_set_ =
-    ImGui_ImplVulkan_AddTexture(static_cast<VkImageView>(*color_image_view_),
-                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
   color_image_layout_ = vk::ImageLayout::eUndefined;
 
   GGEMS_INFOEX("Vulkan", 2,
@@ -262,7 +251,8 @@ auto GGEMSVulkanSceneRenderer::CreateDepthTarget() -> void {
     .tiling = vk::ImageTiling::eOptimal,
     .usage = vk::ImageUsageFlagBits::eDepthStencilAttachment,
     .sharingMode = vk::SharingMode::eExclusive,
-    .initialLayout = vk::ImageLayout::eUndefined};
+    .initialLayout = vk::ImageLayout::eUndefined,
+  };
 
   depth_image_ = vk::raii::Image{*device_, depth_image_create_info};
 
@@ -302,11 +292,6 @@ auto GGEMSVulkanSceneRenderer::CreateDepthTarget() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSVulkanSceneRenderer::CleanupRenderTargets() noexcept -> void {
-  if (imgui_descriptor_set_ != VK_NULL_HANDLE) {
-    ImGui_ImplVulkan_RemoveTexture(imgui_descriptor_set_);
-    imgui_descriptor_set_ = VK_NULL_HANDLE;
-  }
-
   color_image_view_ = nullptr;
   color_memory_ = nullptr;
   color_image_ = nullptr;
@@ -354,17 +339,10 @@ auto GGEMSVulkanSceneRenderer::FindMemoryType(
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanSceneRenderer::GetTextureID() const noexcept -> ImTextureID {
-  return reinterpret_cast<ImTextureID>(imgui_descriptor_set_);
-}
-
-// -----------------------------------------------------------------------------
-
 auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
   vk::raii::CommandBuffer const &command_buffer,
   ggems::render::GGEMSParticleTraceVisibility const &visibility) -> void {
-  if (imgui_descriptor_set_ == VK_NULL_HANDLE || *color_image_ == vk::Image{} ||
-      *color_image_view_ == vk::ImageView{}) {
+  if (*color_image_ == vk::Image{} || *color_image_view_ == vk::ImageView{}) {
     return;
   }
 

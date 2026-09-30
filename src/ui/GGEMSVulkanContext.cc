@@ -1,6 +1,5 @@
 #include <array>
 #include <cstdio>
-#include <cmath>
 #include <cstring>
 #include <format>
 #include <string>
@@ -8,8 +7,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <limits>
-#include <cstdlib>
-#include <filesystem>
 #include <optional>
 #include <utility>
 #include <string_view>
@@ -21,12 +18,8 @@
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_raii.hpp>
 
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_vulkan.h>
-
-#include "GGEMS/ui/GGEMSImGuiTheme.hh"
 #include "GGEMS/ui/GGEMSVulkanContext.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiIntegration.hh"
 #include "GGEMS/ui/GGEMSVulkanDeviceSelection.hh"
 #include "GGEMS/ui/GGEMSDeviceStatus.hh"
 #include "GGEMS/ui/GGEMSVulkanColorConversion.hh"
@@ -67,28 +60,6 @@ constexpr std::array<char const *, 1> k_required_device_extensions{
 };
 #endif
 
-constexpr float k_imgui_min_ui_scale{1.0F};
-constexpr float k_imgui_max_ui_scale{2.5F};
-constexpr float k_imgui_base_font_size{15.0F};
-
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] auto NormalizeImGuiUIScale(float content_scale_x,
-                                         float content_scale_y) noexcept
-  -> float {
-  if (!std::isfinite(content_scale_x) || !std::isfinite(content_scale_y) ||
-      content_scale_x <= 0.0F || content_scale_y <= 0.0F) {
-    return k_imgui_min_ui_scale;
-  }
-
-  return std::clamp(std::max(content_scale_x, content_scale_y),
-                    k_imgui_min_ui_scale, k_imgui_max_ui_scale);
-}
-
-// =============================================================================
-// =============================================================================
-
 auto AppendRejectionReason(std::string &diagnostic, std::string_view reason)
   -> void {
   if (!diagnostic.empty()) {
@@ -124,76 +95,6 @@ auto AppendRejectionReason(std::string &diagnostic, std::string_view reason)
            : "no";
 }
 
-// =============================================================================
-// =============================================================================
-
-[[nodiscard]] auto FindFirstExistingFont()
-  -> std::optional<std::filesystem::path> {
-  std::vector<std::filesystem::path> candidates{};
-
-  if (char const *local_app_data = std::getenv("LOCALAPPDATA");
-      local_app_data != nullptr) {
-    std::filesystem::path const user_fonts =
-      std::filesystem::path{local_app_data} / "Microsoft/Windows/Fonts";
-
-    candidates.emplace_back(user_fonts / "JetBrainsMono-Regular.ttf");
-    candidates.emplace_back(user_fonts / "JetBrainsMonoNerdFont-Regular.ttf");
-    candidates.emplace_back(user_fonts /
-                            "JetBrainsMonoNerdFontMono-Regular.ttf");
-    candidates.emplace_back(user_fonts / "JetBrainsMonoNLNerdFont-Regular.ttf");
-    candidates.emplace_back(user_fonts /
-                            "JetBrainsMonoNLNerdFontMono-Regular.ttf");
-  }
-
-  candidates.emplace_back("C:/Windows/Fonts/JetBrainsMono-Regular.ttf");
-  candidates.emplace_back("C:/Windows/Fonts/JetBrainsMonoNerdFont-Regular.ttf");
-  candidates.emplace_back(
-    "C:/Windows/Fonts/JetBrainsMonoNerdFontMono-Regular.ttf");
-  candidates.emplace_back("C:/Windows/Fonts/CascadiaMono.ttf");
-  candidates.emplace_back("C:/Windows/Fonts/CascadiaCode.ttf");
-  candidates.emplace_back("C:/Windows/Fonts/consola.ttf");
-
-#ifdef __APPLE__
-  if (char const *home = std::getenv("HOME"); home != nullptr) {
-    std::filesystem::path const user_fonts =
-      std::filesystem::path{home} / "Library/Fonts";
-
-    candidates.emplace_back(user_fonts / "JetBrainsMono-Regular.ttf");
-    candidates.emplace_back(user_fonts / "JetBrainsMonoNerdFont-Regular.ttf");
-    candidates.emplace_back(user_fonts /
-                            "JetBrainsMonoNerdFontMono-Regular.ttf");
-  }
-
-  candidates.emplace_back("/System/Library/Fonts/Menlo.ttc");
-  candidates.emplace_back("/System/Library/Fonts/Monaco.dfont");
-#endif
-
-  if (char const *home = std::getenv("HOME"); home != nullptr) {
-    std::filesystem::path const user_fonts =
-      std::filesystem::path{home} / ".local/share/fonts";
-
-    candidates.emplace_back(user_fonts / "JetBrainsMono-Regular.ttf");
-    candidates.emplace_back(user_fonts / "JetBrainsMonoNerdFont-Regular.ttf");
-    candidates.emplace_back(user_fonts /
-                            "JetBrainsMonoNerdFontMono-Regular.ttf");
-    candidates.emplace_back(user_fonts / "DejaVuSansMono.ttf");
-  }
-
-  candidates.emplace_back(
-    "/usr/share/fonts/truetype/jetbrains-mono/JetBrainsMono-Regular.ttf");
-  candidates.emplace_back(
-    "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf");
-  candidates.emplace_back("/usr/local/share/fonts/JetBrainsMono-Regular.ttf");
-
-  for (std::filesystem::path const &candidate : candidates) {
-    if (std::filesystem::exists(candidate)) {
-      return candidate;
-    }
-  }
-
-  return std::nullopt;
-}
-
 } // namespace
 
 namespace ggems::ui {
@@ -214,8 +115,9 @@ GGEMSVulkanContext::~GGEMSVulkanContext() noexcept {
       stderr);
   }
 
+  imgui_integration_.UnregisterSceneTexture();
   ShutdownSceneRenderer();
-  ShutdownImGui();
+  imgui_integration_.Shutdown();
 }
 
 // -----------------------------------------------------------------------------
@@ -274,8 +176,17 @@ void GGEMSVulkanContext::Initialize(
     AllocateCommandBuffers();
     CreateFrameSyncObjects();
     CreateSwapchainSyncObjects();
-    CreateImGuiDescriptorPool();
-    InitializeImGui(window);
+
+    imgui_integration_.Initialize(
+      window,
+      detail::GGEMSImGuiIntegration::VulkanHandles{
+        .instance = *instance_,
+        .physical_device = *physical_device_,
+        .device = *device_,
+        .graphics_queue = *graphics_queue_,
+        .graphics_queue_family = queue_family_indices_.graphics.value()},
+      BuildImGuiBackendEpoch());
+
     InitializeSceneRenderer();
   } catch (vk::SystemError const &error) {
     throw ggems::core::GGEMSRecoverable(
@@ -1271,8 +1182,7 @@ auto GGEMSVulkanContext::RecordCommandBuffer(std::uint32_t image_index)
 
   command_buffer.beginRendering(rendering_info);
 
-  ImGui_ImplVulkan_RenderDrawData(
-    ImGui::GetDrawData(), static_cast<VkCommandBuffer>(*command_buffer));
+  imgui_integration_.RenderDrawData(*command_buffer);
 
   command_buffer.endRendering();
 
@@ -1296,6 +1206,8 @@ auto GGEMSVulkanContext::RenderFrame(GLFWwindow *window,
     throw ggems::core::GGEMSInternal(
       "A valid GLFW window is required before rendering a Vulkan frame.");
   }
+
+  imgui_integration_.ThrowIfBackendFailed();
 
   try {
     if (framebuffer_resized) {
@@ -1453,10 +1365,7 @@ auto GGEMSVulkanContext::RecreateSwapchain(GLFWwindow *window) -> void {
   AllocateCommandBuffers();
   CreateSwapchainSyncObjects();
 
-  if (imgui_initialized_) {
-    ImGui_ImplVulkan_SetMinImageCount(
-      static_cast<std::uint32_t>(swapchain_images_.size()));
-  }
+  imgui_integration_.UpdateVulkanBackend(BuildImGuiBackendEpoch());
 
   current_frame_ = 0U;
 
@@ -1466,152 +1375,28 @@ auto GGEMSVulkanContext::RecreateSwapchain(GLFWwindow *window) -> void {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanContext::CreateImGuiDescriptorPool() -> void {
-  constexpr std::uint32_t k_imgui_descriptor_count{1024U};
+auto GGEMSVulkanContext::BuildImGuiBackendEpoch() const noexcept
+  -> detail::GGEMSImGuiIntegration::VulkanBackendEpoch {
+  auto const image_count = static_cast<std::uint32_t>(swapchain_images_.size());
 
-  std::array<vk::DescriptorPoolSize, 11> pool_sizes{
-    vk::DescriptorPoolSize{.type = vk::DescriptorType::eSampler,
-                           .descriptorCount = k_imgui_descriptor_count},
-    vk::DescriptorPoolSize{.type = vk::DescriptorType::eCombinedImageSampler,
-                           .descriptorCount = k_imgui_descriptor_count},
-    vk::DescriptorPoolSize{.type = vk::DescriptorType::eSampledImage,
-                           .descriptorCount = k_imgui_descriptor_count},
-    vk::DescriptorPoolSize{.type = vk::DescriptorType::eStorageImage,
-                           .descriptorCount = k_imgui_descriptor_count},
-    vk::DescriptorPoolSize{.type = vk::DescriptorType::eUniformTexelBuffer,
-                           .descriptorCount = k_imgui_descriptor_count},
-    vk::DescriptorPoolSize{.type = vk::DescriptorType::eStorageTexelBuffer,
-                           .descriptorCount = k_imgui_descriptor_count},
-    vk::DescriptorPoolSize{.type = vk::DescriptorType::eUniformBuffer,
-                           .descriptorCount = k_imgui_descriptor_count},
-    vk::DescriptorPoolSize{.type = vk::DescriptorType::eStorageBuffer,
-                           .descriptorCount = k_imgui_descriptor_count},
-    vk::DescriptorPoolSize{.type = vk::DescriptorType::eUniformBufferDynamic,
-                           .descriptorCount = k_imgui_descriptor_count},
-    vk::DescriptorPoolSize{.type = vk::DescriptorType::eStorageBufferDynamic,
-                           .descriptorCount = k_imgui_descriptor_count},
-    vk::DescriptorPoolSize{.type = vk::DescriptorType::eInputAttachment,
-                           .descriptorCount = k_imgui_descriptor_count}};
-
-  vk::DescriptorPoolCreateInfo create_info{
-    .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-    .maxSets =
-      k_imgui_descriptor_count * static_cast<std::uint32_t>(pool_sizes.size()),
-    .poolSizeCount = static_cast<std::uint32_t>(pool_sizes.size()),
-    .pPoolSizes = pool_sizes.data()};
-
-  imgui_descriptor_pool_ = vk::raii::DescriptorPool{device_, create_info};
-
-  GGEMS_INFOEX("Vulkan", 2, "Dear ImGui Vulkan descriptor pool created.");
+  return detail::GGEMSImGuiIntegration::VulkanBackendEpoch{
+    .image_count = image_count,
+    .min_image_count = image_count,
+    .color_format = swapchain_image_format_,
+    .sample_count = vk::SampleCountFlagBits::e1,
+    .view_mask = 0U,
+    .depth_format = vk::Format::eUndefined,
+    .stencil_format = vk::Format::eUndefined};
 }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanContext::CheckImGuiVkResult(VkResult result) noexcept -> void {
-  if (result == VK_SUCCESS) {
-    return;
-  }
+auto GGEMSVulkanContext::RecreateSceneRenderTargets() -> void {
+  device_.waitIdle();
 
-  try {
-    GGEMS_ERROR("Vulkan", "Dear ImGui Vulkan backend error: {}.",
-                vk::to_string(static_cast<vk::Result>(result)));
-  } catch (...) {
-    std::fputs("[GGEMS Vulkan] Dear ImGui backend reported an error.\n",
-               stderr);
-  }
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanContext::InitializeImGui(GLFWwindow *window) -> void {
-  if (!(window != nullptr)) {
-    throw ggems::core::GGEMSInternal(
-      "A valid GLFW window is required before initializing Dear ImGui.");
-  }
-
-  if (!(*imgui_descriptor_pool_ != nullptr)) {
-    throw ggems::core::GGEMSInternal(
-      "A Vulkan descriptor pool is required before initializing Dear ImGui.");
-  }
-
-  float content_scale_x{1.0F};
-  float content_scale_y{1.0F};
-
-  glfwGetWindowContentScale(window, &content_scale_x, &content_scale_y);
-
-  imgui_ui_scale_ = NormalizeImGuiUIScale(content_scale_x, content_scale_y);
-  imgui_font_size_ = k_imgui_base_font_size * imgui_ui_scale_;
-
-  IMGUI_CHECKVERSION();
-
-  ImGui::CreateContext();
-
-  ImGuiIO &imgui_io = ImGui::GetIO();
-  imgui_io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-  imgui_io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-
-  ImGui::StyleColorsDark();
-  ApplyGGEMSImGuiTheme();
-  ImGui::GetStyle().ScaleAllSizes(imgui_ui_scale_);
-
-  LoadImGuiFonts();
-
-  GGEMS_INFO("Gui", "ImGui content scale: x={:.2f}, y={:.2f}.", content_scale_x,
-             content_scale_y);
-  GGEMS_INFO("Gui", "ImGui UI scale: {:.2f}.", imgui_ui_scale_);
-  GGEMS_INFO("Gui", "ImGui font size: {:.2f} px.", imgui_font_size_);
-
-  ImGui_ImplGlfw_InitForVulkan(window, true);
-
-  imgui_color_attachment_format_ =
-    static_cast<VkFormat>(swapchain_image_format_);
-
-  imgui_pipeline_rendering_create_info_ = VkPipelineRenderingCreateInfo{
-    .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
-    .pNext = nullptr,
-    .viewMask = 0U,
-    .colorAttachmentCount = 1U,
-    .pColorAttachmentFormats = &imgui_color_attachment_format_,
-    .depthAttachmentFormat = VK_FORMAT_UNDEFINED,
-    .stencilAttachmentFormat = VK_FORMAT_UNDEFINED};
-
-  ImGui_ImplVulkan_InitInfo init_info{};
-  init_info.ApiVersion = k_vulkan_api_version_;
-  init_info.Instance = static_cast<VkInstance>(*instance_);
-  init_info.PhysicalDevice = static_cast<VkPhysicalDevice>(*physical_device_);
-  init_info.Device = static_cast<VkDevice>(*device_);
-  init_info.QueueFamily = queue_family_indices_.graphics.value();
-  init_info.Queue = static_cast<VkQueue>(*graphics_queue_);
-  init_info.DescriptorPool =
-    static_cast<VkDescriptorPool>(*imgui_descriptor_pool_);
-  init_info.MinImageCount =
-    static_cast<std::uint32_t>(swapchain_images_.size());
-  init_info.ImageCount = static_cast<std::uint32_t>(swapchain_images_.size());
-  init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-  init_info.CheckVkResultFn = &GGEMSVulkanContext::CheckImGuiVkResult;
-  init_info.UseDynamicRendering = true;
-  init_info.PipelineInfoMain.PipelineRenderingCreateInfo =
-    imgui_pipeline_rendering_create_info_;
-
-  ImGui_ImplVulkan_Init(&init_info);
-
-  imgui_initialized_ = true;
-
-  GGEMS_INFOEX("Gui", 1, "Dear ImGui context and Vulkan backend initialized.");
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanContext::ShutdownImGui() noexcept -> void {
-  if (!imgui_initialized_) {
-    return;
-  }
-
-  ImGui_ImplVulkan_Shutdown();
-  ImGui_ImplGlfw_Shutdown();
-  ImGui::DestroyContext();
-
-  imgui_initialized_ = false;
+  imgui_integration_.UnregisterSceneTexture();
+  scene_renderer_.RecreateRenderTargets();
+  imgui_integration_.RegisterSceneTexture(scene_renderer_.GetColorImageView());
 }
 
 // -----------------------------------------------------------------------------
@@ -1674,28 +1459,24 @@ auto GGEMSVulkanContext::ApplyPendingParticleTraceSegments() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSVulkanContext::BuildImGuiFrame() -> void {
-  if (!(imgui_initialized_)) {
-    throw ggems::core::GGEMSInternal(
-      "Dear ImGui must be initialized before building a GUI "
-      "frame.");
-  }
-
   ApplyPendingSourceRunSnapshot();
   ApplyPendingParticleTraceSegments();
 
-  ImGui_ImplVulkan_NewFrame();
-  ImGui_ImplGlfw_NewFrame();
-  ImGui::NewFrame();
+  imgui_integration_.BeginFrame();
 
   GGEMSImGuiLayer::ViewportState viewport_state =
     imgui_layer_.GetViewportState();
 
   if (viewport_state.visible) {
     scene_renderer_.SetViewportExtent(viewport_state.extent);
-    scene_renderer_.RecreateRenderTargetsIfNeeded();
+
+    if (scene_renderer_.RequiresResize()) {
+      RecreateSceneRenderTargets();
+    }
   }
 
-  imgui_layer_.BuildFrame(swapchain_extent_, scene_renderer_.GetTextureID(),
+  imgui_layer_.BuildFrame(swapchain_extent_,
+                          imgui_integration_.GetSceneTextureID(),
                           scene_renderer_.GetViewportExtent(), device_status_);
 
   GGEMSImGuiLayer::ViewportState updated_viewport_state =
@@ -1714,33 +1495,6 @@ auto GGEMSVulkanContext::BuildImGuiFrame() -> void {
   }
 
   scene_renderer_.SetShowAxes(imgui_layer_.ShouldShowAxes());
-
-  ImGui::Render();
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanContext::LoadImGuiFonts() -> void {
-  ImGuiIO &imgui_io = ImGui::GetIO();
-
-  std::optional<std::filesystem::path> const font_path =
-    FindFirstExistingFont();
-
-  if (font_path.has_value()) {
-    imgui_io.Fonts->AddFontFromFileTTF(font_path->string().c_str(),
-                                       imgui_font_size_);
-
-    GGEMS_INFOEX("Gui", 2, "Loaded ImGui font '{}'.", font_path->string());
-    return;
-  }
-
-  ImFontConfig font_config{};
-  font_config.SizePixels = imgui_font_size_;
-  imgui_io.Fonts->AddFontDefault(&font_config);
-
-  GGEMS_WARN("Gui",
-             "No preferred monospace ImGui font was found. Falling back to "
-             "Dear ImGui default font.");
 }
 
 // -----------------------------------------------------------------------------

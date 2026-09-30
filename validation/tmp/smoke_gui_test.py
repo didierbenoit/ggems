@@ -8,7 +8,7 @@ try:
 
     opencl = ggems.opencl.GGEMSOpenCL()
     opencl.set_worker_count(256)
-    opencl.select_devices("2")
+    opencl.select_devices("1")
     opencl.initialize()
 
     # --------------------------------------------------------------------------
@@ -51,6 +51,7 @@ try:
     # --------------------------------------------------------------------------
 
     gui = ggems.gui.GGEMSGuiApplication()
+    gui.set_vulkan_device(1)
     gui.initialize()
 
     gui.submit_last_run_source_snapshot(run)
