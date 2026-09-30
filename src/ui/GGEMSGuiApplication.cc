@@ -1,15 +1,21 @@
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <memory>
+#include <mutex>
+#include <optional>
 #include <format>
 #include <string>
 #include <string_view>
 #include <utility>
-#include <cstddef>
-#include <cstdint>
-#include <memory>
 #include <vector>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+
+#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_raii.hpp>
 
 #include "GGEMS/GGEMSRun.hh"
 #include "GGEMS/GGEMSException.hh"
@@ -21,11 +27,16 @@
 #include "GGEMS/opencl/GGEMSOpenCLPlatform.hh"
 #include "GGEMS/opencl/GGEMSOpenCLStrings.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
+#include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/ui/GGEMSGuiApplication.hh"
-#include "GGEMS/ui/GGEMSDeviceStatus.hh"
-#include "GGEMS/ui/GGEMSVulkanContext.hh"
-#include "GGEMS/ui/GGEMSVulkanDeviceSelection.hh"
-#include "GGEMS/ui/GGEMSWindowIconData.hh"
+#include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiIntegration.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiLayer.hh"
+#include "GGEMS/ui/detail/GGEMSVulkanDevice.hh"
+#include "GGEMS/ui/detail/GGEMSVulkanDeviceSelection.hh"
+#include "GGEMS/ui/detail/GGEMSVulkanPresenter.hh"
+#include "GGEMS/ui/detail/GGEMSVulkanSceneRenderer.hh"
+#include "GGEMS/ui/detail/GGEMSWindowIconData.hh"
 
 namespace {
 // =============================================================================
@@ -66,7 +77,8 @@ namespace {
         .context_index = context_index,
         .name = device.GetName(),
         .type = ggems::ocl::DeviceTypeToString(device.GetType()),
-        .platform = platform->GetName()});
+        .platform = platform->GetName(),
+      });
   }
 
   for (ggems::ui::detail::GGEMSComputeDeviceStatus &device :
@@ -80,6 +92,25 @@ namespace {
   }
 
   return compute_status;
+}
+
+// =============================================================================
+// =============================================================================
+
+[[nodiscard]] auto BuildImGuiBackendEpoch(
+  ggems::ui::detail::GGEMSVulkanPresenter const &presenter) noexcept
+  -> ggems::ui::detail::GGEMSImGuiIntegration::VulkanBackendEpoch {
+  std::uint32_t const image_count = presenter.GetImageCount();
+
+  return ggems::ui::detail::GGEMSImGuiIntegration::VulkanBackendEpoch{
+    .image_count = image_count,
+    .min_image_count = image_count,
+    .color_format = presenter.GetImageFormat(),
+    .sample_count = vk::SampleCountFlagBits::e1,
+    .view_mask = 0U,
+    .depth_format = vk::Format::eUndefined,
+    .stencil_format = vk::Format::eUndefined,
+  };
 }
 
 // =============================================================================
@@ -112,7 +143,29 @@ GGEMSGuiApplication::~GGEMSGuiApplication() noexcept { Shutdown(); }
 // -----------------------------------------------------------------------------
 
 void GGEMSGuiApplication::Shutdown() noexcept {
-  vk_context_.reset();
+  if (device_ != nullptr) {
+    try {
+      device_->GetDevice().waitIdle();
+    } catch (...) {
+      std::fputs(
+        "[GGEMS Vulkan] Failed to wait for device idle during shutdown.\n",
+        stderr);
+    }
+  }
+
+  if (imgui_integration_ != nullptr) {
+    imgui_integration_->UnregisterSceneTexture();
+  }
+
+  if (scene_renderer_ != nullptr) {
+    scene_renderer_->Shutdown();
+  }
+
+  imgui_integration_.reset();
+  scene_renderer_.reset();
+  imgui_layer_.reset();
+  presenter_.reset();
+  device_.reset();
 
   if (window_ != nullptr) {
     glfwDestroyWindow(window_);
@@ -128,8 +181,7 @@ void GGEMSGuiApplication::Shutdown() noexcept {
 // -----------------------------------------------------------------------------
 
 auto GGEMSGuiApplication::IsInitialized() const noexcept -> bool {
-  return window_ != nullptr && vk_context_ != nullptr &&
-         vk_context_->IsInitialized();
+  return window_ != nullptr && imgui_layer_ != nullptr;
 }
 
 // -----------------------------------------------------------------------------
@@ -197,9 +249,12 @@ auto GGEMSGuiApplication::Initialize() -> void {
     throw ggems::core::GGEMSRecoverable(error);
   }
 
-  GLFWimage icon{.width = detail::k_ggems_window_icon_width,
-                 .height = detail::k_ggems_window_icon_height,
-                 .pixels = detail::k_ggems_window_icon_pixels.data()};
+  GLFWimage icon{
+    .width = detail::k_ggems_window_icon_width,
+    .height = detail::k_ggems_window_icon_height,
+    .pixels = detail::k_ggems_window_icon_pixels.data(),
+  };
+
   glfwSetWindowIcon(window_, 1, &icon);
 
   glfwSetWindowUserPointer(window_, this);
@@ -218,9 +273,40 @@ auto GGEMSGuiApplication::Initialize() -> void {
         : detail::GGEMSVulkanDeviceSelector::FromString(
             vulkan_device_name_selector_);
 
-    vk_context_ = std::make_unique<GGEMSVulkanContext>();
-    vk_context_->Initialize(window_, device_selector,
-                            std::move(compute_status));
+    try {
+      device_ =
+        std::make_unique<detail::GGEMSVulkanDevice>(window_, device_selector);
+
+      presenter_ =
+        std::make_unique<detail::GGEMSVulkanPresenter>(*device_, window_);
+
+      imgui_integration_ = std::make_unique<detail::GGEMSImGuiIntegration>();
+      imgui_integration_->Initialize(
+        window_,
+        detail::GGEMSImGuiIntegration::VulkanHandles{
+          .instance = *device_->GetInstance(),
+          .physical_device = *device_->GetPhysicalDevice(),
+          .device = *device_->GetDevice(),
+          .graphics_queue = *device_->GetGraphicsQueue(),
+          .graphics_queue_family = device_->GetGraphicsQueueFamily(),
+        },
+        BuildImGuiBackendEpoch(*presenter_));
+
+      scene_renderer_ = std::make_unique<GGEMSVulkanSceneRenderer>();
+      scene_renderer_->Initialize(device_->GetPhysicalDevice(),
+                                  device_->GetDevice(),
+                                  vk::Format::eR8G8B8A8Unorm);
+
+      imgui_layer_ = std::make_unique<GGEMSImGuiLayer>();
+    } catch (vk::SystemError const &error) {
+      throw ggems::core::GGEMSRecoverable(
+        std::format("Unable to initialize Vulkan GuiMode: {}.", error.what()));
+    }
+
+    device_status_ = detail::GGEMSDeviceStatusSnapshot{
+      .renderer = device_->GetStatus(),
+      .compute = std::move(compute_status),
+    };
   } catch (...) {
     Shutdown();
     throw;
@@ -232,18 +318,12 @@ auto GGEMSGuiApplication::Initialize() -> void {
 // -----------------------------------------------------------------------------
 
 void GGEMSGuiApplication::Run() {
-  if (!(window_ != nullptr)) {
+  if (!IsInitialized()) {
     throw ggems::core::GGEMSInternal(
       "GGEMS GuiMode must be initialized before entering its event loop.");
   }
 
   GGEMS_INFOEX("Gui", 1, "GGEMS GuiMode event loop started.");
-
-  if (!(vk_context_ != nullptr && vk_context_->IsInitialized())) {
-    throw ggems::core::GGEMSInternal(
-      "GGEMS GuiMode required an initialized Vulkan context "
-      "before entering the event loop.");
-  }
 
   while (glfwWindowShouldClose(window_) == GLFW_FALSE) {
     glfwPollEvents();
@@ -251,7 +331,7 @@ void GGEMSGuiApplication::Run() {
     bool framebuffer_resized = framebuffer_resized_;
     framebuffer_resized_ = false;
 
-    vk_context_->RenderFrame(window_, framebuffer_resized);
+    RenderFrame(framebuffer_resized);
   }
 
   GGEMS_INFOEX("Gui", 1, "GGEMS GuiMode event loop stopped.");
@@ -271,9 +351,163 @@ void GGEMSGuiApplication::FramebufferResizeCallback(GLFWwindow *window, int,
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSGuiApplication::RenderFrame(bool framebuffer_resized) -> void {
+  imgui_integration_->ThrowIfBackendFailed();
+
+  try {
+    if (framebuffer_resized) {
+      RecreateSwapchain();
+    }
+
+    if (glfwWindowShouldClose(window_) == GLFW_TRUE) {
+      return;
+    }
+
+    presenter_->AcquireImage();
+
+    BuildImGuiFrame();
+
+    vk::raii::CommandBuffer const &command_buffer =
+      presenter_->BeginRecording();
+
+    scene_renderer_->RecordSceneCommands(
+      command_buffer, imgui_layer_->GetParticleTraceVisibility());
+
+    presenter_->BeginMainPass();
+    imgui_integration_->RenderDrawData(*command_buffer);
+
+    if (presenter_->EndFrame()) {
+      RecreateSwapchain();
+    }
+  } catch (vk::OutOfDateKHRError const &) {
+    RecreateSwapchain();
+  } catch (vk::SystemError const &error) {
+    throw ggems::core::GGEMSRecoverable(std::format(
+      "Unable to render a Vulkan GuiMode frame: {}.", error.what()));
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSGuiApplication::RecreateSwapchain() -> void {
+  presenter_->RecreateSwapchain(window_);
+  imgui_integration_->UpdateVulkanBackend(BuildImGuiBackendEpoch(*presenter_));
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSGuiApplication::RecreateSceneRenderTargets() -> void {
+  device_->GetDevice().waitIdle();
+
+  imgui_integration_->UnregisterSceneTexture();
+  scene_renderer_->RecreateRenderTargets();
+  imgui_integration_->RegisterSceneTexture(
+    scene_renderer_->GetColorImageView());
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSGuiApplication::ApplyPendingSourceRunSnapshot() -> void {
+  std::optional<core::sources::GGEMSSourceRunSnapshot> snapshot{};
+
+  {
+    std::scoped_lock lock{pending_source_run_snapshot_mutex_};
+
+    if (!pending_source_run_snapshot_.has_value()) {
+      return;
+    }
+
+    snapshot = std::move(pending_source_run_snapshot_);
+    pending_source_run_snapshot_.reset();
+  }
+
+  imgui_layer_->SetSourceRunSnapshot(std::move(*snapshot));
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSGuiApplication::ApplyPendingParticleTraceSegments() -> void {
+  std::vector<ggems::render::GGEMSParticleTraceSegment> segments{};
+  bool apply_segments{false};
+  bool clear_segments{false};
+
+  {
+    std::scoped_lock lock{pending_particle_trace_mutex_};
+
+    if (has_pending_particle_trace_segments_) {
+      segments = std::move(pending_particle_trace_segments_);
+      pending_particle_trace_segments_.clear();
+      has_pending_particle_trace_segments_ = false;
+      apply_segments = true;
+    }
+
+    if (pending_particle_trace_clear_) {
+      pending_particle_trace_clear_ = false;
+      clear_segments = true;
+    }
+  }
+
+  if (!apply_segments && !clear_segments) {
+    return;
+  }
+
+  device_->GetDevice().waitIdle();
+
+  if (clear_segments) {
+    scene_renderer_->ClearParticleTraces();
+  }
+
+  if (apply_segments) {
+    scene_renderer_->SetParticleTraceSegments(segments);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSGuiApplication::BuildImGuiFrame() -> void {
+  ApplyPendingSourceRunSnapshot();
+  ApplyPendingParticleTraceSegments();
+
+  imgui_integration_->BeginFrame();
+
+  GGEMSImGuiLayer::ViewportState viewport_state =
+    imgui_layer_->GetViewportState();
+
+  if (viewport_state.visible) {
+    scene_renderer_->SetViewportExtent(viewport_state.extent);
+
+    if (scene_renderer_->RequiresResize()) {
+      RecreateSceneRenderTargets();
+    }
+  }
+
+  imgui_layer_->BuildFrame(
+    presenter_->GetExtent(), imgui_integration_->GetSceneTextureID(),
+    scene_renderer_->GetViewportExtent(), device_status_);
+
+  GGEMSImGuiLayer::ViewportState updated_viewport_state =
+    imgui_layer_->GetViewportState();
+
+  scene_renderer_->OrbitCamera(updated_viewport_state.orbit_delta_x_pixels,
+                               updated_viewport_state.orbit_delta_y_pixels);
+
+  scene_renderer_->PanCamera(updated_viewport_state.pan_delta_x_pixels,
+                             updated_viewport_state.pan_delta_y_pixels);
+
+  scene_renderer_->ZoomCamera(updated_viewport_state.zoom_delta);
+
+  if (imgui_layer_->ShouldResetCamera()) {
+    scene_renderer_->ResetCamera();
+  }
+
+  scene_renderer_->SetShowAxes(imgui_layer_->ShouldShowAxes());
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSGuiApplication::SubmitLastRunSourceSnapshot(
   ggems::core::GGEMSRun const &run) -> void {
-  if (!(vk_context_ != nullptr && vk_context_->IsInitialized())) {
+  if (!IsInitialized()) {
     throw ggems::core::GGEMSRecoverable(
       "GGEMS GuiMode must be initialized before submitting a source "
       "snapshot.");
@@ -281,7 +515,7 @@ auto GGEMSGuiApplication::SubmitLastRunSourceSnapshot(
 
   auto snapshot = run.GetLastSourceRunSnapshot();
 
-  if (!(snapshot.has_value())) {
+  if (!snapshot.has_value()) {
     throw ggems::core::GGEMSRecoverable(
       "GGEMSRun has no successfully completed source snapshot to submit.");
   }
@@ -300,18 +534,24 @@ auto GGEMSGuiApplication::SubmitLastRunSourceSnapshot(
                "will be available.");
   }
 
-  vk_context_->SubmitSourceRunSnapshot(std::move(*snapshot));
+  std::scoped_lock lock{pending_source_run_snapshot_mutex_};
+  pending_source_run_snapshot_ = std::move(*snapshot);
 }
 
 // -----------------------------------------------------------------------------
 
 void GGEMSGuiApplication::SubmitParticleTraceSegments(
   std::vector<ggems::render::GGEMSParticleTraceSegment> segments) {
-  if (!(vk_context_ != nullptr && vk_context_->IsInitialized())) {
+  if (!IsInitialized()) {
     throw ggems::core::GGEMSRecoverable(
       "GGEMS GuiMode must be initialized before submitting particle traces.");
   }
-  vk_context_->SubmitParticleTraceSegments(std::move(segments));
+
+  std::scoped_lock lock{pending_particle_trace_mutex_};
+
+  pending_particle_trace_segments_ = std::move(segments);
+  has_pending_particle_trace_segments_ = true;
+  pending_particle_trace_clear_ = false;
 }
 
 // -----------------------------------------------------------------------------
@@ -325,11 +565,15 @@ void GGEMSGuiApplication::SubmitParticleTracesFromObserver(
 // -----------------------------------------------------------------------------
 
 void GGEMSGuiApplication::ClearParticleTraces() {
-  if (!(vk_context_ != nullptr && vk_context_->IsInitialized())) {
+  if (!IsInitialized()) {
     throw ggems::core::GGEMSRecoverable(
       "GGEMS GuiMode must be initialized before clearing particle traces.");
   }
 
-  vk_context_->ClearParticleTraces();
+  std::scoped_lock lock{pending_particle_trace_mutex_};
+
+  pending_particle_trace_segments_.clear();
+  has_pending_particle_trace_segments_ = false;
+  pending_particle_trace_clear_ = true;
 }
 } // namespace ggems::ui

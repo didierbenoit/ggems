@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
@@ -18,7 +17,7 @@
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/logging/GGEMSLogMacros.hh"
-#include "GGEMS/ui/GGEMSImGuiTheme.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
 
 namespace {
 

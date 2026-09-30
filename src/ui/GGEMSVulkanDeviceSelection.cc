@@ -1,17 +1,23 @@
 #include <algorithm>
+#include <optional>
 #include <format>
 #include <string_view>
 #include <utility>
 #include <vector>
+#include <cstddef>
+#include <string>
+#include <expected>
+#include <cstdint>
+#include <span>
 
-#include "GGEMS/ui/GGEMSVulkanDeviceSelection.hh"
+#include "GGEMS/ui/detail/GGEMSVulkanDeviceSelection.hh"
 
 namespace {
 
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] char ToLowerAscii(char character) noexcept {
+[[nodiscard]] auto ToLowerAscii(char character) noexcept -> char {
   if (character >= 'A' && character <= 'Z') {
     return static_cast<char>(character + ('a' - 'A'));
   }
@@ -21,8 +27,9 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] bool EqualAsciiInsensitive(std::string_view left,
-                                         std::string_view right) noexcept {
+[[nodiscard]] auto EqualAsciiInsensitive(std::string_view left,
+                                         std::string_view right) noexcept
+  -> bool {
   if (left.size() != right.size()) {
     return false;
   }
@@ -39,8 +46,9 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] bool ContainsAsciiInsensitive(std::string_view text,
-                                            std::string_view query) noexcept {
+[[nodiscard]] auto ContainsAsciiInsensitive(std::string_view text,
+                                            std::string_view query) noexcept
+  -> bool {
   if (query.empty() || query.size() > text.size()) {
     return false;
   }
@@ -57,9 +65,9 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] std::string FormatCandidates(
+[[nodiscard]] auto FormatCandidates(
   std::vector<ggems::ui::detail::GGEMSVulkanDeviceCandidate const *> const
-    &candidates) {
+    &candidates) -> std::string {
   std::string result{};
 
   for (auto const *candidate : candidates) {
@@ -76,29 +84,30 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] ggems::ui::detail::GGEMSVulkanDeviceSelection
+[[nodiscard]] auto
 MakeSelection(ggems::ui::detail::GGEMSVulkanDeviceCandidate const &candidate,
               std::string reason,
               std::optional<ggems::ui::detail::GGEMSVulkanDisplayAdapter> const
-                &display_adapter) {
+                &display_adapter)
+  -> ggems::ui::detail::GGEMSVulkanDeviceSelection {
   return ggems::ui::detail::GGEMSVulkanDeviceSelection{
     .enumeration_index = candidate.enumeration_index,
     .reason = std::move(reason),
     .display_adapter_mismatch =
       ggems::ui::detail::IsVulkanDisplayAdapterMismatch(candidate,
-                                                        display_adapter)};
+                                                        display_adapter),
+  };
 }
 
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] std::expected<ggems::ui::detail::GGEMSVulkanDeviceSelection,
-                            std::string>
-SelectExplicitCandidate(
+[[nodiscard]] auto SelectExplicitCandidate(
   ggems::ui::detail::GGEMSVulkanDeviceCandidate const &candidate,
   std::string reason,
   std::optional<ggems::ui::detail::GGEMSVulkanDisplayAdapter> const
-    &display_adapter) {
+    &display_adapter)
+  -> std::expected<ggems::ui::detail::GGEMSVulkanDeviceSelection, std::string> {
   if (!candidate.suitable) {
     std::string_view rejection_reason =
       candidate.rejection_reason.empty()
@@ -120,28 +129,32 @@ namespace ggems::ui::detail {
 // =============================================================================
 // =============================================================================
 
-GGEMSVulkanDeviceSelector
-GGEMSVulkanDeviceSelector::FromString(std::string selection) {
+auto GGEMSVulkanDeviceSelector::FromString(std::string selection)
+  -> GGEMSVulkanDeviceSelector {
   if (EqualAsciiInsensitive(selection, "auto")) {
     return GGEMSVulkanDeviceSelector{};
   }
 
-  return GGEMSVulkanDeviceSelector{.kind = GGEMSVulkanDeviceSelectorKind::Name,
-                                   .name = std::move(selection)};
+  return GGEMSVulkanDeviceSelector{
+    .kind = GGEMSVulkanDeviceSelectorKind::Name,
+    .name = std::move(selection),
+  };
 }
 
 // -----------------------------------------------------------------------------
 
-GGEMSVulkanDeviceSelector
-GGEMSVulkanDeviceSelector::FromIndex(std::uint32_t enumeration_index) {
+auto GGEMSVulkanDeviceSelector::FromIndex(std::uint32_t enumeration_index)
+  -> GGEMSVulkanDeviceSelector {
   return GGEMSVulkanDeviceSelector{
     .kind = GGEMSVulkanDeviceSelectorKind::EnumerationIndex,
-    .enumeration_index = enumeration_index};
+    .enumeration_index = enumeration_index,
+    .name = {},
+  };
 }
 // =============================================================================
 
-std::uint32_t
-GetVulkanDeviceFallbackScore(vk::PhysicalDeviceType type) noexcept {
+auto GetVulkanDeviceFallbackScore(vk::PhysicalDeviceType type) noexcept
+  -> std::uint32_t {
   switch (type) {
   case vk::PhysicalDeviceType::eIntegratedGpu:
     return 400U;
@@ -160,9 +173,10 @@ GetVulkanDeviceFallbackScore(vk::PhysicalDeviceType type) noexcept {
 // =============================================================================
 // =============================================================================
 
-bool IsVulkanDisplayAdapterMismatch(
+auto IsVulkanDisplayAdapterMismatch(
   GGEMSVulkanDeviceCandidate const &candidate,
-  std::optional<GGEMSVulkanDisplayAdapter> const &display_adapter) noexcept {
+  std::optional<GGEMSVulkanDisplayAdapter> const &display_adapter) noexcept
+  -> bool {
   return display_adapter.has_value() &&
          candidate.platform_adapter_id.has_value() &&
          candidate.platform_adapter_id.value() != display_adapter->platform_id;
@@ -171,13 +185,14 @@ bool IsVulkanDisplayAdapterMismatch(
 // =============================================================================
 // =============================================================================
 
-std::expected<GGEMSVulkanDeviceSelection, std::string> SelectVulkanDevice(
+auto SelectVulkanDevice(
   GGEMSVulkanDeviceSelector const &selector,
   std::span<GGEMSVulkanDeviceCandidate const> candidates,
-  std::optional<GGEMSVulkanDisplayAdapter> const &display_adapter) {
+  std::optional<GGEMSVulkanDisplayAdapter> const &display_adapter)
+  -> std::expected<GGEMSVulkanDeviceSelection, std::string> {
   if (selector.kind == GGEMSVulkanDeviceSelectorKind::EnumerationIndex) {
     auto candidate = std::ranges::find_if(
-      candidates, [&selector](GGEMSVulkanDeviceCandidate const &entry) {
+      candidates, [&selector](GGEMSVulkanDeviceCandidate const &entry) -> bool {
         return entry.enumeration_index == selector.enumeration_index;
       });
 

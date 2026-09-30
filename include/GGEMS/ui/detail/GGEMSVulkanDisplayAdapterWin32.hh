@@ -14,11 +14,12 @@ struct GLFWwindow;
 
 namespace ggems::ui::detail {
 
-[[nodiscard]] std::expected<GGEMSVulkanDisplayAdapter, std::string>
-ResolveWin32DisplayAdapter(GLFWwindow *window);
+[[nodiscard]] auto ResolveWin32DisplayAdapter(GLFWwindow *window)
+  -> std::expected<GGEMSVulkanDisplayAdapter, std::string>;
 
-[[nodiscard]] std::optional<std::string>
-QueryWin32VulkanAdapterId(vk::raii::PhysicalDevice const &physical_device);
+[[nodiscard]] auto
+QueryWin32VulkanAdapterId(vk::raii::PhysicalDevice const &physical_device)
+  -> std::optional<std::string>;
 
 } // namespace ggems::ui::detail
 

@@ -4,9 +4,9 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMS/render/GGEMSColor.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
-#include "GGEMS/ui/GGEMSVulkanColorConversion.hh"
+#include "GGEMS/ui/detail/GGEMSVulkanColorConversion.hh"
 
 namespace {
 
@@ -14,7 +14,12 @@ namespace render = ggems::render;
 using ggems::ui::detail::ToVulkanClearColor;
 
 constexpr std::array<float, 4U> k_expected_blue_abyss{
-  0.011764707F, 0.019607844F, 0.027450982F, 1.0F};
+  0.011764707F,
+  0.019607844F,
+  0.027450982F,
+  1.0F,
+};
+
 constexpr auto k_constexpr_blue_abyss = ToVulkanClearColor(render::BLUE_Abyss);
 
 static_assert(k_constexpr_blue_abyss == k_expected_blue_abyss);
@@ -35,7 +40,7 @@ auto ExpectVulkanColor(std::array<float, 4U> const &actual,
 // =============================================================================
 
 TEST(GGEMSVulkanColorConversion, ZeroByteChannelsMapToZeroFloatChannels) {
-  ExpectVulkanColor(ToVulkanClearColor(render::GREEN_Deep),
+  ExpectVulkanColor(ToVulkanClearColor(render::GREEN_DeepGreen),
                     {0.0F, 0.18823531F, 0.0F, 1.0F});
 }
 
@@ -43,7 +48,7 @@ TEST(GGEMSVulkanColorConversion, ZeroByteChannelsMapToZeroFloatChannels) {
 // =============================================================================
 
 TEST(GGEMSVulkanColorConversion, AllMaximumByteChannelsMapToOne) {
-  ExpectVulkanColor(ToVulkanClearColor(render::WHITE_Pure),
+  ExpectVulkanColor(ToVulkanClearColor(render::WHITE_White),
                     {1.0F, 1.0F, 1.0F, 1.0F});
 }
 
@@ -52,7 +57,7 @@ TEST(GGEMSVulkanColorConversion, AllMaximumByteChannelsMapToOne) {
 
 TEST(GGEMSVulkanColorConversion, NamedColorMapsToExplicitComponents) {
   ExpectVulkanColor(ToVulkanClearColor(render::RED_Tomato),
-                    {0.86274517F, 0.078431375F, 0.23529413F, 1.0F});
+                    {1.0F, 0.38823533F, 0.27843139F, 1.0F});
 }
 
 // =============================================================================
@@ -68,7 +73,7 @@ TEST(GGEMSVulkanColorConversion, BlueAbyssMatchesCurrentClearColor) {
 
 TEST(GGEMSVulkanColorConversion, BrightVariantMapsToExplicitComponents) {
   ExpectVulkanColor(ToVulkanClearColor(render::RED_Tomato_B),
-                    {0.9058824F, 0.38431376F, 0.4901961F, 1.0F});
+                    {1.0F, 0.59215689F, 0.51764709F, 1.0F});
 }
 
 // =============================================================================
@@ -76,7 +81,7 @@ TEST(GGEMSVulkanColorConversion, BrightVariantMapsToExplicitComponents) {
 
 TEST(GGEMSVulkanColorConversion, FaintVariantMapsToExplicitComponents) {
   ExpectVulkanColor(ToVulkanClearColor(render::RED_Tomato_F),
-                    {0.57254905F, 0.050980397F, 0.15686275F, 1.0F});
+                    {0.66666669F, 0.25882354F, 0.18431373F, 1.0F});
 }
 
 // =============================================================================
@@ -99,10 +104,11 @@ TEST(GGEMSVulkanColorConversion, ClampsShadeAbovePaletteRange) {
     .family = render::ColorFamily::Blue,
     .shade = std::numeric_limits<std::uint8_t>::max(),
     .variant = render::ColorVariant::Normal,
-    .layer = render::ColorLayer::Foreground};
+    .layer = render::ColorLayer::Foreground,
+  };
 
-  ExpectVulkanColor(ToVulkanClearColor(out_of_range_color),
-                    k_expected_blue_abyss);
+  EXPECT_EQ(ToVulkanClearColor(out_of_range_color),
+            ToVulkanClearColor(render::BLUE_Tone90));
 }
 
 // =============================================================================

@@ -2,11 +2,14 @@
 
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <vector>
 
 #include "GGEMS/render/GGEMSParticleTrace.hh"
+#include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
+#include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
 
 struct GLFWwindow;
 
@@ -20,7 +23,14 @@ class GGEMSTransportObserver;
 
 namespace ggems::ui {
 
-class GGEMSVulkanContext;
+class GGEMSImGuiLayer;
+class GGEMSVulkanSceneRenderer;
+
+namespace detail {
+class GGEMSImGuiIntegration;
+class GGEMSVulkanDevice;
+class GGEMSVulkanPresenter;
+} // namespace detail
 
 class GGEMSGuiApplication {
 public:
@@ -56,13 +66,37 @@ private:
   static void FramebufferResizeCallback(GLFWwindow *window, int width,
                                         int height) noexcept;
 
+  auto RenderFrame(bool framebuffer_resized) -> void;
+  auto RecreateSwapchain() -> void;
+  auto BuildImGuiFrame() -> void;
+  auto RecreateSceneRenderTargets() -> void;
+  auto ApplyPendingSourceRunSnapshot() -> void;
+  auto ApplyPendingParticleTraceSegments() -> void;
+
   std::string title_;
   std::int32_t width_{0};
   std::int32_t height_{0};
   std::string vulkan_device_name_selector_{"auto"};
   std::optional<std::uint32_t> vulkan_device_index_selector_;
   GLFWwindow *window_{nullptr};
-  std::unique_ptr<GGEMSVulkanContext> vk_context_;
+
+  std::unique_ptr<detail::GGEMSVulkanDevice> device_;
+  std::unique_ptr<detail::GGEMSVulkanPresenter> presenter_;
+  std::unique_ptr<detail::GGEMSImGuiIntegration> imgui_integration_;
+  std::unique_ptr<GGEMSVulkanSceneRenderer> scene_renderer_;
+  std::unique_ptr<GGEMSImGuiLayer> imgui_layer_;
+  detail::GGEMSDeviceStatusSnapshot device_status_{};
+
+  std::mutex pending_source_run_snapshot_mutex_;
+  std::optional<core::sources::GGEMSSourceRunSnapshot>
+    pending_source_run_snapshot_;
+
+  std::mutex pending_particle_trace_mutex_;
+  std::vector<ggems::render::GGEMSParticleTraceSegment>
+    pending_particle_trace_segments_;
+  bool has_pending_particle_trace_segments_{false};
+  bool pending_particle_trace_clear_{false};
+
   bool glfw_initialized_{false};
   bool framebuffer_resized_{false};
   bool missing_observer_warning_emitted_{false};

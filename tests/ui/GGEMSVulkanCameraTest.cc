@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 #include <vulkan/vulkan.hpp>
 
-#include "GGEMS/ui/GGEMSVulkanCamera.hh"
+#include "GGEMS/ui/detail/GGEMSVulkanCamera.hh"
 
 namespace {
 
@@ -32,14 +32,16 @@ struct Point3 {
 [[nodiscard]] auto TransformPoint(Matrix4Rows const &matrix,
                                   Point3 const &point) noexcept
   -> std::array<float, 4U> {
-  return {(matrix.row_0[0] * point.x) + (matrix.row_0[1] * point.y) +
-            (matrix.row_0[2] * point.z) + matrix.row_0[3],
-          (matrix.row_1[0] * point.x) + (matrix.row_1[1] * point.y) +
-            (matrix.row_1[2] * point.z) + matrix.row_1[3],
-          (matrix.row_2[0] * point.x) + (matrix.row_2[1] * point.y) +
-            (matrix.row_2[2] * point.z) + matrix.row_2[3],
-          (matrix.row_3[0] * point.x) + (matrix.row_3[1] * point.y) +
-            (matrix.row_3[2] * point.z) + matrix.row_3[3]};
+  return {
+    (matrix.row_0[0] * point.x) + (matrix.row_0[1] * point.y) +
+      (matrix.row_0[2] * point.z) + matrix.row_0[3],
+    (matrix.row_1[0] * point.x) + (matrix.row_1[1] * point.y) +
+      (matrix.row_1[2] * point.z) + matrix.row_1[3],
+    (matrix.row_2[0] * point.x) + (matrix.row_2[1] * point.y) +
+      (matrix.row_2[2] * point.z) + matrix.row_2[3],
+    (matrix.row_3[0] * point.x) + (matrix.row_3[1] * point.y) +
+      (matrix.row_3[2] * point.z) + matrix.row_3[3],
+  };
 }
 
 // =============================================================================
@@ -78,7 +80,8 @@ TEST(GGEMSVulkanCamera, ResetRestoresCanonicalView) {
     .row_0 = {0.8F * k_sqrt_half, 0.0F, -0.8F * k_sqrt_half, 0.0F},
     .row_1 = {-0.4F, 0.8F * k_sqrt_half, -0.4F, 0.0F},
     .row_2 = {-0.025F, -0.05F * k_sqrt_half, -0.025F, 0.5F},
-    .row_3 = {0.0F, 0.0F, 0.0F, 1.0F}};
+    .row_3 = {0.0F, 0.0F, 0.0F, 1.0F},
+  };
 
   ExpectMatrixNear(camera.BuildWorldToClipMatrix(), expected);
 }
@@ -89,10 +92,12 @@ TEST(GGEMSVulkanCamera, ZeroYawAndPitchUseExpectedViewBasisAndDepth) {
   camera.SetOrbitAngles(0.0F, 0.0F);
   camera.SetZoom(1.0F);
 
-  Matrix4Rows const expected{.row_0 = {0.0F, 0.0F, -1.0F, 0.0F},
-                             .row_1 = {0.0F, 1.0F, 0.0F, 0.0F},
-                             .row_2 = {-0.05F, 0.0F, 0.0F, 0.5F},
-                             .row_3 = {0.0F, 0.0F, 0.0F, 1.0F}};
+  Matrix4Rows const expected{
+    .row_0 = {0.0F, 0.0F, -1.0F, 0.0F},
+    .row_1 = {0.0F, 1.0F, 0.0F, 0.0F},
+    .row_2 = {-0.05F, 0.0F, 0.0F, 0.5F},
+    .row_3 = {0.0F, 0.0F, 0.0F, 1.0F},
+  };
 
   Matrix4Rows const matrix = camera.BuildWorldToClipMatrix();
   ExpectMatrixNear(matrix, expected);

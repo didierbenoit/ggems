@@ -86,12 +86,19 @@ add_custom_target(
           "${GGEMS_TRACES_VERTEX_SPV}" "${GGEMS_TRACES_FRAGMENT_SPV}")
 
 # GGEMS GuiMode library
-file(GLOB GGEMS_GUI_SOURCES CONFIGURE_DEPENDS
-     "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
-
-list(SORT GGEMS_GUI_SOURCES)
-
-add_library(ggems_gui STATIC ${GGEMS_GUI_SOURCES})
+add_library(
+  ggems_gui STATIC
+  GGEMSGuiApplication.cc
+  GGEMSImGuiIntegration.cc
+  GGEMSImGuiLayer.cc
+  GGEMSImGuiOutputPanel.cc
+  GGEMSImGuiTheme.cc
+  GGEMSVulkanCamera.cc
+  GGEMSVulkanDevice.cc
+  GGEMSVulkanDeviceSelection.cc
+  GGEMSVulkanDisplayAdapterWin32.cc
+  GGEMSVulkanPresenter.cc
+  GGEMSVulkanSceneRenderer.cc)
 
 add_dependencies(ggems_gui ggems_gui_shaders)
 add_library(GGEMS::Gui ALIAS ggems_gui)

@@ -20,7 +20,8 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
-#include "GGEMS/ui/GGEMSVulkanDisplayAdapterWin32.hh"
+#include "GGEMS/ui/detail/GGEMSVulkanDisplayAdapterWin32.hh"
+#include "GGEMS/ui/detail/GGEMSVulkanDeviceSelection.hh"
 
 namespace {
 
@@ -29,15 +30,18 @@ using Microsoft::WRL::ComPtr;
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] std::string EncodeLuid(std::span<std::uint8_t const> bytes) {
-  constexpr char k_hex_digits[]{"0123456789abcdef"};
+[[nodiscard]] auto EncodeLuid(std::span<std::uint8_t const> bytes)
+  -> std::string {
+  constexpr std::string_view k_hex_digits{"0123456789abcdef"};
 
   std::string identity{"win32-luid:"};
-  identity.reserve(identity.size() + bytes.size() * 2U);
+  identity.reserve(identity.size() + (bytes.size() * 2U));
 
   for (std::uint8_t byte : bytes) {
-    identity.push_back(k_hex_digits[(byte >> 4U) & 0x0FU]);
-    identity.push_back(k_hex_digits[byte & 0x0FU]);
+    auto value = static_cast<std::uint32_t>(byte);
+
+    identity.push_back(k_hex_digits[(value >> 4U) & 0x0FU]);
+    identity.push_back(k_hex_digits[value & 0x0FU]);
   }
 
   return identity;
@@ -46,7 +50,7 @@ using Microsoft::WRL::ComPtr;
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] std::string WideToUtf8(std::wstring_view text) {
+[[nodiscard]] auto WideToUtf8(std::wstring_view text) -> std::string {
   if (text.empty()) {
     return {};
   }
@@ -75,7 +79,7 @@ using Microsoft::WRL::ComPtr;
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] std::string EncodeDxgiLuid(LUID const &luid) {
+[[nodiscard]] auto EncodeDxgiLuid(LUID const &luid) -> std::string {
   static_assert(sizeof(LUID) == VK_LUID_SIZE,
                 "Windows and Vulkan LUID widths must match.");
 
@@ -88,8 +92,8 @@ using Microsoft::WRL::ComPtr;
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] std::unexpected<std::string>
-MakeDxgiFailure(std::string_view operation, HRESULT result) {
+[[nodiscard]] auto MakeDxgiFailure(std::string_view operation, HRESULT result)
+  -> std::unexpected<std::string> {
   return std::unexpected<std::string>{
     std::format("{} failed with HRESULT 0x{:08x}.", operation,
                 static_cast<std::uint32_t>(result))};
@@ -102,8 +106,8 @@ namespace ggems::ui::detail {
 // =============================================================================
 // =============================================================================
 
-std::expected<GGEMSVulkanDisplayAdapter, std::string>
-ResolveWin32DisplayAdapter(GLFWwindow *window) {
+auto ResolveWin32DisplayAdapter(GLFWwindow *window)
+  -> std::expected<GGEMSVulkanDisplayAdapter, std::string> {
   if (window == nullptr) {
     return std::unexpected<std::string>{"A valid GLFW window is required to "
                                         "resolve the Win32 display adapter."};
@@ -186,7 +190,8 @@ ResolveWin32DisplayAdapter(GLFWwindow *window) {
 
       GGEMSVulkanDisplayAdapter candidate{
         .platform_id = EncodeDxgiLuid(adapter_description.AdapterLuid),
-        .name = std::move(name)};
+        .name = std::move(name),
+      };
 
       if (matched_adapter.has_value() &&
           matched_adapter->platform_id != candidate.platform_id) {
@@ -210,8 +215,8 @@ ResolveWin32DisplayAdapter(GLFWwindow *window) {
 // =============================================================================
 // =============================================================================
 
-std::optional<std::string>
-QueryWin32VulkanAdapterId(vk::raii::PhysicalDevice const &physical_device) {
+auto QueryWin32VulkanAdapterId(vk::raii::PhysicalDevice const &physical_device)
+  -> std::optional<std::string> {
   auto properties =
     physical_device.getProperties2<vk::PhysicalDeviceProperties2,
                                    vk::PhysicalDeviceIDProperties>();

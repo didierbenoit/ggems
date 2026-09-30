@@ -11,8 +11,8 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
-#include "GGEMS/ui/GGEMSImGuiLayer.hh"
-#include "GGEMS/ui/GGEMSDeviceStatus.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiLayer.hh"
+#include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
 #include "GGEMS/logging/GGEMSOutputState.hh"
 #include "GGEMS/logging/GGEMSOutputMode.hh"
 #include "GGEMS/particles/GGEMSParticleTypes.hh"

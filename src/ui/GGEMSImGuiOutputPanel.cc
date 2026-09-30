@@ -8,9 +8,9 @@
 
 #include "GGEMS/logging/GGEMSOutputState.hh"
 #include "GGEMS/logging/GGEMSLogger.hh"
-#include "GGEMS/ui/GGEMSImGuiTheme.hh"
-#include "GGEMS/ui/GGEMSImGuiOutputPanel.hh"
-#include "GGEMS/render/GGEMSColor.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiOutputPanel.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/render/GGEMSVisualLine.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"

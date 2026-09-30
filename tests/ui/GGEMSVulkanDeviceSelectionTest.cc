@@ -7,7 +7,7 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMS/ui/GGEMSVulkanDeviceSelection.hh"
+#include "GGEMS/ui/detail/GGEMSVulkanDeviceSelection.hh"
 
 namespace {
 
@@ -19,11 +19,11 @@ using ggems::ui::detail::SelectVulkanDevice;
 // =============================================================================
 // =============================================================================
 
-[[nodiscard]] GGEMSVulkanDeviceCandidate
+[[nodiscard]] auto
 MakeCandidate(std::uint32_t index, std::string name,
               vk::PhysicalDeviceType type, bool suitable = true,
               std::optional<std::string> platform_adapter_id = std::nullopt,
-              std::string rejection_reason = {}) {
+              std::string rejection_reason = {}) -> GGEMSVulkanDeviceCandidate {
   GGEMSVulkanDeviceCandidate candidate{};
   candidate.enumeration_index = index;
   candidate.name = std::move(name);
@@ -51,8 +51,10 @@ TEST(GGEMSVulkanDeviceSelection, AutoPrefersDisplayMatchOverDiscreteDevice) {
                   vk::PhysicalDeviceType::eDiscreteGpu, true,
                   "win32-luid:other")};
 
-  GGEMSVulkanDisplayAdapter display_adapter{.platform_id = "win32-luid:display",
-                                            .name = "Display apapter"};
+  GGEMSVulkanDisplayAdapter display_adapter{
+    .platform_id = "win32-luid:display",
+    .name = "Display apapter",
+  };
 
   auto result =
     SelectVulkanDevice(GGEMSVulkanDeviceSelector::FromString("auto"),
@@ -71,7 +73,8 @@ TEST(GGEMSVulkanDeviceSelection,
      AutoUsesCurrentFallbackWhenDisplayIdentityIsUnavailable) {
   std::vector<GGEMSVulkanDeviceCandidate> candidates{
     MakeCandidate(3U, "Discrete", vk::PhysicalDeviceType::eDiscreteGpu),
-    MakeCandidate(19U, "Integrated", vk::PhysicalDeviceType::eIntegratedGpu)};
+    MakeCandidate(19U, "Integrated", vk::PhysicalDeviceType::eIntegratedGpu),
+  };
 
   auto result =
     SelectVulkanDevice(GGEMSVulkanDeviceSelector::FromString("auto"),
@@ -90,7 +93,8 @@ TEST(GGEMSVulkanDeviceSelection,
      ExplicitIndexSupportsNonContiguousEnumerationIndices) {
   std::vector<GGEMSVulkanDeviceCandidate> candidates{
     MakeCandidate(4U, "First", vk::PhysicalDeviceType::eIntegratedGpu),
-    MakeCandidate(27U, "Second", vk::PhysicalDeviceType::eDiscreteGpu)};
+    MakeCandidate(27U, "Second", vk::PhysicalDeviceType::eDiscreteGpu),
+  };
 
   auto result = SelectVulkanDevice(GGEMSVulkanDeviceSelector::FromIndex(27U),
                                    std::span{candidates}, std::nullopt);
@@ -138,7 +142,8 @@ TEST(GGEMSVulkanDeviceSelection,
     MakeCandidate(42U, "AMD Radeon RX 7900 XTX",
                   vk::PhysicalDeviceType::eDiscreteGpu),
     MakeCandidate(91U, "Mobile AMD Radeon",
-                  vk::PhysicalDeviceType::eIntegratedGpu)};
+                  vk::PhysicalDeviceType::eIntegratedGpu),
+  };
 
   auto result =
     SelectVulkanDevice(GGEMSVulkanDeviceSelector::FromString("aMd RaDeOn"),
@@ -156,7 +161,9 @@ TEST(GGEMSVulkanDeviceSelection, AmbiguousNameFailsAndListsCandidates) {
     MakeCandidate(2U, "AMD Radeon RX 7800 XT",
                   vk::PhysicalDeviceType::eDiscreteGpu),
     MakeCandidate(13U, "AMD Radeon RX 7900 XTX",
-                  vk::PhysicalDeviceType::eDiscreteGpu)};
+                  vk::PhysicalDeviceType::eDiscreteGpu),
+  };
+
   auto result =
     SelectVulkanDevice(GGEMSVulkanDeviceSelector::FromString("radeon"),
                        std::span{candidates}, std::nullopt);
@@ -186,7 +193,8 @@ TEST(GGEMSVulkanDeviceSelection, ExplicitlyIncompatibleDeviceFailsWithReason) {
 TEST(GGEMSVulkanDeviceSelection, NoCompatibleDeviceFailsClearly) {
   std::vector<GGEMSVulkanDeviceCandidate> candidates{
     MakeCandidate(1U, "First", vk::PhysicalDeviceType::eIntegratedGpu, false),
-    MakeCandidate(23U, "Second", vk::PhysicalDeviceType::eDiscreteGpu, false)};
+    MakeCandidate(23U, "Second", vk::PhysicalDeviceType::eDiscreteGpu, false),
+  };
   auto result =
     SelectVulkanDevice(GGEMSVulkanDeviceSelector::FromString("auto"),
                        std::span{candidates}, std::nullopt);
@@ -203,8 +211,10 @@ TEST(GGEMSVulkanDeviceSelection, ReliableCrossAdapterMismatchIsReported) {
     29U, "Selected renderer", vk::PhysicalDeviceType::eDiscreteGpu, true,
     "win32-luid:renderer")};
 
-  GGEMSVulkanDisplayAdapter display_adapter{.platform_id = "win32-luid:display",
-                                            .name = "Display adapter"};
+  GGEMSVulkanDisplayAdapter display_adapter{
+    .platform_id = "win32-luid:display",
+    .name = "Display adapter",
+  };
 
   auto result = SelectVulkanDevice(GGEMSVulkanDeviceSelector::FromIndex(29U),
                                    std::span{candidates}, display_adapter);

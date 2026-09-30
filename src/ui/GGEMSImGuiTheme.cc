@@ -1,7 +1,8 @@
 #include <imgui.h>
 
-#include "GGEMS/ui/GGEMSImGuiTheme.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
 #include "GGEMS/render/GGEMSColor.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
 
 namespace ggems::ui {

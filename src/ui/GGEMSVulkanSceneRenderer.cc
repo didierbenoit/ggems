@@ -11,8 +11,8 @@
 #include <ios>
 #include <span>
 
-#include "GGEMS/ui/GGEMSVulkanSceneRenderer.hh"
-#include "GGEMS/ui/GGEMSVulkanColorConversion.hh"
+#include "GGEMS/ui/detail/GGEMSVulkanSceneRenderer.hh"
+#include "GGEMS/ui/detail/GGEMSVulkanColorConversion.hh"
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/logging/GGEMSLogMacros.hh"
@@ -975,15 +975,19 @@ auto GGEMSVulkanSceneRenderer::RecordTraceCommands(
     return;
   }
 
-  vk::Viewport viewport{.x = 0.0F,
-                        .y = 0.0F,
-                        .width = static_cast<float>(viewport_extent_.width),
-                        .height = static_cast<float>(viewport_extent_.height),
-                        .minDepth = 0.0F,
-                        .maxDepth = 1.0F};
+  vk::Viewport viewport{
+    .x = 0.0F,
+    .y = 0.0F,
+    .width = static_cast<float>(viewport_extent_.width),
+    .height = static_cast<float>(viewport_extent_.height),
+    .minDepth = 0.0F,
+    .maxDepth = 1.0F,
+  };
 
-  vk::Rect2D const scissor{.offset = vk::Offset2D{.x = 0, .y = 0},
-                           .extent = viewport_extent_};
+  vk::Rect2D const scissor{
+    .offset = vk::Offset2D{.x = 0, .y = 0},
+    .extent = viewport_extent_,
+  };
 
   command_buffer.setViewport(0U, viewport);
   command_buffer.setScissor(0U, scissor);
