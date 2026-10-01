@@ -17,8 +17,8 @@ class GGEMSImGuiLayer {
 public:
   struct FrameInputs {
     ImTextureID scene_texture_id{};
-    std::uint32_t scene_texture_width{0U};
-    std::uint32_t scene_texture_height{0U};
+    std::uint32_t scene_texture_logical_width{0U};
+    std::uint32_t scene_texture_logical_height{0U};
     std::uint32_t swapchain_width{0U};
     std::uint32_t swapchain_height{0U};
     core::sources::GGEMSSourceRunSnapshot const *source_run_snapshot{nullptr};
@@ -38,15 +38,18 @@ public:
                   detail::GGEMSWorkbenchState &workbench) -> void;
 
 private:
+  struct MenuActions {
+    bool reset_camera{false};
+    bool reset_layout{false};
+  };
+
   [[nodiscard]] auto BuildMainDockspace(detail::GGEMSWorkbenchState &workbench)
-    -> bool;
+    -> MenuActions;
   [[nodiscard]] static auto
-  BuildMainMenuBar(detail::GGEMSWorkbenchState &workbench) -> bool;
-  static auto BuildDefaultDockspaceLayout(ImGuiID dockspace_id,
-                                          ImVec2 const &dockspace_size) -> void;
+  BuildMainMenuBar(detail::GGEMSWorkbenchState &workbench) -> MenuActions;
 
   GGEMSImGuiOutputPanel output_panel_;
   detail::GGEMSImGuiViewportPanel viewport_panel_;
-  bool dockspace_layout_built_{false};
+  bool layout_initialized_{false};
 };
 } // namespace ggems::ui

@@ -33,7 +33,10 @@
 #include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiIntegration.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayer.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
+#include "GGEMS/ui/detail/GGEMSPresentationScale.hh"
 #include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
+#include "GGEMS/ui/detail/GGEMSVulkanColorConversion.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanDevice.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanDeviceSelection.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanPresenter.hh"
@@ -410,6 +413,8 @@ auto GGEMSGuiApplication::RenderFrame(bool framebuffer_resized) -> void {
           world_to_clip.row_2,
           world_to_clip.row_3,
         },
+      .clear_color = detail::ToVulkanClearColor(
+        GetThemeColorKey(GGEMSThemeRole::SceneBackground)),
       .show_axes = workbench_.show_axes,
       .trace_visibility = workbench_.trace_visibility,
     };
@@ -528,27 +533,43 @@ auto GGEMSGuiApplication::BuildImGuiFrame() -> void {
 
   imgui_integration_->BeginFrame();
 
+  // The viewport request is logical; the scene target is sized in
+  // framebuffer pixels. Camera and texture matching stay logical.
   if (workbench_.viewport.visible) {
+    detail::GGEMSImGuiIntegration::FramebufferDensity const density =
+      imgui_integration_->GetFramebufferDensity();
+
+    detail::GGEMSPixelExtent const target_extent =
+      detail::ComputeSceneTargetExtent(
+        detail::GGEMSPixelExtent{
+          .width = workbench_.viewport.width,
+          .height = workbench_.viewport.height,
+        },
+        density.x, density.y);
+
     scene_renderer_->SetViewportExtent(vk::Extent2D{
-      .width = workbench_.viewport.width,
-      .height = workbench_.viewport.height,
+      .width = target_extent.width,
+      .height = target_extent.height,
     });
 
     if (scene_renderer_->RequiresResize()) {
       RecreateSceneRenderTargets();
     }
+
+    scene_target_logical_width_ = workbench_.viewport.width;
+    scene_target_logical_height_ = workbench_.viewport.height;
   }
 
-  vk::Extent2D const &scene_extent = scene_renderer_->GetViewportExtent();
   vk::Extent2D const &swapchain_extent = presenter_->GetExtent();
 
-  workbench_.camera.SetViewportSize(scene_extent.width, scene_extent.height);
+  workbench_.camera.SetViewportSize(scene_target_logical_width_,
+                                    scene_target_logical_height_);
 
   imgui_layer_->BuildFrame(
     GGEMSImGuiLayer::FrameInputs{
       .scene_texture_id = imgui_integration_->GetSceneTextureID(),
-      .scene_texture_width = scene_extent.width,
-      .scene_texture_height = scene_extent.height,
+      .scene_texture_logical_width = scene_target_logical_width_,
+      .scene_texture_logical_height = scene_target_logical_height_,
       .swapchain_width = swapchain_extent.width,
       .swapchain_height = swapchain_extent.height,
       .source_run_snapshot = displayed_source_run_snapshot_.has_value()

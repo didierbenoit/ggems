@@ -91,8 +91,10 @@ add_library(
   GGEMSGuiApplication.cc
   GGEMSImGuiIntegration.cc
   GGEMSImGuiLayer.cc
+  GGEMSImGuiLayout.cc
   GGEMSImGuiOutputPanel.cc
   GGEMSImGuiPanels.cc
+  GGEMSImGuiSettingsFile.cc
   GGEMSImGuiTheme.cc
   GGEMSImGuiViewportPanel.cc
   GGEMSSceneCamera.cc

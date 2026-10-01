@@ -2,6 +2,8 @@
 
 #include <cstdint>
 #include <optional>
+#include <filesystem>
+#include <string>
 
 #include <imgui.h>
 #include <vulkan/vulkan.hpp>
@@ -53,8 +55,16 @@ public:
   auto UnregisterSceneTexture() noexcept -> void;
   [[nodiscard]] auto GetSceneTextureID() const noexcept -> ImTextureID;
 
-  auto BeginFrame() const -> void;
+  auto BeginFrame() -> void;
   auto RenderDrawData(vk::CommandBuffer command_buffer) const -> void;
+
+  struct FramebufferDensity {
+    float x{1.0F};
+    float y{1.0F};
+  };
+
+  [[nodiscard]] auto GetFramebufferDensity() const noexcept
+    -> FramebufferDensity;
 
   auto ThrowIfBackendFailed() const -> void;
 
@@ -65,7 +75,11 @@ private:
   auto DetachVulkanBackend() noexcept -> void;
   auto ReleaseSceneDescriptor() noexcept -> void;
 
-  static auto LoadFonts(float font_size) -> void;
+  auto LoadSettings() -> void;
+  auto SaveSettings() -> void;
+  auto ApplyContentScale(float content_scale) -> void;
+
+  static auto LoadFonts() -> void;
   static auto RecordBackendResult(VkResult result) noexcept -> void;
 
   GLFWwindow *window_{nullptr};
@@ -79,6 +93,12 @@ private:
 
   vk::ImageView scene_image_view_{};
   VkDescriptorSet scene_descriptor_set_{VK_NULL_HANDLE};
+
+  float applied_content_scale_{0.0F};
+
+  std::optional<std::filesystem::path> settings_path_;
+  std::string persisted_settings_;
+  bool settings_write_failed_{false};
 
   std::optional<vk::Result> backend_failure_;
 };

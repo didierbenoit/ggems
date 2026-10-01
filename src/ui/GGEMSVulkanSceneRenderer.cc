@@ -12,11 +12,9 @@
 #include <span>
 
 #include "GGEMS/ui/detail/GGEMSVulkanSceneRenderer.hh"
-#include "GGEMS/ui/detail/GGEMSVulkanColorConversion.hh"
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/logging/GGEMSLogMacros.hh"
-#include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 
 namespace {
@@ -396,7 +394,7 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
 
   command_buffer.pipelineBarrier2(to_color_attachment_dependency);
 
-  vk::ClearValue clear_value{detail::ToVulkanClearColor(render::BLUE_Abyss)};
+  vk::ClearValue clear_value{vk::ClearColorValue{parameters.clear_color}};
 
   vk::RenderingAttachmentInfo color_attachment{
     .imageView = *color_image_view_,

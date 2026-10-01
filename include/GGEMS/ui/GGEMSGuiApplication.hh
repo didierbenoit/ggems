@@ -88,6 +88,8 @@ private:
   std::unique_ptr<GGEMSImGuiLayer> imgui_layer_;
   detail::GGEMSDeviceStatusSnapshot device_status_{};
   detail::GGEMSWorkbenchState workbench_{};
+  std::uint32_t scene_target_logical_width_{0U};
+  std::uint32_t scene_target_logical_height_{0U};
 
   std::optional<core::sources::GGEMSSourceRunSnapshot>
     displayed_source_run_snapshot_;

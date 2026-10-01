@@ -21,6 +21,7 @@ private:
 public:
   struct RenderParameters {
     std::array<std::array<float, 4U>, 4U> world_to_clip{};
+    std::array<float, 4U> clear_color{};
     bool show_axes{true};
     ggems::render::GGEMSParticleTraceVisibility const &trace_visibility;
   };

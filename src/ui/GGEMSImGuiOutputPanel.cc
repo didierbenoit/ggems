@@ -9,11 +9,10 @@
 #include "GGEMS/logging/GGEMSOutputState.hh"
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiOutputPanel.hh"
-#include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/render/GGEMSVisualLine.hh"
 #include "GGEMS/render/GGEMSBanner.hh"
-#include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/utf/GGEMSUTF.hh"
 
 namespace {
@@ -21,9 +20,8 @@ namespace {
 // =============================================================================
 // =============================================================================
 
-auto RenderTextLine(std::string_view text, ggems::render::ColorKey const &color)
-  -> void {
-  ImGui::PushStyleColor(ImGuiCol_Text, ggems::ui::ToImGuiColor(color));
+auto RenderTextLine(std::string_view text, ImVec4 const &color) -> void {
+  ImGui::PushStyleColor(ImGuiCol_Text, color);
 
   if (text.empty()) {
     ImGui::Dummy(ImVec2{0.0F, ImGui::GetTextLineHeight()});
@@ -37,8 +35,7 @@ auto RenderTextLine(std::string_view text, ggems::render::ColorKey const &color)
 // =============================================================================
 // =============================================================================
 
-auto RenderMultilineText(std::string_view text,
-                         ggems::render::ColorKey const &color) -> void {
+auto RenderMultilineText(std::string_view text, ImVec4 const &color) -> void {
   if (text.empty()) {
     RenderTextLine(text, color);
     return;
@@ -136,7 +133,7 @@ auto GGEMSImGuiOutputPanel::ShouldDisplay(
 
 auto GGEMSImGuiOutputPanel::Render(core::GGEMSOutputState &output_state)
   -> void {
-  ImGui::Begin("GGEMS Output");
+  ImGui::Begin(detail::k_output_window_name);
 
   std::size_t log_count = output_state.GetLogCount();
 
@@ -185,7 +182,8 @@ auto GGEMSImGuiOutputPanel::Render(core::GGEMSOutputState &output_state)
 
   ImGui::Separator();
 
-  ImGui::PushStyleColor(ImGuiCol_ChildBg, ToImGuiColor(render::GRAY_Void));
+  ImGui::PushStyleColor(ImGuiCol_ChildBg,
+                        GetThemeColor(GGEMSThemeRole::RecessedBackground));
 
   ImGui::BeginChild("GGEMSOutputLogRegion", ImVec2{0.0F, 0.0F},
                     ImGuiChildFlags_Borders,
@@ -204,6 +202,8 @@ auto GGEMSImGuiOutputPanel::Render(core::GGEMSOutputState &output_state)
   std::vector<core::RenderedLogLine> lines =
     output_state.GetLastLogLinesSnapshot(max_visible_lines_);
 
+  ImVec4 const message_color = GetThemeColor(GGEMSThemeRole::PrimaryText);
+
   for (core::RenderedLogLine const &line : lines) {
     if (!ShouldDisplay(line)) {
       continue;
@@ -212,7 +212,7 @@ auto GGEMSImGuiOutputPanel::Render(core::GGEMSOutputState &output_state)
     bool const is_multiline = line.msg.contains('\n');
 
     if (show_prefix_ && !line.prefix.empty()) {
-      RenderTextLine(line.prefix, line.color);
+      RenderTextLine(line.prefix, ToImGuiColor(line.color));
 
       if (!is_multiline) {
         ImGui::SameLine();
@@ -223,9 +223,9 @@ auto GGEMSImGuiOutputPanel::Render(core::GGEMSOutputState &output_state)
 
     if (is_multiline) {
       message = RemoveLeadingBlockNewline(message);
-      RenderMultilineText(message, render::WHITE_Bone);
+      RenderMultilineText(message, message_color);
     } else {
-      RenderTextLine(message, render::WHITE_Bone);
+      RenderTextLine(message, message_color);
     }
   }
 

@@ -1,8 +1,8 @@
 #include <imgui.h>
-#include <imgui_internal.h>
 
 #include "GGEMS/ui/detail/GGEMSImGuiLayer.hh"
 #include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiPanels.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiViewportPanel.hh"
 #include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
@@ -18,7 +18,7 @@ auto GGEMSImGuiLayer::BuildFrame(
   detail::GGEMSWorkbenchState &workbench) -> void {
   workbench.viewport.visible = false;
 
-  bool const reset_camera_requested = BuildMainDockspace(workbench);
+  MenuActions const menu_actions = BuildMainDockspace(workbench);
 
   if (workbench.show_output_panel) {
     output_panel_.Render(*inputs.output_state);
@@ -39,8 +39,9 @@ auto GGEMSImGuiLayer::BuildFrame(
   if (workbench.show_viewport_panel) {
     detail::GGEMSImGuiViewportPanel::Result const result =
       viewport_panel_.Build(workbench.show_viewport_panel,
-                            inputs.scene_texture_id, inputs.scene_texture_width,
-                            inputs.scene_texture_height);
+                            inputs.scene_texture_id,
+                            inputs.scene_texture_logical_width,
+                            inputs.scene_texture_logical_height);
 
     workbench.viewport.visible = result.visible;
 
@@ -57,7 +58,7 @@ auto GGEMSImGuiLayer::BuildFrame(
     viewport_panel_.CancelGesture();
   }
 
-  if (reset_camera_requested) {
+  if (menu_actions.reset_camera) {
     workbench.camera.Reset();
   }
 
@@ -70,7 +71,7 @@ auto GGEMSImGuiLayer::BuildFrame(
 // -----------------------------------------------------------------------------
 
 auto GGEMSImGuiLayer::BuildMainDockspace(detail::GGEMSWorkbenchState &workbench)
-  -> bool {
+  -> MenuActions {
   ImGuiViewport const *viewport = ImGui::GetMainViewport();
 
   ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -89,37 +90,54 @@ auto GGEMSImGuiLayer::BuildMainDockspace(detail::GGEMSWorkbenchState &workbench)
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0.0F, 0.0F});
 
   bool dockspace_open{true};
-  ImGui::Begin("GGEMS Main Dockspace", &dockspace_open, window_flags);
+  ImGui::Begin(detail::k_main_dockspace_window_name, &dockspace_open,
+               window_flags);
 
   ImGui::PopStyleVar(3);
 
-  bool const reset_camera_requested = BuildMainMenuBar(workbench);
+  MenuActions const menu_actions = BuildMainMenuBar(workbench);
 
-  ImGuiID dockspace_id = ImGui::GetID("GGEMS_Dockspace");
+  // The saved-layout decision must precede the first DockSpace call, which
+  // would otherwise create the main node itself. The default arrangement is
+  // sized from the main viewport size, which on the first frame equals the
+  // work size (no menu-bar inset yet), so a later reset rebuilds it exactly.
+  if (!layout_initialized_) {
+    if (!detail::HasSavedLayout()) {
+      detail::BuildDefaultLayout(viewport->Size);
+    }
+
+    layout_initialized_ = true;
+  }
+
+  if (menu_actions.reset_layout) {
+    detail::ResetLayout(viewport->Size);
+
+    workbench.show_output_panel = true;
+    workbench.show_status_panel = true;
+    workbench.show_scene_panel = true;
+    workbench.show_viewport_panel = true;
+    workbench.show_inspector_panel = true;
+  }
 
   ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
 
-  ImGui::DockSpace(dockspace_id, ImVec2{0.0F, 0.0F}, dockspace_flags);
-
-  if (!dockspace_layout_built_) {
-    BuildDefaultDockspaceLayout(dockspace_id, viewport->WorkSize);
-    dockspace_layout_built_ = true;
-  }
+  ImGui::DockSpace(detail::GetMainDockspaceID(), ImVec2{0.0F, 0.0F},
+                   dockspace_flags);
 
   ImGui::End();
 
-  return reset_camera_requested;
+  return menu_actions;
 }
 
 // -----------------------------------------------------------------------------
 
 auto GGEMSImGuiLayer::BuildMainMenuBar(detail::GGEMSWorkbenchState &workbench)
-  -> bool {
-  if (!ImGui::BeginMainMenuBar()) {
-    return false;
-  }
+  -> MenuActions {
+  MenuActions menu_actions{};
 
-  bool reset_camera_requested{false};
+  if (!ImGui::BeginMainMenuBar()) {
+    return menu_actions;
+  }
 
   if (ImGui::BeginMenu("View")) {
     ImGui::MenuItem("Output", nullptr, &workbench.show_output_panel);
@@ -136,43 +154,16 @@ auto GGEMSImGuiLayer::BuildMainMenuBar(detail::GGEMSWorkbenchState &workbench)
       workbench.trace_visibility.SetGlobalVisible(show_particle_traces);
     }
 
-    reset_camera_requested = ImGui::MenuItem("Reset Camera");
+    menu_actions.reset_camera = ImGui::MenuItem("Reset Camera");
+
+    ImGui::Separator();
+    menu_actions.reset_layout = ImGui::MenuItem("Reset layout");
 
     ImGui::EndMenu();
   }
 
   ImGui::EndMainMenuBar();
-  return reset_camera_requested;
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSImGuiLayer::BuildDefaultDockspaceLayout(ImGuiID dockspace_id,
-                                                  ImVec2 const &dockspace_size)
-  -> void {
-  ImGui::DockBuilderRemoveNode(dockspace_id);
-
-  ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);
-  ImGui::DockBuilderSetNodeSize(dockspace_id, dockspace_size);
-
-  ImGuiID dockspace_main_id = dockspace_id;
-
-  ImGuiID dock_bottom_id = ImGui::DockBuilderSplitNode(
-    dockspace_main_id, ImGuiDir_Down, 0.30F, nullptr, &dockspace_main_id);
-
-  ImGuiID dock_left_id = ImGui::DockBuilderSplitNode(
-    dockspace_main_id, ImGuiDir_Left, 0.24F, nullptr, &dockspace_main_id);
-
-  ImGuiID dock_right_id = ImGui::DockBuilderSplitNode(
-    dockspace_main_id, ImGuiDir_Right, 0.26F, nullptr, &dockspace_main_id);
-
-  ImGui::DockBuilderDockWindow("GGEMS Output", dock_bottom_id);
-  ImGui::DockBuilderDockWindow("GGEMS Status", dock_left_id);
-  ImGui::DockBuilderDockWindow("GGEMS Scene", dock_left_id);
-  ImGui::DockBuilderDockWindow("GGEMS Viewport", dockspace_main_id);
-  ImGui::DockBuilderDockWindow("GGEMS Inspector", dock_right_id);
-
-  ImGui::DockBuilderFinish(dockspace_id);
+  return menu_actions;
 }
 
 } // namespace ggems::ui

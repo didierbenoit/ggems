@@ -9,6 +9,7 @@
 
 #include "GGEMS/ui/detail/GGEMSImGuiPanels.hh"
 #include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
 #include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
 
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
@@ -405,7 +406,7 @@ auto BuildStatusPanel(bool &show_window,
                       std::uint32_t swapchain_width,
                       std::uint32_t swapchain_height, bool show_axes,
                       bool particle_traces_visible) -> void {
-  ImGui::Begin("GGEMS Status", &show_window);
+  ImGui::Begin(k_status_window_name, &show_window);
 
   ImGui::TextUnformatted("GuiMode bootstrap");
   ImGui::Separator();
@@ -470,7 +471,7 @@ auto BuildStatusPanel(bool &show_window,
 auto BuildScenePanel(
   bool &show_window, GGEMSWorkbenchState &workbench,
   core::sources::GGEMSSourceRunSnapshot const *source_run_snapshot) -> void {
-  ImGui::Begin("GGEMS Scene", &show_window);
+  ImGui::Begin(k_scene_window_name, &show_window);
 
   ImGui::TextUnformatted("Scene hierarchy");
   ImGui::Separator();
@@ -498,7 +499,7 @@ auto BuildScenePanel(
 auto BuildInspectorPanel(bool &show_window,
                          GGEMSWorkbenchState::SceneSelection selection)
   -> void {
-  ImGui::Begin("GGEMS Inspector", &show_window);
+  ImGui::Begin(k_inspector_window_name, &show_window);
 
   ImGui::TextUnformatted("Selection");
   ImGui::Separator();

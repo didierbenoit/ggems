@@ -5,6 +5,7 @@
 #include <imgui_internal.h>
 
 #include "GGEMS/ui/detail/GGEMSImGuiViewportPanel.hh"
+#include "GGEMS/ui/detail/GGEMSImGuiLayout.hh"
 
 namespace {
 
@@ -107,7 +108,7 @@ auto GGEMSImGuiViewportPanel::Build(bool &show_window,
   ImGuiWindowFlags const window_flags =
     ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
-  if (!ImGui::Begin("GGEMS Viewport", &show_window, window_flags)) {
+  if (!ImGui::Begin(k_viewport_window_name, &show_window, window_flags)) {
     CancelGesture();
     ImGui::End();
     return result;
