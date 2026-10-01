@@ -20,6 +20,7 @@
 #include "GGEMS/GGEMSRun.hh"
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/logging/GGEMSLogMacros.hh"
+#include "GGEMS/logging/GGEMSOutputMode.hh"
 #include "GGEMS/observer/GGEMSTransportObserver.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
@@ -32,11 +33,13 @@
 #include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiIntegration.hh"
 #include "GGEMS/ui/detail/GGEMSImGuiLayer.hh"
+#include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanDevice.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanDeviceSelection.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanPresenter.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanSceneRenderer.hh"
 #include "GGEMS/ui/detail/GGEMSWindowIconData.hh"
+#include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
 
 namespace {
 // =============================================================================
@@ -396,8 +399,22 @@ auto GGEMSGuiApplication::RenderFrame(bool framebuffer_resized) -> void {
     vk::raii::CommandBuffer const &command_buffer =
       presenter_->BeginRecording();
 
-    scene_renderer_->RecordSceneCommands(
-      command_buffer, imgui_layer_->GetParticleTraceVisibility());
+    detail::GGEMSSceneCamera::Matrix4Rows const world_to_clip =
+      workbench_.camera.BuildWorldToClipMatrix();
+
+    GGEMSVulkanSceneRenderer::RenderParameters const render_parameters{
+      .world_to_clip =
+        {
+          world_to_clip.row_0,
+          world_to_clip.row_1,
+          world_to_clip.row_2,
+          world_to_clip.row_3,
+        },
+      .show_axes = workbench_.show_axes,
+      .trace_visibility = workbench_.trace_visibility,
+    };
+
+    scene_renderer_->RecordSceneCommands(command_buffer, render_parameters);
 
     presenter_->BeginMainPass();
     imgui_integration_->RenderDrawData(*command_buffer);
@@ -459,7 +476,10 @@ auto GGEMSGuiApplication::ApplyPendingSourceRunSnapshot() -> void {
     pending_source_run_snapshot_.reset();
   }
 
-  imgui_layer_->SetSourceRunSnapshot(std::move(*snapshot));
+  workbench_.trace_visibility.ReconcileSourceCount(
+    snapshot->GetRecords().size());
+  ++workbench_.source_presentation_revision;
+  displayed_source_run_snapshot_ = std::move(*snapshot);
 }
 
 // -----------------------------------------------------------------------------
@@ -508,37 +528,35 @@ auto GGEMSGuiApplication::BuildImGuiFrame() -> void {
 
   imgui_integration_->BeginFrame();
 
-  GGEMSImGuiLayer::ViewportState viewport_state =
-    imgui_layer_->GetViewportState();
-
-  if (viewport_state.visible) {
-    scene_renderer_->SetViewportExtent(viewport_state.extent);
+  if (workbench_.viewport.visible) {
+    scene_renderer_->SetViewportExtent(vk::Extent2D{
+      .width = workbench_.viewport.width,
+      .height = workbench_.viewport.height,
+    });
 
     if (scene_renderer_->RequiresResize()) {
       RecreateSceneRenderTargets();
     }
   }
 
+  vk::Extent2D const &scene_extent = scene_renderer_->GetViewportExtent();
+  vk::Extent2D const &swapchain_extent = presenter_->GetExtent();
+
+  workbench_.camera.SetViewportSize(scene_extent.width, scene_extent.height);
+
   imgui_layer_->BuildFrame(
-    presenter_->GetExtent(), imgui_integration_->GetSceneTextureID(),
-    scene_renderer_->GetViewportExtent(), device_status_);
-
-  GGEMSImGuiLayer::ViewportState updated_viewport_state =
-    imgui_layer_->GetViewportState();
-
-  scene_renderer_->OrbitCamera(updated_viewport_state.orbit_delta_x_pixels,
-                               updated_viewport_state.orbit_delta_y_pixels);
-
-  scene_renderer_->PanCamera(updated_viewport_state.pan_delta_x_pixels,
-                             updated_viewport_state.pan_delta_y_pixels);
-
-  scene_renderer_->ZoomCamera(updated_viewport_state.zoom_delta);
-
-  if (imgui_layer_->ShouldResetCamera()) {
-    scene_renderer_->ResetCamera();
-  }
-
-  scene_renderer_->SetShowAxes(imgui_layer_->ShouldShowAxes());
+    GGEMSImGuiLayer::FrameInputs{
+      .scene_texture_id = imgui_integration_->GetSceneTextureID(),
+      .scene_texture_width = scene_extent.width,
+      .scene_texture_height = scene_extent.height,
+      .swapchain_width = swapchain_extent.width,
+      .swapchain_height = swapchain_extent.height,
+      .source_run_snapshot = displayed_source_run_snapshot_.has_value()
+                               ? &displayed_source_run_snapshot_.value()
+                               : nullptr,
+      .output_state = &core::GetOutputState(),
+    },
+    device_status_, workbench_);
 }
 
 // -----------------------------------------------------------------------------

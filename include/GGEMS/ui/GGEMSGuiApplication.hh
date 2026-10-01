@@ -10,6 +10,7 @@
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/ui/detail/GGEMSDeviceStatus.hh"
+#include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
 
 struct GLFWwindow;
 
@@ -86,6 +87,10 @@ private:
   std::unique_ptr<GGEMSVulkanSceneRenderer> scene_renderer_;
   std::unique_ptr<GGEMSImGuiLayer> imgui_layer_;
   detail::GGEMSDeviceStatusSnapshot device_status_{};
+  detail::GGEMSWorkbenchState workbench_{};
+
+  std::optional<core::sources::GGEMSSourceRunSnapshot>
+    displayed_source_run_snapshot_;
 
   std::mutex pending_source_run_snapshot_mutex_;
   std::optional<core::sources::GGEMSSourceRunSnapshot>

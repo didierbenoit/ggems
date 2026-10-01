@@ -24,7 +24,6 @@ namespace {
 constexpr std::uint32_t k_axis_count{3U};
 constexpr std::uint32_t k_vertices_per_axis{2U};
 constexpr std::uint32_t k_axes_vertex_count{k_axis_count * k_vertices_per_axis};
-constexpr float k_orbit_degrees_per_pixel{0.20F};
 
 } // namespace
 
@@ -176,9 +175,12 @@ auto GGEMSVulkanSceneRenderer::CreateColorTarget() -> void {
   vk::ImageCreateInfo image_create_info{
     .imageType = vk::ImageType::e2D,
     .format = color_format_,
-    .extent = vk::Extent3D{.width = viewport_extent_.width,
-                           .height = viewport_extent_.height,
-                           .depth = 1U},
+    .extent =
+      vk::Extent3D{
+        .width = viewport_extent_.width,
+        .height = viewport_extent_.height,
+        .depth = 1U,
+      },
     .mipLevels = 1U,
     .arrayLayers = 1U,
     .samples = vk::SampleCountFlagBits::e1,
@@ -186,7 +188,8 @@ auto GGEMSVulkanSceneRenderer::CreateColorTarget() -> void {
     .usage = vk::ImageUsageFlagBits::eColorAttachment |
              vk::ImageUsageFlagBits::eSampled,
     .sharingMode = vk::SharingMode::eExclusive,
-    .initialLayout = vk::ImageLayout::eUndefined};
+    .initialLayout = vk::ImageLayout::eUndefined,
+  };
 
   color_image_ = vk::raii::Image{*device_, image_create_info};
 
@@ -195,9 +198,9 @@ auto GGEMSVulkanSceneRenderer::CreateColorTarget() -> void {
 
   vk::MemoryAllocateInfo memory_allocate_info{
     .allocationSize = memory_requirements.size,
-    .memoryTypeIndex =
-      FindMemoryType(memory_requirements.memoryTypeBits,
-                     vk::MemoryPropertyFlagBits::eDeviceLocal)};
+    .memoryTypeIndex = FindMemoryType(memory_requirements.memoryTypeBits,
+                                      vk::MemoryPropertyFlagBits::eDeviceLocal),
+  };
 
   color_memory_ = vk::raii::DeviceMemory{*device_, memory_allocate_info};
   color_image_.bindMemory(*color_memory_, 0U);
@@ -207,11 +210,14 @@ auto GGEMSVulkanSceneRenderer::CreateColorTarget() -> void {
     .viewType = vk::ImageViewType::e2D,
     .format = color_format_,
     .subresourceRange =
-      vk::ImageSubresourceRange{.aspectMask = vk::ImageAspectFlagBits::eColor,
-                                .baseMipLevel = 0U,
-                                .levelCount = 1U,
-                                .baseArrayLayer = 0U,
-                                .layerCount = 1U}};
+      vk::ImageSubresourceRange{
+        .aspectMask = vk::ImageAspectFlagBits::eColor,
+        .baseMipLevel = 0U,
+        .levelCount = 1U,
+        .baseArrayLayer = 0U,
+        .layerCount = 1U,
+      },
+  };
 
   color_image_view_ = vk::raii::ImageView{*device_, image_view_create_info};
 
@@ -232,7 +238,7 @@ auto GGEMSVulkanSceneRenderer::CreateDepthTarget() -> void {
       "depth target.");
   }
 
-  if (!(IsDepthFormatSupported(depth_format_))) {
+  if (!IsDepthFormatSupported(depth_format_)) {
     throw ggems::core::GGEMSRecoverable(
       std::format("Vulkan depth format '{}' is not supported as a depth "
                   "attachment.",
@@ -242,9 +248,12 @@ auto GGEMSVulkanSceneRenderer::CreateDepthTarget() -> void {
   vk::ImageCreateInfo depth_image_create_info{
     .imageType = vk::ImageType::e2D,
     .format = depth_format_,
-    .extent = vk::Extent3D{.width = viewport_extent_.width,
-                           .height = viewport_extent_.height,
-                           .depth = 1U},
+    .extent =
+      vk::Extent3D{
+        .width = viewport_extent_.width,
+        .height = viewport_extent_.height,
+        .depth = 1U,
+      },
     .mipLevels = 1U,
     .arrayLayers = 1U,
     .samples = vk::SampleCountFlagBits::e1,
@@ -273,11 +282,14 @@ auto GGEMSVulkanSceneRenderer::CreateDepthTarget() -> void {
     .viewType = vk::ImageViewType::e2D,
     .format = depth_format_,
     .subresourceRange =
-      vk::ImageSubresourceRange{.aspectMask = vk::ImageAspectFlagBits::eDepth,
-                                .baseMipLevel = 0U,
-                                .levelCount = 1U,
-                                .baseArrayLayer = 0U,
-                                .layerCount = 1U}};
+      vk::ImageSubresourceRange{
+        .aspectMask = vk::ImageAspectFlagBits::eDepth,
+        .baseMipLevel = 0U,
+        .levelCount = 1U,
+        .baseArrayLayer = 0U,
+        .layerCount = 1U,
+      },
+  };
 
   depth_image_view_ = vk::raii::ImageView{*device_, depth_view_create_info};
 
@@ -341,17 +353,18 @@ auto GGEMSVulkanSceneRenderer::FindMemoryType(
 
 auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
   vk::raii::CommandBuffer const &command_buffer,
-  ggems::render::GGEMSParticleTraceVisibility const &visibility) -> void {
+  RenderParameters const &parameters) -> void {
   if (*color_image_ == vk::Image{} || *color_image_view_ == vk::ImageView{}) {
     return;
   }
 
-  vk::ImageSubresourceRange color_range{.aspectMask =
-                                          vk::ImageAspectFlagBits::eColor,
-                                        .baseMipLevel = 0U,
-                                        .levelCount = 1U,
-                                        .baseArrayLayer = 0U,
-                                        .layerCount = 1U};
+  vk::ImageSubresourceRange color_range{
+    .aspectMask = vk::ImageAspectFlagBits::eColor,
+    .baseMipLevel = 0U,
+    .levelCount = 1U,
+    .baseArrayLayer = 0U,
+    .layerCount = 1U,
+  };
 
   vk::PipelineStageFlags2 src_stage =
     color_image_layout_ == vk::ImageLayout::eUndefined
@@ -373,11 +386,13 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
     .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
     .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
     .image = *color_image_,
-    .subresourceRange = color_range};
+    .subresourceRange = color_range,
+  };
 
   vk::DependencyInfo to_color_attachment_dependency{
     .imageMemoryBarrierCount = 1U,
-    .pImageMemoryBarriers = &to_color_attachment};
+    .pImageMemoryBarriers = &to_color_attachment,
+  };
 
   command_buffer.pipelineBarrier2(to_color_attachment_dependency);
 
@@ -388,14 +403,16 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
     .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
     .loadOp = vk::AttachmentLoadOp::eClear,
     .storeOp = vk::AttachmentStoreOp::eStore,
-    .clearValue = clear_value};
+    .clearValue = clear_value,
+  };
 
-  vk::ImageSubresourceRange depth_range{.aspectMask =
-                                          vk::ImageAspectFlagBits::eDepth,
-                                        .baseMipLevel = 0U,
-                                        .levelCount = 1U,
-                                        .baseArrayLayer = 0U,
-                                        .layerCount = 1U};
+  vk::ImageSubresourceRange depth_range{
+    .aspectMask = vk::ImageAspectFlagBits::eDepth,
+    .baseMipLevel = 0U,
+    .levelCount = 1U,
+    .baseArrayLayer = 0U,
+    .layerCount = 1U,
+  };
 
   vk::PipelineStageFlags2 depth_src_stage =
     depth_image_layout_ == vk::ImageLayout::eUndefined
@@ -419,11 +436,13 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
     .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
     .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
     .image = *depth_image_,
-    .subresourceRange = depth_range};
+    .subresourceRange = depth_range,
+  };
 
   vk::DependencyInfo to_depth_attachment_dependency{
     .imageMemoryBarrierCount = 1U,
-    .pImageMemoryBarriers = &to_depth_attachment};
+    .pImageMemoryBarriers = &to_depth_attachment,
+  };
 
   command_buffer.pipelineBarrier2(to_depth_attachment_dependency);
 
@@ -438,23 +457,29 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
     .imageLayout = vk::ImageLayout::eDepthAttachmentOptimal,
     .loadOp = vk::AttachmentLoadOp::eClear,
     .storeOp = vk::AttachmentStoreOp::eDontCare,
-    .clearValue = depth_clear_value};
+    .clearValue = depth_clear_value,
+  };
 
   vk::RenderingInfo const rendering_info{
-    .renderArea = vk::Rect2D{.offset = vk::Offset2D{.x = 0, .y = 0},
-                             .extent = viewport_extent_},
+    .renderArea =
+      vk::Rect2D{
+        .offset = vk::Offset2D{.x = 0, .y = 0},
+        .extent = viewport_extent_,
+      },
     .layerCount = 1U,
     .colorAttachmentCount = 1U,
     .pColorAttachments = &color_attachment,
-    .pDepthAttachment = &depth_attachment};
+    .pDepthAttachment = &depth_attachment,
+  };
 
   command_buffer.beginRendering(rendering_info);
 
-  if (show_axes_) {
-    RecordAxesCommands(command_buffer);
+  if (parameters.show_axes) {
+    RecordAxesCommands(command_buffer, parameters.world_to_clip);
   }
 
-  RecordTraceCommands(command_buffer, visibility);
+  RecordTraceCommands(command_buffer, parameters.world_to_clip,
+                      parameters.trace_visibility);
 
   command_buffer.endRendering();
 
@@ -468,10 +493,13 @@ auto GGEMSVulkanSceneRenderer::RecordSceneCommands(
     .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
     .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
     .image = *color_image_,
-    .subresourceRange = color_range};
+    .subresourceRange = color_range,
+  };
 
   vk::DependencyInfo const to_shader_read_dependency{
-    .imageMemoryBarrierCount = 1U, .pImageMemoryBarriers = &to_shader_read};
+    .imageMemoryBarrierCount = 1U,
+    .pImageMemoryBarriers = &to_shader_read,
+  };
 
   command_buffer.pipelineBarrier2(to_shader_read_dependency);
 
@@ -484,7 +512,7 @@ auto GGEMSVulkanSceneRenderer::ReadSPIRVFile(std::filesystem::path const &path)
   -> std::vector<std::uint32_t> {
   std::ifstream file{path, std::ios::binary | std::ios::ate};
 
-  if (!(file.is_open())) {
+  if (!file.is_open()) {
     throw ggems::core::GGEMSInternal(
       std::format("Unable to open SPIR-V shader file '{}'.", path.string()));
   }
@@ -510,7 +538,7 @@ auto GGEMSVulkanSceneRenderer::ReadSPIRVFile(std::filesystem::path const &path)
 
   file.read(reinterpret_cast<char *>(code.data()), file_size);
 
-  if (!(file.good())) {
+  if (!file.good()) {
     throw ggems::core::GGEMSInternal(
       std::format("Unable to read SPIR-V shader file '{}'.", path.string()));
   }
@@ -547,11 +575,13 @@ auto GGEMSVulkanSceneRenderer::CreateAxesShaderModules() -> void {
 
   vk::ShaderModuleCreateInfo vertex_create_info{
     .codeSize = vertex_code.size() * sizeof(std::uint32_t),
-    .pCode = vertex_code.data()};
+    .pCode = vertex_code.data(),
+  };
 
   vk::ShaderModuleCreateInfo fragment_create_info{
     .codeSize = fragment_code.size() * sizeof(std::uint32_t),
-    .pCode = fragment_code.data()};
+    .pCode = fragment_code.data(),
+  };
 
   axes_vertex_shader_module_ =
     vk::raii::ShaderModule{*device_, vertex_create_info};
@@ -586,24 +616,31 @@ auto GGEMSVulkanSceneRenderer::CreateAxesPipeline() -> void {
   vk::PipelineShaderStageCreateInfo vertex_stage{
     .stage = vk::ShaderStageFlagBits::eVertex,
     .module = *axes_vertex_shader_module_,
-    .pName = "VertexMain"};
+    .pName = "VertexMain",
+  };
 
   vk::PipelineShaderStageCreateInfo fragment_stage{
     .stage = vk::ShaderStageFlagBits::eFragment,
     .module = *axes_fragment_shader_module_,
-    .pName = "FragmentMain"};
+    .pName = "FragmentMain",
+  };
 
   std::array<vk::PipelineShaderStageCreateInfo, 2U> shader_stages{
-    vertex_stage, fragment_stage};
+    vertex_stage,
+    fragment_stage,
+  };
 
   vk::PipelineVertexInputStateCreateInfo vertex_input_state{};
 
   vk::PipelineInputAssemblyStateCreateInfo input_assembly_state{
     .topology = vk::PrimitiveTopology::eLineList,
-    .primitiveRestartEnable = vk::False};
+    .primitiveRestartEnable = vk::False,
+  };
 
-  vk::PipelineViewportStateCreateInfo viewport_state{.viewportCount = 1U,
-                                                     .scissorCount = 1U};
+  vk::PipelineViewportStateCreateInfo viewport_state{
+    .viewportCount = 1U,
+    .scissorCount = 1U,
+  };
 
   vk::PipelineRasterizationStateCreateInfo rasterization_state{
     .depthClampEnable = vk::False,
@@ -612,29 +649,36 @@ auto GGEMSVulkanSceneRenderer::CreateAxesPipeline() -> void {
     .cullMode = vk::CullModeFlagBits::eNone,
     .frontFace = vk::FrontFace::eCounterClockwise,
     .depthBiasEnable = vk::False,
-    .lineWidth = 1.0F};
+    .lineWidth = 1.0F,
+  };
 
   vk::PipelineMultisampleStateCreateInfo multisample_state{
     .rasterizationSamples = vk::SampleCountFlagBits::e1,
-    .sampleShadingEnable = vk::False};
+    .sampleShadingEnable = vk::False,
+  };
 
   vk::PipelineColorBlendAttachmentState color_blend_attachment{
     .blendEnable = vk::False,
     .colorWriteMask =
       vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-      vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA};
+      vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA,
+  };
 
   vk::PipelineColorBlendStateCreateInfo color_blend_state{
     .logicOpEnable = vk::False,
     .attachmentCount = 1U,
-    .pAttachments = &color_blend_attachment};
+    .pAttachments = &color_blend_attachment,
+  };
 
-  std::array<vk::DynamicState, 2U> dynamic_states{vk::DynamicState::eViewport,
-                                                  vk::DynamicState::eScissor};
+  std::array<vk::DynamicState, 2U> dynamic_states{
+    vk::DynamicState::eViewport,
+    vk::DynamicState::eScissor,
+  };
 
   vk::PipelineDynamicStateCreateInfo dynamic_state{
     .dynamicStateCount = static_cast<std::uint32_t>(dynamic_states.size()),
-    .pDynamicStates = dynamic_states.data()};
+    .pDynamicStates = dynamic_states.data(),
+  };
 
   vk::PipelineDepthStencilStateCreateInfo depth_stencil_state{
     .depthTestEnable = vk::True,
@@ -643,16 +687,19 @@ auto GGEMSVulkanSceneRenderer::CreateAxesPipeline() -> void {
     .depthBoundsTestEnable = vk::False,
     .stencilTestEnable = vk::False,
     .minDepthBounds = 0.0F,
-    .maxDepthBounds = 1.0F};
+    .maxDepthBounds = 1.0F,
+  };
 
   vk::PushConstantRange axes_push_constant_range{
     .stageFlags = vk::ShaderStageFlagBits::eVertex,
     .offset = 0U,
-    .size = sizeof(ScenePushConstants)};
+    .size = sizeof(ScenePushConstants),
+  };
 
   vk::PipelineLayoutCreateInfo pipeline_layout_create_info{
     .pushConstantRangeCount = 1U,
-    .pPushConstantRanges = &axes_push_constant_range};
+    .pPushConstantRanges = &axes_push_constant_range,
+  };
 
   axes_pipeline_layout_ =
     vk::raii::PipelineLayout{*device_, pipeline_layout_create_info};
@@ -660,7 +707,8 @@ auto GGEMSVulkanSceneRenderer::CreateAxesPipeline() -> void {
   vk::PipelineRenderingCreateInfo rendering_create_info{
     .colorAttachmentCount = 1U,
     .pColorAttachmentFormats = &color_format_,
-    .depthAttachmentFormat = depth_format_};
+    .depthAttachmentFormat = depth_format_,
+  };
 
   vk::GraphicsPipelineCreateInfo pipeline_create_info{
     .pNext = &rendering_create_info,
@@ -676,7 +724,8 @@ auto GGEMSVulkanSceneRenderer::CreateAxesPipeline() -> void {
     .pDynamicState = &dynamic_state,
     .layout = *axes_pipeline_layout_,
     .renderPass = nullptr,
-    .subpass = 0U};
+    .subpass = 0U,
+  };
 
   axes_pipeline_ = vk::raii::Pipeline{*device_, nullptr, pipeline_create_info};
 
@@ -711,11 +760,13 @@ auto GGEMSVulkanSceneRenderer::CreateTraceShaderModules() -> void {
 
   vk::ShaderModuleCreateInfo vertex_create_info{
     .codeSize = vertex_code.size() * sizeof(std::uint32_t),
-    .pCode = vertex_code.data()};
+    .pCode = vertex_code.data(),
+  };
 
   vk::ShaderModuleCreateInfo fragment_create_info{
     .codeSize = fragment_code.size() * sizeof(std::uint32_t),
-    .pCode = fragment_code.data()};
+    .pCode = fragment_code.data(),
+  };
 
   trace_vertex_shader_module_ =
     vk::raii::ShaderModule{*device_, vertex_create_info};
@@ -730,30 +781,31 @@ auto GGEMSVulkanSceneRenderer::CreateTraceShaderModules() -> void {
 // -----------------------------------------------------------------------------
 
 auto GGEMSVulkanSceneRenderer::RecordAxesCommands(
-  vk::raii::CommandBuffer const &command_buffer) -> void {
+  vk::raii::CommandBuffer const &command_buffer,
+  ScenePushConstants const &push_constants) -> void {
   if (*axes_pipeline_ == vk::Pipeline{}) {
     return;
   }
 
-  vk::Viewport viewport{.x = 0.0F,
-                        .y = 0.0F,
-                        .width = static_cast<float>(viewport_extent_.width),
-                        .height = static_cast<float>(viewport_extent_.height),
-                        .minDepth = 0.0F,
-                        .maxDepth = 1.0F};
+  vk::Viewport viewport{
+    .x = 0.0F,
+    .y = 0.0F,
+    .width = static_cast<float>(viewport_extent_.width),
+    .height = static_cast<float>(viewport_extent_.height),
+    .minDepth = 0.0F,
+    .maxDepth = 1.0F,
+  };
 
-  vk::Rect2D const scissor{.offset = vk::Offset2D{.x = 0, .y = 0},
-                           .extent = viewport_extent_};
+  vk::Rect2D const scissor{
+    .offset = vk::Offset2D{.x = 0, .y = 0},
+    .extent = viewport_extent_,
+  };
 
   command_buffer.setViewport(0U, viewport);
   command_buffer.setScissor(0U, scissor);
 
   command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
                               *axes_pipeline_);
-
-  camera_.SetViewportExtent(viewport_extent_);
-
-  ScenePushConstants push_constants = camera_.BuildWorldToClipMatrix();
 
   command_buffer.pushConstants(
     *axes_pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0U,
@@ -785,46 +837,61 @@ auto GGEMSVulkanSceneRenderer::CreateTracePipeline() -> void {
   vk::PipelineShaderStageCreateInfo vertex_stage{
     .stage = vk::ShaderStageFlagBits::eVertex,
     .module = *trace_vertex_shader_module_,
-    .pName = "VertexMain"};
+    .pName = "VertexMain",
+  };
 
   vk::PipelineShaderStageCreateInfo fragment_stage{
     .stage = vk::ShaderStageFlagBits::eFragment,
     .module = *trace_fragment_shader_module_,
-    .pName = "FragmentMain"};
+    .pName = "FragmentMain",
+  };
 
   std::array<vk::PipelineShaderStageCreateInfo, 2U> shader_stages{
-    vertex_stage, fragment_stage};
+    vertex_stage,
+    fragment_stage,
+  };
 
   vk::VertexInputBindingDescription vertex_binding_description{
     .binding = 0U,
     .stride = sizeof(TraceVertex),
-    .inputRate = vk::VertexInputRate::eVertex};
+    .inputRate = vk::VertexInputRate::eVertex,
+  };
 
   std::array<vk::VertexInputAttributeDescription, 2U>
-    vertex_attribute_descriptions{{vk::VertexInputAttributeDescription{
-                                     .location = 0U,
-                                     .binding = 0U,
-                                     .format = vk::Format::eR32G32B32Sfloat,
-                                     .offset = offsetof(TraceVertex, position)},
-                                   vk::VertexInputAttributeDescription{
-                                     .location = 1U,
-                                     .binding = 0U,
-                                     .format = vk::Format::eR32G32B32A32Sfloat,
-                                     .offset = offsetof(TraceVertex, color)}}};
+    vertex_attribute_descriptions{
+      {
+        vk::VertexInputAttributeDescription{
+          .location = 0U,
+          .binding = 0U,
+          .format = vk::Format::eR32G32B32Sfloat,
+          .offset = offsetof(TraceVertex, position),
+        },
+        vk::VertexInputAttributeDescription{
+          .location = 1U,
+          .binding = 0U,
+          .format = vk::Format::eR32G32B32A32Sfloat,
+          .offset = offsetof(TraceVertex, color),
+        },
+      },
+  };
 
   vk::PipelineVertexInputStateCreateInfo vertex_input_state{
     .vertexBindingDescriptionCount = 1U,
     .pVertexBindingDescriptions = &vertex_binding_description,
     .vertexAttributeDescriptionCount =
       static_cast<std::uint32_t>(vertex_attribute_descriptions.size()),
-    .pVertexAttributeDescriptions = vertex_attribute_descriptions.data()};
+    .pVertexAttributeDescriptions = vertex_attribute_descriptions.data(),
+  };
 
   vk::PipelineInputAssemblyStateCreateInfo input_assembly_state{
     .topology = vk::PrimitiveTopology::eLineList,
-    .primitiveRestartEnable = vk::False};
+    .primitiveRestartEnable = vk::False,
+  };
 
-  vk::PipelineViewportStateCreateInfo viewport_state{.viewportCount = 1U,
-                                                     .scissorCount = 1U};
+  vk::PipelineViewportStateCreateInfo viewport_state{
+    .viewportCount = 1U,
+    .scissorCount = 1U,
+  };
 
   vk::PipelineRasterizationStateCreateInfo rasterization_state{
     .depthClampEnable = vk::False,
@@ -833,29 +900,36 @@ auto GGEMSVulkanSceneRenderer::CreateTracePipeline() -> void {
     .cullMode = vk::CullModeFlagBits::eNone,
     .frontFace = vk::FrontFace::eCounterClockwise,
     .depthBiasEnable = vk::False,
-    .lineWidth = 1.0F};
+    .lineWidth = 1.0F,
+  };
 
   vk::PipelineMultisampleStateCreateInfo multisample_state{
     .rasterizationSamples = vk::SampleCountFlagBits::e1,
-    .sampleShadingEnable = vk::False};
+    .sampleShadingEnable = vk::False,
+  };
 
   vk::PipelineColorBlendAttachmentState color_blend_attachment{
     .blendEnable = vk::False,
     .colorWriteMask =
       vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-      vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA};
+      vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA,
+  };
 
   vk::PipelineColorBlendStateCreateInfo color_blend_state{
     .logicOpEnable = vk::False,
     .attachmentCount = 1U,
-    .pAttachments = &color_blend_attachment};
+    .pAttachments = &color_blend_attachment,
+  };
 
-  std::array<vk::DynamicState, 2U> dynamic_states{vk::DynamicState::eViewport,
-                                                  vk::DynamicState::eScissor};
+  std::array<vk::DynamicState, 2U> dynamic_states{
+    vk::DynamicState::eViewport,
+    vk::DynamicState::eScissor,
+  };
 
   vk::PipelineDynamicStateCreateInfo dynamic_state{
     .dynamicStateCount = static_cast<std::uint32_t>(dynamic_states.size()),
-    .pDynamicStates = dynamic_states.data()};
+    .pDynamicStates = dynamic_states.data(),
+  };
 
   vk::PipelineDepthStencilStateCreateInfo depth_stencil_state{
     .depthTestEnable = vk::True,
@@ -864,16 +938,19 @@ auto GGEMSVulkanSceneRenderer::CreateTracePipeline() -> void {
     .depthBoundsTestEnable = vk::False,
     .stencilTestEnable = vk::False,
     .minDepthBounds = 0.0F,
-    .maxDepthBounds = 1.0F};
+    .maxDepthBounds = 1.0F,
+  };
 
   vk::PushConstantRange trace_push_constant_range{
     .stageFlags = vk::ShaderStageFlagBits::eVertex,
     .offset = 0U,
-    .size = sizeof(ScenePushConstants)};
+    .size = sizeof(ScenePushConstants),
+  };
 
   vk::PipelineLayoutCreateInfo pipeline_layout_create_info{
     .pushConstantRangeCount = 1U,
-    .pPushConstantRanges = &trace_push_constant_range};
+    .pPushConstantRanges = &trace_push_constant_range,
+  };
 
   trace_pipeline_layout_ =
     vk::raii::PipelineLayout{*device_, pipeline_layout_create_info};
@@ -881,7 +958,8 @@ auto GGEMSVulkanSceneRenderer::CreateTracePipeline() -> void {
   vk::PipelineRenderingCreateInfo rendering_create_info{
     .colorAttachmentCount = 1U,
     .pColorAttachmentFormats = &color_format_,
-    .depthAttachmentFormat = depth_format_};
+    .depthAttachmentFormat = depth_format_,
+  };
 
   vk::GraphicsPipelineCreateInfo pipeline_create_info{
     .pNext = &rendering_create_info,
@@ -897,7 +975,8 @@ auto GGEMSVulkanSceneRenderer::CreateTracePipeline() -> void {
     .pDynamicState = &dynamic_state,
     .layout = *trace_pipeline_layout_,
     .renderPass = nullptr,
-    .subpass = 0U};
+    .subpass = 0U,
+  };
 
   trace_pipeline_ = vk::raii::Pipeline{*device_, nullptr, pipeline_create_info};
 
@@ -930,7 +1009,8 @@ auto GGEMSVulkanSceneRenderer::CreateTraceVertexBuffer() -> void {
   vk::BufferCreateInfo buffer_create_info{
     .size = buffer_size,
     .usage = vk::BufferUsageFlagBits::eVertexBuffer,
-    .sharingMode = vk::SharingMode::eExclusive};
+    .sharingMode = vk::SharingMode::eExclusive,
+  };
 
   trace_vertex_buffer_ = vk::raii::Buffer{*device_, buffer_create_info};
 
@@ -942,7 +1022,8 @@ auto GGEMSVulkanSceneRenderer::CreateTraceVertexBuffer() -> void {
     .memoryTypeIndex =
       FindMemoryType(memory_requirements.memoryTypeBits,
                      vk::MemoryPropertyFlagBits::eHostVisible |
-                       vk::MemoryPropertyFlagBits::eHostCoherent)};
+                       vk::MemoryPropertyFlagBits::eHostCoherent),
+  };
 
   trace_vertex_memory_ = vk::raii::DeviceMemory{*device_, memory_allocate_info};
   trace_vertex_buffer_.bindMemory(*trace_vertex_memory_, 0U);
@@ -964,6 +1045,7 @@ auto GGEMSVulkanSceneRenderer::CreateTraceVertexBuffer() -> void {
 
 auto GGEMSVulkanSceneRenderer::RecordTraceCommands(
   vk::raii::CommandBuffer const &command_buffer,
+  ScenePushConstants const &push_constants,
   ggems::render::GGEMSParticleTraceVisibility const &visibility) -> void {
   if (!visibility.IsGlobalVisible()) {
     return;
@@ -999,10 +1081,6 @@ auto GGEMSVulkanSceneRenderer::RecordTraceCommands(
   std::array<vk::DeviceSize, 1U> vertex_offsets{0U};
 
   command_buffer.bindVertexBuffers(0U, vertex_buffers, vertex_offsets);
-
-  camera_.SetViewportExtent(viewport_extent_);
-
-  ScenePushConstants push_constants = camera_.BuildWorldToClipMatrix();
 
   command_buffer.pushConstants(
     *trace_pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0U,
@@ -1052,58 +1130,9 @@ auto GGEMSVulkanSceneRenderer::CleanupAxesPipeline() noexcept -> void {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanSceneRenderer::SetShowAxes(bool show_axes) noexcept -> void {
-  show_axes_ = show_axes;
-}
-
-// -----------------------------------------------------------------------------
-
 auto GGEMSVulkanSceneRenderer::GetParticleTraceVertexCount() const noexcept
   -> std::uint32_t {
   return static_cast<std::uint32_t>(trace_vertices_.size());
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanSceneRenderer::ShouldShowAxes() const noexcept -> bool {
-  return show_axes_;
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanSceneRenderer::OrbitCamera(float delta_x_pixels,
-                                           float delta_y_pixels) noexcept
-  -> void {
-  if (delta_x_pixels == 0.0F && delta_y_pixels == 0.0F) {
-    return;
-  }
-
-  camera_.Orbit(delta_x_pixels * k_orbit_degrees_per_pixel,
-                delta_y_pixels * k_orbit_degrees_per_pixel);
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanSceneRenderer::PanCamera(float delta_x_pixels,
-                                         float delta_y_pixels) noexcept
-  -> void {
-  if (delta_x_pixels == 0.0F && delta_y_pixels == 0.0F) {
-    return;
-  }
-
-  camera_.Pan(delta_x_pixels, delta_y_pixels);
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanSceneRenderer::ZoomCamera(float wheel_delta) noexcept -> void {
-  camera_.ZoomBy(wheel_delta);
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSVulkanSceneRenderer::ResetCamera() noexcept -> void {
-  camera_.Reset();
 }
 
 // -----------------------------------------------------------------------------

@@ -92,8 +92,10 @@ add_library(
   GGEMSImGuiIntegration.cc
   GGEMSImGuiLayer.cc
   GGEMSImGuiOutputPanel.cc
+  GGEMSImGuiPanels.cc
   GGEMSImGuiTheme.cc
-  GGEMSVulkanCamera.cc
+  GGEMSImGuiViewportPanel.cc
+  GGEMSSceneCamera.cc
   GGEMSVulkanDevice.cc
   GGEMSVulkanDeviceSelection.cc
   GGEMSVulkanDisplayAdapterWin32.cc

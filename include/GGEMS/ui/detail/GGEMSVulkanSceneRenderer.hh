@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <span>
@@ -7,18 +8,23 @@
 
 #include <vulkan/vulkan_raii.hpp>
 
-#include "GGEMSVulkanCamera.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 
 namespace ggems::ui {
 
 class GGEMSVulkanSceneRenderer {
 private:
-  using ScenePushConstants = GGEMSVulkanCamera::Matrix4Rows;
+  using ScenePushConstants = std::array<std::array<float, 4U>, 4U>;
   using TraceVertex = ggems::render::GGEMSParticleTraceVertex;
   using TraceDrawRange = ggems::render::GGEMSParticleTraceDrawRange;
 
 public:
+  struct RenderParameters {
+    std::array<std::array<float, 4U>, 4U> world_to_clip{};
+    bool show_axes{true};
+    ggems::render::GGEMSParticleTraceVisibility const &trace_visibility;
+  };
+
   GGEMSVulkanSceneRenderer() = default;
   ~GGEMSVulkanSceneRenderer() = default;
 
@@ -44,23 +50,14 @@ public:
   [[nodiscard]] auto GetColorFormat() const noexcept -> vk::Format;
   [[nodiscard]] auto GetColorImageView() const noexcept -> vk::ImageView;
 
-  auto RecordSceneCommands(
-    vk::raii::CommandBuffer const &command_buffer,
-    ggems::render::GGEMSParticleTraceVisibility const &visibility) -> void;
-
-  auto SetShowAxes(bool show_axes) noexcept -> void;
-  [[nodiscard]] auto ShouldShowAxes() const noexcept -> bool;
+  auto RecordSceneCommands(vk::raii::CommandBuffer const &command_buffer,
+                           RenderParameters const &parameters) -> void;
 
   auto SetParticleTraceSegments(
     std::span<ggems::render::GGEMSParticleTraceSegment const> segments) -> void;
   auto ClearParticleTraces() -> void;
   [[nodiscard]] auto GetParticleTraceVertexCount() const noexcept
     -> std::uint32_t;
-
-  auto OrbitCamera(float delta_x_pixels, float delta_y_pixels) noexcept -> void;
-  auto PanCamera(float delta_x_pixels, float delta_y_pixels) noexcept -> void;
-  auto ZoomCamera(float wheel_delta) noexcept -> void;
-  auto ResetCamera() noexcept -> void;
 
 private:
   auto CreateColorTarget() -> void;
@@ -78,8 +75,8 @@ private:
 
   auto CreateAxesPipeline() -> void;
   auto CleanupAxesPipeline() noexcept -> void;
-  auto RecordAxesCommands(vk::raii::CommandBuffer const &command_buffer)
-    -> void;
+  auto RecordAxesCommands(vk::raii::CommandBuffer const &command_buffer,
+                          ScenePushConstants const &push_constants) -> void;
 
   auto CreateTraceShaderModules() -> void;
   auto CreateTracePipeline() -> void;
@@ -89,6 +86,7 @@ private:
   auto DestroyTraceVertexBuffer() noexcept -> void;
   auto RecordTraceCommands(
     vk::raii::CommandBuffer const &command_buffer,
+    ScenePushConstants const &push_constants,
     ggems::render::GGEMSParticleTraceVisibility const &visibility) -> void;
 
   auto CreateDepthTarget() -> void;
@@ -128,9 +126,6 @@ private:
   vk::raii::DeviceMemory trace_vertex_memory_{nullptr};
   std::vector<TraceVertex> trace_vertices_;
   std::vector<TraceDrawRange> trace_draw_ranges_;
-
-  bool show_axes_{true};
-  GGEMSVulkanCamera camera_;
 };
 
 } // namespace ggems::ui

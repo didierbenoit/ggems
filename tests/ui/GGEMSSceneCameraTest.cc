@@ -2,16 +2,15 @@
 #include <cstddef>
 
 #include <gtest/gtest.h>
-#include <vulkan/vulkan.hpp>
 
-#include "GGEMS/ui/detail/GGEMSVulkanCamera.hh"
+#include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
 
 namespace {
 
 // =============================================================================
 // =============================================================================
 
-using Camera = ggems::ui::GGEMSVulkanCamera;
+using Camera = ggems::ui::detail::GGEMSSceneCamera;
 using Matrix4Rows = Camera::Matrix4Rows;
 
 constexpr float k_tolerance{1.0e-5F};
@@ -56,6 +55,7 @@ auto ExpectRowNear(std::array<float, 4U> const &actual,
 
 // =============================================================================
 // =============================================================================
+
 auto ExpectMatrixNear(Matrix4Rows const &actual, Matrix4Rows const &expected)
   -> void {
   ExpectRowNear(actual.row_0, expected.row_0);
@@ -64,9 +64,12 @@ auto ExpectMatrixNear(Matrix4Rows const &actual, Matrix4Rows const &expected)
   ExpectRowNear(actual.row_3, expected.row_3);
 }
 
-TEST(GGEMSVulkanCamera, ResetRestoresCanonicalView) {
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSceneCamera, ResetRestoresCanonicalView) {
   Camera camera{};
-  camera.SetViewportExtent(vk::Extent2D{.width = 800U, .height = 800U});
+  camera.SetViewportSize(800U, 800U);
 
   camera.SetOrbitAngles(-20.0F, 15.0F);
   camera.SetZoom(1.7F);
@@ -86,9 +89,12 @@ TEST(GGEMSVulkanCamera, ResetRestoresCanonicalView) {
   ExpectMatrixNear(camera.BuildWorldToClipMatrix(), expected);
 }
 
-TEST(GGEMSVulkanCamera, ZeroYawAndPitchUseExpectedViewBasisAndDepth) {
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSceneCamera, ZeroYawAndPitchUseExpectedViewBasisAndDepth) {
   Camera camera{};
-  camera.SetViewportExtent(vk::Extent2D{.width = 800U, .height = 800U});
+  camera.SetViewportSize(800U, 800U);
   camera.SetOrbitAngles(0.0F, 0.0F);
   camera.SetZoom(1.0F);
 
@@ -117,10 +123,13 @@ TEST(GGEMSVulkanCamera, ZeroYawAndPitchUseExpectedViewBasisAndDepth) {
   EXPECT_LT(target[2], negative_x[2]);
 }
 
-TEST(GGEMSVulkanCamera,
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSceneCamera,
      CanonicalViewProjectsSixGlobalAxesWithPositiveYDownConvention) {
   Camera camera{};
-  camera.SetViewportExtent(vk::Extent2D{.width = 800U, .height = 800U});
+  camera.SetViewportSize(800U, 800U);
   camera.Reset();
 
   Matrix4Rows const matrix = camera.BuildWorldToClipMatrix();
@@ -157,14 +166,17 @@ TEST(GGEMSVulkanCamera,
   EXPECT_NEAR(negative_z[2], 0.525F, k_tolerance);
 }
 
-TEST(GGEMSVulkanCamera,
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSceneCamera,
      SixteenByNineViewportScalesOnlyHorizontalClipCoordinate) {
   Camera square_camera{};
-  square_camera.SetViewportExtent(vk::Extent2D{.width = 900U, .height = 900U});
+  square_camera.SetViewportSize(900U, 900U);
   square_camera.Reset();
 
   Camera wide_camera{};
-  wide_camera.SetViewportExtent(vk::Extent2D{.width = 1600U, .height = 900U});
+  wide_camera.SetViewportSize(1600U, 900U);
   wide_camera.Reset();
 
   auto const square_positive_x =
@@ -181,9 +193,12 @@ TEST(GGEMSVulkanCamera,
   EXPECT_NEAR(wide_positive_x[2], square_positive_x[2], k_tolerance);
 }
 
-TEST(GGEMSVulkanCamera, PanMovesTargetAlongBothViewAxes) {
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSceneCamera, PanMovesTargetAlongBothViewAxes) {
   Camera camera{};
-  camera.SetViewportExtent(vk::Extent2D{.width = 100U, .height = 100U});
+  camera.SetViewportSize(100U, 100U);
   camera.SetOrbitAngles(0.0F, 0.0F);
   camera.SetZoom(1.0F);
 
@@ -204,9 +219,12 @@ TEST(GGEMSVulkanCamera, PanMovesTargetAlongBothViewAxes) {
   EXPECT_NEAR(target[3], 1.0F, k_tolerance);
 }
 
-TEST(GGEMSVulkanCamera, ZoomScalesXYWithoutChangingDepth) {
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSceneCamera, ZoomScalesXYWithoutChangingDepth) {
   Camera camera{};
-  camera.SetViewportExtent(vk::Extent2D{.width = 800U, .height = 800U});
+  camera.SetViewportSize(800U, 800U);
   camera.SetOrbitAngles(0.0F, 0.0F);
   camera.SetZoom(0.5F);
 
@@ -227,7 +245,10 @@ TEST(GGEMSVulkanCamera, ZoomScalesXYWithoutChangingDepth) {
   EXPECT_NEAR(positive_x_after[2], positive_x_before[2], k_tolerance);
 }
 
-TEST(GGEMSVulkanCamera, PitchIsClampedToEightyFiveDegrees) {
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSceneCamera, PitchIsClampedToEightyFiveDegrees) {
   Camera positive_over_limit{};
   positive_over_limit.SetOrbitAngles(0.0F, 90.0F);
   positive_over_limit.SetZoom(1.0F);
@@ -251,16 +272,39 @@ TEST(GGEMSVulkanCamera, PitchIsClampedToEightyFiveDegrees) {
                    negative_limit.BuildWorldToClipMatrix());
 }
 
-TEST(GGEMSVulkanCamera, ZeroExtentKeepsLastValidViewportExtent) {
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSceneCamera, OrbitByPixelsAppliesTheOrbitPixelPolicy) {
+  Camera by_pixels{};
+  by_pixels.SetViewportSize(800U, 800U);
+  by_pixels.SetOrbitAngles(0.0F, 0.0F);
+  by_pixels.SetZoom(1.0F);
+  by_pixels.OrbitByPixels(5.0F, -10.0F);
+
+  Camera by_degrees{};
+  by_degrees.SetViewportSize(800U, 800U);
+  by_degrees.SetOrbitAngles(0.0F, 0.0F);
+  by_degrees.SetZoom(1.0F);
+  by_degrees.Orbit(1.0F, -2.0F);
+
+  ExpectMatrixNear(by_pixels.BuildWorldToClipMatrix(),
+                   by_degrees.BuildWorldToClipMatrix());
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSceneCamera, ZeroExtentKeepsLastValidViewportExtent) {
   Camera camera{};
-  camera.SetViewportExtent(vk::Extent2D{.width = 1600U, .height = 900U});
+  camera.SetViewportSize(1600U, 900U);
 
   Matrix4Rows const expected = camera.BuildWorldToClipMatrix();
 
-  camera.SetViewportExtent(vk::Extent2D{.width = 0U, .height = 720U});
+  camera.SetViewportSize(0U, 720U);
   ExpectMatrixNear(camera.BuildWorldToClipMatrix(), expected);
 
-  camera.SetViewportExtent(vk::Extent2D{.width = 1280U, .height = 0U});
+  camera.SetViewportSize(1280U, 0U);
   ExpectMatrixNear(camera.BuildWorldToClipMatrix(), expected);
 }
 

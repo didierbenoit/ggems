@@ -1,11 +1,11 @@
 #pragma once
+
 #include <array>
+#include <cstdint>
 
-#include <vulkan/vulkan.hpp>
+namespace ggems::ui::detail {
 
-namespace ggems::ui {
-
-class GGEMSVulkanCamera {
+class GGEMSSceneCamera {
 public:
   struct Matrix4Rows {
     std::array<float, 4> row_0{1.0F, 0.0F, 0.0F, 0.0F};
@@ -14,19 +14,16 @@ public:
     std::array<float, 4> row_3{0.0F, 0.0F, 0.0F, 1.0F};
   };
 
-  GGEMSVulkanCamera() noexcept;
-  ~GGEMSVulkanCamera() = default;
+  GGEMSSceneCamera() noexcept;
 
-  GGEMSVulkanCamera(GGEMSVulkanCamera const &) = delete;
-  GGEMSVulkanCamera(GGEMSVulkanCamera &&) = delete;
-  auto operator=(GGEMSVulkanCamera const &) -> GGEMSVulkanCamera & = delete;
-  auto operator=(GGEMSVulkanCamera &&) -> GGEMSVulkanCamera & = delete;
-
-  auto SetViewportExtent(vk::Extent2D const &extent) noexcept -> void;
+  auto SetViewportSize(std::uint32_t width, std::uint32_t height) noexcept
+    -> void;
   auto SetOrbitAngles(float yaw_degrees, float pitch_degrees) noexcept -> void;
   auto SetZoom(float zoom) noexcept -> void;
 
   auto Orbit(float delta_yaw_degrees, float delta_pitch_degrees) noexcept
+    -> void;
+  auto OrbitByPixels(float delta_x_pixels, float delta_y_pixels) noexcept
     -> void;
   auto Pan(float delta_x_pixels, float delta_y_pixels) noexcept -> void;
   auto ZoomBy(float wheel_delta) noexcept -> void;
@@ -55,7 +52,8 @@ private:
 
   [[nodiscard]] auto BuildCameraBasis() const noexcept -> CameraBasis;
 
-  vk::Extent2D viewport_extent_{.width = 1U, .height = 1U};
+  std::uint32_t viewport_width_{1U};
+  std::uint32_t viewport_height_{1U};
   Vector3 target_m_{.x = 0.0F, .y = 0.0F, .z = 0.0F};
   float yaw_radians_{};
   float pitch_radians_{};
@@ -63,4 +61,4 @@ private:
   float depth_scale_{0.05F};
 };
 
-} // namespace ggems::ui
+} // namespace ggems::ui::detail

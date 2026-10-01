@@ -1,38 +1,39 @@
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 
-#include <vulkan/vulkan.hpp>
-
-#include "GGEMS/ui/detail/GGEMSVulkanCamera.hh"
+#include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 
-namespace ggems::ui {
+namespace ggems::ui::detail {
 
 namespace {
 constexpr float k_max_pitch_radians =
   static_cast<float>(units::ToRadians(units::MakeDegrees(85.0L)));
+constexpr float k_orbit_degrees_per_pixel{0.20F};
 } // namespace
 
 // =============================================================================
 // =============================================================================
 
-GGEMSVulkanCamera::GGEMSVulkanCamera() noexcept { Reset(); }
+GGEMSSceneCamera::GGEMSSceneCamera() noexcept { Reset(); }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanCamera::SetViewportExtent(vk::Extent2D const &extent) noexcept
-  -> void {
-  if (extent.width == 0U || extent.height == 0U) {
+auto GGEMSSceneCamera::SetViewportSize(std::uint32_t width,
+                                       std::uint32_t height) noexcept -> void {
+  if (width == 0U || height == 0U) {
     return;
   }
 
-  viewport_extent_ = extent;
+  viewport_width_ = width;
+  viewport_height_ = height;
 }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanCamera::SetOrbitAngles(float yaw_degrees,
-                                       float pitch_degrees) noexcept -> void {
+auto GGEMSSceneCamera::SetOrbitAngles(float yaw_degrees,
+                                      float pitch_degrees) noexcept -> void {
   yaw_radians_ = static_cast<float>(units::ToRadians(
     units::MakeDegrees(static_cast<long double>(yaw_degrees))));
 
@@ -44,14 +45,14 @@ auto GGEMSVulkanCamera::SetOrbitAngles(float yaw_degrees,
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanCamera::SetZoom(float zoom) noexcept -> void {
+auto GGEMSSceneCamera::SetZoom(float zoom) noexcept -> void {
   zoom_ = std::max(0.05F, zoom);
 }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanCamera::Orbit(float delta_yaw_degrees,
-                              float delta_pitch_degrees) noexcept -> void {
+auto GGEMSSceneCamera::Orbit(float delta_yaw_degrees,
+                             float delta_pitch_degrees) noexcept -> void {
   yaw_radians_ += static_cast<float>(units::ToRadians(
     units::MakeDegrees(static_cast<long double>(delta_yaw_degrees))));
 
@@ -63,20 +64,32 @@ auto GGEMSVulkanCamera::Orbit(float delta_yaw_degrees,
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanCamera::Pan(float delta_x_pixels, float delta_y_pixels) noexcept
+auto GGEMSSceneCamera::OrbitByPixels(float delta_x_pixels,
+                                     float delta_y_pixels) noexcept -> void {
+  if (delta_x_pixels == 0.0F && delta_y_pixels == 0.0F) {
+    return;
+  }
+
+  Orbit(delta_x_pixels * k_orbit_degrees_per_pixel,
+        delta_y_pixels * k_orbit_degrees_per_pixel);
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSSceneCamera::Pan(float delta_x_pixels, float delta_y_pixels) noexcept
   -> void {
   if (delta_x_pixels == 0.0F && delta_y_pixels == 0.0F) {
     return;
   }
 
-  if (viewport_extent_.height == 0U || zoom_ <= 1.0e-6F) {
+  if (viewport_height_ == 0U || zoom_ <= 1.0e-6F) {
     return;
   }
 
   CameraBasis basis = BuildCameraBasis();
 
   float world_units_per_pixel =
-    2.0F / (zoom_ * static_cast<float>(viewport_extent_.height));
+    2.0F / (zoom_ * static_cast<float>(viewport_height_));
 
   float delta_x_world = delta_x_pixels * world_units_per_pixel;
   float delta_y_world = delta_y_pixels * world_units_per_pixel;
@@ -91,7 +104,7 @@ auto GGEMSVulkanCamera::Pan(float delta_x_pixels, float delta_y_pixels) noexcept
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanCamera::ZoomBy(float wheel_delta) noexcept -> void {
+auto GGEMSSceneCamera::ZoomBy(float wheel_delta) noexcept -> void {
   if (std::abs(wheel_delta) <= 1.0e-6F) {
     return;
   }
@@ -102,7 +115,7 @@ auto GGEMSVulkanCamera::ZoomBy(float wheel_delta) noexcept -> void {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanCamera::Reset() noexcept -> void {
+auto GGEMSSceneCamera::Reset() noexcept -> void {
   target_m_ = Vector3{.x = 0.0F, .y = 0.0F, .z = 0.0F};
   SetOrbitAngles(315.0F, 45.0F);
   SetZoom(0.8F);
@@ -110,10 +123,10 @@ auto GGEMSVulkanCamera::Reset() noexcept -> void {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanCamera::BuildWorldToClipMatrix() const noexcept
-  -> GGEMSVulkanCamera::Matrix4Rows {
-  float inverse_aspect_ratio = static_cast<float>(viewport_extent_.height) /
-                               static_cast<float>(viewport_extent_.width);
+auto GGEMSSceneCamera::BuildWorldToClipMatrix() const noexcept
+  -> GGEMSSceneCamera::Matrix4Rows {
+  float inverse_aspect_ratio =
+    static_cast<float>(viewport_height_) / static_cast<float>(viewport_width_);
 
   CameraBasis basis = BuildCameraBasis();
 
@@ -151,16 +164,21 @@ auto GGEMSVulkanCamera::BuildWorldToClipMatrix() const noexcept
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanCamera::BuildCameraBasis() const noexcept
-  -> GGEMSVulkanCamera::CameraBasis {
+auto GGEMSSceneCamera::BuildCameraBasis() const noexcept
+  -> GGEMSSceneCamera::CameraBasis {
   float cos_pitch = std::cos(pitch_radians_);
 
-  Vector3 camera_offset{.x = std::cos(-yaw_radians_) * cos_pitch,
-                        .y = std::sin(pitch_radians_),
-                        .z = std::sin(-yaw_radians_) * cos_pitch};
+  Vector3 camera_offset{
+    .x = std::cos(-yaw_radians_) * cos_pitch,
+    .y = std::sin(pitch_radians_),
+    .z = std::sin(-yaw_radians_) * cos_pitch,
+  };
 
   Vector3 forward = Normalize(Vector3{
-    .x = -camera_offset.x, .y = -camera_offset.y, .z = -camera_offset.z});
+    .x = -camera_offset.x,
+    .y = -camera_offset.y,
+    .z = -camera_offset.z,
+  });
 
   Vector3 world_up{.x = 0.0F, .y = 1.0F, .z = 0.0F};
 
@@ -178,25 +196,27 @@ auto GGEMSVulkanCamera::BuildCameraBasis() const noexcept
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanCamera::Dot(Vector3 const &first,
-                            Vector3 const &second) noexcept -> float {
+auto GGEMSSceneCamera::Dot(Vector3 const &first, Vector3 const &second) noexcept
+  -> float {
   return (first.x * second.x) + (first.y * second.y) + (first.z * second.z);
 }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanCamera::Cross(Vector3 const &first,
-                              Vector3 const &second) noexcept
-  -> GGEMSVulkanCamera::Vector3 {
-  return Vector3{.x = (first.y * second.z) - (first.z * second.y),
-                 .y = (first.z * second.x) - (first.x * second.z),
-                 .z = (first.x * second.y) - (first.y * second.x)};
+auto GGEMSSceneCamera::Cross(Vector3 const &first,
+                             Vector3 const &second) noexcept
+  -> GGEMSSceneCamera::Vector3 {
+  return Vector3{
+    .x = (first.y * second.z) - (first.z * second.y),
+    .y = (first.z * second.x) - (first.x * second.z),
+    .z = (first.x * second.y) - (first.y * second.x),
+  };
 }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanCamera::Normalize(Vector3 const &vec) noexcept
-  -> GGEMSVulkanCamera::Vector3 {
+auto GGEMSSceneCamera::Normalize(Vector3 const &vec) noexcept
+  -> GGEMSSceneCamera::Vector3 {
   float length = std::sqrt(Dot(vec, vec));
 
   if (length <= 1.0e-6F) {
@@ -205,8 +225,10 @@ auto GGEMSVulkanCamera::Normalize(Vector3 const &vec) noexcept
 
   float inverse_length = 1.0F / length;
 
-  return Vector3{.x = vec.x * inverse_length,
-                 .y = vec.y * inverse_length,
-                 .z = vec.z * inverse_length};
+  return Vector3{
+    .x = vec.x * inverse_length,
+    .y = vec.y * inverse_length,
+    .z = vec.z * inverse_length,
+  };
 }
-} // namespace ggems::ui
+} // namespace ggems::ui::detail
