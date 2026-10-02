@@ -29,13 +29,11 @@
 
 #pragma once
 
-/// \cond
 #include <array>
 #include <cstddef>
 #include <string>
 #include <unordered_set>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 

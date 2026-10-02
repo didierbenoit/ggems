@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Builds the GGEMS linear-color Dear ImGui style and scaled metrics.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <imgui.h>
 
 #include "GGEMS/ui/detail/GGEMSImGuiTheme.hh"
@@ -13,6 +42,13 @@ using ggems::ui::GGEMSThemeRole;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Replaces the alpha channel of a presentation color.
+ *
+ * \param[in] color Linear RGBA color to copy.
+ * \param[in] alpha Replacement opacity.
+ * \return Color with the requested alpha and unchanged RGB channels.
+ */
 [[nodiscard]] auto WithAlpha(ImVec4 color, float alpha) noexcept -> ImVec4 {
   color.w = alpha;
   return color;
@@ -21,6 +57,11 @@ using ggems::ui::GGEMSThemeRole;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Sets the unscaled GGEMS spacing, borders, rounding, and font size.
+ *
+ * \param[in,out] style Style whose geometry and font metrics are updated.
+ */
 auto ApplyGGEMSMetrics(ImGuiStyle &style) -> void {
   style.WindowPadding = ImVec2{10.0F, 8.0F};
   style.FramePadding = ImVec2{8.0F, 4.0F};
@@ -48,6 +89,11 @@ auto ApplyGGEMSMetrics(ImGuiStyle &style) -> void {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Applies semantic GGEMS colors to Dear ImGui style slots.
+ *
+ * \param[in,out] style Style whose color table is updated.
+ */
 auto ApplyGGEMSColors(ImGuiStyle &style) -> void {
   ImVec4 *colors = style.Colors;
 

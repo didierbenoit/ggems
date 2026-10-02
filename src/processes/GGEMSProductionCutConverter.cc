@@ -28,7 +28,6 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -39,7 +38,6 @@
 #include <span>
 #include <string_view>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSEMMaterialPackage.hh"

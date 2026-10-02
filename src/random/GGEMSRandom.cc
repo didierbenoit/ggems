@@ -30,7 +30,6 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <cctype>
 #include <cstddef>
 #include <cstring>
@@ -42,7 +41,6 @@
 #include <string>
 #include <cstdint>
 #include <string_view>
-/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/logging/GGEMSLogMacros.hh"

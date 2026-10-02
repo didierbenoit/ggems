@@ -28,10 +28,8 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <algorithm>
 #include <optional>
-/// \endcond
 
 #include "GGEMS/processes/GGEMSProductionCutPolicy.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"

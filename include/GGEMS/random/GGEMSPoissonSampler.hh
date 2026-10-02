@@ -32,9 +32,7 @@
 
 #pragma once
 
-/// \cond
 #include <cstdint>
-/// \endcond
 
 namespace ggems::core::random {
 

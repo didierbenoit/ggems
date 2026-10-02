@@ -29,9 +29,7 @@
 
 #pragma once
 
-/// \cond
 #include <utility>
-/// \endcond
 
 #include "GGEMS/logging/GGEMSOutputState.hh"
 #include "GGEMS/logging/GGEMSLogger.hh"

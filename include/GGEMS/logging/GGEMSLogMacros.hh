@@ -29,9 +29,7 @@
 
 #pragma once
 
-/// \cond
 #include <source_location>
-/// \endcond
 
 #include "GGEMS/logging/GGEMSLogger.hh"
 

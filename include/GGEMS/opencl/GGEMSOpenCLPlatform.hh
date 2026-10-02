@@ -29,11 +29,9 @@
 
 #pragma once
 
-/// \cond
 #include <string>
 #include <vector>
 #include <cstddef>
-/// \endcond
 
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 

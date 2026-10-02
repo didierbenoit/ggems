@@ -28,12 +28,10 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <algorithm>
 #include <format>
 #include <utility>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSIsotope.hh"

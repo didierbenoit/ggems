@@ -29,7 +29,6 @@
 
 #pragma once
 
-/// \cond
 #include <concepts>
 #include <cstdint>
 #include <format>
@@ -37,7 +36,6 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
-/// \endcond
 
 /*!
  * \namespace ggems::core

@@ -29,11 +29,9 @@
 
 #pragma once
 
-/// \cond
 #include <cstdint>
 #include <span>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/materials/GGEMSIsotope.hh"
 

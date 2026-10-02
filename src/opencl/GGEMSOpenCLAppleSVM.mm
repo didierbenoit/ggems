@@ -38,7 +38,6 @@
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #undef GGEMS_OPENCL_C_API_ONLY
 
-/// \cond
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
@@ -52,7 +51,6 @@
 #include <utility>
 #include <vector>
 #include <unistd.h>
-/// \endcond
 
 namespace {
 

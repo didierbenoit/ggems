@@ -30,10 +30,8 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <cmath>
 #include <cstdint>
-/// \endcond
 
 #include "GGEMS/random/GGEMSHostRandomStream.hh"
 #include "GGEMS/random/GGEMSPoissonSampler.hh"

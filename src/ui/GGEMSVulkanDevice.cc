@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Initializes Vulkan and selects a device for the window surface.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -9,6 +38,7 @@
 #include <string_view>
 #include <vector>
 
+/*! \brief Requests Vulkan declarations through the GLFW public boundary. */
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -32,26 +62,37 @@ namespace {
 // =============================================================================
 
 #ifdef GGEMS_DEBUG_MODE
+/*! \brief Whether this build requests Vulkan validation layers. */
 constexpr bool k_enable_validation_layers{true};
 #else
+/*! \brief Whether this build requests Vulkan validation layers. */
 constexpr bool k_enable_validation_layers{false};
 #endif
 
+/*! \brief Validation layers required when debug validation is enabled. */
 constexpr std::array<char const *, 1> k_validation_layers{
   "VK_LAYER_KHRONOS_validation",
 };
 
 #ifdef __APPLE__
+/*! \brief Device extensions required for Apple presentation. */
 constexpr std::array<char const *, 2> k_required_device_extensions{
   vk::KHRSwapchainExtensionName,
   "VK_KHR_portability_subset",
 };
 #else
+/*! \brief Device extensions required for window presentation. */
 constexpr std::array<char const *, 1> k_required_device_extensions{
   vk::KHRSwapchainExtensionName,
 };
 #endif
 
+/*!
+ * \brief Appends a capability failure to the device diagnostic.
+ *
+ * \param[in,out] diagnostic Accumulated device rejection reasons.
+ * \param[in] reason Additional failed capability to report.
+ */
 auto AppendRejectionReason(std::string &diagnostic, std::string_view reason)
   -> void {
   if (!diagnostic.empty()) {
@@ -63,6 +104,12 @@ auto AppendRejectionReason(std::string &diagnostic, std::string_view reason)
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Formats a capability flag for device diagnostics.
+ *
+ * \param[in] value Capability availability.
+ * \return Static yes or no text.
+ */
 [[nodiscard]] auto YesNo(bool value) noexcept -> std::string_view {
   return value ? "yes" : "no";
 }
@@ -70,6 +117,13 @@ auto AppendRejectionReason(std::string &diagnostic, std::string_view reason)
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Classifies the known device-to-display identity match.
+ *
+ * \param[in] candidate Vulkan device candidate.
+ * \param[in] display_adapter Resolved monitor adapter, when available.
+ * \return Static yes, no, unavailable, or unknown label.
+ */
 [[nodiscard]] auto DisplayMatchLabel(
   ggems::ui::detail::GGEMSVulkanDeviceCandidate const &candidate,
   std::optional<ggems::ui::detail::GGEMSVulkanDisplayAdapter> const

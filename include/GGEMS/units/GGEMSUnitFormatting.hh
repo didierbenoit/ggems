@@ -29,14 +29,12 @@
 
 #pragma once
 
-/// \cond
 #include <cmath>
 #include <cstdint>
 #include <format>
 #include <limits>
 #include <string>
 #include <string_view>
-/// \endcond
 
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
@@ -45,9 +43,14 @@
 
 namespace ggems::units {
 
-/// \cond
 namespace detail {
 
+/*!
+ * \brief Selects a unit symbol compatible with the logger encoding.
+ *
+ * \param[in] unit Unit definition providing ASCII and optional Unicode symbols.
+ * \return Borrowed Unicode symbol when enabled and available, otherwise ASCII.
+ */
 [[nodiscard]] inline auto SelectUnitSymbol(UnitDefinition const &unit) noexcept
   -> std::string_view {
   if (ggems::core::GGEMSLogger::GetInstance().GetEncoding() ==
@@ -57,6 +60,17 @@ namespace detail {
   return unit.unicode_symbol.empty() ? unit.symbol : unit.unicode_symbol;
 }
 
+/*!
+ * \brief Formats a quantity in a selected display unit.
+ *
+ * \tparam QuantityType Quantity type supplying the canonical value.
+ * \param[in] quantity Quantity stored in canonical units.
+ * \param[in] unit Compatible unit definition with a valid nonzero scale.
+ * \param[in] precision Nonnegative number of fractional digits.
+ * \param[in] width Numeric field width; a negative value uses the default
+ *   width.
+ * \return Fixed-point value followed by a space and the selected unit symbol.
+ */
 template <typename QuantityType>
 auto FormatScaled(QuantityType const &quantity, UnitDefinition const &unit,
                   std::int8_t precision, std::int8_t width) -> std::string {
@@ -72,7 +86,6 @@ auto FormatScaled(QuantityType const &quantity, UnitDefinition const &unit,
 }
 
 } // namespace detail
-/// \endcond
 
 /*!
  * \brief Formats a GGEMS quantity using its configured display policy.

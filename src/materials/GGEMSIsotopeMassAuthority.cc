@@ -28,13 +28,11 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <cstdint>
 #include <utility>
 #include <vector>
 #include <cstddef>
-/// \endcond
 
 #include "GGEMS/materials/GGEMSIsotope.hh"
 #include "GGEMS/materials/GGEMSIsotopeMassAuthority.hh"

@@ -36,14 +36,12 @@
 
 #pragma once
 
-/// \cond
 #include <array>
 #include <cstdint>
 #include <expected>
 #include <limits>
 #include <string_view>
 #include <type_traits>
-/// \endcond
 
 #include "GGEMS/units/GGEMSQuantity.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"

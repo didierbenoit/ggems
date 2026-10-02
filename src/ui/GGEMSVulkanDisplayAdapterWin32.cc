@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Resolves Windows display and Vulkan adapter identities through LUIDs.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #if defined(_WIN32)
 
 #include <windows.h>
@@ -15,7 +44,9 @@
 #include <string_view>
 #include <utility>
 
+/*! \brief Keeps GLFW from selecting a graphics API include boundary. */
 #define GLFW_INCLUDE_NONE
+/*! \brief Enables the GLFW native Win32 window-handle API. */
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
@@ -30,6 +61,12 @@ using Microsoft::WRL::ComPtr;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Encodes adapter identity bytes in the shared Windows LUID format.
+ *
+ * \param[in] bytes Platform LUID bytes in their native stored order.
+ * \return Lowercase hexadecimal identity with the win32-luid prefix.
+ */
 [[nodiscard]] auto EncodeLuid(std::span<std::uint8_t const> bytes)
   -> std::string {
   constexpr std::string_view k_hex_digits{"0123456789abcdef"};
@@ -50,6 +87,12 @@ using Microsoft::WRL::ComPtr;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Converts a Windows adapter label to UTF-8.
+ *
+ * \param[in] text Borrowed UTF-16 label.
+ * \return UTF-8 text, or an empty string on conversion failure or empty input.
+ */
 [[nodiscard]] auto WideToUtf8(std::wstring_view text) -> std::string {
   if (text.empty()) {
     return {};
@@ -79,6 +122,12 @@ using Microsoft::WRL::ComPtr;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Encodes a DXGI adapter LUID for comparison with Vulkan IDs.
+ *
+ * \param[in] luid DXGI adapter identifier.
+ * \return Identity in the shared Windows LUID byte format.
+ */
 [[nodiscard]] auto EncodeDxgiLuid(LUID const &luid) -> std::string {
   static_assert(sizeof(LUID) == VK_LUID_SIZE,
                 "Windows and Vulkan LUID widths must match.");
@@ -92,6 +141,14 @@ using Microsoft::WRL::ComPtr;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Formats a failed Windows adapter query as an expected error.
+ *
+ * \param[in] operation Name of the failed DXGI operation.
+ * \param[in] result HRESULT returned by the operation.
+ * \return Unexpected result containing the operation and hexadecimal error
+ *   code.
+ */
 [[nodiscard]] auto MakeDxgiFailure(std::string_view operation, HRESULT result)
   -> std::unexpected<std::string> {
   return std::unexpected<std::string>{

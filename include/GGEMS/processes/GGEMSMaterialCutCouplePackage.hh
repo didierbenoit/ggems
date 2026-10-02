@@ -30,13 +30,11 @@
 
 #pragma once
 
-/// \cond
 #include <array>
 #include <compare>
 #include <cstdint>
 #include <span>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/materials/GGEMSEMMaterialPackage.hh"
 #include "GGEMS/processes/GGEMSProductionCutPolicy.hh"

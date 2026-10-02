@@ -27,13 +27,11 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <mutex>
 #include <cstddef>
 #include <utility>
 #include <vector>
 #include <algorithm>
-/// \endcond
 
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/logging/GGEMSOutputState.hh"

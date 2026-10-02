@@ -33,11 +33,9 @@
 
 #pragma once
 
-/// \cond
 #include <cstdint>
 #include <string>
 #include <string_view>
-/// \endcond
 
 /*!
  * \namespace ggems::core::random

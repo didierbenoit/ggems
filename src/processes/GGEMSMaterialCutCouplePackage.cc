@@ -28,7 +28,6 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <algorithm>
 #include <array>
 #include <compare>
@@ -36,7 +35,6 @@
 #include <cstdint>
 #include <span>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/materials/GGEMSEMMaterialPackage.hh"
 #include "GGEMS/processes/GGEMSMaterialCutCouplePackage.hh"

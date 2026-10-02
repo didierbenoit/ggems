@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Resolves automatic and explicit Vulkan device selection requests.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <optional>
 #include <format>
@@ -17,6 +46,12 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Maps an uppercase ASCII character to lowercase.
+ *
+ * \param[in] character Character to normalize.
+ * \return Lowercase ASCII counterpart, or the unchanged character.
+ */
 [[nodiscard]] auto ToLowerAscii(char character) noexcept -> char {
   if (character >= 'A' && character <= 'Z') {
     return static_cast<char>(character + ('a' - 'A'));
@@ -27,6 +62,13 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Compares two strings with ASCII-only case folding.
+ *
+ * \param[in] left First string view.
+ * \param[in] right Second string view.
+ * \return True when lengths and folded characters match.
+ */
 [[nodiscard]] auto EqualAsciiInsensitive(std::string_view left,
                                          std::string_view right) noexcept
   -> bool {
@@ -46,6 +88,13 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Searches for a nonempty query using ASCII-only case folding.
+ *
+ * \param[in] text Device name to search.
+ * \param[in] query Nonempty name fragment.
+ * \return True when a folded substring matches; false for an empty query.
+ */
 [[nodiscard]] auto ContainsAsciiInsensitive(std::string_view text,
                                             std::string_view query) noexcept
   -> bool {
@@ -65,6 +114,12 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Formats device indices and names for a selection diagnostic.
+ *
+ * \param[in] candidates Borrowed candidate pointers to list.
+ * \return Comma-separated device labels.
+ */
 [[nodiscard]] auto FormatCandidates(
   std::vector<ggems::ui::detail::GGEMSVulkanDeviceCandidate const *> const
     &candidates) -> std::string {
@@ -84,6 +139,14 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Records a chosen device with its display-adapter relationship.
+ *
+ * \param[in] candidate Chosen suitable device.
+ * \param[in] reason Selection rationale to retain.
+ * \param[in] display_adapter Resolved monitor adapter, when available.
+ * \return Device index, rationale, and known adapter mismatch.
+ */
 [[nodiscard]] auto
 MakeSelection(ggems::ui::detail::GGEMSVulkanDeviceCandidate const &candidate,
               std::string reason,
@@ -102,6 +165,14 @@ MakeSelection(ggems::ui::detail::GGEMSVulkanDeviceCandidate const &candidate,
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Accepts an explicit device only when it is suitable.
+ *
+ * \param[in] candidate Explicitly matched device.
+ * \param[in] reason Selection rationale to retain on success.
+ * \param[in] display_adapter Resolved monitor adapter, when available.
+ * \return Accepted device selection, or its incompatibility diagnostic.
+ */
 [[nodiscard]] auto SelectExplicitCandidate(
   ggems::ui::detail::GGEMSVulkanDeviceCandidate const &candidate,
   std::string reason,

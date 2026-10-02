@@ -30,14 +30,12 @@
 
 #pragma once
 
-/// \cond
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string_view>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 

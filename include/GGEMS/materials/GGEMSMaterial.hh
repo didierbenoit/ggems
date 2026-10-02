@@ -30,14 +30,12 @@
 
 #pragma once
 
-/// \cond
 #include <cstdint>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/materials/GGEMSMaterialComposition.hh"
 #include "GGEMS/units/GGEMSDensityUnits.hh"

@@ -29,7 +29,6 @@
 
 #pragma once
 
-/// \cond
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -41,7 +40,6 @@
 #include <string_view>
 #include <vector>
 #include <ios>
-/// \endcond
 
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 

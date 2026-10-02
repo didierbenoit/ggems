@@ -142,7 +142,7 @@ TEST(GGEMSLogFormatterTest, SelectsLevelColorWhenColorIsEnabled) {
 
   RenderedLogLine const rendered = LogFormatter::Format(record, true);
 
-  EXPECT_EQ(rendered.color, ggems::render::YELLOW_MotherAmber);
+  EXPECT_EQ(rendered.color, ggems::render::YELLOW_Shade5);
   EXPECT_TRUE(rendered.prefix.ends_with("[WARN] {T0} (Check):"));
 }
 

@@ -29,11 +29,9 @@
 
 #pragma once
 
-/// \cond
 #include <array>
 #include <cstddef>
 #include <cstdint>
-/// \endcond
 
 /*!
  * \namespace ggems::render
@@ -189,9 +187,13 @@ constexpr auto MakeColor(ColorFamily family, std::uint8_t shade,
   };
 }
 
-/// \cond
+/*!
+ * \brief Returns the palette family associated with a shade enum type.
+ *
+ * \tparam ShadeEnum Palette shade enum with a family specialization.
+ * \return Color family selected by the argument type; its value is unused.
+ */
 template <typename ShadeEnum> consteval auto FamilyOf(ShadeEnum) -> ColorFamily;
-/// \endcond
 
 /*!
  * \brief Builds one named GGEMS color key.

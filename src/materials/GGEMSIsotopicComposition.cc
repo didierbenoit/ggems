@@ -28,7 +28,6 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -36,7 +35,6 @@
 #include <span>
 #include <utility>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSIsotope.hh"

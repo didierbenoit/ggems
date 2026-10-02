@@ -28,7 +28,6 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <atomic>
 #include <iostream>
 #include <memory>
@@ -36,7 +35,6 @@
 #include <string>
 #include <string_view>
 #include <cctype>
-/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/logging/GGEMSOutputMode.hh"
@@ -49,9 +47,7 @@
 #include "GGEMS/utf/GGEMSUTF.hh"
 
 #ifdef _WIN32
-/// \cond
 #include <windows.h>
-/// \endcond
 #endif
 
 namespace ggems::core {

@@ -36,7 +36,6 @@
 
 #pragma once
 
-/// \cond
 #include <array>
 #include <bit>
 #include <cstddef>
@@ -47,7 +46,6 @@
 #include <span>
 #include <type_traits>
 #include <utility>
-/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/opencl/GGEMSOpenCLSVMBuffer.hh"

@@ -27,11 +27,9 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <limits>
 #include <cstdint>
 #include <chrono>
-/// \endcond
 
 #include "GGEMS/opencl/GGEMSOpenCLUtils.hh"
 #include "GGEMS/opencl/GGEMSOpenCLProfiler.hh"

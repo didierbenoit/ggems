@@ -28,12 +28,10 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <algorithm>
 #include <cstdint>
 #include <span>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/materials/GGEMSEMMaterialPackage.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"

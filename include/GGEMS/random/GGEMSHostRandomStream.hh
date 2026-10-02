@@ -32,10 +32,8 @@
 
 #pragma once
 
-/// \cond
 #include <cstdint>
 #include <variant>
-/// \endcond
 
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/random/GGEMSRandomState.hh"

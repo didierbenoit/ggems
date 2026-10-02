@@ -27,13 +27,11 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/render/GGEMSBanner.hh"

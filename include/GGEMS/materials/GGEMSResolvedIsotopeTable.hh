@@ -29,9 +29,7 @@
 
 #pragma once
 
-/// \cond
 #include <vector>
-/// \endcond
 
 #include "GGEMS/materials/GGEMSIsotope.hh"
 

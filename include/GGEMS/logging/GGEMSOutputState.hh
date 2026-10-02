@@ -29,11 +29,9 @@
 
 #pragma once
 
-/// \cond
 #include <mutex>
 #include <vector>
 #include <cstddef>
-/// \endcond
 
 #include "GGEMS/logging/GGEMSLogger.hh"
 

@@ -32,14 +32,12 @@
 
 #pragma once
 
-/// \cond
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string>
 #include <string_view>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/random/GGEMSRandomEngine.hh"
 

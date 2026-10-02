@@ -27,7 +27,6 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <atomic>
 #include <cstddef>
 #include <format>
@@ -36,7 +35,6 @@
 #include <string_view>
 #include <thread>
 #include <unordered_map>
-/// \endcond
 
 #include "GGEMS/logging/detail/GGEMSLoggerMetadata.hh"
 

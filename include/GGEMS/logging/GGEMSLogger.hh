@@ -30,7 +30,6 @@
 
 #pragma once
 
-/// \cond
 #include <atomic>
 #include <chrono>
 #include <cstdint>
@@ -43,7 +42,6 @@
 #include <optional>
 #include <vector>
 #include <format>
-/// \endcond
 
 #include "GGEMS/render/GGEMSColorNames.hh"
 #include "GGEMS/render/GGEMSColorTypes.hh"

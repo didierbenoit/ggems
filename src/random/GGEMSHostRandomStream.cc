@@ -30,11 +30,9 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <array>
 #include <cstdint>
 #include <span>
-/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 

@@ -28,7 +28,6 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -36,7 +35,6 @@
 #include <string>
 #include <string_view>
 #include <algorithm>
-/// \endcond
 
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/logging/GGEMSLogMacros.hh"

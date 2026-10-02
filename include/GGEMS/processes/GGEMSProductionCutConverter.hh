@@ -30,9 +30,7 @@
 
 #pragma once
 
-/// \cond
 #include <cstdint>
-/// \endcond
 
 #include "GGEMS/materials/GGEMSEMMaterialPackage.hh"
 #include "GGEMS/processes/GGEMSProductionCutPolicy.hh"

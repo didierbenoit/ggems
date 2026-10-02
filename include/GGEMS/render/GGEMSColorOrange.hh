@@ -29,10 +29,8 @@
 
 #pragma once
 
-/// \cond
 #include <array>
 #include <cstdint>
-/// \endcond
 
 #include "GGEMS/render/GGEMSColorTypes.hh"
 
@@ -150,10 +148,13 @@ constexpr auto MakeOrangeScale() noexcept
 #undef GGEMS_COLOR_SHADE_RGB
 }
 
-/// \cond
+/*!
+ * \brief Returns the family associated with OrangeShade.
+ *
+ * \return ColorFamily::Orange; the shade value is unused.
+ */
 template <> consteval auto FamilyOf(OrangeShade) -> ColorFamily {
   return ColorFamily::Orange;
 }
-/// \endcond
 
 } // namespace ggems::render

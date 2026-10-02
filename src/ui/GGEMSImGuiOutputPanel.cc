@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Renders retained log snapshots and local output-console controls.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <string_view>
 #include <cstddef>
 #include <string>
@@ -20,6 +49,12 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Displays unformatted text while preserving an empty line.
+ *
+ * \param[in] text UTF-8 text without a format-string interpretation.
+ * \param[in] color Linear RGBA text color.
+ */
 auto RenderTextLine(std::string_view text, ImVec4 const &color) -> void {
   ImGui::PushStyleColor(ImGuiCol_Text, color);
 
@@ -35,6 +70,12 @@ auto RenderTextLine(std::string_view text, ImVec4 const &color) -> void {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Displays newline-separated text with a shared foreground color.
+ *
+ * \param[in] text UTF-8 text, possibly containing multiple lines.
+ * \param[in] color Linear RGBA text color.
+ */
 auto RenderMultilineText(std::string_view text, ImVec4 const &color) -> void {
   if (text.empty()) {
     RenderTextLine(text, color);
@@ -59,6 +100,12 @@ auto RenderMultilineText(std::string_view text, ImVec4 const &color) -> void {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Removes one optional opening newline from a log block view.
+ *
+ * \param[in] text Borrowed message text.
+ * \return View into the same storage, excluding the first newline when present.
+ */
 auto RemoveLeadingBlockNewline(std::string_view text) noexcept
   -> std::string_view {
   if (!text.empty() && text.front() == '\n') {

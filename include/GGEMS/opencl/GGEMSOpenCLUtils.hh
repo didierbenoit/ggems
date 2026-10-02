@@ -29,7 +29,6 @@
 
 #pragma once
 
-/// \cond
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -41,7 +40,6 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/logging/GGEMSLogMacros.hh"
@@ -363,9 +361,26 @@ CheckCLError(cl_int err, std::string_view context,
   }
 }
 
-/// \cond
+/*!
+ * \brief Provides typed storage and dispatch for OpenCL C information queries.
+ */
 namespace detail {
+/*!
+ * \brief Reads one fixed-size OpenCL information value.
+ *
+ * \tparam T Scalar query result type.
+ */
 template <typename T> struct CLInfoReader {
+  /*!
+   * \brief Reads the selected information into typed storage.
+   *
+   * \param[in] obj Borrowed OpenCL wrapper supplying the queried handle.
+   * \param[in] param Information selector compatible with the result type.
+   * \param[in] size Unused; scalar storage has sizeof(T) bytes.
+   * \param[in] getter OpenCL C query function matching the handle type.
+   * \param[out] err OpenCL status returned by the query.
+   * \return Scalar result, valid when err is CL_SUCCESS.
+   */
   static auto Read(auto const &obj, cl_uint param, std::size_t size,
                    auto getter, cl_int &err) -> T {
     (void)size;
@@ -375,7 +390,18 @@ template <typename T> struct CLInfoReader {
   }
 };
 
+/*! \brief Reads an OpenCL string and removes its trailing null terminator. */
 template <> struct CLInfoReader<std::string> {
+  /*!
+   * \brief Reads the selected information into typed storage.
+   *
+   * \param[in] obj Borrowed OpenCL wrapper supplying the queried handle.
+   * \param[in] param Information selector compatible with the result type.
+   * \param[in] size Required byte count returned by the size query.
+   * \param[in] getter OpenCL C query function matching the handle type.
+   * \param[out] err OpenCL status returned by the query.
+   * \return String result, valid when err is CL_SUCCESS.
+   */
   static auto Read(auto const &obj, cl_uint param, size_t size, auto getter,
                    cl_int &err) -> std::string {
     std::string value(size, '\0');
@@ -387,7 +413,23 @@ template <> struct CLInfoReader<std::string> {
   }
 };
 
+/*!
+ * \brief Reads OpenCL information into a fixed-capacity array.
+ *
+ * \tparam T Query element type.
+ * \tparam N Maximum number of stored elements.
+ */
 template <typename T, std::size_t N> struct CLInfoReader<std::array<T, N>> {
+  /*!
+   * \brief Reads the selected information into typed storage.
+   *
+   * \param[in] obj Borrowed OpenCL wrapper supplying the queried handle.
+   * \param[in] param Information selector compatible with the result type.
+   * \param[in] size Query byte count, limited to the array capacity.
+   * \param[in] getter OpenCL C query function matching the handle type.
+   * \param[out] err OpenCL status returned by the query.
+   * \return Array result, valid when err is CL_SUCCESS.
+   */
   static auto Read(auto const &obj, cl_uint param, size_t size, auto getter,
                    cl_int &err) -> std::array<T, N> {
     std::array<T, N> values{};
@@ -397,7 +439,22 @@ template <typename T, std::size_t N> struct CLInfoReader<std::array<T, N>> {
   }
 };
 
+/*!
+ * \brief Reads a variable-length sequence of OpenCL information values.
+ *
+ * \tparam T Query element type.
+ */
 template <typename T> struct CLInfoReader<std::vector<T>> {
+  /*!
+   * \brief Reads the selected information into typed storage.
+   *
+   * \param[in] obj Borrowed OpenCL wrapper supplying the queried handle.
+   * \param[in] param Information selector compatible with the result type.
+   * \param[in] size Query byte count; must be a multiple of sizeof(T).
+   * \param[in] getter OpenCL C query function matching the handle type.
+   * \param[out] err OpenCL status returned by the query.
+   * \return Sequence result, valid when err is CL_SUCCESS.
+   */
   static auto Read(auto const &obj, cl_uint param, size_t size, auto getter,
                    cl_int &err) -> std::vector<T> {
     std::vector<T> values(size / sizeof(T));
@@ -406,33 +463,49 @@ template <typename T> struct CLInfoReader<std::vector<T>> {
   }
 };
 
+/*!
+ * \brief Selects the OpenCL C information query for a C++ wrapper.
+ *
+ * \tparam Obj Supported OpenCL C++ wrapper type.
+ */
 template <class Obj> struct CLGetter;
 
+/*! \brief Selects the C information query for cl::Device. */
 template <> struct CLGetter<cl::Device> {
+  /*! \brief Matching OpenCL C information-query entry point. */
   static constexpr auto function = &clGetDeviceInfo;
 };
 
+/*! \brief Selects the C information query for cl::Context. */
 template <> struct CLGetter<cl::Context> {
+  /*! \brief Matching OpenCL C information-query entry point. */
   static constexpr auto function = &clGetContextInfo;
 };
 
+/*! \brief Selects the C information query for cl::Platform. */
 template <> struct CLGetter<cl::Platform> {
+  /*! \brief Matching OpenCL C information-query entry point. */
   static constexpr auto function = &clGetPlatformInfo;
 };
 
+/*! \brief Selects the C information query for cl::Program. */
 template <> struct CLGetter<cl::Program> {
+  /*! \brief Matching OpenCL C information-query entry point. */
   static constexpr auto function = &clGetProgramInfo;
 };
 
+/*! \brief Selects the C information query for cl::CommandQueue. */
 template <> struct CLGetter<cl::CommandQueue> {
+  /*! \brief Matching OpenCL C information-query entry point. */
   static constexpr auto function = &clGetCommandQueueInfo;
 };
 
+/*! \brief Selects the C information query for cl::Kernel. */
 template <> struct CLGetter<cl::Kernel> {
+  /*! \brief Matching OpenCL C information-query entry point. */
   static constexpr auto function = &clGetKernelInfo;
 };
 } // namespace detail
-/// \endcond
 
 /*!
  * \brief Returns typed OpenCL kernel-argument information.

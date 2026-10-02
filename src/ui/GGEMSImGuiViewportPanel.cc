@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Routes viewport mouse and keyboard input into camera deltas.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <array>
 #include <cstdint>
 
@@ -9,22 +38,34 @@
 
 namespace {
 
+/*! \brief Unmodified keyboard pan speed in logical pixels per second. */
 constexpr float k_keyboard_pan_speed_pixels_per_second{360.0F};
+
+/*! \brief Keyboard pan multiplier while Shift is held. */
 constexpr float k_keyboard_pan_fast_factor{3.0F};
+
+/*! \brief Keyboard pan multiplier while Control is held. */
 constexpr float k_keyboard_pan_precise_factor{0.25F};
 
 // =============================================================================
 // =============================================================================
 
+/*! \brief Maps a routed arrow key to a screen-space pan direction. */
 struct KeyboardPanKey {
+  /*! \brief Arrow key whose held state drives panning. */
   ImGuiKey key;
+
+  /*! \brief Signed horizontal pan direction. */
   float direction_x;
+
+  /*! \brief Signed vertical pan direction. */
   float direction_y;
 };
 
 // =============================================================================
 // =============================================================================
 
+/*! \brief Arrow-key bindings for camera-plane panning. */
 constexpr std::array<KeyboardPanKey, 4U> k_keyboard_pan_keys{
   {
     {.key = ImGuiKey_LeftArrow, .direction_x = -1.0F, .direction_y = 0.0F},
@@ -37,6 +78,7 @@ constexpr std::array<KeyboardPanKey, 4U> k_keyboard_pan_keys{
 // =============================================================================
 // =============================================================================
 
+/*! \brief Admitted modifier combinations for viewport pan shortcuts. */
 constexpr std::array<ImGuiKeyChord, 4U> k_keyboard_pan_modifiers{
   ImGuiMod_None,
   ImGuiMod_Shift,
@@ -47,6 +89,14 @@ constexpr std::array<ImGuiKeyChord, 4U> k_keyboard_pan_modifiers{
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Accumulates routed arrow-key motion for the current frame.
+ *
+ * \param[in] scene_item_id ImGui item identity owning the scene keyboard
+ *   shortcuts.
+ * \param[in,out] result Camera deltas receiving time-scaled keyboard pan
+ *   motion.
+ */
 auto AddKeyboardPan(ImGuiID scene_item_id,
                     ggems::ui::detail::GGEMSImGuiViewportPanel::Result &result)
   -> void {

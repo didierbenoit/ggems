@@ -29,10 +29,8 @@
 
 #pragma once
 
-/// \cond
 #include <span>
 #include <string_view>
-/// \endcond
 
 #include "GGEMS/materials/GGEMSMaterial.hh"
 

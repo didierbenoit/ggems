@@ -29,11 +29,9 @@
 
 #pragma once
 
-/// \cond
 #include <cstddef>
 #include <limits>
 #include <optional>
-/// \endcond
 
 namespace ggems::ocl::detail {
 

@@ -27,12 +27,10 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <cstdio>
 #include <cstdlib>
 #include <exception>
 #include <string_view>
-/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 

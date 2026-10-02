@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Runs the GUI lifecycle and consumes queued diagnostic scene data.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -11,6 +40,7 @@
 #include <utility>
 #include <vector>
 
+/*! \brief Keeps GLFW from selecting a graphics API include boundary. */
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
@@ -48,6 +78,16 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Describes active OpenCL contexts for the status panel.
+ *
+ * \param[in] contexts Active compute contexts in presentation order.
+ * \param[in] platforms Available platform descriptions referenced by those
+ *   contexts.
+ * \return Device descriptions with platform labels for duplicate names.
+ * \throws ggems::core::GGEMSInternal If a context refers to an unavailable
+ *   platform.
+ */
 [[nodiscard]] auto BuildComputeStatus(
   std::vector<ggems::ocl::GGEMSOpenCLContext> const &contexts,
   std::vector<ggems::ocl::GGEMSOpenCLPlatform> const &platforms)
@@ -106,6 +146,12 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Describes presenter compatibility for the ImGui Vulkan backend.
+ *
+ * \param[in] presenter Current swapchain generation owner.
+ * \return Backend image counts and main-pass attachment configuration.
+ */
 [[nodiscard]] auto BuildImGuiBackendEpoch(
   ggems::ui::detail::GGEMSVulkanPresenter const &presenter) noexcept
   -> ggems::ui::detail::GGEMSImGuiIntegration::VulkanBackendEpoch {
@@ -125,6 +171,12 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Reads the window framebuffer size in physical pixels.
+ *
+ * \param[in] window Borrowed GLFW window.
+ * \return Current framebuffer extent, including zero while minimized.
+ */
 [[nodiscard]] auto GetFramebufferExtent(GLFWwindow *window) -> vk::Extent2D {
   int width{0};
   int height{0};
@@ -140,6 +192,12 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Reads the last GLFW error with operation context.
+ *
+ * \param[in] context Operation description preceding the GLFW diagnostic.
+ * \return Error code and available GLFW diagnostic text.
+ */
 [[nodiscard]] auto GetGLFWErrorMessage(std::string_view context)
   -> std::string {
   char const *description{nullptr};

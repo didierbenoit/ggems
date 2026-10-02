@@ -27,12 +27,10 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <utility>
 #include <cstddef>
 #include <string>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/logging/GGEMSLogMacros.hh"
 #include "GGEMS/opencl/GGEMSOpenCLPlatform.hh"

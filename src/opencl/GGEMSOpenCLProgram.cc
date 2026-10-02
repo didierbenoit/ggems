@@ -27,7 +27,6 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <cctype>
 #include <cstdlib>
 #include <format>
@@ -45,7 +44,6 @@
 #include <cstdint>
 #include <iosfwd>
 #include <cstddef>
-/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/logging/GGEMSLogMacros.hh"

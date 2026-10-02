@@ -29,7 +29,6 @@
 
 #pragma once
 
-/// \cond
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -37,7 +36,6 @@
 #include <string_view>
 #include <unordered_set>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 

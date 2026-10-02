@@ -29,10 +29,8 @@
 
 #pragma once
 
-/// \cond
 #include <array>
 #include <cstdint>
-/// \endcond
 
 #include "GGEMS/render/GGEMSColorTypes.hh"
 
@@ -150,10 +148,13 @@ constexpr auto MakeYellowScale() noexcept
 #undef GGEMS_COLOR_SHADE_RGB
 }
 
-/// \cond
+/*!
+ * \brief Returns the family associated with YellowShade.
+ *
+ * \return ColorFamily::Yellow; the shade value is unused.
+ */
 template <> consteval auto FamilyOf(YellowShade) -> ColorFamily {
   return ColorFamily::Yellow;
 }
-/// \endcond
 
 } // namespace ggems::render

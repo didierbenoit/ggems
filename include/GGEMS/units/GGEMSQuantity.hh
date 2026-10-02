@@ -30,10 +30,8 @@
 
 #pragma once
 
-/// \cond
 #include <concepts>
 #include <type_traits>
-/// \endcond
 
 /*!
  * \namespace ggems::units

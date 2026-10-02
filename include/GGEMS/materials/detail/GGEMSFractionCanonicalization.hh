@@ -29,13 +29,11 @@
 
 #pragma once
 
-/// \cond
 #include <algorithm>
 #include <cmath>
 #include <format>
 #include <string_view>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 

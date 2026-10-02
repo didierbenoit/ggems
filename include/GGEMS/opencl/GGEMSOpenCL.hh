@@ -29,7 +29,6 @@
 
 #pragma once
 
-/// \cond
 #include <mutex>
 #include <string>
 #include <vector>
@@ -37,7 +36,6 @@
 #include <functional>
 #include <memory>
 #include <cstdint>
-/// \endcond
 
 #include "GGEMS/logging/GGEMSLogMacros.hh"
 #include "GGEMS/opencl/GGEMSOpenCLProgram.hh"

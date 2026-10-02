@@ -29,11 +29,9 @@
 
 #pragma once
 
-/// \cond
 #include <cmath>
 #include <cstdint>
 #include <optional>
-/// \endcond
 
 /*!
  * \namespace ggems::geometry

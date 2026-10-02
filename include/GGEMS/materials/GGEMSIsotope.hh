@@ -29,10 +29,8 @@
 
 #pragma once
 
-/// \cond
 #include <compare>
 #include <cstdint>
-/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 

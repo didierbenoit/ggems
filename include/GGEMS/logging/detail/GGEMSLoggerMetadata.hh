@@ -29,10 +29,8 @@
 
 #pragma once
 
-/// \cond
 #include <string>
 #include <string_view>
-/// \endcond
 
 /*!
  * \namespace ggems::core::logging::detail

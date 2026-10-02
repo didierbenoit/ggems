@@ -29,10 +29,8 @@
 
 #pragma once
 
-/// \cond
 #include <string_view>
 #include <cstdint>
-/// \endcond
 
 /*!
  * \namespace ggems::ocl

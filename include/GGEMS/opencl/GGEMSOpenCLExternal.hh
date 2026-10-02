@@ -29,12 +29,15 @@
 
 #pragma once
 
-/// \cond
+/*! \brief Exposes OpenCL 3.0 declarations in the C++ bindings. */
 #define CL_HPP_TARGET_OPENCL_VERSION 300
+/*! \brief Exposes OpenCL 3.0 declarations in the C headers. */
 #define CL_TARGET_OPENCL_VERSION 300
 #if defined(__APPLE__)
+/*! \brief Admits OpenCL 1.2 runtimes in the Apple C++ bindings. */
 #define CL_HPP_MINIMUM_OPENCL_VERSION 120
 #else
+/*! \brief Requires OpenCL 2.0 or newer outside Apple platforms. */
 #define CL_HPP_MINIMUM_OPENCL_VERSION 200
 #endif
 
@@ -63,4 +66,3 @@
 #elif defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
-/// \endcond

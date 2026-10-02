@@ -29,10 +29,8 @@
 
 #pragma once
 
-/// \cond
 #include <cstdint>
 #include <string_view>
-/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 

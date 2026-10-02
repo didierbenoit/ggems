@@ -29,11 +29,9 @@
 
 #pragma once
 
-/// \cond
 #include <cstddef>
 #include <cstdint>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
 #include "GGEMS/opencl/GGEMSOpenCLSVMMemoryKind.hh"

@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Manages Dear ImGui backends, scaling, fonts, and persisted settings.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -10,6 +39,7 @@
 #include <string_view>
 #include <vector>
 
+/*! \brief Keeps GLFW from selecting a graphics API include boundary. */
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
@@ -27,13 +57,23 @@
 
 namespace {
 
+/*! \brief Descriptor-pool capacity requested from the Vulkan backend. */
 constexpr std::uint32_t k_sampled_image_pool_size{16U};
+
+/*! \brief Minimum swapchain image count admitted by the backend. */
 constexpr std::uint32_t k_min_backend_image_count{2U};
+
+/*! \brief Vulkan API version supplied to Dear ImGui. */
 constexpr std::uint32_t k_vulkan_api_version{vk::ApiVersion13};
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Finds the first installed font in the preferred monospace list.
+ *
+ * \return Existing font path, or no value when no candidate is present.
+ */
 [[nodiscard]] auto FindFirstExistingFont()
   -> std::optional<std::filesystem::path> {
   std::vector<std::filesystem::path> candidates{};

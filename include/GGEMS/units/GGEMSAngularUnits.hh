@@ -35,12 +35,10 @@
 
 #pragma once
 
-/// \cond
 #include <array>
 #include <cstdint>
 #include <numbers>
 #include <string_view>
-/// \endcond
 
 #include "GGEMS/units/GGEMSQuantity.hh"
 #include "GGEMS/units/GGEMSUnitConversion.hh"

@@ -27,7 +27,6 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <iostream>
 #include <format>
 #include <string>
@@ -44,7 +43,6 @@
 #include <string_view>
 #include <cstdint>
 #include <source_location>
-/// \endcond
 
 #include "GGEMS/logging/GGEMSLogger.hh"
 #include "GGEMS/GGEMSException.hh"

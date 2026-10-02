@@ -29,10 +29,8 @@
 
 #pragma once
 
-/// \cond
 #include <chrono>
 #include <cstdint>
-/// \endcond
 
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/units/GGEMSTimeUnits.hh"

@@ -29,9 +29,7 @@
 
 #pragma once
 
-/// \cond
 #include <cstdint>
-/// \endcond
 
 #include "GGEMS/render/GGEMSColorBlue.hh"
 #include "GGEMS/render/GGEMSColorRed.hh"

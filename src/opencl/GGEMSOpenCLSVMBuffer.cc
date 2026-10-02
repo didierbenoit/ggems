@@ -27,13 +27,11 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <format>
 #include <utility>
 #include <exception>
 #include <cstddef>
 #include <cstdint>
-/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"

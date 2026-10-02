@@ -29,11 +29,9 @@
 
 #pragma once
 
-/// \cond
 #include <string>
 #include <string_view>
 #include <cstdint>
-/// \endcond
 
 #include "GGEMS/logging/GGEMSOutputState.hh"
 

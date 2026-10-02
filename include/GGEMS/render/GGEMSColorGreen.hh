@@ -29,10 +29,8 @@
 
 #pragma once
 
-/// \cond
 #include <array>
 #include <cstdint>
-/// \endcond
 
 #include "GGEMS/render/GGEMSColorTypes.hh"
 
@@ -149,10 +147,13 @@ constexpr auto MakeGreenScale() noexcept -> std::array<RGB, color_shade_count> {
 #undef GGEMS_COLOR_SHADE_RGB
 }
 
-/// \cond
+/*!
+ * \brief Returns the family associated with GreenShade.
+ *
+ * \return ColorFamily::Green; the shade value is unused.
+ */
 template <> consteval auto FamilyOf(GreenShade) -> ColorFamily {
   return ColorFamily::Green;
 }
-/// \endcond
 
 } // namespace ggems::render

@@ -29,11 +29,9 @@
 
 #pragma once
 
-/// \cond
 #include <string>
 #include <string_view>
 
-/// \endcond
 /*!
  * \namespace ggems::utf
  * \brief Provides UTF conversion helpers used by GGEMS textual interfaces.

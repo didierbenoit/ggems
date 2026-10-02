@@ -30,14 +30,12 @@
 
 #pragma once
 
-/// \cond
 #include <concepts>
 #include <cstdint>
 #include <expected>
 #include <limits>
 #include <string_view>
 #include <type_traits>
-/// \endcond
 
 #include "GGEMS/units/GGEMSQuantity.hh"
 
@@ -195,9 +193,15 @@ template <typename UniSet> struct UnitRegistry;
  */
 template <typename Tag> struct QuantityTraits;
 
-/// \cond
+/*! \brief Provides checked conversion and literal-construction helpers. */
 namespace detail {
 
+/*!
+ * \brief Evaluates an integral power of ten in long double.
+ *
+ * \param[in] exponent Signed base-10 exponent.
+ * \return Ten raised to the requested exponent.
+ */
 constexpr auto Pow10(std::int16_t exponent) noexcept -> long double {
   long double result{1.0L};
   if (exponent >= 0) {
@@ -212,6 +216,12 @@ constexpr auto Pow10(std::int16_t exponent) noexcept -> long double {
   return result;
 }
 
+/*!
+ * \brief Evaluates the canonical-unit multiplier described by a scale.
+ *
+ * \param[in] scale Validated decimal or special scale metadata.
+ * \return Multiplier from the selected unit to the canonical unit.
+ */
 constexpr auto ScaleFactor(UnitScale const &scale) noexcept -> long double {
   if (scale.special_factor != 0.0L) {
     return scale.special_factor;
@@ -221,11 +231,25 @@ constexpr auto ScaleFactor(UnitScale const &scale) noexcept -> long double {
          Pow10(scale.decimal_exponent);
 }
 
+/*!
+ * \brief Checks whether a long double value is finite.
+ *
+ * \param[in] value Value to classify.
+ * \return True for finite values, false for infinities and NaN.
+ */
 constexpr auto IsFinite(long double value) noexcept -> bool {
   return value == value && value <= std::numeric_limits<long double>::max() &&
          value >= -std::numeric_limits<long double>::max();
 }
 
+/*!
+ * \brief Extracts an exact unsigned integral unit multiplier when supported.
+ *
+ * \param[in] scale Scale metadata to examine.
+ * \param[out] factor Exact multiplier, valid only on success.
+ * \return True for a representable decimal scale with denominator one and a
+ *   nonnegative exponent.
+ */
 constexpr auto ExactIntegralFactor(UnitScale const &scale,
                                    std::uint64_t &factor) noexcept -> bool {
   if (scale.special_factor != 0.0L || scale.denominator != 1ULL ||
@@ -242,6 +266,16 @@ constexpr auto ExactIntegralFactor(UnitScale const &scale,
   return true;
 }
 
+/*!
+ * \brief Checks and converts a value already expressed in canonical units.
+ *
+ * Integral destinations round halfway cases away from zero. Nonfinite input is
+ *   rejected as OutOfRange.
+ *
+ * \tparam Representation Canonical arithmetic representation.
+ * \param[in] value Canonical value to represent.
+ * \return Converted value, or NegativeValue or OutOfRange on failure.
+ */
 template <typename Representation>
 constexpr auto ConvertCanonical(long double value)
   -> std::expected<Representation, UnitConversionError> {
@@ -290,11 +324,23 @@ constexpr auto ConvertCanonical(long double value)
   }
 }
 
+/*!
+ * \brief Accepts non-Boolean integral types no wider than uint64_t.
+ *
+ * \tparam Type Candidate integer representation.
+ */
 template <typename Type>
 concept ExactIntegral =
   std::integral<Type> && !std::same_as<std::remove_cv_t<Type>, bool> &&
   sizeof(Type) <= sizeof(std::uint64_t);
 
+/*!
+ * \brief Checks the sign of a supported integer representation.
+ *
+ * \tparam Integer Supported integer representation.
+ * \param[in] value Integer to classify.
+ * \return True only for a negative signed value.
+ */
 template <ExactIntegral Integer>
 constexpr auto IntegralIsNegative(Integer value) noexcept -> bool {
   if constexpr (std::signed_integral<Integer>) {
@@ -304,6 +350,13 @@ constexpr auto IntegralIsNegative(Integer value) noexcept -> bool {
   }
 }
 
+/*!
+ * \brief Returns an exact unsigned magnitude, including the signed minimum.
+ *
+ * \tparam Integer Supported integer representation.
+ * \param[in] value Integer whose magnitude is required.
+ * \return Absolute value represented as uint64_t.
+ */
 template <ExactIntegral Integer>
 constexpr auto IntegralMagnitude(Integer value) noexcept -> std::uint64_t {
   using UnsignedInteger = std::make_unsigned_t<Integer>;
@@ -316,6 +369,14 @@ constexpr auto IntegralMagnitude(Integer value) noexcept -> std::uint64_t {
   return static_cast<std::uint64_t>(magnitude);
 }
 
+/*!
+ * \brief Checks and combines an integer magnitude and sign.
+ *
+ * \tparam Representation Destination integer representation.
+ * \param[in] magnitude Unsigned absolute value.
+ * \param[in] negative Whether the result is negative.
+ * \return Representable integer, or NegativeValue or OutOfRange on failure.
+ */
 template <ExactIntegral Representation>
 constexpr auto ConvertIntegralMagnitude(std::uint64_t magnitude, bool negative)
   -> std::expected<Representation, UnitConversionError> {
@@ -349,7 +410,6 @@ constexpr auto ConvertIntegralMagnitude(std::uint64_t magnitude, bool negative)
 }
 
 } // namespace detail
-/// \endcond
 
 /*!
  * \brief Finds a unit definition by its ASCII symbol.
@@ -559,9 +619,18 @@ template <detail::ExactIntegral TargetRepresentation,
     magnitude / factor, negative);
 }
 
-/// \cond
 namespace detail {
 
+/*!
+ * \brief Constructs a quantity literal through the central conversion policy.
+ *
+ * An invalid conversion prevents constant evaluation.
+ *
+ * \tparam QuantityValue GGEMS quantity type of the literal.
+ * \param[in] value Literal value in the named unit.
+ * \param[in] unit_symbol Exact ASCII registry symbol.
+ * \return Quantity expressed in its canonical representation.
+ */
 template <QuantityType QuantityValue>
 consteval auto MakeLiteralQuantity(unsigned long long value,
                                    std::string_view unit_symbol)
@@ -574,6 +643,16 @@ consteval auto MakeLiteralQuantity(unsigned long long value,
     .value();
 }
 
+/*!
+ * \brief Constructs a quantity literal through the central conversion policy.
+ *
+ * An invalid conversion prevents constant evaluation.
+ *
+ * \tparam QuantityValue GGEMS quantity type of the literal.
+ * \param[in] value Literal value in the named unit.
+ * \param[in] unit_symbol Exact ASCII registry symbol.
+ * \return Quantity expressed in its canonical representation.
+ */
 template <QuantityType QuantityValue>
 consteval auto MakeLiteralQuantity(long double value,
                                    std::string_view unit_symbol)
@@ -582,6 +661,5 @@ consteval auto MakeLiteralQuantity(long double value,
 }
 
 } // namespace detail
-/// \endcond
 
 } // namespace ggems::units

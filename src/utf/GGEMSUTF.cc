@@ -27,11 +27,9 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <cstddef>
 #include <string>
 #include <string_view>
-/// \endcond
 
 #include "GGEMS/utf/GGEMSUTF.hh"
 

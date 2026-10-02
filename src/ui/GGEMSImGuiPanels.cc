@@ -1,3 +1,33 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Presents device status, completed sources, and scene-category
+ *   controls.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -26,11 +56,18 @@
 
 namespace {
 
+/*! \brief Scene hierarchy categories shared with the workbench. */
 using SceneSelection = ggems::ui::detail::GGEMSWorkbenchState::SceneSelection;
 
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Returns the display label for a scene category.
+ *
+ * \param[in] selection Selected scene hierarchy category.
+ * \return Static label, or Unknown for an unrecognized value.
+ */
 [[nodiscard]] auto GetSceneSelectionName(SceneSelection selection) noexcept
   -> char const * {
   switch (selection) {
@@ -54,6 +91,14 @@ using SceneSelection = ggems::ui::detail::GGEMSWorkbenchState::SceneSelection;
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Displays completed source records and trace-visibility controls.
+ *
+ * \param[in,out] workbench Per-source visibility and source presentation
+ *   revision.
+ * \param[in] source_run_snapshot Borrowed completed snapshot, or null when
+ *   absent.
+ */
 auto BuildSourceEntries(
   ggems::ui::detail::GGEMSWorkbenchState &workbench,
   ggems::core::sources::GGEMSSourceRunSnapshot const *source_run_snapshot)
@@ -343,6 +388,16 @@ auto BuildSourceEntries(
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Builds one selectable scene category and its available contents.
+ *
+ * \param[in,out] workbench Selected category and trace presentation controls.
+ * \param[in] source_run_snapshot Borrowed source snapshot used by the source
+ *   category.
+ * \param[in] label Category display label and ImGui identity.
+ * \param[in] selection Category associated with this node.
+ * \param[in] extra_flags Additional tree-node presentation flags.
+ */
 auto BuildSceneNode(
   ggems::ui::detail::GGEMSWorkbenchState &workbench,
   ggems::core::sources::GGEMSSourceRunSnapshot const *source_run_snapshot,

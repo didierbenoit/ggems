@@ -4,8 +4,8 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/render/GGEMSColorNames.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/ui/detail/GGEMSVulkanColorConversion.hh"
 
 namespace {
@@ -13,16 +13,15 @@ namespace {
 namespace render = ggems::render;
 using ggems::ui::detail::ToVulkanClearColor;
 
+constexpr float k_color_tolerance{1.0e-6F};
+
 constexpr std::array<float, 4U> k_expected_blue_abyss{
-  0.011764707F,
-  0.019607844F,
-  0.027450982F,
+  0.000910581F,
+  0.001517635F,
+  0.002124689F,
   1.0F,
 };
 
-constexpr auto k_constexpr_blue_abyss = ToVulkanClearColor(render::BLUE_Abyss);
-
-static_assert(k_constexpr_blue_abyss == k_expected_blue_abyss);
 static_assert(noexcept(ToVulkanClearColor(render::BLUE_Abyss)));
 
 // =============================================================================
@@ -30,18 +29,19 @@ static_assert(noexcept(ToVulkanClearColor(render::BLUE_Abyss)));
 
 auto ExpectVulkanColor(std::array<float, 4U> const &actual,
                        std::array<float, 4U> const &expected) -> void {
-  EXPECT_FLOAT_EQ(actual[0U], expected[0U]);
-  EXPECT_FLOAT_EQ(actual[1U], expected[1U]);
-  EXPECT_FLOAT_EQ(actual[2U], expected[2U]);
-  EXPECT_FLOAT_EQ(actual[3U], expected[3U]);
+  EXPECT_NEAR(actual[0U], expected[0U], k_color_tolerance);
+  EXPECT_NEAR(actual[1U], expected[1U], k_color_tolerance);
+  EXPECT_NEAR(actual[2U], expected[2U], k_color_tolerance);
+  EXPECT_NEAR(actual[3U], expected[3U], k_color_tolerance);
 }
+} // namespace
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSVulkanColorConversion, ZeroByteChannelsMapToZeroFloatChannels) {
+TEST(GGEMSVulkanColorConversion, ZeroByteChannelsMapToZeroLinearChannels) {
   ExpectVulkanColor(ToVulkanClearColor(render::GREEN_DeepGreen),
-                    {0.0F, 0.18823531F, 0.0F, 1.0F});
+                    {0.0F, 0.029556835F, 0.0F, 1.0F});
 }
 
 // =============================================================================
@@ -55,15 +55,15 @@ TEST(GGEMSVulkanColorConversion, AllMaximumByteChannelsMapToOne) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSVulkanColorConversion, NamedColorMapsToExplicitComponents) {
+TEST(GGEMSVulkanColorConversion, NamedColorMapsToLinearComponents) {
   ExpectVulkanColor(ToVulkanClearColor(render::RED_Tomato),
-                    {1.0F, 0.38823533F, 0.27843139F, 1.0F});
+                    {1.0F, 0.124771819F, 0.063010015F, 1.0F});
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSVulkanColorConversion, BlueAbyssMatchesCurrentClearColor) {
+TEST(GGEMSVulkanColorConversion, BlueAbyssMatchesLinearClearColor) {
   ExpectVulkanColor(ToVulkanClearColor(render::BLUE_Abyss),
                     k_expected_blue_abyss);
 }
@@ -71,17 +71,17 @@ TEST(GGEMSVulkanColorConversion, BlueAbyssMatchesCurrentClearColor) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSVulkanColorConversion, BrightVariantMapsToExplicitComponents) {
+TEST(GGEMSVulkanColorConversion, BrightVariantMapsToLinearComponents) {
   ExpectVulkanColor(ToVulkanClearColor(render::RED_Tomato_B),
-                    {1.0F, 0.59215689F, 0.51764709F, 1.0F});
+                    {1.0F, 0.309468925F, 0.230740055F, 1.0F});
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSVulkanColorConversion, FaintVariantMapsToExplicitComponents) {
+TEST(GGEMSVulkanColorConversion, FaintVariantMapsToLinearComponents) {
   ExpectVulkanColor(ToVulkanClearColor(render::RED_Tomato_F),
-                    {0.66666669F, 0.25882354F, 0.18431373F, 1.0F});
+                    {0.401977777F, 0.054480277F, 0.028426040F, 1.0F});
 }
 
 // =============================================================================
@@ -118,12 +118,3 @@ TEST(GGEMSVulkanColorConversion, AlwaysReturnsOpaqueAlpha) {
   auto const color = ToVulkanClearColor(render::RED_Tomato_F);
   EXPECT_FLOAT_EQ(color[3U], 1.0F);
 }
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSVulkanColorConversion, SupportsConstantEvaluation) {
-  ExpectVulkanColor(k_constexpr_blue_abyss, k_expected_blue_abyss);
-}
-
-} // namespace

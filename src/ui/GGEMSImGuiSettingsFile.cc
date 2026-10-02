@@ -1,3 +1,32 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Resolves user configuration paths and reads or replaces layout files.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
@@ -20,6 +49,12 @@ namespace {
 // =============================================================================
 
 #ifdef _WIN32
+/*!
+ * \brief Reads a nonempty absolute path from an environment variable.
+ *
+ * \param[in] name Platform-native environment-variable name.
+ * \return Absolute path, or no value for absent, empty, or relative values.
+ */
 [[nodiscard]] auto ReadAbsolutePathVariable(wchar_t const *name)
   -> std::optional<std::filesystem::path> {
   wchar_t const *value = _wgetenv(name);
@@ -30,6 +65,12 @@ namespace {
 
   std::filesystem::path path{value};
 #else
+/*!
+ * \brief Reads a nonempty absolute path from an environment variable.
+ *
+ * \param[in] name Platform-native environment-variable name.
+ * \return Absolute path, or no value for absent, empty, or relative values.
+ */
 [[nodiscard]] auto ReadAbsolutePathVariable(char const *name)
   -> std::optional<std::filesystem::path> {
   char const *value = std::getenv(name);
@@ -51,6 +92,12 @@ namespace {
 // =============================================================================
 // =============================================================================
 
+/*!
+ * \brief Builds a failed settings-read result with its diagnostic.
+ *
+ * \param[in] error Read failure diagnostic to retain.
+ * \return Failed result with empty settings text.
+ */
 [[nodiscard]] auto ReadFailure(std::string error)
   -> ggems::ui::detail::GGEMSSettingsFileRead {
   return ggems::ui::detail::GGEMSSettingsFileRead{
@@ -60,6 +107,7 @@ namespace {
   };
 }
 
+/*! \brief Maximum attempts to create a unique temporary settings file. */
 constexpr int k_temporary_name_attempts{8};
 
 } // namespace

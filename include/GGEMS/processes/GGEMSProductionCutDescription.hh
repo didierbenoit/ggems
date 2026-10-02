@@ -30,12 +30,10 @@
 
 #pragma once
 
-/// \cond
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string>
-/// \endcond
 
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/processes/GGEMSMaterialCutCouplePackage.hh"

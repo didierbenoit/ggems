@@ -29,13 +29,11 @@
 
 #pragma once
 
-/// \cond
 #include <array>
 #include <cstddef>
 #include <format>
 #include <string>
 #include <string_view>
-/// \endcond
 
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 #include "GGEMS/opencl/GGEMSOpenCLUtils.hh"

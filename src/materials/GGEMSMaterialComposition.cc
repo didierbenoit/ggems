@@ -28,14 +28,12 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <utility>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSElementCatalog.hh"

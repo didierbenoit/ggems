@@ -28,13 +28,11 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-/// \cond
 #include <algorithm>
 #include <span>
 #include <string>
 #include <utility>
 #include <vector>
-/// \endcond
 
 #include "GGEMS/materials/GGEMSIsotopicComposition.hh"
 #include "GGEMS/materials/GGEMSIsotopeMassAuthority.hh"
