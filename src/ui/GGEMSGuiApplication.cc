@@ -56,7 +56,10 @@ namespace {
     return {};
   }
 
-  ggems::ui::detail::GGEMSComputeStatus compute_status{.initialized = true};
+  ggems::ui::detail::GGEMSComputeStatus compute_status{
+    .initialized = true,
+    .devices = {},
+  };
 
   compute_status.devices.reserve(contexts.size());
 
@@ -371,8 +374,9 @@ void GGEMSGuiApplication::Run() {
 
 // -----------------------------------------------------------------------------
 
-void GGEMSGuiApplication::FramebufferResizeCallback(GLFWwindow *window, int,
-                                                    int) noexcept {
+void GGEMSGuiApplication::FramebufferResizeCallback(
+  GLFWwindow *window, [[maybe_unused]] int width,
+  [[maybe_unused]] int height) noexcept {
   auto *application =
     static_cast<GGEMSGuiApplication *>(glfwGetWindowUserPointer(window));
 
@@ -533,8 +537,6 @@ auto GGEMSGuiApplication::BuildImGuiFrame() -> void {
 
   imgui_integration_->BeginFrame();
 
-  // The viewport request is logical; the scene target is sized in
-  // framebuffer pixels. Camera and texture matching stay logical.
   if (workbench_.viewport.visible) {
     detail::GGEMSImGuiIntegration::FramebufferDensity const density =
       imgui_integration_->GetFramebufferDensity();

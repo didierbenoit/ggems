@@ -63,7 +63,7 @@ public:
     float y{1.0F};
   };
 
-  [[nodiscard]] auto GetFramebufferDensity() const noexcept
+  [[nodiscard]] static auto GetFramebufferDensity() noexcept
     -> FramebufferDensity;
 
   auto ThrowIfBackendFailed() const -> void;

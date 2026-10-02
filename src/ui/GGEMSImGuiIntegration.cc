@@ -140,9 +140,6 @@ auto GGEMSImGuiIntegration::Initialize(GLFWwindow *window,
     imgui_io.UserData = this;
 
     LoadSettings();
-
-    // Fonts are added before the GGEMS style exists, as before Phase 6: the
-    // default-font fallback heuristic sees the same context size.
     LoadFonts();
 
     AttachGlfwBackend();
@@ -165,8 +162,6 @@ auto GGEMSImGuiIntegration::Shutdown() noexcept -> void {
 
   if (context_ != nullptr) {
     try {
-      // Final flush (the dirty timer may still be pending); never after a
-      // partial initialization that rendered no frame.
       if (ImGui::GetFrameCount() > 0) {
         SaveSettings();
       }
@@ -303,7 +298,7 @@ auto GGEMSImGuiIntegration::RenderDrawData(
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSImGuiIntegration::GetFramebufferDensity() const noexcept
+auto GGEMSImGuiIntegration::GetFramebufferDensity() noexcept
   -> FramebufferDensity {
   ImVec2 const scale = ImGui::GetIO().DisplayFramebufferScale;
 
@@ -523,7 +518,6 @@ auto GGEMSImGuiIntegration::LoadFonts() -> void {
     FindFirstExistingFont();
 
   if (font_path.has_value()) {
-    // Dear ImGui file names are UTF-8.
     imgui_io.Fonts->AddFontFromFileTTF(ToUtf8(*font_path).c_str(),
                                        k_ggems_base_font_size);
 

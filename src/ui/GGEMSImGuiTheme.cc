@@ -60,14 +60,22 @@ auto ApplyGGEMSColors(ImGuiStyle &style) -> void {
   ImVec4 const selection_hovered = WithAlpha(selection, 0.72F);
   ImVec4 const selection_faint = WithAlpha(selection, 0.20F);
   ImVec4 const accent = GetThemeColor(GGEMSThemeRole::Accent);
-  ImVec4 const accent_soft = WithAlpha(accent, 0.60F);
   ImVec4 const attention = GetThemeColor(GGEMSThemeRole::Attention);
+  ImVec4 const tab = GetThemeColor(GGEMSThemeRole::TabBackground);
+  ImVec4 const tab_accent = GetThemeColor(GGEMSThemeRole::TabAccent);
+  ImVec4 const separator = GetThemeColor(GGEMSThemeRole::Separator);
+  ImVec4 const border = WithAlpha(GetThemeColor(GGEMSThemeRole::Border), 0.30F);
+  ImVec4 const scrollbar_accent =
+    GetThemeColor(GGEMSThemeRole::ScrollbarAccent);
+  ImVec4 const app_background =
+    GetThemeColor(GGEMSThemeRole::ApplicationBackground);
+  ImVec4 const popup = GetThemeColor(GGEMSThemeRole::PopupBackground);
 
   // Main surfaces
-  colors[ImGuiCol_WindowBg] = window;
-  colors[ImGuiCol_ChildBg] = transparent;
-  colors[ImGuiCol_PopupBg] = window;
-  colors[ImGuiCol_Border] = selection;
+  colors[ImGuiCol_WindowBg] = app_background;
+  colors[ImGuiCol_ChildBg] = app_background;
+  colors[ImGuiCol_PopupBg] = popup;
+  colors[ImGuiCol_Border] = border;
   colors[ImGuiCol_BorderShadow] = transparent;
 
   // Title bars
@@ -83,35 +91,35 @@ auto ApplyGGEMSColors(ImGuiStyle &style) -> void {
   colors[ImGuiCol_InputTextCursor] = accent;
 
   // Menu bar
-  colors[ImGuiCol_MenuBarBg] = window;
+  colors[ImGuiCol_MenuBarBg] = app_background;
 
   // Tabs
-  colors[ImGuiCol_Tab] = GetThemeColor(GGEMSThemeRole::TabBackground);
+  colors[ImGuiCol_Tab] = tab;
   colors[ImGuiCol_TabHovered] = selection_hovered;
   colors[ImGuiCol_TabSelected] = selection;
-  colors[ImGuiCol_TabSelectedOverline] = accent_soft;
-  colors[ImGuiCol_TabDimmed] = recessed;
-  colors[ImGuiCol_TabDimmedSelected] = window;
-  colors[ImGuiCol_TabDimmedSelectedOverline] = selection_soft;
+  colors[ImGuiCol_TabSelectedOverline] = tab_accent;
+  colors[ImGuiCol_TabDimmed] = tab;
+  colors[ImGuiCol_TabDimmedSelected] = selection;
+  colors[ImGuiCol_TabDimmedSelectedOverline] = tab_accent;
 
   // Scrollbars
   colors[ImGuiCol_ScrollbarBg] = recessed;
-  colors[ImGuiCol_ScrollbarGrab] = selection_soft;
-  colors[ImGuiCol_ScrollbarGrabHovered] = selection_hovered;
-  colors[ImGuiCol_ScrollbarGrabActive] = selection;
+  colors[ImGuiCol_ScrollbarGrab] = selection;
+  colors[ImGuiCol_ScrollbarGrabHovered] = WithAlpha(scrollbar_accent, 0.72F);
+  colors[ImGuiCol_ScrollbarGrabActive] = scrollbar_accent;
 
   // Frames: checkbox, radio button, input, plot backgrounds...
-  colors[ImGuiCol_FrameBg] = window;
+  colors[ImGuiCol_FrameBg] = selection;
   colors[ImGuiCol_FrameBgHovered] = selection_hovered;
   colors[ImGuiCol_FrameBgActive] = selection;
 
   // Headers: tree nodes, collapsing headers, selectable rows...
-  colors[ImGuiCol_Header] = window;
+  colors[ImGuiCol_Header] = selection;
   colors[ImGuiCol_HeaderHovered] = selection_hovered;
   colors[ImGuiCol_HeaderActive] = selection;
 
   // Separators
-  colors[ImGuiCol_Separator] = selection;
+  colors[ImGuiCol_Separator] = separator;
   colors[ImGuiCol_SeparatorHovered] = accent;
   colors[ImGuiCol_SeparatorActive] = accent;
 
@@ -122,7 +130,7 @@ auto ApplyGGEMSColors(ImGuiStyle &style) -> void {
   colors[ImGuiCol_SliderGrabActive] = WithAlpha(accent, 0.85F);
 
   // Buttons
-  colors[ImGuiCol_Button] = window;
+  colors[ImGuiCol_Button] = selection;
   colors[ImGuiCol_ButtonHovered] = selection_hovered;
   colors[ImGuiCol_ButtonActive] = selection;
 
@@ -133,7 +141,7 @@ auto ApplyGGEMSColors(ImGuiStyle &style) -> void {
 
   // Docking
   colors[ImGuiCol_DockingPreview] = WithAlpha(selection, 0.45F);
-  colors[ImGuiCol_DockingEmptyBg] = window;
+  colors[ImGuiCol_DockingEmptyBg] = app_background;
 
   // Plots
   colors[ImGuiCol_PlotLines] = accent;
@@ -178,15 +186,17 @@ auto GetThemeColorKey(GGEMSThemeRole role) noexcept -> render::ColorKey {
   switch (role) {
   case GGEMSThemeRole::WindowBackground:
   case GGEMSThemeRole::SceneBackground:
-    return render::BLUE_Abyss;
+    return render::BLUE_Gunmetal_F;
   case GGEMSThemeRole::RecessedBackground:
     return render::GRAY_Void;
   case GGEMSThemeRole::Selection:
     return render::BLUE_Gunmetal;
   case GGEMSThemeRole::TabBackground:
     return render::GRAY_Deep;
+  case GGEMSThemeRole::TabAccent:
+    return render::YELLOW_Shade5;
   case GGEMSThemeRole::PrimaryText:
-    return render::WHITE_Bone;
+    return render::WHITE_WhiteSmoke_B;
   case GGEMSThemeRole::MutedText:
     return render::GRAY_Concrete;
   case GGEMSThemeRole::Accent:
@@ -197,6 +207,17 @@ auto GetThemeColorKey(GGEMSThemeRole role) noexcept -> render::ColorKey {
     return render::YELLOW_MotherAmber;
   case GGEMSThemeRole::AttentionStrong:
     return render::YELLOW_MotherAmber_B;
+  case GGEMSThemeRole::OutputBackground:
+    return render::BLUE_Gunmetal_F;
+  case GGEMSThemeRole::Separator:
+    return render::GRAY_Neutral80;
+  case GGEMSThemeRole::Border:
+  case GGEMSThemeRole::ScrollbarAccent:
+    return render::GREEN_MediumSeaGreen_B;
+  case GGEMSThemeRole::ApplicationBackground:
+    return render::BLUE_Gunmetal_F;
+  case GGEMSThemeRole::PopupBackground:
+    return render::BLUE_Gunmetal;
   }
 
   return render::WHITE_Bone;
@@ -214,11 +235,12 @@ auto ToImGuiColor(render::ColorKey const &color) noexcept -> ImVec4 {
   render::RGB rgb =
     render::GetColorRGB(color.family, color.shade, color.variant);
 
-  constexpr float k_inverse_255{1.0F / 255.0F};
-
-  return ImVec4{static_cast<float>(rgb.red) * k_inverse_255,
-                static_cast<float>(rgb.green) * k_inverse_255,
-                static_cast<float>(rgb.blue) * k_inverse_255, 1.0F};
+  return ImVec4{
+    render::SRGBChannelToLinear(rgb.red),
+    render::SRGBChannelToLinear(rgb.green),
+    render::SRGBChannelToLinear(rgb.blue),
+    1.0F,
+  };
 }
 
 // -----------------------------------------------------------------------------

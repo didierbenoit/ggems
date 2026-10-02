@@ -16,6 +16,9 @@
 
 namespace {
 
+// =============================================================================
+// =============================================================================
+
 #ifdef _WIN32
 [[nodiscard]] auto ReadAbsolutePathVariable(wchar_t const *name)
   -> std::optional<std::filesystem::path> {
@@ -44,6 +47,9 @@ namespace {
 
   return path;
 }
+
+// =============================================================================
+// =============================================================================
 
 [[nodiscard]] auto ReadFailure(std::string error)
   -> ggems::ui::detail::GGEMSSettingsFileRead {
@@ -172,8 +178,6 @@ auto WriteImGuiSettingsFile(std::filesystem::path const &path,
                        error.message());
   }
 
-  // A writer-private sibling: concurrent GGEMS processes never share or
-  // truncate each other's staging file (noreplace = exclusive creation).
   std::random_device entropy{};
   std::filesystem::path temporary_path{};
   std::ofstream stream{};

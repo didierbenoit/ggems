@@ -197,6 +197,7 @@ TEST_F(GGEMSImGuiSettingsFileTest,
       (void)WriteImGuiSettingsFile(path, payload);
     }
   };
+
   auto const Reader = [&] -> void {
     for (int iteration = 0; iteration < 300; ++iteration) {
       GGEMSSettingsFileRead const settings = ReadImGuiSettingsFile(path);

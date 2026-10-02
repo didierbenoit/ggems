@@ -29,7 +29,6 @@
 
 #pragma once
 
-/// \cond
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -38,7 +37,7 @@
 #include <iterator>
 #include <string>
 #include <string_view>
-/// \endcond
+#include <cmath>
 
 #include "GGEMS/render/GGEMSColorTypes.hh"
 #include "GGEMS/render/GGEMSColorGray.hh"
@@ -134,6 +133,28 @@ constexpr auto GetColorRGB(ColorFamily family, std::uint8_t shade,
 
   RGB const base = base_palette[family_index][shade_index];
   return ApplyVariant(base, variant);
+}
+
+/*!
+ * \brief Converts an 8-bit sRGB channel to normalized linear-light intensity.
+ *
+ * Applies the standard piecewise sRGB transfer function to convert a channel
+ * encoded in sRGB space to its linear representation.
+ *
+ * \param[in] channel sRGB channel value in the range [0, 255].
+ * \return Linear-light intensity in the range [0.0, 1.0].
+ */
+
+inline auto SRGBChannelToLinear(std::uint8_t channel) noexcept -> float {
+  constexpr float k_inverse_255{1.0F / 255.0F};
+
+  auto const srgb = static_cast<float>(channel) * k_inverse_255;
+
+  if (srgb <= 0.04045F) {
+    return srgb / 12.92F;
+  }
+
+  return std::pow((srgb + 0.055F) / 1.055F, 2.4F);
 }
 
 /*! \brief Identifies one ANSI text-control sequence. */

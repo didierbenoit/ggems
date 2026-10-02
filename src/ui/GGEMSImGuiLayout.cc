@@ -8,6 +8,9 @@
 
 namespace {
 
+// =============================================================================
+// =============================================================================
+
 constexpr std::array<char const *, 5U> k_layout_window_names{
   ggems::ui::detail::k_output_window_name,
   ggems::ui::detail::k_status_window_name,
@@ -15,6 +18,9 @@ constexpr std::array<char const *, 5U> k_layout_window_names{
   ggems::ui::detail::k_viewport_window_name,
   ggems::ui::detail::k_inspector_window_name,
 };
+
+// =============================================================================
+// =============================================================================
 
 [[nodiscard]] auto IsUsableWindowSettings(char const *name) -> bool {
   ImGuiWindowSettings const *settings =

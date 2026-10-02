@@ -68,15 +68,15 @@ namespace ggems::core {
 static auto LogLevelColor(LogLevel lvl) -> render::ColorKey {
   switch (lvl) {
   case LogLevel::Debug:
-    return render::CYAN_Cryo;
+    return render::MAGENTA_BlueViolet;
   case LogLevel::Info:
-    return render::GREEN_SeaGreen;
+    return render::GREEN_Jade_B;
   case LogLevel::Warn:
-    return render::YELLOW_MotherAmber;
+    return render::YELLOW_Shade5;
   case LogLevel::Error:
-    return render::RED_XenoBlood;
+    return render::RED_Neon;
   }
-  return render::GREEN_Acid;
+  return render::GREEN_Jade_B;
 }
 
 // =============================================================================

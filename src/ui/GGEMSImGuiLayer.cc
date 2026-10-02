@@ -97,10 +97,6 @@ auto GGEMSImGuiLayer::BuildMainDockspace(detail::GGEMSWorkbenchState &workbench)
 
   MenuActions const menu_actions = BuildMainMenuBar(workbench);
 
-  // The saved-layout decision must precede the first DockSpace call, which
-  // would otherwise create the main node itself. The default arrangement is
-  // sized from the main viewport size, which on the first frame equals the
-  // work size (no menu-bar inset yet), so a later reset rebuilds it exactly.
   if (!layout_initialized_) {
     if (!detail::HasSavedLayout()) {
       detail::BuildDefaultLayout(viewport->Size);

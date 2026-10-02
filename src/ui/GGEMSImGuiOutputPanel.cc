@@ -1,7 +1,7 @@
 #include <string_view>
 #include <cstddef>
 #include <string>
-#include <cstdint>
+#include <utility>
 #include <vector>
 
 #include <imgui.h>
@@ -118,7 +118,7 @@ auto GGEMSImGuiOutputPanel::ShouldDisplay(
       return show_info_depth_[0];
     }
 
-    if (line.depth >= static_cast<std::int32_t>(show_info_depth_.size())) {
+    if (std::cmp_greater_equal(line.depth, show_info_depth_.size())) {
       return show_info_depth_.back();
     }
 
@@ -183,7 +183,7 @@ auto GGEMSImGuiOutputPanel::Render(core::GGEMSOutputState &output_state)
   ImGui::Separator();
 
   ImGui::PushStyleColor(ImGuiCol_ChildBg,
-                        GetThemeColor(GGEMSThemeRole::RecessedBackground));
+                        GetThemeColor(GGEMSThemeRole::OutputBackground));
 
   ImGui::BeginChild("GGEMSOutputLogRegion", ImVec2{0.0F, 0.0F},
                     ImGuiChildFlags_Borders,

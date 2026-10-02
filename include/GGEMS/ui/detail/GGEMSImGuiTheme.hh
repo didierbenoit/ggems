@@ -13,6 +13,7 @@ enum class GGEMSThemeRole : std::uint8_t {
   RecessedBackground,
   Selection,
   TabBackground,
+  TabAccent,
   PrimaryText,
   MutedText,
   Accent,
@@ -20,6 +21,12 @@ enum class GGEMSThemeRole : std::uint8_t {
   Attention,
   AttentionStrong,
   SceneBackground,
+  OutputBackground,
+  Separator,
+  Border,
+  ScrollbarAccent,
+  ApplicationBackground,
+  PopupBackground,
 };
 
 inline constexpr float k_ggems_base_font_size{16.5F};

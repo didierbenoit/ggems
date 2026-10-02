@@ -26,6 +26,8 @@ documentation = "https://doc.ggems.fr/v2.0"
 minimum-version = "build-system.requires"
 build-dir = "build/{wheel_tag}"
 wheel.expand-macos-universal-tags = true
+editable.rebuild = true
+editable.verbose = false
 wheel.exclude = [
   "ggems/bindings_*.cc",
   "ggems/detail/**",
