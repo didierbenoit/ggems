@@ -47,7 +47,6 @@ public:
 
   [[nodiscard]] auto IsInitialized() const noexcept -> bool;
   [[nodiscard]] auto RequiresResize() const noexcept -> bool;
-  [[nodiscard]] auto GetViewportExtent() const noexcept -> vk::Extent2D const &;
   [[nodiscard]] auto GetColorFormat() const noexcept -> vk::Format;
   [[nodiscard]] auto GetColorImageView() const noexcept -> vk::ImageView;
 

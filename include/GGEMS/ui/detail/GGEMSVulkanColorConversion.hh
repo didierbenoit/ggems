@@ -3,6 +3,7 @@
 #include <array>
 
 #include "GGEMS/render/GGEMSColor.hh"
+#include "GGEMS/render/GGEMSColorTypes.hh"
 
 namespace ggems::ui::detail {
 

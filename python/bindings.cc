@@ -21,9 +21,6 @@
 
 /*!
  * \file
- * \brief Defines the GGEMS Python extension module and registers its submodule
- * bindings.
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */

@@ -1,5 +1,5 @@
 # GUI dependencies
-find_package(Vulkan 1.3 REQUIRED)
+find_package(Vulkan 1.3 REQUIRED GLOBAL)
 find_package(glfw3 REQUIRED)
 
 if(TARGET glfw)
@@ -110,16 +110,12 @@ add_library(GGEMS::Gui ALIAS ggems_gui)
 target_include_directories(ggems_gui PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 target_compile_definitions(
-  ggems_gui
-  PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1
-          VULKAN_HPP_NO_STRUCT_CONSTRUCTORS=1
-          GGEMS_UI_SHADER_DIRECTORY="${GGEMS_UI_SHADER_OUTPUT_DIR}")
+  ggems_gui PRIVATE VULKAN_HPP_NO_STRUCT_CONSTRUCTORS=1
+                    GGEMS_UI_SHADER_DIRECTORY="${GGEMS_UI_SHADER_OUTPUT_DIR}")
 
 target_link_libraries(
-  ggems_gui
-  PUBLIC Vulkan::Headers
-  PRIVATE ggems_core GGEMS::CompilerOptions ggems_imgui Vulkan::Vulkan
-          ${GGEMS_GLFW_TARGET})
+  ggems_gui PRIVATE ggems_core GGEMS::CompilerOptions ggems_imgui
+                    Vulkan::Headers ${GGEMS_GLFW_TARGET})
 
 if(WIN32)
   target_link_libraries(ggems_gui PRIVATE dxgi dxguid user32)

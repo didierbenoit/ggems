@@ -2,7 +2,6 @@
 
 #include <cstdint>
 
-#include <vulkan/vulkan.hpp>
 #include <imgui.h>
 
 #include "GGEMSDeviceStatus.hh"

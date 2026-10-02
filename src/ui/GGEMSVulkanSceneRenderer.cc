@@ -125,13 +125,6 @@ auto GGEMSVulkanSceneRenderer::RequiresResize() const noexcept -> bool {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSVulkanSceneRenderer::GetViewportExtent() const noexcept
-  -> vk::Extent2D const & {
-  return viewport_extent_;
-}
-
-// -----------------------------------------------------------------------------
-
 auto GGEMSVulkanSceneRenderer::GetColorFormat() const noexcept -> vk::Format {
   return color_format_;
 }

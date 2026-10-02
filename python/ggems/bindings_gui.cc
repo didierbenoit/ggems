@@ -21,8 +21,6 @@
 
 /*!
  * \file
- * \brief XXX
- *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -30,6 +28,7 @@
 #ifdef GGEMS_WITH_IMGUI
 
 #include <cstdint>
+#include <memory>
 #include <string>
 
 #include <pybind11/pybind11.h>
