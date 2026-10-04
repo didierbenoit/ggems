@@ -158,6 +158,48 @@ namespace ggems::core::radioactivity::builtins {
 [[nodiscard]] auto BuildP33Radionuclide() -> GGEMSRadionuclideDefinition;
 
 /*!
+ * \brief Builds the compiled Co-57 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildCo57Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Ga-67 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildGa67Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Cu-67 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildCu67Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Sc-44 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildSc44Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Sc-47 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildSc47Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Mn-52 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildMn52Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
  * \brief Borrows the catalog names in registration order.
  *
  * \return Span backed by static storage for the process lifetime.

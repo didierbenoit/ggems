@@ -2,7 +2,7 @@
 
 Run an ActivityDriven source, then compare its populations, birth times and
 energies with independent calculations and a selected nuclear reference. The
-reference packages cover sixteen radionuclides. Scientific comparisons are
+reference packages cover twenty-two radionuclides. Scientific comparisons are
 reported in `analysis.json`; the campaign does not modify the built-in data.
 
 ## Build and run
@@ -17,16 +17,15 @@ cmake --build build --target validation_radioactivity
 python validation/radioactivity/run_campaign.py --help
 ```
 
-For a Windows multi-configuration build, select the configuration and use its
-executable directory:
+For a Windows Ninja single-configuration build, use the generated executable:
 
 ```powershell
-cmake --build build --config Release --target validation_radioactivity
-python validation/radioactivity/run_campaign.py --exporter build/validation/radioactivity/Release/ggems_radionuclide_exporter.exe --reference validation/radioactivity/data/O-15/reference/reference.json --output validation/radioactivity/results/o15_cpu --device cpu
+cmake --build build --target validation_radioactivity
+python validation/radioactivity/run_campaign.py --exporter build/validation/radioactivity/ggems_radionuclide_exporter.exe --reference validation/radioactivity/data/O-15/reference/reference.json --output validation/radioactivity/results/o15_cpu --device cpu
 ```
 
-For a single-configuration build, the executable has no `Release/` directory.
-On Windows it retains the `.exe` suffix; on Linux and macOS, use:
+For multi-configuration generators, select the intended build configuration and
+use the executable at the actual generated path. On Linux and macOS, use:
 
 ```console
 python validation/radioactivity/run_campaign.py --exporter build/validation/radioactivity/ggems_radionuclide_exporter --reference validation/radioactivity/data/O-15/reference/reference.json --output validation/radioactivity/results/o15_cpu --device cpu
@@ -92,6 +91,12 @@ subset of the physical inventory.
 | I-131 | [I-131 reference](data/I-131/reference/README.md) | `data/I-131/reference/reference.json` |
 | Lu-177 | [Lu-177 reference](data/Lu-177/reference/README.md) | `data/Lu-177/reference/reference.json` |
 | Am-241 | [Am-241 reference](data/Am-241/reference/README.md) | `data/Am-241/reference/reference.json` |
+| Co-57 | [Co-57 reference](data/Co-57/reference/README.md) | `data/Co-57/reference/reference.json` |
+| Ga-67 | [Ga-67 reference](data/Ga-67/reference/README.md) | `data/Ga-67/reference/reference.json` |
+| Cu-67 | [Cu-67 reference](data/Cu-67/reference/README.md) | `data/Cu-67/reference/reference.json` |
+| Sc-44 | [Sc-44 reference](data/Sc-44/reference/README.md) | `data/Sc-44/reference/reference.json` |
+| Sc-47 | [Sc-47 reference](data/Sc-47/reference/README.md) | `data/Sc-47/reference/reference.json` |
+| Mn-52 | [Mn-52 reference](data/Mn-52/reference/README.md) | `data/Mn-52/reference/reference.json` |
 
 Raw evaluation files provide provenance and independent comparisons. Campaigns
 read the selected `reference.json` and any referenced spectrum CSV files.
