@@ -1,0 +1,56 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 27-Co-57 [7/2-] g.s.  -->  Daughter nucleus: 26-Fe-57 [1/2-] g.s.
+Half-life of the parent nuclide: 2.34844E7 (35) s
+Electron capture transition. Order: 2nd forbidden unique
+Total normalization of the decay: 1
+Normalization of this transition: 3.5E-4 %
+Log ft of the ec transition: 12.9
+
+------------------------------------
+Parent nucleus: 27-Co-57 [7/2-] g.s.  -->  Daughter nucleus: 26-Fe-57 [3/2-] 14.41295 (31) keV
+Half-life of the parent nuclide: 2.34844E7 (35) s
+Electron capture transition. Order: 2nd forbidden non-unique
+Total normalization of the decay: 1
+Normalization of this transition: 3.E-4 (3) %
+Log ft of the ec transition: 11.1
+
+------------------------------------
+Parent nucleus: 27-Co-57 [7/2-] g.s.  -->  Daughter nucleus: 26-Fe-57 [5/2-] 136.47374 (29) keV
+Half-life of the parent nuclide: 2.34844E7 (35) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 99.80 (23) %
+Log ft of the ec transition: 6.45
+
+------------------------------------
+Parent nucleus: 27-Co-57 [7/2-] g.s.  -->  Daughter nucleus: 26-Fe-57 [3/2-] 366.74 (3) keV
+Half-life of the parent nuclide: 2.34844E7 (35) s
+Electron capture transition. Order: 2nd forbidden non-unique
+Total normalization of the decay: 1
+Normalization of this transition: 0.002 (2) %
+Log ft of the ec transition: 10.8
+
+------------------------------------
+Parent nucleus: 27-Co-57 [7/2-] g.s.  -->  Daughter nucleus: 26-Fe-57 [5/2-] 706.42 (2) keV
+Half-life of the parent nuclide: 2.34844E7 (35) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.183 (7) %
+Log ft of the ec transition: 7.69
+
+
+####################################
+
+Summary
+
+1 nucleus and 5 transitions have been read.
+
+Parent nucleus: 27-Co-57
+5 transitions have been read (5 EC).
+
+
+####################################

@@ -1,0 +1,51 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 21-Sc-44 [2+] g.s.  -->  Daughter nucleus: 20-Ca-44 [2+] 1157.039 (15) keV
+Half-life of the parent nuclide: 1.429E4 (14) s
+Electron capture transition. Order: allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 4.70 (5) %
+Log ft of the (ec + b+) transition: 5.3
+
+------------------------------------
+Parent nucleus: 21-Sc-44 [2+] g.s.  -->  Daughter nucleus: 20-Ca-44 [2+] 1157.039 (15) keV
+Half-life of the parent nuclide: 1.429E4 (14) s
+Beta + transition. Order: allowed
+Transition energy. Calculated Emax from Q-value and level energies: 1474.3 (19) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 94.27 (5) %
+Average energy of beta + spectrum: 632.0 (9) keV
+Log ft of the (ec + b+) transition: 5.3
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 21-Sc-44 [2+] g.s.  -->  Daughter nucleus: 20-Ca-44 [2+] 2656.530 (24) keV
+Half-life of the parent nuclide: 1.429E4 (14) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 1.02 (2) %
+Log ft of the ec transition: 5.2
+
+------------------------------------
+Parent nucleus: 21-Sc-44 [2+] g.s.  -->  Daughter nucleus: 20-Ca-44 [2+] 3301.46 (6) keV
+Half-life of the parent nuclide: 1.429E4 (14) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.00440 (11) %
+Log ft of the ec transition: 6.6
+
+
+####################################
+
+Summary
+
+1 nucleus and 4 transitions have been read.
+
+Parent nucleus: 21-Sc-44
+4 transitions have been read (3 EC, 1 B+).
+
+
+####################################

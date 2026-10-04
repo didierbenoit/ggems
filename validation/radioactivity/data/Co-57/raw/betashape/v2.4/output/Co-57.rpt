@@ -1,0 +1,114 @@
+Input file:  .\Co57\Co-57.txt
+Output file: .\Co57\Co-57.new
+
+Input file: 69 lines
+Output file: 73 lines
+Added new lines: 4
+--> Output file is consistent.
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 57CO  P 0.0         7/2-              271.81 D  4              836.2     5     - PARENT
+ 57FE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 57FE  L 0           1/2-               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '2U' transition assumed.
+K =  0.87786 (33) | L =  0.10464 (23) | M =  0.01646 (9) | N =  0.001047 (7)
+log ft 12.909
+
+*    log ft
+ 57FE  E                       0.00035   12.9                                2U - OLD CARD
+ 57FE  E                       3.5E-4    12.9                   3.5E-4       2U - NEW CARD
+
+*    Probabilities
+ 57FES E CK=0.87786 33$CL=0.10464 23$CM+=0.01751 9                              - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 57CO  P 0.0         7/2-              271.81 D  4              836.2     5     - PARENT
+ 57FE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 57FE  L 14.41295  313/2-              98.0 NS   4                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.88094 (31) | L =  0.10198 (22) | M =  0.01605 (9) | N =  0.001034 (7)
+log ft 12.09 (GE)
+
+*    log ft
+ 57FE  E                       0.0003   311.1                                2  - OLD CARD
+ 57FE  E                       3.E-4    312.1    GE             3.E-4      3    - NEW CARD
+
+*    Probabilities
+ 57FES E CK=0.88094 31$CL=0.10198 22$CM+=0.01708 9                              - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+ 57CO  P 0.0         7/2-              271.81 D  4              836.2     5     - PARENT
+ 57FE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 57FE  L 136.47374 295/2-              8.6 NS    4                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88295 (30) | L =  0.10026 (21) | M =  0.01577 (9) | N =  0.001022 (7)
+log ft 6.4542 (31)
+
+*    log ft
+ 57FE  E                       99.80   236.45                                   - OLD CARD
+ 57FE  E                       99.80   236.4542  31             99.80     23    - NEW CARD
+
+*    Probabilities
+ 57FE2 E CK=0.8875   16$CL=0.0963   14$CM=0.0154    5                           - OLD CARD
+ 57FE2 E CK=0.88295 30$CL=0.10026 21$CM+=0.01679 9                              - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+ 57CO  P 0.0         7/2-              271.81 D  4              836.2     5     - PARENT
+ 57FE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 57FE  L 366.74    3 3/2-              10.5 PS   14                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.87704 (33) | L =  0.10532 (23) | M =  0.01658 (9) | N =  0.001057 (7)
+log ft 10.29 (GE)
+
+*    log ft
+ 57FE  E                       0.002    210.8                                2  - OLD CARD
+ 57FE  E                       0.002    210.3    GE             0.002      2    - NEW CARD
+
+*    Probabilities
+ 57FES E CK=0.87704 33$CL=0.10532 23$CM+=0.01764 9                              - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+ 57CO  P 0.0         7/2-              271.81 D  4              836.2     5     - PARENT
+ 57FE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 57FE  L 706.42    2 5/2-              4.1 PS    11                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.87428 (37) | L =  0.10754 (26) | M =  0.01707 (10) | N =  0.001108 (8)
+log ft 7.692 (18)
+
+*    log ft
+ 57FE  E                       0.183    77.69                                   - OLD CARD
+ 57FE  E                       0.183    77.692   18             0.183      7    - NEW CARD
+
+*    Probabilities
+ 57FE2 E CK=0.8789   17$CL=0.1035   14$CM=0.0168    6                           - OLD CARD
+ 57FE2 E CK=0.87428 37$CL=0.10754 26$CM+=0.01818 10                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 5
+-------- Added lines: 4
+
+

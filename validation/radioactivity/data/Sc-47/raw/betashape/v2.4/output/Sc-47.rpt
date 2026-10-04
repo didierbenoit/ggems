@@ -1,0 +1,55 @@
+Input file:  .\Sc47\Sc-47.txt
+Output file: .\Sc47\Sc-47.new
+
+Input file: 37 lines
+Output file: 38 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 47SC  P 0.0         7/2-              3.3485 D  9              600.8     19    - PARENT
+ 47TI  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 47TI  L 0           5/2-               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 203.3 (8) keV   |   log ft 6.111 (9)
+
+*    log ft
+ 47TI  B 600.8     1931.5     5          6.1                                    - OLD CARD
+ 47TI  B 600.8     1931.5     5          6.111    9                             - NEW CARD
+
+*    Mean energy
+ 47TIS B EAV=204.2 8                                                            - OLD CARD
+ 47TIS B EAV=203.3 8                                                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 47SC  P 0.0         7/2-              3.3485 D  9              600.8     19    - PARENT
+ 47TI  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 47TI  L 159.373   127/2-              210 PS    6                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 142.0 (7) keV   |   log ft 5.297 (7)
+
+*    log ft
+ 47TI  B 441.4     1968.5     5          5.3                                    - OLD CARD
+ 47TI  B 441.4     1968.5     5          5.297    7                             - NEW CARD
+
+*    Mean energy
+ 47TIS B EAV=142.8 7                                                            - OLD CARD
+ 47TIS B EAV=142.0 7                                                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 2
+-------- Added lines: 1
+
+

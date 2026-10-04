@@ -1,0 +1,93 @@
+Input file:  .\Cu67\Cu-67.txt
+Output file: .\Cu67\Cu-67.new
+
+Input file: 58 lines
+Output file: 59 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 67CU  P 0.0         3/2-              61.82 H   5              560.8     8     - PARENT
+ 67ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 67ZN  L 0           5/2-               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 182.54 (31) keV   |   log ft 6.098 (13)
+
+*    log ft
+ 67ZN  B 560.8     8 27.5     8          6.098                                  - OLD CARD
+ 67ZN  B 560.8     8 27.5     8          6.098   13                             - NEW CARD
+
+*    Mean energy
+ 67ZNS B EAV=182.54 31                                                          - OLD CARD
+ 67ZNS B EAV=182.54 31                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 67CU  P 0.0         3/2-              61.82 H   5              560.8     8     - PARENT
+ 67ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 67ZN  L 93.310    9 1/2-              9.130 US  18                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 147.50 (29) keV   |   log ft 5.965 (11)
+
+*    log ft
+ 67ZN  B 467.5     8 19.73   47          5.965                                  - OLD CARD
+ 67ZN  B 467.5     8 19.73   47          5.965   11                             - NEW CARD
+
+*    Mean energy
+ 67ZNS B EAV=147.50 29                                                          - OLD CARD
+ 67ZNS B EAV=147.50 29                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+ 67CU  P 0.0         3/2-              61.82 H   5              560.8     8     - PARENT
+ 67ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 67ZN  L 184.579   103/2-              1.059 NS  16                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 114.55 (28) keV   |   log ft 5.224 (6)
+
+*    log ft
+ 67ZN  B 376.2     8 51.7     6          5.224                                  - OLD CARD
+ 67ZN  B 376.2     8 51.7     6          5.224    6                             - NEW CARD
+
+*    Mean energy
+ 67ZNS B EAV=114.55 28                                                          - OLD CARD
+ 67ZNS B EAV=114.55 28                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+ 67CU  P 0.0         3/2-              61.82 H   5              560.8     8     - PARENT
+ 67ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 67ZN  L 393.522   103/2-                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 45.66 (24) keV   |   log ft 5.771 (9)
+
+*    log ft
+ 67ZN  B 167.3     8 1.039   14          5.771                                  - OLD CARD
+ 67ZN  B 167.3     8 1.039   14          5.771    9                             - NEW CARD
+
+*    Mean energy
+ 67ZNS B EAV=45.66 24                                                           - OLD CARD
+ 67ZNS B EAV=45.66 24                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 4
+-------- Added lines: 1
+
+

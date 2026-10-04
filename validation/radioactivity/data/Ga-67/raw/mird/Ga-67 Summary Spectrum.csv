@@ -1,0 +1,105 @@
+,Energy [MeV],Yield [#/nt],Type (detailed)
+0,1.63544e-05,6.30445,X-ray
+1,2.45e-05,3.64018e-10,X-ray
+2,7.15774e-05,6.94839e-05,X-ray
+3,0.0001339,6.57738e-06,X-ray
+4,0.0001584,3.13908e-05,X-ray
+5,0.000888571,0.00489766,X-ray
+6,0.000913072,0.00258814,X-ray
+7,0.00093226,1.03761e-05,X-ray
+8,0.00093541,1.00326e-05,X-ray
+9,0.00095991,1.01471e-05,X-ray
+10,0.00100915,0.000558834,X-ray
+11,0.00100954,0.00592244,X-ray
+12,0.00101738,0.000127554,X-ray
+13,0.00103365,0.00329605,X-ray
+14,0.00104189,7.31886e-05,X-ray
+15,0.00109066,0.000279202,X-ray
+16,0.00109381,0.000444163,X-ray
+17,0.00116755,1.09457e-06,X-ray
+18,0.00116794,1.48044e-06,X-ray
+19,0.0085719,0.16645,X-ray
+20,0.00859639,0.324103,X-ray
+21,0.00952867,0.0205831,X-ray
+22,0.00953181,0.0402416,X-ray
+23,0.00960554,2.78259e-05,X-ray
+24,0.00960593,4.02321e-05,X-ray
+25,0.091266,0.0316,Gamma
+26,0.093311,0.392,Gamma
+27,0.184577,0.212,Gamma
+28,0.208951,0.024,Gamma
+29,0.300219,0.168,Gamma
+30,0.393529,0.0468,Gamma
+31,0.494169,0.000691,Gamma
+32,0.70311,0.000106,Gamma
+33,0.794386,0.00054,Gamma
+34,0.887693,0.00149,Gamma
+35,5.67906e-05,2.28128,Auger electron
+36,8.98179e-05,0.317021,Auger electron
+37,0.000118329,0.000217122,Auger electron
+38,0.000929483,1.71632,Auger electron
+39,0.000976176,0.0135384,Auger electron
+40,0.00107736,4.50041e-05,Auger electron
+41,0.00748697,0.496557,Auger electron
+42,0.0084555,0.126758,Auger electron
+43,0.00942804,0.00892373,Auger electron
+44,0.0816436,0.00232228,Conversion electron
+45,0.0836886,0.294159,Conversion electron
+46,0.0900816,0.000230987,Conversion electron
+47,0.0902155,1.02691e-05,Conversion electron
+48,0.09024,5.73111e-06,Conversion electron
+49,0.0911754,3.68925e-05,Conversion electron
+50,0.091266,2.01317e-06,Conversion electron
+51,0.0921266,0.0264406,Conversion electron
+52,0.0922605,0.00422513,Conversion electron
+53,0.092285,0.0061624,Conversion electron
+54,0.0932204,0.00542843,Conversion electron
+55,0.093311,0.000227195,Conversion electron
+56,0.174955,0.00337916,Conversion electron
+57,0.183393,0.000328456,Conversion electron
+58,0.183527,1.49648e-05,Conversion electron
+59,0.183551,1.42299e-05,Conversion electron
+60,0.184486,5.31586e-05,Conversion electron
+61,0.184577,2.85543e-06,Conversion electron
+62,0.199329,0.000194985,Conversion electron
+63,0.207767,1.93364e-05,Conversion electron
+64,0.207901,5.10108e-07,Conversion electron
+65,0.207925,2.36222e-07,Conversion electron
+66,0.20886,2.99007e-06,Conversion electron
+67,0.208951,1.68429e-07,Conversion electron
+68,0.290597,0.000598653,Conversion electron
+69,0.299035,5.90273e-05,Conversion electron
+70,0.299168,1.39435e-06,Conversion electron
+71,0.299193,8.64954e-07,Conversion electron
+72,0.300128,9.14991e-06,Conversion electron
+73,0.300219,5.14409e-07,Conversion electron
+74,0.383907,8.13165e-05,Conversion electron
+75,0.392345,8.05891e-06,Conversion electron
+76,0.392478,1.40226e-07,Conversion electron
+77,0.392503,7.13396e-08,Conversion electron
+78,0.393438,1.23423e-06,Conversion electron
+79,0.393529,7.00024e-08,Conversion electron
+80,0.484547,7.21625e-07,Conversion electron
+81,0.492985,7.14328e-08,Conversion electron
+82,0.493119,1.09199e-09,Conversion electron
+83,0.493143,6.26787e-10,Conversion electron
+84,0.494078,1.09108e-08,Conversion electron
+85,0.494169,6.19595e-10,Conversion electron
+86,0.693488,5.02093e-08,Conversion electron
+87,0.701926,4.94049e-09,Conversion electron
+88,0.70206,5.63367e-11,Conversion electron
+89,0.702084,3.45065e-11,Conversion electron
+90,0.703019,7.51893e-10,Conversion electron
+91,0.70311,4.31264e-11,Conversion electron
+92,0.784764,2.56739e-07,Conversion electron
+93,0.793202,2.51143e-08,Conversion electron
+94,0.793336,4.4246e-10,Conversion electron
+95,0.79336,4.61179e-10,Conversion electron
+96,0.794295,3.88182e-09,Conversion electron
+97,0.794386,2.18768e-10,Conversion electron
+98,0.878071,4.7844e-07,Conversion electron
+99,0.886509,4.69407e-08,Conversion electron
+100,0.886643,5.93766e-10,Conversion electron
+101,0.886667,5.5099e-10,Conversion electron
+102,0.887602,7.17661e-09,Conversion electron
+103,0.887693,4.09797e-10,Conversion electron

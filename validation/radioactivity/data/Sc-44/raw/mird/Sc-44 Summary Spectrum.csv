@@ -1,0 +1,56 @@
+,Energy [MeV],Yield [#/nt],Type (detailed)
+0,3.84e-06,2.57698e-13,X-ray
+1,3.63259e-05,0.206851,X-ray
+2,7.50699e-05,2.05417e-06,X-ray
+3,7.891e-05,6.07027e-06,X-ray
+4,0.000302041,6.49915e-05,X-ray
+5,0.000305879,3.52806e-05,X-ray
+6,0.00032119,2.33225e-08,X-ray
+7,0.0003216,2.29112e-08,X-ray
+8,0.00032544,2.58081e-08,X-ray
+9,0.000349749,1.37688e-06,X-ray
+10,0.000353589,7.48366e-07,X-ray
+11,0.0004001,4.44776e-06,X-ray
+12,0.00040051,6.67011e-06,X-ray
+13,0.00365596,0.0024648,X-ray
+14,0.0036598,0.00486348,X-ray
+15,0.00398099,0.000261951,X-ray
+16,0.0039814,0.000518508,X-ray
+17,0.511,1.88708,Annihilation photon
+18,1.15702,0.999,Gamma
+19,1.49946,0.00908091,Gamma
+20,2.1443,2.997e-05,Gamma
+21,2.15084,1.0989e-05,Gamma
+22,2.65648,0.00111888,Gamma
+23,3.30135,1.3986e-05,Gamma
+24,0.631478,0.943542,Positron
+25,3.69989e-05,0.0197714,Auger electron
+26,0.000285646,0.0863463,Auger electron
+27,0.000321346,0.00251114,Auger electron
+28,0.00326864,0.0344348,Auger electron
+29,0.00360211,0.00762572,Auger electron
+30,0.00393929,0.000422325,Auger electron
+31,1.15301,5.95638e-05,Conversion electron
+32,1.15659,5.093e-06,Conversion electron
+33,1.15666,2.7561e-08,Conversion electron
+34,1.15666,2.05054e-08,Conversion electron
+35,1.49545,2.67463e-07,Conversion electron
+36,1.49903,2.28924e-08,Conversion electron
+37,1.4991,5.43466e-11,Conversion electron
+38,1.4991,6.60346e-11,Conversion electron
+39,2.14029,4.77837e-10,Conversion electron
+40,2.14387,4.08593e-11,Conversion electron
+41,2.14394,1.1099e-13,Conversion electron
+42,2.14394,6.99625e-14,Conversion electron
+43,2.14683,1.14893e-10,Conversion electron
+44,2.15041,9.82534e-12,Conversion electron
+45,2.15048,1.11765e-14,Conversion electron
+46,2.15049,4.13111e-14,Conversion electron
+47,2.65247,1.33529e-08,Conversion electron
+48,2.65605,1.17629e-09,Conversion electron
+49,2.65612,3.7949e-12,Conversion electron
+50,2.65612,1.85038e-12,Conversion electron
+51,3.29734,1.18217e-10,Conversion electron
+52,3.30092,1.08565e-11,Conversion electron
+53,3.30099,1.34264e-14,Conversion electron
+54,3.301,3.29214e-14,Conversion electron

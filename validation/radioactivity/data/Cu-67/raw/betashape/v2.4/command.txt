@@ -1,0 +1,1 @@
+.\betashape.exe .\Cu67\Cu-67.txt -csv

@@ -1,0 +1,1 @@
+.\betashape.exe .\Ga67\Ga-67.txt -csv

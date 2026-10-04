@@ -1,0 +1,46 @@
+Information read from the input file: .\Sc47\Sc-47.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 22   Daughter A: 47   Symbol: Ti
+Transition type: B-
+Estimated parent nuclide from identification record: Z 21, A 47
+
+Parent record has been found
+Parent Z: 21	Parent A: 47   Symbol: Sc
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 7/2- | Treated as: 7/2-
+Parent half-life: 3.3485 (9) D or 2.8931E5 (8) S
+Parent Q-value: 600.8 (19) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 5/2- | Treated as: 5/2-
+Level half-life: STABLE
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 600.8 (19) keV
+Intensity of the beta - branch: 31.5 (5) %
+Transition order: allowed
+Log ft of the beta - transition: 6.1
+Average energy of beta - spectrum: 204.2 (8) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 159.373 (12) keV
+Level spin and parity | Read: 7/2- | Treated as: 7/2-
+Level half-life: 210 (6) PS or 2.10E-10 (6) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 441.4 (19) keV
+Intensity of the beta - branch: 68.5 (5) %
+Transition order: allowed
+Log ft of the beta - transition: 5.3
+Average energy of beta - spectrum: 142.8 (7) keV
+
+####################################

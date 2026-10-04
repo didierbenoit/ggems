@@ -1,0 +1,117 @@
+Input file:  .\Ga67\Ga-67.txt
+Output file: .\Ga67\Ga-67.new
+
+Input file: 73 lines
+Output file: 74 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 67GA  P 0.0         3/2-              3.2613 D  5              1000.8    12    - PARENT
+ 67ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 67ZN  L 0           5/2-               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88258 (23) | L =  0.09961 (14) | M =  0.01650 (6) | N =  0.001314 (28)
+log ft 6.54 (42)
+
+*    log ft
+ 67ZN  E                       3.3     326.532                                  - OLD CARD
+ 67ZN  E                       3.3     326.54    42             3.3       32    - NEW CARD
+
+*    Probabilities
+ 67ZN2 E CK=0.8836   15$CL=0.0989   12$CM=0.0164    4$CN=0.0011    1            - OLD CARD
+ 67ZN2 E CK=0.88258 23$CL=0.09961 14$CM+=0.01781 7                              - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 67GA  P 0.0         3/2-              3.2613 D  5              1000.8    12    - PARENT
+ 67ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 67ZN  L 93.31       1/2-              9.00 US   4                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88240 (23) | L =  0.09976 (14) | M =  0.01653 (6) | N =  0.001316 (28)
+log ft 5.265 (20)
+
+*    log ft
+ 67ZN  E                       50.5    175.261                                  - OLD CARD
+ 67ZN  E                       50.5    175.265   20             50.5      17    - NEW CARD
+
+*    Probabilities
+ 67ZN2 E CK=0.8834   15$CL=0.0991   12$CM=0.0164    4$CN=0.0011    1            - OLD CARD
+ 67ZN2 E CK=0.88240 23$CL=0.09976 14$CM+=0.01785 7                              - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+ 67GA  P 0.0         3/2-              3.2613 D  5              1000.8    12    - PARENT
+ 67ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 67ZN  L 184.58      3/2-              1.028 NS  14                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88218 (23) | L =  0.09994 (14) | M =  0.01656 (6) | N =  0.001319 (28)
+log ft 5.53 (5)
+
+*    log ft
+ 67ZN  E                       22.3    275.523                                  - OLD CARD
+ 67ZN  E                       22.3    275.53     5             22.3      27    - NEW CARD
+
+*    Probabilities
+ 67ZN2 E CK=0.8832   15$CL=0.0993   12$CM=0.0164    4$CN=0.0011    1            - OLD CARD
+ 67ZN2 E CK=0.88218 23$CL=0.09994 14$CM+=0.01788 7                              - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+ 67GA  P 0.0         3/2-              3.2613 D  5              1000.8    12    - PARENT
+ 67ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 67ZN  L 393.53      3/2-                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88142 (24) | L =  0.10057 (15) | M =  0.01668 (6) | N =  0.001328 (28)
+log ft 5.242 (17)
+
+*    log ft
+ 67ZN  E                       23.60   475.239                                  - OLD CARD
+ 67ZN  E                       23.60   475.242   17             23.60     47    - NEW CARD
+
+*    Probabilities
+ 67ZN2 E CK=0.8824   15$CL=0.0999   12$CM=0.0165    4$CN=0.0011    1            - OLD CARD
+ 67ZN2 E CK=0.88142 24$CL=0.10057 15$CM+=0.01801 7                              - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+ 67GA  P 0.0         3/2-              3.2613 D  5              1000.8    12    - PARENT
+ 67ZN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 67ZN  L 887.69      5/2-                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.86725 (46) | L =  0.11233 (33) | M =  0.01891 (10) | N =  0.001509 (35)
+log ft 5.653 (26)
+
+*    log ft
+ 67ZN  E                       0.280    85.648                                  - OLD CARD
+ 67ZN  E                       0.280    85.653   26             0.280      8    - NEW CARD
+
+*    Probabilities
+ 67ZN2 E CK=0.8680   17$CL=0.1119   14$CM=0.0188    5$CN=0.0013    1            - OLD CARD
+ 67ZN2 E CK=0.86725 46$CL=0.11233 33$CM+=0.02042 11                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 5
+-------- Added lines: 1
+
+

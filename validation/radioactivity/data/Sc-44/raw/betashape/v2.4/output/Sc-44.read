@@ -1,0 +1,67 @@
+Information read from the input file: .\Sc44\Sc-44.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 20   Daughter A: 44   Symbol: Ca
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 21, A 44
+
+Parent record has been found
+Parent Z: 21	Parent A: 44   Symbol: Sc
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 2+ | Treated as: 2+
+Parent half-life: 3.97 (4) H or 1.429E4 (14) S
+Parent Q-value: 3653.3 (19) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life: STABLE
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1157.039 (15) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life: 2.61 (14) PS or 2.61E-12 (14) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the beta + branch: 94.27 (5) %
+Intensity of the ec branch: 4.70 (5) %
+Total intensity of the (ec & beta +) decay not given.
+Transition order: allowed
+Log ft of the (ec + b+) transition: 5.3
+Average energy of beta + spectrum: 632.0 (9) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 2656.530 (24) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life: 30 (3) FS or 3.0E-14 (3) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 1.02 (2) %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 5.2
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 3301.46 (6) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life: 35 (18) FS or 3.5E-14 (18) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 0.00440 (11) %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 6.6
+
+####################################

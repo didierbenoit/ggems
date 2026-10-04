@@ -1,0 +1,134 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 25-Mn-52 [6+] g.s.  -->  Daughter nucleus: 24-Cr-52 [4+] 2369.654 (21) keV
+Half-life of the parent nuclide: 4.8315E5 (26) s
+Electron capture transition. Order: 2nd forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.2 (6) %
+Log ft of the (ec + b+) transition: 9.8 (7)
+
+------------------------------------
+Parent nucleus: 25-Mn-52 [6+] g.s.  -->  Daughter nucleus: 24-Cr-52 [4+] 2369.654 (21) keV
+Half-life of the parent nuclide: 4.8315E5 (26) s
+Beta + transition. Order: 2nd forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Transition energy. Calculated Emax from Q-value and level energies: 1320.3 (19) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.3 (6) %
+Average energy of beta + spectrum: 594.5 (8) keV
+Log ft of the (ec + b+) transition: 9.8 (7)
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 25-Mn-52 [6+] g.s.  -->  Daughter nucleus: 24-Cr-52 [4+] 2767.786 (23) keV
+Half-life of the parent nuclide: 4.8315E5 (26) s
+Electron capture transition. Order: 2nd forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.02 (7) %
+Log ft of the (ec + b+) transition: 10.4 (10)
+
+------------------------------------
+Parent nucleus: 25-Mn-52 [6+] g.s.  -->  Daughter nucleus: 24-Cr-52 [4+] 2767.786 (23) keV
+Half-life of the parent nuclide: 4.8315E5 (26) s
+Beta + transition. Order: 2nd forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Transition energy. Calculated Emax from Q-value and level energies: 922.2 (19) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.011 (26) %
+Average energy of beta + spectrum: 418.1 (8) keV
+Log ft of the (ec + b+) transition: 10.4 (10)
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 25-Mn-52 [6+] g.s.  -->  Daughter nucleus: 24-Cr-52 [6+] 3113.883 (24) keV
+Half-life of the parent nuclide: 4.8315E5 (26) s
+Electron capture transition. Order: allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 59.9 (7) %
+Log ft of the (ec + b+) transition: 5.6 (5)
+
+------------------------------------
+Parent nucleus: 25-Mn-52 [6+] g.s.  -->  Daughter nucleus: 24-Cr-52 [6+] 3113.883 (24) keV
+Half-life of the parent nuclide: 4.8315E5 (26) s
+Beta + transition. Order: allowed
+Transition energy. Calculated Emax from Q-value and level energies: 576.1 (19) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 30.85 (44) %
+Average energy of beta + spectrum: 241.6 (8) keV
+Log ft of the (ec + b+) transition: 5.6 (5)
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 25-Mn-52 [6+] g.s.  -->  Daughter nucleus: 24-Cr-52 [4+] 3415.33 (3) keV
+Half-life of the parent nuclide: 4.8315E5 (26) s
+Electron capture transition. Order: 2nd forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.025 (38) %
+Log ft of the (ec + b+) transition: 9.6 (7)
+
+------------------------------------
+Parent nucleus: 25-Mn-52 [6+] g.s.  -->  Daughter nucleus: 24-Cr-52 [4+] 3415.33 (3) keV
+Half-life of the parent nuclide: 4.8315E5 (26) s
+Beta + transition. Order: 2nd forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Transition energy. Calculated Emax from Q-value and level energies: 274.7 (19) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.9E-4 (13) %
+Average energy of beta + spectrum: 132.2 (9) keV
+Log ft of the (ec + b+) transition: 9.6 (7)
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 25-Mn-52 [6+] g.s.  -->  Daughter nucleus: 24-Cr-52 [5+] 3615.946 (24) keV
+Half-life of the parent nuclide: 4.8315E5 (26) s
+Electron capture transition. Order: allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 7.67 (6) %
+Log ft of the (ec + b+) transition: 6.13 (12)
+
+------------------------------------
+Parent nucleus: 25-Mn-52 [6+] g.s.  -->  Daughter nucleus: 24-Cr-52 [5+] 3615.946 (24) keV
+Half-life of the parent nuclide: 4.8315E5 (26) s
+Beta + transition. Order: allowed
+Transition energy. Calculated Emax from Q-value and level energies: 74.1 (19) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.00133 (17) %
+Average energy of beta + spectrum: 34.1 (8) keV
+Log ft of the (ec + b+) transition: 6.13 (12)
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 25-Mn-52 [6+] g.s.  -->  Daughter nucleus: 24-Cr-52 [5+] 4015.52 (4) keV
+Half-life of the parent nuclide: 4.8315E5 (26) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 1.07 (5) %
+Log ft of the ec transition: 6.587 (21)
+
+------------------------------------
+Parent nucleus: 25-Mn-52 [6+] g.s.  -->  Daughter nucleus: 24-Cr-52 [4+] 4627.13 (20) keV
+Half-life of the parent nuclide: 4.8315E5 (26) s
+Electron capture transition. Order: 2nd forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the decay: 1
+Normalization of this transition: 0.0027 (6) %
+Log ft of the ec transition: 5.73 (11)
+
+
+####################################
+
+Summary
+
+1 nucleus and 12 transitions have been read.
+
+Parent nucleus: 25-Mn-52
+12 transitions have been read (7 EC, 5 B+).
+
+
+####################################

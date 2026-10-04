@@ -1,0 +1,56 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 31-Ga-67 [3/2-] g.s.  -->  Daughter nucleus: 30-Zn-67 [5/2-] g.s.
+Half-life of the parent nuclide: 2.81776E5 (43) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 3.3 (32) %
+Log ft of the ec transition: 6.532
+
+------------------------------------
+Parent nucleus: 31-Ga-67 [3/2-] g.s.  -->  Daughter nucleus: 30-Zn-67 [1/2-] 93.31 keV
+Half-life of the parent nuclide: 2.81776E5 (43) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 50.5 (17) %
+Log ft of the ec transition: 5.261
+
+------------------------------------
+Parent nucleus: 31-Ga-67 [3/2-] g.s.  -->  Daughter nucleus: 30-Zn-67 [3/2-] 184.58 keV
+Half-life of the parent nuclide: 2.81776E5 (43) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 22.3 (27) %
+Log ft of the ec transition: 5.523
+
+------------------------------------
+Parent nucleus: 31-Ga-67 [3/2-] g.s.  -->  Daughter nucleus: 30-Zn-67 [3/2-] 393.53 keV
+Half-life of the parent nuclide: 2.81776E5 (43) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 23.60 (47) %
+Log ft of the ec transition: 5.239
+
+------------------------------------
+Parent nucleus: 31-Ga-67 [3/2-] g.s.  -->  Daughter nucleus: 30-Zn-67 [5/2-] 887.69 keV
+Half-life of the parent nuclide: 2.81776E5 (43) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.280 (8) %
+Log ft of the ec transition: 5.648
+
+
+####################################
+
+Summary
+
+1 nucleus and 5 transitions have been read.
+
+Parent nucleus: 31-Ga-67
+5 transitions have been read (5 EC).
+
+
+####################################

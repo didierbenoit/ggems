@@ -1,0 +1,1 @@
+.\betashape.exe .\Sc44\Sc-44.txt fixint=1 -csv

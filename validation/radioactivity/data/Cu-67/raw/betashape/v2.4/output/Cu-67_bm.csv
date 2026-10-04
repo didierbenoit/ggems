@@ -1,0 +1,14 @@
+# BetaShape
+# Version: 2.4 (06/2024)
+# Author: X. Mougeot (xavier.mougeot@cea.fr)
+# CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+# Please cite: [2023MO21] X. Mougeot, Applied Radiation and Isotopes 201, 111018 (2023)
+# 
+# Input file: .\Cu67\Cu-67.txt
+# Neutrino information: no
+# 
+# parent symbol, Z, A, Jpi, level energy, unc, daughter symbol, Z, A, Jpi, level energy, unc, Q, unc, half-life, unc, unit, transition nature, transition nature used, branching %, unc, log ft, unc, f-value, unc, transition energy, unc, mean energy calc, unc, mean energy exp, unc
+Cu, 29, 67, 3/2-, 0, 0, Zn, 30, 67, 5/2-, 0, 0, 560.8, 0.8, 2.2255E5, 180, s, A, A, 27.5, 0.8, 6.098, 0.013, 1.547, 0.008, 560.8, 0.8, 182.54, 0.31, , 
+Cu, 29, 67, 3/2-, 0, 0, Zn, 30, 67, 1/2-, 93.31, 0.009, 560.8, 0.8, 2.2255E5, 180, s, A, A, 19.73, 0.47, 5.965, 0.011, 0.8184, 0.0049, 467.5, 0.8, 147.5, 0.29, , 
+Cu, 29, 67, 3/2-, 0, 0, Zn, 30, 67, 3/2-, 184.579, 0.01, 560.8, 0.8, 2.2255E5, 180, s, A, A, 51.7, 0.6, 5.224, 0.006, 0.389, 0.0028, 376.2, 0.8, 114.55, 0.28, , 
+Cu, 29, 67, 3/2-, 0, 0, Zn, 30, 67, 3/2-, 393.522, 0.01, 560.8, 0.8, 2.2255E5, 180, s, A, A, 1.039, 0.014, 5.771, 0.009, 0.02754, 0.00042, 167.3, 0.8, 45.66, 0.24, , 

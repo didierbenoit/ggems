@@ -1,0 +1,280 @@
+Input file:  .\Mn52\Mn-52.txt
+Output file: .\Mn52\Mn-52.new
+
+Input file: 102 lines
+Output file: 104 lines
+Added new lines: 2
+--> Output file is consistent.
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 52MN  P 0.0         6+                5.592 D   3              4712.0    19    - PARENT
+ 52CR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 52CR  L 2369.654  214+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.2703 (20) | L =  0.03003 (23) | M =  0.004669 (43) | N =  3.55E-4 (7)
+K/b+ =  0.3890 (39) | L/b+ =  0.0432 (6) | M/b+ =  0.00672 (11) | N/b+ =  5.10E-4 (15) | EC/b+ =  0.4395 (46)
+
+Branch splitting:  Iec 0.2 (6) %  and  Ib+ 0.3 (6) %
+                   Itot 0.5 (8) %
+EC component of log ft 8.4 (GE)
+
+*    log ft
+ 52CR  E             0.3      60.2      69.8      7             0.5        8 1U - OLD CARD
+ 52CR  E             0.3      60.2      68.4     GE             0.5        8    - NEW CARD
+
+*    Probabilities
+ 52CR2 E EAV=594.5 8$CK=0.2702 20$CL=0.03003 23$CM+=0.005023 44                 - OLD CARD
+ 52CR2 E EAV= $CK=0.2703 20$CL=0.03003 23$CM+=0.005024 44                       - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 52MN  P 0.0         6+                5.592 D   3              4712.0    19    - PARENT
+ 52CR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 52CR  L 2767.786  234+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.5579 (27) | L =  0.06213 (34) | M =  0.00966 (7) | N =  7.33E-4 (14)
+K/b+ =  1.509 (19) | L/b+ =  0.1681 (26) | M/b+ =  0.0261 (5) | N/b+ =  0.00198 (6) | EC/b+ =  1.705 (23)
+
+Branch splitting:  Iec 0.02 (7) %  and  Ib+ 0.011 (26) %
+                   Itot 0.03 (7) %
+EC component of log ft 8.9 (GE)
+
+*    log ft
+ 52CR  E             0.011   260.02     710.4    10             0.03       7 1U - OLD CARD
+ 52CR  E             0.011   260.02     78.9     GE             0.03       7    - NEW CARD
+
+*    Probabilities
+ 52CR2 E EAV=418.1 8$CK=0.5578 27$CL=0.06212 34$CM+=0.01039 7                   - OLD CARD
+ 52CR2 E EAV= $CK=0.5579 27$CL=0.06213 34$CM+=0.01039 7                         - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+ 52MN  P 0.0         6+                5.592 D   3              4712.0    19    - PARENT
+ 52CR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 52CR  L 3113.883  246+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.5844 (33) | L =  0.06474 (40) | M =  0.01006 (8) | N =  7.65E-4 (15)
+K/b+ =  1.719 (28) | L/b+ =  0.1904 (36) | M/b+ =  0.0296 (7) | N/b+ =  0.00225 (8) | EC/b+ =  1.941 (32)
+
+Branch splitting:  Iec 59.9 (7) %  and  Ib+ 30.85 (44) %
+                   Itot 90.7 (8) %
+EC component of log ft 5.564 (6)
+
+*    log ft
+ 52CR  E             30.85   4459.9     75.6      5             90.7       8    - OLD CARD
+ 52CR  E             30.85   4459.9     75.564    6             90.7       8    - NEW CARD
+
+*    Probabilities
+ 52CR2 E EAV=241.6 8$CK=0.5843 33$CL=0.06473 40$CM+=0.01083 8                   - OLD CARD
+ 52CR2 E EAV= $CK=0.5844 33$CL=0.06474 40$CM+=0.01083 8                         - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+ 52MN  P 0.0         6+                5.592 D   3              4712.0    19    - PARENT
+ 52CR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 52CR  L 3415.33   3 4+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.88117 (37) | L =  0.09878 (24) | M =  0.01536 (9) | N =  0.001165 (22)
+K/b+ =  250 (9) | L/b+ =  28.1 (11) | M/b+ =  4.37 (19) | N/b+ =  0.331 (19) | EC/b+ =  283 (11)
+
+Branch splitting:  Iec 0.025 (38) %  and  Ib+ 0.9E-4 (13) %
+                   Itot 0.025 (38) %
+EC component of log ft 8.9 (GE)
+
+*    log ft
+ 52CR  E             0.9E-4  130.025   389.6      7             0.025     38 1U - OLD CARD
+ 52CR  E             0.9E-4  130.025   388.9     GE             0.025     38    - NEW CARD
+
+*    Probabilities
+ 52CR2 E EAV=132.2 9$CK=0.88116 37$CL=0.09878 24$CM+=0.01653 9                  - OLD CARD
+ 52CR2 E EAV= $CK=0.88117 37$CL=0.09878 24$CM+=0.01653 9                        - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+ 52MN  P 0.0         6+                5.592 D   3              4712.0    19    - PARENT
+ 52CR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 52CR  L 3615.946  245+                0.15 PS   10                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88504 (34) | L =  0.09834 (23) | M =  0.01529 (9) | N =  0.001162 (22)
+K/b+ =  5.2E3 (7) | L/b+ =  5.7E2 (7) | M/b+ =  89 (12) | N/b+ =  6.8 (10) | EC/b+ =  5.8E3 (7)
+
+Branch splitting:  Iec 7.67 (6) %  and  Ib+ 0.00133 (17) %
+                   Itot 7.67 (6) %
+EC component of log ft 6.128 (5)
+
+*    log ft
+ 52CR  E             0.00133 177.67     66.13    12             7.67       6    - OLD CARD
+ 52CR  E             0.00133 177.67     66.128    5             7.67       6    - NEW CARD
+
+*    Probabilities
+ 52CR2 E EAV=34.1 8$CK=0.88504 34$CL=0.09834 23$CM+=0.01645 9                   - OLD CARD
+ 52CR2 E EAV= $CK=0.88504 34$CL=0.09834 23$CM+=0.01645 9                        - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  6
+
+ 52MN  P 0.0         6+                5.592 D   3              4712.0    19    - PARENT
+ 52CR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 52CR  L 4015.52   4 5+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88463 (34) | L =  0.09883 (23) | M =  0.01538 (9) | N =  0.001169 (22)
+log ft 6.587 (21)
+
+*    log ft
+ 52CR  E                       1.07     56.587   21             1.07      5     - OLD CARD
+ 52CR  E                       1.07     56.587   21             1.07       5    - NEW CARD
+
+*    Probabilities
+ 52CR2 E CK=0.88463 34$CL=0.09883 23$CM+=0.01655 9                              - OLD CARD
+ 52CR2 E CK=0.88463 34$CL=0.09883 23$CM+=0.01655 9                              - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  7
+
+ 52MN  P 0.0         6+                5.592 D   3              4712.0    19    - PARENT
+ 52CR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 52CR  L 4627.13   204+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.797 (6) | L =  0.176 (5) | M =  0.0262 (8) | N =  0.001377 (26)
+log ft 5.73 (11)
+
+*    log ft
+ 52CR  E                       0.0027   65.73    11             0.0027    6  1U - OLD CARD
+ 52CR  E                       0.0027   65.73    11             0.0027     6    - NEW CARD
+
+*    Probabilities
+ 52CR2 E CK=0.797 6$CL=0.175 5$CM+=0.0276 8                                     - OLD CARD
+ 52CR2 E CK=0.797 6$CL=0.176 5$CM+=0.0276 8                                     - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 7
+-------- Added lines: 1
+
+
+####################################################  B+ DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 52MN  P 0.0         6+                5.592 D   3              4712.0    19    - PARENT
+ 52CR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 52CR  L 2369.654  214+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 594.5 (8) keV   |   log ft (ec & beta +) 9.1 (GE)
+
+*    log ft (ec & beta +)
+ 52CR  E             0.3      60.2      69.8      7             0.5        8 1U - OLD CARD
+ 52CR  E             0.3      60.2      69.1     GE             0.5        8    - NEW CARD
+
+*    Mean energy
+ 52CR2 E EAV=594.5 8$CK=0.2702 20$CL=0.03003 23$CM+=0.005023 44                 - OLD CARD
+ 52CR2 E EAV=594.5 8$CK=0.2703 20$CL=0.03003 23$CM+=0.005024 44                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 52MN  P 0.0         6+                5.592 D   3              4712.0    19    - PARENT
+ 52CR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 52CR  L 2767.786  234+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 418.0 (8) keV   |   log ft (ec & beta +) 9.4 (GE)
+
+*    log ft (ec & beta +)
+ 52CR  E             0.011   260.02     710.4    10             0.03       7 1U - OLD CARD
+ 52CR  E             0.011   260.02     79.4     GE             0.03       7    - NEW CARD
+
+*    Mean energy
+ 52CR2 E EAV=418.1 8$CK=0.5578 27$CL=0.06212 34$CM+=0.01039 7                   - OLD CARD
+ 52CR2 E EAV=418.0 8$CK=0.5579 27$CL=0.06213 34$CM+=0.01039 7                   - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+ 52MN  P 0.0         6+                5.592 D   3              4712.0    19    - PARENT
+ 52CR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 52CR  L 3113.883  246+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 241.6 (8) keV   |   log ft (ec & beta +) 5.5688 (49)
+
+*    log ft (ec & beta +)
+ 52CR  E             30.85   4459.9     75.6      5             90.7       8    - OLD CARD
+ 52CR  E             30.85   4459.9     75.5688  49             90.7       8    - NEW CARD
+
+*    Mean energy
+ 52CR2 E EAV=241.6 8$CK=0.5843 33$CL=0.06473 40$CM+=0.01083 8                   - OLD CARD
+ 52CR2 E EAV=241.6 8$CK=0.5844 33$CL=0.06474 40$CM+=0.01083 8                   - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+ 52MN  P 0.0         6+                5.592 D   3              4712.0    19    - PARENT
+ 52CR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 52CR  L 3415.33   3 4+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 132.3 (9) keV   |   log ft (ec & beta +) 8.9 (GE)
+
+*    log ft (ec & beta +)
+ 52CR  E             0.9E-4  130.025   389.6      7             0.025     38 1U - OLD CARD
+ 52CR  E             0.9E-4  130.025   388.9     GE             0.025     38    - NEW CARD
+
+*    Mean energy
+ 52CR2 E EAV=132.2 9$CK=0.88116 37$CL=0.09878 24$CM+=0.01653 9                  - OLD CARD
+ 52CR2 E EAV=132.3 9$CK=0.88117 37$CL=0.09878 24$CM+=0.01653 9                  - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+ 52MN  P 0.0         6+                5.592 D   3              4712.0    19    - PARENT
+ 52CR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 52CR  L 3615.946  245+                0.15 PS   10                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 34.2 (8) keV   |   log ft (ec & beta +) 6.128 (5)
+
+*    log ft (ec & beta +)
+ 52CR  E             0.00133 177.67     66.13    12             7.67       6    - OLD CARD
+ 52CR  E             0.00133 177.67     66.128    5             7.67       6    - NEW CARD
+
+*    Mean energy
+ 52CR2 E EAV=34.1 8$CK=0.88504 34$CL=0.09834 23$CM+=0.01645 9                   - OLD CARD
+ 52CR2 E EAV=34.2 8$CK=0.88504 34$CL=0.09834 23$CM+=0.01645 9                   - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 5
+-------- Added lines: 1
+
+

@@ -1,0 +1,85 @@
+--------------------------------------------------------------------------------------
+
+BetaShape
+Version: 2.4 (06/2024)
+Author: X. Mougeot (xavier.mougeot@cea.fr)
+CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+Please cite: [2019MO35] X. Mougeot, Applied Radiation and Isotopes 154, 108884 (2019)
+
+--------------------------------------------------------------------------------------
+
+Parent nucleus: 27-Co-57 [7/2-] g.s.  -->  Daughter nucleus: 26-Fe-57 [3/2-] 14.41295 (31) keV
+This 2nd forbidden non-unique transition from the electron capture decay of Co-57 is calculated as 1st forbidden unique.
+
+Transition energy: 821.8 (5) keV
+
+
+----------------------------------------
+Ratios of relative capture probabilities
+
+PL1/PK =  0.11435 (28)
+PL2/PK =  6.194E-4 (28)
+PL3/PK =  7.93E-4 (5)
+PM1/PK =  0.01802 (11)
+PM2/PK =  9.23E-5 (8)
+PM3/PK =  1.054E-4 (12)
+PN1/PK =  0.001174 (8)
+PM4/PK =  1.652E-8 (23)
+
+L/K =  0.11576 (29)
+M/K =  0.01822 (11)
+N/K =  0.001174 (8)
+
+
+------------------------------
+Relative capture probabilities
+
+PK  =  0.88094 (31)
+PL1 =  0.10073 (21)
+PL2 =  5.457E-4 (23)
+PL3 =  6.986E-4 (41)
+PM1 =  0.01587 (9)
+PM2 =  8.13E-5 (7)
+PM3 =  9.28E-5 (10)
+PN1 =  0.001034 (7)
+PM4 =  1.455E-8 (19)
+
+K =  0.88094 (31)
+L =  0.10198 (22)
+M =  0.01605 (9)
+N =  0.001034 (7)
+
+
+------------------------------
+Capture branch from input data
+
+Iec =   3.E-4 (3) %
+
+
+---------------------
+Capture probabilities
+
+PK  =  0.88094 (31)
+PL1  =  0.10073 (21)
+PL2  =  5.457E-4 (23)
+PL3  =  6.986E-4 (41)
+PM1  =  0.01587 (9)
+PM2  =  8.13E-5 (7)
+PM3  =  9.28E-5 (10)
+PN1  =  0.001034 (7)
+PM4  =  1.455E-8 (19)
+
+K =  0.88094 (31)
+L =  0.10198 (22)
+M =  0.01605 (9)
+N =  0.001034 (7)
+
+
+------------------------------------------------------------
+Input log ft value (ec): 11.1
+
+Log ft value (ec)    =  12.52 (43)
+with log f           =  -0.3701 (34)
+or f-value           =  0.4265 (33)
+and log partial T1/2 =  12.89 (43)
+

@@ -1,0 +1,88 @@
+--------------------------------------------------------------------------------------
+
+BetaShape
+Version: 2.4 (06/2024)
+Author: X. Mougeot (xavier.mougeot@cea.fr)
+CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+Please cite: [2019MO35] X. Mougeot, Applied Radiation and Isotopes 154, 108884 (2019)
+
+--------------------------------------------------------------------------------------
+
+Parent nucleus: 27-Co-57 [7/2-] g.s.  -->  Daughter nucleus: 26-Fe-57 [1/2-] g.s.
+Calculation of the 2nd forbidden unique transition from the electron capture decay of Co-57.
+
+Transition energy: 836.2 (5) keV
+
+
+----------------------------------------
+Ratios of relative capture probabilities
+
+PL1/PK =  0.11599 (28)
+PL2/PK =  6.267E-4 (29)
+PL3/PK =  0.002583 (16)
+PM1/PK =  0.01831 (11)
+PM2/PK =  9.36E-5 (8)
+PM3/PK =  3.437E-4 (39)
+PN1/PK =  0.001193 (8)
+PM4/PK =  5.39E-8 (7)
+PM5/PK =  1.114E-8 (17)
+
+L/K =  0.1192 (3)
+M/K =  0.01875 (11)
+N/K =  0.001193 (8)
+
+
+------------------------------
+Relative capture probabilities
+
+PK  =  0.87786 (33)
+PL1 =  0.10182 (21)
+PL2 =  5.501E-4 (23)
+PL3 =  0.002267 (13)
+PM1 =  0.01607 (9)
+PM2 =  8.21E-5 (7)
+PM3 =  3.018E-4 (33)
+PN1 =  0.001047 (7)
+PM4 =  4.73E-8 (6)
+PM5 =  9.78E-9 (14)
+
+K =  0.87786 (33)
+L =  0.10464 (23)
+M =  0.01646 (9)
+N =  0.001047 (7)
+
+
+------------------------------
+Capture branch from input data
+
+Iec =   3.5E-4 %
+
+
+---------------------
+Capture probabilities
+
+PK  =  0.87786 (33)
+PL1  =  0.10182 (21)
+PL2  =  5.501E-4 (23)
+PL3  =  0.002267 (13)
+PM1  =  0.01607 (9)
+PM2  =  8.21E-5 (7)
+PM3  =  3.018E-4 (33)
+PN1  =  0.001047 (7)
+PM4  =  4.73E-8 (6)
+PM5  =  9.78E-9 (14)
+
+K =  0.87786 (33)
+L =  0.10464 (23)
+M =  0.01646 (9)
+N =  0.001047 (7)
+
+
+------------------------------------------------------------
+Input log ft value (ec): 12.9
+
+Log ft value (ec)    =  12.9091 (39)
+with log f           =  0.0824 (39)
+or f-value           =  1.209 (11)
+and log partial T1/2 =  12.82671 (6)
+

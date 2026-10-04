@@ -1,0 +1,1 @@
+.\betashape.exe .\Sc47\Sc-47.txt -csv

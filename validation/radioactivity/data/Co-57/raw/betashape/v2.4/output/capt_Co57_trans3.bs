@@ -1,0 +1,85 @@
+--------------------------------------------------------------------------------------
+
+BetaShape
+Version: 2.4 (06/2024)
+Author: X. Mougeot (xavier.mougeot@cea.fr)
+CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+Please cite: [2019MO35] X. Mougeot, Applied Radiation and Isotopes 154, 108884 (2019)
+
+--------------------------------------------------------------------------------------
+
+Parent nucleus: 27-Co-57 [7/2-] g.s.  -->  Daughter nucleus: 26-Fe-57 [3/2-] 366.74 (3) keV
+This 2nd forbidden non-unique transition from the electron capture decay of Co-57 is calculated as 1st forbidden unique.
+
+Transition energy: 469.5 (5) keV
+
+
+----------------------------------------
+Ratios of relative capture probabilities
+
+PL1/PK =  0.11698 (29)
+PL2/PK =  6.315E-4 (29)
+PL3/PK =  0.002480 (18)
+PM1/PK =  0.01848 (11)
+PM2/PK =  9.43E-5 (9)
+PM3/PK =  3.30E-4 (4)
+PN1/PK =  0.001205 (9)
+PM4/PK =  5.17E-8 (8)
+
+L/K =  0.12009 (31)
+M/K =  0.01891 (12)
+N/K =  0.001205 (9)
+
+
+------------------------------
+Relative capture probabilities
+
+PK  =  0.87704 (33)
+PL1 =  0.10259 (21)
+PL2 =  5.538E-4 (23)
+PL3 =  0.002175 (15)
+PM1 =  0.01621 (9)
+PM2 =  8.27E-5 (7)
+PM3 =  2.894E-4 (34)
+PN1 =  0.001057 (7)
+PM4 =  4.54E-8 (6)
+
+K =  0.87704 (33)
+L =  0.10532 (23)
+M =  0.01658 (9)
+N =  0.001057 (7)
+
+
+------------------------------
+Capture branch from input data
+
+Iec =   0.002 (2) %
+
+
+---------------------
+Capture probabilities
+
+PK  =  0.87704 (33)
+PL1  =  0.10259 (21)
+PL2  =  5.538E-4 (23)
+PL3  =  0.002175 (15)
+PM1  =  0.01621 (9)
+PM2  =  8.27E-5 (7)
+PM3  =  2.894E-4 (34)
+PN1  =  0.001057 (7)
+PM4  =  4.54E-8 (6)
+
+K =  0.87704 (33)
+L =  0.10532 (23)
+M =  0.01658 (9)
+N =  0.001057 (7)
+
+
+------------------------------------------------------------
+Input log ft value (ec): 10.8
+
+Log ft value (ec)    =  10.72 (43)
+with log f           =  -1.3522 (42)
+or f-value           =  0.04445 (43)
+and log partial T1/2 =  12.07 (43)
+

@@ -1,0 +1,501 @@
+{
+  "name": "Sc-44",
+  "reference_id": "LNHB-Sc44-LARA-PenNuc-BetaShape-2.4",
+  "selected_nuclear_authority": {
+    "evaluation": "LNHB/DDEP, E. Browne (LBNL), November 2001; tables 19/10/01 - 23/4/2004; PenNuc 19/10/2001"
+  },
+  "decay_model": "Electron capture and beta-plus decay to Ca-44; selected positron yield 0.9427 per parent decay",
+  "parent_Q": {
+    "value": "3653.3",
+    "standard_uncertainty": "1.9",
+    "unit": "keV"
+  },
+  "half_life": {
+    "value": "14292.00",
+    "standard_uncertainty": "144.00",
+    "unit": "s",
+    "source_value": "3.97",
+    "source_uncertainty": "0.04",
+    "source_unit": "h",
+    "source": "../raw/lnhb/Sc-44_com.pdf and Sc-44_tables.pdf, parent half-life",
+    "transformation": "Multiply the evaluated value and standard uncertainty by exactly 3600 s/h; retain the evaluated central value rather than rounded LARA/BetaShape seconds."
+  },
+  "groups": [
+    {
+      "id": "beta_plus_1474_3_keV",
+      "particle": "Positron",
+      "yield_per_decay": {
+        "value": "0.9427",
+        "standard_uncertainty": "0.0005",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Sc-44.PenNuc.txt, BEP/BEM; Sc-44_tables.pdf, beta transitions"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "reference_representation": "piecewise_linear_density",
+        "spectrum_file": "beta_plus_1474_3_keV.csv",
+        "energy_unit": "keV",
+        "generator": "BetaShape 2.4 (06/2024)",
+        "command": ".\\betashape.exe .\\Sc44\\Sc-44.txt fixint=1 -csv",
+        "source": "../raw/betashape/v2.4/output/beta+_Sc44_trans0.bs",
+        "selected_density_column": "dN/dE calc.",
+        "raw_grid_points": 370,
+        "raw_piecewise_linear_area": "0.942700036661795",
+        "conditional_piecewise_linear_mean_keV": "630.44718233014546789496609298363378283980046510312666541266185808",
+        "endpoint": {
+          "value": "1474.3",
+          "standard_uncertainty": "1.9",
+          "unit": "keV"
+        },
+        "experimental_shape_factor_available": false,
+        "experimental_shape_factor_statement": "No tabulated experimental shape factor for this transition!",
+        "header_statements": [
+          "Calculation of the allowed transition from the beta + decay of Sc-44.",
+          "End-point energy: 1474.3 (19) keV     Energy step: 4 keV     Intensity: 0.9427 (5)",
+          "Mean energy from the calculated spectrum: 630.4 (9) keV"
+        ],
+        "transformation": "Copy energy, calculated density and adjacent pointwise uncertainty tokens unchanged over the full raw support. Integrate the piecewise-linear density independently and divide by its area only for conditional comparisons. Keep physical branch yield separate."
+      },
+      "index": 0
+    },
+    {
+      "id": "nuclear_gamma",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "1.009003",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Sc-44.lara.txt, absolute photon inventory. X-ray entries retain the supplied compact representative energies; relative component tables are not added again.",
+        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "../raw/lnhb/Sc-44.lara.txt, absolute photon inventory. X-ray entries retain the supplied compact representative energies; relative component tables are not added again.",
+        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
+        "lines": [
+          {
+            "energy_keV": "1157.020",
+            "weight": "0.99875",
+            "weight_standard_uncertainty": "0.00003",
+            "label": "g",
+            "source_line": 20,
+            "energy_standard_uncertainty_keV": "0.015"
+          },
+          {
+            "energy_keV": "1499.46",
+            "weight": "0.00908",
+            "weight_standard_uncertainty": "0.00015",
+            "label": "g",
+            "source_line": 21,
+            "energy_standard_uncertainty_keV": "0.02"
+          },
+          {
+            "energy_keV": "2144.33",
+            "weight": "0.000036",
+            "weight_standard_uncertainty": "0.000007",
+            "label": "g",
+            "source_line": 22,
+            "energy_standard_uncertainty_keV": "0.10"
+          },
+          {
+            "energy_keV": "2656.48",
+            "weight": "0.00112",
+            "weight_standard_uncertainty": "0.00003",
+            "label": "g",
+            "source_line": 23,
+            "energy_standard_uncertainty_keV": "0.07"
+          },
+          {
+            "energy_keV": "3301.35",
+            "weight": "0.000017",
+            "weight_standard_uncertainty": "0.000002",
+            "label": "g",
+            "source_line": 24,
+            "energy_standard_uncertainty_keV": "0.06"
+          }
+        ]
+      },
+      "index": 1
+    },
+    {
+      "id": "atomic_xray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.00876",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Sc-44.lara.txt, absolute photon inventory. X-ray entries retain the supplied compact representative energies; relative component tables are not added again.",
+        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "../raw/lnhb/Sc-44.lara.txt, absolute photon inventory. X-ray entries retain the supplied compact representative energies; relative component tables are not added again.",
+        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
+        "lines": [
+          {
+            "energy_keV": "0.381",
+            "weight": "0.00019",
+            "weight_standard_uncertainty": "0.00004",
+            "label": "XL",
+            "source_line": 15
+          },
+          {
+            "energy_keV": "3.68813",
+            "weight": "0.00255",
+            "weight_standard_uncertainty": "0.00007",
+            "label": "XKa2",
+            "source_line": 16
+          },
+          {
+            "energy_keV": "3.69172",
+            "weight": "0.00504",
+            "weight_standard_uncertainty": "0.00013",
+            "label": "XKa1",
+            "source_line": 17
+          },
+          {
+            "energy_keV": "4.0227",
+            "weight": "0.00098",
+            "weight_standard_uncertainty": "0.00003",
+            "label": "XK'b1",
+            "source_line": 18
+          }
+        ]
+      },
+      "index": 2
+    },
+    {
+      "id": "conversion_1157_02_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000064689",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Sc-44.PenNuc.txt, positive EK/EL/EM/EN records following GA 1157.02 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
+        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "../raw/lnhb/Sc-44.PenNuc.txt, positive EK/EL/EM/EN records following GA 1157.02 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
+        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
+        "lines": [
+          {
+            "energy_keV": "1152.985",
+            "weight": "0.0000589",
+            "weight_standard_uncertainty": "0.0000018",
+            "energy_standard_uncertainty_keV": "0.015",
+            "shell": "K",
+            "parent_gamma_energy_keV": "1157.02",
+            "source_record": "EK  0.0000589 ; 0.0000018 ; 1152.985 ; 0.015 ; 0"
+          },
+          {
+            "energy_keV": "1156.645",
+            "weight": "0.00000498",
+            "weight_standard_uncertainty": "0.00000015",
+            "energy_standard_uncertainty_keV": "0.015",
+            "shell": "L",
+            "parent_gamma_energy_keV": "1157.02",
+            "source_record": "EL  0.00000498 ; 0.00000015 ; 1156.645 ; 0.015 ; 0"
+          },
+          {
+            "energy_keV": "1156.991",
+            "weight": "0.000000809",
+            "weight_standard_uncertainty": "0.00000002",
+            "energy_standard_uncertainty_keV": "0.015",
+            "shell": "M",
+            "parent_gamma_energy_keV": "1157.02",
+            "source_record": "EM  0.000000809 ; 0.00000002 ; 1156.991 ; 0.015 ; 0"
+          }
+        ]
+      },
+      "parent_gamma_energy_keV": "1157.02",
+      "independent_minimum_ticket_quota": "53712818.9099228616920960286911221382306110776175238448577038",
+      "index": 3
+    },
+    {
+      "id": "conversion_1499_46_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "2.8937E-7",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Sc-44.PenNuc.txt, positive EK/EL/EM/EN records following GA 1499.46 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
+        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "../raw/lnhb/Sc-44.PenNuc.txt, positive EK/EL/EM/EN records following GA 1499.46 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
+        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
+        "lines": [
+          {
+            "energy_keV": "1495.425",
+            "weight": "0.000000263",
+            "weight_standard_uncertainty": "0.00000001",
+            "energy_standard_uncertainty_keV": "0.02",
+            "shell": "K",
+            "parent_gamma_energy_keV": "1499.46",
+            "source_record": "EK  0.000000263 ; 0.00000001 ; 1495.425 ; 0.02 ; 1"
+          },
+          {
+            "energy_keV": "1499.085",
+            "weight": "0.0000000221",
+            "weight_standard_uncertainty": "0.0000000007",
+            "energy_standard_uncertainty_keV": "0.02",
+            "shell": "L",
+            "parent_gamma_energy_keV": "1499.46",
+            "source_record": "EL  0.0000000221 ; 0.0000000007 ; 1499.085 ; 0.02 ; 1"
+          },
+          {
+            "energy_keV": "1499.432",
+            "weight": "0.00000000427",
+            "weight_standard_uncertainty": "0.00000000019",
+            "energy_standard_uncertainty_keV": "0.02",
+            "shell": "M",
+            "parent_gamma_energy_keV": "1499.46",
+            "source_record": "EM  0.00000000427 ; 0.00000000019 ; 1499.432 ; 0.02 ; 1"
+          }
+        ]
+      },
+      "parent_gamma_energy_keV": "1499.46",
+      "independent_minimum_ticket_quota": "63377372.7543283685247261291771780073953761620071189135017452",
+      "index": 4
+    }
+  ],
+  "total_yield_per_decay": "1.96052797837",
+  "excluded_source_emissions": [
+    {
+      "id": "auger_energy_laws_unresolved",
+      "reason": "LNHB supplies absolute L- and K-family Auger totals but only energy ranges and relative family information, not a complete conditional line or continuous energy law. LARA/PenNuc supplies no such law. These nonzero emissions are outside this selected model; MIRD remains an independent cross-check and is not substituted as an atomic authority.",
+      "LNHB_L_yield": "0.0871",
+      "LNHB_L_standard_uncertainty": "0.0005",
+      "LNHB_K_yield": "0.0421",
+      "LNHB_K_standard_uncertainty": "0.0003",
+      "source": "../raw/lnhb/Sc-44_tables.pdf, Auger electron table"
+    },
+    {
+      "id": "annihilation",
+      "particle": "Gamma",
+      "energy_keV": "511",
+      "reason": "Annihilation photons belong to positron transport, not parent source groups. No source annihilation pair is selected.",
+      "unselected_lara_lines": [
+        {
+          "energy_keV": "511",
+          "weight": "1.88",
+          "weight_standard_uncertainty": "0.03",
+          "label": "g511",
+          "source_line": 19
+        }
+      ]
+    },
+    {
+      "id": "capture_and_pair_placeholders",
+      "reason": "EC shell probabilities are not source emissions. Relative atomic intensities are not additional absolute yields. Internal-pair conversion coefficients alone do not supply a complete particle energy law; no pair or zero-energy placeholder is inferred."
+    },
+    {
+      "id": "neutrinos_recoil_daughter_chain",
+      "reason": "No neutrino, recoil nucleus, later daughter-decay emission, or unobserved upper-limit branch is added. Selected nuclear transitions and atomic emissions are independent prompt source marginals; level lifetimes and coincidences are not modeled."
+    }
+  ],
+  "provenance": {
+    "betashape_version": "2.4 (06/2024)",
+    "betashape_command": ".\\betashape.exe .\\Sc44\\Sc-44.txt fixint=1 -csv",
+    "capture_outputs": [
+      {
+        "source": "../raw/betashape/v2.4/output/capt_Sc44_trans0.bs",
+        "statements": [
+          "Parent nucleus: 21-Sc-44 [2+] g.s.  -->  Daughter nucleus: 20-Ca-44 [2+] 1157.039 (15) keV",
+          "Calculation of the allowed transition from the electron capture decay of Sc-44.",
+          "Transition energy: 2496.3 (19) keV",
+          "PK  =  0.8992 (5)",
+          "PK  =  0.0426 (8)"
+        ]
+      },
+      {
+        "source": "../raw/betashape/v2.4/output/capt_Sc44_trans1.bs",
+        "statements": [
+          "Parent nucleus: 21-Sc-44 [2+] g.s.  -->  Daughter nucleus: 20-Ca-44 [2+] 2656.530 (24) keV",
+          "Calculation of the allowed transition from the electron capture decay of Sc-44.",
+          "Transition energy: 996.8 (19) keV",
+          "PK  =  0.8988 (5)",
+          "PK  =  0.8988 (5)"
+        ]
+      },
+      {
+        "source": "../raw/betashape/v2.4/output/capt_Sc44_trans2.bs",
+        "statements": [
+          "Parent nucleus: 21-Sc-44 [2+] g.s.  -->  Daughter nucleus: 20-Ca-44 [2+] 3301.46 (6) keV",
+          "Calculation of the allowed transition from the electron capture decay of Sc-44.",
+          "Transition energy: 351.8 (19) keV",
+          "PK  =  0.8976 (5)",
+          "PK  =  0.8976 (5)"
+        ]
+      }
+    ],
+    "capture_role": "Independent audit of evaluated EC branches and shell probabilities; no invented photon/electron yields. fixint=1 is retained exactly where specified."
+  },
+  "cross_checks": {
+    "ENSDF": {
+      "interpretation": "Jun Chen and Balraj Singh, NDS 190, 1 (2023), cutoff June 20, 2023: 4.0420(25) h, Q=3652.7(18) keV, dominant positron yield 94.278(11)% and EC 4.696(11)%. LNHB selects 3.97(4) h, Q=3653.3(19) keV and 94.27(5)% positrons. The newer ENSDF evaluation is a cross-check, not a replacement.",
+      "files": [
+        "../raw/ensdf/ec_decay_4.0420_h.pdf"
+      ]
+    },
+    "MIRD_MIRDsoft": {
+      "role": "Independent cross-check only. The retained CSVs do not establish an evaluation identity or half-life. DPK files are dose-deposition kernels, not source-emission probability laws.",
+      "summary_by_type": {
+        "X-ray": {
+          "rows": 17,
+          "conditional_mean_keV": "0.17420428552407463789020268690852481989135012643247253833624084011",
+          "yield_per_decay": "0.215081450698057698"
+        },
+        "Annihilation photon": {
+          "rows": 1,
+          "conditional_mean_keV": "511.000",
+          "yield_per_decay": "1.88708"
+        },
+        "Gamma": {
+          "rows": 6,
+          "conditional_mean_keV": "1161.8333369363483838398835948983682499146263604103873736098944336",
+          "yield_per_decay": "1.009254735"
+        },
+        "Positron": {
+          "rows": 1,
+          "conditional_mean_keV": "631.478000",
+          "yield_per_decay": "0.943542"
+        },
+        "Auger electron": {
+          "rows": 6,
+          "conditional_mean_keV": "1.1110341840616097954304460306957731296557245060168576639192396008",
+          "yield_per_decay": "0.151111685"
+        },
+        "Conversion electron": {
+          "rows": 24,
+          "conditional_mean_keV": "1155.1738502789412779555739850490020041652090077885109121050385347",
+          "yield_per_decay": "0.0000650106497844079"
+        }
+      },
+      "beta_spectrum": {
+        "rows": 115,
+        "piecewise_linear_area": "0.94308985825123852048183915065",
+        "conditional_mean_keV": "632.93040248839005331278004987593773212807157824986425790358005033"
+      }
+    }
+  },
+  "source_disagreements": [
+    "The retained fixint=1 run preserves the evaluated EC/beta-plus split. EC is about 5.73%; the separately rounded listed EC branch intensities sum to 5.7244%. No branch probability is forced to close a rounded sum.",
+    "LNHB reports beta mean 632.0(9) keV; retained BetaShape 2.4 reports 630.4(9) keV (the independent tabulated-density integral is listed below). PenNuc writes endpoint 1474.261 keV while the selected table/BetaShape support ends at 1474.3 keV. Neither law is stretched or shifted.",
+    "MIRD detailed atomic and conversion inventories have different line granularity and yields from the selected LNHB inventory. They are not added, averaged, or used to close an energy or yield balance."
+  ],
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSSc44.cc",
+    "generator_prefix": " * BetaShape ",
+    "selected_version": "2.4"
+  },
+  "raw_inventory": [
+    {
+      "file": "../raw/betashape/v2.4/command.txt",
+      "bytes": 46,
+      "sha256": "810977bd4a3ae8ff23408fb6e2bcdb152152a83b096778d5169fd55355ef6de8"
+    },
+    {
+      "file": "../raw/betashape/v2.4/input/Sc-44.txt",
+      "bytes": 3198,
+      "sha256": "d614e37616f0782c8caac4c752371739d5ced27b0a8c381064253642a779436c"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/beta+_Sc44_tot.bs",
+      "bytes": 16187,
+      "sha256": "23e6064a1cc5e1724e40fa13ef6eb8c919d3780d911c9ff29f18a0ad81cb8059"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/beta+_Sc44_trans0.bs",
+      "bytes": 16588,
+      "sha256": "a42b1b75138918a164deb51afd7700717fa8cb6267f21b5fb60e6ad2659631a2"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/capt_Sc44_trans0.bs",
+      "bytes": 2360,
+      "sha256": "0eb943731b29da0aca94970112cd381d4daddbb7392e042662b82f03d690427d"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/capt_Sc44_trans1.bs",
+      "bytes": 1789,
+      "sha256": "5f29a720f1aa89d7dc2046828bf770fb3dc9d0fb095a57188d999929059fe295"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/capt_Sc44_trans2.bs",
+      "bytes": 1793,
+      "sha256": "8a5cae72358c207c319dcc32fd55b6d059d870a25403d6ddeb22f7c25c668dd1"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/Sc-44.new",
+      "bytes": 3362,
+      "sha256": "6b94d50eb6c9adfaf1e6c245bbbd5e276138166a4e3828c616cfd959540d3754"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/Sc-44.read",
+      "bytes": 2262,
+      "sha256": "3376bc8fffc77a1b83295e69fa164fa33e3a264479e9ee3b5dd22a3c34132f90"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/Sc-44.rpt",
+      "bytes": 4907,
+      "sha256": "1c0aad76fda1091eb84b4cbe89efbd432d029aefe2d6ebacb4003f691c7deab7"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/Sc-44.trans",
+      "bytes": 1884,
+      "sha256": "58ade297589f834561398e533a126531e6a666bdb647cd329960800a67bfe761"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/Sc-44_ecbp.csv",
+      "bytes": 3152,
+      "sha256": "3cd6100c9ebf575b7c96ce5e252f868eb30115cbe463e7354fdf99e5e5d42a0a"
+    },
+    {
+      "file": "../raw/ensdf/ec_decay_4.0420_h.pdf",
+      "bytes": 99855,
+      "sha256": "a5e4ef7f9c5b3cc70dfcd0a09e3f8919b211c1d1eba7a0e933afd47ee5830d6d"
+    },
+    {
+      "file": "../raw/lnhb/Sc-44.lara.txt",
+      "bytes": 1188,
+      "sha256": "f811ffa19dcd74a50aafdd8b3b84f2512d9f495a99570cab5eec058777bc5df2"
+    },
+    {
+      "file": "../raw/lnhb/Sc-44.PenNuc.txt",
+      "bytes": 1867,
+      "sha256": "5ef8571cab5b54b6e8ce658303b436be07adf24200bb8fcfd8d5e8e46f6b696d"
+    },
+    {
+      "file": "../raw/lnhb/Sc-44.txt",
+      "bytes": 3198,
+      "sha256": "d614e37616f0782c8caac4c752371739d5ced27b0a8c381064253642a779436c"
+    },
+    {
+      "file": "../raw/lnhb/Sc-44_com.pdf",
+      "bytes": 34046,
+      "sha256": "5f1db5acd3ed158af12ae659f3cb4fe6e7707634fa3848776e9ad5bb4b23d676"
+    },
+    {
+      "file": "../raw/lnhb/Sc-44_tables.pdf",
+      "bytes": 138589,
+      "sha256": "7e53d69ac5a6f3e9a50dced20ce7bafd487933c14ae6a2a35b8de4c7fadfad0a"
+    },
+    {
+      "file": "../raw/mird/Sc-44 Beta Spectrum.csv",
+      "bytes": 2150,
+      "sha256": "ecb2257c76108ec163eae824c579c639c70f0f34cd5a2f38e2b1e768d357ecd2"
+    },
+    {
+      "file": "../raw/mird/Sc-44 DPK.csv",
+      "bytes": 189057,
+      "sha256": "d89fb62e3225466b4db73938489de1696d99bbaec4ebef2d9f7275238119fbff"
+    },
+    {
+      "file": "../raw/mird/Sc-44 Summary Spectrum.csv",
+      "bytes": 2118,
+      "sha256": "03c6df8f09fdd6ec19cc183de5d17ce70691433a11d832781eaab05ff275cf65"
+    }
+  ]
+}

@@ -1,0 +1,416 @@
+{
+  "name": "Sc-47",
+  "reference_id": "LNHB-Sc47-LARA-PenNuc-BetaShape-2.4",
+  "selected_nuclear_authority": {
+    "evaluation": "CEA/LNE-LNHB, X. Mougeot, November 2013; tables 29/11/2013 - 5/3/2014; PenNuc 29/11/2013"
+  },
+  "decay_model": "100% beta-minus decay to Ti-47",
+  "parent_Q": {
+    "value": "600.8",
+    "standard_uncertainty": "1.9",
+    "unit": "keV"
+  },
+  "half_life": {
+    "value": "289310.4000",
+    "standard_uncertainty": "77.7600",
+    "unit": "s",
+    "source_value": "3.3485",
+    "source_uncertainty": "0.0009",
+    "source_unit": "d",
+    "source": "../raw/lnhb/Sc-47_com.pdf and Sc-47_tables.pdf, parent half-life",
+    "transformation": "Multiply the evaluated value and standard uncertainty by exactly 86400 s/d; retain the evaluated central value rather than rounded LARA/BetaShape seconds."
+  },
+  "groups": [
+    {
+      "id": "beta_minus_441_4_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.685",
+        "standard_uncertainty": "0.005",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Sc-47.PenNuc.txt, BEP/BEM; Sc-47_tables.pdf, beta transitions"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "reference_representation": "piecewise_linear_density",
+        "spectrum_file": "beta_minus_441_4_keV.csv",
+        "energy_unit": "keV",
+        "generator": "BetaShape 2.4 (06/2024)",
+        "command": ".\\betashape.exe .\\Sc47\\Sc-47.txt -csv",
+        "source": "../raw/betashape/v2.4/output/beta-_Sc47_trans1.bs",
+        "selected_density_column": "dN/dE calc.",
+        "raw_grid_points": 443,
+        "raw_piecewise_linear_area": "0.685029459589013",
+        "conditional_piecewise_linear_mean_keV": "142.00825736893302574843863034241896794025920828309580228560977192",
+        "endpoint": {
+          "value": "441.4",
+          "standard_uncertainty": "1.9",
+          "unit": "keV"
+        },
+        "experimental_shape_factor_available": false,
+        "experimental_shape_factor_statement": "No tabulated experimental shape factor for this transition!",
+        "header_statements": [
+          "Calculation of the allowed transition from the beta - decay of Sc-47.",
+          "End-point energy: 441.4 (19) keV     Energy step: 1 keV     Intensity: 0.685 (5)",
+          "Mean energy from the calculated spectrum: 142.0 (7) keV"
+        ],
+        "transformation": "Copy energy, calculated density and adjacent pointwise uncertainty tokens unchanged over the full raw support. Integrate the piecewise-linear density independently and divide by its area only for conditional comparisons. Keep physical branch yield separate."
+      },
+      "index": 0
+    },
+    {
+      "id": "beta_minus_600_8_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.315",
+        "standard_uncertainty": "0.005",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Sc-47.PenNuc.txt, BEP/BEM; Sc-47_tables.pdf, beta transitions"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "reference_representation": "piecewise_linear_density",
+        "spectrum_file": "beta_minus_600_8_keV.csv",
+        "energy_unit": "keV",
+        "generator": "BetaShape 2.4 (06/2024)",
+        "command": ".\\betashape.exe .\\Sc47\\Sc-47.txt -csv",
+        "source": "../raw/betashape/v2.4/output/beta-_Sc47_trans0.bs",
+        "selected_density_column": "dN/dE calc.",
+        "raw_grid_points": 302,
+        "raw_piecewise_linear_area": "0.315011881386908",
+        "conditional_piecewise_linear_mean_keV": "203.34058797093066866265219855544823030968569332788687558283114855",
+        "endpoint": {
+          "value": "600.8",
+          "standard_uncertainty": "1.9",
+          "unit": "keV"
+        },
+        "experimental_shape_factor_available": false,
+        "experimental_shape_factor_statement": "No tabulated experimental shape factor for this transition!",
+        "header_statements": [
+          "Calculation of the allowed transition from the beta - decay of Sc-47.",
+          "End-point energy: 600.8 (19) keV     Energy step: 2 keV     Intensity: 0.315 (5)",
+          "Mean energy from the calculated spectrum: 203.3 (8) keV"
+        ],
+        "transformation": "Copy energy, calculated density and adjacent pointwise uncertainty tokens unchanged over the full raw support. Integrate the piecewise-linear density independently and divide by its area only for conditional comparisons. Keep physical branch yield separate."
+      },
+      "index": 1
+    },
+    {
+      "id": "nuclear_gamma",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.681",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Sc-47.lara.txt, absolute photon inventory. X-ray entries retain the supplied compact representative energies; relative component tables are not added again.",
+        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "159.373",
+          "unit": "keV",
+          "standard_uncertainty": "0.012"
+        },
+        "source": "../raw/lnhb/Sc-47.lara.txt, absolute photon inventory. X-ray entries retain the supplied compact representative energies; relative component tables are not added again."
+      },
+      "index": 2
+    },
+    {
+      "id": "atomic_xray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.000862",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Sc-47.lara.txt, absolute photon inventory. X-ray entries retain the supplied compact representative energies; relative component tables are not added again.",
+        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "../raw/lnhb/Sc-47.lara.txt, absolute photon inventory. X-ray entries retain the supplied compact representative energies; relative component tables are not added again.",
+        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
+        "lines": [
+          {
+            "energy_keV": "4.50491",
+            "weight": "0.000256",
+            "weight_standard_uncertainty": "0.000009",
+            "label": "XKa2",
+            "source_line": 15
+          },
+          {
+            "energy_keV": "4.5109",
+            "weight": "0.000505",
+            "weight_standard_uncertainty": "0.000016",
+            "label": "XKa1",
+            "source_line": 16
+          },
+          {
+            "energy_keV": "4.9471",
+            "weight": "0.000101",
+            "weight_standard_uncertainty": "0.000004",
+            "label": "XK'b1",
+            "source_line": 17
+          }
+        ]
+      },
+      "index": 3
+    },
+    {
+      "id": "conversion_159_373_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00420535",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/Sc-47.PenNuc.txt, positive EK/EL/EM/EN records following GA 159.373 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
+        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "energy_unit": "keV",
+        "source": "../raw/lnhb/Sc-47.PenNuc.txt, positive EK/EL/EM/EN records following GA 159.373 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
+        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
+        "lines": [
+          {
+            "energy_keV": "154.407",
+            "weight": "0.00381",
+            "weight_standard_uncertainty": "0.00009",
+            "energy_standard_uncertainty_keV": "0.012",
+            "shell": "K",
+            "parent_gamma_energy_keV": "159.373",
+            "source_record": "EK  0.00381 ; 0.00009 ; 154.407 ; 0.012 ; 0"
+          },
+          {
+            "energy_keV": "158.809",
+            "weight": "0.000338",
+            "weight_standard_uncertainty": "0.000007",
+            "energy_standard_uncertainty_keV": "0.012",
+            "shell": "L1",
+            "parent_gamma_energy_keV": "159.373",
+            "source_record": "EL1 0.000338 ; 0.000007 ; 158.809 ; 0.012 ; 0"
+          },
+          {
+            "energy_keV": "158.912",
+            "weight": "0.00000633",
+            "weight_standard_uncertainty": "0.00000021",
+            "energy_standard_uncertainty_keV": "0.012",
+            "shell": "L2",
+            "parent_gamma_energy_keV": "159.373",
+            "source_record": "EL2 0.00000633 ; 0.00000021 ; 158.912 ; 0.012 ; 0"
+          },
+          {
+            "energy_keV": "158.918",
+            "weight": "0.00000415",
+            "weight_standard_uncertainty": "0.00000027",
+            "energy_standard_uncertainty_keV": "0.012",
+            "shell": "L3",
+            "parent_gamma_energy_keV": "159.373",
+            "source_record": "EL3 0.00000415 ; 0.00000027 ; 158.918 ; 0.012 ; 0"
+          },
+          {
+            "energy_keV": "159.346",
+            "weight": "0.0000445",
+            "weight_standard_uncertainty": "0.000001",
+            "energy_standard_uncertainty_keV": "0.012",
+            "shell": "M",
+            "parent_gamma_energy_keV": "159.373",
+            "source_record": "EM  0.0000445 ; 0.000001 ; 159.346 ; 0.012 ; 0"
+          },
+          {
+            "energy_keV": "159.373",
+            "weight": "0.00000237",
+            "weight_standard_uncertainty": "0.00000005",
+            "energy_standard_uncertainty_keV": "0.012",
+            "shell": "N",
+            "parent_gamma_energy_keV": "159.373",
+            "source_record": "EN  0.00000237 ; 0.00000005 ; 159.373 ; 0.012 ; 0"
+          }
+        ]
+      },
+      "parent_gamma_energy_keV": "159.373",
+      "independent_minimum_ticket_quota": "2420505.42559358911862270679016015313826435373987896370099992",
+      "index": 4
+    }
+  ],
+  "total_yield_per_decay": "1.68606735",
+  "excluded_source_emissions": [
+    {
+      "id": "auger_energy_laws_unresolved",
+      "reason": "LNHB supplies absolute L- and K-family Auger totals but only energy ranges and relative family information, not a complete conditional line or continuous energy law. LARA/PenNuc supplies no such law. These nonzero emissions are outside this selected model; MIRD remains an independent cross-check and is not substituted as an atomic authority.",
+      "LNHB_L_yield": "0.000349",
+      "LNHB_L_standard_uncertainty": "0.000008",
+      "LNHB_K_yield": "0.00295",
+      "LNHB_K_standard_uncertainty": "0.00007",
+      "source": "../raw/lnhb/Sc-47_tables.pdf, Auger electron table"
+    },
+    {
+      "id": "annihilation",
+      "particle": "Gamma",
+      "energy_keV": "511",
+      "reason": "Annihilation photons belong to positron transport, not parent source groups. No source annihilation pair is selected.",
+      "unselected_lara_lines": []
+    },
+    {
+      "id": "capture_and_pair_placeholders",
+      "reason": "EC shell probabilities are not source emissions. Relative atomic intensities are not additional absolute yields. Internal-pair conversion coefficients alone do not supply a complete particle energy law; no pair or zero-energy placeholder is inferred."
+    },
+    {
+      "id": "neutrinos_recoil_daughter_chain",
+      "reason": "No neutrino, recoil nucleus, later daughter-decay emission, or unobserved upper-limit branch is added. Selected nuclear transitions and atomic emissions are independent prompt source marginals; level lifetimes and coincidences are not modeled."
+    }
+  ],
+  "provenance": {
+    "betashape_version": "2.4 (06/2024)",
+    "betashape_command": ".\\betashape.exe .\\Sc47\\Sc-47.txt -csv",
+    "capture_outputs": [],
+    "capture_role": "Independent audit of evaluated EC branches and shell probabilities; no invented photon/electron yields. fixint=1 is retained exactly where specified."
+  },
+  "cross_checks": {
+    "ENSDF": {
+      "interpretation": "S. Ota and E. A. McCutchan, NDS 203, 1 (2025), cutoff April 1, 2025: 3.3492(6) d, Q=600.8(19) keV, beta intensities 68.6(4)% and 31.4(4)%, and gamma 159.381(15) keV at 68.3(4)%. LNHB gives 3.3485(9) d, 68.5(5)% and 31.5(5)%, and 159.373(12) keV at 68.1(5)%.",
+      "files": [
+        "../raw/ensdf/beta_decay.pdf"
+      ]
+    },
+    "MIRD_MIRDsoft": {
+      "role": "Independent cross-check only. The retained CSVs do not establish an evaluation identity or half-life. DPK files are dose-deposition kernels, not source-emission probability laws.",
+      "summary_by_type": {
+        "X-ray": {
+          "rows": 25,
+          "conditional_mean_keV": "0.12614178401676426660424479771656709985911965732065491099426839441",
+          "yield_per_decay": "0.0229728660423759922"
+        },
+        "Gamma": {
+          "rows": 1,
+          "conditional_mean_keV": "159.381000",
+          "yield_per_decay": "0.683"
+        },
+        "Beta": {
+          "rows": 2,
+          "conditional_mean_keV": "161.930384",
+          "yield_per_decay": "1.000"
+        },
+        "Auger electron": {
+          "rows": 7,
+          "conditional_mean_keV": "0.57817872592713605854992866698520011948685689681906322026287544041",
+          "yield_per_decay": "0.0192871422"
+        },
+        "Conversion electron": {
+          "rows": 4,
+          "conditional_mean_keV": "154.80957480950061109555322905469792023510255935487274248793139113",
+          "yield_per_decay": "0.00307350461"
+        }
+      },
+      "beta_spectrum": {
+        "rows": 104,
+        "piecewise_linear_area": "1.0020672234569",
+        "conditional_mean_keV": "162.56025373379544557996404423642919764646251973922173489201424829"
+      }
+    }
+  },
+  "source_disagreements": [
+    "LNHB tables retain older LOGFT beta means 142.8(7) and 204.2(8) keV. BetaShape 2.4 gives 142.0(7) and 203.3(8) keV, consistent with the more recent ENSDF means. The selected continuous laws are the retained BetaShape 2.4 calculated spectra.",
+    "MIRD detailed atomic and conversion inventories have different line granularity and yields from the selected LNHB inventory. They are not added, averaged, or used to close an energy or yield balance."
+  ],
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSSc47.cc",
+    "generator_prefix": " * BetaShape ",
+    "selected_version": "2.4"
+  },
+  "raw_inventory": [
+    {
+      "file": "../raw/betashape/v2.4/command.txt",
+      "bytes": 37,
+      "sha256": "5112bd40dfec741c6d24e48972b920ae42a85ff0d016cbd3487d76743a59dcde"
+    },
+    {
+      "file": "../raw/betashape/v2.4/input/Sc-47.txt",
+      "bytes": 3034,
+      "sha256": "e13c2936ae91697a887c865cc31f560563c10d776ede6ba3259b82f50888e989"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/beta-_Sc47_tot.bs",
+      "bytes": 15432,
+      "sha256": "def789e44e4b28fd05f8f31a0860fa7b873c4f35f648a4969684aa30954f4ef8"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/beta-_Sc47_trans0.bs",
+      "bytes": 13616,
+      "sha256": "a64587eb87ae6131f1c2536db63504e998aeb6dfc9111c8e84f5b7ce7730196d"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/beta-_Sc47_trans1.bs",
+      "bytes": 19411,
+      "sha256": "f3d9647f87dcc5c10abe7cd855923dbfcdc8d8a2b37820e270a9aa26c02c97ca"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/Sc-47.new",
+      "bytes": 3116,
+      "sha256": "3f36921dcd78f84e1eaea6e2a787a60d485dcdfb6fd04ad5fa9e6306a27b00c3"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/Sc-47.read",
+      "bytes": 1522,
+      "sha256": "9091aa64e883dce8a223739fd1012451dcb3723f9553b072a4aee0308ee777b9"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/Sc-47.rpt",
+      "bytes": 2339,
+      "sha256": "d6f0e93b4e48df25def44148f04e7c3ddc6aa5992c5ec5093b5931e4a99d85e8"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/Sc-47.trans",
+      "bytes": 1345,
+      "sha256": "f6c487206009278ce7d2af62dd4c8d9509d708d575f1d52b77abcead0b424905"
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/Sc-47_bm.csv",
+      "bytes": 921,
+      "sha256": "3bda1581bde6c4450e46d3b638de676afd0f36af3ce0cc5b5fb969de06380c65"
+    },
+    {
+      "file": "../raw/ensdf/beta_decay.pdf",
+      "bytes": 70883,
+      "sha256": "ca47a6fcd798319283d10edc9017e80e87bcd0ebbbff83647bb11b9d9a1ae01c"
+    },
+    {
+      "file": "../raw/lnhb/Sc-47.lara.txt",
+      "bytes": 901,
+      "sha256": "48a18beccaac2a799a116bdd727184e450c6353390c6cd49693e9347d7a8bd2f"
+    },
+    {
+      "file": "../raw/lnhb/Sc-47.PenNuc.txt",
+      "bytes": 879,
+      "sha256": "73355dc7d04fe2d421907f0d607cb6ec74b9c6ce445b96470b8135b8f850445f"
+    },
+    {
+      "file": "../raw/lnhb/Sc-47.txt",
+      "bytes": 3034,
+      "sha256": "e13c2936ae91697a887c865cc31f560563c10d776ede6ba3259b82f50888e989"
+    },
+    {
+      "file": "../raw/lnhb/Sc-47_com.pdf",
+      "bytes": 117253,
+      "sha256": "60b896f0e895d80cc16ed6f7b4d995e0fdb6d34a042213a80217c95ffbb618dd"
+    },
+    {
+      "file": "../raw/lnhb/Sc-47_tables.pdf",
+      "bytes": 234579,
+      "sha256": "c1a0e993a7730293c4cd80293324e2bba8f18bd71048090430e5d6c16458afe9"
+    },
+    {
+      "file": "../raw/mird/Sc-47 Beta Spectrum.csv",
+      "bytes": 1731,
+      "sha256": "e61425eeba210c7881ec5480241ee9ad72c3544aa67303c2f72c9b435aaa675e"
+    },
+    {
+      "file": "../raw/mird/Sc-47 DPK.csv",
+      "bytes": 166240,
+      "sha256": "56b9f750980a1ed79f770d9e6488de9e40077aa577af3233261f91c7632a9dec"
+    },
+    {
+      "file": "../raw/mird/Sc-47 Summary Spectrum.csv",
+      "bytes": 1407,
+      "sha256": "cc0d4dc82eb0c9675a3450adf91e34f21ce9cfa2813613b9156ce92f9c82ef5d"
+    }
+  ]
+}
