@@ -1,0 +1,46 @@
+Information read from the input file: .\Hg203\Hg-203.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 81   Daughter A: 203   Symbol: Tl
+Transition type: B-
+Estimated parent nuclide from identification record: Z 80, A 203
+
+Parent record has been found
+Parent Z: 80	Parent A: 203   Symbol: Hg
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 5/2- | Treated as: 5/2-
+Parent half-life: 46.594 (12) D or 4.0257E6 (10) S
+Parent Q-value: 491.8 (12) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 1/2+ | Treated as: 1/2+
+Level half-life: STABLE
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 491.8 (12) keV
+Intensity of the beta - branch: 0.01 (1) %
+Transition order: 1st forbidden unique
+Log ft of the beta - transition: 11.6
+Average energy of beta - spectrum: 154.4 (4) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 279.1969 (12) keV
+Level spin and parity | Read: 3/2+ | Treated as: 3/2+
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 212.6 (12) keV
+Intensity of the beta - branch: 99.99 (1) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 6.455
+Average energy of beta - spectrum: 57.8 (4) keV
+
+####################################

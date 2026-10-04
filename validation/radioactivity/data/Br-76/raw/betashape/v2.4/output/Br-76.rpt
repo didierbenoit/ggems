@@ -1,0 +1,1425 @@
+Input file:  .\Br76\Br-76.txt
+Output file: .\Br76\Br-76.new
+
+Input file: 460 lines
+Output file: 462 lines
+Added new lines: 2
+--> Output file is consistent.
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 0           0+                 STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.01662 (24) | L =  0.001839 (27) | M =  3.082E-4 (48) | N =  4.64E-5 (9)
+K/b+ =  0.01694 (26) | L/b+ =  0.001874 (25) | M/b+ =  3.141E-4 (29) | N/b+ =  4.732E-5 (48) | EC/b+ =  0.01917 (28)
+
+Branch splitting:  Iec 0.10 (2) %  and  Ib+ 5.7 (8) %
+                   Itot 5.8 (8) %
+EC component of log ft 8.97 (9)
+
+*    log ft
+ 76SE  E             5.7      80.10     28.93                                1  - OLD CARD
+ 76SE  E             5.7      80.10     28.97     9             5.8        8    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=1803      4$CK=0.015178 26$CL=0.001729 21$CM=0.000303  7           - OLD CARD
+ 76SE2 E EAV= $CK=0.01662 24$CL=0.001839 27$CM+=3.546E-4 49                     - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 559.102   5 2+                12.22 PS  17                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.02584 (40) | L =  0.002860 (45) | M =  4.80E-4 (8) | N =  7.22E-5 (14)
+K/b+ =  0.02662 (43) | L/b+ =  0.002947 (43) | M/b+ =  4.94E-4 (5) | N/b+ =  7.44E-5 (8) | EC/b+ =  0.03013 (48)
+
+Branch splitting:  Iec 0.75 (3) %  and  Ib+ 25.7 (9) %
+                   Itot 26.5 (9) %
+EC component of log ft 7.994 (19)
+
+*    log ft
+ 76SE  E             25.7     90.75     37.98                                1  - OLD CARD
+ 76SE  E             25.7     90.75     37.994   19             26.5       9    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=1535      4$CK=0.024958 43$CL=0.002844 34$CM=0.000499 11           - OLD CARD
+ 76SE2 E EAV= $CK=0.02584 40$CL=0.002860 45$CM+=5.52E-4 8                       - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 1122.283  7 0+                9 PS      4                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.0436 (7) | L =  0.00483 (8) | M =  8.09E-4 (14) | N =  1.219E-4 (25)
+K/b+ =  0.0458 (8) | L/b+ =  0.00508 (8) | M/b+ =  8.51E-4 (10) | N/b+ =  1.282E-4 (17) | EC/b+ =  0.0519 (9)
+
+Branch splitting:  Iec 0.11 (3) %  and  Ib+ 2.1 (6) %
+                   Itot 2.2 (6) %
+EC component of log ft 8.71 (12)
+
+*    log ft
+ 76SE  E             2.1      60.11     38.71                                1  - OLD CARD
+ 76SE  E             2.1      60.11     38.71    12             2.2        6    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=1268      4$CK=0.04381   7$CL=0.00500   6$CM=0.000876 20           - OLD CARD
+ 76SE2 E EAV= $CK=0.0436 7$CL=0.00483 8$CM+=9.31E-4 14                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 1216.147  7 2+                3.4 PS    1                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.0480 (8) | L =  0.00532 (9) | M =  8.91E-4 (16) | N =  1.343E-4 (28)
+K/b+ =  0.0507 (9) | L/b+ =  0.00562 (9) | M/b+ =  9.42E-4 (12) | N/b+ =  1.420E-4 (19) | EC/b+ =  0.0574 (10)
+
+Branch splitting:  Iec 0.10 (5) %  and  Ib+ 1.8 (9) %
+                   Itot 1.9 (9) %
+EC component of log ft 8.73 (22)
+
+*    log ft
+ 76SE  E             1.8      90.10     58.71                                1  - OLD CARD
+ 76SE  E             1.8      90.10     58.73    22             1.9        9    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=1224      4$CK=0.04632   8$CL=0.00528   6$CM=0.000926 21           - OLD CARD
+ 76SE2 E EAV= $CK=0.0480 8$CL=0.00532 9$CM+=0.001025 16                         - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 1688.962  7 3+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.1953 (33) | L =  0.02181 (37) | M =  0.00366 (7) | N =  5.51E-4 (11)
+K/b+ =  0.251 (6) | L/b+ =  0.0280 (6) | M/b+ =  0.00470 (8) | N/b+ =  7.08E-4 (12) | EC/b+ =  0.284 (6)
+
+Branch splitting:  Iec 0.11 (6) %  and  Ib+ 0.6 (3) %
+                   Itot 0.71 (31) %
+EC component of log ft 10.18 (24)
+
+*    log ft
+ 76SE  E             0.6      30.11     610                                  1U - OLD CARD
+ 76SE  E             0.6      30.11     610.18   24             0.71      31 1U - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=1026      4$CK=0.13634  23$CL=0.01557  19$CM=0.00273   6           - OLD CARD
+ 76SE2 E EAV= $CK=0.1953 33$CL=0.02181 37$CM+=0.00421 7                         - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  6
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 1787.648  8 2+                8 PS      5                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.0927 (17) | L =  0.01028 (19) | M =  0.001723 (34) | N =  2.60E-4 (6)
+K/b+ =  0.1035 (22) | L/b+ =  0.01148 (23) | M/b+ =  0.001925 (30) | N/b+ =  2.900E-4 (47) | EC/b+ =  0.1172 (25)
+
+Branch splitting:  Iec 0.10 (4) %  and  Ib+ 0.9 (4) %
+                   Itot 1.0 (4) %
+EC component of log ft 8.58 (17)
+
+*    log ft
+ 76SE  E             0.9      40.10     48.6                                 1  - OLD CARD
+ 76SE  E             0.9      40.10     48.58    17             1.0        4    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=957       4$CK=0.08800  15$CL=0.01005  12$CM=0.00176   4           - OLD CARD
+ 76SE2 E EAV= $CK=0.0927 17$CL=0.01028 19$CM+=0.001983 35                       - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  7
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2127.215  8 (2)+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.1465 (29) | L =  0.01625 (32) | M =  0.00273 (6) | N =  4.11E-4 (9)
+K/b+ =  0.1756 (42) | L/b+ =  0.01949 (43) | M/b+ =  0.00327 (6) | N/b+ =  4.92E-4 (9) | EC/b+ =  0.1988 (47)
+
+Branch splitting:  Iec 0.04 (2) %  and  Ib+ 0.19 (11) %
+                   Itot 0.23 (11) %
+EC component of log ft 8.88 (22)
+
+*    log ft
+ 76SE  E             0.19    110.04     28.9                                 1  - OLD CARD
+ 76SE  E             0.19    110.04     28.88    22             0.23      11    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=800       4$CK=0.15303  26$CL=0.01750  21$CM=0.00306   7           - OLD CARD
+ 76SE2 E EAV= $CK=0.1465 29$CL=0.01625 32$CM+=0.00314 6                         - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  8
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2374.2    6                                                            - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.2111 (42) | L =  0.02344 (47) | M =  0.00393 (8) | N =  5.92E-4 (14)
+K/b+ =  0.277 (7) | L/b+ =  0.0308 (8) | M/b+ =  0.00517 (11) | N/b+ =  7.78E-4 (17) | EC/b+ =  0.314 (8)
+
+Branch splitting:  Iec 0.07 (1) %  and  Ib+ 0.21 (2) %
+                   Itot 0.280 (22) %
+EC component of log ft 8.56 (6)
+
+*    log ft
+ 76SE  E             0.21     20.07     18.6                                    - OLD CARD
+ 76SE  E             0.21     20.07     18.56     6             0.280     22    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=688       4$CK=0.21995  38$CL=0.02515  30$CM=0.0044    1           - OLD CARD
+ 76SE2 E EAV= $CK=0.2111 42$CL=0.02344 47$CM+=0.00452 8                         - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  9
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2429.095  113-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.474 (7) | L =  0.0531 (7) | M =  0.00892 (13) | N =  0.001343 (24)
+K/b+ =  1.022 (31) | L/b+ =  0.1147 (33) | M/b+ =  0.01925 (47) | N/b+ =  0.00290 (7) | EC/b+ =  1.159 (35)
+
+Branch splitting:  Iec 0.2 (1) %  and  Ib+ 0.6 (4) %
+                   Itot 0.80 (41) %
+EC component of log ft 9.47 (22)
+
+*    log ft
+ 76SE  E             0.6      40.2      18.1                                 2  - OLD CARD
+ 76SE  E             0.6      40.2      19.47    22             0.80      41    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=663       4$CK=0.21995  38$CL=0.02515  30$CM=0.0044    1           - OLD CARD
+ 76SE2 E EAV= $CK=0.474 7$CL=0.0531 7$CM+=0.01026 13                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  10
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2514.663  13(2)+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.262 (5) | L =  0.0291 (6) | M =  0.00489 (10) | N =  7.37E-4 (17)
+K/b+ =  0.373 (11) | L/b+ =  0.0415 (11) | M/b+ =  0.00695 (16) | N/b+ =  0.001048 (25) | EC/b+ =  0.423 (12)
+
+Branch splitting:  Iec 0.11 (7) %  and  Ib+ 0.28 (17) %
+                   Itot 0.39 (18) %
+EC component of log ft 8.31 (28)
+
+*    log ft
+ 76SE  E             0.28    170.11     78.3                                 1  - OLD CARD
+ 76SE  E             0.28    170.11     78.31    28             0.39      18    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=624       4$CK=0.24815  42$CL=0.02840  34$CM=0.00496  11           - OLD CARD
+ 76SE2 E EAV= $CK=0.262 5$CL=0.0291 6$CM+=0.00563 10                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  11
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2630.8    5 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.315 (6) | L =  0.0350 (7) | M =  0.00587 (12) | N =  8.85E-4 (20)
+K/b+ =  0.489 (15) | L/b+ =  0.0544 (16) | M/b+ =  0.00912 (23) | N/b+ =  0.001375 (35) | EC/b+ =  0.554 (17)
+
+Branch splitting:  Iec 0.11 (9) %  and  Ib+ 0.20 (15) %
+                   Itot 0.31 (17) %
+EC component of log ft 8.27 (36)
+
+*    log ft
+ 76SE  E             0.20    150.11     98.3                                    - OLD CARD
+ 76SE  E             0.20    150.11     98.27    36             0.31      17    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=572       4$CK=0.3122    5$CL=0.03573  43$CM=0.00625  14           - OLD CARD
+ 76SE2 E EAV= $CK=0.315 6$CL=0.0350 7$CM+=0.00676 12                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  12
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2655.32   4 1-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.327 (6) | L =  0.0364 (7) | M =  0.00610 (12) | N =  9.19E-4 (21)
+K/b+ =  0.520 (16) | L/b+ =  0.0578 (17) | M/b+ =  0.00970 (25) | N/b+ =  0.001461 (38) | EC/b+ =  0.589 (18)
+
+Branch splitting:  Iec 0.15 (4) %  and  Ib+ 0.26 (8) %
+                   Itot 0.41 (9) %
+EC component of log ft 8.13 (12)
+
+*    log ft
+ 76SE  E             0.26     80.15     48.1                                    - OLD CARD
+ 76SE  E             0.26     80.15     48.13    12             0.41       9    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=561       4$CK=0.3218    5$CL=0.03684  44$CM=0.00644  15           - OLD CARD
+ 76SE2 E EAV= $CK=0.327 6$CL=0.0364 7$CM+=0.00702 12                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  13
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2669.88   4 2-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.335 (6) | L =  0.0372 (7) | M =  0.00624 (13) | N =  9.41E-4 (21)
+K/b+ =  0.539 (17) | L/b+ =  0.0600 (18) | M/b+ =  0.01006 (26) | N/b+ =  0.001516 (40) | EC/b+ =  0.611 (19)
+
+Branch splitting:  Iec 0.88 (6) %  and  Ib+ 1.49 (10) %
+                   Itot 2.37 (12) %
+EC component of log ft 7.351 (31)
+
+*    log ft
+ 76SE  E             1.49    100.88     67.33                                   - OLD CARD
+ 76SE  E             1.49    100.88     67.351   31             2.37      12    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=554       4$CK=0.3266    6$CL=0.03739  45$CM=0.00654  15           - OLD CARD
+ 76SE2 E EAV= $CK=0.335 6$CL=0.0372 7$CM+=0.00718 13                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  14
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2858.1    20                                                           - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.447 (8) | L =  0.0498 (9) | M =  0.00835 (16) | N =  0.001259 (27)
+K/b+ =  0.907 (33) | L/b+ =  0.1010 (36) | M/b+ =  0.0169 (5) | N/b+ =  0.00255 (8) | EC/b+ =  1.028 (38)
+
+Branch splitting:  Iec 0.14 (3) %  and  Ib+ 0.13 (3) %
+                   Itot 0.270 (42) %
+EC component of log ft 8.07 (9)
+
+*    log ft
+ 76SE  E             0.13     30.14     38.1                                    - OLD CARD
+ 76SE  E             0.13     30.14     38.07     9             0.270     42    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=471       4$CK=0.4561    8$CL=0.0523    6$CM=0.00918  21           - OLD CARD
+ 76SE2 E EAV= $CK=0.447 8$CL=0.0498 9$CM+=0.00961 16                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  15
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2950.53   5 1,2+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.512 (8) | L =  0.0570 (9) | M =  0.00956 (17) | N =  0.001440 (29)
+K/b+ =  1.218 (48) | L/b+ =  0.136 (5) | M/b+ =  0.0227 (8) | N/b+ =  0.00343 (12) | EC/b+ =  1.38 (5)
+
+Branch splitting:  Iec 6.9 (3) %  and  Ib+ 5.1 (2) %
+                   Itot 12.00 (36) %
+EC component of log ft 6.343 (21)
+
+*    log ft
+ 76SE  E             5.1      26.9      36.33                                   - OLD CARD
+ 76SE  E             5.1      26.9      36.343   21             12.00     36    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=430       4$CK=0.5058    9$CL=0.0580    7$CM=0.01018  23           - OLD CARD
+ 76SE2 E EAV= $CK=0.512 8$CL=0.0570 9$CM+=0.01100 17                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  16
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3069.75   4 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.600 (8) | L =  0.0668 (9) | M =  0.01120 (17) | N =  0.001688 (31)
+K/b+ =  1.87 (8) | L/b+ =  0.208 (9) | M/b+ =  0.0349 (13) | N/b+ =  0.00526 (21) | EC/b+ =  2.12 (9)
+
+Branch splitting:  Iec 12.7 (2) %  and  Ib+ 6.1 (1) %
+                   Itot 18.80 (22) %
+EC component of log ft 6.024 (12)
+
+*    log ft
+ 76SE  E             6.1      112.7     26.01                                   - OLD CARD
+ 76SE  E             6.1      112.7     26.024   12             18.80     22    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=378       4$CK=0.5941   10$CL=0.0682    8$CM=0.01196  27           - OLD CARD
+ 76SE2 E EAV= $CK=0.600 8$CL=0.0668 9$CM+=0.01289 17                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  17
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3160.07   6 (2)+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.666 (8) | L =  0.0742 (9) | M =  0.01245 (16) | N =  0.001876 (31)
+K/b+ =  2.71 (13) | L/b+ =  0.302 (14) | M/b+ =  0.0507 (22) | N/b+ =  0.00763 (34) | EC/b+ =  3.07 (15)
+
+Branch splitting:  Iec 3.99 (14) %  and  Ib+ 1.32 (4) %
+                   Itot 5.31 (15) %
+EC component of log ft 6.484 (18)
+
+*    log ft
+ 76SE  E             1.32     43.99    146.47                                1  - OLD CARD
+ 76SE  E             1.32     43.99    146.484   18             5.31      15    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=339       4$CK=0.6608   11$CL=0.0759    9$CM=0.0133    3           - OLD CARD
+ 76SE2 E EAV= $CK=0.666 8$CL=0.0742 9$CM+=0.01433 16                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  18
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3351.54   7 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.786 (6) | L =  0.0878 (6) | M =  0.01473 (13) | N =  0.00222 (3)
+K/b+ =  7.22 (47) | L/b+ =  0.81 (5) | M/b+ =  0.135 (8) | N/b+ =  0.0204 (12) | EC/b+ =  8.2 (5)
+
+Branch splitting:  Iec 8.0 (4) %  and  Ib+ 1.00 (4) %
+                   Itot 9.0 (4) %
+EC component of log ft 6.084 (24)
+
+*    log ft
+ 76SE  E             1.00     48.0      46.07                                   - OLD CARD
+ 76SE  E             1.00     48.0      46.084   24             9.0        4    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=256       4$CK=0.7816   13$CL=0.0899   11$CM=0.01573  36           - OLD CARD
+ 76SE2 E EAV= $CK=0.786 6$CL=0.0878 6$CM+=0.01695 13                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  19
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3441.5    2 (1,2,3)+                                                   - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8267 (40) | L =  0.09233 (47) | M =  0.01550 (12) | N =  0.002335 (29)
+K/b+ =  13.1 (10) | L/b+ =  1.46 (11) | M/b+ =  0.245 (17) | N/b+ =  0.0370 (27) | EC/b+ =  14.8 (11)
+
+Branch splitting:  Iec 0.09 (3) %  and  Ib+ 0.006 (2) %
+                   Itot 0.096 (30) %
+EC component of log ft 7.98 (15)
+
+*    log ft
+ 76SE  E             0.006    20.09     38                                      - OLD CARD
+ 76SE  E             0.006    20.09     37.98    15             0.096     30    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=218       4$CK=0.8242   14$CL=0.0949   11$CM=0.01659  38           - OLD CARD
+ 76SE2 E EAV= $CK=0.8267 40$CL=0.09233 47$CM+=0.01784 12                        - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  20
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3459.40   8 (2)+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8332 (37) | L =  0.09308 (43) | M =  0.01562 (11) | N =  0.002354 (29)
+K/b+ =  15.0 (12) | L/b+ =  1.67 (13) | M/b+ =  0.280 (21) | N/b+ =  0.0422 (32) | EC/b+ =  16.9 (13)
+
+Branch splitting:  Iec 1.81 (15) %  and  Ib+ 0.108 (9) %
+                   Itot 1.92 (15) %
+EC component of log ft 6.668 (37)
+
+*    log ft
+ 76SE  E             0.108    91.81    156.65                                1  - OLD CARD
+ 76SE  E             0.108    91.81    156.668   37             1.92      15    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=210       4$CK=0.8297   14$CL=0.0955   11$CM=0.01670  38           - OLD CARD
+ 76SE2 E EAV= $CK=0.8332 37$CL=0.09308 43$CM+=0.01797 11                        - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  21
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3556.46   8 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8603 (22) | L =  0.09620 (28) | M =  0.01615 (10) | N =  0.002434 (29)
+K/b+ =  34.5 (35) | L/b+ =  3.86 (39) | M/b+ =  0.65 (6) | N/b+ =  0.098 (10) | EC/b+ =  39.1 (40)
+
+Branch splitting:  Iec 1.53 (8) %  and  Ib+ 0.040 (4) %
+                   Itot 1.57 (8) %
+EC component of log ft 6.683 (25)
+
+*    log ft
+ 76SE  E             0.040    41.53     86.67                                   - OLD CARD
+ 76SE  E             0.040    41.53     86.683   25             1.57       8    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=169       4$CK=0.8567   15$CL=0.0987   12$CM=0.01735  39           - OLD CARD
+ 76SE2 E EAV= $CK=0.8603 22$CL=0.09620 28$CM+=0.01858 10                        - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  22
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3604.08   8 1,2+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8688 (16) | L =  0.09720 (23) | M =  0.01632 (10) | N =  0.002459 (29)
+K/b+ =  57 (7) | L/b+ =  6.4 (7) | M/b+ =  1.07 (12) | N/b+ =  0.162 (18) | EC/b+ =  65 (8)
+
+Branch splitting:  Iec 1.64 (13) %  and  Ib+ 0.026 (3) %
+                   Itot 1.67 (13) %
+EC component of log ft 6.622 (36)
+
+*    log ft
+ 76SE  E             0.026    31.64    136.61                                   - OLD CARD
+ 76SE  E             0.026    31.64    136.622   36             1.67      13    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=149       4$CK=0.8653   15$CL=0.0997   12$CM=0.01752  39           - OLD CARD
+ 76SE2 E EAV= $CK=0.8688 16$CL=0.09720 23$CM+=0.01878 10                        - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  23
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3622.2    20                                                           - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8713 (14) | L =  0.09751 (21) | M =  0.01637 (10) | N =  0.002467 (29)
+K/b+ =  71 (9) | L/b+ =  7.9 (10) | M/b+ =  1.33 (16) | N/b+ =  0.200 (25) | EC/b+ =  80 (10)
+
+Branch splitting:  Iec 0.36 (11) %  and  Ib+ 0.005 (2) %
+                   Itot 0.37 (11) %
+EC component of log ft 7.27 (13)
+
+*    log ft
+ 76SE  E             0.005    20.36    117.3                                    - OLD CARD
+ 76SE  E             0.005    20.36    117.27    13             0.37      11    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=142       4$CK=0.8670   15$CL=0.0999   12$CM=0.01756  39           - OLD CARD
+ 76SE2 E EAV= $CK=0.8713 14$CL=0.09751 21$CM+=0.01884 10                        - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  24
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3669.5    10                                                           - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8763 (9) | L =  0.09812 (18) | M =  0.01647 (10) | N =  0.002483 (29)
+K/b+ =  133 (20) | L/b+ =  14.8 (22) | M/b+ =  2.49 (37) | N/b+ =  0.38 (6) | EC/b+ =  150 (23)
+
+Branch splitting:  Iec 0.73 (19) %  and  Ib+ 0.005 (1) %
+                   Itot 0.74 (19) %
+EC component of log ft 6.93 (11)
+
+*    log ft
+ 76SE  E             0.005    10.73    196.9                                    - OLD CARD
+ 76SE  E             0.005    10.73    196.93    11             0.74      19    - NEW CARD
+
+*    Probabilities
+ 76SE2 E EAV=122       4$CK=0.8729   15$CL=0.1007   12$CM=0.01768  40           - OLD CARD
+ 76SE2 E EAV= $CK=0.8763 9$CL=0.09812 18$CM+=0.01895 10                         - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  25
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3913      1                                                            - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88173 (28) | L =  0.09911 (15) | M =  0.01665 (10) | N =  0.002509 (29)
+K/b+ =  0.5E7 (34) | L/b+ =  0.5E6 (38) | M/b+ =  0E5 (6) | N/b+ =  1E4 (10) | EC/b+ =  0.5E7 (38)
+
+Branch splitting:  Iec 0.133 (15) %  and  Ib+ 0 %
+                   Itot 0.133 (15) %
+EC component of log ft 7.49 (5)
+
+*    log ft
+ 76SE  E                       0.133   157.5                                    - OLD CARD
+ 76SE  E                       0.133   157.49     5             0.133     15    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8785   15$CL=0.1017   13$CM=0.0179    4$CN=0.0019    2            - OLD CARD
+ 76SE2 E CK=0.88173 28$CL=0.09911 15$CM+=0.01916 10                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  26
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3929.1    6 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88169 (28) | L =  0.09914 (15) | M =  0.01665 (10) | N =  0.002510 (29)
+K/b+ =  0.0E12 (23) | L/b+ =  0.0E11 (26) | M/b+ =  0.0E10 (43) | N/b+ =  0E9 (7) | EC/b+ =  0.0E12 (26)
+
+Branch splitting:  Iec 0.17 (4) %  and  Ib+ 0 %
+                   Itot 0.17 (4) %
+EC component of log ft 7.37 (10)
+
+*    log ft
+ 76SE  E                       0.17     47.4                                    - OLD CARD
+ 76SE  E                       0.17     47.37    10             0.17       4    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8784   15$CL=0.1018   13$CM=0.0179    4$CN=0.0019    2            - OLD CARD
+ 76SE2 E CK=0.88169 28$CL=0.09914 15$CM+=0.01916 10                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  27
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3970.6    4 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88160 (28) | L =  0.09922 (16) | M =  0.01667 (10) | N =  0.002513 (29)
+log ft 6.755 (36)
+
+*    log ft
+ 76SE  E                       0.64     56.7                                    - OLD CARD
+ 76SE  E                       0.64     56.755   36             0.64       5    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8783   15$CL=0.1019   13$CM=0.0179    4$CN=0.0019    2            - OLD CARD
+ 76SE2 E CK=0.88160 28$CL=0.09922 16$CM+=0.01918 10                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  28
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3998.4    10                                                           - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88153 (28) | L =  0.09927 (16) | M =  0.01668 (10) | N =  0.002514 (30)
+log ft 6.913 (43)
+
+*    log ft
+ 76SE  E                       0.42     46.9                                    - OLD CARD
+ 76SE  E                       0.42     46.913   43             0.42       4    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8783   15$CL=0.1019   13$CM=0.0179    4$CN=0.0019    2            - OLD CARD
+ 76SE2 E CK=0.88153 28$CL=0.09927 16$CM+=0.01919 10                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  29
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 4019.3    5                                                            - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88148 (29) | L =  0.09932 (16) | M =  0.01669 (10) | N =  0.002515 (30)
+log ft 6.96 (9)
+
+*    log ft
+ 76SE  E                       0.36     77                                      - OLD CARD
+ 76SE  E                       0.36     76.96     9             0.36       7    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8782   15$CL=0.1020   13$CM=0.0179    4$CN=0.0019    2            - OLD CARD
+ 76SE2 E CK=0.88148 29$CL=0.09932 16$CM+=0.0192 1                               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  30
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 4064      4                                                            - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88136 (29) | L =  0.09942 (16) | M =  0.01671 (10) | N =  0.002518 (30)
+log ft 6.84 (9)
+
+*    log ft
+ 76SE  E                       0.43     96.8                                    - OLD CARD
+ 76SE  E                       0.43     96.84     9             0.43       9    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8781   15$CL=0.1021   13$CM=0.0179    4$CN=0.0019    2            - OLD CARD
+ 76SE2 E CK=0.88136 29$CL=0.09942 16$CM+=0.01923 10                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  31
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 4084.3    2 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88130 (29) | L =  0.09947 (16) | M =  0.01672 (10) | N =  0.00252 (3)
+log ft 6.755 (37)
+
+*    log ft
+ 76SE  E                       0.50     46.7                                    - OLD CARD
+ 76SE  E                       0.50     46.755   37             0.50       4    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8780   15$CL=0.1021   13$CM=0.0179    4$CN=0.0019    2            - OLD CARD
+ 76SE2 E CK=0.88130 29$CL=0.09947 16$CM+=0.01924 10                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  32
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 4173.1    9 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8810 (3) | L =  0.09971 (17) | M =  0.01676 (10) | N =  0.002527 (30)
+log ft 7.059 (36)
+
+*    log ft
+ 76SE  E                       0.200   157.1                                    - OLD CARD
+ 76SE  E                       0.200   157.059   36             0.200     15    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8777   15$CL=0.1024   13$CM=0.0180    4$CN=0.0019    2            - OLD CARD
+ 76SE2 E CK=0.8810 3$CL=0.09971 17$CM+=0.01929 10                               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  33
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 4199.6    4 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88089 (30) | L =  0.09980 (17) | M =  0.01678 (10) | N =  0.00253 (3)
+log ft 6.77 (5)
+
+*    log ft
+ 76SE  E                       0.36     46.8                                    - OLD CARD
+ 76SE  E                       0.36     46.77     5             0.36       4    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8776   15$CL=0.1025   13$CM=0.0180    4$CN=0.0019    2            - OLD CARD
+ 76SE2 E CK=0.88089 30$CL=0.09980 17$CM+=0.01931 10                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  34
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 4210      1                                                            - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88085 (30) | L =  0.09983 (17) | M =  0.01679 (10) | N =  0.002531 (30)
+log ft 6.94 (7)
+
+*    log ft
+ 76SE  E                       0.24     46.9                                    - OLD CARD
+ 76SE  E                       0.24     46.94     7             0.24       4    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8776   15$CL=0.1025   13$CM=0.0180    4$CN=0.0019    2            - OLD CARD
+ 76SE2 E CK=0.88085 30$CL=0.09983 17$CM+=0.01932 10                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  35
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 4215.5    2 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88083 (30) | L =  0.09985 (17) | M =  0.01679 (10) | N =  0.002531 (30)
+log ft 6.527 (26)
+
+*    log ft
+ 76SE  E                       0.61     36.5                                    - OLD CARD
+ 76SE  E                       0.61     36.527   26             0.61       3    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8775   15$CL=0.1025   13$CM=0.0180    4$CN=0.0019    2            - OLD CARD
+ 76SE2 E CK=0.88083 30$CL=0.09985 17$CM+=0.01932 10                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  36
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 4328.7    10                                                           - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88026 (32) | L =  0.10031 (18) | M =  0.01688 (10) | N =  0.002545 (31)
+log ft 6.89 (12)
+
+*    log ft
+ 76SE  E                       0.19     56.9                                    - OLD CARD
+ 76SE  E                       0.19     56.89    12             0.19       5    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8769   16$CL=0.1030   13$CM=0.0181    4$CN=0.0020    2            - OLD CARD
+ 76SE2 E CK=0.88026 32$CL=0.10031 18$CM+=0.01942 10                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  37
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 4416      2                                                            - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.87966 (34) | L =  0.10081 (20) | M =  0.01697 (11) | N =  0.002559 (31)
+log ft 6.62 (12)
+
+*    log ft
+ 76SE  E                       0.26     76.6                                    - OLD CARD
+ 76SE  E                       0.26     76.62    12             0.26       7    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8763   16$CL=0.1035   13$CM=0.0182    4$CN=0.0020    2            - OLD CARD
+ 76SE2 E CK=0.87966 34$CL=0.10081 20$CM+=0.01953 11                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  38
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 4436.9    10(1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.87949 (35) | L =  0.10095 (21) | M =  0.01700 (11) | N =  0.002564 (31)
+log ft 7.18 (10)
+
+*    log ft
+ 76SE  E                       0.067   157.2                                    - OLD CARD
+ 76SE  E                       0.067   157.18    10             0.067     15    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8761   16$CL=0.1037   13$CM=0.0182    4$CN=0.0020    2            - OLD CARD
+ 76SE2 E CK=0.87949 35$CL=0.10095 21$CM+=0.01956 11                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  39
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 4455.2    30                                                           - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.87932 (36) | L =  0.10108 (21) | M =  0.01703 (11) | N =  0.002568 (32)
+log ft 8.12 (13)
+
+*    log ft
+ 76SE  E                       0.007    28.1                                    - OLD CARD
+ 76SE  E                       0.007    28.12    13             0.007      2    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8760   16$CL=0.1038   13$CM=0.0183    4$CN=0.0020    2            - OLD CARD
+ 76SE2 E CK=0.87932 36$CL=0.10108 21$CM+=0.01960 11                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  40
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 4492      3                                                            - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.87895 (37) | L =  0.10139 (23) | M =  0.01709 (11) | N =  0.002577 (32)
+log ft 7.19 (13)
+
+*    log ft
+ 76SE  E                       0.052   157.2                                    - OLD CARD
+ 76SE  E                       0.052   157.19    13             0.052     15    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8756   16$CL=0.1041   13$CM=0.0183    4$CN=0.0020    2            - OLD CARD
+ 76SE2 E CK=0.87895 37$CL=0.10139 23$CM+=0.01967 11                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  41
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 4605.8    7 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.87729 (45) | L =  0.10274 (29) | M =  0.01735 (13) | N =  0.002617 (35)
+log ft 5.91 (10)
+
+*    log ft
+ 76SE  E                       0.56    125.9                                    - OLD CARD
+ 76SE  E                       0.56    125.91    10             0.56      12    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8738   16$CL=0.1055   13$CM=0.0186    4$CN=0.0020    2            - OLD CARD
+ 76SE2 E CK=0.87729 45$CL=0.10274 29$CM+=0.01997 13                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  42
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 4621.5    20                                                           - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.87697 (47) | L =  0.10301 (31) | M =  0.01740 (13) | N =  0.002624 (35)
+log ft 6.29 (9)
+
+*    log ft
+ 76SE  E                       0.21     46.3                                    - OLD CARD
+ 76SE  E                       0.21     46.29     9             0.21       4    - NEW CARD
+
+*    Probabilities
+ 76SE2 E CK=0.8735   16$CL=0.1058   13$CM=0.0187    4$CN=0.0020    2            - OLD CARD
+ 76SE2 E CK=0.87697 47$CL=0.10301 31$CM+=0.02002 13                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 42
+-------- Added lines: 1
+
+
+####################################################  B+ DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 0           0+                 STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 1793.6 (43) keV   |   log ft (ec & beta +) 8.95 (6)
+
+*    log ft (ec & beta +)
+ 76SE  E             5.7      80.10     28.93                                1  - OLD CARD
+ 76SE  E             5.7      80.10     28.95     6             5.8        8    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=1803      4$CK=0.015178 26$CL=0.001729 21$CM=0.000303  7           - OLD CARD
+ 76SE2 E EAV=1793.6 43$CK=0.01662 24$CL=0.001839 27$CM+=3.546E-4 49             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 559.102   5 2+                12.22 PS  17                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 1528.1 (43) keV   |   log ft (ec & beta +) 7.992 (16)
+
+*    log ft (ec & beta +)
+ 76SE  E             25.7     90.75     37.98                                1  - OLD CARD
+ 76SE  E             25.7     90.75     37.992   16             26.5       9    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=1535      4$CK=0.024958 43$CL=0.002844 34$CM=0.000499 11           - OLD CARD
+ 76SE2 E EAV=1528.1 43$CK=0.02584 40$CL=0.002860 45$CM+=5.52E-4 8               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 1122.283  7 0+                9 PS      4                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 1262.9 (42) keV   |   log ft (ec & beta +) 8.73 (12)
+
+*    log ft (ec & beta +)
+ 76SE  E             2.1      60.11     38.71                                1  - OLD CARD
+ 76SE  E             2.1      60.11     38.73    12             2.2        6    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=1268      4$CK=0.04381   7$CL=0.00500   6$CM=0.000876 20           - OLD CARD
+ 76SE2 E EAV=1262.9 42$CK=0.0436 7$CL=0.00483 8$CM+=9.31E-4 14                  - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 1216.147  7 2+                3.4 PS    1                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 1218.9 (42) keV   |   log ft (ec & beta +) 8.72 (21)
+
+*    log ft (ec & beta +)
+ 76SE  E             1.8      90.10     58.71                                1  - OLD CARD
+ 76SE  E             1.8      90.10     58.72    21             1.9        9    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=1224      4$CK=0.04632   8$CL=0.00528   6$CM=0.000926 21           - OLD CARD
+ 76SE2 E EAV=1218.9 42$CK=0.0480 8$CL=0.00532 9$CM+=0.001025 16                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 1688.962  7 3+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 1020.6 (41) keV   |   log ft (ec & beta +) 10.03 (19)
+
+*    log ft (ec & beta +)
+ 76SE  E             0.6      30.11     610                                  1U - OLD CARD
+ 76SE  E             0.6      30.11     610.03   19             0.71      31 1U - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=1026      4$CK=0.13634  23$CL=0.01557  19$CM=0.00273   6           - OLD CARD
+ 76SE2 E EAV=1020.6 41$CK=0.1953 33$CL=0.02181 37$CM+=0.00421 7                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  6
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 1787.648  8 2+                8 PS      5                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 953.1 (42) keV   |   log ft (ec & beta +) 8.57 (17)
+
+*    log ft (ec & beta +)
+ 76SE  E             0.9      40.10     48.6                                 1  - OLD CARD
+ 76SE  E             0.9      40.10     48.57    17             1.0        4    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=957       4$CK=0.08800  15$CL=0.01005  12$CM=0.00176   4           - OLD CARD
+ 76SE2 E EAV=953.1 42$CK=0.0927 17$CL=0.01028 19$CM+=0.001983 35                - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  7
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2127.215  8 (2)+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 797.6 (41) keV   |   log ft (ec & beta +) 8.91 (21)
+
+*    log ft (ec & beta +)
+ 76SE  E             0.19    110.04     28.9                                 1  - OLD CARD
+ 76SE  E             0.19    110.04     28.91    21             0.23      11    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=800       4$CK=0.15303  26$CL=0.01750  21$CM=0.00306   7           - OLD CARD
+ 76SE2 E EAV=797.6 41$CK=0.1465 29$CL=0.01625 32$CM+=0.00314 6                  - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  8
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2374.2    6                                                            - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 685.5 (41) keV   |   log ft (ec & beta +) 8.587 (36)
+
+*    log ft (ec & beta +)
+ 76SE  E             0.21     20.07     18.6                                    - OLD CARD
+ 76SE  E             0.21     20.07     18.587   36             0.280     22    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=688       4$CK=0.21995  38$CL=0.02515  30$CM=0.0044    1           - OLD CARD
+ 76SE2 E EAV=685.5 41$CK=0.2111 42$CL=0.02344 47$CM+=0.00452 8                  - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  9
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2429.095  113-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 686.8 (40) keV   |   log ft (ec & beta +) 9.14 (22)
+
+*    log ft (ec & beta +)
+ 76SE  E             0.6      40.2      18.1                                 2  - OLD CARD
+ 76SE  E             0.6      40.2      19.14    22             0.80      41    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=663       4$CK=0.21995  38$CL=0.02515  30$CM=0.0044    1           - OLD CARD
+ 76SE2 E EAV=686.8 40$CK=0.474 7$CL=0.0531 7$CM+=0.01026 13                     - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  10
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2514.663  13(2)+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 622.1 (40) keV   |   log ft (ec & beta +) 8.3 (2)
+
+*    log ft (ec & beta +)
+ 76SE  E             0.28    170.11     78.3                                 1  - OLD CARD
+ 76SE  E             0.28    170.11     78.3      2             0.39      18    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=624       4$CK=0.24815  42$CL=0.02840  34$CM=0.00496  11           - OLD CARD
+ 76SE2 E EAV=622.1 40$CK=0.262 5$CL=0.0291 6$CM+=0.00563 10                     - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  11
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2630.8    5 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 570.2 (40) keV   |   log ft (ec & beta +) 8.28 (24)
+
+*    log ft (ec & beta +)
+ 76SE  E             0.20    150.11     98.3                                    - OLD CARD
+ 76SE  E             0.20    150.11     98.28    24             0.31      17    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=572       4$CK=0.3122    5$CL=0.03573  43$CM=0.00625  14           - OLD CARD
+ 76SE2 E EAV=570.2 40$CK=0.315 6$CL=0.0350 7$CM+=0.00676 12                     - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  12
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2655.32   4 1-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 559.5 (40) keV   |   log ft (ec & beta +) 8.13 (10)
+
+*    log ft (ec & beta +)
+ 76SE  E             0.26     80.15     48.1                                    - OLD CARD
+ 76SE  E             0.26     80.15     48.13    10             0.41       9    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=561       4$CK=0.3218    5$CL=0.03684  44$CM=0.00644  15           - OLD CARD
+ 76SE2 E EAV=559.5 40$CK=0.327 6$CL=0.0364 7$CM+=0.00702 12                     - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  13
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2669.88   4 2-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 552.8 (40) keV   |   log ft (ec & beta +) 7.350 (24)
+
+*    log ft (ec & beta +)
+ 76SE  E             1.49    100.88     67.33                                   - OLD CARD
+ 76SE  E             1.49    100.88     67.350   24             2.37      12    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=554       4$CK=0.3266    6$CL=0.03739  45$CM=0.00654  15           - OLD CARD
+ 76SE2 E EAV=552.8 40$CK=0.335 6$CL=0.0372 7$CM+=0.00718 13                     - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  14
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2858.1    20                                                           - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 469.6 (40) keV   |   log ft (ec & beta +) 8.09 (7)
+
+*    log ft (ec & beta +)
+ 76SE  E             0.13     30.14     38.1                                    - OLD CARD
+ 76SE  E             0.13     30.14     38.09     7             0.270     42    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=471       4$CK=0.4561    8$CL=0.0523    6$CM=0.00918  21           - OLD CARD
+ 76SE2 E EAV=469.6 40$CK=0.447 8$CL=0.0498 9$CM+=0.00961 16                     - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  15
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 2950.53   5 1,2+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 428.8 (39) keV   |   log ft (ec & beta +) 6.344 (16)
+
+*    log ft (ec & beta +)
+ 76SE  E             5.1      26.9      36.33                                   - OLD CARD
+ 76SE  E             5.1      26.9      36.344   16             12.00     36    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=430       4$CK=0.5058    9$CL=0.0580    7$CM=0.01018  23           - OLD CARD
+ 76SE2 E EAV=428.8 39$CK=0.512 8$CL=0.0570 9$CM+=0.01100 17                     - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  16
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3069.75   4 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 376.9 (39) keV   |   log ft (ec & beta +) 6.026 (11)
+
+*    log ft (ec & beta +)
+ 76SE  E             6.1      112.7     26.01                                   - OLD CARD
+ 76SE  E             6.1      112.7     26.026   11             18.80     22    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=378       4$CK=0.5941   10$CL=0.0682    8$CM=0.01196  27           - OLD CARD
+ 76SE2 E EAV=376.9 39$CK=0.600 8$CL=0.0668 9$CM+=0.01289 17                     - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  17
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3160.07   6 (2)+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 337.9 (39) keV   |   log ft (ec & beta +) 6.486 (16)
+
+*    log ft (ec & beta +)
+ 76SE  E             1.32     43.99    146.47                                1  - OLD CARD
+ 76SE  E             1.32     43.99    146.486   16             5.31      15    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=339       4$CK=0.6608   11$CL=0.0759    9$CM=0.0133    3           - OLD CARD
+ 76SE2 E EAV=337.9 39$CK=0.666 8$CL=0.0742 9$CM+=0.01433 16                     - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  18
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3351.54   7 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 255.6 (38) keV   |   log ft (ec & beta +) 6.084 (22)
+
+*    log ft (ec & beta +)
+ 76SE  E             1.00     48.0      46.07                                   - OLD CARD
+ 76SE  E             1.00     48.0      46.084   22             9.0        4    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=256       4$CK=0.7816   13$CL=0.0899   11$CM=0.01573  36           - OLD CARD
+ 76SE2 E EAV=255.6 38$CK=0.786 6$CL=0.0878 6$CM+=0.01695 13                     - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  19
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3441.5    2 (1,2,3)+                                                   - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 217.8 (38) keV   |   log ft (ec & beta +) 7.98 (14)
+
+*    log ft (ec & beta +)
+ 76SE  E             0.006    20.09     38                                      - OLD CARD
+ 76SE  E             0.006    20.09     37.98    14             0.096     30    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=218       4$CK=0.8242   14$CL=0.0949   11$CM=0.01659  38           - OLD CARD
+ 76SE2 E EAV=217.8 38$CK=0.8267 40$CL=0.09233 47$CM+=0.01784 12                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  20
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3459.40   8 (2)+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 210.2 (38) keV   |   log ft (ec & beta +) 6.668 (35)
+
+*    log ft (ec & beta +)
+ 76SE  E             0.108    91.81    156.65                                1  - OLD CARD
+ 76SE  E             0.108    91.81    156.668   35             1.92      15    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=210       4$CK=0.8297   14$CL=0.0955   11$CM=0.01670  38           - OLD CARD
+ 76SE2 E EAV=210.2 38$CK=0.8332 37$CL=0.09308 43$CM+=0.01797 11                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  21
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3556.46   8 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 169.3 (38) keV   |   log ft (ec & beta +) 6.683 (24)
+
+*    log ft (ec & beta +)
+ 76SE  E             0.040    41.53     86.67                                   - OLD CARD
+ 76SE  E             0.040    41.53     86.683   24             1.57       8    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=169       4$CK=0.8567   15$CL=0.0987   12$CM=0.01735  39           - OLD CARD
+ 76SE2 E EAV=169.3 38$CK=0.8603 22$CL=0.09620 28$CM+=0.01858 10                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  22
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3604.08   8 1,2+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 149.0 (38) keV   |   log ft (ec & beta +) 6.622 (35)
+
+*    log ft (ec & beta +)
+ 76SE  E             0.026    31.64    136.61                                   - OLD CARD
+ 76SE  E             0.026    31.64    136.622   35             1.67      13    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=149       4$CK=0.8653   15$CL=0.0997   12$CM=0.01752  39           - OLD CARD
+ 76SE2 E EAV=149.0 38$CK=0.8688 16$CL=0.09720 23$CM+=0.01878 10                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  23
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3622.2    20                                                           - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 141.5 (38) keV   |   log ft (ec & beta +) 7.26 (13)
+
+*    log ft (ec & beta +)
+ 76SE  E             0.005    20.36    117.3                                    - OLD CARD
+ 76SE  E             0.005    20.36    117.26    13             0.37      11    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=142       4$CK=0.8670   15$CL=0.0999   12$CM=0.01756  39           - OLD CARD
+ 76SE2 E EAV=141.5 38$CK=0.8713 14$CL=0.09751 21$CM+=0.01884 10                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  24
+
+ 76BR  P 0.0         1-                16.1 H    2              4963      9     - PARENT
+ 76SE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 76SE  L 3669.5    10                                                           - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 121.7 (38) keV   |   log ft (ec & beta +) 6.93 (11)
+
+*    log ft (ec & beta +)
+ 76SE  E             0.005    10.73    196.9                                    - OLD CARD
+ 76SE  E             0.005    10.73    196.93    11             0.74      19    - NEW CARD
+
+*    Mean energy
+ 76SE2 E EAV=122       4$CK=0.8729   15$CL=0.1007   12$CM=0.01768  40           - OLD CARD
+ 76SE2 E EAV=121.7 38$CK=0.8763 9$CL=0.09812 18$CM+=0.01895 10                  - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 24
+-------- Added lines: 1
+
+

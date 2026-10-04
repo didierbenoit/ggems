@@ -1,0 +1,73 @@
+Input file:  .\N13\N-13.txt
+Output file: .\N13\N-13.new
+
+Input file: 12 lines
+Output file: 16 lines
+Added new lines: 4
+--> Output file is consistent.
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 13N   P 0.0         1/2-              9.9589 M  37             2220.47   27    - PARENT
+ 13C   N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 13C   L 0           1/2-               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.00182 (5) | L =  1.466E-4 (42)
+K/b+ =  0.00182 (5) | L/b+ =  1.469E-4 (30) | EC/b+ =  0.00197 (5)
+
+Branch splitting:  Iec 0.197 (5) %  and  Ib+ 99.803 (5) %
+                   Itot 100 %
+EC component of log ft 3.662 (16)
+
+*    log ft
+ 13C   E             99.803   50.197    53.67176                100.000    7    - OLD CARD
+ 13C   E             99.803   50.197    53.662   16             100             - NEW CARD
+
+*    Probabilities
+ 13C 2 E EAV=492.21   12$CK=18230E-7 12$CL=1.470E-4 12                          - OLD CARD
+ 13C 2 E EAV= $CK=0.00182 5$CL=1.466E-4 42                                      - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 1
+-------- Added lines: 1
+
+
+####################################################  B+ DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 13N   P 0.0         1/2-              9.9589 M  37             2220.47   27    - PARENT
+ 13C   N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 13C   L 0           1/2-               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 490.78 (12) keV   |   log ft (ec & beta +) 3.67176 (44)
+
+From measured spectrum
+Emean 492.21 (12) keV   |   [For information] log ft (ec & beta +) 0
+
+*    log ft (ec & beta +)
+ 13C   E             99.803   50.197    53.67176                100.000    7    - OLD CARD
+ 13C   E             99.803   50.197    53.67176 44             100             - NEW CARD
+
+*    Mean energy
+ 13C 2 E EAV=492.21   12$CK=18230E-7 12$CL=1.470E-4 12                          - OLD CARD
+ 13C 2 E EAV=492.21 12$CK=0.00182 5$CL=1.466E-4 42                              - NEW CARD
+ 13C 2 E C1=0.001 24 (1958DA09)                                                 - ADDITIONAL NEW CARD
+ 13C  DE $Cexp(W) = 1+C{-1}W                                                    - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 1
+-------- Added lines: 3
+
+

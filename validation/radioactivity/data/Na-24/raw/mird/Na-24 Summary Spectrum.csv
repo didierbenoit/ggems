@@ -1,0 +1,48 @@
+,Energy [MeV],Yield [#/nt],Type (detailed)
+0,3.10001e-07,5.38935e-21,X-ray
+1,6.89001e-06,6.68495e-05,X-ray
+2,3.291e-05,4.25351e-10,X-ray
+3,3.322e-05,8.84247e-10,X-ray
+4,4.93501e-05,6.23053e-11,X-ray
+5,4.96601e-05,3.3717e-11,X-ray
+6,0.00123795,1.3658e-07,X-ray
+7,0.00123826,2.71279e-07,X-ray
+8,0.99682,1.4e-05,Gamma
+9,1.36863,1.0,Gamma
+10,2.75403,0.99944,Gamma
+11,2.8695,3e-06,Gamma
+12,3.86619,0.00052,Gamma
+13,4.23796,1.1e-05,Gamma
+14,0.0892331,0.000529997,Beta
+15,0.530493,4.99998e-06,Beta
+16,0.553998,0.999435,Beta
+17,1.88222,2.99998e-05,Beta
+18,2.62261e-05,7.25351e-06,Auger electron
+19,4.26626e-05,2.95672e-05,Auger electron
+20,0.00116706,1.3866e-05,Auger electron
+21,0.00121751,4.47346e-07,Auger electron
+22,0.00128072,7.08546e-09,Auger electron
+23,0.995526,1.8111e-10,Conversion electron
+24,0.996731,1.19583e-11,Conversion electron
+25,0.996763,1.10948e-14,Conversion electron
+26,0.996764,1.27654e-14,Conversion electron
+27,1.36734,1.21927e-05,Conversion electron
+28,1.36854,8.05452e-07,Conversion electron
+29,1.36858,6.91059e-10,Conversion electron
+30,1.36858,1.12938e-09,Conversion electron
+31,2.75273,2.53458e-06,Conversion electron
+32,2.75394,1.7246e-07,Conversion electron
+33,2.75397,1.66996e-10,Conversion electron
+34,2.75397,6.87246e-11,Conversion electron
+35,2.86821,7.12581e-12,Conversion electron
+36,2.86941,4.87888e-13,Conversion electron
+37,2.86944,1.86209e-16,Conversion electron
+38,2.86944,4.66499e-16,Conversion electron
+39,3.8649,7.88402e-10,Conversion electron
+40,3.8661,5.76642e-11,Conversion electron
+41,3.86613,5.23953e-14,Conversion electron
+42,3.86613,1.63324e-14,Conversion electron
+43,4.23667,1.46358e-11,Conversion electron
+44,4.23787,6.39965e-13,Conversion electron
+45,4.2379,4.24762e-16,Conversion electron
+46,4.2379,1.57324e-16,Conversion electron

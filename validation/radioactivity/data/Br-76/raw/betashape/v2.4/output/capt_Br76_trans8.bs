@@ -1,0 +1,117 @@
+--------------------------------------------------------------------------------------
+
+BetaShape
+Version: 2.4 (06/2024)
+Author: X. Mougeot (xavier.mougeot@cea.fr)
+CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+Please cite: [2019MO35] X. Mougeot, Applied Radiation and Isotopes 154, 108884 (2019)
+
+--------------------------------------------------------------------------------------
+
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [3-] 2429.095 (11) keV
+This 2nd forbidden non-unique transition from the electron capture decay of Br-76 is calculated as 1st forbidden unique.
+
+Transition energy: 2534 (9) keV
+
+
+----------------------------------------
+Ratios of relative capture probabilities
+
+PL1/PK =  0.11087 (20)
+PL2/PK =  0.0011552 (21)
+PL3/PK =  1.409E-4 (12)
+PM1/PK =  0.01862 (11)
+PM2/PK =  1.855E-4 (6)
+PM3/PK =  2.004E-5 (23)
+PN1/PK =  0.002818 (34)
+PM4/PK =  9.22E-9 (21)
+PN2/PK =  1.661E-5 (18)
+PN3/PK =  1.001E-6 (22)
+
+L/K =  0.11216 (20)
+M/K =  0.01883 (11)
+N/K =  0.002836 (34)
+
+
+------------------------------
+Relative capture probabilities
+
+PK  =  0.88197 (27)
+PL1 =  0.09778 (15)
+PL2 =  0.0010189 (22)
+PL3 =  1.242E-4 (11)
+PM1 =  0.01643 (9)
+PM2 =  1.6364E-4 (46)
+PM3 =  1.768E-5 (20)
+PN1 =  0.002485 (29)
+PM4 =  8.13E-9 (18)
+PN2 =  1.465E-5 (16)
+PN3 =  8.83E-7 (19)
+
+K =  0.88197 (27)
+L =  0.09893 (14)
+M =  0.01661 (10)
+N =  0.002501 (29)
+
+
+--------------------------
+Capture-to-positron ratios
+
+K/b+ =  1.022 (31)
+L1/b+ =  0.1134 (33)
+L2/b+ =  0.001181 (38)
+L3/b+ =  1.44E-4 (6)
+M1/b+ =  0.01904 (47)
+M2/b+ =  1.90E-4 (5)
+M3/b+ =  2.05E-5 (7)
+N1/b+ =  0.00288 (7)
+M4/b+ =  9.43E-9 (34)
+N2/b+ =  1.698E-5 (42)
+N3/b+ =  1.023E-6 (36)
+
+K/b+ =  1.022 (31)
+L/b+ =  0.1147 (33)
+M/b+ =  0.01925 (47)
+N/b+ =  0.00290 (7)
+
+EC/b+ =  1.159 (35)
+
+
+------------------------------------------------------------
+Splitting of the branch between capture and beta plus decays
+
+Input data: Iec tot. =   0.80 (41) %   Iec =   0.2 (1) %   Ib+ =   0.6 (4) %
+Iec      =   0.2 (1) % (input data kept)
+Ib+      =   0.6 (4) % (input data kept)
+Iec tot. =   0.80 (41) % (input data kept)
+
+
+---------------------
+Capture probabilities
+
+PK  =  0.474 (7)
+PL1  =  0.0525 (7)
+PL2  =  5.47E-4 (8)
+PL3  =  6.67E-5 (11)
+PM1  =  0.00882 (13)
+PM2  =  8.79E-5 (12)
+PM3  =  9.49E-6 (17)
+PN1  =  0.001334 (24)
+PM4  =  4.37E-9 (12)
+PN2  =  7.87E-6 (14)
+PN3  =  4.74E-7 (12)
+
+K =  0.474 (7)
+L =  0.0531 (7)
+M =  0.00892 (13)
+N =  0.001343 (24)
+
+
+------------------------------------------------------------
+Input log ft value (ec & beta +): 8.1
+
+Log ft value (ec)    =  9.47 (22)
+with log f           =  2.007 (10)
+or f-value           =  101.6 (23)
+and log partial T1/2 =  7.46 (22)
+

@@ -1,0 +1,38 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 20-Ca-45 [7/2-] g.s.  -->  Daughter nucleus: 21-Sc-45 [7/2-] g.s.
+Half-life of the parent nuclide: 1.4052E7 (10) s
+Beta - transition. Order: allowed
+Transition energy calculated from Q-value and level energies: 258.0 (7) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 99.9980 (7) %
+Average energy of beta - spectrum: 76.8 (7) keV
+Log ft of the beta - transition: 6
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 20-Ca-45 [7/2-] g.s.  -->  Daughter nucleus: 21-Sc-45 [3/2+] 12.40 (5) keV
+Half-life of the parent nuclide: 1.4052E7 (10) s
+Beta - transition. Order: 1st forbidden unique
+Transition energy calculated from Q-value and level energies: 245.6 (7) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 0.0020 (7) %
+Average energy of beta - spectrum: 91.7 (7) keV
+Log ft of the beta - transition: 10.3
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 2 transitions have been read.
+
+Parent nucleus: 20-Ca-45
+2 transitions have been read (2 B-).
+
+
+####################################

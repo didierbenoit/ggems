@@ -1,0 +1,65 @@
+Information read from the input file: .\Xe133\Xe-133.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 55   Daughter A: 133   Symbol: Cs
+Transition type: B-
+Estimated parent nuclide from identification record: Z 54, A 133
+
+Parent record has been found
+Parent Z: 54	Parent A: 133   Symbol: Xe
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 3/2+ | Treated as: 3/2+
+Parent half-life: 5.2474 (5) D or 4.53375E5 (43) S
+Parent Q-value: 427.4 (24) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 7/2+ | Treated as: 7/2+
+Level half-life: STABLE
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 80.9979 (11) keV
+Level spin and parity | Read: 5/2+ | Treated as: 5/2+
+Level half-life: 6.31 (6) NS or 6.31E-9 (6) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 346.4 (24) keV
+Intensity of the beta - branch: 99.12 (8) %
+Transition order: allowed
+Log ft of the beta - transition: 5.62
+Average energy of beta - spectrum: 100.6 (8) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 160.6120 (16) keV
+Level spin and parity | Read: 5/2+ | Treated as: 5/2+
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 266.8 (24) keV
+Intensity of the beta - branch: 0.87 (8) %
+Transition order: allowed
+Log ft of the beta - transition: 7.31
+Average energy of beta - spectrum: 75.2 (8) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 383.8485 (12) keV
+Level spin and parity | Read: 3/2+ | Treated as: 3/2+
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 43.6 (24) keV
+Intensity of the beta - branch: 0.0092 (9) %
+Transition order: allowed
+Log ft of the beta - transition: 6.84
+Average energy of beta - spectrum: 11.1 (7) keV
+
+####################################

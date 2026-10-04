@@ -1,0 +1,61 @@
+Information read from the input file: .\In111\In-111.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 48   Daughter A: 111   Symbol: Cd
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 49, A 111
+
+Parent record has been found
+Parent Z: 49	Parent A: 111   Symbol: In
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 9/2+ | Treated as: 9/2+
+Parent half-life: 2.8049 (4) D or 2.42343E5 (35) S
+Parent Q-value: 861.8 (46) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 1/2+ | Treated as: 1/2+
+Level half-life: STABLE
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level without uncertainty: 245.4 keV
+Level spin and parity | Read: 5/2+ | Treated as: 5/2+
+Daughter level not clearly defined.
+Level half-life not given.
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level without uncertainty: 396.15 keV
+Level spin and parity | Read: 11/2- | Treated as: 11/2-
+Daughter level not clearly defined.
+Level half-life: 48.50 (9) M or 2910 (5) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 0.005 (5) %
+Total intensity of the decay not given.
+Transition order: 1st forbidden non-unique
+Log ft of the ec transition: 9
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level without uncertainty: 416.6 keV
+Level spin and parity | Read: 7/2+ | Treated as: 7/2+
+Daughter level not clearly defined.
+Level half-life not given.
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 99.995 (5) %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 5
+
+####################################

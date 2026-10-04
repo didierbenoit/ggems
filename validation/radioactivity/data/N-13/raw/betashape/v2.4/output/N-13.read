@@ -1,0 +1,35 @@
+Information read from the input file: .\N13\N-13.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 6   Daughter A: 13   Symbol: C
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 7, A 13
+
+Parent record has been found
+Parent Z: 7	Parent A: 13   Symbol: N
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 1/2- | Treated as: 1/2-
+Parent half-life: 9.9589 (37) M or 597.53 (22) S
+Parent Q-value: 2220.47 (27) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 1/2- | Treated as: 1/2-
+Level half-life: STABLE
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the beta + branch: 99.803 (5) %
+Intensity of the ec branch: 0.197 (5) %
+Total intensity of the (ec & beta +) decay: 100.000 (7) %
+Transition order: allowed
+Log ft of the (ec + b+) transition: 3.6718
+Average energy of beta + spectrum: 492.21 (12) keV
+
+####################################

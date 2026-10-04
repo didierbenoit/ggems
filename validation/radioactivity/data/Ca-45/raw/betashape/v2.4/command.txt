@@ -1,0 +1,1 @@
+.\betashape.exe .\Ca45\Ca-45.txt -csv

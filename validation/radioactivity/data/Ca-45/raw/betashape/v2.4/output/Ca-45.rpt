@@ -1,0 +1,55 @@
+Input file:  .\Ca45\Ca-45.txt
+Output file: .\Ca45\Ca-45.new
+
+Input file: 17 lines
+Output file: 18 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 45CA  P 0.0         7/2-              162.64 D  11             258.0     7     - PARENT
+ 45SC  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 45SC  L 0           7/2-               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 77.01 (24) keV   |   log ft 6.0021 (40)
+
+*    log ft
+ 45SC  B 258.0     7 99.9980  7          6                                      - OLD CARD
+ 45SC  B 258.0     7 99.9980  7          6.0021  40                             - NEW CARD
+
+*    Mean energy
+ 45SCS B EAV=76.8 7                                                             - OLD CARD
+ 45SCS B EAV=77.01 24                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 45CA  P 0.0         7/2-              162.64 D  11             258.0     7     - PARENT
+ 45SC  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 45SC  L 12.40     5 3/2+              318 MS    7                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 92.06 (27) keV   |   log ft 10.27 (15)
+
+*    log ft
+ 45SC  B 245.6     7 0.0020   7          10.3                                1U - OLD CARD
+ 45SC  B 245.6     7 0.0020   7          10.27   15                          1U - NEW CARD
+
+*    Mean energy
+ 45SCS B EAV=91.7 7                                                             - OLD CARD
+ 45SCS B EAV=92.06 27                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 2
+-------- Added lines: 1
+
+

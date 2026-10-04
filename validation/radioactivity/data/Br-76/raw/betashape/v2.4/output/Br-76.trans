@@ -1,0 +1,636 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [0+] g.s.
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.10 (2) %
+Log ft of the (ec + b+) transition: 8.93
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [0+] g.s.
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: 1st forbidden non-unique
+Transition energy. Calculated Emax from Q-value and level energies: 3941 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 5.7 (8) %
+Average energy of beta + spectrum: 1803 (4) keV
+Log ft of the (ec + b+) transition: 8.93
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [2+] 559.102 (5) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.75 (3) %
+Log ft of the (ec + b+) transition: 7.98
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [2+] 559.102 (5) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: 1st forbidden non-unique
+Transition energy. Calculated Emax from Q-value and level energies: 3382 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 25.7 (9) %
+Average energy of beta + spectrum: 1535 (4) keV
+Log ft of the (ec + b+) transition: 7.98
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [0+] 1122.283 (7) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.11 (3) %
+Log ft of the (ec + b+) transition: 8.71
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [0+] 1122.283 (7) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: 1st forbidden non-unique
+Transition energy. Calculated Emax from Q-value and level energies: 2819 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 2.1 (6) %
+Average energy of beta + spectrum: 1268 (4) keV
+Log ft of the (ec + b+) transition: 8.71
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [2+] 1216.147 (7) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.10 (5) %
+Log ft of the (ec + b+) transition: 8.71
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [2+] 1216.147 (7) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: 1st forbidden non-unique
+Transition energy. Calculated Emax from Q-value and level energies: 2725 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 1.8 (9) %
+Average energy of beta + spectrum: 1224 (4) keV
+Log ft of the (ec + b+) transition: 8.71
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [3+] 1688.962 (7) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: 1st forbidden unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.11 (6) %
+Log ft of the (ec + b+) transition: 10
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [3+] 1688.962 (7) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: 1st forbidden unique
+Transition energy. Calculated Emax from Q-value and level energies: 2252 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.6 (3) %
+Average energy of beta + spectrum: 1026 (4) keV
+Log ft of the (ec + b+) transition: 10
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [2+] 1787.648 (8) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.10 (4) %
+Log ft of the (ec + b+) transition: 8.6
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [2+] 1787.648 (8) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: 1st forbidden non-unique
+Transition energy. Calculated Emax from Q-value and level energies: 2153 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.9 (4) %
+Average energy of beta + spectrum: 957 (4) keV
+Log ft of the (ec + b+) transition: 8.6
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [2+] 2127.215 (8) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.04 (2) %
+Log ft of the (ec + b+) transition: 8.9
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [2+] 2127.215 (8) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: 1st forbidden non-unique
+Transition energy. Calculated Emax from Q-value and level energies: 1814 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.19 (11) %
+Average energy of beta + spectrum: 800 (4) keV
+Log ft of the (ec + b+) transition: 8.9
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 2374.2 (6) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.07 (1) %
+Log ft of the (ec + b+) transition: 8.6
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 2374.2 (6) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: as allowed
+Transition energy. Calculated Emax from Q-value and level energies: 1567 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.21 (2) %
+Average energy of beta + spectrum: 688 (4) keV
+Log ft of the (ec + b+) transition: 8.6
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [3-] 2429.095 (11) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: 2nd forbidden non-unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.2 (1) %
+Log ft of the (ec + b+) transition: 8.1
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [3-] 2429.095 (11) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: 2nd forbidden non-unique
+Transition energy. Calculated Emax from Q-value and level energies: 1512 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.6 (4) %
+Average energy of beta + spectrum: 663 (4) keV
+Log ft of the (ec + b+) transition: 8.1
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [2+] 2514.663 (13) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.11 (7) %
+Log ft of the (ec + b+) transition: 8.3
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [2+] 2514.663 (13) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: 1st forbidden non-unique
+Transition energy. Calculated Emax from Q-value and level energies: 1426 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.28 (17) %
+Average energy of beta + spectrum: 624 (4) keV
+Log ft of the (ec + b+) transition: 8.3
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 2630.8 (5) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.11 (9) %
+Log ft of the (ec + b+) transition: 8.3
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 2630.8 (5) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: as allowed
+Transition energy. Calculated Emax from Q-value and level energies: 1310 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.20 (15) %
+Average energy of beta + spectrum: 572 (4) keV
+Log ft of the (ec + b+) transition: 8.3
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1-] 2655.32 (4) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.15 (4) %
+Log ft of the (ec + b+) transition: 8.1
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1-] 2655.32 (4) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: allowed
+Transition energy. Calculated Emax from Q-value and level energies: 1286 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.26 (8) %
+Average energy of beta + spectrum: 561 (4) keV
+Log ft of the (ec + b+) transition: 8.1
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [2-] 2669.88 (4) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.88 (6) %
+Log ft of the (ec + b+) transition: 7.33
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [2-] 2669.88 (4) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: allowed
+Transition energy. Calculated Emax from Q-value and level energies: 1271 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 1.49 (10) %
+Average energy of beta + spectrum: 554 (4) keV
+Log ft of the (ec + b+) transition: 7.33
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 2858.1 (20) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.14 (3) %
+Log ft of the (ec + b+) transition: 8.1
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 2858.1 (20) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: as allowed
+Transition energy. Calculated Emax from Q-value and level energies: 1083 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.13 (3) %
+Average energy of beta + spectrum: 471 (4) keV
+Log ft of the (ec + b+) transition: 8.1
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 2950.53 (5) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 6.9 (3) %
+Log ft of the (ec + b+) transition: 6.33
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 2950.53 (5) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: as allowed
+Transition energy. Calculated Emax from Q-value and level energies: 990 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 5.1 (2) %
+Average energy of beta + spectrum: 430 (4) keV
+Log ft of the (ec + b+) transition: 6.33
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 3069.75 (4) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 12.7 (2) %
+Log ft of the (ec + b+) transition: 6.01
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 3069.75 (4) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: as allowed
+Transition energy. Calculated Emax from Q-value and level energies: 871 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 6.1 (1) %
+Average energy of beta + spectrum: 378 (4) keV
+Log ft of the (ec + b+) transition: 6.01
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [2+] 3160.07 (6) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 3.99 (14) %
+Log ft of the (ec + b+) transition: 6.47
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [2+] 3160.07 (6) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: 1st forbidden non-unique
+Transition energy. Calculated Emax from Q-value and level energies: 781 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 1.32 (4) %
+Average energy of beta + spectrum: 339 (4) keV
+Log ft of the (ec + b+) transition: 6.47
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 3351.54 (7) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 8.0 (4) %
+Log ft of the (ec + b+) transition: 6.07
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 3351.54 (7) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: as allowed
+Transition energy. Calculated Emax from Q-value and level energies: 589 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 1.00 (4) %
+Average energy of beta + spectrum: 256 (4) keV
+Log ft of the (ec + b+) transition: 6.07
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 3441.5 (2) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.09 (3) %
+Log ft of the (ec + b+) transition: 8
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 3441.5 (2) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: as allowed
+Transition energy. Calculated Emax from Q-value and level energies: 500 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.006 (2) %
+Average energy of beta + spectrum: 218 (4) keV
+Log ft of the (ec + b+) transition: 8
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [2+] 3459.40 (8) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 1.81 (15) %
+Log ft of the (ec + b+) transition: 6.65
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [2+] 3459.40 (8) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: 1st forbidden non-unique
+Transition energy. Calculated Emax from Q-value and level energies: 482 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.108 (9) %
+Average energy of beta + spectrum: 210 (4) keV
+Log ft of the (ec + b+) transition: 6.65
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 3556.46 (8) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 1.53 (8) %
+Log ft of the (ec + b+) transition: 6.67
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 3556.46 (8) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: as allowed
+Transition energy. Calculated Emax from Q-value and level energies: 385 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.040 (4) %
+Average energy of beta + spectrum: 169 (4) keV
+Log ft of the (ec + b+) transition: 6.67
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 3604.08 (8) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 1.64 (13) %
+Log ft of the (ec + b+) transition: 6.61
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 3604.08 (8) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: as allowed
+Transition energy. Calculated Emax from Q-value and level energies: 337 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.026 (3) %
+Average energy of beta + spectrum: 149 (4) keV
+Log ft of the (ec + b+) transition: 6.61
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 3622.2 (20) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.36 (11) %
+Log ft of the (ec + b+) transition: 7.3
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 3622.2 (20) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: as allowed
+Transition energy. Calculated Emax from Q-value and level energies: 319 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.005 (2) %
+Average energy of beta + spectrum: 142 (4) keV
+Log ft of the (ec + b+) transition: 7.3
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 3669.5 (10) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.73 (19) %
+Log ft of the (ec + b+) transition: 6.9
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 3669.5 (10) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: as allowed
+Transition energy. Calculated Emax from Q-value and level energies: 272 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.005 (1) %
+Average energy of beta + spectrum: 122 (4) keV
+Log ft of the (ec + b+) transition: 6.9
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 3913 (1) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.133 (15) %
+Log ft of the (ec + b+) transition: 7.5
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 3913 (1) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: as allowed
+Transition energy. Calculated Emax from Q-value and level energies: 28 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0 %
+Log ft of the (ec + b+) transition: 7.5
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 3929.1 (6) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.17 (4) %
+Log ft of the (ec + b+) transition: 7.4
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 3929.1 (6) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Beta + transition. Order: as allowed
+Transition energy. Calculated Emax from Q-value and level energies: 12 (9) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0 %
+Log ft of the (ec + b+) transition: 7.4
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 3970.6 (4) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.64 (5) %
+Log ft of the ec transition: 6.7
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 3998.4 (10) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.42 (4) %
+Log ft of the ec transition: 6.9
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 4019.3 (5) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.36 (7) %
+Log ft of the ec transition: 7
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 4064 (4) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.43 (9) %
+Log ft of the ec transition: 6.8
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 4084.3 (2) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.50 (4) %
+Log ft of the ec transition: 6.7
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 4173.1 (9) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.200 (15) %
+Log ft of the ec transition: 7.1
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 4199.6 (4) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.36 (4) %
+Log ft of the ec transition: 6.8
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 4210 (1) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.24 (4) %
+Log ft of the ec transition: 6.9
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 4215.5 (2) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.61 (3) %
+Log ft of the ec transition: 6.5
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 4328.7 (10) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.19 (5) %
+Log ft of the ec transition: 6.9
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 4416 (2) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.26 (7) %
+Log ft of the ec transition: 6.6
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 4436.9 (10) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.067 (15) %
+Log ft of the ec transition: 7.2
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 4455.2 (30) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.007 (2) %
+Log ft of the ec transition: 8.1
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 4492 (3) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.052 (15) %
+Log ft of the ec transition: 7.2
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [1+] 4605.8 (7) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.56 (12) %
+Log ft of the ec transition: 5.9
+
+------------------------------------
+Parent nucleus: 35-Br-76 [1-] g.s.  -->  Daughter nucleus: 34-Se-76 [**] 4621.5 (20) keV
+Half-life of the parent nuclide: 5.80E4 (7) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.21 (4) %
+Log ft of the ec transition: 6.3
+
+
+####################################
+
+Summary
+
+1 nucleus and 68 transitions have been read.
+
+Parent nucleus: 35-Br-76
+68 transitions have been read (42 EC, 26 B+).
+
+
+####################################

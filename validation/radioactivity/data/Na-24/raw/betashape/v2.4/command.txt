@@ -1,0 +1,1 @@
+.\betashape.exe .\Na24\Na-24.txt -csv

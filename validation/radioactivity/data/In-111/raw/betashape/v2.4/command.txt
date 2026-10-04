@@ -1,0 +1,1 @@
+.\betashape.exe .\In111\In-111.txt -csv

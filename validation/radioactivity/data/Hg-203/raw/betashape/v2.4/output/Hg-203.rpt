@@ -1,0 +1,55 @@
+Input file:  .\Hg203\Hg-203.txt
+Output file: .\Hg203\Hg-203.new
+
+Input file: 37 lines
+Output file: 38 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+203HG  P 0.0         5/2-              46.594 D  12             491.8     12    - PARENT
+203TL  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+203TL  L 0           1/2+               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 151.29 (38) keV   |   log ft 11.29 (GE)
+
+*    log ft
+203TL  B 491.8     120.01     1          11.6                                1U - OLD CARD
+203TL  B 491.8     120.01     1          11.3    GE                          1U - NEW CARD
+
+*    Mean energy
+203TLS B EAV=154.4 4                                                            - OLD CARD
+203TLS B EAV=151.29 38                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+203HG  P 0.0         5/2-              46.594 D  12             491.8     12    - PARENT
+203TL  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+203TL  L 279.1969  123/2+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 57.51 (35) keV   |   log ft 6.550 (8)
+
+*    log ft
+203TL  B 212.6     1299.99    1          6.455                               1  - OLD CARD
+203TL  B 212.6     1299.99    1          6.550    8                             - NEW CARD
+
+*    Mean energy
+203TLS B EAV=57.8 4                                                             - OLD CARD
+203TLS B EAV=57.51 35                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 2
+-------- Added lines: 1
+
+

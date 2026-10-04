@@ -1,0 +1,38 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 80-Hg-203 [5/2-] g.s.  -->  Daughter nucleus: 81-Tl-203 [1/2+] g.s.
+Half-life of the parent nuclide: 4.0257E6 (10) s
+Beta - transition. Order: 1st forbidden unique
+Transition energy calculated from Q-value and level energies: 491.8 (12) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 0.01 (1) %
+Average energy of beta - spectrum: 154.4 (4) keV
+Log ft of the beta - transition: 11.6
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 80-Hg-203 [5/2-] g.s.  -->  Daughter nucleus: 81-Tl-203 [3/2+] 279.1969 (12) keV
+Half-life of the parent nuclide: 4.0257E6 (10) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 212.6 (12) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 99.99 (1) %
+Average energy of beta - spectrum: 57.8 (4) keV
+Log ft of the beta - transition: 6.455
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 2 transitions have been read.
+
+Parent nucleus: 80-Hg-203
+2 transitions have been read (2 B-).
+
+
+####################################

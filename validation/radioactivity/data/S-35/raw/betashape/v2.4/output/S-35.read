@@ -1,0 +1,33 @@
+Information read from the input file: .\S35\S-35.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 17   Daughter A: 35   Symbol: Cl
+Transition type: B-
+Estimated parent nuclide from identification record: Z 16, A 35
+
+Parent record has been found
+Parent Z: 16	Parent A: 35   Symbol: S
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 3/2+ | Treated as: 3/2+
+Parent half-life: 87.25 (15) D or 7.538E6 (13) S
+Parent Q-value: 167.33 (3) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 3/2+ | Treated as: 3/2+
+Level half-life: STABLE
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 167.33 (3) keV
+Intensity of the beta - branch: 100 %
+Transition order: allowed
+Log ft of the beta - transition: 5.01
+Average energy of beta - spectrum: 48.79 (1) keV
+
+####################################

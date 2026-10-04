@@ -1,0 +1,16 @@
+ 13C     13N EC DECAY (9.9589 M)                                                
+ 13C  C  References:1935Ru01, 1939Wa09, 1939Ly15, 1941To01, 1948Co24, 1950Ho01, 
+ 13C 2C  1953Ch34, 1954Gr66, 1955Wi43, 1957Da08, 1957No17, 1957De22, 1958Da09,  
+ 13C 3C  1958Ar15, 1960Ki02, 1960Ja12, 1961Ra06, 1963Le22, 1965Bo42, 1965Eb01,  
+ 13C 4C  1968Ri15, 1973SiYS, 1977Az01, 1977Ba48, 1980An40, 1989KaYR, 1996Sc06,  
+ 13C 5C  2008DuZX, 2019Mo35, 2021Wa16, 2022Lo14, 2023Se01, 2023Mo21, 2024Ke04   
+ 13C  DE LOGFT,CK,CL,CM,CN$FROM BetaShape v2.4 (Jun-2024) 2019MO35.             
+ 13C  DE EAV,LOGFT$FROM BetaShape v2.4 (Jun-2024) 2023MO21.                     
+ 13N   P 0.0         1/2-              9.9589 M  37             2220.47   27    
+ 13C   N 1.0         1.0       1         1.0                                    
+ 13C   L 0           1/2-               STABLE                                  
+ 13C   E             99.803   50.197    53.67176 44             100             
+ 13C 2 E EAV=492.21 12$CK=0.00182 5$CL=1.466E-4 42                              
+ 13C 2 E C1=0.001 24 (1958DA09)                                                 
+ 13C  DE $Cexp(W) = 1+C{-1}W                                                    
+                                                                                

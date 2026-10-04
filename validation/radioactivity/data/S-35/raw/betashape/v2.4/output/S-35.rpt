@@ -1,0 +1,36 @@
+Input file:  .\S35\S-35.txt
+Output file: .\S35\S-35.new
+
+Input file: 18 lines
+Output file: 19 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 35S   P 0.0         3/2+              87.25 D   15             167.33    3     - PARENT
+ 35CL  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 35CL  L 0           3/2+               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 48.279 (10) keV   |   log ft 5.0212 (8)
+
+*    log ft
+ 35CL  B 167.33    3 100                 5.01                                   - OLD CARD
+ 35CL  B 167.33    3 100                 5.0212   8                             - NEW CARD
+
+*    Mean energy
+ 35CLS B EAV=48.79 1                                                            - OLD CARD
+ 35CLS B EAV=48.279 10                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 1
+-------- Added lines: 1
+
+

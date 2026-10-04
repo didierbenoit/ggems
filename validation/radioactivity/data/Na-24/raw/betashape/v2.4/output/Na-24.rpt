@@ -1,0 +1,98 @@
+Input file:  .\Na24\Na-24.txt
+Output file: .\Na24\Na-24.new
+
+Input file: 57 lines
+Output file: 60 lines
+Added new lines: 3
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 24NA  P 0.0         4+                14.958 H  2              5515.61   4     - PARENT
+ 24MG  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 24MG  L 1368.672  5 2+                1.33 PS   6                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 1875.087 (19) keV   |   log ft 14.35 (29)
+
+*    log ft
+ 24MG  B 4146.94   4 0.003    2          12.7                                2  - OLD CARD
+ 24MG  B 4146.94   4 0.003    2          14.35   29                             - NEW CARD
+
+*    Mean energy
+ 24MGS B EAV=1866.70 2                                                          - OLD CARD
+ 24MGS B EAV=1875.087 19                                                        - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 24NA  P 0.0         4+                14.958 H  2              5515.61   4     - PARENT
+ 24MG  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 24MG  L 4122.889  124+                22 FS     2                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 553.768 (19) keV   |   log ft 6.12401 (8)
+
+From measured spectrum
+Emean 552.788 (19) keV   |   [For information] log ft 6.11053 (8)
+
+*    log ft
+ 24MG  B 1392.72   4 99.930   3          6.12                                   - OLD CARD
+ 24MG  B 1392.72   4 99.930   3          6.12401  8                             - NEW CARD
+
+*    Mean energy
+ 24MGS B EAV=555.05 2                                                           - OLD CARD
+ 24MGS B EAV=552.788 19                                                         - NEW CARD
+ 24MG2 B C1=-0.0110 21 (1976GE06)                                               - ADDITIONAL NEW CARD
+ 24MG DB $Cexp(W) = 1+C{-1}W                                                    - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+ 24NA  P 0.0         4+                14.958 H  2              5515.61   4     - PARENT
+ 24MG  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 24MG  L 4238.24   3 2+                41 FS     4                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 530.232 (22) keV   |   log ft 11.3 (GE)
+
+*    log ft
+ 24MG  B 1277.37   5 0.001    1          12.3                                2  - OLD CARD
+ 24MG  B 1277.37   5 0.001    1          11.3    GE                             - NEW CARD
+
+*    Mean energy
+ 24MGS B EAV=503                                                                - OLD CARD
+ 24MGS B EAV=530.232 22                                                         - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+ 24NA  P 0.0         4+                14.958 H  2              5515.61   4     - PARENT
+ 24MG  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 24MG  L 5235.12   4 3+                61 FS     7                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 89.606 (22) keV   |   log ft 6.696 (20)
+
+*    log ft
+ 24MG  B 280.49    6 0.066    3          6.69                                   - OLD CARD
+ 24MG  B 280.49    6 0.066    3          6.696   20                             - NEW CARD
+
+*    Mean energy
+ 24MGS B EAV=90.00 2                                                            - OLD CARD
+ 24MGS B EAV=89.606 22                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 4
+-------- Added lines: 3
+
+

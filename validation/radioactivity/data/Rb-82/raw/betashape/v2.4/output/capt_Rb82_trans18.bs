@@ -1,0 +1,79 @@
+--------------------------------------------------------------------------------------
+
+BetaShape
+Version: 2.4 (06/2024)
+Author: X. Mougeot (xavier.mougeot@cea.fr)
+CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+Please cite: [2019MO35] X. Mougeot, Applied Radiation and Isotopes 154, 108884 (2019)
+
+--------------------------------------------------------------------------------------
+
+Parent nucleus: 37-Rb-82 [1+] g.s.  -->  Daughter nucleus: 36-Kr-82 [0+] 3716.83 (15) keV
+This transition from the electron capture decay of Rb-82 is calculated as allowed.
+
+Transition energy: 686.2 (30) keV
+
+
+----------------------------------------
+Ratios of relative capture probabilities
+
+PL1/PK =  0.11576 (22)
+PL2/PK =  0.001297 (13)
+PM1/PK =  0.02243 (18)
+PM2/PK =  2.578E-4 (8)
+PN1/PK =  0.003213 (38)
+PN2/PK =  2.584E-5 (16)
+
+L/K =  0.11705 (21)
+M/K =  0.02269 (18)
+N/K =  0.003239 (38)
+
+
+------------------------------
+Relative capture probabilities
+
+PK  =  0.87491 (33)
+PL1 =  0.10128 (16)
+PL2 =  0.001135 (11)
+PM1 =  0.01962 (15)
+PM2 =  2.256E-4 (8)
+PN1 =  0.002811 (32)
+PN2 =  2.261E-5 (13)
+
+K =  0.87491 (33)
+L =  0.10241 (15)
+M =  0.01985 (15)
+N =  0.002834 (32)
+
+
+------------------------------
+Capture branch from input data
+
+Iec =   0.008 (3) %
+
+
+---------------------
+Capture probabilities
+
+PK  =  0.87491 (33)
+PL1  =  0.10128 (16)
+PL2  =  0.001135 (11)
+PM1  =  0.01962 (15)
+PM2  =  2.256E-4 (8)
+PN1  =  0.002811 (32)
+PN2  =  2.261E-5 (13)
+
+K =  0.87491 (33)
+L =  0.10241 (15)
+M =  0.01985 (15)
+N =  0.002834 (32)
+
+
+------------------------------------------------------------
+Input log ft value (ec): 5.8
+
+Log ft value (ec)    =  5.53 (16)
+with log f           =  -0.445 (7)
+or f-value           =  0.359 (5)
+and log partial T1/2 =  5.98 (16)
+

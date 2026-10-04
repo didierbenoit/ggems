@@ -1,0 +1,74 @@
+Input file:  .\Xe133\Xe-133.txt
+Output file: .\Xe133\Xe-133.new
+
+Input file: 64 lines
+Output file: 65 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+133XE  P 0.0         3/2+              5.2474 D  5              427.4     24    - PARENT
+133CS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+133CS  L 80.9979   115/2+              6.31 NS   6                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 99.9 (8) keV   |   log ft 5.654 (10)
+
+*    log ft
+133CS  B 346.4     2499.12    8          5.62                                   - OLD CARD
+133CS  B 346.4     2499.12    8          5.654   10                             - NEW CARD
+
+*    Mean energy
+133CSS B EAV=100.6 8                                                            - OLD CARD
+133CSS B EAV=99.9 8                                                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+133XE  P 0.0         3/2+              5.2474 D  5              427.4     24    - PARENT
+133CS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+133CS  L 160.6120  165/2+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 74.5 (7) keV   |   log ft 7.343 (42)
+
+*    log ft
+133CS  B 266.8     240.87     8          7.31                                   - OLD CARD
+133CS  B 266.8     240.87     8          7.343   42                             - NEW CARD
+
+*    Mean energy
+133CSS B EAV=75.2 8                                                             - OLD CARD
+133CSS B EAV=74.5 7                                                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+133XE  P 0.0         3/2+              5.2474 D  5              427.4     24    - PARENT
+133CS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+133CS  L 383.8485  123/2+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 10.9 (6) keV   |   log ft 6.89 (9)
+
+*    log ft
+133CS  B 43.6      240.0092   9          6.84                                   - OLD CARD
+133CS  B 43.6      240.0092   9          6.89     9                             - NEW CARD
+
+*    Mean energy
+133CSS B EAV=11.1 7                                                             - OLD CARD
+133CSS B EAV=10.9 6                                                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 3
+-------- Added lines: 1
+
+

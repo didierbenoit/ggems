@@ -1,0 +1,1 @@
+.\betashape.exe .\Tl201\Tl-201.txt -csv

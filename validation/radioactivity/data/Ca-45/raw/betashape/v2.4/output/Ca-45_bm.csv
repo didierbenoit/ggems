@@ -1,0 +1,12 @@
+# BetaShape
+# Version: 2.4 (06/2024)
+# Author: X. Mougeot (xavier.mougeot@cea.fr)
+# CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+# Please cite: [2023MO21] X. Mougeot, Applied Radiation and Isotopes 201, 111018 (2023)
+# 
+# Input file: .\Ca45\Ca-45.txt
+# Neutrino information: no
+# 
+# parent symbol, Z, A, Jpi, level energy, unc, daughter symbol, Z, A, Jpi, level energy, unc, Q, unc, half-life, unc, unit, transition nature, transition nature used, branching %, unc, log ft, unc, f-value, unc, transition energy, unc, mean energy calc, unc, mean energy exp, unc
+Ca, 20, 45, 7/2-, 0, 0, Sc, 21, 45, 7/2-, 0, 0, 258, 0.7, 1.4052E7, 10000, s, A, A, 99.998, 0.0007, 6.0021, 0.004, 0.0715, 0.0006, 258, 0.7, 77.01, 0.24, , 
+Ca, 20, 45, 7/2-, 0, 0, Sc, 21, 45, 3/2+, 12.4, 0.05, 258, 0.7, 1.4052E7, 10000, s, 1U, 1U, 0.002, 0.0007, 10.27, 0.15, 0.02651, 0.00036, 245.6, 0.7, 92.06, 0.27, , 

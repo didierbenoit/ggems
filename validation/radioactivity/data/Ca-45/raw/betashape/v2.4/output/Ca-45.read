@@ -1,0 +1,46 @@
+Information read from the input file: .\Ca45\Ca-45.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 21   Daughter A: 45   Symbol: Sc
+Transition type: B-
+Estimated parent nuclide from identification record: Z 20, A 45
+
+Parent record has been found
+Parent Z: 20	Parent A: 45   Symbol: Ca
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 7/2- | Treated as: 7/2-
+Parent half-life: 162.64 (11) D or 1.4052E7 (10) S
+Parent Q-value: 258.0 (7) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 7/2- | Treated as: 7/2-
+Level half-life: STABLE
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 258.0 (7) keV
+Intensity of the beta - branch: 99.9980 (7) %
+Transition order: allowed
+Log ft of the beta - transition: 6
+Average energy of beta - spectrum: 76.8 (7) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 12.40 (5) keV
+Level spin and parity | Read: 3/2+ | Treated as: 3/2+
+Level half-life: 318 (7) MS or 0.318 (7) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 245.6 (7) keV
+Intensity of the beta - branch: 0.0020 (7) %
+Transition order: 1st forbidden unique
+Log ft of the beta - transition: 10.3
+Average energy of beta - spectrum: 91.7 (7) keV
+
+####################################

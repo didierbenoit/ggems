@@ -1,0 +1,1 @@
+.\betashape.exe .\Br76\Br-76.txt fixint=1 -csv

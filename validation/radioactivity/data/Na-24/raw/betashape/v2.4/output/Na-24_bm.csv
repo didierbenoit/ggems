@@ -1,0 +1,14 @@
+# BetaShape
+# Version: 2.4 (06/2024)
+# Author: X. Mougeot (xavier.mougeot@cea.fr)
+# CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+# Please cite: [2023MO21] X. Mougeot, Applied Radiation and Isotopes 201, 111018 (2023)
+# 
+# Input file: .\Na24\Na-24.txt
+# Neutrino information: no
+# 
+# parent symbol, Z, A, Jpi, level energy, unc, daughter symbol, Z, A, Jpi, level energy, unc, Q, unc, half-life, unc, unit, transition nature, transition nature used, branching %, unc, log ft, unc, f-value, unc, transition energy, unc, mean energy calc, unc, mean energy exp, unc
+Na, 11, 24, 4+, 0, 0, Mg, 12, 24, 2+, 1368.672, 0.005, 5515.61, 0.04, 5.3849E4, 7, s, 2N, 1U, 0.003, 0.002, 14.35, 0.29, 124683, 8, 4146.938, 0.04, 1875.087, 0.019, , 
+Na, 11, 24, 4+, 0, 0, Mg, 12, 24, 4+, 4122.889, 0.012, 5515.61, 0.04, 5.3849E4, 7, s, A, A, 99.93, 0.003, 6.12401, 8e-05, 24.6902, 0.003, 1392.721, 0.042, 553.768, 0.019, 552.788, 0.019
+Na, 11, 24, 4+, 0, 0, Mg, 12, 24, 2+, 4238.24, 0.03, 5515.61, 0.04, 5.3849E4, 7, s, 2N, 1U, 0.001, 0.001, 11.3, GE, 100.109, 0.022, 1277.37, 0.05, 530.232, 0.022, , 
+Na, 11, 24, 4+, 0, 0, Mg, 12, 24, 3+, 5235.12, 0.04, 5515.61, 0.04, 5.3849E4, 7, s, A, A, 0.066, 0.003, 6.696, 0.02, 0.060825, 4.5e-05, 280.49, 0.06, 89.606, 0.022, , 

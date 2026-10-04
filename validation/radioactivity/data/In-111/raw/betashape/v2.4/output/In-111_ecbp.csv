@@ -1,0 +1,12 @@
+# BetaShape
+# Version: 2.4 (06/2024)
+# Author: X. Mougeot (xavier.mougeot@cea.fr)
+# CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+# Please cite: [2019MO35] X. Mougeot, Applied Radiation and Isotopes 154, 108884 (2019)
+# 
+# Input file: .\In111\In-111.txt
+# Neutrino information: no
+# 
+# parent symbol, Z, A, Jpi, level energy, unc, daughter symbol, Z, A, Jpi, level energy, unc, Q, unc, half-life, unc, unit, transition nature, transition nature used, branching %, unc, log ft, unc, ftot-value, unc, ec branching %, unc, log ft ec, unc, fec-value, unc, ec transition energy, unc, b+ branching %, unc, log ft b+, unc, fb+-value, unc, b+ transition energy, unc, mean energy calc, unc, mean energy exp, unc, EC/b+, value, unc, nb shells, [shell name, relative proba, unc, proba, unc, proba/b+, unc] * nb shells, nb subshells, [subshell name, relative proba, unc, proba, unc, proba/b+, unc] * nb subshells
+In, 49, 111, 9/2+, 0, 0, Cd, 48, 111, 11/2-, 396.15, 0, 861.8, 4.6, 2.42343E5, 35, s, 1N, A, 0.005, 0.005, 8.95, GE, 0.498, , 0.005, 0.005, 8.95, GE, 0.498, , 465.6, , , , , , , , , , , , , , EC/b+, , , 5, K, 0.85324, 0.00049, 0.85324, 0.00049, , , L, 0.1157, 0.00027, 0.1157, 0.00027, , , M, 0.02469, 0.00014, 0.02469, 0.00014, , , N, 0.00552, 5e-05, 0.00552, 5e-05, , , O, 0.000862, 2.3e-05, 0.000862, 2.3e-05, , , 8, PK, 0.85324, 0.00049, 0.85324, 0.00049, , , PL1, 0.11323, 0.00019, 0.11323, 0.00019, , , PL2, 0.00247, 8e-05, 0.00247, 8e-05, , , PM1, 0.02414, 0.00012, 0.02414, 0.00012, , , PM2, 0.000547, 2.5e-05, 0.000547, 2.5e-05, , , PN1, 0.005404, 4.7e-05, 0.005404, 4.7e-05, , , PN2, 0.000113, 6e-06, 0.000113, 6e-06, , , PO1, 0.000862, 2.3e-05, 0.000862, 2.3e-05, , 
+In, 49, 111, 9/2+, 0, 0, Cd, 48, 111, 7/2+, 416.6, 0, 861.8, 4.6, 2.42343E5, 35, s, A, A, 99.995, 0.005, 5.04, 0.022, 0.453, , 99.995, 0.005, 5.04, 0.022, 0.453, , 445.2, , , , , , , , , , , , , , EC/b+, , , 5, K, 0.8526, 0.0005, 0.8526, 0.0005, , , L, 0.11616, 0.00028, 0.11616, 0.00028, , , M, 0.0248, 0.00014, 0.0248, 0.00014, , , N, 0.00554, 5e-05, 0.00554, 5e-05, , , O, 0.000866, 2.4e-05, 0.000866, 2.4e-05, , , 8, PK, 0.8526, 0.0005, 0.8526, 0.0005, , , PL1, 0.11368, 0.0002, 0.11368, 0.0002, , , PL2, 0.00248, 8e-05, 0.00248, 8e-05, , , PM1, 0.02425, 0.00012, 0.02425, 0.00012, , , PM2, 0.00055, 2.5e-05, 0.00055, 2.5e-05, , , PN1, 0.005429, 4.8e-05, 0.005429, 4.8e-05, , , PN2, 0.000114, 6e-06, 0.000114, 6e-06, , , PO1, 0.000866, 2.4e-05, 0.000866, 2.4e-05, , 

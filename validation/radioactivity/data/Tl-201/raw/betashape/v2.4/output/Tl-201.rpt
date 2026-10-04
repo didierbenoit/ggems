@@ -1,0 +1,117 @@
+Input file:  .\Tl201\Tl-201.txt
+Output file: .\Tl201\Tl-201.new
+
+Input file: 72 lines
+Output file: 73 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+201TL  P 0.0         1/2+              3.0421 D  17             483       15    - PARENT
+201HG  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+201HG  L 0           3/2-               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.7657 (26) | L =  0.1760 (18) | M =  0.0428 (6) | N =  0.01223 (18) | O =  0.00299 (5) | P =  2.64E-4 (7)
+log ft 6.46 (GE)
+
+*    log ft
+201HG  E                       21      216.5                                 1  - OLD CARD
+201HG  E                       21      216.5     GE             21        21    - NEW CARD
+
+*    Probabilities
+201HG2 E CK=0.7630   28$CL=0.1776   20$CM=0.0451    9$CN=0.0120    5            - OLD CARD
+201HG2 E CK=0.7657 26$CL=0.1760 18$CM+=0.0583 6                                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+201TL  P 0.0         1/2+              3.0421 D  17             483       15    - PARENT
+201HG  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+201HG  L 1.565       1/2-                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.7655 (26) | L =  0.1762 (18) | M =  0.0428 (6) | N =  0.01225 (18) | O =  0.00300 (5) | P =  2.64E-4 (7)
+log ft 6.82 (38)
+
+*    log ft
+201HG  E                       25      226.5                                    - OLD CARD
+201HG  E                       25      226.82    38             25        22    - NEW CARD
+
+*    Probabilities
+201HG2 E CK=0.7628   28$CL=0.1777   20$CM=0.0451    9$CN=0.0120    5            - OLD CARD
+201HG2 E CK=0.7655 26$CL=0.1762 18$CM+=0.0583 6                                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+201TL  P 0.0         1/2+              3.0421 D  17             483       15    - PARENT
+201HG  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+201HG  L 26.269      5/2-              630 PS                                   - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.672 (8) | L =  0.243 (6) | M =  0.0625 (18) | N =  0.0179 (5) | O =  0.00432 (14) | P =  3.53E-4 (12)
+log ft 8.58
+
+*    log ft
+201HG  E                       0.23      8.5                                 1U - OLD CARD
+201HG  E                       0.23      8.6                    0.23         1U - NEW CARD
+
+*    Probabilities
+201HG2 E CK=0.7591   31$CL=0.1803   22$CM=0.0459   10$CN=0.0123    5            - OLD CARD
+201HG2 E CK=0.672 8$CL=0.243 6$CM+=0.0851 19                                    - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+201TL  P 0.0         1/2+              3.0421 D  17             483       15    - PARENT
+201HG  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+201HG  L 32.138      3/2-              0.2 NS                                   - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.761 (3) | L =  0.1794 (21) | M =  0.0437 (6) | N =  0.01252 (20) | O =  0.00306 (6) | P =  2.70E-4 (8)
+log ft 7.034 (46)
+
+*    log ft
+201HG  E                       13.0     56.9                                 1  - OLD CARD
+201HG  E                       13.0     57.034   46             13.0       5    - NEW CARD
+
+*    Probabilities
+201HG2 E CK=0.7582   31$CL=0.1810   22$CM=0.0461   10$CN=0.0123    5            - OLD CARD
+201HG2 E CK=0.761 3$CL=0.1794 21$CM+=0.0596 6                                   - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+201TL  P 0.0         1/2+              3.0421 D  17             483       15    - PARENT
+201HG  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+201HG  L 167.45      1/2-              2 NS                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.727 (7) | L =  0.2037 (48) | M =  0.0508 (15) | N =  0.01461 (45) | O =  0.00358 (12) | P =  3.15E-4 (14)
+log ft 6.16 (6)
+
+*    log ft
+201HG  E                       40.9     96.1                                    - OLD CARD
+201HG  E                       40.9     96.16     6             40.9       9    - NEW CARD
+
+*    Probabilities
+201HG2 E CK=0.724     6$CL=0.2056   46$CM=0.0536   15$CN=0.0144    7            - OLD CARD
+201HG2 E CK=0.727 7$CL=0.2037 48$CM+=0.0693 16                                  - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 5
+-------- Added lines: 1
+
+

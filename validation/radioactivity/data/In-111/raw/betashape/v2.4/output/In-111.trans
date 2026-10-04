@@ -1,0 +1,32 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 49-In-111 [9/2+] g.s.  -->  Daughter nucleus: 48-Cd-111 [11/2-] 396.15 keV
+Half-life of the parent nuclide: 2.42343E5 (35) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the decay: 1
+Normalization of this transition: 0.005 (5) %
+Log ft of the ec transition: 9
+
+------------------------------------
+Parent nucleus: 49-In-111 [9/2+] g.s.  -->  Daughter nucleus: 48-Cd-111 [7/2+] 416.6 keV
+Half-life of the parent nuclide: 2.42343E5 (35) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 99.995 (5) %
+Log ft of the ec transition: 5
+
+
+####################################
+
+Summary
+
+1 nucleus and 2 transitions have been read.
+
+Parent nucleus: 49-In-111
+2 transitions have been read (2 EC).
+
+
+####################################

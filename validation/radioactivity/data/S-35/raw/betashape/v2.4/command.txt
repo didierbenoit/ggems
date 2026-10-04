@@ -1,0 +1,1 @@
+.\betashape.exe .\S35\S-35.txt -csv
