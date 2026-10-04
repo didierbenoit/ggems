@@ -1,0 +1,301 @@
+{
+  "name": "Na-24",
+  "reference_id": "LNHB-Na24-LARA-PenNuc-BetaShape-2.4",
+  "half_life": {
+    "value": "53848.800"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_minus_280_49_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00066"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_280_49_keV.csv"
+      }
+    },
+    {
+      "index": 1,
+      "id": "beta_minus_1277_37_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00001"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_1277_37_keV.csv"
+      }
+    },
+    {
+      "index": 2,
+      "id": "beta_minus_1392_721_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.99930"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_1392_721_keV.csv"
+      }
+    },
+    {
+      "index": 3,
+      "id": "beta_minus_4146_938_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00003"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_4146_938_keV.csv"
+      }
+    },
+    {
+      "index": 4,
+      "id": "nuclear_gamma",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "1.9992394"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "996.86",
+            "weight": "0.0000145"
+          },
+          {
+            "energy_keV": "1368.630",
+            "weight": "0.999934"
+          },
+          {
+            "energy_keV": "2754.049",
+            "weight": "0.99862"
+          },
+          {
+            "energy_keV": "2869.38",
+            "weight": "0.0000025"
+          },
+          {
+            "energy_keV": "3866.12",
+            "weight": "0.00066"
+          },
+          {
+            "energy_keV": "4237.84",
+            "weight": "0.0000084"
+          }
+        ]
+      }
+    },
+    {
+      "index": 5,
+      "id": "atomic_xray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "3.438E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1.25361",
+            "weight": "3.38E-7"
+          },
+          {
+            "energy_keV": "1.3022",
+            "weight": "5.8E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 6,
+      "id": "conversion_996_86_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "2.965087E-10"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "995.58",
+            "weight": "2.78E-10"
+          },
+          {
+            "energy_keV": "996.79",
+            "weight": "1.78E-11"
+          },
+          {
+            "energy_keV": "996.83",
+            "weight": "4.87E-14"
+          },
+          {
+            "energy_keV": "996.88",
+            "weight": "6.6E-13"
+          }
+        ]
+      }
+    },
+    {
+      "index": 7,
+      "id": "conversion_1368_63_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000009909336"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1367.367",
+            "weight": "0.00000929"
+          },
+          {
+            "energy_keV": "1368.583",
+            "weight": "5.96E-7"
+          },
+          {
+            "energy_keV": "1368.621",
+            "weight": "1.236E-9"
+          },
+          {
+            "energy_keV": "1368.67",
+            "weight": "2.21E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 8,
+      "id": "conversion_2754_049_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000027050442"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "2752.912",
+            "weight": "0.000002536"
+          },
+          {
+            "energy_keV": "2754.128",
+            "weight": "1.628E-7"
+          },
+          {
+            "energy_keV": "2754.166",
+            "weight": "2.042E-10"
+          },
+          {
+            "energy_keV": "2754.215",
+            "weight": "6.04E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 9,
+      "id": "conversion_2869_38_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "6.396668E-12"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "2868.265",
+            "weight": "6E-12"
+          },
+          {
+            "energy_keV": "2869.481",
+            "weight": "3.82E-13"
+          },
+          {
+            "energy_keV": "2869.519",
+            "weight": "4.68E-16"
+          },
+          {
+            "energy_keV": "2869.568",
+            "weight": "1.42E-14"
+          }
+        ]
+      }
+    },
+    {
+      "index": 10,
+      "id": "conversion_3866_12_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "1.0676485E-9"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "3865.145",
+            "weight": "1.001E-9"
+          },
+          {
+            "energy_keV": "3866.361",
+            "weight": "6.42E-11"
+          },
+          {
+            "energy_keV": "3866.399",
+            "weight": "6.85E-14"
+          },
+          {
+            "energy_keV": "3866.448",
+            "weight": "2.38E-12"
+          }
+        ]
+      }
+    },
+    {
+      "index": 11,
+      "id": "conversion_4237_84_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "1.1947241E-11"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "4236.935",
+            "weight": "1.12E-11"
+          },
+          {
+            "energy_keV": "4238.151",
+            "weight": "7.2E-13"
+          },
+          {
+            "energy_keV": "4238.189",
+            "weight": "7.41E-16"
+          },
+          {
+            "energy_keV": "4238.238",
+            "weight": "2.65E-14"
+          }
+        ]
+      }
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "annihilation_photons",
+      "particle": "Gamma",
+      "energy_keV": "511"
+    }
+  ],
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSNa24.cc",
+    "generator_prefix": " * BetaShape ",
+    "selected_version": "2.4"
+  }
+}

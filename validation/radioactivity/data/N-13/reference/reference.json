@@ -1,0 +1,33 @@
+{
+  "name": "N-13",
+  "reference_id": "LNHB-N13-LARA-PenNuc-BetaShape-2.4",
+  "half_life": {
+    "value": "597.5340"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_plus_1198_47_keV",
+      "particle": "Positron",
+      "yield_per_decay": {
+        "value": "0.99803"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_plus_1198_47_keV.csv"
+      }
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "annihilation_photons",
+      "particle": "Gamma",
+      "energy_keV": "511"
+    }
+  ],
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSN13.cc",
+    "generator_prefix": " * BetaShape ",
+    "selected_version": "2.4"
+  }
+}

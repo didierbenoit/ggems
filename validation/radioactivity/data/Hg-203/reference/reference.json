@@ -1,0 +1,120 @@
+{
+  "name": "Hg-203",
+  "reference_id": "LNHB-Hg203-LARA-PenNuc-BetaShape-2.4",
+  "half_life": {
+    "value": "4025721.600"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_minus_212_6_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.9999"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_212_6_keV.csv"
+      }
+    },
+    {
+      "index": 1,
+      "id": "beta_minus_491_8_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0001"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_491_8_keV.csv"
+      }
+    },
+    {
+      "index": 2,
+      "id": "nuclear_gamma",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.8148"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "279.1952",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "id": "atomic_xray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.18299"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "11.8455",
+            "weight": "0.0543"
+          },
+          {
+            "energy_keV": "70.8325",
+            "weight": "0.0375"
+          },
+          {
+            "energy_keV": "72.8725",
+            "weight": "0.0633"
+          },
+          {
+            "energy_keV": "82.6033",
+            "weight": "0.0215"
+          },
+          {
+            "energy_keV": "85.1387",
+            "weight": "0.00639"
+          }
+        ]
+      }
+    },
+    {
+      "index": 4,
+      "id": "conversion_279_1952_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.185047"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "193.6665",
+            "weight": "0.13363"
+          },
+          {
+            "energy_keV": "263.8502",
+            "weight": "0.01744"
+          },
+          {
+            "energy_keV": "264.499",
+            "weight": "0.01434"
+          },
+          {
+            "energy_keV": "266.5394",
+            "weight": "0.007007"
+          },
+          {
+            "energy_keV": "276.2067",
+            "weight": "0.01263"
+          }
+        ]
+      }
+    }
+  ],
+  "excluded_source_emissions": [],
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSHg203.cc",
+    "generator_prefix": " * BetaShape ",
+    "selected_version": "2.4"
+  }
+}

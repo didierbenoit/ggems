@@ -1,0 +1,54 @@
+{
+  "name": "Ca-45",
+  "reference_id": "LNHB-Ca45-LARA-PenNuc-BetaShape-2.4",
+  "half_life": {
+    "value": "14052096.00"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_minus_245_6_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000020"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_245_6_keV.csv"
+      }
+    },
+    {
+      "index": 1,
+      "id": "beta_minus_258_0_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.999980"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_258_0_keV.csv"
+      }
+    },
+    {
+      "index": 2,
+      "id": "conversion_12_40_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000017"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "7.90",
+          "unit": "keV"
+        }
+      }
+    }
+  ],
+  "excluded_source_emissions": [],
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSCa45.cc",
+    "generator_prefix": " * BetaShape ",
+    "selected_version": "2.4"
+  }
+}

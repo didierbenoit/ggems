@@ -1,0 +1,27 @@
+{
+  "name": "S-35",
+  "reference_id": "LNHB-S35-LARA-PenNuc-BetaShape-2.4",
+  "half_life": {
+    "value": "7538400.00"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_minus_167_33_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "1"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_167_33_keV.csv"
+      }
+    }
+  ],
+  "excluded_source_emissions": [],
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSS35.cc",
+    "generator_prefix": " * BetaShape ",
+    "selected_version": "2.4"
+  }
+}
