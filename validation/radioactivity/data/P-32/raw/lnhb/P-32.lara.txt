@@ -1,0 +1,12 @@
+Nuclide ; P-32 
+Element ; Phosphorus
+Z ; 15
+Daughter(s) ; (B-) ; S-32 ; 100
+Q- ; 1710.661
+Half-life (d) ; 14.273 ; 0.007
+Half-life (s) ; 1.2332E6 ; 0.0006E6
+Decay constant (1/s) ; 562.08E-9 ; 0.28E-9
+Specific activity (Bq/g) ; 10.578E15 ; 0.005E15
+Reference ; CEA/LNE-LNHB - 2026
+No emissions
+==================================================================================================================

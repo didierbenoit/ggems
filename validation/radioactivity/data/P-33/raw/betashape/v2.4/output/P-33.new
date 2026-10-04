@@ -1,0 +1,28 @@
+ 33S     33P B- DECAY (25.38 D)                                                 
+ 33S  C  References:1951Sh92, 1952Je12, 1952We29, 1954Ni06, 1954El25, 1958Ru66, 
+ 33S 2C  1960Fi05, 1967En05, 1968Re04, 1972La14, 1984Po09, 1996Sc06, 2004BeZR,  
+ 33S 3C  2021Wa16, 2023Mo21                                                     
+ 33S  T  Auger electrons and X ray energies and emission intensities:           
+ 33S  T       {U Energy (keV)}   {U Intensity}  {U Line}                        
+ 33S  T                                                                         
+ 33S  T        2.30667                           XKA2                           
+ 33S  T        2.30787                           XKA1                           
+ 33S  T                                                                         
+ 33S  T        2.4641         |]                 XKB1                           
+ 33S  T                                                                         
+ 33S  T                                                                         
+ 33S  T        0.1513                            XLL                            
+ 33S  T        0.1531                            XLC                            
+ 33S  T        0.225-0.2272                      XLB                            
+ 33S  T                                                                         
+ 33S  T        1.985-2.119    |]                 KLL AUGER                      
+ 33S  T        2.227-2.3      |]                 KLX AUGER                      
+ 33S  T        2.44-2.456     |]                 KXY AUGER                      
+ 33S  T        0.1326-0.2132                     L AUGER                        
+ 33S  DB EAV,LOGFT$FROM BetaShape v2.4 (Jun-2024) 2023MO21.                     
+ 33P   P 0.0         1/2+              25.38 D   5              248.5     11    
+ 33S   N 1.0         1.0       1         1.0                                    
+ 33S   L 0           3/2+              0                                        
+ 33S   B 248.5     11100                 5.033    7                             
+ 33S S B EAV=75.91 38                                                           
+                                                                                

@@ -1,0 +1,215 @@
+{
+  "name": "P-32",
+  "reference_id": "LNHB-2026-P32-BetaShape-2.4-Wiesner-1973",
+  "selected_nuclear_authority": {
+    "evaluation": "CEA/LNE-LNHB, M.-C. Lepy, March 2026",
+    "literature_cutoff": "February 2026",
+    "tables_dates": "2026-02-19 / 2026-03-27",
+    "pennuc_date": "2026-03-27"
+  },
+  "half_life": {
+    "value": "1233187.200",
+    "standard_uncertainty": "604.800",
+    "unit": "s",
+    "source_value": "14.273",
+    "source_uncertainty": "0.007",
+    "source_unit": "d",
+    "source": "../raw/lnhb/P-32_com.pdf, section 1.1; ../raw/lnhb/P-32_tables.pdf, section 2; ../raw/lnhb/P-32.lara.txt, days field",
+    "transformation": "Multiply the evaluated days and their standard uncertainty by exact 86400 s/d. Preserve the more precise evaluated central value; do not substitute the rounded LARA/BetaShape seconds.",
+    "rounded_lara_seconds": "1233200",
+    "rounded_lara_standard_uncertainty_seconds": "600"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_minus_1710_661_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "1",
+        "unit": "primary/parent decay",
+        "source": "../raw/lnhb/P-32.PenNuc.txt, BEM record; ../raw/lnhb/P-32_tables.pdf, sections 1-2"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "reference_representation": "piecewise_linear_density",
+        "spectrum_file": "beta_minus_1710_661_keV.csv",
+        "energy_unit": "keV",
+        "generator": "BetaShape 2.4 (06/2024)",
+        "command": ".\\betashape.exe .\\P32\\P-32.txt -csv",
+        "source": "../raw/betashape/v2.4/output/beta-_P32_trans0.bs",
+        "selected_density_column": "dN/dE exp.",
+        "raw_grid_points": 344,
+        "raw_piecewise_linear_area": "0.999997246410269405",
+        "conditional_piecewise_linear_mean_keV": "689.4864621263404587700630512399556483264877084151849508813766378815369",
+        "calculated_header_mean_keV": "693.306",
+        "calculated_piecewise_linear_mean_keV": "693.3047779571110546222656144312414519634507730388937030050061927213242",
+        "transformation": "Energy, selected density and adjacent uncertainty tokens copied unchanged over the full support. Conditional comparisons divide the piecewise-linear density by its independently integrated area; physical yield remains separate. No spectrum rescaling or regeneration.",
+        "endpoint": {
+          "value": "1710.661",
+          "standard_uncertainty": "0.040",
+          "unit": "keV",
+          "source": "../raw/lnhb/P-32.PenNuc.txt, Q and BEM records; ../raw/lnhb/P-32_tables.pdf, sections 1-2"
+        },
+        "experimental_shape_factor_available": true,
+        "experimental_shape_factor": "1 - 0.019*W",
+        "coefficient_card": "C1=-0.019 3 (1973WI**)",
+        "coefficient_standard_uncertainty": "0.003",
+        "measurement_range_keV": [
+          200,
+          1635
+        ],
+        "measurement_source": "W. Wiesner, D. Flothmann and H. J. Gils, Nucl. Instr. Meth. 112, 449 (1973), database transition 16",
+        "experimental_header_mean_keV": "689.484",
+        "header_mean_standard_uncertainty_keV": "0.018"
+      }
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "no_separate_source_emissions",
+      "source": "../raw/lnhb/P-32.lara.txt, No emissions; ../raw/lnhb/P-32_tables.pdf, sections 1-4",
+      "reason": "One 100% allowed beta-minus branch to stable S-32 ground state. Atomic reference energies and relative intensities are not per-parent source yields. No gamma, X-ray, Auger, antineutrino, recoil, daughter-chain or placeholder group is selected."
+    }
+  ],
+  "cross_checks": {
+    "ENSDF": {
+      "source": "../raw/ensdf/beta_decay_14.266_d.pdf",
+      "evaluation": "Jun Chen, NDS 201, 1 (2025), cutoff 2024-10-31",
+      "half_life_days": "14.266",
+      "half_life_standard_uncertainty_days": "0.004",
+      "parent_Q_keV": "1710.66",
+      "parent_Q_standard_uncertainty_keV": "0.04",
+      "beta_table_decay_energy_keV": "1710.7",
+      "beta_table_decay_energy_standard_uncertainty_keV": "1.4",
+      "mean_energy_keV": "694.587",
+      "mean_energy_standard_uncertainty_keV": "0.019",
+      "yield": "1",
+      "role": "Independent cross-check only; not averaged with the selected LNHB/BetaShape evidence."
+    },
+    "MIRD": {
+      "summary_file": "../raw/mird/P-32 Summary Spectrum.csv",
+      "mean_energy_keV": "694.777",
+      "yield": "1",
+      "role": "Independent cross-check only. Evaluation identity and half-life are not established by the retained CSVs; the DPK is not a Source emission law.",
+      "beta_spectrum": {
+        "rows": 117,
+        "support_MeV": [
+          "0.0",
+          "1.71066"
+        ],
+        "piecewise_linear_area": "0.9999819066",
+        "conditional_piecewise_linear_mean_keV": "695.9863572105058859005292859699161014133226451452810049606684886925666"
+      }
+    },
+    "BetaShape_total": {
+      "source": "../raw/betashape/v2.4/output/beta-_P32_tot.bs",
+      "points": 344,
+      "piecewise_linear_area": "0.999997246410269405",
+      "conditional_piecewise_linear_mean_keV": "689.486462126340458770063051239955648326487708415184950881371",
+      "role": "Cross-check only; selected reference is the transition output.",
+      "comparison": "All selected transition triples are identical to the total-spectrum triples."
+    }
+  },
+  "source_disagreements": [
+    "LARA and BetaShape print rounded seconds; exact conversion of evaluated days is selected.",
+    "LNHB adopts the theoretical 693.306(18) keV mean. The selected BetaShape experimental-shape header reports 689.484(18) keV; these are distinct laws and are not averaged.",
+    "Both BetaShape .trans files retain the general warning that information about this decay is not totally sure; no unrecorded correction is made."
+  ],
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSP32.cc",
+    "generator_prefix": " * BetaShape ",
+    "selected_version": "2.4"
+  },
+  "raw_inventory": [
+    {
+      "file": "../raw/betashape/v2.4/command.txt",
+      "sha256": "35366092b5a6aadfb64ab5347c3676247f8b337f6e51cca5874fda691cef541b",
+      "bytes": 35
+    },
+    {
+      "file": "../raw/betashape/v2.4/input/P-32.txt",
+      "sha256": "217fdbad1e0430abf5e4d82e67fb4fdaf87983499dcce77176229f77fc92433c",
+      "bytes": 2788
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/beta-_P32_tot.bs",
+      "sha256": "816f6cfcda3e29936a3709d661e9fcf4ba77b6978fb4f0d1eebd294d7b4c3873",
+      "bytes": 15097
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/beta-_P32_trans0.bs",
+      "sha256": "d6fcd5572b3e0754b066f24203544cf99e6a5c6fd7a7414897a786f953ad326d",
+      "bytes": 27613
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/P-32.new",
+      "sha256": "2a83ce32da5c764d357ef15f5b06ec5dd614526bc737352ca971b795022b7c1a",
+      "bytes": 3034
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/P-32.read",
+      "sha256": "954b70c46c1cc9ee83e42d4a892d1e52079bf2197385aeade95b8b0b62571578",
+      "bytes": 1037
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/P-32.rpt",
+      "sha256": "d544e4fb6e1d4fe6ccdf29dc41a8a832d8da24f920844ce8a946e703319063a3",
+      "bytes": 1700
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/P-32.trans",
+      "sha256": "943dbbcdf48f47e8bbe1d69c9660454edb31548a6dbdb72637d703a5755fabdd",
+      "bytes": 801
+    },
+    {
+      "file": "../raw/betashape/v2.4/output/P-32_bm.csv",
+      "sha256": "69bf913f9f042f6a10e5aafa01787c423a0e2c72c0fb67c5b86caa922b11ad34",
+      "bytes": 781
+    },
+    {
+      "file": "../raw/ensdf/beta_decay_14.266_d.pdf",
+      "sha256": "1c1ee832abbe5b9c4295500818ace037a79a5318ec994841c9f544c5fbb58861",
+      "bytes": 39263
+    },
+    {
+      "file": "../raw/lnhb/P-32.lara.txt",
+      "sha256": "c9a9abfc99cee2c71b59050de86981e24261f936d07fe13c9202e0704b33beb6",
+      "bytes": 420
+    },
+    {
+      "file": "../raw/lnhb/P-32.PenNuc.txt",
+      "sha256": "bd6ef64d62dc67b4984312243b109a8966c7746e8f55b1a660f116718346912e",
+      "bytes": 317
+    },
+    {
+      "file": "../raw/lnhb/P-32.txt",
+      "sha256": "83e3cd764f9e669f9b057ef7f4f57db934cd0040972ea53b02242fa86f39aef6",
+      "bytes": 2704
+    },
+    {
+      "file": "../raw/lnhb/P-32_com.pdf",
+      "sha256": "d46fe20c307112413551731542e4223165ef50e8353401449926628b4b5ad38a",
+      "bytes": 488191
+    },
+    {
+      "file": "../raw/lnhb/P-32_tables.pdf",
+      "sha256": "cd5933d49169f04904668328c07b76514ad91a8502a5b6454a3f4d953e7b6914",
+      "bytes": 214520
+    },
+    {
+      "file": "../raw/mird/P-32 Beta Spectrum.csv",
+      "sha256": "90a88c7b17d9e70db7d62dea10f96d2a84b6171d890bc80d26f4722887a7621d",
+      "bytes": 2038
+    },
+    {
+      "file": "../raw/mird/P-32 DPK.csv",
+      "sha256": "0781a60800d4cbb0cb9af57b6b89cbb9f4c36351176d4a9b47a202fa51cfe35a",
+      "bytes": 82462
+    },
+    {
+      "file": "../raw/mird/P-32 Summary Spectrum.csv",
+      "sha256": "041d9efcb5c503c0f1358f19c99c3dc8ce066c1732f0ba43a48cccf68c6f8cc0",
+      "bytes": 65
+    }
+  ]
+}

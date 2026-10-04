@@ -1,0 +1,33 @@
+Information read from the input file: .\P33\P-33.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 16   Daughter A: 33   Symbol: S
+Transition type: B-
+Estimated parent nuclide from identification record: Z 15, A 33
+
+Parent record has been found
+Parent Z: 15	Parent A: 33   Symbol: P
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 1/2+ | Treated as: 1/2+
+Parent half-life: 25.38 (5) D or 2.1928E6 (43) S
+Parent Q-value: 248.5 (11) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 3/2+ | Treated as: 3/2+
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 248.5 (11) keV
+Intensity of the beta - branch: 100 %
+Transition order: allowed
+Log ft of the beta - transition: 5.033
+Average energy of beta - spectrum: 75.91 (38) keV
+
+####################################

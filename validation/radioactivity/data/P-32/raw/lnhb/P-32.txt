@@ -1,0 +1,33 @@
+ 32S     32P B- DECAY (14.273 D)                                                
+ 32S  C  References:1934AM01, 1934FE01, 1935PR01, 1935AM01, 1936SI01, 1936SAGA, 
+ 32S 2C  1937LY08, 1937NE02, 1938CA02, 1938CA01, 1940MU01, 1946SI09, 1948KL28,  
+ 32S 3C  1949LA06, 1950BA94, 1950WA76, 1950AG01, 1951SI25, 1951SH92, 1952JE12,  
+ 32S 4C  1953LO10, 1954ANTO, 1956PO07, 1957RI41, 1957AN03, 1957PO36, 1958DA10,  
+ 32S 5C  1958JO33, 1958ST50, 1959RO61, 1960GESH, 1961FE10, 1961DE25, 1961MA46,  
+ 32S 6C  1961NI02, 1963BO31, 1966CA10, 1966GO16, 1967EN05, 1968FI04, 1969PE04,  
+ 32S 7C  1969LA34, 1969FL02, 1971BO01, 1971PE03, 1971ZE04, 1973ENVA, 1976MO12,  
+ 32S 8C  1977BE59, 1977MU07, 1978EN02, 1979PR14, 1985WA02, 1990EN08, 1993GR17,  
+ 32S 9C  1994CO02, 1995AU04, 1996SC06, 2001KO07, 2002UN02, 2004BEZR, 2014UN01,  
+ 32S AC  2020UNTE, 2021WA16, 2023MO21                                           
+ 32S  T  Auger electrons and X ray energies and emission intensities:           
+ 32S  T       {U Energy (keV)}   {U Intensity}  {U Line}                        
+ 32S  T                                                                         
+ 32S  T        2.30667                           XKA2                           
+ 32S  T        2.30787                           XKA1                           
+ 32S  T                                                                         
+ 32S  T        2.4641         |]                 XKB1                           
+ 32S  T                                                                         
+ 32S  T                                                                         
+ 32S  T        0.1513                            XLL                            
+ 32S  T        0.1531                            XLC                            
+ 32S  T        0.225-0.2272                      XLB                            
+ 32S  T                                                                         
+ 32S  T        1.985-2.119    |]                 KLL AUGER                      
+ 32S  T        2.227-2.3      |]                 KLX AUGER                      
+ 32S  T        2.44-2.456     |]                 KXY AUGER                      
+ 32S  T        0.1326-0.2132                     L AUGER                        
+ 32P   P 0.0         1+                14.273 D  7              1710.661  40    
+ 32S   N 1.0         1.0       1         1.0                                    
+ 32S   L 0           0+                                                         
+ 32S   B 1710.661  40100                 7.90673                                
+ 32S S B EAV=693.306 18                                                         

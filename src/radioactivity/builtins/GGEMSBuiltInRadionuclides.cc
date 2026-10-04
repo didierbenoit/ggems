@@ -88,6 +88,8 @@ constexpr auto k_builtin_entries = std::to_array<BuiltInEntry>({
   {.canonical_name = "I-131", .builder = BuildI131Radionuclide},
   {.canonical_name = "Am-241", .builder = BuildAm241Radionuclide},
   {.canonical_name = "Tc-99m", .builder = BuildTc99mRadionuclide},
+  {.canonical_name = "P-32", .builder = BuildP32Radionuclide},
+  {.canonical_name = "P-33", .builder = BuildP33Radionuclide},
 });
 
 // =============================================================================

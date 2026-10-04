@@ -144,6 +144,20 @@ namespace ggems::core::radioactivity::builtins {
 [[nodiscard]] auto BuildTc99mRadionuclide() -> GGEMSRadionuclideDefinition;
 
 /*!
+ * \brief Builds the compiled P-32 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildP32Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled P-33 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildP33Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
  * \brief Borrows the catalog names in registration order.
  *
  * \return Span backed by static storage for the process lifetime.

@@ -49,7 +49,7 @@ struct ExpectedBuiltIn {
 // =============================================================================
 
 TEST(GGEMSBuiltInRadionuclides, DispatchesOnlyExactCanonicalNames) {
-  constexpr std::array<ExpectedBuiltIn, 14U> expected{
+  constexpr std::array<ExpectedBuiltIn, 16U> expected{
     {
       {
         .name = "H-3",
@@ -93,6 +93,8 @@ TEST(GGEMSBuiltInRadionuclides, DispatchesOnlyExactCanonicalNames) {
         .emission_count = 6U,
       },
       {.name = "Tc-99m", .half_life_seconds = 21'624.12L, .emission_count = 6U},
+      {.name = "P-32", .half_life_seconds = 1'233'187.2L, .emission_count = 1U},
+      {.name = "P-33", .half_life_seconds = 2'192'832.0L, .emission_count = 1U},
     },
   };
 
@@ -115,6 +117,24 @@ TEST(GGEMSBuiltInRadionuclides, DispatchesOnlyExactCanonicalNames) {
   EXPECT_FALSE(
     ggems::core::radioactivity::builtins::BuildBuiltInRadionuclide(" F-18 ")
       .has_value());
+  EXPECT_FALSE(
+    ggems::core::radioactivity::builtins::BuildBuiltInRadionuclide("P32")
+      .has_value());
+  EXPECT_FALSE(
+    ggems::core::radioactivity::builtins::BuildBuiltInRadionuclide("p-32")
+      .has_value());
+  EXPECT_FALSE(
+    ggems::core::radioactivity::builtins::BuildBuiltInRadionuclide(" P-32 ")
+      .has_value());
+  EXPECT_FALSE(
+    ggems::core::radioactivity::builtins::BuildBuiltInRadionuclide("P33")
+      .has_value());
+  EXPECT_FALSE(
+    ggems::core::radioactivity::builtins::BuildBuiltInRadionuclide("p-33")
+      .has_value());
+  EXPECT_FALSE(
+    ggems::core::radioactivity::builtins::BuildBuiltInRadionuclide(" P-33 ")
+      .has_value());
 }
 
 // =============================================================================
@@ -122,9 +142,9 @@ TEST(GGEMSBuiltInRadionuclides, DispatchesOnlyExactCanonicalNames) {
 
 TEST(GGEMSBuiltInRadionuclides,
      ListsEveryAvailableCanonicalNameInDispatchOrder) {
-  constexpr std::array<std::string_view, 14U> expected{
-    "H-3",    "C-14",  "F-18",  "C-11",  "O-15",  "Ga-68",  "Co-60",
-    "Lu-177", "I-123", "I-124", "I-125", "I-131", "Am-241", "Tc-99m",
+  constexpr std::array<std::string_view, 16U> expected{
+    "H-3",   "C-14",  "F-18",  "C-11",  "O-15",   "Ga-68",  "Co-60", "Lu-177",
+    "I-123", "I-124", "I-125", "I-131", "Am-241", "Tc-99m", "P-32",  "P-33",
   };
 
   auto const available =

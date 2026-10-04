@@ -2,7 +2,7 @@
 
 Run an ActivityDriven source, then compare its populations, birth times and
 energies with independent calculations and a selected nuclear reference. The
-reference packages cover fourteen radionuclides. Scientific comparisons are
+reference packages cover sixteen radionuclides. Scientific comparisons are
 reported in `analysis.json`; the campaign does not modify the built-in data.
 
 ## Build and run
@@ -84,6 +84,8 @@ subset of the physical inventory.
 | Co-60 | [Co-60 reference](data/Co-60/reference/README.md) | `data/Co-60/reference/reference.json` |
 | Ga-68 | [Ga-68 reference](data/Ga-68/reference/README.md) | `data/Ga-68/reference/reference.json` |
 | Tc-99m | [Tc-99m reference](data/Tc-99m/reference/README.md) | `data/Tc-99m/reference/reference.json` |
+| P-32 | [P-32 reference](data/P-32/reference/README.md) | `data/P-32/reference/reference.json` |
+| P-33 | [P-33 reference](data/P-33/reference/README.md) | `data/P-33/reference/reference.json` |
 | I-123 | [I-123 reference](data/I-123/reference/README.md) | `data/I-123/reference/reference.json` |
 | I-124 | [I-124 reference](data/I-124/reference/README.md) | `data/I-124/reference/reference.json` |
 | I-125 | [I-125 reference](data/I-125/reference/README.md) | `data/I-125/reference/reference.json` |

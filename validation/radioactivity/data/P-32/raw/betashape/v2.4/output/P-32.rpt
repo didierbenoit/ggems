@@ -1,0 +1,41 @@
+Input file:  .\P32\P-32.txt
+Output file: .\P32\P-32.new
+
+Input file: 34 lines
+Output file: 37 lines
+Added new lines: 3
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 32P   P 0.0         1+                14.273 D  7              1710.661  40    - PARENT
+ 32S   N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 32S   L 0           0+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 693.306 (18) keV   |   log ft 7.90673 (22)
+
+From measured spectrum
+Emean 689.484 (18) keV   |   [For information] log ft 7.88428 (22)
+
+*    log ft
+ 32S   B 1710.661  40100                 7.90673                                - OLD CARD
+ 32S   B 1710.661  40100                 7.90673 22                             - NEW CARD
+
+*    Mean energy
+ 32S S B EAV=693.306 18                                                         - OLD CARD
+ 32S S B EAV=689.484 18                                                         - NEW CARD
+ 32S 2 B C1=-0.019 3 (1973WI**)                                                 - ADDITIONAL NEW CARD
+ 32S  DB $Cexp(W) = 1+C{-1}W                                                    - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 1
+-------- Added lines: 3
+
+
