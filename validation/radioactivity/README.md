@@ -68,10 +68,10 @@ Adapt the executable path to the platform and configuration as above.
 
 ## Reference and compiled data
 
-Each package documents its selected evaluation, source files, uncertainties,
-transformations, exclusions, and ordered emission groups. Read its README before
-interpreting comparisons, especially where the modeled emissions form only a
-subset of the physical inventory.
+Each package keeps the complete retained evidence in `raw/`. Its `reference/`
+directory contains only the machine input, required spectrum CSVs, and a short
+README explaining the selection and exclusions. Read that note before
+interpreting comparisons, especially for an incomplete modeled inventory.
 
 | Radionuclide | Reference documentation | Campaign input |
 | --- | --- | --- |
@@ -101,15 +101,28 @@ subset of the physical inventory.
 Raw evaluation files provide provenance and independent comparisons. Campaigns
 read the selected `reference.json` and any referenced spectrum CSV files.
 
-The three conditional energy descriptions are:
+`reference.json` contains `name`, `reference_id`, `half_life.value` in seconds,
+ordered `groups`, and `excluded_source_emissions`. Each group specifies `index`,
+`id`, `particle`, `yield_per_decay.value`, and `distribution.kind`. The three
+conditional energy descriptions retain only their applicable fields:
 
-- `Mono`: an `energy` object with `value`, `standard_uncertainty`, `unit: "keV"`
-  and source identity.
-- `DiscreteLines`: ordered `lines` with exact `energy_keV` values and conditional
-  `weight` entries.
-- `RegularSpectrum`: `reference_representation: "piecewise_linear_density"`,
-  `energy_unit: "keV"` and `spectrum_file`. The CSV columns are
-  `energy_keV,density_per_keV,standard_uncertainty_per_keV`.
+- `Mono`: `energy` with `value` and `unit: "keV"`.
+- `DiscreteLines`: ordered `lines` with `energy_keV` and relative `weight`.
+  Existing line weights retain their absolute per-parent values; the conditional
+  law divides by the group weight sum.
+- `RegularSpectrum`: `spectrum_file`, relative to `reference.json`. The loader
+  integrates its piecewise-linear density over the full CSV support and derives
+  the area and conditional mean directly. Columns remain
+  `energy_keV,density_per_keV,standard_uncertainty_per_keV`; the current analysis
+  reads the first two. No separate JSON endpoint, area or mean is needed.
+
+`excluded_source_emissions` retains only executable absence checks, each with
+`id`, `particle` and `energy_keV`; it is empty when there is no such check.
+Other physical exclusions are explained in the package README. Where present,
+`implementation_audit` retains `source_file`, `generator_prefix` and
+`selected_version` for the existing source-comment audit. The JSON does not
+duplicate raw evidence, evaluation histories, uncertainty metadata unused by
+the analysis, or file-integrity records.
 
 Global yields are expected primaries per parent decay; they are never normalized.
 Conditional energy weights and normalization are separate. O-15 maps to one

@@ -1,1149 +1,473 @@
 {
   "name": "Co-57",
   "reference_id": "LNHB-Co57-LARA-PenNuc-BetaShape-2.4",
-  "selected_nuclear_authority": {
-    "evaluation": "LNHB/DDEP, V. P. Chechev and N. K. Kuzmenko (KRI), updated August 2014; tables 07/07/2014 - 1/3/2017; PenNuc 09/09/2014"
-  },
-  "decay_model": "100% electron capture to Fe-57",
-  "parent_Q": {
-    "value": "836.2",
-    "standard_uncertainty": "0.5",
-    "unit": "keV"
-  },
   "half_life": {
-    "value": "23484384.00",
-    "standard_uncertainty": "3456.00",
-    "unit": "s",
-    "source_value": "271.81",
-    "source_uncertainty": "0.04",
-    "source_unit": "d",
-    "source": "../raw/lnhb/Co-57_com.pdf and Co-57_tables.pdf, parent half-life",
-    "transformation": "Multiply the evaluated value and standard uncertainty by exactly 86400 s/d; retain the evaluated central value rather than rounded LARA/BetaShape seconds."
+    "value": "23484384.00"
   },
   "groups": [
     {
+      "index": 0,
       "id": "nuclear_gamma",
       "particle": "Gamma",
       "yield_per_decay": {
-        "value": "1.055677",
-        "unit": "primary/parent decay",
-        "source": "../raw/lnhb/Co-57.lara.txt, absolute photon inventory. X-ray entries retain the supplied compact representative energies; relative component tables are not added again.",
-        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+        "value": "1.055677"
       },
       "distribution": {
         "kind": "DiscreteLines",
-        "energy_unit": "keV",
-        "source": "../raw/lnhb/Co-57.lara.txt, absolute photon inventory. X-ray entries retain the supplied compact representative energies; relative component tables are not added again.",
-        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
         "lines": [
           {
             "energy_keV": "14.41295",
-            "weight": "0.0918",
-            "weight_standard_uncertainty": "0.0012",
-            "label": "g",
-            "source_line": 19,
-            "energy_standard_uncertainty_keV": "0.00031"
+            "weight": "0.0918"
           },
           {
             "energy_keV": "122.06065",
-            "weight": "0.8549",
-            "weight_standard_uncertainty": "0.0014",
-            "label": "g",
-            "source_line": 20,
-            "energy_standard_uncertainty_keV": "0.00012"
+            "weight": "0.8549"
           },
           {
             "energy_keV": "136.47356",
-            "weight": "0.1071",
-            "weight_standard_uncertainty": "0.0015",
-            "label": "g",
-            "source_line": 21,
-            "energy_standard_uncertainty_keV": "0.00029"
+            "weight": "0.1071"
           },
           {
             "energy_keV": "230.27",
-            "weight": "0.000004",
-            "weight_standard_uncertainty": "0.000004",
-            "label": "g",
-            "source_line": 22,
-            "energy_standard_uncertainty_keV": "0.03"
+            "weight": "0.000004"
           },
           {
             "energy_keV": "339.67",
-            "weight": "0.000038",
-            "weight_standard_uncertainty": "0.000004",
-            "label": "g",
-            "source_line": 23,
-            "energy_standard_uncertainty_keV": "0.03"
+            "weight": "0.000038"
           },
           {
             "energy_keV": "352.34",
-            "weight": "0.000032",
-            "weight_standard_uncertainty": "0.000004",
-            "label": "g",
-            "source_line": 24,
-            "energy_standard_uncertainty_keV": "0.02"
+            "weight": "0.000032"
           },
           {
             "energy_keV": "366.74",
-            "weight": "0.000013",
-            "weight_standard_uncertainty": "0.000004",
-            "label": "g",
-            "source_line": 25,
-            "energy_standard_uncertainty_keV": "0.03"
+            "weight": "0.000013"
           },
           {
             "energy_keV": "569.94",
-            "weight": "0.00015",
-            "weight_standard_uncertainty": "0.00002",
-            "label": "g",
-            "source_line": 26,
-            "energy_standard_uncertainty_keV": "0.04"
+            "weight": "0.00015"
           },
           {
             "energy_keV": "692.01",
-            "weight": "0.00159",
-            "weight_standard_uncertainty": "0.00006",
-            "label": "g",
-            "source_line": 27,
-            "energy_standard_uncertainty_keV": "0.02"
+            "weight": "0.00159"
           },
           {
             "energy_keV": "706.415",
-            "weight": "0.00005",
-            "weight_standard_uncertainty": "0.000005",
-            "label": "g",
-            "source_line": 28,
-            "energy_standard_uncertainty_keV": "0.020"
+            "weight": "0.00005"
           }
         ]
-      },
-      "index": 0
+      }
     },
     {
+      "index": 1,
       "id": "atomic_xray",
       "particle": "Gamma",
       "yield_per_decay": {
-        "value": "0.5885",
-        "unit": "primary/parent decay",
-        "source": "../raw/lnhb/Co-57.lara.txt, absolute photon inventory. X-ray entries retain the supplied compact representative energies; relative component tables are not added again.",
-        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+        "value": "0.5885"
       },
       "distribution": {
         "kind": "DiscreteLines",
-        "energy_unit": "keV",
-        "source": "../raw/lnhb/Co-57.lara.txt, absolute photon inventory. X-ray entries retain the supplied compact representative energies; relative component tables are not added again.",
-        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
         "lines": [
           {
             "energy_keV": "0.7054",
-            "weight": "0.013",
-            "weight_standard_uncertainty": "0.0004",
-            "label": "XL",
-            "source_line": 15
+            "weight": "0.013"
           },
           {
             "energy_keV": "6.39091",
-            "weight": "0.1712",
-            "weight_standard_uncertainty": "0.0026",
-            "label": "XKa2",
-            "source_line": 16
+            "weight": "0.1712"
           },
           {
             "energy_keV": "6.40391",
-            "weight": "0.335",
-            "weight_standard_uncertainty": "0.005",
-            "label": "XKa1",
-            "source_line": 17
+            "weight": "0.335"
           },
           {
             "energy_keV": "7.0832",
-            "weight": "0.0693",
-            "weight_standard_uncertainty": "0.0013",
-            "label": "XK'b1",
-            "source_line": 18
+            "weight": "0.0693"
           }
         ]
-      },
-      "index": 1
+      }
     },
     {
+      "index": 2,
       "id": "conversion_14_41295_keV",
       "particle": "Electron",
       "yield_per_decay": {
-        "value": "0.784623",
-        "unit": "primary/parent decay",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 14.41295 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+        "value": "0.784623"
       },
       "distribution": {
         "kind": "DiscreteLines",
-        "energy_unit": "keV",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 14.41295 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
         "lines": [
           {
             "energy_keV": "7.30095",
-            "weight": "0.702",
-            "weight_standard_uncertainty": "0.014",
-            "energy_standard_uncertainty_keV": "0.00031",
-            "shell": "K",
-            "parent_gamma_energy_keV": "14.41295",
-            "source_record": "EK  0.702 ; 0.014 ; 7.30095 ; 0.00031 ; 0"
+            "weight": "0.702"
           },
           {
             "energy_keV": "13.56685",
-            "weight": "0.0666",
-            "weight_standard_uncertainty": "0.0013",
-            "energy_standard_uncertainty_keV": "0.00031",
-            "shell": "L1",
-            "parent_gamma_energy_keV": "14.41295",
-            "source_record": "EL1 0.0666 ; 0.0013 ; 13.56685 ; 0.00031 ; 0"
+            "weight": "0.0666"
           },
           {
             "energy_keV": "13.69185",
-            "weight": "0.004",
-            "weight_standard_uncertainty": "0.00008",
-            "energy_standard_uncertainty_keV": "0.00031",
-            "shell": "L2",
-            "parent_gamma_energy_keV": "14.41295",
-            "source_record": "EL2 0.004 ; 0.00008 ; 13.69185 ; 0.00031 ; 0"
+            "weight": "0.004"
           },
           {
             "energy_keV": "13.70485",
-            "weight": "0.001662",
-            "weight_standard_uncertainty": "0.000035",
-            "energy_standard_uncertainty_keV": "0.00031",
-            "shell": "L3",
-            "parent_gamma_energy_keV": "14.41295",
-            "source_record": "EL3 0.001662 ; 0.000035 ; 13.70485 ; 0.00031 ; 0"
+            "weight": "0.001662"
           },
           {
             "energy_keV": "14.37133",
-            "weight": "0.00993",
-            "weight_standard_uncertainty": "0.0002",
-            "energy_standard_uncertainty_keV": "0.00031",
-            "shell": "M",
-            "parent_gamma_energy_keV": "14.41295",
-            "source_record": "EM  0.00993 ; 0.0002 ; 14.37133 ; 0.00031 ; 0"
+            "weight": "0.00993"
           },
           {
             "energy_keV": "14.41255",
-            "weight": "0.000431",
-            "weight_standard_uncertainty": "0.000009",
-            "energy_standard_uncertainty_keV": "0.00031",
-            "shell": "N",
-            "parent_gamma_energy_keV": "14.41295",
-            "source_record": "EN  0.000431 ; 0.000009 ; 14.41255 ; 0.00031 ; 0"
+            "weight": "0.000431"
           }
         ]
-      },
-      "parent_gamma_energy_keV": "14.41295",
-      "independent_minimum_ticket_quota": "2359261.58750890555081867342660105553877467267719656446471745",
-      "index": 2
+      }
     },
     {
+      "index": 3,
       "id": "conversion_122_06065_keV",
       "particle": "Electron",
       "yield_per_decay": {
-        "value": "0.02017715",
-        "unit": "primary/parent decay",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 122.06065 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+        "value": "0.02017715"
       },
       "distribution": {
         "kind": "DiscreteLines",
-        "energy_unit": "keV",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 122.06065 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
         "lines": [
           {
             "energy_keV": "114.94879",
-            "weight": "0.01812",
-            "weight_standard_uncertainty": "0.00026",
-            "energy_standard_uncertainty_keV": "0.00042",
-            "shell": "K",
-            "parent_gamma_energy_keV": "122.06065",
-            "source_record": "EK  0.01812 ; 0.00026 ; 114.94879 ; 0.00042 ; 1"
+            "weight": "0.01812"
           },
           {
             "energy_keV": "121.21469",
-            "weight": "0.001701",
-            "weight_standard_uncertainty": "0.000026",
-            "energy_standard_uncertainty_keV": "0.00042",
-            "shell": "L1",
-            "parent_gamma_energy_keV": "122.06065",
-            "source_record": "EL1 0.001701 ; 0.000026 ; 121.21469 ; 0.00042 ; 1"
+            "weight": "0.001701"
           },
           {
             "energy_keV": "121.33969",
-            "weight": "0.000056",
-            "weight_standard_uncertainty": "0.0000009",
-            "energy_standard_uncertainty_keV": "0.00042",
-            "shell": "L2",
-            "parent_gamma_energy_keV": "122.06065",
-            "source_record": "EL2 0.000056 ; 0.0000009 ; 121.33969 ; 0.00042 ; 1"
+            "weight": "0.000056"
           },
           {
             "energy_keV": "121.35269",
-            "weight": "0.0000412",
-            "weight_standard_uncertainty": "0.0000008",
-            "energy_standard_uncertainty_keV": "0.00042",
-            "shell": "L3",
-            "parent_gamma_energy_keV": "122.06065",
-            "source_record": "EL3 0.0000412 ; 0.0000008 ; 121.35269 ; 0.00042 ; 1"
+            "weight": "0.0000412"
           },
           {
             "energy_keV": "122.01917",
-            "weight": "0.0002479",
-            "weight_standard_uncertainty": "0.0000043",
-            "energy_standard_uncertainty_keV": "0.00042",
-            "shell": "M",
-            "parent_gamma_energy_keV": "122.06065",
-            "source_record": "EM  0.0002479 ; 0.0000043 ; 122.01917 ; 0.00042 ; 1"
+            "weight": "0.0002479"
           },
           {
             "energy_keV": "122.06039",
-            "weight": "0.00001105",
-            "weight_standard_uncertainty": "0.00000016",
-            "energy_standard_uncertainty_keV": "0.00042",
-            "shell": "N",
-            "parent_gamma_energy_keV": "122.06065",
-            "source_record": "EN  0.00001105 ; 0.00000016 ; 122.06039 ; 0.00042 ; 1"
+            "weight": "0.00001105"
           }
         ]
-      },
-      "parent_gamma_energy_keV": "122.06065",
-      "independent_minimum_ticket_quota": "2352135.39180706888733047035879695596256161053468899225113557",
-      "index": 3
+      }
     },
     {
+      "index": 4,
       "id": "conversion_136_47356_keV",
       "particle": "Electron",
       "yield_per_decay": {
-        "value": "0.01593619",
-        "unit": "primary/parent decay",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 136.47356 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+        "value": "0.01593619"
       },
       "distribution": {
         "kind": "DiscreteLines",
-        "energy_unit": "keV",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 136.47356 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
         "lines": [
           {
             "energy_keV": "129.36174",
-            "weight": "0.01426",
-            "weight_standard_uncertainty": "0.00029",
-            "energy_standard_uncertainty_keV": "0.00029",
-            "shell": "K",
-            "parent_gamma_energy_keV": "136.47356",
-            "source_record": "EK  0.01426 ; 0.00029 ; 129.36174 ; 0.00029 ; 0"
+            "weight": "0.01426"
           },
           {
             "energy_keV": "135.62764",
-            "weight": "0.001271",
-            "weight_standard_uncertainty": "0.000025",
-            "energy_standard_uncertainty_keV": "0.00029",
-            "shell": "L1",
-            "parent_gamma_energy_keV": "136.47356",
-            "source_record": "EL1 0.001271 ; 0.000025 ; 135.62764 ; 0.00029 ; 0"
+            "weight": "0.001271"
           },
           {
             "energy_keV": "135.75264",
-            "weight": "0.0000812",
-            "weight_standard_uncertainty": "0.0000016",
-            "energy_standard_uncertainty_keV": "0.00029",
-            "shell": "L2",
-            "parent_gamma_energy_keV": "136.47356",
-            "source_record": "EL2 0.0000812 ; 0.0000016 ; 135.75264 ; 0.00029 ; 0"
+            "weight": "0.0000812"
           },
           {
             "energy_keV": "135.76564",
-            "weight": "0.0001155",
-            "weight_standard_uncertainty": "0.0000023",
-            "energy_standard_uncertainty_keV": "0.00029",
-            "shell": "L3",
-            "parent_gamma_energy_keV": "136.47356",
-            "source_record": "EL3 0.0001155 ; 0.0000023 ; 135.76564 ; 0.00029 ; 0"
+            "weight": "0.0001155"
           },
           {
             "energy_keV": "136.43212",
-            "weight": "0.0002003",
-            "weight_standard_uncertainty": "0.0000043",
-            "energy_standard_uncertainty_keV": "0.00029",
-            "shell": "M",
-            "parent_gamma_energy_keV": "136.47356",
-            "source_record": "EM  0.0002003 ; 0.0000043 ; 136.43212 ; 0.00029 ; 0"
+            "weight": "0.0002003"
           },
           {
             "energy_keV": "136.47334",
-            "weight": "0.00000819",
-            "weight_standard_uncertainty": "0.00000016",
-            "energy_standard_uncertainty_keV": "0.00029",
-            "shell": "N",
-            "parent_gamma_energy_keV": "136.47356",
-            "source_record": "EN  0.00000819 ; 0.00000016 ; 136.47334 ; 0.00029 ; 0"
+            "weight": "0.00000819"
           }
         ]
-      },
-      "parent_gamma_energy_keV": "136.47356",
-      "independent_minimum_ticket_quota": "2207289.33040080470928120209410153869902404527054459064556836",
-      "index": 4
+      }
     },
     {
+      "index": 5,
       "id": "conversion_230_27_keV",
       "particle": "Electron",
       "yield_per_decay": {
-        "value": "1.6648E-8",
-        "unit": "primary/parent decay",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 230.27 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+        "value": "1.6648E-8"
       },
       "distribution": {
         "kind": "DiscreteLines",
-        "energy_unit": "keV",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 230.27 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
         "lines": [
           {
             "energy_keV": "223.158",
-            "weight": "0.000000015",
-            "weight_standard_uncertainty": "0.000000015",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "K",
-            "parent_gamma_energy_keV": "230.27",
-            "source_record": "EK  0.000000015 ; 0.000000015 ; 223.158 ; 0.03 ; 2"
+            "weight": "0.000000015"
           },
           {
             "energy_keV": "229.424",
-            "weight": "0.0000000014",
-            "weight_standard_uncertainty": "0.0000000014",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "L1",
-            "parent_gamma_energy_keV": "230.27",
-            "source_record": "EL1 0.0000000014 ; 0.0000000014 ; 229.424 ; 0.03 ; 2"
+            "weight": "0.0000000014"
           },
           {
             "energy_keV": "229.549",
-            "weight": "0.000000000026",
-            "weight_standard_uncertainty": "0.000000000026",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "L2",
-            "parent_gamma_energy_keV": "230.27",
-            "source_record": "EL2 0.000000000026 ; 0.000000000026 ; 229.549 ; 0.03 ; 2"
+            "weight": "0.000000000026"
           },
           {
             "energy_keV": "229.562",
-            "weight": "0.000000000013",
-            "weight_standard_uncertainty": "0.000000000013",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "L3",
-            "parent_gamma_energy_keV": "230.27",
-            "source_record": "EL3 0.000000000013 ; 0.000000000013 ; 229.562 ; 0.03 ; 2"
+            "weight": "0.000000000013"
           },
           {
             "energy_keV": "230.228",
-            "weight": "0.0000000002",
-            "weight_standard_uncertainty": "0.0000000002",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "M",
-            "parent_gamma_energy_keV": "230.27",
-            "source_record": "EM  0.0000000002 ; 0.0000000002 ; 230.228 ; 0.03 ; 2"
+            "weight": "0.0000000002"
           },
           {
             "energy_keV": "230.27",
-            "weight": "0.000000000009",
-            "weight_standard_uncertainty": "0.000000000009",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "N",
-            "parent_gamma_energy_keV": "230.27",
-            "source_record": "EN  0.000000000009 ; 0.000000000009 ; 230.27 ; 0.03 ; 2"
+            "weight": "0.000000000009"
           }
         ]
-      },
-      "parent_gamma_energy_keV": "230.27",
-      "independent_minimum_ticket_quota": "2321882.84863046612205670350792888034598750600672753483901970",
-      "index": 5
+      }
     },
     {
+      "index": 6,
       "id": "conversion_339_67_keV",
       "particle": "Electron",
       "yield_per_decay": {
-        "value": "6.33053E-8",
-        "unit": "primary/parent decay",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 339.67 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+        "value": "6.33053E-8"
       },
       "distribution": {
         "kind": "DiscreteLines",
-        "energy_unit": "keV",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 339.67 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
         "lines": [
           {
             "energy_keV": "332.558",
-            "weight": "0.000000057",
-            "weight_standard_uncertainty": "0.000000006",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "K",
-            "parent_gamma_energy_keV": "339.67",
-            "source_record": "EK  0.000000057 ; 0.000000006 ; 332.558 ; 0.03 ; 3"
+            "weight": "0.000000057"
           },
           {
             "energy_keV": "338.824",
-            "weight": "0.0000000054",
-            "weight_standard_uncertainty": "0.0000000006",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "L1",
-            "parent_gamma_energy_keV": "339.67",
-            "source_record": "EL1 0.0000000054 ; 0.0000000006 ; 338.824 ; 0.03 ; 3"
+            "weight": "0.0000000054"
           },
           {
             "energy_keV": "338.949",
-            "weight": "0.000000000077",
-            "weight_standard_uncertainty": "0.000000000008",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "L2",
-            "parent_gamma_energy_keV": "339.67",
-            "source_record": "EL2 0.000000000077 ; 0.000000000008 ; 338.949 ; 0.03 ; 3"
+            "weight": "0.000000000077"
           },
           {
             "energy_keV": "338.962",
-            "weight": "0.0000000000436",
-            "weight_standard_uncertainty": "0.0000000000046",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "L3",
-            "parent_gamma_energy_keV": "339.67",
-            "source_record": "EL3 0.0000000000436 ; 0.0000000000046 ; 338.962 ; 0.03 ; 3"
+            "weight": "0.0000000000436"
           },
           {
             "energy_keV": "339.628",
-            "weight": "0.00000000075",
-            "weight_standard_uncertainty": "0.00000000008",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "M",
-            "parent_gamma_energy_keV": "339.67",
-            "source_record": "EM  0.00000000075 ; 0.00000000008 ; 339.628 ; 0.03 ; 3"
+            "weight": "0.00000000075"
           },
           {
             "energy_keV": "339.67",
-            "weight": "0.0000000000347",
-            "weight_standard_uncertainty": "0.0000000000037",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "N",
-            "parent_gamma_energy_keV": "339.67",
-            "source_record": "EN  0.0000000000347 ; 0.0000000000037 ; 339.67 ; 0.03 ; 3"
+            "weight": "0.0000000000347"
           }
         ]
-      },
-      "parent_gamma_energy_keV": "339.67",
-      "independent_minimum_ticket_quota": "2354232.03382971094047417830734551451458250730981450210329941",
-      "index": 6
+      }
     },
     {
+      "index": 7,
       "id": "conversion_352_34_keV",
       "particle": "Electron",
       "yield_per_decay": {
-        "value": "4.77934E-8",
-        "unit": "primary/parent decay",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 352.34 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+        "value": "4.77934E-8"
       },
       "distribution": {
         "kind": "DiscreteLines",
-        "energy_unit": "keV",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 352.34 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
         "lines": [
           {
             "energy_keV": "345.228",
-            "weight": "0.000000043",
-            "weight_standard_uncertainty": "0.000000005",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "K",
-            "parent_gamma_energy_keV": "352.34",
-            "source_record": "EK  0.000000043 ; 0.000000005 ; 345.228 ; 0.02 ; 1"
+            "weight": "0.000000043"
           },
           {
             "energy_keV": "351.494",
-            "weight": "0.0000000041",
-            "weight_standard_uncertainty": "0.0000000005",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "L1",
-            "parent_gamma_energy_keV": "352.34",
-            "source_record": "EL1 0.0000000041 ; 0.0000000005 ; 351.494 ; 0.02 ; 1"
+            "weight": "0.0000000041"
           },
           {
             "energy_keV": "351.619",
-            "weight": "0.000000000056",
-            "weight_standard_uncertainty": "0.000000000007",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "L2",
-            "parent_gamma_energy_keV": "352.34",
-            "source_record": "EL2 0.000000000056 ; 0.000000000007 ; 351.619 ; 0.02 ; 1"
+            "weight": "0.000000000056"
           },
           {
             "energy_keV": "351.632",
-            "weight": "0.0000000000309",
-            "weight_standard_uncertainty": "0.0000000000039",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "L3",
-            "parent_gamma_energy_keV": "352.34",
-            "source_record": "EL3 0.0000000000309 ; 0.0000000000039 ; 351.632 ; 0.02 ; 1"
+            "weight": "0.0000000000309"
           },
           {
             "energy_keV": "352.298",
-            "weight": "0.00000000058",
-            "weight_standard_uncertainty": "0.00000000007",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "M",
-            "parent_gamma_energy_keV": "352.34",
-            "source_record": "EM  0.00000000058 ; 0.00000000007 ; 352.298 ; 0.02 ; 1"
+            "weight": "0.00000000058"
           },
           {
             "energy_keV": "352.34",
-            "weight": "0.0000000000265",
-            "weight_standard_uncertainty": "0.0000000000033",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "N",
-            "parent_gamma_energy_keV": "352.34",
-            "source_record": "EN  0.0000000000265 ; 0.0000000000033 ; 352.34 ; 0.02 ; 1"
+            "weight": "0.0000000000265"
           }
         ]
-      },
-      "parent_gamma_energy_keV": "352.34",
-      "independent_minimum_ticket_quota": "2381429.93266852745358145685387522126486083852582155695137822",
-      "index": 7
+      }
     },
     {
+      "index": 8,
       "id": "conversion_366_74_keV",
       "particle": "Electron",
       "yield_per_decay": {
-        "value": "2.32566E-8",
-        "unit": "primary/parent decay",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 366.74 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+        "value": "2.32566E-8"
       },
       "distribution": {
         "kind": "DiscreteLines",
-        "energy_unit": "keV",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 366.74 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
         "lines": [
           {
             "energy_keV": "359.628",
-            "weight": "0.000000021",
-            "weight_standard_uncertainty": "0.000000006",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "K",
-            "parent_gamma_energy_keV": "366.74",
-            "source_record": "EK  0.000000021 ; 0.000000006 ; 359.628 ; 0.03 ; 0"
+            "weight": "0.000000021"
           },
           {
             "energy_keV": "365.894",
-            "weight": "0.0000000019",
-            "weight_standard_uncertainty": "0.0000000006",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "L1",
-            "parent_gamma_energy_keV": "366.74",
-            "source_record": "EL1 0.0000000019 ; 0.0000000006 ; 365.894 ; 0.03 ; 0"
+            "weight": "0.0000000019"
           },
           {
             "energy_keV": "366.019",
-            "weight": "0.000000000034",
-            "weight_standard_uncertainty": "0.000000000011",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "L2",
-            "parent_gamma_energy_keV": "366.74",
-            "source_record": "EL2 0.000000000034 ; 0.000000000011 ; 366.019 ; 0.03 ; 0"
+            "weight": "0.000000000034"
           },
           {
             "energy_keV": "366.032",
-            "weight": "0.00000000003",
-            "weight_standard_uncertainty": "0.00000000001",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "L3",
-            "parent_gamma_energy_keV": "366.74",
-            "source_record": "EL3 0.00000000003 ; 0.00000000001 ; 366.032 ; 0.03 ; 0"
+            "weight": "0.00000000003"
           },
           {
             "energy_keV": "366.698",
-            "weight": "0.00000000028",
-            "weight_standard_uncertainty": "0.00000000009",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "M",
-            "parent_gamma_energy_keV": "366.74",
-            "source_record": "EM  0.00000000028 ; 0.00000000009 ; 366.698 ; 0.03 ; 0"
+            "weight": "0.00000000028"
           },
           {
             "energy_keV": "366.74",
-            "weight": "0.0000000000126",
-            "weight_standard_uncertainty": "0.0000000000039",
-            "energy_standard_uncertainty_keV": "0.03",
-            "shell": "N",
-            "parent_gamma_energy_keV": "366.74",
-            "source_record": "EN  0.0000000000126 ; 0.0000000000039 ; 366.74 ; 0.03 ; 0"
+            "weight": "0.0000000000126"
           }
         ]
-      },
-      "parent_gamma_energy_keV": "366.74",
-      "independent_minimum_ticket_quota": "2326934.63058228631872242718196124970975981011841799747168546",
-      "index": 8
+      }
     },
     {
+      "index": 9,
       "id": "conversion_569_94_keV",
       "particle": "Electron",
       "yield_per_decay": {
-        "value": "7.6554E-8",
-        "unit": "primary/parent decay",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 569.94 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+        "value": "7.6554E-8"
       },
       "distribution": {
         "kind": "DiscreteLines",
-        "energy_unit": "keV",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 569.94 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
         "lines": [
           {
             "energy_keV": "562.828",
-            "weight": "0.000000069",
-            "weight_standard_uncertainty": "0.000000009",
-            "energy_standard_uncertainty_keV": "0.04",
-            "shell": "K",
-            "parent_gamma_energy_keV": "569.94",
-            "source_record": "EK  0.000000069 ; 0.000000009 ; 562.828 ; 0.04 ; 2"
+            "weight": "0.000000069"
           },
           {
             "energy_keV": "569.094",
-            "weight": "0.0000000065",
-            "weight_standard_uncertainty": "0.0000000009",
-            "energy_standard_uncertainty_keV": "0.04",
-            "shell": "L1",
-            "parent_gamma_energy_keV": "569.94",
-            "source_record": "EL1 0.0000000065 ; 0.0000000009 ; 569.094 ; 0.04 ; 2"
+            "weight": "0.0000000065"
           },
           {
             "energy_keV": "569.219",
-            "weight": "0.000000000062",
-            "weight_standard_uncertainty": "0.000000000008",
-            "energy_standard_uncertainty_keV": "0.04",
-            "shell": "L2",
-            "parent_gamma_energy_keV": "569.94",
-            "source_record": "EL2 0.000000000062 ; 0.000000000008 ; 569.219 ; 0.04 ; 2"
+            "weight": "0.000000000062"
           },
           {
             "energy_keV": "569.232",
-            "weight": "0.00000000004",
-            "weight_standard_uncertainty": "0.000000000005",
-            "energy_standard_uncertainty_keV": "0.04",
-            "shell": "L3",
-            "parent_gamma_energy_keV": "569.94",
-            "source_record": "EL3 0.00000000004 ; 0.000000000005 ; 569.232 ; 0.04 ; 2"
+            "weight": "0.00000000004"
           },
           {
             "energy_keV": "569.898",
-            "weight": "0.00000000091",
-            "weight_standard_uncertainty": "0.00000000012",
-            "energy_standard_uncertainty_keV": "0.04",
-            "shell": "M",
-            "parent_gamma_energy_keV": "569.94",
-            "source_record": "EM  0.00000000091 ; 0.00000000012 ; 569.898 ; 0.04 ; 2"
+            "weight": "0.00000000091"
           },
           {
             "energy_keV": "569.94",
-            "weight": "0.000000000042",
-            "weight_standard_uncertainty": "0.000000000006",
-            "energy_standard_uncertainty_keV": "0.04",
-            "shell": "N",
-            "parent_gamma_energy_keV": "569.94",
-            "source_record": "EN  0.000000000042 ; 0.000000000006 ; 569.94 ; 0.04 ; 2"
+            "weight": "0.000000000042"
           }
         ]
-      },
-      "parent_gamma_energy_keV": "569.94",
-      "independent_minimum_ticket_quota": "2244150.42767197011260025602842438017608485513493742978812342",
-      "index": 9
+      }
     },
     {
+      "index": 10,
       "id": "conversion_692_01_keV",
       "particle": "Electron",
       "yield_per_decay": {
-        "value": "5.80152E-7",
-        "unit": "primary/parent decay",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 692.01 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+        "value": "5.80152E-7"
       },
       "distribution": {
         "kind": "DiscreteLines",
-        "energy_unit": "keV",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 692.01 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
         "lines": [
           {
             "energy_keV": "684.898",
-            "weight": "0.000000523",
-            "weight_standard_uncertainty": "0.000000021",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "K",
-            "parent_gamma_energy_keV": "692.01",
-            "source_record": "EK  0.000000523 ; 0.000000021 ; 684.898 ; 0.02 ; 1"
+            "weight": "0.000000523"
           },
           {
             "energy_keV": "691.164",
-            "weight": "0.0000000491",
-            "weight_standard_uncertainty": "0.000000002",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "L1",
-            "parent_gamma_energy_keV": "692.01",
-            "source_record": "EL1 0.0000000491 ; 0.000000002 ; 691.164 ; 0.02 ; 1"
+            "weight": "0.0000000491"
           },
           {
             "energy_keV": "691.289",
-            "weight": "0.000000000464",
-            "weight_standard_uncertainty": "0.000000000019",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "L2",
-            "parent_gamma_energy_keV": "692.01",
-            "source_record": "EL2 0.000000000464 ; 0.000000000019 ; 691.289 ; 0.02 ; 1"
+            "weight": "0.000000000464"
           },
           {
             "energy_keV": "691.302",
-            "weight": "0.000000000388",
-            "weight_standard_uncertainty": "0.000000000017",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "L3",
-            "parent_gamma_energy_keV": "692.01",
-            "source_record": "EL3 0.000000000388 ; 0.000000000017 ; 691.302 ; 0.02 ; 1"
+            "weight": "0.000000000388"
           },
           {
             "energy_keV": "691.968",
-            "weight": "0.00000000688",
-            "weight_standard_uncertainty": "0.00000000028",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "M",
-            "parent_gamma_energy_keV": "692.01",
-            "source_record": "EM  0.00000000688 ; 0.00000000028 ; 691.968 ; 0.02 ; 1"
+            "weight": "0.00000000688"
           },
           {
             "energy_keV": "692.01",
-            "weight": "0.00000000032",
-            "weight_standard_uncertainty": "0.000000000013",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "N",
-            "parent_gamma_energy_keV": "692.01",
-            "source_record": "EN  0.00000000032 ; 0.000000000013 ; 692.01 ; 0.02 ; 1"
+            "weight": "0.00000000032"
           }
         ]
-      },
-      "parent_gamma_energy_keV": "692.01",
-      "independent_minimum_ticket_quota": "2369016.28318095947268991574621823246321653635598946482990665",
-      "index": 10
+      }
     },
     {
+      "index": 11,
       "id": "conversion_706_415_keV",
       "particle": "Electron",
       "yield_per_decay": {
-        "value": "2.41978E-8",
-        "unit": "primary/parent decay",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 706.415 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "derivation": "Sum absolute line yields without normalizing physical yields. Correlated line uncertainties are not combined without a covariance model."
+        "value": "2.41978E-8"
       },
       "distribution": {
         "kind": "DiscreteLines",
-        "energy_unit": "keV",
-        "source": "../raw/lnhb/Co-57.PenNuc.txt, positive EK/EL/EM/EN records following GA 706.415 keV. Absolute yields are already per parent decay; no multiplication by gamma intensity or capture probability.",
-        "weight_unit": "primary/parent decay; normalized only for conditional sampling",
         "lines": [
           {
             "energy_keV": "699.308",
-            "weight": "0.0000000218",
-            "weight_standard_uncertainty": "0.0000000022",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "K",
-            "parent_gamma_energy_keV": "706.415",
-            "source_record": "EK  0.0000000218 ; 0.0000000022 ; 699.308 ; 0.02 ; 0"
+            "weight": "0.0000000218"
           },
           {
             "energy_keV": "705.574",
-            "weight": "0.00000000204",
-            "weight_standard_uncertainty": "0.00000000021",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "L1",
-            "parent_gamma_energy_keV": "706.415",
-            "source_record": "EL1 0.00000000204 ; 0.00000000021 ; 705.574 ; 0.02 ; 0"
+            "weight": "0.00000000204"
           },
           {
             "energy_keV": "705.699",
-            "weight": "0.0000000000266",
-            "weight_standard_uncertainty": "0.0000000000027",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "L2",
-            "parent_gamma_energy_keV": "706.415",
-            "source_record": "EL2 0.0000000000266 ; 0.0000000000027 ; 705.699 ; 0.02 ; 0"
+            "weight": "0.0000000000266"
           },
           {
             "energy_keV": "705.712",
-            "weight": "0.00000000003",
-            "weight_standard_uncertainty": "0.000000000003",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "L3",
-            "parent_gamma_energy_keV": "706.415",
-            "source_record": "EL3 0.00000000003 ; 0.000000000003 ; 705.712 ; 0.02 ; 0"
+            "weight": "0.00000000003"
           },
           {
             "energy_keV": "706.378",
-            "weight": "0.000000000288",
-            "weight_standard_uncertainty": "0.000000000029",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "M",
-            "parent_gamma_energy_keV": "706.415",
-            "source_record": "EM  0.000000000288 ; 0.000000000029 ; 706.378 ; 0.02 ; 0"
+            "weight": "0.000000000288"
           },
           {
             "energy_keV": "706.42",
-            "weight": "0.0000000000132",
-            "weight_standard_uncertainty": "0.0000000000013",
-            "energy_standard_uncertainty_keV": "0.02",
-            "shell": "N",
-            "parent_gamma_energy_keV": "706.415",
-            "source_record": "EN  0.0000000000132 ; 0.0000000000013 ; 706.42 ; 0.02 ; 0"
+            "weight": "0.0000000000132"
           }
         ]
-      },
-      "parent_gamma_energy_keV": "706.415",
-      "independent_minimum_ticket_quota": "2342922.42712973906718792617510682789344485862351122829348123",
-      "index": 11
+      }
     }
   ],
-  "total_yield_per_decay": "2.4649141719071",
   "excluded_source_emissions": [
-    {
-      "id": "auger_energy_laws_unresolved",
-      "reason": "LNHB supplies absolute L- and K-family Auger totals but only energy ranges and relative family information, not a complete conditional line or continuous energy law. LARA/PenNuc supplies no such law. These nonzero emissions are outside this selected model; MIRD remains an independent cross-check and is not substituted as an atomic authority.",
-      "LNHB_L_yield": "2.506",
-      "LNHB_L_standard_uncertainty": "0.016",
-      "LNHB_K_yield": "1.046",
-      "LNHB_K_standard_uncertainty": "0.011",
-      "source": "../raw/lnhb/Co-57_tables.pdf, Auger electron table"
-    },
     {
       "id": "annihilation",
       "particle": "Gamma",
-      "energy_keV": "511",
-      "reason": "Annihilation photons belong to positron transport, not parent source groups. No source annihilation pair is selected.",
-      "unselected_lara_lines": []
-    },
-    {
-      "id": "capture_and_pair_placeholders",
-      "reason": "EC shell probabilities are not source emissions. Relative atomic intensities are not additional absolute yields. Internal-pair conversion coefficients alone do not supply a complete particle energy law; no pair or zero-energy placeholder is inferred."
-    },
-    {
-      "id": "neutrinos_recoil_daughter_chain",
-      "reason": "No neutrino, recoil nucleus, later daughter-decay emission, or unobserved upper-limit branch is added. Selected nuclear transitions and atomic emissions are independent prompt source marginals; level lifetimes and coincidences are not modeled."
+      "energy_keV": "511"
     }
-  ],
-  "provenance": {
-    "betashape_version": "2.4 (06/2024)",
-    "betashape_command": ".\\betashape.exe .\\Co57\\Co-57.txt -csv",
-    "capture_outputs": [
-      {
-        "source": "../raw/betashape/v2.4/output/capt_Co57_trans0.bs",
-        "statements": [
-          "Parent nucleus: 27-Co-57 [7/2-] g.s.  -->  Daughter nucleus: 26-Fe-57 [1/2-] g.s.",
-          "Calculation of the 2nd forbidden unique transition from the electron capture decay of Co-57.",
-          "Transition energy: 836.2 (5) keV",
-          "PK  =  0.87786 (33)",
-          "PK  =  0.87786 (33)"
-        ]
-      },
-      {
-        "source": "../raw/betashape/v2.4/output/capt_Co57_trans1.bs",
-        "statements": [
-          "Parent nucleus: 27-Co-57 [7/2-] g.s.  -->  Daughter nucleus: 26-Fe-57 [3/2-] 14.41295 (31) keV",
-          "Transition energy: 821.8 (5) keV",
-          "PK  =  0.88094 (31)",
-          "PK  =  0.88094 (31)"
-        ]
-      },
-      {
-        "source": "../raw/betashape/v2.4/output/capt_Co57_trans2.bs",
-        "statements": [
-          "Parent nucleus: 27-Co-57 [7/2-] g.s.  -->  Daughter nucleus: 26-Fe-57 [5/2-] 136.47374 (29) keV",
-          "Calculation of the allowed transition from the electron capture decay of Co-57.",
-          "Transition energy: 699.7 (5) keV",
-          "PK  =  0.88295 (30)",
-          "PK  =  0.88295 (30)"
-        ]
-      },
-      {
-        "source": "../raw/betashape/v2.4/output/capt_Co57_trans3.bs",
-        "statements": [
-          "Parent nucleus: 27-Co-57 [7/2-] g.s.  -->  Daughter nucleus: 26-Fe-57 [3/2-] 366.74 (3) keV",
-          "Transition energy: 469.5 (5) keV",
-          "PK  =  0.87704 (33)",
-          "PK  =  0.87704 (33)"
-        ]
-      },
-      {
-        "source": "../raw/betashape/v2.4/output/capt_Co57_trans4.bs",
-        "statements": [
-          "Parent nucleus: 27-Co-57 [7/2-] g.s.  -->  Daughter nucleus: 26-Fe-57 [5/2-] 706.42 (2) keV",
-          "Calculation of the allowed transition from the electron capture decay of Co-57.",
-          "Transition energy: 129.8 (5) keV",
-          "PK  =  0.87428 (37)",
-          "PK  =  0.87428 (37)"
-        ]
-      }
-    ],
-    "capture_role": "Independent audit of evaluated EC branches and shell probabilities; no invented photon/electron yields. fixint=1 is retained exactly where specified."
-  },
-  "cross_checks": {
-    "ENSDF": {
-      "interpretation": "M. R. Bhat, NDS 85, 415 (1998), cutoff September 24, 1998: 271.74(6) d and Q=836.0(4) keV, versus LNHB 271.81(4) d and 836.2(5) keV. The 706.76 keV level feeding is 0.174(10)% versus LNHB 0.183(14)%.",
-      "files": [
-        "../raw/ensdf/ec_decay.pdf"
-      ]
-    },
-    "MIRD_MIRDsoft": {
-      "role": "Independent cross-check only. The retained CSVs do not establish an evaluation identity or half-life. DPK files are dose-deposition kernels, not source-emission probability laws.",
-      "summary_by_type": {
-        "X-ray": {
-          "rows": 25,
-          "conditional_mean_keV": "0.33239880026576936464905360467109760597683783241142203541204575195",
-          "yield_per_decay": "11.024006797150738"
-        },
-        "Gamma": {
-          "rows": 10,
-          "conditional_mean_keV": "115.09903566718204550167064167978783939495219095969346163204980964",
-          "yield_per_decay": "1.056181"
-        },
-        "Auger electron": {
-          "rows": 7,
-          "conditional_mean_keV": "0.92928987792000284400757328110431925318138630371501266610990034031",
-          "yield_per_decay": "8.6413272"
-        },
-        "Conversion electron": {
-          "rows": 40,
-          "conditional_mean_keV": "12.927643814873261479189180449126174576305204477352936980894872494",
-          "yield_per_decay": "0.8204053254796594"
-        }
-      },
-      "beta_spectrum": null
-    }
-  },
-  "source_disagreements": [
-    "The comments and tables differ in the dominant EC feeding (99.82(20)% versus 99.80(23)%) and the limit on direct 14.4 keV feeding (<0.003% versus <0.0003%). These are capture-scheme cross-checks, not additional source groups.",
-    "The comments quote total K X rays 57.1(9)% and K-alpha 50.0(6)%; the selected direct LARA inventory sums to 57.55% and 50.62%, respectively. No rescaling is applied.",
-    "MIRD detailed atomic and conversion inventories have different line granularity and yields from the selected LNHB inventory. They are not added, averaged, or used to close an energy or yield balance."
   ],
   "implementation_audit": {
     "source_file": "src/radioactivity/builtins/GGEMSCo57.cc",
     "generator_prefix": " * BetaShape ",
     "selected_version": "2.4"
-  },
-  "raw_inventory": [
-    {
-      "file": "../raw/betashape/v2.4/command.txt",
-      "bytes": 37,
-      "sha256": "4b1eb42a41321104354f05b1199e0ce48e341dd5469923ae7a9dcc15ed71fc57"
-    },
-    {
-      "file": "../raw/betashape/v2.4/input/Co-57.txt",
-      "bytes": 5658,
-      "sha256": "60918ab769a6f6fd141e71fcacd4459fdc079ea9cce66b4119f65b6b195024ab"
-    },
-    {
-      "file": "../raw/betashape/v2.4/output/capt_Co57_trans0.bs",
-      "bytes": 2063,
-      "sha256": "a708fe5ba485946717b98902d9a16e4b4cbdeb2e68b2f00775a9b1bb5bcc758c"
-    },
-    {
-      "file": "../raw/betashape/v2.4/output/capt_Co57_trans1.bs",
-      "bytes": 2041,
-      "sha256": "1cb56f61d9c3c59e514e0e82a798c8947de54ade46d936e01ad01b65f281ca7d"
-    },
-    {
-      "file": "../raw/betashape/v2.4/output/capt_Co57_trans2.bs",
-      "bytes": 1797,
-      "sha256": "c20f474ce8c7993a95d4e281c0da3faae75deadbe907497554d6899dca5fec83"
-    },
-    {
-      "file": "../raw/betashape/v2.4/output/capt_Co57_trans3.bs",
-      "bytes": 2035,
-      "sha256": "f21a921a48b87af5087b16a572137a32d785b3bcceba1ae7dc4561fbda40aaeb"
-    },
-    {
-      "file": "../raw/betashape/v2.4/output/capt_Co57_trans4.bs",
-      "bytes": 1794,
-      "sha256": "c804bdb38611c7fdf218a67f239c60a7f8cf9168d916999d5b1209d078691694"
-    },
-    {
-      "file": "../raw/betashape/v2.4/output/Co-57.new",
-      "bytes": 5986,
-      "sha256": "f7922e81f7e0e83ea1276dcb1553606b3f8d464572e4acca3bb378ad8439bf12"
-    },
-    {
-      "file": "../raw/betashape/v2.4/output/Co-57.read",
-      "bytes": 2909,
-      "sha256": "689538e1e6b20e2cb4b5f1a5ed96b413321cd0121e8fbc06c9b86929ac1716e4"
-    },
-    {
-      "file": "../raw/betashape/v2.4/output/Co-57.rpt",
-      "bytes": 5122,
-      "sha256": "63af79fa5a2112466cf0e4f6a6aaf212ec0f98c1796a4ef6697db1e70a998623"
-    },
-    {
-      "file": "../raw/betashape/v2.4/output/Co-57.trans",
-      "bytes": 2065,
-      "sha256": "87c798e3dbe3b2095f491b4e6706eef5cf7b9d4b0107e1d1bcf765b436d19b48"
-    },
-    {
-      "file": "../raw/betashape/v2.4/output/Co-57_ecbp.csv",
-      "bytes": 4736,
-      "sha256": "f604c2e58d8a7e16fc31c0b7fe01d76e9baac25a35712c94e69fd3357877b681"
-    },
-    {
-      "file": "../raw/ensdf/ec_decay.pdf",
-      "bytes": 96565,
-      "sha256": "636eb32fa171a27c6c2eefce9d1b7a3b03914e19104a2e2e4f519a1a463f1a2c"
-    },
-    {
-      "file": "../raw/lnhb/Co-57.lara.txt",
-      "bytes": 1416,
-      "sha256": "986d941fefb80e7134719ab6d537fe6bbf21003f4d50cdcc624df95addb77146"
-    },
-    {
-      "file": "../raw/lnhb/Co-57.PenNuc.txt",
-      "bytes": 5024,
-      "sha256": "efd6d4148adc2a8a7bf2b2d689f8c719d97caa6164120aa92d5b9db19cb88f0b"
-    },
-    {
-      "file": "../raw/lnhb/Co-57.txt",
-      "bytes": 5658,
-      "sha256": "60918ab769a6f6fd141e71fcacd4459fdc079ea9cce66b4119f65b6b195024ab"
-    },
-    {
-      "file": "../raw/lnhb/Co-57_com.pdf",
-      "bytes": 312436,
-      "sha256": "a3fc3f3dc8ae57e4973e34cc2ede4a4346039dcb3816babb735e99821392f84a"
-    },
-    {
-      "file": "../raw/lnhb/Co-57_tables.pdf",
-      "bytes": 249418,
-      "sha256": "13686770eb60a792ac40ad17e3642f2a8b9768c5d1aed66edfbc4eae4fd3ca55"
-    },
-    {
-      "file": "../raw/mird/Co-57 DPK.csv",
-      "bytes": 119215,
-      "sha256": "8f24e41be6fc77bffba3166118cb8a06184a3e4dd141160a0300c9f1362cc17e"
-    },
-    {
-      "file": "../raw/mird/Co-57 Summary Spectrum.csv",
-      "bytes": 3163,
-      "sha256": "932119cd0b14397eb4e8f7a5f8cfadc07ee5fa9245928c0018a9163e61d385bc"
-    }
-  ]
+  }
 }

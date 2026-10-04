@@ -2,171 +2,29 @@
   "name": "O-15",
   "reference_id": "LNHB-O15-2026-03-03-BetaShape-2.4-fixint1",
   "half_life": {
-    "value": "122.266",
-    "standard_uncertainty": "0.049",
-    "unit": "s",
-    "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
-  },
-  "nuclear_quantities": {
-    "q_plus": {
-      "value": "2754.18",
-      "standard_uncertainty": "0.49",
-      "unit": "keV",
-      "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
-    },
-    "beta_plus_probability": {
-      "value": "99.9001",
-      "standard_uncertainty": "0.0017",
-      "unit": "%",
-      "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
-    },
-    "electron_capture_probability": {
-      "value": "0.0999",
-      "standard_uncertainty": "0.0017",
-      "unit": "%",
-      "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
-    },
-    "beta_plus_endpoint": {
-      "value": "1732.18",
-      "standard_uncertainty": "0.49",
-      "unit": "keV",
-      "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
-    },
-    "beta_plus_mean_energy": {
-      "value": "733.47",
-      "standard_uncertainty": "0.23",
-      "unit": "keV",
-      "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
-    },
-    "annihilation_photon_yield": {
-      "value": "199.8002",
-      "standard_uncertainty": "0.0034",
-      "unit": "per 100 disintegrations",
-      "source": "lnhb/O-15_tables.pdf, p. 2; lnhb/O-15_com.pdf, section 3"
-    }
+    "value": "122.266"
   },
   "groups": [
     {
-      "id": "beta_plus_to_ground_state",
       "index": 0,
+      "id": "beta_plus_to_ground_state",
       "particle": "Positron",
       "yield_per_decay": {
-        "value": "0.999001",
-        "standard_uncertainty": "0.000017",
-        "unit": "primary/parent decay",
-        "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
+        "value": "0.999001"
       },
       "distribution": {
         "kind": "RegularSpectrum",
-        "reference_representation": "piecewise_linear_density",
-        "spectrum_file": "positron_spectrum.csv",
-        "energy_unit": "keV",
-        "endpoint": {
-          "value": "1732.18",
-          "standard_uncertainty": "0.49",
-          "unit": "keV",
-          "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
-        },
-        "mean_energy": {
-          "value": "733.47",
-          "standard_uncertainty": "0.23",
-          "unit": "keV",
-          "source": "lnhb/O-15_tables.pdf, pp. 1-2; lnhb/O-15_com.pdf, sections 1.1-1.2"
-        },
-        "generator": "BetaShape 2.4 (06/2024)",
-        "source": "betashape/v2.4/output/beta+_O15_trans0.bs",
-        "raw_grid_points": 348,
-        "raw_grid_step_keV": "5",
-        "last_interval_keV": "2.18",
-        "raw_trapezoid_integral": "0.998991212775914",
-        "conditional_piecewise_linear_mean_keV": "733.47520744597438834102999941580872388423191636253360439719373715347139473164995",
-        "transformation": "Copy all three decimal columns verbatim. For conditional shape comparisons only, linearly interpolate density and divide its integral by the recorded raw integral. No change to source emission yield; no rescaling of the energy axis.",
-        "uncertainty_policy": "Preserve supplied pointwise uncertainties; no covariance is supplied. Statistical tests condition on the tabulated central shape and do not constitute an uncertainty-aware evaluation equivalence test."
-      },
-      "mapping": "One ordered GGEMS Positron emission group for the allowed ground-state beta+ transition; conditional spectrum weights are separate from the physical yield."
+        "spectrum_file": "positron_spectrum.csv"
+      }
     }
   ],
   "excluded_source_emissions": [
     {
       "id": "annihilation",
       "particle": "Gamma",
-      "energy_keV": "511",
-      "reason": "Reference information only. Annihilation belongs to positron transport and must not be a source-emission group."
-    },
-    {
-      "id": "electron_capture",
-      "reason": "Parent decay channel, not a transported GGEMS particle. Selected evaluation does not provide a resolved source-emission relaxation spectrum; do not import MIRD X-ray/Auger groups or add a zero-energy placeholder."
-    },
-    {
-      "id": "neutrino_and_daughter_recoil",
-      "reason": "Outside this Source validation mapping; neither is a current built-in O-15 source group."
+      "energy_keV": "511"
     }
   ],
-  "provenance": {
-    "authority": "User-selected recovered local LNHB evaluation; no live web substitution.",
-    "evaluator": "X. Mougeot, LNE-LNHB/CEA",
-    "evaluation_literature_cutoff": "February 2026",
-    "table_date": "2026-03-03",
-    "scheme_and_PenNuc_date": "2026-02-27",
-    "betashape_version": "2.4 (06/2024)",
-    "betashape_command": ".\\betashape.exe O15\\O-15.txt fixint=1 -csv",
-    "betashape_options": {
-      "fixint": 1,
-      "csv": true,
-      "qval_override": false
-    },
-    "execution": "Recovered outputs only; BetaShape was not rerun for this package. Original download/execution timestamps were not recovered.",
-    "cross_checks": [
-      {
-        "source": "lnhb/O-15.lara.txt",
-        "selection": "not selected for half-life",
-        "half_life_s": "122.268",
-        "uncertainty_s": "0.048",
-        "comment": "Differs from selected 122.266(49) s; consistent with rounded 2.0378(8) min multiplied by 60. This explanation is an inference; retain source values."
-      },
-      {
-        "source": "ensdf/ec_decay.pdf",
-        "selection": "independent cross-check",
-        "evaluation": "F. Ajzenberg-Selove, NP A523,1 (1991); cutoff 1990-07-01",
-        "half_life_s": "122.24",
-        "uncertainty_s": "0.16",
-        "q_plus_keV": "2754.0",
-        "beta_plus_percent": "99.9003",
-        "ec_percent": "0.0997",
-        "mean_beta_energy_keV": "735.28",
-        "comment": "Historical evaluation, not the selected LNHB values; no merge."
-      },
-      {
-        "source": "mird/mird-O-15-table-0.csv",
-        "selection": "independent cross-check",
-        "mean_beta_energy_MeV": "0.7352",
-        "beta_plus_yield_per_decay": "0.999",
-        "comment": "Also lists annihilation, X-rays and Auger electrons. No recovered evaluation identity/date in this CSV; none is invented and no group is imported."
-      }
-    ],
-    "raw_files": [
-      "betashape/v2.4/command.txt",
-      "betashape/v2.4/input/O-15.txt",
-      "betashape/v2.4/output/beta+_O15_tot.bs",
-      "betashape/v2.4/output/beta+_O15_trans0.bs",
-      "betashape/v2.4/output/capt_O15_trans0.bs",
-      "betashape/v2.4/output/O-15.new",
-      "betashape/v2.4/output/O-15.read",
-      "betashape/v2.4/output/O-15.rpt",
-      "betashape/v2.4/output/O-15.trans",
-      "betashape/v2.4/output/O-15_ecbp.csv",
-      "ensdf/ec_decay.pdf",
-      "lnhb/O-15.lara.txt",
-      "lnhb/O-15.PenNuc.txt",
-      "lnhb/O-15.txt",
-      "lnhb/O-15_com.pdf",
-      "lnhb/O-15_tables.pdf",
-      "mird/mird-O-15-table-0.csv",
-      "mird/O-15 Beta Spectrum.csv",
-      "mird/O-15 DPK.csv",
-      "mird/O-15 Summary Spectrum.csv"
-    ]
-  },
   "implementation_audit": {
     "source_file": "src/radioactivity/builtins/GGEMSO15.cc",
     "generator_prefix": "// LNHB BetaShape ",
