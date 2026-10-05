@@ -1,0 +1,37 @@
+Input file:  .\Ge68\Ge-68.txt
+Output file: .\Ge68\Ge-68.new
+
+Input file: 35 lines
+Output file: 36 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 68GE  P 0.0         0+                270.95 D  26             106.9     24    - PARENT
+ 68GA  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 68GA  L 0           1+                67.83 M   20                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8620 (8) | L =  0.1165 (6) | M =  0.01954 (16) | N =  0.001972 (37)
+log ft 5.004 (24)
+
+*    log ft
+ 68GA  E                       100       5.006                                  - OLD CARD
+ 68GA  E                       100       5.004   24             100             - NEW CARD
+
+*    Probabilities
+ 68GA2 E CK=0.8639   24$CL=0.1150   23$CM=0.0196    5$CN=0.0015    2            - OLD CARD
+ 68GA2 E CK=0.8620 8$CL=0.1165 6$CM+=0.02151 16                                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 1
+-------- Added lines: 1
+
+

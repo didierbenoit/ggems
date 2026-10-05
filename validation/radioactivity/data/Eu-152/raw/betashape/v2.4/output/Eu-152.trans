@@ -1,0 +1,323 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [2+] 121.7818 (3) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 1.7 (10) %
+Log ft of the (ec + b+) transition: 11.8
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [2+] 121.7818 (3) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Beta + transition. Order: 1st forbidden non-unique
+Transition energy. Calculated Emax from Q-value and level energies: 730.5 (7) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.025 (15) %
+Average energy of beta + spectrum: 338.1 (3) keV
+Log ft of the (ec + b+) transition: 11.8
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [4+] 366.4786 (8) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.77 (5) %
+Log ft of the (ec + b+) transition: 12
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [4+] 366.4786 (8) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Beta + transition. Order: 1st forbidden non-unique
+Transition energy. Calculated Emax from Q-value and level energies: 485.8 (7) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.0024 (2) %
+Average energy of beta + spectrum: 230.7 (3) keV
+Log ft of the (ec + b+) transition: 12
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [2+] 810.4474 (20) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 1.28 (3) %
+Log ft of the (ec + b+) transition: 11.4
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [2+] 810.4474 (20) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Beta + transition. Order: 1st forbidden non-unique
+Transition energy. Calculated Emax from Q-value and level energies: 41.9 (7) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0 %
+Log ft of the (ec + b+) transition: 11.4
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [4-] 1022.967 (5) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.238 (5) %
+Log ft of the ec transition: 11.9
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [3-] 1041.1342 (18) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.086 (7) %
+Log ft of the ec transition: 12.4
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [2+] 1085.8499 (23) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the decay: 1
+Normalization of this transition: 21.35 (11) %
+Log ft of the ec transition: 9.9
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [3+] 1233.8656 (17) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Electron capture transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the decay: 1
+Normalization of this transition: 17.16 (8) %
+Log ft of the ec transition: 9.8
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [2+] 1292.771 (6) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the decay: 1
+Normalization of this transition: 0.644 (10) %
+Log ft of the ec transition: 11.2
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [4+] 1371.691 (9) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the decay: 1
+Normalization of this transition: 0.869 (24) %
+Log ft of the ec transition: 10.9
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [2-] 1529.8073 (16) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 24.72 (11) %
+Log ft of the ec transition: 9.1
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [3-] 1579.365 (3) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 2.068 (12) %
+Log ft of the ec transition: 10
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [**] 1612.94 (6) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.0208 (14) %
+Log ft of the ec transition: 11.9
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [2-] 1649.910 (8) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.889 (14) %
+Log ft of the ec transition: 10.1
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [3-] 1730.241 (22) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.0422 (12) %
+Log ft of the ec transition: 10.9
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [2+] 1757.151 (13) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Electron capture transition. Order: as allowed
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the decay: 1
+Normalization of this transition: 0.041 (3) %
+Log ft of the ec transition: 10.7
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 62-Sm-152 [2+] 1769.10 (3) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the decay: 1
+Normalization of this transition: 0.068 (5) %
+Log ft of the ec transition: 10.3
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 64-Gd-152 [2+] 344.2798 (12) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 1474.5 (11) keV. 
+Total normalization of the beta - decay: 0.9999
+Normalization of this transition: 8.17 (11) %
+Average energy of beta - spectrum: 535.4 (5) keV
+Log ft of the beta - transition: 12.1
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 64-Gd-152 [4+] 755.3964 (17) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 1063.4 (11) keV. 
+Total normalization of the beta - decay: 0.9999
+Normalization of this transition: 0.904 (14) %
+Average energy of beta - spectrum: 364.6 (5) keV
+Log ft of the beta - transition: 12.5
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 64-Gd-152 [2+] 930.562 (3) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 888.2 (11) keV. 
+Total normalization of the beta - decay: 0.9999
+Normalization of this transition: 0.303 (7) %
+Average energy of beta - spectrum: 295.1 (5) keV
+Log ft of the beta - transition: 12.7
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 64-Gd-152 [2+] 1109.076 (5) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 709.7 (11) keV. 
+Total normalization of the beta - decay: 0.9999
+Normalization of this transition: 0.245 (8) %
+Average energy of beta - spectrum: 226.9 (5) keV
+Log ft of the beta - transition: 12.4
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 64-Gd-152 [3-] 1123.184 (2) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Beta - transition. Order: allowed
+Transition energy calculated from Q-value and level energies: 695.6 (11) keV. 
+Total normalization of the beta - decay: 0.9999
+Normalization of this transition: 13.80 (15) %
+Average energy of beta - spectrum: 221.7 (4) keV
+Log ft of the beta - transition: 10.6
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 64-Gd-152 [4+] 1282.267 (18) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 536.5 (11) keV. 
+Total normalization of the beta - decay: 0.9999
+Normalization of this transition: 0.037 (8) %
+Average energy of beta - spectrum: 164.1 (4) keV
+Log ft of the beta - transition: 12.8
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 64-Gd-152 [1-] 1314.71 (20) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Beta - transition. Order: 2nd forbidden non-unique
+Transition energy calculated from Q-value and level energies: 504.1 (11) keV. 
+Total normalization of the beta - decay: 0.9999
+Normalization of this transition: 0.0048 (7) %
+Average energy of beta - spectrum: 152.7 (4) keV
+Log ft of the beta - transition: 13.6
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 64-Gd-152 [2+] 1318.50 (3) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 500.3 (11) keV. 
+Total normalization of the beta - decay: 0.9999
+Normalization of this transition: 0.0267 (17) %
+Average energy of beta - spectrum: 151.4 (4) keV
+Log ft of the beta - transition: 12.9
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 64-Gd-152 [3+] 1434.025 (4) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Beta - transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Transition energy calculated from Q-value and level energies: 384.8 (11) keV. 
+Total normalization of the beta - decay: 0.9999
+Normalization of this transition: 2.44 (3) %
+Average energy of beta - spectrum: 112.3 (4) keV
+Log ft of the beta - transition: 10.5
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 64-Gd-152 [4+] 1550.19 (3) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 268.6 (11) keV. 
+Total normalization of the beta - decay: 0.9999
+Normalization of this transition: 0.0536 (18) %
+Average energy of beta - spectrum: 75.2 (4) keV
+Log ft of the beta - transition: 11.7
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 64-Gd-152 [2+] 1605.255 (4) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 213.5 (11) keV. 
+Total normalization of the beta - decay: 0.9999
+Normalization of this transition: 0.101 (3) %
+Average energy of beta - spectrum: 58.6 (4) keV
+Log ft of the beta - transition: 11.1
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 64-Gd-152 [2-] 1643.395 (4) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Beta - transition. Order: allowed
+Transition energy calculated from Q-value and level energies: 175.4 (11) keV. 
+Total normalization of the beta - decay: 0.9999
+Normalization of this transition: 1.826 (21) %
+Average energy of beta - spectrum: 47.4 (4) keV
+Log ft of the beta - transition: 9.6
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 63-Eu-152 [3-] g.s.  -->  Daughter nucleus: 64-Gd-152 [3+] 1692.447 (15) keV
+Half-life of the parent nuclide: 4.267E8 (5) s
+Beta - transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Transition energy calculated from Q-value and level energies: 126.4 (11) keV. 
+Total normalization of the beta - decay: 0.9999
+Normalization of this transition: 0.0203 (11) %
+Average energy of beta - spectrum: 33.4 (3) keV
+Log ft of the beta - transition: 11.1
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 32 transitions have been read.
+
+Parent nucleus: 63-Eu-152
+32 transitions have been read (13 B-, 16 EC, 3 B+).
+
+
+####################################

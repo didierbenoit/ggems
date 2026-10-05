@@ -1,0 +1,32 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 58-Ce-139 [3/2+] g.s.  -->  Daughter nucleus: 57-La-139 [7/2+] g.s.
+Half-life of the parent nuclide: 1.18922E7 (17) s
+Electron capture transition. Order: 2nd forbidden non-unique
+Total normalization of the decay: 1
+Normalization of this transition: 0.008 %
+Log ft of the ec transition: 10.6
+
+------------------------------------
+Parent nucleus: 58-Ce-139 [3/2+] g.s.  -->  Daughter nucleus: 57-La-139 [5/2+] 165.8576 (11) keV
+Half-life of the parent nuclide: 1.18922E7 (17) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 99.9973 (27) %
+Log ft of the ec transition: 5.42
+
+
+####################################
+
+Summary
+
+1 nucleus and 2 transitions have been read.
+
+Parent nucleus: 58-Ce-139
+2 transitions have been read (2 EC).
+
+
+####################################

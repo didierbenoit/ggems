@@ -1,0 +1,655 @@
+Input file:  .\Eu152\Eu-152.txt
+Output file: .\Eu152\Eu-152.new
+
+Input file: 403 lines
+Output file: 408 lines
+Added new lines: 5
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+152EU  P 0.0         3-                13.522 Y  16             1818.8    11    - PARENT
+152GD  N 3.584E0     3.584E0   0.279     3.584E0                                - NORMALIZATION
+152GD  L 344.2798  122+                32.4 PS   17                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 534.10 (47) keV   |   log ft 12.120 (6)
+
+From measured spectrum
+Emean 532.81 (45) keV   |   [For information] log ft 13.190 (6)
+
+*    log ft
+152GD  B 1474.5    118.17    11          12.1                                1  - OLD CARD
+152GD  B 1474.5    118.17    11          12.120   6                             - NEW CARD
+
+*    Mean energy
+152GDS B EAV=535.4 5                                                            - OLD CARD
+152GDS B EAV=532.81 45                                                          - NEW CARD
+152GD2 B C2=0.79 $C3=5 2 (1960LA04)                                             - ADDITIONAL NEW CARD
+152GD DB $Cexp(W) = q{+2}+C{-2}p{+2}+C{-3}                                      - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+152EU  P 0.0         3-                13.522 Y  16             1818.8    11    - PARENT
+152GD  N 3.584E0     3.584E0   0.279     3.584E0                                - NORMALIZATION
+152GD  L 755.3964  174+                7.3 PS    4                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 363.32 (44) keV   |   log ft 12.547 (7)
+
+*    log ft
+152GD  B 1063.4    110.904   14          12.5                                1  - OLD CARD
+152GD  B 1063.4    110.904   14          12.547   7                             - NEW CARD
+
+*    Mean energy
+152GDS B EAV=364.6 5                                                            - OLD CARD
+152GDS B EAV=363.32 44                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+152EU  P 0.0         3-                13.522 Y  16             1818.8    11    - PARENT
+152GD  N 3.584E0     3.584E0   0.279     3.584E0                                - NORMALIZATION
+152GD  L 930.562   3 2+                7.3 PS    6                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 293.76 (43) keV   |   log ft 12.739 (10)
+
+*    log ft
+152GD  B 888.2     110.303    7          12.7                                1  - OLD CARD
+152GD  B 888.2     110.303    7          12.739  10                             - NEW CARD
+
+*    Mean energy
+152GDS B EAV=295.1 5                                                            - OLD CARD
+152GDS B EAV=293.76 43                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+152EU  P 0.0         3-                13.522 Y  16             1818.8    11    - PARENT
+152GD  N 3.584E0     3.584E0   0.279     3.584E0                                - NORMALIZATION
+152GD  L 1109.076  5 2+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 225.64 (41) keV   |   log ft 12.488 (14)
+
+*    log ft
+152GD  B 709.7     110.245    8          12.4                                1  - OLD CARD
+152GD  B 709.7     110.245    8          12.488  14                             - NEW CARD
+
+*    Mean energy
+152GDS B EAV=226.9 5                                                            - OLD CARD
+152GDS B EAV=225.64 41                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+152EU  P 0.0         3-                13.522 Y  16             1818.8    11    - PARENT
+152GD  N 3.584E0     3.584E0   0.279     3.584E0                                - NORMALIZATION
+152GD  L 1123.184  2 3-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 220.40 (41) keV   |   log ft 10.706 (5)
+
+*    log ft
+152GD  B 695.6     1113.80   15          10.6                                   - OLD CARD
+152GD  B 695.6     1113.80   15          10.706   5                             - NEW CARD
+
+*    Mean energy
+152GDS B EAV=221.7 4                                                            - OLD CARD
+152GDS B EAV=220.40 41                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  6
+
+152EU  P 0.0         3-                13.522 Y  16             1818.8    11    - PARENT
+152GD  N 3.584E0     3.584E0   0.279     3.584E0                                - NORMALIZATION
+152GD  L 1282.267  184+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 162.88 (39) keV   |   log ft 12.89 (9)
+
+*    log ft
+152GD  B 536.5     110.037    8          12.8                                1  - OLD CARD
+152GD  B 536.5     110.037    8          12.89    9                             - NEW CARD
+
+*    Mean energy
+152GDS B EAV=164.1 4                                                            - OLD CARD
+152GDS B EAV=162.88 39                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  7
+
+152EU  P 0.0         3-                13.522 Y  16             1818.8    11    - PARENT
+152GD  N 3.584E0     3.584E0   0.279     3.584E0                                - NORMALIZATION
+152GD  L 1314.71   201-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 164.47 (37) keV   |   log ft 13.73 (6)
+
+*    log ft
+152GD  B 504.1     110.0048   7          13.6                                2  - OLD CARD
+152GD  B 504.1     110.0048   7          13.73    6                             - NEW CARD
+
+*    Mean energy
+152GDS B EAV=152.7 4                                                            - OLD CARD
+152GDS B EAV=164.47 37                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  8
+
+152EU  P 0.0         3-                13.522 Y  16             1818.8    11    - PARENT
+152GD  N 3.584E0     3.584E0   0.279     3.584E0                                - NORMALIZATION
+152GD  L 1318.50   3 2+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 150.26 (38) keV   |   log ft 12.931 (28)
+
+*    log ft
+152GD  B 500.3     110.0267  17          12.9                                1  - OLD CARD
+152GD  B 500.3     110.0267  17          12.931  28                             - NEW CARD
+
+*    Mean energy
+152GDS B EAV=151.4 4                                                            - OLD CARD
+152GDS B EAV=150.26 38                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  9
+
+152EU  P 0.0         3-                13.522 Y  16             1818.8    11    - PARENT
+152GD  N 3.584E0     3.584E0   0.279     3.584E0                                - NORMALIZATION
+152GD  L 1434.025  4 3+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 111.32 (36) keV   |   log ft 10.593 (7)
+
+*    log ft
+152GD  B 384.8     112.44     3          10.5                                   - OLD CARD
+152GD  B 384.8     112.44     3          10.593   7                             - NEW CARD
+
+*    Mean energy
+152GDS B EAV=112.3 4                                                            - OLD CARD
+152GDS B EAV=111.32 36                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  10
+
+152EU  P 0.0         3-                13.522 Y  16             1818.8    11    - PARENT
+152GD  N 3.584E0     3.584E0   0.279     3.584E0                                - NORMALIZATION
+152GD  L 1550.19   3 4+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 74.44 (34) keV   |   log ft 11.746 (16)
+
+*    log ft
+152GD  B 268.6     110.0536  18          11.7                                1  - OLD CARD
+152GD  B 268.6     110.0536  18          11.746  16                             - NEW CARD
+
+*    Mean energy
+152GDS B EAV=75.2 4                                                             - OLD CARD
+152GDS B EAV=74.44 34                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  11
+
+152EU  P 0.0         3-                13.522 Y  16             1818.8    11    - PARENT
+152GD  N 3.584E0     3.584E0   0.279     3.584E0                                - NORMALIZATION
+152GD  L 1605.255  4 2+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 57.86 (32) keV   |   log ft 11.155 (15)
+
+*    log ft
+152GD  B 213.5     110.101    3          11.1                                1  - OLD CARD
+152GD  B 213.5     110.101    3          11.155  15                             - NEW CARD
+
+*    Mean energy
+152GDS B EAV=58.6 4                                                             - OLD CARD
+152GDS B EAV=57.86 32                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  12
+
+152EU  P 0.0         3-                13.522 Y  16             1818.8    11    - PARENT
+152GD  N 3.584E0     3.584E0   0.279     3.584E0                                - NORMALIZATION
+152GD  L 1643.395  4 2-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 46.77 (32) keV   |   log ft 9.63 (1)
+
+*    log ft
+152GD  B 175.4     111.826   21          9.6                                    - OLD CARD
+152GD  B 175.4     111.826   21          9.63     1                             - NEW CARD
+
+*    Mean energy
+152GDS B EAV=47.4 4                                                             - OLD CARD
+152GDS B EAV=46.77 32                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  13
+
+152EU  P 0.0         3-                13.522 Y  16             1818.8    11    - PARENT
+152GD  N 3.584E0     3.584E0   0.279     3.584E0                                - NORMALIZATION
+152GD  L 1692.447  153+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 32.98 (30) keV   |   log ft 11.143 (26)
+
+*    log ft
+152GD  B 126.4     110.0203  11          11.1                                   - OLD CARD
+152GD  B 126.4     110.0203  11          11.143  26                             - NEW CARD
+
+*    Mean energy
+152GDS B EAV=33.4 3                                                             - OLD CARD
+152GDS B EAV=32.98 30                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 13
+-------- Added lines: 3
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 121.7818  3 2+                1.400 NS  11                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.82894 (28) | L =  0.12004 (10) | M =  0.02833 (10) | N =  0.00731 (6) | O =  0.001234 (12) | P =  1.155E-4 (11)
+K/b+ =  59.14 (42) | L/b+ =  8.56 (5) | M/b+ =  2.021 (8) | N/b+ =  0.5218 (41) | O/b+ =  0.0880 (9) | P/b+ =  0.00824 (8) | EC/b+ =  70.34 (48)
+
+Branch splitting:  Iec 1.7 (10) %  and  Ib+ 0.025 (15) %
+                   Itot 1.7 (10) %
+EC component of log ft 11.80 (26)
+
+*    log ft
+152SM  E             0.025   151.7     1011.8                                1  - OLD CARD
+152SM  E             0.025   151.7     1011.80   26             1.7       10    - NEW CARD
+
+*    Probabilities
+152SM2 E EAV=338.1     3$CK=0.8286   15$CL=0.1223   10$CM=0.02769  49           - OLD CARD
+152SM2 E EAV= $CK=0.82894 28$CL=0.12004 10$CM+=0.03699 12                       - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 366.4786  8 4+                57.7 PS   8                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.83721 (28) | L =  0.12213 (10) | M =  0.02886 (11) | N =  0.00745 (6) | O =  0.001257 (12) | P =  1.176E-4 (11)
+K/b+ =  281.0 (26) | L/b+ =  40.99 (34) | M/b+ =  9.69 (6) | N/b+ =  2.501 (25) | O/b+ =  0.422 (5) | P/b+ =  0.03949 (48) | EC/b+ =  334.6 (30)
+
+Branch splitting:  Iec 0.77 (5) %  and  Ib+ 0.0024 (2) %
+                   Itot 0.77 (5) %
+EC component of log ft 12.006 (28)
+
+*    log ft
+152SM  E             0.0024   20.77     512                                  1  - OLD CARD
+152SM  E             0.0024   20.77     512.006  28             0.77       5    - NEW CARD
+
+*    Probabilities
+152SM2 E EAV=230.7     3$CK=0.8372   15$CL=0.1245   11$CM=0.02821  50           - OLD CARD
+152SM2 E EAV= $CK=0.83721 28$CL=0.12213 10$CM+=0.03768 13                       - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 810.4474  202+                7.4 PS    6                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.83658 (29) | L =  0.12478 (11) | M =  0.02958 (11) | N =  0.00764 (6) | O =  0.001290 (13) | P =  1.207E-4 (12)
+K/b+ =  5.7E7 (6) | L/b+ =  8.5E6 (9) | M/b+ =  2.02E6 (22) | N/b+ =  5.2E5 (6) | O/b+ =  8.8E4 (10) | P/b+ =  8.2E3 (9) | EC/b+ =  6.8E7 (8)
+
+Branch splitting:  Iec 1.28 (3) %  and  Ib+ 0 %
+                   Itot 1.28 (3) %
+EC component of log ft 11.472 (10)
+
+*    log ft
+152SM  E                       1.28     311.4                                1  - OLD CARD
+152SM  E                       1.28     311.472  10             1.28       3    - NEW CARD
+
+*    Probabilities
+152SM2 E CK=0.8366   15$CL=0.1273   11$CM=0.0290    6$CN=0.0071    4            - OLD CARD
+152SM2 E CK=0.83658 29$CL=0.12478 11$CM+=0.03863 13                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 1022.967  5 4-                4.9 PS                                   - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.83384 (30) | L =  0.12678 (11) | M =  0.03014 (11) | N =  0.00779 (6) | O =  0.001315 (13) | P =  1.231E-4 (12)
+log ft 12.001 (9)
+
+*    log ft
+152SM  E                       0.238    511.9                                   - OLD CARD
+152SM  E                       0.238    512.001   9             0.238      5    - NEW CARD
+
+*    Probabilities
+152SM2 E CK=0.8338   15$CL=0.1294   11$CM=0.0295    6$CN=0.0073    4            - OLD CARD
+152SM2 E CK=0.83384 30$CL=0.12678 11$CM+=0.03937 13                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 1041.1342 183-                27 FS     5                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.83354 (30) | L =  0.12701 (11) | M =  0.03020 (11) | N =  0.00781 (6) | O =  0.001318 (13) | P =  1.234E-4 (12)
+log ft 12.423 (35)
+
+*    log ft
+152SM  E                       0.086    712.4                                   - OLD CARD
+152SM  E                       0.086    712.423  35             0.086      7    - NEW CARD
+
+*    Probabilities
+152SM2 E CK=0.8335   15$CL=0.1296   11$CM=0.0296    6$CN=0.0073    4            - OLD CARD
+152SM2 E CK=0.83354 30$CL=0.12701 11$CM+=0.03945 13                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  6
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 1085.8499 232+                0.87 PS   4                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.83273 (30) | L =  0.12760 (11) | M =  0.03037 (11) | N =  0.00785 (6) | O =  0.001326 (13) | P =  1.241E-4 (12)
+log ft 9.9780 (32)
+
+*    log ft
+152SM  E                       21.35   119.9                                 1  - OLD CARD
+152SM  E                       21.35   119.9780  32             21.35     11    - NEW CARD
+
+*    Probabilities
+152SM2 E CK=0.8327   15$CL=0.1302   11$CM=0.0297    6$CN=0.0073    4            - OLD CARD
+152SM2 E CK=0.83273 30$CL=0.12760 11$CM+=0.03967 13                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  7
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 1233.8656 173+                3 PS      3                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.82916 (31) | L =  0.13021 (12) | M =  0.03110 (12) | N =  0.00805 (6) | O =  0.001359 (13) | P =  1.272E-4 (12)
+log ft 9.8814 (32)
+
+*    log ft
+152SM  E                       17.16    89.8                                    - OLD CARD
+152SM  E                       17.16    89.8814  32             17.16      8    - NEW CARD
+
+*    Probabilities
+152SM2 E CK=0.8291   16$CL=0.1329   11$CM=0.0305    6$CN=0.0075    4            - OLD CARD
+152SM2 E CK=0.82916 31$CL=0.13021 12$CM+=0.04064 13                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  8
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 1292.771  6 (2)+              8 PS      8                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.82718 (32) | L =  0.13165 (12) | M =  0.03150 (12) | N =  0.00816 (6) | O =  0.001377 (14) | P =  1.289E-4 (13)
+log ft 11.217 (7)
+
+*    log ft
+152SM  E                       0.644   1011.2                                1  - OLD CARD
+152SM  E                       0.644   1011.217   7             0.644     10    - NEW CARD
+
+*    Probabilities
+152SM2 E CK=0.8271   16$CL=0.1344   11$CM=0.0309    6$CN=0.0076    4            - OLD CARD
+152SM2 E CK=0.82718 32$CL=0.13165 12$CM+=0.04117 13                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  9
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 1371.691  9 4+                1.4 PS    4                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.82372 (34) | L =  0.13418 (13) | M =  0.03221 (12) | N =  0.00835 (7) | O =  0.001409 (14) | P =  1.319E-4 (13)
+log ft 10.950 (12)
+
+*    log ft
+152SM  E                       0.869   2410.9                                1  - OLD CARD
+152SM  E                       0.869   2410.950  12             0.869     24    - NEW CARD
+
+*    Probabilities
+152SM2 E CK=0.8236   16$CL=0.1370   11$CM=0.0316    6$CN=0.0078    4            - OLD CARD
+152SM2 E CK=0.82372 34$CL=0.13418 13$CM+=0.04210 14                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  10
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 1529.8073 162-                27 FS                                    - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.81118 (40) | L =  0.14333 (17) | M =  0.03479 (14) | N =  0.00904 (7) | O =  0.001527 (16) | P =  1.430E-4 (14)
+log ft 9.1335 (39)
+
+*    log ft
+152SM  E                       24.72   119.1                                    - OLD CARD
+152SM  E                       24.72   119.1335  39             24.72     11    - NEW CARD
+
+*    Probabilities
+152SM2 E CK=0.8109   17$CL=0.1465   12$CM=0.0341    7$CN=0.0085    4            - OLD CARD
+152SM2 E CK=0.81118 40$CL=0.14333 17$CM+=0.04550 16                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  11
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 1579.365  3 3-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.80390 (45) | L =  0.14863 (20) | M =  0.03629 (15) | N =  0.00944 (8) | O =  0.001595 (17) | P =  1.494E-4 (15)
+log ft 10.0570 (46)
+
+*    log ft
+152SM  E                       2.068   1210                                     - OLD CARD
+152SM  E                       2.068   1210.0570 46             2.068     12    - NEW CARD
+
+*    Probabilities
+152SM2 E CK=0.8036   17$CL=0.1519   12$CM=0.0356    7$CN=0.0088    5            - OLD CARD
+152SM2 E CK=0.80390 45$CL=0.14863 20$CM+=0.04747 17                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  12
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 1612.94   6                                                            - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.7970 (5) | L =  0.15363 (23) | M =  0.03771 (17) | N =  0.00982 (8) | O =  0.001660 (18) | P =  1.554E-4 (16)
+log ft 11.932 (30)
+
+*    log ft
+152SM  E                       0.0208  1411.9                                   - OLD CARD
+152SM  E                       0.0208  1411.932  30             0.0208    14    - NEW CARD
+
+*    Probabilities
+152SM2 E CK=0.7966   18$CL=0.1571   13$CM=0.0370    7$CN=0.0092    5            - OLD CARD
+152SM2 E CK=0.7970 5$CL=0.15363 23$CM+=0.04935 19                               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  13
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 1649.910  8 2-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.7864 (6) | L =  0.16135 (29) | M =  0.03992 (19) | N =  0.01041 (9) | O =  0.001761 (19) | P =  1.649E-4 (18)
+log ft 10.143 (8)
+
+*    log ft
+152SM  E                       0.889   1410.1                                   - OLD CARD
+152SM  E                       0.889   1410.143   8             0.889     14    - NEW CARD
+
+*    Probabilities
+152SM2 E CK=0.7859   19$CL=0.1651   13$CM=0.0392    7$CN=0.0098    5            - OLD CARD
+152SM2 E CK=0.7864 6$CL=0.16135 29$CM+=0.05226 21                               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  14
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 1730.241  22(3)-                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.7352 (12) | L =  0.1984 (7) | M =  0.05064 (35) | N =  0.01330 (15) | O =  0.002252 (30) | P =  2.109E-4 (27)
+log ft 10.975 (14)
+
+*    log ft
+152SM  E                       0.0422  1210.9                                   - OLD CARD
+152SM  E                       0.0422  1210.975  14             0.0422    12    - NEW CARD
+
+*    Probabilities
+152SM2 E CK=0.7339   23$CL=0.2036   16$CM=0.0499    9$CN=0.0125    7            - OLD CARD
+152SM2 E CK=0.7352 12$CL=0.1984 7$CM+=0.06640 38                                - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  15
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 1757.151  132,3+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.6922 (20) | L =  0.2294 (12) | M =  0.0597 (5) | N =  0.01575 (20) | O =  0.002670 (41) | P =  2.501E-4 (38)
+log ft 10.734 (33)
+
+*    log ft
+152SM  E                       0.041    310.7                                1  - OLD CARD
+152SM  E                       0.041    310.734  33             0.041      3    - NEW CARD
+
+*    Probabilities
+152SM2 E CK=0.6903   28$CL=0.2358   20$CM=0.0591   11$CN=0.0149    8            - OLD CARD
+152SM2 E CK=0.6922 20$CL=0.2294 12$CM+=0.0784 5                                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  16
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 1769.10   3 2+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.6612 (27) | L =  0.2517 (17) | M =  0.0664 (7) | N =  0.01755 (25) | O =  0.00298 (5) | P =  2.788E-4 (46)
+log ft 10.374 (34)
+
+*    log ft
+152SM  E                       0.068    510.3                                1  - OLD CARD
+152SM  E                       0.068    510.374  34             0.068      5    - NEW CARD
+
+*    Probabilities
+152SM2 E CK=0.6586   33$CL=0.2591   24$CM=0.0657   12$CN=0.0166    9            - OLD CARD
+152SM2 E CK=0.6612 27$CL=0.2517 17$CM+=0.0872 7                                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 16
+-------- Added lines: 1
+
+
+####################################################  B+ DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 121.7818  3 2+                1.400 NS  11                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 337.02 (31) keV   |   log ft (ec & beta +) 11.80 (26)
+
+*    log ft (ec & beta +)
+152SM  E             0.025   151.7     1011.8                                1  - OLD CARD
+152SM  E             0.025   151.7     1011.80   26             1.7       10    - NEW CARD
+
+*    Mean energy
+152SM2 E EAV=338.1     3$CK=0.8286   15$CL=0.1223   10$CM=0.02769  49           - OLD CARD
+152SM2 E EAV=337.02 31$CK=0.82894 28$CL=0.12004 10$CM+=0.03699 12               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+152EU  P 0.0         3-                13.522 Y  16             1874.3    7     - PARENT
+152SM  N 1.387E0     1.387E0   0.721     1.387E0                                - NORMALIZATION
+152SM  L 366.4786  8 4+                57.7 PS   8                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 229.97 (31) keV   |   log ft (ec & beta +) 12.008 (28)
+
+*    log ft (ec & beta +)
+152SM  E             0.0024   20.77     512                                  1  - OLD CARD
+152SM  E             0.0024   20.77     512.008  28             0.77       5    - NEW CARD
+
+*    Mean energy
+152SM2 E EAV=230.7     3$CK=0.8372   15$CL=0.1245   11$CM=0.02821  50           - OLD CARD
+152SM2 E EAV=229.97 31$CK=0.83721 28$CL=0.12213 10$CM+=0.03768 13               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 2
+-------- Added lines: 1
+
+

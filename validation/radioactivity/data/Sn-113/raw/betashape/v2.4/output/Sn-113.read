@@ -1,0 +1,66 @@
+Information read from the input file: .\Sn113\Sn-113.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 49   Daughter A: 113   Symbol: In
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 50, A 113
+
+Parent record has been found
+Parent Z: 50	Parent A: 113   Symbol: Sn
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 1/2+ | Treated as: 1/2+
+Parent half-life: 115.09 (3) D or 9.9438E6 (26) S
+Parent Q-value: 1036.0 (28) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 9/2+ | Treated as: 9/2+
+Level half-life: STABLE
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 391.699 (3) keV
+Level spin and parity | Read: 1/2- | Treated as: 1/2-
+Level half-life: 1.6579 (38) H or 5968 (14) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 97.79 (8) %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 7.01
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 646.833 (10) keV
+Level spin and parity | Read: 3/2- | Treated as: 3/2-
+Level half-life not given.
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 2.21 (8) %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 8.2
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1029.73 (8) keV
+Level spin and parity | Read: 1/2,3/2+ | Treated as: 1/2+
+Daughter level not clearly defined.
+Level half-life: 0.33 NS or 3.3E-10 S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 0.00103 (4) %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 6.5
+
+####################################

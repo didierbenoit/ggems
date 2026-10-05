@@ -1,0 +1,77 @@
+Input file:  .\Sn113\Sn-113.txt
+Output file: .\Sn113\Sn-113.new
+
+Input file: 50 lines
+Output file: 51 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+113SN  P 0.0         1/2+              115.09 D  3              1036.0    28    - PARENT
+113IN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+113IN  L 391.699   3 1/2-              1.6579 H  38                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.85509 (18) | L =  0.114135 (41) | M =  0.02465 (9) | N =  0.005509 (44) | O =  6.21E-4 (11)
+log ft 7.029 (7)
+
+*    log ft
+113IN  E                       97.79    87.01                                   - OLD CARD
+113IN  E                       97.79    87.029    7             97.79      8    - NEW CARD
+
+*    Probabilities
+113IN2 E CK=0.855     1$CL=0.116     1$CM=0.0241    5                           - OLD CARD
+113IN2 E CK=0.85509 18$CL=0.114135 41$CM+=0.03078 10                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+113SN  P 0.0         1/2+              115.09 D  3              1036.0    28    - PARENT
+113IN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+113IN  L 646.833   103/2-                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.84846 (27) | L =  0.11917 (10) | M =  0.02591 (11) | N =  0.005799 (49) | O =  6.54E-4 (12)
+log ft 8.214 (18)
+
+*    log ft
+113IN  E                       2.21     88.2                                    - OLD CARD
+113IN  E                       2.21     88.214   18             2.21       8    - NEW CARD
+
+*    Probabilities
+113IN2 E CK=0.8490   14$CL=0.121     1$CM=0.0254    5                           - OLD CARD
+113IN2 E CK=0.84846 27$CL=0.11917 10$CM+=0.03236 12                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+113SN  P 0.0         1/2+              115.09 D  3              1036.0    28    - PARENT
+113IN  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+113IN  L 1029.73   8 1/2,3/2+          0.33 NS                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+L =  0.35 (21) | M =  0.49 (16) | N =  0.14 (5) | O =  0.016 (6)
+log ft 6.6 (10)
+
+*    log ft
+113IN  E                       0.00103  46.5                                    - OLD CARD
+113IN  E                       0.00103  46.6     10             0.00103    4    - NEW CARD
+
+*    Probabilities
+113IN2 E CL=0.3       3$CM=0.54     20                                          - OLD CARD
+113IN2 E CL=0.35 21$CM=0.49 16$CN+=0.16 5                                       - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 3
+-------- Added lines: 1
+
+

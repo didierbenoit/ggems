@@ -1,0 +1,1 @@
+.\betashape.exe .\Ba133\Ba-133.txt -csv

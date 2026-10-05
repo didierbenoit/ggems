@@ -1,0 +1,1 @@
+.\betashape.exe .\Mn54\Mn-54.txt fixint=1 -csv

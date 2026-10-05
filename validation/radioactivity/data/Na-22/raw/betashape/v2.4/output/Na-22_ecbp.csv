@@ -1,0 +1,12 @@
+# BetaShape
+# Version: 2.4 (06/2024)
+# Author: X. Mougeot (xavier.mougeot@cea.fr)
+# CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+# Please cite: [2019MO35] X. Mougeot, Applied Radiation and Isotopes 154, 108884 (2019)
+# 
+# Input file: .\Na22\Na-22.txt
+# Neutrino information: no
+# 
+# parent symbol, Z, A, Jpi, level energy, unc, daughter symbol, Z, A, Jpi, level energy, unc, Q, unc, half-life, unc, unit, transition nature, transition nature used, branching %, unc, log ft, unc, ftot-value, unc, ec branching %, unc, log ft ec, unc, fec-value, unc, ec transition energy, unc, b+ branching %, unc, log ft b+, unc, fb+-value, unc, b+ transition energy, unc, mean energy calc, unc, mean energy exp, unc, EC/b+, value, unc, nb shells, [shell name, relative proba, unc, proba, unc, proba/b+, unc] * nb shells, nb subshells, [subshell name, relative proba, unc, proba, unc, proba/b+, unc] * nb subshells
+Na, 11, 22, 3+, 0, 0, Ne, 10, 22, 0+, 0, 0, 2843.02, 0.21, 8.2140E7, 25000, s, 2U, 2U, 0.056, 0.014, 14.93, 0.11, 5800, 5, 0.00098, 0.00025, 14.92, 0.11, 99.5, 0.7, 2843.02, 0.21, 0.055, 0.014, 14.93, 0.11, 5701, 5, 1821.02, 0.21, 832.82, 0.1, 835.82, 0.1, EC/b+, 0.01783, 0.00013, 2, K, 0.93637, 0.00017, 0.0164, 0.00012, 0.0167, 0.00012, L, 0.06363, 0.00017, 0.001115, 8e-06, 0.001135, 5e-06, 4, PK, 0.93637, 0.00017, 0.0164, 0.00012, 0.0167, 0.00012, PL1, 0.06359, 0.00017, 0.001114, 8e-06, 0.001134, 5e-06, PL2, 2.464e-05, 5e-08, 4.316e-07, 3.2e-09, 4.39e-07, 2.2e-09, PL3, 1.016e-05, 6e-08, 1.779e-07, 1.7e-09, 1.8097e-07, 2.1e-10
+Na, 11, 22, 3+, 0, 0, Ne, 10, 22, 2+, 1274.577, 0.007, 2843.02, 0.21, 8.2140E7, 25000, s, A, A, 99.94, 0.13, 7.4219, 0.0009, 0.3214, 0.0005, 9.64, 0.09, 7.429, 0.005, 0.03149, 0.00022, 1568.44, 0.21, 90.3, 0.09, 7.4212, 0.0008, 0.28994, 0.00044, 546.45, 0.21, 215.64, 0.09, 216.32, 0.09, EC/b+, 0.111, 0.0009, 2, K, 0.93642, 0.00017, 0.0936, 0.0007, 0.104, 0.0008, L, 0.06358, 0.00017, 0.006355, 4.9e-05, 0.00706, 3.7e-05, 3, PK, 0.93642, 0.00017, 0.0936, 0.0007, 0.104, 0.0008, PL1, 0.06356, 0.00017, 0.006352, 4.9e-05, 0.007058, 3.7e-05, PL2, 2.412e-05, 5e-08, 2.411e-06, 1.8e-08, 2.678e-06, 1.5e-08

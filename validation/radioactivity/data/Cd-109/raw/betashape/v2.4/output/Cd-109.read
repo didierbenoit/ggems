@@ -1,0 +1,40 @@
+Information read from the input file: .\Cd109\Cd-109.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 47   Daughter A: 109   Symbol: Ag
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 48, A 109
+
+Parent record has been found
+Parent Z: 48	Parent A: 109   Symbol: Cd
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 5/2+ | Treated as: 5/2+
+Parent half-life: 461.9 (4) D or 3.9908E7 (35) S
+Parent Q-value: 215.5 (18) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 1/2- | Treated as: 1/2-
+Level half-life: STABLE
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level without uncertainty: 88.034 keV
+Level spin and parity | Read: 7/2+ | Treated as: 7/2+
+Daughter level not clearly defined.
+Level half-life: 39.7 (2) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 100 %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 6
+
+####################################

@@ -1,0 +1,54 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 11-Na-22 [3+] g.s.  -->  Daughter nucleus: 10-Ne-22 [0+] g.s.
+Half-life of the parent nuclide: 8.2140E7 (25) s
+Electron capture transition. Order: 2nd forbidden unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 9.8E-4 (25) %
+Log ft of the (ec + b+) transition: 14.91
+
+------------------------------------
+Parent nucleus: 11-Na-22 [3+] g.s.  -->  Daughter nucleus: 10-Ne-22 [0+] g.s.
+Half-life of the parent nuclide: 8.2140E7 (25) s
+Beta + transition. Order: 2nd forbidden unique
+Transition energy. Calculated Emax from Q-value and level energies: 1821.02 (21) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.055 (14) %
+Average energy of beta + spectrum: 835.04 (19) keV
+Log ft of the (ec + b+) transition: 14.91
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 11-Na-22 [3+] g.s.  -->  Daughter nucleus: 10-Ne-22 [2+] 1274.577 (7) keV
+Half-life of the parent nuclide: 8.2140E7 (25) s
+Electron capture transition. Order: allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 9.64 (9) %
+Log ft of the (ec + b+) transition: 7.41
+
+------------------------------------
+Parent nucleus: 11-Na-22 [3+] g.s.  -->  Daughter nucleus: 10-Ne-22 [2+] 1274.577 (7) keV
+Half-life of the parent nuclide: 8.2140E7 (25) s
+Beta + transition. Order: allowed
+Transition energy. Calculated Emax from Q-value and level energies: 546.45 (21) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 90.30 (9) %
+Average energy of beta + spectrum: 215.62 (17) keV
+Log ft of the (ec + b+) transition: 7.41
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 4 transitions have been read.
+
+Parent nucleus: 11-Na-22
+4 transitions have been read (2 EC, 2 B+).
+
+
+####################################

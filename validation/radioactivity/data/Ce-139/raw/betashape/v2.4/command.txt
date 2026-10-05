@@ -1,0 +1,1 @@
+.\betashape.exe .\Ce139\Ce-139.txt -csv

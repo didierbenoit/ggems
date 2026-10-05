@@ -1,0 +1,54 @@
+Information read from the input file: .\Zn65\Zn-65.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 29   Daughter A: 65   Symbol: Cu
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 30, A 65
+
+Parent record has been found
+Parent Z: 30	Parent A: 65   Symbol: Zn
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 5/2- | Treated as: 5/2-
+Parent half-life: 244.01 (9) D or 2.1082E7 (8) S
+Parent Q-value: 1352.1 (3) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 3/2- | Treated as: 3/2-
+Level half-life: STABLE
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the beta + branch: 1.421 (7) %
+Intensity of the ec branch: 48.35 (11) %
+Total intensity of the (ec & beta +) decay not given.
+Transition order: allowed
+Log ft of the (ec + b+) transition: 7.46
+Average energy of beta + spectrum: 143.1 (1) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 770.64 (9) keV
+Level spin and parity | Read: 1/2- | Treated as: 1/2-
+Level half-life: 0.099 (5) PS or 9.9E-14 (5) S
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1115.556 (4) keV
+Level spin and parity | Read: 5/2- | Treated as: 5/2-
+Level half-life: 0.285 (9) PS or 2.85E-13 (9) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 50.23 (11) %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 5.89
+
+####################################

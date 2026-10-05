@@ -1,0 +1,120 @@
+Input file:  .\Na22\Na-22.txt
+Output file: .\Na22\Na-22.new
+
+Input file: 32 lines
+Output file: 37 lines
+Added new lines: 5
+--> Output file is consistent.
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 22NA  P 0.0         3+                2.6029 Y  8              2843.02   21    - PARENT
+ 22NE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 22NE  L 0           0+                 STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '2U' transition assumed.
+K =  0.01640 (12) | L =  0.001115 (8)
+K/b+ =  0.01670 (12) | L/b+ =  0.001135 (5) | EC/b+ =  0.01783 (13)
+
+Branch splitting:  Iec 9.8E-4 (25) %  and  Ib+ 0.055 (14) %
+                   Itot 0.056 (14) %
+EC component of log ft 14.92 (11)
+
+*    log ft
+ 22NE  E             0.055   140.00098 2514.91                               2U - OLD CARD
+ 22NE  E             0.055   149.8E-4  2514.92   11             0.056     14 2U - NEW CARD
+
+*    Probabilities
+ 22NE2 E EAV=835.04   19                                                        - OLD CARD
+ 22NE2 E EAV= $CK=0.01640 12$CL=0.001115 8                                      - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 22NA  P 0.0         3+                2.6029 Y  8              2843.02   21    - PARENT
+ 22NE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 22NE  L 1274.577  7 2+                0.00524 NS7                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.0936 (7) | L =  0.006355 (49)
+K/b+ =  0.1040 (8) | L/b+ =  0.007060 (37) | EC/b+ =  0.1110 (9)
+
+Branch splitting:  Iec 9.64 (9) %  and  Ib+ 90.30 (9) %
+                   Itot 99.94 (13) %
+EC component of log ft 7.429 (5)
+
+*    log ft
+ 22NE  E             90.30    99.64     97.41                                   - OLD CARD
+ 22NE  E             90.30    99.64     97.429    5             99.94     13    - NEW CARD
+
+*    Probabilities
+ 22NE2 E EAV=215.62   17$CK=0.08903  39$CL=0.00743  39                          - OLD CARD
+ 22NE2 E EAV= $CK=0.0936 7$CL=0.006355 49                                       - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 2
+-------- Added lines: 1
+
+
+####################################################  B+ DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 22NA  P 0.0         3+                2.6029 Y  8              2843.02   21    - PARENT
+ 22NE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 22NE  L 0           0+                 STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '2U' transition assumed.
+Emean 832.82 (10) keV   |   log ft (ec & beta +) 14.93 (11)
+
+From measured spectrum
+Emean 835.82 (10) keV   |   [For information] log ft (ec & beta +) 0
+
+*    log ft (ec & beta +)
+ 22NE  E             0.055   140.00098 2514.91                               2U - OLD CARD
+ 22NE  E             0.055   149.8E-4  2514.93   11             0.056     14 2U - NEW CARD
+
+*    Mean energy
+ 22NE2 E EAV=835.04   19                                                        - OLD CARD
+ 22NE2 E EAV=835.82 10$CK=0.01640 12$CL=0.001115 8                              - NEW CARD
+ 22NE DE $Cexp(W)=q{+4}+(10/3)|l{-2}q{+2}p{+2}+|l{-3}p{+4} (1953WR13)           - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 22NA  P 0.0         3+                2.6029 Y  8              2843.02   21    - PARENT
+ 22NE  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 22NE  L 1274.577  7 2+                0.00524 NS7                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 215.64 (9) keV   |   log ft (ec & beta +) 7.4219 (9)
+
+From measured spectrum
+Emean 216.32 (9) keV   |   [For information] log ft (ec & beta +) 0
+
+*    log ft (ec & beta +)
+ 22NE  E             90.30    99.64     97.41                                   - OLD CARD
+ 22NE  E             90.30    99.64     97.4219   9             99.94     13    - NEW CARD
+
+*    Mean energy
+ 22NE2 E EAV=215.62   17$CK=0.08903  39$CL=0.00743  39                          - OLD CARD
+ 22NE2 E EAV=216.32 9$CK=0.0936 7$CL=0.006355 49                                - NEW CARD
+ 22NE2 E C1=-0.005 (1972GI17)                                                   - ADDITIONAL NEW CARD
+ 22NE DE $Cexp(W) = 1+C{-1}W                                                    - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 2
+-------- Added lines: 4
+
+

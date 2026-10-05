@@ -1,0 +1,67 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 38-Sr-85 [9/2+] g.s.  -->  Daughter nucleus: 37-Rb-85 [5/2-] g.s.
+Half-life of the parent nuclide: 5.6030E6 (6) s
+Electron capture transition. Order: 1st forbidden unique
+Total normalization of the (ec & b+) decay: 1
+Warning: missing total intensity in input file. Recalculated.
+Normalization of this transition: 0.8 (4) %
+Log ft of the (ec + b+) transition: 9.3
+
+------------------------------------
+Parent nucleus: 38-Sr-85 [9/2+] g.s.  -->  Daughter nucleus: 37-Rb-85 [5/2-] g.s.
+Half-life of the parent nuclide: 5.6030E6 (6) s
+Beta + transition. Order: 1st forbidden unique
+Transition energy. Calculated Emax from Q-value and level energies: 43 (3) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0 %
+Log ft of the (ec + b+) transition: 9.3
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 38-Sr-85 [9/2+] g.s.  -->  Daughter nucleus: 37-Rb-85 [3/2-] 151.16 keV
+Half-life of the parent nuclide: 5.6030E6 (6) s
+Electron capture transition. Order: 3rd forbidden non-unique
+Total normalization of the decay: 1
+Normalization of this transition: 5E-4 %
+Log ft of the ec transition: 11.5
+
+------------------------------------
+Parent nucleus: 38-Sr-85 [9/2+] g.s.  -->  Daughter nucleus: 37-Rb-85 [1/2-] 280.99 keV
+Half-life of the parent nuclide: 5.6030E6 (6) s
+Electron capture transition. Order: 3rd forbidden unique
+Total normalization of the decay: 1
+Normalization of this transition: 5E-4 %
+Log ft of the ec transition: 11.8
+
+------------------------------------
+Parent nucleus: 38-Sr-85 [9/2+] g.s.  -->  Daughter nucleus: 37-Rb-85 [9/2+] 514.01 keV
+Half-life of the parent nuclide: 5.6030E6 (6) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 99.2 (4) %
+Log ft of the ec transition: 6.2
+
+------------------------------------
+Parent nucleus: 38-Sr-85 [9/2+] g.s.  -->  Daughter nucleus: 37-Rb-85 [7/2-] 868.98 keV
+Half-life of the parent nuclide: 5.6030E6 (6) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the decay: 1
+Normalization of this transition: 0.0129 (4) %
+Log ft of the ec transition: 9.1
+
+
+####################################
+
+Summary
+
+1 nucleus and 6 transitions have been read.
+
+Parent nucleus: 38-Sr-85
+6 transitions have been read (5 EC, 1 B+).
+
+
+####################################

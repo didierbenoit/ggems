@@ -1,0 +1,43 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 30-Zn-65 [5/2-] g.s.  -->  Daughter nucleus: 29-Cu-65 [3/2-] g.s.
+Half-life of the parent nuclide: 2.1082E7 (8) s
+Electron capture transition. Order: allowed
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 48.35 (11) %
+Log ft of the (ec + b+) transition: 7.46
+
+------------------------------------
+Parent nucleus: 30-Zn-65 [5/2-] g.s.  -->  Daughter nucleus: 29-Cu-65 [3/2-] g.s.
+Half-life of the parent nuclide: 2.1082E7 (8) s
+Beta + transition. Order: allowed
+Transition energy. Calculated Emax from Q-value and level energies: 330.1 (3) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 1.421 (7) %
+Average energy of beta + spectrum: 143.1 (1) keV
+Log ft of the (ec + b+) transition: 7.46
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 30-Zn-65 [5/2-] g.s.  -->  Daughter nucleus: 29-Cu-65 [5/2-] 1115.556 (4) keV
+Half-life of the parent nuclide: 2.1082E7 (8) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 50.23 (11) %
+Log ft of the ec transition: 5.89
+
+
+####################################
+
+Summary
+
+1 nucleus and 3 transitions have been read.
+
+Parent nucleus: 30-Zn-65
+3 transitions have been read (2 EC, 1 B+).
+
+
+####################################

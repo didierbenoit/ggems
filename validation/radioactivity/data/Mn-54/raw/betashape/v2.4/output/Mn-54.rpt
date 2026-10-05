@@ -1,0 +1,88 @@
+Input file:  .\Mn54\Mn-54.txt
+Output file: .\Mn54\Mn-54.new
+
+Input file: 44 lines
+Output file: 46 lines
+Added new lines: 2
+--> Output file is consistent.
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 54MN  P 0.0         3+                312.19 D  3              1377.2    10    - PARENT
+ 54CR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 54CR  L 0           0+                 STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '2U' transition assumed.
+K =  0.88167 (36) | L =  0.09995 (25) | M =  0.01554 (9) | N =  0.001175 (22)
+K/b+ =  530 (10) | L/b+ =  60.1 (14) | M/b+ =  9.34 (24) | N/b+ =  0.706 (28) | EC/b+ =  600 (12)
+
+Branch splitting:  Iec 3.E-4 (3) %  and  Ib+ 5.7E-7 %
+                   Itot 3.E-4 (3) %
+EC component of log ft 13.77 (GE)
+
+*    log ft
+ 54CR  E             5.7E-7    0.0003   313.9                                2U - OLD CARD
+ 54CR  E             5.7E-7    3.E-4    313.8    GE             3.E-4      3 2U - NEW CARD
+
+*    Probabilities
+ 54CR2 E EAV=182      $CK=0.8891   16$CL=0.0936   13$CM=0.0148    6             - OLD CARD
+ 54CR2 E EAV= $CK=0.88167 36$CL=0.09995 25$CM+=0.01672 9                        - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 54MN  P 0.0         3+                312.19 D  3              1377.2    10    - PARENT
+ 54CR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 54CR  L 834.855   3 2+                0.0079 NS 3                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88418 (34) | L =  0.09920 (23) | M =  0.01544 (9) | N =  0.001174 (22)
+log ft 6.1437 (39)
+
+*    log ft
+ 54CR  E                       99.9997  36.17                                   - OLD CARD
+ 54CR  E                       99.9997  36.1437  39             99.9997    3    - NEW CARD
+
+*    Probabilities
+ 54CR2 E CK=0.8896   17$CL=0.0948   14$CM=0.0150    6$CN=0.0005    2            - OLD CARD
+ 54CR2 E CK=0.88418 34$CL=0.09920 23$CM+=0.01661 9                              - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 2
+-------- Added lines: 1
+
+
+####################################################  B+ DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 54MN  P 0.0         3+                312.19 D  3              1377.2    10    - PARENT
+ 54CR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 54CR  L 0           0+                 STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '2U' transition assumed.
+Emean 181.91 (47) keV   |   log ft (ec & beta +) 13.77 (GE)
+
+*    log ft (ec & beta +)
+ 54CR  E             5.7E-7    0.0003   313.9                                2U - OLD CARD
+ 54CR  E             5.7E-7    3.E-4    313.8    GE             3.E-4      3 2U - NEW CARD
+
+*    Mean energy
+ 54CR2 E EAV=182      $CK=0.8891   16$CL=0.0936   13$CM=0.0148    6             - OLD CARD
+ 54CR2 E EAV=181.91 47$CK=0.88167 36$CL=0.09995 25$CM+=0.01672 9                - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 1
+-------- Added lines: 1
+
+

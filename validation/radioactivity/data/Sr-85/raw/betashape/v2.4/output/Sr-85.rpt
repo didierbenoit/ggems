@@ -1,0 +1,148 @@
+Input file:  .\Sr-85\Sr-85.txt
+Output file: .\Sr-85\Sr-85.new
+
+Input file: 65 lines
+Output file: 67 lines
+Added new lines: 2
+--> Output file is consistent.
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 85SR  P 0.0         9/2+              64.850 D  7              1065      3     - PARENT
+ 85RB  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 85RB  L 0           5/2-               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.8650 (7) | L =  0.11060 (43) | M =  0.02089 (17) | N =  0.003103 (39) | O =  3.7E-4 (3)
+K/b+ =  2.4E7 (14) | L/b+ =  3.1E6 (18) | M/b+ =  5.8E5 (34) | N/b+ =  9E4 (5) | O/b+ =  1.0E4 (5) | EC/b+ =  2.8E7 (16)
+
+Branch splitting:  Iec 0.8 (4) %  and  Ib+ 2.9E-8 (22) %
+                   Itot 0.8 (4) %
+EC component of log ft 9.43 (22)
+
+*    log ft
+ 85RB  E                       0.8      49.3                                 1U - OLD CARD
+ 85RB  E             2.9E-8  220.8      49.43    22             0.8        4 1U - NEW CARD
+
+*    Probabilities
+ 85RB2 E CK=0.8745   15$CL=0.1037   12$CM=0.0190    4$CN=0.0027    2            - OLD CARD
+ 85RB2 E EAV= $CK=0.8650 7$CL=0.11060 43$CM+=0.02436 18                         - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 85SR  P 0.0         9/2+              64.850 D  7              1065      3     - PARENT
+ 85RB  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 85RB  L 151.161     3/2-              0.71 NS   5                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '2U' transition assumed.
+K =  0.8573 (12) | L =  0.1169 (8) | M =  0.02216 (25) | N =  0.003264 (48) | O =  3.83E-4 (30)
+log ft 12.86
+
+*    log ft
+ 85RB  E                       0.0005    11.5                                3  - OLD CARD
+ 85RB  E                       5E-4      12.9                   5E-4            - NEW CARD
+
+*    Probabilities
+ 85RB2 E CK=0.8740   15$CL=0.1041   12$CM=0.0191    4$CN=0.0027    2            - OLD CARD
+ 85RB2 E CK=0.8573 12$CL=0.1169 8$CM+=0.02581 26                                - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+ 85SR  P 0.0         9/2+              64.850 D  7              1065      3     - PARENT
+ 85RB  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 85RB  L 280.986     1/2-              40 PS     3                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '3U' transition assumed.
+K =  0.8433 (23) | L =  0.1283 (18) | M =  0.02443 (43) | N =  0.00353 (7) | O =  3.98E-4 (31)
+log ft 12.82
+
+*    log ft
+ 85RB  E                       0.0005    11.8                                3U - OLD CARD
+ 85RB  E                       5E-4      12.8                   5E-4         3U - NEW CARD
+
+*    Probabilities
+ 85RB2 E CK=0.8735   15$CL=0.1045   12$CM=0.0192    4$CN=0.0028    2            - OLD CARD
+ 85RB2 E CK=0.8433 23$CL=0.1283 18$CM+=0.02836 44                               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+ 85SR  P 0.0         9/2+              64.850 D  7              1065      3     - PARENT
+ 85RB  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 85RB  L 514.007     9/2+              1.015 US  1                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8661 (6) | L =  0.10971 (34) | M =  0.02073 (15) | N =  0.003087 (38) | O =  3.7E-4 (3)
+log ft 6.129 (47)
+
+*    log ft
+ 85RB  E                       99.2     46.2                                    - OLD CARD
+ 85RB  E                       99.2     46.129   47             99.2       4    - NEW CARD
+
+*    Probabilities
+ 85RB2 E CK=0.8718   15$CL=0.1059   12$CM=0.0195    4$CN=0.0028    2            - OLD CARD
+ 85RB2 E CK=0.8661 6$CL=0.10971 34$CM+=0.02419 16                               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+ 85SR  P 0.0         9/2+              64.850 D  7              1065      3     - PARENT
+ 85RB  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 85RB  L 868.98      7/2-              2.5 PS    3                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8550 (9) | L =  0.1186 (6) | M =  0.02265 (21) | N =  0.003379 (48) | O =  4.05E-4 (33)
+log ft 9.08 (6)
+
+*    log ft
+ 85RB  E                       0.0129   49.1                                 1  - OLD CARD
+ 85RB  E                       0.0129   49.08     6             0.0129     4    - NEW CARD
+
+*    Probabilities
+ 85RB2 E CK=0.861     9$CL=0.114     7$CM=0.0213   14$CN=0.0031    3            - OLD CARD
+ 85RB2 E CK=0.8550 9$CL=0.1186 6$CM+=0.02643 22                                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 5
+-------- Added lines: 1
+
+
+####################################################  B+ DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 85SR  P 0.0         9/2+              64.850 D  7              1065      3     - PARENT
+ 85RB  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 85RB  L 0           5/2-               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 24.0 (16) keV   |   log ft (ec & beta +) 9.43
+
+*    log ft (ec & beta +)
+ 85RB  E                       0.8      49.3                                 1U - OLD CARD
+ 85RB  E             2.9E-8  220.8      49.4                    0.8        4 1U - NEW CARD
+
+*    Mean energy
+ 85RB2 E CK=0.8745   15$CL=0.1037   12$CM=0.0190    4$CN=0.0027    2            - OLD CARD
+ 85RB2 E EAV=24.0 16$CK=0.8650 7$CL=0.11060 43$CM+=0.02436 18                   - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 1
+-------- Added lines: 1
+
+

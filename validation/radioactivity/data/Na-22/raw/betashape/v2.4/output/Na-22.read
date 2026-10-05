@@ -1,0 +1,50 @@
+Information read from the input file: .\Na22\Na-22.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 10   Daughter A: 22   Symbol: Ne
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 11, A 22
+
+Parent record has been found
+Parent Z: 11	Parent A: 22   Symbol: Na
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 3+ | Treated as: 3+
+Parent half-life: 2.6029 (8) Y or 8.2140E7 (25) S
+Parent Q-value: 2843.02 (21) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life: STABLE
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the beta + branch: 0.055 (14) %
+Intensity of the ec branch: 9.8E-4 (25) %
+Total intensity of the (ec & beta +) decay not given.
+Transition order: 2nd forbidden unique
+Log ft of the (ec + b+) transition: 14.91
+Average energy of beta + spectrum: 835.04 (19) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1274.577 (7) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life: 0.00524 (7) NS or 5.24E-12 (7) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the beta + branch: 90.30 (9) %
+Intensity of the ec branch: 9.64 (9) %
+Total intensity of the (ec & beta +) decay not given.
+Transition order: allowed
+Log ft of the (ec + b+) transition: 7.41
+Average energy of beta + spectrum: 215.62 (17) keV
+
+####################################

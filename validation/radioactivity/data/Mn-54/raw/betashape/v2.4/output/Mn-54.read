@@ -1,0 +1,48 @@
+Information read from the input file: .\Mn54\Mn-54.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 24   Daughter A: 54   Symbol: Cr
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 25, A 54
+
+Parent record has been found
+Parent Z: 25	Parent A: 54   Symbol: Mn
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 3+ | Treated as: 3+
+Parent half-life: 312.19 (3) D or 2.69732E7 (26) S
+Parent Q-value: 1377.2 (10) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life: STABLE
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the beta + branch: 5.7E-7 %
+Intensity of the ec branch: 3.E-4 (3) %
+Total intensity of the (ec & beta +) decay not given.
+Transition order: 2nd forbidden unique
+Log ft of the (ec + b+) transition: 13.9
+Average energy of beta + spectrum: 182 keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 834.855 (3) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life: 0.0079 (3) NS or 7.9E-12 (3) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 99.9997 (3) %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 6.17
+
+####################################

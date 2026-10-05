@@ -1,0 +1,117 @@
+Input file:  .\Ba133\Ba-133.txt
+Output file: .\Ba133\Ba-133.new
+
+Input file: 86 lines
+Output file: 87 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+133BA  P 0.0         1/2+              10.539 Y  6              517.3     10    - PARENT
+133CS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+133CS  L 0           7/2+               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '2U' transition assumed.
+K =  0.7733 (48) | L =  0.1731 (35) | M =  0.0415 (10) | N =  0.01017 (28) | O =  0.001725 (49) | P =  1.92E-4 (15)
+log ft 13.773
+
+*    log ft
+133CS  E                       0.0005    13.9                                2U - OLD CARD
+133CS  E                       5E-4      13.8                   5E-4         2U - NEW CARD
+
+*    Probabilities
+133CS2 E CK=0.77     $CL=0.18     $CM=0.05                                      - OLD CARD
+133CS2 E CK=0.7733 48$CL=0.1731 35$CM+=0.0536 10                                - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+133BA  P 0.0         1/2+              10.539 Y  6              517.3     10    - PARENT
+133CS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+133CS  L 80.9979   115/2+              6.283 NS  14                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.8029 (26) | L =  0.1509 (18) | M =  0.0357 (6) | N =  0.00883 (18) | O =  0.001538 (36) | P =  1.83E-4 (15)
+log ft 10.342
+
+*    log ft
+133CS  E                       0.7       10.9                                2  - OLD CARD
+133CS  E                       0.7       10.3                   0.7             - NEW CARD
+
+*    Probabilities
+133CS2 E CK=0.84     $CL=0.13     $CM=0.037                                     - OLD CARD
+133CS2 E CK=0.8029 26$CL=0.1509 18$CM+=0.0463 6                                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+133BA  P 0.0         1/2+              10.539 Y  6              517.3     10    - PARENT
+133CS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+133CS  L 160.6121  165/2+              172 PS    4                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.7851 (36) | L =  0.1642 (26) | M =  0.0392 (8) | N =  0.00968 (22) | O =  0.001669 (43) | P =  1.94E-4 (16)
+log ft 10.335
+
+*    log ft
+133CS  E                       0.3       10.6                                2  - OLD CARD
+133CS  E                       0.3       10.3                   0.3             - NEW CARD
+
+*    Probabilities
+133CS2 E CK=0.83     $CL=0.13     $CM=0.037                                     - OLD CARD
+133CS2 E CK=0.7851 36$CL=0.1642 26$CM+=0.0507 8                                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+133BA  P 0.0         1/2+              10.539 Y  6              517.3     10    - PARENT
+133CS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+133CS  L 383.8491  123/2+              44 PS     11                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.7744 (19) | L =  0.1715 (12) | M =  0.04160 (48) | N =  0.01047 (17) | O =  0.001866 (41) | P =  2.34E-4 (21)
+log ft 8.03 (5)
+
+*    log ft
+133CS  E                       14.5     58.03                                   - OLD CARD
+133CS  E                       14.5     58.03     5             14.5       5    - NEW CARD
+
+*    Probabilities
+133CS2 E CK=0.7727    9$CL=0.1755    7$CM=0.05174  23                           - OLD CARD
+133CS2 E CK=0.7744 19$CL=0.1715 12$CM+=0.0542 5                                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+133BA  P 0.0         1/2+              10.539 Y  6              517.3     10    - PARENT
+133CS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+133CS  L 437.0113  131/2+              150 PS                                   - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.675 (5) | L =  0.2443 (37) | M =  0.0621 (13) | N =  0.01577 (40) | O =  0.00282 (9) | P =  3.53E-4 (35)
+log ft 6.64 (6)
+
+*    log ft
+133CS  E                       85.4     56.63                                   - OLD CARD
+133CS  E                       85.4     56.64     6             85.4       5    - NEW CARD
+
+*    Probabilities
+133CS2 E CK=0.671     5$CL=0.251     4$CM=0.0777   11                           - OLD CARD
+133CS2 E CK=0.675 5$CL=0.2443 37$CM+=0.0810 14                                  - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 5
+-------- Added lines: 1
+
+

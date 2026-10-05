@@ -1,0 +1,46 @@
+Information read from the input file: .\Ce139\Ce-139.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 57   Daughter A: 139   Symbol: La
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 58, A 139
+
+Parent record has been found
+Parent Z: 58	Parent A: 139   Symbol: Ce
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 3/2+ | Treated as: 3/2+
+Parent half-life: 137.641 (20) D or 1.18922E7 (17) S
+Parent Q-value: 270 (3) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 7/2+ | Treated as: 7/2+
+Level half-life: STABLE
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 0.008 %
+Total intensity of the decay not given.
+Transition order: 2nd forbidden non-unique
+Log ft of the ec transition: 10.6
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 165.8576 (11) keV
+Level spin and parity | Read: 5/2+ | Treated as: 5/2+
+Level half-life: 1.499 (19) NS or 1.499E-9 (19) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 99.9973 (27) %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 5.42
+
+####################################

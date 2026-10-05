@@ -1,0 +1,42 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 50-Sn-113 [1/2+] g.s.  -->  Daughter nucleus: 49-In-113 [1/2-] 391.699 (3) keV
+Half-life of the parent nuclide: 9.9438E6 (26) s
+Electron capture transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the decay: 1
+Normalization of this transition: 97.79 (8) %
+Log ft of the ec transition: 7.01
+
+------------------------------------
+Parent nucleus: 50-Sn-113 [1/2+] g.s.  -->  Daughter nucleus: 49-In-113 [3/2-] 646.833 (10) keV
+Half-life of the parent nuclide: 9.9438E6 (26) s
+Electron capture transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the decay: 1
+Normalization of this transition: 2.21 (8) %
+Log ft of the ec transition: 8.2
+
+------------------------------------
+Parent nucleus: 50-Sn-113 [1/2+] g.s.  -->  Daughter nucleus: 49-In-113 [1/2+] 1029.73 (8) keV
+Half-life of the parent nuclide: 9.9438E6 (26) s
+Electron capture transition. Order: as allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.00103 (4) %
+Log ft of the ec transition: 6.5
+
+
+####################################
+
+Summary
+
+1 nucleus and 3 transitions have been read.
+
+Parent nucleus: 50-Sn-113
+3 transitions have been read (3 EC).
+
+
+####################################

@@ -1,0 +1,33 @@
+Information read from the input file: .\Ge68\Ge-68.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 31   Daughter A: 68   Symbol: Ga
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 32, A 68
+
+Parent record has been found
+Parent Z: 32	Parent A: 68   Symbol: Ge
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 0+ | Treated as: 0+
+Parent half-life: 270.95 (26) D or 2.3410E7 (22) S
+Parent Q-value: 106.9 (24) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 1+ | Treated as: 1+
+Level half-life: 67.83 (20) M or 4070 (12) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 100 %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 5.006
+
+####################################
