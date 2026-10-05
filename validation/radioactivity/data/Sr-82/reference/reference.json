@@ -1,0 +1,43 @@
+{
+  "name": "Sr-82",
+  "reference_id": "LNHB-Sr82-prompt-parent",
+  "half_life": {
+    "value": "2189980.800"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "atomic_xray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.6041"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1.7675",
+            "weight": "0.0252"
+          },
+          {
+            "energy_keV": "13.3359",
+            "weight": "0.1679"
+          },
+          {
+            "energy_keV": "13.3955",
+            "weight": "0.3232"
+          },
+          {
+            "energy_keV": "14.9994",
+            "weight": "0.0787"
+          },
+          {
+            "energy_keV": "15.1953",
+            "weight": "0.0091"
+          }
+        ]
+      }
+    }
+  ],
+  "excluded_source_emissions": []
+}

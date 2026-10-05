@@ -116,6 +116,16 @@ constexpr auto k_builtin_entries = std::to_array<BuiltInEntry>({
   {.canonical_name = "Ho-166", .builder = BuildHo166Radionuclide},
   {.canonical_name = "Ac-225", .builder = BuildAc225Radionuclide},
   {.canonical_name = "At-211", .builder = BuildAt211Radionuclide},
+  {.canonical_name = "Pb-212", .builder = BuildPb212Radionuclide},
+  {.canonical_name = "Bi-212", .builder = BuildBi212Radionuclide},
+  {.canonical_name = "Bi-213", .builder = BuildBi213Radionuclide},
+  {.canonical_name = "Pd-103", .builder = BuildPd103Radionuclide},
+  {.canonical_name = "Cs-131", .builder = BuildCs131Radionuclide},
+  {.canonical_name = "Ir-192", .builder = BuildIr192Radionuclide},
+  {.canonical_name = "Cs-137", .builder = BuildCs137Radionuclide},
+  {.canonical_name = "Ru-106", .builder = BuildRu106Radionuclide},
+  {.canonical_name = "Mo-99", .builder = BuildMo99Radionuclide},
+  {.canonical_name = "Sr-82", .builder = BuildSr82Radionuclide},
 });
 
 // =============================================================================

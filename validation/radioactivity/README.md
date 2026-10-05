@@ -2,7 +2,7 @@
 
 Run an ActivityDriven source, then compare its populations, birth times and
 energies with independent calculations and a selected nuclear reference. The
-reference packages cover forty-two radionuclides. Scientific comparisons are
+reference packages cover fifty-two radionuclides. Scientific comparisons are
 reported in `analysis.json`; the campaign does not modify the built-in data.
 
 ## Build and run
@@ -117,6 +117,16 @@ interpreting comparisons, especially for an incomplete modeled inventory.
 | Ho-166 | [Ho-166 reference](data/Ho-166/reference/README.md) | `data/Ho-166/reference/reference.json` |
 | Ac-225 | [Ac-225 reference](data/Ac-225/reference/README.md) | `data/Ac-225/reference/reference.json` |
 | At-211 | [At-211 reference](data/At-211/reference/README.md) | `data/At-211/reference/reference.json` |
+| Pb-212 | [Pb-212 reference](data/Pb-212/reference/README.md) | `data/Pb-212/reference/reference.json` |
+| Bi-212 | [Bi-212 reference](data/Bi-212/reference/README.md) | `data/Bi-212/reference/reference.json` |
+| Bi-213 | [Bi-213 reference](data/Bi-213/reference/README.md) | `data/Bi-213/reference/reference.json` |
+| Pd-103 | [Pd-103 reference](data/Pd-103/reference/README.md) | `data/Pd-103/reference/reference.json` |
+| Cs-131 | [Cs-131 reference](data/Cs-131/reference/README.md) | `data/Cs-131/reference/reference.json` |
+| Ir-192 | [Ir-192 reference](data/Ir-192/reference/README.md) | `data/Ir-192/reference/reference.json` |
+| Cs-137 | [Cs-137 reference](data/Cs-137/reference/README.md) | `data/Cs-137/reference/reference.json` |
+| Ru-106 | [Ru-106 reference](data/Ru-106/reference/README.md) | `data/Ru-106/reference/reference.json` |
+| Mo-99 | [Mo-99 reference](data/Mo-99/reference/README.md) | `data/Mo-99/reference/reference.json` |
+| Sr-82 | [Sr-82 reference](data/Sr-82/reference/README.md) | `data/Sr-82/reference/reference.json` |
 
 Raw evaluation files provide provenance and independent comparisons. Campaigns
 read the selected `reference.json` and any referenced spectrum CSV files.

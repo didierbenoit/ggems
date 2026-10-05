@@ -1,0 +1,55 @@
+{
+  "name": "Cs-131",
+  "reference_id": "LNHB-Cs131-prompt-parent",
+  "half_life": {
+    "value": "836438.400"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "atomic_xray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.745264"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "30.631",
+            "weight": "0.214"
+          },
+          {
+            "energy_keV": "30.978",
+            "weight": "0.396"
+          },
+          {
+            "energy_keV": "34.925",
+            "weight": "0.037"
+          },
+          {
+            "energy_keV": "34.993",
+            "weight": "0.072"
+          },
+          {
+            "energy_keV": "35.252",
+            "weight": "0.000354"
+          },
+          {
+            "energy_keV": "35.266",
+            "weight": "0.00052"
+          },
+          {
+            "energy_keV": "35.828",
+            "weight": "0.0231"
+          },
+          {
+            "energy_keV": "35.98",
+            "weight": "0.00229"
+          }
+        ]
+      }
+    }
+  ],
+  "excluded_source_emissions": []
+}

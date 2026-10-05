@@ -1,0 +1,27 @@
+{
+  "name": "Ru-106",
+  "reference_id": "LNHB-Ru106-prompt-parent-BetaShape-2.4",
+  "half_life": {
+    "value": "32097600.0"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_minus_39_40_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "1"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_39_40_keV.csv"
+      }
+    }
+  ],
+  "excluded_source_emissions": [],
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSRu106.cc",
+    "generator_prefix": " * BetaShape ",
+    "selected_version": "2.4"
+  }
+}

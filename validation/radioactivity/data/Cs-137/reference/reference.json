@@ -1,0 +1,182 @@
+{
+  "name": "Cs-137",
+  "reference_id": "LNHB-Cs137-prompt-parent-BetaShape-2.4",
+  "half_life": {
+    "value": "947275801.882329600"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_minus_513_97_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.9457"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_513_97_keV.csv"
+      }
+    },
+    {
+      "index": 1,
+      "id": "beta_minus_892_17_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000006"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_892_17_keV.csv"
+      }
+    },
+    {
+      "index": 2,
+      "id": "beta_minus_1175_63_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0543"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_1175_63_keV.csv"
+      }
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "delayed_or_mixed_photon_4_8824",
+      "particle": "Gamma",
+      "energy_keV": "4.8824"
+    },
+    {
+      "id": "delayed_or_mixed_photon_31_8174",
+      "particle": "Gamma",
+      "energy_keV": "31.8174"
+    },
+    {
+      "id": "delayed_or_mixed_photon_32_1939",
+      "particle": "Gamma",
+      "energy_keV": "32.1939"
+    },
+    {
+      "id": "delayed_or_mixed_photon_36_4457",
+      "particle": "Gamma",
+      "energy_keV": "36.4457"
+    },
+    {
+      "id": "delayed_or_mixed_photon_37_3317",
+      "particle": "Gamma",
+      "energy_keV": "37.3317"
+    },
+    {
+      "id": "delayed_or_mixed_photon_283_46",
+      "particle": "Gamma",
+      "energy_keV": "283.46"
+    },
+    {
+      "id": "delayed_or_mixed_photon_378_20",
+      "particle": "Gamma",
+      "energy_keV": "378.20"
+    },
+    {
+      "id": "delayed_or_mixed_photon_661_6553",
+      "particle": "Gamma",
+      "energy_keV": "661.6553"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_246_02",
+      "particle": "Electron",
+      "energy_keV": "246.02"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_277_47",
+      "particle": "Electron",
+      "energy_keV": "277.47"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_277_84",
+      "particle": "Electron",
+      "energy_keV": "277.84"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_278_21",
+      "particle": "Electron",
+      "energy_keV": "278.21"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_282_45",
+      "particle": "Electron",
+      "energy_keV": "282.45"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_283_3",
+      "particle": "Electron",
+      "energy_keV": "283.3"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_340_76",
+      "particle": "Electron",
+      "energy_keV": "340.76"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_372_21",
+      "particle": "Electron",
+      "energy_keV": "372.21"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_372_58",
+      "particle": "Electron",
+      "energy_keV": "372.58"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_372_95",
+      "particle": "Electron",
+      "energy_keV": "372.95"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_377_19",
+      "particle": "Electron",
+      "energy_keV": "377.19"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_378_04",
+      "particle": "Electron",
+      "energy_keV": "378.04"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_624_2164",
+      "particle": "Electron",
+      "energy_keV": "624.2164"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_655_6682",
+      "particle": "Electron",
+      "energy_keV": "655.6682"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_656_0334",
+      "particle": "Electron",
+      "energy_keV": "656.0334"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_656_41",
+      "particle": "Electron",
+      "energy_keV": "656.41"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_660_6433",
+      "particle": "Electron",
+      "energy_keV": "660.6433"
+    },
+    {
+      "id": "delayed_or_mixed_conversion_661_4956",
+      "particle": "Electron",
+      "energy_keV": "661.4956"
+    }
+  ],
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSCs137.cc",
+    "generator_prefix": " * BetaShape ",
+    "selected_version": "2.4"
+  }
+}

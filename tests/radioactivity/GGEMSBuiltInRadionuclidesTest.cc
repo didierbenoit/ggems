@@ -50,7 +50,7 @@ struct ExpectedBuiltIn {
 // =============================================================================
 
 TEST(GGEMSBuiltInRadionuclides, DispatchesOnlyExactCanonicalNames) {
-  constexpr std::array<ExpectedBuiltIn, 42U> expected{
+  constexpr std::array<ExpectedBuiltIn, 52U> expected{
     {
       {
         .name = "H-3",
@@ -198,6 +198,56 @@ TEST(GGEMSBuiltInRadionuclides, DispatchesOnlyExactCanonicalNames) {
         .half_life_seconds = 25977.600L,
         .emission_count = 9U,
       },
+      {
+        .name = "Pb-212",
+        .half_life_seconds = 38268.000L,
+        .emission_count = 10U,
+      },
+      {
+        .name = "Bi-212",
+        .half_life_seconds = 3632.40L,
+        .emission_count = 31U,
+      },
+      {
+        .name = "Bi-213",
+        .half_life_seconds = 2735.40L,
+        .emission_count = 17U,
+      },
+      {
+        .name = "Pd-103",
+        .half_life_seconds = 1468800.00L,
+        .emission_count = 9U,
+      },
+      {
+        .name = "Cs-131",
+        .half_life_seconds = 836438.400L,
+        .emission_count = 1U,
+      },
+      {
+        .name = "Ir-192",
+        .half_life_seconds = 6378652.800L,
+        .emission_count = 35U,
+      },
+      {
+        .name = "Cs-137",
+        .half_life_seconds = 947275801.882329600L,
+        .emission_count = 3U,
+      },
+      {
+        .name = "Ru-106",
+        .half_life_seconds = 32097600.0L,
+        .emission_count = 1U,
+      },
+      {
+        .name = "Mo-99",
+        .half_life_seconds = 237418.5600L,
+        .emission_count = 25U,
+      },
+      {
+        .name = "Sr-82",
+        .half_life_seconds = 2189980.800L,
+        .emission_count = 1U,
+      },
     },
   };
 
@@ -245,13 +295,15 @@ TEST(GGEMSBuiltInRadionuclides, DispatchesOnlyExactCanonicalNames) {
 
 TEST(GGEMSBuiltInRadionuclides,
      ListsEveryAvailableCanonicalNameInDispatchOrder) {
-  constexpr std::array<std::string_view, 42U> expected{
+  constexpr std::array<std::string_view, 52U> expected{
     "H-3",    "C-14",   "F-18",   "C-11",   "O-15",   "Ga-68",  "Co-60",
     "Lu-177", "I-123",  "I-124",  "I-125",  "I-131",  "Am-241", "Tc-99m",
     "P-32",   "P-33",   "Co-57",  "Ga-67",  "Cu-67",  "Sc-44",  "Sc-47",
     "Mn-52",  "Br-76",  "Na-24",  "S-35",   "Ca-45",  "Hg-203", "Tl-201",
     "Xe-133", "N-13",   "Rb-82",  "In-111", "Cu-64",  "Zr-89",  "Ra-223",
     "Sr-89",  "Sm-153", "Re-186", "Re-188", "Ho-166", "Ac-225", "At-211",
+    "Pb-212", "Bi-212", "Bi-213", "Pd-103", "Cs-131", "Ir-192", "Cs-137",
+    "Ru-106", "Mo-99",  "Sr-82",
   };
 
   auto const available =
@@ -284,6 +336,11 @@ TEST(GGEMSBuiltInRadionuclides, RejectsNoncanonicalAddedNames) {
          "Sm153", "sm-153", " Sm-153 ", "Re186", "re-186", " Re-186 ",
          "Re188", "re-188", " Re-188 ", "Ho166", "ho-166", " Ho-166 ",
          "Ac225", "ac-225", " Ac-225 ", "At211", "at-211", " At-211 ",
+         "Pb212", "pb-212", " Pb-212 ", "Bi212", "bi-212", " Bi-212 ",
+         "Bi213", "bi-213", " Bi-213 ", "Pd103", "pd-103", " Pd-103 ",
+         "Cs131", "cs-131", " Cs-131 ", "Ir192", "ir-192", " Ir-192 ",
+         "Cs137", "cs-137", " Cs-137 ", "Ru106", "ru-106", " Ru-106 ",
+         "Mo99",  "mo-99",  " Mo-99 ",  "Sr82",  "sr-82",  " Sr-82 ",
        }) {
     EXPECT_FALSE(
       ggems::core::radioactivity::builtins::BuildBuiltInRadionuclide(name)
