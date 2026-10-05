@@ -21,6 +21,7 @@
 
 /*!
  * \file
+ * \brief Tests canonical built-in registration, lookup and descriptions.
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
@@ -49,7 +50,7 @@ struct ExpectedBuiltIn {
 // =============================================================================
 
 TEST(GGEMSBuiltInRadionuclides, DispatchesOnlyExactCanonicalNames) {
-  constexpr std::array<ExpectedBuiltIn, 32U> expected{
+  constexpr std::array<ExpectedBuiltIn, 42U> expected{
     {
       {
         .name = "H-3",
@@ -147,6 +148,56 @@ TEST(GGEMSBuiltInRadionuclides, DispatchesOnlyExactCanonicalNames) {
         .half_life_seconds = 242343.3600L,
         .emission_count = 5U,
       },
+      {
+        .name = "Cu-64",
+        .half_life_seconds = 45721.4400L,
+        .emission_count = 5U,
+      },
+      {
+        .name = "Zr-89",
+        .half_life_seconds = 282312.00L,
+        .emission_count = 3U,
+      },
+      {
+        .name = "Ra-223",
+        .half_life_seconds = 987552.00L,
+        .emission_count = 30U,
+      },
+      {
+        .name = "Sr-89",
+        .half_life_seconds = 4369248.00L,
+        .emission_count = 3U,
+      },
+      {
+        .name = "Sm-153",
+        .half_life_seconds = 166626.72000L,
+        .emission_count = 35U,
+      },
+      {
+        .name = "Re-186",
+        .half_life_seconds = 321287.0400L,
+        .emission_count = 15U,
+      },
+      {
+        .name = "Re-188",
+        .half_life_seconds = 61218.000L,
+        .emission_count = 41U,
+      },
+      {
+        .name = "Ho-166",
+        .half_life_seconds = 96508.800L,
+        .emission_count = 26U,
+      },
+      {
+        .name = "Ac-225",
+        .half_life_seconds = 856846.0800L,
+        .emission_count = 94U,
+      },
+      {
+        .name = "At-211",
+        .half_life_seconds = 25977.600L,
+        .emission_count = 9U,
+      },
     },
   };
 
@@ -194,11 +245,13 @@ TEST(GGEMSBuiltInRadionuclides, DispatchesOnlyExactCanonicalNames) {
 
 TEST(GGEMSBuiltInRadionuclides,
      ListsEveryAvailableCanonicalNameInDispatchOrder) {
-  constexpr std::array<std::string_view, 32U> expected{
-    "H-3",   "C-14",  "F-18",   "C-11",   "O-15",   "Ga-68",  "Co-60", "Lu-177",
-    "I-123", "I-124", "I-125",  "I-131",  "Am-241", "Tc-99m", "P-32",  "P-33",
-    "Co-57", "Ga-67", "Cu-67",  "Sc-44",  "Sc-47",  "Mn-52",  "Br-76", "Na-24",
-    "S-35",  "Ca-45", "Hg-203", "Tl-201", "Xe-133", "N-13",   "Rb-82", "In-111",
+  constexpr std::array<std::string_view, 42U> expected{
+    "H-3",    "C-14",   "F-18",   "C-11",   "O-15",   "Ga-68",  "Co-60",
+    "Lu-177", "I-123",  "I-124",  "I-125",  "I-131",  "Am-241", "Tc-99m",
+    "P-32",   "P-33",   "Co-57",  "Ga-67",  "Cu-67",  "Sc-44",  "Sc-47",
+    "Mn-52",  "Br-76",  "Na-24",  "S-35",   "Ca-45",  "Hg-203", "Tl-201",
+    "Xe-133", "N-13",   "Rb-82",  "In-111", "Cu-64",  "Zr-89",  "Ra-223",
+    "Sr-89",  "Sm-153", "Re-186", "Re-188", "Ho-166", "Ac-225", "At-211",
   };
 
   auto const available =
@@ -226,6 +279,11 @@ TEST(GGEMSBuiltInRadionuclides, RejectsNoncanonicalAddedNames) {
          "Hg203", "hg-203", " Hg-203 ", "Tl201", "tl-201", " Tl-201 ",
          "Xe133", "xe-133", " Xe-133 ", "N13",   "n-13",   " N-13 ",
          "Rb82",  "rb-82",  " Rb-82 ",  "In111", "in-111", " In-111 ",
+         "Cu64",  "cu-64",  " Cu-64 ",  "Zr89",  "zr-89",  " Zr-89 ",
+         "Ra223", "ra-223", " Ra-223 ", "Sr89",  "sr-89",  " Sr-89 ",
+         "Sm153", "sm-153", " Sm-153 ", "Re186", "re-186", " Re-186 ",
+         "Re188", "re-188", " Re-188 ", "Ho166", "ho-166", " Ho-166 ",
+         "Ac225", "ac-225", " Ac-225 ", "At211", "at-211", " At-211 ",
        }) {
     EXPECT_FALSE(
       ggems::core::radioactivity::builtins::BuildBuiltInRadionuclide(name)

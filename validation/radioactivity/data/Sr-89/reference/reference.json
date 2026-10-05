@@ -1,0 +1,70 @@
+{
+  "name": "Sr-89",
+  "reference_id": "LNHB-Sr89-LARA-PenNuc-BetaShape-2.4",
+  "half_life": {
+    "value": "4369248.00"
+  },
+  "groups": [
+    {
+      "id": "beta_minus_586_1_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "9.64E-5"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_586_1_keV.csv"
+      },
+      "index": 0
+    },
+    {
+      "id": "beta_minus_1495_1_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.9999036"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_1495_1_keV.csv"
+      },
+      "index": 1
+    },
+    {
+      "id": "atomic_xray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.00086"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "14.9585",
+          "unit": "keV"
+        }
+      },
+      "index": 2
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "delayed_Y89m_gamma",
+      "particle": "Gamma",
+      "energy_keV": "909.0"
+    },
+    {
+      "id": "delayed_Y89m_conversion_891_96",
+      "particle": "Electron",
+      "energy_keV": "891.96"
+    },
+    {
+      "id": "delayed_Y89m_conversion_906_8",
+      "particle": "Electron",
+      "energy_keV": "906.8"
+    }
+  ],
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSSr89.cc",
+    "generator_prefix": " * BetaShape ",
+    "selected_version": "2.4"
+  }
+}

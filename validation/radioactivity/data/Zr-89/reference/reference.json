@@ -1,0 +1,159 @@
+{
+  "name": "Zr-89",
+  "reference_id": "LNHB-Zr89-LARA-PenNuc-BetaShape-2.4",
+  "half_life": {
+    "value": "282312.00"
+  },
+  "groups": [
+    {
+      "id": "beta_plus_901_8_keV",
+      "particle": "Positron",
+      "yield_per_decay": {
+        "value": "0.228"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_plus_901_8_keV.csv"
+      },
+      "index": 0
+    },
+    {
+      "id": "nuclear_gamma",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.01048"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1620.81",
+            "weight": "0.00074"
+          },
+          {
+            "energy_keV": "1657.56",
+            "weight": "0.00106"
+          },
+          {
+            "energy_keV": "1713.1",
+            "weight": "0.00745"
+          },
+          {
+            "energy_keV": "1744.72",
+            "weight": "0.00123"
+          }
+        ]
+      },
+      "index": 1
+    },
+    {
+      "id": "conversion_1744_72_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "2.39377E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1727.7",
+            "weight": "0.000000212"
+          },
+          {
+            "energy_keV": "1742.37",
+            "weight": "0.0000000223"
+          },
+          {
+            "energy_keV": "1742.58",
+            "weight": "0.0000000003"
+          },
+          {
+            "energy_keV": "1742.66",
+            "weight": "0.000000000315"
+          },
+          {
+            "energy_keV": "1744.48",
+            "weight": "0.0000000039"
+          },
+          {
+            "energy_keV": "1744.72",
+            "weight": "0.000000000562"
+          }
+        ]
+      },
+      "index": 2
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "unseparated_atomic_2_0165",
+      "particle": "Gamma",
+      "energy_keV": "2.0165"
+    },
+    {
+      "id": "unseparated_atomic_14_8829",
+      "particle": "Gamma",
+      "energy_keV": "14.8829"
+    },
+    {
+      "id": "unseparated_atomic_14_9585",
+      "particle": "Gamma",
+      "energy_keV": "14.9585"
+    },
+    {
+      "id": "unseparated_atomic_16_7813",
+      "particle": "Gamma",
+      "energy_keV": "16.7813"
+    },
+    {
+      "id": "unseparated_atomic_17_0259",
+      "particle": "Gamma",
+      "energy_keV": "17.0259"
+    },
+    {
+      "id": "annihilation_photons",
+      "particle": "Gamma",
+      "energy_keV": "511"
+    },
+    {
+      "id": "delayed_Y89m_gamma",
+      "particle": "Gamma",
+      "energy_keV": "908.97"
+    },
+    {
+      "id": "delayed_Y89m_conversion_891_932",
+      "particle": "Electron",
+      "energy_keV": "891.932"
+    },
+    {
+      "id": "delayed_Y89m_conversion_906_598",
+      "particle": "Electron",
+      "energy_keV": "906.598"
+    },
+    {
+      "id": "delayed_Y89m_conversion_906_815",
+      "particle": "Electron",
+      "energy_keV": "906.815"
+    },
+    {
+      "id": "delayed_Y89m_conversion_906_89",
+      "particle": "Electron",
+      "energy_keV": "906.89"
+    },
+    {
+      "id": "delayed_Y89m_conversion_908_705",
+      "particle": "Electron",
+      "energy_keV": "908.705"
+    },
+    {
+      "id": "delayed_Y89m_conversion_908_95",
+      "particle": "Electron",
+      "energy_keV": "908.95"
+    }
+  ],
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSZr89.cc",
+    "generator_prefix": " * BetaShape ",
+    "selected_version": "2.4"
+  }
+}

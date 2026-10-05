@@ -270,6 +270,76 @@ namespace ggems::core::radioactivity::builtins {
 [[nodiscard]] auto BuildIn111Radionuclide() -> GGEMSRadionuclideDefinition;
 
 /*!
+ * \brief Builds the compiled Cu-64 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildCu64Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Zr-89 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildZr89Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Ra-223 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildRa223Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Sr-89 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildSr89Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Sm-153 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildSm153Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Re-186 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildRe186Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Re-188 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildRe188Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Ho-166 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildHo166Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Ac-225 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildAc225Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled At-211 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildAt211Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
  * \brief Borrows the catalog names in registration order.
  *
  * \return Span backed by static storage for the process lifetime.
