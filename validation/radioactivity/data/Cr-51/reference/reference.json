@@ -1,0 +1,91 @@
+{
+  "name": "Cr-51",
+  "reference_id": "LNHB-Cr51-direct-parent",
+  "half_life": {
+    "value": "2393625.600"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "nuclear_gamma",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.0989"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "320.0835",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 1,
+      "id": "atomic_xray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.2340"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "0.53715",
+            "weight": "0.0056"
+          },
+          {
+            "energy_keV": "4.9447",
+            "weight": "0.0679"
+          },
+          {
+            "energy_keV": "4.95224",
+            "weight": "0.1336"
+          },
+          {
+            "energy_keV": "5.4452",
+            "weight": "0.0269"
+          }
+        ]
+      }
+    },
+    {
+      "index": 2,
+      "id": "conversion_320_0835_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0001792339"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "314.6184",
+            "weight": "0.0001622"
+          },
+          {
+            "energy_keV": "319.4553",
+            "weight": "0.00001454"
+          },
+          {
+            "energy_keV": "319.563",
+            "weight": "2.21E-7"
+          },
+          {
+            "energy_keV": "319.5706",
+            "weight": "2.13E-7"
+          },
+          {
+            "energy_keV": "320.0542",
+            "weight": "0.00000196"
+          },
+          {
+            "energy_keV": "320.0832",
+            "weight": "9.99E-8"
+          }
+        ]
+      }
+    }
+  ],
+  "excluded_source_emissions": []
+}

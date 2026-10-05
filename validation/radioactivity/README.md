@@ -2,7 +2,7 @@
 
 Run an ActivityDriven source, then compare its populations, birth times and
 energies with independent calculations and a selected nuclear reference. The
-reference packages cover sixty-two radionuclides. Scientific comparisons are
+reference packages cover seventy radionuclides. Scientific comparisons are
 reported in `analysis.json`; the campaign does not modify the built-in data.
 
 ## Build and run
@@ -137,6 +137,14 @@ interpreting comparisons, especially for an incomplete modeled inventory.
 | Ce-139 | [Ce-139 reference](data/Ce-139/reference/README.md) | `data/Ce-139/reference/reference.json` |
 | Sn-113 | [Sn-113 reference](data/Sn-113/reference/README.md) | `data/Sn-113/reference/reference.json` |
 | Sr-85 | [Sr-85 reference](data/Sr-85/reference/README.md) | `data/Sr-85/reference/reference.json` |
+| Y-88 | [Y-88 reference](data/Y-88/reference/README.md) | `data/Y-88/reference/reference.json` |
+| Y-90 | [Y-90 reference](data/Y-90/reference/README.md) | `data/Y-90/reference/reference.json` |
+| Cr-51 | [Cr-51 reference](data/Cr-51/reference/README.md) | `data/Cr-51/reference/reference.json` |
+| Cs-134 | [Cs-134 reference](data/Cs-134/reference/README.md) | `data/Cs-134/reference/reference.json` |
+| Gd-153 | [Gd-153 reference](data/Gd-153/reference/README.md) | `data/Gd-153/reference/reference.json` |
+| Kr-81m | [Kr-81m reference](data/Kr-81m/reference/README.md) | `data/Kr-81m/reference/reference.json` |
+| Rb-81 | [Rb-81 reference](data/Rb-81/reference/README.md) | `data/Rb-81/reference/reference.json` |
+| Tb-161 | [Tb-161 reference](data/Tb-161/reference/README.md) | `data/Tb-161/reference/reference.json` |
 
 Raw evaluation files provide provenance and independent comparisons. Campaigns
 read the selected `reference.json` and any referenced spectrum CSV files.
@@ -198,7 +206,8 @@ The analysis keeps these conclusions separate:
    mono energies and discrete-line laws. Continuous tables report bin-mass
    differences, bounds, excluded reference mass, CDF supremum and exact
    finite-ticket mean. Scalar decimal/binary representation tolerance is 1e-14.
-   Pointwise reference uncertainties are retained, but absent covariance prevents
+   Available pointwise reference uncertainties are retained; the field is empty
+   when the selected source supplies none. Absent covariance prevents
    an uncertainty-aware evaluation-equivalence test.
 2. **Integrated decay counts:** an independent 80-digit Decimal exponential
    integral for every window, with a power series for `(1-exp(-x))/x` at small

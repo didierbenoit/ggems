@@ -1,0 +1,72 @@
+{
+  "name": "Y-90",
+  "reference_id": "LNHB-Y90-direct-parent-BetaShape-2.4",
+  "half_life": {
+    "value": "230547.600"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_minus_92_4_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000000014"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_92_4_keV.csv"
+      }
+    },
+    {
+      "index": 1,
+      "id": "beta_minus_518_0_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00017"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_518_0_keV.csv"
+      }
+    },
+    {
+      "index": 2,
+      "id": "beta_minus_2278_7_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.99983"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_2278_7_keV.csv"
+      }
+    },
+    {
+      "index": 3,
+      "id": "nuclear_gamma",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "1.4E-8"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "2186.254",
+          "unit": "keV"
+        }
+      }
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "annihilation_photons",
+      "particle": "Gamma",
+      "energy_keV": "511"
+    }
+  ],
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSY90.cc",
+    "generator_prefix": " * BetaShape ",
+    "selected_version": "2.4"
+  }
+}
