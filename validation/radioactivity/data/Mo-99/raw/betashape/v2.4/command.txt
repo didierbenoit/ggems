@@ -1,0 +1,1 @@
+.\betashape.exe .\Mo99\Mo-99.txt -csv

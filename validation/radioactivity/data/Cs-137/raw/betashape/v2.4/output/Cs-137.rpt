@@ -1,0 +1,78 @@
+Input file:  .\Cs137\Cs-137.txt
+Output file: .\Cs137\Cs-137.new
+
+Input file: 57 lines
+Output file: 59 lines
+Added new lines: 2
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+137CS  P 0.0         7/2+              30.018 Y  22             1175.63   17    - PARENT
+137BA  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+137BA  L 0           3/2+               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 422.07 (7) keV   |   log ft 12.760 (21)
+
+From measured spectrum
+Emean 284.90 (5) keV   |   [For information] log ft 10.596 (21)
+
+*    log ft
+137BA  B 1175.63   175.43    26          12.761                              2  - OLD CARD
+137BA  B 1175.63   175.43    26          12.760  21                             - NEW CARD
+
+*    Mean energy
+137BAS B EAV=284.90 5                                                           - OLD CARD
+137BAS B EAV=284.90 5                                                           - NEW CARD
+137BA DB $For Cexp(W), see in reference 1983BE18                                - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+137CS  P 0.0         7/2+              30.018 Y  22             1175.63   17    - PARENT
+137BA  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+137BA  L 283.46    7 1/2+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '2U' transition assumed.
+Emean 331.16 (7) keV   |   log ft 16.63 (7)
+
+*    log ft
+137BA  B 892.17    180.0006   1          16.62                               2U - OLD CARD
+137BA  B 892.17    180.0006   1          16.63    7                          2U - NEW CARD
+
+*    Mean energy
+137BAS B EAV=332.51 7                                                           - OLD CARD
+137BAS B EAV=331.16 7                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+137CS  P 0.0         7/2+              30.018 Y  22             1175.63   17    - PARENT
+137BA  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+137BA  L 661.657   3 11/2-             2.5545 M  13                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 172.43 (6) keV   |   log ft 9.6565 (14)
+
+*    log ft
+137BA  B 513.97    1794.57   26          9.6514                              1U - OLD CARD
+137BA  B 513.97    1794.57   26          9.6565  14                          1U - NEW CARD
+
+*    Mean energy
+137BAS B EAV=173.67 6                                                           - OLD CARD
+137BAS B EAV=172.43 6                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 3
+-------- Added lines: 2
+
+

@@ -1,0 +1,150 @@
+Input file:  .\Bi212\Bi-212.txt
+Output file: .\Bi212\Bi-212.new
+
+Input file: 175 lines
+Output file: 176 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+212BI  P 0.0         1-                60.54 M   6              2252.1    17    - PARENT
+212PO  N 1.561E0     1.561E0   0.6407    1.561E0                                - NORMALIZATION
+212PO  L 0           0+                300 NS    2                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 834.9 (7) keV   |   log ft 7.3668 (15)
+
+*    log ft
+212PO  B 2252.1    1755.31    9          7.267                               1  - OLD CARD
+212PO  B 2252.1    1755.31    9          7.3668  15                             - NEW CARD
+
+*    Mean energy
+212POS B EAV=834.2 7                                                            - OLD CARD
+212POS B EAV=834.9 7                                                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+212BI  P 0.0         1-                60.54 M   6              2252.1    17    - PARENT
+212PO  N 1.561E0     1.561E0   0.6407    1.561E0                                - NORMALIZATION
+212PO  L 727.330   9 2+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 532.8 (7) keV   |   log ft 7.816 (6)
+
+*    log ft
+212PO  B 1524.8    174.50     6          7.718                               1  - OLD CARD
+212PO  B 1524.8    174.50     6          7.816    6                             - NEW CARD
+
+*    Mean energy
+212POS B EAV=533.1 7                                                            - OLD CARD
+212POS B EAV=532.8 7                                                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+212BI  P 0.0         1-                60.54 M   6              2252.1    17    - PARENT
+212PO  N 1.561E0     1.561E0   0.6407    1.561E0                                - NORMALIZATION
+212PO  L 1512.70   8 2+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 230.0 (6) keV   |   log ft 7.1928 (46)
+
+*    log ft
+212PO  B 739.4     171.44     1          7.094                               1  - OLD CARD
+212PO  B 739.4     171.44     1          7.1928  46                             - NEW CARD
+
+*    Mean energy
+212POS B EAV=230.8 6                                                            - OLD CARD
+212POS B EAV=230.0 6                                                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+212BI  P 0.0         1-                60.54 M   6              2252.1    17    - PARENT
+212PO  N 1.561E0     1.561E0   0.6407    1.561E0                                - NORMALIZATION
+212PO  L 1620.738  101+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 191.9 (6) keV   |   log ft 6.839 (8)
+
+*    log ft
+212PO  B 631.4     171.90     3          6.74                                   - OLD CARD
+212PO  B 631.4     171.90     3          6.839    8                             - NEW CARD
+
+*    Mean energy
+212POS B EAV=192.7 6                                                            - OLD CARD
+212POS B EAV=191.9 6                                                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+212BI  P 0.0         1-                60.54 M   6              2252.1    17    - PARENT
+212PO  N 1.561E0     1.561E0   0.6407    1.561E0                                - NORMALIZATION
+212PO  L 1679.450  142+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 171.6 (6) keV   |   log ft 7.65 (8)
+
+*    log ft
+212PO  B 572.7     170.21     4          7.55                                1  - OLD CARD
+212PO  B 572.7     170.21     4          7.65     8                             - NEW CARD
+
+*    Mean energy
+212POS B EAV=172.4 6                                                            - OLD CARD
+212POS B EAV=171.6 6                                                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  6
+
+212BI  P 0.0         1-                60.54 M   6              2252.1    17    - PARENT
+212PO  N 1.561E0     1.561E0   0.6407    1.561E0                                - NORMALIZATION
+212PO  L 1800.9    2 0+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 131.0 (6) keV   |   log ft 8.13 (5)
+
+*    log ft
+212PO  B 451.2     170.032    4          8.03                                1  - OLD CARD
+212PO  B 451.2     170.032    4          8.13     5                             - NEW CARD
+
+*    Mean energy
+212POS B EAV=131.7 6                                                            - OLD CARD
+212POS B EAV=131.0 6                                                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  7
+
+212BI  P 0.0         1-                60.54 M   6              2252.1    17    - PARENT
+212PO  N 1.561E0     1.561E0   0.6407    1.561E0                                - NORMALIZATION
+212PO  L 1805.96   102+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 129.3 (6) keV   |   log ft 6.784 (26)
+
+*    log ft
+212PO  B 446.1     170.68     4          6.67                                1  - OLD CARD
+212PO  B 446.1     170.68     4          6.784   26                             - NEW CARD
+
+*    Mean energy
+212POS B EAV=130.1 6                                                            - OLD CARD
+212POS B EAV=129.3 6                                                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 7
+-------- Added lines: 1
+
+

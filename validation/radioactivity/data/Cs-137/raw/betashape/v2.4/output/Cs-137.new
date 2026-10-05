@@ -1,0 +1,59 @@
+137BA    137CS B- DECAY (30.018 Y)                                              
+137BA C  References:1962DA05, 1962DA05, 1965ME03, 1965ME03, 1967MI11, 1966HS02, 
+137BA2C  1966MA28, 1967MI11, 1966HS02, 1966MA28, 1967ZA04, 1967ZA04, 1969HA05,  
+137BA3C  1969HA05, 1973LEZJ, 1973LEZJ, 1975GO28, 1975GO28, 1976BO16, 1976BO16,  
+137BA4C  1978GR09, 1978MEZM, 1978MEZM, 1978GR09, 1983BE18, 1983BE18, 1990MA15,  
+137BA5C  1990MA15, 1995BO03, 1995BO03, 1996BI23, 1996SC06, 1996BI23, 1996SC06,  
+137BA6C  1997WA37, 1997WA37, 1998SCZM, 1998SCZM, 1999SCZX, 1999SCZX, 1999BeZQ,  
+137BA7C  2000SC47, 2000HE14, 2000SC47, 2000HE14, 2007SE05, 2007SE05, 2007BR23,  
+137BA8C  2007BR23, 2008DUZX, 2008KI07, 2008KI07, 2008DUZX, 2010SC08, 2010SC08,  
+137BA9C  2012BE08, 2012BE08, 2014MO32, 2014MO32, 2016JU05, 2016JU05, 2019MO35,  
+137BAAC  2019MO35, 2020UnU0, 2020ZY02, 2020ZY02, 2020UnU0, 2021WA16, 2021WA16   
+137BA T  Auger electrons and X ray energies and emission intensities:           
+137BA T       {U Energy (keV)}   {U Intensity}  {U Line}                        
+137BA T                                                                         
+137BA T        31.8174            1.99     4     XKA2                           
+137BA T        32.1939            3.66     6     XKA1                           
+137BA T                                                                         
+137BA T        36.3045        |]                 XKB3                           
+137BA T        36.3786        |]  1.078   20     XKB1                           
+137BA T        36.654         |]                 XKB5II                         
+137BA T                                                                         
+137BA T        37.258         |]                 XKB2                           
+137BA T        37.312         |]  0.272    8     XKB4                           
+137BA T        37.425         |]                 XKO23                          
+137BA T                                                                         
+137BA T        3.9544-5.8104      0.919   16     XL (total)                     
+137BA T        3.9544             0.0175   5     XLL                            
+137BA T        4.4515-4.4666      0.454   11     XLA                            
+137BA T        4.3307             0.00669 18     XLC                            
+137BA T        4.8278-5.207       0.382    8     XLB                            
+137BA T        5.3715-5.8104      0.0602  13     XLG                            
+137BA T                                                                         
+137BA T        25.314-26.786  |]                 KLL AUGER                      
+137BA T        30.095-32.179  |]  0.78     4     KLX AUGER                      
+137BA T        34.86-37.41    |]                 KXY AUGER                      
+137BA T        2.6614-5.8064      7.39     5     L AUGER                        
+137BA DB EAV,LOGFT$FROM BetaShape v2.4 (Jun-2024) 2023MO21.                     
+137CS  P 0.0         7/2+              30.018 Y  22             1175.63   17    
+137BA  N 1.0         1.0       1         1.0                                    
+137BA  L 0           3/2+               STABLE                                  
+137BA  B 1175.63   175.43    26          12.760  21                             
+137BAS B EAV=284.90 5                                                           
+137BA DB $For Cexp(W), see in reference 1983BE18                                
+137BA  L 283.46    7 1/2+                                                       
+137BA  B 892.17    180.0006   1          16.63    7                          2U 
+137BAS B EAV=331.16 7                                                           
+137BA  G 283.46    7 0.0006   1M1+E2     1             0.0552  8                
+137BA2 G KC=0.0461    7$LC=0.00726  11$MC=0.001516 22$NC=0.000324  5            
+137BA3 G OC=4.77E-5   7                                                         
+137BA  L 661.657   3 11/2-             2.5545 M  13                             
+137BA  B 513.97    1794.57   26          9.6565  14                          1U 
+137BAS B EAV=172.43 6                                                           
+137BA  G 378.20    7 1.06E-5  9E5                      0.904  13                
+137BA2 G KC=0.463     7$LC=0.344     5$MC=0.0787   11$NC=0.01644  23            
+137BA3 G OC=0.00217   3                                                         
+137BA  G 661.6553  3085.01   20M4                      0.1124 16                
+137BA2 G KC=0.0915   13$LC=0.01648  23$MC=0.00352   5$NC=0.000759 11            
+137BA3 G OC=1.134E-4 16                                                         
+                                                                                

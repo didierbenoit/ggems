@@ -1,0 +1,49 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 46-Pd-103 [5/2+] g.s.  -->  Daughter nucleus: 45-Rh-103 [7/2+] 39.753 (6) keV
+Half-life of the parent nuclide: 1.4688E6 (43) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 99.9646 (9) %
+Log ft of the ec transition: 5.88
+
+------------------------------------
+Parent nucleus: 46-Pd-103 [5/2+] g.s.  -->  Daughter nucleus: 45-Rh-103 [3/2-] 294.965 (10) keV
+Half-life of the parent nuclide: 1.4688E6 (43) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the decay: 1
+Normalization of this transition: 5.8E-4 (7) %
+Log ft of the ec transition: 10.52
+
+------------------------------------
+Parent nucleus: 46-Pd-103 [5/2+] g.s.  -->  Daughter nucleus: 45-Rh-103 [5/2-] 357.40 (3) keV
+Half-life of the parent nuclide: 1.4688E6 (43) s
+Electron capture transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the decay: 1
+Normalization of this transition: 0.0300 (9) %
+Log ft of the ec transition: 8.569
+
+------------------------------------
+Parent nucleus: 46-Pd-103 [5/2+] g.s.  -->  Daughter nucleus: 45-Rh-103 [5/2+] 536.839 (8) keV
+Half-life of the parent nuclide: 1.4688E6 (43) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.00480 (16) %
+Log ft of the ec transition: 7.33
+
+
+####################################
+
+Summary
+
+1 nucleus and 4 transitions have been read.
+
+Parent nucleus: 46-Pd-103
+4 transitions have been read (4 EC).
+
+
+####################################

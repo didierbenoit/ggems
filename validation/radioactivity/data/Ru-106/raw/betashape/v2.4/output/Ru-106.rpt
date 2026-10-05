@@ -1,0 +1,36 @@
+Input file:  .\Ru106\Ru-106.txt
+Output file: .\Ru106\Ru-106.new
+
+Input file: 28 lines
+Output file: 29 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+106RU  P 0.0         0+                371.5 D   21             39.40     21    - PARENT
+106RH  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+106RH  L 0           1+                30.1 S    3                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 9.85 (5) keV   |   log ft 4.349 (7)
+
+*    log ft
+106RH  B 39.40     21100                 4.31                                   - OLD CARD
+106RH  B 39.40     21100                 4.349    7                             - NEW CARD
+
+*    Mean energy
+106RHS B EAV=10.03 6                                                            - OLD CARD
+106RHS B EAV=9.85 5                                                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 1
+-------- Added lines: 1
+
+

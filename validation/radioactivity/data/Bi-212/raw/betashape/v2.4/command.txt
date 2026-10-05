@@ -1,0 +1,1 @@
+.\betashape.exe .\Bi212\Bi-212.txt -csv

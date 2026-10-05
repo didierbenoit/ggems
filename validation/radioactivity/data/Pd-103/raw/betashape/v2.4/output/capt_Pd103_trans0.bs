@@ -1,0 +1,79 @@
+--------------------------------------------------------------------------------------
+
+BetaShape
+Version: 2.4 (06/2024)
+Author: X. Mougeot (xavier.mougeot@cea.fr)
+CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+Please cite: [2019MO35] X. Mougeot, Applied Radiation and Isotopes 154, 108884 (2019)
+
+--------------------------------------------------------------------------------------
+
+Parent nucleus: 46-Pd-103 [5/2+] g.s.  -->  Daughter nucleus: 45-Rh-103 [7/2+] 39.753 (6) keV
+Calculation of the allowed transition from the electron capture decay of Pd-103.
+
+Transition energy: 534.9 (24) keV
+
+
+----------------------------------------
+Ratios of relative capture probabilities
+
+PL1/PK =  0.12660 (22)
+PL2/PK =  0.0023860 (47)
+PM1/PK =  0.02631 (13)
+PM2/PK =  5.167E-4 (28)
+PN1/PK =  0.00571 (5)
+PN2/PK =  9.97E-5 (10)
+
+L/K =  0.12899 (22)
+M/K =  0.02683 (13)
+N/K =  0.00581 (5)
+
+
+------------------------------
+Relative capture probabilities
+
+PK  =  0.86086 (30)
+PL1 =  0.10898 (15)
+PL2 =  0.0020540 (33)
+PM1 =  0.02265 (10)
+PM2 =  4.448E-4 (23)
+PN1 =  0.004920 (42)
+PN2 =  8.58E-5 (8)
+
+K =  0.86086 (30)
+L =  0.11104 (15)
+M =  0.02310 (11)
+N =  0.005005 (43)
+
+
+------------------------------
+Capture branch from input data
+
+Iec =   99.9646 (9) %
+
+
+---------------------
+Capture probabilities
+
+PK  =  0.86086 (30)
+PL1  =  0.10898 (15)
+PL2  =  0.0020540 (33)
+PM1  =  0.02265 (10)
+PM2  =  4.448E-4 (23)
+PN1  =  0.004920 (42)
+PN2  =  8.58E-5 (8)
+
+K =  0.86086 (30)
+L =  0.11104 (15)
+M =  0.02310 (11)
+N =  0.005005 (43)
+
+
+------------------------------------------------------------
+Input log ft value (ec): 5.88
+
+Log ft value (ec)    =  5.880 (6)
+with log f           =  -0.287 (5)
+or f-value           =  0.516 (6)
+and log partial T1/2 =  6.1671 (13)
+

@@ -1,0 +1,94 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 83-Bi-212 [1-] g.s.  -->  Daughter nucleus: 84-Po-212 [0+] g.s.
+Half-life of the parent nuclide: 3632.4 (36) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 2252.1 (17) keV. 
+Total normalization of the beta - decay: 1.0001
+Normalization of this transition: 55.32 (9) %
+Average energy of beta - spectrum: 834.2 (7) keV
+Log ft of the beta - transition: 7.267
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 83-Bi-212 [1-] g.s.  -->  Daughter nucleus: 84-Po-212 [2+] 727.330 (9) keV
+Half-life of the parent nuclide: 3632.4 (36) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 1524.8 (17) keV. 
+Total normalization of the beta - decay: 1.0001
+Normalization of this transition: 4.50 (6) %
+Average energy of beta - spectrum: 533.1 (7) keV
+Log ft of the beta - transition: 7.718
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 83-Bi-212 [1-] g.s.  -->  Daughter nucleus: 84-Po-212 [2+] 1512.70 (8) keV
+Half-life of the parent nuclide: 3632.4 (36) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 739.4 (17) keV. 
+Total normalization of the beta - decay: 1.0001
+Normalization of this transition: 1.44 (1) %
+Average energy of beta - spectrum: 230.8 (6) keV
+Log ft of the beta - transition: 7.094
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 83-Bi-212 [1-] g.s.  -->  Daughter nucleus: 84-Po-212 [1+] 1620.738 (10) keV
+Half-life of the parent nuclide: 3632.4 (36) s
+Beta - transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Transition energy calculated from Q-value and level energies: 631.4 (17) keV. 
+Total normalization of the beta - decay: 1.0001
+Normalization of this transition: 1.90 (3) %
+Average energy of beta - spectrum: 192.7 (6) keV
+Log ft of the beta - transition: 6.74
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 83-Bi-212 [1-] g.s.  -->  Daughter nucleus: 84-Po-212 [2+] 1679.450 (14) keV
+Half-life of the parent nuclide: 3632.4 (36) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 572.6 (17) keV. For information, given measured Emax: 572.7 (17) keV.
+Total normalization of the beta - decay: 1.0001
+Normalization of this transition: 0.21 (4) %
+Average energy of beta - spectrum: 172.4 (6) keV
+Log ft of the beta - transition: 7.55
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 83-Bi-212 [1-] g.s.  -->  Daughter nucleus: 84-Po-212 [0+] 1800.9 (2) keV
+Half-life of the parent nuclide: 3632.4 (36) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 451.2 (17) keV. 
+Total normalization of the beta - decay: 1.0001
+Normalization of this transition: 0.032 (4) %
+Average energy of beta - spectrum: 131.7 (6) keV
+Log ft of the beta - transition: 8.03
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 83-Bi-212 [1-] g.s.  -->  Daughter nucleus: 84-Po-212 [2+] 1805.96 (10) keV
+Half-life of the parent nuclide: 3632.4 (36) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 446.1 (17) keV. 
+Total normalization of the beta - decay: 1.0001
+Normalization of this transition: 0.68 (4) %
+Average energy of beta - spectrum: 130.1 (6) keV
+Log ft of the beta - transition: 6.67
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 7 transitions have been read.
+
+Parent nucleus: 83-Bi-212
+7 transitions have been read (7 B-).
+
+
+####################################

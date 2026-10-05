@@ -1,0 +1,33 @@
+Information read from the input file: .\Cs131\Cs-131.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 54   Daughter A: 131   Symbol: Xe
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 55, A 131
+
+Parent record has been found
+Parent Z: 55	Parent A: 131   Symbol: Cs
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 5/2+ | Treated as: 5/2+
+Parent half-life: 9.681 (16) D or 8.364E5 (14) S
+Parent Q-value: 358.00 (18) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 3/2+ | Treated as: 3/2+
+Level half-life: STABLE
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 100 %
+Total intensity of the decay: 100 %
+Transition order: allowed
+Log ft of the ec transition: 5.5804
+
+####################################

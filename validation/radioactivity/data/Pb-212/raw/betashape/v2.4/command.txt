@@ -1,0 +1,1 @@
+.\betashape.exe .\Pb212\Pb-212.txt -csv

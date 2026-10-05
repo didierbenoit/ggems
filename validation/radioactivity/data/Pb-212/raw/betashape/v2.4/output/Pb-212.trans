@@ -1,0 +1,50 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 82-Pb-212 [0+] g.s.  -->  Daughter nucleus: 83-Bi-212 [1-] g.s.
+Half-life of the parent nuclide: 3.8268E4 (25) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 569.0 (18) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 14.4 (14) %
+Average energy of beta - spectrum: 170.6 (6) keV
+Log ft of the beta - transition: 6.803
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 82-Pb-212 [0+] g.s.  -->  Daughter nucleus: 83-Bi-212 [0-] 238.632 (2) keV
+Half-life of the parent nuclide: 3.8268E4 (25) s
+Beta - transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Transition energy calculated from Q-value and level energies: 330.4 (18) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 80.8 (14) %
+Average energy of beta - spectrum: 92.7 (6) keV
+Log ft of the beta - transition: 5.281
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 82-Pb-212 [0+] g.s.  -->  Daughter nucleus: 83-Bi-212 [1-] 415.272 (9) keV
+Half-life of the parent nuclide: 3.8268E4 (25) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 153.7 (18) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 4.92 (8) %
+Average energy of beta - spectrum: 40.6 (5) keV
+Log ft of the beta - transition: 5.449
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 3 transitions have been read.
+
+Parent nucleus: 82-Pb-212
+3 transitions have been read (3 B-).
+
+
+####################################

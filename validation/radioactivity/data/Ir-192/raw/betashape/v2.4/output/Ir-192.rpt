@@ -1,0 +1,199 @@
+Input file:  .\Ir192\Ir-192.txt
+Output file: .\Ir192\Ir-192.new
+
+Input file: 146 lines
+Output file: 148 lines
+Added new lines: 2
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+192IR  P 0.0         4+                73.827 D  13             1459.7    19    - PARENT
+192PT  N 1.051E0     1.051E0   0.9513    1.051E0                                - NORMALIZATION
+192PT  L 784.5757  3 4+                0.0042 NS 2                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 209.0 (7) keV   |   log ft 8.628 (5)
+
+*    log ft
+192PT  B 675.1     1947.9     3          8.5                                    - OLD CARD
+192PT  B 675.1     1947.9     3          8.628    5                             - NEW CARD
+
+*    Mean energy
+192PTS B EAV=209.9 7                                                            - OLD CARD
+192PTS B EAV=209.0 7                                                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+192IR  P 0.0         4+                73.827 D  13             1459.7    19    - PARENT
+192PT  N 1.051E0     1.051E0   0.9513    1.051E0                                - NORMALIZATION
+192PT  L 920.91815 243+                0.0213 NS 21                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 161.3 (6) keV   |   log ft 8.361 (6)
+
+*    log ft
+192PT  B 538.8     1941.4     3          8.3                                    - OLD CARD
+192PT  B 538.8     1941.4     3          8.361    6                             - NEW CARD
+
+*    Mean energy
+192PTS B EAV=162.1 7                                                            - OLD CARD
+192PTS B EAV=161.3 6                                                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+192IR  P 0.0         4+                73.827 D  13             1459.7    19    - PARENT
+192PT  N 1.051E0     1.051E0   0.9513    1.051E0                                - NORMALIZATION
+192PT  L 1201.0450 5 4+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 71.1 (6) keV   |   log ft 8.194 (10)
+
+*    log ft
+192PT  B 258.7     195.59     3          8.1                                    - OLD CARD
+192PT  B 258.7     195.59     3          8.194   10                             - NEW CARD
+
+*    Mean energy
+192PTS B EAV=71.6 6                                                             - OLD CARD
+192PTS B EAV=71.1 6                                                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+192IR  P 0.0         4+                73.827 D  13             1459.7    19    - PARENT
+192PT  N 1.051E0     1.051E0   0.9513    1.051E0                                - NORMALIZATION
+192PT  L 1378.02   3 3-                0.064 NS  18                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 21.0 (5) keV   |   log ft 8.376 (33)
+
+*    log ft
+192PT  B 81.7      190.1026  23          8.3                                 1  - OLD CARD
+192PT  B 81.7      190.1026  23          8.376   33                             - NEW CARD
+
+*    Mean energy
+192PTS B EAV=21.1 5                                                             - OLD CARD
+192PTS B EAV=21.0 5                                                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+192IR  P 0.0         4+                73.827 D  13             1459.7    19    - PARENT
+192PT  N 1.051E0     1.051E0   0.9513    1.051E0                                - NORMALIZATION
+192PT  L 1383.99   15(5)-                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 19.4 (5) keV   |   log ft 9.70 (19)
+
+*    log ft
+192PT  B 75.7      190.0039  17          9.6                                 1  - OLD CARD
+192PT  B 75.7      190.0039  17          9.70    19                             - NEW CARD
+
+*    Mean energy
+192PTS B EAV=19.5 5                                                             - OLD CARD
+192PTS B EAV=19.4 5                                                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  6
+
+192IR  P 0.0         4+                73.827 D  13             1459.7    19    - PARENT
+192PT  N 1.051E0     1.051E0   0.9513    1.051E0                                - NORMALIZATION
+192PT  L 1406.24   11(3)+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 13.61 (49) keV   |   log ft 9.31 (8)
+
+*    log ft
+192PT  B 53.5      190.0033   5          9.2                                    - OLD CARD
+192PT  B 53.5      190.0033   5          9.31     8                             - NEW CARD
+
+*    Mean energy
+192PTS B EAV=13.6 5                                                             - OLD CARD
+192PTS B EAV=13.61 49                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 6
+-------- Added lines: 1
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+192IR  P 0.0         4+                73.827 D  13             1046.2    23    - PARENT
+192OS  N 2.053E1     2.053E1   0.0487    2.053E1                                - NORMALIZATION
+192OS  L 580.2798  8 4+                0.0147 NS 4                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.7790 (6) | L =  0.16607 (30) | M =  0.04099 (16) | N =  0.01131 (8) | O =  0.002422 (24) | P =  1.841E-4 (21)
+log ft 9.606 (9)
+
+*    log ft
+192OS  E                       0.686    99.5                                    - OLD CARD
+192OS  E                       0.686    99.606    9             0.686      9    - NEW CARD
+
+*    Probabilities
+192OS2 E CK=0.777     2$CL=0.168     2$CM=0.055     1                           - OLD CARD
+192OS2 E CK=0.7790 6$CL=0.16607 30$CM+=0.05491 18                               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+192IR  P 0.0         4+                73.827 D  13             1046.2    23    - PARENT
+192OS  N 2.053E1     2.053E1   0.0487    2.053E1                                - NORMALIZATION
+192OS  L 690.3705  4 3+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.7604 (8) | L =  0.17940 (49) | M =  0.04488 (23) | N =  0.01243 (10) | O =  0.002663 (30) | P =  2.024E-4 (25)
+log ft 8.569 (9)
+
+*    log ft
+192OS  E                       3.97     38.5                                    - OLD CARD
+192OS  E                       3.969   308.569    9             3.969     30    - NEW CARD
+
+*    Probabilities
+192OS2 E CK=0.758     2$CL=0.182     2$CM=0.060     1                           - OLD CARD
+192OS2 E CK=0.7604 8$CL=0.17940 49$CM+=0.06018 25                               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+192IR  P 0.0         4+                73.827 D  13             1046.2    23    - PARENT
+192OS  N 2.053E1     2.053E1   0.0487    2.053E1                                - NORMALIZATION
+192OS  L 909.58    6 4+                0.010 NS  5                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.544 (10) | L =  0.333 (7) | M =  0.0916 (22) | N =  0.0259 (7) | O =  0.00558 (18) | P =  4.24E-4 (14)
+log ft 9.037 (32)
+
+*    log ft
+192OS  E                       0.095    49.5                                    - OLD CARD
+192OS  E                       0.095    49.037   32             0.095      4    - NEW CARD
+
+*    Probabilities
+192OS2 E CK=0.537     9$CL=0.339    14$CM=0.124     5                           - OLD CARD
+192OS2 E CK=0.544 10$CL=0.333 7$CM+=0.1235 23                                   - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 3
+-------- Added lines: 1
+
+

@@ -1,0 +1,33 @@
+Information read from the input file: .\Sr82\Sr-82.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 37   Daughter A: 82   Symbol: Rb
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 38, A 82
+
+Parent record has been found
+Parent Z: 38	Parent A: 82   Symbol: Sr
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 0+ | Treated as: 0+
+Parent half-life: 25.347 (17) D or 2.1900E6 (15) S
+Parent Q-value: 178 (7) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 1+ | Treated as: 1+
+Level half-life: STABLE
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 100 %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 4.7
+
+####################################

@@ -1,0 +1,74 @@
+Input file:  .\Pb212\Pb-212.txt
+Output file: .\Pb212\Pb-212.new
+
+Input file: 60 lines
+Output file: 61 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+212PB  P 0.0         0+                10.630 H  7              569.0     18    - PARENT
+212BI  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+212BI  L 0           1-                 STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 170.6 (6) keV   |   log ft 6.803 (42)
+
+*    log ft
+212BI  B 569.0     1814.4    14          6.803                               1  - OLD CARD
+212BI  B 569.0     1814.4    14          6.803   42                             - NEW CARD
+
+*    Mean energy
+212BIS B EAV=170.6 6                                                            - OLD CARD
+212BIS B EAV=170.6 6                                                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+212PB  P 0.0         0+                10.630 H  7              569.0     18    - PARENT
+212BI  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+212BI  L 238.632   2 0-                1.0 PS    2                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 92.7 (6) keV   |   log ft 5.281 (11)
+
+*    log ft
+212BI  B 330.4     1880.8    14          5.281                                  - OLD CARD
+212BI  B 330.4     1880.8    14          5.281   11                             - NEW CARD
+
+*    Mean energy
+212BIS B EAV=92.7 6                                                             - OLD CARD
+212BIS B EAV=92.7 6                                                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+212PB  P 0.0         0+                10.630 H  7              569.0     18    - PARENT
+212BI  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+212BI  L 415.272   9 1-                10 PS                                    - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 40.6 (5) keV   |   log ft 5.449 (17)
+
+*    log ft
+212BI  B 153.7     184.92     8          5.449                               1  - OLD CARD
+212BI  B 153.7     184.92     8          5.449   17                             - NEW CARD
+
+*    Mean energy
+212BIS B EAV=40.6 5                                                             - OLD CARD
+212BIS B EAV=40.6 5                                                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 3
+-------- Added lines: 1
+
+

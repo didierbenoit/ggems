@@ -1,0 +1,84 @@
+Information read from the input file: .\Pd103\Pd-103.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 45   Daughter A: 103   Symbol: Rh
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 46, A 103
+
+Parent record has been found
+Parent Z: 46	Parent A: 103   Symbol: Pd
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 5/2+ | Treated as: 5/2+
+Parent half-life: 17.00 (5) D or 1.4688E6 (43) S
+Parent Q-value: 574.7 (24) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 1/2- | Treated as: 1/2-
+Level half-life: STABLE
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 39.753 (6) keV
+Level spin and parity | Read: 7/2+ | Treated as: 7/2+
+Level half-life: 56.115 (16) M or 3366.9 (10) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 99.9646 (9) %
+Total intensity of the decay: 99.9646 (9) %
+Transition order: allowed
+Log ft of the ec transition: 5.88
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 93.034 (8) keV
+Level spin and parity | Read: 9/2+ | Treated as: 9/2+
+Level half-life: 1.11 (3) NS or 1.11E-9 (3) S
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 294.965 (10) keV
+Level spin and parity | Read: 3/2- | Treated as: 3/2-
+Level half-life not given.
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 5.8E-4 (7) %
+Total intensity of the decay: 5.8E-4 (7) %
+Transition order: 1st forbidden non-unique
+Log ft of the ec transition: 10.52
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 357.40 (3) keV
+Level spin and parity | Read: 5/2- | Treated as: 5/2-
+Level half-life not given.
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 0.0300 (9) %
+Total intensity of the decay: 0.0300 (9) %
+Transition order: allowed
+Log ft of the ec transition: 8.569
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 536.839 (8) keV
+Level spin and parity | Read: 5/2+ | Treated as: 5/2+
+Level half-life not given.
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 0.00480 (16) %
+Total intensity of the decay: 0.00480 (16) %
+Transition order: allowed
+Log ft of the ec transition: 7.33
+
+####################################

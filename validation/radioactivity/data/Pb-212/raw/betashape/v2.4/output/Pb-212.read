@@ -1,0 +1,65 @@
+Information read from the input file: .\Pb212\Pb-212.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 83   Daughter A: 212   Symbol: Bi
+Transition type: B-
+Estimated parent nuclide from identification record: Z 82, A 212
+
+Parent record has been found
+Parent Z: 82	Parent A: 212   Symbol: Pb
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 0+ | Treated as: 0+
+Parent half-life: 10.630 (7) H or 3.8268E4 (25) S
+Parent Q-value: 569.0 (18) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 1- | Treated as: 1-
+Level half-life: STABLE
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 569.0 (18) keV
+Intensity of the beta - branch: 14.4 (14) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 6.803
+Average energy of beta - spectrum: 170.6 (6) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 115.183 (5) keV
+Level spin and parity | Read: 2- | Treated as: 2-
+Level half-life: 8 (4) PS or 8.E-12 (4) S
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 238.632 (2) keV
+Level spin and parity | Read: 0- | Treated as: 0-
+Level half-life: 1.0 (2) PS or 1.0E-12 (2) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 330.4 (18) keV
+Intensity of the beta - branch: 80.8 (14) %
+Transition order: allowed
+Log ft of the beta - transition: 5.281
+Average energy of beta - spectrum: 92.7 (6) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 415.272 (9) keV
+Level spin and parity | Read: 1- | Treated as: 1-
+Level half-life: 10 PS or 1E-11 S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 153.7 (18) keV
+Intensity of the beta - branch: 4.92 (8) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 5.449
+Average energy of beta - spectrum: 40.6 (5) keV
+
+####################################

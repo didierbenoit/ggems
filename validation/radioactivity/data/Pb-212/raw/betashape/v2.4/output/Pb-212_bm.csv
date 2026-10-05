@@ -1,0 +1,13 @@
+# BetaShape
+# Version: 2.4 (06/2024)
+# Author: X. Mougeot (xavier.mougeot@cea.fr)
+# CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+# Please cite: [2023MO21] X. Mougeot, Applied Radiation and Isotopes 201, 111018 (2023)
+# 
+# Input file: .\Pb212\Pb-212.txt
+# Neutrino information: no
+# 
+# parent symbol, Z, A, Jpi, level energy, unc, daughter symbol, Z, A, Jpi, level energy, unc, Q, unc, half-life, unc, unit, transition nature, transition nature used, branching %, unc, log ft, unc, f-value, unc, transition energy, unc, mean energy calc, unc, mean energy exp, unc
+Pb, 82, 212, 0+, 0, 0, Bi, 83, 212, 1-, 0, 0, 569, 1.8, 3.8268E4, 25, s, 1N, A, 14.4, 1.4, 6.803, 0.042, 23.93, 0.25, 569, 1.8, 170.6, 0.6, , 
+Pb, 82, 212, 0+, 0, 0, Bi, 83, 212, 0-, 238.632, 0.002, 569, 1.8, 3.8268E4, 25, s, 1N, A, 80.8, 1.4, 5.281, 0.011, 4.03, 0.07, 330.4, 1.8, 92.7, 0.6, , 
+Pb, 82, 212, 0+, 0, 0, Bi, 83, 212, 1-, 415.272, 0.009, 569, 1.8, 3.8268E4, 25, s, 1N, A, 4.92, 0.08, 5.449, 0.017, 0.362, 0.013, 153.7, 1.8, 40.6, 0.5, , 

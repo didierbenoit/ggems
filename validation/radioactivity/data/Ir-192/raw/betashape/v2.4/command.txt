@@ -1,0 +1,1 @@
+.\betashape.exe .\Ir192\Ir-192.txt -csv

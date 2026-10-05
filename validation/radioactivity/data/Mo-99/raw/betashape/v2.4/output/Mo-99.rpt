@@ -1,0 +1,236 @@
+Input file:  .\Mo99\Mo-99.txt
+Output file: .\Mo99\Mo-99.new
+
+Input file: 130 lines
+Output file: 135 lines
+Added new lines: 5
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 99MO  P 0.0         1/2+              2.7479 D  6              1357.2    10    - PARENT
+ 99TC  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 99TC  L 142.6832    1/2-              6.0067 H  10                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 441.61 keV   |   log ft 7.125
+
+From measured spectrum
+Emean 440.8 keV   |   [For information] log ft 7.12
+
+*    log ft
+ 99TC  B 1214.5    1082.1    15          7.1                                    - OLD CARD
+ 99TC  B 1214.5    1082.1    15          7.1                                    - NEW CARD
+
+*    Mean energy
+ 99TCS B EAV=442.7 3                                                            - OLD CARD
+ 99TCS B EAV=440.8                                                              - NEW CARD
+ 99TC2 B C1=-0.010 7 (1971NA01)                                                 - ADDITIONAL NEW CARD
+ 99TC DB $Cexp(W) = 1+C{-1}W                                                    - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 99MO  P 0.0         1/2+              2.7479 D  6              1357.2    10    - PARENT
+ 99TC  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 99TC  L 509.106     (3/2)-                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 288.59 keV   |   log ft 8.385
+
+From measured spectrum
+Emean 298.48 keV   |   [For information] log ft 8.453
+
+*    log ft
+ 99TC  B 848.1     101.18     3          8.38                                1  - OLD CARD
+ 99TC  B 848.1     101.18     3          8.4                                    - NEW CARD
+
+*    Mean energy
+ 99TCS B EAV=289.7 3                                                            - OLD CARD
+ 99TCS B EAV=298.48                                                             - NEW CARD
+ 99TC2 B C1=0.049 $C2=-0.0047 $C3=0.034 (1971NA01)                              - ADDITIONAL NEW CARD
+ 99TC DB $Cexp(W) = 1+C{-1}W+C{-2}/W+C{-3}W{+2}                                 - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+ 99MO  P 0.0         1/2+              2.7479 D  6              1357.2    10    - PARENT
+ 99TC  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 99TC  L 534.41      (3/2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 278.41 keV   |   log ft 11.41
+
+*    log ft
+ 99TC  B 822.8     100.0010   2                                                 - OLD CARD
+ 99TC  B 822.8     100.0010   2          11.4                                   - NEW CARD
+
+*    Mean energy
+ 99TCS B EAV=279 2                                                              - OLD CARD
+ 99TCS B EAV=278.41                                                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+ 99MO  P 0.0         1/2+              2.7479 D  6              1357.2    10    - PARENT
+ 99TC  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 99TC  L 671.489     (3/2)-                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 224.38 keV   |   log ft 9.409
+
+*    log ft
+ 99TC  B 685.7     100.052    5          9.46                                1  - OLD CARD
+ 99TC  B 685.7     100.052    5          9.4                                    - NEW CARD
+
+*    Mean energy
+ 99TCS B EAV=225.4 4                                                            - OLD CARD
+ 99TCS B EAV=224.38                                                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+ 99MO  P 0.0         1/2+              2.7479 D  6              1357.2    10    - PARENT
+ 99TC  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 99TC  L 920.591     1/2+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 132.19 keV   |   log ft 6.231
+
+*    log ft
+ 99TC  B 436.6     1016.45   30          6.21                                   - OLD CARD
+ 99TC  B 436.6     1016.45   30          6.2                                    - NEW CARD
+
+*    Mean energy
+ 99TCS B EAV=133.0 3                                                            - OLD CARD
+ 99TCS B EAV=132.19                                                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  6
+
+ 99MO  P 0.0         1/2+              2.7479 D  6              1357.2    10    - PARENT
+ 99TC  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 99TC  L 1004.066    3/2-                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 103.5 keV   |   log ft 8.012
+
+*    log ft
+ 99TC  B 353.1     100.134    5          7.97                                1  - OLD CARD
+ 99TC  B 353.1     100.134    5          8.0                                    - NEW CARD
+
+*    Mean energy
+ 99TCS B EAV=104.3 3                                                            - OLD CARD
+ 99TCS B EAV=103.5                                                              - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  7
+
+ 99MO  P 0.0         1/2+              2.7479 D  6              1357.2    10    - PARENT
+ 99TC  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 99TC  L 1072.2      (7/2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '2U' transition assumed.
+Emean 113.07 keV   |   log ft 8.94
+
+*    log ft
+ 99TC  B 285       1 0.0027   7                                              2U - OLD CARD
+ 99TC  B 285       1 0.0027   7          8.9                                 2U - NEW CARD
+
+*    Mean energy
+ 99TCS B EAV=82 1                                                               - OLD CARD
+ 99TCS B EAV=113.07                                                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  8
+
+ 99MO  P 0.0         1/2+              2.7479 D  6              1357.2    10    - PARENT
+ 99TC  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 99TC  L 1129.116    (1/2,3/2)-                                                 - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 63.19 keV   |   log ft 8.481
+
+*    log ft
+ 99TC  B 228.1     100.011    1          8.5                                    - OLD CARD
+ 99TC  B 228.1     100.011    1          8.5                                    - NEW CARD
+
+*    Mean energy
+ 99TCS B EAV=69.3 3                                                             - OLD CARD
+ 99TCS B EAV=63.19                                                              - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  9
+
+ 99MO  P 0.0         1/2+              2.7479 D  6              1357.2    10    - PARENT
+ 99TC  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 99TC  L 1141.871    3/2+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 59.27 keV   |   log ft 7.397
+
+*    log ft
+ 99TC  B 215.3     100.111    3          7.39                                   - OLD CARD
+ 99TC  B 215.3     100.111    3          7.4                                    - NEW CARD
+
+*    Mean energy
+ 99TCS B EAV=59.8 3                                                             - OLD CARD
+ 99TCS B EAV=59.27                                                              - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  10
+
+ 99MO  P 0.0         1/2+              2.7479 D  6              1357.2    10    - PARENT
+ 99TC  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 99TC  L 1171.98     3/2+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 50.2 keV   |   log ft 9.03
+
+*    log ft
+ 99TC  B 185.2     100.0016   4          8.91                                   - OLD CARD
+ 99TC  B 185.2     100.0016   4          9.0                                    - NEW CARD
+
+*    Mean energy
+ 99TCS B EAV=51.0 4                                                             - OLD CARD
+ 99TCS B EAV=50.2                                                               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  11
+
+ 99MO  P 0.0         1/2+              2.7479 D  6              1357.2    10    - PARENT
+ 99TC  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 99TC  L 1198.88     (3/2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 42.3 keV   |   log ft 8.7
+
+*    log ft
+ 99TC  B 158.3     100.0021   3          8.65                                   - OLD CARD
+ 99TC  B 158.3     100.0021   3          8.7                                    - NEW CARD
+
+*    Mean energy
+ 99TCS B EAV=43.3 4                                                             - OLD CARD
+ 99TCS B EAV=42.3                                                               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 11
+-------- Added lines: 5
+
+

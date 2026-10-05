@@ -1,0 +1,13 @@
+# BetaShape
+# Version: 2.4 (06/2024)
+# Author: X. Mougeot (xavier.mougeot@cea.fr)
+# CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+# Please cite: [2023MO21] X. Mougeot, Applied Radiation and Isotopes 201, 111018 (2023)
+# 
+# Input file: .\Cs137\Cs-137.txt
+# Neutrino information: no
+# 
+# parent symbol, Z, A, Jpi, level energy, unc, daughter symbol, Z, A, Jpi, level energy, unc, Q, unc, half-life, unc, unit, transition nature, transition nature used, branching %, unc, log ft, unc, f-value, unc, transition energy, unc, mean energy calc, unc, mean energy exp, unc
+Cs, 55, 137, 7/2+, 0, 0, Ba, 56, 137, 3/2+, 0, 0, 1175.63, 0.17, 9.473E8, 700000, s, 2N, 1U, 5.43, 0.26, 12.76, 0.021, 329.49, 0.26, 1175.63, 0.17, 422.07, 0.07, 284.9, 0.05
+Cs, 55, 137, 7/2+, 0, 0, Ba, 56, 137, 1/2+, 283.46, 0.07, 1175.63, 0.17, 9.473E8, 700000, s, 2U, 2U, 0.0006, 0.0001, 16.63, 0.07, 267.2, 0.37, 892.17, 0.18, 331.16, 0.07, , 
+Cs, 55, 137, 7/2+, 0, 0, Ba, 56, 137, 11/2-, 661.657, 0.003, 1175.63, 0.17, 9.473E8, 700000, s, 1U, 1U, 94.57, 0.26, 9.6565, 0.0014, 4.527, 0.007, 513.97, 0.17, 172.43, 0.06, , 

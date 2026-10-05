@@ -1,0 +1,59 @@
+Information read from the input file: .\Cs137\Cs-137.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 56   Daughter A: 137   Symbol: Ba
+Transition type: B-
+Estimated parent nuclide from identification record: Z 55, A 137
+
+Parent record has been found
+Parent Z: 55	Parent A: 137   Symbol: Cs
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 7/2+ | Treated as: 7/2+
+Parent half-life: 30.018 (22) Y or 9.473E8 (7) S
+Parent Q-value: 1175.63 (17) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 3/2+ | Treated as: 3/2+
+Level half-life: STABLE
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 1175.63 (17) keV
+Intensity of the beta - branch: 5.43 (26) %
+Transition order: 2nd forbidden non-unique
+Log ft of the beta - transition: 12.761
+Average energy of beta - spectrum: 284.90 (5) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 283.46 (7) keV
+Level spin and parity | Read: 1/2+ | Treated as: 1/2+
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 892.17 (18) keV
+Intensity of the beta - branch: 6.E-4 (1) %
+Transition order: 2nd forbidden unique
+Log ft of the beta - transition: 16.62
+Average energy of beta - spectrum: 332.51 (7) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 661.657 (3) keV
+Level spin and parity | Read: 11/2- | Treated as: 11/2-
+Level half-life: 2.5545 (13) M or 153.27 (8) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 513.97 (17) keV
+Intensity of the beta - branch: 94.57 (26) %
+Transition order: 1st forbidden unique
+Log ft of the beta - transition: 9.6514
+Average energy of beta - spectrum: 173.67 (6) keV
+
+####################################

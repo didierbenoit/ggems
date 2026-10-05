@@ -1,0 +1,37 @@
+Input file:  .\Sr82\Sr-82.txt
+Output file: .\Sr82\Sr-82.new
+
+Input file: 34 lines
+Output file: 35 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 82SR  P 0.0         0+                25.347 D  17             178       7     - PARENT
+ 82RB  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 82RB  L 0           1+                 STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.8531 (14) | L =  0.120 (1) | M =  0.02298 (31) | N =  0.00343 (6) | O =  4.11E-4 (36)
+log ft 4.69 (8)
+
+*    log ft
+ 82RB  E                       100       4.7                                    - OLD CARD
+ 82RB  E                       100       4.69     8             100             - NEW CARD
+
+*    Probabilities
+ 82RB2 E CK=0.859     2$CL=0.116     2$CM=0.022     1$CN=0.0031    2            - OLD CARD
+ 82RB2 E CK=0.8531 14$CL=0.120 1$CM+=0.02682 32                                 - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 1
+-------- Added lines: 1
+
+
