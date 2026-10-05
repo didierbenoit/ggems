@@ -1,0 +1,3892 @@
+{
+  "name": "Eu-152",
+  "reference_id": "LNHB-Eu152-prompt-parent-BetaShape-2.4",
+  "half_life": {
+    "value": "426729600"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_minus_126_4_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000203"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_126_4_keV.csv"
+      }
+    },
+    {
+      "index": 1,
+      "id": "beta_minus_175_4_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.01826"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_175_4_keV.csv"
+      }
+    },
+    {
+      "index": 2,
+      "id": "beta_minus_213_5_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00101"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_213_5_keV.csv"
+      }
+    },
+    {
+      "index": 3,
+      "id": "beta_minus_268_6_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000536"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_268_6_keV.csv"
+      }
+    },
+    {
+      "index": 4,
+      "id": "beta_minus_384_8_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0244"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_384_8_keV.csv"
+      }
+    },
+    {
+      "index": 5,
+      "id": "beta_minus_500_3_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000267"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_500_3_keV.csv"
+      }
+    },
+    {
+      "index": 6,
+      "id": "beta_minus_504_1_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000048"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_504_1_keV.csv"
+      }
+    },
+    {
+      "index": 7,
+      "id": "beta_minus_536_5_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00037"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_536_5_keV.csv"
+      }
+    },
+    {
+      "index": 8,
+      "id": "beta_minus_695_6_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.138"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_695_6_keV.csv"
+      }
+    },
+    {
+      "index": 9,
+      "id": "beta_minus_709_7_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00245"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_709_7_keV.csv"
+      }
+    },
+    {
+      "index": 10,
+      "id": "beta_minus_888_2_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00303"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_888_2_keV.csv"
+      }
+    },
+    {
+      "index": 11,
+      "id": "beta_minus_1063_4_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00904"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_1063_4_keV.csv"
+      }
+    },
+    {
+      "index": 12,
+      "id": "beta_minus_1474_5_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0817"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_minus_1474_5_keV.csv"
+      }
+    },
+    {
+      "index": 13,
+      "id": "beta_plus_485_8_keV",
+      "particle": "Positron",
+      "yield_per_decay": {
+        "value": "0.000024"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_plus_485_8_keV.csv"
+      }
+    },
+    {
+      "index": 14,
+      "id": "beta_plus_730_5_keV",
+      "particle": "Positron",
+      "yield_per_decay": {
+        "value": "0.00025"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_plus_730_5_keV.csv"
+      }
+    },
+    {
+      "index": 15,
+      "id": "nuclear_gamma",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "1.5918799"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "121.7817",
+            "weight": "0.2841"
+          },
+          {
+            "energy_keV": "125.69",
+            "weight": "0.00019"
+          },
+          {
+            "energy_keV": "148.010",
+            "weight": "0.00035"
+          },
+          {
+            "energy_keV": "192.6",
+            "weight": "0.000068"
+          },
+          {
+            "energy_keV": "207.6",
+            "weight": "0.000059"
+          },
+          {
+            "energy_keV": "209.41",
+            "weight": "0.000055"
+          },
+          {
+            "energy_keV": "212.568",
+            "weight": "0.000196"
+          },
+          {
+            "energy_keV": "237.31",
+            "weight": "0.000025"
+          },
+          {
+            "energy_keV": "239.42",
+            "weight": "0.00008"
+          },
+          {
+            "energy_keV": "244.6974",
+            "weight": "0.0755"
+          },
+          {
+            "energy_keV": "251.633",
+            "weight": "0.000671"
+          },
+          {
+            "energy_keV": "269.86",
+            "weight": "0.00006"
+          },
+          {
+            "energy_keV": "271.131",
+            "weight": "0.00078"
+          },
+          {
+            "energy_keV": "275.449",
+            "weight": "0.000323"
+          },
+          {
+            "energy_keV": "285.98",
+            "weight": "0.0001"
+          },
+          {
+            "energy_keV": "295.9387",
+            "weight": "0.00442"
+          },
+          {
+            "energy_keV": "315.174",
+            "weight": "0.000496"
+          },
+          {
+            "energy_keV": "316.2",
+            "weight": "0.000031"
+          },
+          {
+            "energy_keV": "320.03",
+            "weight": "0.000017"
+          },
+          {
+            "energy_keV": "324.83",
+            "weight": "0.000738"
+          },
+          {
+            "energy_keV": "329.425",
+            "weight": "0.00129"
+          },
+          {
+            "energy_keV": "330.54",
+            "weight": "0.00006"
+          },
+          {
+            "energy_keV": "340.40",
+            "weight": "0.00031"
+          },
+          {
+            "energy_keV": "344.2785",
+            "weight": "0.2659"
+          },
+          {
+            "energy_keV": "351.66",
+            "weight": "0.00014"
+          },
+          {
+            "energy_keV": "357.26",
+            "weight": "0.00004"
+          },
+          {
+            "energy_keV": "367.7891",
+            "weight": "0.00862"
+          },
+          {
+            "energy_keV": "379.37",
+            "weight": "0.0000083"
+          },
+          {
+            "energy_keV": "385.69",
+            "weight": "0.00005"
+          },
+          {
+            "energy_keV": "387.90",
+            "weight": "0.0000296"
+          },
+          {
+            "energy_keV": "391.32",
+            "weight": "0.0000125"
+          },
+          {
+            "energy_keV": "406.74",
+            "weight": "0.0000083"
+          },
+          {
+            "energy_keV": "411.1165",
+            "weight": "0.02238"
+          },
+          {
+            "energy_keV": "416.048",
+            "weight": "0.00109"
+          },
+          {
+            "energy_keV": "423.45",
+            "weight": "0.000032"
+          },
+          {
+            "energy_keV": "440.86",
+            "weight": "0.000133"
+          },
+          {
+            "energy_keV": "443.965",
+            "weight": "0.0312"
+          },
+          {
+            "energy_keV": "482.31",
+            "weight": "0.0002929"
+          },
+          {
+            "energy_keV": "488.6792",
+            "weight": "0.004139"
+          },
+          {
+            "energy_keV": "493.508",
+            "weight": "0.000368"
+          },
+          {
+            "energy_keV": "496.39",
+            "weight": "0.000091"
+          },
+          {
+            "energy_keV": "503.474",
+            "weight": "0.001533"
+          },
+          {
+            "energy_keV": "520.227",
+            "weight": "0.000536"
+          },
+          {
+            "energy_keV": "523.13",
+            "weight": "0.000113"
+          },
+          {
+            "energy_keV": "526.881",
+            "weight": "0.000129"
+          },
+          {
+            "energy_keV": "534.245",
+            "weight": "0.000368"
+          },
+          {
+            "energy_keV": "535.4",
+            "weight": "0.00006"
+          },
+          {
+            "energy_keV": "538.29",
+            "weight": "0.000042"
+          },
+          {
+            "energy_keV": "556.56",
+            "weight": "0.000177"
+          },
+          {
+            "energy_keV": "557.91",
+            "weight": "0.000044"
+          },
+          {
+            "energy_keV": "561.2",
+            "weight": "0.0000108"
+          },
+          {
+            "energy_keV": "562.93",
+            "weight": "0.00038"
+          },
+          {
+            "energy_keV": "563.990",
+            "weight": "0.00457"
+          },
+          {
+            "energy_keV": "566.442",
+            "weight": "0.00131"
+          },
+          {
+            "energy_keV": "571.83",
+            "weight": "0.000048"
+          },
+          {
+            "energy_keV": "586.265",
+            "weight": "0.00462"
+          },
+          {
+            "energy_keV": "595.61",
+            "weight": "0.000031"
+          },
+          {
+            "energy_keV": "616.05",
+            "weight": "0.000092"
+          },
+          {
+            "energy_keV": "644.37",
+            "weight": "0.000063"
+          },
+          {
+            "energy_keV": "656.489",
+            "weight": "0.001437"
+          },
+          {
+            "energy_keV": "664.78",
+            "weight": "0.0001"
+          },
+          {
+            "energy_keV": "671.155",
+            "weight": "0.000194"
+          },
+          {
+            "energy_keV": "674.675",
+            "weight": "0.0017"
+          },
+          {
+            "energy_keV": "674.677",
+            "weight": "0.000171"
+          },
+          {
+            "energy_keV": "678.623",
+            "weight": "0.0047"
+          },
+          {
+            "energy_keV": "683.32",
+            "weight": "0.000031"
+          },
+          {
+            "energy_keV": "686.61",
+            "weight": "0.0002"
+          },
+          {
+            "energy_keV": "688.670",
+            "weight": "0.00841"
+          },
+          {
+            "energy_keV": "696.87",
+            "weight": "0.000029"
+          },
+          {
+            "energy_keV": "703.25",
+            "weight": "0.000053"
+          },
+          {
+            "energy_keV": "712.843",
+            "weight": "0.000961"
+          },
+          {
+            "energy_keV": "719.349",
+            "weight": "0.00327"
+          },
+          {
+            "energy_keV": "727.99",
+            "weight": "0.000106"
+          },
+          {
+            "energy_keV": "735.4",
+            "weight": "0.000058"
+          },
+          {
+            "energy_keV": "756.12",
+            "weight": "0.000054"
+          },
+          {
+            "energy_keV": "764.900",
+            "weight": "0.0019"
+          },
+          {
+            "energy_keV": "768.944",
+            "weight": "0.00088"
+          },
+          {
+            "energy_keV": "778.9045",
+            "weight": "0.1297"
+          },
+          {
+            "energy_keV": "794.81",
+            "weight": "0.000263"
+          },
+          {
+            "energy_keV": "805.70",
+            "weight": "0.000125"
+          },
+          {
+            "energy_keV": "810.451",
+            "weight": "0.00317"
+          },
+          {
+            "energy_keV": "839.36",
+            "weight": "0.00016"
+          },
+          {
+            "energy_keV": "841.574",
+            "weight": "0.00163"
+          },
+          {
+            "energy_keV": "867.380",
+            "weight": "0.04243"
+          },
+          {
+            "energy_keV": "896.58",
+            "weight": "0.000669"
+          },
+          {
+            "energy_keV": "901.181",
+            "weight": "0.00084"
+          },
+          {
+            "energy_keV": "906.01",
+            "weight": "0.00016"
+          },
+          {
+            "energy_keV": "919.337",
+            "weight": "0.00429"
+          },
+          {
+            "energy_keV": "926.317",
+            "weight": "0.00273"
+          },
+          {
+            "energy_keV": "930.58",
+            "weight": "0.000729"
+          },
+          {
+            "energy_keV": "937.050",
+            "weight": "0.000027"
+          },
+          {
+            "energy_keV": "958.63",
+            "weight": "0.00021"
+          },
+          {
+            "energy_keV": "963.390",
+            "weight": "0.001341"
+          },
+          {
+            "energy_keV": "964.079",
+            "weight": "0.145"
+          },
+          {
+            "energy_keV": "974.09",
+            "weight": "0.000138"
+          },
+          {
+            "energy_keV": "990.19",
+            "weight": "0.000315"
+          },
+          {
+            "energy_keV": "1001.1",
+            "weight": "0.000046"
+          },
+          {
+            "energy_keV": "1005.272",
+            "weight": "0.00665"
+          },
+          {
+            "energy_keV": "1084",
+            "weight": "0.00244"
+          },
+          {
+            "energy_keV": "1085.837",
+            "weight": "0.1013"
+          },
+          {
+            "energy_keV": "1089.737",
+            "weight": "0.0173"
+          },
+          {
+            "energy_keV": "1109.174",
+            "weight": "0.00186"
+          },
+          {
+            "energy_keV": "1112.076",
+            "weight": "0.1341"
+          },
+          {
+            "energy_keV": "1139",
+            "weight": "0.000013"
+          },
+          {
+            "energy_keV": "1170.93",
+            "weight": "0.000365"
+          },
+          {
+            "energy_keV": "1206.11",
+            "weight": "0.000135"
+          },
+          {
+            "energy_keV": "1212.948",
+            "weight": "0.01416"
+          },
+          {
+            "energy_keV": "1249.938",
+            "weight": "0.00186"
+          },
+          {
+            "energy_keV": "1261.343",
+            "weight": "0.000336"
+          },
+          {
+            "energy_keV": "1292.778",
+            "weight": "0.00104"
+          },
+          {
+            "energy_keV": "1299.142",
+            "weight": "0.01633"
+          },
+          {
+            "energy_keV": "1314.7",
+            "weight": "0.000048"
+          },
+          {
+            "energy_keV": "1348.10",
+            "weight": "0.000175"
+          },
+          {
+            "energy_keV": "1363.77",
+            "weight": "0.000256"
+          },
+          {
+            "energy_keV": "1390.36",
+            "weight": "0.000048"
+          },
+          {
+            "energy_keV": "1408.013",
+            "weight": "0.2085"
+          },
+          {
+            "energy_keV": "1457.643",
+            "weight": "0.00498"
+          },
+          {
+            "energy_keV": "1528.103",
+            "weight": "0.00281"
+          },
+          {
+            "energy_keV": "1605.61",
+            "weight": "0.000081"
+          },
+          {
+            "energy_keV": "1608.36",
+            "weight": "0.000053"
+          },
+          {
+            "energy_keV": "1635.2",
+            "weight": "0.0000015"
+          },
+          {
+            "energy_keV": "1643.6",
+            "weight": "0.000015"
+          },
+          {
+            "energy_keV": "1647.41",
+            "weight": "0.000064"
+          },
+          {
+            "energy_keV": "1674.30",
+            "weight": "0.00006"
+          },
+          {
+            "energy_keV": "1769.09",
+            "weight": "0.000092"
+          }
+        ]
+      }
+    },
+    {
+      "index": 16,
+      "id": "atomic_xray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.873513"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "6.395",
+            "weight": "0.13"
+          },
+          {
+            "energy_keV": "6.73255",
+            "weight": "0.00177"
+          },
+          {
+            "energy_keV": "39.5229",
+            "weight": "0.208"
+          },
+          {
+            "energy_keV": "40.1186",
+            "weight": "0.377"
+          },
+          {
+            "energy_keV": "42.3093",
+            "weight": "0.00243"
+          },
+          {
+            "energy_keV": "42.9967",
+            "weight": "0.00437"
+          },
+          {
+            "energy_keV": "45.4777",
+            "weight": "0.1178"
+          },
+          {
+            "energy_keV": "46.6977",
+            "weight": "0.0304"
+          },
+          {
+            "energy_keV": "48.7687",
+            "weight": "0.00138"
+          },
+          {
+            "energy_keV": "50.093",
+            "weight": "0.000363"
+          }
+        ]
+      }
+    },
+    {
+      "index": 17,
+      "id": "conversion_121_7817_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.32998"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "74.9476",
+            "weight": "0.192"
+          },
+          {
+            "energy_keV": "114.52687",
+            "weight": "0.1074"
+          },
+          {
+            "energy_keV": "120.4079",
+            "weight": "0.0249"
+          },
+          {
+            "energy_keV": "121.6207",
+            "weight": "0.00568"
+          }
+        ]
+      }
+    },
+    {
+      "index": 18,
+      "id": "conversion_125_69_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0001977"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "78.86",
+            "weight": "0.000117"
+          },
+          {
+            "energy_keV": "118.44",
+            "weight": "0.000063"
+          },
+          {
+            "energy_keV": "124.32",
+            "weight": "0.0000144"
+          },
+          {
+            "energy_keV": "125.53",
+            "weight": "0.0000033"
+          }
+        ]
+      }
+    },
+    {
+      "index": 19,
+      "id": "conversion_148_01_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0002022"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "101.176",
+            "weight": "0.000151"
+          },
+          {
+            "energy_keV": "140.755",
+            "weight": "0.00004"
+          },
+          {
+            "energy_keV": "146.636",
+            "weight": "0.0000091"
+          },
+          {
+            "energy_keV": "147.849",
+            "weight": "0.0000021"
+          }
+        ]
+      }
+    },
+    {
+      "index": 20,
+      "id": "conversion_192_6_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000034250"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "142.36",
+            "weight": "0.0000029"
+          },
+          {
+            "energy_keV": "184.75",
+            "weight": "4.14E-7"
+          },
+          {
+            "energy_keV": "191.1",
+            "weight": "8.98E-8"
+          },
+          {
+            "energy_keV": "192.43",
+            "weight": "2.12E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 21,
+      "id": "conversion_207_6_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000022727"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "160.77",
+            "weight": "0.00000193"
+          },
+          {
+            "energy_keV": "200.35",
+            "weight": "2.68E-7"
+          },
+          {
+            "energy_keV": "206.23",
+            "weight": "5.75E-8"
+          },
+          {
+            "energy_keV": "207.44",
+            "weight": "1.72E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 22,
+      "id": "conversion_209_41_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000022187"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "159.17",
+            "weight": "0.00000188"
+          },
+          {
+            "energy_keV": "201.56",
+            "weight": "2.67E-7"
+          },
+          {
+            "energy_keV": "207.91",
+            "weight": "5.8E-8"
+          },
+          {
+            "energy_keV": "209.24",
+            "weight": "1.37E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 23,
+      "id": "conversion_212_568_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000033634"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "165.734",
+            "weight": "0.0000244"
+          },
+          {
+            "energy_keV": "205.313",
+            "weight": "0.00000713"
+          },
+          {
+            "energy_keV": "211.194",
+            "weight": "0.00000162"
+          },
+          {
+            "energy_keV": "212.407",
+            "weight": "4.84E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 24,
+      "id": "conversion_239_42_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000002119"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "192.59",
+            "weight": "0.0000018"
+          },
+          {
+            "energy_keV": "232.17",
+            "weight": "2.5E-7"
+          },
+          {
+            "energy_keV": "238.05",
+            "weight": "5.3E-8"
+          },
+          {
+            "energy_keV": "239.26",
+            "weight": "1.6E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 25,
+      "id": "conversion_244_6974_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.008170"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "197.8634",
+            "weight": "0.00611"
+          },
+          {
+            "energy_keV": "237.4427",
+            "weight": "0.001593"
+          },
+          {
+            "energy_keV": "243.3237",
+            "weight": "0.000359"
+          },
+          {
+            "energy_keV": "244.5365",
+            "weight": "0.000108"
+          }
+        ]
+      }
+    },
+    {
+      "index": 26,
+      "id": "conversion_251_633_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000156384"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "204.799",
+            "weight": "0.0000133"
+          },
+          {
+            "energy_keV": "244.378",
+            "weight": "0.00000183"
+          },
+          {
+            "energy_keV": "250.259",
+            "weight": "3.91E-7"
+          },
+          {
+            "energy_keV": "251.472",
+            "weight": "1.174E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 27,
+      "id": "conversion_269_86_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000004739"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "223.03",
+            "weight": "0.0000036"
+          },
+          {
+            "energy_keV": "262.61",
+            "weight": "8.8E-7"
+          },
+          {
+            "energy_keV": "268.49",
+            "weight": "2E-7"
+          },
+          {
+            "energy_keV": "269.7",
+            "weight": "5.9E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 28,
+      "id": "conversion_271_131_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000064566"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "220.892",
+            "weight": "0.0000484"
+          },
+          {
+            "energy_keV": "263.281",
+            "weight": "0.0000126"
+          },
+          {
+            "energy_keV": "269.628",
+            "weight": "0.00000289"
+          },
+          {
+            "energy_keV": "270.957",
+            "weight": "6.76E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 29,
+      "id": "conversion_275_449_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000033787"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "228.615",
+            "weight": "0.0000287"
+          },
+          {
+            "energy_keV": "268.194",
+            "weight": "0.00000397"
+          },
+          {
+            "energy_keV": "274.075",
+            "weight": "8.6E-7"
+          },
+          {
+            "energy_keV": "275.288",
+            "weight": "2.57E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 30,
+      "id": "conversion_285_98_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000006582"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "239.146",
+            "weight": "0.00000506"
+          },
+          {
+            "energy_keV": "278.725",
+            "weight": "0.00000118"
+          },
+          {
+            "energy_keV": "284.606",
+            "weight": "2.63E-7"
+          },
+          {
+            "energy_keV": "285.819",
+            "weight": "7.9E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 31,
+      "id": "conversion_295_9387_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000067958"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "249.1048",
+            "weight": "0.0000579"
+          },
+          {
+            "energy_keV": "288.6841",
+            "weight": "0.00000787"
+          },
+          {
+            "energy_keV": "294.5651",
+            "weight": "0.000001684"
+          },
+          {
+            "energy_keV": "295.7779",
+            "weight": "5.04E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 32,
+      "id": "conversion_315_174_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000025749"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "264.935",
+            "weight": "0.0000198"
+          },
+          {
+            "energy_keV": "307.324",
+            "weight": "0.00000465"
+          },
+          {
+            "energy_keV": "313.671",
+            "weight": "0.000001052"
+          },
+          {
+            "energy_keV": "315",
+            "weight": "2.47E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 33,
+      "id": "conversion_316_2_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000001494"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "269.37",
+            "weight": "0.00000117"
+          },
+          {
+            "energy_keV": "308.95",
+            "weight": "2.5E-7"
+          },
+          {
+            "energy_keV": "314.83",
+            "weight": "5.7E-8"
+          },
+          {
+            "energy_keV": "316.04",
+            "weight": "1.7E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 34,
+      "id": "conversion_324_83_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000046838"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "274.591",
+            "weight": "0.0000384"
+          },
+          {
+            "energy_keV": "316.98",
+            "weight": "0.00000662"
+          },
+          {
+            "energy_keV": "323.327",
+            "weight": "0.00000147"
+          },
+          {
+            "energy_keV": "324.656",
+            "weight": "3.48E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 35,
+      "id": "conversion_329_425_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000015136"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "282.591",
+            "weight": "0.0000129"
+          },
+          {
+            "energy_keV": "322.17",
+            "weight": "0.00000175"
+          },
+          {
+            "energy_keV": "328.051",
+            "weight": "3.74E-7"
+          },
+          {
+            "energy_keV": "329.264",
+            "weight": "1.12E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 36,
+      "id": "conversion_330_54_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "6.925E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "283.71",
+            "weight": "5.9E-7"
+          },
+          {
+            "energy_keV": "323.29",
+            "weight": "8E-8"
+          },
+          {
+            "energy_keV": "329.17",
+            "weight": "1.73E-8"
+          },
+          {
+            "energy_keV": "330.38",
+            "weight": "5.2E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 37,
+      "id": "conversion_340_4_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000011898"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "293.57",
+            "weight": "0.0000094"
+          },
+          {
+            "energy_keV": "333.15",
+            "weight": "0.00000196"
+          },
+          {
+            "energy_keV": "339.03",
+            "weight": "4.37E-7"
+          },
+          {
+            "energy_keV": "340.24",
+            "weight": "1.01E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 38,
+      "id": "conversion_344_2785_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0106091"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "294.0398",
+            "weight": "0.00827"
+          },
+          {
+            "energy_keV": "336.4293",
+            "weight": "0.00183"
+          },
+          {
+            "energy_keV": "342.7758",
+            "weight": "0.000412"
+          },
+          {
+            "energy_keV": "344.1051",
+            "weight": "0.0000971"
+          }
+        ]
+      }
+    },
+    {
+      "index": 39,
+      "id": "conversion_351_66_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000005239"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "301.421",
+            "weight": "0.0000041"
+          },
+          {
+            "energy_keV": "343.81",
+            "weight": "8.9E-7"
+          },
+          {
+            "energy_keV": "350.157",
+            "weight": "2.02E-7"
+          },
+          {
+            "energy_keV": "351.486",
+            "weight": "4.7E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 40,
+      "id": "conversion_357_26_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "3.8372E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "310.43",
+            "weight": "3.28E-7"
+          },
+          {
+            "energy_keV": "350.01",
+            "weight": "4.4E-8"
+          },
+          {
+            "energy_keV": "355.89",
+            "weight": "9.5E-9"
+          },
+          {
+            "energy_keV": "357.1",
+            "weight": "2.22E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 41,
+      "id": "conversion_367_7891_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000083852"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "317.5505",
+            "weight": "0.0000715"
+          },
+          {
+            "energy_keV": "359.94",
+            "weight": "0.00000974"
+          },
+          {
+            "energy_keV": "366.2865",
+            "weight": "0.00000211"
+          },
+          {
+            "energy_keV": "367.6158",
+            "weight": "5.02E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 42,
+      "id": "conversion_385_69_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000017417"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "338.86",
+            "weight": "0.00000145"
+          },
+          {
+            "energy_keV": "378.44",
+            "weight": "2.3E-7"
+          },
+          {
+            "energy_keV": "384.32",
+            "weight": "5E-8"
+          },
+          {
+            "energy_keV": "385.53",
+            "weight": "1.17E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 43,
+      "id": "conversion_387_9_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000112"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "337.66",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 44,
+      "id": "conversion_411_1165_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00053328"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "360.878",
+            "weight": "0.000425"
+          },
+          {
+            "energy_keV": "403.2675",
+            "weight": "0.0000848"
+          },
+          {
+            "energy_keV": "409.614",
+            "weight": "0.000019"
+          },
+          {
+            "energy_keV": "410.9433",
+            "weight": "0.00000448"
+          }
+        ]
+      }
+    },
+    {
+      "index": 45,
+      "id": "conversion_416_048_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000072606"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "369.215",
+            "weight": "0.00000621"
+          },
+          {
+            "energy_keV": "408.794",
+            "weight": "8.31E-7"
+          },
+          {
+            "energy_keV": "414.675",
+            "weight": "1.78E-7"
+          },
+          {
+            "energy_keV": "415.888",
+            "weight": "4.16E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 46,
+      "id": "conversion_423_45_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "8.621E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "376.616",
+            "weight": "7.2E-7"
+          },
+          {
+            "energy_keV": "416.195",
+            "weight": "1.12E-7"
+          },
+          {
+            "energy_keV": "422.076",
+            "weight": "2.44E-8"
+          },
+          {
+            "energy_keV": "423.289",
+            "weight": "5.7E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 47,
+      "id": "conversion_440_86_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000026143"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "390.62",
+            "weight": "0.0000021"
+          },
+          {
+            "energy_keV": "433.01",
+            "weight": "4.03E-7"
+          },
+          {
+            "energy_keV": "439.36",
+            "weight": "9E-8"
+          },
+          {
+            "energy_keV": "440.69",
+            "weight": "2.13E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 48,
+      "id": "conversion_443_965_keV_sm152_5_2",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000057082"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "397.1318",
+            "weight": "0.0000464"
+          },
+          {
+            "energy_keV": "436.7111",
+            "weight": "0.0000084"
+          },
+          {
+            "energy_keV": "442.5921",
+            "weight": "0.00000185"
+          },
+          {
+            "energy_keV": "443.8049",
+            "weight": "4.32E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 49,
+      "id": "conversion_443_965_keV_sm152_13_9",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000168206"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "397.1318",
+            "weight": "0.0001456"
+          },
+          {
+            "energy_keV": "436.7111",
+            "weight": "0.0000178"
+          },
+          {
+            "energy_keV": "442.5921",
+            "weight": "0.00000389"
+          },
+          {
+            "energy_keV": "443.8049",
+            "weight": "9.16E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 50,
+      "id": "conversion_482_31_keV_gd152_13_7",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "7.1775E-8"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "432.071",
+            "weight": "6.12E-8"
+          },
+          {
+            "energy_keV": "474.46",
+            "weight": "8.26E-9"
+          },
+          {
+            "energy_keV": "480.807",
+            "weight": "1.78E-9"
+          },
+          {
+            "energy_keV": "482.136",
+            "weight": "5.35E-10"
+          }
+        ]
+      }
+    },
+    {
+      "index": 51,
+      "id": "conversion_482_31_keV_sm152_11_5",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000053496"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "435.476",
+            "weight": "0.00000449"
+          },
+          {
+            "energy_keV": "475.055",
+            "weight": "6.78E-7"
+          },
+          {
+            "energy_keV": "480.936",
+            "weight": "1.47E-7"
+          },
+          {
+            "energy_keV": "482.149",
+            "weight": "3.46E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 52,
+      "id": "conversion_488_6792_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000057904"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "441.8458",
+            "weight": "0.0000476"
+          },
+          {
+            "energy_keV": "481.4251",
+            "weight": "0.00000811"
+          },
+          {
+            "energy_keV": "487.3061",
+            "weight": "0.00000178"
+          },
+          {
+            "energy_keV": "488.5189",
+            "weight": "4.14E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 53,
+      "id": "conversion_493_508_keV_gd152_6_2",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000013089"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "443.27",
+            "weight": "0.00000106"
+          },
+          {
+            "energy_keV": "485.659",
+            "weight": "1.93E-7"
+          },
+          {
+            "energy_keV": "492.006",
+            "weight": "4.3E-8"
+          },
+          {
+            "energy_keV": "493.335",
+            "weight": "1.29E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 54,
+      "id": "conversion_493_508_keV_sm152_14_9",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000012394"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "446.674",
+            "weight": "0.00000106"
+          },
+          {
+            "energy_keV": "486.253",
+            "weight": "1.42E-7"
+          },
+          {
+            "energy_keV": "492.134",
+            "weight": "3.03E-8"
+          },
+          {
+            "energy_keV": "493.347",
+            "weight": "7.1E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 55,
+      "id": "conversion_496_39_keV_gd152_13_6",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000034"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "446.151",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 56,
+      "id": "conversion_496_39_keV_sm152_17_10",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "2.1703E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "449.556",
+            "weight": "1.86E-7"
+          },
+          {
+            "energy_keV": "489.135",
+            "weight": "2.46E-8"
+          },
+          {
+            "energy_keV": "495.016",
+            "weight": "5.2E-9"
+          },
+          {
+            "energy_keV": "496.229",
+            "weight": "1.23E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 57,
+      "id": "conversion_503_474_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000021192"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "453.236",
+            "weight": "0.0000172"
+          },
+          {
+            "energy_keV": "495.625",
+            "weight": "0.0000031"
+          },
+          {
+            "energy_keV": "501.972",
+            "weight": "6.87E-7"
+          },
+          {
+            "energy_keV": "503.301",
+            "weight": "2.05E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 58,
+      "id": "conversion_520_227_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000097339"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "469.989",
+            "weight": "0.00000815"
+          },
+          {
+            "energy_keV": "512.378",
+            "weight": "0.000001233"
+          },
+          {
+            "energy_keV": "518.725",
+            "weight": "2.7E-7"
+          },
+          {
+            "energy_keV": "520.054",
+            "weight": "8.09E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 59,
+      "id": "conversion_523_13_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000017582"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "476.3",
+            "weight": "0.00000148"
+          },
+          {
+            "energy_keV": "515.88",
+            "weight": "2.19E-7"
+          },
+          {
+            "energy_keV": "521.76",
+            "weight": "4.8E-8"
+          },
+          {
+            "energy_keV": "522.97",
+            "weight": "1.12E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 60,
+      "id": "conversion_526_881_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000108"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "476.643",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 61,
+      "id": "conversion_534_245_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000015114"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "484.007",
+            "weight": "0.00000129"
+          },
+          {
+            "energy_keV": "526.396",
+            "weight": "1.73E-7"
+          },
+          {
+            "energy_keV": "532.743",
+            "weight": "3.72E-8"
+          },
+          {
+            "energy_keV": "534.072",
+            "weight": "1.12E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 62,
+      "id": "conversion_538_29_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "6.061E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "491.46",
+            "weight": "5.1E-7"
+          },
+          {
+            "energy_keV": "531.04",
+            "weight": "7.6E-8"
+          },
+          {
+            "energy_keV": "536.92",
+            "weight": "1.63E-8"
+          },
+          {
+            "energy_keV": "538.13",
+            "weight": "3.8E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 63,
+      "id": "conversion_556_56_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "5.9953E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "509.726",
+            "weight": "5.13E-7"
+          },
+          {
+            "energy_keV": "549.305",
+            "weight": "6.85E-8"
+          },
+          {
+            "energy_keV": "555.186",
+            "weight": "1.46E-8"
+          },
+          {
+            "energy_keV": "556.399",
+            "weight": "3.43E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 64,
+      "id": "conversion_557_91_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "4.650E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "507.67",
+            "weight": "3.8E-7"
+          },
+          {
+            "energy_keV": "550.06",
+            "weight": "6.6E-8"
+          },
+          {
+            "energy_keV": "556.41",
+            "weight": "1.46E-8"
+          },
+          {
+            "energy_keV": "557.74",
+            "weight": "4.4E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 65,
+      "id": "conversion_561_2_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "1.0282E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "514.4",
+            "weight": "8.5E-8"
+          },
+          {
+            "energy_keV": "553.9",
+            "weight": "1.4E-8"
+          },
+          {
+            "energy_keV": "559.8",
+            "weight": "3.1E-9"
+          },
+          {
+            "energy_keV": "561",
+            "weight": "7.2E-10"
+          }
+        ]
+      }
+    },
+    {
+      "index": 66,
+      "id": "conversion_562_93_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000003622"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "516.096",
+            "weight": "0.000003"
+          },
+          {
+            "energy_keV": "555.675",
+            "weight": "4.9E-7"
+          },
+          {
+            "energy_keV": "561.556",
+            "weight": "1.07E-7"
+          },
+          {
+            "energy_keV": "562.769",
+            "weight": "2.5E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 67,
+      "id": "conversion_563_99_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000149734"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "517.157",
+            "weight": "0.0000128"
+          },
+          {
+            "energy_keV": "556.736",
+            "weight": "0.00000172"
+          },
+          {
+            "energy_keV": "562.617",
+            "weight": "3.67E-7"
+          },
+          {
+            "energy_keV": "563.83",
+            "weight": "8.64E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 68,
+      "id": "conversion_566_442_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000180483"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "519.608",
+            "weight": "0.0000153"
+          },
+          {
+            "energy_keV": "559.187",
+            "weight": "0.00000217"
+          },
+          {
+            "energy_keV": "565.068",
+            "weight": "4.68E-7"
+          },
+          {
+            "energy_keV": "566.281",
+            "weight": "1.103E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 69,
+      "id": "conversion_586_265_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000093"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "536.0269",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 70,
+      "id": "conversion_616_05_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "6.9682E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "569.216",
+            "weight": "5.8E-7"
+          },
+          {
+            "energy_keV": "608.795",
+            "weight": "9.2E-8"
+          },
+          {
+            "energy_keV": "614.676",
+            "weight": "2.01E-8"
+          },
+          {
+            "energy_keV": "615.889",
+            "weight": "4.72E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 71,
+      "id": "conversion_644_37_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "1.5480E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "597.54",
+            "weight": "1.32E-7"
+          },
+          {
+            "energy_keV": "636.63",
+            "weight": "1.6E-8"
+          },
+          {
+            "energy_keV": "637.06",
+            "weight": "1E-9"
+          },
+          {
+            "energy_keV": "637.65",
+            "weight": "1E-9"
+          },
+          {
+            "energy_keV": "643",
+            "weight": "3.77E-9"
+          },
+          {
+            "energy_keV": "644.21",
+            "weight": "1.03E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 72,
+      "id": "conversion_656_489_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000714"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "609.656",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 73,
+      "id": "conversion_664_78_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "6.242E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "617.95",
+            "weight": "5.2E-7"
+          },
+          {
+            "energy_keV": "657.53",
+            "weight": "8.2E-8"
+          },
+          {
+            "energy_keV": "663.41",
+            "weight": "1.8E-8"
+          },
+          {
+            "energy_keV": "664.62",
+            "weight": "4.2E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 74,
+      "id": "conversion_671_155_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000020493"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "624.323",
+            "weight": "0.00000175"
+          },
+          {
+            "energy_keV": "663.902",
+            "weight": "2.37E-7"
+          },
+          {
+            "energy_keV": "669.783",
+            "weight": "5.04E-8"
+          },
+          {
+            "energy_keV": "670.996",
+            "weight": "1.19E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 75,
+      "id": "conversion_674_675_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000037757"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "627.8428",
+            "weight": "0.00000323"
+          },
+          {
+            "energy_keV": "667.4221",
+            "weight": "4.32E-7"
+          },
+          {
+            "energy_keV": "673.3031",
+            "weight": "9.21E-8"
+          },
+          {
+            "energy_keV": "674.5159",
+            "weight": "2.16E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 76,
+      "id": "conversion_674_677_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000012958"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "624.438",
+            "weight": "0.00000108"
+          },
+          {
+            "energy_keV": "666.827",
+            "weight": "1.68E-7"
+          },
+          {
+            "energy_keV": "673.174",
+            "weight": "3.68E-8"
+          },
+          {
+            "energy_keV": "674.503",
+            "weight": "1.1E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 77,
+      "id": "conversion_678_623_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000032241"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "628.386",
+            "weight": "0.0000268"
+          },
+          {
+            "energy_keV": "670.775",
+            "weight": "0.00000423"
+          },
+          {
+            "energy_keV": "677.122",
+            "weight": "9.31E-7"
+          },
+          {
+            "energy_keV": "678.451",
+            "weight": "2.8E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 78,
+      "id": "conversion_686_61_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000015817"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "639.78",
+            "weight": "0.00000134"
+          },
+          {
+            "energy_keV": "679.36",
+            "weight": "1.91E-7"
+          },
+          {
+            "energy_keV": "685.24",
+            "weight": "4.1E-8"
+          },
+          {
+            "energy_keV": "686.45",
+            "weight": "9.7E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 79,
+      "id": "conversion_688_67_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000302"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "641.838",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 80,
+      "id": "conversion_703_25_keV_gd152_5_1",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "1.0814E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "653.01",
+            "weight": "9E-8"
+          },
+          {
+            "energy_keV": "695.4",
+            "weight": "1.4E-8"
+          },
+          {
+            "energy_keV": "701.75",
+            "weight": "3.2E-9"
+          },
+          {
+            "energy_keV": "703.08",
+            "weight": "9.4E-10"
+          }
+        ]
+      }
+    },
+    {
+      "index": 81,
+      "id": "conversion_703_25_keV_gd152_10_2",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "2.1093E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "653.01",
+            "weight": "1.75E-7"
+          },
+          {
+            "energy_keV": "695.4",
+            "weight": "2.8E-8"
+          },
+          {
+            "energy_keV": "701.75",
+            "weight": "6.1E-9"
+          },
+          {
+            "energy_keV": "703.08",
+            "weight": "1.83E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 82,
+      "id": "conversion_712_843_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000021354"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "662.606",
+            "weight": "0.00000183"
+          },
+          {
+            "energy_keV": "704.995",
+            "weight": "2.41E-7"
+          },
+          {
+            "energy_keV": "711.342",
+            "weight": "5.2E-8"
+          },
+          {
+            "energy_keV": "712.671",
+            "weight": "1.24E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 83,
+      "id": "conversion_719_349_keV_sm152_9_2",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000014057"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "672.5168",
+            "weight": "0.0000118"
+          },
+          {
+            "energy_keV": "712.0961",
+            "weight": "0.00000178"
+          },
+          {
+            "energy_keV": "717.9771",
+            "weight": "3.86E-7"
+          },
+          {
+            "energy_keV": "719.1899",
+            "weight": "9.1E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 84,
+      "id": "conversion_719_349_keV_sm152_13_5",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000011654"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "672.5168",
+            "weight": "0.000001"
+          },
+          {
+            "energy_keV": "712.0961",
+            "weight": "1.31E-7"
+          },
+          {
+            "energy_keV": "717.9771",
+            "weight": "2.79E-8"
+          },
+          {
+            "energy_keV": "719.1899",
+            "weight": "6.5E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 85,
+      "id": "conversion_727_99_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "2.0524E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "681.16",
+            "weight": "1.76E-7"
+          },
+          {
+            "energy_keV": "720.25",
+            "weight": "2.1E-8"
+          },
+          {
+            "energy_keV": "720.68",
+            "weight": "1E-9"
+          },
+          {
+            "energy_keV": "721.27",
+            "weight": "1E-9"
+          },
+          {
+            "energy_keV": "726.62",
+            "weight": "4.9E-9"
+          },
+          {
+            "energy_keV": "727.83",
+            "weight": "1.34E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 86,
+      "id": "conversion_764_9_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000099842"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "714.663",
+            "weight": "0.00000836"
+          },
+          {
+            "energy_keV": "756.526",
+            "weight": "0.00000103"
+          },
+          {
+            "energy_keV": "756.972",
+            "weight": "1.6E-7"
+          },
+          {
+            "energy_keV": "757.659",
+            "weight": "8E-8"
+          },
+          {
+            "energy_keV": "763.399",
+            "weight": "2.77E-7"
+          },
+          {
+            "energy_keV": "764.728",
+            "weight": "7.72E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 87,
+      "id": "conversion_768_944_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00000153625"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "722.112",
+            "weight": "0.00000132"
+          },
+          {
+            "energy_keV": "761.209",
+            "weight": "1.5E-7"
+          },
+          {
+            "energy_keV": "761.634",
+            "weight": "1E-8"
+          },
+          {
+            "energy_keV": "762.23",
+            "weight": "1E-8"
+          },
+          {
+            "energy_keV": "767.572",
+            "weight": "3.63E-8"
+          },
+          {
+            "energy_keV": "768.785",
+            "weight": "9.95E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 88,
+      "id": "conversion_778_9045_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000242328"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "728.6675",
+            "weight": "0.000208"
+          },
+          {
+            "energy_keV": "771.057",
+            "weight": "0.0000271"
+          },
+          {
+            "energy_keV": "777.4035",
+            "weight": "0.00000584"
+          },
+          {
+            "energy_keV": "778.7328",
+            "weight": "0.000001388"
+          }
+        ]
+      }
+    },
+    {
+      "index": 89,
+      "id": "conversion_794_81_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000020118"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "744.571",
+            "weight": "0.00000171"
+          },
+          {
+            "energy_keV": "786.96",
+            "weight": "2.38E-7"
+          },
+          {
+            "energy_keV": "793.307",
+            "weight": "5.15E-8"
+          },
+          {
+            "energy_keV": "794.636",
+            "weight": "1.23E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 90,
+      "id": "conversion_805_7_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "2.0278E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "758.87",
+            "weight": "1.75E-7"
+          },
+          {
+            "energy_keV": "798.45",
+            "weight": "2.2E-8"
+          },
+          {
+            "energy_keV": "804.33",
+            "weight": "4.68E-9"
+          },
+          {
+            "energy_keV": "805.54",
+            "weight": "1.1E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 91,
+      "id": "conversion_810_451_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000124413"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "763.619",
+            "weight": "0.00001046"
+          },
+          {
+            "energy_keV": "803.198",
+            "weight": "0.000001563"
+          },
+          {
+            "energy_keV": "809.079",
+            "weight": "3.39E-7"
+          },
+          {
+            "energy_keV": "810.292",
+            "weight": "7.93E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 92,
+      "id": "conversion_839_36_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "2.2472E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "792.526",
+            "weight": "1.92E-7"
+          },
+          {
+            "energy_keV": "832.105",
+            "weight": "2.59E-8"
+          },
+          {
+            "energy_keV": "837.986",
+            "weight": "5.52E-9"
+          },
+          {
+            "energy_keV": "839.199",
+            "weight": "1.3E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 93,
+      "id": "conversion_841_574_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00000229105"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "794.742",
+            "weight": "0.00000196"
+          },
+          {
+            "energy_keV": "834.321",
+            "weight": "2.62E-7"
+          },
+          {
+            "energy_keV": "840.202",
+            "weight": "5.59E-8"
+          },
+          {
+            "energy_keV": "841.415",
+            "weight": "1.315E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 94,
+      "id": "conversion_867_38_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000145682"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "820.5488",
+            "weight": "0.000123"
+          },
+          {
+            "energy_keV": "860.1281",
+            "weight": "0.0000179"
+          },
+          {
+            "energy_keV": "866.0091",
+            "weight": "0.00000387"
+          },
+          {
+            "energy_keV": "867.2219",
+            "weight": "9.12E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 95,
+      "id": "conversion_901_181_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000025865"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "854.35",
+            "weight": "0.00000218"
+          },
+          {
+            "energy_keV": "893.929",
+            "weight": "3.21E-7"
+          },
+          {
+            "energy_keV": "899.81",
+            "weight": "6.92E-8"
+          },
+          {
+            "energy_keV": "901.023",
+            "weight": "1.63E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 96,
+      "id": "conversion_919_337_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000050217"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "872.5058",
+            "weight": "0.00000429"
+          },
+          {
+            "energy_keV": "912.0851",
+            "weight": "5.79E-7"
+          },
+          {
+            "energy_keV": "917.9661",
+            "weight": "1.236E-7"
+          },
+          {
+            "energy_keV": "919.1789",
+            "weight": "2.91E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 97,
+      "id": "conversion_926_317_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000080677"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "879.486",
+            "weight": "0.00000683"
+          },
+          {
+            "energy_keV": "919.065",
+            "weight": "9.77E-7"
+          },
+          {
+            "energy_keV": "924.946",
+            "weight": "2.11E-7"
+          },
+          {
+            "energy_keV": "926.159",
+            "weight": "4.97E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 98,
+      "id": "conversion_930_58_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000023407"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "880.34",
+            "weight": "0.00000197"
+          },
+          {
+            "energy_keV": "922.73",
+            "weight": "2.92E-7"
+          },
+          {
+            "energy_keV": "929.08",
+            "weight": "6.36E-8"
+          },
+          {
+            "energy_keV": "930.41",
+            "weight": "1.51E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 99,
+      "id": "conversion_937_05_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "1.1762E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "886.814",
+            "weight": "1E-7"
+          },
+          {
+            "energy_keV": "929.203",
+            "weight": "1.39E-8"
+          },
+          {
+            "energy_keV": "935.55",
+            "weight": "3E-9"
+          },
+          {
+            "energy_keV": "936.879",
+            "weight": "7.2E-10"
+          }
+        ]
+      }
+    },
+    {
+      "index": 100,
+      "id": "conversion_958_63_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "6.5E-7"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "911.8",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 101,
+      "id": "conversion_963_39_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00000155199"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "916.559",
+            "weight": "0.000001341"
+          },
+          {
+            "energy_keV": "955.656",
+            "weight": "1.53E-7"
+          },
+          {
+            "energy_keV": "956.081",
+            "weight": "6E-9"
+          },
+          {
+            "energy_keV": "956.677",
+            "weight": "7E-9"
+          },
+          {
+            "energy_keV": "962.019",
+            "weight": "3.53E-8"
+          },
+          {
+            "energy_keV": "963.232",
+            "weight": "9.69E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 102,
+      "id": "conversion_964_079_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00039398"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "917.248",
+            "weight": "0.000334"
+          },
+          {
+            "energy_keV": "956.827",
+            "weight": "0.0000474"
+          },
+          {
+            "energy_keV": "962.708",
+            "weight": "0.00001019"
+          },
+          {
+            "energy_keV": "963.921",
+            "weight": "0.00000239"
+          }
+        ]
+      }
+    },
+    {
+      "index": 103,
+      "id": "conversion_974_09_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "6.6E-7"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "923.851",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 104,
+      "id": "conversion_990_19_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "8.9543E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "939.951",
+            "weight": "7.56E-7"
+          },
+          {
+            "energy_keV": "981.814",
+            "weight": "9.3E-8"
+          },
+          {
+            "energy_keV": "982.26",
+            "weight": "1.1E-8"
+          },
+          {
+            "energy_keV": "982.947",
+            "weight": "5E-9"
+          },
+          {
+            "energy_keV": "988.687",
+            "weight": "2.38E-8"
+          },
+          {
+            "energy_keV": "990.016",
+            "weight": "6.63E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 105,
+      "id": "conversion_1005_272_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000172201"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "958.442",
+            "weight": "0.0000146"
+          },
+          {
+            "energy_keV": "998.021",
+            "weight": "0.00000207"
+          },
+          {
+            "energy_keV": "1003.902",
+            "weight": "4.45E-7"
+          },
+          {
+            "energy_keV": "1005.115",
+            "weight": "1.051E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 106,
+      "id": "conversion_1085_837_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000214006"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1039.007",
+            "weight": "0.000182"
+          },
+          {
+            "energy_keV": "1078.586",
+            "weight": "0.0000253"
+          },
+          {
+            "energy_keV": "1084.467",
+            "weight": "0.00000543"
+          },
+          {
+            "energy_keV": "1085.68",
+            "weight": "0.000001276"
+          }
+        ]
+      }
+    },
+    {
+      "index": 107,
+      "id": "conversion_1089_737_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000346"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "1039.502",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 108,
+      "id": "conversion_1109_174_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000041645"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1058.939",
+            "weight": "0.00000353"
+          },
+          {
+            "energy_keV": "1101.328",
+            "weight": "5E-7"
+          },
+          {
+            "energy_keV": "1107.675",
+            "weight": "1.086E-7"
+          },
+          {
+            "energy_keV": "1109.004",
+            "weight": "2.59E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 109,
+      "id": "conversion_1112_076_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000268359"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1065.2458",
+            "weight": "0.000228"
+          },
+          {
+            "energy_keV": "1104.8251",
+            "weight": "0.0000319"
+          },
+          {
+            "energy_keV": "1110.7061",
+            "weight": "0.00000685"
+          },
+          {
+            "energy_keV": "1111.9189",
+            "weight": "0.000001609"
+          }
+        ]
+      }
+    },
+    {
+      "index": 110,
+      "id": "conversion_1170_93_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "8.5229E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1124.1",
+            "weight": "7.3E-7"
+          },
+          {
+            "energy_keV": "1163.68",
+            "weight": "9.67E-8"
+          },
+          {
+            "energy_keV": "1169.56",
+            "weight": "2.07E-8"
+          },
+          {
+            "energy_keV": "1170.77",
+            "weight": "4.89E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 111,
+      "id": "conversion_1206_11_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "2.5454E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1155.87",
+            "weight": "2.16E-7"
+          },
+          {
+            "energy_keV": "1198.26",
+            "weight": "3.04E-8"
+          },
+          {
+            "energy_keV": "1204.61",
+            "weight": "6.57E-9"
+          },
+          {
+            "energy_keV": "1205.94",
+            "weight": "1.57E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 112,
+      "id": "conversion_1212_948_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000099339"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1166.119",
+            "weight": "0.0000085"
+          },
+          {
+            "energy_keV": "1205.698",
+            "weight": "0.000001136"
+          },
+          {
+            "energy_keV": "1211.579",
+            "weight": "2.41E-7"
+          },
+          {
+            "energy_keV": "1212.792",
+            "weight": "5.69E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 113,
+      "id": "conversion_1249_938_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000030308"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1203.11",
+            "weight": "0.0000026"
+          },
+          {
+            "energy_keV": "1242.207",
+            "weight": "3.1E-7"
+          },
+          {
+            "energy_keV": "1242.632",
+            "weight": "2E-8"
+          },
+          {
+            "energy_keV": "1243.228",
+            "weight": "1E-8"
+          },
+          {
+            "energy_keV": "1248.57",
+            "weight": "7.35E-8"
+          },
+          {
+            "energy_keV": "1249.783",
+            "weight": "1.73E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 114,
+      "id": "conversion_1261_343_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "9.0634E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1211.11",
+            "weight": "7.73E-7"
+          },
+          {
+            "energy_keV": "1253.499",
+            "weight": "1.052E-7"
+          },
+          {
+            "energy_keV": "1259.846",
+            "weight": "2.27E-8"
+          },
+          {
+            "energy_keV": "1261.175",
+            "weight": "5.44E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 115,
+      "id": "conversion_1292_778_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00000157634"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1245.95",
+            "weight": "0.00000135"
+          },
+          {
+            "energy_keV": "1285.529",
+            "weight": "1.79E-7"
+          },
+          {
+            "energy_keV": "1291.41",
+            "weight": "3.83E-8"
+          },
+          {
+            "energy_keV": "1292.623",
+            "weight": "9.04E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 116,
+      "id": "conversion_1299_142_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000114591"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1248.909",
+            "weight": "0.0000098"
+          },
+          {
+            "energy_keV": "1291.298",
+            "weight": "0.000001311"
+          },
+          {
+            "energy_keV": "1297.645",
+            "weight": "2.81E-7"
+          },
+          {
+            "energy_keV": "1298.974",
+            "weight": "6.71E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 117,
+      "id": "conversion_1314_7_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "3.350E-8"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1264.46",
+            "weight": "2.88E-8"
+          },
+          {
+            "energy_keV": "1306.85",
+            "weight": "3.71E-9"
+          },
+          {
+            "energy_keV": "1313.2",
+            "weight": "8E-10"
+          },
+          {
+            "energy_keV": "1314.53",
+            "weight": "1.9E-10"
+          }
+        ]
+      }
+    },
+    {
+      "index": 118,
+      "id": "conversion_1348_1_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "2.6769E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1297.86",
+            "weight": "2.28E-7"
+          },
+          {
+            "energy_keV": "1340.25",
+            "weight": "3.13E-8"
+          },
+          {
+            "energy_keV": "1346.6",
+            "weight": "6.77E-9"
+          },
+          {
+            "energy_keV": "1347.93",
+            "weight": "1.62E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 119,
+      "id": "conversion_1363_77_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "5.0697E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1316.94",
+            "weight": "4.35E-7"
+          },
+          {
+            "energy_keV": "1356.03",
+            "weight": "5.4E-8"
+          },
+          {
+            "energy_keV": "1356.46",
+            "weight": "2E-9"
+          },
+          {
+            "energy_keV": "1357.05",
+            "weight": "1E-9"
+          },
+          {
+            "energy_keV": "1362.4",
+            "weight": "1.21E-8"
+          },
+          {
+            "energy_keV": "1363.61",
+            "weight": "2.87E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 120,
+      "id": "conversion_1390_36_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "7.729E-8"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1343.53",
+            "weight": "6.7E-8"
+          },
+          {
+            "energy_keV": "1382.62",
+            "weight": "8E-9"
+          },
+          {
+            "energy_keV": "1388.99",
+            "weight": "1.85E-9"
+          },
+          {
+            "energy_keV": "1390.2",
+            "weight": "4.4E-10"
+          }
+        ]
+      }
+    },
+    {
+      "index": 121,
+      "id": "conversion_1408_013_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000120492"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1361.1788",
+            "weight": "0.0001043"
+          },
+          {
+            "energy_keV": "1400.7581",
+            "weight": "0.00001282"
+          },
+          {
+            "energy_keV": "1406.6391",
+            "weight": "0.00000273"
+          },
+          {
+            "energy_keV": "1407.8519",
+            "weight": "6.42E-7"
+          }
+        ]
+      }
+    },
+    {
+      "index": 122,
+      "id": "conversion_1457_643_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00000285574"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1410.817",
+            "weight": "0.00000249"
+          },
+          {
+            "energy_keV": "1449.914",
+            "weight": "2.7E-7"
+          },
+          {
+            "energy_keV": "1450.339",
+            "weight": "1E-8"
+          },
+          {
+            "energy_keV": "1450.935",
+            "weight": "1E-8"
+          },
+          {
+            "energy_keV": "1456.277",
+            "weight": "6.13E-8"
+          },
+          {
+            "energy_keV": "1457.49",
+            "weight": "1.444E-8"
+          }
+        ]
+      }
+    },
+    {
+      "index": 123,
+      "id": "conversion_1528_103_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.000001124"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "1481.277",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 124,
+      "id": "conversion_1605_61_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "7.29E-8"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "1555.37",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 125,
+      "id": "conversion_1608_36_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "2.12E-8"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "1561.53",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 126,
+      "id": "conversion_1635_2_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "1.5E-9"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "1588.4",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 127,
+      "id": "conversion_1643_6_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "4.2E-8"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "1593.36",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 128,
+      "id": "conversion_1647_41_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "5.12E-8"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "1600.58",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 129,
+      "id": "conversion_1769_09_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "6.44E-8"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "1722.26",
+          "unit": "keV"
+        }
+      }
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "annihilation_photons",
+      "particle": "Gamma",
+      "energy_keV": "511"
+    }
+  ],
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSEu152.cc",
+    "generator_prefix": " * BetaShape ",
+    "selected_version": "2.4"
+  }
+}

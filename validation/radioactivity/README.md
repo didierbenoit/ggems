@@ -2,7 +2,7 @@
 
 Run an ActivityDriven source, then compare its populations, birth times and
 energies with independent calculations and a selected nuclear reference. The
-reference packages cover fifty-two radionuclides. Scientific comparisons are
+reference packages cover sixty-two radionuclides. Scientific comparisons are
 reported in `analysis.json`; the campaign does not modify the built-in data.
 
 ## Build and run
@@ -127,6 +127,16 @@ interpreting comparisons, especially for an incomplete modeled inventory.
 | Ru-106 | [Ru-106 reference](data/Ru-106/reference/README.md) | `data/Ru-106/reference/reference.json` |
 | Mo-99 | [Mo-99 reference](data/Mo-99/reference/README.md) | `data/Mo-99/reference/reference.json` |
 | Sr-82 | [Sr-82 reference](data/Sr-82/reference/README.md) | `data/Sr-82/reference/reference.json` |
+| Ge-68 | [Ge-68 reference](data/Ge-68/reference/README.md) | `data/Ge-68/reference/reference.json` |
+| Na-22 | [Na-22 reference](data/Na-22/reference/README.md) | `data/Na-22/reference/reference.json` |
+| Ba-133 | [Ba-133 reference](data/Ba-133/reference/README.md) | `data/Ba-133/reference/reference.json` |
+| Eu-152 | [Eu-152 reference](data/Eu-152/reference/README.md) | `data/Eu-152/reference/reference.json` |
+| Mn-54 | [Mn-54 reference](data/Mn-54/reference/README.md) | `data/Mn-54/reference/reference.json` |
+| Zn-65 | [Zn-65 reference](data/Zn-65/reference/README.md) | `data/Zn-65/reference/reference.json` |
+| Cd-109 | [Cd-109 reference](data/Cd-109/reference/README.md) | `data/Cd-109/reference/reference.json` |
+| Ce-139 | [Ce-139 reference](data/Ce-139/reference/README.md) | `data/Ce-139/reference/reference.json` |
+| Sn-113 | [Sn-113 reference](data/Sn-113/reference/README.md) | `data/Sn-113/reference/reference.json` |
+| Sr-85 | [Sr-85 reference](data/Sr-85/reference/README.md) | `data/Sr-85/reference/reference.json` |
 
 Raw evaluation files provide provenance and independent comparisons. Campaigns
 read the selected `reference.json` and any referenced spectrum CSV files.

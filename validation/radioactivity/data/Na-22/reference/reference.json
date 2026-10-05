@@ -1,0 +1,90 @@
+{
+  "name": "Na-22",
+  "reference_id": "LNHB-Na22-prompt-parent-BetaShape-2.4",
+  "half_life": {
+    "value": "82139522.619265516800"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_plus_546_45_keV",
+      "particle": "Positron",
+      "yield_per_decay": {
+        "value": "0.903"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_plus_546_45_keV.csv"
+      }
+    },
+    {
+      "index": 1,
+      "id": "beta_plus_1821_02_keV",
+      "particle": "Positron",
+      "yield_per_decay": {
+        "value": "0.00055"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_plus_1821_02_keV.csv"
+      }
+    },
+    {
+      "index": 2,
+      "id": "nuclear_gamma",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.9994"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "1274.537",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "id": "atomic_xray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.001353"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "0.8486",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "id": "conversion_1274_537_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.00000636"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "1273.707",
+          "unit": "keV"
+        }
+      }
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "annihilation_photons",
+      "particle": "Gamma",
+      "energy_keV": "511"
+    }
+  ],
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSNa22.cc",
+    "generator_prefix": " * BetaShape ",
+    "selected_version": "2.4"
+  }
+}

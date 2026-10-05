@@ -1,0 +1,166 @@
+{
+  "name": "Zn-65",
+  "reference_id": "LNHB-Zn65-prompt-parent-BetaShape-2.4",
+  "half_life": {
+    "value": "21082464.00"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_plus_330_1_keV",
+      "particle": "Positron",
+      "yield_per_decay": {
+        "value": "0.01421"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_plus_330_1_keV.csv"
+      }
+    },
+    {
+      "index": 1,
+      "id": "nuclear_gamma",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.5022523"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "344.95",
+            "weight": "0.0000254"
+          },
+          {
+            "energy_keV": "770.64",
+            "weight": "0.0000269"
+          },
+          {
+            "energy_keV": "1115.539",
+            "weight": "0.5022"
+          }
+        ]
+      }
+    },
+    {
+      "index": 2,
+      "id": "atomic_xray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.40795"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "0.9165",
+            "weight": "0.01305"
+          },
+          {
+            "energy_keV": "8.02792",
+            "weight": "0.1176"
+          },
+          {
+            "energy_keV": "8.04787",
+            "weight": "0.2291"
+          },
+          {
+            "energy_keV": "8.9412",
+            "weight": "0.0482"
+          }
+        ]
+      }
+    },
+    {
+      "index": 3,
+      "id": "conversion_344_95_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "1.55E-7"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "335.97",
+            "weight": "1.41E-7"
+          },
+          {
+            "energy_keV": "343.85",
+            "weight": "1.3E-8"
+          },
+          {
+            "energy_keV": "344.02",
+            "weight": "1E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 4,
+      "id": "conversion_770_64_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "1.56E-8"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "761.66",
+            "weight": "9.3E-9"
+          },
+          {
+            "energy_keV": "769.54",
+            "weight": "9E-10"
+          },
+          {
+            "energy_keV": "769.71",
+            "weight": "5.4E-9"
+          }
+        ]
+      }
+    },
+    {
+      "index": 5,
+      "id": "conversion_1115_539_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0000916"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1106.5701",
+            "weight": "0.0000834"
+          },
+          {
+            "energy_keV": "1114.4529",
+            "weight": "0.000008"
+          },
+          {
+            "energy_keV": "1114.598",
+            "weight": "1E-7"
+          },
+          {
+            "energy_keV": "1114.6179",
+            "weight": "1E-7"
+          }
+        ]
+      }
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "annihilation_photons",
+      "particle": "Gamma",
+      "energy_keV": "511"
+    }
+  ],
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSZn65.cc",
+    "generator_prefix": " * BetaShape ",
+    "selected_version": "2.4"
+  }
+}

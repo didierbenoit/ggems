@@ -1,0 +1,114 @@
+{
+  "name": "Mn-54",
+  "reference_id": "LNHB-Mn54-prompt-parent-BetaShape-2.4",
+  "half_life": {
+    "value": "26973216.00"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "beta_plus_355_2_keV",
+      "particle": "Positron",
+      "yield_per_decay": {
+        "value": "0.0000000057"
+      },
+      "distribution": {
+        "kind": "RegularSpectrum",
+        "spectrum_file": "beta_plus_355_2_keV.csv"
+      }
+    },
+    {
+      "index": 1,
+      "id": "nuclear_gamma",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.999752"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "834.848",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "id": "atomic_xray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.2637"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "0.59889",
+            "weight": "0.0065"
+          },
+          {
+            "energy_keV": "5.40557",
+            "weight": "0.0765"
+          },
+          {
+            "energy_keV": "5.41479",
+            "weight": "0.1502"
+          },
+          {
+            "energy_keV": "5.9669",
+            "weight": "0.0305"
+          }
+        ]
+      }
+    },
+    {
+      "index": 3,
+      "id": "conversion_834_848_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.0002452883"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "828.8658",
+            "weight": "0.0002219"
+          },
+          {
+            "energy_keV": "834.1604",
+            "weight": "0.00002019"
+          },
+          {
+            "energy_keV": "834.2713",
+            "weight": "1.783E-7"
+          },
+          {
+            "energy_keV": "834.2805",
+            "weight": "2.099E-7"
+          },
+          {
+            "energy_keV": "834.8223",
+            "weight": "0.000002709"
+          },
+          {
+            "energy_keV": "834.8547",
+            "weight": "1.011E-7"
+          }
+        ]
+      }
+    }
+  ],
+  "excluded_source_emissions": [
+    {
+      "id": "annihilation_photons",
+      "particle": "Gamma",
+      "energy_keV": "511"
+    }
+  ],
+  "implementation_audit": {
+    "source_file": "src/radioactivity/builtins/GGEMSMn54.cc",
+    "generator_prefix": " * BetaShape ",
+    "selected_version": "2.4"
+  }
+}

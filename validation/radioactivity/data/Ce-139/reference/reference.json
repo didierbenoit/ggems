@@ -1,0 +1,91 @@
+{
+  "name": "Ce-139",
+  "reference_id": "LNHB-Ce139-prompt-parent",
+  "half_life": {
+    "value": "11892182.400"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "nuclear_gamma",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.799"
+      },
+      "distribution": {
+        "kind": "Mono",
+        "energy": {
+          "value": "165.8575",
+          "unit": "keV"
+        }
+      }
+    },
+    {
+      "index": 1,
+      "id": "atomic_xray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.9252"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "5.0945",
+            "weight": "0.1219"
+          },
+          {
+            "energy_keV": "33.0344",
+            "weight": "0.228"
+          },
+          {
+            "energy_keV": "33.4421",
+            "weight": "0.419"
+          },
+          {
+            "energy_keV": "37.8687",
+            "weight": "0.1247"
+          },
+          {
+            "energy_keV": "38.8228",
+            "weight": "0.0316"
+          }
+        ]
+      }
+    },
+    {
+      "index": 2,
+      "id": "conversion_165_8575_keV",
+      "particle": "Electron",
+      "yield_per_decay": {
+        "value": "0.199292"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "126.933",
+            "weight": "0.1715"
+          },
+          {
+            "energy_keV": "159.5913",
+            "weight": "0.02125"
+          },
+          {
+            "energy_keV": "159.967",
+            "weight": "0.00144"
+          },
+          {
+            "energy_keV": "160.3749",
+            "weight": "0.000312"
+          },
+          {
+            "energy_keV": "164.7837",
+            "weight": "0.00479"
+          }
+        ]
+      }
+    }
+  ],
+  "excluded_source_emissions": []
+}

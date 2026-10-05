@@ -1,0 +1,43 @@
+{
+  "name": "Ge-68",
+  "reference_id": "LNHB-Ge68-prompt-parent",
+  "half_life": {
+    "value": "23410080.00"
+  },
+  "groups": [
+    {
+      "index": 0,
+      "id": "atomic_xray",
+      "particle": "Gamma",
+      "yield_per_decay": {
+        "value": "0.46164"
+      },
+      "distribution": {
+        "kind": "DiscreteLines",
+        "lines": [
+          {
+            "energy_keV": "1.131",
+            "weight": "0.0149"
+          },
+          {
+            "energy_keV": "9.22495",
+            "weight": "0.1325"
+          },
+          {
+            "energy_keV": "9.25184",
+            "weight": "0.2574"
+          },
+          {
+            "energy_keV": "10.291",
+            "weight": "0.0565"
+          },
+          {
+            "energy_keV": "10.3664",
+            "weight": "0.00034"
+          }
+        ]
+      }
+    }
+  ],
+  "excluded_source_emissions": []
+}

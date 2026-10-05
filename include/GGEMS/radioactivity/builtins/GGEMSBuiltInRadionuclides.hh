@@ -410,6 +410,76 @@ namespace ggems::core::radioactivity::builtins {
 [[nodiscard]] auto BuildSr82Radionuclide() -> GGEMSRadionuclideDefinition;
 
 /*!
+ * \brief Builds the compiled Ge-68 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildGe68Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Na-22 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildNa22Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Ba-133 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildBa133Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Eu-152 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildEu152Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Mn-54 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildMn54Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Zn-65 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildZn65Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Cd-109 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildCd109Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Ce-139 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildCe139Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Sn-113 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildSn113Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
+ * \brief Builds the compiled Sr-85 source-emission definition.
+ *
+ * \return Owned parent lifetime and independent marginal emission laws.
+ */
+[[nodiscard]] auto BuildSr85Radionuclide() -> GGEMSRadionuclideDefinition;
+
+/*!
  * \brief Borrows the catalog names in registration order.
  *
  * \return Span backed by static storage for the process lifetime.
