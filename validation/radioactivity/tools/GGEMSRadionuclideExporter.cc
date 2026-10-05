@@ -32,6 +32,8 @@
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
+#include <cmath>
+#include <sstream>
 #include <filesystem>
 #include <format>
 #include <fstream>
@@ -65,7 +67,6 @@
 #include "GGEMS/random/GGEMSRandomEngine.hh"
 #include "GGEMS/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/sources/GGEMSSource.hh"
-#include "GGEMS/sources/GGEMSSourceEmissionRange.hh"
 #include "GGEMS/sources/GGEMSSourcePopulationPlan.hh"
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/sources/GGEMSSourceTypes.hh"
@@ -75,10 +76,17 @@
 #include "GGEMS/units/GGEMSUnitConversion.hh"
 
 namespace {
+
+// =============================================================================
+// =============================================================================
+
 namespace sources = ggems::core::sources;
 namespace radioactivity = ggems::core::radioactivity;
 namespace random = ggems::core::random;
 namespace observer = ggems::core::observer;
+
+// =============================================================================
+// =============================================================================
 
 struct Options {
   std::string nuclide;
@@ -97,6 +105,9 @@ struct Options {
   bool describe{false};
   bool help{false};
 };
+
+// =============================================================================
+// =============================================================================
 
 auto PrintHelp() -> void {
   std::cout
@@ -124,6 +135,9 @@ Campaign:
 )";
 }
 
+// =============================================================================
+// =============================================================================
+
 template <typename T> auto ParseNumber(std::string_view text) -> T {
   T value{};
   auto const result =
@@ -136,6 +150,28 @@ template <typename T> auto ParseNumber(std::string_view text) -> T {
 
   return value;
 }
+
+// =============================================================================
+// =============================================================================
+
+template <>
+auto ParseNumber<long double>(std::string_view text) -> long double {
+  std::istringstream stream{std::string{text}};
+  stream.imbue(std::locale::classic());
+  stream >> std::noskipws;
+
+  long double value{};
+
+  if (!(stream >> value) || !stream.eof() || !std::isfinite(value)) {
+    throw std::runtime_error(
+      std::format("Invalid numeric argument '{}'.", text));
+  }
+
+  return value;
+}
+
+// =============================================================================
+// =============================================================================
 
 auto ParseOptions(int argc, char const *const *argv) -> Options {
   Options options;
@@ -195,8 +231,8 @@ auto ParseOptions(int argc, char const *const *argv) -> Options {
   return options;
 }
 
-// ----------------------------------------------------------------------------
-// Scientific output
+// =============================================================================
+// =============================================================================
 
 auto OpenOutput(std::filesystem::path const &path) -> std::ofstream {
   std::ofstream output;
@@ -207,6 +243,9 @@ auto OpenOutput(std::filesystem::path const &path) -> std::ofstream {
 
   return output;
 }
+
+// =============================================================================
+// =============================================================================
 
 auto JsonString(std::string_view value) -> std::string {
   constexpr unsigned char k_first_printable_ascii{0x20U};
@@ -228,6 +267,9 @@ auto JsonString(std::string_view value) -> std::string {
   return result + '"';
 }
 
+// =============================================================================
+// =============================================================================
+
 auto WriteEnergyTable(std::filesystem::path const &directory, std::size_t index,
                       sources::GGEMSEnergyDistribution const &energy) -> void {
   auto table = OpenOutput(directory / std::format("group_{}.csv", index));
@@ -242,6 +284,8 @@ auto WriteEnergyTable(std::filesystem::path const &directory, std::size_t index,
   }
 }
 
+// =============================================================================
+// =============================================================================
 auto WriteDefinition(
   std::filesystem::path const &directory,
   radioactivity::GGEMSRadionuclideDefinition const &definition) -> void {
@@ -298,6 +342,8 @@ auto WriteDefinition(
   output << "\n]}\n";
 }
 
+// =============================================================================
+// =============================================================================
 // ----------------------------------------------------------------------------
 // Source samples and population observations
 
@@ -312,6 +358,9 @@ auto WritePopulation(std::ofstream &output, std::uint32_t replicate,
            << group.sampled_primary_count << '\n';
   }
 }
+
+// =============================================================================
+// =============================================================================
 
 auto WriteSamples(std::ofstream &output, std::uint32_t window,
                   observer::GGEMSTransportObserver const &capture,
@@ -343,8 +392,8 @@ auto WriteSamples(std::ofstream &output, std::uint32_t window,
   }
 }
 
-// ----------------------------------------------------------------------------
-// Campaign execution
+// =============================================================================
+// =============================================================================
 
 auto WriteRunHeader(std::ofstream &metadata, Options const &options,
                     ggems::ocl::GGEMSOpenCL &opencl) -> void {
@@ -386,6 +435,9 @@ auto WriteRunHeader(std::ofstream &metadata, Options const &options,
 )json";
 }
 
+// =============================================================================
+// =============================================================================
+
 auto WriteWindow(std::ofstream &metadata, std::uint32_t window,
                  sources::GGEMSSourceRunSnapshot const &snapshot,
                  observer::GGEMSTransportObserver const &capture) -> void {
@@ -404,10 +456,12 @@ auto WriteWindow(std::ofstream &metadata, std::uint32_t window,
            << snapshot.GetPopulationRecords().front().scaled_decay << '}';
 }
 
+// =============================================================================
+// =============================================================================
+
 auto WritePopulationReplicas(
   std::ofstream &populations, Options const &options,
   std::span<std::shared_ptr<sources::GGEMSSource> const> source_list) -> void {
-  // Extra population experiments have distinct seeds and no device execution.
   for (std::uint32_t index = 0U; index < options.population_replicates;
        ++index) {
     auto const replicate = index + 1ULL;
@@ -421,7 +475,8 @@ auto WritePopulationReplicas(
     for (std::uint32_t window = 0U; window < options.windows; ++window) {
       ggems::core::GGEMSTimeWindow const time{
         .start_ps = options.step_ps * window,
-        .stop_ps = options.step_ps * (window + 1ULL)};
+        .stop_ps = options.step_ps * (window + 1ULL),
+      };
 
       auto candidate = planner.BuildCandidate(time);
       WritePopulation(populations, static_cast<std::uint32_t>(replicate), seed,
@@ -430,6 +485,9 @@ auto WritePopulationReplicas(
     }
   }
 }
+
+// =============================================================================
+// =============================================================================
 
 auto RunCampaign(
   Options const &options,
@@ -443,7 +501,7 @@ auto RunCampaign(
   engine->SetEngine(random::GGEMSRandomEngine::Philox).SetSeed(options.seed);
 
   std::array const source_list{source};
-  // A separate planner exposes expected counts without consuming Run's RNG.
+
   sources::GGEMSSourcePopulationPlanner population_planner(source_list,
                                                            *engine);
 
@@ -459,9 +517,6 @@ auto RunCampaign(
 
   auto metadata = OpenOutput(options.output / "run.json");
   WriteRunHeader(metadata, options, opencl);
-
-  // ----------------------------------------------------------------------------
-  // Initialize once; each Run advances the same source and random streams.
 
   ggems::core::GGEMSRun run;
   run.SetTimePicoSecond(0ULL, options.step_ps * options.windows,
@@ -503,6 +558,9 @@ auto RunCampaign(
   metadata << "\n]}\n";
 }
 } // namespace
+
+// =============================================================================
+// =============================================================================
 
 auto main(int argc, char const *const *argv) -> int {
   auto const options = ParseOptions(argc, argv);

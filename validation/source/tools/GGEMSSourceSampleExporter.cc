@@ -30,6 +30,7 @@
 #include <exception>
 #include <string>
 #include <cstdint>
+#include <sstream>
 #include <array>
 #include <filesystem>
 #include <charconv>
@@ -202,13 +203,13 @@ auto ParseUnsigned(std::string_view text, std::string_view option)
 
 auto ParseNumber(std::string_view text, std::string_view option)
   -> long double {
+  std::istringstream stream{std::string{text}};
+  stream.imbue(std::locale::classic());
+  stream >> std::noskipws;
+
   long double value{};
 
-  auto const result =
-    std::from_chars(text.data(), text.data() + text.size(), value);
-
-  if (result.ec != std::errc{} || result.ptr != text.data() + text.size() ||
-      !std::isfinite(value)) {
+  if (!(stream >> value) || !stream.eof() || !std::isfinite(value)) {
     throw std::runtime_error(
       std::format("Invalid number for {}: '{}'.", option, text));
   }
@@ -342,7 +343,8 @@ auto ValidatePoseOptions(Options &options,
 
   constexpr std::array<std::string_view, 6U> k_frame_options{
     "--frame-direction-x", "--frame-direction-y", "--frame-direction-z",
-    "--frame-up-x",        "--frame-up-y",        "--frame-up-z"};
+    "--frame-up-x",        "--frame-up-y",        "--frame-up-z",
+  };
   options.has_orientation =
     std::ranges::any_of(k_frame_options, [&seen](auto option) -> bool {
       return seen.contains(option);

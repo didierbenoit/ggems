@@ -51,7 +51,7 @@ try:
     # --------------------------------------------------------------------------
 
     gui = ggems.gui.GGEMSGuiApplication()
-    gui.set_vulkan_device(1)
+    # gui.set_vulkan_device(0)
     gui.initialize()
 
     gui.submit_last_run_source_snapshot(run)
