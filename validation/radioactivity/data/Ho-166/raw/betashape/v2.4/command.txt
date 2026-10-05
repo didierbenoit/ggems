@@ -1,0 +1,1 @@
+.\betashape.exe .\Ho166\Ho-166.txt -csv

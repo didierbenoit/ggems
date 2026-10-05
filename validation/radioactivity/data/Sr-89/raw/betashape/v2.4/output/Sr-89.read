@@ -1,0 +1,47 @@
+Information read from the input file: .\Sr89\Sr-89.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 39   Daughter A: 89   Symbol: Y
+Transition type: B-
+Estimated parent nuclide from identification record: Z 38, A 89
+
+Parent record has been found
+Parent Z: 38	Parent A: 89   Symbol: Sr
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 5/2+ | Treated as: 5/2+
+Parent half-life: 50.57 (3) D or 4.3692E6 (26) S
+Parent Q-value: 1495.1 (22) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 1/2- | Treated as: 1/2-
+Level half-life: STABLE
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 1495.1 (22) keV
+Intensity of the beta - branch: 99.99036 (4) %
+Transition order: 1st forbidden unique
+Log ft of the beta - transition: 9.4
+Average energy of beta - spectrum: 584.6 (10) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level without uncertainty: 909 keV
+Level spin and parity | Read: 9/2+ | Treated as: 9/2+
+Daughter level not clearly defined.
+Level half-life: 16.05 (4) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 586.1 (22) keV
+Intensity of the beta - branch: 0.00964 (6) %
+Transition order: 2nd forbidden non-unique
+Log ft of the beta - transition: 11.1
+Average energy of beta - spectrum: 189.1 (9) keV
+
+####################################

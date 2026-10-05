@@ -1,0 +1,38 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 38-Sr-89 [5/2+] g.s.  -->  Daughter nucleus: 39-Y-89 [1/2-] g.s.
+Half-life of the parent nuclide: 4.3692E6 (26) s
+Beta - transition. Order: 1st forbidden unique
+Transition energy calculated from Q-value and level energies: 1495.1 (22) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 99.99036 (4) %
+Average energy of beta - spectrum: 584.6 (10) keV
+Log ft of the beta - transition: 9.4
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 38-Sr-89 [5/2+] g.s.  -->  Daughter nucleus: 39-Y-89 [9/2+] 909 keV
+Half-life of the parent nuclide: 4.3692E6 (26) s
+Beta - transition. Order: 2nd forbidden non-unique
+Transition energy calculated from Q-value and level energies: 586.1 (22) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 0.00964 (6) %
+Average energy of beta - spectrum: 189.1 (9) keV
+Log ft of the beta - transition: 11.1
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 2 transitions have been read.
+
+Parent nucleus: 38-Sr-89
+2 transitions have been read (2 B-).
+
+
+####################################

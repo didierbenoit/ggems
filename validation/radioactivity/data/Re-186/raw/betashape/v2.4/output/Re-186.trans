@@ -1,0 +1,76 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 75-Re-186 [1-] g.s.  -->  Daughter nucleus: 74-W-186 [0+] g.s.
+Half-life of the parent nuclide: 3.2129E5 (15) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the decay: 1
+Normalization of this transition: 5.84 (12) %
+Log ft of the ec transition: 7.5
+
+------------------------------------
+Parent nucleus: 75-Re-186 [1-] g.s.  -->  Daughter nucleus: 74-W-186 [2+] 122.33 (10) keV
+Half-life of the parent nuclide: 3.2129E5 (15) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the decay: 1
+Normalization of this transition: 1.69 (3) %
+Log ft of the ec transition: 7.8
+
+------------------------------------
+Parent nucleus: 75-Re-186 [1-] g.s.  -->  Daughter nucleus: 76-Os-186 [0+] g.s.
+Half-life of the parent nuclide: 3.2129E5 (15) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 1069.5 (9) keV. 
+Total normalization of the beta - decay: 0.9996
+Normalization of this transition: 70.87 (30) %
+Average energy of beta - spectrum: 359.6 (7) keV
+Log ft of the beta - transition: 7.7
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 75-Re-186 [1-] g.s.  -->  Daughter nucleus: 76-Os-186 [2+] 137.157 (8) keV
+Half-life of the parent nuclide: 3.2129E5 (15) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 932.3 (9) keV. 
+Total normalization of the beta - decay: 0.9996
+Normalization of this transition: 21.49 (30) %
+Average energy of beta - spectrum: 306.7 (7) keV
+Log ft of the beta - transition: 8
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 75-Re-186 [1-] g.s.  -->  Daughter nucleus: 76-Os-186 [2+] 767.48 (3) keV
+Half-life of the parent nuclide: 3.2129E5 (15) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 302.0 (9) keV. 
+Total normalization of the beta - decay: 0.9996
+Normalization of this transition: 0.0627 (9) %
+Average energy of beta - spectrum: 84.7 (7) keV
+Log ft of the beta - transition: 8.9
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 75-Re-186 [1-] g.s.  -->  Daughter nucleus: 76-Os-186 [3+] 910.48 (3) keV
+Half-life of the parent nuclide: 3.2129E5 (15) s
+Beta - transition. Order: 1st forbidden unique
+Transition energy calculated from Q-value and level energies: 159.0 (9) keV. 
+Total normalization of the beta - decay: 0.9996
+Normalization of this transition: 2.7E-5 (9) %
+Average energy of beta - spectrum: 42.6 (7) keV
+Log ft of the beta - transition: 10.9
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 6 transitions have been read.
+
+Parent nucleus: 75-Re-186
+6 transitions have been read (4 B-, 2 EC).
+
+
+####################################

@@ -1,0 +1,54 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 29-Cu-64 [1+] g.s.  -->  Daughter nucleus: 28-Ni-64 [0+] g.s.
+Half-life of the parent nuclide: 4.5721E4 (7) s
+Electron capture transition. Order: allowed
+Total normalization of the (ec & b+) decay: 0.9997 (42)
+Normalization of this transition: 43.52 (27) %
+Log ft of the (ec + b+) transition: 4.97
+
+------------------------------------
+Parent nucleus: 29-Cu-64 [1+] g.s.  -->  Daughter nucleus: 28-Ni-64 [0+] g.s.
+Half-life of the parent nuclide: 4.5721E4 (7) s
+Beta + transition. Order: allowed
+Transition energy. Calculated Emax from Q-value and level energies: 653.03 (20) keV.
+Total normalization of the (ec & b+) decay: 0.9997 (42)
+Normalization of this transition: 17.51 (17) %
+Average energy of beta + spectrum: 278.21 (9) keV
+Log ft of the (ec + b+) transition: 4.97
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 29-Cu-64 [1+] g.s.  -->  Daughter nucleus: 28-Ni-64 [2+] 1345.75 (5) keV
+Half-life of the parent nuclide: 4.5721E4 (7) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 0.9997 (42)
+Normalization of this transition: 0.4743 (39) %
+Log ft of the ec transition: 5.51
+
+------------------------------------
+Parent nucleus: 29-Cu-64 [1+] g.s.  -->  Daughter nucleus: 30-Zn-64 [0+] g.s.
+Half-life of the parent nuclide: 4.5721E4 (7) s
+Beta - transition. Order: allowed
+Transition energy calculated from Q-value and level energies: 579.4 (7) keV. 
+Total normalization of the beta - decay: 1.000 (7)
+Normalization of this transition: 38.48 (37) %
+Average energy of beta - spectrum: 190.7 (3) keV
+Log ft of the beta - transition: 5.29
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 4 transitions have been read.
+
+Parent nucleus: 29-Cu-64
+4 transitions have been read (1 B-, 2 EC, 1 B+).
+
+
+####################################

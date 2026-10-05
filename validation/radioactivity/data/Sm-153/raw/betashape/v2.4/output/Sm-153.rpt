@@ -1,0 +1,359 @@
+Input file:  .\Sm153\Sm-153.txt
+Output file: .\Sm153\Sm-153.new
+
+Input file: 181 lines
+Output file: 182 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 0           5/2+               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 263.02 (27) keV   |   log ft 7.352 (33)
+
+*    log ft
+153EU  B 807.6     7 19.5    15          7.3                                    - OLD CARD
+153EU  B 807.6     7 19.5    15          7.352   33                             - NEW CARD
+
+*    Mean energy
+153EUS B EAV=264.3 3                                                            - OLD CARD
+153EUS B EAV=263.02 27                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 97.43103  175/2-                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 226.14 (26) keV   |   log ft 8.65 (6)
+
+*    log ft
+153EU  B 710.2     7 0.62     8          8.6                                 1  - OLD CARD
+153EU  B 710.2     7 0.62     8          8.65     6                             - NEW CARD
+
+*    Mean energy
+153EUS B EAV=227.4 3                                                            - OLD CARD
+153EUS B EAV=226.14 26                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 103.18016 133/2+              3.8 NS                                   - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 223.98 (26) keV   |   log ft 6.742 (15)
+
+*    log ft
+153EU  B 704.7     7 49.2    17          6.7                                    - OLD CARD
+153EU  B 704.7     7 49.2    17          6.742   15                             - NEW CARD
+
+*    Mean energy
+153EUS B EAV=225.3 3                                                            - OLD CARD
+153EUS B EAV=223.98 26                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 151.6257  5 7/2-                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 217.83 (25) keV   |   log ft 9.93 (8)
+
+*    log ft
+153EU  B 656.0     7 0.042    8          10                                  1U - OLD CARD
+153EU  B 656.0     7 0.042    8          9.93     8                          1U - NEW CARD
+
+*    Mean energy
+153EUS B EAV=221.2 3                                                            - OLD CARD
+153EUS B EAV=217.83 25                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 172.85320 135/2+              0.14 NS                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 198.27 (26) keV   |   log ft 6.794 (12)
+
+*    log ft
+153EU  B 634.7     7 30.4     8          6.7                                    - OLD CARD
+153EU  B 634.7     7 30.4     8          6.794   12                             - NEW CARD
+
+*    Mean energy
+153EUS B EAV=199.7 3                                                            - OLD CARD
+153EUS B EAV=198.27 26                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  6
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 269.7370  7 7/2+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 176.62 (24) keV   |   log ft 9.786 (7)
+
+*    log ft
+153EU  B 537.8     7 0.0216   3          11                                  2  - OLD CARD
+153EU  B 537.8     7 0.0216   3          9.786    7                             - NEW CARD
+
+*    Mean energy
+153EUS B EAV=164.7 3                                                            - OLD CARD
+153EUS B EAV=176.62 24                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  7
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 585.02    15                                                           - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 60.56 (21) keV   |   log ft 9.428 (10)
+
+*    log ft
+153EU  B 222.6     8 0.00227  5          9.4                                    - OLD CARD
+153EU  B 222.6     8 0.00227  5          9.428   10                             - NEW CARD
+
+*    Mean energy
+153EUS B EAV=61.3 3                                                             - OLD CARD
+153EUS B EAV=60.56 21                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  8
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 634.59    6 1/2+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 46.07 (20) keV   |   log ft 7.688 (8)
+
+*    log ft
+153EU  B 172.9     8 0.0565   7          7.6                                    - OLD CARD
+153EU  B 172.9     8 0.0565   7          7.688    8                             - NEW CARD
+
+*    Mean energy
+153EUS B EAV=46.7 2                                                             - OLD CARD
+153EUS B EAV=46.07 20                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  9
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 636.522   183/2-                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 45.52 (20) keV   |   log ft 7.613 (7)
+
+*    log ft
+153EU  B 171.1     7 0.0648   6          7.5                                    - OLD CARD
+153EU  B 171.1     7 0.0648   6          7.613    7                             - NEW CARD
+
+*    Mean energy
+153EUS B EAV=46.1 2                                                             - OLD CARD
+153EUS B EAV=45.52 20                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  10
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 657.67    14                                                           - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 39.51 (20) keV   |   log ft 9.292 (30)
+
+*    log ft
+153EU  B 149.9     8 0.00090  6          9.3                                    - OLD CARD
+153EU  B 149.9     8 0.00090  6          9.292   30                             - NEW CARD
+
+*    Mean energy
+153EUS B EAV=40.1 2                                                             - OLD CARD
+153EUS B EAV=39.51 20                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  11
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 681.88    8 5/2-                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 32.76 (19) keV   |   log ft 8.080 (32)
+
+*    log ft
+153EU  B 125.7     7 0.0085   6          7.9                                 1  - OLD CARD
+153EU  B 125.7     7 0.0085   6          8.080   32                             - NEW CARD
+
+*    Mean energy
+153EUS B EAV=33.2 2                                                             - OLD CARD
+153EUS B EAV=32.76 19                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  12
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 694.180   235/2+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 29.39 (19) keV   |   log ft 7.528 (18)
+
+*    log ft
+153EU  B 113.4     7 0.0221   8          7.4                                    - OLD CARD
+153EU  B 113.4     7 0.0221   8          7.528   18                             - NEW CARD
+
+*    Mean energy
+153EUS B EAV=29.8 2                                                             - OLD CARD
+153EUS B EAV=29.39 19                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  13
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 701.46    24                                                           - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 27.40 (19) keV   |   log ft 7.903 (35)
+
+*    log ft
+153EU  B 106.1     8 0.0076   6          8.8                                    - OLD CARD
+153EU  B 106.1     8 0.0076   6          7.903   35                             - NEW CARD
+
+*    Mean energy
+153EUS B EAV=27.8 2                                                             - OLD CARD
+153EUS B EAV=27.40 19                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  14
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 706.622   235/2+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 26.02 (19) keV   |   log ft 7.336 (16)
+
+*    log ft
+153EU  B 101.0     8 0.0241   7          7.3                                    - OLD CARD
+153EU  B 101.0     8 0.0241   7          7.336   16                             - NEW CARD
+
+*    Mean energy
+153EUS B EAV=26.4 3                                                             - OLD CARD
+153EUS B EAV=26.02 19                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  15
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 713.12    20                                                           - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 24.27 (19) keV   |   log ft 7.480 (18)
+
+*    log ft
+153EU  B 94.5      8 0.0141   5          7.4                                    - OLD CARD
+153EU  B 94.5      8 0.0141   5          7.480   18                             - NEW CARD
+
+*    Mean energy
+153EUS B EAV=24.6 2                                                             - OLD CARD
+153EUS B EAV=24.27 19                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  16
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 718.69    143/2+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 22.77 (19) keV   |   log ft 8.393 (32)
+
+*    log ft
+153EU  B 88.9      8 0.00143 10          8.4                                    - OLD CARD
+153EU  B 88.9      8 0.00143 10          8.393   32                             - NEW CARD
+
+*    Mean energy
+153EUS B EAV=23.1 2                                                             - OLD CARD
+153EUS B EAV=22.77 19                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  17
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 760.39    17                                                           - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 11.83 (18) keV   |   log ft 7.722 (30)
+
+*    log ft
+153EU  B 47.2      8 0.00098  5          7.9                                    - OLD CARD
+153EU  B 47.2      8 0.00098  5          7.722   30                             - NEW CARD
+
+*    Mean energy
+153EUS B EAV=12.0 2                                                             - OLD CARD
+153EUS B EAV=11.83 18                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  18
+
+153SM  P 0.0         3/2+              1.92855 D 5              807.6     7     - PARENT
+153EU  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+153EU  L 763.8     6                                                            - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 10.96 (23) keV   |   log ft 8.97 (12)
+
+*    log ft
+153EU  B 44.0      7 0.00004412          8.9                                    - OLD CARD
+153EU  B 44.0      7 0.00004412          8.97    12                             - NEW CARD
+
+*    Mean energy
+153EUS B EAV=11.1 3                                                             - OLD CARD
+153EUS B EAV=10.96 23                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 18
+-------- Added lines: 1
+
+

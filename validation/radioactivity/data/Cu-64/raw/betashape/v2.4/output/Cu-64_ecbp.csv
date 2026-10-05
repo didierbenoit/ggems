@@ -1,0 +1,12 @@
+# BetaShape
+# Version: 2.4 (06/2024)
+# Author: X. Mougeot (xavier.mougeot@cea.fr)
+# CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+# Please cite: [2019MO35] X. Mougeot, Applied Radiation and Isotopes 154, 108884 (2019)
+# 
+# Input file: .\Cu64\Cu-64.txt
+# Neutrino information: no
+# 
+# parent symbol, Z, A, Jpi, level energy, unc, daughter symbol, Z, A, Jpi, level energy, unc, Q, unc, half-life, unc, unit, transition nature, transition nature used, branching %, unc, log ft, unc, ftot-value, unc, ec branching %, unc, log ft ec, unc, fec-value, unc, ec transition energy, unc, b+ branching %, unc, log ft b+, unc, fb+-value, unc, b+ transition energy, unc, mean energy calc, unc, mean energy exp, unc, EC/b+, value, unc, nb shells, [shell name, relative proba, unc, proba, unc, proba/b+, unc] * nb shells, nb subshells, [subshell name, relative proba, unc, proba, unc, proba/b+, unc] * nb subshells
+Cu, 29, 64, 1+, 0, 0, Ni, 28, 64, 0+, 0, 0, 1675.03, 0.2, 4.5721E4, 7, s, A, A, 61.03, 0.32, 4.9789, 0.0046, 1.271, 0.011, 43.52, 0.27, 4.976, 0.006, 0.901, 0.011, 1675.03, 0.2, 17.51, 0.17, 4.9856, 0.0043, 0.37046, 0.00048, 653.03, 0.2, 277.83, 0.09, , , EC/b+, 2.503, 0.033, 4, K, 0.88393, 0.00023, 0.6316, 0.0024, 2.213, 0.03, L, 0.09975, 0.00016, 0.07128, 0.00029, 0.2497, 0.0029, M, 0.01602, 7e-05, 0.01144, 6e-05, 0.0401, 0.00036, N, 0.000301, 3.1e-06, 0.0002151, 2.4e-06, 0.0007535, 2.3e-06, 6, PK, 0.88393, 0.00023, 0.6316, 0.0024, 2.213, 0.03, PL1, 0.09911, 0.00015, 0.07082, 0.00029, 0.2481, 0.0029, PL2, 0.000641, 9e-06, 0.000458, 6e-06, 0.0016036, 3.5e-06, PM1, 0.01592, 6e-05, 0.01137, 6e-05, 0.03985, 0.00037, PM2, 9.84e-05, 1.7e-06, 7.03e-05, 1.2e-06, 0.0002464, 1.3e-06, PN1, 0.000301, 3.1e-06, 0.0002151, 2.4e-06, 0.0007535, 2.3e-06
+Cu, 29, 64, 1+, 0, 0, Ni, 28, 64, 2+, 1345.75, 0.05, 1675.03, 0.2, 4.5721E4, 7, s, A, A, 0.4743, 0.0039, 5.509, 0.007, 0.03351, 0.00045, 0.4743, 0.0039, 5.509, 0.007, 0.03351, 0.00045, 329.28, 0.21, , , , , , , , , , , , , EC/b+, , , 4, K, 0.88017, 0.00024, 0.88017, 0.00024, , , L, 0.10292, 0.00016, 0.10292, 0.00016, , , M, 0.0166, 7e-05, 0.0166, 7e-05, , , N, 0.0003121, 3.2e-06, 0.0003121, 3.2e-06, , , 6, PK, 0.88017, 0.00024, 0.88017, 0.00024, , , PL1, 0.10227, 0.00015, 0.10227, 0.00015, , , PL2, 0.000648, 9e-06, 0.000648, 9e-06, , , PM1, 0.0165, 7e-05, 0.0165, 7e-05, , , PM2, 0.0001, 1.7e-06, 0.0001, 1.7e-06, , , PN1, 0.0003121, 3.2e-06, 0.0003121, 3.2e-06, , 

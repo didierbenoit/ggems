@@ -1,0 +1,1 @@
+.\betashape.exe .\Cu64\Cu-64.txt fixint=1 -csv

@@ -1,0 +1,352 @@
+Information read from the input file: .\Re188\Re-188.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 76   Daughter A: 188   Symbol: Os
+Transition type: B-
+Estimated parent nuclide from identification record: Z 75, A 188
+
+Parent record has been found
+Parent Z: 75	Parent A: 188   Symbol: Re
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 1- | Treated as: 1-
+Parent half-life: 17.005 (4) H or 6.1218E4 (14) S
+Parent Q-value: 2120.4 (4) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life: STABLE
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 2120.4 (4) keV
+Intensity of the beta - branch: 71.1 (22) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 8.1
+Average energy of beta - spectrum: 795.40 (17) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 155.040 (4) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life: 0.70 (2) NS or 7.0E-10 (2) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 1965.3 (4) keV
+Intensity of the beta - branch: 25.6 (20) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 8.4
+Average energy of beta - spectrum: 728.89 (17) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 477.97 (3) keV
+Level spin and parity | Read: 4+ | Treated as: 4+
+Level half-life: 19.40 (9) PS or 1.940E-11 (9) S
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 633.024 (13) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life: 6.6 (3) PS or 6.6E-12 (3) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 1487.4 (4) keV
+Intensity of the beta - branch: 1.65 (12) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 9.2
+Average energy of beta - spectrum: 527.77 (17) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 789.97 (3) keV
+Level spin and parity | Read: 3+ | Treated as: 3+
+Level half-life not given.
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1086.382 (10) keV
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life: 12 (9) PS or 1.2E-11 (9) S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 1034.0 (4) keV
+Intensity of the beta - branch: 0.63 (4) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 9
+Average energy of beta - spectrum: 345.33 (16) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1304.85 (7) keV
+Level spin and parity | Read: (2)+ | Treated as: 2+
+Daughter level not clearly defined.
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 815.5 (4) keV
+Intensity of the beta - branch: 0.0241 (17) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 10
+Average energy of beta - spectrum: 261.94 (15) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1413.8 (3) keV
+Level spin and parity | Read: (3)- | Treated as: 3-
+Daughter level not clearly defined.
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 706.6 (5) keV
+Intensity of the beta - branch: 0.0024 (5) %
+Transition order: 2nd forbidden non-unique
+Log ft of the beta - transition: 10.8
+Average energy of beta - spectrum: 221.84 (18) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1443.52 (5) keV
+Spin and parity of the daughter level undefined. Allowed transition will be assumed.
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 676.88 (5) keV
+Intensity of the beta - branch: 9.2E-4 (21) %
+Transition order: allowed
+Log ft of the beta - transition: 11.2
+Average energy of beta - spectrum: 211.11 (14) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1457.55 (12) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 662.8 (5) keV
+Intensity of the beta - branch: 0.042 (3) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 9.5
+Average energy of beta - spectrum: 206.07 (15) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1462.50 (3) keV
+Level spin and parity | Read: 2- | Treated as: 2-
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 657.9 (4) keV
+Intensity of the beta - branch: 0.44 (3) %
+Transition order: allowed
+Log ft of the beta - transition: 8.5
+Average energy of beta - spectrum: 204.30 (14) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1478.09 (5) keV
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 642.3 (4) keV
+Intensity of the beta - branch: 0.018 (3) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 9.8
+Average energy of beta - spectrum: 198.73 (14) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1685.5 (3) keV
+Spin and parity of the daughter level undefined. Allowed transition will be assumed.
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 434.9 (5) keV
+Intensity of the beta - branch: 5.5E-4 (17) %
+Transition order: allowed
+Log ft of the beta - transition: 10.8
+Average energy of beta - spectrum: 127.46 (17) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1704.32 (10) keV
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 416.1 (5) keV
+Intensity of the beta - branch: 0.0023 (9) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 10.1
+Average energy of beta - spectrum: 121.28 (13) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1729.68 (22) keV
+Level spin and parity | Read: (2,3)+ | Treated as: 2+
+Daughter level not clearly defined.
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 390.7 (5) keV
+Intensity of the beta - branch: 0.00128 (21) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 10.3
+Average energy of beta - spectrum: 113.02 (15) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1765.353 (22) keV
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 355.0 (4) keV
+Intensity of the beta - branch: 0.181 (13) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 8
+Average energy of beta - spectrum: 101.57 (13) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1807.60 (3) keV
+Level spin and parity | Read: (2)+ | Treated as: 2+
+Daughter level not clearly defined.
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 312.8 (4) keV
+Intensity of the beta - branch: 0.038 (3) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 8.5
+Average energy of beta - spectrum: 88.27 (12) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1824.94 (6) keV
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 295.5 (4) keV
+Intensity of the beta - branch: 0.0236 (17) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 8.6
+Average energy of beta - spectrum: 82.90 (12) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1842.86 (6) keV
+Level spin and parity | Read: (1,2)+ | Treated as: 1+
+Daughter level not clearly defined.
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 277.5 (4) keV
+Intensity of the beta - branch: 0.00299 (22) %
+Transition order: allowed
+Log ft of the beta - transition: 9.4
+Average energy of beta - spectrum: 77.41 (12) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1936.9 (3) keV
+Spin and parity of the daughter level undefined. Allowed transition will be assumed.
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 183.5 (4) keV
+Intensity of the beta - branch: 2.14E-4 (25) %
+Transition order: allowed
+Log ft of the beta - transition: 10
+Average energy of beta - spectrum: 49.46 (14) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1941.03 (6) keV
+Level spin and parity | Read: (1,2)+ | Treated as: 1+
+Daughter level not clearly defined.
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 179.4 (4) keV
+Intensity of the beta - branch: 0.102 (7) %
+Transition order: allowed
+Log ft of the beta - transition: 7.3
+Average energy of beta - spectrum: 48.27 (12) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1948.59 (3) keV
+Spin and parity of the daughter level undefined. Allowed transition will be assumed.
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 171.8 (4) keV
+Intensity of the beta - branch: 0.079 (6) %
+Transition order: allowed
+Log ft of the beta - transition: 7.3
+Average energy of beta - spectrum: 46.10 (11) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1957.08 (4) keV
+Level spin and parity | Read: (1,2)+ | Treated as: 1+
+Daughter level not clearly defined.
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 163.3 (4) keV
+Intensity of the beta - branch: 0.051 (4) %
+Transition order: allowed
+Log ft of the beta - transition: 7.4
+Average energy of beta - spectrum: 43.68 (11) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1964.96 (7) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 155.4 (4) keV
+Intensity of the beta - branch: 0.0021 (3) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 8.8
+Average energy of beta - spectrum: 41.44 (11) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 2020.18 (10) keV
+Spin and parity of the daughter level undefined. Allowed transition will be assumed.
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 100.2 (5) keV
+Intensity of the beta - branch: 0.0059 (4) %
+Transition order: allowed
+Log ft of the beta - transition: 7.7
+Average energy of beta - spectrum: 26.12 (11) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 2022.44 (13) keV
+Level spin and parity | Read: (1,2)+ | Treated as: 1+
+Daughter level not clearly defined.
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 98.0 (5) keV
+Intensity of the beta - branch: 0.00198 (16) %
+Transition order: allowed
+Log ft of the beta - transition: 8.2
+Average energy of beta - spectrum: 25.51 (11) keV
+
+####################################

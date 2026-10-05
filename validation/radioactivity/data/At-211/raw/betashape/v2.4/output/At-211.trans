@@ -1,0 +1,33 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 85-At-211 [9/2-] g.s.  -->  Daughter nucleus: 84-Po-211 [9/2+] g.s.
+Half-life of the parent nuclide: 2.5978E4 (25) s
+Electron capture transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Total normalization of the decay: 1.0002
+Normalization of this transition: 57.97 (8) %
+Log ft of the ec transition: 5.97
+
+------------------------------------
+Parent nucleus: 85-At-211 [9/2-] g.s.  -->  Daughter nucleus: 84-Po-211 [11/2+] 687.2 (7) keV
+Half-life of the parent nuclide: 2.5978E4 (25) s
+Electron capture transition. Order: 1st forbidden non-unique
+Total normalization of the decay: 1.0002
+Normalization of this transition: 0.258 (13) %
+Log ft of the ec transition: 5.77
+
+
+####################################
+
+Summary
+
+1 nucleus and 2 transitions have been read.
+
+Parent nucleus: 85-At-211
+2 transitions have been read (2 EC).
+
+
+####################################

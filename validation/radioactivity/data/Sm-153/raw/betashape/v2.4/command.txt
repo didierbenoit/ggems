@@ -1,0 +1,1 @@
+.\betashape.exe .\Sm153\Sm-153.txt -csv

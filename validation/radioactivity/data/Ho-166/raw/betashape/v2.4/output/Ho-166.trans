@@ -1,0 +1,106 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 67-Ho-166 [0-] g.s.  -->  Daughter nucleus: 68-Er-166 [0+] g.s.
+Half-life of the parent nuclide: 9.651E4 (7) s
+Beta - transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Transition energy calculated from Q-value and level energies: 1853.8 (8) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 48.4 (8) %
+Average energy of beta - spectrum: 671.91 (34) keV
+Log ft of the beta - transition: 8.169
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 67-Ho-166 [0-] g.s.  -->  Daughter nucleus: 68-Er-166 [2+] 80.5776 (20) keV
+Half-life of the parent nuclide: 9.651E4 (7) s
+Beta - transition. Order: 1st forbidden unique
+Transition energy calculated from Q-value and level energies: 1773.2 (8) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 50.2 (8) %
+Average energy of beta - spectrum: 599.21 (28) keV
+Log ft of the beta - transition: 9.028
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 67-Ho-166 [0-] g.s.  -->  Daughter nucleus: 68-Er-166 [2+] 785.905 (6) keV
+Half-life of the parent nuclide: 9.651E4 (7) s
+Beta - transition. Order: 1st forbidden unique
+Transition energy calculated from Q-value and level energies: 1067.9 (8) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 0.0063 (12) %
+Average energy of beta - spectrum: 363.16 (30) keV
+Log ft of the beta - transition: 11.72
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 67-Ho-166 [0-] g.s.  -->  Daughter nucleus: 68-Er-166 [0+] 1460.031 (6) keV
+Half-life of the parent nuclide: 9.651E4 (7) s
+Beta - transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Transition energy calculated from Q-value and level energies: 393.8 (8) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 0.953 (21) %
+Average energy of beta - spectrum: 113.83 (26) keV
+Log ft of the beta - transition: 7.482
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 67-Ho-166 [0-] g.s.  -->  Daughter nucleus: 68-Er-166 [2+] 1528.401 (10) keV
+Half-life of the parent nuclide: 9.651E4 (7) s
+Beta - transition. Order: 1st forbidden unique
+Transition energy calculated from Q-value and level energies: 325.4 (8) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 0.0028 (5) %
+Average energy of beta - spectrum: 103.42 (26) keV
+Log ft of the beta - transition: 9.51
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 67-Ho-166 [0-] g.s.  -->  Daughter nucleus: 68-Er-166 [1-] 1662.435 (5) keV
+Half-life of the parent nuclide: 9.651E4 (7) s
+Beta - transition. Order: allowed
+Transition energy calculated from Q-value and level energies: 191.4 (8) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 0.296 (5) %
+Average energy of beta - spectrum: 51.28 (23) keV
+Log ft of the beta - transition: 6.989
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 67-Ho-166 [0-] g.s.  -->  Daughter nucleus: 68-Er-166 [1+] 1813.2 (3) keV
+Half-life of the parent nuclide: 9.651E4 (7) s
+Beta - transition. Order: 1st forbidden non-unique
+Transition energy calculated from Q-value and level energies: 40.6 (9) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 1.1E-4 (3) %
+Average energy of beta - spectrum: 10.15 (23) keV
+Log ft of the beta - transition: 8.36
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 67-Ho-166 [0-] g.s.  -->  Daughter nucleus: 68-Er-166 [1-] 1830.425 (12) keV
+Half-life of the parent nuclide: 9.651E4 (7) s
+Beta - transition. Order: allowed
+Transition energy calculated from Q-value and level energies: 23.4 (8) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 0.0339 (4) %
+Average energy of beta - spectrum: 5.8 (2) keV
+Log ft of the beta - transition: 5.147
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 8 transitions have been read.
+
+Parent nucleus: 67-Ho-166
+8 transitions have been read (8 B-).
+
+
+####################################

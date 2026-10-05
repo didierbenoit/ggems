@@ -1,0 +1,60 @@
+Input file:  .\Sr89\Sr-89.txt
+Output file: .\Sr89\Sr-89.new
+
+Input file: 26 lines
+Output file: 29 lines
+Added new lines: 3
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 89SR  P 0.0         5/2+              50.57 D   3              1495.1    22    - PARENT
+ 89Y   N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 89Y   L 0           1/2-               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 582.1 (10) keV   |   log ft 9.4383 (37)
+
+From measured spectrum
+Emean 580.9 (9) keV   |   [For information] log ft 9.4321 (36)
+
+*    log ft
+ 89Y   B 1495.1    2299.99036 4          9.4                                 1U - OLD CARD
+ 89Y   B 1495.1    2299.99036 4          9.4383  37                          1U - NEW CARD
+
+*    Mean energy
+ 89Y S B EAV=584.6 10                                                           - OLD CARD
+ 89Y S B EAV=580.9 9                                                            - NEW CARD
+ 89Y 2 B C1=-0.0112 14 (1970WO05)                                               - ADDITIONAL NEW CARD
+ 89Y  DB $Cexp(W) = (1+C{-1}W)|*(q{+2}+|l{-2}p{+2})                             - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 89SR  P 0.0         5/2+              50.57 D   3              1495.1    22    - PARENT
+ 89Y   N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 89Y   L 909         9/2+              16.05 S   4                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 209.6 keV   |   log ft 11.268
+
+*    log ft
+ 89Y   B 586.1     220.00964  6          11.1                                2  - OLD CARD
+ 89Y   B 586.1     220.00964  6          11.3                                   - NEW CARD
+
+*    Mean energy
+ 89Y S B EAV=189.1 9                                                            - OLD CARD
+ 89Y S B EAV=209.6                                                              - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 2
+-------- Added lines: 3
+
+

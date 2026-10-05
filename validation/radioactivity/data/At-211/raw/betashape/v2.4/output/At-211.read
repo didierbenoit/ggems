@@ -1,0 +1,46 @@
+Information read from the input file: .\At211\At-211.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 84   Daughter A: 211   Symbol: Po
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 85, A 211
+
+Parent record has been found
+Parent Z: 85	Parent A: 211   Symbol: At
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 9/2- | Treated as: 9/2-
+Parent half-life: 7.216 (7) H or 2.5978E4 (25) S
+Parent Q-value: 785.4 (25) keV
+
+Total branching ratio: 0.5822
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 9/2+ | Treated as: 9/2+
+Level half-life: 0.516 (3) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 57.96 (8) %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 5.97
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 687.2 (7) keV
+Level spin and parity | Read: 11/2+ | Treated as: 11/2+
+Level half-life not given.
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 0.258 (13) %
+Total intensity of the decay not given.
+Transition order: 1st forbidden non-unique
+Log ft of the ec transition: 5.77
+
+####################################

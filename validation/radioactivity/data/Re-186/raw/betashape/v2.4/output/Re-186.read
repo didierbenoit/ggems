@@ -1,0 +1,120 @@
+Information read from the input file: .\Re186\Re-186.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 74   Daughter A: 186   Symbol: W
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 75, A 186
+
+Parent record has been found
+Parent Z: 75	Parent A: 186   Symbol: Re
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 1- | Treated as: 1-
+Parent half-life: 3.7186 (17) D or 3.2129E5 (15) S
+Parent Q-value: 581.6 (17) keV
+
+Total branching ratio: 0.0753
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life: STABLE
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 5.84 (12) %
+Total intensity of the decay not given.
+Transition order: 1st forbidden non-unique
+Log ft of the ec transition: 7.5
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 122.33 (10) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life: 1.036 NS or 1.036E-9 S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 1.69 (3) %
+Total intensity of the decay not given.
+Transition order: 1st forbidden non-unique
+Log ft of the ec transition: 7.8
+
+####################################
+
+Identification record has been found
+Daughter Z: 76   Daughter A: 186   Symbol: Os
+Transition type: B-
+Estimated parent nuclide from identification record: Z 75, A 186
+
+Parent record has been found
+Parent Z: 75	Parent A: 186   Symbol: Re
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 1- | Treated as: 1-
+Parent half-life: 3.7186 (17) D or 3.2129E5 (15) S
+Parent Q-value: 1069.5 (9) keV
+
+Total branching ratio: 0.9247
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life: 2E15 Y or 6.311E22 S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 1069.5 (9) keV
+Intensity of the beta - branch: 70.9 (3) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 7.7
+Average energy of beta - spectrum: 359.6 (7) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 137.157 (8) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life: 0.818 NS or 8.18E-10 S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 932.3 (9) keV
+Intensity of the beta - branch: 21.5 (3) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 8
+Average energy of beta - spectrum: 306.7 (7) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 434.09 (3) keV
+Level spin and parity | Read: 4+ | Treated as: 4+
+Level half-life: 23.9 PS or 2.39E-11 S
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 767.48 (3) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life: 2.38 PS or 2.38E-12 S
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 302.0 (9) keV
+Intensity of the beta - branch: 0.0627 (9) %
+Transition order: 1st forbidden non-unique
+Log ft of the beta - transition: 8.9
+Average energy of beta - spectrum: 84.7 (7) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 910.48 (3) keV
+Level spin and parity | Read: 3+ | Treated as: 3+
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 159.0 (9) keV
+Intensity of the beta - branch: 2.7E-5 (9) %
+Transition order: 1st forbidden unique
+Log ft of the beta - transition: 10.9
+Average energy of beta - spectrum: 42.6 (7) keV
+
+####################################

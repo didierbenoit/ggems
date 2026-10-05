@@ -1,0 +1,1 @@
+.\betashape.exe .\Re188\Re-188.txt -csv

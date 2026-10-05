@@ -1,0 +1,179 @@
+Input file:  .\Ho166\Ho-166.txt
+Output file: .\Ho166\Ho-166.new
+
+Input file: 104 lines
+Output file: 109 lines
+Added new lines: 5
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+166HO  P 0.0         0-                26.808 H  20             1853.8    8     - PARENT
+166ER  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+166ER  L 0           0+                 STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 692.50 (35) keV   |   log ft 8.169 (7)
+
+From measured spectrum
+Emean 671.91 (34) keV   |   [For information] log ft 7.893 (7)
+
+*    log ft
+166ER  B 1853.8    8 48.4     8          8.169                                  - OLD CARD
+166ER  B 1853.8    8 48.4     8          8.169    7                             - NEW CARD
+
+*    Mean energy
+166ERS B EAV=671.91 34                                                          - OLD CARD
+166ERS B EAV=671.91 34                                                          - NEW CARD
+166ER2 B C1=-0.87 $C2=-1 $C3=0.22 $C4=-0.02 (1966DA04)                          - ADDITIONAL NEW CARD
+166ER DB $Cexp(W) = 1+C{-1}W+C{-2}/W+C{-3}W{+2}+C{-4}W{+3}                      - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+166HO  P 0.0         0-                26.808 H  20             1853.8    8     - PARENT
+166ER  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+166ER  L 80.5776   202+                1.815 NS  23                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 642.06 (33) keV   |   log ft 9.028 (7)
+
+From measured spectrum
+Emean 599.21 (28) keV   |   [For information] log ft 8.919 (7)
+
+*    log ft
+166ER  B 1773.2    8 50.2     8          9.028                               1U - OLD CARD
+166ER  B 1773.2    8 50.2     8          9.028    7                          1U - NEW CARD
+
+*    Mean energy
+166ERS B EAV=599.21 28                                                          - OLD CARD
+166ERS B EAV=599.21 28                                                          - NEW CARD
+166ER2 B C1=-0.105 10 (1966BE12)                                                - ADDITIONAL NEW CARD
+166ER DB $Cexp(W) = (1+C{-1}W)|*(q{+2}+|l{-2}p{+2})                             - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+166HO  P 0.0         0-                26.808 H  20             1853.8    8     - PARENT
+166ER  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+166ER  L 785.905   6 2+                3.12 PS   10                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 363.16 (30) keV   |   log ft 11.72 (8)
+
+*    log ft
+166ER  B 1067.9    8 0.0063  12          11.72                               1U - OLD CARD
+166ER  B 1067.9    8 0.0063  12          11.72    8                          1U - NEW CARD
+
+*    Mean energy
+166ERS B EAV=363.16 30                                                          - OLD CARD
+166ERS B EAV=363.16 30                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+166HO  P 0.0         0-                26.808 H  20             1853.8    8     - PARENT
+166ER  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+166ER  L 1460.031  6 0+                0.76 PS   28                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 113.83 (26) keV   |   log ft 7.482 (10)
+
+*    log ft
+166ER  B 393.8     8 0.953   21          7.482                                  - OLD CARD
+166ER  B 393.8     8 0.953   21          7.482   10                             - NEW CARD
+
+*    Mean energy
+166ERS B EAV=113.83 26                                                          - OLD CARD
+166ERS B EAV=113.83 26                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+166HO  P 0.0         0-                26.808 H  20             1853.8    8     - PARENT
+166ER  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+166ER  L 1528.401  102+                45 FS     6                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 103.42 (26) keV   |   log ft 9.51 (8)
+
+*    log ft
+166ER  B 325.4     8 0.0028   5          9.51                                1U - OLD CARD
+166ER  B 325.4     8 0.0028   5          9.51     8                          1U - NEW CARD
+
+*    Mean energy
+166ERS B EAV=103.42 26                                                          - OLD CARD
+166ERS B EAV=103.42 26                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  6
+
+166HO  P 0.0         0-                26.808 H  20             1853.8    8     - PARENT
+166ER  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+166ER  L 1662.435  5 1-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 51.28 (23) keV   |   log ft 6.989 (9)
+
+*    log ft
+166ER  B 191.4     8 0.296    5          6.989                                  - OLD CARD
+166ER  B 191.4     8 0.296    5          6.989    9                             - NEW CARD
+
+*    Mean energy
+166ERS B EAV=51.28 23                                                           - OLD CARD
+166ERS B EAV=51.28 23                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  7
+
+166HO  P 0.0         0-                26.808 H  20             1853.8    8     - PARENT
+166ER  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+166ER  L 1813.2    3 1+                39 FS     7                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 10.15 (23) keV   |   log ft 8.36 (12)
+
+*    log ft
+166ER  B 40.6      9 0.00011  3          8.36                                1  - OLD CARD
+166ER  B 40.6      9 0.00011  3          8.36    12                             - NEW CARD
+
+*    Mean energy
+166ERS B EAV=10.15 23                                                           - OLD CARD
+166ERS B EAV=10.15 23                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  8
+
+166HO  P 0.0         0-                26.808 H  20             1853.8    8     - PARENT
+166ER  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+166ER  L 1830.425  121-                45 FS     8                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 5.8 (2) keV   |   log ft 5.147 (47)
+
+*    log ft
+166ER  B 23.4      8 0.0339   4          5.147                                  - OLD CARD
+166ER  B 23.4      8 0.0339   4          5.147   47                             - NEW CARD
+
+*    Mean energy
+166ERS B EAV=5.8 2                                                              - OLD CARD
+166ERS B EAV=5.8 2                                                              - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 8
+-------- Added lines: 5
+
+

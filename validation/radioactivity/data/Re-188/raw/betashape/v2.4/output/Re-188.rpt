@@ -1,0 +1,483 @@
+Input file:  .\Re188\Re-188.txt
+Output file: .\Re188\Re-188.new
+
+Input file: 169 lines
+Output file: 174 lines
+Added new lines: 5
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 0           0+                 STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 795.07 (17) keV   |   log ft 8.204 (13)
+
+From measured spectrum
+Emean 798.70 (17) keV   |   [For information] log ft 8.395 (13)
+
+*    log ft
+188OS  B 2120.4    4 71.1    22          8.1                                 1  - OLD CARD
+188OS  B 2120.4    4 71.1    22          8.204   13                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=795.40 17                                                          - OLD CARD
+188OSS B EAV=798.70 17                                                          - NEW CARD
+188OS2 B C1=0.039 5 $C2=0.039 5 $C3=1 (1969VA17)                                - ADDITIONAL NEW CARD
+188OS DB $Cexp(W) = C{-1}q{+2}+C{-2}p{+2}+C{-3}                                 - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 155.040   4 2+                0.70 NS   2                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 728.44 (17) keV   |   log ft 8.519 (34)
+
+From measured spectrum
+Emean 731.72 (17) keV   |   [For information] log ft 8.662 (34)
+
+*    log ft
+188OS  B 1965.3    4 25.6    20          8.4                                 1  - OLD CARD
+188OS  B 1965.3    4 25.6    20          8.519   34                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=728.89 17                                                          - OLD CARD
+188OSS B EAV=731.72 17                                                          - NEW CARD
+188OS2 B C1=0.031 16 $C2=0.031 16 $C3=1 (1969VA17)                              - ADDITIONAL NEW CARD
+188OS DB $Cexp(W) = C{-1}q{+2}+C{-2}p{+2}+C{-3}                                 - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 633.024   132+                6.6 PS    3                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 526.97 (17) keV   |   log ft 9.250 (32)
+
+*    log ft
+188OS  B 1487.4    4 1.65    12          9.2                                 1  - OLD CARD
+188OS  B 1487.4    4 1.65    12          9.250   32                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=527.77 17                                                          - OLD CARD
+188OSS B EAV=526.97 17                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1086.382  100+                12 PS     9                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 344.33 (16) keV   |   log ft 9.090 (28)
+
+*    log ft
+188OS  B 1034.0    4 0.63     4          9                                   1  - OLD CARD
+188OS  B 1034.0    4 0.63     4          9.090   28                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=345.33 16                                                          - OLD CARD
+188OSS B EAV=344.33 16                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  5
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1304.85   7 (2)+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 260.90 (15) keV   |   log ft 10.142 (31)
+
+*    log ft
+188OS  B 815.5     4 0.0241  17          10                                  1  - OLD CARD
+188OS  B 815.5     4 0.0241  17          10.142  31                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=261.94 15                                                          - OLD CARD
+188OSS B EAV=260.90 15                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  6
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1413.8    3 (3)-                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 224.92 (17) keV   |   log ft 11.18 (9)
+
+*    log ft
+188OS  B 706.6     5 0.0024   5          10.8                                2  - OLD CARD
+188OS  B 706.6     5 0.0024   5          11.18    9                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=221.84 18                                                          - OLD CARD
+188OSS B EAV=224.92 17                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  7
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1443.52   5                                                            - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 210.10 (14) keV   |   log ft 11.28 (10)
+
+*    log ft
+188OS  B 676.88    5 0.00092 21          11.2                                   - OLD CARD
+188OS  B 676.88    5 0.00092 21          11.28   10                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=211.11 14                                                          - OLD CARD
+188OSS B EAV=210.10 14                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  8
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1457.55   122+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 205.07 (15) keV   |   log ft 9.590 (31)
+
+*    log ft
+188OS  B 662.8     5 0.042    3          9.5                                 1  - OLD CARD
+188OS  B 662.8     5 0.042    3          9.590   31                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=206.07 15                                                          - OLD CARD
+188OSS B EAV=205.07 15                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  9
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1462.50   3 2-                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 203.30 (14) keV   |   log ft 8.559 (30)
+
+*    log ft
+188OS  B 657.9     4 0.44     3          8.5                                    - OLD CARD
+188OS  B 657.9     4 0.44     3          8.559   30                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=204.30 14                                                          - OLD CARD
+188OSS B EAV=203.30 14                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  10
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1478.09   5 0+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 197.74 (14) keV   |   log ft 9.91 (7)
+
+*    log ft
+188OS  B 642.3     4 0.018    3          9.8                                 1  - OLD CARD
+188OS  B 642.3     4 0.018    3          9.91     7                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=198.73 14                                                          - OLD CARD
+188OSS B EAV=197.74 14                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  11
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1685.5    3                                                            - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 126.62 (16) keV   |   log ft 10.86 (13)
+
+*    log ft
+188OS  B 434.9     5 0.00055 17          10.8                                   - OLD CARD
+188OS  B 434.9     5 0.00055 17          10.86   13                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=127.46 17                                                          - OLD CARD
+188OSS B EAV=126.62 16                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  12
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1704.32   100+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 120.46 (13) keV   |   log ft 10.18 (17)
+
+*    log ft
+188OS  B 416.1     5 0.0023   9          10.1                                1  - OLD CARD
+188OS  B 416.1     5 0.0023   9          10.18   17                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=121.28 13                                                          - OLD CARD
+188OSS B EAV=120.46 13                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  13
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1729.68   22(2,3)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 112.23 (15) keV   |   log ft 10.34 (7)
+
+*    log ft
+188OS  B 390.7     5 0.00128 21          10.3                                1  - OLD CARD
+188OS  B 390.7     5 0.00128 21          10.34    7                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=113.02 15                                                          - OLD CARD
+188OSS B EAV=112.23 15                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  14
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1765.353  220+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 100.83 (13) keV   |   log ft 8.056 (31)
+
+*    log ft
+188OS  B 355.0     4 0.181   13          8                                   1  - OLD CARD
+188OS  B 355.0     4 0.181   13          8.056   31                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=101.57 13                                                          - OLD CARD
+188OSS B EAV=100.83 13                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  15
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1807.60   3 (2)+                                                       - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 87.60 (12) keV   |   log ft 8.556 (34)
+
+*    log ft
+188OS  B 312.8     4 0.038    3          8.5                                 1  - OLD CARD
+188OS  B 312.8     4 0.038    3          8.556   34                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=88.27 12                                                           - OLD CARD
+188OSS B EAV=87.60 12                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  16
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1824.94   6 0+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 82.25 (12) keV   |   log ft 8.684 (31)
+
+*    log ft
+188OS  B 295.5     4 0.0236  17          8.6                                 1  - OLD CARD
+188OS  B 295.5     4 0.0236  17          8.684   31                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=82.90 12                                                           - OLD CARD
+188OSS B EAV=82.25 12                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  17
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1842.86   6 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 76.78 (12) keV   |   log ft 9.494 (32)
+
+*    log ft
+188OS  B 277.5     4 0.00299 22          9.4                                    - OLD CARD
+188OS  B 277.5     4 0.00299 22          9.494   32                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=77.41 12                                                           - OLD CARD
+188OSS B EAV=76.78 12                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  18
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1936.9    3                                                            - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 49.03 (14) keV   |   log ft 10.07 (5)
+
+*    log ft
+188OS  B 183.5     4 0.00021425          10                                     - OLD CARD
+188OS  B 183.5     4 0.00021425          10.07    5                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=49.46 14                                                           - OLD CARD
+188OSS B EAV=49.03 14                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  19
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1941.03   6 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 47.85 (11) keV   |   log ft 7.364 (30)
+
+*    log ft
+188OS  B 179.4     4 0.102    7          7.3                                    - OLD CARD
+188OS  B 179.4     4 0.102    7          7.364   30                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=48.27 12                                                           - OLD CARD
+188OSS B EAV=47.85 11                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  20
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1948.59   3                                                            - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 45.70 (11) keV   |   log ft 7.416 (33)
+
+*    log ft
+188OS  B 171.8     4 0.079    6          7.3                                    - OLD CARD
+188OS  B 171.8     4 0.079    6          7.416   33                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=46.10 11                                                           - OLD CARD
+188OSS B EAV=45.70 11                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  21
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1957.08   4 (1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 43.30 (11) keV   |   log ft 7.538 (34)
+
+*    log ft
+188OS  B 163.3     4 0.051    4          7.4                                    - OLD CARD
+188OS  B 163.3     4 0.051    4          7.538   34                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=43.68 11                                                           - OLD CARD
+188OSS B EAV=43.30 11                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  22
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 1964.96   7 2+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 41.08 (12) keV   |   log ft 8.86 (6)
+
+*    log ft
+188OS  B 155.4     4 0.0021   3          8.8                                 1  - OLD CARD
+188OS  B 155.4     4 0.0021   3          8.86     6                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=41.44 11                                                           - OLD CARD
+188OSS B EAV=41.08 12                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  23
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 2020.18   10                                                           - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 25.90 (11) keV   |   log ft 7.82 (3)
+
+*    log ft
+188OS  B 100.2     5 0.0059   4          7.7                                    - OLD CARD
+188OS  B 100.2     5 0.0059   4          7.82     3                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=26.12 11                                                           - OLD CARD
+188OSS B EAV=25.90 11                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  24
+
+188RE  P 0.0         1-                17.005 H  4              2120.4    4     - PARENT
+188OS  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+188OS  L 2022.44   13(1,2)+                                                     - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 25.29 (11) keV   |   log ft 8.264 (36)
+
+*    log ft
+188OS  B 98.0      5 0.00198 16          8.2                                    - OLD CARD
+188OS  B 98.0      5 0.00198 16          8.264   36                             - NEW CARD
+
+*    Mean energy
+188OSS B EAV=25.51 11                                                           - OLD CARD
+188OSS B EAV=25.29 11                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 24
+-------- Added lines: 5
+
+

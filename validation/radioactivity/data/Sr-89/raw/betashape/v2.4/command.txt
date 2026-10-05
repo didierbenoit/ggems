@@ -1,0 +1,1 @@
+.\betashape.exe .\Sr89\Sr-89.txt -csv

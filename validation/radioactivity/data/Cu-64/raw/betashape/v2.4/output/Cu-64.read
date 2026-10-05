@@ -1,0 +1,77 @@
+Information read from the input file: .\Cu64\Cu-64.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 28   Daughter A: 64   Symbol: Ni
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 29, A 64
+
+Parent record has been found
+Parent Z: 29	Parent A: 64   Symbol: Cu
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 1+ | Treated as: 1+
+Parent half-life: 12.7004 (20) H or 4.5721E4 (7) S
+Parent Q-value: 1675.03 (20) keV
+
+Total branching ratio: 0.6152 (26)
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life: STABLE
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the beta + branch: 17.52 (15) %
+Intensity of the ec branch: 43.53 (20) %
+Total intensity of the (ec & beta +) decay not given.
+Transition order: allowed
+Log ft of the (ec + b+) transition: 4.97
+Average energy of beta + spectrum: 278.21 (9) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1345.75 (5) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life: 1.088 (35) PS or 1.088E-12 (35) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 0.4744 (33) %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 5.51
+
+####################################
+
+Identification record has been found
+Daughter Z: 30   Daughter A: 64   Symbol: Zn
+Transition type: B-
+Estimated parent nuclide from identification record: Z 29, A 64
+
+Parent record has been found
+Parent Z: 29	Parent A: 64   Symbol: Cu
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 1+ | Treated as: 1+
+Parent half-life: 12.7004 (20) H or 4.5721E4 (7) S
+Parent Q-value: 579.4 (7) keV
+
+Total branching ratio: 0.3848 (26)
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life: STABLE
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 579.4 (7) keV
+Intensity of the beta - branch: 38.48 (26) %
+Transition order: allowed
+Log ft of the beta - transition: 5.29
+Average energy of beta - spectrum: 190.7 (3) keV
+
+####################################

@@ -1,0 +1,151 @@
+Input file:  .\Re186\Re-186.txt
+Output file: .\Re186\Re-186.new
+
+Input file: 103 lines
+Output file: 109 lines
+Added new lines: 6
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+186RE  P 0.0         1-                3.7186 D  17             1069.5    9     - PARENT
+186OS  N 1.081E0     1.081E0   0.9247    1.081E0                                - NORMALIZATION
+186OS  L 0           0+                2E15 Y                                   - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 358.21 (35) keV   |   log ft 7.8118 (23)
+
+From measured spectrum
+Emean 361.45 (36) keV   |   [For information] log ft 7.8760 (23)
+
+*    log ft
+186OS  B 1069.5    9 70.9     3          7.7                                 1  - OLD CARD
+186OS  B 1069.5    9 70.9     3          7.8118  23                             - NEW CARD
+
+*    Mean energy
+186OSS B EAV=359.6 7                                                            - OLD CARD
+186OSS B EAV=361.45 36                                                          - NEW CARD
+186OS2 B C1=0.034 5 $C2=0.034 5 $C3=1 (1969VA17)                                - ADDITIONAL NEW CARD
+186OS DB $Cexp(W) = C{-1}q{+2}+C{-2}p{+2}+C{-3}                                 - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+186RE  P 0.0         1-                3.7186 D  17             1069.5    9     - PARENT
+186OS  N 1.081E0     1.081E0   0.9247    1.081E0                                - NORMALIZATION
+186OS  L 137.157   8 2+                0.818 NS                                 - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 305.03 (34) keV   |   log ft 8.117 (6)
+
+From measured spectrum
+Emean 308.22 (35) keV   |   [For information] log ft 8.175 (6)
+
+*    log ft
+186OS  B 932.3     9 21.5     3          8                                   1  - OLD CARD
+186OS  B 932.3     9 21.5     3          8.117    6                             - NEW CARD
+
+*    Mean energy
+186OSS B EAV=306.7 7                                                            - OLD CARD
+186OSS B EAV=308.22 35                                                          - NEW CARD
+186OS2 B C1=0.038 8 $C2=0.038 8 $C3=1 (1969VA17)                                - ADDITIONAL NEW CARD
+186OS DB $Cexp(W) = C{-1}q{+2}+C{-2}p{+2}+C{-3}                                 - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+186RE  P 0.0         1-                3.7186 D  17             1069.5    9     - PARENT
+186OS  N 1.081E0     1.081E0   0.9247    1.081E0                                - NORMALIZATION
+186OS  L 767.48    3 2+                2.38 PS                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 84.26 (28) keV   |   log ft 9.010 (7)
+
+*    log ft
+186OS  B 302.0     9 0.0627   9          8.9                                 1  - OLD CARD
+186OS  B 302.0     9 0.0627   9          9.010    7                             - NEW CARD
+
+*    Mean energy
+186OSS B EAV=84.7 7                                                             - OLD CARD
+186OSS B EAV=84.26 28                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+186RE  P 0.0         1-                3.7186 D  17             1069.5    9     - PARENT
+186OS  N 1.081E0     1.081E0   0.9247    1.081E0                                - NORMALIZATION
+186OS  L 910.48    3 3+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 48.44 (29) keV   |   log ft 10.92 (15)
+
+*    log ft
+186OS  B 159.0     9 0.000027 9          10.9                                1U - OLD CARD
+186OS  B 159.0     9 0.000027 9          10.92   15                          1U - NEW CARD
+
+*    Mean energy
+186OSS B EAV=42.6 7                                                             - OLD CARD
+186OSS B EAV=48.44 29                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 4
+-------- Added lines: 5
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+186RE  P 0.0         1-                3.7186 D  17             581.6     17    - PARENT
+186W   N 1.328E1     1.328E1   0.0753    1.328E1                                - NORMALIZATION
+186W   L 0           0+                 STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.79589 (38) | L =  0.15390 (18) | M =  0.03779 (12) | N =  0.01020 (6) | O =  0.002055 (19) | P =  1.686E-4 (18)
+log ft 7.533 (10)
+
+*    log ft
+186W   E                       5.84    127.5                                 1  - OLD CARD
+186W   E                       5.84    127.533   10             5.84      12    - NEW CARD
+
+*    Probabilities
+186W 2 E CK=0.7943   18$CL=0.1560   12$CM=0.0382    7                           - OLD CARD
+186W 2 E CK=0.79589 38$CL=0.15390 18$CM+=0.05021 14                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+186RE  P 0.0         1-                3.7186 D  17             581.6     17    - PARENT
+186W   N 1.328E1     1.328E1   0.0753    1.328E1                                - NORMALIZATION
+186W   L 122.33    102+                1.036 NS                                 - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.78530 (48) | L =  0.16152 (24) | M =  0.04000 (14) | N =  0.01082 (7) | O =  0.002181 (21) | P =  1.789E-4 (20)
+log ft 7.84 (1)
+
+*    log ft
+186W   E                       1.69     37.8                                 1  - OLD CARD
+186W   E                       1.69     37.84     1             1.69       3    - NEW CARD
+
+*    Probabilities
+186W 2 E CK=0.7836   19$CL=0.1638   13$CM=0.0404    8                           - OLD CARD
+186W 2 E CK=0.78530 48$CL=0.16152 24$CM+=0.05318 16                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 2
+-------- Added lines: 1
+
+

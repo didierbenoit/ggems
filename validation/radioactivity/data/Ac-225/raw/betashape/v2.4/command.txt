@@ -1,0 +1,1 @@
+.\betashape.exe .\Ac225\Ac-225.txt -csv
