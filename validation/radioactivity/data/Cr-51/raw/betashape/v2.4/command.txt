@@ -1,0 +1,1 @@
+.\betashape.exe .\Cr51\Cr-51.txt -csv

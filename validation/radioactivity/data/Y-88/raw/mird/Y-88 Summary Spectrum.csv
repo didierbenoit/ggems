@@ -1,0 +1,89 @@
+,Energy [MeV],Yield [#/nt],Type (detailed)
+0,1.88253e-05,4.53807e-06,X-ray
+1,2.09351e-05,8.31766,X-ray
+2,6.97e-05,8.59033e-10,X-ray
+3,0.000148125,0.000351385,X-ray
+4,0.000188,3.06483e-06,X-ray
+5,0.000257699,1.84052e-05,X-ray
+6,0.00159208,0.00308786,X-ray
+7,0.00166178,0.00108736,X-ray
+8,0.00166208,1.14282e-05,X-ray
+9,0.00167287,1.08653e-05,X-ray
+10,0.00174257,8.61447e-06,X-ray
+11,0.00179747,0.00158223,X-ray
+12,0.00179939,0.0148774,X-ray
+13,0.00186717,0.00760813,X-ray
+14,0.00189601,0.000127883,X-ray
+15,0.00191393,2.28669e-07,X-ray
+16,0.0019152,2.19236e-07,X-ray
+17,0.00191978,0.000288625,X-ray
+18,0.00193057,0.000508033,X-ray
+19,0.00196571,6.37059e-05,X-ray
+20,0.0019849,2.15967e-07,X-ray
+21,0.00205517,1.95305e-06,X-ray
+22,0.00205709,2.9069e-06,X-ray
+23,0.00217163,3.64323e-05,X-ray
+24,0.0021729,6.46062e-05,X-ray
+25,0.0140549,0.175085,X-ray
+26,0.0141246,0.336192,X-ray
+27,0.0157867,0.0255521,X-ray
+28,0.0157975,0.0498054,X-ray
+29,0.015922,9.00133e-05,X-ray
+30,0.015924,0.000128439,X-ray
+31,0.0160385,0.0033105,X-ray
+32,0.0160399,0.00632896,X-ray
+33,0.511,0.00419987,Annihilation photon
+34,0.8506,0.000654984,Gamma
+35,0.898042,0.936826,Gamma
+36,1.3822,0.000208404,Gamma
+37,1.83606,0.9924,Gamma
+38,2.734,0.00714528,Gamma
+39,3.2197,7.04604e-05,Gamma
+40,0.359487,0.00209994,Positron
+41,1.36397e-05,2.31829,Auger electron
+42,7.49597e-05,2.31173,Auger electron
+43,9.39134e-05,0.981858,Auger electron
+44,0.000100617,0.212138,Auger electron
+45,0.000109931,0.112044,Auger electron
+46,0.00157339,0.966217,Auger electron
+47,0.00171382,0.0859286,Auger electron
+48,0.00191681,0.00308441,Auger electron
+49,0.0120238,0.200095,Auger electron
+50,0.013789,0.067806,Auger electron
+51,0.0155562,0.00554333,Auger electron
+52,0.834533,4.98424e-07,Conversion electron
+53,0.8484,5.17069e-08,Conversion electron
+54,0.848588,1.59126e-09,Conversion electron
+55,0.848658,1.44769e-09,Conversion electron
+56,0.85033,9.35266e-09,Conversion electron
+57,0.8506,1.4706e-09,Conversion electron
+58,0.881975,0.000256695,Conversion electron
+59,0.895842,2.65858e-05,Conversion electron
+60,0.89603,3.11011e-07,Conversion electron
+61,0.8961,5.93124e-07,Conversion electron
+62,0.897772,4.69079e-06,Conversion electron
+63,0.898042,7.40879e-07,Conversion electron
+64,1.36613,6.46513e-08,Conversion electron
+65,1.38,6.79107e-09,Conversion electron
+66,1.38019,7.89827e-11,Conversion electron
+67,1.38026,5.43548e-11,Conversion electron
+68,1.38193,1.1798e-09,Conversion electron
+69,1.3822,1.8593e-10,Conversion electron
+70,1.82,0.00014509,Conversion electron
+71,1.83386,1.51461e-05,Conversion electron
+72,1.83405,1.82336e-07,Conversion electron
+73,1.83412,2.04489e-07,Conversion electron
+74,1.83579,2.65952e-06,Conversion electron
+75,1.83606,4.08822e-07,Conversion electron
+76,2.71793,7.93753e-07,Conversion electron
+77,2.7318,6.5769e-08,Conversion electron
+78,2.73199,7.87442e-10,Conversion electron
+79,2.73206,5.06928e-10,Conversion electron
+80,2.73373,1.14269e-08,Conversion electron
+81,2.734,1.70233e-09,Conversion electron
+82,3.20363,3.86165e-09,Conversion electron
+83,3.2175,3.07919e-10,Conversion electron
+84,3.21769,1.86541e-12,Conversion electron
+85,3.21776,2.50765e-12,Conversion electron
+86,3.21943,5.32033e-11,Conversion electron
+87,3.2197,8.08682e-12,Conversion electron

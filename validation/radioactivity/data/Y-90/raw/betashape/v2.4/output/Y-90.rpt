@@ -1,0 +1,79 @@
+Input file:  .\Y90\Y-90.txt
+Output file: .\Y90\Y-90.new
+
+Input file: 49 lines
+Output file: 52 lines
+Added new lines: 3
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 90Y   P 0.0         2-                2.6684 D  13             2278.7    16    - PARENT
+ 90ZR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 90ZR  L 0           0+                 STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 928.8 (7) keV   |   log ft 9.2402 (18)
+
+From measured spectrum
+Emean 924.9 (7) keV   |   [For information] log ft 9.2293 (18)
+
+*    log ft
+ 90ZR  B 2278.7    1699.983   7          8.05                                1U - OLD CARD
+ 90ZR  B 2278.7    1699.983   7          9.2402  18                          1U - NEW CARD
+
+*    Mean energy
+ 90ZRS B EAV=926.7 8                                                            - OLD CARD
+ 90ZRS B EAV=924.9 7                                                            - NEW CARD
+ 90ZR2 B C1=-0.0114 3 (1975FL07)                                                - ADDITIONAL NEW CARD
+ 90ZR DB $Cexp(W) = (1+C{-1}W)|*(q{+2}+|l{-2}p{+2})                             - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 90Y   P 0.0         2-                2.6684 D  13             2278.7    16    - PARENT
+ 90ZR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 90ZR  L 1760.72   200+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 183.4 (6) keV   |   log ft 9.49 (18)
+
+*    log ft
+ 90ZR  B 518.0     160.017    7          9.4                                 1U - OLD CARD
+ 90ZR  B 518.0     160.017    7          9.49    18                          1U - NEW CARD
+
+*    Mean energy
+ 90ZRS B EAV=163.7 6                                                            - OLD CARD
+ 90ZRS B EAV=183.4 6                                                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+ 90Y   P 0.0         2-                2.6684 D  13             2278.7    16    - PARENT
+ 90ZR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 90ZR  L 2186.282  102+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 23.80 (44) keV   |   log ft 11.07 (10)
+
+*    log ft
+ 90ZR  B 92.4      161.4E-6   3          11.1                                   - OLD CARD
+ 90ZR  B 92.4      161.4E-6   3          11.07   10                             - NEW CARD
+
+*    Mean energy
+ 90ZRS B EAV=24.5 5                                                             - OLD CARD
+ 90ZRS B EAV=23.80 44                                                           - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 3
+-------- Added lines: 3
+
+

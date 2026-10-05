@@ -1,0 +1,59 @@
+Information read from the input file: .\Y90\Y-90.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 40   Daughter A: 90   Symbol: Zr
+Transition type: B-
+Estimated parent nuclide from identification record: Z 39, A 90
+
+Parent record has been found
+Parent Z: 39	Parent A: 90   Symbol: Y
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 2- | Treated as: 2-
+Parent half-life: 2.6684 (13) D or 2.3055E5 (11) S
+Parent Q-value: 2278.7 (16) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life: STABLE
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 2278.7 (16) keV
+Intensity of the beta - branch: 99.983 (7) %
+Transition order: 1st forbidden unique
+Log ft of the beta - transition: 8.05
+Average energy of beta - spectrum: 926.7 (8) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 1760.72 (20) keV
+Level spin and parity | Read: 0+ | Treated as: 0+
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 518.0 (16) keV
+Intensity of the beta - branch: 0.017 (7) %
+Transition order: 1st forbidden unique
+Log ft of the beta - transition: 9.4
+Average energy of beta - spectrum: 163.7 (6) keV
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 2186.282 (10) keV
+Level spin and parity | Read: 2+ | Treated as: 2+
+Level half-life not given.
+
+Beta - record has been found
+Measured endpoint energy of the beta - transition: 92.4 (16) keV
+Intensity of the beta - branch: 1.4E-6 (3) %
+Transition order: allowed
+Log ft of the beta - transition: 11.1
+Average energy of beta - spectrum: 24.5 (5) keV
+
+####################################

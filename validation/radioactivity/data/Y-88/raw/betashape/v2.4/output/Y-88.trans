@@ -1,0 +1,59 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 39-Y-88 [4-] g.s.  -->  Daughter nucleus: 38-Sr-88 [2+] 1836.090 (8) keV
+Half-life of the parent nuclide: 9.2128E6 (43) s
+Electron capture transition. Order: 1st forbidden unique
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 5.7 (3) %
+Log ft of the (ec + b+) transition: 9.8
+
+------------------------------------
+Parent nucleus: 39-Y-88 [4-] g.s.  -->  Daughter nucleus: 38-Sr-88 [2+] 1836.090 (8) keV
+Half-life of the parent nuclide: 9.2128E6 (43) s
+Beta + transition. Order: 1st forbidden unique
+Transition energy. Calculated Emax from Q-value and level energies: 764.5 (15) keV.
+Total normalization of the (ec & b+) decay: 1
+Normalization of this transition: 0.21 (1) %
+Average energy of beta + spectrum: 359.5 (7) keV
+Log ft of the (ec + b+) transition: 9.8
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 39-Y-88 [4-] g.s.  -->  Daughter nucleus: 38-Sr-88 [3-] 2734.137 (8) keV
+Half-life of the parent nuclide: 9.2128E6 (43) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 94.3 (3) %
+Log ft of the ec transition: 6.9
+
+------------------------------------
+Parent nucleus: 39-Y-88 [4-] g.s.  -->  Daughter nucleus: 38-Sr-88 [2+] 3218.489 (22) keV
+Half-life of the parent nuclide: 9.2128E6 (43) s
+Electron capture transition. Order: 1st forbidden unique
+Total normalization of the decay: 1
+Normalization of this transition: 0.023 (4) %
+Log ft of the ec transition: 9.5
+
+------------------------------------
+Parent nucleus: 39-Y-88 [4-] g.s.  -->  Daughter nucleus: 38-Sr-88 [5-] 3584.784 (19) keV
+Half-life of the parent nuclide: 9.2128E6 (43) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 0.048 (18) %
+Log ft of the ec transition: 7
+
+
+####################################
+
+Summary
+
+1 nucleus and 5 transitions have been read.
+
+Parent nucleus: 39-Y-88
+5 transitions have been read (4 EC, 1 B+).
+
+
+####################################

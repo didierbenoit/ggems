@@ -1,0 +1,132 @@
+Input file:  .\Y88\Y-88.txt
+Output file: .\Y88\Y-88.new
+
+Input file: 69 lines
+Output file: 72 lines
+Added new lines: 3
+--> Output file is consistent.
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 88Y   P 0.0         4-                106.63 D  5              3622.6    15    - PARENT
+ 88SR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 88SR  L 1836.090  8 2+                0.154 PS  8                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.8375 (8) | L =  0.10217 (18) | M =  0.01961 (10) | N =  0.003226 (36) | O =  3.49E-4 (7)
+K/b+ =  22.6 (6) | L/b+ =  2.75 (7) | M/b+ =  0.528 (11) | N/b+ =  0.0869 (12) | O/b+ =  0.00939 (9) | EC/b+ =  25.9 (6)
+
+Branch splitting:  Iec 5.7 (3) %  and  Ib+ 0.21 (1) %
+                   Itot 5.91 (30) %
+EC component of log ft 9.780 (25)
+
+*    log ft
+ 88SR  E             0.21     15.7      39.8                                 1U - OLD CARD
+ 88SR  E             0.21     15.7      39.780   25             5.91      30 1U - NEW CARD
+
+*    Probabilities
+ 88SR2 E EAV=359.5     7$CK=0.80948  29$CL=96529E-6  4$CM=0.02128   8           - OLD CARD
+ 88SR2 E EAV= $CK=0.8375 8$CL=0.10217 18$CM+=0.02319 11                         - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 88Y   P 0.0         4-                106.63 D  5              3622.6    15    - PARENT
+ 88SR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 88SR  L 2734.137  8 3-                0.70 PS   5                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.87011 (30) | L =  0.10586 (15) | M =  0.02032 (10) | N =  0.003346 (37) | O =  3.62E-4 (7)
+log ft 6.866 (9)
+
+*    log ft
+ 88SR  E                       94.3     36.9                                    - OLD CARD
+ 88SR  E                       94.3     36.866    9             94.3       3    - NEW CARD
+
+*    Probabilities
+ 88SR2 E CK=0.8726   15$CL=0.1046   14$CM=0.0229    6$CN=0.0030    2            - OLD CARD
+ 88SR2 E CK=0.87011 30$CL=0.10586 15$CM+=0.02403 11                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+ 88Y   P 0.0         4-                106.63 D  5              3622.6    15    - PARENT
+ 88SR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 88SR  L 3218.489  222+                0.154 PS  10                             - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.8504 (5) | L =  0.12176 (32) | M =  0.02365 (15) | N =  0.003841 (47) | O =  4.01E-4 (8)
+log ft 9.55 (8)
+
+*    log ft
+ 88SR  E                       0.023    49.5                                 1U - OLD CARD
+ 88SR  E                       0.023    49.55     8             0.023      4 1U - NEW CARD
+
+*    Probabilities
+ 88SR2 E CK=0.8521    2$CL=0.1209    1$CM=0.02701   3$CN=0.0031    2            - OLD CARD
+ 88SR2 E CK=0.8504 5$CL=0.12176 32$CM+=0.02789 16                               - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+ 88Y   P 0.0         4-                106.63 D  5              3622.6    15    - PARENT
+ 88SR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 88SR  L 3584.784  195-                0.14 NS   4                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.720 (12) | L =  0.224 (9) | M =  0.0473 (23) | N =  0.00790 (45) | O =  8.6E-4 (6)
+log ft 7.04 (17)
+
+*    log ft
+ 88SR  E                       0.048   187                                      - OLD CARD
+ 88SR  E                       0.048   187.04    17             0.048     18    - NEW CARD
+
+*    Probabilities
+ 88SR2 E CK=0.721    12$CL=0.225    10$CM=0.0542   25$CN=0.0072    5            - OLD CARD
+ 88SR2 E CK=0.720 12$CL=0.224 9$CM+=0.0561 23                                   - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 4
+-------- Added lines: 1
+
+
+####################################################  B+ DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 88Y   P 0.0         4-                106.63 D  5              3622.6    15    - PARENT
+ 88SR  N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 88SR  L 1836.090  8 2+                0.154 PS  8                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 358.7 (7) keV   |   log ft (ec & beta +) 9.781 (24)
+
+From measured spectrum
+Emean 362.0 (7) keV   |   [For information] log ft (ec & beta +) 0
+
+*    log ft (ec & beta +)
+ 88SR  E             0.21     15.7      39.8                                 1U - OLD CARD
+ 88SR  E             0.21     15.7      39.781   24             5.91      30 1U - NEW CARD
+
+*    Mean energy
+ 88SR2 E EAV=359.5     7$CK=0.80948  29$CL=96529E-6  4$CM=0.02128   8           - OLD CARD
+ 88SR2 E EAV=362.0 7$CK=0.8375 8$CL=0.10217 18$CM+=0.02319 11                   - NEW CARD
+ 88SR DE $Cexp(W)=q{+2}+|l{-2}p{+2} (1963RH01)                                  - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 1
+-------- Added lines: 2
+
+

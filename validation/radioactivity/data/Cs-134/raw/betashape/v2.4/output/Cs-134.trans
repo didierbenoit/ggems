@@ -1,0 +1,68 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 55-Cs-134 [4+] g.s.  -->  Daughter nucleus: 54-Xe-134 [2+] 847.041 (23) keV
+Half-life of the parent nuclide: 6.5146E7 (44) s
+Electron capture transition. Order: 2nd forbidden non-unique
+Total normalization of the decay: 1.00 (33)
+Normalization of this transition: 3.0E-4 (14) %
+Log ft of the ec transition: 13
+
+------------------------------------
+Parent nucleus: 55-Cs-134 [4+] g.s.  -->  Daughter nucleus: 56-Ba-134 [2+] 604.7223 (19) keV
+Half-life of the parent nuclide: 6.5146E7 (44) s
+Beta - transition. Order: 2nd forbidden non-unique
+Transition energy calculated from Q-value and level energies: 1454.26 (33) keV. 
+Total normalization of the beta - decay: 0.999997 (1)
+Normalization of this transition: 0.06 (6) %
+Average energy of beta - spectrum: 535 (1) keV
+Log ft of the beta - transition: 13.1
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 55-Cs-134 [4+] g.s.  -->  Daughter nucleus: 56-Ba-134 [4+] 1400.590 (4) keV
+Half-life of the parent nuclide: 6.5146E7 (44) s
+Beta - transition. Order: allowed
+Transition energy calculated from Q-value and level energies: 658.39 (33) keV. 
+Total normalization of the beta - decay: 0.999997 (1)
+Normalization of this transition: 70.19 (8) %
+Average energy of beta - spectrum: 210.3 (4) keV
+Log ft of the beta - transition: 8.89
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 55-Cs-134 [4+] g.s.  -->  Daughter nucleus: 56-Ba-134 [3+] 1643.336 (4) keV
+Half-life of the parent nuclide: 6.5146E7 (44) s
+Beta - transition. Order: allowed
+Transition energy calculated from Q-value and level energies: 415.64 (33) keV. 
+Total normalization of the beta - decay: 0.999997 (1)
+Normalization of this transition: 2.498 (8) %
+Average energy of beta - spectrum: 123.6 (4) keV
+Log ft of the beta - transition: 9.65
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 55-Cs-134 [4+] g.s.  -->  Daughter nucleus: 56-Ba-134 [4+] 1969.921 (4) keV
+Half-life of the parent nuclide: 6.5146E7 (44) s
+Beta - transition. Order: allowed
+Transition energy calculated from Q-value and level energies: 89.06 (33) keV. 
+Total normalization of the beta - decay: 0.999997 (1)
+Normalization of this transition: 27.27 (3) %
+Average energy of beta - spectrum: 23.2 (4) keV
+Log ft of the beta - transition: 6.49
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 5 transitions have been read.
+
+Parent nucleus: 55-Cs-134
+5 transitions have been read (4 B-, 1 EC).
+
+
+####################################

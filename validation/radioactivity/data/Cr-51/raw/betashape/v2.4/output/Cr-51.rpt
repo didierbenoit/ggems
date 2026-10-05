@@ -1,0 +1,57 @@
+Input file:  .\Cr51\Cr-51.txt
+Output file: .\Cr51\Cr-51.new
+
+Input file: 44 lines
+Output file: 45 lines
+Added new lines: 1
+--> Output file is consistent.
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+ 51CR  P 0.0         7/2-              27.704 D  4              752.62    24    - PARENT
+ 51V   N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 51V   L 0           7/2-               STABLE                                  - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88829 (31) | L =  0.09608 (21) | M =  0.0152 (1) | N =  4.313E-4 (49)
+log ft 5.397 (6)
+
+*    log ft
+ 51V   E                       90.09    25.39                                   - OLD CARD
+ 51V   E                       90.09    25.397    6             90.09      2    - NEW CARD
+
+*    Probabilities
+ 51V 2 E CK=0.8919   17$CL=0.0927   14$CM=0.0154    6                           - OLD CARD
+ 51V 2 E CK=0.88829 31$CL=0.09608 21$CM+=0.01563 10                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+ 51CR  P 0.0         7/2-              27.704 D  4              752.62    24    - PARENT
+ 51V   N 1.0         1.0       1         1.0                                    - NORMALIZATION
+ 51V   L 320.0835  4 5/2-              184 PS    6                              - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: 'A' transition assumed.
+K =  0.88734 (31) | L =  0.09688 (21) | M =  0.01534 (10) | N =  4.354E-4 (49)
+log ft 5.870 (7)
+
+*    log ft
+ 51V   E                       9.91     25.86                                   - OLD CARD
+ 51V   E                       9.91     25.870    7             9.91       2    - NEW CARD
+
+*    Probabilities
+ 51V 2 E CK=0.8910   17$CL=0.0935   14$CM=0.0156    6                           - OLD CARD
+ 51V 2 E CK=0.88734 31$CL=0.09688 21$CM+=0.01578 10                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 2
+-------- Added lines: 1
+
+

@@ -1,0 +1,11 @@
+# BetaShape
+# Version: 2.4 (06/2024)
+# Author: X. Mougeot (xavier.mougeot@cea.fr)
+# CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+# Please cite: [2019MO35] X. Mougeot, Applied Radiation and Isotopes 154, 108884 (2019)
+# 
+# Input file: .\Cs134\Cs-134.txt
+# Neutrino information: no
+# 
+# parent symbol, Z, A, Jpi, level energy, unc, daughter symbol, Z, A, Jpi, level energy, unc, Q, unc, half-life, unc, unit, transition nature, transition nature used, branching %, unc, log ft, unc, ftot-value, unc, ec branching %, unc, log ft ec, unc, fec-value, unc, ec transition energy, unc, b+ branching %, unc, log ft b+, unc, fb+-value, unc, b+ transition energy, unc, mean energy calc, unc, mean energy exp, unc, EC/b+, value, unc, nb shells, [shell name, relative proba, unc, proba, unc, proba/b+, unc] * nb shells, nb subshells, [subshell name, relative proba, unc, proba, unc, proba/b+, unc] * nb subshells
+Cs, 55, 134, 4+, 0, 0, Xe, 54, 134, 2+, 847.041, 0.023, 1233.3, 0.8, 6.5146E7, 44000, s, 2N, 1U, 0.0003, 0.00014, 12.76, 0.2, 0.2673, 0.0037, 0.0003, 0.00014, 12.76, 0.2, 0.2673, 0.0037, 386.3, 0.8, , , , , , , , , , , , , EC/b+, , , 5, K, 0.79836, 0.00033, 0.79836, 0.00033, , , L, 0.15594, 0.00022, 0.15594, 0.00022, , , M, 0.03521, 0.00015, 0.03521, 0.00015, , , N, 0.00904, 0.00011, 0.00904, 0.00011, , , O, 0.001447, 2.3e-05, 0.001447, 2.3e-05, , , 15, PK, 0.79836, 0.00033, 0.79836, 0.00033, , , PL1, 0.13688, 0.00018, 0.13688, 0.00018, , , PL2, 0.003915, 3.4e-05, 0.003915, 3.4e-05, , , PL3, 0.01514, 0.00024, 0.01514, 0.00024, , , PM1, 0.03087, 0.00016, 0.03087, 0.00016, , , PM2, 0.000937, 4.8e-06, 0.000937, 4.8e-06, , , PM3, 0.003397, 3.9e-05, 0.003397, 3.9e-05, , , PN1, 0.00804, 0.0001, 0.00804, 0.0001, , , PM4, 9.37e-06, 8e-08, 9.37e-06, 8e-08, , , PN2, 0.0002359, 1.2e-06, 0.0002359, 1.2e-06, , , PN3, 0.000767, 7e-06, 0.000767, 7e-06, , , PO1, 0.001346, 2.1e-05, 0.001346, 2.1e-05, , , PN4, 2.01e-06, 4.9e-08, 2.01e-06, 4.9e-08, , , PO2, 2.883e-05, 3.1e-07, 2.883e-05, 3.1e-07, , , PO3, 7.27e-05, 1.3e-06, 7.27e-05, 1.3e-06, , 

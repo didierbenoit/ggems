@@ -1,0 +1,14 @@
+# BetaShape
+# Version: 2.4 (06/2024)
+# Author: X. Mougeot (xavier.mougeot@cea.fr)
+# CEA, LIST, Laboratoire National Henri Becquerel (LNHB), Gif-sur-Yvette F-91191, France
+# Please cite: [2023MO21] X. Mougeot, Applied Radiation and Isotopes 201, 111018 (2023)
+# 
+# Input file: .\Cs134\Cs-134.txt
+# Neutrino information: no
+# 
+# parent symbol, Z, A, Jpi, level energy, unc, daughter symbol, Z, A, Jpi, level energy, unc, Q, unc, half-life, unc, unit, transition nature, transition nature used, branching %, unc, log ft, unc, f-value, unc, transition energy, unc, mean energy calc, unc, mean energy exp, unc
+Cs, 55, 134, 4+, 0, 0, Ba, 56, 134, 2+, 604.7223, 0.0019, 2058.98, 0.33, 6.5146E7, 44000, s, 2N, 1U, 0.06, 0.06, 13.63, GE, 1066.8, 1.4, 1454.26, 0.33, 535.46, 0.14, , 
+Cs, 55, 134, 4+, 0, 0, Ba, 56, 134, 4+, 1400.59, 0.004, 2058.98, 0.33, 6.5146E7, 44000, s, A, A, 70.19, 0.08, 8.9233, 0.001, 9.029, 0.016, 658.39, 0.33, 209.12, 0.12, 209.93, 0.12
+Cs, 55, 134, 4+, 0, 0, Ba, 56, 134, 3+, 1643.336, 0.004, 2058.98, 0.33, 6.5146E7, 44000, s, A, A, 2.498, 0.008, 9.6938, 0.0018, 1.894, 0.005, 415.64, 0.33, 122.54, 0.11, 123.44, 0.11
+Cs, 55, 134, 4+, 0, 0, Ba, 56, 134, 4+, 1969.921, 0.004, 2058.98, 0.33, 6.5146E7, 44000, s, A, A, 27.27, 0.03, 6.544, 0.005, 0.01466, 0.00017, 89.06, 0.33, 22.75, 0.09, , 

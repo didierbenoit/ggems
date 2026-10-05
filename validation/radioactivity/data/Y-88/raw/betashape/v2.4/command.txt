@@ -1,0 +1,1 @@
+.\betashape.exe .\Y88\Y-88.txt fixint=1 -csv

@@ -1,0 +1,129 @@
+Input file:  .\Cs134\Cs-134.txt
+Output file: .\Cs134\Cs-134.new
+
+Input file: 112 lines
+Output file: 116 lines
+Added new lines: 4
+--> Output file is consistent.
+
+
+####################################################  B- DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+134CS  P 0.0         4+                2.0644 Y  14             2058.98   33    - PARENT
+134BA  N 1.00E0      1.00E0    0.999997 11.00E0                                 - NORMALIZATION
+134BA  L 604.7223  192+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: '1U' transition assumed.
+Emean 535.46 (14) keV   |   log ft 13.63 (GE)
+
+*    log ft
+134BA  B 1454.26   330.06     6          13.1                                2  - OLD CARD
+134BA  B 1454.26   330.06     6          13.6    GE                             - NEW CARD
+
+*    Mean energy
+134BAS B EAV=535 1                                                              - OLD CARD
+134BAS B EAV=535.46 14                                                          - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  2
+
+134CS  P 0.0         4+                2.0644 Y  14             2058.98   33    - PARENT
+134BA  N 1.00E0      1.00E0    0.999997 11.00E0                                 - NORMALIZATION
+134BA  L 1400.590  4 4+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 209.12 (12) keV   |   log ft 8.9233 (10)
+
+From measured spectrum
+Emean 209.93 (12) keV   |   [For information] log ft 8.9281 (10)
+
+*    log ft
+134BA  B 658.39    3370.19    8          8.89                                   - OLD CARD
+134BA  B 658.39    3370.19    8          8.9233  10                             - NEW CARD
+
+*    Mean energy
+134BAS B EAV=210.3 4                                                            - OLD CARD
+134BAS B EAV=209.93 12                                                          - NEW CARD
+134BA DB $Cexp(W)=1 (1968HS01)                                                  - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  3
+
+134CS  P 0.0         4+                2.0644 Y  14             2058.98   33    - PARENT
+134BA  N 1.00E0      1.00E0    0.999997 11.00E0                                 - NORMALIZATION
+134BA  L 1643.336  4 3+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 122.54 (11) keV   |   log ft 9.6938 (18)
+
+From measured spectrum
+Emean 123.44 (11) keV   |   [For information] log ft 9.6974 (18)
+
+*    log ft
+134BA  B 415.64    332.498    8          9.65                                   - OLD CARD
+134BA  B 415.64    332.498    8          9.6938  18                             - NEW CARD
+
+*    Mean energy
+134BAS B EAV=123.6 4                                                            - OLD CARD
+134BAS B EAV=123.44 11                                                          - NEW CARD
+134BA DB $Cexp(W)=1 (1968HS01)                                                  - ADDITIONAL NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  4
+
+134CS  P 0.0         4+                2.0644 Y  14             2058.98   33    - PARENT
+134BA  N 1.00E0      1.00E0    0.999997 11.00E0                                 - NORMALIZATION
+134BA  L 1969.921  4 4+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculated spectrum: 'A' transition assumed.
+Emean 22.75 (9) keV   |   log ft 6.544 (5)
+
+*    log ft
+134BA  B 89.06     3327.27    3          6.49                                   - OLD CARD
+134BA  B 89.06     3327.27    3          6.544    5                             - NEW CARD
+
+*    Mean energy
+134BAS B EAV=23.2 4                                                             - OLD CARD
+134BAS B EAV=22.75 9                                                            - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 4
+-------- Added lines: 3
+
+
+####################################################  EC DECAYS  ####################################################
+
+---------------------------------------------------------------------------------------------------------------------  1
+
+134CS  P 0.0         4+                2.0644 Y  14             1233.3    8     - PARENT
+134XE  N 3.333E5     3.333E5   0.000003 13.333E5                                - NORMALIZATION
+134XE  L 847.041   232+                                                         - LEVEL
+
+***** BR and NB from N record *****
+
+From calculation: '1U' transition assumed.
+K =  0.79836 (33) | L =  0.15594 (22) | M =  0.03521 (15) | N =  0.00904 (11) | O =  0.001447 (23)
+log ft 12.76 (20)
+
+*    log ft
+134XE  E                       0.0003   113                                  2  - OLD CARD
+134XE  E                       3.0E-4  1412.76   20             3.0E-4    14    - NEW CARD
+
+*    Probabilities
+134XE2 E CK=0.8361   16$CL=0.1289   11$CM=0.0283    6$CN=0.0066    4            - OLD CARD
+134XE2 E CK=0.79836 33$CL=0.15594 22$CM+=0.04570 19                             - NEW CARD
+
+---------------------------------------------------------------------------------------------------------------------  
+
+-------- Total: 1
+-------- Added lines: 1
+
+

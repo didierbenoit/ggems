@@ -1,0 +1,32 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 24-Cr-51 [7/2-] g.s.  -->  Daughter nucleus: 23-V-51 [7/2-] g.s.
+Half-life of the parent nuclide: 2.39363E6 (35) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 90.09 (2) %
+Log ft of the ec transition: 5.39
+
+------------------------------------
+Parent nucleus: 24-Cr-51 [7/2-] g.s.  -->  Daughter nucleus: 23-V-51 [5/2-] 320.0835 (4) keV
+Half-life of the parent nuclide: 2.39363E6 (35) s
+Electron capture transition. Order: allowed
+Total normalization of the decay: 1
+Normalization of this transition: 9.91 (2) %
+Log ft of the ec transition: 5.86
+
+
+####################################
+
+Summary
+
+1 nucleus and 2 transitions have been read.
+
+Parent nucleus: 24-Cr-51
+2 transitions have been read (2 EC).
+
+
+####################################

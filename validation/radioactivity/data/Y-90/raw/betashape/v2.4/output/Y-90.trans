@@ -1,0 +1,50 @@
+####################################
+
+Transitions that have been found.
+
+------------------------------------
+Parent nucleus: 39-Y-90 [2-] g.s.  -->  Daughter nucleus: 40-Zr-90 [0+] g.s.
+Half-life of the parent nuclide: 2.3055E5 (11) s
+Beta - transition. Order: 1st forbidden unique
+Transition energy calculated from Q-value and level energies: 2278.7 (16) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 99.983 (7) %
+Average energy of beta - spectrum: 926.7 (8) keV
+Log ft of the beta - transition: 8.05
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 39-Y-90 [2-] g.s.  -->  Daughter nucleus: 40-Zr-90 [0+] 1760.72 (20) keV
+Half-life of the parent nuclide: 2.3055E5 (11) s
+Beta - transition. Order: 1st forbidden unique
+Transition energy calculated from Q-value and level energies: 518.0 (16) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 0.017 (7) %
+Average energy of beta - spectrum: 163.7 (6) keV
+Log ft of the beta - transition: 9.4
+Warning: information about this decay is not totally sure.
+
+------------------------------------
+Parent nucleus: 39-Y-90 [2-] g.s.  -->  Daughter nucleus: 40-Zr-90 [2+] 2186.282 (10) keV
+Half-life of the parent nuclide: 2.3055E5 (11) s
+Beta - transition. Order: 1st forbidden non-unique
+Given transition order different. Determined order from spins and parities kept.
+Transition energy calculated from Q-value and level energies: 92.4 (16) keV. 
+Total normalization of the beta - decay: 1
+Normalization of this transition: 1.4E-6 (3) %
+Average energy of beta - spectrum: 24.5 (5) keV
+Log ft of the beta - transition: 11.1
+Warning: information about this decay is not totally sure.
+
+
+####################################
+
+Summary
+
+1 nucleus and 3 transitions have been read.
+
+Parent nucleus: 39-Y-90
+3 transitions have been read (3 B-).
+
+
+####################################

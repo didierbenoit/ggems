@@ -1,0 +1,46 @@
+Information read from the input file: .\Cr51\Cr-51.txt
+
+
+####################################
+
+Identification record has been found
+Daughter Z: 23   Daughter A: 51   Symbol: V
+Transition type: EC or B+
+Estimated parent nuclide from identification record: Z 24, A 51
+
+Parent record has been found
+Parent Z: 24	Parent A: 51   Symbol: Cr
+Parent energy of the initial level: G.S.
+Parent spin and parity | Read: 7/2- | Treated as: 7/2-
+Parent half-life: 27.704 (4) D or 2.39363E6 (35) S
+Parent Q-value: 752.62 (24) keV
+
+Total branching ratio: 1
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: G.S.
+Level spin and parity | Read: 7/2- | Treated as: 7/2-
+Level half-life: STABLE
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 90.09 (2) %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 5.39
+
+------------------------------------
+Level record has been found
+Daughter energy of the final level: 320.0835 (4) keV
+Level spin and parity | Read: 5/2- | Treated as: 5/2-
+Level half-life: 184 (6) PS or 1.84E-10 (6) S
+
+Electron capture record has been found
+Measured energy of the ec transition not given.
+Intensity of the ec branch: 9.91 (2) %
+Total intensity of the decay not given.
+Transition order: allowed
+Log ft of the ec transition: 5.86
+
+####################################

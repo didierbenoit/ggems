@@ -1,0 +1,1 @@
+.\betashape.exe .\Gd153\Gd-153.txt -csv
