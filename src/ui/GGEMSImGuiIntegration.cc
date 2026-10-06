@@ -124,6 +124,18 @@ constexpr std::uint32_t k_vulkan_api_version{vk::ApiVersion13};
     candidates.emplace_back(user_fonts /
                             "JetBrainsMonoNerdFontMono-Regular.ttf");
     candidates.emplace_back(user_fonts / "DejaVuSansMono.ttf");
+
+    std::filesystem::path const jetbrains_nerd =
+      user_fonts / "JetBrainsMonoNerd";
+
+    candidates.emplace_back(jetbrains_nerd /
+                            "JetBrainsMonoNerdFont-Regular.ttf");
+    candidates.emplace_back(jetbrains_nerd /
+                            "JetBrainsMonoNerdFontMono-Regular.ttf");
+    candidates.emplace_back(jetbrains_nerd /
+                            "JetBrainsMonoNLNerdFont-Regular.ttf");
+    candidates.emplace_back(jetbrains_nerd /
+                            "JetBrainsMonoNLNerdFontMono-Regular.ttf");
   }
 
   candidates.emplace_back(
@@ -418,7 +430,7 @@ auto GGEMSImGuiIntegration::AttachVulkanBackend(VulkanBackendEpoch const &epoch)
       .pColorAttachmentFormats = &color_attachment_format_,
       .depthAttachmentFormat = static_cast<VkFormat>(epoch.depth_format),
       .stencilAttachmentFormat = static_cast<VkFormat>(epoch.stencil_format),
-  };
+    };
   init_info.CheckVkResultFn = &GGEMSImGuiIntegration::RecordBackendResult;
 
   if (!ImGui_ImplVulkan_Init(&init_info)) {
