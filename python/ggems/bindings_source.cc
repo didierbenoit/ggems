@@ -401,7 +401,7 @@ non-empty GGEMSRun time schedule, and reference_time must not be later than the
 configured run start time.
 
 Args:
-    radionuclide: Definition returned by ggems.radionuclide.create().
+    radionuclide: Definition returned by ggems.radionuclide.load().
     activity: Activity at the reference time.
     activity_unit: GGEMS activity unit.
     reference_time: Time at which activity is specified.
@@ -411,7 +411,7 @@ Returns:
     GGEMSSource: This source, allowing chained configuration.
 
 Example:
-    f18 = ggems.radionuclide.create("F-18")
+    f18 = ggems.radionuclide.load("F-18")
     source.set_radionuclide(f18, 5.0, "MBq", 0.0, "s")
 )doc",
       py::arg("radionuclide"), py::arg("activity"),

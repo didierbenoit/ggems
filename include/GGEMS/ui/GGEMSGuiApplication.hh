@@ -120,15 +120,15 @@ public:
   void Run();
 
   /*!
-   * \brief Queues the last successful CountDriven source snapshot.
+   * \brief Queues the last successful source snapshot.
    *
-   * The newest submission replaces any pending snapshot. ActivityDriven
-   *   presentation is not implemented.
+   * The newest submission replaces any pending snapshot. CountDriven and
+   *   ActivityDriven sources are both presented.
    *
    * \param[in] run Run whose completed source snapshot is copied for
    *   presentation.
-   * \throws core::GGEMSRecoverable If the GUI is uninitialized, no completed
-   *   snapshot exists, or the snapshot contains an ActivityDriven source.
+   * \throws core::GGEMSRecoverable If the GUI is uninitialized or no
+   *   completed snapshot exists.
    */
   auto SubmitLastRunSourceSnapshot(ggems::core::GGEMSRun const &run) -> void;
 

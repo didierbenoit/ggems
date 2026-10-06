@@ -34,6 +34,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include <imgui.h>
 
@@ -43,11 +44,15 @@
 #include "GGEMS/ui/detail/GGEMSWorkbenchState.hh"
 
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
+#include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
+#include "GGEMS/radioactivity/GGEMSRadionuclideEmission.hh"
 #include "GGEMS/render/GGEMSParticleTrace.hh"
 #include "GGEMS/sources/GGEMSEnergyDistributionRecord.hh"
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/sources/GGEMSSourceValidation.hh"
+#include "GGEMS/sources/GGEMSSourcePopulation.hh"
+#include "GGEMS/sources/GGEMSSourcePopulationRecord.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/units/GGEMSEnergyUnits.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
@@ -92,6 +97,142 @@ using SceneSelection = ggems::ui::detail::GGEMSWorkbenchState::SceneSelection;
 // =============================================================================
 
 /*!
+ * \brief Displays one energy law with the compact source-panel summary.
+ *
+ * \param[in] energy_record Descriptor locating the law in the packed tables.
+ * \param[in] energy_values Concatenated canonical energy tables in micro-eV.
+ * \param[in] mono_energy_micro_eV Energy displayed by a monoenergetic law.
+ */
+auto BuildEnergyLawSummary(
+  ggems::core::sources::GGEMSEnergyDistributionRecord const &energy_record,
+  std::vector<std::uint64_t> const &energy_values,
+  std::uint64_t mono_energy_micro_eV) -> void {
+  namespace core = ggems::core;
+  namespace units = ggems::units;
+
+  auto const energy_distribution_type{
+    core::sources::FromKernelEnergyDistributionType(
+      energy_record.distribution_type),
+  };
+
+  std::string const energy_distribution{
+    core::sources::ToLongName(energy_distribution_type)};
+
+  ImGui::Text("Energy distribution: %s", energy_distribution.c_str());
+
+  if (energy_distribution_type ==
+      core::sources::GGEMSEnergyDistributionType::Mono) {
+    std::string const energy =
+      units::HumanReadable(units::Energy{mono_energy_micro_eV}, 3);
+    ImGui::Text("Energy: %s", energy.c_str());
+    return;
+  }
+
+  bool const table_offset_fits =
+    energy_record.table_offset <=
+    static_cast<std::uint64_t>(energy_values.size());
+
+  std::size_t const table_offset =
+    table_offset_fits ? static_cast<std::size_t>(energy_record.table_offset)
+                      : 0U;
+
+  auto const table_count = static_cast<std::size_t>(energy_record.table_count);
+
+  bool const valid_table = table_offset_fits && table_count >= 2U &&
+                           table_count <= energy_values.size() - table_offset;
+
+  if (!valid_table) {
+    ImGui::TextDisabled("Invalid energy table metadata");
+    return;
+  }
+
+  std::string const first =
+    units::HumanReadable(units::Energy{energy_values[table_offset]}, 3);
+
+  std::string const last = units::HumanReadable(
+    units::Energy{energy_values[table_offset + table_count - 1U]}, 3);
+
+  if (energy_distribution_type ==
+      core::sources::GGEMSEnergyDistributionType::DiscreteLines) {
+    ImGui::Text("Line count: %zu", table_count);
+    ImGui::Text("Line-energy range: %s - %s", first.c_str(), last.c_str());
+  } else if (energy_distribution_type ==
+             core::sources::GGEMSEnergyDistributionType::RegularSpectrum) {
+    std::string const width = units::HumanReadable(
+      units::Energy{energy_record.regular_bin_width_micro_eV}, 3);
+    ImGui::Text("Bin count: %zu", table_count);
+    ImGui::Text("Center range: %s - %s", first.c_str(), last.c_str());
+    ImGui::Text("Bin width: %s", width.c_str());
+  } else {
+    ImGui::TextDisabled("Unknown energy distribution");
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+/*!
+ * \brief Displays the collapsed per-group summary of a radionuclide source.
+ *
+ * \param[in] source_run_snapshot Completed snapshot owning the packed groups.
+ * \param[in] population Population record of the ActivityDriven source slot.
+ * \param[in] definition Radionuclide definition retained for that slot.
+ */
+auto BuildEmissionGroupEntries(
+  ggems::core::sources::GGEMSSourceRunSnapshot const &source_run_snapshot,
+  ggems::core::sources::GGEMSSourcePopulationRecord const &population,
+  ggems::core::radioactivity::GGEMSRadionuclideDefinition const &definition)
+  -> void {
+  namespace core = ggems::core;
+
+  ImGuiTreeNodeFlags const flags =
+    ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+  if (!ImGui::TreeNodeEx("##emission_groups", flags,
+                         "Emission group details")) {
+    return;
+  }
+
+  auto const &emission_records = source_run_snapshot.GetEmissionRecords();
+  auto const &group_ranges = source_run_snapshot.GetGroupRanges();
+  auto const &energy_records =
+    source_run_snapshot.GetEnergyDistributionRecords();
+  auto const &energy_values =
+    source_run_snapshot.GetEnergyValuesMicroElectronVolt();
+  auto const emissions = definition.GetEmissions();
+
+  for (std::uint32_t offset = 0U; offset < population.emission_count;
+       ++offset) {
+    std::size_t const emission_index =
+      static_cast<std::size_t>(population.first_emission_index) + offset;
+    auto const &emission = emission_records[emission_index];
+
+    std::string_view const particle_type{
+      core::particles::ToLongName(
+        core::particles::FromKernelParticleType(emission.particle_type)),
+    };
+
+    ImGui::Text("[%u] %.*s - %.8g per decay - %llu sampled",
+                static_cast<unsigned int>(offset),
+                static_cast<int>(particle_type.size()), particle_type.data(),
+                static_cast<double>(emissions[offset].GetYieldPerDecay()),
+                static_cast<unsigned long long>(
+                  group_ranges[emission_index].primary_count));
+
+    ImGui::Indent();
+    BuildEnergyLawSummary(
+      energy_records[emission.energy_distribution_record_index], energy_values,
+      emission.mono_energy_micro_eV);
+    ImGui::Unindent();
+  }
+
+  ImGui::TreePop();
+}
+
+// =============================================================================
+// =============================================================================
+
+/*!
  * \brief Displays completed source records and trace-visibility controls.
  *
  * \param[in,out] workbench Per-source visibility and source presentation
@@ -113,16 +254,13 @@ auto BuildSourceEntries(
 
   auto const &records = source_run_snapshot->GetRecords();
   auto const &ranges = source_run_snapshot->GetRanges();
+  auto const &population_records = source_run_snapshot->GetPopulationRecords();
+  auto const &radionuclide_definitions =
+    source_run_snapshot->GetRadionuclideDefinitions();
   auto const &energy_records =
     source_run_snapshot->GetEnergyDistributionRecords();
   auto const &energy_values =
     source_run_snapshot->GetEnergyValuesMicroElectronVolt();
-
-  if (records.size() != ranges.size() ||
-      records.size() != energy_records.size()) {
-    ImGui::TextDisabled("Invalid source snapshot");
-    return;
-  }
 
   ggems::render::GGEMSParticleTraceVisibility &trace_visibility =
     workbench.trace_visibility;
@@ -133,7 +271,15 @@ auto BuildSourceEntries(
        ++source_index) {
     auto const &record = records[source_index];
     auto const &range = ranges[source_index];
-    auto const &energy_record = energy_records[source_index];
+    auto const &population = population_records[source_index];
+
+    bool const activity_driven =
+      population.population_mode ==
+      core::sources::ToKernelSourcePopulationMode(
+        core::sources::GGEMSSourcePopulationMode::ActivityDriven);
+
+    core::radioactivity::GGEMSRadionuclideDefinition const *const definition =
+      activity_driven ? radionuclide_definitions[source_index].get() : nullptr;
 
     std::string_view const source_type{
       core::sources::ToLongName(
@@ -145,6 +291,12 @@ auto BuildSourceEntries(
         core::particles::FromKernelParticleType(record.emitted_particle_type)),
     };
 
+    std::string_view const label_kind =
+      activity_driven ? std::string_view{"ActivityDriven"} : source_type;
+
+    std::string_view const label_detail =
+      activity_driven ? definition->GetCanonicalName() : particle_type;
+
     auto const emission_geometry_type{
       core::sources::FromKernelEmissionGeometryType(
         record.emission_geometry_type),
@@ -154,14 +306,6 @@ auto BuildSourceEntries(
       core::sources::FromKernelAngularDistributionType(
         record.angular_distribution_type),
     };
-
-    auto const energy_distribution_type{
-      core::sources::FromKernelEnergyDistributionType(
-        energy_record.distribution_type),
-    };
-
-    std::string const energy_distribution{
-      core::sources::ToLongName(energy_distribution_type)};
 
     std::string const emission_geometry{
       core::sources::ToLongName(emission_geometry_type)};
@@ -195,15 +339,33 @@ auto BuildSourceEntries(
 
     bool const opened = ImGui::TreeNodeEx(
       "##source_details", flags, "Source %zu - %.*s - %.*s", source_index,
-      static_cast<int>(source_type.size()), source_type.data(),
-      static_cast<int>(particle_type.size()), particle_type.data());
+      static_cast<int>(label_kind.size()), label_kind.data(),
+      static_cast<int>(label_detail.size()), label_detail.data());
 
     if (opened) {
       ImGui::Text("Source index: %zu", source_index);
       ImGui::Text("Type: %.*s", static_cast<int>(source_type.size()),
                   source_type.data());
-      ImGui::Text("Particle: %.*s", static_cast<int>(particle_type.size()),
-                  particle_type.data());
+
+      if (activity_driven) {
+        std::string_view const radionuclide_name =
+          definition->GetCanonicalName();
+
+        ImGui::TextUnformatted("Population: ActivityDriven");
+        ImGui::Text("Radionuclide: %.*s",
+                    static_cast<int>(radionuclide_name.size()),
+                    radionuclide_name.data());
+        ImGui::Text("Half-life: %.8g s",
+                    static_cast<double>(definition->GetHalfLifeSeconds()));
+        ImGui::Text("Emission groups: %u",
+                    static_cast<unsigned int>(population.emission_count));
+        ImGui::Text("Total yield: %.8g particles per decay",
+                    static_cast<double>(definition->GetTotalYieldPerDecay()));
+      } else {
+        ImGui::Text("Particle: %.*s", static_cast<int>(particle_type.size()),
+                    particle_type.data());
+      }
+
       ImGui::Text("Primary count: %llu",
                   static_cast<unsigned long long>(range.primary_count));
       ImGui::Text(
@@ -321,52 +483,12 @@ auto BuildSourceEntries(
                   static_cast<double>(record.axis_z_y),
                   static_cast<double>(record.axis_z_z));
 
-      ImGui::Text("Energy distribution: %s", energy_distribution.c_str());
-
-      if (energy_distribution_type ==
-          core::sources::GGEMSEnergyDistributionType::Mono) {
-        std::string const energy =
-          units::HumanReadable(units::Energy{record.energy_micro_eV}, 3);
-        ImGui::Text("Energy: %s", energy.c_str());
+      if (activity_driven) {
+        BuildEmissionGroupEntries(*source_run_snapshot, population,
+                                  *definition);
       } else {
-        bool const table_offset_fits =
-          energy_record.table_offset <=
-          static_cast<std::uint64_t>(energy_values.size());
-        std::size_t const table_offset =
-          table_offset_fits
-            ? static_cast<std::size_t>(energy_record.table_offset)
-            : 0U;
-        auto const table_count =
-          static_cast<std::size_t>(energy_record.table_count);
-        bool const valid_table =
-          table_offset_fits && table_count >= 2U &&
-          table_count <= energy_values.size() - table_offset;
-
-        if (!valid_table) {
-          ImGui::TextDisabled("Invalid energy table metadata");
-        } else {
-          std::string const first =
-            units::HumanReadable(units::Energy{energy_values[table_offset]}, 3);
-          std::string const last = units::HumanReadable(
-            units::Energy{energy_values[table_offset + table_count - 1U]}, 3);
-
-          if (energy_distribution_type ==
-              core::sources::GGEMSEnergyDistributionType::DiscreteLines) {
-            ImGui::Text("Line count: %zu", table_count);
-            ImGui::Text("Line-energy range: %s - %s", first.c_str(),
-                        last.c_str());
-          } else if (energy_distribution_type ==
-                     core::sources::GGEMSEnergyDistributionType::
-                       RegularSpectrum) {
-            std::string const width = units::HumanReadable(
-              units::Energy{energy_record.regular_bin_width_micro_eV}, 3);
-            ImGui::Text("Bin count: %zu", table_count);
-            ImGui::Text("Center range: %s - %s", first.c_str(), last.c_str());
-            ImGui::Text("Bin width: %s", width.c_str());
-          } else {
-            ImGui::TextDisabled("Unknown energy distribution");
-          }
-        }
+        BuildEnergyLawSummary(energy_records[source_index], energy_values,
+                              record.energy_micro_eV);
       }
 
       if (record.time_stop_ps <= record.time_start_ps) {

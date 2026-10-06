@@ -657,11 +657,6 @@ auto GGEMSGuiApplication::SubmitLastRunSourceSnapshot(
       "GGEMSRun has no successfully completed source snapshot to submit.");
   }
 
-  if (snapshot->HasActivityDrivenSource()) {
-    throw ggems::core::GGEMSRecoverable(
-      "ActivityDriven GUI presentation is not implemented.");
-  }
-
   if (!run.HasObserver() && !missing_observer_warning_emitted_) {
     missing_observer_warning_emitted_ = true;
 

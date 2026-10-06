@@ -27,9 +27,7 @@ try:
         .set_emission_point()
         .set_position(0.0, 0.0, 0.0, "mm")
         .set_angular_isotropic()
-        .set_primary_count(1000)
-        .set_particle("gamma")
-        .set_energy(59.5, "keV")
+        .set_radionuclide(am241, 100.0, "Bq", 0.0, "s")
     )
 
     # --------------------------------------------------------------------------

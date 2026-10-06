@@ -653,9 +653,9 @@ auto GGEMSRun::Run() -> void {
         });
     }
 
-    //    if (observer_config.enabled != 0U) {
-    //     observer_dump = observer_result_candidate->BuildDump();
-    //   }
+    if (observer_config.enabled != 0U) {
+      observer_dump = observer_result_candidate->BuildDump();
+    }
   }
 
   std::unique_lock snapshot_lock{source_run_snapshot_mutex_};
