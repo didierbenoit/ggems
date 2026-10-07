@@ -21,7 +21,8 @@
 
 /*!
  * \file
- * \brief Defines canonical picometer positions, displacements, and directions.
+ * \brief Defines canonical picometer positions, displacements, half extents,
+ * and directions.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -93,6 +94,32 @@ struct Displacement3PM {
    *         or equality if all three components match.
    */
   constexpr auto operator<=>(Displacement3PM const &) const = default;
+};
+
+/*!
+ * \brief Represents the half extents of an origin-centered axis-aligned box.
+ *
+ * Each component is the nonnegative distance in picometers from the box center
+ * to the corresponding pair of faces. Default initialization represents a
+ * degenerate box reduced to its center.
+ */
+struct HalfExtent3PM {
+  /*! \brief Half extent along X in picometers. */
+  DistancePM x{0};
+
+  /*! \brief Half extent along Y in picometers. */
+  DistancePM y{0};
+
+  /*! \brief Half extent along Z in picometers. */
+  DistancePM z{0};
+
+  /*!
+   * \brief Compares half extents lexicographically by x, then y, then z.
+   *
+   * \return The ordering determined by the first differing component,
+   *         or equality if all three components match.
+   */
+  constexpr auto operator<=>(HalfExtent3PM const &) const = default;
 };
 
 /*!
