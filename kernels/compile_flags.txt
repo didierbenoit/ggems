@@ -4,6 +4,8 @@ cl
 -DGGEMS_RANDOM_ENGINE=GGEMS_RANDOM_ENGINE_PHILOX
 -I.
 -Itests
+-Igeometry
+-Inavigation
 -Iparticles
 -Irandom
 -Itransport

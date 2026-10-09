@@ -78,7 +78,7 @@ constexpr std::int64_t k_one_meter_pm{1'000'000'000'000LL};
 [[nodiscard]] auto
 MakeSourceRecord(std::array<std::int64_t, 3U> const &position,
                  std::array<double, 3U> const &direction,
-                 ParticleType particle_type = ParticleType::Aionino)
+                 ParticleType particle_type = ParticleType::Gamma)
   -> SourceRecord {
   ggems::core::sources::GGEMSSource source{};
 

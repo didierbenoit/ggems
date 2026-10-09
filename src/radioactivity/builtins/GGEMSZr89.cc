@@ -416,7 +416,7 @@ constexpr std::array<std::uint64_t, 6U>
   k_conversion_1744_72_keV_energies_micro_eV{
     1'727'700'000'000ULL, 1'742'370'000'000ULL, 1'742'580'000'000ULL,
     1'742'660'000'000ULL, 1'744'480'000'000ULL, 1'744'720'000'000ULL,
-};
+  };
 
 /*! \brief Absolute line yields used as conditional relative weights. */
 constexpr std::array<double, 6U> k_conversion_1744_72_keV_line_yields{

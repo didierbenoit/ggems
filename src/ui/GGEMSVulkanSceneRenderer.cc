@@ -898,7 +898,7 @@ auto GGEMSVulkanSceneRenderer::CreateTracePipeline() -> void {
           .offset = offsetof(TraceVertex, color),
         },
       },
-  };
+    };
 
   vk::PipelineVertexInputStateCreateInfo vertex_input_state{
     .vertexBindingDescriptionCount = 1U,

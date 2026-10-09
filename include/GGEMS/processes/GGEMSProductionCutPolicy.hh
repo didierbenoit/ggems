@@ -72,7 +72,7 @@ inline constexpr std::array<GGEMSProductionCutChannel, 4U>
     GGEMSProductionCutChannel::Electron,
     GGEMSProductionCutChannel::Positron,
     GGEMSProductionCutChannel::Proton,
-};
+  };
 
 /*!
  * \brief Converts a channel to its position in four-channel arrays.

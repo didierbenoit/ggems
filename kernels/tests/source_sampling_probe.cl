@@ -47,12 +47,14 @@ source_sampling_imposed_probe(__global GGEMSSourceRecord const *source,
   float4 const position_uniforms =
     (float4)(uniform_values[0], uniform_values[1], uniform_values[2],
              uniform_values[3]);
+
   float4 const direction_uniforms =
     (float4)(uniform_values[4], uniform_values[5], uniform_values[6],
              uniform_values[7]);
 
   long3 const position =
     GGEMS_SourceSamplePositionFromUniforms(source, position_uniforms);
+
   float3 const direction = GGEMS_SourceSampleDirectionFromUniforms(
     source, position, direction_uniforms);
 
@@ -83,9 +85,11 @@ __kernel void source_initialization_random_state_probe(
     return;
   }
 
-  GGEMSParticleState const particle = GGEMS_SourceInitializePrimary(
-    19UL, source_local_primary_id, source, energy_distribution,
-    energy_values_micro_eV, cumulative_ticket_upper, sample_states, 0U);
+  GGEMSParticleState particle;
+  GGEMS_SourceInitializePrimary(19UL, source_local_primary_id, source,
+                                energy_distribution, energy_values_micro_eV,
+                                cumulative_ticket_upper, sample_states, 0U,
+                                &particle);
 
   float4 reference_position_uniforms = (float4)(0.0f);
   for (uint draw = 0U; draw < expected_position_vector_draw_count; ++draw) {
@@ -104,10 +108,12 @@ __kernel void source_initialization_random_state_probe(
 
   long3 const reference_position =
     GGEMS_SourceSamplePositionFromUniforms(source, reference_position_uniforms);
+
   float3 const reference_direction = GGEMS_SourceSampleDirectionFromUniforms(
     source, reference_position, reference_direction_uniforms);
 
   ulong reference_energy = source->energy_micro_eV;
+
   if (expected_energy_raw_draw_count != 0U) {
     reference_energy = GGEMS_EnergyDistributionSampleWithTicket(
       energy_distribution, energy_values_micro_eV, cumulative_ticket_upper,

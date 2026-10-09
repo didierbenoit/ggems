@@ -127,7 +127,7 @@ constexpr std::array<std::uint64_t, 6U>
   k_conversion_149_72_keV_energies_micro_eV{
     59'190'000'000ULL,  133'330'000'000ULL, 134'010'000'000ULL,
     136'300'000'000ULL, 146'490'000'000ULL, 149'200'000'000ULL,
-};
+  };
 
 /*! \brief Absolute line yields used as conditional relative weights. */
 constexpr std::array<double, 6U> k_conversion_149_72_keV_line_yields{
@@ -145,7 +145,7 @@ constexpr std::array<std::uint64_t, 6U>
   k_conversion_222_69_keV_energies_micro_eV{
     132'160'000'000ULL, 206'300'000'000ULL, 206'980'000'000ULL,
     209'270'000'000ULL, 219'460'000'000ULL, 222'170'000'000ULL,
-};
+  };
 
 /*! \brief Absolute line yields used as conditional relative weights. */
 constexpr std::array<double, 6U> k_conversion_222_69_keV_line_yields{
@@ -163,7 +163,7 @@ constexpr std::array<std::uint64_t, 6U>
   k_conversion_669_77_keV_energies_micro_eV{
     579'240'000'000ULL, 653'380'000'000ULL, 654'060'000'000ULL,
     656'350'000'000ULL, 666'540'000'000ULL, 669'250'000'000ULL,
-};
+  };
 
 /*! \brief Absolute line yields used as conditional relative weights. */
 constexpr std::array<double, 6U> k_conversion_669_77_keV_line_yields{
@@ -181,7 +181,7 @@ constexpr std::array<std::uint64_t, 6U>
   k_conversion_687_2_keV_energies_micro_eV{
     594'100'000'000ULL, 670'300'000'000ULL, 671'000'000'000ULL,
     673'400'000'000ULL, 683'800'000'000ULL, 686'600'000'000ULL,
-};
+  };
 
 /*! \brief Absolute line yields used as conditional relative weights. */
 constexpr std::array<double, 6U> k_conversion_687_2_keV_line_yields{
@@ -199,7 +199,7 @@ constexpr std::array<std::uint64_t, 6U>
   k_conversion_742_74_keV_energies_micro_eV{
     652'210'000'000ULL, 726'350'000'000ULL, 727'030'000'000ULL,
     729'320'000'000ULL, 739'510'000'000ULL, 742'220'000'000ULL,
-};
+  };
 
 /*! \brief Absolute line yields used as conditional relative weights. */
 constexpr std::array<double, 6U> k_conversion_742_74_keV_line_yields{
@@ -217,7 +217,7 @@ constexpr std::array<std::uint64_t, 6U>
   k_conversion_892_46_keV_energies_micro_eV{
     801'930'000'000ULL, 876'070'000'000ULL, 876'750'000'000ULL,
     879'040'000'000ULL, 889'230'000'000ULL, 891'940'000'000ULL,
-};
+  };
 
 /*! \brief Absolute line yields used as conditional relative weights. */
 constexpr std::array<double, 6U> k_conversion_892_46_keV_line_yields{

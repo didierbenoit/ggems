@@ -23,11 +23,9 @@
  * \file
  * \brief Claims source primaries and performs a diagnostic endpoint projection.
  *
- * This kernel initializes a private particle, projects its direction by the
- * nominal one-meter diagnostic scale with checked integer arithmetic, and marks
- * it killed. It does not perform physical transport, navigation, interactions,
- * time-of-flight updates, or secondary production. Only RNG states, transport
- * counters, and optional observer records are written to global memory.
+ * Aionino traverses the host-authored finite World and exits geometrically.
+ * Other species keep the diagnostic one-meter projection and Killed status.
+ * No interaction, energy loss, time-of-flight update, or secondary is modeled.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -36,13 +34,17 @@
 #include "observer/GGEMSObserverRecord.clh"
 #include "particles/GGEMSParticleState.clh"
 #include "random/GGEMSRandom.clh"
+#include "transport/GGEMSWorldTransport.clh"
 #include "transport/GGEMSDiagnosticProjection.clh"
 #include "transport/GGEMSTransportCounters.clh"
 #include "sources/GGEMSSourcePopulationRecord.clh"
 #include "sources/GGEMSSourceEmissionRecord.clh"
 #include "sources/GGEMSSourceEmissionRange.clh"
-#include "sources/GGEMSEnergyDistribution.clh"
+#include "sources/GGEMSEnergyDistributionRecord.clh"
+#include "geometry/GGEMSWorldRecord.clh"
+#include "navigation/GGEMSWorldNavigation.clh"
 #include "sources/GGEMSSource.clh"
+#include "sources/GGEMSSourceRecord.clh"
 #include "sources/GGEMSSourceRunRange.clh"
 
 #ifndef GGEMS_ENABLE_TRANSPORT_OBSERVER
@@ -50,6 +52,50 @@
 /*! \brief Enables optional source and terminal observer writes when nonzero. */
 #define GGEMS_ENABLE_TRANSPORT_OBSERVER 0
 #endif
+
+// =============================================================================
+// =============================================================================
+
+/*!
+ * \brief Out-of-line Aionino step: World transport plus its counters.
+ *
+ * This function and GGEMS_TransportAioninoToWorld are deliberately kept out of
+ * line. When the Aionino branch is inlined into the claim/initialize/complete
+ * loop below, the Intel CPU OpenCL compiler with -cl-fast-relaxed-math mixes
+ * the private particle states of neighboring work-items: multi-source
+ * histories receive each other's positions, including Gamma histories that
+ * never enter this branch. Two explicit function boundaries (this step and
+ * the Transport helper) restore correct results on every available device;
+ * one boundary alone does not. This is a documented device-compiler boundary,
+ * not a performance choice; the multi-source tests in tests/navigation guard
+ * it.
+ *
+ * \param[in] world Immutable device World parameters.
+ * \param[in,out] particle Private state; moved to the boundary on success.
+ * \param[in,out] counters Transport counters receiving the outcome.
+ * \return Zero when the history completed at the World boundary; nonzero when
+ * the birth was outside the World or the query was unresolved.
+ */
+static __attribute__((noinline)) uint GGEMS_AioninoWorldStep(
+  __global GGEMSWorldRecord const *world, GGEMSParticleState *particle,
+  volatile __global GGEMSTransportCounters *counters) {
+  uint world_exit_faces = 0U;
+  uint outcome =
+    GGEMS_TransportAioninoToWorld(world, particle, &world_exit_faces);
+
+  if (outcome == GGEMS_WORLD_EXIT) {
+    atomic_inc(&counters->escaped_world_count);
+    return 0U;
+  }
+
+  if (outcome == GGEMS_WORLD_OUTSIDE) {
+    atomic_inc(&counters->outside_world_count);
+  } else {
+    atomic_inc(&counters->unresolved_geometry_count);
+  }
+
+  return 1U;
+}
 
 // =============================================================================
 // =============================================================================
@@ -70,14 +116,11 @@
  * range selects the source slot and source-local index. Missing ranges and
  * failed birth initialization increment overflow_count and skip completion.
  *
- * After successful birth, all three direction components are scaled and all
- * three endpoint additions must succeed before any particle coordinate changes.
- * A failure retains the entire birth position and increments overflow_count. In
- * either case the particle is marked killed, its energy and time remain
- * unchanged, and terminal_particle_count and completed_history_count are
- * incremented. Thus completed_history_count alone does not certify a valid
- * projection. consumed_primary_count is incremented before birth initialization
- * and can exceed completed_history_count.
+ * Aionino calls World Navigation and commits its final accepted interval before
+ * EscapedWorld completion. Outside births and unresolved queries increment
+ * distinct failure counters without terminal publication or history completion.
+ * Other species retain the checked one-meter projection and diagnostic Killed
+ * completion. Energy, time and direction are unchanged in both paths.
  *
  * With observer support enabled, capture selection precedes initialization and
  * optional source/terminal records have zero deposited energy. All observer
@@ -120,6 +163,7 @@
  * population records.
  * \param[in] source_emission_ranges Global source-local primary ranges parallel
  * to source_emissions.
+ * \param[in] world Immutable box parameters; required for Aionino.
  */
 __kernel void particle_stream_transport(
   __global GGEMSRandomState *random_states,
@@ -137,7 +181,8 @@ __kernel void particle_stream_transport(
   __global ulong const *cumulative_ticket_upper,
   __global GGEMSSourcePopulationRecord const *source_population_records,
   __global GGEMSSourceEmissionRecord const *source_emissions,
-  __global GGEMSSourceEmissionRange const *source_emission_ranges) {
+  __global GGEMSSourceEmissionRange const *source_emission_ranges,
+  __global GGEMSWorldRecord const *world) {
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER == 0
   (void)(observer_config);
@@ -237,51 +282,57 @@ __kernel void particle_stream_transport(
     }
 #endif
 
-    long displacement_x_pm = 0L;
-    long displacement_y_pm = 0L;
-    long displacement_z_pm = 0L;
-
-    uint valid_projection = GGEMS_TryScaleDiagnosticProjectionComponent(
-      particle.direction_x, &displacement_x_pm);
-
-    if (valid_projection != 0U) {
-      valid_projection = GGEMS_TryScaleDiagnosticProjectionComponent(
-        particle.direction_y, &displacement_y_pm);
-    }
-
-    if (valid_projection != 0U) {
-      valid_projection = GGEMS_TryScaleDiagnosticProjectionComponent(
-        particle.direction_z, &displacement_z_pm);
-    }
-
-    long endpoint_x_pm = particle.position_x_pm;
-    long endpoint_y_pm = particle.position_y_pm;
-    long endpoint_z_pm = particle.position_z_pm;
-
-    if (valid_projection != 0U) {
-      valid_projection = GGEMS_TryAddDiagnosticProjectionDisplacement(
-        particle.position_x_pm, displacement_x_pm, &endpoint_x_pm);
-    }
-
-    if (valid_projection != 0U) {
-      valid_projection = GGEMS_TryAddDiagnosticProjectionDisplacement(
-        particle.position_y_pm, displacement_y_pm, &endpoint_y_pm);
-    }
-
-    if (valid_projection != 0U) {
-      valid_projection = GGEMS_TryAddDiagnosticProjectionDisplacement(
-        particle.position_z_pm, displacement_z_pm, &endpoint_z_pm);
-    }
-
-    if (valid_projection != 0U) {
-      particle.position_x_pm = endpoint_x_pm;
-      particle.position_y_pm = endpoint_y_pm;
-      particle.position_z_pm = endpoint_z_pm;
+    if (particle.particle_type == GGEMS_PARTICLE_TYPE_AIONINO) {
+      if (GGEMS_AioninoWorldStep(world, &particle, counters) != 0U) {
+        continue;
+      }
     } else {
-      atomic_inc(&counters->overflow_count);
-    }
+      long displacement_x_pm = 0L;
+      long displacement_y_pm = 0L;
+      long displacement_z_pm = 0L;
 
-    particle.status = GGEMS_PARTICLE_STATUS_KILLED;
+      uint valid_projection = GGEMS_TryScaleDiagnosticProjectionComponent(
+        particle.direction_x, &displacement_x_pm);
+
+      if (valid_projection != 0U) {
+        valid_projection = GGEMS_TryScaleDiagnosticProjectionComponent(
+          particle.direction_y, &displacement_y_pm);
+      }
+
+      if (valid_projection != 0U) {
+        valid_projection = GGEMS_TryScaleDiagnosticProjectionComponent(
+          particle.direction_z, &displacement_z_pm);
+      }
+
+      long endpoint_x_pm = particle.position_x_pm;
+      long endpoint_y_pm = particle.position_y_pm;
+      long endpoint_z_pm = particle.position_z_pm;
+
+      if (valid_projection != 0U) {
+        valid_projection = GGEMS_TryAddDiagnosticProjectionDisplacement(
+          particle.position_x_pm, displacement_x_pm, &endpoint_x_pm);
+      }
+
+      if (valid_projection != 0U) {
+        valid_projection = GGEMS_TryAddDiagnosticProjectionDisplacement(
+          particle.position_y_pm, displacement_y_pm, &endpoint_y_pm);
+      }
+
+      if (valid_projection != 0U) {
+        valid_projection = GGEMS_TryAddDiagnosticProjectionDisplacement(
+          particle.position_z_pm, displacement_z_pm, &endpoint_z_pm);
+      }
+
+      if (valid_projection != 0U) {
+        particle.position_x_pm = endpoint_x_pm;
+        particle.position_y_pm = endpoint_y_pm;
+        particle.position_z_pm = endpoint_z_pm;
+      } else {
+        atomic_inc(&counters->overflow_count);
+      }
+
+      particle.status = GGEMS_PARTICLE_STATUS_KILLED;
+    }
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER
     if (capture_history != 0U) {

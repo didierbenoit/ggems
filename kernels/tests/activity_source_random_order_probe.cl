@@ -52,25 +52,32 @@ __kernel void activity_source_random_order_probe(
     return;
   }
 
-  GGEMSParticleState const particle =
-    GGEMS_SourceInitializeActivityDrivenPrimary(
-      19UL, 23UL, source, population, emission, energy_distribution,
-      energy_values_micro_eV, cumulative_ticket_upper, sample_states, 0U);
+  GGEMSParticleState particle;
+  GGEMS_SourceInitializeActivityDrivenPrimary(
+    19UL, 23UL, source, population, emission, energy_distribution,
+    energy_values_micro_eV, cumulative_ticket_upper, sample_states, 0U,
+    &particle);
 
   uint const reference_time_word = GGEMS_RndmUInt32(reference_states, 0U);
+
   float4 const reference_position_uniforms =
     GGEMS_RndmUniform4(reference_states, 0U);
+
   float4 const reference_direction_uniforms =
     GGEMS_RndmUniform4(reference_states, 0U);
+
   uint const reference_energy_word = GGEMS_RndmUInt32(reference_states, 0U);
 
   ulong const reference_time = GGEMS_SampleRadioactiveTimeFromRaw(
     source->time_start_ps, source->time_stop_ps, population->scaled_decay,
     reference_time_word);
+
   long3 const reference_position =
     GGEMS_SourceSamplePositionFromUniforms(source, reference_position_uniforms);
+
   float3 const reference_direction = GGEMS_SourceSampleDirectionFromUniforms(
     source, reference_position, reference_direction_uniforms);
+
   ulong const reference_energy = GGEMS_EnergyDistributionSampleWithTicket(
     energy_distribution, energy_values_micro_eV, cumulative_ticket_upper,
     reference_energy_word);

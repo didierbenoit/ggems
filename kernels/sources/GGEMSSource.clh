@@ -516,15 +516,17 @@ static inline float3 GGEMS_SourceSampleDirection(
  * \param[in,out] random_states Global RNG-state array; the selected element is
  * exclusively owned.
  * \param[in] worker_id Valid RNG-state buffer index for this worker.
- * \return Fully initialized primary state by value.
+ * \param[out] particle Private destination initialized directly without a
+ * struct return.
  */
-static inline GGEMSParticleState GGEMS_SourceInitializePrimary(
+static inline void GGEMS_SourceInitializePrimary(
   ulong global_primary_id, ulong source_local_primary_id,
   __global GGEMSSourceRecord const *source,
   __global GGEMSEnergyDistributionRecord const *energy_distribution,
   __global ulong const *energy_values_micro_eV,
   __global ulong const *cumulative_ticket_upper,
-  __global GGEMSRandomState *random_states, uint worker_id) {
+  __global GGEMSRandomState *random_states, uint worker_id,
+  __private GGEMSParticleState *particle) {
   (void)(source_local_primary_id);
 
   ulong const sampled_time_ps = source->time_start_ps;
@@ -539,36 +541,32 @@ static inline GGEMSParticleState GGEMS_SourceInitializePrimary(
     source->energy_micro_eV, energy_distribution, energy_values_micro_eV,
     cumulative_ticket_upper, random_states, worker_id);
 
-  GGEMSParticleState particle;
+  particle->global_particle_id = global_primary_id;
+  particle->track_id = 0UL;
+  particle->parent_track_id = GGEMS_INVALID_ID_U64;
 
-  particle.global_particle_id = global_primary_id;
-  particle.track_id = 0UL;
-  particle.parent_track_id = GGEMS_INVALID_ID_U64;
+  particle->time_ps = sampled_time_ps;
 
-  particle.time_ps = sampled_time_ps;
+  particle->position_x_pm = sampled_position.x;
+  particle->position_y_pm = sampled_position.y;
+  particle->position_z_pm = sampled_position.z;
 
-  particle.position_x_pm = sampled_position.x;
-  particle.position_y_pm = sampled_position.y;
-  particle.position_z_pm = sampled_position.z;
+  particle->particle_type = source->emitted_particle_type;
+  particle->status = GGEMS_PARTICLE_STATUS_ALIVE;
+  particle->generation = 0U;
+  particle->flags = 0U;
 
-  particle.particle_type = source->emitted_particle_type;
-  particle.status = GGEMS_PARTICLE_STATUS_ALIVE;
-  particle.generation = 0U;
-  particle.flags = 0U;
+  particle->current_navigator_id = GGEMS_INVALID_ID_U32;
+  particle->current_volume_id = GGEMS_INVALID_ID_U32;
+  particle->material_id = GGEMS_INVALID_ID_U32;
+  particle->region_id = GGEMS_INVALID_ID_U32;
 
-  particle.current_navigator_id = GGEMS_INVALID_ID_U32;
-  particle.current_volume_id = GGEMS_INVALID_ID_U32;
-  particle.material_id = GGEMS_INVALID_ID_U32;
-  particle.region_id = GGEMS_INVALID_ID_U32;
+  particle->direction_x = sampled_direction.x;
+  particle->direction_y = sampled_direction.y;
+  particle->direction_z = sampled_direction.z;
+  particle->direction_w = 0.0F;
 
-  particle.direction_x = sampled_direction.x;
-  particle.direction_y = sampled_direction.y;
-  particle.direction_z = sampled_direction.z;
-  particle.direction_w = 0.0F;
-
-  particle.energy_micro_eV = sampled_energy_micro_eV;
-
-  return particle;
+  particle->energy_micro_eV = sampled_energy_micro_eV;
 }
 
 // =============================================================================
@@ -603,9 +601,10 @@ static inline GGEMSParticleState GGEMS_SourceInitializePrimary(
  * \param[in,out] random_states Global RNG-state array; the selected element is
  * exclusively owned.
  * \param[in] worker_id Valid RNG-state buffer index for this worker.
- * \return Fully initialized primary state by value.
+ * \param[out] particle Private destination initialized directly without a
+ * struct return.
  */
-static inline GGEMSParticleState GGEMS_SourceInitializeActivityDrivenPrimary(
+static inline void GGEMS_SourceInitializeActivityDrivenPrimary(
   ulong global_primary_id, ulong source_local_primary_id,
   __global GGEMSSourceRecord const *source,
   __global GGEMSSourcePopulationRecord const *population,
@@ -613,7 +612,8 @@ static inline GGEMSParticleState GGEMS_SourceInitializeActivityDrivenPrimary(
   __global GGEMSEnergyDistributionRecord const *energy_distribution,
   __global ulong const *energy_values_micro_eV,
   __global ulong const *cumulative_ticket_upper,
-  __global GGEMSRandomState *random_states, uint worker_id) {
+  __global GGEMSRandomState *random_states, uint worker_id,
+  __private GGEMSParticleState *particle) {
   (void)(source_local_primary_id);
 
   uint const time_raw_word = GGEMS_RndmUInt32(random_states, worker_id);
@@ -631,35 +631,31 @@ static inline GGEMSParticleState GGEMS_SourceInitializeActivityDrivenPrimary(
     emission->mono_energy_micro_eV, energy_distribution, energy_values_micro_eV,
     cumulative_ticket_upper, random_states, worker_id);
 
-  GGEMSParticleState particle;
+  particle->global_particle_id = global_primary_id;
+  particle->track_id = 0UL;
+  particle->parent_track_id = GGEMS_INVALID_ID_U64;
+  particle->time_ps = sampled_time_ps;
 
-  particle.global_particle_id = global_primary_id;
-  particle.track_id = 0UL;
-  particle.parent_track_id = GGEMS_INVALID_ID_U64;
-  particle.time_ps = sampled_time_ps;
+  particle->position_x_pm = sampled_position.x;
+  particle->position_y_pm = sampled_position.y;
+  particle->position_z_pm = sampled_position.z;
 
-  particle.position_x_pm = sampled_position.x;
-  particle.position_y_pm = sampled_position.y;
-  particle.position_z_pm = sampled_position.z;
+  particle->particle_type = emission->particle_type;
+  particle->status = GGEMS_PARTICLE_STATUS_ALIVE;
+  particle->generation = 0U;
+  particle->flags = 0U;
 
-  particle.particle_type = emission->particle_type;
-  particle.status = GGEMS_PARTICLE_STATUS_ALIVE;
-  particle.generation = 0U;
-  particle.flags = 0U;
+  particle->current_navigator_id = GGEMS_INVALID_ID_U32;
+  particle->current_volume_id = GGEMS_INVALID_ID_U32;
+  particle->material_id = GGEMS_INVALID_ID_U32;
+  particle->region_id = GGEMS_INVALID_ID_U32;
 
-  particle.current_navigator_id = GGEMS_INVALID_ID_U32;
-  particle.current_volume_id = GGEMS_INVALID_ID_U32;
-  particle.material_id = GGEMS_INVALID_ID_U32;
-  particle.region_id = GGEMS_INVALID_ID_U32;
+  particle->direction_x = sampled_direction.x;
+  particle->direction_y = sampled_direction.y;
+  particle->direction_z = sampled_direction.z;
+  particle->direction_w = 0.0F;
 
-  particle.direction_x = sampled_direction.x;
-  particle.direction_y = sampled_direction.y;
-  particle.direction_z = sampled_direction.z;
-  particle.direction_w = 0.0F;
-
-  particle.energy_micro_eV = sampled_energy_micro_eV;
-
-  return particle;
+  particle->energy_micro_eV = sampled_energy_micro_eV;
 }
 
 // =============================================================================
@@ -710,16 +706,16 @@ static inline uint GGEMS_SourceTryInitializePrimary(
   __global ulong const *energy_values_micro_eV,
   __global ulong const *cumulative_ticket_upper,
   __global GGEMSRandomState *random_states, uint worker_id,
-  GGEMSParticleState *particle) {
+  __private GGEMSParticleState *particle) {
   if (population->population_mode ==
       GGEMS_SOURCE_POPULATION_MODE_COUNT_DRIVEN) {
     __global GGEMSEnergyDistributionRecord const *energy_distribution =
       &energy_distribution_records[source_index];
 
-    *particle = GGEMS_SourceInitializePrimary(
+    GGEMS_SourceInitializePrimary(
       global_primary_id, source_local_primary_id, source, energy_distribution,
-      energy_values_micro_eV, cumulative_ticket_upper, random_states,
-      worker_id);
+      energy_values_micro_eV, cumulative_ticket_upper, random_states, worker_id,
+      particle);
 
     return 1U;
   }
@@ -742,10 +738,10 @@ static inline uint GGEMS_SourceTryInitializePrimary(
         &energy_distribution_records[emission
                                        ->energy_distribution_record_index];
 
-      *particle = GGEMS_SourceInitializeActivityDrivenPrimary(
+      GGEMS_SourceInitializeActivityDrivenPrimary(
         global_primary_id, source_local_primary_id, source, population,
         emission, energy_distribution, energy_values_micro_eV,
-        cumulative_ticket_upper, random_states, worker_id);
+        cumulative_ticket_upper, random_states, worker_id, particle);
 
       return 1U;
     }

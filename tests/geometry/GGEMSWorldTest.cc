@@ -25,7 +25,6 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-#include <array>
 #include <cstdint>
 #include <limits>
 #include <type_traits>
@@ -44,7 +43,6 @@ namespace {
 
 using namespace ggems::units;
 using ggems::geometry::GGEMSWorld;
-using ggems::geometry::GGEMSWorldRegion;
 using ggems::geometry::MakePositionPM;
 
 static_assert(!std::is_default_constructible_v<GGEMSWorld>);
@@ -114,10 +112,6 @@ TEST(GGEMSWorld, AcceptsSmallestWorld) {
 
   EXPECT_EQ(world.GetHalfExtentPM(),
             (ggems::geometry::HalfExtent3PM{.x = 1ULL, .y = 1ULL, .z = 1ULL}));
-  EXPECT_EQ(world.Classify(MakePositionPM(0, 0, 0)), GGEMSWorldRegion::Inside);
-  EXPECT_EQ(world.Classify(MakePositionPM(1, 0, 0)),
-            GGEMSWorldRegion::Boundary);
-  EXPECT_EQ(world.Classify(MakePositionPM(2, 0, 0)), GGEMSWorldRegion::Outside);
 }
 
 // =============================================================================
@@ -155,103 +149,30 @@ TEST(GGEMSWorld, AcceptsLargestWorldAndRejectsLargerSizes) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSWorld, ClassifiesExactFacesAndOnePicometerNeighbors) {
+TEST(GGEMSWorld, ContainsClosedBoxPositionsForStaticInputValidation) {
   // Asymmetric World so that each axis is checked against its own half extent.
   GGEMSWorld const world{20_pm, 40_pm, 60_pm, Vacuum()};
 
-  EXPECT_EQ(world.Classify(MakePositionPM(0, 0, 0)), GGEMSWorldRegion::Inside);
+  EXPECT_TRUE(world.Contains(MakePositionPM(0, 0, 0)));
+  EXPECT_TRUE(world.Contains(MakePositionPM(10, -20, 30)));
+  EXPECT_TRUE(world.Contains(MakePositionPM(-10, 20, -30)));
+  EXPECT_TRUE(world.Contains(MakePositionPM(9, -19, 29)));
+  EXPECT_FALSE(world.Contains(MakePositionPM(11, 0, 0)));
+  EXPECT_FALSE(world.Contains(MakePositionPM(0, -21, 0)));
+  EXPECT_FALSE(world.Contains(MakePositionPM(0, 0, 31)));
+  EXPECT_FALSE(world.Contains(MakePositionPM(10, 20, 31)));
 
-  struct AxisCase {
-    std::int64_t half;
-    std::int64_t x_scale;
-    std::int64_t y_scale;
-    std::int64_t z_scale;
-  };
-
-  constexpr std::array<AxisCase, 3U> k_cases{{
-    {.half = 10, .x_scale = 1, .y_scale = 0, .z_scale = 0},
-    {.half = 20, .x_scale = 0, .y_scale = 1, .z_scale = 0},
-    {.half = 30, .x_scale = 0, .y_scale = 0, .z_scale = 1},
-  }};
-
-  for (auto const &axis : k_cases) {
-    for (std::int64_t const sign : {-1LL, 1LL}) {
-      SCOPED_TRACE(testing::Message()
-                   << "half=" << axis.half << " sign=" << sign);
-
-      auto const position_at =
-        [&](std::int64_t value) -> ggems::geometry::Position3PM {
-        return MakePositionPM(sign * value * axis.x_scale,
-                              sign * value * axis.y_scale,
-                              sign * value * axis.z_scale);
-      };
-
-      EXPECT_EQ(world.Classify(position_at(axis.half - 1)),
-                GGEMSWorldRegion::Inside);
-      EXPECT_EQ(world.Classify(position_at(axis.half)),
-                GGEMSWorldRegion::Boundary);
-      EXPECT_EQ(world.Classify(position_at(axis.half + 1)),
-                GGEMSWorldRegion::Outside);
-
-      EXPECT_TRUE(world.Contains(position_at(axis.half - 1)));
-      EXPECT_TRUE(world.Contains(position_at(axis.half)));
-      EXPECT_FALSE(world.Contains(position_at(axis.half + 1)));
-    }
-  }
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSWorld, ClassifiesEdgesCornersAndMixedCases) {
-  GGEMSWorld const world{20_pm, 40_pm, 60_pm, Vacuum()};
-
-  // Edge: two faces reached simultaneously, third axis strictly inside.
-  EXPECT_EQ(world.Classify(MakePositionPM(10, -20, 0)),
-            GGEMSWorldRegion::Boundary);
-
-  // Corner: all three faces reached simultaneously.
-  EXPECT_EQ(world.Classify(MakePositionPM(-10, 20, -30)),
-            GGEMSWorldRegion::Boundary);
-
-  // One face reached while another axis is outside: Outside wins.
-  EXPECT_EQ(world.Classify(MakePositionPM(10, 21, 0)),
-            GGEMSWorldRegion::Outside);
-  EXPECT_EQ(world.Classify(MakePositionPM(-11, -20, -30)),
-            GGEMSWorldRegion::Outside);
-
-  // Interior point with negative coordinates.
-  EXPECT_EQ(world.Classify(MakePositionPM(-9, -19, -29)),
-            GGEMSWorldRegion::Inside);
-}
-
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSWorld, ClassifiesExtremeCoordinatesWithoutOverflow) {
   constexpr std::int64_t k_min = std::numeric_limits<std::int64_t>::min();
   constexpr std::int64_t k_max = std::numeric_limits<std::int64_t>::max();
-
-  GGEMSWorld const small{2_pm, 2_pm, 2_pm, Vacuum()};
-  EXPECT_EQ(small.Classify(MakePositionPM(k_min, 0, 0)),
-            GGEMSWorldRegion::Outside);
-  EXPECT_EQ(small.Classify(MakePositionPM(0, k_max, 0)),
-            GGEMSWorldRegion::Outside);
+  EXPECT_FALSE(world.Contains(MakePositionPM(k_min, 0, 0)));
+  EXPECT_FALSE(world.Contains(MakePositionPM(0, k_max, 0)));
 
   Length const max_size{k_max_size_pm};
   GGEMSWorld const largest{max_size, max_size, max_size, Vacuum()};
-  EXPECT_EQ(largest.Classify(MakePositionPM(k_min, 0, 0)),
-            GGEMSWorldRegion::Outside);
-  EXPECT_EQ(largest.Classify(MakePositionPM(0, 0, k_max)),
-            GGEMSWorldRegion::Outside);
-  EXPECT_EQ(largest.Classify(
-              MakePositionPM(-k_max_half_pm, k_max_half_pm, -k_max_half_pm)),
-            GGEMSWorldRegion::Boundary);
-  EXPECT_EQ(
-    largest.Classify(MakePositionPM(-k_max_half_pm + 1, k_max_half_pm - 1, 0)),
-    GGEMSWorldRegion::Inside);
-  EXPECT_EQ(largest.Classify(MakePositionPM(0, -k_max_half_pm - 1, 0)),
-            GGEMSWorldRegion::Outside);
+  EXPECT_TRUE(largest.Contains(
+    MakePositionPM(-k_max_half_pm, k_max_half_pm, -k_max_half_pm)));
+  EXPECT_FALSE(largest.Contains(MakePositionPM(0, -k_max_half_pm - 1, 0)));
+  EXPECT_FALSE(largest.Contains(MakePositionPM(k_min, 0, 0)));
 }
 
 // =============================================================================
@@ -289,15 +210,9 @@ TEST(GGEMSWorld, PreservesExactFacesBeyondBinary64IntegerPrecision) {
   GGEMSWorld const world{size, size, size, Vacuum()};
   EXPECT_EQ(world.GetHalfExtentPM().x, static_cast<std::uint64_t>(k_half_pm));
 
-  for (std::int64_t const sign : {-1LL, 1LL}) {
-    SCOPED_TRACE(testing::Message() << "sign=" << sign);
-    EXPECT_EQ(world.Classify(MakePositionPM(sign * (k_half_pm - 1), 0, 0)),
-              GGEMSWorldRegion::Inside);
-    EXPECT_EQ(world.Classify(MakePositionPM(0, sign * k_half_pm, 0)),
-              GGEMSWorldRegion::Boundary);
-    EXPECT_EQ(world.Classify(MakePositionPM(0, 0, sign * (k_half_pm + 1))),
-              GGEMSWorldRegion::Outside);
-  }
+  EXPECT_EQ(world.BuildRecord().half_extent_x_pm, k_half_pm);
+  EXPECT_EQ(world.GetLowerCornerPM().x, -k_half_pm);
+  EXPECT_EQ(world.GetUpperCornerPM().x, k_half_pm);
 }
 
 // =============================================================================

@@ -429,7 +429,7 @@ constexpr std::array<std::uint64_t, 268U>
       644'790'000'000ULL, 648'119'000'000ULL, 653'900'000'000ULL,
       699'533'000'000ULL,
     },
-};
+  };
 
 /*!
  * \brief Main-partition conversion electrons per parent decay, parallel to line
@@ -588,7 +588,7 @@ constexpr std::array<std::uint64_t, 248U>
       783'340'000'000ULL, 784'170'000'000ULL, 788'160'000'000ULL,
       801'160'000'000ULL, 804'870'000'000ULL,
     },
-};
+  };
 
 /*!
  * \brief Weak-partition conversion electrons per parent decay, parallel to line

@@ -140,7 +140,7 @@ constexpr std::array<std::uint64_t, 6U>
       52'213'300'000ULL,
       53'018'200'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -172,7 +172,7 @@ constexpr std::array<std::uint64_t, 6U>
       78'665'300'000ULL,
       79'470'200'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -204,7 +204,7 @@ constexpr std::array<std::uint64_t, 6U>
       80'049'000'000ULL,
       80'853'900'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -236,7 +236,7 @@ constexpr std::array<std::uint64_t, 6U>
       159'663'200'000ULL,
       160'468'100'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -268,7 +268,7 @@ constexpr std::array<std::uint64_t, 6U>
       222'288'100'000ULL,
       223'093'000'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -300,7 +300,7 @@ constexpr std::array<std::uint64_t, 6U>
       275'450'300'000ULL,
       276'255'200'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -332,7 +332,7 @@ constexpr std::array<std::uint64_t, 6U>
       301'902'300'000ULL,
       302'707'200'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -364,7 +364,7 @@ constexpr std::array<std::uint64_t, 6U>
       355'064'500'000ULL,
       355'869'400'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -396,7 +396,7 @@ constexpr std::array<std::uint64_t, 6U>
       382'900'200'000ULL,
       383'705'100'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */

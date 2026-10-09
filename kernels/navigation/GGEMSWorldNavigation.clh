@@ -1,0 +1,322 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Finds the exact first forward World face for a binary32 ray.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_WORLD_NAVIGATION_CLH
+#define GGEMS_WORLD_NAVIGATION_CLH
+
+#include "geometry/GGEMSWorldRecord.clh"
+
+#define GGEMS_WORLD_EXIT 0U
+#define GGEMS_WORLD_OUTSIDE 1U
+#define GGEMS_WORLD_UNRESOLVED 2U
+
+/*!
+ * \brief Face bits of the World crossing mask.
+ *
+ * `exit_faces` contains exactly the forward World planes attaining the
+ * minimum nonnegative ray parameter for a nonzero direction component.
+ * Equality is tested on the unrounded rational parameter. Parallel or
+ * coincident planes, inward planes at a zero-distance outward exit, and planes
+ * touched only by canonical endpoint rounding are excluded; every true
+ * simultaneous crossing is included. The witness is authoritative
+ * independently of the rounded endpoint.
+ */
+
+#define GGEMS_WORLD_FACE_MINUS_X 1U
+#define GGEMS_WORLD_FACE_PLUS_X 2U
+#define GGEMS_WORLD_FACE_MINUS_Y 4U
+#define GGEMS_WORLD_FACE_PLUS_Y 8U
+#define GGEMS_WORLD_FACE_MINUS_Z 16U
+#define GGEMS_WORLD_FACE_PLUS_Z 32U
+
+/*! \brief Exact magnitude m*2^exponent of one finite binary32 component. */
+typedef struct GGEMSWorldDirection {
+  /*! \brief Unsigned significand; zero denotes a parallel component. */
+  uint mantissa;
+
+  /*! \brief Binary exponent applied to the significand. */
+  int exponent;
+
+  /*! \brief One if the original component sign bit is set. */
+  uint negative;
+} GGEMSWorldDirection;
+
+/*!
+ * \brief Decodes a component without arithmetic that could flush subnormals.
+ * \param[in] value Finite binary32 component, including signed zero.
+ * \return Exact sign, significand, and binary exponent.
+ */
+static inline GGEMSWorldDirection GGEMS_WorldDecodeDirection(float value) {
+  uint bits = as_uint(value);
+  uint biased = (bits >> 23U) & 255U;
+  GGEMSWorldDirection result;
+  result.mantissa = (bits & 0x7FFFFFU) | (biased != 0U ? 0x800000U : 0U);
+  result.exponent = biased == 0U ? -149 : (int)biased - 150;
+  result.negative = bits >> 31U;
+  return result;
+}
+
+/*!
+ * \brief Returns the binary length of a nonnegative two-limb integer.
+ * \param[in] value Unsigned integer with low limb in x and high limb in y.
+ * \return Zero for zero, otherwise the position of the leading bit plus one.
+ */
+static inline int GGEMS_WorldBitLength(ulong2 value) {
+  return value.y != 0UL ? 128 - (int)clz(value.y) : 64 - (int)clz(value.x);
+}
+
+/*!
+ * \brief Left-aligns a nonzero <=87-bit cross product without losing bits.
+ * \param[in] value Nonzero gap-times-significand product, low limb first.
+ * \param[in] length Actual binary length of value, in [1,87].
+ * \return Product shifted so its leading bit is at position 127.
+ */
+static inline ulong2 GGEMS_WorldNormalizeProduct(ulong2 value, int length) {
+  int shift = 128 - length;
+  if (shift >= 64) {
+    return (ulong2)(0UL, value.x << (shift - 64));
+  }
+  return (ulong2)(value.x << shift,
+                  (value.y << shift) | (value.x >> (64 - shift)));
+}
+
+/*!
+ * \brief Compares two exact nonnegative scaled cross products.
+ * \param[in] a First <=87-bit integer product, low limb first.
+ * \param[in] ea Binary exponent applied to a.
+ * \param[in] b Second <=87-bit integer product, low limb first.
+ * \param[in] eb Binary exponent applied to b.
+ * \return -1, 0, or +1 according to the exact ordering of a*2^ea and b*2^eb.
+ */
+static inline int GGEMS_WorldCompareScaled(ulong2 a, int ea, ulong2 b, int eb) {
+  int la = GGEMS_WorldBitLength(a);
+  int lb = GGEMS_WorldBitLength(b);
+
+  if (la == 0 || lb == 0) {
+    return (la != 0) - (lb != 0);
+  }
+
+  if (la + ea != lb + eb) {
+    return la + ea < lb + eb ? -1 : 1;
+  }
+
+  a = GGEMS_WorldNormalizeProduct(a, la);
+  b = GGEMS_WorldNormalizeProduct(b, lb);
+
+  if (a.y != b.y) {
+    return a.y < b.y ? -1 : 1;
+  }
+
+  return (a.x > b.x) - (a.x < b.x);
+}
+
+/*!
+ * \brief Forms an exact <=87-bit gap-times-significand product.
+ * \param[in] gap Nonnegative signed-safe face gap in pm.
+ * \param[in] mantissa Unsigned binary32 significand, at most 24 bits.
+ * \return Full product with low limb in x and high limb in y.
+ */
+static inline ulong2 GGEMS_WorldProduct(ulong gap, uint mantissa) {
+  // Two 32-bit partial products instead of mul_hi(ulong, ulong): the 64-bit
+  // mul_hi crashes the Intel Graphics compiler (IGC internal error) when the
+  // program is built with -cl-fast-relaxed-math on Iris Xe.
+  ulong const low_part = (gap & 0xFFFFFFFFUL) * (ulong)mantissa;
+  ulong const high_part = (gap >> 32U) * (ulong)mantissa;
+  ulong const low = low_part + (high_part << 32U);
+  ulong const carry = low < low_part ? 1UL : 0UL;
+  return (ulong2)(low, (high_part >> 32U) + carry);
+}
+
+/*!
+ * \brief Reports whether any of the low count bits is nonzero.
+ * \param[in] value Unsigned product, low limb first.
+ * \param[in] count Bit count; nonpositive means none, >=128 means all.
+ * \return Nonzero if a selected bit is set.
+ */
+static inline uint GGEMS_WorldLowBits(ulong2 value, int count) {
+  if (count <= 0) {
+    return 0U;
+  }
+
+  if (count >= 128) {
+    return (value.x | value.y) != 0UL;
+  }
+
+  if (count >= 64) {
+    return value.x != 0UL || (value.y & ((1UL << (count - 64)) - 1UL)) != 0UL;
+  }
+
+  return (value.x & ((1UL << count) - 1UL)) != 0UL;
+}
+
+/*!
+ * \brief Divides numerator*2^shift by a positive <=24-bit denominator.
+ *
+ * Returns the floor and the fractional comparison with 1/2. The bit stream
+ * includes one fractional bit; remaining numerator bits plus remainder decide
+ * exact equality. At most 364 iterations for binary32 component ratios.
+ * \param[in] numerator Unsigned <=87-bit product, low limb first.
+ * \param[in] shift Binary scale; supported binary32 ratios are in [-276,276].
+ * \param[in] denominator Positive binary32 significand, at most 24 bits.
+ * \param[out] quotient Private floor of the ratio when representable.
+ * \param[out] half_compare Private -1, 0, or +1 for fraction versus one half.
+ * \return Nonzero if the unsigned quotient fits; failure outputs are ignored.
+ */
+static inline uint GGEMS_WorldDivide(ulong2 numerator, int shift,
+                                     uint denominator, ulong *quotient,
+                                     int *half_compare) {
+  int length = GGEMS_WorldBitLength(numerator);
+  *quotient = 0UL;
+  *half_compare = -1;
+
+  if (length == 0 || length - 1 + shift < -1) {
+    return 1U;
+  }
+
+  uint remainder = 0U;
+  for (int place = length - 1 + shift; place >= -1; --place) {
+    int bit_index = place - shift;
+    uint bit = 0U;
+
+    if (bit_index >= 0 && bit_index < 128) {
+      bit = bit_index < 64 ? (uint)((numerator.x >> bit_index) & 1UL)
+                           : (uint)((numerator.y >> (bit_index - 64)) & 1UL);
+    }
+
+    remainder = (remainder << 1U) | bit;
+    uint digit = remainder >= denominator;
+
+    if (digit != 0U) {
+      remainder -= denominator;
+    }
+
+    if (place >= 0 && digit != 0U) {
+      if (place >= 64) {
+        return 0U;
+      }
+      *quotient |= 1UL << place;
+    }
+
+    if (place == -1 && digit != 0U) {
+      *half_compare =
+        remainder != 0U || GGEMS_WorldLowBits(numerator, bit_index) != 0U ? 1
+                                                                          : 0;
+    }
+  }
+
+  return 1U;
+}
+
+/*! \brief Boundary witness retaining the exact, unquantized ray parameter. */
+typedef struct GGEMSWorldBoundary {
+  /*! \brief Forward gap to the chosen face in exact integer pm. */
+  ulong gap_pm;
+
+  /*! \brief Chosen component; gap divided by its magnitude is the limit. */
+  GGEMSWorldDirection direction;
+
+  /*! \brief Exact simultaneous crossing planes in -X,+X,-Y,+Y,-Z,+Z order. */
+  uint faces;
+
+  /*! \brief Exit witness, outside birth, or unresolved numerical state. */
+  uint status;
+} GGEMSWorldBoundary;
+
+/*!
+ * \brief Finds the first exit from the closed origin-centered World.
+ *
+ * Position comparisons and face ties are exact. Zero components are parallel;
+ * coincident axes remain on the closed support until another face is crossed.
+ * An outward boundary start exits at zero. No RNG or position mutation occurs.
+ * \param[in] world Valid host-authored half extents, or all-zero if absent.
+ * \param[in] position Canonical global integer-pm anchor.
+ * \param[in] direction Stored Source unit direction, subject to binary32 error.
+ * \return Exact boundary witness, outside input, or unresolved direction/World.
+ */
+static inline GGEMSWorldBoundary
+GGEMS_WorldFindBoundary(__global GGEMSWorldRecord const *world, long3 position,
+                        float3 direction) {
+  GGEMSWorldBoundary result = {0UL, {0U, 0, 0U}, 0U, GGEMS_WORLD_UNRESOLVED};
+
+  if (world->half_extent_x_pm == 0L) {
+    return result;
+  }
+
+  long3 half_extent = (long3)(world->half_extent_x_pm, world->half_extent_y_pm,
+                              world->half_extent_z_pm);
+
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    if (position[axis] < -half_extent[axis] ||
+        position[axis] > half_extent[axis]) {
+      result.status = GGEMS_WORLD_OUTSIDE;
+      return result;
+    }
+    if ((as_uint(direction[axis]) & 0x7F800000U) == 0x7F800000U) {
+      return result;
+    }
+  }
+
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    GGEMSWorldDirection component = GGEMS_WorldDecodeDirection(direction[axis]);
+
+    if (component.mantissa == 0U) {
+      continue;
+    }
+
+    ulong gap =
+      (ulong)(component.negative != 0U ? half_extent[axis] + position[axis]
+                                       : half_extent[axis] - position[axis]);
+
+    uint face = 1U << (2U * axis + (component.negative == 0U));
+
+    int order = result.faces == 0U
+                  ? -1
+                  : GGEMS_WorldCompareScaled(
+                      GGEMS_WorldProduct(gap, result.direction.mantissa),
+                      result.direction.exponent,
+                      GGEMS_WorldProduct(result.gap_pm, component.mantissa),
+                      component.exponent);
+
+    if (order < 0) {
+      result.gap_pm = gap;
+      result.direction = component;
+      result.faces = face;
+    } else if (order == 0) {
+      result.faces |= face;
+    }
+  }
+
+  if (result.faces != 0U) {
+    result.status = GGEMS_WORLD_EXIT;
+  }
+
+  return result;
+}
+
+#endif

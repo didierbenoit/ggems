@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Validates World sizes and classifies positions against the World.
+ * \brief Validates and packs immutable World parameters.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -35,6 +35,7 @@
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
+#include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
@@ -118,30 +119,21 @@ auto GGEMSWorld::GetUpperCornerPM() const noexcept -> Position3PM {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSWorld::Classify(Position3PM position) const noexcept
-  -> GGEMSWorldRegion {
+auto GGEMSWorld::Contains(Position3PM position) const noexcept -> bool {
   Position3PM const lower = GetLowerCornerPM();
   Position3PM const upper = GetUpperCornerPM();
 
-  bool const outside = position.x < lower.x || position.x > upper.x ||
-                       position.y < lower.y || position.y > upper.y ||
-                       position.z < lower.z || position.z > upper.z;
-
-  if (outside) {
-    return GGEMSWorldRegion::Outside;
-  }
-
-  bool const on_face = position.x == lower.x || position.x == upper.x ||
-                       position.y == lower.y || position.y == upper.y ||
-                       position.z == lower.z || position.z == upper.z;
-
-  return on_face ? GGEMSWorldRegion::Boundary : GGEMSWorldRegion::Inside;
+  return position.x >= lower.x && position.x <= upper.x &&
+         position.y >= lower.y && position.y <= upper.y &&
+         position.z >= lower.z && position.z <= upper.z;
 }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSWorld::Contains(Position3PM position) const noexcept -> bool {
-  return Classify(position) != GGEMSWorldRegion::Outside;
+auto GGEMSWorld::BuildRecord() const noexcept -> GGEMSWorldRecord {
+  return {.half_extent_x_pm = static_cast<CoordinatePM>(half_extent_pm_.x),
+          .half_extent_y_pm = static_cast<CoordinatePM>(half_extent_pm_.y),
+          .half_extent_z_pm = static_cast<CoordinatePM>(half_extent_pm_.z)};
 }
 
 // -----------------------------------------------------------------------------

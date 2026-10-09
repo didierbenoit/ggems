@@ -50,7 +50,7 @@ typedef struct GGEMSTransportCounters {
   /*! \brief Histories reaching termination, even after projection failure. */
   uint completed_history_count;
 
-  /*! \brief Initialized particles marked Killed by the stream kernel. */
+  /*! \brief Particles completing World exit or diagnostic termination. */
   uint terminal_particle_count;
 
   /*! \brief Created secondary count; untouched by the stream kernel. */
@@ -79,6 +79,17 @@ typedef struct GGEMSTransportCounters {
 
   /*! \brief Synthetic step count; untouched by the stream kernel. */
   uint total_fake_step_count;
+
+  /*! \brief Aionino births outside the closed World; no completion. */
+  uint outside_world_count;
+
+  /*!
+   * \brief Aionino queries without a resolvable World boundary; no completion.
+   */
+  uint unresolved_geometry_count;
+
+  /*! \brief Aionino histories completed at the World boundary. */
+  uint escaped_world_count;
 } GGEMSTransportCounters;
 
 #endif

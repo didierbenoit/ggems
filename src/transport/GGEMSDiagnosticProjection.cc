@@ -44,6 +44,7 @@
 #include "GGEMS/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/sources/GGEMSSourceValidation.hh"
 #include "GGEMS/transport/GGEMSDiagnosticProjection.hh"
+#include "GGEMS/particles/GGEMSParticleTypes.hh"
 
 namespace {
 
@@ -237,6 +238,11 @@ auto ValidateDiagnosticTransportSources(
     auto const &source = source_records[source_index];
 
     sources::ValidateAnalyticSourceRecord(source);
+    if (source.emitted_particle_type ==
+        particles::ToKernelParticleType(
+          particles::GGEMSParticleType::Aionino)) {
+      continue;
+    }
 
     sources::GGEMSEmissionBounds const emission_bounds =
       sources::BuildEmissionBounds(source);

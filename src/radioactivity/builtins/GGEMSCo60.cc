@@ -1947,7 +1947,7 @@ constexpr std::array<std::uint64_t, 12U>
       2'497'415'000'000ULL,
       2'504'836'000'000ULL,
     },
-};
+  };
 
 /*!
  * \brief Conversion electrons per parent decay, parallel to line energies.

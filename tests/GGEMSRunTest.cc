@@ -185,7 +185,7 @@ protected:
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
     if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
+      opencl.SelectDevices({"all"});
       opencl.Initialize();
     }
 
@@ -1357,7 +1357,7 @@ TEST_F(GGEMSRunTest, ProducesOnlySourceAndTerminalAlongStoredSourceAxis) {
   auto source = MakeLowEnergySource(1ULL);
 
   source
-    ->SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Aionino)
+    ->SetEmittedParticleType(ggems::core::particles::GGEMSParticleType::Gamma)
     .SetPositionPicoMeter(-1'500'000'000'000LL, 0LL, 0LL)
     .SetDirection(1.0, 0.0, 0.0);
 

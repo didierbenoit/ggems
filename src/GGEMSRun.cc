@@ -44,6 +44,7 @@
 #include <string>
 
 #include "GGEMS/GGEMSRun.hh"
+#include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/logging/GGEMSLogMacros.hh"
 #include "GGEMS/units/GGEMSTimeUnits.hh"
@@ -97,6 +98,9 @@ auto AccumulateTransportCounters(
   dst.electron_to_electron_count += src.electron_to_electron_count;
   dst.overflow_count += src.overflow_count;
   dst.total_fake_step_count += src.total_fake_step_count;
+  dst.outside_world_count += src.outside_world_count;
+  dst.unresolved_geometry_count += src.unresolved_geometry_count;
+  dst.escaped_world_count += src.escaped_world_count;
 
   dst.max_stack_depth = std::max(dst.max_stack_depth, src.max_stack_depth);
 }
@@ -301,6 +305,16 @@ auto GGEMSRun::SetObserver(
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSRun::SetWorld(geometry::GGEMSWorld world) -> void {
+  if (initialized_) {
+    throw GGEMSRecoverable("Cannot change World after Initialize.");
+  }
+
+  world_ = std::move(world);
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSRun::Initialize() -> void {
   if (initialized_) {
     throw ggems::core::GGEMSRecoverable(
@@ -349,6 +363,7 @@ auto GGEMSRun::Initialize() -> void {
 
   auto new_source_population_planner =
     std::make_unique<sources::GGEMSSourcePopulationPlanner>(sources_, *random_);
+
   auto new_source_configuration =
     sources::BuildSourceConfigurationSnapshot(sources_);
 
@@ -369,11 +384,12 @@ auto GGEMSRun::Initialize() -> void {
         opencl.GetContext()[context_index], kernel_root, *random_,
         opencl.GetWorkerCount(), *new_source_configuration,
         random_stream_offset, static_cast<std::uint32_t>(context_index),
-        observer_record_capacity));
+        observer_record_capacity, 0U, world_ ? &*world_ : nullptr));
   }
 
   GGEMS_INFO("Core", "{} transport workload(s) prepared.",
              new_transport_workloads.size());
+
   GGEMS_INFO("Source", "GGEMSRun source collection prepared with {} slot(s).",
              source_count);
 
@@ -595,6 +611,16 @@ auto GGEMSRun::Run() -> void {
       workload.primary_count, counters.consumed_primary_count,
       counters.completed_history_count, counters.created_secondary_count,
       report.kernel_time, report.host_time, report.kernel_histories_per_second);
+  }
+
+  if (merged_counters.outside_world_count != 0ULL) {
+    throw GGEMSRecoverable(
+      "Aionino source produced a position outside the World.");
+  }
+
+  if (merged_counters.unresolved_geometry_count != 0ULL) {
+    throw GGEMSRecoverable(
+      "Aionino World navigation could not resolve a World boundary.");
   }
 
   if (merged_counters.overflow_count != 0ULL) {

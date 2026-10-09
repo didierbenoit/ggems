@@ -30,7 +30,6 @@
 
 #include <algorithm>
 
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -56,9 +55,13 @@
 #include "GGEMS/sources/GGEMSSourceEmissionRecord.hh"
 #include "GGEMS/sources/GGEMSSourceEmissionRange.hh"
 #include "GGEMS/transport/GGEMSDiagnosticProjection.hh"
+#include "GGEMS/geometry/GGEMSWorldRecord.hh"
+#include "GGEMS/geometry/GGEMSGeometryTypes.hh"
+#include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/transport/GGEMSTransportCounters.hh"
 #include "GGEMS/transport/GGEMSTransportWorkload.hh"
 #include "GGEMS/transport/GGEMSTransportWorkloadPlan.hh"
+#include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLKernel.hh"
 #include "GGEMS/opencl/GGEMSOpenCLProfiler.hh"
@@ -416,7 +419,7 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   sources::GGEMSSourceConfigurationSnapshot const &source_configuration,
   std::uint64_t random_stream_offset, std::uint32_t context_index,
   std::uint32_t observer_record_capacity,
-  std::uint32_t launch_primary_count_limit)
+  std::uint32_t launch_primary_count_limit, geometry::GGEMSWorld const *world)
     : context_{&context}, worker_count_{worker_count},
       source_count_{CheckedSourceCount(source_configuration.GetSourceCount())},
       emission_count_{
@@ -426,6 +429,8 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
       observer_record_capacity_{observer_record_capacity},
       launch_primary_count_limit_{ResolveLaunchPrimaryCountLimit(
         worker_count, launch_primary_count_limit)},
+      world_{world}, world_buffer_{context.CreateSVMBuffer(ggems::units::Bytes{
+                       sizeof(geometry::GGEMSWorldRecord)})},
       random_states_buffer_{context.CreateSVMBuffer(
         ComputeRandomStatesSize(random, worker_count, random_stream_offset))},
       counters_buffer_{context.CreateSVMBuffer(
@@ -465,9 +470,10 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
     "-I{} {} "
     "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
     kernel_root.generic_string(), random.GetKernelBuildDefinition());
-  auto &program =
+  auto const &program =
     opencl.GetOrCreateProgram(*context_, kernel_transport_root,
                               "particle_stream_transport", build_options);
+
   cl::Kernel raw_kernel = program.CreateKernel("particle_stream_transport");
   kernel_ = std::make_unique<ggems::ocl::GGEMSOpenCLKernel>(
     *context_, std::move(raw_kernel), "particle_stream_transport");
@@ -502,12 +508,20 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   kernel_->SetArgSVMPointer(argument_index++,
                             source_emission_ranges_buffer_.GetData());
 
+  kernel_->SetArgSVMPointer(argument_index++, world_buffer_.GetData());
+  ggems::ocl::WriteSVMFromHost(world_buffer_, world != nullptr
+                                                ? world->BuildRecord()
+                                                : geometry::GGEMSWorldRecord{});
+
   auto const &source_emission_records =
     source_configuration.GetEmissionRecords();
+
   auto const &energy_distribution_records =
     source_configuration.GetEnergyDistributionRecords();
+
   auto const &energy_values_micro_eV =
     source_configuration.GetEnergyValuesMicroElectronVolt();
+
   auto const &cumulative_ticket_upper =
     source_configuration.GetCumulativeTicketUpperBounds();
 
@@ -552,6 +566,29 @@ auto GGEMSTransportWorkload::ValidateRunConfig(
   GGEMSTransportRunConfig const &config) const -> void {
   ValidateTransportRunConfig(config, source_count_, emission_count_,
                              worker_count_, launch_primary_count_limit_);
+
+  for (std::size_t index = 0U; index < config.source_records.size(); ++index) {
+    auto const &record = config.source_records[index];
+    if (config.source_ranges[index].primary_count == 0ULL ||
+        record.emitted_particle_type !=
+          particles::ToKernelParticleType(
+            particles::GGEMSParticleType::Aionino)) {
+      continue;
+    }
+
+    if (world_ == nullptr) {
+      throw GGEMSRecoverable(std::format(
+        "Aionino source slot {} requires an explicit finite World.", index));
+    }
+
+    // Static preflight of the authored origin only: the device classifies
+    // every generated birth and reports outside positions separately.
+    if (!world_->Contains(geometry::MakePositionPM(
+          record.position_x_pm, record.position_y_pm, record.position_z_pm))) {
+      throw GGEMSRecoverable(std::format(
+        "Aionino source slot {} origin lies outside the World.", index));
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -713,6 +750,10 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
       counters.electron_to_electron_count;
     report.counters.overflow_count += counters.overflow_count;
     report.counters.total_fake_step_count += counters.total_fake_step_count;
+    report.counters.outside_world_count += counters.outside_world_count;
+    report.counters.unresolved_geometry_count +=
+      counters.unresolved_geometry_count;
+    report.counters.escaped_world_count += counters.escaped_world_count;
     report.counters.max_stack_depth =
       std::max(report.counters.max_stack_depth,
                static_cast<std::uint64_t>(counters.max_stack_depth));

@@ -35,6 +35,7 @@
 #include <vector>
 #include <memory>
 
+#include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/transport/GGEMSTransportCounters.hh"
 #include "GGEMS/units/GGEMSTimeUnits.hh"
@@ -118,7 +119,10 @@ struct GGEMSTransportLogicalCounters {
   /*! \brief Primaries admitted to source initialization across all chunks. */
   std::uint64_t consumed_primary_count{0ULL};
 
-  /*! \brief Histories reaching diagnostic termination across all chunks. */
+  /*!
+   * \brief Histories reaching successful World exit or diagnostic termination
+   * across all chunks.
+   */
   std::uint64_t completed_history_count{0ULL};
 
   /*! \brief Particles marked terminal by the diagnostic kernel. */
@@ -144,6 +148,15 @@ struct GGEMSTransportLogicalCounters {
 
   /*! \brief Accumulated synthetic steps; currently zero. */
   std::uint64_t total_fake_step_count{0ULL};
+
+  /*! \brief Aionino births rejected outside the World. */
+  std::uint64_t outside_world_count{0ULL};
+
+  /*! \brief Aionino queries that could not resolve a World boundary. */
+  std::uint64_t unresolved_geometry_count{0ULL};
+
+  /*! \brief Aionino histories completed at the World boundary. */
+  std::uint64_t escaped_world_count{0ULL};
 };
 
 /*! \brief Retains uint64 capture totals across all launches of one workload. */
@@ -252,9 +265,9 @@ auto ValidateTransportRunConfig(GGEMSTransportRunConfig const &config,
  * stable source assets into owned SVM buffers and initializes one random state
  * per worker. Sequential Run() calls reuse those states and split their
  * assigned primaries into uint32-bounded chunks. The current kernel initializes
- * each primary, projects it one meter, and records diagnostic termination
- * without physical navigation, interactions, or time of flight. Calls using the
- * same workload must be serialized by the owner.
+ * each primary, advances Aionino to the World boundary, and keeps the
+ * diagnostic one-meter projection for other species. No interactions or time of
+ * flight. Calls using the same workload must be serialized by the owner.
  */
 class GGEMSTransportWorkload {
 public:
@@ -276,6 +289,7 @@ public:
    * records.
    * \param[in] launch_primary_count_limit Requested positive chunk limit, or
    * zero to select the largest limit preserving atomic-cursor headroom.
+   * \param[in] world Optional World copied to SVM; required for Aionino.
    * \throws GGEMSRecoverable If counts, random-stream range, or launch limit
    * are invalid.
    * \throws GGEMSInternal If energy and cumulative-ticket table lengths
@@ -289,7 +303,8 @@ public:
     sources::GGEMSSourceConfigurationSnapshot const &source_configuration,
     std::uint64_t random_stream_offset = 0ULL, std::uint32_t context_index = 0U,
     std::uint32_t observer_record_capacity = 1U,
-    std::uint32_t launch_primary_count_limit = 0U);
+    std::uint32_t launch_primary_count_limit = 0U,
+    geometry::GGEMSWorld const *world = nullptr);
 
   ~GGEMSTransportWorkload() = default;
 
@@ -433,6 +448,16 @@ private:
 
   /*! \brief Primary limit preserving uint32 atomic-cursor headroom. */
   std::uint32_t launch_primary_count_limit_{0U};
+
+  /*!
+   * \brief Borrowed immutable World used for static source preflight, or null.
+   *
+   * The owner (GGEMSRun) keeps the World alive for the workload lifetime.
+   */
+  geometry::GGEMSWorld const *world_{nullptr};
+
+  /*! \brief Immutable origin-centered World box, or zero record if absent. */
+  ggems::ocl::GGEMSOpenCLSVMBuffer world_buffer_;
 
   /*! \brief Owns SVM storage for persistent per-worker random states. */
   ggems::ocl::GGEMSOpenCLSVMBuffer random_states_buffer_;

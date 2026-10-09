@@ -1,0 +1,110 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Commits the accepted Aionino World segment and exit lifecycle.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_WORLD_TRANSPORT_CLH
+#define GGEMS_WORLD_TRANSPORT_CLH
+
+#include "geometry/GGEMSWorldRecord.clh"
+#include "navigation/GGEMSWorldNavigation.clh"
+#include "particles/GGEMSParticleState.clh"
+
+/*!
+ * \brief Advances an Aionino to its exact forward World boundary.
+ *
+ * Movement uses the unrounded parameter. The final integer anchor is rounded
+ * nearest, half away from zero, once per coordinate. A rounded non-crossing
+ * coordinate never adds a face to the exact witness. No energy/time/RNG change.
+ * The exact rational interval is retained in the witness; no scalar travel
+ * distance is materialized, so a representable endpoint is never rejected
+ * because its parameter would not fit an integer.
+ *
+ * This helper is deliberately kept out of line, together with the Aionino
+ * step of particle_stream_transport that calls it. When the body is inlined
+ * into the claim/initialize/complete loop, the Intel CPU OpenCL compiler with
+ * -cl-fast-relaxed-math mixes the private particle states of neighboring
+ * work-items (multi-source histories receive each other's positions, even for
+ * species that never enter this function). The attribute is a documented
+ * device-compiler boundary, not a performance choice.
+ *
+ * \param[in] world Immutable device World parameters.
+ * \param[in,out] particle Private state; unchanged on any failure.
+ * \param[out] exit_faces Exact simultaneous crossing mask (-X,+X,-Y,+Y,-Z,+Z).
+ * \return GGEMS_WORLD_EXIT, GGEMS_WORLD_OUTSIDE, or GGEMS_WORLD_UNRESOLVED.
+ */
+static __attribute__((noinline)) uint
+GGEMS_TransportAioninoToWorld(__global GGEMSWorldRecord const *world,
+                              GGEMSParticleState *particle, uint *exit_faces) {
+  long3 position = (long3)(particle->position_x_pm, particle->position_y_pm,
+                           particle->position_z_pm);
+
+  float3 direction = (float3)(particle->direction_x, particle->direction_y,
+                              particle->direction_z);
+  GGEMSWorldBoundary boundary =
+    GGEMS_WorldFindBoundary(world, position, direction);
+
+  if (boundary.status != GGEMS_WORLD_EXIT) {
+    return boundary.status;
+  }
+
+  int half_compare = -1;
+
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    GGEMSWorldDirection component = GGEMS_WorldDecodeDirection(direction[axis]);
+    ulong displacement = 0UL;
+    // The selected minimum guarantees displacement <= the signed-safe gap.
+    if (GGEMS_WorldDivide(
+          GGEMS_WorldProduct(boundary.gap_pm, component.mantissa),
+          component.exponent - boundary.direction.exponent,
+          boundary.direction.mantissa, &displacement, &half_compare) == 0U) {
+      return GGEMS_WORLD_UNRESOLVED;
+    }
+
+    long integral = component.negative != 0U
+                      ? position[axis] - (long)displacement
+                      : position[axis] + (long)displacement;
+
+    uint away = half_compare > 0 ||
+                (half_compare == 0 &&
+                 (component.negative != 0U ? integral <= 0L : integral >= 0L));
+
+    position[axis] =
+      integral + (component.negative != 0U ? -(long)away : (long)away);
+  }
+
+  particle->position_x_pm = position.x;
+  particle->position_y_pm = position.y;
+  particle->position_z_pm = position.z;
+  particle->status = GGEMS_PARTICLE_STATUS_ESCAPED_WORLD;
+
+  *exit_faces = boundary.faces;
+
+  return GGEMS_WORLD_EXIT;
+}
+
+#endif

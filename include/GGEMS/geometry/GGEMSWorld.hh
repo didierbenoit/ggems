@@ -21,8 +21,7 @@
 
 /*!
  * \file
- * \brief Declares the finite explicit GGEMS World and its exact point
- * membership.
+ * \brief Declares immutable finite World authoring parameters.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -30,9 +29,8 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
+#include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
@@ -48,28 +46,18 @@ namespace ggems::geometry {
  */
 inline constexpr DistancePM k_max_world_size_pm{0x7FFF'FFFF'FFFF'FFFEULL};
 
-/*! \brief Classifies a canonical position relative to the closed World box. */
-enum class GGEMSWorldRegion : std::uint8_t {
-  /*! \brief Strictly inside the World on every axis. */
-  Inside = 0U,
-
-  /*! \brief On at least one World face, edge, or corner, and not outside. */
-  Boundary = 1U,
-
-  /*! \brief Strictly outside the World on at least one axis. */
-  Outside = 2U,
-};
-
 /*!
  * \brief Finite explicit World: an axis-aligned box centered on the global
  * origin.
  *
  * The World frame is the canonical global frame of Position3PM and Direction3:
  * right-handed with X x Y = Z and default direction +Z. Faces lie at exactly
- * +/- half extent on the integer picometer lattice, so membership queries use
- * exact integer comparisons without any tolerance. The World medium is an
- * explicit owned Material value; exact Vacuum is admissible. The object is an
- * immutable validated host value with no occurrence or device record.
+ * +/- half extent on the integer picometer lattice, for device Navigation. The
+ * World medium is an explicit owned Material value; exact Vacuum is admissible.
+ * The object is an immutable validated host value: it packs the device-visible
+ * GGEMSWorldRecord and offers Contains() for static validation of authored
+ * positions only. Per-particle location, intersection and World exit are
+ * computed by OpenCL Navigation/Transport.
  */
 class GGEMSWorld {
 public:
@@ -108,21 +96,20 @@ public:
    */
   [[nodiscard]] auto GetUpperCornerPM() const noexcept -> Position3PM;
 
-  /*!
-   * \brief Classifies a canonical global position against the closed World.
-   *
-   * \param[in] position Global position in picometers.
-   * \return Outside if any coordinate magnitude exceeds its half extent,
-   *         Boundary if none does and at least one equals it, Inside otherwise.
+  /*! \brief Packs immutable geometry parameters for the device.
+   * \return Three signed half extents in canonical pm.
    */
-  [[nodiscard]] auto Classify(Position3PM position) const noexcept
-    -> GGEMSWorldRegion;
+  [[nodiscard]] auto BuildRecord() const noexcept -> GGEMSWorldRecord;
 
   /*!
-   * \brief Checks closed-box membership.
+   * \brief Checks closed-box membership of a configured position.
+   *
+   * This is static host input validation for authored positions such as
+   * source origins; it is not a per-particle Navigation query, which OpenCL
+   * performs on the device.
    *
    * \param[in] position Global position in picometers.
-   * \return True for Inside or Boundary positions.
+   * \return True when every coordinate magnitude is at most its half extent.
    */
   [[nodiscard]] auto Contains(Position3PM position) const noexcept -> bool;
 

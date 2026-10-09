@@ -967,7 +967,7 @@ constexpr std::array<std::uint64_t, 4U>
     1'344'740'000'000ULL,
     1'344'880'000'000ULL,
     1'344'900'000'000ULL,
-};
+  };
 
 /*! \brief Absolute line yields used as conditional relative weights. */
 constexpr std::array<double, 4U> k_conversion_1345_77_keV_line_yields{

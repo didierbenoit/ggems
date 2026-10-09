@@ -41,6 +41,7 @@
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/particles/GGEMSPrimaryStream.hh"
 #include "GGEMS/transport/GGEMSTransportWorkload.hh"
+#include "GGEMS/geometry/GGEMSWorld.hh"
 
 namespace ggems::core::random {
 class GGEMSRandom;
@@ -61,9 +62,9 @@ namespace ggems::core {
  *
  * Initialize() freezes population mode and energy configuration and prepares
  * OpenCL resources. Sequential Run() calls capture the current source poses and
- * execute one population window each. Current transport is diagnostic; this
- * class does not yet orchestrate physical navigation, interactions, or
- * acquisition.
+ * execute one population window each. Aionino uses the configured finite World;
+ * other species retain diagnostic transport. No physical interactions or
+ * acquisition are implemented.
  *
  * Concurrent Run() and ResetTime() calls on this object are rejected by a
  * shared guard. Configuration and source mutation require caller
@@ -104,6 +105,13 @@ public:
    * \throws GGEMSFatal If an OpenCL resource operation fails.
    */
   auto Initialize() -> void;
+
+  /*!
+   * \brief Owns a finite World for Aionino navigation before initialization.
+   * \param[in] world Validated immutable World including its explicit Material.
+   * \throws GGEMSRecoverable If Initialize has already succeeded.
+   */
+  auto SetWorld(geometry::GGEMSWorld world) -> void;
 
   /*!
    * \brief Executes the next source population on the active devices.
@@ -262,6 +270,9 @@ private:
   /*! \brief Owns stable source slots and population-planning RNG state. */
   std::unique_ptr<sources::GGEMSSourcePopulationPlanner>
     source_population_planner_;
+
+  /*! \brief Owned immutable World configuration, fixed before Initialize. */
+  std::optional<geometry::GGEMSWorld> world_;
 
   /*! \brief Owns one persistent transport workload per active context. */
   std::vector<std::unique_ptr<transport::GGEMSTransportWorkload>>

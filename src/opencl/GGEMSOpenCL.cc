@@ -95,7 +95,7 @@ constexpr std::array<std::pair<std::string_view, std::string_view>, 3>
       {"nvidia", "nvidia corporation"},
       {"amd", "advanced micro devices, inc."},
     },
-};
+  };
 
 // =============================================================================
 // =============================================================================

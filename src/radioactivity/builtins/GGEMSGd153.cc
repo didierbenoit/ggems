@@ -142,7 +142,7 @@ constexpr std::array<std::uint64_t, 5U>
       12'626'630'000ULL,
       13'830'410'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -172,7 +172,7 @@ constexpr std::array<std::uint64_t, 5U>
       18'375'760'000ULL,
       19'579'540'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -203,7 +203,7 @@ constexpr std::array<std::uint64_t, 6U>
       68'235'820'000ULL,
       69'439'600'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -235,7 +235,7 @@ constexpr std::array<std::uint64_t, 6U>
       73'984'950'000ULL,
       75'188'730'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -267,7 +267,7 @@ constexpr std::array<std::uint64_t, 6U>
       81'929'990'000ULL,
       83'133'770'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -299,7 +299,7 @@ constexpr std::array<std::uint64_t, 6U>
       88'048'780'000ULL,
       89'252'560'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -331,7 +331,7 @@ constexpr std::array<std::uint64_t, 6U>
       95'993'830'000ULL,
       97'197'610'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -363,7 +363,7 @@ constexpr std::array<std::uint64_t, 6U>
       101'742'960'000ULL,
       102'946'740'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -395,7 +395,7 @@ constexpr std::array<std::uint64_t, 6U>
       171'415'970'000ULL,
       172'619'750'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */

@@ -4673,7 +4673,7 @@ constexpr std::array<std::uint64_t, 6U>
       144'347'000'000ULL,
       147'146'000'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -4705,7 +4705,7 @@ constexpr std::array<std::uint64_t, 6U>
       289'447'000'000ULL,
       292'246'000'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -4737,7 +4737,7 @@ constexpr std::array<std::uint64_t, 6U>
       320'710'000'000ULL,
       323'241'000'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */
@@ -4769,7 +4769,7 @@ constexpr std::array<std::uint64_t, 6U>
       437'087'000'000ULL,
       439'886'000'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */

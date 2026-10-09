@@ -110,7 +110,7 @@ constexpr std::array<std::uint64_t, 5U>
       160'374'900'000ULL,
       164'783'700'000ULL,
     },
-};
+  };
 
 /*! \brief Absolute line yields per parent decay; relative weights for
  * conditional sampling. */

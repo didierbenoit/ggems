@@ -214,7 +214,7 @@ protected:
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
     if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"gpu"});
+      opencl.SelectDevices({"all"});
       opencl.Initialize();
     }
 

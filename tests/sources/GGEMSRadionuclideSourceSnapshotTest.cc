@@ -175,7 +175,7 @@ TEST(GGEMSRadionuclideSourceSnapshot,
       ggems::core::particles::GGEMSParticleType::Positron,
       ggems::core::particles::GGEMSParticleType::Electron,
       ggems::core::particles::GGEMSParticleType::Gamma,
-  };
+    };
   constexpr std::array<std::uint64_t, 9U> k_expected_mono_energies{
     0ULL, 14'300'000ULL, 525'000'000ULL, 0ULL,           0ULL,
     0ULL, 0ULL,          14'300'000ULL,  525'000'000ULL,

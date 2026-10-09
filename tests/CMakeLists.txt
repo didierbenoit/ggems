@@ -111,6 +111,7 @@ set(GGEMS_CORE_TEST_DIRECTORIES
     geometry
     logging
     materials
+    navigation
     observer
     opencl
     particles

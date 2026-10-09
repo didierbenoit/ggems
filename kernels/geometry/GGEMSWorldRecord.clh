@@ -1,0 +1,45 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines the immutable device World box.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_WORLD_RECORD_CLH
+#define GGEMS_WORLD_RECORD_CLH
+
+/*! \brief Host-mirrored box parameters in signed integer pm (24 bytes). */
+typedef struct GGEMSWorldRecord {
+  /*! \brief Positive X half extent; all-zero record denotes no World. */
+  long half_extent_x_pm;
+
+  /*! \brief Positive Y half extent; all-zero record denotes no World. */
+  long half_extent_y_pm;
+
+  /*! \brief Positive Z half extent; all-zero record denotes no World. */
+  long half_extent_z_pm;
+} GGEMSWorldRecord;
+
+#endif
