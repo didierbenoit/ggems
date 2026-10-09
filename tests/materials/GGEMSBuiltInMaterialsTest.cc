@@ -34,6 +34,8 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMSLongDoubleAssertions.hh"
+
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/materials/GGEMSIsotopicComposition.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
@@ -714,11 +716,13 @@ TEST(GGEMSBuiltInMaterialsTest, BuildsCommonMedia) {
   EXPECT_EQ(water.GetDensity(), 1.000_g_cm3);
   ASSERT_EQ(water.GetElementalConstituents().size(), 2U);
   EXPECT_EQ(water.GetElementalConstituents()[0U].atomic_number, 1U);
-  EXPECT_NEAR(water.GetElementalConstituents()[0U].mass_fraction, 0.111898L,
-              64.0L * std::numeric_limits<long double>::epsilon());
+  GGEMS_EXPECT_NEAR_LD(water.GetElementalConstituents()[0U].mass_fraction,
+                       0.111898L,
+                       64.0L * std::numeric_limits<long double>::epsilon());
   EXPECT_EQ(water.GetElementalConstituents()[1U].atomic_number, 8U);
-  EXPECT_NEAR(water.GetElementalConstituents()[1U].mass_fraction, 0.888102L,
-              64.0L * std::numeric_limits<long double>::epsilon());
+  GGEMS_EXPECT_NEAR_LD(water.GetElementalConstituents()[1U].mass_fraction,
+                       0.888102L,
+                       64.0L * std::numeric_limits<long double>::epsilon());
 
   auto const air = builtins::BuildBuiltInMaterial("Air");
   EXPECT_EQ(air.GetDensity(), 1.205e-3_g_cm3);
@@ -785,8 +789,8 @@ TEST(GGEMSBuiltInMaterialsTest, BuildsRepresentativeElementalMaterials) {
     ASSERT_EQ(constituents.size(), 1U);
     EXPECT_EQ(constituents.front().atomic_number,
               expected_material.atomic_number);
-    EXPECT_NEAR(constituents.front().mass_fraction, 1.0L,
-                64.0L * std::numeric_limits<long double>::epsilon());
+    GGEMS_EXPECT_NEAR_LD(constituents.front().mass_fraction, 1.0L,
+                         64.0L * std::numeric_limits<long double>::epsilon());
   }
 }
 
@@ -810,11 +814,13 @@ TEST(GGEMSBuiltInMaterialsTest, BuildsRepresentativeMedicalMaterials) {
   EXPECT_EQ(cdte.GetDensity(), 6.200_g_cm3);
   ASSERT_EQ(cdte.GetElementalConstituents().size(), 2U);
   EXPECT_EQ(cdte.GetElementalConstituents()[0U].atomic_number, 48U);
-  EXPECT_NEAR(cdte.GetElementalConstituents()[0U].mass_fraction, 0.468358L,
-              64.0L * std::numeric_limits<long double>::epsilon());
+  GGEMS_EXPECT_NEAR_LD(cdte.GetElementalConstituents()[0U].mass_fraction,
+                       0.468358L,
+                       64.0L * std::numeric_limits<long double>::epsilon());
   EXPECT_EQ(cdte.GetElementalConstituents()[1U].atomic_number, 52U);
-  EXPECT_NEAR(cdte.GetElementalConstituents()[1U].mass_fraction, 0.531642L,
-              64.0L * std::numeric_limits<long double>::epsilon());
+  GGEMS_EXPECT_NEAR_LD(cdte.GetElementalConstituents()[1U].mass_fraction,
+                       0.531642L,
+                       64.0L * std::numeric_limits<long double>::epsilon());
 }
 
 // =============================================================================
@@ -874,8 +880,9 @@ TEST(GGEMSBuiltInMaterialsTest, ResolvesEveryElementThroughDefaultIsotopes) {
         auto const &actual = isotopes[isotope_index];
 
         EXPECT_EQ(actual.isotope, expected.isotope);
-        EXPECT_NEAR(actual.atom_fraction_in_element, expected.fraction,
-                    64.0L * std::numeric_limits<long double>::epsilon());
+        GGEMS_EXPECT_NEAR_LD(actual.atom_fraction_in_element, expected.fraction,
+                             64.0L *
+                               std::numeric_limits<long double>::epsilon());
 
         ++isotope_index;
       }

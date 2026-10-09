@@ -33,6 +33,8 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMSLongDoubleAssertions.hh"
+
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideEmission.hh"
@@ -61,90 +63,94 @@ TEST(GGEMSRb82Test, PreservesIdentityAndOrderedMarginalYields) {
   // Physical yields are not a categorical probability distribution.
   // beta_plus_725_2_keV
   EXPECT_EQ(emissions[0U].GetParticleType(), GGEMSParticleType::Positron);
-  EXPECT_NEAR(emissions[0U].GetYieldPerDecay(), 0.0000284L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[0U].GetYieldPerDecay(), 0.0000284L, 1.0e-16L);
   EXPECT_EQ(emissions[0U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::RegularSpectrum);
   // beta_plus_819_3_keV
   EXPECT_EQ(emissions[1U].GetParticleType(), GGEMSParticleType::Positron);
-  EXPECT_NEAR(emissions[1U].GetYieldPerDecay(), 0.0000033L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[1U].GetYieldPerDecay(), 0.0000033L, 1.0e-16L);
   EXPECT_EQ(emissions[1U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::RegularSpectrum);
   // beta_plus_824_7_keV
   EXPECT_EQ(emissions[2U].GetParticleType(), GGEMSParticleType::Positron);
-  EXPECT_NEAR(emissions[2U].GetYieldPerDecay(), 7E-7L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[2U].GetYieldPerDecay(), 7E-7L, 1.0e-16L);
   EXPECT_EQ(emissions[2U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::RegularSpectrum);
   // beta_plus_872_keV
   EXPECT_EQ(emissions[3U].GetParticleType(), GGEMSParticleType::Positron);
-  EXPECT_NEAR(emissions[3U].GetYieldPerDecay(), 0.0000041L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[3U].GetYieldPerDecay(), 0.0000041L, 1.0e-16L);
   EXPECT_EQ(emissions[3U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::RegularSpectrum);
   // beta_plus_901_3_keV
   EXPECT_EQ(emissions[4U].GetParticleType(), GGEMSParticleType::Positron);
-  EXPECT_NEAR(emissions[4U].GetYieldPerDecay(), 0.000288L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[4U].GetYieldPerDecay(), 0.000288L, 1.0e-16L);
   EXPECT_EQ(emissions[4U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::RegularSpectrum);
   // beta_plus_930_9_keV
   EXPECT_EQ(emissions[5U].GetParticleType(), GGEMSParticleType::Positron);
-  EXPECT_NEAR(emissions[5U].GetYieldPerDecay(), 0.000050L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[5U].GetYieldPerDecay(), 0.000050L, 1.0e-16L);
   EXPECT_EQ(emissions[5U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::RegularSpectrum);
   // beta_plus_1209_3_keV
   EXPECT_EQ(emissions[6U].GetParticleType(), GGEMSParticleType::Positron);
-  EXPECT_NEAR(emissions[6U].GetYieldPerDecay(), 0.00317L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[6U].GetYieldPerDecay(), 0.00317L, 1.0e-16L);
   EXPECT_EQ(emissions[6U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::RegularSpectrum);
   // beta_plus_1424_2_keV
   EXPECT_EQ(emissions[7U].GetParticleType(), GGEMSParticleType::Positron);
-  EXPECT_NEAR(emissions[7U].GetYieldPerDecay(), 0.0000890L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[7U].GetYieldPerDecay(), 0.0000890L, 1.0e-16L);
   EXPECT_EQ(emissions[7U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::RegularSpectrum);
   // beta_plus_1560_4_keV
   EXPECT_EQ(emissions[8U].GetParticleType(), GGEMSParticleType::Positron);
-  EXPECT_NEAR(emissions[8U].GetYieldPerDecay(), 7E-7L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[8U].GetYieldPerDecay(), 7E-7L, 1.0e-16L);
   EXPECT_EQ(emissions[8U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::RegularSpectrum);
   // beta_plus_1893_4_keV
   EXPECT_EQ(emissions[9U].GetParticleType(), GGEMSParticleType::Positron);
-  EXPECT_NEAR(emissions[9U].GetYieldPerDecay(), 0.000444L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[9U].GetYieldPerDecay(), 0.000444L, 1.0e-16L);
   EXPECT_EQ(emissions[9U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::RegularSpectrum);
   // beta_plus_1906_1_keV
   EXPECT_EQ(emissions[10U].GetParticleType(), GGEMSParticleType::Positron);
-  EXPECT_NEAR(emissions[10U].GetYieldPerDecay(), 0.00135L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[10U].GetYieldPerDecay(), 0.00135L, 1.0e-16L);
   EXPECT_EQ(emissions[10U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::RegularSpectrum);
   // beta_plus_2604_5_keV
   EXPECT_EQ(emissions[11U].GetParticleType(), GGEMSParticleType::Positron);
-  EXPECT_NEAR(emissions[11U].GetYieldPerDecay(), 0.1310L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[11U].GetYieldPerDecay(), 0.1310L, 1.0e-16L);
   EXPECT_EQ(emissions[11U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::RegularSpectrum);
   // beta_plus_3381_keV
   EXPECT_EQ(emissions[12U].GetParticleType(), GGEMSParticleType::Positron);
-  EXPECT_NEAR(emissions[12U].GetYieldPerDecay(), 0.8181L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[12U].GetYieldPerDecay(), 0.8181L, 1.0e-16L);
   EXPECT_EQ(emissions[12U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::RegularSpectrum);
   // nuclear_gamma
   EXPECT_EQ(emissions[13U].GetParticleType(), GGEMSParticleType::Gamma);
-  EXPECT_NEAR(emissions[13U].GetYieldPerDecay(), 0.16183768L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[13U].GetYieldPerDecay(), 0.16183768L,
+                       1.0e-16L);
   EXPECT_EQ(emissions[13U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::DiscreteLines);
   // atomic_xray
   EXPECT_EQ(emissions[14U].GetParticleType(), GGEMSParticleType::Gamma);
-  EXPECT_NEAR(emissions[14U].GetYieldPerDecay(), 0.027190L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[14U].GetYieldPerDecay(), 0.027190L, 1.0e-16L);
   EXPECT_EQ(emissions[14U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::DiscreteLines);
   // conversion_776_52_keV
   EXPECT_EQ(emissions[15U].GetParticleType(), GGEMSParticleType::Electron);
-  EXPECT_NEAR(emissions[15U].GetYieldPerDecay(), 0.0001386527L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[15U].GetYieldPerDecay(), 0.0001386527L,
+                       1.0e-16L);
   EXPECT_EQ(emissions[15U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::DiscreteLines);
   // conversion_1474_88_keV
   EXPECT_EQ(emissions[16U].GetParticleType(), GGEMSParticleType::Electron);
-  EXPECT_NEAR(emissions[16U].GetYieldPerDecay(), 1.90080E-7L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[16U].GetYieldPerDecay(), 1.90080E-7L,
+                       1.0e-16L);
   EXPECT_EQ(emissions[16U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::DiscreteLines);
-  EXPECT_NEAR(definition.GetTotalYieldPerDecay(), 1.143694722780L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(definition.GetTotalYieldPerDecay(), 1.143694722780L,
+                       1.0e-14L);
 }
 
 // =============================================================================
@@ -187,23 +193,23 @@ TEST(GGEMSRb82Test, PreservesBetaPlus7252Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent full-support piecewise-linear mean; unchanged 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 315.59693960545053L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 315.59693960545053L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 315.59693960545053L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       315.59693960545053L, 0.005L);
   // Independently integrated conditional masses at three bin boundaries.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 362U) {
-      EXPECT_NEAR(cumulative, 0.19553575164814420L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.19553575164814420L, 1.0e-12L);
     }
     if (index + 1U == 725U) {
-      EXPECT_NEAR(cumulative, 0.62958571457773551L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.62958571457773551L, 1.0e-12L);
     }
     if (index + 1U == 1088U) {
-      EXPECT_NEAR(cumulative, 0.93511938181658561L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.93511938181658561L, 1.0e-12L);
     }
   }
 }
@@ -248,23 +254,23 @@ TEST(GGEMSRb82Test, PreservesBetaPlus8193Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent full-support piecewise-linear mean; unchanged 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 356.22993290382016L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 356.22993290382016L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 356.22993290382016L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       356.22993290382016L, 0.005L);
   // Independently integrated conditional masses at three bin boundaries.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 409U) {
-      EXPECT_NEAR(cumulative, 0.19746233152309928L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.19746233152309928L, 1.0e-12L);
     }
     if (index + 1U == 819U) {
-      EXPECT_NEAR(cumulative, 0.62951611701134491L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.62951611701134491L, 1.0e-12L);
     }
     if (index + 1U == 1229U) {
-      EXPECT_NEAR(cumulative, 0.93481582711770381L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.93481582711770381L, 1.0e-12L);
     }
   }
 }
@@ -309,23 +315,23 @@ TEST(GGEMSRb82Test, PreservesBetaPlus8247Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent full-support piecewise-linear mean; unchanged 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 403.262299370703L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 403.262299370703L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 403.262299370703L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       403.262299370703L, 0.005L);
   // Independently integrated conditional masses at three bin boundaries.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 412U) {
-      EXPECT_NEAR(cumulative, 0.14807150964270249L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.14807150964270249L, 1.0e-12L);
     }
     if (index + 1U == 825U) {
-      EXPECT_NEAR(cumulative, 0.51759035475934283L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.51759035475934283L, 1.0e-12L);
     }
     if (index + 1U == 1237U) {
-      EXPECT_NEAR(cumulative, 0.87796256035001573L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.87796256035001573L, 1.0e-12L);
     }
   }
 }
@@ -370,23 +376,23 @@ TEST(GGEMSRb82Test, PreservesBetaPlus872Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent full-support piecewise-linear mean; unchanged 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 379.0945269641037L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 379.0945269641037L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 379.0945269641037L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       379.0945269641037L, 0.005L);
   // Independently integrated conditional masses at three bin boundaries.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 436U) {
-      EXPECT_NEAR(cumulative, 0.19884672418600889L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.19884672418600889L, 1.0e-12L);
     }
     if (index + 1U == 872U) {
-      EXPECT_NEAR(cumulative, 0.62969091037636661L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.62969091037636661L, 1.0e-12L);
     }
     if (index + 1U == 1308U) {
-      EXPECT_NEAR(cumulative, 0.93470008944892943L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.93470008944892943L, 1.0e-12L);
     }
   }
 }
@@ -431,23 +437,23 @@ TEST(GGEMSRb82Test, PreservesBetaPlus9013Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent full-support piecewise-linear mean; unchanged 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 391.8400848949806L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 391.8400848949806L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 391.8400848949806L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       391.8400848949806L, 0.005L);
   // Independently integrated conditional masses at three bin boundaries.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 450U) {
-      EXPECT_NEAR(cumulative, 0.19849527057498187L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.19849527057498187L, 1.0e-12L);
     }
     if (index + 1U == 901U) {
-      EXPECT_NEAR(cumulative, 0.62898673929108339L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.62898673929108339L, 1.0e-12L);
     }
     if (index + 1U == 1352U) {
-      EXPECT_NEAR(cumulative, 0.93446567460599409L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.93446567460599409L, 1.0e-12L);
     }
   }
 }
@@ -492,23 +498,23 @@ TEST(GGEMSRb82Test, PreservesBetaPlus9309Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent full-support piecewise-linear mean; unchanged 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 404.7400923893532L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 404.7400923893532L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 404.7400923893532L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       404.7400923893532L, 0.005L);
   // Independently integrated conditional masses at three bin boundaries.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 465U) {
-      EXPECT_NEAR(cumulative, 0.19895597507523055L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.19895597507523055L, 1.0e-12L);
     }
     if (index + 1U == 931U) {
-      EXPECT_NEAR(cumulative, 0.62915940985848356L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.62915940985848356L, 1.0e-12L);
     }
     if (index + 1U == 1396U) {
-      EXPECT_NEAR(cumulative, 0.93423189239015726L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.93423189239015726L, 1.0e-12L);
     }
   }
 }
@@ -553,23 +559,23 @@ TEST(GGEMSRb82Test, PreservesBetaPlus12093Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent full-support piecewise-linear mean; unchanged 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 527.1971436117112L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 527.1971436117112L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 527.1971436117112L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       527.1971436117112L, 0.005L);
   // Independently integrated conditional masses at three bin boundaries.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 604U) {
-      EXPECT_NEAR(cumulative, 0.19912084427947966L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.19912084427947966L, 1.0e-12L);
     }
     if (index + 1U == 1209U) {
-      EXPECT_NEAR(cumulative, 0.62495463937249423L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.62495463937249423L, 1.0e-12L);
     }
     if (index + 1U == 1814U) {
-      EXPECT_NEAR(cumulative, 0.93283788927213317L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.93283788927213317L, 1.0e-12L);
     }
   }
 }
@@ -614,23 +620,23 @@ TEST(GGEMSRb82Test, PreservesBetaPlus14242Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent full-support piecewise-linear mean; unchanged 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 622.9999979412999L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 622.9999979412999L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 622.9999979412999L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       622.9999979412999L, 0.005L);
   // Independently integrated conditional masses at three bin boundaries.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 712U) {
-      EXPECT_NEAR(cumulative, 0.19814361923075818L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.19814361923075818L, 1.0e-12L);
     }
     if (index + 1U == 1424U) {
-      EXPECT_NEAR(cumulative, 0.62129997701072081L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.62129997701072081L, 1.0e-12L);
     }
     if (index + 1U == 2136U) {
-      EXPECT_NEAR(cumulative, 0.93148397035276273L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.93148397035276273L, 1.0e-12L);
     }
   }
 }
@@ -675,23 +681,23 @@ TEST(GGEMSRb82Test, PreservesBetaPlus15604Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent full-support piecewise-linear mean; unchanged 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 732.3158849837718L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 732.3158849837718L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 732.3158849837718L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       732.3158849837718L, 0.005L);
   // Independently integrated conditional masses at three bin boundaries.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 780U) {
-      EXPECT_NEAR(cumulative, 0.18363202097787502L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.18363202097787502L, 1.0e-12L);
     }
     if (index + 1U == 1560U) {
-      EXPECT_NEAR(cumulative, 0.55222760365734875L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.55222760365734875L, 1.0e-12L);
     }
     if (index + 1U == 2340U) {
-      EXPECT_NEAR(cumulative, 0.88585242043385239L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.88585242043385239L, 1.0e-12L);
     }
   }
 }
@@ -736,23 +742,23 @@ TEST(GGEMSRb82Test, PreservesBetaPlus18934Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent full-support piecewise-linear mean; unchanged 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 835.3798554884311L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 835.3798554884311L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 835.3798554884311L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       835.3798554884311L, 0.005L);
   // Independently integrated conditional masses at three bin boundaries.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 946U) {
-      EXPECT_NEAR(cumulative, 0.19338048218363536L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.19338048218363536L, 1.0e-12L);
     }
     if (index + 1U == 1893U) {
-      EXPECT_NEAR(cumulative, 0.61298840795986216L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.61298840795986216L, 1.0e-12L);
     }
     if (index + 1U == 2840U) {
-      EXPECT_NEAR(cumulative, 0.92904061502623117L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.92904061502623117L, 1.0e-12L);
     }
   }
 }
@@ -797,23 +803,23 @@ TEST(GGEMSRb82Test, PreservesBetaPlus19061Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent full-support piecewise-linear mean; unchanged 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 841.1813657348903L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 841.1813657348903L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 841.1813657348903L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       841.1813657348903L, 0.005L);
   // Independently integrated conditional masses at three bin boundaries.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 953U) {
-      EXPECT_NEAR(cumulative, 0.19343314134680772L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.19343314134680772L, 1.0e-12L);
     }
     if (index + 1U == 1906U) {
-      EXPECT_NEAR(cumulative, 0.61276764531119148L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.61276764531119148L, 1.0e-12L);
     }
     if (index + 1U == 2859U) {
-      EXPECT_NEAR(cumulative, 0.92887570061286442L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.92887570061286442L, 1.0e-12L);
     }
   }
 }
@@ -858,23 +864,23 @@ TEST(GGEMSRb82Test, PreservesBetaPlus26045Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent full-support piecewise-linear mean; unchanged 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 1163.6279784535775L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 1163.6279784535775L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 1163.6279784535775L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       1163.6279784535775L, 0.005L);
   // Independently integrated conditional masses at three bin boundaries.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 1302U) {
-      EXPECT_NEAR(cumulative, 0.18570611921617612L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.18570611921617612L, 1.0e-12L);
     }
     if (index + 1U == 2604U) {
-      EXPECT_NEAR(cumulative, 0.60155641244710598L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.60155641244710598L, 1.0e-12L);
     }
     if (index + 1U == 3906U) {
-      EXPECT_NEAR(cumulative, 0.92562550651218949L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.92562550651218949L, 1.0e-12L);
     }
   }
 }
@@ -919,23 +925,23 @@ TEST(GGEMSRb82Test, PreservesBetaPlus3381Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent full-support piecewise-linear mean; unchanged 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 1528.1321190786148L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 1528.1321190786148L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 1528.1321190786148L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       1528.1321190786148L, 0.005L);
   // Independently integrated conditional masses at three bin boundaries.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 1690U) {
-      EXPECT_NEAR(cumulative, 0.17783871613303843L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.17783871613303843L, 1.0e-12L);
     }
     if (index + 1U == 3381U) {
-      EXPECT_NEAR(cumulative, 0.59140703561413285L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.59140703561413285L, 1.0e-12L);
     }
     if (index + 1U == 5071U) {
-      EXPECT_NEAR(cumulative, 0.92275243142775566L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.92275243142775566L, 1.0e-12L);
     }
   }
 }
@@ -991,10 +997,10 @@ TEST(GGEMSRb82Test, PreservesNuclearGamma) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 0.16183768L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 818.22298116235972L, 1.0e-9L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 818.22298116235972L,
-              0.000035971037460660934L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 0.16183768L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 818.22298116235972L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       818.22298116235972L, 0.000035971037460660934L);
 }
 
 // =============================================================================
@@ -1056,10 +1062,10 @@ TEST(GGEMSRb82Test, PreservesAtomicXray) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 0.027190L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 12.420101691798455L, 1.0e-9L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 12.420101691798455L,
-              1.4852731658518314e-8L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 0.027190L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 12.420101691798455L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       12.420101691798455L, 1.4852731658518314e-8L);
 }
 
 // =============================================================================
@@ -1123,10 +1129,10 @@ TEST(GGEMSRb82Test, PreservesConversion77652Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 0.0001386527L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 763.62741490501087L, 1.0e-9L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 763.62741490501087L,
-              2.0093633031845093e-8L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 0.0001386527L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 763.62741490501087L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       763.62741490501087L, 2.0093633031845093e-8L);
 }
 
 // =============================================================================
@@ -1186,10 +1192,10 @@ TEST(GGEMSRb82Test, PreservesConversion147488Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.90080E-7L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 1461.7484943392256L, 1.0e-9L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 1461.7484943392256L,
-              1.1882161891460419e-8L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.90080E-7L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 1461.7484943392256L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       1461.7484943392256L, 1.1882161891460419e-8L);
 }
 
 } // namespace

@@ -589,9 +589,9 @@ TEST_P(GGEMSWorldRayTest, ActualStreamKernel) {
 }
 
 INSTANTIATE_TEST_SUITE_P(World, GGEMSWorldRayTest, testing::ValuesIn(k_cases),
-                         [](testing::TestParamInfo<WorldCase> const &info)
+                         [](testing::TestParamInfo<WorldCase> const &case_info)
                            -> std::string {
-                           return std::string{info.param.name};
+                           return std::string{case_info.param.name};
                          });
 
 TEST_F(GGEMSWorldTransportTest,

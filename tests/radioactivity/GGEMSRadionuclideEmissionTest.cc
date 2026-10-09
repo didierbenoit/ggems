@@ -90,7 +90,8 @@ TEST(GGEMSRadionuclideEmissionTest, RejectsNonPhysicalParticleTypes) {
   for (GGEMSParticleType particle_type : {
          GGEMSParticleType::Unknown,
          GGEMSParticleType::Aionino,
-         static_cast<GGEMSParticleType>(999U),
+         // Representable by the fixed underlying type, but not a named species.
+         GGEMSParticleType{255U},
        }) {
     SCOPED_TRACE(static_cast<unsigned int>(particle_type));
     EXPECT_THROW(

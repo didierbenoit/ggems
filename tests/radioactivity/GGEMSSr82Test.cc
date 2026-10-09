@@ -33,6 +33,8 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMSLongDoubleAssertions.hh"
+
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideEmission.hh"
@@ -61,10 +63,10 @@ TEST(GGEMSSr82Test, PreservesIdentityAndOrderedMarginalYields) {
   // Physical yields are not a categorical probability distribution.
   // atomic_xray
   EXPECT_EQ(emissions[0U].GetParticleType(), GGEMSParticleType::Gamma);
-  EXPECT_NEAR(emissions[0U].GetYieldPerDecay(), 0.6041L, 1.0e-16L);
+  GGEMS_EXPECT_NEAR_LD(emissions[0U].GetYieldPerDecay(), 0.6041L, 1.0e-16L);
   EXPECT_EQ(emissions[0U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::DiscreteLines);
-  EXPECT_NEAR(definition.GetTotalYieldPerDecay(), 0.6041L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(definition.GetTotalYieldPerDecay(), 0.6041L, 1.0e-14L);
 }
 
 // =============================================================================
@@ -126,10 +128,10 @@ TEST(GGEMSSr82Test, PreservesAtomicXray) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 0.6041L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 13.129935805330243L, 1.0e-9L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 13.129935805330243L,
-              1.5732016584277153e-8L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 0.6041L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 13.129935805330243L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       13.129935805330243L, 1.5732016584277153e-8L);
 }
 
 } // namespace

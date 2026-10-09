@@ -34,6 +34,8 @@
 
 #include <gtest/gtest.h>
 
+#include "GGEMSLongDoubleAssertions.hh"
+
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideEmission.hh"
@@ -185,7 +187,8 @@ TEST(GGEMSHo166Test, PreservesIdentityAndOrderedMarginalYields) {
   EXPECT_EQ(emissions[25U].GetYieldPerDecay(), 3.83217E-8L);
   EXPECT_EQ(emissions[25U].GetEnergyDistribution().GetType(),
             GGEMSEnergyDistributionType::DiscreteLines);
-  EXPECT_NEAR(definition.GetTotalYieldPerDecay(), 1.70868250744859L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(definition.GetTotalYieldPerDecay(), 1.70868250744859L,
+                       1.0e-14L);
 }
 
 TEST(GGEMSHo166Test, PreservesBetaMinus234Kev) {
@@ -224,23 +227,23 @@ TEST(GGEMSHo166Test, PreservesBetaMinus234Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent 60-digit full-support integral; existing 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 5.7956314798813588L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 5.7956314798813588L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 5.7956314798813588L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       5.7956314798813588L, 0.005L);
   // Independently integrated retained-support cumulative masses.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 11U) {
-      EXPECT_NEAR(cumulative, 0.55574309922473475L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.55574309922473475L, 1.0e-12L);
     }
     if (index + 1U == 23U) {
-      EXPECT_NEAR(cumulative, 0.86940933691136624L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.86940933691136624L, 1.0e-12L);
     }
     if (index + 1U == 35U) {
-      EXPECT_NEAR(cumulative, 0.98414367587407792L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.98414367587407792L, 1.0e-12L);
     }
   }
 }
@@ -281,23 +284,23 @@ TEST(GGEMSHo166Test, PreservesBetaMinus406Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent 60-digit full-support integral; existing 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 10.148467627442519L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 10.148467627442519L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 10.148467627442519L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       10.148467627442519L, 0.005L);
   // Independently integrated retained-support cumulative masses.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 20U) {
-      EXPECT_NEAR(cumulative, 0.56802905645035029L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.56802905645035029L, 1.0e-12L);
     }
     if (index + 1U == 41U) {
-      EXPECT_NEAR(cumulative, 0.8740292273521223L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.8740292273521223L, 1.0e-12L);
     }
     if (index + 1U == 61U) {
-      EXPECT_NEAR(cumulative, 0.98312017500309734L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.98312017500309734L, 1.0e-12L);
     }
   }
 }
@@ -338,23 +341,23 @@ TEST(GGEMSHo166Test, PreservesBetaMinus1914Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent 60-digit full-support integral; existing 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 51.277252296247596L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 51.277252296247596L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 51.277252296247596L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       51.277252296247596L, 0.005L);
   // Independently integrated retained-support cumulative masses.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 95U) {
-      EXPECT_NEAR(cumulative, 0.537426455575159L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.537426455575159L, 1.0e-12L);
     }
     if (index + 1U == 191U) {
-      EXPECT_NEAR(cumulative, 0.84985207767310378L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.84985207767310378L, 1.0e-12L);
     }
     if (index + 1U == 287U) {
-      EXPECT_NEAR(cumulative, 0.9795456109938504L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.9795456109938504L, 1.0e-12L);
     }
   }
 }
@@ -395,23 +398,23 @@ TEST(GGEMSHo166Test, PreservesBetaMinus3254Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent 60-digit full-support integral; existing 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 103.42103634362208L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 103.42103634362208L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 103.42103634362208L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       103.42103634362208L, 0.005L);
   // Independently integrated retained-support cumulative masses.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 162U) {
-      EXPECT_NEAR(cumulative, 0.44738057875410303L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.44738057875410303L, 1.0e-12L);
     }
     if (index + 1U == 325U) {
-      EXPECT_NEAR(cumulative, 0.77401224340430819L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.77401224340430819L, 1.0e-12L);
     }
     if (index + 1U == 488U) {
-      EXPECT_NEAR(cumulative, 0.96010512686957039L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.96010512686957039L, 1.0e-12L);
     }
   }
 }
@@ -452,23 +455,23 @@ TEST(GGEMSHo166Test, PreservesBetaMinus3938Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent 60-digit full-support integral; existing 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 113.82483638048022L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 113.82483638048022L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 113.82483638048022L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       113.82483638048022L, 0.005L);
   // Independently integrated retained-support cumulative masses.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 197U) {
-      EXPECT_NEAR(cumulative, 0.49710028132654521L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.49710028132654521L, 1.0e-12L);
     }
     if (index + 1U == 394U) {
-      EXPECT_NEAR(cumulative, 0.82354836925167496L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.82354836925167496L, 1.0e-12L);
     }
     if (index + 1U == 591U) {
-      EXPECT_NEAR(cumulative, 0.97426109594826948L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.97426109594826948L, 1.0e-12L);
     }
   }
 }
@@ -509,23 +512,23 @@ TEST(GGEMSHo166Test, PreservesBetaMinus10679Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent 60-digit full-support integral; existing 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 363.15534935373313L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 363.15534935373313L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 363.15534935373313L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       363.15534935373313L, 0.005L);
   // Independently integrated retained-support cumulative masses.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 534U) {
-      EXPECT_NEAR(cumulative, 0.41368060969649484L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.41368060969649484L, 1.0e-12L);
     }
     if (index + 1U == 1068U) {
-      EXPECT_NEAR(cumulative, 0.74027501076090174L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.74027501076090174L, 1.0e-12L);
     }
     if (index + 1U == 1602U) {
-      EXPECT_NEAR(cumulative, 0.94769120957315822L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.94769120957315822L, 1.0e-12L);
     }
   }
 }
@@ -566,23 +569,23 @@ TEST(GGEMSHo166Test, PreservesBetaMinus17732Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent 60-digit full-support integral; existing 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 599.20809137972753L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 599.20809137972753L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 599.20809137972753L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       599.20809137972753L, 0.005L);
   // Independently integrated retained-support cumulative masses.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 886U) {
-      EXPECT_NEAR(cumulative, 0.41195682724001953L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.41195682724001953L, 1.0e-12L);
     }
     if (index + 1U == 1773U) {
-      EXPECT_NEAR(cumulative, 0.75044592770586671L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.75044592770586671L, 1.0e-12L);
     }
     if (index + 1U == 2660U) {
-      EXPECT_NEAR(cumulative, 0.95191558872391102L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.95191558872391102L, 1.0e-12L);
     }
   }
 }
@@ -623,23 +626,23 @@ TEST(GGEMSHo166Test, PreservesBetaMinus18538Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.0L, 1.0e-12L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.0L, 1.0e-12L);
   // Independent 60-digit full-support integral; existing 0.005 keV budget.
-  EXPECT_NEAR(moment / weight_sum / keV, 671.91450820983152L, 0.005L);
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 671.91450820983152L,
-              0.005L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 671.91450820983152L, 0.005L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       671.91450820983152L, 0.005L);
   // Independently integrated retained-support cumulative masses.
   long double cumulative{0.0L};
   for (std::size_t index = 0U; index < weights.size(); ++index) {
     cumulative += static_cast<long double>(weights[index]);
     if (index + 1U == 927U) {
-      EXPECT_NEAR(cumulative, 0.34855619895045181L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.34855619895045181L, 1.0e-12L);
     }
     if (index + 1U == 1854U) {
-      EXPECT_NEAR(cumulative, 0.7230390433856938L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.7230390433856938L, 1.0e-12L);
     }
     if (index + 1U == 2781U) {
-      EXPECT_NEAR(cumulative, 0.95322218055069818L, 1.0e-12L);
+      GGEMS_EXPECT_NEAR_LD(cumulative, 0.95322218055069818L, 1.0e-12L);
     }
   }
 }
@@ -690,11 +693,11 @@ TEST(GGEMSHo166Test, PreservesNuclearGamma) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 0.0788853L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 298.32639801509282L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 0.0788853L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 298.32639801509282L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 298.32639801509282L,
-              6.5196485648155206e-06L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       298.32639801509282L, 6.5196485648155206e-06L);
 }
 
 TEST(GGEMSHo166Test, PreservesAtomicXray) {
@@ -737,11 +740,11 @@ TEST(GGEMSHo166Test, PreservesAtomicXray) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 0.18275L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 31.972632585499316L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 0.18275L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 31.972632585499316L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 31.972632585499316L,
-              5.8672674302011729e-08L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       31.972632585499316L, 5.8672674302011729e-08L);
 }
 
 TEST(GGEMSHo166Test, PreservesConversion805776Kev) {
@@ -784,11 +787,11 @@ TEST(GGEMSHo166Test, PreservesConversion805776Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 0.44810L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 61.051073273822809L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 0.44810L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 61.051073273822809L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 61.051073273822809L,
-              8.1009317025542258e-08L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       61.051073273822809L, 8.1009317025542258e-08L);
 }
 
 TEST(GGEMSHo166Test, PreservesConversion1844124Kev) {
@@ -831,11 +834,11 @@ TEST(GGEMSHo166Test, PreservesConversion1844124Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 0.0000048157L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 145.94882701580249L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 0.0000048157L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 145.94882701580249L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 145.94882701580249L,
-              8.1009317025542258e-08L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       145.94882701580249L, 8.1009317025542258e-08L);
 }
 
 TEST(GGEMSHo166Test, PreservesConversion520914Kev) {
@@ -878,11 +881,11 @@ TEST(GGEMSHo166Test, PreservesConversion520914Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 5.037E-8L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 473.38752948183441L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 5.037E-8L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 473.38752948183441L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 473.38752948183441L,
-              8.1009456723928442e-08L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       473.38752948183441L, 8.1009456723928442e-08L);
 }
 
 TEST(GGEMSHo166Test, PreservesConversion674125Kev) {
@@ -925,11 +928,11 @@ TEST(GGEMSHo166Test, PreservesConversion674125Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 0.0000015282L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 625.69487586703315L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 0.0000015282L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 625.69487586703315L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 625.69487586703315L,
-              8.1009456723928442e-08L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       625.69487586703315L, 8.1009456723928442e-08L);
 }
 
 TEST(GGEMSHo166Test, PreservesConversion705326Kev) {
@@ -972,11 +975,11 @@ TEST(GGEMSHo166Test, PreservesConversion705326Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 9.968E-7L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 656.66096428571427L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 9.968E-7L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 656.66096428571427L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 656.66096428571427L,
-              8.1008059740066525e-08L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       656.66096428571427L, 8.1008059740066525e-08L);
 }
 
 TEST(GGEMSHo166Test, PreservesConversion785903Kev) {
@@ -1019,11 +1022,11 @@ TEST(GGEMSHo166Test, PreservesConversion785903Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 6.6558E-7L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 737.05077792301449L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 6.6558E-7L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 737.05077792301449L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 737.05077792301449L,
-              8.1008059740066525e-08L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       737.05077792301449L, 8.1008059740066525e-08L);
 }
 
 TEST(GGEMSHo166Test, PreservesConversion1263406Kev) {
@@ -1066,11 +1069,11 @@ TEST(GGEMSHo166Test, PreservesConversion1263406Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 3.1975E-8L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 1213.6470103205629L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 3.1975E-8L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 1213.6470103205629L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 1213.6470103205629L,
-              8.1008059740066525e-08L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       1213.6470103205629L, 8.1008059740066525e-08L);
 }
 
 TEST(GGEMSHo166Test, PreservesConversion1379447Kev) {
@@ -1113,11 +1116,11 @@ TEST(GGEMSHo166Test, PreservesConversion1379447Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 0.0000160585L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 1329.6875188965346L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 0.0000160585L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 1329.6875188965346L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 1329.6875188965346L,
-              8.1008059740066525e-08L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       1329.6875188965346L, 8.1008059740066525e-08L);
 }
 
 TEST(GGEMSHo166Test, PreservesConversion1447817Kev) {
@@ -1160,11 +1163,11 @@ TEST(GGEMSHo166Test, PreservesConversion1447817Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 3.0626E-8L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 1397.8241771697251L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 3.0626E-8L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 1397.8241771697251L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 1397.8241771697251L,
-              8.1008059740066525e-08L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       1397.8241771697251L, 8.1008059740066525e-08L);
 }
 
 TEST(GGEMSHo166Test, PreservesConversion1528394Kev) {
@@ -1207,11 +1210,11 @@ TEST(GGEMSHo166Test, PreservesConversion1528394Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.3122E-9L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 1478.5598065081542L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.3122E-9L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 1478.5598065081542L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 1478.5598065081542L,
-              8.1008059740066525e-08L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       1478.5598065081542L, 8.1008059740066525e-08L);
 }
 
 TEST(GGEMSHo166Test, PreservesConversion1581849Kev) {
@@ -1254,11 +1257,11 @@ TEST(GGEMSHo166Test, PreservesConversion1581849Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 0.00000109564L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 1531.5513530447956L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 0.00000109564L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 1531.5513530447956L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 1531.5513530447956L,
-              8.1008059740066525e-08L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       1531.5513530447956L, 8.1008059740066525e-08L);
 }
 
 TEST(GGEMSHo166Test, PreservesConversion1662426Kev) {
@@ -1301,11 +1304,11 @@ TEST(GGEMSHo166Test, PreservesConversion1662426Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 6.53293E-7L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 1612.1061025282684L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 6.53293E-7L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 1612.1061025282684L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 1612.1061025282684L,
-              8.1008059740066525e-08L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       1612.1061025282684L, 8.1008059740066525e-08L);
 }
 
 TEST(GGEMSHo166Test, PreservesConversion173261Kev) {
@@ -1348,11 +1351,11 @@ TEST(GGEMSHo166Test, PreservesConversion173261Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 7.065E-10L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 1682.6013658881811L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 7.065E-10L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 1682.6013658881811L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 1682.6013658881811L,
-              8.1019235610961911e-08L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       1682.6013658881811L, 8.1019235610961911e-08L);
 }
 
 TEST(GGEMSHo166Test, PreservesConversion1749838Kev) {
@@ -1395,11 +1398,11 @@ TEST(GGEMSHo166Test, PreservesConversion1749838Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 1.39659E-7L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 1699.5539629096586L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 1.39659E-7L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 1699.5539629096586L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 1699.5539629096586L,
-              8.1008059740066525e-08L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       1699.5539629096586L, 8.1008059740066525e-08L);
 }
 
 TEST(GGEMSHo166Test, PreservesConversion181319Kev) {
@@ -1442,11 +1445,11 @@ TEST(GGEMSHo166Test, PreservesConversion181319Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 7.6519E-10L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 1763.1765896051961L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 7.6519E-10L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 1763.1765896051961L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 1763.1765896051961L,
-              8.1019235610961911e-08L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       1763.1765896051961L, 8.1019235610961911e-08L);
 }
 
 TEST(GGEMSHo166Test, PreservesConversion1830414Kev) {
@@ -1489,11 +1492,11 @@ TEST(GGEMSHo166Test, PreservesConversion1830414Kev) {
   EXPECT_EQ(previous_ticket, 4'294'967'296ULL);
   long double const keV =
     static_cast<long double>(ggems::units::operator""_keV(1ULL).value);
-  EXPECT_NEAR(weight_sum, 3.83217E-8L, 1.0e-14L);
-  EXPECT_NEAR(moment / weight_sum / keV, 1780.0839236907548L, 1.0e-9L);
+  GGEMS_EXPECT_NEAR_LD(weight_sum, 3.83217E-8L, 1.0e-14L);
+  GGEMS_EXPECT_NEAR_LD(moment / weight_sum / keV, 1780.0839236907548L, 1.0e-9L);
   // At most one ticket of error per line from largest-remainder allocation.
-  EXPECT_NEAR(ticket_moment / 4'294'967'296.0L / keV, 1780.0839236907548L,
-              8.1008059740066525e-08L);
+  GGEMS_EXPECT_NEAR_LD(ticket_moment / 4'294'967'296.0L / keV,
+                       1780.0839236907548L, 8.1008059740066525e-08L);
 }
 
 } // namespace
