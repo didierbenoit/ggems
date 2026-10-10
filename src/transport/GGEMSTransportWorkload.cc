@@ -56,6 +56,7 @@
 #include "GGEMS/sources/GGEMSSourceEmissionRange.hh"
 #include "GGEMS/transport/GGEMSDiagnosticProjection.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
+#include "GGEMS/geometry/GGEMSBoxRecord.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/transport/GGEMSTransportCounters.hh"
@@ -419,7 +420,8 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   sources::GGEMSSourceConfigurationSnapshot const &source_configuration,
   std::uint64_t random_stream_offset, std::uint32_t context_index,
   std::uint32_t observer_record_capacity,
-  std::uint32_t launch_primary_count_limit, geometry::GGEMSWorld const *world)
+  std::uint32_t launch_primary_count_limit, geometry::GGEMSWorld const *world,
+  std::span<geometry::GGEMSBoxRecord const> boxes)
     : context_{&context}, worker_count_{worker_count},
       source_count_{CheckedSourceCount(source_configuration.GetSourceCount())},
       emission_count_{
@@ -431,6 +433,9 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
         worker_count, launch_primary_count_limit)},
       world_{world}, world_buffer_{context.CreateSVMBuffer(ggems::units::Bytes{
                        sizeof(geometry::GGEMSWorldRecord)})},
+      box_count_{static_cast<std::uint32_t>(boxes.size())},
+      box_records_buffer_{context.CreateSVMBuffer(ComputeArrayBufferSize(
+        boxes.size(), sizeof(geometry::GGEMSBoxRecord)))},
       random_states_buffer_{context.CreateSVMBuffer(
         ComputeRandomStatesSize(random, worker_count, random_stream_offset))},
       counters_buffer_{context.CreateSVMBuffer(
@@ -512,6 +517,15 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   ggems::ocl::WriteSVMFromHost(world_buffer_, world != nullptr
                                                 ? world->BuildRecord()
                                                 : geometry::GGEMSWorldRecord{});
+
+  kernel_->SetArgSVMPointer(argument_index++, box_records_buffer_.GetData());
+  kernel_->SetArg(argument_index++, static_cast<cl_uint>(box_count_));
+  if (boxes.empty()) {
+    ggems::ocl::WriteSVMFromHost(box_records_buffer_,
+                                 geometry::GGEMSBoxRecord{});
+  } else {
+    ggems::ocl::WriteSVMFromHost(box_records_buffer_, boxes);
+  }
 
   auto const &source_emission_records =
     source_configuration.GetEmissionRecords();

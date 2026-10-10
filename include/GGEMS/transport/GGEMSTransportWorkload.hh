@@ -31,10 +31,12 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <span>
 #include <string>
 #include <vector>
 #include <memory>
 
+#include "GGEMS/geometry/GGEMSBoxRecord.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/transport/GGEMSTransportCounters.hh"
@@ -152,7 +154,7 @@ struct GGEMSTransportLogicalCounters {
   /*! \brief Aionino births rejected outside the World. */
   std::uint64_t outside_world_count{0ULL};
 
-  /*! \brief Aionino queries that could not resolve a World boundary. */
+  /*! \brief Aionino queries that could not resolve a physical boundary. */
   std::uint64_t unresolved_geometry_count{0ULL};
 
   /*! \brief Aionino histories completed at the World boundary. */
@@ -290,6 +292,7 @@ public:
    * \param[in] launch_primary_count_limit Requested positive chunk limit, or
    * zero to select the largest limit preserving atomic-cursor headroom.
    * \param[in] world Optional World copied to SVM; required for Aionino.
+   * \param[in] boxes Immutable Box occurrence records copied to SVM.
    * \throws GGEMSRecoverable If counts, random-stream range, or launch limit
    * are invalid.
    * \throws GGEMSInternal If energy and cumulative-ticket table lengths
@@ -304,7 +307,8 @@ public:
     std::uint64_t random_stream_offset = 0ULL, std::uint32_t context_index = 0U,
     std::uint32_t observer_record_capacity = 1U,
     std::uint32_t launch_primary_count_limit = 0U,
-    geometry::GGEMSWorld const *world = nullptr);
+    geometry::GGEMSWorld const *world = nullptr,
+    std::span<geometry::GGEMSBoxRecord const> boxes = {});
 
   ~GGEMSTransportWorkload() = default;
 
@@ -458,6 +462,12 @@ private:
 
   /*! \brief Immutable origin-centered World box, or zero record if absent. */
   ggems::ocl::GGEMSOpenCLSVMBuffer world_buffer_;
+
+  /*! \brief Number of immutable Box occurrences uploaded to the device. */
+  std::uint32_t box_count_{0U};
+
+  /*! \brief Immutable Box occurrence records; one zero record if absent. */
+  ggems::ocl::GGEMSOpenCLSVMBuffer box_records_buffer_;
 
   /*! \brief Owns SVM storage for persistent per-worker random states. */
   ggems::ocl::GGEMSOpenCLSVMBuffer random_states_buffer_;

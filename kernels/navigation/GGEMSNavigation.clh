@@ -1,0 +1,359 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Generic physical boundary queries over the World and its analytic
+ * Box occurrences.
+ *
+ * Navigation supplies geometric facts: the current physical owner of a
+ * canonical start and the exact first forward physical boundary with its
+ * event, crossed planes and arrival owner. Transport owns the accepted
+ * movement, the canonical commit and the lifecycle.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_NAVIGATION_CLH
+#define GGEMS_NAVIGATION_CLH
+
+#include "geometry/GGEMSBoxRecord.clh"
+#include "geometry/GGEMSWorldRecord.clh"
+#include "navigation/GGEMSWorldNavigation.clh"
+
+/*! \brief Query resolved: the witness describes the first physical boundary. */
+#define GGEMS_NAVIGATION_RESOLVED 0U
+
+/*! \brief The start lies outside the closed World. */
+#define GGEMS_NAVIGATION_OUTSIDE_WORLD 1U
+
+/*! \brief The direction or the World record cannot be resolved. */
+#define GGEMS_NAVIGATION_UNRESOLVED 2U
+
+/*! \brief No boundary event (unresolved queries, no Box entry). */
+#define GGEMS_NAVIGATION_EVENT_NONE 0U
+
+/*!
+ * \brief The ray leaves the World through the crossed planes; the arrival
+ * owner is GGEMS_VOLUME_ID_EXTERIOR.
+ */
+#define GGEMS_NAVIGATION_EVENT_WORLD_EXIT 1U
+
+/*! \brief The ray enters the open interior of a physical volume. */
+#define GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY 2U
+
+/*! \brief The ray leaves the closed support of its current physical volume. */
+#define GGEMS_NAVIGATION_EVENT_VOLUME_EXIT 3U
+
+/*!
+ * \brief Dense Material identity of the World medium: the host interns the
+ * World medium first, so the Materials authority assigns it identity 0.
+ */
+#define GGEMS_MATERIAL_ID_WORLD 0U
+
+/*! \brief Material identity of the exterior: no medium. */
+#define GGEMS_MATERIAL_ID_NONE 0xFFFFFFFFU
+
+/*!
+ * \brief Exact first physical boundary along the forward open ray.
+ *
+ * The unrounded ray parameter is gap_pm divided by the magnitude of the
+ * limiting direction component (mantissa * 2^exponent); it is kept as an
+ * exact witness, never as a rounded distance. faces lists every plane
+ * attaining that parameter in the -X,+X,-Y,+Y,-Z,+Z bit order of
+ * GGEMSWorldNavigation.clh.
+ */
+typedef struct GGEMSBoundaryWitness {
+  /*! \brief Forward integer gap to the limiting plane along its axis. */
+  ulong gap_pm;
+
+  /*! \brief Significand of the limiting direction component. */
+  uint mantissa;
+
+  /*! \brief Binary exponent of the limiting direction component. */
+  int exponent;
+
+  /*! \brief Exact simultaneous crossing planes of the limiting volume. */
+  uint faces;
+
+  /*! \brief GGEMS_NAVIGATION_EVENT_* describing the boundary. */
+  uint event;
+
+  /*! \brief Physical owner after the boundary; exterior after a World exit. */
+  uint arrival_volume_id;
+
+  /*! \brief Dense Material identity of the arrival owner. */
+  uint arrival_material_id;
+
+  /*! \brief GGEMS_NAVIGATION_RESOLVED, OUTSIDE_WORLD or UNRESOLVED. */
+  uint status;
+} GGEMSBoundaryWitness;
+
+/*!
+ * \brief Compares two exact ray parameters gap_a/|d_a| and gap_b/|d_b|.
+ * \param[in] gap_a First forward gap in pm.
+ * \param[in] mantissa_a Significand of the first limiting component.
+ * \param[in] exponent_a Binary exponent of the first limiting component.
+ * \param[in] gap_b Second forward gap in pm.
+ * \param[in] mantissa_b Significand of the second limiting component.
+ * \param[in] exponent_b Binary exponent of the second limiting component.
+ * \return -1, 0 or +1 according to the exact ordering of the parameters.
+ */
+static inline int GGEMS_NavigationCompareParameters(ulong gap_a,
+                                                    uint mantissa_a,
+                                                    int exponent_a, ulong gap_b,
+                                                    uint mantissa_b,
+                                                    int exponent_b) {
+  return GGEMS_WorldCompareScaled(
+    GGEMS_WorldProduct(gap_a, mantissa_b), exponent_b,
+    GGEMS_WorldProduct(gap_b, mantissa_a), exponent_a);
+}
+
+/*!
+ * \brief Finds the first entry of the forward open ray into the open interior
+ * of a Box from a start that the Box does not own.
+ *
+ * A direction component parallel to an axis requires the start strictly inside
+ * that slab; the entry parameter is the largest near-plane parameter and the
+ * entry exists only if it is strictly smaller than the smallest far-plane
+ * parameter, so tangent contacts with an edge or a corner and motion along a
+ * face never enter. All comparisons are exact.
+ *
+ * Witnesses are written through private pointers rather than returned by
+ * value. The qualified call pattern is: inline queries filling a private
+ * witness, called from the out-of-line Transport transaction. An earlier
+ * structure returning the witness by value from a query that itself called
+ * the struct-returning World query was miscompiled by the Intel Graphics
+ * compiler (NEO 26.35, -cl-opt-disable): a pointer was stored over the
+ * transport counters. The qualification covers these callers and the tested
+ * runtimes, not every nested struct return.
+ * \param[in] box Immutable Box occurrence.
+ * \param[in] position Canonical global integer-pm anchor inside the World.
+ * \param[in] direction Finite stored direction with a nonzero component.
+ * \param[out] witness Entry witness, written only when the ray enters.
+ * \return Nonzero if the ray enters the Box.
+ */
+static inline uint GGEMS_BoxFindEntry(__global GGEMSBoxRecord const *box,
+                                      long3 position, float3 direction,
+                                      GGEMSBoundaryWitness *witness) {
+  long3 lower = (long3)(box->lower_x_pm, box->lower_y_pm, box->lower_z_pm);
+  long3 upper = (long3)(box->upper_x_pm, box->upper_y_pm, box->upper_z_pm);
+
+  ulong near_gap = 0UL;
+  uint near_mantissa = 0U;
+  int near_exponent = 0;
+  uint near_faces = 0U;
+  ulong far_gap = 0UL;
+  uint far_mantissa = 0U;
+  int far_exponent = 0;
+
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    GGEMSWorldDirection component = GGEMS_WorldDecodeDirection(direction[axis]);
+
+    if (component.mantissa == 0U) {
+      if (position[axis] <= lower[axis] || position[axis] >= upper[axis]) {
+        return 0U;
+      }
+      continue;
+    }
+
+    // Signed forward gaps to the near and far planes along the motion sign.
+    long gap_near = component.negative != 0U ? position[axis] - upper[axis]
+                                             : lower[axis] - position[axis];
+    long gap_far = component.negative != 0U ? position[axis] - lower[axis]
+                                            : upper[axis] - position[axis];
+
+    if (gap_far <= 0L) {
+      return 0U;
+    }
+
+    if (far_mantissa == 0U ||
+        GGEMS_NavigationCompareParameters((ulong)gap_far, component.mantissa,
+                                          component.exponent, far_gap,
+                                          far_mantissa, far_exponent) < 0) {
+      far_gap = (ulong)gap_far;
+      far_mantissa = component.mantissa;
+      far_exponent = component.exponent;
+    }
+
+    if (gap_near < 0L) {
+      continue;
+    }
+
+    uint face = 1U << (2U * axis + (component.negative != 0U));
+    int near_order =
+      near_faces == 0U
+        ? 1
+        : GGEMS_NavigationCompareParameters((ulong)gap_near, component.mantissa,
+                                            component.exponent, near_gap,
+                                            near_mantissa, near_exponent);
+
+    if (near_order > 0) {
+      near_gap = (ulong)gap_near;
+      near_mantissa = component.mantissa;
+      near_exponent = component.exponent;
+      near_faces = face;
+    } else if (near_order == 0) {
+      near_faces |= face;
+    }
+  }
+
+  if (near_faces == 0U || far_mantissa == 0U ||
+      GGEMS_NavigationCompareParameters(near_gap, near_mantissa, near_exponent,
+                                        far_gap, far_mantissa,
+                                        far_exponent) >= 0) {
+    return 0U;
+  }
+
+  witness->gap_pm = near_gap;
+  witness->mantissa = near_mantissa;
+  witness->exponent = near_exponent;
+  witness->faces = near_faces;
+  witness->event = GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY;
+  witness->arrival_volume_id = box->volume_id;
+  witness->arrival_material_id = box->material_id;
+  witness->status = GGEMS_NAVIGATION_RESOLVED;
+
+  return 1U;
+}
+
+/*!
+ * \brief Locates the physical owner of a canonical start inside the World.
+ *
+ * A start strictly inside a Box belongs to the Box. A start on the Box surface
+ * belongs to the Box only when the forward open ray immediately enters the
+ * open interior, that is when every coincident face is left inward; a ray
+ * leaving outward or sliding along a face starts in the World. No epsilon is
+ * involved.
+ * \param[in] boxes Immutable Box occurrences.
+ * \param[in] box_count Number of Box occurrences.
+ * \param[in] position Canonical global integer-pm anchor inside the World.
+ * \param[in] direction Finite stored direction.
+ * \return Owner identities packed as (volume_id << 32) | material_id;
+ * GGEMS_VOLUME_ID_WORLD and GGEMS_MATERIAL_ID_WORLD when no Box owns it.
+ */
+static inline ulong GGEMS_NavigationLocate(__global GGEMSBoxRecord const *boxes,
+                                           uint box_count, long3 position,
+                                           float3 direction) {
+  for (uint index = 0U; index < box_count; ++index) {
+    __global GGEMSBoxRecord const *box = boxes + index;
+    long3 lower = (long3)(box->lower_x_pm, box->lower_y_pm, box->lower_z_pm);
+    long3 upper = (long3)(box->upper_x_pm, box->upper_y_pm, box->upper_z_pm);
+    uint owned = 1U;
+
+    for (uint axis = 0U; axis < 3U && owned != 0U; ++axis) {
+      if (position[axis] < lower[axis] || position[axis] > upper[axis]) {
+        owned = 0U;
+      } else if (position[axis] == lower[axis] ||
+                 position[axis] == upper[axis]) {
+        GGEMSWorldDirection component =
+          GGEMS_WorldDecodeDirection(direction[axis]);
+        owned = component.mantissa != 0U &&
+                (position[axis] == lower[axis] ? component.negative == 0U
+                                               : component.negative != 0U);
+      }
+    }
+
+    if (owned != 0U) {
+      return ((ulong)box->volume_id << 32U) | (ulong)box->material_id;
+    }
+  }
+
+  return ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | (ulong)GGEMS_MATERIAL_ID_WORLD;
+}
+
+/*!
+ * \brief Finds the first physical boundary along the forward open ray.
+ *
+ * From the World, the candidates are the World exit and the entry into every
+ * Box; from a Box, the only candidate is its own exit because Boxes are
+ * strictly contained in the World and do not overlap. Candidates are compared
+ * on their exact ray parameters before any rounding. A tangent or coincident
+ * contact that does not change the owner produces no event.
+ *
+ * Witnesses are filled through a private pointer; see GGEMS_BoxFindEntry
+ * for the qualified call pattern.
+ * \param[in] world Immutable World record.
+ * \param[in] boxes Immutable Box occurrences.
+ * \param[in] box_count Number of Box occurrences.
+ * \param[in] position Canonical global integer-pm anchor.
+ * \param[in] direction Stored finite direction.
+ * \param[in] current_volume_id Physical owner of the start.
+ * \param[out] witness Earliest boundary; meaningful when the status is
+ * GGEMS_NAVIGATION_RESOLVED.
+ * \return GGEMS_NAVIGATION_RESOLVED, OUTSIDE_WORLD or UNRESOLVED.
+ */
+static inline uint GGEMS_NavigationFindBoundary(
+  __global GGEMSWorldRecord const *world, __global GGEMSBoxRecord const *boxes,
+  uint box_count, long3 position, float3 direction, uint current_volume_id,
+  GGEMSBoundaryWitness *witness) {
+  GGEMSWorldBoundary world_exit =
+    GGEMS_WorldFindBoundary(world, position, direction);
+
+  witness->gap_pm = world_exit.gap_pm;
+  witness->mantissa = world_exit.direction.mantissa;
+  witness->exponent = world_exit.direction.exponent;
+  witness->faces = world_exit.faces;
+  witness->event = GGEMS_NAVIGATION_EVENT_NONE;
+  witness->arrival_volume_id = GGEMS_VOLUME_ID_EXTERIOR;
+  witness->arrival_material_id = GGEMS_MATERIAL_ID_NONE;
+  witness->status = world_exit.status;
+
+  if (world_exit.status != GGEMS_WORLD_EXIT) {
+    return world_exit.status;
+  }
+
+  witness->event = GGEMS_NAVIGATION_EVENT_WORLD_EXIT;
+
+  if (current_volume_id != GGEMS_VOLUME_ID_WORLD) {
+    __global GGEMSBoxRecord const *box = boxes + (current_volume_id - 1U);
+    GGEMSWorldBoundary exit = GGEMS_SlabFindExit(
+      (long3)(box->lower_x_pm, box->lower_y_pm, box->lower_z_pm),
+      (long3)(box->upper_x_pm, box->upper_y_pm, box->upper_z_pm), position,
+      direction);
+
+    witness->gap_pm = exit.gap_pm;
+    witness->mantissa = exit.direction.mantissa;
+    witness->exponent = exit.direction.exponent;
+    witness->faces = exit.faces;
+    witness->event = GGEMS_NAVIGATION_EVENT_VOLUME_EXIT;
+    witness->arrival_volume_id = GGEMS_VOLUME_ID_WORLD;
+    witness->arrival_material_id = GGEMS_MATERIAL_ID_WORLD;
+
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+
+  for (uint index = 0U; index < box_count; ++index) {
+    GGEMSBoundaryWitness entry;
+
+    if (GGEMS_BoxFindEntry(boxes + index, position, direction, &entry) != 0U &&
+        GGEMS_NavigationCompareParameters(
+          entry.gap_pm, entry.mantissa, entry.exponent, witness->gap_pm,
+          witness->mantissa, witness->exponent) < 0) {
+      *witness = entry;
+    }
+  }
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+#endif

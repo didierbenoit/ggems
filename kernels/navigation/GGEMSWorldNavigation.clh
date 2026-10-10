@@ -249,11 +249,68 @@ typedef struct GGEMSWorldBoundary {
 } GGEMSWorldBoundary;
 
 /*!
+ * \brief Finds the first exit from a closed axis-aligned slab box.
+ *
+ * Shared by the World and by analytic Box occurrences. Position comparisons
+ * and face ties are exact. Zero components are parallel; coincident axes
+ * remain on the closed support until another face is crossed. An outward
+ * boundary start exits at zero. The start must lie in the closed box so that
+ * every forward gap is nonnegative; the caller guarantees it. No RNG or
+ * position mutation occurs.
+ * \param[in] lower Global integer-pm coordinates of the -X,-Y,-Z faces.
+ * \param[in] upper Global integer-pm coordinates of the +X,+Y,+Z faces.
+ * \param[in] position Canonical global integer-pm anchor inside the closed box.
+ * \param[in] direction Stored finite direction; an all-zero vector is
+ * unresolved.
+ * \return Exact boundary witness with status GGEMS_WORLD_EXIT, or
+ * GGEMS_WORLD_UNRESOLVED for the zero direction.
+ */
+static inline GGEMSWorldBoundary
+GGEMS_SlabFindExit(long3 lower, long3 upper, long3 position, float3 direction) {
+  GGEMSWorldBoundary result = {0UL, {0U, 0, 0U}, 0U, GGEMS_WORLD_UNRESOLVED};
+
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    GGEMSWorldDirection component = GGEMS_WorldDecodeDirection(direction[axis]);
+
+    if (component.mantissa == 0U) {
+      continue;
+    }
+
+    ulong gap =
+      (ulong)(component.negative != 0U ? position[axis] - lower[axis]
+                                       : upper[axis] - position[axis]);
+
+    uint face = 1U << (2U * axis + (component.negative == 0U));
+
+    int order = result.faces == 0U
+                  ? -1
+                  : GGEMS_WorldCompareScaled(
+                      GGEMS_WorldProduct(gap, result.direction.mantissa),
+                      result.direction.exponent,
+                      GGEMS_WorldProduct(result.gap_pm, component.mantissa),
+                      component.exponent);
+
+    if (order < 0) {
+      result.gap_pm = gap;
+      result.direction = component;
+      result.faces = face;
+    } else if (order == 0) {
+      result.faces |= face;
+    }
+  }
+
+  if (result.faces != 0U) {
+    result.status = GGEMS_WORLD_EXIT;
+  }
+
+  return result;
+}
+
+/*!
  * \brief Finds the first exit from the closed origin-centered World.
  *
- * Position comparisons and face ties are exact. Zero components are parallel;
- * coincident axes remain on the closed support until another face is crossed.
- * An outward boundary start exits at zero. No RNG or position mutation occurs.
+ * Rejects starts outside the closed World and nonfinite components, then
+ * delegates to GGEMS_SlabFindExit.
  * \param[in] world Valid host-authored half extents, or all-zero if absent.
  * \param[in] position Canonical global integer-pm anchor.
  * \param[in] direction Stored Source unit direction, subject to binary32 error.
@@ -282,41 +339,7 @@ GGEMS_WorldFindBoundary(__global GGEMSWorldRecord const *world, long3 position,
     }
   }
 
-  for (uint axis = 0U; axis < 3U; ++axis) {
-    GGEMSWorldDirection component = GGEMS_WorldDecodeDirection(direction[axis]);
-
-    if (component.mantissa == 0U) {
-      continue;
-    }
-
-    ulong gap =
-      (ulong)(component.negative != 0U ? half_extent[axis] + position[axis]
-                                       : half_extent[axis] - position[axis]);
-
-    uint face = 1U << (2U * axis + (component.negative == 0U));
-
-    int order = result.faces == 0U
-                  ? -1
-                  : GGEMS_WorldCompareScaled(
-                      GGEMS_WorldProduct(gap, result.direction.mantissa),
-                      result.direction.exponent,
-                      GGEMS_WorldProduct(result.gap_pm, component.mantissa),
-                      component.exponent);
-
-    if (order < 0) {
-      result.gap_pm = gap;
-      result.direction = component;
-      result.faces = face;
-    } else if (order == 0) {
-      result.faces |= face;
-    }
-  }
-
-  if (result.faces != 0U) {
-    result.status = GGEMS_WORLD_EXIT;
-  }
-
-  return result;
+  return GGEMS_SlabFindExit(-half_extent, half_extent, position, direction);
 }
 
 #endif

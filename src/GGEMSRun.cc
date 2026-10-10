@@ -44,7 +44,11 @@
 #include <string>
 
 #include "GGEMS/GGEMSRun.hh"
+#include "GGEMS/geometry/GGEMSBox.hh"
+#include "GGEMS/geometry/GGEMSBoxRecord.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
+#include "GGEMS/materials/GGEMSMaterial.hh"
+#include "GGEMS/materials/GGEMSEMMaterialPackage.hh"
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/logging/GGEMSLogMacros.hh"
 #include "GGEMS/units/GGEMSTimeUnits.hh"
@@ -315,6 +319,20 @@ auto GGEMSRun::SetWorld(geometry::GGEMSWorld world) -> void {
 
 // -----------------------------------------------------------------------------
 
+auto GGEMSRun::AddBox(geometry::GGEMSBox box) -> void {
+  if (initialized_) {
+    throw GGEMSRecoverable("Cannot add a Box after Initialize.");
+  }
+
+  if (!boxes_.empty()) {
+    throw GGEMSRecoverable("The current slice admits exactly one Box.");
+  }
+
+  boxes_.push_back(std::move(box));
+}
+
+// -----------------------------------------------------------------------------
+
 auto GGEMSRun::Initialize() -> void {
   if (initialized_) {
     throw ggems::core::GGEMSRecoverable(
@@ -369,6 +387,37 @@ auto GGEMSRun::Initialize() -> void {
 
   std::filesystem::path const kernel_root{GGEMS_KERNEL_ROOT};
 
+  // Static scene compilation: Box occurrences receive dense snapshot-local
+  // volume identities after the World (identity 0).
+  std::vector<geometry::GGEMSBoxRecord> box_records;
+
+  if (!boxes_.empty() && !world_) {
+    throw GGEMSRecoverable("A Box requires an explicit finite World.");
+  }
+
+  if (world_) {
+    std::vector<materials::GGEMSMaterial> scene_materials;
+    scene_materials.push_back(world_->GetMaterial());
+    for (auto const &box : boxes_) {
+      if (!box.IsStrictlyInside(*world_)) {
+        throw GGEMSRecoverable(
+          "Every Box must lie strictly inside the World; coincident or "
+          "crossing faces are not supported.");
+      }
+      scene_materials.push_back(box.GetMaterial());
+    }
+
+    // Exact dense Material identities from the Materials authority: the World
+    // medium is the first input, hence identity 0. No Cut couple is bound in
+    // this geometry-only slice.
+    materials::GGEMSEMMaterialPackage const package{scene_materials};
+    auto const material_ids = package.GetMaterialIds();
+    for (std::size_t index = 0U; index < boxes_.size(); ++index) {
+      box_records.push_back(boxes_[index].BuildRecord(
+        static_cast<std::uint32_t>(index) + 1U, material_ids[index + 1U]));
+    }
+  }
+
   std::vector<std::unique_ptr<transport::GGEMSTransportWorkload>>
     new_transport_workloads;
   new_transport_workloads.reserve(opencl.GetContext().size());
@@ -384,7 +433,8 @@ auto GGEMSRun::Initialize() -> void {
         opencl.GetContext()[context_index], kernel_root, *random_,
         opencl.GetWorkerCount(), *new_source_configuration,
         random_stream_offset, static_cast<std::uint32_t>(context_index),
-        observer_record_capacity, 0U, world_ ? &*world_ : nullptr));
+        observer_record_capacity, 0U, world_ ? &*world_ : nullptr,
+        box_records));
   }
 
   GGEMS_INFO("Core", "{} transport workload(s) prepared.",
@@ -620,7 +670,7 @@ auto GGEMSRun::Run() -> void {
 
   if (merged_counters.unresolved_geometry_count != 0ULL) {
     throw GGEMSRecoverable(
-      "Aionino World navigation could not resolve a World boundary.");
+      "Aionino geometry navigation could not resolve a physical boundary.");
   }
 
   if (merged_counters.overflow_count != 0ULL) {

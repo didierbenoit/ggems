@@ -34,15 +34,16 @@
 #include "observer/GGEMSObserverRecord.clh"
 #include "particles/GGEMSParticleState.clh"
 #include "random/GGEMSRandom.clh"
-#include "transport/GGEMSWorldTransport.clh"
+#include "transport/GGEMSTransport.clh"
 #include "transport/GGEMSDiagnosticProjection.clh"
 #include "transport/GGEMSTransportCounters.clh"
 #include "sources/GGEMSSourcePopulationRecord.clh"
 #include "sources/GGEMSSourceEmissionRecord.clh"
 #include "sources/GGEMSSourceEmissionRange.clh"
 #include "sources/GGEMSEnergyDistributionRecord.clh"
+#include "geometry/GGEMSBoxRecord.clh"
 #include "geometry/GGEMSWorldRecord.clh"
-#include "navigation/GGEMSWorldNavigation.clh"
+#include "navigation/GGEMSNavigation.clh"
 #include "sources/GGEMSSource.clh"
 #include "sources/GGEMSSourceRecord.clh"
 #include "sources/GGEMSSourceRunRange.clh"
@@ -57,42 +58,75 @@
 // =============================================================================
 
 /*!
- * \brief Out-of-line Aionino step: World transport plus its counters.
+ * \brief Out-of-line geometry-only history: generic Navigation through the
+ * World and its analytic volumes, boundary by boundary, until the World exit.
  *
- * This function and GGEMS_TransportAioninoToWorld are deliberately kept out of
- * line. When the Aionino branch is inlined into the claim/initialize/complete
- * loop below, the Intel CPU OpenCL compiler with -cl-fast-relaxed-math mixes
- * the private particle states of neighboring work-items: multi-source
- * histories receive each other's positions, including Gamma histories that
- * never enter this branch. Two explicit function boundaries (this step and
- * the Transport helper) restore correct results on every available device;
- * one boundary alone does not. This is a documented device-compiler boundary,
- * not a performance choice; the multi-source tests in tests/navigation guard
- * it.
+ * The birth owner is located first. Each iteration performs one accepted
+ * Transport transaction from the current owner (query, canonical move, owner
+ * update); a World exit completes the history with EscapedWorld. For the
+ * admitted one-Box profile at most three boundaries are accepted (entry,
+ * exit, World exit); exhausting the bound without escaping is reported as
+ * unresolved, never as a silent completion. Aionino is the only current
+ * caller; the loop carries no shape algorithm.
+ *
+ * This function and the Transport transaction it calls are deliberately kept
+ * out of line. When the geometry loop is inlined into the claim/initialize/
+ * complete loop below, the Intel CPU OpenCL compiler with
+ * -cl-fast-relaxed-math mixes the private particle states of neighboring
+ * work-items: multi-source histories receive each other's positions or end
+ * unresolved, including Gamma histories that never enter this branch. This
+ * is a documented device-compiler boundary, not a performance choice; the
+ * multi-source tests in tests/navigation guard it.
  *
  * \param[in] world Immutable device World parameters.
- * \param[in,out] particle Private state; moved to the boundary on success.
+ * \param[in] boxes Immutable analytic Box occurrences.
+ * \param[in] box_count Number of Box occurrences (at most one).
+ * \param[in,out] particle Private state; moved to the World boundary on
+ * success, owner identities updated at every accepted boundary.
  * \param[in,out] counters Transport counters receiving the outcome.
  * \return Zero when the history completed at the World boundary; nonzero when
- * the birth was outside the World or the query was unresolved.
+ * the birth was outside the World or a transaction was unresolved.
  */
-static __attribute__((noinline)) uint GGEMS_AioninoWorldStep(
-  __global GGEMSWorldRecord const *world, GGEMSParticleState *particle,
+static __attribute__((noinline)) uint GGEMS_TransportGeometry(
+  __global GGEMSWorldRecord const *world, __global GGEMSBoxRecord const *boxes,
+  uint box_count, GGEMSParticleState *particle,
   volatile __global GGEMSTransportCounters *counters) {
-  uint world_exit_faces = 0U;
-  uint outcome =
-    GGEMS_TransportAioninoToWorld(world, particle, &world_exit_faces);
+  ulong const owner = GGEMS_NavigationLocate(
+    boxes, box_count,
+    (long3)(particle->position_x_pm, particle->position_y_pm,
+            particle->position_z_pm),
+    (float3)(particle->direction_x, particle->direction_y,
+             particle->direction_z));
 
-  if (outcome == GGEMS_WORLD_EXIT) {
-    atomic_inc(&counters->escaped_world_count);
-    return 0U;
+  particle->current_volume_id = (uint)(owner >> 32U);
+  particle->material_id = (uint)(owner & 0xFFFFFFFFUL);
+
+  uint const max_boundary_events = 2U * box_count + 1U;
+
+  for (uint event_index = 0U; event_index < max_boundary_events;
+       ++event_index) {
+    uint event = GGEMS_NAVIGATION_EVENT_NONE;
+    uint faces = 0U;
+    uint const status = GGEMS_TransportToNextBoundary(world, boxes, box_count,
+                                                      particle, &event, &faces);
+
+    if (status == GGEMS_NAVIGATION_OUTSIDE_WORLD) {
+      atomic_inc(&counters->outside_world_count);
+      return 1U;
+    }
+
+    if (status != GGEMS_NAVIGATION_RESOLVED) {
+      atomic_inc(&counters->unresolved_geometry_count);
+      return 1U;
+    }
+
+    if (event == GGEMS_NAVIGATION_EVENT_WORLD_EXIT) {
+      atomic_inc(&counters->escaped_world_count);
+      return 0U;
+    }
   }
 
-  if (outcome == GGEMS_WORLD_OUTSIDE) {
-    atomic_inc(&counters->outside_world_count);
-  } else {
-    atomic_inc(&counters->unresolved_geometry_count);
-  }
+  atomic_inc(&counters->unresolved_geometry_count);
 
   return 1U;
 }
@@ -111,27 +145,33 @@ static __attribute__((noinline)) uint GGEMS_AioninoWorldStep(
  * claiming does not fix the primary-to-worker assignment.
  *
  * The run-wide population index is device_primary_offset plus the claimed
- * index. Adding projection_history_offset produces the global primary identity;
- * both additions are checked. The first nonempty matching half-open source
- * range selects the source slot and source-local index. Missing ranges and
- * failed birth initialization increment overflow_count and skip completion.
+ * index. Adding projection_history_offset produces the global primary
+ * identity; both additions are checked. The first nonempty matching half-open
+ * source range selects the source slot and source-local index. Missing ranges
+ * and failed birth initialization increment overflow_count and skip
+ * completion.
  *
- * Aionino calls World Navigation and commits its final accepted interval before
- * EscapedWorld completion. Outside births and unresolved queries increment
- * distinct failure counters without terminal publication or history completion.
- * Other species retain the checked one-meter projection and diagnostic Killed
- * completion. Energy, time and direction are unchanged in both paths.
+ * Aionino navigates the World and its analytic Box occurrences boundary by
+ * boundary and commits its final accepted interval before EscapedWorld
+ * completion. Outside births and
+ * unresolved queries increment distinct failure counters without terminal
+ * publication or history completion.
+ * completion. Other species retain the checked one-meter projection and
+ * diagnostic Killed completion. Energy, time and direction are unchanged in
+ * both paths.
  *
- * With observer support enabled, capture selection precedes initialization and
- * optional source/terminal records have zero deposited energy. All observer
- * arguments remain in the signature when support is disabled, but are unused.
- * The private particle state is not returned in a global particle array.
+ * With observer support enabled, capture selection precedes initialization
+ * and optional source/terminal records have zero deposited energy. All
+ * observer arguments remain in the signature when support is disabled, but
+ * are unused. The private particle state is not returned in a global particle
+ * array.
  *
  * \param[in,out] random_states Global host-initialized RNG states, with at
  * least worker_count elements.
  * \param[in,out] counters Global per-launch counters, initialized by the host
  * and atomically updated.
- * \param[in] source_records Global source records, with source_count elements.
+ * \param[in] source_records Global source records, with source_count
+ * elements.
  * \param[in] source_ranges Global run-wide source ranges parallel to
  * source_records.
  * \param[in] source_count Number of source slots searched for each primary.
@@ -143,11 +183,12 @@ static __attribute__((noinline)) uint GGEMS_AioninoWorldStep(
  * this device chunk.
  * \param[in] observer_config Global capture configuration, read only when
  * observer support is enabled.
- * \param[in,out] observer_counters Global atomic capture/record counters, used
- * only with observer support.
+ * \param[in,out] observer_counters Global atomic capture/record counters,
+ * used only with observer support.
  * \param[out] observer_records Global optional record buffer, writable for
  * observer_record_capacity entries.
- * \param[in] observer_record_capacity Capacity in observer records, not bytes.
+ * \param[in] observer_record_capacity Capacity in observer records, not
+ * bytes.
  * \param[in] run_id Run identity attached to optional observer records.
  * \param[in] worker_count Number of active workers and valid worker-owned RNG
  * states.
@@ -155,15 +196,17 @@ static __attribute__((noinline)) uint GGEMS_AioninoWorldStep(
  * emission-indexed energy descriptors.
  * \param[in] energy_values_micro_eV Global energy table in unsigned integer
  * microelectronvolts.
- * \param[in] cumulative_ticket_upper Global exclusive cumulative ticket bounds
- * for energy tables.
+ * \param[in] cumulative_ticket_upper Global exclusive cumulative ticket
+ * bounds for energy tables.
  * \param[in] source_population_records Global population records parallel to
  * source_records.
  * \param[in] source_emissions Global emission descriptors referenced by
  * population records.
- * \param[in] source_emission_ranges Global source-local primary ranges parallel
- * to source_emissions.
- * \param[in] world Immutable box parameters; required for Aionino.
+ * \param[in] source_emission_ranges Global source-local primary ranges
+ * parallel to source_emissions.
+ * \param[in] world Immutable World parameters; required for Aionino.
+ * \param[in] boxes Immutable analytic Box occurrences, box_count elements.
+ * \param[in] box_count Number of Box occurrences strictly inside the World.
  */
 __kernel void particle_stream_transport(
   __global GGEMSRandomState *random_states,
@@ -182,7 +225,8 @@ __kernel void particle_stream_transport(
   __global GGEMSSourcePopulationRecord const *source_population_records,
   __global GGEMSSourceEmissionRecord const *source_emissions,
   __global GGEMSSourceEmissionRange const *source_emission_ranges,
-  __global GGEMSWorldRecord const *world) {
+  __global GGEMSWorldRecord const *world, __global GGEMSBoxRecord const *boxes,
+  uint box_count) {
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER == 0
   (void)(observer_config);
@@ -283,7 +327,8 @@ __kernel void particle_stream_transport(
 #endif
 
     if (particle.particle_type == GGEMS_PARTICLE_TYPE_AIONINO) {
-      if (GGEMS_AioninoWorldStep(world, &particle, counters) != 0U) {
+      if (GGEMS_TransportGeometry(world, boxes, box_count, &particle,
+                                  counters) != 0U) {
         continue;
       }
     } else {

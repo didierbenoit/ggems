@@ -21,58 +21,53 @@
 
 /*!
  * \file
- * \brief Commits the accepted Aionino World segment and exit lifecycle.
+ * \brief Defines one immutable device analytic Box occurrence.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-#ifndef GGEMS_WORLD_TRANSPORT_CLH
-#define GGEMS_WORLD_TRANSPORT_CLH
+#ifndef GGEMS_BOX_RECORD_CLH
+#define GGEMS_BOX_RECORD_CLH
 
-#include "geometry/GGEMSWorldRecord.clh"
-#include "navigation/GGEMSWorldNavigation.clh"
-#include "particles/GGEMSParticleState.clh"
-#include "transport/GGEMSTransport.clh"
+/*! \brief Snapshot-local physical volume identity of the World. */
+#define GGEMS_VOLUME_ID_WORLD 0U
+
+/*! \brief Owner identity of a particle that has left the World. */
+#define GGEMS_VOLUME_ID_EXTERIOR 0xFFFFFFFFU
 
 /*!
- * \brief Advances an Aionino to its exact forward World boundary.
+ * \brief Host-mirrored axis-aligned Box occurrence in signed integer pm
+ * (56 bytes).
  *
- * World-only query followed by the generic boundary move of
- * GGEMSTransport.clh; no energy/time/RNG change and no rounded scalar
- * distance is materialized.
- *
- * \param[in] world Immutable device World parameters.
- * \param[in,out] particle Private state; unchanged on any failure.
- * \param[out] exit_faces Exact simultaneous crossing mask (-X,+X,-Y,+Y,-Z,+Z).
- * \return GGEMS_WORLD_EXIT, GGEMS_WORLD_OUTSIDE, or GGEMS_WORLD_UNRESOLVED.
+ * Faces lie at the lower and upper coordinates on the integer picometer
+ * lattice; each lower coordinate is strictly below its upper coordinate. The
+ * host guarantees strict containment within the World.
  */
-static __attribute__((noinline)) uint
-GGEMS_TransportAioninoToWorld(__global GGEMSWorldRecord const *world,
-                              GGEMSParticleState *particle, uint *exit_faces) {
-  long3 position = (long3)(particle->position_x_pm, particle->position_y_pm,
-                           particle->position_z_pm);
+typedef struct GGEMSBoxRecord {
+  /*! \brief Global X coordinate of the -X face. */
+  long lower_x_pm;
 
-  float3 direction = (float3)(particle->direction_x, particle->direction_y,
-                              particle->direction_z);
-  GGEMSWorldBoundary boundary =
-    GGEMS_WorldFindBoundary(world, position, direction);
+  /*! \brief Global Y coordinate of the -Y face. */
+  long lower_y_pm;
 
-  if (boundary.status != GGEMS_WORLD_EXIT) {
-    return boundary.status;
-  }
+  /*! \brief Global Z coordinate of the -Z face. */
+  long lower_z_pm;
 
-  if (GGEMS_TransportMoveToBoundary(
-        boundary.gap_pm, boundary.direction.mantissa,
-        boundary.direction.exponent, particle) == 0U) {
-    return GGEMS_WORLD_UNRESOLVED;
-  }
+  /*! \brief Global X coordinate of the +X face. */
+  long upper_x_pm;
 
-  particle->status = GGEMS_PARTICLE_STATUS_ESCAPED_WORLD;
+  /*! \brief Global Y coordinate of the +Y face. */
+  long upper_y_pm;
 
-  *exit_faces = boundary.faces;
+  /*! \brief Global Z coordinate of the +Z face. */
+  long upper_z_pm;
 
-  return GGEMS_WORLD_EXIT;
-}
+  /*! \brief Snapshot-local physical volume identity; never the World's. */
+  uint volume_id;
+
+  /*! \brief Dense snapshot-local Material identity of the Box medium. */
+  uint material_id;
+} GGEMSBoxRecord;
 
 #endif

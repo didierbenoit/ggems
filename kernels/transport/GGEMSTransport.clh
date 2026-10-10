@@ -1,0 +1,162 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Generic accepted movement of a particle to a Navigation boundary.
+ *
+ * Transport owns the accepted geometric transaction: it asks Navigation for
+ * the first physical boundary, commits one canonical position, updates the
+ * physical owner of the particle and marks the World exit. Species-specific
+ * lifecycle (counters, capture, completion) stays in the stream kernel.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_TRANSPORT_CLH
+#define GGEMS_TRANSPORT_CLH
+
+#include "navigation/GGEMSWorldNavigation.clh"
+#include "navigation/GGEMSNavigation.clh"
+#include "particles/GGEMSParticleState.clh"
+#include "geometry/GGEMSBoxRecord.clh"
+#include "geometry/GGEMSWorldRecord.clh"
+
+/*!
+ * \brief Moves the particle to the exact boundary described by a witness.
+ *
+ * Movement uses the unrounded parameter gap_pm / |limiting component|. The
+ * limiting coordinate lands exactly on its plane; every other coordinate is
+ * rounded once, nearest with half away from zero on the final coordinate.
+ * A rounded coordinate landing on a plane that was not crossed never adds a
+ * plane to the exact witness. Energy, time, direction and RNG are untouched.
+ *
+ * This helper is deliberately kept out of line (see
+ * GGEMS_TransportToNextBoundary).
+ *
+ * \param[in] gap_pm Forward integer gap to the limiting plane.
+ * \param[in] limit_mantissa Significand of the limiting direction component.
+ * \param[in] limit_exponent Binary exponent of the limiting component.
+ * \param[in,out] particle Private state; unchanged when the move fails.
+ * \return Nonzero on success; zero if a displacement is not representable.
+ */
+static __attribute__((noinline)) uint GGEMS_TransportMoveToBoundary(
+  ulong gap_pm, uint limit_mantissa, int limit_exponent,
+  GGEMSParticleState *particle) {
+  long3 position = (long3)(particle->position_x_pm, particle->position_y_pm,
+                           particle->position_z_pm);
+  float3 direction = (float3)(particle->direction_x, particle->direction_y,
+                              particle->direction_z);
+  int half_compare = -1;
+
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    GGEMSWorldDirection component = GGEMS_WorldDecodeDirection(direction[axis]);
+    ulong displacement = 0UL;
+
+    // The selected minimum guarantees displacement <= the signed-safe gap.
+    if (GGEMS_WorldDivide(GGEMS_WorldProduct(gap_pm, component.mantissa),
+                          component.exponent - limit_exponent, limit_mantissa,
+                          &displacement, &half_compare) == 0U) {
+      return 0U;
+    }
+
+    long integral = component.negative != 0U
+                      ? position[axis] - (long)displacement
+                      : position[axis] + (long)displacement;
+
+    uint away = half_compare > 0 ||
+                (half_compare == 0 &&
+                 (component.negative != 0U ? integral <= 0L : integral >= 0L));
+
+    position[axis] =
+      integral + (component.negative != 0U ? -(long)away : (long)away);
+  }
+
+  particle->position_x_pm = position.x;
+  particle->position_y_pm = position.y;
+  particle->position_z_pm = position.z;
+
+  return 1U;
+}
+
+/*!
+ * \brief One accepted geometric transaction: query, move, owner update.
+ *
+ * From the particle's current physical owner, Navigation supplies the first
+ * boundary; the particle is moved to it, its owner identities take the
+ * arrival values, and a World exit sets EscapedWorld with the exterior owner
+ * (the departure context is available to the caller before this commit). No
+ * Process competes here; a future Process proposal is compared with the witness
+ * before this commit, strictly earlier Process first and geometry first on
+ * exact ties.
+ *
+ * This transaction and GGEMS_TransportMoveToBoundary are deliberately kept
+ * out of line. When the query and the move are inlined into a kernel loop,
+ * the Intel CPU OpenCL compiler with -cl-fast-relaxed-math mixes the private
+ * states of neighboring work-items (multi-source histories receive each
+ * other's positions or end unresolved). The attributes are a documented
+ * device-compiler boundary, not a performance choice.
+ *
+ * \param[in] world Immutable World record.
+ * \param[in] boxes Immutable Box occurrences.
+ * \param[in] box_count Number of Box occurrences.
+ * \param[in,out] particle Private state with a valid current owner.
+ * \param[out] event GGEMS_NAVIGATION_EVENT_* of the accepted boundary.
+ * \param[out] faces Exact crossing mask of the accepted boundary.
+ * \return GGEMS_NAVIGATION_RESOLVED after an accepted move; otherwise the
+ * failed status and the particle is unchanged.
+ */
+static __attribute__((noinline)) uint GGEMS_TransportToNextBoundary(
+  __global GGEMSWorldRecord const *world, __global GGEMSBoxRecord const *boxes,
+  uint box_count, GGEMSParticleState *particle, uint *event, uint *faces) {
+  long3 position = (long3)(particle->position_x_pm, particle->position_y_pm,
+                           particle->position_z_pm);
+  float3 direction = (float3)(particle->direction_x, particle->direction_y,
+                              particle->direction_z);
+  GGEMSBoundaryWitness witness;
+  uint const status =
+    GGEMS_NavigationFindBoundary(world, boxes, box_count, position, direction,
+                                 particle->current_volume_id, &witness);
+
+  if (status != GGEMS_NAVIGATION_RESOLVED) {
+    return status;
+  }
+
+  if (GGEMS_TransportMoveToBoundary(witness.gap_pm, witness.mantissa,
+                                    witness.exponent, particle) == 0U) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+
+  particle->current_volume_id = witness.arrival_volume_id;
+  particle->material_id = witness.arrival_material_id;
+
+  if (witness.event == GGEMS_NAVIGATION_EVENT_WORLD_EXIT) {
+    particle->status = GGEMS_PARTICLE_STATUS_ESCAPED_WORLD;
+  }
+
+  *event = witness.event;
+  *faces = witness.faces;
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+#endif

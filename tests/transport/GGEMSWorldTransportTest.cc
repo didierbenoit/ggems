@@ -46,6 +46,7 @@
 
 #include "GGEMS/GGEMSRun.hh"
 #include "GGEMS/GGEMSException.hh"
+#include "GGEMS/geometry/GGEMSBoxRecord.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
@@ -473,6 +474,7 @@ TEST_P(GGEMSWorldRayTest, ActualStreamKernel) {
                                              .half_extent_y_pm = test.half[1],
                                              .half_extent_z_pm = test.half[2]};
       auto world_buffer = buffer(world);
+      auto box_buffer = buffer(geometry::GGEMSBoxRecord{});
       sources::GGEMSSourceRecord source{};
       source.emitted_particle_type =
         particles::ToKernelParticleType(particles::GGEMSParticleType::Aionino);
@@ -536,6 +538,8 @@ TEST_P(GGEMSWorldRayTest, ActualStreamKernel) {
       kernel.SetArgSVMPointer(18U, emissions.GetData());
       kernel.SetArgSVMPointer(19U, emission_ranges.GetData());
       kernel.SetArgSVMPointer(20U, world_buffer.GetData());
+      kernel.SetArgSVMPointer(21U, box_buffer.GetData());
+      kernel.SetArg(22U, cl_uint{0});
       kernel.Run({64U}, {64U});
 
       std::vector<std::byte> rng_after(rng_before.size());
