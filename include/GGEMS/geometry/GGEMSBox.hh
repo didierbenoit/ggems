@@ -21,7 +21,9 @@
 
 /*!
  * \file
- * \brief Declares the finite analytic Box occurrence placed in the World.
+ *
+ * \brief Declares the finite analytic Box volume placed by its center in the
+ * World.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -29,98 +31,104 @@
 
 #pragma once
 
-#include <cstdint>
+#include <optional>
 
-#include "GGEMS/geometry/GGEMSBoxRecord.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
-#include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
 namespace ggems::geometry {
 
 /*!
- * \brief Finite axis-aligned analytic Box: one physical occurrence with its
- * own explicit Material, placed by its lower corner in the World frame.
+ * \brief Finite axis-aligned analytic Box: one physical volume with its own
+ * explicit Material, placed by its geometric center in the World frame.
  *
- * Faces lie at the lower corner and at lower corner plus full size on the
- * integer picometer lattice; any positive integer size is admitted. The
- * object is an immutable validated host authoring value; per-particle
- * location, intersection and boundary selection are computed by OpenCL
- * Navigation. Strict containment in the World is checked when the Box is
- * attached to a Run with its World.
+ * The object is a host authoring value. A default-constructed Box is centered
+ * on the global origin with no size and no Material; SetSize(), SetPosition()
+ * and SetMaterial() may be called in any order. Validate() checks that the
+ * Box is complete and is called by GGEMSWorld::AddVolume, which copies the
+ * Box. Every full size is an even number of picometers, at least 2 pm, so the
+ * faces center -/+ half extent are exact lattice coordinates; the owning World
+ * checks strict containment and computes the device faces, so the Box itself
+ * performs no face arithmetic. Per-particle location, intersection and
+ * boundary selection are computed by OpenCL Navigation.
  */
 class GGEMSBox {
 public:
+  /*! \brief Creates a Box centered on the origin with no size and no Material.
+   */
+  GGEMSBox() = default;
+
   /*!
-   * \brief Builds a Box from its full sizes, lower corner and medium.
+   * \brief Sets the full sizes along the global axes.
    *
    * \param[in] size_x Full extent along X.
    * \param[in] size_y Full extent along Y.
    * \param[in] size_z Full extent along Z.
-   * \param[in] lower_corner Global position of the (-X,-Y,-Z) corner.
+   * \return This Box for chained configuration.
+   * \throws GGEMSRecoverable If a size is zero or an odd number of picometers;
+   * the previous size is kept.
+   */
+  auto SetSize(units::Length size_x, units::Length size_y, units::Length size_z)
+    -> GGEMSBox &;
+
+  /*!
+   * \brief Sets the global position of the geometric center.
+   *
+   * \param[in] center Global center in picometers.
+   * \return This Box for chained configuration.
+   */
+  auto SetPosition(Position3PM center) noexcept -> GGEMSBox &;
+
+  /*!
+   * \brief Sets the owned Box medium.
+   *
    * \param[in] material Owned Box medium; no default medium exists.
-   * \throws GGEMSRecoverable If a size is zero or the upper corner does not
-   * fit the signed 64-bit picometer lattice.
+   * \return This Box for chained configuration.
    */
-  GGEMSBox(units::Length size_x, units::Length size_y, units::Length size_z,
-           Position3PM lower_corner, core::materials::GGEMSMaterial material);
+  auto SetMaterial(core::materials::GGEMSMaterial material) -> GGEMSBox &;
 
   /*!
-   * \brief Returns the Box corner with the smallest coordinates.
+   * \brief Checks that the Box is complete.
    *
-   * \return Lower corner in picometers.
+   * \throws GGEMSRecoverable If the size or the Material is not set.
    */
-  [[nodiscard]] auto GetLowerCornerPM() const noexcept -> Position3PM;
+  auto Validate() const -> void;
 
   /*!
-   * \brief Returns the Box corner with the largest coordinates.
+   * \brief Returns the geometric center.
    *
-   * \return Lower corner plus full sizes in picometers.
+   * \return Center in picometers; the origin before SetPosition().
    */
-  [[nodiscard]] auto GetUpperCornerPM() const noexcept -> Position3PM;
+  [[nodiscard]] auto GetPositionPM() const noexcept -> Position3PM;
 
   /*!
-   * \brief Checks strict containment of the Box in a World.
+   * \brief Returns the distances from the center to the faces.
    *
-   * Every Box face must lie strictly inside the World so that no Box face
-   * coincides with a World face.
-   *
-   * \param[in] world Validated World.
-   * \return True when the closed Box lies in the open World interior.
+   * \return Half extents in picometers along X, Y, and Z; zero before
+   * SetSize().
    */
-  [[nodiscard]] auto IsStrictlyInside(GGEMSWorld const &world) const noexcept
-    -> bool;
-
-  /*!
-   * \brief Builds the immutable device-visible occurrence record.
-   *
-   * \param[in] volume_id Snapshot-local physical volume identity.
-   * \param[in] material_id Dense snapshot-local Material identity.
-   * \return Record carrying the faces and identities.
-   */
-  [[nodiscard]] auto BuildRecord(std::uint32_t volume_id,
-                                 std::uint32_t material_id) const noexcept
-    -> GGEMSBoxRecord;
+  [[nodiscard]] auto GetHalfExtentPM() const noexcept -> HalfExtent3PM;
 
   /*!
    * \brief Returns the Box medium.
    *
    * \return A borrowed reference to the owned Material; it must not outlive
    * this Box.
+   * \throws GGEMSRecoverable If no Material has been set.
    */
-  [[nodiscard]] auto GetMaterial() const noexcept
+  [[nodiscard]] auto GetMaterial() const
     -> core::materials::GGEMSMaterial const &;
 
 private:
-  /*! \brief Validated lower corner in picometers. */
-  Position3PM lower_corner_pm_;
+  /*! \brief Geometric center in picometers; the origin until SetPosition(). */
+  Position3PM center_pm_{};
 
-  /*! \brief Validated upper corner in picometers. */
-  Position3PM upper_corner_pm_;
+  /*! \brief Validated half extents in picometers; zero until SetSize(). */
+  HalfExtent3PM half_extent_pm_{};
 
-  /*! \brief Owned Box medium. */
-  core::materials::GGEMSMaterial material_;
+  /*! \brief Owned Box medium, absent until SetMaterial(). */
+  std::optional<core::materials::GGEMSMaterial> material_;
 };
 
 } // namespace ggems::geometry

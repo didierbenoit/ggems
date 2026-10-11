@@ -21,57 +21,86 @@
 
 /*!
  * \file
- * \brief Validates and packs immutable World parameters.
+ * \brief Validates the authored World scene and compiles its device records.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-#include "GGEMS/geometry/GGEMSWorld.hh"
-
+#include <cstddef>
+#include <cstdint>
 #include <format>
+#include <span>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "GGEMS/GGEMSException.hh"
+#include "GGEMS/geometry/GGEMSBox.hh"
+#include "GGEMS/geometry/GGEMSBoxRecord.hh"
+#include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
+#include "GGEMS/geometry/detail/GGEMSGeometrySize.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
 namespace {
 
+using ggems::geometry::CoordinatePM;
+using ggems::geometry::DistancePM;
+
 /*!
- * \brief Converts one validated full World size into its half extent.
+ * \brief Converts one World full size into its half extent.
  *
  * \param[in] size Full extent along the axis.
  * \param[in] axis Axis label used in diagnostics.
- * \return Half extent in picometers.
+ * \return Half extent in picometers, at most 2^62 - 1.
  * \throws ggems::core::GGEMSRecoverable If the size is zero, odd, or larger
  * than ggems::geometry::k_max_world_size_pm.
  */
-[[nodiscard]] auto RequireHalfExtent(ggems::units::Length size,
-                                     std::string_view axis)
-  -> ggems::geometry::DistancePM {
-  if (size.value == 0ULL) {
-    throw ggems::core::GGEMSRecoverable(
-      std::format("World {} size must be strictly positive.", axis));
-  }
-
-  if (size.value % 2ULL != 0ULL) {
-    throw ggems::core::GGEMSRecoverable(std::format(
-      "World {} size must be an even number of picometers so that the "
-      "origin-centered faces lie on the integer picometer lattice; got {} pm.",
-      axis, size.value));
-  }
-
+[[nodiscard]] auto RequireWorldHalfExtentPM(ggems::units::Length size,
+                                            std::string_view axis)
+  -> DistancePM {
   if (size.value > ggems::geometry::k_max_world_size_pm) {
     throw ggems::core::GGEMSRecoverable(std::format(
       "World {} size {} pm exceeds the largest admitted size {} pm.", axis,
       size.value, ggems::geometry::k_max_world_size_pm));
   }
 
-  return size.value / 2ULL;
+  return ggems::geometry::detail::RequireEvenHalfExtentPM(size, "World", axis);
+}
+
+// =============================================================================
+// =============================================================================
+
+/*!
+ * \brief Checks that a centered Box lies strictly inside the World.
+ *
+ * The World half extents are at most 2^62 - 1 pm. Each margin is formed only
+ * after the Box half extent is known to be smaller, so it is a positive signed
+ * value and the center is compared against it directly; no face sum is
+ * evaluated, so the check cannot overflow for any signed center.
+ *
+ * \param[in] world_half World half extents.
+ * \param[in] box Complete Box.
+ * \return True when every Box face is strictly between the World faces.
+ */
+[[nodiscard]] auto
+IsStrictlyInside(ggems::geometry::HalfExtent3PM world_half,
+                 ggems::geometry::GGEMSBox const &box) noexcept -> bool {
+  ggems::geometry::HalfExtent3PM const half = box.GetHalfExtentPM();
+  if (half.x >= world_half.x || half.y >= world_half.y ||
+      half.z >= world_half.z) {
+    return false;
+  }
+
+  auto const margin_x = static_cast<CoordinatePM>(world_half.x - half.x);
+  auto const margin_y = static_cast<CoordinatePM>(world_half.y - half.y);
+  auto const margin_z = static_cast<CoordinatePM>(world_half.z - half.z);
+  ggems::geometry::Position3PM const center = box.GetPositionPM();
+  return center.x > -margin_x && center.x < margin_x && center.y > -margin_y &&
+         center.y < margin_y && center.z > -margin_z && center.z < margin_z;
 }
 
 } // namespace
@@ -81,15 +110,82 @@ namespace {
 
 namespace ggems::geometry {
 
-GGEMSWorld::GGEMSWorld(units::Length size_x, units::Length size_y,
-                       units::Length size_z,
-                       core::materials::GGEMSMaterial material)
-    : half_extent_pm_{
-        .x = RequireHalfExtent(size_x, "X"),
-        .y = RequireHalfExtent(size_y, "Y"),
-        .z = RequireHalfExtent(size_z, "Z"),
-      },
-      material_{std::move(material)} {}
+auto GGEMSWorld::SetSize(units::Length size_x, units::Length size_y,
+                         units::Length size_z) -> GGEMSWorld & {
+  HalfExtent3PM const half_extent{
+    .x = RequireWorldHalfExtentPM(size_x, "X"),
+    .y = RequireWorldHalfExtentPM(size_y, "Y"),
+    .z = RequireWorldHalfExtentPM(size_z, "Z"),
+  };
+
+  half_extent_pm_ = half_extent;
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::SetMaterial(core::materials::GGEMSMaterial material)
+  -> GGEMSWorld & {
+  material_ = std::move(material);
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::AddVolume(GGEMSBox box) -> GGEMSWorld & {
+  if (!boxes_.empty()) {
+    throw core::GGEMSRecoverable("The current slice admits exactly one Box.");
+  }
+
+  box.Validate();
+  boxes_.push_back(std::move(box));
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::Validate() const -> void {
+  if (half_extent_pm_.x == 0ULL) {
+    throw core::GGEMSRecoverable("World size is not set.");
+  }
+
+  if (!material_) {
+    throw core::GGEMSRecoverable("World material is not set.");
+  }
+
+  for (auto const &box : boxes_) {
+    if (!IsStrictlyInside(half_extent_pm_, box)) {
+      throw core::GGEMSRecoverable(
+        "Every Box must lie strictly inside the World; coincident or "
+        "crossing faces are not supported.");
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::BuildBoxRecords(std::span<std::uint32_t const> material_ids)
+  const -> std::vector<GGEMSBoxRecord> {
+  std::vector<GGEMSBoxRecord> records;
+  records.reserve(boxes_.size());
+
+  for (std::size_t index = 0U; index < boxes_.size(); ++index) {
+    HalfExtent3PM const half = boxes_[index].GetHalfExtentPM();
+    Position3PM const center = boxes_[index].GetPositionPM();
+    records.push_back(GGEMSBoxRecord{
+      .lower_x_pm = center.x - static_cast<CoordinatePM>(half.x),
+      .lower_y_pm = center.y - static_cast<CoordinatePM>(half.y),
+      .lower_z_pm = center.z - static_cast<CoordinatePM>(half.z),
+      .upper_x_pm = center.x + static_cast<CoordinatePM>(half.x),
+      .upper_y_pm = center.y + static_cast<CoordinatePM>(half.y),
+      .upper_z_pm = center.z + static_cast<CoordinatePM>(half.z),
+      .volume_id = static_cast<std::uint32_t>(index) + 1U,
+      .material_id = material_ids[index],
+    });
+  }
+
+  return records;
+}
 
 // -----------------------------------------------------------------------------
 
@@ -138,9 +234,18 @@ auto GGEMSWorld::BuildRecord() const noexcept -> GGEMSWorldRecord {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSWorld::GetMaterial() const noexcept
-  -> core::materials::GGEMSMaterial const & {
-  return material_;
+auto GGEMSWorld::GetMaterial() const -> core::materials::GGEMSMaterial const & {
+  if (!material_) {
+    throw core::GGEMSRecoverable("World material is not set.");
+  }
+
+  return *material_;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::GetBoxes() const noexcept -> std::span<GGEMSBox const> {
+  return boxes_;
 }
 
 } // namespace ggems::geometry

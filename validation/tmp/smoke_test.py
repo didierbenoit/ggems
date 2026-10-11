@@ -115,4 +115,19 @@ ggems.cuts.verbose()
 ggems.cuts.set_cut(gamma=5.0, electron=0.1, positron=2.5, proton=10.0, unit="mm")
 ggems.cuts.verbose()
 
+# ------------------------------------------------------------------------------
+
+world = ggems.geometry.GGEMSWorld()
+world.set_size(2.0, 2.0, 2.0, "m")
+world.set_material("Air")
+
+box = ggems.geometry.GGEMSBox()
+box.set_size(1.2, 0.5, 0.3, "m")
+box.set_position(0.0, 0.0, 0.0, "m")
+box.set_material("Water")
+
+world.add_volume(box)
+
+# run.set_world(world)
+
 ggems.stop()

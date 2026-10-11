@@ -41,7 +41,6 @@
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/particles/GGEMSPrimaryStream.hh"
 #include "GGEMS/transport/GGEMSTransportWorkload.hh"
-#include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 
 namespace ggems::core::random {
@@ -109,22 +108,19 @@ public:
   auto Initialize() -> void;
 
   /*!
-   * \brief Owns a finite World for geometry transport before initialization.
-   * \param[in] world Validated immutable World including its explicit Material.
-   * \throws GGEMSRecoverable If Initialize has already succeeded.
-   */
-  auto SetWorld(geometry::GGEMSWorld world) -> void;
-
-  /*!
-   * \brief Adds one analytic Box occurrence before initialization.
+   * \brief Attaches a copy of the authored World and its volumes before
+   * initialization.
    *
-   * The current slice admits exactly one Box; it must lie strictly inside the
-   * World, which is checked by Initialize.
-   * \param[in] box Validated immutable Box including its explicit Material.
-   * \throws GGEMSRecoverable If Initialize has already succeeded or a Box is
-   * already attached.
+   * The World is validated as a completed scene (size, Material, volume
+   * completeness and strict containment) and then owned by the Run as its
+   * scene snapshot; later edits of the caller's World do not reach the Run.
+   * Initialize compiles the snapshot into the device World and volume records.
+   * \param[in] world Authored World including its explicit Material and
+   * volumes.
+   * \throws GGEMSRecoverable If Initialize has already succeeded, or if the
+   * World is incomplete or inconsistent.
    */
-  auto AddBox(geometry::GGEMSBox box) -> void;
+  auto SetWorld(geometry::GGEMSWorld box) -> void;
 
   /*!
    * \brief Executes the next source population on the active devices.
@@ -284,11 +280,9 @@ private:
   std::unique_ptr<sources::GGEMSSourcePopulationPlanner>
     source_population_planner_;
 
-  /*! \brief Owned immutable World configuration, fixed before Initialize. */
+  /*! \brief Owned validated World snapshot with its volumes, fixed before
+   * Initialize. */
   std::optional<geometry::GGEMSWorld> world_;
-
-  /*! \brief Owned immutable Box occurrences, fixed before Initialize. */
-  std::vector<geometry::GGEMSBox> boxes_;
 
   /*! \brief Owns one persistent transport workload per active context. */
   std::vector<std::unique_ptr<transport::GGEMSTransportWorkload>>

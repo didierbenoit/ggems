@@ -35,6 +35,7 @@
 
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/observer/GGEMSTransportObserver.hh"
+#include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/GGEMSRun.hh"
 #include "GGEMS/units/GGEMSTimeUnits.hh"
 
@@ -59,6 +60,8 @@ void BindRun(py::module_ &module) {
 
     .def("set_observer", &ggems::core::GGEMSRun::SetObserver,
          py::arg("observer"))
+
+    .def("set_world", &ggems::core::GGEMSRun::SetWorld, py::arg("world"))
 
     .def(
       "set_time",

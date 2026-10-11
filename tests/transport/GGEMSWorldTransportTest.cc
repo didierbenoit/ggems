@@ -91,6 +91,14 @@ auto PrintTo(WorldCase const &value, std::ostream *output) -> void {
   *output << value.name;
 }
 
+/*! \brief Cubic Vacuum World of the given full size. */
+auto MakeVacuumWorld(units::Length size) -> geometry::GGEMSWorld {
+  geometry::GGEMSWorld world{};
+  world.SetSize(size, size, size)
+    .SetMaterial(materials::builtins::BuildBuiltInMaterial("Vacuum"));
+  return world;
+}
+
 // Exact rational goldens for the stored binary32 inputs. No float epsilon.
 // W01 is 200 mm full size and +X; travel is exactly 100 mm = 10^11 pm.
 constexpr std::array k_cases{
@@ -612,14 +620,9 @@ TEST_F(GGEMSWorldTransportTest,
   run.SetRandom(rng);
   run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorld(
-    geometry::GGEMSWorld{200_mm, 200_mm, 200_mm,
-                         materials::builtins::BuildBuiltInMaterial("Vacuum")});
+  run.SetWorld(MakeVacuumWorld(200_mm));
   ASSERT_NO_THROW(run.Initialize());
-  EXPECT_THROW(
-    run.SetWorld(geometry::GGEMSWorld{
-      2_mm, 2_mm, 2_mm, materials::builtins::BuildBuiltInMaterial("Vacuum")}),
-    GGEMSRecoverable);
+  EXPECT_THROW(run.SetWorld(MakeVacuumWorld(2_mm)), GGEMSRecoverable);
   ASSERT_NO_THROW(run.Run());
   auto const successful = observer->GetRecords();
   ASSERT_EQ(successful.size(), 2U);
@@ -652,8 +655,7 @@ TEST_F(GGEMSWorldTransportTest,
   run.SetRandom(rng);
   run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorld(geometry::GGEMSWorld{
-    2_pm, 2_pm, 2_pm, materials::builtins::BuildBuiltInMaterial("Vacuum")});
+  run.SetWorld(MakeVacuumWorld(2_pm));
   ASSERT_NO_THROW(run.Initialize());
   ASSERT_NO_THROW(run.Run());
   auto const before = observer->GetRecords();
@@ -706,6 +708,11 @@ TEST_F(GGEMSWorldTransportTest, ExactCrossingMasksThroughTheSharedHelper) {
                                              .half_extent_z_pm = test.half[2]};
       auto world_buffer = context.CreateSVMBuffer(units::Bytes{sizeof(world)});
       ocl::WriteSVMFromHost(world_buffer, world);
+      // World-only scene through the generic transaction: one zero Box record
+      // with a count of zero.
+      geometry::GGEMSBoxRecord const no_box{};
+      auto box_buffer = context.CreateSVMBuffer(units::Bytes{sizeof(no_box)});
+      ocl::WriteSVMFromHost(box_buffer, no_box);
       auto positions =
         context.CreateSVMBuffer(units::Bytes{sizeof(test.start)});
       ocl::WriteSVMFromHost(positions,
@@ -718,12 +725,14 @@ TEST_F(GGEMSWorldTransportTest, ExactCrossingMasksThroughTheSharedHelper) {
         context.CreateSVMBuffer(units::Bytes{sizeof(test.start)});
       auto faces = context.CreateSVMBuffer(units::Bytes{sizeof(cl_uint)});
       kernel.SetArgSVMPointer(0U, world_buffer.GetData());
-      kernel.SetArgSVMPointer(1U, positions.GetData());
-      kernel.SetArgSVMPointer(2U, directions.GetData());
-      kernel.SetArg(3U, cl_uint{1});
-      kernel.SetArgSVMPointer(4U, statuses.GetData());
-      kernel.SetArgSVMPointer(5U, endpoints.GetData());
-      kernel.SetArgSVMPointer(6U, faces.GetData());
+      kernel.SetArgSVMPointer(1U, box_buffer.GetData());
+      kernel.SetArg(2U, cl_uint{0});
+      kernel.SetArgSVMPointer(3U, positions.GetData());
+      kernel.SetArgSVMPointer(4U, directions.GetData());
+      kernel.SetArg(5U, cl_uint{1});
+      kernel.SetArgSVMPointer(6U, statuses.GetData());
+      kernel.SetArgSVMPointer(7U, endpoints.GetData());
+      kernel.SetArgSVMPointer(8U, faces.GetData());
       kernel.Run({64U}, {64U});
       EXPECT_EQ(ocl::ReadSVMToHost<cl_uint>(statuses), test.outcome);
       EXPECT_EQ(ocl::ReadSVMToHost<cl_uint>(faces), test.faces);
@@ -818,9 +827,7 @@ TEST_F(GGEMSWorldTransportTest, OtherSpeciesKeepDiagnosticMovementWithWorld) {
     run.SetRandom(std::make_shared<random::GGEMSRandom>());
     run.AddSource(source);
     run.SetObserver(observer);
-    run.SetWorld(geometry::GGEMSWorld{
-      200_mm, 200_mm, 200_mm,
-      materials::builtins::BuildBuiltInMaterial("Vacuum")});
+    run.SetWorld(MakeVacuumWorld(200_mm));
     ASSERT_NO_THROW(run.Initialize());
     ASSERT_NO_THROW(run.Run());
     auto const records = observer->GetRecords();

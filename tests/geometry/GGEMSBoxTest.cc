@@ -21,14 +21,17 @@
 
 /*!
  * \file
- * \brief Validates analytic Box authoring, containment and device packing.
+ * \brief Tests the center-placed analytic Box authoring and its World
+ * compilation.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
+#include <array>
 #include <cstdint>
 #include <limits>
+#include <type_traits>
 
 #include <gtest/gtest.h>
 
@@ -44,10 +47,16 @@
 namespace {
 
 using ggems::core::GGEMSRecoverable;
+using ggems::geometry::CoordinatePM;
 using ggems::geometry::GGEMSBox;
+using ggems::geometry::GGEMSBoxRecord;
 using ggems::geometry::GGEMSWorld;
+using ggems::geometry::HalfExtent3PM;
 using ggems::geometry::MakePositionPM;
 using namespace ggems::units;
+
+static_assert(std::is_default_constructible_v<GGEMSBox>);
+static_assert(std::is_copy_constructible_v<GGEMSBox>);
 
 auto Vacuum() -> ggems::core::materials::GGEMSMaterial {
   return ggems::core::materials::builtins::BuildBuiltInMaterial("Vacuum");
@@ -57,72 +66,229 @@ auto Water() -> ggems::core::materials::GGEMSMaterial {
   return ggems::core::materials::builtins::BuildBuiltInMaterial("Water");
 }
 
+/*! \brief Cubic Vacuum World of the given full size. */
+auto MakeWorld(Length size) -> GGEMSWorld {
+  GGEMSWorld world{};
+  world.SetSize(size, size, size).SetMaterial(Vacuum());
+  return world;
+}
+
+/*! \brief The N1.1 asymmetric Water Box: x in [-20, 40], y in [-30, -10], z in
+ * [-10, 20] mm, authored by its center. */
+auto MakeBox() -> GGEMSBox {
+  GGEMSBox box{};
+  box.SetSize(60_mm, 20_mm, 30_mm)
+    .SetPosition(
+      MakePositionPM(10'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL))
+    .SetMaterial(Water());
+  return box;
+}
+
+/*! \brief Water Box of the given full sizes centered at a global point. */
+auto PlaceBox(Length size_x, Length size_y, Length size_z,
+              ggems::geometry::Position3PM center) -> GGEMSBox {
+  GGEMSBox box{};
+  box.SetSize(size_x, size_y, size_z).SetPosition(center).SetMaterial(Water());
+  return box;
+}
+
+/*! \brief Whether the Box is admitted as the single volume of the World. */
+auto Fits(GGEMSWorld world, GGEMSBox const &box) -> bool {
+  world.AddVolume(box);
+  try {
+    world.Validate();
+  } catch (GGEMSRecoverable const &) {
+    return false;
+  }
+  return true;
+}
+
+/*! \brief Compiles the Box as the single volume of the World, Material 1. */
+auto Compile(GGEMSWorld world, GGEMSBox const &box) -> GGEMSBoxRecord {
+  world.AddVolume(box);
+  world.Validate();
+  std::array<std::uint32_t, 1U> const material_ids{1U};
+  return world.BuildBoxRecords(material_ids)[0U];
+}
+
+/*! \brief Half extent of the largest admitted World. */
+constexpr std::int64_t k_max_half_pm{0x3FFF'FFFF'FFFF'FFFFLL};
+
 } // namespace
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSBox, AcceptsAnyPositiveIntegerSizesAndOffsetPlacement) {
-  EXPECT_THROW(GGEMSBox(0_pm, 2_pm, 2_pm, MakePositionPM(0, 0, 0), Water()),
-               GGEMSRecoverable);
-
-  // Odd and one-picometer sizes are admitted: faces stay on the lattice.
-  GGEMSBox const thin{1_pm, 23_pm, 3_pm, MakePositionPM(-11, -13, -17),
-                      Water()};
-  EXPECT_EQ(thin.GetLowerCornerPM(), MakePositionPM(-11, -13, -17));
-  EXPECT_EQ(thin.GetUpperCornerPM(), MakePositionPM(-10, 10, -14));
-
-  GGEMSBox const box{
-    60_mm, 20_mm, 30_mm,
-    MakePositionPM(-20'000'000'000, -30'000'000'000, -10'000'000'000), Water()};
-  EXPECT_EQ(box.GetUpperCornerPM(),
-            MakePositionPM(40'000'000'000, -10'000'000'000, 20'000'000'000));
+TEST(GGEMSBox, StoresCenterAndHalfExtentsFromUserUnits) {
+  GGEMSBox const box = MakeBox();
+  EXPECT_EQ(
+    box.GetPositionPM(),
+    MakePositionPM(10'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL));
+  EXPECT_EQ(box.GetHalfExtentPM(), (HalfExtent3PM{.x = 30'000'000'000ULL,
+                                                  .y = 10'000'000'000ULL,
+                                                  .z = 15'000'000'000ULL}));
   EXPECT_EQ(box.GetMaterial().GetName(), "Water");
+
+  // A 13 cm side is 130 000 000 000 pm with the exact half extent
+  // 65 000 000 000 pm; the center defaults to the origin.
+  GGEMSBox thirteen{};
+  thirteen.SetSize(13_cm, 13_cm, 13_cm);
+  EXPECT_EQ(thirteen.GetPositionPM(), MakePositionPM(0, 0, 0));
+  EXPECT_EQ(thirteen.GetHalfExtentPM(),
+            (HalfExtent3PM{.x = 65'000'000'000ULL,
+                           .y = 65'000'000'000ULL,
+                           .z = 65'000'000'000ULL}));
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSBox, AdmitsTheSmallestEvenSideAndRejectsZeroOrOddSides) {
+  GGEMSBox box{};
+  box.SetSize(2_pm, 2_pm, 2_pm);
+  EXPECT_EQ(box.GetHalfExtentPM(),
+            (HalfExtent3PM{.x = 1ULL, .y = 1ULL, .z = 1ULL}));
+
+  EXPECT_THROW(box.SetSize(0_pm, 2_pm, 2_pm), GGEMSRecoverable);
+  EXPECT_THROW(box.SetSize(1_pm, 2_pm, 2_pm), GGEMSRecoverable);
+  EXPECT_THROW(box.SetSize(2_pm, 3_pm, 2_pm), GGEMSRecoverable);
+  EXPECT_THROW(box.SetSize(2_pm, 2_pm, 1'000'000'001_pm), GGEMSRecoverable);
+
+  // A rejected size keeps the previous size.
+  EXPECT_EQ(box.GetHalfExtentPM(),
+            (HalfExtent3PM{.x = 1ULL, .y = 1ULL, .z = 1ULL}));
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSBox, CompilesFacesAtTheCenterPlusMinusHalfExtent) {
+  GGEMSBoxRecord const record = Compile(MakeWorld(200_mm), MakeBox());
+  EXPECT_EQ(record.lower_x_pm, -20'000'000'000LL);
+  EXPECT_EQ(record.lower_y_pm, -30'000'000'000LL);
+  EXPECT_EQ(record.lower_z_pm, -10'000'000'000LL);
+  EXPECT_EQ(record.upper_x_pm, 40'000'000'000LL);
+  EXPECT_EQ(record.upper_y_pm, -10'000'000'000LL);
+  EXPECT_EQ(record.upper_z_pm, 20'000'000'000LL);
+  EXPECT_EQ(record.volume_id, 1U);
+  EXPECT_EQ(record.material_id, 1U);
+
+  // 13 cm cube at the origin of a 2 m World.
+  GGEMSBoxRecord const thirteen = Compile(
+    MakeWorld(2_m), PlaceBox(13_cm, 13_cm, 13_cm, MakePositionPM(0, 0, 0)));
+  EXPECT_EQ(thirteen.lower_x_pm, -65'000'000'000LL);
+  EXPECT_EQ(thirteen.upper_z_pm, 65'000'000'000LL);
+
+  // Smallest Box centered in the smallest World that can contain it: one
+  // picometer of clearance from every World face.
+  GGEMSBoxRecord const tiny = Compile(
+    MakeWorld(4_pm), PlaceBox(2_pm, 2_pm, 2_pm, MakePositionPM(0, 0, 0)));
+  EXPECT_EQ(tiny.lower_x_pm, -1LL);
+  EXPECT_EQ(tiny.upper_z_pm, 1LL);
+  EXPECT_FALSE(
+    Fits(MakeWorld(2_pm), PlaceBox(2_pm, 2_pm, 2_pm, MakePositionPM(0, 0, 0))));
+
+  // Smallest Box at an odd center: faces one picometer on each side.
+  GGEMSBoxRecord const smallest =
+    Compile(MakeWorld(200_mm),
+            PlaceBox(2_pm, 2_pm, 2_pm, MakePositionPM(-11, -13, -17)));
+  EXPECT_EQ(smallest.lower_x_pm, -12LL);
+  EXPECT_EQ(smallest.lower_y_pm, -14LL);
+  EXPECT_EQ(smallest.lower_z_pm, -18LL);
+  EXPECT_EQ(smallest.upper_x_pm, -10LL);
+  EXPECT_EQ(smallest.upper_y_pm, -12LL);
+  EXPECT_EQ(smallest.upper_z_pm, -16LL);
 }
 
 // =============================================================================
 // =============================================================================
 
 TEST(GGEMSBox, StrictContainmentRejectsCoincidentWorldFaces) {
-  GGEMSWorld const world{200_mm, 200_mm, 200_mm, Vacuum()};
+  GGEMSWorld const world = MakeWorld(200_mm);
+  auto const place = [](CoordinatePM center_x, CoordinatePM center_y,
+                        CoordinatePM center_z) -> GGEMSBox {
+    return PlaceBox(40_mm, 20_mm, 30_mm,
+                    MakePositionPM(center_x, center_y, center_z));
+  };
 
-  EXPECT_TRUE(GGEMSBox(40_mm, 20_mm, 30_mm, MakePositionPM(0, 0, 0), Water())
-                .IsStrictlyInside(world));
+  EXPECT_TRUE(Fits(world, place(0, 0, 0)));
   // Upper X face one picometer inside the World face is still strictly inside.
-  EXPECT_TRUE(GGEMSBox(40_mm, 20_mm, 30_mm,
-                       MakePositionPM(60'000'000'000 - 1, 0, 0), Water())
-                .IsStrictlyInside(world));
-  // Coincident face.
+  EXPECT_TRUE(Fits(world, place(80'000'000'000LL - 1, 0, 0)));
+  // Coincident +X face.
+  EXPECT_FALSE(Fits(world, place(80'000'000'000LL, 0, 0)));
+  // Coincident -Y face.
+  EXPECT_FALSE(Fits(world, place(0, -90'000'000'000LL, 0)));
+  // Crossing -Z face.
+  EXPECT_FALSE(Fits(world, place(0, 0, -95'000'000'000LL)));
+  // Same size as the World, and larger than the World.
   EXPECT_FALSE(
-    GGEMSBox(40_mm, 20_mm, 30_mm, MakePositionPM(60'000'000'000, 0, 0), Water())
-      .IsStrictlyInside(world));
-  // Crossing face.
-  EXPECT_FALSE(GGEMSBox(40_mm, 20_mm, 30_mm,
-                        MakePositionPM(0, 0, -110'000'000'000), Water())
-                 .IsStrictlyInside(world));
-  // Same size as the World.
-  EXPECT_FALSE(GGEMSBox(200_mm, 200_mm, 200_mm,
-                        MakePositionPM(-100'000'000'000, -100'000'000'000,
-                                       -100'000'000'000),
-                        Water())
-                 .IsStrictlyInside(world));
+    Fits(world, PlaceBox(200_mm, 200_mm, 200_mm, MakePositionPM(0, 0, 0))));
+  EXPECT_FALSE(
+    Fits(world, PlaceBox(40_mm, 202_mm, 30_mm, MakePositionPM(0, 0, 0))));
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSBox, BuildsTheDeviceRecordWithSnapshotIdentities) {
-  GGEMSBox const box{
-    60_mm, 20_mm, 30_mm,
-    MakePositionPM(-20'000'000'000, -30'000'000'000, -10'000'000'000), Water()};
-  ggems::geometry::GGEMSBoxRecord const record = box.BuildRecord(1U, 1U);
+TEST(GGEMSBox, KeepsEveryFaceOnTheSignedLatticeAtTheAdmittedBounds) {
+  GGEMSWorld const largest =
+    MakeWorld(Length{ggems::geometry::k_max_world_size_pm});
+  constexpr std::int64_t k_min = std::numeric_limits<std::int64_t>::min();
+  constexpr std::int64_t k_max = std::numeric_limits<std::int64_t>::max();
 
-  EXPECT_EQ(record.lower_x_pm, -20'000'000'000);
-  EXPECT_EQ(record.lower_y_pm, -30'000'000'000);
-  EXPECT_EQ(record.lower_z_pm, -10'000'000'000);
-  EXPECT_EQ(record.upper_x_pm, 40'000'000'000);
-  EXPECT_EQ(record.upper_y_pm, -10'000'000'000);
-  EXPECT_EQ(record.upper_z_pm, 20'000'000'000);
-  EXPECT_EQ(record.volume_id, 1U);
-  EXPECT_EQ(record.material_id, 1U);
+  // Smallest Box with one picometer of clearance from two World faces.
+  GGEMSBoxRecord const edge = Compile(
+    largest,
+    PlaceBox(2_pm, 2_pm, 2_pm,
+             MakePositionPM(k_max_half_pm - 2, -(k_max_half_pm - 2), 0)));
+  EXPECT_EQ(edge.upper_x_pm, k_max_half_pm - 1);
+  EXPECT_EQ(edge.lower_x_pm, k_max_half_pm - 3);
+  EXPECT_EQ(edge.lower_y_pm, -(k_max_half_pm - 1));
+  EXPECT_EQ(edge.upper_y_pm, -(k_max_half_pm - 3));
+
+  // Extreme signed centers are rejected without forming any face sum.
+  EXPECT_FALSE(
+    Fits(largest, PlaceBox(2_pm, 2_pm, 2_pm, MakePositionPM(k_max, 0, 0))));
+  EXPECT_FALSE(
+    Fits(largest, PlaceBox(2_pm, 2_pm, 2_pm, MakePositionPM(0, k_min, 0))));
+  EXPECT_FALSE(
+    Fits(largest,
+         PlaceBox(2_pm, 2_pm, 2_pm, MakePositionPM(0, 0, k_max_half_pm - 1))));
+
+  // A Box as wide as, or wider than, the largest World is rejected.
+  EXPECT_FALSE(
+    Fits(largest, PlaceBox(Length{ggems::geometry::k_max_world_size_pm}, 2_pm,
+                           2_pm, MakePositionPM(0, 0, 0))));
+  EXPECT_FALSE(
+    Fits(largest,
+         PlaceBox(2_pm, Length{std::numeric_limits<std::uint64_t>::max() - 1},
+                  2_pm, MakePositionPM(0, 0, 0))));
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSBox, SettersApplyInAnyOrderAndValidateRequiresSizeAndMaterial) {
+  GGEMSBox box{};
+  EXPECT_THROW(box.Validate(), GGEMSRecoverable);
+  EXPECT_THROW(static_cast<void>(box.GetMaterial()), GGEMSRecoverable);
+
+  box.SetMaterial(Vacuum());
+  EXPECT_THROW(box.Validate(), GGEMSRecoverable);
+
+  box
+    .SetPosition(
+      MakePositionPM(10'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL))
+    .SetSize(60_mm, 20_mm, 30_mm);
+  EXPECT_NO_THROW(box.Validate());
+
+  GGEMSBox const reference = MakeBox();
+  EXPECT_EQ(box.GetPositionPM(), reference.GetPositionPM());
+  EXPECT_EQ(box.GetHalfExtentPM(), reference.GetHalfExtentPM());
+  EXPECT_EQ(box.GetMaterial().GetName(), "Vacuum");
+  EXPECT_EQ(reference.GetMaterial().GetName(), "Water");
+
+  GGEMSBox sized{};
+  sized.SetSize(2_pm, 2_pm, 2_pm);
+  EXPECT_THROW(sized.Validate(), GGEMSRecoverable);
 }

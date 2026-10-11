@@ -53,7 +53,8 @@ struct ParticleStateAlignmentProbe {
   ParticleState particle;
 };
 
-constexpr std::size_t k_layout_value_count{23U};
+// 23 layout values followed by the catalog predicate of species codes 0..7.
+constexpr std::size_t k_layout_value_count{31U};
 constexpr std::size_t k_particle_count{2U};
 constexpr std::uint64_t k_probe_track_id{7ULL};
 constexpr float k_probe_direction_w{0.5F};
@@ -147,6 +148,15 @@ TEST_F(GGEMSParticleStateKernelTest, HostAndKernelLayoutsMatch) {
     offsetof(ParticleState, energy_micro_eV),
     sizeof(ParticleState),
     offsetof(ParticleStateAlignmentProbe, particle),
+    // GGEMS_ParticleIsProcessFree for species codes 0..7: only Aionino (1).
+    0ULL,
+    1ULL,
+    0ULL,
+    0ULL,
+    0ULL,
+    0ULL,
+    0ULL,
+    0ULL,
   };
 
   layout_buffer.Map(CL_MAP_READ);

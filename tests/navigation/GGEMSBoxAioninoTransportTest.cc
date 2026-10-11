@@ -79,7 +79,6 @@ using World = ggems::geometry::GGEMSWorld;
 using ggems::geometry::MakePositionPM;
 
 constexpr std::int64_t k_100_mm{100'000'000'000LL};
-constexpr std::uint32_t k_box{1U};
 
 auto Material(char const *name) -> ggems::core::materials::GGEMSMaterial {
   return ggems::core::materials::builtins::BuildBuiltInMaterial(name);
@@ -87,16 +86,30 @@ auto Material(char const *name) -> ggems::core::materials::GGEMSMaterial {
 
 /*! \brief 200 mm Vacuum World. */
 auto MakeWorld() -> World {
-  return World{200_mm, 200_mm, 200_mm, Material("Vacuum")};
+  World world{};
+  world.SetSize(200_mm, 200_mm, 200_mm).SetMaterial(Material("Vacuum"));
+  return world;
 }
 
-/*! \brief Asymmetric Water Box: x in [-20, 40], y in [-30, -10], z in
- * [-10, 20] mm. */
-auto MakeBox() -> Box {
-  return Box{
-    60_mm, 20_mm, 30_mm,
-    MakePositionPM(-20'000'000'000LL, -30'000'000'000LL, -10'000'000'000LL),
-    Material("Water")};
+/*! \brief Asymmetric Box: x in [-20, 40], y in [-30, -10], z in [-10, 20] mm,
+ * authored by its center (10, -20, 5) mm. */
+auto MakeBox(char const *material = "Water") -> Box {
+  Box box{};
+  box.SetSize(60_mm, 20_mm, 30_mm)
+    .SetPosition(
+      MakePositionPM(10'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL))
+    .SetMaterial(Material(material));
+  return box;
+}
+
+/*! \brief Device record of MakeBox() admitted and compiled by the World with
+ * Material 1. */
+auto MakeBoxRecord() -> BoxRecord {
+  World world = MakeWorld();
+  world.AddVolume(MakeBox());
+  world.Validate();
+  std::array<std::uint32_t, 1U> const material_ids{1U};
+  return world.BuildBoxRecords(material_ids)[0U];
 }
 
 auto MakeSource(std::array<std::int64_t, 3U> const &position_pm,
@@ -228,7 +241,7 @@ auto ExpectHistories(World const &world, std::span<BoxRecord const> boxes,
 
 TEST_F(GGEMSNavigationDeviceTest, AioninoCrossesTheBoxThenExitsTheWorld) {
   World const world = MakeWorld();
-  std::array<BoxRecord, 1U> const boxes{MakeBox().BuildRecord(k_box, 1U)};
+  std::array<BoxRecord, 1U> const boxes{MakeBoxRecord()};
 
   // The intermediate boundaries of these histories are verified by the
   // traced-stream test; this launch checks the unmodified production stream.
@@ -267,7 +280,7 @@ TEST_F(GGEMSNavigationDeviceTest, AioninoCrossesTheBoxThenExitsTheWorld) {
 
 TEST_F(GGEMSNavigationDeviceTest, AioninoBornInsideOrOnTheBoxSurface) {
   World const world = MakeWorld();
-  std::array<BoxRecord, 1U> const boxes{MakeBox().BuildRecord(k_box, 1U)};
+  std::array<BoxRecord, 1U> const boxes{MakeBoxRecord()};
 
   std::vector<HistoryCase> const cases{
     // Born strictly inside, -Z: Box exit then World exit.
@@ -300,7 +313,7 @@ TEST_F(GGEMSNavigationDeviceTest, AioninoBornInsideOrOnTheBoxSurface) {
 
 TEST_F(GGEMSNavigationDeviceTest, WorldOnlyAndOtherSpeciesAreUnchangedByBoxes) {
   World const world = MakeWorld();
-  std::array<BoxRecord, 1U> const boxes{MakeBox().BuildRecord(k_box, 1U)};
+  std::array<BoxRecord, 1U> const boxes{MakeBoxRecord()};
 
   for (auto &context : ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
     SCOPED_TRACE(context.GetDevice().GetName());
@@ -340,7 +353,7 @@ TEST_F(GGEMSNavigationDeviceTest, WorldOnlyAndOtherSpeciesAreUnchangedByBoxes) {
 // =============================================================================
 // =============================================================================
 
-TEST_F(GGEMSNavigationDeviceTest, RunOwnsTheBoxAndRejectsInvalidAuthoring) {
+TEST_F(GGEMSNavigationDeviceTest, WorldOwnsTheBoxAndRejectsInvalidAuthoring) {
   auto source = std::make_shared<ggems::core::sources::GGEMSSource>();
   source->SetAnalytic()
     .SetPrimaryCount(1ULL)
@@ -354,25 +367,23 @@ TEST_F(GGEMSNavigationDeviceTest, RunOwnsTheBoxAndRejectsInvalidAuthoring) {
   observer->Enable().SetRecordCapacity(2U).CaptureFirstPrimaries(1U);
 
   {
-    // Box without World.
+    // Box touching the World +X face: rejected when the World is attached.
+    // A second Box is rejected by the World itself.
     ggems::core::GGEMSRun run{};
     run.SetRandom(rng);
     run.AddSource(source);
-    run.AddBox(MakeBox());
-    EXPECT_THROW(run.Initialize(), ggems::core::GGEMSRecoverable);
-  }
-  {
-    // Box touching the World +X face, and a second Box.
-    ggems::core::GGEMSRun run{};
-    run.SetRandom(rng);
-    run.AddSource(source);
-    run.SetWorld(MakeWorld());
-    run.AddBox(Box{
-      40_mm, 20_mm, 30_mm,
-      MakePositionPM(60'000'000'000LL, -10'000'000'000LL, -15'000'000'000LL),
-      Material("Water")});
-    EXPECT_THROW(run.AddBox(MakeBox()), ggems::core::GGEMSRecoverable);
-    EXPECT_THROW(run.Initialize(), ggems::core::GGEMSRecoverable);
+    World world = MakeWorld();
+    Box touching{};
+    touching.SetSize(40_mm, 20_mm, 30_mm)
+      .SetPosition(MakePositionPM(80'000'000'000LL, 0LL, 0LL))
+      .SetMaterial(Material("Water"));
+    world.AddVolume(touching);
+    EXPECT_THROW(world.AddVolume(MakeBox()), ggems::core::GGEMSRecoverable);
+    EXPECT_THROW(run.SetWorld(world), ggems::core::GGEMSRecoverable);
+    // The rejected World was not retained: the process-free source still has
+    // no World to navigate.
+    ASSERT_NO_THROW(run.Initialize());
+    EXPECT_THROW(run.Run(), ggems::core::GGEMSRecoverable);
   }
   {
     // Same Material as the World still gives a distinct physical volume: the
@@ -381,25 +392,52 @@ TEST_F(GGEMSNavigationDeviceTest, RunOwnsTheBoxAndRejectsInvalidAuthoring) {
     run.SetRandom(rng);
     run.AddSource(source);
     run.SetObserver(observer);
-    run.SetWorld(MakeWorld());
-    run.AddBox(Box{
-      60_mm, 20_mm, 30_mm,
-      MakePositionPM(-20'000'000'000LL, -30'000'000'000LL, -10'000'000'000LL),
-      Material("Vacuum")});
+    run.SetWorld(MakeWorld().AddVolume(MakeBox("Vacuum")));
     ASSERT_NO_THROW(run.Initialize());
     ASSERT_NO_THROW(run.Run());
     ASSERT_EQ(observer->GetRecords().size(), 2U);
     EXPECT_EQ(observer->GetRecords().back().position_x_pm, k_100_mm);
+  }
+  {
+    // Replacing the attached World before Initialize replaces its whole
+    // volume collection: the former Box could not fit the smaller World.
+    auto inner_source = std::make_shared<ggems::core::sources::GGEMSSource>();
+    inner_source->SetAnalytic()
+      .SetPrimaryCount(1ULL)
+      .SetEmittedParticleType(ParticleType::Aionino)
+      .SetPositionPicoMeter(0LL, -20'000'000'000LL, 5'000'000'000LL)
+      .SetDirection(1.0, 0.0, 0.0);
+    auto inner_observer =
+      std::make_shared<ggems::core::observer::GGEMSTransportObserver>();
+    inner_observer->Enable().SetRecordCapacity(2U).CaptureFirstPrimaries(1U);
+    ggems::core::GGEMSRun run{};
+    run.SetRandom(rng);
+    run.AddSource(inner_source);
+    run.SetObserver(inner_observer);
+    run.SetWorld(MakeWorld().AddVolume(MakeBox()));
+    World small{};
+    small.SetSize(50_mm, 50_mm, 50_mm).SetMaterial(Material("Vacuum"));
+    run.SetWorld(small);
+    ASSERT_NO_THROW(run.Initialize());
+    ASSERT_NO_THROW(run.Run());
+    ASSERT_EQ(inner_observer->GetRecords().size(), 2U);
+    EXPECT_EQ(inner_observer->GetRecords().back().position_x_pm,
+              25'000'000'000LL);
   }
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(rng);
   run.AddSource(source);
   run.SetObserver(observer);
-  run.SetWorld(MakeWorld());
-  run.AddBox(MakeBox());
+  World world = MakeWorld();
+  world.AddVolume(MakeBox());
+  run.SetWorld(world);
+  // The Run owns its copy: later edits of the authoring object (a 400 mm
+  // World would move the exit to +200 mm) and attachment after Initialize do
+  // not reach the frozen scene.
+  world.SetSize(400_mm, 400_mm, 400_mm).SetMaterial(Material("Water"));
   ASSERT_NO_THROW(run.Initialize());
-  EXPECT_THROW(run.AddBox(MakeBox()), ggems::core::GGEMSRecoverable);
+  EXPECT_THROW(run.SetWorld(world), ggems::core::GGEMSRecoverable);
   ASSERT_NO_THROW(run.Run());
 
   auto const records = observer->GetRecords();

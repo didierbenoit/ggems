@@ -21,115 +21,108 @@
 
 /*!
  * \file
- * \brief Validates and packs immutable analytic Box parameters.
+ * \brief Validates the center-placed analytic Box authoring parameters.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
-#include <cstdint>
 #include <format>
 #include <string_view>
 #include <utility>
 
 #include "GGEMS/GGEMSException.hh"
-#include "GGEMS/geometry/GGEMSBoxRecord.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
-#include "GGEMS/geometry/GGEMSWorld.hh"
+#include "GGEMS/geometry/detail/GGEMSGeometrySize.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
-namespace {
+namespace ggems::geometry::detail {
 
-/*!
- * \brief Computes one upper face from a lower face and a validated size.
- *
- * \param[in] lower Lower face coordinate.
- * \param[in] size Full extent along the axis.
- * \param[in] axis Axis label used in diagnostics.
- * \return Upper face coordinate.
- * \throws ggems::core::GGEMSRecoverable If the size is zero or the upper face
- * does not fit the picometer lattice.
- */
-auto RequireUpperFace(ggems::geometry::CoordinatePM lower,
-                      ggems::units::Length size, std::string_view axis)
-  -> ggems::geometry::CoordinatePM {
+auto RequireEvenHalfExtentPM(units::Length size, std::string_view volume,
+                             std::string_view axis) -> DistancePM {
   if (size.value == 0ULL) {
-    throw ggems::core::GGEMSRecoverable(
-      std::format("Box {} size must be strictly positive.", axis));
+    throw core::GGEMSRecoverable(
+      std::format("{} {} size must be strictly positive.", volume, axis));
   }
 
-  return lower + static_cast<ggems::geometry::CoordinatePM>(size.value);
+  if (size.value % 2ULL != 0ULL) {
+    throw core::GGEMSRecoverable(std::format(
+      "{} {} size must be an even number of picometers so that the centered "
+      "faces lie on the integer picometer lattice; got {} pm.",
+      volume, axis, size.value));
+  }
+
+  return size.value / 2ULL;
 }
 
-} // namespace
+} // namespace ggems::geometry::detail
 
 // =============================================================================
 // =============================================================================
 
 namespace ggems::geometry {
 
-GGEMSBox::GGEMSBox(units::Length size_x, units::Length size_y,
-                   units::Length size_z, Position3PM lower_corner,
-                   core::materials::GGEMSMaterial material)
-    : lower_corner_pm_{lower_corner},
-      upper_corner_pm_{
-        .x = RequireUpperFace(lower_corner.x, size_x, "X"),
-        .y = RequireUpperFace(lower_corner.y, size_y, "Y"),
-        .z = RequireUpperFace(lower_corner.z, size_z, "Z"),
-      },
-      material_{std::move(material)} {}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSBox::GetLowerCornerPM() const noexcept -> Position3PM {
-  return lower_corner_pm_;
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSBox::GetUpperCornerPM() const noexcept -> Position3PM {
-  return upper_corner_pm_;
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSBox::IsStrictlyInside(GGEMSWorld const &world) const noexcept
-  -> bool {
-  Position3PM const world_lower = world.GetLowerCornerPM();
-  Position3PM const world_upper = world.GetUpperCornerPM();
-
-  return lower_corner_pm_.x > world_lower.x &&
-         upper_corner_pm_.x < world_upper.x &&
-         lower_corner_pm_.y > world_lower.y &&
-         upper_corner_pm_.y < world_upper.y &&
-         lower_corner_pm_.z > world_lower.z &&
-         upper_corner_pm_.z < world_upper.z;
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSBox::BuildRecord(std::uint32_t volume_id,
-                           std::uint32_t material_id) const noexcept
-  -> GGEMSBoxRecord {
-  return GGEMSBoxRecord{
-    .lower_x_pm = lower_corner_pm_.x,
-    .lower_y_pm = lower_corner_pm_.y,
-    .lower_z_pm = lower_corner_pm_.z,
-    .upper_x_pm = upper_corner_pm_.x,
-    .upper_y_pm = upper_corner_pm_.y,
-    .upper_z_pm = upper_corner_pm_.z,
-    .volume_id = volume_id,
-    .material_id = material_id,
+auto GGEMSBox::SetSize(units::Length size_x, units::Length size_y,
+                       units::Length size_z) -> GGEMSBox & {
+  HalfExtent3PM const half_extent{
+    .x = detail::RequireEvenHalfExtentPM(size_x, "Box", "X"),
+    .y = detail::RequireEvenHalfExtentPM(size_y, "Box", "Y"),
+    .z = detail::RequireEvenHalfExtentPM(size_z, "Box", "Z"),
   };
+
+  half_extent_pm_ = half_extent;
+  return *this;
 }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSBox::GetMaterial() const noexcept
-  -> core::materials::GGEMSMaterial const & {
-  return material_;
+auto GGEMSBox::SetPosition(Position3PM center) noexcept -> GGEMSBox & {
+  center_pm_ = center;
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSBox::SetMaterial(core::materials::GGEMSMaterial material)
+  -> GGEMSBox & {
+  material_ = std::move(material);
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSBox::Validate() const -> void {
+  if (half_extent_pm_.x == 0ULL) {
+    throw core::GGEMSRecoverable("Box size is not set.");
+  }
+
+  if (!material_) {
+    throw core::GGEMSRecoverable("Box material is not set.");
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSBox::GetPositionPM() const noexcept -> Position3PM {
+  return center_pm_;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSBox::GetHalfExtentPM() const noexcept -> HalfExtent3PM {
+  return half_extent_pm_;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSBox::GetMaterial() const -> core::materials::GGEMSMaterial const & {
+  if (!material_) {
+    throw core::GGEMSRecoverable("Box material is not set.");
+  }
+
+  return *material_;
 }
 
 } // namespace ggems::geometry

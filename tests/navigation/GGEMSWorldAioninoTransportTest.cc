@@ -71,11 +71,18 @@ using World = ggems::geometry::GGEMSWorld;
 constexpr std::int64_t k_100_mm{100'000'000'000LL};
 constexpr std::int64_t k_one_meter_pm{1'000'000'000'000LL};
 
+/*! \brief Vacuum World of the given full sizes centered on the origin. */
+auto MakeVacuumWorld(Length size_x, Length size_y, Length size_z) -> World {
+  World world{};
+  world.SetSize(size_x, size_y, size_z)
+    .SetMaterial(
+      ggems::core::materials::builtins::BuildBuiltInMaterial("Vacuum"));
+  return world;
+}
+
 /*! \brief The W01 World: 200 mm cube of Vacuum centered on the origin. */
 auto MakeCubicWorld() -> World {
-  return World{
-    200_mm, 200_mm, 200_mm,
-    ggems::core::materials::builtins::BuildBuiltInMaterial("Vacuum")};
+  return MakeVacuumWorld(200_mm, 200_mm, 200_mm);
 }
 
 /*! \brief Builds a count-driven analytic point source along a stored axis. */
@@ -268,9 +275,7 @@ TEST_F(GGEMSNavigationDeviceTest, ExitsCubicWorldOnEveryFaceAndDiagonal) {
 // =============================================================================
 
 TEST_F(GGEMSNavigationDeviceTest, ExitsAsymmetricWorldWithRoundedCoordinates) {
-  World const world{
-    200_mm, 400_mm, 100_mm,
-    ggems::core::materials::builtins::BuildBuiltInMaterial("Vacuum")};
+  World const world = MakeVacuumWorld(200_mm, 400_mm, 100_mm);
 
   std::array<AioninoCase, 3U> const cases{{
     // Stored normalize(1, 2, 3) from the center: z limits at 50 mm; the
@@ -331,9 +336,7 @@ TEST_F(GGEMSNavigationDeviceTest, HandlesBoundaryStartsAndCoincidentMovement) {
 
 TEST_F(GGEMSNavigationDeviceTest, ExitsTheLargestAdmittedWorld) {
   Length const max_size{0x7FFF'FFFF'FFFF'FFFEULL};
-  World const world{
-    max_size, max_size, max_size,
-    ggems::core::materials::builtins::BuildBuiltInMaterial("Vacuum")};
+  World const world = MakeVacuumWorld(max_size, max_size, max_size);
   constexpr std::int64_t k_half{0x3FFF'FFFF'FFFF'FFFFLL};
 
   std::array<AioninoCase, 2U> const cases{{

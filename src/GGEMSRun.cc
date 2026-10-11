@@ -314,21 +314,8 @@ auto GGEMSRun::SetWorld(geometry::GGEMSWorld world) -> void {
     throw GGEMSRecoverable("Cannot change World after Initialize.");
   }
 
+  world.Validate();
   world_ = std::move(world);
-}
-
-// -----------------------------------------------------------------------------
-
-auto GGEMSRun::AddBox(geometry::GGEMSBox box) -> void {
-  if (initialized_) {
-    throw GGEMSRecoverable("Cannot add a Box after Initialize.");
-  }
-
-  if (!boxes_.empty()) {
-    throw GGEMSRecoverable("The current slice admits exactly one Box.");
-  }
-
-  boxes_.push_back(std::move(box));
 }
 
 // -----------------------------------------------------------------------------
@@ -387,23 +374,15 @@ auto GGEMSRun::Initialize() -> void {
 
   std::filesystem::path const kernel_root{GGEMS_KERNEL_ROOT};
 
-  // Static scene compilation: Box occurrences receive dense snapshot-local
-  // volume identities after the World (identity 0).
+  // Static scene compilation of the validated World snapshot: its Box volumes
+  // receive dense snapshot-local volume identities after the World (identity
+  // 0).
   std::vector<geometry::GGEMSBoxRecord> box_records;
-
-  if (!boxes_.empty() && !world_) {
-    throw GGEMSRecoverable("A Box requires an explicit finite World.");
-  }
 
   if (world_) {
     std::vector<materials::GGEMSMaterial> scene_materials;
     scene_materials.push_back(world_->GetMaterial());
-    for (auto const &box : boxes_) {
-      if (!box.IsStrictlyInside(*world_)) {
-        throw GGEMSRecoverable(
-          "Every Box must lie strictly inside the World; coincident or "
-          "crossing faces are not supported.");
-      }
+    for (auto const &box : world_->GetBoxes()) {
       scene_materials.push_back(box.GetMaterial());
     }
 
@@ -411,11 +390,9 @@ auto GGEMSRun::Initialize() -> void {
     // medium is the first input, hence identity 0. No Cut couple is bound in
     // this geometry-only slice.
     materials::GGEMSEMMaterialPackage const package{scene_materials};
-    auto const material_ids = package.GetMaterialIds();
-    for (std::size_t index = 0U; index < boxes_.size(); ++index) {
-      box_records.push_back(boxes_[index].BuildRecord(
-        static_cast<std::uint32_t>(index) + 1U, material_ids[index + 1U]));
-    }
+    std::span<std::uint32_t const> const material_ids =
+      package.GetMaterialIds();
+    box_records = world_->BuildBoxRecords(material_ids.subspan(1U));
   }
 
   std::vector<std::unique_ptr<transport::GGEMSTransportWorkload>>
