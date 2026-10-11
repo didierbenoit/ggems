@@ -37,6 +37,7 @@ void BindCuts(py::module_ &module);
 void BindRadionuclide(py::module_ &module);
 void BindSource(py::module_ &module);
 void BindObserver(py::module_ &module);
+void BindGeometry(py::module_ &module);
 void BindRun(py::module_ &module);
 
 #ifdef GGEMS_WITH_IMGUI
@@ -60,6 +61,7 @@ PYBIND11_MODULE(ggems, module) {
   auto source = module.def_submodule("source", "GGEMS source module");
   auto run = module.def_submodule("run", "GGEMS run module");
   auto observer = module.def_submodule("observer", "GGEMS observer module");
+  auto geometry = module.def_submodule("geometry", "GGEMS geometry module");
 
 #ifdef GGEMS_WITH_IMGUI
   auto gui = module.def_submodule("gui", "GGEMS graphical interface module");
@@ -73,6 +75,7 @@ PYBIND11_MODULE(ggems, module) {
   BindCuts(cuts);
   BindSource(source);
   BindObserver(observer);
+  BindGeometry(geometry);
   BindRun(run);
 
 #ifdef GGEMS_WITH_IMGUI

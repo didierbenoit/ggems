@@ -238,9 +238,8 @@ auto ValidateDiagnosticTransportSources(
     auto const &source = source_records[source_index];
 
     sources::ValidateAnalyticSourceRecord(source);
-    if (source.emitted_particle_type ==
-        particles::ToKernelParticleType(
-          particles::GGEMSParticleType::Aionino)) {
+    if (particles::IsProcessFree(
+          particles::FromKernelParticleType(source.emitted_particle_type))) {
       continue;
     }
 

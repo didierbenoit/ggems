@@ -137,6 +137,24 @@ constexpr auto FromKernelParticleType(std::uint32_t particle_type) noexcept
 }
 
 /*!
+ * \brief Reports whether the catalog defines a species as having no physical
+ * interactions.
+ *
+ * Such a species is transported by geometry alone: Navigation takes it from
+ * boundary to boundary until the World exit, its distance to the next
+ * interaction being infinite by definition. This is a property of the species,
+ * independent of Process implementation progress: physical species return
+ * false even while their Processes are not implemented yet, and keep the
+ * diagnostic projection until they are. Aionino is the only Process-free
+ * species. The device mirror is GGEMS_ParticleIsProcessFree.
+ * \param[in] particle_type Host species code.
+ * \return True only for a species defined without physical interactions.
+ */
+constexpr auto IsProcessFree(GGEMSParticleType particle_type) noexcept -> bool {
+  return particle_type == GGEMSParticleType::Aionino;
+}
+
+/*!
  * \brief Widens a particle-status code to the kernel representation.
  * \param[in] status Host status code; no validation is performed.
  * \return The underlying numeric code as uint32_t.

@@ -38,9 +38,9 @@ namespace ggems::core::transport {
  *
  * Counters reset before each chunk. The atomic claim cursor includes
  * terminating out-of-range claims and must not be interpreted as a
- * completed-history count. Aionino exits the World; other species keep the
- * one-meter diagnostic projection; legacy synthetic branching and stack
- * counters remain zero.
+ * completed-history count. Process-free species exit the World; other
+ * species keep the one-meter diagnostic projection; legacy synthetic branching
+ * and stack counters remain zero.
  */
 struct GGEMSTransportCounters {
   /*!
@@ -91,14 +91,13 @@ struct GGEMSTransportCounters {
   /*! \brief Synthetic step count; zero in the current diagnostic kernel. */
   std::uint32_t total_fake_step_count{0U};
 
-  /*! \brief Aionino births outside the closed World; no completion. */
+  /*! \brief Navigated births outside the closed World; no completion. */
   std::uint32_t outside_world_count{0U};
 
-  /*! \brief Aionino queries without a resolvable World boundary; no completion.
-   */
+  /*! \brief Navigation queries without a resolvable boundary; no completion. */
   std::uint32_t unresolved_geometry_count{0U};
 
-  /*! \brief Aionino histories completed at the World boundary. */
+  /*! \brief Navigated histories completed at the World boundary. */
   std::uint32_t escaped_world_count{0U};
 };
 

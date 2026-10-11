@@ -25,7 +25,7 @@
  *
  * Transport owns the accepted geometric transaction: it asks Navigation for
  * the first physical boundary, commits one canonical position, updates the
- * physical owner of the particle and marks the World exit. Species-specific
+ * physical owner of the particle and marks the World exit. History
  * lifecycle (counters, capture, completion) stays in the stream kernel.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>

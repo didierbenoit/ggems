@@ -63,9 +63,10 @@ namespace ggems::core {
  *
  * Initialize() freezes population mode and energy configuration and prepares
  * OpenCL resources. Sequential Run() calls capture the current source poses and
- * execute one population window each. Aionino uses the configured finite World;
- * other species retain diagnostic transport. No physical interactions or
- * acquisition are implemented.
+ * execute one population window each. Process-free species navigate the
+ * configured finite World and its analytic volumes; other species retain
+ * diagnostic transport. No physical interactions or acquisition are
+ * implemented.
  *
  * Concurrent Run() and ResetTime() calls on this object are rejected by a
  * shared guard. Configuration and source mutation require caller
@@ -108,7 +109,7 @@ public:
   auto Initialize() -> void;
 
   /*!
-   * \brief Owns a finite World for Aionino navigation before initialization.
+   * \brief Owns a finite World for geometry transport before initialization.
    * \param[in] world Validated immutable World including its explicit Material.
    * \throws GGEMSRecoverable If Initialize has already succeeded.
    */

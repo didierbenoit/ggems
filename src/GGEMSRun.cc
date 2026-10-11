@@ -665,12 +665,13 @@ auto GGEMSRun::Run() -> void {
 
   if (merged_counters.outside_world_count != 0ULL) {
     throw GGEMSRecoverable(
-      "Aionino source produced a position outside the World.");
+      "A source particle was born outside the World during geometry "
+      "transport.");
   }
 
   if (merged_counters.unresolved_geometry_count != 0ULL) {
     throw GGEMSRecoverable(
-      "Aionino geometry navigation could not resolve a physical boundary.");
+      "Geometry navigation could not resolve a physical boundary.");
   }
 
   if (merged_counters.overflow_count != 0ULL) {

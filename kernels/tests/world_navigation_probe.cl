@@ -21,21 +21,29 @@
 
 /*!
  * \file
- * \brief Test probe running the Aionino World transport step on one ray per
- * work-item, outside the production stream kernel.
+ * \brief Test probe running one generic Transport transaction from the World
+ * on one ray per work-item, outside the production stream kernel.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
+#include "geometry/GGEMSBoxRecord.clh"
 #include "geometry/GGEMSWorldRecord.clh"
+#include "navigation/GGEMSNavigation.clh"
 #include "particles/GGEMSParticleState.clh"
-#include "transport/GGEMSWorldTransport.clh"
+#include "transport/GGEMSTransport.clh"
 
 /*!
- * \brief Navigates independent rays to the World boundary.
+ * \brief Moves independent World-owned rays to their first boundary.
+ *
+ * Without Box occurrences the first boundary is the World exit, so the
+ * reported status is GGEMS_NAVIGATION_RESOLVED (0), OUTSIDE_WORLD (1) or
+ * UNRESOLVED (2) and the endpoint is the exact World-exit commit.
  *
  * \param[in] world Shared World record.
+ * \param[in] boxes Box occurrences; one zero record when box_count is 0.
+ * \param[in] box_count Number of Box occurrences.
  * \param[in] positions_pm Start positions, three coordinates per ray.
  * \param[in] directions Stored binary32 directions, three components per ray.
  * \param[in] ray_count Number of rays.
@@ -43,12 +51,11 @@
  * \param[out] endpoints_pm Final positions (unchanged on failure).
  * \param[out] exit_faces Exact crossing mask per ray.
  */
-__kernel void world_navigation_probe(__global GGEMSWorldRecord const *world,
-                                     __global long const *positions_pm,
-                                     __global float const *directions,
-                                     uint ray_count, __global uint *statuses,
-                                     __global long *endpoints_pm,
-                                     __global uint *exit_faces) {
+__kernel void world_navigation_probe(
+  __global GGEMSWorldRecord const *world, __global GGEMSBoxRecord const *boxes,
+  uint box_count, __global long const *positions_pm,
+  __global float const *directions, uint ray_count, __global uint *statuses,
+  __global long *endpoints_pm, __global uint *exit_faces) {
   uint const ray = (uint)get_global_id(0);
   if (ray >= ray_count) {
     return;
@@ -62,9 +69,13 @@ __kernel void world_navigation_probe(__global GGEMSWorldRecord const *world,
   particle.direction_y = directions[3U * ray + 1U];
   particle.direction_z = directions[3U * ray + 2U];
   particle.status = GGEMS_PARTICLE_STATUS_ALIVE;
+  particle.current_volume_id = GGEMS_VOLUME_ID_WORLD;
+  particle.material_id = GGEMS_MATERIAL_ID_WORLD;
 
+  uint event = GGEMS_NAVIGATION_EVENT_NONE;
   uint faces = 0U;
-  statuses[ray] = GGEMS_TransportAioninoToWorld(world, &particle, &faces);
+  statuses[ray] = GGEMS_TransportToNextBoundary(world, boxes, box_count,
+                                                &particle, &event, &faces);
   endpoints_pm[3U * ray] = particle.position_x_pm;
   endpoints_pm[3U * ray + 1U] = particle.position_y_pm;
   endpoints_pm[3U * ray + 2U] = particle.position_z_pm;

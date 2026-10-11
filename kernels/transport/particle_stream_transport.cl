@@ -21,10 +21,11 @@
 
 /*!
  * \file
- * \brief Claims source primaries and performs a diagnostic endpoint projection.
+ * \brief Claims source primaries and executes the selected transport path.
  *
- * Aionino traverses the host-authored finite World and exits geometrically.
- * Other species keep the diagnostic one-meter projection and Killed status.
+ * Process-free species traverse the host-authored finite World and its
+ * analytic volumes and exit geometrically. Other species keep the diagnostic
+ * one-meter projection and Killed status until their Processes exist.
  * No interaction, energy loss, time-of-flight update, or secondary is modeled.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
@@ -66,8 +67,8 @@
  * update); a World exit completes the history with EscapedWorld. For the
  * admitted one-Box profile at most three boundaries are accepted (entry,
  * exit, World exit); exhausting the bound without escaping is reported as
- * unresolved, never as a silent completion. Aionino is the only current
- * caller; the loop carries no shape algorithm.
+ * unresolved, never as a silent completion. The loop is species-agnostic
+ * and carries no shape algorithm.
  *
  * This function and the Transport transaction it calls are deliberately kept
  * out of line. When the geometry loop is inlined into the claim/initialize/
@@ -151,14 +152,13 @@ static __attribute__((noinline)) uint GGEMS_TransportGeometry(
  * and failed birth initialization increment overflow_count and skip
  * completion.
  *
- * Aionino navigates the World and its analytic Box occurrences boundary by
- * boundary and commits its final accepted interval before EscapedWorld
- * completion. Outside births and
+ * A Process-free species (GGEMS_ParticleIsProcessFree) navigates the World
+ * and its analytic Box occurrences boundary by boundary and commits its final
+ * accepted interval before EscapedWorld completion. Outside births and
  * unresolved queries increment distinct failure counters without terminal
- * publication or history completion.
- * completion. Other species retain the checked one-meter projection and
- * diagnostic Killed completion. Energy, time and direction are unchanged in
- * both paths.
+ * publication or history completion. Other species retain the checked
+ * one-meter projection and diagnostic Killed completion until their physical
+ * Processes exist. Energy, time and direction are unchanged in both paths.
  *
  * With observer support enabled, capture selection precedes initialization
  * and optional source/terminal records have zero deposited energy. All
@@ -204,7 +204,8 @@ static __attribute__((noinline)) uint GGEMS_TransportGeometry(
  * population records.
  * \param[in] source_emission_ranges Global source-local primary ranges
  * parallel to source_emissions.
- * \param[in] world Immutable World parameters; required for Aionino.
+ * \param[in] world Immutable World parameters; required for navigated
+ * species.
  * \param[in] boxes Immutable analytic Box occurrences, box_count elements.
  * \param[in] box_count Number of Box occurrences strictly inside the World.
  */
@@ -326,7 +327,7 @@ __kernel void particle_stream_transport(
     }
 #endif
 
-    if (particle.particle_type == GGEMS_PARTICLE_TYPE_AIONINO) {
+    if (GGEMS_ParticleIsProcessFree(particle.particle_type) != 0U) {
       if (GGEMS_TransportGeometry(world, boxes, box_count, &particle,
                                   counters) != 0U) {
         continue;

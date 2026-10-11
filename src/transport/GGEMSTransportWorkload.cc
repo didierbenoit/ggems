@@ -584,23 +584,24 @@ auto GGEMSTransportWorkload::ValidateRunConfig(
   for (std::size_t index = 0U; index < config.source_records.size(); ++index) {
     auto const &record = config.source_records[index];
     if (config.source_ranges[index].primary_count == 0ULL ||
-        record.emitted_particle_type !=
-          particles::ToKernelParticleType(
-            particles::GGEMSParticleType::Aionino)) {
+        !particles::IsProcessFree(
+          particles::FromKernelParticleType(record.emitted_particle_type))) {
       continue;
     }
 
     if (world_ == nullptr) {
       throw GGEMSRecoverable(std::format(
-        "Aionino source slot {} requires an explicit finite World.", index));
+        "Source slot {} requires an explicit finite World for geometry "
+        "transport.",
+        index));
     }
 
     // Static preflight of the authored origin only: the device classifies
     // every generated birth and reports outside positions separately.
     if (!world_->Contains(geometry::MakePositionPM(
           record.position_x_pm, record.position_y_pm, record.position_z_pm))) {
-      throw GGEMSRecoverable(std::format(
-        "Aionino source slot {} origin lies outside the World.", index));
+      throw GGEMSRecoverable(
+        std::format("Source slot {} origin lies outside the World.", index));
     }
   }
 }

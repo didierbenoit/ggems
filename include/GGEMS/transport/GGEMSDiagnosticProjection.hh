@@ -67,7 +67,8 @@ inline constexpr std::uint64_t k_diagnostic_projection_distance_pm{
   std::int64_t &endpoint_pm) noexcept -> bool;
 
 /*!
- * \brief Checks nonempty source inputs and non-Aionino diagnostic endpoints.
+ * \brief Checks nonempty source inputs and the diagnostic endpoints of
+ * sources that are not navigated by geometry.
  *
  * \param[in] source_records Analytic source records.
  * \param[in] source_ranges Parallel run-primary ranges; zero-count sources are

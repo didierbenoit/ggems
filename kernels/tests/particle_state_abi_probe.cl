@@ -78,6 +78,11 @@ __kernel void particle_state_abi_probe(__global ulong *layout,
   layout[22] = (ulong)((__private uchar const *)&alignment_probe.particle -
                        alignment_base);
 
+  // Device mirror of the host catalog predicate for every species code.
+  for (uint particle_type = 0U; particle_type < 8U; ++particle_type) {
+    layout[23U + particle_type] = GGEMS_ParticleIsProcessFree(particle_type);
+  }
+
   particles[1].track_id = 7UL;
   particles[1].direction_w = 0.5f;
   particles[1].energy_micro_eV = 511000000000UL;

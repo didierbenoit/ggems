@@ -62,6 +62,20 @@
 /*! \brief Alpha-particle species code. */
 #define GGEMS_PARTICLE_TYPE_ALPHA 7U
 
+/*!
+ * \brief Reports whether the catalog defines a species as having no physical
+ * interactions.
+ *
+ * Mirrors the host IsProcessFree: such a species is transported by geometry
+ * alone, boundary by boundary, until the World exit. Physical species return
+ * zero whether or not their Processes are implemented.
+ * \param[in] particle_type Kernel species code.
+ * \return Nonzero for a Process-free species.
+ */
+static inline uint GGEMS_ParticleIsProcessFree(uint particle_type) {
+  return particle_type == GGEMS_PARTICLE_TYPE_AIONINO ? 1U : 0U;
+}
+
 /*! \brief Inactive particle slot. */
 #define GGEMS_PARTICLE_STATUS_INACTIVE 0U
 

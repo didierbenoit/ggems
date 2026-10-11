@@ -151,13 +151,13 @@ struct GGEMSTransportLogicalCounters {
   /*! \brief Accumulated synthetic steps; currently zero. */
   std::uint64_t total_fake_step_count{0ULL};
 
-  /*! \brief Aionino births rejected outside the World. */
+  /*! \brief Navigated births rejected outside the World. */
   std::uint64_t outside_world_count{0ULL};
 
-  /*! \brief Aionino queries that could not resolve a physical boundary. */
+  /*! \brief Navigation queries that could not resolve a physical boundary. */
   std::uint64_t unresolved_geometry_count{0ULL};
 
-  /*! \brief Aionino histories completed at the World boundary. */
+  /*! \brief Navigated histories completed at the World boundary. */
   std::uint64_t escaped_world_count{0ULL};
 };
 
@@ -267,9 +267,10 @@ auto ValidateTransportRunConfig(GGEMSTransportRunConfig const &config,
  * stable source assets into owned SVM buffers and initializes one random state
  * per worker. Sequential Run() calls reuse those states and split their
  * assigned primaries into uint32-bounded chunks. The current kernel initializes
- * each primary, advances Aionino to the World boundary, and keeps the
- * diagnostic one-meter projection for other species. No interactions or time of
- * flight. Calls using the same workload must be serialized by the owner.
+ * each primary, navigates Process-free species to the World boundary, and
+ * keeps the diagnostic one-meter projection for other species. No interactions
+ * or time of flight. Calls using the same workload must be serialized by the
+ * owner.
  */
 class GGEMSTransportWorkload {
 public:
@@ -291,7 +292,8 @@ public:
    * records.
    * \param[in] launch_primary_count_limit Requested positive chunk limit, or
    * zero to select the largest limit preserving atomic-cursor headroom.
-   * \param[in] world Optional World copied to SVM; required for Aionino.
+   * \param[in] world Optional World copied to SVM; required for navigated
+   * (Process-free) species.
    * \param[in] boxes Immutable Box occurrence records copied to SVM.
    * \throws GGEMSRecoverable If counts, random-stream range, or launch limit
    * are invalid.
