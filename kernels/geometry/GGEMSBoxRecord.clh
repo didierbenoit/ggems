@@ -42,25 +42,26 @@
  *
  * Faces lie at the lower and upper coordinates on the integer picometer
  * lattice; each lower coordinate is strictly below its upper coordinate. The
- * host guarantees strict containment within the World.
+ * host guarantees strict containment within the World. With an optional pose,
+ * faces are local and define the physical OBB; otherwise they are global.
  */
 typedef struct GGEMSBoxRecord {
-  /*! \brief Global X coordinate of the -X face. */
+  /*! \brief Box-frame X coordinate of the -X face. */
   long lower_x_pm;
 
-  /*! \brief Global Y coordinate of the -Y face. */
+  /*! \brief Box-frame Y coordinate of the -Y face. */
   long lower_y_pm;
 
-  /*! \brief Global Z coordinate of the -Z face. */
+  /*! \brief Box-frame Z coordinate of the -Z face. */
   long lower_z_pm;
 
-  /*! \brief Global X coordinate of the +X face. */
+  /*! \brief Box-frame X coordinate of the +X face. */
   long upper_x_pm;
 
-  /*! \brief Global Y coordinate of the +Y face. */
+  /*! \brief Box-frame Y coordinate of the +Y face. */
   long upper_y_pm;
 
-  /*! \brief Global Z coordinate of the +Z face. */
+  /*! \brief Box-frame Z coordinate of the +Z face. */
   long upper_z_pm;
 
   /*! \brief Snapshot-local physical volume identity; never the World's. */

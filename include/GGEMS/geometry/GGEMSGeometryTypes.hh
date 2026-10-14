@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <optional>
@@ -346,27 +347,41 @@ struct NormalizedVector3D {
 [[nodiscard]] inline auto TryNormalizeVector3D(double x_val, double y_val,
                                                double z_val) noexcept
   -> std::optional<NormalizedVector3D> {
-  if (!std::isfinite(x_val) || !std::isfinite(y_val) || !std::isfinite(z_val)) {
-    return std::nullopt;
-  }
-
   double const norm = std::hypot(x_val, y_val, z_val);
+
   if (!std::isfinite(norm) || !(norm > 0.0)) {
     return std::nullopt;
   }
 
-  NormalizedVector3D const result{
+  return NormalizedVector3D{
     .x = x_val / norm,
     .y = y_val / norm,
     .z = z_val / norm,
   };
+}
 
-  if (!std::isfinite(result.x) || !std::isfinite(result.y) ||
-      !std::isfinite(result.z)) {
-    return std::nullopt;
-  }
+/*!
+ * \brief Computes the binary64 scalar product used by orientation frames.
+ * \param[in] lhs Left working axis.
+ * \param[in] rhs Right working axis.
+ * \return Dimensionless scalar product.
+ */
+[[nodiscard]] inline auto Dot3D(NormalizedVector3D lhs,
+                                NormalizedVector3D rhs) noexcept -> double {
+  return (lhs.x * rhs.x) + (lhs.y * rhs.y) + (lhs.z * rhs.z);
+}
 
-  return result;
+/*!
+ * \brief Computes the right-handed cross product used by orientation frames.
+ * \param[in] lhs Left working axis.
+ * \param[in] rhs Right working axis.
+ * \return Three unnormalized binary64 components.
+ */
+[[nodiscard]] inline auto Cross3D(NormalizedVector3D lhs,
+                                  NormalizedVector3D rhs) noexcept
+  -> std::array<double, 3U> {
+  return {(lhs.y * rhs.z) - (lhs.z * rhs.y), (lhs.z * rhs.x) - (lhs.x * rhs.z),
+          (lhs.x * rhs.y) - (lhs.y * rhs.x)};
 }
 
 } // namespace detail
@@ -391,18 +406,11 @@ struct NormalizedVector3D {
     return std::nullopt;
   }
 
-  Direction3 const result{
+  return Direction3{
     .x = static_cast<float>(precise->x),
     .y = static_cast<float>(precise->y),
     .z = static_cast<float>(precise->z),
   };
-
-  if (!std::isfinite(result.x) || !std::isfinite(result.y) ||
-      !std::isfinite(result.z) || !(Norm(result) > 0.0F)) {
-    return std::nullopt;
-  }
-
-  return result;
 }
 
 /*!

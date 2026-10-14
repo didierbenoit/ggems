@@ -36,6 +36,11 @@
 #include "particles/GGEMSParticleState.clh"
 #include "random/GGEMSRandom.clh"
 #include "transport/GGEMSTransport.clh"
+
+#if GGEMS_ENABLE_ROTATED_BOX
+#include "navigation/GGEMSRotatedBoxNavigation.clh"
+#endif
+
 #include "transport/GGEMSDiagnosticProjection.clh"
 #include "transport/GGEMSTransportCounters.clh"
 #include "sources/GGEMSSourcePopulationRecord.clh"
@@ -82,6 +87,7 @@
  * \param[in] world Immutable device World parameters.
  * \param[in] boxes Immutable analytic Box occurrences.
  * \param[in] box_count Number of Box occurrences (at most one).
+ * \param[in] box_pose Optional immutable pose in rotated scene programs.
  * \param[in,out] particle Private state; moved to the World boundary on
  * success, owner identities updated at every accepted boundary.
  * \param[in,out] counters Transport counters receiving the outcome.
@@ -90,26 +96,49 @@
  */
 static __attribute__((noinline)) uint GGEMS_TransportGeometry(
   __global GGEMSWorldRecord const *world, __global GGEMSBoxRecord const *boxes,
-  uint box_count, GGEMSParticleState *particle,
+  uint box_count GGEMS_BOX_POSE_PARAMETER, GGEMSParticleState *particle,
   volatile __global GGEMSTransportCounters *counters) {
+#if GGEMS_ENABLE_ROTATED_BOX
+  ulong owner;
+
+  uint const locate_status = GGEMS_RotatedBoxLocate(
+    world, boxes, box_pose,
+    (long3)(particle->position_x_pm, particle->position_y_pm,
+            particle->position_z_pm),
+    (float3)(particle->direction_x, particle->direction_y,
+             particle->direction_z),
+    &owner);
+
+  if (locate_status != GGEMS_NAVIGATION_RESOLVED) {
+    if (locate_status == GGEMS_NAVIGATION_OUTSIDE_WORLD) {
+      atomic_inc(&counters->outside_world_count);
+    } else {
+      atomic_inc(&counters->unresolved_geometry_count);
+    }
+    return 1U;
+  }
+#else
   ulong const owner = GGEMS_NavigationLocate(
     boxes, box_count,
     (long3)(particle->position_x_pm, particle->position_y_pm,
             particle->position_z_pm),
     (float3)(particle->direction_x, particle->direction_y,
              particle->direction_z));
+#endif
 
   particle->current_volume_id = (uint)(owner >> 32U);
   particle->material_id = (uint)(owner & 0xFFFFFFFFUL);
 
   uint const max_boundary_events = 2U * box_count + 1U;
 
+  uint event = GGEMS_NAVIGATION_EVENT_NONE;
+  uint faces = 0U;
+
   for (uint event_index = 0U; event_index < max_boundary_events;
        ++event_index) {
-    uint event = GGEMS_NAVIGATION_EVENT_NONE;
-    uint faces = 0U;
-    uint const status = GGEMS_TransportToNextBoundary(world, boxes, box_count,
-                                                      particle, &event, &faces);
+    uint const status = GGEMS_TransportToNextBoundary(
+      world, boxes, box_count GGEMS_BOX_POSE_ARGUMENT, particle, &event,
+      &faces);
 
     if (status == GGEMS_NAVIGATION_OUTSIDE_WORLD) {
       atomic_inc(&counters->outside_world_count);
@@ -208,6 +237,7 @@ static __attribute__((noinline)) uint GGEMS_TransportGeometry(
  * species.
  * \param[in] boxes Immutable analytic Box occurrences, box_count elements.
  * \param[in] box_count Number of Box occurrences strictly inside the World.
+ * \param[in] box_pose Optional immutable pose in rotated scene programs.
  */
 __kernel void particle_stream_transport(
   __global GGEMSRandomState *random_states,
@@ -227,7 +257,7 @@ __kernel void particle_stream_transport(
   __global GGEMSSourceEmissionRecord const *source_emissions,
   __global GGEMSSourceEmissionRange const *source_emission_ranges,
   __global GGEMSWorldRecord const *world, __global GGEMSBoxRecord const *boxes,
-  uint box_count) {
+  uint box_count GGEMS_BOX_POSE_PARAMETER) {
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER == 0
   (void)(observer_config);
@@ -328,7 +358,8 @@ __kernel void particle_stream_transport(
 #endif
 
     if (GGEMS_ParticleIsProcessFree(particle.particle_type) != 0U) {
-      if (GGEMS_TransportGeometry(world, boxes, box_count, &particle,
+      if (GGEMS_TransportGeometry(world, boxes,
+                                  box_count GGEMS_BOX_POSE_ARGUMENT, &particle,
                                   counters) != 0U) {
         continue;
       }

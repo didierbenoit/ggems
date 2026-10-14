@@ -35,6 +35,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <optional>
 
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
@@ -470,6 +471,9 @@ private:
 
   /*! \brief Immutable Box occurrence records; one zero record if absent. */
   ggems::ocl::GGEMSOpenCLSVMBuffer box_records_buffer_;
+
+  /*! \brief Optional immutable FP64 pose of the single rotated Box. */
+  std::optional<ggems::ocl::GGEMSOpenCLSVMBuffer> box_pose_buffer_;
 
   /*! \brief Owns SVM storage for persistent per-worker random states. */
   ggems::ocl::GGEMSOpenCLSVMBuffer random_states_buffer_;

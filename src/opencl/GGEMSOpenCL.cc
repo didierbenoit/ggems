@@ -413,12 +413,14 @@ auto GGEMSOpenCL::SetWorkerCount(std::uint32_t worker_count) -> void {
 auto GGEMSOpenCL::GetOrCreateProgram(GGEMSOpenCLContext const &ctx,
                                      std::filesystem::path const &kernel_root,
                                      std::string const &kernel_name,
-                                     std::string const &build_options)
+                                     std::string const &build_options,
+                                     bool strict_math)
   -> GGEMSOpenCLProgram const & {
   std::scoped_lock lock{program_cache_mutex_};
 
   for (auto const &program : program_cache_) {
-    if (program->Matches(ctx, kernel_root, kernel_name, build_options)) {
+    if (program->Matches(ctx, kernel_root, kernel_name, build_options,
+                         strict_math)) {
       GGEMS_INFOEX("OpenCL", 3,
                    "Reusing OpenCL program '{}' from memory cache.",
                    kernel_name);
@@ -429,7 +431,7 @@ auto GGEMSOpenCL::GetOrCreateProgram(GGEMSOpenCLContext const &ctx,
   GGEMS_INFOEX("OpenCL", 2, "Creating OpenCL program '{}'.", kernel_name);
 
   auto program = std::make_unique<GGEMSOpenCLProgram>(
-    ctx, kernel_root, kernel_name, build_options);
+    ctx, kernel_root, kernel_name, build_options, strict_math);
 
   GGEMSOpenCLProgram const &reference = *program;
   program_cache_.push_back(std::move(program));

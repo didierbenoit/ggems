@@ -34,6 +34,8 @@
 #include <optional>
 
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
+#include "GGEMS/geometry/GGEMSRotation3D.hh"
+#include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 
@@ -48,9 +50,9 @@ namespace ggems::geometry {
  * and SetMaterial() may be called in any order. Validate() checks that the
  * Box is complete and is called by GGEMSWorld::AddVolume, which copies the
  * Box. Every full size is an even number of picometers, at least 2 pm, so the
- * faces center -/+ half extent are exact lattice coordinates; the owning World
- * checks strict containment and computes the device faces, so the Box itself
- * performs no face arithmetic. Per-particle location, intersection and
+ * local faces are exact lattice coordinates. Identity rotation keeps the exact
+ * global axis-aligned path. The owning World checks strict containment and
+ * compiles the pose and face records. Per-particle location, intersection and
  * boundary selection are computed by OpenCL Navigation.
  */
 class GGEMSBox {
@@ -60,7 +62,7 @@ public:
   GGEMSBox() = default;
 
   /*!
-   * \brief Sets the full sizes along the global axes.
+   * \brief Sets the full sizes along the local Box axes.
    *
    * \param[in] size_x Full extent along X.
    * \param[in] size_y Full extent along Y.
@@ -79,6 +81,28 @@ public:
    * \return This Box for chained configuration.
    */
   auto SetPosition(Position3PM center) noexcept -> GGEMSBox &;
+
+  /*!
+   * \brief Assigns the absolute active rotation Rz * Ry * Rx about the center.
+   *
+   * Positive angles follow the right-hand rule about fixed X, Y, then Z axes.
+   * The default is identity; this setter never accumulates rotations.
+   *
+   * \param[in] angle_x Rotation about X.
+   * \param[in] angle_y Rotation about Y.
+   * \param[in] angle_z Rotation about Z.
+   * \return This Box for chained configuration.
+   * \throws GGEMSRecoverable If an angle or basis is invalid; the old pose
+   * stays.
+   */
+  auto SetRotation(units::Angle angle_x, units::Angle angle_y,
+                   units::Angle angle_z) -> GGEMSBox &;
+
+  /*!
+   * \brief Returns the immutable local-to-global FP64 rotation.
+   * \return Validated orientation owned by this Box.
+   */
+  [[nodiscard]] auto GetRotation() const noexcept -> GGEMSRotation3D const &;
 
   /*!
    * \brief Sets the owned Box medium.
@@ -126,6 +150,9 @@ private:
 
   /*! \brief Validated half extents in picometers; zero until SetSize(). */
   HalfExtent3PM half_extent_pm_{};
+
+  /*! \brief Proper local-to-global rotation; identity by default. */
+  GGEMSRotation3D rotation_{};
 
   /*! \brief Owned Box medium, absent until SetMaterial(). */
   std::optional<core::materials::GGEMSMaterial> material_;

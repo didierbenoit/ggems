@@ -36,6 +36,7 @@
 
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
+#include "GGEMS/geometry/GGEMSBoxPoseRecord.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
@@ -118,7 +119,8 @@ public:
    * \brief Checks that the authored scene is complete and consistent.
    *
    * Every volume must lie strictly inside the World: no Box face may coincide
-   * with or cross a World face, so one picometer of clearance is required.
+   * with or cross a World face. Rotated bounds include FP64 roundoff;
+   * identity bounds retain the exact integer containment check.
    *
    * \throws GGEMSRecoverable If the World size or Material is not set, or if a
    * volume is not strictly inside the World.
@@ -130,8 +132,8 @@ public:
    *
    * Admission belongs to Validate(); this method only packs. Volume
    * identities are 1 upward in registration order after the World (identity
-   * 0). Faces are center -/+ half extent; after Validate() every face lies
-   * strictly between the World faces and fits CoordinatePM.
+   * 0). Identity faces are global center -/+ half extent. Rotated faces are
+   * local -/+ half extent and require the separate pose record.
    *
    * \param[in] material_ids Dense snapshot-local Material identity of each
    * volume, supplied by the scene compiler in GetBoxes() order.
@@ -142,6 +144,14 @@ public:
   [[nodiscard]] auto
   BuildBoxRecords(std::span<std::uint32_t const> material_ids) const
     -> std::vector<GGEMSBoxRecord>;
+
+  /*!
+   * \brief Packs the optional pose for the single rotated Box.
+   * \return No pose for an empty scene or an identity rotation.
+   * \pre Validate() has succeeded since the last scene edit.
+   */
+  [[nodiscard]] auto BuildBoxPoseRecord() const
+    -> std::optional<GGEMSBoxPoseRecord>;
 
   /*!
    * \brief Returns the distances from the origin to the World faces.

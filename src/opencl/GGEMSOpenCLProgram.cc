@@ -270,12 +270,14 @@ auto ResolveLocalInclude(
 GGEMSOpenCLProgram::GGEMSOpenCLProgram(GGEMSOpenCLContext const &context,
                                        std::filesystem::path kernel_root,
                                        std::string kernel_name,
-                                       std::string build_options)
+                                       std::string build_options,
+                                       bool strict_math)
     : context_{context.GetContextNative()},
       device_{context.GetDevice().GetDeviceNative()},
       kernel_root_{std::move(kernel_root)},
       kernel_name_{std::move(kernel_name)},
-      user_build_options_{std::move(build_options)}, global_hash_{0LL} {
+      user_build_options_{std::move(build_options)}, strict_math_{strict_math},
+      global_hash_{0LL} {
   GGEMS_INFOEX("OpenCL", 2, "Initializing OpenCL program '{}'.", kernel_name_);
   GGEMS_INFOEX("OpenCL", 3, "OpenCL program source root: '{}'.",
                kernel_root_.string());
@@ -301,9 +303,9 @@ auto GGEMSOpenCLProgram::BuildOptions() const -> std::vector<std::string> {
   opts.emplace_back("-g");
   opts.emplace_back("-cl-opt-disable");
 #else
-  opts.emplace_back("-cl-fast-relaxed-math");
-  // opts.emplace_back("-cl-mad-enable");
-  // opts.emplace_back("-cl-no-signed-zeros");
+  if (!strict_math_) {
+    opts.emplace_back("-cl-fast-relaxed-math");
+  }
 #endif
 
   return opts;
@@ -421,8 +423,8 @@ auto GGEMSOpenCLProgram::AppendSourceFingerprintText(
 auto GGEMSOpenCLProgram::Matches(GGEMSOpenCLContext const &context,
                                  std::filesystem::path const &kernel_root,
                                  std::string_view kernel_name,
-                                 std::string_view user_build_options) const
-  -> bool {
+                                 std::string_view user_build_options,
+                                 bool strict_math) const -> bool {
   if (context_() != context.GetContextNative()()) {
     return false;
   }
@@ -435,7 +437,8 @@ auto GGEMSOpenCLProgram::Matches(GGEMSOpenCLContext const &context,
     return false;
   }
 
-  if (user_build_options_ != user_build_options) {
+  if (user_build_options_ != user_build_options ||
+      strict_math_ != strict_math) {
     return false;
   }
 

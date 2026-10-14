@@ -74,39 +74,6 @@ using Vector3D = std::array<double, 3U>;
 // =============================================================================
 
 /*!
- * \brief Computes the scalar product of two working axes.
- *
- * \param[in] lhs Left axis.
- * \param[in] rhs Right axis.
- * \return Dimensionless dot product.
- */
-[[nodiscard]] auto Dot(PreciseAxis lhs, PreciseAxis rhs) noexcept -> double {
-  return (lhs.x * rhs.x) + (lhs.y * rhs.y) + (lhs.z * rhs.z);
-}
-
-// =============================================================================
-// =============================================================================
-
-/*!
- * \brief Computes the right-handed cross product of two working axes.
- *
- * \param[in] lhs Left axis.
- * \param[in] rhs Right axis.
- * \return Three unnormalized binary64 components.
- */
-[[nodiscard]] auto Cross(PreciseAxis lhs, PreciseAxis rhs) noexcept
-  -> Vector3D {
-  return Vector3D{
-    (lhs.y * rhs.z) - (lhs.z * rhs.y),
-    (lhs.z * rhs.x) - (lhs.x * rhs.z),
-    (lhs.x * rhs.y) - (lhs.y * rhs.x),
-  };
-}
-
-// =============================================================================
-// =============================================================================
-
-/*!
  * \brief Checks the normalized direction/up separation threshold.
  *
  * \param[in] direction Unit forward axis.
@@ -115,7 +82,7 @@ using Vector3D = std::array<double, 3U>;
  */
 [[nodiscard]] auto IsTooParallel(PreciseAxis direction,
                                  PreciseAxis up_reference) noexcept -> bool {
-  return 1.0 - std::abs(Dot(direction, up_reference)) <=
+  return 1.0 - std::abs(geometry::detail::Dot3D(direction, up_reference)) <=
          k_source_frame_parallel_tolerance;
 }
 
@@ -223,9 +190,11 @@ auto BuildSourceFrameFromNormalized(PreciseAxis direction,
   }
 
   PreciseAxis const axis_x =
-    RequireNormalized(Cross(up_reference, direction), "frame horizontal axis");
-  PreciseAxis const axis_y =
-    RequireNormalized(Cross(direction, axis_x), "frame vertical axis");
+    RequireNormalized(geometry::detail::Cross3D(up_reference, direction),
+                      "frame horizontal axis");
+
+  PreciseAxis const axis_y = RequireNormalized(
+    geometry::detail::Cross3D(direction, axis_x), "frame vertical axis");
 
   GGEMSSourceFrame const frame = {
     .axis_x = ToFloatDirection(axis_x),

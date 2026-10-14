@@ -33,6 +33,8 @@
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
+#include "GGEMS/geometry/GGEMSRotation3D.hh"
+#include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/detail/GGEMSGeometrySize.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
@@ -81,6 +83,20 @@ auto GGEMSBox::SetSize(units::Length size_x, units::Length size_y,
 auto GGEMSBox::SetPosition(Position3PM center) noexcept -> GGEMSBox & {
   center_pm_ = center;
   return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSBox::SetRotation(units::Angle angle_x, units::Angle angle_y,
+                           units::Angle angle_z) -> GGEMSBox & {
+  rotation_ = BuildRotationXYZ(angle_x, angle_y, angle_z);
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSBox::GetRotation() const noexcept -> GGEMSRotation3D const & {
+  return rotation_;
 }
 
 // -----------------------------------------------------------------------------

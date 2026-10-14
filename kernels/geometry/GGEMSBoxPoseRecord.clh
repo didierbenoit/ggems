@@ -1,0 +1,78 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Defines the optional FP64 rigid pose accompanying local Box faces.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_BOX_POSE_RECORD_CLH
+#define GGEMS_BOX_POSE_RECORD_CLH
+
+#if defined(cl_khr_fp64)
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#elif !defined(__opencl_c_fp64)
+#error Rotated Box navigation requires FP64
+#endif
+
+/*! \brief Scalar 96-byte pose; mirrors GGEMSBoxPoseRecord.hh. */
+typedef struct GGEMSBoxPoseRecord {
+  /*! \brief Global center X coordinate in integer pm. */
+  long center_x_pm;
+
+  /*! \brief Global center Y coordinate in integer pm. */
+  long center_y_pm;
+
+  /*! \brief Global center Z coordinate in integer pm. */
+  long center_z_pm;
+
+  /*! \brief World X component of local X. */
+  double axis_x_x;
+
+  /*! \brief World Y component of local X. */
+  double axis_x_y;
+
+  /*! \brief World Z component of local X. */
+  double axis_x_z;
+
+  /*! \brief World X component of local Y. */
+  double axis_y_x;
+
+  /*! \brief World Y component of local Y. */
+  double axis_y_y;
+
+  /*! \brief World Z component of local Y. */
+  double axis_y_z;
+
+  /*! \brief World X component of local Z. */
+  double axis_z_x;
+
+  /*! \brief World Y component of local Z. */
+  double axis_z_y;
+
+  /*! \brief World Z component of local Z. */
+  double axis_z_z;
+} GGEMSBoxPoseRecord;
+
+#endif

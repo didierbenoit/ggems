@@ -40,6 +40,7 @@
 #include <utility>
 #include <vector>
 #include <memory>
+#include <optional>
 
 #include "GGEMS/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/observer/GGEMSObserverCounterArithmetic.hh"
@@ -57,6 +58,8 @@
 #include "GGEMS/transport/GGEMSDiagnosticProjection.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
+#include "GGEMS/geometry/GGEMSBoxPoseRecord.hh"
+#include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/transport/GGEMSTransportCounters.hh"
@@ -471,13 +474,31 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
         ComputeObserverRecordsSize(observer_record_capacity))} {
   auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
   std::filesystem::path const kernel_transport_root = kernel_root / "transport";
-  std::string const build_options = std::format(
-    "-I{} {} "
-    "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
-    kernel_root.generic_string(), random.GetKernelBuildDefinition());
-  auto const &program =
-    opencl.GetOrCreateProgram(*context_, kernel_transport_root,
-                              "particle_stream_transport", build_options);
+
+  auto const pose =
+    world != nullptr ? world->BuildBoxPoseRecord() : std::nullopt;
+
+  if (pose.has_value()) {
+    if (context.GetDevice().GetDoubleFpConfig() == 0U) {
+      throw GGEMSRecoverable(
+        "Rotated Box navigation requires OpenCL FP64 support.");
+    }
+    box_pose_buffer_.emplace(context.CreateSVMBuffer(
+      ggems::units::Bytes{sizeof(geometry::GGEMSBoxPoseRecord)}));
+    ggems::ocl::WriteSVMFromHost(*box_pose_buffer_, *pose);
+  }
+
+  std::string build_options = std::format("-I{} {} "
+                                          "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
+                                          kernel_root.generic_string(),
+                                          random.GetKernelBuildDefinition());
+  if (pose.has_value()) {
+    build_options += " -DGGEMS_ENABLE_ROTATED_BOX=1";
+  }
+
+  auto const &program = opencl.GetOrCreateProgram(
+    *context_, kernel_transport_root, "particle_stream_transport",
+    build_options, pose.has_value());
 
   cl::Kernel raw_kernel = program.CreateKernel("particle_stream_transport");
   kernel_ = std::make_unique<ggems::ocl::GGEMSOpenCLKernel>(
@@ -520,6 +541,11 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
 
   kernel_->SetArgSVMPointer(argument_index++, box_records_buffer_.GetData());
   kernel_->SetArg(argument_index++, static_cast<cl_uint>(box_count_));
+
+  if (box_pose_buffer_.has_value()) {
+    kernel_->SetArgSVMPointer(argument_index++, box_pose_buffer_->GetData());
+  }
+
   if (boxes.empty()) {
     ggems::ocl::WriteSVMFromHost(box_records_buffer_,
                                  geometry::GGEMSBoxRecord{});

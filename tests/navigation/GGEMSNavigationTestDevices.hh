@@ -30,6 +30,7 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include <cstdlib>
 
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 
@@ -37,6 +38,7 @@
  * \brief Initializes every available OpenCL device once for the test binary.
  *
  * Navigation kernels must behave identically on OpenCL CPU and GPU devices, so
+ * GGEMS_TEST_DEVICE selects one device for isolated qualification. Without it,
  * the fixture selects all devices and every test iterates over the contexts.
  */
 class GGEMSNavigationDeviceTest : public ::testing::Test {
@@ -45,7 +47,8 @@ protected:
     auto &opencl = ggems::ocl::GGEMSOpenCL::GetInstance();
 
     if (opencl.GetContext().empty()) {
-      opencl.SelectDevices({"all"});
+      char const *selected = std::getenv("GGEMS_TEST_DEVICE");
+      opencl.SelectDevices({selected != nullptr ? selected : "all"});
       opencl.Initialize();
     }
 

@@ -58,6 +58,7 @@ public:
    * \param[in] kernel_root Root directory containing kernel sources.
    * \param[in] kernel_name Kernel source name.
    * \param[in] build_options Additional user build options.
+   * \param[in] strict_math Omit the default Release fast-math option.
    *
    * Reads kernel_root / (kernel_name + ".cl") and its resolved quoted includes
    * to fingerprint the build. A cached-binary build failure falls back to
@@ -71,7 +72,7 @@ public:
    */
   GGEMSOpenCLProgram(GGEMSOpenCLContext const &context,
                      std::filesystem::path kernel_root, std::string kernel_name,
-                     std::string build_options = {});
+                     std::string build_options = {}, bool strict_math = false);
 
   /*! \brief Destroys the OpenCL program wrapper. */
   ~GGEMSOpenCLProgram() = default;
@@ -166,17 +167,19 @@ public:
    * \param[in] kernel_root Requested kernel root directory.
    * \param[in] kernel_name Requested kernel source name.
    * \param[in] user_build_options Requested user build options.
+   * \param[in] strict_math Requested default Release math policy.
    * \return True if this program matches the requested build identity.
    *
    * Compares native context/device identities, the normalized source path,
-   * kernel name, and exact user-option text. It does not reread sources or
-   * recompute the content hash, so edits on disk do not invalidate an existing
-   * in-memory match.
+   * kernel name, strict-math request, and exact user-option text. It does not
+   * reread sources or recompute the content hash, so edits on disk do not
+   * invalidate an existing in-memory match.
    */
   [[nodiscard]] auto Matches(GGEMSOpenCLContext const &context,
                              std::filesystem::path const &kernel_root,
                              std::string_view kernel_name,
-                             std::string_view user_build_options) const -> bool;
+                             std::string_view user_build_options,
+                             bool strict_math = false) const -> bool;
 
 private:
   /*!
@@ -306,6 +309,9 @@ private:
 
   /*! \brief User-supplied build options. */
   std::string user_build_options_;
+
+  /*! \brief Omits the default Release fast-math option when requested. */
+  bool strict_math_{false};
 
   /*! \brief Effective OpenCL build options. */
   std::string build_options_;

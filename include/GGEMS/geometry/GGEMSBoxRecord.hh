@@ -42,22 +42,25 @@ inline constexpr std::uint32_t k_volume_id_exterior{0xFFFFFFFFU};
 /*!
  * \brief Device Box occurrence: lower and upper faces and snapshot identities.
  *
+ * Faces are global for identity placement and local when a pose accompanies
+ * the record. The local box is the physical OBB, never its global AABB.
+ *
  * Mirrors kernels/geometry/GGEMSBoxRecord.clh field for field.
  */
 struct GGEMSBoxRecord {
-  /*! \brief Global X coordinate of the -X face in signed integer pm. */
+  /*! \brief Box-frame X coordinate of the -X face in signed integer pm. */
   std::int64_t lower_x_pm{0};
 
-  /*! \brief Global Y coordinate of the -Y face in signed integer pm. */
+  /*! \brief Box-frame Y coordinate of the -Y face in signed integer pm. */
   std::int64_t lower_y_pm{0};
 
-  /*! \brief Global Z coordinate of the -Z face in signed integer pm. */
+  /*! \brief Box-frame Z coordinate of the -Z face in signed integer pm. */
   std::int64_t lower_z_pm{0};
 
-  /*! \brief Global X coordinate of the +X face in signed integer pm. */
+  /*! \brief Box-frame X coordinate of the +X face in signed integer pm. */
   std::int64_t upper_x_pm{0};
 
-  /*! \brief Global Y coordinate of the +Y face in signed integer pm. */
+  /*! \brief Box-frame Y coordinate of the +Y face in signed integer pm. */
   std::int64_t upper_y_pm{0};
 
   /*! \brief Global Z coordinate of the +Z face in signed integer pm. */

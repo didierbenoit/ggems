@@ -34,6 +34,7 @@
 #include "detail/GGEMSPythonQuantityConversion.hh"
 
 #include "GGEMS/geometry/GGEMSBox.hh"
+#include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
@@ -81,11 +82,12 @@ auto BindGeometry(py::module_ &module) -> void {
 
   // === === ===
   py::class_<GGEMSBox>(module, "GGEMSBox",
-                       R"doc(Configure a finite axis-aligned analytic Box.
+                       R"doc(Configure a finite oriented analytic Box.
 
 The Box is placed by the global position of its geometric center and has its
 own explicit material. Each full size must be an even number of picometers
-after unit conversion, so both faces lie exactly on the picometer lattice.
+after unit conversion, so local faces lie on the picometer lattice. Rotation
+is identity by default.
 
 Configuration methods return the same object, so calls can be chained.
 
@@ -108,14 +110,14 @@ Example:
           MakeQuantityOrThrow<ggems::units::Length>(size_y, unit),
           MakeQuantityOrThrow<ggems::units::Length>(size_z, unit));
       },
-      R"doc(Set the full Box sizes along the global axes.
+      R"doc(Set the full Box sizes along the local axes.
 
 Each size must convert to an even number of picometers, at least 2 pm.
 
 Args:
-    x: Full extent along the global X axis.
-    y: Full extent along the global Y axis.
-    z: Full extent along the global Z axis.
+    x: Full extent along the local X axis.
+    y: Full extent along the local Y axis.
+    z: Full extent along the local Z axis.
     unit: GGEMS length unit.
 
 Returns:
@@ -125,6 +127,32 @@ Example:
     box.set_size(130.0, 20.0, 30.0, "mm")
 )doc",
       py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+
+    .def(
+      "set_rotation",
+      [](GGEMSBox &self, double angle_x, double angle_y, double angle_z,
+         std::string const &unit) -> GGEMSBox & {
+        return self.SetRotation(
+          MakeQuantityOrThrow<ggems::units::Angle>(angle_x, unit),
+          MakeQuantityOrThrow<ggems::units::Angle>(angle_y, unit),
+          MakeQuantityOrThrow<ggems::units::Angle>(angle_z, unit));
+      },
+      R"doc(Assign the absolute right-handed active rotation Rz * Ry * Rx.
+
+The Box rotates about its center. Fixed-axis X, Y, then Z rotations replace
+any previous rotation; positive angles follow the right-hand rule.
+
+Args:
+    rx: Rotation about X.
+    ry: Rotation about Y.
+    rz: Rotation about Z.
+    unit: Angle unit, "deg" or "rad".
+
+Returns:
+    GGEMSBox: This Box, allowing chained configuration.
+)doc",
+      py::arg("rx"), py::arg("ry"), py::arg("rz"), py::arg("unit") = "deg",
       py::return_value_policy::reference_internal)
 
     .def(

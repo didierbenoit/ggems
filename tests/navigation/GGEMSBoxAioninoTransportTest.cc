@@ -59,6 +59,7 @@
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/transport/GGEMSTransportWorkload.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
+#include "GGEMS/units/GGEMSAngularUnits.hh"
 
 #include "GGEMSNavigationTestDevices.hh"
 
@@ -445,4 +446,33 @@ TEST_F(GGEMSNavigationDeviceTest, WorldOwnsTheBoxAndRejectsInvalidAuthoring) {
   EXPECT_EQ(records[1U].position_x_pm, k_100_mm);
   EXPECT_EQ(records[1U].status, ggems::core::particles::ToKernelParticleStatus(
                                   ParticleStatus::EscapedWorld));
+}
+
+TEST_F(GGEMSNavigationDeviceTest, AioninoUsesTheUploadedRotatedBoxPose) {
+  for (auto const &context :
+       ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+    if (context.GetDevice().GetDoubleFpConfig() == 0U) {
+      GTEST_SKIP() << "Selected device lacks FP64";
+    }
+  }
+  auto world = MakeWorld();
+  auto box = MakeBox();
+  box.SetRotation(30.0_deg, 45.0_deg, -30.0_deg);
+  world.AddVolume(box);
+  world.Validate();
+  box.SetRotation(0.0_deg, 0.0_deg, 0.0_deg);
+  auto const boxes = world.BuildBoxRecords(std::array<std::uint32_t, 1>{1});
+  std::array const cases{
+    HistoryCase{
+      .position_pm = {-90'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
+      .direction = {1.0, 0.0, 0.0},
+      .exit_pm = {k_100_mm, -20'000'000'000LL, 5'000'000'000LL}},
+    HistoryCase{
+      .position_pm = {10'000'000'000LL, -20'000'000'000LL, 5'000'000'000LL},
+      .direction = {-1.0, 0.0, 0.0},
+      .exit_pm = {-k_100_mm, -20'000'000'000LL, 5'000'000'000LL}},
+    HistoryCase{.position_pm = {-90'000'000'000LL, 80'000'000'000LL, 0},
+                .direction = {1.0, 0.0, 0.0},
+                .exit_pm = {k_100_mm, 80'000'000'000LL, 0}}};
+  ExpectHistories(world, boxes, cases);
 }

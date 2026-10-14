@@ -27,6 +27,10 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
+#include <array>
+#include <cmath>
+#include <limits>
+#include <optional>
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -41,6 +45,7 @@
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
+#include "GGEMS/geometry/GGEMSBoxPoseRecord.hh"
 #include "GGEMS/geometry/detail/GGEMSGeometrySize.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
@@ -75,6 +80,73 @@ using ggems::geometry::DistancePM;
 // =============================================================================
 
 /*!
+ * \brief Checks conservative rotated extrema against exact World margins.
+ * \param[in] world_half Canonical World half extents.
+ * \param[in] box Box with a nonidentity proper rotation.
+ * \return True only for strict containment including a FP64 roundoff allowance.
+ */
+[[nodiscard]] auto
+IsRotatedStrictlyInside(ggems::geometry::HalfExtent3PM world_half,
+                        ggems::geometry::GGEMSBox const &box) noexcept -> bool {
+  auto const half = box.GetHalfExtentPM();
+  auto const center = box.GetPositionPM();
+  auto const &rotation = box.GetRotation();
+
+  std::array<DistancePM, 3U> const sizes{half.x, half.y, half.z};
+  std::array<DistancePM, 3U> const world{world_half.x, world_half.y,
+                                         world_half.z};
+
+  std::array<CoordinatePM, 3U> const position{center.x, center.y, center.z};
+
+  std::array<std::array<double, 3U>, 3U> const rows{{
+    {rotation.axis_x.x, rotation.axis_y.x, rotation.axis_z.x},
+    {rotation.axis_x.y, rotation.axis_y.y, rotation.axis_z.y},
+    {rotation.axis_x.z, rotation.axis_y.z, rotation.axis_z.z},
+  }};
+
+  auto const infinity = std::numeric_limits<long double>::infinity();
+
+  for (std::size_t axis = 0U; axis < 3U; ++axis) {
+    auto const world_radius = static_cast<CoordinatePM>(world[axis]);
+    if (position[axis] <= -world_radius || position[axis] >= world_radius) {
+      return false;
+    }
+
+    CoordinatePM const magnitude =
+      position[axis] < 0 ? -position[axis] : position[axis];
+
+    auto const margin = static_cast<long double>(world_radius - magnitude);
+
+    long double radius = 0.0L;
+
+    for (std::size_t column = 0U; column < 3U; ++column) {
+      long double const extent =
+        std::nextafter(static_cast<long double>(sizes[column]), infinity);
+
+      long double const term = std::nextafter(
+        std::abs(static_cast<long double>(rows[axis][column])) * extent,
+        infinity);
+
+      radius = std::nextafter(radius + term, infinity);
+    }
+
+    // Includes binary64 transpose/query roundoff, never a physical gap.
+    radius = std::nextafter(
+      radius * (1.0L + (16.0L * std::numeric_limits<double>::epsilon())),
+      infinity);
+
+    if (!(radius < std::nextafter(margin, -infinity))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// =============================================================================
+// =============================================================================
+
+/*!
  * \brief Checks that a centered Box lies strictly inside the World.
  *
  * The World half extents are at most 2^62 - 1 pm. Each margin is formed only
@@ -89,6 +161,10 @@ using ggems::geometry::DistancePM;
 [[nodiscard]] auto
 IsStrictlyInside(ggems::geometry::HalfExtent3PM world_half,
                  ggems::geometry::GGEMSBox const &box) noexcept -> bool {
+  if (!box.GetRotation().IsIdentity()) {
+    return IsRotatedStrictlyInside(world_half, box);
+  }
+
   ggems::geometry::HalfExtent3PM const half = box.GetHalfExtentPM();
   if (half.x >= world_half.x || half.y >= world_half.y ||
       half.z >= world_half.z) {
@@ -171,7 +247,11 @@ auto GGEMSWorld::BuildBoxRecords(std::span<std::uint32_t const> material_ids)
 
   for (std::size_t index = 0U; index < boxes_.size(); ++index) {
     HalfExtent3PM const half = boxes_[index].GetHalfExtentPM();
-    Position3PM const center = boxes_[index].GetPositionPM();
+
+    Position3PM const center = boxes_[index].GetRotation().IsIdentity()
+                                 ? boxes_[index].GetPositionPM()
+                                 : Position3PM{};
+
     records.push_back(GGEMSBoxRecord{
       .lower_x_pm = center.x - static_cast<CoordinatePM>(half.x),
       .lower_y_pm = center.y - static_cast<CoordinatePM>(half.y),
@@ -185,6 +265,33 @@ auto GGEMSWorld::BuildBoxRecords(std::span<std::uint32_t const> material_ids)
   }
 
   return records;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::BuildBoxPoseRecord() const
+  -> std::optional<GGEMSBoxPoseRecord> {
+  if (boxes_.empty() || boxes_.front().GetRotation().IsIdentity()) {
+    return std::nullopt;
+  }
+
+  auto const center = boxes_.front().GetPositionPM();
+  auto const &rotation = boxes_.front().GetRotation();
+
+  return GGEMSBoxPoseRecord{
+    .center_x_pm = center.x,
+    .center_y_pm = center.y,
+    .center_z_pm = center.z,
+    .axis_x_x = rotation.axis_x.x,
+    .axis_x_y = rotation.axis_x.y,
+    .axis_x_z = rotation.axis_x.z,
+    .axis_y_x = rotation.axis_y.x,
+    .axis_y_y = rotation.axis_y.y,
+    .axis_y_z = rotation.axis_y.z,
+    .axis_z_x = rotation.axis_z.x,
+    .axis_z_y = rotation.axis_z.y,
+    .axis_z_z = rotation.axis_z.z,
+  };
 }
 
 // -----------------------------------------------------------------------------
