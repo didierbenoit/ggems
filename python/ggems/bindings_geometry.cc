@@ -34,6 +34,7 @@
 #include "detail/GGEMSPythonQuantityConversion.hh"
 
 #include "GGEMS/geometry/GGEMSBox.hh"
+#include "GGEMS/geometry/GGEMSSphere.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
@@ -71,13 +72,14 @@ using ggems::python::detail::MakeQuantityOrThrow;
 /*!
  * \brief Registers GGEMS geometry authoring bindings in a Python module.
  *
- * The Box is registered before the World so that add_volume() exposes the
+ * Box and Sphere are registered before World so that add_volume() exposes the
  * Python type of its argument.
  *
  * \param[in,out] module Python module receiving the bindings.
  */
 auto BindGeometry(py::module_ &module) -> void {
   using ggems::geometry::GGEMSBox;
+  using ggems::geometry::GGEMSSphere;
   using ggems::geometry::GGEMSWorld;
 
   // === === ===
@@ -206,6 +208,61 @@ Example:
       py::arg("material_name"), py::return_value_policy::reference_internal);
 
   // === === ===
+  py::class_<GGEMSSphere>(
+    module, "GGEMSSphere",
+    R"doc(Configure a full solid Sphere by center, radius, and material.
+
+The radius must be strictly positive after conversion to integer picometers.
+Odd picometer radii are allowed. The default center is the global origin.
+Configuration methods return this Sphere for chaining.
+)doc")
+    .def(py::init<>(), "Create a Sphere without radius or material.")
+    .def(
+      "set_radius",
+      [](GGEMSSphere &self, double radius,
+         std::string const &unit) -> GGEMSSphere & {
+        return self.SetRadius(
+          MakeQuantityOrThrow<ggems::units::Length>(radius, unit));
+      },
+      R"doc(Set the strictly positive radius using a GGEMS length unit.
+
+Returns:
+    GGEMSSphere: This Sphere, allowing chained configuration.
+)doc",
+      py::arg("radius"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+    .def(
+      "set_position",
+      [](GGEMSSphere &self, double x, double y, double z,
+         std::string const &unit) -> GGEMSSphere & {
+        return self.SetPosition(ggems::geometry::MakePositionPM(
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(x, unit).value,
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(y, unit).value,
+          MakeQuantityOrThrow<ggems::units::PositionCoordinate>(z, unit)
+            .value));
+      },
+      R"doc(Set the global geometric center using a GGEMS length unit.
+
+Returns:
+    GGEMSSphere: This Sphere, allowing chained configuration.
+)doc",
+      py::arg("x"), py::arg("y"), py::arg("z"), py::arg("unit") = "mm",
+      py::return_value_policy::reference_internal)
+    .def(
+      "set_material",
+      [](GGEMSSphere &self, std::string const &name) -> GGEMSSphere & {
+        return self.SetMaterial(ResolveMaterial(name));
+      },
+      R"doc(Set the medium by exact registered, built-in, or custom material name.
+
+The material becomes registered as used by the scene.
+
+Returns:
+    GGEMSSphere: This Sphere, allowing chained configuration.
+)doc",
+      py::arg("name"), py::return_value_policy::reference_internal);
+
+  // === === ===
   py::class_<GGEMSWorld>(module, "GGEMSWorld",
                          R"doc(Configure the finite World of a GGEMS scene.
 
@@ -276,12 +333,12 @@ Example:
 )doc",
       py::arg("material_name"), py::return_value_policy::reference_internal)
 
-    .def("add_volume", &GGEMSWorld::AddVolume,
+    .def("add_volume", py::overload_cast<GGEMSBox>(&GGEMSWorld::AddVolume),
          R"doc(Add one physical volume owned by this World.
 
 The volume must be complete (size and material set) and is copied into the
 World; later edits of the caller's object do not reach the copy. The current
-implementation admits at most one GGEMSBox. Strict containment in the World is
+implementation admits at most one GGEMSBox or one GGEMSSphere in total. Strict containment in the World is
 checked when the World is attached with GGEMSRun.set_world().
 
 Args:
@@ -292,6 +349,16 @@ Returns:
 
 Example:
     world.add_volume(box)
+)doc",
+         py::arg("volume"), py::return_value_policy::reference_internal)
+    .def("add_volume", py::overload_cast<GGEMSSphere>(&GGEMSWorld::AddVolume),
+         R"doc(Copy a complete Sphere into the single-volume World.
+
+Radius and material must be set. A second volume is rejected, including a Box.
+Strict World containment is checked by GGEMSRun.set_world().
+
+Returns:
+    GGEMSWorld: This World, allowing chained configuration.
 )doc",
          py::arg("volume"), py::return_value_policy::reference_internal);
 }

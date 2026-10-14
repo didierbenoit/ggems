@@ -28,6 +28,7 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
+#include "geometry/GGEMSAnalyticVolumeRecord.clh"
 #include "geometry/GGEMSBoxRecord.clh"
 #include "geometry/GGEMSWorldRecord.clh"
 #include "navigation/GGEMSNavigation.clh"
@@ -42,8 +43,7 @@
  * UNRESOLVED (2) and the endpoint is the exact World-exit commit.
  *
  * \param[in] world Shared World record.
- * \param[in] boxes Box occurrences; one zero record when box_count is 0.
- * \param[in] box_count Number of Box occurrences.
+ * \param[in] volume Single analytic record (None for the World-only probe).
  * \param[in] positions_pm Start positions, three coordinates per ray.
  * \param[in] directions Stored binary32 directions, three components per ray.
  * \param[in] ray_count Number of rays.
@@ -51,11 +51,13 @@
  * \param[out] endpoints_pm Final positions (unchanged on failure).
  * \param[out] exit_faces Exact crossing mask per ray.
  */
-__kernel void world_navigation_probe(
-  __global GGEMSWorldRecord const *world, __global GGEMSBoxRecord const *boxes,
-  uint box_count, __global long const *positions_pm,
-  __global float const *directions, uint ray_count, __global uint *statuses,
-  __global long *endpoints_pm, __global uint *exit_faces) {
+__kernel void
+world_navigation_probe(__global GGEMSWorldRecord const *world,
+                       __global GGEMSAnalyticVolumeRecord const *volume,
+                       __global long const *positions_pm,
+                       __global float const *directions, uint ray_count,
+                       __global uint *statuses, __global long *endpoints_pm,
+                       __global uint *exit_faces) {
   uint const ray = (uint)get_global_id(0);
   if (ray >= ray_count) {
     return;
@@ -74,8 +76,8 @@ __kernel void world_navigation_probe(
 
   uint event = GGEMS_NAVIGATION_EVENT_NONE;
   uint faces = 0U;
-  statuses[ray] = GGEMS_TransportToNextBoundary(world, boxes, box_count,
-                                                &particle, &event, &faces);
+  statuses[ray] =
+    GGEMS_TransportToNextBoundary(world, volume, 0, &particle, &event, &faces);
   endpoints_pm[3U * ray] = particle.position_x_pm;
   endpoints_pm[3U * ray + 1U] = particle.position_y_pm;
   endpoints_pm[3U * ray + 2U] = particle.position_z_pm;

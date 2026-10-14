@@ -31,13 +31,12 @@
 
 #include <cstdint>
 #include <filesystem>
-#include <span>
 #include <string>
 #include <vector>
 #include <memory>
 #include <optional>
 
-#include "GGEMS/geometry/GGEMSBoxRecord.hh"
+#include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/transport/GGEMSTransportCounters.hh"
@@ -295,7 +294,8 @@ public:
    * zero to select the largest limit preserving atomic-cursor headroom.
    * \param[in] world Optional World copied to SVM; required for navigated
    * (Process-free) species.
-   * \param[in] boxes Immutable Box occurrence records copied to SVM.
+   * \param[in] volume Single tagged volume record copied to SVM.
+   * Sphere and rotated Box require FP64 on the selected device.
    * \throws GGEMSRecoverable If counts, random-stream range, or launch limit
    * are invalid.
    * \throws GGEMSInternal If energy and cumulative-ticket table lengths
@@ -311,7 +311,7 @@ public:
     std::uint32_t observer_record_capacity = 1U,
     std::uint32_t launch_primary_count_limit = 0U,
     geometry::GGEMSWorld const *world = nullptr,
-    std::span<geometry::GGEMSBoxRecord const> boxes = {});
+    geometry::GGEMSAnalyticVolumeRecord volume = {});
 
   ~GGEMSTransportWorkload() = default;
 
@@ -466,11 +466,8 @@ private:
   /*! \brief Immutable origin-centered World box, or zero record if absent. */
   ggems::ocl::GGEMSOpenCLSVMBuffer world_buffer_;
 
-  /*! \brief Number of immutable Box occurrences uploaded to the device. */
-  std::uint32_t box_count_{0U};
-
-  /*! \brief Immutable Box occurrence records; one zero record if absent. */
-  ggems::ocl::GGEMSOpenCLSVMBuffer box_records_buffer_;
+  /*! \brief Immutable single analytic volume record, including None. */
+  ggems::ocl::GGEMSOpenCLSVMBuffer volume_buffer_;
 
   /*! \brief Optional immutable FP64 pose of the single rotated Box. */
   std::optional<ggems::ocl::GGEMSOpenCLSVMBuffer> box_pose_buffer_;

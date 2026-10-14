@@ -44,8 +44,7 @@
 #include <string>
 
 #include "GGEMS/GGEMSRun.hh"
-#include "GGEMS/geometry/GGEMSBox.hh"
-#include "GGEMS/geometry/GGEMSBoxRecord.hh"
+#include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
 #include "GGEMS/materials/GGEMSEMMaterialPackage.hh"
@@ -374,16 +373,14 @@ auto GGEMSRun::Initialize() -> void {
 
   std::filesystem::path const kernel_root{GGEMS_KERNEL_ROOT};
 
-  // Static scene compilation of the validated World snapshot: its Box volumes
-  // receive dense snapshot-local volume identities after the World (identity
-  // 0).
-  std::vector<geometry::GGEMSBoxRecord> box_records;
+  // Compile the owned analytic volume after interning the World medium first.
+  geometry::GGEMSAnalyticVolumeRecord volume_record;
 
   if (world_) {
     std::vector<materials::GGEMSMaterial> scene_materials;
     scene_materials.push_back(world_->GetMaterial());
-    for (auto const &box : world_->GetBoxes()) {
-      scene_materials.push_back(box.GetMaterial());
+    if (auto const *material = world_->GetVolumeMaterial()) {
+      scene_materials.push_back(*material);
     }
 
     // Exact dense Material identities from the Materials authority: the World
@@ -392,7 +389,8 @@ auto GGEMSRun::Initialize() -> void {
     materials::GGEMSEMMaterialPackage const package{scene_materials};
     std::span<std::uint32_t const> const material_ids =
       package.GetMaterialIds();
-    box_records = world_->BuildBoxRecords(material_ids.subspan(1U));
+    volume_record = world_->BuildAnalyticVolumeRecord(
+      material_ids.size() > 1U ? material_ids[1U] : 0U);
   }
 
   std::vector<std::unique_ptr<transport::GGEMSTransportWorkload>>
@@ -411,7 +409,7 @@ auto GGEMSRun::Initialize() -> void {
         opencl.GetWorkerCount(), *new_source_configuration,
         random_stream_offset, static_cast<std::uint32_t>(context_index),
         observer_record_capacity, 0U, world_ ? &*world_ : nullptr,
-        box_records));
+        volume_record));
   }
 
   GGEMS_INFO("Core", "{} transport workload(s) prepared.",

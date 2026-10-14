@@ -94,7 +94,6 @@ public:
    * \param[in] kernel_root Root directory containing the kernel sources.
    * \param[in] kernel_name Kernel source name.
    * \param[in] build_options Additional OpenCL build options.
-   * \param[in] strict_math Omit the default Release fast-math option.
    * \return Matching cached or newly created OpenCL program.
    *
    * Memory-cache matching uses context/device handles, source path, kernel
@@ -106,8 +105,7 @@ public:
   auto GetOrCreateProgram(GGEMSOpenCLContext const &ctx,
                           std::filesystem::path const &kernel_root,
                           std::string const &kernel_name,
-                          std::string const &build_options = "",
-                          bool strict_math = false)
+                          std::string const &build_options = "")
     -> GGEMSOpenCLProgram const &;
 
   /*! \brief Prints information for all discovered OpenCL platforms. */

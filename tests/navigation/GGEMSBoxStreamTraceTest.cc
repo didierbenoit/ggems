@@ -35,28 +35,19 @@
  */
 
 #include <array>
-#include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <numbers>
-#include <ratio>
-#include <utility>
-#include <iostream>
 #include <optional>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <format>
-#include <fstream>
-#include <iterator>
-#include <span>
-#include <stdexcept>
 #include <string>
-#include <vector>
 
 #include <gtest/gtest.h>
 
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
+#include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSBoxPoseRecord.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
@@ -64,26 +55,17 @@
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
-#include "GGEMS/observer/GGEMSObserverRecord.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
 #include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
-#include "GGEMS/opencl/GGEMSOpenCLKernel.hh"
 #include "GGEMS/opencl/GGEMSOpenCLProgram.hh"
-#include "GGEMS/opencl/GGEMSOpenCLSVMHostAccess.hh"
 #include "GGEMS/opencl/GGEMSOpenCLSVMBuffer.hh"
 #include "GGEMS/particles/GGEMSParticleTypes.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
-#include "GGEMS/sources/GGEMSEnergyDistributionRecord.hh"
-#include "GGEMS/sources/GGEMSSourceEmissionRange.hh"
-#include "GGEMS/sources/GGEMSSourceEmissionRecord.hh"
-#include "GGEMS/sources/GGEMSSourcePopulationRecord.hh"
 #include "GGEMS/sources/GGEMSSourceRecord.hh"
-#include "GGEMS/sources/GGEMSSourceRunRange.hh"
-#include "GGEMS/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/transport/GGEMSTransportCounters.hh"
-#include "GGEMS/units/GGEMSBytesUnits.hh"
 
+#include "GGEMSAnalyticStreamFixture.hh"
 #include "GGEMSBoxFixtures.hh"
 #include "GGEMSNavigationTestDevices.hh"
 
@@ -92,68 +74,15 @@ namespace {
 using namespace ggems;
 using namespace ggems::core;
 
-constexpr std::size_t k_trace_stride{8U};
-constexpr std::size_t k_trace_values{1U + (3U * k_trace_stride)};
+using ggems::test::InstrumentStream;
+using ggems::test::k_trace_stride;
+using ggems::test::k_trace_values;
 constexpr std::uint32_t k_world{0U};
 constexpr std::uint32_t k_box{1U};
 constexpr std::uint32_t k_exterior{0xFFFFFFFFU};
 constexpr std::uint32_t k_event_world_exit{1U};
 constexpr std::uint32_t k_event_volume_entry{2U};
 constexpr std::uint32_t k_event_volume_exit{3U};
-
-/*! \brief Replaces one unique occurrence or throws. */
-auto ReplaceUnique(std::string &source, std::string const &before,
-                   std::string const &after) -> void {
-  auto const position = source.find(before);
-  if (position == std::string::npos ||
-      source.find(before, position + 1U) != std::string::npos) {
-    throw std::runtime_error(
-      std::format("Stream instrumentation site is not unique: '{}'", before));
-  }
-  source.replace(position, before.size(), after);
-}
-
-/*!
- * \brief Loads the production stream source and inserts the trace.
- *
- * The geometry loop receives a trace pointer; after every accepted
- * transaction it records departure owner, arrival owner, crossed planes,
- * committed position, event and arrival Material. Every anchor must be
- * unique in the production source. Nothing else changes.
- */
-auto InstrumentStream(std::filesystem::path const &root) -> std::string {
-  std::ifstream input{root / "transport/particle_stream_transport.cl"};
-  std::string source{std::istreambuf_iterator<char>{input}, {}};
-
-  ReplaceUnique(source,
-                "  volatile __global GGEMSTransportCounters *counters) {",
-                "  volatile __global GGEMSTransportCounters *counters,\n"
-                "  __global long *trace) {");
-  ReplaceUnique(
-    source, "  uint box_count GGEMS_BOX_POSE_PARAMETER) {",
-    "  uint box_count GGEMS_BOX_POSE_PARAMETER, __global long *trace) {");
-  ReplaceUnique(source, "counters) != 0U)",
-                "counters, trace + 25UL * global_primary_id) != 0U)");
-  ReplaceUnique(
-    source, "    uint const status = GGEMS_TransportToNextBoundary(",
-    "    uint const departure_owner = particle->current_volume_id;\n"
-    "    uint const status = GGEMS_TransportToNextBoundary(");
-  ReplaceUnique(source, "    if (status == GGEMS_NAVIGATION_OUTSIDE_WORLD) {",
-                "    if (status == GGEMS_NAVIGATION_RESOLVED) {\n"
-                "      uint const offset = 1U + 8U * event_index;\n"
-                "      trace[0] = event_index + 1U;\n"
-                "      trace[offset] = departure_owner;\n"
-                "      trace[offset + 1U] = particle->current_volume_id;\n"
-                "      trace[offset + 2U] = faces;\n"
-                "      trace[offset + 3U] = particle->position_x_pm;\n"
-                "      trace[offset + 4U] = particle->position_y_pm;\n"
-                "      trace[offset + 5U] = particle->position_z_pm;\n"
-                "      trace[offset + 6U] = event;\n"
-                "      trace[offset + 7U] = particle->material_id;\n"
-                "    }\n\n"
-                "    if (status == GGEMS_NAVIGATION_OUTSIDE_WORLD) {");
-  return source;
-}
 
 /*! \brief Event implied by an owner transition. */
 auto ExpectedEvent(BoxEvent const &event) -> std::uint32_t {
@@ -172,12 +101,6 @@ auto ExpectedMaterial(std::uint32_t arrival, std::uint32_t box_material)
   return arrival == k_box ? box_material : 0LL;
 }
 
-/*! \brief Timed kernel execution and the retained boundary trace. */
-struct TraceRun {
-  double milliseconds;
-  std::vector<std::int64_t> trace;
-};
-
 /*!
  * \brief Runs one frozen history through the traced stream and checks the
  * ordered transitions, the untouched RNG, the counters and the terminal record.
@@ -185,26 +108,11 @@ struct TraceRun {
 auto RunTracedHistory(ocl::GGEMSOpenCLContext &context,
                       cl::Program const &program, random::GGEMSRandom &random,
                       BoxCase const &test, std::uint32_t box_material,
-                      geometry::GGEMSBoxPoseRecord const *pose = nullptr,
-                      std::uint32_t histories = 1U, TraceRun *result = nullptr)
+                      geometry::GGEMSBoxPoseRecord const *pose = nullptr)
   -> void {
-  auto buffer = [&context](auto const &value) -> ocl::GGEMSOpenCLSVMBuffer {
-    auto result = context.CreateSVMBuffer(units::Bytes{sizeof(value)});
-    ocl::WriteSVMFromHost(result, value);
-    return result;
-  };
-
-  auto const workers = histories == 1U ? 1U : 64U;
-  auto rng =
-    context.CreateSVMBuffer(units::Bytes{random.GetStateSize() * workers});
-  std::vector<std::byte> rng_before(random.GetStateSize() * workers);
-  random.InitializeStates(0ULL, std::span<std::byte>{rng_before});
-  ocl::WriteSVMFromHost(rng, std::span<std::byte const>{rng_before});
-
   geometry::GGEMSWorldRecord const world{.half_extent_x_pm = test.half[0],
                                          .half_extent_y_pm = test.half[1],
                                          .half_extent_z_pm = test.half[2]};
-  auto world_buffer = buffer(world);
   sources::GGEMSSourceRecord source{};
   source.emitted_particle_type =
     particles::ToKernelParticleType(particles::GGEMSParticleType::Aionino);
@@ -217,27 +125,6 @@ auto RunTracedHistory(ocl::GGEMSOpenCLContext &context,
   source.energy_micro_eV = 123456789ULL;
   source.time_start_ps = 17ULL;
   source.time_stop_ps = 17ULL;
-  auto source_buffer = buffer(source);
-  auto ranges = buffer(sources::GGEMSSourceRunRange{
-    .projection_primary_begin = 0ULL, .primary_count = histories});
-  auto populations = buffer(sources::GGEMSSourcePopulationRecord{});
-  auto emissions = buffer(sources::GGEMSSourceEmissionRecord{});
-  auto emission_ranges = buffer(sources::GGEMSSourceEmissionRange{});
-  sources::GGEMSEnergyDistributionRecord energy{};
-  energy.distribution_type = sources::ToKernelEnergyDistributionType(
-    sources::GGEMSEnergyDistributionType::Mono);
-  auto energies = buffer(energy);
-  auto values = buffer(std::uint64_t{0});
-  auto tickets = buffer(std::uint64_t{0});
-  auto counters_buffer = buffer(transport::GGEMSTransportCounters{});
-  observer::GGEMSObserverConfigRecord capture{};
-  capture.enabled = 1U;
-  capture.capture_first_primary_count_per_source = 1U;
-  auto capture_buffer = buffer(capture);
-  auto observed_counts = buffer(observer::GGEMSObserverCounters{});
-  auto observations = context.CreateSVMBuffer(
-    units::Bytes{2 * sizeof(observer::GGEMSObserverRecord)});
-  ocl::FillSVMFromHost(observations, 2U, observer::GGEMSObserverRecord{});
   geometry::GGEMSBoxRecord const box{.lower_x_pm = test.lower[0],
                                      .lower_y_pm = test.lower[1],
                                      .lower_z_pm = test.lower[2],
@@ -246,54 +133,14 @@ auto RunTracedHistory(ocl::GGEMSOpenCLContext &context,
                                      .upper_z_pm = test.upper[2],
                                      .volume_id = k_box,
                                      .material_id = box_material};
-  auto box_buffer = buffer(box);
-  std::vector<std::int64_t> trace(k_trace_values * histories);
-  auto trace_buffer =
-    context.CreateSVMBuffer(units::Bytes{sizeof(std::int64_t) * trace.size()});
-  ocl::WriteSVMFromHost(trace_buffer, std::span<std::int64_t const>{trace});
-  std::optional<ocl::GGEMSOpenCLSVMBuffer> pose_buffer;
-  if (pose != nullptr) {
-    pose_buffer.emplace(buffer(*pose));
-  }
-
-  ocl::GGEMSOpenCLKernel kernel{
-    context, cl::Kernel(program, "particle_stream_transport"),
-    "particle_stream_transport"};
-  kernel.SetArgSVMPointer(0U, rng.GetData());
-  kernel.SetArgSVMPointer(1U, counters_buffer.GetData());
-  kernel.SetArgSVMPointer(2U, source_buffer.GetData());
-  kernel.SetArgSVMPointer(3U, ranges.GetData());
-  kernel.SetArg(4U, cl_uint{1});
-  kernel.SetArg(5U, cl_uint{histories});
-  kernel.SetArg(6U, cl_ulong{0});
-  kernel.SetArg(7U, cl_ulong{0});
-  kernel.SetArgSVMPointer(8U, capture_buffer.GetData());
-  kernel.SetArgSVMPointer(9U, observed_counts.GetData());
-  kernel.SetArgSVMPointer(10U, observations.GetData());
-  kernel.SetArg(11U, cl_uint{2});
-  kernel.SetArg(12U, cl_ulong{0});
-  kernel.SetArg(13U, cl_uint{workers});
-  kernel.SetArgSVMPointer(14U, energies.GetData());
-  kernel.SetArgSVMPointer(15U, values.GetData());
-  kernel.SetArgSVMPointer(16U, tickets.GetData());
-  kernel.SetArgSVMPointer(17U, populations.GetData());
-  kernel.SetArgSVMPointer(18U, emissions.GetData());
-  kernel.SetArgSVMPointer(19U, emission_ranges.GetData());
-  kernel.SetArgSVMPointer(20U, world_buffer.GetData());
-  kernel.SetArgSVMPointer(21U, box_buffer.GetData());
-  kernel.SetArg(22U, cl_uint{1});
-  if (pose_buffer.has_value()) {
-    kernel.SetArgSVMPointer(23U, pose_buffer->GetData());
-    kernel.SetArgSVMPointer(24U, trace_buffer.GetData());
-  } else {
-    kernel.SetArgSVMPointer(23U, trace_buffer.GetData());
-  }
-  auto const before = std::chrono::steady_clock::now();
-  kernel.Run({64U}, {64U});
-  auto const after = std::chrono::steady_clock::now();
-
-  ocl::ReadSVMToHost(trace_buffer, std::span{trace});
-  for (std::size_t history = 0; history < histories; ++history) {
+  geometry::GGEMSAnalyticVolumeRecord volume{};
+  volume.kind = pose != nullptr ? geometry::GGEMSAnalyticKind::RotatedBox
+                                : geometry::GGEMSAnalyticKind::Box;
+  volume.parameters.box = box;
+  auto const result = ggems::test::RunStream(context, program, random, world,
+                                             volume, source, pose);
+  auto const &trace = result.trace;
+  for (std::size_t history = 0; history < 1U; ++history) {
     auto const base = k_trace_values * history;
     ASSERT_EQ(trace[base], test.count);
     for (std::size_t event = 0U; event < test.count; ++event) {
@@ -312,19 +159,15 @@ auto RunTracedHistory(ocl::GGEMSOpenCLContext &context,
     }
   }
 
-  std::vector<std::byte> rng_after(rng_before.size());
-  ocl::ReadSVMToHost(rng, std::span{rng_after});
-  EXPECT_EQ(rng_after, rng_before);
-  auto const counts =
-    ocl::ReadSVMToHost<transport::GGEMSTransportCounters>(counters_buffer);
-  EXPECT_EQ(counts.completed_history_count, histories);
-  EXPECT_EQ(counts.terminal_particle_count, histories);
-  EXPECT_EQ(counts.escaped_world_count, histories);
+  EXPECT_TRUE(result.unchanged_rng);
+  auto const &counts = result.counts;
+  EXPECT_EQ(counts.completed_history_count, 1U);
+  EXPECT_EQ(counts.terminal_particle_count, 1U);
+  EXPECT_EQ(counts.escaped_world_count, 1U);
   EXPECT_EQ(counts.outside_world_count, 0U);
   EXPECT_EQ(counts.unresolved_geometry_count, 0U);
   EXPECT_EQ(counts.overflow_count, 0U);
-  std::array<observer::GGEMSObserverRecord, 2> records{};
-  ocl::ReadSVMToHost(observations, std::span{records});
+  auto const &records = result.records;
   EXPECT_EQ(records[1].position_x_pm, test.events[test.count - 1].endpoint[0]);
   EXPECT_EQ(records[1].position_y_pm, test.events[test.count - 1].endpoint[1]);
   EXPECT_EQ(records[1].position_z_pm, test.events[test.count - 1].endpoint[2]);
@@ -335,11 +178,6 @@ auto RunTracedHistory(ocl::GGEMSOpenCLContext &context,
   EXPECT_FLOAT_EQ(records[1].direction_x, source.axis_z_x);
   EXPECT_FLOAT_EQ(records[1].direction_y, source.axis_z_y);
   EXPECT_FLOAT_EQ(records[1].direction_z, source.axis_z_z);
-  if (result != nullptr) {
-    result->milliseconds =
-      std::chrono::duration<double, std::milli>(after - before).count();
-    result->trace = std::move(trace);
-  }
 }
 
 } // namespace
@@ -391,8 +229,7 @@ TEST_F(GGEMSNavigationDeviceTest, TracedStreamReportsOrderedOwnerTransitions) {
   }
 }
 
-TEST_F(GGEMSNavigationDeviceTest,
-       RotatedBoxTracedWorkerAndBoundedMathComparison) {
+TEST_F(GGEMSNavigationDeviceTest, RotatedBoxTracedWorker) {
   using namespace ggems::units;
   std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
   std::string const instrumented = InstrumentStream(root);
@@ -439,10 +276,10 @@ TEST_F(GGEMSNavigationDeviceTest,
     random.SetEngine("philox").SetSeed(91231ULL);
     auto const options =
       std::format("-I{} {} -DGGEMS_ENABLE_TRANSPORT_OBSERVER=1 "
-                  "-DGGEMS_ENABLE_ROTATED_BOX=1",
+                  "-DGGEMS_ENABLE_FP64_NAVIGATION=1",
                   root.generic_string(), random.GetKernelBuildDefinition());
     auto const &strict = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
-      context, root / "transport", "particle_stream_transport", options, true);
+      context, root / "transport", "particle_stream_transport", options);
     auto const device = context.GetDevice().GetDeviceNative();
     cl::Program strict_program(context.GetContextNative(), instrumented);
     ASSERT_EQ(strict_program.build(
@@ -451,41 +288,5 @@ TEST_F(GGEMSNavigationDeviceTest,
       << strict_program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
     RunTracedHistory(context, strict_program, random, test, 1, &pose);
     ASSERT_FALSE(HasFailure());
-#ifndef GGEMS_DEBUG_MODE
-    // Only after strict correctness: five small sequential pairs, excluding
-    // compilation, allocation and host verification from the timed interval.
-    auto const &fast = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
-      context, root / "transport", "particle_stream_transport", options, false);
-    cl::Program fast_program(context.GetContextNative(), instrumented);
-    ASSERT_EQ(
-      fast_program.build({device}, std::string{fast.GetBuildOptions()}.c_str()),
-      CL_SUCCESS)
-      << fast_program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-    RunTracedHistory(context, fast_program, random, test, 1, &pose);
-    std::array<double, 5> strict_times{};
-    std::array<double, 5> fast_times{};
-    for (std::size_t sample = 0; sample < strict_times.size(); ++sample) {
-      TraceRun strict_run;
-      TraceRun fast_run;
-      RunTracedHistory(context, strict_program, random, test, 1, &pose, 4096,
-                       &strict_run);
-      RunTracedHistory(context, fast_program, random, test, 1, &pose, 4096,
-                       &fast_run);
-      ASSERT_EQ(strict_run.trace, fast_run.trace);
-      strict_times[sample] = strict_run.milliseconds;
-      fast_times[sample] = fast_run.milliseconds;
-    }
-    std::sort(strict_times.begin(), strict_times.end());
-    std::sort(fast_times.begin(), fast_times.end());
-    std::cout << std::format(
-      "Rotated worker, 4096 histories, 64 workers, 5 sequential pairs: "
-      "strict median {:.6f} ms (range {:.6f}..{:.6f}), fast median {:.6f} ms "
-      "(range {:.6f}..{:.6f}), "
-      "strict/fast {:.4f}; 0 boundary/position differences\n",
-      strict_times[2], strict_times.front(), strict_times.back(), fast_times[2],
-      fast_times.front(), fast_times.back(), strict_times[2] / fast_times[2]);
-    std::cout << "Strict options: " << strict.GetBuildOptions()
-              << "\nFast options: " << fast.GetBuildOptions() << '\n';
-#endif
   }
 }

@@ -57,7 +57,7 @@
 #include "GGEMS/sources/GGEMSSourceEmissionRange.hh"
 #include "GGEMS/transport/GGEMSDiagnosticProjection.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
-#include "GGEMS/geometry/GGEMSBoxRecord.hh"
+#include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSBoxPoseRecord.hh"
 #include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
@@ -424,7 +424,7 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   std::uint64_t random_stream_offset, std::uint32_t context_index,
   std::uint32_t observer_record_capacity,
   std::uint32_t launch_primary_count_limit, geometry::GGEMSWorld const *world,
-  std::span<geometry::GGEMSBoxRecord const> boxes)
+  geometry::GGEMSAnalyticVolumeRecord volume)
     : context_{&context}, worker_count_{worker_count},
       source_count_{CheckedSourceCount(source_configuration.GetSourceCount())},
       emission_count_{
@@ -436,9 +436,8 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
         worker_count, launch_primary_count_limit)},
       world_{world}, world_buffer_{context.CreateSVMBuffer(ggems::units::Bytes{
                        sizeof(geometry::GGEMSWorldRecord)})},
-      box_count_{static_cast<std::uint32_t>(boxes.size())},
-      box_records_buffer_{context.CreateSVMBuffer(ComputeArrayBufferSize(
-        boxes.size(), sizeof(geometry::GGEMSBoxRecord)))},
+      volume_buffer_{context.CreateSVMBuffer(
+        ggems::units::Bytes{sizeof(geometry::GGEMSAnalyticVolumeRecord)})},
       random_states_buffer_{context.CreateSVMBuffer(
         ComputeRandomStatesSize(random, worker_count, random_stream_offset))},
       counters_buffer_{context.CreateSVMBuffer(
@@ -478,11 +477,14 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   auto const pose =
     world != nullptr ? world->BuildBoxPoseRecord() : std::nullopt;
 
+  bool const needs_fp64 =
+    volume.kind == geometry::GGEMSAnalyticKind::RotatedBox ||
+    volume.kind == geometry::GGEMSAnalyticKind::Sphere;
+  if (needs_fp64 && context.GetDevice().GetDoubleFpConfig() == 0U) {
+    throw GGEMSRecoverable(
+      "Sphere and rotated Box navigation require OpenCL FP64 support.");
+  }
   if (pose.has_value()) {
-    if (context.GetDevice().GetDoubleFpConfig() == 0U) {
-      throw GGEMSRecoverable(
-        "Rotated Box navigation requires OpenCL FP64 support.");
-    }
     box_pose_buffer_.emplace(context.CreateSVMBuffer(
       ggems::units::Bytes{sizeof(geometry::GGEMSBoxPoseRecord)}));
     ggems::ocl::WriteSVMFromHost(*box_pose_buffer_, *pose);
@@ -492,13 +494,13 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
                                           "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
                                           kernel_root.generic_string(),
                                           random.GetKernelBuildDefinition());
-  if (pose.has_value()) {
-    build_options += " -DGGEMS_ENABLE_ROTATED_BOX=1";
+  if (needs_fp64) {
+    build_options += " -DGGEMS_ENABLE_FP64_NAVIGATION=1";
   }
 
-  auto const &program = opencl.GetOrCreateProgram(
-    *context_, kernel_transport_root, "particle_stream_transport",
-    build_options, pose.has_value());
+  auto const &program =
+    opencl.GetOrCreateProgram(*context_, kernel_transport_root,
+                              "particle_stream_transport", build_options);
 
   cl::Kernel raw_kernel = program.CreateKernel("particle_stream_transport");
   kernel_ = std::make_unique<ggems::ocl::GGEMSOpenCLKernel>(
@@ -539,19 +541,10 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
                                                 ? world->BuildRecord()
                                                 : geometry::GGEMSWorldRecord{});
 
-  kernel_->SetArgSVMPointer(argument_index++, box_records_buffer_.GetData());
-  kernel_->SetArg(argument_index++, static_cast<cl_uint>(box_count_));
-
-  if (box_pose_buffer_.has_value()) {
-    kernel_->SetArgSVMPointer(argument_index++, box_pose_buffer_->GetData());
-  }
-
-  if (boxes.empty()) {
-    ggems::ocl::WriteSVMFromHost(box_records_buffer_,
-                                 geometry::GGEMSBoxRecord{});
-  } else {
-    ggems::ocl::WriteSVMFromHost(box_records_buffer_, boxes);
-  }
+  kernel_->SetArgSVMPointer(argument_index++, volume_buffer_.GetData());
+  kernel_->SetArgSVMPointer(
+    argument_index++, box_pose_buffer_ ? box_pose_buffer_->GetData() : nullptr);
+  ggems::ocl::WriteSVMFromHost(volume_buffer_, volume);
 
   auto const &source_emission_records =
     source_configuration.GetEmissionRecords();

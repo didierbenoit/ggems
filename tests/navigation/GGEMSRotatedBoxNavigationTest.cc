@@ -296,14 +296,14 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context,
   world.SetSize(size, size, size).SetMaterial(material).AddVolume(box);
   world.Validate();
   auto const pose = *world.BuildBoxPoseRecord();
-  auto const boxes = world.BuildBoxRecords(std::array<std::uint32_t, 1>{7});
+  auto const volume = world.BuildAnalyticVolumeRecord(7U);
   auto buffer = [&context](auto const &value) -> ocl::GGEMSOpenCLSVMBuffer {
     auto result = context.CreateSVMBuffer(units::Bytes{sizeof(value)});
     ocl::WriteSVMFromHost(result, value);
     return result;
   };
   auto world_buffer = buffer(world.BuildRecord());
-  auto box_buffer = buffer(boxes[0]);
+  auto box_buffer = buffer(volume);
   auto pose_buffer = buffer(pose);
   particles::GGEMSParticleState particle;
   particle.position_x_pm = test.start[0];
@@ -452,14 +452,15 @@ TEST_F(GGEMSNavigationDeviceTest,
     if (context.GetDevice().GetDoubleFpConfig() == 0U) {
       GTEST_SKIP() << "Selected device lacks FP64";
     }
-    auto const options =
-      std::format("-I{} -DGGEMS_ENABLE_ROTATED_BOX=1", root.generic_string());
+    auto const options = std::format("-I{} -DGGEMS_ENABLE_FP64_NAVIGATION=1",
+                                     root.generic_string());
     auto const &program = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
-      context, root / "tests", "rotated_box_navigation_probe", options, true);
+      context, root / "tests", "rotated_box_navigation_probe", options);
     EXPECT_TRUE(program.Matches(context, root / "tests",
-                                "rotated_box_navigation_probe", options, true));
-    EXPECT_FALSE(program.Matches(
-      context, root / "tests", "rotated_box_navigation_probe", options, false));
+                                "rotated_box_navigation_probe", options));
+    EXPECT_FALSE(
+      program.Matches(context, root / "tests", "rotated_box_navigation_probe",
+                      options + " -DGGEMS_TEST_DIFFERENT_OPTIONS=1"));
     EXPECT_EQ(program.GetBuildOptions().find("-cl-fast-relaxed-math"),
               std::string::npos);
     Errors errors;

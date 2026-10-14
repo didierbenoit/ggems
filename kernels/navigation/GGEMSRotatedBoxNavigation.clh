@@ -24,7 +24,7 @@
  * \brief FP64 local-plane queries for one rigidly placed Box.
  *
  * R has the same right-handed local-to-World column convention as Source.
- * Only rotated scene programs include this file; identity scenes retain the
+ * FP64 navigation programs include this file; exact-only scenes retain the
  * exact integer helpers without requiring FP64. Query outputs remain private
  * pointer outputs across the qualified out-of-line Transport boundary.
  *
@@ -35,27 +35,11 @@
 #define GGEMS_ROTATED_BOX_NAVIGATION_CLH
 
 #include "geometry/GGEMSBoxPoseRecord.clh"
+#include "navigation/GGEMSAnalyticArithmetic.clh"
 #include "geometry/GGEMSBoxRecord.clh"
 #include "geometry/GGEMSWorldRecord.clh"
 #include "navigation/GGEMSWorldNavigation.clh"
 #include "navigation/GGEMSNavigation.clh"
-
-/*!
- * \brief Promotes the actual stored direction, including binary32 subnormals.
- * \param[in] direction Stored direction, already validated by World.
- * \return Exact binary64 representation of the stored components.
- */
-static inline double3 GGEMS_RotatedBoxDirection(float3 direction) {
-  double3 result;
-  for (uint axis = 0U; axis < 3U; ++axis) {
-    GGEMSWorldDirection part = GGEMS_WorldDecodeDirection(direction[axis]);
-    result[axis] = ldexp((double)part.mantissa, part.exponent);
-    if (part.negative != 0U) {
-      result[axis] = -result[axis];
-    }
-  }
-  return result;
-}
 
 /*!
  * \brief Transforms a canonical anchor and stored direction with R transpose.
@@ -83,7 +67,7 @@ static inline void GGEMS_RotatedBoxRay(__global GGEMSBoxRecord const *box,
   long3 relative =
     position - (long3)(pose->center_x_pm, pose->center_y_pm, pose->center_z_pm);
   double3 offset = convert_double3(relative);
-  double3 motion = GGEMS_RotatedBoxDirection(direction);
+  double3 motion = GGEMS_AnalyticDirection(direction);
   double3 columns[3] = {
     (double3)(pose->axis_x_x, pose->axis_x_y, pose->axis_x_z),
     (double3)(pose->axis_y_x, pose->axis_y_y, pose->axis_y_z),
@@ -136,7 +120,7 @@ GGEMS_RotatedBoxLocate(__global GGEMSWorldRecord const *world,
   GGEMS_RotatedBoxRay(box, pose, position, direction, &local_position,
                       &local_direction, &resolution, &rounding);
 
-  double3 motion = GGEMS_RotatedBoxDirection(direction);
+  double3 motion = GGEMS_AnalyticDirection(direction);
   double direction_resolution =
     0x1p-48 * (fabs(motion.x) + fabs(motion.y) + fabs(motion.z));
   double3 extent =
@@ -188,7 +172,7 @@ GGEMS_RotatedBoxLocate(__global GGEMSWorldRecord const *world,
  * fields remain valid when World exit wins.
  * \param[out] parameter Forward parameter in pm, without unit-norm assumption.
  * \return Resolved, outside World, or bounded unresolved status.
-+ */
+ */
 static inline uint GGEMS_RotatedBoxFindBoundary(
   __global GGEMSWorldRecord const *world, __global GGEMSBoxRecord const *box,
   __global GGEMSBoxPoseRecord const *pose, long3 position, float3 direction,
@@ -217,7 +201,7 @@ static inline uint GGEMS_RotatedBoxFindBoundary(
   GGEMS_RotatedBoxRay(box, pose, position, direction, &local_position,
                       &local_direction, &resolution, &rounding);
 
-  double3 motion = GGEMS_RotatedBoxDirection(direction);
+  double3 motion = GGEMS_AnalyticDirection(direction);
   double direction_resolution =
     0x1p-48 * (fabs(motion.x) + fabs(motion.y) + fabs(motion.z));
   double3 extent =

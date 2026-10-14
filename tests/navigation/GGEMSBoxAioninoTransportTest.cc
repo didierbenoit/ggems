@@ -43,6 +43,7 @@
 #include "GGEMS/GGEMSRun.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
+#include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/materials/GGEMSMaterial.hh"
@@ -152,10 +153,17 @@ auto MakeWorkload(ggems::ocl::GGEMSOpenCLContext &context,
   }
   auto const snapshot =
     ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
+  ggems::geometry::GGEMSAnalyticVolumeRecord volume{};
+  if (!boxes.empty()) {
+    volume.kind = world->BuildBoxPoseRecord().has_value()
+                    ? ggems::geometry::GGEMSAnalyticKind::RotatedBox
+                    : ggems::geometry::GGEMSAnalyticKind::Box;
+    volume.parameters.box = boxes.front();
+  }
   return std::make_unique<TransportWorkload>(
     context, std::filesystem::path{GGEMS_TEST_KERNEL_ROOT}, random, 64U,
     *snapshot, 0ULL, 0U, static_cast<std::uint32_t>(2U * source_count), 0U,
-    world, boxes);
+    world, volume);
 }
 
 /*! \brief One history: start, direction and its World exit. */

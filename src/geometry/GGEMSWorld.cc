@@ -38,6 +38,10 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include <variant>
+
+#include "GGEMS/geometry/GGEMSSphere.hh"
+#include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 
 #include "GGEMS/GGEMSException.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
@@ -209,12 +213,25 @@ auto GGEMSWorld::SetMaterial(core::materials::GGEMSMaterial material)
 // -----------------------------------------------------------------------------
 
 auto GGEMSWorld::AddVolume(GGEMSBox box) -> GGEMSWorld & {
-  if (!boxes_.empty()) {
-    throw core::GGEMSRecoverable("The current slice admits exactly one Box.");
+  if (!std::holds_alternative<std::monostate>(volume_)) {
+    throw core::GGEMSRecoverable(
+      "The current slice admits at most one Box or one Sphere.");
   }
 
   box.Validate();
-  boxes_.push_back(std::move(box));
+  volume_ = std::move(box);
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::AddVolume(GGEMSSphere sphere) -> GGEMSWorld & {
+  if (!std::holds_alternative<std::monostate>(volume_)) {
+    throw core::GGEMSRecoverable(
+      "The current slice admits at most one Box or one Sphere.");
+  }
+  sphere.Validate();
+  volume_ = std::move(sphere);
   return *this;
 }
 
@@ -229,11 +246,30 @@ auto GGEMSWorld::Validate() const -> void {
     throw core::GGEMSRecoverable("World material is not set.");
   }
 
-  for (auto const &box : boxes_) {
+  for (auto const &box : GetBoxes()) {
     if (!IsStrictlyInside(half_extent_pm_, box)) {
       throw core::GGEMSRecoverable(
         "Every Box must lie strictly inside the World; coincident or "
         "crossing faces are not supported.");
+    }
+  }
+  if (auto const *sphere = std::get_if<GGEMSSphere>(&volume_)) {
+    auto const radius = sphere->GetRadiusPM();
+    auto const center = sphere->GetPositionPM();
+    // Compare margins before subtracting signed centers or adding the radius.
+    if (radius >= half_extent_pm_.x || radius >= half_extent_pm_.y ||
+        radius >= half_extent_pm_.z) {
+      throw core::GGEMSRecoverable(
+        "Sphere must lie strictly inside the World.");
+    }
+    auto const margin_x = static_cast<CoordinatePM>(half_extent_pm_.x - radius);
+    auto const margin_y = static_cast<CoordinatePM>(half_extent_pm_.y - radius);
+    auto const margin_z = static_cast<CoordinatePM>(half_extent_pm_.z - radius);
+    if (center.x <= -margin_x || center.x >= margin_x ||
+        center.y <= -margin_y || center.y >= margin_y ||
+        center.z <= -margin_z || center.z >= margin_z) {
+      throw core::GGEMSRecoverable(
+        "Sphere must lie strictly inside the World.");
     }
   }
 }
@@ -242,14 +278,15 @@ auto GGEMSWorld::Validate() const -> void {
 
 auto GGEMSWorld::BuildBoxRecords(std::span<std::uint32_t const> material_ids)
   const -> std::vector<GGEMSBoxRecord> {
+  auto const boxes = GetBoxes();
   std::vector<GGEMSBoxRecord> records;
-  records.reserve(boxes_.size());
+  records.reserve(boxes.size());
 
-  for (std::size_t index = 0U; index < boxes_.size(); ++index) {
-    HalfExtent3PM const half = boxes_[index].GetHalfExtentPM();
+  for (std::size_t index = 0U; index < boxes.size(); ++index) {
+    HalfExtent3PM const half = boxes[index].GetHalfExtentPM();
 
-    Position3PM const center = boxes_[index].GetRotation().IsIdentity()
-                                 ? boxes_[index].GetPositionPM()
+    Position3PM const center = boxes[index].GetRotation().IsIdentity()
+                                 ? boxes[index].GetPositionPM()
                                  : Position3PM{};
 
     records.push_back(GGEMSBoxRecord{
@@ -271,12 +308,13 @@ auto GGEMSWorld::BuildBoxRecords(std::span<std::uint32_t const> material_ids)
 
 auto GGEMSWorld::BuildBoxPoseRecord() const
   -> std::optional<GGEMSBoxPoseRecord> {
-  if (boxes_.empty() || boxes_.front().GetRotation().IsIdentity()) {
+  auto const boxes = GetBoxes();
+  if (boxes.empty() || boxes.front().GetRotation().IsIdentity()) {
     return std::nullopt;
   }
 
-  auto const center = boxes_.front().GetPositionPM();
-  auto const &rotation = boxes_.front().GetRotation();
+  auto const center = boxes.front().GetPositionPM();
+  auto const &rotation = boxes.front().GetRotation();
 
   return GGEMSBoxPoseRecord{
     .center_x_pm = center.x,
@@ -352,7 +390,46 @@ auto GGEMSWorld::GetMaterial() const -> core::materials::GGEMSMaterial const & {
 // -----------------------------------------------------------------------------
 
 auto GGEMSWorld::GetBoxes() const noexcept -> std::span<GGEMSBox const> {
-  return boxes_;
+  auto const *box = std::get_if<GGEMSBox>(&volume_);
+  return box != nullptr ? std::span<GGEMSBox const>{box, 1U}
+                        : std::span<GGEMSBox const>{};
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::GetVolumeMaterial() const
+  -> core::materials::GGEMSMaterial const * {
+  if (auto const *box = std::get_if<GGEMSBox>(&volume_)) {
+    return &box->GetMaterial();
+  }
+  if (auto const *sphere = std::get_if<GGEMSSphere>(&volume_)) {
+    return &sphere->GetMaterial();
+  }
+  return nullptr;
+}
+
+// -----------------------------------------------------------------------------
+
+auto GGEMSWorld::BuildAnalyticVolumeRecord(std::uint32_t material_id) const
+  -> GGEMSAnalyticVolumeRecord {
+  if (auto const *box = std::get_if<GGEMSBox>(&volume_)) {
+    std::array const material_ids{material_id};
+    return {.kind = box->GetRotation().IsIdentity()
+                      ? GGEMSAnalyticKind::Box
+                      : GGEMSAnalyticKind::RotatedBox,
+            .parameters = {.box = BuildBoxRecords(material_ids).front()}};
+  }
+  if (auto const *sphere = std::get_if<GGEMSSphere>(&volume_)) {
+    auto const center = sphere->GetPositionPM();
+    return {.kind = GGEMSAnalyticKind::Sphere,
+            .parameters = {.sphere = {.center_x_pm = center.x,
+                                      .center_y_pm = center.y,
+                                      .center_z_pm = center.z,
+                                      .radius_pm = sphere->GetRadiusPM(),
+                                      .volume_id = 1U,
+                                      .material_id = material_id}}};
+  }
+  return {};
 }
 
 } // namespace ggems::geometry

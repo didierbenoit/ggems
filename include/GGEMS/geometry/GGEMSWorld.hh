@@ -33,7 +33,10 @@
 #include <optional>
 #include <span>
 #include <vector>
+#include <variant>
 
+#include "GGEMS/geometry/GGEMSSphere.hh"
+#include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
 #include "GGEMS/geometry/GGEMSBoxPoseRecord.hh"
@@ -68,8 +71,8 @@ inline constexpr DistancePM k_max_world_size_pm{0x7FFF'FFFF'FFFF'FFFEULL};
  * size, no Material and no volume; SetSize(), SetMaterial() and AddVolume()
  * may be called in any order. Validate() checks the completed scene and is
  * called by GGEMSRun::SetWorld, which copies the World: later edits of the
- * authoring object do not reach the Run. BuildBoxRecords() then compiles the
- * validated volumes into device records. The World also packs the
+ * authoring object do not reach the Run. BuildAnalyticVolumeRecord() compiles
+ * the single volume into a tagged device record. The World also packs the
  * device-visible GGEMSWorldRecord and offers Contains() for static validation
  * of authored positions only. Per-particle location, intersection and World
  * exit are computed by OpenCL Navigation/Transport.
@@ -103,10 +106,10 @@ public:
   /*!
    * \brief Adds one complete physical volume owned by this World.
    *
-   * The current slice admits at most one Box; a World without volumes remains
-   * valid. Strict containment is checked by Validate(), so the World size may
-   * still be set afterwards. Later edits of the caller's Box do not reach the
-   * owned copy.
+   * The current slice admits at most one Box or one Sphere; a World without
+   * volumes remains valid. Strict containment is checked by Validate(), so the
+   * World size may still be set afterwards. Later edits of the caller's Box do
+   * not reach the owned copy.
    *
    * \param[in] box Complete Box authoring value copied into the World.
    * \return This World for chained configuration.
@@ -116,11 +119,38 @@ public:
   auto AddVolume(GGEMSBox box) -> GGEMSWorld &;
 
   /*!
+   * \brief Copies one complete Sphere into the single-volume World.
+   * \param[in] sphere Complete Sphere, independent of the caller after copying.
+   * \return This World for chained configuration.
+   * \throws GGEMSRecoverable If any volume is already present or Sphere is
+   * incomplete.
+   */
+  auto AddVolume(GGEMSSphere sphere) -> GGEMSWorld &;
+
+  /*!
+   * \brief Packs the single volume, or a None tag for a World-only scene.
+   * \param[in] material_id Dense Material identity from the scene compiler.
+   * \return Tagged scalar device record with physical VolumeID 1 when present.
+   * \pre Validate() has succeeded since the last edit.
+   */
+  [[nodiscard]] auto BuildAnalyticVolumeRecord(std::uint32_t material_id) const
+    -> GGEMSAnalyticVolumeRecord;
+
+  /*!
+   * \brief Borrows the single volume's Material, independent of shape.
+   * \return Null for World-only; otherwise a pointer valid until World
+   * mutation.
+   */
+  [[nodiscard]] auto GetVolumeMaterial() const
+    -> core::materials::GGEMSMaterial const *;
+
+  /*!
    * \brief Checks that the authored scene is complete and consistent.
    *
-   * Every volume must lie strictly inside the World: no Box face may coincide
-   * with or cross a World face. Rotated bounds include FP64 roundoff;
-   * identity bounds retain the exact integer containment check.
+   * Every volume must lie strictly inside the World: no surface may touch
+   * or cross a World face. Sphere containment is exact in integer pm. Rotated
+   * bounds include FP64 roundoff; identity bounds retain the exact integer
+   * containment check.
    *
    * \throws GGEMSRecoverable If the World size or Material is not set, or if a
    * volume is not strictly inside the World.
@@ -128,18 +158,19 @@ public:
   auto Validate() const -> void;
 
   /*!
-   * \brief Packs the owned volumes into device records.
+   * \brief Packs the owned Box into device records; empty for Sphere or
+   * World-only.
    *
    * Admission belongs to Validate(); this method only packs. Volume
-   * identities are 1 upward in registration order after the World (identity
-   * 0). Identity faces are global center -/+ half extent. Rotated faces are
-   * local -/+ half extent and require the separate pose record.
+   * identity is 1 after the World (identity 0). Identity faces are global
+   * center -/+ half extent. Rotated faces are local -/+ half extent and require
+   * the separate pose record.
    *
    * \param[in] material_ids Dense snapshot-local Material identity of each
-   * volume, supplied by the scene compiler in GetBoxes() order.
-   * \return One record per volume; empty for a World without volumes.
+   * Box, supplied by the scene compiler in GetBoxes() order.
+   * \return One record for Box; empty for Sphere or World-only.
    * \pre Validate() has succeeded and the World has not been modified since.
-   * \pre material_ids has exactly one entry per owned volume.
+   * \pre material_ids has exactly one entry per owned Box.
    */
   [[nodiscard]] auto
   BuildBoxRecords(std::span<std::uint32_t const> material_ids) const
@@ -147,7 +178,7 @@ public:
 
   /*!
    * \brief Packs the optional pose for the single rotated Box.
-   * \return No pose for an empty scene or an identity rotation.
+   * \return No pose for Sphere, World-only, or an identity Box.
    * \pre Validate() has succeeded since the last scene edit.
    */
   [[nodiscard]] auto BuildBoxPoseRecord() const
@@ -208,7 +239,7 @@ public:
     -> core::materials::GGEMSMaterial const &;
 
   /*!
-   * \brief Returns the owned physical volumes in registration order.
+   * \brief Returns the owned Box view; empty for Sphere or World-only.
    *
    * \return A borrowed view; AddVolume() invalidates it.
    */
@@ -221,8 +252,8 @@ private:
   /*! \brief Owned World medium, absent until SetMaterial(). */
   std::optional<core::materials::GGEMSMaterial> material_;
 
-  /*! \brief Owned physical volumes in registration order. */
-  std::vector<GGEMSBox> boxes_;
+  /*! \brief Owned single physical volume, absent until AddVolume(). */
+  std::variant<std::monostate, GGEMSBox, GGEMSSphere> volume_;
 };
 
 } // namespace ggems::geometry

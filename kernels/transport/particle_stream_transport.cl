@@ -37,17 +37,14 @@
 #include "random/GGEMSRandom.clh"
 #include "transport/GGEMSTransport.clh"
 
-#if GGEMS_ENABLE_ROTATED_BOX
-#include "navigation/GGEMSRotatedBoxNavigation.clh"
-#endif
-
 #include "transport/GGEMSDiagnosticProjection.clh"
 #include "transport/GGEMSTransportCounters.clh"
 #include "sources/GGEMSSourcePopulationRecord.clh"
 #include "sources/GGEMSSourceEmissionRecord.clh"
 #include "sources/GGEMSSourceEmissionRange.clh"
 #include "sources/GGEMSEnergyDistributionRecord.clh"
-#include "geometry/GGEMSBoxRecord.clh"
+#include "geometry/GGEMSAnalyticVolumeRecord.clh"
+#include "navigation/GGEMSAnalyticNavigation.clh"
 #include "geometry/GGEMSWorldRecord.clh"
 #include "navigation/GGEMSNavigation.clh"
 #include "sources/GGEMSSource.clh"
@@ -70,10 +67,10 @@
  * The birth owner is located first. Each iteration performs one accepted
  * Transport transaction from the current owner (query, canonical move, owner
  * update); a World exit completes the history with EscapedWorld. For the
- * admitted one-Box profile at most three boundaries are accepted (entry,
- * exit, World exit); exhausting the bound without escaping is reported as
- * unresolved, never as a silent completion. The loop is species-agnostic
- * and carries no shape algorithm.
+ * admitted one-convex-volume profile at most three boundaries are accepted
+ * (entry, exit, World exit); exhausting the bound without escaping is reported
+ * as unresolved, never as a silent completion. The loop is species-agnostic and
+ * carries no shape algorithm.
  *
  * This function and the Transport transaction it calls are deliberately kept
  * out of line. When the geometry loop is inlined into the claim/initialize/
@@ -85,9 +82,8 @@
  * multi-source tests in tests/navigation guard it.
  *
  * \param[in] world Immutable device World parameters.
- * \param[in] boxes Immutable analytic Box occurrences.
- * \param[in] box_count Number of Box occurrences (at most one).
- * \param[in] box_pose Optional immutable pose in rotated scene programs.
+ * \param[in] volume Single tagged analytic volume or None.
+ * \param[in] box_pose Separate pose, null unless RotatedBox.
  * \param[in,out] particle Private state; moved to the World boundary on
  * success, owner identities updated at every accepted boundary.
  * \param[in,out] counters Transport counters receiving the outcome.
@@ -95,14 +91,14 @@
  * the birth was outside the World or a transaction was unresolved.
  */
 static __attribute__((noinline)) uint GGEMS_TransportGeometry(
-  __global GGEMSWorldRecord const *world, __global GGEMSBoxRecord const *boxes,
-  uint box_count GGEMS_BOX_POSE_PARAMETER, GGEMSParticleState *particle,
+  __global GGEMSWorldRecord const *world,
+  __global GGEMSAnalyticVolumeRecord const *volume,
+  __global void const *box_pose, GGEMSParticleState *particle,
   volatile __global GGEMSTransportCounters *counters) {
-#if GGEMS_ENABLE_ROTATED_BOX
   ulong owner;
 
-  uint const locate_status = GGEMS_RotatedBoxLocate(
-    world, boxes, box_pose,
+  uint const locate_status = GGEMS_AnalyticLocate(
+    world, volume, box_pose,
     (long3)(particle->position_x_pm, particle->position_y_pm,
             particle->position_z_pm),
     (float3)(particle->direction_x, particle->direction_y,
@@ -117,28 +113,20 @@ static __attribute__((noinline)) uint GGEMS_TransportGeometry(
     }
     return 1U;
   }
-#else
-  ulong const owner = GGEMS_NavigationLocate(
-    boxes, box_count,
-    (long3)(particle->position_x_pm, particle->position_y_pm,
-            particle->position_z_pm),
-    (float3)(particle->direction_x, particle->direction_y,
-             particle->direction_z));
-#endif
 
   particle->current_volume_id = (uint)(owner >> 32U);
   particle->material_id = (uint)(owner & 0xFFFFFFFFUL);
 
-  uint const max_boundary_events = 2U * box_count + 1U;
+  uint const max_boundary_events =
+    volume->kind == GGEMS_ANALYTIC_NONE ? 1U : 3U;
 
   uint event = GGEMS_NAVIGATION_EVENT_NONE;
   uint faces = 0U;
 
   for (uint event_index = 0U; event_index < max_boundary_events;
        ++event_index) {
-    uint const status = GGEMS_TransportToNextBoundary(
-      world, boxes, box_count GGEMS_BOX_POSE_ARGUMENT, particle, &event,
-      &faces);
+    uint const status = GGEMS_TransportToNextBoundary(world, volume, box_pose,
+                                                      particle, &event, &faces);
 
     if (status == GGEMS_NAVIGATION_OUTSIDE_WORLD) {
       atomic_inc(&counters->outside_world_count);
@@ -182,7 +170,7 @@ static __attribute__((noinline)) uint GGEMS_TransportGeometry(
  * completion.
  *
  * A Process-free species (GGEMS_ParticleIsProcessFree) navigates the World
- * and its analytic Box occurrences boundary by boundary and commits its final
+ * and its analytic volume boundary by boundary and commits its final
  * accepted interval before EscapedWorld completion. Outside births and
  * unresolved queries increment distinct failure counters without terminal
  * publication or history completion. Other species retain the checked
@@ -235,8 +223,7 @@ static __attribute__((noinline)) uint GGEMS_TransportGeometry(
  * parallel to source_emissions.
  * \param[in] world Immutable World parameters; required for navigated
  * species.
- * \param[in] boxes Immutable analytic Box occurrences, box_count elements.
- * \param[in] box_count Number of Box occurrences strictly inside the World.
+ * \param[in] volume Single analytic record, including None.
  * \param[in] box_pose Optional immutable pose in rotated scene programs.
  */
 __kernel void particle_stream_transport(
@@ -256,8 +243,9 @@ __kernel void particle_stream_transport(
   __global GGEMSSourcePopulationRecord const *source_population_records,
   __global GGEMSSourceEmissionRecord const *source_emissions,
   __global GGEMSSourceEmissionRange const *source_emission_ranges,
-  __global GGEMSWorldRecord const *world, __global GGEMSBoxRecord const *boxes,
-  uint box_count GGEMS_BOX_POSE_PARAMETER) {
+  __global GGEMSWorldRecord const *world,
+  __global GGEMSAnalyticVolumeRecord const *volume,
+  __global void const *box_pose) {
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER == 0
   (void)(observer_config);
@@ -358,8 +346,7 @@ __kernel void particle_stream_transport(
 #endif
 
     if (GGEMS_ParticleIsProcessFree(particle.particle_type) != 0U) {
-      if (GGEMS_TransportGeometry(world, boxes,
-                                  box_count GGEMS_BOX_POSE_ARGUMENT, &particle,
+      if (GGEMS_TransportGeometry(world, volume, box_pose, &particle,
                                   counters) != 0U) {
         continue;
       }

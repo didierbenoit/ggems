@@ -28,6 +28,7 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
+#include "geometry/GGEMSAnalyticVolumeRecord.clh"
 #include "geometry/GGEMSBoxRecord.clh"
 #include "geometry/GGEMSWorldRecord.clh"
 #include "navigation/GGEMSNavigation.clh"
@@ -96,8 +97,7 @@ __kernel void box_record_abi_probe(__global GGEMSBoxRecord *boxes,
  * transaction from it.
  *
  * \param[in] world Shared World record.
- * \param[in] boxes Box occurrences.
- * \param[in] box_count Number of Box occurrences.
+ * \param[in] volume Single analytic Box record.
  * \param[in] positions_pm Start positions, three coordinates per ray.
  * \param[in] directions Stored binary32 directions, three components per ray.
  * \param[in] ray_count Number of rays.
@@ -109,11 +109,12 @@ __kernel void box_record_abi_probe(__global GGEMSBoxRecord *boxes,
  * \param[out] arrival_owners Owner after the transaction per ray.
  */
 __kernel void box_navigation_probe(
-  __global GGEMSWorldRecord const *world, __global GGEMSBoxRecord const *boxes,
-  uint box_count, __global long const *positions_pm,
-  __global float const *directions, uint ray_count, __global uint *start_owners,
-  __global uint *statuses, __global uint *events, __global uint *exit_faces,
-  __global long *endpoints_pm, __global uint *arrival_owners) {
+  __global GGEMSWorldRecord const *world,
+  __global GGEMSAnalyticVolumeRecord const *volume,
+  __global long const *positions_pm, __global float const *directions,
+  uint ray_count, __global uint *start_owners, __global uint *statuses,
+  __global uint *events, __global uint *exit_faces, __global long *endpoints_pm,
+  __global uint *arrival_owners) {
   uint const ray = (uint)get_global_id(0);
   if (ray >= ray_count) {
     return;
@@ -129,7 +130,7 @@ __kernel void box_navigation_probe(
   particle.status = GGEMS_PARTICLE_STATUS_ALIVE;
 
   ulong const owner = GGEMS_NavigationLocate(
-    boxes, box_count,
+    &volume->parameters.box, volume->kind == GGEMS_ANALYTIC_BOX,
     (long3)(particle.position_x_pm, particle.position_y_pm,
             particle.position_z_pm),
     (float3)(particle.direction_x, particle.direction_y, particle.direction_z));
@@ -138,8 +139,9 @@ __kernel void box_navigation_probe(
 
   uint event = GGEMS_NAVIGATION_EVENT_NONE;
   uint faces = 0U;
-  uint const status = GGEMS_TransportToNextBoundary(world, boxes, box_count,
-                                                    &particle, &event, &faces);
+
+  uint const status =
+    GGEMS_TransportToNextBoundary(world, volume, 0, &particle, &event, &faces);
 
   start_owners[ray] = (uint)(owner >> 32U);
   statuses[ray] = status;

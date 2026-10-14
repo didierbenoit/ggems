@@ -38,7 +38,7 @@
 
 #include <gtest/gtest.h>
 
-#include "GGEMS/geometry/GGEMSBoxRecord.hh"
+#include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
@@ -114,9 +114,8 @@ auto RunCases(ggems::ocl::GGEMSOpenCLContext &context, WorldRecord const &world,
 
   auto world_buffer =
     context.CreateSVMBuffer(ggems::units::Bytes{sizeof(WorldRecord)});
-  // The World-only probe shares the generic transaction: one zero Box record
-  // with a count of zero.
-  ggems::geometry::GGEMSBoxRecord const no_box{};
+  // The World-only probe uses the common single-record ABI.
+  ggems::geometry::GGEMSAnalyticVolumeRecord const no_box{};
   auto box_buffer =
     context.CreateSVMBuffer(ggems::units::Bytes{sizeof(no_box)});
   auto positions_buffer = context.CreateSVMBuffer(bytes(positions));
@@ -143,13 +142,12 @@ auto RunCases(ggems::ocl::GGEMSOpenCLContext &context, WorldRecord const &world,
 
   kernel.SetArgSVMPointer(0U, world_buffer.GetData());
   kernel.SetArgSVMPointer(1U, box_buffer.GetData());
-  kernel.SetArg(2U, cl_uint{0U});
-  kernel.SetArgSVMPointer(3U, positions_buffer.GetData());
-  kernel.SetArgSVMPointer(4U, directions_buffer.GetData());
-  kernel.SetArg(5U, static_cast<cl_uint>(cases.size()));
-  kernel.SetArgSVMPointer(6U, statuses_buffer.GetData());
-  kernel.SetArgSVMPointer(7U, endpoints_buffer.GetData());
-  kernel.SetArgSVMPointer(8U, faces_buffer.GetData());
+  kernel.SetArgSVMPointer(2U, positions_buffer.GetData());
+  kernel.SetArgSVMPointer(3U, directions_buffer.GetData());
+  kernel.SetArg(4U, static_cast<cl_uint>(cases.size()));
+  kernel.SetArgSVMPointer(5U, statuses_buffer.GetData());
+  kernel.SetArgSVMPointer(6U, endpoints_buffer.GetData());
+  kernel.SetArgSVMPointer(7U, faces_buffer.GetData());
   kernel.Run({cases.size()}, {1U});
 
   ggems::ocl::ReadSVMToHost(statuses_buffer, std::span{statuses});

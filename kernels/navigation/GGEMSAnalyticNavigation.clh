@@ -1,0 +1,149 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Dispatches the single analytic volume through one Navigation
+ * interface.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_ANALYTIC_NAVIGATION_CLH
+#define GGEMS_ANALYTIC_NAVIGATION_CLH
+
+#include "geometry/GGEMSAnalyticVolumeRecord.clh"
+#include "geometry/GGEMSWorldRecord.clh"
+#include "navigation/GGEMSNavigation.clh"
+#include "navigation/GGEMSWorldNavigation.clh"
+
+#if GGEMS_ENABLE_FP64_NAVIGATION
+#include "geometry/GGEMSBoxRecord.clh"
+#include "geometry/GGEMSBoxPoseRecord.clh"
+#include "navigation/GGEMSRotatedBoxNavigation.clh"
+#include "navigation/GGEMSSphereNavigation.clh"
+#endif
+
+/*!
+ * \brief Private selected-event output; exact planar evidence stays unchanged.
+ *
+ * FP64 programs add only a transient ray parameter, never persistent position.
+ */
+typedef struct GGEMSAnalyticBoundary {
+  /*! \brief Event, arrival owner, and the exact witness for planar movement. */
+  GGEMSBoundaryWitness boundary;
+
+#if GGEMS_ENABLE_FP64_NAVIGATION
+  /*! \brief Unrounded ray parameter in pm for FP64 volume movement. */
+  double parameter;
+#endif
+} GGEMSAnalyticBoundary;
+
+/*!
+ * \brief Locates the forward owner through the selected analytic predicate.
+ * \param[in] world Exact finite World.
+ * \param[in] volume Single volume or None.
+ * \param[in] box_pose Separate Box pose, null unless the tag is RotatedBox.
+ * \param[in] position Canonical global position.
+ * \param[in] direction Actual stored direction.
+ * \param[out] owner Packed VolumeID/MaterialID on success.
+ * \return Resolved, outside World, or unresolved.
+ */
+static inline uint
+GGEMS_AnalyticLocate(__global GGEMSWorldRecord const *world,
+                     __global GGEMSAnalyticVolumeRecord const *volume,
+                     __global void const *box_pose, long3 position,
+                     float3 direction, ulong *owner) {
+  GGEMSWorldBoundary world_exit =
+    GGEMS_WorldFindBoundary(world, position, direction);
+  if (world_exit.status != GGEMS_WORLD_EXIT) {
+    return world_exit.status;
+  }
+#if GGEMS_ENABLE_FP64_NAVIGATION
+  if (volume->kind == GGEMS_ANALYTIC_ROTATED_BOX) {
+    return GGEMS_RotatedBoxLocate(world, &volume->parameters.box,
+                                  (__global GGEMSBoxPoseRecord const *)box_pose,
+                                  position, direction, owner);
+  }
+
+  if (volume->kind == GGEMS_ANALYTIC_SPHERE) {
+    return GGEMS_SphereLocate(&volume->parameters.sphere, position, direction,
+                              owner);
+  }
+#endif
+  *owner = GGEMS_NavigationLocate(&volume->parameters.box,
+                                  volume->kind == GGEMS_ANALYTIC_BOX, position,
+                                  direction);
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+/*!
+ * \brief Selects the next boundary through the single analytic dispatch.
+ * \param[in] world Exact World exit authority.
+ * \param[in] volume Single volume or None.
+ * \param[in] box_pose Separate pose, null unless RotatedBox.
+ * \param[in] position Canonical anchor in integer pm.
+ * \param[in] direction Actual stored direction.
+ * \param[in] current_owner Known physical departure VolumeID.
+ * \param[in] last_event Previously accepted event while direction is unchanged.
+ * \param[out] result Selected event and movement evidence through a private
+ * pointer.
+ * \return Resolved, outside World, or unresolved.
+ */
+static inline uint
+GGEMS_AnalyticFindBoundary(__global GGEMSWorldRecord const *world,
+                           __global GGEMSAnalyticVolumeRecord const *volume,
+                           __global void const *box_pose, long3 position,
+                           float3 direction, uint current_owner,
+                           uint last_event, GGEMSAnalyticBoundary *result) {
+#if GGEMS_ENABLE_FP64_NAVIGATION
+  if (volume->kind == GGEMS_ANALYTIC_ROTATED_BOX) {
+    return GGEMS_RotatedBoxFindBoundary(
+      world, &volume->parameters.box,
+      (__global GGEMSBoxPoseRecord const *)box_pose, position, direction,
+      current_owner, last_event, &result->boundary, &result->parameter);
+  }
+
+  if (volume->kind == GGEMS_ANALYTIC_SPHERE) {
+    uint status = GGEMS_NavigationFindBoundary(
+      world, &volume->parameters.box, 0U, position, direction,
+      GGEMS_VOLUME_ID_WORLD, &result->boundary);
+
+    if (status != GGEMS_NAVIGATION_RESOLVED) {
+      return status;
+    }
+
+    result->parameter =
+      ldexp((double)result->boundary.gap_pm / (double)result->boundary.mantissa,
+            -result->boundary.exponent);
+
+    return GGEMS_SphereFindBoundary(&volume->parameters.sphere, position,
+                                    direction, current_owner, last_event,
+                                    &result->boundary, &result->parameter);
+  }
+#endif
+  return GGEMS_NavigationFindBoundary(
+    world, &volume->parameters.box, volume->kind == GGEMS_ANALYTIC_BOX,
+    position, direction, current_owner, &result->boundary);
+}
+
+#endif

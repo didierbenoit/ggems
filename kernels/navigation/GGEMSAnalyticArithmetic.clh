@@ -1,0 +1,53 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Shares FP64 direction decoding between analytic predicates and
+ * Transport.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_ANALYTIC_ARITHMETIC_CLH
+#define GGEMS_ANALYTIC_ARITHMETIC_CLH
+
+#include "navigation/GGEMSWorldNavigation.clh"
+
+/*!
+ * \brief Promotes the actual stored direction, including binary32 subnormals.
+ * \param[in] direction Stored direction, already validated by World.
+ * \return Exact binary64 representation of the stored components.
+ */
+static inline double3 GGEMS_AnalyticDirection(float3 direction) {
+  double3 result;
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    GGEMSWorldDirection part = GGEMS_WorldDecodeDirection(direction[axis]);
+    result[axis] = ldexp((double)part.mantissa, part.exponent);
+    if (part.negative != 0U) {
+      result[axis] = -result[axis];
+    }
+  }
+  return result;
+}
+
+#endif

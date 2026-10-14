@@ -40,6 +40,7 @@
 #include <gtest/gtest.h>
 
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
+#include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 #include "GGEMS/opencl/GGEMSOpenCLContext.hh"
@@ -124,11 +125,14 @@ auto RunRays(ggems::ocl::GGEMSOpenCLContext &context,
   auto world_buffer =
     context.CreateSVMBuffer(ggems::units::Bytes{sizeof(world)});
   ggems::ocl::WriteSVMFromHost(world_buffer, world);
-  std::vector<GGEMSBoxRecord> box_values(boxes.begin(), boxes.end());
-  if (box_values.empty()) {
-    box_values.emplace_back();
+  ggems::geometry::GGEMSAnalyticVolumeRecord volume{};
+  if (!boxes.empty()) {
+    volume.kind = ggems::geometry::GGEMSAnalyticKind::Box;
+    volume.parameters.box = boxes.front();
   }
-  auto box_buffer = make(box_values);
+  auto box_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{sizeof(volume)});
+  ggems::ocl::WriteSVMFromHost(box_buffer, volume);
   auto position_buffer = make(positions);
   auto direction_buffer = make(directions);
   std::vector<std::uint32_t> const zeros(ray_count, 0U);
@@ -150,16 +154,15 @@ auto RunRays(ggems::ocl::GGEMSOpenCLContext &context,
     "box_navigation_probe"};
   kernel.SetArgSVMPointer(0U, world_buffer.GetData());
   kernel.SetArgSVMPointer(1U, box_buffer.GetData());
-  kernel.SetArg(2U, static_cast<cl_uint>(boxes.size()));
-  kernel.SetArgSVMPointer(3U, position_buffer.GetData());
-  kernel.SetArgSVMPointer(4U, direction_buffer.GetData());
-  kernel.SetArg(5U, static_cast<cl_uint>(ray_count));
-  kernel.SetArgSVMPointer(6U, start_owners.GetData());
-  kernel.SetArgSVMPointer(7U, statuses.GetData());
-  kernel.SetArgSVMPointer(8U, events.GetData());
-  kernel.SetArgSVMPointer(9U, faces.GetData());
-  kernel.SetArgSVMPointer(10U, endpoints.GetData());
-  kernel.SetArgSVMPointer(11U, arrivals.GetData());
+  kernel.SetArgSVMPointer(2U, position_buffer.GetData());
+  kernel.SetArgSVMPointer(3U, direction_buffer.GetData());
+  kernel.SetArg(4U, static_cast<cl_uint>(ray_count));
+  kernel.SetArgSVMPointer(5U, start_owners.GetData());
+  kernel.SetArgSVMPointer(6U, statuses.GetData());
+  kernel.SetArgSVMPointer(7U, events.GetData());
+  kernel.SetArgSVMPointer(8U, faces.GetData());
+  kernel.SetArgSVMPointer(9U, endpoints.GetData());
+  kernel.SetArgSVMPointer(10U, arrivals.GetData());
   kernel.Run({static_cast<std::size_t>((ray_count + 63U) / 64U) * 64U}, {64U});
 
   std::vector<std::uint32_t> got_owner(ray_count);
