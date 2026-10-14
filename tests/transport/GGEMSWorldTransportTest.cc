@@ -46,7 +46,7 @@
 
 #include "GGEMS/GGEMSRun.hh"
 #include "GGEMS/GGEMSException.hh"
-#include "GGEMS/geometry/GGEMSBoxRecord.hh"
+#include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSWorld.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
@@ -482,7 +482,7 @@ TEST_P(GGEMSWorldRayTest, ActualStreamKernel) {
                                              .half_extent_y_pm = test.half[1],
                                              .half_extent_z_pm = test.half[2]};
       auto world_buffer = buffer(world);
-      auto box_buffer = buffer(geometry::GGEMSBoxRecord{});
+      auto volume_buffer = buffer(geometry::GGEMSAnalyticVolumeRecord{});
       sources::GGEMSSourceRecord source{};
       source.emitted_particle_type =
         particles::ToKernelParticleType(particles::GGEMSParticleType::Aionino);
@@ -546,8 +546,9 @@ TEST_P(GGEMSWorldRayTest, ActualStreamKernel) {
       kernel.SetArgSVMPointer(18U, emissions.GetData());
       kernel.SetArgSVMPointer(19U, emission_ranges.GetData());
       kernel.SetArgSVMPointer(20U, world_buffer.GetData());
-      kernel.SetArgSVMPointer(21U, box_buffer.GetData());
-      kernel.SetArg(22U, cl_uint{0});
+      kernel.SetArgSVMPointer(21U, volume_buffer.GetData());
+      // World-only navigation does not read the pose argument.
+      kernel.SetArgSVMPointer(22U, volume_buffer.GetData());
       kernel.Run({64U}, {64U});
 
       std::vector<std::byte> rng_after(rng_before.size());
@@ -708,11 +709,11 @@ TEST_F(GGEMSWorldTransportTest, ExactCrossingMasksThroughTheSharedHelper) {
                                              .half_extent_z_pm = test.half[2]};
       auto world_buffer = context.CreateSVMBuffer(units::Bytes{sizeof(world)});
       ocl::WriteSVMFromHost(world_buffer, world);
-      // World-only scene through the generic transaction: one zero Box record
-      // with a count of zero.
-      geometry::GGEMSBoxRecord const no_box{};
-      auto box_buffer = context.CreateSVMBuffer(units::Bytes{sizeof(no_box)});
-      ocl::WriteSVMFromHost(box_buffer, no_box);
+      // A default analytic record selects the World-only transaction.
+      geometry::GGEMSAnalyticVolumeRecord const no_volume{};
+      auto volume_buffer =
+        context.CreateSVMBuffer(units::Bytes{sizeof(no_volume)});
+      ocl::WriteSVMFromHost(volume_buffer, no_volume);
       auto positions =
         context.CreateSVMBuffer(units::Bytes{sizeof(test.start)});
       ocl::WriteSVMFromHost(positions,
@@ -725,14 +726,13 @@ TEST_F(GGEMSWorldTransportTest, ExactCrossingMasksThroughTheSharedHelper) {
         context.CreateSVMBuffer(units::Bytes{sizeof(test.start)});
       auto faces = context.CreateSVMBuffer(units::Bytes{sizeof(cl_uint)});
       kernel.SetArgSVMPointer(0U, world_buffer.GetData());
-      kernel.SetArgSVMPointer(1U, box_buffer.GetData());
-      kernel.SetArg(2U, cl_uint{0});
-      kernel.SetArgSVMPointer(3U, positions.GetData());
-      kernel.SetArgSVMPointer(4U, directions.GetData());
-      kernel.SetArg(5U, cl_uint{1});
-      kernel.SetArgSVMPointer(6U, statuses.GetData());
-      kernel.SetArgSVMPointer(7U, endpoints.GetData());
-      kernel.SetArgSVMPointer(8U, faces.GetData());
+      kernel.SetArgSVMPointer(1U, volume_buffer.GetData());
+      kernel.SetArgSVMPointer(2U, positions.GetData());
+      kernel.SetArgSVMPointer(3U, directions.GetData());
+      kernel.SetArg(4U, cl_uint{1});
+      kernel.SetArgSVMPointer(5U, statuses.GetData());
+      kernel.SetArgSVMPointer(6U, endpoints.GetData());
+      kernel.SetArgSVMPointer(7U, faces.GetData());
       kernel.Run({64U}, {64U});
       EXPECT_EQ(ocl::ReadSVMToHost<cl_uint>(statuses), test.outcome);
       EXPECT_EQ(ocl::ReadSVMToHost<cl_uint>(faces), test.faces);

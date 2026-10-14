@@ -62,7 +62,7 @@ typedef struct GGEMSAnalyticBoundary {
  * \brief Locates the forward owner through the selected analytic predicate.
  * \param[in] world Exact finite World.
  * \param[in] volume Single volume or None.
- * \param[in] box_pose Separate Box pose, null unless the tag is RotatedBox.
+ * \param[in] box_pose Separate Box pose, ignored unless the tag is RotatedBox.
  * \param[in] position Canonical global position.
  * \param[in] direction Actual stored direction.
  * \param[out] owner Packed VolumeID/MaterialID on success.
@@ -100,7 +100,7 @@ GGEMS_AnalyticLocate(__global GGEMSWorldRecord const *world,
  * \brief Selects the next boundary through the single analytic dispatch.
  * \param[in] world Exact World exit authority.
  * \param[in] volume Single volume or None.
- * \param[in] box_pose Separate pose, null unless RotatedBox.
+ * \param[in] box_pose Separate Box pose, ignored unless the tag is RotatedBox.
  * \param[in] position Canonical anchor in integer pm.
  * \param[in] direction Actual stored direction.
  * \param[in] current_owner Known physical departure VolumeID.

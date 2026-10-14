@@ -182,7 +182,7 @@ static __attribute__((noinline)) uint GGEMS_TransportMoveToAnalyticBoundary(
  *
  * \param[in] world Immutable World record.
  * \param[in] volume Immutable tagged volume, or None.
- * \param[in] box_pose Separate pose, null unless the tag is RotatedBox.
+ * \param[in] box_pose Separate Box pose, ignored unless the tag is RotatedBox.
  * \param[in,out] particle Private state with a valid current owner.
  * \param[in,out] event Last accepted event on entry (NONE at birth), updated
  * on success. Retained only while the straight flight direction is unchanged.

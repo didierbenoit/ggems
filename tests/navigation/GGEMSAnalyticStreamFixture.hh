@@ -222,7 +222,9 @@ inline auto RunStream(ocl::GGEMSOpenCLContext &context,
   kernel.SetArgSVMPointer(19U, emission_ranges.GetData());
   kernel.SetArgSVMPointer(20U, world_buffer.GetData());
   kernel.SetArgSVMPointer(21U, volume_buffer.GetData());
-  kernel.SetArgSVMPointer(22U, pose_buffer ? pose_buffer->GetData() : nullptr);
+  // Match production: the pose argument is ignored outside RotatedBox.
+  kernel.SetArgSVMPointer(22U, pose_buffer ? pose_buffer->GetData()
+                                           : volume_buffer.GetData());
   kernel.SetArgSVMPointer(23U, trace_buffer.GetData());
   kernel.Run({64U}, {64U});
 

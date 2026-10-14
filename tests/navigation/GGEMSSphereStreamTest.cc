@@ -488,8 +488,13 @@ __kernel void analytic_layout(__global ulong *layout) {
   layout[9] = sizeof(GGEMSParticleState);
 }
 )cl";
+  bool exercised_fp64{false};
   for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
-    ASSERT_NE(context.GetDevice().GetDoubleFpConfig(), 0U);
+    SCOPED_TRACE(context.GetDevice().GetName());
+    if (context.GetDevice().GetDoubleFpConfig() == 0U) {
+      continue;
+    }
+    exercised_fp64 = true;
     random::GGEMSRandom random;
     random.SetEngine("philox").SetSeed(91231);
     auto const options =
@@ -528,11 +533,18 @@ __kernel void analytic_layout(__global ulong *layout) {
       errors.position[2], errors.segment, errors.flight,
       production.GetBuildOptions());
   }
+  if (!exercised_fp64) {
+    GTEST_SKIP() << "No selected device supports FP64 Sphere navigation.";
+  }
 }
 
 TEST_F(GGEMSNavigationDeviceTest,
        RunOwnsSphereSnapshotAndDispatchesItsPredicate) {
   using namespace ggems::units;
+  bool requires_rejection{false};
+  for (auto const &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
+    requires_rejection |= context.GetDevice().GetDoubleFpConfig() == 0U;
+  }
   for (bool const ambiguous_birth : {false, true}) {
     auto source = std::make_shared<sources::GGEMSSource>();
     source->SetAnalytic()
@@ -559,6 +571,13 @@ TEST_F(GGEMSNavigationDeviceTest,
       run.SetWorld(world);
       sphere.SetRadius(2_mm);
       world.SetSize(40_mm, 40_mm, 40_mm);
+    }
+    if (requires_rejection) {
+      // Run must reject the complete selected device set if any device lacks
+      // FP64; it must not silently execute only the compatible devices.
+      EXPECT_THROW(run.Initialize(), GGEMSRecoverable);
+      EXPECT_TRUE(observer->GetRecords().empty());
+      return;
     }
     ASSERT_NO_THROW(run.Initialize());
     if (ambiguous_birth) {
