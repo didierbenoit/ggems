@@ -36,7 +36,7 @@
 namespace ggems::geometry {
 
 /*! \brief Selects the implemented geometric predicate for the single volume. */
-enum class GGEMSAnalyticKind : std::uint8_t {
+enum class GGEMSAnalyticKind : std::uint32_t {
   /*! \brief World-only scene. */
   None = 0,
 
