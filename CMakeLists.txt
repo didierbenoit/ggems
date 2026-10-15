@@ -79,6 +79,27 @@ include(OptimizationOptions)
 # Optional build features
 option(GGEMS_WITH_IMGUI "Enable ImGui / Vulkan interface" OFF)
 
+set(GGEMS_EXPERIMENTAL_SPHERE_PRECISION "FP64" CACHE STRING
+    "Experimental Sphere arithmetic profile: FP64, FP32, INT64, or INT32_LOCAL")
+set_property(CACHE GGEMS_EXPERIMENTAL_SPHERE_PRECISION PROPERTY STRINGS
+             FP64 FP32 INT64 INT32_LOCAL)
+if(GGEMS_EXPERIMENTAL_SPHERE_PRECISION STREQUAL "FP64")
+  set(GGEMS_SPHERE_FP32 0)
+  set(GGEMS_SPHERE_INTEGER 0)
+elseif(GGEMS_EXPERIMENTAL_SPHERE_PRECISION STREQUAL "FP32")
+  set(GGEMS_SPHERE_FP32 1)
+  set(GGEMS_SPHERE_INTEGER 0)
+elseif(GGEMS_EXPERIMENTAL_SPHERE_PRECISION STREQUAL "INT64")
+  set(GGEMS_SPHERE_FP32 0)
+  set(GGEMS_SPHERE_INTEGER 64)
+elseif(GGEMS_EXPERIMENTAL_SPHERE_PRECISION STREQUAL "INT32_LOCAL")
+  set(GGEMS_SPHERE_FP32 0)
+  set(GGEMS_SPHERE_INTEGER 32)
+else()
+  message(FATAL_ERROR
+          "GGEMS_EXPERIMENTAL_SPHERE_PRECISION must be FP64, FP32, INT64, or INT32_LOCAL.")
+endif()
+
 # ------------------------------------------------------------------------------
 # Dependencies
 set(OPENCL_HPP_INCLUDE_DIR
@@ -144,7 +165,10 @@ target_compile_definitions(
   ggems_core
   PUBLIC "$<$<CONFIG:Debug>:GGEMS_DEBUG_MODE>"
          "$<$<CONFIG:Release>:GGEMS_RELEASE_MODE>"
-  PRIVATE "GGEMS_KERNEL_ROOT=\"${PROJECT_SOURCE_DIR}/kernels\"")
+  PRIVATE "GGEMS_KERNEL_ROOT=\"${PROJECT_SOURCE_DIR}/kernels\""
+          "GGEMS_SPHERE_FP32=${GGEMS_SPHERE_FP32}"
+          "GGEMS_SPHERE_INTEGER=${GGEMS_SPHERE_INTEGER}"
+          "GGEMS_SPHERE_PROFILE=\"${GGEMS_EXPERIMENTAL_SPHERE_PRECISION}\"")
 
 target_link_libraries(
   ggems_core
@@ -201,6 +225,7 @@ endif()
 message(STATUS "Compiler cache         : ${GGEMS_USE_COMPILER_CACHE}")
 message(STATUS "Test targets           : tests")
 message(STATUS "ImGui UI enabled       : ${GGEMS_WITH_IMGUI}")
+message(STATUS "Sphere arithmetic      : ${GGEMS_EXPERIMENTAL_SPHERE_PRECISION}")
 message(STATUS "Validation target      : validation")
 message(STATUS "Documentation targets  : doxygen, sphinx, docs")
 message(STATUS "========================================================")

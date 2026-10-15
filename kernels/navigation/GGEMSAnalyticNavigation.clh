@@ -31,6 +31,14 @@
 #ifndef GGEMS_ANALYTIC_NAVIGATION_CLH
 #define GGEMS_ANALYTIC_NAVIGATION_CLH
 
+#ifndef GGEMS_SPHERE_FP32
+#define GGEMS_SPHERE_FP32 0
+#endif
+
+#ifndef GGEMS_SPHERE_INTEGER
+#define GGEMS_SPHERE_INTEGER 0
+#endif
+
 #include "geometry/GGEMSAnalyticVolumeRecord.clh"
 #include "geometry/GGEMSWorldRecord.clh"
 #include "navigation/GGEMSNavigation.clh"
@@ -40,13 +48,25 @@
 #include "geometry/GGEMSBoxRecord.clh"
 #include "geometry/GGEMSBoxPoseRecord.clh"
 #include "navigation/GGEMSRotatedBoxNavigation.clh"
+#if !GGEMS_SPHERE_FP32 && !GGEMS_SPHERE_INTEGER
 #include "navigation/GGEMSSphereNavigation.clh"
+#endif
+#endif
+
+#if GGEMS_SPHERE_FP32
+#include "navigation/GGEMSSphereNavigationFP32.clh"
+#endif
+
+#if GGEMS_SPHERE_INTEGER == 64
+#include "navigation/GGEMSSphereNavigationINT64.clh"
+#elif GGEMS_SPHERE_INTEGER == 32
+#include "navigation/GGEMSSphereNavigationINT32.clh"
 #endif
 
 /*!
  * \brief Private selected-event output; exact planar evidence stays unchanged.
  *
- * FP64 programs add only a transient ray parameter, never persistent position.
+ * Analytic profiles add transient ray parameters, never persistent position.
  */
 typedef struct GGEMSAnalyticBoundary {
   /*! \brief Event, arrival owner, and the exact witness for planar movement. */
@@ -55,6 +75,15 @@ typedef struct GGEMSAnalyticBoundary {
 #if GGEMS_ENABLE_FP64_NAVIGATION
   /*! \brief Unrounded ray parameter in pm for FP64 volume movement. */
   double parameter;
+#endif
+
+#if GGEMS_SPHERE_FP32
+  /*! \brief Unrounded FP32 Sphere ray parameter in pm. */
+  float sphere_parameter;
+#endif
+#if GGEMS_SPHERE_INTEGER
+  /*! \brief Exact rational displacement for the selected integer Sphere ray. */
+  GGEMSSphereIntegerBoundary sphere_integer;
 #endif
 } GGEMSAnalyticBoundary;
 
@@ -73,6 +102,9 @@ GGEMS_AnalyticLocate(__global GGEMSWorldRecord const *world,
                      __global GGEMSAnalyticVolumeRecord const *volume,
                      __global void const *box_pose, long3 position,
                      float3 direction, ulong *owner) {
+#if !GGEMS_ENABLE_FP64_NAVIGATION
+  (void)box_pose;
+#endif
   GGEMSWorldBoundary world_exit =
     GGEMS_WorldFindBoundary(world, position, direction);
   if (world_exit.status != GGEMS_WORLD_EXIT) {
@@ -85,9 +117,28 @@ GGEMS_AnalyticLocate(__global GGEMSWorldRecord const *world,
                                   position, direction, owner);
   }
 
+#if !GGEMS_SPHERE_FP32 && !GGEMS_SPHERE_INTEGER
   if (volume->kind == GGEMS_ANALYTIC_SPHERE) {
     return GGEMS_SphereLocate(&volume->parameters.sphere, position, direction,
                               owner);
+  }
+#endif
+#endif
+#if GGEMS_SPHERE_FP32
+  if (volume->kind == GGEMS_ANALYTIC_SPHERE) {
+    return GGEMS_SphereFP32Locate(&volume->parameters.sphere, position,
+                                  direction, owner);
+  }
+#endif
+#if GGEMS_SPHERE_INTEGER
+  if (volume->kind == GGEMS_ANALYTIC_SPHERE) {
+#if GGEMS_SPHERE_INTEGER == 64
+    return GGEMS_SphereINT64Locate(&volume->parameters.sphere, position,
+                                   direction, owner);
+#else
+    return GGEMS_SphereINT32Locate(&volume->parameters.sphere, position,
+                                   direction, owner);
+#endif
   }
 #endif
   *owner = GGEMS_NavigationLocate(&volume->parameters.box,
@@ -115,6 +166,9 @@ GGEMS_AnalyticFindBoundary(__global GGEMSWorldRecord const *world,
                            __global void const *box_pose, long3 position,
                            float3 direction, uint current_owner,
                            uint last_event, GGEMSAnalyticBoundary *result) {
+#if !GGEMS_ENABLE_FP64_NAVIGATION
+  (void)box_pose;
+#endif
 #if GGEMS_ENABLE_FP64_NAVIGATION
   if (volume->kind == GGEMS_ANALYTIC_ROTATED_BOX) {
     return GGEMS_RotatedBoxFindBoundary(
@@ -123,6 +177,7 @@ GGEMS_AnalyticFindBoundary(__global GGEMSWorldRecord const *world,
       current_owner, last_event, &result->boundary, &result->parameter);
   }
 
+#if !GGEMS_SPHERE_FP32 && !GGEMS_SPHERE_INTEGER
   if (volume->kind == GGEMS_ANALYTIC_SPHERE) {
     uint status = GGEMS_NavigationFindBoundary(
       world, &volume->parameters.box, 0U, position, direction,
@@ -139,6 +194,42 @@ GGEMS_AnalyticFindBoundary(__global GGEMSWorldRecord const *world,
     return GGEMS_SphereFindBoundary(&volume->parameters.sphere, position,
                                     direction, current_owner, last_event,
                                     &result->boundary, &result->parameter);
+  }
+#endif
+#endif
+#if GGEMS_SPHERE_FP32
+  if (volume->kind == GGEMS_ANALYTIC_SPHERE) {
+    uint status = GGEMS_NavigationFindBoundary(
+      world, &volume->parameters.box, 0U, position, direction,
+      GGEMS_VOLUME_ID_WORLD, &result->boundary);
+    if (status != GGEMS_NAVIGATION_RESOLVED) {
+      return status;
+    }
+    result->sphere_parameter =
+      ldexp((float)result->boundary.gap_pm / (float)result->boundary.mantissa,
+            -result->boundary.exponent);
+    return GGEMS_SphereFP32FindBoundary(
+      &volume->parameters.sphere, position, direction, current_owner,
+      last_event, &result->boundary, &result->sphere_parameter);
+  }
+#endif
+#if GGEMS_SPHERE_INTEGER
+  if (volume->kind == GGEMS_ANALYTIC_SPHERE) {
+    result->sphere_integer = (GGEMSSphereIntegerBoundary){
+      0UL, 0UL, (int3)(0), 0U, 0U, GGEMS_SPHERE_INTEGER_OK};
+    uint status = GGEMS_NavigationFindBoundary(
+      world, &volume->parameters.box, 0U, position, direction,
+      GGEMS_VOLUME_ID_WORLD, &result->boundary);
+    if (status != GGEMS_NAVIGATION_RESOLVED) {
+      return status;
+    }
+#if GGEMS_SPHERE_INTEGER == 64
+    return GGEMS_SphereINT64FindBoundary(
+#else
+    return GGEMS_SphereINT32FindBoundary(
+#endif
+      &volume->parameters.sphere, position, direction, current_owner,
+      last_event, &result->boundary, &result->sphere_integer);
   }
 #endif
   return GGEMS_NavigationFindBoundary(

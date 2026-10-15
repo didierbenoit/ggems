@@ -19,3 +19,6 @@ add_dependencies(validation validation_source)
 
 add_subdirectory(radioactivity)
 add_dependencies(validation validation_radioactivity)
+
+# Explicit E1 observation target; not an accuracy acceptance test.
+add_subdirectory(performance/sphere_precision)

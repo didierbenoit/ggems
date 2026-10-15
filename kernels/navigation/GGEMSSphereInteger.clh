@@ -1,0 +1,278 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Supplies bounded integer Sphere arithmetic and transient evidence.
+ *
+ * Unsigned two-limb products are exact, with the low limb first. Limb carry
+ * arithmetic deliberately uses unsigned modulo operations; admitted complete
+ * values never overflow 128 bits. There is no floating arithmetic here: the
+ * stored direction is consumed only through its binary32 representation.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_SPHERE_INTEGER_CLH
+/*! \brief Prevents repeated inclusion of integer Sphere evidence helpers. */
+#define GGEMS_SPHERE_INTEGER_CLH
+
+#include "geometry/GGEMSAnalyticVolumeRecord.clh"
+#include "navigation/GGEMSNavigation.clh"
+#include "navigation/GGEMSWorldNavigation.clh"
+
+/*! \brief Inputs and any selected Sphere event are supported. */
+#define GGEMS_SPHERE_INTEGER_OK 0U
+/*! \brief A relative coordinate is outside the published working range. */
+#define GGEMS_SPHERE_INTEGER_POSITION_DOMAIN 1U
+/*! \brief The radius is outside the published working range. */
+#define GGEMS_SPHERE_INTEGER_RADIUS_DOMAIN 2U
+/*! \brief A direction component is nonfinite or outside [-4,4]. */
+#define GGEMS_SPHERE_INTEGER_DIRECTION_DOMAIN 3U
+/*! \brief Every direction component rounds to zero. */
+#define GGEMS_SPHERE_INTEGER_ZERO_DIRECTION 4U
+/*! \brief The quantized ray has no positive chord for a known inside owner. */
+#define GGEMS_SPHERE_INTEGER_OWNERSHIP 5U
+/*! \brief The selected root is negative or its positive exit rounds to zero. */
+#define GGEMS_SPHERE_INTEGER_ROOT 6U
+/*! \brief The Sphere parameter is not strictly before the exact World exit. */
+#define GGEMS_SPHERE_INTEGER_WORLD_ORDER 7U
+
+/*! \brief Admitted working inputs, also observable by the E2 probe. */
+typedef struct GGEMSSphereIntegerInputs {
+  /*! \brief Relative coordinates in the profile's spatial ticks. */
+  long3 position;
+  /*! \brief Radius in the same spatial ticks. */
+  ulong radius;
+  /*! \brief Direction multiplied by 2^direction_shift and rounded. */
+  int3 direction;
+  /*! \brief Actual preflight failure, or GGEMS_SPHERE_INTEGER_OK. */
+  uint reason;
+} GGEMSSphereIntegerInputs;
+
+/*! \brief Rational Sphere displacement; never part of persistent particle ABI.
+ */
+typedef struct GGEMSSphereIntegerBoundary {
+  /*! \brief Nonnegative root numerator, already scaled to pm. */
+  ulong numerator;
+  /*! \brief Positive squared integer direction norm. */
+  ulong denominator;
+  /*! \brief Integer direction used for this selected event. */
+  int3 direction;
+  /*! \brief Binary32 direction was quantized in units of 2^-direction_shift. */
+  uint direction_shift;
+  /*! \brief Original solver spatial tick was 2^spatial_shift pm. */
+  uint spatial_shift;
+  /*! \brief Actual query failure, or GGEMS_SPHERE_INTEGER_OK. */
+  uint reason;
+} GGEMSSphereIntegerBoundary;
+
+/*!
+ * \brief Quantizes finite components in [-4,4], nearest with ties away.
+ * \param[in] direction Stored binary32 ray, never normalized.
+ * \param[in] fixed_shift Profile binary scale, 12 or 17.
+ * \param[out] quantized Signed integer direction, valid only on success.
+ * \return Domain/zero-direction reason or GGEMS_SPHERE_INTEGER_OK.
+ */
+static inline uint GGEMS_SphereIntegerDirection(float3 direction,
+                                                uint fixed_shift,
+                                                int3 *quantized) {
+  *quantized = (int3)(0);
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    uint bits = as_uint(direction[axis]);
+    if ((bits & 0x7FFFFFFFU) > 0x40800000U) {
+      return GGEMS_SPHERE_INTEGER_DIRECTION_DOMAIN;
+    }
+    GGEMSWorldDirection component = GGEMS_WorldDecodeDirection(direction[axis]);
+    uint right = (uint)(-component.exponent - (int)fixed_shift);
+    uint magnitude =
+      right > 24U ? 0U : (component.mantissa + (1U << (right - 1U))) >> right;
+    (*quantized)[axis] =
+      component.negative != 0U ? -(int)magnitude : (int)magnitude;
+  }
+  return any(*quantized != (int3)(0)) ? GGEMS_SPHERE_INTEGER_OK
+                                      : GGEMS_SPHERE_INTEGER_ZERO_DIRECTION;
+}
+
+/*!
+ * \brief Forms the exact 128-bit product using four 32-bit partial products.
+ * \param[in] a First unsigned factor.
+ * \param[in] b Second unsigned factor.
+ * \return Full unsigned product, low limb first.
+ */
+static inline ulong2 GGEMS_SphereIntegerProduct(ulong a, ulong b) {
+  ulong low = (a & 0xFFFFFFFFUL) * (b & 0xFFFFFFFFUL);
+  ulong middle = (a >> 32U) * (b & 0xFFFFFFFFUL) + (low >> 32U);
+  ulong high = middle >> 32U;
+  middle = (middle & 0xFFFFFFFFUL) + (a & 0xFFFFFFFFUL) * (b >> 32U);
+  return (ulong2)((middle << 32U) | (low & 0xFFFFFFFFUL),
+                  (a >> 32U) * (b >> 32U) + high + (middle >> 32U));
+}
+
+/*!
+ * \brief Adds two nonnegative values whose sum is representable in 128 bits.
+ * \param[in] a First addend, low limb first.
+ * \param[in] b Second addend, low limb first.
+ * \return Exact sum.
+ */
+static inline ulong2 GGEMS_SphereIntegerAdd(ulong2 a, ulong2 b) {
+  ulong low = a.x + b.x;
+  return (ulong2)(low, a.y + b.y + (ulong)(low < a.x));
+}
+
+/*!
+ * \brief Subtracts ordered unsigned two-limb values.
+ * \param[in] a Minuend, at least b.
+ * \param[in] b Subtrahend.
+ * \return Exact nonnegative difference.
+ */
+static inline ulong2 GGEMS_SphereIntegerSubtract(ulong2 a, ulong2 b) {
+  return (ulong2)(a.x - b.x, a.y - b.y - (ulong)(a.x < b.x));
+}
+
+/*!
+ * \brief Orders two unsigned two-limb values.
+ * \param[in] a First value.
+ * \param[in] b Second value.
+ * \return -1, 0, or 1.
+ */
+static inline int GGEMS_SphereIntegerCompare(ulong2 a, ulong2 b) {
+  return a.y != b.y ? (a.y < b.y ? -1 : 1)
+                    : (int)(a.x > b.x) - (int)(a.x < b.x);
+}
+
+/*!
+ * \brief Aligns a nonzero value to bit 127 without losing information.
+ * \param[in] value Unsigned two-limb value.
+ * \param[in] length Its binary length, in [1,128].
+ * \return Left-aligned value.
+ */
+static inline ulong2 GGEMS_SphereIntegerNormalize(ulong2 value, int length) {
+  int shift = 128 - length;
+  if (shift == 0) {
+    return value;
+  }
+  if (shift >= 64) {
+    return (ulong2)(0UL, value.x << (shift - 64));
+  }
+  return (ulong2)(value.x << shift,
+                  (value.y << shift) | (value.x >> (64 - shift)));
+}
+
+/*!
+ * \brief Compares arbitrary unsigned 128-bit values with binary scales.
+ * \param[in] a First integer.
+ * \param[in] exponent Binary exponent applied to a; b is unscaled.
+ * \param[in] b Second integer.
+ * \return -1, 0, or 1 according to a*2^exponent versus b.
+ */
+static inline int GGEMS_SphereIntegerCompareScaled(ulong2 a, int exponent,
+                                                   ulong2 b) {
+  int a_length = GGEMS_WorldBitLength(a);
+  int b_length = GGEMS_WorldBitLength(b);
+  if (a_length == 0 || b_length == 0) {
+    return (a_length != 0) - (b_length != 0);
+  }
+  if (a_length + exponent != b_length) {
+    return a_length + exponent < b_length ? -1 : 1;
+  }
+  return GGEMS_SphereIntegerCompare(GGEMS_SphereIntegerNormalize(a, a_length),
+                                    GGEMS_SphereIntegerNormalize(b, b_length));
+}
+
+/*!
+ * \brief Computes floor(sqrt(value)) for a value below 2^124.
+ *
+ * At most 62 restoring bit-pair steps. The partial remainder and trial fit
+ * 64 bits under this bound; no software multiword division is used.
+ * \param[in] value Unsigned discriminant below 2^124, low limb first.
+ * \return Integer floor of its square root.
+ */
+static inline ulong GGEMS_SphereIntegerSqrt(ulong2 value) {
+  ulong root = 0UL;
+  ulong remainder = 0UL;
+  int pairs = (GGEMS_WorldBitLength(value) + 1) / 2;
+  for (int pair = pairs - 1; pair >= 0; --pair) {
+    uint bit = (uint)(2 * pair);
+    ulong digit =
+      bit >= 64U ? (value.y >> (bit - 64U)) & 3UL : (value.x >> bit) & 3UL;
+    remainder = (remainder << 2U) | digit;
+    root <<= 1U;
+    ulong trial = (root << 1U) | 1UL;
+    if (remainder >= trial) {
+      remainder -= trial;
+      ++root;
+    }
+  }
+  return root;
+}
+
+/*!
+ * \brief Orders a nonnegative Sphere root against the unchanged exact World
+ * ray.
+ *
+ * The integer ray uses Dint*2^-direction_shift. Its common ray parameter is
+ * numerator*2^direction_shift/denominator pm. A failed strict World ordering
+ * remains unresolved. The packet's numerator already includes spatial scale.
+ * \param[in] sphere Immutable identities.
+ * \param[in] current_owner Known physical departure VolumeID.
+ * \param[in] numerator Nonnegative root numerator in pm.
+ * \param[in] denominator Positive squared integer direction norm.
+ * \param[in] direction Quantized direction.
+ * \param[in] direction_shift Direction scale exponent.
+ * \param[in] spatial_shift Solver spatial scale exponent, for observation.
+ * \param[in,out] witness Exact World witness on entry; selected Sphere event.
+ * \param[out] result Rational movement evidence or failure reason.
+ * \return Resolved or unresolved.
+ */
+static inline uint GGEMS_SphereIntegerSelect(
+  __global GGEMSSphereRecord const *sphere, uint current_owner, ulong numerator,
+  ulong denominator, int3 direction, uint direction_shift, uint spatial_shift,
+  GGEMSBoundaryWitness *witness, GGEMSSphereIntegerBoundary *result) {
+  result->numerator = numerator;
+  result->denominator = denominator;
+  result->direction = direction;
+  result->direction_shift = direction_shift;
+  result->spatial_shift = spatial_shift;
+  result->reason = GGEMS_SPHERE_INTEGER_OK;
+  ulong2 sphere_product =
+    GGEMS_SphereIntegerProduct(numerator, (ulong)witness->mantissa);
+  ulong2 world_product =
+    GGEMS_SphereIntegerProduct(witness->gap_pm, denominator);
+  if (GGEMS_SphereIntegerCompareScaled(sphere_product,
+                                       witness->exponent + (int)direction_shift,
+                                       world_product) >= 0) {
+    result->reason = GGEMS_SPHERE_INTEGER_WORLD_ORDER;
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+  uint inside = current_owner == sphere->volume_id;
+  witness->faces = 0U;
+  witness->event = inside != 0U ? GGEMS_NAVIGATION_EVENT_VOLUME_EXIT
+                                : GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY;
+  witness->arrival_volume_id =
+    inside != 0U ? GGEMS_VOLUME_ID_WORLD : sphere->volume_id;
+  witness->arrival_material_id =
+    inside != 0U ? GGEMS_MATERIAL_ID_WORLD : sphere->material_id;
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+#endif

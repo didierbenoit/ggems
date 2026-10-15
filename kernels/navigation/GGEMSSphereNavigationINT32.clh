@@ -1,0 +1,212 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Bounded native-integer local Sphere experiment.
+ *
+ * Coordinates/radius use a 2^24-pm grid, nearest with half away from zero.
+ * Direction uses Q12 with the same tie rule. Local magnitudes are <=32767;
+ * direction magnitudes are <=16384. A and B fit int32, C and B*B-A*C fit
+ * int64: |B*B|+|A*C| < 18*2^58 < 2^63. The root is floor integer sqrt;
+ * its rational parameter is retained through canonical endpoint rounding.
+ * No epsilon, correction, normalization, or floating fallback is used.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+#ifndef GGEMS_SPHERE_NAVIGATION_INT32_CLH
+/*! \brief Include guard for the bounded local integer Sphere candidate. */
+#define GGEMS_SPHERE_NAVIGATION_INT32_CLH
+
+#include "navigation/GGEMSSphereInteger.clh"
+
+/*! \brief Binary exponent of the local spatial quantum in picometers. */
+#define GGEMS_SPHERE_INT32_POSITION_SHIFT 24U
+/*! \brief Fractional bits in the local candidate's fixed-point direction. */
+#define GGEMS_SPHERE_INT32_DIRECTION_SHIFT 12U
+
+/*!
+ * \brief Converts canonical relative inputs to the published bounded grid.
+ * \param[in] sphere Canonical Sphere parameters.
+ * \param[in] position Canonical global point, validated against the World.
+ * \param[in] direction Stored binary32 direction.
+ * \return Quantized inputs, or an explicit unsupported-domain reason.
+ */
+static inline GGEMSSphereIntegerInputs
+GGEMS_SphereINT32Preflight(__global GGEMSSphereRecord const *sphere,
+                           long3 position, float3 direction) {
+  GGEMSSphereIntegerInputs result;
+  result.position = position - (long3)(sphere->center_x_pm, sphere->center_y_pm,
+                                       sphere->center_z_pm);
+  result.radius = sphere->radius_pm;
+  result.direction = (int3)(0);
+  result.reason = GGEMS_SPHERE_INTEGER_OK;
+  ulong const half_tick = 1UL << (GGEMS_SPHERE_INT32_POSITION_SHIFT - 1U);
+  ulong const largest =
+    (32767UL << GGEMS_SPHERE_INT32_POSITION_SHIFT) + half_tick - 1UL;
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    if (abs(result.position[axis]) > largest) {
+      result.reason = GGEMS_SPHERE_INTEGER_POSITION_DOMAIN;
+      return result;
+    }
+  }
+  if (result.radius > largest || result.radius < half_tick) {
+    result.reason = GGEMS_SPHERE_INTEGER_RADIUS_DOMAIN;
+    return result;
+  }
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    int magnitude = (int)((abs(result.position[axis]) + half_tick) >>
+                          GGEMS_SPHERE_INT32_POSITION_SHIFT);
+    result.position[axis] = result.position[axis] < 0L ? -magnitude : magnitude;
+  }
+  result.radius =
+    (result.radius + half_tick) >> GGEMS_SPHERE_INT32_POSITION_SHIFT;
+  result.reason = GGEMS_SphereIntegerDirection(
+    direction, GGEMS_SPHERE_INT32_DIRECTION_SHIFT, &result.direction);
+  return result;
+}
+
+/*!
+ * \brief Returns floor(sqrt(value)) using at most 32 native bit-pair steps.
+ * \param[in] value Nonnegative discriminant.
+ * \return Unsigned floor square root.
+ */
+static inline ulong GGEMS_SphereINT32Sqrt(ulong value) {
+  ulong result = 0UL;
+  ulong bit = 1UL << 62U;
+  while (bit > value) {
+    bit >>= 2U;
+  }
+  while (bit != 0UL) {
+    if (value >= result + bit) {
+      value -= result + bit;
+      result = (result >> 1U) + bit;
+    } else {
+      result >>= 1U;
+    }
+    bit >>= 2U;
+  }
+  return result;
+}
+
+/*!
+ * \brief Computes the local quadratic coefficients with bounded widths.
+ * \param[in] inputs Successful preflight result.
+ * \param[out] a Direction squared norm.
+ * \param[out] b Position-direction dot product.
+ * \param[out] c Squared position minus squared radius.
+ */
+static inline void
+GGEMS_SphereINT32Coefficients(GGEMSSphereIntegerInputs inputs, int *a, int *b,
+                              long *c) {
+  int3 offset = convert_int3(inputs.position);
+  int3 direction = inputs.direction;
+  *a = direction.x * direction.x + direction.y * direction.y +
+       direction.z * direction.z;
+  *b = offset.x * direction.x + offset.y * direction.y + offset.z * direction.z;
+  *c = (long)offset.x * offset.x + (long)offset.y * offset.y +
+       (long)offset.z * offset.z - (long)(inputs.radius * inputs.radius);
+}
+
+/*!
+ * \brief Selects forward ownership in the quantized local geometry.
+ * \param[in] sphere Canonical Sphere parameters.
+ * \param[in] position Canonical global point.
+ * \param[in] direction Stored binary32 direction.
+ * \param[out] owner Packed VolumeID/MaterialID on success.
+ * \return Resolved, or unresolved outside the integer input domain.
+ */
+static inline uint
+GGEMS_SphereINT32Locate(__global GGEMSSphereRecord const *sphere,
+                        long3 position, float3 direction, ulong *owner) {
+  GGEMSSphereIntegerInputs inputs =
+    GGEMS_SphereINT32Preflight(sphere, position, direction);
+  if (inputs.reason != GGEMS_SPHERE_INTEGER_OK) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+  int a = 0;
+  int b = 0;
+  long c = 0L;
+  GGEMS_SphereINT32Coefficients(inputs, &a, &b, &c);
+  uint inside = c < 0L || (c == 0L && b < 0);
+  *owner = inside != 0U
+             ? ((ulong)sphere->volume_id << 32U) | sphere->material_id
+             : ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+/*!
+ * \brief Selects a forward root of the bounded local integer quadratic.
+ * \param[in] sphere Canonical Sphere parameters.
+ * \param[in] position Canonical global anchor.
+ * \param[in] direction Stored binary32 direction.
+ * \param[in] current_owner Accepted departure owner.
+ * \param[in] last_event Last accepted event in this straight flight.
+ * \param[in,out] witness Exact World exit, replaced by a Sphere event.
+ * \param[out] result Rational movement parameter and failure reason.
+ * \return Resolved, or unresolved for unsupported inputs or roots.
+ */
+static inline uint GGEMS_SphereINT32FindBoundary(
+  __global GGEMSSphereRecord const *sphere, long3 position, float3 direction,
+  uint current_owner, uint last_event, GGEMSBoundaryWitness *witness,
+  GGEMSSphereIntegerBoundary *result) {
+  result->reason = GGEMS_SPHERE_INTEGER_OK;
+  if (last_event == GGEMS_NAVIGATION_EVENT_VOLUME_EXIT &&
+      current_owner == GGEMS_VOLUME_ID_WORLD) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+  GGEMSSphereIntegerInputs inputs =
+    GGEMS_SphereINT32Preflight(sphere, position, direction);
+  result->reason = inputs.reason;
+  if (inputs.reason != GGEMS_SPHERE_INTEGER_OK) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+  int a = 0;
+  int b = 0;
+  long c = 0L;
+  GGEMS_SphereINT32Coefficients(inputs, &a, &b, &c);
+  uint inside = current_owner == sphere->volume_id;
+  if (inside == 0U && b >= 0) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+  long discriminant = (long)b * b - (long)a * c;
+  if (discriminant <= 0L) {
+    if (inside != 0U) {
+      result->reason = GGEMS_SPHERE_INTEGER_OWNERSHIP;
+      return GGEMS_NAVIGATION_UNRESOLVED;
+    }
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+  long root = (long)GGEMS_SphereINT32Sqrt((ulong)discriminant);
+  long numerator = -(long)b + (inside != 0U ? root : -root);
+  if (numerator < 0L || (inside != 0U && numerator == 0L)) {
+    result->reason = GGEMS_SPHERE_INTEGER_ROOT;
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+  return GGEMS_SphereIntegerSelect(
+    sphere, current_owner,
+    (ulong)numerator << GGEMS_SPHERE_INT32_POSITION_SHIFT, (ulong)a,
+    inputs.direction, GGEMS_SPHERE_INT32_DIRECTION_SHIFT,
+    GGEMS_SPHERE_INT32_POSITION_SHIFT, witness, result);
+}
+
+#endif

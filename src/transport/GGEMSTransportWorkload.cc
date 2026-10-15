@@ -46,6 +46,7 @@
 #include "GGEMS/observer/GGEMSObserverCounterArithmetic.hh"
 #include "GGEMS/opencl/GGEMSOpenCLLaunchGeometry.hh"
 #include "GGEMS/GGEMSException.hh"
+#include "GGEMS/logging/GGEMSLogMacros.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/sources/GGEMSSourceRecord.hh"
 #include "GGEMS/sources/GGEMSEnergyDistributionRecord.hh"
@@ -477,12 +478,19 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   auto const pose =
     world != nullptr ? world->BuildBoxPoseRecord() : std::nullopt;
 
+  bool const sphere_fp32 =
+    volume.kind == geometry::GGEMSAnalyticKind::Sphere && GGEMS_SPHERE_FP32;
+  int const sphere_integer = volume.kind == geometry::GGEMSAnalyticKind::Sphere
+                               ? GGEMS_SPHERE_INTEGER
+                               : 0;
   bool const needs_fp64 =
     volume.kind == geometry::GGEMSAnalyticKind::RotatedBox ||
-    volume.kind == geometry::GGEMSAnalyticKind::Sphere;
+    (volume.kind == geometry::GGEMSAnalyticKind::Sphere && !sphere_fp32 &&
+     sphere_integer == 0);
   if (needs_fp64 && context.GetDevice().GetDoubleFpConfig() == 0U) {
     throw GGEMSRecoverable(
-      "Sphere and rotated Box navigation require OpenCL FP64 support.");
+      "The selected Sphere/rotated Box navigation profile requires OpenCL "
+      "FP64 support.");
   }
   if (pose.has_value()) {
     box_pose_buffer_.emplace(context.CreateSVMBuffer(
@@ -490,10 +498,12 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
     ggems::ocl::WriteSVMFromHost(*box_pose_buffer_, *pose);
   }
 
-  std::string build_options = std::format("-I{} {} "
-                                          "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
-                                          kernel_root.generic_string(),
-                                          random.GetKernelBuildDefinition());
+  std::string build_options =
+    std::format("-I{} {} "
+                "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=1 "
+                "-DGGEMS_SPHERE_FP32={} -DGGEMS_SPHERE_INTEGER={}",
+                kernel_root.generic_string(), random.GetKernelBuildDefinition(),
+                static_cast<int>(sphere_fp32), sphere_integer);
   if (needs_fp64) {
     build_options += " -DGGEMS_ENABLE_FP64_NAVIGATION=1";
   }
@@ -768,6 +778,31 @@ auto GGEMSTransportWorkload::Run(GGEMSTransportRunConfig const &config)
     profiler.RecordKernelEvent(event);
 
     TransportCounters const counters = ReadCountersFromSVM();
+    GGEMS_INFOEX(
+      "Core", 2,
+      "Transport chunk counters: run_id={}, context_index={}, device='{}', "
+      "sphere_profile='{}', sphere_profile_fp32={}, sphere_profile_integer={}, "
+      "primary_offset={}, assigned_primaries={}, "
+      "workers={}, "
+      "global_size={}, local_size={}, kernel_time_ps={}, "
+      "next_primary_id={}, consumed_primary_count={}, "
+      "completed_history_count={}, terminal_particle_count={}, "
+      "created_secondary_count={}, aionino_to_gamma_count={}, "
+      "gamma_to_electron_count={}, electron_to_electron_count={}, "
+      "overflow_count={}, max_stack_depth={}, total_fake_step_count={}, "
+      "outside_world_count={}, unresolved_geometry_count={}, "
+      "escaped_world_count={}.",
+      config.run_id, context_index_, device_name_, GGEMS_SPHERE_PROFILE,
+      GGEMS_SPHERE_FP32, GGEMS_SPHERE_INTEGER, chunk.device_primary_offset,
+      chunk.primary_count, worker_count_, global_size, k_local_size,
+      profiler.GetKernelTime().value, counters.next_primary_id,
+      counters.consumed_primary_count, counters.completed_history_count,
+      counters.terminal_particle_count, counters.created_secondary_count,
+      counters.aionino_to_gamma_count, counters.gamma_to_electron_count,
+      counters.electron_to_electron_count, counters.overflow_count,
+      counters.max_stack_depth, counters.total_fake_step_count,
+      counters.outside_world_count, counters.unresolved_geometry_count,
+      counters.escaped_world_count);
     ObserverCounters const observer_counters = ReadObserverCountersFromSVM();
     std::vector<ObserverRecord> observer_records =
       ReadObserverRecordsFromSVM(observer_counters.record_count);

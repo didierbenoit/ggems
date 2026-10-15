@@ -300,6 +300,8 @@ auto GGEMSOpenCLProgram::BuildOptions() const -> std::vector<std::string> {
 #ifdef GGEMS_DEBUG_MODE
   opts.emplace_back("-g");
   opts.emplace_back("-cl-opt-disable");
+#else
+  opts.emplace_back("-cl-fast-relaxed-math");
 #endif
 
   return opts;

@@ -104,6 +104,113 @@ static __attribute__((noinline)) uint GGEMS_TransportMoveToBoundary(
   return 1U;
 }
 
+#if GGEMS_SPHERE_FP32
+/*!
+ * \brief Commits the E1 Sphere endpoint using FP32 displacement arithmetic.
+ *
+ * Retains the integer global anchor and the existing final-coordinate rounding
+ * rule. Arithmetic is direct binary32, with no compensation or position repair.
+ * All coordinates succeed before commit; energy, time and direction are
+ * unchanged.
+ * \param[in] parameter Nonnegative FP32 ray parameter in pm.
+ * \param[in,out] particle Private particle, unchanged on failure.
+ * \return Nonzero on success; zero for an unrepresentable displacement.
+ */
+static __attribute__((noinline)) uint GGEMS_TransportMoveToSphereFP32Boundary(
+  float parameter, GGEMSParticleState *particle) {
+  long3 position = (long3)(particle->position_x_pm, particle->position_y_pm,
+                           particle->position_z_pm);
+  float3 direction = (float3)(particle->direction_x, particle->direction_y,
+                               particle->direction_z);
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    float displacement = parameter * direction[axis];
+    if (!isfinite(displacement) || fabs(displacement) >= 0x1p63f) {
+      return 0U;
+    }
+    long integral = convert_long_rtz(displacement);
+    float fraction = displacement - (float)integral;
+    if ((integral > 0L && position[axis] > LONG_MAX - integral) ||
+        (integral < 0L && position[axis] < LONG_MIN - integral)) {
+      return 0U;
+    }
+    long coordinate = position[axis] + integral;
+    long adjustment =
+      fraction > 0.5f || (fraction == 0.5f && coordinate >= 0L)     ? 1L
+      : fraction < -0.5f || (fraction == -0.5f && coordinate <= 0L) ? -1L
+                                                                    : 0L;
+    if ((coordinate == LONG_MAX && adjustment > 0L) ||
+        (coordinate == LONG_MIN && adjustment < 0L)) {
+      return 0U;
+    }
+    position[axis] = coordinate + adjustment;
+  }
+  particle->position_x_pm = position.x;
+  particle->position_y_pm = position.y;
+  particle->position_z_pm = position.z;
+  return 1U;
+}
+#endif
+
+#if GGEMS_SPHERE_INTEGER
+/*!
+ * \brief Commits a rational integer Sphere displacement on the global lattice.
+ *
+ * Dividing the numerator first avoids multiword division: n/A=q+r/A, so each
+ * axis is q*Dint+(r*Dint)/A. In the admitted profiles r*|Dint|<2^59 and the
+ * full integral displacement is <2^45 pm. The exact residual rounds the final
+ * signed global coordinate nearest with ties away. All coordinates must remain
+ * in the closed World before commit; this reports an invalid candidate instead
+ * of repairing its position. Persistent direction and other state are
+ * unchanged.
+ * \param[in] world Exact World bounds, unchanged by the integer approximation.
+ * \param[in] boundary Selected integer Sphere rational movement evidence.
+ * \param[in,out] particle Private particle, unchanged on failure.
+ * \return Nonzero on success; zero for an unrepresentable or outside endpoint.
+ */
+static __attribute__((noinline)) uint
+GGEMS_TransportMoveToSphereIntegerBoundary(
+  __global GGEMSWorldRecord const *world,
+  GGEMSSphereIntegerBoundary const *boundary, GGEMSParticleState *particle) {
+  long3 position = (long3)(particle->position_x_pm, particle->position_y_pm,
+                           particle->position_z_pm);
+  ulong quotient = boundary->numerator / boundary->denominator;
+  ulong remainder = boundary->numerator % boundary->denominator;
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    uint magnitude = abs(boundary->direction[axis]);
+    ulong product = remainder * (ulong)magnitude;
+    ulong displacement =
+      quotient * (ulong)magnitude + product / boundary->denominator;
+    ulong fraction = product % boundary->denominator;
+    long integral =
+      boundary->direction[axis] < 0 ? -(long)displacement : (long)displacement;
+    if ((integral > 0L && position[axis] > LONG_MAX - integral) ||
+        (integral < 0L && position[axis] < LONG_MIN - integral)) {
+      return 0U;
+    }
+    long coordinate = position[axis] + integral;
+    uint negative = boundary->direction[axis] < 0;
+    uint away = fraction * 2UL > boundary->denominator ||
+                (fraction * 2UL == boundary->denominator &&
+                 (negative != 0U ? coordinate <= 0L : coordinate >= 0L));
+    long adjustment = negative != 0U ? -(long)away : (long)away;
+    if ((coordinate == LONG_MAX && adjustment > 0L) ||
+        (coordinate == LONG_MIN && adjustment < 0L)) {
+      return 0U;
+    }
+    position[axis] = coordinate + adjustment;
+  }
+  long3 half_extent = (long3)(world->half_extent_x_pm, world->half_extent_y_pm,
+                              world->half_extent_z_pm);
+  if (any(position < -half_extent) || any(position > half_extent)) {
+    return 0U;
+  }
+  particle->position_x_pm = position.x;
+  particle->position_y_pm = position.y;
+  particle->position_z_pm = position.z;
+  return 1U;
+}
+#endif
+
 #if GGEMS_ENABLE_FP64_NAVIGATION
 /*!
  * \brief Commits a floating analytic endpoint once on the canonical global
@@ -210,19 +317,33 @@ static __attribute__((noinline)) uint GGEMS_TransportToNextBoundary(
 
   GGEMSBoundaryWitness witness = result.boundary;
 
-#if GGEMS_ENABLE_FP64_NAVIGATION
   uint moved =
+#if GGEMS_SPHERE_INTEGER
+    volume->kind == GGEMS_ANALYTIC_SPHERE &&
+        witness.event != GGEMS_NAVIGATION_EVENT_WORLD_EXIT
+      ? GGEMS_TransportMoveToSphereIntegerBoundary(
+          world, &result.sphere_integer, particle)
+    :
+#endif
+#if GGEMS_SPHERE_FP32
+    volume->kind == GGEMS_ANALYTIC_SPHERE &&
+        witness.event != GGEMS_NAVIGATION_EVENT_WORLD_EXIT
+      ? GGEMS_TransportMoveToSphereFP32Boundary(result.sphere_parameter,
+                                                particle)
+      :
+#endif
+#if GGEMS_ENABLE_FP64_NAVIGATION
     (volume->kind == GGEMS_ANALYTIC_NONE ||
      volume->kind == GGEMS_ANALYTIC_BOX ||
      witness.event == GGEMS_NAVIGATION_EVENT_WORLD_EXIT)
       ? GGEMS_TransportMoveToBoundary(witness.gap_pm, witness.mantissa,
                                       witness.exponent, particle)
       : GGEMS_TransportMoveToAnalyticBoundary(result.parameter, particle);
-  if (moved == 0U) {
 #else
-  if (GGEMS_TransportMoveToBoundary(witness.gap_pm, witness.mantissa,
-                                    witness.exponent, particle) == 0U) {
+    GGEMS_TransportMoveToBoundary(witness.gap_pm, witness.mantissa,
+                                  witness.exponent, particle);
 #endif
+  if (moved == 0U) {
     return GGEMS_NAVIGATION_UNRESOLVED;
   }
 

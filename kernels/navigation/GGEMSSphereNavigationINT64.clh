@@ -1,0 +1,198 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Provides the exact-pm bounded INT64 Sphere experiment.
+ *
+ * Relative coordinates and radius retain integer pm through |q_i|,R<=2^42.
+ * Direction components in [-4,4] are quantized to Q17, nearest with ties away.
+ * With |Dint_i|<=2^19, A<2^40 and |B|<2^63. The discriminant is evaluated as
+ * sum((R*Dint_i)^2)-sum((q cross Dint)_i^2) using exact unsigned 128-bit
+ * products. Each sum fits 128 bits, and a nonnegative discriminant is <2^124.
+ * Its floor integer square root defines the experimental root quantization;
+ * the remaining rational displacement is rounded only at endpoint commit.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_SPHERE_NAVIGATION_INT64_CLH
+/*! \brief Prevents repeated inclusion of the bounded INT64 Sphere solver. */
+#define GGEMS_SPHERE_NAVIGATION_INT64_CLH
+
+#include "navigation/GGEMSSphereInteger.clh"
+
+/*! \brief Retains the canonical one-pm spatial tick. */
+#define GGEMS_SPHERE_INT64_POSITION_SHIFT 0U
+/*! \brief Quantizes direction in units of 2^-17. */
+#define GGEMS_SPHERE_INT64_DIRECTION_SHIFT 17U
+
+/*!
+ * \brief Admits exact relative pm and a bounded Q17 direction.
+ * \param[in] sphere Immutable Sphere inside the validated World.
+ * \param[in] position Canonical point already validated against the World.
+ * \param[in] direction Stored binary32 direction.
+ * \return Exact working coordinates and explicit preflight reason.
+ */
+static inline GGEMSSphereIntegerInputs
+GGEMS_SphereINT64Preflight(__global GGEMSSphereRecord const *sphere,
+                           long3 position, float3 direction) {
+  GGEMSSphereIntegerInputs result;
+  // World bounds make this subtraction signed-safe before the tighter check.
+  result.position = position - (long3)(sphere->center_x_pm, sphere->center_y_pm,
+                                       sphere->center_z_pm);
+  result.radius = sphere->radius_pm;
+  result.direction = (int3)(0);
+  result.reason = GGEMS_SPHERE_INTEGER_OK;
+  if (any(abs(result.position) > (ulong3)(1UL << 42U))) {
+    result.reason = GGEMS_SPHERE_INTEGER_POSITION_DOMAIN;
+    return result;
+  }
+  if (result.radius == 0UL || result.radius > (1UL << 42U)) {
+    result.reason = GGEMS_SPHERE_INTEGER_RADIUS_DOMAIN;
+    return result;
+  }
+  result.reason = GGEMS_SphereIntegerDirection(
+    direction, GGEMS_SPHERE_INT64_DIRECTION_SHIFT, &result.direction);
+  return result;
+}
+
+/*!
+ * \brief Computes a bounded exact squared norm in two unsigned limbs.
+ * \param[in] vector Signed components with magnitudes no greater than 2^62.
+ * \return Exact sum of three squares, below 3*2^124.
+ */
+static inline ulong2 GGEMS_SphereINT64Norm(long3 vector) {
+  ulong3 magnitude = abs(vector);
+  return GGEMS_SphereIntegerAdd(
+    GGEMS_SphereIntegerAdd(
+      GGEMS_SphereIntegerProduct(magnitude.x, magnitude.x),
+      GGEMS_SphereIntegerProduct(magnitude.y, magnitude.y)),
+    GGEMS_SphereIntegerProduct(magnitude.z, magnitude.z));
+}
+
+/*!
+ * \brief Selects exact-pm forward ownership using the quantized direction.
+ * \param[in] sphere Immutable Sphere parameters and identities.
+ * \param[in] position Canonical global anchor inside the World.
+ * \param[in] direction Actual stored binary32 direction.
+ * \param[out] owner Packed forward VolumeID/MaterialID on success.
+ * \return Resolved or unresolved for an unsupported input domain.
+ */
+static inline uint
+GGEMS_SphereINT64Locate(__global GGEMSSphereRecord const *sphere,
+                        long3 position, float3 direction, ulong *owner) {
+  GGEMSSphereIntegerInputs inputs =
+    GGEMS_SphereINT64Preflight(sphere, position, direction);
+  if (inputs.reason != GGEMS_SPHERE_INTEGER_OK) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+  int radial = GGEMS_SphereIntegerCompare(
+    GGEMS_SphereINT64Norm(inputs.position),
+    GGEMS_SphereIntegerProduct(inputs.radius, inputs.radius));
+  long3 d = convert_long3(inputs.direction);
+  long b =
+    inputs.position.x * d.x + inputs.position.y * d.y + inputs.position.z * d.z;
+  uint inside = radial < 0 || (radial == 0 && b < 0L);
+  *owner = inside != 0U
+             ? ((ulong)sphere->volume_id << 32U) | sphere->material_id
+             : ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+/*!
+ * \brief Selects a bounded integer Sphere root without floating arithmetic.
+ *
+ * Exact tangency is a miss from World and unresolved for a known inside owner.
+ * A negative selected root or a zero positive-chord exit is unresolved; no
+ * radial reconciliation, epsilon, or fallback changes the calculation.
+ * \param[in] sphere Immutable Sphere parameters.
+ * \param[in] position Canonical global anchor.
+ * \param[in] direction Actual stored binary32 direction.
+ * \param[in] current_owner Known physical departure VolumeID.
+ * \param[in] last_event Last accepted event for this straight flight.
+ * \param[in,out] witness Exact World exit on entry; selected event on success.
+ * \param[out] result Rational movement evidence and query reason.
+ * \return Resolved or unresolved for domain, ownership, root, or World order.
+ */
+static inline uint GGEMS_SphereINT64FindBoundary(
+  __global GGEMSSphereRecord const *sphere, long3 position, float3 direction,
+  uint current_owner, uint last_event, GGEMSBoundaryWitness *witness,
+  GGEMSSphereIntegerBoundary *result) {
+  result->reason = GGEMS_SPHERE_INTEGER_OK;
+  if (last_event == GGEMS_NAVIGATION_EVENT_VOLUME_EXIT &&
+      current_owner == GGEMS_VOLUME_ID_WORLD) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+  GGEMSSphereIntegerInputs inputs =
+    GGEMS_SphereINT64Preflight(sphere, position, direction);
+  result->reason = inputs.reason;
+  if (inputs.reason != GGEMS_SPHERE_INTEGER_OK) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+  long3 q = inputs.position;
+  long3 d = convert_long3(inputs.direction);
+  ulong a = (ulong)(d.x * d.x + d.y * d.y + d.z * d.z);
+  long b = q.x * d.x + q.y * d.y + q.z * d.z;
+  uint inside = current_owner == sphere->volume_id;
+  if (inside == 0U && b >= 0L) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+  long3 cross = (long3)(q.y * d.z - q.z * d.y, q.z * d.x - q.x * d.z,
+                        q.x * d.y - q.y * d.x);
+  ulong2 radius_term = GGEMS_SphereINT64Norm((long)inputs.radius * d);
+  ulong2 impact_term = GGEMS_SphereINT64Norm(cross);
+  if (GGEMS_SphereIntegerCompare(radius_term, impact_term) <= 0) {
+    if (inside != 0U) {
+      result->reason = GGEMS_SPHERE_INTEGER_OWNERSHIP;
+      return GGEMS_NAVIGATION_UNRESOLVED;
+    }
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+  ulong root = GGEMS_SphereIntegerSqrt(
+    GGEMS_SphereIntegerSubtract(radius_term, impact_term));
+  ulong numerator;
+  if (inside != 0U) {
+    if (b >= 0L) {
+      if (root <= (ulong)b) {
+        result->reason = GGEMS_SPHERE_INTEGER_ROOT;
+        return GGEMS_NAVIGATION_UNRESOLVED;
+      }
+      numerator = root - (ulong)b;
+    } else {
+      // |B|+root < (3+sqrt(3))*2^61 < 2^64 in the admitted domain.
+      numerator = abs(b) + root;
+    }
+  } else {
+    if (root > abs(b)) {
+      result->reason = GGEMS_SPHERE_INTEGER_ROOT;
+      return GGEMS_NAVIGATION_UNRESOLVED;
+    }
+    numerator = abs(b) - root;
+  }
+  return GGEMS_SphereIntegerSelect(
+    sphere, current_owner, numerator, a, inputs.direction,
+    GGEMS_SPHERE_INT64_DIRECTION_SHIFT, GGEMS_SPHERE_INT64_POSITION_SHIFT,
+    witness, result);
+}
+
+#endif

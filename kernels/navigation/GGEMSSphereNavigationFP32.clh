@@ -1,0 +1,174 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Provides the direct FP32 Sphere candidate for the E1 comparison.
+ *
+ * Integer center subtraction precedes conversion to float. The candidate uses
+ * the stored float direction directly and q.q-R*R without compensation. It has
+ * no resolution band, canonical-rounding reconciliation band, precision
+ * fallback, or spatial acceptance threshold. Rounded-zero ambiguities retain
+ * UNRESOLVED unless an existing exact integer axis predicate resolves them.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_SPHERE_NAVIGATION_FP32_CLH
+#define GGEMS_SPHERE_NAVIGATION_FP32_CLH
+
+#include "geometry/GGEMSAnalyticVolumeRecord.clh"
+#include "navigation/GGEMSNavigation.clh"
+
+/*!
+ * \brief Locates the forward owner using uncompensated FP32 radial arithmetic.
+ * \param[in] sphere Immutable integer Sphere parameters and owner identities.
+ * \param[in] position Canonical point already validated against the World.
+ * \param[in] direction Actual stored direction.
+ * \param[out] owner Packed forward VolumeID/MaterialID on success.
+ * \return Resolved or unresolved when a rounded radial zero is ambiguous.
+ */
+static inline uint
+GGEMS_SphereFP32Locate(__global GGEMSSphereRecord const *sphere, long3 position,
+                       float3 direction, ulong *owner) {
+  long3 relative = position - (long3)(sphere->center_x_pm, sphere->center_y_pm,
+                                      sphere->center_z_pm);
+  float3 offset = convert_float3(relative);
+  float radius = (float)sphere->radius_pm;
+  float radial = dot(offset, offset) - radius * radius;
+  uint inside = radial < 0.0f;
+  if (radial == 0.0f) {
+    uint axis_surface = (relative.x == 0L && relative.y == 0L &&
+                         abs(relative.z) == sphere->radius_pm) ||
+                        (relative.x == 0L && relative.z == 0L &&
+                         abs(relative.y) == sphere->radius_pm) ||
+                        (relative.y == 0L && relative.z == 0L &&
+                         abs(relative.x) == sphere->radius_pm);
+    if (axis_surface == 0U) {
+      return GGEMS_NAVIGATION_UNRESOLVED;
+    }
+    inside = dot(offset, direction) < 0.0f;
+  }
+  *owner = inside != 0U
+             ? ((ulong)sphere->volume_id << 32U) | sphere->material_id
+             : ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+/*!
+ * \brief Selects the next Sphere crossing with direct FP32 arithmetic.
+ *
+ * Retains the reference impact-distance discriminant and Q/a, c/Q root
+ * ordering, with uncompensated c=q.q-R*R and no resolution or repair band.
+ * Known entry ownership selects the far root; a completed convex-volume exit
+ * cannot reenter with unchanged direction. Failed parameters remain unresolved.
+ * \param[in] sphere Immutable integer Sphere parameters.
+ * \param[in] position Canonical global anchor.
+ * \param[in] direction Actual stored finite direction.
+ * \param[in] current_owner Known physical departure VolumeID.
+ * \param[in] last_event Last accepted event for this straight flight.
+ * \param[in,out] witness Exact World exit on entry; selected event on success.
+ * \param[in,out] parameter FP32 World parameter on entry; selected parameter.
+ * \return Resolved or unresolved for ambiguous tangency or invalid ordering.
+ */
+static inline uint
+GGEMS_SphereFP32FindBoundary(__global GGEMSSphereRecord const *sphere,
+                             long3 position, float3 direction,
+                             uint current_owner, uint last_event,
+                             GGEMSBoundaryWitness *witness, float *parameter) {
+  if (last_event == GGEMS_NAVIGATION_EVENT_VOLUME_EXIT &&
+      current_owner == GGEMS_VOLUME_ID_WORLD) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+  long3 relative = position - (long3)(sphere->center_x_pm, sphere->center_y_pm,
+                                      sphere->center_z_pm);
+  float3 offset = convert_float3(relative);
+  float radius = (float)sphere->radius_pm;
+  float norm = length(direction);
+  float a = dot(direction, direction);
+  float b = dot(offset, direction);
+  float c = dot(offset, offset) - radius * radius;
+  // Finite stored directions can overflow or underflow FP32 intermediates.
+  // Report that arithmetic failure before sign tests can turn it into a miss.
+  if (!isfinite(a) || a == 0.0f || !isfinite(b)) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+  uint inside = current_owner == sphere->volume_id;
+  if (inside == 0U && b >= 0.0f) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+  float impact = length(cross(offset, direction)) / norm;
+  if (!isfinite(impact)) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+  float gap = radius - impact;
+  if (gap < 0.0f) {
+    return inside != 0U ? GGEMS_NAVIGATION_UNRESOLVED
+                        : GGEMS_NAVIGATION_RESOLVED;
+  }
+  if (gap == 0.0f) {
+    uint tangent = 0U;
+    for (uint axis = 0U; axis < 3U; ++axis) {
+      uint next = (axis + 1U) % 3U;
+      uint last = (axis + 2U) % 3U;
+      if (direction[axis] != 0.0f && direction[next] == 0.0f &&
+          direction[last] == 0.0f) {
+        tangent =
+          (relative[next] == 0L && abs(relative[last]) == sphere->radius_pm) ||
+          (relative[last] == 0L && abs(relative[next]) == sphere->radius_pm);
+      }
+    }
+    return inside == 0U && tangent != 0U ? GGEMS_NAVIGATION_RESOLVED
+                                         : GGEMS_NAVIGATION_UNRESOLVED;
+  }
+  float discriminant = a * gap * (radius + impact);
+  if (!isfinite(discriminant)) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+  float root = -b - copysign(sqrt(discriminant), b);
+  float first = root / a;
+  float second = c / root;
+  // fmin/fmax may select their finite operand when the other one is NaN.
+  if (!isfinite(first) || !isfinite(second)) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+  float near_parameter = fmin(first, second);
+  float far_parameter = fmax(first, second);
+  if (inside == 0U && far_parameter <= 0.0f) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+  float candidate = inside != 0U ? far_parameter : near_parameter;
+  if (!isfinite(candidate) || candidate < 0.0f || candidate >= *parameter) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+  *parameter = candidate;
+  witness->faces = 0U;
+  witness->event = inside != 0U ? GGEMS_NAVIGATION_EVENT_VOLUME_EXIT
+                                : GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY;
+  witness->arrival_volume_id =
+    inside != 0U ? GGEMS_VOLUME_ID_WORLD : sphere->volume_id;
+  witness->arrival_material_id =
+    inside != 0U ? GGEMS_MATERIAL_ID_WORLD : sphere->material_id;
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+#endif
