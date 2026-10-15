@@ -71,8 +71,9 @@ public:
    *
    * \param[in] yaw_degrees Yaw angle in degrees.
    * \param[in] pitch_degrees Pitch angle in degrees, clamped to [-85, 85].
+   * \throws std::bad_expected_access If an angle is not representable in Units.
    */
-  auto SetOrbitAngles(float yaw_degrees, float pitch_degrees) noexcept -> void;
+  auto SetOrbitAngles(float yaw_degrees, float pitch_degrees) -> void;
 
   /*!
    * \brief Sets the orthographic scale with a minimum of 0.05.
@@ -86,18 +87,20 @@ public:
    *
    * \param[in] delta_yaw_degrees Yaw increment in degrees.
    * \param[in] delta_pitch_degrees Pitch increment in degrees.
+   * \throws std::bad_expected_access If an increment is not representable in
+   * Units.
    */
-  auto Orbit(float delta_yaw_degrees, float delta_pitch_degrees) noexcept
-    -> void;
+  auto Orbit(float delta_yaw_degrees, float delta_pitch_degrees) -> void;
 
   /*!
    * \brief Converts a drag to orbit motion at 0.20 degrees per pixel.
    *
    * \param[in] delta_x_pixels Horizontal drag in logical pixels.
    * \param[in] delta_y_pixels Vertical drag in logical pixels.
+   * \throws std::bad_expected_access If the angular motion is not representable
+   * in Units.
    */
-  auto OrbitByPixels(float delta_x_pixels, float delta_y_pixels) noexcept
-    -> void;
+  auto OrbitByPixels(float delta_x_pixels, float delta_y_pixels) -> void;
 
   /*!
    * \brief Moves the target in the camera plane using the current zoom.

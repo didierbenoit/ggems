@@ -29,6 +29,7 @@
 #include <cmath>
 #include <cstdint>
 #include <numbers>
+#include <expected>
 #include <limits>
 #include <memory>
 #include <string>
@@ -51,6 +52,7 @@
 #include "GGEMS/sources/GGEMSEnergyDistribution.hh"
 #include "GGEMS/sources/GGEMSSourcePopulation.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 
 // =============================================================================
 // =============================================================================
@@ -305,50 +307,67 @@ TEST(GGEMSSource, BuildsOwnedActivityDrivenPopulationConfiguration) {
 
   {
     Source source{};
-    source.SetRadionuclide(radionuclide, ggems::units::Activity{k_activity_bq},
-                           k_reference_time_ps);
+    source.SetRadionuclide(
+      radionuclide,
+      ggems::units::MakeQuantity<ggems::units::Activity>(k_activity_bq, "Bq")
+        .value(),
+      k_reference_time_ps);
 
     owned_configuration = source.BuildActivityDrivenPopulationConfiguration();
     EXPECT_EQ(owned_configuration.radionuclide.get(), definition_address);
-    EXPECT_EQ(owned_configuration.activity_at_reference_time.value,
-              k_activity_bq);
+    EXPECT_EQ(
+      owned_configuration.activity_at_reference_time,
+      ggems::units::MakeQuantity<ggems::units::Activity>(k_activity_bq, "Bq")
+        .value());
     EXPECT_EQ(owned_configuration.reference_time_ps, k_reference_time_ps);
 
     {
       auto editable_configuration = owned_configuration;
       editable_configuration.radionuclide = replacement;
       editable_configuration.activity_at_reference_time =
-        ggems::units::Activity{99.0L};
+        ggems::units::MakeQuantity<ggems::units::Activity>(99.0L, "Bq").value();
       editable_configuration.reference_time_ps = 100ULL;
 
       auto const current_configuration =
         source.BuildActivityDrivenPopulationConfiguration();
       EXPECT_EQ(current_configuration.radionuclide.get(), definition_address);
-      EXPECT_EQ(current_configuration.activity_at_reference_time.value,
-                k_activity_bq);
+      EXPECT_EQ(
+        current_configuration.activity_at_reference_time,
+        ggems::units::MakeQuantity<ggems::units::Activity>(k_activity_bq, "Bq")
+          .value());
       EXPECT_EQ(current_configuration.reference_time_ps, k_reference_time_ps);
     }
 
     ExpectGGEMSExceptionContaining(
       [&source] -> void {
-        source.SetRadionuclide(nullptr, ggems::units::Activity{1.0L}, 99ULL);
+        source.SetRadionuclide(
+          nullptr,
+          ggems::units::MakeQuantity<ggems::units::Activity>(1.0L, "Bq")
+            .value(),
+          99ULL);
       },
       "ActivityDriven GGEMSSource requires a radionuclide definition.");
     EXPECT_EQ(owned_configuration.radionuclide.get(), definition_address);
-    EXPECT_EQ(owned_configuration.activity_at_reference_time.value,
-              k_activity_bq);
+    EXPECT_EQ(
+      owned_configuration.activity_at_reference_time,
+      ggems::units::MakeQuantity<ggems::units::Activity>(k_activity_bq, "Bq")
+        .value());
     EXPECT_EQ(owned_configuration.reference_time_ps, k_reference_time_ps);
 
-    EXPECT_NO_THROW(
-      source.SetRadionuclide(replacement, ggems::units::Activity{1.0L}, 0ULL));
+    EXPECT_NO_THROW(source.SetRadionuclide(
+      replacement,
+      ggems::units::MakeQuantity<ggems::units::Activity>(1.0L, "Bq").value(),
+      0ULL));
     radionuclide.reset();
     EXPECT_FALSE(retained.expired());
   }
 
   EXPECT_FALSE(retained.expired());
   EXPECT_EQ(owned_configuration.radionuclide.get(), definition_address);
-  EXPECT_EQ(owned_configuration.activity_at_reference_time.value,
-            k_activity_bq);
+  EXPECT_EQ(
+    owned_configuration.activity_at_reference_time,
+    ggems::units::MakeQuantity<ggems::units::Activity>(k_activity_bq, "Bq")
+      .value());
   EXPECT_EQ(owned_configuration.reference_time_ps, k_reference_time_ps);
 
   owned_configuration.radionuclide.reset();
@@ -395,8 +414,11 @@ TEST(GGEMSSource,
 
   auto radionuclide = MakeTestRadionuclide();
   ggems::core::sources::GGEMSSource source{};
-  source.SetRadionuclide(radionuclide, ggems::units::Activity{k_activity_bq},
-                         k_reference_before_start_ps);
+  source.SetRadionuclide(
+    radionuclide,
+    ggems::units::MakeQuantity<ggems::units::Activity>(k_activity_bq, "Bq")
+      .value(),
+    k_reference_before_start_ps);
   GGEMSTimeWindow const empty_window{
     .start_ps = k_window_start_ps,
     .stop_ps = k_window_start_ps,
@@ -413,7 +435,10 @@ TEST(GGEMSSource,
     auto const &configuration =
       source.BuildActivityDrivenPopulationConfiguration();
     EXPECT_EQ(configuration.radionuclide, radionuclide);
-    EXPECT_EQ(configuration.activity_at_reference_time.value, k_activity_bq);
+    EXPECT_EQ(
+      configuration.activity_at_reference_time,
+      ggems::units::MakeQuantity<ggems::units::Activity>(k_activity_bq, "Bq")
+        .value());
     EXPECT_EQ(configuration.reference_time_ps, expected_reference_time_ps);
   };
 
@@ -438,14 +463,19 @@ TEST(GGEMSSource,
   expect_configuration(k_reference_before_start_ps);
 
   EXPECT_NO_THROW(source.SetRadionuclide(
-    radionuclide, ggems::units::Activity{k_activity_bq}, k_window_start_ps));
+    radionuclide,
+    ggems::units::MakeQuantity<ggems::units::Activity>(k_activity_bq, "Bq")
+      .value(),
+    k_window_start_ps));
   EXPECT_NO_THROW(
     source.ValidatePopulationForRunInitialization(initial_time_window));
   expect_configuration(k_window_start_ps);
 
-  EXPECT_NO_THROW(source.SetRadionuclide(radionuclide,
-                                         ggems::units::Activity{k_activity_bq},
-                                         k_reference_after_start_ps));
+  EXPECT_NO_THROW(source.SetRadionuclide(
+    radionuclide,
+    ggems::units::MakeQuantity<ggems::units::Activity>(k_activity_bq, "Bq")
+      .value(),
+    k_reference_after_start_ps));
   ExpectGGEMSExceptionContaining(
     [&source, &initial_time_window] -> void {
       source.ValidatePopulationForRunInitialization(initial_time_window);
@@ -468,7 +498,10 @@ TEST(GGEMSSource, OwnsAtomicImmutableRadionuclideConfiguration) {
 
   ggems::core::sources::GGEMSSource source{};
   EXPECT_EQ(
-    &source.SetRadionuclide(radionuclide, ggems::units::Activity{12.5L}, 37ULL),
+    &source.SetRadionuclide(
+      radionuclide,
+      ggems::units::MakeQuantity<ggems::units::Activity>(12.5L, "Bq").value(),
+      37ULL),
     &source);
   radionuclide.reset();
 
@@ -478,7 +511,9 @@ TEST(GGEMSSource, OwnsAtomicImmutableRadionuclideConfiguration) {
   auto const &configuration =
     source.BuildActivityDrivenPopulationConfiguration();
   EXPECT_EQ(configuration.radionuclide.get(), definition_address);
-  EXPECT_EQ(configuration.activity_at_reference_time.value, 12.5L);
+  EXPECT_EQ(
+    configuration.activity_at_reference_time,
+    ggems::units::MakeQuantity<ggems::units::Activity>(12.5L, "Bq").value());
   EXPECT_EQ(configuration.reference_time_ps, 37ULL);
 }
 
@@ -490,15 +525,24 @@ TEST(GGEMSSource, RejectsNullRadionuclideWithoutChangingConfiguration) {
   ggems::core::sources::GGEMSSource source{};
 
   EXPECT_THROW(
-    source.SetRadionuclide(nullptr, ggems::units::Activity{1.0L}, 0ULL),
+    source.SetRadionuclide(
+      nullptr,
+      ggems::units::MakeQuantity<ggems::units::Activity>(1.0L, "Bq").value(),
+      0ULL),
     ggems::core::GGEMSExceptionBase);
   EXPECT_EQ(source.GetPrimaryCount(), 4096ULL);
 
-  source.SetRadionuclide(radionuclide, ggems::units::Activity{3.0L}, 5ULL);
+  source.SetRadionuclide(
+    radionuclide,
+    ggems::units::MakeQuantity<ggems::units::Activity>(3.0L, "Bq").value(),
+    5ULL);
   auto const before = source.BuildActivityDrivenPopulationConfiguration();
 
   EXPECT_THROW(
-    source.SetRadionuclide(nullptr, ggems::units::Activity{1.0L}, 8ULL),
+    source.SetRadionuclide(
+      nullptr,
+      ggems::units::MakeQuantity<ggems::units::Activity>(1.0L, "Bq").value(),
+      8ULL),
     ggems::core::GGEMSRecoverable);
 
   auto const after = source.BuildActivityDrivenPopulationConfiguration();
@@ -516,8 +560,10 @@ TEST(GGEMSSource, ActivityDrivenRejectsSingleParticleConfiguration) {
   constexpr std::array<double, 2U> k_weights{1.0, 1.0};
 
   ggems::core::sources::GGEMSSource source{};
-  source.SetRadionuclide(MakeTestRadionuclide(), ggems::units::Activity{1.0L},
-                         0ULL);
+  source.SetRadionuclide(
+    MakeTestRadionuclide(),
+    ggems::units::MakeQuantity<ggems::units::Activity>(1.0L, "Bq").value(),
+    0ULL);
 
   EXPECT_THROW((void)source.GetPrimaryCount(), ggems::core::GGEMSExceptionBase);
   EXPECT_THROW(source.SetPrimaryCount(1ULL), ggems::core::GGEMSExceptionBase);
@@ -552,8 +598,10 @@ TEST(GGEMSSource, ExplicitlySwitchesBackToCountDrivenBeforeInitialization) {
   using ggems::core::sources::GGEMSSourcePopulationMode;
 
   ggems::core::sources::GGEMSSource source{};
-  source.SetRadionuclide(MakeTestRadionuclide(), ggems::units::Activity{1.0L},
-                         0ULL);
+  source.SetRadionuclide(
+    MakeTestRadionuclide(),
+    ggems::units::MakeQuantity<ggems::units::Activity>(1.0L, "Bq").value(),
+    0ULL);
 
   EXPECT_EQ(&source.SetCountDrivenPopulation(19ULL), &source);
   EXPECT_EQ(source.GetPopulationMode(), GGEMSSourcePopulationMode::CountDriven);
@@ -580,7 +628,10 @@ TEST(GGEMSSource,
     k_population_finalized_diagnostic);
   ExpectGGEMSExceptionContaining(
     [&source, &radionuclide] -> void {
-      source.SetRadionuclide(radionuclide, ggems::units::Activity{1.0L}, 0ULL);
+      source.SetRadionuclide(
+        radionuclide,
+        ggems::units::MakeQuantity<ggems::units::Activity>(1.0L, "Bq").value(),
+        0ULL);
     },
     k_population_finalized_diagnostic);
   ExpectGGEMSExceptionContaining(
@@ -605,7 +656,10 @@ TEST(GGEMSSource,
   auto radionuclide = MakeTestRadionuclide();
   auto replacement = MakeTestRadionuclide("Replacement");
   ggems::core::sources::GGEMSSource source{};
-  source.SetRadionuclide(radionuclide, ggems::units::Activity{12.5L}, 37ULL);
+  source.SetRadionuclide(
+    radionuclide,
+    ggems::units::MakeQuantity<ggems::units::Activity>(12.5L, "Bq").value(),
+    37ULL);
 
   source.FinalizeInitialization();
 
@@ -614,19 +668,26 @@ TEST(GGEMSSource,
     k_population_finalized_diagnostic);
   ExpectGGEMSExceptionContaining(
     [&source, &replacement] -> void {
-      source.SetRadionuclide(replacement, ggems::units::Activity{12.5L}, 37ULL);
+      source.SetRadionuclide(
+        replacement,
+        ggems::units::MakeQuantity<ggems::units::Activity>(12.5L, "Bq").value(),
+        37ULL);
     },
     k_population_finalized_diagnostic);
   ExpectGGEMSExceptionContaining(
     [&source, &radionuclide] -> void {
-      source.SetRadionuclide(radionuclide, ggems::units::Activity{13.5L},
-                             37ULL);
+      source.SetRadionuclide(
+        radionuclide,
+        ggems::units::MakeQuantity<ggems::units::Activity>(13.5L, "Bq").value(),
+        37ULL);
     },
     k_population_finalized_diagnostic);
   ExpectGGEMSExceptionContaining(
     [&source, &radionuclide] -> void {
-      source.SetRadionuclide(radionuclide, ggems::units::Activity{12.5L},
-                             38ULL);
+      source.SetRadionuclide(
+        radionuclide,
+        ggems::units::MakeQuantity<ggems::units::Activity>(12.5L, "Bq").value(),
+        38ULL);
     },
     k_population_finalized_diagnostic);
 
@@ -648,7 +709,9 @@ TEST(GGEMSSource,
   auto const &configuration =
     source.BuildActivityDrivenPopulationConfiguration();
   EXPECT_EQ(configuration.radionuclide, radionuclide);
-  EXPECT_EQ(configuration.activity_at_reference_time.value, 12.5L);
+  EXPECT_EQ(
+    configuration.activity_at_reference_time,
+    ggems::units::MakeQuantity<ggems::units::Activity>(12.5L, "Bq").value());
   EXPECT_EQ(configuration.reference_time_ps, 37ULL);
   EXPECT_NO_THROW(source.Verbose());
 }
@@ -659,13 +722,18 @@ TEST(GGEMSSource,
 TEST(GGEMSSource, CopiesAndMovesActivityConfigurationByManagedOwnership) {
   auto radionuclide = MakeTestRadionuclide();
   ggems::core::sources::GGEMSSource source{};
-  source.SetRadionuclide(radionuclide, ggems::units::Activity{8.0L}, 9ULL);
+  source.SetRadionuclide(
+    radionuclide,
+    ggems::units::MakeQuantity<ggems::units::Activity>(8.0L, "Bq").value(),
+    9ULL);
 
   ggems::core::sources::GGEMSSource copied{source};
   auto const copied_configuration =
     copied.BuildActivityDrivenPopulationConfiguration();
   EXPECT_EQ(copied_configuration.radionuclide, radionuclide);
-  EXPECT_EQ(copied_configuration.activity_at_reference_time.value, 8.0L);
+  EXPECT_EQ(
+    copied_configuration.activity_at_reference_time,
+    ggems::units::MakeQuantity<ggems::units::Activity>(8.0L, "Bq").value());
 
   ggems::core::sources::GGEMSSource moved{std::move(copied)};
   auto const moved_configuration =
@@ -874,8 +942,10 @@ TEST(GGEMSSource, ExecutionRecordPreservesSourceStateAcrossPopulationModes) {
     ggems::core::particles::ToKernelParticleType(GGEMSParticleType::Unknown);
   expected_activity_record.energy_micro_eV = 0ULL;
 
-  source.SetRadionuclide(MakeTestRadionuclide(), ggems::units::Activity{7.5L},
-                         42ULL);
+  source.SetRadionuclide(
+    MakeTestRadionuclide(),
+    ggems::units::MakeQuantity<ggems::units::Activity>(7.5L, "Bq").value(),
+    42ULL);
   auto const activity_driven_record = source.BuildExecutionRecord();
 
   ExpectSourceRecordsEqual(activity_driven_record, expected_activity_record);
@@ -1137,11 +1207,11 @@ TEST(GGEMSSource, RejectsInvalidOrCollapsedAngularDomainsAtomically) {
   EXPECT_THROW(source.SetIsotropicAngularDistribution(
                  MakeRadians(nan), MakeRadians(1.0L), MakeRadians(0.0L),
                  MakeRadians(1.0L)),
-               ggems::core::GGEMSExceptionBase);
+               std::bad_expected_access<ggems::units::UnitConversionError>);
   EXPECT_THROW(source.SetIsotropicAngularDistribution(
                  MakeRadians(0.0L), MakeRadians(infinity), MakeRadians(0.0L),
                  MakeRadians(1.0L)),
-               ggems::core::GGEMSExceptionBase);
+               std::bad_expected_access<ggems::units::UnitConversionError>);
   EXPECT_THROW(source.SetIsotropicAngularDistribution(
                  MakeRadians(-0.1L), MakeRadians(1.0L), MakeRadians(0.0L),
                  MakeRadians(1.0L)),
@@ -1167,6 +1237,55 @@ TEST(GGEMSSource, RejectsInvalidOrCollapsedAngularDomainsAtomically) {
                  MakeRadians(std::nextafter(1.0L, 2.0L))),
                ggems::core::GGEMSExceptionBase);
 
+  ExpectSourceRecordsEqual(source.BuildRecord(), before);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSource, CanonicalFullTurnBoundsPreserveDegreeAndRadianInputs) {
+  using ggems::units::MakeDegrees;
+  using ggems::units::MakeRadians;
+  ggems::core::sources::GGEMSSource source{};
+  source.SetIsotropicAngularDistribution();
+  auto const canonical = source.BuildRecord();
+  source.SetIsotropicAngularDistribution(MakeDegrees(0.0L), MakeDegrees(180.0L),
+                                         MakeDegrees(0.0L),
+                                         MakeDegrees(360.0L));
+  ExpectSourceRecordsEqual(source.BuildRecord(), canonical);
+  source.SetIsotropicAngularDistribution(
+    MakeRadians(0.0L), MakeRadians(std::numbers::pi_v<long double>),
+    MakeRadians(0.0L), MakeRadians(2.0L * std::numbers::pi_v<long double>));
+  ExpectSourceRecordsEqual(source.BuildRecord(), canonical);
+  for (long double const minimum : {-180.0L, -90.0L}) {
+    EXPECT_NO_THROW(source.SetIsotropicAngularDistribution(
+      MakeDegrees(0.0L), MakeDegrees(180.0L), MakeDegrees(minimum),
+      MakeDegrees(minimum + 360.0L)));
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSource, RejectsCanonicalAngularOverflowAndExcessTicksAtomically) {
+  using ggems::units::Angle;
+  using ggems::units::MakeDegrees;
+  auto constexpr half_turn = MakeDegrees(180.0L);
+  auto constexpr full_turn = MakeDegrees(360.0L);
+  ggems::core::sources::GGEMSSource source{};
+  source.SetIsotropicAngularDistribution();
+  auto const before = source.BuildRecord();
+  EXPECT_THROW(source.SetIsotropicAngularDistribution(
+                 Angle{}, Angle{half_turn.value + 1}, Angle{}, full_turn),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(source.SetIsotropicAngularDistribution(
+                 Angle{}, half_turn, Angle{}, Angle{full_turn.value + 1}),
+               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(source.SetIsotropicAngularDistribution(
+                 Angle{}, half_turn,
+                 Angle{std::numeric_limits<std::int64_t>::min()},
+                 Angle{std::numeric_limits<std::int64_t>::max()}),
+               ggems::core::GGEMSExceptionBase);
   ExpectSourceRecordsEqual(source.BuildRecord(), before);
 }
 

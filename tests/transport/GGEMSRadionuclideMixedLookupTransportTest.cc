@@ -54,6 +54,7 @@
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/transport/GGEMSTransportWorkload.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 
 namespace {
@@ -131,7 +132,10 @@ constexpr std::array<std::uint64_t, 3U> k_activity_energies{
 
   auto activity = std::make_shared<Source>();
   activity
-    ->SetRadionuclide(MakeDefinition(), ggems::units::Activity{100.0L}, 0ULL)
+    ->SetRadionuclide(
+      MakeDefinition(),
+      ggems::units::MakeQuantity<ggems::units::Activity>(100.0L, "Bq").value(),
+      0ULL)
     .SetPositionPicoMeter(0LL, 2'000LL, 0LL);
 
   auto last_count = std::make_shared<Source>();

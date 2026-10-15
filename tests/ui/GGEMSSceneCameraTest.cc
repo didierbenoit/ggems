@@ -1,9 +1,12 @@
 #include <array>
 #include <cstddef>
+#include <expected>
+#include <limits>
 
 #include <gtest/gtest.h>
 
 #include "GGEMS/ui/detail/GGEMSSceneCamera.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 
 namespace {
 
@@ -306,6 +309,46 @@ TEST(GGEMSSceneCamera, ZeroExtentKeepsLastValidViewportExtent) {
 
   camera.SetViewportSize(1280U, 0U);
   ExpectMatrixNear(camera.BuildWorldToClipMatrix(), expected);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSSceneCamera, InvalidAngularInputsPreserveThePreviousView) {
+  using ConversionFailure =
+    std::bad_expected_access<ggems::units::UnitConversionError>;
+  Camera camera{};
+  camera.SetOrbitAngles(-20.0F, 15.0F);
+  auto const expected = camera.BuildWorldToClipMatrix();
+  auto const expect_unchanged = [&camera, &expected] -> void {
+    auto const actual = camera.BuildWorldToClipMatrix();
+    EXPECT_EQ(actual.row_0, expected.row_0);
+    EXPECT_EQ(actual.row_1, expected.row_1);
+    EXPECT_EQ(actual.row_2, expected.row_2);
+    EXPECT_EQ(actual.row_3, expected.row_3);
+  };
+  std::array const invalid_values{
+    std::numeric_limits<float>::quiet_NaN(),
+    std::numeric_limits<float>::infinity(),
+    -std::numeric_limits<float>::infinity(),
+    std::numeric_limits<float>::max(),
+    std::numeric_limits<float>::lowest(),
+  };
+  for (float const invalid : invalid_values) {
+    SCOPED_TRACE(invalid);
+    EXPECT_THROW(camera.SetOrbitAngles(invalid, 12.0F), ConversionFailure);
+    expect_unchanged();
+    EXPECT_THROW(camera.SetOrbitAngles(12.0F, invalid), ConversionFailure);
+    expect_unchanged();
+    EXPECT_THROW(camera.Orbit(invalid, 12.0F), ConversionFailure);
+    expect_unchanged();
+    EXPECT_THROW(camera.Orbit(12.0F, invalid), ConversionFailure);
+    expect_unchanged();
+    EXPECT_THROW(camera.OrbitByPixels(invalid, 5.0F), ConversionFailure);
+    expect_unchanged();
+    EXPECT_THROW(camera.OrbitByPixels(5.0F, invalid), ConversionFailure);
+    expect_unchanged();
+  }
 }
 
 } // namespace

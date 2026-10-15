@@ -64,15 +64,14 @@ auto GGEMSSceneCamera::SetViewportSize(std::uint32_t width,
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSSceneCamera::SetOrbitAngles(float yaw_degrees,
-                                      float pitch_degrees) noexcept -> void {
-  yaw_radians_ = static_cast<float>(units::ToRadians(
+auto GGEMSSceneCamera::SetOrbitAngles(float yaw_degrees, float pitch_degrees)
+  -> void {
+  auto const yaw = static_cast<float>(units::ToRadians(
     units::MakeDegrees(static_cast<long double>(yaw_degrees))));
-
-  pitch_radians_ =
-    std::clamp(static_cast<float>(units::ToRadians(
-                 units::MakeDegrees(static_cast<long double>(pitch_degrees)))),
-               -k_max_pitch_radians, k_max_pitch_radians);
+  auto const pitch = static_cast<float>(units::ToRadians(
+    units::MakeDegrees(static_cast<long double>(pitch_degrees))));
+  yaw_radians_ = yaw;
+  pitch_radians_ = std::clamp(pitch, -k_max_pitch_radians, k_max_pitch_radians);
 }
 
 // -----------------------------------------------------------------------------
@@ -83,21 +82,21 @@ auto GGEMSSceneCamera::SetZoom(float zoom) noexcept -> void {
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSSceneCamera::Orbit(float delta_yaw_degrees,
-                             float delta_pitch_degrees) noexcept -> void {
-  yaw_radians_ += static_cast<float>(units::ToRadians(
+auto GGEMSSceneCamera::Orbit(float delta_yaw_degrees, float delta_pitch_degrees)
+  -> void {
+  auto const delta_yaw = static_cast<float>(units::ToRadians(
     units::MakeDegrees(static_cast<long double>(delta_yaw_degrees))));
-
-  pitch_radians_ = std::clamp(
-    pitch_radians_ + static_cast<float>(units::ToRadians(units::MakeDegrees(
-                       static_cast<long double>(delta_pitch_degrees)))),
-    -k_max_pitch_radians, k_max_pitch_radians);
+  auto const delta_pitch = static_cast<float>(units::ToRadians(
+    units::MakeDegrees(static_cast<long double>(delta_pitch_degrees))));
+  yaw_radians_ += delta_yaw;
+  pitch_radians_ = std::clamp(pitch_radians_ + delta_pitch,
+                              -k_max_pitch_radians, k_max_pitch_radians);
 }
 
 // -----------------------------------------------------------------------------
 
-auto GGEMSSceneCamera::OrbitByPixels(float delta_x_pixels,
-                                     float delta_y_pixels) noexcept -> void {
+auto GGEMSSceneCamera::OrbitByPixels(float delta_x_pixels, float delta_y_pixels)
+  -> void {
   if (delta_x_pixels == 0.0F && delta_y_pixels == 0.0F) {
     return;
   }

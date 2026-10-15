@@ -49,6 +49,7 @@
 #include "GGEMS/units/GGEMSLengthUnits.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
 #include "GGEMS/units/GGEMSTimeUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 #include "GGEMS/radioactivity/GGEMSRadionuclideDefinition.hh"
 
 namespace py = pybind11;
@@ -318,7 +319,7 @@ Args:
     theta_max: Maximum polar angle.
     phi_min: Minimum azimuth.
     phi_max: Maximum azimuth.
-    unit: GGEMS angular unit.
+    unit: GGEMS angular unit ("deg" or "rad").
 
 Returns:
     GGEMSSource: This source, allowing chained configuration.
@@ -403,7 +404,7 @@ configured run start time.
 Args:
     radionuclide: Definition returned by ggems.radionuclide.load().
     activity: Activity at the reference time.
-    activity_unit: GGEMS activity unit.
+    activity_unit: GGEMS activity unit, including "Bq" and "mBq".
     reference_time: Time at which activity is specified.
     time_unit: GGEMS time unit.
 
@@ -662,7 +663,8 @@ Example:
             "emission_count={} emission_geometry={} "
             "angular_distribution={}>",
             record.source_type, radionuclide.GetCanonicalName(),
-            configuration.activity_at_reference_time.value,
+            *ggems::units::ConvertTo(configuration.activity_at_reference_time,
+                                     "Bq"),
             configuration.reference_time_ps, radionuclide.GetEmissions().size(),
             ggems::core::sources::ToLongName(geometry_type),
             ggems::core::sources::ToLongName(angular_type));

@@ -27,7 +27,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <array>
+#include <expected>
 #include <limits>
+#include <numbers>
 #include <type_traits>
 #include <utility>
 
@@ -40,6 +43,7 @@
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/random/GGEMSRandomEngine.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 
 namespace {
 
@@ -76,7 +80,7 @@ static_assert(std::is_same_v<
 TEST(GGEMSDecayStatisticsTest, ZeroActivityHasZeroExpectedCount) {
   EXPECT_EQ(
     ComputeExpectedDecayEventCount(
-      Activity{0.0L}, 1'000.0L, 0ULL,
+      ggems::units::MakeQuantity<Activity>(0.0L, "Bq").value(), 1'000.0L, 0ULL,
       GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1'000'000'000'000ULL}),
     0.0L);
 }
@@ -86,7 +90,8 @@ TEST(GGEMSDecayStatisticsTest, ZeroActivityHasZeroExpectedCount) {
 
 TEST(GGEMSDecayStatisticsTest, EmptyWindowHasZeroExpectedCount) {
   EXPECT_EQ(ComputeExpectedDecayEventCount(
-              Activity{1.0e6L}, 1'000.0L, 0ULL,
+              ggems::units::MakeQuantity<Activity>(1.0e6L, "Bq").value(),
+              1'000.0L, 0ULL,
               GGEMSTimeWindow{.start_ps = 42ULL, .stop_ps = 42ULL}),
             0.0L);
 }
@@ -94,16 +99,42 @@ TEST(GGEMSDecayStatisticsTest, EmptyWindowHasZeroExpectedCount) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSDecayStatisticsTest, RejectsInvalidActivity) {
+TEST(GGEMSDecayStatisticsTest, EquivalentUnitsEnterDecayFormulaInBecquerels) {
+  std::array<Activity, 4U> const activities{
+    ggems::units::MakeQuantity<Activity>(1'000.0L, "mBq").value(),
+    ggems::units::MakeQuantity<Activity>(1.0L, "Bq").value(),
+    ggems::units::MakeQuantity<Activity>(1.0e-6L, "MBq").value(),
+    ggems::units::MakeQuantity<Activity>(1.0L / 37'000'000'000.0L, "Ci")
+      .value(),
+  };
+  // One Bq with a one-second half-life integrates to 1/(2*ln(2)) decays.
+  long double const expected = 0.5L / std::numbers::ln2_v<long double>;
+  GGEMSTimeWindow const window{.start_ps = 0ULL,
+                               .stop_ps = 1'000'000'000'000ULL};
+  for (auto const activity : activities) {
+    EXPECT_EQ(activity.value, 1'000ULL);
+    EXPECT_DOUBLE_EQ(static_cast<double>(ComputeExpectedDecayEventCount(
+                       activity, 1.0L, 0ULL, window)),
+                     static_cast<double>(expected));
+  }
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSDecayStatisticsTest, RejectsInvalidActivityAtUnitsBoundary) {
   GGEMSTimeWindow const window{.start_ps = 0ULL, .stop_ps = 1ULL};
 
-  EXPECT_THROW(
-    (void)ComputeExpectedDecayEventCount(Activity{-1.0L}, 1.0L, 0ULL, window),
-    ggems::core::GGEMSRecoverable);
   EXPECT_THROW((void)ComputeExpectedDecayEventCount(
-                 Activity{std::numeric_limits<long double>::quiet_NaN()}, 1.0L,
-                 0ULL, window),
-               ggems::core::GGEMSRecoverable);
+                 ggems::units::MakeQuantity<Activity>(-1.0L, "Bq").value(),
+                 1.0L, 0ULL, window),
+               std::bad_expected_access<ggems::units::UnitConversionError>);
+  EXPECT_THROW((void)ComputeExpectedDecayEventCount(
+                 ggems::units::MakeQuantity<Activity>(
+                   std::numeric_limits<long double>::quiet_NaN(), "Bq")
+                   .value(),
+                 1.0L, 0ULL, window),
+               std::bad_expected_access<ggems::units::UnitConversionError>);
 }
 
 // =============================================================================
@@ -111,8 +142,8 @@ TEST(GGEMSDecayStatisticsTest, RejectsInvalidActivity) {
 
 TEST(GGEMSDecayStatisticsTest, RejectsReferenceTimeAfterWindowStart) {
   EXPECT_THROW((void)ComputeExpectedDecayEventCount(
-                 Activity{1.0L}, 1.0L, 2ULL,
-                 GGEMSTimeWindow{.start_ps = 1ULL, .stop_ps = 1ULL}),
+                 ggems::units::MakeQuantity<Activity>(1.0L, "Bq").value(), 1.0L,
+                 2ULL, GGEMSTimeWindow{.start_ps = 1ULL, .stop_ps = 1ULL}),
                ggems::core::GGEMSRecoverable);
 }
 
@@ -120,7 +151,8 @@ TEST(GGEMSDecayStatisticsTest, RejectsReferenceTimeAfterWindowStart) {
 // =============================================================================
 
 TEST(GGEMSDecayStatisticsTest, AdjacentWindowsAreAdditive) {
-  Activity const activity{1.0e6L};
+  auto const activity =
+    ggems::units::MakeQuantity<Activity>(1.0e6L, "Bq").value();
   long double const half_life_seconds{1'000.0L};
   GGEMSTimeWindow const first{
     .start_ps = 0ULL,
@@ -150,8 +182,9 @@ TEST(GGEMSDecayStatisticsTest, AdjacentWindowsAreAdditive) {
 
 TEST(GGEMSDecayStatisticsTest,
      VeryLongHalfLifeApproachesActivityTimesDuration) {
-  Activity const activity{1'234.5L};
-  long double const expected = activity.value * 1.0L;
+  auto const activity =
+    ggems::units::MakeQuantity<Activity>(1'234.5L, "Bq").value();
+  long double const expected = 1'234.5L * 1.0L;
   long double const actual = ComputeExpectedDecayEventCount(
     activity, 1.0e20L, 0ULL,
     GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1'000'000'000'000ULL});
@@ -165,7 +198,8 @@ TEST(GGEMSDecayStatisticsTest,
 
 TEST(GGEMSDecayStatisticsTest, MatchesF18HalfLifeNumericalReference) {
   long double const actual = ComputeExpectedDecayEventCount(
-    Activity{1.0e6L}, 1.82890L * 3'600.0L, 0ULL,
+    ggems::units::MakeQuantity<Activity>(1.0e6L, "Bq").value(),
+    1.82890L * 3'600.0L, 0ULL,
     GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 3'600'000'000'000'000ULL});
 
   EXPECT_NEAR(static_cast<double>(actual), 2'996'405'056.4, 1.0);
@@ -186,10 +220,12 @@ TEST(GGEMSDecayStatisticsTest,
   };
 
   for (std::size_t sample = 0U; sample < 64U; ++sample) {
-    EXPECT_EQ(
-      SampleDecayEventCount(Activity{1'000.0L}, 1'000.0L, 0ULL, window, first),
-      SampleDecayEventCount(Activity{1'000.0L}, 1'000.0L, 0ULL, window,
-                            second));
+    EXPECT_EQ(SampleDecayEventCount(
+                ggems::units::MakeQuantity<Activity>(1'000.0L, "Bq").value(),
+                1'000.0L, 0ULL, window, first),
+              SampleDecayEventCount(
+                ggems::units::MakeQuantity<Activity>(1'000.0L, "Bq").value(),
+                1'000.0L, 0ULL, window, second));
   }
 }
 
@@ -202,10 +238,12 @@ TEST(GGEMSDecayStatisticsTest, ExpectedAndSampledCountsRemainDistinct) {
   GGEMSHostRandomStream random{configuration, 42ULL};
   GGEMSTimeWindow const window{.start_ps = 0ULL,
                                .stop_ps = 1'000'000'000'000ULL};
-  long double const expected =
-    ComputeExpectedDecayEventCount(Activity{123.45L}, 1'000.0L, 0ULL, window);
-  std::uint64_t const sampled =
-    SampleDecayEventCount(Activity{123.45L}, 1'000.0L, 0ULL, window, random);
+  long double const expected = ComputeExpectedDecayEventCount(
+    ggems::units::MakeQuantity<Activity>(123.45L, "Bq").value(), 1'000.0L, 0ULL,
+    window);
+  std::uint64_t const sampled = SampleDecayEventCount(
+    ggems::units::MakeQuantity<Activity>(123.45L, "Bq").value(), 1'000.0L, 0ULL,
+    window, random);
 
   EXPECT_GT(expected, 0.0L);
   EXPECT_NE(expected, static_cast<long double>(sampled));
@@ -221,9 +259,31 @@ TEST(GGEMSDecayStatisticsTest, ZeroExpectedCountDoesNotConsumeHostRandomState) {
   GGEMSHostRandomStream reference{configuration, 42ULL};
 
   EXPECT_EQ(SampleDecayEventCount(
-              Activity{0.0L}, 1'000.0L, 0ULL,
+              ggems::units::MakeQuantity<Activity>(0.0L, "Bq").value(),
+              1'000.0L, 0ULL,
               GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1ULL}, random),
             0ULL);
+  EXPECT_EQ(random.NextUInt32(), reference.NextUInt32());
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSDecayStatisticsTest,
+     SubMillibecquerelQuantizationPreservesZeroDraws) {
+  auto const activity =
+    ggems::units::MakeQuantity<Activity>(0.0004L, "Bq").value();
+  EXPECT_EQ(activity.value, 0ULL);
+  GGEMSRandom configuration{};
+  configuration.SetEngine(GGEMSRandomEngine::JKISS).SetSeed(77'777ULL);
+  GGEMSHostRandomStream random{configuration, 42ULL};
+  GGEMSHostRandomStream reference{configuration, 42ULL};
+  EXPECT_EQ(
+    SampleDecayEventCount(
+      activity, 1.0L, 0ULL,
+      GGEMSTimeWindow{.start_ps = 0ULL, .stop_ps = 1'000'000'000'000ULL},
+      random),
+    0ULL);
   EXPECT_EQ(random.NextUInt32(), reference.NextUInt32());
 }
 

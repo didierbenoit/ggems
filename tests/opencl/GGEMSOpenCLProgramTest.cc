@@ -25,12 +25,16 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
+#include <array>
 #include <filesystem>
 #include <string>
 
 #include <gtest/gtest.h>
 
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
+#include "GGEMS/opencl/GGEMSOpenCLContext.hh"
+#include "GGEMS/opencl/GGEMSOpenCLDevice.hh"
+#include "GGEMS/opencl/GGEMSOpenCLExternal.hh"
 #include "GGEMS/opencl/GGEMSOpenCLProgram.hh"
 #include "GGEMSOpenCLCompilerDeviceInventory.hh"
 #include "GGEMSOpenCLDeviceInventory.hh"
@@ -68,6 +72,28 @@ TEST(GGEMSOpenCLProgramTest,
     EXPECT_EQ(program.GetKernelName(), probe_name);
     EXPECT_FALSE(program.GetBuildOptions().empty());
     EXPECT_EQ(program.GetNumDevices(), 1U);
+
+    cl_int options_error{CL_SUCCESS};
+    auto const native_options =
+      program.GetProgramNative().getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(
+        context.GetDevice().GetDeviceNative(), &options_error);
+    ASSERT_EQ(options_error, CL_SUCCESS);
+
+    std::array const reported_options{std::string{program.GetBuildOptions()},
+                                      native_options};
+    for (auto const &reported : reported_options) {
+      SCOPED_TRACE(reported);
+      std::string const options{" " + reported + " "};
+#ifdef GGEMS_DEBUG_MODE
+      EXPECT_TRUE(options.contains(" -g "));
+      EXPECT_TRUE(options.contains(" -cl-opt-disable "));
+      EXPECT_FALSE(options.contains(" -cl-fast-relaxed-math "));
+#else
+      EXPECT_FALSE(options.contains(" -g "));
+      EXPECT_FALSE(options.contains(" -cl-opt-disable "));
+      EXPECT_TRUE(options.contains(" -cl-fast-relaxed-math "));
+#endif
+    }
 
     EXPECT_EQ(std::filesystem::weakly_canonical(program.GetSourcePath()),
               std::filesystem::weakly_canonical(expected_source));

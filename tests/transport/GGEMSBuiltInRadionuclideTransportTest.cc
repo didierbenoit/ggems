@@ -52,6 +52,7 @@
 #include "GGEMS/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/transport/GGEMSTransportWorkload.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 
 namespace {
@@ -338,7 +339,9 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
   Random const random = MakeRandom(0xF18B32ULL);
   ActivityScenario const scenario = MakeActivityScenario(
     ggems::core::radioactivity::builtins::BuildF18Radionuclide(),
-    ggems::units::Activity{100'000'000.0L}, random);
+    ggems::units::MakeQuantity<ggems::units::Activity>(100'000'000.0L, "Bq")
+      .value(),
+    random);
 
   auto const &emission_records =
     scenario.source_configuration->GetEmissionRecords();
@@ -492,7 +495,10 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
   ASSERT_EQ(definition.GetEmissions().size(), 1U);
   EXPECT_EQ(definition.GetEmissions()[0U].GetYieldPerDecay(), 0.99750L);
   ActivityScenario const scenario = MakeActivityScenario(
-    std::move(definition), ggems::units::Activity{1'024'000.0L}, random);
+    std::move(definition),
+    ggems::units::MakeQuantity<ggems::units::Activity>(1'024'000.0L, "Bq")
+      .value(),
+    random);
 
   ASSERT_EQ(scenario.source_configuration->GetEmissionRecords().size(), 1U);
   ASSERT_EQ(scenario.source_snapshot.GetGroupRanges().size(), 1U);
@@ -539,7 +545,10 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
   ASSERT_EQ(definition.GetEmissions().size(), 1U);
   EXPECT_EQ(definition.GetEmissions()[0U].GetYieldPerDecay(), 0.999001L);
   ActivityScenario const scenario = MakeActivityScenario(
-    std::move(definition), ggems::units::Activity{1'024'000.0L}, random);
+    std::move(definition),
+    ggems::units::MakeQuantity<ggems::units::Activity>(1'024'000.0L, "Bq")
+      .value(),
+    random);
 
   ASSERT_EQ(scenario.source_configuration->GetEmissionRecords().size(), 1U);
   ASSERT_EQ(scenario.source_snapshot.GetGroupRanges().size(), 1U);
@@ -595,7 +604,10 @@ TEST_F(GGEMSBuiltInRadionuclideTransportTest,
 
   Random const random = MakeRandom(0xD15C32ULL);
   ActivityScenario const scenario = MakeActivityScenario(
-    std::move(definition), ggems::units::Activity{1'024'000.0L}, random);
+    std::move(definition),
+    ggems::units::MakeQuantity<ggems::units::Activity>(1'024'000.0L, "Bq")
+      .value(),
+    random);
 
   ASSERT_EQ(scenario.source_configuration->GetEmissionRecords().size(), 1U);
   ASSERT_EQ(scenario.source_snapshot.GetGroupRanges().size(), 1U);

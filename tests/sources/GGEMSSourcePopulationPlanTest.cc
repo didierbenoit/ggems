@@ -54,6 +54,7 @@
 #include "GGEMS/sources/GGEMSSource.hh"
 #include "GGEMS/sources/GGEMSSourcePopulation.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 
 namespace {
 
@@ -118,8 +119,10 @@ MakeActivitySource(std::shared_ptr<Definition const> const &definition,
                    long double activity, std::uint64_t reference_time_ps = 0ULL)
   -> SourcePtr {
   auto source = std::make_shared<Source>();
-  source->SetRadionuclide(definition, ggems::units::Activity{activity},
-                          reference_time_ps);
+  source->SetRadionuclide(
+    definition,
+    ggems::units::MakeQuantity<ggems::units::Activity>(activity, "Bq").value(),
+    reference_time_ps);
   return source;
 }
 
@@ -219,8 +222,8 @@ TEST(GGEMSSourcePopulationPlanTest,
 
   long double const expected_parent =
     ggems::core::radioactivity::ComputeExpectedDecayEventCount(
-      ggems::units::Activity{100.0L}, definition->GetHalfLifeSeconds(), 0ULL,
-      k_one_second_window);
+      ggems::units::MakeQuantity<ggems::units::Activity>(100.0L, "Bq").value(),
+      definition->GetHalfLifeSeconds(), 0ULL, k_one_second_window);
   EXPECT_EQ(source_entries[0U].expected_parent_decay_count, expected_parent);
 
   constexpr std::array<long double, 3U> k_expected_yields{0.9686L, 0.00229L,
@@ -429,23 +432,29 @@ TEST(GGEMSSourcePopulationPlanTest,
     auto replacement_definition =
       MakeSyntheticDefinition(k_yields, 10.0L, "Replacement");
     source->SetRadionuclide(replacement_definition,
-                            ggems::units::Activity{k_live_activity_bq},
+                            ggems::units::MakeQuantity<ggems::units::Activity>(
+                              k_live_activity_bq, "Bq")
+                              .value(),
                             k_reference_time_ps);
     EXPECT_THROW((void)planner.BuildCandidate(k_later_window),
                  ggems::core::GGEMSExceptionBase);
     EXPECT_EQ(planner.GetRevision(), 1ULL);
 
     source->SetRadionuclide(definition,
-                            ggems::units::Activity{k_live_activity_bq},
+                            ggems::units::MakeQuantity<ggems::units::Activity>(
+                              k_live_activity_bq, "Bq")
+                              .value(),
                             k_reference_time_ps);
     auto continued = planner.BuildCandidate(k_later_window);
     auto const continued_sources = continued.GetPlan().GetSources();
     ASSERT_EQ(continued_sources.size(), 1U);
-    EXPECT_EQ(continued_sources[0U].expected_parent_decay_count,
-              ggems::core::radioactivity::ComputeExpectedDecayEventCount(
-                ggems::units::Activity{k_live_activity_bq},
-                definition->GetHalfLifeSeconds(), k_reference_time_ps,
-                k_later_window));
+    EXPECT_EQ(
+      continued_sources[0U].expected_parent_decay_count,
+      ggems::core::radioactivity::ComputeExpectedDecayEventCount(
+        ggems::units::MakeQuantity<ggems::units::Activity>(k_live_activity_bq,
+                                                           "Bq")
+          .value(),
+        definition->GetHalfLifeSeconds(), k_reference_time_ps, k_later_window));
 
     auto reference_source =
       MakeActivitySource(definition, k_live_activity_bq, k_reference_time_ps);
@@ -462,17 +471,25 @@ TEST(GGEMSSourcePopulationPlanTest,
 TEST(GGEMSSourcePopulationPlanTest,
      PositiveMeanZeroCountConsumesOnlyPoissonState) {
   constexpr std::array<long double, 1U> k_yields{1.0L};
+  constexpr ggems::core::GGEMSTimeWindow k_one_picosecond_window{
+    .start_ps = 0ULL,
+    .stop_ps = 1ULL,
+  };
   auto definition = MakeSyntheticDefinition(k_yields);
 
   for (RandomEngine engine : k_engines) {
     SCOPED_TRACE(static_cast<std::uint32_t>(engine));
 
-    auto source = MakeActivitySource(definition, 1.0e-30L);
+    // The smallest positive activity and duration give a positive ~1e-15 mean.
+    auto source = MakeActivitySource(definition, 0.001L);
+    ASSERT_EQ(source->BuildActivityDrivenPopulationConfiguration()
+                .activity_at_reference_time.value,
+              1ULL);
     std::vector<SourcePtr> sources{source};
     Random const simulation_random = MakeRandom(engine, 27'182ULL);
     Planner planner{sources, simulation_random};
 
-    auto zero_candidate = planner.BuildCandidate(k_one_second_window);
+    auto zero_candidate = planner.BuildCandidate(k_one_picosecond_window);
     auto const zero_groups = zero_candidate.GetPlan().GetGroups();
     ASSERT_EQ(zero_groups.size(), 1U);
     EXPECT_GT(zero_groups[0U].expected_emission_count, 0.0L);
@@ -488,7 +505,10 @@ TEST(GGEMSSourcePopulationPlanTest,
               0ULL);
 
     planner.CommitCandidate(zero_candidate);
-    source->SetRadionuclide(definition, ggems::units::Activity{50.0L}, 0ULL);
+    source->SetRadionuclide(
+      definition,
+      ggems::units::MakeQuantity<ggems::units::Activity>(50.0L, "Bq").value(),
+      0ULL);
     auto continuation = planner.BuildCandidate(k_one_second_window);
     auto const continuation_groups = continuation.GetPlan().GetGroups();
     ASSERT_EQ(continuation_groups.size(), 1U);
@@ -625,8 +645,10 @@ TEST(GGEMSSourcePopulationPlanTest,
     auto definition = MakeSyntheticDefinition(k_yields);
     auto activity = MakeActivitySource(definition, 25.0L);
     auto invalid = MakeActivitySource(definition, 25.0L);
-    invalid->SetRadionuclide(definition, ggems::units::Activity{25.0L},
-                             k_one_second_window.stop_ps);
+    invalid->SetRadionuclide(
+      definition,
+      ggems::units::MakeQuantity<ggems::units::Activity>(25.0L, "Bq").value(),
+      k_one_second_window.stop_ps);
     std::vector<SourcePtr> sources{activity, invalid};
     Random const random = MakeRandom(engine);
     Planner planner{sources, random};
@@ -635,7 +657,10 @@ TEST(GGEMSSourcePopulationPlanTest,
                  ggems::core::GGEMSExceptionBase);
     EXPECT_EQ(planner.GetRevision(), 0ULL);
 
-    invalid->SetRadionuclide(definition, ggems::units::Activity{25.0L}, 0ULL);
+    invalid->SetRadionuclide(
+      definition,
+      ggems::units::MakeQuantity<ggems::units::Activity>(25.0L, "Bq").value(),
+      0ULL);
     auto recovered = planner.BuildCandidate(k_one_second_window);
 
     std::vector<SourcePtr> reference_sources{
@@ -824,8 +849,9 @@ TEST(GGEMSSourcePopulationPlanTest,
 
   long double const expected_parent =
     ggems::core::radioactivity::ComputeExpectedDecayEventCount(
-      ggems::units::Activity{k_activity_bq}, definition->GetHalfLifeSeconds(),
-      0ULL, k_ten_second_window);
+      ggems::units::MakeQuantity<ggems::units::Activity>(k_activity_bq, "Bq")
+        .value(),
+      definition->GetHalfLifeSeconds(), 0ULL, k_ten_second_window);
   EXPECT_EQ(source_entries[0U].expected_parent_decay_count, expected_parent);
 
   std::uint64_t next_source_local_primary{0ULL};
@@ -874,12 +900,23 @@ TEST(GGEMSSourcePopulationPlanTest,
     std::numeric_limits<long double>::max()};
   auto huge_definition = MakeSyntheticDefinition(k_huge_yield, 1.0e20L, "Huge");
   std::vector<SourcePtr> huge_sources{
-    MakeActivitySource(huge_definition, 1.0e300L)};
+    MakeActivitySource(huge_definition, 1.0L)};
+  constexpr ggems::core::GGEMSTimeWindow k_window{
+    .start_ps = 0ULL, .stop_ps = std::numeric_limits<std::uint64_t>::max()};
+  // A valid 1 Bq source has a finite parent mean above one; its finite maximum
+  // yield still overflows the emission expectation without an invalid Activity.
+  auto const expected_parent =
+    ggems::core::radioactivity::ComputeExpectedDecayEventCount(
+      huge_sources[0U]
+        ->BuildActivityDrivenPopulationConfiguration()
+        .activity_at_reference_time,
+      huge_definition->GetHalfLifeSeconds(), 0ULL, k_window);
+  ASSERT_TRUE(std::isfinite(expected_parent));
+  ASSERT_GT(expected_parent, 1.0L);
+  ASSERT_FALSE(std::isfinite(expected_parent * k_huge_yield[0U]));
   Planner huge_planner{huge_sources, MakeRandom()};
-  EXPECT_THROW(
-    (void)huge_planner.BuildCandidate(ggems::core::GGEMSTimeWindow{
-      .start_ps = 0ULL, .stop_ps = std::numeric_limits<std::uint64_t>::max()}),
-    ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW((void)huge_planner.BuildCandidate(k_window),
+               ggems::core::GGEMSExceptionBase);
   EXPECT_EQ(huge_planner.GetRevision(), 0ULL);
 }
 

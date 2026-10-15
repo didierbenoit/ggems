@@ -300,8 +300,8 @@ static_assert(ValidateUnitSet<SpeedUnitSet>());
 static_assert(ValidateUnitSet<TimeUnitSet>());
 static_assert(ValidateUnitSet<VolumeUnitSet>());
 
-static_assert(ValidateQuantityTraits<ActivityTag, long double>());
-static_assert(ValidateQuantityTraits<AngleTag, long double>());
+static_assert(ValidateQuantityTraits<ActivityTag, std::uint64_t>());
+static_assert(ValidateQuantityTraits<AngleTag, std::int64_t>());
 static_assert(ValidateQuantityTraits<AreaTag, long double>());
 static_assert(ValidateQuantityTraits<BitsTag, std::uint64_t>());
 static_assert(ValidateQuantityTraits<BytesTag, std::uint64_t>());
@@ -331,6 +331,8 @@ static_assert(!ValidateQuantityTraits<MissingFixedUnitTag, std::uint64_t>());
 // =============================================================================
 
 static_assert(!std::is_same_v<Activity, Frequency>);
+static_assert(std::is_same_v<Area::representation, long double>);
+static_assert(std::is_same_v<Volume::representation, long double>);
 static_assert(!std::is_same_v<Area, CrossSection>);
 static_assert(!std::is_same_v<Bits, Bytes>);
 static_assert(!std::is_same_v<Length, PositionCoordinate>);
@@ -353,8 +355,9 @@ static_assert(!std::is_convertible_v<Bits, Bytes>);
 
 consteval auto EveryPublicLiteralCompiles() -> bool {
   auto const activity = std::array{
-    1_Bq,   1_kBq,   1_MBq,   1_GBq,   1_TBq,   1_Ci,   1_mCi,   1_uCi,
-    1.0_Bq, 1.0_kBq, 1.0_MBq, 1.0_GBq, 1.0_TBq, 1.0_Ci, 1.0_mCi, 1.0_uCi,
+    1_mBq,   1.0_mBq, 1_Bq,    1_kBq,  1_MBq,   1_GBq,
+    1_TBq,   1_Ci,    1_mCi,   1_uCi,  1.0_Bq,  1.0_kBq,
+    1.0_MBq, 1.0_GBq, 1.0_TBq, 1.0_Ci, 1.0_mCi, 1.0_uCi,
   };
 
   auto const angle = std::array{
@@ -487,6 +490,8 @@ TEST(GGEMSUnitRegistryContractTest, ParsesOnlyOfficialAsciiSymbols) {
   EXPECT_TRUE(MakeQuantity<Duration>(1.0L, "s").has_value());
   EXPECT_TRUE(MakeQuantity<Dose>(1.0L, "uGy").has_value());
   EXPECT_TRUE(MakeQuantity<Activity>(1.0L, "uCi").has_value());
+  EXPECT_TRUE(MakeQuantity<Activity>(1, "mBq").has_value());
+  EXPECT_FALSE(MakeQuantity<Angle>(1, "prad").has_value());
   EXPECT_TRUE(MakeQuantity<CrossSection>(1.0L, "ub").has_value());
   EXPECT_TRUE(MakeQuantity<CrossSection>(1.0L, "pb").has_value());
   EXPECT_TRUE(MakeQuantity<Energy>(1.0L, "meV").has_value());

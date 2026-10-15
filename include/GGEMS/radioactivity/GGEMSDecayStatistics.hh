@@ -51,18 +51,18 @@ namespace ggems::core::radioactivity {
  * seconds, and \f$\Delta t\f$ is the window duration in seconds. The
  * expectation
  * is dimensionless; it counts parent decays before emission yields are applied.
- * Uses expm1 to retain short-window precision. Callers supply a finite
- * activity,
- * valid half-life, and ordered window; this function does not validate all
- * three.
+ * Canonical integer mBq are converted once to Bq for this formula. Uses expm1
+ * to retain short-window precision. Callers supply a valid half-life and
+ * ordered window; this function does not validate both.
  *
- * \param[in] activity_at_reference Source activity in Bq at reference_time_ps.
+ * \param[in] activity_at_reference Canonical source activity in mBq at
+ * reference_time_ps.
  * \param[in] half_life_seconds Positive finite half-life in seconds.
  * \param[in] reference_time_ps Reference time in ps, no later than the start.
  * \param[in] time_window Ordered half-open source interval in ps.
  * \return Expected parent decays; zero for zero activity or an empty window.
- * \throws GGEMSRecoverable If activity fails the nonnegative comparison or the
- * reference time is later than the window start.
+ * \throws GGEMSRecoverable If the reference time is later than the window
+ * start.
  */
 [[nodiscard]] auto ComputeExpectedDecayEventCount(
   units::Activity activity_at_reference, long double half_life_seconds,
@@ -70,7 +70,8 @@ namespace ggems::core::radioactivity {
 
 /*!
  * \brief Samples a Poisson count with the integrated parent-decay expectation.
- * \param[in] activity_at_reference Source activity in Bq at reference_time_ps.
+ * \param[in] activity_at_reference Canonical source activity in mBq at
+ * reference_time_ps.
  * \param[in] half_life_seconds Positive finite half-life in seconds.
  * \param[in] reference_time_ps Reference time in ps, no later than the start.
  * \param[in] time_window Ordered half-open source interval in ps.

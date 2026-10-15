@@ -25,10 +25,15 @@
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
 
+#include <array>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <expected>
 #include <format>
 #include <limits>
 #include <numbers>
+#include <type_traits>
 
 #include <gtest/gtest.h>
 
@@ -38,18 +43,19 @@
 
 namespace {
 
-constexpr long double k_tolerance{1.0e-12L};
+// Bounds below describe only rounding to the canonical one-picoradian grid.
+constexpr long double k_half_quantum_rad{0.5e-12L};
 constexpr long double k_pi_reference{std::numbers::pi_v<long double>};
-constexpr long double k_rounding_error_bound{8.0L};
-constexpr long double k_registered_token_tolerance{
-  k_rounding_error_bound * k_pi_reference *
-  std::numeric_limits<long double>::epsilon()};
+constexpr long double k_half_quantum_deg{0.5e-12L * 180.0L / k_pi_reference};
+
+static_assert(
+  std::is_same_v<ggems::units::Angle::representation, std::int64_t>);
 
 // =============================================================================
 // =============================================================================
 
-void ExpectNearLongDouble(long double value, long double reference,
-                          long double tolerance = k_tolerance) {
+auto ExpectNearLongDouble(long double value, long double reference,
+                          long double tolerance = k_half_quantum_rad) -> void {
   EXPECT_LE(std::abs(value - reference), tolerance);
 }
 
@@ -72,15 +78,14 @@ TEST(GGEMSAngularUnits, ConvertsEveryRegisteredAngleToken) {
 
   ASSERT_TRUE(radians.has_value());
   ASSERT_TRUE(degrees.has_value());
-  EXPECT_EQ(radians->value, 2.5L);
-  ExpectNearLongDouble(degrees->value, k_pi_reference,
-                       k_registered_token_tolerance);
+  EXPECT_EQ(radians->value, 2'500'000'000'000LL);
+  EXPECT_EQ(degrees->value, 3'141'592'653'590LL);
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSAngularUnits, MakeRadiansStoresRadiansDirectly) {
+TEST(GGEMSAngularUnits, MakeRadiansStoresIntegerPicoradians) {
   ggems::units::Angle angle = ggems::units::MakeRadians(2.5L);
 
   ExpectNearLongDouble(ggems::units::ToRadians(angle), 2.5L);
@@ -103,39 +108,40 @@ TEST(GGEMSAngularUnits, RadiansAreConvertedToDegrees) {
   ggems::units::Angle const angle =
     ggems::units::MakeRadians(std::numbers::pi_v<long double>);
 
-  ExpectNearLongDouble(ggems::units::ToDegrees(angle), 180.0L);
+  ExpectNearLongDouble(ggems::units::ToDegrees(angle), 180.0L,
+                       k_half_quantum_deg);
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSAngularUnits, DegreeLiteralStoresRadiansInternally) {
+TEST(GGEMSAngularUnits, DegreeLiteralStoresIntegerPicoradians) {
   using namespace ggems::units;
 
   Angle angle = 90.0_deg;
 
   ExpectNearLongDouble(ToRadians(angle),
                        std::numbers::pi_v<long double> / 2.0L);
-  ExpectNearLongDouble(ToDegrees(angle), 90.0L);
+  ExpectNearLongDouble(ToDegrees(angle), 90.0L, k_half_quantum_deg);
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSAngularUnits, IntegerDegreeLiteralStoresRadiansInternally) {
+TEST(GGEMSAngularUnits, IntegerDegreeLiteralStoresIntegerPicoradians) {
   using namespace ggems::units;
 
   Angle angle = 270_deg;
 
   ExpectNearLongDouble(ToRadians(angle),
                        3.0L * std::numbers::pi_v<long double> / 2.0L);
-  ExpectNearLongDouble(ToDegrees(angle), 270.0L);
+  ExpectNearLongDouble(ToDegrees(angle), 270.0L, k_half_quantum_deg);
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSAngularUnits, RadianLiteralStoresRadiansDirectly) {
+TEST(GGEMSAngularUnits, RadianLiteralStoresIntegerPicoradians) {
   using namespace ggems::units;
 
   Angle angle = 2.0_rad;
@@ -146,7 +152,7 @@ TEST(GGEMSAngularUnits, RadianLiteralStoresRadiansDirectly) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSAngularUnits, IntegerRadianLiteralStoresRadiansDirectly) {
+TEST(GGEMSAngularUnits, IntegerRadianLiteralStoresIntegerPicoradians) {
   using namespace ggems::units;
 
   Angle const angle = 2_rad;
@@ -162,7 +168,7 @@ TEST(GGEMSAngularUnits, SupportsNegativeAngles) {
 
   Angle angle = -45.0_deg;
 
-  ExpectNearLongDouble(ToDegrees(angle), -45.0L);
+  ExpectNearLongDouble(ToDegrees(angle), -45.0L, k_half_quantum_deg);
   ExpectNearLongDouble(ToRadians(angle),
                        -std::numbers::pi_v<long double> / 4.0L);
 }
@@ -176,7 +182,7 @@ TEST(GGEMSAngularUnits, AdditionPreservesAngleSemantics) {
   Angle lhs = 30.0_deg;
   Angle rhs = 15.0_deg;
 
-  ExpectNearLongDouble(ToDegrees(lhs + rhs), 45.0L);
+  EXPECT_EQ((lhs + rhs).value, lhs.value + rhs.value);
 }
 
 // =============================================================================
@@ -188,7 +194,7 @@ TEST(GGEMSAngularUnits, SubtractionPreservesAngleSemantics) {
   Angle lhs = 30.0_deg;
   Angle rhs = 15.0_deg;
 
-  ExpectNearLongDouble(ToDegrees(lhs - rhs), 15.0L);
+  EXPECT_EQ((lhs - rhs).value, lhs.value - rhs.value);
 }
 
 // =============================================================================
@@ -199,36 +205,93 @@ TEST(GGEMSAngularUnits, UnaryMinusPreservesAngleSemantics) {
 
   Angle angle = 30.0_deg;
 
-  ExpectNearLongDouble(ToDegrees(-angle), -30.0L);
+  EXPECT_EQ((-angle).value, -angle.value);
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSAngularUnits, MultiplicationByScalarPreservesAngleSemantics) {
+TEST(GGEMSAngularUnits, QuantizesSubPicoradianRadianInputs) {
   using namespace ggems::units;
-
-  Angle angle = 30.0_deg;
-
-  ExpectNearLongDouble(ToDegrees(angle * 2.0L), 60.0L);
-  ExpectNearLongDouble(ToDegrees(2.0L * angle), 60.0L);
+  constexpr std::array input{0.49e-12L,  0.51e-12L,  1.49e-12L,  1.51e-12L,
+                             -0.49e-12L, -0.51e-12L, -1.49e-12L, -1.51e-12L};
+  constexpr std::array<std::int64_t, 8> expected{0, 1, 1, 2, 0, -1, -1, -2};
+  for (std::size_t index = 0; index < input.size(); ++index) {
+    auto const angle = MakeQuantity<Angle>(input[index], "rad");
+    ASSERT_TRUE(angle.has_value());
+    EXPECT_EQ(angle->value, expected[index]);
+  }
 }
 
-// =============================================================================
-// =============================================================================
-
-TEST(GGEMSAngularUnits, DivisionByScalarPreservesAngleSemantics) {
+TEST(GGEMSAngularUnits, PreservesExactCanonicalIntegerRange) {
   using namespace ggems::units;
+  for (auto value : {std::numeric_limits<std::int64_t>::min(),
+                     std::numeric_limits<std::int64_t>::max()}) {
+    Angle const angle{value};
+    EXPECT_EQ(angle.value, value);
+  }
+  for (long double value : {1.0e7L, -1.0e7L}) {
+    auto const angle = MakeQuantity<Angle>(value, "rad");
+    ASSERT_FALSE(angle.has_value());
+    EXPECT_EQ(angle.error(), UnitConversionError::OutOfRange);
+  }
+}
 
-  Angle angle = 30.0_deg;
+TEST(GGEMSAngularUnits, RejectsNonfiniteAndUnsupportedInputs) {
+  using namespace ggems::units;
+  for (long double value : {std::numeric_limits<long double>::quiet_NaN(),
+                            std::numeric_limits<long double>::infinity(),
+                            -std::numeric_limits<long double>::infinity()}) {
+    auto const angle = MakeQuantity<Angle>(value, "rad");
+    ASSERT_FALSE(angle.has_value());
+    EXPECT_EQ(angle.error(), UnitConversionError::NonFinite);
+    EXPECT_THROW(MakeRadians(value),
+                 std::bad_expected_access<UnitConversionError>);
+    EXPECT_THROW(MakeDegrees(value),
+                 std::bad_expected_access<UnitConversionError>);
+  }
+  for (auto const *unit : {"prad", "PRAD", " prad", "prad ", "radian"}) {
+    auto const angle = MakeQuantity<Angle>(1, unit);
+    ASSERT_FALSE(angle.has_value());
+    EXPECT_EQ(angle.error(), UnitConversionError::UnsupportedUnit);
+  }
+  EXPECT_THROW(MakeRadians(1.0e7L),
+               std::bad_expected_access<UnitConversionError>);
+  EXPECT_THROW(MakeDegrees(1.0e9L),
+               std::bad_expected_access<UnitConversionError>);
+}
 
-  ExpectNearLongDouble(ToDegrees(angle / 2.0L), 15.0L);
+TEST(GGEMSAngularUnits, ConvertsIntegralOutputsOnlyWhenExact) {
+  using namespace ggems::units;
+  EXPECT_EQ(ConvertTo<std::int64_t>(-2_rad, "rad").value(), -2);
+  Angle const one_picoradian{1};
+  auto const inexact = ConvertTo<std::int64_t>(one_picoradian, "rad");
+  ASSERT_FALSE(inexact.has_value());
+  EXPECT_EQ(inexact.error(), UnitConversionError::InexactConversion);
+  EXPECT_EQ(ConvertTo(one_picoradian, "rad").value(), 1.0e-12L);
+}
+
+TEST(GGEMSAngularUnits, QuantizesEachCardinalAngleIndependently) {
+  using namespace ggems::units;
+  constexpr std::array degrees{0.0L,   90.0L,  180.0L, 270.0L,
+                               360.0L, 450.0L, 720.0L};
+  constexpr std::array<std::int64_t, 7> picoradians{0,
+                                                    1'570'796'326'795,
+                                                    3'141'592'653'590,
+                                                    4'712'388'980'385,
+                                                    6'283'185'307'180,
+                                                    7'853'981'633'974,
+                                                    12'566'370'614'359};
+  for (std::size_t index = 0; index < degrees.size(); ++index) {
+    EXPECT_EQ(MakeDegrees(degrees[index]).value, picoradians[index]);
+    EXPECT_EQ(MakeDegrees(-degrees[index]).value, -picoradians[index]);
+  }
 }
 
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSAngularUnits, SpaceshipComparisonUsesRadians) {
+TEST(GGEMSAngularUnits, SpaceshipComparisonUsesCanonicalPicoradians) {
   using namespace ggems::units;
 
   EXPECT_EQ(90.0_deg, MakeRadians(std::numbers::pi_v<long double> / 2.0L));

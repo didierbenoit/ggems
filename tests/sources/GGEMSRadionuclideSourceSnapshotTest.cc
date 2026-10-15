@@ -51,6 +51,7 @@
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/sources/GGEMSSourceTypes.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 
 namespace {
 
@@ -87,8 +88,11 @@ using SourcePtr = std::shared_ptr<Source>;
 MakeActivitySource(std::shared_ptr<Definition const> radionuclide,
                    long double activity_bq) -> SourcePtr {
   auto source = std::make_shared<Source>();
-  source->SetRadionuclide(std::move(radionuclide),
-                          ggems::units::Activity{activity_bq}, 0ULL);
+  source->SetRadionuclide(
+    std::move(radionuclide),
+    ggems::units::MakeQuantity<ggems::units::Activity>(activity_bq, "Bq")
+      .value(),
+    0ULL);
   return source;
 }
 
@@ -380,8 +384,10 @@ TEST(GGEMSRadionuclideSourceSnapshot,
   ASSERT_EQ(successful_snapshot.GetPopulationRecords().size(), 1U);
   EXPECT_EQ(successful_snapshot.GetPopulationRecords()[0U].emission_count, 3U);
 
-  source->SetRadionuclide(replacement_definition, ggems::units::Activity{0.0L},
-                          0ULL);
+  source->SetRadionuclide(
+    replacement_definition,
+    ggems::units::MakeQuantity<ggems::units::Activity>(0.0L, "Bq").value(),
+    0ULL);
   EXPECT_THROW((void)ggems::core::sources::BuildSourceRunSnapshot(
                  sources, configuration, candidate.GetPlan()),
                ggems::core::GGEMSExceptionBase);
@@ -394,8 +400,10 @@ TEST(GGEMSRadionuclideSourceSnapshot,
   EXPECT_EQ(successful_snapshot.GetRadionuclideDefinitions()[0U],
             planned_definition);
 
-  source->SetRadionuclide(planned_definition, ggems::units::Activity{0.0L},
-                          0ULL);
+  source->SetRadionuclide(
+    planned_definition,
+    ggems::units::MakeQuantity<ggems::units::Activity>(0.0L, "Bq").value(),
+    0ULL);
   std::vector<SourcePtr> mismatched_sources{
     MakeActivitySource(replacement_definition, 0.0L)};
   auto const mismatched_configuration =

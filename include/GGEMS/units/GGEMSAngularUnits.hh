@@ -54,9 +54,9 @@ struct AngleUnitSet {};
 template <> struct UnitRegistry<AngleUnitSet> {
   /*! \brief Registered unit definitions for this quantity family. */
   static constexpr std::array<UnitDefinition, 2U> units{{
-    {.symbol = "rad", .scale = DecimalScale(0), .automatic_display = false},
+    {.symbol = "rad", .scale = DecimalScale(12), .automatic_display = false},
     {.symbol = "deg",
-     .scale = SpecialScale(std::numbers::pi_v<long double> / 180.0L)},
+     .scale = SpecialScale(std::numbers::pi_v<long double> * 1.0e12L / 180.0L)},
   }};
 };
 
@@ -88,32 +88,31 @@ template <> struct QuantityTraits<AngleTag> {
   static constexpr std::int8_t default_precision{3};
 };
 
-/*! \brief Strongly typed angle quantity stored canonically in radians. */
-using Angle = Quantity<AngleTag, long double>;
+/*! \brief Signed angle stored in integer picoradians (10^-12 rad). */
+using Angle = Quantity<AngleTag, std::int64_t>;
 
 /*!
- * \brief Creates an angle directly from a value expressed in radians.
+ * \brief Creates an angle from checked radians, nearest with ties away.
  *
- * \param[in] radians Angle value in radians.
- * \return Angle storing the supplied radian value.
- *
- * This helper performs no finite-value check or angular wrapping.
+ * \param[in] radians Angle value in radians, without angular wrapping.
+ * \return Angle rounded to the canonical integer picoradian lattice.
+ * \throws std::bad_expected_access<UnitConversionError> If the value is
+ * nonfinite or cannot be represented after conversion.
  */
-constexpr auto MakeRadians(long double radians) noexcept -> Angle {
-  return Angle{radians};
+constexpr auto MakeRadians(long double radians) -> Angle {
+  return MakeQuantity<Angle>(radians, "rad").value();
 }
 
 /*!
- * \brief Creates an angle from a value expressed in degrees.
+ * \brief Creates an angle from checked degrees, nearest with ties away.
  *
- * \param[in] degrees Angle value in degrees.
- * \return Angle converted to the canonical radian representation.
- *
- * This helper performs no finite-value check or angular wrapping.
+ * \param[in] degrees Angle value in degrees, without angular wrapping.
+ * \return Angle rounded to the canonical integer picoradian lattice.
+ * \throws std::bad_expected_access<UnitConversionError> If the value is
+ * nonfinite or cannot be represented after conversion.
  */
-constexpr auto MakeDegrees(long double degrees) noexcept -> Angle {
-  return Angle{degrees *
-               detail::ScaleFactor(FindUnit<AngleUnitSet>("deg")->scale)};
+constexpr auto MakeDegrees(long double degrees) -> Angle {
+  return MakeQuantity<Angle>(degrees, "deg").value();
 }
 
 /*!
@@ -123,7 +122,8 @@ constexpr auto MakeDegrees(long double degrees) noexcept -> Angle {
  * \return Angle value in radians.
  */
 constexpr auto ToRadians(Angle angle) noexcept -> long double {
-  return angle.value;
+  return static_cast<long double>(angle.value) /
+         detail::ScaleFactor(FindUnit<AngleUnitSet>("rad")->scale);
 }
 
 /*!
@@ -133,7 +133,7 @@ constexpr auto ToRadians(Angle angle) noexcept -> long double {
  * \return Angle value in degrees.
  */
 constexpr auto ToDegrees(Angle angle) noexcept -> long double {
-  return angle.value /
+  return static_cast<long double>(angle.value) /
          detail::ScaleFactor(FindUnit<AngleUnitSet>("deg")->scale);
 }
 

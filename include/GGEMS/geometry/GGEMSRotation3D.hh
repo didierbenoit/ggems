@@ -67,7 +67,7 @@ struct GGEMSRotation3D {
  * \param[in] angle_y Rotation about Y.
  * \param[in] angle_z Rotation about Z.
  * \return Proper FP64 basis, with exact cardinal entries when recognized.
- * \throws core::GGEMSRecoverable If an angle or resulting basis is invalid.
+ * \throws core::GGEMSRecoverable If the resulting basis is invalid.
  */
 [[nodiscard]] auto BuildRotationXYZ(units::Angle angle_x, units::Angle angle_y,
                                     units::Angle angle_z) -> GGEMSRotation3D;

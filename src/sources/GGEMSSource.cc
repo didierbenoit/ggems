@@ -35,7 +35,6 @@
 #include <string_view>
 #include <utility>
 #include <numbers>
-#include <limits>
 #include <variant>
 #include <memory>
 #include <optional>
@@ -461,32 +460,26 @@ auto GGEMSSource::SetIsotropicAngularDistribution(ggems::units::Angle theta_min,
                                                   ggems::units::Angle phi_min,
                                                   ggems::units::Angle phi_max)
   -> GGEMSSource & {
-  constexpr long double k_pi{std::numbers::pi_v<long double>};
-  constexpr long double k_two_pi{2.0L * k_pi};
+  constexpr auto k_pi = ggems::units::MakeDegrees(180.0L);
+  constexpr auto k_two_pi = ggems::units::MakeDegrees(360.0L);
+  if (theta_min.value < 0 || theta_min >= theta_max || theta_max > k_pi) {
+    throw ggems::core::GGEMSRecoverable(
+      "Isotropic theta bounds must satisfy 0 <= min < max <= pi.");
+  }
+
+  // Unsigned subtraction preserves the entire ordered signed span without UB.
+  auto const phi_width = static_cast<std::uint64_t>(phi_max.value) -
+                         static_cast<std::uint64_t>(phi_min.value);
+  if (phi_max <= phi_min ||
+      phi_width > static_cast<std::uint64_t>(k_two_pi.value)) {
+    throw ggems::core::GGEMSRecoverable(
+      "Isotropic phi bounds must have width in (0, 2*pi].");
+  }
 
   long double const theta_min_rad = ggems::units::ToRadians(theta_min);
   long double const theta_max_rad = ggems::units::ToRadians(theta_max);
   long double const phi_min_rad = ggems::units::ToRadians(phi_min);
   long double const phi_max_rad = ggems::units::ToRadians(phi_max);
-
-  if (!(std::isfinite(theta_min_rad) && std::isfinite(theta_max_rad) &&
-        std::isfinite(phi_min_rad) && std::isfinite(phi_max_rad))) {
-    throw ggems::core::GGEMSRecoverable(
-      "Isotropic angular bounds must be finite.");
-  }
-
-  if (!(theta_min_rad >= 0.0L && theta_min_rad < theta_max_rad &&
-        theta_max_rad <= k_pi)) {
-    throw ggems::core::GGEMSRecoverable(
-      "Isotropic theta bounds must satisfy 0 <= min < max <= pi.");
-  }
-
-  long double const phi_width_rad = phi_max_rad - phi_min_rad;
-  if (!(phi_max_rad > phi_min_rad && std::isfinite(phi_width_rad) &&
-        phi_width_rad <= k_two_pi)) {
-    throw ggems::core::GGEMSRecoverable(
-      "Isotropic phi bounds must have width in (0, 2*pi].");
-  }
 
   GGEMSSourceRecord candidate = record_;
   candidate.angular_distribution_type =

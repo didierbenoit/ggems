@@ -37,37 +37,39 @@
 #include "GGEMS/geometry/GGEMSGeometryTypes.hh"
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 
 namespace {
 
 /*!
  * \brief Evaluates an angle once, preserving recognized quarter turns.
- * \param[in] angle Canonical angle in radians.
+ * \param[in] angle Canonical angle in integer picoradians.
  * \return Sine and cosine in host working precision.
- * \throws ggems::core::GGEMSRecoverable If the angle is nonfinite.
  */
 auto SinCos(ggems::units::Angle angle) -> std::array<long double, 2U> {
-  if (!std::isfinite(angle.value)) {
-    throw ggems::core::GGEMSRecoverable("Box rotation angles must be finite.");
-  }
-
+  long double const radians = ggems::units::ToRadians(angle);
   long double const half_pi = std::numbers::pi_v<long double> / 2.0L;
-  long double const reduced = std::remainder(angle.value, 4.0L * half_pi);
-  long double const quarter_turns = reduced / half_pi;
-
-  if (quarter_turns == std::trunc(quarter_turns)) {
-    int const quadrant = static_cast<int>(quarter_turns);
+  long double const quarter_turns = std::round(radians / half_pi);
+  // Each cardinal angle is rounded independently at the input boundary.
+  // Multiples of the rounded pi/2 tick count would accumulate rounding error.
+  auto const cardinal = ggems::units::MakeQuantity<ggems::units::Angle>(
+    quarter_turns * 90.0L, "deg");
+  if (cardinal && *cardinal == angle) {
+    int const quadrant = static_cast<int>(quarter_turns) % 4;
     if (quadrant == 0) {
       return {0.0L, 1.0L};
     }
-    if (quadrant == 1 || quadrant == -1) {
-      return {quadrant > 0 ? 1.0L : -1.0L, 0.0L};
+    if (quadrant == 1 || quadrant == -3) {
+      return {1.0L, 0.0L};
+    }
+    if (quadrant == -1 || quadrant == 3) {
+      return {-1.0L, 0.0L};
     }
     return {0.0L, -1.0L};
   }
 
   // Preserve libm argument reduction for noncardinal large angles.
-  return {std::sin(angle.value), std::cos(angle.value)};
+  return {std::sin(radians), std::cos(radians)};
 }
 
 } // namespace

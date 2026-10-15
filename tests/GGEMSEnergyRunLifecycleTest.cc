@@ -50,6 +50,7 @@
 #include "GGEMS/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
 #include "GGEMS/sources/GGEMSSourcePopulation.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 
 namespace {
 
@@ -348,7 +349,10 @@ TEST_F(GGEMSEnergyRunLifecycleTest,
     ggems::core::radioactivity::builtins::BuildF18Radionuclide());
 
   ExpectFinalizedRejection([&] -> void {
-    source->SetRadionuclide(radionuclide, ggems::units::Activity{100.0L}, 0ULL);
+    source->SetRadionuclide(
+      radionuclide,
+      ggems::units::MakeQuantity<ggems::units::Activity>(100.0L, "Bq").value(),
+      0ULL);
   });
   ExpectFinalizedRejection(
     [&] -> void { source->SetCountDrivenPopulation(7ULL); });

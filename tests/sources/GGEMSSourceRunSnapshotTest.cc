@@ -54,6 +54,7 @@
 #include "GGEMS/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
 #include "GGEMS/sources/GGEMSSourcePopulationPlan.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 #include "GGEMS/random/GGEMSRandom.hh"
 #include "GGEMS/random/GGEMSRandomEngine.hh"
 
@@ -1225,8 +1226,10 @@ TEST(GGEMSSourceRunSnapshot,
     ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
     ggems::core::radioactivity::builtins::BuildF18Radionuclide());
   auto activity_source = std::make_shared<ggems::core::sources::GGEMSSource>();
-  activity_source->SetRadionuclide(definition, ggems::units::Activity{1.0L},
-                                   0ULL);
+  activity_source->SetRadionuclide(
+    definition,
+    ggems::units::MakeQuantity<ggems::units::Activity>(1.0L, "Bq").value(),
+    0ULL);
 
   auto const activity_configuration =
     ggems::core::sources::BuildSourceConfigurationSnapshot(*activity_source);
@@ -1268,8 +1271,10 @@ TEST(GGEMSSourceRunSnapshot,
   auto stable_configuration =
     ggems::core::sources::BuildSourceConfigurationSnapshot(
       reconfigured_sources);
-  reconfigured_sources[1U]->SetRadionuclide(definition,
-                                            ggems::units::Activity{2.0L}, 0ULL);
+  reconfigured_sources[1U]->SetRadionuclide(
+    definition,
+    ggems::units::MakeQuantity<ggems::units::Activity>(2.0L, "Bq").value(),
+    0ULL);
 
   ExpectGGEMSExceptionContaining(
     [&reconfigured_sources, &stable_configuration]() -> void {

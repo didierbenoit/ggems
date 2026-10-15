@@ -131,8 +131,8 @@ public:
    * only the definition pointer and mutability.
    *
    * \param[in] radionuclide Non-null shared immutable emission definition.
-   * \param[in] activity_at_reference_time Finite nonnegative parent activity in
-   * Bq.
+   * \param[in] activity_at_reference_time Nonnegative parent activity in
+   * canonical integer mBq.
    * \param[in] reference_time_ps Reference simulation time in ps, no later than
    * the run start.
    * \return This source for chained configuration.
@@ -280,15 +280,16 @@ public:
   /*!
    * \brief Selects uniform solid angle within local polar and azimuth bounds.
    *
-   * Angles are strong quantities in radians internally. Uniformity is in
+   * Angles are canonical integer picoradians; bounds use quantized pi and
+   * 2*pi before conversion to the prepared float record. Uniformity is in
    * cos(theta) and phi, not in theta.
    *
    * \param[in] theta_min Lower polar angle in [0, pi).
    * \param[in] theta_max Upper polar angle in (theta_min, pi].
-   * \param[in] phi_min Finite lower azimuth angle.
+   * \param[in] phi_min Lower azimuth angle.
    * \param[in] phi_max Finite upper azimuth with width in (0, 2*pi].
    * \return This source for chained configuration.
-   * \throws GGEMSRecoverable If angles are nonfinite, domains are invalid, or
+   * \throws GGEMSRecoverable If domains are invalid or
    * binary32 bounds fail record validation.
    */
   auto SetIsotropicAngularDistribution(ggems::units::Angle theta_min,

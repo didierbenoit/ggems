@@ -503,8 +503,13 @@ __kernel void analytic_layout(__global ulong *layout) {
                   root.generic_string(), random.GetKernelBuildDefinition());
     auto const &production = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
       context, root / "transport", "particle_stream_transport", options);
+#ifdef GGEMS_DEBUG_MODE
     EXPECT_EQ(production.GetBuildOptions().find("-cl-fast-relaxed-math"),
               std::string::npos);
+#else
+    EXPECT_NE(production.GetBuildOptions().find("-cl-fast-relaxed-math"),
+              std::string::npos);
+#endif
     cl::Program program{context.GetContextNative(), source};
     auto const device = context.GetDevice().GetDeviceNative();
     ASSERT_EQ(program.build({device},

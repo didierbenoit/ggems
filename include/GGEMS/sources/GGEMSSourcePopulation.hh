@@ -72,7 +72,7 @@ struct GGEMSActivityDrivenSourceConfiguration {
   std::shared_ptr<radioactivity::GGEMSRadionuclideDefinition const>
     radionuclide;
 
-  /*! \brief Parent activity in Bq at reference_time_ps. */
+  /*! \brief Parent activity in canonical mBq at reference_time_ps. */
   units::Activity activity_at_reference_time{};
 
   /*! \brief Absolute simulation reference time in picoseconds. */

@@ -92,7 +92,7 @@ public:
    * \param[in] angle_y Rotation about Y.
    * \param[in] angle_z Rotation about Z.
    * \return This Box for chained configuration.
-   * \throws GGEMSRecoverable If an angle or basis is invalid; the old pose
+   * \throws GGEMSRecoverable If the basis is invalid; the old pose
    * stays.
    */
   auto SetRotation(units::Angle angle_x, units::Angle angle_y,

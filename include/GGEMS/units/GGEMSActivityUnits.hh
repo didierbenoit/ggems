@@ -53,41 +53,46 @@ struct ActivityUnitSet {};
  */
 template <> struct UnitRegistry<ActivityUnitSet> {
   /*! \brief Registered unit definitions for this quantity family. */
-  static constexpr std::array<UnitDefinition, 8U> units{
+  static constexpr std::array<UnitDefinition, 9U> units{
     {
       {
-        .symbol = "Bq",
+        .symbol = "mBq",
         .scale = DecimalScale(0),
+        .automatic_display = false,
       },
       {
-        .symbol = "kBq",
+        .symbol = "Bq",
         .scale = DecimalScale(3),
       },
       {
-        .symbol = "MBq",
+        .symbol = "kBq",
         .scale = DecimalScale(6),
       },
       {
-        .symbol = "GBq",
+        .symbol = "MBq",
         .scale = DecimalScale(9),
       },
       {
-        .symbol = "TBq",
+        .symbol = "GBq",
         .scale = DecimalScale(12),
       },
       {
+        .symbol = "TBq",
+        .scale = DecimalScale(15),
+      },
+      {
         .symbol = "Ci",
-        .scale = DecimalScale(0, 37'000'000'000ULL),
+        .scale = DecimalScale(0, 37'000'000'000'000ULL),
         .automatic_display = false,
       },
       {
         .symbol = "mCi",
-        .scale = DecimalScale(0, 37'000'000ULL),
+        .scale = DecimalScale(0, 37'000'000'000ULL),
         .automatic_display = false,
       },
       {
         .symbol = "uCi",
-        .scale = DecimalScale(0, 37'000ULL),
+        .scale = DecimalScale(0, 37'000'000ULL),
         .unicode_symbol = "µCi",
         .automatic_display = false,
       },
@@ -123,8 +128,28 @@ template <> struct QuantityTraits<ActivityTag> {
   static constexpr std::int8_t default_precision{7};
 };
 
-/*! \brief Strongly typed activity quantity stored canonically in becquerels. */
-using Activity = Quantity<ActivityTag, long double>;
+/*! \brief Nonnegative activity stored in integer millibecquerels (10^-3 Bq). */
+using Activity = Quantity<ActivityTag, std::uint64_t>;
+
+/*!
+ * \brief Creates an activity quantity from a \c _mBq literal.
+ *
+ * \param[in] value Literal value expressed in millibecquerels.
+ * \return Activity converted to its canonical GGEMS representation.
+ */
+consteval auto operator""_mBq(unsigned long long value) -> Activity {
+  return detail::MakeLiteralQuantity<Activity>(value, "mBq");
+}
+
+/*!
+ * \brief Creates an activity quantity from a \c _mBq literal.
+ *
+ * \param[in] value Literal value expressed in millibecquerels.
+ * \return Activity converted to its canonical GGEMS representation.
+ */
+consteval auto operator""_mBq(long double value) -> Activity {
+  return detail::MakeLiteralQuantity<Activity>(value, "mBq");
+}
 
 /*!
  * \brief Creates an activity quantity from a \c _Bq literal.

@@ -42,6 +42,7 @@
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 #include "GGEMSScopedLoggerEncoding.hh"
 
 namespace {
@@ -156,8 +157,11 @@ TEST(GGEMSSourceDescription,
     ggems::core::radioactivity::builtins::BuildF18Radionuclide());
   GGEMSSource source{};
   source
-    .SetRadionuclide(radionuclide, ggems::units::Activity{100'000'000.0L},
-                     2'000'000'000ULL)
+    .SetRadionuclide(
+      radionuclide,
+      ggems::units::MakeQuantity<ggems::units::Activity>(100'000'000.0L, "Bq")
+        .value(),
+      2'000'000'000ULL)
     .SetBoxEmissionPicoMeter(2'000'000'000ULL, 3'000'000'000ULL,
                              4'000'000'000ULL)
     .SetIsotropicAngularDistribution()

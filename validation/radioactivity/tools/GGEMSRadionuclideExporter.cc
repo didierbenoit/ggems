@@ -100,7 +100,7 @@ struct Options {
   std::uint32_t capacity{50'000U};
   std::uint32_t population_replicates{128U};
 
-  ggems::units::Activity activity{0.0L};
+  ggems::units::Activity activity{};
 
   bool describe{false};
   bool help{false};
@@ -402,7 +402,7 @@ auto WriteRunHeader(std::ofstream &metadata, Options const &options,
     << R"json(,"workers_per_device":)json" << options.workers
     << R"json(,"rng_engine":"Philox","geometry":"Point","direction":"Fixed")json"
     << R"json(,"population_mode":"ActivityDriven","activity_bq":")json"
-    << options.activity.value
+    << *ggems::units::ConvertTo(options.activity, "Bq")
     << R"json(","reference_time_ps":0,"start_ps":0,"step_ps":)json"
     << options.step_ps << R"json(,"windows":)json" << options.windows
     << R"json(,"capacity_primaries":)json" << options.capacity

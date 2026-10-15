@@ -31,6 +31,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstddef>
+#include <expected>
 #include <limits>
 #include <numbers>
 
@@ -45,6 +46,7 @@
 #include "GGEMS/materials/builtins/GGEMSBuiltInMaterials.hh"
 #include "GGEMS/units/GGEMSAngularUnits.hh"
 #include "GGEMS/units/GGEMSLengthUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 
 namespace {
 using namespace ggems::units;
@@ -79,14 +81,15 @@ TEST(GGEMSRotatedBox, ActiveFixedAxisXYZOrder) {
 
 TEST(GGEMSRotatedBox, ThirtyFortyFiveNegativeAndRadians) {
   auto const thirty = ggems::geometry::BuildRotationXYZ(0_deg, 0_deg, 30_deg);
-  EXPECT_NEAR(thirty.axis_x.x, std::sqrt(3.0) / 2.0, 2.0e-16);
-  EXPECT_NEAR(thirty.axis_x.y, 0.5, 2.0e-16);
+  // Noncardinal rotations evaluate the canonical picoradian angle.
+  EXPECT_NEAR(thirty.axis_x.x, std::cos(ToRadians(30_deg)), 2.0e-16);
+  EXPECT_NEAR(thirty.axis_x.y, std::sin(ToRadians(30_deg)), 2.0e-16);
   auto const negative =
     ggems::geometry::BuildRotationXYZ(0_deg, 0_deg, -45.0_deg);
   auto const radians = ggems::geometry::BuildRotationXYZ(
     0_rad, 0_rad, MakeRadians(-std::numbers::pi_v<long double> / 4.0L));
-  EXPECT_NEAR(negative.axis_x.x, std::sqrt(0.5), 2.0e-16);
-  EXPECT_NEAR(negative.axis_x.y, -std::sqrt(0.5), 2.0e-16);
+  EXPECT_NEAR(negative.axis_x.x, std::cos(ToRadians(-45.0_deg)), 2.0e-16);
+  EXPECT_NEAR(negative.axis_x.y, std::sin(ToRadians(-45.0_deg)), 2.0e-16);
   EXPECT_DOUBLE_EQ(negative.axis_x.x, radians.axis_x.x);
   EXPECT_DOUBLE_EQ(negative.axis_y.x, radians.axis_y.x);
 }
@@ -98,9 +101,65 @@ TEST(GGEMSRotatedBox, InvalidAnglesKeepThePreviousRotation) {
   for (auto const invalid : {std::numeric_limits<long double>::infinity(),
                              std::numeric_limits<long double>::quiet_NaN()}) {
     EXPECT_THROW(box.SetRotation(MakeRadians(invalid), 0_rad, 0_rad),
-                 ggems::core::GGEMSRecoverable);
+                 std::bad_expected_access<UnitConversionError>);
     EXPECT_DOUBLE_EQ(box.GetRotation().axis_x.x, previous);
   }
+}
+
+TEST(GGEMSRotatedBox, IndependentlyRoundedQuarterTurnsRemainExact) {
+  for (int turn = -16; turn <= 16; ++turn) {
+    SCOPED_TRACE(turn);
+    auto const rotation = ggems::geometry::BuildRotationXYZ(
+      0_deg, 0_deg, MakeDegrees(static_cast<long double>(turn) * 90.0L));
+    std::array<double, 4U> constexpr cosine{1.0, 0.0, -1.0, 0.0};
+    std::array<double, 4U> constexpr sine{0.0, 1.0, 0.0, -1.0};
+    auto const quadrant = static_cast<std::size_t>(((turn % 4) + 4) % 4);
+    EXPECT_EQ(rotation.axis_x.x, cosine[quadrant]);
+    EXPECT_EQ(rotation.axis_x.y, sine[quadrant]);
+    EXPECT_EQ(rotation.axis_y.x, -sine[quadrant]);
+    EXPECT_EQ(rotation.axis_y.y, cosine[quadrant]);
+    EXPECT_EQ(rotation.IsIdentity(), quadrant == 0U);
+  }
+  for (long double const degrees : {-90'000'000.0L, 90'000'000.0L}) {
+    EXPECT_TRUE(
+      ggems::geometry::BuildRotationXYZ(MakeDegrees(degrees), 0_deg, 0_deg)
+        .IsIdentity());
+  }
+  for (std::int64_t const ticks : {std::numeric_limits<std::int64_t>::min(),
+                                   std::numeric_limits<std::int64_t>::max()}) {
+    EXPECT_NO_THROW(
+      (void)ggems::geometry::BuildRotationXYZ(0_deg, 0_deg, Angle{ticks}));
+  }
+}
+
+TEST(GGEMSRotatedBox, PicoradianNeighborsAreNotSnappedToCardinalAngles) {
+  for (long double const degrees : {-360.0L, -90.0L, 0.0L, 90.0L, 360.0L}) {
+    auto const cardinal = MakeDegrees(degrees);
+    auto const exact =
+      ggems::geometry::BuildRotationXYZ(0_deg, 0_deg, cardinal);
+    for (std::int64_t const delta : {-1LL, 1LL}) {
+      auto const adjacent = ggems::geometry::BuildRotationXYZ(
+        0_deg, 0_deg, Angle{cardinal.value + delta});
+      EXPECT_TRUE(adjacent.axis_x.x != exact.axis_x.x ||
+                  adjacent.axis_x.y != exact.axis_x.y);
+      EXPECT_FALSE(adjacent.IsIdentity());
+    }
+  }
+}
+
+TEST(GGEMSRotatedBox, SubPicoradianAngleUsesTheIdentityGeometryPath) {
+  auto const angle = MakeRadians(1.0e-20L);
+  EXPECT_EQ(angle.value, 0);
+  GGEMSWorld world;
+  world.SetSize(20_mm, 20_mm, 20_mm);
+  GGEMSBox box;
+  box.SetSize(2_mm, 4_mm, 6_mm)
+    .SetRotation(0_rad, 0_rad, angle)
+    .SetMaterial(
+      ggems::core::materials::builtins::BuildBuiltInMaterial("Vacuum"));
+  EXPECT_TRUE(box.GetRotation().IsIdentity());
+  world.AddVolume(box);
+  EXPECT_FALSE(world.BuildBoxPoseRecord().has_value());
 }
 
 TEST(GGEMSRotatedBox, RotationFitsWithSubPicometerWorldClearance) {

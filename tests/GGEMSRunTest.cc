@@ -55,6 +55,7 @@
 #include "GGEMS/radioactivity/builtins/GGEMSBuiltInRadionuclides.hh"
 #include "GGEMS/sources/GGEMSSourcePopulation.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 
 namespace {
 
@@ -276,7 +277,10 @@ TEST(GGEMSRun,
     ggems::core::radioactivity::GGEMSRadionuclideDefinition const>(
     ggems::core::radioactivity::builtins::BuildF18Radionuclide());
   auto source = std::make_shared<ggems::core::sources::GGEMSSource>();
-  source->SetRadionuclide(radionuclide, ggems::units::Activity{100.0L}, 0ULL);
+  source->SetRadionuclide(
+    radionuclide,
+    ggems::units::MakeQuantity<ggems::units::Activity>(100.0L, "Bq").value(),
+    0ULL);
 
   ggems::core::GGEMSRun run{};
   run.AddSource(source);
@@ -287,7 +291,9 @@ TEST(GGEMSRun,
     "schedule");
 
   EXPECT_NO_THROW(source->SetRadionuclide(
-    radionuclide, ggems::units::Activity{125.0L}, 17ULL));
+    radionuclide,
+    ggems::units::MakeQuantity<ggems::units::Activity>(125.0L, "Bq").value(),
+    17ULL));
   EXPECT_NO_THROW(run.SetTimePicoSecond(10ULL, 20ULL, 10ULL));
 
   ExpectGGEMSExceptionContaining(
@@ -296,13 +302,17 @@ TEST(GGEMSRun,
     "configured GGEMSRun start time");
 
   EXPECT_NO_THROW(source->SetRadionuclide(
-    radionuclide, ggems::units::Activity{125.0L}, 9ULL));
+    radionuclide,
+    ggems::units::MakeQuantity<ggems::units::Activity>(125.0L, "Bq").value(),
+    9ULL));
   ExpectGGEMSExceptionContaining(
     [&run] -> void { run.Initialize(); },
     "GGEMSRun cannot be initialized without a GGEMSRandom");
 
   EXPECT_NO_THROW(source->SetRadionuclide(
-    radionuclide, ggems::units::Activity{125.0L}, 10ULL));
+    radionuclide,
+    ggems::units::MakeQuantity<ggems::units::Activity>(125.0L, "Bq").value(),
+    10ULL));
   ExpectGGEMSExceptionContaining(
     [&run] -> void { run.Initialize(); },
     "GGEMSRun cannot be initialized without a GGEMSRandom");

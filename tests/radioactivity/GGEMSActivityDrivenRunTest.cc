@@ -50,6 +50,7 @@
 #include "GGEMS/sources/GGEMSSource.hh"
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 
 namespace {
@@ -101,8 +102,11 @@ constexpr std::uint32_t k_source_record_kind =
   long double activity_bq = k_activity_bq)
   -> std::shared_ptr<ggems::core::sources::GGEMSSource> {
   auto source = std::make_shared<ggems::core::sources::GGEMSSource>();
-  source->SetRadionuclide(std::move(radionuclide),
-                          ggems::units::Activity{activity_bq}, 0ULL);
+  source->SetRadionuclide(
+    std::move(radionuclide),
+    ggems::units::MakeQuantity<ggems::units::Activity>(activity_bq, "Bq")
+      .value(),
+    0ULL);
   return source;
 }
 
@@ -176,8 +180,11 @@ TEST_F(GGEMSActivityDrivenRunTest,
        RetriesDuplicateActivitySourceSlotsAfterInvalidReferenceTime) {
   auto radionuclide = MakeMonoRadionuclide();
   auto source = MakeActivitySource(radionuclide);
-  source->SetRadionuclide(radionuclide, ggems::units::Activity{k_activity_bq},
-                          3ULL * k_second_ps);
+  source->SetRadionuclide(
+    radionuclide,
+    ggems::units::MakeQuantity<ggems::units::Activity>(k_activity_bq, "Bq")
+      .value(),
+    3ULL * k_second_ps);
 
   ggems::core::GGEMSRun run{};
   run.SetRandom(MakeRandom());
@@ -188,14 +195,20 @@ TEST_F(GGEMSActivityDrivenRunTest,
   EXPECT_THROW(run.Initialize(), ggems::core::GGEMSExceptionBase);
 
   EXPECT_NO_THROW(source->SetRadionuclide(
-    radionuclide, ggems::units::Activity{k_activity_bq}, k_second_ps));
+    radionuclide,
+    ggems::units::MakeQuantity<ggems::units::Activity>(k_activity_bq, "Bq")
+      .value(),
+    k_second_ps));
 
   ASSERT_NO_THROW(run.Initialize());
 
   auto const &configuration =
     source->BuildActivityDrivenPopulationConfiguration();
   EXPECT_EQ(configuration.radionuclide, radionuclide);
-  EXPECT_EQ(configuration.activity_at_reference_time.value, k_activity_bq);
+  EXPECT_EQ(
+    configuration.activity_at_reference_time,
+    ggems::units::MakeQuantity<ggems::units::Activity>(k_activity_bq, "Bq")
+      .value());
   EXPECT_EQ(configuration.reference_time_ps, k_second_ps);
 }
 
@@ -237,9 +250,13 @@ TEST_F(GGEMSActivityDrivenRunTest,
 
   ASSERT_NO_THROW(run.Initialize());
 
-  EXPECT_THROW(source->SetRadionuclide(
-                 radionuclide, ggems::units::Activity{k_activity_bq}, 0ULL),
-               ggems::core::GGEMSExceptionBase);
+  EXPECT_THROW(
+    source->SetRadionuclide(
+      radionuclide,
+      ggems::units::MakeQuantity<ggems::units::Activity>(k_activity_bq, "Bq")
+        .value(),
+      0ULL),
+    ggems::core::GGEMSExceptionBase);
   EXPECT_THROW(source->SetCountDrivenPopulation(1ULL),
                ggems::core::GGEMSExceptionBase);
 

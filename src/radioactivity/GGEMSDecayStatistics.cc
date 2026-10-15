@@ -51,17 +51,12 @@ auto ComputeExpectedDecayEventCount(units::Activity activity_at_reference,
                                     std::uint64_t reference_time_ps,
                                     GGEMSTimeWindow time_window)
   -> long double {
-  if (!(activity_at_reference.value >= 0.0L)) {
-    throw ggems::core::GGEMSRecoverable(
-      "Activity at the reference time must be non-negative.");
-  }
-
   if (reference_time_ps > time_window.start_ps) {
     throw ggems::core::GGEMSRecoverable(
       "Decay reference time must not exceed the window start.");
   }
 
-  if (activity_at_reference.value == 0.0L ||
+  if (activity_at_reference.value == 0ULL ||
       time_window.start_ps == time_window.stop_ps) {
     return 0.0L;
   }
@@ -78,9 +73,11 @@ auto ComputeExpectedDecayEventCount(units::Activity activity_at_reference,
   long double const decay_constant =
     std::numbers::ln2_v<long double> / half_life_seconds;
 
+  // Convert canonical mBq once where the physical decay formula consumes Bq.
+  long double const activity_bq =
+    *units::ConvertTo(activity_at_reference, "Bq");
   long double const activity_at_start =
-    activity_at_reference.value *
-    std::exp(-decay_constant * elapsed_start_seconds);
+    activity_bq * std::exp(-decay_constant * elapsed_start_seconds);
 
   long double const decayed_fraction =
     -std::expm1(-decay_constant * duration_seconds);

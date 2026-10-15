@@ -33,7 +33,6 @@
 #include <filesystem>
 #include <format>
 #include <iostream>
-#include <numbers>
 #include <string>
 #include <span>
 #include <vector>
@@ -95,8 +94,12 @@ struct Case {
 /*! \brief Builds authored poses, with expected planes derived independently. */
 auto Cases() -> std::vector<Case> {
   Vector const x{1.0L, 0.0L, 0.0L};
-  auto const inverse_root_two = 1.0L / std::numbers::sqrt2_v<long double>;
-  auto const cosine_thirty = std::numbers::sqrt3_v<long double> / 2.0L;
+  // Prescribed planes use the physical angle represented by the canonical
+  // picoradian input, independently of the production rotation builder.
+  auto const cosine_forty_five = std::cos(ToRadians(45.0_deg));
+  auto const sine_forty_five = std::sin(ToRadians(45.0_deg));
+  auto const cosine_thirty = std::cos(ToRadians(30.0_deg));
+  auto const sine_thirty = std::sin(ToRadians(30.0_deg));
   std::vector<Case> cases;
   Case axis{.name = "90-degree axis swap", .planes = {}};
   axis.planes = {{.normal = x, .offset = -10, .faces = 8, .event = 2},
@@ -116,8 +119,11 @@ auto Cases() -> std::vector<Case> {
   }
   Case pathological = axis;
   pathological.name = "near-parallel unresolved surface";
-  pathological.rotation[2] = units::MakeRadians(1.0e-20L);
-  pathological.start = {-50, 10, 0};
+  // The former 1e-20 rad rotation quantizes to zero. Keep a true nonzero
+  // normal motion below the existing 2^-48 direction-resolution band instead:
+  // at this exact quarter turn, local y is 10 and its motion is -2^-60.
+  pathological.start = {-10, -50, 0};
+  pathological.direction = {0x1p-60F, 1.0F, 0.0F};
   pathological.expected_status = 2;
   pathological.planes.clear();
   cases.push_back(pathological);
@@ -171,7 +177,7 @@ auto Cases() -> std::vector<Case> {
   diagonal.rotation[2] = 45.0_deg;
   diagonal.start = {-40, -40, 0};
   diagonal.direction = {0.5F, 0.5F, 0.0F};
-  Vector const diagonal_normal{inverse_root_two, inverse_root_two, 0};
+  Vector const diagonal_normal{cosine_forty_five, sine_forty_five, 0};
   diagonal.planes = {
     {.normal = diagonal_normal, .offset = -20, .faces = 1, .event = 2},
     {.normal = diagonal_normal, .offset = 20, .faces = 2, .event = 3},
@@ -191,7 +197,7 @@ auto Cases() -> std::vector<Case> {
   tiny.half = {1, 1, 1};
   tiny.start = {-1, 1, 0};
   tiny.planes = {
-    {.normal = {-inverse_root_two, inverse_root_two, 0},
+    {.normal = {-sine_forty_five, cosine_forty_five, 0},
      .offset = 1,
      .faces = 8,
      .event = 2},
@@ -204,8 +210,9 @@ auto Cases() -> std::vector<Case> {
   spatial.rotation = {30.0_deg, 45.0_deg, 30.0_deg};
   spatial.start = {-60, -40, -20};
   spatial.direction = {0.75F, 0.5F, 0.25F};
-  Vector const spatial_normal{cosine_thirty * inverse_root_two,
-                              0.5L * inverse_root_two, -inverse_root_two};
+  Vector const spatial_normal{cosine_thirty * cosine_forty_five,
+                              sine_thirty * cosine_forty_five,
+                              -sine_forty_five};
   spatial.planes = {
     {.normal = spatial_normal, .offset = -10, .faces = 1, .event = 2},
     {.normal = spatial_normal, .offset = 10, .faces = 2, .event = 3},
@@ -226,7 +233,7 @@ auto Cases() -> std::vector<Case> {
     medical.half = {10 * scale, 30 * scale, 50 * scale};
     medical.world_half = 100 * scale;
     medical.start = {-60 * scale, 3 * scale, 0};
-    Vector const normal{cosine_thirty, 0.5L, 0};
+    Vector const normal{cosine_thirty, sine_thirty, 0};
     medical.planes = {
       {.normal = normal, .offset = -10.0L * scale, .faces = 1, .event = 2},
       {.normal = normal, .offset = 10.0L * scale, .faces = 2, .event = 3},
@@ -461,8 +468,13 @@ TEST_F(GGEMSNavigationDeviceTest,
     EXPECT_FALSE(
       program.Matches(context, root / "tests", "rotated_box_navigation_probe",
                       options + " -DGGEMS_TEST_DIFFERENT_OPTIONS=1"));
+#ifdef GGEMS_DEBUG_MODE
     EXPECT_EQ(program.GetBuildOptions().find("-cl-fast-relaxed-math"),
               std::string::npos);
+#else
+    EXPECT_NE(program.GetBuildOptions().find("-cl-fast-relaxed-math"),
+              std::string::npos);
+#endif
     Errors errors;
     auto const cases = Cases();
     for (auto const &test : cases) {

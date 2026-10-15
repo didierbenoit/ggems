@@ -51,6 +51,7 @@
 #include "GGEMS/sources/GGEMSSourceRunSnapshot.hh"
 #include "GGEMS/transport/GGEMSTransportWorkload.hh"
 #include "GGEMS/units/GGEMSActivityUnits.hh"
+#include "GGEMS/units/GGEMSUnitConversion.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
 
 namespace {
@@ -122,8 +123,10 @@ struct ActivityScenario {
     .SetFixedAngularDistribution()
     .SetPositionPicoMeter(11LL, 22LL, 33LL)
     .SetDirection(0.0, 0.0, 1.0)
-    .SetRadionuclide(std::move(definition), ggems::units::Activity{64.0L},
-                     k_time_window.start_ps);
+    .SetRadionuclide(
+      std::move(definition),
+      ggems::units::MakeQuantity<ggems::units::Activity>(64.0L, "Bq").value(),
+      k_time_window.start_ps);
 
   std::vector<SourcePtr> sources{std::move(source)};
   auto source_configuration =
