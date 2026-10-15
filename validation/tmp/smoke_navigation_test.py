@@ -29,7 +29,8 @@ source_test = (
     .set_direction(1.0, 0.0, 0.0)
     .set_angular_isotropic(0.0, 2.5, 0.0, 360.0, "deg")
     # .set_angular_fixed()
-    .set_primary_count(1_073_741_824)
+    # .set_primary_count(1_073_741_824)
+    .set_primary_count(1_000_000_000)
     .set_particle("aionino")
     .set_energy(125.0, "keV")
 )
@@ -42,13 +43,18 @@ world = ggems.geometry.GGEMSWorld()
 world.set_size(3.0, 3.0, 3.0, "m")
 world.set_material("Air")
 
-box = ggems.geometry.GGEMSBox()
-box.set_size(0.2, 0.1, 0.1, "m")
-box.set_position(0.0, 0.0, 0.0, "m")
-box.set_rotation(0.0, 0.0, 0.0, "deg")
-box.set_material("Water")
+# box = ggems.geometry.GGEMSBox()
+# box.set_size(0.2, 0.1, 0.1, "m")
+# box.set_position(0.0, 0.0, 0.0, "m")
+# box.set_rotation(0.0, 0.0, 0.0, "deg")
+# box.set_material("Water")
 
-world.add_volume(box)
+sphere = ggems.geometry.GGEMSSphere()
+sphere.set_radius(0.25, "m")
+sphere.set_position(0.0, 0.0, 0.0, "m")
+sphere.set_material("Water")
+
+world.add_volume(sphere)
 
 # ---------------------------------------------------------------------------
 
