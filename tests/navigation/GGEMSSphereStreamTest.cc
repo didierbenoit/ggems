@@ -420,7 +420,8 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context, cl::Program const &program,
                 0); // A curved surface has no planar face.
       auto const roots = Roots(anchor, direction, test.radius);
       auto const expected = roots[owner == 0 ? 0 : 1];
-      auto const measured = std::bit_cast<double>(result.trace[offset + 8]);
+      auto const measured = std::bit_cast<float>(
+        static_cast<std::uint32_t>(result.trace[offset + 8]));
       if (std::string{test.name} == "rounded outward arrival" && index == 1) {
         EXPECT_EQ(measured, 0.0);
         EXPECT_EQ(endpoint, (Point{0, 1, 0}));
@@ -488,18 +489,12 @@ __kernel void analytic_layout(__global ulong *layout) {
   layout[9] = sizeof(GGEMSParticleState);
 }
 )cl";
-  bool exercised_fp64{false};
   for (auto &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
     SCOPED_TRACE(context.GetDevice().GetName());
-    if (context.GetDevice().GetDoubleFpConfig() == 0U) {
-      continue;
-    }
-    exercised_fp64 = true;
     random::GGEMSRandom random;
     random.SetEngine("philox").SetSeed(91231);
     auto const options =
-      std::format("-I{} {} -DGGEMS_ENABLE_TRANSPORT_OBSERVER=1 "
-                  "-DGGEMS_ENABLE_FP64_NAVIGATION=1",
+      std::format("-I{} {} -DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
                   root.generic_string(), random.GetKernelBuildDefinition());
     auto const &production = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
       context, root / "transport", "particle_stream_transport", options);
@@ -523,7 +518,7 @@ __kernel void analytic_layout(__global ulong *layout) {
     layout_kernel.SetArgSVMPointer(0U, layout_buffer.GetData());
     layout_kernel.Run({1U}, {1U});
     ocl::ReadSVMToHost(layout_buffer, std::span{layout});
-    EXPECT_EQ(layout, (std::array<std::uint64_t, 10>{64, 8, 40, 0, 8, 16, 24,
+    EXPECT_EQ(layout, (std::array<std::uint64_t, 10>{48, 8, 40, 0, 8, 16, 24,
                                                      32, 36, 112}));
     Errors errors;
     for (auto const &test : Cases()) {
@@ -538,18 +533,11 @@ __kernel void analytic_layout(__global ulong *layout) {
       errors.position[2], errors.segment, errors.flight,
       production.GetBuildOptions());
   }
-  if (!exercised_fp64) {
-    GTEST_SKIP() << "No selected device supports FP64 Sphere navigation.";
-  }
 }
 
 TEST_F(GGEMSNavigationDeviceTest,
        RunOwnsSphereSnapshotAndDispatchesItsPredicate) {
   using namespace ggems::units;
-  bool requires_rejection{false};
-  for (auto const &context : ocl::GGEMSOpenCL::GetInstance().GetContext()) {
-    requires_rejection |= context.GetDevice().GetDoubleFpConfig() == 0U;
-  }
   for (bool const ambiguous_birth : {false, true}) {
     auto source = std::make_shared<sources::GGEMSSource>();
     source->SetAnalytic()
@@ -576,13 +564,6 @@ TEST_F(GGEMSNavigationDeviceTest,
       run.SetWorld(world);
       sphere.SetRadius(2_mm);
       world.SetSize(40_mm, 40_mm, 40_mm);
-    }
-    if (requires_rejection) {
-      // Run must reject the complete selected device set if any device lacks
-      // FP64; it must not silently execute only the compatible devices.
-      EXPECT_THROW(run.Initialize(), GGEMSRecoverable);
-      EXPECT_TRUE(observer->GetRecords().empty());
-      return;
     }
     ASSERT_NO_THROW(run.Initialize());
     if (ambiguous_birth) {

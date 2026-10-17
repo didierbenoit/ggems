@@ -155,9 +155,7 @@ auto MakeWorkload(ggems::ocl::GGEMSOpenCLContext &context,
     ggems::core::sources::BuildSourceConfigurationSnapshot(sources);
   ggems::geometry::GGEMSAnalyticVolumeRecord volume{};
   if (!boxes.empty()) {
-    volume.kind = world->BuildBoxPoseRecord().has_value()
-                    ? ggems::geometry::GGEMSAnalyticKind::RotatedBox
-                    : ggems::geometry::GGEMSAnalyticKind::Box;
+    volume.kind = ggems::geometry::GGEMSAnalyticKind::Box;
     volume.parameters.box = boxes.front();
   }
   return std::make_unique<TransportWorkload>(
@@ -457,12 +455,6 @@ TEST_F(GGEMSNavigationDeviceTest, WorldOwnsTheBoxAndRejectsInvalidAuthoring) {
 }
 
 TEST_F(GGEMSNavigationDeviceTest, AioninoUsesTheUploadedRotatedBoxPose) {
-  for (auto const &context :
-       ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
-    if (context.GetDevice().GetDoubleFpConfig() == 0U) {
-      GTEST_SKIP() << "Selected device lacks FP64";
-    }
-  }
   auto world = MakeWorld();
   auto box = MakeBox();
   box.SetRotation(30.0_deg, 45.0_deg, -30.0_deg);

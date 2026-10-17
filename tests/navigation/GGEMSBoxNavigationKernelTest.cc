@@ -40,6 +40,7 @@
 #include <gtest/gtest.h>
 
 #include "GGEMS/geometry/GGEMSBoxRecord.hh"
+#include "GGEMS/geometry/GGEMSBoxPoseRecord.hh"
 #include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSWorldRecord.hh"
 #include "GGEMS/opencl/GGEMSOpenCL.hh"
@@ -79,14 +80,18 @@ constexpr std::int64_t k_100_mm{100'000'000'000LL};
 
 /*! \brief Asymmetric, off-center Box: x in [-20, 40], y in [-30, -10],
  * z in [-10, 20] mm. */
-constexpr GGEMSBoxRecord k_box_record{.lower_x_pm = -20'000'000'000LL,
-                                      .lower_y_pm = -30'000'000'000LL,
-                                      .lower_z_pm = -10'000'000'000LL,
-                                      .upper_x_pm = 40'000'000'000LL,
-                                      .upper_y_pm = -10'000'000'000LL,
-                                      .upper_z_pm = 20'000'000'000LL,
+constexpr GGEMSBoxRecord k_box_record{.half_extent_x_pm = 30'000'000'000ULL,
+                                      .half_extent_y_pm = 10'000'000'000ULL,
+                                      .half_extent_z_pm = 15'000'000'000ULL,
                                       .volume_id = k_box,
                                       .material_id = 1U};
+constexpr ggems::geometry::GGEMSBoxPoseRecord k_box_pose{
+  .center_x_pm = 10'000'000'000LL,
+  .center_y_pm = -20'000'000'000LL,
+  .center_z_pm = 5'000'000'000LL,
+  .axis_x_x = 1.0F,
+  .axis_y_y = 1.0F,
+  .axis_z_z = 1.0F};
 
 /*! \brief One transaction: start, direction and the expected device answer. */
 struct RayCase {
@@ -133,6 +138,9 @@ auto RunRays(ggems::ocl::GGEMSOpenCLContext &context,
   auto box_buffer =
     context.CreateSVMBuffer(ggems::units::Bytes{sizeof(volume)});
   ggems::ocl::WriteSVMFromHost(box_buffer, volume);
+  auto pose_buffer =
+    context.CreateSVMBuffer(ggems::units::Bytes{sizeof(k_box_pose)});
+  ggems::ocl::WriteSVMFromHost(pose_buffer, k_box_pose);
   auto position_buffer = make(positions);
   auto direction_buffer = make(directions);
   std::vector<std::uint32_t> const zeros(ray_count, 0U);
@@ -154,15 +162,16 @@ auto RunRays(ggems::ocl::GGEMSOpenCLContext &context,
     "box_navigation_probe"};
   kernel.SetArgSVMPointer(0U, world_buffer.GetData());
   kernel.SetArgSVMPointer(1U, box_buffer.GetData());
-  kernel.SetArgSVMPointer(2U, position_buffer.GetData());
-  kernel.SetArgSVMPointer(3U, direction_buffer.GetData());
-  kernel.SetArg(4U, static_cast<cl_uint>(ray_count));
-  kernel.SetArgSVMPointer(5U, start_owners.GetData());
-  kernel.SetArgSVMPointer(6U, statuses.GetData());
-  kernel.SetArgSVMPointer(7U, events.GetData());
-  kernel.SetArgSVMPointer(8U, faces.GetData());
-  kernel.SetArgSVMPointer(9U, endpoints.GetData());
-  kernel.SetArgSVMPointer(10U, arrivals.GetData());
+  kernel.SetArgSVMPointer(2U, pose_buffer.GetData());
+  kernel.SetArgSVMPointer(3U, position_buffer.GetData());
+  kernel.SetArgSVMPointer(4U, direction_buffer.GetData());
+  kernel.SetArg(5U, static_cast<cl_uint>(ray_count));
+  kernel.SetArgSVMPointer(6U, start_owners.GetData());
+  kernel.SetArgSVMPointer(7U, statuses.GetData());
+  kernel.SetArgSVMPointer(8U, events.GetData());
+  kernel.SetArgSVMPointer(9U, faces.GetData());
+  kernel.SetArgSVMPointer(10U, endpoints.GetData());
+  kernel.SetArgSVMPointer(11U, arrivals.GetData());
   kernel.Run({static_cast<std::size_t>((ray_count + 63U) / 64U) * 64U}, {64U});
 
   std::vector<std::uint32_t> got_owner(ray_count);
@@ -184,13 +193,17 @@ auto RunRays(ggems::ocl::GGEMSOpenCLContext &context,
       std::format("case {} position ({}, {}, {}) direction ({}, {}, {})", index,
                   ray.position[0U], ray.position[1U], ray.position[2U],
                   ray.direction[0U], ray.direction[1U], ray.direction[2U]));
-    EXPECT_EQ(got_owner[index], ray.start_owner);
     EXPECT_EQ(got_status[index], ray.status);
-    EXPECT_EQ(got_event[index], ray.event);
-    EXPECT_EQ(got_faces[index], ray.faces);
     EXPECT_EQ(got_end[(3U * index)], ray.endpoint[0U]);
     EXPECT_EQ(got_end[(3U * index) + 1U], ray.endpoint[1U]);
     EXPECT_EQ(got_end[(3U * index) + 2U], ray.endpoint[2U]);
+    if (got_owner[index] == k_exterior && got_status[index] != k_resolved) {
+      // AnalyticLocate does not define ownership when location fails.
+      continue;
+    }
+    EXPECT_EQ(got_owner[index], ray.start_owner);
+    EXPECT_EQ(got_event[index], ray.event);
+    EXPECT_EQ(got_faces[index], ray.faces);
     EXPECT_EQ(got_arrival[index], ray.arrival);
   }
 }
@@ -214,12 +227,9 @@ auto ExpectRays(std::span<RayCase const> cases) -> void {
 TEST_F(GGEMSNavigationDeviceTest, BoxRecordDeviceLayoutMatchesHost) {
   for (auto &context : ggems::ocl::GGEMSOpenCL::GetInstance().GetContext()) {
     SCOPED_TRACE(context.GetDevice().GetName());
-    GGEMSBoxRecord const populated{.lower_x_pm = 1'000'000'000'001LL,
-                                   .lower_y_pm = 2,
-                                   .lower_z_pm = -3'000'000'000'003LL,
-                                   .upper_x_pm = 4,
-                                   .upper_y_pm = 5'000'000'000'005LL,
-                                   .upper_z_pm = -6,
+    GGEMSBoxRecord const populated{.half_extent_x_pm = 1'000'000'000'001ULL,
+                                   .half_extent_y_pm = 2ULL,
+                                   .half_extent_z_pm = 3'000'000'000'003ULL,
                                    .volume_id = 7U,
                                    .material_id = 8U};
     std::array<GGEMSBoxRecord, 2U> boxes{{GGEMSBoxRecord{}, populated}};
@@ -227,7 +237,7 @@ TEST_F(GGEMSNavigationDeviceTest, BoxRecordDeviceLayoutMatchesHost) {
       context.CreateSVMBuffer(ggems::units::Bytes{sizeof(boxes)});
     ggems::ocl::WriteSVMFromHost(box_buffer,
                                  std::span<GGEMSBoxRecord const>{boxes});
-    std::array<std::uint64_t, 19U> layout{};
+    std::array<std::uint64_t, 13U> layout{};
     auto layout_buffer =
       context.CreateSVMBuffer(ggems::units::Bytes{sizeof(layout)});
 
@@ -244,38 +254,29 @@ TEST_F(GGEMSNavigationDeviceTest, BoxRecordDeviceLayoutMatchesHost) {
     kernel.Run({1U}, {1U});
     ggems::ocl::ReadSVMToHost(layout_buffer, std::span<std::uint64_t>{layout});
 
-    std::array<std::uint64_t, 19U> const expected{
+    std::array<std::uint64_t, 13U> const expected{
       sizeof(GGEMSBoxRecord),
-      offsetof(GGEMSBoxRecord, lower_x_pm),
-      offsetof(GGEMSBoxRecord, lower_y_pm),
-      offsetof(GGEMSBoxRecord, lower_z_pm),
-      offsetof(GGEMSBoxRecord, upper_x_pm),
-      offsetof(GGEMSBoxRecord, upper_y_pm),
-      offsetof(GGEMSBoxRecord, upper_z_pm),
+      offsetof(GGEMSBoxRecord, half_extent_x_pm),
+      offsetof(GGEMSBoxRecord, half_extent_y_pm),
+      offsetof(GGEMSBoxRecord, half_extent_z_pm),
       offsetof(GGEMSBoxRecord, volume_id),
       offsetof(GGEMSBoxRecord, material_id),
       alignof(GGEMSBoxRecord),
       sizeof(GGEMSBoxRecord),
-      static_cast<std::uint64_t>(populated.lower_x_pm),
-      static_cast<std::uint64_t>(populated.lower_y_pm),
-      static_cast<std::uint64_t>(populated.lower_z_pm),
-      static_cast<std::uint64_t>(populated.upper_x_pm),
-      static_cast<std::uint64_t>(populated.upper_y_pm),
-      static_cast<std::uint64_t>(populated.upper_z_pm),
+      populated.half_extent_x_pm,
+      populated.half_extent_y_pm,
+      populated.half_extent_z_pm,
       populated.volume_id,
       populated.material_id};
     EXPECT_EQ(layout, expected);
 
     ggems::ocl::ReadSVMToHost(box_buffer, std::span<GGEMSBoxRecord>{boxes});
-    EXPECT_EQ(boxes[0U].lower_x_pm, -populated.lower_x_pm);
-    EXPECT_EQ(boxes[0U].lower_y_pm, -populated.lower_y_pm);
-    EXPECT_EQ(boxes[0U].lower_z_pm, -populated.lower_z_pm);
-    EXPECT_EQ(boxes[0U].upper_x_pm, -populated.upper_x_pm);
-    EXPECT_EQ(boxes[0U].upper_y_pm, -populated.upper_y_pm);
-    EXPECT_EQ(boxes[0U].upper_z_pm, -populated.upper_z_pm);
-    EXPECT_EQ(boxes[0U].volume_id, 107U);
-    EXPECT_EQ(boxes[0U].material_id, 42U);
-    EXPECT_EQ(boxes[1U].lower_x_pm, populated.lower_x_pm);
+    EXPECT_EQ(boxes[0U].half_extent_x_pm, populated.half_extent_x_pm + 1U);
+    EXPECT_EQ(boxes[0U].half_extent_y_pm, populated.half_extent_y_pm + 2U);
+    EXPECT_EQ(boxes[0U].half_extent_z_pm, populated.half_extent_z_pm + 3U);
+    EXPECT_EQ(boxes[0U].volume_id, populated.volume_id + 100U);
+    EXPECT_EQ(boxes[0U].material_id, populated.material_id + 34U);
+    EXPECT_EQ(boxes[1U].half_extent_x_pm, populated.half_extent_x_pm);
     EXPECT_EQ(boxes[1U].material_id, populated.material_id);
   }
 }

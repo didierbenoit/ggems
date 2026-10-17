@@ -43,10 +43,6 @@
 #include "geometry/GGEMSAnalyticVolumeRecord.clh"
 #include "navigation/GGEMSAnalyticNavigation.clh"
 
-#if GGEMS_ENABLE_FP64_NAVIGATION
-#include "navigation/GGEMSAnalyticArithmetic.clh"
-#endif
-
 /*!
  * \brief Moves the particle to the exact boundary described by a witness.
  *
@@ -104,12 +100,11 @@ static __attribute__((noinline)) uint GGEMS_TransportMoveToBoundary(
   return 1U;
 }
 
-#if GGEMS_ENABLE_FP64_NAVIGATION
 /*!
  * \brief Commits a floating analytic endpoint once on the canonical global
  * lattice.
  *
- * The global integer anchor never passes through FP64. A signed integral
+ * The global integer anchor never passes through FP32. A signed integral
  * displacement is added first; the remaining fraction rounds the final signed
  * coordinate half away from zero. All three coordinates succeed before commit.
  * No physical push, energy, time, direction or RNG change is introduced.
@@ -118,23 +113,27 @@ static __attribute__((noinline)) uint GGEMS_TransportMoveToBoundary(
  * \return Nonzero on success; zero for an unrepresentable displacement.
  */
 static __attribute__((noinline)) uint GGEMS_TransportMoveToAnalyticBoundary(
-  double parameter, GGEMSParticleState *particle) {
+  float parameter, GGEMSParticleState *particle) {
+  if (GGEMS_NavigationIsFinite(parameter) == 0U || parameter < 0.0F) {
+    return 0U;
+  }
+
   long3 position = (long3)(particle->position_x_pm, particle->position_y_pm,
                            particle->position_z_pm);
 
-  double3 direction = GGEMS_AnalyticDirection((float3)(particle->direction_x,
-                                                       particle->direction_y,
-                                                       particle->direction_z));
+  float3 direction = (float3)(particle->direction_x, particle->direction_y,
+                              particle->direction_z);
 
   for (uint axis = 0U; axis < 3U; ++axis) {
-    double displacement = parameter * direction[axis];
+    float displacement = parameter * direction[axis];
 
-    if (!isfinite(displacement) || fabs(displacement) >= 0x1p63) {
+    if (GGEMS_NavigationIsFinite(displacement) == 0U ||
+        fabs(displacement) >= 0x1p63F) {
       return 0U;
     }
 
     long integral = convert_long_rtz(displacement);
-    double fraction = displacement - (double)integral;
+    float fraction = displacement - (float)integral;
 
     if ((integral > 0L && position[axis] > LONG_MAX - integral) ||
         (integral < 0L && position[axis] < LONG_MIN - integral)) {
@@ -143,9 +142,9 @@ static __attribute__((noinline)) uint GGEMS_TransportMoveToAnalyticBoundary(
 
     long coordinate = position[axis] + integral;
     long adjustment =
-      fraction > 0.5 || (fraction == 0.5 && coordinate >= 0L)     ? 1L
-      : fraction < -0.5 || (fraction == -0.5 && coordinate <= 0L) ? -1L
-                                                                  : 0L;
+      fraction > 0.5F || (fraction == 0.5F && coordinate >= 0L)     ? 1L
+      : fraction < -0.5F || (fraction == -0.5F && coordinate <= 0L) ? -1L
+                                                                    : 0L;
 
     if ((coordinate == LONG_MAX && adjustment > 0L) ||
         (coordinate == LONG_MIN && adjustment < 0L)) {
@@ -160,7 +159,6 @@ static __attribute__((noinline)) uint GGEMS_TransportMoveToAnalyticBoundary(
   particle->position_z_pm = position.z;
   return 1U;
 }
-#endif
 
 /*!
  * \brief One accepted geometric transaction: query, move, owner update.
@@ -182,11 +180,11 @@ static __attribute__((noinline)) uint GGEMS_TransportMoveToAnalyticBoundary(
  *
  * \param[in] world Immutable World record.
  * \param[in] volume Immutable tagged volume, or None.
- * \param[in] box_pose Separate Box pose, ignored unless the tag is RotatedBox.
+ * \param[in] box_pose Separate pose for every Box; unused for other kinds.
  * \param[in,out] particle Private state with a valid current owner.
  * \param[in,out] event Last accepted event on entry (NONE at birth), updated
  * on success. Retained only while the straight flight direction is unchanged.
- * \param[out] faces Crossing mask, local for rotated Box and zero for Sphere.
+ * \param[out] faces Crossing mask, local for Box and zero for Sphere.
  * \return GGEMS_NAVIGATION_RESOLVED after an accepted move; otherwise the
  * failed status and the particle is unchanged.
  */
@@ -197,6 +195,7 @@ static __attribute__((noinline)) uint GGEMS_TransportToNextBoundary(
   uint *faces) {
   long3 position = (long3)(particle->position_x_pm, particle->position_y_pm,
                            particle->position_z_pm);
+
   float3 direction = (float3)(particle->direction_x, particle->direction_y,
                               particle->direction_z);
 
@@ -204,25 +203,20 @@ static __attribute__((noinline)) uint GGEMS_TransportToNextBoundary(
   uint const status =
     GGEMS_AnalyticFindBoundary(world, volume, box_pose, position, direction,
                                particle->current_volume_id, *event, &result);
+
   if (status != GGEMS_NAVIGATION_RESOLVED) {
     return status;
   }
 
   GGEMSBoundaryWitness witness = result.boundary;
 
-#if GGEMS_ENABLE_FP64_NAVIGATION
   uint moved =
-    (volume->kind == GGEMS_ANALYTIC_NONE ||
-     volume->kind == GGEMS_ANALYTIC_BOX ||
-     witness.event == GGEMS_NAVIGATION_EVENT_WORLD_EXIT)
+    witness.event == GGEMS_NAVIGATION_EVENT_WORLD_EXIT
       ? GGEMS_TransportMoveToBoundary(witness.gap_pm, witness.mantissa,
                                       witness.exponent, particle)
       : GGEMS_TransportMoveToAnalyticBoundary(result.parameter, particle);
+
   if (moved == 0U) {
-#else
-  if (GGEMS_TransportMoveToBoundary(witness.gap_pm, witness.mantissa,
-                                    witness.exponent, particle) == 0U) {
-#endif
     return GGEMS_NAVIGATION_UNRESOLVED;
   }
 

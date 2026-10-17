@@ -21,7 +21,7 @@
 
 /*!
  * \file
- * \brief Defines the optional FP64 rigid pose accompanying local Box faces.
+ * \brief Defines the FP32 rigid pose accompanying every Box.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -33,7 +33,7 @@
 
 namespace ggems::geometry {
 
-/*! \brief Scalar 96-byte pose; mirrors GGEMSBoxPoseRecord.clh. */
+/*! \brief Scalar 64-byte pose; mirrors GGEMSBoxPoseRecord.clh. */
 struct GGEMSBoxPoseRecord {
   /*! \brief Global center X coordinate in integer pm. */
   std::int64_t center_x_pm{0};
@@ -45,31 +45,34 @@ struct GGEMSBoxPoseRecord {
   std::int64_t center_z_pm{0};
 
   /*! \brief World X component of local X. */
-  double axis_x_x{1.0};
+  float axis_x_x{1.0};
 
   /*! \brief World Y component of local X. */
-  double axis_x_y{0.0};
+  float axis_x_y{0.0};
 
   /*! \brief World Z component of local X. */
-  double axis_x_z{0.0};
+  float axis_x_z{0.0};
 
   /*! \brief World X component of local Y. */
-  double axis_y_x{0.0};
+  float axis_y_x{0.0};
 
   /*! \brief World Y component of local Y. */
-  double axis_y_y{1.0};
+  float axis_y_y{1.0};
 
   /*! \brief World Z component of local Y. */
-  double axis_y_z{0.0};
+  float axis_y_z{0.0};
 
   /*! \brief World X component of local Z. */
-  double axis_z_x{0.0};
+  float axis_z_x{0.0};
 
   /*! \brief World Y component of local Z. */
-  double axis_z_y{0.0};
+  float axis_z_y{0.0};
 
   /*! \brief World Z component of local Z. */
-  double axis_z_z{1.0};
+  float axis_z_z{1.0};
+
+  /*! \brief Explicit alignment padding, initialized to zero. */
+  std::uint32_t padding{0U};
 };
 
 } // namespace ggems::geometry

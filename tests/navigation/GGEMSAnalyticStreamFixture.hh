@@ -86,7 +86,7 @@ inline auto ReplaceUnique(std::string &source, std::string const &before,
  *
  * The geometry loop receives a trace pointer; after every accepted
  * transaction it records departure owner, arrival owner, crossed planes,
- * committed position, event and arrival Material. FP64 runs also repeat the
+ * committed position, event and arrival Material. Analytic runs also repeat the
  * read-only query before the transaction to retain its unrounded parameter.
  * Every instrumentation anchor must be unique. No production hook is added.
  */
@@ -105,7 +105,6 @@ inline auto InstrumentStream(std::filesystem::path const &root) -> std::string {
   ReplaceUnique(
     source, "    uint const status = GGEMS_TransportToNextBoundary(",
     "    uint const departure_owner = particle->current_volume_id;\n"
-    "#if GGEMS_ENABLE_FP64_NAVIGATION\n"
     "    GGEMSAnalyticBoundary selected;\n"
     "    GGEMS_AnalyticFindBoundary(world, volume, box_pose,\n"
     "      (long3)(particle->position_x_pm, particle->position_y_pm, "
@@ -113,25 +112,23 @@ inline auto InstrumentStream(std::filesystem::path const &root) -> std::string {
     "      (float3)(particle->direction_x, particle->direction_y, "
     "particle->direction_z),\n"
     "      departure_owner, event, &selected);\n"
-    "#endif\n"
     "    uint const status = GGEMS_TransportToNextBoundary(");
-  ReplaceUnique(source, "    if (status == GGEMS_NAVIGATION_OUTSIDE_WORLD) {",
-                "    if (status == GGEMS_NAVIGATION_RESOLVED) {\n"
-                "      uint const offset = 1U + 9U * event_index;\n"
-                "      trace[0] = event_index + 1U;\n"
-                "      trace[offset] = departure_owner;\n"
-                "      trace[offset + 1U] = particle->current_volume_id;\n"
-                "      trace[offset + 2U] = faces;\n"
-                "      trace[offset + 3U] = particle->position_x_pm;\n"
-                "      trace[offset + 4U] = particle->position_y_pm;\n"
-                "      trace[offset + 5U] = particle->position_z_pm;\n"
-                "      trace[offset + 6U] = event;\n"
-                "      trace[offset + 7U] = particle->material_id;\n"
-                "#if GGEMS_ENABLE_FP64_NAVIGATION\n"
-                "      trace[offset + 8U] = as_long(selected.parameter);\n"
-                "#endif\n"
-                "    }\n\n"
-                "    if (status == GGEMS_NAVIGATION_OUTSIDE_WORLD) {");
+  ReplaceUnique(
+    source, "    if (status == GGEMS_NAVIGATION_OUTSIDE_WORLD) {",
+    "    if (status == GGEMS_NAVIGATION_RESOLVED) {\n"
+    "      uint const offset = 1U + 9U * event_index;\n"
+    "      trace[0] = event_index + 1U;\n"
+    "      trace[offset] = departure_owner;\n"
+    "      trace[offset + 1U] = particle->current_volume_id;\n"
+    "      trace[offset + 2U] = faces;\n"
+    "      trace[offset + 3U] = particle->position_x_pm;\n"
+    "      trace[offset + 4U] = particle->position_y_pm;\n"
+    "      trace[offset + 5U] = particle->position_z_pm;\n"
+    "      trace[offset + 6U] = event;\n"
+    "      trace[offset + 7U] = particle->material_id;\n"
+    "      trace[offset + 8U] = (long)as_uint(selected.parameter);\n"
+    "    }\n\n"
+    "    if (status == GGEMS_NAVIGATION_OUTSIDE_WORLD) {");
   return source;
 }
 
@@ -222,7 +219,7 @@ inline auto RunStream(ocl::GGEMSOpenCLContext &context,
   kernel.SetArgSVMPointer(19U, emission_ranges.GetData());
   kernel.SetArgSVMPointer(20U, world_buffer.GetData());
   kernel.SetArgSVMPointer(21U, volume_buffer.GetData());
-  // Match production: the pose argument is ignored outside RotatedBox.
+  // Match production: the pose argument is ignored outside Box.
   kernel.SetArgSVMPointer(22U, pose_buffer ? pose_buffer->GetData()
                                            : volume_buffer.GetData());
   kernel.SetArgSVMPointer(23U, trace_buffer.GetData());

@@ -21,8 +21,7 @@
 
 /*!
  * \file
- * \brief Resolves full solid Sphere ownership and crossings in local FP64
- * arithmetic.
+ * \brief Resolves full solid Sphere ownership and crossings in local FP32.
  *
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
@@ -34,109 +33,33 @@
 
 #include "geometry/GGEMSAnalyticVolumeRecord.clh"
 #include "geometry/GGEMSBoxRecord.clh"
-#include "navigation/GGEMSAnalyticArithmetic.clh"
 #include "navigation/GGEMSNavigation.clh"
-
-/*! \brief Practical FP64 arithmetic resolution, 16 * DBL_EPSILON. */
-#define GGEMS_SPHERE_RESOLUTION_FACTOR 0x1p-48
-
-/*! \brief Integer input bound for exact compensated radial zero/sign tests. */
-#define GGEMS_SPHERE_INTEGER_RESIDUAL_LIMIT 0x1p50
-
-/*!
- * \brief Evaluates q.q-R^2 with FMA product residuals and compensated addition.
- *
- * This short fixed calculation preserves cancellation near a surface. For
- * integer inputs of magnitude at most 2^50 pm, all product/addition residuals
- * are integers small enough to sum exactly in binary64; zero and sign are
- * exact in that profile. Beyond it this is only a floating approximation.
- * It stores no history and performs no refinement or root certification.
- * \param[in] offset Integer local coordinates promoted to FP64.
- * \param[in] radius Integer radius promoted to FP64.
- * \return Radial polynomial residual in square picometers.
- */
-static inline double GGEMS_SphereRadialResidual(double3 offset, double radius) {
-#pragma OPENCL FP_CONTRACT OFF
-  double squared_radius = radius * radius;
-  double sum = -squared_radius;
-  double residual = -fma(radius, radius, -squared_radius);
-  for (uint axis = 0U; axis < 3U; ++axis) {
-    double square = offset[axis] * offset[axis];
-    double next = sum + square;
-    double added = next - sum;
-    residual += (sum - (next - added)) + (square - added) +
-                fma(offset[axis], offset[axis], -square);
-    sum = next;
-  }
-  return sum + residual;
-}
 
 /*!
  * \brief Locates the forward owner of a canonical birth in the closed World.
  *
- * Integer center subtraction precedes FP64 conversion. The arithmetic band
- * rho = 16 * DBL_EPSILON * (sum(abs(q)) + R) pm detects ambiguous births.
- * A compensated radial residual resolves integer births through 2^50 pm;
- * recognized exact surface starts use radial motion. It is not a geometric
- * enlargement or a displacement.
+ * Integer center subtraction precedes FP32 conversion. Direct squared-radius
+ * classification uses inward radial motion at a represented surface; an
+ * outward or tangent surface birth belongs to the World. No tolerance or
+ * displacement is introduced.
  * \param[in] sphere Complete ball and owner identities.
  * \param[in] position Canonical point already validated against the World.
  * \param[in] direction Actual finite, nonzero stored direction.
  * \param[out] owner Packed forward VolumeID/MaterialID.
- * \return Resolved, or unresolved for an indeterminate near-surface birth.
+ * \return Resolved according to the FP32 radial classification.
  */
 static inline uint GGEMS_SphereLocate(__global GGEMSSphereRecord const *sphere,
                                       long3 position, float3 direction,
                                       ulong *owner) {
   long3 relative = position - (long3)(sphere->center_x_pm, sphere->center_y_pm,
                                       sphere->center_z_pm);
-  double3 offset = convert_double3(relative);
-  double3 motion = GGEMS_AnalyticDirection(direction);
-  double radius = (double)sphere->radius_pm;
-  double radial_gap = length(offset) - radius;
-  double resolution =
-    GGEMS_SPHERE_RESOLUTION_FACTOR *
-    (fabs(offset.x) + fabs(offset.y) + fabs(offset.z) + radius);
-  double radial_motion = dot(offset, motion);
-  uint inside = radial_gap < -resolution;
-  if (fabs(radial_gap) <= resolution) {
-    // Exact axis starts remain recognizable even outside the FP64 integer
-    // profile. Within the profile, compensated integer residuals also resolve
-    // oblique surface births and sub-pm radial separations without a push.
-    uint axis_surface = (relative.x == 0L && relative.y == 0L &&
-                         abs(relative.z) == sphere->radius_pm) ||
-                        (relative.x == 0L && relative.z == 0L &&
-                         abs(relative.y) == sphere->radius_pm) ||
-                        (relative.y == 0L && relative.z == 0L &&
-                         abs(relative.x) == sphere->radius_pm);
-    if (axis_surface != 0U) {
-      inside = radial_motion < 0.0;
-    } else if (radius <= GGEMS_SPHERE_INTEGER_RESIDUAL_LIMIT &&
-               fmax(fabs(offset.x), fmax(fabs(offset.y), fabs(offset.z))) <=
-                 GGEMS_SPHERE_INTEGER_RESIDUAL_LIMIT) {
-      double radial = GGEMS_SphereRadialResidual(offset, radius);
-      if (radial == 0.0 && fabs(radial_motion) <= resolution * length(motion)) {
-#pragma OPENCL FP_CONTRACT OFF
-        // At a surface with nearly tangent motion, do not infer a side from
-        // a dot product that lost bits. Exact ordinary tangents still resolve.
-        double sum = 0.0;
-        for (uint axis = 0U; axis < 3U; ++axis) {
-          double product = offset[axis] * motion[axis];
-          double next = sum + product;
-          double added = next - sum;
-          if (fma(offset[axis], motion[axis], -product) != 0.0 ||
-              (sum - (next - added)) + (product - added) != 0.0) {
-            return GGEMS_NAVIGATION_UNRESOLVED;
-          }
-          sum = next;
-        }
-        radial_motion = sum;
-      }
-      inside = radial < 0.0 || (radial == 0.0 && radial_motion < 0.0);
-    } else {
-      return GGEMS_NAVIGATION_UNRESOLVED;
-    }
-  }
+
+  float3 offset = convert_float3(relative);
+  float radius = (float)sphere->radius_pm;
+  float radial = dot(offset, offset) - radius * radius;
+  float motion = dot(offset, direction);
+  uint inside = radial < 0.0F || (radial == 0.0F && motion < 0.0F);
+
   *owner = inside != 0U
              ? ((ulong)sphere->volume_id << 32U) | sphere->material_id
              : ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
@@ -144,117 +67,72 @@ static inline uint GGEMS_SphereLocate(__global GGEMSSphereRecord const *sphere,
 }
 
 /*!
- * \brief Selects a Sphere crossing against an already resolved exact World
- * exit.
+ * \brief Selects a direct FP32 Sphere crossing against the resolved World exit.
  *
- * For q = P-C and actual stored D, a = D.D, b = q.D, c = q.q-R^2.
- * The discriminant uses a*(R-impact)*(R+impact), with
- * impact = |q cross D|/sqrt(a), avoiding subtraction of large along-ray terms.
- * Roots use Q/a and c/Q, Q = -b-copysign(sqrt(discriminant),b).
- * A near-tangent gap within rho is unresolved unless an exact axial tangent
- * is established from the integer coordinates. No positive chord is discarded
- * as a tangent. This is a bounded practical profile, not a root certificate.
- *
- * Known arrival ownership selects the far root after entry even if canonical
- * rounding leaves the anchor outside the entry surface. An outward endpoint
- * at most sqrt(3)/2 + rho pm outside resolves at zero additional path. A single
- * convex volume cannot be reentered after exit while direction stays unchanged.
- * No locating decision changes position, time, energy, or RNG.
+ * For q = P-C and stored D, a = D.D, b = q.D, c = q.q-R^2. The selected root
+ * is (-b-sqrt(b*b-a*c))/a for entry and (-b+sqrt(b*b-a*c))/a for exit.
+ * A nonpositive discriminant has no crossing for an outside owner. Accepted
+ * arrival ownership selects the exit root without relocating the rounded
+ * anchor. Analytic dispatch suppresses reentry after an accepted convex exit
+ * while direction stays unchanged. Arithmetic failures remain unresolved; no
+ * compensation, near-surface envelope, or endpoint repair is applied.
  * \param[in] sphere Immutable full ball.
  * \param[in] position Canonical start in the closed World.
  * \param[in] direction Actual stored finite direction.
  * \param[in] current_owner Accepted departure owner.
- * \param[in] last_event Previous accepted event; reset after a direction
- * change.
  * \param[in,out] witness World exit on entry; chosen crossing on success.
  * \param[in,out] parameter World parameter on entry; selected parameter on
  * success.
- * \return Resolved or bounded unresolved (ambiguous tangent, side, or
- * ordering).
+ * \return Resolved or unresolved for invalid arithmetic or boundary ordering.
  */
 static inline uint
 GGEMS_SphereFindBoundary(__global GGEMSSphereRecord const *sphere,
                          long3 position, float3 direction, uint current_owner,
-                         uint last_event, GGEMSBoundaryWitness *witness,
-                         double *parameter) {
-  if (last_event == GGEMS_NAVIGATION_EVENT_VOLUME_EXIT &&
-      current_owner == GGEMS_VOLUME_ID_WORLD) {
-    return GGEMS_NAVIGATION_RESOLVED;
-  }
+                         GGEMSBoundaryWitness *witness, float *parameter) {
   long3 relative = position - (long3)(sphere->center_x_pm, sphere->center_y_pm,
                                       sphere->center_z_pm);
-  double3 offset = convert_double3(relative);
-  double3 motion = GGEMS_AnalyticDirection(direction);
-  double radius = (double)sphere->radius_pm;
-  double norm = length(motion);
-  double a = dot(motion, motion);
-  double b = dot(offset, motion);
-  double radial = length(offset);
-  double c = GGEMS_SphereRadialResidual(offset, radius);
-  double resolution =
-    GGEMS_SPHERE_RESOLUTION_FACTOR *
-    (fabs(offset.x) + fabs(offset.y) + fabs(offset.z) + radius);
-  uint inside = current_owner == sphere->volume_id;
-  double candidate;
 
-  if (inside != 0U && b >= 0.0 && radial >= radius) {
-    // Only the known arrival side admits this canonical rounding
-    // reconciliation.
-    double rounding_radius = sqrt(3.0) * 0.5 + resolution;
-    if (radial - radius > rounding_radius) {
-      return GGEMS_NAVIGATION_UNRESOLVED;
-    }
-    candidate = 0.0;
-  } else {
-    if (inside == 0U && b >= 0.0) {
-      return GGEMS_NAVIGATION_RESOLVED;
-    }
-    double impact = length(cross(offset, motion)) / norm;
-    double gap = radius - impact;
-    if (gap < -resolution) {
-      return inside != 0U ? GGEMS_NAVIGATION_UNRESOLVED
-                          : GGEMS_NAVIGATION_RESOLVED;
-    }
-    if (fabs(gap) <= resolution) {
-      // An axis-aligned line at exactly +/-R with the other transverse
-      // coordinate zero is an exact tangent, including at enormous origins.
-      uint tangent = 0U;
-      for (uint axis = 0U; axis < 3U; ++axis) {
-        uint next = (axis + 1U) % 3U;
-        uint last = (axis + 2U) % 3U;
-        if (motion[axis] != 0.0 && motion[next] == 0.0 && motion[last] == 0.0) {
-          tangent =
-            (relative[next] == 0L &&
-             abs(relative[last]) == sphere->radius_pm) ||
-            (relative[last] == 0L && abs(relative[next]) == sphere->radius_pm);
-        }
-      }
-      return inside == 0U && tangent != 0U ? GGEMS_NAVIGATION_RESOLVED
-                                           : GGEMS_NAVIGATION_UNRESOLVED;
-    }
-    double discriminant = a * gap * (radius + impact);
-    double root = -b - copysign(sqrt(discriminant), b);
-    double first = root / a;
-    double second = c / root;
-    double near_parameter = fmin(first, second);
-    double far_parameter = fmax(first, second);
-    if (inside == 0U && far_parameter <= 0.0) {
-      return GGEMS_NAVIGATION_RESOLVED;
-    }
-    candidate = inside != 0U ? far_parameter : near_parameter;
+  float3 offset = convert_float3(relative);
+  float radius = (float)sphere->radius_pm;
+  float a = dot(direction, direction);
+  float b = dot(offset, direction);
+
+  uint inside = current_owner == sphere->volume_id;
+
+  if (inside == 0U && b >= 0.0F) {
+    return GGEMS_NAVIGATION_RESOLVED;
   }
 
-  if (!isfinite(candidate) || candidate < 0.0 || candidate >= *parameter) {
+  float c = dot(offset, offset) - radius * radius;
+  float discriminant = b * b - a * c;
+
+  if (GGEMS_NavigationIsFinite(discriminant) == 0U) {
     return GGEMS_NAVIGATION_UNRESOLVED;
   }
+
+  if (discriminant <= 0.0F) {
+    return inside != 0U ? GGEMS_NAVIGATION_UNRESOLVED
+                        : GGEMS_NAVIGATION_RESOLVED;
+  }
+
+  float root = sqrt(discriminant);
+  float candidate = (inside != 0U ? -b + root : -b - root) / a;
+
+  if (GGEMS_NavigationIsFinite(candidate) == 0U || candidate < 0.0F ||
+      candidate >= *parameter) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+
   *parameter = candidate;
-  witness->faces = 0U; // Curved surface: no planar face mask.
+
+  witness->faces = 0U;
   witness->event = inside != 0U ? GGEMS_NAVIGATION_EVENT_VOLUME_EXIT
                                 : GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY;
   witness->arrival_volume_id =
     inside != 0U ? GGEMS_VOLUME_ID_WORLD : sphere->volume_id;
   witness->arrival_material_id =
     inside != 0U ? GGEMS_MATERIAL_ID_WORLD : sphere->material_id;
+
   return GGEMS_NAVIGATION_RESOLVED;
 }
 

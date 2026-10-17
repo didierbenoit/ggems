@@ -477,26 +477,16 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
   auto const pose =
     world != nullptr ? world->BuildBoxPoseRecord() : std::nullopt;
 
-  bool const needs_fp64 =
-    volume.kind == geometry::GGEMSAnalyticKind::RotatedBox ||
-    volume.kind == geometry::GGEMSAnalyticKind::Sphere;
-  if (needs_fp64 && context.GetDevice().GetDoubleFpConfig() == 0U) {
-    throw GGEMSRecoverable(
-      "Sphere and rotated Box navigation require OpenCL FP64 support.");
-  }
   if (pose.has_value()) {
     box_pose_buffer_.emplace(context.CreateSVMBuffer(
       ggems::units::Bytes{sizeof(geometry::GGEMSBoxPoseRecord)}));
     ggems::ocl::WriteSVMFromHost(*box_pose_buffer_, *pose);
   }
 
-  std::string build_options = std::format("-I{} {} "
-                                          "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
-                                          kernel_root.generic_string(),
-                                          random.GetKernelBuildDefinition());
-  if (needs_fp64) {
-    build_options += " -DGGEMS_ENABLE_FP64_NAVIGATION=1";
-  }
+  std::string const build_options = std::format(
+    "-I{} {} "
+    "-DGGEMS_ENABLE_TRANSPORT_OBSERVER=1",
+    kernel_root.generic_string(), random.GetKernelBuildDefinition());
 
   auto const &program =
     opencl.GetOrCreateProgram(*context_, kernel_transport_root,
@@ -542,7 +532,7 @@ GGEMSTransportWorkload::GGEMSTransportWorkload(
                                                 : geometry::GGEMSWorldRecord{});
 
   kernel_->SetArgSVMPointer(argument_index++, volume_buffer_.GetData());
-  // The pose is read only for RotatedBox. Keep every kernel argument bound
+  // The pose is read for every Box. Keep every kernel argument bound
   // to live SVM storage: a null pointer can leave it unset on OpenCL drivers.
   kernel_->SetArgSVMPointer(argument_index++, box_pose_buffer_
                                                 ? box_pose_buffer_->GetData()

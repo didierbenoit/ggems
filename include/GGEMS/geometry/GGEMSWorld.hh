@@ -162,9 +162,8 @@ public:
    * World-only.
    *
    * Admission belongs to Validate(); this method only packs. Volume
-   * identity is 1 after the World (identity 0). Identity faces are global
-   * center -/+ half extent. Rotated faces are local -/+ half extent and require
-   * the separate pose record.
+   * identity is 1 after the World (identity 0). Every Box stores local half
+   * extents and uses the separate center and FP32 pose record.
    *
    * \param[in] material_ids Dense snapshot-local Material identity of each
    * Box, supplied by the scene compiler in GetBoxes() order.
@@ -177,8 +176,9 @@ public:
     -> std::vector<GGEMSBoxRecord>;
 
   /*!
-   * \brief Packs the optional pose for the single rotated Box.
-   * \return No pose for Sphere, World-only, or an identity Box.
+   * \brief Packs the center and FP32 pose for the single Box.
+   * \return A pose for every Box, including identity; none for Sphere or
+   * World-only.
    * \pre Validate() has succeeded since the last scene edit.
    */
   [[nodiscard]] auto BuildBoxPoseRecord() const

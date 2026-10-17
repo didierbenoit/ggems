@@ -37,11 +37,8 @@
 /*! \brief World-only scene. */
 #define GGEMS_ANALYTIC_NONE 0U
 
-/*! \brief Exact global Box faces. */
+/*! \brief Local Box with a separate FP32 pose. */
 #define GGEMS_ANALYTIC_BOX 1U
-
-/*! \brief Local Box faces with a separate FP64 pose. */
-#define GGEMS_ANALYTIC_ROTATED_BOX 2U
 
 /*! \brief Full solid Sphere. */
 #define GGEMS_ANALYTIC_SPHERE 3U
@@ -69,15 +66,14 @@ typedef struct GGEMSSphereRecord {
 
 /*! \brief Payload selected by the enclosing analytic tag. */
 typedef union GGEMSAnalyticParameters {
-  /*! \brief Global or local Box faces and identities. */
+  /*! \brief Local Box half extents and identities. */
   GGEMSBoxRecord box;
 
   /*! \brief Sphere center, radius, and identities. */
   GGEMSSphereRecord sphere;
 } GGEMSAnalyticParameters;
 
-/*! \brief One 64-byte scene record shared by every numerical program variant.
- */
+/*! \brief One 48-byte scene record shared by every transport program. */
 typedef struct GGEMSAnalyticVolumeRecord {
   /*! \brief GGEMS_ANALYTIC_* predicate selection. */
   uint kind;

@@ -83,7 +83,7 @@
  *
  * \param[in] world Immutable device World parameters.
  * \param[in] volume Single tagged analytic volume or None.
- * \param[in] box_pose Separate Box pose, ignored unless the tag is RotatedBox.
+ * \param[in] box_pose Separate pose for every Box; unused for other kinds.
  * \param[in,out] particle Private state; moved to the World boundary on
  * success, owner identities updated at every accepted boundary.
  * \param[in,out] counters Transport counters receiving the outcome.

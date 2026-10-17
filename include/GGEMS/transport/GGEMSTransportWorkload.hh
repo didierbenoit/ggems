@@ -295,7 +295,6 @@ public:
    * \param[in] world Optional World copied to SVM; required for navigated
    * (Process-free) species.
    * \param[in] volume Single tagged volume record copied to SVM.
-   * Sphere and rotated Box require FP64 on the selected device.
    * \throws GGEMSRecoverable If counts, random-stream range, or launch limit
    * are invalid.
    * \throws GGEMSInternal If energy and cumulative-ticket table lengths
@@ -469,7 +468,9 @@ private:
   /*! \brief Immutable single analytic volume record, including None. */
   ggems::ocl::GGEMSOpenCLSVMBuffer volume_buffer_;
 
-  /*! \brief Optional immutable FP64 pose of the single rotated Box. */
+  /*!
+   * \brief Immutable FP32 pose for any Box; absent for Sphere or World-only.
+   */
   std::optional<ggems::ocl::GGEMSOpenCLSVMBuffer> box_pose_buffer_;
 
   /*! \brief Owns SVM storage for persistent per-worker random states. */

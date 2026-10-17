@@ -29,6 +29,7 @@
  */
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <type_traits>
@@ -162,29 +163,26 @@ TEST(GGEMSBox, AdmitsTheSmallestEvenSideAndRejectsZeroOrOddSides) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSBox, CompilesFacesAtTheCenterPlusMinusHalfExtent) {
+TEST(GGEMSBox, CompilesPositiveLocalHalfExtentsForEveryPlacement) {
   GGEMSBoxRecord const record = Compile(MakeWorld(200_mm), MakeBox());
-  EXPECT_EQ(record.lower_x_pm, -20'000'000'000LL);
-  EXPECT_EQ(record.lower_y_pm, -30'000'000'000LL);
-  EXPECT_EQ(record.lower_z_pm, -10'000'000'000LL);
-  EXPECT_EQ(record.upper_x_pm, 40'000'000'000LL);
-  EXPECT_EQ(record.upper_y_pm, -10'000'000'000LL);
-  EXPECT_EQ(record.upper_z_pm, 20'000'000'000LL);
+  EXPECT_EQ(record.half_extent_x_pm, 30'000'000'000ULL);
+  EXPECT_EQ(record.half_extent_y_pm, 10'000'000'000ULL);
+  EXPECT_EQ(record.half_extent_z_pm, 15'000'000'000ULL);
   EXPECT_EQ(record.volume_id, 1U);
   EXPECT_EQ(record.material_id, 1U);
 
   // 13 cm cube at the origin of a 2 m World.
   GGEMSBoxRecord const thirteen = Compile(
     MakeWorld(2_m), PlaceBox(13_cm, 13_cm, 13_cm, MakePositionPM(0, 0, 0)));
-  EXPECT_EQ(thirteen.lower_x_pm, -65'000'000'000LL);
-  EXPECT_EQ(thirteen.upper_z_pm, 65'000'000'000LL);
+  EXPECT_EQ(thirteen.half_extent_x_pm, 65'000'000'000ULL);
+  EXPECT_EQ(thirteen.half_extent_z_pm, 65'000'000'000ULL);
 
   // Smallest Box centered in the smallest World that can contain it: one
   // picometer of clearance from every World face.
   GGEMSBoxRecord const tiny = Compile(
     MakeWorld(4_pm), PlaceBox(2_pm, 2_pm, 2_pm, MakePositionPM(0, 0, 0)));
-  EXPECT_EQ(tiny.lower_x_pm, -1LL);
-  EXPECT_EQ(tiny.upper_z_pm, 1LL);
+  EXPECT_EQ(tiny.half_extent_x_pm, 1ULL);
+  EXPECT_EQ(tiny.half_extent_z_pm, 1ULL);
   EXPECT_FALSE(
     Fits(MakeWorld(2_pm), PlaceBox(2_pm, 2_pm, 2_pm, MakePositionPM(0, 0, 0))));
 
@@ -192,12 +190,9 @@ TEST(GGEMSBox, CompilesFacesAtTheCenterPlusMinusHalfExtent) {
   GGEMSBoxRecord const smallest =
     Compile(MakeWorld(200_mm),
             PlaceBox(2_pm, 2_pm, 2_pm, MakePositionPM(-11, -13, -17)));
-  EXPECT_EQ(smallest.lower_x_pm, -12LL);
-  EXPECT_EQ(smallest.lower_y_pm, -14LL);
-  EXPECT_EQ(smallest.lower_z_pm, -18LL);
-  EXPECT_EQ(smallest.upper_x_pm, -10LL);
-  EXPECT_EQ(smallest.upper_y_pm, -12LL);
-  EXPECT_EQ(smallest.upper_z_pm, -16LL);
+  EXPECT_EQ(smallest.half_extent_x_pm, 1ULL);
+  EXPECT_EQ(smallest.half_extent_y_pm, 1ULL);
+  EXPECT_EQ(smallest.half_extent_z_pm, 1ULL);
 }
 
 // =============================================================================
@@ -230,7 +225,7 @@ TEST(GGEMSBox, StrictContainmentRejectsCoincidentWorldFaces) {
 // =============================================================================
 // =============================================================================
 
-TEST(GGEMSBox, KeepsEveryFaceOnTheSignedLatticeAtTheAdmittedBounds) {
+TEST(GGEMSBox, PacksCanonicalHalfExtentsAtTheAdmittedBounds) {
   GGEMSWorld const largest =
     MakeWorld(Length{ggems::geometry::k_max_world_size_pm});
   constexpr std::int64_t k_min = std::numeric_limits<std::int64_t>::min();
@@ -241,10 +236,9 @@ TEST(GGEMSBox, KeepsEveryFaceOnTheSignedLatticeAtTheAdmittedBounds) {
     largest,
     PlaceBox(2_pm, 2_pm, 2_pm,
              MakePositionPM(k_max_half_pm - 2, -(k_max_half_pm - 2), 0)));
-  EXPECT_EQ(edge.upper_x_pm, k_max_half_pm - 1);
-  EXPECT_EQ(edge.lower_x_pm, k_max_half_pm - 3);
-  EXPECT_EQ(edge.lower_y_pm, -(k_max_half_pm - 1));
-  EXPECT_EQ(edge.upper_y_pm, -(k_max_half_pm - 3));
+  EXPECT_EQ(edge.half_extent_x_pm, 1ULL);
+  EXPECT_EQ(edge.half_extent_y_pm, 1ULL);
+  EXPECT_EQ(edge.half_extent_z_pm, 1ULL);
 
   // Extreme signed centers are rejected without forming any face sum.
   EXPECT_FALSE(
@@ -291,4 +285,19 @@ TEST(GGEMSBox, SettersApplyInAnyOrderAndValidateRequiresSizeAndMaterial) {
   GGEMSBox sized{};
   sized.SetSize(2_pm, 2_pm, 2_pm);
   EXPECT_THROW(sized.Validate(), GGEMSRecoverable);
+}
+
+// =============================================================================
+// =============================================================================
+
+TEST(GGEMSBox, ScalarHostLayoutMatchesTheDocumentedDeviceABI) {
+  EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSBoxRecord>);
+  EXPECT_TRUE(std::is_standard_layout_v<GGEMSBoxRecord>);
+  EXPECT_EQ(sizeof(GGEMSBoxRecord), 32U);
+  EXPECT_EQ(alignof(GGEMSBoxRecord), 8U);
+  EXPECT_EQ(offsetof(GGEMSBoxRecord, half_extent_x_pm), 0U);
+  EXPECT_EQ(offsetof(GGEMSBoxRecord, half_extent_y_pm), 8U);
+  EXPECT_EQ(offsetof(GGEMSBoxRecord, half_extent_z_pm), 16U);
+  EXPECT_EQ(offsetof(GGEMSBoxRecord, volume_id), 24U);
+  EXPECT_EQ(offsetof(GGEMSBoxRecord, material_id), 28U);
 }

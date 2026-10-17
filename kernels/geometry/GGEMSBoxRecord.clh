@@ -28,6 +28,7 @@
  */
 
 #ifndef GGEMS_BOX_RECORD_CLH
+/*! \brief Prevents repeated definition of the shared Box record. */
 #define GGEMS_BOX_RECORD_CLH
 
 /*! \brief Snapshot-local physical volume identity of the World. */
@@ -37,32 +38,22 @@
 #define GGEMS_VOLUME_ID_EXTERIOR 0xFFFFFFFFU
 
 /*!
- * \brief Host-mirrored axis-aligned Box occurrence in signed integer pm
- * (56 bytes).
+ * \brief Scalar 32-byte local Box half extents and snapshot identities.
  *
- * Faces lie at the lower and upper coordinates on the integer picometer
- * lattice; each lower coordinate is strictly below its upper coordinate. The
- * host guarantees strict containment within the World. With an optional pose,
- * faces are local and define the physical OBB; otherwise they are global.
+ * Every Box uses positive canonical half extents and a separate FP32 pose,
+ * including identity placement. The local Box is the physical OBB, never its
+ * global AABB. The host guarantees strict containment within the World.
+ * Mirrors the corresponding host/device record field for field.
  */
 typedef struct GGEMSBoxRecord {
-  /*! \brief Box-frame X coordinate of the -X face. */
-  long lower_x_pm;
+  /*! \brief Positive local X half extent in integer pm. */
+  ulong half_extent_x_pm;
 
-  /*! \brief Box-frame Y coordinate of the -Y face. */
-  long lower_y_pm;
+  /*! \brief Positive local Y half extent in integer pm. */
+  ulong half_extent_y_pm;
 
-  /*! \brief Box-frame Z coordinate of the -Z face. */
-  long lower_z_pm;
-
-  /*! \brief Box-frame X coordinate of the +X face. */
-  long upper_x_pm;
-
-  /*! \brief Box-frame Y coordinate of the +Y face. */
-  long upper_y_pm;
-
-  /*! \brief Box-frame Z coordinate of the +Z face. */
-  long upper_z_pm;
+  /*! \brief Positive local Z half extent in integer pm. */
+  ulong half_extent_z_pm;
 
   /*! \brief Snapshot-local physical volume identity; never the World's. */
   uint volume_id;

@@ -40,11 +40,8 @@ enum class GGEMSAnalyticKind : std::uint32_t {
   /*! \brief World-only scene. */
   None = 0,
 
-  /*! \brief Exact global axis-aligned Box faces. */
+  /*! \brief Local Box with a separate FP32 pose. */
   Box = 1,
-
-  /*! \brief Local Box faces with a separately allocated FP64 pose. */
-  RotatedBox = 2,
 
   /*! \brief Full ball with integer center and radius. */
   Sphere = 3,
@@ -73,7 +70,7 @@ struct GGEMSSphereRecord {
 
 /*! \brief Stores only the shape payload selected by the enclosing tag. */
 union GGEMSAnalyticParameters {
-  /*! \brief Exact global or centered local faces and owner identities. */
+  /*! \brief Local Box half extents and owner identities. */
   GGEMSBoxRecord box{};
 
   /*! \brief Full Sphere; no rotation is stored or allocated. */
@@ -81,9 +78,9 @@ union GGEMSAnalyticParameters {
 };
 
 /*!
- * \brief Scalar 64-byte scene record, including the no-volume case.
+ * \brief Scalar 48-byte scene record, including the no-volume case.
  *
- * Mirrors GGEMSAnalyticVolumeRecord.clh. Only RotatedBox uses the separately
+ * Mirrors GGEMSAnalyticVolumeRecord.clh. Every Box uses the separately
  * supplied GGEMSBoxPoseRecord. All programs receive this same scene layout.
  */
 struct GGEMSAnalyticVolumeRecord {
@@ -93,7 +90,7 @@ struct GGEMSAnalyticVolumeRecord {
   /*! \brief Explicit alignment padding, initialized to zero. */
   std::uint32_t padding{0};
 
-  /*! \brief Shape parameters; box is active for None, Box, and RotatedBox. */
+  /*! \brief Shape parameters; box is active for None and Box. */
   GGEMSAnalyticParameters parameters{};
 };
 

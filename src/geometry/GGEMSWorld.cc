@@ -285,17 +285,10 @@ auto GGEMSWorld::BuildBoxRecords(std::span<std::uint32_t const> material_ids)
   for (std::size_t index = 0U; index < boxes.size(); ++index) {
     HalfExtent3PM const half = boxes[index].GetHalfExtentPM();
 
-    Position3PM const center = boxes[index].GetRotation().IsIdentity()
-                                 ? boxes[index].GetPositionPM()
-                                 : Position3PM{};
-
     records.push_back(GGEMSBoxRecord{
-      .lower_x_pm = center.x - static_cast<CoordinatePM>(half.x),
-      .lower_y_pm = center.y - static_cast<CoordinatePM>(half.y),
-      .lower_z_pm = center.z - static_cast<CoordinatePM>(half.z),
-      .upper_x_pm = center.x + static_cast<CoordinatePM>(half.x),
-      .upper_y_pm = center.y + static_cast<CoordinatePM>(half.y),
-      .upper_z_pm = center.z + static_cast<CoordinatePM>(half.z),
+      .half_extent_x_pm = half.x,
+      .half_extent_y_pm = half.y,
+      .half_extent_z_pm = half.z,
       .volume_id = static_cast<std::uint32_t>(index) + 1U,
       .material_id = material_ids[index],
     });
@@ -309,7 +302,7 @@ auto GGEMSWorld::BuildBoxRecords(std::span<std::uint32_t const> material_ids)
 auto GGEMSWorld::BuildBoxPoseRecord() const
   -> std::optional<GGEMSBoxPoseRecord> {
   auto const boxes = GetBoxes();
-  if (boxes.empty() || boxes.front().GetRotation().IsIdentity()) {
+  if (boxes.empty()) {
     return std::nullopt;
   }
 
@@ -320,15 +313,15 @@ auto GGEMSWorld::BuildBoxPoseRecord() const
     .center_x_pm = center.x,
     .center_y_pm = center.y,
     .center_z_pm = center.z,
-    .axis_x_x = rotation.axis_x.x,
-    .axis_x_y = rotation.axis_x.y,
-    .axis_x_z = rotation.axis_x.z,
-    .axis_y_x = rotation.axis_y.x,
-    .axis_y_y = rotation.axis_y.y,
-    .axis_y_z = rotation.axis_y.z,
-    .axis_z_x = rotation.axis_z.x,
-    .axis_z_y = rotation.axis_z.y,
-    .axis_z_z = rotation.axis_z.z,
+    .axis_x_x = static_cast<float>(rotation.axis_x.x),
+    .axis_x_y = static_cast<float>(rotation.axis_x.y),
+    .axis_x_z = static_cast<float>(rotation.axis_x.z),
+    .axis_y_x = static_cast<float>(rotation.axis_y.x),
+    .axis_y_y = static_cast<float>(rotation.axis_y.y),
+    .axis_y_z = static_cast<float>(rotation.axis_y.z),
+    .axis_z_x = static_cast<float>(rotation.axis_z.x),
+    .axis_z_y = static_cast<float>(rotation.axis_z.y),
+    .axis_z_z = static_cast<float>(rotation.axis_z.z),
   };
 }
 
@@ -412,13 +405,12 @@ auto GGEMSWorld::GetVolumeMaterial() const
 
 auto GGEMSWorld::BuildAnalyticVolumeRecord(std::uint32_t material_id) const
   -> GGEMSAnalyticVolumeRecord {
-  if (auto const *box = std::get_if<GGEMSBox>(&volume_)) {
+  if (std::holds_alternative<GGEMSBox>(volume_)) {
     std::array const material_ids{material_id};
-    return {.kind = box->GetRotation().IsIdentity()
-                      ? GGEMSAnalyticKind::Box
-                      : GGEMSAnalyticKind::RotatedBox,
+    return {.kind = GGEMSAnalyticKind::Box,
             .parameters = {.box = BuildBoxRecords(material_ids).front()}};
   }
+
   if (auto const *sphere = std::get_if<GGEMSSphere>(&volume_)) {
     auto const center = sphere->GetPositionPM();
     return {.kind = GGEMSAnalyticKind::Sphere,
@@ -429,6 +421,7 @@ auto GGEMSWorld::BuildAnalyticVolumeRecord(std::uint32_t material_id) const
                                       .volume_id = 1U,
                                       .material_id = material_id}}};
   }
+
   return {};
 }
 

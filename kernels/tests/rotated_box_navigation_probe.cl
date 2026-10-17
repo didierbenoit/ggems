@@ -25,19 +25,12 @@
  * \author Julien BERT <julien.bert@univ-brest.fr>
  * \author Didier BENOIT <didier.benoit@inserm.fr>
  */
-#ifndef GGEMS_ENABLE_FP64_NAVIGATION
-
-/*! \brief This focused probe always requests the FP64 numerical capability. */
-#define GGEMS_ENABLE_FP64_NAVIGATION 1
-#endif
-
 #include "geometry/GGEMSAnalyticVolumeRecord.clh"
 #include "geometry/GGEMSBoxRecord.clh"
-#include "navigation/GGEMSAnalyticArithmetic.clh"
 #include "geometry/GGEMSBoxPoseRecord.clh"
 #include "geometry/GGEMSWorldRecord.clh"
 #include "navigation/GGEMSNavigation.clh"
-#include "navigation/GGEMSRotatedBoxNavigation.clh"
+#include "navigation/GGEMSAnalyticNavigation.clh"
 #include "particles/GGEMSParticleState.clh"
 #include "transport/GGEMSTransport.clh"
 
@@ -57,7 +50,7 @@ rotated_box_navigation_probe(__global GGEMSWorldRecord const *world,
                              __global GGEMSAnalyticVolumeRecord const *volume,
                              __global GGEMSBoxPoseRecord const *pose,
                              __global GGEMSParticleState const *input,
-                             __global long *trace, __global double *parameters,
+                             __global long *trace, __global float *parameters,
                              __global ulong *layout) {
   if (get_global_id(0) != 0U) {
     return;
@@ -79,16 +72,15 @@ rotated_box_navigation_probe(__global GGEMSWorldRecord const *world,
   layout[13] = sizeof(GGEMSParticleState);
   layout[14] = sizeof(GGEMSBoxRecord);
 
-  __global GGEMSBoxRecord const *box = &volume->parameters.box;
   GGEMSParticleState particle = *input;
   float3 direction =
     (float3)(particle.direction_x, particle.direction_y, particle.direction_z);
   ulong owner;
-  uint status = GGEMS_RotatedBoxLocate(world, box, pose,
-                                       (long3)(particle.position_x_pm,
-                                               particle.position_y_pm,
-                                               particle.position_z_pm),
-                                       direction, &owner);
+  uint status =
+    GGEMS_AnalyticLocate(world, volume, pose,
+                         (long3)(particle.position_x_pm, particle.position_y_pm,
+                                 particle.position_z_pm),
+                         direction, &owner);
   trace[1] = status;
   trace[2] = 0L;
 
@@ -104,22 +96,26 @@ rotated_box_navigation_probe(__global GGEMSWorldRecord const *world,
 
   for (uint index = 0U; index < 3U; ++index) {
     uint departure = particle.current_volume_id;
-    GGEMSBoundaryWitness witness;
-    double parameter;
-    status = GGEMS_RotatedBoxFindBoundary(
-      world, box, pose,
-      (long3)(particle.position_x_pm, particle.position_y_pm,
-              particle.position_z_pm),
-      direction, departure, event, &witness, &parameter);
+    GGEMSAnalyticBoundary selected;
+    status = GGEMS_AnalyticFindBoundary(world, volume, pose,
+                                        (long3)(particle.position_x_pm,
+                                                particle.position_y_pm,
+                                                particle.position_z_pm),
+                                        direction, departure, event, &selected);
     trace[1] = status;
 
     if (status != GGEMS_NAVIGATION_RESOLVED) {
       return;
     }
 
+    float parameter = selected.parameter;
+    if (selected.boundary.event == GGEMS_NAVIGATION_EVENT_WORLD_EXIT) {
+      parameter = ldexp((float)selected.boundary.gap_pm /
+                          (float)selected.boundary.mantissa,
+                        -selected.boundary.exponent);
+    }
     parameters[2U * index] = parameter;
-    parameters[2U * index + 1U] =
-      parameter * length(GGEMS_AnalyticDirection(direction));
+    parameters[2U * index + 1U] = parameter * length(direction);
     status = GGEMS_TransportToNextBoundary(world, volume, pose, &particle,
                                            &event, &faces);
     trace[1] = status;

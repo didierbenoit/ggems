@@ -181,7 +181,7 @@ TEST(GGEMSSphere, ScalarHostLayoutMatchesTheDocumentedDeviceABI) {
   EXPECT_EQ(offsetof(GGEMSSphereRecord, radius_pm), 24U);
   EXPECT_EQ(offsetof(GGEMSSphereRecord, volume_id), 32U);
   EXPECT_EQ(offsetof(GGEMSSphereRecord, material_id), 36U);
-  EXPECT_EQ(sizeof(GGEMSAnalyticVolumeRecord), 64U);
+  EXPECT_EQ(sizeof(GGEMSAnalyticVolumeRecord), 48U);
   EXPECT_EQ(offsetof(GGEMSAnalyticVolumeRecord, parameters), 8U);
 }
 

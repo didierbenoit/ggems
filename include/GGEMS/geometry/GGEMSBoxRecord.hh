@@ -40,31 +40,22 @@ inline constexpr std::uint32_t k_volume_id_world{0U};
 inline constexpr std::uint32_t k_volume_id_exterior{0xFFFFFFFFU};
 
 /*!
- * \brief Device Box occurrence: lower and upper faces and snapshot identities.
+ * \brief Scalar 32-byte local Box half extents and snapshot identities.
  *
- * Faces are global for identity placement and local when a pose accompanies
- * the record. The local box is the physical OBB, never its global AABB.
- *
- * Mirrors kernels/geometry/GGEMSBoxRecord.clh field for field.
+ * Every Box uses positive canonical half extents and a separate FP32 pose,
+ * including identity placement. The local Box is the physical OBB, never its
+ * global AABB. The host guarantees strict containment within the World.
+ * Mirrors the corresponding host/device record field for field.
  */
 struct GGEMSBoxRecord {
-  /*! \brief Box-frame X coordinate of the -X face in signed integer pm. */
-  std::int64_t lower_x_pm{0};
+  /*! \brief Positive local X half extent in integer pm. */
+  std::uint64_t half_extent_x_pm{0U};
 
-  /*! \brief Box-frame Y coordinate of the -Y face in signed integer pm. */
-  std::int64_t lower_y_pm{0};
+  /*! \brief Positive local Y half extent in integer pm. */
+  std::uint64_t half_extent_y_pm{0U};
 
-  /*! \brief Box-frame Z coordinate of the -Z face in signed integer pm. */
-  std::int64_t lower_z_pm{0};
-
-  /*! \brief Box-frame X coordinate of the +X face in signed integer pm. */
-  std::int64_t upper_x_pm{0};
-
-  /*! \brief Box-frame Y coordinate of the +Y face in signed integer pm. */
-  std::int64_t upper_y_pm{0};
-
-  /*! \brief Global Z coordinate of the +Z face in signed integer pm. */
-  std::int64_t upper_z_pm{0};
+  /*! \brief Positive local Z half extent in integer pm. */
+  std::uint64_t half_extent_z_pm{0U};
 
   /*! \brief Snapshot-local physical volume identity; never k_volume_id_world.
    */

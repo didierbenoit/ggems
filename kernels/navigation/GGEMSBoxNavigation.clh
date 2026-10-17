@@ -1,0 +1,206 @@
+// *****************************************************************************
+// * This file is part of GGEMS.                                               *
+// *                                                                           *
+// * SPDX-License-Identifier: GPL-3.0-or-later                                 *
+// * Copyright (C) 2017-2026 CHRU de Brest, Université de Bretagne Occidentale,*
+// * Inserm.                                                                   *
+// *                                                                           *
+// * GGEMS is free software: you can redistribute it and/or modify             *
+// * it under the terms of the GNU General Public License as published by      *
+// * the Free Software Foundation, either version 3 of the License, or         *
+// * (at your option) any later version.                                       *
+// *                                                                           *
+// * GGEMS is distributed in the hope that it will be useful,                  *
+// * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+// * GNU General Public License for more details.                              *
+// *                                                                           *
+// * You should have received a copy of the GNU General Public License         *
+// * along with GGEMS. If not, see <https://www.gnu.org/licenses/>.            *
+// *****************************************************************************
+
+/*!
+ * \file
+ * \brief Local FP32 slab navigation shared by every Box pose.
+ *
+ * \author Julien BERT <julien.bert@univ-brest.fr>
+ * \author Didier BENOIT <didier.benoit@inserm.fr>
+ */
+
+#ifndef GGEMS_BOX_NAVIGATION_CLH
+/*! \brief Prevents repeated inclusion of the Box predicates. */
+#define GGEMS_BOX_NAVIGATION_CLH
+
+#include "geometry/GGEMSBoxRecord.clh"
+#include "geometry/GGEMSBoxPoseRecord.clh"
+#include "navigation/GGEMSNavigation.clh"
+
+/*!
+ * \brief Transforms a canonical global ray into the Box frame once.
+ *
+ * Integer center subtraction precedes FP32 conversion. The packed column
+ * axes apply R^T to the relative position and stored direction, including
+ * identity poses. Host World admission makes the integer subtraction safe.
+ * \param[in] pose Immutable center and local axes in global coordinates.
+ * \param[in] position Canonical global position in integer pm.
+ * \param[in] direction Actual stored direction.
+ * \param[out] local_position FP32 local position in pm.
+ * \param[out] local_direction FP32 local direction.
+ */
+static inline void GGEMS_BoxLocalRay(__global GGEMSBoxPoseRecord const *pose,
+                                     long3 position, float3 direction,
+                                     float3 *local_position,
+                                     float3 *local_direction) {
+  long3 relative =
+    position - (long3)(pose->center_x_pm, pose->center_y_pm, pose->center_z_pm);
+
+  float3 offset = convert_float3(relative);
+  float3 axis_x = (float3)(pose->axis_x_x, pose->axis_x_y, pose->axis_x_z);
+  float3 axis_y = (float3)(pose->axis_y_x, pose->axis_y_y, pose->axis_y_z);
+  float3 axis_z = (float3)(pose->axis_z_x, pose->axis_z_y, pose->axis_z_z);
+
+  *local_position =
+    (float3)(dot(offset, axis_x), dot(offset, axis_y), dot(offset, axis_z));
+
+  *local_direction = (float3)(dot(direction, axis_x), dot(direction, axis_y),
+                              dot(direction, axis_z));
+}
+
+/*!
+ * \brief Locates the forward owner with the local FP32 slab predicate.
+ * \param[in] box Local half extents and owner identities.
+ * \param[in] pose Center and axes for every Box, including identity.
+ * \param[in] position Canonical start already validated against the World.
+ * \param[in] direction Actual finite, nonzero stored direction.
+ * \param[out] owner Packed forward VolumeID/MaterialID.
+ * \return Resolved according to the FP32 slab classification.
+ */
+static inline uint GGEMS_BoxLocate(__global GGEMSBoxRecord const *box,
+                                   __global GGEMSBoxPoseRecord const *pose,
+                                   long3 position, float3 direction,
+                                   ulong *owner) {
+  float3 local_position;
+  float3 local_direction;
+
+  GGEMS_BoxLocalRay(pose, position, direction, &local_position,
+                    &local_direction);
+
+  float3 half_extent =
+    (float3)((float)box->half_extent_x_pm, (float)box->half_extent_y_pm,
+             (float)box->half_extent_z_pm);
+
+  *owner = ((ulong)GGEMS_VOLUME_ID_WORLD << 32U) | GGEMS_MATERIAL_ID_WORLD;
+
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    float coordinate = local_position[axis];
+    float component = local_direction[axis];
+    float half_length = half_extent[axis];
+
+    if (coordinate < -half_length || coordinate > half_length ||
+        (coordinate == -half_length && component <= 0.0F) ||
+        (coordinate == half_length && component >= 0.0F)) {
+      return GGEMS_NAVIGATION_RESOLVED;
+    }
+  }
+
+  *owner = ((ulong)box->volume_id << 32U) | box->material_id;
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+/*!
+ * \brief Selects a local slab crossing against the resolved World exit.
+ *
+ * Direct min/max slab parameters select entry or exit from the accepted
+ * departure owner. Parallel face motion and tangent intervals do not enter.
+ * Exact FP32 ties combine local faces. No epsilon, endpoint repair, or special
+ * identity algorithm is used.
+ * \param[in] box Local half extents and owner identities.
+ * \param[in] pose Center and axes for every Box.
+ * \param[in] position Canonical start in the closed World.
+ * \param[in] direction Actual stored finite direction.
+ * \param[in] current_owner Accepted departure owner.
+ * \param[in,out] witness World exit on entry; selected crossing on success.
+ * \param[in,out] parameter World limit on entry; selected FP32 parameter on
+ * success.
+ * \return Resolved or unresolved for invalid arithmetic or boundary ordering.
+ */
+static inline uint
+GGEMS_BoxFindBoundary(__global GGEMSBoxRecord const *box,
+                      __global GGEMSBoxPoseRecord const *pose, long3 position,
+                      float3 direction, uint current_owner,
+                      GGEMSBoundaryWitness *witness, float *parameter) {
+  float3 local_position;
+  float3 local_direction;
+
+  GGEMS_BoxLocalRay(pose, position, direction, &local_position,
+                    &local_direction);
+
+  float3 half_extent =
+    (float3)((float)box->half_extent_x_pm, (float)box->half_extent_y_pm,
+             (float)box->half_extent_z_pm);
+
+  uint inside = current_owner == box->volume_id;
+  float near_parameter = -INFINITY;
+  float far_parameter = INFINITY;
+  uint near_faces = 0U;
+  uint far_faces = 0U;
+
+  for (uint axis = 0U; axis < 3U; ++axis) {
+    float coordinate = local_position[axis];
+    float component = local_direction[axis];
+    float half_length = half_extent[axis];
+
+    if (component == 0.0F) {
+      if (inside == 0U && fabs(coordinate) >= half_length) {
+        return GGEMS_NAVIGATION_RESOLVED;
+      }
+      continue;
+    }
+
+    uint negative = component < 0.0F;
+    float signed_coordinate = negative != 0U ? -coordinate : coordinate;
+    float near = (-half_length - signed_coordinate) / fabs(component);
+    float far = (half_length - signed_coordinate) / fabs(component);
+    uint near_face = 1U << (2U * axis + negative);
+    uint far_face = 1U << (2U * axis + (1U - negative));
+
+    if (near > near_parameter) {
+      near_parameter = near;
+      near_faces = near_face;
+    } else if (near == near_parameter) {
+      near_faces |= near_face;
+    }
+
+    if (far < far_parameter) {
+      far_parameter = far;
+      far_faces = far_face;
+    } else if (far == far_parameter) {
+      far_faces |= far_face;
+    }
+  }
+
+  if (inside == 0U &&
+      (near_parameter >= far_parameter || far_parameter <= 0.0F)) {
+    return GGEMS_NAVIGATION_RESOLVED;
+  }
+
+  float candidate = inside != 0U ? far_parameter : near_parameter;
+  if (GGEMS_NavigationIsFinite(candidate) == 0U || candidate < 0.0F ||
+      candidate >= *parameter) {
+    return GGEMS_NAVIGATION_UNRESOLVED;
+  }
+
+  *parameter = candidate;
+  witness->faces = inside != 0U ? far_faces : near_faces;
+  witness->event = inside != 0U ? GGEMS_NAVIGATION_EVENT_VOLUME_EXIT
+                                : GGEMS_NAVIGATION_EVENT_VOLUME_ENTRY;
+  witness->arrival_volume_id =
+    inside != 0U ? GGEMS_VOLUME_ID_WORLD : box->volume_id;
+
+  witness->arrival_material_id =
+    inside != 0U ? GGEMS_MATERIAL_ID_WORLD : box->material_id;
+
+  return GGEMS_NAVIGATION_RESOLVED;
+}
+
+#endif

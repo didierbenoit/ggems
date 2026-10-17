@@ -29,15 +29,17 @@
 
 #include <array>
 #include <cmath>
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <expected>
 #include <limits>
 #include <numbers>
+#include <type_traits>
 
 #include <gtest/gtest.h>
 
 #include "GGEMS/GGEMSException.hh"
+#include "GGEMS/geometry/GGEMSAnalyticVolumeRecord.hh"
 #include "GGEMS/geometry/GGEMSBox.hh"
 #include "GGEMS/geometry/GGEMSBoxPoseRecord.hh"
 #include "GGEMS/geometry/GGEMSRotation3D.hh"
@@ -147,7 +149,7 @@ TEST(GGEMSRotatedBox, PicoradianNeighborsAreNotSnappedToCardinalAngles) {
   }
 }
 
-TEST(GGEMSRotatedBox, SubPicoradianAngleUsesTheIdentityGeometryPath) {
+TEST(GGEMSRotatedBox, SubPicoradianAnglePacksAnIdentityPose) {
   auto const angle = MakeRadians(1.0e-20L);
   EXPECT_EQ(angle.value, 0);
   GGEMSWorld world;
@@ -159,7 +161,12 @@ TEST(GGEMSRotatedBox, SubPicoradianAngleUsesTheIdentityGeometryPath) {
       ggems::core::materials::builtins::BuildBuiltInMaterial("Vacuum"));
   EXPECT_TRUE(box.GetRotation().IsIdentity());
   world.AddVolume(box);
-  EXPECT_FALSE(world.BuildBoxPoseRecord().has_value());
+  auto const pose = world.BuildBoxPoseRecord();
+  ASSERT_TRUE(pose.has_value());
+  EXPECT_EQ(pose->axis_x_x, 1.0F);
+  EXPECT_EQ(pose->axis_x_y, 0.0F);
+  EXPECT_EQ(pose->axis_y_x, 0.0F);
+  EXPECT_EQ(pose->axis_y_y, 1.0F);
 }
 
 TEST(GGEMSRotatedBox, RotationFitsWithSubPicometerWorldClearance) {
@@ -206,7 +213,7 @@ TEST(GGEMSRotatedBox, RejectsRotatedProtrusionAndExactContact) {
   EXPECT_THROW(contact.Validate(), ggems::core::GGEMSRecoverable);
 }
 
-TEST(GGEMSRotatedBox, WorldOwnsPoseAndPacksLocalFaces) {
+TEST(GGEMSRotatedBox, WorldOwnsPoseAndPacksLocalHalfExtents) {
   GGEMSWorld world;
   world.SetSize(20_mm, 20_mm, 20_mm)
     .SetMaterial(
@@ -224,20 +231,89 @@ TEST(GGEMSRotatedBox, WorldOwnsPoseAndPacksLocalFaces) {
   ASSERT_TRUE(pose.has_value());
   EXPECT_EQ(pose->center_x_pm, -100);
   EXPECT_EQ(pose->center_y_pm, 200);
-  EXPECT_DOUBLE_EQ(pose->axis_x_y, 1.0);
+  EXPECT_EQ(pose->axis_x_y, 1.0F);
   std::array<std::uint32_t, 1U> const material_ids{3U};
   auto const records = world.BuildBoxRecords(material_ids);
-  EXPECT_EQ(records[0].lower_x_pm, -1'000'000'000LL);
-  EXPECT_EQ(records[0].upper_y_pm, 2'000'000'000LL);
+  EXPECT_EQ(records[0].half_extent_x_pm, 1'000'000'000ULL);
+  EXPECT_EQ(records[0].half_extent_y_pm, 2'000'000'000ULL);
   EXPECT_EQ(records[0].volume_id, 1U);
   EXPECT_EQ(records[0].material_id, 3U);
-  EXPECT_EQ(sizeof(ggems::geometry::GGEMSBoxPoseRecord), 96U);
+  EXPECT_EQ(sizeof(ggems::geometry::GGEMSBoxPoseRecord), 64U);
   EXPECT_EQ(offsetof(ggems::geometry::GGEMSBoxPoseRecord, axis_x_x), 24U);
   GGEMSWorld identity;
   identity.SetSize(20_mm, 20_mm, 20_mm)
     .SetMaterial(
       ggems::core::materials::builtins::BuildBuiltInMaterial("Vacuum"))
     .AddVolume(box);
-  EXPECT_FALSE(identity.BuildBoxPoseRecord().has_value());
+  auto const identity_pose = identity.BuildBoxPoseRecord();
+  ASSERT_TRUE(identity_pose.has_value());
+  EXPECT_EQ(identity_pose->axis_x_x, 1.0F);
+  EXPECT_EQ(identity_pose->axis_y_y, 1.0F);
+  EXPECT_EQ(identity_pose->axis_z_z, 1.0F);
+  EXPECT_EQ(identity_pose->axis_x_y, 0.0F);
+  EXPECT_EQ(identity_pose->axis_x_z, 0.0F);
+  EXPECT_EQ(identity_pose->axis_y_x, 0.0F);
+  EXPECT_EQ(identity_pose->axis_y_z, 0.0F);
+  EXPECT_EQ(identity_pose->axis_z_x, 0.0F);
+  EXPECT_EQ(identity_pose->axis_z_y, 0.0F);
+  EXPECT_EQ(identity.BuildAnalyticVolumeRecord(3U).kind,
+            ggems::geometry::GGEMSAnalyticKind::Box);
+  EXPECT_EQ(world.BuildAnalyticVolumeRecord(3U).kind,
+            ggems::geometry::GGEMSAnalyticKind::Box);
+}
+TEST(GGEMSRotatedBox, PackingRoundsAxesOnceAndPreservesCanonicalCenter) {
+  constexpr std::int64_t center = (1LL << 60) + 1;
+  GGEMSWorld world;
+  world
+    .SetSize(Length{ggems::geometry::k_max_world_size_pm},
+             Length{ggems::geometry::k_max_world_size_pm},
+             Length{ggems::geometry::k_max_world_size_pm})
+    .SetMaterial(
+      ggems::core::materials::builtins::BuildBuiltInMaterial("Vacuum"));
+  GGEMSBox box;
+  box.SetSize(2_mm, 4_mm, 6_mm)
+    .SetPosition({.x = center, .y = -center, .z = 17})
+    .SetRotation(13_deg, -27_deg, 41_deg)
+    .SetMaterial(
+      ggems::core::materials::builtins::BuildBuiltInMaterial("Vacuum"));
+  world.AddVolume(box);
+  ASSERT_NO_THROW(world.Validate());
+  auto const pose = world.BuildBoxPoseRecord();
+  ASSERT_TRUE(pose.has_value());
+  EXPECT_EQ(pose->center_x_pm, center);
+  EXPECT_EQ(pose->center_y_pm, -center);
+  EXPECT_EQ(pose->center_z_pm, 17);
+  auto const &rotation = box.GetRotation();
+  EXPECT_EQ(pose->axis_x_x, static_cast<float>(rotation.axis_x.x));
+  EXPECT_EQ(pose->axis_x_y, static_cast<float>(rotation.axis_x.y));
+  EXPECT_EQ(pose->axis_x_z, static_cast<float>(rotation.axis_x.z));
+  EXPECT_EQ(pose->axis_y_x, static_cast<float>(rotation.axis_y.x));
+  EXPECT_EQ(pose->axis_y_y, static_cast<float>(rotation.axis_y.y));
+  EXPECT_EQ(pose->axis_y_z, static_cast<float>(rotation.axis_y.z));
+  EXPECT_EQ(pose->axis_z_x, static_cast<float>(rotation.axis_z.x));
+  EXPECT_EQ(pose->axis_z_y, static_cast<float>(rotation.axis_z.y));
+  EXPECT_EQ(pose->axis_z_z, static_cast<float>(rotation.axis_z.z));
+  EXPECT_EQ(pose->padding, 0U);
+}
+
+TEST(GGEMSRotatedBox, ScalarPoseLayoutMatchesTheDocumentedDeviceABI) {
+  using ggems::geometry::GGEMSBoxPoseRecord;
+  EXPECT_TRUE(std::is_trivially_copyable_v<GGEMSBoxPoseRecord>);
+  EXPECT_TRUE(std::is_standard_layout_v<GGEMSBoxPoseRecord>);
+  EXPECT_EQ(sizeof(GGEMSBoxPoseRecord), 64U);
+  EXPECT_EQ(alignof(GGEMSBoxPoseRecord), 8U);
+  EXPECT_EQ(offsetof(GGEMSBoxPoseRecord, center_x_pm), 0U);
+  EXPECT_EQ(offsetof(GGEMSBoxPoseRecord, center_y_pm), 8U);
+  EXPECT_EQ(offsetof(GGEMSBoxPoseRecord, center_z_pm), 16U);
+  EXPECT_EQ(offsetof(GGEMSBoxPoseRecord, axis_x_x), 24U);
+  EXPECT_EQ(offsetof(GGEMSBoxPoseRecord, axis_x_y), 28U);
+  EXPECT_EQ(offsetof(GGEMSBoxPoseRecord, axis_x_z), 32U);
+  EXPECT_EQ(offsetof(GGEMSBoxPoseRecord, axis_y_x), 36U);
+  EXPECT_EQ(offsetof(GGEMSBoxPoseRecord, axis_y_y), 40U);
+  EXPECT_EQ(offsetof(GGEMSBoxPoseRecord, axis_y_z), 44U);
+  EXPECT_EQ(offsetof(GGEMSBoxPoseRecord, axis_z_x), 48U);
+  EXPECT_EQ(offsetof(GGEMSBoxPoseRecord, axis_z_y), 52U);
+  EXPECT_EQ(offsetof(GGEMSBoxPoseRecord, axis_z_z), 56U);
+  EXPECT_EQ(offsetof(GGEMSBoxPoseRecord, padding), 60U);
 }
 } // namespace

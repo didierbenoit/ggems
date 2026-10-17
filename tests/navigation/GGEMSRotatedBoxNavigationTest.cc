@@ -325,7 +325,7 @@ auto CheckCase(ocl::GGEMSOpenCLContext &context,
     particles::ToKernelParticleStatus(particles::GGEMSParticleStatus::Alive);
   auto particle_buffer = buffer(particle);
   std::array<std::int64_t, 31> trace{};
-  std::array<double, 6> parameters{};
+  std::array<float, 6> parameters{};
   std::array<std::uint64_t, 15> layout{};
   auto trace_buffer = buffer(trace);
   auto parameter_buffer = buffer(parameters);
@@ -456,11 +456,7 @@ TEST_F(GGEMSNavigationDeviceTest,
   std::filesystem::path const root{GGEMS_TEST_KERNEL_ROOT};
   for (auto &context : contexts) {
     SCOPED_TRACE(context.GetDevice().GetName());
-    if (context.GetDevice().GetDoubleFpConfig() == 0U) {
-      GTEST_SKIP() << "Selected device lacks FP64";
-    }
-    auto const options = std::format("-I{} -DGGEMS_ENABLE_FP64_NAVIGATION=1",
-                                     root.generic_string());
+    auto const options = std::format("-I{}", root.generic_string());
     auto const &program = ocl::GGEMSOpenCL::GetInstance().GetOrCreateProgram(
       context, root / "tests", "rotated_box_navigation_probe", options);
     EXPECT_TRUE(program.Matches(context, root / "tests",
