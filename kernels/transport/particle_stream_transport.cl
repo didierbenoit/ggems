@@ -269,25 +269,11 @@ __kernel void particle_stream_transport(
     }
 
     ulong local_primary_id_u64 = (ulong)(local_primary_id);
-
-    if (device_primary_offset >
-        GGEMS_DIAGNOSTIC_UINT64_MAX - local_primary_id_u64) {
-      atomic_inc(&counters->overflow_count);
-      continue;
-    }
-
     ulong projection_primary_id = device_primary_offset + local_primary_id_u64;
-
-    if (projection_history_offset >
-        GGEMS_DIAGNOSTIC_UINT64_MAX - projection_primary_id) {
-      atomic_inc(&counters->overflow_count);
-      continue;
-    }
 
     ulong global_primary_id = projection_history_offset + projection_primary_id;
 
     uint selected_source_index = source_count;
-
     for (uint source_index = 0U; source_index < source_count; ++source_index) {
       ulong begin = source_ranges[source_index].projection_primary_begin;
       ulong count = source_ranges[source_index].primary_count;
@@ -297,11 +283,6 @@ __kernel void particle_stream_transport(
         selected_source_index = source_index;
         break;
       }
-    }
-
-    if (selected_source_index == source_count) {
-      atomic_inc(&counters->overflow_count);
-      continue;
     }
 
     ulong source_local_primary_id =
@@ -321,20 +302,16 @@ __kernel void particle_stream_transport(
 
     __global GGEMSSourceRecord const *source =
       &source_records[selected_source_index];
+
     __global GGEMSSourcePopulationRecord const *population =
       &source_population_records[selected_source_index];
 
     GGEMSParticleState particle;
-    uint initialized = GGEMS_SourceTryInitializePrimary(
+    GGEMS_SourceTryInitializePrimary(
       global_primary_id, source_local_primary_id, selected_source_index, source,
       population, source_emissions, source_emission_ranges,
       energy_distribution_records, energy_values_micro_eV,
       cumulative_ticket_upper, random_states, worker_id, &particle);
-
-    if (initialized == 0U) {
-      atomic_inc(&counters->overflow_count);
-      continue;
-    }
 
 #if GGEMS_ENABLE_TRANSPORT_OBSERVER
     if (capture_history != 0U) {

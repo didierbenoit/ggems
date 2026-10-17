@@ -216,11 +216,6 @@ GGEMS_SourceSampleLocalVolumePosition(__global GGEMSSourceRecord const *source,
 static inline long3
 GGEMS_SourceSamplePositionFromUniforms(__global GGEMSSourceRecord const *source,
                                        float4 random_values) {
-  if (source->emission_geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_POINT) {
-    return (long3)(source->position_x_pm, source->position_y_pm,
-                   source->position_z_pm);
-  }
-
   if (GGEMS_SourceIsVolumeGeometry(source->emission_geometry_type) != 0U) {
     float3 const local_position =
       GGEMS_SourceSampleLocalVolumePosition(source, random_values);
@@ -289,10 +284,12 @@ GGEMS_SourceSamplePosition(__global GGEMSSourceRecord const *source,
                            __global GGEMSRandomState *random_states,
                            uint worker_id) {
   if (source->emission_geometry_type == GGEMS_EMISSION_GEOMETRY_TYPE_POINT) {
-    return GGEMS_SourceSamplePositionFromUniforms(source, (float4)(0.0f));
+    return (long3)(source->position_x_pm, source->position_y_pm,
+                   source->position_z_pm);
   }
 
   float4 const random_values = GGEMS_RndmUniform4(random_states, worker_id);
+
   return GGEMS_SourceSamplePositionFromUniforms(source, random_values);
 }
 
@@ -496,16 +493,13 @@ static inline float3 GGEMS_SourceSampleDirection(
 /*!
  * \brief Initializes a count-driven primary birth state.
  *
- * The returned state is alive with generation and flags zero, track_id zero, an
- * invalid parent ID, invalid navigation/material/region IDs, and direction_w
+ * The initialized state is alive with generation and flags zero, track_id zero,
+ * an invalid parent ID, invalid navigation/material/region IDs, and direction_w
  * zero. Time is the stored window start and particle type comes from the
  * source. Draw order is position, direction, then energy; point, fixed/focused,
- * and monoenergetic branches skip their respective draws. The source-local
- * index is not used to choose the RNG state.
+ * and monoenergetic branches skip their respective draws.
  *
  * \param[in] global_primary_id Global identity assigned to the new primary.
- * \param[in] source_local_primary_id Source-local primary index; unused by this
- * initializer.
  * \param[in] source Host-validated source record in global memory.
  * \param[in] energy_distribution Host-prepared global energy descriptor with
  * valid table ranges.
@@ -520,15 +514,12 @@ static inline float3 GGEMS_SourceSampleDirection(
  * struct return.
  */
 static inline void GGEMS_SourceInitializePrimary(
-  ulong global_primary_id, ulong source_local_primary_id,
-  __global GGEMSSourceRecord const *source,
+  ulong global_primary_id, __global GGEMSSourceRecord const *source,
   __global GGEMSEnergyDistributionRecord const *energy_distribution,
   __global ulong const *energy_values_micro_eV,
   __global ulong const *cumulative_ticket_upper,
   __global GGEMSRandomState *random_states, uint worker_id,
   __private GGEMSParticleState *particle) {
-  (void)(source_local_primary_id);
-
   ulong const sampled_time_ps = source->time_start_ps;
 
   long3 const sampled_position =
@@ -668,7 +659,8 @@ static inline void GGEMS_SourceInitializeActivityDrivenPrimary(
  * Every other mode searches the population emission slice and selects the first
  * nonempty matching range. Its emission selects the energy descriptor. The
  * caller supplies consistent indices, counts, and array capacities; no bounds
- * checks are performed. A failed range search consumes no random numbers.
+ * checks are performed. A matching emission range is guaranteed by.
+ * the host-validated source configuration.
  *
  * \param[in] global_primary_id Global identity assigned to the new primary.
  * \param[in] source_local_primary_id Index within this source population, used
@@ -691,12 +683,10 @@ static inline void GGEMS_SourceInitializeActivityDrivenPrimary(
  * \param[in,out] random_states Global RNG-state array; the selected element is
  * exclusively owned.
  * \param[in] worker_id Valid RNG-state buffer index for this worker.
- * \param[out] particle Writable private result; left unchanged when no emission
- * range matches.
- * \return One after successful initialization; zero if the emission search
- * finds no matching range.
+ * \param[out] particle Writable private state initialized from the selected
+ * source emission.
  */
-static inline uint GGEMS_SourceTryInitializePrimary(
+static inline void GGEMS_SourceTryInitializePrimary(
   ulong global_primary_id, ulong source_local_primary_id, uint source_index,
   __global GGEMSSourceRecord const *source,
   __global GGEMSSourcePopulationRecord const *population,
@@ -713,11 +703,10 @@ static inline uint GGEMS_SourceTryInitializePrimary(
       &energy_distribution_records[source_index];
 
     GGEMS_SourceInitializePrimary(
-      global_primary_id, source_local_primary_id, source, energy_distribution,
-      energy_values_micro_eV, cumulative_ticket_upper, random_states, worker_id,
-      particle);
+      global_primary_id, source, energy_distribution, energy_values_micro_eV,
+      cumulative_ticket_upper, random_states, worker_id, particle);
 
-    return 1U;
+    return;
   }
 
   for (uint local_emission_index = 0U;
@@ -725,8 +714,10 @@ static inline uint GGEMS_SourceTryInitializePrimary(
        ++local_emission_index) {
     uint const emission_index =
       population->first_emission_index + local_emission_index;
+
     ulong const begin =
       source_emission_ranges[emission_index].source_local_primary_begin;
+
     ulong const count = source_emission_ranges[emission_index].primary_count;
 
     if (source_local_primary_id >= begin &&
@@ -743,11 +734,9 @@ static inline uint GGEMS_SourceTryInitializePrimary(
         emission, energy_distribution, energy_values_micro_eV,
         cumulative_ticket_upper, random_states, worker_id, particle);
 
-      return 1U;
+      return;
     }
   }
-
-  return 0U;
 }
 
 // =============================================================================
